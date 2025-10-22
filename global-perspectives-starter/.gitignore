@@ -1,0 +1,27 @@
+# Global ignores
+.DS_Store
+node_modules/
+dist/
+coverage/
+__pycache__/
+*.pyc
+
+# Env files (keep examples)
+.env*
+!.env.example
+frontend/.env*
+!frontend/.env.example
+
+# Vite/React build artifacts
+frontend/dist/
+frontend/dist-ssr/
+
+# IDE/editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

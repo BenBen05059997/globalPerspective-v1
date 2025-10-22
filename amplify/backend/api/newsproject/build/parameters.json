@@ -1,0 +1,5 @@
+{
+    "AppSyncApiName": "newsproject",
+    "S3DeploymentBucket": "amplify-newsproject-dev-2b7f6-deployment",
+    "S3DeploymentRootKey": "amplify-appsync-files/d69d800f44b9c82a74c0950ed24784f0de758b85"
+}

@@ -1,0 +1,262 @@
+{
+  "countries": {
+    "US": {
+      "name": "United States",
+      "region": "North America",
+      "continent": "North America",
+      "timezone": "UTC-5 to UTC-10",
+      "language": "en",
+      "flag": "🇺🇸",
+      "major_cities": ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "San Antonio", "San Diego", "Dallas", "San Jose"]
+    },
+    "GB": {
+      "name": "United Kingdom",
+      "region": "Western Europe",
+      "continent": "Europe",
+      "timezone": "UTC+0",
+      "language": "en",
+      "flag": "🇬🇧",
+      "major_cities": ["London", "Birmingham", "Manchester", "Glasgow", "Liverpool", "Leeds", "Sheffield", "Edinburgh", "Bristol", "Cardiff"]
+    },
+    "FR": {
+      "name": "France",
+      "region": "Western Europe",
+      "continent": "Europe",
+      "timezone": "UTC+1",
+      "language": "fr",
+      "flag": "🇫🇷",
+      "major_cities": ["Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Nantes", "Strasbourg", "Montpellier", "Bordeaux", "Lille"]
+    },
+    "DE": {
+      "name": "Germany",
+      "region": "Western Europe",
+      "continent": "Europe",
+      "timezone": "UTC+1",
+      "language": "de",
+      "flag": "🇩🇪",
+      "major_cities": ["Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt", "Stuttgart", "Düsseldorf", "Dortmund", "Essen", "Leipzig"]
+    },
+    "JP": {
+      "name": "Japan",
+      "region": "East Asia",
+      "continent": "Asia",
+      "timezone": "UTC+9",
+      "language": "ja",
+      "flag": "🇯🇵",
+      "major_cities": ["Tokyo", "Yokohama", "Osaka", "Nagoya", "Sapporo", "Fukuoka", "Kobe", "Kawasaki", "Kyoto", "Saitama"]
+    },
+    "CN": {
+      "name": "China",
+      "region": "East Asia",
+      "continent": "Asia",
+      "timezone": "UTC+8",
+      "language": "zh",
+      "flag": "🇨🇳",
+      "major_cities": ["Beijing", "Shanghai", "Guangzhou", "Shenzhen", "Tianjin", "Wuhan", "Dongguan", "Chengdu", "Nanjing", "Foshan"]
+    },
+    "IN": {
+      "name": "India",
+      "region": "South Asia",
+      "continent": "Asia",
+      "timezone": "UTC+5:30",
+      "language": "hi",
+      "flag": "🇮🇳",
+      "major_cities": ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Ahmedabad", "Chennai", "Kolkata", "Surat", "Pune", "Jaipur"]
+    },
+    "RU": {
+      "name": "Russia",
+      "region": "Eastern Europe",
+      "continent": "Europe/Asia",
+      "timezone": "UTC+3 to UTC+12",
+      "language": "ru",
+      "flag": "🇷🇺",
+      "major_cities": ["Moscow", "Saint Petersburg", "Novosibirsk", "Yekaterinburg", "Nizhny Novgorod", "Kazan", "Chelyabinsk", "Omsk", "Samara", "Rostov-on-Don"]
+    },
+    "AU": {
+      "name": "Australia",
+      "region": "Oceania",
+      "continent": "Australia",
+      "timezone": "UTC+8 to UTC+11",
+      "language": "en",
+      "flag": "🇦🇺",
+      "major_cities": ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast", "Newcastle", "Canberra", "Sunshine Coast", "Wollongong"]
+    },
+    "CA": {
+      "name": "Canada",
+      "region": "North America",
+      "continent": "North America",
+      "timezone": "UTC-3:30 to UTC-8",
+      "language": "en",
+      "flag": "🇨🇦",
+      "major_cities": ["Toronto", "Montreal", "Calgary", "Ottawa", "Edmonton", "Mississauga", "Winnipeg", "Vancouver", "Brampton", "Hamilton"]
+    },
+    "ES": {
+      "name": "Spain",
+      "region": "Southern Europe",
+      "continent": "Europe",
+      "timezone": "UTC+1",
+      "language": "es",
+      "flag": "🇪🇸",
+      "major_cities": ["Madrid", "Barcelona", "Valencia", "Seville", "Zaragoza", "Málaga", "Murcia", "Palma", "Las Palmas", "Bilbao"]
+    },
+    "IT": {
+      "name": "Italy",
+      "region": "Southern Europe",
+      "continent": "Europe",
+      "timezone": "UTC+1",
+      "language": "it",
+      "flag": "🇮🇹",
+      "major_cities": ["Rome", "Milan", "Naples", "Turin", "Palermo", "Genoa", "Bologna", "Florence", "Bari", "Catania"]
+    },
+    "NL": {
+      "name": "Netherlands",
+      "region": "Western Europe",
+      "continent": "Europe",
+      "timezone": "UTC+1",
+      "language": "nl",
+      "flag": "🇳🇱",
+      "major_cities": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven", "Tilburg", "Groningen", "Almere", "Breda", "Nijmegen"]
+    },
+    "BR": {
+      "name": "Brazil",
+      "region": "South America",
+      "continent": "South America",
+      "timezone": "UTC-2 to UTC-5",
+      "language": "pt",
+      "flag": "🇧🇷",
+      "major_cities": ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador", "Fortaleza", "Belo Horizonte", "Manaus", "Curitiba", "Recife", "Goiânia"]
+    },
+    "IL": {
+      "name": "Israel",
+      "region": "Middle East",
+      "continent": "Asia",
+      "timezone": "UTC+2",
+      "language": "he",
+      "flag": "🇮🇱",
+      "major_cities": ["Jerusalem", "Tel Aviv", "Haifa", "Rishon LeZion", "Petah Tikva", "Ashdod", "Netanya", "Beer Sheva", "Holon", "Bnei Brak"]
+    },
+    "QA": {
+      "name": "Qatar",
+      "region": "Middle East",
+      "continent": "Asia",
+      "timezone": "UTC+3",
+      "language": "ar",
+      "flag": "🇶🇦",
+      "major_cities": ["Doha", "Al Rayyan", "Umm Salal", "Al Wakrah", "Al Khor", "Dukhan", "Lusail", "Al Shamal", "Mesaieed", "Al Shahaniya"]
+    },
+    "HK": {
+      "name": "Hong Kong",
+      "region": "East Asia",
+      "continent": "Asia",
+      "timezone": "UTC+8",
+      "language": "zh",
+      "flag": "🇭🇰",
+      "major_cities": ["Hong Kong", "Kowloon", "Tsuen Wan", "Yuen Long", "Tuen Mun", "Tai Po", "Sha Tin", "Kwun Tong", "Sham Shui Po", "Wong Tai Sin"]
+    },
+    "UA": {
+      "name": "Ukraine",
+      "region": "Eastern Europe",
+      "continent": "Europe",
+      "timezone": "UTC+2",
+      "language": "uk",
+      "flag": "🇺🇦",
+      "major_cities": ["Kyiv", "Kharkiv", "Odesa", "Dnipro", "Donetsk", "Zaporizhzhia", "Lviv", "Kryvyi Rih", "Mykolaiv", "Mariupol"]
+    },
+    "PL": {
+      "name": "Poland",
+      "region": "Eastern Europe",
+      "continent": "Europe",
+      "timezone": "UTC+1",
+      "language": "pl",
+      "flag": "🇵🇱",
+      "major_cities": ["Warsaw", "Krakow", "Lodz", "Wroclaw", "Poznan", "Gdansk", "Szczecin", "Bydgoszcz", "Lublin", "Katowice"]
+    },
+    "TR": {
+      "name": "Turkey",
+      "region": "Western Asia",
+      "continent": "Asia",
+      "timezone": "UTC+3",
+      "language": "tr",
+      "flag": "🇹🇷",
+      "major_cities": ["Istanbul", "Ankara", "Izmir", "Bursa", "Antalya", "Gaziantep", "Konya", "Adana", "Mersin", "Diyarbakir"]
+    },
+    "EG": {
+      "name": "Egypt",
+      "region": "North Africa",
+      "continent": "Africa",
+      "timezone": "UTC+2",
+      "language": "ar",
+      "flag": "🇪🇬",
+      "major_cities": ["Cairo", "Alexandria", "Giza", "Shubra El Kheima", "Port Said", "Suez", "Luxor", "Mansoura", "El Mahalla El Kubra", "Tanta"]
+    },
+    "SA": {
+      "name": "Saudi Arabia",
+      "region": "Western Asia",
+      "continent": "Asia",
+      "timezone": "UTC+3",
+      "language": "ar",
+      "flag": "🇸🇦",
+      "major_cities": ["Riyadh", "Jeddah", "Mecca", "Medina", "Dammam", "Khobar", "Tabuk", "Buraidah", "Khamis Mushait", "Hofuf"]
+    },
+    "IR": {
+      "name": "Iran",
+      "region": "Western Asia",
+      "continent": "Asia",
+      "timezone": "UTC+3:30",
+      "language": "fa",
+      "flag": "🇮🇷",
+      "major_cities": ["Tehran", "Mashhad", "Isfahan", "Karaj", "Shiraz", "Tabriz", "Qom", "Ahvaz", "Kermanshah", "Urmia"]
+    },
+    "KR": {
+      "name": "South Korea",
+      "region": "East Asia",
+      "continent": "Asia",
+      "timezone": "UTC+9",
+      "language": "ko",
+      "flag": "🇰🇷",
+      "major_cities": ["Seoul", "Busan", "Incheon", "Daegu", "Daejeon", "Gwangju", "Suwon", "Ulsan", "Changwon", "Goyang"]
+    },
+    "MX": {
+      "name": "Mexico",
+      "region": "North America",
+      "continent": "North America",
+      "timezone": "UTC-6",
+      "language": "es",
+      "flag": "🇲🇽",
+      "major_cities": ["Mexico City", "Guadalajara", "Monterrey", "Puebla", "Tijuana", "Leon", "Juarez", "Torreon", "Queretaro", "Merida"]
+    }
+  },
+  "regions": {
+    "North America": ["US", "CA", "MX"],
+    "Western Europe": ["GB", "FR", "DE", "NL"],
+    "Southern Europe": ["ES", "IT"],
+    "Eastern Europe": ["RU", "UA", "PL"],
+    "East Asia": ["JP", "CN", "HK", "KR"],
+    "South Asia": ["IN"],
+    "Middle East": ["IL", "QA"],
+    "Western Asia": ["TR", "SA", "IR"],
+    "North Africa": ["EG"],
+    "Oceania": ["AU"],
+    "South America": ["BR"]
+  },
+  "languages": {
+    "en": ["US", "GB", "AU", "CA"],
+    "fr": ["FR"],
+    "de": ["DE"],
+    "es": ["ES", "MX"],
+    "it": ["IT"],
+    "nl": ["NL"],
+    "pt": ["BR"],
+    "ja": ["JP"],
+    "zh": ["CN", "HK"],
+    "hi": ["IN"],
+    "ru": ["RU"],
+    "he": ["IL"],
+    "ar": ["QA", "EG", "SA"],
+    "uk": ["UA"],
+    "pl": ["PL"],
+    "tr": ["TR"],
+    "fa": ["IR"],
+    "ko": ["KR"]
+  }
+}

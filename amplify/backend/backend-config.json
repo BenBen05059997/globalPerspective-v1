@@ -1,0 +1,115 @@
+{
+  "api": {
+    "newsproject": {
+      "dependsOn": [],
+      "output": {
+        "authConfig": {
+          "additionalAuthenticationProviders": [],
+          "defaultAuthentication": {
+            "apiKeyConfig": {
+              "apiKeyExpirationDate": "2025-10-28T03:37:57.280Z",
+              "apiKeyExpirationDays": 30,
+              "description": ""
+            },
+            "authenticationType": "API_KEY"
+          }
+        }
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "AppSync"
+    }
+  },
+  "auth": {
+    "newsproject": {
+      "dependsOn": [],
+      "frontendAuthConfig": {
+        "mfaConfiguration": "OFF",
+        "mfaTypes": [
+          "SMS"
+        ],
+        "passwordProtectionSettings": {
+          "passwordPolicyCharacters": [],
+          "passwordPolicyMinLength": 8
+        },
+        "signupAttributes": [
+          "EMAIL"
+        ],
+        "socialProviders": [],
+        "usernameAttributes": [],
+        "verificationMechanisms": [
+          "EMAIL"
+        ]
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Cognito",
+      "serviceType": "managed"
+    }
+  },
+  "function": {
+    "NewsProjectInvokeAgentLambda": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "newsInvokeGemini": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "newsSensitiveData": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_function_NewsProjectInvokeAgentLambda_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "NewsProjectInvokeAgentLambda"
+        }
+      ]
+    },
+    "AMPLIFY_function_NewsProjectInvokeAgentLambda_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "NewsProjectInvokeAgentLambda"
+        }
+      ]
+    },
+    "AMPLIFY_function_newsInvokeGemini_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "newsInvokeGemini"
+        }
+      ]
+    },
+    "AMPLIFY_function_newsInvokeGemini_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "newsInvokeGemini"
+        }
+      ]
+    },
+    "AMPLIFY_function_newsSensitiveData_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "newsSensitiveData"
+        }
+      ]
+    },
+    "AMPLIFY_function_newsSensitiveData_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "newsSensitiveData"
+        }
+      ]
+    }
+  }
+}

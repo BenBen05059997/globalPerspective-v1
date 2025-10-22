@@ -1,0 +1,593 @@
+{
+  "cities": {
+    "New York": {"country": "US", "region": "North America", "lat": 40.7128, "lng": -74.0060, "population": 8336817},
+    "Los Angeles": {"country": "US", "region": "North America", "lat": 34.0522, "lng": -118.2437, "population": 3979576},
+    "Chicago": {"country": "US", "region": "North America", "lat": 41.8781, "lng": -87.6298, "population": 2693976},
+    "Houston": {"country": "US", "region": "North America", "lat": 29.7604, "lng": -95.3698, "population": 2320268},
+    "Phoenix": {"country": "US", "region": "North America", "lat": 33.4484, "lng": -112.0740, "population": 1680992},
+    "Philadelphia": {"country": "US", "region": "North America", "lat": 39.9526, "lng": -75.1652, "population": 1584064},
+    "San Antonio": {"country": "US", "region": "North America", "lat": 29.4241, "lng": -98.4936, "population": 1547253},
+    "San Diego": {"country": "US", "region": "North America", "lat": 32.7157, "lng": -117.1611, "population": 1423851},
+    "Dallas": {"country": "US", "region": "North America", "lat": 32.7767, "lng": -96.7970, "population": 1343573},
+    "San Jose": {"country": "US", "region": "North America", "lat": 37.3382, "lng": -121.8863, "population": 1021795},
+    
+    "Toronto": {"country": "CA", "region": "North America", "lat": 43.6532, "lng": -79.3832, "population": 2731571},
+    "Montreal": {"country": "CA", "region": "North America", "lat": 45.5017, "lng": -73.5673, "population": 1704694},
+    "Vancouver": {"country": "CA", "region": "North America", "lat": 49.2827, "lng": -123.1207, "population": 631486},
+    "Calgary": {"country": "CA", "region": "North America", "lat": 51.0447, "lng": -114.0719, "population": 1239220},
+    "Ottawa": {"country": "CA", "region": "North America", "lat": 45.4215, "lng": -75.6972, "population": 994837},
+    
+    "London": {"country": "GB", "region": "Europe", "lat": 51.5074, "lng": -0.1278, "population": 8982000},
+    "Birmingham": {"country": "GB", "region": "Europe", "lat": 52.4862, "lng": -1.8904, "population": 1141816},
+    "Manchester": {"country": "GB", "region": "Europe", "lat": 53.4808, "lng": -2.2426, "population": 547899},
+    "Glasgow": {"country": "GB", "region": "Europe", "lat": 55.8642, "lng": -4.2518, "population": 635640},
+    "Liverpool": {"country": "GB", "region": "Europe", "lat": 53.4084, "lng": -2.9916, "population": 498042},
+    
+    "Paris": {"country": "FR", "region": "Europe", "lat": 48.8566, "lng": 2.3522, "population": 2161000},
+    "Marseille": {"country": "FR", "region": "Europe", "lat": 43.2965, "lng": 5.3698, "population": 861635},
+    "Lyon": {"country": "FR", "region": "Europe", "lat": 45.7640, "lng": 4.8357, "population": 513275},
+    "Toulouse": {"country": "FR", "region": "Europe", "lat": 43.6047, "lng": 1.4442, "population": 471941},
+    "Nice": {"country": "FR", "region": "Europe", "lat": 43.7102, "lng": 7.2620, "population": 342522},
+    
+    "Berlin": {"country": "DE", "region": "Europe", "lat": 52.5200, "lng": 13.4050, "population": 3669491},
+    "Hamburg": {"country": "DE", "region": "Europe", "lat": 53.5511, "lng": 9.9937, "population": 1899160},
+    "Munich": {"country": "DE", "region": "Europe", "lat": 48.1351, "lng": 11.5820, "population": 1471508},
+    "Cologne": {"country": "DE", "region": "Europe", "lat": 50.9375, "lng": 6.9603, "population": 1085664},
+    "Frankfurt": {"country": "DE", "region": "Europe", "lat": 50.1109, "lng": 8.6821, "population": 753056},
+    
+    "Madrid": {"country": "ES", "region": "Europe", "lat": 40.4168, "lng": -3.7038, "population": 3223334},
+    "Barcelona": {"country": "ES", "region": "Europe", "lat": 41.3851, "lng": 2.1734, "population": 1620343},
+    "Valencia": {"country": "ES", "region": "Europe", "lat": 39.4699, "lng": -0.3763, "population": 791413},
+    "Seville": {"country": "ES", "region": "Europe", "lat": 37.3891, "lng": -5.9845, "population": 688711},
+    "Bilbao": {"country": "ES", "region": "Europe", "lat": 43.2627, "lng": -2.9253, "population": 345821},
+    
+    "Rome": {"country": "IT", "region": "Europe", "lat": 41.9028, "lng": 12.4964, "population": 2872800},
+    "Milan": {"country": "IT", "region": "Europe", "lat": 45.4642, "lng": 9.1900, "population": 1378689},
+    "Naples": {"country": "IT", "region": "Europe", "lat": 40.8518, "lng": 14.2681, "population": 967069},
+    "Turin": {"country": "IT", "region": "Europe", "lat": 45.0703, "lng": 7.6869, "population": 870952},
+    "Florence": {"country": "IT", "region": "Europe", "lat": 43.7696, "lng": 11.2558, "population": 382258},
+    
+    "Amsterdam": {"country": "NL", "region": "Europe", "lat": 52.3676, "lng": 4.9041, "population": 821752},
+    "Rotterdam": {"country": "NL", "region": "Europe", "lat": 51.9244, "lng": 4.4777, "population": 651446},
+    "The Hague": {"country": "NL", "region": "Europe", "lat": 52.0705, "lng": 4.3007, "population": 544766},
+    "Utrecht": {"country": "NL", "region": "Europe", "lat": 52.0907, "lng": 5.1214, "population": 357694},
+    
+    "Brussels": {"country": "BE", "region": "Europe", "lat": 50.8503, "lng": 4.3517, "population": 1208542},
+    "Antwerp": {"country": "BE", "region": "Europe", "lat": 51.2194, "lng": 4.4025, "population": 523248},
+    "Ghent": {"country": "BE", "region": "Europe", "lat": 51.0543, "lng": 3.7174, "population": 262219},
+    
+    "Vienna": {"country": "AT", "region": "Europe", "lat": 48.2082, "lng": 16.3738, "population": 1911191},
+    "Graz": {"country": "AT", "region": "Europe", "lat": 47.0707, "lng": 15.4395, "population": 328276},
+    "Linz": {"country": "AT", "region": "Europe", "lat": 48.3069, "lng": 14.2858, "population": 206604},
+    
+    "Zurich": {"country": "CH", "region": "Europe", "lat": 47.3769, "lng": 8.5417, "population": 415367},
+    "Geneva": {"country": "CH", "region": "Europe", "lat": 46.2044, "lng": 6.1432, "population": 201818},
+    "Basel": {"country": "CH", "region": "Europe", "lat": 47.5596, "lng": 7.5886, "population": 175131},
+    
+    "Stockholm": {"country": "SE", "region": "Europe", "lat": 59.3293, "lng": 18.0686, "population": 975551},
+    "Gothenburg": {"country": "SE", "region": "Europe", "lat": 57.7089, "lng": 11.9746, "population": 579281},
+    "Malmö": {"country": "SE", "region": "Europe", "lat": 55.6050, "lng": 13.0038, "population": 347949},
+    
+    "Oslo": {"country": "NO", "region": "Europe", "lat": 59.9139, "lng": 10.7522, "population": 697549},
+    "Bergen": {"country": "NO", "region": "Europe", "lat": 60.3913, "lng": 5.3221, "population": 283929},
+    "Trondheim": {"country": "NO", "region": "Europe", "lat": 63.4305, "lng": 10.3951, "population": 205332},
+    
+    "Copenhagen": {"country": "DK", "region": "Europe", "lat": 55.6761, "lng": 12.5683, "population": 644431},
+    "Aarhus": {"country": "DK", "region": "Europe", "lat": 56.1629, "lng": 10.2039, "population": 349983},
+    "Odense": {"country": "DK", "region": "Europe", "lat": 55.4038, "lng": 10.4024, "population": 180760},
+    
+    "Helsinki": {"country": "FI", "region": "Europe", "lat": 60.1699, "lng": 24.9384, "population": 658864},
+    "Espoo": {"country": "FI", "region": "Europe", "lat": 60.2055, "lng": 24.6559, "population": 292796},
+    "Tampere": {"country": "FI", "region": "Europe", "lat": 61.4991, "lng": 23.7871, "population": 238245},
+    
+    "Moscow": {"country": "RU", "region": "Europe", "lat": 55.7558, "lng": 37.6176, "population": 12506468},
+    "Saint Petersburg": {"country": "RU", "region": "Europe", "lat": 59.9311, "lng": 30.3609, "population": 5383890},
+    "Novosibirsk": {"country": "RU", "region": "Asia", "lat": 55.0084, "lng": 82.9357, "population": 1625631},
+    "Yekaterinburg": {"country": "RU", "region": "Europe", "lat": 56.8431, "lng": 60.6454, "population": 1493749},
+    
+    "Kyiv": {"country": "UA", "region": "Europe", "lat": 50.4501, "lng": 30.5234, "population": 2962180},
+    "Kharkiv": {"country": "UA", "region": "Europe", "lat": 49.9935, "lng": 36.2304, "population": 1421125},
+    "Odesa": {"country": "UA", "region": "Europe", "lat": 46.4825, "lng": 30.7233, "population": 1017699},
+    "Dnipro": {"country": "UA", "region": "Europe", "lat": 48.4647, "lng": 35.0462, "population": 980948},
+    "Donetsk": {"country": "UA", "region": "Europe", "lat": 48.0159, "lng": 37.8028, "population": 905364},
+    "Zaporizhzhia": {"country": "UA", "region": "Europe", "lat": 47.8388, "lng": 35.1396, "population": 722713},
+    "Lviv": {"country": "UA", "region": "Europe", "lat": 49.8397, "lng": 24.0297, "population": 717803},
+    
+    "Warsaw": {"country": "PL", "region": "Europe", "lat": 52.2297, "lng": 21.0122, "population": 1790658},
+    "Krakow": {"country": "PL", "region": "Europe", "lat": 50.0647, "lng": 19.9450, "population": 779115},
+    "Lodz": {"country": "PL", "region": "Europe", "lat": 51.7592, "lng": 19.4560, "population": 679941},
+    
+    "Prague": {"country": "CZ", "region": "Europe", "lat": 50.0755, "lng": 14.4378, "population": 1318982},
+    "Brno": {"country": "CZ", "region": "Europe", "lat": 49.1951, "lng": 16.6068, "population": 380681},
+    "Ostrava": {"country": "CZ", "region": "Europe", "lat": 49.8209, "lng": 18.2625, "population": 287968},
+    
+    "Budapest": {"country": "HU", "region": "Europe", "lat": 47.4979, "lng": 19.0402, "population": 1752286},
+    "Debrecen": {"country": "HU", "region": "Europe", "lat": 47.5316, "lng": 21.6273, "population": 201981},
+    "Szeged": {"country": "HU", "region": "Europe", "lat": 46.2530, "lng": 20.1414, "population": 161921},
+    
+    "Bucharest": {"country": "RO", "region": "Europe", "lat": 44.4268, "lng": 26.1025, "population": 1883425},
+    "Cluj-Napoca": {"country": "RO", "region": "Europe", "lat": 46.7712, "lng": 23.6236, "population": 324576},
+    "Timisoara": {"country": "RO", "region": "Europe", "lat": 45.7489, "lng": 21.2087, "population": 319279},
+    
+    "Sofia": {"country": "BG", "region": "Europe", "lat": 42.6977, "lng": 23.3219, "population": 1400384},
+    "Plovdiv": {"country": "BG", "region": "Europe", "lat": 42.1354, "lng": 24.7453, "population": 346893},
+    "Varna": {"country": "BG", "region": "Europe", "lat": 43.2141, "lng": 27.9147, "population": 335177},
+    
+    "Belgrade": {"country": "RS", "region": "Europe", "lat": 44.7866, "lng": 20.4489, "population": 1397939},
+    "Novi Sad": {"country": "RS", "region": "Europe", "lat": 45.2671, "lng": 19.8335, "population": 277522},
+    "Nis": {"country": "RS", "region": "Europe", "lat": 43.3209, "lng": 21.8958, "population": 260237},
+    
+    "Zagreb": {"country": "HR", "region": "Europe", "lat": 45.8150, "lng": 15.9819, "population": 790017},
+    "Split": {"country": "HR", "region": "Europe", "lat": 43.5081, "lng": 16.4402, "population": 178102},
+    "Rijeka": {"country": "HR", "region": "Europe", "lat": 45.3271, "lng": 14.4422, "population": 128624},
+    
+    "Ljubljana": {"country": "SI", "region": "Europe", "lat": 46.0569, "lng": 14.5058, "population": 295504},
+    "Maribor": {"country": "SI", "region": "Europe", "lat": 46.5547, "lng": 15.6467, "population": 112065},
+    
+    "Bratislava": {"country": "SK", "region": "Europe", "lat": 48.1486, "lng": 17.1077, "population": 432864},
+    "Kosice": {"country": "SK", "region": "Europe", "lat": 48.7164, "lng": 21.2611, "population": 238138},
+    
+    "Athens": {"country": "GR", "region": "Europe", "lat": 37.9838, "lng": 23.7275, "population": 664046},
+    "Thessaloniki": {"country": "GR", "region": "Europe", "lat": 40.6401, "lng": 22.9444, "population": 325182},
+    "Patras": {"country": "GR", "region": "Europe", "lat": 38.2466, "lng": 21.7346, "population": 213984},
+    
+    "Lisbon": {"country": "PT", "region": "Europe", "lat": 38.7223, "lng": -9.1393, "population": 505526},
+    "Porto": {"country": "PT", "region": "Europe", "lat": 41.1579, "lng": -8.6291, "population": 237591},
+    "Braga": {"country": "PT", "region": "Europe", "lat": 41.5518, "lng": -8.4229, "population": 193333},
+    
+    "Dublin": {"country": "IE", "region": "Europe", "lat": 53.3498, "lng": -6.2603, "population": 554554},
+    "Cork": {"country": "IE", "region": "Europe", "lat": 51.8985, "lng": -8.4756, "population": 210853},
+    "Limerick": {"country": "IE", "region": "Europe", "lat": 52.6638, "lng": -8.6267, "population": 94192},
+    
+    "Tokyo": {"country": "JP", "region": "East Asia", "lat": 35.6762, "lng": 139.6503, "population": 13960000},
+    "Yokohama": {"country": "JP", "region": "East Asia", "lat": 35.4437, "lng": 139.6380, "population": 3726167},
+    "Osaka": {"country": "JP", "region": "East Asia", "lat": 34.6937, "lng": 135.5023, "population": 2691185},
+    "Nagoya": {"country": "JP", "region": "East Asia", "lat": 35.1815, "lng": 136.9066, "population": 2295638},
+    "Sapporo": {"country": "JP", "region": "East Asia", "lat": 43.0642, "lng": 141.3469, "population": 1952356},
+    "Fukuoka": {"country": "JP", "region": "East Asia", "lat": 33.5904, "lng": 130.4017, "population": 1538681},
+    "Kobe": {"country": "JP", "region": "East Asia", "lat": 34.6901, "lng": 135.1956, "population": 1537272},
+    "Kyoto": {"country": "JP", "region": "East Asia", "lat": 35.0116, "lng": 135.7681, "population": 1474570},
+    "Kawasaki": {"country": "JP", "region": "East Asia", "lat": 35.5308, "lng": 139.7029, "population": 1475213},
+    "Saitama": {"country": "JP", "region": "East Asia", "lat": 35.9078, "lng": 139.6565, "population": 1324854},
+    
+    "Seoul": {"country": "KR", "region": "East Asia", "lat": 37.5665, "lng": 126.9780, "population": 9720846},
+    "Busan": {"country": "KR", "region": "East Asia", "lat": 35.1796, "lng": 129.0756, "population": 3448737},
+    "Incheon": {"country": "KR", "region": "East Asia", "lat": 37.4563, "lng": 126.7052, "population": 2954955},
+    "Daegu": {"country": "KR", "region": "East Asia", "lat": 35.8714, "lng": 128.6014, "population": 2466052},
+    "Daejeon": {"country": "KR", "region": "East Asia", "lat": 36.3504, "lng": 127.3845, "population": 1538394},
+    "Gwangju": {"country": "KR", "region": "East Asia", "lat": 35.1595, "lng": 126.8526, "population": 1469214},
+    
+    "Beijing": {"country": "CN", "region": "East Asia", "lat": 39.9042, "lng": 116.4074, "population": 21540000},
+    "Shanghai": {"country": "CN", "region": "East Asia", "lat": 31.2304, "lng": 121.4737, "population": 24870000},
+    "Guangzhou": {"country": "CN", "region": "East Asia", "lat": 23.1291, "lng": 113.2644, "population": 15300000},
+    "Shenzhen": {"country": "CN", "region": "East Asia", "lat": 22.5431, "lng": 114.0579, "population": 12590000},
+    "Chengdu": {"country": "CN", "region": "East Asia", "lat": 30.5728, "lng": 104.0668, "population": 11400000},
+    "Nanjing": {"country": "CN", "region": "East Asia", "lat": 32.0603, "lng": 118.7969, "population": 9314685},
+    "Wuhan": {"country": "CN", "region": "East Asia", "lat": 30.5928, "lng": 114.3055, "population": 8896900},
+    "Xi'an": {"country": "CN", "region": "East Asia", "lat": 34.3416, "lng": 108.9398, "population": 8705600},
+    "Hangzhou": {"country": "CN", "region": "East Asia", "lat": 30.2741, "lng": 120.1551, "population": 8700000},
+    "Chongqing": {"country": "CN", "region": "East Asia", "lat": 29.4316, "lng": 106.9123, "population": 8500000},
+    
+    "Hong Kong": {"country": "HK", "region": "East Asia", "lat": 22.3193, "lng": 114.1694, "population": 7496981},
+    "Macau": {"country": "MO", "region": "East Asia", "lat": 22.1987, "lng": 113.5439, "population": 649335},
+    
+    "Taipei": {"country": "TW", "region": "East Asia", "lat": 25.0330, "lng": 121.5654, "population": 2646204},
+    "Kaohsiung": {"country": "TW", "region": "East Asia", "lat": 22.6273, "lng": 120.3014, "population": 2773533},
+    "Taichung": {"country": "TW", "region": "East Asia", "lat": 24.1477, "lng": 120.6736, "population": 2820787},
+    
+    "Singapore": {"country": "SG", "region": "Southeast Asia", "lat": 1.3521, "lng": 103.8198, "population": 5850342},
+    
+    "Bangkok": {"country": "TH", "region": "Southeast Asia", "lat": 13.7563, "lng": 100.5018, "population": 10156000},
+    "Chiang Mai": {"country": "TH", "region": "Southeast Asia", "lat": 18.7883, "lng": 98.9853, "population": 127240},
+    "Phuket": {"country": "TH", "region": "Southeast Asia", "lat": 7.8804, "lng": 98.3923, "population": 416582},
+    
+    "Jakarta": {"country": "ID", "region": "Southeast Asia", "lat": -6.2088, "lng": 106.8456, "population": 10770487},
+    "Surabaya": {"country": "ID", "region": "Southeast Asia", "lat": -7.2575, "lng": 112.7521, "population": 2874699},
+    "Bandung": {"country": "ID", "region": "Southeast Asia", "lat": -6.9175, "lng": 107.6191, "population": 2444160},
+    "Medan": {"country": "ID", "region": "Southeast Asia", "lat": 3.5952, "lng": 98.6722, "population": 2435252},
+    
+    "Manila": {"country": "PH", "region": "Southeast Asia", "lat": 14.5995, "lng": 120.9842, "population": 1780148},
+    "Quezon City": {"country": "PH", "region": "Southeast Asia", "lat": 14.6760, "lng": 121.0437, "population": 2936116},
+    "Davao": {"country": "PH", "region": "Southeast Asia", "lat": 7.1907, "lng": 125.4553, "population": 1776949},
+    "Cebu City": {"country": "PH", "region": "Southeast Asia", "lat": 10.3157, "lng": 123.8854, "population": 964169},
+    
+    "Kuala Lumpur": {"country": "MY", "region": "Southeast Asia", "lat": 3.1390, "lng": 101.6869, "population": 1768000},
+    "George Town": {"country": "MY", "region": "Southeast Asia", "lat": 5.4164, "lng": 100.3327, "population": 708127},
+    "Johor Bahru": {"country": "MY", "region": "Southeast Asia", "lat": 1.4927, "lng": 103.7414, "population": 497067},
+    
+    "Ho Chi Minh City": {"country": "VN", "region": "Southeast Asia", "lat": 10.8231, "lng": 106.6297, "population": 9077158},
+    "Hanoi": {"country": "VN", "region": "Southeast Asia", "lat": 21.0285, "lng": 105.8542, "population": 8053663},
+    "Da Nang": {"country": "VN", "region": "Southeast Asia", "lat": 16.0544, "lng": 108.2022, "population": 1230000},
+    
+    "Yangon": {"country": "MM", "region": "Southeast Asia", "lat": 16.8661, "lng": 96.1951, "population": 5209541},
+    "Mandalay": {"country": "MM", "region": "Southeast Asia", "lat": 21.9588, "lng": 96.0891, "population": 1225553},
+    "Naypyidaw": {"country": "MM", "region": "Southeast Asia", "lat": 19.7633, "lng": 96.0785, "population": 924608},
+    
+    "Phnom Penh": {"country": "KH", "region": "Southeast Asia", "lat": 11.5564, "lng": 104.9282, "population": 2281951},
+    "Siem Reap": {"country": "KH", "region": "Southeast Asia", "lat": 13.3671, "lng": 103.8448, "population": 245494},
+    
+    "Vientiane": {"country": "LA", "region": "Southeast Asia", "lat": 17.9757, "lng": 102.6331, "population": 948477},
+    "Luang Prabang": {"country": "LA", "region": "Southeast Asia", "lat": 19.8845, "lng": 102.1348, "population": 56212},
+    
+    "Bandar Seri Begawan": {"country": "BN", "region": "Southeast Asia", "lat": 4.9031, "lng": 114.9398, "population": 100700},
+    
+    "Dili": {"country": "TL", "region": "Southeast Asia", "lat": -8.5569, "lng": 125.5603, "population": 277279},
+    
+    "Mumbai": {"country": "IN", "region": "South Asia", "lat": 19.0760, "lng": 72.8777, "population": 12442373},
+    "Delhi": {"country": "IN", "region": "South Asia", "lat": 28.7041, "lng": 77.1025, "population": 11007835},
+    "Bangalore": {"country": "IN", "region": "South Asia", "lat": 12.9716, "lng": 77.5946, "population": 8443675},
+    "Hyderabad": {"country": "IN", "region": "South Asia", "lat": 17.3850, "lng": 78.4867, "population": 6809970},
+    "Ahmedabad": {"country": "IN", "region": "South Asia", "lat": 23.0225, "lng": 72.5714, "population": 5633927},
+    "Chennai": {"country": "IN", "region": "South Asia", "lat": 13.0827, "lng": 80.2707, "population": 4681087},
+    "Kolkata": {"country": "IN", "region": "South Asia", "lat": 22.5726, "lng": 88.3639, "population": 4496694},
+    "Pune": {"country": "IN", "region": "South Asia", "lat": 18.5204, "lng": 73.8567, "population": 3124458},
+    "Jaipur": {"country": "IN", "region": "South Asia", "lat": 26.9124, "lng": 75.7873, "population": 3046163},
+    "Lucknow": {"country": "IN", "region": "South Asia", "lat": 26.8467, "lng": 80.9462, "population": 2817105},
+    
+    "Karachi": {"country": "PK", "region": "South Asia", "lat": 24.8607, "lng": 67.0011, "population": 14910352},
+    "Lahore": {"country": "PK", "region": "South Asia", "lat": 31.5204, "lng": 74.3587, "population": 11126285},
+    "Faisalabad": {"country": "PK", "region": "South Asia", "lat": 31.4504, "lng": 73.1350, "population": 3203846},
+    "Rawalpindi": {"country": "PK", "region": "South Asia", "lat": 33.5651, "lng": 73.0169, "population": 2098231},
+    "Gujranwala": {"country": "PK", "region": "South Asia", "lat": 32.1877, "lng": 74.1945, "population": 2027001},
+    "Peshawar": {"country": "PK", "region": "South Asia", "lat": 34.0151, "lng": 71.5249, "population": 1970042},
+    "Multan": {"country": "PK", "region": "South Asia", "lat": 30.1575, "lng": 71.5249, "population": 1871843},
+    "Islamabad": {"country": "PK", "region": "South Asia", "lat": 33.6844, "lng": 73.0479, "population": 1014825},
+    
+    "Dhaka": {"country": "BD", "region": "South Asia", "lat": 23.8103, "lng": 90.4125, "population": 9540000},
+    "Chittagong": {"country": "BD", "region": "South Asia", "lat": 22.3569, "lng": 91.7832, "population": 2592439},
+    "Khulna": {"country": "BD", "region": "South Asia", "lat": 22.8456, "lng": 89.5403, "population": 1022000},
+    "Rajshahi": {"country": "BD", "region": "South Asia", "lat": 24.3636, "lng": 88.6241, "population": 449756},
+    
+    "Colombo": {"country": "LK", "region": "South Asia", "lat": 6.9271, "lng": 79.8612, "population": 752993},
+    "Kandy": {"country": "LK", "region": "South Asia", "lat": 7.2906, "lng": 80.6337, "population": 125351},
+    "Galle": {"country": "LK", "region": "South Asia", "lat": 6.0535, "lng": 80.2210, "population": 99478},
+    
+    "Kathmandu": {"country": "NP", "region": "South Asia", "lat": 27.7172, "lng": 85.3240, "population": 1442271},
+    "Pokhara": {"country": "NP", "region": "South Asia", "lat": 28.2096, "lng": 83.9856, "population": 518452},
+    "Lalitpur": {"country": "NP", "region": "South Asia", "lat": 27.6588, "lng": 85.3247, "population": 299843},
+    
+    "Thimphu": {"country": "BT", "region": "South Asia", "lat": 27.4728, "lng": 89.6390, "population": 203765},
+    "Phuentsholing": {"country": "BT", "region": "South Asia", "lat": 26.8512, "lng": 89.3909, "population": 27658},
+    
+    "Male": {"country": "MV", "region": "South Asia", "lat": 4.1755, "lng": 73.5093, "population": 252768},
+    
+    "Sydney": {"country": "AU", "region": "Oceania", "lat": -33.8688, "lng": 151.2093, "population": 5312163},
+    "Melbourne": {"country": "AU", "region": "Oceania", "lat": -37.8136, "lng": 144.9631, "population": 5078193},
+    "Brisbane": {"country": "AU", "region": "Oceania", "lat": -27.4698, "lng": 153.0251, "population": 2560720},
+    "Perth": {"country": "AU", "region": "Oceania", "lat": -31.9505, "lng": 115.8605, "population": 2192229},
+    "Adelaide": {"country": "AU", "region": "Oceania", "lat": -34.9285, "lng": 138.6007, "population": 1402393},
+    "Gold Coast": {"country": "AU", "region": "Oceania", "lat": -28.0167, "lng": 153.4000, "population": 679127},
+    "Newcastle": {"country": "AU", "region": "Oceania", "lat": -32.9283, "lng": 151.7817, "population": 322278},
+    "Canberra": {"country": "AU", "region": "Oceania", "lat": -35.2809, "lng": 149.1300, "population": 431380},
+    
+    "Auckland": {"country": "NZ", "region": "Oceania", "lat": -36.8485, "lng": 174.7633, "population": 1695200},
+    "Wellington": {"country": "NZ", "region": "Oceania", "lat": -41.2865, "lng": 174.7762, "population": 418500},
+    "Christchurch": {"country": "NZ", "region": "Oceania", "lat": -43.5321, "lng": 172.6362, "population": 381800},
+    "Hamilton": {"country": "NZ", "region": "Oceania", "lat": -37.7870, "lng": 175.2793, "population": 169800},
+    
+    "Port Moresby": {"country": "PG", "region": "Oceania", "lat": -9.4438, "lng": 147.1803, "population": 383000},
+    "Lae": {"country": "PG", "region": "Oceania", "lat": -6.7248, "lng": 146.9984, "population": 148934},
+    
+    "Suva": {"country": "FJ", "region": "Oceania", "lat": -18.1248, "lng": 178.4501, "population": 93970},
+    "Nadi": {"country": "FJ", "region": "Oceania", "lat": -17.7765, "lng": 177.4162, "population": 42284},
+    
+    "Nuku'alofa": {"country": "TO", "region": "Oceania", "lat": -21.1789, "lng": -175.1982, "population": 22400},
+    
+    "Apia": {"country": "WS", "region": "Oceania", "lat": -13.8506, "lng": -171.7513, "population": 37708},
+    
+    "Port Vila": {"country": "VU", "region": "Oceania", "lat": -17.7334, "lng": 168.3273, "population": 51437},
+    
+    "Honiara": {"country": "SB", "region": "Oceania", "lat": -9.4280, "lng": 159.9729, "population": 84520},
+    
+    "Noumea": {"country": "NC", "region": "Oceania", "lat": -22.2758, "lng": 166.4581, "population": 99926},
+    
+    "Papeete": {"country": "PF", "region": "Oceania", "lat": -17.5516, "lng": -149.5585, "population": 26926},
+    
+    "Cairo": {"country": "EG", "region": "Africa", "lat": 30.0444, "lng": 31.2357, "population": 10230350},
+    "Alexandria": {"country": "EG", "region": "Africa", "lat": 31.2001, "lng": 29.9187, "population": 5200000},
+    "Giza": {"country": "EG", "region": "Africa", "lat": 30.0131, "lng": 31.2089, "population": 4367343},
+    
+    "Lagos": {"country": "NG", "region": "Africa", "lat": 6.5244, "lng": 3.3792, "population": 15388000},
+    "Kano": {"country": "NG", "region": "Africa", "lat": 12.0022, "lng": 8.5920, "population": 4103000},
+    "Ibadan": {"country": "NG", "region": "Africa", "lat": 7.3775, "lng": 3.9470, "population": 3649000},
+    "Abuja": {"country": "NG", "region": "Africa", "lat": 9.0765, "lng": 7.3986, "population": 3464000},
+    "Port Harcourt": {"country": "NG", "region": "Africa", "lat": 4.8156, "lng": 7.0498, "population": 3020000},
+    
+    "Kinshasa": {"country": "CD", "region": "Africa", "lat": -4.4419, "lng": 15.2663, "population": 14970000},
+    "Lubumbashi": {"country": "CD", "region": "Africa", "lat": -11.6204, "lng": 27.4794, "population": 2584000},
+    "Mbuji-Mayi": {"country": "CD", "region": "Africa", "lat": -6.1360, "lng": 23.5904, "population": 2525000},
+    
+    "Johannesburg": {"country": "ZA", "region": "Africa", "lat": -26.2041, "lng": 28.0473, "population": 4434827},
+    "Cape Town": {"country": "ZA", "region": "Africa", "lat": -33.9249, "lng": 18.4241, "population": 4618000},
+    "Durban": {"country": "ZA", "region": "Africa", "lat": -29.8587, "lng": 31.0218, "population": 3442361},
+    "Pretoria": {"country": "ZA", "region": "Africa", "lat": -25.7479, "lng": 28.2293, "population": 2921488},
+    "Port Elizabeth": {"country": "ZA", "region": "Africa", "lat": -33.9180, "lng": 25.5701, "population": 1244900},
+    
+    "Nairobi": {"country": "KE", "region": "Africa", "lat": -1.2921, "lng": 36.8219, "population": 4397073},
+    "Mombasa": {"country": "KE", "region": "Africa", "lat": -4.0435, "lng": 39.6682, "population": 1208333},
+    "Kisumu": {"country": "KE", "region": "Africa", "lat": -0.1022, "lng": 34.7617, "population": 610082},
+    
+    "Addis Ababa": {"country": "ET", "region": "Africa", "lat": 9.1450, "lng": 40.4897, "population": 3040740},
+    "Dire Dawa": {"country": "ET", "region": "Africa", "lat": 9.5916, "lng": 41.8661, "population": 440000},
+    "Mek'ele": {"country": "ET", "region": "Africa", "lat": 13.4967, "lng": 39.4753, "population": 340859},
+    
+    "Kampala": {"country": "UG", "region": "Africa", "lat": 0.3476, "lng": 32.5825, "population": 1680000},
+    "Gulu": {"country": "UG", "region": "Africa", "lat": 2.7796, "lng": 32.2990, "population": 152276},
+    "Lira": {"country": "UG", "region": "Africa", "lat": 2.2490, "lng": 32.8998, "population": 119323},
+    
+    "Dar es Salaam": {"country": "TZ", "region": "Africa", "lat": -6.7924, "lng": 39.2083, "population": 6048000},
+    "Mwanza": {"country": "TZ", "region": "Africa", "lat": -2.5164, "lng": 32.9175, "population": 706453},
+    "Arusha": {"country": "TZ", "region": "Africa", "lat": -3.3869, "lng": 36.6830, "population": 617631},
+    
+    "Kigali": {"country": "RW", "region": "Africa", "lat": -1.9441, "lng": 30.0619, "population": 1132686},
+    "Butare": {"country": "RW", "region": "Africa", "lat": -2.6017, "lng": 29.7398, "population": 89600},
+    "Gitarama": {"country": "RW", "region": "Africa", "lat": -2.0742, "lng": 29.7564, "population": 87613},
+    
+    "Bujumbura": {"country": "BI", "region": "Africa", "lat": -3.3614, "lng": 29.3599, "population": 1013176},
+    "Gitega": {"country": "BI", "region": "Africa", "lat": -3.4271, "lng": 29.9246, "population": 135467},
+    "Muyinga": {"country": "BI", "region": "Africa", "lat": -2.8442, "lng": 30.3421, "population": 71076},
+    
+    "Lusaka": {"country": "ZM", "region": "Africa", "lat": -15.3875, "lng": 28.3228, "population": 2731696},
+    "Kitwe": {"country": "ZM", "region": "Africa", "lat": -12.8024, "lng": 28.2132, "population": 517543},
+    "Ndola": {"country": "ZM", "region": "Africa", "lat": -12.9587, "lng": 28.6366, "population": 475194},
+    
+    "Harare": {"country": "ZW", "region": "Africa", "lat": -17.8252, "lng": 31.0335, "population": 2123132},
+    "Bulawayo": {"country": "ZW", "region": "Africa", "lat": -20.1594, "lng": 28.5806, "population": 653337},
+    "Chitungwiza": {"country": "ZW", "region": "Africa", "lat": -18.0130, "lng": 31.0742, "population": 371244},
+    
+    "Maputo": {"country": "MZ", "region": "Africa", "lat": -25.9692, "lng": 32.5732, "population": 1191613},
+    "Matola": {"country": "MZ", "region": "Africa", "lat": -25.9622, "lng": 32.4589, "population": 1616267},
+    "Beira": {"country": "MZ", "region": "Africa", "lat": -19.8187, "lng": 34.8389, "population": 592090},
+    
+    "Gaborone": {"country": "BW", "region": "Africa", "lat": -24.6282, "lng": 25.9231, "population": 246325},
+    "Francistown": {"country": "BW", "region": "Africa", "lat": -21.1699, "lng": 27.5084, "population": 103417},
+    "Molepolole": {"country": "BW", "region": "Africa", "lat": -24.4069, "lng": 25.4943, "population": 66466},
+    
+    "Windhoek": {"country": "NA", "region": "Africa", "lat": -22.5609, "lng": 17.0658, "population": 431000},
+    "Rundu": {"country": "NA", "region": "Africa", "lat": -17.9336, "lng": 19.7668, "population": 63431},
+    "Walvis Bay": {"country": "NA", "region": "Africa", "lat": -22.9576, "lng": 14.5052, "population": 62096},
+    
+    "Maseru": {"country": "LS", "region": "Africa", "lat": -29.3151, "lng": 27.4869, "population": 330760},
+    "Teyateyaneng": {"country": "LS", "region": "Africa", "lat": -29.1442, "lng": 27.7324, "population": 75115},
+    "Mafeteng": {"country": "LS", "region": "Africa", "lat": -29.8237, "lng": 27.2373, "population": 57059},
+    
+    "Mbabane": {"country": "SZ", "region": "Africa", "lat": -26.3054, "lng": 31.1367, "population": 94874},
+    "Manzini": {"country": "SZ", "region": "Africa", "lat": -26.4833, "lng": 31.3667, "population": 110537},
+    "Big Bend": {"country": "SZ", "region": "Africa", "lat": -26.8167, "lng": 31.9500, "population": 10342},
+    
+    "Casablanca": {"country": "MA", "region": "Africa", "lat": 33.5731, "lng": -7.5898, "population": 3359818},
+    "Rabat": {"country": "MA", "region": "Africa", "lat": 34.0209, "lng": -6.8416, "population": 577827},
+    "Fez": {"country": "MA", "region": "Africa", "lat": 34.0181, "lng": -5.0078, "population": 1112072},
+    "Marrakech": {"country": "MA", "region": "Africa", "lat": 31.6295, "lng": -7.9811, "population": 928850},
+    
+    "Algiers": {"country": "DZ", "region": "Africa", "lat": 36.7538, "lng": 3.0588, "population": 2364230},
+    "Oran": {"country": "DZ", "region": "Africa", "lat": 35.6911, "lng": -0.6417, "population": 803329},
+    "Constantine": {"country": "DZ", "region": "Africa", "lat": 36.3650, "lng": 6.6147, "population": 448374},
+    
+    "Tunis": {"country": "TN", "region": "Africa", "lat": 36.8065, "lng": 10.1815, "population": 693210},
+    "Sfax": {"country": "TN", "region": "Africa", "lat": 34.7406, "lng": 10.7603, "population": 330440},
+    "Sousse": {"country": "TN", "region": "Africa", "lat": 35.8256, "lng": 10.6411, "population": 271428},
+    
+    "Tripoli": {"country": "LY", "region": "Africa", "lat": 32.8872, "lng": 13.1913, "population": 1126000},
+    "Benghazi": {"country": "LY", "region": "Africa", "lat": 32.1167, "lng": 20.0667, "population": 650629},
+    "Misrata": {"country": "LY", "region": "Africa", "lat": 32.3743, "lng": 15.0925, "population": 386120},
+    
+    "Khartoum": {"country": "SD", "region": "Africa", "lat": 15.5007, "lng": 32.5599, "population": 1974647},
+    "Omdurman": {"country": "SD", "region": "Africa", "lat": 15.6445, "lng": 32.4777, "population": 1849659},
+    "Port Sudan": {"country": "SD", "region": "Africa", "lat": 19.6158, "lng": 37.2164, "population": 489725},
+    
+    "Juba": {"country": "SS", "region": "Africa", "lat": 4.8594, "lng": 31.5713, "population": 525953},
+    "Wau": {"country": "SS", "region": "Africa", "lat": 7.7028, "lng": 28.0075, "population": 151320},
+    "Malakal": {"country": "SS", "region": "Africa", "lat": 9.5334, "lng": 31.6605, "population": 160765},
+    
+    "N'Djamena": {"country": "TD", "region": "Africa", "lat": 12.1348, "lng": 15.0557, "population": 1605696},
+    "Moundou": {"country": "TD", "region": "Africa", "lat": 8.5667, "lng": 16.0833, "population": 137929},
+    "Sarh": {"country": "TD", "region": "Africa", "lat": 9.1500, "lng": 18.3833, "population": 102528},
+    
+    "Bangui": {"country": "CF", "region": "Africa", "lat": 4.3947, "lng": 18.5582, "population": 889231},
+    "Bimbo": {"country": "CF", "region": "Africa", "lat": 4.2536, "lng": 18.4181, "population": 267859},
+    "Berbérati": {"country": "CF", "region": "Africa", "lat": 4.2611, "lng": 15.7869, "population": 105155},
+    
+    "Libreville": {"country": "GA", "region": "Africa", "lat": 0.4162, "lng": 9.4673, "population": 703904},
+    "Port-Gentil": {"country": "GA", "region": "Africa", "lat": -0.7193, "lng": 8.7815, "population": 136462},
+    "Franceville": {"country": "GA", "region": "Africa", "lat": -1.6332, "lng": 13.5833, "population": 110568},
+    
+    "Malabo": {"country": "GQ", "region": "Africa", "lat": 3.7558, "lng": 8.7811, "population": 297000},
+    "Bata": {"country": "GQ", "region": "Africa", "lat": 1.8639, "lng": 9.7658, "population": 230282},
+    
+    "São Tomé": {"country": "ST", "region": "Africa", "lat": 0.3365, "lng": 6.7273, "population": 80420},
+    "Santo António": {"country": "ST", "region": "Africa", "lat": 1.6397, "lng": 7.4056, "population": 1200},
+    
+    "Yaoundé": {"country": "CM", "region": "Africa", "lat": 3.8480, "lng": 11.5021, "population": 4164000},
+    "Douala": {"country": "CM", "region": "Africa", "lat": 4.0483, "lng": 9.7043, "population": 3663000},
+    "Bamenda": {"country": "CM", "region": "Africa", "lat": 5.9597, "lng": 10.1494, "population": 2277000},
+    
+    "Abidjan": {"country": "CI", "region": "Africa", "lat": 5.3600, "lng": -4.0083, "population": 4707404},
+    "Yamoussoukro": {"country": "CI", "region": "Africa", "lat": 6.8276, "lng": -5.2893, "population": 355573},
+    "Bouaké": {"country": "CI", "region": "Africa", "lat": 7.6906, "lng": -5.0300, "population": 832371},
+    
+    "Accra": {"country": "GH", "region": "Africa", "lat": 5.6037, "lng": -0.1870, "population": 2557000},
+    "Kumasi": {"country": "GH", "region": "Africa", "lat": 6.6885, "lng": -1.6244, "population": 3348000},
+    "Tamale": {"country": "GH", "region": "Africa", "lat": 9.4008, "lng": -0.8393, "population": 950000},
+    
+    "Lomé": {"country": "TG", "region": "Africa", "lat": 6.1256, "lng": 1.2251, "population": 1477660},
+    "Sokodé": {"country": "TG", "region": "Africa", "lat": 8.9833, "lng": 1.1333, "population": 117811},
+    "Kara": {"country": "TG", "region": "Africa", "lat": 9.5511, "lng": 1.1867, "population": 104207},
+    
+    "Cotonou": {"country": "BJ", "region": "Africa", "lat": 6.4023, "lng": 2.5059, "population": 1190269},
+    "Porto-Novo": {"country": "BJ", "region": "Africa", "lat": 6.4969, "lng": 2.6283, "population": 264320},
+    "Parakou": {"country": "BJ", "region": "Africa", "lat": 9.3372, "lng": 2.6303, "population": 255478},
+    
+    "Ouagadougou": {"country": "BF", "region": "Africa", "lat": 12.3714, "lng": -1.5197, "population": 2415266},
+    "Bobo-Dioulasso": {"country": "BF", "region": "Africa", "lat": 11.1781, "lng": -4.2979, "population": 903887},
+    "Koudougou": {"country": "BF", "region": "Africa", "lat": 12.2530, "lng": -2.3619, "population": 131825},
+    
+    "Bamako": {"country": "ML", "region": "Africa", "lat": 12.6392, "lng": -8.0029, "population": 2529300},
+    "Sikasso": {"country": "ML", "region": "Africa", "lat": 11.3175, "lng": -5.6670, "population": 225753},
+    "Mopti": {"country": "ML", "region": "Africa", "lat": 14.4843, "lng": -4.1960, "population": 120786},
+    
+    "Niamey": {"country": "NE", "region": "Africa", "lat": 13.5116, "lng": 2.1254, "population": 1302910},
+    "Zinder": {"country": "NE", "region": "Africa", "lat": 13.8069, "lng": 8.9881, "population": 235605},
+    "Maradi": {"country": "NE", "region": "Africa", "lat": 13.5000, "lng": 7.1017, "population": 267249},
+    
+    "Conakry": {"country": "GN", "region": "Africa", "lat": 9.6412, "lng": -13.5784, "population": 1660973},
+    "Nzérékoré": {"country": "GN", "region": "Africa", "lat": 7.7562, "lng": -8.8179, "population": 132728},
+    "Kankan": {"country": "GN", "region": "Africa", "lat": 10.3853, "lng": -9.3056, "population": 190722},
+    
+    "Freetown": {"country": "SL", "region": "Africa", "lat": 8.4657, "lng": -13.2317, "population": 1136000},
+    "Bo": {"country": "SL", "region": "Africa", "lat": 7.9644, "lng": -11.7383, "population": 174354},
+    "Kenema": {"country": "SL", "region": "Africa", "lat": 7.8767, "lng": -11.1900, "population": 200354},
+    
+    "Monrovia": {"country": "LR", "region": "Africa", "lat": 6.2907, "lng": -10.7605, "population": 1418000},
+    "Gbarnga": {"country": "LR", "region": "Africa", "lat": 7.0000, "lng": -9.4667, "population": 56000},
+    "Kakata": {"country": "LR", "region": "Africa", "lat": 6.5167, "lng": -10.3500, "population": 33945},
+    
+    "Dakar": {"country": "SN", "region": "Africa", "lat": 14.7167, "lng": -17.4677, "population": 3326000},
+    "Thiès": {"country": "SN", "region": "Africa", "lat": 14.7886, "lng": -16.9260, "population": 320000},
+    "Kaolack": {"country": "SN", "region": "Africa", "lat": 14.1500, "lng": -16.0667, "population": 233708},
+    
+    "Banjul": {"country": "GM", "region": "Africa", "lat": 13.4549, "lng": -16.5790, "population": 31301},
+    "Serekunda": {"country": "GM", "region": "Africa", "lat": 13.4399, "lng": -16.6775, "population": 340000},
+    "Brikama": {"country": "GM", "region": "Africa", "lat": 13.2710, "lng": -16.6497, "population": 101119},
+    
+    "Bissau": {"country": "GW", "region": "Africa", "lat": 11.8816, "lng": -15.6178, "population": 492004},
+    "Bafatá": {"country": "GW", "region": "Africa", "lat": 12.1667, "lng": -14.6667, "population": 22521},
+    "Gabú": {"country": "GW", "region": "Africa", "lat": 12.2833, "lng": -14.2167, "population": 14430},
+    
+    "Praia": {"country": "CV", "region": "Africa", "lat": 14.9177, "lng": -23.5092, "population": 159050},
+    "Mindelo": {"country": "CV", "region": "Africa", "lat": 16.8864, "lng": -24.9811, "population": 93307},
+    
+    "Mexico City": {"country": "MX", "region": "North America", "lat": 19.4326, "lng": -99.1332, "population": 9209944},
+    "Guadalajara": {"country": "MX", "region": "North America", "lat": 20.6597, "lng": -103.3496, "population": 1385629},
+    "Monterrey": {"country": "MX", "region": "North America", "lat": 25.6866, "lng": -100.3161, "population": 1135512},
+    "Puebla": {"country": "MX", "region": "North America", "lat": 19.0414, "lng": -98.2063, "population": 1692181},
+    "Tijuana": {"country": "MX", "region": "North America", "lat": 32.5149, "lng": -117.0382, "population": 1810645},
+    
+    "Guatemala City": {"country": "GT", "region": "Central America", "lat": 14.6349, "lng": -90.5069, "population": 994938},
+    "Quetzaltenango": {"country": "GT", "region": "Central America", "lat": 14.8333, "lng": -91.5167, "population": 180706},
+    
+    "Belize City": {"country": "BZ", "region": "Central America", "lat": 17.5045, "lng": -88.1962, "population": 61461},
+    "San Ignacio": {"country": "BZ", "region": "Central America", "lat": 17.1561, "lng": -89.0714, "population": 17878},
+    
+    "San Salvador": {"country": "SV", "region": "Central America", "lat": 13.6929, "lng": -89.2182, "population": 525990},
+    "Santa Ana": {"country": "SV", "region": "Central America", "lat": 13.9942, "lng": -89.5597, "population": 245421},
+    
+    "Tegucigalpa": {"country": "HN", "region": "Central America", "lat": 14.0723, "lng": -87.1921, "population": 1157509},
+    "San Pedro Sula": {"country": "HN", "region": "Central America", "lat": 15.5047, "lng": -88.0251, "population": 719447},
+    
+    "Managua": {"country": "NI", "region": "Central America", "lat": 12.1364, "lng": -86.2514, "population": 1055247},
+    "León": {"country": "NI", "region": "Central America", "lat": 12.4334, "lng": -86.8790, "population": 201100},
+    
+    "San José": {"country": "CR", "region": "Central America", "lat": 9.9281, "lng": -84.0907, "population": 288054},
+    "Cartago": {"country": "CR", "region": "Central America", "lat": 9.8644, "lng": -83.9194, "population": 156600},
+    
+    "Panama City": {"country": "PA", "region": "Central America", "lat": 8.9824, "lng": -79.5199, "population": 880691},
+    "San Miguelito": {"country": "PA", "region": "Central America", "lat": 9.0333, "lng": -79.4667, "population": 315019},
+    
+    "Havana": {"country": "CU", "region": "Caribbean", "lat": 23.1136, "lng": -82.3666, "population": 2106146},
+    "Santiago de Cuba": {"country": "CU", "region": "Caribbean", "lat": 20.0247, "lng": -75.8219, "population": 431272},
+    
+    "Kingston": {"country": "JM", "region": "Caribbean", "lat": 17.9970, "lng": -76.7936, "population": 937700},
+    "Spanish Town": {"country": "JM", "region": "Caribbean", "lat": 17.9914, "lng": -76.9568, "population": 147152},
+    
+    "Port-au-Prince": {"country": "HT", "region": "Caribbean", "lat": 18.5944, "lng": -72.3074, "population": 987310},
+    "Cap-Haïtien": {"country": "HT", "region": "Caribbean", "lat": 19.7570, "lng": -72.2014, "population": 274404},
+    
+    "Santo Domingo": {"country": "DO", "region": "Caribbean", "lat": 18.4861, "lng": -69.9312, "population": 965040},
+    "Santiago": {"country": "DO", "region": "Caribbean", "lat": 19.4517, "lng": -70.6970, "population": 550753},
+    
+    "San Juan": {"country": "PR", "region": "Caribbean", "lat": 18.4655, "lng": -66.1057, "population": 342259},
+    "Bayamón": {"country": "PR", "region": "Caribbean", "lat": 18.3833, "lng": -66.1500, "population": 185187},
+    
+    "Bridgetown": {"country": "BB", "region": "Caribbean", "lat": 13.1939, "lng": -59.6140, "population": 110000},
+    
+    "Port of Spain": {"country": "TT", "region": "Caribbean", "lat": 10.6596, "lng": -61.5089, "population": 37074},
+    "San Fernando": {"country": "TT", "region": "Caribbean", "lat": 10.2796, "lng": -61.4678, "population": 48838},
+    
+    "Buenos Aires": {"country": "AR", "region": "South America", "lat": -34.6118, "lng": -58.3960, "population": 2890151},
+    "Córdoba": {"country": "AR", "region": "South America", "lat": -31.4201, "lng": -64.1888, "population": 1329604},
+    "Rosario": {"country": "AR", "region": "South America", "lat": -32.9442, "lng": -60.6505, "population": 948312},
+    "Mendoza": {"country": "AR", "region": "South America", "lat": -32.8908, "lng": -68.8272, "population": 115021},
+    
+    "São Paulo": {"country": "BR", "region": "South America", "lat": -23.5558, "lng": -46.6396, "population": 12325232},
+    "Rio de Janeiro": {"country": "BR", "region": "South America", "lat": -22.9068, "lng": -43.1729, "population": 6748000},
+    "Brasília": {"country": "BR", "region": "South America", "lat": -15.8267, "lng": -47.9218, "population": 3055149},
+    "Salvador": {"country": "BR", "region": "South America", "lat": -12.9714, "lng": -38.5014, "population": 2886698},
+    "Fortaleza": {"country": "BR", "region": "South America", "lat": -3.7319, "lng": -38.5267, "population": 2669342},
+    "Belo Horizonte": {"country": "BR", "region": "South America", "lat": -19.8157, "lng": -43.9542, "population": 2521564},
+    "Manaus": {"country": "BR", "region": "South America", "lat": -3.1190, "lng": -60.0217, "population": 2219580},
+    "Curitiba": {"country": "BR", "region": "South America", "lat": -25.4244, "lng": -49.2654, "population": 1948626},
+    "Recife": {"country": "BR", "region": "South America", "lat": -8.0476, "lng": -34.8770, "population": 1653461},
+    "Porto Alegre": {"country": "BR", "region": "South America", "lat": -30.0346, "lng": -51.2177, "population": 1488252},
+    
+    "Santiago": {"country": "CL", "region": "South America", "lat": -33.4489, "lng": -70.6693, "population": 6257516},
+    "Valparaíso": {"country": "CL", "region": "South America", "lat": -33.0458, "lng": -71.6197, "population": 296655},
+    "Concepción": {"country": "CL", "region": "South America", "lat": -36.8201, "lng": -73.0444, "population": 238092},
+    
+    "Bogotá": {"country": "CO", "region": "South America", "lat": 4.7110, "lng": -74.0721, "population": 7412566},
+    "Medellín": {"country": "CO", "region": "South America", "lat": 6.2486, "lng": -75.5742, "population": 2508452},
+    "Cali": {"country": "CO", "region": "South America", "lat": 3.4516, "lng": -76.5320, "population": 2227642},
+    "Barranquilla": {"country": "CO", "region": "South America", "lat": 10.9639, "lng": -74.7964, "population": 1274250},
+    
+    "Lima": {"country": "PE", "region": "South America", "lat": -12.0464, "lng": -77.0428, "population": 10092000},
+    "Arequipa": {"country": "PE", "region": "South America", "lat": -16.4090, "lng": -71.5375, "population": 1008290},
+    "Trujillo": {"country": "PE", "region": "South America", "lat": -8.1116, "lng": -79.0287, "population": 919899},
+    
+    "Caracas": {"country": "VE", "region": "South America", "lat": 10.4806, "lng": -66.9036, "population": 2935744},
+    "Maracaibo": {"country": "VE", "region": "South America", "lat": 10.6666, "lng": -71.6333, "population": 2225000},
+    "Valencia": {"country": "VE", "region": "South America", "lat": 10.1621, "lng": -68.0077, "population": 1385083},
+    
+    "Quito": {"country": "EC", "region": "South America", "lat": -0.1807, "lng": -78.4678, "population": 2781641},
+    "Guayaquil": {"country": "EC", "region": "South America", "lat": -2.1709, "lng": -79.9224, "population": 2723665},
+    "Cuenca": {"country": "EC", "region": "South America", "lat": -2.9001, "lng": -79.0059, "population": 636996},
+    
+    "La Paz": {"country": "BO", "region": "South America", "lat": -16.5000, "lng": -68.1193, "population": 835361},
+    "Santa Cruz": {"country": "BO", "region": "South America", "lat": -17.8146, "lng": -63.1560, "population": 1453549},
+    "Cochabamba": {"country": "BO", "region": "South America", "lat": -17.3895, "lng": -66.1568, "population": 630587},
+    
+    "Asunción": {"country": "PY", "region": "South America", "lat": -25.2637, "lng": -57.5759, "population": 525294},
+    "Ciudad del Este": {"country": "PY", "region": "South America", "lat": -25.5095, "lng": -54.6112, "population": 320782},
+    "San Lorenzo": {"country": "PY", "region": "South America", "lat": -25.3406, "lng": -57.5089, "population": 252561},
+    
+    "Montevideo": {"country": "UY", "region": "South America", "lat": -34.9011, "lng": -56.1645, "population": 1319108},
+    "Salto": {"country": "UY", "region": "South America", "lat": -31.3833, "lng": -57.9667, "population": 104028},
+    "Paysandú": {"country": "UY", "region": "South America", "lat": -32.3167, "lng": -58.0833, "population": 76429},
+    
+    "Georgetown": {"country": "GY", "region": "South America", "lat": 6.8013, "lng": -58.1551, "population": 118363},
+    "Linden": {"country": "GY", "region": "South America", "lat": 6.0081, "lng": -58.3067, "population": 44690},
+    "New Amsterdam": {"country": "GY", "region": "South America", "lat": 6.2500, "lng": -57.5167, "population": 35039},
+    
+    "Paramaribo": {"country": "SR", "region": "South America", "lat": 5.8520, "lng": -55.2038, "population": 241000},
+    "Lelydorp": {"country": "SR", "region": "South America", "lat": 5.7000, "lng": -55.2333, "population": 18663},
+    "Nieuw Nickerie": {"country": "SR", "region": "South America", "lat": 5.9333, "lng": -56.9833, "population": 12818},
+    
+    "Cayenne": {"country": "GF", "region": "South America", "lat": 4.9346, "lng": -52.3303, "population": 61550},
+    "Saint-Laurent-du-Maroni": {"country": "GF", "region": "South America", "lat": 5.5000, "lng": -54.0333, "population": 45576},
+    "Kourou": {"country": "GF", "region": "South America", "lat": 5.1667, "lng": -52.6500, "population": 25682}
+  },
+  "location_patterns": {
+    "country_indicators": [
+      "in {country}", "from {country}", "{country} capital", "{country} city",
+      "located in {country}", "based in {country}", "{country} government",
+      "{country} officials", "{country} authorities", "{country} president",
+      "{country} prime minister", "{country} parliament", "{country} ministry"
+    ],
+    "city_indicators": [
+      "in {city}", "from {city}", "{city} mayor", "{city} council",
+      "downtown {city}", "{city} police", "{city} hospital",
+      "{city} university", "{city} airport", "{city} residents"
+    ]
+  },
+  "region_mapping": {
+    "North America": ["US", "CA", "MX"],
+    "Central America": ["GT", "BZ", "SV", "HN", "NI", "CR", "PA"],
+    "Caribbean": ["CU", "JM", "HT", "DO", "PR", "BB", "TT"],
+    "South America": ["AR", "BR", "CL", "CO", "PE", "VE", "EC", "BO", "PY", "UY", "GY", "SR", "GF"],
+    "Europe": ["GB", "FR", "DE", "ES", "IT", "NL", "BE", "AT", "CH", "SE", "NO", "DK", "FI", "RU", "PL", "CZ", "HU", "RO", "BG", "RS", "HR", "SI", "SK", "GR", "PT", "IE"],
+    "East Asia": ["JP", "KR", "CN", "HK", "MO", "TW"],
+    "Southeast Asia": ["SG", "TH", "ID", "PH", "MY", "VN", "MM", "KH", "LA", "BN", "TL"],
+    "South Asia": ["IN", "PK", "BD", "LK", "NP", "BT", "MV"],
+    "Africa": ["EG", "NG", "CD", "ZA", "KE", "ET", "UG", "TZ", "RW", "BI", "ZM", "ZW", "MZ", "BW", "NA", "LS", "SZ", "MA", "DZ", "TN", "LY", "SD", "SS", "TD", "CF", "GA", "GQ", "ST", "CM", "CI", "GH", "TG", "BJ", "BF", "ML", "NE", "GN", "SL", "LR", "SN", "GM", "GW", "CV"],
+    "Oceania": ["AU", "NZ", "PG", "FJ", "TO", "WS", "VU", "SB", "NC", "PF"]
+  }
+}

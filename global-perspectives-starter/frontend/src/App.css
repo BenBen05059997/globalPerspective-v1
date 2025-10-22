@@ -1,0 +1,48 @@
+/* App-specific styles */
+.app {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+/* Main content area */
+.main-content {
+  padding: 2rem 0;
+  min-height: calc(100vh - 120px);
+}
+
+/* Loading states */
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+/* Error states */
+.error {
+  background-color: var(--bg-secondary);
+  border: 2px solid var(--border-dark);
+  padding: 1rem;
+  margin: 1rem 0;
+  color: var(--text-primary);
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mt-8 {
+  margin-top: 2rem;
+}

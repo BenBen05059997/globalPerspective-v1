@@ -1,10 +1,11 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
+// global-perspectives-starter/frontend/src/App.jsx
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './components/Home';
 import WorldMap from './components/WorldMap';
 import './App.css';
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter basename="/globalPerspective-v1">
       <Layout>
@@ -16,5 +17,3 @@ function App() {
     </BrowserRouter>
   );
 }
-
-export default App;

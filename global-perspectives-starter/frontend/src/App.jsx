@@ -6,14 +6,14 @@ import './App.css';
 
 function App() {
   return (
-    <HashRouter>
+    <BrowserRouter basename="/globalPerspective-v1">
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/map" element={<WorldMap />} />
         </Routes>
       </Layout>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 

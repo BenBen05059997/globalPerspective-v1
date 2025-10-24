@@ -11,7 +11,7 @@ function Layout({ children }) {
             <Link to="/" className="nav-link">
               <h2>Global Perspectives</h2>
             </Link>
-            <div className="flex gap-4">
+            <div className="flex gap-4" style={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Link 
                 to="/" 
                 className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
@@ -24,6 +24,24 @@ function Layout({ children }) {
                 className={`nav-link ${location.pathname === '/map' ? 'active' : ''}`}
               >
                 Map
+              </Link>
+              <Link 
+                to="/about" 
+                className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}
+              >
+                About
+              </Link>
+              <Link 
+                to="/privacy" 
+                className={`nav-link ${location.pathname === '/privacy' ? 'active' : ''}`}
+              >
+                Privacy
+              </Link>
+              <Link 
+                to="/disclosures" 
+                className={`nav-link ${location.pathname === '/disclosures' ? 'active' : ''}`}
+              >
+                Disclosures
               </Link>
             </div>
           </div>
@@ -38,10 +56,21 @@ function Layout({ children }) {
       
       <footer className="nav" style={{ borderTop: '2px solid var(--border-color)', borderBottom: 'none' }}>
         <div className="container">
-          <div className="text-center">
+          <div className="text-center" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
             <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-              Global Perspectives - AI-powered news aggregation
+              Global Perspectives &mdash; AI-powered news aggregation
             </p>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.9rem' }}>
+              <Link to="/about" className="nav-link">About</Link>
+              <Link to="/privacy" className="nav-link">Privacy &amp; Terms</Link>
+              <Link to="/disclosures" className="nav-link">Disclosures</Link>
+              <a
+                href="mailto:globalperspectives.app@gmail.com"
+                className="nav-link"
+              >
+                Contact
+              </a>
+            </div>
           </div>
         </div>
       </footer>

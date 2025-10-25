@@ -1,16 +1,20 @@
 // global-perspectives-starter/frontend/src/App.jsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import './App.css';
 import Layout from './components/Layout';
 import Home from './components/Home';
 import WorldMap from './components/WorldMap';
 import PrivacyTerms from './components/PrivacyTerms';
 import AboutContact from './components/AboutContact';
 import Disclosures from './components/Disclosures';
-import './App.css';
 
 export default function App() {
+  const rawBase = import.meta.env.BASE_URL ?? '/';
+  const normalizedBase = rawBase.replace(/\/+$/, '').replace(/^\.+/, '');
+  const basename = normalizedBase || undefined;
+
   return (
-    <BrowserRouter basename="/globalPerspective-v1">
+    <BrowserRouter basename={basename}>
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />

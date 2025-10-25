@@ -8,10 +8,25 @@ import PrivacyTerms from './components/PrivacyTerms';
 import AboutContact from './components/AboutContact';
 import Disclosures from './components/Disclosures';
 
-export default function App() {
+function resolveBasename() {
   const rawBase = import.meta.env.BASE_URL ?? '/';
-  const normalizedBase = rawBase.replace(/\/+$/, '').replace(/^\.+/, '');
-  const basename = normalizedBase || undefined;
+
+  if (rawBase && rawBase !== '/' && rawBase !== './') {
+    return rawBase.replace(/\/+$/, '');
+  }
+
+  if (!import.meta.env.DEV && typeof window !== 'undefined') {
+    const segments = window.location.pathname.split('/').filter(Boolean);
+    if (segments.length > 0) {
+      return `/${segments[0]}`;
+    }
+  }
+
+  return undefined;
+}
+
+export default function App() {
+  const basename = resolveBasename();
 
   return (
     <BrowserRouter basename={basename}>

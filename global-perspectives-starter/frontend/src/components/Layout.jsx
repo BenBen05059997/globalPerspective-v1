@@ -1,48 +1,51 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 function Layout({ children }) {
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  const navLinks = [
+    { to: '/', label: 'Home' },
+    { to: '/map', label: 'Map' },
+    { to: '/about', label: 'About' },
+    { to: '/privacy', label: 'Privacy' },
+    { to: '/disclosures', label: 'Disclosures' },
+  ];
 
   return (
     <div className="app">
       <nav className="nav">
         <div className="container">
-          <div className="flex justify-between items-center">
-            <Link to="/" className="nav-link">
+          <div className="nav-bar">
+            <Link to="/" className="nav-brand">
               <h2>Global Perspectives</h2>
             </Link>
-            <div className="flex gap-4" style={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <Link 
-                to="/" 
-                className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
-              >
-                Home
-              </Link>
-              {/* Topics nav removed; Home and Map remain */}
-              <Link 
-                to="/map" 
-                className={`nav-link ${location.pathname === '/map' ? 'active' : ''}`}
-              >
-                Map
-              </Link>
-              <Link 
-                to="/about" 
-                className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}
-              >
-                About
-              </Link>
-              <Link 
-                to="/privacy" 
-                className={`nav-link ${location.pathname === '/privacy' ? 'active' : ''}`}
-              >
-                Privacy
-              </Link>
-              <Link 
-                to="/disclosures" 
-                className={`nav-link ${location.pathname === '/disclosures' ? 'active' : ''}`}
-              >
-                Disclosures
-              </Link>
+            <button
+              type="button"
+              className={`nav-toggle ${menuOpen ? 'open' : ''}`}
+              aria-label="Toggle menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+            <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
+              {navLinks.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`nav-link ${location.pathname === to ? 'active' : ''}`}
+                >
+                  {label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

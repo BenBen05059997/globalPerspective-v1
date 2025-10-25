@@ -39,3 +39,4 @@ The production build for [https://benben05059997.github.io/globalPerspective-v1/
 - The root `index.html` at repository level exists solely to redirect visitors to `/globalPerspective-v1/`.
 - If the app’s base path changes, update the resolver in `global-perspectives-starter/frontend/src/App.jsx` and rebuild before publishing.
 - The summaries and predictions shown on the live site are now generated via OpenAI (see `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`). Ensure the `OPENAI_API_KEY` and DynamoDB table environment variables are configured before deploying backend changes.
+- The REST proxy (`newsSensitiveData` lambda) invokes `NewsProjectInvokeAgentLambda` internally for summary/prediction requests. Set `SUMMARY_LAMBDA_NAME` (defaults to `NewsProjectInvokeAgentLambda`) and keep `AWS_REGION` aligned so cache refresh works in production.

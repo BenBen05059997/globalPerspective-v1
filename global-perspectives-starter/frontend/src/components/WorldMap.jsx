@@ -806,69 +806,30 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
       </div>
 
       {/* Map Container */}
-      <div style={{ width: '100%', height: '600px', position: 'relative' }}>
+      <div className="map-shell">
         {/* Map Legend */}
-        <div style={{
-          position: 'absolute',
-          top: '16px',
-          right: '16px',
-          backgroundColor: 'white',
-          padding: '12px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          zIndex: 1000,
-          minWidth: '200px'
-        }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600' }}>
-            Coverage Density
-          </h4>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <div style={{
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
-              backgroundColor: 'rgb(100, 200, 255)',
-              border: '2px solid white'
-            }} />
-            <span style={{ fontSize: '12px', color: '#666' }}>Low coverage (1-5 articles)</span>
+        <div className="map-overlay map-legend">
+          <h4 className="map-legend-title">Coverage Density</h4>
+          <div className="map-legend-row">
+            <span className="legend-dot low" />
+            <span className="legend-label">Low coverage (1-5 articles)</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <div style={{
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
-              backgroundColor: 'rgb(255, 150, 100)',
-              border: '2px solid white'
-            }} />
-            <span style={{ fontSize: '12px', color: '#666' }}>Medium coverage (6-10 articles)</span>
+          <div className="map-legend-row">
+            <span className="legend-dot medium" />
+            <span className="legend-label">Medium coverage (6-10 articles)</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              backgroundColor: 'rgb(255, 100, 100)',
-              border: '2px solid white'
-            }} />
-            <span style={{ fontSize: '12px', color: '#666' }}>High coverage (10+ articles)</span>
+          <div className="map-legend-row">
+            <span className="legend-dot high" />
+            <span className="legend-label">High coverage (10+ articles)</span>
           </div>
         </div>
 
         {/* Map Statistics */}
-        <div style={{
-          position: 'absolute',
-          bottom: '16px',
-          left: '16px',
-          backgroundColor: 'white',
-          padding: '12px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          zIndex: 1000
-        }}>
-          <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+        <div className="map-overlay map-stats">
+          <div className="map-stats-row">
             Total Articles: <strong>{articles.length}</strong>
           </div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
+          <div className="map-stats-row">
             Countries: <strong>
               {(() => {
                 const countries = new Set();

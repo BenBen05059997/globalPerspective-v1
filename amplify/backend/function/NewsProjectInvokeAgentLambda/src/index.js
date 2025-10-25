@@ -1,25 +1,15 @@
 'use strict';
 
-const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const DEFAULT_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'qwen.qwen3-32b-v1:0';
-const DEFAULT_MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '600', 10);
-const DEFAULT_TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
-const DEFAULT_TOP_P = Number(process.env.TOP_P || '0.9');
-
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const OPENAI_ENDPOINT = process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions';
 const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
-
-const AI_PROVIDER = (() => {
-  const explicit = (process.env.AI_PROVIDER || '').trim().toLowerCase();
-  if (explicit) return explicit;
-  if (OPENAI_KEY) return 'openai';
-  return 'bedrock';
-})();
+const DEFAULT_MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '600', 10);
+const DEFAULT_TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
+const DEFAULT_TOP_P = Number(process.env.TOP_P || '0.9');
 
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
@@ -30,11 +20,6 @@ const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
 const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
 const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '3600', 10);
 const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3600', 10);
-
-const bedrockClient =
-  AI_PROVIDER === 'bedrock'
-    ? new BedrockRuntimeClient({ region: REGION })
-    : null;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
@@ -49,10 +34,7 @@ exports.handler = async (event) => {
       return http(503, { error: 'Topics cache empty or stale' });
     }
 
-    const filteredTopics = topicId
-      ? topics.filter(t => topicMatches(t, topicId))
-      : topics;
-
+    const filteredTopics = topicId ? topics.filter(t => topicMatches(t, topicId)) : topics;
     if (!filteredTopics.length) {
       return http(404, { error: `No topic found for "${topicId}"` });
     }
@@ -102,7 +84,7 @@ function normalizeAction(payload = {}) {
   return {
     action,
     topicId: payload.topicId || payload.topic_id || null,
-    readOnly: Boolean(payload.readOnly)
+    readOnly: Boolean(payload.readOnly),
   };
 }
 
@@ -116,10 +98,12 @@ async function loadTopics() {
   if (!TOPICS_TABLE) {
     throw new Error('TOPICS_DDB_TABLE env var not set');
   }
-  const { Item } = await ddb.send(new GetCommand({
-    TableName: TOPICS_TABLE,
-    Key: { id: TOPICS_ITEM_ID }
-  }));
+  const { Item } = await ddb.send(
+    new GetCommand({
+      TableName: TOPICS_TABLE,
+      Key: { id: TOPICS_ITEM_ID },
+    }),
+  );
   if (!Item || !Array.isArray(Item.topics)) {
     return [];
   }
@@ -137,7 +121,7 @@ function buildSummaryPrompt(topic) {
     'You are an analyst. Summarize this topic in 3-4 bullet points.',
     `Title: ${topic.title || 'Untitled Topic'}`,
     `Description: ${topic.description || 'No description provided.'}`,
-    'Also highlight the main countries or regions involved if present.'
+    'Also highlight the main countries or regions involved if present.',
   ].join('\n\n');
 }
 
@@ -151,23 +135,16 @@ function buildPredictionPrompt(topic) {
     '2. Economic implications',
     '3. Political ramifications',
     '4. Estimated timeline of effects (short / medium / long term).',
-    'Keep the answer concise (<= 150 words) but informative.'
+    'Keep the answer concise (<= 150 words) but informative.',
   ].join('\n\n');
 }
 
 async function generateAndStore(topic, kind) {
   const prompt = kind === 'summary' ? buildSummaryPrompt(topic) : buildPredictionPrompt(topic);
-  const response = await invokeModel(prompt);
+  const response = await invokeOpenAI(prompt);
   const ttlSeconds = kind === 'summary' ? SUMMARY_TTL_SECONDS : PREDICTION_TTL_SECONDS;
   const item = await writeCache(topic, kind, response, ttlSeconds);
   return item;
-}
-
-async function invokeModel(prompt) {
-  if (AI_PROVIDER === 'openai') {
-    return invokeOpenAI(prompt);
-  }
-  return invokeBedrock(prompt);
 }
 
 async function invokeOpenAI(prompt) {
@@ -180,15 +157,15 @@ async function invokeOpenAI(prompt) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_KEY}`
+      Authorization: `Bearer ${OPENAI_KEY}`,
     },
     body: JSON.stringify({
       model: OPENAI_MODEL,
       messages: [{ role: 'user', content: prompt }],
       max_tokens: DEFAULT_MAX_TOKENS,
       temperature: DEFAULT_TEMPERATURE,
-      top_p: DEFAULT_TOP_P
-    })
+      top_p: DEFAULT_TOP_P,
+    }),
   });
 
   const rawText = await response.text();
@@ -208,68 +185,6 @@ async function invokeOpenAI(prompt) {
 
   const content = extractContent(parsed);
   return { modelId: parsed?.model || OPENAI_MODEL, content, latencyMs };
-}
-
-async function invokeBedrock(prompt) {
-  if (!bedrockClient) {
-    throw new Error('Bedrock client is not configured');
-  }
-
-  const modelId = DEFAULT_MODEL_ID;
-  const cmd = new InvokeModelCommand({
-    modelId,
-    contentType: 'application/json',
-    accept: 'application/json',
-    body: Buffer.from(JSON.stringify({
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: DEFAULT_MAX_TOKENS,
-      temperature: DEFAULT_TEMPERATURE,
-      top_p: DEFAULT_TOP_P
-    }))
-  });
-
-  const started = Date.now();
-  const res = await bedrockClient.send(cmd);
-  const latencyMs = Date.now() - started;
-
-  const raw = await readBody(res.body);
-  const parsed = tryParseJSON(raw);
-  const content = extractContent(parsed);
-
-  return { modelId, content, latencyMs };
-}
-
-async function readBody(body) {
-  if (!body) return '';
-  if (typeof body === 'string') return body;
-  if (Buffer.isBuffer(body)) return body.toString('utf-8');
-  if (body instanceof Uint8Array) return Buffer.from(body).toString('utf-8');
-  if (typeof body.on === 'function') {
-    return await new Promise((resolve, reject) => {
-      const chunks = [];
-      body.on('data', (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
-      body.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
-      body.on('error', reject);
-    });
-  }
-  if (typeof body.getReader === 'function') {
-    const reader = body.getReader();
-    const chunks = [];
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      if (value) chunks.push(Buffer.from(value));
-    }
-    return Buffer.concat(chunks).toString('utf-8');
-  }
-  try { return JSON.stringify(body); } catch { return String(body); }
-}
-
-function tryParseJSON(value) {
-  if (typeof value === 'string') {
-    try { return JSON.parse(value); } catch { return value; }
-  }
-  return value;
 }
 
 function stripCodeFence(value) {
@@ -305,9 +220,6 @@ function extractContent(payload) {
   const openAIString = normalizeMessageContent(openAIMessage);
   if (openAIString) return openAIString;
 
-  const bedrockText = payload?.output?.message?.content?.find?.(c => typeof c?.text === 'string')?.text;
-  if (bedrockText) return stripCodeFence(bedrockText);
-
   if (typeof payload === 'string') return payload.trim();
   return JSON.stringify(payload);
 }
@@ -317,14 +229,17 @@ async function readCache(topic, action) {
     throw new Error('SUMMARIZE_PREDICT_TABLE env var not set');
   }
   const pk = `${PK_PREFIX}${topic.id}`;
-  const sks = action === 'prediction' ? [PREDICTION_SK] : action === 'summary' ? [SUMMARY_SK] : [SUMMARY_SK, PREDICTION_SK];
+  const sks =
+    action === 'prediction' ? [PREDICTION_SK] : action === 'summary' ? [SUMMARY_SK] : [SUMMARY_SK, PREDICTION_SK];
 
   const results = [];
   for (const sk of sks) {
-    const { Item } = await ddb.send(new GetCommand({
-      TableName: SUMMARY_TABLE,
-      Key: { PK: pk, SK: sk }
-    }));
+    const { Item } = await ddb.send(
+      new GetCommand({
+        TableName: SUMMARY_TABLE,
+        Key: { PK: pk, SK: sk },
+      }),
+    );
     if (Item) {
       results.push(Item);
     }
@@ -349,18 +264,20 @@ async function writeCache(topic, kind, response, ttlSeconds) {
     action: kind,
     content: response.content,
     model: response.modelId,
+    provider: 'openai',
     generatedAt: new Date().toISOString(),
     ttl,
     latencyMs: response.latencyMs,
-    provider: AI_PROVIDER
   };
 
-  await ddb.send(new PutCommand({
-    TableName: SUMMARY_TABLE,
-    Item: item
-  }));
+  await ddb.send(
+    new PutCommand({
+      TableName: SUMMARY_TABLE,
+      Item: item,
+    }),
+  );
 
-  console.log(`Cached ${kind} for ${topic.id} via ${AI_PROVIDER}`);
+  console.log(`Cached ${kind} for ${topic.id} via OpenAI`);
   return item;
 }
 
@@ -368,6 +285,6 @@ function http(statusCode, body) {
   return {
     statusCode,
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   };
 }

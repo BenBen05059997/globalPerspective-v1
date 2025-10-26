@@ -1,13 +1,55 @@
-let lambdaClient;
-let InvokeCommandCtor;
+'use strict';
 
-export const handler = async (event) => {
-  const allowedOrigins = [
-    'https://BenBen05059997.github.io',
-    'https://BenBen05059997.github.io/GlobalPerspective'
-  ];
-  const origin = event.headers?.origin || '';
-  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, GetCommand } = require('@aws-sdk/lib-dynamodb');
+const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
+
+const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
+const SUMMARY_LAMBDA_NAME = process.env.SUMMARY_LAMBDA_NAME || 'NewsProjectInvokeAgentLambda';
+
+const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
+const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
+const TOPICS_MAX_AGE_SECONDS = Number(process.env.TOPICS_CACHE_MAX_AGE_SECONDS || '3600');
+
+const SUMMARIZE_PREDICT_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
+const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
+const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
+const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
+const SUMMARY_PREDICT_MAX_AGE_SECONDS = Number(process.env.SUMMARY_PREDICT_MAX_AGE_SECONDS || '5400');
+
+let dynamoDocClient = null;
+let lambdaClient = null;
+
+const getDynamoClient = () => {
+  if (!dynamoDocClient) {
+    const ddb = new DynamoDBClient({ region: REGION });
+    dynamoDocClient = DynamoDBDocumentClient.from(ddb, {
+      marshallOptions: { removeUndefinedValues: true },
+    });
+  }
+  return dynamoDocClient;
+};
+
+const getLambdaClient = () => {
+  if (!lambdaClient) {
+    lambdaClient = new LambdaClient({ region: REGION });
+  }
+  return lambdaClient;
+};
+
+const allowedOrigins = [
+  'https://benben05059997.github.io',
+  'https://benben05059997.github.io/GlobalPerspective',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
+const allowedOriginsLower = allowedOrigins.map((o) => o.toLowerCase());
+
+exports.handler = async (event) => {
+  const originHeader = event.headers?.origin || '';
+  const originLower = typeof originHeader === 'string' ? originHeader.toLowerCase() : '';
+  const matchedIndex = allowedOriginsLower.indexOf(originLower);
+  const corsOrigin = matchedIndex >= 0 ? originHeader : allowedOrigins[0];
 
   if (event.requestContext?.http?.method === 'OPTIONS' || event.httpMethod === 'OPTIONS') {
     return {
@@ -15,196 +57,326 @@ export const handler = async (event) => {
       headers: {
         'Access-Control-Allow-Origin': corsOrigin,
         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type,Authorization'
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization',
       },
-      body: ''
+      body: '',
     };
   }
 
   const body = typeof event.body === 'string' ? JSON.parse(event.body || '{}') : (event.body || {});
   const action = body?.action;
   const payload = body?.payload || {};
-  const timeoutMs = Number(process.env.TIMEOUT_MS || 10000);
-  const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
-  const summaryLambdaName = process.env.SUMMARY_LAMBDA_NAME || 'NewsProjectInvokeAgentLambda';
 
   const headers = {
     'Access-Control-Allow-Origin': corsOrigin,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   };
 
-  const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout')), ms));
-
-  const fetchJson = async (url, options) => {
-    const res = await Promise.race([fetch(url, options), timeout(timeoutMs)]);
-    const text = await res.text();
-    let data = null;
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
-    if (!res.ok) {
-      throw new Error(JSON.stringify({ status: res.status, data }));
-    }
-    return data;
-  };
-
-  const invokeSummaryLambda = async (lambdaPayload) => {
-    if (!summaryLambdaName) {
-      throw new Error('SUMMARY_LAMBDA_NAME env var is not set');
-    }
-    if (!lambdaClient) {
-      const mod = await import('@aws-sdk/client-lambda');
-      lambdaClient = new mod.LambdaClient({ region });
-      InvokeCommandCtor = mod.InvokeCommand;
-    }
-
-    const command = new InvokeCommandCtor({
-      FunctionName: summaryLambdaName,
-      Payload: Buffer.from(JSON.stringify(lambdaPayload ?? {}))
-    });
-
-    const response = await lambdaClient.send(command);
-    const rawPayload = response.Payload;
-    const text = rawPayload
-      ? Buffer.isBuffer(rawPayload)
-        ? rawPayload.toString('utf-8')
-        : new TextDecoder().decode(rawPayload)
-      : '';
-    if (!text) return null;
-
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text;
-    }
-  };
-
-  const pickCacheItem = (result, action) => {
-    if (!result) return null;
-    const target = action === 'prediction' ? 'prediction' : 'summary';
-
-    if (Array.isArray(result.items)) {
-      return result.items.find(item => item?.action === target) || null;
-    }
-
-    if (Array.isArray(result.results)) {
-      for (const entry of result.results) {
-        if (Array.isArray(entry?.items)) {
-          const match = entry.items.find(item => item?.action === target);
-          if (match) return match;
-        }
-      }
-    }
-
-    return null;
-  };
-
-  const shapeCacheResponse = (item) => {
-    if (!item || typeof item !== 'object') {
-      return null;
-    }
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    const ttlSeconds = typeof item.ttl === 'number' ? item.ttl : null;
-    const remaining = ttlSeconds != null ? Math.max(ttlSeconds - nowSeconds, 0) : null;
-
-    return {
-      topicId: item.topicId,
-      title: item.title,
-      content: item.content,
-      model: item.model,
-      provider: item.provider,
-      generatedAt: item.generatedAt,
-      latencyMs: item.latencyMs,
-      remainingTtlSeconds: remaining,
-      ttl: ttlSeconds,
-    };
-  };
+  console.info('newsSensitiveData received event', {
+    action,
+    payloadKeys: payload ? Object.keys(payload) : [],
+    origin: corsOrigin,
+    requestId: event.requestContext?.requestId || event.requestContext?.awsRequestId,
+    httpMethod: event.requestContext?.http?.method || event.httpMethod || 'POST',
+  });
 
   try {
-    if (action === 'appsync') {
-      const endpoint = process.env.GRAPHQL_ENDPOINT;
-      const apiKey = process.env.GRAPHQL_API_KEY;
-      const { query, variables } = payload || {};
-      const data = await fetchJson(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-        body: JSON.stringify({ query, variables })
+    if (action === 'topics') {
+      const response = await readTopicsCache();
+      console.info('newsSensitiveData topics response', {
+        statusCode: response.statusCode,
+        success: response.body?.success,
+        cached: response.body?.cached,
+        error: response.body?.error,
       });
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true, data }) };
-    }
-
-    if (action === 'openai') {
-      const key = process.env.OPENAI_API_KEY;
-      const { model, messages, temperature, max_tokens } = payload || {};
-      const data = await fetchJson('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-        body: JSON.stringify({ model, messages, temperature, max_tokens })
-      });
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true, data }) };
-    }
-
-    if (action === 'summary' || action === 'prediction') {
-      const topicId = payload.topicId || payload.topic_id || null;
-      if (!topicId) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ success: false, error: 'Missing topicId' })
-        };
-      }
-
-      // Attempt to read cache first unless caller explicitly asks to skip.
-      let shaped = null;
-      if (!payload.skipCache) {
-        const cachedResponse = await invokeSummaryLambda({ action, topicId, readOnly: true });
-        const cachedItem = pickCacheItem(cachedResponse, action);
-        shaped = shapeCacheResponse(cachedItem);
-        if (shaped && shaped.remainingTtlSeconds != null && shaped.remainingTtlSeconds > 0) {
-          const { ttl, ...rest } = shaped;
-          return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ success: true, cached: true, data: rest })
-          };
-        }
-      }
-
-      const refreshResponse = await invokeSummaryLambda({ action, topicId, readOnly: false });
-      const refreshedItem = pickCacheItem(refreshResponse, action);
-      const refreshed = shapeCacheResponse(refreshedItem);
-
-      if (!refreshed) {
-        return {
-          statusCode: 503,
-          headers,
-          body: JSON.stringify({ success: false, error: 'Cache miss', reason: 'MISSING' })
-        };
-      }
-
-      const { ttl, ...rest } = refreshed;
-
       return {
-        statusCode: 200,
+        statusCode: response.statusCode,
         headers,
-        body: JSON.stringify({
-          success: true,
-          cached: false,
-          data: rest
-        })
+        body: JSON.stringify(response.body),
       };
     }
 
-    // Deprecated: external NewsData API calls removed to enforce Gemini-only pipeline
+    if (action === 'summary' || action === 'prediction') {
+      const topicId = payload?.topicId || payload?.topic_id;
+      if (!topicId || typeof topicId !== 'string') {
+        console.warn('newsSensitiveData summary/prediction missing topicId', {
+          action,
+          payloadSample: payload,
+        });
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ success: false, error: 'Missing topicId' }),
+        };
+      }
 
-    if (action === 'geocode') {
-      const key = process.env.GOOGLE_GEOCODING_KEY;
-      const { address } = payload || {};
-      const params = new URLSearchParams({ address, key });
-      const data = await fetchJson(`https://maps.googleapis.com/maps/api/geocode/json?${params.toString()}`, { method: 'GET' });
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true, data }) };
+      const response = await readSummaryPredictionCache(action, topicId, {
+        skipCache: Boolean(payload.skipCache),
+        forceRefresh: Boolean(payload.forceRefresh),
+      });
+
+      console.info('newsSensitiveData summary/prediction response', {
+        action,
+        topicId,
+        statusCode: response.statusCode,
+        success: response.body?.success,
+        cached: response.body?.cached,
+        error: response.body?.error,
+        reason: response.body?.reason,
+      });
+      return {
+        statusCode: response.statusCode,
+        headers,
+        body: JSON.stringify(response.body),
+      };
     }
 
-    return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Unknown action' }) };
+    console.warn('newsSensitiveData received unsupported action', {
+      action,
+      payloadSample: payload,
+    });
+
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ success: false, error: 'Unsupported action' }),
+    };
   } catch (err) {
-    return { statusCode: 502, headers, body: JSON.stringify({ success: false, error: String(err.message || err) }) };
+    console.error('newsSensitiveData error:', err);
+    return {
+      statusCode: 502,
+      headers,
+      body: JSON.stringify({ success: false, error: String(err.message || err) }),
+    };
   }
 };
+
+async function readTopicsCache() {
+  if (!TOPICS_TABLE) {
+    console.error('newsSensitiveData topics misconfiguration: missing TOPICS_DDB_TABLE');
+    return {
+      statusCode: 500,
+      body: { success: false, error: 'Topics table not configured' },
+    };
+  }
+
+  try {
+    const client = getDynamoClient();
+    const { Item } = await client.send(new GetCommand({
+      TableName: TOPICS_TABLE,
+      Key: { id: TOPICS_ITEM_ID },
+    }));
+    if (!Item) {
+      console.warn('newsSensitiveData topics cache miss', {
+        table: TOPICS_TABLE,
+        itemId: TOPICS_ITEM_ID,
+      });
+      return {
+        statusCode: 503,
+        body: { success: false, error: 'Topics cache miss' },
+      };
+    }
+
+    const isFresh = cacheEntryFresh(Item.updatedAt, TOPICS_MAX_AGE_SECONDS);
+    if (!isFresh) {
+      console.warn('newsSensitiveData topics cache stale', {
+        table: TOPICS_TABLE,
+        itemId: TOPICS_ITEM_ID,
+        updatedAt: Item.updatedAt,
+        maxAgeSeconds: TOPICS_MAX_AGE_SECONDS,
+      });
+      return {
+        statusCode: 503,
+        body: { success: false, error: 'Topics cache stale', data: Item },
+      };
+    }
+
+    console.info('newsSensitiveData topics cache hit', {
+      table: TOPICS_TABLE,
+      itemId: TOPICS_ITEM_ID,
+      updatedAt: Item.updatedAt,
+    });
+
+    return {
+      statusCode: 200,
+      body: { success: true, cached: true, data: Item },
+    };
+  } catch (err) {
+    console.error('Topics cache error:', err);
+    return {
+      statusCode: 500,
+      body: { success: false, error: 'Failed to read topics cache' },
+    };
+  }
+}
+
+async function readSummaryPredictionCache(action, topicId, options = {}) {
+  const { skipCache = false, forceRefresh = false } = options;
+
+  if (!SUMMARIZE_PREDICT_TABLE) {
+    console.error('newsSensitiveData summary/prediction misconfiguration: missing SUMMARIZE_PREDICT_TABLE');
+    return {
+      statusCode: 500,
+      body: { success: false, error: 'Summarize/Prediction table not configured' },
+    };
+  }
+
+  const client = getDynamoClient();
+  const pk = `${PK_PREFIX}${topicId}`;
+  const sk = action === 'prediction' ? PREDICTION_SK : SUMMARY_SK;
+
+  try {
+    let { Item } = await client.send(new GetCommand({
+      TableName: SUMMARIZE_PREDICT_TABLE,
+      Key: { PK: pk, SK: sk },
+    }));
+
+    const itemFresh = Item ? summaryPredictionFresh(Item) : false;
+    const needsRefresh = forceRefresh || skipCache || !Item || !itemFresh;
+
+    if (needsRefresh) {
+      try {
+        await invokeSummaryLambda(action, topicId);
+        const refreshed = await client.send(new GetCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          Key: { PK: pk, SK: sk },
+        }));
+        Item = refreshed.Item;
+      } catch (err) {
+        console.error('newsSensitiveData refresh error', {
+          action,
+          topicId,
+          error: err,
+        });
+        return {
+          statusCode: 502,
+          body: { success: false, error: 'Failed to refresh cache' },
+        };
+      }
+    }
+
+    if (!Item) {
+      console.warn('newsSensitiveData summary/prediction cache miss', {
+        table: SUMMARIZE_PREDICT_TABLE,
+        pk,
+        sk,
+      });
+      return {
+        statusCode: 503,
+        body: { success: false, error: 'Cache miss', reason: 'MISSING' },
+      };
+    }
+
+    const freshNow = summaryPredictionFresh(Item);
+    if (!freshNow) {
+      console.warn('newsSensitiveData summary/prediction cache stale', {
+        table: SUMMARIZE_PREDICT_TABLE,
+        pk,
+        sk,
+        generatedAt: Item.generatedAt,
+        ttl: Item.ttl,
+        maxAgeSeconds: SUMMARY_PREDICT_MAX_AGE_SECONDS,
+      });
+      return {
+        statusCode: 503,
+        body: {
+          success: false,
+          error: 'Cached entry stale',
+          reason: 'STALE',
+          item: normalizeSummaryPrediction(Item),
+        },
+      };
+    }
+
+    console.info('newsSensitiveData summary/prediction cache hit', {
+      action,
+      table: SUMMARIZE_PREDICT_TABLE,
+      pk,
+      sk,
+      generatedAt: Item.generatedAt,
+      ttl: Item.ttl,
+      refreshed: needsRefresh,
+    });
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        cached: !needsRefresh,
+        data: normalizeSummaryPrediction(Item),
+      },
+    };
+  } catch (err) {
+    console.error('Summary/Prediction cache error:', err);
+    return {
+      statusCode: 500,
+      body: { success: false, error: 'Failed to read summary/prediction cache' },
+    };
+  }
+}
+
+async function invokeSummaryLambda(action, topicId) {
+  if (!SUMMARY_LAMBDA_NAME) {
+    throw new Error('SUMMARY_LAMBDA_NAME env var not configured');
+  }
+
+  const lambda = getLambdaClient();
+  const command = new InvokeCommand({
+    FunctionName: SUMMARY_LAMBDA_NAME,
+    Payload: Buffer.from(JSON.stringify({ action, topicId, readOnly: false })),
+  });
+
+  const response = await lambda.send(command);
+
+  if (response.FunctionError) {
+    throw new Error(`Summary lambda error: ${response.FunctionError}`);
+  }
+
+  return response.Payload || null;
+}
+
+function cacheEntryFresh(updatedAt, maxAgeSeconds) {
+  if (!updatedAt) return false;
+  const updated = Date.parse(updatedAt);
+  if (Number.isNaN(updated)) return false;
+  const ageSeconds = (Date.now() - updated) / 1000;
+  return ageSeconds <= maxAgeSeconds;
+}
+
+function summaryPredictionFresh(item) {
+  if (typeof item.ttl === 'number') {
+    return item.ttl > Date.now() / 1000;
+  }
+  return cacheEntryFresh(item.generatedAt, SUMMARY_PREDICT_MAX_AGE_SECONDS);
+}
+
+function normalizeSummaryPrediction(item) {
+  const { PK, SK, ttl, ...rest } = item;
+  const remainingTtlSeconds = typeof ttl === 'number'
+    ? Math.max(0, Math.floor(ttl - Date.now() / 1000))
+    : null;
+
+  let content = rest.content;
+  if (typeof content === 'object' && content !== null) {
+    try {
+      content = JSON.stringify(content, null, 2);
+    } catch {
+      content = String(content);
+    }
+  }
+  if (typeof content !== 'string') {
+    content = content == null ? '' : String(content);
+  }
+
+  const topicId = typeof PK === 'string' && PK.startsWith(PK_PREFIX)
+    ? PK.slice(PK_PREFIX.length)
+    : PK;
+
+  return {
+    ...rest,
+    topicId,
+    kind: SK,
+    remainingTtlSeconds,
+    content: content.trim(),
+  };
+}

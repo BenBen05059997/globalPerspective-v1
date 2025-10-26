@@ -1,7 +1,13 @@
 'use strict';
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, PutCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
+const {
+  DynamoDBDocumentClient,
+  PutCommand,
+  GetCommand,
+  ScanCommand,
+  BatchWriteCommand,
+} = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
@@ -20,6 +26,7 @@ const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
 const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
 const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '3600', 10);
 const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3600', 10);
+const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
@@ -53,6 +60,14 @@ exports.handler = async (event) => {
       if (action === 'prediction' || action === 'both') {
         const prediction = await generateAndStore(topic, 'prediction');
         outputs.push(prediction);
+      }
+    }
+
+    if (!readOnly && CACHE_CLEANUP_ENABLED) {
+      try {
+        await pruneObsoleteEntries(new Set(topics.map(t => t.id)));
+      } catch (cleanupErr) {
+        console.warn('Cache cleanup encountered an issue:', cleanupErr);
       }
     }
 
@@ -279,6 +294,60 @@ async function writeCache(topic, kind, response, ttlSeconds) {
 
   console.log(`Cached ${kind} for ${topic.id} via OpenAI`);
   return item;
+}
+
+async function pruneObsoleteEntries(validTopicIds) {
+  if (!SUMMARY_TABLE || !validTopicIds || !validTopicIds.size) {
+    return;
+  }
+
+  const validPkSet = new Set(Array.from(validTopicIds).map(id => `${PK_PREFIX}${id}`));
+  let lastEvaluatedKey = undefined;
+  const keysToDelete = [];
+
+  do {
+    const { Items, LastEvaluatedKey } = await ddb.send(
+      new ScanCommand({
+        TableName: SUMMARY_TABLE,
+        ProjectionExpression: 'PK, SK',
+        ExclusiveStartKey: lastEvaluatedKey,
+      }),
+    );
+
+    if (Array.isArray(Items)) {
+      for (const item of Items) {
+        const pk = item?.PK;
+        if (typeof pk === 'string' && pk.startsWith(PK_PREFIX) && !validPkSet.has(pk)) {
+          keysToDelete.push({ PK: pk, SK: item.SK });
+        }
+      }
+    }
+
+    lastEvaluatedKey = LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+
+  if (!keysToDelete.length) {
+    return;
+  }
+
+  console.info('Pruning obsolete summary/prediction entries', { count: keysToDelete.length });
+
+  const chunks = [];
+  for (let i = 0; i < keysToDelete.length; i += 25) {
+    chunks.push(keysToDelete.slice(i, i + 25));
+  }
+
+  for (const chunk of chunks) {
+    await ddb.send(
+      new BatchWriteCommand({
+        RequestItems: {
+          [SUMMARY_TABLE]: chunk.map(key => ({
+            DeleteRequest: { Key: key },
+          })),
+        },
+      }),
+    );
+  }
 }
 
 function http(statusCode, body) {

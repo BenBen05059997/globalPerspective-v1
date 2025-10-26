@@ -142,15 +142,20 @@ function buildSummaryPrompt(topic) {
 
 function buildPredictionPrompt(topic) {
   return [
-    'You are an analyst forecasting impacts for the given topic.',
-    `Title: ${topic.title || 'Untitled Topic'}`,
-    `Description: ${topic.description || 'No description provided.'}`,
-    'Respond with:',
-    '1. Potential societal impact',
-    '2. Economic implications',
-    '3. Political ramifications',
-    '4. Estimated timeline of effects (short / medium / long term).',
-    'Keep the answer concise (<= 150 words) but informative.',
+    'You are an international affairs analyst creating a forward-looking brief for newsroom editors.',
+    `Headline: ${topic.title || 'Untitled Topic'}`,
+    `Context from discovery pipeline: ${topic.description || 'No description provided.'}`,
+    'Tasks:',
+    '1. Summarize the real-world backdrop from current reporting (reference specific regions, key actors, or events tied to this headline).',
+    '2. Provide THREE forecast scenarios (Optimistic, Base Case, Risk Case). For each include:',
+    '   • Likelihood (High/Medium/Low)',
+    '   • Key triggers to watch (named actors, dates, negotiations, sanctions, etc.)',
+    '   • Expected societal, economic, and political outcomes for the directly affected region and any global spillover.',
+    '3. Conclude with a “Watchlist” of 2-3 concrete signals (e.g., UN votes, ceasefire compliance metrics, commodity price levels) reporters should monitor over the next 30/90 days.',
+    'Guardrails:',
+    '- Ground every statement in plausible world conditions; name relevant countries, blocs, alliances, or institutions when discussing impacts.',
+    '- Avoid generic textbook language—tie predictions to the headline and present-day dynamics.',
+    '- Keep the full response under 220 words; use clear sub-headings for each section.',
   ].join('\n\n');
 }
 

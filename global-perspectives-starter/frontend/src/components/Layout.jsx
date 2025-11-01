@@ -1,13 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 function Layout({ children }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const navBarRef = useRef(null);
 
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (navBarRef.current && !navBarRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -21,7 +38,7 @@ function Layout({ children }) {
     <div className="app">
       <nav className="nav">
         <div className="container">
-          <div className="nav-bar">
+          <div className="nav-bar" ref={navBarRef}>
             <Link to="/" className="nav-brand">
               <h2>Global Perspectives</h2>
             </Link>
@@ -36,7 +53,7 @@ function Layout({ children }) {
               <span />
               <span />
             </button>
-            <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
+            <div className={`nav-links ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)}>
               {navLinks.map(({ to, label }) => (
                 <Link
                   key={to}

@@ -8,7 +8,7 @@ function AboutContact() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Mission</h2>
         <p>
-          Global Perspectives experiments with AI-assisted journalism. The dashboard surfaces emerging international
+          Global Perspectives™ experiments with AI-assisted journalism. The dashboard surfaces emerging international
           topics, summarizes regional coverage, and gives readers a map-first view of shifting attention. The project
           was built as a learning tool to explore serverless data pipelines, AI APIs, and accessible storytelling.
         </p>
@@ -47,7 +47,7 @@ function AboutContact() {
       <section>
         <h2 style={{ fontSize: '1.25rem' }}>Media &amp; Attribution</h2>
         <p>
-          Screenshots or quotes may be used with credit to &ldquo;Global Perspectives&rdquo; and a link back to the site.
+          Screenshots or quotes may be used with credit to &ldquo;Global Perspectives™&rdquo; and a link back to the site.
           For press inquiries please reach out via email with your publication name and deadline.
         </p>
       </section>

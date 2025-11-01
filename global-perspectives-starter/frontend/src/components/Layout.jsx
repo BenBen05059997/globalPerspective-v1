@@ -40,7 +40,7 @@ function Layout({ children }) {
         <div className="container">
           <div className="nav-bar" ref={navBarRef}>
             <Link to="/" className="nav-brand">
-              <h2>Global Perspectives</h2>
+              <h2>Global Perspectives™</h2>
             </Link>
             <button
               type="button"
@@ -78,7 +78,7 @@ function Layout({ children }) {
         <div className="container">
           <div className="text-center" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
             <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-              Global Perspectives &mdash; AI-powered news aggregation
+              Global Perspectives™ &mdash; AI-powered news aggregation
             </p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.9rem' }}>
               <Link to="/about" className="nav-link">About</Link>

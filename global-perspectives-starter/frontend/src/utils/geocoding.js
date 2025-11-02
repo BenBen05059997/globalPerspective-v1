@@ -176,10 +176,21 @@ export async function geocodeArticle(article) {
   if (!article?.title) return null;
   
   console.log(`🌍 Geocoding article: ${article.title}`);
-  
-  // Extract potential locations from title
+
+  // NEW: Check for primary_location from Gemini first
+  if (article.primary_location) {
+    console.log(`🎯 Using Gemini primary_location: ${article.primary_location}`);
+    const coords = await geocodeLocation(article.primary_location, null);
+    if (coords) {
+      console.log(`✅ Successfully geocoded primary_location: ${article.primary_location} -> ${coords.country}`);
+      return coords;
+    }
+    console.log(`⚠️ Failed to geocode primary_location: ${article.primary_location}, falling back to title extraction`);
+  }
+
+  // Extract potential locations from title as fallback
   let locations = extractLocationsFromTitle(article.title);
-  console.log(`📍 Extracted locations: ${locations.join(', ')}`);
+  console.log(`📍 Extracted locations from title (fallback): ${locations.join(', ')}`);
 
   // Try to determine a known country code from article metadata to constrain geocoding
   let knownCountryCode = null;

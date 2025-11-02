@@ -25,6 +25,10 @@ function PrivacyTerms() {
             may be retained briefly for reliability monitoring.
           </li>
           <li>
+            Cloudflare Web Analytics records anonymized usage metrics (page views, timestamp, country/region, browser/device).
+            IP addresses are not stored, and the data is used only to understand overall adoption.
+          </li>
+          <li>
             Third-party APIs (Google Gemini, Google Maps, OpenAI) receive only the minimum request data needed to fulfill
             summaries, predictions, or map lookups.
           </li>
@@ -54,6 +58,7 @@ function PrivacyTerms() {
           <li>Google Maps Platform &mdash; geocoding and visual map tiles</li>
           <li>OpenAI &mdash; optional predictive narratives</li>
           <li>AWS AppSync and Lambda &mdash; API gateway and caching</li>
+          <li>Cloudflare Web Analytics &mdash; privacy-first usage metrics (page views, device type, browser locale)</li>
         </ul>
         <p>
           Usage of those services is subject to their respective terms. By interacting with the site you agree to

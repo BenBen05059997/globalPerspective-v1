@@ -4,8 +4,50 @@ import SummaryDisplay from './SummaryDisplay';
 import PredictionDisplay from './PredictionDisplay';
 import graphqlService from '../utils/graphqlService';
 
+// Regional categorization function
+function categorizeByRegion(topics) {
+  const regions = {
+    'Asia': [],
+    'Africa': [], 
+    'North America': [],
+    'Europe': [],
+    'Middle East': [],
+    'South America': [],
+    'World': []
+  };
+
+  topics.forEach(topic => {
+    const topicRegions = Array.isArray(topic.regions) ? topic.regions.map(r => r.toLowerCase()) : [];
+    
+    // Categorize by region (case-insensitive)
+    if (topicRegions.some(r => r.includes('china') || r.includes('japan') || r.includes('korea') || r.includes('india') || r.includes('singapore') || r.includes('thailand') || r.includes('vietnam') || r.includes('malaysia') || r.includes('indonesia') || r.includes('philippines') || r.includes('pakistan') || r.includes('bangladesh') || r.includes('sri lanka') || r.includes('nepal') || r.includes('bhutan') || r.includes('myanmar') || r.includes('cambodia') || r.includes('laos'))) {
+      regions['Asia'].push(topic);
+    } else if (topicRegions.some(r => r.includes('nigeria') || r.includes('south africa') || r.includes('egypt') || r.includes('kenya') || r.includes('ethiopia') || r.includes('ghana') || r.includes('morocco') || r.includes('tanzania') || r.includes('uganda') || r.includes('algeria') || r.includes('sudan') || r.includes('libya') || r.includes('tunisia') || r.includes('angola') || r.includes('mozambique') || r.includes('zambia'))) {
+      regions['Africa'].push(topic);
+    } else if (topicRegions.some(r => r.includes('usa') || r.includes('united states') || r.includes('canada') || r.includes('mexico') || r.includes('guatemala') || r.includes('costa rica') || r.includes('panama') || r.includes('cuba') || r.includes('jamaica') || r.includes('haiti') || r.includes('dominican republic'))) {
+      regions['North America'].push(topic);
+    } else if (topicRegions.some(r => r.includes('uk') || r.includes('britain') || r.includes('france') || r.includes('germany') || r.includes('italy') || r.includes('spain') || r.includes('netherlands') || r.includes('sweden') || r.includes('norway') || r.includes('denmark') || r.includes('finland') || r.includes('poland') || r.includes('czech') || r.includes('austria') || r.includes('switzerland') || r.includes('belgium') || r.includes('portugal') || r.includes('greece'))) {
+      regions['Europe'].push(topic);
+    } else if (topicRegions.some(r => r.includes('israel') || r.includes('palestine') || r.includes('saudi arabia') || r.includes('iran') || r.includes('iraq') || r.includes('syria') || r.includes('lebanon') || r.includes('jordan') || r.includes('uae') || r.includes('qatar') || r.includes('kuwait') || r.includes('bahrain') || r.includes('oman') || r.includes('yemen') || r.includes('turkey'))) {
+      regions['Middle East'].push(topic);
+    } else if (topicRegions.some(r => r.includes('brazil') || r.includes('argentina') || r.includes('chile') || r.includes('peru') || r.includes('colombia') || r.includes('venezuela') || r.includes('ecuador') || r.includes('bolivia') || r.includes('paraguay') || r.includes('uruguay') || r.includes('guyana') || r.includes('suriname'))) {
+      regions['South America'].push(topic);
+    } else {
+      // World category - either affects multiple regions or unclear categorization
+      regions['World'].push(topic);
+    }
+  });
+
+  return regions;
+}
+
 function Home() {
   const { topics, loading, error, refetch } = useGeminiTopics();
+  
+  // Organize topics by region
+  const categorizedTopics = React.useMemo(() => {
+    return categorizeByRegion(topics);
+  }, [topics]);
 
   // Local state maps keyed by topicId
   const [summaries, setSummaries] = useState({});
@@ -112,9 +154,9 @@ function Home() {
   return (
     <div>
       <div className="text-center mb-8">
-        <h1 className="mb-4">Today's Topics</h1>
+        <h1 className="mb-4">Today's Global Topics</h1>
         <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-          Trending topics discovered by Google Gemini 
+          Trending topics from around the world, organized by region
         </p>
       </div>
 
@@ -142,83 +184,107 @@ function Home() {
       )}
 
       {!loading && topics && topics.length > 0 && (
-        <div className="card" style={{ maxWidth: 800, margin: '0 auto' }}>
-          <h2 style={{ marginBottom: '1rem' }}>Trending Topics</h2>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {topics.map((t, idx) => (
-              <li key={idx} style={{ padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
-                <div style={{ marginBottom: '2rem' }}>
-                  <strong style={{ fontSize: '1.5rem' }}>{t.title}</strong>
-                  {t.category && (
-                    <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                      [{t.category}]
-                    </span>
-                  )}
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          {Object.entries(categorizedTopics).map(([region, regionTopics]) => (
+            regionTopics.length > 0 && (
+              <div key={region} className="card" style={{ marginBottom: '2rem' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  marginBottom: '1rem',
+                  borderBottom: '2px solid var(--border-color)',
+                  paddingBottom: '0.5rem'
+                }}>
+                  <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>
+                    {region}
+                  </h2>
+                  <span style={{ 
+                    marginLeft: '1rem', 
+                    color: 'var(--text-muted)', 
+                    fontSize: '0.8rem',
+                    fontWeight: 'normal'
+                  }}>
+                    {regionTopics.length} topic{regionTopics.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
-                {t.description && (
-                  <div style={{ marginBottom: '0.5rem' }}>{t.description}</div>
-                )}
-                {/* Regions and Keywords hidden per UI request */}
-                {/* Sources + AI Actions horizontally aligned */}
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                  {(() => {
-                    // Use the exact homepage title as the sources query
-                    const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
-
-                    const sourceUrl = fullTitle
-                      ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
-                      : '';
-
+                <ul style={{ listStyle: 'none', padding: 0 }}>
+                  {regionTopics.map((t, idx) => {
+                    const globalIdx = topics.indexOf(t);
                     return (
-                      <a
-                        href={sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-link"
-                        style={{ fontSize: '0.9rem' }}
-                      >
-                        View sources →
-                      </a>
+                      <li key={globalIdx} style={{ padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                        <div style={{ marginBottom: '0.5rem' }}>
+                          <strong style={{ fontSize: '1.25rem' }}>{t.title}</strong>
+                          {t.category && (
+                            <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                              [{t.category}]
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Sources + AI Actions horizontally aligned */}
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                          {(() => {
+                            // Use the exact homepage title as the sources query
+                            const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+
+                            const sourceUrl = fullTitle
+                              ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
+                              : '';
+
+                            return (
+                              <a
+                                href={sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-link"
+                                style={{ fontSize: '0.9rem' }}
+                              >
+                                View sources →
+                              </a>
+                            );
+                          })()}
+                          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+                            <button className="btn btn-summarize" onClick={() => handleGenerateSummary(t, globalIdx)}>
+                              Summarize
+                            </button>
+                            <button className="btn btn-predict" onClick={() => handleGeneratePrediction(t, globalIdx)}>
+                              Predict
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* AI Summary Display */}
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <SummaryDisplay
+                            summary={summaries[getTopicId(t, globalIdx)]}
+                            isLoading={summaryLoading[getTopicId(t, globalIdx)]}
+                            error={summaryErrors[getTopicId(t, globalIdx)]}
+                            onRetry={() => handleGenerateSummary(t, globalIdx)}
+                            onClear={() => handleClearSummary(t, globalIdx)}
+                            isCollapsed={summaryCollapsed[getTopicId(t, globalIdx)]}
+                            onToggleCollapse={() => toggleSummaryCollapsed(t, globalIdx)}
+                          />
+                        </div>
+
+                        {/* AI Prediction Display */}
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <PredictionDisplay
+                            prediction={predictions[getTopicId(t, globalIdx)]}
+                            isLoading={predictionLoading[getTopicId(t, globalIdx)]}
+                            error={(predictionErrors[getTopicId(t, globalIdx)] || null)}
+                            onRetry={() => handleGeneratePrediction(t, globalIdx)}
+                            onClear={() => handleClearPrediction(t, globalIdx)}
+                            isCollapsed={predictionCollapsed[getTopicId(t, globalIdx)]}
+                            onToggleCollapse={() => togglePredictionCollapsed(t, globalIdx)}
+                          />
+                        </div>
+                      </li>
                     );
-                  })()}
-                  <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn btn-summarize" onClick={() => handleGenerateSummary(t, idx)}>
-                      Summarize
-                    </button>
-                    <button className="btn btn-predict" onClick={() => handleGeneratePrediction(t, idx)}>
-                      Predict
-                    </button>
-                  </div>
-                </div>
-
-                {/* AI Summary Display */}
-                <div style={{ marginTop: '0.5rem' }}>
-                  <SummaryDisplay
-                    summary={summaries[getTopicId(t, idx)]}
-                    isLoading={summaryLoading[getTopicId(t, idx)]}
-                    error={summaryErrors[getTopicId(t, idx)]}
-                    onRetry={() => handleGenerateSummary(t, idx)}
-                    onClear={() => handleClearSummary(t, idx)}
-                    isCollapsed={summaryCollapsed[getTopicId(t, idx)]}
-                    onToggleCollapse={() => toggleSummaryCollapsed(t, idx)}
-                  />
-                </div>
-
-                {/* AI Prediction Display */}
-                <div style={{ marginTop: '0.5rem' }}>
-                  <PredictionDisplay
-                    prediction={predictions[getTopicId(t, idx)]}
-                    isLoading={predictionLoading[getTopicId(t, idx)]}
-                    error={(predictionErrors[getTopicId(t, idx)] || null)}
-                    onRetry={() => handleGeneratePrediction(t, idx)}
-                    onClear={() => handleClearPrediction(t, idx)}
-                    isCollapsed={predictionCollapsed[getTopicId(t, idx)]}
-                    onToggleCollapse={() => togglePredictionCollapsed(t, idx)}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
+                  })}
+                </ul>
+              </div>
+            )
+          ))}
         </div>
       )}
 

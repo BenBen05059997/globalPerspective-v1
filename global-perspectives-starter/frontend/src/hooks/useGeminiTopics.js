@@ -30,8 +30,8 @@ export function useGeminiTopics() {
   // Fallback to network fetch
   setLoading(true);
   try {
-      // Explicitly request 7 topics from the service
-      const data = await graphqlService.getGeminiTopics(7);
+      // Explicitly request 10 topics from the service
+      const data = await graphqlService.getGeminiTopics(10);
       const list = Array.isArray(data?.topics) ? data.topics : [];
       setTopics(list);
       try {

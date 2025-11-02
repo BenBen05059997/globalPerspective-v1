@@ -2,10 +2,8 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand } = require('@aws-sdk/lib-dynamodb');
-const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
-const SUMMARY_LAMBDA_NAME = process.env.SUMMARY_LAMBDA_NAME || 'NewsProjectInvokeAgentLambda';
 
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
@@ -18,7 +16,6 @@ const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
 const SUMMARY_PREDICT_MAX_AGE_SECONDS = Number(process.env.SUMMARY_PREDICT_MAX_AGE_SECONDS || '5400');
 
 let dynamoDocClient = null;
-let lambdaClient = null;
 
 const getDynamoClient = () => {
   if (!dynamoDocClient) {
@@ -28,13 +25,6 @@ const getDynamoClient = () => {
     });
   }
   return dynamoDocClient;
-};
-
-const getLambdaClient = () => {
-  if (!lambdaClient) {
-    lambdaClient = new LambdaClient({ region: REGION });
-  }
-  return lambdaClient;
 };
 
 const allowedOrigins = [
@@ -110,10 +100,7 @@ exports.handler = async (event) => {
         };
       }
 
-      const response = await readSummaryPredictionCache(action, topicId, {
-        skipCache: Boolean(payload.skipCache),
-        forceRefresh: Boolean(payload.forceRefresh),
-      });
+      const response = await readSummaryPredictionCache(action, topicId);
 
       console.info('newsSensitiveData summary/prediction response', {
         action,
@@ -210,9 +197,7 @@ async function readTopicsCache() {
   }
 }
 
-async function readSummaryPredictionCache(action, topicId, options = {}) {
-  const { skipCache = false, forceRefresh = false } = options;
-
+async function readSummaryPredictionCache(action, topicId) {
   if (!SUMMARIZE_PREDICT_TABLE) {
     console.error('newsSensitiveData summary/prediction misconfiguration: missing SUMMARIZE_PREDICT_TABLE');
     return {
@@ -226,34 +211,10 @@ async function readSummaryPredictionCache(action, topicId, options = {}) {
   const sk = action === 'prediction' ? PREDICTION_SK : SUMMARY_SK;
 
   try {
-    let { Item } = await client.send(new GetCommand({
+    const { Item } = await client.send(new GetCommand({
       TableName: SUMMARIZE_PREDICT_TABLE,
       Key: { PK: pk, SK: sk },
     }));
-
-    const itemFresh = Item ? summaryPredictionFresh(Item) : false;
-    const needsRefresh = forceRefresh || skipCache || !Item || !itemFresh;
-
-    if (needsRefresh) {
-      try {
-        await invokeSummaryLambda(action, topicId);
-        const refreshed = await client.send(new GetCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          Key: { PK: pk, SK: sk },
-        }));
-        Item = refreshed.Item;
-      } catch (err) {
-        console.error('newsSensitiveData refresh error', {
-          action,
-          topicId,
-          error: err,
-        });
-        return {
-          statusCode: 502,
-          body: { success: false, error: 'Failed to refresh cache' },
-        };
-      }
-    }
 
     if (!Item) {
       console.warn('newsSensitiveData summary/prediction cache miss', {
@@ -267,8 +228,8 @@ async function readSummaryPredictionCache(action, topicId, options = {}) {
       };
     }
 
-    const freshNow = summaryPredictionFresh(Item);
-    if (!freshNow) {
+    const normalized = normalizeSummaryPrediction(Item);
+    if (!summaryPredictionFresh(Item)) {
       console.warn('newsSensitiveData summary/prediction cache stale', {
         table: SUMMARIZE_PREDICT_TABLE,
         pk,
@@ -283,7 +244,7 @@ async function readSummaryPredictionCache(action, topicId, options = {}) {
           success: false,
           error: 'Cached entry stale',
           reason: 'STALE',
-          item: normalizeSummaryPrediction(Item),
+          item: normalized,
         },
       };
     }
@@ -295,15 +256,14 @@ async function readSummaryPredictionCache(action, topicId, options = {}) {
       sk,
       generatedAt: Item.generatedAt,
       ttl: Item.ttl,
-      refreshed: needsRefresh,
     });
 
     return {
       statusCode: 200,
       body: {
         success: true,
-        cached: !needsRefresh,
-        data: normalizeSummaryPrediction(Item),
+        cached: true,
+        data: normalized,
       },
     };
   } catch (err) {
@@ -313,26 +273,6 @@ async function readSummaryPredictionCache(action, topicId, options = {}) {
       body: { success: false, error: 'Failed to read summary/prediction cache' },
     };
   }
-}
-
-async function invokeSummaryLambda(action, topicId) {
-  if (!SUMMARY_LAMBDA_NAME) {
-    throw new Error('SUMMARY_LAMBDA_NAME env var not configured');
-  }
-
-  const lambda = getLambdaClient();
-  const command = new InvokeCommand({
-    FunctionName: SUMMARY_LAMBDA_NAME,
-    Payload: Buffer.from(JSON.stringify({ action, topicId, readOnly: false })),
-  });
-
-  const response = await lambda.send(command);
-
-  if (response.FunctionError) {
-    throw new Error(`Summary lambda error: ${response.FunctionError}`);
-  }
-
-  return response.Payload || null;
 }
 
 function cacheEntryFresh(updatedAt, maxAgeSeconds) {

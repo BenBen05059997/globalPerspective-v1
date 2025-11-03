@@ -30,6 +30,7 @@ function Layout({ children }) {
     { to: '/', label: 'Home' },
     { to: '/map', label: 'Map' },
     { to: '/about', label: 'About' },
+    { to: '/contact', label: 'Contact' },
     { to: '/privacy', label: 'Privacy' },
     { to: '/disclosures', label: 'Disclosures' },
   ];

@@ -673,20 +673,24 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
   const { topics, loading, error, refetch } = useGeminiTopics();
 
   // Convert AppSync topics to article-like objects for map grouping
-  const topicsToArticles = (list) => {
-    if (!Array.isArray(list)) return [];
-    const out = [];
-    list.forEach(t => {
-      const regions = Array.isArray(t.regions) ? t.regions : [];
-      regions.forEach(code => {
-        out.push({
-          title: t.title,
-          geographic_analysis: { primary_countries: [{ code }] },
-        });
+const topicsToArticles = (list) => {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  list.forEach(t => {
+    const regions = Array.isArray(t.regions) ? t.regions : [];
+    regions.forEach(code => {
+      out.push({
+        title: t.title,
+        primary_location: t.primary_location || null,
+        location_context: t.location_context || null,
+        regions: regions,
+        search_keywords: Array.isArray(t.search_keywords) ? t.search_keywords : [],
+        geographic_analysis: { primary_countries: [{ code }] },
       });
     });
-    return out;
-  };
+  });
+  return out;
+};
 
   const articles = propArticles && propArticles.length ? propArticles : topicsToArticles(topics);
 

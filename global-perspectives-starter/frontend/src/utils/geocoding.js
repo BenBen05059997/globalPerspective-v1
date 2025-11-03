@@ -1,7 +1,7 @@
-// Geocoding utility using OpenStreetMap Nominatim API
-// This extracts location names from article titles and converts them to coordinates
+// Geocoding utility that proxies Mapbox lookups through the backend.
+// This extracts location names from article titles and converts them to coordinates.
 
-const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org/search';
+import { geocodeProxy } from '../services/restProxy.js';
 
 // Common location keywords that might appear in news articles
 const LOCATION_KEYWORDS = [
@@ -100,66 +100,55 @@ export async function geocodeLocation(locationName, countryCode) {
       return await inFlight;
     }
 
-    const params = new URLSearchParams({
-      q: locationName,
-      format: 'json',
-      limit: '1',
-      addressdetails: '1'
-    });
+    const lookupPromise = (async () => {
+      try {
+        const address = (() => {
+          if (!countryCode || typeof countryCode !== 'string') return locationName;
+          const cc = countryCode.trim().toUpperCase();
+          const invalid = new Set(['UN', 'EU', 'WW', 'GLOBAL', 'UNKNOWN']);
+          return /^[A-Z]{2}$/.test(cc) && !invalid.has(cc)
+            ? `${locationName}, ${cc}`
+            : locationName;
+        })();
 
-    // Constrain by country when available (expects lower-case ISO alpha2)
-    if (countryCode && typeof countryCode === 'string') {
-      const cc = countryCode.trim().toUpperCase();
-      const invalid = new Set(['UN', 'EU', 'WW', 'GLOBAL', 'UNKNOWN']);
-      if (/^[A-Z]{2}$/.test(cc) && !invalid.has(cc)) {
-        params.set('countrycodes', cc.toLowerCase());
-      }
-    }
+        const payload = await geocodeProxy(address);
+        if (!payload || payload.success === false) {
+          const reason = payload?.error || payload?.reason || 'unknown error';
+          console.warn(`Geocoding proxy failure for ${locationName}: ${reason}`);
+          return null;
+        }
 
-    const fetchPromise = fetch(`${NOMINATIM_BASE_URL}?${params.toString()}`);
-    setInFlight(key, fetchPromise);
-    const response = await fetchPromise;
-    
-    if (!response.ok) {
-      console.warn(`Geocoding failed for ${locationName}: ${response.status}`);
-      return null;
-    }
-    
-    const data = await response.json();
-    
-    if (data && data.length > 0) {
-      const result = data[0];
-      const addr = result.address || {};
-      const cityName = addr.city || addr.town || addr.village || addr.hamlet || addr.suburb || addr.municipality || null;
-      const provinceName = addr.state || addr.region || addr.province || addr.county || null;
-      const countryIso = (addr.country_code || '').toUpperCase() || 'UNKNOWN';
-      const countryName = addr.country || null;
+        const data = payload.data || {};
+        const latNum = Number(data.lat);
+        const lngNum = Number(data.lng);
+        if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+          console.warn('Geocoding proxy returned invalid coordinates:', data);
+          return null;
+        }
 
-      const latNum = parseFloat(result.lat);
-      const lngNum = parseFloat(result.lon);
-      if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
-        console.warn(`Geocoding returned invalid coordinates for ${locationName}:`, result.lat, result.lon);
-        clearInFlight(key);
+        const resultObj = {
+          lat: latNum,
+          lng: lngNum,
+          country: typeof data.country === 'string' ? data.country.toUpperCase() : 'UNKNOWN',
+          countryName: data.countryName || null,
+          cityName: data.cityName || null,
+          provinceName: data.provinceName || null,
+          displayName: data.displayName || address,
+          source: 'mapbox',
+        };
+
+        setCachedGeocode(locationName, countryCode, resultObj);
+        return resultObj;
+      } catch (err) {
+        console.error(`Error calling geocoding proxy for ${locationName}:`, err);
         return null;
+      } finally {
+        clearInFlight(key);
       }
+    })();
 
-      const resultObj = {
-        lat: latNum,
-        lng: lngNum,
-        country: countryIso,
-        countryName,
-        cityName,
-        provinceName,
-        displayName: result.display_name
-      };
-
-      // Cache successful geocode
-      setCachedGeocode(locationName, countryCode, resultObj);
-      clearInFlight(key);
-      return resultObj;
-    }
-    clearInFlight(key);
-    return null;
+    setInFlight(key, lookupPromise);
+    return await lookupPromise;
   } catch (error) {
     console.error(`Error geocoding ${locationName}:`, error);
     try { clearInFlight(getCacheKey(locationName, countryCode)); } catch (e) { void e; }
@@ -188,9 +177,31 @@ export async function geocodeArticle(article) {
     console.log(`⚠️ Failed to geocode primary_location: ${article.primary_location}, falling back to title extraction`);
   }
 
+  const candidateSet = new Set();
+  const addCandidate = (value) => {
+    if (typeof value !== 'string') return;
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    candidateSet.add(trimmed);
+  };
+
+  addCandidate(article.primary_location);
+  addCandidate(article.location_context);
+
+  if (Array.isArray(article.regions)) {
+    article.regions.forEach(addCandidate);
+  }
+
+  if (Array.isArray(article.search_keywords)) {
+    article.search_keywords
+      .filter((kw) => typeof kw === 'string' && kw.split(/\s+/).length > 1)
+      .forEach(addCandidate);
+  }
+
   // Extract potential locations from title as fallback
-  let locations = extractLocationsFromTitle(article.title);
-  console.log(`📍 Extracted locations from title (fallback): ${locations.join(', ')}`);
+  const extractedLocations = extractLocationsFromTitle(article.title);
+  console.log(`📍 Extracted locations from title (fallback): ${extractedLocations.join(', ')}`);
+  extractedLocations.forEach(addCandidate);
 
   // Try to determine a known country code from article metadata to constrain geocoding
   let knownCountryCode = null;
@@ -221,20 +232,22 @@ export async function geocodeArticle(article) {
 
   // Disambiguation: Gaza is ambiguous (Mozambique province vs Gaza Strip).
   // If Gaza is mentioned, force Palestine (PS) and prioritize "Gaza Strip" query.
-  const lowerLocations = locations.map(l => l.toLowerCase());
+  const lowerLocations = extractedLocations.map(l => l.toLowerCase());
   if (lowerLocations.includes('gaza')) {
     knownCountryCode = 'PS';
     // Prioritize accurate variants
-    const withoutGaza = locations.filter(l => l.toLowerCase() !== 'gaza');
-    locations = ['Gaza Strip', 'Gaza, Palestine', ...withoutGaza, 'Gaza'];
+    addCandidate('Gaza Strip');
+    addCandidate('Gaza, Palestine');
   }
   // Additional regional hint: West Bank belongs to Palestine
   if (lowerLocations.includes('west bank')) {
     knownCountryCode = 'PS';
-    const withoutWB = locations.filter(l => l.toLowerCase() !== 'west bank');
-    locations = ['West Bank, Palestine', ...withoutWB, 'West Bank'];
+    addCandidate('West Bank, Palestine');
+    addCandidate('West Bank');
   }
   
+  let locations = Array.from(candidateSet);
+
   // Try to geocode each location until we find one
   // Limit attempts to reduce latency
   locations = locations.slice(0, MAX_LOCATION_ATTEMPTS);

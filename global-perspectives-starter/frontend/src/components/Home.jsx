@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import SummaryDisplay from './SummaryDisplay';
 import PredictionDisplay from './PredictionDisplay';
@@ -59,6 +59,11 @@ function Home() {
   const [predictionLoading, setPredictionLoading] = useState({});
   const [predictionErrors, setPredictionErrors] = useState({});
   const [predictionCollapsed, setPredictionCollapsed] = useState({});
+  const summaryAttemptsRef = useRef({});
+  const predictionAttemptsRef = useRef({});
+
+  const MAX_RETRIES = 6;
+  const RETRY_DELAY_MS = 10000;
 
   const getTopicId = (t, idx) => {
     const directId = t?.topicId || t?.topic_id || t?.id;
@@ -70,8 +75,23 @@ function Home() {
     return slug || `topic-${idx}`;
   };
 
-  const handleGenerateSummary = async (t, idx) => {
+  const scheduleSummaryRetry = (topic, idx, attempt) => {
+    setTimeout(() => {
+      summaryAttemptsRef.current[getTopicId(topic, idx)] = attempt;
+      handleGenerateSummary(topic, idx, attempt);
+    }, RETRY_DELAY_MS);
+  };
+
+  const handleGenerateSummary = async (t, idx, attempt = 0) => {
     const id = getTopicId(t, idx);
+    if (summaries[id]) {
+      setSummaryCollapsed(prev => ({ ...prev, [id]: false }));
+      return;
+    }
+    if (summaryLoading[id] && attempt === 0) {
+      return;
+    }
+    summaryAttemptsRef.current[id] = attempt;
     setSummaryLoading(prev => ({ ...prev, [id]: true }));
     setSummaryErrors(prev => ({ ...prev, [id]: null }));
     const start = Date.now();
@@ -92,10 +112,19 @@ function Home() {
       };
       setSummaries(prev => ({ ...prev, [id]: processed }));
       setSummaryCollapsed(prev => ({ ...prev, [id]: false }));
-    } catch (e) {
-      setSummaryErrors(prev => ({ ...prev, [id]: e.message || String(e) }));
-    } finally {
+      summaryAttemptsRef.current[id] = 0;
       setSummaryLoading(prev => ({ ...prev, [id]: false }));
+    } catch (e) {
+      const message = e?.message || String(e);
+      const shouldRetry = /cache miss|failed to read summary|503/i.test(message);
+      const nextAttempt = attempt + 1;
+      if (shouldRetry && nextAttempt <= MAX_RETRIES) {
+        console.info(`[SummaryRetry] ${id} attempt ${nextAttempt}/${MAX_RETRIES}`);
+        scheduleSummaryRetry(t, idx, nextAttempt);
+      } else {
+        setSummaryErrors(prev => ({ ...prev, [id]: message }));
+        setSummaryLoading(prev => ({ ...prev, [id]: false }));
+      }
     }
   };
 
@@ -104,6 +133,7 @@ function Home() {
     setSummaries(prev => { const n = { ...prev }; delete n[id]; return n; });
     setSummaryErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
     setSummaryCollapsed(prev => ({ ...prev, [id]: true }));
+    delete summaryAttemptsRef.current[id];
   };
 
   const toggleSummaryCollapsed = (t, idx) => {
@@ -111,8 +141,23 @@ function Home() {
     setSummaryCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleGeneratePrediction = async (t, idx) => {
+  const schedulePredictionRetry = (topic, idx, attempt) => {
+    setTimeout(() => {
+      predictionAttemptsRef.current[getTopicId(topic, idx)] = attempt;
+      handleGeneratePrediction(topic, idx, attempt);
+    }, RETRY_DELAY_MS);
+  };
+
+  const handleGeneratePrediction = async (t, idx, attempt = 0) => {
     const id = getTopicId(t, idx);
+    if (predictions[id]) {
+      setPredictionCollapsed(prev => ({ ...prev, [id]: false }));
+      return;
+    }
+    if (predictionLoading[id] && attempt === 0) {
+      return;
+    }
+    predictionAttemptsRef.current[id] = attempt;
     setPredictionLoading(prev => ({ ...prev, [id]: true }));
     setPredictionErrors(prev => ({ ...prev, [id]: null }));
     const start = Date.now();
@@ -133,10 +178,19 @@ function Home() {
       };
       setPredictions(prev => ({ ...prev, [id]: processed }));
       setPredictionCollapsed(prev => ({ ...prev, [id]: false }));
-    } catch (e) {
-      setPredictionErrors(prev => ({ ...prev, [id]: e.message || String(e) }));
-    } finally {
+      predictionAttemptsRef.current[id] = 0;
       setPredictionLoading(prev => ({ ...prev, [id]: false }));
+    } catch (e) {
+      const message = e?.message || String(e);
+      const shouldRetry = /cache miss|failed to read summary|503/i.test(message);
+      const nextAttempt = attempt + 1;
+      if (shouldRetry && nextAttempt <= MAX_RETRIES) {
+        console.info(`[PredictionRetry] ${id} attempt ${nextAttempt}/${MAX_RETRIES}`);
+        schedulePredictionRetry(t, idx, nextAttempt);
+      } else {
+        setPredictionErrors(prev => ({ ...prev, [id]: message }));
+        setPredictionLoading(prev => ({ ...prev, [id]: false }));
+      }
     }
   };
 
@@ -145,6 +199,7 @@ function Home() {
     setPredictions(prev => { const n = { ...prev }; delete n[id]; return n; });
     setPredictionErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
     setPredictionCollapsed(prev => ({ ...prev, [id]: true }));
+    delete predictionAttemptsRef.current[id];
   };
 
   const togglePredictionCollapsed = (t, idx) => {

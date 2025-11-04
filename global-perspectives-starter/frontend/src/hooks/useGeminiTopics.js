@@ -11,6 +11,8 @@ export function useGeminiTopics() {
 
   const loadTopics = useCallback(async () => {
     setError(null);
+    let hadCachedTopics = false;
+
     // Try cache first
     try {
       const raw = localStorage.getItem(CACHE_KEY);
@@ -20,7 +22,7 @@ export function useGeminiTopics() {
         const list = Array.isArray(cached?.topics) ? cached.topics : [];
         if (isFresh && list.length > 0) {
           setTopics(list);
-          return; // Skip network fetch when cache is fresh
+          hadCachedTopics = true;
         }
       }
     } catch {
@@ -40,7 +42,9 @@ export function useGeminiTopics() {
         // Ignore cache write errors
       }
     } catch (err) {
-      setError(err?.message || 'Failed to fetch Gemini topics');
+      if (!hadCachedTopics) {
+        setError(err?.message || 'Failed to fetch Gemini topics');
+      }
     } finally {
       setLoading(false);
     }

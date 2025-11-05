@@ -188,11 +188,11 @@
          });
 
          const prompt = [
-           `You are an AI assistant discovering trending global news topics for today, ${currentDateString}.`,
-           'IMPORTANT: Focus on news events happening on this specific date and the immediately preceding 24-48 hours.',
+           `You are an AI assistant providing historical news topic analysis from significant past events up to today, ${currentDateString}.`,
+           'IMPORTANT: Focus on major historical news events that occurred in the past and remain relevant today.',
            'Return only a JSON array with no commentary.',
            'Each item must be an object with fields:',
-           '- title: string (concise topic title)',
+           '- title: string (concise topic title - can be historical)',
            '- category: string (e.g., politics, economy, technology, environment, security, health, culture)',
            '- search_keywords: array of 3-6 short keywords users would search',
            '- regions: array of affected regions or countries (strings)',
@@ -201,9 +201,12 @@
            `Limit to ${limit} items.`,
            '',
            'TEMPORAL REQUIREMENTS:',
-           `1. Today is ${currentDateString}. Focus on current and recent events only.`,
-           '2. Only include topics that are actively trending or breaking within the past 48 hours.',
-           '3. EXCLUDE: historical events, long-term trends without current activity, or recurring topics without recent developments.',
+           `1. Today is ${currentDateString}. Include historical news topics from any time period up to the present.`,
+           '2. Focus on significant historical events that had major impact and are still relevant today.',
+           '3. Include historical events that shaped current geopolitical situations, conflicts, or major global developments.',
+           '4. Historical events are preferred over speculative current events.',
+           '5. Examples: major wars, elections, disasters, policy changes, technological breakthroughs that occurred in the past.',
+           '6. DO NOT limit to recent events - prioritize historically significant topics over fake "current" events.',
            '',
            'CRITICAL GEOGRAPHIC REQUIREMENTS:',
            '1. ONLY include topics that have CLEAR, GEOGRAPHICALLY SPECIFIC locations that can be accurately geocoded.',
@@ -236,7 +239,7 @@
          ].join('\n');
 
          // Log the current date for debugging temporal relevance
-        console.info(`📅 Generating Gemini topics for date: ${currentDateString}`);
+        console.info(`📅 Generating historical Gemini topics up to date: ${currentDateString}`);
         
         const result = await model.generateContent(prompt);
          const text =

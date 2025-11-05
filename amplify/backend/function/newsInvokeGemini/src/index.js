@@ -188,25 +188,27 @@
          });
 
          const prompt = [
-           `You are an AI assistant providing historical news topic analysis from significant past events up to today, ${currentDateString}.`,
-           'IMPORTANT: Focus on major historical news events that occurred in the past and remain relevant today.',
+           `You are an AI assistant with internet search capabilities finding current global news topics for today, ${currentDateString}.`,
+           'IMPORTANT: Search the internet extensively for the most recent news from the past 24-48 hours.',
+           'You MUST search online and browse news websites to find actual current events.',
            'Return only a JSON array with no commentary.',
            'Each item must be an object with fields:',
-           '- title: string (concise topic title - can be historical)',
+           '- title: string (current news headline from your web search)',
            '- category: string (e.g., politics, economy, technology, environment, security, health, culture)',
            '- search_keywords: array of 3-6 short keywords users would search',
            '- regions: array of affected regions or countries (strings)',
-           '- primary_location: string (specific geographical location that best represents where this story is happening)',
-           '- location_context: string (brief explanation of why this location was chosen)',
+           '- primary_location: string (specific geographical location where this story is happening)',
+           '- location_context: string (brief explanation of why this location is relevant)',
            `Limit to ${limit} items.`,
            '',
-           'TEMPORAL REQUIREMENTS:',
-           `1. Today is ${currentDateString}. Include historical news topics from any time period up to the present.`,
-           '2. Focus on significant historical events that had major impact and are still relevant today.',
-           '3. Include historical events that shaped current geopolitical situations, conflicts, or major global developments.',
-           '4. Historical events are preferred over speculative current events.',
-           '5. Examples: major wars, elections, disasters, policy changes, technological breakthroughs that occurred in the past.',
-           '6. DO NOT limit to recent events - prioritize historically significant topics over fake "current" events.',
+           'INTERNET SEARCH REQUIREMENTS:',
+           `1. Today is ${currentDateString}. You must search the internet for current news from the past 24-48 hours.`,
+           '2. Browse major news websites: BBC, CNN, Reuters, Associated Press, Al Jazeera, etc.',
+           '3. ONLY include topics you can verify from real current news sources online.',
+           '4. If no news from past 24-48 hours, then include news from the past week.',
+           '5. Each topic MUST be based on actual recent news you found through internet search.',
+           '6. DO NOT make up fictional headlines - search and verify everything.',
+           '7. Focus on breaking news, current events, and developing stories.',
            '',
            'CRITICAL GEOGRAPHIC REQUIREMENTS:',
            '1. ONLY include topics that have CLEAR, GEOGRAPHICALLY SPECIFIC locations that can be accurately geocoded.',
@@ -239,7 +241,7 @@
          ].join('\n');
 
          // Log the current date for debugging temporal relevance
-        console.info(`📅 Generating historical Gemini topics up to date: ${currentDateString}`);
+        console.info(`🌐 Prompting Gemini to search internet for current news up to: ${currentDateString}`);
         
         const result = await model.generateContent(prompt);
          const text =

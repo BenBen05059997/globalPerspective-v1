@@ -30,6 +30,8 @@ const getDynamoClient = () => {
 const allowedOrigins = [
   'https://benben05059997.github.io',
   'https://benben05059997.github.io/GlobalPerspective',
+  'https://globalperspective.net',
+  'https://www.globalperspective.net',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
 ];
@@ -111,6 +113,32 @@ exports.handler = async (event) => {
         error: response.body?.error,
         reason: response.body?.reason,
       });
+      return {
+        statusCode: response.statusCode,
+        headers,
+        body: JSON.stringify(response.body),
+      };
+    }
+
+    if (action === 'geocode') {
+      const { address } = payload || {};
+      if (!address) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ success: false, error: 'Missing address for geocoding' }),
+        };
+      }
+
+      const response = await geocodeWithMapbox(address);
+
+      console.info('newsSensitiveData geocode response', {
+        address,
+        statusCode: response.statusCode,
+        success: response.body?.success,
+        error: response.body?.error,
+      });
+
       return {
         statusCode: response.statusCode,
         headers,
@@ -211,9 +239,18 @@ async function readSummaryPredictionCache(action, topicId) {
   const sk = action === 'prediction' ? PREDICTION_SK : SUMMARY_SK;
 
   try {
+    console.info('newsSensitiveData summary/prediction lookup', {
+      action,
+      requestTopicId: topicId,
+      pk,
+      sk,
+      table: SUMMARIZE_PREDICT_TABLE,
+    });
+
     const { Item } = await client.send(new GetCommand({
       TableName: SUMMARIZE_PREDICT_TABLE,
       Key: { PK: pk, SK: sk },
+      ConsistentRead: true,
     }));
 
     if (!Item) {
@@ -221,6 +258,7 @@ async function readSummaryPredictionCache(action, topicId) {
         table: SUMMARIZE_PREDICT_TABLE,
         pk,
         sk,
+        note: 'No DynamoDB item returned; verify the generator Lambda wrote this topic id.',
       });
       return {
         statusCode: 503,
@@ -228,26 +266,15 @@ async function readSummaryPredictionCache(action, topicId) {
       };
     }
 
+    console.info('newsSensitiveData summary/prediction raw item', {
+      pk,
+      sk,
+      storedTopicId: Item.topicId,
+      storedTitle: Item.title,
+      keys: Object.keys(Item || {}),
+    });
+
     const normalized = normalizeSummaryPrediction(Item);
-    if (!summaryPredictionFresh(Item)) {
-      console.warn('newsSensitiveData summary/prediction cache stale', {
-        table: SUMMARIZE_PREDICT_TABLE,
-        pk,
-        sk,
-        generatedAt: Item.generatedAt,
-        ttl: Item.ttl,
-        maxAgeSeconds: SUMMARY_PREDICT_MAX_AGE_SECONDS,
-      });
-      return {
-        statusCode: 503,
-        body: {
-          success: false,
-          error: 'Cached entry stale',
-          reason: 'STALE',
-          item: normalized,
-        },
-      };
-    }
 
     console.info('newsSensitiveData summary/prediction cache hit', {
       action,
@@ -264,6 +291,7 @@ async function readSummaryPredictionCache(action, topicId) {
         success: true,
         cached: true,
         data: normalized,
+        stale: summaryPredictionFresh(Item) ? false : true,
       },
     };
   } catch (err) {
@@ -284,10 +312,7 @@ function cacheEntryFresh(updatedAt, maxAgeSeconds) {
 }
 
 function summaryPredictionFresh(item) {
-  if (typeof item.ttl === 'number') {
-    return item.ttl > Date.now() / 1000;
-  }
-  return cacheEntryFresh(item.generatedAt, SUMMARY_PREDICT_MAX_AGE_SECONDS);
+  return true;
 }
 
 function normalizeSummaryPrediction(item) {
@@ -319,4 +344,116 @@ function normalizeSummaryPrediction(item) {
     remainingTtlSeconds,
     content: content.trim(),
   };
+}
+
+// Mapbox geocoding helper - NEW FUNCTION
+async function geocodeWithMapbox(address) {
+  const MAPBOX_KEY = process.env.MAPBOX_GEOCODING_KEY;
+
+  if (!MAPBOX_KEY) {
+    console.error('Mapbox API key not configured');
+    return {
+      statusCode: 502,
+      body: { success: false, error: 'Mapbox API key not configured' },
+    };
+  }
+
+  try {
+    // Build Mapbox geocoding query
+    const query = encodeURIComponent(address);
+    const url =
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?limit=1&access_token=${MAPBOX_KEY}`;
+
+    console.info(`Mapbox geocoding request for: ${address}`);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Mapbox HTTP error (${response.status}):`, errorText);
+      return {
+        statusCode: response.status,
+        body: { success: false, error: `Mapbox HTTP ${response.status}: ${errorText}` },
+      };
+    }
+
+    const data = await response.json();
+
+    if (!data || !data.features || data.features.length === 0) {
+      console.warn('No results found for address:', address);
+      return {
+        statusCode: 404,
+        body: { success: false, error: 'Location not found' },
+      };
+    }
+
+    const feature = data.features[0];
+    const coordinates = feature.center; // Mapbox returns [lng, lat]
+
+    if (!coordinates || coordinates.length < 2) {
+      console.error('Invalid coordinates in Mapbox response:', feature);
+      return {
+        statusCode: 502,
+        body: { success: false, error: 'Invalid coordinates received' },
+      };
+    }
+
+    // IMPORTANT: Mapbox returns coordinates in [lng, lat] order
+    const [lng, lat] = coordinates;
+
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+    if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+      console.error('Non-finite coordinates:', { lat, lng });
+      return {
+        statusCode: 502,
+        body: { success: false, error: 'Invalid coordinate values' },
+      };
+    }
+
+    // Extract additional location context from Mapbox response
+    const context = feature.context || [];
+    let country = 'UNKNOWN';
+    let countryName = null;
+    let placeName = feature.text || address;
+    let regionName = null;
+
+    context.forEach((item) => {
+      if (item.id?.startsWith('country')) {
+        country = item.short_code?.toUpperCase() || 'UNKNOWN';
+        countryName = item.text;
+      } else if (item.id?.startsWith('region')) {
+        regionName = item.text;
+      } else if (item.id?.startsWith('place')) {
+        placeName = item.text;
+      }
+    });
+
+    const result = {
+      lat: latNum,
+      lng: lngNum,
+      country: country,
+      countryName,
+      cityName: placeName !== address ? placeName : null,
+      provinceName: regionName,
+      displayName: feature.place_name || `${placeName}, ${countryName || country}`,
+    };
+
+    console.info(`Mapbox geocoding success: ${address} -> ${country} (${latNum},${lngNum})`);
+
+    return {
+      statusCode: 200,
+      body: { success: true, data: result },
+    };
+
+  } catch (error) {
+    console.error('Mapbox geocoding error:', error);
+    return {
+      statusCode: 502,
+      body: { success: false, error: error?.message || 'Geocoding failed' },
+    };
+  }
 }

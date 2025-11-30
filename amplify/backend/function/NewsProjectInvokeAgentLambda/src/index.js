@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
   DynamoDBDocumentClient,
@@ -104,9 +105,21 @@ function normalizeAction(payload = {}) {
 }
 
 function topicMatches(topic, topicId) {
-  const safeId = topicId.replace(/\s+/g, '-').toLowerCase();
-  const titleSlug = String(topic.title || '').trim().replace(/\s+/g, '-').toLowerCase();
-  return titleSlug === safeId || (topic.id && topic.id === topicId);
+  if (!topicId) return false;
+
+  const normalizedTarget = slugify(topicId, topicId);
+  const candidates = [
+    topic.id,
+    topic.topicId,
+    slugify(topic.id, topic.id),
+    slugify(topic.topicId, topic.topicId),
+    slugify(topic.title, topic.title),
+  ].filter(Boolean);
+
+  return candidates.some((candidate) => {
+    if (!candidate) return false;
+    return candidate === topicId || slugify(candidate, candidate) === normalizedTarget;
+  });
 }
 
 async function loadTopics() {
@@ -122,13 +135,25 @@ async function loadTopics() {
   if (!Item || !Array.isArray(Item.topics)) {
     return [];
   }
-  return Item.topics.map((t, idx) => ({
-    id: t.id || `${String(t.title || '').trim()}-${idx}`,
-    title: t.title,
-    description: t.description || '',
-    categories: t.categories || t.category || [],
-    regions: t.regions || [],
-  }));
+  return Item.topics.map((t, idx) => {
+    const stableId = buildStableTopicId(t, idx);
+    const categories = Array.isArray(t.categories)
+      ? t.categories
+      : t.category
+        ? [t.category]
+        : [];
+
+    return {
+      id: stableId,
+      topicId: stableId,
+      title: t.title,
+      description: t.description || '',
+      categories,
+      regions: Array.isArray(t.regions) ? t.regions : [],
+      primary_location: t.primary_location,
+      location_context: t.location_context,
+    };
+  });
 }
 
 function buildSummaryPrompt(topic) {
@@ -353,6 +378,59 @@ async function pruneObsoleteEntries(validTopicIds) {
       }),
     );
   }
+}
+
+function slugify(value, fallback = '') {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-')
+    .slice(0, 80) || fallback;
+}
+
+function normalizeList(input) {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+  return input
+    .map((entry) => String(entry || '').trim().toLowerCase())
+    .filter(Boolean)
+    .sort();
+}
+
+function buildStableTopicId(topic, idx = 0) {
+  if (topic?.id) {
+    return String(topic.id);
+  }
+  if (topic?.topicId) {
+    return String(topic.topicId);
+  }
+
+  const title = String(topic?.title || '').trim();
+  const category = String(
+    Array.isArray(topic?.categories) && topic.categories.length ? topic.categories[0] : topic?.category || '',
+  ).trim();
+  const primaryLocation = String(topic?.primary_location || '').trim();
+  const regions = normalizeList(topic?.regions);
+  const keywords = normalizeList(topic?.search_keywords);
+
+  const payload = JSON.stringify({
+    title: title.toLowerCase(),
+    category: category.toLowerCase(),
+    primaryLocation: primaryLocation.toLowerCase(),
+    regions,
+    keywords,
+  });
+
+  const hash = crypto.createHash('sha1').update(payload || `${idx}`).digest('hex').slice(0, 10);
+  const slugBase = slugify(title || primaryLocation || `topic-${idx}`, `topic-${idx}`);
+  return `${slugBase}-${hash}`;
 }
 
 function http(statusCode, body) {

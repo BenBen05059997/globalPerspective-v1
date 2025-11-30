@@ -6,16 +6,16 @@ import { geocodeProxy } from '../services/restProxy.js';
 // Common location keywords that might appear in news articles
 const LOCATION_KEYWORDS = [
   // Countries
-  'Ukraine', 'Russia', 'China', 'Taiwan', 'Gaza', 'Palestine', 'Israel', 
+  'Ukraine', 'Russia', 'China', 'Taiwan', 'Gaza', 'Palestine', 'Israel',
   'Sudan', 'Myanmar', 'Syria', 'Turkey', 'Armenia', 'Azerbaijan', 'Mali',
   'Afghanistan', 'Pakistan', 'Bangladesh', 'Iraq', 'Iran', 'Libya',
   'Yemen', 'Somalia', 'Ethiopia', 'Nigeria', 'Congo', 'Chad',
-  
+
   // Cities
   'Kharkiv', 'Kiev', 'Kyiv', 'Moscow', 'Beijing', 'Shanghai', 'Taipei',
   'Khartoum', 'Yangon', 'Damascus', 'Ankara', 'Istanbul', 'Yerevan', 'Baku',
   'Bamako', 'Kabul', 'Islamabad', 'Dhaka', 'Baghdad', 'Tehran', 'Tripoli',
-  
+
   // Regions
   'Donbas', 'Crimea', 'Xinjiang', 'Tibet', 'West Bank', 'Darfur', 'Sahel',
   'Kurdistan', 'Nagorno-Karabakh'
@@ -38,17 +38,17 @@ const MAX_LOCATION_ATTEMPTS = 3;
  */
 export function extractLocationsFromTitle(title) {
   if (!title) return [];
-  
+
   const locations = [];
   const titleLower = title.toLowerCase();
-  
+
   // Check for known location keywords
   LOCATION_KEYWORDS.forEach(location => {
     if (titleLower.includes(location.toLowerCase())) {
       locations.push(location);
     }
   });
-  
+
   // Extract capitalized words that might be locations (stricter heuristic)
   const words = title.split(/\s+/);
   words.forEach(word => {
@@ -68,7 +68,7 @@ export function extractLocationsFromTitle(title) {
       }
     }
   });
-  
+
   // Prioritize known keywords first
   const keywordSet = new Set(LOCATION_KEYWORDS.map(k => k.toLowerCase()));
   const deduped = [...new Set(locations)];
@@ -163,7 +163,7 @@ export async function geocodeLocation(locationName, countryCode) {
  */
 export async function geocodeArticle(article) {
   if (!article?.title) return null;
-  
+
   console.log(`🌍 Geocoding article: ${article.title}`);
 
   // NEW: Check for primary_location from Gemini first
@@ -245,7 +245,7 @@ export async function geocodeArticle(article) {
     addCandidate('West Bank, Palestine');
     addCandidate('West Bank');
   }
-  
+
   let locations = Array.from(candidateSet);
 
   // Try to geocode each location until we find one
@@ -258,7 +258,7 @@ export async function geocodeArticle(article) {
       return coords;
     }
   }
-  
+
   console.log(`❌ No coordinates found for article: ${article.title}`);
   return null;
 }

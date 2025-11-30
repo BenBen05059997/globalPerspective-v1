@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import { geocodeArticle, delay } from '../utils/geocoding';
+import { getTopicCountryCodes } from '../utils/countryMapping';
 
 // Hardcoded country coordinates for mapping
 const COUNTRY_COORDINATES = {
@@ -121,16 +122,16 @@ function MapComponent({ articles, onCountryClick }) {
 
       console.log(`🌍 Starting geocoding for ${articles.length} articles`);
       setIsGeocoding(true);
-      
+
       const geocoded = [];
-      
+
       for (let i = 0; i < articles.length; i++) {
         const article = articles[i];
         console.log(`🔍 Geocoding article ${i + 1}/${articles.length}: ${article.title}`);
-        
+
         try {
           const coords = await geocodeArticle(article);
-          
+
           if (coords) {
             geocoded.push({
               ...article,
@@ -173,7 +174,7 @@ function MapComponent({ articles, onCountryClick }) {
             });
             console.log(`⚠️ Fallback mapping for: ${article.title} -> ${countryCode}${coords ? '' : ' (no coordinates found)'}`);
           }
-          
+
           // Add delay between requests to be respectful to the API
           if (i < articles.length - 1) {
             await delay(100); // 100ms delay between requests
@@ -188,7 +189,7 @@ function MapComponent({ articles, onCountryClick }) {
           });
         }
       }
-      
+
       console.log(`🎯 Geocoding complete: ${geocoded.filter(a => a.geocoded).length}/${geocoded.length} articles successfully geocoded`);
       setGeocodedArticles(geocoded);
       setIsGeocoding(false);
@@ -200,17 +201,17 @@ function MapComponent({ articles, onCountryClick }) {
   useEffect(() => {
     if (map && geocodedArticles.length > 0) {
       console.log('MapComponent: Processing', geocodedArticles.length, 'geocoded articles');
-      
+
       // Clear existing markers
       markers.forEach(marker => marker.setMap(null));
-      
+
       // Group articles by location
       const locationGroups = {};
       geocodedArticles.forEach(article => {
-        const key = article.geocoded 
-          ? `${article.coordinates.lat},${article.coordinates.lng}` 
+        const key = article.geocoded
+          ? `${article.coordinates.lat},${article.coordinates.lng}`
           : article.countryCode;
-        
+
         if (!locationGroups[key]) {
           locationGroups[key] = {
             coordinates: article.coordinates,
@@ -219,7 +220,7 @@ function MapComponent({ articles, onCountryClick }) {
             isGeocoded: article.geocoded
           };
         }
-        
+
         locationGroups[key].articles.push(article);
       });
 
@@ -229,23 +230,23 @@ function MapComponent({ articles, onCountryClick }) {
       Object.values(locationGroups).forEach((group) => {
         if (group.coordinates) {
           const articleCount = group.articles.length;
-          
+
           // Determine marker size and color based on article count (coverage density)
-           let markerSize = 20;
-           let markerColor = 'rgb(100, 200, 255)'; // Default blue for low coverage
-           
-           if (articleCount > 10) {
-             markerSize = 30;
-             markerColor = 'rgb(255, 100, 100)'; // Red for high coverage
-           } else if (articleCount > 5) {
-             markerSize = 25;
-             markerColor = 'rgb(255, 150, 100)'; // Orange for medium coverage
-           }
+          let markerSize = 20;
+          let markerColor = 'rgb(100, 200, 255)'; // Default blue for low coverage
+
+          if (articleCount > 10) {
+            markerSize = 30;
+            markerColor = 'rgb(255, 100, 100)'; // Red for high coverage
+          } else if (articleCount > 5) {
+            markerSize = 25;
+            markerColor = 'rgb(255, 150, 100)'; // Orange for medium coverage
+          }
 
           // Build human-friendly location label using city, province, country name
           const cityName = group.coordinates.cityName || null;
           const provinceName = group.coordinates.provinceName || null;
-          const countryNameLabel = group.coordinates.countryName 
+          const countryNameLabel = group.coordinates.countryName
             || (COUNTRY_COORDINATES[group.countryCode]?.name || group.countryCode);
 
           const locationName = group.isGeocoded
@@ -281,8 +282,8 @@ function MapComponent({ articles, onCountryClick }) {
           });
 
           marker.addListener('click', () => {
-            const primaryArticle = Array.isArray(group.articles) && group.articles.length > 0 
-              ? group.articles[0] 
+            const primaryArticle = Array.isArray(group.articles) && group.articles.length > 0
+              ? group.articles[0]
               : null;
             const sourceUrl = buildNewsSearchUrl(
               primaryArticle?.title,
@@ -374,7 +375,7 @@ function FallbackMapComponent({ articles, onCountryClick }) {
   const countryData = {};
   articles.forEach(article => {
     let countries = [];
-    
+
     // Try to get countries from detected_locations first
     if (article.detected_locations?.countries) {
       countries = article.detected_locations.countries;
@@ -390,7 +391,7 @@ function FallbackMapComponent({ articles, onCountryClick }) {
       countries = article.geographic_analysis.countries;
       console.log('FallbackMapComponent: Found countries from geographic_analysis legacy:', countries.map(c => c.code || c.name));
     }
-    
+
     countries.forEach(country => {
       const countryCode = country.code || country.country_code || country.name?.substring(0, 2).toUpperCase();
       if (countryCode && COUNTRY_COORDINATES[countryCode]) {
@@ -437,23 +438,23 @@ function FallbackMapComponent({ articles, onCountryClick }) {
       >
         {/* Simplified world map outline */}
         <rect width="1000" height="500" fill="#81d4fa" />
-        
+
         {/* Continents (simplified shapes) */}
         {/* North America */}
         <path d="M100 100 L300 80 L320 200 L250 250 L150 220 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-        
+
         {/* South America */}
         <path d="M200 280 L280 270 L300 400 L220 420 L180 350 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-        
+
         {/* Europe */}
         <path d="M450 80 L550 70 L580 150 L500 180 L430 140 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-        
+
         {/* Africa */}
         <path d="M480 200 L580 190 L600 350 L520 380 L460 320 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-        
+
         {/* Asia */}
         <path d="M600 50 L850 40 L880 200 L750 220 L620 180 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-        
+
         {/* Australia */}
         <path d="M750 350 L850 340 L870 400 L780 410 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
 
@@ -462,7 +463,7 @@ function FallbackMapComponent({ articles, onCountryClick }) {
           // Convert lat/lng to SVG coordinates (simplified projection)
           const x = ((data.lng + 180) / 360) * 1000;
           const y = ((90 - data.lat) / 180) * 500;
-          
+
           return (
             <g key={countryCode}>
               <circle
@@ -472,7 +473,7 @@ function FallbackMapComponent({ articles, onCountryClick }) {
                 fill={getMarkerColor(data.count)}
                 stroke="white"
                 strokeWidth="2"
-                style={{ 
+                style={{
                   cursor: 'pointer',
                   opacity: hoveredCountry === countryCode ? 0.8 : 1,
                   transform: hoveredCountry === countryCode ? 'scale(1.2)' : 'scale(1)',
@@ -554,11 +555,11 @@ function FallbackMapComponent({ articles, onCountryClick }) {
                 countryData[selectedCountry]?.name
               );
               return (
-                <div 
-                  key={index} 
-                  style={{ 
-                    marginBottom: '8px', 
-                    paddingBottom: '8px', 
+                <div
+                  key={index}
+                  style={{
+                    marginBottom: '8px',
+                    paddingBottom: '8px',
                     borderBottom: '1px solid #eee',
                     padding: '4px',
                     borderRadius: '4px'
@@ -626,7 +627,7 @@ function FallbackMapComponent({ articles, onCountryClick }) {
             ))}
           </div>
         )}
-        <button 
+        <button
           onClick={async () => {
             try {
               const response = await fetch('http://localhost:8000/api/search?q=news');
@@ -673,24 +674,31 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
   const { topics, loading, error, refetch } = useGeminiTopics();
 
   // Convert AppSync topics to article-like objects for map grouping
-const topicsToArticles = (list) => {
-  if (!Array.isArray(list)) return [];
-  const out = [];
-  list.forEach(t => {
-    const regions = Array.isArray(t.regions) ? t.regions : [];
-    regions.forEach(code => {
-      out.push({
-        title: t.title,
-        primary_location: t.primary_location || null,
-        location_context: t.location_context || null,
-        regions: regions,
-        search_keywords: Array.isArray(t.search_keywords) ? t.search_keywords : [],
-        geographic_analysis: { primary_countries: [{ code }] },
+  const topicsToArticles = (list) => {
+    if (!Array.isArray(list)) return [];
+    const out = [];
+
+    list.forEach(t => {
+      // Get country codes from regions and sources
+      const countryCodes = getTopicCountryCodes(t);
+
+      // Create an article entry for each country
+      countryCodes.forEach(code => {
+        out.push({
+          title: t.title,
+          regions: t.regions || [],
+          sources: t.sources || [],
+          search_keywords: Array.isArray(t.search_keywords) ? t.search_keywords : [],
+          geographic_analysis: {
+            primary_countries: [{ code, name: code }]
+          },
+        });
       });
     });
-  });
-  return out;
-};
+
+    console.log(`📍 Converted ${list.length} topics to ${out.length} map articles`);
+    return out;
+  };
 
   const articles = propArticles && propArticles.length ? propArticles : topicsToArticles(topics);
 
@@ -705,11 +713,11 @@ const topicsToArticles = (list) => {
   const render = (status) => {
     if (status === 'LOADING') {
       return (
-        <div style={{ 
-          width: '100%', 
-          height: '100%', 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: '#f5f5f5'
         }}>
@@ -741,11 +749,11 @@ const topicsToArticles = (list) => {
 
   if (loading) {
     return (
-      <div style={{ 
-        width: '100%', 
-        height: '600px', 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        width: '100%',
+        height: '600px',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#f5f5f5'
       }}>
@@ -767,11 +775,11 @@ const topicsToArticles = (list) => {
 
   if (error) {
     return (
-      <div style={{ 
-        width: '100%', 
-        height: '600px', 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        width: '100%',
+        height: '600px',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#f5f5f5'
       }}>
@@ -852,8 +860,8 @@ const topicsToArticles = (list) => {
           </div>
         </div>
 
-      {/* Google Maps Wrapper */}
-      <Wrapper apiKey={apiKey} render={render} />
+        {/* Google Maps Wrapper */}
+        <Wrapper apiKey={apiKey} render={render} />
       </div>
 
       {/* CSS for loading animation */}

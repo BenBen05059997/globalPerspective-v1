@@ -1,65 +1,124 @@
-import React from 'react';
-import './SummaryDisplay.css'; // Reusing the same CSS styles
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import './AIComponents.css';
 
 /**
  * PredictionDisplay Component
- * Displays AI-generated predictions with interactive features
+ * Displays AI-generated Chain Reaction, Winners/Losers & Watchlist
  */
-const PredictionDisplay = ({ 
-  prediction, 
-  isLoading, 
-  error, 
-  onRetry, 
-  onClear, 
+const PredictionDisplay = ({
+  prediction,
+  isLoading,
+  error,
+  onRetry,
+  onClear,
   isCollapsed = false,
-  onToggleCollapse
+  onToggleCollapse,
+  lastActive
 }) => {
+  const containerRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('chain_reaction'); // 'chain_reaction', 'winners_losers', 'watchlist'
 
-  const renderContent = (text) => {
-    if (!text) return null;
-    // Normalize: strip markdown markers, stray '#', and collapse whitespace
-    let normalized = String(text)
-      .replace(/\*\*(.+?)\*\*/g, '$1')
-      .replace(/^\s*[-*]\s+/gm, '')
-      .replace(/^\s*#{1,6}\s+/gm, '')
-      .replace(/---/g, '')
-      .replace(/#/g, '')
-      .replace(/\r\n/g, '\n')
-      .trim();
+  // Auto-scroll logic
+  useEffect(() => {
+    if ((isLoading || ((prediction || error) && !isCollapsed)) && containerRef.current) {
+      setTimeout(() => {
+        containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [isLoading, prediction, error, isCollapsed, lastActive]);
 
-    // Join lines like "1.\n\nSocietal..." into a single paragraph
-    normalized = normalized.replace(/(\d+\.)\s*\n+/g, '$1 ');
-    // Collapse excessive blank lines
-    normalized = normalized.replace(/\n{3,}/g, '\n\n');
+  // Parse the raw markdown into structured sections
+  const parsedContent = useMemo(() => {
+    if (!prediction?.content) return null;
 
-    // Merge spaced abbreviations like "e. g." -> "e.g." and "U. S." -> "U.S."
-    normalized = normalized.replace(/\b([A-Za-z])\.\s*([A-Za-z])\./g, '$1.$2.');
+    const text = prediction.content;
+    const sections = {
+      chain_reaction: [],
+      winners_losers: [],
+      watchlist: [],
+      score: null
+    };
 
-    const paragraphs = normalized
-      .split(/\n{2,}/)
-      .map(part => part.trim())
-      .filter(Boolean);
+    let currentSection = 'chain_reaction';
+    const lines = text.split('\n');
 
-    return paragraphs.map((paragraph, idx) => (
-      <p key={`pred-part-${idx}`} style={{ margin: '6px 0' }}>{paragraph}</p>
-    ));
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+
+      // Detect Section Headers to switch tabs
+      const lower = trimmed.toLowerCase();
+      if (lower.includes('chain reaction') || lower.includes('consequences')) {
+        currentSection = 'chain_reaction';
+      } else if (lower.includes('winners') || lower.includes('losers') || lower.includes('benefit')) {
+        currentSection = 'winners_losers';
+      } else if (lower.includes('watchlist') || lower.includes('signals') || lower.includes('future events')) {
+        currentSection = 'watchlist';
+      }
+
+      // Add line to current section
+      sections[currentSection].push(trimmed);
+    });
+
+    return sections;
+  }, [prediction]);
+
+  // Simple Markdown Renderer
+  const renderMarkdown = (lines) => {
+    return lines.map((line, idx) => {
+      // Header ###
+      if (line.startsWith('###')) {
+        return <h4 key={idx} style={{ margin: '16px 0 8px', color: '#111827', fontSize: '1.05em', fontWeight: 600 }}>{line.replace(/###/g, '').trim()}</h4>;
+      }
+      // Bold **text**
+      const processBold = (text) => {
+        const parts = text.split(/(\*\*.*?\*\*)/);
+        return parts.map((part, i) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={i} style={{ color: '#1f2937' }}>{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+      };
+
+      // List Item -
+      if (line.startsWith('- ') || line.startsWith('• ')) {
+        return (
+          <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '8px', paddingLeft: '4px' }}>
+            <span style={{ color: 'var(--ai-accent-predict)', fontSize: '1.2em', lineHeight: '1' }}>•</span>
+            <span style={{ lineHeight: '1.6', color: '#4b5563' }}>{processBold(line.substring(2))}</span>
+          </div>
+        );
+      }
+
+      // Arrow ➔ visualization
+      if (line.includes('➔')) {
+        return (
+          <div key={idx} style={{
+            background: 'rgba(139, 92, 246, 0.05)',
+            borderLeft: '3px solid var(--ai-accent-predict)',
+            padding: '12px',
+            borderRadius: '0 8px 8px 0',
+            margin: '8px 0',
+            color: '#374151',
+            lineHeight: '1.6'
+          }}>
+            {processBold(line)}
+          </div>
+        );
+      }
+
+      // Standard Paragraph
+      return <p key={idx} style={{ margin: '0 0 12px', lineHeight: '1.6', color: '#4b5563' }}>{processBold(line)}</p>;
+    });
   };
 
   if (isLoading) {
     return (
-      <div className="summary-display loading">
-        <div className="summary-header">
-          <div className="summary-icon">🔮</div>
-          <div className="summary-title">Generating AI Prediction...</div>
-        </div>
-        <div className="loading-content">
-          <div className="loading-spinner"></div>
-          <div className="loading-text">
-            <div className="loading-dots">
-              <span>.</span><span>.</span><span>.</span>
-            </div>
-            <p>Our AI is analyzing potential impacts and outcomes</p>
-          </div>
+      <div ref={containerRef} className="ai-result-card" style={{ padding: '24px', textAlign: 'center' }}>
+        <div className="ai-spinner" style={{ position: 'relative', left: 'auto', margin: '0 auto 12px', width: '24px', height: '24px', color: 'var(--ai-accent-predict)' }}></div>
+        <div className="loading-text">
+          <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>Mapping chain reactions...</p>
         </div>
       </div>
     );
@@ -67,106 +126,78 @@ const PredictionDisplay = ({
 
   if (error) {
     return (
-      <div className="summary-display error">
-        <div className="summary-header">
-          <div className="summary-icon error">⚠️</div>
-          <div className="summary-title">Prediction Generation Failed</div>
-        </div>
-        <div className="error-content">
-          <p className="error-message">{error}</p>
-          <div className="error-actions">
-            <button 
-              className="retry-button"
-              onClick={onRetry}
-              title="Try generating the prediction again"
-            >
-              🔄 Retry
-            </button>
-            <button 
-              className="clear-button"
-              onClick={onClear}
-              title="Clear this error"
-            >
-              ✕ Clear
-            </button>
+      <div ref={containerRef} className="ai-result-card" style={{ borderColor: '#fca5a5' }}>
+        <div className="ai-result-header" style={{ background: '#fef2f2' }}>
+          <div className="ai-result-title" style={{ color: '#991b1b' }}>Prediction Failed</div>
+          <div className="ai-result-actions">
+            <button className="ai-btn" onClick={onRetry} style={{ height: '28px', fontSize: '12px', background: '#fff' }}>Retry</button>
+            <button className="ai-btn" onClick={onClear} style={{ height: '28px', fontSize: '12px', background: '#fff' }}>Close</button>
           </div>
+        </div>
+        <div className="ai-result-content">
+          <p style={{ color: '#b91c1c', margin: 0 }}>{error}</p>
         </div>
       </div>
     );
   }
 
-  if (!prediction) {
-    return null;
-  }
-
-  const formatGenerationTime = (ms) => {
-    if (ms == null) return '';
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(1)}s`;
-  };
-
-  const formatTimestamp = (timestamp) => {
-    return timestamp ? new Date(timestamp).toLocaleString() : '';
-  };
-
-  // Removed service badge per UI request
-
-  // Simplified display: only show generated text
+  if (!prediction) return null;
 
   return (
-    <div className={`summary-display success ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="summary-header" onClick={onToggleCollapse}>
-        <div className="summary-icon">🔮</div>
-        <div className="summary-title" style={{ fontWeight: 700 }}>AI Prediction</div>
-        <div className="summary-badges">
-          <span className="word-count-badge" title="Word count">
-            {String(prediction.content || '').split(' ').length} words
-          </span>
+    <div ref={containerRef} className="ai-result-card">
+      {/* Header */}
+      <div className="ai-result-header" onClick={onToggleCollapse} style={{ cursor: 'pointer' }}>
+        <div className="ai-result-title" style={{ color: 'var(--ai-accent-predict)' }}>
+          Chain Reaction Prediction
         </div>
-        <div className="collapse-toggle">
-          {isCollapsed ? '▼' : '▲'}
+        <div style={{ color: '#9ca3af', fontSize: '12px' }}>
+          {isCollapsed ? 'Show' : 'Hide'}
         </div>
       </div>
 
-      {!isCollapsed && (
-        <div className="summary-content">
-          <div className="summary-text" style={{ lineHeight: '1.6' }}>
-            {renderContent(prediction.content)}
-          </div>
-          {/* Bottom fold button to collapse the section */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+      {!isCollapsed && parsedContent && (
+        <>
+          {/* Tabs */}
+          <div className="ai-tabs">
             <button
-              onClick={onToggleCollapse}
-              title="Fold this section"
-              style={{
-                padding: '6px 12px',
-                border: '1px solid #dee2e6',
-                borderRadius: '6px',
-                background: 'white',
-                color: '#495057',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 500
-              }}
+              onClick={() => setActiveTab('chain_reaction')}
+              className={`ai-tab ${activeTab === 'chain_reaction' ? 'active' : ''}`}
+              style={{ width: '33.3%' }}
             >
-              ▲ Fold
+              Chain Reaction
+            </button>
+            <button
+              onClick={() => setActiveTab('winners_losers')}
+              className={`ai-tab ${activeTab === 'winners_losers' ? 'active' : ''}`}
+              style={{ width: '33.3%' }}
+            >
+              Winners & Losers
+            </button>
+            <button
+              onClick={() => setActiveTab('watchlist')}
+              className={`ai-tab ${activeTab === 'watchlist' ? 'active' : ''}`}
+              style={{ width: '33.3%' }}
+            >
+              Watchlist
             </button>
           </div>
-          <div className="summary-footer">
-            <div className="summary-stats">
-              {prediction.generationTime != null && (
-                <span className="generation-time" title="Time taken to generate">
-                  ⚡ {formatGenerationTime(prediction.generationTime)}
-                </span>
-              )}
-              {prediction.timestamp && (
-                <span className="timestamp" title="Generated at">
-                  🕒 {formatTimestamp(prediction.timestamp)}
-                </span>
-              )}
+
+          {/* Content Area */}
+          <div className="ai-result-content">
+            {renderMarkdown(parsedContent[activeTab])}
+            {parsedContent[activeTab].length === 0 && (
+              <p style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>
+                No prediction data for this section.
+              </p>
+            )}
+            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', color: '#9ca3af' }}>AI Prediction Model v2.5</span>
+              <div className="ai-result-actions">
+                <div className="ai-action-icon" onClick={onClear} title="Close">✕</div>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

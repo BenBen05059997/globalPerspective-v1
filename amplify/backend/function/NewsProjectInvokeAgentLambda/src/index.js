@@ -58,6 +58,10 @@ exports.handler = async (event) => {
         const summary = await generateAndStore(topic, 'summary');
         outputs.push(summary);
       }
+      if (action === 'trace_cause') {
+        const traceCause = await generateAndStore(topic, 'trace_cause');
+        outputs.push(traceCause);
+      }
       if (action === 'prediction' || action === 'both') {
         const prediction = await generateAndStore(topic, 'prediction');
         outputs.push(prediction);
@@ -93,9 +97,9 @@ function parseEvent(event) {
 }
 
 function normalizeAction(payload = {}) {
+  const ordered = ['summary', 'prediction', 'trace_cause', 'both'];
   const rawAction = (payload.action || payload.mode || 'both').toString().toLowerCase();
-  const allowed = ['summary', 'prediction', 'both'];
-  const action = allowed.includes(rawAction) ? rawAction : 'both';
+  const action = ordered.includes(rawAction) ? rawAction : 'both';
 
   return {
     action,
@@ -152,6 +156,7 @@ async function loadTopics() {
       regions: Array.isArray(t.regions) ? t.regions : [],
       primary_location: t.primary_location,
       location_context: t.location_context,
+      sources: t.sources || [],
     };
   });
 }
@@ -165,29 +170,63 @@ function buildSummaryPrompt(topic) {
   ].join('\n\n');
 }
 
-function buildPredictionPrompt(topic) {
+function buildTraceCausePrompt(topic) {
+  const snippets = topic.sources
+    ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
+    : 'No article snippets available.';
+
   return [
-    'You are an international affairs analyst creating a forward-looking brief for newsroom editors.',
-    `Headline: ${topic.title || 'Untitled Topic'}`,
-    `Context from discovery pipeline: ${topic.description || 'No description provided.'}`,
-    'Tasks:',
-    '1. Summarize the real-world backdrop from current reporting (reference specific regions, key actors, or events tied to this headline).',
-    '2. Provide THREE forecast scenarios (Optimistic, Base Case, Risk Case). For each include:',
-    '   • Likelihood (High/Medium/Low)',
-    '   • Key triggers to watch (named actors, dates, negotiations, sanctions, etc.)',
-    '   • Expected societal, economic, and political outcomes for the directly affected region and any global spillover.',
-    '3. Conclude with a “Watchlist” of 2-3 concrete signals (e.g., UN votes, ceasefire compliance metrics, commodity price levels) reporters should monitor over the next 30/90 days.',
-    'Guardrails:',
-    '- Ground every statement in plausible world conditions; name relevant countries, blocs, alliances, or institutions when discussing impacts.',
-    '- Avoid generic textbook language—tie predictions to the headline and present-day dynamics.',
-    '- Keep the full response under 220 words; use clear sub-headings for each section.',
+    'You are a "Council of Experts" analyzing this news topic. Your goal is to provide deep context and balanced perspectives, filtering out noise.',
+    `Topic: ${topic.title || 'Untitled'}`,
+    `Description: ${topic.description || ''}`,
+    '',
+    'Refence these Article Snippets for your analysis:',
+    snippets,
+    '',
+    'Structure your response in markdown:',
+    '### 1. The Context (How We Got Here)',
+    '- **Historical Analogy**: Briefly compare this to a similar historical event to explain the stakes.',
+    '- **The Origin**: In 1 sentence, explain when/why this issue started (before today).',
+    '- **Timeline**: Provide a very brief timeline of key events leading to this moment.',
+    '',
+    '### 2. Perspective Balancing (The "Echo Chamber" Breaker)',
+    '- **Dominant Narrative**: What is the main angle reported by major global outlets?',
+    '- **Local/Alternative Perspective**: Based on the snippets or your knowledge, what is the view from the affected region or opposing side? Identify the "Silent Perspective" if missing.',
+    '- **Bias Note**: Explicitly label any clear geopolitical tilt in the sources.',
+    '',
+    '### 3. The "So What?" Verdict',
+    '- **Impact Score (1/10)**: Rate specific Criteria: Human Impact, Economic Reach, Geopolitical Stability.',
+    '- **Verdict**: Is this "True Signal" that shapes the world, or just "Noise"? Explain why in 1 sentence.',
   ].join('\n\n');
 }
 
+function buildPredictionPrompt(topic) {
+  return [
+    'You are a Global Systems Analyst. Your job is to map the "Chain Reaction" of this event.',
+    `Topic: ${topic.title}`,
+    `Premise: ${topic.description}`,
+    '',
+    'Tasks:',
+    '1. **Chain Reaction Map**: Visualize the consequences in a logical flow:',
+    '   `Event ➔ Immediate Effect ➔ 2nd Order Effect ➔ Global Consequence`',
+    '   (Example: "Drought in Panama ➔ Canal traffic slows ➔ Shipping costs rise ➔ Inflation in US/Asia markets")',
+    '',
+    '2. **Winners & Losers**: Who benefits from this connection? Who suffers?',
+    '   - **Winners**: (Countries, Industries, or Leaders)',
+    '   - **Losers**: (Populations, Economies, or Alliances)',
+    '',
+    '3. **Watchlist Signals**: List 2 concrete future events (with approx timeframe) that would confirm this chain reaction is happening.',
+  ].join('\n');
+}
+
 async function generateAndStore(topic, kind) {
-  const prompt = kind === 'summary' ? buildSummaryPrompt(topic) : buildPredictionPrompt(topic);
+  let prompt;
+  if (kind === 'summary') prompt = buildSummaryPrompt(topic);
+  else if (kind === 'trace_cause') prompt = buildTraceCausePrompt(topic);
+  else prompt = buildPredictionPrompt(topic);
+
   const response = await invokeOpenAI(prompt);
-  const ttlSeconds = kind === 'summary' ? SUMMARY_TTL_SECONDS : PREDICTION_TTL_SECONDS;
+  const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
   const item = await writeCache(topic, kind, response, ttlSeconds);
   return item;
 }
@@ -275,7 +314,13 @@ async function readCache(topic, action) {
   }
   const pk = `${PK_PREFIX}${topic.id}`;
   const sks =
-    action === 'prediction' ? [PREDICTION_SK] : action === 'summary' ? [SUMMARY_SK] : [SUMMARY_SK, PREDICTION_SK];
+    action === 'prediction'
+      ? [PREDICTION_SK]
+      : action === 'trace_cause'
+        ? ['TRACE_CAUSE']
+        : action === 'summary'
+          ? [SUMMARY_SK]
+          : [SUMMARY_SK, PREDICTION_SK, 'TRACE_CAUSE'];
 
   const results = [];
   for (const sk of sks) {
@@ -298,7 +343,9 @@ async function writeCache(topic, kind, response, ttlSeconds) {
   }
 
   const pk = `${PK_PREFIX}${topic.id}`;
-  const sk = kind === 'prediction' ? PREDICTION_SK : SUMMARY_SK;
+  let sk = SUMMARY_SK;
+  if (kind === 'prediction') sk = PREDICTION_SK;
+  else if (kind === 'trace_cause') sk = 'TRACE_CAUSE';
   const ttl = Math.floor(Date.now() / 1000) + ttlSeconds;
 
   const item = {

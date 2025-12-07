@@ -61,3 +61,7 @@ export async function fetchSummaryCache(topicId) {
 export async function fetchPredictionCache(topicId) {
   return proxyAction('prediction', { topicId });
 }
+
+export async function fetchTraceCauseCache(topicId) {
+  return proxyAction('trace_cause', { topicId });
+}

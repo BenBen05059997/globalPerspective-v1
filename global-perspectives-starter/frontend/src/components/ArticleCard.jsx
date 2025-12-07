@@ -7,7 +7,7 @@ import PredictionDisplay from './PredictionDisplay';
 function ArticleCard({ article }) {
   const [isAISummaryCollapsed, setIsAISummaryCollapsed] = useState(true);
   const [isAIPredictionCollapsed, setIsAIPredictionCollapsed] = useState(true);
-  
+
   // Initialize the summary hook
   const {
     generateSummary,
@@ -34,7 +34,7 @@ function ArticleCard({ article }) {
     try {
       // Use 'bedrock' as the default service to connect to Bedrock API
       const selectedService = 'bedrock';
-      
+
       await generateSummary(articleId, {
         title: article.title,
         description: article.description,
@@ -112,7 +112,7 @@ function ArticleCard({ article }) {
       const date = new Date(dateString);
       const now = new Date();
       const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-      
+
       if (diffInHours < 1) {
         return 'Just now';
       } else if (diffInHours < 24) {
@@ -144,9 +144,9 @@ function ArticleCard({ article }) {
     // Mock credibility scoring based on source name
     const highCredibility = ['reuters', 'bbc', 'ap news', 'associated press', 'npr', 'pbs'];
     const mediumCredibility = ['cnn', 'fox news', 'nbc', 'abc', 'cbs', 'the guardian'];
-    
+
     const sourceName = source?.name?.toLowerCase() || '';
-    
+
     if (highCredibility.some(name => sourceName.includes(name))) {
       return { score: 'high', color: '#10b981', icon: '🟢' };
     } else if (mediumCredibility.some(name => sourceName.includes(name))) {
@@ -190,43 +190,43 @@ function ArticleCard({ article }) {
   const credibility = getCredibilityScore(source);
 
   return (
-    <div className="card" style={{ 
+    <div className="card" style={{
       marginBottom: '1rem',
       transition: 'all 0.2s ease',
       cursor: 'pointer'
     }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = 'translateY(-2px)';
-      e.currentTarget.style.boxShadow = '0 8px 16px var(--shadow)';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = 'translateY(0)';
-      e.currentTarget.style.boxShadow = '0 2px 4px var(--shadow)';
-    }}>
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 8px 16px var(--shadow)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 2px 4px var(--shadow)';
+      }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {/* Header with Source and Credibility */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'flex-start',
           gap: '0.5rem'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-            <span style={{ 
-              fontWeight: '600', 
+            <span style={{
+              fontWeight: '600',
               fontSize: '0.85rem',
               color: 'var(--text-primary)'
             }}>
               {source?.name || 'Unknown Source'}
             </span>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '0.25rem',
               fontSize: '0.75rem'
             }}>
               <span>{credibility.icon}</span>
-              <span style={{ 
+              <span style={{
                 color: credibility.color,
                 fontWeight: '500',
                 textTransform: 'capitalize'
@@ -235,10 +235,10 @@ function ArticleCard({ article }) {
               </span>
             </div>
           </div>
-          
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
             gap: '0.5rem',
             fontSize: '0.8rem',
             color: 'var(--text-muted)'
@@ -249,21 +249,21 @@ function ArticleCard({ article }) {
 
         {/* Title */}
         {title && (
-          <h3 style={{ 
-            margin: 0, 
-            fontSize: '1.2rem', 
+          <h3 style={{
+            margin: 0,
+            fontSize: '1.2rem',
             fontWeight: '700',
             lineHeight: '1.3',
             letterSpacing: '-0.01em'
           }}>
             {url ? (
-              <a 
-                href={url} 
-                target="_blank" 
+              <a
+                href={url}
+                target="_blank"
                 rel="noopener noreferrer"
-                style={{ 
-                  color: 'var(--text-primary)', 
-                  textDecoration: 'none' 
+                style={{
+                  color: 'var(--text-primary)',
+                  textDecoration: 'none'
                 }}
                 onMouseEnter={(e) => e.target.style.color = 'var(--accent-color)'}
                 onMouseLeave={(e) => e.target.style.color = 'var(--text-primary)'}
@@ -278,9 +278,9 @@ function ArticleCard({ article }) {
 
         {/* Description */}
         {description && (
-          <p style={{ 
-            margin: 0, 
-            color: 'var(--text-secondary)', 
+          <p style={{
+            margin: 0,
+            color: 'var(--text-secondary)',
             lineHeight: '1.6',
             fontSize: '0.95rem'
           }}>
@@ -311,7 +311,7 @@ function ArticleCard({ article }) {
             <span>🤖</span>
             <span>AI Features</span>
           </div>
-          
+
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -463,17 +463,17 @@ function ArticleCard({ article }) {
               marginBottom: '0.5rem'
             }}>
               <span style={{ fontSize: '0.8rem' }}>🤖</span>
-              <span style={{ 
-                fontSize: '0.8rem', 
+              <span style={{
+                fontSize: '0.8rem',
                 fontWeight: '600',
                 color: 'var(--accent-color)'
               }}>
                 AI Summary
               </span>
             </div>
-            <p style={{ 
-              margin: 0, 
-              fontSize: '0.9rem', 
+            <p style={{
+              margin: 0,
+              fontSize: '0.9rem',
               lineHeight: '1.5',
               color: 'var(--text-secondary)'
             }}>
@@ -483,9 +483,9 @@ function ArticleCard({ article }) {
         )}
 
         {/* Footer with Tags and Metadata */}
-        <div style={{ 
-          display: 'flex', 
-          flexWrap: 'wrap', 
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: '0.75rem',
@@ -493,15 +493,15 @@ function ArticleCard({ article }) {
           borderTop: '1px solid var(--border-color)'
         }}>
           {/* Left side - Classification and Country */}
-          <div style={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            gap: '0.5rem', 
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
             alignItems: 'center'
           }}>
             {/* Classification Badge */}
             {classification && (
-              <span 
+              <span
                 style={{
                   backgroundColor: getClassificationColor(classification),
                   color: 'white',
@@ -519,7 +519,7 @@ function ArticleCard({ article }) {
 
             {/* Country */}
             {country && (
-              <span style={{ 
+              <span style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.25rem',
@@ -538,9 +538,9 @@ function ArticleCard({ article }) {
 
           {/* Right side - Read More Link */}
           {url && (
-            <a 
-              href={url} 
-              target="_blank" 
+            <a
+              href={url}
+              target="_blank"
               rel="noopener noreferrer"
               style={{
                 fontSize: '0.8rem',

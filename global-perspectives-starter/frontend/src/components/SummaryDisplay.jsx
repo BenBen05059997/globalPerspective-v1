@@ -1,88 +1,33 @@
-import React from 'react';
-import './SummaryDisplay.css';
+import React, { useEffect, useRef } from 'react';
+import './AIComponents.css';
 
 /**
  * SummaryDisplay Component
- * Displays AI-generated summaries with interactive features
+ * Displays AI-generated summaries with consistent Premium UI
  */
-const SummaryDisplay = ({ 
-  summary, 
-  isLoading, 
-  error, 
-  onRetry, 
-  onClear, 
+const SummaryDisplay = ({
+  summary,
+  isLoading,
+  error,
+  onRetry,
+  onClear,
   isCollapsed = false,
-  onToggleCollapse 
+  onToggleCollapse,
+  lastActive
 }) => {
-  // Simplified UI: remove details, export, and clear buttons
+  const containerRef = useRef(null);
 
-  if (isLoading) {
-    return (
-      <div className="summary-display loading">
-        <div className="summary-header">
-          <div className="summary-icon">🤖</div>
-          <div className="summary-title">Generating AI Summary...</div>
-        </div>
-        <div className="loading-content">
-          <div className="loading-spinner"></div>
-          <div className="loading-text">
-            <div className="loading-dots">
-              <span>.</span><span>.</span><span>.</span>
-            </div>
-            <p>Our AI is analyzing the article content</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Auto-scroll logic
+  useEffect(() => {
+    // Scroll if loading, or if we have content/error and it is expanded
+    if ((isLoading || ((summary || error) && !isCollapsed)) && containerRef.current) {
+      setTimeout(() => {
+        containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [isLoading, summary, error, isCollapsed, lastActive]);
 
-  if (error) {
-    return (
-      <div className="summary-display error">
-        <div className="summary-header">
-          <div className="summary-icon error">⚠️</div>
-          <div className="summary-title">Summary Generation Failed</div>
-        </div>
-        <div className="error-content">
-          <p className="error-message">{error}</p>
-          <div className="error-actions">
-            <button 
-              className="retry-button"
-              onClick={onRetry}
-              title="Try generating the summary again"
-            >
-              🔄 Retry
-            </button>
-            <button 
-              className="clear-button"
-              onClick={onClear}
-              title="Clear this error"
-            >
-              ✕ Clear
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!summary) {
-    return null;
-  }
-
-  const formatGenerationTime = (ms) => {
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(1)}s`;
-  };
-
-  const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
-  };
-
-  // Removed service badge per UI request
-
-  // Removed export handler and metadata toggles per UI simplification
-
+  // Simple Bullet Renderer
   const renderContent = (text) => {
     if (!text) return null;
     let normalized = String(text)
@@ -97,64 +42,72 @@ const SummaryDisplay = ({
       .filter(Boolean);
 
     if (parts.length <= 1) {
-      return <p style={{ margin: '6px 0' }}>{normalized}</p>;
+      return (
+        <p style={{ margin: '0 0 12px', lineHeight: '1.6', color: '#4b5563' }}>
+          {normalized}
+        </p>
+      );
     }
 
     return parts.map((paragraph, idx) => (
-      <p key={`summary-part-${idx}`} style={{ margin: '6px 0' }}>
-        {paragraph}
-      </p>
+      <div key={`summary-part-${idx}`} style={{ display: 'flex', gap: '10px', marginBottom: '8px', paddingLeft: '4px' }}>
+        <span style={{ color: 'var(--ai-accent-summary)', fontSize: '1.2em', lineHeight: '1' }}>•</span>
+        <span style={{ lineHeight: '1.6', color: '#4b5563' }}>{paragraph}</span>
+      </div>
     ));
   };
 
-  return (
-    <div className={`summary-display success ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="summary-header" onClick={onToggleCollapse}>
-        <div className="summary-icon">✨</div>
-        <div className="summary-title" style={{ fontWeight: 700 }}>AI Summary</div>
-        <div className="summary-badges">
-          <span className="word-count-badge" title="Word count">
-            {summary.wordCount} words
-          </span>
+  if (isLoading) {
+    return (
+      <div ref={containerRef} className="ai-result-card" style={{ padding: '24px', textAlign: 'center' }}>
+        <div className="ai-spinner" style={{ position: 'relative', left: 'auto', margin: '0 auto 12px', width: '24px', height: '24px', color: 'var(--ai-accent-summary)' }}></div>
+        <div className="loading-text">
+          <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>Generating concise summary...</p>
         </div>
-        <div className="collapse-toggle">
-          {isCollapsed ? '▼' : '▲'}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div ref={containerRef} className="ai-result-card" style={{ borderColor: '#fca5a5' }}>
+        <div className="ai-result-header" style={{ background: '#fef2f2' }}>
+          <div className="ai-result-title" style={{ color: '#991b1b' }}>Summary Failed</div>
+          <div className="ai-result-actions">
+            <button className="ai-btn" onClick={onRetry} style={{ height: '28px', fontSize: '12px', background: '#fff' }}>Retry</button>
+            <button className="ai-btn" onClick={onClear} style={{ height: '28px', fontSize: '12px', background: '#fff' }}>Close</button>
+          </div>
+        </div>
+        <div className="ai-result-content">
+          <p style={{ color: '#b91c1c', margin: 0 }}>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!summary) return null;
+
+  return (
+    <div ref={containerRef} className="ai-result-card">
+      <div className="ai-result-header" onClick={onToggleCollapse} style={{ cursor: 'pointer' }}>
+        <div className="ai-result-title" style={{ color: 'var(--ai-accent-summary)' }}>
+          AI Key Takeaways
+        </div>
+        <div style={{ color: '#9ca3af', fontSize: '12px' }}>
+          {isCollapsed ? 'Show' : 'Hide'}
         </div>
       </div>
 
       {!isCollapsed && (
-        <div className="summary-content">
+        <div className="ai-result-content">
           <div className="summary-text">
             {renderContent(summary.content)}
           </div>
 
-          <div className="summary-footer">
-            <div className="summary-stats">
-              <span className="generation-time" title="Time taken to generate">
-                ⚡ {formatGenerationTime(summary.generationTime)}
-              </span>
-              <span className="timestamp" title="Generated at">
-                🕒 {formatTimestamp(summary.timestamp)}
-              </span>
-            </div>
-            {/* Bottom fold button to collapse the section */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-              <button
-                onClick={onToggleCollapse}
-                title="Fold this section"
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '6px',
-                  background: 'white',
-                  color: '#495057',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 500
-                }}
-              >
-                ▲ Fold
-              </button>
+          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: '#9ca3af' }}>Fast-Track Summary v1.0</span>
+            <div className="ai-result-actions">
+              <div className="ai-action-icon" onClick={onClear} title="Close">✕</div>
             </div>
           </div>
         </div>

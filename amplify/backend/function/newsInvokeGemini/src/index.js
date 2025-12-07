@@ -66,28 +66,55 @@ async function fetchBraveNews(limit) {
   }
 
   try {
-    const count = Math.min(100, limit * 3); // Fetch 3x articles to give Gemini more material
-    const url = `${BRAVE_NEWS_ENDPOINT}?q=global+news+trending&count=${count}&freshness=pd`;
+    // Multi-query strategy for global news diversity (industry best practice)
+    // Instead of one generic query, use multiple targeted queries to get impactful stories worldwide
+    const queries = [
+      'breaking news (conflict OR war OR attack OR violence)',  // Conflicts and security
+      'breaking news (earthquake OR disaster OR fire OR flood OR emergency)', // Natural disasters
+      'breaking news (politics OR election OR government OR protest OR coup)', // Political events
+      'breaking news (technology OR AI OR innovation OR space OR science)', // Tech & science
+      'breaking news (economy OR market OR crisis OR inflation OR trade)', // Economic events
+    ];
 
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'Accept-Encoding': 'gzip',
-        'X-Subscription-Token': BRAVE_API_KEY,
-      },
-    });
+    const articlesPerQuery = Math.ceil((limit * 3) / queries.length);
+    const allArticles = [];
 
-    if (!response.ok) {
-      console.error(`Brave API error: ${response.status} ${response.statusText}`);
-      return null;
+    // Fetch from each query to ensure topic diversity
+    for (const query of queries) {
+      try {
+        const url = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(query)}&count=${articlesPerQuery}&freshness=pd&search_lang=en`;
+
+        const response = await fetch(url, {
+          headers: {
+            'Accept': 'application/json',
+            'Accept-Encoding': 'gzip',
+            'X-Subscription-Token': BRAVE_API_KEY,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const articles = data?.results || [];
+          allArticles.push(...articles);
+          console.log(`Brave Search query "${query.substring(0, 30)}..." returned ${articles.length} articles`);
+        }
+      } catch (queryError) {
+        console.warn(`Failed to fetch for query "${query.substring(0, 30)}...":`, queryError.message);
+        // Continue with other queries even if one fails
+      }
     }
 
-    const data = await response.json();
-    const articles = data?.results || [];
+    // Deduplicate by URL
+    const seen = new Set();
+    const uniqueArticles = allArticles.filter(article => {
+      if (!article.url || seen.has(article.url)) return false;
+      seen.add(article.url);
+      return true;
+    });
 
-    console.log(`Brave Search returned ${articles.length} news articles`);
+    console.log(`Brave Search returned ${uniqueArticles.length} unique articles from ${queries.length} queries`);
 
-    return articles.map((article) => ({
+    return uniqueArticles.map((article) => ({
       title: article.title || '',
       url: article.url || '',
       description: article.description || '',
@@ -182,8 +209,24 @@ exports.handler = async (event) => {
         '- title: string (concise topic title summarizing related articles)',
         '- category: string (e.g., politics, economy, technology, environment, security, health, culture)',
         '- search_keywords: array of 3-6 short keywords',
-        '- regions: array of affected regions or countries',
-        '- sources: array of objects with {title, url, source, age} from the articles above that relate to this topic',
+        '- regions: array of country names (READ the article title and description to extract which countries are mentioned)',
+        '- sources: array of objects with {title, url, source, age, snippet} from the articles above that relate to this topic. "snippet" MUST be a relevant 1-2 sentence quote or summary from the article content to provide context.',
+        '',
+        'CRITICAL INSTRUCTIONS for regions field:',
+        '1. READ each article carefully and extract country names mentioned in the title or description',
+        '2. Use specific country names (e.g., "United States", "China", "Brazil", "Nigeria", "Saudi Arabia")',
+        '3. If an article mentions multiple countries, list ALL of them',
+        '4. Only use "Multiple regions" if the article truly affects 5+ countries and doesn\'t mention specific ones',
+        '5. Prioritize stories from underreported regions: Africa, Middle East, South America, Southeast Asia',
+        '',
+        'GEOGRAPHIC BALANCE REQUIREMENT:',
+        'Ensure diverse coverage across all world regions:',
+        '- Asia-Pacific (China, Japan, India, Indonesia, Australia, etc.)',
+        '- Middle East (Israel, Palestine, Saudi Arabia, Iran, Turkey, UAE, etc.)',
+        '- Africa (Nigeria, Kenya, South Africa, Egypt, Ethiopia, etc.)',
+        '- Europe (Ukraine, Russia, UK, France, Germany, etc.)',
+        '- North America (United States, Canada, Mexico)',
+        '- South America (Brazil, Argentina, Venezuela, Chile, Colombia, etc.)',
         '',
         'Group related articles into the same topic. Include all relevant source articles for each topic.',
       ].join('\n');

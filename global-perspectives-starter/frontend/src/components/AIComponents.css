@@ -1,0 +1,197 @@
+/* AIComponents.css - Premium AI Toolbar & Insights */
+
+:root {
+  --ai-glass-bg: rgba(255, 255, 255, 0.8);
+  --ai-glass-border: rgba(255, 255, 255, 0.5);
+  --ai-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --ai-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  
+  --ai-accent-summary: #10b981; /* Emerald */
+  --ai-accent-predict: #8b5cf6; /* Violet */
+  --ai-accent-trace: #3b82f6;   /* Royal Blue */
+}
+
+/* --- Toolbar Container --- */
+.ai-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--ai-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 999px; /* Pill shape */
+  box-shadow: var(--ai-shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.ai-toolbar:hover {
+  box-shadow: var(--ai-shadow-md);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* --- AI Buttons --- */
+.ai-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ai-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Button Variants */
+.ai-btn-summary:hover, .ai-btn-summary.active {
+  color: var(--ai-accent-summary);
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.ai-btn-predict:hover, .ai-btn-predict.active {
+  color: var(--ai-accent-predict);
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.ai-btn-trace:hover, .ai-btn-trace.active {
+  color: var(--ai-accent-trace);
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Loading State */
+.ai-btn.loading {
+  padding-left: 32px; /* Make room for spinner */
+  color: #9ca3af;
+}
+
+.ai-spinner {
+  position: absolute;
+  left: 10px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ai-spin 0.8s linear infinite;
+}
+
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Result Cards --- */
+.ai-result-card {
+  margin-top: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  box-shadow: var(--ai-shadow-md);
+  overflow: hidden;
+  animation: ai-slide-down 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ai-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  background: rgba(250, 250, 250, 0.5);
+}
+
+.ai-result-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-result-content {
+  padding: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.ai-result-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-action-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-action-icon:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #111827;
+}
+
+/* --- Tabs (for Trace Cause) --- */
+.ai-tabs {
+  display: flex;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+}
+
+.ai-tab {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-tab:hover {
+  color: #111827;
+}
+
+.ai-tab.active {
+  color: var(--ai-accent-trace);
+  border-bottom-color: var(--ai-accent-trace);
+}
+
+/* Animations */
+@keyframes ai-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

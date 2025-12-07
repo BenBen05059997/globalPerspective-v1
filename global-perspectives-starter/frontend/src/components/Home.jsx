@@ -1,14 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import SummaryDisplay from './SummaryDisplay';
+
 import PredictionDisplay from './PredictionDisplay';
+import TraceCauseDisplay from './TraceCauseDisplay';
+import { useTraceCause } from '../hooks/useTraceCause';
 import graphqlService from '../utils/graphqlService';
+import './AIComponents.css'; // Import new premium styles
 
 // Regional categorization function
 function categorizeByRegion(topics) {
   const regions = {
     'Asia': [],
-    'Africa': [], 
+    'Africa': [],
     'North America': [],
     'Europe': [],
     'Middle East': [],
@@ -18,7 +22,7 @@ function categorizeByRegion(topics) {
 
   topics.forEach(topic => {
     const topicRegions = Array.isArray(topic.regions) ? topic.regions.map(r => r.toLowerCase()) : [];
-    
+
     // Categorize by region (case-insensitive)
     if (topicRegions.some(r => r.includes('china') || r.includes('japan') || r.includes('korea') || r.includes('india') || r.includes('singapore') || r.includes('thailand') || r.includes('vietnam') || r.includes('malaysia') || r.includes('indonesia') || r.includes('philippines') || r.includes('pakistan') || r.includes('bangladesh') || r.includes('sri lanka') || r.includes('nepal') || r.includes('bhutan') || r.includes('myanmar') || r.includes('cambodia') || r.includes('laos'))) {
       regions['Asia'].push(topic);
@@ -43,7 +47,7 @@ function categorizeByRegion(topics) {
 
 function Home() {
   const { topics, loading, error, refetch } = useGeminiTopics();
-  
+
   // Organize topics by region
   const categorizedTopics = React.useMemo(() => {
     return categorizeByRegion(topics);
@@ -59,8 +63,22 @@ function Home() {
   const [predictionLoading, setPredictionLoading] = useState({});
   const [predictionErrors, setPredictionErrors] = useState({});
   const [predictionCollapsed, setPredictionCollapsed] = useState({});
+
+  const [traceCauses, setTraceCauses] = useState({});
+  const [traceCauseLoading, setTraceCauseLoading] = useState({});
+  const [traceCauseErrors, setTraceCauseErrors] = useState({});
+  const [traceCauseCollapsed, setTraceCauseCollapsed] = useState({});
+
+  // Stores the last time a user clicked a button for a specific topic+feature
+  // Keys: topicId_feature (e.g. "123_summary")
+  const [activeTimestamps, setActiveTimestamps] = useState({});
+
   const summaryAttemptsRef = useRef({});
   const predictionAttemptsRef = useRef({});
+  const traceCauseAttemptsRef = useRef({});
+
+  // Initialize custom hook for API calls
+  const { generateTraceCause } = useTraceCause();
 
   const MAX_RETRIES = 6;
   const RETRY_DELAY_MS = 10000;
@@ -84,6 +102,9 @@ function Home() {
 
   const handleGenerateSummary = async (t, idx, attempt = 0) => {
     const id = getTopicId(t, idx);
+    // Update active timestamp to force scroll
+    setActiveTimestamps(prev => ({ ...prev, [`${id}_summary`]: Date.now() }));
+
     if (summaries[id]) {
       setSummaryCollapsed(prev => ({ ...prev, [id]: false }));
       return;
@@ -150,6 +171,9 @@ function Home() {
 
   const handleGeneratePrediction = async (t, idx, attempt = 0) => {
     const id = getTopicId(t, idx);
+    // Update active timestamp to force scroll
+    setActiveTimestamps(prev => ({ ...prev, [`${id}_prediction`]: Date.now() }));
+
     if (predictions[id]) {
       setPredictionCollapsed(prev => ({ ...prev, [id]: false }));
       return;
@@ -206,6 +230,58 @@ function Home() {
     const id = getTopicId(t, idx);
     setPredictionCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
+
+  const handleGenerateTraceCause = async (t, idx) => {
+    const id = getTopicId(t, idx);
+    // Update active timestamp to force scroll
+    setActiveTimestamps(prev => ({ ...prev, [`${id}_trace`]: Date.now() }));
+
+    if (traceCauses[id]) {
+      setTraceCauseCollapsed(prev => ({ ...prev, [id]: false }));
+      return;
+    }
+    if (traceCauseLoading[id]) return;
+
+    setTraceCauseLoading(prev => ({ ...prev, [id]: true }));
+    setTraceCauseErrors(prev => ({ ...prev, [id]: null }));
+
+    try {
+      // Use direct service call or hook generator.
+      // Since Home.jsx manages its own state maps, we'll call the service directly or reuse the hook's logic if possible.
+      // But to fit the existing pattern of Home.jsx (manual state maps), let's call graphqlService directly
+      const data = await graphqlService.getTopicTraceCause(id); // Use the method we added earlier
+      const content = data?.content || '';
+
+      const processed = {
+        content,
+        service: 'cache',
+        timestamp: data?.generatedAt || new Date().toISOString(),
+        metadata: {
+          cached: data?.cached ?? true,
+        },
+      };
+
+      setTraceCauses(prev => ({ ...prev, [id]: processed }));
+      setTraceCauseCollapsed(prev => ({ ...prev, [id]: false }));
+      setTraceCauseLoading(prev => ({ ...prev, [id]: false }));
+    } catch (e) {
+      const message = e?.message || String(e);
+      setTraceCauseErrors(prev => ({ ...prev, [id]: message }));
+      setTraceCauseLoading(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const handleClearTraceCause = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setTraceCauses(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setTraceCauseErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setTraceCauseCollapsed(prev => ({ ...prev, [id]: true }));
+  };
+
+  const toggleTraceCauseCollapsed = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setTraceCauseCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+  };
   return (
     <div>
       <div className="text-center mb-8">
@@ -218,7 +294,7 @@ function Home() {
       {/* Topics list via AppSync */}
       {loading && (
         <div className="card text-center">
-          <div style={{ 
+          <div style={{
             display: 'inline-block', width: 20, height: 20,
             border: '2px solid var(--border-color)',
             borderTop: '2px solid var(--text-primary)',
@@ -243,9 +319,9 @@ function Home() {
           {Object.entries(categorizedTopics).map(([region, regionTopics]) => (
             regionTopics.length > 0 && (
               <div key={region} className="card" style={{ marginBottom: '2rem' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   marginBottom: '1rem',
                   borderBottom: '2px solid var(--border-color)',
                   paddingBottom: '0.5rem'
@@ -253,9 +329,9 @@ function Home() {
                   <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>
                     {region}
                   </h2>
-                  <span style={{ 
-                    marginLeft: '1rem', 
-                    color: 'var(--text-muted)', 
+                  <span style={{
+                    marginLeft: '1rem',
+                    color: 'var(--text-muted)',
                     fontSize: '0.8rem',
                     fontWeight: 'normal'
                   }}>
@@ -275,13 +351,44 @@ function Home() {
                             </span>
                           )}
                         </div>
-                        
-                        {/* Sources + AI Actions horizontally aligned */}
-                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                          {(() => {
-                            // Use the exact homepage title as the sources query
-                            const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
 
+                        {/* Premium AI Toolbar */}
+                        <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div className="ai-toolbar">
+                            {/* Summarize Button */}
+                            <button
+                              className={`ai-btn ai-btn-summary ${summaryLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
+                              onClick={() => handleGenerateSummary(t, globalIdx)}
+                              disabled={summaryLoading[getTopicId(t, globalIdx)]}
+                            >
+                              {summaryLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
+                              Summarize
+                            </button>
+
+                            {/* Predict Button */}
+                            <button
+                              className={`ai-btn ai-btn-predict ${predictionLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
+                              onClick={() => handleGeneratePrediction(t, globalIdx)}
+                              disabled={predictionLoading[getTopicId(t, globalIdx)]}
+                            >
+                              {predictionLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
+                              Predict
+                            </button>
+
+                            {/* Trace Cause Button */}
+                            <button
+                              className={`ai-btn ai-btn-trace ${traceCauseLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
+                              onClick={() => handleGenerateTraceCause(t, globalIdx)}
+                              disabled={traceCauseLoading[getTopicId(t, globalIdx)]}
+                            >
+                              {traceCauseLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
+                              Trace Cause
+                            </button>
+                          </div>
+
+                          {(() => {
+                            // Source link moved to right side for balance
+                            const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
                             const sourceUrl = fullTitle
                               ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
                               : '';
@@ -292,20 +399,12 @@ function Home() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="btn btn-link"
-                                style={{ fontSize: '0.9rem' }}
+                                style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
                               >
-                                View sources →
+                                View Sources ↗
                               </a>
                             );
                           })()}
-                          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                            <button className="btn btn-summarize" onClick={() => handleGenerateSummary(t, globalIdx)}>
-                              Summarize
-                            </button>
-                            <button className="btn btn-predict" onClick={() => handleGeneratePrediction(t, globalIdx)}>
-                              Predict
-                            </button>
-                          </div>
                         </div>
 
                         {/* AI Summary Display */}
@@ -318,6 +417,7 @@ function Home() {
                             onClear={() => handleClearSummary(t, globalIdx)}
                             isCollapsed={summaryCollapsed[getTopicId(t, globalIdx)]}
                             onToggleCollapse={() => toggleSummaryCollapsed(t, globalIdx)}
+                            lastActive={activeTimestamps[`${getTopicId(t, globalIdx)}_summary`]}
                           />
                         </div>
 
@@ -331,6 +431,21 @@ function Home() {
                             onClear={() => handleClearPrediction(t, globalIdx)}
                             isCollapsed={predictionCollapsed[getTopicId(t, globalIdx)]}
                             onToggleCollapse={() => togglePredictionCollapsed(t, globalIdx)}
+                            lastActive={activeTimestamps[`${getTopicId(t, globalIdx)}_prediction`]}
+                          />
+                        </div>
+
+                        {/* AI Trace Cause Display */}
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <TraceCauseDisplay
+                            traceCause={traceCauses[getTopicId(t, globalIdx)]}
+                            isLoading={traceCauseLoading[getTopicId(t, globalIdx)]}
+                            error={traceCauseErrors[getTopicId(t, globalIdx)]}
+                            onRetry={() => handleGenerateTraceCause(t, globalIdx)}
+                            onClear={() => handleClearTraceCause(t, globalIdx)}
+                            isCollapsed={traceCauseCollapsed[getTopicId(t, globalIdx)]}
+                            onToggleCollapse={() => toggleTraceCauseCollapsed(t, globalIdx)}
+                            lastActive={activeTimestamps[`${getTopicId(t, globalIdx)}_trace`]}
                           />
                         </div>
                       </li>

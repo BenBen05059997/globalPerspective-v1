@@ -88,7 +88,7 @@ exports.handler = async (event) => {
       };
     }
 
-    if (action === 'summary' || action === 'prediction') {
+    if (action === 'summary' || action === 'prediction' || action === 'trace_cause') {
       const topicId = payload?.topicId || payload?.topic_id;
       if (!topicId || typeof topicId !== 'string') {
         console.warn('newsSensitiveData summary/prediction missing topicId', {

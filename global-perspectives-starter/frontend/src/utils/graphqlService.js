@@ -1,4 +1,4 @@
-import { fetchTopicsCache, fetchSummaryCache, fetchPredictionCache } from '../services/restProxy.js';
+import { fetchTopicsCache, fetchSummaryCache, fetchPredictionCache, fetchTraceCauseCache } from '../services/restProxy.js';
 
 const PREDICTION_WORD_LIMIT = 500;
 
@@ -111,6 +111,22 @@ class GraphQLService {
     return data;
   }
 
+  async getTopicTraceCause(topicId) {
+    if (!topicId) {
+      throw new Error('Missing topicId for trace cause lookup');
+    }
+    const payload = await fetchTraceCauseCache(topicId);
+    if (!payload || payload.success === false) {
+      const reason = payload?.reason || payload?.error || 'Trace cause cache unavailable';
+      throw new Error(reason);
+    }
+    const data = payload?.data ?? null;
+    if (data && typeof data === 'object') {
+      return { ...data, cached: payload?.cached ?? true };
+    }
+    return data;
+  }
+
   async generateSummary(topicOrId) {
     const topicId = resolveTopicId(topicOrId);
     if (!topicId) {
@@ -118,6 +134,15 @@ class GraphQLService {
     }
     const data = await this.getTopicSummary(topicId);
     return data?.content ?? '';
+  }
+
+  async generateTraceCause(topicOrId) {
+    const topicId = resolveTopicId(topicOrId);
+    if (!topicId) {
+      throw new Error('Trace Cause is only available for cached Gemini topics');
+    }
+    const data = await this.getTopicTraceCause(topicId);
+    return data?.content ?? ''; // Markdown content
   }
 
   async generatePredictions(topicOrArticle) {

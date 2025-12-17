@@ -1,99 +1,246 @@
-// Geocoding utility that proxies Mapbox lookups through the backend.
-// This extracts location names from article titles and converts them to coordinates.
-
+// Geocoding utility with hybrid approach: AI + Complete Country List + Keywords + Heuristics
 import { geocodeProxy } from '../services/restProxy.js';
 
-// Common location keywords that might appear in news articles
-const LOCATION_KEYWORDS = [
-  // Countries
-  'Ukraine', 'Russia', 'China', 'Taiwan', 'Gaza', 'Palestine', 'Israel',
-  'Sudan', 'Myanmar', 'Syria', 'Turkey', 'Armenia', 'Azerbaijan', 'Mali',
-  'Afghanistan', 'Pakistan', 'Bangladesh', 'Iraq', 'Iran', 'Libya',
-  'Yemen', 'Somalia', 'Ethiopia', 'Nigeria', 'Congo', 'Chad',
-
-  // Cities
-  'Kharkiv', 'Kiev', 'Kyiv', 'Moscow', 'Beijing', 'Shanghai', 'Taipei',
-  'Khartoum', 'Yangon', 'Damascus', 'Ankara', 'Istanbul', 'Yerevan', 'Baku',
-  'Bamako', 'Kabul', 'Islamabad', 'Dhaka', 'Baghdad', 'Tehran', 'Tripoli',
-
-  // Regions
-  'Donbas', 'Crimea', 'Xinjiang', 'Tibet', 'West Bank', 'Darfur', 'Sahel',
-  'Kurdistan', 'Nagorno-Karabakh'
+// PRIORITY 1: All countries in the world (ISO 3166-1 + common variations)
+const ALL_COUNTRIES = [
+  // A
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 
+  'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
+  // B
+  'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize',
+  'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Bosnia', 'Botswana', 
+  'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi',
+  // C
+  'Cambodia', 'Cameroon', 'Canada', 'Cape Verde', 'Central African Republic', 
+  'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica', 
+  'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Czechia',
+  // D
+  'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic',
+  // E
+  'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 
+  'Eswatini', 'Ethiopia',
+  // F
+  'Fiji', 'Finland', 'France',
+  // G
+  'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 
+  'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
+  // H
+  'Haiti', 'Honduras', 'Hungary',
+  // I
+  'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy',
+  // J
+  'Jamaica', 'Japan', 'Jordan',
+  // K
+  'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan',
+  // L
+  'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 
+  'Lithuania', 'Luxembourg',
+  // M
+  'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands',
+  'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia',
+  'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Burma',
+  // N
+  'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger',
+  'Nigeria', 'North Korea', 'North Macedonia', 'Macedonia', 'Norway',
+  // O
+  'Oman',
+  // P
+  'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru',
+  'Philippines', 'Poland', 'Portugal',
+  // Q
+  'Qatar',
+  // R
+  'Romania', 'Russia', 'Rwanda',
+  // S
+  'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines',
+  'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal',
+  'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia',
+  'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan',
+  'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
+  // T
+  'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'East Timor',
+  'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu',
+  // U
+  'Uganda', 'Ukraine', 'United Arab Emirates', 'UAE', 'United Kingdom', 'UK', 
+  'Britain', 'England', 'Scotland', 'Wales', 'Northern Ireland',
+  'United States', 'USA', 'US', 'America', 'Uruguay', 'Uzbekistan',
+  // V
+  'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam',
+  // Y
+  'Yemen',
+  // Z
+  'Zambia', 'Zimbabwe'
 ];
 
-// Common capitalized non-location words to avoid in extraction
+// PRIORITY 2: Major cities and conflict zones (high-value locations for news)
+const MAJOR_CITIES_AND_REGIONS = [
+  // Major world cities
+  'Tokyo', 'Delhi', 'Shanghai', 'Mumbai', 'Beijing', 'Dhaka', 'Karachi', 'Istanbul',
+  'Manila', 'Lagos', 'Cairo', 'Mexico City', 'Sao Paulo', 'Moscow', 'Bangkok',
+  'London', 'Paris', 'Berlin', 'Madrid', 'Rome', 'Amsterdam', 'Brussels', 'Vienna',
+  'New York', 'Los Angeles', 'Chicago', 'Houston', 'Toronto', 'Vancouver',
+  'Sydney', 'Melbourne', 'Seoul', 'Singapore', 'Hong Kong', 'Dubai', 'Riyadh',
+  
+  // Conflict/news-relevant cities
+  'Kharkiv', 'Kiev', 'Kyiv', 'Mariupol', 'Odesa', 'Lviv',
+  'Khartoum', 'Yangon', 'Damascus', 'Aleppo', 'Ankara', 'Yerevan', 'Baku',
+  'Bamako', 'Kabul', 'Islamabad', 'Baghdad', 'Tehran', 'Tripoli', 'Benghazi',
+  'Jerusalem', 'Tel Aviv', 'Ramallah', 'Rafah',
+  
+  // Important regions
+  'Gaza', 'Gaza Strip', 'West Bank', 'Donbas', 'Crimea', 'Xinjiang', 'Tibet',
+  'Darfur', 'Sahel', 'Kurdistan', 'Nagorno-Karabakh', 'Transnistria', 'Abkhazia',
+  'Kashmir', 'Catalonia', 'Basque Country', 'Chechnya'
+];
+
+// Words to exclude from location detection (adjectives, verbs, common words)
 const NON_LOCATION_WORDS = [
   'The', 'And', 'But', 'For', 'With', 'As', 'By', 'From', 'To', 'In', 'On', 'At',
   'Ceasefire', 'Negotiations', 'Humanitarian', 'Crisis', 'Conflict', 'War', 'Aid',
-  'Talks', 'Agreement', 'Sanctions', 'Election', 'Elections', 'Government', 'Diplomacy'
+  'Talks', 'Agreement', 'Sanctions', 'Election', 'Elections', 'Government', 'Diplomacy',
+  'Long', 'Economic', 'Strategy', 'Devastating', 'Major', 'Global', 'International',
+  'Rising', 'Growing', 'Ongoing', 'Latest', 'Breaking', 'Recent', 'New', 'Historic',
+  'Deadly', 'Massive', 'Escalating', 'Urgent', 'Critical', 'Emergency', 'Violence',
+  'Peace', 'Security', 'Defense', 'Military', 'Political', 'Economic', 'Trade',
+  'Climate', 'Energy', 'Food', 'Water', 'Health', 'Covid', 'Pandemic'
 ];
 
-// Maximum number of location attempts per article (prioritize known keywords)
 const MAX_LOCATION_ATTEMPTS = 3;
 
 /**
- * Extract potential location names from article title
- * @param {string} title - Article title
- * @returns {string[]} - Array of potential location names
+ * HYBRID METHOD 1: Check AI-detected location (Gemini)
  */
-export function extractLocationsFromTitle(title) {
+function checkAILocation(article) {
+  if (article?.primary_location && typeof article.primary_location === 'string') {
+    console.log(`🤖 AI detected location: ${article.primary_location}`);
+    return [article.primary_location];
+  }
+  return [];
+}
+
+/**
+ * HYBRID METHOD 2: Match against complete country list
+ */
+function matchCountries(title) {
   if (!title) return [];
-
-  const locations = [];
   const titleLower = title.toLowerCase();
-
-  // Check for known location keywords
-  LOCATION_KEYWORDS.forEach(location => {
-    if (titleLower.includes(location.toLowerCase())) {
-      locations.push(location);
+  const matched = [];
+  
+  for (const country of ALL_COUNTRIES) {
+    const countryLower = country.toLowerCase();
+    // Use word boundary regex to avoid partial matches (e.g., "Chad" in "Tchad")
+    const regex = new RegExp(`\\b${countryLower}\\b`, 'i');
+    if (regex.test(titleLower)) {
+      matched.push(country);
     }
-  });
+  }
+  
+  if (matched.length > 0) {
+    console.log(`🌍 Matched countries: ${matched.join(', ')}`);
+  }
+  return matched;
+}
 
-  // Extract capitalized words that might be locations (stricter heuristic)
+/**
+ * HYBRID METHOD 3: Match major cities and regions
+ */
+function matchCitiesAndRegions(title) {
+  if (!title) return [];
+  const titleLower = title.toLowerCase();
+  const matched = [];
+  
+  for (const location of MAJOR_CITIES_AND_REGIONS) {
+    const locationLower = location.toLowerCase();
+    const regex = new RegExp(`\\b${locationLower}\\b`, 'i');
+    if (regex.test(titleLower)) {
+      matched.push(location);
+    }
+  }
+  
+  if (matched.length > 0) {
+    console.log(`🏙️ Matched cities/regions: ${matched.join(', ')}`);
+  }
+  return matched;
+}
+
+/**
+ * HYBRID METHOD 4: Extract capitalized words (heuristic fallback)
+ */
+function extractCapitalizedLocations(title) {
+  if (!title) return [];
+  
   const words = title.split(/\s+/);
-  words.forEach(word => {
-    // Remove punctuation and check if it's capitalized
+  const locations = [];
+  
+  for (const word of words) {
     const cleanWord = word.replace(/[^\w]/g, '');
     const isCapitalized = cleanWord.length > 2 && cleanWord[0] === cleanWord[0].toUpperCase();
     const endsLikeVerb = /(ing|ed|s)$/i.test(cleanWord);
+    
     if (isCapitalized && cleanWord.length >= 4 && !endsLikeVerb) {
-      const alreadyKnown = locations.includes(cleanWord);
-      const isKeyword = LOCATION_KEYWORDS.some(k => k.toLowerCase() === cleanWord.toLowerCase());
-      const isBlocked = NON_LOCATION_WORDS.includes(cleanWord);
-      if (!alreadyKnown && !isBlocked) {
-        // Only add capitalized words if they are known keywords or look like proper nouns
-        if (isKeyword || /^[A-Z][a-z]+(?:[-\s][A-Z][a-z]+)*$/.test(cleanWord)) {
-          locations.push(cleanWord);
-        }
+      const isBlocked = NON_LOCATION_WORDS.some(blocked => 
+        blocked.toLowerCase() === cleanWord.toLowerCase()
+      );
+      
+      if (!isBlocked && /^[A-Z][a-z]+(?:[-\s][A-Z][a-z]+)*$/.test(cleanWord)) {
+        locations.push(cleanWord);
       }
     }
-  });
+  }
+  
+  if (locations.length > 0) {
+    console.log(`🔤 Extracted capitalized words: ${locations.join(', ')}`);
+  }
+  return locations;
+}
 
-  // Prioritize known keywords first
-  const keywordSet = new Set(LOCATION_KEYWORDS.map(k => k.toLowerCase()));
-  const deduped = [...new Set(locations)];
-  deduped.sort((a, b) => {
-    const ak = keywordSet.has(a.toLowerCase()) ? 0 : 1;
-    const bk = keywordSet.has(b.toLowerCase()) ? 0 : 1;
-    return ak - bk;
-  });
-  return deduped;
+/**
+ * Extract potential location names using hybrid approach
+ */
+export function extractLocationsFromTitle(title, article = null) {
+  if (!title) return [];
+
+  const candidates = [];
+  
+  // Priority 1: AI detection (if article object provided)
+  if (article) {
+    candidates.push(...checkAILocation(article));
+  }
+  
+  // Priority 2: Complete country list
+  candidates.push(...matchCountries(title));
+  
+  // Priority 3: Major cities and regions
+  candidates.push(...matchCitiesAndRegions(title));
+  
+  // Priority 4: Capitalized words (last resort)
+  candidates.push(...extractCapitalizedLocations(title));
+  
+  // Deduplicate while preserving priority order
+  const seen = new Set();
+  const deduplicated = [];
+  for (const loc of candidates) {
+    const normalized = loc.toLowerCase();
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      deduplicated.push(loc);
+    }
+  }
+  
+  console.log(`📍 Final candidate list: ${deduplicated.slice(0, MAX_LOCATION_ATTEMPTS).join(', ')}`);
+  return deduplicated;
 }
 
 /**
  * Geocode a location name to get coordinates
- * @param {string} locationName - Name of the location
- * @returns {Promise<{lat: number, lng: number, country: string} | null>}
  */
 export async function geocodeLocation(locationName, countryCode) {
   try {
-    // Check cache first
     const cached = getCachedGeocode(locationName, countryCode);
     if (cached) {
       return cached;
     }
 
-    // Deduplicate in-flight requests by cache key
     const key = getCacheKey(locationName, countryCode);
     const inFlight = getInFlight(key);
     if (inFlight) {
@@ -158,24 +305,11 @@ export async function geocodeLocation(locationName, countryCode) {
 
 /**
  * Process an article to extract and geocode locations
- * @param {Object} article - Article object with title and content
- * @returns {Promise<{lat: number, lng: number, country: string} | null>}
  */
 export async function geocodeArticle(article) {
   if (!article?.title) return null;
 
   console.log(`🌍 Geocoding article: ${article.title}`);
-
-  // NEW: Check for primary_location from Gemini first
-  if (article.primary_location) {
-    console.log(`🎯 Using Gemini primary_location: ${article.primary_location}`);
-    const coords = await geocodeLocation(article.primary_location, null);
-    if (coords) {
-      console.log(`✅ Successfully geocoded primary_location: ${article.primary_location} -> ${coords.country}`);
-      return coords;
-    }
-    console.log(`⚠️ Failed to geocode primary_location: ${article.primary_location}, falling back to title extraction`);
-  }
 
   const candidateSet = new Set();
   const addCandidate = (value) => {
@@ -185,6 +319,7 @@ export async function geocodeArticle(article) {
     candidateSet.add(trimmed);
   };
 
+  // Add metadata locations
   addCandidate(article.primary_location);
   addCandidate(article.location_context);
 
@@ -198,12 +333,11 @@ export async function geocodeArticle(article) {
       .forEach(addCandidate);
   }
 
-  // Extract potential locations from title as fallback
-  const extractedLocations = extractLocationsFromTitle(article.title);
-  console.log(`📍 Extracted locations from title (fallback): ${extractedLocations.join(', ')}`);
+  // Extract locations using hybrid approach
+  const extractedLocations = extractLocationsFromTitle(article.title, article);
   extractedLocations.forEach(addCandidate);
 
-  // Try to determine a known country code from article metadata to constrain geocoding
+  // Determine country code from metadata
   let knownCountryCode = null;
   try {
     let countries = [];
@@ -225,21 +359,17 @@ export async function geocodeArticle(article) {
     // ignore
   }
 
-  // Normalize invalid/non-ISO country codes to null so filters can be applied
   if (knownCountryCode && !/^[A-Z]{2}$/.test(knownCountryCode)) {
     knownCountryCode = null;
   }
 
-  // Disambiguation: Gaza is ambiguous (Mozambique province vs Gaza Strip).
-  // If Gaza is mentioned, force Palestine (PS) and prioritize "Gaza Strip" query.
+  // Special handling for Gaza and West Bank
   const lowerLocations = extractedLocations.map(l => l.toLowerCase());
   if (lowerLocations.includes('gaza')) {
     knownCountryCode = 'PS';
-    // Prioritize accurate variants
     addCandidate('Gaza Strip');
     addCandidate('Gaza, Palestine');
   }
-  // Additional regional hint: West Bank belongs to Palestine
   if (lowerLocations.includes('west bank')) {
     knownCountryCode = 'PS';
     addCandidate('West Bank, Palestine');
@@ -247,10 +377,8 @@ export async function geocodeArticle(article) {
   }
 
   let locations = Array.from(candidateSet);
-
-  // Try to geocode each location until we find one
-  // Limit attempts to reduce latency
   locations = locations.slice(0, MAX_LOCATION_ATTEMPTS);
+  
   for (const location of locations) {
     const coords = await geocodeLocation(location, knownCountryCode);
     if (coords) {
@@ -263,16 +391,13 @@ export async function geocodeArticle(article) {
   return null;
 }
 
-/**
- * Add a small delay between geocoding requests to be respectful to the API
- * @param {number} ms - Milliseconds to wait
- */
 export function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
-// Simple localStorage cache for geocoding results
+
+// Cache management (same as original)
 const GEO_CACHE_KEY = 'geocode_cache_v1';
-const GEO_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const GEO_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function readGeoCache() {
   try {
@@ -287,7 +412,7 @@ function writeGeoCache(cache) {
   try {
     localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(cache));
   } catch {
-    // ignore write errors
+    // ignore
   }
 }
 
@@ -312,7 +437,6 @@ function setCachedGeocode(locationName, countryCode, value) {
   writeGeoCache(cache);
 }
 
-// In-flight request dedupe map
 const GEO_INFLIGHT = {};
 
 function getInFlight(key) {

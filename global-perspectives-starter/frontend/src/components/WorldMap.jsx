@@ -305,54 +305,66 @@ function MapComponent({ articles, onCountryClick }) {
         console.log(`🔍 Geocoding article ${i + 1}/${articles.length}: ${article.title}`);
 
         try {
-          const coords = await geocodeArticle(article);
+          // PRIORITY 1: Check if article already has a known country code
+          let countries = [];
 
-          if (coords) {
+          if (article.detected_locations?.countries?.length > 0) {
+            countries = article.detected_locations.countries;
+          } else if (article.geographic_analysis?.primary_countries?.length > 0) {
+            countries = article.geographic_analysis.primary_countries;
+          } else if (article.geographic_analysis?.countries?.length > 0) {
+            countries = article.geographic_analysis.countries;
+          } else if (article.country) {
+            countries = [article.country];
+          }
+
+          let countryCode = 'Unknown';
+          if (countries.length > 0) {
+            const c = countries[0];
+            if (typeof c === 'string') {
+              countryCode = c.toUpperCase();
+            } else {
+              countryCode = c.code || c.country_code || (c.name ? c.name.substring(0, 2).toUpperCase() : 'Unknown');
+            }
+          }
+
+          // If we have a valid country code, use static coordinates (skip Mapbox)
+          if (countryCode !== 'Unknown' && COUNTRY_COORDINATES[countryCode]) {
+            const coords = COUNTRY_COORDINATES[countryCode];
             geocoded.push({
               ...article,
-              geocoded: true,
-              coordinates: coords,
-              countryCode: coords.country
-            });
-            console.log(`✅ Successfully geocoded: ${article.title} -> ${coords.country}`);
-          } else {
-            // Fallback to country-level mapping for articles that can't be geocoded
-            let countries = [];
-
-            if (article.detected_locations?.countries?.length > 0) {
-              countries = article.detected_locations.countries;
-            } else if (article.geographic_analysis?.primary_countries?.length > 0) {
-              countries = article.geographic_analysis.primary_countries;
-            } else if (article.geographic_analysis?.countries?.length > 0) {
-              countries = article.geographic_analysis.countries;
-            } else if (article.country) {
-              countries = [article.country];
-            }
-
-            let countryCode = 'Unknown';
-            if (countries.length > 0) {
-              const c = countries[0];
-              if (typeof c === 'string') {
-                countryCode = c.toUpperCase();
-              } else {
-                countryCode = c.code || c.country_code || (c.name ? c.name.substring(0, 2).toUpperCase() : 'Unknown');
-              }
-            }
-
-            const coords = COUNTRY_COORDINATES[countryCode] || null;
-
-            geocoded.push({
-              ...article,
-              geocoded: false,
+              geocoded: false, // Country-level, not city-level
               coordinates: coords,
               countryCode: countryCode
             });
-            console.log(`⚠️ Fallback mapping for: ${article.title} -> ${countryCode}${coords ? '' : ' (no coordinates found)'}`);
-          }
+            console.log(`✅ Country-level mapping: ${article.title} -> ${countryCode} (${coords.name})`);
+          } else {
+            // PRIORITY 2: Try Mapbox geocoding for city-level precision (if country unknown)
+            const coords = await geocodeArticle(article);
 
-          // Add delay between requests to be respectful to the API
-          if (i < articles.length - 1) {
-            await delay(100); // 100ms delay between requests
+            if (coords) {
+              geocoded.push({
+                ...article,
+                geocoded: true,
+                coordinates: coords,
+                countryCode: coords.country
+              });
+              console.log(`✅ City-level geocoded: ${article.title} -> ${coords.country}`);
+            } else {
+              // Final fallback: no coordinates available
+              geocoded.push({
+                ...article,
+                geocoded: false,
+                coordinates: null,
+                countryCode: 'Unknown'
+              });
+              console.log(`⚠️ No coordinates found for: ${article.title}`);
+            }
+
+            // Add delay between Mapbox API requests
+            if (i < articles.length - 1) {
+              await delay(100); // 100ms delay between requests
+            }
           }
         } catch (error) {
           console.error(`❌ Error geocoding article: ${article.title}`, error);

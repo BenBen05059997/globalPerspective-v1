@@ -387,6 +387,16 @@ function MapComponent({ articles, onCountryClick }) {
       }
 
       console.log(`🎯 Geocoding complete: ${geocoded.filter(a => a.geocoded).length}/${geocoded.length} articles successfully geocoded`);
+      console.groupCollapsed('🧭 MapComponent: Geocoded articles');
+      geocoded.forEach((entry, index) => {
+        console.log(`#${index + 1}`, {
+          title: entry.title,
+          countryCode: entry.countryCode,
+          geocoded: entry.geocoded,
+          coordinates: entry.coordinates,
+        });
+      });
+      console.groupEnd();
       setGeocodedArticles(geocoded);
       setIsGeocoding(false);
     };
@@ -423,6 +433,17 @@ function MapComponent({ articles, onCountryClick }) {
       // Create markers for each location group
       const newMarkers = [];
       console.log('MapComponent: Location groups:', Object.keys(locationGroups));
+      console.groupCollapsed('📌 MapComponent: Location group details');
+      Object.entries(locationGroups).forEach(([key, group]) => {
+        console.log(key, {
+          count: group.articles.length,
+          countryCode: group.countryCode,
+          isGeocoded: group.isGeocoded,
+          coordinates: group.coordinates,
+          titles: group.articles.map(a => a.title),
+        });
+      });
+      console.groupEnd();
       Object.values(locationGroups).forEach((group) => {
         if (group.coordinates) {
           const articleCount = group.articles.length;
@@ -894,6 +915,17 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
     });
 
     console.log(`📍 Converted ${list.length} topics to ${out.length} map articles`);
+    console.groupCollapsed('🗺️ WorldMap: Topics -> Map articles');
+    list.forEach((topic, topicIndex) => {
+      const topicCodes = getTopicCountryCodes(topic);
+      console.log(`#${topicIndex + 1}`, {
+        title: topic?.title,
+        regions: topic?.regions,
+        sources: Array.isArray(topic?.sources) ? topic.sources.map(s => s?.source || s?.url) : [],
+        countryCodes: topicCodes,
+      });
+    });
+    console.groupEnd();
     return out;
   };
 

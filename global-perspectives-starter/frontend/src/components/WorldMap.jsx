@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
-import { geocodeArticle, delay } from '../utils/geocoding';
 import { getTopicCountryCodes } from '../utils/countryMapping';
 
 // Hardcoded country coordinates for mapping
@@ -347,44 +346,13 @@ function MapComponent({ articles, onCountryClick }) {
             });
             console.log(`✅ Country-level mapping: ${article.title} -> ${countryCode} (${coords.name})`);
           } else {
-            // Topic-derived entries should not fall back to Mapbox.
-            if (article.topicDerived) {
-              geocoded.push({
-                ...article,
-                geocoded: false,
-                coordinates: null,
-                countryCode: 'Unknown'
-              });
-              console.log(`⚠️ Topic-derived entry missing country code: ${article.title}`);
-              continue;
-            }
-
-            // PRIORITY 2: Try Mapbox geocoding for city-level precision (if country unknown)
-            const coords = await geocodeArticle(article);
-
-            if (coords) {
-              geocoded.push({
-                ...article,
-                geocoded: true,
-                coordinates: coords,
-                countryCode: coords.country
-              });
-              console.log(`✅ City-level geocoded: ${article.title} -> ${coords.country}`);
-            } else {
-              // Final fallback: no coordinates available
-              geocoded.push({
-                ...article,
-                geocoded: false,
-                coordinates: null,
-                countryCode: 'Unknown'
-              });
-              console.log(`⚠️ No coordinates found for: ${article.title}`);
-            }
-
-            // Add delay between Mapbox API requests
-            if (i < articles.length - 1) {
-              await delay(100); // 100ms delay between requests
-            }
+            // Country-only mode: skip any geocoding if country code is missing.
+            geocoded.push({
+              ...article,
+              geocoded: false,
+              coordinates: null,
+              countryCode: 'Unknown'
+            });
           }
         } catch (error) {
           console.error(`❌ Error geocoding article: ${article.title}`, error);

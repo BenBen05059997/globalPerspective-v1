@@ -236,6 +236,7 @@ export function extractLocationsFromTitle(title, article = null) {
  */
 export async function geocodeLocation(locationName, countryCode) {
   try {
+    console.log('🧭 Geocode lookup:', { locationName, countryCode });
     const cached = getCachedGeocode(locationName, countryCode);
     if (cached) {
       return cached;
@@ -378,6 +379,12 @@ export async function geocodeArticle(article) {
 
   let locations = Array.from(candidateSet);
   locations = locations.slice(0, MAX_LOCATION_ATTEMPTS);
+
+  console.log('🗺️ Geocode candidates:', {
+    title: article.title,
+    knownCountryCode,
+    locations,
+  });
   
   for (const location of locations) {
     const coords = await geocodeLocation(location, knownCountryCode);

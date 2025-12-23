@@ -8,6 +8,9 @@ export function useGeminiTopics() {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isStale, setIsStale] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const [hasNewData, setHasNewData] = useState(false);
 
   const loadTopics = useCallback(async () => {
     setError(null);
@@ -20,8 +23,10 @@ export function useGeminiTopics() {
         const cached = JSON.parse(raw);
         const isFresh = cached?.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL_MS;
         const list = Array.isArray(cached?.topics) ? cached.topics : [];
-        if (isFresh && list.length > 0) {
+        if (list.length > 0) {
           setTopics(list);
+          setUpdatedAt(cached?.updatedAt || null);
+          setIsStale(!isFresh);
           hadCachedTopics = true;
         }
       }
@@ -29,15 +34,25 @@ export function useGeminiTopics() {
       // Ignore cache read errors
     }
 
-  // Fallback to network fetch
-  setLoading(true);
-  try {
+    // Fallback to network fetch
+    setLoading(true);
+    try {
       // Explicitly request 10 topics from the service
       const data = await graphqlService.getGeminiTopics(10);
       const list = Array.isArray(data?.topics) ? data.topics : [];
       setTopics(list);
+      setIsStale(Boolean(data?.stale));
+      setUpdatedAt(data?.updatedAt || null);
+      setHasNewData(false);
       try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ topics: list, timestamp: Date.now() }));
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({
+            topics: list,
+            timestamp: Date.now(),
+            updatedAt: data?.updatedAt || null,
+          })
+        );
       } catch {
         // Ignore cache write errors
       }
@@ -54,5 +69,24 @@ export function useGeminiTopics() {
     loadTopics();
   }, [loadTopics]);
 
-  return { topics, loading, error, refetch: loadTopics };
+  useEffect(() => {
+    if (!updatedAt) return;
+
+    const POLL_INTERVAL = 10 * 60 * 1000;
+    const intervalId = setInterval(async () => {
+      try {
+        const data = await graphqlService.getGeminiTopics(10);
+        const newUpdatedAt = data?.updatedAt;
+        if (newUpdatedAt && newUpdatedAt !== updatedAt) {
+          setHasNewData(true);
+        }
+      } catch (err) {
+        console.warn('Background poll failed:', err);
+      }
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, [updatedAt]);
+
+  return { topics, loading, error, refetch: loadTopics, isStale, updatedAt, hasNewData };
 }

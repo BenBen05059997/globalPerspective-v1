@@ -75,6 +75,7 @@ class GraphQLService {
       model: item.model || payload?.model || 'gemini-2.5-flash',
       limit: effectiveLimit || item.limit || topics.length,
       cached: payload?.cached ?? true,
+      stale: payload?.stale ?? false,
       updatedAt: item.updatedAt,
     };
   }

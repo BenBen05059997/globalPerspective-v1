@@ -46,7 +46,7 @@ function categorizeByRegion(topics) {
 }
 
 function Home() {
-  const { topics, loading, error, refetch } = useGeminiTopics();
+  const { topics, loading, error, refetch, isStale, updatedAt, hasNewData } = useGeminiTopics();
 
   // Organize topics by region
   const categorizedTopics = React.useMemo(() => {
@@ -282,6 +282,21 @@ function Home() {
     const id = getTopicId(t, idx);
     setTraceCauseCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
+
+  const getTimeAgo = (isoString) => {
+    if (!isoString) return null;
+    const date = new Date(isoString);
+    const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+
+    const days = Math.floor(hours / 24);
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
+  };
   return (
     <div>
       <div className="text-center mb-8">
@@ -289,6 +304,49 @@ function Home() {
         <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
           Trending topics from around the world, organized by region
         </p>
+        {updatedAt && (
+          <p
+            style={{
+              fontSize: '0.9rem',
+              color: isStale ? '#ff9800' : '#666',
+              marginTop: '0.5rem',
+            }}
+          >
+            {isStale && '⚠️ '}
+            Updated {getTimeAgo(updatedAt)}
+            {isStale && ' (refreshing...)'}
+          </p>
+        )}
+        {hasNewData && (
+          <div
+            style={{
+              marginTop: '1rem',
+              padding: '0.75rem 1rem',
+              backgroundColor: '#4caf50',
+              color: 'white',
+              borderRadius: '4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}
+          >
+            <span>🆕 New topics available</span>
+            <button
+              onClick={refetch}
+              style={{
+                padding: '0.25rem 0.75rem',
+                backgroundColor: 'white',
+                color: '#4caf50',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontWeight: '600',
+              }}
+            >
+              Refresh
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Topics list via AppSync */}

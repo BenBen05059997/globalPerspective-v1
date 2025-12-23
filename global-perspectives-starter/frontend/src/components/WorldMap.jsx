@@ -307,15 +307,23 @@ function MapComponent({ articles, onCountryClick }) {
         try {
           // PRIORITY 1: Check if article already has a known country code
           let countries = [];
+          let countrySource = 'unknown';
 
           if (article.detected_locations?.countries?.length > 0) {
             countries = article.detected_locations.countries;
+            countrySource = 'detected_locations';
           } else if (article.geographic_analysis?.primary_countries?.length > 0) {
             countries = article.geographic_analysis.primary_countries;
+            countrySource = 'geographic_analysis.primary_countries';
           } else if (article.geographic_analysis?.countries?.length > 0) {
             countries = article.geographic_analysis.countries;
+            countrySource = 'geographic_analysis.countries';
           } else if (article.country) {
             countries = [article.country];
+            countrySource = 'article.country';
+          } else if (article.countryCode) {
+            countries = [article.countryCode];
+            countrySource = 'article.countryCode';
           }
 
           let countryCode = 'Unknown';
@@ -337,9 +345,10 @@ function MapComponent({ articles, onCountryClick }) {
               coordinates: coords,
               countryCode: countryCode
             });
-            console.log(`✅ Country-level mapping: ${article.title} -> ${countryCode} (${coords.name})`);
+            console.log(`✅ Country-level mapping: ${article.title} -> ${countryCode} (${coords.name}) [${countrySource}]`);
           } else {
             // PRIORITY 2: Try Mapbox geocoding for city-level precision (if country unknown)
+            console.log(`🌐 Falling back to Mapbox geocoding: ${article.title} [countryCode=${countryCode}, source=${countrySource}]`);
             const coords = await geocodeArticle(article);
 
             if (coords) {
@@ -876,6 +885,7 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
           regions: t.regions || [],
           sources: t.sources || [],
           search_keywords: Array.isArray(t.search_keywords) ? t.search_keywords : [],
+          countryCode: code,
           geographic_analysis: {
             primary_countries: [{ code, name: code }]
           },

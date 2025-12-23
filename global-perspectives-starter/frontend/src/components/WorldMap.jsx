@@ -345,10 +345,21 @@ function MapComponent({ articles, onCountryClick }) {
               coordinates: coords,
               countryCode: countryCode
             });
-            console.log(`✅ Country-level mapping: ${article.title} -> ${countryCode} (${coords.name}) [${countrySource}]`);
+            console.log(`✅ Country-level mapping: ${article.title} -> ${countryCode} (${coords.name})`);
           } else {
+            // Topic-derived entries should not fall back to Mapbox.
+            if (article.topicDerived) {
+              geocoded.push({
+                ...article,
+                geocoded: false,
+                coordinates: null,
+                countryCode: 'Unknown'
+              });
+              console.log(`⚠️ Topic-derived entry missing country code: ${article.title}`);
+              continue;
+            }
+
             // PRIORITY 2: Try Mapbox geocoding for city-level precision (if country unknown)
-            console.log(`🌐 Falling back to Mapbox geocoding: ${article.title} [countryCode=${countryCode}, source=${countrySource}]`);
             const coords = await geocodeArticle(article);
 
             if (coords) {
@@ -387,16 +398,6 @@ function MapComponent({ articles, onCountryClick }) {
       }
 
       console.log(`🎯 Geocoding complete: ${geocoded.filter(a => a.geocoded).length}/${geocoded.length} articles successfully geocoded`);
-      console.groupCollapsed('🧭 MapComponent: Geocoded articles');
-      geocoded.forEach((entry, index) => {
-        console.log(`#${index + 1}`, {
-          title: entry.title,
-          countryCode: entry.countryCode,
-          geocoded: entry.geocoded,
-          coordinates: entry.coordinates,
-        });
-      });
-      console.groupEnd();
       setGeocodedArticles(geocoded);
       setIsGeocoding(false);
     };
@@ -433,17 +434,6 @@ function MapComponent({ articles, onCountryClick }) {
       // Create markers for each location group
       const newMarkers = [];
       console.log('MapComponent: Location groups:', Object.keys(locationGroups));
-      console.groupCollapsed('📌 MapComponent: Location group details');
-      Object.entries(locationGroups).forEach(([key, group]) => {
-        console.log(key, {
-          count: group.articles.length,
-          countryCode: group.countryCode,
-          isGeocoded: group.isGeocoded,
-          coordinates: group.coordinates,
-          titles: group.articles.map(a => a.title),
-        });
-      });
-      console.groupEnd();
       Object.values(locationGroups).forEach((group) => {
         if (group.coordinates) {
           const articleCount = group.articles.length;
@@ -897,7 +887,16 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
 
     list.forEach(t => {
       // Get country codes from regions and sources
-      const countryCodes = getTopicCountryCodes(t);
+      let countryCodes = getTopicCountryCodes(t);
+
+      // If the title explicitly mentions South Sudan, prefer SS over SD.
+      const titleLower = String(t?.title || '').toLowerCase();
+      if (titleLower.includes('south sudan')) {
+        countryCodes = countryCodes.filter(code => code !== 'SD');
+        if (!countryCodes.includes('SS')) {
+          countryCodes.push('SS');
+        }
+      }
 
       // Create an article entry for each country
       countryCodes.forEach(code => {
@@ -907,6 +906,7 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
           sources: t.sources || [],
           search_keywords: Array.isArray(t.search_keywords) ? t.search_keywords : [],
           countryCode: code,
+          topicDerived: true,
           geographic_analysis: {
             primary_countries: [{ code, name: code }]
           },
@@ -915,17 +915,6 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
     });
 
     console.log(`📍 Converted ${list.length} topics to ${out.length} map articles`);
-    console.groupCollapsed('🗺️ WorldMap: Topics -> Map articles');
-    list.forEach((topic, topicIndex) => {
-      const topicCodes = getTopicCountryCodes(topic);
-      console.log(`#${topicIndex + 1}`, {
-        title: topic?.title,
-        regions: topic?.regions,
-        sources: Array.isArray(topic?.sources) ? topic.sources.map(s => s?.source || s?.url) : [],
-        countryCodes: topicCodes,
-      });
-    });
-    console.groupEnd();
     return out;
   };
 

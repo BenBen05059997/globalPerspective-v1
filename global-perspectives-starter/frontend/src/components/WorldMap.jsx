@@ -426,7 +426,7 @@ function MapComponent({ articles, onCountryClick }) {
 
           const locationName = group.isGeocoded
             ? [cityName, provinceName, countryNameLabel].filter(Boolean).join(', ')
-            : `Country-level: ${countryNameLabel}`;
+            : countryNameLabel;
 
           // Guard against invalid coordinates (NaN/undefined)
           const latNum = Number(group.coordinates.lat);
@@ -474,8 +474,7 @@ function MapComponent({ articles, onCountryClick }) {
             const content = `
               <div style="max-width: 300px;">
                 <h3 style="margin: 0 0 10px 0; color: #333;">${locationName}</h3>
-                <p style="margin: 0 0 10px 0; color: #666;"><strong>${articleCount}</strong> articles found ${group.isGeocoded ? '<span style="color: #4CAF50;">(Geocoded location)</span>' : '<span style="color: #FF9800;">(Country-level)</span>'}</p>
-                <p style="margin: 0 0 10px 0; color: #999; font-size: 12px;">${group.isGeocoded ? '📍 Precise location' : '🌍 Country-level location'}</p>
+                <p style="margin: 0 0 10px 0; color: #666;"><strong>${articleCount}</strong> articles found</p>
                 <div style="max-height: 200px; overflow-y: auto;">
                   ${primaryArticle ? `
                     <div style="margin-bottom: 8px; padding: 8px; background: #f9f9f9; border-radius: 4px;">

@@ -6,51 +6,15 @@ import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
 import { useTraceCause } from '../hooks/useTraceCause';
 import graphqlService from '../utils/graphqlService';
+import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import './AIComponents.css'; // Import new premium styles
-
-// Regional categorization function
-function categorizeByRegion(topics) {
-  const regions = {
-    'Asia': [],
-    'Africa': [],
-    'North America': [],
-    'Europe': [],
-    'Middle East': [],
-    'South America': [],
-    'World': []
-  };
-
-  topics.forEach(topic => {
-    const topicRegions = Array.isArray(topic.regions) ? topic.regions.map(r => r.toLowerCase()) : [];
-
-    // Categorize by region (case-insensitive)
-    if (topicRegions.some(r => r.includes('china') || r.includes('japan') || r.includes('korea') || r.includes('india') || r.includes('singapore') || r.includes('thailand') || r.includes('vietnam') || r.includes('malaysia') || r.includes('indonesia') || r.includes('philippines') || r.includes('pakistan') || r.includes('bangladesh') || r.includes('sri lanka') || r.includes('nepal') || r.includes('bhutan') || r.includes('myanmar') || r.includes('cambodia') || r.includes('laos'))) {
-      regions['Asia'].push(topic);
-    } else if (topicRegions.some(r => r.includes('nigeria') || r.includes('south africa') || r.includes('egypt') || r.includes('kenya') || r.includes('ethiopia') || r.includes('ghana') || r.includes('morocco') || r.includes('tanzania') || r.includes('uganda') || r.includes('algeria') || r.includes('sudan') || r.includes('libya') || r.includes('tunisia') || r.includes('angola') || r.includes('mozambique') || r.includes('zambia'))) {
-      regions['Africa'].push(topic);
-    } else if (topicRegions.some(r => r.includes('usa') || r.includes('united states') || r.includes('canada') || r.includes('mexico') || r.includes('guatemala') || r.includes('costa rica') || r.includes('panama') || r.includes('cuba') || r.includes('jamaica') || r.includes('haiti') || r.includes('dominican republic'))) {
-      regions['North America'].push(topic);
-    } else if (topicRegions.some(r => r.includes('uk') || r.includes('britain') || r.includes('france') || r.includes('germany') || r.includes('italy') || r.includes('spain') || r.includes('netherlands') || r.includes('sweden') || r.includes('norway') || r.includes('denmark') || r.includes('finland') || r.includes('poland') || r.includes('czech') || r.includes('austria') || r.includes('switzerland') || r.includes('belgium') || r.includes('portugal') || r.includes('greece'))) {
-      regions['Europe'].push(topic);
-    } else if (topicRegions.some(r => r.includes('israel') || r.includes('palestine') || r.includes('saudi arabia') || r.includes('iran') || r.includes('iraq') || r.includes('syria') || r.includes('lebanon') || r.includes('jordan') || r.includes('uae') || r.includes('qatar') || r.includes('kuwait') || r.includes('bahrain') || r.includes('oman') || r.includes('yemen') || r.includes('turkey'))) {
-      regions['Middle East'].push(topic);
-    } else if (topicRegions.some(r => r.includes('brazil') || r.includes('argentina') || r.includes('chile') || r.includes('peru') || r.includes('colombia') || r.includes('venezuela') || r.includes('ecuador') || r.includes('bolivia') || r.includes('paraguay') || r.includes('uruguay') || r.includes('guyana') || r.includes('suriname'))) {
-      regions['South America'].push(topic);
-    } else {
-      // World category - either affects multiple regions or unclear categorization
-      regions['World'].push(topic);
-    }
-  });
-
-  return regions;
-}
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, hasNewData } = useGeminiTopics();
 
   // Organize topics by region
   const categorizedTopics = React.useMemo(() => {
-    return categorizeByRegion(topics);
+    return categorizeTopicsByRegion(topics);
   }, [topics]);
 
   // Local state maps keyed by topicId

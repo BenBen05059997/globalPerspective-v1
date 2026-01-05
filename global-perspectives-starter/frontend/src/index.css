@@ -143,6 +143,10 @@ p {
 .btn-link {
   border-radius: 9999px;
 }
+.btn-link:hover {
+  background-color: var(--text-primary) !important;
+  color: var(--bg-primary) !important;
+}
 /* Cards */
 .card {
   background-color: var(--bg-primary);

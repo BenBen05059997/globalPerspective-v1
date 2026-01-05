@@ -21,9 +21,9 @@ try {
 }
 
 const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-const DEFAULT_LIMIT = 5;
+const DEFAULT_LIMIT = 10;
 const CACHE_TABLE = process.env.TOPICS_DDB_TABLE; // e.g., GeminiTopicsCache
-const CACHE_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
+const CACHE_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
 const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY;
 const BRAVE_NEWS_ENDPOINT = 'https://api.search.brave.com/res/v1/news/search';
 
@@ -69,14 +69,19 @@ async function fetchBraveNews(limit) {
     // Multi-query strategy for global news diversity (industry best practice)
     // Instead of one generic query, use multiple targeted queries to get impactful stories worldwide
     const queries = [
-      'breaking news (conflict OR war OR attack OR violence)',  // Conflicts and security
-      'breaking news (earthquake OR disaster OR fire OR flood OR emergency)', // Natural disasters
-      'breaking news (politics OR election OR government OR protest OR coup)', // Political events
-      'breaking news (technology OR AI OR innovation OR space OR science)', // Tech & science
-      'breaking news (economy OR market OR crisis OR inflation OR trade)', // Economic events
+      'breaking news global (conflict OR war OR politics OR economy OR disaster)',
+      'breaking news North America USA Canada Mexico (conflict OR war OR politics OR economy OR disaster)',
+      'breaking news South America Brazil Argentina (conflict OR war OR politics OR economy OR disaster)',
+      'breaking news Western Europe UK France Germany (conflict OR war OR politics OR economy OR disaster)',
+      'breaking news Eastern Europe Russia Ukraine (conflict OR war OR politics OR economy OR disaster)',
+      'breaking news East Asia China Japan Korea (conflict OR war OR politics OR economy OR disaster)',
+      'breaking news Southeast Asia (conflict OR war OR politics OR economy OR disaster)',
+      'breaking news Middle East (conflict OR war OR politics OR economy OR disaster)',
+      'breaking news Africa (conflict OR war OR politics OR economy OR disaster)',
+      'breaking news Oceania (conflict OR war OR politics OR economy OR disaster)',
     ];
 
-    const articlesPerQuery = Math.ceil((limit * 3) / queries.length);
+    const articlesPerQuery = Math.max(5, Math.ceil((limit * 4) / queries.length));
     const allArticles = [];
 
     // Fetch from each query to ensure topic diversity
@@ -143,18 +148,28 @@ async function writeCache({ topics, model, limit }) {
   }
 
   const updatedAt = new Date().toISOString();
-  const item = { id: CACHE_ID, topics, model, limit, updatedAt };
+  const generationId = `gen-${Date.now()}`;
+
+  const item = {
+    id: CACHE_ID,
+    topics,
+    model,
+    limit,
+    updatedAt,
+    generationId,
+    status: 'pending',
+  };
 
   try {
-    console.log(`Attempting DynamoDB cache write: table=${CACHE_TABLE}, id=${CACHE_ID}`);
+    console.log(`Attempting DynamoDB cache write: table=${CACHE_TABLE}, id=${CACHE_ID}, generationId=${generationId}`);
     if (usingAwsSdkV3) {
       const { PutCommand } = require('@aws-sdk/lib-dynamodb');
       await ddbDoc.send(new PutCommand({ TableName: CACHE_TABLE, Item: item }));
     } else {
       await ddbDoc.put({ TableName: CACHE_TABLE, Item: item }).promise();
     }
-    console.log(`DynamoDB cache write OK: id=${CACHE_ID}, updatedAt=${updatedAt}`);
-    return { cached: true, updatedAt };
+    console.log(`DynamoDB cache write OK: id=${CACHE_ID}, generationId=${generationId}`);
+    return { cached: true, updatedAt, generationId };
   } catch (e) {
     console.error('DynamoDB put error:', e);
     return { cached: false, reason: e.message };
@@ -203,30 +218,31 @@ exports.handler = async (event) => {
         '',
         articlesText,
         '',
-        `Categorize these into ${limit} distinct global news topics.`,
+        `Task: Select exactly ${limit} distinct global news topics.`,
         'Return only a JSON array with no commentary.',
+        '',
+        'CRITICAL SELECTION PRIORITIES:',
+        '1. **IMPACT FIRST**: Prioritize major "Conflict", "Disaster", or "Economic Crisis" events over minor political updates.',
+        '2. **REGIONAL QUOTAS**: You MUST attempt to select at least one significant topic from EACH of these 10 regions if available:',
+        '   - **North America**',
+        '   - **South America**',
+        '   - **Western Europe**',
+        '   - **Eastern Europe** (incl. Russia/Ukraine)',
+        '   - **East Asia**',
+        '   - **Southeast Asia**',
+        '   - **Middle East**',
+        '   - **Africa**',
+        '   - **Oceania**',
+        '   - **Global Headline** (The single biggest story)',
+        '',
+        'If a region has no major breaking news, select its most significant developing story.',
+        '',
         'Each item must be an object with fields:',
         '- title: string (concise topic title summarizing related articles)',
         '- category: string (e.g., politics, economy, technology, environment, security, health, culture)',
         '- search_keywords: array of 3-6 short keywords',
-        '- regions: array of country names (READ the article title and description to extract which countries are mentioned)',
-        '- sources: array of objects with {title, url, source, age, snippet} from the articles above that relate to this topic. "snippet" MUST be a relevant 1-2 sentence quote or summary from the article content to provide context.',
-        '',
-        'CRITICAL INSTRUCTIONS for regions field:',
-        '1. READ each article carefully and extract country names mentioned in the title or description',
-        '2. Use specific country names (e.g., "United States", "China", "Brazil", "Nigeria", "Saudi Arabia")',
-        '3. If an article mentions multiple countries, list ALL of them',
-        '4. Only use "Multiple regions" if the article truly affects 5+ countries and doesn\'t mention specific ones',
-        '5. Prioritize stories from underreported regions: Africa, Middle East, South America, Southeast Asia',
-        '',
-        'GEOGRAPHIC BALANCE REQUIREMENT:',
-        'Ensure diverse coverage across all world regions:',
-        '- Asia-Pacific (China, Japan, India, Indonesia, Australia, etc.)',
-        '- Middle East (Israel, Palestine, Saudi Arabia, Iran, Turkey, UAE, etc.)',
-        '- Africa (Nigeria, Kenya, South Africa, Egypt, Ethiopia, etc.)',
-        '- Europe (Ukraine, Russia, UK, France, Germany, etc.)',
-        '- North America (United States, Canada, Mexico)',
-        '- South America (Brazil, Argentina, Venezuela, Chile, Colombia, etc.)',
+        '- regions: array of specific country names (NEVER use regional terms like "Middle East", "Asia", "Europe". Always use actual country names like "Israel", "Iran", "China", "Japan", "France", "Germany")',
+        '- sources: array of objects with {title, url, source, age, snippet} from the articles above.',
         '',
         'Group related articles into the same topic. Include all relevant source articles for each topic.',
       ].join('\n');

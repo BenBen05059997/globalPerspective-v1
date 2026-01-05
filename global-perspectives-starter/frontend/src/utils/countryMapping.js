@@ -654,20 +654,12 @@ export function sourceToCountryCode(url) {
 export function getTopicCountryCodes(topic) {
     const codes = new Set();
 
-    // From regions array
+    // From regions array only - trust Gemini's country extraction
+    // Note: Source URL inference removed to prevent mapping news to where it's REPORTED
+    // instead of where it HAPPENED (e.g., Ukraine news from BBC was mapping to GB)
     if (Array.isArray(topic.regions)) {
         topic.regions.forEach(region => {
             const code = regionToCountryCode(region);
-            if (code && code !== 'GLOBAL') {
-                codes.add(code);
-            }
-        });
-    }
-
-    // From source URLs
-    if (Array.isArray(topic.sources)) {
-        topic.sources.forEach(source => {
-            const code = sourceToCountryCode(source.url);
             if (code && code !== 'GLOBAL') {
                 codes.add(code);
             }

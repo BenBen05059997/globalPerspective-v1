@@ -3,6 +3,130 @@ import { Wrapper } from '@googlemaps/react-wrapper';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import { getTopicCountryCodes } from '../utils/countryMapping';
 
+// Modal component for displaying all articles in a country
+function ArticleListModal({ isOpen, onClose, countryName, articles }) {
+  if (!isOpen) return null;
+
+  const buildNewsSearchUrl = (title) => {
+    if (!title) return '';
+    const query = String(title).replace(/\s+/g, ' ').trim();
+    return query ? `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=nws&tbs=qdr:d` : '';
+  };
+
+  return (
+    <div
+      className="article-modal-backdrop"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000,
+      }}
+    >
+      <div
+        className="article-modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '8px',
+          maxWidth: '500px',
+          width: '90%',
+          maxHeight: '80vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+        }}
+      >
+        <div
+          className="article-modal-header"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '16px 20px',
+            borderBottom: '1px solid #eee',
+          }}
+        >
+          <div>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#333' }}>{countryName}</h3>
+            <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#666' }}>
+              {articles.length} article{articles.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: '#666',
+              padding: '0 4px',
+              lineHeight: 1,
+            }}
+          >
+            &times;
+          </button>
+        </div>
+        <div
+          className="article-modal-body"
+          style={{
+            padding: '12px 20px',
+            overflowY: 'auto',
+            flex: 1,
+          }}
+        >
+          {articles.map((article, index) => {
+            const sourceUrl = buildNewsSearchUrl(article.title);
+            return (
+              <div
+                key={index}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 0',
+                  borderBottom: index < articles.length - 1 ? '1px solid #eee' : 'none',
+                  gap: '12px',
+                }}
+              >
+                <span style={{
+                  fontSize: '14px',
+                  color: '#333',
+                  flex: 1,
+                  lineHeight: 1.4,
+                }}>
+                  {article.title || 'Untitled'}
+                </span>
+                {sourceUrl && (
+                  <a
+                    href={sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '13px',
+                      color: '#0066cc',
+                      textDecoration: 'none',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                    }}
+                  >
+                    View &rarr;
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Hardcoded country coordinates for mapping
 // Complete country coordinates for all 195 countries
 const COUNTRY_COORDINATES = {
@@ -257,6 +381,9 @@ function MapComponent({ articles, onCountryClick }) {
   const [map, setMap] = useState(null);
   const [markers, setMarkers] = useState([]);
   const [infoWindow, setInfoWindow] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalCountry, setModalCountry] = useState('');
+  const [modalArticles, setModalArticles] = useState([]);
 
   useEffect(() => {
     if (mapRef.current && !map) {
@@ -471,10 +598,12 @@ function MapComponent({ articles, onCountryClick }) {
             const classLabel = (primaryArticle?.classification || '').trim();
             const leftText = [sourceLabel, classLabel].filter(Boolean).join(' • ');
 
+            const viewAllBtnId = `view-all-btn-${group.countryCode}`;
+
             const content = `
               <div style="max-width: 300px;">
                 <h3 style="margin: 0 0 10px 0; color: #333;">${locationName}</h3>
-                <p style="margin: 0 0 10px 0; color: #666;"><strong>${articleCount}</strong> articles found</p>
+                <p style="margin: 0 0 10px 0; color: #666;"><strong>${articleCount}</strong> article${articleCount !== 1 ? 's' : ''} found</p>
                 <div style="max-height: 200px; overflow-y: auto;">
                   ${primaryArticle ? `
                     <div style="margin-bottom: 8px; padding: 8px; background: #f9f9f9; border-radius: 4px;">
@@ -485,13 +614,39 @@ function MapComponent({ articles, onCountryClick }) {
                       </div>
                     </div>
                   ` : '<div style="font-size: 12px; color: #666;">No article available</div>'}
-                  ${articleCount > 1 ? `<div style="text-align: center; color: #666; font-size: 12px;">+${articleCount - 1} more articles</div>` : ''}
+                  ${articleCount > 1 ? `
+                    <button id="${viewAllBtnId}" style="
+                      display: block;
+                      width: 100%;
+                      margin-top: 8px;
+                      padding: 8px 12px;
+                      background: #0066cc;
+                      color: white;
+                      border: none;
+                      border-radius: 4px;
+                      font-size: 13px;
+                      cursor: pointer;
+                    ">View all ${articleCount} articles</button>
+                  ` : ''}
                 </div>
               </div>
             `;
 
             infoWindow.setContent(content);
             infoWindow.open(map, marker);
+
+            // Add click handler for "View all" button after info window opens
+            setTimeout(() => {
+              const viewAllBtn = document.getElementById(viewAllBtnId);
+              if (viewAllBtn) {
+                viewAllBtn.addEventListener('click', () => {
+                  setModalCountry(locationName);
+                  setModalArticles(group.articles);
+                  setModalOpen(true);
+                  infoWindow.close();
+                });
+              }
+            }, 100);
 
             if (onCountryClick) {
               onCountryClick(group.countryCode, group.articles);
@@ -534,6 +689,12 @@ function MapComponent({ articles, onCountryClick }) {
           </div>
         </div>
       )}
+      <ArticleListModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        countryName={modalCountry}
+        articles={modalArticles}
+      />
     </div>
   );
 }
@@ -542,6 +703,9 @@ function MapComponent({ articles, onCountryClick }) {
 function FallbackMapComponent({ articles, onCountryClick }) {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [hoveredCountry, setHoveredCountry] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalCountry, setModalCountry] = useState('');
+  const [modalArticles, setModalArticles] = useState([]);
 
   console.log('FallbackMapComponent: Processing', articles.length, 'articles');
 
@@ -769,13 +933,38 @@ function FallbackMapComponent({ articles, onCountryClick }) {
               );
             })}
             {countryData[selectedCountry].articles.length > 1 && (
-              <div style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>
-                +{countryData[selectedCountry].articles.length - 1} more articles
-              </div>
+              <button
+                onClick={() => {
+                  setModalCountry(countryData[selectedCountry].name);
+                  setModalArticles(countryData[selectedCountry].articles);
+                  setModalOpen(true);
+                }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: '8px',
+                  padding: '8px 12px',
+                  background: '#0066cc',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                View all {countryData[selectedCountry].articles.length} articles
+              </button>
             )}
           </div>
         </div>
       )}
+
+      <ArticleListModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        countryName={modalCountry}
+        articles={modalArticles}
+      />
 
       {/* Debug panel */}
       <div style={{

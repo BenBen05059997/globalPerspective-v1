@@ -91,19 +91,40 @@ const PredictionDisplay = ({
         );
       }
 
-      // Arrow ➔ visualization
+      // Arrow ➔ visualization - Enhanced Chain Flow
       if (line.includes('➔')) {
+        const steps = line.split('➔').map(s => s.trim()).filter(Boolean);
+
+        // Single step (no arrow split) - use simplified card
+        if (steps.length === 1) {
+          return (
+            <div key={idx} className="chain-step-card">
+              <div className="chain-step-content">
+                {processBold(line)}
+              </div>
+            </div>
+          );
+        }
+
+        // Multiple steps - full numbered flow
         return (
-          <div key={idx} style={{
-            background: 'rgba(139, 92, 246, 0.05)',
-            borderLeft: '3px solid var(--ai-accent-predict)',
-            padding: '12px',
-            borderRadius: '0 8px 8px 0',
-            margin: '8px 0',
-            color: '#374151',
-            lineHeight: '1.6'
-          }}>
-            {processBold(line)}
+          <div key={idx} className="chain-reaction-container">
+            {steps.map((step, stepIdx) => (
+              <React.Fragment key={`step-${idx}-${stepIdx}`}>
+                {/* Step card */}
+                <div className="chain-step-card">
+                  <div className="chain-step-number">{stepIdx + 1}</div>
+                  <div className="chain-step-content">
+                    {processBold(step)}
+                  </div>
+                </div>
+
+                {/* Arrow connector (not after last step) */}
+                {stepIdx < steps.length - 1 && (
+                  <div className="chain-arrow" />
+                )}
+              </React.Fragment>
+            ))}
           </div>
         );
       }
@@ -162,21 +183,18 @@ const PredictionDisplay = ({
             <button
               onClick={() => setActiveTab('chain_reaction')}
               className={`ai-tab ${activeTab === 'chain_reaction' ? 'active' : ''}`}
-              style={{ width: '33.3%' }}
             >
               Chain Reaction
             </button>
             <button
               onClick={() => setActiveTab('winners_losers')}
               className={`ai-tab ${activeTab === 'winners_losers' ? 'active' : ''}`}
-              style={{ width: '33.3%' }}
             >
               Winners & Losers
             </button>
             <button
               onClick={() => setActiveTab('watchlist')}
               className={`ai-tab ${activeTab === 'watchlist' ? 'active' : ''}`}
-              style={{ width: '33.3%' }}
             >
               Watchlist
             </button>

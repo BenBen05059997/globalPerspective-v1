@@ -317,21 +317,18 @@ const TraceCauseDisplay = ({
                         <button
                             onClick={() => setActiveTab('context')}
                             className={`ai-tab ${activeTab === 'context' ? 'active' : ''}`}
-                            style={{ flex: 1 }}
                         >
                             History
                         </button>
                         <button
                             onClick={() => setActiveTab('perspectives')}
                             className={`ai-tab ${activeTab === 'perspectives' ? 'active' : ''}`}
-                            style={{ flex: 1 }}
                         >
                             Perspectives
                         </button>
                         <button
                             onClick={() => setActiveTab('timeline')}
                             className={`ai-tab ${activeTab === 'timeline' ? 'active' : ''}`}
-                            style={{ flex: 1 }}
                         >
                             Timeline
                         </button>

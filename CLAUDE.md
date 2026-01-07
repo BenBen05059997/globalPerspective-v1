@@ -71,7 +71,13 @@ If you modify ANY files in `global-perspectives-starter/frontend/src/`, you MUST
    - Verify build succeeded
    - Include both source and `/docs/` in commit
 
-3. **Review the changes:**
+3. **Update CHANGES.md:**
+   - Add entry at the top with today's date (YYYY-MM-DD)
+   - Document what changed and which files were modified
+   - Follow existing format for consistency
+   - Stage CHANGES.md with your commit
+
+4. **Review the changes:**
    - Ensure no sensitive data (API keys, credentials)
    - Verify only intended files are staged
 
@@ -149,6 +155,7 @@ Before pushing frontend changes:
 - [ ] Source files modified
 - [ ] `npm run build` executed successfully
 - [ ] Build output copied to `/docs/`
+- [ ] **CHANGES.md updated** with new entry
 - [ ] Both source and `/docs/` staged for commit
 - [ ] Commit message is descriptive
 - [ ] No sensitive data in commit

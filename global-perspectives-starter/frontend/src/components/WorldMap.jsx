@@ -3,6 +3,16 @@ import { Wrapper } from '@googlemaps/react-wrapper';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import { getTopicCountryCodes } from '../utils/countryMapping';
 
+// Convert country code to flag emoji (shared utility)
+const getFlagEmoji = (code) => {
+  if (!code || code === 'Unknown' || code.length !== 2) return '🌍';
+  const codePoints = code
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+};
+
 // Modal component for displaying all articles in a country
 function ArticleListModal({ isOpen, onClose, countryName, countryCode, articles }) {
   if (!isOpen) return null;
@@ -11,16 +21,6 @@ function ArticleListModal({ isOpen, onClose, countryName, countryCode, articles 
     if (!title) return '';
     const query = String(title).replace(/\s+/g, ' ').trim();
     return query ? `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=nws&tbs=qdr:d` : '';
-  };
-
-  // Convert country code to flag emoji
-  const getFlagEmoji = (code) => {
-    if (!code || code === 'Unknown' || code.length !== 2) return '🌍';
-    const codePoints = code
-      .toUpperCase()
-      .split('')
-      .map(char => 127397 + char.charCodeAt(0));
-    return String.fromCodePoint(...codePoints);
   };
 
   return (
@@ -616,7 +616,10 @@ function MapComponent({ articles, onCountryClick }) {
 
             const content = `
               <div style="max-width: 300px;">
-                <h3 style="margin: 0 0 10px 0; color: #333;">${locationName}</h3>
+                <h3 style="margin: 0 0 10px 0; color: #333; display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 24px; line-height: 1;">${getFlagEmoji(group.countryCode)}</span>
+                  <span>${locationName}</span>
+                </h3>
                 <p style="margin: 0 0 10px 0; color: #666;"><strong>${articleCount}</strong> article${articleCount !== 1 ? 's' : ''} found</p>
                 <div style="max-height: 200px; overflow-y: auto;">
                   ${primaryArticle ? `
@@ -884,7 +887,10 @@ function FallbackMapComponent({ articles, onCountryClick }) {
           zIndex: 1000
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 style={{ margin: 0, color: '#333' }}>{countryData[selectedCountry].name}</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '24px', lineHeight: 1 }}>{getFlagEmoji(selectedCountry)}</span>
+              <h3 style={{ margin: 0, color: '#333' }}>{countryData[selectedCountry].name}</h3>
+            </div>
             <button
               onClick={() => setSelectedCountry(null)}
               style={{

@@ -1,8 +1,8 @@
 # Global Perspectives — Change Log
 
 ## 2026-01-07
-- **Map Modal Country Flags:** Added country flag emojis to the article list modal header. When clicking "View all X articles" on a map marker, the modal now displays the country's flag (🇺🇸, 🇫🇷, 🇯🇵, etc.) next to the country name for better visual recognition. Falls back to 🌍 globe emoji for unknown countries.
-- Updated `global-perspectives-starter/frontend/src/components/WorldMap.jsx` with flag emoji conversion utility and modal header styling.
+- **Map Country Flags (Complete):** Added country flag emojis to all map UI elements for consistent visual recognition. Flags now appear in: (1) Info window popup when clicking markers, (2) Article list modal when clicking "View all X articles", and (3) Fallback SVG map info panel. All display country flags (🇺🇸, 🇫🇷, 🇯🇵, etc.) with 🌍 globe fallback for unknown countries.
+- Updated `global-perspectives-starter/frontend/src/components/WorldMap.jsx` with shared `getFlagEmoji()` utility function and flag display in all three UI contexts.
 - **Trace Cause UI Enhancement:** Replaced numeric "Impact: X/10" badge with qualitative Verdict Banner. Now displays AI classification (True Signal 🔴 / Worth Watching 🟠 / Noise 🟢) with 1-sentence explanation above tabs. Provides clearer, more meaningful insights than arbitrary scores.
 - Updated `global-perspectives-starter/frontend/src/components/TraceCauseDisplay.jsx` with verdict parsing logic, helper functions, and banner UI component.
 

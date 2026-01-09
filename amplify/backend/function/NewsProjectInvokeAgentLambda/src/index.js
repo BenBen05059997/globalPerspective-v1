@@ -19,7 +19,8 @@ const DEFAULT_TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
 const DEFAULT_TOP_P = Number(process.env.TOP_P || '0.9');
 
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
-const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
+const STAGING_ITEM_ID = 'staging';
+const ACTIVE_ITEM_ID = 'latest';
 
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
@@ -36,7 +37,8 @@ exports.handler = async (event) => {
   try {
     const payload = parseEvent(event);
     const { action, topicId, readOnly } = normalizeAction(payload);
-    const topics = await loadTopics();
+
+    const { topics, generationId, generatedDate, generatedYear, item: stagingItem } = await loadTopics();
 
     if (!topics.length) {
       return http(503, { error: 'Topics cache empty or stale' });
@@ -52,31 +54,43 @@ exports.handler = async (event) => {
       return http(200, { cached: true, results });
     }
 
+    console.log(`Starting generation for ${filteredTopics.length} topics (generationId: ${generationId})`);
+
     const outputs = [];
     for (const topic of filteredTopics) {
       if (action === 'summary' || action === 'both') {
-        const summary = await generateAndStore(topic, 'summary');
+        const summary = await generateAndStore(topic, 'summary', generationId, generatedDate, generatedYear);
         outputs.push(summary);
       }
-      if (action === 'trace_cause') {
-        const traceCause = await generateAndStore(topic, 'trace_cause');
+      if (action === 'trace_cause' || action === 'both') {
+        const traceCause = await generateAndStore(topic, 'trace_cause', generationId, generatedDate, generatedYear);
         outputs.push(traceCause);
       }
       if (action === 'prediction' || action === 'both') {
-        const prediction = await generateAndStore(topic, 'prediction');
+        const prediction = await generateAndStore(topic, 'prediction', generationId, generatedDate, generatedYear);
         outputs.push(prediction);
       }
     }
 
-    if (!readOnly && CACHE_CLEANUP_ENABLED) {
+    console.log(`Generation complete: ${outputs.length} items (generationId: ${generationId})`);
+
+    const swapped = await swapStagingToActive(stagingItem, generationId);
+
+    if (!readOnly && CACHE_CLEANUP_ENABLED && swapped) {
       try {
-        await pruneObsoleteEntries(new Set(topics.map(t => t.id)));
+        await pruneObsoleteEntries(generationId);
       } catch (cleanupErr) {
         console.warn('Cache cleanup encountered an issue:', cleanupErr);
       }
     }
 
-    return http(200, { success: true, generated: outputs.length, items: outputs });
+    return http(200, {
+      success: true,
+      generated: outputs.length,
+      generationId,
+      swapped,
+      items: outputs,
+    });
   } catch (err) {
     console.error('NewsProjectInvokeAgentLambda error:', err);
     return http(500, { error: err.message || String(err) });
@@ -130,53 +144,90 @@ async function loadTopics() {
   if (!TOPICS_TABLE) {
     throw new Error('TOPICS_DDB_TABLE env var not set');
   }
+
   const { Item } = await ddb.send(
     new GetCommand({
       TableName: TOPICS_TABLE,
-      Key: { id: TOPICS_ITEM_ID },
+      Key: { id: STAGING_ITEM_ID },
     }),
   );
-  if (!Item || !Array.isArray(Item.topics)) {
-    return [];
-  }
-  return Item.topics.map((t, idx) => {
-    const stableId = buildStableTopicId(t, idx);
-    const categories = Array.isArray(t.categories)
-      ? t.categories
-      : t.category
-        ? [t.category]
-        : [];
 
-    return {
-      id: stableId,
-      topicId: stableId,
-      title: t.title,
-      description: t.description || '',
-      categories,
-      regions: Array.isArray(t.regions) ? t.regions : [],
-      primary_location: t.primary_location,
-      location_context: t.location_context,
-      sources: t.sources || [],
-    };
+  const now = new Date();
+  const fallbackDate = now.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
+  const fallbackYear = now.getFullYear();
+
+  if (!Item || !Array.isArray(Item.topics)) {
+    console.warn('No staging topics found, checking active...');
+    const { Item: activeItem } = await ddb.send(
+      new GetCommand({
+        TableName: TOPICS_TABLE,
+        Key: { id: ACTIVE_ITEM_ID },
+      }),
+    );
+    if (!activeItem || !Array.isArray(activeItem.topics)) {
+      return { topics: [], generationId: null, generatedDate: null, generatedYear: null, item: null };
+    }
+    return {
+      topics: activeItem.topics.map((t, idx) => buildTopic(t, idx)),
+      generationId: activeItem.generationId || null,
+      generatedDate: activeItem.generatedDate || fallbackDate,
+      generatedYear: activeItem.generatedYear || fallbackYear,
+      item: activeItem,
+    };
+  }
+
+  return {
+    topics: Item.topics.map((t, idx) => buildTopic(t, idx)),
+    generationId: Item.generationId || `gen-${Date.now()}`,
+    generatedDate: Item.generatedDate || fallbackDate,
+    generatedYear: Item.generatedYear || fallbackYear,
+    item: Item,
+  };
 }
 
-function buildSummaryPrompt(topic) {
+function buildTopic(t, idx) {
+  const stableId = buildStableTopicId(t, idx);
+  const categories = Array.isArray(t.categories)
+    ? t.categories
+    : t.category
+      ? [t.category]
+      : [];
+
+  return {
+    id: stableId,
+    topicId: stableId,
+    title: t.title,
+    description: t.description || '',
+    categories,
+    regions: Array.isArray(t.regions) ? t.regions : [],
+    primary_location: t.primary_location,
+    location_context: t.location_context,
+    sources: t.sources || [],
+  };
+}
+
+function buildSummaryPrompt(topic, generatedDate) {
   return [
-    'You are an analyst. Summarize this topic in 3-4 bullet points.',
+    `You are an analyst summarizing news from ${generatedDate}.`,
+    'Summarize this topic in 3-4 bullet points.',
     `Title: ${topic.title || 'Untitled Topic'}`,
     `Description: ${topic.description || 'No description provided.'}`,
     'Also highlight the main countries or regions involved if present.',
   ].join('\n\n');
 }
 
-function buildTraceCausePrompt(topic) {
+function buildTraceCausePrompt(topic, generatedDate) {
   const snippets = topic.sources
     ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
     : 'No article snippets available.';
 
   return [
-    'You are a "Council of Experts" analyzing this news topic. Your goal is to provide deep context and balanced perspectives, filtering out noise.',
+    `You are a "Council of Experts" analyzing news from ${generatedDate}. Your goal is to provide deep context and balanced perspectives, filtering out noise.`,
+    `IMPORTANT: Today's date is ${generatedDate}. All analysis should be relative to this date.`,
     `Topic: ${topic.title || 'Untitled'}`,
     `Description: ${topic.description || ''}`,
     '',
@@ -200,34 +251,36 @@ function buildTraceCausePrompt(topic) {
   ].join('\n\n');
 }
 
-function buildPredictionPrompt(topic) {
+function buildPredictionPrompt(topic, generatedDate, generatedYear) {
   return [
-    'You are a Global Systems Analyst. Your job is to map the "Chain Reaction" of this event.',
+    `You are a Global Systems Analyst analyzing news from ${generatedDate}.`,
+    `IMPORTANT: Today is ${generatedDate}. The current year is ${generatedYear}. All predictions and timeframes must be relative to this date.`,
+    '',
     `Topic: ${topic.title}`,
     `Premise: ${topic.description}`,
     '',
     'Tasks:',
     '1. **Chain Reaction Map**: Visualize the consequences in a logical flow:',
-    '   `Event ➔ Immediate Effect ➔ 2nd Order Effect ➔ Global Consequence`',
-    '   (Example: "Drought in Panama ➔ Canal traffic slows ➔ Shipping costs rise ➔ Inflation in US/Asia markets")',
+    '   `Event -> Immediate Effect -> 2nd Order Effect -> Global Consequence`',
+    '   (Example: "Drought in Panama -> Canal traffic slows -> Shipping costs rise -> Inflation in US/Asia markets")',
     '',
     '2. **Winners & Losers**: Who benefits from this connection? Who suffers?',
     '   - **Winners**: (Countries, Industries, or Leaders)',
     '   - **Losers**: (Populations, Economies, or Alliances)',
     '',
-    '3. **Watchlist Signals**: List 2 concrete future events (with approx timeframe) that would confirm this chain reaction is happening.',
+    `3. **Watchlist Signals**: List 2 concrete future events (with timeframes relative to ${generatedYear}) that would confirm this chain reaction is happening.`,
   ].join('\n');
 }
 
-async function generateAndStore(topic, kind) {
+async function generateAndStore(topic, kind, generationId, generatedDate, generatedYear) {
   let prompt;
-  if (kind === 'summary') prompt = buildSummaryPrompt(topic);
-  else if (kind === 'trace_cause') prompt = buildTraceCausePrompt(topic);
-  else prompt = buildPredictionPrompt(topic);
+  if (kind === 'summary') prompt = buildSummaryPrompt(topic, generatedDate);
+  else if (kind === 'trace_cause') prompt = buildTraceCausePrompt(topic, generatedDate);
+  else prompt = buildPredictionPrompt(topic, generatedDate, generatedYear);
 
   const response = await invokeOpenAI(prompt);
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
-  const item = await writeCache(topic, kind, response, ttlSeconds);
+  const item = await writeCache(topic, kind, response, ttlSeconds, generationId);
   return item;
 }
 
@@ -337,7 +390,7 @@ async function readCache(topic, action) {
   return { topicId: topic.id, items: results };
 }
 
-async function writeCache(topic, kind, response, ttlSeconds) {
+async function writeCache(topic, kind, response, ttlSeconds, generationId) {
   if (!SUMMARY_TABLE) {
     throw new Error('SUMMARIZE_PREDICT_TABLE env var not set');
   }
@@ -358,6 +411,7 @@ async function writeCache(topic, kind, response, ttlSeconds) {
     model: response.modelId,
     provider: 'openai',
     generatedAt: new Date().toISOString(),
+    generationId,
     ttl,
     latencyMs: response.latencyMs,
   };
@@ -369,16 +423,44 @@ async function writeCache(topic, kind, response, ttlSeconds) {
     }),
   );
 
-  console.log(`Cached ${kind} for ${topic.id} via OpenAI`);
+  console.log(`Cached ${kind} for ${topic.id} (generationId: ${generationId})`);
   return item;
 }
 
-async function pruneObsoleteEntries(validTopicIds) {
-  if (!SUMMARY_TABLE || !validTopicIds || !validTopicIds.size) {
+async function swapStagingToActive(stagingItem, generationId) {
+  if (!TOPICS_TABLE || !stagingItem) {
+    console.warn('Cannot swap: missing table or staging item');
+    return false;
+  }
+
+  try {
+    const activeItem = {
+      ...stagingItem,
+      id: ACTIVE_ITEM_ID,
+      status: 'active',
+      activatedAt: new Date().toISOString(),
+    };
+
+    await ddb.send(
+      new PutCommand({
+        TableName: TOPICS_TABLE,
+        Item: activeItem,
+      }),
+    );
+
+    console.log(`Swapped staging -> active (generationId: ${generationId})`);
+    return true;
+  } catch (err) {
+    console.error('Failed to swap staging to active:', err);
+    return false;
+  }
+}
+
+async function pruneObsoleteEntries(currentGenerationId) {
+  if (!SUMMARY_TABLE || !currentGenerationId) {
     return;
   }
 
-  const validPkSet = new Set(Array.from(validTopicIds).map(id => `${PK_PREFIX}${id}`));
   let lastEvaluatedKey = undefined;
   const keysToDelete = [];
 
@@ -386,7 +468,7 @@ async function pruneObsoleteEntries(validTopicIds) {
     const { Items, LastEvaluatedKey } = await ddb.send(
       new ScanCommand({
         TableName: SUMMARY_TABLE,
-        ProjectionExpression: 'PK, SK',
+        ProjectionExpression: 'PK, SK, generationId',
         ExclusiveStartKey: lastEvaluatedKey,
       }),
     );
@@ -394,7 +476,13 @@ async function pruneObsoleteEntries(validTopicIds) {
     if (Array.isArray(Items)) {
       for (const item of Items) {
         const pk = item?.PK;
-        if (typeof pk === 'string' && pk.startsWith(PK_PREFIX) && !validPkSet.has(pk)) {
+        const itemGenId = item?.generationId;
+
+        if (
+          typeof pk === 'string' &&
+          pk.startsWith(PK_PREFIX) &&
+          (!itemGenId || itemGenId !== currentGenerationId)
+        ) {
           keysToDelete.push({ PK: pk, SK: item.SK });
         }
       }
@@ -404,10 +492,11 @@ async function pruneObsoleteEntries(validTopicIds) {
   } while (lastEvaluatedKey);
 
   if (!keysToDelete.length) {
+    console.info('No obsolete entries to prune');
     return;
   }
 
-  console.info('Pruning obsolete summary/prediction entries', { count: keysToDelete.length });
+  console.info(`Pruning ${keysToDelete.length} entries from old generations`);
 
   const chunks = [];
   for (let i = 0; i < keysToDelete.length; i += 25) {

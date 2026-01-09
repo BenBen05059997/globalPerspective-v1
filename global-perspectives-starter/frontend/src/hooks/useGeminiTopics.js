@@ -10,6 +10,7 @@ export function useGeminiTopics() {
   const [error, setError] = useState(null);
   const [isStale, setIsStale] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(null);
+  const [generatedDate, setGeneratedDate] = useState(null);
   const [hasNewData, setHasNewData] = useState(false);
 
   const loadTopics = useCallback(async () => {
@@ -26,6 +27,7 @@ export function useGeminiTopics() {
         if (list.length > 0) {
           setTopics(list);
           setUpdatedAt(cached?.updatedAt || null);
+          setGeneratedDate(cached?.generatedDate || null);
           setIsStale(!isFresh);
           hadCachedTopics = true;
         }
@@ -43,6 +45,7 @@ export function useGeminiTopics() {
       setTopics(list);
       setIsStale(Boolean(data?.stale));
       setUpdatedAt(data?.updatedAt || null);
+      setGeneratedDate(data?.generatedDate || null);
       setHasNewData(false);
       try {
         localStorage.setItem(
@@ -51,6 +54,7 @@ export function useGeminiTopics() {
             topics: list,
             timestamp: Date.now(),
             updatedAt: data?.updatedAt || null,
+            generatedDate: data?.generatedDate || null,
           })
         );
       } catch {
@@ -88,5 +92,5 @@ export function useGeminiTopics() {
     return () => clearInterval(intervalId);
   }, [updatedAt]);
 
-  return { topics, loading, error, refetch: loadTopics, isStale, updatedAt, hasNewData };
+  return { topics, loading, error, refetch: loadTopics, isStale, updatedAt, generatedDate, hasNewData };
 }

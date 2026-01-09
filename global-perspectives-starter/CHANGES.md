@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-01-09
+- Backend: Added `generatedDate` and `generatedYear` fields to topic generation pipeline
+- AI Prompts: Updated all AI prompts (summary, prediction, trace_cause) to include current date context
+- Frontend: Display "Topics from [date]" instead of just relative time
+- Fix: AI predictions now reference correct year (2026) instead of outdated 2024 references
+- Data Flow: Centralized date at generation source (newsInvokeGemini) flows through entire pipeline
+
 ## 2025-10-09
 - Security: Restored direct Amplify AppSync configuration; removed Vite env usage for AppSync.
 - Configuration: Added root `.gitignore` to exclude `.env` files; committed sanitized `.env.example` and `frontend/.env.example`.

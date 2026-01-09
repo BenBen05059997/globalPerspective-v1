@@ -147,8 +147,15 @@ async function writeCache({ topics, model, limit }) {
     return { cached: false, reason };
   }
 
-  const updatedAt = new Date().toISOString();
+  const now = new Date();
+  const updatedAt = now.toISOString();
   const generationId = `gen-${Date.now()}`;
+  const generatedDate = now.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const generatedYear = now.getFullYear();
 
   const item = {
     id: CACHE_ID,
@@ -156,6 +163,8 @@ async function writeCache({ topics, model, limit }) {
     model,
     limit,
     updatedAt,
+    generatedDate,
+    generatedYear,
     generationId,
     status: 'pending',
   };

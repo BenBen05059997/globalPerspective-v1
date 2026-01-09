@@ -10,7 +10,7 @@ import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import './AIComponents.css'; // Import new premium styles
 
 function Home() {
-  const { topics, loading, error, refetch, isStale, updatedAt, hasNewData } = useGeminiTopics();
+  const { topics, loading, error, refetch, isStale, updatedAt, generatedDate, hasNewData } = useGeminiTopics();
 
   // Organize topics by region
   const categorizedTopics = React.useMemo(() => {
@@ -268,7 +268,7 @@ function Home() {
         <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
           Trending topics from around the world, organized by region
         </p>
-        {updatedAt && (
+        {(generatedDate || updatedAt) && (
           <p
             style={{
               fontSize: '0.9rem',
@@ -277,7 +277,8 @@ function Home() {
             }}
           >
             {isStale && '⚠️ '}
-            Updated {getTimeAgo(updatedAt)}
+            {generatedDate ? `Topics from ${generatedDate}` : `Updated ${getTimeAgo(updatedAt)}`}
+            {updatedAt && generatedDate && ` (${getTimeAgo(updatedAt)})`}
             {isStale && ' (refreshing...)'}
           </p>
         )}

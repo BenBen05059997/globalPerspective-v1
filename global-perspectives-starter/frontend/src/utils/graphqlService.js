@@ -77,6 +77,8 @@ class GraphQLService {
       cached: payload?.cached ?? true,
       stale: payload?.stale ?? false,
       updatedAt: item.updatedAt,
+      generatedDate: item.generatedDate || null,
+      generatedYear: item.generatedYear || null,
     };
   }
 

@@ -167,7 +167,114 @@ const TraceCauseDisplay = ({
         }
     };
 
-    // Simple Markdown Renderer (Headers, Bold, Lists)
+    // Parse timeline events from markdown
+    const parseTimelineEvents = (lines) => {
+        const events = [];
+        let currentEvent = null;
+
+        lines.forEach(line => {
+            // Detect date patterns (e.g., "2020", "2022-01", "Jan 2024", etc.)
+            const dateMatch = line.match(/^(\d{4}[-\/]?\d{0,2}[-\/]?\d{0,2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}|\d{4})\s*[-:]?\s*(.*)/i);
+
+            if (dateMatch) {
+                // Save previous event
+                if (currentEvent) {
+                    events.push(currentEvent);
+                }
+                // Start new event
+                currentEvent = {
+                    date: dateMatch[1].trim(),
+                    title: dateMatch[2].trim() || '',
+                    description: []
+                };
+            } else if (currentEvent) {
+                // Add to description, skip headers and empty lines
+                if (line && !line.startsWith('###') && !line.toLowerCase().includes('timeline')) {
+                    // If this is the first line and title is empty, use it as title
+                    if (currentEvent.title === '' && currentEvent.description.length === 0) {
+                        currentEvent.title = line.trim();
+                    } else {
+                        currentEvent.description.push(line.trim());
+                    }
+                }
+            }
+        });
+
+        // Push last event
+        if (currentEvent) {
+            events.push(currentEvent);
+        }
+
+        return events;
+    };
+
+    // Determine event color stage based on position and keywords
+    const getEventStage = (event, index, total) => {
+        const text = (event.title + ' ' + event.description.join(' ')).toLowerCase();
+
+        // Keyword detection
+        const startKeywords = ['began', 'started', 'initial', 'origin', 'first', 'launch'];
+        const resultKeywords = ['now', 'today', 'current', 'resulted', 'led to', 'culminat', 'recent'];
+
+        if (startKeywords.some(kw => text.includes(kw))) {
+            return 'start';
+        }
+        if (resultKeywords.some(kw => text.includes(kw))) {
+            return 'result';
+        }
+
+        // Position-based fallback
+        const ratio = index / (total - 1 || 1);
+        if (ratio < 0.33) return 'start';
+        if (ratio > 0.66) return 'result';
+        return 'evolve';
+    };
+
+    // Render timeline visualization
+    const renderTimeline = (lines) => {
+        const events = parseTimelineEvents(lines);
+
+        if (events.length === 0) {
+            return <p style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>
+                No timeline events found.
+            </p>;
+        }
+
+        return (
+            <div className="timeline-container">
+                {events.map((event, idx) => {
+                    const stage = getEventStage(event, idx, events.length);
+
+                    return (
+                        <div key={idx} className="timeline-item">
+                            {/* Timeline line with dot */}
+                            <div className="timeline-line">
+                                <div className="timeline-dot"></div>
+                                <div className="timeline-connector"></div>
+                            </div>
+
+                            {/* Event content */}
+                            <div className="timeline-content">
+                                <div className="timeline-date">{event.date}</div>
+                                <div className="timeline-event-card">
+                                    <div className={`timeline-event-title ${stage}`}>
+                                        {event.title}
+                                    </div>
+                                    {event.description.length > 0 && (
+                                        <div className="timeline-event-description">
+                                            {event.description.join(' ')}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    // Simple Markdown Renderer (Headers, Bold, Lists) - for context/perspectives tabs
     const renderMarkdown = (lines) => {
         return lines.map((line, idx) => {
             // Header ###
@@ -336,8 +443,11 @@ const TraceCauseDisplay = ({
 
                     {/* Content Area */}
                     <div className="ai-result-content">
-                        {renderMarkdown(parsedContent[activeTab])}
-                        {parsedContent[activeTab].length === 0 && (
+                        {activeTab === 'timeline'
+                            ? renderTimeline(parsedContent[activeTab])
+                            : renderMarkdown(parsedContent[activeTab])
+                        }
+                        {activeTab !== 'timeline' && parsedContent[activeTab].length === 0 && (
                             <p style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>
                                 No specific data for this section.
                             </p>

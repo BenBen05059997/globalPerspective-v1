@@ -317,6 +317,137 @@
 }
 
 /* ========================================
+   TIMELINE VISUALIZATION
+   ======================================== */
+
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: var(--space-lg) 0;
+  position: relative;
+}
+
+.timeline-item {
+  display: flex;
+  gap: var(--space-lg);
+  position: relative;
+}
+
+/* Timeline vertical line */
+.timeline-line {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Timeline dot (black) */
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  background: #000000;
+  border-radius: 50%;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+/* Vertical connector line */
+.timeline-connector {
+  width: 2px;
+  flex: 1;
+  background: #d1d5db;
+  min-height: 40px;
+}
+
+/* Last item - no connector */
+.timeline-item:last-child .timeline-connector {
+  display: none;
+}
+
+/* Timeline content area */
+.timeline-content {
+  flex: 1;
+  padding-bottom: var(--space-xl);
+}
+
+/* Date badge */
+.timeline-date {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
+  letter-spacing: 0.5px;
+}
+
+/* Event card */
+.timeline-event-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  transition: all var(--transition-base) var(--transition-ease);
+  box-shadow: var(--shadow-sm);
+}
+
+.timeline-event-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Event title with color coding */
+.timeline-event-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--space-sm);
+}
+
+.timeline-event-title.start {
+  color: #10b981; /* Green */
+}
+
+.timeline-event-title.evolve {
+  color: #f59e0b; /* Orange */
+}
+
+.timeline-event-title.result {
+  color: #ef4444; /* Red */
+}
+
+/* Event description */
+.timeline-event-description {
+  color: var(--text-secondary);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-relaxed);
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .timeline-item {
+    gap: var(--space-md);
+  }
+
+  .timeline-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .timeline-event-card {
+    padding: var(--space-md);
+  }
+
+  .timeline-event-title {
+    font-size: var(--font-size-md);
+  }
+
+  .timeline-event-description {
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* ========================================
    MOBILE RESPONSIVENESS
    ======================================== */
 

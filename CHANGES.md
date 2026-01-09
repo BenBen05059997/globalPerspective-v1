@@ -2,8 +2,9 @@
 
 ## 2026-01-09
 - **Timeline Visualization Enhancement:** Replaced plain text timeline with vertical timeline visualization featuring black dots, gray connecting lines, date badges, and event cards with hover effects. Event titles are color-coded by stage: green (starting events), orange (evolving events), red (result events). Uses hybrid keyword + position detection for intelligent color assignment.
+- **Timeline Parsing Fix:** Improved date detection to handle bullet points (`- 2020:`), prose format (`In 2020, something happened`), and dates anywhere in line (not just at start). Added fallback to plain markdown rendering if no dates detected. Strips leading prepositions and separators for cleaner titles.
 - Updated `global-perspectives-starter/frontend/src/components/AIComponents.css` with timeline styles (lines 319-448): timeline-container, timeline-item, timeline-dot, timeline-line, timeline-connector, timeline-event-card with color classes (start/evolve/result).
-- Updated `global-perspectives-starter/frontend/src/components/TraceCauseDisplay.jsx` with parseTimelineEvents() function to extract dates/titles/descriptions, getEventStage() for color detection, and renderTimeline() for visualization (lines 170-275).
+- Updated `global-perspectives-starter/frontend/src/components/TraceCauseDisplay.jsx` with parseTimelineEvents() function to extract dates/titles/descriptions, getEventStage() for color detection, and renderTimeline() for visualization with improved parsing (lines 170-275).
 
 ## 2026-01-08
 - **UI Enhancement - Design System:** Added 60+ CSS variables for spacing (8px scale), typography (6 sizes), colors, shadows, and transitions. Replaces hardcoded values with maintainable design tokens across the application. Variables include `--space-xs` through `--space-3xl` (4px-32px), `--font-size-xs` through `--font-size-xl` (11px-16px), `--radius-sm` through `--radius-full`, shadow scales, and transition timings.

@@ -173,28 +173,52 @@ const TraceCauseDisplay = ({
         let currentEvent = null;
 
         lines.forEach(line => {
-            // Detect date patterns (e.g., "2020", "2022-01", "Jan 2024", etc.)
-            const dateMatch = line.match(/^(\d{4}[-\/]?\d{0,2}[-\/]?\d{0,2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}|\d{4})\s*[-:]?\s*(.*)/i);
+            // Skip headers and empty lines
+            if (!line || line.startsWith('###')) return;
 
-            if (dateMatch) {
+            // Strip bullet prefix for parsing
+            const cleanLine = line.replace(/^[-•]\s*/, '').trim();
+
+            // Look for year pattern anywhere in line (e.g., "2020", "2022-01", "Jan 2024")
+            const yearMatch = cleanLine.match(/\b(\d{4}(?:[-\/]\d{1,2}(?:[-\/]\d{1,2})?)?)\b|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}/i);
+
+            if (yearMatch) {
                 // Save previous event
                 if (currentEvent) {
                     events.push(currentEvent);
                 }
-                // Start new event
+
+                const dateStr = yearMatch[0];
+                const dateIndex = cleanLine.indexOf(dateStr);
+
+                // Extract title: everything after the date, skip common prefixes
+                let title = cleanLine.substring(dateIndex + dateStr.length).trim();
+
+                // Clean up title: remove leading separators and common words
+                title = title
+                    .replace(/^[-:,\s]+/, '')  // Remove separators
+                    .replace(/^(in|by|on|at|the)\s+/i, '')  // Remove leading prepositions
+                    .trim();
+
+                // If no title after date, try text before date
+                if (!title && dateIndex > 0) {
+                    title = cleanLine.substring(0, dateIndex).trim()
+                        .replace(/^(in|by|on|at|the)\s+/i, '');
+                }
+
                 currentEvent = {
-                    date: dateMatch[1].trim(),
-                    title: dateMatch[2].trim() || '',
+                    date: dateStr,
+                    title: title || 'Event',
                     description: []
                 };
             } else if (currentEvent) {
-                // Add to description, skip headers and empty lines
-                if (line && !line.startsWith('###') && !line.toLowerCase().includes('timeline')) {
-                    // If this is the first line and title is empty, use it as title
-                    if (currentEvent.title === '' && currentEvent.description.length === 0) {
-                        currentEvent.title = line.trim();
+                // Add to description if not empty and doesn't contain 'timeline' header text
+                if (cleanLine && !cleanLine.toLowerCase().match(/^timeline\s*$/)) {
+                    // If title is still generic, try to use first description line as title
+                    if (currentEvent.title === 'Event' && currentEvent.description.length === 0) {
+                        currentEvent.title = cleanLine;
                     } else {
-                        currentEvent.description.push(line.trim());
+                        currentEvent.description.push(cleanLine);
                     }
                 }
             }
@@ -234,10 +258,9 @@ const TraceCauseDisplay = ({
     const renderTimeline = (lines) => {
         const events = parseTimelineEvents(lines);
 
+        // Fallback to markdown rendering if no date-based events detected
         if (events.length === 0) {
-            return <p style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>
-                No timeline events found.
-            </p>;
+            return renderMarkdown(lines);
         }
 
         return (

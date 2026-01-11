@@ -154,7 +154,8 @@ const TraceCauseDisplay = ({
                 lower.includes('economic impact') ||
                 lower.includes('geopolitical stability') ||
                 lower.includes('geopolitical impact') ||
-                (lower.includes('verdict:') && lower.includes('true signal'));
+                lower.includes('**verdict') ||
+                lower.includes('verdict:');
 
             if (shouldSkipLine) {
                 return;

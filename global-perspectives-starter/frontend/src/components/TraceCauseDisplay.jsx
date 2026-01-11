@@ -165,8 +165,44 @@ const TraceCauseDisplay = ({
             sections[currentSection].push(cleanedLine);
         });
 
-        // Fallback: Infer verdict from score if verdict not found
-        if (!sections.verdict.classification && sections.score) {
+        // Calculate verdict from impact breakdown (stricter criteria)
+        if (sections.impactBreakdown.length > 0) {
+            const scores = sections.impactBreakdown.map(item => item.score);
+            const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const highCount = scores.filter(s => s >= 8).length;
+            const maxScore = Math.max(...scores);
+
+            // Combine all explanations for keyword detection
+            const allExplanations = sections.impactBreakdown.map(item => item.explanation).join(' ').toLowerCase();
+
+            // True Signal: High scores + global keywords (strict)
+            const globalKeywords = ['global', 'worldwide', 'multiple countries', 'international',
+                                   'war', 'invasion', 'pandemic', 'supply chain', 'trade disruption',
+                                   'energy crisis', 'financial crisis', 'collapse'];
+            const hasGlobalKeyword = globalKeywords.some(kw => allExplanations.includes(kw));
+
+            if (avgScore >= 8 && highCount >= 2 && hasGlobalKeyword) {
+                sections.verdict.classification = 'True Signal';
+                sections.verdict.explanation = 'High-impact event with global implications affecting multiple countries.';
+            }
+            // Worth Watching: Moderate scores or regional keywords
+            else {
+                const regionalKeywords = ['regional', 'neighboring', 'spillover', 'tensions',
+                                        'escalate', 'sanctions', 'drought', 'migration', 'refugees',
+                                        'border', 'instability', 'could affect'];
+                const hasRegionalKeyword = regionalKeywords.some(kw => allExplanations.includes(kw));
+
+                if (avgScore >= 5 && (maxScore >= 7 || hasRegionalKeyword)) {
+                    sections.verdict.classification = 'Worth Watching';
+                    sections.verdict.explanation = 'Moderate-impact event that could escalate or spread regionally.';
+                } else {
+                    sections.verdict.classification = 'Noise';
+                    sections.verdict.explanation = 'Low-impact event with limited consequences beyond local scope.';
+                }
+            }
+        }
+        // Fallback: Infer verdict from score if no impact breakdown available
+        else if (!sections.verdict.classification && sections.score) {
             const numScore = parseInt(sections.score, 10);
             if (numScore >= 8) {
                 sections.verdict.classification = 'True Signal';

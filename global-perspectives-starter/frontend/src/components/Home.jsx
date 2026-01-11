@@ -416,92 +416,107 @@ function Home() {
                             </button>
                           </div>
 
-                          {/* Direct Sources Section */}
-                          <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
-                            {Array.isArray(t.sources) && t.sources.length > 0 ? (
-                              <div>
+                          {/* Sources Section */}
+                          <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem', position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                              {/* Google Search Link */}
+                              {(() => {
+                                const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+                                const sourceUrl = fullTitle
+                                  ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
+                                  : '';
+
+                                return (
+                                  <a
+                                    href={sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-link"
+                                    style={{
+                                      fontSize: '0.85rem',
+                                      color: '#666',
+                                      textDecoration: 'none',
+                                      fontWeight: '400'
+                                    }}
+                                  >
+                                    Search Google News ↗
+                                  </a>
+                                );
+                              })()}
+
+                              {/* Sources Dropdown Button */}
+                              {Array.isArray(t.sources) && t.sources.length > 0 && (
                                 <button
                                   onClick={() => toggleSourcesExpanded(t, globalIdx)}
                                   style={{
                                     background: 'none',
-                                    border: 'none',
-                                    padding: '0.25rem 0',
+                                    border: '1px solid #e0e0e0',
+                                    borderRadius: '4px',
+                                    padding: '0.25rem 0.5rem',
                                     cursor: 'pointer',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '600',
-                                    color: '#1a73e8',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.25rem'
-                                  }}
-                                >
-                                  <span>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▼' : '▶'}</span>
-                                  <span>Sources ({t.sources.length})</span>
-                                </button>
-
-                                {sourcesExpanded[getTopicId(t, globalIdx)] && (
-                                  <div style={{
-                                    marginTop: '0.5rem',
-                                    paddingLeft: '1.5rem',
-                                    borderLeft: '2px solid #e0e0e0'
-                                  }}>
-                                    {t.sources.map((source, srcIdx) => (
-                                      <div key={srcIdx} style={{ marginBottom: '0.5rem' }}>
-                                        <a
-                                          href={source.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          style={{
-                                            fontSize: '0.85rem',
-                                            color: '#1a73e8',
-                                            textDecoration: 'none',
-                                            display: 'block',
-                                            lineHeight: '1.4'
-                                          }}
-                                        >
-                                          • {source.title || 'Untitled'}
-                                        </a>
-                                        <div style={{
-                                          fontSize: '0.75rem',
-                                          color: '#666',
-                                          marginLeft: '0.75rem',
-                                          marginTop: '0.15rem'
-                                        }}>
-                                          {source.source} {source.age ? `• ${source.age}` : ''}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            ) : null}
-
-                            {/* Google Search Link */}
-                            {(() => {
-                              const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
-                              const sourceUrl = fullTitle
-                                ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
-                                : '';
-
-                              return (
-                                <a
-                                  href={sourceUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-link"
-                                  style={{
                                     fontSize: '0.85rem',
-                                    color: '#666',
-                                    textDecoration: 'none',
-                                    fontWeight: '400',
-                                    marginTop: Array.isArray(t.sources) && t.sources.length > 0 ? '0.5rem' : '0',
-                                    display: 'inline-block'
+                                    fontWeight: '500',
+                                    color: '#1a73e8',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    transition: 'all 0.2s'
                                   }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                 >
-                                  Search Google News ↗
-                                </a>
-                              );
-                            })()}
+                                  <span>Sources ({t.sources.length})</span>
+                                  <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Helper text */}
+                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                              Note: Very recent news may take time to appear in search results
+                            </div>
+
+                            {/* Sources Dropdown */}
+                            {Array.isArray(t.sources) && t.sources.length > 0 && sourcesExpanded[getTopicId(t, globalIdx)] && (
+                              <div style={{
+                                marginTop: '0.75rem',
+                                padding: '0.75rem',
+                                background: '#f9f9f9',
+                                border: '1px solid #e0e0e0',
+                                borderRadius: '4px',
+                                maxHeight: '300px',
+                                overflowY: 'auto'
+                              }}>
+                                {t.sources.map((source, srcIdx) => (
+                                  <div key={srcIdx} style={{ marginBottom: srcIdx < t.sources.length - 1 ? '0.75rem' : '0', paddingBottom: srcIdx < t.sources.length - 1 ? '0.75rem' : '0', borderBottom: srcIdx < t.sources.length - 1 ? '1px solid #e0e0e0' : 'none' }}>
+                                    <a
+                                      href={source.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{
+                                        fontSize: '0.85rem',
+                                        color: '#1a73e8',
+                                        textDecoration: 'none',
+                                        display: 'block',
+                                        lineHeight: '1.4',
+                                        fontWeight: '500'
+                                      }}
+                                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                                    >
+                                      {source.title || 'Untitled'}
+                                    </a>
+                                    <div style={{
+                                      fontSize: '0.75rem',
+                                      color: '#666',
+                                      marginTop: '0.25rem'
+                                    }}>
+                                      {source.source} {source.age ? `• ${source.age}` : ''}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
 

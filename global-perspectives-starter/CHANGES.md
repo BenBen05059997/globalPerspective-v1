@@ -4,8 +4,11 @@
 - Backend: Fix Brave Search rate limiting (HTTP 429) by adding 2000ms delay between regional queries
 - Backend: Stricter Gemini prompt to prevent AI hallucination of non-existent news sources
 - Backend: Source validation filter to remove fabricated URLs not in original Brave results
-- Frontend: Added collapsible "Sources" section showing actual Brave articles with links
-- Frontend: Renamed "View Sources" to "Search Google News" to clarify it's a fallback search
+- Backend: Block archive domains (archive.is, archive.ph, web.archive.org) from sources
+- Backend: Filter out articles older than 48 hours to ensure recent news only
+- Frontend: Redesigned sources UI as dropdown button next to Google search (cleaner layout)
+- Frontend: Added helper text about real-time indexing delays
+- Frontend: Improved dropdown styling with hover effects and max height scrolling
 - Data Quality: All 10 regional Brave queries now succeed, providing better global news coverage
 
 ## 2026-01-09

@@ -59,6 +59,47 @@ function extractJson(text) {
   throw new Error('Failed to parse JSON from model output');
 }
 
+// Parse age string (e.g., "2 hours ago", "1 day ago") and return hours
+function parseAgeToHours(ageStr) {
+  if (!ageStr || typeof ageStr !== 'string') return null;
+  const lower = ageStr.toLowerCase().trim();
+
+  const hourMatch = lower.match(/(\d+)\s*hour/);
+  if (hourMatch) return parseInt(hourMatch[1], 10);
+
+  const dayMatch = lower.match(/(\d+)\s*day/);
+  if (dayMatch) return parseInt(dayMatch[1], 10) * 24;
+
+  const minMatch = lower.match(/(\d+)\s*min/);
+  if (minMatch) return parseInt(minMatch[1], 10) / 60;
+
+  return null;
+}
+
+// Filter out articles that are too old or from blocked domains
+function shouldFilterArticle(article) {
+  const BLOCKED_DOMAINS = ['archive.is', 'archive.ph', 'web.archive.org', 'archive.org'];
+  const MAX_AGE_HOURS = 48; // 2 days
+
+  // Check domain blacklist
+  const url = article.url || '';
+  for (const domain of BLOCKED_DOMAINS) {
+    if (url.includes(domain)) {
+      console.warn(`FILTERED: Blocked archive domain: ${url}`);
+      return true;
+    }
+  }
+
+  // Check age
+  const ageHours = parseAgeToHours(article.age);
+  if (ageHours !== null && ageHours > MAX_AGE_HOURS) {
+    console.warn(`FILTERED: Article too old (${article.age}): ${article.title?.substring(0, 60)}`);
+    return true;
+  }
+
+  return false;
+}
+
 async function fetchBraveNews(limit) {
   if (!BRAVE_API_KEY) {
     console.warn('BRAVE_SEARCH_API_KEY not configured, skipping Brave search');
@@ -129,14 +170,21 @@ async function fetchBraveNews(limit) {
 
     console.log(`Brave Search returned ${uniqueArticles.length} unique articles from ${queries.length} queries`);
 
+    // Filter out old articles and blocked domains
+    const filteredArticles = uniqueArticles.filter(article => !shouldFilterArticle(article));
+    const filteredCount = uniqueArticles.length - filteredArticles.length;
+    if (filteredCount > 0) {
+      console.log(`FILTER: Removed ${filteredCount} articles (old or blocked domains). ${filteredArticles.length} remain.`);
+    }
+
     // DEBUG: Log sample of fetched articles
-    console.log('DEBUG: Sample Brave articles:', JSON.stringify(uniqueArticles.slice(0, 5).map(a => ({
+    console.log('DEBUG: Sample Brave articles:', JSON.stringify(filteredArticles.slice(0, 5).map(a => ({
       title: a.title?.substring(0, 60),
       source: a.meta_url?.hostname || a.source,
       age: a.age
     })), null, 2));
 
-    return uniqueArticles.map((article) => ({
+    return filteredArticles.map((article) => ({
       title: article.title || '',
       url: article.url || '',
       description: article.description || '',

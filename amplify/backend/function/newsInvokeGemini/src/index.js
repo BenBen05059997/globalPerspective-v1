@@ -85,7 +85,15 @@ async function fetchBraveNews(limit) {
     const allArticles = [];
 
     // Fetch from each query to ensure topic diversity
-    for (const query of queries) {
+    for (let i = 0; i < queries.length; i++) {
+      const query = queries[i];
+
+      // Add delay between queries to avoid rate limiting (429)
+      // 2000ms ensures all 10 regional queries succeed reliably
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
       try {
         const url = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(query)}&count=${articlesPerQuery}&freshness=pd&search_lang=en`;
 
@@ -102,6 +110,8 @@ async function fetchBraveNews(limit) {
           const articles = data?.results || [];
           allArticles.push(...articles);
           console.log(`Brave Search query "${query.substring(0, 30)}..." returned ${articles.length} articles`);
+        } else {
+          console.warn(`Brave Search query "${query.substring(0, 30)}..." failed with status ${response.status}`);
         }
       } catch (queryError) {
         console.warn(`Failed to fetch for query "${query.substring(0, 30)}...":`, queryError.message);
@@ -118,6 +128,13 @@ async function fetchBraveNews(limit) {
     });
 
     console.log(`Brave Search returned ${uniqueArticles.length} unique articles from ${queries.length} queries`);
+
+    // DEBUG: Log sample of fetched articles
+    console.log('DEBUG: Sample Brave articles:', JSON.stringify(uniqueArticles.slice(0, 5).map(a => ({
+      title: a.title?.substring(0, 60),
+      source: a.meta_url?.hostname || a.source,
+      age: a.age
+    })), null, 2));
 
     return uniqueArticles.map((article) => ({
       title: article.title || '',
@@ -223,37 +240,35 @@ exports.handler = async (event) => {
 
       prompt = [
         'You are analyzing real news articles from today.',
-        'Below are actual news articles with verified sources and URLs.',
+        'Below are the ONLY articles available. You must work exclusively with these.',
         '',
+        '=== START OF AVAILABLE ARTICLES ===',
         articlesText,
+        '=== END OF AVAILABLE ARTICLES ===',
         '',
-        `Task: Select exactly ${limit} distinct global news topics.`,
+        `Task: Create up to ${limit} news topics by grouping the articles above.`,
         'Return only a JSON array with no commentary.',
         '',
-        'CRITICAL SELECTION PRIORITIES:',
-        '1. **IMPACT FIRST**: Prioritize major "Conflict", "Disaster", or "Economic Crisis" events over minor political updates.',
-        '2. **REGIONAL QUOTAS**: You MUST attempt to select at least one significant topic from EACH of these 10 regions if available:',
-        '   - **North America**',
-        '   - **South America**',
-        '   - **Western Europe**',
-        '   - **Eastern Europe** (incl. Russia/Ukraine)',
-        '   - **East Asia**',
-        '   - **Southeast Asia**',
-        '   - **Middle East**',
-        '   - **Africa**',
-        '   - **Oceania**',
-        '   - **Global Headline** (The single biggest story)',
+        '⚠️ CRITICAL RULES - VIOLATION WILL CAUSE SYSTEM FAILURE:',
+        '1. **ONLY USE ARTICLES FROM ABOVE**: Every source in your response MUST be copied EXACTLY from the list above.',
+        '2. **DO NOT INVENT**: Do NOT create, fabricate, or hallucinate any URLs, titles, or sources.',
+        '3. **DO NOT ADD EXTERNAL KNOWLEDGE**: Only use information from the provided articles.',
+        '4. **COPY URLs EXACTLY**: Source URLs must match exactly - do not modify or guess URLs.',
+        '5. **SKIP MISSING REGIONS**: If a region has no articles above, do NOT create a topic for it.',
         '',
-        'If a region has no major breaking news, select its most significant developing story.',
+        'SELECTION PRIORITIES (only from available articles):',
+        '- Prioritize major "Conflict", "Disaster", or "Economic Crisis" events',
+        '- Try to cover different regions IF articles exist for them',
+        '- Group related articles into the same topic',
         '',
         'Each item must be an object with fields:',
-        '- title: string (concise topic title summarizing related articles)',
-        '- category: string (e.g., politics, economy, technology, environment, security, health, culture)',
-        '- search_keywords: array of 3-6 short keywords',
-        '- regions: array of specific country names (NEVER use regional terms like "Middle East", "Asia", "Europe". Always use actual country names like "Israel", "Iran", "China", "Japan", "France", "Germany")',
-        '- sources: array of objects with {title, url, source, age, snippet} from the articles above.',
+        '- title: string (concise topic title summarizing the grouped articles)',
+        '- category: string (politics, economy, technology, environment, security, health, culture)',
+        '- search_keywords: array of 3-6 short keywords from the articles',
+        '- regions: array of country names mentioned in the articles (use specific countries, not regions)',
+        '- sources: array copied from articles above with {title, url, source, age, snippet}',
         '',
-        'Group related articles into the same topic. Include all relevant source articles for each topic.',
+        'REMEMBER: Only use sources that appear in the article list above. Do not invent any sources.',
       ].join('\n');
     } else {
       // Fallback to original Gemini-only approach if Brave fails
@@ -270,11 +285,16 @@ exports.handler = async (event) => {
       ].join('\n');
     }
 
+    console.log('DEBUG: Sending prompt to Gemini, article count:', braveArticles?.length || 0);
+
     const result = await model.generateContent(prompt);
     const text =
       (typeof result?.response?.text === 'function' ? result?.response?.text() : null) ||
       result?.response?.candidates?.[0]?.content?.parts?.[0]?.text ||
       '';
+
+    // DEBUG: Log Gemini raw response (first 1000 chars)
+    console.log('DEBUG: Gemini response preview:', text?.substring(0, 1000));
 
     if (!text) {
       const msg = 'Empty response from Gemini model';
@@ -287,10 +307,29 @@ exports.handler = async (event) => {
 
     const topics = extractJson(text);
 
+    // SOURCE VALIDATION: Filter out hallucinated URLs not in original Brave results
+    const validUrls = new Set(braveArticles ? braveArticles.map(a => a.url) : []);
+    let totalSourcesBefore = 0;
+    let totalSourcesAfter = 0;
+
     const normalized = Array.isArray(topics)
       ? topics.map((t, idx) => {
         const title = String(t?.title || '').trim();
         const topicId = createStableTopicId(title, idx);
+        const rawSources = Array.isArray(t?.sources) ? t.sources : [];
+        totalSourcesBefore += rawSources.length;
+
+        // Only keep sources whose URLs exist in the original Brave results
+        const validatedSources = rawSources.filter(s => {
+          if (!s?.url) return false;
+          const isValid = validUrls.has(s.url);
+          if (!isValid) {
+            console.warn(`HALLUCINATION DETECTED: Filtering out fabricated URL: ${s.url}`);
+          }
+          return isValid;
+        });
+        totalSourcesAfter += validatedSources.length;
+
         return {
           id: topicId,
           topicId,
@@ -298,10 +337,27 @@ exports.handler = async (event) => {
           category: String(t?.category || '').trim(),
           search_keywords: Array.isArray(t?.search_keywords) ? t.search_keywords.map((k) => String(k)) : [],
           regions: Array.isArray(t?.regions) ? t.regions.map((r) => String(r)) : [],
-          sources: Array.isArray(t?.sources) ? t.sources : [],  // NEW: Save Brave article sources
+          sources: validatedSources,
         };
       })
       : [];
+
+    // Log source validation results
+    const filteredOut = totalSourcesBefore - totalSourcesAfter;
+    if (filteredOut > 0) {
+      console.warn(`SOURCE VALIDATION: Filtered out ${filteredOut} hallucinated sources (${totalSourcesBefore} -> ${totalSourcesAfter})`);
+    } else {
+      console.log(`SOURCE VALIDATION: All ${totalSourcesAfter} sources validated successfully`);
+    }
+
+    // DEBUG: Log final topics with source counts
+    console.log('DEBUG: Final topics summary:', JSON.stringify(normalized.map(t => ({
+      title: t.title?.substring(0, 50),
+      category: t.category,
+      regions: t.regions,
+      sourceCount: t.sources?.length || 0,
+      sampleSource: t.sources?.[0]?.title?.substring(0, 40) || 'NO SOURCES'
+    })), null, 2));
 
     const cacheResult = await writeCache({ topics: normalized, model: MODEL_NAME, limit });
 

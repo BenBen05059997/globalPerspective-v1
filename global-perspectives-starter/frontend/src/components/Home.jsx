@@ -33,6 +33,8 @@ function Home() {
   const [traceCauseErrors, setTraceCauseErrors] = useState({});
   const [traceCauseCollapsed, setTraceCauseCollapsed] = useState({});
 
+  const [sourcesExpanded, setSourcesExpanded] = useState({});
+
   // Stores the last time a user clicked a button for a specific topic+feature
   // Keys: topicId_feature (e.g. "123_summary")
   const [activeTimestamps, setActiveTimestamps] = useState({});
@@ -247,6 +249,11 @@ function Home() {
     setTraceCauseCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const toggleSourcesExpanded = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setSourcesExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const getTimeAgo = (isoString) => {
     if (!isoString) return null;
     const date = new Date(isoString);
@@ -409,25 +416,93 @@ function Home() {
                             </button>
                           </div>
 
-                          {(() => {
-                            // Source link moved to right side for balance
-                            const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
-                            const sourceUrl = fullTitle
-                              ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
-                              : '';
+                          {/* Direct Sources Section */}
+                          <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
+                            {Array.isArray(t.sources) && t.sources.length > 0 ? (
+                              <div>
+                                <button
+                                  onClick={() => toggleSourcesExpanded(t, globalIdx)}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: '0.25rem 0',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '600',
+                                    color: '#1a73e8',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem'
+                                  }}
+                                >
+                                  <span>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▼' : '▶'}</span>
+                                  <span>Sources ({t.sources.length})</span>
+                                </button>
 
-                            return (
-                              <a
-                                href={sourceUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-link"
-                                style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
-                              >
-                                View Sources ↗
-                              </a>
-                            );
-                          })()}
+                                {sourcesExpanded[getTopicId(t, globalIdx)] && (
+                                  <div style={{
+                                    marginTop: '0.5rem',
+                                    paddingLeft: '1.5rem',
+                                    borderLeft: '2px solid #e0e0e0'
+                                  }}>
+                                    {t.sources.map((source, srcIdx) => (
+                                      <div key={srcIdx} style={{ marginBottom: '0.5rem' }}>
+                                        <a
+                                          href={source.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          style={{
+                                            fontSize: '0.85rem',
+                                            color: '#1a73e8',
+                                            textDecoration: 'none',
+                                            display: 'block',
+                                            lineHeight: '1.4'
+                                          }}
+                                        >
+                                          • {source.title || 'Untitled'}
+                                        </a>
+                                        <div style={{
+                                          fontSize: '0.75rem',
+                                          color: '#666',
+                                          marginLeft: '0.75rem',
+                                          marginTop: '0.15rem'
+                                        }}>
+                                          {source.source} {source.age ? `• ${source.age}` : ''}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
+
+                            {/* Google Search Link */}
+                            {(() => {
+                              const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+                              const sourceUrl = fullTitle
+                                ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
+                                : '';
+
+                              return (
+                                <a
+                                  href={sourceUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-link"
+                                  style={{
+                                    fontSize: '0.85rem',
+                                    color: '#666',
+                                    textDecoration: 'none',
+                                    fontWeight: '400',
+                                    marginTop: Array.isArray(t.sources) && t.sources.length > 0 ? '0.5rem' : '0',
+                                    display: 'inline-block'
+                                  }}
+                                >
+                                  Search Google News ↗
+                                </a>
+                              );
+                            })()}
+                          </div>
                         </div>
 
                         {/* AI Summary Display */}

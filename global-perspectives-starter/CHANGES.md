@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-01-11
+- Backend: Fix Brave Search rate limiting (HTTP 429) by adding 2000ms delay between regional queries
+- Backend: Stricter Gemini prompt to prevent AI hallucination of non-existent news sources
+- Backend: Source validation filter to remove fabricated URLs not in original Brave results
+- Frontend: Added collapsible "Sources" section showing actual Brave articles with links
+- Frontend: Renamed "View Sources" to "Search Google News" to clarify it's a fallback search
+- Data Quality: All 10 regional Brave queries now succeed, providing better global news coverage
+
 ## 2026-01-09
 - Backend: Added `generatedDate` and `generatedYear` fields to topic generation pipeline
 - AI Prompts: Updated all AI prompts (summary, prediction, trace_cause) to include current date context

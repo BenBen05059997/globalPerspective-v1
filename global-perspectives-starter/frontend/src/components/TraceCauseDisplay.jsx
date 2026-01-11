@@ -146,8 +146,23 @@ const TraceCauseDisplay = ({
                 currentSection = 'timeline';
             }
 
-            // Add line to current section
-            sections[currentSection].push(trimmed);
+            // Skip lines that are part of impact score breakdown or verdict (already parsed separately)
+            const shouldSkipLine =
+                lower.includes('impact score') ||
+                lower.includes('human impact') ||
+                lower.includes('economic reach') ||
+                lower.includes('economic impact') ||
+                lower.includes('geopolitical stability') ||
+                lower.includes('geopolitical impact') ||
+                (lower.includes('verdict:') && lower.includes('true signal'));
+
+            if (shouldSkipLine) {
+                return;
+            }
+
+            // Remove ** artifacts from beginning and add line to current section
+            const cleanedLine = trimmed.replace(/^\*\*:?\s*/, '').replace(/\*\*$/, '');
+            sections[currentSection].push(cleanedLine);
         });
 
         // Fallback: Infer verdict from score if verdict not found

@@ -6,9 +6,10 @@
 - Backend: Source validation filter to remove fabricated URLs not in original Brave results
 - Backend: Block archive domains (archive.is, archive.ph, web.archive.org) from sources
 - Backend: Filter out articles older than 48 hours to ensure recent news only
-- Frontend: Redesigned sources UI as dropdown button next to Google search (cleaner layout)
+- Frontend: Redesigned sources display to match Summary/Prediction pattern (consistent UI)
+- Frontend: Sources expand in ai-result-card below button row (no layout shift)
 - Frontend: Added helper text about real-time indexing delays
-- Frontend: Improved dropdown styling with hover effects and max height scrolling
+- Frontend: Click header or X icon to collapse sources
 - Data Quality: All 10 regional Brave queries now succeed, providing better global news coverage
 
 ## 2026-01-09

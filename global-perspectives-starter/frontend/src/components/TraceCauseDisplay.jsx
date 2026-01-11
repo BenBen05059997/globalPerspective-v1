@@ -40,7 +40,8 @@ const TraceCauseDisplay = ({
             verdict: {
                 classification: null,
                 explanation: null
-            }
+            },
+            impactBreakdown: []
         };
 
         let currentSection = 'context';
@@ -55,6 +56,34 @@ const TraceCauseDisplay = ({
                 const match = trimmed.match(/(\d+)\/10/);
                 if (match) sections.score = match[1];
             }
+
+            // Parse Impact Breakdown (Human Impact, Economic Reach, Geopolitical Stability)
+            const impactTypes = [
+                { pattern: /\*?\*?Human Impact\*?\*?/i, category: 'People', icon: '👥' },
+                { pattern: /\*?\*?Economic (Reach|Impact)\*?\*?/i, category: 'Economy', icon: '💰' },
+                { pattern: /\*?\*?Geopolitical (Stability|Impact)\*?\*?/i, category: 'Regional', icon: '🌍' }
+            ];
+
+            impactTypes.forEach(({ pattern, category, icon }) => {
+                if (pattern.test(trimmed)) {
+                    // Extract score (e.g., "9/10")
+                    const scoreMatch = trimmed.match(/(\d+)\/10/);
+                    // Extract explanation from parentheses
+                    const explanationMatch = trimmed.match(/\(([^)]+)\)/);
+
+                    if (scoreMatch) {
+                        const score = parseInt(scoreMatch[1], 10);
+                        const explanation = explanationMatch ? explanationMatch[1].trim() : '';
+
+                        sections.impactBreakdown.push({
+                            category,
+                            icon,
+                            score,
+                            explanation
+                        });
+                    }
+                }
+            });
 
             // Detect Verdict
             if (trimmed.includes('Verdict') && trimmed.includes(':')) {
@@ -297,6 +326,42 @@ const TraceCauseDisplay = ({
         );
     };
 
+    // Render Impact Breakdown visualization
+    const renderImpactBreakdown = (impactData) => {
+        if (!impactData || impactData.length === 0) return null;
+
+        // Helper: Convert score to level and bar width
+        const getImpactLevel = (score) => {
+            if (score >= 8) return { level: 'High', className: 'high', width: '90%' };
+            if (score >= 5) return { level: 'Moderate', className: 'moderate', width: '60%' };
+            return { level: 'Low', className: 'low', width: '30%' };
+        };
+
+        return (
+            <div className="impact-breakdown-container">
+                <div className="impact-breakdown-title">Impact Breakdown</div>
+                {impactData.map((item, idx) => {
+                    const { level, className, width } = getImpactLevel(item.score);
+                    return (
+                        <div key={idx} className="impact-item">
+                            <div className="impact-header">
+                                <span className="impact-icon">{item.icon}</span>
+                                <span className="impact-label">{item.category}</span>
+                                <div className="impact-bar-container">
+                                    <div className={`impact-bar-fill ${className}`} style={{ width }}></div>
+                                </div>
+                                <span className="impact-level">{level}</span>
+                            </div>
+                            {item.explanation && (
+                                <div className="impact-explanation">{item.explanation}</div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     // Simple Markdown Renderer (Headers, Bold, Lists) - for context/perspectives tabs
     const renderMarkdown = (lines) => {
         return lines.map((line, idx) => {
@@ -441,6 +506,9 @@ const TraceCauseDisplay = ({
                             )}
                         </div>
                     )}
+
+                    {/* Impact Breakdown */}
+                    {parsedContent.impactBreakdown.length > 0 && renderImpactBreakdown(parsedContent.impactBreakdown)}
 
                     {/* Tabs */}
                     <div className="ai-tabs">

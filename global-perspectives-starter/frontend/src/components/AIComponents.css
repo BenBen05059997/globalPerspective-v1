@@ -405,7 +405,7 @@
 }
 
 .timeline-event-title.start {
-  color: #10b981; /* Green */
+  color: #3b82f6; /* Blue */
 }
 
 .timeline-event-title.evolve {
@@ -444,6 +444,126 @@
 
   .timeline-event-description {
     font-size: var(--font-size-sm);
+  }
+}
+
+/* ========================================
+   IMPACT BREAKDOWN VISUALIZATION
+   ======================================== */
+
+.impact-breakdown-container {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin: var(--space-lg) 0;
+}
+
+.impact-breakdown-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-lg);
+}
+
+.impact-item {
+  margin-bottom: var(--space-lg);
+}
+
+.impact-item:last-child {
+  margin-bottom: 0;
+}
+
+.impact-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.impact-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.impact-label {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.impact-bar-container {
+  flex: 1;
+  height: 20px;
+  background: #e5e7eb;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.impact-bar-fill {
+  height: 100%;
+  transition: width var(--transition-base) var(--transition-ease);
+}
+
+.impact-bar-fill.high {
+  background: #ef4444;
+}
+
+.impact-bar-fill.moderate {
+  background: #f59e0b;
+}
+
+.impact-bar-fill.low {
+  background: #3b82f6;
+}
+
+.impact-level {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  min-width: 70px;
+  text-align: right;
+}
+
+.impact-explanation {
+  margin-left: 24px;
+  margin-top: var(--space-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  line-height: var(--line-height-relaxed);
+}
+
+@media (max-width: 768px) {
+  .impact-breakdown-container {
+    padding: var(--space-md);
+  }
+
+  .impact-header {
+    flex-wrap: wrap;
+  }
+
+  .impact-label {
+    min-width: 60px;
+    font-size: var(--font-size-sm);
+  }
+
+  .impact-bar-container {
+    height: 16px;
+  }
+
+  .impact-level {
+    font-size: var(--font-size-xs);
+    min-width: 60px;
+  }
+
+  .impact-explanation {
+    margin-left: 20px;
+    font-size: var(--font-size-xs);
   }
 }
 

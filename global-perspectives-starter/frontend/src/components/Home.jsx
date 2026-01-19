@@ -422,7 +422,7 @@ function Home() {
                         </div>
 
                         {/* Premium AI Toolbar */}
-                        <div className="topic-actions-container" style={{ marginTop: '1rem' }}>
+                        <div className="topic-actions-container" style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           {/* Desktop AI Toolbar */}
                           <div className="ai-toolbar ai-toolbar-desktop">
                             <button

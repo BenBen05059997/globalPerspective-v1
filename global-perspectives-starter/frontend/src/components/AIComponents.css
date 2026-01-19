@@ -227,18 +227,21 @@
 }
 
 /* --- Layout Styles --- */
-.topic-actions-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
+/* Desktop layout only - prevent affecting mobile */
+@media (min-width: 769px) {
+  .topic-actions-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
 
-.source-links {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  .source-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
 }
 
 /* --- Result Cards --- */

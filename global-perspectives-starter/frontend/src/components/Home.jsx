@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import SummaryDisplay from './SummaryDisplay';
 
@@ -34,6 +34,7 @@ function Home() {
   const [traceCauseCollapsed, setTraceCauseCollapsed] = useState({});
 
   const [sourcesExpanded, setSourcesExpanded] = useState({});
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState({});
 
   // Stores the last time a user clicked a button for a specific topic+feature
   // Keys: topicId_feature (e.g. "123_summary")
@@ -48,6 +49,20 @@ function Home() {
 
   const MAX_RETRIES = 6;
   const RETRY_DELAY_MS = 10000;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.ai-toolbar-mobile')) {
+        setMobileDropdownOpen({});
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const getTopicId = (t, idx) => {
     const directId = t?.topicId || t?.topic_id || t?.id;
@@ -249,6 +264,30 @@ function Home() {
     setTraceCauseCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const toggleMobileDropdown = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setMobileDropdownOpen(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleMobileAction = (action, t, idx) => {
+    // Close dropdown first
+    const id = getTopicId(t, idx);
+    setMobileDropdownOpen(prev => ({ ...prev, [id]: false }));
+
+    // Execute the action
+    switch(action) {
+      case 'summary':
+        handleGenerateSummary(t, idx);
+        break;
+      case 'prediction':
+        handleGeneratePrediction(t, idx);
+        break;
+      case 'traceCause':
+        handleGenerateTraceCause(t, idx);
+        break;
+    }
+  };
+
   const toggleSourcesExpanded = (t, idx) => {
     const id = getTopicId(t, idx);
     setSourcesExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -384,7 +423,8 @@ function Home() {
 
                         {/* Premium AI Toolbar */}
                         <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div className="ai-toolbar">
+                          {/* Desktop AI Toolbar */}
+                          <div className="ai-toolbar ai-toolbar-desktop">
                             {/* Summarize Button */}
                             <button
                               className={`ai-btn ai-btn-summary ${summaryLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
@@ -414,6 +454,49 @@ function Home() {
                               {traceCauseLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
                               Trace Cause
                             </button>
+                          </div>
+
+                          {/* Mobile AI Dropdown */}
+                          <div className="ai-toolbar-mobile">
+                            <button
+                              className="ai-btn ai-dropdown-trigger"
+                              onClick={() => toggleMobileDropdown(t, globalIdx)}
+                            >
+                              Actions
+                              <span className={`ai-chevron ${mobileDropdownOpen[getTopicId(t, globalIdx)] ? 'open' : ''}`}>▼</span>
+                            </button>
+
+                            {mobileDropdownOpen[getTopicId(t, globalIdx)] && (
+                              <div className="ai-dropdown-menu">
+                                <button
+                                  className={`ai-dropdown-item ${summaryLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
+                                  onClick={() => handleMobileAction('summary', t, globalIdx)}
+                                  disabled={summaryLoading[getTopicId(t, globalIdx)]}
+                                >
+                                  {summaryLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
+                                  Summarize
+                                  {summaries[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
+                                </button>
+                                <button
+                                  className={`ai-dropdown-item ${predictionLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
+                                  onClick={() => handleMobileAction('prediction', t, globalIdx)}
+                                  disabled={predictionLoading[getTopicId(t, globalIdx)]}
+                                >
+                                  {predictionLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
+                                  Predict
+                                  {predictions[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
+                                </button>
+                                <button
+                                  className={`ai-dropdown-item ${traceCauseLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
+                                  onClick={() => handleMobileAction('traceCause', t, globalIdx)}
+                                  disabled={traceCauseLoading[getTopicId(t, globalIdx)]}
+                                >
+                                  {traceCauseLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
+                                  Trace Cause
+                                  {traceCauses[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
+                                </button>
+                              </div>
+                            )}
                           </div>
 
                           {/* Source Links Row */}

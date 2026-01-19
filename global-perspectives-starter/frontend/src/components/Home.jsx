@@ -422,10 +422,9 @@ function Home() {
                         </div>
 
                         {/* Premium AI Toolbar */}
-                        <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div className="topic-actions-container" style={{ marginTop: '1rem' }}>
                           {/* Desktop AI Toolbar */}
                           <div className="ai-toolbar ai-toolbar-desktop">
-                            {/* Summarize Button */}
                             <button
                               className={`ai-btn ai-btn-summary ${summaryLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
                               onClick={() => handleGenerateSummary(t, globalIdx)}
@@ -435,7 +434,6 @@ function Home() {
                               Summarize
                             </button>
 
-                            {/* Predict Button */}
                             <button
                               className={`ai-btn ai-btn-predict ${predictionLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
                               onClick={() => handleGeneratePrediction(t, globalIdx)}
@@ -445,7 +443,6 @@ function Home() {
                               Predict
                             </button>
 
-                            {/* Trace Cause Button */}
                             <button
                               className={`ai-btn ai-btn-trace ${traceCauseLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
                               onClick={() => handleGenerateTraceCause(t, globalIdx)}
@@ -459,7 +456,7 @@ function Home() {
                           {/* Mobile AI Dropdown */}
                           <div className="ai-toolbar-mobile">
                             <button
-                              className="ai-btn ai-dropdown-trigger"
+                              className="ai-dropdown-trigger"
                               onClick={() => toggleMobileDropdown(t, globalIdx)}
                             >
                               Actions
@@ -499,65 +496,61 @@ function Home() {
                             )}
                           </div>
 
-                          {/* Source Links Row */}
-                          <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                              {/* Google Search Link */}
-                              {(() => {
-                                const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
-                                const sourceUrl = fullTitle
-                                  ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
-                                  : '';
+                          {/* Source Links */}
+                          <div className="source-links">
+                            {(() => {
+                              const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+                              const sourceUrl = fullTitle
+                                ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
+                                : '';
 
-                                return (
-                                  <a
-                                    href={sourceUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-link"
-                                    style={{
-                                      fontSize: '0.85rem',
-                                      color: '#666',
-                                      textDecoration: 'none',
-                                      fontWeight: '400'
-                                    }}
-                                  >
-                                    Search Google News ↗
-                                  </a>
-                                );
-                              })()}
-
-                              {/* Sources Toggle Button */}
-                              {Array.isArray(t.sources) && t.sources.length > 0 && (
-                                <button
-                                  onClick={() => toggleSourcesExpanded(t, globalIdx)}
+                              return (
+                                <a
+                                  href={sourceUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-link"
                                   style={{
-                                    background: 'none',
-                                    border: '1px solid #e0e0e0',
-                                    borderRadius: '4px',
-                                    padding: '0.25rem 0.5rem',
-                                    cursor: 'pointer',
                                     fontSize: '0.85rem',
-                                    fontWeight: '500',
-                                    color: '#1a73e8',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.35rem',
-                                    transition: 'all 0.2s'
+                                    color: '#666',
+                                    textDecoration: 'none',
+                                    fontWeight: '400'
                                   }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                 >
-                                  <span>Sources ({t.sources.length})</span>
-                                  <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
-                                </button>
-                              )}
-                            </div>
+                                  Search Google News ↗
+                                </a>
+                              );
+                            })()}
 
-                            {/* Helper text */}
-                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
-                              Note: Very recent news may take time to appear in search results
-                            </div>
+                            {Array.isArray(t.sources) && t.sources.length > 0 && (
+                              <button
+                                onClick={() => toggleSourcesExpanded(t, globalIdx)}
+                                style={{
+                                  background: 'none',
+                                  border: '1px solid #e0e0e0',
+                                  borderRadius: '4px',
+                                  padding: '0.25rem 0.5rem',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500',
+                                  color: '#1a73e8',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                              >
+                                <span>Sources ({t.sources.length})</span>
+                                <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Helper text */}
+                          <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                            Note: Very recent news may take time to appear in search results
                           </div>
                         </div>
 

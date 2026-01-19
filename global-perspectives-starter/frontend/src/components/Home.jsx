@@ -421,10 +421,9 @@ function Home() {
                           )}
                         </div>
 
-                        {/* Premium AI Toolbar */}
-                        <div className="topic-actions-container" style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          {/* Desktop AI Toolbar */}
-                          <div className="ai-toolbar ai-toolbar-desktop">
+                        {/* Desktop Layout - Only visible on desktop */}
+                        <div className="topic-actions-desktop">
+                          <div className="ai-toolbar">
                             <button
                               className={`ai-btn ai-btn-summary ${summaryLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
                               onClick={() => handleGenerateSummary(t, globalIdx)}
@@ -453,7 +452,65 @@ function Home() {
                             </button>
                           </div>
 
-                          {/* Mobile AI Dropdown */}
+                          <div className="source-links">
+                            {(() => {
+                              const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+                              const sourceUrl = fullTitle
+                                ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
+                                : '';
+
+                              return (
+                                <a
+                                  href={sourceUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-link"
+                                  style={{
+                                    fontSize: '0.85rem',
+                                    color: '#666',
+                                    textDecoration: 'none',
+                                    fontWeight: '400'
+                                  }}
+                                >
+                                  Search Google News ↗
+                                </a>
+                              );
+                            })()}
+
+                            {Array.isArray(t.sources) && t.sources.length > 0 && (
+                              <button
+                                onClick={() => toggleSourcesExpanded(t, globalIdx)}
+                                style={{
+                                  background: 'none',
+                                  border: '1px solid #e0e0e0',
+                                  borderRadius: '4px',
+                                  padding: '0.25rem 0.5rem',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500',
+                                  color: '#1a73e8',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                              >
+                                <span>Sources ({t.sources.length})</span>
+                                <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Helper text */}
+                          <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                            Note: Very recent news may take time to appear in search results
+                          </div>
+                        </div>
+
+                        {/* Mobile Layout - Only visible on mobile */}
+                        <div className="topic-actions-mobile">
                           <div className="ai-toolbar-mobile">
                             <button
                               className="ai-dropdown-trigger"
@@ -496,8 +553,7 @@ function Home() {
                             )}
                           </div>
 
-                          {/* Source Links */}
-                          <div className="source-links">
+                          <div className="source-links-mobile">
                             {(() => {
                               const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
                               const sourceUrl = fullTitle

@@ -696,20 +696,59 @@
 }
 
 /* ========================================
+   DESKTOP/MOBILE LAYOUT CONTAINERS
+   ======================================== */
+
+/* Desktop Layout Container - only visible on desktop */
+.topic-actions-desktop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+/* Desktop AI Toolbar */
+.topic-actions-desktop .ai-toolbar {
+  display: inline-flex;
+}
+
+.topic-actions-desktop .source-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Mobile Layout Container - only visible on mobile */
+.topic-actions-mobile {
+  display: none;
+  margin-top: 1rem;
+}
+
+.topic-actions-mobile .ai-toolbar-mobile {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.topic-actions-mobile .source-links-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* ========================================
    MOBILE RESPONSIVENESS
    ======================================== */
 
 @media (max-width: 768px) {
-  /* Hide desktop toolbar on mobile */
-  .ai-toolbar-desktop {
+  /* Hide desktop layout on mobile */
+  .topic-actions-desktop {
     display: none !important;
   }
 
-  /* Show mobile toolbar on mobile */
-  .ai-toolbar-mobile {
+  /* Show mobile layout on mobile */
+  .topic-actions-mobile {
     display: block !important;
-    width: 100%;
-    margin-bottom: 1rem;
   }
 
   /* Mobile layout improvements */
@@ -726,24 +765,17 @@
     width: 100%;
   }
 
-  /* Source links on mobile - stack below */
-  .topic-actions-container {
+  /* Source links on mobile - stack vertically */
+  .source-links-mobile {
     display: flex !important;
     flex-direction: column !important;
     gap: 1rem !important;
     align-items: flex-start !important;
   }
 
-  /* Source links styling for mobile */
-  .source-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    width: 100%;
-  }
-
-  .source-links a,
-  .source-links button {
+  /* Mobile source links styling */
+  .source-links-mobile a,
+  .source-links-mobile button {
     font-size: 0.9rem !important;
     padding: 8px 12px !important;
     white-space: nowrap;

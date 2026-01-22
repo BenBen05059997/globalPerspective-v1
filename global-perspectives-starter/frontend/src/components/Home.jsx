@@ -33,7 +33,6 @@ function Home() {
   const [traceCauseErrors, setTraceCauseErrors] = useState({});
   const [traceCauseCollapsed, setTraceCauseCollapsed] = useState({});
 
-  const [sourcesExpanded, setSourcesExpanded] = useState({});
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState({});
 
   // Stores the last time a user clicked a button for a specific topic+feature
@@ -288,11 +287,6 @@ function Home() {
     }
   };
 
-  const toggleSourcesExpanded = (t, idx) => {
-    const id = getTopicId(t, idx);
-    setSourcesExpanded(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const getTimeAgo = (isoString) => {
     if (!isoString) return null;
     const date = new Date(isoString);
@@ -452,61 +446,24 @@ function Home() {
                             </button>
                           </div>
 
-                          <div className="source-links">
-                            {(() => {
-                              const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
-                              const sourceUrl = fullTitle
-                                ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
-                                : '';
+                          {(() => {
+                            const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+                            const sourceUrl = fullTitle
+                              ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
+                              : '';
 
-                              return (
-                                <a
-                                  href={sourceUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-link"
-                                  style={{
-                                    fontSize: '0.85rem',
-                                    color: '#666',
-                                    textDecoration: 'none',
-                                    fontWeight: '400'
-                                  }}
-                                >
-                                  Search Google News ↗
-                                </a>
-                              );
-                            })()}
-
-                            {Array.isArray(t.sources) && t.sources.length > 0 && (
-                              <button
-                                onClick={() => toggleSourcesExpanded(t, globalIdx)}
-                                style={{
-                                  background: 'none',
-                                  border: '1px solid #e0e0e0',
-                                  borderRadius: '4px',
-                                  padding: '0.25rem 0.5rem',
-                                  cursor: 'pointer',
-                                  fontSize: '0.85rem',
-                                  fontWeight: '500',
-                                  color: '#1a73e8',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.35rem',
-                                  transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                            return (
+                              <a
+                                href={sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-link"
+                                style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
                               >
-                                <span>Sources ({t.sources.length})</span>
-                                <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Helper text */}
-                          <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
-                            Note: Very recent news may take time to appear in search results
-                          </div>
+                                View Sources ↗
+                              </a>
+                            );
+                          })()}
                         </div>
 
                         {/* Mobile Layout - Only visible on mobile */}
@@ -553,126 +510,25 @@ function Home() {
                             )}
                           </div>
 
-                          <div className="source-links-mobile">
-                            {(() => {
-                              const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
-                              const sourceUrl = fullTitle
-                                ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
-                                : '';
+                          {(() => {
+                            const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+                            const sourceUrl = fullTitle
+                              ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
+                              : '';
 
-                              return (
-                                <a
-                                  href={sourceUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-link"
-                                  style={{
-                                    fontSize: '0.85rem',
-                                    color: '#666',
-                                    textDecoration: 'none',
-                                    fontWeight: '400'
-                                  }}
-                                >
-                                  Search Google News ↗
-                                </a>
-                              );
-                            })()}
-
-                            {Array.isArray(t.sources) && t.sources.length > 0 && (
-                              <button
-                                onClick={() => toggleSourcesExpanded(t, globalIdx)}
-                                style={{
-                                  background: 'none',
-                                  border: '1px solid #e0e0e0',
-                                  borderRadius: '4px',
-                                  padding: '0.25rem 0.5rem',
-                                  cursor: 'pointer',
-                                  fontSize: '0.85rem',
-                                  fontWeight: '500',
-                                  color: '#1a73e8',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.35rem',
-                                  transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                            return (
+                              <a
+                                href={sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-link"
+                                style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
                               >
-                                <span>Sources ({t.sources.length})</span>
-                                <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Helper text */}
-                          <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
-                            Note: Very recent news may take time to appear in search results
-                          </div>
+                                View Sources ↗
+                              </a>
+                            );
+                          })()}
                         </div>
-
-                        {/* Sources Display */}
-                        {Array.isArray(t.sources) && t.sources.length > 0 && sourcesExpanded[getTopicId(t, globalIdx)] && (
-                          <div style={{ marginTop: '0.5rem' }}>
-                            <div className="ai-result-card">
-                              <div className="ai-result-header" onClick={() => toggleSourcesExpanded(t, globalIdx)} style={{ cursor: 'pointer' }}>
-                                <div className="ai-result-title" style={{ color: '#1a73e8' }}>
-                                  📰 Article Sources
-                                </div>
-                                <div style={{ color: '#9ca3af', fontSize: '12px' }}>
-                                  Hide
-                                </div>
-                              </div>
-
-                              <div className="ai-result-content">
-                                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                  {t.sources.map((source, srcIdx) => (
-                                    <div
-                                      key={srcIdx}
-                                      style={{
-                                        marginBottom: srcIdx < t.sources.length - 1 ? '16px' : '0',
-                                        paddingBottom: srcIdx < t.sources.length - 1 ? '16px' : '0',
-                                        borderBottom: srcIdx < t.sources.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none'
-                                      }}
-                                    >
-                                      <a
-                                        href={source.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{
-                                          fontSize: '0.95rem',
-                                          color: '#1a73e8',
-                                          textDecoration: 'none',
-                                          display: 'block',
-                                          lineHeight: '1.5',
-                                          fontWeight: '500',
-                                          marginBottom: '4px'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                                      >
-                                        {source.title || 'Untitled'}
-                                      </a>
-                                      <div style={{
-                                        fontSize: '0.8rem',
-                                        color: '#6b7280',
-                                        lineHeight: '1.4'
-                                      }}>
-                                        {source.source} {source.age ? `• ${source.age}` : ''}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>Real-time News Sources</span>
-                                  <div className="ai-result-actions">
-                                    <div className="ai-action-icon" onClick={() => toggleSourcesExpanded(t, globalIdx)} title="Close">✕</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
 
                         {/* AI Summary Display */}
                         <div style={{ marginTop: '0.5rem' }}>

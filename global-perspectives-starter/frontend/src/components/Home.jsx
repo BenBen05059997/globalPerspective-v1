@@ -460,45 +460,48 @@ function Home() {
                               : '';
 
                             return (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <a
-                                  href={sourceUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-link"
-                                  style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
-                                >
-                                  View Sources ↗
-                                </a>
-
-                                {/* Sources Toggle Button */}
-                                {Array.isArray(t.sources) && t.sources.length > 0 && (
-                                  <button
-                                    onClick={() => toggleSourcesExpanded(t, globalIdx)}
-                                    style={{
-                                      background: 'none',
-                                      border: '1px solid #e0e0e0',
-                                      borderRadius: '4px',
-                                      padding: '0.25rem 0.5rem',
-                                      cursor: 'pointer',
-                                      fontSize: '0.85rem',
-                                      fontWeight: '500',
-                                      color: '#1a73e8',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.35rem',
-                                      transition: 'all 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    <span>Sources ({t.sources.length})</span>
-                                    <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
-                                  </button>
-                                )}
-                              </div>
+                              <a
+                                href={sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-link"
+                                style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
+                              >
+                                View Sources ↗
+                              </a>
                             );
                           })()}
+                        </div>
+
+                        {/* Sources Row - Below the AI toolbar */}
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                            {/* Sources Toggle Button */}
+                            {Array.isArray(t.sources) && t.sources.length > 0 && (
+                              <button
+                                onClick={() => toggleSourcesExpanded(t, globalIdx)}
+                                style={{
+                                  background: 'none',
+                                  border: '1px solid #e0e0e0',
+                                  borderRadius: '4px',
+                                  padding: '0.25rem 0.5rem',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500',
+                                  color: '#1a73e8',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.35rem',
+                                  transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                              >
+                                <span>Sources ({t.sources.length})</span>
+                                <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
+                              </button>
+                            )}
+                          </div>
 
                           {/* Helper text */}
                           <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>

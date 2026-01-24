@@ -467,15 +467,15 @@ function Home() {
                                 className="btn btn-link"
                                 style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
                               >
-                                View Sources ↗
+                                View Google News ↗
                               </a>
                             );
                           })()}
                         </div>
 
-                        {/* Sources Row - Below the AI toolbar */}
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                        {/* Sources Row - Below the AI toolbar, aligned right */}
+                        <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                             {/* Sources Toggle Button */}
                             {Array.isArray(t.sources) && t.sources.length > 0 && (
                               <button
@@ -568,7 +568,7 @@ function Home() {
                                   className="btn btn-link"
                                   style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
                                 >
-                                  View Sources ↗
+                                  View Google News ↗
                                 </a>
 
                                 {/* Sources Toggle Button */}

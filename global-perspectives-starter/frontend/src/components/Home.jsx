@@ -453,30 +453,8 @@ function Home() {
                             </button>
                           </div>
 
-                          {(() => {
-                            const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
-                            const sourceUrl = fullTitle
-                              ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
-                              : '';
-
-                            return (
-                              <a
-                                href={sourceUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="btn btn-link"
-                                style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
-                              >
-                                View Google News ↗
-                              </a>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Sources Row - Below the AI toolbar, aligned right with slight left offset */}
-                        <div style={{ marginTop: '0.5rem', textAlign: 'right', paddingRight: '20px' }}>
-                          <div style={{ display: 'inline-block', textAlign: 'left' }}>
-                            {/* Sources Toggle Button */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            {/* Sources Toggle Button - on same line, left of View Google News */}
                             {Array.isArray(t.sources) && t.sources.length > 0 && (
                               <button
                                 onClick={() => toggleSourcesExpanded(t, globalIdx)}
@@ -502,10 +480,31 @@ function Home() {
                               </button>
                             )}
 
-                            {/* Helper text */}
-                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
-                              Note: Very recent news may take time to appear in search results
-                            </div>
+                            {(() => {
+                              const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+                              const sourceUrl = fullTitle
+                                ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
+                                : '';
+
+                              return (
+                                <a
+                                  href={sourceUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-link"
+                                  style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
+                                >
+                                  View Google News ↗
+                                </a>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Helper text - below the toolbar row */}
+                        <div style={{ textAlign: 'right', marginTop: '0.25rem' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#999', fontStyle: 'italic' }}>
+                            Note: Very recent news may take time to appear in search results
                           </div>
                         </div>
 

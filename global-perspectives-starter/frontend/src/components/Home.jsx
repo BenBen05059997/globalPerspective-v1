@@ -473,9 +473,9 @@ function Home() {
                           })()}
                         </div>
 
-                        {/* Sources Row - Below the AI toolbar, aligned right */}
-                        <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                        {/* Sources Row - Below the AI toolbar, aligned right but with left margin */}
+                        <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                             {/* Sources Toggle Button */}
                             {Array.isArray(t.sources) && t.sources.length > 0 && (
                               <button
@@ -501,11 +501,11 @@ function Home() {
                                 <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
                               </button>
                             )}
-                          </div>
 
-                          {/* Helper text */}
-                          <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
-                            Note: Very recent news may take time to appear in search results
+                            {/* Helper text */}
+                            <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                              Note: Very recent news may take time to appear in search results
+                            </div>
                           </div>
                         </div>
 

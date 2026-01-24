@@ -473,9 +473,9 @@ function Home() {
                           })()}
                         </div>
 
-                        {/* Sources Row - Below the AI toolbar, aligned right but with left margin */}
-                        <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        {/* Sources Row - Below the AI toolbar, aligned right with slight left offset */}
+                        <div style={{ marginTop: '0.5rem', textAlign: 'right', paddingRight: '20px' }}>
+                          <div style={{ display: 'inline-block', textAlign: 'left' }}>
                             {/* Sources Toggle Button */}
                             {Array.isArray(t.sources) && t.sources.length > 0 && (
                               <button

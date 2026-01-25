@@ -4,6 +4,7 @@ import SummaryDisplay from './SummaryDisplay';
 
 import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
+import TopicNav from './TopicNav';
 import { useTraceCause } from '../hooks/useTraceCause';
 import graphqlService from '../utils/graphqlService';
 import { categorizeTopicsByRegion } from '../utils/countryMapping';
@@ -310,6 +311,9 @@ function Home() {
   };
   return (
     <div>
+      {/* Floating Topic Navigation */}
+      <TopicNav topics={topics} categorizedTopics={categorizedTopics} />
+
       <div className="text-center mb-8">
         <h1 className="mb-4">Today's Global Topics</h1>
         <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
@@ -411,8 +415,9 @@ function Home() {
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                   {regionTopics.map((t, idx) => {
                     const globalIdx = topics.indexOf(t);
+                    const topicId = getTopicId(t, globalIdx);
                     return (
-                      <li key={globalIdx} style={{ padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                      <li key={globalIdx} id={`topic-${topicId}`} style={{ padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
                         <div style={{ marginBottom: '0.5rem' }}>
                           <strong style={{ fontSize: '1.25rem' }}>{t.title}</strong>
                           {t.category && (

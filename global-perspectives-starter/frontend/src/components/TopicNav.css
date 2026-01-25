@@ -1,0 +1,188 @@
+/* TopicNav.css - Floating Topic Navigation */
+
+.topic-nav {
+  position: fixed;
+  top: 120px;
+  right: 24px;
+  width: 280px;
+  max-height: calc(100vh - 160px);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.topic-nav.collapsed {
+  width: auto;
+  max-height: none;
+}
+
+/* Header */
+.topic-nav-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.topic-nav-header:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.topic-nav-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+}
+
+.topic-nav-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.topic-nav-toggle {
+  font-size: 10px;
+  color: #9ca3af;
+  transition: transform 0.3s;
+}
+
+.topic-nav-toggle.collapsed {
+  transform: rotate(0deg);
+}
+
+/* List Container */
+.topic-nav-list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  padding: 8px;
+}
+
+/* Scrollbar Styling */
+.topic-nav-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.topic-nav-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.topic-nav-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.topic-nav-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Topic Item */
+.topic-nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.topic-nav-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-left-color: rgba(0, 0, 0, 0.1);
+}
+
+.topic-nav-item.active {
+  background: rgba(59, 130, 246, 0.08);
+  border-left-color: #3b82f6;
+}
+
+.topic-nav-item.active .topic-nav-item-title {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Topic Title */
+.topic-nav-item-title {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #374151;
+  font-weight: 500;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Region Badge */
+.topic-nav-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+  background: rgba(0, 0, 0, 0.06);
+  color: #6b7280;
+}
+
+/* Region-specific badge colors */
+.topic-nav-badge.asia-pacific,
+.topic-nav-badge.asia {
+  background: rgba(236, 72, 153, 0.1);
+  color: #be185d;
+}
+
+.topic-nav-badge.europe {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+}
+
+.topic-nav-badge.americas {
+  background: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+}
+
+.topic-nav-badge.middle-east-africa,
+.topic-nav-badge.mena {
+  background: rgba(251, 146, 60, 0.1);
+  color: #c2410c;
+}
+
+.topic-nav-badge.global {
+  background: rgba(139, 92, 246, 0.1);
+  color: #6d28d9;
+}
+
+/* Hide on mobile and tablet */
+@media (max-width: 1200px) {
+  .topic-nav {
+    display: none;
+  }
+}
+
+/* Adjust for smaller desktop screens */
+@media (max-width: 1400px) {
+  .topic-nav {
+    right: 16px;
+    width: 240px;
+  }
+
+  .topic-nav-item-title {
+    font-size: 12px;
+  }
+}

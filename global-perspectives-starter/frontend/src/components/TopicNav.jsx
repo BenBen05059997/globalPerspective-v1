@@ -106,29 +106,32 @@ function TopicNav({ topics, categorizedTopics }) {
 
       {!isCollapsed && (
         <div className="topic-nav-list">
-          {topics.map((topic, idx) => {
-            const globalIdx = topics.indexOf(topic);
-            const id = getTopicId(topic, globalIdx);
-            const region = getTopicRegion(topic);
-            const regionBadge = getRegionBadge(region);
-            const isActive = activeTopicId === `topic-${id}`;
+          {Object.entries(categorizedTopics).map(([region, regionTopics]) => {
+            if (regionTopics.length === 0) return null;
 
-            return (
-              <div
-                key={id}
-                className={`topic-nav-item ${isActive ? 'active' : ''}`}
-                onClick={() => scrollToTopic(id)}
-              >
-                <span className="topic-nav-item-title">
-                  {truncateTitle(topic.title)}
-                </span>
-                {regionBadge && (
-                  <span className={`topic-nav-badge ${region?.toLowerCase().replace(/[^a-z]/g, '-')}`}>
-                    {regionBadge}
+            return regionTopics.map((topic) => {
+              const globalIdx = topics.indexOf(topic);
+              const id = getTopicId(topic, globalIdx);
+              const regionBadge = getRegionBadge(region);
+              const isActive = activeTopicId === `topic-${id}`;
+
+              return (
+                <div
+                  key={id}
+                  className={`topic-nav-item ${isActive ? 'active' : ''}`}
+                  onClick={() => scrollToTopic(id)}
+                >
+                  <span className="topic-nav-item-title">
+                    {truncateTitle(topic.title)}
                   </span>
-                )}
-              </div>
-            );
+                  {regionBadge && (
+                    <span className={`topic-nav-badge ${region?.toLowerCase().replace(/[^a-z]/g, '-')}`}>
+                      {regionBadge}
+                    </span>
+                  )}
+                </div>
+              );
+            });
           })}
         </div>
       )}

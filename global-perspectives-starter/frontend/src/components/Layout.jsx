@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import KickstarterBanner from './KickstarterBanner';
 
 function Layout({ children }) {
   const location = useLocation();
@@ -37,6 +38,7 @@ function Layout({ children }) {
 
   return (
     <div className="app">
+      <KickstarterBanner />
       <nav className="nav">
         <div className="container">
           <div className="nav-bar" ref={navBarRef}>

@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-01-28
+
+### Kickstarter Campaign Banner
+- **New Feature:** Added dismissible Kickstarter banner at the top of all pages to promote the mobile app funding campaign.
+- **Banner Design:** Green gradient banner with direct messaging ("Support Mobile App on Kickstarter"), "View Campaign" button, and close (✕) button.
+- **Persistence:** Banner dismissal is stored in localStorage so users who close it won't see it again.
+- **Mobile Responsive:** Banner adjusts layout for smaller screens with stacked content.
+- **Placement:** Appears above the navigation header on all pages via Layout component.
+- Created `global-perspectives-starter/frontend/src/components/KickstarterBanner.jsx` with dismissible banner logic and Kickstarter link.
+- Created `global-perspectives-starter/frontend/src/components/KickstarterBanner.css` with green gradient styling and responsive adjustments.
+- Updated `global-perspectives-starter/frontend/src/components/Layout.jsx` to import and render KickstarterBanner at the top of the page.
+
 ## 2026-01-27
 
 ### Increase Frontend Topic Limit

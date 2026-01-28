@@ -40,7 +40,7 @@ export function useGeminiTopics() {
     setLoading(true);
     try {
       // Explicitly request 10 topics from the service
-      const data = await graphqlService.getGeminiTopics(20);
+      const data = await graphqlService.getGeminiTopics(13);
       const list = Array.isArray(data?.topics) ? data.topics : [];
       setTopics(list);
       setIsStale(Boolean(data?.stale));
@@ -79,7 +79,7 @@ export function useGeminiTopics() {
     const POLL_INTERVAL = 10 * 60 * 1000;
     const intervalId = setInterval(async () => {
       try {
-        const data = await graphqlService.getGeminiTopics(20);
+        const data = await graphqlService.getGeminiTopics(13);
         const newUpdatedAt = data?.updatedAt;
         if (newUpdatedAt && newUpdatedAt !== updatedAt) {
           setHasNewData(true);

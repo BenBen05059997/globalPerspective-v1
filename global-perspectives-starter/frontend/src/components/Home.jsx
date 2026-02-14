@@ -5,13 +5,16 @@ import SummaryDisplay from './SummaryDisplay';
 import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
 import TopicNav from './TopicNav';
+import TodayArchiveSidebar from './TodayArchiveSidebar';
 import { useTraceCause } from '../hooks/useTraceCause';
+import { useTodayArchive } from '../hooks/useTodayArchive';
 import graphqlService from '../utils/graphqlService';
 import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import './AIComponents.css'; // Import new premium styles
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, generatedDate, hasNewData } = useGeminiTopics();
+  const { entries: archiveEntries } = useTodayArchive();
 
   // Organize topics by region
   const categorizedTopics = React.useMemo(() => {
@@ -313,6 +316,7 @@ function Home() {
     <div>
       {/* Floating Topic Navigation */}
       <TopicNav topics={topics} categorizedTopics={categorizedTopics} />
+      <TodayArchiveSidebar entries={archiveEntries} />
 
       <div className="text-center mb-8">
         <h1 className="mb-4">Today's Global Topics</h1>

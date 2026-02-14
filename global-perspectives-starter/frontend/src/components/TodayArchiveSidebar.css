@@ -1,0 +1,339 @@
+/* ========== LEFT SIDEBAR ========== */
+
+.archive-sidebar {
+  position: fixed;
+  top: 120px;
+  left: 24px;
+  width: 260px;
+  max-height: calc(100vh - 160px);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.archive-sidebar.collapsed {
+  width: auto;
+  max-height: none;
+}
+
+.archive-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.archive-sidebar-header:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.archive-sidebar-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+}
+
+.archive-sidebar-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.archive-sidebar-toggle {
+  font-size: 10px;
+  color: #9ca3af;
+  transition: transform 0.3s;
+}
+
+.archive-sidebar-list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  padding: 8px;
+}
+
+.archive-sidebar-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.archive-sidebar-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.archive-sidebar-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.archive-category-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  padding: 8px 12px 4px;
+  margin-top: 4px;
+}
+
+.archive-sidebar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  margin-bottom: 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.archive-sidebar-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-left-color: #111827;
+}
+
+.archive-item-title {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #374151;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.archive-item-time {
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+@media (max-width: 1200px) {
+  .archive-sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 1600px) and (min-width: 1201px) {
+  .archive-sidebar {
+    left: 16px;
+    width: 220px;
+  }
+}
+
+/* ========== MODAL OVERLAY ========== */
+
+.archive-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1030;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: archive-fade-in 0.2s ease;
+}
+
+@keyframes archive-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.archive-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 720px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: archive-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes archive-slide-up {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.archive-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.archive-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.archive-modal-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.archive-modal-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #6b7280;
+}
+
+.archive-modal-regions {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.archive-modal-close {
+  background: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 18px;
+  line-height: 1;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.archive-modal-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #111827;
+}
+
+.archive-modal-tabs {
+  display: flex;
+  padding: 0 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.archive-modal-tab {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.archive-modal-tab:hover {
+  color: #111827;
+}
+
+.archive-modal-tab.active {
+  color: #111827;
+  border-bottom-color: #111827;
+}
+
+.archive-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px 24px;
+}
+
+.archive-modal-content .ai-result-card {
+  margin-top: 0;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.archive-modal-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.archive-modal-sources {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(250, 250, 250, 0.5);
+  border-radius: 0 0 16px 16px;
+}
+
+.archive-sources-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.archive-source-link {
+  display: block;
+  font-size: 13px;
+  color: #3b82f6;
+  text-decoration: none;
+  padding: 4px 0;
+  line-height: 1.4;
+}
+
+.archive-source-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .archive-modal {
+    width: 95%;
+    max-height: 90vh;
+    border-radius: 12px;
+  }
+
+  .archive-modal-header {
+    padding: 16px;
+  }
+
+  .archive-modal-title {
+    font-size: 16px;
+  }
+
+  .archive-modal-tabs {
+    padding: 0 16px;
+  }
+
+  .archive-modal-content {
+    padding: 12px 16px 16px;
+  }
+
+  .archive-modal-sources {
+    padding: 12px 16px;
+  }
+}

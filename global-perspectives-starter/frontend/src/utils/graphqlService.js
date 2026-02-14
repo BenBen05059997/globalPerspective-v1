@@ -1,4 +1,4 @@
-import { fetchTopicsCache, fetchSummaryCache, fetchPredictionCache, fetchTraceCauseCache } from '../services/restProxy.js';
+import { fetchTopicsCache, fetchSummaryCache, fetchPredictionCache, fetchTraceCauseCache, fetchTodayArchive } from '../services/restProxy.js';
 
 const PREDICTION_WORD_LIMIT = 500;
 
@@ -128,6 +128,18 @@ class GraphQLService {
       return { ...data, cached: payload?.cached ?? true };
     }
     return data;
+  }
+
+  async getTodayArchive() {
+    const payload = await fetchTodayArchive();
+    if (!payload || payload.success === false) {
+      throw new Error(payload?.error || 'Today archive unavailable');
+    }
+    const data = payload?.data ?? {};
+    return {
+      entries: Array.isArray(data.entries) ? data.entries : [],
+      updatedAt: data.updatedAt || null,
+    };
   }
 
   async generateSummary(topicOrId) {

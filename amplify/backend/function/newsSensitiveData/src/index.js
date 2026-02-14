@@ -7,7 +7,7 @@ const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-n
 
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
-const TOPICS_MAX_AGE_SECONDS = Number(process.env.TOPICS_CACHE_MAX_AGE_SECONDS || '3600');
+const TOPICS_MAX_AGE_SECONDS = Number(process.env.TOPICS_CACHE_MAX_AGE_SECONDS || '5400');
 
 const SUMMARIZE_PREDICT_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
@@ -36,6 +36,96 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
 ];
 const allowedOriginsLower = allowedOrigins.map((o) => o.toLowerCase());
+
+const COUNTRY_NAMES = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda',
+  'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan',
+  'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize',
+  'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Bosnia', 'Botswana',
+  'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi',
+  'Cambodia', 'Cameroon', 'Canada', 'Cape Verde', 'Central African Republic',
+  'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica',
+  'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Czechia',
+  'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic',
+  'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia',
+  'Eswatini', 'Ethiopia',
+  'Fiji', 'Finland', 'France',
+  'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada',
+  'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
+  'Haiti', 'Honduras', 'Hungary',
+  'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy',
+  'Jamaica', 'Japan', 'Jordan',
+  'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan',
+  'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein',
+  'Lithuania', 'Luxembourg',
+  'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands',
+  'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia',
+  'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Burma',
+  'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger',
+  'Nigeria', 'North Korea', 'North Macedonia', 'Macedonia', 'Norway',
+  'Oman',
+  'Pakistan', 'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru',
+  'Philippines', 'Poland', 'Portugal',
+  'Qatar',
+  'Romania', 'Russia', 'Rwanda',
+  'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines',
+  'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal',
+  'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia',
+  'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan',
+  'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria',
+  'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'East Timor',
+  'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu',
+  'Uganda', 'Ukraine', 'United Arab Emirates', 'UAE', 'United Kingdom', 'UK',
+  'Britain', 'England', 'Scotland', 'Wales', 'Northern Ireland',
+  'United States', 'USA', 'US', 'America', 'Uruguay', 'Uzbekistan',
+  'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam',
+  'Yemen',
+  'Zambia', 'Zimbabwe',
+];
+
+const COUNTRY_ALIAS_TO_CODE = new Map([
+  ['united states', 'US'],
+  ['usa', 'US'],
+  ['us', 'US'],
+  ['america', 'US'],
+  ['united kingdom', 'GB'],
+  ['uk', 'GB'],
+  ['britain', 'GB'],
+  ['uae', 'AE'],
+  ['united arab emirates', 'AE'],
+  ['south sudan', 'SS'],
+  ['sudan', 'SD'],
+]);
+
+const COUNTRY_NAME_SET = new Set(
+  COUNTRY_NAMES.map((name) => normalizeCountryKey(name)),
+);
+
+function normalizeCountryKey(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resolveCountryCode(address) {
+  const trimmed = String(address || '').trim();
+  if (/^[A-Z]{2}$/.test(trimmed.toUpperCase())) {
+    return trimmed.toUpperCase();
+  }
+  const normalized = normalizeCountryKey(trimmed);
+  return COUNTRY_ALIAS_TO_CODE.get(normalized) || null;
+}
+
+function isCountryQuery(address) {
+  if (!address) return false;
+  if (String(address).includes(',')) return false;
+  const normalized = normalizeCountryKey(address);
+  if (!normalized) return false;
+  if (COUNTRY_NAME_SET.has(normalized)) return true;
+  return COUNTRY_ALIAS_TO_CODE.has(normalized);
+}
 
 exports.handler = async (event) => {
   const originHeader = event.headers?.origin || '';
@@ -146,6 +236,19 @@ exports.handler = async (event) => {
       };
     }
 
+    if (action === 'today') {
+      const response = await readTodayArchive();
+      console.info('newsSensitiveData today archive response', {
+        statusCode: response.statusCode,
+        entryCount: response.body?.data?.entries?.length ?? 0,
+      });
+      return {
+        statusCode: response.statusCode,
+        headers,
+        body: JSON.stringify(response.body),
+      };
+    }
+
     console.warn('newsSensitiveData received unsupported action', {
       action,
       payloadSample: payload,
@@ -194,20 +297,15 @@ async function readTopicsCache() {
 
     const isFresh = cacheEntryFresh(Item.updatedAt, TOPICS_MAX_AGE_SECONDS);
     if (!isFresh) {
-      console.warn('newsSensitiveData topics cache stale (serving anyway)', {
+      console.warn('newsSensitiveData topics cache stale', {
         table: TOPICS_TABLE,
         itemId: TOPICS_ITEM_ID,
         updatedAt: Item.updatedAt,
         maxAgeSeconds: TOPICS_MAX_AGE_SECONDS,
       });
       return {
-        statusCode: 200,
-        body: {
-          success: true,
-          cached: true,
-          stale: true,
-          data: Item,
-        },
+        statusCode: 503,
+        body: { success: false, error: 'Topics cache stale', data: Item },
       };
     }
 
@@ -241,7 +339,9 @@ async function readSummaryPredictionCache(action, topicId) {
 
   const client = getDynamoClient();
   const pk = `${PK_PREFIX}${topicId}`;
-  const sk = action === 'prediction' ? PREDICTION_SK : SUMMARY_SK;
+  const sk = action === 'prediction' ? PREDICTION_SK
+           : action === 'trace_cause' ? 'TRACE_CAUSE'
+           : SUMMARY_SK;
 
   try {
     console.info('newsSensitiveData summary/prediction lookup', {
@@ -308,6 +408,52 @@ async function readSummaryPredictionCache(action, topicId) {
   }
 }
 
+async function readTodayArchive() {
+  if (!TOPICS_TABLE) {
+    return {
+      statusCode: 500,
+      body: { success: false, error: 'Topics table not configured' },
+    };
+  }
+
+  try {
+    const client = getDynamoClient();
+    const { Item } = await client.send(new GetCommand({
+      TableName: TOPICS_TABLE,
+      Key: { id: 'today-archive' },
+    }));
+
+    if (!Item || !Array.isArray(Item.entries) || Item.entries.length === 0) {
+      return {
+        statusCode: 200,
+        body: { success: true, data: { entries: [], updatedAt: null } },
+      };
+    }
+
+    const cutoff = Date.now() - (24 * 60 * 60 * 1000);
+    const freshEntries = Item.entries.filter(e =>
+      new Date(e.archivedAt).getTime() > cutoff
+    );
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: {
+          entries: freshEntries,
+          updatedAt: Item.updatedAt,
+        },
+      },
+    };
+  } catch (err) {
+    console.error('Today archive read error:', err);
+    return {
+      statusCode: 500,
+      body: { success: false, error: 'Failed to read today archive' },
+    };
+  }
+}
+
 function cacheEntryFresh(updatedAt, maxAgeSeconds) {
   if (!updatedAt) return false;
   const updated = Date.parse(updatedAt);
@@ -366,8 +512,24 @@ async function geocodeWithMapbox(address) {
   try {
     // Build Mapbox geocoding query
     const query = encodeURIComponent(address);
+    const countryMatch = isCountryQuery(address);
+    const countryCode = countryMatch ? resolveCountryCode(address) : null;
+    const urlParams = new URLSearchParams({
+      limit: '1',
+      access_token: MAPBOX_KEY,
+    });
+    if (countryMatch) {
+      urlParams.set('types', 'country');
+      if (countryCode) {
+        urlParams.set('country', countryCode.toLowerCase());
+      }
+      console.info('Mapbox geocoding: country-only lookup enforced', {
+        address,
+        countryCode,
+      });
+    }
     const url =
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?limit=1&access_token=${MAPBOX_KEY}`;
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?${urlParams.toString()}`;
 
     console.info(`Mapbox geocoding request for: ${address}`);
 

@@ -11,9 +11,9 @@ const {
 } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-const OPENAI_ENDPOINT = process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions';
-const OPENAI_KEY = process.env.OPENAI_API_KEY || '';
+const GROK_MODEL = process.env.GROK_MODEL || 'grok-4-1-fast-non-reasoning';
+const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
+const GROK_KEY = process.env.XAI_API_KEY || '';
 const DEFAULT_MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '600', 10);
 const DEFAULT_TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
 const DEFAULT_TOP_P = Number(process.env.TOP_P || '0.9');
@@ -29,6 +29,8 @@ const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
 const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '3600', 10);
 const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3600', 10);
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
+const ARCHIVE_ITEM_ID = 'today-archive';
+const ARCHIVE_TTL_HOURS = 24;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
@@ -75,6 +77,14 @@ exports.handler = async (event) => {
     console.log(`Generation complete: ${outputs.length} items (generationId: ${generationId})`);
 
     const swapped = await swapStagingToActive(stagingItem, generationId);
+
+    if (!readOnly && swapped) {
+      try {
+        await buildAndWriteArchive(filteredTopics, generationId);
+      } catch (archiveErr) {
+        console.warn('Archive write encountered an issue:', archiveErr);
+      }
+    }
 
     if (!readOnly && CACHE_CLEANUP_ENABLED && swapped) {
       try {
@@ -278,26 +288,26 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
   else if (kind === 'trace_cause') prompt = buildTraceCausePrompt(topic, generatedDate);
   else prompt = buildPredictionPrompt(topic, generatedDate, generatedYear);
 
-  const response = await invokeOpenAI(prompt);
+  const response = await invokeGrok(prompt);
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
   const item = await writeCache(topic, kind, response, ttlSeconds, generationId);
   return item;
 }
 
-async function invokeOpenAI(prompt) {
-  if (!OPENAI_KEY) {
-    throw new Error('OPENAI_API_KEY is not configured');
+async function invokeGrok(prompt) {
+  if (!GROK_KEY) {
+    throw new Error('XAI_API_KEY is not configured');
   }
 
   const started = Date.now();
-  const response = await fetch(OPENAI_ENDPOINT, {
+  const response = await fetch(GROK_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_KEY}`,
+      Authorization: `Bearer ${GROK_KEY}`,
     },
     body: JSON.stringify({
-      model: OPENAI_MODEL,
+      model: GROK_MODEL,
       messages: [{ role: 'user', content: prompt }],
       max_tokens: DEFAULT_MAX_TOKENS,
       temperature: DEFAULT_TEMPERATURE,
@@ -513,6 +523,79 @@ async function pruneObsoleteEntries(currentGenerationId) {
         },
       }),
     );
+  }
+}
+
+async function buildAndWriteArchive(topics, generationId) {
+  if (!TOPICS_TABLE || !SUMMARY_TABLE) {
+    console.warn('Cannot write archive: missing table config');
+    return false;
+  }
+
+  try {
+    const { Item: existingArchive } = await ddb.send(
+      new GetCommand({ TableName: TOPICS_TABLE, Key: { id: ARCHIVE_ITEM_ID } }),
+    );
+    const existingEntries = Array.isArray(existingArchive?.entries)
+      ? existingArchive.entries
+      : [];
+
+    const newEntries = [];
+    for (const topic of topics) {
+      const pk = `${PK_PREFIX}${topic.id}`;
+
+      const [summaryResult, predictionResult, traceResult] = await Promise.all([
+        ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: SUMMARY_SK } })),
+        ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: PREDICTION_SK } })),
+        ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: 'TRACE_CAUSE' } })),
+      ]);
+
+      newEntries.push({
+        topicId: topic.id,
+        title: topic.title,
+        category: Array.isArray(topic.categories) ? topic.categories[0] || '' : '',
+        regions: topic.regions || [],
+        sources: (topic.sources || []).slice(0, 3),
+        archivedAt: new Date().toISOString(),
+        generationId,
+        ai: {
+          summary: summaryResult.Item?.content || null,
+          prediction: predictionResult.Item?.content || null,
+          trace_cause: traceResult.Item?.content || null,
+        },
+      });
+    }
+
+    const newTopicIds = new Set(newEntries.map(e => e.topicId));
+    const cutoff = Date.now() - (ARCHIVE_TTL_HOURS * 60 * 60 * 1000);
+    const merged = [
+      ...existingEntries.filter(e =>
+        !newTopicIds.has(e.topicId) &&
+        new Date(e.archivedAt).getTime() > cutoff
+      ),
+      ...newEntries,
+    ];
+
+    const now = new Date();
+    const ttl = Math.floor(now.getTime() / 1000) + (ARCHIVE_TTL_HOURS * 3600);
+
+    await ddb.send(
+      new PutCommand({
+        TableName: TOPICS_TABLE,
+        Item: {
+          id: ARCHIVE_ITEM_ID,
+          entries: merged,
+          updatedAt: now.toISOString(),
+          ttl,
+        },
+      }),
+    );
+
+    console.log(`Archive written: ${newEntries.length} new + ${merged.length - newEntries.length} existing = ${merged.length} total`);
+    return true;
+  } catch (err) {
+    console.error('Failed to write archive:', err);
+    return false;
   }
 }
 

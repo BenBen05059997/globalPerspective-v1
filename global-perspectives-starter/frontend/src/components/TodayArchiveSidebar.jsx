@@ -10,14 +10,14 @@ function TodayArchiveSidebar({ entries }) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
 
-  if (!entries || entries.length === 0) return null;
-
   const availableCategories = useMemo(() => {
+    if (!entries || entries.length === 0) return [];
     const cats = new Set(entries.map(e => e.category || 'other'));
     return CATEGORY_ORDER.filter(c => cats.has(c));
   }, [entries]);
 
   const filtered = useMemo(() => {
+    if (!entries || entries.length === 0) return [];
     let result = entries;
     if (activeCategory) {
       result = result.filter(e => (e.category || 'other') === activeCategory);
@@ -28,6 +28,8 @@ function TodayArchiveSidebar({ entries }) {
     }
     return result;
   }, [entries, activeCategory, search]);
+
+  if (!entries || entries.length === 0) return null;
 
   const grouped = {};
   filtered.forEach(entry => {

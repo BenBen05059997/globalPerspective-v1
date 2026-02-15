@@ -6,7 +6,7 @@ const CATEGORY_ORDER = ['conflict', 'politics', 'economy', 'military', 'disaster
 
 function TodayArchiveSidebar({ entries }) {
   const [selectedEntry, setSelectedEntry] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
 

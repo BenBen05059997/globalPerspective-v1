@@ -16,6 +16,16 @@ function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, generatedDate, hasNewData } = useGeminiTopics();
   const { entries: archiveEntries } = useTodayArchive();
 
+  // Filter archive to only show topics NOT currently on the main page
+  const filteredArchiveEntries = React.useMemo(() => {
+    if (!archiveEntries.length || !topics.length) return archiveEntries;
+    const activeIds = new Set(topics.map((t) => {
+      const id = t?.topicId || t?.topic_id || t?.id;
+      return id != null ? String(id).trim() : '';
+    }).filter(Boolean));
+    return archiveEntries.filter(e => !activeIds.has(e.topicId));
+  }, [archiveEntries, topics]);
+
   // Organize topics by region
   const categorizedTopics = React.useMemo(() => {
     return categorizeTopicsByRegion(topics);
@@ -316,7 +326,7 @@ function Home() {
     <div>
       {/* Floating Topic Navigation */}
       <TopicNav topics={topics} categorizedTopics={categorizedTopics} />
-      <TodayArchiveSidebar entries={archiveEntries} />
+      <TodayArchiveSidebar entries={filteredArchiveEntries} />
 
       <div className="text-center mb-8">
         <h1 className="mb-4">Today's Global Topics</h1>

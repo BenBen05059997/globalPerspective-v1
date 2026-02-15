@@ -58,6 +58,71 @@
   transition: transform 0.3s;
 }
 
+.archive-sidebar-filters {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.archive-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  outline: none;
+  background: #fafafa;
+  color: #111827;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.archive-search-input:focus {
+  border-color: #111827;
+  background: #fff;
+}
+
+.archive-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.archive-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.archive-chip {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: capitalize;
+}
+
+.archive-chip:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.archive-chip.active {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
+.archive-no-results {
+  padding: 16px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
 .archive-sidebar-list {
   overflow-y: auto;
   overflow-x: hidden;

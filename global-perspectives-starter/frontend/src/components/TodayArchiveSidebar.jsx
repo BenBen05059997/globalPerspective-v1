@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ArchiveTopicModal from './ArchiveTopicModal';
 import './TodayArchiveSidebar.css';
 
@@ -7,11 +7,30 @@ const CATEGORY_ORDER = ['conflict', 'politics', 'economy', 'military', 'disaster
 function TodayArchiveSidebar({ entries }) {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState(null);
 
   if (!entries || entries.length === 0) return null;
 
+  const availableCategories = useMemo(() => {
+    const cats = new Set(entries.map(e => e.category || 'other'));
+    return CATEGORY_ORDER.filter(c => cats.has(c));
+  }, [entries]);
+
+  const filtered = useMemo(() => {
+    let result = entries;
+    if (activeCategory) {
+      result = result.filter(e => (e.category || 'other') === activeCategory);
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(e => e.title?.toLowerCase().includes(q));
+    }
+    return result;
+  }, [entries, activeCategory, search]);
+
   const grouped = {};
-  entries.forEach(entry => {
+  filtered.forEach(entry => {
     const cat = entry.category || 'other';
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(entry);
@@ -32,6 +51,10 @@ function TodayArchiveSidebar({ entries }) {
     return `${hours}h`;
   };
 
+  const handleCategoryClick = (cat) => {
+    setActiveCategory(prev => prev === cat ? null : cat);
+  };
+
   return (
     <>
       <div className={`archive-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
@@ -44,23 +67,52 @@ function TodayArchiveSidebar({ entries }) {
         </div>
 
         {!isCollapsed && (
-          <div className="archive-sidebar-list">
-            {sortedCategories.map(category => (
-              <div key={category}>
-                <div className="archive-category-label">{category}</div>
-                {grouped[category].map((entry) => (
-                  <div
-                    key={entry.topicId}
-                    className="archive-sidebar-item"
-                    onClick={() => setSelectedEntry(entry)}
+          <>
+            <div className="archive-sidebar-filters">
+              <input
+                className="archive-search-input"
+                type="text"
+                placeholder="Search topics..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="archive-category-chips">
+                {availableCategories.map(cat => (
+                  <button
+                    key={cat}
+                    className={`archive-chip ${activeCategory === cat ? 'active' : ''}`}
+                    onClick={() => handleCategoryClick(cat)}
                   >
-                    <span className="archive-item-title">{entry.title}</span>
-                    <span className="archive-item-time">{getTimeAgo(entry.archivedAt)}</span>
-                  </div>
+                    {cat}
+                  </button>
                 ))}
               </div>
-            ))}
-          </div>
+            </div>
+
+            <div className="archive-sidebar-list">
+              {filtered.length === 0 && (
+                <div className="archive-no-results">No matching topics</div>
+              )}
+              {sortedCategories.map(category => (
+                <div key={category}>
+                  {!activeCategory && (
+                    <div className="archive-category-label">{category}</div>
+                  )}
+                  {grouped[category].map((entry) => (
+                    <div
+                      key={entry.topicId}
+                      className="archive-sidebar-item"
+                      onClick={() => setSelectedEntry(entry)}
+                    >
+                      <span className="archive-item-title">{entry.title}</span>
+                      <span className="archive-item-time">{getTimeAgo(entry.archivedAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

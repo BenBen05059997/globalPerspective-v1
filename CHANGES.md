@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-02-23
+- **Archive Sidebar Timestamp:** Updated "Today's Archive" sidebar to show when each topic entered the database with a clearer label. Time display now reads "Showed Xh ago" / "Showed Xm ago" / "Showed just now" instead of a bare compact time, making it explicit that the timestamp reflects when the topic was captured by the pipeline.
+- Updated `global-perspectives-starter/frontend/src/components/TodayArchiveSidebar.jsx`.
+
 ## 2026-02-06
 
 ### LinkedIn Auto-Posting Feature

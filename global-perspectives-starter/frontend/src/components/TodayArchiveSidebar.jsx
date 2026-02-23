@@ -47,10 +47,10 @@ function TodayArchiveSidebar({ entries }) {
   const getTimeAgo = (isoString) => {
     if (!isoString) return '';
     const minutes = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
-    if (minutes < 1) return 'now';
-    if (minutes < 60) return `${minutes}m`;
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
-    return `${hours}h`;
+    return `${hours}h ago`;
   };
 
   const handleCategoryClick = (cat) => {
@@ -108,7 +108,7 @@ function TodayArchiveSidebar({ entries }) {
                       onClick={() => setSelectedEntry(entry)}
                     >
                       <span className="archive-item-title">{entry.title}</span>
-                      <span className="archive-item-time">{getTimeAgo(entry.archivedAt)}</span>
+                      <span className="archive-item-time">Showed {getTimeAgo(entry.archivedAt)}</span>
                     </div>
                   ))}
                 </div>

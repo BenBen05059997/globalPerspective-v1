@@ -1,149 +1,35 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import { getTopicCountryCodes } from '../utils/countryMapping';
+import MapSidePanel from './MapSidePanel';
+import './WorldMap.css';
 
-// Convert country code to flag emoji (shared utility)
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const CATEGORY_COLORS = {
+  conflict:   '#ef4444',
+  military:   '#ef4444',
+  disaster:   '#f97316',
+  politics:   '#3b82f6',
+  economy:    '#22c55e',
+  technology: '#8b5cf6',
+  health:     '#14b8a6',
+  other:      '#6b7280',
+};
+
+const CATEGORY_DISPLAY_ORDER = ['conflict', 'military', 'disaster', 'politics', 'economy', 'technology', 'health', 'other'];
+
 const getFlagEmoji = (code) => {
   if (!code || code === 'Unknown' || code.length !== 2) return '🌍';
-  const codePoints = code
-    .toUpperCase()
-    .split('')
-    .map(char => 127397 + char.charCodeAt(0));
+  const codePoints = code.toUpperCase().split('').map(c => 127397 + c.charCodeAt(0));
   return String.fromCodePoint(...codePoints);
 };
 
-// Modal component for displaying all articles in a country
-function ArticleListModal({ isOpen, onClose, countryName, countryCode, articles }) {
-  if (!isOpen) return null;
+const getCategoryColor = (category) => CATEGORY_COLORS[(category || '').toLowerCase()] || CATEGORY_COLORS.other;
 
-  const buildNewsSearchUrl = (title) => {
-    if (!title) return '';
-    const query = String(title).replace(/\s+/g, ' ').trim();
-    return query ? `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=nws&tbs=qdr:d` : '';
-  };
-
-  return (
-    <div
-      className="article-modal-backdrop"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10000,
-      }}
-    >
-      <div
-        className="article-modal"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          maxWidth: '500px',
-          width: '90%',
-          maxHeight: '80vh',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-        }}
-      >
-        <div
-          className="article-modal-header"
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '16px 20px',
-            borderBottom: '1px solid #eee',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '32px', lineHeight: 1 }}>{getFlagEmoji(countryCode)}</span>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '18px', color: '#333' }}>{countryName}</h3>
-              <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#666' }}>
-                {articles.length} article{articles.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: '#666',
-              padding: '0 4px',
-              lineHeight: 1,
-            }}
-          >
-            &times;
-          </button>
-        </div>
-        <div
-          className="article-modal-body"
-          style={{
-            padding: '12px 20px',
-            overflowY: 'auto',
-            flex: 1,
-          }}
-        >
-          {articles.map((article, index) => {
-            const sourceUrl = buildNewsSearchUrl(article.title);
-            return (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px 0',
-                  borderBottom: index < articles.length - 1 ? '1px solid #eee' : 'none',
-                  gap: '12px',
-                }}
-              >
-                <span style={{
-                  fontSize: '14px',
-                  color: '#333',
-                  flex: 1,
-                  lineHeight: 1.4,
-                }}>
-                  {article.title || 'Untitled'}
-                </span>
-                {sourceUrl && (
-                  <a
-                    href={sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      fontSize: '13px',
-                      color: '#0066cc',
-                      textDecoration: 'none',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                    }}
-                  >
-                    View &rarr;
-                  </a>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Hardcoded country coordinates for mapping
-// Complete country coordinates for all 195 countries
+// Hardcoded country coordinates for all 195 countries
 const COUNTRY_COORDINATES = {
-  // A
   'AF': { lat: 33.9391, lng: 67.7100, name: 'Afghanistan' },
   'AL': { lat: 41.1533, lng: 20.1683, name: 'Albania' },
   'DZ': { lat: 28.0339, lng: 1.6596, name: 'Algeria' },
@@ -155,8 +41,6 @@ const COUNTRY_COORDINATES = {
   'AU': { lat: -25.2744, lng: 133.7751, name: 'Australia' },
   'AT': { lat: 47.5162, lng: 14.5501, name: 'Austria' },
   'AZ': { lat: 40.1431, lng: 47.5769, name: 'Azerbaijan' },
-
-  // B
   'BS': { lat: 25.0343, lng: -77.3963, name: 'Bahamas' },
   'BH': { lat: 26.0667, lng: 50.5577, name: 'Bahrain' },
   'BD': { lat: 23.6850, lng: 90.3563, name: 'Bangladesh' },
@@ -174,8 +58,6 @@ const COUNTRY_COORDINATES = {
   'BG': { lat: 42.7339, lng: 25.4858, name: 'Bulgaria' },
   'BF': { lat: 12.2383, lng: -1.5616, name: 'Burkina Faso' },
   'BI': { lat: -3.3731, lng: 29.9189, name: 'Burundi' },
-
-  // C
   'KH': { lat: 12.5657, lng: 104.9910, name: 'Cambodia' },
   'CM': { lat: 7.3697, lng: 12.3547, name: 'Cameroon' },
   'CA': { lat: 56.1304, lng: -106.3468, name: 'Canada' },
@@ -187,20 +69,16 @@ const COUNTRY_COORDINATES = {
   'CO': { lat: 4.5709, lng: -74.2973, name: 'Colombia' },
   'KM': { lat: -11.6455, lng: 43.3333, name: 'Comoros' },
   'CG': { lat: -0.2280, lng: 15.8277, name: 'Congo' },
-  'CD': { lat: -4.0383, lng: 21.7587, name: 'Democratic Republic of the Congo' },
+  'CD': { lat: -4.0383, lng: 21.7587, name: 'DR Congo' },
   'CR': { lat: 9.7489, lng: -83.7534, name: 'Costa Rica' },
   'HR': { lat: 45.1000, lng: 15.2000, name: 'Croatia' },
   'CU': { lat: 21.5218, lng: -77.7812, name: 'Cuba' },
   'CY': { lat: 35.1264, lng: 33.4299, name: 'Cyprus' },
   'CZ': { lat: 49.8175, lng: 15.4730, name: 'Czech Republic' },
-
-  // D
   'DK': { lat: 56.2639, lng: 9.5018, name: 'Denmark' },
   'DJ': { lat: 11.8251, lng: 42.5903, name: 'Djibouti' },
   'DM': { lat: 15.4150, lng: -61.3710, name: 'Dominica' },
   'DO': { lat: 18.7357, lng: -70.1627, name: 'Dominican Republic' },
-
-  // E
   'EC': { lat: -1.8312, lng: -78.1834, name: 'Ecuador' },
   'EG': { lat: 26.8206, lng: 30.8025, name: 'Egypt' },
   'SV': { lat: 13.7942, lng: -88.8965, name: 'El Salvador' },
@@ -209,13 +87,9 @@ const COUNTRY_COORDINATES = {
   'EE': { lat: 58.5953, lng: 25.0136, name: 'Estonia' },
   'SZ': { lat: -26.5225, lng: 31.4659, name: 'Eswatini' },
   'ET': { lat: 9.1450, lng: 40.4897, name: 'Ethiopia' },
-
-  // F
   'FJ': { lat: -17.7134, lng: 178.0650, name: 'Fiji' },
   'FI': { lat: 61.9241, lng: 25.7482, name: 'Finland' },
   'FR': { lat: 46.6034, lng: 1.8883, name: 'France' },
-
-  // G
   'GA': { lat: -0.8037, lng: 11.6094, name: 'Gabon' },
   'GM': { lat: 13.4432, lng: -15.3101, name: 'Gambia' },
   'GE': { lat: 42.3154, lng: 43.3569, name: 'Georgia' },
@@ -227,13 +101,9 @@ const COUNTRY_COORDINATES = {
   'GN': { lat: 9.9456, lng: -9.6966, name: 'Guinea' },
   'GW': { lat: 11.8037, lng: -15.1804, name: 'Guinea-Bissau' },
   'GY': { lat: 4.8604, lng: -58.9302, name: 'Guyana' },
-
-  // H
   'HT': { lat: 18.9712, lng: -72.2852, name: 'Haiti' },
   'HN': { lat: 15.2000, lng: -86.2419, name: 'Honduras' },
   'HU': { lat: 47.1625, lng: 19.5033, name: 'Hungary' },
-
-  // I
   'IS': { lat: 64.9631, lng: -19.0208, name: 'Iceland' },
   'IN': { lat: 20.5937, lng: 78.9629, name: 'India' },
   'ID': { lat: -0.7893, lng: 113.9213, name: 'Indonesia' },
@@ -242,21 +112,15 @@ const COUNTRY_COORDINATES = {
   'IE': { lat: 53.4129, lng: -8.2439, name: 'Ireland' },
   'IL': { lat: 31.0461, lng: 34.8516, name: 'Israel' },
   'IT': { lat: 41.8719, lng: 12.5674, name: 'Italy' },
-
-  // J
   'JM': { lat: 18.1096, lng: -77.2975, name: 'Jamaica' },
   'JP': { lat: 36.2048, lng: 138.2529, name: 'Japan' },
   'JO': { lat: 30.5852, lng: 36.2384, name: 'Jordan' },
-
-  // K
   'KZ': { lat: 48.0196, lng: 66.9237, name: 'Kazakhstan' },
   'KE': { lat: -0.0236, lng: 37.9062, name: 'Kenya' },
   'KI': { lat: -3.3704, lng: -168.7340, name: 'Kiribati' },
   'XK': { lat: 42.6026, lng: 20.9030, name: 'Kosovo' },
   'KW': { lat: 29.3117, lng: 47.4818, name: 'Kuwait' },
   'KG': { lat: 41.2044, lng: 74.7661, name: 'Kyrgyzstan' },
-
-  // L
   'LA': { lat: 19.8563, lng: 102.4955, name: 'Laos' },
   'LV': { lat: 56.8796, lng: 24.6032, name: 'Latvia' },
   'LB': { lat: 33.8547, lng: 35.8623, name: 'Lebanon' },
@@ -266,8 +130,6 @@ const COUNTRY_COORDINATES = {
   'LI': { lat: 47.1660, lng: 9.5554, name: 'Liechtenstein' },
   'LT': { lat: 55.1694, lng: 23.8813, name: 'Lithuania' },
   'LU': { lat: 49.8153, lng: 6.1296, name: 'Luxembourg' },
-
-  // M
   'MG': { lat: -18.7669, lng: 46.8691, name: 'Madagascar' },
   'MW': { lat: -13.2543, lng: 34.3015, name: 'Malawi' },
   'MY': { lat: 4.2105, lng: 101.9758, name: 'Malaysia' },
@@ -286,8 +148,6 @@ const COUNTRY_COORDINATES = {
   'MA': { lat: 31.7917, lng: -7.0926, name: 'Morocco' },
   'MZ': { lat: -18.6657, lng: 35.5296, name: 'Mozambique' },
   'MM': { lat: 21.9162, lng: 95.9560, name: 'Myanmar' },
-
-  // N
   'NA': { lat: -22.9576, lng: 18.4904, name: 'Namibia' },
   'NR': { lat: -0.5228, lng: 166.9315, name: 'Nauru' },
   'NP': { lat: 28.3949, lng: 84.1240, name: 'Nepal' },
@@ -299,11 +159,7 @@ const COUNTRY_COORDINATES = {
   'KP': { lat: 40.3399, lng: 127.5101, name: 'North Korea' },
   'MK': { lat: 41.6086, lng: 21.7453, name: 'North Macedonia' },
   'NO': { lat: 60.4720, lng: 8.4689, name: 'Norway' },
-
-  // O
   'OM': { lat: 21.4735, lng: 55.9754, name: 'Oman' },
-
-  // P
   'PK': { lat: 30.3753, lng: 69.3451, name: 'Pakistan' },
   'PW': { lat: 7.5150, lng: 134.5825, name: 'Palau' },
   'PS': { lat: 31.9522, lng: 35.2332, name: 'Palestine' },
@@ -314,19 +170,13 @@ const COUNTRY_COORDINATES = {
   'PH': { lat: 12.8797, lng: 121.7740, name: 'Philippines' },
   'PL': { lat: 51.9194, lng: 19.1451, name: 'Poland' },
   'PT': { lat: 39.3999, lng: -8.2245, name: 'Portugal' },
-
-  // Q
   'QA': { lat: 25.3548, lng: 51.1839, name: 'Qatar' },
-
-  // R
   'RO': { lat: 45.9432, lng: 24.9668, name: 'Romania' },
   'RU': { lat: 61.5240, lng: 105.3188, name: 'Russia' },
   'RW': { lat: -1.9403, lng: 29.8739, name: 'Rwanda' },
-
-  // S
   'KN': { lat: 17.3578, lng: -62.7830, name: 'Saint Kitts and Nevis' },
   'LC': { lat: 13.9094, lng: -60.9789, name: 'Saint Lucia' },
-  'VC': { lat: 12.9843, lng: -61.2872, name: 'Saint Vincent and the Grenadines' },
+  'VC': { lat: 12.9843, lng: -61.2872, name: 'Saint Vincent' },
   'WS': { lat: -13.7590, lng: -172.1046, name: 'Samoa' },
   'SM': { lat: 43.9424, lng: 12.4578, name: 'San Marino' },
   'ST': { lat: 0.1864, lng: 6.6131, name: 'Sao Tome and Principe' },
@@ -350,8 +200,6 @@ const COUNTRY_COORDINATES = {
   'SE': { lat: 60.1282, lng: 18.6435, name: 'Sweden' },
   'CH': { lat: 46.8182, lng: 8.2275, name: 'Switzerland' },
   'SY': { lat: 34.8021, lng: 38.9968, name: 'Syria' },
-
-  // T
   'TW': { lat: 23.6978, lng: 120.9605, name: 'Taiwan' },
   'TJ': { lat: 38.8610, lng: 71.2761, name: 'Tajikistan' },
   'TZ': { lat: -6.3690, lng: 34.8888, name: 'Tanzania' },
@@ -364,508 +212,367 @@ const COUNTRY_COORDINATES = {
   'TR': { lat: 38.9637, lng: 35.2433, name: 'Turkey' },
   'TM': { lat: 38.9697, lng: 59.5563, name: 'Turkmenistan' },
   'TV': { lat: -7.1095, lng: 177.6493, name: 'Tuvalu' },
-
-  // U
   'UG': { lat: 1.3733, lng: 32.2903, name: 'Uganda' },
   'UA': { lat: 48.3794, lng: 31.1656, name: 'Ukraine' },
-  'AE': { lat: 23.4241, lng: 53.8478, name: 'United Arab Emirates' },
+  'AE': { lat: 23.4241, lng: 53.8478, name: 'UAE' },
   'GB': { lat: 55.3781, lng: -3.4360, name: 'United Kingdom' },
   'US': { lat: 39.8283, lng: -98.5795, name: 'United States' },
   'UY': { lat: -32.5228, lng: -55.7658, name: 'Uruguay' },
   'UZ': { lat: 41.3775, lng: 64.5853, name: 'Uzbekistan' },
-
-  // V
   'VU': { lat: -15.3767, lng: 166.9592, name: 'Vanuatu' },
   'VA': { lat: 41.9029, lng: 12.4534, name: 'Vatican City' },
   'VE': { lat: 6.4238, lng: -66.5897, name: 'Venezuela' },
   'VN': { lat: 14.0583, lng: 108.2772, name: 'Vietnam' },
-
-  // Y
   'YE': { lat: 15.5527, lng: 48.5164, name: 'Yemen' },
-
-  // Z
   'ZM': { lat: -13.1339, lng: 27.8493, name: 'Zambia' },
-  'ZW': { lat: -19.0154, lng: 29.1549, name: 'Zimbabwe' }
+  'ZW': { lat: -19.0154, lng: 29.1549, name: 'Zimbabwe' },
 };
 
-// Map component that renders the actual Google Map
-function MapComponent({ articles, onCountryClick }) {
-  const mapRef = useRef(null);
-  const [map, setMap] = useState(null);
-  const [markers, setMarkers] = useState([]);
-  const [infoWindow, setInfoWindow] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalCountry, setModalCountry] = useState('');
-  const [modalCountryCode, setModalCountryCode] = useState('');
-  const [modalArticles, setModalArticles] = useState([]);
+// ─── Data Model ────────────────────────────────────────────────────────────────
 
+function buildMapData(topics) {
+  const countryTopicMap = {};
+  const connectionMap = {}; // key: "A-B" → { from, to, topics[], categories[] }
+
+  topics.forEach(topic => {
+    let codes = getTopicCountryCodes(topic);
+
+    // South Sudan disambiguation
+    const titleLower = String(topic?.title || '').toLowerCase();
+    if (titleLower.includes('south sudan')) {
+      codes = codes.filter(c => c !== 'SD');
+      if (!codes.includes('SS')) codes.push('SS');
+    }
+
+    codes.forEach(code => {
+      if (!COUNTRY_COORDINATES[code]) return;
+      if (!countryTopicMap[code]) {
+        countryTopicMap[code] = {
+          ...COUNTRY_COORDINATES[code],
+          code,
+          topics: [],
+        };
+      }
+      countryTopicMap[code].topics.push(topic);
+    });
+
+    // Build pairwise connections
+    for (let i = 0; i < codes.length; i++) {
+      for (let j = i + 1; j < codes.length; j++) {
+        const a = codes[i];
+        const b = codes[j];
+        if (!COUNTRY_COORDINATES[a] || !COUNTRY_COORDINATES[b]) continue;
+        const key = [a, b].sort().join('-');
+        if (!connectionMap[key]) {
+          connectionMap[key] = { from: a, to: b, topics: [], categories: [] };
+        }
+        connectionMap[key].topics.push(topic);
+        const cat = (topic.category || 'other').toLowerCase();
+        if (!connectionMap[key].categories.includes(cat)) {
+          connectionMap[key].categories.push(cat);
+        }
+      }
+    }
+  });
+
+  const connections = Object.values(connectionMap);
+  return { countryTopicMap, connections };
+}
+
+function getDominantCategory(topics) {
+  const counts = {};
+  topics.forEach(t => {
+    const cat = (t.category || 'other').toLowerCase();
+    counts[cat] = (counts[cat] || 0) + 1;
+  });
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'other';
+}
+
+// ─── Google MapComponent ───────────────────────────────────────────────────────
+
+function MapComponent({ countryTopicMap, connections, onCountryClick, onConnectionClick, selectedTopic }) {
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersRef = useRef([]);
+  const polylinesRef = useRef([]);
+  const infoWindowRef = useRef(null);
+
+  // Init map
   useEffect(() => {
-    if (mapRef.current && !map) {
-      const newMap = new window.google.maps.Map(mapRef.current, {
-        center: { lat: 20, lng: 0 },
+    if (mapRef.current && !mapInstanceRef.current) {
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+        center: { lat: 20, lng: 10 },
         zoom: 2,
         styles: [
-          {
-            featureType: 'water',
-            elementType: 'geometry',
-            stylers: [{ color: '#e9e9e9' }, { lightness: 17 }]
-          },
-          {
-            featureType: 'landscape',
-            elementType: 'geometry',
-            stylers: [{ color: '#f5f5f5' }, { lightness: 20 }]
-          }
-        ]
+          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#dde8f0' }] },
+          { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+          { featureType: 'road', stylers: [{ visibility: 'off' }] },
+          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+          { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#c0c0c0' }] },
+        ],
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
-      setMap(newMap);
-      setInfoWindow(new window.google.maps.InfoWindow());
+      infoWindowRef.current = new window.google.maps.InfoWindow();
+
+      // Click on map background clears story flow
+      mapInstanceRef.current.addListener('click', () => {
+        if (onConnectionClick) onConnectionClick(null);
+        if (infoWindowRef.current) infoWindowRef.current.close();
+      });
     }
-  }, [map]);
+  }, [onConnectionClick]);
 
-  // State for geocoded articles
-  const [geocodedArticles, setGeocodedArticles] = useState([]);
-  const [isGeocoding, setIsGeocoding] = useState(false);
-
-  // Geocode articles when they change
+  // Draw markers
   useEffect(() => {
-    const geocodeAllArticles = async () => {
-      if (!articles || articles.length === 0) {
-        console.log('MapComponent: No articles to geocode');
-        setGeocodedArticles([]);
-        return;
-      }
+    const map = mapInstanceRef.current;
+    if (!map || !countryTopicMap) return;
 
-      console.log(`🌍 Starting geocoding for ${articles.length} articles`);
-      setIsGeocoding(true);
+    markersRef.current.forEach(m => m.setMap(null));
+    markersRef.current = [];
 
-      const geocoded = [];
+    Object.values(countryTopicMap).forEach(country => {
+      const { lat, lng, name, code, topics } = country;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
-      for (let i = 0; i < articles.length; i++) {
-        const article = articles[i];
-        console.log(`🔍 Geocoding article ${i + 1}/${articles.length}: ${article.title}`);
+      const dominant = getDominantCategory(topics);
+      const color = getCategoryColor(dominant);
+      const count = topics.length;
+      const size = count >= 4 ? 16 : count >= 2 ? 12 : 9;
 
-        try {
-          // PRIORITY 1: Check if article already has a known country code
-          let countries = [];
-          let countrySource = 'unknown';
-
-          if (article.detected_locations?.countries?.length > 0) {
-            countries = article.detected_locations.countries;
-            countrySource = 'detected_locations';
-          } else if (article.geographic_analysis?.primary_countries?.length > 0) {
-            countries = article.geographic_analysis.primary_countries;
-            countrySource = 'geographic_analysis.primary_countries';
-          } else if (article.geographic_analysis?.countries?.length > 0) {
-            countries = article.geographic_analysis.countries;
-            countrySource = 'geographic_analysis.countries';
-          } else if (article.country) {
-            countries = [article.country];
-            countrySource = 'article.country';
-          } else if (article.countryCode) {
-            countries = [article.countryCode];
-            countrySource = 'article.countryCode';
-          }
-
-          let countryCode = 'Unknown';
-          if (countries.length > 0) {
-            const c = countries[0];
-            if (typeof c === 'string') {
-              countryCode = c.toUpperCase();
-            } else {
-              countryCode = c.code || c.country_code || (c.name ? c.name.substring(0, 2).toUpperCase() : 'Unknown');
-            }
-          }
-
-          // If we have a valid country code, use static coordinates (skip Mapbox)
-          if (countryCode !== 'Unknown' && COUNTRY_COORDINATES[countryCode]) {
-            const coords = COUNTRY_COORDINATES[countryCode];
-            geocoded.push({
-              ...article,
-              geocoded: false, // Country-level, not city-level
-              coordinates: coords,
-              countryCode: countryCode
-            });
-            console.log(`✅ Country-level mapping: ${article.title} -> ${countryCode} (${coords.name})`);
-          } else {
-            // Country-only mode: skip any geocoding if country code is missing.
-            geocoded.push({
-              ...article,
-              geocoded: false,
-              coordinates: null,
-              countryCode: 'Unknown'
-            });
-          }
-        } catch (error) {
-          console.error(`❌ Error geocoding article: ${article.title}`, error);
-          geocoded.push({
-            ...article,
-            geocoded: false,
-            coordinates: null,
-            countryCode: 'Unknown'
-          });
-        }
-      }
-
-      console.log(`🎯 Geocoding complete: ${geocoded.filter(a => a.geocoded).length}/${geocoded.length} articles successfully geocoded`);
-      setGeocodedArticles(geocoded);
-      setIsGeocoding(false);
-    };
-
-    geocodeAllArticles();
-  }, [articles]);
-
-  useEffect(() => {
-    if (map && geocodedArticles.length > 0) {
-      console.log('MapComponent: Processing', geocodedArticles.length, 'geocoded articles');
-
-      // Clear existing markers
-      markers.forEach(marker => marker.setMap(null));
-
-      // Group articles by location
-      const locationGroups = {};
-      geocodedArticles.forEach(article => {
-        const key = article.geocoded
-          ? `${article.coordinates.lat},${article.coordinates.lng}`
-          : article.countryCode;
-
-        if (!locationGroups[key]) {
-          locationGroups[key] = {
-            coordinates: article.coordinates,
-            countryCode: article.countryCode,
-            articles: [],
-            isGeocoded: article.geocoded
-          };
-        }
-
-        locationGroups[key].articles.push(article);
+      const marker = new window.google.maps.Marker({
+        position: { lat, lng },
+        map,
+        title: `${name}: ${count} topic${count !== 1 ? 's' : ''}`,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: size,
+          fillColor: color,
+          fillOpacity: 0.9,
+          strokeColor: '#fff',
+          strokeWeight: 2,
+        },
+        label: {
+          text: String(count),
+          color: '#fff',
+          fontWeight: 'bold',
+          fontSize: count >= 10 ? '10px' : '11px',
+        },
+        zIndex: count * 10,
       });
 
-      // Create markers for each location group
-      const newMarkers = [];
-      console.log('MapComponent: Location groups:', Object.keys(locationGroups));
-      Object.values(locationGroups).forEach((group) => {
-        if (group.coordinates) {
-          const articleCount = group.articles.length;
+      marker.addListener('click', (e) => {
+        e.stop?.();
 
-          // Determine marker size and color based on article count (coverage density)
-          let markerSize = 20;
-          let markerColor = 'rgb(100, 200, 255)'; // Default blue for low coverage
+        const topicListHtml = topics.map(t => {
+          const cat = (t.category || 'other').toLowerCase();
+          const catColor = getCategoryColor(cat);
+          const otherCodes = getTopicCountryCodes(t).filter(c => c !== code);
+          const othersText = otherCodes.length
+            ? `<div style="font-size:11px;color:#888;margin-top:2px;">Also affects: ${otherCodes.map(getFlagEmoji).join(' ')}</div>`
+            : '';
+          return `
+            <div style="padding:6px 0;border-bottom:1px solid #f0f0f0;">
+              <span style="display:inline-block;background:${catColor};color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-right:4px;">${cat}</span>
+              <span style="font-size:13px;font-weight:500;">${t.title}</span>
+              ${othersText}
+            </div>`;
+        }).join('');
 
-          if (articleCount > 10) {
-            markerSize = 30;
-            markerColor = 'rgb(255, 100, 100)'; // Red for high coverage
-          } else if (articleCount > 5) {
-            markerSize = 25;
-            markerColor = 'rgb(255, 150, 100)'; // Orange for medium coverage
-          }
+        infoWindowRef.current.setContent(`
+          <div style="max-width:280px;font-family:sans-serif;">
+            <div style="font-size:15px;font-weight:700;margin-bottom:8px;">
+              ${getFlagEmoji(code)} ${name} — ${count} topic${count !== 1 ? 's' : ''}
+            </div>
+            ${topicListHtml}
+            <button id="iw-details-${code}" style="margin-top:10px;width:100%;padding:7px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
+              View details →
+            </button>
+          </div>
+        `);
+        infoWindowRef.current.open(map, marker);
 
-          // Build human-friendly location label using city, province, country name
-          const cityName = group.coordinates.cityName || null;
-          const provinceName = group.coordinates.provinceName || null;
-          const countryNameLabel = group.coordinates.countryName
-            || (COUNTRY_COORDINATES[group.countryCode]?.name || group.countryCode);
-
-          const locationName = group.isGeocoded
-            ? [cityName, provinceName, countryNameLabel].filter(Boolean).join(', ')
-            : countryNameLabel;
-
-          // Guard against invalid coordinates (NaN/undefined)
-          const latNum = Number(group.coordinates.lat);
-          const lngNum = Number(group.coordinates.lng);
-          if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
-            console.warn('Skipping marker with invalid coords:', group.coordinates);
-            return; // skip this group
-          }
-
-          const marker = new window.google.maps.Marker({
-            position: { lat: latNum, lng: lngNum },
-            map: map,
-            title: `${locationName}: ${articleCount} articles`,
-            icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: markerSize / 2,
-              fillColor: markerColor,
-              fillOpacity: 0.8,
-              strokeColor: 'white',
-              strokeWeight: 2
-            },
-            label: {
-              text: `${articleCount}`,
-              color: 'white',
-              fontWeight: 'bold',
-              fontSize: '12px'
-            }
+        setTimeout(() => {
+          const btn = document.getElementById(`iw-details-${code}`);
+          if (btn) btn.addEventListener('click', () => {
+            infoWindowRef.current.close();
+            onCountryClick(code);
           });
+        }, 80);
+      });
 
-          marker.addListener('click', () => {
-            const primaryArticle = Array.isArray(group.articles) && group.articles.length > 0
-              ? group.articles[0]
-              : null;
-            const sourceUrl = buildNewsSearchUrl(
-              primaryArticle?.title,
-              primaryArticle?.search_keywords,
-              group.countryCode,
-              locationName
-            );
+      markersRef.current.push(marker);
+    });
+  }, [countryTopicMap, onCountryClick]);
 
-            const sourceLabel = (primaryArticle?.source || '').trim();
-            const classLabel = (primaryArticle?.classification || '').trim();
-            const leftText = [sourceLabel, classLabel].filter(Boolean).join(' • ');
+  // Draw connection lines
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !connections) return;
 
-            const viewAllBtnId = `view-all-btn-${group.countryCode}`;
+    polylinesRef.current.forEach(p => p.setMap(null));
+    polylinesRef.current = [];
 
-            const content = `
-              <div style="max-width: 300px;">
-                <h3 style="margin: 0 0 10px 0; color: #333; display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 24px; line-height: 1;">${getFlagEmoji(group.countryCode)}</span>
-                  <span>${locationName}</span>
-                </h3>
-                <p style="margin: 0 0 10px 0; color: #666;"><strong>${articleCount}</strong> article${articleCount !== 1 ? 's' : ''} found</p>
-                <div style="max-height: 200px; overflow-y: auto;">
-                  ${primaryArticle ? `
-                    <div style="margin-bottom: 8px; padding: 8px; background: #f9f9f9; border-radius: 4px;">
-                      <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px; color: var(--text-primary);">${primaryArticle.title || 'No title'}</div>
-                      <div style="display: flex; justify-content: space-between; align-items: center;">
-                        ${leftText ? `<div style="font-size: 12px; color: #666;">${leftText}</div>` : ''}
-                        ${sourceUrl ? `<a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-link" style="font-size: 0.9rem">View sources →</a>` : ''}
-                      </div>
-                    </div>
-                  ` : '<div style="font-size: 12px; color: #666;">No article available</div>'}
-                  ${articleCount > 1 ? `
-                    <button id="${viewAllBtnId}" style="
-                      display: block;
-                      width: 100%;
-                      margin-top: 8px;
-                      padding: 8px 12px;
-                      background: #0066cc;
-                      color: white;
-                      border: none;
-                      border-radius: 4px;
-                      font-size: 13px;
-                      cursor: pointer;
-                    ">View all ${articleCount} articles</button>
-                  ` : ''}
-                </div>
-              </div>
-            `;
+    connections.forEach(conn => {
+      const fromCoords = COUNTRY_COORDINATES[conn.from];
+      const toCoords = COUNTRY_COORDINATES[conn.to];
+      if (!fromCoords || !toCoords) return;
 
-            infoWindow.setContent(content);
-            infoWindow.open(map, marker);
+      const dominantCat = conn.categories[0] || 'other';
+      const color = getCategoryColor(dominantCat);
+      const weight = Math.min(1 + conn.topics.length, 4);
 
-            // Add click handler for "View all" button after info window opens
-            setTimeout(() => {
-              const viewAllBtn = document.getElementById(viewAllBtnId);
-              if (viewAllBtn) {
-                viewAllBtn.addEventListener('click', () => {
-                  setModalCountry(locationName);
-                  setModalCountryCode(group.countryCode);
-                  setModalArticles(group.articles);
-                  setModalOpen(true);
-                  infoWindow.close();
-                });
-              }
-            }, 100);
+      const polyline = new window.google.maps.Polyline({
+        path: [
+          { lat: fromCoords.lat, lng: fromCoords.lng },
+          { lat: toCoords.lat, lng: toCoords.lng },
+        ],
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: 0.45,
+        strokeWeight: weight,
+        map,
+      });
 
-            if (onCountryClick) {
-              onCountryClick(group.countryCode, group.articles);
-            }
-          });
-
-          newMarkers.push(marker);
+      polyline.addListener('click', (e) => {
+        e.stop?.();
+        if (conn.topics.length === 1) {
+          onConnectionClick(conn.topics[0]);
+        } else {
+          // Show mini info window listing topics on this line
+          const html = conn.topics.map(t => `<div style="padding:3px 0;font-size:13px;">${t.title}</div>`).join('');
+          infoWindowRef.current.setContent(`
+            <div style="max-width:260px;font-family:sans-serif;">
+              <div style="font-weight:600;margin-bottom:6px;">${getFlagEmoji(conn.from)} ↔ ${getFlagEmoji(conn.to)}</div>
+              ${html}
+            </div>
+          `);
+          infoWindowRef.current.setPosition(e.latLng);
+          infoWindowRef.current.open(map);
         }
       });
 
-      setMarkers(newMarkers);
+      polyline._connData = conn;
+      polylinesRef.current.push(polyline);
+    });
+  }, [connections, onConnectionClick]);
+
+  // Story flow: dim/highlight lines based on selectedTopic
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (!selectedTopic) {
+      polylinesRef.current.forEach(p => {
+        p.setOptions({ strokeOpacity: 0.45, strokeWeight: Math.min(1 + p._connData.topics.length, 4) });
+      });
+      markersRef.current.forEach(m => {
+        m.setOptions({ opacity: 1 });
+      });
+      return;
     }
-  }, [map, geocodedArticles, infoWindow, onCountryClick]);
+
+    const selectedId = selectedTopic.topicId || selectedTopic.id;
+    const affectedCodes = new Set(getTopicCountryCodes(selectedTopic));
+
+    polylinesRef.current.forEach(p => {
+      const conn = p._connData;
+      const isSelected = conn.topics.some(t => (t.topicId || t.id) === selectedId);
+      p.setOptions({
+        strokeOpacity: isSelected ? 0.95 : 0.05,
+        strokeWeight: isSelected ? 5 : 1,
+      });
+    });
+
+    markersRef.current.forEach(m => {
+      const pos = m.getPosition();
+      const matchedCountry = Object.values(countryTopicMap || {}).find(c =>
+        Math.abs(c.lat - pos.lat()) < 0.01 && Math.abs(c.lng - pos.lng()) < 0.01
+      );
+      const isAffected = matchedCountry && affectedCodes.has(matchedCountry.code);
+      m.setOptions({ opacity: isAffected ? 1 : 0.25 });
+    });
+
+    // Auto-zoom to fit affected countries
+    if (affectedCodes.size > 0) {
+      const bounds = new window.google.maps.LatLngBounds();
+      affectedCodes.forEach(code => {
+        const coords = COUNTRY_COORDINATES[code];
+        if (coords) bounds.extend({ lat: coords.lat, lng: coords.lng });
+      });
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { top: 60, right: 400, bottom: 40, left: 40 });
+      }
+    }
+  }, [selectedTopic, countryTopicMap]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div style={{ width: '100%', height: '100%' }}>
       <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-      {isGeocoding && (
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: 'rgba(255,255,255,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid var(--text-primary)',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 12px'
-            }} />
-            <div style={{ color: '#333', fontWeight: 500 }}>Geocoding articles...</div>
-            <div style={{ color: '#666', fontSize: '12px' }}>Analyzing locations for map coverage</div>
-          </div>
-        </div>
-      )}
-      <ArticleListModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        countryName={modalCountry}
-        countryCode={modalCountryCode}
-        articles={modalArticles}
-      />
     </div>
   );
 }
 
-// Fallback Map Component (works without Google Maps API)
-function FallbackMapComponent({ articles, onCountryClick }) {
-  const [selectedCountry, setSelectedCountry] = useState(null);
-  const [hoveredCountry, setHoveredCountry] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalCountry, setModalCountry] = useState('');
-  const [modalCountryCode, setModalCountryCode] = useState('');
-  const [modalArticles, setModalArticles] = useState([]);
+// ─── Fallback Map ──────────────────────────────────────────────────────────────
 
-  console.log('FallbackMapComponent: Processing', articles.length, 'articles');
+function FallbackMapComponent({ countryTopicMap, connections, onCountryClick }) {
+  const [hoveredCode, setHoveredCode] = useState(null);
 
-  // Group articles by country
-  const countryData = {};
-  articles.forEach(article => {
-    let countries = [];
-
-    // Try to get countries from detected_locations first
-    if (article.detected_locations?.countries) {
-      countries = article.detected_locations.countries;
-      console.log('FallbackMapComponent: Found countries from detected_locations:', countries.map(c => c.code || c.name));
-    }
-    // Fallback to geographic_analysis
-    else if (article.geographic_analysis?.primary_countries) {
-      countries = article.geographic_analysis.primary_countries;
-      console.log('FallbackMapComponent: Found countries from geographic_analysis primary:', countries.map(c => c.code || c.name));
-    }
-    // Fallback to legacy geographic_analysis.countries
-    else if (article.geographic_analysis?.countries) {
-      countries = article.geographic_analysis.countries;
-      console.log('FallbackMapComponent: Found countries from geographic_analysis legacy:', countries.map(c => c.code || c.name));
-    }
-
-    countries.forEach(country => {
-      const countryCode = country.code || country.country_code || country.name?.substring(0, 2).toUpperCase();
-      if (countryCode && COUNTRY_COORDINATES[countryCode]) {
-        if (!countryData[countryCode]) {
-          countryData[countryCode] = {
-            ...COUNTRY_COORDINATES[countryCode],
-            articles: [],
-            count: 0
-          };
-        }
-        countryData[countryCode].articles.push(article);
-        countryData[countryCode].count++;
-      }
-    });
-  });
-
-  const getMarkerColor = (count) => {
-    if (count >= 10) return '#d32f2f';
-    if (count >= 5) return '#ff9800';
-    return '#4caf50';
-  };
-
-  const getMarkerSize = (count) => {
-    if (count >= 10) return 12;
-    if (count >= 5) return 8;
-    return 6;
-  };
-
-  const handleCountryClick = (countryCode, countryInfo) => {
-    setSelectedCountry(countryCode);
-    if (onCountryClick) {
-      onCountryClick(countryInfo);
-    }
-  };
+  const countries = Object.values(countryTopicMap || {});
+  const totalConnections = (connections || []).length;
 
   return (
-    <div style={{ width: '100%', height: '600px', position: 'relative', backgroundColor: '#e3f2fd' }}>
-      {/* Simple World Map Background */}
-      <svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 1000 500"
-        style={{ position: 'absolute', top: 0, left: 0 }}
-      >
-        {/* Simplified world map outline */}
-        <rect width="1000" height="500" fill="#81d4fa" />
+    <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#dde8f0' }}>
+      <svg width="100%" height="100%" viewBox="0 0 1000 500" style={{ position: 'absolute', inset: 0 }}>
+        <rect width="1000" height="500" fill="#dde8f0" />
+        <path d="M100 100 L300 80 L320 200 L250 250 L150 220 Z" fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
+        <path d="M200 280 L280 270 L300 400 L220 420 L180 350 Z" fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
+        <path d="M450 80 L550 70 L580 150 L500 180 L430 140 Z" fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
+        <path d="M480 200 L580 190 L600 350 L520 380 L460 320 Z" fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
+        <path d="M600 50 L850 40 L880 200 L750 220 L620 180 Z" fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
+        <path d="M750 350 L850 340 L870 400 L780 410 Z" fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
 
-        {/* Continents (simplified shapes) */}
-        {/* North America */}
-        <path d="M100 100 L300 80 L320 200 L250 250 L150 220 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-
-        {/* South America */}
-        <path d="M200 280 L280 270 L300 400 L220 420 L180 350 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-
-        {/* Europe */}
-        <path d="M450 80 L550 70 L580 150 L500 180 L430 140 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-
-        {/* Africa */}
-        <path d="M480 200 L580 190 L600 350 L520 380 L460 320 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-
-        {/* Asia */}
-        <path d="M600 50 L850 40 L880 200 L750 220 L620 180 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
-
-        {/* Australia */}
-        <path d="M750 350 L850 340 L870 400 L780 410 Z" fill="#c8e6c9" stroke="#4caf50" strokeWidth="1" />
+        {/* Connection lines */}
+        {(connections || []).slice(0, 50).map((conn, i) => {
+          const from = COUNTRY_COORDINATES[conn.from];
+          const to = COUNTRY_COORDINATES[conn.to];
+          if (!from || !to) return null;
+          const x1 = ((from.lng + 180) / 360) * 1000;
+          const y1 = ((90 - from.lat) / 180) * 500;
+          const x2 = ((to.lng + 180) / 360) * 1000;
+          const y2 = ((90 - to.lat) / 180) * 500;
+          const color = getCategoryColor(conn.categories[0] || 'other');
+          return (
+            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+              stroke={color} strokeWidth="1" strokeOpacity="0.4" />
+          );
+        })}
 
         {/* Country markers */}
-        {Object.entries(countryData).map(([countryCode, data]) => {
-          // Convert lat/lng to SVG coordinates (simplified projection)
-          const x = ((data.lng + 180) / 360) * 1000;
-          const y = ((90 - data.lat) / 180) * 500;
-
+        {countries.map(country => {
+          const x = ((country.lng + 180) / 360) * 1000;
+          const y = ((90 - country.lat) / 180) * 500;
+          const dominant = getDominantCategory(country.topics);
+          const color = getCategoryColor(dominant);
+          const r = Math.min(4 + country.topics.length * 2, 12);
           return (
-            <g key={countryCode}>
-              <circle
-                cx={x}
-                cy={y}
-                r={getMarkerSize(data.count)}
-                fill={getMarkerColor(data.count)}
-                stroke="white"
-                strokeWidth="2"
-                style={{
-                  cursor: 'pointer',
-                  opacity: hoveredCountry === countryCode ? 0.8 : 1,
-                  transform: hoveredCountry === countryCode ? 'scale(1.2)' : 'scale(1)',
-                  transformOrigin: `${x}px ${y}px`,
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={() => setHoveredCountry(countryCode)}
-                onMouseLeave={() => setHoveredCountry(null)}
-                onClick={() => handleCountryClick(countryCode, data)}
+            <g key={country.code}>
+              <circle cx={x} cy={y} r={r} fill={color} stroke="#fff" strokeWidth="1.5"
+                style={{ cursor: 'pointer', opacity: hoveredCode === country.code ? 0.75 : 1 }}
+                onMouseEnter={() => setHoveredCode(country.code)}
+                onMouseLeave={() => setHoveredCode(null)}
+                onClick={() => onCountryClick(country.code)}
               />
-              {/* Permanent article count label */}
-              <text
-                x={x}
-                y={y + 4}
-                textAnchor="middle"
-                fill="white"
-                fontSize="10"
-                fontWeight="bold"
-                style={{ pointerEvents: 'none' }}
-              >
-                {data.count}
+              <text x={x} y={y + 4} textAnchor="middle" fill="#fff" fontSize="9" fontWeight="bold"
+                style={{ pointerEvents: 'none' }}>
+                {country.topics.length}
               </text>
-              {/* Hover tooltip */}
-              {hoveredCountry === countryCode && (
-                <text
-                  x={x}
-                  y={y - 20}
-                  textAnchor="middle"
-                  fill="#333"
-                  fontSize="12"
-                  fontWeight="bold"
-                  style={{ pointerEvents: 'none' }}
-                >
-                  {data.name}: {data.count} articles
+              {hoveredCode === country.code && (
+                <text x={x} y={y - r - 4} textAnchor="middle" fill="#333" fontSize="11" fontWeight="600"
+                  style={{ pointerEvents: 'none' }}>
+                  {country.name}
                 </text>
               )}
             </g>
@@ -873,300 +580,98 @@ function FallbackMapComponent({ articles, onCountryClick }) {
         })}
       </svg>
 
-      {/* Info panel */}
-      {selectedCountry && countryData[selectedCountry] && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          backgroundColor: 'white',
-          padding: '16px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          maxWidth: '300px',
-          zIndex: 1000
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '24px', lineHeight: 1 }}>{getFlagEmoji(selectedCountry)}</span>
-              <h3 style={{ margin: 0, color: '#333' }}>{countryData[selectedCountry].name}</h3>
-            </div>
-            <button
-              onClick={() => setSelectedCountry(null)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '18px',
-                cursor: 'pointer',
-                color: '#666'
-              }}
-            >
-              ×
-            </button>
-          </div>
-          <p style={{ margin: '0 0 8px 0', color: '#666' }}>
-            {countryData[selectedCountry].count} articles found
-          </p>
-          <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-            {countryData[selectedCountry].articles.slice(0, 1).map((article, index) => {
-              const sourceUrl = buildNewsSearchUrl(
-                article?.title,
-                article?.search_keywords,
-                selectedCountry,
-                countryData[selectedCountry]?.name
-              );
-              return (
-                <div
-                  key={index}
-                  style={{
-                    marginBottom: '8px',
-                    paddingBottom: '8px',
-                    borderBottom: '1px solid #eee',
-                    padding: '4px',
-                    borderRadius: '4px'
-                  }}
-                >
-                  <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px', color: '#1976d2' }}>
-                    {article.title}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {(() => {
-                      const sourceLabel = (article?.source || '').trim();
-                      const classLabel = (article?.classification || '').trim();
-                      const leftText = [sourceLabel, classLabel].filter(Boolean).join(' • ');
-                      return leftText ? (
-                        <div style={{ fontSize: '12px', color: '#666' }}>
-                          {leftText}
-                        </div>
-                      ) : null;
-                    })()}
-                    {sourceUrl && (
-                      <a
-                        href={sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-link"
-                        style={{ fontSize: '0.9rem' }}
-                      >
-                        View sources →
-                      </a>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            {countryData[selectedCountry].articles.length > 1 && (
-              <button
-                onClick={() => {
-                  setModalCountry(countryData[selectedCountry].name);
-                  setModalCountryCode(selectedCountry);
-                  setModalArticles(countryData[selectedCountry].articles);
-                  setModalOpen(true);
-                }}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: '8px',
-                  padding: '8px 12px',
-                  background: '#0066cc',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                }}
-              >
-                View all {countryData[selectedCountry].articles.length} articles
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      <ArticleListModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        countryName={modalCountry}
-        countryCode={modalCountryCode}
-        articles={modalArticles}
-      />
-
-      {/* Debug panel */}
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        right: '20px',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        padding: '12px',
-        borderRadius: '4px',
-        fontSize: '12px',
-        color: '#333',
-        border: '1px solid #ddd',
-        maxWidth: '250px'
-      }}>
-        <div><strong>Debug Info:</strong></div>
-        <div>Articles: {articles.length}</div>
-        <div>Countries: {Object.keys(countryData).length}</div>
-        {Object.keys(countryData).length > 0 && (
-          <div style={{ marginTop: '8px' }}>
-            <div><strong>Countries found:</strong></div>
-            {Object.entries(countryData).map(([code, data]) => (
-              <div key={code}>{code}: {data.count} articles</div>
-            ))}
-          </div>
-        )}
-        <button
-          onClick={async () => {
-            try {
-              const response = await fetch('http://localhost:8000/api/search?q=news');
-              const data = await response.json();
-              alert(`API Test: ${data.articles?.length || 0} articles found`);
-            } catch (err) {
-              alert(`API Error: ${err.message}`);
-            }
-          }}
-          style={{
-            marginTop: '8px',
-            padding: '4px 8px',
-            fontSize: '10px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '3px',
-            cursor: 'pointer'
-          }}
-        >
-          Test API
-        </button>
-      </div>
-
-      {/* Map notice */}
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '20px',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        padding: '8px 12px',
-        borderRadius: '4px',
-        fontSize: '12px',
-        color: '#666'
-      }}>
-        📍 Simplified map view • Click markers to see articles
+      <div style={{ position: 'absolute', bottom: 16, left: 16, background: 'rgba(255,255,255,0.9)',
+        padding: '8px 12px', borderRadius: 6, fontSize: 12, color: '#555' }}>
+        📍 Simplified map · {countries.length} countries · {totalConnections} connections · Click markers for details
       </div>
     </div>
   );
 }
 
-// Main WorldMap component
-function WorldMap({ articles: propArticles, onCountryClick }) {
+// ─── Main WorldMap Component ───────────────────────────────────────────────────
+
+export default function WorldMap() {
   const { topics, loading, error, refetch } = useGeminiTopics();
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelCountry, setPanelCountry] = useState(null);
+  const [selectedTopic, setSelectedTopic] = useState(null);
 
-  // Convert AppSync topics to article-like objects for map grouping
-  const topicsToArticles = (list) => {
-    if (!Array.isArray(list)) return [];
-    const out = [];
+  const { countryTopicMap, connections } = buildMapData(topics || []);
 
-    list.forEach(t => {
-      // Get country codes from regions and sources
-      let countryCodes = getTopicCountryCodes(t);
+  const handleCountryClick = useCallback((code) => {
+    setPanelCountry(code);
+    setPanelOpen(true);
+  }, []);
 
-      // If the title explicitly mentions South Sudan, prefer SS over SD.
-      const titleLower = String(t?.title || '').toLowerCase();
-      if (titleLower.includes('south sudan')) {
-        countryCodes = countryCodes.filter(code => code !== 'SD');
-        if (!countryCodes.includes('SS')) {
-          countryCodes.push('SS');
-        }
+  const handleConnectionClick = useCallback((topic) => {
+    setSelectedTopic(topic);
+    if (topic) {
+      const codes = getTopicCountryCodes(topic);
+      if (codes.length > 0) {
+        setPanelCountry(codes[0]);
+        setPanelOpen(true);
       }
+    }
+  }, []);
 
-      // Create an article entry for each country
-      countryCodes.forEach(code => {
-        out.push({
-          title: t.title,
-          regions: t.regions || [],
-          sources: t.sources || [],
-          search_keywords: Array.isArray(t.search_keywords) ? t.search_keywords : [],
-          countryCode: code,
-          topicDerived: true,
-          geographic_analysis: {
-            primary_countries: [{ code, name: code }]
-          },
-        });
-      });
-    });
+  const handleTopicSelect = useCallback((topic) => {
+    setSelectedTopic(topic);
+  }, []);
 
-    console.log(`📍 Converted ${list.length} topics to ${out.length} map articles`);
-    return out;
-  };
+  const handleClosePanel = useCallback(() => {
+    setPanelOpen(false);
+    setSelectedTopic(null);
+  }, []);
 
-  const articles = propArticles && propArticles.length ? propArticles : topicsToArticles(topics);
+  // Escape key clears story flow
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') { setSelectedTopic(null); setPanelOpen(false); } };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
-  const apiKey = 'AIzaSyA6L0VMKNFLNoMIAglFxVg9MWZhdc4OFzU';
+  const totalCountries = Object.keys(countryTopicMap).length;
+  const totalConnections = connections.length;
 
-  console.log('🗺️ WorldMap: Using articles derived from topics:', articles.length);
-  console.log('🗺️ WorldMap: Topics count:', Array.isArray(topics) ? topics.length : 0);
-  console.log('🗺️ WorldMap: PropArticles:', propArticles?.length || 0);
-  console.log('🗺️ WorldMap: Final articles being used:', articles);
-  console.log('🗺️ WorldMap: First few article titles:', articles.slice(0, 3).map(a => a?.title));
+  const apiKey = typeof window !== 'undefined' && window.GOOGLE_MAPS_API_KEY
+    ? window.GOOGLE_MAPS_API_KEY
+    : '';
 
   const render = (status) => {
+    if (status === 'FAILURE' || !apiKey) {
+      return (
+        <FallbackMapComponent
+          countryTopicMap={countryTopicMap}
+          connections={connections}
+          onCountryClick={handleCountryClick}
+        />
+      );
+    }
     if (status === 'LOADING') {
       return (
-        <div style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#f5f5f5'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              border: '4px solid #f3f3f3',
-              borderTop: '4px solid var(--accent-color)',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 16px'
-            }} />
-            <p style={{ color: '#666', margin: 0 }}>Loading map...</p>
-          </div>
+        <div className="map-loading-overlay">
+          <div className="map-spinner" />
         </div>
       );
     }
-
-    if (status === 'FAILURE' || apiKey === 'REPLACE_WITH_GOOGLE_MAPS_API_KEY') {
-      // Use fallback map when Google Maps API key is not configured
-      console.log('WorldMap: Using FallbackMapComponent with', articles.length, 'articles');
-      return <FallbackMapComponent articles={articles} onCountryClick={onCountryClick} />;
-    }
-
-    console.log('WorldMap: Using Google MapComponent with', articles.length, 'articles');
-    return <MapComponent articles={articles} onCountryClick={onCountryClick} />;
+    return (
+      <MapComponent
+        countryTopicMap={countryTopicMap}
+        connections={connections}
+        onCountryClick={handleCountryClick}
+        onConnectionClick={handleConnectionClick}
+        selectedTopic={selectedTopic}
+      />
+    );
   };
 
   if (loading) {
     return (
-      <div style={{
-        width: '100%',
-        height: '600px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5'
-      }}>
+      <div style={{ width: '100%', height: 600, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: '#f5f5f5', borderRadius: 12 }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid var(--accent-color)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px'
-          }} />
-          <p style={{ color: '#666', margin: 0 }}>Loading articles...</p>
+          <div className="map-spinner" style={{ margin: '0 auto 12px' }} />
+          <p style={{ color: '#666', margin: 0 }}>Loading topics…</p>
         </div>
       </div>
     );
@@ -1174,29 +679,14 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
 
   if (error) {
     return (
-      <div style={{
-        width: '100%',
-        height: '600px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5'
-      }}>
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🗺️</div>
-          <h3 style={{ color: '#d32f2f', margin: '0 0 8px 0' }}>Map Loading Failed</h3>
-          <p style={{ color: '#666', margin: '0 0 16px 0' }}>{error}</p>
-          <button
-            onClick={refetch}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: 'var(--accent-color)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
+      <div style={{ width: '100%', height: 600, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', background: '#f5f5f5', borderRadius: 12 }}>
+        <div style={{ textAlign: 'center', padding: 20 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🗺️</div>
+          <h3 style={{ color: '#d32f2f', margin: '0 0 8px' }}>Map loading failed</h3>
+          <p style={{ color: '#666', margin: '0 0 16px' }}>{error}</p>
+          <button onClick={refetch} style={{ padding: '8px 16px', background: '#111',
+            color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
             Retry
           </button>
         </div>
@@ -1204,85 +694,70 @@ function WorldMap({ articles: propArticles, onCountryClick }) {
     );
   }
 
+  // Gather unique categories present in today's topics
+  const presentCategories = [...new Set(
+    (topics || []).map(t => (t.category || 'other').toLowerCase())
+  )].sort((a, b) => CATEGORY_DISPLAY_ORDER.indexOf(a) - CATEGORY_DISPLAY_ORDER.indexOf(b));
+
   return (
     <div>
-      {/* Map Header */}
       <div style={{ marginBottom: '1rem' }}>
         <div className="card" style={{ padding: '1rem' }}>
-          <h2 style={{ margin: '0 0 1rem 0' }}>Today's Topics Map</h2>
-          <p style={{ margin: '0', color: 'var(--text-muted)' }}>
-            Explore today's top international topics around the world. Markers show coverage density by region.
+          <h2 style={{ margin: '0 0 0.5rem 0' }}>Today's Topics Map</h2>
+          <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+            Lines connect countries sharing the same news topic. Click a country or line to explore.
           </p>
         </div>
       </div>
 
-      {/* Map Container */}
       <div className="map-shell">
-        {/* Map Legend */}
+        {/* Story flow banner */}
+        {selectedTopic && (
+          <div className="map-story-banner">
+            <span>Story: {selectedTopic.title}</span>
+            <button onClick={() => setSelectedTopic(null)}>✕ Clear</button>
+          </div>
+        )}
+
+        {/* Legend */}
         <div className="map-overlay map-legend">
-          <h4 className="map-legend-title">Coverage Density</h4>
-          <div className="map-legend-row">
-            <span className="legend-dot low" />
-            <span className="legend-label">Low coverage (1-5 articles)</span>
-          </div>
-          <div className="map-legend-row">
-            <span className="legend-dot medium" />
-            <span className="legend-label">Medium coverage (6-10 articles)</span>
-          </div>
-          <div className="map-legend-row">
-            <span className="legend-dot high" />
-            <span className="legend-label">High coverage (10+ articles)</span>
-          </div>
+          <div className="map-legend-title">Topic Categories</div>
+          {presentCategories.map(cat => (
+            <div key={cat} className="map-legend-row">
+              <span className={`legend-dot ${cat}`}
+                style={{ backgroundColor: getCategoryColor(cat) }} />
+              <span className="legend-label" style={{ textTransform: 'capitalize' }}>{cat}</span>
+            </div>
+          ))}
         </div>
 
-        {/* Map Statistics */}
+        {/* Stats */}
         <div className="map-overlay map-stats">
-          <div className="map-stats-row">
-            Total Articles: <strong>{articles.length}</strong>
-          </div>
-          <div className="map-stats-row">
-            Countries: <strong>
-              {(() => {
-                const countries = new Set();
-                articles.forEach(article => {
-                  if (article.detected_locations?.countries) {
-                    article.detected_locations.countries.forEach(c => countries.add(c.code || c.country_code));
-                  } else if (article.geographic_analysis?.primary_countries) {
-                    article.geographic_analysis.primary_countries.forEach(c => countries.add(c.code));
-                  } else if (article.country) {
-                    countries.add(article.country);
-                  }
-                });
-                return countries.size;
-              })()}
-            </strong>
-          </div>
+          <div className="map-stats-row">Topics: <strong>{(topics || []).length}</strong></div>
+          <div className="map-stats-row">Countries: <strong>{totalCountries}</strong></div>
+          <div className="map-stats-row">Connections: <strong>{totalConnections}</strong></div>
         </div>
 
-        {/* Google Maps Wrapper */}
-        <Wrapper apiKey={apiKey} render={render} />
+        {apiKey ? (
+          <Wrapper apiKey={apiKey} render={render} />
+        ) : (
+          <FallbackMapComponent
+            countryTopicMap={countryTopicMap}
+            connections={connections}
+            onCountryClick={handleCountryClick}
+          />
+        )}
       </div>
 
-      {/* CSS for loading animation */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-
-      {/* Removed articles list under the map per UI request */}
+      <MapSidePanel
+        isOpen={panelOpen}
+        onClose={handleClosePanel}
+        country={panelCountry}
+        topics={panelCountry ? countryTopicMap[panelCountry]?.topics : []}
+        countryTopicMap={countryTopicMap}
+        selectedTopicId={selectedTopic ? (selectedTopic.topicId || selectedTopic.id) : null}
+        onTopicSelect={handleTopicSelect}
+      />
     </div>
   );
 }
-
-// Removed GroupedArticlesByCountry component per UI request
-
-export default WorldMap;
-const buildNewsSearchUrl = (title) => {
-  if (!title) return '';
-  const query = String(title)
-    .replace(/\s+/g, ' ')
-    .trim();
-  return query ? `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=nws&tbs=qdr:d` : '';
-};

@@ -36,23 +36,25 @@ function processContent(data) {
   };
 }
 
-function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect }) {
+function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArchive }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
-  const [summary, setSummary] = useState(null);
+  const preAi = isArchive ? topic.ai : null;
+
+  const [summary, setSummary] = useState(preAi?.summary ? processContent({ content: preAi.summary }) : null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState(null);
-  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(true);
 
-  const [prediction, setPrediction] = useState(null);
+  const [prediction, setPrediction] = useState(preAi?.prediction ? processContent({ content: preAi.prediction }) : null);
   const [predictionLoading, setPredictionLoading] = useState(false);
   const [predictionError, setPredictionError] = useState(null);
-  const [predictionCollapsed, setPredictionCollapsed] = useState(false);
+  const [predictionCollapsed, setPredictionCollapsed] = useState(true);
 
-  const [traceCause, setTraceCause] = useState(null);
+  const [traceCause, setTraceCause] = useState(preAi?.trace_cause ? processContent({ content: preAi.trace_cause }) : null);
   const [traceCauseLoading, setTraceCauseLoading] = useState(false);
   const [traceCauseError, setTraceCauseError] = useState(null);
-  const [traceCauseCollapsed, setTraceCauseCollapsed] = useState(false);
+  const [traceCauseCollapsed, setTraceCauseCollapsed] = useState(true);
 
   const isActive = selectedTopicId === topic.topicId || selectedTopicId === topic.id;
   const category = (topic.category || 'other').toLowerCase();
@@ -61,7 +63,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect }) {
   const otherCodes = countryCodes.filter(Boolean);
 
   const handleSummary = async () => {
-    if (summary) { setSummaryCollapsed(c => !c); return; }
+    if (isArchive || summary) { setSummaryCollapsed(c => !c); return; }
     if (summaryLoading) return;
     setSummaryLoading(true);
     setSummaryError(null);
@@ -77,7 +79,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect }) {
   };
 
   const handlePrediction = async () => {
-    if (prediction) { setPredictionCollapsed(c => !c); return; }
+    if (isArchive || prediction) { setPredictionCollapsed(c => !c); return; }
     if (predictionLoading) return;
     setPredictionLoading(true);
     setPredictionError(null);
@@ -93,7 +95,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect }) {
   };
 
   const handleTraceCause = async () => {
-    if (traceCause) { setTraceCauseCollapsed(c => !c); return; }
+    if (isArchive || traceCause) { setTraceCauseCollapsed(c => !c); return; }
     if (traceCauseLoading) return;
     setTraceCauseLoading(true);
     setTraceCauseError(null);
@@ -110,8 +112,8 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect }) {
 
   return (
     <div
-      className={`map-topic-card${isActive ? ' active' : ''}`}
-      style={{ borderLeftColor: color }}
+      className={`map-topic-card${isActive ? ' active' : ''}${isArchive ? ' archive' : ''}`}
+      style={{ borderLeftColor: isArchive ? '#94a3b8' : color }}
     >
       <div className="map-topic-card-header">
         <span className="map-topic-card-title">{topic.title}</span>
@@ -210,12 +212,14 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect }) {
 
       {/* Footer actions */}
       <div className="map-topic-actions">
-        <button
-          className={`map-topic-story-btn${isActive ? ' active' : ''}`}
-          onClick={() => onTopicSelect(isActive ? null : topic)}
-        >
-          {isActive ? 'Clear Story' : '▶ Story Flow'}
-        </button>
+        {!isArchive && (
+          <button
+            className={`map-topic-story-btn${isActive ? ' active' : ''}`}
+            onClick={() => onTopicSelect(isActive ? null : topic)}
+          >
+            {isActive ? 'Clear Story' : '▶ Story Flow'}
+          </button>
+        )}
         <a
           href={buildNewsSearchUrl(topic.title)}
           target="_blank"
@@ -229,12 +233,14 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect }) {
   );
 }
 
-export default function MapSidePanel({ isOpen, onClose, country, topics, countryTopicMap, selectedTopicId, onTopicSelect }) {
+export default function MapSidePanel({ isOpen, onClose, country, topics, archiveTopics, countryTopicMap, selectedTopicId, onTopicSelect }) {
   if (!country) return null;
 
   const info = countryTopicMap?.[country] || {};
   const panelTopics = topics || info.topics || [];
+  const panelArchiveTopics = archiveTopics || [];
   const countryName = info.name || country;
+  const totalCount = panelTopics.length + panelArchiveTopics.length;
 
   return (
     <>
@@ -245,27 +251,49 @@ export default function MapSidePanel({ isOpen, onClose, country, topics, country
           <div className="map-side-panel-title">
             <h3>{countryName}</h3>
             <div className="map-side-panel-subtitle">
-              {panelTopics.length} topic{panelTopics.length !== 1 ? 's' : ''} in today's news
+              {panelTopics.length > 0
+                ? `${panelTopics.length} now${panelArchiveTopics.length > 0 ? ` · ${panelArchiveTopics.length} earlier` : ''}`
+                : `${panelArchiveTopics.length} earlier topic${panelArchiveTopics.length !== 1 ? 's' : ''}`
+              }
             </div>
           </div>
           <button className="map-side-panel-close" onClick={onClose}>×</button>
         </div>
 
         <div className="map-side-panel-body">
-          {panelTopics.length === 0 ? (
+          {totalCount === 0 ? (
             <div style={{ padding: '2rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' }}>
               No topics found for this country.
             </div>
           ) : (
-            panelTopics.map((topic, i) => (
-              <TopicCard
-                key={topic.topicId || topic.id || i}
-                topic={topic}
-                countryCodes={info.allCodes || []}
-                selectedTopicId={selectedTopicId}
-                onTopicSelect={onTopicSelect}
-              />
-            ))
+            <>
+              {panelTopics.map((topic, i) => (
+                <TopicCard
+                  key={topic.topicId || topic.id || i}
+                  topic={topic}
+                  countryCodes={info.allCodes || []}
+                  selectedTopicId={selectedTopicId}
+                  onTopicSelect={onTopicSelect}
+                />
+              ))}
+              {panelArchiveTopics.length > 0 && (
+                <>
+                  <div className="map-archive-divider">
+                    <span>Earlier today</span>
+                  </div>
+                  {panelArchiveTopics.map((topic, i) => (
+                    <TopicCard
+                      key={`archive-${topic.topicId || i}`}
+                      topic={topic}
+                      countryCodes={[]}
+                      selectedTopicId={selectedTopicId}
+                      onTopicSelect={onTopicSelect}
+                      isArchive
+                    />
+                  ))}
+                </>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -513,3 +513,56 @@
     bottom: 8px;
   }
 }
+
+/* ===== ARCHIVE TOPIC CARD ===== */
+.map-topic-card.archive {
+  opacity: 0.75;
+  border-left-color: #94a3b8 !important;
+  background: #f8f9fa;
+}
+
+.map-topic-card.archive .map-topic-card-title {
+  color: #555;
+}
+
+.map-topic-card.archive .map-category-badge {
+  opacity: 0.6;
+}
+
+/* ===== ARCHIVE DIVIDER IN SIDE PANEL ===== */
+.map-archive-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 10px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.map-archive-divider::before,
+.map-archive-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e0e0e0;
+}
+
+/* ===== ARCHIVE LEGEND ===== */
+.map-legend-archive-row {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #eee;
+}
+
+.legend-archive-dash {
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-top: 2px dashed #94a3b8;
+  margin-left: 5px;
+  vertical-align: middle;
+  opacity: 0.6;
+}

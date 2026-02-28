@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
+import { useTodayArchive } from '../hooks/useTodayArchive';
 import { getTopicCountryCodes } from '../utils/countryMapping';
 import MapSidePanel from './MapSidePanel';
+import TodayArchiveSidebar from './TodayArchiveSidebar';
 import './WorldMap.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -27,6 +29,17 @@ const getFlagEmoji = (code) => {
 };
 
 const getCategoryColor = (category) => CATEGORY_COLORS[(category || '').toLowerCase()] || CATEGORY_COLORS.other;
+
+function getMutedColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const gr = 0x94, gg = 0xa3, gb = 0xb8;
+  const mr = Math.round(r * 0.35 + gr * 0.65);
+  const mg = Math.round(g * 0.35 + gg * 0.65);
+  const mb = Math.round(b * 0.35 + gb * 0.65);
+  return `#${mr.toString(16).padStart(2,'0')}${mg.toString(16).padStart(2,'0')}${mb.toString(16).padStart(2,'0')}`;
+}
 
 // Hardcoded country coordinates for all 195 countries
 const COUNTRY_COORDINATES = {
@@ -290,11 +303,13 @@ function getDominantCategory(topics) {
 
 // ─── Google MapComponent ───────────────────────────────────────────────────────
 
-function MapComponent({ countryTopicMap, connections, onCountryClick, onConnectionClick, selectedTopic }) {
+function MapComponent({ countryTopicMap, connections, archiveCountryTopicMap, archiveConnections, onCountryClick, onConnectionClick, selectedTopic }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const polylinesRef = useRef([]);
+  const archiveMarkersRef = useRef([]);
+  const archivePolylinesRef = useRef([]);
   const infoWindowRef = useRef(null);
 
   // Init map
@@ -362,6 +377,9 @@ function MapComponent({ countryTopicMap, connections, onCountryClick, onConnecti
         },
         zIndex: count * 10,
       });
+      marker._baseScale = size;
+      marker._fillColor = color;
+      marker._count = count;
 
       marker.addListener('click', (e) => {
         e.stop?.();
@@ -459,6 +477,83 @@ function MapComponent({ countryTopicMap, connections, onCountryClick, onConnecti
     });
   }, [connections, onConnectionClick]);
 
+  // Draw archive-only markers (muted, smaller, no label)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !archiveCountryTopicMap) return;
+
+    archiveMarkersRef.current.forEach(m => m.setMap(null));
+    archiveMarkersRef.current = [];
+
+    Object.values(archiveCountryTopicMap).forEach(country => {
+      const { lat, lng, name, code, topics } = country;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      const dominant = getDominantCategory(topics);
+      const mutedColor = getMutedColor(getCategoryColor(dominant));
+
+      const marker = new window.google.maps.Marker({
+        position: { lat, lng },
+        map,
+        title: `${name}: ${topics.length} earlier topic${topics.length !== 1 ? 's' : ''}`,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 6,
+          fillColor: mutedColor,
+          fillOpacity: 0.6,
+          strokeColor: '#ccc',
+          strokeWeight: 1,
+        },
+        zIndex: 1,
+      });
+
+      marker.addListener('click', (e) => {
+        e.stop?.();
+        onCountryClick(code);
+      });
+
+      archiveMarkersRef.current.push(marker);
+    });
+  }, [archiveCountryTopicMap, onCountryClick]);
+
+  // Draw archive connections (dashed, muted)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !archiveConnections) return;
+
+    archivePolylinesRef.current.forEach(p => p.setMap(null));
+    archivePolylinesRef.current = [];
+
+    archiveConnections.forEach(conn => {
+      const fromCoords = COUNTRY_COORDINATES[conn.from];
+      const toCoords = COUNTRY_COORDINATES[conn.to];
+      if (!fromCoords || !toCoords) return;
+
+      const dominantCat = conn.categories[0] || 'other';
+      const mutedColor = getMutedColor(getCategoryColor(dominantCat));
+
+      const polyline = new window.google.maps.Polyline({
+        path: [
+          { lat: fromCoords.lat, lng: fromCoords.lng },
+          { lat: toCoords.lat, lng: toCoords.lng },
+        ],
+        geodesic: true,
+        strokeColor: mutedColor,
+        strokeOpacity: 0,
+        strokeWeight: 2,
+        icons: [{
+          icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.5, scale: 2, strokeColor: mutedColor },
+          offset: '0',
+          repeat: '12px',
+        }],
+        map,
+        zIndex: 0,
+      });
+
+      archivePolylinesRef.current.push(polyline);
+    });
+  }, [archiveConnections]);
+
   // Story flow: dim/highlight lines based on selectedTopic
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -469,7 +564,17 @@ function MapComponent({ countryTopicMap, connections, onCountryClick, onConnecti
         p.setOptions({ strokeOpacity: 0.45, strokeWeight: Math.min(1 + p._connData.topics.length, 4) });
       });
       markersRef.current.forEach(m => {
-        m.setOptions({ opacity: 1 });
+        m.setOptions({
+          opacity: 1,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: m._baseScale,
+            fillColor: m._fillColor,
+            fillOpacity: 0.9,
+            strokeColor: '#fff',
+            strokeWeight: 2,
+          },
+        });
       });
       return;
     }
@@ -492,7 +597,32 @@ function MapComponent({ countryTopicMap, connections, onCountryClick, onConnecti
         Math.abs(c.lat - pos.lat()) < 0.01 && Math.abs(c.lng - pos.lng()) < 0.01
       );
       const isAffected = matchedCountry && affectedCodes.has(matchedCountry.code);
-      m.setOptions({ opacity: isAffected ? 1 : 0.25 });
+      if (isAffected) {
+        m.setOptions({
+          opacity: 1,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: m._baseScale + 4,
+            fillColor: m._fillColor,
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 4,
+          },
+          zIndex: 9999,
+        });
+      } else {
+        m.setOptions({
+          opacity: 0.2,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: m._baseScale,
+            fillColor: m._fillColor,
+            fillOpacity: 0.9,
+            strokeColor: '#fff',
+            strokeWeight: 2,
+          },
+        });
+      }
     });
 
     // Auto-zoom to fit affected countries
@@ -517,10 +647,11 @@ function MapComponent({ countryTopicMap, connections, onCountryClick, onConnecti
 
 // ─── Fallback Map ──────────────────────────────────────────────────────────────
 
-function FallbackMapComponent({ countryTopicMap, connections, onCountryClick }) {
+function FallbackMapComponent({ countryTopicMap, connections, archiveCountryTopicMap, archiveConnections, onCountryClick }) {
   const [hoveredCode, setHoveredCode] = useState(null);
 
   const countries = Object.values(countryTopicMap || {});
+  const archiveCountries = Object.values(archiveCountryTopicMap || {});
   const totalConnections = (connections || []).length;
 
   return (
@@ -533,6 +664,22 @@ function FallbackMapComponent({ countryTopicMap, connections, onCountryClick }) 
         <path d="M480 200 L580 190 L600 350 L520 380 L460 320 Z" fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
         <path d="M600 50 L850 40 L880 200 L750 220 L620 180 Z" fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
         <path d="M750 350 L850 340 L870 400 L780 410 Z" fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
+
+        {/* Archive connection lines (dashed, muted) */}
+        {(archiveConnections || []).slice(0, 50).map((conn, i) => {
+          const from = COUNTRY_COORDINATES[conn.from];
+          const to = COUNTRY_COORDINATES[conn.to];
+          if (!from || !to) return null;
+          const x1 = ((from.lng + 180) / 360) * 1000;
+          const y1 = ((90 - from.lat) / 180) * 500;
+          const x2 = ((to.lng + 180) / 360) * 1000;
+          const y2 = ((90 - to.lat) / 180) * 500;
+          const mutedColor = getMutedColor(getCategoryColor(conn.categories[0] || 'other'));
+          return (
+            <line key={`arc-${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
+              stroke={mutedColor} strokeWidth="1" strokeOpacity="0.35" strokeDasharray="6 4" />
+          );
+        })}
 
         {/* Connection lines */}
         {(connections || []).slice(0, 50).map((conn, i) => {
@@ -578,6 +725,21 @@ function FallbackMapComponent({ countryTopicMap, connections, onCountryClick }) 
             </g>
           );
         })}
+
+        {/* Archive-only country markers (muted, smaller) */}
+        {archiveCountries.map(country => {
+          const x = ((country.lng + 180) / 360) * 1000;
+          const y = ((90 - country.lat) / 180) * 500;
+          const dominant = getDominantCategory(country.topics);
+          const mutedColor = getMutedColor(getCategoryColor(dominant));
+          return (
+            <circle key={`arc-${country.code}`} cx={x} cy={y} r={4}
+              fill={mutedColor} stroke="#ccc" strokeWidth="1" opacity="0.6"
+              style={{ cursor: 'pointer' }}
+              onClick={() => onCountryClick(country.code)}
+            />
+          );
+        })}
       </svg>
 
       <div style={{ position: 'absolute', bottom: 16, left: 16, background: 'rgba(255,255,255,0.9)',
@@ -592,11 +754,32 @@ function FallbackMapComponent({ countryTopicMap, connections, onCountryClick }) 
 
 export default function WorldMap() {
   const { topics, loading, error, refetch } = useGeminiTopics();
+  const { entries: archiveEntries } = useTodayArchive();
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelCountry, setPanelCountry] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
 
   const { countryTopicMap, connections } = buildMapData(topics || []);
+
+  // Filter archive: exclude topic IDs already in current topics
+  const filteredArchive = useMemo(() => {
+    if (!archiveEntries.length) return [];
+    const activeIds = new Set(
+      (topics || []).map(t => String(t?.topicId || t?.topic_id || t?.id || '').trim()).filter(Boolean)
+    );
+    return archiveEntries.filter(e => !activeIds.has(String(e.topicId)));
+  }, [archiveEntries, topics]);
+
+  const { countryTopicMap: archiveCountryTopicMap, connections: archiveConnections } = buildMapData(filteredArchive);
+
+  // Archive-only countries: in archive but NOT in current (to avoid marker overlap)
+  const archiveOnlyCountryTopicMap = useMemo(() => {
+    const result = {};
+    for (const code of Object.keys(archiveCountryTopicMap)) {
+      if (!countryTopicMap[code]) result[code] = archiveCountryTopicMap[code];
+    }
+    return result;
+  }, [archiveCountryTopicMap, countryTopicMap]);
 
   const handleCountryClick = useCallback((code) => {
     setPanelCountry(code);
@@ -643,6 +826,8 @@ export default function WorldMap() {
         <FallbackMapComponent
           countryTopicMap={countryTopicMap}
           connections={connections}
+          archiveCountryTopicMap={archiveOnlyCountryTopicMap}
+          archiveConnections={archiveConnections}
           onCountryClick={handleCountryClick}
         />
       );
@@ -658,6 +843,8 @@ export default function WorldMap() {
       <MapComponent
         countryTopicMap={countryTopicMap}
         connections={connections}
+        archiveCountryTopicMap={archiveOnlyCountryTopicMap}
+        archiveConnections={archiveConnections}
         onCountryClick={handleCountryClick}
         onConnectionClick={handleConnectionClick}
         selectedTopic={selectedTopic}
@@ -729,12 +916,24 @@ export default function WorldMap() {
               <span className="legend-label" style={{ textTransform: 'capitalize' }}>{cat}</span>
             </div>
           ))}
+          {filteredArchive.length > 0 && (
+            <div className="map-legend-row map-legend-archive-row">
+              <span className="legend-dot" style={{ backgroundColor: '#94a3b8', opacity: 0.6 }} />
+              <span className="legend-label">
+                Earlier
+                <span className="legend-archive-dash" />
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Stats */}
         <div className="map-overlay map-stats">
-          <div className="map-stats-row">Topics: <strong>{(topics || []).length}</strong></div>
-          <div className="map-stats-row">Countries: <strong>{totalCountries}</strong></div>
+          <div className="map-stats-row">Now: <strong>{(topics || []).length}</strong></div>
+          {filteredArchive.length > 0 && (
+            <div className="map-stats-row">Earlier: <strong>{filteredArchive.length}</strong></div>
+          )}
+          <div className="map-stats-row">Countries: <strong>{totalCountries + Object.keys(archiveOnlyCountryTopicMap).length}</strong></div>
           <div className="map-stats-row">Connections: <strong>{totalConnections}</strong></div>
         </div>
 
@@ -744,16 +943,21 @@ export default function WorldMap() {
           <FallbackMapComponent
             countryTopicMap={countryTopicMap}
             connections={connections}
+            archiveCountryTopicMap={archiveOnlyCountryTopicMap}
+            archiveConnections={archiveConnections}
             onCountryClick={handleCountryClick}
           />
         )}
       </div>
 
+      <TodayArchiveSidebar entries={filteredArchive} />
+
       <MapSidePanel
         isOpen={panelOpen}
         onClose={handleClosePanel}
         country={panelCountry}
-        topics={panelCountry ? countryTopicMap[panelCountry]?.topics : []}
+        topics={panelCountry ? (countryTopicMap[panelCountry]?.topics || []) : []}
+        archiveTopics={panelCountry ? (archiveCountryTopicMap[panelCountry]?.topics || []) : []}
         countryTopicMap={countryTopicMap}
         selectedTopicId={selectedTopic ? (selectedTopic.topicId || selectedTopic.id) : null}
         onTopicSelect={handleTopicSelect}

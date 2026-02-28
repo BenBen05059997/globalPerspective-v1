@@ -959,6 +959,7 @@ export default function WorldMap() {
         topics={panelCountry ? (countryTopicMap[panelCountry]?.topics || []) : []}
         archiveTopics={panelCountry ? (archiveCountryTopicMap[panelCountry]?.topics || []) : []}
         countryTopicMap={countryTopicMap}
+        archiveCountryTopicMap={archiveCountryTopicMap}
         selectedTopicId={selectedTopic ? (selectedTopic.topicId || selectedTopic.id) : null}
         onTopicSelect={handleTopicSelect}
       />

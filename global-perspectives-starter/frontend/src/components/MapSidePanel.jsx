@@ -233,10 +233,10 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
   );
 }
 
-export default function MapSidePanel({ isOpen, onClose, country, topics, archiveTopics, countryTopicMap, selectedTopicId, onTopicSelect }) {
+export default function MapSidePanel({ isOpen, onClose, country, topics, archiveTopics, countryTopicMap, archiveCountryTopicMap, selectedTopicId, onTopicSelect }) {
   if (!country) return null;
 
-  const info = countryTopicMap?.[country] || {};
+  const info = countryTopicMap?.[country] || archiveCountryTopicMap?.[country] || {};
   const panelTopics = topics || info.topics || [];
   const panelArchiveTopics = archiveTopics || [];
   const countryName = info.name || country;

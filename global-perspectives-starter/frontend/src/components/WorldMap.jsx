@@ -384,7 +384,7 @@ function MapComponent({ countryTopicMap, connections, archiveCountryTopicMap, ar
       marker.addListener('click', (e) => {
         e.stop?.();
 
-        const topicListHtml = topics.map(t => {
+        const topicListHtml = topics.map((t, idx) => {
           const cat = (t.category || 'other').toLowerCase();
           const catColor = getCategoryColor(cat);
           const otherCodes = getTopicCountryCodes(t).filter(c => c !== code);
@@ -392,7 +392,7 @@ function MapComponent({ countryTopicMap, connections, archiveCountryTopicMap, ar
             ? `<div style="font-size:11px;color:#888;margin-top:2px;">Also affects: ${otherCodes.map(getFlagEmoji).join(' ')}</div>`
             : '';
           return `
-            <div style="padding:6px 0;border-bottom:1px solid #f0f0f0;">
+            <div id="iw-topic-${code}-${idx}" style="padding:8px 6px;border-bottom:1px solid #f0f0f0;cursor:pointer;border-radius:4px;transition:background 0.15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
               <span style="display:inline-block;background:${catColor};color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;margin-right:4px;">${cat}</span>
               <span style="font-size:13px;font-weight:500;">${t.title}</span>
               ${othersText}
@@ -400,23 +400,22 @@ function MapComponent({ countryTopicMap, connections, archiveCountryTopicMap, ar
         }).join('');
 
         infoWindowRef.current.setContent(`
-          <div style="max-width:280px;font-family:sans-serif;">
+          <div style="max-width:300px;font-family:sans-serif;">
             <div style="font-size:15px;font-weight:700;margin-bottom:8px;">
               ${getFlagEmoji(code)} ${name} — ${count} topic${count !== 1 ? 's' : ''}
             </div>
             ${topicListHtml}
-            <button id="iw-details-${code}" style="margin-top:10px;width:100%;padding:7px;background:#111;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
-              View details →
-            </button>
           </div>
         `);
         infoWindowRef.current.open(map, marker);
 
         setTimeout(() => {
-          const btn = document.getElementById(`iw-details-${code}`);
-          if (btn) btn.addEventListener('click', () => {
-            infoWindowRef.current.close();
-            onCountryClick(code);
+          topics.forEach((t, idx) => {
+            const el = document.getElementById(`iw-topic-${code}-${idx}`);
+            if (el) el.addEventListener('click', () => {
+              infoWindowRef.current.close();
+              onCountryClick(code, t);
+            });
           });
         }, 80);
       });
@@ -818,9 +817,12 @@ export default function WorldMap() {
     return result;
   }, [archiveCountryTopicMap, countryTopicMap]);
 
-  const handleCountryClick = useCallback((code) => {
+  const handleCountryClick = useCallback((code, topic) => {
     setPanelCountry(code);
     setPanelOpen(true);
+    if (topic) {
+      setSelectedTopic(topic);
+    }
   }, []);
 
   const handleConnectionClick = useCallback((topic) => {

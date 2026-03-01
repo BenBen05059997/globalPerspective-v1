@@ -6,7 +6,7 @@ const { DynamoDBDocumentClient, GetCommand } = require('@aws-sdk/lib-dynamodb');
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
-const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
+const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
 const TOPICS_MAX_AGE_SECONDS = Number(process.env.TOPICS_CACHE_MAX_AGE_SECONDS || '5400');
 
 const SUMMARIZE_PREDICT_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;

@@ -566,6 +566,19 @@ async function buildAndWriteArchive(topics, generationId) {
       });
     }
 
+    const MAX_ARCHIVE_ENTRIES = 50;
+    const MAX_AI_CHARS = 1500;
+    const trimAi = (entry) => {
+      if (!entry.ai) return entry;
+      const trimmed = {};
+      for (const [k, v] of Object.entries(entry.ai)) {
+        trimmed[k] = typeof v === 'string' && v.length > MAX_AI_CHARS
+          ? v.slice(0, MAX_AI_CHARS) + '...'
+          : v;
+      }
+      return { ...entry, ai: trimmed };
+    };
+
     const newTopicIds = new Set(newEntries.map(e => e.topicId));
     const cutoff = Date.now() - (ARCHIVE_TTL_HOURS * 60 * 60 * 1000);
     const merged = [
@@ -574,7 +587,7 @@ async function buildAndWriteArchive(topics, generationId) {
         new Date(e.archivedAt).getTime() > cutoff
       ),
       ...newEntries,
-    ];
+    ].map(trimAi).slice(-MAX_ARCHIVE_ENTRIES);
 
     const now = new Date();
     const ttl = Math.floor(now.getTime() / 1000) + (ARCHIVE_TTL_HOURS * 3600);

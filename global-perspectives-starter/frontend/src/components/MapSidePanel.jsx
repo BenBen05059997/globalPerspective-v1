@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import SummaryDisplay from './SummaryDisplay';
 import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
@@ -61,9 +61,20 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
   const color = CATEGORY_COLORS[category] || CATEGORY_COLORS.other;
   const topicId = topic.topicId || topic.id;
   const otherCodes = countryCodes.filter(Boolean);
+  const cardRef = useRef(null);
+  const autoFetched = useRef(false);
 
-  const handleSummary = async () => {
-    if (isArchive || summary) { setSummaryCollapsed(c => !c); return; }
+  useEffect(() => {
+    if (isActive && !summary && !summaryLoading && !isArchive && !autoFetched.current) {
+      autoFetched.current = true;
+      handleSummaryFn();
+    }
+    if (isActive && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [isActive]);
+
+  const handleSummaryFn = async () => {
     if (summaryLoading) return;
     setSummaryLoading(true);
     setSummaryError(null);
@@ -76,6 +87,11 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     } finally {
       setSummaryLoading(false);
     }
+  };
+
+  const handleSummary = async () => {
+    if (isArchive || summary) { setSummaryCollapsed(c => !c); return; }
+    await handleSummaryFn();
   };
 
   const handlePrediction = async () => {
@@ -112,6 +128,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
 
   return (
     <div
+      ref={cardRef}
       className={`map-topic-card${isActive ? ' active' : ''}${isArchive ? ' archive' : ''}`}
       style={{ borderLeftColor: isArchive ? '#94a3b8' : color }}
     >

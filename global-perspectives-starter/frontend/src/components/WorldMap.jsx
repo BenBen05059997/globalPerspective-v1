@@ -758,8 +758,45 @@ export default function WorldMap() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelCountry, setPanelCountry] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
+  const [activeCategories, setActiveCategories] = useState(new Set());
 
-  const { countryTopicMap, connections } = buildMapData(topics || []);
+  const { countryTopicMap: rawCountryTopicMap, connections: rawConnections } = buildMapData(topics || []);
+
+  // Gather categories present in today's topics (for chips)
+  const presentCategories = useMemo(() => [...new Set(
+    (topics || []).map(t => (t.category || 'other').toLowerCase())
+  )].sort((a, b) => CATEGORY_DISPLAY_ORDER.indexOf(a) - CATEGORY_DISPLAY_ORDER.indexOf(b)), [topics]);
+
+  // Apply category filter — empty activeCategories means "show all"
+  const { countryTopicMap, connections } = useMemo(() => {
+    if (activeCategories.size === 0) {
+      return { countryTopicMap: rawCountryTopicMap, connections: rawConnections };
+    }
+    // Filter connections
+    const filteredConns = rawConnections.filter(conn =>
+      conn.categories.some(c => activeCategories.has(c))
+    );
+    // Rebuild filtered country topic map
+    const filteredCtm = {};
+    Object.entries(rawCountryTopicMap).forEach(([code, country]) => {
+      const filteredTopics = country.topics.filter(t =>
+        activeCategories.has((t.category || 'other').toLowerCase())
+      );
+      if (filteredTopics.length > 0) {
+        filteredCtm[code] = { ...country, topics: filteredTopics };
+      }
+    });
+    return { countryTopicMap: filteredCtm, connections: filteredConns };
+  }, [rawCountryTopicMap, rawConnections, activeCategories]);
+
+  const toggleCategory = useCallback((cat) => {
+    setActiveCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat); else next.add(cat);
+      return next;
+    });
+    setSelectedTopic(null); // clear story flow when filter changes
+  }, []);
 
   // Filter archive: exclude topic IDs already in current topics
   const filteredArchive = useMemo(() => {
@@ -881,19 +918,39 @@ export default function WorldMap() {
     );
   }
 
-  // Gather unique categories present in today's topics
-  const presentCategories = [...new Set(
-    (topics || []).map(t => (t.category || 'other').toLowerCase())
-  )].sort((a, b) => CATEGORY_DISPLAY_ORDER.indexOf(a) - CATEGORY_DISPLAY_ORDER.indexOf(b));
-
   return (
     <div>
       <div style={{ marginBottom: '1rem' }}>
         <div className="card" style={{ padding: '1rem' }}>
           <h2 style={{ margin: '0 0 0.5rem 0' }}>Today's Topics Map</h2>
-          <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+          <p style={{ margin: '0 0 0.75rem 0', color: 'var(--text-muted)' }}>
             Lines connect countries sharing the same news topic. Click a country or line to explore.
           </p>
+          {/* Category filter chips */}
+          {presentCategories.length > 0 && (
+            <div className="map-filter-bar">
+              {activeCategories.size > 0 && (
+                <button className="map-filter-chip map-filter-chip-reset" onClick={() => { setActiveCategories(new Set()); setSelectedTopic(null); }}>
+                  ✕ All
+                </button>
+              )}
+              {presentCategories.map(cat => {
+                const isActive = activeCategories.has(cat);
+                const color = getCategoryColor(cat);
+                const count = (topics || []).filter(t => (t.category || 'other').toLowerCase() === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    className={`map-filter-chip${isActive ? ' active' : ''}`}
+                    style={isActive ? { backgroundColor: color, borderColor: color, color: '#fff' } : { borderColor: color, color: color }}
+                    onClick={() => toggleCategory(cat)}
+                  >
+                    {cat} <span className="map-filter-chip-count">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

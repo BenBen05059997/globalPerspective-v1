@@ -514,6 +514,61 @@
   }
 }
 
+/* ===== CATEGORY FILTER BAR ===== */
+.map-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.map-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1.5px solid #ccc;
+  background: #fff;
+  color: #555;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-transform: capitalize;
+  transition: all 0.15s ease;
+  line-height: 1.6;
+}
+
+.map-filter-chip:hover {
+  opacity: 0.85;
+}
+
+.map-filter-chip.active {
+  font-weight: 600;
+}
+
+.map-filter-chip-reset {
+  border-color: #999;
+  color: #555;
+  font-weight: 500;
+}
+
+.map-filter-chip-reset:hover {
+  background: #f0f0f0;
+}
+
+.map-filter-chip-count {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  padding: 0 5px;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.map-filter-chip.active .map-filter-chip-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 /* ===== ARCHIVE TOPIC CARD ===== */
 .map-topic-card.archive {
   opacity: 0.75;

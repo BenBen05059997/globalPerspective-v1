@@ -54,7 +54,9 @@ function createStableTopicId(topic, index) {
 class GraphQLService {
   async getGeminiTopics(limit = 5) {
     const payload = await fetchTopicsCache();
-    if (!payload || payload.success === false) {
+    const isStaleWithData = payload?.success === false &&
+      Array.isArray(payload?.data?.topics) && payload.data.topics.length > 0;
+    if (!payload || (payload.success === false && !isStaleWithData)) {
       const message = payload?.error || 'Topics cache unavailable';
       throw new Error(message);
     }
@@ -75,7 +77,7 @@ class GraphQLService {
       model: item.model || payload?.model || 'gemini-2.5-flash',
       limit: effectiveLimit || item.limit || topics.length,
       cached: payload?.cached ?? true,
-      stale: payload?.stale ?? false,
+      stale: payload?.stale ?? isStaleWithData ?? false,
       updatedAt: item.updatedAt,
       generatedDate: item.generatedDate || null,
       generatedYear: item.generatedYear || null,

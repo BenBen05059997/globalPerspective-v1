@@ -131,6 +131,10 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
       ref={cardRef}
       className={`map-topic-card${isActive ? ' active' : ''}${isArchive ? ' archive' : ''}`}
       style={{ borderLeftColor: isArchive ? '#94a3b8' : color }}
+      onClick={(e) => {
+        if (e.target.closest('button, a, .map-sources-list, .ai-result-card')) return;
+        handleSummary();
+      }}
     >
       <div className="map-topic-card-header">
         <span className="map-topic-card-title">{topic.title}</span>

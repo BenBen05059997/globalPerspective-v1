@@ -379,44 +379,6 @@ function Home() {
         )}
       </div>
 
-      {/* Support Banner */}
-      <div style={{
-        maxWidth: '600px',
-        margin: '0 auto 1.5rem',
-        padding: '0.75rem 1rem',
-        backgroundColor: '#fafafa',
-        border: '1px solid #e5e5e5',
-        borderRadius: '8px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem',
-        fontSize: '0.9rem',
-        color: '#555',
-      }}>
-        <span>We run ad-free. Help us keep it that way</span>
-        <a
-          href="https://buymeacoffee.com/BenBen990505"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            padding: '0.35rem 0.75rem',
-            backgroundColor: '#FFDD00',
-            color: '#000',
-            fontWeight: '600',
-            fontSize: '0.85rem',
-            borderRadius: '6px',
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Buy Me a Coffee
-        </a>
-      </div>
-
       {/* Topics list via AppSync */}
       {loading && (
         <div className="card text-center">

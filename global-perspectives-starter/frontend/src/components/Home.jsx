@@ -442,8 +442,14 @@ function Home() {
 
       {!loading && topics && topics.length > 0 && (
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          {Object.entries(categorizedTopics).map(([region, regionTopics]) => (
-            regionTopics.length > 0 && (
+          {Object.entries(categorizedTopics)
+            .filter(([, regionTopics]) => regionTopics.length > 0)
+            .sort((a, b) => {
+              if (a[0] === 'World') return 1;
+              if (b[0] === 'World') return -1;
+              return b[1].length - a[1].length;
+            })
+            .map(([region, regionTopics]) => (
               <div key={region} className="card" style={{ marginBottom: '2rem' }}>
                 <div style={{
                   display: 'flex',
@@ -775,7 +781,6 @@ function Home() {
                   })}
                 </ul>
               </div>
-            )
           ))}
         </div>
       )}

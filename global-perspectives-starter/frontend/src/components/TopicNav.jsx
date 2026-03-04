@@ -109,8 +109,8 @@ function TopicNav({ topics, categorizedTopics }) {
 
       {!isCollapsed && (
         <div className="topic-nav-list">
-          {Object.entries(categorizedTopics).map(([region, regionTopics]) => {
-            if (regionTopics.length === 0) return null;
+          {Object.entries(categorizedTopics).flatMap(([region, regionTopics]) => {
+            if (regionTopics.length === 0) return [];
 
             return regionTopics.map((topic) => {
               const globalIdx = topics.indexOf(topic);

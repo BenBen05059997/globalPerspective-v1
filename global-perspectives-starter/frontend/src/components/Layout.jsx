@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useLang } from '../contexts/LanguageContext';
+import { t } from '../utils/i18n';
 
 function Layout({ children }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const navBarRef = useRef(null);
+  const { lang, setLang } = useLang();
 
   useEffect(() => {
     setMenuOpen(false);
@@ -27,12 +30,12 @@ function Layout({ children }) {
   }, [menuOpen]);
 
   const navLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/map', label: 'Map' },
-    { to: '/about', label: 'About' },
-    { to: '/contact', label: 'Contact' },
-    { to: '/privacy', label: 'Privacy' },
-    { to: '/disclosures', label: 'Disclosures' },
+    { to: '/', labelKey: 'navHome' },
+    { to: '/map', labelKey: 'navMap' },
+    { to: '/about', labelKey: 'navAbout' },
+    { to: '/contact', labelKey: 'navContact' },
+    { to: '/privacy', labelKey: 'navPrivacy' },
+    { to: '/disclosures', labelKey: 'navDisclosures' },
   ];
 
   return (
@@ -55,14 +58,25 @@ function Layout({ children }) {
               <span />
             </button>
             <div className={`nav-links ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)}>
-              {navLinks.map(({ to, label }) => (
+              {navLinks.map(({ to, labelKey }) => (
                 <Link
                   key={to}
                   to={to}
                   className={`nav-link ${location.pathname === to ? 'active' : ''}`}
                 >
-                  {label}
+                  {t(labelKey, lang)}
                 </Link>
+              ))}
+            </div>
+            <div className="lang-toggle">
+              {['en', 'ja', 'zh'].map(l => (
+                <button
+                  key={l}
+                  className={`lang-btn ${lang === l ? 'active' : ''}`}
+                  onClick={() => setLang(l)}
+                >
+                  {l === 'en' ? 'EN' : l === 'ja' ? '日本語' : '中文'}
+                </button>
               ))}
             </div>
           </div>
@@ -79,17 +93,17 @@ function Layout({ children }) {
         <div className="container">
           <div className="text-center" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
             <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-              Global Perspectives™ &mdash; AI-powered news aggregation
+              Global Perspectives™ &mdash; {t('footerTagline', lang)}
             </p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.9rem' }}>
-              <Link to="/about" className="nav-link">About</Link>
-              <Link to="/privacy" className="nav-link">Privacy &amp; Terms</Link>
-              <Link to="/disclosures" className="nav-link">Disclosures</Link>
+              <Link to="/about" className="nav-link">{t('navAbout', lang)}</Link>
+              <Link to="/privacy" className="nav-link">{t('footerPrivacy', lang)}</Link>
+              <Link to="/disclosures" className="nav-link">{t('navDisclosures', lang)}</Link>
               <a
                 href="mailto:globalperspectives.app@gmail.com"
                 className="nav-link"
               >
-                Contact
+                {t('navContact', lang)}
               </a>
             </div>
           </div>

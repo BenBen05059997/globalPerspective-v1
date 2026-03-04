@@ -1,10 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import ArchiveTopicModal from './ArchiveTopicModal';
 import './TodayArchiveSidebar.css';
+import { useLang } from '../contexts/LanguageContext';
+import { t, tCategory, getLocalizedTitle } from '../utils/i18n';
 
 const CATEGORY_ORDER = ['conflict', 'politics', 'economy', 'military', 'disaster', 'technology', 'health'];
 
 function TodayArchiveSidebar({ entries }) {
+  const { lang } = useLang();
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [search, setSearch] = useState('');
@@ -61,7 +64,7 @@ function TodayArchiveSidebar({ entries }) {
     <>
       <div className={`archive-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
         <div className="archive-sidebar-header" onClick={() => setIsCollapsed(!isCollapsed)}>
-          <span className="archive-sidebar-title">Today's Archive</span>
+          <span className="archive-sidebar-title">{t('todayArchive', lang)}</span>
           <span className="archive-sidebar-count">{entries.length}</span>
           <span className="archive-sidebar-toggle">
             {isCollapsed ? '\u25B6' : '\u25C0'}
@@ -74,7 +77,7 @@ function TodayArchiveSidebar({ entries }) {
               <input
                 className="archive-search-input"
                 type="text"
-                placeholder="Search topics..."
+                placeholder={t('searchTopics', lang)}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
@@ -86,7 +89,7 @@ function TodayArchiveSidebar({ entries }) {
                     className={`archive-chip ${activeCategory === cat ? 'active' : ''}`}
                     onClick={() => handleCategoryClick(cat)}
                   >
-                    {cat}
+                    {tCategory(cat, lang)}
                   </button>
                 ))}
               </div>
@@ -94,12 +97,12 @@ function TodayArchiveSidebar({ entries }) {
 
             <div className="archive-sidebar-list">
               {filtered.length === 0 && (
-                <div className="archive-no-results">No matching topics</div>
+                <div className="archive-no-results">{t('noMatching', lang)}</div>
               )}
               {sortedCategories.map(category => (
                 <div key={category}>
                   {!activeCategory && (
-                    <div className="archive-category-label">{category}</div>
+                    <div className="archive-category-label">{tCategory(category, lang)}</div>
                   )}
                   {grouped[category].map((entry) => (
                     <div
@@ -107,7 +110,7 @@ function TodayArchiveSidebar({ entries }) {
                       className="archive-sidebar-item"
                       onClick={() => setSelectedEntry(entry)}
                     >
-                      <span className="archive-item-title">{entry.title}</span>
+                      <span className="archive-item-title">{getLocalizedTitle(entry, lang)}</span>
                       <span className="archive-item-time">Showed {getTimeAgo(entry.archivedAt)}</span>
                     </div>
                   ))}

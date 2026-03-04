@@ -3,6 +3,9 @@ import SummaryDisplay from './SummaryDisplay';
 import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
 import graphqlService from '../utils/graphqlService';
+import { useLang } from '../contexts/LanguageContext';
+import { useError } from '../contexts/ErrorContext';
+import { t, tCategory, getLocalizedTitle } from '../utils/i18n';
 
 const CATEGORY_COLORS = {
   conflict:   '#ef4444',
@@ -37,9 +40,11 @@ function processContent(data) {
 }
 
 function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArchive }) {
+  const { lang } = useLang();
+  const { showError } = useError();
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
-  const preAi = isArchive ? topic.ai : null;
+  const preAi = isArchive ? (lang === 'ja' ? topic.ai_ja || topic.ai : lang === 'zh' ? topic.ai_zh || topic.ai : topic.ai) : null;
 
   const [summary, setSummary] = useState(preAi?.summary ? processContent({ content: preAi.summary }) : null);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -79,11 +84,11 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     setSummaryLoading(true);
     setSummaryError(null);
     try {
-      const data = await graphqlService.getTopicSummary(topicId);
+      const data = await graphqlService.getTopicSummary(topicId, lang);
       setSummary(processContent(data));
       setSummaryCollapsed(false);
     } catch (e) {
-      setSummaryError(e?.message || String(e));
+      showError(e?.message || String(e));
     } finally {
       setSummaryLoading(false);
     }
@@ -100,11 +105,11 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     setPredictionLoading(true);
     setPredictionError(null);
     try {
-      const data = await graphqlService.getTopicPrediction(topicId);
+      const data = await graphqlService.getTopicPrediction(topicId, lang);
       setPrediction(processContent({ content: data?.content || data?.impact_analysis || '', ...data }));
       setPredictionCollapsed(false);
     } catch (e) {
-      setPredictionError(e?.message || String(e));
+      showError(e?.message || String(e));
     } finally {
       setPredictionLoading(false);
     }
@@ -116,11 +121,11 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     setTraceCauseLoading(true);
     setTraceCauseError(null);
     try {
-      const data = await graphqlService.getTopicTraceCause(topicId);
+      const data = await graphqlService.getTopicTraceCause(topicId, lang);
       setTraceCause(processContent(data));
       setTraceCauseCollapsed(false);
     } catch (e) {
-      setTraceCauseError(e?.message || String(e));
+      showError(e?.message || String(e));
     } finally {
       setTraceCauseLoading(false);
     }
@@ -137,15 +142,15 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
       }}
     >
       <div className="map-topic-card-header">
-        <span className="map-topic-card-title">{topic.title}</span>
+        <span className="map-topic-card-title">{getLocalizedTitle(topic, lang)}</span>
         <span className="map-category-badge" style={{ backgroundColor: color }}>
-          {category}
+          {tCategory(category, lang)}
         </span>
       </div>
 
       {otherCodes.length > 0 && (
         <div className="map-topic-affected">
-          <span className="map-topic-affected-label">Also affects: </span>
+          <span className="map-topic-affected-label">{t('alsoAffects', lang)}: </span>
           {otherCodes.map(c => getFlagEmoji(c)).join(' ')}
           {' '}
           <span style={{ color: '#888' }}>{otherCodes.join(', ')}</span>
@@ -156,7 +161,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
       {Array.isArray(topic.sources) && topic.sources.length > 0 && (
         <>
           <button className="map-sources-toggle" onClick={() => setSourcesOpen(o => !o)}>
-            {sourcesOpen ? '▲ Hide' : '▼ Sources'} ({topic.sources.length})
+            {sourcesOpen ? `▲ ${t('hideSources', lang)}` : `▼ ${t('sources', lang)}`} ({topic.sources.length})
           </button>
           {sourcesOpen && (
             <div className="map-sources-list">
@@ -182,7 +187,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
           disabled={summaryLoading}
         >
           {summaryLoading && <span className="map-ai-spinner" />}
-          Summarize
+          {t('summarize', lang)}
         </button>
         <button
           className={`map-ai-btn map-ai-btn-predict${predictionLoading ? ' loading' : ''}`}
@@ -190,7 +195,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
           disabled={predictionLoading}
         >
           {predictionLoading && <span className="map-ai-spinner" />}
-          Predict
+          {t('predict', lang)}
         </button>
         <button
           className={`map-ai-btn map-ai-btn-trace${traceCauseLoading ? ' loading' : ''}`}
@@ -198,7 +203,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
           disabled={traceCauseLoading}
         >
           {traceCauseLoading && <span className="map-ai-spinner" />}
-          Trace Cause
+          {t('traceCause', lang)}
         </button>
       </div>
 
@@ -238,16 +243,16 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
             className={`map-topic-story-btn${isActive ? ' active' : ''}`}
             onClick={() => onTopicSelect(isActive ? null : topic)}
           >
-            {isActive ? 'Clear Story' : '▶ Story Flow'}
+            {isActive ? t('clearStory', lang) : `▶ ${t('storyFlow', lang)}`}
           </button>
         )}
         <a
-          href={buildNewsSearchUrl(topic.title)}
+          href={buildNewsSearchUrl(getLocalizedTitle(topic, lang))}
           target="_blank"
           rel="noopener noreferrer"
           className="map-topic-news-link"
         >
-          View Google News ↗
+          {t('viewGoogleNews', lang)} ↗
         </a>
       </div>
     </div>
@@ -255,6 +260,8 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
 }
 
 export default function MapSidePanel({ isOpen, onClose, country, topics, archiveTopics, countryTopicMap, archiveCountryTopicMap, selectedTopicId, onTopicSelect }) {
+  const { lang } = useLang();
+
   if (!country) return null;
 
   const info = countryTopicMap?.[country] || archiveCountryTopicMap?.[country] || {};
@@ -273,8 +280,8 @@ export default function MapSidePanel({ isOpen, onClose, country, topics, archive
             <h3>{countryName}</h3>
             <div className="map-side-panel-subtitle">
               {panelTopics.length > 0
-                ? `${panelTopics.length} now${panelArchiveTopics.length > 0 ? ` · ${panelArchiveTopics.length} earlier` : ''}`
-                : `${panelArchiveTopics.length} earlier topic${panelArchiveTopics.length !== 1 ? 's' : ''}`
+                ? `${panelTopics.length} ${t('now', lang || 'en')}${panelArchiveTopics.length > 0 ? ` · ${panelArchiveTopics.length} ${t('earlier', lang || 'en')}` : ''}`
+                : `${panelArchiveTopics.length} ${t('earlierTopics', lang || 'en')}`
               }
             </div>
           </div>
@@ -284,7 +291,7 @@ export default function MapSidePanel({ isOpen, onClose, country, topics, archive
         <div className="map-side-panel-body">
           {totalCount === 0 ? (
             <div style={{ padding: '2rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' }}>
-              No topics found for this country.
+              {t('noTopicsForCountry', lang)}
             </div>
           ) : (
             <>
@@ -300,7 +307,7 @@ export default function MapSidePanel({ isOpen, onClose, country, topics, archive
               {panelArchiveTopics.length > 0 && (
                 <>
                   <div className="map-archive-divider">
-                    <span>Earlier today</span>
+                    <span>{t('earlierToday', lang)}</span>
                   </div>
                   {panelArchiveTopics.map((topic, i) => (
                     <TopicCard

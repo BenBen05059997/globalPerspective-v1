@@ -54,16 +54,16 @@ export async function fetchTopicsCache() {
   return proxyAction('topics');
 }
 
-export async function fetchSummaryCache(topicId) {
-  return proxyAction('summary', { topicId });
+export async function fetchSummaryCache(topicId, lang = 'en') {
+  return proxyAction('summary', { topicId, lang });
 }
 
-export async function fetchPredictionCache(topicId) {
-  return proxyAction('prediction', { topicId });
+export async function fetchPredictionCache(topicId, lang = 'en') {
+  return proxyAction('prediction', { topicId, lang });
 }
 
-export async function fetchTraceCauseCache(topicId) {
-  return proxyAction('trace_cause', { topicId });
+export async function fetchTraceCauseCache(topicId, lang = 'en') {
+  return proxyAction('trace_cause', { topicId, lang });
 }
 
 export async function fetchTodayArchive() {

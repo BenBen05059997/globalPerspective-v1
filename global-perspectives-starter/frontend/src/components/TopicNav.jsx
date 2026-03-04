@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './TopicNav.css';
+import { useLang } from '../contexts/LanguageContext';
+import { t, getLocalizedTitle } from '../utils/i18n';
 
 function TopicNav({ topics, categorizedTopics }) {
+  const { lang } = useLang();
   const [activeTopicId, setActiveTopicId] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const observerRef = useRef(null);
@@ -97,7 +100,7 @@ function TopicNav({ topics, categorizedTopics }) {
   return (
     <div className={`topic-nav ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="topic-nav-header" onClick={() => setIsCollapsed(!isCollapsed)}>
-        <span className="topic-nav-title">Topics</span>
+        <span className="topic-nav-title">{t('topics', lang)}</span>
         <span className="topic-nav-count">{topics.length}</span>
         <span className={`topic-nav-toggle ${isCollapsed ? 'collapsed' : ''}`}>
           {isCollapsed ? '◀' : '▶'}
@@ -122,7 +125,7 @@ function TopicNav({ topics, categorizedTopics }) {
                   onClick={() => scrollToTopic(id)}
                 >
                   <span className="topic-nav-item-title">
-                    {truncateTitle(topic.title)}
+                    {truncateTitle(getLocalizedTitle(topic, lang))}
                   </span>
                   {regionBadge && (
                     <span className={`topic-nav-badge ${region?.toLowerCase().replace(/[^a-z]/g, '-')}`}>

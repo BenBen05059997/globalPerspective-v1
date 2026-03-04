@@ -3,10 +3,21 @@ import SummaryDisplay from './SummaryDisplay';
 import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
 import './TodayArchiveSidebar.css';
+import { useLang } from '../contexts/LanguageContext';
+import { t, tCategory, getLocalizedTitle } from '../utils/i18n';
 
 function ArchiveTopicModal({ entry, onClose }) {
   const overlayRef = useRef(null);
   const [activeSection, setActiveSection] = useState('summary');
+  const { lang } = useLang();
+
+  // Select AI content based on language
+  const aiContent = React.useMemo(() => {
+    if (!entry) return null;
+    if (lang === 'ja') return entry.ai_ja || entry.ai;
+    if (lang === 'zh') return entry.ai_zh || entry.ai;
+    return entry.ai;
+  }, [entry, lang]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -21,13 +32,13 @@ function ArchiveTopicModal({ entry, onClose }) {
   };
 
   const sections = React.useMemo(() => {
-    if (!entry?.ai) return [];
+    if (!aiContent) return [];
     return [
-      { key: 'summary', label: 'Summary', available: !!entry.ai.summary },
-      { key: 'prediction', label: 'Prediction', available: !!entry.ai.prediction },
-      { key: 'trace_cause', label: 'Trace Cause', available: !!entry.ai.trace_cause },
+      { key: 'summary', label: t('summarize', lang), available: !!aiContent.summary },
+      { key: 'prediction', label: t('predict', lang), available: !!aiContent.prediction },
+      { key: 'trace_cause', label: t('traceCause', lang), available: !!aiContent.trace_cause },
     ].filter(s => s.available);
-  }, [entry]);
+  }, [aiContent, lang]);
 
   useEffect(() => {
     if (sections.length > 0 && !sections.find(s => s.key === activeSection)) {
@@ -42,10 +53,10 @@ function ArchiveTopicModal({ entry, onClose }) {
       <div className="archive-modal">
         <div className="archive-modal-header">
           <div>
-            <h3 className="archive-modal-title">{entry.title}</h3>
+            <h3 className="archive-modal-title">{getLocalizedTitle(entry, lang)}</h3>
             <div className="archive-modal-meta">
               {entry.category && (
-                <span className="archive-modal-badge">{entry.category}</span>
+                <span className="archive-modal-badge">{tCategory(entry.category, lang)}</span>
               )}
               {entry.regions?.length > 0 && (
                 <span className="archive-modal-regions">
@@ -72,9 +83,9 @@ function ArchiveTopicModal({ entry, onClose }) {
         )}
 
         <div className="archive-modal-content">
-          {activeSection === 'summary' && entry.ai?.summary && (
+          {activeSection === 'summary' && aiContent?.summary && (
             <SummaryDisplay
-              summary={{ content: entry.ai.summary }}
+              summary={{ content: aiContent.summary }}
               isLoading={false}
               error={null}
               onRetry={() => {}}
@@ -84,9 +95,9 @@ function ArchiveTopicModal({ entry, onClose }) {
             />
           )}
 
-          {activeSection === 'prediction' && entry.ai?.prediction && (
+          {activeSection === 'prediction' && aiContent?.prediction && (
             <PredictionDisplay
-              prediction={{ content: entry.ai.prediction }}
+              prediction={{ content: aiContent.prediction }}
               isLoading={false}
               error={null}
               onRetry={() => {}}
@@ -96,9 +107,9 @@ function ArchiveTopicModal({ entry, onClose }) {
             />
           )}
 
-          {activeSection === 'trace_cause' && entry.ai?.trace_cause && (
+          {activeSection === 'trace_cause' && aiContent?.trace_cause && (
             <TraceCauseDisplay
-              traceCause={{ content: entry.ai.trace_cause }}
+              traceCause={{ content: aiContent.trace_cause }}
               isLoading={false}
               error={null}
               onRetry={() => {}}
@@ -117,7 +128,7 @@ function ArchiveTopicModal({ entry, onClose }) {
 
         {Array.isArray(entry.sources) && entry.sources.length > 0 && (
           <div className="archive-modal-sources">
-            <div className="archive-sources-label">Sources</div>
+            <div className="archive-sources-label">{t('sources', lang)}</div>
             {entry.sources.map((source, idx) => (
               <a
                 key={idx}

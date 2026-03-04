@@ -84,11 +84,11 @@ class GraphQLService {
     };
   }
 
-  async getTopicSummary(topicId) {
+  async getTopicSummary(topicId, lang = 'en') {
     if (!topicId) {
       throw new Error('Missing topicId for summary lookup');
     }
-    const payload = await fetchSummaryCache(topicId);
+    const payload = await fetchSummaryCache(topicId, lang);
     if (!payload || payload.success === false) {
       const reason = payload?.reason || payload?.error || 'Summary cache unavailable';
       throw new Error(reason);
@@ -100,11 +100,11 @@ class GraphQLService {
     return data;
   }
 
-  async getTopicPrediction(topicId) {
+  async getTopicPrediction(topicId, lang = 'en') {
     if (!topicId) {
       throw new Error('Missing topicId for prediction lookup');
     }
-    const payload = await fetchPredictionCache(topicId);
+    const payload = await fetchPredictionCache(topicId, lang);
     if (!payload || payload.success === false) {
       const reason = payload?.reason || payload?.error || 'Prediction cache unavailable';
       throw new Error(reason);
@@ -116,11 +116,11 @@ class GraphQLService {
     return data;
   }
 
-  async getTopicTraceCause(topicId) {
+  async getTopicTraceCause(topicId, lang = 'en') {
     if (!topicId) {
       throw new Error('Missing topicId for trace cause lookup');
     }
-    const payload = await fetchTraceCauseCache(topicId);
+    const payload = await fetchTraceCauseCache(topicId, lang);
     if (!payload || payload.success === false) {
       const reason = payload?.reason || payload?.error || 'Trace cause cache unavailable';
       throw new Error(reason);
@@ -144,30 +144,30 @@ class GraphQLService {
     };
   }
 
-  async generateSummary(topicOrId) {
+  async generateSummary(topicOrId, lang = 'en') {
     const topicId = resolveTopicId(topicOrId);
     if (!topicId) {
       throw new Error('Summaries are only available for cached Gemini topics');
     }
-    const data = await this.getTopicSummary(topicId);
+    const data = await this.getTopicSummary(topicId, lang);
     return data?.content ?? '';
   }
 
-  async generateTraceCause(topicOrId) {
+  async generateTraceCause(topicOrId, lang = 'en') {
     const topicId = resolveTopicId(topicOrId);
     if (!topicId) {
       throw new Error('Trace Cause is only available for cached Gemini topics');
     }
-    const data = await this.getTopicTraceCause(topicId);
+    const data = await this.getTopicTraceCause(topicId, lang);
     return data?.content ?? ''; // Markdown content
   }
 
-  async generatePredictions(topicOrArticle) {
+  async generatePredictions(topicOrArticle, lang = 'en') {
     const topicId = resolveTopicId(topicOrArticle);
     if (!topicId) {
       throw new Error('Predictions are only available for cached Gemini topics');
     }
-    const data = await this.getTopicPrediction(topicId);
+    const data = await this.getTopicPrediction(topicId, lang);
     const content = typeof data?.content === 'string' ? data.content : '';
     return {
       impact_analysis: trimToCompleteSentence(content, PREDICTION_WORD_LIMIT),

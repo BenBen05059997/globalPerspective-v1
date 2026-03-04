@@ -227,22 +227,7 @@
 }
 
 /* --- Layout Styles --- */
-/* Desktop layout only - prevent affecting mobile */
-@media (min-width: 769px) {
-  .topic-actions-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .source-links {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-}
+/* Removed old .topic-actions-container styles - now using separate desktop/mobile containers */
 
 /* --- Result Cards --- */
 .ai-result-card {

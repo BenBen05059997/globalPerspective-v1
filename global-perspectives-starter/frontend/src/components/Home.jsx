@@ -10,11 +10,16 @@ import { useTraceCause } from '../hooks/useTraceCause';
 import { useTodayArchive } from '../hooks/useTodayArchive';
 import graphqlService from '../utils/graphqlService';
 import { categorizeTopicsByRegion } from '../utils/countryMapping';
+import { useLang } from '../contexts/LanguageContext';
+import { useError } from '../contexts/ErrorContext';
+import { t, getLocalizedTitle } from '../utils/i18n';
 import './AIComponents.css'; // Import new premium styles
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, generatedDate, hasNewData } = useGeminiTopics();
   const { entries: archiveEntries } = useTodayArchive();
+  const { lang } = useLang();
+  const { showError } = useError();
 
   // Filter archive to only show topics NOT currently on the main page
   const filteredArchiveEntries = React.useMemo(() => {
@@ -65,6 +70,16 @@ function Home() {
   const MAX_RETRIES = 6;
   const RETRY_DELAY_MS = 10000;
 
+  // Clear AI content cache when language changes
+  useEffect(() => {
+    setSummaries({});
+    setPredictions({});
+    setTraceCauses({});
+    setSummaryErrors({});
+    setPredictionErrors({});
+    setTraceCauseErrors({});
+  }, [lang]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -113,7 +128,7 @@ function Home() {
     setSummaryErrors(prev => ({ ...prev, [id]: null }));
     const start = Date.now();
     try {
-      const data = await graphqlService.getTopicSummary(id);
+      const data = await graphqlService.getTopicSummary(id, lang);
       const content = data?.content || '';
       const genTime = Date.now() - start;
       const processed = {
@@ -139,8 +154,8 @@ function Home() {
         console.info(`[SummaryRetry] ${id} attempt ${nextAttempt}/${MAX_RETRIES}`);
         scheduleSummaryRetry(t, idx, nextAttempt);
       } else {
-        setSummaryErrors(prev => ({ ...prev, [id]: message }));
         setSummaryLoading(prev => ({ ...prev, [id]: false }));
+        showError(message);
       }
     }
   };
@@ -182,7 +197,7 @@ function Home() {
     setPredictionErrors(prev => ({ ...prev, [id]: null }));
     const start = Date.now();
     try {
-      const data = await graphqlService.getTopicPrediction(id);
+      const data = await graphqlService.getTopicPrediction(id, lang);
       const content = data?.content || data?.impact_analysis || '';
       const genTime = Date.now() - start;
       const processed = {
@@ -208,8 +223,8 @@ function Home() {
         console.info(`[PredictionRetry] ${id} attempt ${nextAttempt}/${MAX_RETRIES}`);
         schedulePredictionRetry(t, idx, nextAttempt);
       } else {
-        setPredictionErrors(prev => ({ ...prev, [id]: message }));
         setPredictionLoading(prev => ({ ...prev, [id]: false }));
+        showError(message);
       }
     }
   };
@@ -217,7 +232,6 @@ function Home() {
   const handleClearPrediction = (t, idx) => {
     const id = getTopicId(t, idx);
     setPredictions(prev => { const n = { ...prev }; delete n[id]; return n; });
-    setPredictionErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
     setPredictionCollapsed(prev => ({ ...prev, [id]: true }));
     delete predictionAttemptsRef.current[id];
   };
@@ -245,7 +259,7 @@ function Home() {
       // Use direct service call or hook generator.
       // Since Home.jsx manages its own state maps, we'll call the service directly or reuse the hook's logic if possible.
       // But to fit the existing pattern of Home.jsx (manual state maps), let's call graphqlService directly
-      const data = await graphqlService.getTopicTraceCause(id); // Use the method we added earlier
+      const data = await graphqlService.getTopicTraceCause(id, lang); // Use the method we added earlier
       const content = data?.content || '';
 
       const processed = {
@@ -262,15 +276,14 @@ function Home() {
       setTraceCauseLoading(prev => ({ ...prev, [id]: false }));
     } catch (e) {
       const message = e?.message || String(e);
-      setTraceCauseErrors(prev => ({ ...prev, [id]: message }));
       setTraceCauseLoading(prev => ({ ...prev, [id]: false }));
+      showError(message);
     }
   };
 
   const handleClearTraceCause = (t, idx) => {
     const id = getTopicId(t, idx);
     setTraceCauses(prev => { const n = { ...prev }; delete n[id]; return n; });
-    setTraceCauseErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
     setTraceCauseCollapsed(prev => ({ ...prev, [id]: true }));
   };
 
@@ -329,9 +342,9 @@ function Home() {
       <TodayArchiveSidebar entries={filteredArchiveEntries} />
 
       <div className="text-center mb-8">
-        <h1 className="mb-4">Today's Global Topics</h1>
+        <h1 className="mb-4">{t('todaysTopics', lang)}</h1>
         <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-          Trending topics from around the world, organized by region
+          {t('topicsSubtitle', lang)}
         </p>
         {(generatedDate || updatedAt) && (
           <p
@@ -360,7 +373,7 @@ function Home() {
               gap: '0.5rem',
             }}
           >
-            <span>🆕 New topics available</span>
+            <span>🆕 {t('newTopics', lang)}</span>
             <button
               onClick={refetch}
               style={{
@@ -373,7 +386,7 @@ function Home() {
                 fontWeight: '600',
               }}
             >
-              Refresh
+              {t('refresh', lang)}
             </button>
           </div>
         )}
@@ -427,7 +440,7 @@ function Home() {
             borderRadius: '50%', animation: 'spin 1s linear infinite',
             marginBottom: '1rem'
           }} />
-          <p style={{ margin: 0 }}>Loading Gemini topics...</p>
+          <p style={{ margin: 0 }}>{t('loading', lang)}</p>
         </div>
       )}
 
@@ -435,7 +448,7 @@ function Home() {
         <div className="error">
           <strong>Error:</strong> {error}
           <div style={{ marginTop: '1rem' }}>
-            <button onClick={refetch} className="btn btn-primary">Retry</button>
+            <button onClick={refetch} className="btn btn-primary">{t('retry', lang)}</button>
           </div>
         </div>
       )}
@@ -477,7 +490,7 @@ function Home() {
                     return (
                       <li key={globalIdx} id={`topic-${topicId}`} style={{ padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
                         <div style={{ marginBottom: '0.5rem' }}>
-                          <strong style={{ fontSize: '1.25rem' }}>{t.title}</strong>
+                          <strong style={{ fontSize: '1.25rem' }}>{getLocalizedTitle(t, lang)}</strong>
                           {t.category && (
                             <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                               [{t.category}]
@@ -494,7 +507,7 @@ function Home() {
                               disabled={summaryLoading[getTopicId(t, globalIdx)]}
                             >
                               {summaryLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
-                              Summarize
+                              {t('summarize', lang)}
                             </button>
 
                             <button
@@ -503,7 +516,7 @@ function Home() {
                               disabled={predictionLoading[getTopicId(t, globalIdx)]}
                             >
                               {predictionLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
-                              Predict
+                              {t('predict', lang)}
                             </button>
 
                             <button
@@ -512,7 +525,7 @@ function Home() {
                               disabled={traceCauseLoading[getTopicId(t, globalIdx)]}
                             >
                               {traceCauseLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
-                              Trace Cause
+                              {t('traceCause', lang)}
                             </button>
                           </div>
 
@@ -538,7 +551,7 @@ function Home() {
                                 onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                               >
-                                <span>Sources ({t.sources.length})</span>
+                                <span>{t('sources', lang)} ({t.sources.length})</span>
                                 <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
                               </button>
                             )}
@@ -578,7 +591,7 @@ function Home() {
                               className="ai-dropdown-trigger"
                               onClick={() => toggleMobileDropdown(t, globalIdx)}
                             >
-                              Actions
+                              {t('actions', lang)}
                               <span className={`ai-chevron ${mobileDropdownOpen[getTopicId(t, globalIdx)] ? 'open' : ''}`}>▼</span>
                             </button>
 
@@ -590,7 +603,7 @@ function Home() {
                                   disabled={summaryLoading[getTopicId(t, globalIdx)]}
                                 >
                                   {summaryLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
-                                  Summarize
+                                  {t('summarize', lang)}
                                   {summaries[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
                                 </button>
                                 <button
@@ -599,7 +612,7 @@ function Home() {
                                   disabled={predictionLoading[getTopicId(t, globalIdx)]}
                                 >
                                   {predictionLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
-                                  Predict
+                                  {t('predict', lang)}
                                   {predictions[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
                                 </button>
                                 <button
@@ -608,7 +621,7 @@ function Home() {
                                   disabled={traceCauseLoading[getTopicId(t, globalIdx)]}
                                 >
                                   {traceCauseLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
-                                  Trace Cause
+                                  {t('traceCause', lang)}
                                   {traceCauses[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
                                 </button>
                               </div>
@@ -657,7 +670,7 @@ function Home() {
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                   >
-                                    <span>Sources ({t.sources.length})</span>
+                                    <span>{t('sources', lang)} ({t.sources.length})</span>
                                     <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
                                   </button>
                                 )}

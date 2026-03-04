@@ -1,5 +1,60 @@
 # Global Perspectives — Change Log
 
+## 2026-03-04
+
+### Multi-Language Frontend Completion & Error Modal System
+- **Frontend - Complete Multi-Language Implementation:** Extended multi-language support (EN/JA/ZH) to all pages and components across the entire site. Previously only Home page had language support; now all static pages (About, Contact, Privacy, Disclosures) and dynamic components (Map side panel, navigation, footer, archive sidebar) display content in the selected language.
+- **Frontend - Static Pages Translation:** Created `CONTENT` objects within each static page component containing full EN/JA/ZH translations. Modified `AboutContact.jsx`, `Contact.jsx`, `PrivacyTerms.jsx`, and `Disclosures.jsx` to use `useLang()` hook and dynamically render content based on selected language. Fixed syntax errors in Chinese strings by using single quotes to wrap strings containing internal double quotes.
+- **Frontend - Navigation & Footer:** Updated `Layout.jsx` to translate all navigation links (Home, Map, About, Contact, Privacy, Disclosures) and footer text using `t()` function from i18n. Navigation and footer now respond to language toggle.
+- **Frontend - Map Components:** Modified `MapSidePanel.jsx` to pass `lang` parameter to all API calls (`getTopicSummary`, `getTopicPrediction`, `getTopicTraceCause`) and display localized topic titles using `getLocalizedTitle()`. Archive AI content selection based on language (`ai_ja`, `ai_zh`, or fallback to `ai`).
+- **Frontend - Archive & Display Components:** Updated `TodayArchiveSidebar.jsx`, `TopicNav.jsx`, `ArchiveTopicModal.jsx`, `SummaryDisplay.jsx`, `PredictionDisplay.jsx`, and `TraceCauseDisplay.jsx` to use localized titles and category names. All UI strings (buttons, headers, labels) now use `t()` or `tCategory()` for translation.
+- **Frontend - i18n Expansion:** Added comprehensive UI strings to `i18n.js` covering navigation (navHome, navMap, etc.), footer (footerTagline, footerPrivacy), map UI (alsoAffects, storyFlow, clearStory, hideSources, etc.), and updated subtitle to emphasize global impact ("that have impact around the world" instead of "from around the world"). Changed all Chinese "话题" (topics) to "新闻" (news) for accuracy.
+- **Frontend - Error Modal System:** Created global error handling system to display user-friendly, translated error messages instead of raw API errors. Created `ErrorContext.jsx` providing `showError(message, title)` and `clearError()` functions via React Context. Created `ErrorModal.jsx` component with EN/JA/ZH error messages for common errors (503 service unavailable, cache miss, network errors). Modal supports keyboard (Escape) and click-outside-to-close interactions.
+- **Frontend - Error Integration:** Modified `App.jsx` to wrap entire application with `<ErrorProvider>` and include `<ErrorModal />` component. Updated `Home.jsx` and `MapSidePanel.jsx` to use `showError()` from ErrorContext in catch blocks instead of setting local error state. After retry exhaustion, errors now display in modal with friendly messages like "Service temporarily unavailable. Please try again in a moment." instead of raw error strings.
+- **Frontend - API Service Updates:** Modified `restProxy.js` to accept and pass `lang` parameter to backend for content fetching. Updated `graphqlService.js` to pass `lang` through to REST proxy calls for summaries, predictions, and trace cause analysis.
+- **Language Persistence:** Language preference persists across page navigation and browser sessions via localStorage (`gp_lang` key). Language toggle in navbar shows active state with white text on black background.
+- **Modified Files:**
+  - `global-perspectives-starter/frontend/src/App.jsx` - Wrapped with ErrorProvider, added ErrorModal
+  - `global-perspectives-starter/frontend/src/contexts/ErrorContext.jsx` - New file: Global error state management
+  - `global-perspectives-starter/frontend/src/components/ErrorModal.jsx` - New file: Translated error modal (EN/JA/ZH)
+  - `global-perspectives-starter/frontend/src/components/Home.jsx` - Error handling via showError(), lang param for API calls
+  - `global-perspectives-starter/frontend/src/components/MapSidePanel.jsx` - Error handling via showError(), lang param, localized titles
+  - `global-perspectives-starter/frontend/src/components/Layout.jsx` - Translated navigation and footer
+  - `global-perspectives-starter/frontend/src/components/AboutContact.jsx` - Full EN/JA/ZH content object
+  - `global-perspectives-starter/frontend/src/components/Contact.jsx` - Full EN/JA/ZH content object
+  - `global-perspectives-starter/frontend/src/components/PrivacyTerms.jsx` - Full EN/JA/ZH content object
+  - `global-perspectives-starter/frontend/src/components/Disclosures.jsx` - Full EN/JA/ZH content object
+  - `global-perspectives-starter/frontend/src/components/TodayArchiveSidebar.jsx` - Localized titles and UI strings
+  - `global-perspectives-starter/frontend/src/components/TopicNav.jsx` - Localized titles
+  - `global-perspectives-starter/frontend/src/components/ArchiveTopicModal.jsx` - Localized AI content selection
+  - `global-perspectives-starter/frontend/src/utils/i18n.js` - Expanded UI strings (nav, footer, map, subtitle change, Chinese terminology update)
+  - `global-perspectives-starter/frontend/src/services/restProxy.js` - Added lang parameter support
+  - `global-perspectives-starter/frontend/src/utils/graphqlService.js` - Pass lang parameter through
+- **Status:** Full-stack multi-language implementation complete. Frontend now fully translated across all pages and components. Error handling upgraded with user-friendly modal system. Backend was deployed previously (2026-02-12). Frontend deployment in progress.
+
+## 2026-02-12
+
+### Multi-Language Support (Japanese + Chinese)
+- **Architecture:** Implemented Option C multi-language strategy where a single Grok API call returns all 3 languages (EN/JA/ZH) in structured JSON format. This maintains the same API call count (~39/hour) while generating content in 3 languages simultaneously, avoiding 3x cost inflation of per-language API calls.
+- **Backend - NewsProjectInvokeAgentLambda:** Modified AI content generation to output multilingual JSON. Added `wrapMultilingual()` function to append JSON output requirements to all prompts (summary, prediction, trace cause). Increased `DEFAULT_MAX_TOKENS` from 600 to 1800 to accommodate 3 languages. Added `parseMultilingualContent()` to parse JSON response into `{en, ja, zh}` objects with graceful fallback to English-only if JSON parsing fails. Replaced `writeCache()` with `writeCacheMultilingual()` that writes 3 DynamoDB items per content type using language-specific sort keys (SK: `SUMMARY`, `SUMMARY_JA`, `SUMMARY_ZH`). Modified `buildAndWriteArchive()` to fetch all 9 items (3 languages × 3 content types) and store as `ai`, `ai_ja`, `ai_zh` objects in archive entries. Added `response_format: { type: 'json_object' }` to `invokeGrok()` to enforce structured output.
+- **Backend - newsInvokeGemini:** Added batch title translation after topic generation. Makes 1 additional Grok API call to translate all ~13 topic titles to Japanese and Chinese simultaneously using structured JSON output. Merges `title_ja` and `title_zh` fields into each topic object. Wrapped in try-catch for graceful degradation - if translation fails, topics keep English titles without breaking the pipeline.
+- **Backend - newsSensitiveData:** Modified REST proxy to accept `lang` parameter from frontend. Extracts `lang` from request payload (defaults to 'en'), computes language suffix ('_JA' for Japanese, '_ZH' for Chinese, '' for English), and appends suffix to DynamoDB sort key for content lookups. Updated `readSummaryPredictionCache()` function signature to accept lang parameter. Topics and archive endpoints unchanged - they return full objects with all language fields.
+- **Frontend - Language Infrastructure:** Created `src/contexts/LanguageContext.jsx` with React Context API providing global language state (`lang`) and setter (`setLang`). State persisted in localStorage (`gp_lang` key) and defaults to English. Created `src/utils/i18n.js` with UI_STRINGS dictionary mapping all UI text to EN/JA/ZH translations. Exported `t(key, lang)` function for button labels/headers, `tCategory(name, lang)` for category names, and `getLocalizedTitle(topic, lang)` helper to extract correct title field from topic objects.
+- **Frontend - Layout Integration:** Modified `App.jsx` to wrap entire application with `<LanguageProvider>`. Updated `Layout.jsx` to add language toggle in navbar with 3 buttons (EN / 日本語 / 中文) using `useLang()` hook. Active language highlighted with white text on black background. Toggle persists across page navigation and browser sessions via localStorage.
+- **Frontend - Styling:** Added `.lang-toggle` and `.lang-btn` CSS classes to `index.css` with button styling, hover effects, and active state styling. Language buttons display inline with 4px gap, minimal padding (2px 8px), and smooth transitions.
+- **DynamoDB Key Strategy:** English content uses original sort keys (`SUMMARY`, `PREDICTION`, `TRACE_CAUSE`) for full backward compatibility with existing cache. Japanese and Chinese content stored with language suffixes (`_JA`, `_ZH`). Archive entries include all 3 language objects as separate fields.
+- **Graceful Degradation:** System never breaks if translation fails. JSON parsing failure falls back to English-only content. Missing language keys in response are skipped (no write to DynamoDB). Title translation wrapped in try-catch - failure keeps English titles. Frontend requests for non-existent translations return cache miss - user can retry or switch to English.
+- **Modified Files:**
+  - `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` - Multilingual prompt wrapping, JSON parsing, 3-item writes, archive handling
+  - `amplify/backend/function/newsInvokeGemini/src/index.js` - Batch title translation via Grok JSON output
+  - `amplify/backend/function/newsSensitiveData/src/index.js` - Language parameter handling, SK suffix logic
+  - `global-perspectives-starter/frontend/src/contexts/LanguageContext.jsx` - New file: React Context for language state
+  - `global-perspectives-starter/frontend/src/utils/i18n.js` - New file: UI translations and helpers (EN/JA/ZH)
+  - `global-perspectives-starter/frontend/src/App.jsx` - Wrapped with LanguageProvider
+  - `global-perspectives-starter/frontend/src/components/Layout.jsx` - Language toggle navbar buttons
+  - `global-perspectives-starter/frontend/src/index.css` - Language toggle button styles
+- **Status:** Backend implementation complete (NOT deployed to production yet per user request). Frontend language infrastructure complete (LanguageContext, i18n, toggle, CSS). Remaining work: Update frontend components (restProxy, graphqlService, Home.jsx, display components) to actually fetch and display content in selected language.
+
 ## 2026-03-03
 - **Map: Clickable Info Window Topics:** Clicking a country dot on the map now shows individual clickable topic rows (with hover highlight) instead of plain text + a "View details" button. Clicking a topic directly opens the side panel and auto-fetches its AI summary.
 - **Map: Clickable Topic Cards:** Clicking anywhere on a topic card in the map side panel now triggers the Summarize action (toggles it open/closed). Buttons, links, and AI result areas still work independently via event filtering.

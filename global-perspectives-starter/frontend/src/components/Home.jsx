@@ -94,13 +94,13 @@ function Home() {
     };
   }, []);
 
-  const getTopicId = (t, idx) => {
-    const directId = t?.topicId || t?.topic_id || t?.id;
+  const getTopicId = (topic, idx) => {
+    const directId = topic?.topicId || topic?.topic_id || topic?.id;
     if (directId != null) {
       const candidate = String(directId).trim();
       if (candidate.length > 0) return candidate;
     }
-    const slug = `${t.title || 'topic'}-${idx}`.replace(/[^a-zA-Z0-9]/g, '-');
+    const slug = `${topic.title || 'topic'}-${idx}`.replace(/[^a-zA-Z0-9]/g, '-');
     return slug || `topic-${idx}`;
   };
 
@@ -111,8 +111,8 @@ function Home() {
     }, RETRY_DELAY_MS);
   };
 
-  const handleGenerateSummary = async (t, idx, attempt = 0) => {
-    const id = getTopicId(t, idx);
+  const handleGenerateSummary = async (topic, idx, attempt = 0) => {
+    const id = getTopicId(topic, idx);
     // Update active timestamp to force scroll
     setActiveTimestamps(prev => ({ ...prev, [`${id}_summary`]: Date.now() }));
 
@@ -152,7 +152,7 @@ function Home() {
       const nextAttempt = attempt + 1;
       if (shouldRetry && nextAttempt <= MAX_RETRIES) {
         console.info(`[SummaryRetry] ${id} attempt ${nextAttempt}/${MAX_RETRIES}`);
-        scheduleSummaryRetry(t, idx, nextAttempt);
+        scheduleSummaryRetry(topic, idx, nextAttempt);
       } else {
         setSummaryLoading(prev => ({ ...prev, [id]: false }));
         showError(message);
@@ -160,16 +160,16 @@ function Home() {
     }
   };
 
-  const handleClearSummary = (t, idx) => {
-    const id = getTopicId(t, idx);
+  const handleClearSummary = (topic, idx) => {
+    const id = getTopicId(topic, idx);
     setSummaries(prev => { const n = { ...prev }; delete n[id]; return n; });
     setSummaryErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
     setSummaryCollapsed(prev => ({ ...prev, [id]: true }));
     delete summaryAttemptsRef.current[id];
   };
 
-  const toggleSummaryCollapsed = (t, idx) => {
-    const id = getTopicId(t, idx);
+  const toggleSummaryCollapsed = (topic, idx) => {
+    const id = getTopicId(topic, idx);
     setSummaryCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -180,8 +180,8 @@ function Home() {
     }, RETRY_DELAY_MS);
   };
 
-  const handleGeneratePrediction = async (t, idx, attempt = 0) => {
-    const id = getTopicId(t, idx);
+  const handleGeneratePrediction = async (topic, idx, attempt = 0) => {
+    const id = getTopicId(topic, idx);
     // Update active timestamp to force scroll
     setActiveTimestamps(prev => ({ ...prev, [`${id}_prediction`]: Date.now() }));
 
@@ -221,7 +221,7 @@ function Home() {
       const nextAttempt = attempt + 1;
       if (shouldRetry && nextAttempt <= MAX_RETRIES) {
         console.info(`[PredictionRetry] ${id} attempt ${nextAttempt}/${MAX_RETRIES}`);
-        schedulePredictionRetry(t, idx, nextAttempt);
+        schedulePredictionRetry(topic, idx, nextAttempt);
       } else {
         setPredictionLoading(prev => ({ ...prev, [id]: false }));
         showError(message);
@@ -229,20 +229,20 @@ function Home() {
     }
   };
 
-  const handleClearPrediction = (t, idx) => {
-    const id = getTopicId(t, idx);
+  const handleClearPrediction = (topic, idx) => {
+    const id = getTopicId(topic, idx);
     setPredictions(prev => { const n = { ...prev }; delete n[id]; return n; });
     setPredictionCollapsed(prev => ({ ...prev, [id]: true }));
     delete predictionAttemptsRef.current[id];
   };
 
-  const togglePredictionCollapsed = (t, idx) => {
-    const id = getTopicId(t, idx);
+  const togglePredictionCollapsed = (topic, idx) => {
+    const id = getTopicId(topic, idx);
     setPredictionCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleGenerateTraceCause = async (t, idx) => {
-    const id = getTopicId(t, idx);
+  const handleGenerateTraceCause = async (topic, idx) => {
+    const id = getTopicId(topic, idx);
     // Update active timestamp to force scroll
     setActiveTimestamps(prev => ({ ...prev, [`${id}_trace`]: Date.now() }));
 
@@ -281,42 +281,42 @@ function Home() {
     }
   };
 
-  const handleClearTraceCause = (t, idx) => {
-    const id = getTopicId(t, idx);
+  const handleClearTraceCause = (topic, idx) => {
+    const id = getTopicId(topic, idx);
     setTraceCauses(prev => { const n = { ...prev }; delete n[id]; return n; });
     setTraceCauseCollapsed(prev => ({ ...prev, [id]: true }));
   };
 
-  const toggleTraceCauseCollapsed = (t, idx) => {
-    const id = getTopicId(t, idx);
+  const toggleTraceCauseCollapsed = (topic, idx) => {
+    const id = getTopicId(topic, idx);
     setTraceCauseCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const toggleMobileDropdown = (t, idx) => {
-    const id = getTopicId(t, idx);
+  const toggleMobileDropdown = (topic, idx) => {
+    const id = getTopicId(topic, idx);
     setMobileDropdownOpen(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const toggleSourcesExpanded = (t, idx) => {
-    const id = getTopicId(t, idx);
+  const toggleSourcesExpanded = (topic, idx) => {
+    const id = getTopicId(topic, idx);
     setSourcesExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleMobileAction = (action, t, idx) => {
+  const handleMobileAction = (action, topic, idx) => {
     // Close dropdown first
-    const id = getTopicId(t, idx);
+    const id = getTopicId(topic, idx);
     setMobileDropdownOpen(prev => ({ ...prev, [id]: false }));
 
     // Execute the action
     switch(action) {
       case 'summary':
-        handleGenerateSummary(t, idx);
+        handleGenerateSummary(topic, idx);
         break;
       case 'prediction':
-        handleGeneratePrediction(t, idx);
+        handleGeneratePrediction(topic, idx);
         break;
       case 'traceCause':
-        handleGenerateTraceCause(t, idx);
+        handleGenerateTraceCause(topic, idx);
         break;
     }
   };
@@ -484,16 +484,16 @@ function Home() {
                   </span>
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {regionTopics.map((t, idx) => {
-                    const globalIdx = topics.indexOf(t);
-                    const topicId = getTopicId(t, globalIdx);
+                  {regionTopics.map((topic, idx) => {
+                    const globalIdx = topics.indexOf(topic);
+                    const topicId = getTopicId(topic, globalIdx);
                     return (
                       <li key={globalIdx} id={`topic-${topicId}`} style={{ padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
                         <div style={{ marginBottom: '0.5rem' }}>
-                          <strong style={{ fontSize: '1.25rem' }}>{getLocalizedTitle(t, lang)}</strong>
-                          {t.category && (
+                          <strong style={{ fontSize: '1.25rem' }}>{getLocalizedTitle(topic, lang)}</strong>
+                          {topic.category && (
                             <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                              [{t.category}]
+                              [{topic.category}]
                             </span>
                           )}
                         </div>
@@ -502,38 +502,38 @@ function Home() {
                         <div className="topic-actions-desktop">
                           <div className="ai-toolbar">
                             <button
-                              className={`ai-btn ai-btn-summary ${summaryLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                              onClick={() => handleGenerateSummary(t, globalIdx)}
-                              disabled={summaryLoading[getTopicId(t, globalIdx)]}
+                              className={`ai-btn ai-btn-summary ${summaryLoading[getTopicId(topic, globalIdx)] ? 'loading' : ''}`}
+                              onClick={() => handleGenerateSummary(topic, globalIdx)}
+                              disabled={summaryLoading[getTopicId(topic, globalIdx)]}
                             >
-                              {summaryLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
+                              {summaryLoading[getTopicId(topic, globalIdx)] && <span className="ai-spinner"></span>}
                               {t('summarize', lang)}
                             </button>
 
                             <button
-                              className={`ai-btn ai-btn-predict ${predictionLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                              onClick={() => handleGeneratePrediction(t, globalIdx)}
-                              disabled={predictionLoading[getTopicId(t, globalIdx)]}
+                              className={`ai-btn ai-btn-predict ${predictionLoading[getTopicId(topic, globalIdx)] ? 'loading' : ''}`}
+                              onClick={() => handleGeneratePrediction(topic, globalIdx)}
+                              disabled={predictionLoading[getTopicId(topic, globalIdx)]}
                             >
-                              {predictionLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
+                              {predictionLoading[getTopicId(topic, globalIdx)] && <span className="ai-spinner"></span>}
                               {t('predict', lang)}
                             </button>
 
                             <button
-                              className={`ai-btn ai-btn-trace ${traceCauseLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                              onClick={() => handleGenerateTraceCause(t, globalIdx)}
-                              disabled={traceCauseLoading[getTopicId(t, globalIdx)]}
+                              className={`ai-btn ai-btn-trace ${traceCauseLoading[getTopicId(topic, globalIdx)] ? 'loading' : ''}`}
+                              onClick={() => handleGenerateTraceCause(topic, globalIdx)}
+                              disabled={traceCauseLoading[getTopicId(topic, globalIdx)]}
                             >
-                              {traceCauseLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
+                              {traceCauseLoading[getTopicId(topic, globalIdx)] && <span className="ai-spinner"></span>}
                               {t('traceCause', lang)}
                             </button>
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             {/* Sources Toggle Button - on same line, left of View Google News */}
-                            {Array.isArray(t.sources) && t.sources.length > 0 && (
+                            {Array.isArray(topic.sources) && topic.sources.length > 0 && (
                               <button
-                                onClick={() => toggleSourcesExpanded(t, globalIdx)}
+                                onClick={() => toggleSourcesExpanded(topic, globalIdx)}
                                 style={{
                                   background: 'none',
                                   border: '1px solid #e0e0e0',
@@ -551,13 +551,13 @@ function Home() {
                                 onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                               >
-                                <span>{t('sources', lang)} ({t.sources.length})</span>
-                                <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
+                                <span>{t('sources', lang)} ({topic.sources.length})</span>
+                                <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(topic, globalIdx)] ? '▲' : '▼'}</span>
                               </button>
                             )}
 
                             {(() => {
-                              const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+                              const fullTitle = String(topic.title || '').replace(/\s+/g, ' ').trim();
                               const sourceUrl = fullTitle
                                 ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
                                 : '';
@@ -589,47 +589,47 @@ function Home() {
                           <div className="ai-toolbar-mobile">
                             <button
                               className="ai-dropdown-trigger"
-                              onClick={() => toggleMobileDropdown(t, globalIdx)}
+                              onClick={() => toggleMobileDropdown(topic, globalIdx)}
                             >
                               {t('actions', lang)}
-                              <span className={`ai-chevron ${mobileDropdownOpen[getTopicId(t, globalIdx)] ? 'open' : ''}`}>▼</span>
+                              <span className={`ai-chevron ${mobileDropdownOpen[getTopicId(topic, globalIdx)] ? 'open' : ''}`}>▼</span>
                             </button>
 
-                            {mobileDropdownOpen[getTopicId(t, globalIdx)] && (
+                            {mobileDropdownOpen[getTopicId(topic, globalIdx)] && (
                               <div className="ai-dropdown-menu">
                                 <button
-                                  className={`ai-dropdown-item ${summaryLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                                  onClick={() => handleMobileAction('summary', t, globalIdx)}
-                                  disabled={summaryLoading[getTopicId(t, globalIdx)]}
+                                  className={`ai-dropdown-item ${summaryLoading[getTopicId(topic, globalIdx)] ? 'loading' : ''}`}
+                                  onClick={() => handleMobileAction('summary', topic, globalIdx)}
+                                  disabled={summaryLoading[getTopicId(topic, globalIdx)]}
                                 >
-                                  {summaryLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
+                                  {summaryLoading[getTopicId(topic, globalIdx)] && <span className="ai-spinner-small"></span>}
                                   {t('summarize', lang)}
-                                  {summaries[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
+                                  {summaries[getTopicId(topic, globalIdx)] && <span className="ai-checkmark">✓</span>}
                                 </button>
                                 <button
-                                  className={`ai-dropdown-item ${predictionLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                                  onClick={() => handleMobileAction('prediction', t, globalIdx)}
-                                  disabled={predictionLoading[getTopicId(t, globalIdx)]}
+                                  className={`ai-dropdown-item ${predictionLoading[getTopicId(topic, globalIdx)] ? 'loading' : ''}`}
+                                  onClick={() => handleMobileAction('prediction', topic, globalIdx)}
+                                  disabled={predictionLoading[getTopicId(topic, globalIdx)]}
                                 >
-                                  {predictionLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
+                                  {predictionLoading[getTopicId(topic, globalIdx)] && <span className="ai-spinner-small"></span>}
                                   {t('predict', lang)}
-                                  {predictions[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
+                                  {predictions[getTopicId(topic, globalIdx)] && <span className="ai-checkmark">✓</span>}
                                 </button>
                                 <button
-                                  className={`ai-dropdown-item ${traceCauseLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                                  onClick={() => handleMobileAction('traceCause', t, globalIdx)}
-                                  disabled={traceCauseLoading[getTopicId(t, globalIdx)]}
+                                  className={`ai-dropdown-item ${traceCauseLoading[getTopicId(topic, globalIdx)] ? 'loading' : ''}`}
+                                  onClick={() => handleMobileAction('traceCause', topic, globalIdx)}
+                                  disabled={traceCauseLoading[getTopicId(topic, globalIdx)]}
                                 >
-                                  {traceCauseLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
+                                  {traceCauseLoading[getTopicId(topic, globalIdx)] && <span className="ai-spinner-small"></span>}
                                   {t('traceCause', lang)}
-                                  {traceCauses[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
+                                  {traceCauses[getTopicId(topic, globalIdx)] && <span className="ai-checkmark">✓</span>}
                                 </button>
                               </div>
                             )}
                           </div>
 
                           {(() => {
-                            const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
+                            const fullTitle = String(topic.title || '').replace(/\s+/g, ' ').trim();
                             const sourceUrl = fullTitle
                               ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
                               : '';
@@ -647,9 +647,9 @@ function Home() {
                                 </a>
 
                                 {/* Sources Toggle Button */}
-                                {Array.isArray(t.sources) && t.sources.length > 0 && (
+                                {Array.isArray(topic.sources) && topic.sources.length > 0 && (
                                   <button
-                                    onClick={() => toggleSourcesExpanded(t, globalIdx)}
+                                    onClick={() => toggleSourcesExpanded(topic, globalIdx)}
                                     style={{
                                       background: 'none',
                                       border: '1px solid #e0e0e0',
@@ -670,8 +670,8 @@ function Home() {
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                                   >
-                                    <span>{t('sources', lang)} ({t.sources.length})</span>
-                                    <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
+                                    <span>{t('sources', lang)} ({topic.sources.length})</span>
+                                    <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(topic, globalIdx)] ? '▲' : '▼'}</span>
                                   </button>
                                 )}
 
@@ -685,10 +685,10 @@ function Home() {
                         </div>
 
                         {/* Sources Display */}
-                        {Array.isArray(t.sources) && t.sources.length > 0 && sourcesExpanded[getTopicId(t, globalIdx)] && (
+                        {Array.isArray(topic.sources) && topic.sources.length > 0 && sourcesExpanded[getTopicId(topic, globalIdx)] && (
                           <div style={{ marginTop: '0.5rem' }}>
                             <div className="ai-result-card">
-                              <div className="ai-result-header" onClick={() => toggleSourcesExpanded(t, globalIdx)} style={{ cursor: 'pointer' }}>
+                              <div className="ai-result-header" onClick={() => toggleSourcesExpanded(topic, globalIdx)} style={{ cursor: 'pointer' }}>
                                 <div className="ai-result-title" style={{ color: '#1a73e8' }}>
                                   📰 Article Sources
                                 </div>
@@ -699,13 +699,13 @@ function Home() {
 
                               <div className="ai-result-content">
                                 <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                  {t.sources.map((source, srcIdx) => (
+                                  {topic.sources.map((source, srcIdx) => (
                                     <div
                                       key={srcIdx}
                                       style={{
-                                        marginBottom: srcIdx < t.sources.length - 1 ? '16px' : '0',
-                                        paddingBottom: srcIdx < t.sources.length - 1 ? '16px' : '0',
-                                        borderBottom: srcIdx < t.sources.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none'
+                                        marginBottom: srcIdx < topic.sources.length - 1 ? '16px' : '0',
+                                        paddingBottom: srcIdx < topic.sources.length - 1 ? '16px' : '0',
+                                        borderBottom: srcIdx < topic.sources.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none'
                                       }}
                                     >
                                       <a
@@ -740,7 +740,7 @@ function Home() {
                                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                   <span style={{ fontSize: '12px', color: '#9ca3af' }}>Real-time News Sources</span>
                                   <div className="ai-result-actions">
-                                    <div className="ai-action-icon" onClick={() => toggleSourcesExpanded(t, globalIdx)} title="Close">✕</div>
+                                    <div className="ai-action-icon" onClick={() => toggleSourcesExpanded(topic, globalIdx)} title="Close">✕</div>
                                   </div>
                                 </div>
                               </div>
@@ -751,42 +751,42 @@ function Home() {
                         {/* AI Summary Display */}
                         <div style={{ marginTop: '0.5rem' }}>
                           <SummaryDisplay
-                            summary={summaries[getTopicId(t, globalIdx)]}
-                            isLoading={summaryLoading[getTopicId(t, globalIdx)]}
-                            error={summaryErrors[getTopicId(t, globalIdx)]}
-                            onRetry={() => handleGenerateSummary(t, globalIdx)}
-                            onClear={() => handleClearSummary(t, globalIdx)}
-                            isCollapsed={summaryCollapsed[getTopicId(t, globalIdx)]}
-                            onToggleCollapse={() => toggleSummaryCollapsed(t, globalIdx)}
-                            lastActive={activeTimestamps[`${getTopicId(t, globalIdx)}_summary`]}
+                            summary={summaries[getTopicId(topic, globalIdx)]}
+                            isLoading={summaryLoading[getTopicId(topic, globalIdx)]}
+                            error={summaryErrors[getTopicId(topic, globalIdx)]}
+                            onRetry={() => handleGenerateSummary(topic, globalIdx)}
+                            onClear={() => handleClearSummary(topic, globalIdx)}
+                            isCollapsed={summaryCollapsed[getTopicId(topic, globalIdx)]}
+                            onToggleCollapse={() => toggleSummaryCollapsed(topic, globalIdx)}
+                            lastActive={activeTimestamps[`${getTopicId(topic, globalIdx)}_summary`]}
                           />
                         </div>
 
                         {/* AI Prediction Display */}
                         <div style={{ marginTop: '0.5rem' }}>
                           <PredictionDisplay
-                            prediction={predictions[getTopicId(t, globalIdx)]}
-                            isLoading={predictionLoading[getTopicId(t, globalIdx)]}
-                            error={(predictionErrors[getTopicId(t, globalIdx)] || null)}
-                            onRetry={() => handleGeneratePrediction(t, globalIdx)}
-                            onClear={() => handleClearPrediction(t, globalIdx)}
-                            isCollapsed={predictionCollapsed[getTopicId(t, globalIdx)]}
-                            onToggleCollapse={() => togglePredictionCollapsed(t, globalIdx)}
-                            lastActive={activeTimestamps[`${getTopicId(t, globalIdx)}_prediction`]}
+                            prediction={predictions[getTopicId(topic, globalIdx)]}
+                            isLoading={predictionLoading[getTopicId(topic, globalIdx)]}
+                            error={(predictionErrors[getTopicId(topic, globalIdx)] || null)}
+                            onRetry={() => handleGeneratePrediction(topic, globalIdx)}
+                            onClear={() => handleClearPrediction(topic, globalIdx)}
+                            isCollapsed={predictionCollapsed[getTopicId(topic, globalIdx)]}
+                            onToggleCollapse={() => togglePredictionCollapsed(topic, globalIdx)}
+                            lastActive={activeTimestamps[`${getTopicId(topic, globalIdx)}_prediction`]}
                           />
                         </div>
 
                         {/* AI Trace Cause Display */}
                         <div style={{ marginTop: '0.5rem' }}>
                           <TraceCauseDisplay
-                            traceCause={traceCauses[getTopicId(t, globalIdx)]}
-                            isLoading={traceCauseLoading[getTopicId(t, globalIdx)]}
-                            error={traceCauseErrors[getTopicId(t, globalIdx)]}
-                            onRetry={() => handleGenerateTraceCause(t, globalIdx)}
-                            onClear={() => handleClearTraceCause(t, globalIdx)}
-                            isCollapsed={traceCauseCollapsed[getTopicId(t, globalIdx)]}
-                            onToggleCollapse={() => toggleTraceCauseCollapsed(t, globalIdx)}
-                            lastActive={activeTimestamps[`${getTopicId(t, globalIdx)}_trace`]}
+                            traceCause={traceCauses[getTopicId(topic, globalIdx)]}
+                            isLoading={traceCauseLoading[getTopicId(topic, globalIdx)]}
+                            error={traceCauseErrors[getTopicId(topic, globalIdx)]}
+                            onRetry={() => handleGenerateTraceCause(topic, globalIdx)}
+                            onClear={() => handleClearTraceCause(topic, globalIdx)}
+                            isCollapsed={traceCauseCollapsed[getTopicId(topic, globalIdx)]}
+                            onToggleCollapse={() => toggleTraceCauseCollapsed(topic, globalIdx)}
+                            lastActive={activeTimestamps[`${getTopicId(topic, globalIdx)}_trace`]}
                           />
                         </div>
                       </li>

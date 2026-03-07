@@ -8,6 +8,8 @@ import PrivacyTerms from './components/PrivacyTerms';
 import AboutContact from './components/AboutContact';
 import Disclosures from './components/Disclosures';
 import Contact from './components/Contact';
+import { ErrorProvider } from './contexts/ErrorContext';
+import ErrorModal from './components/ErrorModal';
 
 function resolveBasename() {
   const rawBase = import.meta.env.BASE_URL ?? '/';
@@ -30,17 +32,20 @@ export default function App() {
   const basename = resolveBasename();
 
   return (
-    <BrowserRouter basename={basename}>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/map" element={<WorldMap />} />
-          <Route path="/privacy" element={<PrivacyTerms />} />
-          <Route path="/about" element={<AboutContact />} />
-          <Route path="/disclosures" element={<Disclosures />} />
-          <Route path="/contact" element={<Contact />} />
-        </Routes>
-      </Layout>
-    </BrowserRouter>
+    <ErrorProvider>
+      <BrowserRouter basename={basename}>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/map" element={<WorldMap />} />
+            <Route path="/privacy" element={<PrivacyTerms />} />
+            <Route path="/about" element={<AboutContact />} />
+            <Route path="/disclosures" element={<Disclosures />} />
+            <Route path="/contact" element={<Contact />} />
+          </Routes>
+        </Layout>
+      </BrowserRouter>
+      <ErrorModal />
+    </ErrorProvider>
   );
 }

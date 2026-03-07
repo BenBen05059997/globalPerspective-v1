@@ -31,6 +31,21 @@ export async function proxyAction(action, payload = {}) {
   }
 
   if (!res.ok) {
+    // Special case: 503 with stale data should return the data, not throw
+    if (res.status === 503 && body && typeof body === 'object') {
+      // Check if Lambda proxy format with body field
+      if ('body' in body) {
+        const parsed = typeof body.body === 'string' ? JSON.parse(body.body) : body.body;
+        if (parsed?.data?.topics && Array.isArray(parsed.data.topics) && parsed.data.topics.length > 0) {
+          return parsed;
+        }
+      }
+      // Check if direct format
+      if (body?.data?.topics && Array.isArray(body.data.topics) && body.data.topics.length > 0) {
+        return body;
+      }
+    }
+
     const details = typeof body === 'object' ? JSON.stringify(body) : String(body);
     throw new Error(`Proxy HTTP ${res.status}: ${details}`);
   }

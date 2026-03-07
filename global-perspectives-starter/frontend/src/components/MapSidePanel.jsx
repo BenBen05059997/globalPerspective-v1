@@ -3,6 +3,7 @@ import SummaryDisplay from './SummaryDisplay';
 import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
 import graphqlService from '../utils/graphqlService';
+import { useError } from '../contexts/ErrorContext';
 
 const CATEGORY_COLORS = {
   conflict:   '#ef4444',
@@ -37,6 +38,7 @@ function processContent(data) {
 }
 
 function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArchive }) {
+  const { showError } = useError();
   const [sourcesOpen, setSourcesOpen] = useState(false);
 
   const preAi = isArchive ? topic.ai : null;
@@ -83,7 +85,9 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
       setSummary(processContent(data));
       setSummaryCollapsed(false);
     } catch (e) {
-      setSummaryError(e?.message || String(e));
+      const message = e?.message || String(e);
+      setSummaryError(message);
+      showError(message);
     } finally {
       setSummaryLoading(false);
     }
@@ -104,7 +108,9 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
       setPrediction(processContent({ content: data?.content || data?.impact_analysis || '', ...data }));
       setPredictionCollapsed(false);
     } catch (e) {
-      setPredictionError(e?.message || String(e));
+      const message = e?.message || String(e);
+      setPredictionError(message);
+      showError(message);
     } finally {
       setPredictionLoading(false);
     }
@@ -120,7 +126,9 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
       setTraceCause(processContent(data));
       setTraceCauseCollapsed(false);
     } catch (e) {
-      setTraceCauseError(e?.message || String(e));
+      const message = e?.message || String(e);
+      setTraceCauseError(message);
+      showError(message);
     } finally {
       setTraceCauseLoading(false);
     }

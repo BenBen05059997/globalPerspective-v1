@@ -10,11 +10,13 @@ import { useTraceCause } from '../hooks/useTraceCause';
 import { useTodayArchive } from '../hooks/useTodayArchive';
 import graphqlService from '../utils/graphqlService';
 import { categorizeTopicsByRegion } from '../utils/countryMapping';
+import { useError } from '../contexts/ErrorContext';
 import './AIComponents.css'; // Import new premium styles
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, generatedDate, hasNewData } = useGeminiTopics();
   const { entries: archiveEntries } = useTodayArchive();
+  const { showError } = useError();
 
   // Filter archive to only show topics NOT currently on the main page
   const filteredArchiveEntries = React.useMemo(() => {
@@ -79,6 +81,13 @@ function Home() {
     };
   }, []);
 
+  // Show error modal when topics fetch fails
+  useEffect(() => {
+    if (error) {
+      showError(error);
+    }
+  }, [error, showError]);
+
   const getTopicId = (t, idx) => {
     const directId = t?.topicId || t?.topic_id || t?.id;
     if (directId != null) {
@@ -141,6 +150,7 @@ function Home() {
       } else {
         setSummaryErrors(prev => ({ ...prev, [id]: message }));
         setSummaryLoading(prev => ({ ...prev, [id]: false }));
+        showError(message);
       }
     }
   };
@@ -210,6 +220,7 @@ function Home() {
       } else {
         setPredictionErrors(prev => ({ ...prev, [id]: message }));
         setPredictionLoading(prev => ({ ...prev, [id]: false }));
+        showError(message);
       }
     }
   };
@@ -264,6 +275,7 @@ function Home() {
       const message = e?.message || String(e);
       setTraceCauseErrors(prev => ({ ...prev, [id]: message }));
       setTraceCauseLoading(prev => ({ ...prev, [id]: false }));
+      showError(message);
     }
   };
 
@@ -333,19 +345,47 @@ function Home() {
         <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
           Trending topics from around the world, organized by region
         </p>
-        {(generatedDate || updatedAt) && (
+        {(generatedDate || updatedAt) && !isStale && (
           <p
             style={{
               fontSize: '0.9rem',
-              color: isStale ? '#ff9800' : '#666',
+              color: '#666',
               marginTop: '0.5rem',
             }}
           >
-            {isStale && '⚠️ '}
             {generatedDate ? `Topics from ${generatedDate}` : `Updated ${getTimeAgo(updatedAt)}`}
             {updatedAt && generatedDate && ` (${getTimeAgo(updatedAt)})`}
-            {isStale && ' (refreshing...)'}
           </p>
+        )}
+        {isStale && (
+          <div
+            style={{
+              marginTop: '1rem',
+              padding: '0.75rem 1rem',
+              backgroundColor: '#ff9800',
+              color: 'white',
+              borderRadius: '4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}
+          >
+            <span>⚠️ Topics are being refreshed. Showing latest available data.</span>
+            <button
+              onClick={refetch}
+              style={{
+                padding: '0.25rem 0.75rem',
+                backgroundColor: 'white',
+                color: '#ff9800',
+                border: 'none',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontWeight: '600',
+              }}
+            >
+              Refresh
+            </button>
+          </div>
         )}
         {hasNewData && (
           <div
@@ -428,15 +468,6 @@ function Home() {
             marginBottom: '1rem'
           }} />
           <p style={{ margin: 0 }}>Loading Gemini topics...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="error">
-          <strong>Error:</strong> {error}
-          <div style={{ marginTop: '1rem' }}>
-            <button onClick={refetch} className="btn btn-primary">Retry</button>
-          </div>
         </div>
       )}
 

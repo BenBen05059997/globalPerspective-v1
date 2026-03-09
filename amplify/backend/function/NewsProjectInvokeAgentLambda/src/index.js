@@ -542,16 +542,19 @@ async function fetchAiContent(topicId) {
   };
 }
 
-function buildArchiveEntry(topic, ai, generationId, sourceCap) {
+function buildArchiveEntry(topic, ai, generationId, sourceCap, threadId) {
   return {
     topicId: topic.id,
+    threadId: threadId || generateThreadId(topic),
     title: topic.title,
     category: Array.isArray(topic.categories) ? topic.categories[0] || '' : '',
     regions: topic.regions || [],
+    search_keywords: topic.search_keywords || [],
     sources: (topic.sources || []).slice(0, sourceCap),
     archivedAt: new Date().toISOString(),
     generationId,
     ai,
+    ...(topic.continues_topic && { continues_topic: topic.continues_topic }),
   };
 }
 
@@ -576,6 +579,104 @@ function formatDateKey(date) {
   return `archive#${y}-${m}-${d}`;
 }
 
+// ============================================================
+// NARRATIVE THREADING - threadId assignment
+// ============================================================
+
+const THREAD_STOP_WORDS = new Set([
+  'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or',
+  'is', 'are', 'was', 'were', 'as', 'by', 'its', 'be', 'with', 'from',
+]);
+
+function topicSignature(topic) {
+  const titleWords = String(topic.title || '')
+    .toLowerCase().split(/\W+/)
+    .filter(w => w.length > 2 && !THREAD_STOP_WORDS.has(w));
+  const keywords = (topic.search_keywords || []).map(k => String(k).toLowerCase());
+  return new Set([...titleWords, ...keywords]);
+}
+
+function jaccard(setA, setB) {
+  if (!setA.size || !setB.size) return 0;
+  let intersection = 0;
+  for (const item of setA) { if (setB.has(item)) intersection++; }
+  return intersection / (setA.size + setB.size - intersection);
+}
+
+function computeJaccardScore(topic, pastEntry) {
+  const keywordScore = jaccard(topicSignature(topic), topicSignature(pastEntry));
+  const regionsA = new Set((topic.regions || []).map(r => String(r).toLowerCase()));
+  const regionsB = new Set((pastEntry.regions || []).map(r => String(r).toLowerCase()));
+  const regionScore = jaccard(regionsA, regionsB);
+  const categoryScore = (topic.category || '') === (pastEntry.category || '') ? 1 : 0;
+  return (0.5 * keywordScore) + (0.3 * regionScore) + (0.2 * categoryScore);
+}
+
+function generateThreadId(topic) {
+  const slug = slugify(topic.title || 'topic', 'topic').slice(0, 30);
+  const hash = crypto.createHash('sha1').update(topic.title || '').digest('hex').slice(0, 6);
+  return `thread-${slug}-${hash}`;
+}
+
+function assignThreadId(topic, pastEntries) {
+  // 1. Grok detected a continuation — look up that topic's threadId
+  if (topic.continues_topic) {
+    const match = pastEntries.find(e => e.title === topic.continues_topic && e.threadId);
+    if (match) {
+      console.log(`Thread inherited via continues_topic: "${topic.title}" -> ${match.threadId}`);
+      return match.threadId;
+    }
+  }
+
+  // 2. Jaccard keyword similarity fallback
+  let bestScore = 0;
+  let bestEntry = null;
+  for (const entry of pastEntries) {
+    const score = computeJaccardScore(topic, entry);
+    if (score > bestScore) { bestScore = score; bestEntry = entry; }
+  }
+  if (bestScore >= 0.4 && bestEntry?.threadId) {
+    console.log(`Thread inherited via Jaccard (${bestScore.toFixed(2)}): "${topic.title}" -> ${bestEntry.threadId}`);
+    return bestEntry.threadId;
+  }
+
+  // 3. New thread
+  const newId = generateThreadId(topic);
+  console.log(`New thread created: "${topic.title}" -> ${newId}`);
+  return newId;
+}
+
+async function readPastArchiveEntries(days) {
+  if (!TOPICS_TABLE) return [];
+  try {
+    const entries = [];
+    const now = new Date();
+    for (let i = 1; i <= days; i++) {
+      const date = new Date(now);
+      date.setUTCDate(date.getUTCDate() - i);
+      const key = formatDateKey(date);
+      try {
+        const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } }));
+        if (Item && Array.isArray(Item.entries)) {
+          entries.push(...Item.entries.map(e => ({
+            topicId: e.topicId,
+            threadId: e.threadId,
+            title: e.title,
+            search_keywords: e.search_keywords || [],
+            regions: e.regions || [],
+            category: e.category || '',
+          })));
+        }
+      } catch (_) {}
+    }
+    console.log(`Past archive entries for threading: ${entries.length} across ${days} days`);
+    return entries;
+  } catch (err) {
+    console.warn('Failed to read past archive entries:', err.message);
+    return [];
+  }
+}
+
 async function buildAndWriteArchive(topics, generationId) {
   if (!TOPICS_TABLE || !SUMMARY_TABLE) {
     console.warn('Cannot write archive: missing table config');
@@ -585,10 +686,22 @@ async function buildAndWriteArchive(topics, generationId) {
   try {
     const now = new Date();
 
-    // Fetch AI content for all topics once
-    const aiByTopic = {};
+    // Fetch AI content + past archive entries in parallel
+    const [aiByTopic, pastEntries] = await Promise.all([
+      (async () => {
+        const result = {};
+        for (const topic of topics) {
+          result[topic.id] = await fetchAiContent(topic.id);
+        }
+        return result;
+      })(),
+      readPastArchiveEntries(7),
+    ]);
+
+    // Assign threadIds to all topics
+    const threadIdByTopic = {};
     for (const topic of topics) {
-      aiByTopic[topic.id] = await fetchAiContent(topic.id);
+      threadIdByTopic[topic.id] = assignThreadId(topic, pastEntries);
     }
 
     // --- Today archive (free tier, 24h TTL, 3 sources) ---
@@ -599,7 +712,7 @@ async function buildAndWriteArchive(topics, generationId) {
       ? existingArchive.entries
       : [];
 
-    const todayEntries = topics.map(t => buildArchiveEntry(t, aiByTopic[t.id], generationId, 3));
+    const todayEntries = topics.map(t => buildArchiveEntry(t, aiByTopic[t.id], generationId, 3, threadIdByTopic[t.id]));
     const newTopicIds = new Set(todayEntries.map(e => e.topicId));
     const cutoff = Date.now() - (ARCHIVE_TTL_HOURS * 60 * 60 * 1000);
     const mergedToday = [
@@ -633,7 +746,7 @@ async function buildAndWriteArchive(topics, generationId) {
       ? existingDaily.entries
       : [];
 
-    const dailyEntries = topics.map(t => buildArchiveEntry(t, aiByTopic[t.id], generationId, DAILY_ARCHIVE_MAX_SOURCES));
+    const dailyEntries = topics.map(t => buildArchiveEntry(t, aiByTopic[t.id], generationId, DAILY_ARCHIVE_MAX_SOURCES, threadIdByTopic[t.id]));
     const dailyTopicIds = new Set(dailyEntries.map(e => e.topicId));
     const mergedDaily = [
       ...existingDailyEntries.filter(e => !dailyTopicIds.has(e.topicId)),

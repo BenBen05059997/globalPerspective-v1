@@ -86,6 +86,49 @@ async function writeSeenTopics(entries) {
 }
 
 // ============================================================
+// PAST ARCHIVE TITLES - For narrative continuity threading
+// ============================================================
+
+async function readPastArchiveTitles(days) {
+  if (!ddbDoc || !CACHE_TABLE) return [];
+  try {
+    const titles = [];
+    const now = new Date();
+    for (let i = 1; i <= days; i++) {
+      const date = new Date(now);
+      date.setUTCDate(date.getUTCDate() - i);
+      const y = date.getUTCFullYear();
+      const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const d = String(date.getUTCDate()).padStart(2, '0');
+      const key = `archive#${y}-${m}-${d}`;
+      const dateLabel = `${y}-${m}-${d}`;
+      try {
+        let result;
+        if (usingAwsSdkV3) {
+          const { GetCommand } = require('@aws-sdk/lib-dynamodb');
+          result = await ddbDoc.send(new GetCommand({ TableName: CACHE_TABLE, Key: { id: key } }));
+        } else {
+          result = await ddbDoc.get({ TableName: CACHE_TABLE, Key: { id: key } }).promise();
+        }
+        const entries = result?.Item?.entries;
+        if (Array.isArray(entries)) {
+          for (const entry of entries) {
+            if (entry.title) titles.push({ date: dateLabel, title: entry.title });
+          }
+        }
+      } catch (dayErr) {
+        console.warn(`Failed to read archive for ${dateLabel}:`, dayErr.message);
+      }
+    }
+    console.log(`Past archive titles loaded: ${titles.length} entries across ${days} days`);
+    return titles;
+  } catch (err) {
+    console.warn('Failed to read past archive titles:', err.message);
+    return [];
+  }
+}
+
+// ============================================================
 // RSS FEEDS - Free, fast, no rate limits
 // ============================================================
 const RSS_FEEDS = [
@@ -463,12 +506,14 @@ exports.handler = async (event) => {
       ? Math.max(1, Math.min(20, configuredLimit))
       : Math.max(1, Math.min(20, parseInt(qs.limit || DEFAULT_LIMIT, 10) || DEFAULT_LIMIT));
 
-    // Fetch news from RSS feeds + Brave Search (hybrid approach)
-    const allArticles = await fetchAllNews(limit);
-
-    // Read previously-covered topics for soft dedup
-    const seenEntries = await readSeenTopics();
+    // Fetch news + read DynamoDB context in parallel
+    const [allArticles, seenEntries, pastArchiveTitles] = await Promise.all([
+      fetchAllNews(limit),
+      readSeenTopics(),
+      readPastArchiveTitles(7),
+    ]);
     console.log(`Seen topics from last 24h: ${seenEntries.length}`);
+    console.log(`Past archive titles for threading: ${pastArchiveTitles.length}`);
 
     // Initialize Grok (xAI) client
     const openai = new OpenAI({
@@ -492,6 +537,20 @@ exports.handler = async (event) => {
           'Only include a previously-covered topic if there are not enough new events to fill the limit,',
           'or if there is a significant new development with fresh sources.',
           ...seenEntries.map(e => `  - ${e.title}`),
+          '',
+        );
+      }
+
+      // Build narrative continuity prompt section
+      const narrativeContinuityLines = [];
+      if (pastArchiveTitles.length > 0) {
+        narrativeContinuityLines.push(
+          'NARRATIVE CONTINUITY:',
+          'These topics appeared in the previous 7 days. If a new topic is a clear continuation',
+          'or development of one of these stories, add "continues_topic" with the exact previous title.',
+          'Only set continues_topic if it is clearly the same story evolving. Leave it out for new events.',
+          'Previous topics:',
+          ...pastArchiveTitles.map(e => `  - [${e.date}] ${e.title}`),
           '',
         );
       }
@@ -540,6 +599,7 @@ exports.handler = async (event) => {
         '- Do NOT let one story dominate all topics',
         '',
         ...seenTopicsPromptLines,
+        ...narrativeContinuityLines,
         'Each topic object MUST have:',
         '- title: string (SPECIFIC event with key details)',
         '- category: string (politics/economy/military/conflict/disaster/technology/health)',
@@ -548,6 +608,7 @@ exports.handler = async (event) => {
         '- sources: array of source objects (each with {title, url, source, age, snippet})',
         '- x_trending: boolean (true if trending on X)',
         '- significance: string ("high", "medium", or "low")',
+        '- continues_topic: string (optional — exact title of a previous topic this story continues)',
       ].join('\n');
     } else {
       console.warn('No articles available, falling back to Grok X-knowledge mode');
@@ -618,6 +679,10 @@ exports.handler = async (event) => {
       });
       totalSourcesAfter += validatedSources.length;
 
+      const continuesTopic = typeof t?.continues_topic === 'string' && t.continues_topic.trim()
+        ? t.continues_topic.trim()
+        : undefined;
+
       return {
         id: topicId,
         topicId,
@@ -628,6 +693,7 @@ exports.handler = async (event) => {
         sources: validatedSources,
         x_trending: Boolean(t?.x_trending),
         significance: String(t?.significance || 'medium').toLowerCase(),
+        ...(continuesTopic && { continues_topic: continuesTopic }),
       };
     });
 

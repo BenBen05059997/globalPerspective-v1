@@ -258,6 +258,32 @@ exports.handler = async (event) => {
       };
     }
 
+    if (action === 'narrative_thread') {
+      const apiKey = event.headers?.['x-api-key'] || event.headers?.['X-Api-Key'] || '';
+      const tier = resolveTier(apiKey);
+      if (!tier) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ success: false, error: 'Valid API key required for narrative_thread' }),
+        };
+      }
+      const threadId = payload?.threadId;
+      if (!threadId || typeof threadId !== 'string') {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ success: false, error: 'Missing threadId' }),
+        };
+      }
+      const maxDays = tier === 'enterprise' ? ENTERPRISE_MAX_DAYS : MEMBER_MAX_DAYS;
+      const response = await readNarrativeThread(threadId, maxDays);
+      console.info('newsSensitiveData narrative_thread response', {
+        tier, threadId, statusCode: response.statusCode, entryCount: response.body?.data?.length ?? 0,
+      });
+      return { statusCode: response.statusCode, headers, body: JSON.stringify(response.body) };
+    }
+
     if (action === 'archive_range') {
       const apiKey = event.headers?.['x-api-key'] || event.headers?.['X-Api-Key'] || '';
       const tier = resolveTier(apiKey);
@@ -622,6 +648,54 @@ async function readArchiveRange(days) {
       statusCode: 500,
       body: { success: false, error: 'Failed to read archive range' },
     };
+  }
+}
+
+async function readNarrativeThread(threadId, days) {
+  if (!TOPICS_TABLE) {
+    return { statusCode: 500, body: { success: false, error: 'Topics table not configured' } };
+  }
+
+  try {
+    const client = getDynamoClient();
+    const now = new Date();
+    const entries = [];
+
+    for (let i = 0; i < days; i++) {
+      const date = new Date(now);
+      date.setUTCDate(date.getUTCDate() - i);
+      const dateLabel = formatDateLabel(date);
+
+      if (i === 0) {
+        // Today: read from latest topics
+        const { Item } = await client.send(new GetCommand({
+          TableName: TOPICS_TABLE,
+          Key: { id: TOPICS_ITEM_ID },
+        }));
+        const matched = (Item?.topics || []).filter(t => t.threadId === threadId);
+        entries.push(...matched.map(t => ({ ...t, date: dateLabel, source: 'latest' })));
+      } else {
+        // Past days: read from archive#YYYY-MM-DD
+        const archiveKey = formatArchiveDateKey(date);
+        const { Item } = await client.send(new GetCommand({
+          TableName: TOPICS_TABLE,
+          Key: { id: archiveKey },
+        }));
+        const matched = (Item?.entries || []).filter(e => e.threadId === threadId);
+        entries.push(...matched.map(e => ({ ...e, date: dateLabel, source: 'archive' })));
+      }
+    }
+
+    // Sort chronologically (oldest first — narrative flows forward in time)
+    entries.sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      statusCode: 200,
+      body: { success: true, threadId, data: entries },
+    };
+  } catch (err) {
+    console.error('Narrative thread read error:', err);
+    return { statusCode: 500, body: { success: false, error: 'Failed to read narrative thread' } };
   }
 }
 

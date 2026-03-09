@@ -27,10 +27,10 @@ Enterprise clients need to track how news narratives evolve across weeks and mon
 
 | Task | Status | Notes |
 |------|--------|-------|
-| 1.1 Grok prompt enhancement (`continues_topic`) | ❌ Not started | |
-| 1.2 Keyword Jaccard fallback matching | ❌ Not started | |
-| 1.3 `threadId` assignment in archive entries | ❌ Not started | |
-| 1.4 `narrative_thread` endpoint | ❌ Not started | |
+| 1.1 Grok prompt enhancement (`continues_topic`) | ✅ Shipped | `readPastArchiveTitles(7)` reads past archives; NARRATIVE CONTINUITY block injected into clustering prompt; `continues_topic` captured in normalized output and flows to staging. |
+| 1.2 Keyword Jaccard fallback matching | ✅ Shipped | `computeJaccardScore()` in `NewsProjectInvokeAgentLambda`: 0.5×keyword + 0.3×region + 0.2×category. Threshold 0.4. |
+| 1.3 `threadId` assignment in archive entries | ✅ Shipped | `assignThreadId()` checks `continues_topic` first, then Jaccard, then generates `thread-{slug}-{hash}`. Written into both `today-archive` and `archive#YYYY-MM-DD` entries. `search_keywords` also now stored in archive entries for future Jaccard lookups. |
+| 1.4 `narrative_thread` endpoint | ✅ Shipped | In `newsSensitiveData`. Member/enterprise key required. Returns all entries matching `threadId` sorted oldest→newest. |
 
 ### Phase 2: Hindsight & Framing Shift
 

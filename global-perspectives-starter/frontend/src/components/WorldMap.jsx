@@ -727,6 +727,7 @@ export default function WorldMap() {
   const [panelCountry, setPanelCountry] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [activeCategories, setActiveCategories] = useState(new Set());
+  const [legendOpen, setLegendOpen] = useState(false);
 
   const { countryTopicMap: rawCountryTopicMap, connections: rawConnections } = buildMapData(topics || []);
 
@@ -927,23 +928,35 @@ export default function WorldMap() {
           </div>
         )}
 
-        {/* Legend */}
-        <div className="map-overlay map-legend">
-          <div className="map-legend-title">Topic Categories</div>
-          {presentCategories.map(cat => (
-            <div key={cat} className="map-legend-row">
-              <span className={`legend-dot ${cat}`}
-                style={{ backgroundColor: getCategoryColor(cat) }} />
-              <span className="legend-label" style={{ textTransform: 'capitalize' }}>{cat}</span>
-            </div>
-          ))}
-          {filteredArchive.length > 0 && (
-            <div className="map-legend-row map-legend-archive-row">
-              <span className="legend-dot" style={{ backgroundColor: '#94a3b8', opacity: 0.6 }} />
-              <span className="legend-label">
-                Earlier
-                <span className="legend-archive-dash" />
-              </span>
+        {/* Legend — collapsible */}
+        <div className={`map-overlay map-legend${legendOpen ? ' open' : ''}`}>
+          <button className="map-legend-toggle" onClick={() => setLegendOpen(o => !o)}>
+            <span className="map-legend-toggle-dots">
+              {presentCategories.slice(0, 4).map(cat => (
+                <span key={cat} className="legend-dot" style={{ backgroundColor: getCategoryColor(cat) }} />
+              ))}
+            </span>
+            <span className="map-legend-toggle-label">Legend</span>
+            <span className="map-legend-toggle-chevron">{legendOpen ? '▲' : '▼'}</span>
+          </button>
+          {legendOpen && (
+            <div className="map-legend-body">
+              {presentCategories.map(cat => (
+                <div key={cat} className="map-legend-row">
+                  <span className={`legend-dot ${cat}`}
+                    style={{ backgroundColor: getCategoryColor(cat) }} />
+                  <span className="legend-label" style={{ textTransform: 'capitalize' }}>{cat}</span>
+                </div>
+              ))}
+              {filteredArchive.length > 0 && (
+                <div className="map-legend-row map-legend-archive-row">
+                  <span className="legend-dot" style={{ backgroundColor: '#94a3b8', opacity: 0.6 }} />
+                  <span className="legend-label">
+                    Earlier
+                    <span className="legend-archive-dash" />
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -44,17 +44,18 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
 
   const preAi = isArchive ? topic.ai : null;
 
-  const [summary, setSummary] = useState(preAi?.summary ? processContent({ content: preAi.summary }) : null);
+  // All start as null — archive content is hydrated on first click (not pre-shown)
+  const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState(null);
   const [summaryCollapsed, setSummaryCollapsed] = useState(true);
 
-  const [prediction, setPrediction] = useState(preAi?.prediction ? processContent({ content: preAi.prediction }) : null);
+  const [prediction, setPrediction] = useState(null);
   const [predictionLoading, setPredictionLoading] = useState(false);
   const [predictionError, setPredictionError] = useState(null);
   const [predictionCollapsed, setPredictionCollapsed] = useState(true);
 
-  const [traceCause, setTraceCause] = useState(preAi?.trace_cause ? processContent({ content: preAi.trace_cause }) : null);
+  const [traceCause, setTraceCause] = useState(null);
   const [traceCauseLoading, setTraceCauseLoading] = useState(false);
   const [traceCauseError, setTraceCauseError] = useState(null);
   const [traceCauseCollapsed, setTraceCauseCollapsed] = useState(true);
@@ -95,12 +96,22 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
   };
 
   const handleSummary = async () => {
-    if (isArchive || summary) { setSummaryCollapsed(c => !c); return; }
+    if (isArchive) {
+      if (!summary && preAi?.summary) setSummary(processContent({ content: preAi.summary }));
+      setSummaryCollapsed(c => !c);
+      return;
+    }
+    if (summary) { setSummaryCollapsed(c => !c); return; }
     await handleSummaryFn();
   };
 
   const handlePrediction = async () => {
-    if (isArchive || prediction) { setPredictionCollapsed(c => !c); return; }
+    if (isArchive) {
+      if (!prediction && preAi?.prediction) setPrediction(processContent({ content: preAi.prediction }));
+      setPredictionCollapsed(c => !c);
+      return;
+    }
+    if (prediction) { setPredictionCollapsed(c => !c); return; }
     if (predictionLoading) return;
     setPredictionLoading(true);
     setPredictionError(null);
@@ -118,7 +129,12 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
   };
 
   const handleTraceCause = async () => {
-    if (isArchive || traceCause) { setTraceCauseCollapsed(c => !c); return; }
+    if (isArchive) {
+      if (!traceCause && preAi?.trace_cause) setTraceCause(processContent({ content: preAi.trace_cause }));
+      setTraceCauseCollapsed(c => !c);
+      return;
+    }
+    if (traceCause) { setTraceCauseCollapsed(c => !c); return; }
     if (traceCauseLoading) return;
     setTraceCauseLoading(true);
     setTraceCauseError(null);

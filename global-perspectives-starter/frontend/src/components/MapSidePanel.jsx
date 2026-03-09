@@ -4,6 +4,7 @@ import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
 import graphqlService from '../utils/graphqlService';
 import { useError } from '../contexts/ErrorContext';
+import './AIComponents.css';
 
 const CATEGORY_COLORS = {
   conflict:   '#ef4444',
@@ -160,55 +161,73 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
         </div>
       )}
 
-      {/* Sources */}
-      {Array.isArray(topic.sources) && topic.sources.length > 0 && (
-        <>
-          <button className="map-sources-toggle" onClick={() => setSourcesOpen(o => !o)}>
-            {sourcesOpen ? '▲ Hide' : '▼ Sources'} ({topic.sources.length})
-          </button>
-          {sourcesOpen && (
-            <div className="map-sources-list">
-              {topic.sources.map((s, i) => (
-                <div key={i} className="map-source-item">
-                  <a href={s.url} target="_blank" rel="noopener noreferrer"
-                    className="map-source-link" title={s.title}>
-                    {s.title || s.source || 'Source'}
-                  </a>
-                  {s.age && <span className="map-source-age">{s.age}</span>}
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* AI action buttons */}
-      <div className="map-topic-ai-toolbar">
+      {/* AI toolbar — glass pill matching home page */}
+      <div className="ai-toolbar map-ai-toolbar-compact">
         <button
-          className={`map-ai-btn map-ai-btn-summary${summaryLoading ? ' loading' : ''}`}
+          className={`ai-btn ai-btn-summary${summaryLoading ? ' loading' : ''}`}
           onClick={handleSummary}
           disabled={summaryLoading}
         >
-          {summaryLoading && <span className="map-ai-spinner" />}
+          {summaryLoading && <span className="ai-spinner" />}
           Summarize
         </button>
         <button
-          className={`map-ai-btn map-ai-btn-predict${predictionLoading ? ' loading' : ''}`}
+          className={`ai-btn ai-btn-predict${predictionLoading ? ' loading' : ''}`}
           onClick={handlePrediction}
           disabled={predictionLoading}
         >
-          {predictionLoading && <span className="map-ai-spinner" />}
+          {predictionLoading && <span className="ai-spinner" />}
           Predict
         </button>
         <button
-          className={`map-ai-btn map-ai-btn-trace${traceCauseLoading ? ' loading' : ''}`}
+          className={`ai-btn ai-btn-trace${traceCauseLoading ? ' loading' : ''}`}
           onClick={handleTraceCause}
           disabled={traceCauseLoading}
         >
-          {traceCauseLoading && <span className="map-ai-spinner" />}
-          Trace Cause
+          {traceCauseLoading && <span className="ai-spinner" />}
+          Trace
+        </button>
+        <button
+          className={`ai-btn ai-btn-related${isActive ? ' active' : ''}`}
+          onClick={() => onTopicSelect(isActive ? null : topic)}
+        >
+          {isActive ? '★ Related' : '☆ Related'}
         </button>
       </div>
+
+      {/* Footer row: sources + Google News */}
+      <div className="map-topic-footer">
+        {Array.isArray(topic.sources) && topic.sources.length > 0 ? (
+          <button className="map-sources-toggle" onClick={() => setSourcesOpen(o => !o)}>
+            {sourcesOpen ? '▲ Hide' : '▼ Sources'} ({topic.sources.length})
+          </button>
+        ) : (
+          <span />
+        )}
+        <a
+          href={buildNewsSearchUrl(topic.title)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="map-topic-news-link"
+        >
+          Google News ↗
+        </a>
+      </div>
+
+      {/* Sources list (expanded) */}
+      {sourcesOpen && Array.isArray(topic.sources) && topic.sources.length > 0 && (
+        <div className="map-sources-list">
+          {topic.sources.map((s, i) => (
+            <div key={i} className="map-source-item">
+              <a href={s.url} target="_blank" rel="noopener noreferrer"
+                className="map-source-link" title={s.title}>
+                {s.title || s.source || 'Source'}
+              </a>
+              {s.age && <span className="map-source-age">{s.age}</span>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* AI Results */}
       <SummaryDisplay
@@ -238,29 +257,44 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
         isCollapsed={traceCauseCollapsed}
         onToggleCollapse={() => setTraceCauseCollapsed(c => !c)}
       />
-
-      {/* Footer actions */}
-      <div className="map-topic-actions">
-        <button
-          className={`map-topic-story-btn${isActive ? ' active' : ''}`}
-          onClick={() => onTopicSelect(isActive ? null : topic)}
-        >
-          {isActive ? 'Hide Related' : '▶ Related Countries'}
-        </button>
-        <a
-          href={buildNewsSearchUrl(topic.title)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="map-topic-news-link"
-        >
-          View Google News ↗
-        </a>
-      </div>
     </div>
   );
 }
 
+const PANEL_WIDTH_KEY = 'map_side_panel_width';
+const PANEL_MIN = 280;
+const PANEL_MAX = 640;
+
 export default function MapSidePanel({ isOpen, onClose, country, topics, archiveTopics, countryTopicMap, archiveCountryTopicMap, selectedTopicId, onTopicSelect }) {
+  const [panelWidth, setPanelWidth] = useState(() => {
+    const saved = parseInt(localStorage.getItem(PANEL_WIDTH_KEY), 10);
+    return saved && saved >= PANEL_MIN && saved <= PANEL_MAX ? saved : 380;
+  });
+  const dragging = useRef(false);
+
+  const onDragStart = (e) => {
+    e.preventDefault();
+    dragging.current = true;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev) => {
+      if (!dragging.current) return;
+      const newWidth = Math.min(PANEL_MAX, Math.max(PANEL_MIN, window.innerWidth - ev.clientX));
+      setPanelWidth(newWidth);
+    };
+    const onUp = () => {
+      dragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      setPanelWidth(w => { localStorage.setItem(PANEL_WIDTH_KEY, w); return w; });
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   if (!country) return null;
 
   const info = countryTopicMap?.[country] || archiveCountryTopicMap?.[country] || {};
@@ -272,7 +306,8 @@ export default function MapSidePanel({ isOpen, onClose, country, topics, archive
   return (
     <>
       {isOpen && <div className="map-panel-backdrop" onClick={onClose} />}
-      <div className={`map-side-panel${isOpen ? ' open' : ''}`}>
+      <div className={`map-side-panel${isOpen ? ' open' : ''}`} style={{ width: panelWidth }}>
+        <div className="map-side-panel-resize-handle" onMouseDown={onDragStart} />
         <div className="map-side-panel-header">
           <span className="map-side-panel-flag">{getFlagEmoji(country)}</span>
           <div className="map-side-panel-title">

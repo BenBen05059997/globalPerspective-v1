@@ -134,6 +134,21 @@
   transform: translateX(0);
 }
 
+.map-side-panel-resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.map-side-panel-resize-handle:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
 .map-side-panel-header {
   display: flex;
   align-items: center;
@@ -354,67 +369,46 @@
   flex-shrink: 0;
 }
 
-/* ===== AI TOOLBAR IN TOPIC CARDS ===== */
-.map-topic-ai-toolbar {
-  display: flex;
-  gap: 6px;
+/* ===== AI TOOLBAR COMPACT OVERRIDES (map side panel) ===== */
+/* Shrinks the home-page glass pill for the 380px panel */
+.map-ai-toolbar-compact {
+  margin: 10px 0 0;
+  padding: 4px 6px;
+  gap: 2px;
   flex-wrap: wrap;
-  margin: 10px 0 4px;
 }
 
-.map-ai-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: 6px;
-  border: 1px solid;
-  cursor: pointer;
-  transition: all 0.2s;
+.map-ai-toolbar-compact .ai-btn {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
 }
 
-.map-ai-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.map-ai-btn-summary {
-  background: #f0f7ff;
-  color: #1a56db;
-  border-color: #bfdbfe;
-}
-.map-ai-btn-summary:hover:not(:disabled) {
-  background: #dbeafe;
-}
-
-.map-ai-btn-predict {
-  background: #f0fdf4;
-  color: #15803d;
-  border-color: #bbf7d0;
-}
-.map-ai-btn-predict:hover:not(:disabled) {
-  background: #dcfce7;
-}
-
-.map-ai-btn-trace {
-  background: #faf5ff;
-  color: #7e22ce;
-  border-color: #e9d5ff;
-}
-.map-ai-btn-trace:hover:not(:disabled) {
-  background: #f3e8ff;
-}
-
-.map-ai-spinner {
-  display: inline-block;
+.map-ai-toolbar-compact .ai-spinner {
   width: 10px;
   height: 10px;
-  border: 1.5px solid currentColor;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: map-spin 0.7s linear infinite;
+  left: 8px;
+}
+
+.map-ai-toolbar-compact .ai-btn.loading {
+  padding-left: 24px;
+}
+
+/* Related Countries button — amber accent */
+.ai-btn-related:hover,
+.ai-btn-related.active {
+  color: #a16207;
+  background: rgba(234, 179, 8, 0.1);
+  border-color: rgba(234, 179, 8, 0.35);
+}
+
+/* ===== FOOTER ROW (sources + Google News) ===== */
+.map-topic-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  min-height: 24px;
 }
 
 /* ===== PANEL BACKDROP (mobile) ===== */
@@ -584,20 +578,6 @@
   opacity: 0.6;
 }
 
-.map-topic-card.archive .map-topic-story-btn {
-  border-color: #94a3b8;
-  background: #94a3b8;
-  color: #fff;
-}
-
-.map-topic-card.archive .map-topic-story-btn:hover {
-  background: #7c8da0;
-}
-
-.map-topic-card.archive .map-topic-story-btn.active {
-  background: transparent;
-  color: #94a3b8;
-}
 
 /* ===== ARCHIVE DIVIDER IN SIDE PANEL ===== */
 .map-archive-divider {

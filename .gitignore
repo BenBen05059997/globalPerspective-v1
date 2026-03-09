@@ -23,6 +23,9 @@ amplify/backend/amplify-meta.json
 frontend/dist/
 frontend/dist-ssr/
 
+# Lambda deploy artifacts
+amplify/**/*.zip
+
 # IDE/editor
 .vscode/*
 !.vscode/extensions.json

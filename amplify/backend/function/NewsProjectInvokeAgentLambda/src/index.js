@@ -31,6 +31,8 @@ const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
 const ARCHIVE_ITEM_ID = 'today-archive';
 const ARCHIVE_TTL_HOURS = 24;
+const DAILY_ARCHIVE_TTL_DAYS = 7;
+const DAILY_ARCHIVE_MAX_SOURCES = 10;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
@@ -526,6 +528,54 @@ async function pruneObsoleteEntries(currentGenerationId) {
   }
 }
 
+async function fetchAiContent(topicId) {
+  const pk = `${PK_PREFIX}${topicId}`;
+  const [summaryResult, predictionResult, traceResult] = await Promise.all([
+    ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: SUMMARY_SK } })),
+    ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: PREDICTION_SK } })),
+    ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: 'TRACE_CAUSE' } })),
+  ]);
+  return {
+    summary: summaryResult.Item?.content || null,
+    prediction: predictionResult.Item?.content || null,
+    trace_cause: traceResult.Item?.content || null,
+  };
+}
+
+function buildArchiveEntry(topic, ai, generationId, sourceCap) {
+  return {
+    topicId: topic.id,
+    title: topic.title,
+    category: Array.isArray(topic.categories) ? topic.categories[0] || '' : '',
+    regions: topic.regions || [],
+    sources: (topic.sources || []).slice(0, sourceCap),
+    archivedAt: new Date().toISOString(),
+    generationId,
+    ai,
+  };
+}
+
+const MAX_ARCHIVE_ENTRIES = 50;
+const MAX_AI_CHARS = 1500;
+
+function trimAi(entry) {
+  if (!entry.ai) return entry;
+  const trimmed = {};
+  for (const [k, v] of Object.entries(entry.ai)) {
+    trimmed[k] = typeof v === 'string' && v.length > MAX_AI_CHARS
+      ? v.slice(0, MAX_AI_CHARS) + '...'
+      : v;
+  }
+  return { ...entry, ai: trimmed };
+}
+
+function formatDateKey(date) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `archive#${y}-${m}-${d}`;
+}
+
 async function buildAndWriteArchive(topics, generationId) {
   if (!TOPICS_TABLE || !SUMMARY_TABLE) {
     console.warn('Cannot write archive: missing table config');
@@ -533,6 +583,15 @@ async function buildAndWriteArchive(topics, generationId) {
   }
 
   try {
+    const now = new Date();
+
+    // Fetch AI content for all topics once
+    const aiByTopic = {};
+    for (const topic of topics) {
+      aiByTopic[topic.id] = await fetchAiContent(topic.id);
+    }
+
+    // --- Today archive (free tier, 24h TTL, 3 sources) ---
     const { Item: existingArchive } = await ddb.send(
       new GetCommand({ TableName: TOPICS_TABLE, Key: { id: ARCHIVE_ITEM_ID } }),
     );
@@ -540,71 +599,61 @@ async function buildAndWriteArchive(topics, generationId) {
       ? existingArchive.entries
       : [];
 
-    const newEntries = [];
-    for (const topic of topics) {
-      const pk = `${PK_PREFIX}${topic.id}`;
-
-      const [summaryResult, predictionResult, traceResult] = await Promise.all([
-        ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: SUMMARY_SK } })),
-        ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: PREDICTION_SK } })),
-        ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: 'TRACE_CAUSE' } })),
-      ]);
-
-      newEntries.push({
-        topicId: topic.id,
-        title: topic.title,
-        category: Array.isArray(topic.categories) ? topic.categories[0] || '' : '',
-        regions: topic.regions || [],
-        sources: (topic.sources || []).slice(0, 3),
-        archivedAt: new Date().toISOString(),
-        generationId,
-        ai: {
-          summary: summaryResult.Item?.content || null,
-          prediction: predictionResult.Item?.content || null,
-          trace_cause: traceResult.Item?.content || null,
-        },
-      });
-    }
-
-    const MAX_ARCHIVE_ENTRIES = 50;
-    const MAX_AI_CHARS = 1500;
-    const trimAi = (entry) => {
-      if (!entry.ai) return entry;
-      const trimmed = {};
-      for (const [k, v] of Object.entries(entry.ai)) {
-        trimmed[k] = typeof v === 'string' && v.length > MAX_AI_CHARS
-          ? v.slice(0, MAX_AI_CHARS) + '...'
-          : v;
-      }
-      return { ...entry, ai: trimmed };
-    };
-
-    const newTopicIds = new Set(newEntries.map(e => e.topicId));
+    const todayEntries = topics.map(t => buildArchiveEntry(t, aiByTopic[t.id], generationId, 3));
+    const newTopicIds = new Set(todayEntries.map(e => e.topicId));
     const cutoff = Date.now() - (ARCHIVE_TTL_HOURS * 60 * 60 * 1000);
-    const merged = [
+    const mergedToday = [
       ...existingEntries.filter(e =>
         !newTopicIds.has(e.topicId) &&
         new Date(e.archivedAt).getTime() > cutoff
       ),
-      ...newEntries,
+      ...todayEntries,
     ].map(trimAi).slice(-MAX_ARCHIVE_ENTRIES);
 
-    const now = new Date();
-    const ttl = Math.floor(now.getTime() / 1000) + (ARCHIVE_TTL_HOURS * 3600);
-
+    const todayTtl = Math.floor(now.getTime() / 1000) + (ARCHIVE_TTL_HOURS * 3600);
     await ddb.send(
       new PutCommand({
         TableName: TOPICS_TABLE,
         Item: {
           id: ARCHIVE_ITEM_ID,
-          entries: merged,
+          entries: mergedToday,
           updatedAt: now.toISOString(),
-          ttl,
+          ttl: todayTtl,
         },
       }),
     );
+    console.log(`Today archive written: ${todayEntries.length} new + ${mergedToday.length - todayEntries.length} existing = ${mergedToday.length} total`);
 
-    console.log(`Archive written: ${newEntries.length} new + ${merged.length - newEntries.length} existing = ${merged.length} total`);
+    // --- Daily archive (paid tiers, 7-day TTL, 10 sources) ---
+    const dailyKey = formatDateKey(now);
+    const { Item: existingDaily } = await ddb.send(
+      new GetCommand({ TableName: TOPICS_TABLE, Key: { id: dailyKey } }),
+    );
+    const existingDailyEntries = Array.isArray(existingDaily?.entries)
+      ? existingDaily.entries
+      : [];
+
+    const dailyEntries = topics.map(t => buildArchiveEntry(t, aiByTopic[t.id], generationId, DAILY_ARCHIVE_MAX_SOURCES));
+    const dailyTopicIds = new Set(dailyEntries.map(e => e.topicId));
+    const mergedDaily = [
+      ...existingDailyEntries.filter(e => !dailyTopicIds.has(e.topicId)),
+      ...dailyEntries,
+    ].map(trimAi).slice(-MAX_ARCHIVE_ENTRIES);
+
+    const dailyTtl = Math.floor(now.getTime() / 1000) + (DAILY_ARCHIVE_TTL_DAYS * 24 * 3600);
+    await ddb.send(
+      new PutCommand({
+        TableName: TOPICS_TABLE,
+        Item: {
+          id: dailyKey,
+          entries: mergedDaily,
+          updatedAt: now.toISOString(),
+          ttl: dailyTtl,
+        },
+      }),
+    );
+    console.log(`Daily archive written (${dailyKey}): ${dailyEntries.length} new + ${mergedDaily.length - dailyEntries.length} existing = ${mergedDaily.length} total`);
+
     return true;
   } catch (err) {
     console.error('Failed to write archive:', err);

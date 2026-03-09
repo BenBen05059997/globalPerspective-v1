@@ -6,14 +6,23 @@ const { DynamoDBDocumentClient, GetCommand } = require('@aws-sdk/lib-dynamodb');
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
-const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
-const TOPICS_MAX_AGE_SECONDS = Number(process.env.TOPICS_CACHE_MAX_AGE_SECONDS || '5400');
+const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
+const TOPICS_MAX_AGE_SECONDS = Number(process.env.TOPICS_CACHE_MAX_AGE_SECONDS || '9000');
 
 const SUMMARIZE_PREDICT_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
 const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
 const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
 const SUMMARY_PREDICT_MAX_AGE_SECONDS = Number(process.env.SUMMARY_PREDICT_MAX_AGE_SECONDS || '5400');
+
+const MEMBER_API_KEYS = new Set(
+  (process.env.MEMBER_API_KEYS || '').split(',').map(k => k.trim()).filter(Boolean),
+);
+const ENTERPRISE_API_KEYS = new Set(
+  (process.env.ENTERPRISE_API_KEYS || '').split(',').map(k => k.trim()).filter(Boolean),
+);
+const MEMBER_MAX_DAYS = 7;
+const ENTERPRISE_MAX_DAYS = 30;
 
 let dynamoDocClient = null;
 
@@ -139,7 +148,7 @@ exports.handler = async (event) => {
       headers: {
         'Access-Control-Allow-Origin': corsOrigin,
         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-api-key',
       },
       body: '',
     };
@@ -241,6 +250,33 @@ exports.handler = async (event) => {
       console.info('newsSensitiveData today archive response', {
         statusCode: response.statusCode,
         entryCount: response.body?.data?.entries?.length ?? 0,
+      });
+      return {
+        statusCode: response.statusCode,
+        headers,
+        body: JSON.stringify(response.body),
+      };
+    }
+
+    if (action === 'archive_range') {
+      const apiKey = event.headers?.['x-api-key'] || event.headers?.['X-Api-Key'] || '';
+      const tier = resolveTier(apiKey);
+      if (!tier) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ success: false, error: 'Valid API key required for archive_range' }),
+        };
+      }
+      const maxDays = tier === 'enterprise' ? ENTERPRISE_MAX_DAYS : MEMBER_MAX_DAYS;
+      const requestedDays = Math.max(1, Math.min(maxDays, parseInt(payload?.days || maxDays, 10)));
+
+      const response = await readArchiveRange(requestedDays);
+      console.info('newsSensitiveData archive_range response', {
+        tier,
+        requestedDays,
+        statusCode: response.statusCode,
+        dayCount: Object.keys(response.body?.data || {}).length,
       });
       return {
         statusCode: response.statusCode,
@@ -495,6 +531,98 @@ function normalizeSummaryPrediction(item) {
     remainingTtlSeconds,
     content: content.trim(),
   };
+}
+
+function resolveTier(apiKey) {
+  if (!apiKey) return null;
+  if (ENTERPRISE_API_KEYS.has(apiKey)) return 'enterprise';
+  if (MEMBER_API_KEYS.has(apiKey)) return 'member';
+  return null;
+}
+
+function formatArchiveDateKey(date) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `archive#${y}-${m}-${d}`;
+}
+
+function formatDateLabel(date) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+async function readArchiveRange(days) {
+  if (!TOPICS_TABLE) {
+    return {
+      statusCode: 500,
+      body: { success: false, error: 'Topics table not configured' },
+    };
+  }
+
+  try {
+    const client = getDynamoClient();
+    const now = new Date();
+    const result = {};
+
+    // Day 0 = today: serve from "latest"
+    const todayLabel = formatDateLabel(now);
+    const { Item: latestItem } = await client.send(new GetCommand({
+      TableName: TOPICS_TABLE,
+      Key: { id: TOPICS_ITEM_ID },
+    }));
+    if (latestItem && Array.isArray(latestItem.topics)) {
+      result[todayLabel] = {
+        entries: latestItem.topics.map(t => ({
+          topicId: t.topicId || t.id,
+          title: t.title,
+          category: Array.isArray(t.categories) ? t.categories[0] || '' : (t.category || ''),
+          regions: t.regions || [],
+          sources: t.sources || [],
+        })),
+        source: 'latest',
+        updatedAt: latestItem.updatedAt || latestItem.activatedAt || null,
+      };
+    }
+
+    // Days 1..N: serve from archive#YYYY-MM-DD
+    for (let i = 1; i < days; i++) {
+      const date = new Date(now);
+      date.setUTCDate(date.getUTCDate() - i);
+      const dateLabel = formatDateLabel(date);
+      const archiveKey = formatArchiveDateKey(date);
+
+      const { Item } = await client.send(new GetCommand({
+        TableName: TOPICS_TABLE,
+        Key: { id: archiveKey },
+      }));
+
+      if (Item && Array.isArray(Item.entries) && Item.entries.length > 0) {
+        result[dateLabel] = {
+          entries: Item.entries,
+          source: 'archive',
+          updatedAt: Item.updatedAt || null,
+        };
+      }
+    }
+
+    return {
+      statusCode: 200,
+      body: {
+        success: true,
+        data: result,
+        days,
+      },
+    };
+  } catch (err) {
+    console.error('Archive range read error:', err);
+    return {
+      statusCode: 500,
+      body: { success: false, error: 'Failed to read archive range' },
+    };
+  }
 }
 
 // Mapbox geocoding helper - NEW FUNCTION

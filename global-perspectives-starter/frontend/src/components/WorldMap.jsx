@@ -310,6 +310,7 @@ function MapComponent({ countryTopicMap, connections, archiveCountryTopicMap, ar
   const polylinesRef = useRef([]);
   const archiveMarkersRef = useRef([]);
   const archivePolylinesRef = useRef([]);
+  const highlightCirclesRef = useRef([]);
   const infoWindowRef = useRef(null);
 
   // Init map
@@ -332,9 +333,8 @@ function MapComponent({ countryTopicMap, connections, archiveCountryTopicMap, ar
       });
       infoWindowRef.current = new window.google.maps.InfoWindow();
 
-      // Click on map background clears story flow
+      // Click on map background closes info window (story flow stays active)
       mapInstanceRef.current.addListener('click', () => {
-        if (onConnectionClick) onConnectionClick(null);
         if (infoWindowRef.current) infoWindowRef.current.close();
       });
     }
@@ -553,27 +553,19 @@ function MapComponent({ countryTopicMap, connections, archiveCountryTopicMap, ar
     });
   }, [archiveConnections]);
 
-  // Story flow: dim/highlight lines based on selectedTopic
+  // Story flow: yellow highlight on affected countries
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
+    // Clear previous highlight circles
+    highlightCirclesRef.current.forEach(c => c.setMap(null));
+    highlightCirclesRef.current = [];
+
     if (!selectedTopic) {
+      // Reset polylines to normal
       polylinesRef.current.forEach(p => {
         p.setOptions({ strokeOpacity: 0.45, strokeWeight: Math.min(1 + p._connData.topics.length, 4) });
-      });
-      markersRef.current.forEach(m => {
-        m.setOptions({
-          opacity: 1,
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: m._baseScale,
-            fillColor: m._fillColor,
-            fillOpacity: 0.9,
-            strokeColor: '#fff',
-            strokeWeight: 2,
-          },
-        });
       });
       return;
     }
@@ -581,60 +573,37 @@ function MapComponent({ countryTopicMap, connections, archiveCountryTopicMap, ar
     const selectedId = selectedTopic.topicId || selectedTopic.id;
     const affectedCodes = new Set(getTopicCountryCodes(selectedTopic));
 
+    // Slightly emphasize selected polylines, keep others normal
     polylinesRef.current.forEach(p => {
       const conn = p._connData;
       const isSelected = conn.topics.some(t => (t.topicId || t.id) === selectedId);
       p.setOptions({
-        strokeOpacity: isSelected ? 0.95 : 0.05,
-        strokeWeight: isSelected ? 5 : 1,
+        strokeOpacity: isSelected ? 0.85 : 0.45,
+        strokeWeight: isSelected ? 4 : Math.min(1 + conn.topics.length, 4),
       });
     });
 
-    markersRef.current.forEach(m => {
-      const pos = m.getPosition();
-      const matchedCountry = Object.values(countryTopicMap || {}).find(c =>
-        Math.abs(c.lat - pos.lat()) < 0.01 && Math.abs(c.lng - pos.lng()) < 0.01
-      );
-      const isAffected = matchedCountry && affectedCodes.has(matchedCountry.code);
-      if (isAffected) {
-        m.setOptions({
-          opacity: 1,
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: m._baseScale + 4,
-            fillColor: m._fillColor,
-            fillOpacity: 1,
-            strokeColor: '#ffffff',
-            strokeWeight: 4,
-          },
-          zIndex: 9999,
-        });
-      } else {
-        m.setOptions({
-          opacity: 0.2,
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: m._baseScale,
-            fillColor: m._fillColor,
-            fillOpacity: 0.9,
-            strokeColor: '#fff',
-            strokeWeight: 2,
-          },
-        });
-      }
-    });
-
-    // Auto-zoom to fit affected countries
-    if (affectedCodes.size > 0) {
-      const bounds = new window.google.maps.LatLngBounds();
-      affectedCodes.forEach(code => {
-        const coords = COUNTRY_COORDINATES[code];
-        if (coords) bounds.extend({ lat: coords.lat, lng: coords.lng });
+    // Add yellow highlight markers (fixed pixel size, zoom-independent)
+    affectedCodes.forEach(code => {
+      const coords = COUNTRY_COORDINATES[code];
+      if (!coords) return;
+      const marker = new window.google.maps.Marker({
+        position: { lat: coords.lat, lng: coords.lng },
+        map,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 30,
+          fillColor: '#facc15',
+          fillOpacity: 0.22,
+          strokeColor: '#eab308',
+          strokeOpacity: 0.5,
+          strokeWeight: 2,
+        },
+        clickable: false,
+        zIndex: 1,
       });
-      if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, { top: 60, right: 400, bottom: 40, left: 40 });
-      }
-    }
+      highlightCirclesRef.current.push(marker);
+    });
   }, [selectedTopic, countryTopicMap]);
 
   return (
@@ -827,13 +796,6 @@ export default function WorldMap() {
 
   const handleConnectionClick = useCallback((topic) => {
     setSelectedTopic(topic);
-    if (topic) {
-      const codes = getTopicCountryCodes(topic);
-      if (codes.length > 0) {
-        setPanelCountry(codes[0]);
-        setPanelOpen(true);
-      }
-    }
   }, []);
 
   const handleTopicSelect = useCallback((topic) => {
@@ -960,7 +922,7 @@ export default function WorldMap() {
         {/* Story flow banner */}
         {selectedTopic && (
           <div className="map-story-banner">
-            <span>Story: {selectedTopic.title}</span>
+            <span>Related: {selectedTopic.title}</span>
             <button onClick={() => setSelectedTopic(null)}>✕ Clear</button>
           </div>
         )}

@@ -76,12 +76,12 @@ Each topic provides three AI-powered analysis options:
 - **Trace Cause:** Root cause analysis of the topic
 
 ### 3. Interactive World Map
-- Geographic visualization of news coverage
-- Color-coded markers based on article density:
-  - Blue: Low coverage (1-5 articles)
-  - Orange: Medium coverage (6-10 articles)
-  - Red: High coverage (10+ articles)
-- Click markers to view article sources
+- Geographic visualization of geopolitical news connections
+- Color-coded markers by dominant topic category (conflict, economy, politics, technology, health, disaster)
+- Geodesic polylines connecting countries that share a topic (spider-web of news links)
+- Archive-only countries shown as smaller muted dots; archive connections as dashed lines
+- Slide-in side panel per country with current + archive topic cards, AI toolbar (Summarize/Predict/Trace Cause)
+- **Related Countries:** Clicking "▶ Related Countries" on any topic highlights affected countries with yellow translucent pixel-scale circle markers (zoom-independent). Active until user clicks "Hide Related" or the banner clear button.
 - Fallback SVG map when Google Maps API is unavailable
 
 ## Architecture Layers
@@ -264,20 +264,21 @@ Main feature component displaying topics and AI analysis.
 
 ### WorldMap.jsx
 
-Interactive geographic visualization.
+Interactive geographic visualization of global news connections.
 
 **Features:**
-- Google Maps integration with custom markers
-- SVG fallback map
-- Geocodes topics to country/city locations
-- Color-coded markers by article density
-- Click markers to view article lists
-- Info windows with article details
+- Google Maps integration with category-colored circle markers per country
+- Geodesic polyline connections between countries sharing a topic
+- Archive overlay: muted markers + dashed lines for earlier-today topics
+- Slide-in `MapSidePanel` with full topic cards and AI toolbar per country
+- `TodayArchiveSidebar` accessible from the map page
+- **Related Countries mode:** yellow pixel-scale circle markers on affected countries (zoom-independent via `google.maps.Marker` with `SymbolPath.CIRCLE`). Stored in `highlightCirclesRef`. Clears on "Hide Related" or banner clear; background map clicks do not exit the mode.
+- SVG fallback map when Google Maps API is unavailable
 
-**Geocoding Logic:**
-- Uses `geocodeProxy()` via REST Lambda
-- Caches geocoding results in component state
-- Handles both country-level and city-level locations
+**Key State:**
+- `selectedTopic` — active Related Countries topic (null = off)
+- `panelOpen` / `panelCountry` — side panel visibility and selected country
+- `markersRef` / `polylinesRef` / `archiveMarkersRef` / `archivePolylinesRef` / `highlightCirclesRef` — imperative Google Maps object refs
 
 ### Display Components
 
@@ -296,17 +297,20 @@ Consistent UI for AI-generated content.
 
 ### Country Mapping (`utils/countryMapping.js`)
 
-490-line utility providing comprehensive country data:
+Comprehensive country data utility:
 
 ```javascript
-// Maps 195 countries to ISO codes
-getCountryISOCode(countryName)
+// Maps 195 countries + alternates to ISO codes
+regionToCountryCode(regionName)
 
 // Infers country from news source domain
-inferCountryFromSource(sourceUrl)
+sourceToCountryCode(url)
 
-// Maps region names to country codes
-mapRegionToCountry(regionName)
+// Returns all country codes from a topic's regions array
+getTopicCountryCodes(topic)
+
+// Returns geographic region (Asia, Europe, etc.) for a topic
+getTopicRegion(topic)
 ```
 
 **Capabilities:**

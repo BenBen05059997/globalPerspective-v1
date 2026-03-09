@@ -241,14 +241,12 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
 
       {/* Footer actions */}
       <div className="map-topic-actions">
-        {!isArchive && (
-          <button
-            className={`map-topic-story-btn${isActive ? ' active' : ''}`}
-            onClick={() => onTopicSelect(isActive ? null : topic)}
-          >
-            {isActive ? 'Clear Story' : '▶ Story Flow'}
-          </button>
-        )}
+        <button
+          className={`map-topic-story-btn${isActive ? ' active' : ''}`}
+          onClick={() => onTopicSelect(isActive ? null : topic)}
+        >
+          {isActive ? 'Hide Related' : '▶ Related Countries'}
+        </button>
         <a
           href={buildNewsSearchUrl(topic.title)}
           target="_blank"

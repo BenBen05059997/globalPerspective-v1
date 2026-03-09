@@ -584,6 +584,21 @@
   opacity: 0.6;
 }
 
+.map-topic-card.archive .map-topic-story-btn {
+  border-color: #94a3b8;
+  background: #94a3b8;
+  color: #fff;
+}
+
+.map-topic-card.archive .map-topic-story-btn:hover {
+  background: #7c8da0;
+}
+
+.map-topic-card.archive .map-topic-story-btn.active {
+  background: transparent;
+  color: #94a3b8;
+}
+
 /* ===== ARCHIVE DIVIDER IN SIDE PANEL ===== */
 .map-archive-divider {
   display: flex;

@@ -8,6 +8,53 @@ Enterprise clients need to track how news narratives evolve across weeks and mon
 
 ---
 
+## Implementation Status — Last Updated 2026-03-09
+
+### Phase 0: Data Foundation
+
+| Task | Status | Notes |
+|------|--------|-------|
+| 0.1 Date-partitioned daily archives (`archive#YYYY-MM-DD`) | ✅ Shipped | Written in `NewsProjectInvokeAgentLambda/src/index.js` `buildAndWriteArchive()`. 10 sources per entry. |
+| 0.1 Archive TTL | ⚠️ Bug | `DAILY_ARCHIVE_TTL_DAYS = 7` (line 34) — should be **31** so enterprise users can access 30 days. Fix pending. |
+| 0.2 `archive_range` endpoint | ✅ Shipped | In `newsSensitiveData/src/index.js`. Today served from `latest`, past days from `archive#YYYY-MM-DD`. |
+| 0.3 API key gating | ✅ Shipped | `MEMBER_API_KEYS` / `ENTERPRISE_API_KEYS` env vars. `resolveTier()` implemented. Member = 7 days, Enterprise = 30 days. |
+
+**Known bugs to fix next:**
+- `NewsProjectInvokeAgentLambda/src/index.js` line 34: `DAILY_ARCHIVE_TTL_DAYS = 7` → change to `31`
+- `NewsProjectInvokeAgentLambda/src/index.js` line 336: `OPENAI_MODEL` is undefined (should be `GROK_MODEL`). Harmless crash but `modelId` returns `undefined`.
+
+### Phase 1: Narrative Threading
+
+| Task | Status | Notes |
+|------|--------|-------|
+| 1.1 Grok prompt enhancement (`continues_topic`) | ❌ Not started | |
+| 1.2 Keyword Jaccard fallback matching | ❌ Not started | |
+| 1.3 `threadId` assignment in archive entries | ❌ Not started | |
+| 1.4 `narrative_thread` endpoint | ❌ Not started | |
+
+### Phase 2: Hindsight & Framing Shift
+
+| Task | Status | Notes |
+|------|--------|-------|
+| 2.1 Hindsight AI generation + caching | ❌ Not started | Decision pending: add Grok to `newsSensitiveData` (Option A) or new Lambda (Option B) |
+| 2.2 Framing shift analysis | ❌ Not started | Needs Phase 1 thread data first |
+
+### Phase 3: Frontend
+
+| Task | Status | Notes |
+|------|--------|-------|
+| `/weekly` route | ❌ Not started | |
+| `WeeklyTimeline` component | ❌ Not started | |
+| `NarrativeThreadView` component | ❌ Not started | |
+| `SourceCoverageGrid` component | ❌ Not started | |
+| `HindsightModal` component | ❌ Not started | Enterprise only |
+| API key entry / localStorage storage | ❌ Not started | |
+| `useWeeklyArchive` hook | ❌ Not started | |
+| `useNarrativeThread` hook | ❌ Not started | |
+| `fetchArchiveRange()` in `restProxy.js` | ❌ Not started | |
+
+---
+
 ## Tier Model
 
 | Tier | Archive Retention | Features | Access |

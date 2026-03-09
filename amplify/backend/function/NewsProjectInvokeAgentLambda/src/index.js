@@ -31,7 +31,7 @@ const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
 const ARCHIVE_ITEM_ID = 'today-archive';
 const ARCHIVE_TTL_HOURS = 24;
-const DAILY_ARCHIVE_TTL_DAYS = 7;
+const DAILY_ARCHIVE_TTL_DAYS = 31;
 const DAILY_ARCHIVE_MAX_SOURCES = 10;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
@@ -333,7 +333,7 @@ async function invokeGrok(prompt) {
   }
 
   const content = extractContent(parsed);
-  return { modelId: parsed?.model || OPENAI_MODEL, content, latencyMs };
+  return { modelId: parsed?.model || GROK_MODEL, content, latencyMs };
 }
 
 function stripCodeFence(value) {

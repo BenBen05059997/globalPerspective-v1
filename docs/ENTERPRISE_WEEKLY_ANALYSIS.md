@@ -15,13 +15,13 @@ Enterprise clients need to track how news narratives evolve across weeks and mon
 | Task | Status | Notes |
 |------|--------|-------|
 | 0.1 Date-partitioned daily archives (`archive#YYYY-MM-DD`) | ✅ Shipped | Written in `NewsProjectInvokeAgentLambda/src/index.js` `buildAndWriteArchive()`. 10 sources per entry. |
-| 0.1 Archive TTL | ⚠️ Bug | `DAILY_ARCHIVE_TTL_DAYS = 7` (line 34) — should be **31** so enterprise users can access 30 days. Fix pending. |
+| 0.1 Archive TTL | ✅ Fixed | `DAILY_ARCHIVE_TTL_DAYS = 31` (was 7). Enterprise users can now access up to 30 days of history. |
 | 0.2 `archive_range` endpoint | ✅ Shipped | In `newsSensitiveData/src/index.js`. Today served from `latest`, past days from `archive#YYYY-MM-DD`. |
 | 0.3 API key gating | ✅ Shipped | `MEMBER_API_KEYS` / `ENTERPRISE_API_KEYS` env vars. `resolveTier()` implemented. Member = 7 days, Enterprise = 30 days. |
 
-**Known bugs to fix next:**
-- `NewsProjectInvokeAgentLambda/src/index.js` line 34: `DAILY_ARCHIVE_TTL_DAYS = 7` → change to `31`
-- `NewsProjectInvokeAgentLambda/src/index.js` line 336: `OPENAI_MODEL` is undefined (should be `GROK_MODEL`). Harmless crash but `modelId` returns `undefined`.
+**Known bugs — both fixed 2026-03-09:**
+- ~~`DAILY_ARCHIVE_TTL_DAYS = 7` → now `31`~~
+- ~~`OPENAI_MODEL` undefined → now `GROK_MODEL`~~
 
 ### Phase 1: Narrative Threading
 

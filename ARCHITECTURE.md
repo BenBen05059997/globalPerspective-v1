@@ -169,7 +169,25 @@ Auth via `x-api-key` header. Keys configured in `MEMBER_API_KEYS` and `ENTERPRIS
 
 ---
 
-### 4. `newsPostLinkedIn`
+### 4. `newsPostDevTo`
+**Path:** `amplify/backend/function/newsPostDevTo/src/index.js`
+**Trigger:** EventBridge (scheduled) or manual
+
+Posts a daily AI-written summary article to [Dev.to](https://dev.to).
+
+**What it does:**
+1. Reads `latest` topics from Topics Table
+2. Calls OpenRouter AI (model: `deepseek/deepseek-r1:free`) to generate a long-form Dev.to article
+3. Checks `SOCIAL_POSTS_TABLE` to skip if already posted today
+4. Posts to Dev.to via API; records post with 90-day TTL
+
+**Key env vars:** `DEVTO_API_KEY`, `OPENROUTER_API_KEY`, `TOPICS_DDB_TABLE`, `SOCIAL_POSTS_TABLE`, `SITE_URL`
+
+> **Note:** A deploy.zip is staged at `amplify/backend/function/newsPostDevTo/deploy.zip` — needs manual upload to AWS.
+
+---
+
+### 5. `newsPostLinkedIn`
 **Path:** `amplify/backend/function/newsPostLinkedIn/src/index.js`
 **Trigger:** EventBridge (scheduled) or manual
 
@@ -358,6 +376,7 @@ git push
 | Lambda: news fetch | `amplify/backend/function/newsInvokeGemini/src/index.js` |
 | Lambda: AI generation | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` |
 | Lambda: REST proxy | `amplify/backend/function/newsSensitiveData/src/index.js` |
+| Lambda: Dev.to posting | `amplify/backend/function/newsPostDevTo/src/index.js` |
 | Lambda: social posting | `amplify/backend/function/newsPostLinkedIn/src/index.js` |
 | Frontend source | `global-perspectives-starter/frontend/src/` |
 | Production build | `docs/` |

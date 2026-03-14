@@ -1,5 +1,36 @@
 # Global Perspectives — Change Log
 
+## 2026-03-14 (doc audit)
+- **New `ARCHITECTURE.md`.** Single authoritative reference covering all 4 Lambda functions, DynamoDB schemas, frontend routes/components/hooks, API actions, deployment workflow, and key file locations. Replaces the need to read multiple split docs.
+- **Updated `BACKEND_GUIDE.md`.** Fixed all xAI Grok references (replaced Gemini + OpenAI throughout), corrected env vars, added RSS feed ingestion, narrative threading, hallucination filtering, 3 new `newsSensitiveData` actions (`today`, `archive_range`, `narrative_thread`), API key tier system, `newsPostLinkedIn` Lambda documentation, and fixed CORS list.
+- **Updated `DEPLOYMENT_NOTES.md`.** Fixed PowerShell copy commands → macOS `rm -rf`/`cp`; fixed OpenAI → xAI Grok reference.
+- **Updated `FRONTEND_ARCHITECTURE.md`.** Removed non-existent `Sparkline.jsx`, marked AppSync as unused, corrected backend integration note.
+- **Updated `onboard` skill.** Now points to single `ARCHITECTURE.md` instead of 4 separate docs; lists stale old docs to ignore.
+
+## 2026-03-14
+- **Weekly Page: Region-colored tags.** Region tags on story cards now display in distinct colors per region — Asia (amber), Europe (blue), Middle East (pink), Africa (green), Americas (purple), Oceania (orange), World (gray) — making geographic context scannable at a glance.
+- **Weekly Page: Search bar.** Added a search input to the filter bar. Searches across story titles, entry titles, region names, and source names in real time. Filters both threaded stories and standalone entries within each region group.
+- **Weekly Page: Clean card style.** Removed distracting colored left borders, color dots, and colored timeline dots from story cards. Cards now use a uniform neutral style matching the home page. Timeline dots default to gray. Dead code (`threadHue`, `threadColor`) removed from WeeklyPage.jsx.
+- **Weekly Map: Fixed play animation.** Play button now correctly starts from the oldest available date (~1 week ago) and progressively reveals newer dates toward the present, showing story evolution over time. Fixed date range filter bug where descending sort order caused empty marker sets.
+- **Weekly Map: 8 code quality fixes.** Removed dead `dateRange` filtering logic; auto-stop playback when thread is region-filtered away; added empty-state message for region filter; mobile sidebar overlay with `useIsMobile`; separated markers and lines into distinct arrays (removed `_isLine` pattern); shared `groupMarkersByCountry()` utility for dedup; `escapeHtml()` for XSS prevention in info windows; playback resume after pause.
+- **Weekly Map: 6 UX features.** Date range label in header; manual prev/next stepping during playback with pause/resume; zoom-to-thread on thread click; back navigation link to `/weekly`; `MapLegend` component; `StoryPlaybackOverlay` with progress bar and country tracking.
+- **Weekly Map: Thread detail sidebar.** Clicking a thread in the sidebar now shows a detail view with all entries grouped by date, AI toolbar (Summarize/Predict/Trace), and play/stop controls — matching the regular map page pattern.
+- **Weekly Map: Full-Map link.** Added "Full Map →" link in Weekly Page header linking to `/weekly-map`.
+- **Code deduplication.** Extracted 3 shared components used by both WeeklyPage and WeeklyMap:
+  - `src/components/ApiKeyGate.jsx` — reusable API key gate with `title`/`description` props
+  - `src/components/StoryEntryCard.jsx` — reusable entry card with AI toolbar (Summarize/Predict/Trace Cause)
+  - `src/hooks/useIsMobile.js` — responsive breakpoint hook (default 600px)
+- **WeeklyMap cleanup.** Removed inline `ApiKeyGate`, `useIsMobile`, `ThreadEntryCard` duplicates from `WeeklyMap.jsx`; replaced with shared imports. Extracted Google Maps styles to `MAP_STYLES` constant. Removed dead `.active` class from thread list items. Removed dead `.wmap-entry-*` CSS from `WeeklyMap.css`; replaced with scoped `.wmap-detail-day .story-entry-card` overrides. Removed dead `.wmap-thread-item.active` CSS.
+- **WeeklyMap: 5 UX enhancements.**
+  - Marker click → thread selection: clicking a single-thread marker selects it in the sidebar; multi-thread markers show an info window with clickable thread links.
+  - Thread search: search input in sidebar (shown when >5 threads) filters by title or region.
+  - Article count in playback: story playback overlay now shows "Day X of Y · N articles" per date.
+  - URL state deep-linking: `?thread=` and `?region=` query params sync with sidebar selection for shareable links.
+  - Mobile backdrop: tapping outside the sidebar panel closes it on mobile.
+- **Weekly Page: Trending This Week.** New `TrendingSection` component above the filter bar shows rising/new stories with 2+ articles as horizontally scrollable cards. Includes left/right scroll arrows (hidden on mobile), scroll-snap, and a detail panel below that opens on card click showing full thread entries with MiniMap and AI toolbar. Cards show truncated summary preview; selecting a card expands it with interactive `StoryEntryCard` (Summarize/Predict/Trace Cause toggle buttons). Limits to 10 trending cards.
+- **Dead CSS cleanup.** Removed unused `.trending-card-ai`, `.trending-card-ai.prediction`, `.trending-card-ai.trace`, `.trending-card-ai-label` styles from `WeeklyPage.css`.
+- Updated `WeeklyPage.jsx`, `WeeklyPage.css`, `WeeklyMap.jsx`, `WeeklyMap.css`.
+
 ## 2026-03-09 (commit 5)
 - **Backend: Phase 1 Narrative Threading — complete.** Topics now carry a stable `threadId` across days so analysts can trace how a story evolved.
 - **newsInvokeGemini:** Added `readPastArchiveTitles(7)` — reads past 7 `archive#YYYY-MM-DD` items at clustering time. Added `NARRATIVE CONTINUITY` block to Grok prompt so it can detect story continuations and emit `continues_topic`. Field captured in normalized output and written to staging.

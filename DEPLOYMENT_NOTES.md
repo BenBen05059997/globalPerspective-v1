@@ -17,9 +17,9 @@ The production build for [https://benben05059997.github.io/globalPerspective-v1/
 3. **Copy artifacts to `docs/`**
    Inside `global-perspectives-starter/frontend/`:
    ```bash
-   powershell -Command "Remove-Item -Recurse -Force ..\..\docs\assets"
-   powershell -Command "Copy-Item -Recurse -Force dist\assets ..\..\docs\assets"
-   powershell -Command "Copy-Item -Force dist\index.html ..\..\docs\index.html"
+   rm -rf ../../docs/assets
+   cp -r dist/assets ../../docs/assets
+   cp dist/index.html ../../docs/index.html
    ```
    The `docs/config.js` file contains runtime configuration (e.g., proxy endpoints) and should not be overwritten unless intentionally changed.
 
@@ -38,7 +38,7 @@ The production build for [https://benben05059997.github.io/globalPerspective-v1/
 
 - The root `index.html` at repository level exists solely to redirect visitors to `/globalPerspective-v1/`.
 - If the app‚Äôs base path changes, update the resolver in `global-perspectives-starter/frontend/src/App.jsx` and rebuild before publishing.
-- The summaries and predictions shown on the live site are now generated via OpenAI (see `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`). Ensure the `OPENAI_API_KEY` and DynamoDB table environment variables are configured before deploying backend changes.
+- The summaries and predictions shown on the live site are generated via xAI Grok (see `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`). Ensure the `XAI_API_KEY` and DynamoDB table environment variables are configured before deploying backend changes.
 - A scheduled EventBridge rule invokes `NewsProjectInvokeAgentLambda` hourly to refresh summaries/predictions and prune obsolete cache rows. The REST proxy (`newsSensitiveData`) now serves read-only responses from DynamoDB, so ensure the schedule remains enabled in production.
 - Cloudflare Web Analytics is embedded via the script tag in `docs/index.html`. Replace `YOUR-CLOUDFLARE-TOKEN` with the site token from the Cloudflare dashboard and update the Privacy & Terms page whenever analytics tooling changes.
-- Custom domain: globalperspective.net (served via GitHub Pages). Add a flattened CNAME/ANAME in Cloudflare pointing to benben05059997.github.io and set the domain under Settings Å® Pages in GitHub.
+- Custom domain: globalperspective.net (served via GitHub Pages). Add a flattened CNAME/ANAME in Cloudflare pointing to benben05059997.github.io and set the domain under Settings ÔøΩÔøΩ Pages in GitHub.

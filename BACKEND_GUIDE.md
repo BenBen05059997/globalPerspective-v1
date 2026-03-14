@@ -17,6 +17,7 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
 | `newsInvokeGemini` | `amplify/backend/function/newsInvokeGemini/src/index.js` | Fetches news, generates topics |
 | `NewsProjectInvokeAgentLambda` | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` | Generates AI summaries/predictions |
 | `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | REST proxy for frontend |
+| `newsPostLinkedIn` | `amplify/backend/function/newsPostLinkedIn/src/index.js` | Posts top topics to social media |
 
 ### Supporting Documentation
 
@@ -40,10 +41,11 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         newsInvokeGemini Lambda                              │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────────────────────┐  │
-│  │ Brave Search │ ─► │ Gemini 2.5   │ ─► │ DynamoDB (Topics Table)      │  │
-│  │ API (10      │    │ Flash        │    │ id: "staging"                │  │
-│  │ regional     │    │ clusters     │    │ status: "pending"            │  │
-│  │ queries)     │    │ articles     │    │ generationId: "gen-xxx"      │  │
+│  │ Brave Search │ ─► │ xAI Grok     │ ─► │ DynamoDB (Topics Table)      │  │
+│  │ API + RSS    │    │ (grok-4-1-   │    │ id: "staging"                │  │
+│  │ Feeds (8     │    │ fast-non-    │    │ status: "pending"            │  │
+│  │ feeds + 11   │    │ reasoning)   │    │ generationId: "gen-xxx"      │  │
+│  │ Brave sites) │    │ clusters     │    │                              │  │
 │  └──────────────┘    └──────────────┘    └──────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
@@ -51,13 +53,15 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                   NewsProjectInvokeAgentLambda                               │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────────────────────┐  │
-│  │ Read         │ ─► │ OpenAI       │ ─► │ DynamoDB (Summary Table)     │  │
-│  │ "staging"    │    │ gpt-4o-mini  │    │ PK: TOPIC#<id>               │  │
-│  │ topics       │    │ generates:   │    │ SK: SUMMARY|PREDICTION|      │  │
-│  │              │    │ - Summary    │    │     TRACE_CAUSE              │  │
-│  │              │    │ - Prediction │    └──────────────────────────────┘  │
-│  │              │    │ - TraceCause │                  │                   │
-│  └──────────────┘    └──────────────┘                  ▼                   │
+│  │ Read         │ ─► │ xAI Grok     │ ─► │ DynamoDB (Summary Table)     │  │
+│  │ "staging"    │    │ (grok-4-1-   │    │ PK: TOPIC#<id>               │  │
+│  │ topics       │    │ fast-non-    │    │ SK: SUMMARY|PREDICTION|      │  │
+│  │              │    │ reasoning)   │    │     TRACE_CAUSE              │  │
+│  │              │    │ generates:   │    └──────────────────────────────┘  │
+│  │              │    │ - Summary    │                  │                   │
+│  │              │    │ - Prediction │                  ▼                   │
+│  │              │    │ - TraceCause │                                      │
+│  └──────────────┘    └──────────────┘                                      │
 │                                         ┌──────────────────────────────┐   │
 │                                         │ Swap staging → "latest"      │   │
 │                                         │ Prune old cache entries      │   │
@@ -101,25 +105,30 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
 **Trigger:** EventBridge scheduled rule (hourly) or manual invocation.
 
 **Data Flow:**
-1. Queries Brave Search API with 10 regional queries for global coverage
-2. Deduplicates articles by URL
-3. Sends articles to Gemini 2.5 Flash for clustering and topic extraction
+1. Fetches articles in parallel from two sources:
+   - **RSS Feeds** (primary): 8 international feeds (BBC, Al Jazeera, France24, SCMP, Asia Times, The Diplomat, Dawn, Japan Times)
+   - **Brave Search** (secondary): 11 site-specific searches for sources without RSS (Reuters, AP, Guardian, DW, Euronews, etc.)
+2. Deduplicates articles by URL and filters articles older than 48 hours
+3. Sends articles to xAI Grok for clustering and topic extraction
 4. Writes topics to DynamoDB "staging" row with `generationId`
 
 **Key Features:**
-- Multi-query strategy for regional diversity (North America, South America, Europe, Asia, Middle East, Africa, Oceania)
-- Fallback to Gemini-only mode if Brave Search fails
+- Dual-source ingestion (RSS + Brave Search) for regional diversity
+- Narrative threading: reads 7 days of archive to detect `continues_topic` links across days
+- Soft deduplication: tracks recently covered topics (24-hour window) to avoid repetition
+- Hallucination filtering: validates all URLs returned by Grok against actually-fetched articles
+- Category validation: only accepts `politics, economy, military, conflict, disaster, technology, health`
 - Stable topic ID generation based on title
 
 **Environment Variables:**
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GOOGLE_GEMINI_API_KEY` | Yes | Google Gemini API key |
-| `BRAVE_SEARCH_API_KEY` | Yes | Brave Search API key |
+| `XAI_API_KEY` | Yes | xAI API key |
+| `BRAVE_SEARCH_API_KEY` | No | Brave Search API key (falls back to RSS-only) |
 | `TOPICS_DDB_TABLE` | Yes | DynamoDB table name for topics |
 | `TOPICS_CACHE_ITEM_ID` | No | Item ID (default: "staging") |
-| `GEMINI_MODEL` | No | Model name (default: "gemini-2.5-flash") |
-| `TOPICS_LIMIT` | No | Number of topics (default: 10) |
+| `GROK_MODEL` | No | Model name (default: "grok-4-1-fast-non-reasoning") |
+| `TOPICS_LIMIT` | No | Number of topics (default: 13) |
 
 **Output Schema (DynamoDB):**
 ```json
@@ -144,7 +153,7 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
       ]
     }
   ],
-  "model": "gemini-2.5-flash",
+  "model": "grok-4-1-fast-non-reasoning",
   "generationId": "gen-1234567890",
   "updatedAt": "2024-01-15T10:00:00.000Z",
   "status": "pending"
@@ -165,12 +174,14 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
    - **Summary:** 3-4 bullet points highlighting key information
    - **Prediction:** Chain reaction analysis with winners/losers
    - **Trace Cause:** Historical context, perspective balancing, impact verdict
-3. Writes each result to Summary/Prediction Table with TTL
-4. Swaps "staging" → "latest" in Topics Table
-5. Prunes old cache entries from previous generations
+3. Assigns `threadId` to each topic via `continues_topic` inheritance or Jaccard similarity against 7 days of archive
+4. Writes each result to Summary/Prediction Table with TTL
+5. Swaps "staging" → "latest" in Topics Table
+6. Prunes old cache entries from previous generations
 
 **Key Features:**
-- Uses OpenAI gpt-4o-mini for cost-effective generation
+- Uses xAI Grok (`grok-4-1-fast-non-reasoning`) via native `fetch()` to `api.x.ai`
+- Narrative threading: assigns `threadId` by matching `continues_topic` or Jaccard keyword/region/category similarity (threshold 0.4)
 - Generation ID tracking for cache coherence
 - Automatic cleanup of obsolete entries
 - Structured prompts for consistent output format
@@ -178,13 +189,17 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
 **Environment Variables:**
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `OPENAI_API_KEY` | Yes | OpenAI API key |
+| `XAI_API_KEY` | Yes | xAI API key |
 | `TOPICS_DDB_TABLE` | Yes | DynamoDB table for topics |
 | `SUMMARIZE_PREDICT_TABLE` | Yes | DynamoDB table for summaries/predictions |
-| `OPENAI_MODEL` | No | Model name (default: "gpt-4o-mini") |
+| `GROK_MODEL` | No | Model name (default: "grok-4-1-fast-non-reasoning") |
+| `GROK_API_URL` | No | API endpoint (default: "https://api.x.ai/v1/chat/completions") |
 | `MAX_TOKENS` | No | Max tokens per request (default: 600) |
 | `TEMPERATURE` | No | Temperature (default: 0.2) |
-| `SUMMARY_PREDICT_TTL_SECONDS` | No | Cache TTL (default: 3600) |
+| `TOP_P` | No | Top-p sampling (default: 0.9) |
+| `SUMMARY_PREDICT_TTL_SECONDS` | No | Summary cache TTL (default: 3600) |
+| `PREDICTION_TTL_SECONDS` | No | Prediction cache TTL (default: 3600) |
+| `SUMMARY_PREDICT_PK_PREFIX` | No | DynamoDB PK prefix (default: "TOPIC#") |
 | `CACHE_CLEANUP_ENABLED` | No | Enable pruning (default: true) |
 
 **Payload Options:**
@@ -205,8 +220,8 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
   "title": "Topic Title",
   "action": "summary",
   "content": "Generated content...",
-  "model": "gpt-4o-mini",
-  "provider": "openai",
+  "model": "grok-4-1-fast-non-reasoning",
+  "provider": "xai",
   "generatedAt": "2024-01-15T10:05:00.000Z",
   "generationId": "gen-1234567890",
   "ttl": 1705315500,
@@ -224,19 +239,23 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
 
 **Supported Actions:**
 
-| Action | Payload | Description |
-|--------|---------|-------------|
-| `topics` | (none) | Returns cached topics from "latest" row |
-| `summary` | `{ topicId: "..." }` | Returns cached summary for topic |
-| `prediction` | `{ topicId: "..." }` | Returns cached prediction for topic |
-| `trace_cause` | `{ topicId: "..." }` | Returns cached trace cause for topic |
-| `geocode` | `{ address: "..." }` | Returns lat/lng from Mapbox |
+| Action | Payload | Auth Required | Description |
+|--------|---------|---------------|-------------|
+| `topics` | (none) | No | Returns cached topics from "latest" row |
+| `summary` | `{ topicId: "..." }` | No | Returns cached summary for topic |
+| `prediction` | `{ topicId: "..." }` | No | Returns cached prediction for topic |
+| `trace_cause` | `{ topicId: "..." }` | No | Returns cached trace cause for topic |
+| `geocode` | `{ address: "..." }` | No | Returns lat/lng from Mapbox |
+| `today` | (none) | No | Returns today's archive entries |
+| `archive_range` | `{ days: 30 }` | Yes (API key) | Returns N days of archive entries |
+| `narrative_thread` | `{ threadId: "..." }` | Yes (API key) | Returns all entries for a thread across days |
 
 **Key Features:**
 - Read-only (no write operations)
 - CORS configured for allowed origins
 - Staleness detection with configurable max age
 - Country-aware geocoding (detects country queries)
+- Two-tier API key system: `member` (7 days) and `enterprise` (30 days) access
 
 **Environment Variables:**
 | Variable | Required | Description |
@@ -244,8 +263,14 @@ This guide provides a comprehensive overview of the Global Perspectives backend 
 | `TOPICS_DDB_TABLE` | Yes | DynamoDB table for topics |
 | `SUMMARIZE_PREDICT_TABLE` | Yes | DynamoDB table for summaries |
 | `MAPBOX_GEOCODING_KEY` | Yes | Mapbox API key |
+| `MEMBER_API_KEYS` | No | Comma-separated member-tier API keys |
+| `ENTERPRISE_API_KEYS` | No | Comma-separated enterprise-tier API keys |
 | `TOPICS_CACHE_ITEM_ID` | No | Item ID (default: "latest") |
-| `TOPICS_CACHE_MAX_AGE_SECONDS` | No | Max age (default: 5400) |
+| `TOPICS_CACHE_MAX_AGE_SECONDS` | No | Max age for topics (default: 9000) |
+| `SUMMARY_PREDICT_MAX_AGE_SECONDS` | No | Max age for summaries (default: 5400) |
+| `SUMMARY_PREDICT_PK_PREFIX` | No | DynamoDB PK prefix (default: "TOPIC#") |
+| `SUMMARY_SORT_KEY` | No | Summary sort key (default: "SUMMARY") |
+| `PREDICTION_SORT_KEY` | No | Prediction sort key (default: "PREDICTION") |
 
 **Request Format:**
 ```json
@@ -267,10 +292,50 @@ POST /proxy
 
 **CORS Allowed Origins:**
 - `https://benben05059997.github.io`
+- `https://benben05059997.github.io/GlobalPerspective`
 - `https://globalperspective.net`
 - `https://www.globalperspective.net`
 - `http://localhost:5173`
 - `http://127.0.0.1:5173`
+
+---
+
+### 4. newsPostLinkedIn
+
+**Purpose:** Posts the day's top topics to social media platforms (LinkedIn, Bluesky, X/Twitter, Threads).
+
+**Trigger:** EventBridge scheduled rule or manual invocation.
+
+**Data Flow:**
+1. Reads "latest" topics from Topics Table
+2. Fetches AI summaries from Summary Table for each topic
+3. Generates platform-specific post copy per topic
+4. Posts to configured social media platforms (skips if already posted today)
+5. Records each post in a Social Posts Table with 30-day TTL
+
+**Key Features:**
+- Multi-platform: LinkedIn, Bluesky, X/Twitter, Threads
+- Deduplication: checks Social Posts Table before posting to avoid duplicates
+- Configurable rate limits (`MAX_POSTS_PER_RUN`, `MAX_POSTS_PER_DAY`)
+- Significance ordering: high > medium > low priority topics posted first
+
+**Environment Variables:**
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TOPICS_DDB_TABLE` | Yes | DynamoDB table for topics |
+| `SUMMARIZE_PREDICT_TABLE` | Yes | DynamoDB table for summaries |
+| `SOCIAL_POSTS_TABLE` | Yes | DynamoDB table tracking posted items |
+| `LINKEDIN_ACCESS_TOKEN` | No | LinkedIn OAuth token |
+| `LINKEDIN_PERSON_ID` | No | LinkedIn person URN |
+| `BLUESKY_IDENTIFIER` | No | Bluesky handle |
+| `BLUESKY_APP_PASSWORD` | No | Bluesky app password |
+| `X_API_KEY` / `X_API_SECRET` | No | X/Twitter API credentials |
+| `X_ACCESS_TOKEN` / `X_ACCESS_TOKEN_SECRET` | No | X/Twitter user tokens |
+| `THREADS_ACCESS_TOKEN` | No | Threads access token |
+| `THREADS_USER_ID` | No | Threads user ID |
+| `SITE_URL` | No | Site URL in posts (default: "https://globalperspective.net/") |
+| `MAX_POSTS_PER_RUN` | No | Max posts per Lambda run (default: 5) |
+| `MAX_POSTS_PER_DAY` | No | Max posts per day (default: 100) |
 
 ---
 
@@ -328,20 +393,14 @@ latencyMs: Number
 ### Brave Search API
 - **Endpoint:** `https://api.search.brave.com/res/v1/news/search`
 - **Used by:** newsInvokeGemini
-- **Purpose:** Fetch real news articles
+- **Purpose:** Fetch real news articles (supplementary to RSS feeds)
 - **Pricing:** Free tier available, paid plans for higher limits
 
-### Google Gemini API
-- **Endpoint:** Via `@google/generative-ai` SDK
-- **Used by:** newsInvokeGemini
-- **Model:** gemini-2.5-flash
-- **Purpose:** Cluster articles into topics
-
-### OpenAI API
-- **Endpoint:** `https://api.openai.com/v1/chat/completions`
-- **Used by:** NewsProjectInvokeAgentLambda
-- **Model:** gpt-4o-mini
-- **Purpose:** Generate summaries, predictions, trace-cause analysis
+### xAI Grok API
+- **Endpoint:** `https://api.x.ai/v1` (OpenAI-compatible)
+- **Used by:** newsInvokeGemini (via OpenAI SDK with custom baseURL), NewsProjectInvokeAgentLambda (via native fetch)
+- **Model:** `grok-4-1-fast-non-reasoning`
+- **Purpose:** Cluster articles into topics; generate summaries, predictions, trace-cause analysis
 
 ### Mapbox Geocoding API
 - **Endpoint:** `https://api.mapbox.com/geocoding/v5/mapbox.places/`
@@ -368,12 +427,12 @@ Set these in AWS Lambda console or via Amplify:
 
 ```bash
 # newsInvokeGemini
-GOOGLE_GEMINI_API_KEY=xxx
+XAI_API_KEY=xxx
 BRAVE_SEARCH_API_KEY=xxx
 TOPICS_DDB_TABLE=xxx
 
 # NewsProjectInvokeAgentLambda
-OPENAI_API_KEY=xxx
+XAI_API_KEY=xxx
 TOPICS_DDB_TABLE=xxx
 SUMMARIZE_PREDICT_TABLE=xxx
 
@@ -381,6 +440,8 @@ SUMMARIZE_PREDICT_TABLE=xxx
 TOPICS_DDB_TABLE=xxx
 SUMMARIZE_PREDICT_TABLE=xxx
 MAPBOX_GEOCODING_KEY=xxx
+MEMBER_API_KEYS=key1,key2
+ENTERPRISE_API_KEYS=key3,key4
 ```
 
 ### EventBridge Schedule
@@ -474,9 +535,8 @@ curl -X POST https://<api-gateway-url>/proxy \
 
 | Service | Cost Driver | Optimization |
 |---------|-------------|--------------|
-| Brave Search | API calls | Regional query batching |
-| Gemini | Tokens | gemini-2.5-flash (cheaper than Pro) |
-| OpenAI | Tokens | gpt-4o-mini, low temperature, 600 max tokens |
+| Brave Search | API calls | Site-specific queries, 48-hour article age filter |
+| xAI Grok | Tokens | `grok-4-1-fast-non-reasoning`, low temperature, 600 max tokens |
 | DynamoDB | Read/write units | TTL-based cleanup, caching |
 | Lambda | Invocations + duration | Scheduled runs (not on-demand) |
 

@@ -9,7 +9,7 @@ This is a modern React application focused on AI-powered global news aggregation
 - **Framework:** React 19.1.1
 - **Build Tool:** Vite 7.3.0
 - **Routing:** React Router DOM v6.30.1
-- **Backend Integration:** AWS Amplify 6.15.6 with AppSync GraphQL
+- **Backend Integration:** AWS API Gateway REST + Lambda (AppSync/GraphQL files exist but are unused)
 - **Mapping:** Google Maps API (via @googlemaps/react-wrapper)
 - **State Management:** React hooks (useState, useEffect)
 - **Styling:** Custom CSS with CSS variables
@@ -19,34 +19,48 @@ This is a modern React application focused on AI-powered global news aggregation
 ```
 frontend/
 ├── src/
-│   ├── components/          # React components
-│   │   ├── Layout.jsx       # Navigation shell
-│   │   ├── Home.jsx         # Main topics page
-│   │   ├── WorldMap.jsx     # Interactive map
+│   ├── components/              # React components
+│   │   ├── Layout.jsx           # Navigation shell
+│   │   ├── Home.jsx             # Main topics page
+│   │   ├── WorldMap.jsx         # Interactive map (daily)
+│   │   ├── MapSidePanel.jsx     # Map side panel with topic cards
+│   │   ├── WeeklyPage.jsx       # Weekly analysis page (list + embedded map)
+│   │   ├── WeeklyMap.jsx        # Full-page weekly map with playback
+│   │   ├── ApiKeyGate.jsx       # Shared API key prompt (reused by Weekly pages)
+│   │   ├── StoryEntryCard.jsx   # Shared entry card with AI toolbar toggle
+│   │   ├── TrendBadge.jsx       # Rising/Stable/Fading/New trend pill
+│   │   ├── MiniMap.jsx          # Small SVG map showing story footprint
+│   │   ├── ErrorModal.jsx       # User-friendly error modal
 │   │   ├── SummaryDisplay.jsx
 │   │   ├── PredictionDisplay.jsx
 │   │   ├── TraceCauseDisplay.jsx
 │   │   └── ...
-│   ├── hooks/              # Custom React hooks
-│   │   ├── useGeminiTopics.js
+│   ├── hooks/                   # Custom React hooks
+│   │   ├── useGeminiTopics.js   # Daily topic fetching
+│   │   ├── useWeeklyArchive.js  # Weekly archive fetching (7-30 day range)
+│   │   ├── useIsMobile.js       # Responsive breakpoint hook
 │   │   ├── useSummary.js
 │   │   ├── usePrediction.js
 │   │   └── useTraceCause.js
-│   ├── services/           # API integration layers
-│   │   ├── restProxy.js    # REST API proxy
-│   │   └── appsyncProxy.js # GraphQL proxy (alternative)
-│   ├── utils/              # Utility functions
+│   ├── services/                # API integration layers
+│   │   ├── restProxy.js         # REST API proxy
+│   │   └── appsyncProxy.js      # GraphQL proxy (alternative)
+│   ├── utils/                   # Utility functions
 │   │   ├── graphqlService.js    # API abstraction
 │   │   ├── countryMapping.js    # Geographic utilities
+│   │   ├── dateUtils.js         # Date formatting helpers
+│   │   ├── mapConstants.js      # Shared country coordinates
 │   │   └── geocoding.js
-│   ├── main.jsx            # Application entry point
-│   ├── App.jsx             # Root component with routing
-│   ├── bootstrapProxy.js   # REST API configuration
-│   └── index.css           # Global styles
-├── public/                 # Static assets
-│   └── config.js          # Runtime configuration
-├── index.html             # HTML template
-└── vite.config.js         # Vite configuration
+│   ├── contexts/
+│   │   └── ErrorContext.jsx     # Global error state
+│   ├── main.jsx                 # Application entry point
+│   ├── App.jsx                  # Root component with routing
+│   ├── bootstrapProxy.js        # REST API configuration
+│   └── index.css                # Global styles
+├── public/                      # Static assets
+│   └── config.js               # Runtime configuration
+├── index.html                   # HTML template
+└── vite.config.js               # Vite configuration
 ```
 
 ## Application Routes
@@ -54,7 +68,9 @@ frontend/
 The application uses React Router with dynamic basename resolution for GitHub Pages deployment:
 
 - `/` - Home (main news topics page)
-- `/map` - WorldMap (interactive visualization)
+- `/map` - WorldMap (interactive daily visualization)
+- `/weekly` - WeeklyPage (narrative analysis with list/map toggle, requires API key)
+- `/weekly-map` - WeeklyMap (full-page weekly map with date playback, requires API key)
 - `/privacy` - Privacy terms
 - `/about` - About page
 - `/contact` - Contact page
@@ -84,6 +100,83 @@ Each topic provides three AI-powered analysis options:
 - **Related Countries:** Clicking "▶ Related Countries" on any topic highlights affected countries with yellow translucent pixel-scale circle markers (zoom-independent). Active until user clicks "Hide Related" or the banner clear button.
 - Fallback SVG map when Google Maps API is unavailable
 
+### 4. Weekly Narrative Analysis (Member/Enterprise)
+
+Multi-day story tracking that groups topics by narrative thread (`threadId`), showing how stories evolve across days and geographies. Gated behind API key (member = 7 days, enterprise = 30 days).
+
+#### WeeklyPage (`/weekly`)
+
+Main weekly view with two modes: **List** and **Map** (embedded WeeklyMap).
+
+**Data Flow:**
+```
+1. User enters API key → stored in localStorage('gp_api_key')
+   ↓
+2. useWeeklyArchive(apiKey) fetches archive_range (7 or 30 days)
+   ↓
+3. groupByThread() clusters entries by threadId
+   ↓
+4. Stories displayed in region-grouped, expandable cards with timeline
+```
+
+**Sub-components inside WeeklyPage:**
+
+- **TrendingSection** — Horizontal scrollable cards of rising/new stories (2+ articles). Cards show trend badge, article count, region tags, and truncated AI summary. Clicking a card opens a **modal overlay** with full thread detail (MiniMap, all entries by date, StoryEntryCard with Summarize/Predict/Trace Cause toggle). Limited to 10 cards. Left/right scroll arrows with scroll-snap.
+
+- **StoryCard** — Expandable card per narrative thread. Header shows title, trend badge, region tags, day count, article count. Body shows date range, source list, MiniMap, and timeline of StoryEntryCards.
+
+- **RegionSection** — Collapsible section per geographic region (Asia, Europe, etc.), sorted by total article count (most first, World last). Shows first 3 stories with "Show N more" button.
+
+- **StandaloneSection** — Collapsible list of one-off topics with no narrative thread.
+
+- **FilterBar** — Search (title/region/source), region dropdown, time range toggle (3d/7d/all), sort selector (most articles/most recent/rising first).
+
+**Region Color Scheme:**
+| Region | Background | Border | Text |
+|--------|-----------|--------|------|
+| Asia | #fef3c7 | #fbbf24 | #92400e |
+| Europe | #dbeafe | #60a5fa | #1e40af |
+| Middle East | #fce7f3 | #f472b6 | #9d174d |
+| Africa | #d1fae5 | #34d399 | #065f46 |
+| Americas | #ede9fe | #a78bfa | #5b21b6 |
+| Oceania | #ffedd5 | #fb923c | #9a3412 |
+| World | #f3f4f6 | #d1d5db | #6b7280 |
+
+#### WeeklyMap (`/weekly-map`)
+
+Full-page Google Maps visualization of weekly story evolution with date-based playback.
+
+**Features:**
+- **Thread-colored markers** — Each narrative thread gets a unique hue. Markers sized by article count on that date.
+- **Geodesic polylines** — Connect same-thread markers across countries showing geographic spread.
+- **Date playback** — "Play" button auto-advances through dates oldest→newest. Progress bar and "Day X of Y · N articles" display. Manual prev/next stepping with pause/resume.
+- **Thread sidebar** — Left panel listing all threads with search (when >5 threads). Click a thread to zoom the map to its affected countries and show detail view with entries + AI toolbar.
+- **Marker → thread selection** — Clicking a single-thread marker selects that thread in the sidebar. Multi-thread markers show an info window with clickable thread links.
+- **URL deep-linking** — `?thread=<threadId>&region=<regionName>` query params sync with sidebar for shareable links.
+- **Mobile backdrop** — Tapping outside the sidebar closes it on mobile.
+- **Map legend** — Category color legend (conflict, economy, politics, etc.).
+
+**Key State:**
+```javascript
+highlightThread     // Selected threadId (synced to URL ?thread=)
+mapRegion           // Selected region filter (synced to URL ?region=)
+panelOpen           // Sidebar visibility
+storyPlay           // Active playback { threadId, currentDate, dates[] }
+search              // Thread search query
+```
+
+**Shared components used:** `ApiKeyGate`, `StoryEntryCard`, `useIsMobile`, `useWeeklyArchive`.
+
+#### Shared Components
+
+**ApiKeyGate.jsx** — Reusable API key prompt. Props: `onSubmit`, `title`, `description`, `error`. Used by WeeklyPage and WeeklyMap.
+
+**StoryEntryCard.jsx** — Entry card with title, sources, and AI toolbar toggle (Summarize/Predict/Trace Cause buttons). Props: `entry`, `compact`. Used in WeeklyPage (story cards, trending modal), WeeklyMap (sidebar detail), and MiniMap click-through.
+
+**TrendBadge.jsx** — Colored pill showing trend direction. Compares article count in recent half vs older half: ratio > 1.3 → Rising (green), < 0.7 → Fading (orange), single day → New (blue), else → Stable (gray). Exports `getTrend()` utility.
+
+**MiniMap.jsx** — Small SVG Equirectangular map (~300×150px) showing colored dots on affected countries. Uses `mapConstants.js` for coordinates and `countryMapping.js` for region→country resolution.
+
 ## Architecture Layers
 
 ### Layer 1: REST Proxy Service (`services/restProxy.js`)
@@ -106,7 +199,7 @@ geocodeProxy(address)           // Geocoding service
 
 ### Layer 2: AppSync Proxy Service (`services/appsyncProxy.js`)
 
-Alternative GraphQL interface (currently unused in favor of REST).
+Alternative GraphQL interface — **currently unused**. All production traffic goes through the REST proxy.
 
 ```javascript
 proxySensitive(action, payload)  // Generic proxy method
@@ -228,6 +321,30 @@ const {
 - Background polling every 10 minutes
 - Stale data detection
 - New data notifications
+
+### `useWeeklyArchive(apiKey)`
+
+Fetches multi-day archive data for the Weekly Analysis pages.
+
+```javascript
+const {
+  dayMap,        // Object: { 'YYYY-MM-DD': { entries: [...] } }
+  sortedDates,   // Array of date strings, newest first
+  loading,       // Boolean
+  error,         // Error string or null
+  tier           // 'member' | 'enterprise' (inferred from day count returned)
+} = useWeeklyArchive(apiKey)
+```
+
+**Features:**
+- Calls `restProxy.fetchArchiveRange(apiKey)` for 30-day range
+- 30-minute LocalStorage caching (key: `gp_weekly_archive_v1`)
+- Tier auto-detection: ≤7 days returned → member, >7 → enterprise
+- Each entry carries `threadId`, `title`, `regions[]`, `sources[]`, `ai { summary, prediction, trace_cause }`
+
+### `useIsMobile(breakpoint)`
+
+Responsive breakpoint hook. Default breakpoint: 600px. Returns `true` when viewport width ≤ breakpoint.
 
 ### `useSummary()` / `usePrediction()` / `useTraceCause()`
 
@@ -355,8 +472,10 @@ Topics are categorized into 7 regions based on keyword matching:
 - `index.css` - Global styles, CSS variables
 - `Layout.css` - Navigation and footer
 - `Home.css` - Main page layout
-- `AIComponents.css` - Premium AI feature styling
-- `WorldMap.css` - Map component styles
+- `AIComponents.css` - Premium AI feature styling (shared by Home, Weekly, Map)
+- `WorldMap.css` - Daily map component styles
+- `WeeklyPage.css` - Weekly analysis page (story cards, trending section, modal, filters)
+- `WeeklyMap.css` - Weekly map (sidebar, playback overlay, legend, date controls)
 
 **Design Features:**
 - Responsive grid system

@@ -1,5 +1,139 @@
 # Global Perspectives — Change Log
 
+## 2026-03-15 (Category grouping on Weekly Analysis + WeeklyMap panel)
+- **Thread list grouped by category.** Both the Weekly Analysis feed (`WeeklyPage.jsx`) and the WeeklyMap side panel (`WeeklyMap.jsx`) now group threads into collapsible category sections (politics, economy, conflict, technology, environment, health, society, culture, science, other) instead of a flat list. Each section shows a colored header with the category name and thread count, and collapses/expands on click with an animated chevron.
+- **Show 5 / Show more pattern.** Each category group shows the first 5 threads by default. If more exist, a "Show X more" button appears at the bottom of the group. Expanding one group is independent of others.
+- **Category badge color fix.** Category group names were incorrectly using the badge background color (`c.bg`) as text color — fixed to use `c.color` (the dark variant) so labels are legible.
+- **Per-item category badge removed from list view.** Now that threads are already grouped under a category header, the redundant inline category badge on each thread card/item has been removed.
+- CSS added: `.weekly-category-group`, `.weekly-category-group-header`, `.weekly-category-group-name/count/chevron`, `.weekly-category-show-more` in `WeeklyPage.css`; matching `.wmap-category-group*` and `.wmap-category-show-more` in `WeeklyMap.css`.
+
+## 2026-03-15 (Weekly Analysis + WeeklyMap UI improvements)
+- **Trending cards cleaned up.** Removed inline AI summary text from "Rising This Week" featured cards and StoryCard list items — cards now show title, badges, and arc dots only. Full titles no longer truncated.
+- **Filter bar improvements.** Period filter labels changed from cryptic "3d/7d" to "3 days / 7 days". "All Xd" button hidden when archive is exactly 7 days (member tier) to avoid duplication. "Show" label added before the period group. Country dropdown added after sort selector — filters threads to a specific country.
+- **WeeklyMap side panel widened** from 320px → 500px with consistent 20px horizontal padding. Entry title font size increased, AI buttons larger. Detail header and meta paddings increased throughout.
+- **MiniMap single-country zoom fix.** When a story involves only one country, the map now pads out 60°lat × 90°lng so the full country and its neighbors are visible rather than zooming in too close.
+- **Map AI toolbar wrapping.** AI Arc Analysis buttons now wrap onto multiple lines in narrow contexts instead of overflowing.
+- **CompactTimeline entry click → map focus.** Clicking a daily entry in "Daily coverage" sets the map to that entry's date (paused playback), zooms to that entry's countries, and dims others.
+- **Playback overlay removed.** The floating top-right overlay during story playback has been removed. Play/stop is controlled entirely via the side panel button.
+- **Country filter on WeeklyMap.** Dropdown in the panel filters the thread list and dims non-matching markers/lines on the map. Hint text shown when no country is selected.
+- **Country Replay animation.** Select any country → "▶ Replay [Country] — N days" button appears. Clicking starts a day-by-day animation: map shows that country's active threads stepping forward at 1.5s/day, panel thread list updates to show only threads active on that day, progress bar + ◀ ❚❚ ▶ ✕ controls in the panel (no floating overlay).
+- **Category badges unified.** `CATEGORY_BADGE_COLORS` exported from `WeeklyPage.jsx` and imported in `StoryEntryCard.jsx` and `WeeklyMap.jsx` so all category badges (thread list items, entry cards, detail header) use the same color scheme.
+- **WeeklyMap thread list.** Colored thread dots removed from panel list cards and detail header (kept on map markers). Category badge added above each thread title and in the detail header meta.
+- **Full Map link removed** from Weekly Analysis header — redundant with the Map toggle.
+- **Navigation.** "Full Map →" link removed from Weekly Analysis page header.
+
+## 2026-03-15 (Analytics, CI/CD, and deployment infrastructure)
+- **Google Analytics 4 added.** Tag `G-VT6QENX4MB` injected into `docs/index.html`. Tracks real-time visitors, page views, traffic sources, countries, new vs returning users. Data starts accumulating from today. Verify via GA4 → Realtime at analytics.google.com.
+- **GitHub Actions auto-deploy workflow added.** `.github/workflows/deploy.yml` — triggers on push to `main` when `src/` files change. Automatically runs `npm ci`, `npm run build`, copies `dist/` to `docs/`, and commits back. Eliminates the manual build + copy + commit workflow entirely.
+- **Wrangler CLI installed and authenticated.** `wrangler` v4.73.0 installed globally. Authenticated with `globalperspectives.app@gmail.com` (account ID `45efe64168fc55da3937e2c01b1ca43a`). Zone `globalperspective.net` confirmed linked.
+- **`.gitignore` updated.** Added `*-firebase-adminsdk-*.json` pattern to prevent Firebase Admin SDK service account keys from being accidentally committed.
+- **`weekly-ui-redesign` branch deployed.** Built and pushed all frontend changes (Story Intelligence page, loading indicators, auth components, Firebase config) to `weekly-ui-redesign`. Branch is live on GitHub — merge to `main` when ready to go to production.
+
+## 2026-03-15 (Thread analysis improvements — watchQuestions, Brave Search, richer context)
+- **`newsThreadAnalysis`: Brave Search grounding.** Before calling Grok, now performs two web searches on the latest entry title: `/news/search` (past week, 4 results) + `/web/search` (background/analysis, 2 results). Up to 6 external references injected into the prompt with `[1]`, `[2]` citation instructions. Requires `BRAVE_SEARCH_API_KEY` env var (same key as `newsInvokeGemini`).
+- **`newsThreadAnalysis`: Full entry context.** Removed 300-char summary truncation — full summaries now passed to Grok. Added individual entry `ai.prediction` (250 chars) and `ai.trace_cause` (200 chars) per entry so Grok sees how analysts assessed the story each day. Added source outlet names per entry.
+- **`newsThreadAnalysis`: Prompt overhaul.** All three analysis fields given explicit structure instructions: `storyArc` → analytical journalism style with turning points; `trajectory` → specific actors/scenarios/timeframes, no vague language; `rootCauseChain` → 3-layer causal chain (immediate trigger → enabling condition → structural factor).
+- **`newsThreadAnalysis`: `watchQuestions` field added.** New field: array of exactly 3 specific, actor-named follow-up questions a reader should watch for (e.g. "Will the ECB raise rates at its June meeting in response?"). Stored in DDB, passed through to frontend.
+- **`newsThreadAnalysis`: MAX_TOKENS raised 2000 → 3000.** Needed for richer multi-field responses.
+- **`newsSensitiveData`: `watchQuestions` passthrough.** Added `watchQuestions` to `readThreadAnalyses()` field allowlist so frontend receives the new field.
+- **`ThreadIntelligence.jsx`: Tab labels renamed.** "Story Arc" → "How It Evolved", "Trajectory" → "What's Next", "Root Causes" → "Why It Happened". More intuitive for first-time readers.
+- **`ThreadIntelligence.jsx`: Watch questions UI.** Always-visible amber-bordered question list shown above the analysis tabs — no click needed. Label "Questions to follow". Renders only when `watchQuestions` array is non-empty.
+- **Zips:** `newsThreadAnalysis.zip` and `newsSensitiveData.zip` updated and ready to upload.
+
+## 2026-03-15 (Loading indicators — progress bar + AI toast)
+- **`LoadingBar.jsx` (new).** Thin 3px fixed progress bar at the very top of every page. Blue→purple→cyan gradient with glow. Animates 0%→85% on load start, completes to 100% and fades out on finish. Event-driven via `window.dispatchEvent('gp-loading-start' / 'gp-loading-end')` — no context wiring needed.
+- **`AIToast.jsx` (new).** Non-blocking frosted-glass pill fixed at bottom-right. Appears when any AI generation operation is running. Shows contextual messages: "Generating summary…" / "Mapping chain reactions…" / "Tracing origins…". Stacks multiple concurrent ops with a `+N` count badge. Slides in with spring animation. Event-driven via `gp-ai-start` (with `{id, message}`) / `gp-ai-end` (with `{id}`).
+- **`LoadingIndicators.css` (new).** Styles for both components.
+- **`Layout.jsx` updated.** Renders `<LoadingBar />` and `<AIToast />` inside the layout wrapper so they appear on every page.
+- **`useGeminiTopics.js` updated.** Fires `gp-loading-start` before network fetch, `gp-loading-end` in finally block.
+- **`useWeeklyArchive.js` updated.** Same pattern — fires loading events around archive fetch.
+- **`MapSidePanel.jsx` updated.** Each AI handler (Summary, Prediction, TraceCause) fires `gp-ai-start` with contextual message and `gp-ai-end` with per-operation ID on completion.
+
+## 2026-03-15 (Weekly page redesign — Story Intelligence branch)
+- **Branch: `weekly-ui-redesign`.** Full visual redesign of the Weekly page on a separate branch.
+- **Title renamed.** "Weekly Analysis" → "Story Intelligence".
+- **`FeaturedSection` (new component).** Replaces horizontal-scroll `TrendingSection`. 3-column grid of rising/new arcs. Each card has a gradient top border, always-visible summary, "Read full arc →" CTA. Stacks to 1 column on mobile.
+- **`StoryCard` redesigned.** Summary always visible (no click needed). `▼ Analyze` pill button on the right expands the full analysis (ThreadIntelligence + MiniMap + CompactTimeline). Dark pill when expanded.
+- **`ArcDots` updated.** Date labels on both ends (`Mar 10 ●───○───● Mar 14`). Gap dots for days with no coverage. Only shown for multi-day threads.
+- **`FilterControls` (new component).** Replaces `FilterBar` and region accordion. Single bar: search input + 3d/7d/all period toggles + sort select. Region chips row below for one-click filtering. Active chip turns dark.
+- **Flat `weekly-feed`.** Single scrollable feed replacing nested region accordion sections. Region chips provide filtering instead of grouping.
+- **Category badges.** Each story card and featured card shows a colored category badge (conflict/military/disaster/politics/economy/technology/health) derived from the latest entry.
+- **Story activity status dot.** Each card shows ● Active (green, ≤2 days), ● Ongoing (amber, 3–7 days), or ● Quieting (gray, 7+ days) based on `dateRange.to` vs today.
+- **Map navigation fixes.** `WorldMap.jsx`: added `← Back` button in page header; story banner replaced with `← Back` + "Showing connections for: …" layout. `MapSidePanel.jsx`: added sticky "← Back to all" bar when a topic is selected; "☆ Related" → "✕ Deselect" when active.
+- **`MiniMap.jsx`: `static` prop.** Disables navigation and hides "Open full map →" footer when used inside modals (prevents accidental page change). Keyboard accessible (`role="button"`, `onKeyDown`).
+- **New CSS classes.** `.featured-section`, `.featured-card`, `.story-card-main`, `.story-card-content`, `.story-card-summary`, `.story-expand-btn`, `.filter-controls`, `.filter-region-chip`, `.weekly-feed`, `.arc-dot-date-label`, `.story-category-badge`, `.story-activity-dot`, `.watch-questions`, `.watch-question-item`.
+- **Files changed:** `WeeklyPage.jsx`, `WeeklyPage.css`, `MiniMap.jsx`, `WorldMap.jsx`, `MapSidePanel.jsx`, `ThreadIntelligence.jsx`.
+
+## 2026-03-15 (Home page freemium gate)
+- **Home: Freemium gate.** Signed-out visitors see only the first topic fully (with AI toolbar, sources, Google News link). The rest of today's topics are blurred behind a sign-in gate with a "🌍 N more topics today" CTA, "Sign in free →" button, and "See Member plans" link.
+- **Home: `FreeGate` component.** Inline component that renders a blurred preview of up to 3 locked regions with their topic titles (pointer-events disabled), with a gradient overlay fading from transparent to white. Shows exact count of locked topics.
+- Signed-in users (any tier) see all topics unchanged. Gate only activates for unauthenticated visitors.
+- Updated `src/components/Home.jsx`.
+
+## 2026-03-15 (Nav cleanup + Account page)
+- **Nav: Simplified.** Removed Contact, Privacy, Disclosures from main nav (still in footer). Nav is now: Home | Map | Weekly Analysis | Pricing | About | [email / Sign in].
+- **Nav: Renamed Weekly → Weekly Analysis.** Label updated in `Layout.jsx`.
+- **Nav: Member hint.** Small 🔒 superscript shown next to "Weekly Analysis" for signed-out users only. Hidden for signed-in members — no clutter for paying users.
+- **Nav: Removed duplicate Upgrade link.** Signed-out users previously saw both "Pricing" in nav and a separate blue "Upgrade" button. Removed the redundant Upgrade button; Pricing link in nav is sufficient.
+- **Account page: Full rebuild.** Replaced minimal 3-field layout with a proper multi-card profile page:
+  - **Identity card** — initials avatar (blue circle), email, tier badge, Active/status indicator, "Since [month year]" (from Firebase `user.metadata.creationTime`) all in one row.
+  - **Your plan includes** — perks list with icons per tier (member: 4 perks, enterprise: 5 perks, free: hidden). Lists Weekly Analysis, Weekly Map, Thread Intelligence, Trending, Narrative Thread.
+  - **Quick access** — direct links to Weekly Analysis and Weekly Map. Member/enterprise only.
+  - **Billing card** — Manage billing & subscription button (member/enterprise) or Upgrade CTA (free). "Billing issue? Contact support →" mailto link always visible.
+  - **Account card** — Sign out as a proper bordered button (was previously invisible plain muted text). Delete account flow: clicking shows a confirmation panel with instructions to email support for deletion within 24 hours.
+- Updated `src/components/Account.jsx`, `src/components/Layout.jsx`.
+
+## 2026-03-15 (Infrastructure setup + bug fixes)
+- **Firebase Auth configured.** Added `window.FIREBASE_CONFIG` to `docs/config.js`. Added `.env.local` with `VITE_FIREBASE_*` vars for local dev fallback. Enabled Email link (passwordless) sign-in in Firebase Console. Added `benben05059997.github.io` and `globalperspective.net` to Firebase authorized domains.
+- **Stripe setup.** Installed Stripe CLI. Created live product (`prod_U9N7L4KtBAUPso`), price (`price_1TB4NWHAFyhbSKzgEbqhcz3C`, $15/mo recurring), and webhook endpoint (`we_1TB51WHAFyhbSKzgVM8syUnI`) pointing at Lambda Function URL. Webhook subscribes to `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`.
+- **`newsStripeWebhook` Lambda deployed.** New Lambda handling Stripe webhook events — creates/upgrades user to `member` on checkout, downgrades to `free` on cancellation, updates tier on subscription status change. Function URL created: `https://tu2abnue3kefs2lkeczezoez3m0fzztr.lambda-url.ap-northeast-1.on.aws/`. Env vars: `USERS_DDB_TABLE`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
+- **Users DynamoDB table created.** `GlobalPerspectiveUserTable`, PK: `uid` (String). Stores `tier`, `email`, `stripeCustomerId`, `subscriptionId`, `subscriptionStatus`.
+- **`newsSensitiveData` bug fixes deployed.** Fixed `ddb.send()` → `getDynamoClient().send()` crash in `readThreadAnalyses()`. Removed unused `UpdateCommand` import. Zip uploaded to Lambda.
+- **`newsSensitiveData` env vars added.** `USERS_DDB_TABLE`, `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FRONTEND_URL` (`https://globalperspective.net`).
+- **Phase 5 legacy apiKey cleanup.** Removed all remaining `apiKey` refs from weekly archive flow: `useThreadAnalyses`, `WeeklyPage`, `WeeklyMap` (replaced `embeddedApiKey` prop with `embedded` boolean). Fixed `fetchNarrativeThread` dead param. Fixed `AuthCallback` hardcoded `/signin` href → `<Link>`.
+
+## 2026-03-14 (Firebase Auth + Stripe subscription)
+- **Auth system migration.** Replaced manual API key entry (`ApiKeyGate`) with Firebase Authentication (passwordless email link sign-in). Users receive a magic link by email; on click they are signed in. Firebase ID token sent as `Authorization: Bearer <token>` on all gated API calls.
+  - Created `src/contexts/AuthContext.jsx` — Firebase Auth provider. Config read from `window.FIREBASE_CONFIG` (set in `docs/config.js`) with VITE env var fallback for local dev. Exports `useAuth()`, `sendSignInLink()`, `completeSignIn()`, `signOut()`, `getIdToken()`.
+  - Created `src/components/SignIn.jsx` — email input form, sends magic link via Firebase `sendSignInLinkToEmail`.
+  - Created `src/components/AuthCallback.jsx` — `/auth/callback` route, completes sign-in from email link via `signInWithEmailLink`.
+  - Updated `src/App.jsx` — wraps app in `AuthProvider`; added `AuthBridge` that wires `getIdToken` into `restProxy.setAuthProvider()` on mount.
+  - Updated `src/services/restProxy.js` — added `setAuthProvider(fn)` and `proxyActionWithAuth()` which injects Bearer token header. Gated functions (`fetchArchiveRange`, `fetchThreadAnalyses`, `fetchNarrativeThread`, `fetchPortalSession`, `fetchUserProfile`) use this path. Public functions unchanged.
+- **Subscription system.** Stripe billing integration for member/enterprise tiers.
+  - Created `src/components/Pricing.jsx` — pricing page with tier comparison and Stripe checkout links.
+  - Created `src/components/Account.jsx` — shows user email, current tier, and Stripe customer portal link.
+  - Created `src/components/UpgradeSuccess.jsx` — post-checkout success page.
+  - Added `portal_session` action to `newsSensitiveData` — creates Stripe billing portal session for authenticated user.
+  - Added `user_profile` action to `newsSensitiveData` — returns `{ tier, subscriptionStatus, email }` from `USERS_TABLE`.
+- **Backend: Firebase JWT verification.** `newsSensitiveData` Lambda now verifies Firebase ID tokens via Firebase Admin SDK (`verifyIdToken`). Tier resolved from `USERS_TABLE` (DynamoDB) keyed by Firebase UID. New env vars: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `USERS_DDB_TABLE`, `STRIPE_SECRET_KEY`, `FRONTEND_URL`.
+- **WeeklyPage: Auth-gated.** Replaced `ApiKeyGate` with `useAuth()`. Unauthenticated → `WeeklyLockedPreview` (blurred mock content + CTA). Free-tier (401) → upgrade prompt. Member/enterprise → full page.
+  - Created `src/components/WeeklyLockedPreview.jsx` — blurred mock cards with gradient overlay and "Get Member $15/mo" + "Sign in" CTAs.
+- **Navigation.** Layout shows "Sign in" + "Upgrade" links for unauthenticated users; `user.email` → `/account` for signed-in users. Added `/pricing` to main nav.
+- **Custom domain.** Production URL `https://globalperspective.net`. CORS list includes both GitHub Pages and custom domain.
+- **Hook signatures changed.** `useWeeklyArchive()` and `useThreadAnalyses(threadIds)` no longer accept `apiKey` — auth handled internally via `AuthContext`. Cache keyed by `user.uid`.
+- **New routes:** `/signin`, `/auth/callback`, `/pricing`, `/account`, `/upgrade/success`.
+
+## 2026-03-14 (Thread Intelligence)
+- **New Lambda: `newsThreadAnalysis`.** Daily batch Lambda that generates thread-level AI analysis for the top 15 narrative threads with 2+ entries. Reads 30 days of archives, calls xAI Grok to produce: thread title, entry short titles (6-10 word sequential narrative per entry), story arc (evolution), trajectory (prediction), and root cause chain (origins). Writes to `SUMMARIZE_PREDICT_TABLE` with key pattern `PK: THREAD#{threadId}`, `SK: THREAD_ANALYSIS`, 31-day TTL. Staleness check skips threads where entry count hasn't changed.
+  - Created `amplify/backend/function/newsThreadAnalysis/src/index.js`
+  - Created `amplify/backend/function/newsThreadAnalysis/src/package.json`
+  - Created `amplify/backend/function/newsThreadAnalysis/newsThreadAnalysis-cloudformation-template.json`
+- **Backend: `thread_analysis` action.** Added `thread_analysis` action to `newsSensitiveData` REST proxy. Tier-gated (member/enterprise). Accepts array of `threadIds` (max 20), returns map of `threadId → analysis`. Added `readThreadAnalyses()` function with parallel DynamoDB reads.
+  - Updated `amplify/backend/function/newsSensitiveData/src/index.js`
+- **Frontend: Thread Intelligence UI.** Thread-level AI (Story Arc / Trajectory / Root Causes) shown at the top of each thread when analysis data exists. Graceful fallback to current layout when no data.
+  - Created `src/components/ThreadIntelligence.jsx` — three toggle buttons reusing existing `ai-toolbar` CSS classes
+  - Created `src/components/CompactTimeline.jsx` — compact timeline with AI-generated short titles per entry, expand chevron reveals full `StoryEntryCard` with per-entry AI toolbar
+  - Created `src/hooks/useThreadAnalyses.js` — fetches and caches thread analyses (localStorage, 30-min TTL)
+  - Added `fetchThreadAnalyses()` to `src/services/restProxy.js`
+- **WeeklyPage: Thread Intelligence integration.** StoryCard header uses AI-generated thread title when available. Expanded body shows ThreadIntelligence above MiniMap, CompactTimeline replaces flat entry list. Trending modal also uses ThreadIntelligence + CompactTimeline when analysis exists.
+  - Updated `src/components/WeeklyPage.jsx`, `src/components/WeeklyPage.css`
+- **WeeklyMap: Thread Intelligence integration.** ThreadDetailView shows AI-generated thread title, ThreadIntelligence above play button, CompactTimeline in sidebar. Independent `useThreadAnalyses` hook for standalone `/weekly-map` route.
+  - Updated `src/components/WeeklyMap.jsx`
+- **Trending section: Modal overlay.** Replaced inline trending card expansion with popup modal overlay. Fixed event bubbling bug where AI toolbar button clicks closed the expanded card.
+  - Removed dead CSS: `.trending-card.selected`, `.trending-detail`
+  - Added modal CSS: `.trending-modal-overlay`, `.trending-modal`
+- **New CSS.** Added `.thread-intelligence`, `.compact-timeline`, `.compact-timeline-entry`, `.compact-timeline-dot`, `.compact-timeline-header`, `.compact-timeline-expanded` styles to `WeeklyPage.css`.
+
 ## 2026-03-14 (doc audit)
 - **New `ARCHITECTURE.md`.** Single authoritative reference covering all 4 Lambda functions, DynamoDB schemas, frontend routes/components/hooks, API actions, deployment workflow, and key file locations. Replaces the need to read multiple split docs.
 - **Updated `BACKEND_GUIDE.md`.** Fixed all xAI Grok references (replaced Gemini + OpenAI throughout), corrected env vars, added RSS feed ingestion, narrative threading, hallucination filtering, 3 new `newsSensitiveData` actions (`today`, `archive_range`, `narrative_thread`), API key tier system, `newsPostLinkedIn` Lambda documentation, and fixed CORS list.

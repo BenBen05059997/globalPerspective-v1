@@ -67,6 +67,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
   const otherCodes = countryCodes.filter(Boolean);
   const cardRef = useRef(null);
   const autoFetched = useRef(false);
+  const aiOpId = useRef(0);
 
   useEffect(() => {
     if (isActive && !summary && !summaryLoading && !isArchive && !autoFetched.current) {
@@ -82,6 +83,8 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     if (summaryLoading) return;
     setSummaryLoading(true);
     setSummaryError(null);
+    const id = ++aiOpId.current;
+    window.dispatchEvent(new CustomEvent('gp-ai-start', { detail: { id, message: 'Generating summary…' } }));
     try {
       const data = await graphqlService.getTopicSummary(topicId);
       setSummary(processContent(data));
@@ -92,6 +95,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
       showError(message);
     } finally {
       setSummaryLoading(false);
+      window.dispatchEvent(new CustomEvent('gp-ai-end', { detail: { id } }));
     }
   };
 
@@ -115,6 +119,8 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     if (predictionLoading) return;
     setPredictionLoading(true);
     setPredictionError(null);
+    const id = ++aiOpId.current;
+    window.dispatchEvent(new CustomEvent('gp-ai-start', { detail: { id, message: 'Mapping chain reactions…' } }));
     try {
       const data = await graphqlService.getTopicPrediction(topicId);
       setPrediction(processContent({ content: data?.content || data?.impact_analysis || '', ...data }));
@@ -125,6 +131,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
       showError(message);
     } finally {
       setPredictionLoading(false);
+      window.dispatchEvent(new CustomEvent('gp-ai-end', { detail: { id } }));
     }
   };
 
@@ -138,6 +145,8 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     if (traceCauseLoading) return;
     setTraceCauseLoading(true);
     setTraceCauseError(null);
+    const id = ++aiOpId.current;
+    window.dispatchEvent(new CustomEvent('gp-ai-start', { detail: { id, message: 'Tracing origins…' } }));
     try {
       const data = await graphqlService.getTopicTraceCause(topicId);
       setTraceCause(processContent(data));
@@ -148,6 +157,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
       showError(message);
     } finally {
       setTraceCauseLoading(false);
+      window.dispatchEvent(new CustomEvent('gp-ai-end', { detail: { id } }));
     }
   };
 
@@ -206,8 +216,9 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
         <button
           className={`ai-btn ai-btn-related${isActive ? ' active' : ''}`}
           onClick={() => onTopicSelect(isActive ? null : topic)}
+          title={isActive ? 'Clear map connections' : 'Show related countries on map'}
         >
-          {isActive ? '★ Related' : '☆ Related'}
+          {isActive ? '✕ Deselect' : '☆ Related'}
         </button>
       </div>
 
@@ -337,6 +348,15 @@ export default function MapSidePanel({ isOpen, onClose, country, topics, archive
           </div>
           <button className="map-side-panel-close" onClick={onClose}>×</button>
         </div>
+
+        {selectedTopicId && (
+          <div className="map-panel-selection-bar">
+            <span className="map-panel-selection-label">Showing map connections</span>
+            <button className="map-panel-clear-btn" onClick={() => onTopicSelect(null)}>
+              ← Back to all
+            </button>
+          </div>
+        )}
 
         <div className="map-side-panel-body">
           {totalCount === 0 ? (

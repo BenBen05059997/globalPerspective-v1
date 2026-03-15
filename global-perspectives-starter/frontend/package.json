@@ -13,6 +13,7 @@
     "@aws-amplify/api-graphql": "^4.7.22",
     "@googlemaps/react-wrapper": "^1.2.0",
     "aws-amplify": "^6.15.6",
+    "firebase": "^12.10.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^6.30.1"

@@ -10,6 +10,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import StoryEntryCard from './StoryEntryCard';
 import ThreadIntelligence from './ThreadIntelligence';
+import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
 import CompactTimeline from './CompactTimeline';
 import './WeeklyPage.css';
 import './WeeklyMap.css';
@@ -137,7 +138,7 @@ function buildWeeklyMapData(dayMap, dates) {
   return { markers: Object.values(pointMarkers), lines: Object.values(lines), threadList, allRegions };
 }
 
-const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, highlightThread, storyPlay, onThreadSelect }, ref) {
+const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, highlightThread, storyPlay, countryPlay, onThreadSelect, countryThreadIds }, ref) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const gMarkersRef = useRef([]);
@@ -181,11 +182,12 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
     gMarkersRef.current = [];
     gPolylinesRef.current = [];
 
-    const currentDate = storyPlay?.currentDate;
+    const currentDate = storyPlay?.currentDate || countryPlay?.currentDate;
     const grouped = groupMarkersByCountry(markers, currentDate);
 
     for (const item of lines) {
-      const isHighlighted = !highlightThread || item.threadId === highlightThread;
+      const isHighlighted = (!highlightThread || item.threadId === highlightThread) &&
+        (!countryThreadIds || countryThreadIds.has(item.threadId));
       const isCurrent = !currentDate || item.date === currentDate;
       const polyline = new window.google.maps.Polyline({
         path: [item.from, item.to],
@@ -198,8 +200,8 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
     }
 
     for (const country of Object.values(grouped)) {
-      const isHighlighted = !highlightThread ||
-        country.topics.some(t => t.threadId === highlightThread);
+      const isHighlighted = (!highlightThread || country.topics.some(t => t.threadId === highlightThread)) &&
+        (!countryThreadIds || country.topics.some(t => countryThreadIds.has(t.threadId)));
       const count = country.count;
       const size = count >= 4 ? 14 : count >= 2 ? 10 : 7;
       const primaryColor = country.topics[0].color;
@@ -266,13 +268,13 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
 
       gMarkersRef.current.push(marker);
     }
-  }, [markers, lines, highlightThread, storyPlay]);
+  }, [markers, lines, highlightThread, storyPlay, countryPlay, countryThreadIds]);
 
   return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />;
 });
 
-function WeeklyFallbackMap({ markers, lines, storyPlay }) {
-  const currentDate = storyPlay?.currentDate;
+function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThreadIds }) {
+  const currentDate = storyPlay?.currentDate || countryPlay?.currentDate;
   const grouped = groupMarkersByCountry(markers, currentDate);
 
   return (
@@ -288,9 +290,10 @@ function WeeklyFallbackMap({ markers, lines, storyPlay }) {
           const x2 = ((item.to.lng + 180) / 360) * 1000;
           const y2 = ((90 - item.to.lat) / 180) * 500;
           const isCurrent = !currentDate || item.date === currentDate;
+          const isHighlighted = !countryThreadIds || countryThreadIds.has(item.threadId);
           return (
             <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke={item.color} strokeWidth={isCurrent ? 2 : 1} strokeOpacity={isCurrent ? 0.6 : 0.15} />
+              stroke={item.color} strokeWidth={isCurrent ? 2 : 1} strokeOpacity={isCurrent && isHighlighted ? 0.6 : 0.15} />
           );
         })}
         {Object.values(grouped).map(country => {
@@ -298,11 +301,12 @@ function WeeklyFallbackMap({ markers, lines, storyPlay }) {
           const y = ((90 - country.lat) / 180) * 500;
           const r = Math.min(4 + country.count * 2, 12);
           const isCurrent = !currentDate || country.hasCurrent;
+          const isHighlighted = !countryThreadIds || country.topics.some(t => countryThreadIds.has(t.threadId));
           return (
             <g key={country.code}>
               <circle cx={x} cy={y} r={isCurrent ? r + 2 : r} fill={country.color}
-                stroke={isCurrent ? country.color : '#fff'} strokeWidth={isCurrent ? 2 : 1.5} opacity={isCurrent ? 1 : 0.25} />
-              {country.count > 1 && isCurrent && (
+                stroke={isCurrent ? country.color : '#fff'} strokeWidth={isCurrent ? 2 : 1.5} opacity={isCurrent && isHighlighted ? 1 : 0.25} />
+              {country.count > 1 && isCurrent && isHighlighted && (
                 <text x={x} y={y + 4} textAnchor="middle" fill="#fff" fontSize="9" fontWeight="bold">
                   {country.count}
                 </text>
@@ -315,7 +319,7 @@ function WeeklyFallbackMap({ markers, lines, storyPlay }) {
   );
 }
 
-function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis }) {
+function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis, onEntryFocus }) {
   const isPlaying = storyPlay?.threadId === thread.threadId;
   const canPlay = thread.dates && thread.dates.length > 1;
   const displayTitle = analysis?.threadTitle || thread.latestTitle;
@@ -332,10 +336,14 @@ function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis }) {
     <div className="wmap-thread-detail">
       <button className="wmap-detail-back" onClick={onBack}>← All threads</button>
       <div className="wmap-detail-header">
-        <div className="wmap-thread-dot" style={{ background: thread.color }} />
         <div className="wmap-detail-title">{displayTitle}</div>
       </div>
       <div className="wmap-detail-meta">
+        {thread.entries[0]?.category && (() => {
+          const cat = thread.entries[0].category.toLowerCase();
+          const c = CATEGORY_BADGE_COLORS[cat];
+          return <span className="story-category-badge" style={{ marginRight: 8, ...(c ? { background: c.bg, color: c.color } : {}) }}>{cat}</span>;
+        })()}
         {thread.articleCount} article{thread.articleCount !== 1 ? 's' : ''} · {thread.dates.length} day{thread.dates.length !== 1 ? 's' : ''} · {thread.regions.slice(0, 3).join(', ')}
       </div>
       <ThreadIntelligence analysis={analysis} />
@@ -348,7 +356,7 @@ function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis }) {
         </button>
       )}
       {analysis ? (
-        <CompactTimeline entries={thread.entries} entryShortTitles={analysis.entryShortTitles} />
+        <CompactTimeline entries={thread.entries} entryShortTitles={analysis.entryShortTitles} onEntryFocus={onEntryFocus} />
       ) : (
         <div className="wmap-detail-entries">
           {entriesByDate.map(([date, entries]) => (
@@ -365,20 +373,54 @@ function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis }) {
   );
 }
 
-function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThread, storyPlay, open, onClose, allRegions, mapRegion, onRegionChange, allThreads, threadAnalyses }) {
+function WmapCountryChips({ countryOptions, activeCountry, onChange, max = 6 }) {
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? countryOptions : countryOptions.slice(0, max);
+  const overflow = countryOptions.length - max;
+  return (
+    <div className="wmap-country-chips">
+      {visible.map(({ country }) => (
+        <button
+          key={country}
+          className={`wmap-country-chip ${activeCountry === country ? 'active' : ''}`}
+          onClick={() => onChange(activeCountry === country ? null : country)}
+        >
+          {country}
+        </button>
+      ))}
+      {!showAll && overflow > 0 && (
+        <button className="wmap-country-chip overflow" onClick={() => setShowAll(true)}>
+          +{overflow}
+        </button>
+      )}
+      {showAll && overflow > 0 && (
+        <button className="wmap-country-chip overflow" onClick={() => setShowAll(false)}>
+          Less
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThread, storyPlay, open, onClose, allRegions, mapRegion, onRegionChange, allThreads, threadAnalyses, onEntryFocus, activeCountry, countryOptions, onCountryChange, countryPlay, countryDates, onStartCountryPlay, onStopCountryPlay, onPauseCountryPlay, onStepCountryPlay }) {
   const [search, setSearch] = useState('');
+  const [collapsedCategories, setCollapsedCategories] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
   const activeThread = highlightThread
     ? (allThreads || threadList).find(t => t.threadId === highlightThread)
     : null;
 
   const visibleThreads = useMemo(() => {
-    if (!search.trim()) return threadList;
+    let threads = threadList;
+    if (activeCountry) threads = threads.filter(t => (t.regions || []).includes(activeCountry));
+    if (countryPlay) threads = threads.filter(t => t.entries.some(e => e.date === countryPlay.currentDate));
+    if (!search.trim()) return threads;
     const q = search.trim().toLowerCase();
-    return threadList.filter(t =>
+    return threads.filter(t =>
       t.latestTitle.toLowerCase().includes(q) ||
       t.regions.some(r => r.toLowerCase().includes(q))
     );
-  }, [threadList, search]);
+  }, [threadList, search, activeCountry, countryPlay]);
 
   return (
     <div className={`wmap-thread-panel ${open ? '' : 'collapsed'}`}>
@@ -394,6 +436,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
             onPlay={onPlayThread}
             storyPlay={storyPlay}
             analysis={threadAnalyses?.[activeThread.threadId]}
+            onEntryFocus={onEntryFocus}
           />
         </>
       ) : (
@@ -418,6 +461,47 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
               </select>
             </div>
           )}
+          {countryOptions.length > 0 && (
+            <div className="wmap-panel-filter">
+              <WmapCountryChips
+                countryOptions={countryOptions}
+                activeCountry={activeCountry}
+                onChange={onCountryChange}
+                max={6}
+              />
+              {!activeCountry && (
+                <div className="wmap-country-hint">Select a country to filter threads and replay its news day by day</div>
+              )}
+            </div>
+          )}
+          {activeCountry && countryDates.length > 0 && (
+            <div className="wmap-country-replay">
+              {countryPlay ? (
+                <>
+                  <div className="wmap-country-replay-header">
+                    <span className="wmap-country-replay-country">{countryPlay.country}</span>
+                    <span className="wmap-country-replay-date">{formatDateLabel(countryPlay.currentDate)}</span>
+                    <span className="wmap-country-replay-progress-text">Day {countryPlay.dateIdx + 1} of {countryDates.length}</span>
+                  </div>
+                  <div className="wmap-country-replay-bar">
+                    <div className="wmap-country-replay-fill" style={{ width: `${((countryPlay.dateIdx + 1) / countryDates.length) * 100}%` }} />
+                  </div>
+                  <div className="wmap-country-replay-controls">
+                    <button className="wmap-replay-btn" onClick={() => onStepCountryPlay(-1)} disabled={countryPlay.dateIdx === 0}>&#9664;</button>
+                    <button className="wmap-replay-btn pause" onClick={onPauseCountryPlay}>
+                      {countryPlay.paused || countryPlay.dateIdx >= countryDates.length - 1 ? '▶' : '❚❚'}
+                    </button>
+                    <button className="wmap-replay-btn" onClick={() => onStepCountryPlay(1)} disabled={countryPlay.dateIdx >= countryDates.length - 1}>&#9654;</button>
+                    <button className="wmap-replay-btn stop" onClick={onStopCountryPlay}>✕</button>
+                  </div>
+                </>
+              ) : (
+                <button className="wmap-country-replay-start" onClick={onStartCountryPlay}>
+                  ▶ Replay {activeCountry} — {countryDates.length} day{countryDates.length !== 1 ? 's' : ''}
+                </button>
+              )}
+            </div>
+          )}
           {threadList.length > 5 && (
             <div className="wmap-panel-search">
               <input
@@ -433,41 +517,82 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
             {visibleThreads.length === 0 && (
               <div className="wmap-thread-empty">{search ? 'No matching threads' : 'No threads in this region'}</div>
             )}
-            {visibleThreads.map(t => {
-              const isPlaying = storyPlay?.threadId === t.threadId;
-              const canPlay = t.dates && t.dates.length > 1;
-              return (
-                <div
-                  key={t.threadId}
-                  className="wmap-thread-item"
-                >
-                  <div className="wmap-thread-dot" style={{ background: t.color }} />
-                  <div
-                    className="wmap-thread-info"
-                    onClick={() => onThreadClick(t.threadId)}
-                  >
-                    <div className="wmap-thread-title">{t.latestTitle}</div>
-                    <div className="wmap-thread-meta">
-                      {t.articleCount} article{t.articleCount !== 1 ? 's' : ''} · {t.dates.length}d · {t.regions.slice(0, 3).join(', ')}
-                    </div>
-                    {canPlay && (
-                      <div className="wmap-thread-badges">
-                        <span className="wmap-thread-badge multi-day">{t.dates.length} days</span>
-                      </div>
+            {(() => {
+              const ORDER = ['politics', 'economy', 'conflict', 'technology', 'environment', 'health', 'society', 'culture', 'science', 'other'];
+              const groupMap = {};
+              for (const t of visibleThreads) {
+                const cat = t.entries[0]?.category?.toLowerCase() || 'other';
+                const key = ORDER.includes(cat) ? cat : 'other';
+                if (!groupMap[key]) groupMap[key] = [];
+                groupMap[key].push(t);
+              }
+              const groups = ORDER.filter(k => groupMap[k]).map(k => ({ category: k, threads: groupMap[k] }));
+              return groups.map(({ category, threads }) => {
+                const isCollapsed = collapsedCategories.has(category);
+                const c = CATEGORY_BADGE_COLORS[category];
+                const toggleCollapse = () => setCollapsedCategories(prev => {
+                  const next = new Set(prev);
+                  next.has(category) ? next.delete(category) : next.add(category);
+                  return next;
+                });
+                const showAll = expandedGroups.has(category);
+                const visibleInGroup = showAll ? threads : threads.slice(0, 5);
+                const hiddenCount = threads.length - visibleInGroup.length;
+                return (
+                  <div key={category} className="wmap-category-group">
+                    <button
+                      className="wmap-category-group-header"
+                      onClick={toggleCollapse}
+                      style={c ? { borderLeftColor: c.bg } : {}}
+                    >
+                      <span className="wmap-category-group-name" style={c ? { color: c.color } : {}}>{category}</span>
+                      <span className="wmap-category-group-count">{threads.length}</span>
+                      <span className={`wmap-category-group-chevron ${isCollapsed ? 'collapsed' : ''}`}>›</span>
+                    </button>
+                    {!isCollapsed && (
+                      <>
+                        {visibleInGroup.map(t => {
+                          const isPlaying = storyPlay?.threadId === t.threadId;
+                          const canPlay = t.dates && t.dates.length > 1;
+                          return (
+                            <div key={t.threadId} className="wmap-thread-item">
+                              <div className="wmap-thread-info" onClick={() => onThreadClick(t.threadId)}>
+                                <div className="wmap-thread-title">{t.latestTitle}</div>
+                                <div className="wmap-thread-meta">
+                                  {t.articleCount} article{t.articleCount !== 1 ? 's' : ''} · {t.dates.length}d · {t.regions.slice(0, 3).join(', ')}
+                                </div>
+                                {canPlay && (
+                                  <div className="wmap-thread-badges">
+                                    <span className="wmap-thread-badge multi-day">{t.dates.length} days</span>
+                                  </div>
+                                )}
+                              </div>
+                              {canPlay && (
+                                <button
+                                  className={`wmap-thread-play ${isPlaying ? 'playing' : ''}`}
+                                  onClick={(e) => { e.stopPropagation(); onPlayThread(isPlaying ? null : t.threadId); }}
+                                  title={isPlaying ? 'Stop playback' : 'Play story evolution'}
+                                >
+                                  {isPlaying ? '■' : '▶'}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {hiddenCount > 0 && (
+                          <button
+                            className="wmap-category-show-more"
+                            onClick={() => setExpandedGroups(prev => { const n = new Set(prev); n.add(category); return n; })}
+                          >
+                            Show {hiddenCount} more
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
-                  {canPlay && (
-                    <button
-                      className={`wmap-thread-play ${isPlaying ? 'playing' : ''}`}
-                      onClick={(e) => { e.stopPropagation(); onPlayThread(isPlaying ? null : t.threadId); }}
-                      title={isPlaying ? 'Stop playback' : 'Play story evolution'}
-                    >
-                      {isPlaying ? '■' : '▶'}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </>
       )}
@@ -605,6 +730,8 @@ export default function WeeklyMap({ embedded = false }) {
     return searchParams.get('region') || null;
   });
   const [storyPlay, setStoryPlay] = useState(null);
+  const [countryPlay, setCountryPlay] = useState(null);
+  const [activeCountry, setActiveCountry] = useState(null);
   const playRef = useRef(null);
   const googleMapRef = useRef(null);
 
@@ -629,6 +756,32 @@ export default function WeeklyMap({ embedded = false }) {
   );
   const { analyses: threadAnalyses } = useThreadAnalyses(qualifyingThreadIds);
 
+  const countryThreadIds = useMemo(() => {
+    if (!activeCountry) return null;
+    return new Set(allThreads.filter(t => (t.regions || []).includes(activeCountry)).map(t => t.threadId));
+  }, [activeCountry, allThreads]);
+
+  const countryDates = useMemo(() => {
+    if (!countryThreadIds) return [];
+    const dates = new Set();
+    for (const m of allMarkers) {
+      if (countryThreadIds.has(m.threadId)) dates.add(m.date);
+    }
+    return [...dates].sort();
+  }, [countryThreadIds, allMarkers]);
+
+  const countryOptions = useMemo(() => {
+    const counts = {};
+    for (const t of allThreads) {
+      for (const r of (t.regions || [])) {
+        counts[r] = (counts[r] || 0) + t.articleCount;
+      }
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([country, count]) => ({ country, count }));
+  }, [allThreads]);
+
   const { markers: filteredMarkers, lines: filteredLines, threadList } = useMemo(() => {
     if (!mapRegion) return { markers: allMarkers, lines: allLines, threadList: allThreads };
     const inRegion = (code) => getRegionFromCountryCode(code) === mapRegion;
@@ -640,13 +793,22 @@ export default function WeeklyMap({ embedded = false }) {
   }, [allMarkers, allLines, allThreads, mapRegion]);
 
   const { markers, lines } = useMemo(() => {
-    if (!storyPlay) return { markers: filteredMarkers, lines: filteredLines };
-    const { threadId, currentDate } = storyPlay;
-    return {
-      markers: filteredMarkers.filter(m => m.threadId === threadId && m.date <= currentDate),
-      lines: filteredLines.filter(l => l.threadId === threadId && l.date <= currentDate),
-    };
-  }, [filteredMarkers, filteredLines, storyPlay]);
+    if (storyPlay) {
+      const { threadId, currentDate } = storyPlay;
+      return {
+        markers: filteredMarkers.filter(m => m.threadId === threadId && m.date <= currentDate),
+        lines: filteredLines.filter(l => l.threadId === threadId && l.date <= currentDate),
+      };
+    }
+    if (countryPlay) {
+      const { currentDate } = countryPlay;
+      return {
+        markers: filteredMarkers.filter(m => countryThreadIds?.has(m.threadId) && m.date <= currentDate),
+        lines: filteredLines.filter(l => countryThreadIds?.has(l.threadId) && l.date <= currentDate),
+      };
+    }
+    return { markers: filteredMarkers, lines: filteredLines };
+  }, [filteredMarkers, filteredLines, storyPlay, countryPlay, countryThreadIds]);
 
   const playingThread = useMemo(() => {
     if (!storyPlay) return null;
@@ -658,6 +820,10 @@ export default function WeeklyMap({ embedded = false }) {
       setStoryPlay(null);
     }
   }, [threadList, storyPlay]);
+
+  useEffect(() => {
+    setCountryPlay(null);
+  }, [activeCountry]);
 
   useEffect(() => {
     if (!storyPlay || !playingThread || storyPlay.paused) return;
@@ -673,6 +839,22 @@ export default function WeeklyMap({ embedded = false }) {
     }, 1500);
     return () => clearTimeout(playRef.current);
   }, [storyPlay, playingThread]);
+
+  useEffect(() => {
+    if (!countryPlay || countryPlay.paused) return;
+    if (countryPlay.dateIdx >= countryDates.length - 1) {
+      setCountryPlay(prev => prev ? { ...prev, paused: true } : null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setCountryPlay(prev => {
+        if (!prev) return null;
+        const nextIdx = prev.dateIdx + 1;
+        return { ...prev, dateIdx: nextIdx, currentDate: countryDates[nextIdx] };
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [countryPlay, countryDates]);
 
   const zoomToThread = useCallback((threadId) => {
     if (!googleMapRef.current || !threadId) {
@@ -691,15 +873,64 @@ export default function WeeklyMap({ embedded = false }) {
     googleMapRef.current.fitBounds(unique);
   }, [allMarkers]);
 
+  function handleEntryFocus(entry) {
+    const thread = allThreads.find(t => t.threadId === highlightThread);
+    if (!thread) return;
+    const dateIdx = thread.dates.indexOf(entry.date);
+    if (dateIdx === -1) return;
+    setStoryPlay({ threadId: thread.threadId, dateIdx, currentDate: entry.date, paused: true });
+    const entryMarkers = allMarkers.filter(m => m.threadId === thread.threadId && m.date === entry.date);
+    if (entryMarkers.length > 0 && googleMapRef.current) {
+      googleMapRef.current.fitBounds(entryMarkers.map(m => ({ lat: m.lat, lng: m.lng })));
+    }
+  }
+
+  function handleStartCountryPlay() {
+    if (!activeCountry || countryDates.length === 0) return;
+    setStoryPlay(null);
+    setHighlightThread(null);
+    setCountryPlay({ country: activeCountry, dateIdx: 0, currentDate: countryDates[0], paused: false });
+    const countryMarkers = allMarkers.filter(m => countryThreadIds?.has(m.threadId));
+    if (countryMarkers.length > 0 && googleMapRef.current) {
+      const unique = [...new Map(countryMarkers.map(m => [`${m.lat},${m.lng}`, { lat: m.lat, lng: m.lng }])).values()];
+      googleMapRef.current.fitBounds(unique);
+    }
+  }
+
+  function handleStopCountryPlay() {
+    setCountryPlay(null);
+  }
+
+  function handlePauseCountryPlay() {
+    if (!countryPlay) return;
+    const isLast = countryPlay.dateIdx >= countryDates.length - 1;
+    if (isLast) {
+      setCountryPlay(prev => prev ? { ...prev, dateIdx: 0, currentDate: countryDates[0], paused: false } : null);
+    } else {
+      setCountryPlay(prev => prev ? { ...prev, paused: !prev.paused } : null);
+    }
+  }
+
+  function handleStepCountryPlay(dir) {
+    setCountryPlay(prev => {
+      if (!prev) return null;
+      const nextIdx = prev.dateIdx + dir;
+      if (nextIdx < 0 || nextIdx >= countryDates.length) return prev;
+      return { ...prev, dateIdx: nextIdx, currentDate: countryDates[nextIdx], paused: true };
+    });
+  }
+
   function handleMarkerThreadSelect(threadId) {
     setHighlightThread(threadId);
     setPanelOpen(true);
     if (storyPlay) setStoryPlay(null);
+    if (countryPlay) setCountryPlay(null);
   }
 
   function handleThreadClick(threadId) {
     setHighlightThread(threadId);
     if (storyPlay) setStoryPlay(null);
+    if (countryPlay) setCountryPlay(null);
     zoomToThread(threadId);
   }
 
@@ -782,7 +1013,7 @@ export default function WeeklyMap({ embedded = false }) {
 
   const render = (status) => {
     if (status === 'FAILURE' || !googleApiKey) {
-      return <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} />;
+      return <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} countryPlay={countryPlay} countryThreadIds={countryThreadIds} />;
     }
     if (status === 'LOADING') {
       return <div className="wmap-loading">Loading map...</div>;
@@ -794,7 +1025,9 @@ export default function WeeklyMap({ embedded = false }) {
         lines={lines}
         highlightThread={highlightThread}
         storyPlay={storyPlay}
+        countryPlay={countryPlay}
         onThreadSelect={handleMarkerThreadSelect}
+        countryThreadIds={countryThreadIds}
       />
     );
   };
@@ -835,6 +1068,16 @@ export default function WeeklyMap({ embedded = false }) {
             mapRegion={mapRegion}
             onRegionChange={(r) => { setMapRegion(r); setHighlightThread(null); }}
             threadAnalyses={threadAnalyses}
+            onEntryFocus={handleEntryFocus}
+            activeCountry={activeCountry}
+            countryOptions={countryOptions}
+            onCountryChange={setActiveCountry}
+            countryPlay={countryPlay}
+            countryDates={countryDates}
+            onStartCountryPlay={handleStartCountryPlay}
+            onStopCountryPlay={handleStopCountryPlay}
+            onPauseCountryPlay={handlePauseCountryPlay}
+            onStepCountryPlay={handleStepCountryPlay}
           />
 
           {isMobile && panelOpen && (
@@ -851,17 +1094,9 @@ export default function WeeklyMap({ embedded = false }) {
             {googleApiKey ? (
               <Wrapper apiKey={googleApiKey} render={render} />
             ) : (
-              <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} />
+              <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} countryPlay={countryPlay} countryThreadIds={countryThreadIds} />
             )}
 
-            <StoryPlaybackOverlay
-              storyPlay={storyPlay}
-              thread={playingThread}
-              markers={markers}
-              onStop={handleStopPlay}
-              onPause={handlePause}
-              onStep={handleStep}
-            />
 
             <MapLegend />
           </div>

@@ -39,8 +39,9 @@ export default function MiniMap({ regions, color = '#3b82f6', static: isStatic =
       if (p.lng > maxLng) maxLng = p.lng;
     }
 
-    const latPad = Math.max((maxLat - minLat) * 0.4, 15);
-    const lngPad = Math.max((maxLng - minLng) * 0.4, 25);
+    const isSingle = pts.length === 1;
+    const latPad = Math.max((maxLat - minLat) * 0.4, isSingle ? 30 : 15);
+    const lngPad = Math.max((maxLng - minLng) * 0.4, isSingle ? 45 : 25);
 
     return {
       points: pts,

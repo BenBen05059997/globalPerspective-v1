@@ -26,7 +26,7 @@ const REGION_COLORS = {
   World:         { bg: '#f3f4f6', border: '#d1d5db', text: '#6b7280' },
 };
 
-const CATEGORY_BADGE_COLORS = {
+export const CATEGORY_BADGE_COLORS = {
   conflict:   { bg: '#fee2e2', color: '#b91c1c' },
   military:   { bg: '#fee2e2', color: '#b91c1c' },
   disaster:   { bg: '#ffedd5', color: '#c2410c' },
@@ -191,6 +191,12 @@ function FeaturedSection({ threads, threadAnalyses }) {
           const fCategory = thread.entries[0]?.category?.toLowerCase();
           const fCatColors = CATEGORY_BADGE_COLORS[fCategory];
           const fActivity = getActivityStatus(thread.dateRange.to);
+          const hook = (() => {
+            const s = thread.entries[0]?.ai?.summary;
+            if (!s) return null;
+            const sentence = s.split(/(?<=[.!?])\s/)[0] || s;
+            return sentence.length > 110 ? sentence.slice(0, 107) + '…' : sentence;
+          })();
           return (
             <div key={thread.threadId} className="featured-card" onClick={() => setModalThread(thread)}>
               <div className="featured-card-top">
@@ -215,6 +221,7 @@ function FeaturedSection({ threads, threadAnalyses }) {
                   ))}
                 </div>
               )}
+              {hook && <div className="featured-card-hook">{hook}</div>}
               <div className="featured-card-cta">Read full arc →</div>
             </div>
           );
@@ -270,6 +277,7 @@ function StoryCard({ thread, analysis }) {
   const category = thread.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
   const activity = getActivityStatus(thread.dateRange.to);
+  const watchCount = analysis?.watchQuestions?.length || 0;
 
   return (
     <div className={`story-card ${expanded ? 'expanded' : ''}`}>
@@ -299,12 +307,17 @@ function StoryCard({ thread, analysis }) {
             )}
           </div>
           {isMulti && <ArcDots entries={thread.entries} />}
+          {!expanded && watchCount > 0 && (
+            <div className="story-card-watch-hint" onClick={() => setExpanded(true)}>
+              {watchCount} question{watchCount !== 1 ? 's' : ''} to watch →
+            </div>
+          )}
         </div>
         <button
           className={`story-expand-btn ${expanded ? 'open' : ''}`}
           onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? '▲' : '▼ Analyze'}
+          {expanded ? '▲' : '▼ Read arc'}
         </button>
       </div>
 
@@ -390,9 +403,40 @@ function StandaloneSection({ entries }) {
   );
 }
 
+// ─── Country Chips ────────────────────────────────────────────────────────────
+
+function CountryChips({ countryOptions, activeCountry, onChange, max = 8 }) {
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? countryOptions : countryOptions.slice(0, max);
+  const overflow = countryOptions.length - max;
+  return (
+    <div className="filter-country-chips">
+      {visible.map(({ country }) => (
+        <button
+          key={country}
+          className={`filter-country-chip ${activeCountry === country ? 'active' : ''}`}
+          onClick={() => onChange(activeCountry === country ? null : country)}
+        >
+          {country}
+        </button>
+      ))}
+      {!showAll && overflow > 0 && (
+        <button className="filter-country-chip overflow" onClick={() => setShowAll(true)}>
+          +{overflow} more
+        </button>
+      )}
+      {showAll && overflow > 0 && (
+        <button className="filter-country-chip overflow" onClick={() => setShowAll(false)}>
+          Show less
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Filter Controls ──────────────────────────────────────────────────────────
 
-function FilterControls({ regionGroups, activeRegion, setActiveRegion, timeRange, setTimeRange, sortBy, setSortBy, availableDays, searchQuery, setSearchQuery }) {
+function FilterControls({ regionGroups, activeRegion, setActiveRegion, timeRange, setTimeRange, sortBy, setSortBy, availableDays, searchQuery, setSearchQuery, countryOptions, activeCountry, setActiveCountry }) {
   return (
     <div className="filter-controls">
       <div className="filter-top-row">
@@ -403,26 +447,37 @@ function FilterControls({ regionGroups, activeRegion, setActiveRegion, timeRange
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
         />
-        <div className="filter-period-group">
-          {[
-            { value: '3d', label: '3d' },
-            { value: '7d', label: '7d' },
-            { value: 'all', label: `${availableDays}d` },
-          ].map(opt => (
-            <button
-              key={opt.value}
-              className={`filter-period-btn ${timeRange === opt.value ? 'active' : ''}`}
-              onClick={() => setTimeRange(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
+        <div className="filter-period-wrapper">
+          <span className="filter-period-label">Show</span>
+          <div className="filter-period-group">
+            {[
+              { value: '3d', label: '3 days' },
+              { value: '7d', label: '7 days' },
+              ...(availableDays > 7 ? [{ value: 'all', label: `All ${availableDays} days` }] : []),
+            ].map(opt => (
+              <button
+                key={opt.value}
+                className={`filter-period-btn ${timeRange === opt.value ? 'active' : ''}`}
+                onClick={() => setTimeRange(opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
         <select className="filter-sort" value={sortBy} onChange={e => setSortBy(e.target.value)}>
           <option value="articles">Most covered</option>
           <option value="recent">Most recent</option>
           <option value="rising">Rising first</option>
         </select>
+        {countryOptions.length > 0 && (
+          <CountryChips
+            countryOptions={countryOptions}
+            activeCountry={activeCountry}
+            onChange={setActiveCountry}
+            max={8}
+          />
+        )}
       </div>
       {regionGroups.length > 1 && (
         <div className="filter-region-row">
@@ -454,16 +509,21 @@ export default function WeeklyPage() {
   const { user, loading: authLoading } = useAuth();
   const [viewMode, setViewMode] = useState('list');
   const [activeRegion, setActiveRegion] = useState(null);
+  const [activeCountry, setActiveCountry] = useState(null);
   const [timeRange, setTimeRange] = useState('all');
   const [sortBy, setSortBy] = useState('articles');
   const [searchQuery, setSearchQuery] = useState('');
   const [showIntro, setShowIntro] = useState(
     () => !localStorage.getItem('gp_arc_intro_dismissed')
   );
+  const [collapsedCategories, setCollapsedCategories] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
   function dismissIntro() {
     localStorage.setItem('gp_arc_intro_dismissed', '1');
     setShowIntro(false);
   }
+
+  useEffect(() => setActiveCountry(null), [activeRegion]);
 
   const { dayMap, sortedDates: allDates, loading, error, tier } = useWeeklyArchive();
 
@@ -521,6 +581,18 @@ export default function WeeklyPage() {
       });
   }, [sortedThreads, standalone]);
 
+  const countryOptions = useMemo(() => {
+    const counts = {};
+    for (const t of sortedThreads) {
+      for (const r of (t.regions || [])) {
+        counts[r] = (counts[r] || 0) + t.articleCount;
+      }
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([country, count]) => ({ country, count }));
+  }, [sortedThreads]);
+
   // Flat filtered feed
   const { flatThreads, flatStandalone } = useMemo(() => {
     let filteredThreads = activeRegion
@@ -543,8 +615,12 @@ export default function WeeklyPage() {
         (e.regions || []).some(r => r.toLowerCase().includes(q))
       );
     }
+    if (activeCountry) {
+      filteredThreads = filteredThreads.filter(t => (t.regions || []).includes(activeCountry));
+      filteredStandalone = filteredStandalone.filter(e => (e.regions || []).includes(activeCountry));
+    }
     return { flatThreads: filteredThreads, flatStandalone: filteredStandalone };
-  }, [sortedThreads, standalone, activeRegion, searchQuery]);
+  }, [sortedThreads, standalone, activeRegion, searchQuery, activeCountry]);
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
@@ -584,7 +660,6 @@ export default function WeeklyPage() {
                 <button className={`weekly-toggle-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}>List</button>
                 <button className={`weekly-toggle-btn ${viewMode === 'map' ? 'active' : ''}`} onClick={() => setViewMode('map')}>Map</button>
               </div>
-              <Link to="/weekly-map" className="weekly-fullmap-link">Full Map →</Link>
             </>
           )}
           {tier && <span className={`weekly-tier-badge ${tier}`}>{tier}</span>}
@@ -621,18 +696,69 @@ export default function WeeklyPage() {
             availableDays={allDates.length}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
+            countryOptions={countryOptions}
+            activeCountry={activeCountry}
+            setActiveCountry={setActiveCountry}
           />
           <div className="weekly-feed">
-            {flatThreads.map(thread => (
-              <StoryCard key={thread.threadId} thread={thread} analysis={threadAnalyses?.[thread.threadId]} />
-            ))}
-            {flatStandalone.length > 0 && (
-              <StandaloneSection entries={flatStandalone} />
-            )}
             {flatThreads.length === 0 && flatStandalone.length === 0 && (
               <div className="weekly-empty-state">
                 <p>No stories match your current filters.</p>
               </div>
+            )}
+            {(() => {
+              const ORDER = ['politics', 'economy', 'conflict', 'technology', 'environment', 'health', 'society', 'culture', 'science', 'other'];
+              const groupMap = {};
+              for (const t of flatThreads) {
+                const cat = t.entries[0]?.category?.toLowerCase() || 'other';
+                const key = ORDER.includes(cat) ? cat : 'other';
+                if (!groupMap[key]) groupMap[key] = [];
+                groupMap[key].push(t);
+              }
+              const groups = ORDER.filter(k => groupMap[k]).map(k => ({ category: k, threads: groupMap[k] }));
+              return groups.map(({ category, threads }) => {
+                const isCollapsed = collapsedCategories.has(category);
+                const c = CATEGORY_BADGE_COLORS[category];
+                const toggleCollapse = () => setCollapsedCategories(prev => {
+                  const next = new Set(prev);
+                  next.has(category) ? next.delete(category) : next.add(category);
+                  return next;
+                });
+                const showAll = expandedGroups.has(category);
+                const visibleThreads = showAll ? threads : threads.slice(0, 5);
+                const hiddenCount = threads.length - visibleThreads.length;
+                return (
+                  <div key={category} className="weekly-category-group">
+                    <button
+                      className="weekly-category-group-header"
+                      onClick={toggleCollapse}
+                      style={c ? { borderLeftColor: c.bg } : {}}
+                    >
+                      <span className="weekly-category-group-name" style={c ? { color: c.color } : {}}>{category}</span>
+                      <span className="weekly-category-group-count">{threads.length}</span>
+                      <span className={`weekly-category-group-chevron ${isCollapsed ? 'collapsed' : ''}`}>›</span>
+                    </button>
+                    {!isCollapsed && (
+                      <>
+                        {visibleThreads.map(thread => (
+                          <StoryCard key={thread.threadId} thread={thread} analysis={threadAnalyses?.[thread.threadId]} />
+                        ))}
+                        {hiddenCount > 0 && (
+                          <button
+                            className="weekly-category-show-more"
+                            onClick={() => setExpandedGroups(prev => { const n = new Set(prev); n.add(category); return n; })}
+                          >
+                            Show {hiddenCount} more
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              });
+            })()}
+            {flatStandalone.length > 0 && (
+              <StandaloneSection entries={flatStandalone} />
             )}
           </div>
         </>

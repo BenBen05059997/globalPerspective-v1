@@ -1,12 +1,21 @@
 import { useState } from 'react';
+import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
 
 export default function StoryEntryCard({ entry, compact }) {
   const [activeTab, setActiveTab] = useState(null);
   const hasAi = entry.ai?.summary || entry.ai?.trace_cause || entry.ai?.prediction;
   const aiKey = activeTab === 'trace' ? 'trace_cause' : activeTab;
 
+  const category = entry.category?.toLowerCase();
+  const catColors = CATEGORY_BADGE_COLORS[category];
+
   return (
     <div className={`story-entry-card ${compact ? 'compact' : ''}`}>
+      {category && (
+        <span className="story-category-badge" style={{ marginBottom: 4, display: 'inline-block', ...(catColors ? { background: catColors.bg, color: catColors.color } : {}) }}>
+          {category}
+        </span>
+      )}
       <div className="story-entry-title">{entry.title}</div>
       {entry.sources && entry.sources.length > 0 && (
         <div className="story-entry-sources">

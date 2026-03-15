@@ -1452,10 +1452,6 @@
   font-weight: 600;
   color: var(--text-primary, #111827);
   line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .featured-card-regions {
@@ -1589,6 +1585,21 @@
 
 .filter-search::placeholder {
   color: var(--text-muted, #9ca3af);
+}
+
+.filter-period-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-period-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .filter-period-group {
@@ -1761,6 +1772,89 @@
   gap: 10px;
 }
 
+.weekly-category-group {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.weekly-category-group-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 16px;
+  background: #fafafa;
+  border: none;
+  border-left: 4px solid #e5e7eb;
+  cursor: pointer;
+  text-align: left;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.weekly-category-group-header:hover {
+  background: #f3f4f6;
+}
+
+.weekly-category-group-name {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6b7280;
+}
+
+.weekly-category-group-count {
+  font-size: 11px;
+  color: #9ca3af;
+  background: #e9e9e9;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-weight: 600;
+}
+
+.weekly-category-group-chevron {
+  font-size: 14px;
+  color: #9ca3af;
+  transform: rotate(90deg);
+  display: inline-block;
+  transition: transform 0.2s;
+  line-height: 1;
+}
+
+.weekly-category-group-chevron.collapsed {
+  transform: rotate(0deg);
+}
+
+.weekly-category-group > .story-card {
+  border-radius: 0;
+  border-top: 1px solid #f0f0f0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+.weekly-category-show-more {
+  display: block;
+  width: 100%;
+  padding: 9px 16px;
+  background: #f9fafb;
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.weekly-category-show-more:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
 /* ===== ARC DOT DATE LABELS ===== */
 .arc-dot-date-label {
   font-size: 10px;
@@ -1877,4 +1971,68 @@
     font-size: 9px;
     padding: 0 3px;
   }
+}
+
+.featured-card-hook {
+  font-size: 12px;
+  color: var(--text-muted, #6b7280);
+  line-height: 1.5;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+.story-card-watch-hint {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #d97706;
+  cursor: pointer;
+  gap: 2px;
+}
+
+.story-card-watch-hint:hover {
+  color: #b45309;
+}
+
+.filter-country-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 6px;
+}
+
+.filter-country-chip {
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1.5px solid var(--border-color, #e5e7eb);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-secondary, #374151);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.filter-country-chip:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.filter-country-chip.active {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+.filter-country-chip.overflow {
+  color: var(--text-muted, #9ca3af);
+  border-style: dashed;
+}
+
+.filter-country-chip.overflow:hover {
+  color: var(--text-secondary, #374151);
+  background: #f3f4f6;
 }

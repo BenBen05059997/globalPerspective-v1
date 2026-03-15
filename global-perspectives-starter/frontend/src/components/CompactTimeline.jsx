@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { formatDateLabel } from '../utils/dateUtils';
 import StoryEntryCard from './StoryEntryCard';
 
-export default function CompactTimeline({ entries, entryShortTitles }) {
+export default function CompactTimeline({ entries, entryShortTitles, onEntryFocus }) {
   const [expandedIdx, setExpandedIdx] = useState(null);
 
   const shortTitleMap = {};
@@ -27,7 +27,7 @@ export default function CompactTimeline({ entries, entryShortTitles }) {
             <div className="compact-timeline-content">
               <div
                 className="compact-timeline-header"
-                onClick={() => setExpandedIdx(isExpanded ? null : i)}
+                onClick={() => { setExpandedIdx(isExpanded ? null : i); onEntryFocus?.(entry); }}
               >
                 <span className="compact-timeline-date">{formatDateLabel(entry.date)}</span>
                 <span className="compact-timeline-title">{shortTitle}</span>

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import SummaryDisplay from './SummaryDisplay';
 
@@ -11,12 +12,78 @@ import { useTodayArchive } from '../hooks/useTodayArchive';
 import graphqlService from '../utils/graphqlService';
 import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import { useError } from '../contexts/ErrorContext';
+import { useAuth } from '../contexts/AuthContext';
 import './AIComponents.css'; // Import new premium styles
+
+function FreeGate({ lockedCount, lockedRegions }) {
+  return (
+    <div style={{ position: 'relative', marginTop: '0.5rem', minHeight: 280 }}>
+      {/* Blurred preview of locked content */}
+      <div style={{ filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.55 }}>
+        {lockedRegions.slice(0, 3).map(([region, regionTopics]) => (
+          <div key={region} className="card" style={{ marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem', borderBottom: '2px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>{region}</h2>
+              <span style={{ marginLeft: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                {regionTopics.length} topic{regionTopics.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {regionTopics.slice(0, 2).map((t, i) => (
+                <li key={i} style={{ padding: '0.75rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                  <strong style={{ fontSize: '1.1rem' }}>{t.title}</strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA overlay */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.85) 25%, rgba(255,255,255,0.98) 50%)',
+        padding: '3rem 1rem 2rem',
+        textAlign: 'center', gap: '0.75rem',
+      }}>
+        <div style={{ fontSize: '2rem' }}>🌍</div>
+        <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
+          {lockedCount} more topic{lockedCount !== 1 ? 's' : ''} today
+        </h2>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: 340, margin: 0, lineHeight: 1.5 }}>
+          Sign in free to read all of today's global topics, organized by region. Members also get 7-day narrative analysis and Thread Intelligence.
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
+          <Link to="/signin" style={{
+            background: '#111827', color: '#fff',
+            padding: '0.6rem 1.5rem', borderRadius: 8,
+            fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
+          }}>
+            Sign in free →
+          </Link>
+          <Link to="/pricing" style={{
+            background: 'var(--bg-secondary, #f3f4f6)',
+            border: '1.5px solid var(--border-color, #e5e7eb)',
+            color: 'var(--text-primary)',
+            padding: '0.6rem 1.5rem', borderRadius: 8,
+            fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
+          }}>
+            See Member plans
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, generatedDate, hasNewData } = useGeminiTopics();
   const { entries: archiveEntries } = useTodayArchive();
   const { showError } = useError();
+  const { user, loading: authLoading } = useAuth();
+  const showGate = !authLoading && !user;
 
   // Filter archive to only show topics NOT currently on the main page
   const filteredArchiveEntries = React.useMemo(() => {
@@ -32,6 +99,16 @@ function Home() {
   const categorizedTopics = React.useMemo(() => {
     return categorizeTopicsByRegion(topics);
   }, [topics]);
+
+  const sortedRegions = React.useMemo(() =>
+    Object.entries(categorizedTopics)
+      .filter(([, rt]) => rt.length > 0)
+      .sort((a, b) => {
+        if (a[0] === 'World') return 1;
+        if (b[0] === 'World') return -1;
+        return b[1].length - a[1].length;
+      }),
+  [categorizedTopics]);
 
   // Local state maps keyed by topicId
   const [summaries, setSummaries] = useState({});
@@ -473,14 +550,11 @@ function Home() {
 
       {!loading && topics && topics.length > 0 && (
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          {Object.entries(categorizedTopics)
-            .filter(([, regionTopics]) => regionTopics.length > 0)
-            .sort((a, b) => {
-              if (a[0] === 'World') return 1;
-              if (b[0] === 'World') return -1;
-              return b[1].length - a[1].length;
-            })
-            .map(([region, regionTopics]) => (
+          {sortedRegions.map(([region, regionTopics], regionIdx) => {
+              // Gate: signed-out users only see first topic of first region
+              if (showGate && regionIdx > 0) return null;
+              const topicsToShow = showGate ? regionTopics.slice(0, 1) : regionTopics;
+              return (
               <div key={region} className="card" style={{ marginBottom: '2rem' }}>
                 <div style={{
                   display: 'flex',
@@ -502,7 +576,7 @@ function Home() {
                   </span>
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {regionTopics.map((t, idx) => {
+                  {topicsToShow.map((t, idx) => {
                     const globalIdx = topics.indexOf(t);
                     const topicId = getTopicId(t, globalIdx);
                     return (
@@ -513,6 +587,21 @@ function Home() {
                             <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                               [{t.category}]
                             </span>
+                          )}
+                          {t.threadId && (
+                            <Link
+                              to="/weekly"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 3,
+                                fontSize: '0.75rem', fontWeight: 600,
+                                color: '#3b82f6', textDecoration: 'none',
+                                marginLeft: '0.5rem',
+                                border: '1px solid #bfdbfe', borderRadius: 4,
+                                padding: '1px 7px', background: '#eff6ff',
+                              }}
+                            >
+                              Ongoing story →
+                            </Link>
                           )}
                         </div>
 
@@ -812,7 +901,16 @@ function Home() {
                   })}
                 </ul>
               </div>
-          ))}
+              );
+            })}
+
+          {/* Freemium gate — shown after first topic for signed-out users */}
+          {showGate && topics.length > 1 && (() => {
+            const lockedRegions = sortedRegions.map(([r, rt], i) =>
+              i === 0 ? [r, rt.slice(1)] : [r, rt]
+            ).filter(([, rt]) => rt.length > 0);
+            return <FreeGate lockedCount={topics.length - 1} lockedRegions={lockedRegions} />;
+          })()}
         </div>
       )}
 

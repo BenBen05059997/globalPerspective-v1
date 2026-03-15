@@ -38,6 +38,7 @@ export function useGeminiTopics() {
 
     // Fallback to network fetch
     setLoading(true);
+    window.dispatchEvent(new CustomEvent('gp-loading-start'));
     try {
       // Explicitly request 10 topics from the service
       const data = await graphqlService.getGeminiTopics(13);
@@ -66,6 +67,7 @@ export function useGeminiTopics() {
       }
     } finally {
       setLoading(false);
+      window.dispatchEvent(new CustomEvent('gp-loading-end'));
     }
   }, []);
 

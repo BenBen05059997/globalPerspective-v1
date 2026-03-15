@@ -35,3 +35,5 @@ amplify/**/*.zip
 *.njsproj
 *.sln
 *.sw?
+# Firebase Admin SDK service account (sensitive credentials)
+*-firebase-adminsdk-*.json

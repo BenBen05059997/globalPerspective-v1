@@ -3,6 +3,13 @@
 
 let PROXY_ENDPOINT = null;
 
+// Set by AuthContext on init — returns a Promise<string|null> for the Firebase ID token.
+// Falls back to legacy x-api-key if not set (migration period).
+let getAuthToken = null;
+export function setAuthProvider(getTokenFn) {
+  getAuthToken = getTokenFn;
+}
+
 export function configureProxy({ endpoint }) {
   PROXY_ENDPOINT = endpoint;
 }
@@ -84,3 +91,50 @@ export async function fetchTraceCauseCache(topicId) {
 export async function fetchTodayArchive() {
   return proxyAction('today');
 }
+
+async function proxyActionWithAuth(action, payload = {}) {
+  assertProxy();
+  const headers = { 'Content-Type': 'application/json' };
+
+  if (getAuthToken) {
+    const token = await getAuthToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(PROXY_ENDPOINT, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ action, payload }),
+  });
+  let body;
+  try { body = await res.json(); } catch { body = null; }
+  if (!res.ok) {
+    const details = typeof body === 'object' ? JSON.stringify(body) : String(body);
+    throw new Error(`Proxy HTTP ${res.status}: ${details}`);
+  }
+  if (body && typeof body === 'object' && 'statusCode' in body && 'body' in body) {
+    try { return typeof body.body === 'string' ? JSON.parse(body.body) : body.body; } catch { return body.body; }
+  }
+  return body;
+}
+
+export async function fetchArchiveRange(days = 30) {
+  return proxyActionWithAuth('archive_range', { days });
+}
+
+export async function fetchThreadAnalyses(threadIds) {
+  return proxyActionWithAuth('thread_analysis', { threadIds });
+}
+
+export async function fetchPortalSession() {
+  return proxyActionWithAuth('portal_session', {});
+}
+
+export async function fetchUserProfile() {
+  return proxyActionWithAuth('user_profile', {});
+}
+
+export async function fetchNarrativeThread(threadId) {
+  return proxyActionWithAuth('narrative_thread', { threadId });
+}
+

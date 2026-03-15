@@ -1,0 +1,642 @@
+import { useState, useMemo, useRef, useEffect, lazy, Suspense } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
+import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
+import { getTopicRegion } from '../utils/countryMapping';
+import { formatDateLabel } from '../utils/dateUtils';
+import TrendBadge, { getTrend } from './TrendBadge';
+import MiniMap from './MiniMap';
+import WeeklyLockedPreview from './WeeklyLockedPreview';
+import StoryEntryCard from './StoryEntryCard';
+import ThreadIntelligence from './ThreadIntelligence';
+import CompactTimeline from './CompactTimeline';
+import './WeeklyPage.css';
+import './AIComponents.css';
+
+const WeeklyMap = lazy(() => import('./WeeklyMap'));
+
+const REGION_COLORS = {
+  Asia:          { bg: '#fef3c7', border: '#fbbf24', text: '#92400e' },
+  Europe:        { bg: '#dbeafe', border: '#60a5fa', text: '#1e40af' },
+  'Middle East': { bg: '#fce7f3', border: '#f472b6', text: '#9d174d' },
+  Africa:        { bg: '#d1fae5', border: '#34d399', text: '#065f46' },
+  Americas:      { bg: '#ede9fe', border: '#a78bfa', text: '#5b21b6' },
+  Oceania:       { bg: '#ffedd5', border: '#fb923c', text: '#9a3412' },
+  World:         { bg: '#f3f4f6', border: '#d1d5db', text: '#6b7280' },
+};
+
+const CATEGORY_BADGE_COLORS = {
+  conflict:   { bg: '#fee2e2', color: '#b91c1c' },
+  military:   { bg: '#fee2e2', color: '#b91c1c' },
+  disaster:   { bg: '#ffedd5', color: '#c2410c' },
+  politics:   { bg: '#dbeafe', color: '#1d4ed8' },
+  economy:    { bg: '#d1fae5', color: '#065f46' },
+  technology: { bg: '#ede9fe', color: '#5b21b6' },
+  health:     { bg: '#ccfbf1', color: '#0f766e' },
+};
+
+function getActivityStatus(lastDateStr) {
+  const diffDays = Math.floor(
+    (Date.now() - new Date(lastDateStr + 'T00:00:00').getTime()) / 86400000
+  );
+  if (diffDays <= 2) return { label: 'Active', color: '#10b981' };
+  if (diffDays <= 7) return { label: 'Ongoing', color: '#f59e0b' };
+  return { label: 'Quieting', color: '#9ca3af' };
+}
+
+function regionTagStyle(region) {
+  const c = REGION_COLORS[region] || REGION_COLORS.World;
+  return { background: c.bg, borderColor: c.border, color: c.text };
+}
+
+function filterDatesByRange(sortedDates, range) {
+  if (range === 'all') return sortedDates;
+  const days = range === '3d' ? 3 : range === '7d' ? 7 : 30;
+  return sortedDates.slice(0, days);
+}
+
+function groupByThread(dayMap, sortedDates) {
+  const threadMap = {};
+  const standalone = [];
+
+  for (const date of sortedDates) {
+    const entries = dayMap[date]?.entries || [];
+    for (const entry of entries) {
+      const enriched = { ...entry, date };
+      if (entry.threadId) {
+        if (!threadMap[entry.threadId]) {
+          threadMap[entry.threadId] = { entries: [], allSources: new Set(), allRegions: new Set() };
+        }
+        threadMap[entry.threadId].entries.push(enriched);
+        for (const s of (entry.sources || [])) {
+          threadMap[entry.threadId].allSources.add(s.source || s.title || 'Unknown');
+        }
+        for (const r of (entry.regions || [])) {
+          threadMap[entry.threadId].allRegions.add(r);
+        }
+      } else {
+        standalone.push(enriched);
+      }
+    }
+  }
+
+  const threads = Object.entries(threadMap).map(([threadId, data]) => {
+    data.entries.sort((a, b) => b.date.localeCompare(a.date));
+    const regions = [...data.allRegions];
+    const primaryRegion = getTopicRegion({ regions });
+    const trend = getTrend(data.entries);
+    return {
+      threadId,
+      latestTitle: data.entries[0].title,
+      entries: data.entries,
+      articleCount: data.entries.length,
+      dayCount: new Set(data.entries.map(e => e.date)).size,
+      sources: [...data.allSources].slice(0, 8),
+      regions,
+      primaryRegion,
+      trend,
+      dateRange: {
+        from: data.entries[data.entries.length - 1].date,
+        to: data.entries[0].date,
+      },
+    };
+  });
+
+  threads.sort((a, b) => b.articleCount - a.articleCount);
+
+  for (const entry of standalone) {
+    entry.primaryRegion = getTopicRegion(entry);
+  }
+
+  return { threads, standalone };
+}
+
+// ─── Arc Dots ─────────────────────────────────────────────────────────────────
+
+function fmtShort(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function ArcDots({ entries }) {
+  const uniqueDates = [...new Set(entries.map(e => e.date))].sort();
+  if (uniqueDates.length < 2) return null;
+  const startMs = new Date(uniqueDates[0]).getTime();
+  const endMs = new Date(uniqueDates[uniqueDates.length - 1]).getTime();
+  const totalDays = Math.round((endMs - startMs) / 86400000) + 1;
+  const dateSet = new Set(uniqueDates);
+  const showGaps = totalDays <= 14;
+  const dots = showGaps
+    ? Array.from({ length: totalDays }, (_, i) => {
+        const d = new Date(startMs + i * 86400000).toISOString().slice(0, 10);
+        return { date: d, active: dateSet.has(d) };
+      })
+    : uniqueDates.map(d => ({ date: d, active: true }));
+  return (
+    <div className="arc-dots">
+      <span className="arc-dot-date-label">{fmtShort(uniqueDates[0])}</span>
+      {dots.map((dot, i) => (
+        <div key={dot.date} className="arc-dot-item">
+          <div className={`arc-dot ${dot.active ? 'active' : 'gap'}`} title={dot.active ? dot.date : ''} />
+          {i < dots.length - 1 && <div className="arc-dot-connector" />}
+        </div>
+      ))}
+      <span className="arc-dot-date-label">{fmtShort(uniqueDates[uniqueDates.length - 1])}</span>
+    </div>
+  );
+}
+
+// ─── Arc Intro ────────────────────────────────────────────────────────────────
+
+function ArcIntro({ onDismiss }) {
+  return (
+    <div className="arc-intro">
+      <div className="arc-intro-content">
+        <span className="arc-intro-icon">◎</span>
+        <span>
+          <strong>What are Story Arcs?</strong> Each entry below groups related articles from multiple days, showing how a global topic is evolving. The dot trail shows which days coverage appeared.
+        </span>
+      </div>
+      <button className="arc-intro-dismiss" onClick={onDismiss}>Got it</button>
+    </div>
+  );
+}
+
+// ─── Featured Section (Rising arcs) ──────────────────────────────────────────
+
+function FeaturedSection({ threads, threadAnalyses }) {
+  const [modalThread, setModalThread] = useState(null);
+
+  const featured = useMemo(() => threads
+    .filter(t => (t.trend === 'rising' || t.trend === 'new') && t.articleCount >= 2)
+    .sort((a, b) => {
+      if (a.trend === 'rising' && b.trend !== 'rising') return -1;
+      if (b.trend === 'rising' && a.trend !== 'rising') return 1;
+      return b.articleCount - a.articleCount;
+    })
+    .slice(0, 3),
+  [threads]);
+
+  if (featured.length === 0) return null;
+
+  return (
+    <div className="featured-section">
+      <div className="featured-section-header">
+        <span className="featured-section-label">Rising This Week</span>
+        <span className="featured-section-hint">Story arcs gaining momentum — click to read</span>
+      </div>
+      <div className="featured-cards">
+        {featured.map(thread => {
+          const fCategory = thread.entries[0]?.category?.toLowerCase();
+          const fCatColors = CATEGORY_BADGE_COLORS[fCategory];
+          const fActivity = getActivityStatus(thread.dateRange.to);
+          return (
+            <div key={thread.threadId} className="featured-card" onClick={() => setModalThread(thread)}>
+              <div className="featured-card-top">
+                <span className="story-arc-label">Story Arc</span>
+                {fCatColors && (
+                  <span className="story-category-badge" style={{ background: fCatColors.bg, color: fCatColors.color }}>
+                    {fCategory}
+                  </span>
+                )}
+                <TrendBadge entries={thread.entries} />
+                <span className="story-activity-dot" style={{ color: fActivity.color }}>● {fActivity.label}</span>
+                <span className="featured-card-stats">
+                  {thread.articleCount} articles · {thread.dayCount} day{thread.dayCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <ArcDots entries={thread.entries} />
+              <div className="featured-card-title">{thread.latestTitle}</div>
+              {thread.regions.length > 0 && (
+                <div className="featured-card-regions">
+                  {thread.regions.slice(0, 3).map((r, i) => (
+                    <span key={i} className="story-card-region-tag" style={regionTagStyle(r)}>{r}</span>
+                  ))}
+                </div>
+              )}
+              <div className="featured-card-cta">Read full arc →</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {modalThread && (() => {
+        const analysis = threadAnalyses?.[modalThread.threadId];
+        return (
+          <div className="trending-modal-overlay" onClick={() => setModalThread(null)}>
+            <div className="trending-modal" onClick={e => e.stopPropagation()}>
+              <div className="trending-modal-header">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="trending-detail-title">{analysis?.threadTitle || modalThread.latestTitle}</div>
+                  <div className="trending-detail-meta">
+                    <TrendBadge entries={modalThread.entries} />
+                    <span>{modalThread.articleCount} article{modalThread.articleCount !== 1 ? 's' : ''} · {modalThread.dayCount} day{modalThread.dayCount !== 1 ? 's' : ''} · {modalThread.regions.slice(0, 4).join(', ')}</span>
+                  </div>
+                  <ArcDots entries={modalThread.entries} />
+                </div>
+                <button className="trending-detail-close" onClick={() => setModalThread(null)}>✕</button>
+              </div>
+              <div className="trending-modal-body">
+                <ThreadIntelligence analysis={analysis} />
+                {modalThread.regions.length > 0 && (
+                  <MiniMap regions={modalThread.regions} static />
+                )}
+                {analysis ? (
+                  <CompactTimeline entries={modalThread.entries} entryShortTitles={analysis.entryShortTitles} />
+                ) : (
+                  modalThread.entries.map((entry, i) => (
+                    <div key={entry.topicId || i} className="trending-detail-entry">
+                      <div className="trending-detail-date">{formatDateLabel(entry.date)}</div>
+                      <StoryEntryCard entry={entry} />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+// ─── Story Card ───────────────────────────────────────────────────────────────
+
+function StoryCard({ thread, analysis }) {
+  const [expanded, setExpanded] = useState(false);
+  const isMulti = thread.articleCount > 1;
+  const displayTitle = analysis?.threadTitle || thread.latestTitle;
+  const category = thread.entries[0]?.category?.toLowerCase();
+  const catColors = CATEGORY_BADGE_COLORS[category];
+  const activity = getActivityStatus(thread.dateRange.to);
+
+  return (
+    <div className={`story-card ${expanded ? 'expanded' : ''}`}>
+      <div className="story-card-main">
+        <div className="story-card-content">
+          <div className="story-card-title">{displayTitle}</div>
+          <div className="story-card-meta-row">
+            {isMulti && <span className="story-arc-label">Story Arc</span>}
+            {catColors && (
+              <span className="story-category-badge" style={{ background: catColors.bg, color: catColors.color }}>
+                {category}
+              </span>
+            )}
+            <span className="story-arc-stats">
+              {thread.articleCount} article{thread.articleCount !== 1 ? 's' : ''}
+              {isMulti ? ` · ${thread.dayCount} day${thread.dayCount !== 1 ? 's' : ''}` : ''}
+            </span>
+            <TrendBadge entries={thread.entries} />
+            <span className="story-activity-dot" style={{ color: activity.color }}>
+              ● {activity.label}
+            </span>
+            {thread.regions.slice(0, 3).map((r, i) => (
+              <span key={i} className="story-card-region-tag" style={regionTagStyle(r)}>{r}</span>
+            ))}
+            {thread.regions.length > 3 && (
+              <span className="story-card-region-tag more">+{thread.regions.length - 3}</span>
+            )}
+          </div>
+          {isMulti && <ArcDots entries={thread.entries} />}
+        </div>
+        <button
+          className={`story-expand-btn ${expanded ? 'open' : ''}`}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? '▲' : '▼ Analyze'}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="story-card-body">
+          <div className="story-card-detail-meta">
+            <span>{formatDateLabel(thread.dateRange.from)}{thread.dateRange.from !== thread.dateRange.to && ` — ${formatDateLabel(thread.dateRange.to)}`}</span>
+            <span className="story-card-detail-sep" />
+            <span>{thread.sources.slice(0, 5).join(', ')}{thread.sources.length > 5 ? ` +${thread.sources.length - 5}` : ''}</span>
+          </div>
+          <ThreadIntelligence analysis={analysis} />
+          {thread.regions.length > 0 && <MiniMap regions={thread.regions} />}
+          {analysis && isMulti ? (
+            <CompactTimeline entries={thread.entries} entryShortTitles={analysis.entryShortTitles} />
+          ) : isMulti ? (
+            <div className="story-timeline">
+              {thread.entries.map((entry, i) => (
+                <div key={entry.topicId || i} className="story-timeline-entry">
+                  <div className="story-entry-dot" />
+                  <div className="story-entry-content">
+                    <div className="story-entry-date">{formatDateLabel(entry.date)}</div>
+                    <StoryEntryCard entry={entry} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="story-single-entry">
+              <StoryEntryCard entry={thread.entries[0]} />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Standalone Section ───────────────────────────────────────────────────────
+
+function StandaloneSection({ entries }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!entries.length) return null;
+
+  const byDate = {};
+  for (const entry of entries) {
+    if (!byDate[entry.date]) byDate[entry.date] = [];
+    byDate[entry.date].push(entry);
+  }
+  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+  return (
+    <div className="standalone-section">
+      <div className="standalone-header" onClick={() => setExpanded(!expanded)}>
+        <div className="standalone-header-left">
+          <span className="standalone-label">Single Mentions</span>
+          <span className="standalone-count">{entries.length}</span>
+          <span className="standalone-hint">Appeared once — not yet part of a multi-day arc</span>
+        </div>
+        <div className={`story-card-chevron ${expanded ? 'open' : ''}`}>&#9662;</div>
+      </div>
+      {expanded && (
+        <div className="standalone-body">
+          {dates.map(date => (
+            <div key={date} className="standalone-day">
+              <div className="standalone-day-label">{formatDateLabel(date)}</div>
+              {byDate[date].map((entry, i) => (
+                <div key={entry.topicId || i} className="standalone-entry">
+                  <span className="standalone-entry-title">{entry.title}</span>
+                  {entry.regions && entry.regions.length > 0 && (
+                    <span className="standalone-entry-regions">
+                      {entry.regions.slice(0, 2).map((r, j) => (
+                        <span key={j} className="story-card-region-tag" style={regionTagStyle(r)}>{r}</span>
+                      ))}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Filter Controls ──────────────────────────────────────────────────────────
+
+function FilterControls({ regionGroups, activeRegion, setActiveRegion, timeRange, setTimeRange, sortBy, setSortBy, availableDays, searchQuery, setSearchQuery }) {
+  return (
+    <div className="filter-controls">
+      <div className="filter-top-row">
+        <input
+          type="text"
+          className="filter-search"
+          placeholder="Search arcs…"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
+        <div className="filter-period-group">
+          {[
+            { value: '3d', label: '3d' },
+            { value: '7d', label: '7d' },
+            { value: 'all', label: `${availableDays}d` },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              className={`filter-period-btn ${timeRange === opt.value ? 'active' : ''}`}
+              onClick={() => setTimeRange(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <select className="filter-sort" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+          <option value="articles">Most covered</option>
+          <option value="recent">Most recent</option>
+          <option value="rising">Rising first</option>
+        </select>
+      </div>
+      {regionGroups.length > 1 && (
+        <div className="filter-region-row">
+          <button
+            className={`filter-region-chip ${!activeRegion ? 'active' : ''}`}
+            onClick={() => setActiveRegion(null)}
+          >
+            All
+          </button>
+          {regionGroups.map(g => (
+            <button
+              key={g.region}
+              className={`filter-region-chip ${activeRegion === g.region ? 'active' : ''}`}
+              onClick={() => setActiveRegion(activeRegion === g.region ? null : g.region)}
+            >
+              {g.region}
+              <span className="filter-region-count">{g.threads.length}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Weekly Page ──────────────────────────────────────────────────────────────
+
+export default function WeeklyPage() {
+  const { user, loading: authLoading } = useAuth();
+  const [viewMode, setViewMode] = useState('list');
+  const [activeRegion, setActiveRegion] = useState(null);
+  const [timeRange, setTimeRange] = useState('all');
+  const [sortBy, setSortBy] = useState('articles');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showIntro, setShowIntro] = useState(
+    () => !localStorage.getItem('gp_arc_intro_dismissed')
+  );
+  function dismissIntro() {
+    localStorage.setItem('gp_arc_intro_dismissed', '1');
+    setShowIntro(false);
+  }
+
+  const { dayMap, sortedDates: allDates, loading, error, tier } = useWeeklyArchive();
+
+  const sortedDates = useMemo(
+    () => filterDatesByRange(allDates, timeRange),
+    [allDates, timeRange],
+  );
+
+  const { threads, standalone } = useMemo(
+    () => groupByThread(dayMap, sortedDates),
+    [dayMap, sortedDates],
+  );
+
+  const qualifyingThreadIds = useMemo(
+    () => threads.filter(t => t.articleCount >= 2).map(t => t.threadId),
+    [threads],
+  );
+  const { analyses: threadAnalyses } = useThreadAnalyses(qualifyingThreadIds);
+
+  const sortedThreads = useMemo(() => {
+    const copy = [...threads];
+    if (sortBy === 'recent') {
+      copy.sort((a, b) => b.dateRange.to.localeCompare(a.dateRange.to));
+    } else if (sortBy === 'rising') {
+      const order = { rising: 0, new: 1, stable: 2, fading: 3 };
+      copy.sort((a, b) => (order[a.trend] ?? 4) - (order[b.trend] ?? 4) || b.articleCount - a.articleCount);
+    }
+    return copy;
+  }, [threads, sortBy]);
+
+  // Region groups for filter chips
+  const regionGroups = useMemo(() => {
+    const groups = {};
+    for (const t of sortedThreads) {
+      const r = t.primaryRegion || 'World';
+      if (!groups[r]) groups[r] = { threads: [], standaloneEntries: [] };
+      groups[r].threads.push(t);
+    }
+    for (const e of standalone) {
+      const r = e.primaryRegion || 'World';
+      if (!groups[r]) groups[r] = { threads: [], standaloneEntries: [] };
+      groups[r].standaloneEntries.push(e);
+    }
+    return Object.entries(groups)
+      .map(([region, data]) => ({
+        region,
+        threads: data.threads,
+        standaloneEntries: data.standaloneEntries,
+        totalCount: data.threads.reduce((s, t) => s + t.articleCount, 0) + data.standaloneEntries.length,
+      }))
+      .sort((a, b) => {
+        if (a.region === 'World') return 1;
+        if (b.region === 'World') return -1;
+        return b.totalCount - a.totalCount;
+      });
+  }, [sortedThreads, standalone]);
+
+  // Flat filtered feed
+  const { flatThreads, flatStandalone } = useMemo(() => {
+    let filteredThreads = activeRegion
+      ? sortedThreads.filter(t => (t.primaryRegion || 'World') === activeRegion)
+      : sortedThreads;
+    let filteredStandalone = activeRegion
+      ? standalone.filter(e => (e.primaryRegion || 'World') === activeRegion)
+      : standalone;
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      filteredThreads = filteredThreads.filter(t =>
+        t.latestTitle.toLowerCase().includes(q) ||
+        t.entries.some(e => e.title.toLowerCase().includes(q)) ||
+        t.regions.some(r => r.toLowerCase().includes(q)) ||
+        t.sources.some(s => s.toLowerCase().includes(q))
+      );
+      filteredStandalone = filteredStandalone.filter(e =>
+        e.title.toLowerCase().includes(q) ||
+        (e.regions || []).some(r => r.toLowerCase().includes(q))
+      );
+    }
+    return { flatThreads: filteredThreads, flatStandalone: filteredStandalone };
+  }, [sortedThreads, standalone, activeRegion, searchQuery]);
+
+  if (authLoading) return <div className="weekly-loading">Loading…</div>;
+
+  if (!user) return <WeeklyLockedPreview />;
+
+  const isUnauthorized = error && error.includes('401');
+  if (isUnauthorized) {
+    return (
+      <div className="weekly-gate">
+        <div className="weekly-gate-icon">🔒</div>
+        <h2>Member access required</h2>
+        <p>Weekly narrative analysis is available on the Member plan ($15/mo). Upgrade to track how stories evolve across days.</p>
+        <Link to="/pricing" className="weekly-gate-submit" style={{ display: 'inline-block', marginTop: '1rem', textDecoration: 'none' }}>
+          See plans →
+        </Link>
+      </div>
+    );
+  }
+
+  const totalArticles = threads.reduce((sum, t) => sum + t.articleCount, 0) + standalone.length;
+
+  return (
+    <div className={`weekly-page ${viewMode === 'map' ? 'map-mode' : ''}`}>
+      <div className="weekly-header">
+        <div className="weekly-header-left">
+          <h1>Story Intelligence</h1>
+          {!loading && sortedDates.length > 0 && (
+            <div className="weekly-subtitle">
+              {sortedDates.length}-day archive · {totalArticles} articles · {threads.length} arc{threads.length !== 1 ? 's' : ''} tracked
+            </div>
+          )}
+        </div>
+        <div className="weekly-header-right">
+          {!loading && threads.length > 0 && (
+            <>
+              <div className="weekly-view-toggle">
+                <button className={`weekly-toggle-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}>List</button>
+                <button className={`weekly-toggle-btn ${viewMode === 'map' ? 'active' : ''}`} onClick={() => setViewMode('map')}>Map</button>
+              </div>
+              <Link to="/weekly-map" className="weekly-fullmap-link">Full Map →</Link>
+            </>
+          )}
+          {tier && <span className={`weekly-tier-badge ${tier}`}>{tier}</span>}
+        </div>
+      </div>
+
+      {error && !isUnauthorized && (
+        <div className="weekly-error">{error}</div>
+      )}
+
+      {viewMode === 'map' ? (
+        <Suspense fallback={<div className="weekly-loading">Loading map...</div>}>
+          <WeeklyMap embedded />
+        </Suspense>
+      ) : loading ? (
+        <div className="weekly-loading">Loading archive data...</div>
+      ) : threads.length === 0 && standalone.length === 0 ? (
+        <div className="weekly-empty-state">
+          <h3>No archive data yet</h3>
+          <p>Data is accumulating. Check back in a few hours as the pipeline runs.</p>
+        </div>
+      ) : (
+        <>
+          {showIntro && <ArcIntro onDismiss={dismissIntro} />}
+          <FeaturedSection threads={threads} threadAnalyses={threadAnalyses} />
+          <FilterControls
+            regionGroups={regionGroups}
+            activeRegion={activeRegion}
+            setActiveRegion={setActiveRegion}
+            timeRange={timeRange}
+            setTimeRange={setTimeRange}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            availableDays={allDates.length}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+          <div className="weekly-feed">
+            {flatThreads.map(thread => (
+              <StoryCard key={thread.threadId} thread={thread} analysis={threadAnalyses?.[thread.threadId]} />
+            ))}
+            {flatStandalone.length > 0 && (
+              <StandaloneSection entries={flatStandalone} />
+            )}
+            {flatThreads.length === 0 && flatStandalone.length === 0 && (
+              <div className="weekly-empty-state">
+                <p>No stories match your current filters.</p>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

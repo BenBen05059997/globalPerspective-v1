@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-03-15 (Analytics, CI/CD, and deployment infrastructure)
+- **Google Analytics 4 added.** Tag `G-VT6QENX4MB` injected into `docs/index.html`. Tracks real-time visitors, page views, traffic sources, countries, new vs returning users. Data starts accumulating from today. Verify via GA4 → Realtime at analytics.google.com.
+- **GitHub Actions auto-deploy workflow added.** `.github/workflows/deploy.yml` — triggers on push to `main` when `src/` files change. Automatically runs `npm ci`, `npm run build`, copies `dist/` to `docs/`, and commits back. Eliminates the manual build + copy + commit workflow entirely.
+- **Wrangler CLI installed and authenticated.** `wrangler` v4.73.0 installed globally. Authenticated with `globalperspectives.app@gmail.com` (account ID `45efe64168fc55da3937e2c01b1ca43a`). Zone `globalperspective.net` confirmed linked.
+- **`.gitignore` updated.** Added `*-firebase-adminsdk-*.json` pattern to prevent Firebase Admin SDK service account keys from being accidentally committed.
+- **`weekly-ui-redesign` branch deployed.** Built and pushed all frontend changes (Story Intelligence page, loading indicators, auth components, Firebase config) to `weekly-ui-redesign`. Branch is live on GitHub — merge to `main` when ready to go to production.
+
 ## 2026-03-15 (Thread analysis improvements — watchQuestions, Brave Search, richer context)
 - **`newsThreadAnalysis`: Brave Search grounding.** Before calling Grok, now performs two web searches on the latest entry title: `/news/search` (past week, 4 results) + `/web/search` (background/analysis, 2 results). Up to 6 external references injected into the prompt with `[1]`, `[2]` citation instructions. Requires `BRAVE_SEARCH_API_KEY` env var (same key as `newsInvokeGemini`).
 - **`newsThreadAnalysis`: Full entry context.** Removed 300-char summary truncation — full summaries now passed to Grok. Added individual entry `ai.prediction` (250 chars) and `ai.trace_cause` (200 chars) per entry so Grok sees how analysts assessed the story each day. Added source outlet names per entry.

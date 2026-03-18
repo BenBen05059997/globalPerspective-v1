@@ -10,16 +10,23 @@ import Disclosures from './components/Disclosures';
 import Contact from './components/Contact';
 import { ErrorProvider } from './contexts/ErrorContext';
 import ErrorModal from './components/ErrorModal';
-import WeeklyPage from './components/WeeklyPage';
-import WeeklyMap from './components/WeeklyMap';
-import SignIn from './components/SignIn';
-import AuthCallback from './components/AuthCallback';
-import Pricing from './components/Pricing';
-import Account from './components/Account';
-import UpgradeSuccess from './components/UpgradeSuccess';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+
+function ComingSoon() {
+  return (
+    <div style={{ textAlign: 'center', padding: '4rem 1rem', maxWidth: 480, margin: '0 auto' }}>
+      <div style={{ fontSize: '3rem', marginBottom: 16 }}>🚧</div>
+      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 12px' }}>Under Construction</h2>
+      <p style={{ color: '#6b7280', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 24px' }}>
+        This feature is being built. Check back soon for weekly story intelligence, country briefings, and AI-powered narrative analysis.
+      </p>
+      <Link to="/" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>← Back to Home</Link>
+    </div>
+  );
+}
 
 function resolveBasename() {
   const rawBase = import.meta.env.BASE_URL ?? '/';
@@ -63,13 +70,14 @@ export default function App() {
               <Route path="/about" element={<AboutContact />} />
               <Route path="/disclosures" element={<Disclosures />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/weekly" element={<WeeklyPage />} />
-              <Route path="/weekly-map" element={<WeeklyMap />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/upgrade/success" element={<UpgradeSuccess />} />
+              <Route path="/weekly" element={<ComingSoon />} />
+              <Route path="/weekly/*" element={<ComingSoon />} />
+              <Route path="/weekly-map" element={<ComingSoon />} />
+              <Route path="/signin" element={<ComingSoon />} />
+              <Route path="/auth/callback" element={<ComingSoon />} />
+              <Route path="/pricing" element={<ComingSoon />} />
+              <Route path="/account" element={<ComingSoon />} />
+              <Route path="/upgrade/success" element={<ComingSoon />} />
             </Routes>
           </Layout>
         </BrowserRouter>

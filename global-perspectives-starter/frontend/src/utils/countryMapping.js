@@ -273,6 +273,41 @@ export const COUNTRY_NAME_TO_CODE = {
     'Worldwide': 'GLOBAL',
 };
 
+// Broad region names to the specific countries they include
+export const BROAD_REGION_COUNTRIES = {
+    'EU': ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden'],
+    'European Union': ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden'],
+    'Europe': ['United Kingdom', 'France', 'Germany', 'Italy', 'Spain', 'Netherlands', 'Belgium', 'Switzerland', 'Austria', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Poland', 'Czech Republic', 'Greece', 'Portugal', 'Ireland', 'Romania', 'Hungary', 'Ukraine', 'Serbia', 'Croatia', 'Bulgaria', 'Slovakia', 'Slovenia', 'Lithuania', 'Latvia', 'Estonia'],
+    'Middle East': ['Israel', 'Palestine', 'Iran', 'Iraq', 'Saudi Arabia', 'UAE', 'United Arab Emirates', 'Turkey', 'Syria', 'Lebanon', 'Jordan', 'Yemen', 'Oman', 'Qatar', 'Kuwait', 'Bahrain'],
+    'Southeast Asia': ['Thailand', 'Vietnam', 'Philippines', 'Indonesia', 'Malaysia', 'Singapore', 'Myanmar', 'Cambodia', 'Laos', 'Brunei', 'East Timor'],
+    'East Asia': ['China', 'Japan', 'South Korea', 'North Korea', 'Taiwan', 'Mongolia'],
+    'South Asia': ['India', 'Pakistan', 'Bangladesh', 'Sri Lanka', 'Nepal', 'Afghanistan'],
+    'Central Asia': ['Kazakhstan', 'Uzbekistan', 'Turkmenistan', 'Kyrgyzstan', 'Tajikistan'],
+    'Africa': ['Nigeria', 'South Africa', 'Kenya', 'Egypt', 'Ethiopia', 'Ghana', 'Tanzania', 'Democratic Republic of the Congo', 'Sudan', 'Somalia', 'Libya', 'Tunisia', 'Morocco', 'Algeria', 'Uganda', 'Mozambique', 'Angola', 'Cameroon', 'Mali', 'Niger', 'Chad', 'Senegal', 'Rwanda', 'Zimbabwe'],
+    'North Africa': ['Egypt', 'Libya', 'Tunisia', 'Morocco', 'Algeria'],
+    'West Africa': ['Nigeria', 'Ghana', 'Senegal', 'Mali', 'Niger', 'Burkina Faso', 'Sierra Leone', 'Liberia'],
+    'Latin America': ['Brazil', 'Mexico', 'Argentina', 'Colombia', 'Chile', 'Peru', 'Venezuela', 'Ecuador', 'Bolivia', 'Paraguay', 'Uruguay'],
+    'Central America': ['Guatemala', 'Honduras', 'El Salvador', 'Nicaragua', 'Costa Rica', 'Panama', 'Belize'],
+    'Caribbean': ['Cuba', 'Haiti', 'Dominican Republic', 'Jamaica', 'Trinidad and Tobago', 'Bahamas'],
+    'Pacific': ['Australia', 'New Zealand', 'Fiji', 'Papua New Guinea'],
+    'NATO': ['United States', 'United Kingdom', 'France', 'Germany', 'Italy', 'Canada', 'Turkey', 'Spain', 'Poland', 'Netherlands', 'Belgium', 'Norway', 'Denmark', 'Greece', 'Portugal', 'Czech Republic', 'Hungary', 'Romania', 'Bulgaria', 'Croatia', 'Slovakia', 'Slovenia', 'Lithuania', 'Latvia', 'Estonia', 'Finland', 'Sweden'],
+    'BRICS': ['Brazil', 'Russia', 'India', 'China', 'South Africa', 'Egypt', 'Ethiopia', 'Iran', 'Saudi Arabia', 'UAE', 'United Arab Emirates'],
+    'G7': ['United States', 'United Kingdom', 'France', 'Germany', 'Italy', 'Canada', 'Japan'],
+};
+
+// Pre-computed reverse index: country name → list of broad regions it belongs to
+const _COUNTRY_TO_BROAD_REGIONS = {};
+for (const [region, countries] of Object.entries(BROAD_REGION_COUNTRIES)) {
+    for (const country of countries) {
+        if (!_COUNTRY_TO_BROAD_REGIONS[country]) _COUNTRY_TO_BROAD_REGIONS[country] = [];
+        _COUNTRY_TO_BROAD_REGIONS[country].push(region);
+    }
+}
+
+export function getBroadRegionsForCountry(countryName) {
+    return _COUNTRY_TO_BROAD_REGIONS[countryName] || [];
+}
+
 // ISO country code to geographic region mapping
 // Used to categorize news topics by region
 export const ISO_CODE_TO_REGION = {

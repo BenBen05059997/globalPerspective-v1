@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchArchiveRange } from '../services/restProxy';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -58,7 +58,10 @@ export function useWeeklyArchive() {
     load();
   }, [load]);
 
-  const sortedDates = Object.keys(dayMap).sort((a, b) => b.localeCompare(a));
+  const sortedDates = useMemo(
+    () => Object.keys(dayMap).sort((a, b) => b.localeCompare(a)),
+    [dayMap]
+  );
 
   return { dayMap, sortedDates, loading, error, tier, refetch: load };
 }

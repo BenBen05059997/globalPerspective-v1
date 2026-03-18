@@ -36,6 +36,15 @@ export const CATEGORY_BADGE_COLORS = {
   health:     { bg: '#ccfbf1', color: '#0f766e' },
 };
 
+export const CATEGORY_ORDER = ['politics', 'economy', 'conflict', 'technology', 'environment', 'health', 'society', 'culture', 'science', 'other'];
+
+export const RISK_COLORS = {
+  low:      { bg: '#d1fae5', color: '#065f46' },
+  moderate: { bg: '#fef9c3', color: '#854d0e' },
+  elevated: { bg: '#ffedd5', color: '#9a3412' },
+  high:     { bg: '#fee2e2', color: '#991b1b' },
+};
+
 function getActivityStatus(lastDateStr) {
   const diffDays = Math.floor(
     (Date.now() - new Date(lastDateStr + 'T00:00:00').getTime()) / 86400000

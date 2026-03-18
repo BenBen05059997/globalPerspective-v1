@@ -21,7 +21,7 @@ export default function StoryEntryCard({ entry, compact }) {
         <div className="story-entry-sources">
           {entry.sources.slice(0, compact ? 5 : 6).map((s, j) => (
             <span key={j} className="story-entry-source-tag">
-              {s.url && compact
+              {s.url
                 ? <a href={s.url} target="_blank" rel="noopener noreferrer">{s.source || s.title || 'Source'}</a>
                 : (s.source || s.title || 'Source')}
             </span>

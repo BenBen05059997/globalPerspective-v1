@@ -10,10 +10,25 @@ import Disclosures from './components/Disclosures';
 import Contact from './components/Contact';
 import { ErrorProvider } from './contexts/ErrorContext';
 import ErrorModal from './components/ErrorModal';
+import WeeklyPage from './components/WeeklyPage';
+import WeeklyMap from './components/WeeklyMap';
+import ThreadPage from './components/ThreadPage';
+import CountryPage from './components/CountryPage';
+import CountryListPage from './components/CountryListPage';
+import SignIn from './components/SignIn';
+import AuthCallback from './components/AuthCallback';
+import Pricing from './components/Pricing';
+import Account from './components/Account';
+import UpgradeSuccess from './components/UpgradeSuccess';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+
+// ?preview=1 in URL enables hidden pages for testing
+const PREVIEW_MODE = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1';
+if (PREVIEW_MODE) sessionStorage.setItem('gp_preview', '1');
+const isPreview = PREVIEW_MODE || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('gp_preview') === '1');
 
 function ComingSoon() {
   return (
@@ -26,6 +41,10 @@ function ComingSoon() {
       <Link to="/" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>← Back to Home</Link>
     </div>
   );
+}
+
+function Gate({ children }) {
+  return isPreview ? children : <ComingSoon />;
 }
 
 function resolveBasename() {
@@ -70,14 +89,16 @@ export default function App() {
               <Route path="/about" element={<AboutContact />} />
               <Route path="/disclosures" element={<Disclosures />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/weekly" element={<ComingSoon />} />
-              <Route path="/weekly/*" element={<ComingSoon />} />
-              <Route path="/weekly-map" element={<ComingSoon />} />
-              <Route path="/signin" element={<ComingSoon />} />
-              <Route path="/auth/callback" element={<ComingSoon />} />
-              <Route path="/pricing" element={<ComingSoon />} />
-              <Route path="/account" element={<ComingSoon />} />
-              <Route path="/upgrade/success" element={<ComingSoon />} />
+              <Route path="/weekly" element={<Gate><WeeklyPage /></Gate>} />
+              <Route path="/weekly/thread/:threadId" element={<Gate><ThreadPage /></Gate>} />
+              <Route path="/weekly/countries" element={<Gate><CountryListPage /></Gate>} />
+              <Route path="/weekly/country/:countryName" element={<Gate><CountryPage /></Gate>} />
+              <Route path="/weekly-map" element={<Gate><WeeklyMap /></Gate>} />
+              <Route path="/signin" element={<Gate><SignIn /></Gate>} />
+              <Route path="/auth/callback" element={<Gate><AuthCallback /></Gate>} />
+              <Route path="/pricing" element={<Gate><Pricing /></Gate>} />
+              <Route path="/account" element={<Gate><Account /></Gate>} />
+              <Route path="/upgrade/success" element={<Gate><UpgradeSuccess /></Gate>} />
             </Routes>
           </Layout>
         </BrowserRouter>

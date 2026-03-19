@@ -138,3 +138,7 @@ export async function fetchNarrativeThread(threadId) {
   return proxyActionWithAuth('narrative_thread', { threadId });
 }
 
+export async function fetchCountryIntelligence(countryNames) {
+  return proxyActionWithAuth('country_intelligence', { countryNames });
+}
+

@@ -8,9 +8,9 @@ function PrivacyTerms() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Overview</h2>
         <p>
-          Global Perspectives highlights international news topics sourced from Google Gemini, Google Maps
-          geocoding, and publicly available reporting. This site is provided for informational purposes and
-          does not require account creation or login.
+          Global Perspectives is an AI-powered global news intelligence platform. Core content (today's topics and the
+          interactive map) is freely accessible without an account. Premium features (weekly narrative analysis, country
+          intelligence, thread tracking) require a signed-in account and a paid subscription.
         </p>
       </section>
 
@@ -18,19 +18,29 @@ function PrivacyTerms() {
         <h2 style={{ fontSize: '1.25rem' }}>Data Collection</h2>
         <ul style={{ paddingLeft: '1.25rem' }}>
           <li>
-            The application stores a cached copy of the latest topics in your browser via <code>localStorage</code>.
+            The application stores cached data (topics, archive, preferences) in your browser via <code>localStorage</code>.
           </li>
           <li>
-            No personal identifiers are collected, sold, or shared. Aggregated server logs (error messages, request counts)
-            may be retained briefly for reliability monitoring.
+            <strong>Account creation:</strong> If you sign in, we collect your email address via Firebase Authentication
+            (passwordless magic link). Your email is used solely for authentication and account identification.
+            We do not sell or share your email with third parties.
           </li>
           <li>
-            Cloudflare Web Analytics records anonymized usage metrics (page views, timestamp, country/region, browser/device).
-            IP addresses are not stored, and the data is used only to understand overall adoption.
+            <strong>Payment data:</strong> If you subscribe to a paid plan, payment is processed entirely by Stripe.
+            We do not receive or store your credit card number. Stripe may collect billing details (name, address,
+            card info) subject to <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe's Privacy Policy</a>.
           </li>
           <li>
-            Third-party APIs (Google Gemini, Google Maps, OpenAI) receive only the minimum request data needed to fulfill
-            summaries, predictions, or map lookups.
+            Aggregated server logs (error messages, request counts) may be retained briefly for reliability monitoring.
+            No personal identifiers are included in logs.
+          </li>
+          <li>
+            Google Analytics (GA4) records anonymized usage metrics (page views, sessions, device type, geographic region).
+            IP anonymization is enabled. Data is used only to understand overall adoption and improve the product.
+          </li>
+          <li>
+            Third-party AI APIs (xAI Grok, Brave Search) receive only the minimum request data needed to generate
+            topic analysis, summaries, and predictions. No user-identifiable data is sent to these services.
           </li>
         </ul>
       </section>
@@ -46,23 +56,36 @@ function PrivacyTerms() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Cookies &amp; Storage</h2>
         <p>
-          We do not set tracking cookies. The site only uses client-side storage for topic caching and collapsed panel
-          preferences. Clearing your browser cache removes this data.
+          We do not set first-party tracking cookies. The site uses <code>localStorage</code> for topic caching,
+          user preferences, and session data. Google Analytics may set cookies for analytics purposes.
+          Firebase Authentication uses session storage for sign-in state. Clearing your browser data removes all locally stored information.
         </p>
       </section>
 
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Third-Party Services</h2>
         <ul style={{ paddingLeft: '1.25rem' }}>
-          <li>Google Gemini &mdash; topic discovery and AI summaries</li>
+          <li>xAI Grok &mdash; topic detection, AI summaries, predictions, and narrative analysis</li>
+          <li>Brave Search &mdash; supplementary news source discovery</li>
           <li>Google Maps Platform &mdash; geocoding and visual map tiles</li>
-          <li>OpenAI &mdash; optional predictive narratives</li>
-          <li>AWS AppSync and Lambda &mdash; API gateway and caching</li>
-          <li>Cloudflare Web Analytics &mdash; privacy-first usage metrics (page views, device type, browser locale)</li>
+          <li>Firebase Authentication &mdash; passwordless email sign-in</li>
+          <li>Stripe &mdash; subscription billing and payment processing</li>
+          <li>AWS Lambda and DynamoDB &mdash; API backend and data storage</li>
+          <li>Google Analytics (GA4) &mdash; anonymized usage metrics</li>
         </ul>
         <p>
           Usage of those services is subject to their respective terms. By interacting with the site you agree to
           their processing of requests made on your behalf.
+        </p>
+      </section>
+
+      <section style={{ marginBottom: '1.75rem' }}>
+        <h2 style={{ fontSize: '1.25rem' }}>Account Deletion</h2>
+        <p>
+          To delete your account and all associated data, email{' '}
+          <a href="mailto:globalperspectives.app@gmail.com">globalperspectives.app@gmail.com</a> from the
+          email address associated with your account. We will remove your account data within 5 business days
+          and confirm by email. Active subscriptions will be cancelled as part of the deletion process.
         </p>
       </section>
 
@@ -82,7 +105,7 @@ function PrivacyTerms() {
           Significant updates will be announced on the About page.
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          Last updated: {new Date().toLocaleDateString()}
+          Last updated: 2026-03-19
         </p>
       </section>
     </div>

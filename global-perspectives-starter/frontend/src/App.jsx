@@ -20,6 +20,7 @@ import AuthCallback from './components/AuthCallback';
 import Pricing from './components/Pricing';
 import Account from './components/Account';
 import UpgradeSuccess from './components/UpgradeSuccess';
+import WhitepaperPage from './components/WhitepaperPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
@@ -28,7 +29,7 @@ import { Link } from 'react-router-dom';
 // ?preview=1 in URL enables hidden pages for testing
 const PREVIEW_MODE = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1';
 if (PREVIEW_MODE) sessionStorage.setItem('gp_preview', '1');
-const isPreview = PREVIEW_MODE || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('gp_preview') === '1');
+const isPreview = import.meta.env.DEV || PREVIEW_MODE || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('gp_preview') === '1');
 
 function ComingSoon() {
   return (
@@ -96,9 +97,10 @@ export default function App() {
               <Route path="/weekly-map" element={<Gate><WeeklyMap /></Gate>} />
               <Route path="/signin" element={<Gate><SignIn /></Gate>} />
               <Route path="/auth/callback" element={<Gate><AuthCallback /></Gate>} />
-              <Route path="/pricing" element={<Gate><Pricing /></Gate>} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/account" element={<Gate><Account /></Gate>} />
               <Route path="/upgrade/success" element={<Gate><UpgradeSuccess /></Gate>} />
+              <Route path="/whitepaper" element={<WhitepaperPage />} />
             </Routes>
           </Layout>
         </BrowserRouter>

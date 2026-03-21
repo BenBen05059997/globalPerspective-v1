@@ -27,9 +27,18 @@ function Layout({ children }) {
     };
   }, [menuOpen]);
 
-  const navLinks = [
+  const isDev = import.meta.env.DEV;
+  const navLinks = isDev ? [
     { to: '/', label: 'Home' },
     { to: '/map', label: 'Map' },
+    { to: '/weekly', label: 'Weekly Analysis' },
+    { to: '/weekly/countries', label: 'Country Intel' },
+    { to: '/pricing', label: 'Pricing' },
+    { to: '/about', label: 'About' },
+  ] : [
+    { to: '/', label: 'Home' },
+    { to: '/map', label: 'Map' },
+    { to: '/pricing', label: 'Pricing' },
     { to: '/about', label: 'About' },
   ];
 
@@ -83,6 +92,7 @@ function Layout({ children }) {
             </p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.9rem' }}>
               <Link to="/about" className="nav-link">About</Link>
+              <Link to="/whitepaper" className="nav-link">White Paper</Link>
               <Link to="/privacy" className="nav-link">Privacy &amp; Terms</Link>
               <Link to="/disclosures" className="nav-link">Disclosures</Link>
               <a

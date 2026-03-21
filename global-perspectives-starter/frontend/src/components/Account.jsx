@@ -182,39 +182,15 @@ export default function Account() {
         </div>
       )}
 
-      {/* Billing */}
+      {/* Plan status */}
       <div style={SECTION}>
-        <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Billing</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          {(tier === 'member' || tier === 'enterprise') ? (
-            <button
-              onClick={handleManageBilling}
-              disabled={portalLoading}
-              style={{
-                background: 'var(--bg-secondary, #f3f4f6)',
-                border: '1.5px solid var(--border-color, #e5e7eb)',
-                borderRadius: 8, padding: '0.6rem 1rem',
-                fontSize: '0.875rem', fontWeight: 600,
-                cursor: portalLoading ? 'not-allowed' : 'pointer',
-                color: 'var(--text-primary)', textAlign: 'left',
-                opacity: portalLoading ? 0.6 : 1,
-              }}
-            >
-              {portalLoading ? 'Opening billing portal…' : 'Manage billing & subscription →'}
-            </button>
-          ) : (
-            <Link to="/pricing" className="pricing-cta member" style={{ textDecoration: 'none' }}>
-              Upgrade to Member — $15/mo →
-            </Link>
-          )}
-          {error && <div className="weekly-gate-error">{error}</div>}
-          <a
-            href="mailto:globalperspectives.app@gmail.com?subject=Billing%20inquiry"
-            style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textDecoration: 'none' }}
-          >
-            Billing issue? Contact support →
-          </a>
+        <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Plan</div>
+        <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+          All features are currently free for early users. We'll notify you by email before paid plans go live.
         </div>
+        <Link to="/pricing" style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none', marginTop: '0.5rem', display: 'inline-block' }}>
+          View plans →
+        </Link>
       </div>
 
       {/* Account actions */}

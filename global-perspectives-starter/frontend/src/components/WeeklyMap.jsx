@@ -138,7 +138,7 @@ function buildWeeklyMapData(dayMap, dates) {
   return { markers: Object.values(pointMarkers), lines: Object.values(lines), threadList, allRegions };
 }
 
-const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, highlightThread, storyPlay, countryPlay, onThreadSelect, countryThreadIds }, ref) {
+const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, highlightThread, storyPlay, countryPlay, onThreadSelect, countryThreadIds, disableInfoWindow, onCountryClick, activeCountry }, ref) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const gMarkersRef = useRef([]);
@@ -149,9 +149,18 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
     fitBounds(coords) {
       const map = mapInstanceRef.current;
       if (!map || !coords.length) return;
+      if (coords.length === 1) {
+        map.setCenter(coords[0]);
+        map.setZoom(5);
+        return;
+      }
       const bounds = new window.google.maps.LatLngBounds();
       for (const c of coords) bounds.extend(c);
       map.fitBounds(bounds, 60);
+      // Clamp so fitBounds doesn't zoom out past minZoom
+      window.google.maps.event.addListenerOnce(map, 'idle', () => {
+        if (map.getZoom() < 2) map.setZoom(2);
+      });
     },
     resetView() {
       const map = mapInstanceRef.current;
@@ -164,6 +173,12 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
         center: { lat: 20, lng: 10 },
         zoom: 2,
+        minZoom: 2,
+        maxZoom: 12,
+        restriction: {
+          latLngBounds: { north: 85, south: -85, west: -180, east: 180 },
+          strictBounds: true,
+        },
         styles: MAP_STYLES,
         mapTypeControl: false,
         streetViewControl: false,
@@ -188,12 +203,13 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
     for (const item of lines) {
       const isHighlighted = (!highlightThread || item.threadId === highlightThread) &&
         (!countryThreadIds || countryThreadIds.has(item.threadId));
+      if (countryThreadIds && !isHighlighted) continue;
       const isCurrent = !currentDate || item.date === currentDate;
       const polyline = new window.google.maps.Polyline({
         path: [item.from, item.to],
         strokeColor: item.color,
-        strokeOpacity: currentDate ? (isCurrent ? 0.7 : 0.2) : (isHighlighted ? 0.5 : 0.15),
-        strokeWeight: currentDate ? (isCurrent ? 3 : 1) : (isHighlighted ? 2 : 1),
+        strokeOpacity: currentDate ? (isCurrent ? 0.7 : 0.2) : (activeCountry ? 0.3 : (isHighlighted ? 0.5 : 0.15)),
+        strokeWeight: currentDate ? (isCurrent ? 3 : 1) : (activeCountry ? 1.5 : (isHighlighted ? 2 : 1)),
         map,
       });
       gPolylinesRef.current.push(polyline);
@@ -202,10 +218,17 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
     for (const country of Object.values(grouped)) {
       const isHighlighted = (!highlightThread || country.topics.some(t => t.threadId === highlightThread)) &&
         (!countryThreadIds || country.topics.some(t => countryThreadIds.has(t.threadId)));
+      if (countryThreadIds && !isHighlighted) continue;
+      const isSelected = activeCountry && country.name === activeCountry;
       const count = country.count;
       const size = count >= 4 ? 14 : count >= 2 ? 10 : 7;
       const primaryColor = country.topics[0].color;
       const hasCurrent = country.hasCurrent || !currentDate;
+
+      // When a country is active: selected = bright + large, connected = same color but dimmed + smaller
+      const effectiveColor = primaryColor;
+      const effectiveScale = activeCountry ? (isSelected ? size + 4 : size) : (currentDate ? (hasCurrent ? size + 2 : size - 1) : size);
+      const effectiveOpacity = activeCountry ? (isSelected ? 1.0 : 0.35) : (currentDate ? (hasCurrent ? 1.0 : 0.25) : (isHighlighted ? 0.9 : 0.3));
 
       const marker = new window.google.maps.Marker({
         position: { lat: country.lat, lng: country.lng },
@@ -213,22 +236,27 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
         title: `${country.name}: ${count} topic${count !== 1 ? 's' : ''}`,
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
-          scale: currentDate ? (hasCurrent ? size + 2 : size - 1) : size,
-          fillColor: primaryColor,
-          fillOpacity: currentDate ? (hasCurrent ? 1.0 : 0.25) : (isHighlighted ? 0.9 : 0.3),
-          strokeColor: currentDate && hasCurrent ? primaryColor : '#fff',
-          strokeWeight: currentDate && hasCurrent ? 3 : 1.5,
+          scale: effectiveScale,
+          fillColor: effectiveColor,
+          fillOpacity: effectiveOpacity,
+          strokeColor: isSelected ? '#fff' : (currentDate && hasCurrent ? primaryColor : '#fff'),
+          strokeWeight: isSelected ? 3 : (currentDate && hasCurrent ? 3 : 1.5),
         },
-        label: count > 1 && hasCurrent ? {
+        label: count > 1 && (isSelected || (!activeCountry && hasCurrent)) ? {
           text: String(count),
           color: '#fff',
           fontWeight: 'bold',
           fontSize: '10px',
         } : undefined,
-        zIndex: hasCurrent ? 200 : (isHighlighted ? count * 10 + 100 : count * 10),
+        zIndex: isSelected ? 300 : (hasCurrent ? 200 : (isHighlighted ? count * 10 + 100 : count * 10)),
       });
 
       marker.addListener('click', () => {
+        if (disableInfoWindow && onCountryClick) {
+          onCountryClick(country.name);
+          return;
+        }
+
         const threadIds = [...new Set(country.topics.map(t => t.threadId).filter(Boolean))];
 
         if (threadIds.length === 1 && onThreadSelect) {
@@ -268,7 +296,7 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
 
       gMarkersRef.current.push(marker);
     }
-  }, [markers, lines, highlightThread, storyPlay, countryPlay, countryThreadIds]);
+  }, [markers, lines, highlightThread, storyPlay, countryPlay, countryThreadIds, disableInfoWindow, onCountryClick, activeCountry]);
 
   return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />;
 });
@@ -714,7 +742,7 @@ function MapLegend() {
   );
 }
 
-export default function WeeklyMap({ embedded = false }) {
+export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp = false, defaultCountry = null, defaultThread = null, onCountryClick = null }) {
   const isEmbedded = embedded;
   const { user, loading: authLoading } = useAuth();
   const isMobile = useIsMobile();
@@ -724,7 +752,7 @@ export default function WeeklyMap({ embedded = false }) {
     if (isEmbedded) return null;
     return searchParams.get('thread') || null;
   });
-  const [panelOpen, setPanelOpen] = useState(!isMobile);
+  const [panelOpen, setPanelOpen] = useState(!isMobile && !hidePanelProp);
   const [mapRegion, setMapRegion] = useState(() => {
     if (isEmbedded) return null;
     return searchParams.get('region') || null;
@@ -856,6 +884,27 @@ export default function WeeklyMap({ embedded = false }) {
     return () => clearTimeout(timer);
   }, [countryPlay, countryDates]);
 
+  // Sync defaultCountry prop → activeCountry state
+  useEffect(() => {
+    if (defaultCountry) setActiveCountry(defaultCountry);
+  }, [defaultCountry]);
+
+  // Auto-zoom when country is set and markers are ready
+  useEffect(() => {
+    if (!defaultCountry || !countryThreadIds || !allMarkers.length) return;
+    const relevant = allMarkers.filter(m => countryThreadIds.has(m.threadId));
+    if (relevant.length === 0) return;
+    const unique = [...new Map(relevant.map(m => [`${m.lat},${m.lng}`, { lat: m.lat, lng: m.lng }])).values()];
+    function tryZoom() {
+      if (googleMapRef.current) {
+        googleMapRef.current.fitBounds(unique);
+      } else {
+        setTimeout(tryZoom, 200);
+      }
+    }
+    tryZoom();
+  }, [defaultCountry, countryThreadIds, allMarkers]);
+
   const zoomToThread = useCallback((threadId) => {
     if (!googleMapRef.current || !threadId) {
       googleMapRef.current?.resetView?.();
@@ -872,6 +921,20 @@ export default function WeeklyMap({ embedded = false }) {
     }
     googleMapRef.current.fitBounds(unique);
   }, [allMarkers]);
+
+  // Sync defaultThread prop → highlightThread + zoom
+  useEffect(() => {
+    if (!defaultThread) return;
+    setHighlightThread(defaultThread);
+    function tryZoom() {
+      if (googleMapRef.current) {
+        zoomToThread(defaultThread);
+      } else {
+        setTimeout(tryZoom, 200);
+      }
+    }
+    tryZoom();
+  }, [defaultThread, zoomToThread]);
 
   function handleEntryFocus(entry) {
     const thread = allThreads.find(t => t.threadId === highlightThread);
@@ -1028,6 +1091,9 @@ export default function WeeklyMap({ embedded = false }) {
         countryPlay={countryPlay}
         onThreadSelect={handleMarkerThreadSelect}
         countryThreadIds={countryThreadIds}
+        disableInfoWindow={!!onCountryClick}
+        onCountryClick={onCountryClick}
+        activeCountry={activeCountry}
       />
     );
   };
@@ -1055,37 +1121,39 @@ export default function WeeklyMap({ embedded = false }) {
         <div className="wmap-loading-full">Loading archive data...</div>
       ) : (
         <div className="wmap-container">
-          <ThreadListPanel
-            threadList={threadList}
-            allThreads={allThreads}
-            highlightThread={highlightThread}
-            onThreadClick={handleThreadClick}
-            onPlayThread={handlePlayThread}
-            storyPlay={storyPlay}
-            open={panelOpen}
-            onClose={() => setPanelOpen(false)}
-            allRegions={allRegions}
-            mapRegion={mapRegion}
-            onRegionChange={(r) => { setMapRegion(r); setHighlightThread(null); }}
-            threadAnalyses={threadAnalyses}
-            onEntryFocus={handleEntryFocus}
-            activeCountry={activeCountry}
-            countryOptions={countryOptions}
-            onCountryChange={setActiveCountry}
-            countryPlay={countryPlay}
-            countryDates={countryDates}
-            onStartCountryPlay={handleStartCountryPlay}
-            onStopCountryPlay={handleStopCountryPlay}
-            onPauseCountryPlay={handlePauseCountryPlay}
-            onStepCountryPlay={handleStepCountryPlay}
-          />
+          {!hidePanelProp && (
+            <ThreadListPanel
+              threadList={threadList}
+              allThreads={allThreads}
+              highlightThread={highlightThread}
+              onThreadClick={handleThreadClick}
+              onPlayThread={handlePlayThread}
+              storyPlay={storyPlay}
+              open={panelOpen}
+              onClose={() => setPanelOpen(false)}
+              allRegions={allRegions}
+              mapRegion={mapRegion}
+              onRegionChange={(r) => { setMapRegion(r); setHighlightThread(null); }}
+              threadAnalyses={threadAnalyses}
+              onEntryFocus={handleEntryFocus}
+              activeCountry={activeCountry}
+              countryOptions={countryOptions}
+              onCountryChange={setActiveCountry}
+              countryPlay={countryPlay}
+              countryDates={countryDates}
+              onStartCountryPlay={handleStartCountryPlay}
+              onStopCountryPlay={handleStopCountryPlay}
+              onPauseCountryPlay={handlePauseCountryPlay}
+              onStepCountryPlay={handleStepCountryPlay}
+            />
+          )}
 
-          {isMobile && panelOpen && (
+          {!hidePanelProp && isMobile && panelOpen && (
             <div className="wmap-backdrop" onClick={() => setPanelOpen(false)} />
           )}
 
           <div className="wmap-map-area">
-            {!panelOpen && (
+            {!hidePanelProp && !panelOpen && (
               <button className="wmap-panel-toggle" onClick={() => setPanelOpen(true)}>
                 &#x203A; Threads
               </button>
@@ -1097,8 +1165,7 @@ export default function WeeklyMap({ embedded = false }) {
               <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} countryPlay={countryPlay} countryThreadIds={countryThreadIds} />
             )}
 
-
-            <MapLegend />
+            {!hidePanelProp && <MapLegend />}
           </div>
         </div>
       )}

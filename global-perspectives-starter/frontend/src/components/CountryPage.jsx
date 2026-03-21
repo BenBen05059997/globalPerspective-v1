@@ -9,13 +9,39 @@ import { getBroadRegionsForCountry } from '../utils/countryMapping';
 import WeeklyMap from './WeeklyMap';
 import ShareButtons from './ShareButtons';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
+import SectionNav from './SectionNav';
+import SideNav from './SideNav';
+import TrialBanner from './TrialBanner';
+import { useUserProfile } from '../hooks/useUserProfile';
+import BackgroundTimeline from './BackgroundTimeline';
 import './WeeklyPage.css';
 
-const TABS = [
-  { key: 'situationSummary', label: 'Summarize', cssClass: 'summary' },
-  { key: 'trajectory', label: "What's Next", cssClass: 'prediction' },
-  { key: 'crossThreadInsight', label: 'How It Happened', cssClass: 'trace' },
-];
+function formatTimeAgo(isoString) {
+  const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+const TRAJECTORY_BADGES = {
+  escalating: { arrow: '↗', label: 'Escalating', color: '#ef4444' },
+  stable: { arrow: '→', label: 'Stable', color: '#6b7280' },
+  'de-escalating': { arrow: '↘', label: 'De-escalating', color: '#10b981' },
+};
+
+const RISK_DOTS = ['low', 'moderate', 'elevated', 'high'];
+
+function BoldText({ text }) {
+  if (!text) return null;
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return <>{parts.map((p, i) =>
+    p.startsWith('**') && p.endsWith('**')
+      ? <strong key={i}>{p.slice(2, -2)}</strong>
+      : p
+  )}</>;
+}
 
 function CopyLinkBtn({ countryName }) {
   const [copied, setCopied] = useState(false);
@@ -69,10 +95,12 @@ function ArcSection({ arcs, threadAnalyses, countryName }) {
 }
 
 function CoverageList({ entries }) {
+  const [open, setOpen] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [activeAi, setActiveAi] = useState(null);
   const [activeCat, setActiveCat] = useState(null);
   const [collapsedDates, setCollapsedDates] = useState(new Set());
+  const [showAllDays, setShowAllDays] = useState(false);
 
   const categories = useMemo(() => {
     const counts = {};
@@ -106,8 +134,13 @@ function CoverageList({ entries }) {
 
   return (
     <div className="cp-coverage">
+      <button className="cp-coverage-toggle" onClick={() => setOpen(!open)}>
+        <span className="cp-coverage-label">Related coverage ({entries.length})</span>
+        <span className={`cp-day-chevron ${open ? 'open' : ''}`}>&#9662;</span>
+      </button>
+      {open && <>
       <div className="cp-coverage-header">
-        <div className="cp-coverage-label">Related coverage <span className="cp-coverage-hint">— tap an article for sources and AI analysis</span></div>
+        <div className="cp-coverage-hint">Tap an article for sources and AI analysis</div>
         {categories.length > 1 && (
           <div className="cp-coverage-filters">
             <button className={`cp-cov-filter ${!activeCat ? 'active' : ''}`} onClick={() => setActiveCat(null)}>All</button>
@@ -129,7 +162,7 @@ function CoverageList({ entries }) {
         )}
       </div>
       <div className="cp-coverage-list">
-        {dayGroups.map(([date, dayEntries]) => {
+        {(showAllDays ? dayGroups : dayGroups.slice(0, 3)).map(([date, dayEntries]) => {
           const isCollapsed = collapsedDates.has(date);
           return (
             <div key={date} className="cp-day-group">
@@ -146,7 +179,7 @@ function CoverageList({ entries }) {
                 const cat = (entry.category || 'other').toLowerCase();
                 const catColor = CATEGORY_BADGE_COLORS[cat];
                 return (
-                  <div key={id} className={`cp-coverage-item ${isExpanded ? 'expanded' : ''}`}>
+                  <div key={id} id={`coverage-${entry.topicId || id}`} className={`cp-coverage-item ${isExpanded ? 'expanded' : ''}`}>
                     <div className="cp-coverage-row" onClick={() => { setExpandedId(isExpanded ? null : id); setActiveAi(null); }}>
                       {catColor && <span className="story-category-badge" style={{ background: catColor.bg, color: catColor.color, fontSize: 9, padding: '1px 6px' }}>{cat}</span>}
                       <span className="cp-coverage-title">{entry.title}</span>
@@ -205,10 +238,20 @@ function CoverageList({ entries }) {
             </div>
           );
         })}
+        {!showAllDays && dayGroups.length > 3 && (
+          <button
+            className="weekly-category-show-more"
+            onClick={() => setShowAllDays(true)}
+            style={{ marginTop: 8 }}
+          >
+            Show {dayGroups.length - 3} more day{dayGroups.length - 3 !== 1 ? 's' : ''}
+          </button>
+        )}
         {dayGroups.length === 0 && (
           <div className="cp-empty" style={{ padding: '1rem 0' }}>No articles match this filter.</div>
         )}
       </div>
+      </>}
     </div>
   );
 }
@@ -288,10 +331,14 @@ export default function CountryPage() {
   const { countryName } = useParams();
   const paramName = decodeURIComponent(countryName);
   const navigate = useNavigate();
+  const { profile } = useUserProfile();
   const [searchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { dayMap, sortedDates, loading, error } = useWeeklyArchive();
-  const [activeTab, setActiveTab] = useState(null);
+  const [activeTab, setActiveTab] = useState('situationSummary');
+  const [showExplainer, setShowExplainer] = useState(
+    () => !localStorage.getItem('gp_country_explainer_dismissed')
+  );
   const [selectedCountry, setSelectedCountry] = useState(paramName);
 
   const decodedName = selectedCountry || paramName;
@@ -375,7 +422,7 @@ export default function CountryPage() {
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
-  if (!user) {
+  if (!user && !import.meta.env.DEV) {
     return (
       <CountryPreviewGate
         countryName={paramName}
@@ -402,16 +449,15 @@ export default function CountryPage() {
   if (loading) return <div className="weekly-loading">Loading…</div>;
 
   const risk = intel ? (RISK_COLORS[intel.riskLevel] || RISK_COLORS.moderate) : null;
-  const availableTabs = intel ? TABS.filter(t => intel[t.key]) : [];
-  const activeCss = TABS.find(t => t.key === activeTab)?.cssClass || '';
+  const trajectory = intel?.trajectory ? (TRAJECTORY_BADGES[intel.trajectory] || TRAJECTORY_BADGES.stable) : null;
+
+  function dismissExplainer() {
+    localStorage.setItem('gp_country_explainer_dismissed', '1');
+    setShowExplainer(false);
+  }
 
   return (
     <div className="cp-page">
-      {/* ── Page hint ── */}
-      <div className="cp-page-hint">
-        Select a country to see which nations it interacts with, play its news evolution day by day, and read AI-powered analysis below
-      </div>
-
       {/* ── Map hero ── */}
       <div className="cp-map-hero">
         <div className="cp-map-overlay">
@@ -434,6 +480,8 @@ export default function CountryPage() {
         )}
       </div>
 
+      {profile?.isTrial && <TrialBanner daysLeft={profile.trialDaysLeft} />}
+
       {/* ── Info panel ── */}
       <div className="cp-panel">
         {!countryData ? (
@@ -442,68 +490,198 @@ export default function CountryPage() {
             <p>This country has no recent news in the archive.</p>
           </div>
         ) : (
+          <div className="page-with-sidenav">
+            <div className="page-main-content">
           <>
-            <div className="cp-header">
-              <h1 className="cp-title">{decodedName}</h1>
+            {/* ── Header + Risk ── */}
+            <div id="cp-section-overview" className="cp-header">
+              <div>
+                <h1 className="cp-title">{decodedName}</h1>
+                <div className="cp-subtitle">
+                  AI-powered situation briefing
+                  {intel?.generatedAt && <> · Updated {formatTimeAgo(intel.generatedAt)}</>}
+                </div>
+              </div>
               {risk && (
-                <span className="country-risk-badge" style={{ background: risk.bg, color: risk.color }} title="Based on intensity and interaction of active story arcs">
-                  {intel.riskLevel}
-                </span>
+                <div className="cp-risk-indicator">
+                  <div className="cp-risk-dots">
+                    {RISK_DOTS.map(level => (
+                      <span
+                        key={level}
+                        className={`cp-risk-dot-item ${RISK_DOTS.indexOf(level) <= RISK_DOTS.indexOf(intel.riskLevel) ? 'filled' : ''}`}
+                        style={RISK_DOTS.indexOf(level) <= RISK_DOTS.indexOf(intel.riskLevel) ? { background: risk.color } : {}}
+                      />
+                    ))}
+                  </div>
+                  <span className="cp-risk-text" style={{ color: risk.color }}>{(intel.riskLevel || 'moderate').toUpperCase()}</span>
+                  {trajectory && (
+                    <span className="cp-trajectory" style={{ color: trajectory.color }}>{trajectory.arrow} {trajectory.label}</span>
+                  )}
+                </div>
               )}
             </div>
 
+            {/* ── Headline ── */}
             {intel?.headline && (
               <div className="cp-headline">{intel.headline}</div>
             )}
 
-            <div className="cp-stats">
-              AI intelligence synthesized from {countryData.totalArticles} articles across {countryData.dayCount} day{countryData.dayCount !== 1 ? 's' : ''} · {formatDateLabel(countryData.dateRange.from)} — {formatDateLabel(countryData.dateRange.to)}
+            {/* ── Key Metrics Strip (near header) ── */}
+            <div className="cp-metrics">
+              <div className="cp-metric">
+                <span className="cp-metric-value">{countryData.totalArticles}</span>
+                <span className="cp-metric-label">articles</span>
+              </div>
+              <div className="cp-metric">
+                <span className="cp-metric-value">{countryData.arcs?.length || 0}</span>
+                <span className="cp-metric-label">stories</span>
+              </div>
+              <div className="cp-metric">
+                <span className="cp-metric-value">{countryData.dayCount}</span>
+                <span className="cp-metric-label">days</span>
+              </div>
             </div>
+
+            <SectionNav sections={[
+              { id: 'cp-section-overview', label: 'Overview' },
+              ...(intel?.bluf ? [{ id: 'cp-section-bluf', label: 'Bottom Line' }] : []),
+              ...(intel?.keyDevelopments?.length ? [{ id: 'cp-section-developments', label: 'Developments' }] : []),
+              ...(intel?.whyItMatters ? [{ id: 'cp-section-why', label: 'Why It Matters' }] : []),
+              ...(intel?.situationSummary || intel?.trajectoryDetail || intel?.crossThreadInsight ? [{ id: 'cp-section-analysis', label: 'Analysis' }] : []),
+              ...(intel?.riskSignals?.length ? [{ id: 'cp-section-watch', label: 'Watch' }] : []),
+              ...(countryData.arcs?.length ? [{ id: 'cp-section-arcs', label: 'Story Arcs' }] : []),
+              { id: 'cp-section-coverage', label: 'Coverage' },
+            ]} />
+
+            {/* ── BLUF (Bottom Line Up Front) ── */}
+            {intel?.bluf && (
+              <div id="cp-section-bluf" className="cp-bluf">
+                <div className="cp-section-label">BOTTOM LINE</div>
+                <div className="cp-bluf-text">{intel.bluf}</div>
+              </div>
+            )}
+
+            {/* ── Key Developments Timeline ── */}
+            {intel?.keyDevelopments?.length > 0 && (
+              <div id="cp-section-developments" className="cp-developments">
+                <div className="cp-section-label">KEY DEVELOPMENTS</div>
+                <div className="cp-dev-timeline">
+                  {intel.keyDevelopments.map((d, i) => (
+                    <div key={i} className="cp-dev-item">
+                      <span className="cp-dev-date">{formatDateLabel(d.date)}</span>
+                      <span className="cp-dev-dot" />
+                      <span className="cp-dev-text">{d.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Why It Matters ── */}
+            {intel?.whyItMatters && (
+              <div id="cp-section-why" className="cp-why">
+                <div className="cp-section-label">WHY IT MATTERS</div>
+                <div className="cp-why-text"><BoldText text={intel.whyItMatters} /></div>
+              </div>
+            )}
+
+            {/* ── Explainer (dismissible) ── */}
+            {showExplainer && (
+              <div className="cp-explainer">
+                <span>This briefing is generated daily by AI, synthesizing {countryData.totalArticles} articles from {formatDateLabel(countryData.dateRange.from)} — {formatDateLabel(countryData.dateRange.to)}</span>
+                <button className="cp-explainer-dismiss" onClick={dismissExplainer}>Got it</button>
+              </div>
+            )}
 
             <ShareButtons path={`/weekly/country/${encodeURIComponent(decodedName)}`} title={`${decodedName} — Country Intelligence`} preview={{ h: intel?.headline, n: countryData?.totalArticles, d: countryData?.dayCount }} />
 
-            {/* ── AI tabs ── */}
-            {availableTabs.length > 0 ? (
-              <div className="cp-ai">
-                <div className="ai-toolbar">
-                  {availableTabs.map(tab => (
+            {/* ── Background Timeline ── */}
+            {intel?.backgroundTimeline?.length > 0 && (
+              <div id="cp-section-timeline">
+                <BackgroundTimeline
+                  events={intel.backgroundTimeline}
+                  entries={countryData.entries}
+                  onEventClick={(topicId, date) => {
+                    const el = document.getElementById(`coverage-${topicId}`);
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      el.classList.add('highlight-flash');
+                      setTimeout(() => el.classList.remove('highlight-flash'), 2000);
+                    } else {
+                      const section = document.getElementById('cp-section-coverage');
+                      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                />
+              </div>
+            )}
+
+            {/* ── Deep Analysis (expandable sections) ── */}
+            {(intel?.trajectoryDetail || intel?.crossThreadInsight) && (
+              <div id="cp-section-analysis" className="cp-deep">
+                {[
+                  { key: 'trajectoryDetail', label: "What's Next", cssClass: 'prediction' },
+                  { key: 'crossThreadInsight', label: 'Cross-Thread Connections', cssClass: 'trace' },
+                ].filter(t => intel[t.key]).map(tab => (
+                  <div key={tab.key} className="cp-deep-section">
                     <button
-                      key={tab.key}
-                      className={`ai-btn ai-btn-${tab.cssClass} ${activeTab === tab.key ? 'active' : ''}`}
+                      className={`cp-deep-toggle ${activeTab === tab.key ? 'active' : ''}`}
                       onClick={() => setActiveTab(activeTab === tab.key ? null : tab.key)}
                     >
-                      {tab.label}
+                      <span>{tab.label}</span>
+                      <span className={`cp-deep-chevron ${activeTab === tab.key ? 'open' : ''}`}>&#9662;</span>
                     </button>
-                  ))}
-                </div>
-                {activeTab && intel[activeTab] && (
-                  <div className={`story-entry-ai-content ${activeCss}`}>
-                    <div className="story-entry-section-text">{intel[activeTab]}</div>
+                    {activeTab === tab.key && (
+                      <div className={`story-entry-ai-content ${tab.cssClass}`}>
+                        <div className="story-entry-section-text"><BoldText text={intel[tab.key]} /></div>
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            ) : (
+            )}
+
+            {!intel && (
               <div className="cp-ai-pending">Country analysis generates daily — check back soon</div>
             )}
 
-            {/* ── Watch triggers ── */}
-            {intel?.riskSignals && intel.riskSignals.length > 0 && (
-              <div className="country-signals">
-                <div className="country-signals-label">Watch triggers</div>
-                <ul className="country-signals-list">
-                  {intel.riskSignals.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
+            {/* ── Watch Triggers (chips) ── */}
+            {intel?.riskSignals?.length > 0 && (
+              <div id="cp-section-watch" className="cp-watch">
+                <div className="cp-section-label">WHAT TO WATCH</div>
+                <div className="cp-watch-chips">
+                  {intel.riskSignals.map((s, i) => (
+                    <div key={i} className="cp-watch-chip">⚡ {s}</div>
+                  ))}
+                </div>
               </div>
             )}
 
             {/* ── Active arcs ── */}
             {countryData.arcs.length > 0 && (
+              <div id="cp-section-arcs" />
+            )}
+            {countryData.arcs.length > 0 && (
               <ArcSection arcs={countryData.arcs} threadAnalyses={threadAnalyses} countryName={decodedName} />
             )}
 
             {/* ── Related coverage ── */}
+            <div id="cp-section-coverage" />
             <CoverageList entries={countryData.entries} />
           </>
+            </div>
+            <SideNav sections={[
+              { id: 'cp-section-overview', label: 'Overview' },
+              ...(intel?.bluf ? [{ id: 'cp-section-bluf', label: 'Bottom Line' }] : []),
+              ...(intel?.keyDevelopments?.length ? [{ id: 'cp-section-developments', label: 'Developments', count: intel.keyDevelopments.length }] : []),
+              ...(intel?.whyItMatters ? [{ id: 'cp-section-why', label: 'Why It Matters' }] : []),
+              ...(intel?.backgroundTimeline?.length ? [{ id: 'cp-section-timeline', label: 'Timeline', count: intel.backgroundTimeline.length }] : []),
+              ...(intel?.crossThreadInsight || intel?.trajectoryDetail ? [{ id: 'cp-section-analysis', label: 'Analysis' }] : []),
+              ...(intel?.riskSignals?.length ? [{ id: 'cp-section-watch', label: 'Watch', count: intel.riskSignals.length }] : []),
+              ...(countryData.arcs?.length ? [{ id: 'cp-section-arcs', label: 'Story Arcs', count: countryData.arcs.length }] : []),
+              { id: 'cp-section-coverage', label: 'Coverage', count: countryData.totalArticles },
+            ]} />
+          </div>
         )}
       </div>
     </div>

@@ -1,15 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import ShareButtons from './ShareButtons';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { formatDateLabel } from '../utils/dateUtils';
-import ThreadIntelligence from './ThreadIntelligence';
 import CompactTimeline from './CompactTimeline';
 import WeeklyMap from './WeeklyMap';
 import StoryEntryCard from './StoryEntryCard';
 import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
+import SideNav from './SideNav';
+import TrialBanner from './TrialBanner';
+import { useUserProfile } from '../hooks/useUserProfile';
 import './WeeklyPage.css';
 
 function humanizeThreadId(id) {
@@ -102,11 +104,41 @@ function ThreadPreviewGate({ threadId, searchParams, ctaTitle, ctaPrimary, ctaSe
   );
 }
 
+function formatTimeAgo(isoString) {
+  const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function ThreadAnalysisSection({ tab, analysis, defaultOpen }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="cp-deep-section">
+      <button className={`cp-deep-toggle ${open ? 'active' : ''}`} onClick={() => setOpen(!open)}>
+        <div>
+          <span>{tab.label}</span>
+          <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 400, marginLeft: 8 }}>{tab.hint}</span>
+        </div>
+        <span className={`cp-deep-chevron ${open ? 'open' : ''}`}>&#9662;</span>
+      </button>
+      {open && (
+        <div className={`story-entry-ai-content ${tab.cssClass}`}>
+          <div className="story-entry-section-text">{analysis[tab.key]}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ThreadPage() {
   const { threadId } = useParams();
   const [searchParams] = useSearchParams();
   const fromCountry = searchParams.get('from') === 'country' ? searchParams.get('country') : null;
   const { user, loading: authLoading } = useAuth();
+  const { profile } = useUserProfile();
   const { dayMap, sortedDates, loading, error } = useWeeklyArchive();
 
   const thread = useMemo(() => {
@@ -145,7 +177,7 @@ export default function ThreadPage() {
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
-  if (!user) {
+  if (!user && !import.meta.env.DEV) {
     return (
       <ThreadPreviewGate
         threadId={threadId}
@@ -181,6 +213,11 @@ export default function ThreadPage() {
     );
   }
 
+  const hasWatchQuestions = analysis?.watchQuestions?.length > 0;
+  const hasArc = !!analysis?.storyArc;
+  const hasTrajectory = !!analysis?.trajectory;
+  const hasRootCause = !!analysis?.rootCauseChain;
+
   return (
     <div className="thread-page">
       <div className="thread-page-topbar">
@@ -190,46 +227,124 @@ export default function ThreadPage() {
           <Link to="/weekly" className="thread-page-back">← Weekly Analysis</Link>
         )}
       </div>
-      <div className="thread-page-body">
-        {catColors && (
-          <span className="story-category-badge" style={{ background: catColors.bg, color: catColors.color, marginBottom: 8, display: 'inline-block' }}>
-            {category}
-          </span>
-        )}
-        <h1 className="thread-page-title">{analysis?.threadTitle || thread.latestTitle}</h1>
-        <div className="thread-page-meta">
-          <span>{formatDateLabel(thread.dateRange.from)}{thread.dateRange.from !== thread.dateRange.to && ` — ${formatDateLabel(thread.dateRange.to)}`}</span>
-          <span className="story-card-detail-sep" />
-          <span>{thread.articleCount} article{thread.articleCount !== 1 ? 's' : ''} · {thread.dayCount} day{thread.dayCount !== 1 ? 's' : ''}</span>
-          <span className="story-card-detail-sep" />
-          <span>{thread.regions.slice(0, 4).join(', ')}</span>
-        </div>
-        <ShareButtons threadId={thread.threadId} title={analysis?.threadTitle || thread.latestTitle} preview={{ t: analysis?.threadTitle || thread.latestTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: thread.entries[0]?.category?.toLowerCase() }} />
-        <ThreadIntelligence analysis={analysis} />
-        {thread.regions.length > 0 && (
-          <div className="thread-page-map">
-            <WeeklyMap embedded defaultThread={thread.threadId} hidePanel />
-          </div>
-        )}
-        {analysis && thread.dayCount > 1 ? (
-          <CompactTimeline entries={thread.entries} entryShortTitles={analysis.entryShortTitles} dotColor={catColors?.bg} />
-        ) : thread.dayCount > 1 ? (
-          <div className="story-timeline">
-            {thread.entries.map((entry, i) => (
-              <div key={entry.topicId || i} className="story-timeline-entry">
-                <div className="story-entry-dot" />
-                <div className="story-entry-content">
-                  <div className="story-entry-date">{formatDateLabel(entry.date)}</div>
-                  <StoryEntryCard entry={entry} />
+      <div className="page-with-sidenav">
+        <div className="page-main-content">
+          <div className="thread-page-body">
+            {profile?.isTrial && <TrialBanner daysLeft={profile.trialDaysLeft} />}
+            {/* ── Header ── */}
+            <div id="tp-section-overview">
+              {catColors && (
+                <span className="story-category-badge" style={{ background: catColors.bg, color: catColors.color, marginBottom: 8, display: 'inline-block' }}>
+                  {category}
+                </span>
+              )}
+              <h1 className="thread-page-title">{analysis?.threadTitle || thread.latestTitle}</h1>
+              <div className="cp-subtitle">
+                Story arc intelligence — {formatDateLabel(thread.dateRange.from)}{thread.dateRange.from !== thread.dateRange.to && ` to ${formatDateLabel(thread.dateRange.to)}`}
+                {analysis?.generatedAt && <> · Updated {formatTimeAgo(analysis.generatedAt)}</>}
+              </div>
+
+              {/* Metrics strip */}
+              <div className="cp-metrics" style={{ marginTop: 12 }}>
+                <div className="cp-metric">
+                  <span className="cp-metric-value">{thread.articleCount}</span>
+                  <span className="cp-metric-label">articles</span>
+                </div>
+                <div className="cp-metric">
+                  <span className="cp-metric-value">{thread.dayCount}</span>
+                  <span className="cp-metric-label">days</span>
+                </div>
+                <div className="cp-metric">
+                  <span className="cp-metric-value">{thread.regions.length}</span>
+                  <span className="cp-metric-label">regions</span>
+                </div>
+                <div className="cp-metric">
+                  <span className="cp-metric-value">{thread.sources.length}</span>
+                  <span className="cp-metric-label">sources</span>
                 </div>
               </div>
-            ))}
+
+              {/* Region links */}
+              {thread.regions.length > 0 && (
+                <div className="thread-page-regions">
+                  {thread.regions.slice(0, 6).map(r => (
+                    <Link key={r} to={`/weekly/country/${encodeURIComponent(r)}`} className="thread-region-link">{r}</Link>
+                  ))}
+                  {thread.regions.length > 6 && <span className="thread-region-more">+{thread.regions.length - 6}</span>}
+                </div>
+              )}
+            </div>
+
+            <ShareButtons threadId={thread.threadId} title={analysis?.threadTitle || thread.latestTitle} preview={{ t: analysis?.threadTitle || thread.latestTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: thread.entries[0]?.category?.toLowerCase() }} />
+
+            {/* ── Watch Questions ── */}
+            {hasWatchQuestions && (
+              <div id="tp-section-watch" className="cp-watch" style={{ marginBottom: 16 }}>
+                <div className="cp-section-label">QUESTIONS TO FOLLOW ({analysis.watchQuestions.length})</div>
+                <div className="cp-watch-chips">
+                  {analysis.watchQuestions.map((q, i) => (
+                    <div key={i} className="cp-watch-chip">❓ {q}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── AI Analysis sections (auto-open first) ── */}
+            {(hasArc || hasTrajectory || hasRootCause) && (
+              <div id="tp-section-analysis">
+                <div className="cp-section-label">AI ARC ANALYSIS — click a section to read</div>
+                <div className="cp-deep" style={{ marginBottom: 16 }}>
+                  {[
+                    { key: 'storyArc', label: 'How It Evolved', cssClass: 'summary', hint: 'The narrative arc across all days' },
+                    { key: 'trajectory', label: "What's Next", cssClass: 'prediction', hint: 'Where this story is heading' },
+                    { key: 'rootCauseChain', label: 'Why It Happened', cssClass: 'trace', hint: 'Root causes and contributing factors' },
+                  ].filter(t => analysis?.[t.key]).map((tab, i) => (
+                    <ThreadAnalysisSection key={tab.key} tab={tab} analysis={analysis} defaultOpen={i === 0} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Map ── */}
+            {thread.regions.length > 0 && (
+              <div id="tp-section-map" className="thread-page-map">
+                <div className="cp-section-label">GEOGRAPHIC SPREAD <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— countries involved in this story arc</span></div>
+                <WeeklyMap embedded defaultThread={thread.threadId} hidePanel />
+              </div>
+            )}
+
+            {/* ── Timeline ── */}
+            <div id="tp-section-timeline">
+              <div className="cp-section-label">STORY TIMELINE ({thread.entries.length} entries)</div>
+              {analysis && thread.dayCount > 1 ? (
+                <CompactTimeline entries={thread.entries} entryShortTitles={analysis.entryShortTitles} dotColor={catColors?.bg} />
+              ) : thread.dayCount > 1 ? (
+                <div className="story-timeline">
+                  {thread.entries.map((entry, i) => (
+                    <div key={entry.topicId || i} className="story-timeline-entry">
+                      <div className="story-entry-dot" />
+                      <div className="story-entry-content">
+                        <div className="story-entry-date">{formatDateLabel(entry.date)}</div>
+                        <StoryEntryCard entry={entry} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="story-single-entry">
+                  <StoryEntryCard entry={thread.entries[0]} />
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="story-single-entry">
-            <StoryEntryCard entry={thread.entries[0]} />
-          </div>
-        )}
+        </div>
+        <SideNav sections={[
+          { id: 'tp-section-overview', label: 'Overview' },
+          ...(hasWatchQuestions ? [{ id: 'tp-section-watch', label: 'Watch', count: analysis.watchQuestions.length }] : []),
+          ...(hasArc || hasTrajectory || hasRootCause ? [{ id: 'tp-section-analysis', label: 'AI Analysis' }] : []),
+          ...(thread.regions.length > 0 ? [{ id: 'tp-section-map', label: 'Map' }] : []),
+          { id: 'tp-section-timeline', label: 'Timeline', count: thread.entries.length },
+        ]} />
       </div>
     </div>
   );

@@ -13,13 +13,13 @@ export function useThreadAnalyses(threadIds) {
   const idsKey = useMemo(() => [...threadIds].sort().join(','), [threadIds]);
 
   const load = useCallback(async () => {
-    if (!user || threadIds.length === 0) return;
+    if ((!user && !import.meta.env.DEV) || threadIds.length === 0) return;
 
     try {
       const raw = localStorage.getItem(CACHE_KEY);
       if (raw) {
         const cached = JSON.parse(raw);
-        if (cached?.uid === user.uid && cached?.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
+        if (cached?.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
           const hit = {};
           let allHit = true;
           for (const id of threadIds) {
@@ -45,7 +45,7 @@ export function useThreadAnalyses(threadIds) {
       try {
         const existing = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
         const merged = { ...existing.data, ...data };
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: merged, uid: user.uid, timestamp: Date.now() }));
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: merged, timestamp: Date.now() }));
       } catch { /* ignore */ }
     } catch {
       setAnalyses({});

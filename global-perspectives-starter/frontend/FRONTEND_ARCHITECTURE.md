@@ -34,13 +34,19 @@ frontend/
 │   │   ├── KickstarterBanner.jsx # Fundraising/promo banner
 │   │   ├── WeeklyPage.jsx       # Weekly analysis page (list + embedded map)
 │   │   ├── WeeklyMap.jsx        # Full-page weekly map with playback
-│   │   ├── WeeklyLockedPreview.jsx # Blurred preview + CTA for unauthenticated users
 │   │   ├── StoryEntryCard.jsx   # Shared entry card with AI toolbar toggle
+│   │   ├── ThreadPage.jsx       # Single thread deep-dive with AI intelligence
 │   │   ├── ThreadIntelligence.jsx # Thread-level AI toggle (Story Arc/Trajectory/Root Causes)
 │   │   ├── CompactTimeline.jsx  # Compact timeline with short titles + expand
 │   │   ├── TrendBadge.jsx       # Rising/Stable/Fading/New trend pill
 │   │   ├── MiniMap.jsx          # Small SVG map showing story footprint
-│   │   ├── ApiKeyGate.jsx       # Reusable API key/auth prompt
+│   │   ├── CountryListPage.jsx  # Country index: overview map, risk-sorted cards, search, sort, filters
+│   │   ├── CountryPage.jsx      # Structured briefing: BLUF, key developments, timeline, sidebar nav
+│   │   ├── CountryOverviewMap.jsx # Risk-colored dot map for country list (no lines, hover tooltips)
+│   │   ├── BackgroundTimeline.jsx # Vertical day-grouped timeline with category dots and article linking
+│   │   ├── SideNav.jsx          # Reusable floating sidebar nav with scroll-spy (desktop only, right side)
+│   │   ├── SectionNav.jsx       # Sticky horizontal pill bar with scroll-spy (mobile fallback)
+│   │   ├── ApiKeyGate.jsx       # Reusable auth prompt (legacy — being replaced by Firebase auth)
 │   │   ├── ErrorModal.jsx       # User-friendly error modal
 │   │   ├── SignIn.jsx           # Email magic link sign-in form
 │   │   ├── AuthCallback.jsx     # Completes Firebase email link auth
@@ -55,15 +61,16 @@ frontend/
 │   │   ├── Contact.jsx          # Contact form
 │   │   └── Disclosures.jsx      # Data source disclosures
 │   ├── hooks/                   # Custom React hooks
-│   │   ├── useGeminiTopics.js   # Daily topic fetching (LocalStorage 1hr TTL)
-│   │   ├── useArticles.js       # Article fetching for Home/Map via search API
-│   │   ├── useTodayArchive.js   # Today's topic archive (`today` action)
-│   │   ├── useWeeklyArchive.js  # Weekly archive fetching, auth-gated, 30min cache
-│   │   ├── useThreadAnalyses.js # Thread-level AI analysis fetching, auth-gated, 30min cache
-│   │   ├── useIsMobile.js       # Responsive breakpoint hook (default 600px)
-│   │   ├── useSummary.js        # Fetch cached summary by topicId
-│   │   ├── usePrediction.js     # Fetch cached prediction by topicId
-│   │   └── useTraceCause.js     # Fetch cached trace cause by topicId
+│   │   ├── useGeminiTopics.js        # Daily topic fetching (LocalStorage 1hr TTL)
+│   │   ├── useArticles.js            # Article fetching for Home/Map via search API
+│   │   ├── useTodayArchive.js        # Today's topic archive (`today` action)
+│   │   ├── useWeeklyArchive.js       # Weekly archive, auth-gated via AuthContext, 30min cache
+│   │   ├── useThreadAnalyses.js      # Thread-level AI analyses, auth-gated, 30min cache
+│   │   ├── useCountryIntelligence.js # Country-level AI intelligence, auth-gated, 30min cache
+│   │   ├── useIsMobile.js            # Responsive breakpoint hook (default 600px)
+│   │   ├── useSummary.js             # Fetch cached summary by topicId
+│   │   ├── usePrediction.js          # Fetch cached prediction by topicId
+│   │   └── useTraceCause.js          # Fetch cached trace cause by topicId
 │   ├── services/                # API integration layers
 │   │   ├── restProxy.js         # REST API proxy (auth-aware, JWT injection)
 │   │   └── appsyncProxy.js      # GraphQL proxy (unused — all traffic via restProxy)
@@ -89,21 +96,28 @@ frontend/
 
 ## Application Routes
 
-The application uses React Router with dynamic basename resolution for GitHub Pages deployment:
+The application uses React Router with dynamic basename resolution for GitHub Pages deployment.
 
-- `/` - Home (main news topics page)
-- `/map` - WorldMap (interactive daily visualization)
-- `/weekly` - WeeklyPage (narrative analysis with list/map toggle, requires sign-in)
-- `/weekly-map` - WeeklyMap (full-page weekly map with date playback, requires sign-in)
-- `/signin` - SignIn (email magic link entry)
-- `/auth/callback` - AuthCallback (completes Firebase email link sign-in)
-- `/pricing` - Pricing (tier comparison + Stripe checkout)
-- `/account` - Account (profile, current tier, Stripe portal link)
-- `/upgrade/success` - UpgradeSuccess (post-Stripe-checkout confirmation)
-- `/privacy` - Privacy terms
-- `/about` - About page
-- `/contact` - Contact page
-- `/disclosures` - Disclosures page
+Routes marked **[Gate]** show a "Under Construction" page in production unless `?preview=1` is in the URL (persists via sessionStorage) or the app is running on localhost.
+
+| Path | Component | Gate |
+|------|-----------|------|
+| `/` | Home | Public |
+| `/map` | WorldMap | Public |
+| `/about` | AboutContact | Public |
+| `/contact` | Contact | Public |
+| `/privacy` | PrivacyTerms | Public |
+| `/disclosures` | Disclosures | Public |
+| `/weekly` | WeeklyPage | Gate |
+| `/weekly/thread/:threadId` | ThreadPage | Gate |
+| `/weekly/countries` | CountryListPage | Gate |
+| `/weekly/country/:countryName` | CountryPage | Gate |
+| `/weekly-map` | WeeklyMap | Gate |
+| `/signin` | SignIn | Gate |
+| `/auth/callback` | AuthCallback | Gate |
+| `/pricing` | Pricing | Gate |
+| `/account` | Account | Gate |
+| `/upgrade/success` | UpgradeSuccess | Gate |
 
 ## Core Features
 
@@ -131,7 +145,7 @@ Each topic provides three AI-powered analysis options:
 
 ### 4. Weekly Narrative Analysis (Member/Enterprise)
 
-Multi-day story tracking that groups topics by narrative thread (`threadId`), showing how stories evolve across days and geographies. Gated behind API key (member = 7 days, enterprise = 30 days).
+Multi-day story tracking that groups topics by narrative thread (`threadId`), showing how stories evolve across days and geographies. Gated behind Firebase Auth + tier check (member = 7 days, enterprise = 30 days). Routes are additionally protected by a `<Gate>` component that shows "Under Construction" in production unless `?preview=1` is in the URL.
 
 #### WeeklyPage (`/weekly`)
 
@@ -139,9 +153,9 @@ Main weekly view with two modes: **List** and **Map** (embedded WeeklyMap).
 
 **Data Flow:**
 ```
-1. User enters API key → stored in localStorage('gp_api_key')
+1. User signs in via Firebase magic link
    ↓
-2. useWeeklyArchive(apiKey) fetches archive_range (7 or 30 days)
+2. useWeeklyArchive() fetches archive_range (7 or 30 days) with Firebase JWT
    ↓
 3. groupByThread() clusters entries by threadId
    ↓
@@ -435,9 +449,9 @@ const {
 - Stale data detection
 - New data notifications
 
-### `useWeeklyArchive(apiKey)`
+### `useWeeklyArchive()`
 
-Fetches multi-day archive data for the Weekly Analysis pages.
+Fetches multi-day archive data for the Weekly Analysis pages. Uses `AuthContext` — no API key parameter.
 
 ```javascript
 const {
@@ -446,33 +460,47 @@ const {
   loading,       // Boolean
   error,         // Error string or null
   tier           // 'member' | 'enterprise' (inferred from day count returned)
-} = useWeeklyArchive(apiKey)
+} = useWeeklyArchive()
 ```
 
 **Features:**
-- Calls `restProxy.fetchArchiveRange(apiKey)` for 30-day range
-- 30-minute LocalStorage caching (key: `gp_weekly_archive_v1`)
+- Calls `restProxy.fetchArchiveRange(days)` with Firebase JWT auth via AuthContext
+- 30-minute LocalStorage caching, key includes `user.uid` to isolate per-user
 - Tier auto-detection: ≤7 days returned → member, >7 → enterprise
 - Each entry carries `threadId`, `title`, `regions[]`, `sources[]`, `ai { summary, prediction, trace_cause }`
 
-### `useThreadAnalyses(threadIds, apiKey)`
+### `useThreadAnalyses(threadIds)`
 
-Fetches thread-level AI analysis for narrative threads from the `thread_analysis` backend action.
+Fetches thread-level AI analysis. Uses `AuthContext` — no API key parameter.
 
 ```javascript
 const {
   analyses,      // Object: { [threadId]: analysis } — empty {} if no data or error
   loading,       // Boolean
-} = useThreadAnalyses(threadIds, apiKey)
+} = useThreadAnalyses(threadIds)
 ```
 
 **Features:**
-- Calls `restProxy.fetchThreadAnalyses(threadIds, apiKey)` for all qualifying thread IDs
-- 30-minute LocalStorage caching (key: `gp_thread_analyses_v1`)
-- Partial cache hit: if some IDs are cached but not all, refetches and merges
-- Graceful error handling: catches failures and returns empty `{}` — no console errors, no broken UI
-- Stable dependency key via sorted+joined thread IDs to avoid unnecessary refetches
-- Only fetches when `threadIds.length > 0` and `apiKey` exists
+- Calls `restProxy.fetchThreadAnalyses(threadIds)` with Firebase JWT auth
+- 30-minute LocalStorage caching, keyed by user.uid + sorted threadIds
+- Graceful error handling: catches failures and returns empty `{}` — no broken UI
+- Only fetches when `threadIds.length > 0` and user is signed in
+
+### `useCountryIntelligence(countryNames)`
+
+Fetches country-level AI intelligence. Uses `AuthContext`.
+
+```javascript
+const {
+  intelligence,  // Object: { [countryName]: intelligenceObj } — empty {} if no data
+  loading,       // Boolean
+} = useCountryIntelligence(countryNames)
+```
+
+**Features:**
+- Calls `restProxy.fetchCountryIntelligence(countryNames)` with Firebase JWT auth
+- 30-minute LocalStorage caching, keyed by user.uid + sorted countryNames
+- Graceful fallback when `newsCountryIntelligence` Lambda hasn't run yet
 
 **Analysis object shape (per thread):**
 ```javascript

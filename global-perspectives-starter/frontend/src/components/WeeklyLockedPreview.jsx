@@ -113,21 +113,21 @@ export default function WeeklyLockedPreview() {
           gap: '1rem',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '2rem' }}>🔒</div>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, margin: 0 }}>Member access required</h2>
+          <div style={{ fontSize: '2rem' }}>🌐</div>
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, margin: 0 }}>Sign in to access Story Intelligence</h2>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360, margin: 0 }}>
-            Track how every story evolves across days, see which outlets led coverage, and follow narrative threads across regions.
+            Track how every story evolves across days, explore AI country briefings, and follow narrative threads. Free during launch.
           </p>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
-            <Link to="/pricing" style={{
+            <Link to="/signin" style={{
               display: 'inline-block',
-              background: '#3b82f6', color: '#fff',
+              background: '#111827', color: '#fff',
               padding: '0.6rem 1.5rem', borderRadius: 8,
               fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none',
             }}>
-              Get Member — $15/mo →
+              Sign in free →
             </Link>
-            <Link to="/signin" style={{
+            <Link to="/pricing" style={{
               display: 'inline-block',
               background: 'var(--bg-secondary, #f3f4f6)',
               border: '1.5px solid var(--border-color, #e5e7eb)',
@@ -135,7 +135,7 @@ export default function WeeklyLockedPreview() {
               padding: '0.6rem 1.5rem', borderRadius: 8,
               fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
             }}>
-              Sign in
+              See plans
             </Link>
           </div>
         </div>

@@ -13,7 +13,7 @@ export function useWeeklyArchive() {
   const [tier, setTier] = useState(null);
 
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!user && !import.meta.env.DEV) return;
     setError(null);
 
     try {
@@ -21,7 +21,7 @@ export function useWeeklyArchive() {
       if (raw) {
         const cached = JSON.parse(raw);
         const fresh = cached?.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL_MS;
-        if (fresh && cached?.uid === user.uid && cached?.dayMap) {
+        if (fresh && cached?.dayMap) {
           setDayMap(cached.dayMap);
           setTier(cached.tier || null);
           return;
@@ -42,7 +42,7 @@ export function useWeeklyArchive() {
         localStorage.setItem(CACHE_KEY, JSON.stringify({
           dayMap: data,
           tier: resolvedTier,
-          uid: user.uid,
+          uid: user?.uid || 'anon',
           timestamp: Date.now(),
         }));
       } catch { /* ignore */ }

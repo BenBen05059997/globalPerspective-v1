@@ -24,22 +24,20 @@ const MEMBER_FEATURES = [
 
 const ENTERPRISE_FEATURES = [
   'Everything in Member',
-  '90-day archive',
-  'Custom source feeds',
-  'Document upload + cross-reference analysis',
-  'Deep thread analysis (full arc)',
-  'Team seats (3–5)',
-  'Webhook & push alerts',
+  'Extended archive depth',
+  'Priority support',
+  'Custom requirements — we build to your needs',
 ];
 
-// Stripe Payment Link is configured in docs/config.js as window.STRIPE_MEMBER_PAYMENT_LINK
+// Paddle checkout URL configured in docs/config.js as window.PADDLE_CHECKOUT_URL
+// Custom data (uid) is passed via checkout[custom][uid] for webhook user mapping.
 function buildCheckoutUrl(user) {
-  const base = window.STRIPE_MEMBER_PAYMENT_LINK;
+  const base = window.PADDLE_CHECKOUT_URL;
   if (!base) return null;
-  const params = new URLSearchParams();
-  if (user?.email) params.set('prefilled_email', user.email);
-  if (user?.uid) params.set('client_reference_id', user.uid);
-  return `${base}?${params.toString()}`;
+  const parts = [];
+  if (user?.email) parts.push(`customer[email]=${encodeURIComponent(user.email)}`);
+  if (user?.uid) parts.push(`checkout[custom][uid]=${encodeURIComponent(user.uid)}`);
+  return parts.length ? `${base}?${parts.join('&')}` : base;
 }
 
 export default function Pricing() {
@@ -74,6 +72,12 @@ export default function Pricing() {
       <div className="pricing-header">
         <h1>Choose your plan</h1>
         <p>Start free. Upgrade when you need deeper intelligence.</p>
+      </div>
+
+      <div className="pricing-launch-notice">
+        <strong>Launch offer:</strong> All Member features are currently free for early users who sign up.
+        When paid plans go live, we'll notify you in advance so you can decide whether to subscribe.
+        We need to cover AI and infrastructure costs to keep the platform running — your support makes this possible.
       </div>
 
       <div className="pricing-cards">
@@ -125,7 +129,7 @@ export default function Pricing() {
           <div className="pricing-price">
             <span className="pricing-amount" style={{ fontSize: '1.5rem' }}>Custom</span>
           </div>
-          <p className="pricing-description">Your intelligence combined with ours. For organizations and research teams.</p>
+          <p className="pricing-description">Tailored intelligence for your organization. Tell us what you need and we'll build it.</p>
           <hr className="pricing-divider" />
           <ul className="pricing-features">
             {ENTERPRISE_FEATURES.map(f => <li key={f}>{f}</li>)}

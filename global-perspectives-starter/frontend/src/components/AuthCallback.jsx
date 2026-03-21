@@ -12,7 +12,7 @@ export default function AuthCallback() {
     async function finish() {
       try {
         await completeSignIn(window.location.href);
-        // Redirect to weekly page after successful sign-in
+        sessionStorage.setItem('gp_just_signed_in', '1');
         navigate('/weekly', { replace: true });
       } catch (err) {
         setError(err?.message || 'Sign-in failed. The link may have expired.');

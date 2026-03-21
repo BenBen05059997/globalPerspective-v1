@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, lazy, Suspense } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
@@ -6,11 +6,10 @@ import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { getTopicRegion } from '../utils/countryMapping';
 import { formatDateLabel } from '../utils/dateUtils';
 import TrendBadge, { getTrend } from './TrendBadge';
-import MiniMap from './MiniMap';
 import WeeklyLockedPreview from './WeeklyLockedPreview';
-import StoryEntryCard from './StoryEntryCard';
-import ThreadIntelligence from './ThreadIntelligence';
-import CompactTimeline from './CompactTimeline';
+import SideNav from './SideNav';
+import TrialBanner from './TrialBanner';
+import { useUserProfile } from '../hooks/useUserProfile';
 import './WeeklyPage.css';
 import './AIComponents.css';
 
@@ -175,8 +174,6 @@ function ArcIntro({ onDismiss }) {
 // ─── Featured Section (Rising arcs) ──────────────────────────────────────────
 
 function FeaturedSection({ threads, threadAnalyses }) {
-  const [modalThread, setModalThread] = useState(null);
-
   const featured = useMemo(() => threads
     .filter(t => (t.trend === 'rising' || t.trend === 'new') && t.articleCount >= 2)
     .sort((a, b) => {
@@ -207,7 +204,7 @@ function FeaturedSection({ threads, threadAnalyses }) {
             return sentence.length > 110 ? sentence.slice(0, 107) + '…' : sentence;
           })();
           return (
-            <div key={thread.threadId} className="featured-card" onClick={() => setModalThread(thread)}>
+            <Link key={thread.threadId} to={`/weekly/thread/${thread.threadId}`} className="featured-card" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div className="featured-card-top">
                 <span className="story-arc-label">Story Arc</span>
                 {fCatColors && (
@@ -232,47 +229,10 @@ function FeaturedSection({ threads, threadAnalyses }) {
               )}
               {hook && <div className="featured-card-hook">{hook}</div>}
               <div className="featured-card-cta">Read full arc →</div>
-            </div>
+            </Link>
           );
         })}
       </div>
-
-      {modalThread && (() => {
-        const analysis = threadAnalyses?.[modalThread.threadId];
-        return (
-          <div className="trending-modal-overlay" onClick={() => setModalThread(null)}>
-            <div className="trending-modal" onClick={e => e.stopPropagation()}>
-              <div className="trending-modal-header">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="trending-detail-title">{analysis?.threadTitle || modalThread.latestTitle}</div>
-                  <div className="trending-detail-meta">
-                    <TrendBadge entries={modalThread.entries} />
-                    <span>{modalThread.articleCount} article{modalThread.articleCount !== 1 ? 's' : ''} · {modalThread.dayCount} day{modalThread.dayCount !== 1 ? 's' : ''} · {modalThread.regions.slice(0, 4).join(', ')}</span>
-                  </div>
-                  <ArcDots entries={modalThread.entries} />
-                </div>
-                <button className="trending-detail-close" onClick={() => setModalThread(null)}>✕</button>
-              </div>
-              <div className="trending-modal-body">
-                <ThreadIntelligence analysis={analysis} />
-                {modalThread.regions.length > 0 && (
-                  <MiniMap regions={modalThread.regions} static />
-                )}
-                {analysis ? (
-                  <CompactTimeline entries={modalThread.entries} entryShortTitles={analysis.entryShortTitles} />
-                ) : (
-                  modalThread.entries.map((entry, i) => (
-                    <div key={entry.topicId || i} className="trending-detail-entry">
-                      <div className="trending-detail-date">{formatDateLabel(entry.date)}</div>
-                      <StoryEntryCard entry={entry} />
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
@@ -280,16 +240,21 @@ function FeaturedSection({ threads, threadAnalyses }) {
 // ─── Story Card ───────────────────────────────────────────────────────────────
 
 function StoryCard({ thread, analysis }) {
-  const [expanded, setExpanded] = useState(false);
   const isMulti = thread.articleCount > 1;
   const displayTitle = analysis?.threadTitle || thread.latestTitle;
   const category = thread.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
   const activity = getActivityStatus(thread.dateRange.to);
   const watchCount = analysis?.watchQuestions?.length || 0;
+  const hook = (() => {
+    const s = thread.entries[0]?.ai?.summary;
+    if (!s) return null;
+    const sentence = s.split(/(?<=[.!?])\s/)[0] || s;
+    return sentence.length > 140 ? sentence.slice(0, 137) + '…' : sentence;
+  })();
 
   return (
-    <div className={`story-card ${expanded ? 'expanded' : ''}`}>
+    <Link to={`/weekly/thread/${thread.threadId}`} className="story-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <div className="story-card-main">
         <div className="story-card-content">
           <div className="story-card-title">{displayTitle}</div>
@@ -316,51 +281,16 @@ function StoryCard({ thread, analysis }) {
             )}
           </div>
           {isMulti && <ArcDots entries={thread.entries} />}
-          {!expanded && watchCount > 0 && (
-            <div className="story-card-watch-hint" onClick={() => setExpanded(true)}>
-              {watchCount} question{watchCount !== 1 ? 's' : ''} to watch →
+          {hook && <div className="story-card-hook">{hook}</div>}
+          {watchCount > 0 && (
+            <div className="story-card-watch-hint">
+              {watchCount} question{watchCount !== 1 ? 's' : ''} to watch
             </div>
           )}
         </div>
-        <button
-          className={`story-expand-btn ${expanded ? 'open' : ''}`}
-          onClick={() => setExpanded(!expanded)}
-        >
-          {expanded ? '▲' : '▼ Read arc'}
-        </button>
+        <span className="story-expand-btn">Read arc →</span>
       </div>
-
-      {expanded && (
-        <div className="story-card-body">
-          <div className="story-card-detail-meta">
-            <span>{formatDateLabel(thread.dateRange.from)}{thread.dateRange.from !== thread.dateRange.to && ` — ${formatDateLabel(thread.dateRange.to)}`}</span>
-            <span className="story-card-detail-sep" />
-            <span>{thread.sources.slice(0, 5).join(', ')}{thread.sources.length > 5 ? ` +${thread.sources.length - 5}` : ''}</span>
-          </div>
-          <ThreadIntelligence analysis={analysis} />
-          {thread.regions.length > 0 && <MiniMap regions={thread.regions} />}
-          {analysis && isMulti ? (
-            <CompactTimeline entries={thread.entries} entryShortTitles={analysis.entryShortTitles} />
-          ) : isMulti ? (
-            <div className="story-timeline">
-              {thread.entries.map((entry, i) => (
-                <div key={entry.topicId || i} className="story-timeline-entry">
-                  <div className="story-entry-dot" />
-                  <div className="story-entry-content">
-                    <div className="story-entry-date">{formatDateLabel(entry.date)}</div>
-                    <StoryEntryCard entry={entry} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="story-single-entry">
-              <StoryEntryCard entry={thread.entries[0]} />
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    </Link>
   );
 }
 
@@ -516,6 +446,14 @@ function FilterControls({ regionGroups, activeRegion, setActiveRegion, timeRange
 
 export default function WeeklyPage() {
   const { user, loading: authLoading } = useAuth();
+  const { profile } = useUserProfile();
+  const [welcome, setWelcome] = useState(() => {
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('gp_just_signed_in')) {
+      sessionStorage.removeItem('gp_just_signed_in');
+      return true;
+    }
+    return false;
+  });
   const [viewMode, setViewMode] = useState('list');
   const [activeRegion, setActiveRegion] = useState(null);
   const [activeCountry, setActiveCountry] = useState(null);
@@ -633,7 +571,7 @@ export default function WeeklyPage() {
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
-  if (!user) return <WeeklyLockedPreview />;
+  if (!user && !import.meta.env.DEV) return <WeeklyLockedPreview />;
 
   const isUnauthorized = error && error.includes('401');
   if (isUnauthorized) {
@@ -671,9 +609,17 @@ export default function WeeklyPage() {
               </div>
             </>
           )}
-          {tier && <span className={`weekly-tier-badge ${tier}`}>{tier}</span>}
         </div>
       </div>
+
+      {profile?.isTrial && <TrialBanner daysLeft={profile.trialDaysLeft} />}
+
+      {welcome && (
+        <div className="welcome-banner">
+          <span>Welcome to Story Intelligence! You have full access to all features. Explore story arcs, country briefings, and AI analysis below.</span>
+          <button className="welcome-dismiss" onClick={() => setWelcome(false)}>✕</button>
+        </div>
+      )}
 
       {error && !isUnauthorized && (
         <div className="weekly-error">{error}</div>
@@ -684,17 +630,26 @@ export default function WeeklyPage() {
           <WeeklyMap embedded />
         </Suspense>
       ) : loading ? (
-        <div className="weekly-loading">Loading archive data...</div>
+        <div>
+          {[1,2,3,4].map(i => (
+            <div key={i} className="skeleton-card">
+              <div className="skeleton-line title" />
+              <div className="skeleton-line meta" />
+              <div className="skeleton-line short" />
+            </div>
+          ))}
+        </div>
       ) : threads.length === 0 && standalone.length === 0 ? (
         <div className="weekly-empty-state">
           <h3>No archive data yet</h3>
           <p>Data is accumulating. Check back in a few hours as the pipeline runs.</p>
         </div>
       ) : (
-        <>
+        <div className="page-with-sidenav">
+        <div className="page-main-content">
           {showIntro && <ArcIntro onDismiss={dismissIntro} />}
-          <FeaturedSection threads={threads} threadAnalyses={threadAnalyses} />
-          <FilterControls
+          <div id="wp-section-featured"><FeaturedSection threads={threads} threadAnalyses={threadAnalyses} /></div>
+          <div id="wp-section-filters"><FilterControls
             regionGroups={regionGroups}
             activeRegion={activeRegion}
             setActiveRegion={setActiveRegion}
@@ -708,8 +663,8 @@ export default function WeeklyPage() {
             countryOptions={countryOptions}
             activeCountry={activeCountry}
             setActiveCountry={setActiveCountry}
-          />
-          <div className="weekly-feed">
+          /></div>
+          <div id="wp-section-arcs" className="weekly-feed">
             {flatThreads.length === 0 && flatStandalone.length === 0 && (
               <div className="weekly-empty-state">
                 <p>No stories match your current filters.</p>
@@ -767,10 +722,17 @@ export default function WeeklyPage() {
               });
             })()}
             {flatStandalone.length > 0 && (
-              <StandaloneSection entries={flatStandalone} />
+              <div id="wp-section-singles"><StandaloneSection entries={flatStandalone} /></div>
             )}
           </div>
-        </>
+        </div>
+        <SideNav sections={[
+          { id: 'wp-section-featured', label: 'Rising' },
+          { id: 'wp-section-filters', label: 'Filters' },
+          { id: 'wp-section-arcs', label: 'Story Arcs', count: flatThreads.length },
+          ...(flatStandalone.length > 0 ? [{ id: 'wp-section-singles', label: 'Singles', count: flatStandalone.length }] : []),
+        ]} />
+        </div>
       )}
     </div>
   );

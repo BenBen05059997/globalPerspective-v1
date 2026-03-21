@@ -1,38 +1,54 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Contact() {
   return (
     <div className="card" style={{ maxWidth: 720, margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '1rem' }}>Get in Touch</h1>
-      <p style={{ fontSize: '1rem', lineHeight: 1.6 }}>
-        We welcome feedback, collaboration ideas, and press inquiries. The fastest way to reach the
-        Global Perspectives team is by email.
+      <h1 style={{ marginBottom: '0.5rem' }}>Contact Us</h1>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
+        We'd love to hear from you — feedback, questions, partnership ideas, or just to say hello.
       </p>
-      <div
-        style={{
-          backgroundColor: 'var(--surface-subtle)',
-          borderRadius: '10px',
-          padding: '1.25rem',
-          margin: '1.5rem 0',
-        }}
-      >
-        <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem' }}>Email</h2>
-        <a
-          href="mailto:globalperspectives.app@gmail.com"
-          className="btn btn-primary"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-        >
-          globalperspectives.app@gmail.com
-        </a>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '1.5rem' }}>
+        <div style={{ padding: '16px', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '10px' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '6px' }}>General Inquiries</div>
+          <a href="mailto:globalperspectives.app@gmail.com" style={{ fontSize: '1rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>
+            globalperspectives.app@gmail.com
+          </a>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+            Feedback, feature requests, bug reports, press inquiries
+          </p>
+        </div>
+
+        <div style={{ padding: '16px', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '10px' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '6px' }}>Billing & Account</div>
+          <a href="mailto:globalperspectives.app@gmail.com?subject=Billing%20inquiry" style={{ fontSize: '1rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>
+            globalperspectives.app@gmail.com
+          </a>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+            Subscription questions, refund requests, account deletion
+          </p>
+        </div>
+
+        <div style={{ padding: '16px', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '10px' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '6px' }}>Enterprise</div>
+          <a href="mailto:globalperspectives.app@gmail.com?subject=Enterprise%20inquiry" style={{ fontSize: '1rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>
+            globalperspectives.app@gmail.com
+          </a>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+            Custom intelligence, team access, API integration, partnerships
+          </p>
+        </div>
       </div>
-      <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>
-        Please include any relevant context so we can respond quickly. We aim to reply within two
-        business days.
+
+      <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+        We aim to respond within 2 business days. For urgent billing issues, include your account email in the subject line.
       </p>
-      <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>
-        Prefer other channels? You can also reach us via the links in the site footer.
-      </p>
+
+      <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, #e5e7eb)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+        <Link to="/about" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>About Us →</Link>
+        <Link to="/pricing" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Pricing →</Link>
+        <Link to="/disclosures" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Disclosures →</Link>
+      </div>
     </div>
   );
 }
-

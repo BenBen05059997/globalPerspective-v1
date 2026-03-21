@@ -92,16 +92,16 @@ export default function App() {
               <Route path="/about" element={<AboutContact />} />
               <Route path="/disclosures" element={<Disclosures />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/weekly" element={<Gate><WeeklyPage /></Gate>} />
-              <Route path="/weekly/thread/:threadId" element={<Gate><ThreadPage /></Gate>} />
-              <Route path="/weekly/countries" element={<Gate><CountryListPage /></Gate>} />
-              <Route path="/weekly/country/:countryName" element={<Gate><CountryPage /></Gate>} />
-              <Route path="/weekly-map" element={<Gate><WeeklyMap /></Gate>} />
-              <Route path="/signin" element={<Gate><SignIn /></Gate>} />
-              <Route path="/auth/callback" element={<Gate><AuthCallback /></Gate>} />
+              <Route path="/weekly" element={<WeeklyPage />} />
+              <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
+              <Route path="/weekly/countries" element={<CountryListPage />} />
+              <Route path="/weekly/country/:countryName" element={<CountryPage />} />
+              <Route path="/weekly-map" element={<WeeklyMap />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/pricing" element={<Pricing />} />
-              <Route path="/account" element={<Gate><Account /></Gate>} />
-              <Route path="/upgrade/success" element={<Gate><UpgradeSuccess /></Gate>} />
+              <Route path="/account" element={<Account />} />
+              <Route path="/upgrade/success" element={<UpgradeSuccess />} />
               <Route path="/whitepaper" element={<WhitepaperPage />} />
             </Routes>
           </Layout>

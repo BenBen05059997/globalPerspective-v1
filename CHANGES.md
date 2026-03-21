@@ -31,8 +31,12 @@
 ### Docs: Legal Notes
 - **New `docs/LEGAL_NOTES.md`** — documents content usage legal research: Brave Search API ToS analysis, industry precedents (Perplexity lawsuits), risk matrix, what keeps the platform protected.
 
-### Infrastructure: GitHub Pages SPA Routing Fix
-- **`docs/index.html`** — added `sessionStorage.redirect` restore script. When GitHub Pages serves `404.html` for a deep link (e.g. `/whitepaper`), the path is now correctly restored after redirect so React Router renders the right page instead of defaulting to `/`.
+### Frontend: Navigation — Pricing Added to Production Nav
+- **`Layout.jsx`** — added "Pricing" link to the production nav bar (previously only visible in dev mode). Pricing page is now accessible from the top nav on the live site.
+
+### Infrastructure: GitHub Pages SPA Routing Fix (two-part)
+- **`resolveBasename()` fix in `App.jsx`** — was incorrectly using the first path segment (e.g. `/pricing`) as the React Router basename on custom domain, causing every link to double-prefix (e.g. `/pricing/pricing`) and direct URL loads to render the wrong page. Fix: basename detection now only activates on `github.io` hostname; returns `undefined` on custom domain so all routes are treated as absolute paths.
+- **`global-perspectives-starter/frontend/index.html`** — added `sessionStorage.redirect` restore script to the source file (not just `docs/index.html`). When GitHub Pages serves `404.html` for a deep link (e.g. `/whitepaper`), the path is restored after redirect so React Router renders the right page. Moving the script to source ensures it survives every build.
 
 ### Pending (requires Paddle account setup)
 - Set `window.PADDLE_CHECKOUT_URL` in `docs/config.js` after creating product in Paddle dashboard

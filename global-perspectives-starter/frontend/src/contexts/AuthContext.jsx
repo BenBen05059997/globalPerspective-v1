@@ -6,6 +6,8 @@ import {
   sendSignInLinkToEmail,
   signInWithEmailLink,
   isSignInWithEmailLink,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 
@@ -30,8 +32,8 @@ function getCallbackUrl() {
   if (window.APP_CALLBACK_URL) return window.APP_CALLBACK_URL;
   const { origin, pathname } = window.location;
   const knownRoutes = new Set([
-    'weekly', 'weekly-map', 'map', 'about', 'contact',
-    'privacy', 'disclosures', 'signin', 'pricing', 'account', 'auth',
+    'weekly', 'weekly-map', 'map', 'about', 'contact', 'whitepaper',
+    'privacy', 'disclosures', 'signin', 'pricing', 'account', 'auth', 'upgrade',
   ]);
   const baseParts = pathname.split('/').filter(p => p && !knownRoutes.has(p));
   const basePath = baseParts.length > 0 ? '/' + baseParts.join('/') : '';
@@ -99,6 +101,14 @@ export function AuthProvider({ children }) {
     return result.user;
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const firebase = initFirebase();
+    if (!firebase) throw new Error('Firebase not configured');
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(firebase.auth, provider);
+    return result.user;
+  }, []);
+
   const signOut = useCallback(async () => {
     const firebase = initFirebase();
     if (!firebase) return;
@@ -114,7 +124,7 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, authError, setAuthError, sendSignInLink, completeSignIn, signOut, getIdToken }}>
+    <AuthContext.Provider value={{ user, loading, authError, setAuthError, sendSignInLink, signInWithGoogle, completeSignIn, signOut, getIdToken }}>
       {children}
     </AuthContext.Provider>
   );

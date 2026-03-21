@@ -1,3 +1,17 @@
+/* ===== PRICING LAUNCH NOTICE ===== */
+.pricing-launch-notice {
+  max-width: 640px;
+  margin: 0 auto 24px;
+  padding: 14px 18px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.6;
+  text-align: center;
+}
+
 /* ===== PRICING PAGE ===== */
 
 .pricing-page {

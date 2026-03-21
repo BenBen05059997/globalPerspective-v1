@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import LoadingBar from './LoadingBar';
 import AIToast from './AIToast';
 
@@ -7,6 +8,7 @@ function Layout({ children }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const navBarRef = useRef(null);
+  const { user, loading: authLoading } = useAuth();
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
@@ -27,17 +29,11 @@ function Layout({ children }) {
     };
   }, [menuOpen]);
 
-  const isDev = import.meta.env.DEV;
-  const navLinks = isDev ? [
+  const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/map', label: 'Map' },
     { to: '/weekly', label: 'Weekly Analysis' },
     { to: '/weekly/countries', label: 'Country Intel' },
-    { to: '/pricing', label: 'Pricing' },
-    { to: '/about', label: 'About' },
-  ] : [
-    { to: '/', label: 'Home' },
-    { to: '/map', label: 'Map' },
     { to: '/pricing', label: 'Pricing' },
     { to: '/about', label: 'About' },
   ];
@@ -73,6 +69,17 @@ function Layout({ children }) {
                   {label}
                 </Link>
               ))}
+              {!authLoading && (
+                user ? (
+                  <Link to="/account" className={`nav-link nav-link-auth ${location.pathname === '/account' ? 'active' : ''}`}>
+                    {user.email}
+                  </Link>
+                ) : (
+                  <Link to="/signin" className={`nav-link nav-link-auth ${location.pathname === '/signin' ? 'active' : ''}`}>
+                    Sign in
+                  </Link>
+                )
+              )}
             </div>
           </div>
         </div>

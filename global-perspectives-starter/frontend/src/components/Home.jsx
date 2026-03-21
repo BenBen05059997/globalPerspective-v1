@@ -350,6 +350,33 @@ function Home() {
       <TopicNav topics={topics} categorizedTopics={categorizedTopics} />
       <TodayArchiveSidebar entries={filteredArchiveEntries} />
 
+      {/* New features banner */}
+      <div style={{
+        maxWidth: 700, margin: '0 auto 1.5rem', padding: '16px 20px',
+        background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
+        border: '1px solid #bfdbfe', borderRadius: 12,
+        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+      }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827', marginBottom: 4 }}>
+            New: Story Arc Intelligence & Country Briefings
+          </div>
+          <div style={{ fontSize: '0.82rem', color: '#374151', lineHeight: 1.5 }}>
+            Track how stories evolve across days, explore AI-powered country risk briefings, and see the connections between global events. Free for all signed-in users.
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          <Link to="/weekly" style={{
+            padding: '7px 16px', borderRadius: 8, background: '#111827', color: '#fff',
+            fontWeight: 600, fontSize: '0.82rem', textDecoration: 'none', whiteSpace: 'nowrap',
+          }}>Story Arcs →</Link>
+          <Link to="/weekly/countries" style={{
+            padding: '7px 16px', borderRadius: 8, background: '#fff', color: '#111827',
+            fontWeight: 600, fontSize: '0.82rem', textDecoration: 'none', border: '1px solid #d1d5db', whiteSpace: 'nowrap',
+          }}>Country Intel →</Link>
+        </div>
+      </div>
+
       <div className="text-center mb-8">
         <h1 className="mb-4">Today's Global Topics</h1>
         <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
@@ -477,7 +504,7 @@ function Home() {
             borderRadius: '50%', animation: 'spin 1s linear infinite',
             marginBottom: '1rem'
           }} />
-          <p style={{ margin: 0 }}>Loading Gemini topics...</p>
+          <p style={{ margin: 0 }}>Loading topics...</p>
         </div>
       )}
 

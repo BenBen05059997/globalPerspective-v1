@@ -1,5 +1,219 @@
 # Global Perspectives — Change Log
 
+## 2026-03-21 (Whitepaper page, Paddle migration, legal/compliance updates, SPA routing fix)
+
+### Frontend: Whitepaper Page
+- **New `WhitepaperPage.jsx`** — full white paper rendered as a styled React page at `/whitepaper`. Sections: Executive Summary, Problem (3 parts), Solution (6-step Narrative Arc Intelligence pipeline), Who It's For (5 personas), Platform (3 tiers), Design Principles, Why Now, Conclusion + CTA.
+- **Route added** in `App.jsx` — `/whitepaper` is public (no Gate).
+- **Footer link added** in `Layout.jsx` — "White Paper" link in footer nav.
+
+### Frontend: Disclosures Page — Strengthened Legal Language
+- **AI-Generated Content section rewritten** — explicit "not financial, investment, legal, political, or security advice" statement. Forward-looking statements disclaimer. "Do not rely solely on this platform" language.
+- **New Limitation of Liability section** — "as is" disclaimer, no warranties, no consequential damages.
+- **Data Sources section updated** — added note that source article text is not reproduced.
+- Last updated date bumped to 2026-03-21.
+
+### Payment: Stripe → Paddle Migration
+- **`newsStripeWebhook/src/index.js` rewritten for Paddle** — handles `subscription.created`, `subscription.updated`, `subscription.canceled`. Signature verification uses HMAC-SHA256 with built-in Node `crypto` (no external deps). Reads `uid` from `data.custom_data.uid`. Stores `paddleCustomerId` and `paddleSubscriptionId` in `USERS_TABLE`.
+- **`newsStripeWebhook/src/package.json`** — removed `stripe` dependency (crypto is Node built-in).
+- **`Pricing.jsx` `buildCheckoutUrl()` updated** — reads `window.PADDLE_CHECKOUT_URL` (set in `docs/config.js`). Passes `checkout[custom][uid]` and `customer[email]` as URL params.
+- **`newsSensitiveData/src/index.js`** — added `user_profile` action (Firebase JWT auth → DynamoDB lookup → return tier/status). Added `portal_session` action (Firebase JWT auth → get `paddleCustomerId` → call Paddle auth-token API → return portal URL). Firebase JWT verification implemented using Node `crypto` + Google public key fetch (cached 1hr, no firebase-admin needed). New env vars: `USERS_DDB_TABLE`, `FIREBASE_PROJECT_ID`, `PADDLE_API_KEY`.
+
+### Docs: Legal Notes
+- **New `docs/LEGAL_NOTES.md`** — documents content usage legal research: Brave Search API ToS analysis, industry precedents (Perplexity lawsuits), risk matrix, what keeps the platform protected.
+
+### Infrastructure: GitHub Pages SPA Routing Fix
+- **`docs/index.html`** — added `sessionStorage.redirect` restore script. When GitHub Pages serves `404.html` for a deep link (e.g. `/whitepaper`), the path is now correctly restored after redirect so React Router renders the right page instead of defaulting to `/`.
+
+### Pending (requires Paddle account setup)
+- Set `window.PADDLE_CHECKOUT_URL` in `docs/config.js` after creating product in Paddle dashboard
+- Set Lambda env vars: `PADDLE_WEBHOOK_SECRET` (newsStripeWebhook), `USERS_DDB_TABLE` + `FIREBASE_PROJECT_ID` + `PADDLE_API_KEY` (newsSensitiveData)
+- Add webhook in Paddle Dashboard → Notifications pointing to newsStripeWebhook API Gateway URL
+- Subscribe to: `subscription.created`, `subscription.updated`, `subscription.canceled`
+
+---
+
+## 2026-03-21 (Country Intelligence structured briefing, timeline, sidebar nav, dev bypass)
+
+### Lambda: `newsCountryIntelligence` — Structured Output
+- **New `bluf` field.** Single-sentence bottom-line-up-front assessment.
+- **New `keyDevelopments` field.** Array of 5-7 dated events (date + text), most recent first. Replaces scanning paragraphs for key facts.
+- **New `whyItMatters` field.** 2-3 sentences with `**bold**` key phrases for scannable reading.
+- **New `backgroundTimeline` field.** Array of 10-15 chronological events with `date`, `event`, `category` (conflict/politics/economy/diplomacy/security/society), and `topicId` for article linking.
+- **`trajectory` changed to enum.** Now returns "escalating", "stable", or "de-escalating" instead of freeform text. Detailed trajectory moved to `trajectoryDetail`.
+- **All text fields use `**bold**` markers** for frontend rendering of key phrases.
+- **Watch triggers forced forward-looking.** Prompt includes today's date and requires all signals to reference future dates.
+- **`topicId` passed to prompt** so AI can reference specific articles in the timeline.
+- **MAX_TOKENS increased to 5000** to accommodate structured output.
+
+### Lambda: `newsSensitiveData` — Auth Bypass for Dev
+- **All gated actions temporarily public** (`archive_range`, `thread_analysis`, `country_intelligence`, `narrative_thread`). Auth checks replaced with `// TODO: Add Firebase JWT auth before public release` comments.
+- **Local source synced** with deployed version — `thread_analysis`, `country_intelligence` actions now in local index.js. All pass through full DynamoDB item (minus PK/SK/ttl).
+
+### CountryPage — Structured Briefing Redesign
+- **Risk indicator as 4-dot visual scale** (low/moderate/elevated/high) with colored dots instead of text-only badge.
+- **Trajectory badge** (↗ Escalating / → Stable / ↘ De-escalating) with color next to risk dots.
+- **BOTTOM LINE section** — blue left-border card with the one-sentence BLUF assessment. Immediately visible, no click needed.
+- **KEY DEVELOPMENTS timeline** — dated bullet list of 5-7 key events with blue dots.
+- **Metrics strip moved to header area** — articles/stories/days cards between headline and section nav.
+- **WHY IT MATTERS section** — amber callout box with bold key phrases rendered via `BoldText` component.
+- **`BoldText` component** — parses `**text**` markdown into `<strong>` tags for inline bold rendering.
+- **Background Timeline** (`BackgroundTimeline.jsx`) — vertical day-grouped timeline:
+  - Events grouped by date, primary event always visible, "+N more events" expand button
+  - Category-colored dots with numbering (conflict #1, politics #2, etc.)
+  - Category legend at bottom with totals
+  - Click event → scroll to matching article in coverage with yellow flash highlight
+  - Related articles shown inline when expanded (fuzzy-matched by keyword overlap with coverage entries)
+- **Deep Analysis renamed** — "Full Situation Analysis" → removed (replaced by timeline). "What's Next" and "Cross-Thread Connections" remain as expandable accordions.
+- **Watch triggers as amber chips** — ⚡-prefixed pills instead of bullet list. Section renamed to "WHAT TO WATCH".
+- **Related coverage collapsed by default** — toggle button "Related coverage (N) ▾" expands to reveal filters and day groups.
+- **Dismissible explainer** — "This briefing is generated daily by AI..." with "Got it" button, persists in localStorage.
+- **"Updated Xh ago" timestamp** from `intel.generatedAt` in subtitle.
+- **Auto-open first AI tab removed** — structured sections (BLUF, developments, why it matters) replaced the need for tab auto-open.
+- **Section IDs** on all major sections for scroll-spy navigation.
+
+### SideNav — Reusable Floating Sidebar (`SideNav.jsx`)
+- **Desktop only** (1100px+), hidden on mobile. Fixed position on the right side of viewport, outside content container.
+- **Scroll-spy** via IntersectionObserver — active section highlighted as user scrolls.
+- **Bottom-of-page detection** — when scrolled to bottom, last section activates.
+- **Section counts** shown as small badges (e.g., "Coverage 144", "Watch 4").
+- **Click to jump** with smooth scroll.
+- **Glassmorphism style** — semi-transparent white background with backdrop blur, subtle border, 10px border-radius.
+- **Reusable** — any page can use `<SideNav sections={[...]} />` with `page-with-sidenav` / `page-main-content` wrapper classes.
+
+### SectionNav — Floating Pill Bar (kept for mobile)
+- Sticky horizontal pill bar with scroll-spy, used on CountryPage for mobile navigation.
+
+### CountryListPage — Full Redesign
+- **CountryOverviewMap** (`CountryOverviewMap.jsx`) — clean risk-colored dot map:
+  - One dot per country, no connection lines
+  - Color = risk level (red/orange/yellow/green/grey)
+  - Size = log(article count)
+  - Hover tooltip: country name, article count, risk dot, AI headline, "Click for full briefing"
+  - Close button hidden on InfoWindow, auto-pan enabled
+  - Map hero container `overflow: visible` so tooltip isn't clipped
+- **Search bar** — filters featured cards and "other countries" by name and headline
+- **Sort toggle** — Risk level (default) / Most covered / A→Z
+- **Region filter pills** — All (8) / Middle East (3) / Europe (2) etc.
+- **Risk legend** — colored dots for High/Elevated/Moderate/Low + trend arrows
+- **Map hint** — "Dot size = coverage volume · Color = risk level · Click any country"
+- **Section headers** — "AI BRIEFINGS" with hint, "Other countries" with explanation
+- **Featured cards** sorted by risk level (high first), with:
+  - Colored left border by risk
+  - Trend arrow (↗ Escalating derived from trajectory text)
+  - Top 2 category tags with colors
+  - "View briefing →" link
+- **"Updated Xh ago"** timestamp from intelligence data
+- **Compact pill grid** for countries without intelligence
+
+### Dev Mode Bypass
+- **All auth gates bypass in dev** — `import.meta.env.DEV` check on WeeklyPage, CountryPage, CountryListPage, ThreadPage. No sign-in needed for `npm run dev`.
+- **Hooks fetch without user** — `useWeeklyArchive`, `useThreadAnalyses`, `useCountryIntelligence` no longer require `user` to be set.
+- **Dev-only full nav** — Layout shows Weekly Analysis, Country Intel, Pricing links in dev mode.
+
+### Other
+- **Home page FreeGate removed** — all topics visible to everyone, no forced sign-in overlay.
+- **WeeklyMap map bounds** — `minZoom: 2`, `maxZoom: 12`, `restriction` with `strictBounds` prevents grey areas.
+- **WeeklyMap country selection visuals** — selected country bright + large, connected countries same color at 35% opacity, unrelated hidden entirely.
+- **CoverageList show top 3** day groups with "Show N more days" button.
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `src/components/BackgroundTimeline.jsx` | Vertical day-grouped timeline with category dots, expand, and article linking |
+| `src/components/SideNav.jsx` | Reusable floating sidebar nav with scroll-spy (desktop only) |
+| `src/components/CountryOverviewMap.jsx` | Clean risk-colored dot map for country list |
+| `src/components/SectionNav.jsx` | Sticky horizontal pill bar with scroll-spy (mobile) |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `src/components/CountryPage.jsx` | Full structured briefing redesign, SideNav, BackgroundTimeline, BoldText, coverage collapse |
+| `src/components/CountryListPage.jsx` | Full redesign with overview map, search, sort, filters, legends, hints |
+| `src/components/WeeklyPage.css` | All new CSS for timeline, sidebar, overview map, briefing sections, coverage toggle |
+| `src/components/WeeklyPage.jsx` | CATEGORY_ORDER/RISK_COLORS exports, dev auth bypass |
+| `src/components/WeeklyMap.jsx` | hidePanel, defaultCountry/Thread, onCountryClick, country selection visuals, map bounds |
+| `src/components/ThreadPage.jsx` | Dev auth bypass |
+| `src/components/Home.jsx` | FreeGate removed |
+| `src/components/Layout.jsx` | Dev-only nav links |
+| `src/App.jsx` | Dev mode gate bypass |
+| `src/hooks/useWeeklyArchive.js` | User check removed for dev |
+| `src/hooks/useThreadAnalyses.js` | User check removed for dev |
+| `src/hooks/useCountryIntelligence.js` | User check removed for dev |
+| `src/services/restProxy.js` | Added fetchCountryIntelligence |
+| `amplify/backend/function/newsCountryIntelligence/src/index.js` | Structured output prompt, backgroundTimeline, forward-looking watch triggers |
+| `amplify/backend/function/newsSensitiveData/src/index.js` | Added thread_analysis + country_intelligence actions, auth bypass |
+
+---
+
+## 2026-03-20 (WeeklyMap props, CountryPage/ThreadPage map fixes, CountryListPage redesign)
+
+### WeeklyMap — New Embedding Props
+- **`hidePanel` prop.** Hides sidebar panel, toggle button, playback overlay, and legend. Map takes full width. Used by CountryPage and ThreadPage.
+- **`defaultCountry` prop.** Sets `activeCountry` on mount, filters markers to that country's threads, auto-zooms to related markers.
+- **`defaultThread` prop.** Sets `highlightThread` on mount, auto-zooms to that thread's markers.
+- **`onCountryClick` prop.** When set, clicking a map dot calls this callback with the country name instead of showing an InfoWindow. Used by CountryPage to navigate between countries.
+- **`disableInfoWindow`** passed to `WeeklyGoogleMap` when `onCountryClick` is set.
+
+### WeeklyMap — Country Selection Visuals
+- **Selected country** renders at full color, larger scale (+4), white border, topic count label, z-index 300.
+- **Connected countries** keep their thread color but at 35% opacity, normal size — visually linked but clearly not selected.
+- **Unrelated markers and lines** are fully hidden (not rendered at all) when a country is active.
+- **Connection lines** in country mode use original thread color at 30% opacity, thin weight.
+
+### WeeklyMap — Map Bounds & Zoom
+- **`minZoom: 2`** prevents zooming out past the world view.
+- **`restriction`** with `strictBounds: true` prevents panning to grey areas outside world bounds (lat ±85, lng ±180).
+- **`maxZoom: 12`** added.
+- **`fitBounds` clamp.** After auto-fit, an `idle` listener ensures zoom doesn't drop below 2. Single-point coordinates use `setZoom(5)` instead of zero-area bounds.
+
+### CountryPage — Coverage List
+- **Show top 3 day groups** by default with a "Show N more days" button for the rest, saving vertical space.
+
+### CountryListPage — Full Redesign
+- **CountryOverviewMap** — new lightweight map component (`CountryOverviewMap.jsx`). Shows one dot per country (no connection lines, no thread data). Dots colored by risk level (red=high, orange=elevated, yellow=moderate, green=low, grey=no intel). Size scaled logarithmically by article count.
+- **Hover tooltips** on map dots: country name, article count, risk level with colored dot, AI headline, "Click for full briefing" hint. Close button hidden. Map auto-pans to keep tooltip visible (`disableAutoPan: false`). Container `overflow: visible` so tooltip isn't clipped.
+- **Featured cards** sorted by risk level (high first, then by article count). Each card shows: colored left border (risk), country name, risk dot + label, trend arrow (Escalating/Stable/De-escalating derived from trajectory text), AI headline, top 2 category tags, article/story count, "View briefing →" link.
+- **Region filter pills** above featured cards (All, Middle East, Europe, Asia, etc.) with counts.
+- **Other countries** shown as compact tag-style pills (name + article count) below featured section.
+- **Hooks rule fix.** All `useState`/`useMemo` hooks moved before early returns to prevent "Rendered more hooks" error.
+
+### Construction Gate + Preview Mode
+- **`ComingSoon` component** replaces WIP routes (weekly, signin, pricing, account, etc.) in production.
+- **`?preview=1`** URL param bypasses gate, persists in `sessionStorage` for the tab session.
+- **`import.meta.env.DEV`** automatically bypasses gate in dev mode (`npm run dev`).
+- **Dev-only nav links** — Layout shows full nav (Weekly Analysis, Country Intel, Pricing) in dev, trimmed nav (Home, Map, About) in prod.
+
+### Home Page
+- **Removed `FreeGate` overlay** that forced non-authenticated users to sign in after 1 topic. All topics now visible to everyone.
+
+### Other
+- **Removed CI auto-deploy workflow** (`.github/workflows/deploy.yml`). Build + copy to `docs/` is done locally. Prevents push conflicts from CI pushing build artifacts.
+- **Added `fetchCountryIntelligence`** to `restProxy.js`.
+- **Disclosures page updated** — subscription terms (tiers, pricing, refund policy, cancellation, payment processing via Stripe), contact info, business name, corrected data sources (xAI Grok + Brave Search).
+- **Privacy page updated** — Firebase auth, Stripe payment data, account deletion process, corrected third-party services, cookies section for GA4/Firebase.
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `src/components/CountryOverviewMap.jsx` | Lightweight risk-colored dot map for country list page |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `src/components/WeeklyMap.jsx` | `hidePanel`, `defaultCountry`, `defaultThread`, `onCountryClick` props; country selection visuals; marker/line hiding; map bounds restriction; `disableInfoWindow` + `activeCountry` on WeeklyGoogleMap |
+| `src/components/CountryPage.jsx` | CoverageList show 3 + "Show more" |
+| `src/components/CountryListPage.jsx` | Full redesign: overview map, risk-sorted cards, trend arrows, category tags, region filters, compact others grid |
+| `src/components/WeeklyPage.css` | CountryOverviewMap hero, featured card, filter pill, trend, others grid CSS |
+| `src/components/Layout.jsx` | Dev-only full nav links |
+| `src/components/Home.jsx` | Removed FreeGate, unused auth import |
+| `src/components/Disclosures.jsx` | Subscription terms, refund policy, contact, Stripe info |
+| `src/components/PrivacyTerms.jsx` | Auth, Stripe, account deletion, corrected services |
+| `src/App.jsx` | ComingSoon gate, preview mode, dev bypass, real routes behind Gate |
+| `src/services/restProxy.js` | Added `fetchCountryIntelligence` |
+
+---
+
 ## 2026-03-15 (Category grouping on Weekly Analysis + WeeklyMap panel)
 - **Thread list grouped by category.** Both the Weekly Analysis feed (`WeeklyPage.jsx`) and the WeeklyMap side panel (`WeeklyMap.jsx`) now group threads into collapsible category sections (politics, economy, conflict, technology, environment, health, society, culture, science, other) instead of a flat list. Each section shows a colored header with the category name and thread count, and collapses/expands on click with an animated chevron.
 - **Show 5 / Show more pattern.** Each category group shows the first 5 threads by default. If more exist, a "Show X more" button appears at the bottom of the group. Expanding one group is independent of others.

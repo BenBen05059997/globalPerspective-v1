@@ -28,5 +28,15 @@
     <!-- Optional runtime config: create public/config.js (ignored by git) -->
     <!-- Example at /src/public/config.example.js; if present, it sets window.APPSYNC_* values -->
     <script src="./config.js"></script>
+    <script>
+      // Restore path saved by 404.html for GitHub Pages SPA deep-link support
+      (function () {
+        var redirect = sessionStorage.redirect;
+        if (redirect && redirect !== location.pathname) {
+          delete sessionStorage.redirect;
+          history.replaceState(null, '', redirect);
+        }
+      })();
+    </script>
   </body>
 </html>

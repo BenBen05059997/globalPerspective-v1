@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-03-21b (Disclosures update: 14-day free trial, Enterprise contact-us, Paddle payment processor)
+
+### Frontend: Disclosures Page — Subscription Terms Updated
+- **Free Trial**: changed from "No free trial is currently offered" to 14-day free trial, no credit card required.
+- **Enterprise tier**: removed fixed $45/month price, now "Contact us for pricing" model.
+- **Cancellation**: removed Stripe-specific reference, now generic "Customer Portal".
+- **Payment Processing**: updated from Stripe to Paddle; added note that Paddle is the Merchant of Record handling VAT/taxes globally.
+- Last updated date: 2026-03-21.
+
 ## 2026-03-21 (Whitepaper page, Paddle migration, legal/compliance updates, SPA routing fix)
 
 ### Frontend: Whitepaper Page

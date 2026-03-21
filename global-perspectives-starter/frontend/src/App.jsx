@@ -56,9 +56,11 @@ function resolveBasename() {
   }
 
   if (!import.meta.env.DEV && typeof window !== 'undefined') {
-    const segments = window.location.pathname.split('/').filter(Boolean);
-    if (segments.length > 0) {
-      return `/${segments[0]}`;
+    // Only use path-based basename on GitHub Pages subdirectory hosting.
+    // On a custom domain all paths are React routes, not a subdirectory basename.
+    if (window.location.hostname.endsWith('github.io')) {
+      const segments = window.location.pathname.split('/').filter(Boolean);
+      if (segments.length > 0) return `/${segments[0]}`;
     }
   }
 

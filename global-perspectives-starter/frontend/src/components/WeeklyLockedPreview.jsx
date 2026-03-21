@@ -113,7 +113,7 @@ export default function WeeklyLockedPreview() {
           gap: '1rem',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '2rem' }}>🌐</div>
+          <img src="/logo_no_grey_bg.png" alt="Global Perspectives" style={{ width: 56, height: 56 }} />
           <h2 style={{ fontSize: '1.3rem', fontWeight: 700, margin: 0 }}>Sign in to access Story Intelligence</h2>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: 360, margin: 0 }}>
             Track how every story evolves across days, explore AI country briefings, and follow narrative threads. Free during launch.

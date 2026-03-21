@@ -109,18 +109,15 @@ export default function Pricing() {
             <span className="pricing-amount">$15</span>
             <span className="pricing-period">/month</span>
           </div>
+          <div className="pricing-free-hint">Currently free for all signed-in users</div>
           <p className="pricing-description">Track how stories evolve over time. For globally-minded professionals.</p>
           <hr className="pricing-divider" />
           <ul className="pricing-features">
             {MEMBER_FEATURES.map(f => <li key={f}>{f}</li>)}
           </ul>
-          {!loading && currentTier === 'member' ? (
-            <Link to="/account" className="pricing-cta current">Manage plan →</Link>
-          ) : (
-            <button className="pricing-cta member" onClick={handleMemberClick} disabled={loading}>
-              {loading ? 'Loading…' : 'Get Member →'}
-            </button>
-          )}
+          <Link to="/signin" className="pricing-cta member" style={{ textDecoration: 'none', textAlign: 'center' }}>
+            Sign in for free access →
+          </Link>
         </div>
 
         {/* ENTERPRISE */}

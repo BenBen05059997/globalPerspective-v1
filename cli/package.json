@@ -1,6 +1,6 @@
 {
   "name": "global-perspectives",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "AI-powered global news intelligence from your terminal",
   "bin": {
     "gp": "./index.js"

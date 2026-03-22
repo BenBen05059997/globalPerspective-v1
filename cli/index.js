@@ -55,19 +55,11 @@ async function api(action, payload = {}) {
 
 // ── Interactive terminal helpers ──────────────────────────────────────────────
 
-function clearScreen() { process.stdout.write('\x1b[2J\x1b[H'); }
-function moveCursor(row, col) { process.stdout.write(`\x1b[${row};${col}H`); }
-function clearLine() { process.stdout.write('\x1b[2K'); }
-function hideCursor() { process.stdout.write('\x1b[?25l'); }
-function showCursor() { process.stdout.write('\x1b[?25h'); }
-
-function enableRawMode() {
-  if (process.stdin.isTTY) {
-    process.stdin.setRawMode(true);
-    process.stdin.resume();
-    process.stdin.setEncoding('utf8');
-  }
-}
+const ALT_SCREEN_ON = '\x1b[?1049h';
+const ALT_SCREEN_OFF = '\x1b[?1049l';
+const HIDE_CURSOR = '\x1b[?25l';
+const SHOW_CURSOR = '\x1b[?25h';
+const REVERSE = '\x1b[7m';
 
 function wrapText(text, width) {
   if (!text) return [];
@@ -86,6 +78,10 @@ function wrapText(text, width) {
   return lines;
 }
 
+function truncate(str, max) {
+  return str.length > max ? str.slice(0, max - 1) + '…' : str;
+}
+
 // ── Commands ─────────────────────────────────────────────────────────────────
 
 async function cmdToday() {
@@ -97,14 +93,11 @@ async function cmdToday() {
     return;
   }
 
-  // Check if terminal is interactive
   if (!process.stdin.isTTY) {
-    // Non-interactive: print flat list
     printTodayFlat(entries);
     return;
   }
 
-  // Interactive mode
   await interactiveToday(entries);
 }
 
@@ -131,108 +124,199 @@ function printTodayFlat(entries) {
 }
 
 async function interactiveToday(entries) {
-  let selected = 0;
-  let expanded = -1;
-  let aiTab = 0; // 0=summary, 1=prediction, 2=trace
+  // Build category groups
+  const CAT_ORDER = ['conflict', 'politics', 'economy', 'technology', 'environment', 'health', 'society', 'military', 'diplomacy', 'security', 'science', 'culture', 'other'];
+  const catMap = {};
+  for (const e of entries) {
+    const cat = (e.category || 'other').toLowerCase();
+    if (!catMap[cat]) catMap[cat] = [];
+    catMap[cat].push(e);
+  }
+  const categories = CAT_ORDER.filter(k => catMap[k]);
+  categories.push(...Object.keys(catMap).filter(k => !categories.includes(k)));
+
+  let catIdx = 0;
+  let itemIdx = 0;
+  let expanded = false;
+  let aiTab = 0;
   const AI_TABS = ['summary', 'prediction', 'trace_cause'];
   const AI_LABELS = ['Summarize', 'Predict', 'Trace Cause'];
-  const cols = process.stdout.columns || 80;
+  let scrollOffset = 0;
+
+  function currentItems() { return catMap[categories[catIdx]] || []; }
 
   function render() {
-    clearScreen();
+    const cols = process.stdout.columns || 80;
     const rows = process.stdout.rows || 24;
-    const maxVisible = rows - 6;
+    let buf = '\x1b[2J\x1b[H'; // clear + home
 
-    console.log(`${c.bold}📰 Today's Global Topics${c.reset} ${c.dim}(${entries.length})${c.reset}  ${c.dim}↑↓ navigate · Enter expand · Tab switch AI · q quit${c.reset}\n`);
+    // ── Header ──
+    buf += `${c.bold} 📰 Global Perspectives${c.reset}${c.dim}  ${entries.length} topics${c.reset}\n`;
 
-    // Calculate scroll window
-    let start = Math.max(0, selected - Math.floor(maxVisible / 2));
-    if (expanded >= 0) start = Math.max(0, expanded - 2);
-    const end = Math.min(entries.length, start + maxVisible);
-
-    for (let i = start; i < end; i++) {
-      const e = entries[i];
-      const isSelected = i === selected;
-      const isExpanded = i === expanded;
-      const cat = (e.category || 'other').toLowerCase();
+    // ── Category tabs ──
+    buf += '\n ';
+    for (let i = 0; i < categories.length; i++) {
+      const cat = categories[i];
+      const count = catMap[cat].length;
       const cc = CAT_COLORS[cat] || c.gray;
+      if (i === catIdx) {
+        buf += `${REVERSE}${cc}${c.bold} ${cat} (${count}) ${c.reset} `;
+      } else {
+        buf += `${c.dim} ${cat} (${count}) ${c.reset}`;
+      }
+    }
+    buf += '\n\n';
+
+    // ── Item list ──
+    const items = currentItems();
+    const maxListRows = expanded ? Math.floor((rows - 8) / 2) : rows - 8;
+
+    // Adjust scroll
+    if (itemIdx < scrollOffset) scrollOffset = itemIdx;
+    if (itemIdx >= scrollOffset + maxListRows) scrollOffset = itemIdx - maxListRows + 1;
+
+    const visibleEnd = Math.min(items.length, scrollOffset + maxListRows);
+
+    for (let i = scrollOffset; i < visibleEnd; i++) {
+      const e = items[i];
+      const isSelected = i === itemIdx;
       const regions = (e.regions || []).slice(0, 3).join(', ');
-      const prefix = isSelected ? `${c.cyan}▸${c.reset}` : ' ';
-      const titleColor = isSelected ? c.bold : '';
-      const thread = e.threadId ? '🧵' : '  ';
+      const thread = e.threadId ? '🧵 ' : '   ';
+      const title = truncate(e.title, cols - 10);
 
-      console.log(`${prefix} ${thread} ${titleColor}${e.title}${c.reset}`);
-      console.log(`    ${cc}${cat}${c.reset}  ${c.dim}${regions}${c.reset}`);
-
-      if (isExpanded) {
-        // Show AI tabs
-        console.log();
-        let tabLine = '    ';
-        for (let t = 0; t < AI_TABS.length; t++) {
-          const hasData = e.ai?.[AI_TABS[t]];
-          if (t === aiTab) {
-            tabLine += `${c.bold}${c.cyan}[${AI_LABELS[t]}]${c.reset} `;
-          } else if (hasData) {
-            tabLine += `${c.dim} ${AI_LABELS[t]} ${c.reset} `;
-          } else {
-            tabLine += `${c.dim} ${AI_LABELS[t]}${c.reset} `;
-          }
-        }
-        console.log(tabLine);
-
-        const content = e.ai?.[AI_TABS[aiTab]];
-        if (content) {
-          console.log();
-          const wrapped = wrapText(content, cols - 8);
-          for (const line of wrapped.slice(0, 10)) {
-            console.log(`      ${line}`);
-          }
-          if (wrapped.length > 10) {
-            console.log(`      ${c.dim}... (${wrapped.length - 10} more lines)${c.reset}`);
-          }
-        } else {
-          console.log(`\n      ${c.dim}No ${AI_LABELS[aiTab].toLowerCase()} available${c.reset}`);
-        }
-
-        if (e.threadId) {
-          console.log(`\n      ${c.dim}Thread: ${c.cyan}gp thread ${e.threadId}${c.reset}`);
-        }
-        console.log();
+      if (isSelected) {
+        buf += `${REVERSE}${c.bold} ▸ ${thread}${title}${c.reset}\n`;
+        if (regions) buf += `${c.cyan}     ${regions}${c.reset}\n`;
+      } else {
+        buf += `   ${c.dim}${thread}${c.reset}${title}\n`;
       }
     }
 
-    if (start > 0) moveCursor(2, cols - 5), process.stdout.write(`${c.dim}↑${start}${c.reset}`);
-    if (end < entries.length) moveCursor(process.stdout.rows - 1, 1), process.stdout.write(`${c.dim}  ${entries.length - end} more ↓${c.reset}`);
+    // Scroll indicator
+    if (items.length > maxListRows) {
+      const pct = Math.round(((itemIdx + 1) / items.length) * 100);
+      buf += `\n${c.dim}   ${itemIdx + 1}/${items.length} (${pct}%)${c.reset}`;
+    }
+
+    // ── Expanded detail ──
+    if (expanded && items[itemIdx]) {
+      const e = items[itemIdx];
+      buf += '\n\n';
+      buf += ` ${c.dim}${'─'.repeat(cols - 2)}${c.reset}\n`;
+
+      // AI tab bar
+      buf += ' ';
+      for (let t = 0; t < AI_TABS.length; t++) {
+        const hasData = e.ai?.[AI_TABS[t]];
+        if (t === aiTab) {
+          buf += `${REVERSE}${c.cyan}${c.bold} ${AI_LABELS[t]} ${c.reset} `;
+        } else if (hasData) {
+          buf += `${c.dim} ${AI_LABELS[t]} ${c.reset} `;
+        } else {
+          buf += `${c.dim} ${AI_LABELS[t]} ${c.reset} `;
+        }
+      }
+      buf += '\n\n';
+
+      const content = e.ai?.[AI_TABS[aiTab]];
+      if (content) {
+        const wrapped = wrapText(content, cols - 6);
+        const maxLines = rows - maxListRows - 12;
+        for (const line of wrapped.slice(0, Math.max(3, maxLines))) {
+          buf += `   ${line}\n`;
+        }
+        if (wrapped.length > maxLines) {
+          buf += `   ${c.dim}... (${wrapped.length - maxLines} more lines — view full at globalperspective.net)${c.reset}\n`;
+        }
+      } else {
+        buf += `   ${c.dim}No ${AI_LABELS[aiTab].toLowerCase()} available for this topic.${c.reset}\n`;
+      }
+
+      if (e.threadId) {
+        buf += `\n   ${c.dim}Story arc: ${c.cyan}gp thread ${e.threadId}${c.reset}\n`;
+      }
+    }
+
+    // ── Keybindings bar ──
+    buf += `\n${c.dim} ←→${c.reset} category  ${c.dim}↑↓${c.reset} navigate  ${c.dim}Enter${c.reset} ${expanded ? 'collapse' : 'expand'}  ${c.dim}Tab${c.reset} AI tab  ${c.dim}q${c.reset} quit`;
+
+    process.stdout.write(buf);
   }
 
-  enableRawMode();
-  hideCursor();
+  // Enter alternate screen
+  process.stdout.write(ALT_SCREEN_ON + HIDE_CURSOR);
+  process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.setEncoding('utf8');
+  process.stdout.on('resize', render);
   render();
 
   return new Promise((resolve) => {
     process.stdin.on('data', (key) => {
+      const items = currentItems();
+
       if (key === 'q' || key === '\x03') { // q or Ctrl+C
-        showCursor();
-        clearScreen();
+        process.stdout.write(ALT_SCREEN_OFF + SHOW_CURSOR);
         process.stdin.setRawMode(false);
         resolve();
         process.exit(0);
         return;
       }
 
-      if (key === '\x1b[A') { // Up
-        selected = Math.max(0, selected - 1);
-        if (expanded >= 0 && expanded !== selected) expanded = -1;
-      } else if (key === '\x1b[B') { // Down
-        selected = Math.min(entries.length - 1, selected + 1);
-        if (expanded >= 0 && expanded !== selected) expanded = -1;
-      } else if (key === '\r' || key === '\n') { // Enter
-        expanded = expanded === selected ? -1 : selected;
-        aiTab = 0;
-      } else if (key === '\t') { // Tab — cycle AI tabs
-        if (expanded >= 0) {
-          aiTab = (aiTab + 1) % AI_TABS.length;
+      // Arrow up / k
+      if (key === '\x1b[A' || key === 'k') {
+        itemIdx = Math.max(0, itemIdx - 1);
+      }
+      // Arrow down / j
+      else if (key === '\x1b[B' || key === 'j') {
+        itemIdx = Math.min(items.length - 1, itemIdx + 1);
+      }
+      // Arrow left / h / Shift+Tab — previous category
+      else if (key === '\x1b[D' || key === 'h' || key === '\x1b[Z') {
+        catIdx = (catIdx - 1 + categories.length) % categories.length;
+        itemIdx = 0;
+        scrollOffset = 0;
+        expanded = false;
+      }
+      // Arrow right / l — next category
+      else if (key === '\x1b[C' || key === 'l') {
+        catIdx = (catIdx + 1) % categories.length;
+        itemIdx = 0;
+        scrollOffset = 0;
+        expanded = false;
+      }
+      // Number keys 1-9 — jump to category
+      else if (key >= '1' && key <= '9') {
+        const idx = parseInt(key) - 1;
+        if (idx < categories.length) {
+          catIdx = idx;
+          itemIdx = 0;
+          scrollOffset = 0;
+          expanded = false;
         }
+      }
+      // Enter — toggle expand
+      else if (key === '\r' || key === '\n') {
+        expanded = !expanded;
+        aiTab = 0;
+      }
+      // Tab — cycle AI tab
+      else if (key === '\t') {
+        if (expanded) aiTab = (aiTab + 1) % AI_TABS.length;
+        else expanded = true;
+      }
+      // Escape — collapse
+      else if (key === '\x1b' && expanded) {
+        expanded = false;
+      }
+      // g — go to top
+      else if (key === 'g') {
+        itemIdx = 0;
+        scrollOffset = 0;
+      }
+      // G — go to bottom
+      else if (key === 'G') {
+        itemIdx = items.length - 1;
       }
 
       render();

@@ -101,6 +101,7 @@ function Layout({ children }) {
               <Link to="/about" className="nav-link">About</Link>
               <Link to="/whitepaper" className="nav-link">White Paper</Link>
               <Link to="/cli" className="nav-link">CLI</Link>
+              <a href="/blog/" className="nav-link">Blog</a>
               <Link to="/privacy" className="nav-link">Privacy &amp; Terms</Link>
               <Link to="/disclosures" className="nav-link">Disclosures</Link>
               <a

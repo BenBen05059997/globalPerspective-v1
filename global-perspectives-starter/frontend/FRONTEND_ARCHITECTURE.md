@@ -101,27 +101,27 @@ frontend/
 
 The application uses React Router with dynamic basename resolution for GitHub Pages deployment.
 
-Routes marked **[Gate]** show a "Under Construction" page in production unless `?preview=1` is in the URL (persists via sessionStorage) or the app is running on localhost.
+Routes marked **Auth** show a preview gate for non-signed-in users with real data from public preview API. Auth routes require Firebase sign-in for full content. All features are currently free for signed-in users (launch mode).
 
-| Path | Component | Gate |
-|------|-----------|------|
-| `/` | Home | Public |
-| `/map` | WorldMap | Public |
-| `/about` | AboutContact | Public |
-| `/contact` | Contact | Public |
-| `/privacy` | PrivacyTerms | Public |
-| `/disclosures` | Disclosures | Public |
-| `/weekly` | WeeklyPage | Gate |
-| `/weekly/thread/:threadId` | ThreadPage | Gate |
-| `/weekly/countries` | CountryListPage | Gate |
-| `/weekly/country/:countryName` | CountryPage | Gate |
-| `/weekly-map` | WeeklyMap | Gate |
-| `/signin` | SignIn | Gate |
-| `/auth/callback` | AuthCallback | Gate |
-| `/pricing` | Pricing | Public |
-| `/account` | Account | Gate |
-| `/upgrade/success` | UpgradeSuccess | Gate |
-| `/whitepaper` | WhitepaperPage | Public |
+| Path | Component | Access | SEO |
+|------|-----------|--------|-----|
+| `/` | Home | Public | Indexed |
+| `/map` | WorldMap | Public | Indexed |
+| `/about` | AboutContact | Public | Indexed |
+| `/contact` | Contact | Public | Indexed |
+| `/privacy` | PrivacyTerms | Public | Indexed |
+| `/disclosures` | Disclosures | Public | Indexed |
+| `/whitepaper` | WhitepaperPage | Public | Indexed |
+| `/pricing` | Pricing | Public | Indexed |
+| `/weekly` | WeeklyPage | Auth (preview gate) | Preview indexed |
+| `/weekly/thread/:threadId` | ThreadPage | Auth (preview with real data) | Preview indexed |
+| `/weekly/countries` | CountryListPage | Auth (preview gate) | Preview indexed |
+| `/weekly/country/:countryName` | CountryPage | Auth (preview with real data) | Preview indexed |
+| `/weekly-map` | WeeklyMap | Auth | — |
+| `/signin` | SignIn | Public | — |
+| `/auth/callback` | AuthCallback | Public | — |
+| `/account` | Account | Auth | — |
+| `/upgrade/success` | UpgradeSuccess | Auth | — |
 
 ## Core Features
 

@@ -1,5 +1,105 @@
 # Global Perspectives — Change Log
 
+## 2026-03-22 (SEO, public previews, Google Sign-In, launch mode, full site open)
+
+### SEO: Public Content Previews
+- **`country_preview` public API action** (no auth) in `newsSensitiveData`. Returns `headline`, `bluf`, `keyDevelopments`, `riskLevel`, `trajectory`, `totalArticles`, `dayCount` for a single country. Google can now index real country intelligence content.
+- **`thread_preview` public API action** (no auth). Returns `threadTitle` and `entryShortTitles` for a single thread.
+- **CountryPage preview gate** now fetches real data via `fetchCountryPreview()`. Non-signed-in users (and Google) see the actual headline, BLUF, key developments timeline, and risk level — not mock placeholder content.
+- **ThreadPage preview gate** now fetches real data via `fetchThreadPreview()`. Shows real thread title and entry short titles.
+- **`fetchCountryPreview(name)`** and **`fetchThreadPreview(threadId)`** added to `restProxy.js` as public (no auth) functions.
+
+### SEO: Dynamic Page Titles
+- Every page now sets `document.title` dynamically:
+  - Home: "Global Perspectives™ — AI-Powered News Intelligence"
+  - Weekly: "Story Intelligence — Global Perspectives"
+  - Thread: "{threadTitle} — Story Arc | Global Perspectives"
+  - Country: "{name} Intelligence Briefing — Global Perspectives"
+  - Country List: "Country Intelligence — Global Perspectives"
+  - Pricing / About / Sign In: unique titles per page
+
+### SEO: robots.txt + sitemap.xml
+- **`docs/robots.txt`** — allows all crawlers, points to sitemap.
+- **`docs/sitemap.xml`** — 10 public routes with `changefreq` and `priority`. Home (hourly/1.0), Map (hourly/0.8), Weekly + Countries (daily/0.9), Pricing (weekly/0.7), static pages (monthly).
+- **`public/robots.txt`** in frontend source so builds include it.
+
+### Auth: Google Sign-In
+- **`signInWithGoogle()`** added to `AuthContext.jsx` using Firebase `signInWithPopup` + `GoogleAuthProvider`.
+- **SignIn page** redesigned: Google button at top with official logo SVG, "or" divider, magic link form below.
+- **Error handling** for `auth/account-exists-with-different-credential` — shows helpful message instead of crash.
+- **Logo** replaces emoji on sign-in page.
+- **Terms agreement** text: "By signing in, you agree to our Privacy & Terms and Disclosures."
+- **Launch messaging**: "All features are free during our launch period — no credit card required."
+
+### Auth: Launch Mode (Free for All)
+- **`resolveUserTier()`** in `newsSensitiveData` Lambda — verifies Firebase JWT, auto-creates user record on first sign-in (`uid`, `email`, `trialStartedAt`), returns `member` tier for all signed-in users (launch mode).
+- **Trial logic commented out** with clear instructions — uncomment and reset `trialStartedAt` when ready to charge.
+- **All gated actions re-gated** with JWT auth: `archive_range`, `thread_analysis`, `country_intelligence`, `narrative_thread`. Non-signed-in requests get 401.
+- **Hooks guard restored** — `useWeeklyArchive`, `useThreadAnalyses`, `useCountryIntelligence` check `!user` in production (with dev bypass).
+- **`useUserProfile` hook** — fetches `user_profile` action, returns `{ tier, trialDaysLeft, isTrial }`.
+- **`TrialBanner` component** — ready for when trial mode is enabled (blue/amber banner with days countdown).
+
+### Frontend: Full Site Open
+- **Construction gate removed** — all routes render real components (no `<Gate>` wrapper).
+- **Full nav bar** in production: Home | Map | Weekly Analysis | Country Intel | Pricing | About | Sign in/email.
+- **WeeklyLockedPreview** updated — "Sign in to access Story Intelligence" with logo, "Free during launch" messaging, "Sign in free →" as primary button.
+- **Pricing page**: green "Currently free for all signed-in users" badge under $15/mo, Member button → "Sign in for free access →", launch offer notice at top.
+- **Account page**: billing section replaced with "All features are currently free for early users."
+- **Home page**: feature promotion banner — "New: Story Arc Intelligence & Country Briefings" with CTA buttons.
+- **Welcome banner** on WeeklyPage after sign-in: "Welcome to Story Intelligence!"
+- **Skeleton loading** — WeeklyPage shows pulsing skeleton cards instead of "Loading..." text.
+
+### Frontend: Page Updates
+- **About page rewritten** — What We Do, How It Works (4-step grid), Key Features, Who We Are. Technology section removed.
+- **Contact page rewritten** — 3 contact cards (General, Billing, Enterprise) with subject-prefixed mailto links.
+- **Privacy page**: Stripe → Paddle references updated.
+- **Enterprise tier**: fake features removed, replaced with "Custom requirements — we build to your needs."
+- **Tier badge** removed from Weekly Analysis header.
+- **Loading text**: "Loading Gemini topics..." → "Loading topics..."
+
+### Bug Fixes
+- **`intel.riskLevel.toUpperCase()` crash** — fallback to `'moderate'` when undefined (CountryPage + CountryListPage).
+- **Auth guards for production** — hooks no longer fire 401 API requests for non-signed-in users.
+- **Missing routes in `knownRoutes`** — added `whitepaper`, `upgrade` to AuthContext callback URL resolver.
+- **GA4 analytics restored** — `G-VT6QENX4MB` tag re-added to `index.html`.
+
+### Files Created
+| File | Purpose |
+|------|---------|
+| `src/components/TrialBanner.jsx` | Trial countdown banner (ready for trial mode) |
+| `src/hooks/useUserProfile.js` | Fetch user tier/trial status |
+| `docs/robots.txt` | Search engine instructions |
+| `docs/sitemap.xml` | Search engine route discovery |
+| `public/robots.txt` | Source copy for builds |
+
+### Files Modified
+| File | Changes |
+|------|---------|
+| `amplify/backend/function/newsSensitiveData/src/index.js` | `resolveUserTier()`, `country_preview`, `thread_preview`, launch mode, auto-create user |
+| `src/App.jsx` | Construction gates removed, all routes open |
+| `src/components/Layout.jsx` | Full nav, auth links restored |
+| `src/components/SignIn.jsx` | Google Sign-In, logo, terms, launch messaging |
+| `src/components/AuthCallback.jsx` | Sets welcome flag in sessionStorage |
+| `src/contexts/AuthContext.jsx` | `signInWithGoogle()`, `GoogleAuthProvider`, updated `knownRoutes` |
+| `src/components/CountryPage.jsx` | Real preview data for SEO, dynamic title |
+| `src/components/ThreadPage.jsx` | Real preview data for SEO, dynamic title |
+| `src/components/WeeklyPage.jsx` | Dynamic title, welcome banner, skeleton loading, trial banner |
+| `src/components/CountryListPage.jsx` | Dynamic title |
+| `src/components/Pricing.jsx` | Launch notice, free hint, disabled Member purchase, dynamic title |
+| `src/components/Account.jsx` | Billing section → free access message |
+| `src/components/AboutContact.jsx` | Full rewrite, dynamic title |
+| `src/components/Contact.jsx` | Full rewrite |
+| `src/components/Home.jsx` | Feature promo banner, dynamic title, removed "Gemini" loading text |
+| `src/components/WeeklyLockedPreview.jsx` | Logo, launch messaging |
+| `src/components/PrivacyTerms.jsx` | Stripe → Paddle |
+| `src/services/restProxy.js` | `fetchCountryPreview`, `fetchThreadPreview` |
+| `src/hooks/useWeeklyArchive.js` | User guard for production |
+| `src/hooks/useThreadAnalyses.js` | User guard for production |
+| `src/hooks/useCountryIntelligence.js` | User guard for production |
+| `index.html` | GA4 restored |
+
+---
+
 ## 2026-03-21b (Disclosures update: 14-day free trial, Enterprise contact-us, Paddle payment processor)
 
 ### Frontend: Disclosures Page — Subscription Terms Updated

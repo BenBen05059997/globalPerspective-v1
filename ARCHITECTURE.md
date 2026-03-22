@@ -1,11 +1,11 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-03-14
+**Last verified:** 2026-03-22
 
 Global Perspectives is an AI-powered global news aggregation platform. It fetches real news from RSS feeds and Brave Search, clusters articles into topics using xAI Grok, generates AI insights (summaries, predictions, root-cause analysis), and displays everything on an interactive world map and weekly narrative timeline.
 
-- **Production URL:** https://benben05059997.github.io/globalPerspective-v1/
-- **Custom domain:** https://globalperspective.net
+- **Production URL:** https://globalperspective.net (custom domain)
+- **GitHub Pages URL:** https://benben05059997.github.io/globalPerspective-v1/
 - **Frontend hosting:** GitHub Pages (served from `docs/`)
 - **Backend:** AWS Lambda + API Gateway + DynamoDB (managed via Amplify)
 
@@ -36,6 +36,27 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                     │  → Swaps staging → latest      │
                     │  → Writes today-archive        │
                     └───────────────┬───────────────┘
+                    ┌───────────────▼───────────────┐
+                    │         newsThreadAnalysis      │
+                    │  Daily batch (6:30 UTC)        │
+                    │  Top 10 threads (2+ entries)   │
+                    │  → xAI Grok generates:         │
+                    │    threadTitle, storyArc,      │
+                    │    trajectory, rootCauseChain, │
+                    │    watchQuestions              │
+                    │  → Writes THREAD# to SummaryDB │
+                    └───────────────┬───────────────┘
+                    ┌───────────────▼───────────────┐
+                    │      newsCountryIntelligence    │
+                    │  Daily batch (~7:00 UTC)       │
+                    │  Top 10 countries by articles  │
+                    │  Uses thread analyses + Brave  │
+                    │  → xAI Grok generates:         │
+                    │    headline, situationSummary, │
+                    │    trajectory, riskSignals,    │
+                    │    riskLevel                   │
+                    │  → Writes COUNTRY# to SummaryDB│
+                    └───────────────┬───────────────┘
                                     │
                ┌────────────────────▼────────────────────┐
                │              newsPostLinkedIn             │
@@ -48,16 +69,72 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                     ┌───────────────▼───────────────┐
                     │         newsSensitiveData       │
                     │   API Gateway REST endpoint    │
-                    │   Serves 8 actions to frontend │
+                    │   Serves actions to frontend   │
+                    │   Firebase JWT auth for gated  │
                     └───────────────┬───────────────┘
                                     │
                     ┌───────────────▼───────────────┐
                     │     React Frontend (GitHub Pages)│
                     │  restProxy.js → API Gateway    │
+                    │  Firebase Auth (magic link)    │
                     │  LocalStorage cache (1hr TTL)  │
                     │  Background poll every 10min   │
                     └────────────────────────────────┘
 ```
+
+---
+
+## Auth System
+
+**Firebase Authentication** — two methods: passwordless email link (magic link) and Google Sign-In.
+
+**Magic link flow:**
+1. User enters email on `/signin`
+2. Firebase sends a magic link email
+3. User clicks link → lands on `/auth/callback`
+4. `AuthCallback` calls `completeSignIn()` → Firebase signs user in, sets welcome flag in sessionStorage
+
+**Google Sign-In flow:**
+1. User clicks Google button on `/signin`
+2. `signInWithGoogle()` in `AuthContext.jsx` calls `signInWithPopup` + `GoogleAuthProvider`
+3. Firebase signs user in immediately
+
+**In the frontend:**
+- `AuthContext.jsx` manages Firebase auth state (`onAuthStateChanged`), exposes `signInWithGoogle()`
+- `AuthBridge` in `App.jsx` calls `setAuthProvider(getIdToken)` on mount, wiring the token getter into `restProxy`
+- `proxyActionWithAuth()` in `restProxy.js` sends `Authorization: Bearer <token>` header on gated requests
+
+**First sign-in:** `newsSensitiveData` auto-creates a user record in `USERS_TABLE` (`uid`, `email`, `trialStartedAt`) on first JWT-gated request.
+
+**Firebase config** is read from `window.FIREBASE_CONFIG` (set in `docs/config.js` at runtime — never bundled into the build). Falls back to `VITE_FIREBASE_*` env vars for local dev.
+
+**Tier enforcement** is handled in `newsSensitiveData` (Lambda) — see Tier System below.
+
+---
+
+## Tier System
+
+| Tier | Access |
+|------|--------|
+| `free` | Public topics only (no auth required) |
+| `member` | 7-day archive + thread/country intelligence |
+| `enterprise` | 30-day archive + all features |
+
+**Storage:** DynamoDB `USERS_TABLE`, keyed by Firebase UID (`uid`).
+
+**Lifecycle:** Managed by `newsStripeWebhook` Lambda (name is legacy — now handles **Paddle**):
+- `subscription.created` → creates/upgrades user to `member`, stores `paddleCustomerId` + `paddleSubscriptionId`
+- `subscription.updated` → updates tier based on plan change
+- `subscription.canceled` → downgrades to `free`
+
+Signature verification: HMAC-SHA256 of `${ts}:${rawBody}` using `PADDLE_WEBHOOK_SECRET`. UID passed via `data.custom_data.uid` in checkout URL params.
+
+**⚠️ Launch mode (active):** `resolveUserTier()` in `newsSensitiveData` returns `tier: 'member'` for ALL signed-in users regardless of USERS_TABLE. Paddle billing not yet live. 14-day trial logic is coded but commented out — uncomment and reset `trialStartedAt` when ready to charge.
+
+**Enforcement (backend):**
+`newsSensitiveData` verifies the Firebase JWT from `Authorization: Bearer` header using lightweight Node `crypto` + Google cert endpoint (no firebase-admin). Reads USERS_TABLE for the user's tier, then enforces day limits (`member`=7, `enterprise`=30).
+
+**Paddle Customer Portal:** accessible from `/account` via the `portal_session` action. Calls Paddle auth-token API using `PADDLE_API_KEY`, returns redirect URL.
 
 ---
 
@@ -67,10 +144,10 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 **Path:** `amplify/backend/function/newsInvokeGemini/src/index.js`
 **Trigger:** EventBridge (hourly) or manual
 
-Despite the name, uses **xAI Grok** — no Gemini at all.
+Despite the name, uses **xAI Grok** — no Gemini.
 
 **What it does:**
-1. Fetches articles in parallel from:
+1. Fetches articles from:
    - **RSS feeds** (8): BBC, Al Jazeera, France24, SCMP, Asia Times, The Diplomat, Dawn, Japan Times
    - **Brave Search** (11 site queries): Reuters, AP, Guardian, DW, Euronews, and others
 2. Filters articles older than 48 hours; deduplicates by URL
@@ -81,14 +158,14 @@ Despite the name, uses **xAI Grok** — no Gemini at all.
 7. Writes to DynamoDB Topics table as `id=staging`
 
 **Key env vars:**
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `XAI_API_KEY` | — | Required |
-| `BRAVE_SEARCH_API_KEY` | — | Optional; falls back to RSS-only |
-| `TOPICS_DDB_TABLE` | — | Required |
-| `GROK_MODEL` | `grok-4-1-fast-non-reasoning` | |
-| `TOPICS_CACHE_ITEM_ID` | `staging` | |
-| `TOPICS_LIMIT` | `13` | |
+| Variable | Notes |
+|----------|-------|
+| `XAI_API_KEY` | Required |
+| `BRAVE_SEARCH_API_KEY` | Optional; falls back to RSS-only |
+| `TOPICS_DDB_TABLE` | Required |
+| `GROK_MODEL` | Default: `grok-4-1-fast-non-reasoning` |
+| `TOPICS_CACHE_ITEM_ID` | Default: `staging` |
+| `TOPICS_LIMIT` | Default: `13` |
 
 ---
 
@@ -109,7 +186,7 @@ Despite the name, uses **xAI Grok** — no Gemini at all.
 4. Writes each to Summary/Prediction DDB table with TTL
 5. Swaps Topics `staging` → `latest`
 6. Writes today's topics as `today-archive` entry
-7. Prunes old cache entries from previous generations
+7. Prunes old cache entries
 
 **Payload options:**
 ```json
@@ -119,75 +196,105 @@ Despite the name, uses **xAI Grok** — no Gemini at all.
 ```
 
 **Key env vars:**
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `XAI_API_KEY` | — | Required |
-| `TOPICS_DDB_TABLE` | — | Required |
-| `SUMMARIZE_PREDICT_TABLE` | — | Required |
-| `GROK_MODEL` | `grok-4-1-fast-non-reasoning` | |
-| `GROK_API_URL` | `https://api.x.ai/v1/chat/completions` | |
-| `MAX_TOKENS` | `600` | |
-| `TEMPERATURE` | `0.2` | |
-| `TOP_P` | `0.9` | |
-| `SUMMARY_PREDICT_TTL_SECONDS` | `3600` | |
-| `PREDICTION_TTL_SECONDS` | `3600` | |
-| `CACHE_CLEANUP_ENABLED` | `true` | |
+| Variable | Notes |
+|----------|-------|
+| `XAI_API_KEY` | Required |
+| `TOPICS_DDB_TABLE` | Required |
+| `SUMMARIZE_PREDICT_TABLE` | Required |
+| `GROK_MODEL` | Default: `grok-4-1-fast-non-reasoning` |
+| `GROK_API_URL` | Default: `https://api.x.ai/v1/chat/completions` |
+| `MAX_TOKENS` | Default: `600` |
+| `TEMPERATURE` | Default: `0.2` |
+| `TOP_P` | Default: `0.9` |
 
 ---
 
-### 3. `newsSensitiveData`
+### 3. `newsThreadAnalysis`
+**Path:** `amplify/backend/function/newsThreadAnalysis/src/index.js`
+**Trigger:** EventBridge — `cron(30 6 * * ? *)` (6:30 UTC daily)
+
+**What it does:**
+1. Reads 30 days of archive entries from Topics table
+2. Groups entries by `threadId`; selects top 10 threads with 2+ entries
+3. For each thread, searches Brave News + Web for external grounding
+4. Calls xAI Grok to generate:
+   - `threadTitle` — sharp 6-10 word journalistic title
+   - `entryShortTitles` — micro-headline per entry (`{topicId, shortTitle}`)
+   - `storyArc` — 2-3 paragraphs on how the story evolved
+   - `trajectory` — 2 paragraphs on where it's heading (named scenarios + timeframes)
+   - `rootCauseChain` — 3-layer root cause (immediate trigger → medium-term condition → structural factor)
+   - `watchQuestions` — 3 specific, actionable watch questions
+5. Skips threads where `entryCount` hasn't changed since last run
+6. Writes to `SUMMARIZE_PREDICT_TABLE` at `THREAD#{threadId}` / `THREAD_ANALYSIS` (31-day TTL)
+
+**Key env vars:** `XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL`, `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
+
+---
+
+### 4. `newsCountryIntelligence`
+**Path:** `amplify/backend/function/newsCountryIntelligence/src/index.js`
+**Trigger:** EventBridge — `cron(0 7 * * ? *)` (7:00 UTC daily, runs after newsThreadAnalysis)
+
+**What it does:**
+1. Reads 30 days of archive entries; groups by country (`regions` field)
+2. Loads existing thread analyses for cross-thread enrichment
+3. Selects top 10 countries with 2+ articles
+4. For each country, searches Brave News for fresh context
+5. Calls xAI Grok to generate:
+   - `headline` — 8-12 word sharp situation headline
+   - `situationSummary` — 2-3 paragraph intelligence briefing
+   - `crossThreadInsight` — connections between story arcs
+   - `trajectory` — 2 paragraphs with named scenarios + triggers
+   - `riskSignals` — 3-4 specific, concrete watch events
+   - `riskLevel` — `low` | `moderate` | `elevated` | `high`
+6. Skips countries where `totalArticles` count hasn't changed
+7. Writes to `SUMMARIZE_PREDICT_TABLE` at `COUNTRY#{countryName}` / `COUNTRY_INTELLIGENCE` (31-day TTL)
+
+**Key env vars:** `XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL`, `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
+
+---
+
+### 5. `newsSensitiveData`
 **Path:** `amplify/backend/function/newsSensitiveData/src/index.js`
 **Trigger:** API Gateway HTTP POST from frontend
 
-Read-only REST proxy. All 8 actions:
+Read-only REST proxy. All supported actions:
 
 | Action | Auth | Payload | Description |
 |--------|------|---------|-------------|
-| `topics` | No | — | Returns `latest` topics |
-| `summary` | No | `{ topicId }` | Returns cached summary |
-| `prediction` | No | `{ topicId }` | Returns cached prediction |
-| `trace_cause` | No | `{ topicId }` | Returns cached trace cause |
-| `geocode` | No | `{ address }` | Mapbox lat/lng lookup |
-| `today` | No | — | Today's archive entries |
-| `archive_range` | Yes | `{ days }` | N days of archive (member=7, enterprise=30) |
-| `narrative_thread` | Yes | `{ threadId }` | All entries for a thread across days |
+| `topics` | None | — | Returns `latest` topics |
+| `summary` | None | `{ topicId }` | Returns cached SUMMARY |
+| `prediction` | None | `{ topicId }` | Returns cached PREDICTION |
+| `trace_cause` | None | `{ topicId }` | Returns cached TRACE_CAUSE |
+| `geocode` | None | `{ address }` | Mapbox lat/lng lookup |
+| `today` | None | — | Today's archive entries |
+| `country_preview` | None | `{ countryName }` | Public SEO preview: headline, bluf, keyDevelopments, riskLevel, trajectory |
+| `thread_preview` | None | `{ threadId }` | Public SEO preview: threadTitle, entryShortTitles |
+| `archive_range` | Firebase JWT | `{ days }` | N days of archive (member=7, enterprise=30) |
+| `narrative_thread` | Firebase JWT | `{ threadId }` | All entries for a thread across days |
+| `thread_analysis` | Firebase JWT | `{ threadIds }` | Thread-level AI analyses |
+| `country_intelligence` | Firebase JWT | `{ countryNames }` | Country-level AI intelligence |
+| `user_profile` | Firebase JWT | — | User tier + subscription info from USERS_TABLE |
+| `portal_session` | Firebase JWT | — | Paddle Customer Portal session URL |
 
-Auth via `x-api-key` header. Keys configured in `MEMBER_API_KEYS` and `ENTERPRISE_API_KEYS` env vars (comma-separated).
+Gated actions require `Authorization: Bearer <firebase-id-token>` header. The Lambda verifies using lightweight Node `crypto` + Google cert endpoint (no firebase-admin), reads USERS_TABLE for tier, and enforces access limits.
+
+**CORS origins:** `benben05059997.github.io`, `globalperspective.net`, `www.globalperspective.net`, `localhost:5173`, `127.0.0.1:5173`
 
 **Key env vars:**
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `TOPICS_DDB_TABLE` | — | Required |
-| `SUMMARIZE_PREDICT_TABLE` | — | Required |
-| `MAPBOX_GEOCODING_KEY` | — | Required |
-| `MEMBER_API_KEYS` | — | Comma-separated |
-| `ENTERPRISE_API_KEYS` | — | Comma-separated |
-| `TOPICS_CACHE_ITEM_ID` | `latest` | |
-| `TOPICS_CACHE_MAX_AGE_SECONDS` | `9000` | |
-
-**CORS origins:** `benben05059997.github.io`, `benben05059997.github.io/GlobalPerspective`, `globalperspective.net`, `www.globalperspective.net`, `localhost:5173`, `127.0.0.1:5173`
+| Variable | Notes |
+|----------|-------|
+| `TOPICS_DDB_TABLE` | Required |
+| `SUMMARIZE_PREDICT_TABLE` | Required |
+| `USERS_DDB_TABLE` | Required (for tier lookup) |
+| `MAPBOX_GEOCODING_KEY` | Required |
+| `FIREBASE_PROJECT_ID` | Required (JWT verification) |
+| `PADDLE_API_KEY` | Required (portal sessions) |
+| `TOPICS_CACHE_MAX_AGE_SECONDS` | Default: `9000` |
 
 ---
 
-### 4. `newsPostDevTo`
-**Path:** `amplify/backend/function/newsPostDevTo/src/index.js`
-**Trigger:** EventBridge (scheduled) or manual
-
-Posts a daily AI-written summary article to [Dev.to](https://dev.to).
-
-**What it does:**
-1. Reads `latest` topics from Topics Table
-2. Calls OpenRouter AI (model: `deepseek/deepseek-r1:free`) to generate a long-form Dev.to article
-3. Checks `SOCIAL_POSTS_TABLE` to skip if already posted today
-4. Posts to Dev.to via API; records post with 90-day TTL
-
-**Key env vars:** `DEVTO_API_KEY`, `OPENROUTER_API_KEY`, `TOPICS_DDB_TABLE`, `SOCIAL_POSTS_TABLE`, `SITE_URL`
-
-> **Note:** A deploy.zip is staged at `amplify/backend/function/newsPostDevTo/deploy.zip` — needs manual upload to AWS.
-
----
-
-### 5. `newsPostLinkedIn`
+### 6. `newsPostLinkedIn`
 **Path:** `amplify/backend/function/newsPostLinkedIn/src/index.js`
 **Trigger:** EventBridge (scheduled) or manual
 
@@ -202,6 +309,44 @@ Posts a daily AI-written summary article to [Dev.to](https://dev.to).
 
 ---
 
+### 7. `newsPostDevTo`
+**Path:** `amplify/backend/function/newsPostDevTo/src/index.js`
+**Trigger:** EventBridge (scheduled) or manual
+
+Posts a daily AI-written summary article to [Dev.to](https://dev.to).
+
+**What it does:**
+1. Reads `latest` topics from Topics Table
+2. Calls OpenRouter AI (`deepseek/deepseek-r1:free`) to generate a long-form Dev.to article
+3. Checks `SOCIAL_POSTS_TABLE` to skip if already posted today
+4. Posts to Dev.to via API; records post with 90-day TTL
+
+**Key env vars:** `DEVTO_API_KEY`, `OPENROUTER_API_KEY`, `TOPICS_DDB_TABLE`, `SOCIAL_POSTS_TABLE`, `SITE_URL`
+
+> **Note:** A deploy.zip is staged at `amplify/backend/function/newsPostDevTo/deploy.zip` — needs manual upload to AWS.
+
+---
+
+### 8. `newsStripeWebhook` (name is legacy — handles Paddle)
+**Path:** `amplify/backend/function/newsStripeWebhook/src/index.js`
+**Trigger:** Paddle webhook (separate API Gateway endpoint)
+
+Handles Paddle billing events to keep USERS_TABLE in sync.
+
+| Paddle Event | Action |
+|---|---|
+| `subscription.created` | Create/upgrade user to `member`; store `paddleCustomerId` + `paddleSubscriptionId` |
+| `subscription.updated` | Update tier based on plan change |
+| `subscription.canceled` | Downgrade user to `free` |
+
+**Signature verification:** HMAC-SHA256 of `${ts}:${rawBody}` using `PADDLE_WEBHOOK_SECRET`. Uses Node built-in `crypto` — no external dependencies.
+
+**UID resolution:** `data.custom_data.uid` — passed via checkout URL params (`checkout[custom][uid]={uid}`).
+
+**Key env vars:** `PADDLE_WEBHOOK_SECRET`, `USERS_DDB_TABLE`
+
+---
+
 ## DynamoDB Tables
 
 ### Topics Table (`TOPICS_DDB_TABLE`)
@@ -211,48 +356,84 @@ Posts a daily AI-written summary article to [Dev.to](https://dev.to).
 |----|-------------|
 | `staging` | Topics being processed (written by newsInvokeGemini) |
 | `latest` | Active topics served to frontend |
-| `today-archive` | Today's snapshot |
-| `YYYY-MM-DD` | Daily archive entries |
+| `today-archive` | Today's snapshot (entries array) |
+| `archive#YYYY-MM-DD` | Daily archive entries |
 
-**Topic schema:**
+**Topic schema (inside `latest.topics[]`):**
 ```json
 {
-  "id": "staging",
-  "topics": [
-    {
-      "id": "topic-hash",
-      "topicId": "topic-hash",
-      "title": "Topic Title",
-      "category": "politics",
-      "regions": ["United States", "China"],
-      "threadId": "thread-slug-hash",
-      "continues_topic": "prior-topic-id",
-      "search_keywords": ["keyword1"],
-      "sources": [{ "title": "...", "url": "...", "source": "reuters.com" }]
-    }
-  ],
-  "model": "grok-4-1-fast-non-reasoning",
-  "generationId": "gen-1234567890",
-  "updatedAt": "2026-03-14T10:00:00.000Z",
-  "status": "pending"
+  "id": "topic-hash",
+  "topicId": "topic-hash",
+  "title": "Topic Title",
+  "category": "politics",
+  "regions": ["United States", "China"],
+  "threadId": "thread-slug-hash",
+  "continues_topic": "prior-topic-id",
+  "search_keywords": ["keyword1"],
+  "sources": [{ "title": "...", "url": "...", "source": "reuters.com" }]
 }
 ```
+
+**Archive entry schema (inside `today-archive.entries[]` / `archive#YYYY-MM-DD.entries[]`):**
+```json
+{
+  "topicId": "topic-hash",
+  "title": "Topic Title",
+  "category": "politics",
+  "regions": ["United States"],
+  "threadId": "thread-slug-hash",
+  "sources": [...],
+  "ai": { "summary": "...", "prediction": "...", "trace_cause": "..." },
+  "archivedAt": "2026-03-20T10:00:00.000Z"
+}
+```
+
+---
 
 ### Summary/Prediction Table (`SUMMARIZE_PREDICT_TABLE`)
-**PK:** `TOPIC#<topicId>` / **SK:** `SUMMARY` | `PREDICTION` | `TRACE_CAUSE`
+**PK:** composite string / **SK:** record type
+
+| PK | SK | Written by | Contents |
+|----|-----|-----------|---------|
+| `TOPIC#{topicId}` | `SUMMARY` | NewsProjectInvokeAgentLambda | Bullet-point key takeaways |
+| `TOPIC#{topicId}` | `PREDICTION` | NewsProjectInvokeAgentLambda | Chain-reaction analysis |
+| `TOPIC#{topicId}` | `TRACE_CAUSE` | NewsProjectInvokeAgentLambda | Root cause / historical context |
+| `THREAD#{threadId}` | `THREAD_ANALYSIS` | newsThreadAnalysis | threadTitle, storyArc, trajectory, rootCauseChain, watchQuestions |
+| `COUNTRY#{countryName}` | `COUNTRY_INTELLIGENCE` | newsCountryIntelligence | headline, situationSummary, crossThreadInsight, trajectory, riskSignals, riskLevel |
+
+---
+
+### Users Table (`USERS_DDB_TABLE`)
+**PK:** `uid` (Firebase UID, String)
 
 ```json
 {
-  "PK": "TOPIC#topic-hash",
-  "SK": "SUMMARY",
-  "topicId": "topic-hash",
-  "content": "Generated content...",
-  "model": "grok-4-1-fast-non-reasoning",
-  "provider": "xai",
-  "generationId": "gen-1234567890",
-  "ttl": 1705315500
+  "uid": "firebase-uid",
+  "email": "user@example.com",
+  "tier": "member",
+  "paddleCustomerId": "ctm_xxx",
+  "paddleSubscriptionId": "sub_xxx",
+  "subscriptionStatus": "active",
+  "createdAt": "2026-03-20T10:00:00.000Z",
+  "updatedAt": "2026-03-20T10:00:00.000Z"
 }
 ```
+
+---
+
+### Social Posts Table (`SOCIAL_POSTS_TABLE`)
+**PK:** `topicId` + `platform`. Deduplication table for LinkedIn/Bluesky/X/Threads/Dev.to posts. TTL: 30 days (90 days for Dev.to).
+
+---
+
+## CloudWatch EventBridge Rules
+
+| Rule name | Schedule | Target |
+|-----------|----------|--------|
+| `DataCollectorSchedule` | rate(1 hour) | newsInvokeGemini |
+| `TriggerDailyAnalysis` | cron(30 6 * * ? *) | newsThreadAnalysis (6:30 UTC) |
+| `TriggerCountryIntelligence` | cron(0 7 * * ? *) | newsCountryIntelligence (7:00 UTC) |
+| `DailyReportSchedule` | cron(0 12 * * ? *) | NewsProjectInvokeAgentLambda (12:00 UTC) |
 
 ---
 
@@ -260,10 +441,13 @@ Posts a daily AI-written summary article to [Dev.to](https://dev.to).
 
 | API | Used by | Purpose |
 |-----|---------|---------|
-| xAI Grok (`api.x.ai`) | newsInvokeGemini, NewsProjectInvokeAgentLambda | Topic clustering + AI content generation |
-| Brave Search | newsInvokeGemini | News article search |
+| xAI Grok (`api.x.ai`) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsThreadAnalysis, newsCountryIntelligence | Topic clustering + AI content generation |
+| Brave Search (news + web) | newsInvokeGemini, newsThreadAnalysis, newsCountryIntelligence | News article search + grounding |
 | Mapbox Geocoding | newsSensitiveData | Location name → lat/lng |
-| Google Maps | WorldMap.jsx, WeeklyMap.jsx | Interactive map rendering |
+| Google Maps | WorldMap.jsx, WeeklyMap.jsx, CountryPage.jsx | Interactive map rendering |
+| OpenRouter (DeepSeek) | newsPostDevTo | Dev.to article generation |
+| Paddle | newsStripeWebhook, newsSensitiveData | Billing + Customer Portal (MoR — handles VAT/JCT globally) |
+| Firebase Auth | AuthContext.jsx + newsSensitiveData | Passwordless sign-in + JWT verification |
 
 ---
 
@@ -274,67 +458,135 @@ Posts a daily AI-written summary article to [Dev.to](https://dev.to).
 **Production:** `docs/` (served by GitHub Pages)
 
 ### Routes
-| Path | Component | Notes |
-|------|-----------|-------|
-| `/` | `Home.jsx` | Daily topics + AI analysis |
-| `/map` | `WorldMap.jsx` | Interactive daily world map |
-| `/weekly` | `WeeklyPage.jsx` | Weekly narrative analysis — requires API key |
-| `/weekly-map` | `WeeklyMap.jsx` | Full-page weekly map with date playback — requires API key |
-| `/about` | `AboutContact.jsx` | |
-| `/contact` | `Contact.jsx` | |
-| `/privacy` | `PrivacyTerms.jsx` | |
-| `/disclosures` | `Disclosures.jsx` | |
+
+Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.
+
+| Path | Component | Access |
+|------|-----------|--------|
+| `/` | `Home.jsx` | Public |
+| `/map` | `WorldMap.jsx` | Public |
+| `/about` | `AboutContact.jsx` | Public |
+| `/contact` | `Contact.jsx` | Public |
+| `/privacy` | `PrivacyTerms.jsx` | Public |
+| `/disclosures` | `Disclosures.jsx` | Public |
+| `/whitepaper` | `WhitepaperPage.jsx` | Public |
+| `/cli` | `CLIPage.jsx` | Public |
+| `/pricing` | `Pricing.jsx` | Public |
+| `/signin` | `SignIn.jsx` | Public |
+| `/auth/callback` | `AuthCallback.jsx` | Public |
+| `/weekly` | `WeeklyPage.jsx` | Auth (preview gate) |
+| `/weekly/thread/:threadId` | `ThreadPage.jsx` | Auth (preview with real data) |
+| `/weekly/countries` | `CountryListPage.jsx` | Auth (preview gate) |
+| `/weekly/country/:countryName` | `CountryPage.jsx` | Auth (preview with real data) |
+| `/weekly-map` | `WeeklyMap.jsx` | Auth |
+| `/account` | `Account.jsx` | Auth |
+| `/upgrade/success` | `UpgradeSuccess.jsx` | Auth |
 
 ### Key Components
+
 | Component | Purpose |
 |-----------|---------|
 | `Layout.jsx` | Nav shell with hamburger menu |
 | `Home.jsx` | Daily topics, region grouping, AI toolbar |
-| `WorldMap.jsx` | Google Maps with topic markers, geodesic polylines, side panel, related-countries mode |
+| `WorldMap.jsx` | Google Maps with topic markers, geodesic polylines, side panel |
 | `MapSidePanel.jsx` | Per-country topic cards with AI toolbar |
 | `WeeklyPage.jsx` | Narrative threads grouped by region, trending section, filter bar |
 | `WeeklyMap.jsx` | Thread-colored markers, date playback, thread sidebar |
-| `ApiKeyGate.jsx` | Reusable API key prompt for premium features |
+| `ThreadPage.jsx` | Single thread deep-dive with AI intelligence |
+| `CountryListPage.jsx` | Grid index of all countries with intelligence |
+| `CountryPage.jsx` | Map-first country page: Google Map hero, AI tabs, story arcs, coverage |
+| `CountryOverviewMap.jsx` | Country selector map component |
+| `ApiKeyGate.jsx` | API key prompt (legacy — being replaced by Firebase auth) |
 | `StoryEntryCard.jsx` | Entry card with Summarize/Predict/Trace Cause toggle |
-| `TrendBadge.jsx` | Rising/Stable/Fading/New trend pill |
-| `MiniMap.jsx` | Small SVG map showing story regions |
+| `ThreadIntelligence.jsx` | Thread-level AI analysis display (storyArc, trajectory, etc.) |
+| `SignIn.jsx` | Firebase magic link + Google Sign-In form |
+| `AuthCallback.jsx` | Completes Firebase email link sign-in, sets welcome flag |
+| `Pricing.jsx` | Subscription tier comparison + Paddle checkout (launch: free access badge) |
+| `Account.jsx` | User account + Customer Portal link (launch: free access message) |
+| `WhitepaperPage.jsx` | Full white paper as styled React page |
+| `CLIPage.jsx` | CLI documentation page (`/cli`) |
+| `TrialBanner.jsx` | Trial countdown banner (ready for when trial mode activates) |
 
 ### Key Hooks
+
 | Hook | Purpose |
 |------|---------|
-| `useGeminiTopics()` | Fetch daily topics with 1hr LocalStorage cache + 10min background poll |
-| `useWeeklyArchive(apiKey)` | Fetch archive_range (30 days) with 30min LocalStorage cache |
+| `useGeminiTopics()` | Fetch daily topics; 1hr LocalStorage cache + 10min background poll |
+| `useWeeklyArchive()` | Fetch `archive_range` (member=7 days, enterprise=30); 30min LocalStorage cache keyed by `user.uid` |
+| `useThreadAnalyses(threadIds)` | Fetch thread-level AI analyses; 30min cache |
+| `useCountryIntelligence(countryNames)` | Fetch country-level AI intelligence; 30min cache |
+| `useUserProfile()` | Fetch `user_profile` action; returns `{ tier, trialDaysLeft, isTrial }` |
 | `useIsMobile(breakpoint)` | Responsive breakpoint (default 600px) |
 
-### Service Layers
-```
-restProxy.js          ← active production path
-  └─ proxyAction(action, payload)
-  └─ fetchTopicsCache()
-  └─ fetchSummaryCache(topicId)
-  └─ fetchPredictionCache(topicId)
-  └─ fetchTraceCauseCache(topicId)
-  └─ fetchTodayArchive()
-  └─ fetchArchiveRange(days, apiKey)
-  └─ geocodeProxy(address)
+### Service Layer
 
-appsyncProxy.js       ← unused, kept for reference
-graphqlService.js     ← business logic abstraction over restProxy
+```
+restProxy.js
+  proxyAction(action, payload)            ← no auth (public actions)
+    └─ fetchTopicsCache()
+    └─ fetchSummaryCache(topicId)
+    └─ fetchPredictionCache(topicId)
+    └─ fetchTraceCauseCache(topicId)
+    └─ fetchTodayArchive()
+    └─ geocodeProxy(address)
+    └─ fetchCountryPreview(countryName)   ← SEO public preview
+    └─ fetchThreadPreview(threadId)       ← SEO public preview
+
+  proxyActionWithAuth(action, payload)    ← Authorization: Bearer <firebase-id-token>
+    └─ fetchArchiveRange(days)
+    └─ fetchNarrativeThread(threadId)
+    └─ fetchThreadAnalyses(threadIds)
+    └─ fetchCountryIntelligence(countryNames)
+    └─ fetchUserProfile()
+    └─ fetchPortalSession()
 ```
 
 ### Caching Strategy
-- **Topics:** LocalStorage key `gemini_topics_cache_v2`, 1hr TTL
-- **Weekly archive:** LocalStorage key `gp_weekly_archive_v1`, 30min TTL
-- **API key:** LocalStorage key `gp_api_key`, persistent
-- **Backend:** DynamoDB with TTL-based cleanup
+
+| Data | LocalStorage key | TTL |
+|------|-----------------|-----|
+| Daily topics | `gemini_topics_cache_v2` | 1 hour |
+| Weekly archive | `gp_weekly_archive_v1` (keyed by user.uid) | 30 min |
+| Thread analyses | keyed by user.uid + threadIds | 30 min |
+| Country intelligence | keyed by user.uid + countryNames | 30 min |
 
 ### Narrative Threading
+
 Stories are linked across days via `threadId`:
-1. `continues_topic` field on a topic → inherit parent's `threadId`
+1. `continues_topic` field → inherit parent's `threadId`
 2. Jaccard similarity (keywords + regions + category) against 7-day archive, threshold 0.4 → match existing thread
 3. Neither → generate new `thread-{slug}-{hash}`
 
-Weekly pages group topics by `threadId` to show how a story evolves across dates and geographies.
+Weekly pages group topics by `threadId` to show how a story evolves across dates and geographies. `newsThreadAnalysis` runs daily to generate narrative-level AI analysis for top threads.
+
+---
+
+## Blog
+
+Static HTML pages served from `docs/blog/` on GitHub Pages — no CMS, no build step.
+
+**URL:** `globalperspective.net/blog/`
+
+**Structure:**
+```
+docs/
+  blog/
+    index.html                              ← blog index (list of all posts)
+    thread-and-country-intelligence/
+      index.html                            ← post: Thread + Country Intelligence launch
+```
+
+**To add a new post:**
+1. Create `docs/blog/<slug>/index.html` — copy the existing post as a template
+2. Add an entry to `docs/blog/index.html` (the `<ul class="post-list">` section)
+3. Commit and push — no build needed (static HTML, not part of the React app)
+
+**Notes:**
+- Blog uses its own standalone HTML/CSS — separate from the React app
+- Logo image: `/logo_no_grey_bg.png` (served from `docs/` root)
+- Internal app links use full URLs (`https://globalperspective.net/...`), not React Router `<Link>`
+- Blog link is in the app footer (Layout.jsx) as a plain `<a href="/blog/">`
+- Currently published via Claude — no self-serve CMS
 
 ---
 
@@ -352,7 +604,7 @@ rm -rf ../../docs/assets
 cp -r dist/assets ../../docs/assets
 cp dist/index.html ../../docs/index.html
 
-# 3. NEVER overwrite docs/config.js (contains runtime API endpoint)
+# 3. NEVER overwrite docs/config.js (contains FIREBASE_CONFIG, SENSITIVE_PROXY_ENDPOINT, GOOGLE_MAPS_API_KEY)
 
 # 4. Update CHANGES.md, then commit
 cd ../..
@@ -361,7 +613,7 @@ git commit -m "Description of changes"
 git push
 ```
 
-**Backend (Lambda) changes:** Deploy via `amplify push`. No build step needed for Lambda source edits.
+**Backend (Lambda) changes:** Upload updated `index.js` as a deploy.zip via AWS Console, or `amplify push`. No build step needed for Lambda source edits.
 
 ---
 
@@ -372,21 +624,27 @@ git push
 | This architecture doc | `ARCHITECTURE.md` |
 | Claude instructions | `CLAUDE.md` |
 | Change log | `CHANGES.md` |
-| Deployment checklist | `DEPLOYMENT_NOTES.md` |
-| Lambda: news fetch | `amplify/backend/function/newsInvokeGemini/src/index.js` |
-| Lambda: AI generation | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` |
+| Lambda: news fetch + clustering | `amplify/backend/function/newsInvokeGemini/src/index.js` |
+| Lambda: AI generation per topic | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` |
+| Lambda: thread-level analysis | `amplify/backend/function/newsThreadAnalysis/src/index.js` |
+| Lambda: country-level intelligence | `amplify/backend/function/newsCountryIntelligence/src/index.js` |
 | Lambda: REST proxy | `amplify/backend/function/newsSensitiveData/src/index.js` |
-| Lambda: Dev.to posting | `amplify/backend/function/newsPostDevTo/src/index.js` |
 | Lambda: social posting | `amplify/backend/function/newsPostLinkedIn/src/index.js` |
+| Lambda: Dev.to posting | `amplify/backend/function/newsPostDevTo/src/index.js` |
+| Lambda: Paddle webhooks | `amplify/backend/function/newsStripeWebhook/src/index.js` |
 | Frontend source | `global-perspectives-starter/frontend/src/` |
 | Production build | `docs/` |
-| Runtime config | `docs/config.js` (sets `window.SENSITIVE_PROXY_ENDPOINT`) |
+| Runtime config | `docs/config.js` (sets `window.FIREBASE_CONFIG`, `window.SENSITIVE_PROXY_ENDPOINT`, Google Maps key) |
+| Auth context | `global-perspectives-starter/frontend/src/contexts/AuthContext.jsx` |
+| REST proxy service | `global-perspectives-starter/frontend/src/services/restProxy.js` |
 
 ---
 
 ## Common Mistakes to Avoid
 
 1. **Pushing frontend source without building** — changes won't appear in production
-2. **Overwriting `docs/config.js`** — it sets the API Gateway endpoint at runtime
+2. **Overwriting `docs/config.js`** — it sets the Firebase config and API Gateway endpoint at runtime
 3. **Referring to docs that mention Gemini or OpenAI** — the backend uses xAI Grok; older docs are outdated
-4. **Reading old planning docs** — `HYBRID_NEWS_ARCHITECTURE.md`, `INTEGRATION_NOTES_Gemini_AppSync.md`, `NEWS_API_INTEGRATION_PLAN.md`, etc. are all pre-xAI and should be ignored
+4. **Reading old planning docs** — `HYBRID_NEWS_ARCHITECTURE.md`, `INTEGRATION_NOTES_Gemini_AppSync.md`, `NEWS_API_INTEGRATION_PLAN.md` are all pre-xAI and should be ignored
+5. **Using `x-api-key` for auth** — gated endpoints now use `Authorization: Bearer <firebase-id-token>`, not static API keys
+6. **Assuming archive keys are `YYYY-MM-DD`** — the actual DynamoDB key format is `archive#YYYY-MM-DD`

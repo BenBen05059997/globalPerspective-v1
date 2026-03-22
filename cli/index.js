@@ -53,6 +53,39 @@ async function api(action, payload = {}) {
   return data.data;
 }
 
+// ── Interactive terminal helpers ──────────────────────────────────────────────
+
+function clearScreen() { process.stdout.write('\x1b[2J\x1b[H'); }
+function moveCursor(row, col) { process.stdout.write(`\x1b[${row};${col}H`); }
+function clearLine() { process.stdout.write('\x1b[2K'); }
+function hideCursor() { process.stdout.write('\x1b[?25l'); }
+function showCursor() { process.stdout.write('\x1b[?25h'); }
+
+function enableRawMode() {
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+  }
+}
+
+function wrapText(text, width) {
+  if (!text) return [];
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    if ((line + ' ' + w).trim().length > width) {
+      lines.push(line.trim());
+      line = w;
+    } else {
+      line = line ? line + ' ' + w : w;
+    }
+  }
+  if (line.trim()) lines.push(line.trim());
+  return lines;
+}
+
 // ── Commands ─────────────────────────────────────────────────────────────────
 
 async function cmdToday() {
@@ -64,16 +97,25 @@ async function cmdToday() {
     return;
   }
 
-  console.log(`\n${c.bold}📰 Today's Global Topics${c.reset} ${c.dim}(${entries.length} topics)${c.reset}\n`);
+  // Check if terminal is interactive
+  if (!process.stdin.isTTY) {
+    // Non-interactive: print flat list
+    printTodayFlat(entries);
+    return;
+  }
 
-  // Group by category
+  // Interactive mode
+  await interactiveToday(entries);
+}
+
+function printTodayFlat(entries) {
+  console.log(`\n${c.bold}📰 Today's Global Topics${c.reset} ${c.dim}(${entries.length} topics)${c.reset}\n`);
   const groups = {};
   for (const e of entries) {
     const cat = (e.category || 'other').toLowerCase();
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(e);
   }
-
   for (const [cat, items] of Object.entries(groups).sort((a, b) => b[1].length - a[1].length)) {
     const cc = CAT_COLORS[cat] || c.gray;
     console.log(`${cc}${c.bold}  ${cat.toUpperCase()}${c.reset} ${c.dim}(${items.length})${c.reset}`);
@@ -85,8 +127,117 @@ async function cmdToday() {
     }
     console.log();
   }
-
   console.log(`${c.dim}  Full analysis at ${c.cyan}https://globalperspective.net${c.reset}`);
+}
+
+async function interactiveToday(entries) {
+  let selected = 0;
+  let expanded = -1;
+  let aiTab = 0; // 0=summary, 1=prediction, 2=trace
+  const AI_TABS = ['summary', 'prediction', 'trace_cause'];
+  const AI_LABELS = ['Summarize', 'Predict', 'Trace Cause'];
+  const cols = process.stdout.columns || 80;
+
+  function render() {
+    clearScreen();
+    const rows = process.stdout.rows || 24;
+    const maxVisible = rows - 6;
+
+    console.log(`${c.bold}📰 Today's Global Topics${c.reset} ${c.dim}(${entries.length})${c.reset}  ${c.dim}↑↓ navigate · Enter expand · Tab switch AI · q quit${c.reset}\n`);
+
+    // Calculate scroll window
+    let start = Math.max(0, selected - Math.floor(maxVisible / 2));
+    if (expanded >= 0) start = Math.max(0, expanded - 2);
+    const end = Math.min(entries.length, start + maxVisible);
+
+    for (let i = start; i < end; i++) {
+      const e = entries[i];
+      const isSelected = i === selected;
+      const isExpanded = i === expanded;
+      const cat = (e.category || 'other').toLowerCase();
+      const cc = CAT_COLORS[cat] || c.gray;
+      const regions = (e.regions || []).slice(0, 3).join(', ');
+      const prefix = isSelected ? `${c.cyan}▸${c.reset}` : ' ';
+      const titleColor = isSelected ? c.bold : '';
+      const thread = e.threadId ? '🧵' : '  ';
+
+      console.log(`${prefix} ${thread} ${titleColor}${e.title}${c.reset}`);
+      console.log(`    ${cc}${cat}${c.reset}  ${c.dim}${regions}${c.reset}`);
+
+      if (isExpanded) {
+        // Show AI tabs
+        console.log();
+        let tabLine = '    ';
+        for (let t = 0; t < AI_TABS.length; t++) {
+          const hasData = e.ai?.[AI_TABS[t]];
+          if (t === aiTab) {
+            tabLine += `${c.bold}${c.cyan}[${AI_LABELS[t]}]${c.reset} `;
+          } else if (hasData) {
+            tabLine += `${c.dim} ${AI_LABELS[t]} ${c.reset} `;
+          } else {
+            tabLine += `${c.dim} ${AI_LABELS[t]}${c.reset} `;
+          }
+        }
+        console.log(tabLine);
+
+        const content = e.ai?.[AI_TABS[aiTab]];
+        if (content) {
+          console.log();
+          const wrapped = wrapText(content, cols - 8);
+          for (const line of wrapped.slice(0, 10)) {
+            console.log(`      ${line}`);
+          }
+          if (wrapped.length > 10) {
+            console.log(`      ${c.dim}... (${wrapped.length - 10} more lines)${c.reset}`);
+          }
+        } else {
+          console.log(`\n      ${c.dim}No ${AI_LABELS[aiTab].toLowerCase()} available${c.reset}`);
+        }
+
+        if (e.threadId) {
+          console.log(`\n      ${c.dim}Thread: ${c.cyan}gp thread ${e.threadId}${c.reset}`);
+        }
+        console.log();
+      }
+    }
+
+    if (start > 0) moveCursor(2, cols - 5), process.stdout.write(`${c.dim}↑${start}${c.reset}`);
+    if (end < entries.length) moveCursor(process.stdout.rows - 1, 1), process.stdout.write(`${c.dim}  ${entries.length - end} more ↓${c.reset}`);
+  }
+
+  enableRawMode();
+  hideCursor();
+  render();
+
+  return new Promise((resolve) => {
+    process.stdin.on('data', (key) => {
+      if (key === 'q' || key === '\x03') { // q or Ctrl+C
+        showCursor();
+        clearScreen();
+        process.stdin.setRawMode(false);
+        resolve();
+        process.exit(0);
+        return;
+      }
+
+      if (key === '\x1b[A') { // Up
+        selected = Math.max(0, selected - 1);
+        if (expanded >= 0 && expanded !== selected) expanded = -1;
+      } else if (key === '\x1b[B') { // Down
+        selected = Math.min(entries.length - 1, selected + 1);
+        if (expanded >= 0 && expanded !== selected) expanded = -1;
+      } else if (key === '\r' || key === '\n') { // Enter
+        expanded = expanded === selected ? -1 : selected;
+        aiTab = 0;
+      } else if (key === '\t') { // Tab — cycle AI tabs
+        if (expanded >= 0) {
+          aiTab = (aiTab + 1) % AI_TABS.length;
+        }
+      }
+
+      render();
+    });
+  });
 }
 
 async function cmdCountry(name) {

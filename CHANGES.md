@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-03-22c (Blog: Thread Intelligence and Country Intelligence announcement)
+
+- **New blog:** Added `docs/blog/` with index page and first post announcing Thread Intelligence and Country Intelligence features.
+- Post URL: `globalperspective.net/blog/thread-and-country-intelligence/`
+- Updated `.agents/product-marketing-context.md` to reflect current product state (Paddle, 3 tiers, launch mode, all 5 personas, accurate feature list).
+
 ## 2026-03-22b (CLI: global news intelligence from the terminal)
 
 ### CLI Package (`cli/`, published to npm as `global-perspectives`)

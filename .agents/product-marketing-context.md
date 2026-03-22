@@ -1,186 +1,189 @@
 # Product Marketing Context
 
-*Last updated: 2026-03-03*
+*Last updated: 2026-03-22*
 
 ## Product Overview
-**One-liner:** AI-powered news platform that shows you what's actually happening in the world — not what algorithms think you want to see.
+**One-liner:** AI-powered geopolitical intelligence platform that tracks how stories evolve — not just what happened today.
 
-**What it does:** Global Perspectives scans news from 10+ global regions every 2 hours, clusters articles into ~13 important topics, and generates AI summaries, predictions, and root cause analysis. It visualizes everything on an interactive world map with a "spider web" of connection lines between countries sharing the same story — showing how events connect across borders. A 24-hour archive preserves earlier topics so users can track how the news has evolved throughout the day.
+**What it does:** Global Perspectives ingests news from 20+ international sources across 6 continents hourly, clusters articles into ~13 important topics per cycle, and generates three-layer AI analysis per topic (Summary, Prediction, Trace Cause). A persistent narrative thread system links related events across days and geographies, revealing how stories develop over time. An interactive world map with geodesic connection lines shows how events span borders. Member and Enterprise tiers unlock 7- and 30-day archives, thread-level intelligence (story arcs, root cause chains, trajectory forecasts), and daily country intelligence briefings.
 
-**Product category:** AI news aggregation / global news intelligence
+**Product category:** Geopolitical intelligence / AI news analysis
 
-**Product type:** Free web app (B2C), hosted on GitHub Pages
+**Product type:** Web platform (B2C + B2B), hosted at globalperspective.net (custom domain on GitHub Pages frontend, AWS Lambda backend)
 
-**Business model:** Free, ad-free, donation-supported (Buy Me a Coffee). A Kickstarter campaign was attempted ($15K CAD for a mobile app) but did not reach its funding goal. Mobile app development is paused. No paid tier currently.
+**Business model:** Three tiers — Free (no account required), Member ($15/month via Paddle), Enterprise (contact us). Launch mode active: all signed-in users currently receive Member features free. 14-day free trial coded for when paid plans activate. Paddle is the Merchant of Record. Welcome emails via Loops.so.
 
 ## Target Audience
 **Target users:**
-- Globally-minded professionals who feel their news feed is a bubble
-- Tech workers / developers affected by global economic shifts they don't hear about
-- International professionals (expats, remote workers, multi-country)
-- News-conscious individuals frustrated by fragmented, algorithm-driven feeds
+- Policy researchers, think tank analysts, international consultancies
+- Executives and board advisors at multinationals with geopolitical exposure
+- Academic researchers in international relations and security studies
+- International journalists, foreign desk editors, freelancers
+- Educated professionals and students who read widely but feel like their understanding isn't growing
 
-**Primary use case:** Understanding what's actually happening in the world in 5 minutes, with context — not just headlines.
+**Primary use case:** Replacing an hour of fragmented news reading with 15 minutes of structured narrative intelligence — knowing not just what happened, but why and where it's going.
 
 **Jobs to be done:**
-- "Show me the most important global news right now without the noise"
-- "Help me understand WHY this is happening and what happens next"
-- "Break me out of my algorithmic filter bubble"
-- "Show me how events in different countries are connected"
+- "Show me how this story has evolved over the past week and where it's heading"
+- "Help me understand the root causes, not just today's headline"
+- "Build context for a risk assessment or briefing without spending two days on research"
+- "Tell me which stories are actually moving and which ones are noise"
+- "Give me global coverage that isn't filtered through a Western lens"
 
 **Use cases:**
-- Morning briefing: check ~13 global topics over coffee
-- Career decisions: spot global economic shifts that affect your industry
-- Dinner table: actually understand what's going on in the world
-- Research: get structured analysis of complex global events
-- Tracking the day: use the 24-hour archive to see how news has evolved
+- Morning briefing: structured daily intelligence in 15 minutes
+- Risk assessment: country briefings and thread intelligence for client work
+- Academic research: trace narrative evolution across sources over weeks
+- Journalism: rapid historical context for developing stories
+- Executive prep: board-ready geopolitical signal without a Bloomberg terminal
 
 ## Personas
 
-| Persona | Description | Motivation |
-|---------|------------|------------|
-| **The Blindsided Professional** | Tech worker / office worker who reads news daily but still gets surprised by major global events | "I thought I was informed. I wasn't." |
-| **The Curious Generalist** | Person who cares about the world but doesn't have time to read 50 sources | "I want the big picture in 5 minutes" |
-| **The International Worker** | Expat or remote worker whose salary/career is affected by events in multiple countries | "Global events directly affect my life — I need to see them coming" |
+| Persona | Description | Key Pain | Our Message |
+|---------|------------|----------|-------------|
+| **The Policy Researcher** | Think tank, consultancy, development org | Tracks multiple regions without a full intelligence team | "The synthesis layer that used to cost thousands — now accessible." |
+| **The C-Suite / Board Advisor** | CFO, CEO, board member at a multinational | Needs reliable geopolitical signal without deep reading time | "Which stories matter, how they're moving, where the risk inflection points are." |
+| **The Academic Researcher** | IR scholar, security studies, policy analyst | Needs cross-source narrative view over weeks; existing tools too broad or too expensive | "Track exactly how coverage of an event shifted across outlets over a two-week period." |
+| **The Journalist / Editor** | Foreign desk, freelance geopolitics | Needs background context fast; current research is slow and fragmented | "Build historical context for your piece in minutes, not hours." |
+| **The Engaged Citizen** | Educated professional, student, globally curious | Information overload; reads widely but feels fragmented | "15 minutes that replaces an hour of fragmented reading with a clearer picture." |
 
 ## Problems & Pain Points
-**Core problem:** People consume more news than ever but understand less. Algorithmic feeds create filter bubbles. Fragmented headlines provide no context, no causation, no prediction. No tool shows how events in different countries are connected.
+**Core problem:** The world produces more news than any analyst can meaningfully process. The problem is not a shortage of information — it is a shortage of synthesis. Headlines tell you what happened. They do not tell you why it happened, how it connects to last week, or where it is going.
 
 **Why alternatives fall short:**
-- Google News / Apple News: aggregate headlines but don't analyze or connect them
-- Twitter/X: fast but noisy, no structure, no analysis
-- Traditional media: Western-centric, no global overview, no AI analysis
-- Newsletter aggregators: curated but still just links, no predictions or root cause
-- None of them show geographic connections between stories
+- Google News / Apple News: aggregate headlines without analysis or threading
+- Stratfor / Oxford Analytica: deep intelligence but $1,000–$5,000+/year, enterprise-only
+- Bloomberg Terminal: designed for finance, not narrative geopolitics ($25K+/year)
+- Ground News: shows bias framing but no narrative arcs, no prediction layer
+- Feedly AI / Perplexity: aggregation or reactive Q&A, not proactive narrative monitoring
+- None thread stories across time with AI-generated trajectory and root cause
 
 **What it costs them:**
-- Missed signals that affect career, investments, and life decisions
-- Hours reading news with no real understanding gained
-- Anxiety from information overload without coherence
+- Missed signals that affect strategic decisions, client risk assessments, or editorial coverage
+- Hours of reading without the narrative understanding to act on
+- Expensive subscriptions that serve large organizations, inaccessible to individuals
 
-**Emotional tension:** "I feel blindsided. Uninformed. Like I was living in a bubble." / "I spent hours reading and ended up more confused than when I started."
+**Emotional tension:** "I spend hours reading and still don't understand how we got here or where this is going."
 
 ## Competitive Landscape
-**Direct:** No exact competitor (AI-powered global news with summary + prediction + trace cause + map + spider web connections + 24h archive is unique)
 
-**Secondary:**
-- Google News — aggregates but doesn't analyze or show connections
-- Apple News — personalized but reinforces bubbles
-- Ground News — shows bias but doesn't predict, trace causes, or visualize connections
-- Morning Brew / TLDR — curated newsletters, no AI analysis, no map
+| Competitor | Price | Weakness vs Us |
+|------------|-------|----------------|
+| Stratfor | $1,000+/year | Enterprise only; no real-time hourly updates; no narrative threading UI |
+| Oxford Analytica | $5,000+/year | Human-authored (slower); enterprise only; not interactive |
+| Bloomberg Intelligence | $25,000+/year | Designed for finance, not geopolitical narrative tracking |
+| Ground News | ~$10/month | No AI synthesis; shows bias labels, not narrative arcs |
+| Feedly AI | ~$18/month | No narrative threading; no prediction/trace cause layer |
+| The Rundown AI | ~$10/month | Newsletter format; no interactive depth; no country intelligence |
+| Perplexity | Free/$20/month | Reactive (you ask); not proactive continuous monitoring |
 
-**Indirect:**
-- Scrolling Twitter/Reddit for world news
-- Watching CNN/BBC for global coverage
-- Asking ChatGPT "what's happening in the world"
+**Our gap to own:** Narrative threading + accessible pricing. Nobody in the $0–$50/month range does what we do. The enterprises that do it charge 100x more.
 
 ## Differentiation
 **Key differentiators:**
-- 4-layer analysis per topic: Summary + Prediction + Trace Cause + Map (no competitor does all four)
-- Spider web visualization: geodesic connection lines between countries sharing the same news topic — visually shows how stories span borders
-- True global coverage: 10+ regions, not just Western media
-- 24-hour archive: earlier topics preserved so users can track the full day's news evolution
-- Every-2-hours automated refresh pipeline
-- Free and ad-free
-- Clickable map with country markers, info windows showing topic rows, and a side panel with auto-loading AI summaries
-- Archive shown as muted markers with dashed connection lines on the map
+1. **Narrative threading:** Persistent `threadId` system links related events across 7 days (member) or 30 days (enterprise) — showing how stories develop, not just what happened today
+2. **Three-layer analysis per topic:** Summary (what), Prediction (next), Trace Cause (why)
+3. **Thread Intelligence:** Daily story arc, trajectory forecast, root cause chain, and watch questions for top 10 active threads
+4. **Country Intelligence:** Daily situation assessments for top 10 most active countries — headline, situation summary, trajectory, risk signals
+5. **Non-Western sourcing:** Al Jazeera, SCMP, Dawn, Japan Times alongside Western wire services — intelligence without geographic bias
+6. **World map with geodesic connection lines:** Visual evidence of how stories connect across borders
+7. **Free tier with no account required:** Public access, no friction
+8. **Accessible pricing:** $15/month vs. $1,000+/year for the nearest professional alternative
 
-**How we do it differently:** Instead of showing 1000 headlines, we show ~13 topics with complete understanding — what happened, why it happened, what happens next, and where. The map's spider web reveals how stories connect across borders. The 24-hour archive shows how the news landscape has shifted throughout the day.
-
-**Why that's better:** "This is the difference between reading news and seeing the news."
-
-**Why users choose us:** Clarity in 5 minutes vs. confusion after an hour of scrolling.
+**How we do it differently:** Instead of aggregating 1,000 headlines, we show ~13 topics per cycle with complete narrative context — what happened, why, what's next, and how today's event connects to last week's chapter.
 
 ## Objections
+
 | Objection | Response |
 |-----------|----------|
-| "Can I trust AI-generated analysis?" | All AI content is labeled. Every topic links to original source articles. AI saves time — it doesn't replace critical thinking. |
-| "How is this different from Google News?" | Google aggregates headlines. We analyze them — summaries, predictions, root causes, geographic visualization with cross-border connection lines. |
-| "Is this just another news app?" | No. We don't show you more news. We show you fewer topics with deeper understanding. |
-| "Will it last? It's a side project." | Backend is running, web app is live with real users, pipeline runs every 2 hours. Sustainable at ~$81/month (~$2.70/day). |
-| "The Kickstarter didn't fund — is this dead?" | The Kickstarter was for a mobile app, not the core product. The web app is live and running independently. The mobile app is paused, not cancelled. |
+| "Can I trust AI-generated analysis?" | Every analysis links to named source articles. The hallucination filter verifies every URL against actually ingested articles. AI augments judgment — it doesn't replace it. |
+| "How is this different from Ground News / Feedly?" | Those show you more headlines with framing notes. We show fewer topics with deeper narrative intelligence: root causes, trajectory forecasts, cross-week threading. |
+| "Stratfor is the standard for this kind of work." | Stratfor is $1,000+/year and serves large organizations. We provide narrative-level intelligence at $15/month with a free tier that requires no account. |
+| "Is this just another AI news app?" | No. The value is narrative threading — understanding how a story got here and where it's going. Not a faster aggregator. A fundamentally different product. |
 
 **Anti-persona:**
-- People who want entertainment/celebrity news
-- People who want hyper-local news (city/neighborhood level)
-- People who distrust all AI-generated content on principle
+- People who want entertainment, celebrity, or hyper-local news
 - News professionals who need raw wire feeds
+- People who distrust all AI-generated content on principle
 
 ## Switching Dynamics
-**Push:** "My personalized feed was showing me what algorithms thought I wanted to see — not what was actually happening."
+**Push:** "I can't afford Stratfor. I was spending hours aggregating context manually. I needed synthesis, not more headlines."
 
-**Pull:** "~13 topics. Complete understanding. 5 minutes. Updated every 2 hours. Spider web shows how stories connect across borders. Archive tracks the full day."
+**Pull:** "Stories threaded across 7 days. Root cause analysis. Trajectory forecast. Non-Western sourcing. Free to start, $15/month to go deeper."
 
-**Habit:** People default to their existing news apps/feeds out of routine. Scrolling Twitter feels productive even when it's not.
+**Habit:** People default to existing feeds and aggregators. Scrolling feels productive even when it doesn't produce understanding.
 
-**Anxiety:** "Is AI analysis trustworthy?" / "Will this be another site I visit once and forget?"
+**Anxiety:** "Is the AI trustworthy?" — addressed by traceable sources. "Will it stay live?" — platform is live, pipeline runs hourly, paid tiers coming.
 
 ## Customer Language
 **How they describe the problem:**
-- "I feel like I'm living in a bubble"
-- "I read the news every day but I still get blindsided"
-- "Headlines without context"
-- "I know things are happening but I can't connect any of it"
-- "More confused than when I started"
+- "I read about it for an hour and still don't understand the background"
+- "Everything feels reactive — I only learn about it after it's happened"
+- "I know something is happening but I can't connect it to what came before"
+- "The analysis I can afford is shallow; the analysis that's deep costs thousands"
 
 **How they describe us:**
-- "It shows you what's actually happening in the world"
-- "The complete picture, not fragments"
-- "Certainty in an uncertain world"
+- "It threads the story across the week"
+- "Shows you how the pieces connect"
+- "Narrative intelligence, not headlines"
 
-**Words to use:** global, clarity, understanding, complete picture, connected, insight, predictions, trace cause, real news, ~13 topics, 5 minutes, spider web, connections, archive, 24 hours
+**Words to use:** intelligence, briefing, synthesis, narrative, arc, trajectory, signal, thread, analysis, geopolitical, structural, context, grounded, traceable, decision-ready
 
-**Words to avoid:** breaking news, personalized, algorithm, feed, viral, trending (in clickbait sense), comprehensive (overused), revolutionary
+**Words to avoid:** game-changer, revolutionary, disruptive, cutting-edge, leverage (as verb), "powered by AI" as headline
 
 **Glossary:**
 | Term | Meaning |
 |------|---------|
+| Narrative Arc | The through-line of a story across time: trigger → escalation → turning points → likely resolution |
+| Thread Intelligence | Daily AI-generated analysis for a story thread: story arc, trajectory, root cause chain, watch questions |
+| Country Intelligence | Daily AI briefing for a country: headline, situation summary, active threads, trajectory, risk signals |
 | Trace Cause | Root cause analysis — how we got here (historical context) |
-| Prediction | Chain reaction analysis — what happens next, winners/losers |
-| Summary | Key takeaways in 3-4 bullet points |
-| Topic | A cluster of related articles from multiple sources/regions |
-| Spider Web | Geodesic connection lines on the map between countries sharing the same news topic |
-| Today's Archive | Earlier topics from the past 24 hours that have rotated out of the current refresh, preserved for continuity |
+| Prediction | Chain reaction analysis — what happens next |
+| Summary | Key takeaways per topic |
+| Topic | A cluster of related articles from multiple sources and regions |
+| threadId | Persistent identifier linking related events across days and geographies |
+| Spider Web | Geodesic connection lines on the world map between countries sharing the same news topic |
 
 ## Brand Voice
-**Tone:** Direct, honest, slightly personal. Like a smart friend explaining the world over coffee.
+**Tone:** Credible, analytical, direct. The voice of a senior analyst who respects your time and treats you as intelligent.
 
-**Style:** Conversational but substantive. Short sentences. No jargon. Ben speaks in first person as the builder.
+**Style:** Short declarative sentences for key points. Contrast structures: "This is not a faster news feed. It is a fundamentally different product." Problem → tension → resolution arc in paragraphs. Lead with the point.
 
-**Personality:** Independent, transparent, globally-minded, anti-hype, builder-mentality
+**Personality:** Professional but not stiff. Confident, evidence-grounded. Dry, precise, occasionally wry. No exclamation points in analytical copy. No superlatives unless backed by a specific claim.
 
 ## Proof Points
-**Metrics:**
-- ~$81/month operating cost ($2.70/day)
-- 10+ global regions scanned every 2 hours
-- ~13 topics per refresh cycle
-- 24-hour archive of past topics
-- Live and working at globalperspective.net
+**Current metrics:**
+- 20+ international sources across 6 continents ingested hourly
+- ~13 AI-clustered topics per cycle, refreshed hourly
+- 3 analysis layers per topic: Summary, Prediction, Trace Cause
+- Narrative thread system: 7 days (member) / 30 days (enterprise)
+- Thread Intelligence: daily analysis of top 10 active story arcs
+- Country Intelligence: daily briefings for top 10 most active countries
+- Hallucination filter: every URL in AI output verified against ingested articles
+- Free tier: no account required
+- Pricing: $15/month vs. $1,000+/year Stratfor comparable
 
-**Research evidence (compiled in RESEARCH_EVIDENCE_COMPILATION.md):**
-- UC Davis: Uncertainty is more stressful than bad news (50% shock study)
-- ScienceDirect: Information overload impairs decision quality
-- Springer: Fragmented information triggers generalized anxiety
-- MDPI systematic review: 30 studies confirm algorithmic filter bubbles limit viewpoint diversity
-- PMC: Causal understanding reduces anxiety and frees cognitive resources
+**Product Hunt:** Launched (see PRODUCT_HUNT_PREP.md)
 
-**Value themes:**
-| Theme | Proof |
-|-------|-------|
-| Information overload is harmful | Decision quality drops with excess information (ScienceDirect) |
-| Uncertainty causes anxiety | 50% chance = maximum stress (UC Davis) |
-| Filter bubbles are real | 30-study systematic review confirms (MDPI) |
-| Structured understanding helps | Causal frameworks reduce anxiety (PMC) |
-| It's affordable to run | $2.70/day with serverless + caching |
+**Launch mode:** All signed-in users receive Member features free until paid tiers activate. 14-day free trial coded and ready.
 
 ## Goals
-**Business goal:** Grow user base, validate demand, explore sustainable monetization (donations, potential premium features)
+**Business goal:** Grow user base during free launch period, convert to paid at $15/month (Member) when Paddle account approved, establish narrative intelligence positioning in the $0–$50/month gap.
 
 **Conversion actions:**
-1. Visit globalperspective.net and use the app
-2. Buy Me a Coffee donation
-3. Share with others
+1. Visit globalperspective.net — use the free tier (no account)
+2. Sign in (Firebase auth — magic link or Google) — unlock Member features during launch
+3. Convert to Member ($15/month) when paid tier activates
+4. Share or recommend to colleagues
 
-**Current metrics:** Early stage — no public traffic numbers disclosed yet
+**Active marketing channels:**
+- LinkedIn auto-post Lambda (top topics posted daily)
+- Bluesky, X/Twitter, Threads (via newsPostLinkedIn Lambda)
+- Dev.to (via newsPostDevTo Lambda — deploy.zip pending upload)
+- Welcome email via Loops.so (fires on first sign-in)
 
-**Kickstarter learnings:** Campaign for mobile app did not reach $15K CAD goal. Mobile app development is paused. Focus is on growing the web app audience and improving the core product.
+**Pending:**
+- Paddle account approval → activate paid tier
+- LinkedIn bulk post scheduling (Buffer)
+- SEO blog at globalperspective.net/blog
+- Map image generation for richer social posts

@@ -1995,6 +1995,17 @@
   font-style: italic;
 }
 
+.story-ai-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #eff6ff;
+  color: #3b82f6;
+  border: 1px solid #bfdbfe;
+  letter-spacing: 0.5px;
+}
+
 .story-card-hook {
   font-size: 12px;
   color: #6b7280;

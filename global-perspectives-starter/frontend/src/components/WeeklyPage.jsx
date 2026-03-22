@@ -259,6 +259,7 @@ function StoryCard({ thread, analysis }) {
         <div className="story-card-content">
           <div className="story-card-title">{displayTitle}</div>
           <div className="story-card-meta-row">
+            {analysis && <span className="story-ai-badge">AI</span>}
             {isMulti && <span className="story-arc-label">Story Arc</span>}
             {catColors && (
               <span className="story-category-badge" style={{ background: catColors.bg, color: catColors.color }}>

@@ -42,6 +42,49 @@ const CAT_COLORS = {
 
 // ── API helpers ──────────────────────────────────────────────────────────────
 
+// ── Country flag emoji ────────────────────────────────────────────────────────
+
+const COUNTRY_CODES = {
+  'afghanistan':'AF','albania':'AL','algeria':'DZ','argentina':'AR','armenia':'AM',
+  'australia':'AU','austria':'AT','azerbaijan':'AZ','bahrain':'BH','bangladesh':'BD',
+  'belarus':'BY','belgium':'BE','bolivia':'BO','bosnia':'BA','brazil':'BR','brunei':'BN',
+  'bulgaria':'BG','cambodia':'KH','cameroon':'CM','canada':'CA','chile':'CL','china':'CN',
+  'colombia':'CO','croatia':'HR','cuba':'CU','cyprus':'CY','czech republic':'CZ','czechia':'CZ',
+  'denmark':'DK','ecuador':'EC','egypt':'EG','estonia':'EE','ethiopia':'ET','finland':'FI',
+  'france':'FR','georgia':'GE','germany':'DE','ghana':'GH','greece':'GR','guatemala':'GT',
+  'haiti':'HT','honduras':'HN','hungary':'HU','iceland':'IS','india':'IN','indonesia':'ID',
+  'iran':'IR','iraq':'IQ','ireland':'IE','israel':'IL','italy':'IT','jamaica':'JM',
+  'japan':'JP','jordan':'JO','kazakhstan':'KZ','kenya':'KE','kosovo':'XK','kuwait':'KW',
+  'laos':'LA','latvia':'LV','lebanon':'LB','libya':'LY','lithuania':'LT','luxembourg':'LU',
+  'malaysia':'MY','mexico':'MX','moldova':'MD','mongolia':'MN','morocco':'MA','myanmar':'MM',
+  'nepal':'NP','netherlands':'NL','new zealand':'NZ','nigeria':'NG','north korea':'KP',
+  'norway':'NO','oman':'OM','pakistan':'PK','palestine':'PS','panama':'PA','peru':'PE',
+  'philippines':'PH','poland':'PL','portugal':'PT','qatar':'QA','romania':'RO','russia':'RU',
+  'saudi arabia':'SA','senegal':'SN','serbia':'RS','singapore':'SG','slovakia':'SK',
+  'slovenia':'SI','somalia':'SO','south africa':'ZA','south korea':'KR','south sudan':'SS',
+  'spain':'ES','sri lanka':'LK','sudan':'SD','sweden':'SE','switzerland':'CH','syria':'SY',
+  'taiwan':'TW','tajikistan':'TJ','thailand':'TH','turkey':'TR','turkmenistan':'TM',
+  'ukraine':'UA','united arab emirates':'AE','uae':'AE','united kingdom':'GB','uk':'GB',
+  'united states':'US','usa':'US','us':'US','uruguay':'UY','uzbekistan':'UZ','venezuela':'VE',
+  'vietnam':'VN','yemen':'YE','zambia':'ZM','zimbabwe':'ZW',
+};
+
+function countryFlag(name) {
+  if (!name) return '  ';
+  const code = COUNTRY_CODES[name.toLowerCase()];
+  if (!code || code.length !== 2) return '  ';
+  return String.fromCodePoint(0x1F1E6 + code.charCodeAt(0) - 65, 0x1F1E6 + code.charCodeAt(1) - 65);
+}
+
+function topicFlag(entry) {
+  const regions = entry.regions || [];
+  for (const r of regions) {
+    const flag = countryFlag(r);
+    if (flag !== '  ') return flag;
+  }
+  return '🌐';
+}
+
 async function api(action, payload = {}) {
   const res = await fetch(API, {
     method: 'POST',
@@ -114,8 +157,8 @@ function printTodayFlat(entries) {
     console.log(`${cc}${c.bold}  ${cat.toUpperCase()}${c.reset} ${c.dim}(${items.length})${c.reset}`);
     for (const e of items) {
       const regions = (e.regions || []).slice(0, 3).join(', ');
-      const thread = e.threadId ? `${c.dim}🧵${c.reset}` : '  ';
-      console.log(`  ${thread} ${e.title}`);
+      const flag = topicFlag(e);
+      console.log(`  ${flag} ${e.title}`);
       if (regions) console.log(`      ${c.dim}${regions}${c.reset}`);
     }
     console.log();
@@ -181,14 +224,14 @@ async function interactiveToday(entries) {
       const e = items[i];
       const isSelected = i === itemIdx;
       const regions = (e.regions || []).slice(0, 3).join(', ');
-      const thread = e.threadId ? '🧵 ' : '   ';
+      const flag = topicFlag(e);
       const title = truncate(e.title, cols - 10);
 
       if (isSelected) {
-        buf += `${REVERSE}${c.bold} ▸ ${thread}${title}${c.reset}\n`;
+        buf += `${REVERSE}${c.bold} ▸ ${flag} ${title}${c.reset}\n`;
         if (regions) buf += `${c.cyan}     ${regions}${c.reset}\n`;
       } else {
-        buf += `   ${c.dim}${thread}${c.reset}${title}\n`;
+        buf += `   ${flag} ${title}\n`;
       }
     }
 
@@ -341,7 +384,8 @@ async function cmdCountry(name) {
   const riskColor = RISK_COLORS[data.riskLevel] || c.gray;
   const arrow = data.trajectory === 'escalating' ? '↗' : data.trajectory === 'de-escalating' ? '↘' : '→';
 
-  console.log(`\n${c.bold}🌍 ${name}${c.reset}  ${riskColor}${c.bold}${(data.riskLevel || '').toUpperCase()}${c.reset} ${riskColor}${arrow}${c.reset}`);
+  const flag = countryFlag(name);
+  console.log(`\n${c.bold}${flag} ${name}${c.reset}  ${riskColor}${c.bold}${(data.riskLevel || '').toUpperCase()}${c.reset} ${riskColor}${arrow}${c.reset}`);
 
   if (data.headline) {
     console.log(`${c.dim}${data.headline}${c.reset}\n`);
@@ -412,7 +456,8 @@ async function cmdCountries() {
 
   console.log(`\n${c.bold}🌍 Top Countries in Today's News${c.reset}\n`);
   for (const [name, count] of sorted) {
-    console.log(`  ${c.bold}${String(count).padStart(3)}${c.reset}  ${name}`);
+    const flag = countryFlag(name);
+    console.log(`  ${flag} ${c.bold}${String(count).padStart(3)}${c.reset}  ${name}`);
   }
   console.log(`\n${c.dim}  Run ${c.cyan}gp country "<name>"${c.dim} for intelligence briefing${c.reset}`);
   console.log(`${c.dim}  Full dashboard at ${c.cyan}https://globalperspective.net/weekly/countries${c.reset}`);

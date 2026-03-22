@@ -378,6 +378,26 @@ function Home() {
         </div>
       </div>
 
+      {/* CLI banner */}
+      <div style={{
+        maxWidth: 700, margin: '0 auto 1.5rem', padding: '12px 20px',
+        background: '#111827', borderRadius: 10,
+        display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+      }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff', marginBottom: 2 }}>
+            Now available as a CLI
+          </div>
+          <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#9ca3af' }}>
+            npx global-perspectives today
+          </div>
+        </div>
+        <Link to="/cli" style={{
+          padding: '6px 14px', borderRadius: 6, background: '#374151', color: '#e5e7eb',
+          fontWeight: 600, fontSize: '0.78rem', textDecoration: 'none', border: '1px solid #4b5563', whiteSpace: 'nowrap',
+        }}>Learn more →</Link>
+      </div>
+
       <div className="text-center mb-8">
         <h1 className="mb-4">Today's Global Topics</h1>
         <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>

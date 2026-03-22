@@ -1,5 +1,33 @@
 # Global Perspectives — Change Log
 
+## 2026-03-22b (CLI: global news intelligence from the terminal)
+
+### CLI Package (`cli/`, published to npm as `global-perspectives`)
+- **Interactive topic browser** — `gp today` launches a full-screen terminal UI:
+  - Category tabs at top (conflict, politics, economy, etc.) — switch with `←→` or `1-9`
+  - Reverse-video highlight for selected item
+  - `↑↓`/`j`/`k` to navigate, `Enter` to expand
+  - `Tab` to cycle AI tabs (Summarize / Predict / Trace Cause)
+  - `Esc` to collapse, `g`/`G` for top/bottom
+  - Alternate screen buffer (doesn't pollute terminal scrollback)
+  - Keybindings bar at bottom
+  - Falls back to flat list when piped (non-TTY)
+- **Country intelligence** — `gp country "Iran"` shows BLUF, key developments, risk level with trajectory arrow
+- **Countries list** — `gp countries` shows top 15 countries by mention count
+- **Thread preview** — `gp thread <id>` shows thread title and entry timeline
+- **JSON mode** — `--json` flag on any command for raw JSON output (pipeable to `jq`, scripts, agents)
+- **Country flag emojis** — each topic shows the flag of its primary region (🇮🇷 🇺🇸 🇮🇱 🇨🇳). Regions without a country code show 🌐
+- **Zero dependencies** — pure Node.js 18+, uses built-in `fetch` and ANSI escape codes
+- **Published to npm** — `npx global-perspectives today` works globally
+
+### Installation
+```bash
+npx global-perspectives today              # instant, no install
+npm install -g global-perspectives && gp today  # permanent
+```
+
+---
+
 ## 2026-03-22 (SEO, public previews, Google Sign-In, launch mode, full site open)
 
 ### SEO: Public Content Previews

@@ -21,6 +21,7 @@ import Pricing from './components/Pricing';
 import Account from './components/Account';
 import UpgradeSuccess from './components/UpgradeSuccess';
 import WhitepaperPage from './components/WhitepaperPage';
+import CLIPage from './components/CLIPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
@@ -103,6 +104,7 @@ export default function App() {
               <Route path="/account" element={<Account />} />
               <Route path="/upgrade/success" element={<UpgradeSuccess />} />
               <Route path="/whitepaper" element={<WhitepaperPage />} />
+              <Route path="/cli" element={<CLIPage />} />
             </Routes>
           </Layout>
         </BrowserRouter>

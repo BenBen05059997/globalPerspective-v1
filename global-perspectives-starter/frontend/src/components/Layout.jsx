@@ -100,6 +100,7 @@ function Layout({ children }) {
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.9rem' }}>
               <Link to="/about" className="nav-link">About</Link>
               <Link to="/whitepaper" className="nav-link">White Paper</Link>
+              <Link to="/cli" className="nav-link">CLI</Link>
               <Link to="/privacy" className="nav-link">Privacy &amp; Terms</Link>
               <Link to="/disclosures" className="nav-link">Disclosures</Link>
               <a

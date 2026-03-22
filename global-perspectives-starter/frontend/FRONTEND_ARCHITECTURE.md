@@ -46,6 +46,7 @@ frontend/
 │   │   ├── BackgroundTimeline.jsx # Vertical day-grouped timeline with category dots and article linking
 │   │   ├── SideNav.jsx          # Reusable floating sidebar nav with scroll-spy (desktop only, right side)
 │   │   ├── SectionNav.jsx       # Sticky horizontal pill bar with scroll-spy (mobile fallback)
+│   │   ├── CLIPage.jsx         # CLI documentation page (/cli, public)
 │   │   ├── ApiKeyGate.jsx       # Reusable auth prompt (legacy — being replaced by Firebase auth)
 │   │   ├── ErrorModal.jsx       # User-friendly error modal
 │   │   ├── SignIn.jsx           # Email magic link sign-in form
@@ -112,6 +113,7 @@ Routes marked **Auth** show a preview gate for non-signed-in users with real dat
 | `/privacy` | PrivacyTerms | Public | Indexed |
 | `/disclosures` | Disclosures | Public | Indexed |
 | `/whitepaper` | WhitepaperPage | Public | Indexed |
+| `/cli` | CLIPage | Public | Indexed |
 | `/pricing` | Pricing | Public | Indexed |
 | `/weekly` | WeeklyPage | Auth (preview gate) | Preview indexed |
 | `/weekly/thread/:threadId` | ThreadPage | Auth (preview with real data) | Preview indexed |

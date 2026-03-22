@@ -142,3 +142,12 @@ export async function fetchCountryIntelligence(countryNames) {
   return proxyActionWithAuth('country_intelligence', { countryNames });
 }
 
+// Public preview endpoints (no auth required, for SEO / non-signed-in users)
+export async function fetchCountryPreview(countryName) {
+  return proxyAction('country_preview', { countryName });
+}
+
+export async function fetchThreadPreview(threadId) {
+  return proxyAction('thread_preview', { threadId });
+}
+

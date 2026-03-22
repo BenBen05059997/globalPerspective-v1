@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './WeeklyPage.css';
@@ -11,6 +11,8 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => { document.title = 'Sign In — Global Perspectives'; }, []);
 
   async function handleGoogle() {
     setGoogleLoading(true);

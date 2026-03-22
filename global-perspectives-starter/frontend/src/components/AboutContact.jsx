@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 export default function AboutContact() {
+  useEffect(() => { document.title = 'About — Global Perspectives'; }, []);
   return (
     <div className="card" style={{ maxWidth: '880px', margin: '0 auto' }}>
       <h1 style={{ marginBottom: '0.5rem' }}>About Global Perspectives</h1>

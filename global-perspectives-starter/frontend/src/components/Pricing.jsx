@@ -55,6 +55,7 @@ export default function Pricing() {
       .finally(() => setProfileLoading(false));
   }, [user]);
 
+  useEffect(() => { document.title = 'Pricing — Global Perspectives'; }, []);
   const loading = authLoading || profileLoading;
   const checkoutUrl = user ? buildCheckoutUrl(user) : null;
 

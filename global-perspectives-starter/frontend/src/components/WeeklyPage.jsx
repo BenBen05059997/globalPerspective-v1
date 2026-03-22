@@ -573,6 +573,7 @@ export default function WeeklyPage() {
 
   if (!user && !import.meta.env.DEV) return <WeeklyLockedPreview />;
 
+  useEffect(() => { document.title = 'Story Intelligence — Global Perspectives'; }, []);
   const isUnauthorized = error && error.includes('401');
   if (isUnauthorized) {
     return (

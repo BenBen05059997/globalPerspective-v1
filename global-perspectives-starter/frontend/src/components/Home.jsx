@@ -344,6 +344,7 @@ function Home() {
     const days = Math.floor(hours / 24);
     return `${days} day${days !== 1 ? 's' : ''} ago`;
   };
+  useEffect(() => { document.title = 'Global Perspectives™ — AI-Powered News Intelligence'; }, []);
   return (
     <div>
       {/* Floating Topic Navigation */}

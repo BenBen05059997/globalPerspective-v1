@@ -50,9 +50,11 @@ frontend/
 │   │   ├── ErrorModal.jsx       # User-friendly error modal
 │   │   ├── SignIn.jsx           # Email magic link sign-in form
 │   │   ├── AuthCallback.jsx     # Completes Firebase email link auth
-│   │   ├── Pricing.jsx          # Tier comparison + Stripe checkout
-│   │   ├── Account.jsx          # User profile, tier, Stripe portal
-│   │   ├── UpgradeSuccess.jsx   # Post-Stripe-checkout success page
+│   │   ├── Pricing.jsx          # Tier comparison + Paddle checkout
+│   │   ├── Account.jsx          # User profile, tier, Paddle customer portal
+│   │   ├── UpgradeSuccess.jsx   # Post-checkout success page
+│   │   ├── WhitepaperPage.jsx   # Full white paper as styled React page (/whitepaper, public)
+│   │   ├── TrialBanner.jsx      # Trial countdown banner for trial-tier users
 │   │   ├── SummaryDisplay.jsx   # Renders AI summary content
 │   │   ├── PredictionDisplay.jsx # Renders AI prediction content
 │   │   ├── TraceCauseDisplay.jsx # Renders AI trace cause content
@@ -70,7 +72,8 @@ frontend/
 │   │   ├── useIsMobile.js            # Responsive breakpoint hook (default 600px)
 │   │   ├── useSummary.js             # Fetch cached summary by topicId
 │   │   ├── usePrediction.js          # Fetch cached prediction by topicId
-│   │   └── useTraceCause.js          # Fetch cached trace cause by topicId
+│   │   ├── useTraceCause.js          # Fetch cached trace cause by topicId
+│   │   └── useUserProfile.js         # Fetch user tier/trial status, auth-gated via AuthContext
 │   ├── services/                # API integration layers
 │   │   ├── restProxy.js         # REST API proxy (auth-aware, JWT injection)
 │   │   └── appsyncProxy.js      # GraphQL proxy (unused — all traffic via restProxy)
@@ -85,7 +88,7 @@ frontend/
 │   │   ├── AuthContext.jsx      # Firebase Auth provider + useAuth() hook
 │   │   └── ErrorContext.jsx     # Global error state
 │   ├── main.jsx                 # Application entry point
-│   ├── App.jsx                  # Root component with routing (13 routes)
+│   ├── App.jsx                  # Root component with routing (17 routes)
 │   ├── bootstrapProxy.js        # REST API bootstrap/config loader
 │   └── index.css                # Global styles
 ├── public/                      # Static assets
@@ -115,9 +118,10 @@ Routes marked **[Gate]** show a "Under Construction" page in production unless `
 | `/weekly-map` | WeeklyMap | Gate |
 | `/signin` | SignIn | Gate |
 | `/auth/callback` | AuthCallback | Gate |
-| `/pricing` | Pricing | Gate |
+| `/pricing` | Pricing | Public |
 | `/account` | Account | Gate |
 | `/upgrade/success` | UpgradeSuccess | Gate |
+| `/whitepaper` | WhitepaperPage | Public |
 
 ## Core Features
 

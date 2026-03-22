@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
@@ -169,6 +169,7 @@ export default function CountryListPage() {
     );
   }
 
+  useEffect(() => { document.title = 'Country Intelligence — Global Perspectives'; }, []);
   if (loading) return <div className="weekly-loading">Loading country data…</div>;
 
   const q = searchQuery.trim().toLowerCase();

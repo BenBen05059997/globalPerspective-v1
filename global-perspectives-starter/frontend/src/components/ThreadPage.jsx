@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import ShareButtons from './ShareButtons';
+import { fetchThreadPreview } from '../services/restProxy';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
@@ -36,12 +37,17 @@ const PREVIEW_FEATURES = [
 ];
 
 function ThreadPreviewGate({ threadId, searchParams, ctaTitle, ctaPrimary, ctaSecondary }) {
-  const previewTitle = searchParams.get('t') || humanizeThreadId(threadId);
+  const [preview, setPreview] = useState(null);
+  const previewTitle = preview?.threadTitle || searchParams.get('t') || humanizeThreadId(threadId);
   const articles = parseInt(searchParams.get('n')) || null;
   const days = parseInt(searchParams.get('d')) || null;
   const regions = searchParams.get('r')?.split(',').filter(Boolean) || [];
   const category = searchParams.get('c') || null;
   const catColors = category ? CATEGORY_BADGE_COLORS[category] : null;
+
+  useEffect(() => {
+    fetchThreadPreview(threadId).then(res => setPreview(res?.data || null)).catch(() => {});
+  }, [threadId]);
 
   return (
     <div className="thread-preview-gate">
@@ -64,40 +70,26 @@ function ThreadPreviewGate({ threadId, searchParams, ctaTitle, ctaPrimary, ctaSe
         )}
       </div>
 
-      <div className="wlp-preview-wrap">
-        <div className="wlp-preview-blur">
-          <div className="story-timeline">
-            {MOCK_TIMELINE.map((text, i) => (
-              <div key={i} className="story-timeline-entry">
-                <div className="story-entry-dot" />
-                <div className="story-entry-content">
-                  <div className="story-entry-date">Day {i + 1}</div>
-                  <div className="story-entry-card">
-                    <div className="story-entry-title">{text}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Real entry titles from API (indexable by Google) */}
+      {preview?.entryShortTitles?.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div className="cp-section-label">STORY TIMELINE</div>
+          {preview.entryShortTitles.slice(0, 5).map((e, i) => (
+            <div key={i} style={{ padding: '6px 0', borderBottom: '1px solid #f3f4f6', fontSize: 13, color: '#374151' }}>
+              {e.shortTitle}
+            </div>
+          ))}
         </div>
-        <div className="wlp-overlay">
-          <div className="wlp-cta">
-            <div className="wlp-cta-title">{ctaTitle}</div>
-            <div className="wlp-cta-desc">See how this story evolved with AI narrative analysis, trajectory predictions, and root cause tracing</div>
-            <div className="wlp-features" style={{ marginBottom: 16 }}>
-              {PREVIEW_FEATURES.map(f => (
-                <div key={f.label} className="wlp-feature-card">
-                  <span className="wlp-feature-icon">{f.icon}</span>
-                  <span className="wlp-feature-label">{f.label}</span>
-                  <span className="wlp-feature-desc">{f.desc}</span>
-                </div>
-              ))}
-            </div>
-            <div className="wlp-cta-btns">
-              {ctaPrimary}
-              {ctaSecondary}
-            </div>
-          </div>
+      )}
+
+      <div style={{ textAlign: 'center', padding: '20px 0' }}>
+        <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>{ctaTitle}</div>
+        <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: 16, maxWidth: 400, margin: '0 auto 16px' }}>
+          Sign in for full AI analysis, geographic map, and detailed timeline
+        </div>
+        <div className="wlp-cta-btns" style={{ justifyContent: 'center' }}>
+          {ctaPrimary}
+          {ctaSecondary}
         </div>
       </div>
     </div>
@@ -174,6 +166,11 @@ export default function ThreadPage() {
   const analysis = analyses?.[threadId];
   const category = thread?.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
+
+  const displayTitle = analysis?.threadTitle || thread?.latestTitle || humanizeThreadId(threadId);
+  useEffect(() => {
+    document.title = `${displayTitle} — Story Arc | Global Perspectives`;
+  }, [displayTitle]);
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 

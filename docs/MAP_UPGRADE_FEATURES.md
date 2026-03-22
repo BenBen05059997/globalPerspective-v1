@@ -1,5 +1,11 @@
 # World Map Upgrade — Feature Specifications
 
+> **LEGACY PLANNING DOC — All 4 features described here are shipped.**
+> Features 1 (connection lines), 2 (topic markers), 7 (story flow / Related Countries mode), and 9 (side panel) are live in `WorldMap.jsx`.
+> This document is kept for historical context.
+
+---
+
 This document describes the planned upgrades to the Global Perspectives World Map page. The goal is to transform the map from a simple article-count view into a meaningful geopolitical connection visualizer.
 
 ## Current State

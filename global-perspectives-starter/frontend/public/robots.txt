@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://globalperspective.net/sitemap.xml

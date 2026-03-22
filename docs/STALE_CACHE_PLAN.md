@@ -1,5 +1,12 @@
 # Stale Cache Plan (Topics + Summary/Prediction/Trace Cause)
 
+> **LEGACY PLANNING DOC — Implemented.** Option A (stale-while-revalidate) was chosen.
+> `TOPICS_CACHE_MAX_AGE_SECONDS` is set to 9000 (2.5h). Topics return `stale: true` instead of 503.
+> `useGeminiTopics` returns `isStale`, `updatedAt`, `hasNewData`. Background polling runs every 10min.
+> This document is kept for historical context.
+
+---
+
 ## Context
 - The frontend reads cached topics and cached AI outputs (summary, prediction, trace cause) from `newsSensitiveData`.
 - The generator (`NewsProjectInvokeAgentLambda`) runs after the hourly topics refresh and writes AI outputs to DynamoDB.

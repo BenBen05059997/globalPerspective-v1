@@ -8,6 +8,7 @@ import { formatDateLabel } from '../utils/dateUtils';
 import { getBroadRegionsForCountry } from '../utils/countryMapping';
 import WeeklyMap from './WeeklyMap';
 import ShareButtons from './ShareButtons';
+import { fetchCountryPreview } from '../services/restProxy';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
 import SectionNav from './SectionNav';
 import SideNav from './SideNav';
@@ -268,59 +269,60 @@ const MOCK_COVERAGE = [
   'Regional security concerns prompt multilateral talks…',
 ];
 
-function CountryPreviewGate({ countryName, searchParams, ctaTitle, ctaPrimary, ctaSecondary }) {
-  const headline = searchParams.get('h');
-  const articles = parseInt(searchParams.get('n')) || null;
-  const days = parseInt(searchParams.get('d')) || null;
+function CountryPreviewGate({ countryName, ctaTitle, ctaPrimary, ctaSecondary }) {
+  const [preview, setPreview] = useState(null);
+
+  useEffect(() => {
+    fetchCountryPreview(countryName).then(res => setPreview(res?.data || null)).catch(() => {});
+  }, [countryName]);
+
+  const risk = preview?.riskLevel ? (RISK_COLORS[preview.riskLevel] || RISK_COLORS.moderate) : null;
 
   return (
     <div className="country-preview-gate">
       <div className="thread-preview-header">
-        <div className="thread-preview-title">{countryName}</div>
-        {headline && <div className="cp-headline">{headline}</div>}
-        {(articles || days) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          <div className="thread-preview-title" style={{ margin: 0 }}>{countryName}</div>
+          {risk && <span className="country-risk-badge" style={{ background: risk.bg, color: risk.color }}>{preview.riskLevel}</span>}
+        </div>
+        {preview?.headline && <div className="cp-headline">{preview.headline}</div>}
+        {preview?.bluf && (
+          <div className="cp-bluf" style={{ marginBottom: 12 }}>
+            <div className="cp-section-label">BOTTOM LINE</div>
+            <div className="cp-bluf-text">{preview.bluf}</div>
+          </div>
+        )}
+        {preview?.keyDevelopments?.length > 0 && (
+          <div className="cp-developments" style={{ marginBottom: 12 }}>
+            <div className="cp-section-label">KEY DEVELOPMENTS</div>
+            <div className="cp-dev-timeline">
+              {preview.keyDevelopments.slice(0, 5).map((d, i) => (
+                <div key={i} className="cp-dev-item">
+                  <span className="cp-dev-date">{formatDateLabel(d.date)}</span>
+                  <span className="cp-dev-dot" />
+                  <span className="cp-dev-text">{d.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {(preview?.totalArticles || preview?.dayCount) && (
           <div className="thread-preview-stats">
-            {articles && <>{articles} article{articles !== 1 ? 's' : ''}</>}
-            {articles && days && ' across '}
-            {days && <>{days} day{days !== 1 ? 's' : ''}</>}
+            {preview.totalArticles && <>{preview.totalArticles} articles</>}
+            {preview.totalArticles && preview.dayCount && ' across '}
+            {preview.dayCount && <>{preview.dayCount} days</>}
           </div>
         )}
       </div>
 
-      <div className="wlp-preview-wrap">
-        <div className="wlp-preview-blur">
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            <span className="country-risk-badge" style={{ background: RISK_COLORS.moderate.bg, color: RISK_COLORS.moderate.color }}>moderate</span>
-          </div>
-          <div className="ai-toolbar" style={{ marginBottom: 12 }}>
-            <button className="ai-btn ai-btn-summary" disabled>Summarize</button>
-            <button className="ai-btn ai-btn-predict" disabled>What's Next</button>
-            <button className="ai-btn ai-btn-trace" disabled>How It Happened</button>
-          </div>
-          {MOCK_COVERAGE.map((text, i) => (
-            <div key={i} className="cp-coverage-item" style={{ padding: '10px 0', borderBottom: '1px solid #e5e7eb' }}>
-              <span className="cp-coverage-title">{text}</span>
-            </div>
-          ))}
+      <div style={{ textAlign: 'center', padding: '20px 0' }}>
+        <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>{ctaTitle}</div>
+        <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: 16, maxWidth: 400, margin: '0 auto 16px' }}>
+          Sign in for full analysis, watch triggers, story arcs, and detailed coverage
         </div>
-        <div className="wlp-overlay">
-          <div className="wlp-cta">
-            <div className="wlp-cta-title">{ctaTitle}</div>
-            <div className="wlp-cta-desc">AI-powered country briefing with risk signals, trajectory predictions, and cross-thread analysis</div>
-            <div className="wlp-features" style={{ marginBottom: 16 }}>
-              {COUNTRY_PREVIEW_FEATURES.map(f => (
-                <div key={f.label} className="wlp-feature-card">
-                  <span className="wlp-feature-icon">{f.icon}</span>
-                  <span className="wlp-feature-label">{f.label}</span>
-                  <span className="wlp-feature-desc">{f.desc}</span>
-                </div>
-              ))}
-            </div>
-            <div className="wlp-cta-btns">
-              {ctaPrimary}
-              {ctaSecondary}
-            </div>
-          </div>
+        <div className="wlp-cta-btns" style={{ justifyContent: 'center' }}>
+          {ctaPrimary}
+          {ctaSecondary}
         </div>
       </div>
     </div>
@@ -426,7 +428,6 @@ export default function CountryPage() {
     return (
       <CountryPreviewGate
         countryName={paramName}
-        searchParams={searchParams}
         ctaTitle={`Sign in for ${paramName} intelligence`}
         ctaPrimary={<Link to="/signin" className="wlp-btn-primary">Sign in free →</Link>}
         ctaSecondary={<Link to="/pricing" className="wlp-btn-secondary">See Member plans</Link>}
@@ -450,6 +451,10 @@ export default function CountryPage() {
 
   const risk = intel ? (RISK_COLORS[intel.riskLevel] || RISK_COLORS.moderate) : null;
   const trajectory = intel?.trajectory ? (TRAJECTORY_BADGES[intel.trajectory] || TRAJECTORY_BADGES.stable) : null;
+
+  useEffect(() => {
+    document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
+  }, [decodedName]);
 
   function dismissExplainer() {
     localStorage.setItem('gp_country_explainer_dismissed', '1');

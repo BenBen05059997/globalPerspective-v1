@@ -1,5 +1,12 @@
 # Enterprise Feature: Weekly Narrative Analysis
 
+> **LEGACY PLANNING DOC — All features described here are shipped as of 2026-03-18.**
+> Phase 0 (data foundation), Phase 1 (narrative threading), and Phase 3 (frontend) are complete.
+> Phase 2 (hindsight / framing shift AI) is the only part not yet built.
+> For current architecture, see `ARCHITECTURE.md` and `BACKEND_GUIDE.md`.
+
+---
+
 ## Overview
 
 Enterprise clients need to track how news narratives evolve across weeks and months -- not just see today's snapshot. The core use case (from client Lori Collins) is geopolitical and economic analysts who track how the same story gets framed differently across outlets over time.

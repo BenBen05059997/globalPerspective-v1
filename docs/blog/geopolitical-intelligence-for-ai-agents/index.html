@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geopolitical Intelligence for AI Agents — Global Perspectives</title>
+  <meta name="description" content="How AI agents can access structured geopolitical intelligence — today's topics, country briefings, and narrative threads — via the Global Perspectives CLI." />
+  <meta property="og:title" content="Geopolitical Intelligence for AI Agents" />
+  <meta property="og:description" content="One npm install. Structured world-state data — topics, country briefings, narrative threads — piped directly into your agent." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://globalperspective.net/blog/geopolitical-intelligence-for-ai-agents/" />
+  <link rel="canonical" href="https://globalperspective.net/blog/geopolitical-intelligence-for-ai-agents/" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0e1a;
+      color: #d4dae8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 17px;
+      line-height: 1.75;
+    }
+    a { color: #7eb8f7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      border-bottom: 1px solid #1e2a40;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header .wordmark {
+      font-size: 15px;
+      font-weight: 600;
+      color: #e2e8f4;
+      letter-spacing: 0.02em;
+    }
+    header nav a {
+      font-size: 14px;
+      color: #7eb8f7;
+      margin-left: 24px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 64px 24px 96px;
+    }
+
+    .label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #5b7aa8;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #e8edf8;
+      line-height: 1.25;
+      margin-bottom: 20px;
+    }
+
+    .byline {
+      font-size: 14px;
+      color: #5b7aa8;
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid #1e2a40;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #c8d5ea;
+      margin: 48px 0 16px;
+    }
+
+    p { margin-bottom: 20px; }
+
+    pre {
+      background: #080c18;
+      border: 1px solid #1e2a40;
+      border-radius: 6px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      margin: 24px 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    code {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 14px;
+      color: #a8c4e8;
+    }
+    p code, li code {
+      background: #0f1829;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #7eb8f7;
+      font-size: 13px;
+    }
+
+    .comment { color: #3d5878; }
+    .keyword { color: #c792ea; }
+    .string { color: #c3e88d; }
+    .fn { color: #82aaff; }
+    .var { color: #f78c6c; }
+    .dim { color: #5b7aa8; }
+
+    .callout {
+      border-left: 3px solid #3a6ea8;
+      background: #0f1829;
+      padding: 20px 24px;
+      margin: 32px 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .callout p { margin: 0; color: #b0c4df; font-size: 15px; }
+
+    ul {
+      margin: 16px 0 20px 0;
+      padding-left: 20px;
+    }
+    ul li { margin-bottom: 8px; color: #b8c8e0; }
+    ul li strong { color: #d4dae8; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 15px;
+    }
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      background: #0f1829;
+      color: #7a9ac0;
+      font-weight: 600;
+      font-size: 13px;
+      border-bottom: 1px solid #1e2a40;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #141e30;
+      color: #b8c8e0;
+      vertical-align: top;
+    }
+    td code { font-size: 13px; }
+
+    .cta-block {
+      margin-top: 64px;
+      padding: 32px;
+      background: #0f1829;
+      border: 1px solid #1e3050;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .cta-block p { color: #8fa8c8; margin-bottom: 20px; font-size: 15px; }
+    .cta-btn {
+      display: inline-block;
+      background: #2563eb;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .cta-btn:hover { background: #1d4ed8; text-decoration: none; }
+
+    footer {
+      border-top: 1px solid #1e2a40;
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #3d5070;
+    }
+    footer a { color: #3d5070; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="https://globalperspective.net" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+    <img src="/logo_no_grey_bg.png" alt="Global Perspectives" style="height:28px;width:auto;" />
+    <span class="wordmark">Global Perspectives</span>
+  </a>
+  <nav>
+    <a href="https://globalperspective.net">Open App</a>
+    <a href="https://globalperspective.net/blog/">Blog</a>
+  </nav>
+</header>
+
+<div class="container">
+  <p class="label">Developer</p>
+  <h1>Geopolitical Intelligence for AI Agents</h1>
+  <p class="byline">March 22, 2026 &nbsp;·&nbsp; Global Perspectives</p>
+
+  <p>Most AI agents know a lot about code, language, and reasoning. They know very little about what is happening in the world right now.</p>
+
+  <p>If your agent needs to reason about current events — to brief a user, inform a decision, or understand a geopolitical context — it has to either ask the user, search the web unstructured, or hallucinate. None of those are good options.</p>
+
+  <p>Global Perspectives publishes structured, AI-analyzed geopolitical intelligence updated hourly. The data is available via a CLI package that any agent can call and pipe directly into its context.</p>
+
+  <h2>Install</h2>
+
+<pre><code>npm install -g global-perspectives</code></pre>
+
+  <p>No account required. No API key for the free tier. Works immediately.</p>
+
+  <h2>What an agent gets</h2>
+
+  <p>Every command supports a <code>--json</code> flag that returns clean, structured JSON — no terminal formatting, no ANSI codes.</p>
+
+  <h2>Today's global topics</h2>
+
+<pre><code>gp today --json</code></pre>
+
+  <p>Returns the current cycle of AI-clustered topics — updated hourly from 20+ international sources. Each topic includes:</p>
+
+  <ul>
+    <li><strong>title</strong> — what the story is</li>
+    <li><strong>category</strong> — conflict, politics, economy, diplomacy, etc.</li>
+    <li><strong>regions</strong> — which countries and regions are involved</li>
+    <li><strong>summary</strong> — AI-generated key takeaways</li>
+    <li><strong>prediction</strong> — where this story is likely going next</li>
+    <li><strong>traceCause</strong> — root cause analysis: how we got here</li>
+    <li><strong>threadId</strong> — links this topic to prior coverage of the same story</li>
+    <li><strong>sources</strong> — named source articles the analysis is based on</li>
+  </ul>
+
+<pre><code><span class="comment">// Sample shape of a topic object</span>
+{
+  <span class="string">"title"</span>: <span class="string">"Ceasefire Talks Stall as Regional Powers Take Sides"</span>,
+  <span class="string">"category"</span>: <span class="string">"conflict"</span>,
+  <span class="string">"regions"</span>: [<span class="string">"Middle East"</span>, <span class="string">"Iran"</span>, <span class="string">"United States"</span>],
+  <span class="string">"summary"</span>: <span class="string">"Negotiations broke down after..."</span>,
+  <span class="string">"prediction"</span>: <span class="string">"Escalation likely within 72 hours if..."</span>,
+  <span class="string">"traceCause"</span>: <span class="string">"The underlying tension traces back to..."</span>,
+  <span class="string">"threadId"</span>: <span class="string">"thread-mideast-ceasefire-a3f9"</span>,
+  <span class="string">"sources"</span>: [<span class="string">"Al Jazeera"</span>, <span class="string">"Reuters"</span>, <span class="string">"SCMP"</span>]
+}</code></pre>
+
+  <h2>Country intelligence briefing</h2>
+
+<pre><code>gp country "Iran" --json
+gp country "Germany" --json</code></pre>
+
+  <p>Returns a daily AI briefing for a specific country:</p>
+
+  <ul>
+    <li><strong>headline</strong> — one-line situation summary</li>
+    <li><strong>situationSummary</strong> — what is happening across all active story threads</li>
+    <li><strong>crossThreadInsight</strong> — how different stories interact and compound</li>
+    <li><strong>trajectory</strong> — escalating / stable / de-escalating</li>
+    <li><strong>riskLevel</strong> — low / moderate / high / critical</li>
+    <li><strong>riskSignals</strong> — specific indicators worth watching</li>
+  </ul>
+
+  <h2>Active countries</h2>
+
+<pre><code>gp countries --json</code></pre>
+
+  <p>Returns the list of currently active countries ranked by coverage volume — useful for knowing which parts of the world the platform is tracking most closely right now.</p>
+
+  <h2>Narrative thread</h2>
+
+<pre><code>gp thread thread-mideast-ceasefire-a3f9 --json</code></pre>
+
+  <p>Returns the full thread intelligence for a story arc:</p>
+
+  <ul>
+    <li><strong>threadTitle</strong> — the name of the ongoing story</li>
+    <li><strong>storyArc</strong> — how the narrative has developed from origin to today</li>
+    <li><strong>trajectory</strong> — where the story is heading</li>
+    <li><strong>rootCauseChain</strong> — the structural forces that produced this situation</li>
+    <li><strong>watchQuestions</strong> — signals that will indicate how the story breaks</li>
+    <li><strong>entries</strong> — the individual topics that make up this thread, in chronological order</li>
+  </ul>
+
+  <h2>Example: wiring it into an agent</h2>
+
+  <p>The simplest integration is a system prompt injection. Before your agent responds to any geopolitics-related query, pull current context:</p>
+
+<pre><code><span class="keyword">import</span> { <span class="fn">execSync</span> } <span class="keyword">from</span> <span class="string">'child_process'</span>;
+
+<span class="keyword">function</span> <span class="fn">getGeopoliticalContext</span>() {
+  <span class="keyword">const</span> <span class="var">raw</span> = <span class="fn">execSync</span>(<span class="string">'gp today --json'</span>, { encoding: <span class="string">'utf8'</span> });
+  <span class="keyword">const</span> <span class="var">topics</span> = <span class="fn">JSON</span>.<span class="fn">parse</span>(<span class="var">raw</span>);
+  <span class="keyword">return</span> <span class="var">topics</span>.<span class="fn">map</span>(<span class="var">t</span> => <span class="string">`</span>
+<span class="string">## ${t.title} [${t.category}]</span>
+<span class="string">Regions: ${t.regions.join(', ')}</span>
+<span class="string">Summary: ${t.summary}</span>
+<span class="string">Prediction: ${t.prediction}</span>
+<span class="string">Root cause: ${t.traceCause}</span>
+  <span class="string">`</span>).<span class="fn">join</span>(<span class="string">'\n---\n'</span>);
+}
+
+<span class="keyword">const</span> <span class="var">systemPrompt</span> = <span class="string">`
+You are a geopolitical intelligence assistant.
+Current world context (updated hourly):
+
+${<span class="fn">getGeopoliticalContext</span>()}
+
+Answer the user's question using this context where relevant.
+`</span>;</code></pre>
+
+  <p>For country-specific queries, pull the briefing on demand:</p>
+
+<pre><code><span class="keyword">function</span> <span class="fn">getCountryBriefing</span>(<span class="var">country</span>) {
+  <span class="keyword">const</span> <span class="var">raw</span> = <span class="fn">execSync</span>(<span class="string">`gp country "${<span class="var">country</span>}" --json`</span>, { encoding: <span class="string">'utf8'</span> });
+  <span class="keyword">return</span> <span class="fn">JSON</span>.<span class="fn">parse</span>(<span class="var">raw</span>);
+}
+
+<span class="comment">// Returns: { headline, situationSummary, trajectory, riskLevel, riskSignals }</span>
+<span class="keyword">const</span> <span class="var">briefing</span> = <span class="fn">getCountryBriefing</span>(<span class="string">'Germany'</span>);</code></pre>
+
+  <div class="callout">
+    <p>The free tier requires no account and no API key. <code>gp today --json</code> returns the current topics immediately after install. Signed-in access unlocks the 7-day archive and thread intelligence — available free during the current launch period.</p>
+  </div>
+
+  <h2>What the data covers</h2>
+
+  <table>
+    <thead>
+      <tr><th>Command</th><th>What it returns</th><th>Updated</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>gp today --json</code></td><td>~13 AI-clustered global topics with 3-layer analysis</td><td>Hourly</td></tr>
+      <tr><td><code>gp country &lt;name&gt; --json</code></td><td>Country situation briefing, trajectory, risk signals</td><td>Daily</td></tr>
+      <tr><td><code>gp countries --json</code></td><td>Active countries ranked by coverage volume</td><td>Hourly</td></tr>
+      <tr><td><code>gp thread &lt;id&gt; --json</code></td><td>Full narrative arc, root cause chain, watch questions</td><td>Daily</td></tr>
+    </tbody>
+  </table>
+
+  <p>Sources span 20+ international outlets across 6 continents — Al Jazeera, SCMP, Dawn, Japan Times alongside Western wire services. The non-Western sourcing is deliberate: geopolitical blind spots are usually geographic.</p>
+
+  <div class="cta-block">
+    <p>Install the package and pull your first geopolitical context in under a minute.</p>
+    <a href="https://www.npmjs.com/package/global-perspectives" class="cta-btn">View on npm →</a>
+  </div>
+</div>
+
+<footer>
+  <a href="https://globalperspective.net">globalperspective.net</a> &nbsp;·&nbsp;
+  <a href="https://globalperspective.net/blog/">Blog</a> &nbsp;·&nbsp;
+  <a href="https://globalperspective.net/privacy">Privacy</a>
+</footer>
+
+</body>
+</html>

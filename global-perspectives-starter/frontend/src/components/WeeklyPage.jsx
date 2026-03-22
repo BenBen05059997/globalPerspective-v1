@@ -569,11 +569,11 @@ export default function WeeklyPage() {
     return { flatThreads: filteredThreads, flatStandalone: filteredStandalone };
   }, [sortedThreads, standalone, activeRegion, searchQuery, activeCountry]);
 
+  useEffect(() => { document.title = 'Story Intelligence — Global Perspectives'; }, []);
+
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
   if (!user && !import.meta.env.DEV) return <WeeklyLockedPreview />;
-
-  useEffect(() => { document.title = 'Story Intelligence — Global Perspectives'; }, []);
   const isUnauthorized = error && error.includes('401');
   if (isUnauthorized) {
     return (

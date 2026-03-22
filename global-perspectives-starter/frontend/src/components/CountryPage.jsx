@@ -422,6 +422,10 @@ export default function CountryPage() {
   const { intelligence } = useCountryIntelligence(decodedName ? [decodedName] : []);
   const intel = intelligence?.[decodedName];
 
+  useEffect(() => {
+    document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
+  }, [decodedName]);
+
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
   if (!user && !import.meta.env.DEV) {
@@ -451,10 +455,6 @@ export default function CountryPage() {
 
   const risk = intel ? (RISK_COLORS[intel.riskLevel] || RISK_COLORS.moderate) : null;
   const trajectory = intel?.trajectory ? (TRAJECTORY_BADGES[intel.trajectory] || TRAJECTORY_BADGES.stable) : null;
-
-  useEffect(() => {
-    document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
-  }, [decodedName]);
 
   function dismissExplainer() {
     localStorage.setItem('gp_country_explainer_dismissed', '1');

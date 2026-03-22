@@ -113,6 +113,8 @@ export default function CountryListPage() {
     return latest;
   }, [intelligence]);
 
+  useEffect(() => { document.title = 'Country Intelligence — Global Perspectives'; }, []);
+
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
   if ((!user || (error && error.includes('401'))) && !import.meta.env.DEV) {
@@ -169,7 +171,6 @@ export default function CountryListPage() {
     );
   }
 
-  useEffect(() => { document.title = 'Country Intelligence — Global Perspectives'; }, []);
   if (loading) return <div className="weekly-loading">Loading country data…</div>;
 
   const q = searchQuery.trim().toLowerCase();

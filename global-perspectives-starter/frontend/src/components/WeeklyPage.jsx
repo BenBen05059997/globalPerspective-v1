@@ -173,7 +173,7 @@ function ArcIntro({ onDismiss }) {
 
 // ─── Featured Section (Rising arcs) ──────────────────────────────────────────
 
-function FeaturedSection({ threads, threadAnalyses }) {
+function FeaturedSection({ threads }) {
   const featured = useMemo(() => threads
     .filter(t => (t.trend === 'rising' || t.trend === 'new') && t.articleCount >= 2)
     .sort((a, b) => {
@@ -472,7 +472,7 @@ export default function WeeklyPage() {
 
   useEffect(() => setActiveCountry(null), [activeRegion]);
 
-  const { dayMap, sortedDates: allDates, loading, error, tier } = useWeeklyArchive();
+  const { dayMap, sortedDates: allDates, loading, error } = useWeeklyArchive();
 
   const sortedDates = useMemo(
     () => filterDatesByRange(allDates, timeRange),

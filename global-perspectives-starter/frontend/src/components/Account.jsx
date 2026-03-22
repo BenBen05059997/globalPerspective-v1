@@ -65,8 +65,9 @@ export default function Account() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // portalLoading + error + handleManageBilling — re-enable when Paddle is ready
+  const [, /* portalLoading */ setPortalLoading] = useState(false);
+  const [, /* error */ setError] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {

@@ -629,13 +629,8 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
 }
 
 function StoryPlaybackOverlay({ storyPlay, thread, markers, onStop, onPause, onStep }) {
-  if (!storyPlay || !thread) return null;
-  const { currentDate, dateIdx, paused } = storyPlay;
-  const progress = ((dateIdx + 1) / thread.dates.length) * 100;
-  const isFirst = dateIdx === 0;
-  const isLast = dateIdx >= thread.dates.length - 1;
-
   const countryByDate = useMemo(() => {
+    if (!thread?.dates) return {};
     const byDate = {};
     const seen = new Set();
     for (const date of thread.dates) {
@@ -650,9 +645,12 @@ function StoryPlaybackOverlay({ storyPlay, thread, markers, onStop, onPause, onS
       byDate[date] = newCountries;
     }
     return byDate;
-  }, [markers, thread.dates]);
+  }, [markers, thread?.dates]);
+
+  const dateIdx = storyPlay?.dateIdx ?? 0;
 
   const allCountriesSoFar = useMemo(() => {
+    if (!thread?.dates) return [];
     const names = new Set();
     for (let i = 0; i <= dateIdx; i++) {
       for (const m of markers) {
@@ -660,7 +658,13 @@ function StoryPlaybackOverlay({ storyPlay, thread, markers, onStop, onPause, onS
       }
     }
     return [...names];
-  }, [markers, thread.dates, dateIdx]);
+  }, [markers, thread?.dates, dateIdx]);
+
+  if (!storyPlay || !thread) return null;
+  const { currentDate, paused } = storyPlay;
+  const progress = ((dateIdx + 1) / thread.dates.length) * 100;
+  const isFirst = dateIdx === 0;
+  const isLast = dateIdx >= thread.dates.length - 1;
 
   const newToday = countryByDate[currentDate] || [];
   const articlesOnDate = thread.entries.filter(e => e.date === currentDate).length;
@@ -1016,27 +1020,6 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
       return;
     }
     setStoryPlay({ threadId, dateIdx: 0, currentDate: thread.dates[0], paused: false });
-  }
-
-  function handlePause() {
-    if (!storyPlay || !playingThread) return;
-    const isLast = storyPlay.dateIdx >= playingThread.dates.length - 1;
-    if (isLast) {
-      setStoryPlay(prev => ({ ...prev, dateIdx: 0, currentDate: playingThread.dates[0], paused: false }));
-    } else {
-      setStoryPlay(prev => ({ ...prev, paused: !prev.paused }));
-    }
-  }
-
-  function handleStep(dir) {
-    if (!storyPlay || !playingThread) return;
-    const nextIdx = storyPlay.dateIdx + dir;
-    if (nextIdx < 0 || nextIdx >= playingThread.dates.length) return;
-    setStoryPlay(prev => ({ ...prev, dateIdx: nextIdx, currentDate: playingThread.dates[nextIdx], paused: true }));
-  }
-
-  function handleStopPlay() {
-    setStoryPlay(null);
   }
 
   // Auth gates — only for standalone route, not when embedded in WeeklyPage

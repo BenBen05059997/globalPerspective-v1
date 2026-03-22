@@ -38,7 +38,7 @@ function TopicNav({ topics, categorizedTopics }) {
     observerRef.current = new IntersectionObserver(observerCallback, observerOptions);
 
     // Observe all topic elements
-    topics.forEach((topic, idx) => {
+    topics.forEach((topic) => {
       const globalIdx = topics.indexOf(topic);
       const id = getTopicId(topic, globalIdx);
       const element = document.getElementById(`topic-${id}`);
@@ -60,16 +60,6 @@ function TopicNav({ topics, categorizedTopics }) {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
-
-  // Get region for a topic
-  const getTopicRegion = (topic) => {
-    for (const [region, regionTopics] of Object.entries(categorizedTopics)) {
-      if (regionTopics.includes(topic)) {
-        return region;
-      }
-    }
-    return null;
   };
 
   // Shorten region name for badge

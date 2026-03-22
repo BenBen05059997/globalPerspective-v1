@@ -24,11 +24,9 @@ function matchScore(eventText, articleTitle) {
 export default function BackgroundTimeline({ events, entries, onEventClick }) {
   const [expandedDates, setExpandedDates] = useState(new Set());
 
-  if (!events || events.length === 0) return null;
-
   // Number events per category
   const catCounts = {};
-  const numbered = events.map(e => {
+  const numbered = (events || []).map(e => {
     const cat = e.category || 'other';
     catCounts[cat] = (catCounts[cat] || 0) + 1;
     return { ...e, catIndex: catCounts[cat] };
@@ -54,6 +52,8 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
     }
     return map;
   }, [entries]);
+
+  if (!events || events.length === 0) return null;
 
   // Find best matching article for a timeline event
   function findLinkedArticles(event, date) {

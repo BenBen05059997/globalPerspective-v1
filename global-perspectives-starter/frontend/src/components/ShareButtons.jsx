@@ -83,20 +83,17 @@ export default function ShareButtons({ path, title, threadId, preview }) {
       <button className={`share-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy link">
         {copied ? <IconCheck /> : <IconLink />}
       </button>
-      {canNativeShare ? (
+      {canNativeShare && (
         <button className="share-btn share" onClick={handleNativeShare} title="Share">
           <IconShare />
         </button>
-      ) : (
-        <>
-          <a className="share-btn x" href={twitterUrl} target="_blank" rel="noopener noreferrer" title="Share on X / Twitter">
-            <IconX />
-          </a>
-          <a className="share-btn linkedin" href={linkedInUrl} target="_blank" rel="noopener noreferrer" title="Share on LinkedIn">
-            <IconLinkedIn />
-          </a>
-        </>
       )}
+      <a className="share-btn x" href={twitterUrl} target="_blank" rel="noopener noreferrer" title="Share on X / Twitter">
+        <IconX />
+      </a>
+      <a className="share-btn linkedin" href={linkedInUrl} target="_blank" rel="noopener noreferrer" title="Share on LinkedIn">
+        <IconLinkedIn />
+      </a>
     </div>
   );
 }

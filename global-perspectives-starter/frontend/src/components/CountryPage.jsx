@@ -8,6 +8,7 @@ import { formatDateLabel } from '../utils/dateUtils';
 import { getBroadRegionsForCountry } from '../utils/countryMapping';
 import WeeklyMap from './WeeklyMap';
 import ShareButtons from './ShareButtons';
+import CopyBriefing, { formatCountryBriefing } from './CopyBriefing';
 import { fetchCountryPreview } from '../services/restProxy';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
 import SectionNav from './SectionNav';
@@ -598,7 +599,10 @@ export default function CountryPage() {
               </div>
             )}
 
-            <ShareButtons path={`/weekly/country/${encodeURIComponent(decodedName)}`} title={`${decodedName} — Country Intelligence`} preview={{ h: intel?.headline, n: countryData?.totalArticles, d: countryData?.dayCount }} />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+              <ShareButtons path={`/weekly/country/${encodeURIComponent(decodedName)}`} title={`${decodedName} — Country Intelligence`} preview={{ h: intel?.headline, n: countryData?.totalArticles, d: countryData?.dayCount }} />
+              <CopyBriefing getText={() => formatCountryBriefing(decodedName, intel, countryData)} />
+            </div>
 
             {/* ── Background Timeline ── */}
             {intel?.backgroundTimeline?.length > 0 && (

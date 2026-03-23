@@ -11,6 +11,7 @@ import WeeklyMap from './WeeklyMap';
 import StoryEntryCard from './StoryEntryCard';
 import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
 import SideNav from './SideNav';
+import CopyBriefing, { formatThreadBriefing } from './CopyBriefing';
 import TrialBanner from './TrialBanner';
 import { useUserProfile } from '../hooks/useUserProfile';
 import './WeeklyPage.css';
@@ -272,7 +273,10 @@ export default function ThreadPage() {
               )}
             </div>
 
-            <ShareButtons threadId={thread.threadId} title={analysis?.threadTitle || thread.latestTitle} preview={{ t: analysis?.threadTitle || thread.latestTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: thread.entries[0]?.category?.toLowerCase() }} />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+              <ShareButtons threadId={thread.threadId} title={analysis?.threadTitle || thread.latestTitle} preview={{ t: analysis?.threadTitle || thread.latestTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: thread.entries[0]?.category?.toLowerCase() }} />
+              <CopyBriefing getText={() => formatThreadBriefing(thread, analysis)} />
+            </div>
 
             {/* ── Watch Questions ── */}
             {hasWatchQuestions && (

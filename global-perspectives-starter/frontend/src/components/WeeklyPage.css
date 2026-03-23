@@ -1995,6 +1995,15 @@
   font-style: italic;
 }
 
+/* ===== COPY BRIEFING ===== */
+.copy-briefing-btn {
+  font-size: 12px; font-weight: 600; padding: 5px 12px;
+  border: 1px solid #e5e7eb; border-radius: 6px;
+  background: #fff; color: #374151; cursor: pointer;
+  transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+}
+.copy-briefing-btn:hover { background: #f3f4f6; border-color: #d1d5db; }
+
 .story-ai-badge {
   font-size: 9px;
   font-weight: 800;

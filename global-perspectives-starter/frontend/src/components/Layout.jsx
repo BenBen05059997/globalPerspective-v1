@@ -103,7 +103,7 @@ function Layout({ children }) {
               <Link to="/cli" className="nav-link">CLI</Link>
               <a href="/blog/" className="nav-link">Blog</a>
               <Link to="/privacy" className="nav-link">Privacy &amp; Terms</Link>
-              <Link to="/disclosures" className="nav-link">Disclosures</Link>
+              <Link to="/disclosures" className="nav-link">Commerce Disclosure</Link>
               <a
                 href="mailto:globalperspectives.app@gmail.com"
                 className="nav-link"

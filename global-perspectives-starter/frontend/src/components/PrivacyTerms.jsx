@@ -26,9 +26,9 @@ function PrivacyTerms() {
             We do not sell or share your email with third parties.
           </li>
           <li>
-            <strong>Payment data:</strong> If you subscribe to a paid plan, payment is processed entirely by Paddle (our Merchant of Record).
-            We do not receive or store your credit card number. Paddle may collect billing details (name, address,
-            card info) subject to <a href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener noreferrer">Paddle's Privacy Policy</a>.
+            <strong>Payment data:</strong> If you subscribe to a paid plan, payment is processed securely by Stripe.
+            We do not store your credit card details. All payment data is handled directly by Stripe in accordance with
+            PCI DSS Level 1 compliance standards. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe's Privacy Policy</a>.
           </li>
           <li>
             Aggregated server logs (error messages, request counts) may be retained briefly for reliability monitoring.
@@ -69,7 +69,7 @@ function PrivacyTerms() {
           <li>Brave Search &mdash; supplementary news source discovery</li>
           <li>Google Maps Platform &mdash; geocoding and visual map tiles</li>
           <li>Firebase Authentication &mdash; passwordless email sign-in</li>
-          <li>Paddle &mdash; subscription billing and payment processing (Merchant of Record)</li>
+          <li>Stripe &mdash; subscription billing and payment processing</li>
           <li>AWS Lambda and DynamoDB &mdash; API backend and data storage</li>
           <li>Google Analytics (GA4) &mdash; anonymized usage metrics</li>
         </ul>

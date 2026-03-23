@@ -92,10 +92,9 @@ function Disclosures() {
 
         <h3 style={{ fontSize: '1.05rem', marginTop: '1rem' }}>Payment Processing</h3>
         <p>
-          Payments are processed securely by <a href="https://www.paddle.com" target="_blank" rel="noopener noreferrer">Paddle</a>,
-          which acts as the Merchant of Record. Paddle handles billing, VAT, and applicable taxes on your behalf.
-          We do not store your credit card details. All payment data is handled directly by Paddle in accordance with
-          PCI DSS compliance standards.
+          Payments are processed securely by <a href="https://stripe.com" target="_blank" rel="noopener noreferrer">Stripe</a>.
+          We do not store your credit card details. All payment data is handled directly by Stripe in accordance with
+          PCI DSS Level 1 compliance standards.
         </p>
       </section>
 

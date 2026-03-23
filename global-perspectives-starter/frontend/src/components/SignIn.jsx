@@ -55,6 +55,9 @@ export default function SignIn() {
         <div className="weekly-gate-icon">📬</div>
         <h2>Check your inbox</h2>
         <p>We sent a sign-in link to <strong>{email}</strong>. Click the link in the email to sign in — no password needed.</p>
+        <p style={{ fontSize: '0.85rem', color: '#b45309', background: '#fef3c7', padding: '8px 12px', borderRadius: 6, marginTop: '0.75rem', lineHeight: 1.5 }}>
+          Can't find it? Check your <strong>spam or junk folder</strong> — the email comes from noreply@globalperspective.net
+        </p>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
           Wrong email? <button className="weekly-clear-btn" onClick={() => { setSent(false); setEmail(''); }}>Try again</button>
         </p>

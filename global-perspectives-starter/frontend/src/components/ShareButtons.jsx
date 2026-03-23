@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link, useHref } from 'react-router-dom';
 
 const IconLink = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
@@ -11,6 +10,14 @@ const IconLink = () => (
 const IconCheck = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
     <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+
+const IconShare = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+    <polyline points="16 6 12 2 8 6"/>
+    <line x1="12" y1="2" x2="12" y2="15"/>
   </svg>
 );
 
@@ -26,14 +33,6 @@ const IconLinkedIn = () => (
   </svg>
 );
 
-const IconExternalLink = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-    <polyline points="15 3 21 3 21 9"/>
-    <line x1="10" y1="14" x2="21" y2="3"/>
-  </svg>
-);
-
 function buildPreviewParams(p) {
   if (!p) return '';
   const sp = new URLSearchParams();
@@ -46,23 +45,36 @@ function buildPreviewParams(p) {
   return sp.toString();
 }
 
+const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
+
 export default function ShareButtons({ path, title, threadId, preview }) {
   const [copied, setCopied] = useState(false);
   const linkPath = path || (threadId ? `/weekly/thread/${threadId}` : '/');
-  const href = useHref(linkPath);
-  const baseUrl = `${window.location.origin}${href}`;
+  const baseUrl = `${window.location.origin}${linkPath}`;
   const previewQs = buildPreviewParams(preview);
   const url = previewQs ? `${baseUrl}?${previewQs}` : baseUrl;
+  const shareTitle = title || 'Global Perspectives';
 
-  const handleCopy = (e) => {
-    e.preventDefault();
+  const handleCopy = () => {
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   };
 
-  const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent((title || 'Global Perspectives') + ' — Global Perspectives')}`;
+  const handleNativeShare = async () => {
+    try {
+      await navigator.share({
+        title: shareTitle,
+        text: `${shareTitle} — Global Perspectives`,
+        url,
+      });
+    } catch {
+      // User cancelled or share failed — ignore
+    }
+  };
+
+  const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareTitle + ' — Global Perspectives')}`;
   const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
 
   return (
@@ -71,15 +83,20 @@ export default function ShareButtons({ path, title, threadId, preview }) {
       <button className={`share-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy link">
         {copied ? <IconCheck /> : <IconLink />}
       </button>
-      <a className="share-btn x" href={twitterUrl} target="_blank" rel="noopener noreferrer" title="Share on X / Twitter">
-        <IconX />
-      </a>
-      <a className="share-btn linkedin" href={linkedInUrl} target="_blank" rel="noopener noreferrer" title="Share on LinkedIn">
-        <IconLinkedIn />
-      </a>
-      <Link className="share-btn open" to={linkPath} title="Open full page">
-        <IconExternalLink />
-      </Link>
+      {canNativeShare ? (
+        <button className="share-btn share" onClick={handleNativeShare} title="Share">
+          <IconShare />
+        </button>
+      ) : (
+        <>
+          <a className="share-btn x" href={twitterUrl} target="_blank" rel="noopener noreferrer" title="Share on X / Twitter">
+            <IconX />
+          </a>
+          <a className="share-btn linkedin" href={linkedInUrl} target="_blank" rel="noopener noreferrer" title="Share on LinkedIn">
+            <IconLinkedIn />
+          </a>
+        </>
+      )}
     </div>
   );
 }

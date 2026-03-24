@@ -8,6 +8,7 @@ import {
   isSignInWithEmailLink,
   signInWithPopup,
   GoogleAuthProvider,
+  signInAnonymously,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 
@@ -109,6 +110,13 @@ export function AuthProvider({ children }) {
     return result.user;
   }, []);
 
+  const signInAsGuest = useCallback(async () => {
+    const firebase = initFirebase();
+    if (!firebase) throw new Error('Firebase not configured');
+    const result = await signInAnonymously(firebase.auth);
+    return result.user;
+  }, []);
+
   const signOut = useCallback(async () => {
     const firebase = initFirebase();
     if (!firebase) return;
@@ -124,7 +132,7 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, authError, setAuthError, sendSignInLink, signInWithGoogle, completeSignIn, signOut, getIdToken }}>
+    <AuthContext.Provider value={{ user, loading, authError, setAuthError, sendSignInLink, signInWithGoogle, signInAsGuest, completeSignIn, signOut, getIdToken }}>
       {children}
     </AuthContext.Provider>
   );

@@ -4,12 +4,13 @@ import { useAuth } from '../contexts/AuthContext';
 import './WeeklyPage.css';
 
 export default function SignIn() {
-  const { sendSignInLink, signInWithGoogle } = useAuth();
+  const { sendSignInLink, signInWithGoogle, signInAsGuest } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => { document.title = 'Sign In — Global Perspectives'; }, []);
@@ -31,6 +32,19 @@ export default function SignIn() {
       }
     } finally {
       setGoogleLoading(false);
+    }
+  }
+
+  async function handleGuest() {
+    setGuestLoading(true);
+    setError(null);
+    try {
+      await signInAsGuest();
+      navigate('/weekly', { replace: true });
+    } catch (err) {
+      setError(err?.message || 'Guest sign-in failed');
+    } finally {
+      setGuestLoading(false);
     }
   }
 
@@ -104,6 +118,20 @@ export default function SignIn() {
         </button>
       </form>
       {error && <div className="weekly-gate-error">{error}</div>}
+
+      <div className="signin-divider">
+        <span>or</span>
+      </div>
+
+      <button
+        className="weekly-clear-btn"
+        onClick={handleGuest}
+        disabled={guestLoading}
+        style={{ fontSize: '0.9rem', color: 'var(--text-muted)', padding: '8px 0' }}
+      >
+        {guestLoading ? 'Continuing…' : 'Continue as guest'}
+      </button>
+
       <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '1rem', lineHeight: 1.6 }}>
         All features are free during our launch period — no credit card required.
       </p>

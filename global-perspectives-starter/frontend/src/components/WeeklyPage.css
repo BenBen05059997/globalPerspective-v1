@@ -2596,7 +2596,7 @@
 .country-list-card-meta { font-size: 12px; color: #9ca3af; }
 
 /* ===== SHARE BUTTONS ===== */
-.share-buttons { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.share-buttons { display: flex; align-items: center; gap: 6px; }
 .share-buttons-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #9ca3af; margin-right: 2px; }
 .share-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; color: #6b7280; transition: all 0.15s; text-decoration: none; padding: 0; }
 .share-btn:hover { border-color: #d1d5db; background: #f9fafb; }

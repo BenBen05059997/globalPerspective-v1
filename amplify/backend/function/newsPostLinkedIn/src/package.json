@@ -6,7 +6,9 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.609.0",
-    "@aws-sdk/lib-dynamodb": "^3.609.0"
+    "@aws-sdk/lib-dynamodb": "^3.609.0",
+    "nostr-tools": "^1.17.0",
+    "ws": "^8.17.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.92"

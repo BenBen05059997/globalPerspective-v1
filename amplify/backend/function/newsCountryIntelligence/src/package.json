@@ -1,0 +1,11 @@
+{
+  "name": "newscountryintelligence",
+  "version": "1.0.0",
+  "description": "Generates country-level intelligence by synthesizing threads and topics per country",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}

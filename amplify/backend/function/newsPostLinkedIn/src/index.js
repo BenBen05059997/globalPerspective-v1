@@ -1,6 +1,8 @@
 'use strict';
 
 const crypto = require('crypto');
+const WebSocket = require('ws');
+const nostrTools = require('nostr-tools');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
   DynamoDBDocumentClient,
@@ -27,15 +29,26 @@ const LINKEDIN_API_VERSION = '202601';
 const BLUESKY_IDENTIFIER = process.env.BLUESKY_IDENTIFIER || '';
 const BLUESKY_APP_PASSWORD = process.env.BLUESKY_APP_PASSWORD || '';
 
-// X / Twitter
-const X_API_KEY = process.env.X_API_KEY || '';
-const X_API_SECRET = process.env.X_API_SECRET || '';
-const X_ACCESS_TOKEN = process.env.X_ACCESS_TOKEN || '';
-const X_ACCESS_TOKEN_SECRET = process.env.X_ACCESS_TOKEN_SECRET || '';
+// X / Twitter — disabled
+// const X_API_KEY = process.env.X_API_KEY || '';
 
-// Threads
-const THREADS_ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN || '';
-const THREADS_USER_ID = process.env.THREADS_USER_ID || '';
+// Threads — disabled
+// const THREADS_ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN || '';
+
+// Farcaster (via Neynar)
+const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY || '';
+const FARCASTER_SIGNER_UUID = process.env.FARCASTER_SIGNER_UUID || '';
+
+// Mastodon
+const MASTODON_ACCESS_TOKEN = process.env.MASTODON_ACCESS_TOKEN || '';
+const MASTODON_INSTANCE = process.env.MASTODON_INSTANCE || 'mastodon.social';
+
+// Telegram
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || '';
+
+// Nostr
+const NOSTR_PRIVATE_KEY_NSEC = process.env.NOSTR_PRIVATE_KEY_NSEC || '';
 
 const MAX_POSTS_PER_RUN = parseInt(process.env.MAX_POSTS_PER_RUN || '5', 10);
 const MAX_POSTS_PER_DAY = parseInt(process.env.MAX_POSTS_PER_DAY || '100', 10);
@@ -134,25 +147,47 @@ function buildPlatformList() {
     });
   }
 
-  if (X_API_KEY && X_API_SECRET && X_ACCESS_TOKEN && X_ACCESS_TOKEN_SECRET) {
+  if (MASTODON_ACCESS_TOKEN) {
     platforms.push({
-      name: 'X',
+      name: 'MASTODON',
       maxPerRun: MAX_POSTS_PER_RUN,
       maxPerDay: MAX_POSTS_PER_DAY,
-      formatFn: (topic) => formatShortPost(topic, 280),
-      postFn: async (text) => postToX(X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET, text),
+      formatFn: (topic) => formatShortPost(topic, 500),
+      postFn: async (text) => postToMastodon(MASTODON_ACCESS_TOKEN, MASTODON_INSTANCE, text),
       needsSummary: false,
     });
   }
 
-  if (THREADS_ACCESS_TOKEN && THREADS_USER_ID) {
+  if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHANNEL_ID) {
     platforms.push({
-      name: 'THREADS',
+      name: 'TELEGRAM',
       maxPerRun: MAX_POSTS_PER_RUN,
       maxPerDay: MAX_POSTS_PER_DAY,
-      formatFn: formatThreadsPost,
-      postFn: async (text) => postToThreads(THREADS_ACCESS_TOKEN, THREADS_USER_ID, text),
-      needsSummary: true,
+      formatFn: (topic) => formatShortPost(topic, 4096),
+      postFn: async (text) => postToTelegram(TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL_ID, text),
+      needsSummary: false,
+    });
+  }
+
+  if (NOSTR_PRIVATE_KEY_NSEC) {
+    platforms.push({
+      name: 'NOSTR',
+      maxPerRun: MAX_POSTS_PER_RUN,
+      maxPerDay: MAX_POSTS_PER_DAY,
+      formatFn: (topic) => formatShortPost(topic, 800),
+      postFn: async (text) => postToNostr(NOSTR_PRIVATE_KEY_NSEC, text),
+      needsSummary: false,
+    });
+  }
+
+  if (NEYNAR_API_KEY && FARCASTER_SIGNER_UUID) {
+    platforms.push({
+      name: 'FARCASTER',
+      maxPerRun: MAX_POSTS_PER_RUN,
+      maxPerDay: MAX_POSTS_PER_DAY,
+      formatFn: (topic) => formatShortPost(topic, 320),
+      postFn: async (text) => postToFarcaster(NEYNAR_API_KEY, FARCASTER_SIGNER_UUID, text),
+      needsSummary: false,
     });
   }
 
@@ -710,6 +745,140 @@ async function postToThreads(accessToken, userId, text) {
 
   const result = await publishRes.json();
   return { success: true, postId: result.id || null };
+}
+
+// ---------------------------------------------------------------------------
+// Platform poster: Nostr
+// ---------------------------------------------------------------------------
+
+const NOSTR_RELAYS = [
+  'wss://relay.damus.io',
+  'wss://nos.lol',
+  'wss://relay.nostr.band',
+];
+
+async function postToNostr(nsec, text) {
+  const { data: privkeyBytes } = nostrTools.nip19.decode(nsec);
+  const privkeyHex = Buffer.from(privkeyBytes).toString('hex');
+  const pubkeyHex = nostrTools.getPublicKey(privkeyHex);
+
+  const event = {
+    kind: 1,
+    pubkey: pubkeyHex,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [],
+    content: text,
+  };
+  event.id = nostrTools.getEventHash(event);
+  event.sig = nostrTools.signEvent(event, privkeyHex);
+
+  // Publish to relays in parallel, succeed if at least one accepts
+  const results = await Promise.allSettled(
+    NOSTR_RELAYS.map(relay => publishToNostrRelay(relay, event))
+  );
+
+  const succeeded = results.filter(r => r.status === 'fulfilled');
+  if (!succeeded.length) {
+    throw new Error('All Nostr relays rejected the event');
+  }
+
+  return { success: true, postId: event.id };
+}
+
+function publishToNostrRelay(relayUrl, event) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(relayUrl);
+    const timeout = setTimeout(() => {
+      ws.terminate();
+      reject(new Error(`${relayUrl} timed out`));
+    }, 8000);
+
+    ws.on('open', () => {
+      ws.send(JSON.stringify(['EVENT', event]));
+    });
+
+    ws.on('message', (data) => {
+      try {
+        const msg = JSON.parse(data.toString());
+        if (msg[0] === 'OK') {
+          clearTimeout(timeout);
+          ws.close();
+          resolve(msg);
+        }
+      } catch (_) {}
+    });
+
+    ws.on('error', (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Platform poster: Telegram
+// ---------------------------------------------------------------------------
+
+async function postToTelegram(botToken, channelId, text) {
+  const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: channelId, text }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Telegram API error ${res.status}: ${errText}`);
+  }
+
+  const result = await res.json();
+  return { success: true, postId: result.result?.message_id?.toString() || null };
+}
+
+// ---------------------------------------------------------------------------
+// Platform poster: Mastodon
+// ---------------------------------------------------------------------------
+
+async function postToMastodon(accessToken, instance, status) {
+  const res = await fetch(`https://${instance}/api/v1/statuses`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Mastodon API error ${res.status}: ${errText}`);
+  }
+
+  const result = await res.json();
+  return { success: true, postId: result.id || null };
+}
+
+// ---------------------------------------------------------------------------
+// Platform poster: Farcaster (via Neynar)
+// ---------------------------------------------------------------------------
+
+async function postToFarcaster(apiKey, signerUuid, text) {
+  const res = await fetch('https://api.neynar.com/v2/farcaster/cast', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ signer_uuid: signerUuid, text }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Farcaster API error ${res.status}: ${errText}`);
+  }
+
+  const result = await res.json();
+  return { success: true, postId: result.cast?.hash || null };
 }
 
 // ---------------------------------------------------------------------------

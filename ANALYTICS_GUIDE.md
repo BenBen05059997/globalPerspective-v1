@@ -95,7 +95,7 @@ This gives you a week-by-week growth chart — the single most useful chart to s
 
 ---
 
-### Conversion Tracking (Future — when Stripe paywall is live)
+### Conversion Tracking (Stripe paywall is live — add this to `/upgrade/success`)
 
 When a user upgrades to Member, fire this event on the success page:
 

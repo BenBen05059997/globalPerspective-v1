@@ -1,7 +1,7 @@
 'use strict';
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -23,6 +23,128 @@ const ENTERPRISE_API_KEYS = new Set(
 );
 const MEMBER_MAX_DAYS = 7;
 const ENTERPRISE_MAX_DAYS = 30;
+
+const USERS_TABLE = process.env.USERS_DDB_TABLE;
+const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
+const PADDLE_API_KEY = process.env.PADDLE_API_KEY;
+const PADDLE_PORTAL_BASE = 'https://customer-portal.paddle.com';
+const LOOPS_API_KEY = process.env.LOOPS_API_KEY;
+
+// ── Firebase JWT verification (lightweight, no firebase-admin) ──────────────
+let _certCache = null;
+let _certCacheExpiry = 0;
+
+async function getGoogleCerts() {
+  const now = Date.now();
+  if (_certCache && now < _certCacheExpiry) return _certCache;
+  const res = await fetch('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com');
+  _certCache = await res.json();
+  _certCacheExpiry = now + 3600 * 1000;
+  return _certCache;
+}
+
+async function verifyFirebaseToken(authHeader) {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7);
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const { createVerify } = require('crypto');
+    const header = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp < now) return null;
+    if (FIREBASE_PROJECT_ID && payload.aud !== FIREBASE_PROJECT_ID) return null;
+    if (FIREBASE_PROJECT_ID && payload.iss !== `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`) return null;
+    const certs = await getGoogleCerts();
+    const cert = certs[header.kid];
+    if (!cert) return null;
+    const verifier = createVerify('SHA256');
+    verifier.update(`${parts[0]}.${parts[1]}`);
+    const isValid = verifier.verify(cert, parts[2], 'base64url');
+    return isValid ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+const TRIAL_DAYS = 14;
+
+// Resolve user tier from Firebase JWT + DynamoDB.
+// Auto-creates user record on first sign-in.
+// Returns { uid, tier, trialDaysLeft, email } or null if not authenticated.
+async function resolveUserTier(event) {
+  const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
+  const jwtPayload = await verifyFirebaseToken(authHeader);
+  if (!jwtPayload) return null;
+
+  const uid = jwtPayload.sub;
+  const email = jwtPayload.email || null;
+
+  if (!USERS_TABLE) {
+    return { uid, email, tier: 'member', trialDaysLeft: TRIAL_DAYS };
+  }
+
+  const client = getDynamoClient();
+  let item;
+  try {
+    const { Item } = await client.send(new GetCommand({ TableName: USERS_TABLE, Key: { uid } }));
+    item = Item;
+  } catch (err) {
+    console.error('resolveUserTier: DDB read error', err.message);
+    return { uid, email, tier: 'free', trialDaysLeft: 0 };
+  }
+
+  // Auto-create user record on first sign-in
+  if (!item) {
+    const now = new Date().toISOString();
+    item = { uid, email, tier: 'free', trialStartedAt: now, createdAt: now, updatedAt: now };
+    try {
+      await client.send(new PutCommand({
+        TableName: USERS_TABLE,
+        Item: item,
+        ConditionExpression: 'attribute_not_exists(uid)',
+      }));
+      console.info('resolveUserTier: auto-created user', { uid, email });
+      // Send welcome email via Loops (fire-and-forget — don't block sign-in)
+      if (LOOPS_API_KEY && email) {
+        fetch('https://app.loops.so/api/v1/contacts/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${LOOPS_API_KEY}` },
+          body: JSON.stringify({ email, subscribed: true, source: 'app' }),
+        }).catch(err => console.error('Loops contact create failed:', err.message));
+      }
+    } catch (err) {
+      if (err.name !== 'ConditionalCheckFailedException') {
+        console.error('resolveUserTier: auto-create failed', err.message);
+      }
+      // Race condition — another request created it first, re-read
+      try {
+        const { Item: reread } = await client.send(new GetCommand({ TableName: USERS_TABLE, Key: { uid } }));
+        if (reread) item = reread;
+      } catch {}
+    }
+  }
+
+  // Paid tier always wins
+  if (item.tier === 'member' || item.tier === 'enterprise') {
+    return { uid, email, tier: item.tier, trialDaysLeft: 0 };
+  }
+
+  // LAUNCH MODE: all signed-in users get full member access for free.
+  // When payment is ready, remove this line and enable the trial block below.
+  return { uid, email, tier: 'member', trialDaysLeft: 0, freeAccess: true };
+
+  // // TRIAL MODE (enable when ready to charge):
+  // if (item.trialStartedAt) {
+  //   const elapsed = Date.now() - new Date(item.trialStartedAt).getTime();
+  //   const daysLeft = Math.max(0, Math.ceil((TRIAL_DAYS * 86400000 - elapsed) / 86400000));
+  //   if (daysLeft > 0) {
+  //     return { uid, email, tier: 'member', trialDaysLeft: daysLeft, isTrial: true };
+  //   }
+  // }
+  // return { uid, email, tier: 'free', trialDaysLeft: 0 };
+}
 
 let dynamoDocClient = null;
 
@@ -259,14 +381,9 @@ exports.handler = async (event) => {
     }
 
     if (action === 'narrative_thread') {
-      const apiKey = event.headers?.['x-api-key'] || event.headers?.['X-Api-Key'] || '';
-      const tier = resolveTier(apiKey);
-      if (!tier) {
-        return {
-          statusCode: 401,
-          headers,
-          body: JSON.stringify({ success: false, error: 'Valid API key required for narrative_thread' }),
-        };
+      const userInfo = await resolveUserTier(event);
+      if (!userInfo || userInfo.tier === 'free') {
+        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for narrative_thread' }) };
       }
       const threadId = payload?.threadId;
       if (!threadId || typeof threadId !== 'string') {
@@ -276,30 +393,24 @@ exports.handler = async (event) => {
           body: JSON.stringify({ success: false, error: 'Missing threadId' }),
         };
       }
-      const maxDays = tier === 'enterprise' ? ENTERPRISE_MAX_DAYS : MEMBER_MAX_DAYS;
+      const maxDays = ENTERPRISE_MAX_DAYS;
       const response = await readNarrativeThread(threadId, maxDays);
       console.info('newsSensitiveData narrative_thread response', {
-        tier, threadId, statusCode: response.statusCode, entryCount: response.body?.data?.length ?? 0,
+        threadId, statusCode: response.statusCode, entryCount: response.body?.data?.length ?? 0,
       });
       return { statusCode: response.statusCode, headers, body: JSON.stringify(response.body) };
     }
 
     if (action === 'archive_range') {
-      const apiKey = event.headers?.['x-api-key'] || event.headers?.['X-Api-Key'] || '';
-      const tier = resolveTier(apiKey);
-      if (!tier) {
-        return {
-          statusCode: 401,
-          headers,
-          body: JSON.stringify({ success: false, error: 'Valid API key required for archive_range' }),
-        };
+      const userInfo = await resolveUserTier(event);
+      if (!userInfo || userInfo.tier === 'free') {
+        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for archive_range' }) };
       }
-      const maxDays = tier === 'enterprise' ? ENTERPRISE_MAX_DAYS : MEMBER_MAX_DAYS;
+      const maxDays = userInfo.tier === 'enterprise' ? ENTERPRISE_MAX_DAYS : MEMBER_MAX_DAYS;
       const requestedDays = Math.max(1, Math.min(maxDays, parseInt(payload?.days || maxDays, 10)));
 
       const response = await readArchiveRange(requestedDays);
       console.info('newsSensitiveData archive_range response', {
-        tier,
         requestedDays,
         statusCode: response.statusCode,
         dayCount: Object.keys(response.body?.data || {}).length,
@@ -309,6 +420,173 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify(response.body),
       };
+    }
+
+    if (action === 'thread_analysis') {
+      const userInfo = await resolveUserTier(event);
+      if (!userInfo || userInfo.tier === 'free') {
+        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for thread_analysis' }) };
+      }
+      const threadIds = Array.isArray(payload?.threadIds) ? payload.threadIds.slice(0, 20) : [];
+      const data = {};
+      const client = getDynamoClient();
+      await Promise.all(threadIds.map(async (tid) => {
+        try {
+          const { Item } = await client.send(new GetCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            Key: { PK: `THREAD#${tid}`, SK: 'THREAD_ANALYSIS' },
+          }));
+          if (Item) {
+            const { PK, SK, ttl, ...rest } = Item;
+            data[tid] = rest;
+          }
+        } catch {}
+      }));
+      console.info('newsSensitiveData thread_analysis response', {
+        requested: threadIds.length, found: Object.values(data).filter(Boolean).length,
+      });
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, data }),
+      };
+    }
+
+    if (action === 'country_intelligence') {
+      const userInfo = await resolveUserTier(event);
+      if (!userInfo || userInfo.tier === 'free') {
+        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for country_intelligence' }) };
+      }
+      const countryNames = Array.isArray(payload?.countryNames) ? payload.countryNames.slice(0, 15) : [];
+      const data = {};
+      const client = getDynamoClient();
+      await Promise.all(countryNames.map(async (name) => {
+        try {
+          const { Item } = await client.send(new GetCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            Key: { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE' },
+          }));
+          if (Item) {
+            const { PK, SK, ttl, ...rest } = Item;
+            data[name] = rest;
+          }
+        } catch {}
+      }));
+      console.info('newsSensitiveData country_intelligence response', {
+        requested: countryNames.length, found: Object.values(data).filter(Boolean).length,
+      });
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, data }),
+      };
+    }
+
+    if (action === 'user_profile') {
+      const userInfo = await resolveUserTier(event);
+      if (!userInfo) {
+        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Unauthorized' }) };
+      }
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          data: {
+            uid: userInfo.uid,
+            email: userInfo.email,
+            tier: userInfo.tier,
+            trialDaysLeft: userInfo.trialDaysLeft || 0,
+            isTrial: userInfo.isTrial || false,
+          },
+        }),
+      };
+    }
+
+    if (action === 'portal_session') {
+      const authHeader = event.headers?.authorization || event.headers?.Authorization || '';
+      const jwtPayload = await verifyFirebaseToken(authHeader);
+      if (!jwtPayload) {
+        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Unauthorized' }) };
+      }
+      const uid = jwtPayload.sub;
+      if (!USERS_TABLE || !PADDLE_API_KEY) {
+        console.error('newsSensitiveData portal_session: missing USERS_DDB_TABLE or PADDLE_API_KEY');
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Billing portal not configured' }) };
+      }
+      try {
+        const { Item } = await getDynamoClient().send(new GetCommand({ TableName: USERS_TABLE, Key: { uid } }));
+        const paddleCustomerId = Item?.paddleCustomerId;
+        if (!paddleCustomerId) {
+          return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'No billing account found' }) };
+        }
+        const paddleRes = await fetch(`https://api.paddle.com/customers/${paddleCustomerId}/auth-token`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${PADDLE_API_KEY}`, 'Content-Type': 'application/json' },
+        });
+        if (!paddleRes.ok) {
+          const errText = await paddleRes.text();
+          console.error('newsSensitiveData portal_session: Paddle API error', paddleRes.status, errText);
+          return { statusCode: 502, headers, body: JSON.stringify({ success: false, error: 'Failed to generate portal link' }) };
+        }
+        const paddleData = await paddleRes.json();
+        const authToken = paddleData?.data?.customer_auth_token;
+        if (!authToken) {
+          return { statusCode: 502, headers, body: JSON.stringify({ success: false, error: 'No auth token in Paddle response' }) };
+        }
+        const portalUrl = `${PADDLE_PORTAL_BASE}?customer_auth_token=${encodeURIComponent(authToken)}`;
+        console.info('newsSensitiveData portal_session: generated portal URL', { uid, paddleCustomerId });
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, url: portalUrl }) };
+      } catch (err) {
+        console.error('newsSensitiveData portal_session error:', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Portal session failed' }) };
+      }
+    }
+
+    // ── Public preview endpoints (no auth, limited fields for SEO) ──
+    if (action === 'country_preview') {
+      const name = payload?.countryName;
+      if (!name) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing countryName' }) };
+      try {
+        const { Item } = await getDynamoClient().send(new GetCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          Key: { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE' },
+        }));
+        if (!Item) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, data: {
+            headline: Item.headline || null,
+            bluf: Item.bluf || null,
+            keyDevelopments: Item.keyDevelopments || [],
+            riskLevel: Item.riskLevel || null,
+            trajectory: Item.trajectory || null,
+            totalArticles: Item.totalArticles || 0,
+            dayCount: Item.dayCount || 0,
+            generatedAt: Item.generatedAt || null,
+          }}),
+        };
+      } catch { return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) }; }
+    }
+
+    if (action === 'thread_preview') {
+      const tid = payload?.threadId;
+      if (!tid) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing threadId' }) };
+      try {
+        const { Item } = await getDynamoClient().send(new GetCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          Key: { PK: `THREAD#${tid}`, SK: 'THREAD_ANALYSIS' },
+        }));
+        if (!Item) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, data: {
+            threadTitle: Item.threadTitle || null,
+            entryShortTitles: Item.entryShortTitles || [],
+            generatedAt: Item.generatedAt || null,
+          }}),
+        };
+      } catch { return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) }; }
     }
 
     console.warn('newsSensitiveData received unsupported action', {

@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-03-23 (Share buttons + Copy Briefing)
+
+- **Share buttons always visible** — X/Twitter and LinkedIn share links now always show on desktop alongside the copy-link button. Native OS share sheet (`navigator.share`) shown only when available (mobile/supported browsers). Fixed previous behaviour where X + LinkedIn were hidden on desktop.
+- **Copy Briefing button** — new `CopyBriefing.jsx` component with `formatThreadBriefing()` and `formatCountryBriefing()` formatters. Copies plain-text briefing to clipboard with AI analysis, stats, and canonical URL. Used on ThreadPage and CountryPage.
+- **Share + Copy Briefing alignment fixed** — removed `margin-bottom: 12px` from `.share-buttons` CSS rule; the parent wrapper div handles spacing, so both buttons now sit on the same baseline.
+
+---
+
 ## 2026-03-22c (Blog: Thread Intelligence and Country Intelligence announcement)
 
 - **New blog:** Added `docs/blog/` with index page and first post announcing Thread Intelligence and Country Intelligence features.

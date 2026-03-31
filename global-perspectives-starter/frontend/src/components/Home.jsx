@@ -403,6 +403,9 @@ function Home() {
         <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
           Trending topics from around the world, organized by region
         </p>
+        <p style={{ fontSize: '0.78rem', color: '#9ca3af', maxWidth: '520px', margin: '6px auto 0', lineHeight: 1.4 }}>
+          AI news aggregator and geopolitical intelligence platform — tracking country risk analysis and narrative patterns across 190+ countries
+        </p>
         {(generatedDate || updatedAt) && !isStale && (
           <p
             style={{

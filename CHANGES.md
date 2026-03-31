@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-03-31 (GEO optimization: structured data + homepage keywords)
+
+- **Schema.org structured data** — Added `Organization` + `WebApplication` + `FAQPage` JSON-LD to `<head>` for AI search engine discoverability (Perplexity, ChatGPT, Gemini).
+- **Twitter Card upgrade** — Changed from `summary` to `summary_large_image`, added `twitter:site` and `twitter:creator` tags.
+- **Homepage keyword copy** — Added subtle tagline under main heading with key phrases: "AI news aggregator", "geopolitical intelligence platform", "country risk analysis", "narrative patterns". Helps AI crawlers match page content to structured data.
+- Files changed: `index.html` (source + docs), `Home.jsx`, `docs/assets/`.
+
+---
+
 ## 2026-03-31 (Guest sign-out button)
 
 - **Guest sign-out in nav** — anonymous (guest) users now see "Guest · Sign out" in the nav bar instead of a blank link. Clicking it calls `signOut()` and returns them to the signed-out state. Registered users are unaffected (still see email → `/account`). Change in `Layout.jsx`.

@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-03-31 (GEO: noscript fallback for AI crawlers)
+
+- **`<noscript>` content block** — Added keyword-rich fallback content in `index.html` for crawlers that don't execute JavaScript (Perplexity, ChatGPT browse, etc.). Contains product description, feature list, audience info, and FAQ-style content matching the Schema.org FAQ. Invisible to normal users (only rendered when JS is disabled).
+
+---
+
 ## 2026-03-31 (GEO optimization: structured data + homepage keywords)
 
 - **Schema.org structured data** — Added `Organization` + `WebApplication` + `FAQPage` JSON-LD to `<head>` for AI search engine discoverability (Perplexity, ChatGPT, Gemini).

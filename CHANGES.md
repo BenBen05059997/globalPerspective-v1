@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-03-31 (GEO: sitemap update)
+
+- **Sitemap updated** — Added 4 missing public pages: `/cli`, `/blog/`, `/blog/thread-and-country-intelligence/`, `/blog/geopolitical-intelligence-for-ai-agents/`. Bumped `/whitepaper` priority to 0.7. Organized with section comments.
+
+---
+
 ## 2026-03-31 (GEO: noscript fallback for AI crawlers)
 
 - **`<noscript>` content block** — Added keyword-rich fallback content in `index.html` for crawlers that don't execute JavaScript (Perplexity, ChatGPT browse, etc.). Contains product description, feature list, audience info, and FAQ-style content matching the Schema.org FAQ. Invisible to normal users (only rendered when JS is disabled).

@@ -72,7 +72,7 @@ export default function Account() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { navigate('/signin'); return; }
+    if (!user || user.isAnonymous) { navigate('/signin'); return; }
     setProfileLoading(true);
     fetchUserProfile()
       .then(res => setProfile(res?.data || { tier: 'free' }))

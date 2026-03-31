@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingBar from './LoadingBar';
 import AIToast from './AIToast';
@@ -8,7 +8,8 @@ function Layout({ children }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const navBarRef = useRef(null);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
@@ -71,9 +72,20 @@ function Layout({ children }) {
               ))}
               {!authLoading && (
                 user ? (
-                  <Link to="/account" className={`nav-link nav-link-auth ${location.pathname === '/account' ? 'active' : ''}`}>
-                    {user.email}
-                  </Link>
+                  user.isAnonymous ? (
+                    <button
+                      type="button"
+                      className="nav-link nav-link-auth"
+                      onClick={async () => { await signOut(); navigate('/signin'); }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                      Guest · Sign out
+                    </button>
+                  ) : (
+                    <Link to="/account" className={`nav-link nav-link-auth ${location.pathname === '/account' ? 'active' : ''}`}>
+                      {user.email}
+                    </Link>
+                  )
                 ) : (
                   <Link to="/signin" className={`nav-link nav-link-auth ${location.pathname === '/signin' ? 'active' : ''}`}>
                     Sign in
@@ -85,6 +97,15 @@ function Layout({ children }) {
         </div>
       </nav>
       
+      {user?.isAnonymous && (
+        <div style={{ background: '#eff6ff', borderBottom: '1px solid #bfdbfe', padding: '8px 16px', textAlign: 'center', fontSize: '0.85rem', color: '#1e40af' }}>
+          You're browsing as a guest.{' '}
+          <Link to="/signin" style={{ color: '#1d4ed8', fontWeight: 600, textDecoration: 'underline' }}>
+            Sign up free
+          </Link>
+          {' '}to save your session and unlock all features.
+        </div>
+      )}
       <main className="main-content">
         <div className="container">
           {children}

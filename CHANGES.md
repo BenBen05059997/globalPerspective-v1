@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-03-31 (Guest sign-out button)
+
+- **Guest sign-out in nav** — anonymous (guest) users now see "Guest · Sign out" in the nav bar instead of a blank link. Clicking it calls `signOut()` and returns them to the signed-out state. Registered users are unaffected (still see email → `/account`). Change in `Layout.jsx`.
+
+---
+
 ## 2026-03-23 (Share buttons + Copy Briefing)
 
 - **Share buttons always visible** — X/Twitter and LinkedIn share links now always show on desktop alongside the copy-link button. Native OS share sheet (`navigator.share`) shown only when available (mobile/supported browsers). Fixed previous behaviour where X + LinkedIn were hidden on desktop.

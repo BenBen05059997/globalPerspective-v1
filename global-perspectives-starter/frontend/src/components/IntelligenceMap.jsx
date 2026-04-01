@@ -247,13 +247,13 @@ function MapCanvas({ top10, intelligence, activeCountry, onChipClick }) {
       </div>
 
       {/* Expanded card */}
-      {activeCountry && activePos && mapSize.w > 0 && (
+      {activeCountry && chipPositions[activeCountry] && mapSize.w > 0 && (
         <IntelCard
           key={activeCountry}
           countryName={activeCountry}
           intel={intelligence[activeCountry] || null}
-          chipX={activePos.x}
-          chipY={activePos.y}
+          chipX={chipPositions[activeCountry].x}
+          chipY={chipPositions[activeCountry].y}
           mapW={mapSize.w}
           mapH={mapSize.h}
           onClose={() => onChipClick(null)}
@@ -297,18 +297,6 @@ export default function IntelligenceMap() {
     setActiveCountry(name);
   }, []);
 
-  const renderFallback = (status) => {
-    if (status === 'FAILURE') {
-      return (
-        <div className="imap-fallback">
-          <div>🗺️</div>
-          <p>Map unavailable — Google Maps API key not configured.</p>
-        </div>
-      );
-    }
-    return <div className="imap-map-loading">Loading map…</div>;
-  };
-
   return (
     <div className="imap-root">
       <div className="imap-header">
@@ -331,22 +319,36 @@ export default function IntelligenceMap() {
       </div>
 
       <div className="imap-map-wrap">
-        {loading && top10.length === 0 ? (
-          <div className="imap-map-loading">Loading country data…</div>
-        ) : googleApiKey ? (
-          <Wrapper apiKey={googleApiKey} render={renderFallback}>
-            <MapCanvas
-              top10={top10}
-              intelligence={intelligence}
-              activeCountry={activeCountry}
-              onChipClick={handleChipClick}
-            />
-          </Wrapper>
-        ) : (
+        {!googleApiKey ? (
           <div className="imap-fallback">
             <div>🗺️</div>
             <p>Map requires Google Maps API key.</p>
           </div>
+        ) : (
+          <Wrapper
+            apiKey={googleApiKey}
+            render={(status) => {
+              if (status === 'FAILURE') {
+                return (
+                  <div className="imap-fallback">
+                    <div>🗺️</div>
+                    <p>Map unavailable.</p>
+                  </div>
+                );
+              }
+              if (status === 'LOADING') {
+                return <div className="imap-map-loading">Loading map…</div>;
+              }
+              return (
+                <MapCanvas
+                  top10={top10}
+                  intelligence={intelligence}
+                  activeCountry={activeCountry}
+                  onChipClick={handleChipClick}
+                />
+              );
+            }}
+          />
         )}
       </div>
     </div>

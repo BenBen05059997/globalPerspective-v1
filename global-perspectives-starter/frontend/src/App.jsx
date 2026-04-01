@@ -18,6 +18,7 @@ import CountryListPage from './components/CountryListPage';
 import SignIn from './components/SignIn';
 import AuthCallback from './components/AuthCallback';
 import Pricing from './components/Pricing';
+import BriefingCardTest from './components/BriefingCardTest';
 import Account from './components/Account';
 import UpgradeSuccess from './components/UpgradeSuccess';
 import WhitepaperPage from './components/WhitepaperPage';
@@ -105,6 +106,7 @@ export default function App() {
               <Route path="/upgrade/success" element={<UpgradeSuccess />} />
               <Route path="/whitepaper" element={<WhitepaperPage />} />
               <Route path="/cli" element={<CLIPage />} />
+              <Route path="/test/briefing-card" element={<BriefingCardTest />} />
             </Routes>
           </Layout>
         </BrowserRouter>

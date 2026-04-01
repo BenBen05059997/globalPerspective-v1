@@ -11,6 +11,9 @@
   <!-- Long-form content -->
   <url><loc>https://globalperspective.net/whitepaper</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://globalperspective.net/blog/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://globalperspective.net/blog/ai-news-aggregation-guide/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://globalperspective.net/blog/country-risk-analysis-ai/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://globalperspective.net/blog/google-news-vs-ai-news/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://globalperspective.net/blog/thread-and-country-intelligence/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://globalperspective.net/blog/geopolitical-intelligence-for-ai-agents/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 

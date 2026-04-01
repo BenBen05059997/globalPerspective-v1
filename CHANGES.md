@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-04-01 (GEO: publish 3 long-form blog articles)
+
+- **3 new blog articles** published for GEO authority building:
+  - `/blog/ai-news-aggregation-guide/` — "What is AI News Aggregation? A Complete Guide" (target: AI news aggregator queries)
+  - `/blog/country-risk-analysis-ai/` — "Country Risk Analysis: How AI is Changing Geopolitical Intelligence" (target: country risk tool queries)
+  - `/blog/google-news-vs-ai-news/` — "Google News vs AI News Platforms: What's the Difference?" (target: Google News alternative queries)
+- Each article includes Article schema JSON-LD, OG tags, canonical URLs
+- Article 3 also includes FAQPage schema for direct AI engine citation
+- Blog index updated with 3 new entries, sitemap updated with 3 new URLs at priority 0.7
+- All articles include balanced competitor mentions (Feedly, Dataminr, Particle, Recorded Future, etc.) for credibility
+
+---
+
 ## 2026-03-31 (GEO: sitemap update)
 
 - **Sitemap updated** — Added 4 missing public pages: `/cli`, `/blog/`, `/blog/thread-and-country-intelligence/`, `/blog/geopolitical-intelligence-for-ai-agents/`. Bumped `/whitepaper` priority to 0.7. Organized with section comments.

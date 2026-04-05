@@ -4,12 +4,12 @@
   position: fixed;
   top: 120px;
   left: 24px;
-  width: 260px;
+  width: 240px;
   max-height: calc(100vh - 160px);
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -25,31 +25,31 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6;
   cursor: pointer;
   user-select: none;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
 .archive-sidebar-header:hover {
-  background: rgba(0, 0, 0, 0.02);
+  background: #f9fafb;
 }
 
 .archive-sidebar-title {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #111827;
   flex: 1;
 }
 
 .archive-sidebar-count {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 700;
   color: #6b7280;
-  background: rgba(0, 0, 0, 0.04);
-  padding: 2px 8px;
-  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 6px;
+  border-radius: 8px;
 }
 
 .archive-sidebar-toggle {
@@ -59,20 +59,20 @@
 }
 
 .archive-sidebar-filters {
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 8px;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .archive-search-input {
   width: 100%;
-  padding: 6px 10px;
-  font-size: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 5px 8px;
+  font-size: 11px;
+  border: 1px solid #f3f4f6;
   border-radius: 6px;
   outline: none;
-  background: #fafafa;
+  background: #f9fafb;
   color: #111827;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s;
   box-sizing: border-box;
 }
 
@@ -88,16 +88,16 @@
 .archive-category-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 6px;
+  gap: 3px;
+  margin-top: 5px;
 }
 
 .archive-chip {
   font-size: 10px;
   font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 1px solid #f3f4f6;
   background: transparent;
   color: #6b7280;
   cursor: pointer;
@@ -106,8 +106,8 @@
 }
 
 .archive-chip:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.2);
+  background: #f3f4f6;
+  color: #374151;
 }
 
 .archive-chip.active {
@@ -127,11 +127,11 @@
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
-  padding: 8px;
+  padding: 6px;
 }
 
 .archive-sidebar-list::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .archive-sidebar-list::-webkit-scrollbar-track {
@@ -149,31 +149,29 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #9ca3af;
-  padding: 8px 12px 4px;
-  margin-top: 4px;
+  padding: 6px 10px 2px;
 }
 
 .archive-sidebar-item {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   margin-bottom: 2px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border-left: 3px solid transparent;
+  transition: all 0.15s;
+  border: none;
 }
 
 .archive-sidebar-item:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-left-color: #111827;
+  background: #f3f4f6;
 }
 
 .archive-item-title {
   font-size: 12px;
   line-height: 1.4;
-  color: #374151;
+  color: #6b7280;
   font-weight: 500;
   display: -webkit-box;
   -webkit-line-clamp: 2;

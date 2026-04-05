@@ -1,5 +1,111 @@
 # Global Perspectives — Change Log
 
+## 2026-04-05 (Home page sidebar UI refresh)
+
+- **Restyle TopicNav + TodayArchiveSidebar** to match the SideNav frosted-glass design from ThreadPage
+  - Frosted glass background (`rgba(255,255,255,0.95)` + `backdrop-filter: blur(8px)`)
+  - Lighter borders, compact padding, thinned scrollbars
+  - Active state: solid black pill instead of blue tint / border-left accent
+- **TopicNav now starts collapsed** (matching TodayArchiveSidebar behavior)
+- **TopicNav region accordions** — topics grouped by region with collapsible headers instead of flat list with badges
+- **Full topic titles** — 2-line CSS clamp replaces hard 35-char JS truncation
+- Updated `TopicNav.jsx`, `TopicNav.css`, `TodayArchiveSidebar.css`
+
+---
+
+## 2026-04-05 (NewsProjectInvokeAgentLambda: two-pass prediction agent)
+
+- **Two-pass prediction architecture** — Research Agent → Prediction Agent, inspired by IARPA Hybrid Forecasting Competition
+- **Pass 1 (Research Agent, 800 tokens):** Gathers structured context before any prediction:
+  - Historical precedents (2-3 analogous events with outcomes)
+  - Key actors & motivations (3-5 decision-makers, what they want, constraints)
+  - Upcoming deadlines (elections, summits, central bank meetings, treaty dates)
+  - Balance of forces (who has initiative, leverage, momentum)
+- **Pass 2 (Prediction Agent, 1500 tokens):** Receives topic + snippets + research briefing, generates:
+  - 3 scenarios (Most Likely/Optimistic/Pessimistic) grounded in research precedents
+  - Winners & Losers
+  - 3 trigger signals referencing real upcoming deadlines from research
+- **Research output is ephemeral** — not stored, only fed into prediction prompt
+- **Per-topic cost:** 4 Grok calls now (summary 600 + trace_cause 600 + research 800 + prediction 1500) vs 3 before
+- **Deploy:** Lambda-only, zip at `~/Downloads/NewsProjectInvokeAgentLambda-deploy.zip`
+
+---
+
+## 2026-04-05 (NewsProjectInvokeAgentLambda: structured prediction with 3 scenarios)
+
+- **Prediction prompt rewritten** using structured analytic techniques (superforecasting / ACH methodology)
+- **5 changes in one commit:**
+  1. **Article snippets** now fed into prediction prompt (was only title + description; trace_cause already had this)
+  2. **Historical precedent** — prompt asks for 2-3 analogous situations as base rate before predicting
+  3. **3 scenarios with probabilities** — Most Likely (~60%), Optimistic (~20%), Pessimistic (~20%) with adjustable weights
+  4. **Falsifiable trigger signals** — 3 specific events with real dates/deadlines instead of vague watchlist
+  5. **max_tokens raised** from 600 → 1500 for predictions (summary/trace_cause unchanged at 600)
+- **`invokeGrok()` updated** to accept per-call `maxTokens` parameter
+- **Motivation:** User feedback that single-path predictions aren't credible; professional analysts always provide multiple scenarios
+- **Deploy:** Lambda-only, zip at `~/Downloads/NewsProjectInvokeAgentLambda-deploy.zip`
+
+---
+
+## 2026-04-04 (NewsProjectInvokeAgentLambda: fix 403 crash bug)
+
+- **Per-topic generation now wrapped in try/catch** — a Grok API 403 on one topic no longer crashes the entire run
+- **Partial results published** — if 12/13 topics succeed, the pipeline still swaps staging → latest and writes archives
+- **Swap skipped only if zero topics succeed** — prevents publishing empty data
+- **Logs improved** — now reports failed count alongside generated count
+- **Root cause:** `invokeGrok()` threw on 403, unwound to outer catch, skipped `swapStagingToActive()` entirely → frontend showed stale data 503
+- **Deploy:** Lambda-only, zip at `~/Downloads/NewsProjectInvokeAgentLambda-deploy.zip`
+
+---
+
+## 2026-04-04 (newsSensitiveData: RSS feed endpoint)
+
+- **New `rss` action** on `newsSensitiveData` Lambda — serves RSS 2.0 XML feed of daily topics
+- **Supports GET requests** via `?action=rss` query param (for RSS readers) + POST body
+- **Content:** Today's archive entries with AI summaries, regions, sources; falls back to `latest` topics
+- **Each item includes:** title, category, description (AI summary + regions + sources), pubDate, link to thread page
+- **Headers:** `Content-Type: application/rss+xml`, `Cache-Control: public, max-age=1800` (30min cache)
+- **Public, no auth required** — RSS readers/platforms can subscribe directly
+- **Self-referencing** `<atom:link>` auto-constructed from API Gateway request context
+- **Deploy:** Lambda-only change, zip at `~/Downloads/newsSensitiveData-deploy.zip`
+- **Next steps:** Submit feed URL to Feedly, Flipboard, Inoreader; add `<link rel="alternate">` to frontend HTML
+
+---
+
+## 2026-04-02 (newsInvokeGemini: expand RSS sources from 8 → 22)
+
+- **14 new RSS feeds added** to `newsInvokeGemini` Lambda, tripling source diversity:
+  - Americas: NPR World, CBC World
+  - Europe: The Guardian, DW English, EuroNews (moved from Brave Search → RSS)
+  - Africa: AllAfrica, Daily Maverick, The East African
+  - Middle East: Middle East Eye, Al-Monitor (moved from Brave Search → RSS)
+  - Asia: Channel News Asia, Nikkei Asia, Bangkok Post
+  - Oceania: ABC Australia
+- **Brave Search queries reduced** from 12 → 7 (removed Guardian, DW, EuroNews, Al-Monitor, generic Africa — all now covered by RSS)
+- **Per-feed cap** added: `MAX_ARTICLES_PER_FEED = 8` to keep Grok prompt size manageable
+- **Expected article pool:** ~200-250 articles (up from ~80), covering all major world regions
+- **Brave fetch time reduced:** 7 queries × 2s = ~14s (down from ~24s)
+- **Motivation:** User feedback that source count was too low and hard to trust
+- **Deploy:** Lambda-only change, zip at `amplify/backend/function/newsInvokeGemini/deploy.zip`
+
+---
+
+## 2026-04-02 (IntelligenceLoader: animated loading screens)
+
+- **New component: `IntelligenceLoader.jsx` + `IntelligenceLoader.css`** — reusable dark-background loading animation component with two modes:
+  - `type="typewriter"` — sentence typewriter effect with country name highlights → fades out → constellation of country nodes connected by co-occurrence edges. Used for data-heavy pages.
+  - `type="explode"` — headline list shakes → explodes outward → words cluster by country → constellation. Reserved for future use (stored but not currently active on Home).
+- **Showcase page: `/intelligence-map`** — existing tab page (A/B/C/D) serves as live preview of all 4 animation concepts. Tabs C (Typewriter) and D (Explode) are the ones extracted into `IntelligenceLoader`.
+- **Applied to:**
+  - `WeeklyPage.jsx` — replaces skeleton cards while archive loads (`type="typewriter"`)
+  - `ThreadPage.jsx` — replaces `"Loading story arc…"` text (`type="typewriter"`)
+  - `CountryPage.jsx` — replaces `"Loading…"` text (`type="typewriter"`)
+  - `AuthCallback.jsx` — replaces `⏳ Signing you in…` gate (`type="typewriter"`)
+- **Home.jsx** — `type="explode"` ready but reverted; loads too fast from cache to be useful now. Re-add with `<IntelligenceLoader type="explode" />` when needed.
+- **Data source:** `useGeminiTopics()` (public, no auth, 1hr localStorage cache) — animation data available near-instantly on repeat visits. Falls back to simple spinner when no topics cached yet.
+- **Exports:** `default IntelligenceLoader`, `AnimTypewriter`, `AnimExplode`, `buildGraph`
+
+---
+
 ## 2026-04-01 (GEO: publish 3 long-form blog articles)
 
 - **3 new blog articles** published for GEO authority building:

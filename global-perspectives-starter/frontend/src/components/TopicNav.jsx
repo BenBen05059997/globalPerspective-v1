@@ -3,10 +3,10 @@ import './TopicNav.css';
 
 function TopicNav({ topics, categorizedTopics }) {
   const [activeTopicId, setActiveTopicId] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [collapsedRegions, setCollapsedRegions] = useState({});
   const observerRef = useRef(null);
 
-  // Get topic ID consistent with Home.jsx
   const getTopicId = (t, idx) => {
     const directId = t?.topicId || t?.topic_id || t?.id;
     if (directId != null) {
@@ -17,13 +17,12 @@ function TopicNav({ topics, categorizedTopics }) {
     return slug || `topic-${idx}`;
   };
 
-  // Set up Intersection Observer to track which topic is in view
   useEffect(() => {
     if (!topics || topics.length === 0) return;
 
     const observerOptions = {
       root: null,
-      rootMargin: '-20% 0px -60% 0px', // Trigger when topic is in upper portion of viewport
+      rootMargin: '-20% 0px -60% 0px',
       threshold: 0
     };
 
@@ -37,7 +36,6 @@ function TopicNav({ topics, categorizedTopics }) {
 
     observerRef.current = new IntersectionObserver(observerCallback, observerOptions);
 
-    // Observe all topic elements
     topics.forEach((topic) => {
       const globalIdx = topics.indexOf(topic);
       const id = getTopicId(topic, globalIdx);
@@ -54,7 +52,6 @@ function TopicNav({ topics, categorizedTopics }) {
     };
   }, [topics]);
 
-  // Scroll to topic when clicked
   const scrollToTopic = (topicId) => {
     const element = document.getElementById(`topic-${topicId}`);
     if (element) {
@@ -62,66 +59,60 @@ function TopicNav({ topics, categorizedTopics }) {
     }
   };
 
-  // Shorten region name for badge
-  const getRegionBadge = (region) => {
-    if (!region) return null;
-    const regionMap = {
-      'Asia & Pacific': 'Asia',
-      'Europe': 'Europe',
-      'Americas': 'Americas',
-      'Middle East & Africa': 'MENA',
-      'Global': 'Global'
-    };
-    return regionMap[region] || region.split(' ')[0];
-  };
-
-  // Truncate long titles
-  const truncateTitle = (title, maxLength = 35) => {
-    if (!title) return '';
-    if (title.length <= maxLength) return title;
-    return title.substring(0, maxLength - 3) + '...';
+  const toggleRegion = (region) => {
+    setCollapsedRegions(prev => ({ ...prev, [region]: !prev[region] }));
   };
 
   if (!topics || topics.length === 0) return null;
+
+  const sortedRegions = Object.entries(categorizedTopics)
+    .filter(([, rt]) => rt.length > 0)
+    .sort((a, b) => {
+      if (a[0] === 'World') return 1;
+      if (b[0] === 'World') return -1;
+      return b[1].length - a[1].length;
+    });
 
   return (
     <div className={`topic-nav ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="topic-nav-header" onClick={() => setIsCollapsed(!isCollapsed)}>
         <span className="topic-nav-title">Topics</span>
         <span className="topic-nav-count">{topics.length}</span>
-        <span className={`topic-nav-toggle ${isCollapsed ? 'collapsed' : ''}`}>
-          {isCollapsed ? '◀' : '▶'}
-        </span>
+        <span className="topic-nav-toggle">{isCollapsed ? '◀' : '▶'}</span>
       </div>
 
       {!isCollapsed && (
         <div className="topic-nav-list">
-          {Object.entries(categorizedTopics).map(([region, regionTopics]) => {
-            if (regionTopics.length === 0) return null;
-
-            return regionTopics.map((topic) => {
-              const globalIdx = topics.indexOf(topic);
-              const id = getTopicId(topic, globalIdx);
-              const regionBadge = getRegionBadge(region);
-              const isActive = activeTopicId === `topic-${id}`;
-
-              return (
+          {sortedRegions.map(([region, regionTopics]) => {
+            const isRegionCollapsed = collapsedRegions[region];
+            return (
+              <div key={region} className="topic-nav-region">
                 <div
-                  key={id}
-                  className={`topic-nav-item ${isActive ? 'active' : ''}`}
-                  onClick={() => scrollToTopic(id)}
+                  className="topic-nav-region-header"
+                  onClick={() => toggleRegion(region)}
                 >
-                  <span className="topic-nav-item-title">
-                    {truncateTitle(topic.title)}
-                  </span>
-                  {regionBadge && (
-                    <span className={`topic-nav-badge ${region?.toLowerCase().replace(/[^a-z]/g, '-')}`}>
-                      {regionBadge}
-                    </span>
-                  )}
+                  <span className="topic-nav-region-label">{region}</span>
+                  <span className="topic-nav-region-count">{regionTopics.length}</span>
+                  <span className="topic-nav-region-toggle">{isRegionCollapsed ? '▶' : '▼'}</span>
                 </div>
-              );
-            });
+
+                {!isRegionCollapsed && regionTopics.map((topic) => {
+                  const globalIdx = topics.indexOf(topic);
+                  const id = getTopicId(topic, globalIdx);
+                  const isActive = activeTopicId === `topic-${id}`;
+
+                  return (
+                    <div
+                      key={id}
+                      className={`topic-nav-item ${isActive ? 'active' : ''}`}
+                      onClick={() => scrollToTopic(id)}
+                    >
+                      <span className="topic-nav-item-title">{topic.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
           })}
         </div>
       )}

@@ -2624,3 +2624,29 @@
 .daily-nav-btn:hover {
   background: var(--bg-tertiary, #e8e8e8);
 }
+
+.thread-page-topbar {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.thread-page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-secondary, #f8f8f8);
+  color: var(--text-secondary, #374151);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.thread-page-back:hover {
+  background: var(--bg-tertiary, #e8e8e8);
+}

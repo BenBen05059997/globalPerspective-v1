@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building Cinematic Loading Screens: How We Explored Pretext and What We Built Instead — Global Perspectives</title>
+  <meta name="description" content="We set out to use Cheng Lou's Pretext library for animated loading screens. Here's what we learned about DOM-free text layout, and what we shipped instead." />
+  <meta property="og:title" content="Building Cinematic Loading Screens: How We Explored Pretext and What We Built Instead" />
+  <meta property="og:description" content="We set out to use Cheng Lou's Pretext library for animated loading screens. Here's what we learned about DOM-free text layout, and what we shipped instead." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://globalperspective.net/blog/building-animated-loading-screens/" />
+  <link rel="canonical" href="https://globalperspective.net/blog/building-animated-loading-screens/" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "Building Cinematic Loading Screens: How We Explored Pretext and What We Built Instead",
+    "description": "We set out to use Cheng Lou's Pretext library for animated loading screens. Here's what we learned about DOM-free text layout, and what we shipped instead.",
+    "author": {"@type": "Organization", "name": "Global Perspectives"},
+    "publisher": {"@type": "Organization", "name": "Global Perspectives", "logo": {"@type": "ImageObject", "url": "https://globalperspective.net/logo_no_grey_bg.png"}},
+    "datePublished": "2026-04-02",
+    "url": "https://globalperspective.net/blog/building-animated-loading-screens/"
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0e1a; color: #d4dae8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 17px; line-height: 1.75; }
+    a { color: #7eb8f7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header { border-bottom: 1px solid #1e2a40; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; }
+    header .wordmark { font-size: 15px; font-weight: 600; color: #e2e8f4; letter-spacing: 0.02em; }
+    header nav a { font-size: 14px; color: #7eb8f7; margin-left: 24px; }
+    .container { max-width: 720px; margin: 0 auto; padding: 64px 24px 96px; }
+    .label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #5b7aa8; margin-bottom: 16px; }
+    h1 { font-size: 2rem; font-weight: 700; color: #e8edf8; line-height: 1.25; margin-bottom: 20px; }
+    .byline { font-size: 14px; color: #5b7aa8; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid #1e2a40; }
+    h2 { font-size: 1.2rem; font-weight: 600; color: #c8d5ea; margin: 48px 0 16px; }
+    p { margin-bottom: 20px; }
+    .callout { border-left: 3px solid #3a6ea8; background: #0f1829; padding: 20px 24px; margin: 32px 0; border-radius: 0 6px 6px 0; }
+    .callout p { margin: 0; color: #b0c4df; font-size: 15px; }
+    ul { margin: 16px 0 20px 0; padding-left: 20px; }
+    ul li { margin-bottom: 8px; color: #b8c8e0; }
+    ul li strong { color: #d4dae8; }
+    pre { background: #0f1829; border: 1px solid #1e2a40; border-radius: 6px; padding: 20px 24px; margin: 24px 0; overflow-x: auto; font-size: 14px; line-height: 1.6; color: #a8c0d8; }
+    code { font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace; }
+    pre code { color: #a8c0d8; }
+    p code { background: #0f1829; border: 1px solid #1e2a40; border-radius: 3px; padding: 2px 6px; font-size: 14px; color: #a8c0d8; font-family: 'SF Mono', 'Fira Code', monospace; }
+    .cta-block { margin-top: 64px; padding: 32px; background: #0f1829; border: 1px solid #1e3050; border-radius: 8px; text-align: center; }
+    .cta-block p { color: #8fa8c8; margin-bottom: 20px; font-size: 15px; }
+    .cta-btn { display: inline-block; background: #2563eb; color: #fff; padding: 12px 28px; border-radius: 6px; font-size: 15px; font-weight: 500; }
+    .cta-btn:hover { background: #1d4ed8; text-decoration: none; }
+    footer { border-top: 1px solid #1e2a40; padding: 24px; text-align: center; font-size: 13px; color: #3d5070; }
+    footer a { color: #3d5070; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="https://globalperspective.net" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+    <img src="/logo_no_grey_bg.png" alt="Global Perspectives" style="height:28px;width:auto;" />
+    <span class="wordmark">Global Perspectives</span>
+  </a>
+  <nav><a href="https://globalperspective.net">Open App</a></nav>
+</header>
+
+<div class="container">
+  <p class="label">Engineering</p>
+  <h1>Building Cinematic Loading Screens: How We Explored Pretext and What We Built Instead</h1>
+  <p class="byline">April 2, 2026</p>
+
+  <p>Loading screens are usually an afterthought — a spinner, a skeleton card, a placeholder. We wanted ours to do something more: use the actual intelligence data the app is fetching to show a brief, animated preview of the world before the page finishes loading. It should feel like the app is thinking, not stalling.</p>
+
+  <p>That goal led us to explore <a href="https://github.com/chenglou/pretext" target="_blank" rel="noopener">Pretext</a>, a text layout library by Cheng Lou. Here is what we found, why we ultimately did not use it, and what we built instead.</p>
+
+  <h2>What is Pretext?</h2>
+
+  <p>Pretext is a low-level text layout engine for the web. The key idea is that it measures and flows text entirely in JavaScript, without touching the DOM. That sounds like an unusual constraint, but it unlocks something valuable: you can compute the exact position of every character before anything is rendered, and then render only what you need — to a canvas, to an SVG, or to absolutely-positioned DOM nodes — at 60fps.</p>
+
+  <p>The core API revolves around a few primitives:</p>
+
+  <ul>
+    <li><strong><code>prepareWithSegments(text, segments, font)</code></strong> — measures a string of text, broken into styled segments, against a given font description</li>
+    <li><strong><code>layoutNextLine(state, maxWidth)</code></strong> — advances the layout cursor by one line, returning glyph positions</li>
+    <li><strong><code>layoutWithObstacles(state, obstacles)</code></strong> — flows text around a list of circular or rectangular obstacles, the feature that initially caught our attention</li>
+  </ul>
+
+  <div class="callout">
+    <p>The obstacle-aware layout is genuinely novel. Most CSS text-flow-around-shapes approaches rely on <code>shape-outside</code>, which only works in float contexts and has no animation story. Pretext gives you the positions mathematically, so you can animate obstacles and reflow text on every frame.</p>
+  </div>
+
+  <p>The use case we imagined: as our country constellation animation renders — circular node badges for each country, connected by edges — text headlines could flow around the nodes in real time. The whole loading screen would be a live, typographic map.</p>
+
+  <h2>Where It Got Complicated</h2>
+
+  <p>The vision worked on paper. In practice, a few things gave us pause.</p>
+
+  <p><strong>Font loading timing.</strong> Pretext needs to measure glyphs before layout, which means the fonts must be fully loaded before the first frame. Our loading screen is shown precisely when the app is in its most fragile state — fonts may still be in flight, data may not be cached yet. Adding a font-readiness gate to an already-loading screen felt like the wrong tradeoff.</p>
+
+  <p><strong>Obstacle coordinates require DOM measurements.</strong> To flow text around the country node badges, we need to know where those nodes are on screen. But those positions depend on the container dimensions, which are only available after the first render. We would have needed a two-pass approach: render the nodes, measure their positions, feed those into Pretext, then re-render the text. That added complexity for a loading screen that will be visible for only a few seconds.</p>
+
+  <p><strong>The library is pre-release.</strong> Pretext is an experimental project. The API is thoughtful and the performance story is compelling, but shipping a pre-release dependency in a production loading path — where reliability is critical — felt premature.</p>
+
+  <h2>What We Built Instead</h2>
+
+  <p>We stepped back and asked: what is the loading screen actually supposed to communicate? Not "text is flowing around circles." The real goal is: <em>here is the intelligence you are about to see — countries, stories, connections</em>. That insight led to a different design.</p>
+
+  <p>We built two animation modes, both using plain React state and CSS:</p>
+
+  <p><strong>Typewriter → Constellation.</strong> A sentence types out describing the day's top headlines and the countries in focus. Country names are highlighted in their risk color as they appear. The text then fades out, and the same countries emerge as circular node badges arranged in a circle, connected by SVG edges weighted by co-occurrence. The graph is interactive once the full animation completes.</p>
+
+  <p><strong>Exploding Paragraph.</strong> The top six headlines appear stacked in the center. The block shakes, then each headline flies outward to a position around the screen. The headlines then cluster toward their primary country's node, and the country constellation fades in beneath them. This one is reserved for contexts where there is more time to breathe.</p>
+
+  <p>Both animations derive all their content from the same live data the app uses — <code>useGeminiTopics()</code>, cached in localStorage for one hour. On repeat visits, the data is available instantly. On a cold first visit, a simple dark spinner shows until the first fetch resolves.</p>
+
+<pre><code>// The graph is built from topic data in one pass
+function buildGraph(topics) {
+  const nodeMap = {}, edgeMap = {};
+  for (const topic of topics) {
+    const codes = topic.regions
+      .map(r => regionToCountryCode(r))
+      .filter(Boolean);
+    for (const code of codes) {
+      nodeMap[code] ??= { code, count: 0, headlines: [] };
+      nodeMap[code].count++;
+    }
+    // Edge weight = number of topics that mention both countries
+    for (let i = 0; i &lt; codes.length; i++)
+      for (let j = i + 1; j &lt; codes.length; j++) {
+        const key = [codes[i], codes[j]].sort().join('-');
+        edgeMap[key] ??= { from: codes[i], to: codes[j], weight: 0 };
+        edgeMap[key].weight++;
+      }
+  }
+  // Top 8 countries by article count, risk level derived from count
+  const nodes = Object.values(nodeMap)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+    .map(n => ({ ...n, risk: n.count >= 4 ? 'high' : n.count >= 3 ? 'elevated' : n.count >= 2 ? 'moderate' : 'low' }));
+  return { nodes, edges: Object.values(edgeMap).filter(e => ...) };
+}</code></pre>
+
+  <h2>The Phase Pattern</h2>
+
+  <p>Both animations use the same timing architecture: a chain of <code>setTimeout</code> calls that advance a phase counter, with each phase triggering CSS class changes that drive transitions and keyframe animations.</p>
+
+<pre><code>useEffect(() => {
+  const t = [
+    setTimeout(() => setPhase(1), 200),    // text appears
+    setTimeout(() => setPhase(2), 2000),   // text shakes
+    setTimeout(() => setPhase(3), 2600),   // words scatter
+    setTimeout(() => setPhase(4), 4200),   // nodes appear
+    setTimeout(() => setPhase(5), 5800),   // hover enabled
+  ];
+  return () => t.forEach(clearTimeout);
+}, []);</code></pre>
+
+  <p>This keeps the animation logic declarative and easy to tune. Each phase is a CSS state, not an imperative animation loop. The cleanup function ensures no state updates fire after the component unmounts — important because the loading screen disappears as soon as data arrives.</p>
+
+  <h2>What Pretext Is Actually Good For</h2>
+
+  <p>Walking through this process clarified something: Pretext solves a different problem than what we had. It shines when you need <em>precise, reflow-aware text layout</em> — a document editor, a data visualization where labels must not overlap, or a generative design tool where text and graphics are computed together frame by frame. Those are contexts where you are in control of the full render cycle and can afford the setup cost.</p>
+
+  <p>A loading screen is the wrong host for that kind of system. It needs to be lightweight, fast to initialize, and resilient to uncertain data. CSS keyframes and React state transitions are exactly right for that job.</p>
+
+  <p>We are keeping Pretext on the list for future use. There are places in the app — country map labels, thread timeline annotations — where its obstacle-aware layout could genuinely improve the experience. When we get there, we will write about that too.</p>
+
+  <div class="callout">
+    <p>The final component — <code>IntelligenceLoader</code> — is a self-contained React component with two props: <code>type="typewriter"</code> and <code>type="explode"</code>. It handles its own data fetching, fallback states, and cleanup. Any page in the app can add a cinematic loading screen with one line.</p>
+  </div>
+
+  <div class="cta-block">
+    <p>Global Perspectives uses AI to track how global stories evolve across days, with country-level risk signals and narrative thread intelligence.</p>
+    <a href="https://globalperspective.net" class="cta-btn">Open the app</a>
+  </div>
+</div>
+
+<footer>
+  <p><a href="https://globalperspective.net/blog/">← All posts</a> &nbsp;·&nbsp; <a href="https://globalperspective.net/privacy">Privacy</a></p>
+</footer>
+
+</body>
+</html>

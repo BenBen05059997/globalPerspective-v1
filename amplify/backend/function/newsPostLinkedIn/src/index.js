@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const WebSocket = require('ws');
 const nostrTools = require('nostr-tools');
+const { generateTopicMapImage } = require('./mapImageGenerator');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
   DynamoDBDocumentClient,
@@ -131,8 +132,9 @@ function buildPlatformList() {
       maxPerRun: MAX_POSTS_PER_RUN,
       maxPerDay: MAX_POSTS_PER_DAY,
       formatFn: formatLinkedInPost,
-      postFn: async (text) => postToLinkedIn(LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID, text),
+      postFn: async (text, imageBuffer) => postToLinkedIn(LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID, text, imageBuffer),
       needsSummary: true,
+      supportsImage: true,
     });
   }
 
@@ -142,8 +144,9 @@ function buildPlatformList() {
       maxPerRun: MAX_POSTS_PER_RUN,
       maxPerDay: MAX_POSTS_PER_DAY,
       formatFn: (topic) => formatShortPost(topic, 300),
-      postFn: async (text) => postToBluesky(BLUESKY_IDENTIFIER, BLUESKY_APP_PASSWORD, text),
+      postFn: async (text, imageBuffer) => postToBluesky(BLUESKY_IDENTIFIER, BLUESKY_APP_PASSWORD, text, imageBuffer),
       needsSummary: false,
+      supportsImage: true,
     });
   }
 
@@ -250,9 +253,22 @@ async function runPlatform(platform, allTopics) {
         postText = formatFn(topic);
       }
 
-      console.log(`[${name}] Posting: "${topic.title.substring(0, 50)}..." (${postText.length} chars)`);
+      // Generate map image if platform supports it
+      let imageBuffer = null;
+      if (platform.supportsImage) {
+        try {
+          imageBuffer = await generateTopicMapImage(topic);
+          if (imageBuffer) {
+            console.log(`[${name}] Map image generated (${Math.round(imageBuffer.length / 1024)}KB)`);
+          }
+        } catch (imgErr) {
+          console.warn(`[${name}] Map image failed, posting text-only:`, imgErr.message);
+        }
+      }
 
-      const postResult = await postFn(postText);
+      console.log(`[${name}] Posting: "${topic.title.substring(0, 50)}..." (${postText.length} chars${imageBuffer ? ' + image' : ''})`);
+
+      const postResult = await postFn(postText, imageBuffer);
 
       await recordPostedTopicForPlatform(name, fingerprint, topic, postResult.postUrn || postResult.postId || null);
 
@@ -562,8 +578,9 @@ function formatThreadsPost(topic, summary) {
 // Platform poster: LinkedIn
 // ---------------------------------------------------------------------------
 
-async function postToLinkedIn(accessToken, personId, commentary) {
-  const res = await fetch('https://api.linkedin.com/rest/posts', {
+async function uploadLinkedInImage(accessToken, personId, imageBuffer) {
+  // Step 1: Initialize upload
+  const initRes = await fetch('https://api.linkedin.com/rest/images?action=initializeUpload', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -572,17 +589,87 @@ async function postToLinkedIn(accessToken, personId, commentary) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      author: `urn:li:person:${personId}`,
-      commentary,
-      visibility: 'PUBLIC',
-      distribution: {
-        feedDistribution: 'MAIN_FEED',
-        targetEntities: [],
-        thirdPartyDistributionChannels: [],
+      initializeUploadRequest: {
+        owner: `urn:li:person:${personId}`,
       },
-      lifecycleState: 'PUBLISHED',
-      isReshareDisabledByAuthor: false,
     }),
+  });
+
+  if (!initRes.ok) {
+    const errText = await initRes.text();
+    throw new Error(`LinkedIn image init error ${initRes.status}: ${errText}`);
+  }
+
+  const initData = await initRes.json();
+  const uploadUrl = initData.value?.uploadUrl;
+  const imageUrn = initData.value?.image;
+
+  if (!uploadUrl || !imageUrn) {
+    throw new Error('LinkedIn image init: missing uploadUrl or image URN');
+  }
+
+  // Step 2: Upload binary
+  const uploadRes = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'image/png',
+    },
+    body: imageBuffer,
+  });
+
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text();
+    throw new Error(`LinkedIn image upload error ${uploadRes.status}: ${errText}`);
+  }
+
+  return imageUrn;
+}
+
+async function postToLinkedIn(accessToken, personId, commentary, imageBuffer) {
+  // Upload image if provided
+  let imageUrn = null;
+  if (imageBuffer) {
+    try {
+      imageUrn = await uploadLinkedInImage(accessToken, personId, imageBuffer);
+      console.log(`[LINKEDIN] Image uploaded: ${imageUrn}`);
+    } catch (imgErr) {
+      console.warn(`[LINKEDIN] Image upload failed, posting text-only:`, imgErr.message);
+    }
+  }
+
+  const postBody = {
+    author: `urn:li:person:${personId}`,
+    commentary,
+    visibility: 'PUBLIC',
+    distribution: {
+      feedDistribution: 'MAIN_FEED',
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    lifecycleState: 'PUBLISHED',
+    isReshareDisabledByAuthor: false,
+  };
+
+  // Attach image if uploaded
+  if (imageUrn) {
+    postBody.content = {
+      media: {
+        id: imageUrn,
+        title: 'Global Perspectives Map',
+      },
+    };
+  }
+
+  const res = await fetch('https://api.linkedin.com/rest/posts', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'X-Restli-Protocol-Version': '2.0.0',
+      'Linkedin-Version': LINKEDIN_API_VERSION,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(postBody),
   });
 
   if (!res.ok) {
@@ -598,7 +685,7 @@ async function postToLinkedIn(accessToken, personId, commentary) {
 // Platform poster: Bluesky (AT Protocol)
 // ---------------------------------------------------------------------------
 
-async function postToBluesky(identifier, appPassword, text) {
+async function postToBluesky(identifier, appPassword, text, imageBuffer) {
   // Step 1: Create session (login)
   const sessionRes = await fetch('https://bsky.social/xrpc/com.atproto.server.createSession', {
     method: 'POST',
@@ -614,8 +701,46 @@ async function postToBluesky(identifier, appPassword, text) {
   const session = await sessionRes.json();
   const { accessJwt, did } = session;
 
-  // Step 2: Create post record
+  // Step 2: Upload image if provided
+  let embed = undefined;
+  if (imageBuffer) {
+    try {
+      const blobRes = await fetch('https://bsky.social/xrpc/com.atproto.repo.uploadBlob', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessJwt}`,
+          'Content-Type': 'image/png',
+        },
+        body: imageBuffer,
+      });
+
+      if (blobRes.ok) {
+        const blobData = await blobRes.json();
+        embed = {
+          $type: 'app.bsky.embed.images',
+          images: [{
+            alt: text.substring(0, 300),
+            image: blobData.blob,
+          }],
+        };
+        console.log('[BLUESKY] Image uploaded successfully');
+      } else {
+        console.warn(`[BLUESKY] Image upload failed: ${blobRes.status}, posting text-only`);
+      }
+    } catch (imgErr) {
+      console.warn('[BLUESKY] Image upload error, posting text-only:', imgErr.message);
+    }
+  }
+
+  // Step 3: Create post record
   const now = new Date().toISOString();
+  const record = {
+    $type: 'app.bsky.feed.post',
+    text,
+    createdAt: now,
+  };
+  if (embed) record.embed = embed;
+
   const postRes = await fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {
     method: 'POST',
     headers: {
@@ -625,11 +750,7 @@ async function postToBluesky(identifier, appPassword, text) {
     body: JSON.stringify({
       repo: did,
       collection: 'app.bsky.feed.post',
-      record: {
-        $type: 'app.bsky.feed.post',
-        text,
-        createdAt: now,
-      },
+      record,
     }),
   });
 

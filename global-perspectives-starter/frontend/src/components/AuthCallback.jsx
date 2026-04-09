@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './WeeklyPage.css';
+import IntelligenceLoader from './IntelligenceLoader';
 
 export default function AuthCallback() {
   const { completeSignIn } = useAuth();
@@ -34,11 +35,5 @@ export default function AuthCallback() {
     );
   }
 
-  return (
-    <div className="weekly-gate">
-      <div className="weekly-gate-icon">⏳</div>
-      <h2>Signing you in…</h2>
-      <p>Just a moment.</p>
-    </div>
-  );
+  return <IntelligenceLoader type="typewriter" />;
 }

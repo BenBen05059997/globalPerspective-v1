@@ -32,6 +32,7 @@ function Layout({ children }) {
 
   const navLinks = [
     { to: '/', label: 'Home' },
+    { to: '/daily', label: 'Daily Brief' },
     { to: '/map', label: 'Map' },
     { to: '/weekly', label: 'Weekly Analysis' },
     { to: '/weekly/countries', label: 'Country Intel' },

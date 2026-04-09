@@ -40,12 +40,48 @@ export default function AboutContact() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Key Features</h2>
         <ul style={{ paddingLeft: '1.25rem', lineHeight: 1.8 }}>
-          <li><strong>Daily Topics</strong> — ~15 global topics refreshed hourly with AI analysis</li>
+          <li><strong>Daily Topics</strong> — ~13 global topics refreshed hourly with AI analysis</li>
           <li><strong>Story Arc Intelligence</strong> — track how stories evolve across days with narrative threading</li>
           <li><strong>Country Intelligence</strong> — AI-powered country briefings with risk levels, timelines, and watch triggers</li>
           <li><strong>Interactive World Map</strong> — geographic visualization of news connections and country replay</li>
           <li><strong>Structured Briefings</strong> — bottom-line assessments, key developments, and "why it matters" for every major story</li>
         </ul>
+      </section>
+
+      <section style={{ marginBottom: '1.75rem' }}>
+        <h2 style={{ fontSize: '1.25rem' }}>Our Sources</h2>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+          We aggregate from 29 outlets across every major region, combining RSS feeds with search APIs. No single source dominates our coverage.
+        </p>
+        {[
+          { region: 'Global Wire Services', outlets: ['BBC World', 'Al Jazeera', 'Reuters*', 'AP News*'] },
+          { region: 'Americas', outlets: ['NPR', 'CBC'] },
+          { region: 'Europe', outlets: ['The Guardian', 'Deutsche Welle', 'EuroNews', 'France24'] },
+          { region: 'Africa', outlets: ['AllAfrica', 'Daily Maverick', 'The East African'] },
+          { region: 'Middle East', outlets: ['Middle East Eye', 'Al-Monitor'] },
+          { region: 'Asia', outlets: ['SCMP', 'Asia Times', 'The Diplomat', 'Dawn', 'Japan Times', 'Channel News Asia', 'Nikkei Asia', 'Bangkok Post'] },
+          { region: 'Oceania', outlets: ['ABC Australia'] },
+          { region: 'Specialized', outlets: ['Straits Times*', 'Times of India*', 'Korea Herald*', 'Kyiv Independent*'] },
+        ].map(g => (
+          <div key={g.region} style={{ marginBottom: '10px' }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>{g.region}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {g.outlets.map(name => (
+                <span key={name} style={{
+                  fontSize: '0.8rem',
+                  padding: '3px 10px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color, #e5e7eb)',
+                  color: 'var(--text-secondary)',
+                  background: 'var(--bg-secondary, #f8f8f8)',
+                }}>{name}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+        <p style={{ fontSize: '0.78rem', color: '#9ca3af', marginTop: '8px' }}>
+          * Sourced via Brave Search API (no RSS available)
+        </p>
       </section>
 
       <section style={{ marginBottom: '1.75rem' }}>

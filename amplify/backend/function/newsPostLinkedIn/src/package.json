@@ -7,7 +7,11 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.609.0",
     "@aws-sdk/lib-dynamodb": "^3.609.0",
+    "@fontsource/inter": "^5.2.8",
+    "@img/sharp-libvips-linux-x64": "^1.2.4",
+    "@img/sharp-linux-x64": "^0.34.5",
     "nostr-tools": "^1.17.0",
+    "sharp": "^0.34.5",
     "ws": "^8.17.0"
   },
   "devDependencies": {

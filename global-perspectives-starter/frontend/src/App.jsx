@@ -15,6 +15,7 @@ import WeeklyMap from './components/WeeklyMap';
 import ThreadPage from './components/ThreadPage';
 import CountryPage from './components/CountryPage';
 import CountryListPage from './components/CountryListPage';
+import DailyPage from './components/DailyPage';
 import SignIn from './components/SignIn';
 import AuthCallback from './components/AuthCallback';
 import Pricing from './components/Pricing';
@@ -95,6 +96,8 @@ export default function App() {
               <Route path="/about" element={<AboutContact />} />
               <Route path="/disclosures" element={<Disclosures />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/daily" element={<DailyPage />} />
+              <Route path="/daily/:dateKey" element={<DailyPage />} />
               <Route path="/weekly" element={<WeeklyPage />} />
               <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
               <Route path="/weekly/countries" element={<CountryListPage />} />

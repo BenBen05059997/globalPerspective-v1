@@ -22,7 +22,7 @@ const ENTERPRISE_API_KEYS = new Set(
   (process.env.ENTERPRISE_API_KEYS || '').split(',').map(k => k.trim()).filter(Boolean),
 );
 const MEMBER_MAX_DAYS = 7;
-const ENTERPRISE_MAX_DAYS = 30;
+const ENTERPRISE_MAX_DAYS = 90;
 
 const USERS_TABLE = process.env.USERS_DDB_TABLE;
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
@@ -276,8 +276,10 @@ exports.handler = async (event) => {
     };
   }
 
+  // Support GET query params (for RSS readers) and POST body
+  const qs = event.queryStringParameters || {};
   const body = typeof event.body === 'string' ? JSON.parse(event.body || '{}') : (event.body || {});
-  const action = body?.action;
+  const action = qs.action || body?.action;
   const payload = body?.payload || {};
 
   const headers = {
@@ -378,6 +380,50 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify(response.body),
       };
+    }
+
+    if (action === 'rss') {
+      const rssXml = await generateRssFeed(event);
+      console.info('newsSensitiveData rss feed served');
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/rss+xml; charset=utf-8',
+          'Cache-Control': 'public, max-age=1800',
+        },
+        body: rssXml,
+      };
+    }
+
+    if (action === 'daily_brief') {
+      const now = new Date();
+      const todayKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+      const dateKey = payload?.dateKey || todayKey;
+      const isToday = dateKey === todayKey;
+
+      if (!isToday) {
+        const userInfo = await resolveUserTier(event);
+        if (!userInfo || userInfo.tier === 'free') {
+          return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for past daily briefs' }) };
+        }
+      }
+
+      try {
+        const { Item } = await getDynamoClient().send(new GetCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          Key: { PK: `DAILY_BRIEF#${dateKey}`, SK: 'DAILY_BRIEF' },
+        }));
+        if (!Item) {
+          return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
+        }
+        const { PK, SK, ttl, ...rest } = Item;
+        console.info('newsSensitiveData daily_brief response', { dateKey, found: true });
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest }) };
+      } catch (err) {
+        console.error('daily_brief read error:', err);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
+      }
     }
 
     if (action === 'narrative_thread') {
@@ -1103,4 +1149,146 @@ async function geocodeWithMapbox(address) {
       body: { success: false, error: error?.message || 'Geocoding failed' },
     };
   }
+}
+
+// ── RSS Feed Generator ───────────────────────────────────────────────────────
+
+const SITE_URL = 'https://globalperspective.net';
+const RSS_TITLE = 'Global Perspectives — AI-Powered World News Intelligence';
+const RSS_DESCRIPTION = 'Daily AI-curated global news topics with summaries, predictions, and root cause analysis. Covering politics, economy, conflict, technology, and more across every region.';
+const CATEGORY_LABEL = {
+  politics: 'Politics', economy: 'Economy', military: 'Military',
+  conflict: 'Conflict', disaster: 'Disaster', technology: 'Technology', health: 'Health',
+};
+
+function escapeXml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function toRfc2822(isoDate) {
+  try {
+    return new Date(isoDate).toUTCString();
+  } catch {
+    return new Date().toUTCString();
+  }
+}
+
+function buildItemDescription(entry) {
+  const parts = [];
+  const regions = (entry.regions || []).join(', ');
+  if (regions) parts.push(`<strong>Regions:</strong> ${escapeXml(regions)}`);
+
+  if (entry.ai?.summary) {
+    const summary = entry.ai.summary
+      .replace(/^#{1,4}\s+/gm, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .substring(0, 600);
+    parts.push(`<p>${escapeXml(summary)}</p>`);
+  }
+
+  const sources = (entry.sources || []).slice(0, 5);
+  if (sources.length > 0) {
+    const sourceList = sources
+      .map(s => s.source || s.title || '')
+      .filter(Boolean)
+      .join(', ');
+    if (sourceList) parts.push(`<strong>Sources:</strong> ${escapeXml(sourceList)}`);
+  }
+
+  return parts.join('<br/>') || escapeXml(entry.title);
+}
+
+async function generateRssFeed(event) {
+  const client = getDynamoClient();
+
+  // Read today-archive (has AI summaries) with fallback to latest
+  let entries = [];
+  let lastUpdated = new Date().toISOString();
+
+  try {
+    const { Item } = await client.send(new GetCommand({
+      TableName: TOPICS_TABLE,
+      Key: { id: 'today-archive' },
+    }));
+    if (Item && Array.isArray(Item.entries) && Item.entries.length > 0) {
+      const cutoff = Date.now() - (24 * 60 * 60 * 1000);
+      entries = Item.entries.filter(e => new Date(e.archivedAt).getTime() > cutoff);
+      lastUpdated = Item.updatedAt || lastUpdated;
+    }
+  } catch (err) {
+    console.warn('RSS: today-archive read failed:', err.message);
+  }
+
+  // Fallback to latest if no archive entries
+  if (entries.length === 0) {
+    try {
+      const { Item } = await client.send(new GetCommand({
+        TableName: TOPICS_TABLE,
+        Key: { id: TOPICS_ITEM_ID },
+      }));
+      if (Item && Array.isArray(Item.topics)) {
+        entries = Item.topics.map(t => ({
+          topicId: t.topicId || t.id,
+          title: t.title,
+          category: Array.isArray(t.categories) ? t.categories[0] || '' : (t.category || ''),
+          regions: t.regions || [],
+          sources: t.sources || [],
+          archivedAt: Item.updatedAt || Item.activatedAt || new Date().toISOString(),
+        }));
+        lastUpdated = Item.updatedAt || Item.activatedAt || lastUpdated;
+      }
+    } catch (err) {
+      console.warn('RSS: latest read failed:', err.message);
+    }
+  }
+
+  // Build self URL from request context
+  const domainName = event.requestContext?.domainName || '';
+  const stage = event.requestContext?.stage || '';
+  const selfUrl = domainName
+    ? `https://${domainName}${stage ? '/' + stage : ''}?action=rss`
+    : `${SITE_URL}/rss.xml`;
+
+  const items = entries.map(entry => {
+    const category = CATEGORY_LABEL[(entry.category || '').toLowerCase()] || 'World';
+    const pubDate = toRfc2822(entry.archivedAt || lastUpdated);
+    const guid = entry.topicId || entry.title;
+    const description = buildItemDescription(entry);
+    const threadLink = entry.threadId
+      ? `${SITE_URL}/weekly/thread/${encodeURIComponent(entry.threadId)}`
+      : SITE_URL;
+
+    return `    <item>
+      <title>${escapeXml(entry.title)}</title>
+      <description><![CDATA[${description}]]></description>
+      <link>${escapeXml(threadLink)}</link>
+      <guid isPermaLink="false">${escapeXml(guid)}</guid>
+      <pubDate>${pubDate}</pubDate>
+      <category>${escapeXml(category)}</category>
+    </item>`;
+  }).join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>${escapeXml(RSS_TITLE)}</title>
+    <link>${SITE_URL}</link>
+    <description>${escapeXml(RSS_DESCRIPTION)}</description>
+    <language>en</language>
+    <lastBuildDate>${toRfc2822(lastUpdated)}</lastBuildDate>
+    <atom:link href="${escapeXml(selfUrl)}" rel="self" type="application/rss+xml"/>
+    <image>
+      <url>${SITE_URL}/favicon.ico</url>
+      <title>${escapeXml(RSS_TITLE)}</title>
+      <link>${SITE_URL}</link>
+    </image>
+${items}
+  </channel>
+</rss>`;
 }

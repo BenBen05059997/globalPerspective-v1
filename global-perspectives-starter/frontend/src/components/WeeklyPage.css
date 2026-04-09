@@ -2604,3 +2604,23 @@
 .share-btn.x { color: #111827; }
 .share-btn.linkedin { color: #0077b5; }
 .share-btn.open { color: #3b82f6; }
+
+/* ===== DAILY BRIEF ===== */
+.daily-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-secondary, #f8f8f8);
+  color: var(--text-secondary, #333);
+  font-size: 0.85rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.daily-nav-btn:hover {
+  background: var(--bg-tertiary, #e8e8e8);
+}

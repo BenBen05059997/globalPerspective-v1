@@ -103,3 +103,54 @@ export function formatCountryBriefing(countryName, intel, countryData) {
 
   return lines.join('\n');
 }
+
+export function formatDailyBrief(brief) {
+  if (!brief) return '';
+  const lines = [];
+
+  lines.push(`DAILY INTELLIGENCE BRIEF — ${brief.displayDate}`);
+  lines.push('');
+
+  if (brief.headline) {
+    lines.push(`LEAD: ${brief.headline}`);
+    lines.push('');
+  }
+
+  if (brief.summary) {
+    lines.push('OVERVIEW');
+    lines.push(brief.summary.replace(/\*\*/g, ''));
+    lines.push('');
+  }
+
+  if (brief.topStories?.length > 0) {
+    lines.push('TOP STORIES');
+    for (const story of brief.topStories) {
+      const regions = (story.regions || []).join(', ');
+      lines.push(`• [${(story.category || '').toUpperCase()}] ${story.title} (${regions})`);
+      if (story.prediction) lines.push(`  → ${story.prediction}`);
+    }
+    lines.push('');
+  }
+
+  if (brief.risingThread?.title) {
+    lines.push('RISING THREAD');
+    lines.push(`${brief.risingThread.title} — ${brief.risingThread.articleCount || '?'} articles, ${brief.risingThread.dayCount || '?'} days`);
+    if (brief.risingThread.oneLiner) lines.push(brief.risingThread.oneLiner);
+    lines.push('');
+  }
+
+  if (brief.countryToWatch?.countryName) {
+    lines.push('COUNTRY TO WATCH');
+    lines.push(`${brief.countryToWatch.countryName} — ${(brief.countryToWatch.riskLevel || '').toUpperCase()}`);
+    if (brief.countryToWatch.headline) lines.push(brief.countryToWatch.headline);
+    lines.push('');
+  }
+
+  if (brief.stats) {
+    lines.push(`${brief.stats.totalArticles} articles · ${brief.stats.sourceOutlets} sources · ${brief.stats.countriesCovered} countries`);
+  }
+
+  lines.push(`— Global Perspectives · globalperspective.net/daily/${brief.dateKey}`);
+
+  return lines.join('\n');
+}

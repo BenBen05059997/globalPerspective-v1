@@ -131,7 +131,10 @@ async function readPastArchiveTitles(days) {
 // ============================================================
 // RSS FEEDS - Free, fast, no rate limits
 // ============================================================
+const MAX_ARTICLES_PER_FEED = 8;
+
 const RSS_FEEDS = [
+  // --- Existing (global / Asia / South Asia) ---
   { name: 'BBC World', url: 'http://feeds.bbci.co.uk/news/world/rss.xml', source: 'bbc.com' },
   { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml', source: 'aljazeera.com' },
   { name: 'France24', url: 'https://www.france24.com/en/rss', source: 'france24.com' },
@@ -140,6 +143,32 @@ const RSS_FEEDS = [
   { name: 'The Diplomat', url: 'https://thediplomat.com/feed/', source: 'thediplomat.com' },
   { name: 'Dawn', url: 'https://www.dawn.com/feeds/home', source: 'dawn.com' },
   { name: 'Japan Times', url: 'https://www.japantimes.co.jp/feed/', source: 'japantimes.co.jp' },
+
+  // --- Americas ---
+  { name: 'NPR World', url: 'https://feeds.npr.org/1004/rss.xml', source: 'npr.org' },
+  { name: 'CBC World', url: 'https://rss.cbc.ca/lineup/world.xml', source: 'cbc.ca' },
+
+  // --- Europe (moved from Brave Search) ---
+  { name: 'The Guardian', url: 'https://www.theguardian.com/world/rss', source: 'theguardian.com' },
+  { name: 'DW English', url: 'https://rss.dw.com/rdf/rss-en-all', source: 'dw.com' },
+  { name: 'EuroNews', url: 'https://www.euronews.com/rss', source: 'euronews.com' },
+
+  // --- Africa ---
+  { name: 'AllAfrica', url: 'https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf', source: 'allafrica.com' },
+  { name: 'Daily Maverick', url: 'https://www.dailymaverick.co.za/dmrss/', source: 'dailymaverick.co.za' },
+  { name: 'The East African', url: 'https://www.theeastafrican.co.ke/rss.xml', source: 'theeastafrican.co.ke' },
+
+  // --- Middle East (Al-Monitor moved from Brave Search) ---
+  { name: 'Middle East Eye', url: 'https://www.middleeasteye.net/rss', source: 'middleeasteye.net' },
+  { name: 'Al-Monitor', url: 'https://www.al-monitor.com/rss', source: 'al-monitor.com' },
+
+  // --- Asia additions ---
+  { name: 'CNA', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml', source: 'channelnewsasia.com' },
+  { name: 'Nikkei Asia', url: 'https://asia.nikkei.com/rss/feed/nar', source: 'asia.nikkei.com' },
+  { name: 'Bangkok Post', url: 'https://www.bangkokpost.com/rss/data/most-recent.xml', source: 'bangkokpost.com' },
+
+  // --- Oceania ---
+  { name: 'ABC Australia', url: 'https://www.abc.net.au/news/feed/2942460/rss.xml', source: 'abc.net.au' },
 ];
 
 // ============================================================
@@ -279,7 +308,7 @@ async function fetchRssFeeds() {
         }
 
         const xml = await response.text();
-        const articles = parseRssXml(xml, feed.source);
+        const articles = parseRssXml(xml, feed.source).slice(0, MAX_ARTICLES_PER_FEED);
         console.log(`RSS ${feed.name}: ${articles.length} articles`);
         return articles;
       } catch (err) {
@@ -312,26 +341,19 @@ async function fetchBraveNews(limit) {
   try {
     // Only query sources that don't have working RSS feeds
     const queries = [
-      // Wire Services (no RSS or blocked)
+      // Wire Services (no RSS available)
       'site:reuters.com world news politics economy',
       'site:apnews.com world news politics economy',
 
-      // Europe (no RSS or blocked)
-      'site:theguardian.com world news politics',
-      'site:dw.com Europe news politics economy',
-      'site:euronews.com Europe EU news politics',
-
-      // Asia (no RSS or blocked)
+      // Asia (no RSS available)
       'site:straitstimes.com Singapore Asia politics economy',
       'site:timesofindia.indiatimes.com India politics economy',
       'site:koreaherald.com Korea politics economy',
 
-      // Specialized
+      // Specialized (no RSS available)
       'site:kyivindependent.com Ukraine Russia war',
-      'site:al-monitor.com Middle East politics',
 
-      // Broader regional (coverage gaps)
-      'Africa news politics economy conflict today',
+      // Broader regional
       'Latin America Brazil Mexico Argentina news politics today',
     ];
 
@@ -582,7 +604,7 @@ exports.handler = async (event) => {
         '2. BE SPECIFIC: Include key details (names, numbers, locations, actions)',
         '3. ONLY USE ARTICLES FROM ABOVE: Source URLs must match exactly',
         '4. DO NOT INVENT URLs: Do NOT fabricate any URLs',
-        '5. GROUP CAREFULLY: Only group articles about the SAME specific event',
+        '5. GROUP AGGRESSIVELY: Articles about the SAME underlying event MUST be grouped into ONE topic, even if they use different headlines, angles, framings, or names for the same actors/locations. Example: "Iran shoots down US jet", "Pentagon confirms aircraft loss near Hormuz", and "US warplane downed in Gulf" are ALL the same event — group them. Err on the side of merging, not splitting.',
         '6. EXCLUSIVE SOURCES: Each source article URL must appear in exactly ONE topic. Never assign the same article to multiple topics.',
         '',
         'BAD EXAMPLES (too vague):',

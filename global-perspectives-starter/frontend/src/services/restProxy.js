@@ -142,6 +142,14 @@ export async function fetchCountryIntelligence(countryNames) {
   return proxyActionWithAuth('country_intelligence', { countryNames });
 }
 
+export async function fetchDailyBrief(dateKey) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (!dateKey || dateKey === today) {
+    return proxyAction('daily_brief', { dateKey: dateKey || today });
+  }
+  return proxyActionWithAuth('daily_brief', { dateKey });
+}
+
 // Public preview endpoints (no auth required, for SEO / non-signed-in users)
 export async function fetchCountryPreview(countryName) {
   return proxyAction('country_preview', { countryName });

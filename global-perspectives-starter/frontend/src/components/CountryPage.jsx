@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link, useHref } from 'react-router-dom';
+import IntelligenceLoader from './IntelligenceLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '../hooks/useCountryIntelligence';
@@ -452,7 +453,7 @@ export default function CountryPage() {
     );
   }
 
-  if (loading) return <div className="weekly-loading">Loading…</div>;
+  if (loading) return <IntelligenceLoader type="typewriter" />;
 
   const risk = intel ? (RISK_COLORS[intel.riskLevel] || RISK_COLORS.moderate) : null;
   const trajectory = intel?.trajectory ? (TRAJECTORY_BADGES[intel.trajectory] || TRAJECTORY_BADGES.stable) : null;

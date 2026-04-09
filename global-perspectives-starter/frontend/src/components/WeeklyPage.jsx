@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
+import IntelligenceLoader from './IntelligenceLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
@@ -632,15 +633,7 @@ export default function WeeklyPage() {
           <WeeklyMap embedded />
         </Suspense>
       ) : loading ? (
-        <div>
-          {[1,2,3,4].map(i => (
-            <div key={i} className="skeleton-card">
-              <div className="skeleton-line title" />
-              <div className="skeleton-line meta" />
-              <div className="skeleton-line short" />
-            </div>
-          ))}
-        </div>
+        <IntelligenceLoader type="typewriter" />
       ) : threads.length === 0 && standalone.length === 0 ? (
         <div className="weekly-empty-state">
           <h3>No archive data yet</h3>

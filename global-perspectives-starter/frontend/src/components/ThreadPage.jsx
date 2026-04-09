@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
+import IntelligenceLoader from './IntelligenceLoader';
 import ShareButtons from './ShareButtons';
 import { fetchThreadPreview } from '../services/restProxy';
 import { useAuth } from '../contexts/AuthContext';
@@ -187,7 +188,7 @@ export default function ThreadPage() {
     );
   }
 
-  if (loading) return <div className="weekly-loading">Loading story arc…</div>;
+  if (loading) return <IntelligenceLoader type="typewriter" />;
 
   if (error && error.includes('401')) {
     return (

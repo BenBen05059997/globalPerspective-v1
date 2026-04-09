@@ -15,6 +15,7 @@ const GROK_MODEL = process.env.GROK_MODEL || 'grok-4-1-fast-non-reasoning';
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const DEFAULT_MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '600', 10);
+const PREDICTION_MAX_TOKENS = parseInt(process.env.PREDICTION_MAX_TOKENS || '1500', 10);
 const DEFAULT_TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
 const DEFAULT_TOP_P = Number(process.env.TOP_P || '0.9');
 
@@ -31,7 +32,7 @@ const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
 const ARCHIVE_ITEM_ID = 'today-archive';
 const ARCHIVE_TTL_HOURS = 24;
-const DAILY_ARCHIVE_TTL_DAYS = 31;
+const DAILY_ARCHIVE_TTL_DAYS = 90;
 const DAILY_ARCHIVE_MAX_SOURCES = 10;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
@@ -61,24 +62,32 @@ exports.handler = async (event) => {
     console.log(`Starting generation for ${filteredTopics.length} topics (generationId: ${generationId})`);
 
     const outputs = [];
+    let failed = 0;
     for (const topic of filteredTopics) {
-      if (action === 'summary' || action === 'both') {
-        const summary = await generateAndStore(topic, 'summary', generationId, generatedDate, generatedYear);
-        outputs.push(summary);
-      }
-      if (action === 'trace_cause' || action === 'both') {
-        const traceCause = await generateAndStore(topic, 'trace_cause', generationId, generatedDate, generatedYear);
-        outputs.push(traceCause);
-      }
-      if (action === 'prediction' || action === 'both') {
-        const prediction = await generateAndStore(topic, 'prediction', generationId, generatedDate, generatedYear);
-        outputs.push(prediction);
+      try {
+        if (action === 'summary' || action === 'both') {
+          const summary = await generateAndStore(topic, 'summary', generationId, generatedDate, generatedYear);
+          outputs.push(summary);
+        }
+        if (action === 'trace_cause' || action === 'both') {
+          const traceCause = await generateAndStore(topic, 'trace_cause', generationId, generatedDate, generatedYear);
+          outputs.push(traceCause);
+        }
+        if (action === 'prediction' || action === 'both') {
+          const prediction = await generateAndStore(topic, 'prediction', generationId, generatedDate, generatedYear);
+          outputs.push(prediction);
+        }
+      } catch (topicErr) {
+        failed++;
+        console.error(`Generation failed for topic "${topic.title?.substring(0, 50)}":`, topicErr.message);
       }
     }
 
-    console.log(`Generation complete: ${outputs.length} items (generationId: ${generationId})`);
+    console.log(`Generation complete: ${outputs.length} items, ${failed} failed (generationId: ${generationId})`);
 
-    const swapped = await swapStagingToActive(stagingItem, generationId);
+    const swapped = outputs.length > 0
+      ? await swapStagingToActive(stagingItem, generationId)
+      : false;
 
     if (!readOnly && swapped) {
       try {
@@ -263,40 +272,109 @@ function buildTraceCausePrompt(topic, generatedDate) {
   ].join('\n\n');
 }
 
-function buildPredictionPrompt(topic, generatedDate, generatedYear) {
+// ── Two-Pass Prediction: Research Agent + Prediction Agent ──────────────────
+
+const RESEARCH_MAX_TOKENS = 800;
+
+function buildResearchPrompt(topic, generatedDate, generatedYear) {
+  const snippets = topic.sources
+    ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
+    : '';
+
+  const snippetBlock = snippets
+    ? `\nArticle Snippets:\n${snippets}\n`
+    : '';
+
   return [
-    `You are a Global Systems Analyst analyzing news from ${generatedDate}.`,
-    `IMPORTANT: Today is ${generatedDate}. The current year is ${generatedYear}. All predictions and timeframes must be relative to this date.`,
+    `You are a geopolitical research analyst preparing a structured briefing. Today is ${generatedDate} (year ${generatedYear}).`,
     '',
     `Topic: ${topic.title}`,
-    `Premise: ${topic.description}`,
+    `Description: ${topic.description}`,
+    `Regions: ${(topic.regions || []).join(', ') || 'Unknown'}`,
+    snippetBlock,
+    'Produce a concise research briefing with these sections. Be specific — name real people, institutions, treaties, and dates.',
     '',
-    'Tasks:',
-    '1. **Chain Reaction Map**: Visualize the consequences in a logical flow:',
-    '   `Event -> Immediate Effect -> 2nd Order Effect -> Global Consequence`',
-    '   (Example: "Drought in Panama -> Canal traffic slows -> Shipping costs rise -> Inflation in US/Asia markets")',
+    '**HISTORICAL PRECEDENTS**: List 2-3 similar historical events. For each: what happened, what was the outcome, and how long it took to resolve. This establishes the base rate.',
     '',
-    '2. **Winners & Losers**: Who benefits from this connection? Who suffers?',
-    '   - **Winners**: (Countries, Industries, or Leaders)',
-    '   - **Losers**: (Populations, Economies, or Alliances)',
+    '**KEY ACTORS & MOTIVATIONS**: Who are the 3-5 most important decision-makers or institutions? What does each one want? What constraints do they face?',
     '',
-    `3. **Watchlist Signals**: List 2 concrete future events (with timeframes relative to ${generatedYear}) that would confirm this chain reaction is happening.`,
+    `**UPCOMING DEADLINES**: List any scheduled events in the next 1-3 months (elections, summits, central bank meetings, UN sessions, treaty expirations, earnings dates, sanctions reviews) relevant to the regions involved. Include specific dates where known. Current year is ${generatedYear}.`,
+    '',
+    '**BALANCE OF FORCES**: In 2-3 sentences, what is the current balance of power, leverage, or momentum between the key actors? Who has the initiative?',
+    '',
+    'Be factual and concise. No predictions — that comes next.',
+  ].join('\n');
+}
+
+function buildPredictionPrompt(topic, generatedDate, generatedYear, researchContext) {
+  const snippets = topic.sources
+    ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
+    : '';
+
+  const snippetBlock = snippets
+    ? `\nArticle Snippets:\n${snippets}\n`
+    : '';
+
+  return [
+    `You are a geopolitical forecasting analyst. Today is ${generatedDate} (year ${generatedYear}).`,
+    '',
+    `Topic: ${topic.title}`,
+    `Description: ${topic.description}`,
+    snippetBlock,
+    '=== RESEARCH BRIEFING (prepared by research analyst) ===',
+    researchContext,
+    '=== END RESEARCH BRIEFING ===',
+    '',
+    'Using the research briefing above, structure your prediction in markdown:',
+    '',
+    '### 1. Three Scenarios',
+    'Generate three scenarios with rough probability estimates. Ground each in the historical precedents and actor motivations from the research. Be specific — name actors, institutions, dates, and mechanisms.',
+    '',
+    '**Most Likely (~60%)**',
+    'The base case given current trajectory and the balance of forces. What probably happens in the next 2-4 weeks?',
+    '',
+    '**Optimistic (~20%)**',
+    'What happens if key actors make constructive moves? Reference which actors from the briefing would need to act differently.',
+    '',
+    '**Pessimistic (~20%)**',
+    'What happens if the situation escalates? What specific miscalculation or trigger from the briefing could cause this?',
+    '',
+    '(Adjust the probability percentages if the research evidence strongly favors a different distribution. They must sum to ~100%.)',
+    '',
+    '### 2. Winners & Losers',
+    'Across the most likely scenario:',
+    '- **Winners**: (Countries, Industries, or Leaders)',
+    '- **Losers**: (Populations, Economies, or Alliances)',
+    '',
+    '### 3. Trigger Signals',
+    `List 3 concrete, falsifiable events — drawn from the upcoming deadlines in the research — that would confirm which scenario is unfolding. Each must reference a specific date or deadline in ${generatedYear}. Avoid vague signals.`,
   ].join('\n');
 }
 
 async function generateAndStore(topic, kind, generationId, generatedDate, generatedYear) {
   let prompt;
-  if (kind === 'summary') prompt = buildSummaryPrompt(topic, generatedDate);
-  else if (kind === 'trace_cause') prompt = buildTraceCausePrompt(topic, generatedDate);
-  else prompt = buildPredictionPrompt(topic, generatedDate, generatedYear);
+  let maxTokens = DEFAULT_MAX_TOKENS;
+  if (kind === 'summary') {
+    prompt = buildSummaryPrompt(topic, generatedDate);
+  } else if (kind === 'trace_cause') {
+    prompt = buildTraceCausePrompt(topic, generatedDate);
+  } else {
+    // Two-pass prediction: Research Agent → Prediction Agent
+    const researchPrompt = buildResearchPrompt(topic, generatedDate, generatedYear);
+    const researchResponse = await invokeGrok(researchPrompt, RESEARCH_MAX_TOKENS);
+    console.log(`Research pass complete for "${topic.title?.substring(0, 40)}" (${researchResponse.latencyMs}ms)`);
 
-  const response = await invokeGrok(prompt);
+    prompt = buildPredictionPrompt(topic, generatedDate, generatedYear, researchResponse.content);
+    maxTokens = PREDICTION_MAX_TOKENS;
+  }
+
+  const response = await invokeGrok(prompt, maxTokens);
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
   const item = await writeCache(topic, kind, response, ttlSeconds, generationId);
   return item;
 }
 
-async function invokeGrok(prompt) {
+async function invokeGrok(prompt, maxTokens) {
   if (!GROK_KEY) {
     throw new Error('XAI_API_KEY is not configured');
   }
@@ -311,7 +389,7 @@ async function invokeGrok(prompt) {
     body: JSON.stringify({
       model: GROK_MODEL,
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: DEFAULT_MAX_TOKENS,
+      max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
       temperature: DEFAULT_TEMPERATURE,
       top_p: DEFAULT_TOP_P,
     }),

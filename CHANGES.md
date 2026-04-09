@@ -1,5 +1,92 @@
 # Global Perspectives — Change Log
 
+## 2026-04-08 (Daily Intelligence Brief — full feature)
+
+### Backend
+
+- **`newsPostDevTo`** — repurposed as Daily Intelligence Brief generator:
+  - Runs after Dev.to publish (wrapped in try/catch — brief failure never blocks Dev.to)
+  - Reads thread analyses + country intelligence from `SUMMARIZE_PREDICT_TABLE`
+  - Calls Grok to generate structured brief JSON (headline, summary, topStories[], risingThread, countryToWatch, categoryBreakdown, stats)
+  - Stores as `DAILY_BRIEF#YYYY-MM-DD` / `DAILY_BRIEF` in `SUMMARIZE_PREDICT_TABLE`, TTL 90 days
+  - New env vars: `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY`, `GROK_MODEL`
+  - **Deploy:** `newsPostDevTo-deploy.zip` (3.4MB) — upload + set env vars + trigger manually to seed first brief
+
+- **`newsSensitiveData`** — added `daily_brief` action:
+  - Today's date: **public** (no auth required, SEO indexable)
+  - Past dates: **member-gated** (JWT required, resolveUserTier check)
+  - Also added GET query param support (`?action=daily_brief&dateKey=...`)
+  - **Deploy:** `newsSensitiveData-deploy.zip` (13MB)
+
+### Frontend
+
+- **`src/services/restProxy.js`** — added `fetchDailyBrief(dateKey)`:
+  - Today → `proxyAction()` (public, no auth)
+  - Past → `proxyActionWithAuth()` (JWT required)
+
+- **`src/hooks/useDailyBrief.js`** — new hook:
+  - 30-min localStorage cache keyed per dateKey
+  - Max 7 cached days (oldest evicted)
+  - Today doesn't require auth; past dates do
+
+- **`src/components/DailyPage.jsx`** — new page at `/daily` and `/daily/:dateKey`:
+  - Sections: Lead Story, Global Overview (BoldText), Top Stories (with one-line predictions + region links → CountryPage), Rising Thread (→ ThreadPage), Country to Watch (→ CountryPage), Category Breakdown + Stats
+  - Prev/next day navigation arrows
+  - Auth gate for past dates when not signed in (sign-in prompt)
+  - ShareButtons + CopyBriefing
+  - `page-with-sidenav` layout with SideNav anchors
+
+- **`src/components/CopyBriefing.jsx`** — added `formatDailyBrief(brief)` export
+
+- **`src/App.jsx`** — added routes `/daily` and `/daily/:dateKey`
+
+- **`src/components/Layout.jsx`** — added "Daily Brief" nav link
+
+### Pending Deploy Steps
+1. Upload `newsPostDevTo-deploy.zip` → set env vars `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY`, `GROK_MODEL`
+2. Upload `newsSensitiveData-deploy.zip`
+3. Trigger `newsPostDevTo` manually → verify DDB item `DAILY_BRIEF#today` + CloudWatch log
+4. Build frontend + copy to `/docs/` + push
+
+---
+
+## 2026-04-08 (Data retention extended to 90 days)
+
+- **DynamoDB TTL extended** from 31 → 90 days across 3 Lambdas:
+  - `NewsProjectInvokeAgentLambda`: `DAILY_ARCHIVE_TTL_DAYS` 31→90
+  - `newsThreadAnalysis`: `THREAD_TTL_DAYS` 31→90
+  - `newsCountryIntelligence`: `COUNTRY_TTL_DAYS` 31→90
+- **Enterprise archive access** extended: `ENTERPRISE_MAX_DAYS` 30→90 in `newsSensitiveData`
+- **AI analysis windows unchanged** at 30 days — prevents Grok prompt bloat on long threads
+- **Thread matching window unchanged** at 7 days
+- **Member tier unchanged** at 7 days
+- **Cost impact:** ~$0.02/month extra (18MB storage vs 6MB)
+- **Deploy:** 4 Lambda zips
+
+---
+
+## 2026-04-08 (newsPostLinkedIn: font fix — map text now renders correctly)
+
+- **Root cause found:** librsvg (used by sharp) does NOT support `@font-face`, woff2, or data URIs — only system TTF/OTF via fontconfig
+- **Fix:** Bundle Inter TTF fonts (Regular, Bold, SemiBold) in `fonts/` dir → copy to `/tmp/fonts/` at Lambda cold start → write fontconfig pointing to `/tmp/fonts/` → set `FONTCONFIG_PATH` env var
+- **Connection dots improved:** endpoint dots now have colored ring (r=5) + white center (r=2), thicker connection lines
+- **LinkedIn token refreshed** via OAuth 2.0 tools (expires every 60 days)
+- **Removed:** old woff2 files, base64 `@font-face` `<style>` injection (never worked with librsvg)
+
+---
+
+## 2026-04-05 (newsPostLinkedIn: map image generation for social posts)
+
+- **New `mapImageGenerator.js`** — generates 1200x630 PNG map images per topic for social media
+- **Features:** highlighted countries with glow effect, curved connection lines between involved countries, country name labels, category badge, source count, date stamp, logo branding
+- **LinkedIn integration:** 3-step image upload (initializeUpload → PUT binary → attach imageUrn to post)
+- **Bluesky integration:** uploadBlob → embed image in post record
+- **Fallback:** if image generation or upload fails, posts text-only (existing behavior preserved)
+- **Assets bundled:** `world-map-template.svg` (147 countries, ISO-coded paths), `logo_small.png` (60x60), `sharp` with Linux binary
+- **Deploy:** `~/Downloads/newsPostLinkedIn-deploy.zip` (20MB)
+
+---
+
 ## 2026-04-05 (Home page sidebar UI refresh)
 
 - **Restyle TopicNav + TodayArchiveSidebar** to match the SideNav frosted-glass design from ThreadPage

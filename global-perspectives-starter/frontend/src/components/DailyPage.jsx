@@ -10,9 +10,9 @@ import IntelligenceLoader from './IntelligenceLoader';
 import './WeeklyPage.css';
 
 const TRAJECTORY_BADGES = {
-  escalating: { arrow: '\u2197', label: 'Escalating', color: '#ef4444' },
-  stable: { arrow: '\u2192', label: 'Stable', color: '#6b7280' },
-  'de-escalating': { arrow: '\u2198', label: 'De-escalating', color: '#10b981' },
+  escalating: { arrow: '↗', label: 'Escalating', color: '#ef4444' },
+  stable: { arrow: '→', label: 'Stable', color: '#6b7280' },
+  'de-escalating': { arrow: '↘', label: 'De-escalating', color: '#10b981' },
 };
 
 function BoldText({ text }) {
@@ -57,10 +57,10 @@ export default function DailyPage() {
 
   useEffect(() => {
     const title = brief?.displayDate || dateKey;
-    document.title = `Daily Brief \u2014 ${title} | Global Perspectives`;
+    document.title = `Daily Brief — ${title} | Global Perspectives`;
   }, [brief, dateKey]);
 
-  if (authLoading) return <div className="weekly-loading">Loading\u2026</div>;
+  if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
   if (!isToday && !user && !import.meta.env.DEV) {
     return (
@@ -69,7 +69,7 @@ export default function DailyPage() {
         <div className="thread-preview-stats">Past daily briefs require a free account</div>
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
           <div className="wlp-cta-btns" style={{ justifyContent: 'center' }}>
-            <Link to="/signin" className="wlp-btn-primary">Sign in free \u2192</Link>
+            <Link to="/signin" className="wlp-btn-primary">Sign in free →</Link>
             <Link to="/daily" className="wlp-btn-secondary">View today's brief</Link>
           </div>
         </div>
@@ -85,12 +85,12 @@ export default function DailyPage() {
         <h3>No daily brief available</h3>
         <p style={{ color: '#6b7280' }}>
           {isToday
-            ? 'Today\u2019s brief hasn\u2019t been generated yet. It publishes daily \u2014 check back soon.'
+            ? "Today's brief hasn't been generated yet. It publishes daily — check back soon."
             : `No brief found for ${dateKey}.`}
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 16 }}>
-          <Link to={`/daily/${prevDateKey(dateKey)}`} style={{ color: '#3b82f6' }}>\u2190 Previous day</Link>
-          {!isToday && <Link to="/daily" style={{ color: '#3b82f6' }}>Today\u2019s brief</Link>}
+          <Link to={`/daily/${prevDateKey(dateKey)}`} style={{ color: '#3b82f6' }}>← Previous day</Link>
+          {!isToday && <Link to="/daily" style={{ color: '#3b82f6' }}>Today's brief</Link>}
         </div>
       </div>
     );
@@ -113,11 +113,11 @@ export default function DailyPage() {
     <div className="thread-page">
       <div className="thread-page-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link to="/" className="thread-page-back">\u2190 Home</Link>
+          <Link to="/" className="thread-page-back">← Home</Link>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Link to={`/daily/${prevDateKey(dateKey)}`} className="daily-nav-btn">\u2190</Link>
+            <Link to={`/daily/${prevDateKey(dateKey)}`} className="daily-nav-btn">←</Link>
             <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>{brief.displayDate}</span>
-            {!isToday && <Link to={`/daily/${nextDateKey(dateKey)}`} className="daily-nav-btn">\u2192</Link>}
+            {!isToday && <Link to={`/daily/${nextDateKey(dateKey)}`} className="daily-nav-btn">→</Link>}
             {!isToday && <Link to="/daily" style={{ fontSize: '0.8rem', color: '#3b82f6', textDecoration: 'none' }}>Today</Link>}
           </div>
         </div>
@@ -129,8 +129,8 @@ export default function DailyPage() {
             <div id="daily-headline">
               <h1 className="thread-page-title">{brief.headline}</h1>
               <div className="cp-subtitle">
-                Daily Intelligence Brief \u2014 {brief.displayDate}
-                {brief.generatedAt && <> \u00B7 Updated {formatTimeAgo(brief.generatedAt)}</>}
+                Daily Intelligence Brief — {brief.displayDate}
+                {brief.generatedAt && <> · Updated {formatTimeAgo(brief.generatedAt)}</>}
               </div>
 
               <div className="cp-metrics" style={{ marginTop: 12 }}>
@@ -153,7 +153,7 @@ export default function DailyPage() {
               </div>
 
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12, marginBottom: 16 }}>
-                <ShareButtons path={`/daily/${dateKey}`} title={`Daily Intelligence Brief \u2014 ${brief.displayDate}`} />
+                <ShareButtons path={`/daily/${dateKey}`} title={`Daily Intelligence Brief — ${brief.displayDate}`} />
                 <CopyBriefing getText={() => formatDailyBrief(brief)} />
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function DailyPage() {
                         <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>{story.title}</div>
                         {story.prediction && (
                           <div style={{ fontSize: '0.85rem', color: '#6b7280', fontStyle: 'italic' }}>
-                            \u2192 {story.prediction}
+                            → {story.prediction}
                           </div>
                         )}
                       </div>
@@ -214,14 +214,14 @@ export default function DailyPage() {
                       </span>
                     )}
                     <span style={{ fontSize: '0.75rem', color: '#92400e' }}>
-                      {brief.risingThread.articleCount || '?'} articles \u00B7 {brief.risingThread.dayCount || '?'} days
+                      {brief.risingThread.articleCount || '?'} articles · {brief.risingThread.dayCount || '?'} days
                     </span>
                   </div>
                   <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>{brief.risingThread.title}</div>
                   {brief.risingThread.oneLiner && (
                     <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{brief.risingThread.oneLiner}</div>
                   )}
-                  <div style={{ fontSize: '0.8rem', color: '#3b82f6', marginTop: 6 }}>Read full arc \u2192</div>
+                  <div style={{ fontSize: '0.8rem', color: '#3b82f6', marginTop: 6 }}>Read full arc →</div>
                 </Link>
               </div>
             )}
@@ -249,7 +249,7 @@ export default function DailyPage() {
                   {brief.countryToWatch.headline && (
                     <div style={{ fontSize: '0.9rem', color: '#374151' }}>{brief.countryToWatch.headline}</div>
                   )}
-                  <div style={{ fontSize: '0.8rem', color: '#3b82f6', marginTop: 6 }}>View full briefing \u2192</div>
+                  <div style={{ fontSize: '0.8rem', color: '#3b82f6', marginTop: 6 }}>View full briefing →</div>
                 </Link>
               </div>
             )}
@@ -279,10 +279,10 @@ export default function DailyPage() {
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: '1px solid var(--border-color, #e5e7eb)', marginTop: 16 }}>
-              <Link to={`/daily/${prevDateKey(dateKey)}`} style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.9rem' }}>\u2190 Previous day</Link>
-              <Link to="/weekly" style={{ color: '#6b7280', textDecoration: 'none', fontSize: '0.85rem' }}>Weekly Analysis \u2192</Link>
+              <Link to={`/daily/${prevDateKey(dateKey)}`} style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.9rem' }}>← Previous day</Link>
+              <Link to="/weekly" style={{ color: '#6b7280', textDecoration: 'none', fontSize: '0.85rem' }}>Weekly Analysis →</Link>
               {!isToday
-                ? <Link to={`/daily/${nextDateKey(dateKey)}`} style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.9rem' }}>Next day \u2192</Link>
+                ? <Link to={`/daily/${nextDateKey(dateKey)}`} style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.9rem' }}>Next day →</Link>
                 : <span style={{ fontSize: '0.85rem', color: '#9ca3af' }}>Latest</span>
               }
             </div>

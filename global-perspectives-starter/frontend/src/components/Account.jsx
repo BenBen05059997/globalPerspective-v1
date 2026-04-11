@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchUserProfile, fetchPortalSession } from '../services/restProxy';
 import { useSavedItems } from '../hooks/useSavedItems';
-import './WeeklyPage.css';
-import './Pricing.css';
+import './Account.css';
 
 const TIER_LABELS = {
   free: 'Free',
@@ -35,6 +34,54 @@ const TIER_PERKS = {
   free: [],
 };
 
+const TYPE_COLORS = {
+  thread:  { border: '#3b82f6', badge: '#dbeafe', badgeText: '#1e40af' },
+  country: { border: '#10b981', badge: '#d1fae5', badgeText: '#065f46' },
+  daily:   { border: '#8b5cf6', badge: '#ede9fe', badgeText: '#5b21b6' },
+  pair:    { border: '#f59e0b', badge: '#fef3c7', badgeText: '#92400e' },
+};
+
+const TYPE_LABELS = {
+  thread: 'Thread',
+  country: 'Country',
+  daily: 'Daily',
+  pair: 'Pair',
+};
+
+function getItemHref(item) {
+  if (item.itemType === 'thread')  return `/weekly/thread/${item.itemId}`;
+  if (item.itemType === 'country') return `/weekly/country/${encodeURIComponent(item.itemId)}`;
+  if (item.itemType === 'daily')   return `/daily/${item.itemId}`;
+  return null;
+}
+
+function getItemTitle(item) {
+  return item.metadata?.title || item.metadata?.name || item.metadata?.headline || item.itemId;
+}
+
+function getItemMeta(item) {
+  const parts = [];
+  if (item.metadata?.category) parts.push(item.metadata.category);
+  if (item.metadata?.date)     parts.push(item.metadata.date);
+  return parts.join(' · ');
+}
+
+function formatRelativeTime(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60)  return 'Just now';
+  const m = Math.floor(s / 60);
+  if (m < 60)  return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)   return `${d}d ago`;
+  const w = Math.floor(d / 7);
+  if (w < 5)   return `${w}w ago`;
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 function formatMemberSince(isoString) {
   if (!isoString) return null;
   return new Date(isoString).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -61,65 +108,158 @@ const LABEL = {
   marginBottom: 4,
 };
 
-export default function Account() {
-  const { user, loading: authLoading, signOut } = useAuth();
-  const navigate = useNavigate();
-  const { savedItems, loading: savedLoading } = useSavedItems();
-  const [profile, setProfile] = useState(null);
-  const [profileLoading, setProfileLoading] = useState(false);
-  // portalLoading + error + handleManageBilling — re-enable when Paddle is ready
-  const [, /* portalLoading */ setPortalLoading] = useState(false);
-  const [, /* error */ setError] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+function HeartFilledIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    </svg>
+  );
+}
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user || user.isAnonymous) { navigate('/signin'); return; }
-    setProfileLoading(true);
-    fetchUserProfile()
-      .then(res => setProfile(res?.data || { tier: 'free' }))
-      .catch(() => setProfile({ tier: 'free' }))
-      .finally(() => setProfileLoading(false));
-  }, [user, authLoading, navigate]);
+function SavedCard({ item, onUnsave }) {
+  const [collapsing, setCollapsing] = useState(false);
+  const colors = TYPE_COLORS[item.itemType] || TYPE_COLORS.thread;
+  const href = getItemHref(item);
+  const title = getItemTitle(item);
+  const meta = getItemMeta(item);
+
+  function handleUnsave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setCollapsing(true);
+    setTimeout(() => onUnsave(item.itemType, item.itemId), 250);
+  }
+
+  const cardClass = `saved-card${collapsing ? ' saved-card--collapsing' : ''}`;
+
+  const inner = (
+    <>
+      <div className="saved-card-top">
+        <span
+          className="saved-card-type"
+          style={{ background: colors.badge, color: colors.badgeText }}
+        >
+          {TYPE_LABELS[item.itemType] || item.itemType}
+        </span>
+        <span className="saved-card-time">{formatRelativeTime(item.savedAt)}</span>
+      </div>
+      <div className="saved-card-title">{title}</div>
+      {meta && <div className="saved-card-meta">{meta}</div>}
+      <button
+        className="saved-card-unsave"
+        onClick={handleUnsave}
+        title="Remove from saved"
+        aria-label="Remove from saved"
+      >
+        <HeartFilledIcon />
+      </button>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        to={href}
+        className={cardClass}
+        style={{ borderLeftColor: colors.border }}
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <div className={cardClass} style={{ borderLeftColor: colors.border }}>
+      {inner}
+    </div>
+  );
+}
+
+function SavedPanel({ savedItems, savedLoading, onUnsave }) {
+  const [filter, setFilter] = useState('all');
+
+  const typeCounts = savedItems.reduce((acc, item) => {
+    acc[item.itemType] = (acc[item.itemType] || 0) + 1;
+    return acc;
+  }, {});
+
+  const availableTypes = Object.keys(typeCounts);
+  const filtered = filter === 'all'
+    ? savedItems
+    : savedItems.filter(item => item.itemType === filter);
+
+  const emptyHint = filter === 'all'
+    ? 'Tap the heart on any thread, country, or daily brief to save it here.'
+    : `No saved ${TYPE_LABELS[filter]?.toLowerCase() || filter}s yet.`;
+
+  return (
+    <div>
+      {savedItems.length > 1 && (
+        <div className="saved-filters">
+          <button
+            className={`saved-filter-chip${filter === 'all' ? ' saved-filter-chip--active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All {savedItems.length}
+          </button>
+          {availableTypes.map(type => (
+            <button
+              key={type}
+              className={`saved-filter-chip${filter === type ? ' saved-filter-chip--active' : ''}`}
+              onClick={() => setFilter(type)}
+            >
+              {TYPE_LABELS[type] || type} {typeCounts[type]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="saved-grid">
+        {savedLoading ? (
+          <div style={{ gridColumn: '1/-1', padding: '2rem 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            Loading saved items…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="saved-empty">
+            <div className="saved-empty-icon">🤍</div>
+            <div className="saved-empty-title">Nothing saved yet</div>
+            <div className="saved-empty-hint">{emptyHint}</div>
+          </div>
+        ) : (
+          filtered.map(item => (
+            <SavedCard
+              key={`${item.itemType}:${item.itemId}`}
+              item={item}
+              onUnsave={onUnsave}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProfilePanel({ user, profile, tier, tierStyle, perks, memberSince, isActive, handleSignOut }) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [, setPortalLoading] = useState(false);
+  const [, setError] = useState(null);
 
   async function handleManageBilling() {
     setPortalLoading(true);
     setError(null);
     try {
       const res = await fetchPortalSession();
-      if (res?.url) {
-        window.location.href = res.url;
-      } else {
-        setError('Could not open billing portal. Please try again.');
-      }
+      if (res?.url) window.location.href = res.url;
+      else setError('Could not open billing portal. Please try again.');
     } catch (err) {
       setError(err?.message || 'Failed to open billing portal');
     } finally {
       setPortalLoading(false);
     }
   }
-
-  async function handleSignOut() {
-    await signOut();
-    navigate('/');
-  }
-
-  if (authLoading || profileLoading) {
-    return <div className="weekly-loading">Loading account…</div>;
-  }
-
-  if (!user) return null;
-
-  const tier = profile?.tier || 'free';
-  const tierStyle = TIER_COLORS[tier] || TIER_COLORS.free;
-  const perks = TIER_PERKS[tier] || [];
-  const memberSince = formatMemberSince(user.metadata?.creationTime);
-  const isActive = !profile?.subscriptionStatus || profile.subscriptionStatus === 'active';
+  void handleManageBilling;
 
   return (
-    <div style={{ maxWidth: 520, margin: '2rem auto', padding: '0 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Account</h1>
-
+    <div style={{ maxWidth: 520, margin: '0 auto' }}>
       {/* Avatar + identity */}
       <div style={{ ...SECTION, display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <div style={{
@@ -193,45 +333,6 @@ export default function Account() {
         </div>
       </div>
 
-      {/* Saved items */}
-      <div style={SECTION}>
-        <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Saved</div>
-        {savedLoading ? (
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Loading…</div>
-        ) : savedItems.length === 0 ? (
-          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            No saved items yet. Use the bookmark icon on threads and countries to save them here.
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {savedItems.map(item => {
-              const label = item.metadata?.title || item.metadata?.name || item.itemId;
-              const href = item.itemType === 'thread'
-                ? `/weekly/thread/${item.itemId}`
-                : item.itemType === 'country'
-                ? `/weekly/country/${encodeURIComponent(item.itemId)}`
-                : item.itemType === 'daily'
-                ? `/daily/${item.itemId}`
-                : null;
-              return (
-                <div key={`${item.itemType}:${item.itemId}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 48 }}>
-                    {item.itemType}
-                  </span>
-                  {href ? (
-                    <Link to={href} style={{ fontSize: '0.875rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {label}
-                    </Link>
-                  ) : (
-                    <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)', flex: 1 }}>{label}</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
       {/* Account actions */}
       <div style={SECTION}>
         <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Account</div>
@@ -267,9 +368,7 @@ export default function Account() {
               borderRadius: 8, padding: '0.75rem 1rem',
               fontSize: '0.85rem',
             }}>
-              <div style={{ fontWeight: 600, color: '#b91c1c', marginBottom: 6 }}>
-                Are you sure?
-              </div>
+              <div style={{ fontWeight: 600, color: '#b91c1c', marginBottom: 6 }}>Are you sure?</div>
               <div style={{ color: '#6b7280', marginBottom: 10, lineHeight: 1.5 }}>
                 To delete your account and cancel your subscription, email us at{' '}
                 <a href="mailto:globalperspectives.app@gmail.com?subject=Delete%20my%20account" style={{ color: '#3b82f6' }}>
@@ -279,10 +378,7 @@ export default function Account() {
               </div>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                style={{
-                  background: 'none', border: 'none', padding: 0,
-                  fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer',
-                }}
+                style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer' }}
               >
                 Cancel
               </button>
@@ -290,6 +386,93 @@ export default function Account() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function Account() {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { savedItems, loading: savedLoading, unsave } = useSavedItems();
+  const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  const tab = searchParams.get('tab') || 'saved';
+
+  function setTab(t) {
+    setSearchParams({ tab: t }, { replace: true });
+  }
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user || user.isAnonymous) { navigate('/signin'); return; }
+    setProfileLoading(true);
+    fetchUserProfile()
+      .then(res => setProfile(res?.data || { tier: 'free' }))
+      .catch(() => setProfile({ tier: 'free' }))
+      .finally(() => setProfileLoading(false));
+  }, [user, authLoading, navigate]);
+
+  async function handleSignOut() {
+    await signOut();
+    navigate('/');
+  }
+
+  if (authLoading || profileLoading) {
+    return <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>Loading account…</div>;
+  }
+
+  if (!user) return null;
+
+  const tier = profile?.tier || 'free';
+  const tierStyle = TIER_COLORS[tier] || TIER_COLORS.free;
+  const perks = TIER_PERKS[tier] || [];
+  const memberSince = formatMemberSince(user.metadata?.creationTime);
+  const isActive = !profile?.subscriptionStatus || profile.subscriptionStatus === 'active';
+
+  return (
+    <div style={{ maxWidth: 900, margin: '2rem auto', padding: '0 1rem' }}>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.25rem' }}>Account</h1>
+
+      <div className="account-tabs">
+        <button
+          className={`account-tab${tab === 'profile' ? ' account-tab--active' : ''}`}
+          onClick={() => setTab('profile')}
+        >
+          Profile
+        </button>
+        <button
+          className={`account-tab${tab === 'saved' ? ' account-tab--active' : ''}`}
+          onClick={() => setTab('saved')}
+        >
+          Saved
+          {savedItems.length > 0 && (
+            <span className="account-tab-badge">{savedItems.length}</span>
+          )}
+        </button>
+      </div>
+
+      {tab === 'profile' && (
+        <ProfilePanel
+          user={user}
+          profile={profile}
+          tier={tier}
+          tierStyle={tierStyle}
+          perks={perks}
+          memberSince={memberSince}
+          isActive={isActive}
+          handleSignOut={handleSignOut}
+        />
+      )}
+
+      {tab === 'saved' && (
+        <SavedPanel
+          savedItems={savedItems}
+          savedLoading={savedLoading}
+          onUnsave={unsave}
+        />
+      )}
     </div>
   );
 }

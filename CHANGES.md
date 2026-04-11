@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-04-11 (Redesign Account page — tabs + saved items card grid)
+
+### Frontend
+- `Account`: tabs (Profile | Saved) with URL state (`?tab=`); default tab = Saved
+- `SavedPanel`: card grid (2-col on desktop), type-color-coded left border, inline unsave with collapse animation, filter chips (All / Threads / Countries / Daily), relative timestamps
+- `ProfilePanel`: same content, centered 520px inside wider 900px container
+- New `Account.css` for tab, chip, and card styles + hover/animation
+
+---
+
 ## 2026-04-11 (SaveButton heart icon — fix CORS duplicate headers)
 
 ### Frontend

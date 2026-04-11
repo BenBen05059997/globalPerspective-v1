@@ -1,0 +1,209 @@
+/* Account page — tabs + saved items */
+
+.account-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border-color, #e5e7eb);
+  margin-bottom: 1.5rem;
+}
+
+.account-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.account-tab:hover {
+  color: var(--text-primary, #111827);
+}
+
+.account-tab--active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+.account-tab-badge {
+  display: inline-block;
+  margin-left: 6px;
+  background: #e5e7eb;
+  color: #6b7280;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  vertical-align: middle;
+}
+
+.account-tab--active .account-tab-badge {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Filter chips */
+.saved-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.saved-filter-chip {
+  background: none;
+  border: 1.5px solid var(--border-color, #e5e7eb);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.saved-filter-chip:hover {
+  border-color: #9ca3af;
+  color: var(--text-primary, #111827);
+}
+
+.saved-filter-chip--active {
+  background: #1e40af;
+  border-color: #1e40af;
+  color: #fff;
+}
+
+/* Cards grid */
+.saved-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 680px) {
+  .saved-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Individual card */
+.saved-card {
+  position: relative;
+  background: var(--bg-primary, #fff);
+  border: 1.5px solid var(--border-color, #e5e7eb);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  padding-left: 1.1rem;
+  border-left-width: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+  overflow: hidden;
+  max-height: 200px;
+}
+
+.saved-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.09);
+  transform: translateY(-1px);
+}
+
+.saved-card--collapsing {
+  opacity: 0;
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  border-width: 0;
+  transition: opacity 0.2s, max-height 0.25s 0.05s, padding 0.2s, margin 0.2s, border-width 0.2s;
+}
+
+.saved-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+}
+
+.saved-card-type {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.saved-card-time {
+  font-size: 0.72rem;
+  color: var(--text-muted, #9ca3af);
+  margin-right: 28px; /* space for unsave btn */
+}
+
+.saved-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  line-height: 1.4;
+  margin-bottom: 0.3rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.saved-card-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted, #9ca3af);
+}
+
+.saved-card-unsave {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #ef4444;
+  opacity: 0.7;
+  transition: opacity 0.15s, transform 0.15s;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.saved-card-unsave:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* Empty state */
+.saved-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted, #9ca3af);
+}
+
+.saved-empty-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.75rem;
+}
+
+.saved-empty-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #374151);
+  margin-bottom: 0.4rem;
+}
+
+.saved-empty-hint {
+  font-size: 0.83rem;
+  line-height: 1.6;
+}

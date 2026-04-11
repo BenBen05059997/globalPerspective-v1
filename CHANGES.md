@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-04-11 (Add SaveButton to DailyPage)
+
+### Frontend
+- `DailyPage`: SaveButton next to brief headline (itemType=daily, itemId=dateKey)
+
+---
+
 ## 2026-04-11 (Save/bookmark feature — newsSavedItems Lambda + DynamoDB)
 
 ### Backend

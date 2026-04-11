@@ -5,6 +5,7 @@ import { useDailyBrief } from '../hooks/useDailyBrief';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
 import ShareButtons from './ShareButtons';
 import CopyBriefing, { formatDailyBrief } from './CopyBriefing';
+import { SaveButton } from './SaveButton';
 import SideNav from './SideNav';
 import IntelligenceLoader from './IntelligenceLoader';
 import './WeeklyPage.css';
@@ -112,7 +113,10 @@ export default function DailyPage() {
           <div className="thread-page-body">
 
             <div id="daily-headline">
-              <h1 className="thread-page-title">{brief.headline}</h1>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <h1 className="thread-page-title" style={{ flex: 1 }}>{brief.headline}</h1>
+                <SaveButton itemType="daily" itemId={dateKey} metadata={{ headline: brief.headline, date: brief.displayDate }} />
+              </div>
               <div className="cp-subtitle">
                 Daily Intelligence Brief — {brief.displayDate}
                 {brief.generatedAt && <> · Updated {formatTimeAgo(brief.generatedAt)}</>}

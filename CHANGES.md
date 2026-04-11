@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-04-11 (SaveButton heart icon — fix CORS duplicate headers)
+
+### Frontend
+- `SaveButton`: switched to heart icon (red #ef4444 filled when saved, outline when not), scale animation on saved state
+
+### Backend
+- `newsSavedItems`: removed CORS headers from Lambda code — Function URL CORS config handles it exclusively (fixes duplicate Access-Control-Allow-Origin browser error)
+
+---
+
 ## 2026-04-11 (Add SaveButton to DailyPage)
 
 ### Frontend

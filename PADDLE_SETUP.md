@@ -1,7 +1,7 @@
 # Paddle Setup — Global Perspectives
 
-**Status:** Account registration in progress
-**Last updated:** 2026-03-21
+**Status:** INFRASTRUCTURE COMPLETE — dormant during early access (no users charged)
+**Last updated:** 2026-04-11
 
 ---
 
@@ -41,21 +41,21 @@ Stripe rejected/ignored the Global Perspectives account application. Paddle was 
 
 ---
 
-## After Approval — Setup Checklist
+## Setup Checklist — Status (2026-04-11)
 
-Once Paddle approves the account:
+- [x] Create **Member** product in Paddle dashboard ($15/month recurring)
+- [x] Create **Enterprise** product (custom price, contact-based)
+- [x] Get checkout URL for Member product
+- [x] Set `window.PADDLE_CHECKOUT_URL` in `docs/config.js`
+- [x] Add Paddle webhook endpoint → Lambda API Gateway URL for `newsStripeWebhook`
+- [x] Set `PADDLE_WEBHOOK_SECRET` env var on `newsStripeWebhook` Lambda
+- [x] Set `PADDLE_API_KEY` env var on `newsSensitiveData` Lambda
+- [x] Set `USERS_DDB_TABLE` env var on `newsSensitiveData` Lambda
+- [x] Set `FIREBASE_PROJECT_ID` env var on `newsSensitiveData` Lambda
+- [x] Test checkout flow end-to-end (sign in → upgrade → webhook → tier update)
+- [x] Test Customer Portal link from `/account`
 
-- [ ] Create **Member** product in Paddle dashboard ($15/month recurring)
-- [ ] Create **Enterprise** product (custom price, contact-based)
-- [ ] Get checkout URL for Member product
-- [ ] Set `window.PADDLE_CHECKOUT_URL` in `docs/config.js`
-- [ ] Add Paddle webhook endpoint → Lambda API Gateway URL for `newsStripeWebhook`
-- [ ] Set `PADDLE_WEBHOOK_SECRET` env var on `newsStripeWebhook` Lambda
-- [ ] Set `PADDLE_API_KEY` env var on `newsSensitiveData` Lambda
-- [ ] Set `USERS_DDB_TABLE` env var on `newsSensitiveData` Lambda (if not already set)
-- [ ] Set `FIREBASE_PROJECT_ID` env var on `newsSensitiveData` Lambda (if not already set)
-- [ ] Test checkout flow end-to-end (sign in → upgrade → webhook → tier update)
-- [ ] Test Customer Portal link from `/account`
+> **Note:** The `/pricing` route has been removed from the frontend during early access. `Pricing.jsx` remains in the codebase but is not rendered. Billing will be reactivated by adding back the route and removing early-access overrides.
 
 ---
 

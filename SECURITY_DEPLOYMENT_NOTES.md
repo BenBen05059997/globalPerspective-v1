@@ -1,6 +1,6 @@
 # Security & Deployment Notes
 
-**Last verified:** 2026-03-20
+**Last verified:** 2026-04-11
 
 This app is hosted on GitHub Pages (custom domain: globalperspective.net) and calls the `newsSensitiveData` Lambda via API Gateway. Keep these items in mind when updating infrastructure or pushing new builds.
 
@@ -17,9 +17,13 @@ const allowedOrigins = [
   'https://globalperspective.net',
   'https://www.globalperspective.net',
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
 ];
 ```
+
+**`newsSavedItems` Lambda** uses AWS Function URL CORS (not Lambda-level CORS). Configured via `aws lambda update-function-url-config --cors`. The Lambda code must NOT emit `Access-Control-*` headers itself — doing so causes duplicate header errors in the browser.
 
 - If you serve from a new domain, add it explicitly before deploying. Avoid `*` wildcards.
 - After editing, redeploy the Lambda so API Gateway returns the updated `Access-Control-Allow-Origin` header.
@@ -29,14 +33,16 @@ const allowedOrigins = [
 
 ## Auth Security
 
-All gated API actions (`archive_range`, `narrative_thread`, `thread_analysis`, `country_intelligence`, `user_profile`, `portal_session`) require a **Firebase ID token** in the `Authorization: Bearer <token>` header.
+**🚀 Early access mode (ACTIVE 2026-04-11):** All content actions are fully public. Only `user_profile` and `portal_session` require a Firebase JWT.
 
-- Tokens are verified server-side via Firebase Admin SDK (`verifyIdToken`)
+**JWT-required actions:** `user_profile`, `portal_session`, and the `newsSavedItems` Lambda (all actions).
+
+**JWT verification:** Lightweight Node `crypto` + Google public cert endpoint — no firebase-admin dependency. Token header (`kid`) → Google x509 cert → RSA signature verify → payload check (`exp`, `aud`, `iss`).
+
 - Tokens expire after **1 hour** — Firebase JS SDK auto-refreshes them
-- The user's tier (`free` / `member` / `enterprise`) is read from DynamoDB `USERS_TABLE` keyed by Firebase UID
-- Never trust client-supplied tier information — always resolve from DDB
+- The user's tier is read from DynamoDB `USERS_TABLE` keyed by Firebase UID (currently only used for `user_profile`; content is not gated)
 
-**Stripe webhook security:** `newsStripeWebhook` verifies the Stripe webhook signature using `STRIPE_WEBHOOK_SECRET` before processing any event. Never skip signature verification.
+**Paddle webhook security:** `newsStripeWebhook` (name is legacy) verifies the Paddle webhook signature using HMAC-SHA256 of `${ts}:${rawBody}` with `PADDLE_WEBHOOK_SECRET`. Never skip signature verification.
 
 ---
 
@@ -69,10 +75,11 @@ Never commit secrets to the repository. All sensitive values live in Lambda envi
 | NewsProjectInvokeAgentLambda | `XAI_API_KEY` |
 | newsThreadAnalysis | `XAI_API_KEY`, `BRAVE_SEARCH_API_KEY` |
 | newsCountryIntelligence | `XAI_API_KEY`, `BRAVE_SEARCH_API_KEY` |
-| newsSensitiveData | `MAPBOX_GEOCODING_KEY`, Firebase Admin credentials, `STRIPE_SECRET_KEY` |
-| newsStripeWebhook | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` |
+| newsSensitiveData | `MAPBOX_GEOCODING_KEY`, `FIREBASE_PROJECT_ID`, `PADDLE_API_KEY`, `USERS_DDB_TABLE` |
+| newsSavedItems | `SAVED_ITEMS_TABLE`, `FIREBASE_PROJECT_ID` |
+| newsStripeWebhook | `PADDLE_WEBHOOK_SECRET`, `USERS_DDB_TABLE` |
 | newsPostLinkedIn | All social media tokens |
-| newsPostDevTo | `DEVTO_API_KEY`, `OPENROUTER_API_KEY` |
+| newsPostDevTo | `DEVTO_API_KEY`, `XAI_API_KEY`, `GROK_MODEL` |
 
 ---
 

@@ -1,6 +1,6 @@
 # Backend Guide — Global Perspectives
 
-**Last verified:** 2026-03-20
+**Last verified:** 2026-04-11
 
 Quick-start guide to the backend system. For a complete architecture overview, see `ARCHITECTURE.md`.
 
@@ -14,10 +14,11 @@ Quick-start guide to the backend system. For a complete architecture overview, s
 | `NewsProjectInvokeAgentLambda` | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` | Reads `staging` → generates SUMMARY/PREDICTION/TRACE_CAUSE → assigns threadIds → swaps to `latest` |
 | `newsThreadAnalysis` | `amplify/backend/function/newsThreadAnalysis/src/index.js` | Daily batch: top 10 threads → generates storyArc, trajectory, rootCauseChain, watchQuestions |
 | `newsCountryIntelligence` | `amplify/backend/function/newsCountryIntelligence/src/index.js` | Daily batch: top 10 countries → generates headline, situationSummary, trajectory, riskSignals |
-| `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | Read-only REST proxy serving 12 actions to frontend via API Gateway |
+| `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | Read-only REST proxy serving 16 actions to frontend via API Gateway |
+| `newsSavedItems` | `amplify/backend/function/newsSavedItems/src/index.js` | Save/bookmark Lambda (separate Function URL, Firebase JWT required) |
 | `newsPostLinkedIn` | `amplify/backend/function/newsPostLinkedIn/src/index.js` | Posts top topics to LinkedIn, Bluesky, X/Twitter, Threads |
-| `newsPostDevTo` | `amplify/backend/function/newsPostDevTo/src/index.js` | Posts AI-written daily article to Dev.to *(deploy.zip pending upload)* |
-| `newsStripeWebhook` | `amplify/backend/function/newsStripeWebhook/src/index.js` | Stripe webhook → writes/updates tier in DynamoDB Users table |
+| `newsPostDevTo` | `amplify/backend/function/newsPostDevTo/src/index.js` | Posts AI-written daily article to Dev.to + generates Daily Intelligence Brief |
+| `newsStripeWebhook` | `amplify/backend/function/newsStripeWebhook/src/index.js` | **Paddle** webhook → writes/updates tier in DynamoDB Users table (name is legacy) |
 
 ---
 
@@ -41,26 +42,28 @@ API Gateway (frontend) → newsSensitiveData → reads all DDB tables
 | Table | Env var | Key | What's stored |
 |-------|---------|-----|---------------|
 | Topics | `TOPICS_DDB_TABLE` | `id` | `staging`, `latest`, `today-archive`, `archive#YYYY-MM-DD` |
-| Summary/Prediction | `SUMMARIZE_PREDICT_TABLE` | `PK` + `SK` | `TOPIC#` / SUMMARY\|PREDICTION\|TRACE_CAUSE, `THREAD#` / THREAD_ANALYSIS, `COUNTRY#` / COUNTRY_INTELLIGENCE |
-| Users | `USERS_DDB_TABLE` | `uid` | Firebase UID, email, tier, Stripe IDs |
+| Summary/Prediction | `SUMMARIZE_PREDICT_TABLE` | `PK` + `SK` | `TOPIC#` / SUMMARY\|PREDICTION\|TRACE_CAUSE, `THREAD#` / THREAD_ANALYSIS, `COUNTRY#` / COUNTRY_INTELLIGENCE, `DAILY_BRIEF#YYYY-MM-DD` / DAILY_BRIEF |
+| Users | `USERS_DDB_TABLE` | `uid` | Firebase UID, email, tier, Paddle IDs |
 | Social Posts | `SOCIAL_POSTS_TABLE` | composite | Dedup table for posted content |
+| Saved Items | `GlobalPerspectiveSavedItems` | `uid` + `savedKey` | User bookmarks (thread, country, daily) — used by `newsSavedItems` Lambda |
 
 ---
 
 ## Auth System
 
-**Firebase Authentication** (passwordless magic link). Frontend sends `Authorization: Bearer <firebase-id-token>` on gated requests. The `newsSensitiveData` Lambda verifies the token via Firebase Admin SDK, reads the user's tier from `USERS_DDB_TABLE`, and enforces access.
+**Firebase Authentication** (passwordless magic link + Google Sign-In). Frontend sends `Authorization: Bearer <firebase-id-token>` on auth-required requests.
 
-**Tiers:**
-- `free` — public topics only, no auth required
-- `member` — 7-day archive + all intelligence features
-- `enterprise` — 30-day archive + all intelligence features
+**`newsSensitiveData` verifies JWT** via lightweight Node `crypto` + Google public cert endpoint (no firebase-admin dependency). JWT is only required for `user_profile` and `portal_session`.
 
-> **Note:** The deployed `newsSensitiveData` code in this repo still uses static API keys (`x-api-key` / `MEMBER_API_KEYS` / `ENTERPRISE_API_KEYS`). The Firebase JWT auth migration is tracked in `TIERS.md` and may be deployed separately from what's committed here.
+**🚀 Early access mode (ACTIVE 2026-04-11):** All content actions are fully public — no JWT required. Tiers exist in schema but are not enforced. Sign-in is only used for the save/bookmark feature (personalization).
+
+**When billing goes live:** `archive_range`, `thread_analysis`, `country_intelligence`, `narrative_thread`, `daily_brief` (past dates) will be re-gated. See `TIERS.md` for the intended tier structure.
 
 ---
 
-## `newsSensitiveData` — All 12 Actions
+## `newsSensitiveData` — All 16 Actions
+
+> **Early access note:** Actions marked "JWT" below were previously gated. All content actions are now **public** (no auth needed) during early access. Only `user_profile` and `portal_session` require a Firebase JWT.
 
 | Action | Auth | Description |
 |--------|------|-------------|
@@ -70,12 +73,26 @@ API Gateway (frontend) → newsSensitiveData → reads all DDB tables
 | `trace_cause` | None | AI trace-cause for a topic |
 | `geocode` | None | Mapbox lat/lng lookup |
 | `today` | None | Today's archived entries |
-| `archive_range` | JWT | N days of archive (member=7, enterprise=30) |
-| `narrative_thread` | JWT | All entries for a thread across days |
-| `thread_analysis` | JWT | Thread-level AI analyses (storyArc, trajectory, etc.) |
-| `country_intelligence` | JWT | Country-level AI intelligence |
+| `rss` | None | Public RSS 2.0 XML feed (GET `?action=rss`) |
+| `country_preview` | None | Public SEO preview for a country page |
+| `thread_preview` | None | Public SEO preview for a thread page |
+| `daily_brief` | None | Daily Intelligence Brief (all dates public; GET `?action=daily_brief&dateKey=YYYY-MM-DD`) |
+| `archive_range` | None* | N days of archive — returns full 90 days to everyone |
+| `narrative_thread` | None* | All entries for a thread across days |
+| `thread_analysis` | None* | Thread-level AI analyses (storyArc, trajectory, etc.) |
+| `country_intelligence` | None* | Country-level AI intelligence |
 | `user_profile` | JWT | User tier + subscription info |
-| `portal_session` | JWT | Stripe Customer Portal URL |
+| `portal_session` | JWT | Paddle Customer Portal URL |
+
+*Will be re-gated when paid tiers go live.
+
+**`newsSavedItems` Lambda — separate endpoint** (`window.SAVED_ITEMS_ENDPOINT`):
+
+| Action | Auth | Description |
+|--------|------|-------------|
+| `save_item` | JWT | Save a thread, country, or daily brief |
+| `unsave_item` | JWT | Remove a saved item |
+| `get_saved_items` | JWT | List all saved items for the user |
 
 **Request format:**
 ```json
@@ -174,19 +191,20 @@ Authorization: Bearer <firebase-id-token>
 
 ---
 
-## Lambda 5: `newsStripeWebhook`
+## Lambda 5: `newsStripeWebhook` (name is legacy — now handles Paddle)
 
-**Trigger:** Stripe webhook (separate API Gateway endpoint)
+**Trigger:** Paddle webhook (separate API Gateway endpoint)
 
-| Stripe Event | Action |
+| Paddle Event | Action |
 |---|---|
-| `checkout.session.completed` | Create/upgrade user to `member`; stamp uid on subscription metadata |
-| `customer.subscription.updated` | Set tier=`member` (active) or `free` (past_due/canceled) |
-| `customer.subscription.deleted` | Downgrade to `free` |
+| `subscription.created` | Create/upgrade user to `member`; store `paddleCustomerId` + `paddleSubscriptionId` |
+| `subscription.updated` | Update tier on plan change |
+| `subscription.canceled` | Downgrade to `free` |
 
-**UID resolution:** `session.client_reference_id` → `session.metadata.uid`
+**UID resolution:** `data.custom_data.uid` (passed via Paddle checkout URL params)
+**Signature verification:** HMAC-SHA256 of `${ts}:${rawBody}` using `PADDLE_WEBHOOK_SECRET`
 
-**Key env vars:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `USERS_DDB_TABLE`
+**Key env vars:** `PADDLE_WEBHOOK_SECRET`, `USERS_DDB_TABLE`
 
 ---
 
@@ -202,11 +220,17 @@ Posts top topics to LinkedIn, Bluesky, X/Twitter, Threads. Deduplicates via `SOC
 
 ## Lambda 7: `newsPostDevTo`
 
-Posts a daily AI-written summary article to Dev.to using OpenRouter (DeepSeek). Deduplicates via `SOCIAL_POSTS_TABLE` (90-day TTL).
+Posts a daily AI-written summary article to Dev.to using **xAI Grok** (not DeepSeek/OpenRouter). Also generates the **Daily Intelligence Brief** (stored as `DAILY_BRIEF#YYYY-MM-DD` in `SUMMARIZE_PREDICT_TABLE`, TTL 90 days). Brief generation is wrapped in try/catch — never blocks Dev.to publish. Deduplicates via `SOCIAL_POSTS_TABLE` (90-day TTL).
 
-> **Note:** `amplify/backend/function/newsPostDevTo/deploy.zip` is staged — needs manual upload to AWS Lambda console.
+**Key env vars:** `DEVTO_API_KEY`, `XAI_API_KEY`, `GROK_MODEL`, `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `SOCIAL_POSTS_TABLE`, `SITE_URL`
 
-**Key env vars:** `DEVTO_API_KEY`, `OPENROUTER_API_KEY`, `TOPICS_DDB_TABLE`, `SOCIAL_POSTS_TABLE`, `SITE_URL`
+## Lambda 8: `newsSavedItems`
+
+**Trigger:** AWS Lambda Function URL (direct HTTP, not via API Gateway). CORS configured at AWS Function URL level — Lambda code does NOT emit CORS headers.
+
+Handles user save/bookmark actions. Requires Firebase JWT. Uses dedicated `GlobalPerspectiveSavedItems` DynamoDB table (PK=`uid`, SK=`savedKey` as `{itemType}#{itemId}`).
+
+**Key env vars:** `SAVED_ITEMS_TABLE`, `FIREBASE_PROJECT_ID`, `AWS_REGION`
 
 ---
 
@@ -261,10 +285,10 @@ curl -X POST https://<api-gateway-url>/proxy \
 2. Confirm EventBridge rules exist: `TriggerDailyAnalysis` (6:30 UTC) + `TriggerCountryIntelligence` (7:00 UTC)
 3. Check `SUMMARIZE_PREDICT_TABLE` for `THREAD#` / `COUNTRY#` items
 
-**Auth / 401 errors on gated endpoints:**
+**Auth / 401 errors on `user_profile` or `portal_session`:**
 1. Verify Firebase JWT is valid (not expired — they expire in 1 hour)
-2. Check `USERS_DDB_TABLE` has a record for the user's UID with correct tier
-3. Confirm `newsStripeWebhook` ran after the Stripe checkout event
+2. Check `USERS_DDB_TABLE` has a record for the user's UID
+3. Note: all other actions are fully public and do not require auth during early access
 
 **Summaries returning 503 (cache miss):**
 1. Verify `NewsProjectInvokeAgentLambda` completed its run
@@ -278,8 +302,8 @@ curl -X POST https://<api-gateway-url>/proxy \
 1. **No secrets in frontend** — All keys in Lambda environment variables only
 2. **CORS restricted** — `newsSensitiveData` allows only trusted origins (see `ARCHITECTURE.md`)
 3. **Read-only proxy** — `newsSensitiveData` never writes data
-4. **Firebase JWT** — gated actions verify token via Firebase Admin SDK, resolve tier from DDB
-5. **Stripe signature** — `newsStripeWebhook` verifies webhook signature before processing
+4. **Firebase JWT** — `user_profile` and `portal_session` verify token via lightweight Node crypto + Google cert endpoint (no firebase-admin). All content actions are currently public.
+5. **Paddle signature** — `newsStripeWebhook` verifies Paddle webhook signature (HMAC-SHA256) before processing
 6. **TTL cleanup** — DynamoDB TTL automatically expires old cache items
 
 ---

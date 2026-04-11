@@ -1,7 +1,7 @@
 # Pair Intelligence — Product & Implementation Plan
 
-**Status:** Planning (pre-implementation)
-**Last updated:** 2026-04-10
+**Status:** Phase 0 COMPLETE — Phase 1 ready to start
+**Last updated:** 2026-04-11
 
 This document captures the plan for the Pair Intelligence feature — the next major product milestone for Global Perspectives. It is intentionally a living document; revise as decisions are made.
 
@@ -42,16 +42,16 @@ Not a history encyclopedia. Not an aggregator. A real-time lens on how relations
 
 ---
 
-## Open Decisions (Require Your Input)
+## Open Decisions — ALL RESOLVED 2026-04-11
 
-| # | Question | Current lean |
+| # | Decision | Confirmed |
 |---|---|---|
-| 1 | URL canonicalization — alphabetical ordering? (`/explore/iran-and-israel` regardless of input order, 301 redirect from reverse form) | Yes, alphabetical |
-| 2 | Which pairs get pre-computed daily? 30 stable top pairs + 20 rotating trending pairs? | Hybrid 30+20 |
-| 3 | Thin-pair fallback — empty intersection shows each entity separately? | Yes |
-| 4 | Pair trajectory — single label computed by Grok in the same call as the narrative? | Yes |
-| 5 | Paid/member value prop in the new product — email alerts when tracked pair trajectory flips? | Yes |
-| 6 | Start extracting people/org entities now for Phase 2 use, even without UI? | Yes (cheap, data accumulates) |
+| 1 | URL canonicalization — alphabetical slug, 301 redirect from reverse | ✅ `/explore/iran-and-israel` always |
+| 2 | Pre-computed pair set: 30 stable + 20 rotating trending | ✅ Hybrid 30+20 |
+| 3 | Thin-pair fallback: show each entity separately if empty intersection | ✅ Yes |
+| 4 | Pair trajectory: single label, computed by Grok in same narrative call | ✅ Yes |
+| 5 | Email alerts when tracked pair trajectory flips = first paid feature | ✅ Yes, free during early access |
+| 6 | Start extracting people/org entities now for future Phase 2 use | ✅ Yes (cheap, accumulates data) |
 
 ---
 
@@ -179,7 +179,7 @@ Roughly doubles token consumption, but absolute cost remains trivial.
 
 ---
 
-## Phase 0 — Remove Auth Gates + Ship Save Feature (DO FIRST)
+## Phase 0 — Remove Auth Gates + Ship Save Feature ✅ COMPLETE 2026-04-11
 
 **Goal:** unlock SEO immediately by making all content public, and give login a meaningful purpose (personalization) instead of a gate (content access).
 
@@ -210,28 +210,22 @@ Remove the launch-mode tier override in `resolveUserTier` (it's unnecessary now 
 - **Remove `/pricing` route** from `App.jsx` and remove the nav link from `Layout.jsx`. Leave `Pricing.jsx` and `UpgradeSuccess.jsx` in the codebase — they'll be reactivated when paid tiers come back. Also remove any footer/CTA links pointing to `/pricing`.
 - Update sign-in button copy (optional): "Sign in to save stories"
 
-### 0.3 Build save feature backend
+### 0.3 Build save feature backend ✅ COMPLETE
 
-New actions in `newsSensitiveData` (all auth-required via existing `resolveUserTier`):
+> **Note:** The save feature was built as a **dedicated Lambda** (`newsSavedItems`) with its own DynamoDB table — not as actions inside `newsSensitiveData`. The original plan below was updated during implementation.
 
+**What was actually built:**
+- Lambda: `amplify/backend/function/newsSavedItems/src/index.js` — Lambda Function URL (not API Gateway)
+- DynamoDB table: `GlobalPerspectiveSavedItems` (PK=`uid`, SK=`savedKey` = `{itemType}#{itemId}`)
+- Endpoint: `window.SAVED_ITEMS_ENDPOINT` in `docs/config.js`
+- CORS: handled at AWS Function URL level, not in Lambda code
+
+Actions (all require Firebase JWT):
 ```
-save_item        { itemType, itemId }  → writes USER#{uid} / SAVED#{itemType}#{itemId}
-unsave_item      { itemType, itemId }  → deletes that item
-get_saved_items                        → queries USER#{uid} / SAVED# prefix, returns list
+save_item        { itemType, itemId, metadata }
+unsave_item      { itemType, itemId }
+get_saved_items  { itemType? }  → sorted by savedAt desc
 ```
-
-**Storage schema in `SummarizeAndPredict`:**
-
-```
-PK: USER#{uid}
-SK: SAVED#{itemType}#{itemId}
-itemType: "thread" | "country" | "pair" | "daily_brief"
-itemId: "thread-iran-israel-abc" | "Iran" | "iran-and-israel" | "2026-04-09"
-savedAt: "2026-04-11T..."
-note: null  // phase 2 — optional user note
-```
-
-Queryable via `KeyConditionExpression: PK = USER#{uid} AND begins_with(SK, SAVED#)`. Cheap, fast, no GSI needed.
 
 ### 0.4 Build save feature frontend
 
@@ -708,20 +702,17 @@ After Phase 3 is live and stable for a few weeks, and the ledger has ≥4 weeks 
 
 ## Execution Order (Updated 2026-04-11)
 
-1. **Phase 0 — FIRST, URGENT.** Remove auth gates + ship save feature. Unlocks SEO, simplifies the story before the pair explorer arrives. Delegated to multi-agent workflow (tasks #5-9 in the task list).
-2. **Phase 1 — Private pair quality test.** Starts after Phase 0 is stable. Begins with checking the data window (Phase 1.1, 15 min) and hand-crafting the benchmark (Phase 1.2).
-3. **Phase 2 — Ledger writes.** Runs in parallel with Phase 1. Adds prediction ledger entries to existing Lambdas. Non-breaking.
+1. ✅ **Phase 0 — COMPLETE.** Auth gates removed, save feature shipped, Account page redesigned, `/pricing` route removed.
+2. **Phase 1 — Private pair quality test. NEXT.** Starts with checking the data window (Phase 1.1, 15 min) and hand-crafting the Iran × Israel benchmark (Phase 1.2).
+3. **Phase 2 — Ledger writes.** Runs in parallel with Phase 1. Non-breaking Adds prediction ledger entries to existing Lambdas.
 4. **Phase 3 — Frontend `/explore`.** Only after Phase 1.6 decision gate passes.
 5. **Phase 4 — Audit + email alerts.** Several weeks after Phase 3 ships.
 
-## What I Still Need From You Before Phase 1 Starts
+## What's Still Needed Before Phase 1 Starts
 
-1. **Answer the 6 open decisions** in the table near the top (or confirm my leans)
-2. **Confirm or modify the test pair list** (10 pairs in Phase 1.4)
-3. **Approve the hand-crafted benchmark approach** — we start by writing the ideal Iran × Israel output together
-4. **Confirm the sequencing** — Phase 0 first, then Phase 1 + 2 in parallel, then decision gate, then Phase 3
-
-These aren't blocking Phase 0 — the multi-agent workflow can execute Phase 0 from this document directly. They're only needed when we're ready to move on to Phase 1.
+1. ✅ Open decisions resolved (see above)
+2. **Confirm or modify the test pair list** (10 pairs in Phase 1.4) — proposed list is there, needs your OK
+3. **Ready to start Phase 1.1** — check archive data window (oldest entry date)
 
 ---
 

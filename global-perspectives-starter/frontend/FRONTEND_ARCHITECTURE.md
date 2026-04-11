@@ -51,8 +51,8 @@ frontend/
 │   │   ├── ErrorModal.jsx       # User-friendly error modal
 │   │   ├── SignIn.jsx           # Email magic link sign-in form
 │   │   ├── AuthCallback.jsx     # Completes Firebase email link auth
-│   │   ├── Pricing.jsx          # Tier comparison + Paddle checkout
-│   │   ├── Account.jsx          # User profile, tier, Paddle customer portal
+│   │   ├── Pricing.jsx          # Tier comparison + Paddle checkout (NOT rendered — /pricing route removed during early access)
+│   │   ├── Account.jsx          # Tabs: Profile (email, plan) | Saved (bookmark card grid, ?tab=saved default)
 │   │   ├── UpgradeSuccess.jsx   # Post-checkout success page
 │   │   ├── WhitepaperPage.jsx   # Full white paper as styled React page (/whitepaper, public)
 │   │   ├── TrialBanner.jsx      # Trial countdown banner for trial-tier users
@@ -67,14 +67,16 @@ frontend/
 │   │   ├── useGeminiTopics.js        # Daily topic fetching (LocalStorage 1hr TTL)
 │   │   ├── useArticles.js            # Article fetching for Home/Map via search API
 │   │   ├── useTodayArchive.js        # Today's topic archive (`today` action)
-│   │   ├── useWeeklyArchive.js       # Weekly archive, auth-gated via AuthContext, 30min cache
-│   │   ├── useThreadAnalyses.js      # Thread-level AI analyses, auth-gated, 30min cache
-│   │   ├── useCountryIntelligence.js # Country-level AI intelligence, auth-gated, 30min cache
+│   │   ├── useWeeklyArchive.js       # Weekly archive, public (no auth), 30min cache
+│   │   ├── useThreadAnalyses.js      # Thread-level AI analyses, public, 30min cache
+│   │   ├── useCountryIntelligence.js # Country-level AI intelligence, public, 30min cache
+│   │   ├── useDailyBrief.js          # Daily Intelligence Brief, public, 30min cache
+│   │   ├── useSavedItems.js          # User bookmarks (save feature), JWT required, in-memory cache
 │   │   ├── useIsMobile.js            # Responsive breakpoint hook (default 600px)
 │   │   ├── useSummary.js             # Fetch cached summary by topicId
 │   │   ├── usePrediction.js          # Fetch cached prediction by topicId
 │   │   ├── useTraceCause.js          # Fetch cached trace cause by topicId
-│   │   └── useUserProfile.js         # Fetch user tier/trial status, auth-gated via AuthContext
+│   │   └── useUserProfile.js         # Fetch user tier/trial status, JWT required
 │   ├── services/                # API integration layers
 │   │   ├── restProxy.js         # REST API proxy (auth-aware, JWT injection)
 │   │   └── appsyncProxy.js      # GraphQL proxy (unused — all traffic via restProxy)
@@ -102,27 +104,29 @@ frontend/
 
 The application uses React Router with dynamic basename resolution for GitHub Pages deployment.
 
-Routes marked **Auth** show a preview gate for non-signed-in users with real data from public preview API. Auth routes require Firebase sign-in for full content. All features are currently free for signed-in users (launch mode).
+**🚀 Early access (2026-04-11):** All content routes are public — auth gates removed. Sign-in only needed for the save feature (`/account`). `/pricing` route removed from routing (component exists but is not rendered).
 
 | Path | Component | Access | SEO |
 |------|-----------|--------|-----|
 | `/` | Home | Public | Indexed |
 | `/map` | WorldMap | Public | Indexed |
+| `/daily` | DailyPage | Public | Indexed |
+| `/daily/:dateKey` | DailyPage | Public (all dates) | Indexed |
 | `/about` | AboutContact | Public | Indexed |
 | `/contact` | Contact | Public | Indexed |
 | `/privacy` | PrivacyTerms | Public | Indexed |
 | `/disclosures` | Disclosures | Public | Indexed |
 | `/whitepaper` | WhitepaperPage | Public | Indexed |
 | `/cli` | CLIPage | Public | Indexed |
-| `/pricing` | Pricing | Public | Indexed |
-| `/weekly` | WeeklyPage | Auth (preview gate) | Preview indexed |
-| `/weekly/thread/:threadId` | ThreadPage | Auth (preview with real data) | Preview indexed |
-| `/weekly/countries` | CountryListPage | Auth (preview gate) | Preview indexed |
-| `/weekly/country/:countryName` | CountryPage | Auth (preview with real data) | Preview indexed |
-| `/weekly-map` | WeeklyMap | Auth | — |
+| `/intelligence-map` | IntelligenceMap | Public | — |
+| `/weekly` | WeeklyPage | Public | Indexed |
+| `/weekly/thread/:threadId` | ThreadPage | Public | Indexed |
+| `/weekly/countries` | CountryListPage | Public | Indexed |
+| `/weekly/country/:countryName` | CountryPage | Public | Indexed |
+| `/weekly-map` | WeeklyMap | Public | — |
 | `/signin` | SignIn | Public | — |
 | `/auth/callback` | AuthCallback | Public | — |
-| `/account` | Account | Auth | — |
+| `/account` | Account | Auth (sign-in required) | — |
 | `/upgrade/success` | UpgradeSuccess | Auth | — |
 
 ## Core Features
@@ -149,9 +153,9 @@ Each topic provides three AI-powered analysis options:
 - **Related Countries:** Clicking "▶ Related Countries" on any topic highlights affected countries with yellow translucent pixel-scale circle markers (zoom-independent). Active until user clicks "Hide Related" or the banner clear button.
 - Fallback SVG map when Google Maps API is unavailable
 
-### 4. Weekly Narrative Analysis (Member/Enterprise)
+### 4. Weekly Narrative Analysis (Public — all gates removed 2026-04-11)
 
-Multi-day story tracking that groups topics by narrative thread (`threadId`), showing how stories evolve across days and geographies. Gated behind Firebase Auth + tier check (member = 7 days, enterprise = 30 days). Routes are additionally protected by a `<Gate>` component that shows "Under Construction" in production unless `?preview=1` is in the URL.
+Multi-day story tracking that groups topics by narrative thread (`threadId`), showing how stories evolve across days and geographies. **All routes are fully public** — no auth required. `<Gate>` component removed.
 
 #### WeeklyPage (`/weekly`)
 
@@ -159,13 +163,11 @@ Main weekly view with two modes: **List** and **Map** (embedded WeeklyMap).
 
 **Data Flow:**
 ```
-1. User signs in via Firebase magic link
+1. useWeeklyArchive() fetches archive_range (90 days) — no auth needed
    ↓
-2. useWeeklyArchive() fetches archive_range (7 or 30 days) with Firebase JWT
+2. groupByThread() clusters entries by threadId
    ↓
-3. groupByThread() clusters entries by threadId
-   ↓
-4. Stories displayed in region-grouped, expandable cards with timeline
+3. Stories displayed in region-grouped, expandable cards with timeline
 ```
 
 **Sub-components inside WeeklyPage:**

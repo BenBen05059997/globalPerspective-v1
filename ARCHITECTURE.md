@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-03-22
+**Last verified:** 2026-04-11
 
 Global Perspectives is an AI-powered global news aggregation platform. It fetches real news from RSS feeds and Brave Search, clusters articles into topics using xAI Grok, generates AI insights (summaries, predictions, root-cause analysis), and displays everything on an interactive world map and weekly narrative timeline.
 
@@ -20,7 +20,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                                     │
                     ┌───────────────▼───────────────┐
                     │       newsInvokeGemini          │
-                    │  RSS Feeds (8) + Brave Search  │
+                    │  RSS Feeds (22) + Brave Search │
                     │  → xAI Grok clusters topics    │
                     │  → DynamoDB Topics[id=staging] │
                     └───────────────┬───────────────┘
@@ -69,8 +69,8 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                     ┌───────────────▼───────────────┐
                     │         newsSensitiveData       │
                     │   API Gateway REST endpoint    │
-                    │   Serves actions to frontend   │
-                    │   Firebase JWT auth for gated  │
+                    │   16 actions — all content     │
+                    │   public during early access   │
                     └───────────────┬───────────────┘
                                     │
                     ┌───────────────▼───────────────┐
@@ -118,7 +118,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 |------|--------|
 | `free` | Public topics only (no auth required) |
 | `member` | 7-day archive + thread/country intelligence |
-| `enterprise` | 30-day archive + all features |
+| `enterprise` | 90-day archive + all features |
 
 **Storage:** DynamoDB `USERS_TABLE`, keyed by Firebase UID (`uid`).
 
@@ -129,10 +129,10 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 
 Signature verification: HMAC-SHA256 of `${ts}:${rawBody}` using `PADDLE_WEBHOOK_SECRET`. UID passed via `data.custom_data.uid` in checkout URL params.
 
-**⚠️ Launch mode (active):** `resolveUserTier()` in `newsSensitiveData` returns `tier: 'member'` for ALL signed-in users regardless of USERS_TABLE. Paddle billing not yet live. 14-day trial logic is coded but commented out — uncomment and reset `trialStartedAt` when ready to charge.
+**🚀 Early access mode (ACTIVE as of 2026-04-11):** ALL auth gates removed from `newsSensitiveData`. Every action is fully public — no Firebase JWT required. `resolveUserTier` is only called for `user_profile` and `portal_session`. Archive, thread analysis, country intelligence, narrative thread, and daily brief are all open. This will be re-gated when Paddle billing goes live.
 
 **Enforcement (backend):**
-`newsSensitiveData` verifies the Firebase JWT from `Authorization: Bearer` header using lightweight Node `crypto` + Google cert endpoint (no firebase-admin). Reads USERS_TABLE for the user's tier, then enforces day limits (`member`=7, `enterprise`=30).
+Auth gates disabled in early access. When re-enabling: `newsSensitiveData` verifies Firebase JWT via lightweight Node `crypto` + Google cert endpoint (no firebase-admin). Reads USERS_TABLE for tier, enforces day limits (`member`=7, `enterprise`=90).
 
 **Paddle Customer Portal:** accessible from `/account` via the `portal_session` action. Calls Paddle auth-token API using `PADDLE_API_KEY`, returns redirect URL.
 
@@ -270,14 +270,15 @@ Read-only REST proxy. All supported actions:
 | `today` | None | — | Today's archive entries |
 | `country_preview` | None | `{ countryName }` | Public SEO preview: headline, bluf, keyDevelopments, riskLevel, trajectory |
 | `thread_preview` | None | `{ threadId }` | Public SEO preview: threadTitle, entryShortTitles |
-| `archive_range` | Firebase JWT | `{ days }` | N days of archive (member=7, enterprise=30) |
-| `narrative_thread` | Firebase JWT | `{ threadId }` | All entries for a thread across days |
-| `thread_analysis` | Firebase JWT | `{ threadIds }` | Thread-level AI analyses |
-| `country_intelligence` | Firebase JWT | `{ countryNames }` | Country-level AI intelligence |
+| `archive_range` | None (early access) | `{ days }` | N days of archive (member=7, enterprise=90) |
+| `narrative_thread` | None (early access) | `{ threadId }` | All entries for a thread across days |
+| `thread_analysis` | None (early access) | `{ threadIds }` | Thread-level AI analyses |
+| `country_intelligence` | None (early access) | `{ countryNames }` | Country-level AI intelligence |
+| `daily_brief` | None (early access) | `{ dateKey }` | Daily Intelligence Brief for a specific date |
 | `user_profile` | Firebase JWT | — | User tier + subscription info from USERS_TABLE |
 | `portal_session` | Firebase JWT | — | Paddle Customer Portal session URL |
 
-Gated actions require `Authorization: Bearer <firebase-id-token>` header. The Lambda verifies using lightweight Node `crypto` + Google cert endpoint (no firebase-admin), reads USERS_TABLE for tier, and enforces access limits.
+**Early access:** All content actions are currently public (no auth required). When billing goes live, gated actions will require `Authorization: Bearer <firebase-id-token>`.
 
 **CORS origins:** `benben05059997.github.io`, `globalperspective.net`, `www.globalperspective.net`, `localhost:5173`, `127.0.0.1:5173`
 
@@ -423,6 +424,36 @@ Handles Paddle billing events to keep USERS_TABLE in sync.
 
 ### Social Posts Table (`SOCIAL_POSTS_TABLE`)
 **PK:** `topicId` + `platform`. Deduplication table for LinkedIn/Bluesky/X/Threads/Dev.to posts. TTL: 30 days (90 days for Dev.to).
+
+---
+
+## Cloudflare Workers
+
+Domain is registered and DNS-managed in Cloudflare. Orange cloud (proxy) is enabled — all traffic flows through Cloudflare before reaching GitHub Pages.
+
+### Worker: `globalperspective-rss`
+
+**Routes:** `globalperspective.net/*` and `globalperspective.net/rss*`
+
+**Full source:** `WORKER_FULL_CODE.md`
+
+The Worker handles three cases:
+
+| Path | Visitor type | What happens |
+|------|-------------|--------------|
+| `/rss` | Anyone | Proxied to `newsSensitiveData ?action=rss`, returns RSS 2.0 XML, 30 min edge cache |
+| `/weekly/country/:name` | Bot (25+ patterns) | POSTs `country_preview` to Lambda, returns pre-rendered HTML with OG tags |
+| `/weekly/thread/:id` | Bot (25+ patterns) | POSTs `thread_preview` to Lambda, returns pre-rendered HTML with OG tags |
+| Everything else | Anyone | Passed through to GitHub Pages unchanged |
+
+**Bot patterns detected:** Twitterbot, facebookexternalhit, LinkedInBot, Slackbot, Discordbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Googlebot, Bingbot, and 14 others.
+
+**Why this matters:**
+- Social shares of country/thread pages show rich previews (real headline, description, image) instead of blank cards
+- AI crawlers (ChatGPT, Perplexity, Claude, Google) can read and cite page content — previously invisible due to React SPA empty shell
+- Human visitors always get the full React app unchanged
+
+**Key implementation detail:** Both `country_preview` and `thread_preview` require POST with JSON body (`{ action, payload }`). The Lambda's `payload` field is only populated from POST body, not GET query params.
 
 ---
 

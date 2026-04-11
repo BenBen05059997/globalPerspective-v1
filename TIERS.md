@@ -1,7 +1,15 @@
 # Global Perspectives — Tier Design
 
-**Last updated: 2026-03-20**
-**Status: Member tier fully shipped. Enterprise is planned but not yet built.**
+**Last updated: 2026-04-11**
+**Status: SCHEMA PRESENT — DORMANT DURING EARLY ACCESS**
+
+> ⚠️ **IMPORTANT FOR AI AGENTS:** The tier system described in this document is **infrastructure that exists in the codebase but is not enforced**. As of 2026-04-11, all content is public — no auth gates, no tier checks on any content action. Firebase Auth exists only for personalization (save feature). Paddle billing infrastructure is built but users are not charged. This document describes the **intended future design**, not current behavior. Do NOT propose re-adding tier enforcement based on this document.
+>
+> **Current reality:** `archive_range`, `thread_analysis`, `country_intelligence`, `narrative_thread`, `daily_brief` (all dates) are fully public. Only `user_profile` and `portal_session` require Firebase JWT. Tiers will be re-enforced when Paddle billing goes live.
+>
+> **Payment system:** Stripe was replaced by **Paddle** as MoR. All Stripe references below are historical.
+
+---
 
 ---
 

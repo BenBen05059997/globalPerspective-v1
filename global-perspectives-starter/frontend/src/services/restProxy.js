@@ -159,3 +159,32 @@ export async function fetchThreadPreview(threadId) {
   return proxyAction('thread_preview', { threadId });
 }
 
+// ── Saved items (newsSavedItems Lambda, separate Function URL endpoint) ────
+async function savedItemsRequest(action, payload = {}) {
+  const endpoint = typeof window !== 'undefined' && window.SAVED_ITEMS_ENDPOINT;
+  if (!endpoint) throw new Error('Missing SAVED_ITEMS_ENDPOINT');
+  const token = getAuthToken ? await getAuthToken() : null;
+  if (!token) throw new Error('Sign in required');
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ action, payload }),
+  });
+  let body;
+  try { body = await res.json(); } catch { body = null; }
+  if (!res.ok) throw new Error(`SavedItems HTTP ${res.status}: ${JSON.stringify(body)}`);
+  return body;
+}
+
+export async function saveItem(itemType, itemId, metadata = {}) {
+  return savedItemsRequest('save_item', { itemType, itemId, metadata });
+}
+
+export async function unsaveItem(itemType, itemId) {
+  return savedItemsRequest('unsave_item', { itemType, itemId });
+}
+
+export async function fetchSavedItems(itemType = null) {
+  return savedItemsRequest('get_saved_items', itemType ? { itemType } : {});
+}
+

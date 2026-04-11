@@ -1,5 +1,6 @@
 // Runtime config served by GitHub Pages.
 window.SENSITIVE_PROXY_ENDPOINT = 'https://ba4q3fnwq6.execute-api.ap-northeast-1.amazonaws.com/default/proxy';
+window.SAVED_ITEMS_ENDPOINT = 'https://y57kgqdctggtjtieddcts2byke0madfd.lambda-url.ap-northeast-1.on.aws/';
 window.GOOGLE_MAPS_API_KEY = 'AIzaSyA6L0VMKNFLNoMIAglFxVg9MWZhdc4OFzU';
 window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyBZEwAIfF27lF1QCKleDWLsvhGpL5e2JZ0",

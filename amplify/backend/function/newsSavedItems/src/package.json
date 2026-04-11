@@ -1,0 +1,10 @@
+{
+  "name": "newssaveditems",
+  "version": "2.0.0",
+  "description": "Per-user save/bookmark Lambda for Global Perspectives",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.92"
+  }
+}

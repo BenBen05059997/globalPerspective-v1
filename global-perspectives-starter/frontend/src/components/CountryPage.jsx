@@ -16,6 +16,7 @@ import SideNav from './SideNav';
 import TrialBanner from './TrialBanner';
 import { useUserProfile } from '../hooks/useUserProfile';
 import BackgroundTimeline from './BackgroundTimeline';
+import { SaveButton } from './SaveButton';
 import './WeeklyPage.css';
 
 function formatTimeAgo(isoString) {
@@ -419,7 +420,10 @@ export default function CountryPage() {
             {/* ── Header + Risk ── */}
             <div id="cp-section-overview" className="cp-header">
               <div>
-                <h1 className="cp-title">{decodedName}</h1>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <h1 className="cp-title" style={{ flex: 1 }}>{decodedName}</h1>
+                  <SaveButton itemType="country" itemId={decodedName} metadata={{ name: decodedName }} />
+                </div>
                 <div className="cp-subtitle">
                   AI-powered situation briefing
                   {intel?.generatedAt && <> · Updated {formatTimeAgo(intel.generatedAt)}</>}

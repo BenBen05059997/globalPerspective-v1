@@ -13,6 +13,7 @@ import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
 import SideNav from './SideNav';
 import CopyBriefing, { formatThreadBriefing } from './CopyBriefing';
 import TrialBanner from './TrialBanner';
+import { SaveButton } from './SaveButton';
 import { useUserProfile } from '../hooks/useUserProfile';
 import './WeeklyPage.css';
 
@@ -152,7 +153,10 @@ export default function ThreadPage() {
                   {category}
                 </span>
               )}
-              <h1 className="thread-page-title">{analysis?.threadTitle || thread.latestTitle}</h1>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <h1 className="thread-page-title" style={{ flex: 1 }}>{analysis?.threadTitle || thread.latestTitle}</h1>
+                <SaveButton itemType="thread" itemId={threadId} metadata={{ title: analysis?.threadTitle || thread.latestTitle, category }} />
+              </div>
               <div className="cp-subtitle">
                 Story arc intelligence — {formatDateLabel(thread.dateRange.from)}{thread.dateRange.from !== thread.dateRange.to && ` to ${formatDateLabel(thread.dateRange.to)}`}
                 {analysis?.generatedAt && <> · Updated {formatTimeAgo(analysis.generatedAt)}</>}

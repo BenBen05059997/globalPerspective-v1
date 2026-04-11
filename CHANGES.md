@@ -1,5 +1,24 @@
 # Global Perspectives — Change Log
 
+## 2026-04-11 (Save/bookmark feature — newsSavedItems Lambda + DynamoDB)
+
+### Backend
+- New `newsSavedItems` Lambda with Function URL — save/unsave/list bookmarks per user
+- New `GlobalPerspectiveSavedItems` DynamoDB table (PK: `uid`, SK: `itemType#itemId`)
+- Firebase JWT auth; supports itemTypes: thread, country, daily, pair
+- Lambda URL: `https://y57kgqdctggtjtieddcts2byke0madfd.lambda-url.ap-northeast-1.on.aws/`
+
+### Frontend
+- `restProxy.js`: added `saveItem`, `unsaveItem`, `fetchSavedItems` functions
+- New `useSavedItems` hook — fetches from backend, in-memory cache per session
+- New `SaveButton` component — bookmark icon (filled=saved, outline=unsaved), auth-gated
+- `ThreadPage`: SaveButton in title area (itemType=thread)
+- `CountryPage`: SaveButton in title area (itemType=country)
+- `Account`: Saved items section lists all bookmarks grouped with links
+- `docs/config.js`: added `window.SAVED_ITEMS_ENDPOINT`
+
+---
+
 ## 2026-04-11 (Early access: remove all auth gates, remove Pricing page)
 
 ### Backend (`newsSensitiveData`)
@@ -14,17 +33,20 @@
 
 ---
 
-## 2026-04-11 (RSS feed at globalperspective.net/rss — Cloudflare Worker)
+## 2026-04-11 (Cloudflare Worker — RSS + bot pre-rendering + OG tags)
 
 ### Infrastructure
 
-- **Cloudflare Worker `globalperspective-rss`** — deployed to Cloudflare dashboard
-  - Route: `globalperspective.net/rss*`
-  - Proxies to `newsSensitiveData` API Gateway `?action=rss`
-  - Caches at Cloudflare edge for 30 minutes (`cacheTtl: 1800`)
-  - Returns `Content-Type: application/rss+xml`
-  - No DNS changes needed — domain was already registered in Cloudflare
-- **`RSS_CLOUDFLARE_TODO.md`** — migration runbook (now complete)
+- **Cloudflare Worker `globalperspective-rss`** — deployed, routes: `globalperspective.net/*` + `globalperspective.net/rss*`
+  - **RSS proxy:** `globalperspective.net/rss` → `newsSensitiveData ?action=rss`, 30 min edge cache
+  - **Bot pre-rendering:** detects 25+ bot user-agents (Twitterbot, GPTBot, Googlebot, PerplexityBot, ClaudeBot, LinkedInBot, etc.)
+    - `/weekly/country/:name` → POSTs `country_preview` to Lambda → returns full HTML with OG tags, real headline, situation summary, key developments, trajectory
+    - `/weekly/thread/:id` → POSTs `thread_preview` to Lambda → returns full HTML with OG tags, thread title, story timeline
+  - Human visitors always get the normal React app unchanged
+  - **Impact:** rich social share previews on Twitter/LinkedIn/Slack; ChatGPT/Perplexity/Claude can now read and cite page content
+- **`WORKER_FULL_CODE.md`** — full Worker source code on file
+- **`RSS_CLOUDFLARE_TODO.md`** — migration runbook (complete)
+- No DNS changes needed — domain already registered in Cloudflare (orange cloud already enabled)
 
 ---
 

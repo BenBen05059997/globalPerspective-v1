@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchUserProfile, fetchPortalSession } from '../services/restProxy';
+import { useSavedItems } from '../hooks/useSavedItems';
 import './WeeklyPage.css';
 import './Pricing.css';
 
@@ -63,6 +64,7 @@ const LABEL = {
 export default function Account() {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { savedItems, loading: savedLoading } = useSavedItems();
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   // portalLoading + error + handleManageBilling — re-enable when Paddle is ready
@@ -189,6 +191,45 @@ export default function Account() {
         <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
           All features are currently free for early users. We'll notify you by email before paid plans go live.
         </div>
+      </div>
+
+      {/* Saved items */}
+      <div style={SECTION}>
+        <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Saved</div>
+        {savedLoading ? (
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Loading…</div>
+        ) : savedItems.length === 0 ? (
+          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+            No saved items yet. Use the bookmark icon on threads and countries to save them here.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {savedItems.map(item => {
+              const label = item.metadata?.title || item.metadata?.name || item.itemId;
+              const href = item.itemType === 'thread'
+                ? `/weekly/thread/${item.itemId}`
+                : item.itemType === 'country'
+                ? `/weekly/country/${encodeURIComponent(item.itemId)}`
+                : item.itemType === 'daily'
+                ? `/daily/${item.itemId}`
+                : null;
+              return (
+                <div key={`${item.itemType}:${item.itemId}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: 48 }}>
+                    {item.itemType}
+                  </span>
+                  {href ? (
+                    <Link to={href} style={{ fontSize: '0.875rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {label}
+                    </Link>
+                  ) : (
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)', flex: 1 }}>{label}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Account actions */}

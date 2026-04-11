@@ -26,7 +26,8 @@ export function useDailyBrief(dateKey) {
       if (raw) {
         const cached = JSON.parse(raw);
         if (cached?.[effectiveDateKey]?.timestamp &&
-            (Date.now() - cached[effectiveDateKey].timestamp) < CACHE_TTL_MS) {
+            (Date.now() - cached[effectiveDateKey].timestamp) < CACHE_TTL_MS &&
+            cached[effectiveDateKey].data) {
           setBrief(cached[effectiveDateKey].data);
           setLoading(false);
           return;
@@ -48,6 +49,7 @@ export function useDailyBrief(dateKey) {
       }
       setBrief(data);
       try {
+        if (!data) return;
         const existing = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
         existing[effectiveDateKey] = { data, timestamp: Date.now() };
         const keys = Object.keys(existing);

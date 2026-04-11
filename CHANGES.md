@@ -1,5 +1,21 @@
 # Global Perspectives — Change Log
 
+## 2026-04-11 (Fix archive_range 502 + daily brief 7-day fallback)
+
+### Backend (`newsSensitiveData`)
+- `readArchiveRange`: strip archived entries to essential fields only (`topicId, title, category, regions, sources, threadId`) — previously returned full entries with AI summary/prediction/trace_cause text, pushing 30-day responses past Lambda's 6MB payload limit and causing 502 errors on WeeklyPage
+- Added `threadId` to today's entry shape so latest and archive days have matching structure
+
+### Frontend (`useDailyBrief`)
+- Added 7-day fallback loop: when the requested date returns null data, hook tries the previous day, then the day before, etc. up to 7 days back
+- Fixed cache to skip storing null results and to skip returning null from cache (prevents stale empty-state getting stuck)
+- User experience: `/daily` now shows the most recent brief available instead of an empty page when today's hasn't been generated yet
+
+### Cloudflare Worker (`globalperspective-rss`)
+- `renderDailyPage`: extended fallback from 1 day to 7 days back — bots hitting `/daily` always get pre-rendered HTML with the latest available brief
+
+---
+
 ## 2026-04-11 (Redesign Account page — tabs + saved items card grid)
 
 ### Frontend

@@ -164,7 +164,9 @@ const allowedOrigins = [
   'https://globalperspective.net',
   'https://www.globalperspective.net',
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
 ];
 const allowedOriginsLower = allowedOrigins.map((o) => o.toLowerCase());
 
@@ -906,6 +908,7 @@ async function readArchiveRange(days) {
           category: Array.isArray(t.categories) ? t.categories[0] || '' : (t.category || ''),
           regions: t.regions || [],
           sources: t.sources || [],
+          threadId: t.threadId || null,
         })),
         source: 'latest',
         updatedAt: latestItem.updatedAt || latestItem.activatedAt || null,
@@ -925,8 +928,16 @@ async function readArchiveRange(days) {
       }));
 
       if (Item && Array.isArray(Item.entries) && Item.entries.length > 0) {
+        // Strip heavy AI fields to keep response under 6MB Lambda payload limit
         result[dateLabel] = {
-          entries: Item.entries,
+          entries: Item.entries.map(e => ({
+            topicId: e.topicId || e.id,
+            title: e.title,
+            category: Array.isArray(e.categories) ? e.categories[0] || '' : (e.category || ''),
+            regions: e.regions || [],
+            sources: e.sources || [],
+            threadId: e.threadId || null,
+          })),
           source: 'archive',
           updatedAt: Item.updatedAt || null,
         };

@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-04-11 (Google Analytics + Search Console sitemap)
+
+### SEO & Discovery
+- **Google Analytics:** GA4 measurement ID `G-VT6QENX4MB` installed in `docs/index.html` — tracking live events, user flow, engagement
+- **Google Search Console:** Property verified and sitemap.xml submitted — `https://globalperspective.net/sitemap.xml` now discoverable by Google crawler
+- **robots.txt:** serves from production, correctly references sitemap
+- **Timeline:** Expect Google to crawl sitemap within 2-24 hours, first indexed URLs in 2-7 days
+
+### Next steps for SEO
+- Current sitemap lists 18 static pages; dynamic content (daily briefs, countries, threads) not yet in sitemap → consider auto-generating URLs from DDB keys for maximum coverage
+
+---
+
 ## 2026-04-11 (RSS feed links to source articles instead of thread pages)
 
 ### Backend (`newsSensitiveData`)

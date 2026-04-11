@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-04-11 (RSS feed links to source articles instead of thread pages)
+
+### Backend (`newsSensitiveData`)
+- `generateRssFeed`: changed link strategy — items now link to the first source article URL (e.g., `aljazeera.com`) instead of thread pages. Preserves fallback to thread page if no sources, then site root.
+- User experience: RSS readers (Feedly, Inoreader) now click through to the original article; readers still see our AI-generated description (BLUF, regions, sources).
+- Note: Feedly-cached old items still link to thread pages; new items will link to sources. Cache will naturally refresh over 1-2 days.
+
+---
+
 ## 2026-04-11 (Fix archive_range 502 + daily brief 7-day fallback)
 
 ### Backend (`newsSensitiveData`)

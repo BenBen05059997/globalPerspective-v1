@@ -400,14 +400,6 @@ exports.handler = async (event) => {
       const now = new Date();
       const todayKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
       const dateKey = payload?.dateKey || todayKey;
-      const isToday = dateKey === todayKey;
-
-      if (!isToday) {
-        const userInfo = await resolveUserTier(event);
-        if (!userInfo || userInfo.tier === 'free') {
-          return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for past daily briefs' }) };
-        }
-      }
 
       try {
         const { Item } = await getDynamoClient().send(new GetCommand({
@@ -427,10 +419,6 @@ exports.handler = async (event) => {
     }
 
     if (action === 'narrative_thread') {
-      const userInfo = await resolveUserTier(event);
-      if (!userInfo || userInfo.tier === 'free') {
-        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for narrative_thread' }) };
-      }
       const threadId = payload?.threadId;
       if (!threadId || typeof threadId !== 'string') {
         return {
@@ -448,12 +436,7 @@ exports.handler = async (event) => {
     }
 
     if (action === 'archive_range') {
-      const userInfo = await resolveUserTier(event);
-      if (!userInfo || userInfo.tier === 'free') {
-        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for archive_range' }) };
-      }
-      const maxDays = userInfo.tier === 'enterprise' ? ENTERPRISE_MAX_DAYS : MEMBER_MAX_DAYS;
-      const requestedDays = Math.max(1, Math.min(maxDays, parseInt(payload?.days || maxDays, 10)));
+      const requestedDays = Math.max(1, Math.min(ENTERPRISE_MAX_DAYS, parseInt(payload?.days || ENTERPRISE_MAX_DAYS, 10)));
 
       const response = await readArchiveRange(requestedDays);
       console.info('newsSensitiveData archive_range response', {
@@ -469,10 +452,6 @@ exports.handler = async (event) => {
     }
 
     if (action === 'thread_analysis') {
-      const userInfo = await resolveUserTier(event);
-      if (!userInfo || userInfo.tier === 'free') {
-        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for thread_analysis' }) };
-      }
       const threadIds = Array.isArray(payload?.threadIds) ? payload.threadIds.slice(0, 20) : [];
       const data = {};
       const client = getDynamoClient();
@@ -499,10 +478,6 @@ exports.handler = async (event) => {
     }
 
     if (action === 'country_intelligence') {
-      const userInfo = await resolveUserTier(event);
-      if (!userInfo || userInfo.tier === 'free') {
-        return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Member access required for country_intelligence' }) };
-      }
       const countryNames = Array.isArray(payload?.countryNames) ? payload.countryNames.slice(0, 15) : [];
       const data = {};
       const client = getDynamoClient();

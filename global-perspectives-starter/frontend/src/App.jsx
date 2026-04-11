@@ -105,7 +105,6 @@ export default function App() {
               <Route path="/weekly-map" element={<WeeklyMap />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/pricing" element={<Pricing />} />
               <Route path="/account" element={<Account />} />
               <Route path="/upgrade/success" element={<UpgradeSuccess />} />
               <Route path="/whitepaper" element={<WhitepaperPage />} />

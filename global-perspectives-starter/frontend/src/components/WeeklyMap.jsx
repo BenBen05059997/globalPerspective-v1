@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Wrapper } from '@googlemaps/react-wrapper';
-import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { getTopicCountryCodes, getTopicRegion, getRegionFromCountryCode } from '../utils/countryMapping';
 import { COUNTRY_COORDINATES, CONTINENT_PATHS } from '../utils/mapConstants';
@@ -748,10 +747,9 @@ function MapLegend() {
 
 export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp = false, defaultCountry = null, defaultThread = null, onCountryClick = null }) {
   const isEmbedded = embedded;
-  const { user, loading: authLoading } = useAuth();
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { dayMap, sortedDates, loading, error } = useWeeklyArchive();
+  const { dayMap, sortedDates, loading } = useWeeklyArchive();
   const [highlightThread, setHighlightThread] = useState(() => {
     if (isEmbedded) return null;
     return searchParams.get('thread') || null;
@@ -1020,35 +1018,6 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
       return;
     }
     setStoryPlay({ threadId, dateIdx: 0, currentDate: thread.dates[0], paused: false });
-  }
-
-  // Auth gates — only for standalone route, not when embedded in WeeklyPage
-  if (!isEmbedded) {
-    if (authLoading) return <div className="wmap-loading-full">Loading…</div>;
-    if (!user) {
-      return (
-        <div className="weekly-gate">
-          <div className="weekly-gate-icon">🔒</div>
-          <h2>Sign in to view the map</h2>
-          <p>The weekly evolution map is available to Member subscribers.</p>
-          <Link to="/signin" className="weekly-gate-submit" style={{ display: 'inline-block', marginTop: '1rem', textDecoration: 'none' }}>
-            Sign in →
-          </Link>
-        </div>
-      );
-    }
-    if (error && error.includes('401')) {
-      return (
-        <div className="weekly-gate">
-          <div className="weekly-gate-icon">🔒</div>
-          <h2>Member access required</h2>
-          <p>The weekly evolution map is available on the Member plan ($15/mo).</p>
-          <Link to="/pricing" className="weekly-gate-submit" style={{ display: 'inline-block', marginTop: '1rem', textDecoration: 'none' }}>
-            See plans →
-          </Link>
-        </div>
-      );
-    }
   }
 
   const googleApiKey = window.GOOGLE_MAPS_API_KEY || '';

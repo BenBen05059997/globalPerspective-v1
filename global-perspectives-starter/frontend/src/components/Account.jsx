@@ -189,9 +189,6 @@ export default function Account() {
         <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
           All features are currently free for early users. We'll notify you by email before paid plans go live.
         </div>
-        <Link to="/pricing" style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none', marginTop: '0.5rem', display: 'inline-block' }}>
-          View plans →
-        </Link>
       </div>
 
       {/* Account actions */}

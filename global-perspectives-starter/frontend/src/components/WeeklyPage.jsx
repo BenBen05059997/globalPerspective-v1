@@ -7,7 +7,6 @@ import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { getTopicRegion } from '../utils/countryMapping';
 import { formatDateLabel } from '../utils/dateUtils';
 import TrendBadge, { getTrend } from './TrendBadge';
-import WeeklyLockedPreview from './WeeklyLockedPreview';
 import SideNav from './SideNav';
 import TrialBanner from './TrialBanner';
 import { useUserProfile } from '../hooks/useUserProfile';
@@ -447,7 +446,7 @@ function FilterControls({ regionGroups, activeRegion, setActiveRegion, timeRange
 // ─── Weekly Page ──────────────────────────────────────────────────────────────
 
 export default function WeeklyPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const { profile } = useUserProfile();
   const [welcome, setWelcome] = useState(() => {
     if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('gp_just_signed_in')) {
@@ -575,21 +574,6 @@ export default function WeeklyPage() {
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
-  if (!user && !import.meta.env.DEV) return <WeeklyLockedPreview />;
-  const isUnauthorized = error && error.includes('401');
-  if (isUnauthorized) {
-    return (
-      <div className="weekly-gate">
-        <div className="weekly-gate-icon">🔒</div>
-        <h2>Member access required</h2>
-        <p>Weekly narrative analysis is available on the Member plan ($15/mo). Upgrade to track how stories evolve across days.</p>
-        <Link to="/pricing" className="weekly-gate-submit" style={{ display: 'inline-block', marginTop: '1rem', textDecoration: 'none' }}>
-          See plans →
-        </Link>
-      </div>
-    );
-  }
-
   const totalArticles = threads.reduce((sum, t) => sum + t.articleCount, 0) + standalone.length;
 
   return (
@@ -624,7 +608,7 @@ export default function WeeklyPage() {
         </div>
       )}
 
-      {error && !isUnauthorized && (
+      {error && (
         <div className="weekly-error">{error}</div>
       )}
 

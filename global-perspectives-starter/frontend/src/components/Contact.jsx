@@ -46,8 +46,7 @@ export default function Contact() {
 
       <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, #e5e7eb)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
         <Link to="/about" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>About Us →</Link>
-        <Link to="/pricing" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Pricing →</Link>
-        <Link to="/disclosures" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Disclosures →</Link>
+<Link to="/disclosures" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Disclosures →</Link>
       </div>
     </div>
   );

@@ -13,9 +13,6 @@ export default function TrialBanner({ daysLeft }) {
           : `Free trial — ${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`
         }
       </span>
-      <Link to="/pricing" className="trial-banner-cta">
-        {urgent ? 'Upgrade now →' : 'See plans →'}
-      </Link>
     </div>
   );
 }

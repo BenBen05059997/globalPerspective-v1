@@ -48,7 +48,7 @@ function formatTimeAgo(isoString) {
 export default function DailyPage() {
   const { dateKey: paramDateKey } = useParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const today = new Date().toISOString().slice(0, 10);
   const dateKey = paramDateKey || today;
   const isToday = dateKey === today;
@@ -61,21 +61,6 @@ export default function DailyPage() {
   }, [brief, dateKey]);
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
-
-  if (!isToday && !user && !import.meta.env.DEV) {
-    return (
-      <div className="thread-preview-gate" style={{ maxWidth: 600, margin: '2rem auto', padding: '2rem' }}>
-        <div className="thread-preview-title">Daily Intelligence Brief</div>
-        <div className="thread-preview-stats">Past daily briefs require a free account</div>
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-          <div className="wlp-cta-btns" style={{ justifyContent: 'center' }}>
-            <Link to="/signin" className="wlp-btn-primary">Sign in free →</Link>
-            <Link to="/daily" className="wlp-btn-secondary">View today's brief</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) return <IntelligenceLoader type="typewriter" />;
 

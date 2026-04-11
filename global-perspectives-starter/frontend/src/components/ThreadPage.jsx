@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import IntelligenceLoader from './IntelligenceLoader';
 import ShareButtons from './ShareButtons';
-import { fetchThreadPreview } from '../services/restProxy';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
@@ -38,66 +37,6 @@ const PREVIEW_FEATURES = [
   { icon: '🗺️', label: 'Country Replay', desc: 'Animate news coverage day-by-day on a world map' },
 ];
 
-function ThreadPreviewGate({ threadId, searchParams, ctaTitle, ctaPrimary, ctaSecondary }) {
-  const [preview, setPreview] = useState(null);
-  const previewTitle = preview?.threadTitle || searchParams.get('t') || humanizeThreadId(threadId);
-  const articles = parseInt(searchParams.get('n')) || null;
-  const days = parseInt(searchParams.get('d')) || null;
-  const regions = searchParams.get('r')?.split(',').filter(Boolean) || [];
-  const category = searchParams.get('c') || null;
-  const catColors = category ? CATEGORY_BADGE_COLORS[category] : null;
-
-  useEffect(() => {
-    fetchThreadPreview(threadId).then(res => setPreview(res?.data || null)).catch(() => {});
-  }, [threadId]);
-
-  return (
-    <div className="thread-preview-gate">
-      <div className="thread-preview-header">
-        {catColors && (
-          <span className="story-category-badge" style={{ background: catColors.bg, color: catColors.color }}>{category}</span>
-        )}
-        <div className="thread-preview-title">{previewTitle}</div>
-        {(articles || days) && (
-          <div className="thread-preview-stats">
-            {articles && <>{articles} article{articles !== 1 ? 's' : ''}</>}
-            {articles && days && ' · '}
-            {days && <>{days} day{days !== 1 ? 's' : ''}</>}
-          </div>
-        )}
-        {regions.length > 0 && (
-          <div className="thread-preview-regions">
-            {regions.map(r => <span key={r} className="story-card-region-tag">{r}</span>)}
-          </div>
-        )}
-      </div>
-
-      {/* Real entry titles from API (indexable by Google) */}
-      {preview?.entryShortTitles?.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div className="cp-section-label">STORY TIMELINE</div>
-          {preview.entryShortTitles.slice(0, 5).map((e, i) => (
-            <div key={i} style={{ padding: '6px 0', borderBottom: '1px solid #f3f4f6', fontSize: 13, color: '#374151' }}>
-              {e.shortTitle}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div style={{ textAlign: 'center', padding: '20px 0' }}>
-        <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>{ctaTitle}</div>
-        <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: 16, maxWidth: 400, margin: '0 auto 16px' }}>
-          Sign in for full AI analysis, geographic map, and detailed timeline
-        </div>
-        <div className="wlp-cta-btns" style={{ justifyContent: 'center' }}>
-          {ctaPrimary}
-          {ctaSecondary}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function formatTimeAgo(isoString) {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
   if (mins < 1) return 'just now';
@@ -131,9 +70,9 @@ export default function ThreadPage() {
   const { threadId } = useParams();
   const [searchParams] = useSearchParams();
   const fromCountry = searchParams.get('from') === 'country' ? searchParams.get('country') : null;
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const { profile } = useUserProfile();
-  const { dayMap, sortedDates, loading, error } = useWeeklyArchive();
+  const { dayMap, sortedDates, loading } = useWeeklyArchive();
 
   const thread = useMemo(() => {
     if (!dayMap || loading) return null;
@@ -176,31 +115,7 @@ export default function ThreadPage() {
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
-  if (!user && !import.meta.env.DEV) {
-    return (
-      <ThreadPreviewGate
-        threadId={threadId}
-        searchParams={searchParams}
-        ctaTitle="Sign in to read this story arc"
-        ctaPrimary={<Link to="/signin" className="wlp-btn-primary">Sign in free →</Link>}
-        ctaSecondary={<Link to="/pricing" className="wlp-btn-secondary">See Member plans</Link>}
-      />
-    );
-  }
-
   if (loading) return <IntelligenceLoader type="typewriter" />;
-
-  if (error && error.includes('401')) {
-    return (
-      <ThreadPreviewGate
-        threadId={threadId}
-        searchParams={searchParams}
-        ctaTitle="Upgrade to unlock this story arc"
-        ctaPrimary={<Link to="/pricing" className="wlp-btn-primary">Get Member access →</Link>}
-        ctaSecondary={<Link to="/" className="wlp-btn-secondary">Back to free content</Link>}
-      />
-    );
-  }
 
   if (!thread) {
     return (

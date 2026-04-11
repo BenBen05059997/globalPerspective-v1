@@ -1,5 +1,33 @@
 # Global Perspectives — Change Log
 
+## 2026-04-11 (Early access: remove all auth gates, remove Pricing page)
+
+### Backend (`newsSensitiveData`)
+- Removed auth gates from `daily_brief` (past dates), `narrative_thread`, `archive_range`, `thread_analysis`, `country_intelligence` — all content now public
+- `archive_range` now allows up to 90 days for all callers (was capped at 7 for free tier)
+
+### Frontend
+- All content accessible without sign-in (auth/save still works for logged-in users)
+- Removed gate UI from: WeeklyPage, ThreadPage, CountryPage, CountryListPage, WeeklyMap, DailyPage
+- Removed `/pricing` route and nav link; `Pricing.jsx` kept in codebase
+- Removed dead `/pricing` links from CLIPage, AboutContact, Contact, WhitepaperPage, Account, TrialBanner
+
+---
+
+## 2026-04-11 (RSS feed at globalperspective.net/rss — Cloudflare Worker)
+
+### Infrastructure
+
+- **Cloudflare Worker `globalperspective-rss`** — deployed to Cloudflare dashboard
+  - Route: `globalperspective.net/rss*`
+  - Proxies to `newsSensitiveData` API Gateway `?action=rss`
+  - Caches at Cloudflare edge for 30 minutes (`cacheTtl: 1800`)
+  - Returns `Content-Type: application/rss+xml`
+  - No DNS changes needed — domain was already registered in Cloudflare
+- **`RSS_CLOUDFLARE_TODO.md`** — migration runbook (now complete)
+
+---
+
 ## 2026-04-08 (Daily Intelligence Brief — full feature)
 
 ### Backend

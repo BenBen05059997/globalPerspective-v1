@@ -423,9 +423,6 @@ export default function WhitepaperPage() {
           <Link to="/" style={{ padding: '0.7rem 1.75rem', background: '#3b82f6', color: '#fff', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
             Explore the Platform
           </Link>
-          <Link to="/pricing" style={{ padding: '0.7rem 1.75rem', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
-            View Plans
-          </Link>
         </div>
       </div>
 

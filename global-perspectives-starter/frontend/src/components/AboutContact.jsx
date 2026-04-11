@@ -107,8 +107,7 @@ export default function AboutContact() {
         <h2 style={{ fontSize: '1.25rem' }}>Learn More</h2>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
           <Link to="/whitepaper" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Read the White Paper →</Link>
-          <Link to="/pricing" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>View Pricing →</Link>
-          <Link to="/disclosures" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Disclosures →</Link>
+<Link to="/disclosures" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Disclosures →</Link>
           <Link to="/privacy" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Privacy & Terms →</Link>
         </div>
       </section>

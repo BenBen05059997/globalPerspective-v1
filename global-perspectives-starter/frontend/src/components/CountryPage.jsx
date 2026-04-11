@@ -10,7 +10,6 @@ import { getBroadRegionsForCountry } from '../utils/countryMapping';
 import WeeklyMap from './WeeklyMap';
 import ShareButtons from './ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from './CopyBriefing';
-import { fetchCountryPreview } from '../services/restProxy';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
 import SectionNav from './SectionNav';
 import SideNav from './SideNav';
@@ -271,73 +270,13 @@ const MOCK_COVERAGE = [
   'Regional security concerns prompt multilateral talks…',
 ];
 
-function CountryPreviewGate({ countryName, ctaTitle, ctaPrimary, ctaSecondary }) {
-  const [preview, setPreview] = useState(null);
-
-  useEffect(() => {
-    fetchCountryPreview(countryName).then(res => setPreview(res?.data || null)).catch(() => {});
-  }, [countryName]);
-
-  const risk = preview?.riskLevel ? (RISK_COLORS[preview.riskLevel] || RISK_COLORS.moderate) : null;
-
-  return (
-    <div className="country-preview-gate">
-      <div className="thread-preview-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <div className="thread-preview-title" style={{ margin: 0 }}>{countryName}</div>
-          {risk && <span className="country-risk-badge" style={{ background: risk.bg, color: risk.color }}>{preview.riskLevel}</span>}
-        </div>
-        {preview?.headline && <div className="cp-headline">{preview.headline}</div>}
-        {preview?.bluf && (
-          <div className="cp-bluf" style={{ marginBottom: 12 }}>
-            <div className="cp-section-label">BOTTOM LINE</div>
-            <div className="cp-bluf-text">{preview.bluf}</div>
-          </div>
-        )}
-        {preview?.keyDevelopments?.length > 0 && (
-          <div className="cp-developments" style={{ marginBottom: 12 }}>
-            <div className="cp-section-label">KEY DEVELOPMENTS</div>
-            <div className="cp-dev-timeline">
-              {preview.keyDevelopments.slice(0, 5).map((d, i) => (
-                <div key={i} className="cp-dev-item">
-                  <span className="cp-dev-date">{formatDateLabel(d.date)}</span>
-                  <span className="cp-dev-dot" />
-                  <span className="cp-dev-text">{d.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {(preview?.totalArticles || preview?.dayCount) && (
-          <div className="thread-preview-stats">
-            {preview.totalArticles && <>{preview.totalArticles} articles</>}
-            {preview.totalArticles && preview.dayCount && ' across '}
-            {preview.dayCount && <>{preview.dayCount} days</>}
-          </div>
-        )}
-      </div>
-
-      <div style={{ textAlign: 'center', padding: '20px 0' }}>
-        <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>{ctaTitle}</div>
-        <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: 16, maxWidth: 400, margin: '0 auto 16px' }}>
-          Sign in for full analysis, watch triggers, story arcs, and detailed coverage
-        </div>
-        <div className="wlp-cta-btns" style={{ justifyContent: 'center' }}>
-          {ctaPrimary}
-          {ctaSecondary}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function CountryPage() {
   const { countryName } = useParams();
   const paramName = decodeURIComponent(countryName);
   const navigate = useNavigate();
   const { profile } = useUserProfile();
   const [searchParams] = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const { dayMap, sortedDates, loading, error } = useWeeklyArchive();
   const [activeTab, setActiveTab] = useState('situationSummary');
   const [showExplainer, setShowExplainer] = useState(
@@ -429,29 +368,6 @@ export default function CountryPage() {
   }, [decodedName]);
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
-
-  if (!user && !import.meta.env.DEV) {
-    return (
-      <CountryPreviewGate
-        countryName={paramName}
-        ctaTitle={`Sign in for ${paramName} intelligence`}
-        ctaPrimary={<Link to="/signin" className="wlp-btn-primary">Sign in free →</Link>}
-        ctaSecondary={<Link to="/pricing" className="wlp-btn-secondary">See Member plans</Link>}
-      />
-    );
-  }
-
-  if (error && error.includes('401')) {
-    return (
-      <CountryPreviewGate
-        countryName={paramName}
-        searchParams={searchParams}
-        ctaTitle={`Upgrade for ${paramName} intelligence`}
-        ctaPrimary={<Link to="/pricing" className="wlp-btn-primary">Get Member access →</Link>}
-        ctaSecondary={<Link to="/" className="wlp-btn-secondary">Back to free content</Link>}
-      />
-    );
-  }
 
   if (loading) return <IntelligenceLoader type="typewriter" />;
 

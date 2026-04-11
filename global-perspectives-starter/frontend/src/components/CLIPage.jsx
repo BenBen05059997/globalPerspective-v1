@@ -114,7 +114,6 @@ export default function CLIPage() {
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <a href="https://www.npmjs.com/package/global-perspectives" target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none', fontSize: '0.9rem' }}>npm package →</a>
           <a href="https://github.com/BenBen05059997/globalPerspective-v1/tree/main/cli" target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none', fontSize: '0.9rem' }}>Source code →</a>
-          <Link to="/pricing" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none', fontSize: '0.9rem' }}>Pricing →</Link>
         </div>
       </section>
     </div>

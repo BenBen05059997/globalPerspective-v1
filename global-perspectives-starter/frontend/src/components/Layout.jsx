@@ -36,7 +36,6 @@ function Layout({ children }) {
     { to: '/map', label: 'Map' },
     { to: '/weekly', label: 'Weekly Analysis' },
     { to: '/weekly/countries', label: 'Country Intel' },
-    { to: '/pricing', label: 'Pricing' },
     { to: '/about', label: 'About' },
   ];
 

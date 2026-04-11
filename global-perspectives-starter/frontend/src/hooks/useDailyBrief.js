@@ -37,8 +37,15 @@ export function useDailyBrief(dateKey) {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchDailyBrief(effectiveDateKey);
-      const data = result?.data || null;
+      let data = null;
+      const base = new Date(effectiveDateKey + 'T00:00:00Z');
+      for (let daysBack = 0; daysBack <= 7; daysBack++) {
+        const d = new Date(base);
+        d.setUTCDate(d.getUTCDate() - daysBack);
+        const tryKey = d.toISOString().slice(0, 10);
+        const result = await fetchDailyBrief(tryKey);
+        if (result?.data) { data = result.data; break; }
+      }
       setBrief(data);
       try {
         const existing = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pair Intelligence: AI Analysis of Bilateral Country Relationships — Global Perspectives</title>
+  <meta name="description" content="Global Perspectives now tracks bilateral relationships between countries — analyzing current state, root drivers, timelines, and predictions for 15 country pairs including Iran-Israel, Russia-Ukraine, and China-US." />
+  <meta property="og:title" content="Pair Intelligence: AI Analysis of Bilateral Country Relationships" />
+  <meta property="og:description" content="Beyond single-country briefings — AI-generated analysis of how two countries relate, what drives the relationship, and where it is heading." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://globalperspective.net/blog/pair-intelligence/" />
+  <link rel="canonical" href="https://globalperspective.net/blog/pair-intelligence/" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0e1a;
+      color: #d4dae8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 17px;
+      line-height: 1.75;
+    }
+    a { color: #7eb8f7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      border-bottom: 1px solid #1e2a40;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header .wordmark {
+      font-size: 15px;
+      font-weight: 600;
+      color: #e2e8f4;
+      letter-spacing: 0.02em;
+    }
+    header nav a {
+      font-size: 14px;
+      color: #7eb8f7;
+      margin-left: 24px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 64px 24px 96px;
+    }
+
+    .label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #5b7aa8;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #e8edf8;
+      line-height: 1.25;
+      margin-bottom: 20px;
+    }
+
+    .byline {
+      font-size: 14px;
+      color: #5b7aa8;
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid #1e2a40;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #c8d5ea;
+      margin: 48px 0 16px;
+    }
+
+    p { margin-bottom: 20px; }
+
+    .callout {
+      border-left: 3px solid #3a6ea8;
+      background: #0f1829;
+      padding: 20px 24px;
+      margin: 32px 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .callout p { margin: 0; color: #b0c4df; font-size: 15px; }
+
+    ul {
+      margin: 16px 0 20px 0;
+      padding-left: 20px;
+    }
+    ul li { margin-bottom: 8px; color: #b8c8e0; }
+    ul li strong { color: #d4dae8; }
+
+    .pair-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0 32px;
+    }
+    .pair-chip {
+      background: #0f1829;
+      border: 1px solid #1e3050;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #8fa8c8;
+    }
+    .pair-chip strong { color: #c8d8f0; display: block; margin-bottom: 2px; }
+
+    .quality-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 16px 0 24px;
+    }
+    .quality-pill {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border-radius: 100px;
+    }
+    .q-rich { background: rgba(16,185,129,0.15); color: #34d399; }
+    .q-moderate { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .q-sparse { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    .q-thin { background: rgba(107,114,128,0.15); color: #9ca3af; }
+
+    .cta-block {
+      margin-top: 64px;
+      padding: 32px;
+      background: #0f1829;
+      border: 1px solid #1e3050;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .cta-block p {
+      color: #8fa8c8;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: #2563eb;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 500;
+      margin: 4px;
+    }
+    .cta-btn:hover { background: #1d4ed8; text-decoration: none; }
+    .cta-btn.secondary {
+      background: transparent;
+      border: 1px solid #2563eb;
+      color: #7eb8f7;
+    }
+    .cta-btn.secondary:hover { background: #1e3050; }
+
+    footer {
+      border-top: 1px solid #1e2a40;
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #3d5070;
+    }
+    footer a { color: #3d5070; }
+
+    @media (max-width: 600px) {
+      .pair-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="https://globalperspective.net" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+    <img src="/logo_no_grey_bg.png" alt="Global Perspectives" style="height:28px;width:auto;" />
+    <span class="wordmark">Global Perspectives</span>
+  </a>
+  <nav>
+    <a href="https://globalperspective.net">Open App</a>
+    <a href="https://globalperspective.net/blog/">Blog</a>
+  </nav>
+</header>
+
+<div class="container">
+  <p class="label">Product Update</p>
+  <h1>Pair Intelligence: AI Analysis of Bilateral Country Relationships</h1>
+  <p class="byline">April 18, 2026 &nbsp;·&nbsp; Global Perspectives</p>
+
+  <p>Country briefings tell you what is happening inside a country. But most of the world's most consequential dynamics happen <em>between</em> countries — in the space where two states' interests, histories, and power calculations collide.</p>
+
+  <p>That is what Pair Intelligence is built to analyze.</p>
+
+  <h2>What it is</h2>
+
+  <p>Pair Intelligence generates a structured bilateral analysis for two countries — drawing on 30 days of live news coverage, daily country briefings, narrative thread analyses, and an operator-verified editorial fact layer. It is updated continuously and covers 15 country pairs across the most active geopolitical relationships today.</p>
+
+  <p>Each analysis contains seven sections:</p>
+
+  <ul>
+    <li><strong>Current State</strong> — a narrative account of where the relationship stands right now, grounded in recent events</li>
+    <li><strong>Root Driver</strong> — a three-layer analysis: the immediate trigger, the structural pattern behind it, and the deep historical context that made it possible</li>
+    <li><strong>Timeline</strong> — a chronological sequence of the 5–7 most significant events shaping the current situation</li>
+    <li><strong>Trajectory</strong> — three plausible scenarios for how the relationship develops over the next 30–90 days</li>
+    <li><strong>Predictions</strong> — specific, time-bounded claims with confidence levels (High / Medium / Low) and the causal mechanism behind each</li>
+    <li><strong>Watch Items</strong> — specific actors, indicators, and signals that will tell you how the situation is actually evolving</li>
+    <li><strong>Data quality disclosure</strong> — a transparent rating of how much source material the analysis is based on</li>
+  </ul>
+
+  <div class="callout">
+    <p>Pair Intelligence is fully public — no account required. Every analysis is shareable at a permanent URL.</p>
+  </div>
+
+  <h2>The 15 pairs live today</h2>
+
+  <p>The initial set is drawn from the most co-occurring country pairs in 30 days of Global Perspectives coverage — the relationships that keep appearing together in the same stories.</p>
+
+  <div class="pair-grid">
+    <div class="pair-chip"><strong>Iran × Israel</strong>Active conflict, ceasefire dynamics</div>
+    <div class="pair-chip"><strong>Russia × Ukraine</strong>Ongoing war, Western support</div>
+    <div class="pair-chip"><strong>Iran × United States</strong>Nuclear negotiations, sanctions</div>
+    <div class="pair-chip"><strong>Israel × United States</strong>Military aid, regional strategy</div>
+    <div class="pair-chip"><strong>China × United States</strong>Trade war, Taiwan flashpoint</div>
+    <div class="pair-chip"><strong>Iran × Pakistan</strong>Border tensions, regional balance</div>
+    <div class="pair-chip"><strong>Pakistan × United States</strong>Counter-terrorism, IMF</div>
+    <div class="pair-chip"><strong>Israel × Lebanon</strong>Post-conflict reconstruction</div>
+    <div class="pair-chip"><strong>Iran × Saudi Arabia</strong>Rivalry, normalization</div>
+    <div class="pair-chip"><strong>Israel × Saudi Arabia</strong>Normalization talks</div>
+    <div class="pair-chip"><strong>India × Pakistan</strong>Kashmir, nuclear threshold</div>
+    <div class="pair-chip"><strong>China × Taiwan</strong>Strait tension, deterrence</div>
+    <div class="pair-chip"><strong>UK × United States</strong>Trade deal, special relationship</div>
+    <div class="pair-chip"><strong>Russia × United States</strong>Ukraine endgame, Arctic</div>
+    <div class="pair-chip"><strong>Cuba × United States</strong>Sanctions, migration</div>
+  </div>
+
+  <p>Each pair is classified by data quality based on how much recent coverage exists:</p>
+
+  <div class="quality-row">
+    <span class="quality-pill q-rich">Rich — 20+ events</span>
+    <span class="quality-pill q-moderate">Moderate — 10–19 events</span>
+    <span class="quality-pill q-sparse">Sparse — 5–9 events</span>
+    <span class="quality-pill q-thin">Limited — under 5 events</span>
+  </div>
+
+  <p>Pairs with sparse or limited data show a disclaimer. The analysis is still generated — but you know exactly how much source material it rests on.</p>
+
+  <h2>How the analysis is grounded</h2>
+
+  <p>Pair Intelligence does not rely on a language model's training data alone. Each analysis is built from a structured evidence stack:</p>
+
+  <ul>
+    <li><strong>Editorial fact layer</strong> — operator-verified facts about current leadership, conflict trigger dates, and government transitions. These override everything else. This is how the Iran × Israel analysis correctly identifies Mojtaba Khamenei as Supreme Leader following the February 28 airstrike — a fact that live news search alone consistently missed.</li>
+    <li><strong>Automated leadership data</strong> — daily-updated head-of-state and head-of-government records sourced from Wikidata's structured political data, cached in our database. Updated every 24 hours.</li>
+    <li><strong>30-day archive</strong> — deduplicated event entries from the live news pipeline, filtered for the pair's countries and ranked by relevance</li>
+    <li><strong>Country intelligence profiles</strong> — each country's daily briefing, including trajectory and risk signals, feeds into the pair analysis</li>
+    <li><strong>Thread analyses</strong> — narrative arcs from the thread intelligence system provide the story-level context that raw articles lack</li>
+  </ul>
+
+  <div class="callout">
+    <p>The authority hierarchy is explicit in the prompt: editorial facts override live search, live search overrides archive data. When facts conflict, the most verified source wins.</p>
+  </div>
+
+  <h2>Why bilateral analysis is different from single-country briefings</h2>
+
+  <p>A country briefing answers: what is happening inside Iran right now? A pair analysis answers: what is the dynamic between Iran and Israel, and why does it exist?</p>
+
+  <p>These are different questions. The bilateral frame forces the analysis to do something a single-country view cannot: it has to account for the interaction — the feedback loops, the asymmetries, the points where each side's calculus is shaped by the other's actions.</p>
+
+  <p>The Root Driver section is where this is most visible. Layer 1 is the immediate trigger — a specific event, actor, and date. Layer 2 is the structural pattern that made that trigger consequential. Layer 3 is the historical context that made the structural pattern possible. Reading all three together is a different kind of understanding than any headline provides.</p>
+
+  <h2>What comes next</h2>
+
+  <p>The current 15 pairs are a starting set. We are expanding to cover more relationships as coverage volume supports it — European pairs, Southeast Asian dynamics, and African relationships where the news pipeline generates enough material for a grounded analysis.</p>
+
+  <p>We are also evaluating ACLED conflict event data as a structured supplement to the live news pipeline — which would significantly improve the depth of analysis for active conflict pairs.</p>
+
+  <p>Cross-links from Country Intelligence pages to relevant pairs are coming shortly — so the Iran country briefing will surface the Iran × Israel and Iran × United States pair analyses directly.</p>
+
+  <div class="cta-block">
+    <p>Pair Intelligence is live now. Start with the most active conflict pair — or browse all 15.</p>
+    <a href="https://globalperspective.net/weekly/pair/iran-and-israel" class="cta-btn">Iran × Israel analysis</a>
+    <a href="https://globalperspective.net/weekly/pairs" class="cta-btn secondary">Browse all pairs</a>
+  </div>
+</div>
+
+<footer>
+  <p><a href="https://globalperspective.net/blog/">← Back to blog</a> &nbsp;·&nbsp; <a href="https://globalperspective.net/privacy">Privacy &amp; Terms</a></p>
+</footer>
+
+</body>
+</html>

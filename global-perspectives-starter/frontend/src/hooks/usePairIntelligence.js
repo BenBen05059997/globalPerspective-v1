@@ -9,7 +9,7 @@ function cacheKey(slug) {
 
 export function usePairIntelligence(pairSlug) {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!!pairSlug);
   const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
@@ -21,6 +21,7 @@ export function usePairIntelligence(pairSlug) {
         const cached = JSON.parse(raw);
         if (cached?.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
           setData(cached.data);
+          setLoading(false);
           return;
         }
       }

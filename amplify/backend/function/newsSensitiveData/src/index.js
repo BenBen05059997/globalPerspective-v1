@@ -1,7 +1,7 @@
 'use strict';
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -503,6 +503,60 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify({ success: true, data }),
       };
+    }
+
+    if (action === 'pair_analysis') {
+      const pairSlug = qs.pair || payload?.pair;
+      if (!pairSlug) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing pair slug' }) };
+      }
+      const client = getDynamoClient();
+      try {
+        const { Item } = await client.send(new GetCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          Key: { PK: `PAIR#${pairSlug}`, SK: 'PAIR_ANALYSIS' },
+        }));
+        if (!Item) {
+          return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Pair analysis not found' }) };
+        }
+        const { PK, SK, ttl, ...rest } = Item;
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest }) };
+      } catch (e) {
+        console.error('pair_analysis error', e);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Internal error' }) };
+      }
+    }
+
+    if (action === 'pair_analyses_list') {
+      const client = getDynamoClient();
+      try {
+        const { Items = [] } = await client.send(new ScanCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk',
+          ExpressionAttributeValues: { ':prefix': 'PAIR#', ':sk': 'PAIR_ANALYSIS' },
+          ProjectionExpression: 'PK, pairTitle, currentState, dataQuality, countries, generatedAt',
+        }));
+        const qualityOrder = { rich: 0, moderate: 1, sparse: 2, thin: 3 };
+        const list = Items
+          .map(item => {
+            const slug = item.PK.replace('PAIR#', '');
+            const leadSentence = typeof item.currentState === 'string'
+              ? item.currentState.substring(0, 200)
+              : '';
+            return { slug, pairTitle: item.pairTitle, leadSentence, dataQuality: item.dataQuality, countries: item.countries, generatedAt: item.generatedAt };
+          })
+          .sort((a, b) => {
+            const qa = qualityOrder[a.dataQuality] ?? 4;
+            const qb = qualityOrder[b.dataQuality] ?? 4;
+            if (qa !== qb) return qa - qb;
+            return (b.generatedAt || '').localeCompare(a.generatedAt || '');
+          });
+        console.info('pair_analyses_list', { count: list.length });
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: list }) };
+      } catch (e) {
+        console.error('pair_analyses_list error', e);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Internal error' }) };
+      }
     }
 
     if (action === 'user_profile') {
@@ -1246,14 +1300,17 @@ async function generateRssFeed(event) {
     const pubDate = toRfc2822(entry.archivedAt || lastUpdated);
     const guid = entry.topicId || entry.title;
     const description = buildItemDescription(entry);
-    const threadLink = entry.threadId
-      ? `${SITE_URL}/weekly/thread/${encodeURIComponent(entry.threadId)}`
-      : SITE_URL;
+    // Prefer the first source article URL; fall back to thread page, then site root
+    const firstSourceUrl = Array.isArray(entry.sources) && entry.sources[0]?.url
+      ? entry.sources[0].url
+      : null;
+    const link = firstSourceUrl
+      || (entry.threadId ? `${SITE_URL}/weekly/thread/${encodeURIComponent(entry.threadId)}` : SITE_URL);
 
     return `    <item>
       <title>${escapeXml(entry.title)}</title>
       <description><![CDATA[${description}]]></description>
-      <link>${escapeXml(threadLink)}</link>
+      <link>${escapeXml(link)}</link>
       <guid isPermaLink="false">${escapeXml(guid)}</guid>
       <pubDate>${pubDate}</pubDate>
       <category>${escapeXml(category)}</category>

@@ -150,6 +150,14 @@ export async function fetchDailyBrief(dateKey) {
   return proxyActionWithAuth('daily_brief', { dateKey });
 }
 
+export async function fetchPairAnalysis(slug) {
+  return proxyAction('pair_analysis', { pair: slug });
+}
+
+export async function fetchPairAnalysesList() {
+  return proxyAction('pair_analyses_list');
+}
+
 // Public preview endpoints (no auth required, for SEO / non-signed-in users)
 export async function fetchCountryPreview(countryName) {
   return proxyAction('country_preview', { countryName });

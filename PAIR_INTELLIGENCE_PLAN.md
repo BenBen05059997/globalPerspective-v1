@@ -11,7 +11,7 @@ This document captures the plan for the Pair Intelligence feature — the next m
 
 Global Perspectives shows how the world is changing — one relationship at a time. The Pair Explorer lets anyone type two entities (countries or broad regions) and see a unified story of how that relationship is evolving, where it's heading, and what to watch.
 
-- **Target user:** normal curious people, not analysts
+- **Target user:** engaged readers who want analyst-quality depth (UPDATED 2026-04-11 — was previously "normal curious people, not analysts"). Anyone who actually reads the site is implicitly self-selecting as a pro-grade reader. Don't dumb down output for hypothetical casuals — they're not the audience.
 - **Mental model:** "Type two things → see their shared story right now → understand where it's heading"
 - **Time window:** 90 days rolling (no historical backfill, no pretense of deep history)
 - **AI calls:** all pre-computed on a schedule — no on-demand synthesis ever

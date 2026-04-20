@@ -51,7 +51,17 @@
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
     },
+    "newsCountryFactsUpdater": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
     "newsInvokeGemini": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "newsSavedItems": {
       "build": true,
       "providerPlugin": "awscloudformation",
       "service": "Lambda"

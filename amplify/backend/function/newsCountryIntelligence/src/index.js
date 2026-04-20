@@ -3,6 +3,13 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
+let EDITORIAL_FACTS = {};
+try {
+  EDITORIAL_FACTS = require('./country_facts.json');
+} catch (err) {
+  console.warn('country_facts.json not found — editorial context disabled');
+}
+
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const GROK_MODEL = process.env.GROK_MODEL || 'grok-4-1-fast-non-reasoning';
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
@@ -240,6 +247,114 @@ async function searchCountryNews(countryName) {
   }
 }
 
+// Load automated facts from DDB (written by newsCountryFactsUpdater) and merge into
+// EDITORIAL_FACTS. JSON operator entries always take precedence over DDB auto-entries.
+async function loadAndMergeDDBFacts(countryName) {
+  try {
+    const res = await ddb.send(new GetCommand({
+      TableName: SUMMARY_TABLE,
+      Key: { PK: `FACTS#${countryName}`, SK: 'COUNTRY_FACTS' },
+    }));
+    const record = res.Item;
+    if (!record) return;
+    const existing = EDITORIAL_FACTS[countryName] || {};
+    EDITORIAL_FACTS[countryName] = {
+      currentLeadership: record.leadershipString,
+      _autoSource: 'wikidata',
+      _autoUpdatedAt: record.lastUpdatedAt,
+      ...existing, // JSON fields win if set
+    };
+    if (record.acledData && !existing.activeConflicts?.length) {
+      const acled = record.acledData;
+      EDITORIAL_FACTS[countryName]._acledSummary =
+        `${acled.eventCount30d} conflict events in past 30 days (ACLED, as of ${acled.retrievedAt?.slice(0, 10) || '?'}). Latest: ${acled.latestEventSummary}`;
+    }
+  } catch (e) {
+    console.warn(`DDB facts load failed for ${countryName}:`, e.message);
+  }
+}
+
+// Operator-verified facts — highest authority. Supplemented by Wikidata auto-facts from DDB.
+function buildEditorialBlock(countryName) {
+  const facts = EDITORIAL_FACTS[countryName];
+  if (!facts || typeof facts !== 'object') return '';
+  if (!facts.currentLeadership && !Array.isArray(facts.activeConflicts)) return '';
+
+  const lines = [];
+  if (facts.currentLeadership) lines.push(`▸ Current leadership: ${facts.currentLeadership}`);
+  if (facts.government) lines.push(`▸ Government: ${facts.government}`);
+  if (Array.isArray(facts.activeConflicts) && facts.activeConflicts.length) {
+    lines.push(`▸ Active conflicts:`);
+    facts.activeConflicts.forEach(c => {
+      lines.push(`    - ${c.name} (started ${c.startDate})`);
+      if (c.trigger) lines.push(`      Trigger: ${c.trigger}`);
+      if (c.currentStatus) lines.push(`      Current status: ${c.currentStatus}`);
+    });
+  }
+  if (facts._acledSummary) lines.push(`▸ Conflict activity (auto): ${facts._acledSummary}`);
+
+  if (!lines.length) return '';
+
+  const stamp = facts.lastUpdated ? ` (last reviewed ${facts.lastUpdated} by operator)` : '';
+  return `\n=== EDITORIAL CONTEXT for ${countryName}${stamp} — OPERATOR-VERIFIED, HIGHEST AUTHORITY ===
+These are facts verified by the platform operator. They override the archive and override web search if contradicted. Use the names, dates, and triggers below as the canonical reference.
+
+${lines.join('\n')}
+`;
+}
+
+// Targeted grounding search: verify current leadership, regime changes, conflict status.
+// Returns a formatted text block to inject into the prompt as verified facts.
+async function gatherCountryGrounding(countryName) {
+  if (!BRAVE_API_KEY) return '';
+  const year = new Date().getUTCFullYear();
+
+  const queries = [
+    { label: `Current head of state / government`, q: `${countryName} current leader president prime minister ${year}` },
+    { label: `Recent leadership changes / deaths`, q: `${countryName} leader killed assassinated resigned appointed ${year}` },
+    { label: `Current regime / government status`, q: `${countryName} government status regime change election ${year}` },
+  ];
+
+  const results = await Promise.all(queries.map(async ({ label, q }) => {
+    try {
+      const url = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(q)}&count=3&search_lang=en&freshness=pm`;
+      const resp = await fetch(url, {
+        headers: { 'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY },
+      });
+      if (!resp.ok) return { label, hits: [] };
+      const data = await resp.json();
+      const hits = (data?.results || []).slice(0, 3).map(r => ({
+        title: r.title || '',
+        snippet: r.description || '',
+        source: r.meta_url?.hostname || 'unknown',
+        age: r.age || '',
+      }));
+      return { label, hits };
+    } catch (err) {
+      console.warn(`Grounding search failed for "${countryName}" / "${label}":`, err.message);
+      return { label, hits: [] };
+    }
+  }));
+
+  const lines = [];
+  for (const { label, hits } of results) {
+    if (!hits.length) continue;
+    lines.push(`▸ ${label}:`);
+    hits.forEach(h => {
+      const age = h.age ? ` · ${h.age}` : '';
+      lines.push(`    - "${h.title}" — ${h.snippet} (${h.source}${age})`);
+    });
+  }
+
+  if (!lines.length) return '';
+
+  return `\n=== VERIFIED GROUNDING FACTS for ${countryName} (live web search — treat as authoritative) ===
+These are current web-search results about ${countryName}'s leadership and regime status. If the archive entries below reference a leader as active but these grounding facts say they have been killed, succeeded, resigned, or replaced, defer to the grounding facts. The archive entries may be weeks old or reference events before the data window — always use the current leader's name in your analysis.
+
+${lines.join('\n')}
+`;
+}
+
 async function generateCountryIntelligence(country) {
   const threadBlock = country.threads.map((t, i) => {
     const arcSnippet = t.storyArc ? `\n  Story arc: ${t.storyArc.slice(0, 300)}` : '';
@@ -257,7 +372,13 @@ async function generateCountryIntelligence(country) {
     .map(([cat, count]) => `${cat}: ${count}`)
     .join(', ');
 
-  const searchResults = await searchCountryNews(country.countryName);
+  await loadAndMergeDDBFacts(country.countryName);
+  const editorialBlock = buildEditorialBlock(country.countryName);
+
+  const [searchResults, groundingBlock] = await Promise.all([
+    searchCountryNews(country.countryName),
+    gatherCountryGrounding(country.countryName),
+  ]);
   const referenceBlock = searchResults.length > 0
     ? '\n\n=== EXTERNAL REFERENCES (live web search) ===\n' +
       searchResults.map((r, i) => {
@@ -269,6 +390,12 @@ async function generateCountryIntelligence(country) {
 
   const prompt = `You are a geopolitical intelligence analyst writing a country briefing for a sophisticated news intelligence platform. Below is all tracked coverage for ${country.countryName} over the past ${country.dayCount} days (${country.dateRange.from} to ${country.dateRange.to}).
 
+AUTHORITY HIERARCHY (apply in order when facts conflict):
+  1. EDITORIAL CONTEXT (operator-verified) — highest authority
+  2. VERIFIED GROUNDING FACTS (live web search)
+  3. ARCHIVE ENTRIES + THREAD ANALYSES
+  4. EXTERNAL REFERENCES (Brave News)
+${editorialBlock || ''}${groundingBlock || ''}
 === OVERVIEW ===
 Country: ${country.countryName}
 Total articles: ${country.totalArticles} across ${country.dayCount} days
@@ -281,7 +408,14 @@ ${singleBlock}
 ${referenceBlock}
 Generate a JSON object with exactly these fields:
 
-1. "headline": A sharp 8-12 word headline capturing the country's overall situation right now. Journalistic tone, no clickbait.
+=== HARD CONSTRAINTS ===
+- The EDITORIAL CONTEXT (if present) is the canonical source of truth. If it names a current leader, use that name. If it provides a conflict startDate or trigger, cite that as the actual beginning of the crisis even if earlier archive entries only reference ongoing events.
+- If the VERIFIED GROUNDING FACTS or archive entries contradict EDITORIAL CONTEXT, defer to editorial context. Do not cite deceased or succeeded leaders as active decision-makers.
+- When leadership has changed, note the transition once (e.g., "following the succession of X by Y on {date}") then proceed with the current leader throughout.
+- The bluf and headline must reflect current leadership, not leadership from any stale archive window.
+- When a conflict's start date from editorial context predates the archive window, use the editorial trigger as the causal anchor in backgroundTimeline (as the earliest entry) rather than treating the first archive entry as the start of the crisis.
+
+1. "headline": A sharp 8-12 word headline capturing the country's overall situation right now. Journalistic tone, no clickbait. Must reflect current leadership if a succession occurred.
 
 2. "bluf": ONE sentence — the bottom-line-up-front assessment. This is the single most important thing a reader needs to know. Be direct and specific.
 

@@ -1,0 +1,77 @@
+{
+  "_meta": {
+    "description": "Operator-verified facts about countries. Injected into pair intelligence prompts as the highest-authority source. Use this to correct or supplement archive data that is stale or missing pre-window context.",
+    "instructions": "Each entry should be operator-verified (via trusted news source, primary document, etc.). If you do not know a fact, leave the field out — do not guess. The 'verified' flag indicates whether the entry has been manually reviewed.",
+    "lastReviewed": "2026-04-18",
+    "sync": "Keep this file in sync with ../newsCountryIntelligence/src/country_facts.json"
+  },
+  "Iran": {
+    "verified": true,
+    "currentLeadership": "Supreme Leader: Mojtaba Khamenei (appointed 2026-03-08 by the Assembly of Experts following the death of his father, Ali Khamenei, on 2026-02-28 in an Israeli airstrike on the Tehran compound). President: Masoud Pezeshkian.",
+    "government": "Islamic Republic (theocratic)",
+    "activeConflicts": [
+      {
+        "name": "Iran-Israel War",
+        "startDate": "2026-02-28",
+        "trigger": "Israeli airstrike on Ali Khamenei's Tehran compound on 2026-02-28, killing the Supreme Leader. Preceded by months of covert sabotage and an Israeli assessment that Iran was near nuclear breakout.",
+        "currentStatus": "Active. Fragile ceasefire attempts brokered by Pakistan. US naval blockade on Iranian oil ports ongoing. Multiple nuclear sites degraded by US-Israeli strikes. Hezbollah and Houthis drawn in as proxies."
+      }
+    ],
+    "lastUpdated": "2026-04-18",
+    "operator": "benlai310"
+  },
+  "Israel": {
+    "verified": false,
+    "_note": "Operator should verify and expand — currently only contains war-start context derived from the Iran entry.",
+    "activeConflicts": [
+      {
+        "name": "Iran-Israel War",
+        "startDate": "2026-02-28",
+        "trigger": "Israeli preemptive airstrike on Iran on 2026-02-28, targeting Ali Khamenei's compound (killing the Supreme Leader) and Iranian nuclear facilities.",
+        "currentStatus": "Active. Multi-front: Iran (direct), Hezbollah (Lebanon ceasefire fragile), Houthis (drone/missile strikes from Yemen). Ceasefire efforts brokered by Pakistan and US."
+      }
+    ],
+    "lastUpdated": "2026-04-18",
+    "operator": "benlai310"
+  },
+  "United States": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current president, cabinet, active conflicts."
+  },
+  "China": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current leader, active disputes (Taiwan, South China Sea, etc.)."
+  },
+  "Russia": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current leader, Ukraine war status."
+  },
+  "Ukraine": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current leader, Russia war status."
+  },
+  "India": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current leader, Pakistan tension status."
+  },
+  "Pakistan": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current leader, India tension status, mediation role in Iran-US talks."
+  },
+  "Saudi Arabia": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current leader, regional posture."
+  },
+  "Taiwan": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current leader, China relationship status."
+  },
+  "North Korea": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current leader, active tests/provocations."
+  },
+  "South Korea": {
+    "verified": false,
+    "_note": "TODO — operator to verify and add current leader, North Korea posture."
+  }
+}

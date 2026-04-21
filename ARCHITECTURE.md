@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-04-11
+**Last verified:** 2026-04-22
 
 Global Perspectives is an AI-powered global news aggregation platform. It fetches real news from RSS feeds and Brave Search, clusters articles into topics using xAI Grok, generates AI insights (summaries, predictions, root-cause analysis), and displays everything on an interactive world map and weekly narrative timeline.
 
@@ -275,6 +275,8 @@ Read-only REST proxy. All supported actions:
 | `thread_analysis` | None (early access) | `{ threadIds }` | Thread-level AI analyses |
 | `country_intelligence` | None (early access) | `{ countryNames }` | Country-level AI intelligence |
 | `daily_brief` | None (early access) | `{ dateKey }` | Daily Intelligence Brief for a specific date |
+| `pair_analysis` | None (early access) | `{ pair: "slug" }` | Bilateral relationship analysis for a country pair |
+| `pair_analyses_list` | None (early access) | — | All pair analyses (DDB Scan, sorted list) |
 | `user_profile` | Firebase JWT | — | User tier + subscription info from USERS_TABLE |
 | `portal_session` | Firebase JWT | — | Paddle Customer Portal session URL |
 
@@ -328,7 +330,28 @@ Posts a daily AI-written summary article to [Dev.to](https://dev.to).
 
 ---
 
-### 8. `newsStripeWebhook` (name is legacy — handles Paddle)
+### 8. `newsPairIntelligence`
+**Path:** `amplify/backend/function/newsPairIntelligence/src/index.js`
+**Trigger:** EventBridge (scheduled) or manual with `{"pair":["Country A","Country B"],"forceRegenerate":true}`
+**Deployed:** 2026-04-18
+
+Bilateral relationship analysis between country pairs.
+
+**What it does:**
+1. Default run: analyzes 10 predefined pairs; manual run: single pair specified in payload
+2. Reads 30-day archive; deduplicates events by Jaccard title similarity
+3. Loads `country_facts.json` editorial layer + existing country intelligence + thread analyses
+4. Calls xAI Grok to generate: `pairTitle`, `currentState`, `timeline`, `trajectory` (3 scenarios), `rootDriver` (3 layers), `predictions`, `watchItems`
+5. Writes to `SUMMARIZE_PREDICT_TABLE` at `PAIR#{slug}` / `PAIR_ANALYSIS`
+
+**Frontend:** `/weekly/pairs` (PairListPage) + `/weekly/pair/:slug` (PairPage)
+**API actions:** `pair_analysis` (single pair by slug) + `pair_analyses_list` (all pairs, DDB Scan)
+
+**Key env vars:** `XAI_API_KEY`, `GROK_MODEL`, `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
+
+---
+
+### 9. `newsStripeWebhook` (name is legacy — handles Paddle)
 **Path:** `amplify/backend/function/newsStripeWebhook/src/index.js`
 **Trigger:** Paddle webhook (separate API Gateway endpoint)
 
@@ -463,7 +486,7 @@ The Worker handles three cases:
 |-----------|----------|--------|
 | `DataCollectorSchedule` | rate(1 hour) | newsInvokeGemini |
 | `TriggerDailyAnalysis` | cron(30 6 * * ? *) | newsThreadAnalysis (6:30 UTC) |
-| `TriggerCountryIntelligence` | cron(0 7 * * ? *) | newsCountryIntelligence (7:00 UTC) |
+| `TriggerCountryIntelligence` | cron(0 7 * * ? *) | newsCountryIntelligence (7:00 UTC) — active |
 | `DailyReportSchedule` | cron(0 12 * * ? *) | NewsProjectInvokeAgentLambda (12:00 UTC) |
 
 ---
@@ -507,8 +530,10 @@ Construction gate removed — all routes render real components in production. A
 | `/auth/callback` | `AuthCallback.jsx` | Public |
 | `/weekly` | `WeeklyPage.jsx` | Auth (preview gate) |
 | `/weekly/thread/:threadId` | `ThreadPage.jsx` | Auth (preview with real data) |
-| `/weekly/countries` | `CountryListPage.jsx` | Auth (preview gate) |
-| `/weekly/country/:countryName` | `CountryPage.jsx` | Auth (preview with real data) |
+| `/weekly/countries` | `CountryListPage.jsx` | Public |
+| `/weekly/country/:countryName` | `CountryPage.jsx` | Public |
+| `/weekly/pairs` | `PairListPage.jsx` | Public |
+| `/weekly/pair/:slug` | `PairPage.jsx` | Public |
 | `/weekly-map` | `WeeklyMap.jsx` | Auth |
 | `/account` | `Account.jsx` | Auth |
 | `/upgrade/success` | `UpgradeSuccess.jsx` | Auth |

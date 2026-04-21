@@ -1,6 +1,6 @@
 # Backend Guide — Global Perspectives
 
-**Last verified:** 2026-04-11
+**Last verified:** 2026-04-22
 
 Quick-start guide to the backend system. For a complete architecture overview, see `ARCHITECTURE.md`.
 
@@ -14,7 +14,8 @@ Quick-start guide to the backend system. For a complete architecture overview, s
 | `NewsProjectInvokeAgentLambda` | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` | Reads `staging` → generates SUMMARY/PREDICTION/TRACE_CAUSE → assigns threadIds → swaps to `latest` |
 | `newsThreadAnalysis` | `amplify/backend/function/newsThreadAnalysis/src/index.js` | Daily batch: top 10 threads → generates storyArc, trajectory, rootCauseChain, watchQuestions |
 | `newsCountryIntelligence` | `amplify/backend/function/newsCountryIntelligence/src/index.js` | Daily batch: top 10 countries → generates headline, situationSummary, trajectory, riskSignals |
-| `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | Read-only REST proxy serving 16 actions to frontend via API Gateway |
+| `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | Read-only REST proxy serving 18 actions to frontend via API Gateway |
+| `newsPairIntelligence` | `amplify/backend/function/newsPairIntelligence/src/index.js` | Bilateral country-pair relationship analysis → writes PAIR# to Summary DDB |
 | `newsSavedItems` | `amplify/backend/function/newsSavedItems/src/index.js` | Save/bookmark Lambda (separate Function URL, Firebase JWT required) |
 | `newsPostLinkedIn` | `amplify/backend/function/newsPostLinkedIn/src/index.js` | Posts top topics to LinkedIn, Bluesky, X/Twitter, Threads |
 | `newsPostDevTo` | `amplify/backend/function/newsPostDevTo/src/index.js` | Posts AI-written daily article to Dev.to + generates Daily Intelligence Brief |
@@ -29,10 +30,12 @@ EventBridge (hourly) → newsInvokeGemini → staging DDB
                      → NewsProjectInvokeAgentLambda → latest DDB + archive DDB
 EventBridge (6:30 UTC) → newsThreadAnalysis → THREAD# records in Summary DDB
 EventBridge (7:00 UTC) → newsCountryIntelligence → COUNTRY# records in Summary DDB
+EventBridge (scheduled) → newsPairIntelligence → PAIR# records in Summary DDB
 EventBridge (scheduled) → newsPostLinkedIn → social platforms
-Stripe → newsStripeWebhook → Users DDB
+Paddle → newsStripeWebhook → Users DDB
 
 API Gateway (frontend) → newsSensitiveData → reads all DDB tables
+Function URL → newsSavedItems → GlobalPerspectiveSavedItems DDB (JWT required)
 ```
 
 ---
@@ -81,6 +84,8 @@ API Gateway (frontend) → newsSensitiveData → reads all DDB tables
 | `narrative_thread` | None* | All entries for a thread across days |
 | `thread_analysis` | None* | Thread-level AI analyses (storyArc, trajectory, etc.) |
 | `country_intelligence` | None* | Country-level AI intelligence |
+| `pair_analysis` | None* | Bilateral relationship analysis for a country pair (slug via `payload.pair`) |
+| `pair_analyses_list` | None* | All pair analyses, DDB Scan, sorted list |
 | `user_profile` | JWT | User tier + subscription info |
 | `portal_session` | JWT | Paddle Customer Portal URL |
 

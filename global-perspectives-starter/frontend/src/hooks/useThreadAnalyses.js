@@ -1,19 +1,17 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchThreadAnalyses } from '../services/restProxy';
-import { useAuth } from '../contexts/AuthContext';
 
 const CACHE_KEY = 'gp_thread_analyses_v2';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 export function useThreadAnalyses(threadIds) {
-  const { user } = useAuth();
   const [analyses, setAnalyses] = useState({});
   const [loading, setLoading] = useState(false);
 
   const idsKey = useMemo(() => [...threadIds].sort().join(','), [threadIds]);
 
   const load = useCallback(async () => {
-    if ((!user && !import.meta.env.DEV) || threadIds.length === 0) return;
+    if (threadIds.length === 0) return;
 
     try {
       const raw = localStorage.getItem(CACHE_KEY);
@@ -52,7 +50,7 @@ export function useThreadAnalyses(threadIds) {
     } finally {
       setLoading(false);
     }
-  }, [idsKey, user]);
+  }, [idsKey]);
 
   useEffect(() => { load(); }, [load]);
 

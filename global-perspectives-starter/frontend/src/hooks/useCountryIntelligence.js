@@ -1,19 +1,17 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchCountryIntelligence } from '../services/restProxy';
-import { useAuth } from '../contexts/AuthContext';
 
 const CACHE_KEY = 'gp_country_intel_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 export function useCountryIntelligence(countryNames) {
-  const { user } = useAuth();
   const [intelligence, setIntelligence] = useState({});
   const [loading, setLoading] = useState(false);
 
   const namesKey = useMemo(() => [...countryNames].sort().join(','), [countryNames]);
 
   const load = useCallback(async () => {
-    if ((!user && !import.meta.env.DEV) || countryNames.length === 0) return;
+    if (countryNames.length === 0) return;
 
     try {
       const raw = localStorage.getItem(CACHE_KEY);
@@ -52,7 +50,7 @@ export function useCountryIntelligence(countryNames) {
     } finally {
       setLoading(false);
     }
-  }, [namesKey, user]);
+  }, [namesKey]);
 
   useEffect(() => { load(); }, [load]);
 

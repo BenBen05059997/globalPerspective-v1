@@ -13,7 +13,6 @@ export function useWeeklyArchive() {
   const [tier, setTier] = useState(null);
 
   const load = useCallback(async () => {
-    if (!user && !import.meta.env.DEV) return;
     setError(null);
 
     try {

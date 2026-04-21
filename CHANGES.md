@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-04-22 (Fix: intelligence visible to anonymous users)
+
+### Bug Fix
+- Removed auth guard from `useWeeklyArchive`, `useThreadAnalyses`, `useCountryIntelligence` hooks — these hooks were blocking the API fetch for unauthenticated visitors (incognito mode), showing "No archive data yet" even though the backend is fully public in early access mode. All three hooks now fetch without requiring a signed-in user.
+
+**Files modified:** `src/hooks/useWeeklyArchive.js`, `src/hooks/useThreadAnalyses.js`, `src/hooks/useCountryIntelligence.js`
+
 ## 2026-04-11 (Google Analytics + Search Console sitemap)
 
 ### SEO & Discovery

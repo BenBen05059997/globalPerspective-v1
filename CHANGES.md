@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-04-22b (Hide Pair Intelligence from production)
+
+### Feature Flag
+- Removed "Pair Intel" nav link from Layout.jsx and /weekly/pairs + /weekly/pair/:slug routes from App.jsx
+- Components, hooks, and backend remain intact — can be re-enabled by restoring routes
+
+**Files modified:** `src/App.jsx`, `src/components/Layout.jsx`
+
 ## 2026-04-22 (Fix: intelligence visible to anonymous users)
 
 ### Bug Fix

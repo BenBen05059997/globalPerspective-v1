@@ -27,6 +27,7 @@ import CLIPage from './components/CLIPage';
 import IntelligenceMap from './components/IntelligenceMap';
 import PairPage from './components/PairPage';
 import PairListPage from './components/PairListPage';
+import WorldMapV2 from './components/WorldMapV2';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
@@ -113,8 +114,7 @@ export default function App() {
               <Route path="/cli" element={<CLIPage />} />
               <Route path="/test/briefing-card" element={<BriefingCardTest />} />
               <Route path="/intelligence-map" element={<IntelligenceMap />} />
-              <Route path="/weekly/pairs" element={<PairListPage />} />
-              <Route path="/weekly/pair/:slug" element={<PairPage />} />
+              <Route path="/map-v2" element={<WorldMapV2 />} />
             </Routes>
           </Layout>
         </BrowserRouter>

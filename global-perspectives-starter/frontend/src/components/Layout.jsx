@@ -42,6 +42,23 @@ function Layout({ children }) {
 
   return (
     <div className="app">
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: '#0a0f1e',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: '2rem', textAlign: 'center',
+      }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔧</div>
+        <h1 style={{ color: '#f1f5f9', fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.75rem' }}>
+          Major Update in Progress
+        </h1>
+        <p style={{ color: '#94a3b8', fontSize: '1.05rem', maxWidth: '420px', lineHeight: 1.6, margin: '0 0 0.5rem' }}>
+          We're working on something big. Global Perspectives will be back shortly.
+        </p>
+        <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
+          Check back in a few hours.
+        </p>
+      </div>
       <LoadingBar />
       <AIToast />
       <nav className="nav">

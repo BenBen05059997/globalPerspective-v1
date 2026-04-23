@@ -10,15 +10,17 @@ Quick-start guide to the backend system. For a complete architecture overview, s
 
 | Function | Path | Purpose |
 |----------|------|---------|
-| `newsInvokeGemini` | `amplify/backend/function/newsInvokeGemini/src/index.js` | RSS + Brave → xAI Grok → clusters topics → writes `staging` |
+| `newsInvokeGemini` | `amplify/backend/function/newsInvokeGemini/src/index.js` | RSS (21 feeds) + Brave → xAI Grok → clusters topics → writes `staging` |
 | `NewsProjectInvokeAgentLambda` | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` | Reads `staging` → generates SUMMARY/PREDICTION/TRACE_CAUSE → assigns threadIds → swaps to `latest` |
 | `newsThreadAnalysis` | `amplify/backend/function/newsThreadAnalysis/src/index.js` | Daily batch: top 10 threads → generates storyArc, trajectory, rootCauseChain, watchQuestions |
 | `newsCountryIntelligence` | `amplify/backend/function/newsCountryIntelligence/src/index.js` | Daily batch: top 10 countries → generates headline, situationSummary, trajectory, riskSignals |
-| `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | Read-only REST proxy serving 18 actions to frontend via API Gateway |
 | `newsPairIntelligence` | `amplify/backend/function/newsPairIntelligence/src/index.js` | Bilateral country-pair relationship analysis → writes PAIR# to Summary DDB |
+| `newsCountryFactsUpdater` | `amplify/backend/function/newsCountryFactsUpdater/src/index.js` | Daily: Wikidata SPARQL + ACLED → writes FACTS# to Summary DDB (90-day TTL) |
+| `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | Read-only REST proxy serving 18 actions to frontend via API Gateway |
 | `newsSavedItems` | `amplify/backend/function/newsSavedItems/src/index.js` | Save/bookmark Lambda (separate Function URL, Firebase JWT required) |
-| `newsPostLinkedIn` | `amplify/backend/function/newsPostLinkedIn/src/index.js` | Posts top topics to LinkedIn, Bluesky, X/Twitter, Threads |
-| `newsPostDevTo` | `amplify/backend/function/newsPostDevTo/src/index.js` | Posts AI-written daily article to Dev.to + generates Daily Intelligence Brief |
+| `newsPostLinkedIn` | `amplify/backend/function/newsPostLinkedIn/src/index.js` | Multi-platform poster: LinkedIn, Bluesky, X/Twitter, Threads, Farcaster, Mastodon, Telegram, Nostr |
+| `linkedInAutoPost` | `amplify/backend/function/linkedInAutoPost/src/index.js` | Scheduled LinkedIn-only poster: scores threads/country intel by trend + risk, picks best |
+| `newsPostDevTo` | `amplify/backend/function/newsPostDevTo/src/index.js` | Posts AI-written daily article to Dev.to + generates Daily Intelligence Brief via xAI Grok |
 | `newsStripeWebhook` | `amplify/backend/function/newsStripeWebhook/src/index.js` | **Paddle** webhook → writes/updates tier in DynamoDB Users table (name is legacy) |
 
 ---
@@ -26,16 +28,18 @@ Quick-start guide to the backend system. For a complete architecture overview, s
 ## System Architecture
 
 ```
-EventBridge (hourly) → newsInvokeGemini → staging DDB
-                     → NewsProjectInvokeAgentLambda → latest DDB + archive DDB
+EventBridge (hourly)   → newsInvokeGemini → staging DDB
+EventBridge (12:00 UTC)→ NewsProjectInvokeAgentLambda → latest DDB + archive DDB
 EventBridge (6:30 UTC) → newsThreadAnalysis → THREAD# records in Summary DDB
 EventBridge (7:00 UTC) → newsCountryIntelligence → COUNTRY# records in Summary DDB
-EventBridge (scheduled) → newsPairIntelligence → PAIR# records in Summary DDB
-EventBridge (scheduled) → newsPostLinkedIn → social platforms
-Paddle → newsStripeWebhook → Users DDB
+EventBridge (daily)    → newsCountryFactsUpdater → FACTS# records in Summary DDB
+EventBridge (scheduled)→ newsPairIntelligence → PAIR# records in Summary DDB
+EventBridge (scheduled)→ linkedInAutoPost → LinkedIn (scored, deduplicated)
+EventBridge (scheduled)→ newsPostLinkedIn → LinkedIn + Bluesky + X + Threads + others
+Paddle webhook         → newsStripeWebhook → Users DDB
 
 API Gateway (frontend) → newsSensitiveData → reads all DDB tables
-Function URL → newsSavedItems → GlobalPerspectiveSavedItems DDB (JWT required)
+Function URL           → newsSavedItems → SAVED_ITEMS_TABLE (JWT required)
 ```
 
 ---
@@ -45,10 +49,10 @@ Function URL → newsSavedItems → GlobalPerspectiveSavedItems DDB (JWT require
 | Table | Env var | Key | What's stored |
 |-------|---------|-----|---------------|
 | Topics | `TOPICS_DDB_TABLE` | `id` | `staging`, `latest`, `today-archive`, `archive#YYYY-MM-DD` |
-| Summary/Prediction | `SUMMARIZE_PREDICT_TABLE` | `PK` + `SK` | `TOPIC#` / SUMMARY\|PREDICTION\|TRACE_CAUSE, `THREAD#` / THREAD_ANALYSIS, `COUNTRY#` / COUNTRY_INTELLIGENCE, `DAILY_BRIEF#YYYY-MM-DD` / DAILY_BRIEF |
+| Summary/Prediction | `SUMMARIZE_PREDICT_TABLE` | `PK` + `SK` | `TOPIC#` / SUMMARY\|PREDICTION\|TRACE_CAUSE, `THREAD#` / THREAD_ANALYSIS, `COUNTRY#` / COUNTRY_INTELLIGENCE, `PAIR#` / PAIR_ANALYSIS, `DAILY_BRIEF#YYYY-MM-DD` / DAILY_BRIEF, `FACTS#` / COUNTRY_FACTS |
 | Users | `USERS_DDB_TABLE` | `uid` | Firebase UID, email, tier, Paddle IDs |
-| Social Posts | `SOCIAL_POSTS_TABLE` | composite | Dedup table for posted content |
-| Saved Items | `GlobalPerspectiveSavedItems` | `uid` + `savedKey` | User bookmarks (thread, country, daily) — used by `newsSavedItems` Lambda |
+| Social Posts | `SOCIAL_POSTS_TABLE` | composite | Dedup table for all platform posts (30-day TTL; 90-day for Dev.to) |
+| Saved Items | `SAVED_ITEMS_TABLE` | `uid` + `savedKey` | User bookmarks (thread, country, daily, pair — max 500/user) — used by `newsSavedItems` Lambda |
 
 ---
 

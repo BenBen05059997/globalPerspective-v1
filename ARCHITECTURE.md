@@ -351,7 +351,42 @@ Bilateral relationship analysis between country pairs.
 
 ---
 
-### 9. `newsStripeWebhook` (name is legacy — handles Paddle)
+### 9. `linkedInAutoPost`
+**Path:** `amplify/backend/function/linkedInAutoPost/src/index.js`
+**Trigger:** EventBridge (scheduled)
+
+Intelligent scheduled LinkedIn poster — distinct from `newsPostLinkedIn` (manual/multi-platform).
+
+**What it does:**
+1. Scans `SUMMARIZE_PREDICT_TABLE` for thread analyses (`THREAD_ANALYSIS`) and country intelligence (`COUNTRY_INTELLIGENCE`)
+2. Scores items by trend (rising/stable/fading) and risk level (critical/elevated/moderate/low)
+3. Deduplicates against `SOCIAL_POSTS_TABLE`
+4. Posts highest-scoring eligible item to LinkedIn; records with TTL
+
+**Key env vars:** `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `SUMMARIZE_PREDICT_TABLE`, `SOCIAL_POSTS_TABLE`
+
+---
+
+### 10. `newsCountryFactsUpdater`
+**Path:** `amplify/backend/function/newsCountryFactsUpdater/src/index.js`
+**Trigger:** EventBridge (daily scheduled)
+**Deployed:** 2026-04-18 (Phase 2 complete)
+
+Keeps country facts in DynamoDB current without manual editing.
+
+**What it does:**
+1. Fetches head-of-state/government data from **Wikidata** via SPARQL query
+2. Fetches active conflicts from **ACLED API** (approval pending)
+3. Detects leadership changes vs. previously stored facts
+4. Stores results in `SUMMARIZE_PREDICT_TABLE` at `FACTS#{countryName}` / `COUNTRY_FACTS` (90-day TTL)
+5. Supports partial updates for specific countries via payload
+
+**DDB key:** `FACTS#{countryName}` / `COUNTRY_FACTS`
+**Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `ACLED_API_KEY` (optional)
+
+---
+
+### 11. `newsStripeWebhook` (name is legacy — handles Paddle)
 **Path:** `amplify/backend/function/newsStripeWebhook/src/index.js`
 **Trigger:** Paddle webhook (separate API Gateway endpoint)
 
@@ -424,6 +459,9 @@ Handles Paddle billing events to keep USERS_TABLE in sync.
 | `TOPIC#{topicId}` | `TRACE_CAUSE` | NewsProjectInvokeAgentLambda | Root cause / historical context |
 | `THREAD#{threadId}` | `THREAD_ANALYSIS` | newsThreadAnalysis | threadTitle, storyArc, trajectory, rootCauseChain, watchQuestions |
 | `COUNTRY#{countryName}` | `COUNTRY_INTELLIGENCE` | newsCountryIntelligence | headline, situationSummary, crossThreadInsight, trajectory, riskSignals, riskLevel |
+| `PAIR#{pairSlug}` | `PAIR_ANALYSIS` | newsPairIntelligence | pairTitle, currentState, timeline, trajectory, rootDriver, predictions, watchItems |
+| `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL) |
+| `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata), active conflicts (ACLED), leadership change detection (90-day TTL) |
 
 ---
 
@@ -495,13 +533,14 @@ The Worker handles three cases:
 
 | API | Used by | Purpose |
 |-----|---------|---------|
-| xAI Grok (`api.x.ai`) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsThreadAnalysis, newsCountryIntelligence | Topic clustering + AI content generation |
-| Brave Search (news + web) | newsInvokeGemini, newsThreadAnalysis, newsCountryIntelligence | News article search + grounding |
+| xAI Grok (`api.x.ai`) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsThreadAnalysis, newsCountryIntelligence, newsPairIntelligence, newsPostDevTo | Topic clustering + AI content generation |
+| Brave Search (news + web) | newsInvokeGemini, newsThreadAnalysis, newsCountryIntelligence, newsPairIntelligence | News article search + grounding |
+| Wikidata (SPARQL) | newsCountryFactsUpdater | Head of state/government data |
+| ACLED API | newsCountryFactsUpdater | Active conflict data (approval pending) |
 | Mapbox Geocoding | newsSensitiveData | Location name → lat/lng |
-| Google Maps | WorldMap.jsx, WeeklyMap.jsx, CountryPage.jsx | Interactive map rendering |
-| OpenRouter (DeepSeek) | newsPostDevTo | Dev.to article generation |
-| Paddle | newsStripeWebhook, newsSensitiveData | Billing + Customer Portal (MoR — handles VAT/JCT globally) |
-| Firebase Auth | AuthContext.jsx + newsSensitiveData | Passwordless sign-in + JWT verification |
+| Google Maps | WorldMap.jsx, WorldMapV2.jsx, WeeklyMap.jsx, CountryPage.jsx | Interactive map rendering |
+| Paddle | newsStripeWebhook, newsSensitiveData | Billing + Customer Portal (MoR — handles VAT/JCT globally) — dormant in early access |
+| Firebase Auth | AuthContext.jsx + newsSensitiveData + newsSavedItems | Passwordless sign-in + JWT verification |
 
 ---
 
@@ -525,53 +564,75 @@ Construction gate removed — all routes render real components in production. A
 | `/disclosures` | `Disclosures.jsx` | Public |
 | `/whitepaper` | `WhitepaperPage.jsx` | Public |
 | `/cli` | `CLIPage.jsx` | Public |
-| `/pricing` | `Pricing.jsx` | Public |
 | `/signin` | `SignIn.jsx` | Public |
 | `/auth/callback` | `AuthCallback.jsx` | Public |
-| `/weekly` | `WeeklyPage.jsx` | Auth (preview gate) |
-| `/weekly/thread/:threadId` | `ThreadPage.jsx` | Auth (preview with real data) |
+| `/daily` | `DailyPage.jsx` | Public |
+| `/daily/:dateKey` | `DailyPage.jsx` | Public |
+| `/weekly` | `WeeklyPage.jsx` | Public |
+| `/weekly/thread/:threadId` | `ThreadPage.jsx` | Public |
 | `/weekly/countries` | `CountryListPage.jsx` | Public |
 | `/weekly/country/:countryName` | `CountryPage.jsx` | Public |
-| `/weekly/pairs` | `PairListPage.jsx` | Public |
-| `/weekly/pair/:slug` | `PairPage.jsx` | Public |
 | `/weekly-map` | `WeeklyMap.jsx` | Auth |
+| `/intelligence-map` | `IntelligenceMap.jsx` | Public |
+| `/map-v2` | `WorldMapV2.jsx` | Public (dev/preview) |
+| `/test/briefing-card` | `BriefingCardTest.jsx` | Dev/preview only |
 | `/account` | `Account.jsx` | Auth |
 | `/upgrade/success` | `UpgradeSuccess.jsx` | Auth |
 
+**Note:** `/pricing` route removed from routing and nav (Pricing.jsx kept in codebase). `/weekly/pairs` + `/weekly/pair/:slug` hidden 2026-04-23 (PairPage/PairListPage kept, backend active).
+
 ### Key Components
+
+58 total components. Key ones:
 
 | Component | Purpose |
 |-----------|---------|
-| `Layout.jsx` | Nav shell with hamburger menu |
+| `Layout.jsx` | Nav shell with hamburger menu + maintenance overlay (active 2026-04-23) |
 | `Home.jsx` | Daily topics, region grouping, AI toolbar |
 | `WorldMap.jsx` | Google Maps with topic markers, geodesic polylines, side panel |
+| `WorldMapV2.jsx` | Enhanced map with pair intelligence arc overlays (`/map-v2`) |
 | `MapSidePanel.jsx` | Per-country topic cards with AI toolbar |
 | `WeeklyPage.jsx` | Narrative threads grouped by region, trending section, filter bar |
 | `WeeklyMap.jsx` | Thread-colored markers, date playback, thread sidebar |
 | `ThreadPage.jsx` | Single thread deep-dive with AI intelligence |
 | `CountryListPage.jsx` | Grid index of all countries with intelligence |
 | `CountryPage.jsx` | Map-first country page: Google Map hero, AI tabs, story arcs, coverage |
-| `CountryOverviewMap.jsx` | Country selector map component |
-| `ApiKeyGate.jsx` | API key prompt (legacy — being replaced by Firebase auth) |
+| `DailyPage.jsx` | Daily Intelligence Brief display (`/daily`, `/daily/:dateKey`) |
+| `PairListPage.jsx` | All country-pair analyses (hidden from nav/routes, component kept) |
+| `PairPage.jsx` | Single pair deep-dive (hidden from nav/routes, component kept) |
 | `StoryEntryCard.jsx` | Entry card with Summarize/Predict/Trace Cause toggle |
 | `ThreadIntelligence.jsx` | Thread-level AI analysis display (storyArc, trajectory, etc.) |
+| `BriefingCard.jsx` | Formatted intelligence briefing card |
+| `BackgroundTimeline.jsx` | Historical timeline display for country/thread context |
+| `SaveButton.jsx` | Heart bookmark button — saves threads/countries/dailies to account |
 | `SignIn.jsx` | Firebase magic link + Google Sign-In form |
-| `AuthCallback.jsx` | Completes Firebase email link sign-in, sets welcome flag |
-| `Pricing.jsx` | Subscription tier comparison + Paddle checkout (launch: free access badge) |
-| `Account.jsx` | User account + Customer Portal link (launch: free access message) |
-| `WhitepaperPage.jsx` | Full white paper as styled React page |
-| `CLIPage.jsx` | CLI documentation page (`/cli`) |
-| `TrialBanner.jsx` | Trial countdown banner (ready for when trial mode activates) |
+| `Account.jsx` | User account tabs: saved items + profile |
+| `IntelligenceLoader.jsx` | Animated loading states (typewriter + explode variants) |
+| `Pricing.jsx` | Subscription tiers (removed from routing, kept in codebase) |
+| `TrialBanner.jsx` | Trial countdown banner (dormant until billing re-enabled) |
 
 ### Key Hooks
+
+17 total hooks:
 
 | Hook | Purpose |
 |------|---------|
 | `useGeminiTopics()` | Fetch daily topics; 1hr LocalStorage cache + 10min background poll |
-| `useWeeklyArchive()` | Fetch `archive_range` (member=7 days, enterprise=30); 30min LocalStorage cache keyed by `user.uid` |
-| `useThreadAnalyses(threadIds)` | Fetch thread-level AI analyses; 30min cache |
-| `useCountryIntelligence(countryNames)` | Fetch country-level AI intelligence; 30min cache |
-| `useUserProfile()` | Fetch `user_profile` action; returns `{ tier, trialDaysLeft, isTrial }` |
+| `useWeeklyArchive()` | Fetch `archive_range` (30 days, fully public in early access); 30min cache |
+| `useThreadAnalyses(threadIds)` | Fetch thread-level AI analyses; 30min cache; no auth required |
+| `useCountryIntelligence(countryNames)` | Fetch country-level AI intelligence; 30min cache; no auth required |
+| `usePairAnalyses()` | Fetch all pair analyses list; 30min cache |
+| `usePairIntelligence(pairSlug)` | Fetch single pair analysis; 30min cache |
+| `useDailyBrief(dateKey)` | Fetch Daily Intelligence Brief for a date |
+| `useSavedItems(itemType)` | Manage user bookmarks via newsSavedItems Lambda (JWT required) |
+| `useUserProfile()` | Fetch `user_profile`; returns `{ tier, trialDaysLeft, isTrial }` |
+| `useSummary(topicId)` | Fetch AI summary for a topic |
+| `usePrediction(topicId)` | Fetch AI prediction for a topic |
+| `useTraceCause(topicId)` | Fetch trace_cause deep context for a topic |
+| `useTodayArchive()` | Fetch today's archive entries |
+| `useArticles(topicId)` | Fetch article sources for a topic |
+| `useCountrySignal(countryName)` | Country-level signal/metrics hook |
+| `useBookmarks()` | Bookmark state management |
 | `useIsMobile(breakpoint)` | Responsive breakpoint (default 600px) |
 
 ### Service Layer
@@ -584,17 +645,25 @@ restProxy.js
     └─ fetchPredictionCache(topicId)
     └─ fetchTraceCauseCache(topicId)
     └─ fetchTodayArchive()
+    └─ fetchArchiveRange(days)            ← public in early access
+    └─ fetchNarrativeThread(threadId)     ← public in early access
+    └─ fetchThreadAnalyses(threadIds)     ← public in early access
+    └─ fetchCountryIntelligence(names)    ← public in early access
+    └─ fetchDailyBrief(dateKey)           ← public in early access
+    └─ fetchPairAnalysis(slug)
+    └─ fetchPairAnalysesList()
     └─ geocodeProxy(address)
     └─ fetchCountryPreview(countryName)   ← SEO public preview
     └─ fetchThreadPreview(threadId)       ← SEO public preview
 
   proxyActionWithAuth(action, payload)    ← Authorization: Bearer <firebase-id-token>
-    └─ fetchArchiveRange(days)
-    └─ fetchNarrativeThread(threadId)
-    └─ fetchThreadAnalyses(threadIds)
-    └─ fetchCountryIntelligence(countryNames)
     └─ fetchUserProfile()
     └─ fetchPortalSession()
+
+  savedItemsProxy (window.SAVED_ITEMS_ENDPOINT — separate Function URL)
+    └─ saveItem(itemType, itemId, metadata)
+    └─ unsaveItem(itemType, itemId)
+    └─ fetchSavedItems(itemType)
 ```
 
 ### Caching Strategy

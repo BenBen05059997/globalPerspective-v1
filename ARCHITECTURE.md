@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-04-22
+**Last verified:** 2026-04-25
 
 Global Perspectives is an AI-powered global news aggregation platform. It fetches real news from RSS feeds and Brave Search, clusters articles into topics using xAI Grok, generates AI insights (summaries, predictions, root-cause analysis), and displays everything on an interactive world map and weekly narrative timeline.
 
@@ -351,7 +351,36 @@ Bilateral relationship analysis between country pairs.
 
 ---
 
-### 9. `linkedInAutoPost`
+### 9. `newsSystemsAnalysis`
+**Path:** `amplify/backend/function/newsSystemsAnalysis/src/index.js`
+**Trigger:** EventBridge (scheduled) or manual
+**Deployed:** 2026-04-25 (Phase 1 test — Argentina/Iran only)
+
+Cross-domain causal relationship analysis. Maps how events across categories connect with time lags and confidence.
+
+**What it does:**
+1. Reads 30-day archive entries; groups by country
+2. Identifies threads (2+ articles per threadId) per country; loads thread analyses
+3. For each country: builds nodes from threads, calls Grok with anti-hallucination prompt
+4. Grok returns nodes + edges. Validation: all IDs must be real, edges cite real topicIds, confidence calibrated
+5. Dropped edges: unknown IDs, self-loops, 0 citations, confidence downgraded if citation count misses threshold
+6. Writes to `SUMMARIZE_PREDICT_TABLE` at `SYSTEMS#{countryName}` / `SYSTEMS_ANALYSIS` (14-day TTL)
+
+**Output shape:**
+```json
+{
+  "nodes": [{"threadId", "category", "peakDate", "summary"}],
+  "edges": [{"from", "to", "lagDays", "mechanism", "confidence", "citedEntries"}]
+}
+```
+
+**Phase 1 (current):** Test countries only (`SYSTEMS_TEST_COUNTRIES=Argentina,Iran`). First run: Iran 15 nodes, 8 valid edges.
+
+**Key env vars:** `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL`, `SYSTEMS_TOP_N` (default: 5), `SYSTEMS_TEST_COUNTRIES`
+
+---
+
+### 10. `linkedInAutoPost`
 **Path:** `amplify/backend/function/linkedInAutoPost/src/index.js`
 **Trigger:** EventBridge (scheduled)
 
@@ -367,7 +396,7 @@ Intelligent scheduled LinkedIn poster — distinct from `newsPostLinkedIn` (manu
 
 ---
 
-### 10. `newsCountryFactsUpdater`
+### 11. `newsCountryFactsUpdater`
 **Path:** `amplify/backend/function/newsCountryFactsUpdater/src/index.js`
 **Trigger:** EventBridge (daily scheduled)
 **Deployed:** 2026-04-18 (Phase 2 complete)
@@ -386,7 +415,7 @@ Keeps country facts in DynamoDB current without manual editing.
 
 ---
 
-### 11. `newsStripeWebhook` (name is legacy — handles Paddle)
+### 12. `newsStripeWebhook` (name is legacy — handles Paddle)
 **Path:** `amplify/backend/function/newsStripeWebhook/src/index.js`
 **Trigger:** Paddle webhook (separate API Gateway endpoint)
 
@@ -460,6 +489,7 @@ Handles Paddle billing events to keep USERS_TABLE in sync.
 | `THREAD#{threadId}` | `THREAD_ANALYSIS` | newsThreadAnalysis | threadTitle, storyArc, trajectory, rootCauseChain, watchQuestions |
 | `COUNTRY#{countryName}` | `COUNTRY_INTELLIGENCE` | newsCountryIntelligence | headline, situationSummary, crossThreadInsight, trajectory, riskSignals, riskLevel |
 | `PAIR#{pairSlug}` | `PAIR_ANALYSIS` | newsPairIntelligence | pairTitle, currentState, timeline, trajectory, rootDriver, predictions, watchItems |
+| `SYSTEMS#{countryName}` | `SYSTEMS_ANALYSIS` | newsSystemsAnalysis | nodes[], edges[] with causal graph, confidence levels, citations (14-day TTL) |
 | `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL) |
 | `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata), active conflicts (ACLED), leadership change detection (90-day TTL) |
 
@@ -525,6 +555,7 @@ The Worker handles three cases:
 | `DataCollectorSchedule` | rate(1 hour) | newsInvokeGemini |
 | `TriggerDailyAnalysis` | cron(30 6 * * ? *) | newsThreadAnalysis (6:30 UTC) |
 | `TriggerCountryIntelligence` | cron(0 7 * * ? *) | newsCountryIntelligence (7:00 UTC) — active |
+| `TriggerSystemsAnalysis` | cron(0 8 ? * SUN *) | newsSystemsAnalysis (8:00 UTC Sundays) — Phase 1 test |
 | `DailyReportSchedule` | cron(0 12 * * ? *) | NewsProjectInvokeAgentLambda (12:00 UTC) |
 
 ---
@@ -753,6 +784,7 @@ git push
 | Lambda: AI generation per topic | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` |
 | Lambda: thread-level analysis | `amplify/backend/function/newsThreadAnalysis/src/index.js` |
 | Lambda: country-level intelligence | `amplify/backend/function/newsCountryIntelligence/src/index.js` |
+| Lambda: causal graph analysis | `amplify/backend/function/newsSystemsAnalysis/src/index.js` |
 | Lambda: REST proxy | `amplify/backend/function/newsSensitiveData/src/index.js` |
 | Lambda: social posting | `amplify/backend/function/newsPostLinkedIn/src/index.js` |
 | Lambda: Dev.to posting | `amplify/backend/function/newsPostDevTo/src/index.js` |

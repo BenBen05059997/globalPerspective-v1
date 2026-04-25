@@ -1,5 +1,21 @@
 # Global Perspectives — Change Log
 
+## 2026-04-25b (newsSystemsAnalysis Lambda — Phase 1 causal graphs)
+
+### Backend — newsSystemsAnalysis (NEW)
+- New Lambda function for cross-domain causal relationship analysis within countries
+- Reads 30-day archive; groups entries by threadId; identifies causal links between story threads
+- Anti-hallucination: all edges must cite real topicIds, invalid IDs dropped post-LLM, edges capped per node
+- Confidence levels: weak (inferential) / medium (2+ citations, 7+ day span) / strong (3+ citations + named mechanism)
+- Output: `SYSTEMS#{country}` / `SYSTEMS_ANALYSIS` in `SummarizeAndPredict` DDB table
+- Phase 1 restricted to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran` env var (test only)
+- First run verified: Iran produced 15 valid nodes, 8 edges tracing escalation sequence (threats → mediation → collapse → blockade)
+- Timeout: 300s, Memory: 512MB
+
+**Files added:** `amplify/backend/function/newsSystemsAnalysis/src/index.js`, `package.json`, CFN template
+
+---
+
 ## 2026-04-25 (Topic mix rebalance: more climate, science, energy, business, society)
 
 ### Backend — newsInvokeGemini

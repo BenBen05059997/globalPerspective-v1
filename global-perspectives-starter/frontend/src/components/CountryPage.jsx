@@ -6,6 +6,8 @@ import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '../hooks/useCountryIntelligence';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { useMarketsCountry } from '../hooks/useMarketsCountry';
+import { useCountryHistory } from '../hooks/useCountryHistory';
+import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
 import { formatDateLabel } from '../utils/dateUtils';
 import { getBroadRegionsForCountry } from '../utils/countryMapping';
 import WeeklyMap from './WeeklyMap';
@@ -211,6 +213,26 @@ function CoverageList({ entries }) {
   );
 }
 
+function RiskSparkline({ snapshots, color = '#a2442e' }) {
+  if (!snapshots || snapshots.length < 2) return null;
+  const scores = snapshots.map(s => s.riskScore ?? null).filter(v => v != null);
+  if (scores.length < 2) return null;
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const range = max - min || 1;
+  const w = 60, h = 20;
+  const pts = scores.map((v, i) => {
+    const x = (i / (scores.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 2) - 1;
+    return `${x},${y}`;
+  }).join(' ');
+  return (
+    <svg width={w} height={h} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function CountryPage() {
   const { countryName } = useParams();
   const paramName = decodeURIComponent(countryName);
@@ -302,6 +324,8 @@ export default function CountryPage() {
   const { intelligence } = useCountryIntelligence(decodedName ? [decodedName] : []);
   const intel = intelligence?.[decodedName];
   const { data: markets } = useMarketsCountry(decodedName);
+  const { snapshots: riskHistory } = useCountryHistory(decodedName);
+  const { data: systemsData } = useSystemsAnalysis(decodedName);
 
   useEffect(() => {
     document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
@@ -399,11 +423,17 @@ export default function CountryPage() {
                 <div className="cpg-stat-d">{formatDateLabel(countryData.dateRange.from)} – {formatDateLabel(countryData.dateRange.to)}</div>
               </div>
               <div className="cpg-stat">
-                <div className="cpg-stat-k">Risk level</div>
+                <div className="cpg-stat-k">Risk score</div>
                 <div className="cpg-stat-v" style={risk ? { color: risk.color } : {}}>
-                  {intel?.riskLevel || '—'}
+                  {intel?.riskScore != null ? intel.riskScore : (intel?.riskLevel || '—')}
                 </div>
-                <div className="cpg-stat-d">{trajectory ? `${trajectory.arrow} ${trajectory.label}` : 'AI-assessed'}</div>
+                <div className="cpg-stat-d">
+                  {riskHistory.length >= 2 ? (
+                    <RiskSparkline snapshots={riskHistory} color={risk?.color} />
+                  ) : (
+                    trajectory ? `${trajectory.arrow} ${trajectory.label}` : 'AI-assessed'
+                  )}
+                </div>
               </div>
             </div>
 
@@ -527,6 +557,39 @@ export default function CountryPage() {
               {/* Right AI rail */}
               <aside className="cpg-rail">
 
+                {/* Causal graph */}
+                {systemsData?.nodes?.length > 0 && (
+                  <div className="cpg-rail-section">
+                    <div className="cpg-rail-hd">
+                      Causal Graph
+                      <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#999', marginLeft: 6 }}>{systemsData.nodes.length} threads · {systemsData.edges?.length || 0} links</span>
+                    </div>
+                    <div style={{ fontSize: 12, lineHeight: 1.5 }}>
+                      {(systemsData.edges || []).slice(0, 5).map((e, i) => {
+                        const fromNode = systemsData.nodes.find(n => n.threadId === e.from);
+                        const toNode = systemsData.nodes.find(n => n.threadId === e.to);
+                        if (!fromNode || !toNode) return null;
+                        return (
+                          <div key={i} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+                            <div style={{ color: 'var(--ink)', fontWeight: 500 }}>{fromNode.title?.slice(0, 40) || fromNode.threadId}</div>
+                            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--accent)', margin: '2px 0' }}>
+                              → {e.mechanism || 'influences'}
+                              {e.lagDays ? ` (${e.lagDays}d lag)` : ''}
+                              {e.confidence ? ` · ${Math.round(e.confidence * 100)}%` : ''}
+                            </div>
+                            <div style={{ color: 'var(--ink-dim)' }}>{toNode.title?.slice(0, 40) || toNode.threadId}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {systemsData.generatedAt && (
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#bbb', marginTop: 4 }}>
+                        as of {new Date(systemsData.generatedAt).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Risk assessment */}
                 {risk && (
                   <div className="cpg-rail-section">
@@ -559,6 +622,20 @@ export default function CountryPage() {
                       <div key={i} className="cpg-rail-watch">
                         <span className="cpg-rail-watch-icon">⚡</span>
                         {s}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Live web evidence */}
+                {intel?.groundingSources?.length > 0 && (
+                  <div className="cpg-rail-section">
+                    <div className="cpg-rail-hd">Live Web Evidence</div>
+                    {intel.groundingSources.slice(0, 4).map((s, i) => (
+                      <div key={i} style={{ fontSize: 12, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4 }}>{s.title}</div>
+                        {s.snippet && <div style={{ color: 'var(--ink-dim)', marginTop: 2, lineHeight: 1.4 }}>{s.snippet.slice(0, 100)}{s.snippet.length > 100 ? '…' : ''}</div>}
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#999', marginTop: 3 }}>{s.source}{s.age ? ` · ${s.age}` : ''}</div>
                       </div>
                     ))}
                   </div>

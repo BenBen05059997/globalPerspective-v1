@@ -1,7 +1,7 @@
 'use strict';
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -313,7 +313,7 @@ exports.handler = async (event) => {
       };
     }
 
-    if (action === 'summary' || action === 'prediction' || action === 'trace_cause') {
+    if (action === 'summary' || action === 'prediction' || action === 'trace_cause' || action === 'research_briefing') {
       const topicId = payload?.topicId || payload?.topic_id;
       if (!topicId || typeof topicId !== 'string') {
         console.warn('newsSensitiveData summary/prediction missing topicId', {
@@ -503,6 +503,50 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify({ success: true, data }),
       };
+    }
+
+    if (action === 'country_history') {
+      const countryName = payload?.countryName || qs?.countryName;
+      if (!countryName) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing countryName' }) };
+      }
+      const client = getDynamoClient();
+      try {
+        const { Items } = await client.send(new QueryCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+          ExpressionAttributeValues: { ':pk': `COUNTRY#${countryName}`, ':prefix': 'HISTORY#' },
+          ScanIndexForward: false,
+          Limit: 90,
+        }));
+        const snapshots = (Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, countryName, snapshots }) };
+      } catch (err) {
+        console.error('country_history error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Query failed' }) };
+      }
+    }
+
+    if (action === 'systems_analysis') {
+      const countryName = payload?.countryName || qs?.countryName;
+      if (!countryName) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing countryName' }) };
+      }
+      const client = getDynamoClient();
+      try {
+        const { Item } = await client.send(new GetCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          Key: { PK: `SYSTEMS#${countryName}`, SK: 'SYSTEMS_ANALYSIS' },
+        }));
+        if (!Item) {
+          return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Systems analysis not found for this country' }) };
+        }
+        const { PK, SK, ttl, ...rest } = Item;
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest }) };
+      } catch (err) {
+        console.error('systems_analysis error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Lookup failed' }) };
+      }
     }
 
     if (action === 'pair_analysis') {
@@ -829,6 +873,7 @@ async function readSummaryPredictionCache(action, topicId) {
   const pk = `${PK_PREFIX}${topicId}`;
   const sk = action === 'prediction' ? PREDICTION_SK
            : action === 'trace_cause' ? 'TRACE_CAUSE'
+           : action === 'research_briefing' ? 'RESEARCH_BRIEFING'
            : SUMMARY_SK;
 
   try {

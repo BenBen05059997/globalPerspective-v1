@@ -88,6 +88,10 @@ export async function fetchTraceCauseCache(topicId) {
   return proxyAction('trace_cause', { topicId });
 }
 
+export async function fetchResearchBriefingCache(topicId) {
+  return proxyAction('research_briefing', { topicId });
+}
+
 export async function fetchTodayArchive() {
   return proxyAction('today');
 }
@@ -142,6 +146,10 @@ export async function fetchCountryIntelligence(countryNames) {
   return proxyActionWithAuth('country_intelligence', { countryNames });
 }
 
+export async function fetchCountryHistory(countryName) {
+  return proxyAction('country_history', { countryName });
+}
+
 export async function fetchDailyBrief(dateKey) {
   const today = new Date().toISOString().slice(0, 10);
   if (!dateKey || dateKey === today) {
@@ -169,6 +177,10 @@ export async function fetchMarketsCountry(country) {
 
 export async function fetchMarketsHistory(symbol, days = 30) {
   return proxyAction('markets_history', { symbol, days });
+}
+
+export async function fetchSystemsAnalysis(countryName) {
+  return proxyAction('systems_analysis', { countryName });
 }
 
 // Public preview endpoints (no auth required, for SEO / non-signed-in users)

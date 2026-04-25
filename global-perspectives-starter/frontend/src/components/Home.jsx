@@ -354,6 +354,7 @@ function Home() {
               <article key={globalIdx} id={`topic-${id}`} className="home-topic">
                 <div className="home-topic-kicker">
                   {t.category && <span className="home-topic-cat">{t.category}</span>}
+                  {t.urgency === 'high' && <span className="home-urgency-pill">BREAKING</span>}
                   {country && <span> · {country}</span>}
                 </div>
 

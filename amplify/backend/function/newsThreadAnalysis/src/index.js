@@ -269,7 +269,16 @@ Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
     throw new Error(`Missing required fields in response: ${Object.keys(parsed).join(', ')}`);
   }
 
-  return { ...parsed, modelId, latencyMs, searchResultsCount: searchResults.length };
+  const groundingSources = searchResults.map(r => ({
+    title: r.title,
+    snippet: r.snippet,
+    source: r.source,
+    type: r.type,
+    ...(r.age && { age: r.age }),
+    queryUsed: searchQuery,
+  }));
+
+  return { ...parsed, modelId, latencyMs, searchResultsCount: searchResults.length, groundingSources };
 }
 
 async function writeAnalysis(threadId, analysis, entryCount) {
@@ -287,6 +296,7 @@ async function writeAnalysis(threadId, analysis, entryCount) {
       trajectory: analysis.trajectory || null,
       rootCauseChain: analysis.rootCauseChain || null,
       watchQuestions: Array.isArray(analysis.watchQuestions) ? analysis.watchQuestions.slice(0, 3) : [],
+      groundingSources: Array.isArray(analysis.groundingSources) ? analysis.groundingSources : [],
       entryCount,
       generatedAt: new Date().toISOString(),
       model: analysis.modelId || GROK_MODEL,

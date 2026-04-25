@@ -27,6 +27,7 @@ const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
 const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
 const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
+const RESEARCH_BRIEFING_SK = 'RESEARCH_BRIEFING';
 const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '3600', 10);
 const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3600', 10);
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
@@ -247,29 +248,29 @@ function buildTraceCausePrompt(topic, generatedDate) {
     : 'No article snippets available.';
 
   return [
-    `You are a "Council of Experts" analyzing news from ${generatedDate}. Your goal is to provide deep context and balanced perspectives, filtering out noise.`,
-    `IMPORTANT: Today's date is ${generatedDate}. All analysis should be relative to this date.`,
+    `You are a "Council of Experts" analyzing news from ${generatedDate}. Respond with ONLY valid JSON — no markdown, no code fences, no commentary before or after.`,
     `Topic: ${topic.title || 'Untitled'}`,
     `Description: ${topic.description || ''}`,
     '',
-    'Refence these Article Snippets for your analysis:',
+    'Article Snippets:',
     snippets,
     '',
-    'Structure your response in markdown:',
-    '### 1. The Context (How We Got Here)',
-    '- **Historical Analogy**: Briefly compare this to a similar historical event to explain the stakes.',
-    '- **The Origin**: In 1 sentence, explain when/why this issue started (before today).',
-    '- **Timeline**: Provide a very brief timeline of key events leading to this moment.',
+    'Return this exact JSON structure (all fields required):',
+    `{
+  "proximate": { "what": "string — the immediate trigger event in 1-2 sentences", "when": "string — approximate date or period" },
+  "contributing": [
+    { "factor": "string — a structural or proximate contributing factor", "evidence": "string — specific evidence from snippets or context" },
+    { "factor": "...", "evidence": "..." }
+  ],
+  "structural": { "factor": "string — the deep root cause that predates recent events", "depth": "string — how long this root cause has been building (e.g. '30 years')" },
+  "impactScores": { "humanImpact": <integer 1-10>, "economicReach": <integer 1-10>, "geopolitical": <integer 1-10> },
+  "biasNote": "string — explicitly name any geopolitical or ideological tilt in the source coverage",
+  "alternativePerspective": "string — the view from the affected region or opposing side that major outlets underreport",
+  "signalVsNoise": { "verdict": "True Signal" | "Noise" | "Uncertain", "confidence": "High" | "Medium" | "Low" }
+}`,
     '',
-    '### 2. Perspective Balancing (The "Echo Chamber" Breaker)',
-    '- **Dominant Narrative**: What is the main angle reported by major global outlets?',
-    '- **Local/Alternative Perspective**: Based on the snippets or your knowledge, what is the view from the affected region or opposing side? Identify the "Silent Perspective" if missing.',
-    '- **Bias Note**: Explicitly label any clear geopolitical tilt in the sources.',
-    '',
-    '### 3. The "So What?" Verdict',
-    '- **Impact Score (1/10)**: Rate specific Criteria: Human Impact, Economic Reach, Geopolitical Stability.',
-    '- **Verdict**: Is this "True Signal" that shapes the world, or just "Noise"? Explain why in 1 sentence.',
-  ].join('\n\n');
+    'contributing array: include 2-4 items. impactScores: integer 1-10 each. Output only the JSON object.',
+  ].join('\n');
 }
 
 // ── Two-Pass Prediction: Research Agent + Prediction Agent ──────────────────
@@ -316,7 +317,7 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
     : '';
 
   return [
-    `You are a geopolitical forecasting analyst. Today is ${generatedDate} (year ${generatedYear}).`,
+    `You are a geopolitical forecasting analyst. Today is ${generatedDate} (year ${generatedYear}). Respond with ONLY valid JSON — no markdown, no code fences, no commentary before or after.`,
     '',
     `Topic: ${topic.title}`,
     `Description: ${topic.description}`,
@@ -325,29 +326,36 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
     researchContext,
     '=== END RESEARCH BRIEFING ===',
     '',
-    'Using the research briefing above, structure your prediction in markdown:',
+    'Using the research briefing above, return this exact JSON structure (all fields required):',
+    `{
+  "scenarios": [
+    {
+      "label": "Most Likely",
+      "probability_range": "string — e.g. '55-65%'",
+      "horizon": "string — e.g. '2-4 weeks'",
+      "rationale": "string — 2-4 sentences grounded in the research briefing, naming specific actors and mechanisms",
+      "triggers": ["string — specific falsifiable event with date/deadline", "string", "string"]
+    },
+    {
+      "label": "Optimistic",
+      "probability_range": "string",
+      "horizon": "string",
+      "rationale": "string — name which actors from the briefing would need to act differently",
+      "triggers": ["string", "string"]
+    },
+    {
+      "label": "Pessimistic",
+      "probability_range": "string",
+      "horizon": "string",
+      "rationale": "string — name the specific miscalculation or trigger from the briefing",
+      "triggers": ["string", "string"]
+    }
+  ],
+  "winners": ["string — country, industry, or leader name"],
+  "losers": ["string — population, economy, or alliance name"]
+}`,
     '',
-    '### 1. Three Scenarios',
-    'Generate three scenarios with rough probability estimates. Ground each in the historical precedents and actor motivations from the research. Be specific — name actors, institutions, dates, and mechanisms.',
-    '',
-    '**Most Likely (~60%)**',
-    'The base case given current trajectory and the balance of forces. What probably happens in the next 2-4 weeks?',
-    '',
-    '**Optimistic (~20%)**',
-    'What happens if key actors make constructive moves? Reference which actors from the briefing would need to act differently.',
-    '',
-    '**Pessimistic (~20%)**',
-    'What happens if the situation escalates? What specific miscalculation or trigger from the briefing could cause this?',
-    '',
-    '(Adjust the probability percentages if the research evidence strongly favors a different distribution. They must sum to ~100%.)',
-    '',
-    '### 2. Winners & Losers',
-    'Across the most likely scenario:',
-    '- **Winners**: (Countries, Industries, or Leaders)',
-    '- **Losers**: (Populations, Economies, or Alliances)',
-    '',
-    '### 3. Trigger Signals',
-    `List 3 concrete, falsifiable events — drawn from the upcoming deadlines in the research — that would confirm which scenario is unfolding. Each must reference a specific date or deadline in ${generatedYear}. Avoid vague signals.`,
+    `probability_range: must be a range string like "55-65%". All three probability_range values must sum to ~100%. triggers: each must reference a specific date, deadline, or named event from ${generatedYear}. Output only the JSON object.`,
   ].join('\n');
 }
 
@@ -363,15 +371,34 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
     const researchPrompt = buildResearchPrompt(topic, generatedDate, generatedYear);
     const researchResponse = await invokeGrok(researchPrompt, RESEARCH_MAX_TOKENS);
     console.log(`Research pass complete for "${topic.title?.substring(0, 40)}" (${researchResponse.latencyMs}ms)`);
+    await writeCache(topic, 'research_briefing', researchResponse, PREDICTION_TTL_SECONDS, generationId);
 
     prompt = buildPredictionPrompt(topic, generatedDate, generatedYear, researchResponse.content);
     maxTokens = PREDICTION_MAX_TOKENS;
   }
 
   const response = await invokeGrok(prompt, maxTokens);
+
+  if (kind === 'prediction' || kind === 'trace_cause') {
+    response.content = normalizeJsonResponse(response.content, kind);
+  }
+
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
   const item = await writeCache(topic, kind, response, ttlSeconds, generationId);
   return item;
+}
+
+function normalizeJsonResponse(raw, kind) {
+  let text = (raw || '').trim();
+  // Strip markdown code fences if model wrapped the JSON
+  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  try {
+    JSON.parse(text);
+    return text;
+  } catch {
+    console.warn(`${kind} response was not valid JSON — storing raw. First 200 chars: ${text.slice(0, 200)}`);
+    return raw;
+  }
 }
 
 async function invokeGrok(prompt, maxTokens) {
@@ -489,7 +516,12 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId) {
   let sk = SUMMARY_SK;
   if (kind === 'prediction') sk = PREDICTION_SK;
   else if (kind === 'trace_cause') sk = 'TRACE_CAUSE';
+  else if (kind === 'research_briefing') sk = RESEARCH_BRIEFING_SK;
   const ttl = Math.floor(Date.now() / 1000) + ttlSeconds;
+
+  const isJson = (kind === 'prediction' || kind === 'trace_cause') && (() => {
+    try { JSON.parse(response.content); return true; } catch { return false; }
+  })();
 
   const item = {
     PK: pk,
@@ -498,6 +530,7 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId) {
     title: topic.title,
     action: kind,
     content: response.content,
+    contentFormat: isJson ? 'json' : 'markdown',
     model: response.modelId,
     provider: 'openai',
     generatedAt: new Date().toISOString(),

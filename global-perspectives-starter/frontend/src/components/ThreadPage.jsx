@@ -153,6 +153,9 @@ export default function ThreadPage() {
               {category}
             </span>
           )}
+          {thread?.entries[0]?.urgency === 'high' && (
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: '#fff', background: 'var(--risk-h)', padding: '1px 6px', borderRadius: 3 }}>BREAKING</span>
+          )}
           Story Arc
         </div>
         <h1 className="tp-hd-h1">{displayTitle}</h1>
@@ -226,6 +229,27 @@ export default function ThreadPage() {
             </>
           )}
 
+          {/* Live web evidence */}
+          {analysis?.groundingSources?.length > 0 && (
+            <>
+              <div className="tp-section-lbl">
+                Live Web Evidence
+                <span className="count">{analysis.groundingSources.length}</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                {analysis.groundingSources.map((s, i) => (
+                  <div key={i} style={{ fontSize: 13, lineHeight: 1.5, padding: '8px 10px', background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 6 }}>
+                    <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>{s.title}</div>
+                    {s.snippet && <div style={{ color: 'var(--ink-dim)', fontSize: 12 }}>{s.snippet}</div>}
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#999', marginTop: 4 }}>
+                      {s.source}{s.age ? ` · ${s.age}` : ''}{s.type === 'web' ? ' · background' : ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           {/* Timeline */}
           <div className="tp-section-lbl">
             Story Timeline
@@ -252,7 +276,10 @@ export default function ThreadPage() {
                     {entry.sources?.length > 0 && (
                       <div className="tp-tl-srcs">
                         {entry.sources.slice(0, 3).map((s, j) => (
-                          <span key={j}><b>{s.source || 'Source'}</b></span>
+                          <span key={j}>
+                            <b>{s.source || 'Source'}</b>
+                            {s.tier === 'secondary' && <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: '#999', marginLeft: 3 }}>bg</span>}
+                          </span>
                         ))}
                       </div>
                     )}

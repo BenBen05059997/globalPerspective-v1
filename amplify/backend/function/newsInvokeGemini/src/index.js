@@ -656,9 +656,13 @@ exports.handler = async (event) => {
         '- category: string (one of the 12 allowed categories)',
         '- search_keywords: array of 3-6 keywords',
         '- regions: array of country names involved',
-        '- sources: array of source objects (each with {title, url, source, age, snippet})',
+        '- sources: array of source objects (each with {title, url, source, age, snippet, tier}) where tier is "primary" (article is directly about this event) or "secondary" (related/background)',
         '- x_trending: boolean (true if trending on X)',
         '- significance: string ("high", "medium", or "low")',
+        '- urgency: string ("high" = breaking/escalating in last 24h, "medium" = developing story, "low" = background/slow-moving)',
+        '- urgencyReason: string (one sentence explaining the urgency classification)',
+        '- primaryCountry: string (the single country most central to this event — the anchor)',
+        '- mentionedCountries: array of other country names materially involved (not just mentioned in passing)',
         '- continues_topic: string (optional — exact title of a previous topic this story continues)',
       ].join('\n');
     } else {
@@ -673,7 +677,7 @@ exports.handler = async (event) => {
         'REJECT: entertainment, sports, celebrity, lifestyle',
         'CATEGORY BALANCE: No single category may exceed 25% of topics. Include climate, science, society, energy, business when relevant.',
         '',
-        'Each topic must have: title, category, search_keywords, regions, x_trending, significance',
+        'Each topic must have: title, category, search_keywords, regions, x_trending, significance, urgency ("high"/"medium"/"low"), urgencyReason (one sentence), primaryCountry (single anchor country), mentionedCountries (array)',
         '',
         `Limit to ${limit} items covering diverse global regions.`,
       ].join('\n');
@@ -735,6 +739,10 @@ exports.handler = async (event) => {
         ? t.continues_topic.trim()
         : undefined;
 
+      const urgency = ['high', 'medium', 'low'].includes(String(t?.urgency || '').toLowerCase())
+        ? String(t.urgency).toLowerCase()
+        : 'medium';
+
       return {
         id: topicId,
         topicId,
@@ -742,9 +750,18 @@ exports.handler = async (event) => {
         category: String(t?.category || '').trim().toLowerCase(),
         search_keywords: Array.isArray(t?.search_keywords) ? t.search_keywords.map(k => String(k)) : [],
         regions: Array.isArray(t?.regions) ? t.regions.map(r => String(r)) : [],
-        sources: validatedSources,
+        sources: validatedSources.map(s => ({
+          ...s,
+          tier: s.tier === 'secondary' ? 'secondary' : 'primary',
+        })),
         x_trending: Boolean(t?.x_trending),
         significance: String(t?.significance || 'medium').toLowerCase(),
+        urgency,
+        ...(t?.urgencyReason && { urgencyReason: String(t.urgencyReason) }),
+        ...(t?.primaryCountry && { primaryCountry: String(t.primaryCountry) }),
+        ...(Array.isArray(t?.mentionedCountries) && t.mentionedCountries.length > 0 && {
+          mentionedCountries: t.mentionedCountries.map(c => String(c)),
+        }),
         ...(continuesTopic && { continues_topic: continuesTopic }),
       };
     });

@@ -440,6 +440,8 @@ Generate a JSON object with exactly these fields:
 
 10. "riskLevel": One of "low", "moderate", "elevated", "high" — based on the interaction of active story arcs and trajectory.
 
+11. "riskScore": Integer 0-100 on a continuous scale. Calibration: 0-24 = low (stable democracy, no active conflict, ordinary policy friction), 25-49 = moderate (meaningful political or economic stress, limited violence), 50-74 = elevated (active conflict, major sanctions, political crisis, or systemic economic instability), 75-100 = high (open war, state failure, mass atrocity, or imminent systemic collapse). Must be consistent with riskLevel: low→0-24, moderate→25-49, elevated→50-74, high→75-100.
+
 Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 
   const { content, modelId, latencyMs } = await invokeGrok(prompt);
@@ -456,44 +458,80 @@ Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
     throw new Error(`Missing required fields in response: ${Object.keys(parsed).join(', ')}`);
   }
 
-  return { ...parsed, modelId, latencyMs, searchResultsCount: searchResults.length };
+  const groundingSources = searchResults.map(r => ({
+    title: r.title,
+    snippet: r.snippet,
+    source: r.source,
+    ...(r.age && { age: r.age }),
+    queryUsed: `${country.countryName} news`,
+  }));
+
+  return { ...parsed, modelId, latencyMs, searchResultsCount: searchResults.length, groundingSources };
 }
 
 // ─── Write to DynamoDB ───────────────────────────────────────────────────────
 
 async function writeAnalysis(countryName, analysis, country) {
-  const ttl = Math.floor(Date.now() / 1000) + COUNTRY_TTL_DAYS * 86400;
+  const now = new Date();
+  const ttl = Math.floor(now.getTime() / 1000) + COUNTRY_TTL_DAYS * 86400;
+  const generatedAt = now.toISOString();
+  const dateKey = generatedAt.slice(0, 10);
 
+  const riskScore = typeof analysis.riskScore === 'number'
+    ? Math.max(0, Math.min(100, Math.round(analysis.riskScore)))
+    : null;
+
+  const coreItem = {
+    countryName,
+    headline: analysis.headline || null,
+    bluf: analysis.bluf || null,
+    keyDevelopments: Array.isArray(analysis.keyDevelopments) ? analysis.keyDevelopments.slice(0, 7) : [],
+    whyItMatters: analysis.whyItMatters || null,
+    situationSummary: analysis.situationSummary || null,
+    backgroundTimeline: Array.isArray(analysis.backgroundTimeline) ? analysis.backgroundTimeline.slice(0, 15) : [],
+    crossThreadInsight: analysis.crossThreadInsight || null,
+    trajectory: analysis.trajectory || 'stable',
+    trajectoryDetail: analysis.trajectoryDetail || null,
+    riskSignals: Array.isArray(analysis.riskSignals) ? analysis.riskSignals.slice(0, 4) : [],
+    riskLevel: analysis.riskLevel || 'moderate',
+    riskScore,
+    groundingSources: Array.isArray(analysis.groundingSources) ? analysis.groundingSources : [],
+    dominantCategory: country.dominantCategory,
+    categories: country.categories,
+    totalArticles: country.totalArticles,
+    activeArcCount: country.threads.length,
+    dateRange: country.dateRange,
+    dayCount: country.dayCount,
+    generatedAt,
+    model: analysis.modelId || GROK_MODEL,
+    latencyMs: analysis.latencyMs || 0,
+    searchResultsCount: analysis.searchResultsCount || 0,
+    ttl,
+  };
+
+  await ddb.send(new PutCommand({
+    TableName: SUMMARY_TABLE,
+    Item: { PK: `${COUNTRY_PK_PREFIX}${countryName}`, SK: COUNTRY_SK, ...coreItem },
+  }));
+
+  // Write daily snapshot for sparkline / riskDelta
   await ddb.send(new PutCommand({
     TableName: SUMMARY_TABLE,
     Item: {
       PK: `${COUNTRY_PK_PREFIX}${countryName}`,
-      SK: COUNTRY_SK,
+      SK: `HISTORY#${dateKey}`,
       countryName,
-      headline: analysis.headline || null,
-      bluf: analysis.bluf || null,
-      keyDevelopments: Array.isArray(analysis.keyDevelopments) ? analysis.keyDevelopments.slice(0, 7) : [],
-      whyItMatters: analysis.whyItMatters || null,
-      situationSummary: analysis.situationSummary || null,
-      backgroundTimeline: Array.isArray(analysis.backgroundTimeline) ? analysis.backgroundTimeline.slice(0, 15) : [],
-      crossThreadInsight: analysis.crossThreadInsight || null,
-      trajectory: analysis.trajectory || 'stable',
-      trajectoryDetail: analysis.trajectoryDetail || null,
-      riskSignals: Array.isArray(analysis.riskSignals) ? analysis.riskSignals.slice(0, 4) : [],
-      riskLevel: analysis.riskLevel || 'moderate',
-      dominantCategory: country.dominantCategory,
-      categories: country.categories,
-      totalArticles: country.totalArticles,
-      activeArcCount: country.threads.length,
-      dateRange: country.dateRange,
-      dayCount: country.dayCount,
-      generatedAt: new Date().toISOString(),
-      model: analysis.modelId || GROK_MODEL,
-      latencyMs: analysis.latencyMs || 0,
-      searchResultsCount: analysis.searchResultsCount || 0,
+      dateKey,
+      riskLevel: coreItem.riskLevel,
+      riskScore,
+      trajectory: coreItem.trajectory,
+      headline: coreItem.headline,
+      generatedAt,
       ttl,
     },
   }));
+
+  console.log(`Wrote COUNTRY_INTELLIGENCE + HISTORY#${dateKey} for ${countryName} (riskScore: ${riskScore})`);
 }
 
 // ─── Grok API ────────────────────────────────────────────────────────────────

@@ -168,6 +168,7 @@
   font-weight: 500;
 }
 .home-topic-cat { color: var(--accent-deep); font-weight: 600; }
+.home-urgency-pill { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.1em; color: #fff; background: var(--risk-h); padding: 1px 6px; border-radius: 3px; vertical-align: middle; }
 
 .home-topic h3 {
   font-family: var(--serif);

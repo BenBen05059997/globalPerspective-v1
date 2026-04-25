@@ -1,5 +1,29 @@
 # Global Perspectives — Change Log
 
+## 2026-04-26 (Redesign v2 — Backend data layer, Changes A–F)
+
+### Backend Lambdas (deployed via aws lambda update-function-code)
+- **NewsProjectInvokeAgentLambda-dev** — Change A: persists prediction research briefing as new SK `RESEARCH_BRIEFING` (was generated then discarded). Change B: prediction + trace_cause prompts now output strict JSON; `normalizeJsonResponse()` strips code fences + validates; items tagged `contentFormat: 'json' | 'markdown'`. New schemas: prediction `{scenarios[{label, probability_range, horizon, rationale, triggers[]}], winners[], losers[]}`; traceCause `{proximate, contributing[], structural, impactScores, biasNote, alternativePerspective, signalVsNoise}`.
+- **newsInvokeGemini-dev** — Change C: topic objects now include `urgency` ("high"/"medium"/"low"), `urgencyReason`, `primaryCountry` (anchor), `mentionedCountries[]`. Each source gets `tier: "primary"|"secondary"`. Mapper validates and passes new fields through.
+- **newsCountryIntelligence** — Change D: prompt now produces numeric `riskScore` (0-100, calibrated to riskLevel buckets). `writeAnalysis()` writes both the existing `COUNTRY_INTELLIGENCE` SK and a new `HISTORY#{YYYY-MM-DD}` SK snapshot with `{riskLevel, riskScore, trajectory, headline}`, TTL 90d. Change E: persists `groundingSources` from Brave search.
+- **newsThreadAnalysis** — Change E: persists `groundingSources` from Brave news + web grounding.
+- **newsSensitiveData-dev** — exposes new actions: `research_briefing` (Change A), `country_history` (Change D, uses QueryCommand, returns up to 90 snapshots descending), `systems_analysis` (Change F, exposes existing `SYSTEMS#{country}` data).
+
+### Frontend (source committed; build NOT yet deployed to /docs/)
+- **PredictionDisplay.jsx** rewritten with dual-path: JSON renderer (scenario cards with probability range badges, horizon, triggers, winners/losers grid) when `contentFormat === 'json'`; legacy markdown renderer preserved for old cached entries.
+- **TraceCauseDisplay.jsx** rewritten with dual-path: JSON renderer (Cause Chain nodes for Proximate/Contributing/Structural with depth label, Impact bars 1-10, Counter Reading tab with bias note + alternative perspective, signal/noise verdict banner) + legacy markdown path.
+- **Home.jsx + Home.css** — BREAKING urgency pill on topics with `urgency === 'high'`.
+- **ThreadPage.jsx** — BREAKING pill in header kicker; "bg" mono label on secondary sources; "Live Web Evidence" section above timeline when grounding sources exist.
+- **CountryPage.jsx** — Risk score stat now shows numeric `riskScore` with inline SVG sparkline when ≥2 history snapshots; "Live Web Evidence" rail card; new "Causal Graph" rail section showing top 5 systems-analysis edges with mechanism + lagDays + confidence.
+- **New hooks**: `useResearchBriefing.js`, `useCountryHistory.js` (1hr cache), `useSystemsAnalysis.js` (1hr cache).
+- **restProxy.js** — added `fetchResearchBriefingCache()`, `fetchCountryHistory()`, `fetchSystemsAnalysis()`.
+
+### What's still pending
+- Frontend build → /docs/ deploy (held back pending review)
+- v2 frontend layout work (EditorialShell + 3-col + atoms) per REDESIGN_V2_PLAN.md
+- Change G (model tiering) — deferred
+- One-line fixes: ACLED lat/lng query field, newsMarketsData quarterly macro history
+
 ## 2026-04-25h (Redesign A8 — Map page redesign)
 
 ### Frontend — WorldMap.jsx + WorldMap.css (A8 complete)

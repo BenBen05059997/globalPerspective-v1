@@ -1,0 +1,11 @@
+{
+  "name": "newsmarketsdata",
+  "version": "1.0.0",
+  "description": "Free economic data ingest — FX, yields, country macros, commodities",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}

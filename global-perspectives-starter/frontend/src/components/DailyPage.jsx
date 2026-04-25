@@ -1,19 +1,18 @@
 import { useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useDailyBrief } from '../hooks/useDailyBrief';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
 import ShareButtons from './ShareButtons';
 import CopyBriefing, { formatDailyBrief } from './CopyBriefing';
 import { SaveButton } from './SaveButton';
-import SideNav from './SideNav';
 import IntelligenceLoader from './IntelligenceLoader';
-import './WeeklyPage.css';
+import './DailyPage.css';
 
-const TRAJECTORY_BADGES = {
-  escalating: { arrow: '↗', label: 'Escalating', color: '#ef4444' },
-  stable: { arrow: '→', label: 'Stable', color: '#6b7280' },
-  'de-escalating': { arrow: '↘', label: 'De-escalating', color: '#10b981' },
+const TRAJECTORY_LABELS = {
+  escalating:      { arrow: '↗', label: 'Escalating',      color: 'var(--risk-h)' },
+  stable:          { arrow: '→', label: 'Stable',           color: 'var(--ink-dim)' },
+  'de-escalating': { arrow: '↘', label: 'De-escalating',   color: 'var(--risk-l)' },
 };
 
 function BoldText({ text }) {
@@ -36,9 +35,8 @@ function nextDateKey(dk) {
   d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString().slice(0, 10);
 }
-
-function formatTimeAgo(isoString) {
-  const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+function formatTimeAgo(iso) {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (mins < 1) return 'just now';
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
@@ -48,236 +46,321 @@ function formatTimeAgo(isoString) {
 
 export default function DailyPage() {
   const { dateKey: paramDateKey } = useParams();
-  const navigate = useNavigate();
   const { loading: authLoading } = useAuth();
   const today = new Date().toISOString().slice(0, 10);
   const dateKey = paramDateKey || today;
   const isToday = dateKey === today;
+  const prev = prevDateKey(dateKey);
+  const next = nextDateKey(dateKey);
 
-  const { brief, loading, error } = useDailyBrief(dateKey);
+  const { brief, loading } = useDailyBrief(dateKey);
 
   useEffect(() => {
     const title = brief?.displayDate || dateKey;
     document.title = `Daily Brief — ${title} | Global Perspectives`;
   }, [brief, dateKey]);
 
-  if (authLoading) return <div className="weekly-loading">Loading…</div>;
-
+  if (authLoading) return null;
   if (loading) return <IntelligenceLoader type="typewriter" />;
 
   if (!brief) {
     return (
-      <div style={{ padding: '4rem 1rem', textAlign: 'center' }}>
-        <h3>No daily brief available</h3>
-        <p style={{ color: '#6b7280' }}>
+      <div className="daily-page daily-empty">
+        <h3>No brief available</h3>
+        <p>
           {isToday
             ? "Today's brief hasn't been generated yet. It publishes daily — check back soon."
             : `No brief found for ${dateKey}.`}
         </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 16 }}>
-          <Link to={`/daily/${prevDateKey(dateKey)}`} style={{ color: '#3b82f6' }}>← Previous day</Link>
-          {!isToday && <Link to="/daily" style={{ color: '#3b82f6' }}>Today's brief</Link>}
+        <div className="daily-empty-links">
+          <Link to={`/daily/${prev}`}>← Previous day</Link>
+          {!isToday && <Link to="/daily">Today's brief</Link>}
         </div>
       </div>
     );
   }
 
-  const risk = brief.countryToWatch?.riskLevel ? (RISK_COLORS[brief.countryToWatch.riskLevel] || RISK_COLORS.moderate) : null;
-  const trajectory = brief.countryToWatch?.trajectory ? (TRAJECTORY_BADGES[brief.countryToWatch.trajectory] || TRAJECTORY_BADGES.stable) : null;
-  const risingTrajectory = brief.risingThread?.trajectory ? (TRAJECTORY_BADGES[brief.risingThread.trajectory] || TRAJECTORY_BADGES.stable) : null;
-
-  const sections = [
-    { id: 'daily-headline', label: 'Lead Story' },
-    { id: 'daily-overview', label: 'Overview' },
-    ...(brief.topStories?.length ? [{ id: 'daily-top-stories', label: 'Top Stories', count: brief.topStories.length }] : []),
-    ...(brief.risingThread?.title ? [{ id: 'daily-rising-thread', label: 'Rising Thread' }] : []),
-    ...(brief.countryToWatch?.countryName ? [{ id: 'daily-country-watch', label: 'Country Watch' }] : []),
-    { id: 'daily-stats', label: 'Stats' },
-  ];
+  const stats = brief.stats || {};
+  const risingTraj = brief.risingThread?.trajectory
+    ? (TRAJECTORY_LABELS[brief.risingThread.trajectory] || TRAJECTORY_LABELS.stable)
+    : null;
+  const countryRisk = brief.countryToWatch?.riskLevel
+    ? (RISK_COLORS[brief.countryToWatch.riskLevel] || RISK_COLORS.moderate)
+    : null;
+  const topPred = brief.topStories?.[0]?.prediction || null;
+  const catEntries = Object.entries(brief.categoryBreakdown || {}).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="thread-page">
-      <div className="thread-page-topbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link to="/" className="thread-page-back">← Home</Link>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Link to={`/daily/${prevDateKey(dateKey)}`} className="daily-nav-btn">←</Link>
-            <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>{brief.displayDate}</span>
-            {!isToday && <Link to={`/daily/${nextDateKey(dateKey)}`} className="daily-nav-btn">→</Link>}
-            {!isToday && <Link to="/daily" style={{ fontSize: '0.8rem', color: '#3b82f6', textDecoration: 'none' }}>Today</Link>}
-          </div>
+    <div className="daily-page">
+
+      {/* Date nav topbar */}
+      <div className="daily-topbar">
+        <Link to="/">← Home</Link>
+        <div className="daily-date-nav">
+          <Link to={`/daily/${prev}`} className="daily-date-arrow" title="Previous day">←</Link>
+          <span className="daily-date-label">{brief.displayDate || dateKey}</span>
+          {!isToday && <Link to={`/daily/${next}`} className="daily-date-arrow" title="Next day">→</Link>}
+          {!isToday && <Link to="/daily">Today</Link>}
+        </div>
+        <div className="daily-topbar-right">
+          <ShareButtons path={`/daily/${dateKey}`} title={`Daily Intelligence Brief — ${brief.displayDate}`} />
+          <CopyBriefing getText={() => formatDailyBrief(brief)} />
+          <SaveButton itemType="daily" itemId={dateKey} metadata={{ headline: brief.headline, date: brief.displayDate }} />
         </div>
       </div>
-      <div className="page-with-sidenav">
-        <div className="page-main-content">
-          <div className="thread-page-body">
 
-            <div id="daily-headline">
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <h1 className="thread-page-title" style={{ flex: 1 }}>{brief.headline}</h1>
-                <SaveButton itemType="daily" itemId={dateKey} metadata={{ headline: brief.headline, date: brief.displayDate }} />
-              </div>
-              <div className="cp-subtitle">
-                Daily Intelligence Brief — {brief.displayDate}
-                {brief.generatedAt && <> · Updated {formatTimeAgo(brief.generatedAt)}</>}
-              </div>
+      {/* Masthead */}
+      <header className="daily-masthead">
+        <div className="daily-masthead-top">
+          <span>Daily Intelligence Brief</span>
+          <span className="daily-masthead-center">Global Perspectives™</span>
+          <span>{brief.displayDate || dateKey}</span>
+        </div>
+        <h1 className="daily-masthead-h1">Today's <em>Brief</em></h1>
+        <div className="daily-masthead-sub">
+          A single read on what the world's newsroom cycle was actually about.
+        </div>
+        <div className="daily-masthead-bar">
+          <span>
+            {brief.generatedAt
+              ? <>Generated <strong>{formatTimeAgo(brief.generatedAt)}</strong></>
+              : 'AI-generated'}
+          </span>
+          <div className="daily-masthead-counts">
+            {stats.totalArticles > 0 && (
+              <span className="dc">
+                <span className="daily-masthead-num">{stats.totalArticles}</span>
+                articles
+              </span>
+            )}
+            {stats.countriesCovered > 0 && (
+              <span className="dc">
+                <span className="daily-masthead-num">{stats.countriesCovered}</span>
+                countries
+              </span>
+            )}
+            {stats.sourceOutlets > 0 && (
+              <span className="dc">
+                <span className="daily-masthead-num">{stats.sourceOutlets}</span>
+                outlets
+              </span>
+            )}
+          </div>
+          <span>AI-generated · analyst-reviewed</span>
+        </div>
+      </header>
 
-              <div className="cp-metrics" style={{ marginTop: 12 }}>
-                <div className="cp-metric">
-                  <span className="cp-metric-value">{brief.stats?.totalArticles || 0}</span>
-                  <span className="cp-metric-label">articles</span>
-                </div>
-                <div className="cp-metric">
-                  <span className="cp-metric-value">{brief.stats?.sourceOutlets || 0}</span>
-                  <span className="cp-metric-label">sources</span>
-                </div>
-                <div className="cp-metric">
-                  <span className="cp-metric-value">{brief.stats?.countriesCovered || 0}</span>
-                  <span className="cp-metric-label">countries</span>
-                </div>
-                <div className="cp-metric">
-                  <span className="cp-metric-value">{Object.keys(brief.categoryBreakdown || {}).length}</span>
-                  <span className="cp-metric-label">categories</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12, marginBottom: 16 }}>
-                <ShareButtons path={`/daily/${dateKey}`} title={`Daily Intelligence Brief — ${brief.displayDate}`} />
-                <CopyBriefing getText={() => formatDailyBrief(brief)} />
-              </div>
+      {/* Lead story */}
+      {brief.headline && (
+        <section className={`daily-headline${topPred ? '' : ' no-pred'}`}>
+          <div className="daily-headline-left">
+            <div className="daily-headline-kicker">
+              <span className="daily-kicker-pill">Lead Story</span>
+              {brief.countryToWatch?.countryName && (
+                <span>{brief.countryToWatch.countryName}</span>
+              )}
             </div>
-
+            <h2 className="daily-headline-h2">{brief.headline}</h2>
             {brief.summary && (
-              <div id="daily-overview" className="cp-bluf" style={{ marginBottom: 20 }}>
-                <div className="cp-section-label">GLOBAL OVERVIEW</div>
-                <div className="cp-bluf-text" style={{ lineHeight: 1.7 }}>
-                  <BoldText text={brief.summary} />
-                </div>
-              </div>
+              <p className="daily-headline-deck">
+                <BoldText text={brief.summary} />
+              </p>
             )}
-
-            {brief.topStories?.length > 0 && (
-              <div id="daily-top-stories" style={{ marginBottom: 20 }}>
-                <div className="cp-section-label">TOP STORIES ({brief.topStories.length})</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {brief.topStories.map((story, i) => {
-                    const catColors = CATEGORY_BADGE_COLORS[(story.category || '').toLowerCase()];
-                    return (
-                      <div key={i} style={{ padding: '12px 16px', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: 10 }}>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-                          {catColors && (
-                            <span className="story-category-badge" style={{ background: catColors.bg, color: catColors.color }}>{story.category}</span>
-                          )}
-                          {(story.regions || []).slice(0, 3).map((r, j) => (
-                            <Link key={j} to={`/weekly/country/${encodeURIComponent(r)}`} className="thread-region-link" style={{ fontSize: '0.75rem' }}>{r}</Link>
-                          ))}
-                          {story.sourceCount > 0 && (
-                            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{story.sourceCount} sources</span>
-                          )}
-                        </div>
-                        <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>{story.title}</div>
-                        {story.prediction && (
-                          <div style={{ fontSize: '0.85rem', color: '#6b7280', fontStyle: 'italic' }}>
-                            → {story.prediction}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {brief.risingThread?.title && (
-              <div id="daily-rising-thread" style={{ marginBottom: 20 }}>
-                <div className="cp-section-label">RISING THREAD</div>
-                <Link
-                  to={brief.risingThread.threadId ? `/weekly/thread/${brief.risingThread.threadId}` : '/weekly'}
-                  style={{ display: 'block', padding: '14px 16px', border: '1px solid #fbbf24', borderRadius: 10, background: '#fefce8', textDecoration: 'none', color: 'inherit' }}
-                >
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                    <span className="story-arc-label">Story Arc</span>
-                    {risingTrajectory && (
-                      <span style={{ fontSize: '0.8rem', color: risingTrajectory.color, fontWeight: 600 }}>
-                        {risingTrajectory.arrow} {risingTrajectory.label}
-                      </span>
-                    )}
-                    <span style={{ fontSize: '0.75rem', color: '#92400e' }}>
-                      {brief.risingThread.articleCount || '?'} articles · {brief.risingThread.dayCount || '?'} days
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>{brief.risingThread.title}</div>
-                  {brief.risingThread.oneLiner && (
-                    <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{brief.risingThread.oneLiner}</div>
-                  )}
-                  <div style={{ fontSize: '0.8rem', color: '#3b82f6', marginTop: 6 }}>Read full arc →</div>
-                </Link>
-              </div>
-            )}
-
-            {brief.countryToWatch?.countryName && (
-              <div id="daily-country-watch" style={{ marginBottom: 20 }}>
-                <div className="cp-section-label">COUNTRY TO WATCH</div>
-                <Link
-                  to={`/weekly/country/${encodeURIComponent(brief.countryToWatch.countryName)}`}
-                  style={{ display: 'block', padding: '14px 16px', border: `1px solid ${risk?.color || '#e5e7eb'}`, borderRadius: 10, textDecoration: 'none', color: 'inherit' }}
-                >
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontWeight: 700 }}>{brief.countryToWatch.countryName}</span>
-                    {risk && (
-                      <span className="country-risk-badge" style={{ background: risk.bg, color: risk.color }}>
-                        {brief.countryToWatch.riskLevel}
-                      </span>
-                    )}
-                    {trajectory && (
-                      <span style={{ fontSize: '0.8rem', color: trajectory.color, fontWeight: 600 }}>
-                        {trajectory.arrow} {trajectory.label}
-                      </span>
-                    )}
-                  </div>
-                  {brief.countryToWatch.headline && (
-                    <div style={{ fontSize: '0.9rem', color: '#374151' }}>{brief.countryToWatch.headline}</div>
-                  )}
-                  <div style={{ fontSize: '0.8rem', color: '#3b82f6', marginTop: 6 }}>View full briefing →</div>
-                </Link>
-              </div>
-            )}
-
-            {brief.categoryBreakdown && Object.keys(brief.categoryBreakdown).length > 0 && (
-              <div id="daily-stats" style={{ marginBottom: 20 }}>
-                <div className="cp-section-label">CATEGORY BREAKDOWN</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {Object.entries(brief.categoryBreakdown)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([cat, count]) => {
-                      const c = CATEGORY_BADGE_COLORS[cat];
-                      return (
-                        <span key={cat} style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 6,
-                          padding: '4px 12px', borderRadius: 8,
-                          border: '1px solid var(--border-color, #e5e7eb)',
-                          fontSize: '0.85rem',
-                        }}>
-                          {c && <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.color, display: 'inline-block' }} />}
-                          {cat} <strong>{count}</strong>
-                        </span>
-                      );
-                    })}
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: '1px solid var(--border-color, #e5e7eb)', marginTop: 16 }}>
-              <Link to={`/daily/${prevDateKey(dateKey)}`} style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.9rem' }}>← Previous day</Link>
-              <Link to="/weekly" style={{ color: '#6b7280', textDecoration: 'none', fontSize: '0.85rem' }}>Weekly Analysis →</Link>
-              {!isToday
-                ? <Link to={`/daily/${nextDateKey(dateKey)}`} style={{ color: '#3b82f6', textDecoration: 'none', fontSize: '0.9rem' }}>Next day →</Link>
-                : <span style={{ fontSize: '0.85rem', color: '#9ca3af' }}>Latest</span>
-              }
+            <div className="daily-headline-meta">
+              {stats.countriesCovered > 0 && (
+                <span>Countries <b>{stats.countriesCovered}</b></span>
+              )}
+              {stats.sourceOutlets > 0 && (
+                <span>Sources <b>{stats.sourceOutlets}</b></span>
+              )}
+              {brief.generatedAt && (
+                <span>Updated <b>{formatTimeAgo(brief.generatedAt)}</b></span>
+              )}
             </div>
           </div>
+
+          {topPred && (
+            <aside className="daily-predict-box">
+              <div className="daily-predict-ph">
+                <span className="hz">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/>
+                  </svg>
+                  AI Prediction
+                </span>
+                <span>Lead story</span>
+              </div>
+              <div className="daily-predict-pb">
+                <div className="daily-predict-lbl">Forecast</div>
+                <p>{topPred}</p>
+              </div>
+              <div className="daily-predict-ac">
+                <span>Forecast model v1.2</span>
+                <span>Updates as sources shift</span>
+              </div>
+            </aside>
+          )}
+        </section>
+      )}
+
+      {/* Top Stories */}
+      {brief.topStories?.length > 0 && (
+        <section className="daily-stories">
+          <div className="daily-stories-hd">
+            <h3>Top Stories</h3>
+            <span className="daily-stories-n">
+              {brief.topStories.length} item{brief.topStories.length !== 1 ? 's' : ''} · ordered by signal breadth
+            </span>
+          </div>
+
+          {brief.topStories.map((story, i) => {
+            const catColors = CATEGORY_BADGE_COLORS[(story.category || '').toLowerCase()];
+            const hasPred = !!story.prediction;
+            return (
+              <article key={i} className={`daily-story${hasPred ? '' : ' no-pred'}`}>
+                <div className="daily-story-num">{String(i + 1).padStart(2, '0')}</div>
+
+                <div className="daily-story-body">
+                  <div className="daily-story-kicker">
+                    {story.category && <span className="daily-story-cat">{story.category}</span>}
+                    {(story.regions || []).slice(0, 3).map((r, j) => (
+                      <span key={j} className="daily-story-kicker-region">{r}</span>
+                    ))}
+                    {story.sourceCount > 0 && (
+                      <span style={{ color: 'var(--ink-faint)' }}>{story.sourceCount} source{story.sourceCount !== 1 ? 's' : ''}</span>
+                    )}
+                  </div>
+                  <h4 className="daily-story-h4">{story.title}</h4>
+                  {(story.regions || []).length > 0 && (
+                    <div className="daily-story-regions">
+                      {(story.regions || []).slice(0, 5).map((r, j) => (
+                        <Link key={j} to={`/weekly/country/${encodeURIComponent(r)}`} className="daily-story-region">{r}</Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {hasPred && (
+                  <aside className="daily-story-pred">
+                    <div className="daily-story-pred-lbl">
+                      <span>Prediction</span>
+                    </div>
+                    <p>{story.prediction}</p>
+                  </aside>
+                )}
+              </article>
+            );
+          })}
+        </section>
+      )}
+
+      {/* Rising Thread */}
+      {brief.risingThread?.title && (
+        <Link
+          to={brief.risingThread.threadId ? `/weekly/thread/${brief.risingThread.threadId}` : '/weekly'}
+          className="daily-rising"
+        >
+          <div className="daily-rising-badge">
+            <span>Rising Thread</span>
+            {risingTraj && (
+              <span className="daily-rising-traj" style={{ color: risingTraj.color }}>
+                {risingTraj.arrow} {risingTraj.label}
+              </span>
+            )}
+            {brief.risingThread.articleCount > 0 && (
+              <span style={{ color: 'var(--ink-dim)' }}>
+                {brief.risingThread.articleCount} articles · {brief.risingThread.dayCount || '?'} days
+              </span>
+            )}
+          </div>
+          <div className="daily-rising-h4">{brief.risingThread.title}</div>
+          {brief.risingThread.oneLiner && (
+            <div className="daily-rising-deck">{brief.risingThread.oneLiner}</div>
+          )}
+          <div className="daily-rising-cta">Read full arc →</div>
+        </Link>
+      )}
+
+      {/* Country to Watch */}
+      {brief.countryToWatch?.countryName && (
+        <div>
+          <div className="daily-country-section-lbl">Country to Watch</div>
+          <Link
+            to={`/weekly/country/${encodeURIComponent(brief.countryToWatch.countryName)}`}
+            className="daily-country"
+            style={countryRisk ? { borderColor: countryRisk.color } : {}}
+          >
+            <div className="daily-country-top">
+              <span className="daily-country-name">{brief.countryToWatch.countryName}</span>
+              {countryRisk && (
+                <span
+                  className="daily-risk-badge"
+                  style={{ background: countryRisk.bg, color: countryRisk.color }}
+                >
+                  {brief.countryToWatch.riskLevel}
+                </span>
+              )}
+            </div>
+            {brief.countryToWatch.headline && (
+              <div className="daily-country-headline">{brief.countryToWatch.headline}</div>
+            )}
+            <div className="daily-country-cta">View full briefing →</div>
+          </Link>
         </div>
-        <SideNav sections={sections} />
+      )}
+
+      {/* Method */}
+      <section className="daily-method">
+        <div className="daily-method-grid">
+          <div className="daily-method-item">
+            <div className="daily-method-lbl">Articles scanned</div>
+            <div className="daily-method-val">{stats.totalArticles || '—'}</div>
+            <p>Across {stats.sourceOutlets || '?'} outlets in 24h window.</p>
+          </div>
+          <div className="daily-method-item">
+            <div className="daily-method-lbl">Countries covered</div>
+            <div className="daily-method-val">{stats.countriesCovered || '—'}</div>
+            <p>Ranked by signal breadth, not volume.</p>
+          </div>
+          <div className="daily-method-item">
+            <div className="daily-method-lbl">Outlets</div>
+            <div className="daily-method-val">{stats.sourceOutlets || '—'}</div>
+            <p>International wire services + regional sources.</p>
+          </div>
+          <div className="daily-method-item">
+            <div className="daily-method-lbl">Categories</div>
+            <div className="daily-method-val">{catEntries.length || '—'}</div>
+            <p>Predictions are probabilistic, not advice.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Category Breakdown */}
+      {catEntries.length > 0 && (
+        <div className="daily-cats">
+          <div className="daily-cats-lbl">Category Breakdown</div>
+          <div className="daily-cats-grid">
+            {catEntries.map(([cat, count]) => {
+              const c = CATEGORY_BADGE_COLORS[cat];
+              return (
+                <span key={cat} className="daily-cat-pill">
+                  {c && <span className="daily-cat-dot" style={{ background: c.color }} />}
+                  {cat} <b>{count}</b>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Footer nav */}
+      <div className="daily-footer-nav">
+        <Link to={`/daily/${prev}`}>← Previous day</Link>
+        <Link to="/weekly">Weekly Analysis →</Link>
+        {!isToday
+          ? <Link to={`/daily/${next}`}>Next day →</Link>
+          : <span className="daily-fn-muted">Latest</span>
+        }
       </div>
     </div>
   );

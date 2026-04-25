@@ -1,23 +1,23 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams, Link, useHref } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import IntelligenceLoader from './IntelligenceLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '../hooks/useCountryIntelligence';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
+import { useMarketsCountry } from '../hooks/useMarketsCountry';
 import { formatDateLabel } from '../utils/dateUtils';
 import { getBroadRegionsForCountry } from '../utils/countryMapping';
 import WeeklyMap from './WeeklyMap';
 import ShareButtons from './ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from './CopyBriefing';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
-import SectionNav from './SectionNav';
-import SideNav from './SideNav';
 import TrialBanner from './TrialBanner';
 import { useUserProfile } from '../hooks/useUserProfile';
 import BackgroundTimeline from './BackgroundTimeline';
 import { SaveButton } from './SaveButton';
 import './WeeklyPage.css';
+import './CountryPage.css';
 
 function formatTimeAgo(isoString) {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
@@ -28,10 +28,17 @@ function formatTimeAgo(isoString) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function formatAsOf(iso) {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+  } catch { return iso; }
+}
+
 const TRAJECTORY_BADGES = {
-  escalating: { arrow: '↗', label: 'Escalating', color: '#ef4444' },
-  stable: { arrow: '→', label: 'Stable', color: '#6b7280' },
-  'de-escalating': { arrow: '↘', label: 'De-escalating', color: '#10b981' },
+  escalating:      { arrow: '↗', label: 'Escalating',    color: 'var(--risk-h)' },
+  stable:          { arrow: '→', label: 'Stable',         color: 'var(--ink-dim)' },
+  'de-escalating': { arrow: '↘', label: 'De-escalating', color: 'var(--risk-l)' },
 };
 
 const RISK_DOTS = ['low', 'moderate', 'elevated', 'high'];
@@ -44,57 +51,6 @@ function BoldText({ text }) {
       ? <strong key={i}>{p.slice(2, -2)}</strong>
       : p
   )}</>;
-}
-
-function CopyLinkBtn({ countryName }) {
-  const [copied, setCopied] = useState(false);
-  const href = useHref(`/weekly/country/${encodeURIComponent(countryName)}`);
-  const url = `${window.location.origin}${href}`;
-  const handleCopy = () => {
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-  return (
-    <button className={`cp-share-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy link">
-      {copied ? (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
-      ) : (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-      )}
-    </button>
-  );
-}
-
-function ArcSection({ arcs, threadAnalyses, countryName }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="cp-arcs">
-      <button className="cp-arcs-header" onClick={() => setOpen(!open)}>
-        <span className="cp-arcs-label">Active story arcs</span>
-        <span className="cp-arcs-count">{arcs.length}</span>
-        <span className={`cp-day-chevron ${open ? 'open' : ''}`}>&#9662;</span>
-      </button>
-      {open && (
-        <div className="cp-arcs-list">
-          {arcs.map(arc => {
-            const c = CATEGORY_BADGE_COLORS[arc.category];
-            const title = threadAnalyses?.[arc.threadId]?.threadTitle || arc.latestTitle;
-            return (
-              <Link key={arc.threadId} to={`/weekly/thread/${arc.threadId}?from=country&country=${encodeURIComponent(countryName)}`} className="cp-arc-row">
-                {c && <span className="cp-arc-dot" style={{ background: c.color }} />}
-                <span className="cp-arc-cat">{arc.category}</span>
-                <span className="cp-arc-title">{title}</span>
-                <span className="cp-arc-meta">{arc.articleCount} articles · {arc.dayCount}d</span>
-                <span className="cp-arc-arrow">→</span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
 }
 
 function CoverageList({ entries }) {
@@ -142,147 +98,129 @@ function CoverageList({ entries }) {
         <span className={`cp-day-chevron ${open ? 'open' : ''}`}>&#9662;</span>
       </button>
       {open && <>
-      <div className="cp-coverage-header">
-        <div className="cp-coverage-hint">Tap an article for sources and AI analysis</div>
-        {categories.length > 1 && (
-          <div className="cp-coverage-filters">
-            <button className={`cp-cov-filter ${!activeCat ? 'active' : ''}`} onClick={() => setActiveCat(null)}>All</button>
-            {categories.map(([cat, count]) => {
-              const c = CATEGORY_BADGE_COLORS[cat];
-              const isActive = activeCat === cat;
-              return (
-                <button
-                  key={cat}
-                  className={`cp-cov-filter ${isActive ? 'active' : ''}`}
-                  style={isActive && c ? { background: c.bg, color: c.color, borderColor: c.bg } : {}}
-                  onClick={() => setActiveCat(isActive ? null : cat)}
-                >
-                  {cat} {count}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-      <div className="cp-coverage-list">
-        {(showAllDays ? dayGroups : dayGroups.slice(0, 3)).map(([date, dayEntries]) => {
-          const isCollapsed = collapsedDates.has(date);
-          return (
-            <div key={date} className="cp-day-group">
-              <button className="cp-day-header" onClick={() => toggleDate(date)}>
-                <span className="cp-day-date">{formatDateLabel(date)}</span>
-                <span className="cp-day-count">{dayEntries.length} article{dayEntries.length !== 1 ? 's' : ''}</span>
-                <span className={`cp-day-chevron ${isCollapsed ? '' : 'open'}`}>&#9662;</span>
-              </button>
-              {!isCollapsed && dayEntries.map((entry, i) => {
-                const id = entry.topicId || `${date}-${i}`;
-                const isExpanded = expandedId === id;
-                const hasAi = entry.ai?.summary || entry.ai?.prediction || entry.ai?.trace_cause;
-                const aiKey = activeAi === 'trace' ? 'trace_cause' : activeAi;
-                const cat = (entry.category || 'other').toLowerCase();
-                const catColor = CATEGORY_BADGE_COLORS[cat];
+        <div className="cp-coverage-header">
+          <div className="cp-coverage-hint">Tap an article for sources and AI analysis</div>
+          {categories.length > 1 && (
+            <div className="cp-coverage-filters">
+              <button className={`cp-cov-filter ${!activeCat ? 'active' : ''}`} onClick={() => setActiveCat(null)}>All</button>
+              {categories.map(([cat, count]) => {
+                const c = CATEGORY_BADGE_COLORS[cat];
+                const isActive = activeCat === cat;
                 return (
-                  <div key={id} id={`coverage-${entry.topicId || id}`} className={`cp-coverage-item ${isExpanded ? 'expanded' : ''}`}>
-                    <div className="cp-coverage-row" onClick={() => { setExpandedId(isExpanded ? null : id); setActiveAi(null); }}>
-                      {catColor && <span className="story-category-badge" style={{ background: catColor.bg, color: catColor.color, fontSize: 9, padding: '1px 6px' }}>{cat}</span>}
-                      <span className="cp-coverage-title">{entry.title}</span>
-                      {entry.threadId && <span className="cp-arc-hint">arc</span>}
-                      <span className={`cp-coverage-chevron ${isExpanded ? 'open' : ''}`}>&#9662;</span>
-                    </div>
-                    {isExpanded && (
-                      <div className="cp-coverage-body">
-                        {entry.sources && entry.sources.length > 0 && (
-                          <div className="cp-coverage-sources">
-                            {entry.sources.slice(0, 5).map((s, j) => (
-                              <span key={j} className="story-entry-source-tag">
-                                {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer">{s.source || s.title || 'Source'}</a> : (s.source || s.title || 'Source')}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <div className="cp-coverage-actions">
-                          <a
-                            href={`https://www.google.com/search?q=${encodeURIComponent(entry.title)}&tbm=nws&tbs=qdr:d`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="cp-google-news-btn"
-                          >
-                            View Google News ↗
-                          </a>
-                          {entry.threadId && (
-                            <Link to={`/weekly/thread/${entry.threadId}`} className="cp-view-arc-btn">
-                              View full story →
-                            </Link>
-                          )}
-                        </div>
-                        {hasAi && (
-                          <div className="ai-toolbar" style={{ marginTop: 8 }}>
-                            {entry.ai?.summary && (
-                              <button className={`ai-btn ai-btn-summary ${activeAi === 'summary' ? 'active' : ''}`} onClick={() => setActiveAi(activeAi === 'summary' ? null : 'summary')}>Summarize</button>
-                            )}
-                            {entry.ai?.prediction && (
-                              <button className={`ai-btn ai-btn-predict ${activeAi === 'prediction' ? 'active' : ''}`} onClick={() => setActiveAi(activeAi === 'prediction' ? null : 'prediction')}>Predict</button>
-                            )}
-                            {entry.ai?.trace_cause && (
-                              <button className={`ai-btn ai-btn-trace ${activeAi === 'trace' ? 'active' : ''}`} onClick={() => setActiveAi(activeAi === 'trace' ? null : 'trace')}>Trace Cause</button>
-                            )}
-                          </div>
-                        )}
-                        {activeAi && entry.ai?.[aiKey] && (
-                          <div className={`story-entry-ai-content ${activeAi}`}>
-                            <div className="story-entry-section-text">{entry.ai[aiKey]}</div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    key={cat}
+                    className={`cp-cov-filter ${isActive ? 'active' : ''}`}
+                    style={isActive && c ? { background: c.bg, color: c.color, borderColor: c.bg } : {}}
+                    onClick={() => setActiveCat(isActive ? null : cat)}
+                  >
+                    {cat} {count}
+                  </button>
                 );
               })}
             </div>
-          );
-        })}
-        {!showAllDays && dayGroups.length > 3 && (
-          <button
-            className="weekly-category-show-more"
-            onClick={() => setShowAllDays(true)}
-            style={{ marginTop: 8 }}
-          >
-            Show {dayGroups.length - 3} more day{dayGroups.length - 3 !== 1 ? 's' : ''}
-          </button>
-        )}
-        {dayGroups.length === 0 && (
-          <div className="cp-empty" style={{ padding: '1rem 0' }}>No articles match this filter.</div>
-        )}
-      </div>
+          )}
+        </div>
+        <div className="cp-coverage-list">
+          {(showAllDays ? dayGroups : dayGroups.slice(0, 3)).map(([date, dayEntries]) => {
+            const isCollapsed = collapsedDates.has(date);
+            return (
+              <div key={date} className="cp-day-group">
+                <button className="cp-day-header" onClick={() => toggleDate(date)}>
+                  <span className="cp-day-date">{formatDateLabel(date)}</span>
+                  <span className="cp-day-count">{dayEntries.length} article{dayEntries.length !== 1 ? 's' : ''}</span>
+                  <span className={`cp-day-chevron ${isCollapsed ? '' : 'open'}`}>&#9662;</span>
+                </button>
+                {!isCollapsed && dayEntries.map((entry, i) => {
+                  const id = entry.topicId || `${date}-${i}`;
+                  const isExpanded = expandedId === id;
+                  const hasAi = entry.ai?.summary || entry.ai?.prediction || entry.ai?.trace_cause;
+                  const aiKey = activeAi === 'trace' ? 'trace_cause' : activeAi;
+                  const cat = (entry.category || 'other').toLowerCase();
+                  const catColor = CATEGORY_BADGE_COLORS[cat];
+                  return (
+                    <div key={id} id={`coverage-${entry.topicId || id}`} className={`cp-coverage-item ${isExpanded ? 'expanded' : ''}`}>
+                      <div className="cp-coverage-row" onClick={() => { setExpandedId(isExpanded ? null : id); setActiveAi(null); }}>
+                        {catColor && <span className="story-category-badge" style={{ background: catColor.bg, color: catColor.color, fontSize: 9, padding: '1px 6px' }}>{cat}</span>}
+                        <span className="cp-coverage-title">{entry.title}</span>
+                        {entry.threadId && <span className="cp-arc-hint">arc</span>}
+                        <span className={`cp-coverage-chevron ${isExpanded ? 'open' : ''}`}>&#9662;</span>
+                      </div>
+                      {isExpanded && (
+                        <div className="cp-coverage-body">
+                          {entry.sources?.length > 0 && (
+                            <div className="cp-coverage-sources">
+                              {entry.sources.slice(0, 5).map((s, j) => (
+                                <span key={j} className="story-entry-source-tag">
+                                  {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer">{s.source || s.title || 'Source'}</a> : (s.source || s.title || 'Source')}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="cp-coverage-actions">
+                            <a
+                              href={`https://www.google.com/search?q=${encodeURIComponent(entry.title)}&tbm=nws&tbs=qdr:d`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="cp-google-news-btn"
+                            >
+                              View Google News ↗
+                            </a>
+                            {entry.threadId && (
+                              <Link to={`/weekly/thread/${entry.threadId}`} className="cp-view-arc-btn">
+                                View full story →
+                              </Link>
+                            )}
+                          </div>
+                          {hasAi && (
+                            <div className="ai-toolbar" style={{ marginTop: 8 }}>
+                              {entry.ai?.summary && (
+                                <button className={`ai-btn ai-btn-summary ${activeAi === 'summary' ? 'active' : ''}`} onClick={() => setActiveAi(activeAi === 'summary' ? null : 'summary')}>Summarize</button>
+                              )}
+                              {entry.ai?.prediction && (
+                                <button className={`ai-btn ai-btn-predict ${activeAi === 'prediction' ? 'active' : ''}`} onClick={() => setActiveAi(activeAi === 'prediction' ? null : 'prediction')}>Predict</button>
+                              )}
+                              {entry.ai?.trace_cause && (
+                                <button className={`ai-btn ai-btn-trace ${activeAi === 'trace' ? 'active' : ''}`} onClick={() => setActiveAi(activeAi === 'trace' ? null : 'trace')}>Trace Cause</button>
+                              )}
+                            </div>
+                          )}
+                          {activeAi && entry.ai?.[aiKey] && (
+                            <div className={`story-entry-ai-content ${activeAi}`}>
+                              <div className="story-entry-section-text">{entry.ai[aiKey]}</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+          {!showAllDays && dayGroups.length > 3 && (
+            <button className="weekly-category-show-more" onClick={() => setShowAllDays(true)} style={{ marginTop: 8 }}>
+              Show {dayGroups.length - 3} more day{dayGroups.length - 3 !== 1 ? 's' : ''}
+            </button>
+          )}
+          {dayGroups.length === 0 && (
+            <div className="cp-empty" style={{ padding: '1rem 0' }}>No articles match this filter.</div>
+          )}
+        </div>
       </>}
     </div>
   );
 }
-
-const COUNTRY_PREVIEW_FEATURES = [
-  { icon: '🌍', label: 'Country Briefing', desc: 'AI situation summary with risk assessment' },
-  { icon: '🔔', label: 'Risk Signals', desc: 'Watch triggers and trajectory predictions' },
-  { icon: '🧵', label: 'Cross-Thread Analysis', desc: 'How stories in this country connect' },
-];
-
-const MOCK_COVERAGE = [
-  'Diplomatic developments draw international response…',
-  'Economic policy shift signals change in direction…',
-  'Regional security concerns prompt multilateral talks…',
-];
 
 export default function CountryPage() {
   const { countryName } = useParams();
   const paramName = decodeURIComponent(countryName);
   const navigate = useNavigate();
   const { profile } = useUserProfile();
-  const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams(); // eslint-disable-line no-unused-vars
   const { loading: authLoading } = useAuth();
-  const { dayMap, sortedDates, loading, error } = useWeeklyArchive();
-  const [activeTab, setActiveTab] = useState('situationSummary');
-  const [showExplainer, setShowExplainer] = useState(
-    () => !localStorage.getItem('gp_country_explainer_dismissed')
-  );
+  const { dayMap, sortedDates, loading } = useWeeklyArchive();
+  const [mainTab, setMainTab] = useState('situation');
+  const [activeDeepTab, setActiveDeepTab] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(paramName);
 
   const decodedName = selectedCountry || paramName;
@@ -291,7 +229,7 @@ export default function CountryPage() {
 
   function selectCountry(name) {
     setSelectedCountry(name);
-    setActiveTab(null);
+    setMainTab('situation');
     navigate(`/weekly/country/${encodeURIComponent(name)}`, { replace: true });
   }
 
@@ -363,255 +301,321 @@ export default function CountryPage() {
   const { analyses: threadAnalyses } = useThreadAnalyses(arcIds);
   const { intelligence } = useCountryIntelligence(decodedName ? [decodedName] : []);
   const intel = intelligence?.[decodedName];
+  const { data: markets } = useMarketsCountry(decodedName);
 
   useEffect(() => {
     document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
   }, [decodedName]);
 
-  if (authLoading) return <div className="weekly-loading">Loading…</div>;
-
+  if (authLoading) return null;
   if (loading) return <IntelligenceLoader type="typewriter" />;
 
   const risk = intel ? (RISK_COLORS[intel.riskLevel] || RISK_COLORS.moderate) : null;
   const trajectory = intel?.trajectory ? (TRAJECTORY_BADGES[intel.trajectory] || TRAJECTORY_BADGES.stable) : null;
-
-  function dismissExplainer() {
-    localStorage.setItem('gp_country_explainer_dismissed', '1');
-    setShowExplainer(false);
-  }
+  const riskIdx = intel ? RISK_DOTS.indexOf(intel.riskLevel) : -1;
 
   return (
-    <div className="cp-page">
-      {/* ── Map hero ── */}
-      <div className="cp-map-hero">
-        <div className="cp-map-overlay">
-          <Link to="/weekly/countries" className="cp-back">← Countries</Link>
-          <select
-            className="cp-country-select"
-            value={decodedName}
-            onChange={e => selectCountry(e.target.value)}
-          >
-            {countries.map(c => (
-              <option key={c.name} value={c.name}>{c.name} ({c.articles})</option>
-            ))}
-          </select>
-          <CopyLinkBtn countryName={decodedName} />
+    <div className="cpg-page">
+
+      {/* Map hero */}
+      <div className="cpg-map-hero">
+        <div className="cpg-map-overlay">
+          <div className="cpg-map-overlay-left">
+            <Link to="/weekly/countries" className="cpg-map-back">← Countries</Link>
+            <select
+              className="cpg-country-select"
+              value={decodedName}
+              onChange={e => selectCountry(e.target.value)}
+            >
+              {countries.map(c => (
+                <option key={c.name} value={c.name}>{c.name} ({c.articles})</option>
+              ))}
+            </select>
+          </div>
+          <div className="cpg-map-overlay-right">
+            {risk && (
+              <span className="cpg-risk-pill" style={{ color: risk.color, borderColor: risk.color + '44' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: risk.color, display: 'inline-block' }} />
+                {(intel.riskLevel || 'moderate').toUpperCase()}
+              </span>
+            )}
+            {trajectory && (
+              <span className="cpg-traj-pill" style={{ color: trajectory.color }}>
+                {trajectory.arrow} {trajectory.label}
+              </span>
+            )}
+          </div>
         </div>
-        {loading ? (
-          <div className="cp-map-loading">Loading map…</div>
-        ) : (
-          <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} />
-        )}
+        <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} />
       </div>
 
       {profile?.isTrial && <TrialBanner daysLeft={profile.trialDaysLeft} />}
 
-      {/* ── Info panel ── */}
-      <div className="cp-panel">
+      <div className="cpg-body">
         {!countryData ? (
-          <div className="cp-empty">
-            <h3>No coverage for {decodedName}</h3>
-            <p>This country has no recent news in the archive.</p>
+          <div className="cpg-empty" style={{ paddingTop: 60 }}>
+            <h3 style={{ fontFamily: 'var(--serif)', fontSize: 28, marginBottom: 12 }}>No coverage for {decodedName}</h3>
+            <p style={{ color: 'var(--ink-mid)' }}>This country has no recent news in the archive.</p>
           </div>
         ) : (
-          <div className="page-with-sidenav">
-            <div className="page-main-content">
           <>
-            {/* ── Header + Risk ── */}
-            <div id="cp-section-overview" className="cp-header">
+            {/* Country header */}
+            <div className="cpg-hd">
               <div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <h1 className="cp-title" style={{ flex: 1 }}>{decodedName}</h1>
-                  <SaveButton itemType="country" itemId={decodedName} metadata={{ name: decodedName }} />
+                <div className="cpg-hd-kicker">
+                  <span className="iso">{decodedName.slice(0, 3).toUpperCase()}</span>
+                  Country Intelligence
                 </div>
-                <div className="cp-subtitle">
-                  AI-powered situation briefing
-                  {intel?.generatedAt && <> · Updated {formatTimeAgo(intel.generatedAt)}</>}
+                <h1 className="cpg-hd-h1">{decodedName}</h1>
+                {intel?.headline && <p className="cpg-hd-dek">{intel.headline}</p>}
+                <div className="cpg-hd-meta">
+                  {intel?.generatedAt && <span>Updated <b>{formatTimeAgo(intel.generatedAt)}</b></span>}
+                  <span>Coverage <b>{countryData.dayCount} days</b></span>
+                  <span>Articles <b>{countryData.totalArticles}</b></span>
                 </div>
               </div>
-              {risk && (
-                <div className="cp-risk-indicator">
-                  <div className="cp-risk-dots">
-                    {RISK_DOTS.map(level => (
-                      <span
-                        key={level}
-                        className={`cp-risk-dot-item ${RISK_DOTS.indexOf(level) <= RISK_DOTS.indexOf(intel.riskLevel) ? 'filled' : ''}`}
-                        style={RISK_DOTS.indexOf(level) <= RISK_DOTS.indexOf(intel.riskLevel) ? { background: risk.color } : {}}
+              <div className="cpg-hd-actions">
+                <ShareButtons path={`/weekly/country/${encodeURIComponent(decodedName)}`} title={`${decodedName} — Country Intelligence`} preview={{ h: intel?.headline, n: countryData?.totalArticles, d: countryData?.dayCount }} />
+                <CopyBriefing getText={() => formatCountryBriefing(decodedName, intel, countryData)} />
+                <SaveButton itemType="country" itemId={decodedName} metadata={{ name: decodedName }} />
+              </div>
+            </div>
+
+            {/* Stats strip */}
+            <div className="cpg-stats">
+              <div className="cpg-stat">
+                <div className="cpg-stat-k">Articles</div>
+                <div className="cpg-stat-v">{countryData.totalArticles}</div>
+                <div className="cpg-stat-d">past 30 days</div>
+              </div>
+              <div className="cpg-stat">
+                <div className="cpg-stat-k">Story arcs</div>
+                <div className="cpg-stat-v accent">{countryData.arcs?.length || 0}</div>
+                <div className="cpg-stat-d">active threads</div>
+              </div>
+              <div className="cpg-stat">
+                <div className="cpg-stat-k">Days tracked</div>
+                <div className="cpg-stat-v">{countryData.dayCount}</div>
+                <div className="cpg-stat-d">{formatDateLabel(countryData.dateRange.from)} – {formatDateLabel(countryData.dateRange.to)}</div>
+              </div>
+              <div className="cpg-stat">
+                <div className="cpg-stat-k">Risk level</div>
+                <div className="cpg-stat-v" style={risk ? { color: risk.color } : {}}>
+                  {intel?.riskLevel || '—'}
+                </div>
+                <div className="cpg-stat-d">{trajectory ? `${trajectory.arrow} ${trajectory.label}` : 'AI-assessed'}</div>
+              </div>
+            </div>
+
+            {/* 2-col content */}
+            <div className="cpg-content">
+
+              {/* Main column */}
+              <div className="cpg-main">
+                <div className="cpg-tabs">
+                  <button className={`cpg-tab${mainTab === 'situation' ? ' on' : ''}`} onClick={() => setMainTab('situation')}>
+                    Situation
+                  </button>
+                  <button className={`cpg-tab${mainTab === 'arcs' ? ' on' : ''}`} onClick={() => setMainTab('arcs')}>
+                    Story Arcs <span className="c">{countryData.arcs?.length || 0}</span>
+                  </button>
+                  <button className={`cpg-tab${mainTab === 'coverage' ? ' on' : ''}`} onClick={() => setMainTab('coverage')}>
+                    Coverage <span className="c">{countryData.totalArticles}</span>
+                  </button>
+                </div>
+
+                {/* Situation tab */}
+                {mainTab === 'situation' && (
+                  <div>
+                    {intel?.bluf && (
+                      <>
+                        <div className="cpg-section-lbl">Bottom Line</div>
+                        <div className="cpg-bluf-text">{intel.bluf}</div>
+                      </>
+                    )}
+
+                    {intel?.whyItMatters && (
+                      <>
+                        <div className="cpg-section-lbl">Why It Matters</div>
+                        <div className="cpg-why-text"><BoldText text={intel.whyItMatters} /></div>
+                      </>
+                    )}
+
+                    {intel?.backgroundTimeline?.length > 0 && (
+                      <BackgroundTimeline
+                        events={intel.backgroundTimeline}
+                        entries={countryData.entries}
+                        onEventClick={(topicId) => {
+                          const el = document.getElementById(`coverage-${topicId}`);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            el.classList.add('highlight-flash');
+                            setTimeout(() => el.classList.remove('highlight-flash'), 2000);
+                          }
+                        }}
                       />
-                    ))}
+                    )}
+
+                    {(intel?.trajectoryDetail || intel?.crossThreadInsight) && (
+                      <div className="cp-deep" style={{ marginTop: 16 }}>
+                        {[
+                          { key: 'trajectoryDetail', label: "What's Next", cssClass: 'prediction' },
+                          { key: 'crossThreadInsight', label: 'Cross-Thread Connections', cssClass: 'trace' },
+                        ].filter(t => intel[t.key]).map(tab => (
+                          <div key={tab.key} className="cp-deep-section">
+                            <button
+                              className={`cp-deep-toggle ${activeDeepTab === tab.key ? 'active' : ''}`}
+                              onClick={() => setActiveDeepTab(activeDeepTab === tab.key ? null : tab.key)}
+                            >
+                              <span>{tab.label}</span>
+                              <span className={`cp-deep-chevron ${activeDeepTab === tab.key ? 'open' : ''}`}>&#9662;</span>
+                            </button>
+                            {activeDeepTab === tab.key && (
+                              <div className={`story-entry-ai-content ${tab.cssClass}`}>
+                                <div className="story-entry-section-text"><BoldText text={intel[tab.key]} /></div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {!intel && (
+                      <div className="cpg-ai-pending">Country analysis generates daily — check back soon</div>
+                    )}
                   </div>
-                  <span className="cp-risk-text" style={{ color: risk.color }}>{(intel.riskLevel || 'moderate').toUpperCase()}</span>
-                  {trajectory && (
-                    <span className="cp-trajectory" style={{ color: trajectory.color }}>{trajectory.arrow} {trajectory.label}</span>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
 
-            {/* ── Headline ── */}
-            {intel?.headline && (
-              <div className="cp-headline">{intel.headline}</div>
-            )}
+                {/* Story arcs tab */}
+                {mainTab === 'arcs' && (
+                  <div>
+                    <div className="cpg-section-lbl">Active Story Arcs <span style={{ color: 'var(--ink-faint)', fontWeight: 400 }}>{countryData.arcs.length}</span></div>
+                    {countryData.arcs.length > 0 ? (
+                      countryData.arcs.map(arc => {
+                        const c = CATEGORY_BADGE_COLORS[arc.category];
+                        const title = threadAnalyses?.[arc.threadId]?.threadTitle || arc.latestTitle;
+                        return (
+                          <Link
+                            key={arc.threadId}
+                            to={`/weekly/thread/${arc.threadId}?from=country&country=${encodeURIComponent(decodedName)}`}
+                            className="cpg-arc-card"
+                          >
+                            <div className="cpg-arc-card-dot" style={{ background: c?.color || 'var(--ink-faint)' }} />
+                            <div className="cpg-arc-card-body">
+                              <div className="cpg-arc-card-kicker">{arc.category} · story arc</div>
+                              <div className="cpg-arc-card-title">{title}</div>
+                            </div>
+                            <div className="cpg-arc-card-meta">
+                              <div><b>{arc.articleCount}</b> articles</div>
+                              <div><b>{arc.dayCount}</b> days</div>
+                            </div>
+                          </Link>
+                        );
+                      })
+                    ) : (
+                      <div className="cpg-empty">No multi-day story arcs found</div>
+                    )}
+                  </div>
+                )}
 
-            {/* ── Key Metrics Strip (near header) ── */}
-            <div className="cp-metrics">
-              <div className="cp-metric">
-                <span className="cp-metric-value">{countryData.totalArticles}</span>
-                <span className="cp-metric-label">articles</span>
+                {/* Coverage tab */}
+                {mainTab === 'coverage' && (
+                  <CoverageList entries={countryData.entries} />
+                )}
               </div>
-              <div className="cp-metric">
-                <span className="cp-metric-value">{countryData.arcs?.length || 0}</span>
-                <span className="cp-metric-label">stories</span>
-              </div>
-              <div className="cp-metric">
-                <span className="cp-metric-value">{countryData.dayCount}</span>
-                <span className="cp-metric-label">days</span>
-              </div>
-            </div>
 
-            <SectionNav sections={[
-              { id: 'cp-section-overview', label: 'Overview' },
-              ...(intel?.bluf ? [{ id: 'cp-section-bluf', label: 'Bottom Line' }] : []),
-              ...(intel?.keyDevelopments?.length ? [{ id: 'cp-section-developments', label: 'Developments' }] : []),
-              ...(intel?.whyItMatters ? [{ id: 'cp-section-why', label: 'Why It Matters' }] : []),
-              ...(intel?.situationSummary || intel?.trajectoryDetail || intel?.crossThreadInsight ? [{ id: 'cp-section-analysis', label: 'Analysis' }] : []),
-              ...(intel?.riskSignals?.length ? [{ id: 'cp-section-watch', label: 'Watch' }] : []),
-              ...(countryData.arcs?.length ? [{ id: 'cp-section-arcs', label: 'Story Arcs' }] : []),
-              { id: 'cp-section-coverage', label: 'Coverage' },
-            ]} />
+              {/* Right AI rail */}
+              <aside className="cpg-rail">
 
-            {/* ── BLUF (Bottom Line Up Front) ── */}
-            {intel?.bluf && (
-              <div id="cp-section-bluf" className="cp-bluf">
-                <div className="cp-section-label">BOTTOM LINE</div>
-                <div className="cp-bluf-text">{intel.bluf}</div>
-              </div>
-            )}
-
-            {/* ── Key Developments Timeline ── */}
-            {intel?.keyDevelopments?.length > 0 && (
-              <div id="cp-section-developments" className="cp-developments">
-                <div className="cp-section-label">KEY DEVELOPMENTS</div>
-                <div className="cp-dev-timeline">
-                  {intel.keyDevelopments.map((d, i) => (
-                    <div key={i} className="cp-dev-item">
-                      <span className="cp-dev-date">{formatDateLabel(d.date)}</span>
-                      <span className="cp-dev-dot" />
-                      <span className="cp-dev-text">{d.text}</span>
+                {/* Risk assessment */}
+                {risk && (
+                  <div className="cpg-rail-section">
+                    <div className="cpg-rail-hd">Risk Assessment</div>
+                    <div className="cpg-risk-row">
+                      {RISK_DOTS.map((level, i) => (
+                        <span
+                          key={level}
+                          className="cpg-risk-dot"
+                          style={i <= riskIdx ? { background: risk.color } : {}}
+                        />
+                      ))}
+                      <span className="cpg-risk-label" style={{ color: risk.color }}>
+                        {intel.riskLevel?.toUpperCase()}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── Why It Matters ── */}
-            {intel?.whyItMatters && (
-              <div id="cp-section-why" className="cp-why">
-                <div className="cp-section-label">WHY IT MATTERS</div>
-                <div className="cp-why-text"><BoldText text={intel.whyItMatters} /></div>
-              </div>
-            )}
-
-            {/* ── Explainer (dismissible) ── */}
-            {showExplainer && (
-              <div className="cp-explainer">
-                <span>This briefing is generated daily by AI, synthesizing {countryData.totalArticles} articles from {formatDateLabel(countryData.dateRange.from)} — {formatDateLabel(countryData.dateRange.to)}</span>
-                <button className="cp-explainer-dismiss" onClick={dismissExplainer}>Got it</button>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
-              <ShareButtons path={`/weekly/country/${encodeURIComponent(decodedName)}`} title={`${decodedName} — Country Intelligence`} preview={{ h: intel?.headline, n: countryData?.totalArticles, d: countryData?.dayCount }} />
-              <CopyBriefing getText={() => formatCountryBriefing(decodedName, intel, countryData)} />
-            </div>
-
-            {/* ── Background Timeline ── */}
-            {intel?.backgroundTimeline?.length > 0 && (
-              <div id="cp-section-timeline">
-                <BackgroundTimeline
-                  events={intel.backgroundTimeline}
-                  entries={countryData.entries}
-                  onEventClick={(topicId, date) => {
-                    const el = document.getElementById(`coverage-${topicId}`);
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      el.classList.add('highlight-flash');
-                      setTimeout(() => el.classList.remove('highlight-flash'), 2000);
-                    } else {
-                      const section = document.getElementById('cp-section-coverage');
-                      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }}
-                />
-              </div>
-            )}
-
-            {/* ── Deep Analysis (expandable sections) ── */}
-            {(intel?.trajectoryDetail || intel?.crossThreadInsight) && (
-              <div id="cp-section-analysis" className="cp-deep">
-                {[
-                  { key: 'trajectoryDetail', label: "What's Next", cssClass: 'prediction' },
-                  { key: 'crossThreadInsight', label: 'Cross-Thread Connections', cssClass: 'trace' },
-                ].filter(t => intel[t.key]).map(tab => (
-                  <div key={tab.key} className="cp-deep-section">
-                    <button
-                      className={`cp-deep-toggle ${activeTab === tab.key ? 'active' : ''}`}
-                      onClick={() => setActiveTab(activeTab === tab.key ? null : tab.key)}
-                    >
-                      <span>{tab.label}</span>
-                      <span className={`cp-deep-chevron ${activeTab === tab.key ? 'open' : ''}`}>&#9662;</span>
-                    </button>
-                    {activeTab === tab.key && (
-                      <div className={`story-entry-ai-content ${tab.cssClass}`}>
-                        <div className="story-entry-section-text"><BoldText text={intel[tab.key]} /></div>
+                    {trajectory && (
+                      <div className="cpg-traj-row" style={{ color: trajectory.color }}>
+                        {trajectory.arrow} {trajectory.label}
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
 
-            {!intel && (
-              <div className="cp-ai-pending">Country analysis generates daily — check back soon</div>
-            )}
+                {/* Watch signals */}
+                {intel?.riskSignals?.length > 0 && (
+                  <div className="cpg-rail-section">
+                    <div className="cpg-rail-hd">What to Watch</div>
+                    {intel.riskSignals.slice(0, 5).map((s, i) => (
+                      <div key={i} className="cpg-rail-watch">
+                        <span className="cpg-rail-watch-icon">⚡</span>
+                        {s}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-            {/* ── Watch Triggers (chips) ── */}
-            {intel?.riskSignals?.length > 0 && (
-              <div id="cp-section-watch" className="cp-watch">
-                <div className="cp-section-label">WHAT TO WATCH</div>
-                <div className="cp-watch-chips">
-                  {intel.riskSignals.map((s, i) => (
-                    <div key={i} className="cp-watch-chip">⚡ {s}</div>
-                  ))}
-                </div>
-              </div>
-            )}
+                {/* Markets snapshot */}
+                {markets?.macro && Object.keys(markets.macro).length > 0 && (
+                  <div className="cpg-rail-section">
+                    <div className="cpg-rail-hd">
+                      Macro Snapshot
+                      {markets.asOf && <span className="cpg-rail-asof">{formatAsOf(markets.asOf)}</span>}
+                    </div>
+                    {markets.macro.gdp != null && (
+                      <div className="cpg-mkt-row"><span>GDP</span><b>{typeof markets.macro.gdp === 'number' ? `$${(markets.macro.gdp / 1e9).toFixed(0)}B` : markets.macro.gdp}</b></div>
+                    )}
+                    {markets.macro.cpi_yoy != null && (
+                      <div className="cpg-mkt-row"><span>CPI YoY</span><b>{markets.macro.cpi_yoy}%</b></div>
+                    )}
+                    {markets.macro.unemployment != null && (
+                      <div className="cpg-mkt-row"><span>Unemployment</span><b>{markets.macro.unemployment}%</b></div>
+                    )}
+                    {markets.macro.debt_to_gdp != null && (
+                      <div className="cpg-mkt-row"><span>Debt/GDP</span><b>{markets.macro.debt_to_gdp}%</b></div>
+                    )}
+                  </div>
+                )}
 
-            {/* ── Active arcs ── */}
-            {countryData.arcs.length > 0 && (
-              <div id="cp-section-arcs" />
-            )}
-            {countryData.arcs.length > 0 && (
-              <ArcSection arcs={countryData.arcs} threadAnalyses={threadAnalyses} countryName={decodedName} />
-            )}
+                {/* FX snapshot */}
+                {markets?.fx && Object.keys(markets.fx).filter(k => k !== 'asOf').length > 0 && (
+                  <div className="cpg-rail-section">
+                    <div className="cpg-rail-hd">
+                      FX Rates
+                      {markets.fx.asOf && <span className="cpg-rail-asof">{formatAsOf(markets.fx.asOf)}</span>}
+                    </div>
+                    {Object.entries(markets.fx)
+                      .filter(([k]) => k !== 'asOf')
+                      .slice(0, 5)
+                      .map(([pair, rate]) => (
+                        <div key={pair} className="cpg-mkt-row">
+                          <span>{pair}</span>
+                          <b>{typeof rate === 'number' ? rate.toFixed(4) : rate}</b>
+                        </div>
+                      ))}
+                  </div>
+                )}
 
-            {/* ── Related coverage ── */}
-            <div id="cp-section-coverage" />
-            <CoverageList entries={countryData.entries} />
-          </>
+                {/* If no intel at all */}
+                {!intel && !markets && (
+                  <div className="cpg-rail-section">
+                    <div className="cpg-ai-pending" style={{ padding: '24px 0' }}>
+                      Analysis generates daily
+                    </div>
+                  </div>
+                )}
+              </aside>
             </div>
-            <SideNav sections={[
-              { id: 'cp-section-overview', label: 'Overview' },
-              ...(intel?.bluf ? [{ id: 'cp-section-bluf', label: 'Bottom Line' }] : []),
-              ...(intel?.keyDevelopments?.length ? [{ id: 'cp-section-developments', label: 'Developments', count: intel.keyDevelopments.length }] : []),
-              ...(intel?.whyItMatters ? [{ id: 'cp-section-why', label: 'Why It Matters' }] : []),
-              ...(intel?.backgroundTimeline?.length ? [{ id: 'cp-section-timeline', label: 'Timeline', count: intel.backgroundTimeline.length }] : []),
-              ...(intel?.crossThreadInsight || intel?.trajectoryDetail ? [{ id: 'cp-section-analysis', label: 'Analysis' }] : []),
-              ...(intel?.riskSignals?.length ? [{ id: 'cp-section-watch', label: 'Watch', count: intel.riskSignals.length }] : []),
-              ...(countryData.arcs?.length ? [{ id: 'cp-section-arcs', label: 'Story Arcs', count: countryData.arcs.length }] : []),
-              { id: 'cp-section-coverage', label: 'Coverage', count: countryData.totalArticles },
-            ]} />
-          </div>
+          </>
         )}
       </div>
     </div>

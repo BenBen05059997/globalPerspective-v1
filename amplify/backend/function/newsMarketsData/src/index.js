@@ -1,0 +1,324 @@
+/**
+ * newsMarketsData — free economic data ingest Lambda
+ *
+ * Sources (all free, no paid feeds):
+ *   - Frankfurter (ECB FX rates, no key)       — hourly
+ *   - FRED (bond yields, free key)              — daily
+ *   - World Bank (country macros, no key)       — weekly
+ *   - Stooq CSV (commodities, no key)           — hourly (15-min delayed)
+ *
+ * DDB table: MARKETS_DDB_TABLE
+ *   PK                    SK                   Contents
+ *   FX#USD                LATEST               { rates: {EUR,JPY,ARS,...}, asOf }
+ *   FX#USD                HISTORY#YYYY-MM-DD   daily snapshot for sparklines
+ *   RATES#GLOBAL          LATEST               { US10Y, US2Y, UK10Y, DE10Y, JP10Y, asOf }
+ *   COMMODITIES#GLOBAL    LATEST               { brent, wti, gold, copper, vix, dxy, asOf }
+ *   MACRO#{country}       LATEST               { gdp, cpi_yoy, reserves_usd, debt_to_gdp,
+ *                                                current_account, unemployment, asOf }
+ *   MACRO#{country}       HISTORY#YYYY-Q#      quarterly history
+ *
+ * EventBridge payloads:
+ *   {}                       → run all sources appropriate for current time
+ *   { "source": "fx" }       → FX only
+ *   { "source": "yields" }   → FRED yields only
+ *   { "source": "macros" }   → World Bank macros only
+ *   { "source": "commodities" } → Stooq only
+ */
+
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
+
+const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+// Table name: GlobalPerspectiveMarkets (ap-northeast-1)
+const TABLE = process.env.MARKETS_DDB_TABLE || 'GlobalPerspectiveMarkets';
+const FRED_KEY = process.env.FRED_API_KEY;
+
+const NOW_ISO = () => new Date().toISOString();
+const TODAY   = () => new Date().toISOString().slice(0, 10);
+const TTL_DAYS = (d) => Math.floor(Date.now() / 1000) + d * 86400;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function safeFetch(url, opts = {}) {
+  const res = await fetch(url, { ...opts, signal: AbortSignal.timeout(10000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
+  return res;
+}
+
+async function putItem(pk, sk, data, ttlDays = 7) {
+  await ddb.send(new PutCommand({
+    TableName: TABLE,
+    Item: { pk, sk, ...data, ttl: TTL_DAYS(ttlDays), updatedAt: NOW_ISO() },
+  }));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SOURCE 1 — FRANKFURTER (ECB FX, no key required)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchFX() {
+  console.log('[FX] fetching from Frankfurter...');
+  const res = await safeFetch('https://api.frankfurter.app/latest?from=USD');
+  const json = await res.json();
+  // json.rates: { EUR, GBP, JPY, ARS, TRY, CNY, BRL, ... }
+  const payload = { rates: json.rates, base: 'USD', asOf: json.date };
+
+  await putItem('FX#USD', 'LATEST', payload, 2);
+  await putItem('FX#USD', `HISTORY#${TODAY()}`, payload, 90);
+  console.log(`[FX] stored ${Object.keys(json.rates).length} pairs`);
+  return payload;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SOURCE 2 — FRED (bond yields, free API key)
+// Key env: FRED_API_KEY — get free at https://fred.stlouisfed.org/docs/api/api_key.html
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FRED_SERIES = {
+  US10Y: 'DGS10',   // 10-Year Treasury
+  US2Y:  'DGS2',    // 2-Year Treasury
+  UK10Y: 'IRLTLT01GBM156N',  // UK long-term yield
+  DE10Y: 'IRLTLT01DEM156N',  // Germany 10Y
+  JP10Y: 'IRLTLT01JPM156N',  // Japan 10Y
+};
+
+async function fetchFREDSeries(seriesId) {
+  if (!FRED_KEY) throw new Error('FRED_API_KEY not set');
+  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${seriesId}&limit=1&sort_order=desc&api_key=${FRED_KEY}&file_type=json`;
+  const res = await safeFetch(url);
+  const json = await res.json();
+  const obs = json.observations?.[0];
+  if (!obs || obs.value === '.') return null;
+  return parseFloat(obs.value);
+}
+
+async function fetchYields() {
+  console.log('[YIELDS] fetching from FRED...');
+  const results = {};
+  for (const [key, seriesId] of Object.entries(FRED_SERIES)) {
+    try {
+      results[key] = await fetchFREDSeries(seriesId);
+    } catch (e) {
+      console.warn(`[YIELDS] ${key} failed: ${e.message}`);
+      results[key] = null;
+    }
+  }
+  const payload = { ...results, asOf: NOW_ISO() };
+  await putItem('RATES#GLOBAL', 'LATEST', payload, 2);
+  console.log('[YIELDS] stored:', results);
+  return payload;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SOURCE 3 — WORLD BANK (country macros, no key)
+// Indicators: GDP, CPI, Reserves, Debt/GDP, Current Account, Unemployment
+// ─────────────────────────────────────────────────────────────────────────────
+
+const WB_INDICATORS = {
+  gdp_usd:         'NY.GDP.MKTP.CD',
+  cpi_yoy:         'FP.CPI.TOTL.ZG',
+  reserves_usd:    'FI.RES.TOTL.CD',
+  debt_to_gdp:     'GC.DOD.TOTL.GD.ZS',
+  current_account: 'BN.CAB.XOKA.GD.ZS',
+  unemployment:    'SL.UEM.TOTL.ZS',
+};
+
+// ISO3 codes for top ~50 countries by global news volume
+// Covers the countries most commonly appearing in our topic archive
+const TOP_COUNTRIES = [
+  { name: 'United States', iso3: 'USA', iso2: 'US' },
+  { name: 'China', iso3: 'CHN', iso2: 'CN' },
+  { name: 'Russia', iso3: 'RUS', iso2: 'RU' },
+  { name: 'Germany', iso3: 'DEU', iso2: 'DE' },
+  { name: 'United Kingdom', iso3: 'GBR', iso2: 'GB' },
+  { name: 'France', iso3: 'FRA', iso2: 'FR' },
+  { name: 'Japan', iso3: 'JPN', iso2: 'JP' },
+  { name: 'India', iso3: 'IND', iso2: 'IN' },
+  { name: 'Brazil', iso3: 'BRA', iso2: 'BR' },
+  { name: 'South Korea', iso3: 'KOR', iso2: 'KR' },
+  { name: 'Australia', iso3: 'AUS', iso2: 'AU' },
+  { name: 'Canada', iso3: 'CAN', iso2: 'CA' },
+  { name: 'Italy', iso3: 'ITA', iso2: 'IT' },
+  { name: 'Spain', iso3: 'ESP', iso2: 'ES' },
+  { name: 'Mexico', iso3: 'MEX', iso2: 'MX' },
+  { name: 'Indonesia', iso3: 'IDN', iso2: 'ID' },
+  { name: 'Saudi Arabia', iso3: 'SAU', iso2: 'SA' },
+  { name: 'Turkey', iso3: 'TUR', iso2: 'TR' },
+  { name: 'Argentina', iso3: 'ARG', iso2: 'AR' },
+  { name: 'Iran', iso3: 'IRN', iso2: 'IR' },
+  { name: 'Israel', iso3: 'ISR', iso2: 'IL' },
+  { name: 'Ukraine', iso3: 'UKR', iso2: 'UA' },
+  { name: 'Taiwan', iso3: 'TWN', iso2: 'TW' },
+  { name: 'Poland', iso3: 'POL', iso2: 'PL' },
+  { name: 'Netherlands', iso3: 'NLD', iso2: 'NL' },
+  { name: 'Pakistan', iso3: 'PAK', iso2: 'PK' },
+  { name: 'Bangladesh', iso3: 'BGD', iso2: 'BD' },
+  { name: 'Egypt', iso3: 'EGY', iso2: 'EG' },
+  { name: 'Nigeria', iso3: 'NGA', iso2: 'NG' },
+  { name: 'Ethiopia', iso3: 'ETH', iso2: 'ET' },
+  { name: 'South Africa', iso3: 'ZAF', iso2: 'ZA' },
+  { name: 'Kenya', iso3: 'KEN', iso2: 'KE' },
+  { name: 'Mali', iso3: 'MLI', iso2: 'ML' },
+  { name: 'Sudan', iso3: 'SDN', iso2: 'SD' },
+  { name: 'Venezuela', iso3: 'VEN', iso2: 'VE' },
+  { name: 'Colombia', iso3: 'COL', iso2: 'CO' },
+  { name: 'Chile', iso3: 'CHL', iso2: 'CL' },
+  { name: 'Peru', iso3: 'PER', iso2: 'PE' },
+  { name: 'Vietnam', iso3: 'VNM', iso2: 'VN' },
+  { name: 'Thailand', iso3: 'THA', iso2: 'TH' },
+  { name: 'Philippines', iso3: 'PHL', iso2: 'PH' },
+  { name: 'Myanmar', iso3: 'MMR', iso2: 'MM' },
+  { name: 'North Korea', iso3: 'PRK', iso2: 'KP' },
+  { name: 'Afghanistan', iso3: 'AFG', iso2: 'AF' },
+  { name: 'Syria', iso3: 'SYR', iso2: 'SY' },
+  { name: 'Yemen', iso3: 'YEM', iso2: 'YE' },
+  { name: 'Iraq', iso3: 'IRQ', iso2: 'IQ' },
+  { name: 'Lebanon', iso3: 'LBN', iso2: 'LB' },
+  { name: 'Libya', iso3: 'LBY', iso2: 'LY' },
+  { name: 'Greece', iso3: 'GRC', iso2: 'GR' },
+];
+
+async function fetchWBIndicator(iso3, indicatorCode) {
+  // World Bank returns last 5 years; take most recent non-null value
+  const url = `https://api.worldbank.org/v2/country/${iso3}/indicator/${indicatorCode}?format=json&mrv=5&per_page=5`;
+  const res = await safeFetch(url);
+  const json = await res.json();
+  const data = json[1];
+  if (!Array.isArray(data)) return null;
+  const latest = data.find(d => d.value !== null);
+  return latest ? { value: latest.value, year: latest.date } : null;
+}
+
+async function fetchMacrosForCountry(country) {
+  const macro = { country: country.name, iso2: country.iso2, asOf: NOW_ISO() };
+  for (const [key, code] of Object.entries(WB_INDICATORS)) {
+    try {
+      macro[key] = await fetchWBIndicator(country.iso3, code);
+      // throttle slightly — World Bank has no published rate limit but be polite
+      await new Promise(r => setTimeout(r, 200));
+    } catch (e) {
+      console.warn(`[MACROS] ${country.name} ${key} failed: ${e.message}`);
+      macro[key] = null;
+    }
+  }
+  return macro;
+}
+
+async function fetchMacros() {
+  console.log(`[MACROS] fetching World Bank data for ${TOP_COUNTRIES.length} countries...`);
+  let stored = 0;
+  for (const country of TOP_COUNTRIES) {
+    try {
+      const macro = await fetchMacrosForCountry(country);
+      await putItem(`MACRO#${country.name}`, 'LATEST', macro, 90);
+      stored++;
+    } catch (e) {
+      console.warn(`[MACROS] ${country.name} failed entirely: ${e.message}`);
+    }
+  }
+  console.log(`[MACROS] stored ${stored}/${TOP_COUNTRIES.length} countries`);
+  return { stored };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SOURCE 4 — STOOQ CSV (commodities + indices, 15-min delayed, no key)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Stooq symbols: brent=brn.f, wti=cl.f, gold=gc.f, copper=hg.f, vix=^vix, dxy=dx.f
+const STOOQ_SYMBOLS = {
+  brent:  'cb.f',   // ICE Brent Crude
+  wti:    'cl.f',   // NYMEX WTI Crude
+  gold:   'gc.f',   // COMEX Gold
+  copper: 'hg.f',   // COMEX Copper
+  dxy:    'dx.f',   // US Dollar Index
+};
+
+async function fetchStooqSymbol(symbol) {
+  const url = `https://stooq.com/q/l/?s=${encodeURIComponent(symbol)}&f=sd2t2ohlcv&h&e=csv`;
+  const res = await safeFetch(url);
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return null;
+  // Header: Symbol,Date,Time,Open,High,Low,Close,Volume
+  const parts = lines[1].split(',');
+  const close = parseFloat(parts[6]);
+  return isNaN(close) ? null : close;
+}
+
+async function fetchVIX() {
+  const url = 'https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d';
+  const res = await safeFetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+  const json = await res.json();
+  return json?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null;
+}
+
+async function fetchCommodities() {
+  console.log('[COMMODITIES] fetching from Stooq + Yahoo...');
+  const result = { asOf: NOW_ISO() };
+  for (const [key, symbol] of Object.entries(STOOQ_SYMBOLS)) {
+    try {
+      result[key] = await fetchStooqSymbol(symbol);
+      await new Promise(r => setTimeout(r, 150));
+    } catch (e) {
+      console.warn(`[COMMODITIES] ${key} failed: ${e.message}`);
+      result[key] = null;
+    }
+  }
+  try {
+    result.vix = await fetchVIX();
+  } catch (e) {
+    console.warn(`[COMMODITIES] vix failed: ${e.message}`);
+    result.vix = null;
+  }
+  await putItem('COMMODITIES#GLOBAL', 'LATEST', result, 1);
+  console.log('[COMMODITIES] stored:', result);
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HANDLER
+// ─────────────────────────────────────────────────────────────────────────────
+
+exports.handler = async (event = {}) => {
+  console.log('[newsMarketsData] event:', JSON.stringify(event));
+
+  if (!TABLE) {
+    console.error('MARKETS_DDB_TABLE env var not set');
+    return { statusCode: 500, body: 'Missing MARKETS_DDB_TABLE' };
+  }
+
+  const source = event?.source || 'all';
+  const hourUTC = new Date().getUTCHours();
+  const dayUTC  = new Date().getUTCDay(); // 0=Sun
+
+  const results = {};
+
+  // FX — run if source=fx or source=all (hourly)
+  if (source === 'fx' || source === 'all') {
+    try { results.fx = await fetchFX(); }
+    catch (e) { console.error('[FX] failed:', e.message); results.fx = { error: e.message }; }
+  }
+
+  // Commodities — run if source=commodities or source=all (hourly)
+  if (source === 'commodities' || source === 'all') {
+    try { results.commodities = await fetchCommodities(); }
+    catch (e) { console.error('[COMMODITIES] failed:', e.message); results.commodities = { error: e.message }; }
+  }
+
+  // Yields — run if source=yields or source=all on weekdays 06-22 UTC
+  if (source === 'yields' || (source === 'all' && hourUTC >= 6 && hourUTC <= 22 && dayUTC >= 1 && dayUTC <= 5)) {
+    try { results.yields = await fetchYields(); }
+    catch (e) { console.error('[YIELDS] failed:', e.message); results.yields = { error: e.message }; }
+  }
+
+  // Macros — run if source=macros or source=all on Sundays at 02:00 UTC (weekly)
+  if (source === 'macros' || (source === 'all' && dayUTC === 0 && hourUTC === 2)) {
+    try { results.macros = await fetchMacros(); }
+    catch (e) { console.error('[MACROS] failed:', e.message); results.macros = { error: e.message }; }
+  }
+
+  console.log('[newsMarketsData] done:', JSON.stringify(results, null, 2));
+  return { statusCode: 200, body: results };
+};

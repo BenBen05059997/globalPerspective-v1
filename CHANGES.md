@@ -1,5 +1,87 @@
 # Global Perspectives — Change Log
 
+## 2026-04-25h (Redesign A8 — Map page redesign)
+
+### Frontend — WorldMap.jsx + WorldMap.css (A8 complete)
+- Full map page redesign matching Map Redesign.html (Direction A editorial + SaaS chrome)
+- New full-viewport layout: `wm-page` fills 100vh minus nav/strip/footer — map fills all available space
+- Page header: mono kicker "Live Intelligence Map" + Fraunces 24px serif h1 + right-side mono stats row (topics · countries · connections)
+- 2-col body: `wm-rail` (240px left sidebar) + `wm-map-area` (flex:1)
+- Left filter rail: category checkboxes with custom `wm-rail-chk-box` (checked state via CSS), color pill dots, count in mono, reset button; + legend section + info blurb
+- Map canvas: `wm-canvas` fills full height, contains story banner (ink bg pill, mono text) + stats overlay (bottom-left, glass card) + map shell
+- Story banner redesigned: dark pill with mono font, "← Clear" button replaces old arrow
+- Removed: old `.card` header wrapper, `useNavigate`/`canGoBack` (unused after removing back button), `legendOpen` state, `TodayArchiveSidebar` (removed from layout), old `.map-story-banner` / `.map-legend` / `.map-stats` overlay HTML
+- Kept: all map logic unchanged (MapComponent, FallbackMapComponent, buildMapData, story flow highlighting, archive markers, category filtering), MapSidePanel flyout
+
+## 2026-04-25g (Redesign A7 — Country page redesign + markets wired)
+
+### Frontend — CountryPage.jsx (rewritten) + CountryPage.css (new)
+- Full Country page redesign matching Country Detail.html (Direction A editorial + SaaS chrome)
+- Map hero: 52vh full-width map with floating overlay (back link + country selector + risk/trajectory pills)
+- Country header: ISO badge mono kicker, Fraunces 56px serif h1, italic serif dek (from intel.headline), mono meta row, share/copy/save actions
+- Stats strip: 4-col border-separated grid — articles / story arcs / days tracked / risk level (with Fraunces 28px numerals)
+- 2-col layout: main (1fr) + sticky right rail (320px)
+- Main tabs: Situation (bluf + why it matters + background timeline + trajectory/cross-thread accordions) | Story Arcs (expanded card list) | Coverage (full article list)
+- Right AI rail (sticky): risk dots indicator + trajectory, watch signals, macro snapshot (GDP/CPI/unemployment/debt-to-gdp from useMarketsCountry), FX rates — all with `asOf` timestamps per honesty contract
+- Markets data (useMarketsCountry hook) wired into right rail — gracefully empty when data not yet available
+- Removed: SideNav, SectionNav, WeeklyPage.css structural classes (kept for inner CoverageList/cp-deep components), ArcSection accordion (replaced by expanded card list), explainer banner
+- Kept: CoverageList (full article browser with filters), BackgroundTimeline, BoldText, all AI analysis sections
+
+## 2026-04-25f (Redesign A6 — Thread page redesign)
+
+### Frontend — ThreadPage.jsx (rewritten) + ThreadPage.css (new)
+- Full Thread page redesign matching Thread Detail.html (Direction A editorial)
+- Topbar: mono breadcrumb (Home / Threads / title) with share/copy/save in right rail
+- Header: mono kicker + category badge, Fraunces 38px serif h1, italic serif dek (first sentence of storyArc), mono meta row (date range · updated · category · regions)
+- Stats: 4-box grid — articles / days tracked / regions / sources — Fraunces 26px numerals
+- Region chips: mono pill links to country pages
+- Body: 2-col grid (main content 1fr | sticky AI rail 360px)
+- Main column: watch questions list (dashed rows, ? prefix) + timeline (CompactTimeline when analysis exists, tp-tl rows fallback) + map wrapper
+- AI rail: sticky panel capped at viewport height, live dot header, 3 tab buttons (How It Evolved / What's Next / Why It Happened), scrollable body, mono footer with timestamp
+- Removed: SideNav, WeeklyPage.css, ThreadAnalysisSection accordion component
+- Kept: CompactTimeline, WeeklyMap, StoryEntryCard, ShareButtons, CopyBriefing, SaveButton, TrialBanner, useUserProfile, fromCountry logic
+
+## 2026-04-25e (Redesign A5 — Daily Brief page redesign)
+
+### Frontend — DailyPage.jsx + DailyPage.css (A5 complete)
+- Full Daily Brief redesign to newspaper broadsheet style matching Daily.html
+- Masthead: mono top bar (Brief | GP™ | date), 72px Fraunces italic "Today's Brief", italic subtitle, stats bar (articles/countries/outlets)
+- Lead story: 2-column grid — left has kicker pill + large serif h2 + italic deck + meta row; right has black-header AI Prediction box (uses topStories[0].prediction)
+- Top Stories: numbered list (01, 02...) with 3-col grid (italic serif number, body kicker+h4+region links, prediction aside)
+- Rising Thread: amber-bordered card with trajectory badge
+- Country Watch: risk-colored border card
+- Method: 4-col stat grid with Fraunces large numerals
+- Category Breakdown: mono pill tags
+- Removed: SideNav, WeeklyPage.css dependency, old card layout
+- Kept: BoldText, ShareButtons, CopyBriefing, SaveButton, IntelligenceLoader, RISK_COLORS/CATEGORY_BADGE_COLORS imports
+
+## 2026-04-25d (Redesign A4 — Home page redesign)
+
+### Frontend — Home.jsx + Home.css (A4 complete)
+- Full Home page redesign to match Brief.html (Direction A editorial soul)
+- Masthead: Fraunces 52px serif h1, italic serif subtitle, mono meta pill (live dot · topic count · updated Xm ago)
+- Region sections: serif h2 + 2px solid ink border-bottom, mono topic count
+- Topic articles: mono kicker (Category · Country), serif h3 title, italic context paragraph
+- AI action buttons: pill style (sum=blue/pre=purple/tra=green), dot indicator when active, spinner while loading
+- Sources panel: collapsible inline source list with mono metadata
+- Support banner: mono text + yellow Buy Me a Coffee button
+- Stale/new-data alerts: mono pill banners (amber/green)
+- Removed old card layout, CLI banner, "new features" banner — cleaner editorial focus
+- All logic unchanged: summary/prediction/trace retries, graphqlService calls, SummaryDisplay/PredictionDisplay/TraceCauseDisplay components
+
+## 2026-04-25c (Redesign A3 — new nav shell + status strip)
+
+### Frontend — Layout.jsx + Layout.css (A3 complete)
+- Rebuilt nav shell: 56px sticky top nav (3-column grid: brand | centered links | search + auth)
+- Black rounded "G" logo + Fraunces serif wordmark with ™ superscript
+- Nav links centered: Topics, Daily, Map, Threads, Countries — active state uses paper-2 bg
+- Right rail: ⌘K search bar + Sign in / Account button
+- Mobile: hamburger collapses all links into full-width dropdown
+- 34px status strip (paper-2 bg, JetBrains Mono, live pulsing dot, topic count from cache)
+- 26px footer bar (mono, two-column: tagline | nav links)
+- All values from design tokens: --nav-h:56px, --strip-h:34px, --footer-h:26px, --paper-2, --risk-l, etc.
+- Layout.css: new scoped `gp-*` class namespace — no conflicts with existing component CSS
+
 ## 2026-04-25b (newsSystemsAnalysis Lambda — Phase 1 causal graphs)
 
 ### Backend — newsSystemsAnalysis (NEW)

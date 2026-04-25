@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import { useTodayArchive } from '../hooks/useTodayArchive';
@@ -528,15 +527,12 @@ function FallbackMapComponent({ countryTopicMap, connections, archiveCountryTopi
 // ─── Main WorldMap Component ───────────────────────────────────────────────────
 
 export default function WorldMap() {
-  const navigate = useNavigate();
-  const canGoBack = window.history.length > 1;
   const { topics, loading, error, refetch } = useGeminiTopics();
   const { entries: archiveEntries } = useTodayArchive();
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelCountry, setPanelCountry] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [activeCategories, setActiveCategories] = useState(new Set());
-  const [legendOpen, setLegendOpen] = useState(false);
 
   const { countryTopicMap: rawCountryTopicMap, connections: rawConnections } = buildMapData(topics || []);
 
@@ -665,11 +661,12 @@ export default function WorldMap() {
 
   if (loading) {
     return (
-      <div style={{ width: '100%', height: 600, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', background: '#f5f5f5', borderRadius: 12 }}>
+      <div className="wm-page" style={{ alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <div className="map-spinner" style={{ margin: '0 auto 12px' }} />
-          <p style={{ color: '#666', margin: 0 }}>Loading topics…</p>
+          <div className="map-spinner" style={{ margin: '0 auto 16px' }} />
+          <p style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-dim)', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0 }}>
+            Loading topics…
+          </p>
         </div>
       </div>
     );
@@ -677,14 +674,11 @@ export default function WorldMap() {
 
   if (error) {
     return (
-      <div style={{ width: '100%', height: 600, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', background: '#f5f5f5', borderRadius: 12 }}>
+      <div className="wm-page" style={{ alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', padding: 20 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🗺️</div>
-          <h3 style={{ color: '#d32f2f', margin: '0 0 8px' }}>Map loading failed</h3>
-          <p style={{ color: '#666', margin: '0 0 16px' }}>{error}</p>
-          <button onClick={refetch} style={{ padding: '8px 16px', background: '#111',
-            color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+          <h3 style={{ fontFamily: 'var(--serif)', fontSize: 24, margin: '0 0 10px', color: 'var(--risk-h)' }}>Map loading failed</h3>
+          <p style={{ color: 'var(--ink-mid)', margin: '0 0 20px', fontSize: 14 }}>{error}</p>
+          <button onClick={refetch} style={{ padding: '8px 18px', background: 'var(--ink)', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 12 }}>
             Retry
           </button>
         </div>
@@ -693,112 +687,114 @@ export default function WorldMap() {
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: '1rem' }}>
-        <div className="card" style={{ padding: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.5rem' }}>
-            {canGoBack && (
-              <button className="map-back-btn" onClick={() => navigate(-1)}>← Back</button>
-            )}
-            <h2 style={{ margin: 0 }}>Today's Topics Map</h2>
-          </div>
-          <p style={{ margin: '0 0 0.75rem 0', color: 'var(--text-muted)' }}>
-            Lines connect countries sharing the same news topic. Click a country or line to explore.
-          </p>
-          {/* Category filter chips */}
+    <div className="wm-page">
+
+      {/* Page header */}
+      <div className="wm-hd">
+        <div className="wm-hd-left">
+          <div className="wm-kicker">Live Intelligence Map</div>
+          <h1 className="wm-h1">Today's Topics</h1>
+        </div>
+        <div className="wm-hd-meta">
+          <span className="dot" />
+          <span>Topics <b>{(topics || []).length}</b></span>
+          <span>Countries <b>{totalCountries + Object.keys(archiveOnlyCountryTopicMap).length}</b></span>
+          <span>Connections <b>{totalConnections}</b></span>
+          {filteredArchive.length > 0 && <span>Earlier <b>{filteredArchive.length}</b></span>}
+        </div>
+      </div>
+
+      {/* Body: left rail + map canvas */}
+      <div className="wm-body">
+
+        {/* Left filter rail */}
+        <aside className="wm-rail">
+
           {presentCategories.length > 0 && (
-            <div className="map-filter-bar">
-              {activeCategories.size > 0 && (
-                <button className="map-filter-chip map-filter-chip-reset" onClick={() => { setActiveCategories(new Set()); setSelectedTopic(null); }}>
-                  ✕ All
-                </button>
-              )}
+            <div className="wm-rail-section">
+              <div className="wm-rail-lbl">Categories</div>
               {presentCategories.map(cat => {
-                const isActive = activeCategories.has(cat);
+                const isOn = activeCategories.has(cat);
                 const color = getCategoryColor(cat);
                 const count = (topics || []).filter(t => (t.category || 'other').toLowerCase() === cat).length;
                 return (
-                  <button
-                    key={cat}
-                    className={`map-filter-chip${isActive ? ' active' : ''}`}
-                    style={isActive ? { backgroundColor: color, borderColor: color, color: '#fff' } : { borderColor: color, color: color }}
-                    onClick={() => toggleCategory(cat)}
-                  >
-                    {cat} <span className="map-filter-chip-count">{count}</span>
-                  </button>
+                  <div key={cat} className={`wm-rail-chk${isOn ? ' on' : ''}`} onClick={() => toggleCategory(cat)}>
+                    <span className="wm-rail-chk-box" />
+                    <span className="wm-rail-pill" style={{ background: color }} />
+                    <span style={{ textTransform: 'capitalize', flex: 1 }}>{cat}</span>
+                    <span className="wm-rail-c">{count}</span>
+                  </div>
                 );
               })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="map-shell">
-        {/* Story flow banner */}
-        {selectedTopic && (
-          <div className="map-story-banner">
-            <button className="map-story-banner-back" onClick={() => setSelectedTopic(null)}>← Back</button>
-            <span className="map-story-banner-title">Showing connections for: {selectedTopic.title}</span>
-          </div>
-        )}
-
-        {/* Legend — collapsible */}
-        <div className={`map-overlay map-legend${legendOpen ? ' open' : ''}`}>
-          <button className="map-legend-toggle" onClick={() => setLegendOpen(o => !o)}>
-            <span className="map-legend-toggle-dots">
-              {presentCategories.slice(0, 4).map(cat => (
-                <span key={cat} className="legend-dot" style={{ backgroundColor: getCategoryColor(cat) }} />
-              ))}
-            </span>
-            <span className="map-legend-toggle-label">Legend</span>
-            <span className="map-legend-toggle-chevron">{legendOpen ? '▲' : '▼'}</span>
-          </button>
-          {legendOpen && (
-            <div className="map-legend-body">
-              {presentCategories.map(cat => (
-                <div key={cat} className="map-legend-row">
-                  <span className={`legend-dot ${cat}`}
-                    style={{ backgroundColor: getCategoryColor(cat) }} />
-                  <span className="legend-label" style={{ textTransform: 'capitalize' }}>{cat}</span>
-                </div>
-              ))}
-              {filteredArchive.length > 0 && (
-                <div className="map-legend-row map-legend-archive-row">
-                  <span className="legend-dot" style={{ backgroundColor: '#94a3b8', opacity: 0.6 }} />
-                  <span className="legend-label">
-                    Earlier
-                    <span className="legend-archive-dash" />
-                  </span>
-                </div>
+              {activeCategories.size > 0 && (
+                <button className="wm-rail-reset" onClick={() => { setActiveCategories(new Set()); setSelectedTopic(null); }}>
+                  ✕ Reset filter
+                </button>
               )}
             </div>
           )}
-        </div>
 
-        {/* Stats */}
-        <div className="map-overlay map-stats">
-          <div className="map-stats-row">Now: <strong>{(topics || []).length}</strong></div>
-          {filteredArchive.length > 0 && (
-            <div className="map-stats-row">Earlier: <strong>{filteredArchive.length}</strong></div>
-          )}
-          <div className="map-stats-row">Countries: <strong>{totalCountries + Object.keys(archiveOnlyCountryTopicMap).length}</strong></div>
-          <div className="map-stats-row">Connections: <strong>{totalConnections}</strong></div>
-        </div>
+          <div className="wm-rail-section">
+            <div className="wm-rail-lbl">Legend</div>
+            {presentCategories.map(cat => (
+              <div key={cat} className="wm-legend-row">
+                <span className="wm-legend-dot" style={{ background: getCategoryColor(cat) }} />
+                <span style={{ textTransform: 'capitalize', fontSize: 12.5, color: 'var(--ink-mid)' }}>{cat}</span>
+              </div>
+            ))}
+            {filteredArchive.length > 0 && (
+              <div className="wm-legend-archive">
+                <span className="wm-legend-dot" style={{ background: '#94a3b8', opacity: 0.6 }} />
+                <span style={{ fontSize: 12.5 }}>Earlier topics</span>
+                <span className="wm-legend-dash" />
+              </div>
+            )}
+          </div>
 
-        {apiKey ? (
-          <Wrapper apiKey={apiKey} render={render} />
-        ) : (
-          <FallbackMapComponent
-            countryTopicMap={countryTopicMap}
-            connections={connections}
-            archiveCountryTopicMap={archiveOnlyCountryTopicMap}
-            archiveConnections={archiveConnections}
-            onCountryClick={handleCountryClick}
-          />
-        )}
+          <div className="wm-rail-section">
+            <div className="wm-rail-lbl">Info</div>
+            <p style={{ fontSize: 12, color: 'var(--ink-dim)', lineHeight: 1.5, margin: 0 }}>
+              Lines connect countries sharing the same story. Click a country marker or line to explore.
+            </p>
+          </div>
+        </aside>
+
+        {/* Map area */}
+        <div className="wm-map-area">
+          <div className="wm-canvas">
+
+            {/* Story flow banner */}
+            {selectedTopic && (
+              <div className="wm-story-banner">
+                <button className="wm-story-banner-back" onClick={() => setSelectedTopic(null)}>← Clear</button>
+                <span className="wm-story-banner-title">{selectedTopic.title}</span>
+              </div>
+            )}
+
+            {/* Stats overlay */}
+            <div className="wm-stats-overlay">
+              <div className="wm-stat-row">Now <b>{(topics || []).length}</b></div>
+              {filteredArchive.length > 0 && <div className="wm-stat-row">Earlier <b>{filteredArchive.length}</b></div>}
+              <div className="wm-stat-row">Countries <b>{totalCountries}</b></div>
+            </div>
+
+            {/* Map */}
+            <div className="map-shell">
+              {apiKey ? (
+                <Wrapper apiKey={apiKey} render={render} />
+              ) : (
+                <FallbackMapComponent
+                  countryTopicMap={countryTopicMap}
+                  connections={connections}
+                  archiveCountryTopicMap={archiveOnlyCountryTopicMap}
+                  archiveConnections={archiveConnections}
+                  onCountryClick={handleCountryClick}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-
-      <TodayArchiveSidebar entries={filteredArchive} />
 
       <MapSidePanel
         isOpen={panelOpen}

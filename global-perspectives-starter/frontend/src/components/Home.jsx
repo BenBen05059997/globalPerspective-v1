@@ -2,23 +2,63 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import SummaryDisplay from './SummaryDisplay';
-
 import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
 import TopicNav from './TopicNav';
 import TodayArchiveSidebar from './TodayArchiveSidebar';
-import { useTraceCause } from '../hooks/useTraceCause';
 import { useTodayArchive } from '../hooks/useTodayArchive';
 import graphqlService from '../utils/graphqlService';
 import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import { useError } from '../contexts/ErrorContext';
 import './AIComponents.css';
+import './Home.css';
+
+// SVG icons
+const SumIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M3 4h10M3 8h10M3 12h6"/>
+  </svg>
+);
+const PreIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/>
+  </svg>
+);
+const TraIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/>
+  </svg>
+);
+
+function getTimeAgo(isoString) {
+  if (!isoString) return null;
+  const minutes = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+function getDayString() {
+  const d = new Date();
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function getTopicId(t, idx) {
+  const directId = t?.topicId || t?.topic_id || t?.id;
+  if (directId != null) {
+    const c = String(directId).trim();
+    if (c.length > 0) return c;
+  }
+  return `${t.title || 'topic'}-${idx}`.replace(/[^a-zA-Z0-9]/g, '-');
+}
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, generatedDate, hasNewData } = useGeminiTopics();
   const { entries: archiveEntries } = useTodayArchive();
   const { showError } = useError();
-  // Filter archive to only show topics NOT currently on the main page
+
   const filteredArchiveEntries = React.useMemo(() => {
     if (!archiveEntries.length || !topics.length) return archiveEntries;
     const activeIds = new Set(topics.map((t) => {
@@ -28,10 +68,7 @@ function Home() {
     return archiveEntries.filter(e => !activeIds.has(e.topicId));
   }, [archiveEntries, topics]);
 
-  // Organize topics by region
-  const categorizedTopics = React.useMemo(() => {
-    return categorizeTopicsByRegion(topics);
-  }, [topics]);
+  const categorizedTopics = React.useMemo(() => categorizeTopicsByRegion(topics), [topics]);
 
   const sortedRegions = React.useMemo(() =>
     Object.entries(categorizedTopics)
@@ -43,7 +80,6 @@ function Home() {
       }),
   [categorizedTopics]);
 
-  // Local state maps keyed by topicId
   const [summaries, setSummaries] = useState({});
   const [summaryLoading, setSummaryLoading] = useState({});
   const [summaryErrors, setSummaryErrors] = useState({});
@@ -59,55 +95,22 @@ function Home() {
   const [traceCauseErrors, setTraceCauseErrors] = useState({});
   const [traceCauseCollapsed, setTraceCauseCollapsed] = useState({});
 
-  const [mobileDropdownOpen, setMobileDropdownOpen] = useState({});
-
   const [sourcesExpanded, setSourcesExpanded] = useState({});
-
-  // Stores the last time a user clicked a button for a specific topic+feature
-  // Keys: topicId_feature (e.g. "123_summary")
   const [activeTimestamps, setActiveTimestamps] = useState({});
 
   const summaryAttemptsRef = useRef({});
   const predictionAttemptsRef = useRef({});
-  const traceCauseAttemptsRef = useRef({});
-
-  // Initialize custom hook for API calls
-  const { generateTraceCause } = useTraceCause();
 
   const MAX_RETRIES = 6;
   const RETRY_DELAY_MS = 10000;
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.ai-toolbar-mobile')) {
-        setMobileDropdownOpen({});
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Show error modal when topics fetch fails
-  useEffect(() => {
-    if (error) {
-      showError(error);
-    }
+    if (error) showError(error);
   }, [error, showError]);
 
-  const getTopicId = (t, idx) => {
-    const directId = t?.topicId || t?.topic_id || t?.id;
-    if (directId != null) {
-      const candidate = String(directId).trim();
-      if (candidate.length > 0) return candidate;
-    }
-    const slug = `${t.title || 'topic'}-${idx}`.replace(/[^a-zA-Z0-9]/g, '-');
-    return slug || `topic-${idx}`;
-  };
+  useEffect(() => { document.title = 'Global Perspectives™ — AI-Powered News Intelligence'; }, []);
 
+  // ── Summary ──────────────────────────────────────────────
   const scheduleSummaryRetry = (topic, idx, attempt) => {
     setTimeout(() => {
       summaryAttemptsRef.current[getTopicId(topic, idx)] = attempt;
@@ -117,16 +120,9 @@ function Home() {
 
   const handleGenerateSummary = async (t, idx, attempt = 0) => {
     const id = getTopicId(t, idx);
-    // Update active timestamp to force scroll
     setActiveTimestamps(prev => ({ ...prev, [`${id}_summary`]: Date.now() }));
-
-    if (summaries[id]) {
-      setSummaryCollapsed(prev => ({ ...prev, [id]: false }));
-      return;
-    }
-    if (summaryLoading[id] && attempt === 0) {
-      return;
-    }
+    if (summaries[id]) { setSummaryCollapsed(prev => ({ ...prev, [id]: false })); return; }
+    if (summaryLoading[id] && attempt === 0) return;
     summaryAttemptsRef.current[id] = attempt;
     setSummaryLoading(prev => ({ ...prev, [id]: true }));
     setSummaryErrors(prev => ({ ...prev, [id]: null }));
@@ -134,19 +130,13 @@ function Home() {
     try {
       const data = await graphqlService.getTopicSummary(id);
       const content = data?.content || '';
-      const genTime = Date.now() - start;
-      const processed = {
-        content,
-        service: 'cache',
+      setSummaries(prev => ({ ...prev, [id]: {
+        content, service: 'cache',
         timestamp: data?.generatedAt || new Date().toISOString(),
-        generationTime: genTime,
-        wordCount: String(content || '').split(' ').length,
-        metadata: {
-          cached: data?.cached ?? true,
-          remainingTtlSeconds: data?.remainingTtlSeconds ?? null,
-        },
-      };
-      setSummaries(prev => ({ ...prev, [id]: processed }));
+        generationTime: Date.now() - start,
+        wordCount: String(content).split(' ').length,
+        metadata: { cached: data?.cached ?? true, remainingTtlSeconds: data?.remainingTtlSeconds ?? null },
+      }}));
       setSummaryCollapsed(prev => ({ ...prev, [id]: false }));
       summaryAttemptsRef.current[id] = 0;
       setSummaryLoading(prev => ({ ...prev, [id]: false }));
@@ -155,7 +145,6 @@ function Home() {
       const shouldRetry = /cache miss|failed to read summary|503/i.test(message);
       const nextAttempt = attempt + 1;
       if (shouldRetry && nextAttempt <= MAX_RETRIES) {
-        console.info(`[SummaryRetry] ${id} attempt ${nextAttempt}/${MAX_RETRIES}`);
         scheduleSummaryRetry(t, idx, nextAttempt);
       } else {
         setSummaryErrors(prev => ({ ...prev, [id]: message }));
@@ -172,12 +161,12 @@ function Home() {
     setSummaryCollapsed(prev => ({ ...prev, [id]: true }));
     delete summaryAttemptsRef.current[id];
   };
-
   const toggleSummaryCollapsed = (t, idx) => {
     const id = getTopicId(t, idx);
     setSummaryCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // ── Prediction ───────────────────────────────────────────
   const schedulePredictionRetry = (topic, idx, attempt) => {
     setTimeout(() => {
       predictionAttemptsRef.current[getTopicId(topic, idx)] = attempt;
@@ -187,16 +176,9 @@ function Home() {
 
   const handleGeneratePrediction = async (t, idx, attempt = 0) => {
     const id = getTopicId(t, idx);
-    // Update active timestamp to force scroll
     setActiveTimestamps(prev => ({ ...prev, [`${id}_prediction`]: Date.now() }));
-
-    if (predictions[id]) {
-      setPredictionCollapsed(prev => ({ ...prev, [id]: false }));
-      return;
-    }
-    if (predictionLoading[id] && attempt === 0) {
-      return;
-    }
+    if (predictions[id]) { setPredictionCollapsed(prev => ({ ...prev, [id]: false })); return; }
+    if (predictionLoading[id] && attempt === 0) return;
     predictionAttemptsRef.current[id] = attempt;
     setPredictionLoading(prev => ({ ...prev, [id]: true }));
     setPredictionErrors(prev => ({ ...prev, [id]: null }));
@@ -204,19 +186,13 @@ function Home() {
     try {
       const data = await graphqlService.getTopicPrediction(id);
       const content = data?.content || data?.impact_analysis || '';
-      const genTime = Date.now() - start;
-      const processed = {
-        content,
-        service: 'cache',
+      setPredictions(prev => ({ ...prev, [id]: {
+        content, service: 'cache',
         timestamp: data?.generatedAt || new Date().toISOString(),
-        generationTime: genTime,
-        wordCount: String(content || '').split(' ').length,
-        metadata: {
-          cached: data?.cached ?? true,
-          remainingTtlSeconds: data?.remainingTtlSeconds ?? null,
-        },
-      };
-      setPredictions(prev => ({ ...prev, [id]: processed }));
+        generationTime: Date.now() - start,
+        wordCount: String(content).split(' ').length,
+        metadata: { cached: data?.cached ?? true, remainingTtlSeconds: data?.remainingTtlSeconds ?? null },
+      }}));
       setPredictionCollapsed(prev => ({ ...prev, [id]: false }));
       predictionAttemptsRef.current[id] = 0;
       setPredictionLoading(prev => ({ ...prev, [id]: false }));
@@ -225,7 +201,6 @@ function Home() {
       const shouldRetry = /cache miss|failed to read summary|503/i.test(message);
       const nextAttempt = attempt + 1;
       if (shouldRetry && nextAttempt <= MAX_RETRIES) {
-        console.info(`[PredictionRetry] ${id} attempt ${nextAttempt}/${MAX_RETRIES}`);
         schedulePredictionRetry(t, idx, nextAttempt);
       } else {
         setPredictionErrors(prev => ({ ...prev, [id]: message }));
@@ -242,43 +217,27 @@ function Home() {
     setPredictionCollapsed(prev => ({ ...prev, [id]: true }));
     delete predictionAttemptsRef.current[id];
   };
-
   const togglePredictionCollapsed = (t, idx) => {
     const id = getTopicId(t, idx);
     setPredictionCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // ── Trace Cause ──────────────────────────────────────────
   const handleGenerateTraceCause = async (t, idx) => {
     const id = getTopicId(t, idx);
-    // Update active timestamp to force scroll
     setActiveTimestamps(prev => ({ ...prev, [`${id}_trace`]: Date.now() }));
-
-    if (traceCauses[id]) {
-      setTraceCauseCollapsed(prev => ({ ...prev, [id]: false }));
-      return;
-    }
+    if (traceCauses[id]) { setTraceCauseCollapsed(prev => ({ ...prev, [id]: false })); return; }
     if (traceCauseLoading[id]) return;
-
     setTraceCauseLoading(prev => ({ ...prev, [id]: true }));
     setTraceCauseErrors(prev => ({ ...prev, [id]: null }));
-
     try {
-      // Use direct service call or hook generator.
-      // Since Home.jsx manages its own state maps, we'll call the service directly or reuse the hook's logic if possible.
-      // But to fit the existing pattern of Home.jsx (manual state maps), let's call graphqlService directly
-      const data = await graphqlService.getTopicTraceCause(id); // Use the method we added earlier
+      const data = await graphqlService.getTopicTraceCause(id);
       const content = data?.content || '';
-
-      const processed = {
-        content,
-        service: 'cache',
+      setTraceCauses(prev => ({ ...prev, [id]: {
+        content, service: 'cache',
         timestamp: data?.generatedAt || new Date().toISOString(),
-        metadata: {
-          cached: data?.cached ?? true,
-        },
-      };
-
-      setTraceCauses(prev => ({ ...prev, [id]: processed }));
+        metadata: { cached: data?.cached ?? true },
+      }}));
       setTraceCauseCollapsed(prev => ({ ...prev, [id]: false }));
       setTraceCauseLoading(prev => ({ ...prev, [id]: false }));
     } catch (e) {
@@ -295,15 +254,9 @@ function Home() {
     setTraceCauseErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
     setTraceCauseCollapsed(prev => ({ ...prev, [id]: true }));
   };
-
   const toggleTraceCauseCollapsed = (t, idx) => {
     const id = getTopicId(t, idx);
     setTraceCauseCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const toggleMobileDropdown = (t, idx) => {
-    const id = getTopicId(t, idx);
-    setMobileDropdownOpen(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const toggleSourcesExpanded = (t, idx) => {
@@ -311,585 +264,235 @@ function Home() {
     setSourcesExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleMobileAction = (action, t, idx) => {
-    // Close dropdown first
-    const id = getTopicId(t, idx);
-    setMobileDropdownOpen(prev => ({ ...prev, [id]: false }));
+  // ── Render ───────────────────────────────────────────────
+  const totalTopics = topics?.length ?? 0;
+  const timeAgo = getTimeAgo(updatedAt);
 
-    // Execute the action
-    switch(action) {
-      case 'summary':
-        handleGenerateSummary(t, idx);
-        break;
-      case 'prediction':
-        handleGeneratePrediction(t, idx);
-        break;
-      case 'traceCause':
-        handleGenerateTraceCause(t, idx);
-        break;
-    }
-  };
-
-  const getTimeAgo = (isoString) => {
-    if (!isoString) return null;
-    const date = new Date(isoString);
-    const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
-
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-
-    const days = Math.floor(hours / 24);
-    return `${days} day${days !== 1 ? 's' : ''} ago`;
-  };
-  useEffect(() => { document.title = 'Global Perspectives™ — AI-Powered News Intelligence'; }, []);
   return (
-    <div>
-      {/* Floating Topic Navigation */}
+    <div className="home-page">
       <TopicNav topics={topics} categorizedTopics={categorizedTopics} />
       <TodayArchiveSidebar entries={filteredArchiveEntries} />
 
-      {/* New features banner */}
-      <div style={{
-        maxWidth: 700, margin: '0 auto 1.5rem', padding: '16px 20px',
-        background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)',
-        border: '1px solid #bfdbfe', borderRadius: 12,
-        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
-      }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111827', marginBottom: 4 }}>
-            New: Story Arc Intelligence & Country Briefings
-          </div>
-          <div style={{ fontSize: '0.82rem', color: '#374151', lineHeight: 1.5 }}>
-            Track how stories evolve across days, explore AI-powered country risk briefings, and see the connections between global events. Free for all signed-in users.
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <Link to="/weekly" style={{
-            padding: '7px 16px', borderRadius: 8, background: '#111827', color: '#fff',
-            fontWeight: 600, fontSize: '0.82rem', textDecoration: 'none', whiteSpace: 'nowrap',
-          }}>Story Arcs →</Link>
-          <Link to="/weekly/countries" style={{
-            padding: '7px 16px', borderRadius: 8, background: '#fff', color: '#111827',
-            fontWeight: 600, fontSize: '0.82rem', textDecoration: 'none', border: '1px solid #d1d5db', whiteSpace: 'nowrap',
-          }}>Country Intel →</Link>
-        </div>
-      </div>
-
-      {/* CLI banner */}
-      <div style={{
-        maxWidth: 700, margin: '0 auto 1.5rem', padding: '12px 20px',
-        background: '#111827', borderRadius: 10,
-        display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
-      }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff', marginBottom: 2 }}>
-            Now available as a CLI
-          </div>
-          <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#9ca3af' }}>
-            npx global-perspectives today
-          </div>
-        </div>
-        <Link to="/cli" style={{
-          padding: '6px 14px', borderRadius: 6, background: '#374151', color: '#e5e7eb',
-          fontWeight: 600, fontSize: '0.78rem', textDecoration: 'none', border: '1px solid #4b5563', whiteSpace: 'nowrap',
-        }}>Learn more →</Link>
-      </div>
-
-      <div className="text-center mb-8">
-        <h1 className="mb-4">Today's Global Topics</h1>
-        <p style={{ fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto' }}>
-          Trending topics from around the world, organized by region
+      {/* Masthead */}
+      <div className="home-masthead">
+        <div className="home-masthead-kicker">{getDayString()}</div>
+        <h1>Today's Global Topics</h1>
+        <p className="home-masthead-sub">
+          Trending topics from around the world, organised by region. Summarise, predict, or trace the cause of any one.
         </p>
-        <p style={{ fontSize: '0.78rem', color: '#9ca3af', maxWidth: '520px', margin: '6px auto 0', lineHeight: 1.4 }}>
-          AI news aggregator and geopolitical intelligence platform — tracking country risk analysis and narrative patterns across 190+ countries
-        </p>
-        {(generatedDate || updatedAt) && !isStale && (
-          <p
-            style={{
-              fontSize: '0.9rem',
-              color: '#666',
-              marginTop: '0.5rem',
-            }}
-          >
-            {generatedDate ? `Topics from ${generatedDate}` : `Updated ${getTimeAgo(updatedAt)}`}
-            {updatedAt && generatedDate && ` (${getTimeAgo(updatedAt)})`}
-          </p>
-        )}
+        <div className="home-meta">
+          <span className="home-meta-dot" />
+          <span>LIVE</span>
+          {totalTopics > 0 && (
+            <>
+              <span className="home-meta-sep">·</span>
+              <span><b>{totalTopics}</b> topics</span>
+            </>
+          )}
+          {timeAgo && (
+            <>
+              <span className="home-meta-sep">·</span>
+              <span>updated <b>{timeAgo}</b></span>
+            </>
+          )}
+          {generatedDate && (
+            <>
+              <span className="home-meta-sep">·</span>
+              <span>{generatedDate}</span>
+            </>
+          )}
+        </div>
+
         {isStale && (
-          <div
-            style={{
-              marginTop: '1rem',
-              padding: '0.75rem 1rem',
-              backgroundColor: '#ff9800',
-              color: 'white',
-              borderRadius: '4px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            <span>⚠️ Topics are being refreshed. Showing latest available data.</span>
-            <button
-              onClick={refetch}
-              style={{
-                padding: '0.25rem 0.75rem',
-                backgroundColor: 'white',
-                color: '#ff9800',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontWeight: '600',
-              }}
-            >
-              Refresh
-            </button>
+          <div className="home-alert stale">
+            <span>Topics refreshing — showing latest available</span>
+            <button onClick={refetch}>Refresh</button>
           </div>
         )}
-        {hasNewData && (
-          <div
-            style={{
-              marginTop: '1rem',
-              padding: '0.75rem 1rem',
-              backgroundColor: '#4caf50',
-              color: 'white',
-              borderRadius: '4px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
-          >
-            <span>🆕 New topics available</span>
-            <button
-              onClick={refetch}
-              style={{
-                padding: '0.25rem 0.75rem',
-                backgroundColor: 'white',
-                color: '#4caf50',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontWeight: '600',
-              }}
-            >
-              Refresh
-            </button>
+        {hasNewData && !isStale && (
+          <div className="home-alert fresh">
+            <span>New topics available</span>
+            <button onClick={refetch}>Load</button>
           </div>
         )}
       </div>
 
-      {/* Support Banner */}
-      <div style={{
-        maxWidth: '600px',
-        margin: '0 auto 1.5rem',
-        padding: '0.75rem 1rem',
-        backgroundColor: '#fafafa',
-        border: '1px solid #e5e5e5',
-        borderRadius: '8px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem',
-        fontSize: '0.9rem',
-        color: '#555',
-      }}>
-        <span>We run ad-free. Help us keep it that way</span>
-        <a
-          href="https://buymeacoffee.com/BenBen990505"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            padding: '0.35rem 0.75rem',
-            backgroundColor: '#FFDD00',
-            color: '#000',
-            fontWeight: '600',
-            fontSize: '0.85rem',
-            borderRadius: '6px',
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
+      {/* Support */}
+      <div className="home-support">
+        <span>We run ad-free. Help keep it that way.</span>
+        <a href="https://buymeacoffee.com/BenBen990505" target="_blank" rel="noopener noreferrer">
           Buy Me a Coffee
         </a>
       </div>
 
-      {/* Topics list via AppSync */}
+      {/* Loading */}
       {loading && (
-        <div className="card text-center">
-          <div style={{
-            display: 'inline-block', width: 20, height: 20,
-            border: '2px solid var(--border-color)',
-            borderTop: '2px solid var(--text-primary)',
-            borderRadius: '50%', animation: 'spin 1s linear infinite',
-            marginBottom: '1rem'
-          }} />
-          <p style={{ margin: 0 }}>Loading topics...</p>
+        <div className="home-loading">
+          <span className="home-loading-spin" />
+          <span className="home-loading-label">Loading topics</span>
         </div>
       )}
 
-      {!loading && topics && topics.length > 0 && (
-        <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          {sortedRegions.map(([region, regionTopics]) => {
-              const topicsToShow = regionTopics;
-              return (
-              <div key={region} className="card" style={{ marginBottom: '2rem' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginBottom: '1rem',
-                  borderBottom: '2px solid var(--border-color)',
-                  paddingBottom: '0.5rem'
-                }}>
-                  <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>
-                    {region}
-                  </h2>
-                  <span style={{
-                    marginLeft: '1rem',
-                    color: 'var(--text-muted)',
-                    fontSize: '0.8rem',
-                    fontWeight: 'normal'
-                  }}>
-                    {regionTopics.length} topic{regionTopics.length !== 1 ? 's' : ''}
-                  </span>
+      {/* Regions */}
+      {!loading && totalTopics > 0 && sortedRegions.map(([region, regionTopics]) => (
+        <section key={region} className="home-region">
+          <div className="home-region-hd">
+            <h2>{region}</h2>
+            <span className="home-region-n">{regionTopics.length} topic{regionTopics.length !== 1 ? 's' : ''}</span>
+          </div>
+
+          {regionTopics.map((t) => {
+            const globalIdx = topics.indexOf(t);
+            const id = getTopicId(t, globalIdx);
+            const country = t.regions?.[0] || null;
+            const hasSummary = !!summaries[id];
+            const hasPredict = !!predictions[id];
+            const hasTrace = !!traceCauses[id];
+            const googleNewsUrl = `https://www.google.com/search?q=${encodeURIComponent(String(t.title || '').trim())}&tbm=nws&tbs=qdr:d`;
+
+            return (
+              <article key={globalIdx} id={`topic-${id}`} className="home-topic">
+                <div className="home-topic-kicker">
+                  {t.category && <span className="home-topic-cat">{t.category}</span>}
+                  {country && <span> · {country}</span>}
                 </div>
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {topicsToShow.map((t, idx) => {
-                    const globalIdx = topics.indexOf(t);
-                    const topicId = getTopicId(t, globalIdx);
-                    return (
-                      <li key={globalIdx} id={`topic-${topicId}`} style={{ padding: '1rem 0', borderBottom: '1px solid var(--border-color)' }}>
-                        <div style={{ marginBottom: '0.5rem' }}>
-                          <strong style={{ fontSize: '1.25rem' }}>{t.title}</strong>
-                          {t.category && (
-                            <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                              [{t.category}]
-                            </span>
-                          )}
-                          {t.threadId && (
-                            <Link
-                              to="/weekly"
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 3,
-                                fontSize: '0.75rem', fontWeight: 600,
-                                color: '#3b82f6', textDecoration: 'none',
-                                marginLeft: '0.5rem',
-                                border: '1px solid #bfdbfe', borderRadius: 4,
-                                padding: '1px 7px', background: '#eff6ff',
-                              }}
-                            >
-                              Ongoing story →
-                            </Link>
-                          )}
+
+                <h3>
+                  {t.threadId
+                    ? <Link to={`/weekly/thread/${t.threadId}`}>{t.title}</Link>
+                    : t.title
+                  }
+                  {t.threadId && (
+                    <Link to="/weekly" className="home-thread-badge">Story arc →</Link>
+                  )}
+                </h3>
+
+                {(t.context || t.description) && (
+                  <p className="home-topic-context">{t.context || t.description}</p>
+                )}
+
+                <div className="home-topic-actions">
+                  <div className="home-ai-row">
+                    {/* Summary */}
+                    <button
+                      className={`home-ai-btn sum${hasSummary || summaryLoading[id] ? ' active' : ''}${summaryLoading[id] ? ' loading' : ''}`}
+                      onClick={() => handleGenerateSummary(t, globalIdx)}
+                      disabled={summaryLoading[id]}
+                    >
+                      {summaryLoading[id]
+                        ? <span className="home-ai-spinner" />
+                        : hasSummary
+                          ? <span className="btn-dot" />
+                          : <SumIcon />
+                      }
+                      Summary
+                    </button>
+
+                    {/* Predict */}
+                    <button
+                      className={`home-ai-btn pre${hasPredict || predictionLoading[id] ? ' active' : ''}${predictionLoading[id] ? ' loading' : ''}`}
+                      onClick={() => handleGeneratePrediction(t, globalIdx)}
+                      disabled={predictionLoading[id]}
+                    >
+                      {predictionLoading[id]
+                        ? <span className="home-ai-spinner" />
+                        : hasPredict
+                          ? <span className="btn-dot" />
+                          : <PreIcon />
+                      }
+                      Predict
+                    </button>
+
+                    {/* Trace Cause */}
+                    <button
+                      className={`home-ai-btn tra${hasTrace || traceCauseLoading[id] ? ' active' : ''}${traceCauseLoading[id] ? ' loading' : ''}`}
+                      onClick={() => handleGenerateTraceCause(t, globalIdx)}
+                      disabled={traceCauseLoading[id]}
+                    >
+                      {traceCauseLoading[id]
+                        ? <span className="home-ai-spinner" />
+                        : hasTrace
+                          ? <span className="btn-dot" />
+                          : <TraIcon />
+                      }
+                      Trace Cause
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {Array.isArray(t.sources) && t.sources.length > 0 && (
+                      <button
+                        className="home-src-link"
+                        onClick={() => toggleSourcesExpanded(t, globalIdx)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      >
+                        {sourcesExpanded[id] ? 'Hide sources' : `${t.sources.length} source${t.sources.length !== 1 ? 's' : ''} ↗`}
+                      </button>
+                    )}
+                    {!Array.isArray(t.sources) && (
+                      <a className="home-src-link" href={googleNewsUrl} target="_blank" rel="noopener noreferrer">
+                        View sources ↗
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sources panel */}
+                {Array.isArray(t.sources) && t.sources.length > 0 && sourcesExpanded[id] && (
+                  <div className="home-sources-panel">
+                    <div className="home-sources-hd" onClick={() => toggleSourcesExpanded(t, globalIdx)}>
+                      <span>Article Sources ({t.sources.length})</span>
+                      <span className="home-sources-close">✕</span>
+                    </div>
+                    <div className="home-sources-body">
+                      {t.sources.map((src, si) => (
+                        <div key={si} className="home-source-item">
+                          <a href={src.url} target="_blank" rel="noopener noreferrer">{src.title || 'Untitled'}</a>
+                          <div className="home-source-meta">{src.source}{src.age ? ` · ${src.age}` : ''}</div>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                        {/* Desktop Layout - Only visible on desktop */}
-                        <div className="topic-actions-desktop">
-                          <div className="ai-toolbar">
-                            <button
-                              className={`ai-btn ai-btn-summary ${summaryLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                              onClick={() => handleGenerateSummary(t, globalIdx)}
-                              disabled={summaryLoading[getTopicId(t, globalIdx)]}
-                            >
-                              {summaryLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
-                              Summarize
-                            </button>
-
-                            <button
-                              className={`ai-btn ai-btn-predict ${predictionLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                              onClick={() => handleGeneratePrediction(t, globalIdx)}
-                              disabled={predictionLoading[getTopicId(t, globalIdx)]}
-                            >
-                              {predictionLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
-                              Predict
-                            </button>
-
-                            <button
-                              className={`ai-btn ai-btn-trace ${traceCauseLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                              onClick={() => handleGenerateTraceCause(t, globalIdx)}
-                              disabled={traceCauseLoading[getTopicId(t, globalIdx)]}
-                            >
-                              {traceCauseLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner"></span>}
-                              Trace Cause
-                            </button>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            {/* Sources Toggle Button - on same line, left of View Google News */}
-                            {Array.isArray(t.sources) && t.sources.length > 0 && (
-                              <button
-                                onClick={() => toggleSourcesExpanded(t, globalIdx)}
-                                style={{
-                                  background: 'none',
-                                  border: '1px solid #e0e0e0',
-                                  borderRadius: '4px',
-                                  padding: '0.25rem 0.5rem',
-                                  cursor: 'pointer',
-                                  fontSize: '0.85rem',
-                                  fontWeight: '500',
-                                  color: '#1a73e8',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.35rem',
-                                  transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                              >
-                                <span>Sources ({t.sources.length})</span>
-                                <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
-                              </button>
-                            )}
-
-                            {(() => {
-                              const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
-                              const sourceUrl = fullTitle
-                                ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
-                                : '';
-
-                              return (
-                                <a
-                                  href={sourceUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-link"
-                                  style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
-                                >
-                                  View Google News ↗
-                                </a>
-                              );
-                            })()}
-                          </div>
-                        </div>
-
-                        {/* Helper text - below the toolbar row */}
-                        <div style={{ textAlign: 'right', marginTop: '0.25rem' }}>
-                          <div style={{ fontSize: '0.75rem', color: '#999', fontStyle: 'italic' }}>
-                            Note: Very recent news may take time to appear in search results
-                          </div>
-                        </div>
-
-                        {/* Mobile Layout - Only visible on mobile */}
-                        <div className="topic-actions-mobile">
-                          <div className="ai-toolbar-mobile">
-                            <button
-                              className="ai-dropdown-trigger"
-                              onClick={() => toggleMobileDropdown(t, globalIdx)}
-                            >
-                              Actions
-                              <span className={`ai-chevron ${mobileDropdownOpen[getTopicId(t, globalIdx)] ? 'open' : ''}`}>▼</span>
-                            </button>
-
-                            {mobileDropdownOpen[getTopicId(t, globalIdx)] && (
-                              <div className="ai-dropdown-menu">
-                                <button
-                                  className={`ai-dropdown-item ${summaryLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                                  onClick={() => handleMobileAction('summary', t, globalIdx)}
-                                  disabled={summaryLoading[getTopicId(t, globalIdx)]}
-                                >
-                                  {summaryLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
-                                  Summarize
-                                  {summaries[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
-                                </button>
-                                <button
-                                  className={`ai-dropdown-item ${predictionLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                                  onClick={() => handleMobileAction('prediction', t, globalIdx)}
-                                  disabled={predictionLoading[getTopicId(t, globalIdx)]}
-                                >
-                                  {predictionLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
-                                  Predict
-                                  {predictions[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
-                                </button>
-                                <button
-                                  className={`ai-dropdown-item ${traceCauseLoading[getTopicId(t, globalIdx)] ? 'loading' : ''}`}
-                                  onClick={() => handleMobileAction('traceCause', t, globalIdx)}
-                                  disabled={traceCauseLoading[getTopicId(t, globalIdx)]}
-                                >
-                                  {traceCauseLoading[getTopicId(t, globalIdx)] && <span className="ai-spinner-small"></span>}
-                                  Trace Cause
-                                  {traceCauses[getTopicId(t, globalIdx)] && <span className="ai-checkmark">✓</span>}
-                                </button>
-                              </div>
-                            )}
-                          </div>
-
-                          {(() => {
-                            const fullTitle = String(t.title || '').replace(/\s+/g, ' ').trim();
-                            const sourceUrl = fullTitle
-                              ? `https://www.google.com/search?q=${encodeURIComponent(fullTitle)}&tbm=nws&tbs=qdr:d`
-                              : '';
-
-                            return (
-                              <div>
-                                <a
-                                  href={sourceUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-link"
-                                  style={{ fontSize: '0.85rem', color: '#000000', textDecoration: 'none', fontWeight: '500' }}
-                                >
-                                  View Google News ↗
-                                </a>
-
-                                {/* Sources Toggle Button */}
-                                {Array.isArray(t.sources) && t.sources.length > 0 && (
-                                  <button
-                                    onClick={() => toggleSourcesExpanded(t, globalIdx)}
-                                    style={{
-                                      background: 'none',
-                                      border: '1px solid #e0e0e0',
-                                      borderRadius: '4px',
-                                      padding: '0.25rem 0.5rem',
-                                      cursor: 'pointer',
-                                      fontSize: '0.85rem',
-                                      fontWeight: '500',
-                                      color: '#1a73e8',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.35rem',
-                                      transition: 'all 0.2s',
-                                      marginTop: '0.5rem',
-                                      width: '100%',
-                                      justifyContent: 'center'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#f5f5f5'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    <span>Sources ({t.sources.length})</span>
-                                    <span style={{ fontSize: '0.7rem' }}>{sourcesExpanded[getTopicId(t, globalIdx)] ? '▲' : '▼'}</span>
-                                  </button>
-                                )}
-
-                                {/* Helper text */}
-                                <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.25rem', fontStyle: 'italic' }}>
-                                  Note: Very recent news may take time to appear in search results
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Sources Display */}
-                        {Array.isArray(t.sources) && t.sources.length > 0 && sourcesExpanded[getTopicId(t, globalIdx)] && (
-                          <div style={{ marginTop: '0.5rem' }}>
-                            <div className="ai-result-card">
-                              <div className="ai-result-header" onClick={() => toggleSourcesExpanded(t, globalIdx)} style={{ cursor: 'pointer' }}>
-                                <div className="ai-result-title" style={{ color: '#1a73e8' }}>
-                                  📰 Article Sources
-                                </div>
-                                <div style={{ color: '#9ca3af', fontSize: '12px' }}>
-                                  Hide
-                                </div>
-                              </div>
-
-                              <div className="ai-result-content">
-                                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                  {t.sources.map((source, srcIdx) => (
-                                    <div
-                                      key={srcIdx}
-                                      style={{
-                                        marginBottom: srcIdx < t.sources.length - 1 ? '16px' : '0',
-                                        paddingBottom: srcIdx < t.sources.length - 1 ? '16px' : '0',
-                                        borderBottom: srcIdx < t.sources.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none'
-                                      }}
-                                    >
-                                      <a
-                                        href={source.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{
-                                          fontSize: '0.95rem',
-                                          color: '#1a73e8',
-                                          textDecoration: 'none',
-                                          display: 'block',
-                                          lineHeight: '1.5',
-                                          fontWeight: '500',
-                                          marginBottom: '4px'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                                        onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-                                      >
-                                        {source.title || 'Untitled'}
-                                      </a>
-                                      <div style={{
-                                        fontSize: '0.8rem',
-                                        color: '#6b7280',
-                                        lineHeight: '1.4'
-                                      }}>
-                                        {source.source} {source.age ? `• ${source.age}` : ''}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>Real-time News Sources</span>
-                                  <div className="ai-result-actions">
-                                    <div className="ai-action-icon" onClick={() => toggleSourcesExpanded(t, globalIdx)} title="Close">✕</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* AI Summary Display */}
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <SummaryDisplay
-                            summary={summaries[getTopicId(t, globalIdx)]}
-                            isLoading={summaryLoading[getTopicId(t, globalIdx)]}
-                            error={summaryErrors[getTopicId(t, globalIdx)]}
-                            onRetry={() => handleGenerateSummary(t, globalIdx)}
-                            onClear={() => handleClearSummary(t, globalIdx)}
-                            isCollapsed={summaryCollapsed[getTopicId(t, globalIdx)]}
-                            onToggleCollapse={() => toggleSummaryCollapsed(t, globalIdx)}
-                            lastActive={activeTimestamps[`${getTopicId(t, globalIdx)}_summary`]}
-                          />
-                        </div>
-
-                        {/* AI Prediction Display */}
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <PredictionDisplay
-                            prediction={predictions[getTopicId(t, globalIdx)]}
-                            isLoading={predictionLoading[getTopicId(t, globalIdx)]}
-                            error={(predictionErrors[getTopicId(t, globalIdx)] || null)}
-                            onRetry={() => handleGeneratePrediction(t, globalIdx)}
-                            onClear={() => handleClearPrediction(t, globalIdx)}
-                            isCollapsed={predictionCollapsed[getTopicId(t, globalIdx)]}
-                            onToggleCollapse={() => togglePredictionCollapsed(t, globalIdx)}
-                            lastActive={activeTimestamps[`${getTopicId(t, globalIdx)}_prediction`]}
-                          />
-                        </div>
-
-                        {/* AI Trace Cause Display */}
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <TraceCauseDisplay
-                            traceCause={traceCauses[getTopicId(t, globalIdx)]}
-                            isLoading={traceCauseLoading[getTopicId(t, globalIdx)]}
-                            error={traceCauseErrors[getTopicId(t, globalIdx)]}
-                            onRetry={() => handleGenerateTraceCause(t, globalIdx)}
-                            onClear={() => handleClearTraceCause(t, globalIdx)}
-                            isCollapsed={traceCauseCollapsed[getTopicId(t, globalIdx)]}
-                            onToggleCollapse={() => toggleTraceCauseCollapsed(t, globalIdx)}
-                            lastActive={activeTimestamps[`${getTopicId(t, globalIdx)}_trace`]}
-                          />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-              );
-            })}
-
-        </div>
-      )}
-
-      {/* Search UI removed; focusing on AppSync-backed topics display */}
+                {/* AI results */}
+                <div className="home-ai-result">
+                  <SummaryDisplay
+                    summary={summaries[id]}
+                    isLoading={summaryLoading[id]}
+                    error={summaryErrors[id]}
+                    onRetry={() => handleGenerateSummary(t, globalIdx)}
+                    onClear={() => handleClearSummary(t, globalIdx)}
+                    isCollapsed={summaryCollapsed[id]}
+                    onToggleCollapse={() => toggleSummaryCollapsed(t, globalIdx)}
+                    lastActive={activeTimestamps[`${id}_summary`]}
+                  />
+                  <PredictionDisplay
+                    prediction={predictions[id]}
+                    isLoading={predictionLoading[id]}
+                    error={predictionErrors[id] || null}
+                    onRetry={() => handleGeneratePrediction(t, globalIdx)}
+                    onClear={() => handleClearPrediction(t, globalIdx)}
+                    isCollapsed={predictionCollapsed[id]}
+                    onToggleCollapse={() => togglePredictionCollapsed(t, globalIdx)}
+                    lastActive={activeTimestamps[`${id}_prediction`]}
+                  />
+                  <TraceCauseDisplay
+                    traceCause={traceCauses[id]}
+                    isLoading={traceCauseLoading[id]}
+                    error={traceCauseErrors[id]}
+                    onRetry={() => handleGenerateTraceCause(t, globalIdx)}
+                    onClear={() => handleClearTraceCause(t, globalIdx)}
+                    isCollapsed={traceCauseCollapsed[id]}
+                    onToggleCollapse={() => toggleTraceCauseCollapsed(t, globalIdx)}
+                    lastActive={activeTimestamps[`${id}_trace`]}
+                  />
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      ))}
     </div>
   );
 }

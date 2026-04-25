@@ -1,156 +1,159 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingBar from './LoadingBar';
 import AIToast from './AIToast';
+import './Layout.css';
 
 function Layout({ children }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const navBarRef = useRef(null);
-  const { user, loading: authLoading, signOut } = useAuth();
-  const navigate = useNavigate();
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
+  const [topicCount, setTopicCount] = useState(null);
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (navBarRef.current && !navBarRef.current.contains(event.target)) {
-        setMenuOpen(false);
+    const handleKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') e.preventDefault();
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('gp_topics_cache');
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        setTopicCount(data?.topics?.length ?? null);
       }
-    };
-
-    if (menuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [menuOpen]);
+    } catch { /* ignore malformed cache */ }
+  }, []);
 
   const navLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/daily', label: 'Daily Brief' },
+    { to: '/', label: 'Topics', exact: true },
+    { to: '/daily', label: 'Daily' },
     { to: '/map', label: 'Map' },
-    { to: '/weekly', label: 'Weekly Analysis' },
-    { to: '/weekly/countries', label: 'Country Intel' },
-
-    { to: '/about', label: 'About' },
+    { to: '/weekly', label: 'Threads' },
+    { to: '/weekly/countries', label: 'Countries' },
   ];
 
+  const isActive = (to, exact) => {
+    if (exact) return location.pathname === to;
+    return location.pathname === to || location.pathname.startsWith(to + '/');
+  };
+
   return (
-    <div className="app">
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: '#0a0f1e',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '2rem', textAlign: 'center',
-      }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔧</div>
-        <h1 style={{ color: '#f1f5f9', fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.75rem' }}>
-          Major Update in Progress
-        </h1>
-        <p style={{ color: '#94a3b8', fontSize: '1.05rem', maxWidth: '420px', lineHeight: 1.6, margin: '0 0 0.5rem' }}>
-          We're working on something big. Global Perspectives will be back shortly.
-        </p>
-        <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
-          Check back in a few hours.
-        </p>
-      </div>
+    <div className="gp-app">
       <LoadingBar />
       <AIToast />
-      <nav className="nav">
-        <div className="container">
-          <div className="nav-bar" ref={navBarRef}>
-            <Link to="/" className="nav-brand">
-              <h2>Global Perspectives™</h2>
-            </Link>
-            <button
-              type="button"
-              className={`nav-toggle ${menuOpen ? 'open' : ''}`}
-              aria-label="Toggle menu"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen(!menuOpen)}
+
+      <nav className="gp-nav">
+        <div className="gp-brand">
+          <Link to="/" className="gp-brand-link">
+            <span className="gp-logo">G</span>
+            <span className="gp-name">
+              Global Perspectives<sup className="gp-tm">™</sup>
+            </span>
+          </Link>
+        </div>
+
+        <div className="gp-nav-links">
+          {navLinks.map(({ to, label, exact }) => (
+            <Link
+              key={to}
+              to={to}
+              className={`gp-nav-link${isActive(to, exact) ? ' active' : ''}`}
             >
-              <span />
-              <span />
-              <span />
-            </button>
-            <div className={`nav-links ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen(false)}>
-              {navLinks.map(({ to, label }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className={`nav-link ${location.pathname === to ? 'active' : ''}`}
-                >
-                  {label}
-                </Link>
-              ))}
-              {!authLoading && (
-                user ? (
-                  user.isAnonymous ? (
-                    <button
-                      type="button"
-                      className="nav-link nav-link-auth"
-                      onClick={async () => { await signOut(); navigate('/signin'); }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
-                      Guest · Sign out
-                    </button>
-                  ) : (
-                    <Link to="/account" className={`nav-link nav-link-auth ${location.pathname === '/account' ? 'active' : ''}`}>
-                      {user.email}
-                    </Link>
-                  )
-                ) : (
-                  <Link to="/signin" className={`nav-link nav-link-auth ${location.pathname === '/signin' ? 'active' : ''}`}>
-                    Sign in
-                  </Link>
-                )
-              )}
-            </div>
-          </div>
+              {label}
+            </Link>
+          ))}
+        </div>
+
+        <div className="gp-nav-right">
+          <button className="gp-search" aria-label="Search (⌘K)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="7" cy="7" r="5"/>
+              <path d="M11 11l3 3"/>
+            </svg>
+            <span>Search</span>
+            <span className="gp-kbd">⌘K</span>
+          </button>
+
+          {!authLoading && (
+            user && !user.isAnonymous ? (
+              <Link to="/account" className="gp-btn">
+                {user.email?.split('@')[0] || 'Account'}
+              </Link>
+            ) : (
+              <Link to="/signin" className="gp-btn gp-btn-primary">Sign in</Link>
+            )
+          )}
+
+          <button
+            type="button"
+            className={`gp-hamburger${menuOpen ? ' open' : ''}`}
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(v => !v)}
+          >
+            <span /><span /><span />
+          </button>
         </div>
       </nav>
-      
-      {user?.isAnonymous && (
-        <div style={{ background: '#eff6ff', borderBottom: '1px solid #bfdbfe', padding: '8px 16px', textAlign: 'center', fontSize: '0.85rem', color: '#1e40af' }}>
-          You're browsing as a guest.{' '}
-          <Link to="/signin" style={{ color: '#1d4ed8', fontWeight: 600, textDecoration: 'underline' }}>
-            Sign up free
+
+      <div className={`gp-mobile-menu${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)}>
+        {navLinks.map(({ to, label, exact }) => (
+          <Link
+            key={to}
+            to={to}
+            className={`gp-mobile-link${isActive(to, exact) ? ' active' : ''}`}
+          >
+            {label}
           </Link>
-          {' '}to save your session and unlock all features.
-        </div>
-      )}
-      <main className="main-content">
+        ))}
+        {!authLoading && (
+          user && !user.isAnonymous ? (
+            <Link to="/account" className="gp-mobile-link">{user.email}</Link>
+          ) : (
+            <Link to="/signin" className="gp-mobile-link">Sign in →</Link>
+          )
+        )}
+      </div>
+
+      <div className="gp-strip">
+        <span className="gp-strip-live">
+          <span className="gp-dot-live" />
+          LIVE
+        </span>
+        <span className="gp-strip-sep">·</span>
+        {topicCount != null && (
+          <>
+            <span><b>{topicCount}</b> topics</span>
+            <span className="gp-strip-sep">·</span>
+          </>
+        )}
+        <span>Updated hourly</span>
+        <span className="gp-strip-sep">·</span>
+        <span>AI-powered global news intelligence</span>
+      </div>
+
+      <main className="gp-main">
         <div className="container">
           {children}
         </div>
       </main>
-      
-      <footer className="nav" style={{ borderTop: '2px solid var(--border-color)', borderBottom: 'none' }}>
-        <div className="container">
-          <div className="text-center" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
-            <p style={{ margin: 0, color: 'var(--text-muted)' }}>
-              Global Perspectives™ &mdash; AI-powered news aggregation
-            </p>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', fontSize: '0.9rem' }}>
-              <Link to="/about" className="nav-link">About</Link>
-              <Link to="/whitepaper" className="nav-link">White Paper</Link>
-              <Link to="/cli" className="nav-link">CLI</Link>
-              <a href="/blog/" className="nav-link">Blog</a>
-              <Link to="/privacy" className="nav-link">Privacy &amp; Terms</Link>
-              <Link to="/disclosures" className="nav-link">Commerce Disclosure</Link>
-              <a
-                href="mailto:globalperspectives.app@gmail.com"
-                className="nav-link"
-              >
-                Contact
-              </a>
-            </div>
-          </div>
+
+      <footer className="gp-footer">
+        <span>Global Perspectives™ — AI news intelligence</span>
+        <div className="gp-footer-links">
+          <Link to="/about">About</Link>
+          <Link to="/whitepaper">White Paper</Link>
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/disclosures">Disclosures</Link>
+          <a href="mailto:globalperspectives.app@gmail.com">Contact</a>
         </div>
       </footer>
     </div>

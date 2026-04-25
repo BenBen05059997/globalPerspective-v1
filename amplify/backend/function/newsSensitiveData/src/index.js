@@ -666,6 +666,77 @@ exports.handler = async (event) => {
       } catch { return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) }; }
     }
 
+    // ── Markets data (public — GlobalPerspectiveMarkets table) ───────────────
+    if (action === 'markets_global') {
+      try {
+        const mClient = getDynamoClient();
+        const [fx, rates, comms] = await Promise.all([
+          mClient.send(new GetCommand({ TableName: 'GlobalPerspectiveMarkets', Key: { pk: 'FX#USD', sk: 'LATEST' } })),
+          mClient.send(new GetCommand({ TableName: 'GlobalPerspectiveMarkets', Key: { pk: 'RATES#GLOBAL', sk: 'LATEST' } })),
+          mClient.send(new GetCommand({ TableName: 'GlobalPerspectiveMarkets', Key: { pk: 'COMMODITIES#GLOBAL', sk: 'LATEST' } })),
+        ]);
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, data: {
+            fx:          fx.Item   ? { rates: fx.Item.rates,   base: fx.Item.base, asOf: fx.Item.asOf } : null,
+            yields:      rates.Item ? { US10Y: rates.Item.US10Y, US2Y: rates.Item.US2Y, UK10Y: rates.Item.UK10Y, DE10Y: rates.Item.DE10Y, JP10Y: rates.Item.JP10Y, asOf: rates.Item.asOf } : null,
+            commodities: comms.Item ? { brent: comms.Item.brent, wti: comms.Item.wti, gold: comms.Item.gold, copper: comms.Item.copper, dxy: comms.Item.dxy, vix: comms.Item.vix, asOf: comms.Item.asOf } : null,
+          }}),
+        };
+      } catch (e) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null, error: e.message }) };
+      }
+    }
+
+    if (action === 'markets_country') {
+      const countryName = payload?.country;
+      if (!countryName) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing country' }) };
+      try {
+        const mClient = getDynamoClient();
+        const [macro, fx] = await Promise.all([
+          mClient.send(new GetCommand({ TableName: 'GlobalPerspectiveMarkets', Key: { pk: `MACRO#${countryName}`, sk: 'LATEST' } })),
+          mClient.send(new GetCommand({ TableName: 'GlobalPerspectiveMarkets', Key: { pk: 'FX#USD', sk: 'LATEST' } })),
+        ]);
+        return {
+          statusCode: 200, headers,
+          body: JSON.stringify({ success: true, data: {
+            macro: macro.Item ? {
+              gdp_usd:         macro.Item.gdp_usd,
+              cpi_yoy:         macro.Item.cpi_yoy,
+              reserves_usd:    macro.Item.reserves_usd,
+              debt_to_gdp:     macro.Item.debt_to_gdp,
+              current_account: macro.Item.current_account,
+              unemployment:    macro.Item.unemployment,
+              asOf:            macro.Item.asOf,
+            } : null,
+            fx: fx.Item ? { rates: fx.Item.rates, base: fx.Item.base, asOf: fx.Item.asOf } : null,
+          }}),
+        };
+      } catch (e) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null, error: e.message }) };
+      }
+    }
+
+    if (action === 'markets_history') {
+      const { symbol, days = 30 } = payload || {};
+      if (!symbol) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing symbol' }) };
+      try {
+        const { Items } = await getDynamoClient().send(new ScanCommand({
+          TableName: 'GlobalPerspectiveMarkets',
+          FilterExpression: 'pk = :pk AND begins_with(sk, :prefix)',
+          ExpressionAttributeValues: { ':pk': `FX#${symbol.toUpperCase()}`, ':prefix': 'HISTORY#' },
+        }));
+        const sorted = (Items || [])
+          .sort((a, b) => a.sk.localeCompare(b.sk))
+          .slice(-(days))
+          .map(i => ({ date: i.sk.replace('HISTORY#', ''), rates: i.rates, asOf: i.asOf }));
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: sorted }) };
+      } catch (e) {
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: [], error: e.message }) };
+      }
+    }
+    // ── End markets actions ──────────────────────────────────────────────────
+
     console.warn('newsSensitiveData received unsupported action', {
       action,
       payloadSample: payload,

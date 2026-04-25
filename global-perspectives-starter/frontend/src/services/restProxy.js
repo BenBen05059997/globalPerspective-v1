@@ -158,6 +158,19 @@ export async function fetchPairAnalysesList() {
   return proxyAction('pair_analyses_list');
 }
 
+// ── Markets data (public, no auth required) ──────────────────────────────────
+export async function fetchMarketsGlobal() {
+  return proxyAction('markets_global');
+}
+
+export async function fetchMarketsCountry(country) {
+  return proxyAction('markets_country', { country });
+}
+
+export async function fetchMarketsHistory(symbol, days = 30) {
+  return proxyAction('markets_history', { symbol, days });
+}
+
 // Public preview endpoints (no auth required, for SEO / non-signed-in users)
 export async function fetchCountryPreview(countryName) {
   return proxyAction('country_preview', { countryName });

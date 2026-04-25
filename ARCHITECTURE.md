@@ -20,7 +20,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                                     │
                     ┌───────────────▼───────────────┐
                     │       newsInvokeGemini          │
-                    │  RSS Feeds (22) + Brave Search │
+                    │  RSS Feeds (26) + Brave Search │
                     │  → xAI Grok clusters topics    │
                     │  → DynamoDB Topics[id=staging] │
                     └───────────────┬───────────────┘
@@ -56,6 +56,17 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                     │    trajectory, riskSignals,    │
                     │    riskLevel                   │
                     │  → Writes COUNTRY# to SummaryDB│
+                    └───────────────┬───────────────┘
+                                    │
+                    ┌───────────────▼───────────────┐
+                    │    newsSystemsAnalysis         │
+                    │  Weekly batch (Sundays 08:00) │
+                    │  Top N countries (test: 2)    │
+                    │  Maps causal links between    │
+                    │  story threads + confidence   │
+                    │  → xAI Grok generates:        │
+                    │    nodes[], edges[], lagDays  │
+                    │  → Writes SYSTEMS# to SummaryDB
                     └───────────────┬───────────────┘
                                     │
                ┌────────────────────▼────────────────────┐
@@ -148,11 +159,11 @@ Despite the name, uses **xAI Grok** — no Gemini.
 
 **What it does:**
 1. Fetches articles from:
-   - **RSS feeds** (8): BBC, Al Jazeera, France24, SCMP, Asia Times, The Diplomat, Dawn, Japan Times
-   - **Brave Search** (11 site queries): Reuters, AP, Guardian, DW, Euronews, and others
+   - **RSS feeds** (26): Global outlets (BBC, Al Jazeera, France24, SCMP, etc.) + climate (Inside Climate News, Grist) + tech (Ars Technica, MIT Tech Review)
+   - **Brave Search** (9 dynamic queries): News + web search for climate/energy, science, business/society, regional topics
 2. Filters articles older than 48 hours; deduplicates by URL
 3. Checks soft-deduplication table (24hr window) to avoid re-covering the same story
-4. Sends to xAI Grok to cluster into topics
+4. Sends to xAI Grok to cluster into topics with category diversity quota
 5. Validates all URLs returned by Grok against actually-fetched articles (hallucination filter)
 6. Assigns `continues_topic` field by scanning 7 days of past archive
 7. Writes to DynamoDB Topics table as `id=staging`
@@ -165,7 +176,7 @@ Despite the name, uses **xAI Grok** — no Gemini.
 | `TOPICS_DDB_TABLE` | Required |
 | `GROK_MODEL` | Default: `grok-4-1-fast-non-reasoning` |
 | `TOPICS_CACHE_ITEM_ID` | Default: `staging` |
-| `TOPICS_LIMIT` | Default: `13` |
+| `TOPICS_LIMIT` | Default: `15` (raised from 13 for category coverage) |
 
 ---
 
@@ -618,7 +629,7 @@ Construction gate removed — all routes render real components in production. A
 
 | Component | Purpose |
 |-----------|---------|
-| `Layout.jsx` | Nav shell with hamburger menu + maintenance overlay (active 2026-04-23) |
+| `Layout.jsx` | Nav shell with hamburger menu |
 | `Home.jsx` | Daily topics, region grouping, AI toolbar |
 | `WorldMap.jsx` | Google Maps with topic markers, geodesic polylines, side panel |
 | `WorldMapV2.jsx` | Enhanced map with pair intelligence arc overlays (`/map-v2`) |

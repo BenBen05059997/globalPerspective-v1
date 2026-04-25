@@ -1,0 +1,11 @@
+{
+  "name": "newssystemsanalysis",
+  "version": "1.0.0",
+  "description": "Cross-domain causal graph analysis per country",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}

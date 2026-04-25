@@ -545,7 +545,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
               <div className="wmap-thread-empty">{search ? 'No matching threads' : 'No threads in this region'}</div>
             )}
             {(() => {
-              const ORDER = ['politics', 'economy', 'conflict', 'technology', 'environment', 'health', 'society', 'culture', 'science', 'other'];
+              const ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
               const groupMap = {};
               for (const t of visibleThreads) {
                 const cat = t.entries[0]?.category?.toLowerCase() || 'other';

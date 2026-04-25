@@ -33,9 +33,14 @@ export const CATEGORY_BADGE_COLORS = {
   economy:    { bg: '#d1fae5', color: '#065f46' },
   technology: { bg: '#ede9fe', color: '#5b21b6' },
   health:     { bg: '#ccfbf1', color: '#0f766e' },
+  climate:    { bg: '#d1fae5', color: '#047857' },
+  science:    { bg: '#fae8ff', color: '#86198f' },
+  business:   { bg: '#e0f2fe', color: '#0369a1' },
+  society:    { bg: '#fef3c7', color: '#92400e' },
+  energy:     { bg: '#fefce8', color: '#713f12' },
 };
 
-export const CATEGORY_ORDER = ['politics', 'economy', 'conflict', 'technology', 'environment', 'health', 'society', 'culture', 'science', 'other'];
+export const CATEGORY_ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
 
 export const RISK_COLORS = {
   low:      { bg: '#d1fae5', color: '#065f46' },
@@ -650,7 +655,7 @@ export default function WeeklyPage() {
               </div>
             )}
             {(() => {
-              const ORDER = ['politics', 'economy', 'conflict', 'technology', 'environment', 'health', 'society', 'culture', 'science', 'other'];
+              const ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
               const groupMap = {};
               for (const t of flatThreads) {
                 const cat = t.entries[0]?.category?.toLowerCase() || 'other';

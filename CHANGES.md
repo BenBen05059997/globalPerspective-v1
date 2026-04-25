@@ -1,5 +1,25 @@
 # Global Perspectives — Change Log
 
+## 2026-04-25 (Topic mix rebalance: more climate, science, energy, business, society)
+
+### Backend — newsInvokeGemini
+- Expanded `VALID_CATEGORIES` from 7 → 12: added `climate`, `science`, `business`, `society`, `energy`
+- Raised `DEFAULT_LIMIT` from 13 → 15 topics per run to support broader category coverage
+- Added 4 new RSS feeds: Inside Climate News, Grist (climate), Ars Technica, MIT Technology Review (tech/science)
+- Rewrote all Brave Search queries — stripped `"politics economy"` suffix from every query; added 3 queries targeting climate/energy, science, and business/society
+- Rewrote Grok prompt: added rule 7 (25% category cap; minimum coverage for climate, science, society, energy, business) and rule 8 (reframed "significance" as material second-order impact, not political theater)
+- Updated GOOD EXAMPLES to include diverse non-political topics
+- Updated fallback prompt (no-articles mode) to include new categories and balance rule
+
+### Frontend
+- `WorldMap.jsx`: added color entries for 5 new categories; updated `CATEGORY_DISPLAY_ORDER`
+- `WeeklyPage.jsx`: added badge color pairs for 5 new categories; updated `CATEGORY_ORDER` (removed stale `environment`, `culture`)
+- `WeeklyMap.jsx`: updated `ORDER` to match new canonical category list
+
+**Files modified:** `amplify/backend/function/newsInvokeGemini/src/index.js`, `src/components/WorldMap.jsx`, `src/components/WeeklyPage.jsx`, `src/components/WeeklyMap.jsx`
+
+---
+
 ## 2026-04-22b (Hide Pair Intelligence from production)
 
 ### Feature Flag

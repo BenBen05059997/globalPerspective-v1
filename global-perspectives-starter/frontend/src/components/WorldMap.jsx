@@ -19,10 +19,15 @@ const CATEGORY_COLORS = {
   economy:    '#22c55e',
   technology: '#8b5cf6',
   health:     '#14b8a6',
+  climate:    '#10b981',
+  science:    '#e879f9',
+  business:   '#0ea5e9',
+  society:    '#f59e0b',
+  energy:     '#ca8a04',
   other:      '#6b7280',
 };
 
-const CATEGORY_DISPLAY_ORDER = ['conflict', 'military', 'disaster', 'politics', 'economy', 'technology', 'health', 'other'];
+const CATEGORY_DISPLAY_ORDER = ['conflict', 'military', 'disaster', 'climate', 'energy', 'politics', 'economy', 'business', 'technology', 'science', 'health', 'society', 'other'];
 
 const getFlagEmoji = (code) => {
   if (!code || code === 'Unknown' || code.length !== 2) return '🌍';

@@ -21,10 +21,13 @@ try {
 }
 
 const MODEL_NAME = process.env.GROK_MODEL || 'grok-4-1-fast-non-reasoning';
-const DEFAULT_LIMIT = 13;
+const DEFAULT_LIMIT = 15;
 
 // Allowed categories for topic filtering
-const VALID_CATEGORIES = ['politics', 'economy', 'military', 'conflict', 'disaster', 'technology', 'health'];
+const VALID_CATEGORIES = [
+  'politics', 'economy', 'military', 'conflict', 'disaster', 'technology', 'health',
+  'climate', 'science', 'business', 'society', 'energy',
+];
 const CACHE_TABLE = process.env.TOPICS_DDB_TABLE;
 const CACHE_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
 const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY;
@@ -169,6 +172,14 @@ const RSS_FEEDS = [
 
   // --- Oceania ---
   { name: 'ABC Australia', url: 'https://www.abc.net.au/news/feed/2942460/rss.xml', source: 'abc.net.au' },
+
+  // --- Climate & Environment ---
+  { name: 'Inside Climate News', url: 'https://insideclimatenews.org/feed/', source: 'insideclimatenews.org' },
+  { name: 'Grist', url: 'https://grist.org/feed/', source: 'grist.org' },
+
+  // --- Technology & Science ---
+  { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', source: 'arstechnica.com' },
+  { name: 'MIT Technology Review', url: 'https://www.technologyreview.com/feed/', source: 'technologyreview.com' },
 ];
 
 // ============================================================
@@ -342,19 +353,28 @@ async function fetchBraveNews(limit) {
     // Only query sources that don't have working RSS feeds
     const queries = [
       // Wire Services (no RSS available)
-      'site:reuters.com world news politics economy',
-      'site:apnews.com world news politics economy',
+      'site:reuters.com world news today',
+      'site:apnews.com world news today',
 
       // Asia (no RSS available)
-      'site:straitstimes.com Singapore Asia politics economy',
-      'site:timesofindia.indiatimes.com India politics economy',
-      'site:koreaherald.com Korea politics economy',
+      'site:straitstimes.com Singapore Asia news today',
+      'site:timesofindia.indiatimes.com India news today',
+      'site:koreaherald.com Korea news today',
 
-      // Specialized (no RSS available)
-      'site:kyivindependent.com Ukraine Russia war',
+      // Specialized conflict tracking (no RSS available)
+      'site:kyivindependent.com Ukraine Russia latest',
 
       // Broader regional
-      'Latin America Brazil Mexico Argentina news politics today',
+      'Latin America Brazil Mexico Argentina news today',
+
+      // Climate & energy (underrepresented in RSS)
+      'climate energy transition renewable oil gas policy news today',
+
+      // Science & health (beyond outbreaks)
+      'scientific research breakthrough discovery published today',
+
+      // Business & society
+      'corporate labor migration society inequality news today',
     ];
 
     const articlesPerQuery = Math.max(10, Math.ceil((limit * 4) / queries.length));
@@ -578,26 +598,29 @@ exports.handler = async (event) => {
       }
 
       prompt = [
-        'You are a news analyst with real-time access to X (Twitter) trends and discussions.',
-        'Analyze the news articles below and identify significant global events.',
+        'You are a global news analyst. Analyze the articles below and identify the most significant events happening in the world right now.',
         '',
         '=== NEWS ARTICLES ===',
         articlesText,
         '=== END OF ARTICLES ===',
         '',
-        `Task: Identify up to ${limit} SIGNIFICANT NEWS EVENTS that matter globally or regionally.`,
-        'Return a JSON object with a single key "topics" containing an array of topic objects.',
+        `Task: Identify up to ${limit} SIGNIFICANT NEWS EVENTS. Return a JSON object with a single key "topics" containing an array of topic objects.`,
         '',
         'ALLOWED CATEGORIES (use ONLY these):',
         '- politics (elections, policy changes, diplomatic relations, government actions)',
-        '- economy (markets, trade deals, sanctions, major business news)',
-        '- military (defense, troop movements, arms deals, military exercises)',
-        '- conflict (wars, battles, peace talks, territorial disputes, violence)',
-        '- disaster (natural disasters, accidents, emergencies, humanitarian crises)',
-        '- technology (tech breakthroughs, AI, cybersecurity, major tech company news)',
-        '- health (ONLY: disease outbreaks, epidemics, pandemics, health emergencies)',
+        '- economy (macroeconomics, trade deals, sanctions, currency, central bank policy)',
+        '- military (defense spending, troop movements, arms deals, military exercises)',
+        '- conflict (wars, battles, peace talks, territorial disputes, organized violence)',
+        '- disaster (natural disasters, industrial accidents, humanitarian crises)',
+        '- technology (tech breakthroughs, AI, cybersecurity, major platform/product news)',
+        '- health (disease outbreaks, epidemics, pandemics, major drug approvals, healthcare policy)',
+        '- climate (climate impacts, emissions data, extreme weather attribution, climate policy, environmental treaties)',
+        '- science (research breakthroughs, space, biology, physics, geology, published findings with global implications)',
+        '- business (corporate M&A, major layoffs, supply chain disruptions, major industry shifts, labor disputes)',
+        '- society (migration, demographics, social movements, protests, education, human rights, inequality)',
+        '- energy (oil, gas, renewables, grid infrastructure, energy security, transition policy)',
         '',
-        'REJECT these categories: entertainment, sports, celebrity, lifestyle, culture',
+        'REJECT these categories: entertainment, sports, celebrity, lifestyle',
         '',
         'CRITICAL RULES:',
         '1. ONE EVENT PER TOPIC: Each topic = ONE specific newsworthy event',
@@ -606,13 +629,19 @@ exports.handler = async (event) => {
         '4. DO NOT INVENT URLs: Do NOT fabricate any URLs',
         '5. GROUP AGGRESSIVELY: Articles about the SAME underlying event MUST be grouped into ONE topic, even if they use different headlines, angles, framings, or names for the same actors/locations. Example: "Iran shoots down US jet", "Pentagon confirms aircraft loss near Hormuz", and "US warplane downed in Gulf" are ALL the same event — group them. Err on the side of merging, not splitting.',
         '6. EXCLUSIVE SOURCES: Each source article URL must appear in exactly ONE topic. Never assign the same article to multiple topics.',
+        '7. CATEGORY BALANCE: No single category may exceed 25% of topics. You MUST include at least one topic from each of these when relevant articles exist: climate, science, society, energy, business. Do NOT invent topics — only include a category if a real article covers it.',
+        '8. SIGNIFICANCE = MATERIAL IMPACT: Prioritize events with second-order effects on how people live, work, eat, move, or breathe. A crop-destroying heatwave, a battery breakthrough, a migration policy shift, or a major corporate collapse can outweigh another routine diplomatic statement. Political theater without material consequence is LOW significance.',
         '',
         'BAD EXAMPLES (too vague):',
         '- "East Asian Economy and Geopolitical Relations"',
         '- "Middle East Conflict Updates"',
         '',
-        'GOOD EXAMPLES (specific events):',
-        '- "Japan Raises Interest Rates to 0.25% Amid Inflation"',
+        'GOOD EXAMPLES (specific, diverse):',
+        '- "India Heatwave Kills Crops Across Three States as Temperatures Hit 48°C"',
+        '- "EU Battery Directive Takes Effect, Forcing Supply Chain Disclosures from 2027"',
+        '- "Argentina Inflation Falls to 2.4% Monthly, Lowest Since 2017"',
+        '- "MIT Study Finds Microplastics in 90% of Tested Human Blood Samples"',
+        '- "Samsung Announces 25,000 Layoffs as Chip Demand Slump Deepens"',
         '- "Israel and Hamas Agree to 72-Hour Ceasefire in Gaza"',
         '',
         'REGIONAL DIVERSITY:',
@@ -624,7 +653,7 @@ exports.handler = async (event) => {
         ...narrativeContinuityLines,
         'Each topic object MUST have:',
         '- title: string (SPECIFIC event with key details)',
-        '- category: string (politics/economy/military/conflict/disaster/technology/health)',
+        '- category: string (one of the 12 allowed categories)',
         '- search_keywords: array of 3-6 keywords',
         '- regions: array of country names involved',
         '- sources: array of source objects (each with {title, url, source, age, snippet})',
@@ -640,8 +669,9 @@ exports.handler = async (event) => {
         '',
         'Return a JSON object with a single key "topics" containing an array of topic objects.',
         '',
-        'ALLOWED CATEGORIES: politics, economy, military, conflict, disaster, technology, health',
-        'REJECT: entertainment, sports, celebrity, lifestyle, culture',
+        'ALLOWED CATEGORIES: politics, economy, military, conflict, disaster, technology, health, climate, science, business, society, energy',
+        'REJECT: entertainment, sports, celebrity, lifestyle',
+        'CATEGORY BALANCE: No single category may exceed 25% of topics. Include climate, science, society, energy, business when relevant.',
         '',
         'Each topic must have: title, category, search_keywords, regions, x_trending, significance',
         '',

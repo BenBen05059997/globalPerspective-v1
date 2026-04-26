@@ -181,11 +181,23 @@ export default function WorldMapV2() {
   useEffect(() => { nameToISORef.current = nameToISO; }, [nameToISO]);
 
   // Build real flow arcs from pair analyses
+  // The list API returns only {slug, pairTitle, ...} — country names live in slug
+  // (format: "country1-and-country2"). Parse slug to recover them.
   const realFlows = useMemo(() => {
     if (!Array.isArray(pairAnalyses) || pairAnalyses.length === 0) return [];
+    if (Object.keys(nameToISO).length === 0) return [];
     const out = [];
     for (const p of pairAnalyses) {
-      const [c1, c2] = (p.countries || []).map(c => String(c).trim().toLowerCase());
+      let c1, c2;
+      if (Array.isArray(p.countries) && p.countries.length === 2) {
+        [c1, c2] = p.countries.map(c => String(c).trim().toLowerCase());
+      } else if (p.slug && p.slug.includes('-and-')) {
+        const [s1, s2] = p.slug.split('-and-');
+        c1 = s1.replace(/-/g, ' ').trim();
+        c2 = s2.replace(/-/g, ' ').trim();
+      } else {
+        continue;
+      }
       const a = nameToISO[c1] || EXTRA_ALIASES[c1];
       const b = nameToISO[c2] || EXTRA_ALIASES[c2];
       if (!a || !b || !isoToCenterRef.current[a] || !isoToCenterRef.current[b]) continue;
@@ -241,11 +253,21 @@ export default function WorldMapV2() {
     const recent = entries.slice(-6).reverse();
     const leadEntry = recent[0];
 
+    const pairCountries = p => {
+      if (Array.isArray(p.countries) && p.countries.length === 2) return p.countries.map(c => String(c).toLowerCase());
+      if (p.slug && p.slug.includes('-and-')) {
+        const [s1, s2] = p.slug.split('-and-');
+        return [s1.replace(/-/g, ' ').trim(), s2.replace(/-/g, ' ').trim()];
+      }
+      return [];
+    };
+
     const links = (pairAnalyses || [])
-      .filter(p => (p.countries || []).some(c => String(c).toLowerCase() === lc))
+      .filter(p => pairCountries(p).some(c => c === lc))
       .slice(0, 5)
       .map(p => {
-        const other = (p.countries || []).find(c => String(c).toLowerCase() !== lc) || '';
+        const parts = pairCountries(p);
+        const other = parts.find(c => c !== lc) || '';
         const otherISO = nameToISO[other.toLowerCase()] || EXTRA_ALIASES[other.toLowerCase()] || other;
         return {
           pair: `${selectedISO.slice(0, 2)} ↔ ${otherISO.slice(0, 2).toUpperCase()}`,

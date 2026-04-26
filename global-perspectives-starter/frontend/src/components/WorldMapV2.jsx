@@ -146,6 +146,8 @@ export default function WorldMapV2() {
   const [zoom, setZoom] = useState(1);
   const [railOpen, setRailOpen] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [flowFilters, setFlowFilters] = useState({ fx: true, tech: true, geo: true });
+  const [timeWindow, setTimeWindow] = useState('7d');
 
   // Dynamic maps built after TopoJSON loads
   const [nameToISO, setNameToISO] = useState({});
@@ -186,8 +188,19 @@ export default function WorldMapV2() {
   const realFlows = useMemo(() => {
     if (!Array.isArray(pairAnalyses) || pairAnalyses.length === 0) return [];
     if (Object.keys(nameToISO).length === 0) return [];
+
+    // Time-window cutoff
+    const cutoffDays = timeWindow === '7d' ? 7 : 30;
+    const cutoffMs = Date.now() - cutoffDays * 24 * 60 * 60 * 1000;
+
     const out = [];
     for (const p of pairAnalyses) {
+      // Time filter — skip if generatedAt is outside the window
+      if (p.generatedAt) {
+        const genMs = new Date(p.generatedAt).getTime();
+        if (!isNaN(genMs) && genMs < cutoffMs) continue;
+      }
+
       let c1, c2;
       if (Array.isArray(p.countries) && p.countries.length === 2) {
         [c1, c2] = p.countries.map(c => String(c).trim().toLowerCase());
@@ -208,10 +221,14 @@ export default function WorldMapV2() {
       let g = 'geo';
       if (/trade|tariff|export|import|peso|yen|lira|imf|fx|capital/.test(title)) g = 'fx';
       else if (/chip|semi|fab|ai|tech|cloud|data/.test(title)) g = 'tech';
+
+      // Flow-type filter
+      if (!flowFilters[g]) continue;
+
       out.push({ a, b, w, g, label: p.pairTitle || `${a}×${b}`, slug: p.slug });
     }
     return out;
-  }, [pairAnalyses, signal, nameToISO]);
+  }, [pairAnalyses, signal, nameToISO, flowFilters, timeWindow]);
 
   // Build editorial picks from top-signal countries
   const editorialPicks = useMemo(() => {
@@ -337,12 +354,23 @@ export default function WorldMapV2() {
   flowsRef.current = realFlows;
   picksRef.current = editorialPicks;
 
+  // Redraw on container resize so map fills the correct dimensions
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      if (worldRef.current) drawMap(lens, selectedISO, zoom);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [lens, selectedISO, zoom]); // eslint-disable-line
+
   // Redraw when lens/selection/zoom/data changes
   useEffect(() => {
     if (!worldRef.current) return;
     const t = setTimeout(() => drawMap(lens, selectedISO, zoom), 240);
     return () => clearTimeout(t);
-  }, [lens, selectedISO, zoom, railOpen, panelOpen, sigReady, realFlows, editorialPicks]); // eslint-disable-line
+  }, [lens, selectedISO, zoom, railOpen, panelOpen, sigReady, realFlows, editorialPicks, flowFilters, timeWindow]); // eslint-disable-line
 
   function drawMap(currentLens, currentISO, currentZoom) {
     const svg  = svgRef.current;
@@ -590,14 +618,27 @@ export default function WorldMapV2() {
             <div className="grp">
               <h5>Flow type</h5>
               {['fx','tech','geo'].map(g => {
-                const count = flowsRef.current.filter(fl => fl.g === g).length;
                 const label = g === 'fx' ? 'FX / Capital' : g === 'tech' ? 'Technology' : 'Geopolitics';
                 const color = FLOW_COLOR[g];
+                const enabled = flowFilters[g];
+                // Count within the current window but ignoring this filter (so unchecked types still show a count)
+                const count = (pairAnalyses || []).filter(p => {
+                  const title = String(p.pairTitle || '').toLowerCase();
+                  let pg = 'geo';
+                  if (/trade|tariff|export|import|peso|yen|lira|imf|fx|capital/.test(title)) pg = 'fx';
+                  else if (/chip|semi|fab|ai|tech|cloud|data/.test(title)) pg = 'tech';
+                  return pg === g;
+                }).length;
                 return (
-                  <div className="chk on" key={g}>
+                  <div
+                    className={`chk${enabled ? ' on' : ''}`}
+                    key={g}
+                    onClick={() => setFlowFilters(f => ({ ...f, [g]: !f[g] }))}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <span className="box" />
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 16, height: 2, background: color, display: 'inline-block' }} />
+                      <span style={{ width: 16, height: 2, background: color, display: 'inline-block', opacity: enabled ? 1 : 0.3 }} />
                       {label}
                     </span>
                     <span className="c">{count}</span>
@@ -648,8 +689,12 @@ export default function WorldMapV2() {
 
           <div className="grp">
             <h5>Time window</h5>
-            <div className="opt on"><span className="box" />7 days<span className="c">{sigValues.reduce((a, s) => a + (s.last7 || 0), 0) || '—'}</span></div>
-            <div className="opt"><span className="box" />30 days<span className="c">baseline</span></div>
+            <div className={`opt${timeWindow === '7d' ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setTimeWindow('7d')}>
+              <span className="box" />7 days<span className="c">{sigValues.reduce((a, s) => a + (s.last7 || 0), 0) || '—'}</span>
+            </div>
+            <div className={`opt${timeWindow === '30d' ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setTimeWindow('30d')}>
+              <span className="box" />30 days<span className="c">baseline</span>
+            </div>
           </div>
         </aside>
 

@@ -285,18 +285,19 @@ function StoryCard({ thread, analysis }) {
     return sentence.length > 160 ? sentence.slice(0, 157) + '…' : sentence;
   })();
 
-  // entryShortTitles: up to 3 micro-headlines from analysis
+  // entryShortTitles: [{topicId, shortTitle}] — pick newest 3 by matching thread entry order
   const microHeadlines = (() => {
     if (!Array.isArray(analysis?.entryShortTitles)) return [];
-    const byDate = {};
+    const seen = new Set();
+    const out = [];
     for (const item of analysis.entryShortTitles) {
-      const d = item.date || item.dateKey;
-      if (d && item.shortTitle) byDate[d] = item.shortTitle;
+      if (item.shortTitle && !seen.has(item.shortTitle)) {
+        seen.add(item.shortTitle);
+        out.push(item.shortTitle);
+        if (out.length === 3) break;
+      }
     }
-    return Object.entries(byDate)
-      .sort(([a], [b]) => b.localeCompare(a))
-      .slice(0, 3)
-      .map(([, t]) => t);
+    return out;
   })();
 
   return (

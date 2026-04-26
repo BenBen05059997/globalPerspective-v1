@@ -1,0 +1,140 @@
+{
+  "success": true,
+  "data": {
+    "thread-tens-of-thousands-of-lebanese--afa29e": {
+      "model": "grok-4-1-fast-non-reasoning",
+      "latencyMs": 6535,
+      "groundingSources": [],
+      "entryShortTitles": [
+        {
+          "topicId": "Tens of thousands of Lebanese return to southern homes despite Israeli warnings on first full day of Israel-Hezbollah ceasefire-3",
+          "shortTitle": "Tens of thousands Lebanese return south defying Israeli warnings"
+        },
+        {
+          "topicId": "Israel strikes kill journalist Amal Khalil targeting first responders in southern Lebanon despite ceasefire-12",
+          "shortTitle": "Israeli strike kills journalist Amal Khalil amid first responders"
+        },
+        {
+          "topicId": "Israeli strikes kill 4 in southern Lebanon town Yohmor al-Shaqif despite ceasefire-3",
+          "shortTitle": "Strikes kill four in Yohmor al-Shaqif despite ceasefire"
+        },
+        {
+          "topicId": "Israel orders forceful attacks on Hezbollah positions killing 6 in southern Lebanon strikes despite ceasefire-6",
+          "shortTitle": "Netanyahu orders forceful Hezbollah strikes killing six"
+        },
+        {
+          "topicId": "Israel orders forceful attacks on Hezbollah killing 6 in southern Lebanon strikes despite ceasefire-3",
+          "shortTitle": "Forceful attacks kill six Hezbollah fighters in south"
+        },
+        {
+          "topicId": "Israel orders forceful attacks on Hezbollah positions killing 6 in southern Lebanon strikes despite ceasefire-6",
+          "shortTitle": "Repeated strikes target Hezbollah positions killing six"
+        },
+        {
+          "topicId": "Israel orders forceful attacks on Hezbollah killing 6 in southern Lebanon strikes despite ceasefire-3",
+          "shortTitle": "Hezbollah confirms six deaths from Israeli ceasefire strikes"
+        },
+        {
+          "topicId": "New Israeli strikes reported in southern Lebanon after Netanyahu orders forceful Hezbollah attacks killing 6 despite ceasefire-4",
+          "shortTitle": "New strikes follow Netanyahu's forceful attack orders"
+        }
+      ],
+      "trajectory": "This story heads toward contained but persistent Israeli airstrikes on Hezbollah targets south of the Litani River, with Netanyahu's government prioritizing security over truce adherence, while Hezbollah weighs restrained rocket responses to avoid full war. Watch Israeli Defense Forces (IDF) command, Hezbollah leadership in Beirut, and UNIFIL peacekeepers in southern Lebanon for signals of de-escalation or retaliation; U.S. mediators and Lebanese government statements could influence containment.\n\nThree scenarios emerge: Most likely (60%), limited tit-for-tat strikes continue over 2-4 weeks through mid-May 2026, with Israel killing 20-50 Hezbollah fighters in 4-6 operations mirroring 2006 UNSCR 1701 violations, without ground incursions. Alternative (25%), Hezbollah launches 10-20 rockets into northern Israel within 1-2 weeks, prompting IDF escalation and UN Security Council emergency session. Least likely (15%), full ceasefire holds after U.S.-Qatar brokerage by end-May 2026, with Hezbollah withdrawals verified by UNIFIL drones.",
+      "threadTitle": "Israel-Hezbollah Ceasefire Crumbles with Repeated Southern Lebanon Strikes",
+      "searchResultsCount": 0,
+      "watchQuestions": [
+        "Will Hezbollah launch retaliatory rockets into northern Israel by April 30?",
+        "Will UNIFIL report new Israeli incursions south of Litani by May 2?",
+        "Will Netanyahu address strikes in Knesset session this week?"
+      ],
+      "entryCount": 8,
+      "generatedAt": "2026-04-26T06:31:02.354Z",
+      "rootCauseChain": "The immediate trigger on April 17, 2026, was the mass return of tens of thousands of Lebanese civilians to southern Lebanon, defying Israeli warnings, as Hezbollah maintained entrenched positions post-intense airstrikes and ground operations. This influx complicated Israel's security monitoring, prompting preemptive strikes starting April 23 that killed journalist Amal Khalil and escalated to Netanyahu-ordered attacks killing six on April 25, directly breaching the truce.\n\nMedium-term, Netanyahu's hardline policy since October 2023, amid ongoing Gaza operations, enabled these violations by framing Hezbollah rearmament as an existential threat, fueled by domestic political pressures for decisive action post-2024 elections. Lebanon's economic collapse since 2019 weakened state control, allowing Hezbollah's unchecked military buildup south of the Litani, contravening UNSCR 1701. Deeper structurally, the unresolved 1982 Israeli invasion and 2006 war legacy entrenched Hezbollah's 'resistance' ideology against Israeli presence, perpetuating cycles of fragile ceasefires and tit-for-tat violence, as verified by UN reports on non-compliance.",
+      "storyArc": "The thread began on April 17, 2026, with tens of thousands of Lebanese civilians returning to their homes in southern Lebanon on the first full day of a fragile Israel-Hezbollah ceasefire, defying explicit Israeli military warnings about lingering security risks from Hezbollah positions. This mass return signaled civilian determination to rebuild amid de-escalation hopes, echoing post-2006 war displacements, but set the stage for immediate tensions as Israel viewed the area as a Hezbollah stronghold.\n\nBy April 23, the truce showed cracks when Israeli airstrikes killed journalist Amal Khalil while targeting first responders in southern Lebanon, raising alarms over violations and risks to media and humanitarian workers. Escalation intensified on April 25 with strikes killing four in Yohmor al-Shaqif and forceful attacks ordered by Prime Minister Netanyahu on Hezbollah positions, killing at least six militants across multiple sites. Reports proliferated through April 26, with repeated coverage of the same incidents and new strikes, marking a rapid shift from hopeful civilian returns to a pattern of Israeli preemptive actions, broadening from warnings to lethal operations and drawing international scrutiny over ceasefire fragility.",
+      "threadId": "thread-tens-of-thousands-of-lebanese--afa29e"
+    },
+    "thread-jd-vance-to-lead-us-delegation-bb0fa5": {
+      "model": "grok-4-1-fast-non-reasoning",
+      "latencyMs": 15519,
+      "entryShortTitles": [
+        {
+          "topicId": "JD Vance to lead US delegation for Iran ceasefire talks in Pakistan on Saturday-3",
+          "shortTitle": "JD Vance to Lead US Delegation for Iran Ceasefire Talks"
+        },
+        {
+          "topicId": "Pakistan prepares to host high-stakes US-Iran ceasefire talks-10",
+          "shortTitle": "Pakistan Gears Up to Host US-Iran Ceasefire Negotiations"
+        },
+        {
+          "topicId": "US VP JD Vance departs for Pakistan to lead US-Iran ceasefire talks warns Iran not to 'play' US-0",
+          "shortTitle": "Vance Departs for Pakistan Warns Iran Against Games"
+        },
+        {
+          "topicId": "US VP JD Vance heads to Pakistan to lead US-Iran ceasefire talks warns Iran not to 'play'-1",
+          "shortTitle": "Vance Heads to Pakistan Issues Stern Iran Warning"
+        },
+        {
+          "topicId": "US VP JD Vance leads delegation to Pakistan for US-Iran ceasefire talks amid fragile truce and Hormuz tensions-0",
+          "shortTitle": "Vance Leads Delegation Amid Hormuz Tensions Truce"
+        },
+        {
+          "topicId": "US VP JD Vance heads to Pakistan to lead US-Iran ceasefire talks amid fragile truce-1",
+          "shortTitle": "Vance Travels to Pakistan for Fragile Truce Talks"
+        },
+        {
+          "topicId": "US and Iran hold direct face-to-face peace talks in Islamabad Pakistan led by VP JD Vance after fragile ceasefire-1",
+          "shortTitle": "US-Iran Hold Historic Direct Talks in Islamabad"
+        },
+        {
+          "topicId": "Trump orders US Navy to blockade Strait of Hormuz after US-Iran peace talks fail in Islamabad-0",
+          "shortTitle": "Trump Orders Navy Blockade After Talks Failure"
+        },
+        {
+          "topicId": "US-Iran direct peace talks in Islamabad fail after 21 hours over nuclear program and Strait of Hormuz-1",
+          "shortTitle": "Islamabad Talks Fail After 21 Hours on Nuclear Issues"
+        },
+        {
+          "topicId": "Trump orders US Navy blockade of Strait of Hormuz after US-Iran peace talks fail in Islamabad-0",
+          "shortTitle": "Trump Launches Hormuz Blockade Post-Talks Collapse"
+        },
+        {
+          "topicId": "Trump orders US Navy blockade of Strait of Hormuz after US-Iran peace talks fail in Islamabad targeting toll-paying vessels-1",
+          "shortTitle": "Blockade Targets Iranian Toll-Paying Hormuz Vessels"
+        },
+        {
+          "topicId": "Trump orders US Navy to begin naval blockade of Strait of Hormuz after US-Iran peace talks collapse in Pakistan-0",
+          "shortTitle": "US Navy Begins Hormuz Blockade After Pakistan Talks Fail"
+        },
+        {
+          "topicId": "Iran rebuffs Trump announcement of US delegation to Pakistan for peace talks-1",
+          "shortTitle": "Iran Rejects Trump's New Pakistan Peace Delegation"
+        },
+        {
+          "topicId": "Iran rebuffs Trump announcement of US delegation to Pakistan for second round of peace talks-1",
+          "shortTitle": "Iran Rebuffs Second Round Trump-Led Peace Talks"
+        },
+        {
+          "topicId": "US VP JD Vance delays Pakistan trip for Iran peace talks as two-week ceasefire set to expire-1",
+          "shortTitle": "Vance Delays Pakistan Trip as Ceasefire Nears Expiry"
+        },
+        {
+          "topicId": "Iranian FM Araghchi to visit Pakistan ahead of potential US-Iran peace talks resumption-5",
+          "shortTitle": "Iran FM Araghchi Visits Pakistan for Talks Resumption"
+        }
+      ],
+      "trajectory": "The crisis now pivots to Iranian FM Abbas Araghchi's April 24-30 Islamabad visit, where Pakistan PM Shehbaz Sharif and Army Chief Asim Munir will likely host preliminary indirect US-Iran discussions via mid-level US envoys, as patterns in entries 6 and 16 suggest. Watch US Fifth Fleet movements in the Strait of Hormuz, Iranian IRGC naval responses, and oil market reactions, with Brent crude already spiking toward $120/barrel per entry 12 predictions. Trump's personal involvement, evident in entries 13-14, indicates White House hardliners steering away from concessions, while EU3+1 coordinator Enrique Mora may push Vienna indirect talks by late April.\n\nMost likely (~55%): Araghchi-Sharif talks yield a 30-day Hormuz truce extension by May 1, 2026, with US easing blockade on non-Iranian tankers, mirroring 2020 Oman de-escalation; Iran caps enrichment at 20% for verification. Alternate (~25%): IRGC swarm attacks on US vessels trigger limited naval clash by April 28, drawing in Saudi/UAE forces within 2 weeks. Pessimistic (~20%): Full Hormuz closure by mid-May disrupts 25% global oil, prompting UNSC emergency session and China-Russia vetoes against US sanctions snapback.",
+      "threadTitle": "US-Iran Ceasefire Talks Collapse into Hormuz Blockade Crisis",
+      "searchResultsCount": 0,
+      "watchQuestions": [
+        "Will Iranian FM Araghchi meet US envoys during April 24-30 Pakistan visit?",
+        "Does US Navy blockade halt over 20% Hormuz oil flows by April 28?",
+        "Will Iran cap uranium enrichment for 30-day truce extension by May 1?"
+      ],
+      "entryCount": 16,
+      "generatedAt": "2026-04-25T06:30:56.275Z",
+      "rootCauseChain": "The immediate trigger on April 8, 2026, was US Vice President JD Vance's delegation to Pakistan for direct ceasefire talks, responding to a fragile truce amid Strait of Hormuz skirmishes, as detailed in entries 1-5 and corroborated by Al Jazeera reports on escalating US-Iran naval posturing. This followed Iran's proxy escalations via Houthis and Hezbollah, with US strikes post-October 2023 Hamas attacks straining the informal truce, per external references like Council on Foreign Relations timelines on 2025-2026 Gulf incidents.\n\nMedium-term conditions stemmed from the 2018 US JCPOA withdrawal under Trump, reimposed 'maximum pressure' sanctions crippling Iran's economy (oil exports down 80% per EIA data), and Tehran's uranium enrichment to 60% by 2025, breaching civilian thresholds as IAEA verified in February 2026 reports. This fueled proxy wars in Yemen and Syria, enabling the Hormuz tensions cited in entry 5. Deeper structurally, the 1979 Iranian Revolution entrenched anti-US theocracy under Ayatollah Khamenei, perpetuating 'Death to America' ideology and nuclear ambitions as deterrence against perceived Israeli-US encirclement, echoing Tanker War precedents in entries 8-12 and historical analyses from Brookings Institution on Persian Gulf flashpoints.",
+      "storyArc": "The saga began on April 8, 2026, when US Vice President JD Vance was announced to lead a high-level American delegation to Pakistan for ceasefire talks with Iran, positioning Islamabad as a neutral venue amid escalating Middle East tensions. Preparations intensified on April 9 as Pakistan readied itself for the high-stakes negotiations, with coverage from Asia Times and The Diplomat highlighting the potential for de-escalation in proxy conflicts and energy markets. By April 10, Vance departed for Pakistan, issuing stern warnings to Iran not to 'play' the US, as reported by Al Jazeera and NPR, setting a tense tone amid a fragile truce and Strait of Hormuz skirmishes. Direct face-to-face talks commenced on April 11 in Islamabad, a historic breakthrough led by Vance, but momentum shattered by April 12 when marathon 21-hour sessions collapsed over nuclear restrictions and Hormuz access, prompting President Trump to order a US Navy blockade of the strait, as covered extensively by BBC, France 24, and Al Jazeera.\n\nThe blockade escalated the crisis, with multiple entries on April 12 detailing Trump's orders targeting Iranian-linked vessels and toll-payers, evoking 1980s Tanker War parallels and threatening global oil flows. A brief diplomatic flicker emerged a week later on April 19, when Iran rebuffed Trump's announcement of a US delegation for second-round talks in Pakistan, signaling entrenched distrust. By April 21, Vance delayed his Pakistan trip as a two-week ceasefire loomed to expire, per France 24 and NPR. The thread culminated on April 24 with Iranian Foreign Minister Abbas Araghchi's visit to Pakistan, hinting at potential resumption of indirect talks, as noted by Al Jazeera and Middle East Eye, though the arc shifted from optimistic diplomacy to military confrontation and stalled recovery efforts, broadening scope from bilateral talks to Persian Gulf naval standoffs.",
+      "threadId": "thread-jd-vance-to-lead-us-delegation-bb0fa5"
+    }
+  }
+}

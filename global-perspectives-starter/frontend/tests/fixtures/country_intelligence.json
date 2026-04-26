@@ -1,0 +1,1289 @@
+{
+  "success": true,
+  "data": {
+    "United States": {
+      "model": "grok-4-1-fast-non-reasoning",
+      "latencyMs": 15581,
+      "dayCount": 31,
+      "dominantCategory": "politics",
+      "situationSummary": null,
+      "crossThreadInsight": "The **US-Iran Hormuz crisis** intertwines with **NATO rifts**, as Trump's criticism of European allies refusing war involvement prompts Pentagon leaks on suspending Spain and UK Falklands disputes, weakening alliance cohesion amid **$1.5 trillion defense budget** debates in Congress that boost Lockheed Martin and Raytheon stocks. Diplomatic arcs like **Pakistan-mediated talks** with Kushner, Witkoff, and Araghchi connect to **Israel-Lebanon ceasefire** brokered by Trump, easing multi-front pressures while **Artemis II triumph** contrasts with military strains from Navy Secretary Phelan resignation and Army Chief George ouster. Economic moves, including sanctions on Chinese oil shippers and EU minerals deal, hedge against **oil market volatility** from Hormuz blockades.",
+      "trajectory": "de-escalating",
+      "searchResultsCount": 0,
+      "countryName": "United States",
+      "generatedAt": "2026-04-26T03:03:26.485Z",
+      "riskSignals": [
+        "Iranian FM Araghchi's Islamabad talks outcome by April 30",
+        "Congressional Armed Services Committees defense budget vote by late April 2026",
+        "UN Security Council session on Resolution 2231 by May 15",
+        "Post-talks US naval posture in Hormuz by May 1"
+      ],
+      "totalArticles": 470,
+      "riskLevel": "elevated",
+      "categories": {
+        "politics": 224,
+        "health": 4,
+        "military": 59,
+        "technology": 32,
+        "economy": 55,
+        "conflict": 87,
+        "disaster": 9
+      },
+      "headline": "Trump navigates US-Iran Hormuz crisis amid ceasefire talks in Pakistan",
+      "activeArcCount": 58,
+      "dateRange": {
+        "from": "2026-03-27",
+        "to": "2026-04-26"
+      },
+      "whyItMatters": "The **US-Iran Hormuz blockade crisis** risks **global oil supply disruptions**, with Brent crude volatility threatening economic stability amid Trump's $1.5 trillion defense budget push. **NATO fissures** from European reluctance deepen alliance strains, while diplomatic pivots to Pakistan signal unconventional mediation paths. **Artemis II success** bolsters US prestige but diverts focus from mounting military and fiscal pressures.",
+      "bluf": "President Trump escalates pressure on Iran through naval blockades and threats while US envoys Steve Witkoff and Jared Kushner prepare for indirect ceasefire talks in Islamabad hosted by Iranian FM Abbas Araghchi.",
+      "keyDevelopments": [
+        {
+          "date": "2026-04-26",
+          "text": "Trump expresses fury over European NATO allies' refusal to join Iran war, creating serious rift and prompting Pentagon proposals to suspend Spain."
+        },
+        {
+          "date": "2026-04-25",
+          "text": "Commercial flights resume at Tehran Imam Khomeini Airport as US-Iran ceasefire holds after weeks of disruption."
+        },
+        {
+          "date": "2026-04-25",
+          "text": "President Trump attends White House Correspondents' Dinner for the first time as president."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "US Justice Department drops criminal probe of Fed Chair Jerome Powell, clearing path for Kevin Warsh nomination."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "Pentagon email leak proposes suspending Spain from NATO over opposition to US Iran war; UK rejects US review of Falklands sovereignty."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "Iranian FM Abbas Araghchi arrives in Islamabad for indirect US ceasefire talks as envoys Kushner and Witkoff head to Pakistan."
+        }
+      ],
+      "trajectoryDetail": "Most likely, **indirect US-Iran talks in Islamabad** during Araghchi's April 24-30 visit yield a temporary Hormuz truce extension, enabling carrier withdrawals by May 1 if mid-level envoys secure compliance on UN Resolution 2231 sanctions. Congress debates Trump's defense budget by late April, with Senate Foreign Relations Committee under Jim Risch influencing outcomes alongside post-Artemis II congressional hearings.\nSecondary scenarios include **Hormuz reclosure** triggering Fifth Fleet-IRGC clashes if talks fail by April 30, or **NATO fracture** acceleration via Spain suspension votes post-May 15 UN session, compounded by government shutdown revival if airport funding stalls. King Charles III's late April US visit tests alliance ties amid these tensions.",
+      "backgroundTimeline": [
+        {
+          "date": "2026-03-14",
+          "topicId": null,
+          "event": "US deploys USS Tripoli and over 2,000 Marines to Middle East in response to ongoing Iran war.",
+          "category": "military"
+        },
+        {
+          "date": "2026-03-21",
+          "topicId": null,
+          "event": "President Trump threatens ICE deployment to airports amid partial government shutdown over TSA funding deadlock.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-03-27",
+          "topicId": "Rubio's Shifting Statements on Swift US-Iran War Resolution",
+          "event": "Secretary of State Marco Rubio states US-Iran war will conclude in weeks via air and naval strategy without ground troops.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-03-28",
+          "topicId": "Iran Missile Strike Hits US Troops at Saudi Air Base",
+          "event": "Iran missile strike wounds 15 US troops at Saudi Prince Sultan Air Base, damaging refueling aircraft.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-01",
+          "topicId": null,
+          "event": "NASA's Artemis II launches with four astronauts for first crewed lunar flyby since 1972.",
+          "category": "technology"
+        },
+        {
+          "date": "2026-04-01",
+          "topicId": null,
+          "event": "Trump announces primetime address on Iran war strategy and requests $1.5 trillion defense budget amid economic fallout.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-06",
+          "topicId": "Pakistan Mediates US-Iran Ceasefire Amid Trump Deadline Pressure",
+          "event": "Pakistan proposes immediate ceasefire for US-Iran war to meet Trump's deadline.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-08",
+          "topicId": null,
+          "event": "VP JD Vance announced to lead US delegation to Pakistan for ceasefire talks with Iran.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-10",
+          "topicId": "Trump Brokers Israel-Lebanon Ceasefire from Talks to Extension",
+          "event": "Lebanon and Israel schedule ceasefire talks in US, advancing to direct negotiations by April 14.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-11",
+          "topicId": null,
+          "event": "Artemis II crew\u2014Wiseman, Glover, Koch, Hansen\u2014safely splashdown after lunar flyby.",
+          "category": "technology"
+        },
+        {
+          "date": "2026-04-14",
+          "topicId": null,
+          "event": "US military ships enforce blockade turning around six vessels near Strait of Hormuz.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-19",
+          "topicId": "US-Iran Strait of Hormuz Naval Escalations Intensify Over Days",
+          "event": "US forces seize Iranian ship Touska by firing on engine room near Hormuz.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "Iranian FM Araghchi arrives in Islamabad for US ceasefire talks as Kushner and Witkoff head to Pakistan",
+          "event": "Iranian FM Araghchi arrives in Islamabad; US envoys Witkoff and Kushner head for indirect talks.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-25",
+          "topicId": "Commercial flights resume at Tehran Imam Khomeini Airport as US-Iran ceasefire holds after weeks of war disruption-5",
+          "event": "Tehran airport resumes commercial flights as ceasefire holds.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-26",
+          "topicId": "Trump fury over Europeans' refusal to join Iran war creates serious NATO rift-6",
+          "event": "Trump blasts European NATO allies for refusing Iran war involvement, escalating alliance tensions.",
+          "category": "military"
+        }
+      ],
+      "riskScore": 68,
+      "groundingSources": []
+    },
+    "Israel": {
+      "latencyMs": 9796,
+      "dayCount": 31,
+      "situationSummary": null,
+      "trajectory": "stable",
+      "searchResultsCount": 0,
+      "countryName": "Israel",
+      "generatedAt": "2026-04-26T03:03:46.644Z",
+      "riskLevel": "elevated",
+      "headline": "Israel Balances Fragile Lebanon Ceasefire Amid Active Iran War Multi-Front Tensions",
+      "trajectoryDetail": "Israel maintains a **stable but tense posture** through early May 2026, with the most likely scenario being a **ceasefire extension to mid-May** via US talks involving Netanyahu, Mikati, and Trump envoys, contingent on Hezbollah compliance south of the Litani. Targeted airstrikes will continue, killing 50-100 fighters, met by daily short-range rockets into northern Israel.\n\nAlternative scenarios include **Lebanon truce collapse by May 1** if Hezbollah rearmament accelerates, prompting limited Israeli ground incursions, or **Iran war resumption post-April 22 ceasefire expiration** if US denies green light to Israel's defense minister, escalating Houthi drone strikes from Yemen.",
+      "model": "grok-4-1-fast-non-reasoning",
+      "whyItMatters": "The **fragile Lebanon ceasefire** risks collapse from Hezbollah rearmament, potentially drawing Israel into prolonged ground operations and displacing more civilians. **Iran-Israel War** escalations threaten regional energy infrastructure, with missile strikes on refineries and plants risking **global fuel disruptions**. Netanyahu's aggressive posture amid US mediation underscores **high-stakes diplomacy** to prevent multi-front escalation.",
+      "bluf": "Israel enforces a shaky April ceasefire with Hezbollah in Lebanon while sustaining strikes against Iranian proxies and awaiting US signals on resuming full-scale war against Iran.",
+      "dominantCategory": "conflict",
+      "crossThreadInsight": "The **Israel-Hezbollah ceasefire** (Threads 1-5, 14) intersects with the broader **Iran-Israel War** (Editorial Context, Threads 8, 10, 17-20), as Israeli strikes on Lebanese infrastructure aim to sever Hezbollah's Iranian supply lines, while Houthi and Iranian missile barrages test Israel's multi-front defenses. **US mediation** via Trump, Amos Hochstein, and envoys like Meir Ben-Shabbat and Abdallah Bou Habib links diplomatic arcs (Threads 4-5) to military posturing, with Netanyahu's 'full force' directives pressuring fragile truces. Domestically, the **death penalty law** (Thread 6) fuels West Bank tensions, amplifying Palestinian mobilization amid Gaza strikes (Thread 9, single articles).",
+      "backgroundTimeline": [
+        {
+          "date": "2026-02-28",
+          "topicId": null,
+          "event": "Israel launches preemptive airstrike on Iran's Supreme Leader Ali Khamenei's compound, killing him, and Iranian nuclear facilities, triggering Iran-Israel War.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-03-26",
+          "topicId": null,
+          "event": "Israel deploys additional troops into southern Lebanon, expanding ground invasion and displacing over 1 million civilians.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-03-30",
+          "topicId": null,
+          "event": "Israeli Knesset passes death penalty law for Palestinians convicted of murdering Israelis, sparking protests.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-03",
+          "topicId": null,
+          "event": "Lebanese Christians hold Good Friday processions in southern Lebanon amid Israeli airstrikes and evacuation orders targeting Hezbollah.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-04",
+          "topicId": null,
+          "event": "Israel bombs key bridges in Lebanon and strikes Beirut, crippling infrastructure and severing Hezbollah supply lines.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-09",
+          "topicId": null,
+          "event": "Netanyahu orders full force directives as Israel monitors Hezbollah rearmament south of Litani River.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-10",
+          "topicId": null,
+          "event": "Lebanon, Israel, and US officials agree to ceasefire talks in Washington, marking diplomatic push.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-14",
+          "topicId": null,
+          "event": "Historic direct Israel-Lebanon ceasefire negotiations occur in US mediation.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-16",
+          "topicId": null,
+          "event": "US-brokered Israel-Lebanon ceasefire takes effect after Trump-mediated extension talks.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-17",
+          "topicId": null,
+          "event": "Tens of thousands of Lebanese return to southern homes on first full day of ceasefire despite Israeli warnings.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-22",
+          "topicId": "Israeli settlers kill two Palestinians including teen at West Bank school prompting tear gas at funeral-12",
+          "event": "Israeli settlers kill two Palestinians including teen at West Bank school in Ramallah, prompting tear gas at funeral.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "Lebanon leaders accuse Israel of war crime after airstrike kills journalist Amal Khalil in south-2",
+          "event": "Lebanon leaders accuse Israel of war crime after airstrike kills journalist Amal Khalil in southern Lebanon.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "Israel defense minister awaits US green light to resume war and return Iran to Stone Age-1",
+          "event": "Israel defense minister awaits US green light to resume war and return Iran to Stone Age.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "Israel kills 12 Palestinians in Gaza and 6 Hezbollah fighters in Lebanon despite ceasefires-3",
+          "event": "Israel kills 12 Palestinians in Gaza and 6 Hezbollah fighters in Lebanon despite ceasefires.",
+          "category": "conflict"
+        }
+      ],
+      "keyDevelopments": [
+        {
+          "date": "2026-04-24",
+          "text": "Israel kills 12 Palestinians in Gaza and 6 Hezbollah fighters in Lebanon despite ongoing ceasefires."
+        },
+        {
+          "date": "2026-04-23",
+          "text": "Lebanon PM accuses Israel of war crimes after IDF airstrike kills journalist Amal Khalil in southern Lebanon."
+        },
+        {
+          "date": "2026-04-23",
+          "text": "Israel's defense minister awaits US green light to resume war and 'return Iran to Stone Age'."
+        },
+        {
+          "date": "2026-04-22",
+          "text": "Israeli settlers kill two Palestinians, including a teen, in school attack in Ramallah West Bank, prompting tear gas at funeral."
+        },
+        {
+          "date": "2026-04-17",
+          "text": "Israel-Hezbollah truce takes effect with fragile enforcement south of Litani River amid Israeli warnings."
+        },
+        {
+          "date": "2026-04-16",
+          "text": "US-brokered Israel-Lebanon ceasefire begins following Trump-mediated talks in Washington."
+        }
+      ],
+      "riskSignals": [
+        "Hezbollah rocket retaliation from Bekaa Valley stockpiles by 2026-05-02.",
+        "US decision on Israel 'Stone Age' operation against Iran by 2026-05-05.",
+        "Ceasefire extension talks outcome in Washington by 2026-05-10.",
+        "West Bank curfews and clashes following death penalty enforcement by 2026-05-01."
+      ],
+      "totalArticles": 178,
+      "categories": {
+        "politics": 34,
+        "military": 13,
+        "economy": 2,
+        "conflict": 129
+      },
+      "activeArcCount": 21,
+      "dateRange": {
+        "from": "2026-03-27",
+        "to": "2026-04-26"
+      },
+      "riskScore": 72,
+      "groundingSources": []
+    },
+    "Iran": {
+      "latencyMs": 10231,
+      "dayCount": 31,
+      "situationSummary": null,
+      "trajectory": "de-escalating",
+      "searchResultsCount": 0,
+      "countryName": "Iran",
+      "generatedAt": "2026-04-26T03:03:36.815Z",
+      "riskLevel": "elevated",
+      "headline": "Iran Faces US Naval Blockade and Ceasefire Talks Under Mojtaba Khamenei's Leadership",
+      "trajectoryDetail": "Most likely, **preliminary US-Iran talks in Islamabad April 24-30** succeed in partial Hormuz reopening and carrier withdrawals, extending the fragile ceasefire as VP Vance signals progress. Iranian concessions on proxies like Hezbollah and Houthis could follow, monitored by CENTCOM.\n\nAlternately, **mine-laying clashes or failed talks** trigger **US strikes on Iranian power plants by May 1**, per Trump's Tuesday deadline echoes, escalating to UNSC Resolution 2231 snapback by May 15. Least likely is full de-escalation without **nuclear site inspections**, given degraded facilities from US-Israeli strikes.",
+      "model": "grok-4-1-fast-non-reasoning",
+      "whyItMatters": "The **US naval blockade** of Iranian ports sustains **global oil shocks**, with Brent crude volatility threatening energy security in Europe and Asia. **Pakistan-mediated ceasefire talks** offer a slim path to de-escalation, but Trump's infrastructure threats and Iranian proxy actions risk reigniting full-scale war. Disruptions to **Hormuz fertilizer shipments** endanger African harvests and could push 30 million into poverty per UN estimates.",
+      "bluf": "Amid fragile US-Iran ceasefire attempts via Pakistan, the US maintains a naval blockade on Iranian oil ports as Iranian FM Araghchi prepares for Islamabad talks with US envoys Kushner and Witkoff.",
+      "dominantCategory": "conflict",
+      "crossThreadInsight": "The **Pakistan-mediated diplomacy** in Threads 1, 2, 5, and 6 directly intersects with **Hormuz naval escalations** (Threads 3, 4), where US Fifth Fleet blockades counter IRGC mine-laying and ship seizures, sustaining oil sanctions pressure via Trump's envoys Kushner and Witkoff meeting Iranian FM Araghchi. **Economic fallout** from fertilizer delays (Thread 13, single articles) amplifies conflict arcs like missile strikes (Threads 10, 11), as **Russia-China UN vetoes** (Thread 20) block resolutions, forcing reliance on Islamabad brokers like PM Shehbaz Sharif and Army Chief Asim Munir amid **Trump's infrastructure threats** (Threads 8, 9).",
+      "backgroundTimeline": [
+        {
+          "date": "2026-02-28",
+          "topicId": null,
+          "event": "Israeli airstrike on Ali Khamenei's Tehran compound kills Supreme Leader, triggering Iran-Israel War; Mojtaba Khamenei appointed Supreme Leader on 2026-03-08.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-03-27",
+          "topicId": "Rubio's Shifting Statements on Swift US-Iran War Resolution-2",
+          "event": "US Secretary of State Marco Rubio announces swift US-Iran war resolution within weeks via air and naval strategy.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-03-28",
+          "topicId": "Iran Missile Strike Hits US Troops at Saudi Air Base-4",
+          "event": "Iran launches missile strike on Prince Sultan Air Base in Saudi Arabia, wounding 15 US troops and damaging refueling aircraft.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-06",
+          "topicId": "Pakistan Mediates US-Iran Ceasefire Amid Trump Deadline Pressure-5",
+          "event": "Pakistan proposes ceasefire for US-Iran war, positioning itself as diplomatic broker ahead of Trump's deadline.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-08",
+          "topicId": "US-Iran Ceasefire Talks Collapse into Hormuz Blockade Crisis-16",
+          "event": "US Vice President JD Vance announced to lead delegation to Pakistan for ceasefire talks with Iran.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-14",
+          "topicId": "US Naval Blockade of Iran Persists Despite Hormuz Reopening-5",
+          "event": "US military ships turn around six vessels enforcing blockade on Iranian ports in Strait of Hormuz.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-19",
+          "topicId": "US-Iran Strait of Hormuz Naval Escalations Intensify Over Days-8",
+          "text": "US forces seize Iranian-flagged cargo ship Touska near Strait of Hormuz by firing on its engine room.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "Iran commandos storm cargo ship to demonstrate control over Strait of Hormuz-2",
+          "event": "Iran commandos storm cargo ship to demonstrate control over Strait of Hormuz.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "US threatens to shoot Iranian boats laying mines in Strait of Hormuz per Trump-10",
+          "event": "US threatens to shoot Iranian boats laying mines in Strait of Hormuz per Trump.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "US sanctions China-based oil refinery and 40 shippers for transporting Iranian oil-7",
+          "event": "US sanctions China-based oil refinery and 40 shippers transporting Iranian oil.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "Iranian FM Araghchi arrives in Islamabad for US ceasefire talks as Kushner and Witkoff head to Pakistan-4",
+          "event": "Iranian FM Abbas Araghchi arrives in Islamabad for US ceasefire talks as Kushner and Witkoff head to Pakistan.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-25",
+          "topicId": "Commercial flights resume at Tehran Imam Khomeini Airport as US-Iran ceasefire holds after weeks of war disruption-5",
+          "event": "Commercial flights resume at Tehran Imam Khomeini Airport as US-Iran ceasefire holds.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-26",
+          "topicId": "UN warns Hormuz disruption risks global food crisis from fertilizer and shipping delays-5",
+          "event": "UN warns Hormuz disruption risks global food crisis from fertilizer and shipping delays.",
+          "category": "economy"
+        }
+      ],
+      "keyDevelopments": [
+        {
+          "date": "2026-04-26",
+          "text": "UN warns Hormuz disruption risks global food crisis from fertilizer and shipping delays."
+        },
+        {
+          "date": "2026-04-25",
+          "text": "Commercial flights resume at Tehran Imam Khomeini Airport as US-Iran ceasefire holds after weeks of war disruption."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "US Defense Secretary Hegseth calls Iran war Trump's 'gift to the world' amid global oil shock."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "US sanctions China-based oil refinery and 40 shippers for transporting Iranian oil."
+        },
+        {
+          "date": "2026-04-23",
+          "text": "US threatens to shoot Iranian boats laying mines in Strait of Hormuz per Trump."
+        },
+        {
+          "date": "2026-04-23",
+          "text": "Israel defense minister awaits US green light to resume war and return Iran to Stone Age."
+        }
+      ],
+      "riskSignals": [
+        "Iranian FM Araghchi's Islamabad talks outcomes by April 30 with US envoys Kushner and Witkoff.",
+        "US response to IRGC mine-laying in Hormuz by May 1 per Trump threats.",
+        "UN Security Council session on Resolution 2231 extensions around May 15.",
+        "CENTCOM announcements on Fifth Fleet patrols or base reinforcements by May 5."
+      ],
+      "totalArticles": 256,
+      "categories": {
+        "politics": 65,
+        "health": 2,
+        "military": 43,
+        "economy": 16,
+        "technology": 3,
+        "conflict": 124,
+        "energy": 1,
+        "disaster": 2
+      },
+      "activeArcCount": 33,
+      "dateRange": {
+        "from": "2026-03-27",
+        "to": "2026-04-26"
+      },
+      "riskScore": 72,
+      "groundingSources": []
+    },
+    "Pakistan": {
+      "latencyMs": 9865,
+      "dayCount": 22,
+      "situationSummary": null,
+      "trajectory": "stable",
+      "searchResultsCount": 0,
+      "countryName": "Pakistan",
+      "generatedAt": "2026-04-26T03:04:46.088Z",
+      "riskLevel": "elevated",
+      "headline": "Pakistan Hosts Iranian FM Araghchi for Critical US-Iran Ceasefire Talks",
+      "trajectoryDetail": "Pakistan remains **stable as diplomatic hub** through Araghchi's April 24-30 visit, likely hosting **mid-level indirect US-Iran talks** with Sharif and Munir facilitating. Most probable scenario: **trilateral extension talks** by May 1, triggered by Kushner/Witkoff arrival, potentially leading to carrier withdrawals if progress made.\n\nSecondary scenarios include **talks stalling** if Trump rejects extensions post-April 30, prompting Iranian Hormuz reinforcements, or **breakthrough nuclear compromise** if Munir's Tehran ties yield concessions. Watch **US mid-level envoys** in Islamabad by April 28 for de-escalation signals.",
+      "model": "grok-4-1-fast-non-reasoning",
+      "whyItMatters": "Pakistan's role as a **neutral mediator** in the **US-Iran Hormuz blockade crisis** elevates its **geopolitical stature** amid **global oil supply risks**. Success could avert **wider Middle East war** and stabilize energy markets, while failure risks drawing Islamabad into **escalatory crossfire**. **Trump's severe repercussions** warning underscores the high stakes for regional stability.",
+      "bluf": "Iranian Foreign Minister Abbas Araghchi arrives in Islamabad April 24-30 for indirect US-Iran ceasefire discussions hosted by PM Shehbaz Sharif and Army Chief Asim Munir, amid collapsed prior talks and Trump deadline pressure.",
+      "dominantCategory": "politics",
+      "crossThreadInsight": "Multiple arcs converge on Pakistan's **central mediation role** in the **US-Iran Hormuz crisis**, with Threads 1-5 detailing escalating diplomatic efforts from Vance's April delegation to Araghchi's current visit and incoming US envoys Kushner and Witkoff. **Army Chief Asim Munir** and **PM Shehbaz Sharif** drive these initiatives, intertwining military and political threads as **Trump's deadline pressure** risks Hormuz blockade escalation. The disaster arc on floods remains isolated, with no evident linkage to diplomatic strains.",
+      "backgroundTimeline": [
+        {
+          "date": "2026-04-06",
+          "topicId": null,
+          "event": "Pakistan proposes ceasefire for escalating US-Iran war, structured as immediate truce followed by comprehensive deal to meet Trump's deadline.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-08",
+          "topicId": null,
+          "event": "US Vice President JD Vance announced to lead high-level delegation to Pakistan for ceasefire talks with Iran, positioning Islamabad as neutral venue.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-09",
+          "topicId": null,
+          "event": "Pakistan intensifies preparations to host US-Iran ceasefire talks amid Middle East tensions.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-11",
+          "topicId": "US and Iran hold direct face-to-face peace talks in Pakistan led by VP JD Vance to end 6-week war-1",
+          "event": "US and Iran hold direct face-to-face peace talks in Pakistan led by VP JD Vance to end 6-week war.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-11",
+          "topicId": "US warships transit Strait of Hormuz for mine-clearing operation amid ongoing US-Iran ceasefire talks in Pakistan-1",
+          "event": "US warships transit Strait of Hormuz for mine-clearing operation amid ongoing US-Iran ceasefire talks in Pakistan.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-15",
+          "topicId": "Pakistan army chief visits Tehran to advance next round of US-Iran nuclear talks-6",
+          "event": "Pakistan Army Chief Asim Munir visits Tehran to advance next round of US-Iran nuclear talks.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-16",
+          "topicId": "Qatar hosts regional talks with Pakistan PM to revive Iran peace process amid Middle East war-8",
+          "event": "Qatar hosts regional talks with Pakistan PM Shehbaz Sharif to revive Iran peace process amid Middle East war.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-17",
+          "topicId": "Pakistan positioned to broker Iran-US nuclear compromise as Trump says deal 'close' with potential Islamabad visit-8",
+          "event": "Pakistan positioned to broker Iran-US nuclear compromise as Trump says deal 'close' with potential Islamabad visit.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-19",
+          "topicId": "Trump announces US negotiators to Pakistan for Iran ceasefire talks amid Strait of Hormuz standoff-1",
+          "event": "Trump announces US negotiators to Pakistan for Iran ceasefire talks amid Strait of Hormuz standoff.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-19",
+          "topicId": "Trump sends US delegation led by JD Vance to Pakistan for Iran talks amid Strait of Hormuz standoff-8",
+          "event": "Trump sends US delegation led by JD Vance to Pakistan for Iran talks amid Strait of Hormuz standoff.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-19",
+          "topicId": "US seizes Iran-flagged cargo ship Touska by blowing hole in engine room amid Hormuz blockade-0",
+          "event": "US seizes Iran-flagged cargo ship Touska by blowing hole in engine room amid Hormuz blockade.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-19",
+          "topicId": "US forces seize Iranian-flagged cargo ship Touska near Strait of Hormuz by firing on engine room-0",
+          "event": "US forces seize Iranian-flagged cargo ship Touska near Strait of Hormuz by firing on engine room.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "US-Iran ceasefire expires Wednesday as Trump opposes extension amid uncertain Pakistan talks-2",
+          "event": "US-Iran ceasefire expires Wednesday as Trump opposes extension amid uncertain Pakistan talks.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": null,
+          "event": "Iranian FM Araghchi arrives in Islamabad for US ceasefire talks as Kushner and Witkoff head to Pakistan.",
+          "category": "politics"
+        }
+      ],
+      "keyDevelopments": [
+        {
+          "date": "2026-04-24",
+          "text": "Iranian FM Abbas Araghchi begins Islamabad visit for preliminary indirect US-Iran ceasefire talks with PM Shehbaz Sharif and Army Chief Asim Munir."
+        },
+        {
+          "date": "2026-04-21",
+          "text": "US-Iran ceasefire expires Wednesday as President Trump opposes extension amid uncertain Pakistan-mediated talks."
+        },
+        {
+          "date": "2026-04-19",
+          "text": "Trump announces US negotiators Steve Witkoff and Jared Kushner traveling to Pakistan for talks with Iran's FM Araghchi."
+        },
+        {
+          "date": "2026-04-19",
+          "text": "US forces seize Iran-flagged cargo ship Touska near Strait of Hormuz by firing on its engine room amid blockade crisis."
+        },
+        {
+          "date": "2026-04-17",
+          "text": "Trump signals Iran-US nuclear deal 'close' with Pakistan positioned to broker compromise, hinting at potential Islamabad visit."
+        },
+        {
+          "date": "2026-04-15",
+          "text": "Pakistan Army Chief Asim Munir visits Tehran to advance next round of US-Iran nuclear talks."
+        }
+      ],
+      "riskSignals": [
+        "Araghchi's meetings with Sharif and Munir outcomes by April 30",
+        "Arrival of US envoys Kushner and Witkoff in Islamabad by April 28",
+        "Trump administration signals on Hormuz carrier group by May 1",
+        "Iranian response to ceasefire status post-April 30"
+      ],
+      "totalArticles": 68,
+      "categories": {
+        "politics": 38,
+        "military": 7,
+        "conflict": 20,
+        "disaster": 3
+      },
+      "activeArcCount": 6,
+      "dateRange": {
+        "from": "2026-03-27",
+        "to": "2026-04-26"
+      },
+      "riskScore": 65,
+      "groundingSources": []
+    },
+    "China": {
+      "model": "grok-4-1-fast-non-reasoning",
+      "latencyMs": 12438,
+      "dayCount": 28,
+      "dominantCategory": "politics",
+      "situationSummary": null,
+      "crossThreadInsight": "Xi Jinping's **anti-corruption probe into Politburo member Ma Xingrui** via the CCDI intersects with external pressures, as US sanctions on oil shippers and AI firms compound economic strains from blocked DUV lithography and BYD blacklisting, potentially forcing Beijing to prioritize **domestic tech self-reliance** seen in Huawei-DeepSeek collaboration and Zhipu AI's GLM-5.1 open-sourcing. Military drills in the East China Sea and Russia-China UN veto on Hormuz respond to Taiwan-related diplomacy like KMT leader Cheng Li-wun's peace mission, linking **internal purges** to assertive **regional posturing** amid Trump-Xi summit preparations.",
+      "trajectory": "escalating",
+      "searchResultsCount": 0,
+      "countryName": "China",
+      "generatedAt": "2026-04-26T03:03:59.120Z",
+      "riskSignals": [
+        "CCDI announces Ma Xingrui suspension by 2026-05-01.",
+        "US Congress votes on DUV lithography block bill by 2026-05-05.",
+        "Japan MSDF announces next Taiwan Strait transit by 2026-05-03.",
+        "Politburo issues formal charges against Ma Xingrui by 2026-05-10."
+      ],
+      "totalArticles": 119,
+      "riskLevel": "elevated",
+      "categories": {
+        "politics": 42,
+        "military": 17,
+        "technology": 28,
+        "economy": 31,
+        "conflict": 1
+      },
+      "headline": "China Faces Intensifying US Sanctions and Tech Restrictions Under Xi Jinping",
+      "activeArcCount": 15,
+      "dateRange": {
+        "from": "2026-03-27",
+        "to": "2026-04-24"
+      },
+      "whyItMatters": "The **US sanctions on Chinese oil entities** and **AI crackdowns** signal a deepening technological and economic decoupling, threatening China's access to critical markets and tech. **G7 concerns over nuclear build-up** heighten global security tensions, while Xi's **anti-corruption probe of Politburo's Ma Xingrui** underscores internal power consolidation amid external pressures.",
+      "bluf": "Xi Jinping's China confronts escalating US-led economic and technological pressures amid anti-corruption probes and regional military tensions.",
+      "keyDevelopments": [
+        {
+          "date": "2026-04-24",
+          "text": "US threatens crackdown on Chinese AI firms distilling US models, risking elimination of copycats in the sector."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "US and EU sign critical minerals agreement to reduce China's supply dominance."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "G7 expresses concern over Russia and China's significant nuclear weapons build-up and modernization."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "US sanctions China-based oil refinery and 40 shippers for transporting Iranian oil."
+        },
+        {
+          "date": "2026-04-23",
+          "text": "China launches bond-market-connect scheme with Brazil, first among emerging markets."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "Huawei and DeepSeek collaborate on V4 AI model using Ascend chips to boost self-reliance."
+        }
+      ],
+      "trajectoryDetail": "In the next 1-4 weeks, the **most likely scenario** is advancement of Ma Xingrui's probe with CCDI suspension by early May and Politburo charges, signaling Xi's tightening grip while US AI sanctions trigger Chinese firm consolidations. **Secondary scenario** involves escalated East China Sea drills if Japan conducts another Taiwan Strait transit, potentially by May 1. A **tertiary de-escalation** could emerge from Trump-Xi summit outcomes, watching KMT peace mission extensions.\n**Heightened US-EU minerals pact** implementation may spur Chinese retaliation in rare earth exports by mid-May, alongside nuclear build-up responses to G7 pressure.",
+      "backgroundTimeline": [
+        {
+          "date": "2026-04-03",
+          "topicId": null,
+          "event": "CCP announces investigation into Politburo member Ma Xingrui as part of Xi Jinping's anti-corruption campaign.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "China launches bond-market-connect scheme with Brazil first among emerging markets-10",
+          "event": "China launches bond-market-connect scheme with Brazil, marking first such initiative among emerging markets.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "US threatens crackdown on Chinese AI firms distilling US models shaking out copycats-7",
+          "event": "US threatens crackdown on Chinese AI firms distilling US models shaking out copycats.",
+          "category": "technology"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "Huawei and DeepSeek collaborate on V4 AI model boosting China's AI self-reliance with Ascend chips-8",
+          "event": "Huawei and DeepSeek collaborate on V4 AI model boosting China's AI self-reliance with Ascend chips.",
+          "category": "technology"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "US threatens crackdown on Chinese AI firms distilling US models to eliminate copycats-10",
+          "event": "US threatens crackdown on Chinese AI firms distilling US models to eliminate copycats.",
+          "category": "technology"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "US and EU sign critical minerals agreement to reduce China's supply dominance-5",
+          "event": "US and EU sign critical minerals agreement to reduce China's supply dominance.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "G7 expresses concern over Russia and China's significant nuclear weapons build-up and modernization-8",
+          "event": "G7 expresses concern over Russia and China's significant nuclear weapons build-up and modernization.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "US sanctions China-based oil refinery and 40 shippers for transporting Iranian oil-7",
+          "event": "US sanctions China-based oil refinery and 40 shippers for transporting Iranian oil.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": null,
+          "event": "China holds joint military drills in East China Sea after Japanese MSDF Taiwan Strait transit.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": null,
+          "event": "US bipartisan lawmakers introduce bill to block China's DUV lithography access.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": null,
+          "event": "Taiwan President Lai Ching-te cancels Eswatini trip after Seychelles, Mauritius, Madagascar revoke overflight permissions blamed on China.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": null,
+          "event": "Brazil blacklists Chinese EV giant BYD for slave labor conditions at largest plant outside China.",
+          "category": "politics"
+        }
+      ],
+      "riskScore": 65,
+      "groundingSources": []
+    },
+    "Russia": {
+      "model": "grok-4-1-fast-non-reasoning",
+      "latencyMs": 11671,
+      "dayCount": 30,
+      "dominantCategory": "conflict",
+      "situationSummary": null,
+      "crossThreadInsight": "The collapse of the **Russia-Ukraine Easter ceasefire** (Thread 1) directly fuels **escalated aerial strikes** on civilian infrastructure (Thread 3), intertwining conflict arcs with economic pressures from **Druzhba pipeline manipulations** and EU sanctions, where Ukraine's repairs enabled loan unlocks but Russia's halt announcement signals retaliation. Diplomatic stalls, including **Zelenskyy's Azerbaijan meeting offer** (Thread 2) and Erdogan's summit revival efforts, are undermined by Russia's Transnistria warnings (Shoigu) and UN vetoes with China on Hormuz, amplifying **nuclear concerns** raised by G7 and linking military escalation to global tensions.",
+      "trajectory": "escalating",
+      "searchResultsCount": 0,
+      "countryName": "Russia",
+      "generatedAt": "2026-04-26T03:04:10.817Z",
+      "riskSignals": [
+        "NATO air defense deployments to Odesa via US and allies by May 2.",
+        "Russian drone/missile barrages testing Ukrainian reinforcements post-April 28.",
+        "Official cause report on petrochemical explosion from Russia's Ministry of Emergency Situations by May 5.",
+        "Druzhba pipeline oil flow halt implementation on May 1 impacting Germany."
+      ],
+      "totalArticles": 113,
+      "riskLevel": "elevated",
+      "categories": {
+        "politics": 36,
+        "military": 19,
+        "economy": 12,
+        "technology": 1,
+        "conflict": 39,
+        "disaster": 6
+      },
+      "headline": "Russia Intensifies Ukraine Strikes as Easter Ceasefire Collapses Under Putin Leadership",
+      "activeArcCount": 14,
+      "dateRange": {
+        "from": "2026-03-28",
+        "to": "2026-04-26"
+      },
+      "trajectoryDetail": "Most likely, Russia under Putin will **intensify aerial campaigns** targeting Kharkiv and Odesa energy grids within 1-2 weeks, prompting **NATO air defense boosts** via Poland and Romania by early May, as UAE mediation stalls without UN backing. Ukraine's responses, including drone strikes on Russian ports like Ust-Luga, will likely provoke sustained **drone and missile barrages** to test defenses, with Black Sea Grain Initiative revival hanging in balance.\n\nAlternative scenarios include a slim chance of **de-escalation** if Turkey or Azerbaijan brokers a leaders' summit post-April 30, or escalation to Transnistria if Shoigu's warnings trigger troop movements by mid-May; **nuclear rhetoric** from G7 could accelerate arms talks but risks miscalculation amid China's alignment.",
+      "whyItMatters": "Russia's **escalated aerial campaigns** against Ukrainian energy grids risk **prolonging the war** and drawing deeper NATO involvement via air defenses in Poland and Romania. **Stalled diplomatic efforts**, including Zelenskyy's Azerbaijan meeting proposal and UAE mediation, heighten global **energy insecurity** through Druzhba pipeline disruptions and nuclear build-up concerns raised by G7. These dynamics threaten **European economic stability** amid new EU sanctions and oil flow halts.",
+      "bluf": "Russia's failed Easter ceasefire with Ukraine has triggered escalated aerial bombardments on civilian infrastructure, killing dozens and straining NATO defenses amid stalled diplomacy.",
+      "backgroundTimeline": [
+        {
+          "date": "2026-03-24",
+          "topicId": null,
+          "event": "Russia launches unprecedented daytime attack of approximately 400 drones on Ukraine, killing four, injuring dozens, and damaging a UNESCO World Heritage site.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-03-31",
+          "topicId": null,
+          "event": "Major explosion at Russian petrochemical plant kills at least two and injures dozens, prompting evacuations.",
+          "category": "disaster"
+        },
+        {
+          "date": "2026-04-09",
+          "topicId": null,
+          "event": "President Vladimir Putin announces Orthodox Easter ceasefire across Ukraine in response to Zelenskyy's proposal.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-11",
+          "topicId": null,
+          "event": "Easter ceasefire collapses after 32 hours, leading to deadly escalation.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "Ukraine repairs damaged Druzhba pipeline resuming Russian oil flows to unlock \u20ac90 billion EU loan-4",
+          "event": "Ukraine repairs damaged Druzhba pipeline, resuming Russian oil flows to Europe to unlock \u20ac90 billion EU loan.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "Sergei Shoigu warns safety of Russians in Moldova's breakaway Transnistria under threat-11",
+          "event": "Sergei Shoigu warns safety of Russians in Moldova's breakaway Transnistria is under threat.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-22",
+          "topicId": "Russia announces halt to Kazakh oil flows to Germany via Druzhba pipeline from May 1-2",
+          "text": "Russia announces halt to Kazakh oil flows to Germany via Druzhba pipeline from May 1.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-22",
+          "topicId": "Turkey's Erdogan tells NATO chief Ankara making efforts to revive Russia-Ukraine leaders summit-11",
+          "event": "Turkey's Erdogan tells NATO chief Ankara is making efforts to revive Russia-Ukraine leaders summit.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "EU formally approves \u20ac90bn loan to Ukraine and new sanctions on Russia-3",
+          "event": "EU formally approves \u20ac90bn loan to Ukraine and new sanctions on Russia.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "G7 expresses concern over Russia and China's significant nuclear weapons build-up and modernization-8",
+          "event": "G7 expresses concern over Russia and China's significant nuclear weapons build-up and modernization.",
+          "category": "military"
+        }
+      ],
+      "keyDevelopments": [
+        {
+          "date": "2026-04-24",
+          "text": "G7 expresses concern over Russia and China's significant nuclear weapons build-up and modernization."
+        },
+        {
+          "date": "2026-04-23",
+          "text": "EU formally approves \u20ac90bn loan to Ukraine and imposes new sanctions on Russia."
+        },
+        {
+          "date": "2026-04-22",
+          "text": "Russia announces halt to Kazakh oil flows to Germany via Druzhba pipeline starting May 1."
+        },
+        {
+          "date": "2026-04-22",
+          "text": "Turkey's Erdogan informs NATO chief of Ankara's efforts to revive Russia-Ukraine leaders summit."
+        },
+        {
+          "date": "2026-04-21",
+          "text": "Ukraine announces repair of damaged Druzhba pipeline, resuming Russian oil flows to unlock \u20ac90B EU loan."
+        },
+        {
+          "date": "2026-04-21",
+          "text": "Russian Defense Minister Sergei Shoigu warns of threats to Russians in Moldova's breakaway Transnistria."
+        }
+      ],
+      "riskScore": 68,
+      "groundingSources": []
+    },
+    "Japan": {
+      "model": "grok-4-1-fast-non-reasoning",
+      "latencyMs": 8231,
+      "dayCount": 19,
+      "dominantCategory": "military",
+      "situationSummary": null,
+      "crossThreadInsight": "Japan's **LDP-Komeito coalition** is aggressively advancing **arms export liberalization** (Thread 2) alongside **missile deployments to Kumamoto and Shizuoka** (Thread 5) and **SDF participation in Philippines-US Balikatan exercises** (Thread 7), directly responding to **China's East China Sea drills** following MSDF Taiwan Strait transit (Thread 1). This militarization intersects with **public protests** against eroding pacifism and a **Nikkei record high** (Thread 3), where economic optimism from tech rallies may bolster coalition support for the July 22 Diet session ratification, despite disaster strains like wildfires and training fatalities.",
+      "trajectory": "escalating",
+      "searchResultsCount": 0,
+      "countryName": "Japan",
+      "generatedAt": "2026-04-26T03:04:54.343Z",
+      "riskSignals": [
+        "LDP-Komeito push for arms export ratification in Diet committees by May 5.",
+        "SDF Balikatan exercise confirmation and unit deployments by May 1.",
+        "Chinese military drill announcements in East China Sea post-April 28.",
+        "Iwate wildfire containment or expansion updates by April 30."
+      ],
+      "totalArticles": 62,
+      "riskLevel": "elevated",
+      "categories": {
+        "politics": 6,
+        "military": 28,
+        "economy": 13,
+        "technology": 1,
+        "disaster": 12,
+        "conflict": 2
+      },
+      "headline": "Japan lifts lethal arms export ban amid military buildup and regional tensions",
+      "activeArcCount": 7,
+      "dateRange": {
+        "from": "2026-03-27",
+        "to": "2026-04-25"
+      },
+      "whyItMatters": "Japan's **historic arms export policy shift** marks a **profound departure from postwar pacifism**, enabling lethal weapons sales to allies like the Philippines and strengthening regional deterrence against **China's East China Sea assertiveness**. This coincides with **missile deployments** and multinational exercises, potentially accelerating an East Asian arms race. **Economic highs** in the Nikkei contrast with domestic disasters and protests, testing public support for militarization.",
+      "bluf": "Japan's cabinet approved ending its postwar ban on lethal weapons exports on April 21, signaling a major shift from pacifism as it deploys missiles and joins multinational drills amid China threats.",
+      "keyDevelopments": [
+        {
+          "date": "2026-04-25",
+          "text": "Over 3,200 evacuated as hundreds of firefighters battle wildfires burning 700 hectares in Iwate Prefecture."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "Japanese protesters rallied against the easing of decades-old arms export curbs, decrying erosion of pacifist tradition."
+        },
+        {
+          "date": "2026-04-23",
+          "text": "Nikkei 225 hit a record high above 60,000 before retreating amid concerns over tech rally sustainability."
+        },
+        {
+          "date": "2026-04-21",
+          "text": "Japan approved removal of postwar ban on lethal weapons exports, enabling sales to over a dozen countries."
+        },
+        {
+          "date": "2026-04-21",
+          "text": "Three GSDF members died in a tank explosion during training at Hijudai maneuver area in Oita Prefecture."
+        }
+      ],
+      "trajectoryDetail": "In the next 1-4 weeks, the **most likely scenario** is **Diet committee debates** on revised Three Principles on Arms Transfers advancing toward July 22 ratification, propelled by LDP's 288-seat majority, with potential **first export deals** announced to allies like the Philippines. A secondary scenario involves **escalated China responses**, such as additional East China Sea drills, if Japan confirms Balikatan combat unit deployment by early May. Least likely but monitored is **protest escalation** disrupting Upper House election campaigning if pacifist opposition gains traction post-April protests.",
+      "backgroundTimeline": [
+        {
+          "date": "2026-04-21",
+          "topicId": "Japan approves removal of postwar ban on lethal weapons exports enabling sales to over a dozen countries-1",
+          "event": "Japan's cabinet approved removal of postwar ban on lethal weapons exports, enabling sales to over a dozen countries.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "Three GSDF members die in tank explosion during training at Hijudai maneuver area in Oita Prefecture-4",
+          "event": "Three GSDF members died in tank explosion during training at Hijudai maneuver area in Oita Prefecture.",
+          "category": "security"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "Three Japanese GSDF soldiers die in tank explosion during training at Hijudai maneuver area in Oita-5",
+          "event": "Three Japanese GSDF soldiers died in tank explosion during training at Hijudai maneuver area in Oita.",
+          "category": "security"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "Three Japanese GSDF members die in tank explosion during training at Hijudai maneuver area in Oita-10",
+          "event": "Three Japanese GSDF members died in tank explosion during training at Hijudai maneuver area in Oita.",
+          "category": "security"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "Three GSDF members die in tank explosion during training at Hijudai maneuver area in Oita Prefecture Japan-9",
+          "event": "Three GSDF members died in tank explosion during training at Hijudai maneuver area in Oita Prefecture Japan.",
+          "category": "security"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "Nikkei 225 hits record high breaking 60,000 for first time before retreating-8",
+          "event": "Nikkei 225 hit record high breaking 60,000 for first time before retreating.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "Nikkei 225 hits record high breaking 60,000 for first time before retreating on tech rally concerns-9",
+          "event": "Nikkei 225 hit record high breaking 60,000 for first time before retreating on tech rally concerns.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "Japanese protest easing of decades-old arms export curbs eroding pacifist tradition-10",
+          "event": "Japanese protested easing of decades-old arms export curbs eroding pacifist tradition.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-25",
+          "topicId": "Over 3,200 evacuated as hundreds of firefighters battle wildfires burning 700 hectares in Iwate Japan-7",
+          "event": "Over 3,200 evacuated as hundreds of firefighters battle wildfires burning 700 hectares in Iwate Japan.",
+          "category": "disaster"
+        }
+      ],
+      "riskScore": 62,
+      "groundingSources": []
+    },
+    "Ukraine": {
+      "model": "grok-4-1-fast-non-reasoning",
+      "latencyMs": 14246,
+      "dayCount": 27,
+      "dominantCategory": "conflict",
+      "situationSummary": null,
+      "crossThreadInsight": "The **Russia-Ukraine Easter ceasefire collapse** (Thread 1) directly fuels **escalated aerial strikes** (Thread 4), interconnecting with NATO responses like drone incursions into Romania (Threads 3,9,10), heightening **border security risks** for Poland and Romania. Diplomatically, Zelenskyy's readiness to meet Putin in Azerbaijan (Threads 2,11) and Erdogan's summit revival efforts contrast with economic concessions like the **Druzhba pipeline restart** (Thread 6), which unlocked **EU's \u20ac90bn loan** but drew Hungarian accusations over pipeline sabotage (Thread 13), illustrating how **energy politics** under Svyrydenko enables financial aid amid **Orban's veto leverage**. Ukraine's strikes on Russian ports (Threads 8,20) provoke retaliation, linking military arcs to stalled UAE and US mediation.",
+      "trajectory": "escalating",
+      "searchResultsCount": 0,
+      "countryName": "Ukraine",
+      "generatedAt": "2026-04-26T03:04:36.190Z",
+      "riskSignals": [
+        "Russian aerial strikes on Kharkiv/Odesa energy grids expected by May 3.",
+        "NATO air defense deployments via Poland/Romania complete by May 2.",
+        "UAE mediation update or stall announcement by May 1.",
+        "Hungarian election fallout on Druzhba pipeline security by May 5."
+      ],
+      "totalArticles": 105,
+      "riskLevel": "elevated",
+      "categories": {
+        "politics": 28,
+        "military": 25,
+        "economy": 5,
+        "conflict": 47
+      },
+      "headline": "Ukraine Faces Intensified Russian Strikes as Easter Ceasefire Collapses Under Zelenskyy Leadership",
+      "activeArcCount": 14,
+      "dateRange": {
+        "from": "2026-03-27",
+        "to": "2026-04-26"
+      },
+      "whyItMatters": "The **collapse of the Easter ceasefire** signals Russia's shift to **intensified aerial campaigns** on civilian and energy infrastructure, straining Ukraine's defenses and economy under Zelenskyy and Svyrydenko's leadership. **EU's \u20ac90bn loan** provides critical financial relief but hinges on precarious energy deals like Druzhba, exposing Europe to **Russian leverage**. NATO's air defense boosts via Poland and Romania underscore the risk of wider regional spillover.",
+      "bluf": "Russia's collapsed Easter ceasefire has triggered deadly aerial escalations targeting Ukrainian energy infrastructure, prompting NATO reinforcements amid stalled diplomatic efforts.",
+      "keyDevelopments": [
+        {
+          "date": "2026-04-24",
+          "text": "Germany's Chancellor Merz states no immediate EU membership for Ukraine but suggests observer meetings."
+        },
+        {
+          "date": "2026-04-23",
+          "text": "EU formally approves \u20ac90bn loan to Ukraine alongside new sanctions on Russia."
+        },
+        {
+          "date": "2026-04-22",
+          "text": "EU unblocks \u20ac90bn loan to Ukraine after Druzhba pipeline restarts, ending Hungary's veto."
+        },
+        {
+          "date": "2026-04-21",
+          "text": "Zelenskyy announces repair of Druzhba pipeline, enabling Russian oil flow to unlock \u20ac90bn EU loan."
+        },
+        {
+          "date": "2026-04-20",
+          "text": "Ukrainian drone attack strikes Russia's Tuapse port on the Black Sea."
+        },
+        {
+          "date": "2026-04-09",
+          "text": "Putin announces Orthodox Easter ceasefire in response to Zelenskyy's proposal, which collapses by April 11."
+        }
+      ],
+      "trajectoryDetail": "Most likely, **Russia intensifies aerial campaigns** on Kharkiv and Odesa energy grids within 1-2 weeks, testing **NATO air defenses** boosted via Poland and Romania by early May, while UAE mediation stalls without UN backing. Zelenskyy may escalate drone reprisals on Russian Baltic and Black Sea ports, potentially drawing **Turkish mediation** if Erdogan revives summits.\n\nSecondary scenarios include a short-lived de-escalation if Azerbaijan talks advance post-April 28, or **Black Sea Grain Initiative revival** tying into EU loan flows; least likely is full UN-brokered truce absent US pressure. Watch **NATO summits by May 1** for defense commitments.",
+      "backgroundTimeline": [
+        {
+          "date": "2026-03-24",
+          "topicId": null,
+          "event": "Russia launches unprecedented daytime attack of approximately 400 drones on Ukraine, killing four, injuring dozens, and damaging a UNESCO World Heritage site.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-03-27",
+          "topicId": null,
+          "event": "Russian strikes kill 7 including 4 in Dnipro residential building across Ukraine.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-09",
+          "topicId": null,
+          "event": "Putin announces Orthodox Easter ceasefire across Ukraine in response to Zelenskyy's proposal.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-11",
+          "topicId": null,
+          "event": "Easter ceasefire collapses after 32 hours into deadly escalation.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-12",
+          "topicId": null,
+          "event": "Russia launches hourslong missile and drone attack on Ukraine, killing at least 16 civilians.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-13",
+          "topicId": "Drone crashes in Romania prompting British jets scramble during Russian strikes on Ukraine",
+          "event": "Drone crashes in Romania during Russian strikes on Ukraine, prompting British jets scramble and 200 evacuations.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-14",
+          "topicId": null,
+          "event": "Ukraine drone strike damages Russia's Ust-Luga Baltic port, starting fire and infrastructure damage.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-20",
+          "topicId": "Ukrainian drone attack hits Russia\u2019s Tuapse port on Black Sea-5",
+          "event": "Ukrainian drone attack hits Russia\u2019s Tuapse port on Black Sea.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "Ukraine repairs damaged Druzhba pipeline resuming Russian oil flows to Europe to unlock \u20ac90 billion EU loan-4",
+          "event": "Ukraine repairs damaged Druzhba pipeline, resuming Russian oil flows to Europe to unlock \u20ac90 billion EU loan.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "Zelensky announces Druzhba oil pipeline repaired enabling \u20ac90B EU loan for Ukraine-10",
+          "event": "Zelensky announces Druzhba oil pipeline repaired, enabling \u20ac90B EU loan for Ukraine.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-22",
+          "topicId": "EU approves \u20ac90bn loan for Ukraine after Druzhba pipeline restarts ending Hungary veto-1",
+          "event": "EU approves \u20ac90bn loan for Ukraine after Druzhba pipeline restarts, ending Hungary veto.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-22",
+          "topicId": "Turkey's Erdogan tells NATO chief Ankara making efforts to revive Russia-Ukraine leaders summit-11",
+          "event": "Turkey's Erdogan tells NATO chief Ankara is making efforts to revive Russia-Ukraine leaders summit.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "EU formally approves \u20ac90bn loan to Ukraine and new sanctions on Russia-3",
+          "event": "EU formally approves \u20ac90bn loan to Ukraine and new sanctions on Russia.",
+          "category": "economy"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "Germany's Chancellor Merz says no immediate Ukraine EU membership but floats observer meetings-12",
+          "event": "Germany's Chancellor Merz says no immediate Ukraine EU membership but suggests observer meetings.",
+          "category": "politics"
+        }
+      ],
+      "riskScore": 68,
+      "groundingSources": []
+    },
+    "Lebanon": {
+      "model": "grok-4-1-fast-non-reasoning",
+      "latencyMs": 11074,
+      "dayCount": 28,
+      "dominantCategory": "conflict",
+      "situationSummary": null,
+      "crossThreadInsight": "The **US-mediated ceasefire** (Threads 4, 6) directly tempers the **Israel-Hezbollah escalation** (Threads 1, 2), with envoys like Amos Hochstein and actors including Netanyahu, Salam, and Aoun navigating fragile truces amid **UNIFIL attacks** (Threads 5, 9) blamed on Hezbollah. **Journalist killings** and **soldier vandalism** (single articles) amplify sectarian tensions, intersecting with President Joseph Aoun's declaration of a 'new phase' (Thread 11), while **Houthi-Hezbollah coordination** (Thread 12) links Lebanon to broader Iran axis dynamics. Infrastructure strikes (Thread 8) exacerbate economic strain, hindering post-ceasefire recovery under PM Nawaf Salam.",
+      "trajectory": "de-escalating",
+      "searchResultsCount": 0,
+      "countryName": "Lebanon",
+      "generatedAt": "2026-04-26T03:04:21.919Z",
+      "riskSignals": [
+        "Hezbollah rocket launches into northern Israel by May 1",
+        "US-mediated ceasefire extension decision by May 5",
+        "Israeli airstrikes south of Litani River killing 50+ by May 10",
+        "UNIFIL reports on Hezbollah compliance by May 3"
+      ],
+      "totalArticles": 110,
+      "riskLevel": "elevated",
+      "categories": {
+        "politics": 6,
+        "military": 10,
+        "economy": 1,
+        "conflict": 92,
+        "disaster": 1
+      },
+      "headline": "Lebanon Enforces Fragile Israel-Hezbollah Ceasefire Amid Ceasefire Violations and Returns",
+      "activeArcCount": 12,
+      "dateRange": {
+        "from": "2026-03-28",
+        "to": "2026-04-26"
+      },
+      "whyItMatters": "The **fragile Israel-Hezbollah ceasefire** risks collapse from **continued cross-border strikes** and **UNIFIL casualties**, potentially reigniting full-scale invasion and displacing over 1 million Lebanese civilians. **US mediation** under Trump provides a diplomatic lifeline, but **Hezbollah rearmament** south of the Litani River threatens long-term stability. **Regional oil markets** stabilize with Hormuz openness, easing global energy pressures tied to the conflict.",
+      "bluf": "A US-brokered Israel-Hezbollah ceasefire holds tenuously in southern Lebanon under President Joseph Aoun and PM Nawaf Salam, despite ongoing strikes killing UN peacekeepers and journalists, as tens of thousands of displaced Lebanese return home.",
+      "keyDevelopments": [
+        {
+          "date": "2026-04-25",
+          "text": "Indonesian UN peacekeeper became the 6th killed in recent Lebanon hostilities."
+        },
+        {
+          "date": "2026-04-24",
+          "text": "Israel killed 6 Hezbollah fighters in Lebanon despite ceasefires in Gaza and Lebanon."
+        },
+        {
+          "date": "2026-04-23",
+          "text": "Lebanon PM Nawaf Salam and leaders accused Israel of war crimes after IDF airstrike killed journalist Amal Khalil."
+        },
+        {
+          "date": "2026-04-18",
+          "text": "French UNIFIL peacekeeper killed in southern Lebanon attack blamed on Hezbollah by President Macron."
+        },
+        {
+          "date": "2026-04-17",
+          "text": "Iran declared Strait of Hormuz open amid Israel-Lebanon ceasefire, causing Brent crude to plunge 10%."
+        },
+        {
+          "date": "2026-04-21",
+          "text": "Two Israeli soldiers received 30 days military detention for vandalizing Jesus statue in southern Lebanon."
+        }
+      ],
+      "trajectoryDetail": "Lebanon heads toward **ceasefire extension to mid-May 2026**, with **US envoys Abdallah Bou Habib and Meir Ben-Shabbat** leading talks potentially deciding by early May; fragile enforcement persists as Israel monitors **Hezbollah rearmament** south of Litani. Most likely scenario is sustained de-escalation via **Trump's influence**, followed by limited flare-ups from short-range rockets triggering Israeli airstrikes killing 50-100 more by early May.\n\nSecondary risks include **ceasefire collapse** if UNIFIL casualties mount or Iran-linked strikes resume post-April 22 Hormuz dynamics, with President Aoun pushing permanent agreements amid daily Hezbollah probes.",
+      "backgroundTimeline": [
+        {
+          "date": "2026-03-26",
+          "topicId": null,
+          "event": "Israel deployed additional troops into southern Lebanon, expanding ground invasion and displacing over 1 million civilians.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-03",
+          "topicId": null,
+          "event": "Lebanese Christians observed Good Friday processions in southern Lebanon amid Israeli airstrikes and evacuation orders targeting Hezbollah.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-04",
+          "topicId": null,
+          "event": "Israel bombed key bridges in Lebanon and struck Beirut, crippling infrastructure and severing Hezbollah supply lines from Iran and Syria.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-09",
+          "topicId": null,
+          "event": "Israeli Prime Minister Netanyahu issued 'full force' directives amid escalating border tensions with Hezbollah.",
+          "category": "military"
+        },
+        {
+          "date": "2026-04-10",
+          "topicId": null,
+          "event": "Lebanon, Israel, and US officials agreed to meet in Washington for ceasefire talks, marking initial de-escalation efforts.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-14",
+          "topicId": null,
+          "event": "Historic direct negotiations between Lebanon and Israel occurred in the US, advancing ceasefire prospects.",
+          "category": "diplomacy"
+        },
+        {
+          "date": "2026-04-16",
+          "topicId": null,
+          "event": "Trump-brokered ceasefire talks progressed, setting stage for initial truce agreement.",
+          "category": "politics"
+        },
+        {
+          "date": "2026-04-17",
+          "topicId": "Iran declares Strait of Hormuz 'completely open' for commercial ships amid Israel-Lebanon ceasefire causing Brent crude to plunge 10%-0",
+          "event": "Israel-Hezbollah ceasefire took effect, with tens of thousands of Lebanese returning south despite Israeli warnings; Iran opened Strait of Hormuz.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-18",
+          "topicId": "French UNIFIL soldier killed in southern Lebanon attack blamed on Hezbollah by Macron-2",
+          "event": "French UNIFIL peacekeeper killed in southern Lebanon attack blamed on Hezbollah by Macron.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-20",
+          "topicId": "Israeli soldier confirmed vandalizing Jesus statue in Debel Lebanon prompting military investigation and US ambassador demands-0",
+          "event": "Israeli soldier confirmed vandalizing Jesus statue in Debel Lebanon, prompting military investigation.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-21",
+          "topicId": "Two Israeli soldiers receive 30 days military detention for vandalizing Jesus statue in southern Lebanon-1",
+          "event": "Two Israeli soldiers received 30 days military detention for vandalizing Jesus statue in southern Lebanon.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-23",
+          "topicId": "Lebanon PM accuses Israel of war crimes after IDF airstrike kills journalist Amal Khalil-2",
+          "event": "IDF airstrike killed journalist Amal Khalil, prompting PM Nawaf Salam and leaders to accuse Israel of war crimes.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-24",
+          "topicId": "Israel kills 12 Palestinians in Gaza and 6 Hezbollah fighters in Lebanon despite ceasefires-3",
+          "event": "Israel killed 6 Hezbollah fighters in Lebanon despite ongoing ceasefires.",
+          "category": "conflict"
+        },
+        {
+          "date": "2026-04-25",
+          "topicId": "Indonesian UN peacekeeper becomes 6th killed in recent Lebanon hostilities-4",
+          "event": "Indonesian UN peacekeeper became the 6th killed in recent Lebanon hostilities.",
+          "category": "conflict"
+        }
+      ],
+      "riskScore": 68,
+      "groundingSources": []
+    }
+  }
+}

@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-04-26 (Tests: redesign smoke + deep fixture tests; fix entryShortTitles bug)
+
+### Bug fix
+- **WeeklyPage.jsx** — `entryShortTitles` micro-headlines never rendered: code read `item.date` but real schema uses `item.topicId`. Fixed to iterate by insertion order and deduplicate by `shortTitle`.
+
+### Tests
+- **src/test/redesign.test.jsx** (new) — 21 deep render tests for WeeklyPage + CountryListPage using real production fixtures. Tests cover: StatusStrip, EditorialShell 3-col, left/right rail elements, search filter narrowing, sort active state, StoryCard micro-headlines, CountryCard headlines + leaderboard links.
+- **tests/fixtures/** (new) — real data from production API: `archive.json` (7-day archive), `thread_analyses.json`, `country_intelligence.json`. Used as fixture source of truth.
+
 ## 2026-04-26 (Redesign v2: shared atoms + WeeklyPage + CountryListPage)
 
 ### Frontend (DEPLOYED to /docs/ 2026-04-26)

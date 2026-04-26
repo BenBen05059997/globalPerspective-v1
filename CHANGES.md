@@ -9,9 +9,9 @@
 - **newsThreadAnalysis** — Change E: persists `groundingSources` from Brave news + web grounding.
 - **newsSensitiveData-dev** — exposes new actions: `research_briefing` (Change A), `country_history` (Change D, uses QueryCommand, returns up to 90 snapshots descending), `systems_analysis` (Change F, exposes existing `SYSTEMS#{country}` data).
 
-### Frontend (source committed; build NOT yet deployed to /docs/)
-- **PredictionDisplay.jsx** rewritten with dual-path: JSON renderer (scenario cards with probability range badges, horizon, triggers, winners/losers grid) when `contentFormat === 'json'`; legacy markdown renderer preserved for old cached entries.
-- **TraceCauseDisplay.jsx** rewritten with dual-path: JSON renderer (Cause Chain nodes for Proximate/Contributing/Structural with depth label, Impact bars 1-10, Counter Reading tab with bias note + alternative perspective, signal/noise verdict banner) + legacy markdown path.
+### Frontend (DEPLOYED to /docs/ 2026-04-26 after Lambda cycle confirmed)
+- **PredictionDisplay.jsx** — JSON-only renderer (legacy markdown path removed). Scenario cards with probability range badge, horizon, triggers, winners/losers tab. Header renamed "Scenario Forecast". Unparseable content shows "Forecast generation failed — please retry."
+- **TraceCauseDisplay.jsx** — JSON-only renderer (legacy markdown path removed). Cause Chain nodes (Proximate/Contributing/Structural), Impact bars, Counter Reading tab, signal/noise verdict banner. Unparseable content shows "Analysis generation failed — please retry."
 - **Home.jsx + Home.css** — BREAKING urgency pill on topics with `urgency === 'high'`.
 - **ThreadPage.jsx** — BREAKING pill in header kicker; "bg" mono label on secondary sources; "Live Web Evidence" section above timeline when grounding sources exist.
 - **CountryPage.jsx** — Risk score stat now shows numeric `riskScore` with inline SVG sparkline when ≥2 history snapshots; "Live Web Evidence" rail card; new "Causal Graph" rail section showing top 5 systems-analysis edges with mechanism + lagDays + confidence.

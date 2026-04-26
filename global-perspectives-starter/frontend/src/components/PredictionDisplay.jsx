@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import './AIComponents.css';
 
 function tryParseJson(content) {
@@ -77,85 +77,6 @@ function JsonPredictionView({ data }) {
   );
 }
 
-// ── Legacy markdown renderer (unchanged for old cached entries) ──────────────
-
-function LegacyPredictionView({ prediction }) {
-  const [activeTab, setActiveTab] = useState('chain_reaction');
-
-  const parsedContent = useMemo(() => {
-    if (!prediction?.content) return null;
-    const text = prediction.content;
-    const sections = { chain_reaction: [], winners_losers: [], watchlist: [], score: null };
-    let currentSection = 'chain_reaction';
-    text.split('\n').forEach(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return;
-      const lower = trimmed.toLowerCase();
-      if (lower.includes('chain reaction') || lower.includes('consequences')) currentSection = 'chain_reaction';
-      else if (lower.includes('winners') || lower.includes('losers') || lower.includes('benefit')) currentSection = 'winners_losers';
-      else if (lower.includes('watchlist') || lower.includes('signals') || lower.includes('future events')) currentSection = 'watchlist';
-      sections[currentSection].push(trimmed);
-    });
-    return sections;
-  }, [prediction]);
-
-  const renderMarkdown = (lines) => lines.map((line, idx) => {
-    if (line.startsWith('###')) return <h4 key={idx} style={{ margin: '16px 0 8px', color: '#111827', fontSize: '1.05em', fontWeight: 600 }}>{line.replace(/###/g, '').trim()}</h4>;
-    const processBold = (text) => text.split(/(\*\*.*?\*\*)/).map((part, i) =>
-      part.startsWith('**') && part.endsWith('**') ? <strong key={i} style={{ color: '#1f2937' }}>{part.slice(2, -2)}</strong> : part
-    );
-    if (line.startsWith('- ') || line.startsWith('• ')) {
-      return (
-        <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '8px', paddingLeft: '4px' }}>
-          <span style={{ color: 'var(--ai-accent-predict)', fontSize: '1.2em', lineHeight: '1' }}>•</span>
-          <span style={{ lineHeight: '1.6', color: '#4b5563' }}>{processBold(line.substring(2))}</span>
-        </div>
-      );
-    }
-    if (line.includes('➔')) {
-      const steps = line.split('➔').map(s => s.trim()).filter(Boolean);
-      if (steps.length === 1) return <div key={idx} className="chain-step-card"><div className="chain-step-content">{processBold(line)}</div></div>;
-      return (
-        <div key={idx} className="chain-reaction-container">
-          {steps.map((step, stepIdx) => (
-            <React.Fragment key={`step-${idx}-${stepIdx}`}>
-              <div className="chain-step-card">
-                <div className="chain-step-number">{stepIdx + 1}</div>
-                <div className="chain-step-content">{processBold(step)}</div>
-              </div>
-              {stepIdx < steps.length - 1 && <div className="chain-arrow" />}
-            </React.Fragment>
-          ))}
-        </div>
-      );
-    }
-    return <p key={idx} style={{ margin: '0 0 12px', lineHeight: '1.6', color: '#4b5563' }}>{processBold(line)}</p>;
-  });
-
-  if (!parsedContent) return null;
-  return (
-    <>
-      <div className="ai-tabs">
-        {['chain_reaction', 'winners_losers', 'watchlist'].map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`ai-tab ${activeTab === tab ? 'active' : ''}`}>
-            {tab === 'chain_reaction' ? 'Chain Reaction' : tab === 'winners_losers' ? 'Winners & Losers' : 'Watchlist'}
-          </button>
-        ))}
-      </div>
-      <div className="ai-result-content">
-        {renderMarkdown(parsedContent[activeTab])}
-        {parsedContent[activeTab].length === 0 && (
-          <p style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>No prediction data for this section.</p>
-        )}
-        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '12px', color: '#9ca3af' }}>AI Prediction Model v2.5</span>
-          <div className="ai-result-actions" />
-        </div>
-      </div>
-    </>
-  );
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 
 const PredictionDisplay = ({ prediction, isLoading, error, onRetry, onClear, isCollapsed = false, onToggleCollapse, lastActive }) => {
@@ -167,12 +88,7 @@ const PredictionDisplay = ({ prediction, isLoading, error, onRetry, onClear, isC
     }
   }, [isLoading, prediction, error, isCollapsed, lastActive]);
 
-  const jsonData = useMemo(() => {
-    if (!prediction?.content) return null;
-    if (prediction.contentFormat === 'json') return tryParseJson(prediction.content);
-    if (prediction.contentFormat === 'markdown') return null;
-    return tryParseJson(prediction.content);
-  }, [prediction]);
+  const jsonData = useMemo(() => tryParseJson(prediction?.content), [prediction]);
 
   if (isLoading) {
     return (
@@ -207,7 +123,9 @@ const PredictionDisplay = ({ prediction, isLoading, error, onRetry, onClear, isC
         <div style={{ color: '#9ca3af', fontSize: '12px' }}>{isCollapsed ? 'Show' : 'Hide'}</div>
       </div>
       {!isCollapsed && (
-        jsonData ? <JsonPredictionView data={jsonData} /> : <LegacyPredictionView prediction={prediction} />
+        jsonData
+          ? <JsonPredictionView data={jsonData} />
+          : <div className="ai-result-content"><p style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>Forecast generation failed — please retry.</p></div>
       )}
     </div>
   );

@@ -821,12 +821,10 @@ export default function WorldMapV2() {
                 <span className="flag">{selectedISO.slice(0, 2)}</span>
               </div>
 
-              {/* Intel loading skeleton */}
+              {/* Intel loading spinner */}
               {intelLoading && !intel && (
-                <div className="mv2-intel-skeleton">
-                  <div className="sk-line sk-w80" />
-                  <div className="sk-line sk-w60" />
-                  <div className="sk-line sk-w40" />
+                <div className="mv2-panel-loading">
+                  <div className="mv2-spinner" />
                 </div>
               )}
 

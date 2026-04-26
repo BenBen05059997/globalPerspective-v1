@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Layout from './components/Layout';
 import Home from './components/Home';
-import WorldMap from './components/WorldMap';
 import PrivacyTerms from './components/PrivacyTerms';
 import AboutContact from './components/AboutContact';
 import Disclosures from './components/Disclosures';
@@ -94,7 +93,7 @@ export default function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/map" element={<WorldMap />} />
+              <Route path="/map" element={<WorldMapV2 />} />
               <Route path="/privacy" element={<PrivacyTerms />} />
               <Route path="/about" element={<AboutContact />} />
               <Route path="/disclosures" element={<Disclosures />} />
@@ -114,7 +113,6 @@ export default function App() {
               <Route path="/cli" element={<CLIPage />} />
               <Route path="/test/briefing-card" element={<BriefingCardTest />} />
               <Route path="/intelligence-map" element={<IntelligenceMap />} />
-              <Route path="/map-v2" element={<WorldMapV2 />} />
             </Routes>
           </Layout>
         </BrowserRouter>

@@ -284,7 +284,7 @@
 .mv2-panel {
   border-left: 1px solid var(--line); background: var(--paper);
   display: flex; flex-direction: column; min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   min-width: 0;
   transition: padding 220ms ease;
 }
@@ -429,6 +429,17 @@
 .mv2-preview-banner a {
   color: #6b5500; text-decoration: underline; font-weight: 600;
   margin-left: auto;
+}
+
+/* ---------- Urgency halo (pulsing ring for high-urgency 24h topics) ---------- */
+@keyframes pulse-halo {
+  0%   { r: 12; opacity: 0.7; }
+  70%  { r: 20; opacity: 0.1; }
+  100% { r: 12; opacity: 0.7; }
+}
+.mv2-map svg.map-svg circle.urgency-halo {
+  animation: pulse-halo 2.2s ease-out infinite;
+  pointer-events: none;
 }
 
 /* ---------- Responsive ---------- */

@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-04-26 (WorldMapV2 — data gap closure, promoted to /map)
+
+### Frontend (DEPLOYED to /docs/ 2026-04-26)
+- **WorldMapV2.jsx** — removed all mock constants (COUNTRY_DATA, COORDS, FLOWS, DETAIL, DEFAULT_DETAIL). Country coverage now dynamic from TopoJSON world-atlas (~177 countries). Dynamic `nameToISO` / `isoToName` / `isoToCenter` maps built after TopoJSON load so `useCountrySignal` binds any country in the archive. Comprehensive `NUM_TO_A3` table covers all UN M.49 numeric codes.
+- **WorldMapV2.jsx** — wired 4 backend hooks for selected country: `useCountryIntelligence` (riskScore, headline, trajectory, riskSignals, groundingSources), `useCountryHistory` (sparkline), `useSystemsAnalysis` (causal graph top 3 edges), `useMarketsCountry` (GDP/CPI/unemployment/debt snapshot).
+- **WorldMapV2.jsx** — right panel updated: risk level pill in header, risk score stat + sparkline, intel headline + trajectory, risk signals list, causal graph cards, markets snapshot grid, web evidence cards. Panel now scrolls.
+- **WorldMapV2.jsx** — urgency halo: pulsing SVG ring on map for any country with `urgency: high` topic in last 24h (`primaryCountry` or regions[0]). CSS `@keyframes pulse-halo` added.
+- **WorldMapV2.jsx** — flows lens shows empty state when no pair analyses instead of mock arcs. Editorial lens shows empty state when signal data loading.
+- **WorldMapV2.jsx** — preview banner removed.
+- **App.jsx** — `/map` route now uses `WorldMapV2`; old `WorldMap` import removed; `/map-v2` preview route removed.
+- **WorldMapV2.css** — panel changed from `overflow: hidden` to `overflow-y: auto`; urgency halo keyframe animation added.
+
 ## 2026-04-26 (Redesign v2 — Backend data layer, Changes A–F)
 
 ### Backend Lambdas (deployed via aws lambda update-function-code)

@@ -828,6 +828,11 @@ export default function WorldMapV2() {
                 </div>
               )}
 
+              {/* No-intel hint */}
+              {!intelLoading && !intel && (
+                <div className="mv2-no-intel">NO AI BRIEFING YET — NEEDS MORE COVERAGE</div>
+              )}
+
               {/* Stat strip */}
               {(() => {
                 const s = signal[selectedISO];

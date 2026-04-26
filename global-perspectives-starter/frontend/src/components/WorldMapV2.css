@@ -528,3 +528,13 @@
   justify-content: center;
   padding: 20px 0;
 }
+
+/* ── No-intel hint ────────────────────────────────────────── */
+.mv2-no-intel {
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint, #9a9a9e);
+  text-transform: uppercase;
+  padding: 6px 0 10px;
+}

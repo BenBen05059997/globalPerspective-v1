@@ -29,7 +29,7 @@ const COUNTRY_SK = 'COUNTRY_INTELLIGENCE';
 const THREAD_PK_PREFIX = 'THREAD#';
 const THREAD_SK = 'THREAD_ANALYSIS';
 const COUNTRY_TTL_DAYS = 90;
-const MAX_COUNTRIES = 10;
+const MAX_COUNTRIES = 20;
 const ARCHIVE_DAYS = 30;
 
 const ddbClient = new DynamoDBClient({ region: REGION });

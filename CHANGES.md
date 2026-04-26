@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-04-26 (Data gap fix: expand country intelligence to top 20 + map empty state)
+
+### Backend
+- **newsCountryIntelligence** — bumped `MAX_COUNTRIES` from 10 → 20; redeployed Lambda + triggered backfill run to generate AI briefings for up to 20 most-covered countries.
+
+### Frontend (DEPLOYED to /docs/ 2026-04-26)
+- **WorldMapV2.jsx** — added "NO AI BRIEFING YET — NEEDS MORE COVERAGE" mono hint in panel when selected country has no intelligence record (not loading, not found). Replaces silent "—/100" gap.
+- **WorldMapV2.css** — added `.mv2-no-intel` style for the hint.
+
 ## 2026-04-26 (Tests: redesign smoke + deep fixture tests; fix entryShortTitles bug)
 
 ### Bug fix

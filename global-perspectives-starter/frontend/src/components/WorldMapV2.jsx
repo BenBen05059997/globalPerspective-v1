@@ -860,11 +860,11 @@ export default function WorldMapV2() {
                   </h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                     {[
-                      ['GDP', markets.macro.gdp != null ? `$${(markets.macro.gdp / 1e12).toFixed(1)}T` : null],
-                      ['CPI YoY', markets.macro.cpi_yoy != null ? `${markets.macro.cpi_yoy.toFixed(1)}%` : null],
-                      ['Unemployment', markets.macro.unemployment != null ? `${markets.macro.unemployment.toFixed(1)}%` : null],
-                      ['Debt/GDP', markets.macro.debt_to_gdp != null ? `${markets.macro.debt_to_gdp.toFixed(0)}%` : null],
-                    ].filter(([, v]) => v).map(([label, val]) => (
+                      ['GDP', markets.macro.gdp != null ? `$${(+markets.macro.gdp / 1e12).toFixed(1)}T` : null],
+                      ['CPI YoY', markets.macro.cpi_yoy != null ? `${(+markets.macro.cpi_yoy).toFixed(1)}%` : null],
+                      ['Unemployment', markets.macro.unemployment != null ? `${(+markets.macro.unemployment).toFixed(1)}%` : null],
+                      ['Debt/GDP', markets.macro.debt_to_gdp != null ? `${(+markets.macro.debt_to_gdp).toFixed(0)}%` : null],
+                    ].filter(([, v]) => v && !isNaN(parseFloat(v))).map(([label, val]) => (
                       <div key={label} style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 6, padding: '6px 10px' }}>
                         <div style={{ fontSize: 9, fontFamily: 'var(--mono)', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink-dim)', marginBottom: 2 }}>{label}</div>
                         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{val}</div>

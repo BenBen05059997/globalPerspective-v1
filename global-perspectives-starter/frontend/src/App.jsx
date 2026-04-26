@@ -1,6 +1,7 @@
 // global-perspectives-starter/frontend/src/App.jsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
+import './components/atoms/atoms.css';
 import Layout from './components/Layout';
 import Home from './components/Home';
 import PrivacyTerms from './components/PrivacyTerms';

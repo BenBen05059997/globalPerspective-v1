@@ -1,5 +1,23 @@
 # Global Perspectives — Change Log
 
+## 2026-04-26 (Redesign v2: shared atoms + WeeklyPage + CountryListPage)
+
+### Frontend (DEPLOYED to /docs/ 2026-04-26)
+
+- **src/components/atoms/** — New atom library for v2 editorial design system:
+  - `Sparkline.jsx` — inline SVG mini-chart + `RiskSparkline` convenience wrapper
+  - `StatusStrip.jsx` — 34px mono "LIVE · N arcs · updated Xm ago" top bar
+  - `RiskDeltaPill.jsx` — 24h riskScore delta pill (↗ +5 / ↘ -3), reads `dateKey` or `date`
+  - `MacroChip.jsx` — compact GDP $24T · CPI 3.1% inline chip from markets data
+  - `RiskScoreBadge.jsx` — 0-100 numeric or enum level badge with risk-color coding
+  - `EditorialShell.jsx` — 3-col grid shell (240px left / 1fr center / 320px right), responsive
+  - `atoms.css` — all atom styles in one import
+- **App.jsx** — imports `atoms.css` once at root
+- **WeeklyPage.jsx** — 3-col EditorialShell layout: filters + period/sort/region in left rail, compact FeaturedSection ("Rising This Week") in right rail. StoryCard now surfaces `entryShortTitles` as bullet micro-headlines (prefer over summary hook when analysis available). StatusStrip at top.
+- **WeeklyPage.css** — Added v2 rail + compact featured + micro-headline styles
+- **CountryListPage.jsx** — Full redesign: EditorialShell 3-col (search/sort/region left rail, highest-risk + most-covered leaderboard right rail, card grid center). CountryCard uses RiskScoreBadge + trajectory arrow + headline + riskSignals[0].
+- **CountryListPage.css** — New stylesheet for redesigned CountryListPage
+
 ## 2026-04-26 (WorldMapV2 — map polish: hierarchy, layout, leaderboard)
 
 ### Frontend (DEPLOYED to /docs/ 2026-04-26, commits cb2683f → 1d2d4ff)

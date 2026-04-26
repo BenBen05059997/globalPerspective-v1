@@ -2650,3 +2650,138 @@
 .thread-page-back:hover {
   background: var(--bg-tertiary, #e8e8e8);
 }
+
+/* ===== WEEKLY PAGE v2 — EditorialShell layout ===== */
+
+.wp-shell { min-height: calc(100vh - 90px); }
+
+/* ── Left Rail ──────────────────────────────────── */
+.wp-rail-left { display: flex; flex-direction: column; gap: 20px; }
+
+.wp-rail-section { display: flex; flex-direction: column; gap: 6px; }
+
+.wp-rail-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.wp-rail-label--top { margin-bottom: 4px; }
+
+.wp-search {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  outline: none;
+}
+.wp-search:focus { border-color: var(--accent); }
+
+.wp-sort-group { display: flex; flex-direction: column; gap: 2px; }
+
+.wp-sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  color: var(--ink-mid);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, border-color 0.12s;
+}
+.wp-sort-btn:hover { background: var(--paper-2); }
+.wp-sort-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  font-weight: 600;
+}
+
+.wp-region-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+/* ── Right Rail ─────────────────────────────────── */
+.wp-rail-right { display: flex; flex-direction: column; gap: 12px; }
+
+/* Compact Featured Section for right rail */
+.fs-compact { display: flex; flex-direction: column; gap: 4px; }
+
+.fs-compact-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 8px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: background 0.1s;
+}
+.fs-compact-row:hover { background: var(--paper-2); }
+
+.fs-compact-cat {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  align-self: flex-start;
+}
+
+.fs-compact-title {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fs-compact-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+/* ── Story Card: micro-headlines ────────────────── */
+.story-card-micro {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.story-card-micro li {
+  font-size: var(--text-xs);
+  color: var(--ink-dim);
+  line-height: 1.35;
+  padding-left: 10px;
+  position: relative;
+}
+
+.story-card-micro li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}

@@ -1,36 +1,182 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '../hooks/useCountryIntelligence';
 import { getTopicRegion } from '../utils/countryMapping';
 import { RISK_COLORS, CATEGORY_BADGE_COLORS } from './WeeklyPage';
 import CountryOverviewMap from './CountryOverviewMap';
-import SideNav from './SideNav';
+import EditorialShell from './atoms/EditorialShell';
+import StatusStrip from './atoms/StatusStrip';
+import RiskScoreBadge from './atoms/RiskScoreBadge';
 import './WeeklyPage.css';
+import './CountryListPage.css';
 
 const RISK_ORDER = { high: 0, elevated: 1, moderate: 2, low: 3 };
 
-function formatTimeAgo(isoString) {
-  const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+function timeAgo(isoString) {
+  if (!isoString) return null;
+  const m = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
-const TREND_ICONS = {
-  escalating: { arrow: '↗', label: 'Escalating', color: '#ef4444' },
-  stable: { arrow: '→', label: 'Stable', color: '#6b7280' },
-  'de-escalating': { arrow: '↘', label: 'De-escalating', color: '#10b981' },
-};
+function trajectoryArrow(text = '') {
+  const t = text.toLowerCase();
+  if (/escalat|intensif|worsen|heighten|spike|surge/.test(t)) return { arrow: '↗', cls: 'traj-up' };
+  if (/de-escalat|improv|eas|calm|stabili|wind down/.test(t)) return { arrow: '↘', cls: 'traj-dn' };
+  return { arrow: '→', cls: 'traj-flat' };
+}
 
+// ─── Country Card ─────────────────────────────────────────────────────────────
+
+function CountryCard({ country, intel }) {
+  const traj = trajectoryArrow(intel?.trajectory);
+  const catColors = CATEGORY_BADGE_COLORS[country.topCategories?.[0]];
+
+  return (
+    <Link to={`/weekly/country/${encodeURIComponent(country.name)}`} className="clp-card">
+      <div className="clp-card-head">
+        <span className="clp-card-name">{country.name}</span>
+        <RiskScoreBadge level={intel?.riskLevel} size="sm" />
+        <span className={`clp-card-traj ${traj.cls}`}>{traj.arrow}</span>
+      </div>
+
+      {intel?.headline && (
+        <div className="clp-card-headline">{intel.headline}</div>
+      )}
+
+      <div className="clp-card-foot">
+        {catColors && (
+          <span className="clp-cat-badge" style={{ background: catColors.bg, color: catColors.color }}>
+            {country.topCategories[0]}
+          </span>
+        )}
+        <span className="clp-card-meta">
+          {country.articles} art · {country.arcCount} {country.arcCount !== 1 ? 'arcs' : 'arc'}
+        </span>
+        {intel?.riskSignals?.[0] && (
+          <span className="clp-card-signal" title={intel.riskSignals[0]}>
+            ⚑ {intel.riskSignals[0].length > 60 ? intel.riskSignals[0].slice(0, 57) + '…' : intel.riskSignals[0]}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+// ─── Left Rail ────────────────────────────────────────────────────────────────
+
+function LeftRail({ sortBy, onSort, searchQuery, onSearch, activeRegion, onRegion, regionCounts }) {
+  return (
+    <div className="clp-rail-left">
+      <div className="clp-rail-section">
+        <div className="clp-rail-label">Search</div>
+        <input
+          className="clp-search"
+          type="text"
+          placeholder="Filter countries…"
+          value={searchQuery}
+          onChange={e => onSearch(e.target.value)}
+        />
+      </div>
+
+      <div className="clp-rail-section">
+        <div className="clp-rail-label">Sort</div>
+        <div className="clp-sort-group">
+          {[['risk', 'Risk level'], ['articles', 'Coverage'], ['alpha', 'A → Z']].map(([v, label]) => (
+            <button
+              key={v}
+              className={`clp-sort-btn ${sortBy === v ? 'active' : ''}`}
+              onClick={() => onSort(v)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {regionCounts.length > 1 && (
+        <div className="clp-rail-section">
+          <div className="clp-rail-label">Region</div>
+          <div className="clp-region-group">
+            <button
+              className={`clp-region-btn ${!activeRegion ? 'active' : ''}`}
+              onClick={() => onRegion(null)}
+            >
+              All
+            </button>
+            {regionCounts.map(([r, n]) => (
+              <button
+                key={r}
+                className={`clp-region-btn ${activeRegion === r ? 'active' : ''}`}
+                onClick={() => onRegion(activeRegion === r ? null : r)}
+              >
+                {r} <span className="clp-region-count">{n}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Right Rail: Top-risk leaderboard ─────────────────────────────────────────
+
+function RightRail({ featured, intelligence }) {
+  const topRisk = useMemo(() =>
+    [...featured]
+      .sort((a, b) => {
+        const ra = RISK_ORDER[intelligence?.[a.name]?.riskLevel] ?? 3;
+        const rb = RISK_ORDER[intelligence?.[b.name]?.riskLevel] ?? 3;
+        return ra !== rb ? ra - rb : b.articles - a.articles;
+      })
+      .slice(0, 5),
+  [featured, intelligence]);
+
+  return (
+    <div className="clp-rail-right">
+      <div className="clp-rail-label clp-rail-label--top">Highest Risk</div>
+      <div className="clp-leaderboard">
+        {topRisk.map((c, i) => {
+          const intel = intelligence?.[c.name];
+          const traj = trajectoryArrow(intel?.trajectory);
+          return (
+            <Link key={c.name} to={`/weekly/country/${encodeURIComponent(c.name)}`} className="clp-lb-row">
+              <span className="clp-lb-rank">{i + 1}</span>
+              <span className="clp-lb-name">{c.name}</span>
+              <span className={`clp-lb-traj ${traj.cls}`}>{traj.arrow}</span>
+              <RiskScoreBadge level={intel?.riskLevel} size="sm" />
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="clp-rail-divider" />
+
+      <div className="clp-rail-label">Most Covered</div>
+      <div className="clp-leaderboard">
+        {featured.slice(0, 5).map((c, i) => (
+          <Link key={c.name} to={`/weekly/country/${encodeURIComponent(c.name)}`} className="clp-lb-row">
+            <span className="clp-lb-rank">{i + 1}</span>
+            <span className="clp-lb-name">{c.name}</span>
+            <span className="clp-lb-count">{c.articles}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function CountryListPage() {
-  const { loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { dayMap, sortedDates, loading, error } = useWeeklyArchive();
+  const { dayMap, sortedDates, loading } = useWeeklyArchive();
+
   const handleCountryClick = useCallback((name) => {
     navigate(`/weekly/country/${encodeURIComponent(name)}`);
   }, [navigate]);
@@ -66,6 +212,7 @@ export default function CountryListPage() {
 
   const countryNames = useMemo(() => countries.slice(0, 10).map(c => c.name), [countries]);
   const { intelligence } = useCountryIntelligence(countryNames);
+
   const [activeRegion, setActiveRegion] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('risk');
@@ -101,17 +248,19 @@ export default function CountryListPage() {
 
   useEffect(() => { document.title = 'Country Intelligence — Global Perspectives'; }, []);
 
-  if (authLoading) return <div className="weekly-loading">Loading…</div>;
-
   if (loading) return <div className="weekly-loading">Loading country data…</div>;
 
   const q = searchQuery.trim().toLowerCase();
+
   let filteredFeatured = activeRegion
     ? featured.filter(c => (c.region || 'World') === activeRegion)
     : featured;
-  if (q) filteredFeatured = filteredFeatured.filter(c => c.name.toLowerCase().includes(q) || (intelligence?.[c.name]?.headline || '').toLowerCase().includes(q));
-
-  // Sort
+  if (q) {
+    filteredFeatured = filteredFeatured.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      (intelligence?.[c.name]?.headline || '').toLowerCase().includes(q)
+    );
+  }
   if (sortBy === 'alpha') {
     filteredFeatured = [...filteredFeatured].sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortBy === 'articles') {
@@ -121,153 +270,88 @@ export default function CountryListPage() {
   let filteredOthers = others;
   if (q) filteredOthers = filteredOthers.filter(c => c.name.toLowerCase().includes(q));
 
-  // Derive trend from trajectory text
-  function getTrend(intel) {
-    const text = (intel?.trajectory || '').toLowerCase();
-    if (/escalat|intensif|worsen|heighten|spike|surge/.test(text)) return TREND_ICONS.escalating;
-    if (/de-escalat|improv|eas|calm|stabili|wind down/.test(text)) return TREND_ICONS['de-escalating'];
-    return TREND_ICONS.stable;
-  }
+  const strip = (
+    <StatusStrip
+      label="LIVE"
+      stats={[
+        { value: featured.length, unit: 'briefings' },
+        { value: countries.length, unit: 'countries' },
+      ]}
+      updatedAt={latestGeneratedAt}
+    />
+  );
+
+  const left = (
+    <LeftRail
+      sortBy={sortBy}
+      onSort={setSortBy}
+      searchQuery={searchQuery}
+      onSearch={setSearchQuery}
+      activeRegion={activeRegion}
+      onRegion={setActiveRegion}
+      regionCounts={regionCounts}
+    />
+  );
+
+  const right = (
+    <RightRail featured={featured} intelligence={intelligence} />
+  );
 
   return (
-    <div className="thread-page">
-      <div className="thread-page-body">
-        <div className="page-with-sidenav">
-        <div className="page-main-content">
-        <h1 id="cl-section-overview" className="thread-page-title">Country Intelligence</h1>
-        <p className="country-list-subtitle">
-          AI situation briefings for the most-covered countries. Tap a country on the map or below for its full assessment.
-          {latestGeneratedAt && (
-            <span className="cl-updated"> · Updated {formatTimeAgo(latestGeneratedAt)}</span>
-          )}
-        </p>
-
-        <div className="cl-controls">
-          <input
-            type="text"
-            className="cl-search"
-            placeholder="Search countries…"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-          <select className="cl-sort" value={sortBy} onChange={e => setSortBy(e.target.value)}>
-            <option value="risk">Sort: Risk level</option>
-            <option value="articles">Sort: Most covered</option>
-            <option value="alpha">Sort: A → Z</option>
-          </select>
-        </div>
-
-        <div id="cl-section-map" className="cl-map-hint">Dot size = coverage volume · Color = risk level · Click any country for its full briefing</div>
-        <div className="cl-map-hero">
-          <CountryOverviewMap
-            countries={countries.map(c => ({
-              name: c.name,
-              articles: c.articles,
-              riskLevel: intelligence?.[c.name]?.riskLevel || null,
-              headline: intelligence?.[c.name]?.headline || null,
-            }))}
-            onCountryClick={handleCountryClick}
-          />
-        </div>
-
-        {/* Legend */}
-        <div className="cl-legend">
-          <span className="cl-legend-item"><span className="cl-legend-dot" style={{ background: '#ef4444' }} /> High</span>
-          <span className="cl-legend-item"><span className="cl-legend-dot" style={{ background: '#f97316' }} /> Elevated</span>
-          <span className="cl-legend-item"><span className="cl-legend-dot" style={{ background: '#eab308' }} /> Moderate</span>
-          <span className="cl-legend-item"><span className="cl-legend-dot" style={{ background: '#22c55e' }} /> Low</span>
-          <span className="cl-legend-sep" />
-          <span className="cl-legend-item">↗ Escalating</span>
-          <span className="cl-legend-item">→ Stable</span>
-          <span className="cl-legend-item">↘ De-escalating</span>
-        </div>
-
-        {/* Region filter pills */}
-        {regionCounts.length > 1 && (
-          <div className="cl-filters">
-            <button className={`cl-filter-pill ${!activeRegion ? 'active' : ''}`} onClick={() => setActiveRegion(null)}>
-              All ({featured.length})
-            </button>
-            {regionCounts.map(([region, count]) => (
-              <button
-                key={region}
-                className={`cl-filter-pill ${activeRegion === region ? 'active' : ''}`}
-                onClick={() => setActiveRegion(activeRegion === region ? null : region)}
-              >
-                {region} ({count})
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Featured cards — countries with AI intelligence */}
-        {filteredFeatured.length > 0 && (
-          <div id="cl-section-briefings" className="cl-section-header">
-            <span className="cl-section-title">AI Briefings</span>
-            <span className="cl-section-hint">Countries with enough coverage for full AI analysis — click for details</span>
-          </div>
-        )}
-        {filteredFeatured.length > 0 && (
-          <div className="cl-featured">
-            {filteredFeatured.map(c => {
-              const intel = intelligence[c.name];
-              const risk = RISK_COLORS[intel.riskLevel] || RISK_COLORS.moderate;
-              const trend = getTrend(intel);
-              return (
-                <Link key={c.name} to={`/weekly/country/${encodeURIComponent(c.name)}`} className="cl-featured-card" style={{ borderLeftColor: risk.color }}>
-                  <div className="cl-featured-top">
-                    <span className="cl-featured-name">{c.name}</span>
-                    <span className="cl-risk-dot" style={{ color: risk.color }}>● {intel.riskLevel || 'moderate'}</span>
-                    <span className="cl-trend" style={{ color: trend.color }}>{trend.arrow} {trend.label}</span>
-                  </div>
-                  {intel.headline && (
-                    <div className="cl-featured-headline">{intel.headline}</div>
-                  )}
-                  <div className="cl-featured-bottom">
-                    <div className="cl-featured-tags">
-                      {c.topCategories.map(cat => {
-                        const cc = CATEGORY_BADGE_COLORS[cat];
-                        return (
-                          <span key={cat} className="story-category-badge" style={cc ? { background: cc.bg, color: cc.color, fontSize: 10, padding: '1px 7px' } : {}}>
-                            {cat}
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <span className="cl-featured-meta">
-                      {c.articles} articles · {c.arcCount} {c.arcCount !== 1 ? 'stories' : 'story'}
-                    </span>
-                    <span className="cl-featured-cta">View briefing →</span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Other countries — compact pills */}
-        {filteredOthers.length > 0 && (
-          <div id="cl-section-others" className="cl-others">
-            <div className="cl-others-label">Other countries in the news ({filteredOthers.length}) — not enough coverage yet for AI briefing</div>
-            <div className="cl-others-grid">
-              {filteredOthers.map(c => (
-                <Link key={c.name} to={`/weekly/country/${encodeURIComponent(c.name)}`} className="cl-others-item">
-                  <span className="cl-others-name">{c.name}</span>
-                  <span className="cl-others-count">{c.articles}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-        </div>
-        <SideNav sections={[
-          { id: 'cl-section-overview', label: 'Overview' },
-          { id: 'cl-section-map', label: 'Map' },
-          ...(filteredFeatured.length > 0 ? [{ id: 'cl-section-briefings', label: 'AI Briefings', count: filteredFeatured.length }] : []),
-          ...(filteredOthers.length > 0 ? [{ id: 'cl-section-others', label: 'Others', count: filteredOthers.length }] : []),
-        ]} />
+    <EditorialShell strip={strip} left={left} right={right} className="clp-shell">
+      {/* Map */}
+      <div className="clp-map-wrap">
+        <CountryOverviewMap
+          countries={countries.map(c => ({
+            name: c.name,
+            articles: c.articles,
+            riskLevel: intelligence?.[c.name]?.riskLevel || null,
+            headline: intelligence?.[c.name]?.headline || null,
+          }))}
+          onCountryClick={handleCountryClick}
+        />
+        <div className="clp-map-legend">
+          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--risk-h)' }} /> High</span>
+          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--risk-e)' }} /> Elevated</span>
+          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--risk-l)' }} /> Low</span>
         </div>
       </div>
-    </div>
+
+      {/* AI Briefings grid */}
+      {filteredFeatured.length > 0 && (
+        <>
+          <div className="clp-section-header">
+            <span className="clp-section-title">AI Briefings</span>
+            <span className="clp-section-hint">{filteredFeatured.length} countries</span>
+          </div>
+          <div className="clp-cards">
+            {filteredFeatured.map(c => (
+              <CountryCard
+                key={c.name}
+                country={c}
+                intel={intelligence?.[c.name]}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Others */}
+      {filteredOthers.length > 0 && (
+        <div className="clp-others">
+          <div className="clp-others-label">
+            Other countries in the news ({filteredOthers.length}) — not enough coverage for AI briefing
+          </div>
+          <div className="clp-others-grid">
+            {filteredOthers.map(c => (
+              <Link key={c.name} to={`/weekly/country/${encodeURIComponent(c.name)}`} className="clp-others-item">
+                <span className="clp-others-name">{c.name}</span>
+                <span className="clp-others-count">{c.articles}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </EditorialShell>
   );
 }

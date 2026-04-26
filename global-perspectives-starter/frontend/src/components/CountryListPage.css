@@ -1,0 +1,321 @@
+/* CountryListPage — editorial 3-col redesign (v2) */
+
+/* Shell override — no extra padding needed from Layout */
+.clp-shell { min-height: calc(100vh - 90px); }
+
+/* ── Left Rail ────────────────────────────────────────────── */
+.clp-rail-left { display: flex; flex-direction: column; gap: 20px; }
+
+.clp-rail-section { display: flex; flex-direction: column; gap: 6px; }
+
+.clp-rail-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.clp-rail-label--top { margin-bottom: 2px; }
+
+.clp-search {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  outline: none;
+}
+.clp-search:focus { border-color: var(--accent); }
+
+.clp-sort-group,
+.clp-region-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clp-sort-btn,
+.clp-region-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  color: var(--ink-mid);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, border-color 0.12s;
+}
+.clp-sort-btn:hover,
+.clp-region-btn:hover {
+  background: var(--paper-2);
+}
+.clp-sort-btn.active,
+.clp-region-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  font-weight: 600;
+}
+
+.clp-region-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+/* ── Right Rail ───────────────────────────────────────────── */
+.clp-rail-right { display: flex; flex-direction: column; gap: 8px; }
+
+.clp-rail-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 12px 0 8px;
+}
+
+.clp-leaderboard { display: flex; flex-direction: column; gap: 2px; }
+
+.clp-lb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: background 0.1s;
+}
+.clp-lb-row:hover { background: var(--paper-2); }
+
+.clp-lb-rank {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  width: 12px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.clp-lb-name {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clp-lb-traj {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.clp-lb-traj.traj-up   { color: var(--risk-h); }
+.clp-lb-traj.traj-dn   { color: var(--risk-l); }
+.clp-lb-traj.traj-flat { color: var(--ink-faint); }
+
+.clp-lb-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+/* ── Center: Map ──────────────────────────────────────────── */
+.clp-map-wrap {
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+
+.clp-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 14px;
+  background: var(--paper-2);
+  border-top: 1px solid var(--line);
+}
+
+.clp-leg {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+}
+
+.clp-leg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Center: Section Header ───────────────────────────────── */
+.clp-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.clp-section-title {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.clp-section-hint {
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+}
+
+/* ── Country Cards grid ───────────────────────────────────── */
+.clp-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.clp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  text-decoration: none;
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.clp-card:hover {
+  border-color: var(--line-2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.clp-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clp-card-name {
+  flex: 1;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.clp-card-traj {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.clp-card-traj.traj-up   { color: var(--risk-h); }
+.clp-card-traj.traj-dn   { color: var(--risk-l); }
+.clp-card-traj.traj-flat { color: var(--ink-faint); }
+
+.clp-card-headline {
+  font-size: var(--text-sm);
+  color: var(--ink-mid);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.clp-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.clp-cat-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.clp-card-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.clp-card-signal {
+  font-size: var(--text-xs);
+  color: var(--ink-dim);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Others grid ──────────────────────────────────────────── */
+.clp-others {
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.clp-others-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  margin-bottom: 10px;
+}
+
+.clp-others-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.clp-others-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  font-size: var(--text-sm);
+  text-decoration: none;
+  color: var(--ink-mid);
+  background: var(--paper);
+  transition: border-color 0.12s, background 0.12s;
+}
+.clp-others-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+.clp-others-name { font-weight: 500; }
+.clp-others-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+}

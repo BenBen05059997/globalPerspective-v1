@@ -7,9 +7,10 @@ import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { getTopicRegion } from '../utils/countryMapping';
 import { formatDateLabel } from '../utils/dateUtils';
 import TrendBadge, { getTrend } from './TrendBadge';
-import SideNav from './SideNav';
 import TrialBanner from './TrialBanner';
 import { useUserProfile } from '../hooks/useUserProfile';
+import EditorialShell from './atoms/EditorialShell';
+import StatusStrip from './atoms/StatusStrip';
 import './WeeklyPage.css';
 import './AIComponents.css';
 
@@ -178,7 +179,7 @@ function ArcIntro({ onDismiss }) {
 
 // ─── Featured Section (Rising arcs) ──────────────────────────────────────────
 
-function FeaturedSection({ threads }) {
+function FeaturedSection({ threads, threadAnalyses, compact = false }) {
   const featured = useMemo(() => threads
     .filter(t => (t.trend === 'rising' || t.trend === 'new') && t.articleCount >= 2)
     .sort((a, b) => {
@@ -186,10 +187,33 @@ function FeaturedSection({ threads }) {
       if (b.trend === 'rising' && a.trend !== 'rising') return 1;
       return b.articleCount - a.articleCount;
     })
-    .slice(0, 3),
-  [threads]);
+    .slice(0, compact ? 5 : 3),
+  [threads, compact]);
 
   if (featured.length === 0) return null;
+
+  if (compact) {
+    return (
+      <div className="fs-compact">
+        <div className="wp-rail-label wp-rail-label--top">Rising This Week</div>
+        {featured.map(thread => {
+          const fCategory = thread.entries[0]?.category?.toLowerCase();
+          const fCatColors = CATEGORY_BADGE_COLORS[fCategory];
+          return (
+            <Link key={thread.threadId} to={`/weekly/thread/${thread.threadId}`} className="fs-compact-row">
+              {fCatColors && (
+                <span className="fs-compact-cat" style={{ background: fCatColors.bg, color: fCatColors.color }}>
+                  {fCategory}
+                </span>
+              )}
+              <span className="fs-compact-title">{threadAnalyses?.[thread.threadId]?.threadTitle || thread.latestTitle}</span>
+              <span className="fs-compact-meta">{thread.articleCount}a · {thread.dayCount}d</span>
+            </Link>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className="featured-section">
@@ -251,11 +275,28 @@ function StoryCard({ thread, analysis }) {
   const catColors = CATEGORY_BADGE_COLORS[category];
   const activity = getActivityStatus(thread.dateRange.to);
   const watchCount = analysis?.watchQuestions?.length || 0;
+
+  // Prefer storyArc first sentence, fall back to summary first sentence
   const hook = (() => {
-    const s = thread.entries[0]?.ai?.summary;
-    if (!s) return null;
-    const sentence = s.split(/(?<=[.!?])\s/)[0] || s;
-    return sentence.length > 140 ? sentence.slice(0, 137) + '…' : sentence;
+    const arc = analysis?.storyArc;
+    const src = arc || thread.entries[0]?.ai?.summary;
+    if (!src) return null;
+    const sentence = src.split(/(?<=[.!?])\s/)[0] || src;
+    return sentence.length > 160 ? sentence.slice(0, 157) + '…' : sentence;
+  })();
+
+  // entryShortTitles: up to 3 micro-headlines from analysis
+  const microHeadlines = (() => {
+    if (!Array.isArray(analysis?.entryShortTitles)) return [];
+    const byDate = {};
+    for (const item of analysis.entryShortTitles) {
+      const d = item.date || item.dateKey;
+      if (d && item.shortTitle) byDate[d] = item.shortTitle;
+    }
+    return Object.entries(byDate)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, 3)
+      .map(([, t]) => t);
   })();
 
   return (
@@ -287,7 +328,12 @@ function StoryCard({ thread, analysis }) {
             )}
           </div>
           {isMulti && <ArcDots entries={thread.entries} />}
-          {hook && <div className="story-card-hook">{hook}</div>}
+          {microHeadlines.length > 0 && (
+            <ul className="story-card-micro">
+              {microHeadlines.map((h, i) => <li key={i}>{h}</li>)}
+            </ul>
+          )}
+          {hook && !microHeadlines.length && <div className="story-card-hook">{hook}</div>}
           {watchCount > 0 && (
             <div className="story-card-watch-hint">
               {watchCount} question{watchCount !== 1 ? 's' : ''} to watch
@@ -581,143 +627,198 @@ export default function WeeklyPage() {
 
   const totalArticles = threads.reduce((sum, t) => sum + t.articleCount, 0) + standalone.length;
 
-  return (
-    <div className={`weekly-page ${viewMode === 'map' ? 'map-mode' : ''}`}>
-      <div className="weekly-header">
-        <div className="weekly-header-left">
-          <h1>Story Intelligence</h1>
-          {!loading && sortedDates.length > 0 && (
-            <div className="weekly-subtitle">
-              {sortedDates.length}-day archive · {totalArticles} articles · {threads.length} arc{threads.length !== 1 ? 's' : ''} tracked
-            </div>
-          )}
-        </div>
-        <div className="weekly-header-right">
-          {!loading && threads.length > 0 && (
-            <>
-              <div className="weekly-view-toggle">
-                <button className={`weekly-toggle-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}>List</button>
-                <button className={`weekly-toggle-btn ${viewMode === 'map' ? 'active' : ''}`} onClick={() => setViewMode('map')}>Map</button>
-              </div>
-            </>
-          )}
+  const latestDate = allDates[0];
+
+  if (viewMode === 'map') {
+    return (
+      <Suspense fallback={<div className="weekly-loading">Loading map…</div>}>
+        <WeeklyMap embedded />
+      </Suspense>
+    );
+  }
+
+  if (loading) return <IntelligenceLoader type="typewriter" />;
+
+  if (threads.length === 0 && standalone.length === 0) {
+    return (
+      <div className="weekly-empty-state">
+        <h3>No archive data yet</h3>
+        <p>Data is accumulating. Check back in a few hours as the pipeline runs.</p>
+      </div>
+    );
+  }
+
+  const strip = (
+    <StatusStrip
+      label="LIVE"
+      stats={[
+        { value: threads.length, unit: 'arcs' },
+        { value: totalArticles, unit: 'articles' },
+        { value: sortedDates.length, unit: 'days' },
+      ]}
+      updatedAt={latestDate ? `${latestDate}T12:00:00` : null}
+    />
+  );
+
+  const leftRail = (
+    <div className="wp-rail-left">
+      <div className="wp-rail-section">
+        <div className="wp-rail-label">Search</div>
+        <input
+          type="text"
+          className="wp-search"
+          placeholder="Search arcs…"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      <div className="wp-rail-section">
+        <div className="wp-rail-label">Period</div>
+        <div className="wp-sort-group">
+          {[
+            { value: '3d', label: '3 days' },
+            { value: '7d', label: '7 days' },
+            ...(allDates.length > 7 ? [{ value: 'all', label: `All ${allDates.length}d` }] : []),
+          ].map(opt => (
+            <button
+              key={opt.value}
+              className={`wp-sort-btn ${timeRange === opt.value ? 'active' : ''}`}
+              onClick={() => setTimeRange(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
 
+      <div className="wp-rail-section">
+        <div className="wp-rail-label">Sort</div>
+        <div className="wp-sort-group">
+          {[['articles', 'Most covered'], ['recent', 'Most recent'], ['rising', 'Rising first']].map(([v, label]) => (
+            <button
+              key={v}
+              className={`wp-sort-btn ${sortBy === v ? 'active' : ''}`}
+              onClick={() => setSortBy(v)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {regionGroups.length > 1 && (
+        <div className="wp-rail-section">
+          <div className="wp-rail-label">Region</div>
+          <div className="wp-sort-group">
+            <button
+              className={`wp-sort-btn ${!activeRegion ? 'active' : ''}`}
+              onClick={() => { setActiveRegion(null); setActiveCountry(null); }}
+            >
+              All
+            </button>
+            {regionGroups.map(g => (
+              <button
+                key={g.region}
+                className={`wp-sort-btn ${activeRegion === g.region ? 'active' : ''}`}
+                onClick={() => { setActiveRegion(activeRegion === g.region ? null : g.region); setActiveCountry(null); }}
+              >
+                {g.region} <span className="wp-region-count">{g.threads.length}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="wp-rail-section">
+        <div className="wp-rail-label">View</div>
+        <div className="wp-sort-group">
+          <button className={`wp-sort-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}>List</button>
+          <button className={`wp-sort-btn ${viewMode === 'map' ? 'active' : ''}`} onClick={() => setViewMode('map')}>Map</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const rightRail = (
+    <div className="wp-rail-right">
+      <FeaturedSection threads={threads} threadAnalyses={threadAnalyses} compact />
+    </div>
+  );
+
+  return (
+    <EditorialShell strip={strip} left={leftRail} right={rightRail} className="wp-shell">
       {profile?.isTrial && <TrialBanner daysLeft={profile.trialDaysLeft} />}
 
       {welcome && (
         <div className="welcome-banner">
-          <span>Welcome to Story Intelligence! You have full access to all features. Explore story arcs, country briefings, and AI analysis below.</span>
+          <span>Welcome to Story Intelligence! You have full access. Explore story arcs, country briefings, and AI analysis below.</span>
           <button className="welcome-dismiss" onClick={() => setWelcome(false)}>✕</button>
         </div>
       )}
 
-      {error && (
-        <div className="weekly-error">{error}</div>
-      )}
+      {error && <div className="weekly-error">{error}</div>}
+      {showIntro && <ArcIntro onDismiss={dismissIntro} />}
 
-      {viewMode === 'map' ? (
-        <Suspense fallback={<div className="weekly-loading">Loading map...</div>}>
-          <WeeklyMap embedded />
-        </Suspense>
-      ) : loading ? (
-        <IntelligenceLoader type="typewriter" />
-      ) : threads.length === 0 && standalone.length === 0 ? (
-        <div className="weekly-empty-state">
-          <h3>No archive data yet</h3>
-          <p>Data is accumulating. Check back in a few hours as the pipeline runs.</p>
-        </div>
-      ) : (
-        <div className="page-with-sidenav">
-        <div className="page-main-content">
-          {showIntro && <ArcIntro onDismiss={dismissIntro} />}
-          <div id="wp-section-featured"><FeaturedSection threads={threads} threadAnalyses={threadAnalyses} /></div>
-          <div id="wp-section-filters"><FilterControls
-            regionGroups={regionGroups}
-            activeRegion={activeRegion}
-            setActiveRegion={setActiveRegion}
-            timeRange={timeRange}
-            setTimeRange={setTimeRange}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            availableDays={allDates.length}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            countryOptions={countryOptions}
-            activeCountry={activeCountry}
-            setActiveCountry={setActiveCountry}
-          /></div>
-          <div id="wp-section-arcs" className="weekly-feed">
-            {flatThreads.length === 0 && flatStandalone.length === 0 && (
-              <div className="weekly-empty-state">
-                <p>No stories match your current filters.</p>
-              </div>
-            )}
-            {(() => {
-              const ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
-              const groupMap = {};
-              for (const t of flatThreads) {
-                const cat = t.entries[0]?.category?.toLowerCase() || 'other';
-                const key = ORDER.includes(cat) ? cat : 'other';
-                if (!groupMap[key]) groupMap[key] = [];
-                groupMap[key].push(t);
-              }
-              const groups = ORDER.filter(k => groupMap[k]).map(k => ({ category: k, threads: groupMap[k] }));
-              return groups.map(({ category, threads }) => {
-                const isCollapsed = collapsedCategories.has(category);
-                const c = CATEGORY_BADGE_COLORS[category];
-                const toggleCollapse = () => setCollapsedCategories(prev => {
-                  const next = new Set(prev);
-                  next.has(category) ? next.delete(category) : next.add(category);
-                  return next;
-                });
-                const showAll = expandedGroups.has(category);
-                const visibleThreads = showAll ? threads : threads.slice(0, 5);
-                const hiddenCount = threads.length - visibleThreads.length;
-                return (
-                  <div key={category} className="weekly-category-group">
-                    <button
-                      className="weekly-category-group-header"
-                      onClick={toggleCollapse}
-                      style={c ? { borderLeftColor: c.bg } : {}}
-                    >
-                      <span className="weekly-category-group-name" style={c ? { color: c.color } : {}}>{category}</span>
-                      <span className="weekly-category-group-count">{threads.length}</span>
-                      <span className={`weekly-category-group-chevron ${isCollapsed ? 'collapsed' : ''}`}>›</span>
-                    </button>
-                    {!isCollapsed && (
-                      <>
-                        {visibleThreads.map(thread => (
-                          <StoryCard key={thread.threadId} thread={thread} analysis={threadAnalyses?.[thread.threadId]} />
-                        ))}
-                        {hiddenCount > 0 && (
-                          <button
-                            className="weekly-category-show-more"
-                            onClick={() => setExpandedGroups(prev => { const n = new Set(prev); n.add(category); return n; })}
-                          >
-                            Show {hiddenCount} more
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              });
-            })()}
-            {flatStandalone.length > 0 && (
-              <div id="wp-section-singles"><StandaloneSection entries={flatStandalone} /></div>
-            )}
+      <div className="weekly-feed">
+        {flatThreads.length === 0 && flatStandalone.length === 0 && (
+          <div className="weekly-empty-state">
+            <p>No stories match your current filters.</p>
           </div>
-        </div>
-        <SideNav sections={[
-          { id: 'wp-section-featured', label: 'Rising' },
-          { id: 'wp-section-filters', label: 'Filters' },
-          { id: 'wp-section-arcs', label: 'Story Arcs', count: flatThreads.length },
-          ...(flatStandalone.length > 0 ? [{ id: 'wp-section-singles', label: 'Singles', count: flatStandalone.length }] : []),
-        ]} />
-        </div>
-      )}
-    </div>
+        )}
+        {(() => {
+          const ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
+          const groupMap = {};
+          for (const t of flatThreads) {
+            const cat = t.entries[0]?.category?.toLowerCase() || 'other';
+            const key = ORDER.includes(cat) ? cat : 'other';
+            if (!groupMap[key]) groupMap[key] = [];
+            groupMap[key].push(t);
+          }
+          const groups = ORDER.filter(k => groupMap[k]).map(k => ({ category: k, threads: groupMap[k] }));
+          return groups.map(({ category, threads }) => {
+            const isCollapsed = collapsedCategories.has(category);
+            const c = CATEGORY_BADGE_COLORS[category];
+            const toggleCollapse = () => setCollapsedCategories(prev => {
+              const next = new Set(prev);
+              next.has(category) ? next.delete(category) : next.add(category);
+              return next;
+            });
+            const showAll = expandedGroups.has(category);
+            const visibleThreads = showAll ? threads : threads.slice(0, 5);
+            const hiddenCount = threads.length - visibleThreads.length;
+            return (
+              <div key={category} className="weekly-category-group">
+                <button
+                  className="weekly-category-group-header"
+                  onClick={toggleCollapse}
+                  style={c ? { borderLeftColor: c.bg } : {}}
+                >
+                  <span className="weekly-category-group-name" style={c ? { color: c.color } : {}}>{category}</span>
+                  <span className="weekly-category-group-count">{threads.length}</span>
+                  <span className={`weekly-category-group-chevron ${isCollapsed ? 'collapsed' : ''}`}>›</span>
+                </button>
+                {!isCollapsed && (
+                  <>
+                    {visibleThreads.map(thread => (
+                      <StoryCard key={thread.threadId} thread={thread} analysis={threadAnalyses?.[thread.threadId]} />
+                    ))}
+                    {hiddenCount > 0 && (
+                      <button
+                        className="weekly-category-show-more"
+                        onClick={() => setExpandedGroups(prev => { const n = new Set(prev); n.add(category); return n; })}
+                      >
+                        Show {hiddenCount} more
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          });
+        })()}
+        {flatStandalone.length > 0 && <StandaloneSection entries={flatStandalone} />}
+      </div>
+    </EditorialShell>
   );
 }

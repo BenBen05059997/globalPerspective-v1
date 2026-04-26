@@ -147,7 +147,7 @@ export default function WorldMapV2() {
   const [railOpen, setRailOpen] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
   const [flowFilters, setFlowFilters] = useState({ fx: true, tech: true, geo: true });
-  const [timeWindow, setTimeWindow] = useState('7d');
+  const [timeWindow, setTimeWindow] = useState('30d');
 
   // Dynamic maps built after TopoJSON loads
   const [nameToISO, setNameToISO] = useState({});
@@ -175,6 +175,15 @@ export default function WorldMapV2() {
 
   const signalRef = useRef({});
   signalRef.current = signal;
+
+  // Ranked signal entries by |z| — shared by drawMap markers and leaderboard panel
+  const rankedSignal = useMemo(() => {
+    return Object.entries(signal)
+      .filter(([, s]) => s.bucket !== 'L')
+      .sort((a, b) => Math.abs(b[1].z || 0) - Math.abs(a[1].z || 0));
+  }, [signal]);
+  const rankedSignalRef = useRef([]);
+  rankedSignalRef.current = rankedSignal;
 
   const topicsRef = useRef([]);
   topicsRef.current = topics;
@@ -429,23 +438,45 @@ export default function WorldMapV2() {
     });
 
     if (currentLens === 'risk') {
-      // Signal markers for elevated/high countries
-      Object.entries(sig).forEach(([iso, s]) => {
-        if (s.bucket === 'L') return;
+      // Two-tier signal markers: top 5 = headline, rest = ambient/tail
+      const ranked = rankedSignalRef.current;
+      ranked.forEach(([iso, s], rank) => {
         const center = isoToCenterRef.current[iso];
         if (!center) return;
         const pt = projection(center);
         if (!pt) return;
         const [x, y] = pt;
-        const r = s.bucket === 'H' ? 6 : 4;
         const color = RISK_MARKER[s.bucket];
-        const sign  = s.z > 0 ? '+' : '';
+        const sign = s.z > 0 ? '+' : '';
+        const label = `${iso.slice(0, 3)}  z${sign}${s.z}`;
 
-        svg.appendChild(el('circle', { cx: x, cy: y, r: r + 6, fill: color, 'fill-opacity': 0.15 }));
-        svg.appendChild(el('circle', { cx: x, cy: y, r, fill: color, stroke: '#fff', 'stroke-width': 1.5 }));
-        const lbl = el('text', { class: 'label', x: x + r + 5, y: y + 3, fill: color });
-        lbl.textContent = `${iso.slice(0, 2)}  z${sign}${s.z}`;
-        svg.appendChild(lbl);
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'sig-marker');
+        g.addEventListener('click', () => handleCountryClick(iso));
+
+        if (rank < 5) {
+          // Headline: large dot + halo + full label always visible
+          g.appendChild(el('circle', { cx: x, cy: y, r: 14, fill: color, 'fill-opacity': 0.15 }));
+          g.appendChild(el('circle', { cx: x, cy: y, r: 8, fill: color, stroke: '#fff', 'stroke-width': 1.5 }));
+          const lbl = el('text', { class: 'lbl-headline', x: x + 11, y: y + 4, fill: color });
+          lbl.textContent = label;
+          g.appendChild(lbl);
+        } else if (rank < 15) {
+          // Ambient: small dot, ISO-only label, hover reveals full label
+          g.appendChild(el('circle', { cx: x, cy: y, r: 14, fill: 'transparent' })); // hit area
+          g.appendChild(el('circle', { cx: x, cy: y, r: 4, fill: color, stroke: '#fff', 'stroke-width': 1, 'fill-opacity': 0.65 }));
+          const shortLbl = el('text', { class: 'lbl-ambient', x: x + 7, y: y + 3, fill: color });
+          shortLbl.textContent = iso.slice(0, 3);
+          g.appendChild(shortLbl);
+          const hoverLbl = el('text', { class: 'lbl-hover', x: x + 7, y: y + 3, fill: color });
+          hoverLbl.textContent = label;
+          g.appendChild(hoverLbl);
+        } else {
+          // Tail: tiny dot, no label, invisible hit area
+          g.appendChild(el('circle', { cx: x, cy: y, r: 14, fill: 'transparent' }));
+          g.appendChild(el('circle', { cx: x, cy: y, r: 2.5, fill: color, 'fill-opacity': 0.35 }));
+        }
+        svg.appendChild(g);
       });
 
       // Urgency halo for high-urgency topics from last 24h
@@ -967,8 +998,54 @@ export default function WorldMapV2() {
               </div>
             </div>
           ) : (
-            <div style={{ padding: '24px 20px', color: 'var(--ink-dim)', fontSize: 13, fontFamily: 'var(--sans)', lineHeight: 1.6 }}>
-              Click any country on the map to see intelligence details.
+            <div style={{ padding: '20px 18px' }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink-dim)', marginBottom: 14 }}>
+                Top signal this week
+              </div>
+              {rankedSignal.slice(0, 5).map(([iso, s], i) => {
+                const name = isoToName[iso] || iso;
+                const color = RISK_MARKER[s.bucket];
+                const sign = s.z > 0 ? '+' : '';
+                const topic = topics.find(t =>
+                  Array.isArray(t.regions) && t.regions.some(r => r && String(r).toLowerCase() === name.toLowerCase())
+                );
+                return (
+                  <div
+                    key={iso}
+                    onClick={() => handleCountryClick(iso)}
+                    style={{
+                      display: 'flex', gap: 12, alignItems: 'flex-start',
+                      padding: '10px 0', borderBottom: '1px solid var(--line)',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--paper-2)'}
+                    onMouseLeave={e => e.currentTarget.style.background = ''}
+                  >
+                    <span style={{
+                      width: 22, height: 22, borderRadius: '50%',
+                      background: color, color: '#fff',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700,
+                      flexShrink: 0, marginTop: 1,
+                    }}>{i + 1}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>{name}</div>
+                      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color, marginTop: 2 }}>z{sign}{s.z} · {s.last7 ?? '—'} articles</div>
+                      {topic && (
+                        <div style={{ fontSize: 11, color: 'var(--ink-mid)', marginTop: 4, lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {topic.title?.slice(0, 52)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {rankedSignal.length === 0 && (
+                <div style={{ color: 'var(--ink-dim)', fontSize: 12, fontStyle: 'italic' }}>Loading signal data…</div>
+              )}
+              <div style={{ marginTop: 16, fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.06em' }}>
+                Click any row or country on the map for full detail.
+              </div>
             </div>
           )}
         </aside>

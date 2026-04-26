@@ -37,7 +37,7 @@
   font-family: var(--sans);
   font-size: 14px;
   line-height: 1.5;
-  min-height: calc(100vh - 80px);
+  height: calc(100vh - 90px); /* nav 56px + strip 34px */
 }
 
 .mv2 *, .mv2 *::before, .mv2 *::after { box-sizing: border-box; }
@@ -211,7 +211,20 @@
   width: 16px; height: 10px; border-radius: 2px; display: inline-block;
 }
 
-.mv2-map { position: relative; height: calc(100vh - 210px); min-height: 400px; }
+/* Escape the Layout shell's padding/max-width when map is mounted */
+.gp-main:has(.mv2) { padding: 0; }
+.gp-main:has(.mv2) > .container { max-width: 100%; padding: 0; }
+
+/* Aspect-locked: Equal Earth is ~2.05:1 — cap height so map fills width cleanly */
+.mv2-mapwrap { align-items: start; }
+.mv2-map {
+  position: relative;
+  width: 100%;
+  /* Height capped to projection's natural 2.05:1 aspect ratio */
+  height: min(calc(100vh - 230px), calc(100% / 2.05));
+  min-height: 460px;
+  max-height: 780px;
+}
 .mv2-map svg.map-svg { width: 100%; height: 100%; display: block; }
 .mv2-map svg.map-svg path.country {
   fill: #f2efe8; stroke: #c6c3bb; stroke-width: 0.5;
@@ -237,6 +250,23 @@
 }
 .mv2-map svg.map-svg path.flow { fill: none; stroke-linecap: round; }
 .mv2-map svg.map-svg circle.node { stroke: #fff; stroke-width: 1.5; }
+
+/* Signal marker tiers */
+.mv2-map svg.map-svg g.sig-marker { cursor: pointer; }
+.mv2-map svg.map-svg text.lbl-headline {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.04em; pointer-events: none;
+}
+.mv2-map svg.map-svg text.lbl-ambient {
+  font-family: var(--mono); font-size: 8.5px; font-weight: 500;
+  opacity: 0.7; pointer-events: none;
+}
+.mv2-map svg.map-svg text.lbl-hover {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+  visibility: hidden; pointer-events: none;
+}
+.mv2-map svg.map-svg g.sig-marker:hover text.lbl-hover { visibility: visible; }
+.mv2-map svg.map-svg g.sig-marker:hover text.lbl-ambient { visibility: hidden; }
 
 /* Caption overlay (editorial lens) */
 .mv2-caption {

@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-04-26 (WorldMapV2 — map polish: hierarchy, layout, leaderboard)
+
+### Frontend (DEPLOYED to /docs/ 2026-04-26, commits cb2683f → 1d2d4ff)
+
+- **WorldMapV2.jsx** — flows slug fix: `pair_analyses_list` returns no `countries[]` field, only `slug` (e.g. `iran-and-saudi-arabia`). Both `realFlows` and `liveDetail` link generation now parse slug by splitting on `-and-` and replacing hyphens with spaces. Arcs and cross-country links now render correctly.
+- **WorldMapV2.jsx** — Flow Type checkboxes (FX/Capital, Technology, Geopolitics) now toggle arc visibility in the Flows & Links lens. Time Window radios (7d/30d) filter pair analyses by `generatedAt`. Default window changed to 30d because pair analyses run weekly (7d window filtered everything).
+- **WorldMapV2.jsx** — Added `ResizeObserver` on map container — SVG redraws to correct dimensions whenever panel or rail collapses/expands.
+- **WorldMapV2.jsx** — Two-tier signal markers: top 5 countries by |z-score| get large dot (r=8) + halo + always-visible full label; ranks 6-15 get small ambient dot (r=4) + ISO-only label, hover reveals full label; rank 16+ gets tiny tail dot (r=2.5), no label. Eliminates cluster clutter in Europe/Middle East.
+- **WorldMapV2.jsx** — Right panel empty state replaced with "Top signal this week" leaderboard: 5 numbered rows with risk-colored circles, country name (Fraunces serif), z-score kicker, 7d article count, top topic excerpt. Clicking a row selects the country.
+- **WorldMapV2.css** — Map container changed from `min-height` to `height: calc(100vh - 90px)` so CSS grid `1fr` row resolves to a definite height and the Equal Earth aspect-ratio clamp `(100% / 2.05)` works correctly.
+- **WorldMapV2.css** — Added `:has(.mv2)` rules to strip Layout shell padding (`2rem`) and container `max-width: 1200px` when the map is mounted, giving the map full-bleed width with no dead zone above it.
+- **WorldMapV2.css** — Added CSS classes `lbl-headline`, `lbl-ambient`, `lbl-hover` for signal marker tiers. Hover on ambient markers reveals full label and hides ISO-only label.
+
 ## 2026-04-26 (WorldMapV2 — data gap closure, promoted to /map)
 
 ### Frontend (DEPLOYED to /docs/ 2026-04-26)

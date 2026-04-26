@@ -7,13 +7,13 @@ import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { formatDateLabel } from '../utils/dateUtils';
 import CompactTimeline from './CompactTimeline';
-import WeeklyMap from './WeeklyMap';
-import StoryEntryCard from './StoryEntryCard';
 import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
 import CopyBriefing, { formatThreadBriefing } from './CopyBriefing';
 import TrialBanner from './TrialBanner';
 import { SaveButton } from './SaveButton';
 import { useUserProfile } from '../hooks/useUserProfile';
+import EditorialShell from './atoms/EditorialShell';
+import StatusStrip from './atoms/StatusStrip';
 import './ThreadPage.css';
 
 function humanizeThreadId(id) {
@@ -41,11 +41,12 @@ function formatDateRange(from, to) {
   return `${a} — ${formatDateLabel(to)}`;
 }
 
-const AI_TABS = [
-  { key: 'storyArc',        label: 'How It Evolved', hint: 'narrative arc across all days' },
-  { key: 'trajectory',      label: "What's Next",     hint: 'where this story is heading' },
-  { key: 'rootCauseChain',  label: 'Why It Happened', hint: 'root causes & contributing factors' },
-];
+const RISK_COLOR = (score) => {
+  if (score == null) return 'var(--ink)';
+  if (score >= 75) return 'var(--risk-h)';
+  if (score >= 50) return 'var(--risk-e)';
+  return 'var(--risk-l)';
+};
 
 export default function ThreadPage() {
   const { threadId } = useParams();
@@ -54,18 +55,25 @@ export default function ThreadPage() {
   const { loading: authLoading } = useAuth();
   const { profile } = useUserProfile();
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
+  const [contentTab, setContentTab] = useState('timeline');
+  const [aiTab, setAiTab] = useState('summary');
 
   const thread = useMemo(() => {
     if (!dayMap || loading) return null;
     const entries = [];
     const allRegions = new Set();
-    const allSources = new Set();
+    const primarySources = new Set();
+    const secondarySources = new Set();
     for (const date of sortedDates) {
       for (const entry of (dayMap[date]?.entries || [])) {
         if (entry.threadId === threadId) {
           entries.push({ ...entry, date });
           for (const r of (entry.regions || [])) allRegions.add(r);
-          for (const s of (entry.sources || [])) allSources.add(s.source || s.title || 'Source');
+          for (const s of (entry.sources || [])) {
+            const name = s.source || s.title || 'Source';
+            if (s.tier === 'secondary') secondarySources.add(name);
+            else primarySources.add(name);
+          }
         }
       }
     }
@@ -77,7 +85,9 @@ export default function ThreadPage() {
       entries,
       articleCount: entries.length,
       regions: [...allRegions],
-      sources: [...allSources],
+      primarySources: [...primarySources],
+      secondarySources: [...secondarySources],
+      allSources: [...new Set([...primarySources, ...secondarySources])],
       dateRange: { from: dates[0], to: dates[dates.length - 1] },
       dates,
       dayCount: dates.length,
@@ -89,11 +99,53 @@ export default function ThreadPage() {
   const category = thread?.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
 
-  const availableTabs = AI_TABS.filter(t => analysis?.[t.key]);
-  const [aiTab, setAiTab] = useState(null);
-  useEffect(() => {
-    if (availableTabs.length > 0 && !aiTab) setAiTab(availableTabs[0].key);
-  }, [availableTabs.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Related threads: same category + same region
+  const relatedThreads = useMemo(() => {
+    if (!dayMap || !thread) return { sameCategory: [], sameRegion: [] };
+    const threadMap = {};
+    for (const date of sortedDates) {
+      for (const e of (dayMap[date]?.entries || [])) {
+        if (!e.threadId || e.threadId === threadId) continue;
+        if (!threadMap[e.threadId]) {
+          threadMap[e.threadId] = {
+            threadId: e.threadId,
+            title: e.title,
+            category: (e.category || 'other').toLowerCase(),
+            regions: new Set(),
+            count: 0,
+          };
+        }
+        threadMap[e.threadId].count++;
+        for (const r of (e.regions || [])) threadMap[e.threadId].regions.add(r);
+      }
+    }
+    const all = Object.values(threadMap).filter(t => t.count >= 2);
+    const sameCategory = all
+      .filter(t => t.category === category)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    const threadRegionSet = new Set(thread.regions);
+    const sameRegion = all
+      .filter(t => t.category !== category && [...t.regions].some(r => threadRegionSet.has(r)))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4);
+    return { sameCategory, sameRegion };
+  }, [dayMap, sortedDates, threadId, category, thread]);
+
+  // Source rollup for Sources tab
+  const sourceRollup = useMemo(() => {
+    if (!thread) return [];
+    const map = {};
+    for (const entry of thread.entries) {
+      for (const s of (entry.sources || [])) {
+        const name = s.source || s.title || 'Source';
+        if (!map[name]) map[name] = { name, count: 0, tier: s.tier || 'secondary', latest: entry.date };
+        map[name].count++;
+        if (entry.date > map[name].latest) map[name].latest = entry.date;
+      }
+    }
+    return Object.values(map).sort((a, b) => b.count - a.count);
+  }, [thread]);
 
   const displayTitle = analysis?.threadTitle || thread?.latestTitle || humanizeThreadId(threadId);
   useEffect(() => {
@@ -113,14 +165,165 @@ export default function ThreadPage() {
     );
   }
 
-  const hasWatchQuestions = analysis?.watchQuestions?.length > 0;
-  const activeTabData = availableTabs.find(t => t.key === aiTab);
-  const activeTabContent = analysis?.[aiTab];
+  const inflectionEntry = analysis?.inflectionTopicId
+    ? thread.entries.find(e => e.topicId === analysis.inflectionTopicId)
+    : null;
+
+  // Status strip
+  const statusStats = [
+    analysis?.riskScore != null && { value: analysis.riskScore, unit: 'risk' },
+    { value: thread.entries.length, unit: 'events' },
+    { value: thread.allSources.length, unit: 'sources' },
+    thread.regions.length > 0 && { value: thread.regions.slice(0, 3).join(' · '), unit: '' },
+  ].filter(Boolean);
+
+  const inflectionLabel = inflectionEntry
+    ? `⚑ INFLECTION · ${formatDateLabel(inflectionEntry.date).toUpperCase()}`
+    : null;
+
+  // AI tabs
+  const aiTabs = [
+    analysis?.storyArc       && { key: 'summary',    label: 'Summary' },
+    analysis?.trajectory     && { key: 'trajectory', label: "What's Next" },
+    analysis?.rootCauseChain && { key: 'trace',      label: 'Trace Cause' },
+    analysis?.watchQuestions?.length && { key: 'watch', label: 'Watch' },
+  ].filter(Boolean);
+
+  const aiContent = {
+    summary:    analysis?.storyArc,
+    trajectory: analysis?.trajectory,
+    trace:      analysis?.rootCauseChain,
+    watch:      null,
+  };
+
+  // Left rail
+  const leftRail = (
+    <div className="tp-left">
+      <div className="tp-left-crumbs">
+        <Link to="/weekly">Threads</Link>
+        <span className="tp-crumb-sep">/</span>
+        {category && <Link to={`/weekly?category=${category}`}>{category}</Link>}
+        {category && <span className="tp-crumb-sep">/</span>}
+        <span>{displayTitle.length > 20 ? displayTitle.slice(0, 20) + '…' : displayTitle}</span>
+      </div>
+
+      {relatedThreads.sameCategory.length > 0 && (
+        <>
+          <div className="tp-left-hd">Related threads</div>
+          {relatedThreads.sameCategory.map(t => {
+            const c = CATEGORY_BADGE_COLORS[t.category];
+            return (
+              <Link key={t.threadId} to={`/weekly/thread/${t.threadId}`} className="tp-related">
+                <div className="tp-related-kicker" style={{ color: c?.color || 'var(--ink-dim)' }}>
+                  {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
+                </div>
+                <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
+                <div className="tp-related-meta">{t.count} articles</div>
+              </Link>
+            );
+          })}
+        </>
+      )}
+
+      {relatedThreads.sameRegion.length > 0 && (
+        <>
+          <div className="tp-left-hd" style={{ marginTop: 20 }}>Watching · region</div>
+          {relatedThreads.sameRegion.map(t => (
+            <Link key={t.threadId} to={`/weekly/thread/${t.threadId}`} className="tp-related">
+              <div className="tp-related-kicker">
+                {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
+              </div>
+              <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
+              <div className="tp-related-meta">{t.count} articles</div>
+            </Link>
+          ))}
+        </>
+      )}
+    </div>
+  );
+
+  // Right AI rail
+  const rightRail = aiTabs.length > 0 && (
+    <div className="tp-ai-rail">
+      <div className="tp-ai-hd">
+        <div className="tp-ai-hd-label"><span className="tp-ai-dot" />Arc Intelligence</div>
+        <span className="tp-ai-model">Grok · xAI</span>
+      </div>
+      <div className="tp-ai-tabs">
+        {aiTabs.map(tab => (
+          <button
+            key={tab.key}
+            className={`tp-ai-tab${aiTab === tab.key ? ' on' : ''}`}
+            onClick={() => setAiTab(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="tp-ai-body">
+        {aiTab === 'watch' ? (
+          analysis?.watchQuestions?.length > 0 ? (
+            <ul className="tp-watch-list">
+              {analysis.watchQuestions.map((q, i) => (
+                <li key={i}>{q}</li>
+              ))}
+            </ul>
+          ) : null
+        ) : aiContent[aiTab] ? (
+          <p className="tp-ai-text">{aiContent[aiTab]}</p>
+        ) : (
+          <div className="tp-ai-empty">No analysis available</div>
+        )}
+
+        {/* Key actors */}
+        {analysis?.keyActors?.length > 0 && (
+          <div className="tp-ai-actors">
+            <div className="tp-ai-section-lbl">Key Actors</div>
+            {analysis.keyActors.map((a, i) => (
+              <div key={i} className="tp-actor-row">
+                <div className="tp-actor-av">{(a.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
+                <div className="tp-actor-body">
+                  <div className="tp-actor-name">{a.name}</div>
+                  <div className="tp-actor-role">{a.role}</div>
+                </div>
+                <div className="tp-actor-count">{a.mentionCount}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Grounding sources */}
+        {analysis?.groundingSources?.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <div className="tp-ai-section-lbl">Live Web Evidence</div>
+            {analysis.groundingSources.slice(0, 3).map((s, i) => (
+              <div key={i} className="tp-grounding-card">
+                <div className="tp-grounding-title">{s.title}</div>
+                {s.snippet && <div className="tp-grounding-snippet">{s.snippet.slice(0, 120)}{s.snippet.length > 120 ? '…' : ''}</div>}
+                <div className="tp-grounding-meta">{s.source}{s.age ? ` · ${s.age}` : ''}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="tp-ai-foot">
+        <span>AI-generated · analyst context</span>
+        {analysis?.generatedAt && <span>{formatTimeAgo(analysis.generatedAt)}</span>}
+      </div>
+    </div>
+  );
+
+  // Content tabs: Timeline | Actors | Sources
+  const contentTabs = [
+    { key: 'timeline', label: 'Timeline', count: thread.entries.length },
+    analysis?.keyActors?.length > 0 && { key: 'actors', label: 'Actors', count: analysis.keyActors.length },
+    sourceRollup.length > 0 && { key: 'sources', label: 'Sources', count: sourceRollup.length },
+  ].filter(Boolean);
 
   return (
     <div className="tp-page">
 
-      {/* Topbar breadcrumbs */}
+      {/* Topbar */}
       <div className="tp-topbar">
         <Link to="/">Home</Link>
         <span className="tp-topbar-sep">/</span>
@@ -145,140 +348,118 @@ export default function ThreadPage() {
 
       {profile?.isTrial && <TrialBanner daysLeft={profile.trialDaysLeft} />}
 
-      {/* Thread header */}
-      <div className="tp-hd">
-        <div className="tp-hd-kicker">
-          {catColors && (
-            <span className="tp-cat-badge" style={{ background: catColors.bg, color: catColors.color }}>
-              {category}
-            </span>
-          )}
-          {thread?.entries[0]?.urgency === 'high' && (
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: '#fff', background: 'var(--risk-h)', padding: '1px 6px', borderRadius: 3 }}>BREAKING</span>
-          )}
-          Story Arc
-        </div>
-        <h1 className="tp-hd-h1">{displayTitle}</h1>
-        {analysis?.storyArc && (
-          <p className="tp-hd-dek">
-            {analysis.storyArc.split(/[.!?]/)[0].trim()}.
-          </p>
-        )}
-        <div className="tp-hd-meta">
-          <span>{formatDateRange(thread.dateRange.from, thread.dateRange.to)}</span>
-          {analysis?.generatedAt && <span>Updated <b>{formatTimeAgo(analysis.generatedAt)}</b></span>}
-          {category && <span>Category <b>{thread.entries[0]?.category}</b></span>}
-          {thread.regions.length > 0 && <span>Regions <b>{thread.regions.length}</b></span>}
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div className="tp-stats">
-        <div className="tp-stat">
-          <div className="tp-stat-k">Articles</div>
-          <div className="tp-stat-v">{thread.articleCount}</div>
-          <div className="tp-stat-d">across this arc</div>
-        </div>
-        <div className="tp-stat">
-          <div className="tp-stat-k">Days tracked</div>
-          <div className="tp-stat-v">{thread.dayCount}</div>
-          <div className="tp-stat-d">{formatDateRange(thread.dateRange.from, thread.dateRange.to)}</div>
-        </div>
-        <div className="tp-stat">
-          <div className="tp-stat-k">Regions</div>
-          <div className="tp-stat-v">{thread.regions.length}</div>
-          <div className="tp-stat-d">countries involved</div>
-        </div>
-        <div className="tp-stat">
-          <div className="tp-stat-k">Sources</div>
-          <div className="tp-stat-v">{thread.sources.length}</div>
-          <div className="tp-stat-d">outlets cited</div>
-        </div>
-      </div>
-
-      {/* Region chips */}
-      {thread.regions.length > 0 && (
-        <div className="tp-regions">
-          {thread.regions.slice(0, 8).map(r => (
-            <Link key={r} to={`/weekly/country/${encodeURIComponent(r)}`} className="tp-region-chip">{r}</Link>
-          ))}
-          {thread.regions.length > 8 && (
-            <span className="tp-region-chip" style={{ cursor: 'default' }}>+{thread.regions.length - 8} more</span>
-          )}
-        </div>
-      )}
-
-      {/* Body: main + AI rail */}
-      <div className="tp-body">
-
-        {/* Main content column */}
-        <div className="tp-main">
-
-          {/* Watch questions */}
-          {hasWatchQuestions && (
-            <>
-              <div className="tp-section-lbl">
-                Questions to Watch
-                <span className="count">{analysis.watchQuestions.length}</span>
-              </div>
-              <div className="tp-watch">
-                {analysis.watchQuestions.map((q, i) => (
-                  <div key={i} className="tp-watch-item">{q}</div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Live web evidence */}
-          {analysis?.groundingSources?.length > 0 && (
-            <>
-              <div className="tp-section-lbl">
-                Live Web Evidence
-                <span className="count">{analysis.groundingSources.length}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                {analysis.groundingSources.map((s, i) => (
-                  <div key={i} style={{ fontSize: 13, lineHeight: 1.5, padding: '8px 10px', background: 'var(--paper)', border: '1px solid var(--border)', borderRadius: 6 }}>
-                    <div style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 2 }}>{s.title}</div>
-                    {s.snippet && <div style={{ color: 'var(--ink-dim)', fontSize: 12 }}>{s.snippet}</div>}
-                    <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: '#999', marginTop: 4 }}>
-                      {s.source}{s.age ? ` · ${s.age}` : ''}{s.type === 'web' ? ' · background' : ''}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Timeline */}
-          <div className="tp-section-lbl">
-            Story Timeline
-            <span className="count">{thread.entries.length} entries</span>
+      <EditorialShell
+        strip={
+          <StatusStrip
+            label={inflectionLabel ? '⚑ INFLECTION' : 'LIVE'}
+            stats={statusStats}
+            updatedAt={analysis?.generatedAt}
+          />
+        }
+        left={leftRail}
+        right={rightRail}
+      >
+        {/* Thread header */}
+        <div className="tp-hd">
+          <div className="tp-hd-kicker">
+            {catColors && (
+              <span className="tp-cat-badge" style={{ background: catColors.bg, color: catColors.color }}>
+                {category}
+              </span>
+            )}
+            {thread?.entries[0]?.urgency === 'high' && (
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: '#fff', background: 'var(--risk-h)', padding: '1px 6px', borderRadius: 3 }}>URGENT</span>
+            )}
+            Story Arc · {thread.dayCount} days
           </div>
+          <h1 className="tp-hd-h1">{displayTitle}</h1>
+          {analysis?.storyArc && (
+            <p className="tp-hd-dek">
+              {analysis.storyArc.split(/[.!?]/)[0].trim()}.
+            </p>
+          )}
+          <div className="tp-hd-meta">
+            <span>{formatDateRange(thread.dateRange.from, thread.dateRange.to)}</span>
+            {category && <span>Category <b>{thread.entries[0]?.category}</b></span>}
+            {thread.regions.length > 0 && <span>Countries <b>{thread.regions.slice(0, 3).join(', ')}{thread.regions.length > 3 ? ` +${thread.regions.length - 3}` : ''}</b></span>}
+            {analysis?.riskScore != null && (
+              <span style={{ color: RISK_COLOR(analysis.riskScore) }}>
+                Risk <b>{analysis.riskScore}/100</b>
+              </span>
+            )}
+            {analysis?.sentiment != null && (
+              <span>Sentiment <b>{analysis.sentiment > 0 ? '+' : ''}{analysis.sentiment.toFixed(1)}</b></span>
+            )}
+          </div>
+        </div>
 
-          {analysis && thread.dayCount > 1 ? (
+        {/* Stats row */}
+        <div className="tp-stats">
+          <div className="tp-stat">
+            <div className="tp-stat-k">Thread Risk</div>
+            <div className="tp-stat-v" style={{ color: RISK_COLOR(analysis?.riskScore) }}>
+              {analysis?.riskScore != null ? analysis.riskScore : '—'}
+            </div>
+            <div className="tp-stat-d">/100</div>
+          </div>
+          <div className="tp-stat">
+            <div className="tp-stat-k">Events</div>
+            <div className="tp-stat-v">{thread.entries.length}</div>
+            <div className="tp-stat-d">{inflectionEntry ? '1 inflection' : 'no inflection'}</div>
+          </div>
+          <div className="tp-stat">
+            <div className="tp-stat-k">Sources</div>
+            <div className="tp-stat-v">{thread.allSources.length}</div>
+            <div className="tp-stat-d">{thread.primarySources.length} primary</div>
+          </div>
+          <div className="tp-stat">
+            <div className="tp-stat-k">Sentiment</div>
+            <div className="tp-stat-v" style={{ color: analysis?.sentiment != null && analysis.sentiment < -0.3 ? 'var(--risk-h)' : 'var(--ink)' }}>
+              {analysis?.sentiment != null ? (analysis.sentiment > 0 ? '+' : '') + analysis.sentiment.toFixed(1) : '—'}
+            </div>
+            <div className="tp-stat-d">−1 to +1</div>
+          </div>
+        </div>
+
+        {/* Content tabs */}
+        <div className="tp-content-tabs">
+          {contentTabs.map(tab => (
+            <button
+              key={tab.key}
+              className={`tp-content-tab${contentTab === tab.key ? ' on' : ''}`}
+              onClick={() => setContentTab(tab.key)}
+            >
+              {tab.label}
+              <span className="tp-tab-count">{tab.count}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Timeline tab */}
+        {contentTab === 'timeline' && (
+          analysis && thread.dayCount > 1 ? (
             <CompactTimeline
               entries={thread.entries}
               entryShortTitles={analysis.entryShortTitles}
               dotColor={catColors?.color}
+              inflectionTopicId={analysis.inflectionTopicId}
             />
           ) : thread.dayCount > 1 ? (
             <div className="tp-tl">
               {thread.entries.map((entry, i) => (
-                <div key={entry.topicId || i} className="tp-tl-row">
+                <div key={entry.topicId || i} className={`tp-tl-row${entry.topicId === analysis?.inflectionTopicId ? ' inflect' : ''}`}>
                   <div className="tp-tl-date">{formatDateLabel(entry.date)}</div>
                   <div className="tp-tl-rail">
-                    <div className={`tp-tl-node${i === 0 ? ' inflect' : ''}`} />
+                    <div className={`tp-tl-node${entry.topicId === analysis?.inflectionTopicId ? ' inflect' : ''}`} />
                   </div>
                   <div className="tp-tl-body">
                     <div className="tp-tl-hl">{entry.title}</div>
-                    {entry.context && <div className="tp-tl-dek">{entry.context}</div>}
                     {entry.sources?.length > 0 && (
                       <div className="tp-tl-srcs">
                         {entry.sources.slice(0, 3).map((s, j) => (
                           <span key={j}>
                             <b>{s.source || 'Source'}</b>
-                            {s.tier === 'secondary' && <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: '#999', marginLeft: 3 }}>bg</span>}
+                            {s.tier === 'secondary' && <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: '#999', marginLeft: 3 }}>secondary</span>}
                           </span>
                         ))}
                       </div>
@@ -287,64 +468,56 @@ export default function ThreadPage() {
                 </div>
               ))}
             </div>
-          ) : (
-            <StoryEntryCard entry={thread.entries[0]} />
-          )}
-
-          {/* Map */}
-          {thread.regions.length > 0 && (
-            <>
-              <div className="tp-section-lbl">Geographic Spread</div>
-              <div className="tp-map-wrap">
-                <WeeklyMap embedded defaultThread={thread.threadId} hidePanel />
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Right AI rail */}
-        {availableTabs.length > 0 && (
-          <aside className="tp-ai">
-            <div className="tp-ai-hd">
-              <div className="tp-ai-hd-label">
-                <span className="tp-ai-dot" />
-                Arc Intelligence
-              </div>
-              <span className="tp-ai-model">Grok · xAI</span>
-            </div>
-
-            <div className="tp-ai-tabs">
-              {availableTabs.map(tab => (
-                <button
-                  key={tab.key}
-                  className={`tp-ai-tab${aiTab === tab.key ? ' on' : ''}`}
-                  onClick={() => setAiTab(tab.key)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="tp-ai-body">
-              {activeTabContent ? (
-                <>
-                  {activeTabData && (
-                    <div className="tp-ai-section-lbl">{activeTabData.hint}</div>
-                  )}
-                  <p className="tp-ai-text">{activeTabContent}</p>
-                </>
-              ) : (
-                <div className="tp-ai-empty">No analysis available</div>
-              )}
-            </div>
-
-            <div className="tp-ai-foot">
-              <span>AI-generated · analyst context</span>
-              {analysis?.generatedAt && <span>{formatTimeAgo(analysis.generatedAt)}</span>}
-            </div>
-          </aside>
+          ) : null
         )}
-      </div>
+
+        {/* Actors tab */}
+        {contentTab === 'actors' && analysis?.keyActors?.length > 0 && (
+          <div className="tp-actors-list">
+            {analysis.keyActors.map((a, i) => (
+              <div key={i} className="tp-actor-card">
+                <div className="tp-actor-av">{(a.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
+                <div className="tp-actor-body">
+                  <div className="tp-actor-name">{a.name}</div>
+                  <div className="tp-actor-role">{a.role}</div>
+                </div>
+                <div className="tp-actor-count">
+                  <b>{a.mentionCount}</b>
+                  <span>mentions</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Sources tab */}
+        {contentTab === 'sources' && (
+          <div className="tp-sources-list">
+            <div className="tp-sources-hd">
+              {sourceRollup.length} outlets · {thread.primarySources.length} primary · {thread.secondarySources.length} secondary
+            </div>
+            {sourceRollup.map((s, i) => (
+              <div key={i} className="tp-source-row">
+                <div className="tp-source-name">{s.name}</div>
+                <div className="tp-source-count">{s.count} item{s.count !== 1 ? 's' : ''}</div>
+                <div className={`tp-source-tier${s.tier === 'secondary' ? ' sec' : ''}`}>
+                  {s.tier === 'secondary' ? 'Secondary' : 'Primary'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Watch questions (below timeline if no AI rail) */}
+        {aiTabs.length === 0 && analysis?.watchQuestions?.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <div className="tp-section-lbl">Questions to Watch</div>
+            <ul className="tp-watch-list">
+              {analysis.watchQuestions.map((q, i) => <li key={i}>{q}</li>)}
+            </ul>
+          </div>
+        )}
+      </EditorialShell>
     </div>
   );
 }

@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-04-26 (Feature: ThreadPage + CountryPage v2 redesign — 3-col EditorialShell)
+
+### Frontend (DEPLOYED to /docs/ 2026-04-26)
+- **ThreadPage.jsx** — full v2 rewrite using `EditorialShell` 3-col layout (240px left / 1fr center / 320px right). Left rail: breadcrumbs + related threads by category/region. Center: `StatusStrip` + thread header with `riskScore`/`sentiment` in meta + 4-stat row + content tabs (Timeline/Actors/Sources). Right AI rail: 4-tab AI panel (Summary/What's Next/Trace Cause/Watch) + Key Actors section + Live Web Evidence. All new backend fields wired: `inflectionTopicId`, `riskScore`, `sentiment`, `keyActors`, `groundingSources`.
+- **ThreadPage.css** — added CSS for left rail (`.tp-left`, `.tp-related`), AI rail (`.tp-ai-rail`), content tabs (`.tp-content-tabs`), actor cards/rows (`.tp-actor-card`, `.tp-actor-row`), sources tab (`.tp-source-row`), watch list (`.tp-watch-list`), grounding cards (`.tp-grounding-card`).
+- **CountryPage.jsx** — full v2 rewrite using `EditorialShell` 3-col layout. Left rail: breadcrumbs + top-countries nav (6 rows) + filter facets (All/Anchor/Linked by thread type, category, urgency) + actor chips from `intel.keyActors`. Center: existing header + 4-stat strip (now shows `anchorCount`/`linkedCount`) + tabs. Story Arcs tab: thread cards now labeled **ANCHOR** (country is primary) / **LINKED** (country mentioned) + story arc summary snippet + thread-level risk score from `threadAnalyses`. Right rail: Key Actors (from `intel.keyActors`) at top, then risk assessment + watch signals + causal graph + markets/FX.
+- **CountryPage.css** — added CSS for left rail navigation (`.cpg-left`, `.cpg-country-nav`, `.cpg-facet`, `.cpg-actor-chips`), arc card enhancements (`.cpg-arc-type`, `.cpg-urg-badge`, `.cpg-arc-card-sum`), right rail actors (`.cpg-actor-row`, `.cpg-actor-av`), shell customizations.
+
+### Backend (deployed earlier this session)
+- **newsThreadAnalysis** — added 4 new prompt fields: `inflectionTopicId`, `riskScore` (0-100), `sentiment` (-1 to +1), `keyActors` (top 5 `{name, role, mentionCount}`).
+- **newsCountryIntelligence** — added `keyActors` (top 8 `{name, role, threadCount}`) to country briefings. Bumped `MAX_COUNTRIES` 10→20.
+
 ## 2026-04-26 (Fix: macro fields rendered as {value,year} objects crash React)
 
 ### Bug fix

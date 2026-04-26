@@ -476,14 +476,269 @@
   margin-top: 8px;
 }
 
+/* ── Arc card enhancements ───────────────────────────────── */
+.cpg-arc-card.anchor { border-left: 3px solid var(--accent); }
+.cpg-arc-card.linked { background: var(--paper); }
+
+.cpg-arc-card-kicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cpg-arc-type {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent-deep);
+}
+.cpg-arc-type.linked { color: var(--ink-mid); }
+.cpg-arc-dot { color: var(--ink-faint); font-size: 9px; }
+
+.cpg-urg-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: var(--risk-h);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.cpg-arc-card-sum {
+  font-size: 12.5px;
+  color: var(--ink-dim);
+  line-height: 1.45;
+  margin-top: 4px;
+  max-width: 520px;
+}
+
+/* Tab content padding */
+.cpg-tab-content { padding-top: 4px; }
+
+/* ── Left rail ────────────────────────────────────────────── */
+.cpg-left { padding: 0; }
+
+.cpg-left-crumbs {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 18px;
+  line-height: 1.4;
+}
+.cpg-left-crumbs a { color: var(--ink-dim); text-decoration: none; }
+.cpg-left-crumbs a:hover { color: var(--ink); }
+.cpg-crumb-sep { color: var(--ink-faint); }
+
+.cpg-left-hd {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+
+.cpg-country-nav {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 2px;
+  transition: background var(--fast);
+}
+.cpg-country-nav:hover { background: var(--paper-2); }
+
+.cpg-country-nav-iso {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  width: 28px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.cpg-country-nav-body { min-width: 0; }
+
+.cpg-country-nav-name {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cpg-country-nav-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  display: block;
+  margin-top: 1px;
+}
+
+/* Facet filter buttons */
+.cpg-facet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 6px 8px 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--ink-mid);
+  font-family: var(--sans);
+  text-align: left;
+  transition: background var(--fast);
+}
+.cpg-facet:hover { background: var(--paper-2); }
+.cpg-facet.on { background: var(--paper-2); color: var(--ink); font-weight: 500; }
+
+.cpg-facet-c {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+.cpg-facet.on .cpg-facet-c { color: var(--ink-mid); }
+
+/* Actor chips */
+.cpg-actor-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.cpg-actor-chip {
+  display: inline-block;
+  padding: 3px 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--ink-mid);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: default;
+}
+.cpg-actor-chip:hover { border-color: var(--line-2); color: var(--ink); }
+
+/* ── Right rail — actors ─────────────────────────────────── */
+.cpg-right { display: flex; flex-direction: column; }
+
+.cpg-actor-row {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cpg-actor-row:last-child { border-bottom: none; }
+
+.cpg-actor-av {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-mid);
+  flex-shrink: 0;
+}
+
+.cpg-actor-body { min-width: 0; }
+
+.cpg-actor-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cpg-actor-role {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cpg-actor-n {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+/* ── Shell customizations ────────────────────────────────── */
+.cpg-shell .es-center { padding: 0; }
+
+/* Stats strip full-width inside center */
+.cpg-stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
+.cpg-stat { padding: 16px 20px; border-right: 1px solid var(--line); }
+.cpg-stat:last-child { border-right: none; }
+
+/* Tabs need some horizontal padding */
+.cpg-tabs { padding: 0 28px; }
+.cpg-tab-content { padding: 0 28px 48px; }
+.cpg-hd { padding: 24px 28px 20px; }
+.cpg-section-lbl { margin-top: 20px; }
+
 /* ── Mobile ──────────────────────────────────────────────── */
 @media (max-width: 960px) {
   .cpg-content { grid-template-columns: 1fr; }
   .cpg-rail { position: static; max-height: none; margin-top: 0; }
   .cpg-stats { grid-template-columns: repeat(2, 1fr); }
-  .cpg-hd { grid-template-columns: 1fr; gap: 16px; }
+  .cpg-hd { grid-template-columns: 1fr; gap: 16px; padding: 20px 16px 16px; }
   .cpg-hd-h1 { font-size: 40px; }
   .cpg-hd-dek { font-size: 16px; }
+  .cpg-tabs { padding: 0 16px; }
+  .cpg-tab-content { padding: 0 16px 48px; }
 }
 
 @media (max-width: 600px) {

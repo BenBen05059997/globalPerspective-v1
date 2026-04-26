@@ -665,14 +665,13 @@ export default function CountryPage() {
                 )}
 
                 {/* FX snapshot */}
-                {markets?.fx && Object.keys(markets.fx).filter(k => k !== 'asOf').length > 0 && (
+                {markets?.fx?.rates && Object.keys(markets.fx.rates).length > 0 && (
                   <div className="cpg-rail-section">
                     <div className="cpg-rail-hd">
-                      FX Rates
+                      FX Rates vs {markets.fx.base || 'USD'}
                       {markets.fx.asOf && <span className="cpg-rail-asof">{formatAsOf(markets.fx.asOf)}</span>}
                     </div>
-                    {Object.entries(markets.fx)
-                      .filter(([k]) => k !== 'asOf')
+                    {Object.entries(markets.fx.rates)
                       .slice(0, 5)
                       .map(([pair, rate]) => (
                         <div key={pair} className="cpg-mkt-row">

@@ -7,7 +7,7 @@ const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const GROK_MODEL = process.env.GROK_MODEL || 'grok-4-1-fast-non-reasoning';
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
-const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3000', 10);
+const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3500', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
 const TOP_P = Number(process.env.TOP_P || '0.9');
 
@@ -253,6 +253,14 @@ Generate a JSON object with exactly these fields:
 
 6. "watchQuestions": Array of exactly 3 strings — specific, actionable questions a reader should watch for in the coming days or weeks. Name specific actors, countries, institutions, or upcoming deadlines. Avoid vague questions like "Will tensions rise?". Good example: "Will the ECB raise rates at its June meeting given this inflation data?" Each string must end with "?".
 
+7. "inflectionTopicId": The topicId of the single entry that represents the narrative inflection point — the event that most clearly changed the story's direction, confirmed a hypothesis, or crossed a threshold. If no clear inflection exists, return null. Must be one of these topicIds or null: ${thread.entries.map(e => `"${e.topicId}"`).join(', ')}
+
+8. "riskScore": Integer 0-100 measuring the risk level of this narrative thread right now. Calibration: 0-24 = routine/low stakes (policy debates, standard diplomacy), 25-49 = meaningful political or economic stress (sanctions threat, political crisis, market volatility), 50-74 = active conflict or major crisis, 75-100 = open war, state failure, or imminent systemic collapse.
+
+9. "sentiment": Float from -1.0 to 1.0 measuring the overall emotional valence of coverage. -1.0 = highly alarming/negative (war, atrocity, collapse), 0.0 = neutral/factual reporting, +1.0 = highly positive (resolution, breakthrough, recovery). One decimal place. Most geopolitical threads will be in -0.8 to 0.0 range.
+
+10. "keyActors": Array of up to 5 objects — the most frequently mentioned named individuals or institutions across all entries. Each object: {"name": full name, "role": their institutional role and country (e.g. "Argentina · Economy Minister"), "mentionCount": approximate number of times they appear across all entries combined}. Sort by mentionCount descending. Do NOT include country names as actors — only named people or named institutions.
+
 Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 
   const { content, modelId, latencyMs } = await invokeGrok(prompt);
@@ -297,6 +305,10 @@ async function writeAnalysis(threadId, analysis, entryCount) {
       rootCauseChain: analysis.rootCauseChain || null,
       watchQuestions: Array.isArray(analysis.watchQuestions) ? analysis.watchQuestions.slice(0, 3) : [],
       groundingSources: Array.isArray(analysis.groundingSources) ? analysis.groundingSources : [],
+      inflectionTopicId: analysis.inflectionTopicId || null,
+      riskScore: typeof analysis.riskScore === 'number' ? Math.max(0, Math.min(100, Math.round(analysis.riskScore))) : null,
+      sentiment: typeof analysis.sentiment === 'number' ? Math.max(-1, Math.min(1, analysis.sentiment)) : null,
+      keyActors: Array.isArray(analysis.keyActors) ? analysis.keyActors.slice(0, 5) : [],
       entryCount,
       generatedAt: new Date().toISOString(),
       model: analysis.modelId || GROK_MODEL,

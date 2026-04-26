@@ -187,6 +187,7 @@ function groupByCountry(entries, threadAnalyses) {
           articleCount: threadEntries.length,
           trajectory: analysis?.trajectory || null,
           storyArc: analysis?.storyArc || null,
+          keyActors: Array.isArray(analysis?.keyActors) ? analysis.keyActors : [],
         };
       });
 
@@ -359,7 +360,10 @@ async function generateCountryIntelligence(country) {
   const threadBlock = country.threads.map((t, i) => {
     const arcSnippet = t.storyArc ? `\n  Story arc: ${t.storyArc.slice(0, 300)}` : '';
     const trajSnippet = t.trajectory ? `\n  Trajectory: ${t.trajectory.slice(0, 250)}` : '';
-    return `Thread ${i + 1}: "${t.title}" [${t.category}] — ${t.articleCount} articles${arcSnippet}${trajSnippet}`;
+    const actorSnippet = t.keyActors?.length
+      ? `\n  Actors: ${t.keyActors.map(a => `${a.name} (${a.role})`).join(', ')}`
+      : '';
+    return `Thread ${i + 1}: "${t.title}" [${t.category}] — ${t.articleCount} articles${arcSnippet}${trajSnippet}${actorSnippet}`;
   }).join('\n\n');
 
   const singleBlock = country.singleEntries.length > 0
@@ -442,6 +446,8 @@ Generate a JSON object with exactly these fields:
 
 11. "riskScore": Integer 0-100 on a continuous scale. Calibration: 0-24 = low (stable democracy, no active conflict, ordinary policy friction), 25-49 = moderate (meaningful political or economic stress, limited violence), 50-74 = elevated (active conflict, major sanctions, political crisis, or systemic economic instability), 75-100 = high (open war, state failure, mass atrocity, or imminent systemic collapse). Must be consistent with riskLevel: low→0-24, moderate→25-49, elevated→50-74, high→75-100.
 
+12. "keyActors": Array of up to 8 objects — the most important named individuals or institutions in this country's coverage. Each object: {"name": full name, "role": institutional role (e.g. "President", "Economy Minister", "Central Bank Governor"), "threadCount": number of story arcs they appear in}. Sort by prominence (threadCount desc, then overall importance). Include current leaders from editorial context even if mentioned only briefly. Do NOT include country names as actors — only named people or institutions.
+
 Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 
   const { content, modelId, latencyMs } = await invokeGrok(prompt);
@@ -496,6 +502,7 @@ async function writeAnalysis(countryName, analysis, country) {
     riskLevel: analysis.riskLevel || 'moderate',
     riskScore,
     groundingSources: Array.isArray(analysis.groundingSources) ? analysis.groundingSources : [],
+    keyActors: Array.isArray(analysis.keyActors) ? analysis.keyActors.slice(0, 8) : [],
     dominantCategory: country.dominantCategory,
     categories: country.categories,
     totalArticles: country.totalArticles,

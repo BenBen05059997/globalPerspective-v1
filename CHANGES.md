@@ -1,5 +1,10 @@
 # Global Perspectives — Change Log
 
+## 2026-04-26 (Fix: macro fields rendered as {value,year} objects crash React)
+
+### Bug fix
+- **CountryPage.jsx**, **WorldMapV2.jsx** — World Bank macro fields (`gdp`, `cpi_yoy`, `unemployment`, `debt_to_gdp`) are stored as `{value, year}` objects by `newsMarketsData`. Both components were rendering them directly as React children. Fixed by extracting `.value` before formatting.
+
 ## 2026-04-26 (Data gap fix: expand country intelligence to top 20 + map empty state)
 
 ### Backend

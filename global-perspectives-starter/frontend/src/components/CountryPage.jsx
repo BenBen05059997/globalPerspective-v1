@@ -648,18 +648,19 @@ export default function CountryPage() {
                       Macro Snapshot
                       {markets.asOf && <span className="cpg-rail-asof">{formatAsOf(markets.asOf)}</span>}
                     </div>
-                    {markets.macro.gdp != null && (
-                      <div className="cpg-mkt-row"><span>GDP</span><b>{typeof markets.macro.gdp === 'number' ? `$${(markets.macro.gdp / 1e9).toFixed(0)}B` : markets.macro.gdp}</b></div>
-                    )}
-                    {markets.macro.cpi_yoy != null && (
-                      <div className="cpg-mkt-row"><span>CPI YoY</span><b>{markets.macro.cpi_yoy}%</b></div>
-                    )}
-                    {markets.macro.unemployment != null && (
-                      <div className="cpg-mkt-row"><span>Unemployment</span><b>{markets.macro.unemployment}%</b></div>
-                    )}
-                    {markets.macro.debt_to_gdp != null && (
-                      <div className="cpg-mkt-row"><span>Debt/GDP</span><b>{markets.macro.debt_to_gdp}%</b></div>
-                    )}
+                    {(() => {
+                      const mv = f => (f != null && typeof f === 'object' ? f.value : f);
+                      const gdp = mv(markets.macro.gdp);
+                      const cpi = mv(markets.macro.cpi_yoy);
+                      const unemp = mv(markets.macro.unemployment);
+                      const debt = mv(markets.macro.debt_to_gdp);
+                      return <>
+                        {gdp != null && <div className="cpg-mkt-row"><span>GDP</span><b>${(gdp / 1e9).toFixed(0)}B</b></div>}
+                        {cpi != null && <div className="cpg-mkt-row"><span>CPI YoY</span><b>{(+cpi).toFixed(1)}%</b></div>}
+                        {unemp != null && <div className="cpg-mkt-row"><span>Unemployment</span><b>{(+unemp).toFixed(1)}%</b></div>}
+                        {debt != null && <div className="cpg-mkt-row"><span>Debt/GDP</span><b>{(+debt).toFixed(0)}%</b></div>}
+                      </>;
+                    })()}
                   </div>
                 )}
 

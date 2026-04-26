@@ -167,7 +167,7 @@ export default function WorldMapV2() {
   );
 
   // Per-country backend hooks (fire only when a country is selected)
-  const { intelligence } = useCountryIntelligence(selectedName ? [selectedName] : []);
+  const { intelligence, loading: intelLoading } = useCountryIntelligence(selectedName ? [selectedName] : []);
   const intel = intelligence?.[selectedName];
   const { snapshots } = useCountryHistory(selectedName);
   const { data: systemsData } = useSystemsAnalysis(selectedName);
@@ -760,6 +760,16 @@ export default function WorldMapV2() {
           <div className="mv2-map" ref={wrapRef}>
             <svg className="map-svg" ref={svgRef} />
 
+            {/* Map loading overlay — shown until TopoJSON resolves */}
+            {Object.keys(nameToISO).length === 0 && (
+              <div className="mv2-map-loading">
+                <div className="mv2-map-loading-inner">
+                  <div className="mv2-spinner" />
+                  <span className="mv2-loading-text">Loading world topology…</span>
+                </div>
+              </div>
+            )}
+
             <button className="mv2-corner-toggle left" onClick={() => setRailOpen(o => !o)} title={railOpen ? 'Hide filters' : 'Show filters'}>
               <span className="chev">{railOpen ? '‹' : '›'}</span>
               Filters
@@ -810,6 +820,15 @@ export default function WorldMapV2() {
                 </div>
                 <span className="flag">{selectedISO.slice(0, 2)}</span>
               </div>
+
+              {/* Intel loading skeleton */}
+              {intelLoading && !intel && (
+                <div className="mv2-intel-skeleton">
+                  <div className="sk-line sk-w80" />
+                  <div className="sk-line sk-w60" />
+                  <div className="sk-line sk-w40" />
+                </div>
+              )}
 
               {/* Stat strip */}
               {(() => {

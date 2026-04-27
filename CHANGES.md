@@ -17,6 +17,14 @@
 
 ---
 
+## 2026-04-27 (Feature: Country search bar on WorldMapV2)
+
+### Frontend (DEPLOYED to /docs/ 2026-04-27)
+- **WorldMapV2.jsx** — Added floating country search overlay at top-center of the map. Survives left rail collapse (positioned absolute on `.mv2-map`, z-index 20). Searches both `nameToISO` (TopoJSON canonical names, ~177 countries) and `EXTRA_ALIASES` (e.g., "us" → United States). Match ranking: prefix matches first, then substring matches, then alphabetical. Caps at 8 results.
+- **WorldMapV2.jsx** — Keyboard: Enter selects first match, Esc clears + blurs. Click-outside (onBlur) closes dropdown after 150ms delay so onMouseDown selection still fires. Selecting a match calls `handleCountryClick(iso)` (existing fn), force-opens the right detail panel.
+- **WorldMapV2.jsx** — Empty state: shows `No country matches "<query>"` when query has no hits.
+- **WorldMapV2.css** — Added `.mv2-search`, `.mv2-search-row`, `.mv2-search-input`, `.mv2-search-clear`, `.mv2-search-dropdown`, `.mv2-search-match`, `.mv2-search-name`, `.mv2-search-iso`, `.mv2-search-empty` styles. Focus state: ink border + stronger shadow. Width: `min(320px, calc(100% - 120px))` so it doesn't collide with corner toggles.
+
 ## 2026-04-27 (Fix: WorldMapV2 Lens controls — Signal level + Time window)
 
 ### Frontend (DEPLOYED to /docs/ 2026-04-27)

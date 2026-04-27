@@ -149,6 +149,8 @@ export default function WorldMapV2() {
   const [flowFilters, setFlowFilters] = useState({ fx: true, tech: true, geo: true });
   const [signalFilters, setSignalFilters] = useState({ H: true, E: true, L: true });
   const [timeWindow, setTimeWindow] = useState('30d');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
 
   // Dynamic maps built after TopoJSON loads
   const [nameToISO, setNameToISO] = useState({});
@@ -594,6 +596,35 @@ export default function WorldMapV2() {
 
   const riskColor = intel?.riskLevel === 'high' ? 'var(--risk-h)' : intel?.riskLevel === 'elevated' ? 'var(--risk-e)' : intel?.riskLevel === 'low' ? 'var(--risk-l)' : 'var(--ink-dim)';
 
+  // Search matches across canonical names + extra aliases
+  const searchMatches = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q.length < 1) return [];
+    const seen = new Set();
+    const out = [];
+    const tryAdd = (key, iso) => {
+      if (!iso || seen.has(iso)) return;
+      const display = isoToName[iso] || key;
+      if (key.startsWith(q) || display.toLowerCase().startsWith(q)) {
+        seen.add(iso);
+        out.push({ key, iso, display, score: 0 });
+      } else if (key.includes(q) || display.toLowerCase().includes(q)) {
+        seen.add(iso);
+        out.push({ key, iso, display, score: 1 });
+      }
+    };
+    for (const [key, iso] of Object.entries(nameToISO)) tryAdd(key, iso);
+    for (const [key, iso] of Object.entries(EXTRA_ALIASES)) tryAdd(key, iso);
+    return out.sort((a, b) => a.score - b.score || a.display.localeCompare(b.display)).slice(0, 8);
+  }, [searchQuery, nameToISO, isoToName]);
+
+  const handleSearchSelect = (iso) => {
+    setSearchQuery('');
+    setSearchFocused(false);
+    handleCountryClick(iso);
+    setPanelOpen(true);
+  };
+
   return (
     <div className="mv2">
 
@@ -778,6 +809,48 @@ export default function WorldMapV2() {
 
           <div className="mv2-map" ref={wrapRef}>
             <svg className="map-svg" ref={svgRef} />
+
+            {/* Country search */}
+            <div className={`mv2-search${searchFocused ? ' focused' : ''}`}>
+              <div className="mv2-search-row">
+                <span className="mv2-search-icon" aria-hidden>⌕</span>
+                <input
+                  className="mv2-search-input"
+                  type="text"
+                  placeholder="Search country…"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && searchMatches[0]) handleSearchSelect(searchMatches[0].iso);
+                    else if (e.key === 'Escape') { setSearchQuery(''); e.currentTarget.blur(); }
+                  }}
+                />
+                {searchQuery && (
+                  <button className="mv2-search-clear" onClick={() => setSearchQuery('')} aria-label="Clear">×</button>
+                )}
+              </div>
+              {searchFocused && searchMatches.length > 0 && (
+                <div className="mv2-search-dropdown">
+                  {searchMatches.map(m => (
+                    <div
+                      key={m.iso + m.key}
+                      className="mv2-search-match"
+                      onMouseDown={() => handleSearchSelect(m.iso)}
+                    >
+                      <span className="mv2-search-name">{m.display}</span>
+                      <span className="mv2-search-iso">{m.iso}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {searchFocused && searchQuery.trim().length >= 1 && searchMatches.length === 0 && (
+                <div className="mv2-search-dropdown">
+                  <div className="mv2-search-empty">No country matches "{searchQuery}"</div>
+                </div>
+              )}
+            </div>
 
             {/* Map loading overlay — shown until TopoJSON resolves */}
             {Object.keys(nameToISO).length === 0 && (

@@ -4,11 +4,12 @@ import './TodayArchiveSidebar.css';
 
 const CATEGORY_ORDER = ['conflict', 'politics', 'economy', 'military', 'disaster', 'technology', 'health'];
 
-function TodayArchiveSidebar({ entries }) {
+function TodayArchiveSidebar({ entries, mode = 'float' }) {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
+  const isRail = mode === 'rail';
 
   const availableCategories = useMemo(() => {
     if (!entries || entries.length === 0) return [];
@@ -56,6 +57,73 @@ function TodayArchiveSidebar({ entries }) {
   const handleCategoryClick = (cat) => {
     setActiveCategory(prev => prev === cat ? null : cat);
   };
+
+  // Rail mode — no floating chrome, no collapse toggle. Used inside EditorialShell left slot.
+  if (isRail) {
+    return (
+      <>
+        <div className="archive-rail">
+          <div className="archive-rail-head">
+            <span className="archive-rail-title">Today's Archive</span>
+            <span className="archive-rail-count">{entries.length}</span>
+          </div>
+
+          <div className="archive-rail-filters">
+            <input
+              className="archive-rail-search"
+              type="text"
+              placeholder="Search topics…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {availableCategories.length > 0 && (
+              <div className="archive-rail-chips">
+                {availableCategories.map(cat => (
+                  <button
+                    key={cat}
+                    className={`archive-rail-chip ${activeCategory === cat ? 'active' : ''}`}
+                    onClick={() => handleCategoryClick(cat)}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="archive-rail-list">
+            {filtered.length === 0 && (
+              <div className="archive-rail-empty">No matching topics</div>
+            )}
+            {sortedCategories.map(category => (
+              <div key={category} className="archive-rail-group">
+                {!activeCategory && (
+                  <div className="archive-rail-lbl">{category}</div>
+                )}
+                {grouped[category].map((entry) => (
+                  <div
+                    key={entry.topicId}
+                    className="archive-rail-item"
+                    onClick={() => setSelectedEntry(entry)}
+                  >
+                    <div className="archive-rail-item-t">{entry.title}</div>
+                    <div className="archive-rail-item-m">Showed {getTimeAgo(entry.archivedAt)}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {selectedEntry && (
+          <ArchiveTopicModal
+            entry={selectedEntry}
+            onClose={() => setSelectedEntry(null)}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <>

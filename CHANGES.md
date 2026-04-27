@@ -1,5 +1,35 @@
 # Global Perspectives — Change Log
 
+## 2026-04-27 (Feature: Home v2 redesign — incremental rebuild + EditorialShell full-bleed)
+
+### Context
+First attempt (caa67a0) was a from-scratch rewrite that silently removed several production features (cache-miss retry logic with MAX_RETRIES=6, expandable sources panel, Google News fallback, filteredArchiveEntries dedup, Buy Me a Coffee CTA). User caught it. Reverted as e4e5848 and redone as 7 small, additive commits that preserve every existing feature.
+
+### Commits (in order)
+- **`6511e9c`** Step 1: add StatusStrip chrome at top — pure addition, no logic changes
+- **`e8718a0`** Step 2: surface TRENDING badge (`x_trending` was generated every batch but unused) + rename BREAKING → URGENT for consistency with Thread/Country pages + prefer `primaryCountry` over `regions[0]`
+- **`e99dab3`** Step 3: add outlet count to topic meta line (`N sources · M outlets`, dedup outlets client-side from sources[].source)
+- **`be8ad9a`** Step 4a: add `mode='float'|'rail'` prop to TodayArchiveSidebar — rail mode renders search/chips/grouped list inline without floating chrome; float mode (default) preserves existing behavior. WorldMap.jsx still uses float mode.
+- **`2d41a1a`** Step 4b: add `mode='float'|'rail'` prop to TopicNav — same pattern, IntersectionObserver scroll-spy preserved in rail mode
+- **`992830d`** Step 4c: cutover Home to `<EditorialShell strip={StatusStrip} left={TodayArchiveSidebar mode=rail + Buy Me a Coffee} right={TopicNav mode=rail}>`. Buy Me a Coffee moved to left rail bottom (mustard yellow `#FFC621` button). All AI handlers, retry logic, sources panel, Google News fallback, ArchiveTopicModal preserved.
+- **`2161345`** Step 5 cleanup: removed redundant `home-meta` inline LIVE strip from masthead (duplicated StatusStrip), unused `getTimeAgo()`, unused `generatedDate` destructure, dead `.home-page` / `.home-meta*` / `.home-support` CSS rules. −94 lines net.
+- **`027f9f3`** EditorialShell full-bleed: single line in `atoms.css` (`.gp-main:has(.es-shell) > .container { max-width: 100%; padding: 0; }`) makes Home, Weekly, Countries, Country pages all escape Layout's 1200px container cap. Center column reading width unchanged (per-page `.es-center` max-width still applies); only side rails get their full intended width on >1200px viewports. Mirrors WorldMapV2's existing escape pattern.
+
+### Reverted
+- **`caa67a0`** (REVERTED via `e4e5848`) — first Home v2 rewrite. Removed retry logic, sources panel, Google News fallback, filteredArchiveEntries dedup, Buy Me a Coffee. Lesson recorded as `feedback_no_unauthorized_removal.md`.
+
+### Hidden data now surfaced on Home
+- `topic.x_trending` — red TRENDING badge (Grok generates per batch, was previously discarded)
+- `topic.urgency === 'high'` — URGENT badge (was BREAKING, renamed for consistency)
+- `topic.primaryCountry` — Change C field, used in kicker
+- Outlet count derived client-side from sources[]
+
+### Known issues / deferred
+- Mobile (<900px) hides left rail entirely (EditorialShell behavior); archive no longer accessible on mobile via Home. Step 7 (deferred) could add a floating archive pill fallback on mobile.
+- Step 6 (deferred): convert `SummaryDisplay`/`PredictionDisplay`/`TraceCauseDisplay` to render `splitToBullets()` cards (Brief.html visual). Skipped because user prefers preserving prose rendering for now.
+
+---
+
 ## 2026-04-27 (Feature: Home v2 redesign — 3-col EditorialShell, Brief.html design)
 
 ### Frontend (DEPLOYED to /docs/ 2026-04-27)

@@ -1044,7 +1044,7 @@ export default function WorldMapV2() {
                   if (n?.threadId) m[n.threadId] = n;
                   return m;
                 }, {});
-                const titleFor = (id) => nodeMap[id]?.summary || nodeMap[id]?.threadTitle || (id || '').replace(/^thread-/, '').replace(/-[a-f0-9]{6}$/, '').replace(/-/g, ' ');
+                const titleFor = (id) => nodeMap[id]?.summary || (id || '').replace(/^thread-/, '').replace(/-[a-f0-9]{6}$/, '').replace(/-/g, ' ');
                 const confColor = (c) => c === 'strong' ? 'var(--risk-h, #c0392b)' : c === 'medium' ? 'var(--risk-e, #d97706)' : 'var(--ink-faint)';
                 return (
                   <div className="section">

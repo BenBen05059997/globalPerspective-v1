@@ -597,7 +597,7 @@ export default function CountryPage() {
           <div style={{ fontSize: 12, lineHeight: 1.5 }}>
             {(() => {
               const nodeMap = (systemsData.nodes || []).reduce((m, n) => { if (n?.threadId) m[n.threadId] = n; return m; }, {});
-              const titleFor = id => nodeMap[id]?.summary || nodeMap[id]?.title || (id || '').replace(/^thread-/, '').replace(/-[a-f0-9]{6}$/, '').replace(/-/g, ' ');
+              const titleFor = id => nodeMap[id]?.summary || (id || '').replace(/^thread-/, '').replace(/-[a-f0-9]{6}$/, '').replace(/-/g, ' ');
               const confColor = c => c === 'strong' ? 'var(--risk-h, #c0392b)' : c === 'medium' ? 'var(--risk-e, #d97706)' : 'var(--ink-faint)';
               return (systemsData.edges || []).slice(0, 4).map((e, i) => (
                 <div key={i} style={{ marginBottom: 8, padding: '7px 9px', background: 'var(--paper, #fbfbf9)', border: '1px solid var(--line)', borderRadius: 5 }}>

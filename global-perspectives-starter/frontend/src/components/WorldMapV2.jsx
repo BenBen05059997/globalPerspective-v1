@@ -947,25 +947,37 @@ export default function WorldMapV2() {
               )}
 
               {/* Causal Graph from systems analysis */}
-              {systemsData?.edges?.length > 0 && (
-                <div className="section">
-                  <h4>Causal Graph</h4>
-                  {systemsData.edges.slice(0, 3).map((e, i) => (
-                    <div key={i} style={{ marginBottom: 8, padding: '7px 10px', background: '#fff', border: '1px solid var(--line)', borderRadius: 6 }}>
-                      <div style={{ fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.4 }}>
-                        <span style={{ fontWeight: 600 }}>{e.from}</span>
-                        <span style={{ color: 'var(--ink-dim)', margin: '0 5px', fontFamily: 'var(--mono)', fontSize: 10 }}>→ {e.mechanism} →</span>
-                        <span style={{ fontWeight: 600 }}>{e.to}</span>
-                      </div>
-                      {(e.confidence || e.lagDays) && (
-                        <div style={{ marginTop: 3, fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-faint)' }}>
-                          {e.confidence && `conf: ${e.confidence}`}{e.confidence && e.lagDays && ' · '}{e.lagDays && `lag: ${e.lagDays}d`}
+              {systemsData?.edges?.length > 0 && (() => {
+                const nodeMap = (systemsData.nodes || []).reduce((m, n) => {
+                  if (n?.threadId) m[n.threadId] = n;
+                  return m;
+                }, {});
+                const titleFor = (id) => nodeMap[id]?.summary || nodeMap[id]?.threadTitle || (id || '').replace(/^thread-/, '').replace(/-[a-f0-9]{6}$/, '').replace(/-/g, ' ');
+                const confColor = (c) => c === 'strong' ? 'var(--risk-h, #c0392b)' : c === 'medium' ? 'var(--risk-e, #d97706)' : 'var(--ink-faint)';
+                return (
+                  <div className="section">
+                    <h4>Causal Graph</h4>
+                    {systemsData.edges.slice(0, 3).map((e, i) => (
+                      <div key={i} className="mv2-causal-edge">
+                        <div className="mv2-causal-from">{titleFor(e.from)}</div>
+                        <div className="mv2-causal-arrow">
+                          <span className="mv2-causal-arrow-line" />
+                          <span className="mv2-causal-meta">
+                            {e.lagDays != null && <span>{e.lagDays}d lag</span>}
+                            {e.confidence && (
+                              <span style={{ color: confColor(e.confidence) }}>· {e.confidence}</span>
+                            )}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                        <div className="mv2-causal-to">{titleFor(e.to)}</div>
+                        {e.mechanism && (
+                          <div className="mv2-causal-mech">{e.mechanism}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Markets snapshot */}
               {markets?.macro && (

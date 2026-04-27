@@ -17,6 +17,16 @@
 
 ---
 
+## 2026-04-27 (Fix: Causal Graph readability + IAM logging fix for newsSystemsAnalysis)
+
+### Backend (IAM)
+- **newsSystemsAnalysis log group** — fixed missing CloudWatch Logs permission. Lambda was using a borrowed role (`newsCountryIntelligence-role-xqboqh2y`) whose logs policy was scoped to a different function ARN, so log group `/aws/lambda/newsSystemsAnalysis` was never created and the 1 prior error was invisible. Added `/aws/lambda/newsSystemsAnalysis:*` to role's logs permissions. Lambda re-invoked → log group auto-created → Iran graph regenerated cleanly (15 nodes, 7 edges, 0 errors).
+
+### Frontend (DEPLOYED to /docs/ 2026-04-27)
+- **WorldMapV2.jsx** — Causal Graph section was rendering raw threadId strings (`thread-trump-issues-expletive-filled--436f45`) for `from`/`to`. Fixed by building `nodeMap` from `systemsData.nodes` and showing the node `summary` as the human-readable title. Falls back to a slug-cleaning function if the node is missing.
+- **WorldMapV2.jsx** — Layout restructured from cramped one-line `from → mechanism → to` into a stacked card: `from` title → arrow column with `Nd lag · confidence` (color-coded: strong=red, medium=amber) → `to` title → mechanism in italic dashed-bordered footnote.
+- **WorldMapV2.css** — Added `.mv2-causal-edge`, `.mv2-causal-from/to`, `.mv2-causal-arrow`, `.mv2-causal-arrow-line`, `.mv2-causal-meta`, `.mv2-causal-mech` styles.
+
 ## 2026-04-27 (Audit: category rebalance confirmed via DynamoDB)
 
 ### Verification

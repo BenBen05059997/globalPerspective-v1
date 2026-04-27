@@ -538,3 +538,53 @@
   text-transform: uppercase;
   padding: 6px 0 10px;
 }
+
+/* ── Causal Graph (Systems Analysis) ──────────────────────── */
+.mv2-causal-edge {
+  margin-bottom: 10px;
+  padding: 9px 11px;
+  background: #fff;
+  border: 1px solid var(--line, #e3e3e0);
+  border-radius: 6px;
+}
+.mv2-causal-from,
+.mv2-causal-to {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink, #0a0a0a);
+  font-weight: 600;
+}
+.mv2-causal-from::first-letter,
+.mv2-causal-to::first-letter {
+  text-transform: uppercase;
+}
+.mv2-causal-arrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 4px 6px;
+  font-family: var(--mono, monospace);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint, #8a8a8e);
+  text-transform: uppercase;
+}
+.mv2-causal-arrow-line {
+  width: 1px;
+  height: 14px;
+  background: var(--line, #d3d3d0);
+  margin-left: 3px;
+}
+.mv2-causal-meta {
+  display: inline-flex;
+  gap: 4px;
+}
+.mv2-causal-mech {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line, #e8e8e6);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink-dim, #6a6a6e);
+  font-style: italic;
+}

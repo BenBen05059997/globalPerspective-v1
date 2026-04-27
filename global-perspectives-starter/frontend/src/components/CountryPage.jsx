@@ -595,22 +595,25 @@ export default function CountryPage() {
             </span>
           </div>
           <div style={{ fontSize: 12, lineHeight: 1.5 }}>
-            {(systemsData.edges || []).slice(0, 4).map((e, i) => {
-              const fromNode = systemsData.nodes.find(n => n.threadId === e.from);
-              const toNode = systemsData.nodes.find(n => n.threadId === e.to);
-              if (!fromNode || !toNode) return null;
-              return (
-                <div key={i} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--line)' }}>
-                  <div style={{ color: 'var(--ink)', fontWeight: 500 }}>{fromNode.title?.slice(0, 38) || fromNode.threadId}</div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--accent)', margin: '2px 0' }}>
-                    → {e.mechanism || 'influences'}
-                    {e.lagDays ? ` (${e.lagDays}d)` : ''}
-                    {e.confidence ? ` · ${Math.round(e.confidence * 100)}%` : ''}
+            {(() => {
+              const nodeMap = (systemsData.nodes || []).reduce((m, n) => { if (n?.threadId) m[n.threadId] = n; return m; }, {});
+              const titleFor = id => nodeMap[id]?.summary || nodeMap[id]?.title || (id || '').replace(/^thread-/, '').replace(/-[a-f0-9]{6}$/, '').replace(/-/g, ' ');
+              const confColor = c => c === 'strong' ? 'var(--risk-h, #c0392b)' : c === 'medium' ? 'var(--risk-e, #d97706)' : 'var(--ink-faint)';
+              return (systemsData.edges || []).slice(0, 4).map((e, i) => (
+                <div key={i} style={{ marginBottom: 8, padding: '7px 9px', background: 'var(--paper, #fbfbf9)', border: '1px solid var(--line)', borderRadius: 5 }}>
+                  <div style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 11.5, lineHeight: 1.35 }}>{titleFor(e.from)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '3px 0 3px 4px', fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-faint)' }}>
+                    <span style={{ width: 1, height: 12, background: 'var(--line)', display: 'inline-block' }} />
+                    {e.lagDays != null && <span>{e.lagDays}d lag</span>}
+                    {e.confidence && <span style={{ color: confColor(e.confidence) }}>· {e.confidence}</span>}
                   </div>
-                  <div style={{ color: 'var(--ink-dim)' }}>{toNode.title?.slice(0, 38) || toNode.threadId}</div>
+                  <div style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 11.5, lineHeight: 1.35 }}>{titleFor(e.to)}</div>
+                  {e.mechanism && (
+                    <div style={{ marginTop: 5, paddingTop: 5, borderTop: '1px dashed var(--line)', fontSize: 10.5, color: 'var(--ink-dim)', fontStyle: 'italic', lineHeight: 1.4 }}>{e.mechanism}</div>
+                  )}
                 </div>
-              );
-            })}
+              ));
+            })()}
           </div>
         </div>
       )}

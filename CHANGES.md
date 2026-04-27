@@ -1,5 +1,24 @@
 # Global Perspectives — Change Log
 
+## 2026-04-28 (Fix: CountryPage Causal Graph — threadId strings + NaN% confidence)
+
+### Frontend (DEPLOYED to /docs/ 2026-04-28)
+- **CountryPage.jsx** — Causal Graph in right rail had two bugs that surfaced as "raw threadId-… → undefined NaN% mechanism" cards:
+  - `fromNode.title` referenced a field that never existed on systems-analysis nodes; correct field is `nodeMap[id].summary`. Without the fallback this rendered raw threadIds.
+  - `e.confidence` is a string label (`'strong'`/`'medium'`/`'weak'`), not a 0-1 float. `Math.round(string * 100)` produced `NaN%`. Now rendered as label text with color coding (strong=risk-h, medium=accent, weak=ink-faint).
+- Applied the same stacked-card layout as the prior WorldMapV2 fix (from-summary → arrow column with lag + confidence label → to-summary → dashed mechanism footnote).
+- **Commit:** `b0f84bc`
+
+---
+
+## 2026-04-27 (Tail-end fixes: country kicker link + map search bar position)
+
+### Frontend (DEPLOYED to /docs/ 2026-04-27)
+- **Home: country in topic kicker links to /weekly/country/:name** (`379c63e`). Inline link styling (color:inherit, hover underline 2px below baseline) — distinct from the chip-style country links on DailyPage which suit card contexts; the kicker is a flowing breadcrumb-style metadata line where a chip would compete with the TRENDING/URGENT badges.
+- **WorldMapV2: search bar moved from absolute overlay to document flow** (`e4a1d99`). `.mv2-search` was overlapping the map (z-index conflict + visual clutter); moved into `.mv2-mapwrap` between title bar and map. Dropdown still uses `position:absolute` relative to `.mv2-search` so it floats over the map when typing.
+
+---
+
 ## 2026-04-27 (Feature: Home v2 redesign — incremental rebuild + EditorialShell full-bleed)
 
 ### Context

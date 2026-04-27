@@ -1,11 +1,5 @@
 /* ── Home page — Brief.html design ──────────────────────── */
 
-.home-page {
-  max-width: 780px;
-  margin: 0 auto;
-  padding: 56px 24px 120px;
-}
-
 /* Inside EditorialShell: center column constrains masthead + regions */
 .home-shell .es-center {
   padding: 0 32px 80px;
@@ -91,30 +85,6 @@
   margin: 0 auto;
   max-width: 480px;
 }
-.home-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 28px;
-  padding: 8px 18px;
-  background: var(--paper-2);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--ink-dim);
-  letter-spacing: 0.06em;
-}
-.home-meta-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--risk-l);
-  box-shadow: 0 0 0 3px rgba(79,160,123,0.2);
-  flex-shrink: 0;
-}
-.home-meta b { color: var(--ink); font-weight: 500; }
-.home-meta-sep { color: var(--ink-faint); }
 
 /* ── Loading ─────────────────────────────────────────────── */
 .home-loading {
@@ -408,43 +378,12 @@
 /* AI result wrapper — spacing only, display handled by SummaryDisplay etc. */
 .home-ai-result { margin-top: 14px; }
 
-/* ── Support banner ──────────────────────────────────────── */
-.home-support {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 18px;
-  margin-bottom: 48px;
-  background: var(--paper-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--ink-dim);
-  letter-spacing: 0.04em;
-  flex-wrap: wrap;
-}
-.home-support a {
-  padding: 6px 14px;
-  background: #FFDD00;
-  color: #000;
-  font-weight: 700;
-  font-family: var(--sans);
-  font-size: 12.5px;
-  border-radius: 6px;
-  text-decoration: none;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
 /* ── Mobile ──────────────────────────────────────────────── */
 @media (max-width: 600px) {
-  .home-page { padding: 32px 16px 80px; }
+  .home-shell .es-center { padding: 0 16px 60px; }
   .home-masthead h1 { font-size: 36px; }
   .home-masthead-sub { font-size: 16px; }
   .home-region-hd h2 { font-size: 24px; }
   .home-topic h3 { font-size: 19px; }
   .home-topic-actions { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .home-meta { flex-wrap: wrap; justify-content: center; }
 }

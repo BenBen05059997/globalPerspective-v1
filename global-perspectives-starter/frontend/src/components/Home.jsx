@@ -32,16 +32,6 @@ const TraIcon = () => (
   </svg>
 );
 
-function getTimeAgo(isoString) {
-  if (!isoString) return null;
-  const minutes = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
-
 function getDayString() {
   const d = new Date();
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -57,7 +47,7 @@ function getTopicId(t, idx) {
 }
 
 function Home() {
-  const { topics, loading, error, refetch, isStale, updatedAt, generatedDate, hasNewData } = useGeminiTopics();
+  const { topics, loading, error, refetch, isStale, updatedAt, hasNewData } = useGeminiTopics();
   const { entries: archiveEntries } = useTodayArchive();
   const { showError } = useError();
 
@@ -268,7 +258,6 @@ function Home() {
 
   // ── Render ───────────────────────────────────────────────
   const totalTopics = topics?.length ?? 0;
-  const timeAgo = getTimeAgo(updatedAt);
 
   const trendingCount = topics.filter(t => t.x_trending).length;
   const statusStats = [
@@ -312,28 +301,6 @@ function Home() {
         <p className="home-masthead-sub">
           Trending topics from around the world, organised by region. Summarise, predict, or trace the cause of any one.
         </p>
-        <div className="home-meta">
-          <span className="home-meta-dot" />
-          <span>LIVE</span>
-          {totalTopics > 0 && (
-            <>
-              <span className="home-meta-sep">·</span>
-              <span><b>{totalTopics}</b> topics</span>
-            </>
-          )}
-          {timeAgo && (
-            <>
-              <span className="home-meta-sep">·</span>
-              <span>updated <b>{timeAgo}</b></span>
-            </>
-          )}
-          {generatedDate && (
-            <>
-              <span className="home-meta-sep">·</span>
-              <span>{generatedDate}</span>
-            </>
-          )}
-        </div>
 
         {isStale && (
           <div className="home-alert stale">

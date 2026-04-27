@@ -125,6 +125,9 @@
 /* ── Sparkline (none needed — inline SVG) ─────────────────── */
 
 /* ── EditorialShell — 3-col layout ───────────────────────── */
+/* Escape Layout's 1200px container cap so 240/1fr/320 rails get full width */
+.gp-main:has(.es-shell) > .container { max-width: 100%; padding: 0; }
+
 .es-shell {
   display: flex;
   flex-direction: column;

@@ -1,5 +1,22 @@
 # Global Perspectives — Change Log
 
+## 2026-04-27 (Feature: Home v2 redesign — 3-col EditorialShell, Brief.html design)
+
+### Frontend (DEPLOYED to /docs/ 2026-04-27)
+- **Home.jsx** — full v2 rewrite using `EditorialShell` 3-col layout. Replaces the standalone masthead + topic feed layout.
+  - **Left rail (Today's Archive)**: search input + ALL category filter chips (12 categories per recent rebalance) + scrollable archive grouped by category. Items deep-link to `/weekly/thread/:threadId` if available, else jump-anchor to topic on the page.
+  - **Center**: StatusStrip (topics · trending · archive · updated) → masthead (date kicker + Fraunces 46px h1 + italic dek) → region sections grouped via `categorizeTopicsByRegion()` (World pinned last).
+  - **Right rail (jump-nav)**: per-region topic preview list with IntersectionObserver scroll-spy (rootMargin -30%/-60%) — active region row highlights as user scrolls. Each topic row shows category + `trending` badge if `x_trending`.
+- **Topic card v2**: kicker now surfaces `x_trending` (red TRENDING badge — was generated but never displayed) + `urgency: 'high'` (URGENT badge) + `primaryCountry || regions[0]`. Meta line: `N sources · M outlets` (no per-topic timestamps — single batch updatedAt lives in StatusStrip). Title links to `/weekly/thread/:threadId` when available, else plain text. Added **SaveButton** for consistency with Thread/Country pages.
+- **AI button toggle**: Summary/Predict/Trace Cause now render as inline bullet cards (not full-text paragraphs). Bullets derived client-side via `splitToBullets()` regex helper — no Grok prompt change. Read-time estimate (`~Xs read`) computed from word count at 250 wpm. Removed legacy `SummaryDisplay`/`PredictionDisplay`/`TraceCauseDisplay` components from Home (still used elsewhere if referenced).
+- **Home.css** — full rewrite with `.hb-*` namespace (HomeBrief). Color tokens: AI summary=blue, predict=purple, trace=green. Match Brief.html design exactly.
+
+### Bundle impact
+- index.js 979kB → 957kB
+- index.css 191kB → 186kB
+
+---
+
 ## 2026-04-27 (Audit: category rebalance confirmed via DynamoDB)
 
 ### Verification

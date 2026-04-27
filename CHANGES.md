@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-04-28 (Fix: newsSensitiveData topics — finish SWR contract)
+
+### Backend (DEPLOYED to Lambda `newsSensitiveData-dev` ap-northeast-1 2026-04-27)
+- **`amplify/backend/function/newsSensitiveData/src/index.js`** — `readTopicsCache()`: when cache is past `TOPICS_CACHE_MAX_AGE_SECONDS`, now returns `200 / success:true / cached:true / stale:true / asOf:<updatedAt>` instead of `503 / success:false`. Fresh path also gains `stale:false / asOf` so the response envelope is consistent.
+- **Why:** `useGeminiTopics.js` already had `setIsStale(Boolean(data?.stale))` and the "⚠️ Updated X ago (refreshing...)" UI in Home, but the topics path never set the flag — frontend's stale UI was dead code on a 503 path that landed in the catch block. TTL inflation to 9000s (vs the original `continue-news.md` plan of 5400s) had been hiding the contract gap by making stale responses rare.
+- **Verified end-to-end via curl:** fresh path → `stale:false`, 11 topics. Forced-stale path (TTL flipped to 60s temporarily) → `stale:true`, 11 topics. TTL restored to env-default (code default 9000s).
+- **Genuine cache-miss (Item null) still returns 503** — only the staleness branch flipped.
+- **Deferred:** `STALE_HARD_CEILING_SECONDS` (suggested 86400) so genuine multi-day pipeline outages still surface as real 503s instead of multi-day-stale "Today's Topics."
+- **No frontend rebuild needed** — hook already speaks this protocol.
+- **Doc updated:** `continue-news.md` now has a Status section reflecting actual ship state.
+
+---
+
 ## 2026-04-28 (Fix: CountryPage Causal Graph — threadId strings + NaN% confidence)
 
 ### Frontend (DEPLOYED to /docs/ 2026-04-28)

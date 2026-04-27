@@ -829,15 +829,15 @@ async function readTopicsCache() {
 
     const isFresh = cacheEntryFresh(Item.updatedAt, TOPICS_MAX_AGE_SECONDS);
     if (!isFresh) {
-      console.warn('newsSensitiveData topics cache stale', {
+      console.warn('newsSensitiveData topics cache stale (serving anyway)', {
         table: TOPICS_TABLE,
         itemId: TOPICS_ITEM_ID,
         updatedAt: Item.updatedAt,
         maxAgeSeconds: TOPICS_MAX_AGE_SECONDS,
       });
       return {
-        statusCode: 503,
-        body: { success: false, error: 'Topics cache stale', data: Item },
+        statusCode: 200,
+        body: { success: true, cached: true, stale: true, asOf: Item.updatedAt, data: Item },
       };
     }
 
@@ -849,7 +849,7 @@ async function readTopicsCache() {
 
     return {
       statusCode: 200,
-      body: { success: true, cached: true, data: Item },
+      body: { success: true, cached: true, stale: false, asOf: Item.updatedAt, data: Item },
     };
   } catch (err) {
     console.error('Topics cache error:', err);

@@ -6,6 +6,28 @@
 
 ---
 
+## Status (as of 2026-04-27)
+
+| Phase | Item | State |
+|-------|------|-------|
+| 1.1 | TTL bump | ✅ Shipped — env var unset, code default `9000s` (2.5h) in use (went further than the planned `5400s`) |
+| 1.2 | Backend serve-stale (200 + `stale:true`) | ✅ Shipped 2026-04-27 — `readTopicsCache()` now returns `200 / success:true / cached:true / stale:true / asOf:<updatedAt>` instead of `503`. Fresh path also gains `stale:false / asOf` for envelope consistency. |
+| 2 | Frontend hook (`isStale`, `updatedAt`, `hasNewData`, 10-min poll) | ✅ Shipped (date unknown — pre-existing in `useGeminiTopics.js`) |
+| 3 | Frontend UI (timestamp + banner) | ✅ Shipped (pre-existing) |
+
+**Important historical note:** Phase 1.2 (the backend stale-200 contract) was the missing half. From the time the frontend shipped until 2026-04-27, `useGeminiTopics` had `setIsStale(Boolean(data?.stale))` reading a flag the topics path never set — so the "⚠️ Updated X minutes ago (refreshing...)" indicator was effectively dead code. That asymmetry was hidden by bumping TTL to 9000s, which made stale responses rare. The 2026-04-27 patch closes the contract; the indicator now actually fires.
+
+**Deferred (recommended next):**
+- **Hard staleness ceiling** (`STALE_HARD_CEILING_SECONDS`, suggested default `86400`). Without it, a multi-day pipeline outage shows users multi-day-old "Today's Global Topics" with a friendly orange label — a credibility risk for a news product. Below ceiling → 200 + stale flag. Above ceiling → real 503 + alarm.
+- **Cross-cutting `asOf` envelope** across all `newsSensitiveData` actions (daily_brief, thread_analysis, country_intelligence, pair_analysis, archive_range), matching the markets-data honesty contract.
+
+**Verification done 2026-04-27:**
+- `curl POST /default/proxy {"action":"topics"}` → fresh path: `success:true, stale:false, asOf:<ts>`, 11 topics ✅
+- TTL temporarily flipped to `60s` → stale path: `success:true, stale:true, asOf:<ts>`, 11 topics still served ✅
+- TTL restored (env var removed, code default `9000s`) ✅
+
+---
+
 ## Changes Required
 
 ### 1. Backend: Lambda Environment Variable

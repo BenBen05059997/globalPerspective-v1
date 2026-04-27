@@ -153,7 +153,7 @@ Auth gates disabled in early access. When re-enabling: `newsSensitiveData` verif
 
 ### 1. `newsInvokeGemini`
 **Path:** `amplify/backend/function/newsInvokeGemini/src/index.js`
-**Trigger:** EventBridge (hourly) or manual
+**Trigger:** EventBridge Scheduler — `InvokeGoogleGemini` — `cron(0 */2 * * ? *)` (every 2 hours)
 
 Despite the name, uses **xAI Grok** — no Gemini.
 
@@ -182,7 +182,7 @@ Despite the name, uses **xAI Grok** — no Gemini.
 
 ### 2. `NewsProjectInvokeAgentLambda`
 **Path:** `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`
-**Trigger:** EventBridge (after newsInvokeGemini) or manual
+**Trigger:** EventBridge Scheduler — `InvokeNewsAgent` — `cron(5 */2 * * ? *)` (every 2 hours at :05, runs after newsInvokeGemini)
 
 **What it does:**
 1. Reads topics from `id=staging` in Topics table
@@ -244,12 +244,12 @@ Despite the name, uses **xAI Grok** — no Gemini.
 
 ### 4. `newsCountryIntelligence`
 **Path:** `amplify/backend/function/newsCountryIntelligence/src/index.js`
-**Trigger:** EventBridge — `cron(0 7 * * ? *)` (7:00 UTC daily, runs after newsThreadAnalysis)
+**Trigger:** EventBridge Scheduler — `countryIntelliegence` — `cron(0 2/10 * * ? *)` (every 10 hours: 02:00, 12:00, 22:00 UTC)
 
 **What it does:**
 1. Reads 30 days of archive entries; groups by country (`regions` field)
 2. Loads existing thread analyses for cross-thread enrichment
-3. Selects top 10 countries with 2+ articles
+3. Selects top 20 countries with 2+ articles
 4. For each country, searches Brave News for fresh context
 5. Calls xAI Grok to generate:
    - `headline` — 8-12 word sharp situation headline
@@ -310,7 +310,7 @@ Read-only REST proxy. All supported actions:
 
 ### 6. `newsPostLinkedIn`
 **Path:** `amplify/backend/function/newsPostLinkedIn/src/index.js`
-**Trigger:** EventBridge (scheduled) or manual
+**Trigger:** EventBridge Scheduler — `InvokeLinkedIn` — `cron(20 */3 * * ? *)` (every 3 hours at :20)
 
 **What it does:**
 1. Reads `latest` topics + AI summaries from DynamoDB
@@ -325,7 +325,7 @@ Read-only REST proxy. All supported actions:
 
 ### 7. `newsPostDevTo`
 **Path:** `amplify/backend/function/newsPostDevTo/src/index.js`
-**Trigger:** EventBridge (scheduled) or manual
+**Trigger:** EventBridge Scheduler — `InvokeDev` — `cron(0 23 * * ? *)` (daily 23:00 UTC)
 
 Posts a daily AI-written summary article to [Dev.to](https://dev.to).
 
@@ -343,7 +343,7 @@ Posts a daily AI-written summary article to [Dev.to](https://dev.to).
 
 ### 8. `newsPairIntelligence`
 **Path:** `amplify/backend/function/newsPairIntelligence/src/index.js`
-**Trigger:** EventBridge (scheduled) or manual with `{"pair":["Country A","Country B"],"forceRegenerate":true}`
+**Trigger:** Manual only — no EventBridge schedule. Invoke with `{"pair":["Country A","Country B"],"forceRegenerate":true}` or `{}` for default 10 pairs
 **Deployed:** 2026-04-18
 
 Bilateral relationship analysis between country pairs.
@@ -364,8 +364,8 @@ Bilateral relationship analysis between country pairs.
 
 ### 9. `newsSystemsAnalysis`
 **Path:** `amplify/backend/function/newsSystemsAnalysis/src/index.js`
-**Trigger:** EventBridge (scheduled) or manual
-**Deployed:** 2026-04-25 (Phase 1 test — Argentina/Iran only)
+**Trigger:** EventBridge Rule — `TriggerNewsSystemsAnalysis` — `cron(15 7 * * ? *)` (daily 07:15 UTC)
+**Deployed:** 2026-04-25. IAM logging fixed 2026-04-27 (log group now exists). Phase 1: restricted to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran`
 
 Cross-domain causal relationship analysis. Maps how events across categories connect with time lags and confidence.
 
@@ -393,7 +393,7 @@ Cross-domain causal relationship analysis. Maps how events across categories con
 
 ### 10. `linkedInAutoPost`
 **Path:** `amplify/backend/function/linkedInAutoPost/src/index.js`
-**Trigger:** EventBridge (scheduled)
+**Trigger:** EventBridge Scheduler — `LinkedinThreadsDaily` — `cron(30 7/12 * * ? *)` (every 12 hours: 07:30, 19:30 UTC)
 
 Intelligent scheduled LinkedIn poster — distinct from `newsPostLinkedIn` (manual/multi-platform).
 
@@ -409,7 +409,7 @@ Intelligent scheduled LinkedIn poster — distinct from `newsPostLinkedIn` (manu
 
 ### 11. `newsCountryFactsUpdater`
 **Path:** `amplify/backend/function/newsCountryFactsUpdater/src/index.js`
-**Trigger:** EventBridge (daily scheduled)
+**Trigger:** EventBridge Scheduler — `Fact` — `cron(0 5 * * ? *)` (daily 05:00 UTC)
 **Deployed:** 2026-04-18 (Phase 2 complete)
 
 Keeps country facts in DynamoDB current without manual editing.
@@ -559,15 +559,34 @@ The Worker handles three cases:
 
 ---
 
-## CloudWatch EventBridge Rules
+## Scheduling — EventBridge Rules + Scheduler (VERIFIED 2026-04-27)
 
+Most schedules use **EventBridge Scheduler** (separate service from EventBridge Rules). Two use EventBridge Rules. All times UTC.
+
+### EventBridge Rules
 | Rule name | Schedule | Target |
 |-----------|----------|--------|
-| `DataCollectorSchedule` | rate(1 hour) | newsInvokeGemini |
-| `TriggerDailyAnalysis` | cron(30 6 * * ? *) | newsThreadAnalysis (6:30 UTC) |
-| `TriggerCountryIntelligence` | cron(0 7 * * ? *) | newsCountryIntelligence (7:00 UTC) — active |
-| `TriggerSystemsAnalysis` | cron(0 8 ? * SUN *) | newsSystemsAnalysis (8:00 UTC Sundays) — Phase 1 test |
-| `DailyReportSchedule` | cron(0 12 * * ? *) | NewsProjectInvokeAgentLambda (12:00 UTC) |
+| `TriggerDailyAnalysis` | `cron(30 6 * * ? *)` | newsThreadAnalysis (06:30 UTC daily) |
+| `TriggerNewsSystemsAnalysis` | `cron(15 7 * * ? *)` | newsSystemsAnalysis (07:15 UTC daily) |
+| `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
+| `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |
+| `MarketsMacrosWeekly` | `cron(0 2 ? * SUN *)` | newsMarketsData |
+
+### EventBridge Scheduler
+| Schedule name | Cron | Target |
+|---------------|------|--------|
+| `InvokeGoogleGemini` | `cron(0 */2 * * ? *)` | newsInvokeGemini-dev (every 2h) |
+| `InvokeNewsAgent` | `cron(5 */2 * * ? *)` | NewsProjectInvokeAgentLambda-dev (every 2h at :05) |
+| `countryIntelliegence` | `cron(0 2/10 * * ? *)` | newsCountryIntelligence (02:00 / 12:00 / 22:00 UTC) |
+| `InvokeLinkedIn` | `cron(20 */3 * * ? *)` | newsPostLinkedin (every 3h at :20) |
+| `LinkedinThreadsDaily` | `cron(30 7/12 * * ? *)` | linkedInAutoPost (07:30 / 19:30 UTC) |
+| `InvokeDev` | `cron(0 23 * * ? *)` | newsPostDevTo (23:00 UTC daily) |
+| `Fact` | `cron(0 5 * * ? *)` | newsCountryFactsUpdater (05:00 UTC daily) |
+
+### No schedule (manual only)
+- `newsPairIntelligence` — invoke manually or via ad-hoc AWS CLI call
+- `newsStripeWebhook` — event-driven (Paddle webhook via API Gateway)
+- `newsSensitiveData` / `newsSavedItems` — user-triggered via REST
 
 ---
 

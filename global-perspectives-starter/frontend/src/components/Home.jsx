@@ -347,7 +347,12 @@ function Home() {
                   {t.category && <span className="home-topic-cat">{t.category}</span>}
                   {t.x_trending && <span className="home-trend-pill">TRENDING</span>}
                   {t.urgency === 'high' && <span className="home-urgency-pill">URGENT</span>}
-                  {country && <span> · {country}</span>}
+                  {country && (
+                    <span> · <Link
+                      to={`/weekly/country/${encodeURIComponent(country)}`}
+                      className="home-topic-country-link"
+                    >{country}</Link></span>
+                  )}
                 </div>
 
                 <h3>

@@ -17,6 +17,13 @@
 
 ---
 
+## 2026-04-27 (Fix: WorldMapV2 Lens controls — Signal level + Time window)
+
+### Frontend (DEPLOYED to /docs/ 2026-04-27)
+- **WorldMapV2.jsx** — Signal level checkboxes (High/Elevated/Quiet) had no `onClick` handlers. They looked clickable but did nothing. Added `signalFilters` state (`{H,E,L}` defaulting to all true) + click handlers that toggle each bucket. Filtering now applied to: country fill (filtered buckets fall back to neutral `#f2efe8`), signal markers (skip render if bucket filtered), and "Top signal this week" leaderboard. Pill colors fade to 0.4 opacity when off.
+- **WorldMapV2.jsx** — Time window section was always visible but `timeWindow` state only filters `pairAnalyses` in the flows lens — toggling it on the risk lens silently did nothing. Wrapped Time window block in `{lens === 'flows' && ...}` so it only appears where it has effect. Counts now show actual pair-analyses-in-window numbers.
+- Added `signalFilters` to drawMap effect dependency array so map redraws when filter changes.
+
 ## 2026-04-27 (Fix: Causal Graph readability + IAM logging fix for newsSystemsAnalysis)
 
 ### Backend (IAM)

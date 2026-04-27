@@ -147,6 +147,7 @@ export default function WorldMapV2() {
   const [railOpen, setRailOpen] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
   const [flowFilters, setFlowFilters] = useState({ fx: true, tech: true, geo: true });
+  const [signalFilters, setSignalFilters] = useState({ H: true, E: true, L: true });
   const [timeWindow, setTimeWindow] = useState('30d');
 
   // Dynamic maps built after TopoJSON loads
@@ -379,7 +380,7 @@ export default function WorldMapV2() {
     if (!worldRef.current) return;
     const t = setTimeout(() => drawMap(lens, selectedISO, zoom), 240);
     return () => clearTimeout(t);
-  }, [lens, selectedISO, zoom, railOpen, panelOpen, sigReady, realFlows, editorialPicks, flowFilters, timeWindow]); // eslint-disable-line
+  }, [lens, selectedISO, zoom, railOpen, panelOpen, sigReady, realFlows, editorialPicks, flowFilters, signalFilters, timeWindow]); // eslint-disable-line
 
   function drawMap(currentLens, currentISO, currentZoom) {
     const svg  = svgRef.current;
@@ -424,7 +425,7 @@ export default function WorldMapV2() {
       let fill = '#f2efe8';
       if (currentLens === 'risk') {
         const bucket = sig[iso]?.bucket || 'L';
-        fill = RISK_FILL[bucket];
+        fill = signalFilters[bucket] ? RISK_FILL[bucket] : '#f2efe8';
       } else if (currentLens === 'flows') {
         const hot = new Set(flowsRef.current.flatMap(fl => [fl.a, fl.b]));
         fill = hot.has(iso) ? '#e6e2d8' : '#f0ede6';
@@ -441,6 +442,7 @@ export default function WorldMapV2() {
       // Two-tier signal markers: top 5 = headline, rest = ambient/tail
       const ranked = rankedSignalRef.current;
       ranked.forEach(([iso, s], rank) => {
+        if (!signalFilters[s.bucket]) return;
         const center = isoToCenterRef.current[iso];
         if (!center) return;
         const pt = projection(center);
@@ -623,19 +625,31 @@ export default function WorldMapV2() {
           {lens === 'risk' && (
             <div className="grp">
               <h5>Signal level</h5>
-              <div className="chk on">
+              <div
+                className={`chk${signalFilters.H ? ' on' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setSignalFilters(f => ({ ...f, H: !f.H }))}
+              >
                 <span className="box" />
-                <span className="pill" style={{ background: '#fbe9e3', color: '#c94a33' }}>High</span>
+                <span className="pill" style={{ background: '#fbe9e3', color: '#c94a33', opacity: signalFilters.H ? 1 : 0.4 }}>High</span>
                 <span className="c">{highCount}</span>
               </div>
-              <div className="chk on">
+              <div
+                className={`chk${signalFilters.E ? ' on' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setSignalFilters(f => ({ ...f, E: !f.E }))}
+              >
                 <span className="box" />
-                <span className="pill" style={{ background: '#fbf0dc', color: '#d89540' }}>Elevated</span>
+                <span className="pill" style={{ background: '#fbf0dc', color: '#d89540', opacity: signalFilters.E ? 1 : 0.4 }}>Elevated</span>
                 <span className="c">{elevCount}</span>
               </div>
-              <div className="chk on">
+              <div
+                className={`chk${signalFilters.L ? ' on' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setSignalFilters(f => ({ ...f, L: !f.L }))}
+              >
                 <span className="box" />
-                <span className="pill" style={{ background: '#e4f1e9', color: '#4fa07b' }}>Quiet</span>
+                <span className="pill" style={{ background: '#e4f1e9', color: '#4fa07b', opacity: signalFilters.L ? 1 : 0.4 }}>Quiet</span>
                 <span className="c">{sigValues.filter(s => s.bucket === 'L').length}</span>
               </div>
               <div style={{ fontSize: 11, color: 'var(--ink-dim)', marginTop: 10, lineHeight: 1.5 }}>
@@ -718,15 +732,20 @@ export default function WorldMapV2() {
             </div>
           )}
 
-          <div className="grp">
-            <h5>Time window</h5>
-            <div className={`opt${timeWindow === '7d' ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setTimeWindow('7d')}>
-              <span className="box" />7 days<span className="c">{sigValues.reduce((a, s) => a + (s.last7 || 0), 0) || '—'}</span>
+          {lens === 'flows' && (
+            <div className="grp">
+              <h5>Time window</h5>
+              <div className={`opt${timeWindow === '7d' ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setTimeWindow('7d')}>
+                <span className="box" />7 days<span className="c">{(pairAnalyses || []).filter(p => {
+                  const t = new Date(p.generatedAt || 0).getTime();
+                  return t > Date.now() - 7 * 86400000;
+                }).length || '—'}</span>
+              </div>
+              <div className={`opt${timeWindow === '30d' ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setTimeWindow('30d')}>
+                <span className="box" />30 days<span className="c">{(pairAnalyses || []).length || '—'}</span>
+              </div>
             </div>
-            <div className={`opt${timeWindow === '30d' ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setTimeWindow('30d')}>
-              <span className="box" />30 days<span className="c">baseline</span>
-            </div>
-          </div>
+          )}
         </aside>
 
         {/* Map */}
@@ -1040,7 +1059,7 @@ export default function WorldMapV2() {
               <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink-dim)', marginBottom: 14 }}>
                 Top signal this week
               </div>
-              {rankedSignal.slice(0, 5).map(([iso, s], i) => {
+              {rankedSignal.filter(([, s]) => signalFilters[s.bucket]).slice(0, 5).map(([iso, s], i) => {
                 const name = isoToName[iso] || iso;
                 const color = RISK_MARKER[s.bucket];
                 const sign = s.z > 0 ? '+' : '';

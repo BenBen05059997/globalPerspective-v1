@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-04-27 (Audit: category rebalance confirmed via DynamoDB)
+
+### Verification
+- Queried `NewsCache` DynamoDB table directly to audit topic category distribution across two days
+- **2026-04-25** (pre-rebalance pipeline run, before new Grok prompt rules took effect): 50 entries, 5 categories — politics 29, conflict 15, economy 3, military 2, disaster 1 (politics+conflict = 88%)
+- **2026-04-26** (first full run under new rules): 50 entries, 11 categories — conflict 14, politics 11, energy 5, disaster 4, climate 4, health 3, society 2, science 2, business 2, technology 2, military 1 (politics+conflict = 50%)
+- **Finding:** politics+conflict share dropped 38 percentage points in one day; all 5 new categories (climate, science, business, society, energy) appeared immediately
+- **Also confirmed:** `TOPICS_LIMIT` AWS env var is set to `13` (not 15) — the `DEFAULT_LIMIT=15` in source code is overridden by env var; to raise live topic count, update the env var in AWS Lambda config
+
+---
+
 ## 2026-04-26 (Feature: ThreadPage + CountryPage v2 redesign — 3-col EditorialShell)
 
 ### Frontend (DEPLOYED to /docs/ 2026-04-26)

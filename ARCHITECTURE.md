@@ -176,7 +176,7 @@ Despite the name, uses **xAI Grok** — no Gemini.
 | `TOPICS_DDB_TABLE` | Required |
 | `GROK_MODEL` | Default: `grok-4-1-fast-non-reasoning` |
 | `TOPICS_CACHE_ITEM_ID` | Default: `staging` |
-| `TOPICS_LIMIT` | Default: `15` (raised from 13 for category coverage) |
+| `TOPICS_LIMIT` | AWS env var currently set to `13`. Code `DEFAULT_LIMIT=15` only applies if env var is unset. |
 
 ---
 

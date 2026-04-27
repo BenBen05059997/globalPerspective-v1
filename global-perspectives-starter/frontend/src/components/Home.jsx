@@ -1,110 +1,76 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
+import SummaryDisplay from './SummaryDisplay';
+import PredictionDisplay from './PredictionDisplay';
+import TraceCauseDisplay from './TraceCauseDisplay';
+import TopicNav from './TopicNav';
+import TodayArchiveSidebar from './TodayArchiveSidebar';
 import { useTodayArchive } from '../hooks/useTodayArchive';
-import { useError } from '../contexts/ErrorContext';
-import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import graphqlService from '../utils/graphqlService';
-import EditorialShell from './atoms/EditorialShell';
-import StatusStrip from './atoms/StatusStrip';
-import IntelligenceLoader from './IntelligenceLoader';
-import { SaveButton } from './SaveButton';
+import { categorizeTopicsByRegion } from '../utils/countryMapping';
+import { useError } from '../contexts/ErrorContext';
+import './AIComponents.css';
 import './Home.css';
 
-const SumIcon = () => <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 4h10M3 8h10M3 12h6"/></svg>;
-const PreIcon = () => <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/></svg>;
-const TraIcon = () => <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/></svg>;
+// SVG icons
+const SumIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M3 4h10M3 8h10M3 12h6"/>
+  </svg>
+);
+const PreIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/>
+  </svg>
+);
+const TraIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/>
+  </svg>
+);
 
-function timeAgo(iso) {
-  if (!iso) return null;
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+function getTimeAgo(isoString) {
+  if (!isoString) return null;
+  const minutes = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 function getDayString() {
-  return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const d = new Date();
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 function getTopicId(t, idx) {
-  const direct = t?.topicId || t?.topic_id || t?.id;
-  if (direct != null && String(direct).trim()) return String(direct).trim();
+  const directId = t?.topicId || t?.topic_id || t?.id;
+  if (directId != null) {
+    const c = String(directId).trim();
+    if (c.length > 0) return c;
+  }
   return `${t.title || 'topic'}-${idx}`.replace(/[^a-zA-Z0-9]/g, '-');
 }
 
-function splitToBullets(text, max = 4) {
-  if (!text) return [];
-  const trimmed = String(text).trim();
-  // Already bulleted (• or - prefix or numbered)?
-  if (/^\s*[•\-\*]|^\s*\d+[.)]/m.test(trimmed)) {
-    return trimmed.split(/\n+/)
-      .map(s => s.replace(/^\s*[•\-\*\d.)]+\s*/, '').trim())
-      .filter(Boolean)
-      .slice(0, max);
-  }
-  // Split on sentence boundaries
-  const sentences = trimmed.match(/[^.!?]+[.!?]+/g)?.map(s => s.trim()).filter(s => s.length > 20);
-  return (sentences && sentences.length > 0 ? sentences : [trimmed]).slice(0, max);
-}
-
-function readTime(text) {
-  if (!text) return 0;
-  return Math.max(15, Math.round(text.split(/\s+/).length / 4)); // ~250 wpm in seconds
-}
-
-const AI_LABELS = { sum: 'AI Key Takeaways', pre: 'AI Prediction', tra: 'AI Trace Cause' };
-
 function Home() {
-  const { topics, loading, error, refetch, isStale, updatedAt, hasNewData } = useGeminiTopics();
+  const { topics, loading, error, refetch, isStale, updatedAt, generatedDate, hasNewData } = useGeminiTopics();
   const { entries: archiveEntries } = useTodayArchive();
   const { showError } = useError();
 
-  const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [activeRegion, setActiveRegion] = useState(null); // for right rail scroll-spy
-  const [aiState, setAiState] = useState({}); // { [topicId]: { kind: 'sum'|'pre'|'tra', content, loading, error } }
+  const filteredArchiveEntries = React.useMemo(() => {
+    if (!archiveEntries.length || !topics.length) return archiveEntries;
+    const activeIds = new Set(topics.map((t) => {
+      const id = t?.topicId || t?.topic_id || t?.id;
+      return id != null ? String(id).trim() : '';
+    }).filter(Boolean));
+    return archiveEntries.filter(e => !activeIds.has(e.topicId));
+  }, [archiveEntries, topics]);
 
-  useEffect(() => { if (error) showError(error); }, [error, showError]);
-  useEffect(() => { document.title = "Today's Global Topics — Global Perspectives"; }, []);
+  const categorizedTopics = React.useMemo(() => categorizeTopicsByRegion(topics), [topics]);
 
-  // Filter archive by search + category for left rail
-  const filteredArchive = useMemo(() => {
-    let list = archiveEntries || [];
-    if (activeCategory) list = list.filter(e => (e.category || '').toLowerCase() === activeCategory);
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter(e => (e.title || '').toLowerCase().includes(q));
-    }
-    return list;
-  }, [archiveEntries, search, activeCategory]);
-
-  // Group archive by category for left rail
-  const archiveByCategory = useMemo(() => {
-    const m = {};
-    for (const e of filteredArchive) {
-      const cat = (e.category || 'other').toLowerCase();
-      if (!m[cat]) m[cat] = [];
-      m[cat].push(e);
-    }
-    return Object.entries(m).sort((a, b) => b[1].length - a[1].length);
-  }, [filteredArchive]);
-
-  // All categories for filter chips (from full archive, not filtered)
-  const allCategories = useMemo(() => {
-    const m = {};
-    for (const e of archiveEntries || []) {
-      const cat = (e.category || 'other').toLowerCase();
-      m[cat] = (m[cat] || 0) + 1;
-    }
-    return Object.entries(m).sort((a, b) => b[1] - a[1]);
-  }, [archiveEntries]);
-
-  // Topics grouped by region for center feed
-  const categorizedTopics = useMemo(() => categorizeTopicsByRegion(topics), [topics]);
-  const sortedRegions = useMemo(() =>
+  const sortedRegions = React.useMemo(() =>
     Object.entries(categorizedTopics)
       .filter(([, rt]) => rt.length > 0)
       .sort((a, b) => {
@@ -114,315 +80,421 @@ function Home() {
       }),
   [categorizedTopics]);
 
-  // ── AI fetch (Summary / Predict / Trace Cause) ──────────────
-  const fetchAi = useCallback(async (topic, idx, kind) => {
-    const id = getTopicId(topic, idx);
-    const stateKey = `${id}_${kind}`;
+  const [summaries, setSummaries] = useState({});
+  const [summaryLoading, setSummaryLoading] = useState({});
+  const [summaryErrors, setSummaryErrors] = useState({});
+  const [summaryCollapsed, setSummaryCollapsed] = useState({});
 
-    // Toggle: if already open, close.
-    if (aiState[stateKey]?.content) {
-      setAiState(prev => { const n = { ...prev }; delete n[stateKey]; return n; });
-      return;
-    }
+  const [predictions, setPredictions] = useState({});
+  const [predictionLoading, setPredictionLoading] = useState({});
+  const [predictionErrors, setPredictionErrors] = useState({});
+  const [predictionCollapsed, setPredictionCollapsed] = useState({});
 
-    setAiState(prev => ({ ...prev, [stateKey]: { kind, loading: true } }));
+  const [traceCauses, setTraceCauses] = useState({});
+  const [traceCauseLoading, setTraceCauseLoading] = useState({});
+  const [traceCauseErrors, setTraceCauseErrors] = useState({});
+  const [traceCauseCollapsed, setTraceCauseCollapsed] = useState({});
 
-    try {
-      const fetcher = kind === 'sum' ? graphqlService.getTopicSummary
-                    : kind === 'pre' ? graphqlService.getTopicPrediction
-                    : graphqlService.getTopicTraceCause;
-      const data = await fetcher(id);
-      const content = data?.content || data?.impact_analysis || '';
-      setAiState(prev => ({ ...prev, [stateKey]: { kind, content, generatedAt: data?.generatedAt } }));
-    } catch (e) {
-      const message = e?.message || String(e);
-      setAiState(prev => ({ ...prev, [stateKey]: { kind, error: message } }));
-      showError(message);
-    }
-  }, [aiState, showError]);
+  const [sourcesExpanded, setSourcesExpanded] = useState({});
+  const [activeTimestamps, setActiveTimestamps] = useState({});
 
-  const closeAi = (id, kind) => {
-    setAiState(prev => { const n = { ...prev }; delete n[`${id}_${kind}`]; return n; });
+  const summaryAttemptsRef = useRef({});
+  const predictionAttemptsRef = useRef({});
+
+  const MAX_RETRIES = 6;
+  const RETRY_DELAY_MS = 10000;
+
+  useEffect(() => {
+    if (error) showError(error);
+  }, [error, showError]);
+
+  useEffect(() => { document.title = 'Global Perspectives™ — AI-Powered News Intelligence'; }, []);
+
+  // ── Summary ──────────────────────────────────────────────
+  const scheduleSummaryRetry = (topic, idx, attempt) => {
+    setTimeout(() => {
+      summaryAttemptsRef.current[getTopicId(topic, idx)] = attempt;
+      handleGenerateSummary(topic, idx, attempt);
+    }, RETRY_DELAY_MS);
   };
 
-  // ── Right rail scroll-spy ───────────────────────────────────
-  useEffect(() => {
-    if (loading || sortedRegions.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            setActiveRegion(e.target.dataset.region);
-            break;
-          }
-        }
-      },
-      { rootMargin: '-30% 0px -60% 0px', threshold: 0 }
-    );
-    document.querySelectorAll('.hb-region').forEach(el => observer.observe(el));
-    return () => observer.disconnect();
-  }, [loading, sortedRegions]);
+  const handleGenerateSummary = async (t, idx, attempt = 0) => {
+    const id = getTopicId(t, idx);
+    setActiveTimestamps(prev => ({ ...prev, [`${id}_summary`]: Date.now() }));
+    if (summaries[id]) { setSummaryCollapsed(prev => ({ ...prev, [id]: false })); return; }
+    if (summaryLoading[id] && attempt === 0) return;
+    summaryAttemptsRef.current[id] = attempt;
+    setSummaryLoading(prev => ({ ...prev, [id]: true }));
+    setSummaryErrors(prev => ({ ...prev, [id]: null }));
+    const start = Date.now();
+    try {
+      const data = await graphqlService.getTopicSummary(id);
+      const content = data?.content || '';
+      setSummaries(prev => ({ ...prev, [id]: {
+        content, service: 'cache',
+        timestamp: data?.generatedAt || new Date().toISOString(),
+        generationTime: Date.now() - start,
+        wordCount: String(content).split(' ').length,
+        metadata: { cached: data?.cached ?? true, remainingTtlSeconds: data?.remainingTtlSeconds ?? null },
+      }}));
+      setSummaryCollapsed(prev => ({ ...prev, [id]: false }));
+      summaryAttemptsRef.current[id] = 0;
+      setSummaryLoading(prev => ({ ...prev, [id]: false }));
+    } catch (e) {
+      const message = e?.message || String(e);
+      const shouldRetry = /cache miss|failed to read summary|503/i.test(message);
+      const nextAttempt = attempt + 1;
+      if (shouldRetry && nextAttempt <= MAX_RETRIES) {
+        scheduleSummaryRetry(t, idx, nextAttempt);
+      } else {
+        setSummaryErrors(prev => ({ ...prev, [id]: message }));
+        setSummaryLoading(prev => ({ ...prev, [id]: false }));
+        showError(message);
+      }
+    }
+  };
 
+  const handleClearSummary = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setSummaries(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setSummaryErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setSummaryCollapsed(prev => ({ ...prev, [id]: true }));
+    delete summaryAttemptsRef.current[id];
+  };
+  const toggleSummaryCollapsed = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setSummaryCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // ── Prediction ───────────────────────────────────────────
+  const schedulePredictionRetry = (topic, idx, attempt) => {
+    setTimeout(() => {
+      predictionAttemptsRef.current[getTopicId(topic, idx)] = attempt;
+      handleGeneratePrediction(topic, idx, attempt);
+    }, RETRY_DELAY_MS);
+  };
+
+  const handleGeneratePrediction = async (t, idx, attempt = 0) => {
+    const id = getTopicId(t, idx);
+    setActiveTimestamps(prev => ({ ...prev, [`${id}_prediction`]: Date.now() }));
+    if (predictions[id]) { setPredictionCollapsed(prev => ({ ...prev, [id]: false })); return; }
+    if (predictionLoading[id] && attempt === 0) return;
+    predictionAttemptsRef.current[id] = attempt;
+    setPredictionLoading(prev => ({ ...prev, [id]: true }));
+    setPredictionErrors(prev => ({ ...prev, [id]: null }));
+    const start = Date.now();
+    try {
+      const data = await graphqlService.getTopicPrediction(id);
+      const content = data?.content || data?.impact_analysis || '';
+      setPredictions(prev => ({ ...prev, [id]: {
+        content, service: 'cache',
+        timestamp: data?.generatedAt || new Date().toISOString(),
+        generationTime: Date.now() - start,
+        wordCount: String(content).split(' ').length,
+        metadata: { cached: data?.cached ?? true, remainingTtlSeconds: data?.remainingTtlSeconds ?? null },
+      }}));
+      setPredictionCollapsed(prev => ({ ...prev, [id]: false }));
+      predictionAttemptsRef.current[id] = 0;
+      setPredictionLoading(prev => ({ ...prev, [id]: false }));
+    } catch (e) {
+      const message = e?.message || String(e);
+      const shouldRetry = /cache miss|failed to read summary|503/i.test(message);
+      const nextAttempt = attempt + 1;
+      if (shouldRetry && nextAttempt <= MAX_RETRIES) {
+        schedulePredictionRetry(t, idx, nextAttempt);
+      } else {
+        setPredictionErrors(prev => ({ ...prev, [id]: message }));
+        setPredictionLoading(prev => ({ ...prev, [id]: false }));
+        showError(message);
+      }
+    }
+  };
+
+  const handleClearPrediction = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setPredictions(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setPredictionErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setPredictionCollapsed(prev => ({ ...prev, [id]: true }));
+    delete predictionAttemptsRef.current[id];
+  };
+  const togglePredictionCollapsed = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setPredictionCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // ── Trace Cause ──────────────────────────────────────────
+  const handleGenerateTraceCause = async (t, idx) => {
+    const id = getTopicId(t, idx);
+    setActiveTimestamps(prev => ({ ...prev, [`${id}_trace`]: Date.now() }));
+    if (traceCauses[id]) { setTraceCauseCollapsed(prev => ({ ...prev, [id]: false })); return; }
+    if (traceCauseLoading[id]) return;
+    setTraceCauseLoading(prev => ({ ...prev, [id]: true }));
+    setTraceCauseErrors(prev => ({ ...prev, [id]: null }));
+    try {
+      const data = await graphqlService.getTopicTraceCause(id);
+      const content = data?.content || '';
+      setTraceCauses(prev => ({ ...prev, [id]: {
+        content, service: 'cache',
+        timestamp: data?.generatedAt || new Date().toISOString(),
+        metadata: { cached: data?.cached ?? true },
+      }}));
+      setTraceCauseCollapsed(prev => ({ ...prev, [id]: false }));
+      setTraceCauseLoading(prev => ({ ...prev, [id]: false }));
+    } catch (e) {
+      const message = e?.message || String(e);
+      setTraceCauseErrors(prev => ({ ...prev, [id]: message }));
+      setTraceCauseLoading(prev => ({ ...prev, [id]: false }));
+      showError(message);
+    }
+  };
+
+  const handleClearTraceCause = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setTraceCauses(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setTraceCauseErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setTraceCauseCollapsed(prev => ({ ...prev, [id]: true }));
+  };
+  const toggleTraceCauseCollapsed = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setTraceCauseCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleSourcesExpanded = (t, idx) => {
+    const id = getTopicId(t, idx);
+    setSourcesExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // ── Render ───────────────────────────────────────────────
   const totalTopics = topics?.length ?? 0;
+  const timeAgo = getTimeAgo(updatedAt);
 
-  // ── Loading state ───────────────────────────────────────────
-  if (loading && totalTopics === 0) {
-    return <IntelligenceLoader type="typewriter" />;
-  }
+  return (
+    <div className="home-page">
+      <TopicNav topics={topics} categorizedTopics={categorizedTopics} />
+      <TodayArchiveSidebar entries={filteredArchiveEntries} />
 
-  // ── Status strip stats ──────────────────────────────────────
-  const trendingCount = topics.filter(t => t.x_trending).length;
-  const statusStats = [
-    totalTopics > 0 && { value: totalTopics, unit: 'topics' },
-    trendingCount > 0 && { value: trendingCount, unit: 'trending' },
-    archiveEntries?.length > 0 && { value: archiveEntries.length, unit: 'archive' },
-  ].filter(Boolean);
+      {/* Masthead */}
+      <div className="home-masthead">
+        <div className="home-masthead-kicker">{getDayString()}</div>
+        <h1>Today's Global Topics</h1>
+        <p className="home-masthead-sub">
+          Trending topics from around the world, organised by region. Summarise, predict, or trace the cause of any one.
+        </p>
+        <div className="home-meta">
+          <span className="home-meta-dot" />
+          <span>LIVE</span>
+          {totalTopics > 0 && (
+            <>
+              <span className="home-meta-sep">·</span>
+              <span><b>{totalTopics}</b> topics</span>
+            </>
+          )}
+          {timeAgo && (
+            <>
+              <span className="home-meta-sep">·</span>
+              <span>updated <b>{timeAgo}</b></span>
+            </>
+          )}
+          {generatedDate && (
+            <>
+              <span className="home-meta-sep">·</span>
+              <span>{generatedDate}</span>
+            </>
+          )}
+        </div>
 
-  // ── Left rail: archive list grouped by category ─────────────
-  const leftRail = (
-    <div className="hb-left">
-      <div className="hb-rl-head">
-        <span className="hb-rl-title">Today's Archive</span>
-        <span className="hb-rl-count">{archiveEntries?.length ?? 0}</span>
+        {isStale && (
+          <div className="home-alert stale">
+            <span>Topics refreshing — showing latest available</span>
+            <button onClick={refetch}>Refresh</button>
+          </div>
+        )}
+        {hasNewData && !isStale && (
+          <div className="home-alert fresh">
+            <span>New topics available</span>
+            <button onClick={refetch}>Load</button>
+          </div>
+        )}
       </div>
 
-      <div className="hb-rl-search">
-        <input
-          type="text"
-          placeholder="Search topics…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      {/* Support */}
+      <div className="home-support">
+        <span>We run ad-free. Help keep it that way.</span>
+        <a href="https://buymeacoffee.com/BenBen990505" target="_blank" rel="noopener noreferrer">
+          Buy Me a Coffee
+        </a>
       </div>
 
-      {allCategories.length > 1 && (
-        <div className="hb-rl-cats">
-          <span
-            className={`hb-cat${!activeCategory ? ' on' : ''}`}
-            onClick={() => setActiveCategory(null)}
-          >All</span>
-          {allCategories.map(([cat, count]) => (
-            <span
-              key={cat}
-              className={`hb-cat${activeCategory === cat ? ' on' : ''}`}
-              onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-              title={`${count} topics`}
-            >{cat}</span>
-          ))}
+      {/* Loading */}
+      {loading && (
+        <div className="home-loading">
+          <span className="home-loading-spin" />
+          <span className="home-loading-label">Loading topics</span>
         </div>
       )}
 
-      <div className="hb-rl-items">
-        {archiveByCategory.length === 0 && (
-          <div className="hb-rl-empty">No topics match</div>
-        )}
-        {archiveByCategory.map(([cat, items]) => (
-          <div key={cat} className="hb-rl-group">
-            <div className="hb-rl-lbl">{cat}</div>
-            {items.slice(0, 12).map((e, i) => (
-              <Link
-                key={`${e.topicId}-${i}`}
-                to={e.threadId ? `/weekly/thread/${e.threadId}` : `#topic-${e.topicId}`}
-                className="hb-rl-item"
-              >
-                <div className="hb-rl-item-t">{e.title}</div>
-                <div className="hb-rl-item-m">
-                  {e.regions?.[0] || 'Global'}
-                  {e.threadId && <span className="hb-rl-arc"> · arc</span>}
-                </div>
-              </Link>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  // ── Right rail: regional jump-nav ───────────────────────────
-  const rightRail = (
-    <div className="hb-right">
-      <div className="hb-rr-head">
-        <span className="hb-rr-title">Topics</span>
-        <span className="hb-rr-count">{totalTopics}</span>
-      </div>
-
-      {sortedRegions.map(([region, regionTopics]) => (
-        <div key={region} className="hb-rr-region">
-          <div className="hb-rr-lbl">
-            {region} <span className="hb-rr-n">{regionTopics.length}</span>
-          </div>
-          {regionTopics.slice(0, 5).map((t, i) => {
-            const id = getTopicId(t, topics.indexOf(t));
-            const isActive = activeRegion === region;
-            return (
-              <a
-                key={`${id}-${i}`}
-                href={`#topic-${id}`}
-                className={`hb-rr-item${isActive ? ' active' : ''}`}
-              >
-                <div className="hb-rr-item-t">{t.title}</div>
-                <div className="hb-rr-item-m">
-                  <span>{t.category}</span>
-                  {t.x_trending && <span className="hb-rr-trend">trending</span>}
-                </div>
-              </a>
-            );
-          })}
-        </div>
-      ))}
-    </div>
-  );
-
-  return (
-    <EditorialShell
-      strip={<StatusStrip label="LIVE" stats={statusStats} updatedAt={updatedAt} />}
-      left={leftRail}
-      right={rightRail}
-      className="hb-shell"
-    >
-      {/* Masthead */}
-      <div className="hb-masthead">
-        <div className="hb-mh-kicker">{getDayString()}</div>
-        <h1 className="hb-mh-h1">Today's Global Topics</h1>
-        <p className="hb-mh-sub">
-          Trending stories from around the world, organised by region. Summarise, predict, or trace the cause of any one.
-        </p>
-
-        {(isStale || hasNewData) && (
-          <div className={`hb-mh-alert${hasNewData ? ' fresh' : ''}`}>
-            <span>{hasNewData ? 'New topics available' : 'Topics refreshing — showing latest available'}</span>
-            <button onClick={refetch}>{hasNewData ? 'Load' : 'Refresh'}</button>
-          </div>
-        )}
-      </div>
-
-      {/* Region sections */}
-      {sortedRegions.map(([region, regionTopics]) => (
-        <section key={region} className="hb-region" data-region={region}>
-          <div className="hb-region-hd">
+      {/* Regions */}
+      {!loading && totalTopics > 0 && sortedRegions.map(([region, regionTopics]) => (
+        <section key={region} className="home-region">
+          <div className="home-region-hd">
             <h2>{region}</h2>
-            <span className="hb-region-n">{regionTopics.length} topic{regionTopics.length !== 1 ? 's' : ''}</span>
+            <span className="home-region-n">{regionTopics.length} topic{regionTopics.length !== 1 ? 's' : ''}</span>
           </div>
 
-          {regionTopics.map(t => {
+          {regionTopics.map((t) => {
             const globalIdx = topics.indexOf(t);
             const id = getTopicId(t, globalIdx);
-            const country = t.primaryCountry || t.regions?.[0];
-            const sourceCount = Array.isArray(t.sources) ? t.sources.length : 0;
-            const outletCount = sourceCount > 0
-              ? new Set(t.sources.map(s => (s.source || s.title || '').toLowerCase()).filter(Boolean)).size
-              : 0;
-            const firstSourceUrl = t.sources?.[0]?.url;
+            const country = t.regions?.[0] || null;
+            const hasSummary = !!summaries[id];
+            const hasPredict = !!predictions[id];
+            const hasTrace = !!traceCauses[id];
+            const googleNewsUrl = `https://www.google.com/search?q=${encodeURIComponent(String(t.title || '').trim())}&tbm=nws&tbs=qdr:d`;
 
             return (
-              <article key={id} id={`topic-${id}`} className="hb-topic">
-                <div className="hb-topic-kicker">
-                  {t.category && <span className="hb-topic-cat">{t.category}</span>}
-                  {t.x_trending && <span className="hb-trend-badge">TRENDING</span>}
-                  {t.urgency === 'high' && <span className="hb-urg-badge">URGENT</span>}
-                  {country && <span className="hb-topic-country"> · {country}</span>}
+              <article key={globalIdx} id={`topic-${id}`} className="home-topic">
+                <div className="home-topic-kicker">
+                  {t.category && <span className="home-topic-cat">{t.category}</span>}
+                  {t.urgency === 'high' && <span className="home-urgency-pill">BREAKING</span>}
+                  {country && <span> · {country}</span>}
                 </div>
 
-                <h3 className="hb-topic-h3">
+                <h3>
                   {t.threadId
                     ? <Link to={`/weekly/thread/${t.threadId}`}>{t.title}</Link>
-                    : <span>{t.title}</span>
+                    : t.title
                   }
+                  {t.threadId && (
+                    <Link to="/weekly" className="home-thread-badge">Story arc →</Link>
+                  )}
                 </h3>
 
                 {(t.context || t.description) && (
-                  <p className="hb-topic-ctx">{t.context || t.description}</p>
+                  <p className="home-topic-context">{t.context || t.description}</p>
                 )}
 
-                <div className="hb-topic-meta">
-                  {sourceCount > 0 && (
-                    <span><b>{sourceCount}</b> source{sourceCount !== 1 ? 's' : ''}</span>
-                  )}
-                  {outletCount > 0 && (
-                    <span><b>{outletCount}</b> outlet{outletCount !== 1 ? 's' : ''}</span>
-                  )}
-                  {t.threadId && (
-                    <Link to={`/weekly/thread/${t.threadId}`} className="hb-topic-arc">→ story arc</Link>
-                  )}
-                </div>
+                <div className="home-topic-actions">
+                  <div className="home-ai-row">
+                    {/* Summary */}
+                    <button
+                      className={`home-ai-btn sum${hasSummary || summaryLoading[id] ? ' active' : ''}${summaryLoading[id] ? ' loading' : ''}`}
+                      onClick={() => handleGenerateSummary(t, globalIdx)}
+                      disabled={summaryLoading[id]}
+                    >
+                      {summaryLoading[id]
+                        ? <span className="home-ai-spinner" />
+                        : hasSummary
+                          ? <span className="btn-dot" />
+                          : <SumIcon />
+                      }
+                      Summary
+                    </button>
 
-                <div className="hb-topic-actions">
-                  {['sum', 'pre', 'tra'].map(kind => {
-                    const stateKey = `${id}_${kind}`;
-                    const s = aiState[stateKey];
-                    const open = !!(s?.content || s?.loading || s?.error);
-                    const Icon = kind === 'sum' ? SumIcon : kind === 'pre' ? PreIcon : TraIcon;
-                    const label = kind === 'sum' ? 'Summary' : kind === 'pre' ? 'Predict' : 'Trace Cause';
-                    return (
+                    {/* Predict */}
+                    <button
+                      className={`home-ai-btn pre${hasPredict || predictionLoading[id] ? ' active' : ''}${predictionLoading[id] ? ' loading' : ''}`}
+                      onClick={() => handleGeneratePrediction(t, globalIdx)}
+                      disabled={predictionLoading[id]}
+                    >
+                      {predictionLoading[id]
+                        ? <span className="home-ai-spinner" />
+                        : hasPredict
+                          ? <span className="btn-dot" />
+                          : <PreIcon />
+                      }
+                      Predict
+                    </button>
+
+                    {/* Trace Cause */}
+                    <button
+                      className={`home-ai-btn tra${hasTrace || traceCauseLoading[id] ? ' active' : ''}${traceCauseLoading[id] ? ' loading' : ''}`}
+                      onClick={() => handleGenerateTraceCause(t, globalIdx)}
+                      disabled={traceCauseLoading[id]}
+                    >
+                      {traceCauseLoading[id]
+                        ? <span className="home-ai-spinner" />
+                        : hasTrace
+                          ? <span className="btn-dot" />
+                          : <TraIcon />
+                      }
+                      Trace Cause
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {Array.isArray(t.sources) && t.sources.length > 0 && (
                       <button
-                        key={kind}
-                        className={`hb-ai-btn ${kind}${open ? ' active' : ''}`}
-                        onClick={() => fetchAi(t, globalIdx, kind)}
-                        disabled={s?.loading}
+                        className="home-src-link"
+                        onClick={() => toggleSourcesExpanded(t, globalIdx)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                       >
-                        {s?.loading ? <span className="hb-ai-spin" /> : <Icon />}
-                        {label}
+                        {sourcesExpanded[id] ? 'Hide sources' : `${t.sources.length} source${t.sources.length !== 1 ? 's' : ''} ↗`}
                       </button>
-                    );
-                  })}
-
-                  <div className="hb-topic-actions-right">
-                    <SaveButton itemType="topic" itemId={id} metadata={{ title: t.title, category: t.category }} />
-                    {firstSourceUrl && (
-                      <a className="hb-src-link" href={firstSourceUrl} target="_blank" rel="noopener noreferrer">
-                        {sourceCount} source{sourceCount !== 1 ? 's' : ''} ↗
+                    )}
+                    {!Array.isArray(t.sources) && (
+                      <a className="home-src-link" href={googleNewsUrl} target="_blank" rel="noopener noreferrer">
+                        View sources ↗
                       </a>
                     )}
                   </div>
                 </div>
 
-                {/* AI result panels */}
-                {['sum', 'pre', 'tra'].map(kind => {
-                  const s = aiState[`${id}_${kind}`];
-                  if (!s) return null;
-                  const bullets = s.content ? splitToBullets(s.content) : [];
-                  const rt = readTime(s.content || '');
-                  return (
-                    <div key={kind} className={`hb-ai-result ${kind}`}>
-                      <div className="hb-ai-rh">
-                        <div className="hb-ai-rt">{AI_LABELS[kind]}</div>
-                        <div className="hb-ai-rx">
-                          {s.loading && <span>Generating…</span>}
-                          {s.error && <span style={{ color: 'var(--risk-h)' }}>Error</span>}
-                          {!s.loading && !s.error && rt > 0 && <span>~{rt}s read</span>}
-                          <span className="hb-ai-close" onClick={() => closeAi(id, kind)}>✕</span>
-                        </div>
-                      </div>
-                      <div className="hb-ai-rb">
-                        {s.loading && <div className="hb-ai-loading">Loading analysis…</div>}
-                        {s.error && (
-                          <div className="hb-ai-error">
-                            {s.error}
-                            <button onClick={() => fetchAi(t, globalIdx, kind)}>Retry</button>
-                          </div>
-                        )}
-                        {bullets.length > 0 && (
-                          <ul>
-                            {bullets.map((b, i) => <li key={i}>{b}</li>)}
-                          </ul>
-                        )}
-                      </div>
+                {/* Sources panel */}
+                {Array.isArray(t.sources) && t.sources.length > 0 && sourcesExpanded[id] && (
+                  <div className="home-sources-panel">
+                    <div className="home-sources-hd" onClick={() => toggleSourcesExpanded(t, globalIdx)}>
+                      <span>Article Sources ({t.sources.length})</span>
+                      <span className="home-sources-close">✕</span>
                     </div>
-                  );
-                })}
+                    <div className="home-sources-body">
+                      {t.sources.map((src, si) => (
+                        <div key={si} className="home-source-item">
+                          <a href={src.url} target="_blank" rel="noopener noreferrer">{src.title || 'Untitled'}</a>
+                          <div className="home-source-meta">{src.source}{src.age ? ` · ${src.age}` : ''}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI results */}
+                <div className="home-ai-result">
+                  <SummaryDisplay
+                    summary={summaries[id]}
+                    isLoading={summaryLoading[id]}
+                    error={summaryErrors[id]}
+                    onRetry={() => handleGenerateSummary(t, globalIdx)}
+                    onClear={() => handleClearSummary(t, globalIdx)}
+                    isCollapsed={summaryCollapsed[id]}
+                    onToggleCollapse={() => toggleSummaryCollapsed(t, globalIdx)}
+                    lastActive={activeTimestamps[`${id}_summary`]}
+                  />
+                  <PredictionDisplay
+                    prediction={predictions[id]}
+                    isLoading={predictionLoading[id]}
+                    error={predictionErrors[id] || null}
+                    onRetry={() => handleGeneratePrediction(t, globalIdx)}
+                    onClear={() => handleClearPrediction(t, globalIdx)}
+                    isCollapsed={predictionCollapsed[id]}
+                    onToggleCollapse={() => togglePredictionCollapsed(t, globalIdx)}
+                    lastActive={activeTimestamps[`${id}_prediction`]}
+                  />
+                  <TraceCauseDisplay
+                    traceCause={traceCauses[id]}
+                    isLoading={traceCauseLoading[id]}
+                    error={traceCauseErrors[id]}
+                    onRetry={() => handleGenerateTraceCause(t, globalIdx)}
+                    onClear={() => handleClearTraceCause(t, globalIdx)}
+                    isCollapsed={traceCauseCollapsed[id]}
+                    onToggleCollapse={() => toggleTraceCauseCollapsed(t, globalIdx)}
+                    lastActive={activeTimestamps[`${id}_trace`]}
+                  />
+                </div>
               </article>
             );
           })}
         </section>
       ))}
-
-      {!loading && totalTopics === 0 && (
-        <div className="hb-empty">
-          <h3>No topics available yet</h3>
-          <p>The pipeline runs hourly. Check back soon.</p>
-        </div>
-      )}
-    </EditorialShell>
+    </div>
   );
 }
 

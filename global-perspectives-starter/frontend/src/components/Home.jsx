@@ -353,7 +353,7 @@ function Home() {
           {regionTopics.map((t) => {
             const globalIdx = topics.indexOf(t);
             const id = getTopicId(t, globalIdx);
-            const country = t.regions?.[0] || null;
+            const country = t.primaryCountry || t.regions?.[0] || null;
             const hasSummary = !!summaries[id];
             const hasPredict = !!predictions[id];
             const hasTrace = !!traceCauses[id];
@@ -363,7 +363,8 @@ function Home() {
               <article key={globalIdx} id={`topic-${id}`} className="home-topic">
                 <div className="home-topic-kicker">
                   {t.category && <span className="home-topic-cat">{t.category}</span>}
-                  {t.urgency === 'high' && <span className="home-urgency-pill">BREAKING</span>}
+                  {t.x_trending && <span className="home-trend-pill">TRENDING</span>}
+                  {t.urgency === 'high' && <span className="home-urgency-pill">URGENT</span>}
                   {country && <span> · {country}</span>}
                 </div>
 

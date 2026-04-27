@@ -382,6 +382,21 @@ function Home() {
                   <p className="home-topic-context">{t.context || t.description}</p>
                 )}
 
+                {Array.isArray(t.sources) && t.sources.length > 0 && (() => {
+                  const sourceCount = t.sources.length;
+                  const outletCount = new Set(
+                    t.sources.map(s => (s.source || s.title || '').toLowerCase()).filter(Boolean)
+                  ).size;
+                  return (
+                    <div className="home-topic-meta">
+                      <span><b>{sourceCount}</b> source{sourceCount !== 1 ? 's' : ''}</span>
+                      {outletCount > 0 && outletCount !== sourceCount && (
+                        <span><b>{outletCount}</b> outlet{outletCount !== 1 ? 's' : ''}</span>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 <div className="home-topic-actions">
                   <div className="home-ai-row">
                     {/* Summary */}

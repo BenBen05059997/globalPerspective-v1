@@ -807,50 +807,50 @@ export default function WorldMapV2() {
             </div>
           </div>
 
-          <div className="mv2-map" ref={wrapRef}>
-            <svg className="map-svg" ref={svgRef} />
-
-            {/* Country search */}
-            <div className={`mv2-search${searchFocused ? ' focused' : ''}`}>
-              <div className="mv2-search-row">
-                <span className="mv2-search-icon" aria-hidden>⌕</span>
-                <input
-                  className="mv2-search-input"
-                  type="text"
-                  placeholder="Search country…"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && searchMatches[0]) handleSearchSelect(searchMatches[0].iso);
-                    else if (e.key === 'Escape') { setSearchQuery(''); e.currentTarget.blur(); }
-                  }}
-                />
-                {searchQuery && (
-                  <button className="mv2-search-clear" onClick={() => setSearchQuery('')} aria-label="Clear">×</button>
-                )}
-              </div>
-              {searchFocused && searchMatches.length > 0 && (
-                <div className="mv2-search-dropdown">
-                  {searchMatches.map(m => (
-                    <div
-                      key={m.iso + m.key}
-                      className="mv2-search-match"
-                      onMouseDown={() => handleSearchSelect(m.iso)}
-                    >
-                      <span className="mv2-search-name">{m.display}</span>
-                      <span className="mv2-search-iso">{m.iso}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {searchFocused && searchQuery.trim().length >= 1 && searchMatches.length === 0 && (
-                <div className="mv2-search-dropdown">
-                  <div className="mv2-search-empty">No country matches "{searchQuery}"</div>
-                </div>
+          {/* Country search — in document flow, above the map */}
+          <div className={`mv2-search${searchFocused ? ' focused' : ''}`}>
+            <div className="mv2-search-row">
+              <span className="mv2-search-icon" aria-hidden>⌕</span>
+              <input
+                className="mv2-search-input"
+                type="text"
+                placeholder="Search country…"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && searchMatches[0]) handleSearchSelect(searchMatches[0].iso);
+                  else if (e.key === 'Escape') { setSearchQuery(''); e.currentTarget.blur(); }
+                }}
+              />
+              {searchQuery && (
+                <button className="mv2-search-clear" onClick={() => setSearchQuery('')} aria-label="Clear">×</button>
               )}
             </div>
+            {searchFocused && searchMatches.length > 0 && (
+              <div className="mv2-search-dropdown">
+                {searchMatches.map(m => (
+                  <div
+                    key={m.iso + m.key}
+                    className="mv2-search-match"
+                    onMouseDown={() => handleSearchSelect(m.iso)}
+                  >
+                    <span className="mv2-search-name">{m.display}</span>
+                    <span className="mv2-search-iso">{m.iso}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {searchFocused && searchQuery.trim().length >= 1 && searchMatches.length === 0 && (
+              <div className="mv2-search-dropdown">
+                <div className="mv2-search-empty">No country matches "{searchQuery}"</div>
+              </div>
+            )}
+          </div>
+
+          <div className="mv2-map" ref={wrapRef}>
+            <svg className="map-svg" ref={svgRef} />
 
             {/* Map loading overlay — shown until TopoJSON resolves */}
             {Object.keys(nameToISO).length === 0 && (

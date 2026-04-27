@@ -11,6 +11,7 @@ import graphqlService from '../utils/graphqlService';
 import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import { useError } from '../contexts/ErrorContext';
 import StatusStrip from './atoms/StatusStrip';
+import EditorialShell from './atoms/EditorialShell';
 import './AIComponents.css';
 import './Home.css';
 
@@ -276,12 +277,34 @@ function Home() {
     archiveEntries?.length > 0 && { value: archiveEntries.length, unit: 'archive' },
   ].filter(Boolean);
 
-  return (
-    <div className="home-page">
-      <StatusStrip label="LIVE" stats={statusStats} updatedAt={updatedAt} />
-      <TopicNav topics={topics} categorizedTopics={categorizedTopics} />
-      <TodayArchiveSidebar entries={filteredArchiveEntries} />
+  const leftRail = (
+    <>
+      <TodayArchiveSidebar mode="rail" entries={filteredArchiveEntries} />
+      <div className="home-rail-coffee">
+        <p>We run ad-free. Help keep it that way.</p>
+        <a
+          href="https://buymeacoffee.com/BenBen990505"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="home-rail-coffee-btn"
+        >
+          Buy Me a Coffee ↗
+        </a>
+      </div>
+    </>
+  );
 
+  const rightRail = (
+    <TopicNav mode="rail" topics={topics} categorizedTopics={categorizedTopics} />
+  );
+
+  return (
+    <EditorialShell
+      strip={<StatusStrip label="LIVE" stats={statusStats} updatedAt={updatedAt} />}
+      left={leftRail}
+      right={rightRail}
+      className="home-shell"
+    >
       {/* Masthead */}
       <div className="home-masthead">
         <div className="home-masthead-kicker">{getDayString()}</div>
@@ -324,14 +347,6 @@ function Home() {
             <button onClick={refetch}>Load</button>
           </div>
         )}
-      </div>
-
-      {/* Support */}
-      <div className="home-support">
-        <span>We run ad-free. Help keep it that way.</span>
-        <a href="https://buymeacoffee.com/BenBen990505" target="_blank" rel="noopener noreferrer">
-          Buy Me a Coffee
-        </a>
       </div>
 
       {/* Loading */}
@@ -519,7 +534,7 @@ function Home() {
           })}
         </section>
       ))}
-    </div>
+    </EditorialShell>
   );
 }
 

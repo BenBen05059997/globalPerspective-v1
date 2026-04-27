@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './TopicNav.css';
 
-function TopicNav({ topics, categorizedTopics }) {
+function TopicNav({ topics, categorizedTopics, mode = 'float' }) {
   const [activeTopicId, setActiveTopicId] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [collapsedRegions, setCollapsedRegions] = useState({});
   const observerRef = useRef(null);
+  const isRail = mode === 'rail';
 
   const getTopicId = (t, idx) => {
     const directId = t?.topicId || t?.topic_id || t?.id;
@@ -72,6 +73,43 @@ function TopicNav({ topics, categorizedTopics }) {
       if (b[0] === 'World') return -1;
       return b[1].length - a[1].length;
     });
+
+  // Rail mode — no floating chrome, used inside EditorialShell right slot.
+  if (isRail) {
+    return (
+      <div className="topic-nav-rail">
+        <div className="topic-nav-rail-head">
+          <span className="topic-nav-rail-title">Topics</span>
+          <span className="topic-nav-rail-count">{topics.length}</span>
+        </div>
+        {sortedRegions.map(([region, regionTopics]) => (
+          <div key={region} className="topic-nav-rail-region">
+            <div className="topic-nav-rail-lbl">
+              {region} <span className="topic-nav-rail-n">{regionTopics.length}</span>
+            </div>
+            {regionTopics.map((topic) => {
+              const globalIdx = topics.indexOf(topic);
+              const id = getTopicId(topic, globalIdx);
+              const isActive = activeTopicId === `topic-${id}`;
+              return (
+                <div
+                  key={id}
+                  className={`topic-nav-rail-item ${isActive ? 'active' : ''}`}
+                  onClick={() => scrollToTopic(id)}
+                >
+                  <div className="topic-nav-rail-item-t">{topic.title}</div>
+                  <div className="topic-nav-rail-item-m">
+                    <span>{topic.category || 'general'}</span>
+                    {topic.x_trending && <span className="topic-nav-rail-trend">trending</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={`topic-nav ${isCollapsed ? 'collapsed' : ''}`}>

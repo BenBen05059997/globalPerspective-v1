@@ -10,6 +10,7 @@ import { useTodayArchive } from '../hooks/useTodayArchive';
 import graphqlService from '../utils/graphqlService';
 import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import { useError } from '../contexts/ErrorContext';
+import StatusStrip from './atoms/StatusStrip';
 import './AIComponents.css';
 import './Home.css';
 
@@ -268,8 +269,16 @@ function Home() {
   const totalTopics = topics?.length ?? 0;
   const timeAgo = getTimeAgo(updatedAt);
 
+  const trendingCount = topics.filter(t => t.x_trending).length;
+  const statusStats = [
+    totalTopics > 0 && { value: totalTopics, unit: 'topics' },
+    trendingCount > 0 && { value: trendingCount, unit: 'trending' },
+    archiveEntries?.length > 0 && { value: archiveEntries.length, unit: 'archive' },
+  ].filter(Boolean);
+
   return (
     <div className="home-page">
+      <StatusStrip label="LIVE" stats={statusStats} updatedAt={updatedAt} />
       <TopicNav topics={topics} categorizedTopics={categorizedTopics} />
       <TodayArchiveSidebar entries={filteredArchiveEntries} />
 

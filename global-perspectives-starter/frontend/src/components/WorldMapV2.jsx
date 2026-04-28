@@ -101,7 +101,7 @@ const EXTRA_ALIASES = {
 
 const RISK_FILL   = { H: '#eab2a6', E: '#eed4a3', L: '#f2efe8' };
 const RISK_MARKER = { H: '#c94a33', E: '#c98510', L: '#4fa07b' };
-const FLOW_COLOR  = { fx: '#0a0a0a', tech: '#3a3a3c', geo: '#6a6a6e' };
+const FLOW_COLOR  = { fx: '#1e6091', tech: '#5b3a91', geo: '#a2442e' };
 
 const LENSES = [
   { id: 'risk',      label: 'News Signal',    sub: 'activity' },
@@ -727,9 +727,24 @@ export default function WorldMapV2() {
                 </div>
               )}
               {flowsRef.current.length > 0 && (
-                <div style={{ fontSize: 11, color: 'var(--ink-dim)', marginTop: 8, fontStyle: 'italic' }}>
-                  Click an arc to open the pair analysis.
-                </div>
+                <>
+                  <div style={{ fontSize: 11, color: 'var(--ink-dim)', marginTop: 12, lineHeight: 1.5 }}>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: 6 }}>
+                      Arc weight
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ width: 24, height: 2, background: 'var(--ink, #0a0a0a)', display: 'inline-block', flexShrink: 0 }} />
+                      <span><b>Active</b> — at least one country in High signal this week</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 24, borderTop: '1.5px dashed var(--ink-faint, #8a8a8e)', display: 'inline-block', flexShrink: 0 }} />
+                      <span><b>On watch</b> — relationship exists but both sides quiet</span>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-dim)', marginTop: 12, fontStyle: 'italic' }}>
+                    Click an arc to open the pair analysis.
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -797,10 +812,10 @@ export default function WorldMapV2() {
               )}
               {lens === 'flows' && (
                 <>
-                  <span className="cell"><span className="sw" style={{ background: '#0a0a0a', height: 3 }} />FX</span>
-                  <span className="cell"><span className="sw" style={{ background: '#3a3a3c', height: 3 }} />Tech</span>
-                  <span className="cell"><span className="sw" style={{ background: '#6a6a6e', height: 3 }} />Geo</span>
-                  <span className="cell" style={{ fontFamily: 'var(--mono)', fontSize: 10 }}>— strong · ┄ moderate</span>
+                  <span className="cell"><span className="sw" style={{ background: FLOW_COLOR.fx, height: 3 }} />FX / Capital</span>
+                  <span className="cell"><span className="sw" style={{ background: FLOW_COLOR.tech, height: 3 }} />Technology</span>
+                  <span className="cell"><span className="sw" style={{ background: FLOW_COLOR.geo, height: 3 }} />Geopolitics</span>
+                  <span className="cell" style={{ fontFamily: 'var(--mono)', fontSize: 10 }}>— active · ┄ on watch</span>
                 </>
               )}
               {lens === 'editorial' && <span className="cell">Numbered stories · tap to read</span>}

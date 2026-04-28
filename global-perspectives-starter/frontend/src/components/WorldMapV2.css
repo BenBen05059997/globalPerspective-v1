@@ -692,3 +692,26 @@
   color: var(--ink-dim, #6a6a6e);
   font-style: italic;
 }
+
+/* ── Panel back button — returns from country detail to leaderboard ── */
+.mv2-back-btn {
+  background: transparent;
+  border: 0;
+  padding: 12px 18px 8px;
+  margin: 0;
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #6a6a6e);
+  cursor: pointer;
+  text-align: left;
+  display: block;
+  width: 100%;
+  border-bottom: 1px solid var(--line-soft, #f0eee9);
+  transition: color 120ms, background 120ms;
+}
+.mv2-back-btn:hover {
+  color: var(--ink, #0a0a0a);
+  background: var(--paper-2, #f5f3ee);
+}

@@ -956,6 +956,15 @@ export default function WorldMapV2() {
           {selectedISO ? (
             <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column' }}>
 
+              {/* Back link — deselects the country and returns to the leaderboard view */}
+              <button
+                className="mv2-back-btn"
+                onClick={() => setSelectedISO(null)}
+                aria-label="Back to top signals"
+              >
+                ← Back to top signals
+              </button>
+
               {/* Header */}
               <div className="hd">
                 <div>

@@ -228,7 +228,9 @@ export default function WorldMapV2() {
       if (!a || !b || !isoToCenterRef.current[a] || !isoToCenterRef.current[b]) continue;
       const sA = signal[a]?.bucket || 'L';
       const sB = signal[b]?.bucket || 'L';
-      const w = (sA === 'H' || sB === 'H') ? 'strong' : 'mod';
+      // Active if at least one country has elevated or high signal this week
+      const isActive = (s) => s === 'H' || s === 'E';
+      const w = (isActive(sA) || isActive(sB)) ? 'strong' : 'mod';
       const title = String(p.pairTitle || '').toLowerCase();
       let g = 'geo';
       if (/trade|tariff|export|import|peso|yen|lira|imf|fx|capital/.test(title)) g = 'fx';
@@ -734,7 +736,7 @@ export default function WorldMapV2() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <span style={{ width: 24, height: 2, background: 'var(--ink, #0a0a0a)', display: 'inline-block', flexShrink: 0 }} />
-                      <span><b>Active</b> — at least one country in High signal this week</span>
+                      <span><b>Active</b> — at least one country in High or Elevated signal</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ width: 24, borderTop: '1.5px dashed var(--ink-faint, #8a8a8e)', display: 'inline-block', flexShrink: 0 }} />

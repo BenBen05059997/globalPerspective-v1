@@ -16,6 +16,12 @@ class MockIntersectionObserver {
 }
 globalThis.IntersectionObserver = MockIntersectionObserver;
 
+// Mock ResizeObserver (not available in jsdom)
+class MockResizeObserver {
+  constructor() { this.observe = vi.fn(); this.unobserve = vi.fn(); this.disconnect = vi.fn(); }
+}
+globalThis.ResizeObserver = MockResizeObserver;
+
 // Mock fetch globally
 globalThis.fetch = vi.fn(() =>
   Promise.resolve({

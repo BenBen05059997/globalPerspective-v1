@@ -150,22 +150,23 @@ describe('WorldMapV2 — signal filter checkboxes are clickable', () => {
   it('checkboxes have cursor:pointer (are interactive)', async () => {
     const { default: WorldMapV2 } = await import('../components/WorldMapV2');
     render(<MemoryRouter><WorldMapV2 /></MemoryRouter>);
-    const highEl = screen.getByText('High').closest('.chk');
-    expect(highEl).not.toBeNull();
-    expect(highEl.style.cursor).toBe('pointer');
+    // Multiple "High" elements (legend swatch + signal pill); pick the one inside .chk
+    const highChk = screen.getAllByText('High').map(el => el.closest('.chk')).find(Boolean);
+    expect(highChk).not.toBeNull();
+    expect(highChk.style.cursor).toBe('pointer');
   });
 
   it('clicking High filter does not throw', async () => {
     const { default: WorldMapV2 } = await import('../components/WorldMapV2');
     render(<MemoryRouter><WorldMapV2 /></MemoryRouter>);
-    const highEl = screen.getByText('High').closest('.chk');
-    expect(() => fireEvent.click(highEl)).not.toThrow();
+    const highChk = screen.getAllByText('High').map(el => el.closest('.chk')).find(Boolean);
+    expect(() => fireEvent.click(highChk)).not.toThrow();
   });
 
-  it('Time window section is hidden on risk lens', async () => {
+  it('Time window section is hidden when Connections layer is off', async () => {
     const { default: WorldMapV2 } = await import('../components/WorldMapV2');
     render(<MemoryRouter><WorldMapV2 /></MemoryRouter>);
-    // Default lens is 'risk' — Time window should not be visible
+    // Connections layer defaults to OFF — Time window should not be visible
     expect(screen.queryByText('Time window')).toBeNull();
   });
 

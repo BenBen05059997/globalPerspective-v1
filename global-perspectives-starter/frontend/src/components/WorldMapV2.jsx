@@ -103,17 +103,11 @@ const RISK_FILL   = { H: '#eab2a6', E: '#eed4a3', L: '#f2efe8' };
 const RISK_MARKER = { H: '#c94a33', E: '#c98510', L: '#4fa07b' };
 const FLOW_COLOR  = { fx: '#1e6091', tech: '#5b3a91', geo: '#a2442e' };
 
-const LENSES = [
-  { id: 'risk',      label: 'News Signal',    sub: 'activity' },
-  { id: 'flows',     label: 'Flows & Links',  sub: 'arcs'     },
-  { id: 'editorial', label: 'Editorial Atlas',sub: 'top 5'    },
+const LAYERS = [
+  { id: 'today',       label: "Today's pulse", sub: 'last 24h news + signal' },
+  { id: 'connections', label: 'Connections',   sub: 'bilateral arcs'         },
+  { id: 'editorial',   label: 'Editorial',     sub: "this week's top stories" },
 ];
-
-const LENS_TITLE = {
-  risk:      { kicker: 'LENS · NEWS SIGNAL',     title: 'Where the world is loudest this week' },
-  flows:     { kicker: 'LENS · NARRATIVE FLOWS', title: 'Who is connected to whom' },
-  editorial: { kicker: 'LENS · EDITORIAL ATLAS', title: "This week's top stories, one map" },
-};
 
 function Sparkline({ snapshots }) {
   if (!snapshots || snapshots.length < 2) return null;
@@ -141,7 +135,7 @@ export default function WorldMapV2() {
   const d3Ref   = useRef(null);
   const worldRef = useRef(null);
 
-  const [lens, setLens] = useState('risk');
+  const [layers, setLayers] = useState({ today: true, connections: false, editorial: false });
   const [selectedISO, setSelectedISO] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [railOpen, setRailOpen] = useState(true);
@@ -190,6 +184,30 @@ export default function WorldMapV2() {
 
   const topicsRef = useRef([]);
   topicsRef.current = topics;
+
+  // Today's pulse — rolling 24h window of fresh news per country
+  const todaySignal = useMemo(() => {
+    if (!Array.isArray(topics) || topics.length === 0) return {};
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const counts = {};
+    for (const t of topics) {
+      const ts = t.timestamp ? new Date(t.timestamp).getTime() : 0;
+      if (!ts || ts < cutoff) continue;
+      const seen = new Set();
+      const regions = Array.isArray(t.regions) ? t.regions : [];
+      for (const r of regions) {
+        if (!r) continue;
+        const iso = nameToISO[String(r).toLowerCase()] || EXTRA_ALIASES[String(r).toLowerCase()];
+        if (iso && !seen.has(iso)) {
+          seen.add(iso);
+          counts[iso] = (counts[iso] || 0) + 1;
+        }
+      }
+    }
+    return counts;
+  }, [topics, nameToISO]);
+  const todaySignalRef = useRef({});
+  todaySignalRef.current = todaySignal;
 
   // Keep nameToISO ref in sync for drawMap (imperative context)
   useEffect(() => { nameToISORef.current = nameToISO; }, [nameToISO]);
@@ -359,7 +377,7 @@ export default function WorldMapV2() {
         worldRef.current = world;
         setNameToISO(nISO);
         setIsoToName(nName);
-        drawMap(lens, selectedISO, zoom);
+        drawMap(layers, selectedISO, zoom);
       });
   }, []); // eslint-disable-line
 
@@ -373,20 +391,20 @@ export default function WorldMapV2() {
     const el = wrapRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
-      if (worldRef.current) drawMap(lens, selectedISO, zoom);
+      if (worldRef.current) drawMap(layers, selectedISO, zoom);
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [lens, selectedISO, zoom]); // eslint-disable-line
+  }, [layers, selectedISO, zoom]); // eslint-disable-line
 
-  // Redraw when lens/selection/zoom/data changes
+  // Redraw when layers/selection/zoom/data changes
   useEffect(() => {
     if (!worldRef.current) return;
-    const t = setTimeout(() => drawMap(lens, selectedISO, zoom), 240);
+    const t = setTimeout(() => drawMap(layers, selectedISO, zoom), 240);
     return () => clearTimeout(t);
-  }, [lens, selectedISO, zoom, railOpen, panelOpen, sigReady, realFlows, editorialPicks, flowFilters, signalFilters, timeWindow]); // eslint-disable-line
+  }, [layers, selectedISO, zoom, railOpen, panelOpen, sigReady, realFlows, editorialPicks, flowFilters, signalFilters, timeWindow, todaySignal]); // eslint-disable-line
 
-  function drawMap(currentLens, currentISO, currentZoom) {
+  function drawMap(currentLayers, currentISO, currentZoom) {
     const svg  = svgRef.current;
     const wrap = wrapRef.current;
     if (!svg || !wrap || !d3Ref.current || !worldRef.current) return;
@@ -423,17 +441,11 @@ export default function WorldMapV2() {
 
     const sig = signalRef.current;
 
-    // Country fills
+    // Country fills — z-score buckets always shown as the base layer
     world.features.forEach(f => {
       const iso = f.id;
-      let fill = '#f2efe8';
-      if (currentLens === 'risk') {
-        const bucket = sig[iso]?.bucket || 'L';
-        fill = signalFilters[bucket] ? RISK_FILL[bucket] : '#f2efe8';
-      } else if (currentLens === 'flows') {
-        const hot = new Set(flowsRef.current.flatMap(fl => [fl.a, fl.b]));
-        fill = hot.has(iso) ? '#e6e2d8' : '#f0ede6';
-      }
+      const bucket = sig[iso]?.bucket || 'L';
+      const fill = signalFilters[bucket] ? RISK_FILL[bucket] : '#f2efe8';
       const p = el('path', {
         class: `country${iso === currentISO ? ' selected' : ''}`,
         d: path(f), fill, 'data-iso': iso,
@@ -442,7 +454,29 @@ export default function WorldMapV2() {
       svg.appendChild(p);
     });
 
-    if (currentLens === 'risk') {
+    // Today's pulse layer — fresh-news rings around countries with topics in last 24h
+    if (currentLayers.today) {
+      Object.entries(todaySignalRef.current).forEach(([iso, count]) => {
+        const center = isoToCenterRef.current[iso];
+        if (!center) return;
+        const pt = projection(center);
+        if (!pt) return;
+        const [x, y] = pt;
+        const r = Math.min(7 + Math.sqrt(count) * 1.6, 14);
+        const ring = el('circle', {
+          cx: x, cy: y, r,
+          fill: 'none',
+          stroke: '#0d9488',
+          'stroke-width': 1.4,
+          'stroke-opacity': 0.55,
+          class: 'today-ring',
+        });
+        svg.appendChild(ring);
+      });
+    }
+
+    // Signal markers — always shown (top-5 headline, ambient, tail)
+    {
       // Two-tier signal markers: top 5 = headline, rest = ambient/tail
       const ranked = rankedSignalRef.current;
       ranked.forEach(([iso, s], rank) => {
@@ -508,7 +542,7 @@ export default function WorldMapV2() {
       });
     }
 
-    if (currentLens === 'flows') {
+    if (currentLayers.connections) {
       flowsRef.current.forEach(fl => {
         const cA = isoToCenterRef.current[fl.a];
         const cB = isoToCenterRef.current[fl.b];
@@ -554,7 +588,7 @@ export default function WorldMapV2() {
       });
     }
 
-    if (currentLens === 'editorial') {
+    if (currentLayers.editorial) {
       picksRef.current.forEach(p => {
         const center = isoToCenterRef.current[p.iso];
         if (!center) return;
@@ -588,8 +622,11 @@ export default function WorldMapV2() {
     if (!panelOpen) setPanelOpen(true);
   }
 
-  const lensInfo   = LENS_TITLE[lens];
-  const showCaption = lens === 'editorial';
+  const showCaption = layers.editorial;
+  const activeLayerLabels = LAYERS.filter(l => layers[l.id]).map(l => l.label.toLowerCase());
+  const subtitleText = activeLayerLabels.length === 0
+    ? 'Country fills only · click any country for details'
+    : activeLayerLabels.join(' · ');
 
   const sigValues    = Object.values(signal);
   const hasRealSignal = sigValues.length > 0;
@@ -645,9 +682,14 @@ export default function WorldMapV2() {
         {/* Left rail */}
         <aside className="mv2-rail">
           <div className="grp">
-            <h5>Lens</h5>
-            {LENSES.map(l => (
-              <div key={l.id} className={`opt${lens === l.id ? ' on' : ''}`} onClick={() => setLens(l.id)}>
+            <h5>Layers</h5>
+            {LAYERS.map(l => (
+              <div
+                key={l.id}
+                className={`opt${layers[l.id] ? ' on' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setLayers(prev => ({ ...prev, [l.id]: !prev[l.id] }))}
+              >
                 <span className="box" />
                 {l.label}
                 <span className="c">{l.sub}</span>
@@ -655,9 +697,9 @@ export default function WorldMapV2() {
             ))}
           </div>
 
-          {lens === 'risk' && (
-            <div className="grp">
-              <h5>Signal level</h5>
+          {/* Signal level — always shown (drives base country fills) */}
+          <div className="grp">
+            <h5>Signal level</h5>
               <div
                 className={`chk${signalFilters.H ? ' on' : ''}`}
                 style={{ cursor: 'pointer' }}
@@ -690,9 +732,8 @@ export default function WorldMapV2() {
                 <br />High ≥ 1.5σ · Elevated ≥ 0.5σ.
               </div>
             </div>
-          )}
 
-          {lens === 'flows' && (
+          {layers.connections && (
             <div className="grp">
               <h5>Flow type</h5>
               {['fx','tech','geo'].map(g => {
@@ -751,7 +792,7 @@ export default function WorldMapV2() {
             </div>
           )}
 
-          {lens === 'editorial' && (
+          {layers.editorial && (
             <div className="grp">
               <h5>Top stories this week</h5>
               {picksRef.current.map(p => (
@@ -780,7 +821,7 @@ export default function WorldMapV2() {
             </div>
           )}
 
-          {lens === 'flows' && (
+          {layers.connections && (
             <div className="grp">
               <h5>Time window</h5>
               <div className={`opt${timeWindow === '7d' ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setTimeWindow('7d')}>
@@ -800,27 +841,28 @@ export default function WorldMapV2() {
         <div className="mv2-mapwrap">
           <div className="title">
             <div>
-              <div className="kicker">{lensInfo.kicker}</div>
-              <h1>{lensInfo.title}</h1>
+              <div className="kicker">GLOBAL SIGNAL MAP</div>
+              <h1>{subtitleText}</h1>
             </div>
             <div className="legend">
-              {lens === 'risk' && (
-                <>
-                  <span className="cell"><span className="sw" style={{ background: '#eab2a6' }} />High signal</span>
-                  <span className="cell"><span className="sw" style={{ background: '#eed4a3' }} />Elevated</span>
-                  <span className="cell"><span className="sw" style={{ background: '#f2efe8' }} />Quiet</span>
-                  <span className="cell" style={{ fontFamily: 'var(--mono)', fontSize: 10 }}>◎ urgent (24h)</span>
-                </>
+              {/* Always-shown signal swatches */}
+              <span className="cell"><span className="sw" style={{ background: '#eab2a6' }} />High</span>
+              <span className="cell"><span className="sw" style={{ background: '#eed4a3' }} />Elevated</span>
+              <span className="cell"><span className="sw" style={{ background: '#f2efe8' }} />Quiet</span>
+              {layers.today && (
+                <span className="cell" style={{ fontFamily: 'var(--mono)', fontSize: 10 }}>◯ news 24h</span>
               )}
-              {lens === 'flows' && (
+              {layers.connections && (
                 <>
-                  <span className="cell"><span className="sw" style={{ background: FLOW_COLOR.fx, height: 3 }} />FX / Capital</span>
-                  <span className="cell"><span className="sw" style={{ background: FLOW_COLOR.tech, height: 3 }} />Technology</span>
-                  <span className="cell"><span className="sw" style={{ background: FLOW_COLOR.geo, height: 3 }} />Geopolitics</span>
+                  <span className="cell"><span className="sw" style={{ background: FLOW_COLOR.fx, height: 3 }} />FX</span>
+                  <span className="cell"><span className="sw" style={{ background: FLOW_COLOR.tech, height: 3 }} />Tech</span>
+                  <span className="cell"><span className="sw" style={{ background: FLOW_COLOR.geo, height: 3 }} />Geo</span>
                   <span className="cell" style={{ fontFamily: 'var(--mono)', fontSize: 10 }}>— active · ┄ on watch</span>
                 </>
               )}
-              {lens === 'editorial' && <span className="cell">Numbered stories · tap to read</span>}
+              {layers.editorial && (
+                <span className="cell" style={{ fontFamily: 'var(--mono)', fontSize: 10 }}>① top stories</span>
+              )}
             </div>
           </div>
 

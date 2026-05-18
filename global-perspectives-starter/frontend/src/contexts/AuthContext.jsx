@@ -121,9 +121,21 @@ export function AuthProvider({ children }) {
     const firebase = initFirebase();
     if (!firebase) return;
     await firebaseSignOut(firebase.auth);
-    // Clear cached weekly archive so next sign-in fetches fresh data
-    localStorage.removeItem('gp_weekly_archive_v1');
-    localStorage.removeItem('gp_api_key');
+    // Purge all per-user cached data so the next signed-in user doesn't see
+    // the previous user's saved items / archive / intel on a shared browser.
+    try {
+      const toRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (key.startsWith('gp_') || key.startsWith('gemini_topics_')) {
+          toRemove.push(key);
+        }
+      }
+      toRemove.forEach(k => localStorage.removeItem(k));
+    } catch {
+      // localStorage unavailable — best-effort
+    }
   }, []);
 
   const getIdToken = useCallback(async () => {

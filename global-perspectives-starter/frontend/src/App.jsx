@@ -11,49 +11,19 @@ import Contact from './components/Contact';
 import { ErrorProvider } from './contexts/ErrorContext';
 import ErrorModal from './components/ErrorModal';
 import WeeklyPage from './components/WeeklyPage';
-import WeeklyMap from './components/WeeklyMap';
 import ThreadPage from './components/ThreadPage';
 import CountryPage from './components/CountryPage';
 import CountryListPage from './components/CountryListPage';
 import DailyPage from './components/DailyPage';
 import SignIn from './components/SignIn';
 import AuthCallback from './components/AuthCallback';
-import Pricing from './components/Pricing';
-import BriefingCardTest from './components/BriefingCardTest';
 import Account from './components/Account';
 import UpgradeSuccess from './components/UpgradeSuccess';
 import WhitepaperPage from './components/WhitepaperPage';
-import CLIPage from './components/CLIPage';
-import IntelligenceMap from './components/IntelligenceMap';
-import PairPage from './components/PairPage';
-import PairListPage from './components/PairListPage';
 import WorldMapV2 from './components/WorldMapV2';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-
-// ?preview=1 in URL enables hidden pages for testing
-const PREVIEW_MODE = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1';
-if (PREVIEW_MODE) sessionStorage.setItem('gp_preview', '1');
-const isPreview = import.meta.env.DEV || PREVIEW_MODE || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('gp_preview') === '1');
-
-function ComingSoon() {
-  return (
-    <div style={{ textAlign: 'center', padding: '4rem 1rem', maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ fontSize: '3rem', marginBottom: 16 }}>🚧</div>
-      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 12px' }}>Under Construction</h2>
-      <p style={{ color: '#6b7280', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 24px' }}>
-        This feature is being built. Check back soon for weekly story intelligence, country briefings, and AI-powered narrative analysis.
-      </p>
-      <Link to="/" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>← Back to Home</Link>
-    </div>
-  );
-}
-
-function Gate({ children }) {
-  return isPreview ? children : <ComingSoon />;
-}
 
 function resolveBasename() {
   const rawBase = import.meta.env.BASE_URL ?? '/';
@@ -105,15 +75,11 @@ export default function App() {
               <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
               <Route path="/weekly/countries" element={<CountryListPage />} />
               <Route path="/weekly/country/:countryName" element={<CountryPage />} />
-              <Route path="/weekly-map" element={<WeeklyMap />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/account" element={<Account />} />
               <Route path="/upgrade/success" element={<UpgradeSuccess />} />
               <Route path="/whitepaper" element={<WhitepaperPage />} />
-              <Route path="/cli" element={<CLIPage />} />
-              <Route path="/test/briefing-card" element={<BriefingCardTest />} />
-              <Route path="/intelligence-map" element={<IntelligenceMap />} />
             </Routes>
           </Layout>
         </BrowserRouter>

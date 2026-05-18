@@ -223,73 +223,33 @@ exports.handler = async (event) => {
   console.log('newsPostDevTo invoked', JSON.stringify(event).substring(0, 200));
 
   try {
-    if (!TOPICS_TABLE || !POSTS_TABLE || !DEVTO_API_KEY) {
-      const missing = [];
-      if (!TOPICS_TABLE)  missing.push('TOPICS_DDB_TABLE');
-      if (!POSTS_TABLE)   missing.push('SOCIAL_POSTS_TABLE');
-      if (!DEVTO_API_KEY) missing.push('DEVTO_API_KEY');
-      throw new Error(`Missing required env vars: ${missing.join(', ')}`);
+    if (!TOPICS_TABLE) {
+      throw new Error('Missing required env vars: TOPICS_DDB_TABLE');
     }
 
     const dateKey = todayDateKey();
-    const dedupPK = `POSTED#${PLATFORM}#date:${dateKey}`;
-
-    const alreadyPosted = await checkAlreadyPosted(dedupPK);
-    if (alreadyPosted) {
-      console.log(`[DEVTO] Already posted for ${dateKey}, skipping`);
-      return resp(200, { status: 'skipped', reason: 'already posted today', dateKey });
-    }
 
     const archive = await loadTodayArchive();
     if (!archive || !archive.entries || archive.entries.length === 0) {
-      console.log(`[DEVTO] No archive entries, skipping`);
+      console.log(`[DAILY_BRIEF] No archive entries, skipping`);
       return resp(200, { status: 'skipped', reason: 'no archive entries' });
     }
 
-    console.log(`[DEVTO] Building article from ${archive.entries.length} entries for ${dateKey}`);
+    console.log(`[DAILY_BRIEF] Building brief from ${archive.entries.length} entries for ${dateKey}`);
 
-    // ── Generate and store daily brief (never blocks Dev.to publish) ──
+    // Dev.to publish path was removed 2026-05-18 — key was 401-broken and the
+    // in-app /daily page consumes DAILY_BRIEF#<date> directly from DDB.
     let dailyBrief = null;
     try {
       dailyBrief = await generateAndStoreDailyBrief(archive.entries, dateKey);
     } catch (briefErr) {
-      console.warn('[DAILY_BRIEF] Generation failed, continuing with Dev.to:', briefErr.message);
+      console.error('[DAILY_BRIEF] Generation failed:', briefErr.message);
+      throw briefErr;
     }
-
-    const displayDate = formatDisplayDate(dateKey);
-    let aiOverview = '';
-
-    if (OPENROUTER_API_KEY) {
-      try {
-        const prompt = buildAiOverviewPrompt(archive.entries, displayDate);
-        aiOverview = await callAi(prompt);
-        console.log(`[DEVTO] AI overview generated (${aiOverview.length} chars)`);
-      } catch (aiErr) {
-        console.warn('[DEVTO] AI overview failed, continuing without it:', aiErr.message);
-      }
-    } else {
-      console.log('[DEVTO] OPENROUTER_API_KEY not set, skipping AI overview');
-    }
-
-    const { title, body_markdown, description, stats } = buildDailySummary(
-      archive.entries,
-      dateKey,
-      { siteUrl: SITE_URL, aiOverview, format: 'devto' },
-    );
-
-    console.log(`[DEVTO] Article: "${title}" (${body_markdown.length} chars, ${stats.totalEntries} entries)`);
-
-    const result = await postToDevTo({ title, body_markdown, description });
-    console.log(`[DEVTO] Published: ${result.url} (id: ${result.id})`);
-
-    await recordPosted(dedupPK, dateKey, result.id, result.url, stats.totalEntries);
 
     return resp(200, {
       status: 'ok',
-      articleId: result.id,
-      articleUrl: result.url,
       dateKey,
-      stats,
       dailyBrief: dailyBrief ? { headline: dailyBrief.headline, stored: true } : { stored: false },
     });
   } catch (err) {

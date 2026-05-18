@@ -31,9 +31,7 @@ import AboutContact from '../components/AboutContact';
 import Contact from '../components/Contact';
 import PrivacyTerms from '../components/PrivacyTerms';
 import Disclosures from '../components/Disclosures';
-import Pricing from '../components/Pricing';
 import SignIn from '../components/SignIn';
-import CLIPage from '../components/CLIPage';
 import WeeklyPage from '../components/WeeklyPage';
 import CountryListPage from '../components/CountryListPage';
 import ThreadPage from '../components/ThreadPage';
@@ -74,16 +72,8 @@ describe('Page render smoke tests', () => {
     expect(() => renderPage(Disclosures)).not.toThrow();
   });
 
-  it('Pricing renders', () => {
-    expect(() => renderPage(Pricing)).not.toThrow();
-  });
-
   it('SignIn renders', () => {
     expect(() => renderPage(SignIn)).not.toThrow();
-  });
-
-  it('CLI page renders', () => {
-    expect(() => renderPage(CLIPage)).not.toThrow();
   });
 
   it('WeeklyPage renders (auth gate)', () => {

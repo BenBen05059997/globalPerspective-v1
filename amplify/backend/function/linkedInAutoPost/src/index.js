@@ -221,28 +221,32 @@ function pickThread(scoredThreads, _pickedCountry) {
 function pickCountry(scoredCountries, pickedThread) {
   if (!pickedThread) return scoredCountries.find(c => c.score > 0) || null;
 
-  const threadRegions = extractRegions(pickedThread);
+  const threadText = extractRegions(pickedThread);
 
   for (const c of scoredCountries) {
     if (c.score <= 0) continue;
-    if (threadRegions.has(c.countryName.toLowerCase())) continue;
+    // Skip country if it's mentioned in the thread title/entries — avoid double-posting
+    // the same country in two separate LinkedIn updates that share subject matter.
+    if (threadText.includes(c.countryName.toLowerCase())) continue;
     return c;
   }
 
   return scoredCountries.find(c => c.score > 0) || null;
 }
 
+// Builds a single lowercase string of every word in the thread title + entry titles.
+// Previously this returned a Set of full title strings and .has(countryName) on it,
+// which only fired when a country name was the ENTIRE title (basically never) — so
+// the overlap filter was silently broken. (OPT-13, fixed 2026-05-18)
 function extractRegions(thread) {
-  const regions = new Set();
+  const parts = [];
   if (thread.entryShortTitles) {
     for (const e of thread.entryShortTitles) {
-      const title = (e.shortTitle || '').toLowerCase();
-      regions.add(title);
+      parts.push((e.shortTitle || '').toLowerCase());
     }
   }
-  const titleWords = (thread.threadTitle || '').toLowerCase();
-  regions.add(titleWords);
-  return regions;
+  parts.push((thread.threadTitle || '').toLowerCase());
+  return parts.join(' ');
 }
 
 // ---------------------------------------------------------------------------

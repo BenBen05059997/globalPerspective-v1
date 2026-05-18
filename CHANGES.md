@@ -1,5 +1,28 @@
 # Global Perspectives — Change Log
 
+## 2026-05-18 (Source diversity — post-LLM enrichment + outlet flags — DEPLOYED)
+
+### Problem
+Home topic cards were showing 1-3 sources per topic even when 10+ outlets were covering the same event. Root cause: prompt rule "EXCLUSIVE SOURCES: Each article URL must appear in exactly ONE topic" plus LLM output-token economy. Median was 4 sources / 3 outlets, but two pathological cases hurt credibility — 1 single-source topic and 1 same-outlet-twice topic per 13-topic feed.
+
+### Backend (DEPLOYED — `newsInvokeGemini-dev` ap-northeast-1)
+- New `source_enrichment.js`: post-LLM Jaccard match over the full article pool with keyword-in-title boost. Default threshold 0.20, cap 12 per topic. Sorted by score, prefers new outlets when tied. Tier='secondary' with `enrichScore` field for transparency.
+- New `outlet_metadata.js`: 50+ outlets mapped to `{country, type}`. Used to annotate every source with `outletCountry` + `outletType` for frontend flag rendering.
+- Wired into `index.js` between source-URL validation and category filter. Env flags: `SOURCE_ENRICH_ENABLED` (default on), `SOURCE_ENRICH_THRESHOLD`, `SOURCE_ENRICH_MAX`, `SOURCE_ENRICH_CROSS_TOPIC` (default off). Wrapped in try/catch so failure never blocks publishing.
+- Bug fix: enriched source objects no longer set `age: undefined` — DDB v3 marshaller refuses undefined. Now uses conditional property spread.
+- 23 unit tests pass (`test_enrichment.js`).
+- **Production verified:** first run wrote 44 sources across 15 topics — 100% outletCountry coverage, 5 sources attached by enrichment, 17 secondary-tier total. Sample: AllAfrica's Somaliland-strike piece auto-attached to Iran/UAE drone topic (Jaccard 0.256).
+
+### Frontend (DEPLOYED — `docs/`)
+- `Home.jsx`: country-flag row in the topic meta line when ≥2 distinct outlet countries present. Expanded sources panel now sorted (primary tier first, then country-diversity) with per-source flag + `· related` tag on secondary sources.
+- New `countryToFlag(cc)` helper — ISO 3166-1 alpha-2 → flag emoji via regional indicator symbols.
+- `Home.css`: new rules for `.home-source-flag`, `.home-source-flags`, `.home-flag`, `.home-source-item.is-secondary`, `.home-source-tier`.
+
+### Plan + audit
+- `SOURCE_DIVERSITY_PLAN.md` — full design rationale, comparator table (Ground News / AllSides / Memeorandum / Google News / GDELT), 5-step implementation, test strategy, audit data + decision matrix.
+
+---
+
 ## 2026-05-18 (Perf: LLM-loop parallelization + active-bug fixes — DEPLOYED)
 
 ### Backend (DEPLOYED — all Lambdas ap-northeast-1)

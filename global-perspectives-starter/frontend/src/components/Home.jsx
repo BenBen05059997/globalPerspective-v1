@@ -37,6 +37,14 @@ function getDayString() {
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
+// ISO 3166-1 alpha-2 → flag emoji via regional indicator symbols.
+function countryToFlag(cc) {
+  if (!cc || cc.length !== 2) return '';
+  const A = 0x1F1E6;
+  const codePoints = cc.toUpperCase().split('').map(c => A + (c.charCodeAt(0) - 65));
+  return String.fromCodePoint(...codePoints);
+}
+
 function getTopicId(t, idx) {
   const directId = t?.topicId || t?.topic_id || t?.id;
   if (directId != null) {
@@ -374,11 +382,21 @@ function Home() {
                   const outletCount = new Set(
                     t.sources.map(s => (s.source || s.title || '').toLowerCase()).filter(Boolean)
                   ).size;
+                  const countries = Array.from(new Set(
+                    t.sources.map(s => s.outletCountry).filter(c => c && c.length === 2 && c !== 'EU')
+                  )).slice(0, 6);
                   return (
                     <div className="home-topic-meta">
                       <span><b>{sourceCount}</b> source{sourceCount !== 1 ? 's' : ''}</span>
                       {outletCount > 0 && outletCount !== sourceCount && (
                         <span><b>{outletCount}</b> outlet{outletCount !== 1 ? 's' : ''}</span>
+                      )}
+                      {countries.length >= 2 && (
+                        <span className="home-source-flags" title={`Coverage from ${countries.length} countries`}>
+                          {countries.map(cc => (
+                            <span key={cc} className="home-flag">{countryToFlag(cc)}</span>
+                          ))}
+                        </span>
                       )}
                     </div>
                   );
@@ -451,22 +469,45 @@ function Home() {
                 </div>
 
                 {/* Sources panel */}
-                {Array.isArray(t.sources) && t.sources.length > 0 && sourcesExpanded[id] && (
-                  <div className="home-sources-panel">
-                    <div className="home-sources-hd" onClick={() => toggleSourcesExpanded(t, globalIdx)}>
-                      <span>Article Sources ({t.sources.length})</span>
-                      <span className="home-sources-close">✕</span>
+                {Array.isArray(t.sources) && t.sources.length > 0 && sourcesExpanded[id] && (() => {
+                  // Sort: primary tier first, then maximize outlet-country diversity at top.
+                  const seenCountries = new Set();
+                  const primary = t.sources.filter(s => s.tier !== 'secondary');
+                  const secondary = t.sources.filter(s => s.tier === 'secondary');
+                  const diversitySort = (arr) => {
+                    const firstHits = [], rest = [];
+                    for (const s of arr) {
+                      const cc = s.outletCountry;
+                      if (cc && !seenCountries.has(cc)) { seenCountries.add(cc); firstHits.push(s); }
+                      else rest.push(s);
+                    }
+                    return [...firstHits, ...rest];
+                  };
+                  const sorted = [...diversitySort(primary), ...diversitySort(secondary)];
+                  return (
+                    <div className="home-sources-panel">
+                      <div className="home-sources-hd" onClick={() => toggleSourcesExpanded(t, globalIdx)}>
+                        <span>Article Sources ({t.sources.length})</span>
+                        <span className="home-sources-close">✕</span>
+                      </div>
+                      <div className="home-sources-body">
+                        {sorted.map((src, si) => (
+                          <div key={si} className={`home-source-item${src.tier === 'secondary' ? ' is-secondary' : ''}`}>
+                            <a href={src.url} target="_blank" rel="noopener noreferrer">{src.title || 'Untitled'}</a>
+                            <div className="home-source-meta">
+                              {src.outletCountry && (
+                                <span className="home-source-flag" title={src.outletCountry}>{countryToFlag(src.outletCountry)}</span>
+                              )}
+                              <span>{src.source}</span>
+                              {src.age && <span> · {src.age}</span>}
+                              {src.tier === 'secondary' && <span className="home-source-tier"> · related</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="home-sources-body">
-                      {t.sources.map((src, si) => (
-                        <div key={si} className="home-source-item">
-                          <a href={src.url} target="_blank" rel="noopener noreferrer">{src.title || 'Untitled'}</a>
-                          <div className="home-source-meta">{src.source}{src.age ? ` · ${src.age}` : ''}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* AI results */}
                 <div className="home-ai-result">

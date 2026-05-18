@@ -384,6 +384,30 @@
   font-family: var(--mono);
   font-size: 10.5px;
   color: var(--ink-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.home-source-flag {
+  font-size: 13px;
+  line-height: 1;
+}
+.home-source-item.is-secondary { opacity: 0.78; }
+.home-source-item.is-secondary a { color: var(--ink); font-weight: 400; }
+.home-source-tier {
+  font-style: italic;
+  color: var(--ink-dim);
+}
+.home-source-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1;
+}
+.home-flag {
+  line-height: 1;
 }
 
 /* AI result wrapper — spacing only, display handled by SummaryDisplay etc. */

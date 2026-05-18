@@ -1,6 +1,7 @@
 'use strict';
 
 const OpenAI = require('openai');
+const { applyEnrichment, annotateSourcesWithMetadata } = require('./source_enrichment');
 
 // Optional DynamoDB: prefer AWS SDK v3; fallback to v2 if available
 let ddbDoc = null;
@@ -771,6 +772,27 @@ exports.handler = async (event) => {
     const filteredOut = totalSourcesBefore - totalSourcesAfter;
     if (filteredOut > 0) {
       console.warn(`SOURCE VALIDATION: Filtered ${filteredOut} hallucinated sources`);
+    }
+
+    // SOURCE ENRICHMENT: post-LLM Jaccard match against the full article pool.
+    // Re-attaches matching articles the LLM dropped due to its "one article per
+    // topic" exclusivity rule + output-token economy. See SOURCE_DIVERSITY_PLAN.md.
+    // Wrapped in try/catch so a bug here never blocks topic publishing.
+    try {
+      if (String(process.env.SOURCE_ENRICH_ENABLED || 'true').toLowerCase() !== 'false') {
+        const threshold = Number(process.env.SOURCE_ENRICH_THRESHOLD) || 0.20;
+        const maxEnriched = Number(process.env.SOURCE_ENRICH_MAX) || 12;
+        const allowCrossTopic = String(process.env.SOURCE_ENRICH_CROSS_TOPIC || 'false').toLowerCase() === 'true';
+        const stats = applyEnrichment(normalized, allArticles, {
+          threshold, maxEnriched, allowCrossTopic,
+        });
+        console.log(`SOURCE ENRICHMENT: ${stats.sourcesBefore} → ${stats.sourcesAfter} sources (+${stats.gainedSources}), ${stats.outletsBefore} → ${stats.outletsAfter} outlets (+${stats.gainedOutlets}); threshold=${threshold} max=${maxEnriched}`);
+      } else {
+        console.log('SOURCE ENRICHMENT: disabled via SOURCE_ENRICH_ENABLED=false');
+      }
+      annotateSourcesWithMetadata(normalized);
+    } catch (err) {
+      console.error('SOURCE ENRICHMENT failed (continuing with LLM-only sources):', err);
     }
 
     // TOPIC FILTERING: Category + source validation

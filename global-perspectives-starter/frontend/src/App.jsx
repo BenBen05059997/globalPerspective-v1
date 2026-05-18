@@ -24,6 +24,23 @@ import WorldMapV2 from './components/WorldMapV2';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+
+function NotFound() {
+  return (
+    <div style={{ textAlign: 'center', padding: '4rem 1rem', maxWidth: 480, margin: '0 auto' }}>
+      <div style={{ fontSize: '3rem', marginBottom: 16 }}>—</div>
+      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 12px' }}>Page not found</h2>
+      <p style={{ color: '#6b7280', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 24px' }}>
+        That URL doesn't lead anywhere. Head back to today's topics or browse the weekly story arcs.
+      </p>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <Link to="/" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>← Home</Link>
+        <Link to="/weekly" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Weekly →</Link>
+      </div>
+    </div>
+  );
+}
 
 function resolveBasename() {
   const rawBase = import.meta.env.BASE_URL ?? '/';
@@ -80,6 +97,7 @@ export default function App() {
               <Route path="/account" element={<Account />} />
               <Route path="/upgrade/success" element={<UpgradeSuccess />} />
               <Route path="/whitepaper" element={<WhitepaperPage />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
         </BrowserRouter>

@@ -5,16 +5,25 @@ const {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
+  ScanCommand,
 } = require('@aws-sdk/lib-dynamodb');
-const { formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
+const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
 const REGION        = process.env.AWS_REGION || 'ap-northeast-1';
 const TOPICS_TABLE  = process.env.TOPICS_DDB_TABLE;
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
+const POSTS_TABLE   = process.env.SOCIAL_POSTS_TABLE;
+const DEVTO_API_KEY = process.env.DEVTO_API_KEY || '';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const XAI_API_KEY   = process.env.XAI_API_KEY || '';
 const GROK_MODEL    = process.env.GROK_MODEL || 'grok-4-1-fast-non-reasoning';
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
-const BRIEF_TTL_DAYS = 90;
+const SITE_URL           = process.env.SITE_URL || 'https://globalperspective.net';
+const PLATFORM           = 'DEVTO';
+const POST_TTL_DAYS      = 90;
+const BRIEF_TTL_DAYS     = 90;
+const AI_MODEL           = process.env.AI_MODEL || 'deepseek/deepseek-v4-flash:free';
+const AI_ENDPOINT        = 'https://openrouter.ai/api/v1/chat/completions';
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, {

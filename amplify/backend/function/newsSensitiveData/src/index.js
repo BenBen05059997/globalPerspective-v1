@@ -1315,6 +1315,7 @@ const RSS_DESCRIPTION = 'Daily AI-curated global news topics with summaries, pre
 const CATEGORY_LABEL = {
   politics: 'Politics', economy: 'Economy', military: 'Military',
   conflict: 'Conflict', disaster: 'Disaster', technology: 'Technology', health: 'Health',
+  business: 'Business', society: 'Society', energy: 'Energy', climate: 'Climate', science: 'Science',
 };
 
 function escapeXml(str) {

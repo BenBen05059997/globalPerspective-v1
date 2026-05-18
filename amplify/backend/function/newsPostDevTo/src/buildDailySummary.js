@@ -8,6 +8,11 @@ const CATEGORY_LABEL = {
   disaster:   'Disaster',
   technology: 'Technology',
   health:     'Health',
+  business:   'Business',
+  society:    'Society',
+  energy:     'Energy',
+  climate:    'Climate',
+  science:    'Science',
 };
 
 const CATEGORY_EMOJI = {

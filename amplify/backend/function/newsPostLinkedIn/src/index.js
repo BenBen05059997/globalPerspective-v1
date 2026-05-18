@@ -2,7 +2,6 @@
 
 const crypto = require('crypto');
 const WebSocket = require('ws');
-const nostrTools = require('nostr-tools');
 const { generateTopicMapImage } = require('./mapImageGenerator');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
@@ -48,8 +47,6 @@ const MASTODON_INSTANCE = process.env.MASTODON_INSTANCE || 'mastodon.social';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || '';
 
-// Nostr
-const NOSTR_PRIVATE_KEY_NSEC = process.env.NOSTR_PRIVATE_KEY_NSEC || '';
 
 const MAX_POSTS_PER_RUN = parseInt(process.env.MAX_POSTS_PER_RUN || '5', 10);
 const MAX_POSTS_PER_DAY = parseInt(process.env.MAX_POSTS_PER_DAY || '100', 10);
@@ -65,6 +62,11 @@ const CATEGORY_LABEL = {
   disaster: 'Disaster',
   technology: 'Technology',
   health: 'Health',
+  business: 'Business',
+  society: 'Society',
+  energy: 'Energy',
+  climate: 'Climate',
+  science: 'Science',
 };
 
 const SIGNIFICANCE_ORDER = { high: 0, medium: 1, low: 2 };
@@ -172,16 +174,6 @@ function buildPlatformList() {
     });
   }
 
-  if (NOSTR_PRIVATE_KEY_NSEC) {
-    platforms.push({
-      name: 'NOSTR',
-      maxPerRun: MAX_POSTS_PER_RUN,
-      maxPerDay: MAX_POSTS_PER_DAY,
-      formatFn: (topic) => formatShortPost(topic, 800),
-      postFn: async (text) => postToNostr(NOSTR_PRIVATE_KEY_NSEC, text),
-      needsSummary: false,
-    });
-  }
 
   if (NEYNAR_API_KEY && FARCASTER_SIGNER_UUID) {
     platforms.push({
@@ -866,74 +858,6 @@ async function postToThreads(accessToken, userId, text) {
 
   const result = await publishRes.json();
   return { success: true, postId: result.id || null };
-}
-
-// ---------------------------------------------------------------------------
-// Platform poster: Nostr
-// ---------------------------------------------------------------------------
-
-const NOSTR_RELAYS = [
-  'wss://relay.damus.io',
-  'wss://nos.lol',
-  'wss://relay.nostr.band',
-];
-
-async function postToNostr(nsec, text) {
-  const { data: privkeyBytes } = nostrTools.nip19.decode(nsec);
-  const privkeyHex = Buffer.from(privkeyBytes).toString('hex');
-  const pubkeyHex = nostrTools.getPublicKey(privkeyHex);
-
-  const event = {
-    kind: 1,
-    pubkey: pubkeyHex,
-    created_at: Math.floor(Date.now() / 1000),
-    tags: [],
-    content: text,
-  };
-  event.id = nostrTools.getEventHash(event);
-  event.sig = nostrTools.signEvent(event, privkeyHex);
-
-  // Publish to relays in parallel, succeed if at least one accepts
-  const results = await Promise.allSettled(
-    NOSTR_RELAYS.map(relay => publishToNostrRelay(relay, event))
-  );
-
-  const succeeded = results.filter(r => r.status === 'fulfilled');
-  if (!succeeded.length) {
-    throw new Error('All Nostr relays rejected the event');
-  }
-
-  return { success: true, postId: event.id };
-}
-
-function publishToNostrRelay(relayUrl, event) {
-  return new Promise((resolve, reject) => {
-    const ws = new WebSocket(relayUrl);
-    const timeout = setTimeout(() => {
-      ws.terminate();
-      reject(new Error(`${relayUrl} timed out`));
-    }, 8000);
-
-    ws.on('open', () => {
-      ws.send(JSON.stringify(['EVENT', event]));
-    });
-
-    ws.on('message', (data) => {
-      try {
-        const msg = JSON.parse(data.toString());
-        if (msg[0] === 'OK') {
-          clearTimeout(timeout);
-          ws.close();
-          resolve(msg);
-        }
-      } catch (_) {}
-    });
-
-    ws.on('error', (err) => {
-      clearTimeout(timeout);
-      reject(err);
-    });
-  });
 }
 
 // ---------------------------------------------------------------------------

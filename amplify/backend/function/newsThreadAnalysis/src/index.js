@@ -28,6 +28,9 @@ const ARCHIVE_DAYS = 30;
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
 
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const INTER_CALL_DELAY_MS = parseInt(process.env.INTER_CALL_DELAY_MS || '13000', 10);
+
 exports.handler = async () => {
   console.log('Thread analysis started');
 
@@ -60,6 +63,7 @@ exports.handler = async () => {
         continue;
       }
 
+      if (generated + failed > 0) await sleep(INTER_CALL_DELAY_MS);
       const analysis = await generateThreadAnalysis(thread);
       await writeAnalysis(thread.threadId, analysis, thread.entries.length);
       generated++;
@@ -365,5 +369,9 @@ function extractContent(payload) {
 
 function stripCodeFence(value) {
   if (typeof value !== 'string') return value;
-  return value.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').trim();
+  return value
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```$/i, '')
+    .replace(/,(\s*[\]}])/g, '$1')
+    .trim();
 }

@@ -1,8 +1,14 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-04-25
+**Last verified:** 2026-05-18
 
-Global Perspectives is an AI-powered global news aggregation platform. It fetches real news from RSS feeds and Brave Search, clusters articles into topics using xAI Grok, generates AI insights (summaries, predictions, root-cause analysis), and displays everything on an interactive world map and weekly narrative timeline.
+> **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](./SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md).**
+
+Global Perspectives is an AI-powered global news aggregation platform. It fetches real news from RSS feeds and Brave Search, clusters articles into topics using DeepSeek V4, generates AI insights (summaries, predictions, root-cause analysis), and displays everything on an interactive world map and weekly narrative timeline.
+
+**AI Provider (as of 2026-05-16):** All LLM calls migrated off xAI Grok (credits exhausted 2026-05-03). See `AI_PROVIDER_MIGRATION_PLAN.md` for full migration history.
+- `newsInvokeGemini-dev`, `NewsProjectInvokeAgentLambda-dev`, `newsCountryIntelligence`, `newsPostDevTo`, `newsSystemsAnalysis` → **DeepSeek V4 Flash** (`deepseek-chat`, $0.14/M in · $0.28/M out)
+- `newsThreadAnalysis` → **Gemini 2.5 Flash** (free tier, 13s pacing between calls)
 
 - **Production URL:** https://globalperspective.net (custom domain)
 - **GitHub Pages URL:** https://benben05059997.github.io/globalPerspective-v1/
@@ -21,14 +27,14 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                     ┌───────────────▼───────────────┐
                     │       newsInvokeGemini          │
                     │  RSS Feeds (26) + Brave Search │
-                    │  → xAI Grok clusters topics    │
+                    │  → DeepSeek V4 clusters topics │
                     │  → DynamoDB Topics[id=staging] │
                     └───────────────┬───────────────┘
                                     │
                     ┌───────────────▼───────────────┐
                     │  NewsProjectInvokeAgentLambda   │
                     │  Reads staging topics          │
-                    │  → xAI Grok generates:         │
+                    │  → DeepSeek V4 generates:      │
                     │    SUMMARY / PREDICTION /      │
                     │    TRACE_CAUSE per topic       │
                     │  → Assigns threadId            │
@@ -40,7 +46,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                     │         newsThreadAnalysis      │
                     │  Daily batch (6:30 UTC)        │
                     │  Top 10 threads (2+ entries)   │
-                    │  → xAI Grok generates:         │
+                    │  → Gemini 2.5 Flash generates: │
                     │    threadTitle, storyArc,      │
                     │    trajectory, rootCauseChain, │
                     │    watchQuestions              │
@@ -48,10 +54,10 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                     └───────────────┬───────────────┘
                     ┌───────────────▼───────────────┐
                     │      newsCountryIntelligence    │
-                    │  Daily batch (~7:00 UTC)       │
-                    │  Top 10 countries by articles  │
+                    │  Daily batch (07:00 UTC)       │
+                    │  Top 20 countries by articles  │
                     │  Uses thread analyses + Brave  │
-                    │  → xAI Grok generates:         │
+                    │  → DeepSeek V4 generates:      │
                     │    headline, situationSummary, │
                     │    trajectory, riskSignals,    │
                     │    riskLevel                   │
@@ -60,11 +66,11 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                                     │
                     ┌───────────────▼───────────────┐
                     │    newsSystemsAnalysis         │
-                    │  Weekly batch (Sundays 08:00) │
+                    │  Daily batch (07:15 UTC)      │
                     │  Top N countries (test: 2)    │
                     │  Maps causal links between    │
                     │  story threads + confidence   │
-                    │  → xAI Grok generates:        │
+                    │  → DeepSeek V4 generates:     │
                     │    nodes[], edges[], lagDays  │
                     │  → Writes SYSTEMS# to SummaryDB
                     └───────────────┬───────────────┘
@@ -73,7 +79,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                │              newsPostLinkedIn             │
                │  Reads latest + summaries               │
                │  → Posts to LinkedIn / Bluesky /        │
-               │    X(Twitter) / Threads                 │
+               │    Farcaster / Mastodon / Telegram      │
                │  → Deduplicates via SOCIAL_POSTS_TABLE  │
                └─────────────────────────────────────────┘
                                     │
@@ -153,9 +159,9 @@ Auth gates disabled in early access. When re-enabling: `newsSensitiveData` verif
 
 ### 1. `newsInvokeGemini`
 **Path:** `amplify/backend/function/newsInvokeGemini/src/index.js`
-**Trigger:** EventBridge Scheduler — `InvokeGoogleGemini` — `cron(0 */2 * * ? *)` (every 2 hours)
+**Trigger:** EventBridge Scheduler — `InvokeGoogleGemini` — `cron(0 */4 * * ? *)` (every 4 hours)
 
-Despite the name, uses **xAI Grok** — no Gemini.
+Despite the name, now uses **DeepSeek V4 Flash** (`deepseek-chat`) — no Gemini, no xAI.
 
 **What it does:**
 1. Fetches articles from:
@@ -171,22 +177,24 @@ Despite the name, uses **xAI Grok** — no Gemini.
 **Key env vars:**
 | Variable | Notes |
 |----------|-------|
-| `XAI_API_KEY` | Required |
-| `BRAVE_SEARCH_API_KEY` | Optional; falls back to RSS-only |
-| `TOPICS_DDB_TABLE` | Required |
-| `GROK_MODEL` | Default: `grok-4-1-fast-non-reasoning` |
-| `TOPICS_CACHE_ITEM_ID` | Default: `staging` |
+| `XAI_API_KEY` | Required. **Legacy name** — actually holds DeepSeek key in production. |
+| `GROK_API_URL` | **Legacy name** — actually points at `https://api.deepseek.com` in production. |
+| `GROK_MODEL` | **Legacy name** — actually `deepseek-chat` in production. Source default `grok-4-1-fast-non-reasoning` is dead fallback. |
+| `BRAVE_SEARCH_API_KEY` | Optional; falls back to RSS-only. |
+| `BRAVE_CONCURRENCY` | Default `3`. Worker pool for parallel Brave queries (replaced 2s-sleep sequential loop 2026-05-18). |
+| `TOPICS_DDB_TABLE` | Required. |
+| `TOPICS_CACHE_ITEM_ID` | Default: `staging`. |
 | `TOPICS_LIMIT` | AWS env var currently set to `13`. Code `DEFAULT_LIMIT=15` only applies if env var is unset. |
 
 ---
 
 ### 2. `NewsProjectInvokeAgentLambda`
 **Path:** `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`
-**Trigger:** EventBridge Scheduler — `InvokeNewsAgent` — `cron(5 */2 * * ? *)` (every 2 hours at :05, runs after newsInvokeGemini)
+**Trigger:** EventBridge Scheduler — `InvokeNewsAgent` — `cron(5 */4 * * ? *)` (every 4 hours at :05, runs after newsInvokeGemini)
 
 **What it does:**
 1. Reads topics from `id=staging` in Topics table
-2. For each topic, calls xAI Grok (via native `fetch()`) to generate:
+2. For each topic, calls DeepSeek V4 (via native `fetch()`) to generate:
    - **SUMMARY** — 3-4 bullet-point key takeaways
    - **PREDICTION** — chain-reaction analysis with winners/losers
    - **TRACE_CAUSE** — historical context and root cause
@@ -209,14 +217,16 @@ Despite the name, uses **xAI Grok** — no Gemini.
 **Key env vars:**
 | Variable | Notes |
 |----------|-------|
-| `XAI_API_KEY` | Required |
-| `TOPICS_DDB_TABLE` | Required |
-| `SUMMARIZE_PREDICT_TABLE` | Required |
-| `GROK_MODEL` | Default: `grok-4-1-fast-non-reasoning` |
-| `GROK_API_URL` | Default: `https://api.x.ai/v1/chat/completions` |
-| `MAX_TOKENS` | Default: `600` |
-| `TEMPERATURE` | Default: `0.2` |
-| `TOP_P` | Default: `0.9` |
+| `XAI_API_KEY` | Required. **Legacy name** — holds DeepSeek key. |
+| `GROK_API_URL` | **Legacy name** — points at `https://api.deepseek.com/chat/completions` in production. |
+| `GROK_MODEL` | **Legacy name** — `deepseek-chat` in production. |
+| `TOPICS_DDB_TABLE` | Required. |
+| `SUMMARIZE_PREDICT_TABLE` | Required. |
+| `MAX_TOKENS` | Default: `600`. |
+| `TEMPERATURE` | Default: `0.2`. |
+| `TOP_P` | Default: `0.9`. |
+| `LLM_CONCURRENCY` | Default `4`. Worker pool for concurrent per-topic LLM calls (replaced sequential loop 2026-05-18, 3.0× speedup). |
+| **Memory / Timeout** | **512MB / 600s** (bumped from 128MB/445s on 2026-05-18 to eliminate 14% timeout failure rate). |
 
 ---
 
@@ -261,7 +271,7 @@ Despite the name, uses **xAI Grok** — no Gemini.
 6. Skips countries where `totalArticles` count hasn't changed
 7. Writes to `SUMMARIZE_PREDICT_TABLE` at `COUNTRY#{countryName}` / `COUNTRY_INTELLIGENCE` (31-day TTL)
 
-**Key env vars:** `XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL`, `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
+**Key env vars:** `XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL` (legacy names; hold DeepSeek values in production — see Lambda #1 notes), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`, `LLM_CONCURRENCY` (default `4`; added 2026-05-18 — 5.8× speedup).
 
 ---
 

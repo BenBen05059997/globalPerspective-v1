@@ -28,6 +28,19 @@ const COUNTRY_PK_PREFIX = 'COUNTRY#';
 const COUNTRY_SK = 'COUNTRY_INTELLIGENCE';
 const THREAD_PK_PREFIX = 'THREAD#';
 const THREAD_SK = 'THREAD_ANALYSIS';
+
+const LLM_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '4', 10);
+
+async function mapWithConcurrency(items, limit, worker) {
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const i = cursor++;
+      await worker(items[i], i);
+    }
+  });
+  await Promise.all(runners);
+}
 const COUNTRY_TTL_DAYS = 90;
 const MAX_COUNTRIES = 20;
 const ARCHIVE_DAYS = 30;
@@ -63,12 +76,12 @@ exports.handler = async () => {
   let skipped = 0;
   let failed = 0;
 
-  for (const country of top) {
+  await mapWithConcurrency(top, LLM_CONCURRENCY, async (country) => {
     try {
       const existing = await readExisting(country.countryName);
       if (existing && existing.totalArticles === country.totalArticles) {
         skipped++;
-        continue;
+        return;
       }
 
       const analysis = await generateCountryIntelligence(country);
@@ -79,7 +92,7 @@ exports.handler = async () => {
       failed++;
       console.error(`Failed to analyze ${country.countryName}:`, err.message);
     }
-  }
+  });
 
   const summary = `Country intelligence complete: ${generated} generated, ${skipped} skipped (unchanged), ${failed} failed`;
   console.log(summary);

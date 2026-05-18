@@ -1,6 +1,6 @@
 # Backend Guide — Global Perspectives
 
-**Last verified:** 2026-04-22
+**Last verified:** 2026-05-18
 
 Quick-start guide to the backend system. For a complete architecture overview, see `ARCHITECTURE.md`.
 
@@ -10,17 +10,18 @@ Quick-start guide to the backend system. For a complete architecture overview, s
 
 | Function | Path | Purpose |
 |----------|------|---------|
-| `newsInvokeGemini` | `amplify/backend/function/newsInvokeGemini/src/index.js` | RSS (21 feeds) + Brave → xAI Grok → clusters topics → writes `staging` |
-| `NewsProjectInvokeAgentLambda` | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` | Reads `staging` → generates SUMMARY/PREDICTION/TRACE_CAUSE → assigns threadIds → swaps to `latest` |
-| `newsThreadAnalysis` | `amplify/backend/function/newsThreadAnalysis/src/index.js` | Daily batch: top 10 threads → generates storyArc, trajectory, rootCauseChain, watchQuestions |
-| `newsCountryIntelligence` | `amplify/backend/function/newsCountryIntelligence/src/index.js` | Daily batch: top 10 countries → generates headline, situationSummary, trajectory, riskSignals |
-| `newsPairIntelligence` | `amplify/backend/function/newsPairIntelligence/src/index.js` | Bilateral country-pair relationship analysis → writes PAIR# to Summary DDB |
-| `newsCountryFactsUpdater` | `amplify/backend/function/newsCountryFactsUpdater/src/index.js` | Daily: Wikidata SPARQL + ACLED → writes FACTS# to Summary DDB (90-day TTL) |
+| `newsInvokeGemini-dev` | `amplify/backend/function/newsInvokeGemini/src/index.js` | RSS (26 feeds) + Brave (parallel, `BRAVE_CONCURRENCY=3`) → **DeepSeek V4** clusters topics → writes `staging`. Every 4h. ~63s/run. |
+| `NewsProjectInvokeAgentLambda-dev` | `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` | Reads `staging` → **DeepSeek V4** generates SUMMARY/PREDICTION/TRACE_CAUSE (parallel, `LLM_CONCURRENCY=4`) → assigns threadIds → swaps to `latest`. Every 4h at :05. ~130s/run. 512MB / 600s. |
+| `newsThreadAnalysis` | `amplify/backend/function/newsThreadAnalysis/src/index.js` | Daily 06:30 UTC: top 10 threads → **Gemini 2.5 Flash** (free, 13s pacing) generates storyArc, trajectory, rootCauseChain, watchQuestions, riskScore, sentiment, keyActors |
+| `newsCountryIntelligence` | `amplify/backend/function/newsCountryIntelligence/src/index.js` | Daily 07:00 UTC: top 20 countries (parallel, `LLM_CONCURRENCY=4`) → **DeepSeek V4** generates headline, bluf, trajectory, riskSignals, keyActors. ~60s/run. |
+| `newsSystemsAnalysis` | `amplify/backend/function/newsSystemsAnalysis/src/index.js` | Daily 07:15 UTC: causal graph (nodes + edges) for top countries → **DeepSeek V4**. Currently restricted to Argentina + Iran (`SYSTEMS_TEST_COUNTRIES`) |
+| `newsPostDevTo` | `amplify/backend/function/newsPostDevTo/src/index.js` | Daily 23:00 UTC: generates Daily Intelligence Brief via **DeepSeek V4** → stores `DAILY_BRIEF#YYYY-MM-DD`. AI overview via OpenRouter `deepseek-v4-flash:free` (`AI_MODEL` env var). Also posts to Dev.to (⚠️ DEVTO_API_KEY still 401 — Dev.to publish broken; in-app `/daily` works). 256MB / 120s. |
+| `newsPairIntelligence` | `amplify/backend/function/newsPairIntelligence/src/index.js` | Manual invoke only: bilateral country-pair relationship analysis → writes PAIR# to Summary DDB |
+| `newsCountryFactsUpdater` | `amplify/backend/function/newsCountryFactsUpdater/src/index.js` | Daily 05:00 UTC: Wikidata SPARQL → writes FACTS# to Summary DDB (90-day TTL). No LLM. |
 | `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | Read-only REST proxy serving 18 actions to frontend via API Gateway |
 | `newsSavedItems` | `amplify/backend/function/newsSavedItems/src/index.js` | Save/bookmark Lambda (separate Function URL, Firebase JWT required) |
-| `newsPostLinkedIn` | `amplify/backend/function/newsPostLinkedIn/src/index.js` | Multi-platform poster: LinkedIn, Bluesky, X/Twitter, Threads, Farcaster, Mastodon, Telegram, Nostr |
-| `linkedInAutoPost` | `amplify/backend/function/linkedInAutoPost/src/index.js` | Scheduled LinkedIn-only poster: scores threads/country intel by trend + risk, picks best |
-| `newsPostDevTo` | `amplify/backend/function/newsPostDevTo/src/index.js` | Posts AI-written daily article to Dev.to + generates Daily Intelligence Brief via xAI Grok |
+| `newsPostLinkedin` | `amplify/backend/function/newsPostLinkedin/src/index.js` | Every 3h: posts to LinkedIn, Bluesky, Farcaster, Mastodon, Telegram. No LLM. Nostr removed 2026-05-16. |
+| `linkedInAutoPost` | `amplify/backend/function/linkedInAutoPost/src/index.js` | 07:30 + 19:30 UTC: scores threads/country intel, posts best to LinkedIn. ⚠️ LinkedIn token expired. |
 | `newsStripeWebhook` | `amplify/backend/function/newsStripeWebhook/src/index.js` | **Paddle** webhook → writes/updates tier in DynamoDB Users table (name is legacy) |
 
 ---
@@ -28,15 +29,17 @@ Quick-start guide to the backend system. For a complete architecture overview, s
 ## System Architecture
 
 ```
-EventBridge (hourly)   → newsInvokeGemini → staging DDB
-EventBridge (12:00 UTC)→ NewsProjectInvokeAgentLambda → latest DDB + archive DDB
-EventBridge (6:30 UTC) → newsThreadAnalysis → THREAD# records in Summary DDB
-EventBridge (7:00 UTC) → newsCountryIntelligence → COUNTRY# records in Summary DDB
-EventBridge (daily)    → newsCountryFactsUpdater → FACTS# records in Summary DDB
-EventBridge (scheduled)→ newsPairIntelligence → PAIR# records in Summary DDB
-EventBridge (scheduled)→ linkedInAutoPost → LinkedIn (scored, deduplicated)
-EventBridge (scheduled)→ newsPostLinkedIn → LinkedIn + Bluesky + X + Threads + others
-Paddle webhook         → newsStripeWebhook → Users DDB
+EventBridge (every 4h, :00)  → newsInvokeGemini-dev → staging DDB [DeepSeek V4]
+EventBridge (every 4h, :05)  → NewsProjectInvokeAgentLambda-dev → latest DDB + archive [DeepSeek V4]
+EventBridge (05:00 UTC daily)→ newsCountryFactsUpdater → FACTS# in Summary DDB [no LLM]
+EventBridge (06:30 UTC daily)→ newsThreadAnalysis → THREAD# in Summary DDB [Gemini 2.5 Flash free]
+EventBridge (07:00 UTC daily)→ newsCountryIntelligence → COUNTRY# in Summary DDB [DeepSeek V4]
+EventBridge (07:15 UTC daily)→ newsSystemsAnalysis → SYSTEMS# in Summary DDB [DeepSeek V4]
+EventBridge (every 3h, :20)  → newsPostLinkedin → LinkedIn/Bluesky/Farcaster/Mastodon/Telegram [no LLM]
+EventBridge (07:30+19:30 UTC)→ linkedInAutoPost → LinkedIn scored post [no LLM]
+EventBridge (23:00 UTC daily)→ newsPostDevTo → Daily Brief + Dev.to [DeepSeek V4]
+Manual only                  → newsPairIntelligence → PAIR# in Summary DDB
+Paddle webhook               → newsStripeWebhook → Users DDB
 
 API Gateway (frontend) → newsSensitiveData → reads all DDB tables
 Function URL           → newsSavedItems → SAVED_ITEMS_TABLE (JWT required)

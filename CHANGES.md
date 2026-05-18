@@ -1,5 +1,73 @@
 # Global Perspectives — Change Log
 
+## 2026-05-18 (Perf: LLM-loop parallelization + active-bug fixes — DEPLOYED)
+
+### Backend (DEPLOYED — all Lambdas ap-northeast-1)
+
+**Performance — measured in production:**
+
+| Lambda | Before | After | Speedup |
+|---|---:|---:|---:|
+| `NewsProjectInvokeAgentLambda-dev` | 387.7 s, **14% timeouts** (445s wall) | **130.4 s, 0 fails** | **3.0×** |
+| `newsCountryIntelligence` | 348 s avg | **60 s** (10 generated + 10 skipped) | **5.8×** |
+| `newsInvokeGemini-dev` | 79 s avg | **63 s** | 1.25× (16s/run × 12 runs/day saved) |
+
+**Changes:**
+- Added 12-line `mapWithConcurrency(items, limit, worker)` helper to `NewsProjectInvokeAgentLambda/src/index.js` and `newsCountryIntelligence/src/index.js`. No new deps.
+- Replaced `for (const x of items) { await ... }` with concurrent worker pool (concurrency 4 via new env `LLM_CONCURRENCY=4`).
+- `newsInvokeGemini/src/index.js` Brave Search loop: same pattern with `BRAVE_CONCURRENCY=3` (was sequential with 2s sleep between 9 queries = 16s wasted/run).
+- Bumped `NewsProjectInvokeAgentLambda-dev`: memory 128MB → 512MB, timeout 445s → 600s. Max memory used 134MB — plenty of headroom; more memory = more vCPU.
+
+**Active bugs fixed:**
+1. **`CATEGORY_LABEL` missing 5 keys** — added `business`, `society`, `energy`, `climate`, `science` to the maps in `newsPostLinkedIn/src/index.js`, `newsSensitiveData/src/index.js`, `newsPostDevTo/src/buildDailySummary.js`. Verified live: 5 of 13 active topics (38%) were tagging "World" as fallback hashtag on every social post. Fixed going forward.
+2. **`newsPostDevTo` AI_MODEL hardcoded** — `AI_MODEL` was `const = 'deepseek/deepseek-r1:free'` which OpenRouter removed → 404 every run, brief published without AI overview. Changed to `process.env.AI_MODEL || 'deepseek/deepseek-v4-flash:free'`. Set env var. Verified: brief now generates 1,558-char AI intro (article 10,992 chars vs 9,427 before). Lambda timeout bumped 30s → 120s, memory 128MB → 256MB.
+3. **Repo↔deployed drift on `newsPostDevTo`** — deployed `index.js` was 397 lines; repo was 388, missing 8 const declarations + 2 imports. Someone edited in AWS console without committing back. Pulled deployed → repo. md5 spot-checked 4 other Lambdas — all clean.
+
+**Known issue not fixed today:**
+- `DEVTO_API_KEY` still returns 401 unauthorized → daily Dev.to publish still fails. `DAILY_BRIEF#YYYY-MM-DD` is stored in DDB (so in-app `/daily` page works); only the Dev.to article publish fails. Rotate the key at https://dev.to/settings/extensions when convenient.
+
+**New foundation docs created at repo root:**
+- `SYSTEM_WIRING.md` — code-grounded companion to ARCHITECTURE.md.
+- `OPTIMIZATION_REPORT.md` — 30 findings with file:line and CloudWatch evidence; tracks SHIPPED / DEFERRED status per item.
+
+---
+
+## 2026-05-16 (Migration: full AI provider switch to DeepSeek V4 + Gemini free)
+
+### Backend (DEPLOYED — all Lambdas ap-northeast-1)
+
+**Root cause:** xAI Grok monthly credits exhausted 2026-05-03. All 7 Grok-dependent Lambdas dark. Cost had grown from ~$8/mo to ~$25/mo due to two-pass predictions, country intel 10→20 countries, 3×/day schedule.
+
+**Provider routing (final state):**
+- `newsThreadAnalysis` → **Gemini 2.5 Flash (free)** — 13s pacing between calls, MAX_TOKENS=6000, trailing-comma JSON fix, daily 06:30 UTC
+- `newsInvokeGemini-dev` → **DeepSeek V4 Flash** (`deepseek-chat`) — every 4h (was 2h)
+- `NewsProjectInvokeAgentLambda-dev` → **DeepSeek V4 Flash** — every 4h at :05 (was 2h)
+- `newsCountryIntelligence` → **DeepSeek V4 Flash** — daily 07:00 UTC (was 3×/day)
+- `newsSystemsAnalysis` → **DeepSeek V4 Flash** — daily 07:15 UTC (was broken on Grok)
+- `newsPostDevTo` → **DeepSeek V4 Flash** — Daily Brief working; Dev.to publish ⚠️ 401 (key expired)
+
+**Code fixes:**
+- `newsThreadAnalysis/src/index.js` — added `sleep()` pacing + `INTER_CALL_DELAY_MS` env var, `stripCodeFence()` trailing-comma stripper, `MAX_TOKENS` env-driven
+- `NewsProjectInvokeAgentLambda/src/index.js` — fixed summary preamble: added "Write directly — do not preface with any introduction" to `buildSummaryPrompt()`
+- `newsInvokeGemini/src/index.js` — made `baseURL` env-driven with `/chat/completions` strip logic for OpenAI SDK compatibility
+- `newsPostLinkedin/src/index.js` — **Nostr removed** (wrong key format, no longer needed): removed `require('nostr-tools')`, platform registration, `postToNostr()`, `publishToNostrRelay()`. Active platforms: LinkedIn, Bluesky, Farcaster, Mastodon, Telegram.
+
+**Schedule changes:**
+- `newsInvokeGemini-dev`: every 2h → **every 4h** (`cron(0 */4)`)
+- `NewsProjectInvokeAgentLambda-dev`: every 2h → **every 4h** (`cron(5 */4)`)
+- `newsCountryIntelligence`: 3×/day → **1×/day 07:00 UTC** (`cron(0 7)`)
+
+**Quality audit:** DeepSeek V4 output assessed vs Grok — predictions and trace causes at analyst level. See `DEEPSEEK_QUALITY_AUDIT.md`.
+
+**Projected cost:** ~$8-10/mo (down from $25/mo). DeepSeek V4 Flash: $0.14/M input · $0.28/M output. Monitor at https://platform.deepseek.com/usage
+
+**Known issues remaining:**
+- `linkedInAutoPost` LinkedIn OAuth token expired — needs re-auth
+- `newsPostDevTo` DEVTO_API_KEY 401 — key may need rotation on Dev.to dashboard
+- OpenRouter model `deepseek/deepseek-r1:free` removed — affects optional Dev.to prose overview only
+
+---
+
 ## 2026-04-28 (Fix: newsSensitiveData topics — finish SWR contract)
 
 ### Backend (DEPLOYED to Lambda `newsSensitiveData-dev` ap-northeast-1 2026-04-27)

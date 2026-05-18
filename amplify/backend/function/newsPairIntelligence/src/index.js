@@ -698,5 +698,9 @@ function extractContent(payload) {
 
 function stripCodeFence(value) {
   if (typeof value !== 'string') return value;
-  return value.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').trim();
+  return value
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```$/i, '')
+    .replace(/,(\s*[\]}])/g, '$1')
+    .trim();
 }

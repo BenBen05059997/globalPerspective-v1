@@ -379,38 +379,39 @@ async function fetchBraveNews(limit) {
 
     const articlesPerQuery = Math.max(10, Math.ceil((limit * 4) / queries.length));
     const allArticles = [];
+    const BRAVE_CONCURRENCY = parseInt(process.env.BRAVE_CONCURRENCY || '3', 10);
 
-    console.log(`Fetching ${queries.length} Brave queries (2s delay between)...`);
+    console.log(`Fetching ${queries.length} Brave queries (concurrency=${BRAVE_CONCURRENCY})...`);
 
-    for (let i = 0; i < queries.length; i++) {
-      const query = queries[i];
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(BRAVE_CONCURRENCY, queries.length) }, async () => {
+      while (cursor < queries.length) {
+        const i = cursor++;
+        const query = queries[i];
+        try {
+          const url = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(query)}&count=${articlesPerQuery}&freshness=pd&search_lang=en`;
+          const response = await fetch(url, {
+            headers: {
+              'Accept': 'application/json',
+              'Accept-Encoding': 'gzip',
+              'X-Subscription-Token': BRAVE_API_KEY,
+            },
+          });
 
-      if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-
-      try {
-        const url = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(query)}&count=${articlesPerQuery}&freshness=pd&search_lang=en`;
-        const response = await fetch(url, {
-          headers: {
-            'Accept': 'application/json',
-            'Accept-Encoding': 'gzip',
-            'X-Subscription-Token': BRAVE_API_KEY,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const articles = data?.results || [];
-          allArticles.push(...articles);
-          console.log(`Brave "${query.substring(0, 25)}...": ${articles.length} articles`);
-        } else {
-          console.warn(`Brave "${query.substring(0, 25)}..." failed: ${response.status}`);
+          if (response.ok) {
+            const data = await response.json();
+            const articles = data?.results || [];
+            allArticles.push(...articles);
+            console.log(`Brave "${query.substring(0, 25)}...": ${articles.length} articles`);
+          } else {
+            console.warn(`Brave "${query.substring(0, 25)}..." failed: ${response.status}`);
+          }
+        } catch (queryError) {
+          console.warn(`Brave query error: ${queryError.message}`);
         }
-      } catch (queryError) {
-        console.warn(`Brave query error: ${queryError.message}`);
       }
-    }
+    });
+    await Promise.all(workers);
 
     // Deduplicate by URL
     const seen = new Set();
@@ -557,11 +558,12 @@ exports.handler = async (event) => {
     console.log(`Seen topics from last 24h: ${seenEntries.length}`);
     console.log(`Past archive titles for threading: ${pastArchiveTitles.length}`);
 
-    // Initialize Grok (xAI) client
-    const openai = new OpenAI({
-      apiKey,
-      baseURL: 'https://api.x.ai/v1'
-    });
+    // Initialize LLM client (provider-agnostic, OpenAI-SDK compatible).
+    // GROK_API_URL may be a full /chat/completions URL (used by other Lambdas via raw fetch);
+    // the SDK wants only the base, so strip the trailing /chat/completions if present.
+    const rawBase = process.env.GROK_API_URL || 'https://api.x.ai/v1';
+    const baseURL = rawBase.replace(/\/chat\/completions\/?$/, '');
+    const openai = new OpenAI({ apiKey, baseURL });
 
     let prompt;
     if (allArticles && allArticles.length > 0) {

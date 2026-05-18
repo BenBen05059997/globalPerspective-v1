@@ -39,6 +39,21 @@ const DAILY_ARCHIVE_MAX_SOURCES = 10;
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
 
+const LLM_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '4', 10);
+
+async function mapWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length);
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const i = cursor++;
+      results[i] = await worker(items[i], i);
+    }
+  });
+  await Promise.all(runners);
+  return results;
+}
+
 exports.handler = async (event) => {
   try {
     const payload = parseEvent(event);
@@ -64,7 +79,7 @@ exports.handler = async (event) => {
 
     const outputs = [];
     let failed = 0;
-    for (const topic of filteredTopics) {
+    await mapWithConcurrency(filteredTopics, LLM_CONCURRENCY, async (topic) => {
       try {
         if (action === 'summary' || action === 'both') {
           const summary = await generateAndStore(topic, 'summary', generationId, generatedDate, generatedYear);
@@ -82,7 +97,7 @@ exports.handler = async (event) => {
         failed++;
         console.error(`Generation failed for topic "${topic.title?.substring(0, 50)}":`, topicErr.message);
       }
-    }
+    });
 
     console.log(`Generation complete: ${outputs.length} items, ${failed} failed (generationId: ${generationId})`);
 
@@ -234,7 +249,7 @@ function buildTopic(t, idx) {
 
 function buildSummaryPrompt(topic, generatedDate) {
   return [
-    `You are an analyst summarizing news from ${generatedDate}.`,
+    `You are an analyst summarizing news from ${generatedDate}. Write directly — do not preface with any introduction, meta-commentary, or restatement of these instructions.`,
     'Summarize this topic in 3-4 bullet points.',
     `Title: ${topic.title || 'Untitled Topic'}`,
     `Description: ${topic.description || 'No description provided.'}`,

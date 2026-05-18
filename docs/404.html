@@ -2,30 +2,172 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VT6QENX4MB"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-VT6QENX4MB');
+    </script>
     <link rel="icon" href="./logo_no_grey_bg.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Global Perspectives™ - AI-powered news aggregation</title>
-    <script type="module" crossorigin src="./assets/index-89cc0f60.js"></script>
-    <link rel="stylesheet" href="./assets/index-30999163.css">
-    <!-- 404 redirect script for GitHub Pages SPA support -->
-    <script>
-      // Preserve the requested path for React Router
-      sessionStorage.redirect = location.pathname + location.search + location.hash;
+    <meta name="description" content="AI-powered global news intelligence. Track how stories evolve across days, explore country-level risk analysis, and read narrative thread intelligence." />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Global Perspectives™" />
+    <meta property="og:title" content="Global Perspectives™ — AI-Powered News Intelligence" />
+    <meta property="og:description" content="Track how global stories evolve across days with AI narrative analysis, country-level risk signals, and story arc intelligence." />
+    <meta property="og:image" content="https://globalperspective.net/logo_mesh_points.png" />
+    <meta property="og:url" content="https://globalperspective.net/" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@globalperspect" />
+    <meta name="twitter:creator" content="@globalperspect" />
+    <meta name="twitter:title" content="Global Perspectives™ — AI-Powered News Intelligence" />
+    <meta name="twitter:description" content="Track how global stories evolve across days with AI narrative analysis, country-level risk signals, and story arc intelligence." />
+    <meta name="twitter:image" content="https://globalperspective.net/logo_mesh_points.png" />
+
+    <!-- Schema.org: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Global Perspectives",
+      "alternateName": ["GlobalPerspective", "GP News", "globalperspective.net"],
+      "description": "AI-powered global news intelligence platform. Track how stories evolve across days, explore country-level risk analysis, and read narrative thread intelligence.",
+      "url": "https://globalperspective.net",
+      "logo": "https://globalperspective.net/logo_no_grey_bg.png",
+      "foundingDate": "2025-11",
+      "sameAs": [
+        "https://www.linkedin.com/in/globalperspective/"
+      ]
+    }
     </script>
-    <meta http-equiv="refresh" content="0; url='/'" />
+
+    <!-- Schema.org: WebApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Global Perspectives",
+      "url": "https://globalperspective.net",
+      "applicationCategory": "NewsApplication",
+      "operatingSystem": "Web",
+      "description": "AI news aggregator and geopolitical intelligence platform. Provides country risk analysis, narrative thread tracking, and AI-powered news summaries across 190+ countries.",
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "USD",
+        "lowPrice": "0",
+        "offerCount": "2",
+        "offers": [
+          { "@type": "Offer", "name": "Free", "price": "0" },
+          { "@type": "Offer", "name": "Member", "price": "15", "priceCurrency": "USD" }
+        ]
+      },
+      "featureList": [
+        "AI-powered news aggregation",
+        "Country risk analysis across 190+ countries",
+        "Narrative thread intelligence",
+        "Geopolitical news tracking",
+        "Interactive world map visualization",
+        "AI summaries, predictions, and root cause analysis"
+      ],
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Business analysts, geopolitical researchers, journalists, risk managers"
+      }
+    }
+    </script>
+
+    <!-- Schema.org: FAQ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Global Perspectives?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Global Perspectives is an AI-powered news intelligence platform that tracks how global stories evolve over time, provides country-level risk analysis, and delivers narrative thread intelligence across 190+ countries."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is Global Perspectives different from Google News?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Unlike Google News which aggregates headlines, Global Perspectives uses AI to analyze narrative arcs, track story evolution across days, and provide geopolitical risk signals — giving analysts and researchers deeper context, not just headlines."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is AI news aggregation?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "AI news aggregation uses machine learning to collect, categorize, and analyze news from thousands of sources simultaneously. Global Perspectives goes further by identifying narrative patterns, tracking story evolution, and generating country-level risk assessments."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Who uses Global Perspectives?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Global Perspectives is used by business analysts, geopolitical researchers, journalists, risk managers, and professionals who need to track global events and understand how narratives evolve across countries and time."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is country risk analysis?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Country risk analysis evaluates political, economic, and social factors that could affect business operations or investments in a specific country. Global Perspectives automates this by analyzing news signals and narrative patterns in real-time."
+          }
+        }
+      ]
+    }
+    </script>
+    <script type="module" crossorigin src="./assets/index-BHgBA_dZ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BoBfTJUG.css">
   </head>
   <body>
-    <div id="root">
-      <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; background: #f6f6f6; color: #333;">
-        <div class="notice" style="text-align: center; max-width: 480px; line-height: 1.5;">
-          <h1>Redirecting to Global Perspectives…</h1>
-          <p>If you are not redirected automatically, <a href="/">click here to return to the home page.</a></p>
-        </div>
+    <div id="root"></div>
+    <noscript>
+      <div style="max-width:700px;margin:0 auto;padding:40px 20px;font-family:system-ui,sans-serif;color:#111827">
+        <h1>Global Perspectives™ — AI-Powered News Intelligence</h1>
+        <p>Global Perspectives is an AI news aggregator and geopolitical intelligence platform that goes beyond headlines. We track how global stories evolve over days and weeks, analyze country-level risk signals across 190+ countries, and surface narrative patterns that traditional news tools miss.</p>
+        <h2>Features</h2>
+        <ul>
+          <li><strong>AI News Aggregation</strong> — Collect, categorize, and analyze news from thousands of sources with machine learning</li>
+          <li><strong>Country Risk Analysis</strong> — Automated political, economic, and social risk assessment across 190+ countries</li>
+          <li><strong>Narrative Thread Intelligence</strong> — Track how stories evolve across days with AI-generated story arcs, trajectory predictions, and root cause chains</li>
+          <li><strong>Interactive World Map</strong> — Visualize geopolitical news connections with geographic markers and cross-country story links</li>
+          <li><strong>AI Summaries, Predictions &amp; Root Cause Analysis</strong> — Get deeper context on every topic, not just headlines</li>
+        </ul>
+        <h2>Who uses Global Perspectives?</h2>
+        <p>Business analysts, geopolitical researchers, journalists, risk managers, and professionals who need to track global events and understand how narratives evolve across countries and time.</p>
+        <h2>How is Global Perspectives different from Google News?</h2>
+        <p>Unlike Google News which aggregates headlines, Global Perspectives uses AI to analyze narrative arcs, track story evolution across days, and provide geopolitical risk signals — giving analysts and researchers deeper context, not just headlines.</p>
+        <p><a href="https://globalperspective.net/pricing">View pricing</a> · <a href="https://globalperspective.net/about">About us</a> · <a href="https://globalperspective.net/whitepaper">Read the white paper</a></p>
       </div>
-    </div>
+    </noscript>
     <!-- Optional runtime config: create public/config.js (ignored by git) -->
     <!-- Example at /src/public/config.example.js; if present, it sets window.APPSYNC_* values -->
-    <script src="./config.js"></script>
-    
+    <script>document.write('<script src="/config.js?v=' + Date.now() + '"><\/script>');</script>
+    <script>
+      // Restore path saved by 404.html for GitHub Pages SPA deep-link support
+      (function () {
+        var redirect = sessionStorage.redirect;
+        if (redirect && redirect !== location.pathname) {
+          delete sessionStorage.redirect;
+          history.replaceState(null, '', redirect);
+        }
+      })();
+    </script>
   </body>
 </html>

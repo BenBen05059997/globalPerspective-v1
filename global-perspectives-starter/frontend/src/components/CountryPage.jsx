@@ -8,6 +8,9 @@ import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { useMarketsCountry } from '../hooks/useMarketsCountry';
 import { useCountryHistory } from '../hooks/useCountryHistory';
 import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
+import { useDisruptionsList } from '../hooks/useDisruptionsList';
+import SeverityBadge from './atoms/SeverityBadge';
+import DirectionArrow from './atoms/DirectionArrow';
 import { formatDateLabel } from '../utils/dateUtils';
 import { getBroadRegionsForCountry } from '../utils/countryMapping';
 import WeeklyMap from './WeeklyMap';
@@ -352,6 +355,7 @@ export default function CountryPage() {
   const { data: markets } = useMarketsCountry(decodedName);
   const { snapshots: riskHistory } = useCountryHistory(decodedName);
   const { data: systemsData } = useSystemsAnalysis(decodedName);
+  const { data: countryDisruptions } = useDisruptionsList(decodedName ? { country: decodedName, limit: 5 } : {});
 
   useEffect(() => {
     document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
@@ -618,11 +622,44 @@ export default function CountryPage() {
         </div>
       )}
 
-      {/* Markets snapshot */}
+      {/* Economic Disruption — event-driven, dated to the hour */}
+      {countryDisruptions?.length > 0 && (
+        <div className="cpg-rail-section">
+          <div className="cpg-rail-hd">
+            Economic Disruption
+            <span className="cpg-rail-asof">{countryDisruptions.length} active</span>
+          </div>
+          {countryDisruptions.slice(0, 3).map((d, i) => (
+            <Link
+              key={d.scopeId || i}
+              to={`/weekly/thread/${encodeURIComponent(d.scopeId)}?tab=economy`}
+              className="cpg-disruption-row"
+              style={{ display: 'block', padding: '8px 0', borderBottom: i < 2 && i < countryDisruptions.length - 1 ? '1px dotted var(--line)' : 'none', textDecoration: 'none', color: 'inherit' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <SeverityBadge level={d.severity} size="sm" />
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-faint)' }}>
+                  {(d.instruments || []).slice(0, 3).map(inst => (
+                    <span key={inst.instrumentId} style={{ marginRight: 6 }}>
+                      <b style={{ color: 'var(--ink)' }}>{inst.instrumentId}</b>
+                      <DirectionArrow dir={inst.direction} />
+                    </span>
+                  ))}
+                </span>
+              </div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 13, lineHeight: 1.35, color: 'var(--ink)' }}>
+                {d.headline}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Markets snapshot — structural baseline (annual macros + FX) */}
       {markets?.macro && Object.keys(markets.macro).length > 0 && (
         <div className="cpg-rail-section">
           <div className="cpg-rail-hd">
-            Macro Snapshot
+            Macro Baseline
             {markets.asOf && <span className="cpg-rail-asof">{formatAsOf(markets.asOf)}</span>}
           </div>
           {(() => {

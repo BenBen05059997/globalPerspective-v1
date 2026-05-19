@@ -12,6 +12,8 @@ import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import { useError } from '../contexts/ErrorContext';
 import StatusStrip from './atoms/StatusStrip';
 import EditorialShell from './atoms/EditorialShell';
+import SeverityBadge from './atoms/SeverityBadge';
+import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import './AIComponents.css';
 import './Home.css';
 
@@ -56,6 +58,12 @@ function getTopicId(t, idx) {
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, hasNewData } = useGeminiTopics();
+  const { data: allDisruptions = [] } = useDisruptionsList({ limit: 100 });
+  const disruptionByThread = React.useMemo(() => {
+    const m = {};
+    for (const d of allDisruptions) { if (d.scopeId) m[d.scopeId] = d; }
+    return m;
+  }, [allDisruptions]);
   const { entries: archiveEntries } = useTodayArchive();
   const { showError } = useError();
 
@@ -355,6 +363,15 @@ function Home() {
                   {t.category && <span className="home-topic-cat">{t.category}</span>}
                   {t.x_trending && <span className="home-trend-pill">TRENDING</span>}
                   {t.urgency === 'high' && <span className="home-urgency-pill">URGENT</span>}
+                  {t.threadId && disruptionByThread[t.threadId]?.severity && (
+                    <Link
+                      to={`/weekly/thread/${t.threadId}?tab=economy`}
+                      style={{ textDecoration: 'none' }}
+                      title="Economic disruption — click for analysis"
+                    >
+                      <SeverityBadge level={disruptionByThread[t.threadId].severity} size="sm" />
+                    </Link>
+                  )}
                   {country && (
                     <span> · <Link
                       to={`/weekly/country/${encodeURIComponent(country)}`}

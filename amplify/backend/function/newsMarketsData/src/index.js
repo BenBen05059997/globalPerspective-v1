@@ -13,6 +13,10 @@
  *   FX#USD                HISTORY#YYYY-MM-DD   daily snapshot for sparklines
  *   RATES#GLOBAL          LATEST               { US10Y, US2Y, UK10Y, DE10Y, JP10Y, asOf }
  *   COMMODITIES#GLOBAL    LATEST               { brent, wti, gold, copper, vix, dxy, asOf }
+ *   EQUITIES#GLOBAL       LATEST               { SPX, NDX, DJI, ..., XLE, SOXX, ..., asOf }
+ *   EQUITIES#GLOBAL       HISTORY#YYYY-MM-DD   daily snapshot for sparklines
+ *   CRYPTO#GLOBAL         LATEST               { BTC, BTC_24h_change, ETH, ETH_24h_change, asOf }
+ *   CRYPTO#GLOBAL         HISTORY#YYYY-MM-DD   daily snapshot for sparklines
  *   MACRO#{country}       LATEST               { gdp, cpi_yoy, reserves_usd, debt_to_gdp,
  *                                                current_account, unemployment, asOf }
  *   MACRO#{country}       HISTORY#YYYY-Q#      quarterly history
@@ -22,7 +26,9 @@
  *   { "source": "fx" }       → FX only
  *   { "source": "yields" }   → FRED yields only
  *   { "source": "macros" }   → World Bank macros only
- *   { "source": "commodities" } → Stooq only
+ *   { "source": "commodities" } → Stooq commodities only
+ *   { "source": "equities" } → Stooq indices + ETFs only
+ *   { "source": "crypto" } → CoinGecko BTC + ETH only
  */
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
@@ -235,6 +241,40 @@ const STOOQ_SYMBOLS = {
   dxy:    'dx.f',   // US Dollar Index
 };
 
+// Stooq index symbols (^ prefix). If any symbol fails at runtime, value is null.
+// Verify on stooq.com if a key returns null persistently.
+const STOOQ_INDICES = {
+  SPX:   '^spx',     // S&P 500
+  NDX:   '^ndx',     // Nasdaq 100
+  DJI:   '^dji',     // Dow Jones Industrial
+  FTM:   '^ftm',     // FTSE 100
+  DAX:   '^dax',     // DAX
+  N225:  '^nkx',     // Nikkei 225
+  HSI:   '^hsi',     // Hang Seng
+  SSEC:  '^shc',     // Shanghai Composite
+  KS11:  '^kospi',   // KOSPI
+  TWII:  '^twse',    // Taiwan Weighted
+  INDA:  'inda.us',  // iShares MSCI India ETF (proxy — Stooq lacks NSEI)
+  BVSP:  '^bvp',     // Bovespa
+  MERV:  '^mrv',     // Merval (Argentina)
+  XU100: '^xu100',   // BIST 100 (Turkey)
+  EIS:   'eis.us',   // iShares MSCI Israel ETF (proxy — Stooq lacks TA125)
+};
+
+// US-listed sector + credit ETFs (.us suffix on Stooq)
+const STOOQ_ETFS = {
+  XLE:  'xle.us',    // Energy
+  ITA:  'ita.us',    // US Defense
+  SOXX: 'soxx.us',   // Semiconductors
+  XLF:  'xlf.us',    // Financials
+  EEM:  'eem.us',    // MSCI EM
+  EFA:  'efa.us',    // MSCI Dev ex-US
+  GDX:  'gdx.us',    // Gold miners
+  SHY:  'shy.us',    // Short Treasuries
+  EMB:  'emb.us',    // EM USD bonds
+  HYG:  'hyg.us',    // US high yield
+};
+
 async function fetchStooqSymbol(symbol) {
   const url = `https://stooq.com/q/l/?s=${encodeURIComponent(symbol)}&f=sd2t2ohlcv&h&e=csv`;
   const res = await safeFetch(url);
@@ -278,6 +318,54 @@ async function fetchCommodities() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SOURCE 5 — COINGECKO (BTC + ETH, free, no key, 30 req/min)
+// Only BTC + ETH — surfaced when economic_impact tags geopoliticalRelevance.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchCrypto() {
+  console.log('[CRYPTO] fetching BTC + ETH from CoinGecko...');
+  const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true';
+  try {
+    const res = await safeFetch(url);
+    const json = await res.json();
+    const result = {
+      BTC: json.bitcoin?.usd ?? null,
+      BTC_24h_change: json.bitcoin?.usd_24h_change ?? null,
+      ETH: json.ethereum?.usd ?? null,
+      ETH_24h_change: json.ethereum?.usd_24h_change ?? null,
+      asOf: NOW_ISO(),
+    };
+    await putItem('CRYPTO#GLOBAL', 'LATEST', result, 2);
+    await putItem('CRYPTO#GLOBAL', `HISTORY#${TODAY()}`, result, 90);
+    console.log('[CRYPTO] stored:', { BTC: result.BTC, ETH: result.ETH });
+    return result;
+  } catch (e) {
+    console.warn(`[CRYPTO] failed: ${e.message}`);
+    return { error: e.message };
+  }
+}
+
+async function fetchEquitiesAndETFs() {
+  console.log('[EQUITIES] fetching from Stooq...');
+  const result = { asOf: NOW_ISO() };
+  const all = { ...STOOQ_INDICES, ...STOOQ_ETFS };
+  for (const [key, symbol] of Object.entries(all)) {
+    try {
+      result[key] = await fetchStooqSymbol(symbol);
+      await new Promise(r => setTimeout(r, 150));
+    } catch (e) {
+      console.warn(`[EQUITIES] ${key} failed: ${e.message}`);
+      result[key] = null;
+    }
+  }
+  await putItem('EQUITIES#GLOBAL', 'LATEST', result, 2);
+  await putItem('EQUITIES#GLOBAL', `HISTORY#${TODAY()}`, result, 90);
+  const count = Object.values(result).filter(v => typeof v === 'number').length;
+  console.log(`[EQUITIES] stored ${count} prices`);
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // HANDLER
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -305,6 +393,18 @@ exports.handler = async (event = {}) => {
   if (source === 'commodities' || source === 'all') {
     try { results.commodities = await fetchCommodities(); }
     catch (e) { console.error('[COMMODITIES] failed:', e.message); results.commodities = { error: e.message }; }
+  }
+
+  // Equities + ETFs — run if source=equities or source=all (hourly)
+  if (source === 'equities' || source === 'all') {
+    try { results.equities = await fetchEquitiesAndETFs(); }
+    catch (e) { console.error('[EQUITIES] failed:', e.message); results.equities = { error: e.message }; }
+  }
+
+  // Crypto — run if source=crypto or source=all (hourly)
+  if (source === 'crypto' || source === 'all') {
+    try { results.crypto = await fetchCrypto(); }
+    catch (e) { console.error('[CRYPTO] failed:', e.message); results.crypto = { error: e.message }; }
   }
 
   // Yields — run if source=yields or source=all on weekdays 06-22 UTC

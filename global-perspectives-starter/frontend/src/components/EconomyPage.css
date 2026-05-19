@@ -1,0 +1,330 @@
+/* EconomyPage — flagship economic-disruption index */
+
+.ep-rail {
+  font-family: var(--sans);
+}
+
+.ep-breadcrumb {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.ep-breadcrumb a {
+  color: var(--ink-mid);
+  text-decoration: none;
+}
+.ep-breadcrumb a:hover {
+  color: var(--accent);
+}
+
+.ep-facet {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ep-facet:last-child {
+  border-bottom: none;
+}
+
+.ep-facet-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  margin-bottom: 10px;
+}
+
+.ep-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--ink-mid);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ep-check input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.ep-check:hover { color: var(--ink); }
+
+.ep-check-count {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+.ep-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ep-chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 4px 7px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink-mid);
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.ep-chip:hover {
+  border-color: var(--ink-mid);
+  color: var(--ink);
+}
+
+.ep-chip.on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+/* Center */
+.ep-center {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.ep-masthead {
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line-2);
+}
+
+.ep-kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.ep-title {
+  font-family: var(--serif);
+  font-size: 38px;
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.ep-sub {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-mid);
+  margin: 0;
+}
+
+.ep-group {
+  margin-bottom: 28px;
+}
+
+.ep-group-hd {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.ep-group-hd::before {
+  content: '─';
+  color: var(--line-3);
+}
+.ep-group-hd::after {
+  content: '─';
+  color: var(--line-3);
+  flex: 1;
+  margin-left: 6px;
+}
+
+.ep-group-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+.ep-group-severe .ep-group-hd { color: var(--risk-h); }
+.ep-group-moderate .ep-group-hd { color: var(--risk-e); }
+.ep-group-minor .ep-group-hd { color: var(--risk-l); }
+
+.ep-empty {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--paper);
+  border: 1px dashed var(--line-2);
+  border-radius: 4px;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-mid);
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.ep-filter-info {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(162, 68, 46, 0.05);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-mid);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ep-filter-info button {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ep-filter-info button:hover {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.ep-disclaimer {
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+.ep-disclaimer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.ep-disclaimer a:hover { text-decoration: underline; }
+
+/* Right rail */
+.ep-rail-section {
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ep-rail-section:last-child {
+  border-bottom: none;
+}
+
+.ep-rail-hd {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+
+.ep-rail-empty {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.ep-mover {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 4px;
+  color: var(--ink-mid);
+}
+
+.ep-mover:hover {
+  border-color: var(--ink-mid);
+  background: rgba(0,0,0,0.02);
+}
+
+.ep-mover.on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.ep-mover-id {
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 56px;
+}
+
+.ep-mover.on .ep-mover-id { color: var(--paper); }
+
+.ep-mover-strength {
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+.ep-mover.on .ep-mover-strength { color: rgba(255,255,255,0.6); }
+
+.ep-mover-cite {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+.ep-mover.on .ep-mover-cite { color: rgba(255,255,255,0.7); }
+
+.ep-horizon-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-mid);
+  text-transform: capitalize;
+}
+
+.ep-horizon-row b {
+  color: var(--ink);
+  font-weight: 600;
+}

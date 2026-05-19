@@ -2,16 +2,19 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '../hooks/useCountryIntelligence';
+import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { getTopicRegion } from '../utils/countryMapping';
 import { RISK_COLORS, CATEGORY_BADGE_COLORS } from './WeeklyPage';
 import CountryOverviewMap from './CountryOverviewMap';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
 import RiskScoreBadge from './atoms/RiskScoreBadge';
+import SeverityBadge from './atoms/SeverityBadge';
 import './WeeklyPage.css';
 import './CountryListPage.css';
 
 const RISK_ORDER = { high: 0, elevated: 1, moderate: 2, low: 3 };
+const SEVERITY_RANK = { severe: 3, moderate: 2, minor: 1 };
 
 function timeAgo(isoString) {
   if (!isoString) return null;
@@ -32,7 +35,7 @@ function trajectoryArrow(text = '') {
 
 // ─── Country Card ─────────────────────────────────────────────────────────────
 
-function CountryCard({ country, intel }) {
+function CountryCard({ country, intel, disruptionSeverity }) {
   const traj = trajectoryArrow(intel?.trajectory);
   const catColors = CATEGORY_BADGE_COLORS[country.topCategories?.[0]];
 
@@ -41,6 +44,7 @@ function CountryCard({ country, intel }) {
       <div className="clp-card-head">
         <span className="clp-card-name">{country.name}</span>
         <RiskScoreBadge level={intel?.riskLevel} size="sm" />
+        {disruptionSeverity && <SeverityBadge level={disruptionSeverity} size="sm" />}
         <span className={`clp-card-traj ${traj.cls}`}>{traj.arrow}</span>
       </div>
 
@@ -86,7 +90,7 @@ function LeftRail({ sortBy, onSort, searchQuery, onSearch, activeRegion, onRegio
       <div className="clp-rail-section">
         <div className="clp-rail-label">Sort</div>
         <div className="clp-sort-group">
-          {[['risk', 'Risk level'], ['articles', 'Coverage'], ['alpha', 'A → Z']].map(([v, label]) => (
+          {[['risk', 'Risk level'], ['articles', 'Coverage'], ['economy', 'Disruption'], ['alpha', 'A → Z']].map(([v, label]) => (
             <button
               key={v}
               className={`clp-sort-btn ${sortBy === v ? 'active' : ''}`}
@@ -212,6 +216,24 @@ export default function CountryListPage() {
 
   const countryNames = useMemo(() => countries.slice(0, 10).map(c => c.name), [countries]);
   const { intelligence } = useCountryIntelligence(countryNames);
+  const { data: allDisruptions = [] } = useDisruptionsList({ limit: 200 });
+
+  // Map: countryName → max severity from any thread disruption involving that country
+  const maxSeverityByCountry = useMemo(() => {
+    const map = {};
+    for (const d of allDisruptions) {
+      const rank = SEVERITY_RANK[d.severity] || 0;
+      for (const w of (d.winners || [])) {
+        if (w.type !== 'country') continue;
+        if (!map[w.name] || rank > SEVERITY_RANK[map[w.name]]) map[w.name] = d.severity;
+      }
+      for (const l of (d.losers || [])) {
+        if (l.type !== 'country') continue;
+        if (!map[l.name] || rank > SEVERITY_RANK[map[l.name]]) map[l.name] = d.severity;
+      }
+    }
+    return map;
+  }, [allDisruptions]);
 
   const [activeRegion, setActiveRegion] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -265,6 +287,12 @@ export default function CountryListPage() {
     filteredFeatured = [...filteredFeatured].sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortBy === 'articles') {
     filteredFeatured = [...filteredFeatured].sort((a, b) => b.articles - a.articles);
+  } else if (sortBy === 'economy') {
+    filteredFeatured = [...filteredFeatured].sort((a, b) => {
+      const sa = SEVERITY_RANK[maxSeverityByCountry[a.name]] || 0;
+      const sb = SEVERITY_RANK[maxSeverityByCountry[b.name]] || 0;
+      return sb !== sa ? sb - sa : b.articles - a.articles;
+    });
   }
 
   let filteredOthers = others;
@@ -330,6 +358,7 @@ export default function CountryListPage() {
                 key={c.name}
                 country={c}
                 intel={intelligence?.[c.name]}
+                disruptionSeverity={maxSeverityByCountry[c.name]}
               />
             ))}
           </div>

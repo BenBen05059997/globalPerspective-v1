@@ -14,6 +14,9 @@ import { SaveButton } from './SaveButton';
 import { useUserProfile } from '../hooks/useUserProfile';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
+import MechanismCard from './atoms/MechanismCard';
+import DisruptionPreview from './atoms/DisruptionPreview';
+import { useEconomicImpact } from '../hooks/useEconomicImpact';
 import './ThreadPage.css';
 
 function humanizeThreadId(id) {
@@ -96,6 +99,8 @@ export default function ThreadPage() {
 
   const { analyses } = useThreadAnalyses(thread ? [threadId] : []);
   const analysis = analyses?.[threadId];
+  const { data: economicImpact } = useEconomicImpact(thread ? threadId : null);
+  const hasEconomy = economicImpact && economicImpact.hasImpact !== false;
   const category = thread?.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
 
@@ -292,6 +297,16 @@ export default function ThreadPage() {
           </div>
         )}
 
+        {/* Economic Disruption preview — jumps to center Economy tab */}
+        {hasEconomy && (
+          <div style={{ marginTop: 18 }}>
+            <DisruptionPreview
+              impact={economicImpact}
+              onExpand={() => setContentTab('economy')}
+            />
+          </div>
+        )}
+
         {/* Grounding sources */}
         {analysis?.groundingSources?.length > 0 && (
           <div style={{ marginTop: 18 }}>
@@ -313,11 +328,12 @@ export default function ThreadPage() {
     </div>
   );
 
-  // Content tabs: Timeline | Actors | Sources
+  // Content tabs: Timeline | Actors | Sources | Economy
   const contentTabs = [
     { key: 'timeline', label: 'Timeline', count: thread.entries.length },
     analysis?.keyActors?.length > 0 && { key: 'actors', label: 'Actors', count: analysis.keyActors.length },
     sourceRollup.length > 0 && { key: 'sources', label: 'Sources', count: sourceRollup.length },
+    hasEconomy && { key: 'economy', label: 'Economy', count: economicImpact.instruments?.length || 0, severity: economicImpact.severity },
   ].filter(Boolean);
 
   return (
@@ -506,6 +522,11 @@ export default function ThreadPage() {
               </div>
             ))}
           </div>
+        )}
+
+        {/* Economy tab */}
+        {contentTab === 'economy' && hasEconomy && (
+          <MechanismCard impact={economicImpact} />
         )}
 
         {/* Watch questions (below timeline if no AI rail) */}

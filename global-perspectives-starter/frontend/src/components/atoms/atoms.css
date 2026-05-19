@@ -189,3 +189,477 @@
   .es-body { grid-template-columns: 200px 1fr; }
   .es-right { display: none; }
 }
+
+/* ── SeverityBadge ────────────────────────────────────────── */
+.sev-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sev-sm  { font-size: 10px; padding: 3px 6px; }
+.sev-md  { font-size: 11px; padding: 4px 8px; }
+.sev-lg  { font-size: 13px; padding: 5px 10px; }
+
+.sev-high     { background: var(--risk-h-soft); color: var(--risk-h); }
+.sev-elevated { background: var(--risk-e-soft); color: var(--risk-e); }
+.sev-low      { background: var(--risk-l-soft); color: var(--risk-l); }
+
+.sev-score {
+  font-weight: 600;
+  opacity: 0.65;
+  padding-left: 4px;
+  border-left: 1px solid currentColor;
+  margin-left: 2px;
+}
+
+/* ── DirectionArrow ───────────────────────────────────────── */
+.da {
+  display: inline-block;
+  font-family: var(--mono);
+  font-weight: 700;
+  line-height: 1;
+}
+.da-sm { font-size: 11px; }
+.da-md { font-size: 14px; }
+.da-up    { color: var(--risk-h); }
+.da-down  { color: var(--risk-l); }
+.da-mixed { color: var(--ink-mid); }
+.da-flat  { color: var(--ink-faint); }
+
+/* ── InstrumentChip ───────────────────────────────────────── */
+.ichip {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 8px 10px;
+  background: var(--paper);
+  font-size: var(--text-xs);
+}
+
+.ichip + .ichip {
+  margin-top: 6px;
+}
+
+.ichip-compact {
+  padding: 6px 8px;
+}
+
+.ichip-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+}
+
+.ichip-ticker {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  min-width: 56px;
+}
+
+.ichip-val {
+  font-weight: 600;
+  color: var(--ink-mid);
+}
+
+.ichip-mag {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.ichip-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--line-3);
+}
+
+.ichip-pip.on {
+  background: var(--ink-mid);
+}
+
+.ichip-mag-label {
+  font-size: 10px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ichip-rationale {
+  margin-top: 4px;
+  color: var(--ink-mid);
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* ── MechanismCard ────────────────────────────────────────── */
+.mc-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 20px 22px;
+}
+
+.mc-header {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mc-headline {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+
+.mc-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-mid);
+}
+
+.mc-meta-item { color: var(--ink-mid); }
+.mc-meta-item b { color: var(--ink); font-weight: 600; }
+
+.mc-meta-ago {
+  color: var(--ink-faint);
+  margin-left: auto;
+}
+
+.mc-section {
+  margin-bottom: 20px;
+}
+
+.mc-section-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+}
+
+.mc-instruments {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mc-mechanism {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-mid);
+  margin: 0;
+}
+
+.mc-winlose {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.mc-wl-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+
+.mc-wl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mc-ent {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--line);
+}
+.mc-ent:last-child { border-bottom: none; }
+
+.mc-ent-link {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+.mc-ent-link:hover { text-decoration: underline; }
+
+.mc-ent-static {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mc-ent-type {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 6px;
+}
+
+.mc-ent-why {
+  color: var(--ink-mid);
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.mc-analog-body {
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.mc-analog-mark {
+  color: var(--accent);
+  margin-right: 6px;
+}
+
+.mc-analog-event {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mc-analog-year {
+  color: var(--ink-faint);
+  margin-left: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.mc-analog-outcome {
+  margin-top: 6px;
+  color: var(--ink-mid);
+}
+
+.mc-analog-caveat {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.mc-watch {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mc-watch li {
+  font-size: 13px;
+  padding: 4px 0;
+  color: var(--ink-mid);
+  font-family: var(--sans);
+}
+
+.mc-disclaimer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.03em;
+}
+
+.mc-disclaimer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.mc-disclaimer a:hover { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  .mc-winlose { grid-template-columns: 1fr; }
+}
+
+/* ── DisruptionPreview (right-rail teaser) ────────────────── */
+.dprev {
+  display: block;
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  margin-bottom: 12px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dprev:hover {
+  border-color: var(--accent);
+  background: rgba(162, 68, 46, 0.03);
+}
+
+.dprev-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+
+.dprev-badge {
+  margin-bottom: 8px;
+}
+
+.dprev-headline {
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.dprev-tickers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-mid);
+  margin-bottom: 8px;
+}
+
+.dprev-tick {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.dprev-tick b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.dprev-more {
+  color: var(--ink-faint);
+}
+
+.dprev-cta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* ── DisruptionRow (used by /economy index) ─────────────── */
+.drow {
+  display: block;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  margin-bottom: 10px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.drow-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.drow-link:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.drow-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.drow-headline {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.3;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.drow-tickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-mid);
+  margin-bottom: 6px;
+}
+
+.drow-tick {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.drow-tick b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.drow-mag {
+  font-size: 9px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 2px;
+}
+
+.drow-more {
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+
+.drow-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+.drow-meta b {
+  color: var(--ink-mid);
+  font-weight: 600;
+}
+
+.drow-ago {
+  margin-left: auto;
+}

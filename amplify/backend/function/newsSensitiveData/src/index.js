@@ -603,6 +603,134 @@ exports.handler = async (event) => {
       }
     }
 
+    if (action === 'economic_impact') {
+      const threadId = payload?.threadId || qs?.threadId;
+      if (!threadId) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing threadId' }) };
+      }
+      const client = getDynamoClient();
+      try {
+        const { Item } = await client.send(new GetCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          Key: { PK: `ECON#THREAD#${threadId}`, SK: 'ECONOMIC_IMPACT' },
+        }));
+        if (!Item) {
+          return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Economic impact not found' }) };
+        }
+        const { PK, SK, ttl, ...rest } = Item;
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest }) };
+      } catch (err) {
+        console.error('economic_impact error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Lookup failed' }) };
+      }
+    }
+
+    if (action === 'economic_impact_list') {
+      const minSeverity = payload?.minSeverity || qs?.minSeverity || null;
+      const country = payload?.country || qs?.country || null;
+      const limit = Math.min(parseInt(payload?.limit || qs?.limit || '50', 10), 200);
+      const client = getDynamoClient();
+      const severityRank = { severe: 3, moderate: 2, minor: 1 };
+      const minRank = minSeverity ? (severityRank[minSeverity] || 0) : 0;
+      try {
+        // Paginate the scan — DDB returns at most 1MB per page; matching items may span pages.
+        const allItems = [];
+        let lastKey;
+        do {
+          const resp = await client.send(new ScanCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk AND hasImpact = :hi',
+            ExpressionAttributeValues: { ':prefix': 'ECON#THREAD#', ':sk': 'ECONOMIC_IMPACT', ':hi': true },
+            ExclusiveStartKey: lastKey,
+          }));
+          allItems.push(...(resp.Items || []));
+          lastKey = resp.LastEvaluatedKey;
+        } while (lastKey);
+        const Items = allItems;
+        const list = Items
+          .filter(item => (severityRank[item.severity] || 0) >= minRank)
+          .filter(item => {
+            if (!country) return true;
+            // Match when country appears in winners or losers
+            const inWinners = Array.isArray(item.winners) && item.winners.some(w => w.name === country);
+            const inLosers = Array.isArray(item.losers) && item.losers.some(l => l.name === country);
+            return inWinners || inLosers;
+          })
+          .map(item => {
+            const { PK, SK, ttl, ...rest } = item;
+            return rest;
+          })
+          .sort((a, b) => (b.severityScore || 0) - (a.severityScore || 0))
+          .slice(0, limit);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: list }) };
+      } catch (err) {
+        console.error('economic_impact_list error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Lookup failed' }) };
+      }
+    }
+
+    if (action === 'economic_top_movers') {
+      const limit = Math.min(parseInt(payload?.limit || qs?.limit || '10', 10), 30);
+      const client = getDynamoClient();
+      try {
+        // Paginate the scan — see economic_impact_list for rationale.
+        const Items = [];
+        let lastKey;
+        do {
+          const resp = await client.send(new ScanCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk AND hasImpact = :hi',
+            ExpressionAttributeValues: { ':prefix': 'ECON#THREAD#', ':sk': 'ECONOMIC_IMPACT', ':hi': true },
+            ProjectionExpression: 'instruments, severity, severityScore, headline, scopeId',
+            ExclusiveStartKey: lastKey,
+          }));
+          Items.push(...(resp.Items || []));
+          lastKey = resp.LastEvaluatedKey;
+        } while (lastKey);
+
+        // Aggregate: for each instrument, count citations + tally directions
+        const agg = {};
+        for (const item of Items) {
+          for (const inst of (item.instruments || [])) {
+            if (!inst.instrumentId) continue;
+            const id = inst.instrumentId;
+            if (!agg[id]) {
+              agg[id] = { instrumentId: id, citations: 0, directions: { up: 0, down: 0, mixed: 0 }, examples: [] };
+            }
+            agg[id].citations++;
+            if (inst.direction && agg[id].directions[inst.direction] != null) {
+              agg[id].directions[inst.direction]++;
+            }
+            if (agg[id].examples.length < 3) {
+              agg[id].examples.push({
+                threadId: item.scopeId,
+                headline: item.headline,
+                severity: item.severity,
+              });
+            }
+          }
+        }
+
+        // Compute consensus direction + sort by citation count
+        const movers = Object.values(agg)
+          .map(m => {
+            const counts = m.directions;
+            const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+            const total = counts.up + counts.down + counts.mixed;
+            const consensus = top && top[1] > 0 ? top[0] : 'mixed';
+            const consensusStrength = total > 0 ? Math.round((top[1] / total) * 100) : 0;
+            return { ...m, consensus, consensusStrength };
+          })
+          .sort((a, b) => b.citations - a.citations)
+          .slice(0, limit);
+
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: movers }) };
+      } catch (err) {
+        console.error('economic_top_movers error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Lookup failed' }) };
+      }
+    }
+
     if (action === 'user_profile') {
       const userInfo = await resolveUserTier(event);
       if (!userInfo) {

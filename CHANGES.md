@@ -1,5 +1,57 @@
 # Global Perspectives — Change Log
 
+## 2026-05-19 (Economic Disruption Layer — Phases 1+2+3 DEPLOYED end-to-end)
+
+### What this is
+New cross-cutting layer that, for every news thread Global Perspectives tracks, surfaces *how the economy is being repriced*: which instruments move, in what direction, with what severity, the causal mechanism, who wins/loses, and what historical event is the closest analog — all with citations back to the underlying articles.
+
+Concept doc: [`ECONOMIC_DISRUPTION.md`](ECONOMIC_DISRUPTION.md). Implementation plan: [`ECONOMIC_DISRUPTION_PLAN.md`](ECONOMIC_DISRUPTION_PLAN.md).
+
+### Backend (DEPLOYED via `aws lambda` CLI, ap-northeast-1)
+- **`newsEconomicImpact`** (NEW Lambda, nodejs22.x, 512MB/300s) — per-thread economic disruption analysis. Reads thread analyses + today/archive entries + market snapshots, calls DeepSeek with a closed instrument allowlist (~55 tickers), validates JSON, drops uncited claims and out-of-allowlist instruments, writes `ECON#THREAD#{id}/ECONOMIC_IMPACT` records to `SummarizeAndPredict` with 21-day TTL. Reuses `newsCountryIntelligence-role-xqboqh2y` IAM role.
+- **EventBridge rule** `TriggerNewsEconomicImpact` — `cron(30 7 * * ? *)` daily 07:30 UTC, ENABLED. Runs after thread analysis (06:30), country intel (07:00), systems analysis (07:15).
+- **`newsMarketsData` extended** — added `fetchEquitiesAndETFs()` pulling 25 instruments via Stooq (15 indices: SPX/NDX/DJI/FTM/DAX/N225/HSI/SSEC/KS11/TWII/INDA/BVSP/MERV/XU100/EIS; 10 ETFs: XLE/ITA/SOXX/XLF/EEM/EFA/GDX/SHY/EMB/HYG). Added `fetchCrypto()` pulling BTC + ETH via CoinGecko free API. New DDB keys: `EQUITIES#GLOBAL/LATEST + HISTORY#`, `CRYPTO#GLOBAL/LATEST + HISTORY#`. NSEI/TA125 replaced with US-listed ETF proxies (INDA/EIS) — Stooq lacks Nifty 50 and Tel Aviv 125.
+- **`newsSensitiveData-dev` extended** — 3 new actions: `economic_impact`, `economic_impact_list`, `economic_top_movers`. All paginate over DDB Scan (bug fix during testing — 1MB scan page limit was hiding records).
+- **Analog catalog** — 22 curated historical events (`amplify/backend/function/newsEconomicImpact/src/economic_analogs.json`) with realized asset moves. Loaded into LLM prompt; LLM picks the closest by category overlap; UI shows the *historical* moves, not a fresh prediction.
+
+### Frontend (DEPLOYED)
+- New page: `/economy` — flagship 3-col index with severity-grouped DisruptionRow list, facet filters (severity / horizon / instrument / country), and "Today's Top Movers" right-rail panel
+- New atoms: `SeverityBadge`, `DirectionArrow`, `InstrumentChip`, `MechanismCard`, `DisruptionPreview`, `DisruptionRow`
+- New hooks: `useEconomicImpact`, `useDisruptionsList`, `useTopMovers`
+- ThreadPage — 4th center tab "Economy" + right-rail `DisruptionPreview` above Live Web Evidence
+- CountryPage — new "Economic Disruption" section above Macro Snapshot (which was relabeled "Macro Baseline" to disambiguate event-driven vs structural)
+- WorldMapV2 — 4th lens "Economy" with severity-colored ring overlay on affected countries
+- DailyPage — new "Today's Economic Footprint" section between masthead and Top Stories
+- Inline `SeverityBadge` on Home kicker / WeeklyPage StoryCard / CountryListPage cards
+- Layout nav + footer entry for `/economy`
+- Disclosures.jsx — full "not investment advice" methodology section
+
+### Methodology (the anti-hallucination spine)
+- **Closed instrument allowlist** — LLM may only reference instruments from a fixed list. Anything outside is dropped server-side. Verified by 31-test validator suite.
+- **Citation requirement** — every claim cites topicIds from the actual thread; uncited claims dropped.
+- **Magnitude as enum** (small/moderate/large) — never %. LLMs hallucinate financial point estimates (FAITH benchmark).
+- **Tombstones** — when no economic dimension exists, write `{hasImpact:false}` to skip regeneration. Refusing to generate beats fabricating.
+- **Market prices computed from `MARKETS_DDB_TABLE`** snapshotted at generation time. LLM never emits a price level.
+
+### Files changed
+- New: `amplify/backend/function/newsEconomicImpact/src/{index.js,package.json,economic_analogs.json}`
+- New: `global-perspectives-starter/frontend/src/components/EconomyPage.{jsx,css}`
+- New: `global-perspectives-starter/frontend/src/components/atoms/{SeverityBadge,DirectionArrow,InstrumentChip,MechanismCard,DisruptionPreview,DisruptionRow}.jsx`
+- New: `global-perspectives-starter/frontend/src/hooks/{useEconomicImpact,useDisruptionsList,useTopMovers}.js`
+- New: `ECONOMIC_DISRUPTION.md`, `ECONOMIC_DISRUPTION_PLAN.md`
+- Modified: `amplify/backend/function/{newsMarketsData,newsSensitiveData}/src/index.js`
+- Modified: frontend `ThreadPage.jsx`, `CountryPage.jsx`, `Home.jsx`, `WeeklyPage.jsx`, `CountryListPage.jsx`, `DailyPage.{jsx,css}`, `WorldMapV2.jsx`, `Layout.jsx`, `App.jsx`, `Disclosures.jsx`, `services/restProxy.js`, `components/atoms/atoms.css`
+
+### Verification
+- Lambda invoked with cap=15: `10 generated, 2 tombstoned, 3 skipped, 0 failed` — first production run wrote 15 records to DDB
+- API actions tested via API Gateway — `economic_impact_list` returns 3 records sorted by severity; `economic_top_movers` shows GOLD/BRENT cited 10× each
+- Real records include severe Iran/Hormuz oil scenarios and a correctly-classified MINOR for Trump warning Taiwan against independence (de-escalation)
+- 31 validator unit tests pass (closed allowlist + citation requirement + enum validation)
+
+### Cost
+- Marginal AWS + DeepSeek: ~$0.30/month at daily volume
+- One-time deploy run: ~$0.06
+
 ## 2026-05-18 (Source diversity — post-LLM enrichment + outlet flags — DEPLOYED)
 
 ### Problem

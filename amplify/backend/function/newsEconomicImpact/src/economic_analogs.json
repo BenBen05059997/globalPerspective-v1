@@ -1,0 +1,319 @@
+{
+  "_meta": {
+    "description": "Curated historical reference events with realized asset moves. The LLM picks the closest analog by mechanism; the frontend shows the analog's actual past moves — NOT a fresh prediction. Update when a major new event occurs and ~60 days of price data is available.",
+    "version": "1",
+    "lastUpdated": "2026-05-19",
+    "methodology": "Each entry records what actually happened to relevant assets after the event. Sources: FRED, BIS, Bloomberg public data, BIS Annual Reports, IMF GFSR. Moves shown are widely-cited approximations from the event window, not point-precise."
+  },
+  "events": [
+    {
+      "id": "abqaiq-2019",
+      "name": "2019 Abqaiq Saudi facility attack",
+      "year": "2019",
+      "category": ["energy", "conflict"],
+      "trigger": "Drone strike on Saudi oil processing facility removed ~5% of global supply briefly",
+      "realizedMoves": {
+        "BRENT": "+15% intraday, retraced ~60% within 2 weeks",
+        "WTI": "+13% intraday",
+        "GOLD": "+1.5% on day of attack",
+        "USD/SAR": "no move (pegged)",
+        "EQUITIES_DM": "broad equity decline 0.5-1% on session"
+      },
+      "lessonForToday": "Single-facility supply disruptions tend to retrace fast when no broader escalation follows. Watch for evidence of regional spread before assuming sustained move."
+    },
+    {
+      "id": "russia-ukraine-2022",
+      "name": "Russia-Ukraine war onset",
+      "year": "2022",
+      "category": ["conflict", "energy", "sanctions"],
+      "trigger": "Russian invasion of Ukraine + Western sanctions on Russia",
+      "realizedMoves": {
+        "BRENT": "+30% over 3 weeks, peaked ~$130, retraced to ~$95 by mid-year",
+        "GOLD": "+8% over first month, gave back later as DXY rose",
+        "DXY": "-0.5% on day 1 (NOT a haven), then +8% over 6 months on rate divergence",
+        "EQUITIES_EM": "MSCI EM -14% in first month",
+        "DE10Y": "Initially fell on safe-haven bid, then rose +200bp over 12 months on ECB tightening",
+        "USD/RUB": "+90% over first 2 weeks, then collapsed back as capital controls imposed"
+      },
+      "lessonForToday": "Major-power conflict with sanctions has multi-month effects. Energy importers' currencies face sustained pressure. DXY only rallies later when rate divergence kicks in — early flows can be against the dollar."
+    },
+    {
+      "id": "iran-sanctions-2018",
+      "name": "US withdrawal from Iran nuclear deal + sanctions",
+      "year": "2018",
+      "category": ["sanctions", "energy"],
+      "trigger": "Trump exits JCPOA, reimposes secondary sanctions on Iran",
+      "realizedMoves": {
+        "BRENT": "+25% over 6 months pre-sanctions waiver",
+        "USD/IRR": "approximate 60% depreciation (parallel market) over 6 months",
+        "TA125": "Israel index up ~5% on regional risk premium"
+      },
+      "lessonForToday": "Sanctions on oil exporters create sustained supply premium ahead of effective date. Domestic currency of sanctioned country goes into free fall."
+    },
+    {
+      "id": "brexit-2016",
+      "name": "Brexit referendum",
+      "year": "2016",
+      "category": ["politics", "trade"],
+      "trigger": "UK vote to leave the EU",
+      "realizedMoves": {
+        "USD/GBP": "GBP -8% on day 1, -16% over 6 months",
+        "FTM": "-3.6% on day 1 (smaller drop because GBP fall helped exporters), recovered within 3 weeks",
+        "UK10Y": "Fell from 1.4% to 0.6% over 6 months (BoE easing)",
+        "GOLD": "+8% over 4 weeks",
+        "EQUITIES_DM": "S&P -3.6% on day 1, recovered within 2 weeks"
+      },
+      "lessonForToday": "Trade/political shocks to one country show up most in its currency, less in the equity index when the currency move offsets earnings. Watch the cross-asset divergence."
+    },
+    {
+      "id": "covid-shock-2020",
+      "name": "COVID-19 pandemic onset",
+      "year": "2020",
+      "category": ["health", "trade", "society"],
+      "trigger": "Global pandemic + lockdowns + supply chain freeze",
+      "realizedMoves": {
+        "BRENT": "-65% in 6 weeks, briefly negative on WTI futures",
+        "SPX": "-34% in 5 weeks, fully recovered in 6 months on Fed/fiscal stimulus",
+        "VIX": "82 peak (highest since 2008)",
+        "GOLD": "+25% over the year",
+        "US10Y": "0.5% trough (record low)",
+        "DXY": "+7% in first 2 weeks (safe haven), gave back over the year"
+      },
+      "lessonForToday": "Global demand shocks crater commodities even when geopolitics looks contained. Don't conflate news intensity with directional impact."
+    },
+    {
+      "id": "trump-tariffs-2018",
+      "name": "US-China tariff escalation",
+      "year": "2018-2019",
+      "category": ["trade", "politics"],
+      "trigger": "Series of US tariff announcements on Chinese imports",
+      "realizedMoves": {
+        "USD/CNY": "+10% over 18 months (CNY weakening)",
+        "SOXX": "-25% on tariff announcement days, longer-term tracked tariff cycles",
+        "HSI": "-15% over 12 months",
+        "SSEC": "-22% during peak tariff escalation period",
+        "EQUITIES_EM": "MSCI EM -16% during peak escalation"
+      },
+      "lessonForToday": "Trade-war shocks hit equity indices more than currencies in floating-rate developed countries. Currency moves are bigger in managed-rate regimes (CNY)."
+    },
+    {
+      "id": "argentina-imf-crisis-2018",
+      "name": "Argentina IMF crisis",
+      "year": "2018",
+      "category": ["economy", "politics"],
+      "trigger": "Capital flight + IMF program negotiation",
+      "realizedMoves": {
+        "USD/ARS": "ARS -50% over 6 months",
+        "MERV": "Local equities -45% in USD terms over 6 months",
+        "EMB": "-3% on contagion fears"
+      },
+      "lessonForToday": "EM currency crises in countries with thin reserves can run 50%+ over months. Watch reserve adequacy + IMF stance."
+    },
+    {
+      "id": "turkey-currency-2018-2021",
+      "name": "Turkey lira crisis episodes",
+      "year": "2018, 2021",
+      "category": ["economy", "politics"],
+      "trigger": "Erdogan-Fed standoff + heterodox monetary policy",
+      "realizedMoves": {
+        "USD/TRY": "TRY -40% in 2018, -45% in late 2021",
+        "XU100": "Local TRY-denominated index rose in nominal terms (inflation), but -40% in USD terms",
+        "TR10Y": "Yields above 25%"
+      },
+      "lessonForToday": "EM currency stress doesn't always crash local nominal equity indices when inflation is the driver. Always normalize to USD or real terms for the analyst view."
+    },
+    {
+      "id": "german-energy-2022",
+      "name": "European energy crisis (Nord Stream cut-off)",
+      "year": "2022",
+      "category": ["energy", "conflict"],
+      "trigger": "Russian gas supply to Europe disrupted",
+      "realizedMoves": {
+        "Natural gas (TTF)": "+10x in 6 months",
+        "USD/EUR": "EUR -15% to parity over 6 months",
+        "DAX": "-22% over 9 months",
+        "DE10Y": "+200bp over 12 months"
+      },
+      "lessonForToday": "Energy-import-dependent regions face combined currency + equity + rate stress when supply is structurally compromised. Industrials are the worst-hit equity sector."
+    },
+    {
+      "id": "fed-pivot-2008",
+      "name": "Lehman bankruptcy + GFC",
+      "year": "2008",
+      "category": ["economy", "markets"],
+      "trigger": "US financial system stress",
+      "realizedMoves": {
+        "SPX": "-37% in 6 months (peak-to-trough -57% over the cycle)",
+        "VIX": "80 peak",
+        "GOLD": "Sold initially on liquidation, then +50% over 18 months",
+        "DXY": "+15% over 6 months (safe haven)",
+        "EQUITIES_EM": "-50% peak-to-trough"
+      },
+      "lessonForToday": "Systemic financial stress drives sustained DXY strength and EM equity damage. Gold's initial reaction can be a liquidation sell-off before its safe-haven role kicks in."
+    },
+    {
+      "id": "taiwan-strait-pelosi-2022",
+      "name": "Pelosi Taiwan visit + PLA exercises",
+      "year": "2022",
+      "category": ["conflict", "trade"],
+      "trigger": "PLA encirclement exercises post-visit",
+      "realizedMoves": {
+        "TWII": "-3% over a week, recovered within 1 month",
+        "SOXX": "-2% on news, recovered within days",
+        "USD/CNY": "no significant move",
+        "GOLD": "modest +0.5%"
+      },
+      "lessonForToday": "Brinkmanship without kinetic action typically retraces fast. Markets price the tail not the headline. Persistent encirclement OR kinetic events change the calculation."
+    },
+    {
+      "id": "saudi-iran-restoration-2023",
+      "name": "Saudi-Iran diplomatic restoration",
+      "year": "2023",
+      "category": ["diplomacy", "energy"],
+      "trigger": "China-brokered détente between Riyadh and Tehran",
+      "realizedMoves": {
+        "BRENT": "-3% on news (risk premium reduced)",
+        "TA125": "muted positive reaction",
+        "USD/AED": "no move (pegged)"
+      },
+      "lessonForToday": "De-escalation news compresses risk premium modestly but doesn't reverse structural supply concerns. Watch what's actually delivered vs announced."
+    },
+    {
+      "id": "israel-gaza-2023",
+      "name": "Israel-Hamas war onset",
+      "year": "2023",
+      "category": ["conflict"],
+      "trigger": "October 7 attack + Israeli ground operations",
+      "realizedMoves": {
+        "BRENT": "+5% on news, retraced within 2 weeks absent Iranian involvement",
+        "TA125": "-7% in first week",
+        "GOLD": "+10% over 4 weeks",
+        "USD/ILS": "ILS -5% in first month, recovered as IDF mobilization completed"
+      },
+      "lessonForToday": "Conflict in non-oil-producer regions has muted commodity reaction unless wider regional involvement appears imminent. Local equity + currency take the hit."
+    },
+    {
+      "id": "ecb-whatever-takes-2012",
+      "name": "Draghi 'whatever it takes' speech",
+      "year": "2012",
+      "category": ["politics", "economy"],
+      "trigger": "ECB commitment to OMT",
+      "realizedMoves": {
+        "DE10Y": "Periphery spreads collapsed; Italian 10Y fell from 6.5% to 4% in 3 months",
+        "USD/EUR": "EUR +6% over 3 months",
+        "DAX": "+18% over 6 months"
+      },
+      "lessonForToday": "Credible policymaker commitment can reverse a months-long stress cycle in days. Watch what the words actually commit the institution to."
+    },
+    {
+      "id": "qatar-2017-blockade",
+      "name": "Saudi-led blockade of Qatar",
+      "year": "2017",
+      "category": ["diplomacy", "energy"],
+      "trigger": "Saudi/UAE/Bahrain/Egypt sever ties with Qatar",
+      "realizedMoves": {
+        "BRENT": "muted (+2% then retraced)",
+        "Qatar QSE index": "-7% on the week",
+        "USD/QAR": "no move (pegged)"
+      },
+      "lessonForToday": "Intra-GCC disputes don't move oil much when supply is unaffected. Watch the supply chain and shipping lanes for the real signal."
+    },
+    {
+      "id": "uk-mini-budget-2022",
+      "name": "UK 'mini-budget' / LDI crisis",
+      "year": "2022",
+      "category": ["economy", "politics"],
+      "trigger": "Truss unfunded tax-cut plan",
+      "realizedMoves": {
+        "USD/GBP": "GBP -8% to all-time low intraday",
+        "UK10Y": "+150bp in 3 days, BoE emergency intervention",
+        "FTM": "-2% on the week"
+      },
+      "lessonForToday": "Fiscal credibility shocks in developed markets can trigger gilts/sterling crises in days. The longer-tail risk is pension fund forced selling — watch for liquidity tools in the BoE/Fed response."
+    },
+    {
+      "id": "swiss-national-bank-2015",
+      "name": "SNB removes EUR/CHF floor",
+      "year": "2015",
+      "category": ["economy"],
+      "trigger": "Surprise SNB decision to abandon currency peg",
+      "realizedMoves": {
+        "USD/CHF": "CHF +30% intraday before settling at +20% on the day",
+        "Swiss SMI": "-9% on the day",
+        "Multiple FX brokers": "insolvent"
+      },
+      "lessonForToday": "Pegs end suddenly. When a managed-rate regime is under stress, watch for a sudden break rather than a smooth adjustment."
+    },
+    {
+      "id": "israel-hezbollah-2006",
+      "name": "Israel-Hezbollah 2006 war (Second Lebanon War)",
+      "year": "2006",
+      "category": ["conflict", "energy"],
+      "trigger": "Hezbollah cross-border raid + Israeli military campaign in Lebanon",
+      "realizedMoves": {
+        "BRENT": "+10% over first 2 weeks of conflict, retraced as the war stayed regionally contained",
+        "GOLD": "+6% over the month",
+        "USD/CHF": "CHF +2% as safe-haven flows",
+        "TA125": "-7% over the conflict period"
+      },
+      "lessonForToday": "Israel-Hezbollah conflicts without direct Iranian involvement see modest oil reactions (+5-10%) that retrace within weeks. Watch for Iranian/proxy escalation as the regime-change trigger."
+    },
+    {
+      "id": "houthi-red-sea-2024",
+      "name": "Houthi Red Sea shipping attacks",
+      "year": "2024",
+      "category": ["conflict", "energy", "trade"],
+      "trigger": "Houthi missile and drone attacks on commercial shipping in Red Sea / Bab el-Mandeb",
+      "realizedMoves": {
+        "Container shipping rates (Shanghai-Rotterdam)": "+250% in first quarter",
+        "BRENT": "+5-8% on each escalation, retraced as Cape route rerouting absorbed disruption",
+        "EQUITIES_EM": "muted reaction overall — supply chain impact diffuse",
+        "Defense ETF (ITA)": "+12% over 6 months"
+      },
+      "lessonForToday": "Shipping chokepoint disruptions hit freight rates much harder than oil prices. Watch container indices (FBX, SCFI) more than crude when Suez/Hormuz/Strait flow is the story."
+    },
+    {
+      "id": "hong-kong-protests-2019",
+      "name": "Hong Kong extradition bill protests",
+      "year": "2019",
+      "category": ["politics", "trade"],
+      "trigger": "Anti-extradition bill movement + crackdown + Western sanctions discussion",
+      "realizedMoves": {
+        "HSI": "-15% over 6 months",
+        "USD/HKD": "no break of peg (tested but held)",
+        "SSEC": "-8% on related volatility",
+        "Property developers (HK)": "-20% sustained decline"
+      },
+      "lessonForToday": "HK political stress hits local equities + property hard but the USD peg has held through all major crises since 1983. Mainland China A-shares get spillover effect but smaller magnitude."
+    },
+    {
+      "id": "svb-collapse-2023",
+      "name": "Silicon Valley Bank collapse + regional bank crisis",
+      "year": "2023",
+      "category": ["economy", "markets"],
+      "trigger": "SVB run + Signature/Silvergate failures + Credit Suisse forced takeover",
+      "realizedMoves": {
+        "US10Y": "-50bp in 3 days (flight to safety + rate-cut expectations)",
+        "Bank stocks (KRE regional)": "-25% in 2 weeks",
+        "GOLD": "+9% over 4 weeks",
+        "VIX": "29 peak",
+        "USD/CHF": "Credit Suisse takeover saw brief CHF weakness then recovery"
+      },
+      "lessonForToday": "Banking stress drives sharp rate moves before equity reaction. When deposit franchises are in question, watch the front of the curve and credit spreads — equities are downstream signals."
+    },
+    {
+      "id": "sahel-coups-2020-2023",
+      "name": "Sahel region coup wave (Mali, Burkina Faso, Niger)",
+      "year": "2020-2023",
+      "category": ["politics", "conflict"],
+      "trigger": "Military takeovers in Mali (2020, 2021), Burkina Faso (2022), Niger (2023). French/UN withdrawal. Wagner / Russia presence expansion.",
+      "realizedMoves": {
+        "GOLD": "Limited direct impact despite Mali being a major producer; supply continued",
+        "GDX": "modest -2-5% during peak coup months",
+        "Uranium spot (Niger)": "+50% over 12 months following Niger coup (Niger = ~5% of global supply)",
+        "USD/XOF": "no peg break (CFA franc holds)"
+      },
+      "lessonForToday": "Sahel political instability has remarkably muted commodity impact because mining/extraction continues under whoever's in power. The real signal is uranium for Niger, supply-chain risk for French companies (Orano), and Russian sphere expansion."
+    }
+  ]
+}

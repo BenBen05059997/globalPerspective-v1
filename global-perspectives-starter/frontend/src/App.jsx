@@ -21,6 +21,7 @@ import Account from './components/Account';
 import UpgradeSuccess from './components/UpgradeSuccess';
 import WhitepaperPage from './components/WhitepaperPage';
 import WorldMapV2 from './components/WorldMapV2';
+import EconomyPage from './components/EconomyPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
@@ -88,6 +89,7 @@ export default function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/daily" element={<DailyPage />} />
               <Route path="/daily/:dateKey" element={<DailyPage />} />
+              <Route path="/economy" element={<EconomyPage />} />
               <Route path="/weekly" element={<WeeklyPage />} />
               <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
               <Route path="/weekly/countries" element={<CountryListPage />} />

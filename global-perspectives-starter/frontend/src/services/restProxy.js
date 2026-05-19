@@ -183,6 +183,23 @@ export async function fetchSystemsAnalysis(countryName) {
   return proxyAction('systems_analysis', { countryName });
 }
 
+// ── Economic Impact (per-thread economic disruption) ─────────────────────────
+export async function fetchEconomicImpact(threadId) {
+  return proxyAction('economic_impact', { threadId });
+}
+
+export async function fetchDisruptionsList({ minSeverity, country, limit } = {}) {
+  const payload = {};
+  if (minSeverity) payload.minSeverity = minSeverity;
+  if (country) payload.country = country;
+  if (limit) payload.limit = limit;
+  return proxyAction('economic_impact_list', payload);
+}
+
+export async function fetchTopMovers(limit = 10) {
+  return proxyAction('economic_top_movers', { limit });
+}
+
 // Public preview endpoints (no auth required, for SEO / non-signed-in users)
 export async function fetchCountryPreview(countryName) {
   return proxyAction('country_preview', { countryName });

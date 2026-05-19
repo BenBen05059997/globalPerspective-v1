@@ -1,7 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useDailyBrief } from '../hooks/useDailyBrief';
+import { useDisruptionsList } from '../hooks/useDisruptionsList';
+import InstrumentChip from './atoms/InstrumentChip';
+import SeverityBadge from './atoms/SeverityBadge';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
 import ShareButtons from './ShareButtons';
 import CopyBriefing, { formatDailyBrief } from './CopyBriefing';
@@ -44,6 +47,80 @@ function formatTimeAgo(iso) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function EconomicFootprint() {
+  const { data: disruptions = [] } = useDisruptionsList({ limit: 50 });
+
+  // Aggregate: pick top 5 instruments by citation count across active disruptions,
+  // average direction (consensus) for each.
+  const topInstruments = useMemo(() => {
+    const agg = {};
+    for (const d of disruptions) {
+      for (const inst of (d.instruments || [])) {
+        if (!inst.instrumentId) continue;
+        if (!agg[inst.instrumentId]) {
+          agg[inst.instrumentId] = {
+            instrumentId: inst.instrumentId,
+            citations: 0,
+            up: 0, down: 0, mixed: 0,
+            example: inst,
+            marketSnap: d.marketContext?.[inst.instrumentId],
+          };
+        }
+        agg[inst.instrumentId].citations++;
+        const dir = inst.direction || 'mixed';
+        if (agg[inst.instrumentId][dir] != null) agg[inst.instrumentId][dir]++;
+      }
+    }
+    const top = Object.values(agg)
+      .map(a => {
+        const counts = { up: a.up, down: a.down, mixed: a.mixed };
+        const consensus = Object.entries(counts).sort((x, y) => y[1] - x[1])[0]?.[0] || 'mixed';
+        return {
+          instrumentId: a.instrumentId,
+          direction: consensus,
+          magnitude: a.example.magnitude || 'moderate',
+          rationale: a.example.rationale,
+          marketSnap: a.marketSnap,
+          citations: a.citations,
+        };
+      })
+      .sort((x, y) => y.citations - x.citations)
+      .slice(0, 5);
+    return top;
+  }, [disruptions]);
+
+  const severeCount = disruptions.filter(d => d.severity === 'severe').length;
+  const leadHeadline = disruptions[0]?.headline || null;
+
+  if (disruptions.length === 0) return null;
+
+  return (
+    <section className="daily-footprint">
+      <div className="daily-footprint-hd">
+        <h3>Today's Economic Footprint</h3>
+        <span className="daily-footprint-meta">
+          {disruptions.length} active · {severeCount > 0 && <><b style={{ color: 'var(--risk-h)' }}>{severeCount} severe</b> · </>}
+          <Link to="/economy">View all →</Link>
+        </span>
+      </div>
+
+      {topInstruments.length > 0 && (
+        <div className="daily-footprint-chips">
+          {topInstruments.map(i => (
+            <InstrumentChip key={i.instrumentId} instrument={i} marketSnap={i.marketSnap} compact />
+          ))}
+        </div>
+      )}
+
+      {leadHeadline && (
+        <p className="daily-footprint-lead">
+          <SeverityBadge level={disruptions[0].severity} size="sm" /> {leadHeadline}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export default function DailyPage() {
   const { dateKey: paramDateKey } = useParams();
   const { loading: authLoading } = useAuth();
@@ -84,6 +161,9 @@ export default function DailyPage() {
   const risingTraj = brief.risingThread?.trajectory
     ? (TRAJECTORY_LABELS[brief.risingThread.trajectory] || TRAJECTORY_LABELS.stable)
     : null;
+
+  // Footprint will be rendered inside the page body below
+
   const countryRisk = brief.countryToWatch?.riskLevel
     ? (RISK_COLORS[brief.countryToWatch.riskLevel] || RISK_COLORS.moderate)
     : null;
@@ -202,6 +282,8 @@ export default function DailyPage() {
           )}
         </section>
       )}
+
+      <EconomicFootprint />
 
       {/* Top Stories */}
       {brief.topStories?.length > 0 && (

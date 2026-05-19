@@ -536,3 +536,66 @@
   .daily-method-grid { grid-template-columns: 1fr 1fr; }
   .daily-masthead-bar { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
+
+/* Today's Economic Footprint */
+.daily-footprint {
+  margin: 32px 0 24px;
+  padding: 20px 24px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.daily-footprint-hd {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.daily-footprint-hd h3 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--ink);
+}
+
+.daily-footprint-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.daily-footprint-meta a {
+  color: var(--accent);
+  text-decoration: none;
+  margin-left: 6px;
+  font-weight: 600;
+}
+
+.daily-footprint-meta a:hover { text-decoration: underline; }
+
+.daily-footprint-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.daily-footprint-chips .ichip + .ichip {
+  margin-top: 0;
+}
+
+.daily-footprint-lead {
+  font-family: var(--serif);
+  font-size: 14px;
+  color: var(--ink-mid);
+  line-height: 1.5;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}

@@ -87,6 +87,19 @@ const VALID_SEVERITIES = new Set(['minor', 'moderate', 'severe']);
 const VALID_CONFIDENCES = new Set(['low', 'medium', 'high']);
 const VALID_HORIZONS = new Set(['immediate', 'days', 'weeks', 'months']);
 
+// Severity → severityScore band. Used by consistency-check downgrades.
+const SEVERITY_BAND = {
+  severe:   { min: 70, max: 100 },
+  moderate: { min: 40, max: 69 },
+  minor:    { min: 0,  max: 39 },
+};
+
+// Hours of staleness before a marketContext instrument is flagged.
+// FX (Frankfurter) is intrinsically daily — ECB reference rates only update once/day.
+// Commodities/Equities/Rates/Crypto refresh hourly so a 4-hour threshold is appropriate.
+const MARKET_STALE_HOURS = 4;
+const MARKET_STALE_HOURS_FX = 30; // FX given a 30h budget (daily refresh + room for weekends)
+
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
 
@@ -428,7 +441,7 @@ Prefer an analog ID from this catalog over inventing one. If none truly fits, om
 3. NEVER emit price levels or percentage moves. Use direction (up/down/mixed) and magnitude (small/moderate/large).
 4. If the thread has no genuine economic dimension, return {"hasImpact": false}. Do NOT invent disruption.
 5. Pick 2-5 instruments most relevant to this story. Do NOT list every related ticker.
-6. Mechanism must cite at least one topicId inline using square brackets, e.g. "[topic-abc]".
+6. Mechanism MUST contain at least one inline citation in square brackets, e.g. "[topic-abc]" — this is non-optional. Records without an inline mechanism citation are flagged as low quality. Example: "Hormuz transits ~21% of crude [topic-abc]. Tehran's threat is credible per [topic-def]."
 7. winners/losers: 2-4 each, type ∈ {country, sector, company}.
 8. historicalAnalog.event must be a real, named past event. caveat must note how this differs.
 
@@ -485,7 +498,9 @@ async function generateEconomicImpact(thread, threadAnalyses, topicSummaries, ma
 
   if (parsed.hasImpact === false) return { hasImpact: false };
 
-  return validateImpact(parsed, thread, fxKeys);
+  const validated = validateImpact(parsed, thread, fxKeys);
+  // Phase A: post-validation consistency-check downgrade pass
+  return applyConsistencyChecks(validated, thread, marketContext);
 }
 
 function validateImpact(parsed, thread, fxKeys) {
@@ -562,6 +577,102 @@ function validateImpact(parsed, thread, fxKeys) {
     watchSignals: (Array.isArray(parsed.watchSignals) ? parsed.watchSignals : []).slice(0, 6).map(s => String(s).slice(0, 200)),
     citedTopicIds,
   };
+}
+
+// ─── Internal consistency checks (Phase A of quality evaluation) ─────────────
+// Post-validateImpact downgrade pass. Failures DOWNGRADE fields rather than
+// tombstone — better to publish a conservative version than nothing.
+// See ECONOMIC_DISRUPTION_QUALITY_PLAN.md for the full rationale.
+
+function applyConsistencyChecks(record, thread, marketContext) {
+  if (!record || record.hasImpact === false) return record;
+  const flags = [];
+  const out = { ...record };
+
+  // 1. severityScore must be in band for the severity enum.
+  // Auto-clamp the score; don't tombstone.
+  const band = SEVERITY_BAND[out.severity];
+  if (band && (out.severityScore < band.min || out.severityScore > band.max)) {
+    flags.push(`severity_score_clamped:${out.severity}<-${out.severityScore}`);
+    out.severityScore = Math.max(band.min, Math.min(band.max, out.severityScore));
+  }
+
+  // 2. High confidence with thin evidence → downgrade to medium.
+  // "Thin" = 1 instrument AND fewer than 2 cited topicIds.
+  if (out.confidence === 'high'
+      && (out.instruments || []).length <= 1
+      && (out.citedTopicIds || []).length < 2) {
+    flags.push('high_confidence_thin_evidence');
+    out.confidence = 'medium';
+  }
+
+  // 3. large magnitude with low confidence → downgrade per-instrument magnitude.
+  if (out.confidence === 'low' && Array.isArray(out.instruments)) {
+    out.instruments = out.instruments.map(i => {
+      if (i.magnitude === 'large') {
+        flags.push(`large_magnitude_low_confidence:${i.instrumentId}`);
+        return { ...i, magnitude: 'moderate' };
+      }
+      return i;
+    });
+  }
+
+  // 5. Mechanism must contain an inline [topic-xxx] citation.
+  // We flag but don't auto-fix — the prompt instructs the LLM to do this.
+  if (out.mechanism && !/\[topic-[^\]]+\]/.test(out.mechanism)) {
+    flags.push('mechanism_missing_inline_citation');
+  }
+
+  // 6. Historical analog year must be plausible (1990-2030). Otherwise drop the analog.
+  if (out.historicalAnalog?.year) {
+    const y = parseInt(out.historicalAnalog.year, 10);
+    if (isNaN(y) || y < 1990 || y > 2030) {
+      flags.push(`analog_year_implausible:${out.historicalAnalog.year}`);
+      out.historicalAnalog = null;
+    }
+  }
+
+  // 7. Severe/moderate with thin winners or losers → downgrade severity one notch.
+  // Real disruptions have real losers. If the LLM can't name them, it's overstating.
+  const winnersN = (out.winners || []).length;
+  const losersN  = (out.losers  || []).length;
+  if ((out.severity === 'severe' || out.severity === 'moderate')
+      && (winnersN < 2 || losersN < 2)) {
+    flags.push(`thin_winners_losers:${out.severity}(${winnersN}w/${losersN}l)`);
+    out.severity = out.severity === 'severe' ? 'moderate' : 'minor';
+    // Reclamp severityScore into the new band
+    const newBand = SEVERITY_BAND[out.severity];
+    if (newBand) {
+      if (out.severityScore > newBand.max) out.severityScore = newBand.max;
+      if (out.severityScore < newBand.min) out.severityScore = newBand.min;
+    }
+  }
+
+  // 8. Market context staleness — flag only. Per-source thresholds:
+  // FX uses 30h budget (Frankfurter = ECB daily reference rates).
+  // Everything else uses 4h (hourly refresh expected).
+  if (marketContext && typeof marketContext === 'object') {
+    const now = Date.now();
+    const stale = [];
+    for (const [key, ctx] of Object.entries(marketContext)) {
+      if (ctx && typeof ctx === 'object' && ctx.asOf) {
+        const isFX = key === 'FX' || key.startsWith('USD/');
+        const threshold = isFX ? MARKET_STALE_HOURS_FX : MARKET_STALE_HOURS;
+        const ageHours = (now - new Date(ctx.asOf).getTime()) / 3600000;
+        if (ageHours > threshold) stale.push(key);
+      }
+    }
+    if (stale.length > 0) {
+      flags.push(`market_context_stale:${stale.join(',')}`);
+    }
+  }
+
+  if (flags.length > 0) {
+    out.qualityFlags = flags;
+    console.log(`[QC] ${thread.threadId}: ${flags.length} flag(s) - ${flags.join('; ')}`);
+  }
+
+  return out;
 }
 
 // ─── DDB writes ───────────────────────────────────────────────────────────────

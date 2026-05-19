@@ -1,0 +1,368 @@
+{
+  "_meta": {
+    "description": "Golden eval suite — frozen LLM outputs run through the validator + consistency-check pipeline. Tests for regression in our validation/downgrade logic, NOT for LLM output quality (that's Layer 2 LLM-as-judge).",
+    "version": "1",
+    "lastUpdated": "2026-05-20",
+    "purpose": "Catch regressions when validator/consistency-check logic changes. Each fixture has an input (mock LLM output + thread context) and expected post-validation result.",
+    "extendingThis": "Add fixtures when a bug class is discovered. Each fixture should test ONE class of behavior."
+  },
+  "fixtures": [
+    {
+      "id": "happy-path-severe-oil",
+      "purpose": "Valid input passes through cleanly. Baseline sanity check.",
+      "input": {
+        "thread": {
+          "threadId": "thread-hormuz-1",
+          "category": "conflict",
+          "entries": [
+            { "topicId": "topic-a", "date": "2026-05-19" },
+            { "topicId": "topic-b", "date": "2026-05-19" },
+            { "topicId": "topic-c", "date": "2026-05-20" }
+          ]
+        },
+        "fxKeys": ["USD/EUR", "USD/JPY"],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "Strait of Hormuz seizure spikes oil",
+          "severity": "severe",
+          "severityScore": 85,
+          "confidence": "high",
+          "horizon": "days",
+          "instruments": [
+            { "instrumentId": "BRENT", "direction": "up", "magnitude": "large", "rationale": "Hormuz disruption [topic-a]", "citedTopicIds": ["topic-a", "topic-b"] },
+            { "instrumentId": "GOLD",  "direction": "up", "magnitude": "moderate", "rationale": "safe haven [topic-b]", "citedTopicIds": ["topic-b"] }
+          ],
+          "winners": [{ "name": "Saudi Arabia", "type": "country", "why": "spare capacity" }, { "name": "XLE", "type": "sector", "why": "energy" }],
+          "losers": [{ "name": "Japan", "type": "country", "why": "import dependent" }, { "name": "Airlines", "type": "sector", "why": "fuel cost" }],
+          "mechanism": "Hormuz transits 21% of crude [topic-a]. Tehran's threat is credible per [topic-b].",
+          "historicalAnalog": { "event": "2019 Abqaiq attack", "year": "2019", "outcome": "Brent +15%", "caveat": "smaller in scope" },
+          "watchSignals": ["AIS tanker data"],
+          "citedTopicIds": ["topic-a", "topic-b"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "severity": "severe",
+        "severityScore": 85,
+        "confidence": "high",
+        "instrumentCount": 2,
+        "hasAnalog": true,
+        "qualityFlags": null
+      }
+    },
+    {
+      "id": "happy-path-tombstone-llm-self-rejects",
+      "purpose": "LLM correctly identifies no economic dimension and returns hasImpact:false.",
+      "input": {
+        "thread": {
+          "threadId": "thread-celebrity-feud",
+          "category": "society",
+          "entries": [{ "topicId": "topic-x", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "llmOutput": { "hasImpact": false }
+      },
+      "expected": {
+        "hasImpact": false
+      }
+    },
+    {
+      "id": "drop-hallucinated-ticker-AAPL",
+      "purpose": "LLM emits AAPL (individual stock, not in allowlist). Should be dropped.",
+      "input": {
+        "thread": {
+          "threadId": "thread-tech-policy",
+          "category": "trade",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "Tech policy hits semis",
+          "severity": "moderate", "severityScore": 50, "confidence": "medium", "horizon": "weeks",
+          "instruments": [
+            { "instrumentId": "AAPL", "direction": "down", "magnitude": "small", "rationale": "individual stock", "citedTopicIds": ["topic-1"] },
+            { "instrumentId": "SOXX", "direction": "down", "magnitude": "moderate", "rationale": "broad chips [topic-1]", "citedTopicIds": ["topic-1"] }
+          ],
+          "winners": [{ "name": "A", "type": "country", "why": "x" }, { "name": "B", "type": "sector", "why": "y" }],
+          "losers": [{ "name": "C", "type": "country", "why": "x" }, { "name": "D", "type": "sector", "why": "y" }],
+          "mechanism": "tech [topic-1]",
+          "citedTopicIds": ["topic-1"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "instrumentCount": 1,
+        "survivingInstrument": "SOXX",
+        "droppedInstrument": "AAPL"
+      }
+    },
+    {
+      "id": "drop-uncited-instrument",
+      "purpose": "Instrument with empty citedTopicIds should be dropped.",
+      "input": {
+        "thread": {
+          "threadId": "thread-conflict",
+          "category": "conflict",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "x",
+          "severity": "moderate", "severityScore": 50, "confidence": "medium", "horizon": "days",
+          "instruments": [
+            { "instrumentId": "BRENT", "direction": "up", "magnitude": "moderate", "rationale": "no cite", "citedTopicIds": [] },
+            { "instrumentId": "GOLD",  "direction": "up", "magnitude": "moderate", "rationale": "cite [topic-1]", "citedTopicIds": ["topic-1"] }
+          ],
+          "winners": [{ "name": "A", "type": "country", "why": "x" }, { "name": "B", "type": "sector", "why": "y" }],
+          "losers": [{ "name": "C", "type": "country", "why": "x" }, { "name": "D", "type": "sector", "why": "y" }],
+          "mechanism": "[topic-1]",
+          "citedTopicIds": ["topic-1"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "instrumentCount": 1,
+        "survivingInstrument": "GOLD"
+      }
+    },
+    {
+      "id": "tombstone-when-all-instruments-invalid",
+      "purpose": "All instruments fail validation → tombstone.",
+      "input": {
+        "thread": {
+          "threadId": "thread-noise",
+          "category": "politics",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "x", "severity": "severe", "severityScore": 80, "confidence": "high", "horizon": "days",
+          "instruments": [
+            { "instrumentId": "BANANA", "direction": "up", "magnitude": "moderate", "rationale": "x", "citedTopicIds": ["topic-1"] }
+          ],
+          "winners": [], "losers": [], "mechanism": "[topic-1]", "citedTopicIds": ["topic-1"]
+        }
+      },
+      "expected": {
+        "hasImpact": false
+      }
+    },
+    {
+      "id": "downgrade-severe-thin-winners",
+      "purpose": "Severe with only 1 winner → downgrade to moderate.",
+      "input": {
+        "thread": {
+          "threadId": "thread-conflict-1",
+          "category": "conflict",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }, { "topicId": "topic-2", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "x",
+          "severity": "severe", "severityScore": 85, "confidence": "medium", "horizon": "days",
+          "instruments": [
+            { "instrumentId": "BRENT", "direction": "up", "magnitude": "moderate", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] },
+            { "instrumentId": "GOLD",  "direction": "up", "magnitude": "moderate", "rationale": "[topic-2]", "citedTopicIds": ["topic-2"] }
+          ],
+          "winners": [{ "name": "Saudi", "type": "country", "why": "x" }],
+          "losers":  [{ "name": "Japan", "type": "country", "why": "x" }, { "name": "Airlines", "type": "sector", "why": "y" }],
+          "mechanism": "[topic-1]",
+          "citedTopicIds": ["topic-1", "topic-2"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "severity": "moderate",
+        "severityScore": 69,
+        "flagIncludes": "thin_winners_losers"
+      }
+    },
+    {
+      "id": "downgrade-high-confidence-thin-evidence",
+      "purpose": "High confidence + 1 instrument + 1 citation → downgrade to medium.",
+      "input": {
+        "thread": {
+          "threadId": "thread-narrow",
+          "category": "politics",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "x",
+          "severity": "moderate", "severityScore": 55, "confidence": "high", "horizon": "days",
+          "instruments": [
+            { "instrumentId": "DXY", "direction": "up", "magnitude": "moderate", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] }
+          ],
+          "winners": [{ "name": "USA", "type": "country", "why": "x" }, { "name": "B", "type": "sector", "why": "y" }],
+          "losers":  [{ "name": "EM", "type": "country", "why": "x" }, { "name": "D", "type": "sector", "why": "y" }],
+          "mechanism": "[topic-1]",
+          "citedTopicIds": ["topic-1"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "confidence": "medium",
+        "flagIncludes": "high_confidence_thin_evidence"
+      }
+    },
+    {
+      "id": "downgrade-large-magnitude-low-confidence",
+      "purpose": "Low confidence + large magnitude → downgrade magnitude.",
+      "input": {
+        "thread": {
+          "threadId": "thread-low-conf",
+          "category": "politics",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "x",
+          "severity": "moderate", "severityScore": 50, "confidence": "low", "horizon": "weeks",
+          "instruments": [
+            { "instrumentId": "BRENT", "direction": "up", "magnitude": "large", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] },
+            { "instrumentId": "GOLD",  "direction": "up", "magnitude": "small", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] }
+          ],
+          "winners": [{ "name": "A", "type": "country", "why": "x" }, { "name": "B", "type": "sector", "why": "y" }],
+          "losers":  [{ "name": "C", "type": "country", "why": "x" }, { "name": "D", "type": "sector", "why": "y" }],
+          "mechanism": "[topic-1]",
+          "citedTopicIds": ["topic-1"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "confidence": "low",
+        "brentMagnitude": "moderate",
+        "goldMagnitude": "small",
+        "flagIncludes": "large_magnitude_low_confidence"
+      }
+    },
+    {
+      "id": "drop-implausible-analog-year",
+      "purpose": "Historical analog year out of range → analog dropped, flagged.",
+      "input": {
+        "thread": {
+          "threadId": "thread-bad-analog",
+          "category": "conflict",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "x",
+          "severity": "moderate", "severityScore": 55, "confidence": "medium", "horizon": "days",
+          "instruments": [
+            { "instrumentId": "BRENT", "direction": "up", "magnitude": "moderate", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] },
+            { "instrumentId": "GOLD",  "direction": "up", "magnitude": "moderate", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] }
+          ],
+          "winners": [{ "name": "A", "type": "country", "why": "x" }, { "name": "B", "type": "sector", "why": "y" }],
+          "losers":  [{ "name": "C", "type": "country", "why": "x" }, { "name": "D", "type": "sector", "why": "y" }],
+          "mechanism": "[topic-1]",
+          "historicalAnalog": { "event": "Ancient Roman event", "year": "1850", "outcome": "x", "caveat": "y" },
+          "citedTopicIds": ["topic-1"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "hasAnalog": false,
+        "flagIncludes": "analog_year_implausible"
+      }
+    },
+    {
+      "id": "flag-mechanism-no-citation",
+      "purpose": "Mechanism missing inline [topic-xxx] citation → flagged (not auto-fixed).",
+      "input": {
+        "thread": {
+          "threadId": "thread-no-mech-cite",
+          "category": "conflict",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "x",
+          "severity": "moderate", "severityScore": 55, "confidence": "medium", "horizon": "days",
+          "instruments": [
+            { "instrumentId": "BRENT", "direction": "up", "magnitude": "moderate", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] },
+            { "instrumentId": "GOLD",  "direction": "up", "magnitude": "moderate", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] }
+          ],
+          "winners": [{ "name": "A", "type": "country", "why": "x" }, { "name": "B", "type": "sector", "why": "y" }],
+          "losers":  [{ "name": "C", "type": "country", "why": "x" }, { "name": "D", "type": "sector", "why": "y" }],
+          "mechanism": "Mechanism with no inline citation markers anywhere in the text",
+          "citedTopicIds": ["topic-1"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "flagIncludes": "mechanism_missing_inline_citation"
+      }
+    },
+    {
+      "id": "stale-market-context-flagged",
+      "purpose": "When marketContext has stale asOf (> 4h), record is flagged but unchanged.",
+      "input": {
+        "thread": {
+          "threadId": "thread-stale-mc",
+          "category": "conflict",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }]
+        },
+        "fxKeys": [],
+        "marketContextOverride": {
+          "BRENT": { "value": 82.4, "_asOfMinusHours": 8 }
+        },
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "x",
+          "severity": "moderate", "severityScore": 55, "confidence": "medium", "horizon": "days",
+          "instruments": [
+            { "instrumentId": "BRENT", "direction": "up", "magnitude": "moderate", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] },
+            { "instrumentId": "GOLD",  "direction": "up", "magnitude": "moderate", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] }
+          ],
+          "winners": [{ "name": "A", "type": "country", "why": "x" }, { "name": "B", "type": "sector", "why": "y" }],
+          "losers":  [{ "name": "C", "type": "country", "why": "x" }, { "name": "D", "type": "sector", "why": "y" }],
+          "mechanism": "[topic-1]",
+          "citedTopicIds": ["topic-1"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "flagIncludes": "market_context_stale"
+      }
+    },
+    {
+      "id": "fx-pair-from-allowlist-survives",
+      "purpose": "USD/EUR is in the runtime FX allowlist (from Frankfurter snapshot) and should be kept.",
+      "input": {
+        "thread": {
+          "threadId": "thread-fx",
+          "category": "economy",
+          "entries": [{ "topicId": "topic-1", "date": "2026-05-19" }]
+        },
+        "fxKeys": ["USD/EUR", "USD/JPY", "USD/CNY"],
+        "llmOutput": {
+          "hasImpact": true,
+          "headline": "ECB diverges from Fed",
+          "severity": "moderate", "severityScore": 50, "confidence": "medium", "horizon": "weeks",
+          "instruments": [
+            { "instrumentId": "USD/EUR", "direction": "up", "magnitude": "small", "rationale": "rate diff [topic-1]", "citedTopicIds": ["topic-1"] },
+            { "instrumentId": "DE10Y",   "direction": "down", "magnitude": "small", "rationale": "[topic-1]", "citedTopicIds": ["topic-1"] }
+          ],
+          "winners": [{ "name": "USA", "type": "country", "why": "x" }, { "name": "XLF", "type": "sector", "why": "y" }],
+          "losers":  [{ "name": "Eurozone", "type": "country", "why": "x" }, { "name": "EU exporters", "type": "sector", "why": "y" }],
+          "mechanism": "[topic-1]",
+          "citedTopicIds": ["topic-1"]
+        }
+      },
+      "expected": {
+        "hasImpact": true,
+        "instrumentCount": 2,
+        "survivingInstruments": ["USD/EUR", "DE10Y"]
+      }
+    }
+  ]
+}

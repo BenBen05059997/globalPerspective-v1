@@ -142,6 +142,66 @@ These are the public sources we lean on, in case you want to audit:
 - [FAITH (2025): hallucination benchmark for financial reasoning](https://arxiv.org/abs/2508.05201) — why we never let the LLM emit price-level numbers.
 - [FTC Disclosures 101](https://www.ftc.gov/business-guidance/resources/disclosures-101-social-media-influencers) — the legal framing for "not investment advice."
 
+## Testing
+
+Three layers, all passing as of 2026-05-20:
+
+### Backend — validator unit tests (no AWS, no LLM)
+
+31 tests covering the closed instrument allowlist, citation requirement, enum normalization, and tombstone logic. No AWS credentials or DeepSeek calls — runs entirely against the Lambda source with a stubbed module loader.
+
+```bash
+node amplify/backend/function/newsEconomicImpact/test/validator.test.js
+```
+
+What gets verified:
+- Valid input passes through with all fields preserved
+- Unknown tickers (AAPL, RTX, BANANA) get dropped server-side
+- Instruments with empty `citedTopicIds` get dropped
+- Citations to topicIds outside the thread's entries get dropped
+- Invalid direction enum (`higher`) → instrument dropped
+- Invalid magnitude (`mega-large`) → normalized to `moderate`
+- When all instruments are invalid → tombstone (`hasImpact: false`)
+- When `citedTopicIds` is empty → tombstone
+- FX pairs from the runtime FX allowlist accepted (USD/EUR)
+- Allowlist sanity — BRENT/INDA/EIS/BTC/ETH IN, NSEI/TA125/AAPL/RTX/TSM OUT
+
+### Frontend — vitest hook tests
+
+12 tests for `useEconomicImpact` and `useDisruptionsList` covering fetch lifecycle, localStorage cache, null inputs, error fallbacks, and filter passing. Mirrors the existing `useSystemsAnalysis.test.js` pattern.
+
+```bash
+cd global-perspectives-starter/frontend
+npm test                                               # full suite (149 tests)
+npx vitest run src/test/useEconomicImpact.test.js      # just this file
+```
+
+### Live end-to-end (manual)
+
+After deploy, smoke-test against the real API:
+
+```bash
+ENDPOINT="https://ba4q3fnwq6.execute-api.ap-northeast-1.amazonaws.com/default/proxy"
+
+# List active disruptions
+curl -s -X POST "$ENDPOINT" -H 'Content-Type: application/json' \
+  -d '{"action":"economic_impact_list","payload":{"limit":5}}' | jq
+
+# Top movers (most-cited instruments)
+curl -s -X POST "$ENDPOINT" -H 'Content-Type: application/json' \
+  -d '{"action":"economic_top_movers","payload":{"limit":10}}' | jq
+
+# Single thread lookup
+curl -s -X POST "$ENDPOINT" -H 'Content-Type: application/json' \
+  -d '{"action":"economic_impact","payload":{"threadId":"<id>"}}' | jq
+```
+
+### What's deliberately NOT tested in code
+
+- **Real LLM output quality.** Reviewed manually against the red-flag table (random tickers? uncited claims? wrong direction? made-up analogs?). Re-review after material prompt or model changes.
+- **End-to-end with real news.** Validated once by running the Lambda against production DDB during deploy. Re-validate after any change to the data pipeline.
+- **Click-through UX flows.** Manual `npm run dev` + browser. Per [`feedback_test_ui_in_browser.md`](../../../../.claude/projects/-Users-benlai-Downloads-globalPerspective-v1/memory/feedback_test_ui_in_browser.md): every control gets clicked before claiming done.
+
 ## For developers
 
 If you want to extend this:

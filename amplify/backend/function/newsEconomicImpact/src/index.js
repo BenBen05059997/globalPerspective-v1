@@ -546,10 +546,20 @@ function validateImpact(parsed, thread, fxKeys) {
     why: String(x.why || '').slice(0, 200),
   })).filter(x => x.name);
 
-  // Citation list
+  // Citation list — combine explicit citedTopicIds, per-instrument cites, and
+  // inline [id] mentions inside mechanism (the LLM sometimes cites in prose
+  // without echoing into the top-level array).
+  const mechanismInline = [];
+  const mech = parsed.mechanism || '';
+  const reBracket = /\[([^\]\n]+)\]/g;
+  let bm;
+  while ((bm = reBracket.exec(mech)) !== null) mechanismInline.push(bm[1]);
   const citedTopicIds = [...new Set(
-    [...(parsed.citedTopicIds || []), ...instruments.flatMap(i => i.citedTopicIds)]
-      .filter(id => validTopicIds.has(id))
+    [
+      ...(parsed.citedTopicIds || []),
+      ...instruments.flatMap(i => i.citedTopicIds),
+      ...mechanismInline,
+    ].filter(id => validTopicIds.has(id))
   )];
 
   if (citedTopicIds.length === 0) {
@@ -617,10 +627,13 @@ function applyConsistencyChecks(record, thread, marketContext) {
     });
   }
 
-  // 5. Mechanism must contain an inline [topic-xxx] citation.
-  // We flag but don't auto-fix — the prompt instructs the LLM to do this.
-  if (out.mechanism && !/\[topic-[^\]]+\]/.test(out.mechanism)) {
-    flags.push('mechanism_missing_inline_citation');
+  // 5. Mechanism must contain an inline citation matching at least one cited topicId.
+  // We don't assume a "topic-" prefix — production topicIds are title-slug-N format
+  // (e.g., "Alberta to hold October 2026 referendum-5"). Match real IDs as substrings.
+  if (out.mechanism) {
+    const citeList = out.citedTopicIds || [];
+    const found = citeList.some(id => out.mechanism.includes(`[${id}]`));
+    if (!found) flags.push('mechanism_missing_inline_citation');
   }
 
   // 6. Historical analog year must be plausible (1990-2030). Otherwise drop the analog.

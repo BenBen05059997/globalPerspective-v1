@@ -33,7 +33,10 @@ const GEMINI_ENDPOINT = process.env.GROK_API_URL || 'https://generativelanguage.
 const INTER_CALL_DELAY_MS = parseInt(process.env.INTER_CALL_DELAY_MS || '13000', 10);
 const MAX_RECORDS = parseInt(process.env.QUALITY_MAX_RECORDS || '15', 10);
 const RECENT_DAYS = parseInt(process.env.QUALITY_RECENT_DAYS || '7', 10);
-const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '500', 10);
+// Gemini 2.5 Flash uses "thinking" tokens that count against max_tokens. At 1200
+// the model burns most of the budget on reasoning and truncates the JSON output.
+// 4000 reliably leaves room for the 5-axis judgment + reasons after thinking.
+const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '4000', 10);
 
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const ECON_PK_PREFIX = 'ECON#THREAD#';
@@ -261,10 +264,15 @@ async function judgeRecord(record, threadAnalysis, topicSummaries) {
   let parsed;
   try { parsed = JSON.parse(rawText); } catch { throw new Error(`Gemini response not JSON: ${rawText.slice(0, 200)}`); }
   const content = parsed?.choices?.[0]?.message?.content || '';
+  const finishReason = parsed?.choices?.[0]?.finish_reason || '(unknown)';
+  const usage = parsed?.usage || null;
   const cleaned = stripCodeFence(content);
 
   let judgment;
-  try { judgment = JSON.parse(cleaned); } catch { throw new Error(`Judgment JSON parse failed: ${cleaned.slice(0, 200)}`); }
+  try { judgment = JSON.parse(cleaned); } catch {
+    // Surface full diagnostic so we can tell truncation from format errors.
+    throw new Error(`Judgment JSON parse failed (finish=${finishReason}, usage=${JSON.stringify(usage)}, len=${cleaned.length}): ${cleaned.slice(0, 600)}`);
+  }
 
   return validateJudgment(judgment);
 }

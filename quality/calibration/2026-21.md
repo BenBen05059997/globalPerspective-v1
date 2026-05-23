@@ -21,6 +21,10 @@
 | judge coverage (>24h) | 0.0% | ≥ 80% | < 50% |
 | judge low-quality rate | — | 5–25% | > 30% or < 2% |
 
+## Drift detection
+
+_Need ≥5 historical snapshots to compute sigma alarms; have 0._
+
 ## Horizon mix
 
 - immediate: 0 (0.0%)

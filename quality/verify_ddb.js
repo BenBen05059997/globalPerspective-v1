@@ -552,8 +552,21 @@ function writeReport(cr, live, tombs, inWindow, allRecords) {
   fs.writeFileSync(out, lines.join('\n'));
   fs.writeFileSync(latest, lines.join('\n'));
   savePrevState(outDir, cr);
+  pruneOldReports(outDir, 20);
   console.log(`Report: ${out}`);
   return summary.requiredOk;
+}
+
+// Keep only the most recent N iteration reports. The summary docs (iteration-1-summary.md,
+// iteration-2-summary.md), state file, and latest.md are preserved regardless.
+function pruneOldReports(outDir, keep) {
+  const files = fs.readdirSync(outDir)
+    .filter(f => /^iteration-2\d{3}-\d{2}-\d{2}T.*\.md$/.test(f))
+    .map(f => ({ name: f, mtime: fs.statSync(path.join(outDir, f)).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime);
+  for (const f of files.slice(keep)) {
+    try { fs.unlinkSync(path.join(outDir, f.name)); } catch {}
+  }
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────

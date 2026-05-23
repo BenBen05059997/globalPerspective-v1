@@ -85,6 +85,17 @@ must_have "$SRC/components/WorldMapV2.jsx" "economy" "exposes economy lens"
 must_have "$SRC/components/Disclosures.jsx" "Economic Disruption" "has Economic Disruption section"
 must_have "$SRC/components/Disclosures.jsx" "[Aa]uto" "mentions automated quality judge"
 
+# ─── QualityFlag propagation contract (ECONOMIC_DISRUPTION.md §"Quality flag propagation") ───
+# Phase B's verdict flag must surface in all 3 atoms that render economic content.
+# One backend deploy → flag visible everywhere, only because each atom imports
+# QualityFlag itself. Remove any of these imports → flag goes dark on that surface.
+must_have "$SRC/components/atoms/MechanismCard.jsx"     "import QualityFlag" "QualityFlag wired into MechanismCard"
+must_have "$SRC/components/atoms/DisruptionRow.jsx"     "import QualityFlag" "QualityFlag wired into DisruptionRow"
+must_have "$SRC/components/atoms/DisruptionPreview.jsx" "import QualityFlag" "QualityFlag wired into DisruptionPreview"
+must_have "$SRC/components/atoms/MechanismCard.jsx"     "<QualityFlag" "QualityFlag rendered in MechanismCard"
+must_have "$SRC/components/atoms/DisruptionRow.jsx"     "<QualityFlag" "QualityFlag rendered in DisruptionRow"
+must_have "$SRC/components/atoms/DisruptionPreview.jsx" "<QualityFlag" "QualityFlag rendered in DisruptionPreview"
+
 # ─── §9.11 negative guards — pages that intentionally do NOT carry economic UI ───
 must_not_have "$SRC/components/WeeklyPage.jsx" "useDisruptionsList|useEconomicImpact|useTopMovers|MechanismCard|DisruptionRow|DisruptionPreview" "no economic hooks/atoms"
 

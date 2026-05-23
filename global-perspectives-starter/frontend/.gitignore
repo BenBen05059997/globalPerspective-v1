@@ -25,3 +25,9 @@ dist-ssr
  
 # Local runtime config (do not commit real credentials)
 public/config.js
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

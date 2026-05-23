@@ -92,6 +92,36 @@ function band(metric, value, healthy, alarmIf) {
   return `| ${metric} | ${value} | ${healthy} | ${alarmIf} |`;
 }
 
+// ─── History persistence ────────────────────────────────────────────────────
+// Snapshot key metrics each run so we can detect drift over time.
+function loadHistory(outDir) {
+  const p = path.join(outDir, '_history.json');
+  if (!fs.existsSync(p)) return [];
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return []; }
+}
+function appendHistory(outDir, snap) {
+  const p = path.join(outDir, '_history.json');
+  const hist = loadHistory(outDir);
+  hist.push(snap);
+  // Keep last 90 snapshots — enough for rolling 30/60/90-day windows.
+  const trimmed = hist.slice(-90);
+  fs.writeFileSync(p, JSON.stringify(trimmed, null, 2));
+  return trimmed;
+}
+function mean(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
+function stdev(arr) {
+  if (arr.length < 2) return 0;
+  const m = mean(arr);
+  const v = arr.reduce((acc, x) => acc + (x - m) ** 2, 0) / (arr.length - 1);
+  return Math.sqrt(v);
+}
+function zscore(curr, history) {
+  if (history.length < 5) return null; // need ≥ 5 samples for a stable baseline
+  const m = mean(history);
+  const s = stdev(history);
+  return s === 0 ? 0 : (curr - m) / s;
+}
+
 function buildReport(records) {
   const inWindow = records.filter(r => withinWindow(r.generatedAt, WINDOW_DAYS));
   const live = inWindow.filter(r => r.hasImpact === true);
@@ -181,17 +211,94 @@ function buildReport(records) {
   return lines.join('\n');
 }
 
+function buildSnapshot(records) {
+  const inWindow = records.filter(r => withinWindow(r.generatedAt, WINDOW_DAYS));
+  const live = inWindow.filter(r => r.hasImpact === true);
+  const tombs = inWindow.filter(r => r.hasImpact === false);
+  const sev = { minor: 0, moderate: 0, severe: 0 };
+  const conf = { low: 0, medium: 0, high: 0 };
+  let instCount = 0;
+  let flagsTotal = 0;
+  for (const r of live) {
+    sev[r.severity] = (sev[r.severity] || 0) + 1;
+    conf[r.confidence] = (conf[r.confidence] || 0) + 1;
+    instCount += (r.instruments || []).length;
+    flagsTotal += (r.qualityFlags || []).length;
+  }
+  return {
+    ts: new Date().toISOString(),
+    n_live: live.length,
+    n_tomb: tombs.length,
+    severe_pct: live.length ? 100 * sev.severe / live.length : 0,
+    moderate_pct: live.length ? 100 * sev.moderate / live.length : 0,
+    minor_pct: live.length ? 100 * sev.minor / live.length : 0,
+    tomb_pct: inWindow.length ? 100 * tombs.length / inWindow.length : 0,
+    mean_instruments: live.length ? instCount / live.length : 0,
+    mean_flags: live.length ? flagsTotal / live.length : 0,
+    high_conf_pct: live.length ? 100 * conf.high / live.length : 0,
+  };
+}
+
+function buildDriftSection(curr, history) {
+  if (history.length < 5) {
+    return ['## Drift detection', '', `_Need ≥5 historical snapshots to compute sigma alarms; have ${history.length}._`, ''];
+  }
+  const lines = [];
+  lines.push('## Drift detection (z-score vs rolling history)');
+  lines.push('');
+  lines.push('| Metric | Current | Mean (history) | σ | z | Status |');
+  lines.push('|---|---:|---:|---:|---:|:--:|');
+  const fields = [
+    ['severe_pct',       '% severe'],
+    ['moderate_pct',     '% moderate'],
+    ['minor_pct',        '% minor'],
+    ['tomb_pct',         'tombstone rate'],
+    ['mean_instruments', 'mean instruments/record'],
+    ['high_conf_pct',    '% high confidence'],
+    ['mean_flags',       'mean Phase A flags'],
+  ];
+  for (const [k, label] of fields) {
+    const series = history.map(h => h[k]).filter(v => typeof v === 'number');
+    const m = mean(series);
+    const s = stdev(series);
+    const z = zscore(curr[k], series);
+    let status = '·';
+    if (z != null) {
+      const absz = Math.abs(z);
+      if (absz >= 3) status = '🚨 SEVERE';
+      else if (absz >= 2) status = '⚠️ alarm';
+      else if (absz >= 1) status = '🟡 watch';
+      else status = '✅';
+    }
+    lines.push(`| ${label} | ${curr[k].toFixed(2)} | ${m.toFixed(2)} | ${s.toFixed(2)} | ${z == null ? '—' : z.toFixed(2)} | ${status} |`);
+  }
+  lines.push('');
+  return lines;
+}
+
 function main() {
   console.log(`Scanning ${TABLE}...`);
   const records = ddbScanAll();
   console.log(`Got ${records.length} ECON records.`);
-  const report = buildReport(records);
+
   const outDir = path.join(__dirname, 'calibration');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+  const snap = buildSnapshot(records);
+  const history = appendHistory(outDir, snap);
+  // Drift compares current vs the prior snapshots only (excludes current we just appended)
+  const driftLines = buildDriftSection(snap, history.slice(0, -1));
+
+  const baseReport = buildReport(records);
+  const report = baseReport.split('## Horizon mix')[0]
+    + driftLines.join('\n') + '\n## Horizon mix'
+    + baseReport.split('## Horizon mix')[1];
+
   const out = path.join(outDir, `${isoWeek()}.md`);
   fs.writeFileSync(out, report);
   fs.writeFileSync(path.join(outDir, 'latest.md'), report);
   console.log(`Report: ${out}`);
+  console.log(`History: ${history.length} snapshots in _history.json`);
 }
 
 main();

@@ -13,7 +13,11 @@ set -u
 cd "$(dirname "$0")/.."
 
 FAST=0
-for arg in "$@"; do [ "$arg" = "--fast" ] && FAST=1; done
+WITH_E2E=0
+for arg in "$@"; do
+  [ "$arg" = "--fast" ] && FAST=1
+  [ "$arg" = "--with-e2e" ] && WITH_E2E=1
+done
 
 PASS=0
 FAIL=0
@@ -65,6 +69,12 @@ else
   # ─── L2.5 — Lambda + cron health ───
   run_layer "L2.5 Lambda + cron health (verify_lambdas.sh)" \
     bash quality/verify_lambdas.sh
+fi
+
+# ─── L8 — Browser E2E (opt-in; needs `npm run e2e:install` once per clone) ───
+if [ "$WITH_E2E" -eq 1 ]; then
+  run_layer "L8  Playwright E2E click-through" \
+    bash -c "cd global-perspectives-starter/frontend && npx playwright test"
 fi
 
 # ─── Summary ───

@@ -1,6 +1,42 @@
 # Economic Disruption — Output Quality Evaluation Plan
 
-**Status:** plan, not yet implemented. Sibling to [`ECONOMIC_DISRUPTION.md`](ECONOMIC_DISRUPTION.md) (the concept doc) and [`ECONOMIC_DISRUPTION_PLAN.md`](ECONOMIC_DISRUPTION_PLAN.md) (the implementation plan).
+Sibling to [`ECONOMIC_DISRUPTION.md`](ECONOMIC_DISRUPTION.md) (concept) and [`ECONOMIC_DISRUPTION_PLAN.md`](ECONOMIC_DISRUPTION_PLAN.md) (implementation). The plan below is the original spec — see **Status & Roadmap** for what's actually shipped and when to check next.
+
+---
+
+## Status & Roadmap (updated 2026-05-20)
+
+| Phase | Layer | Status | Where it lives |
+|---|---|---|---|
+| **A** | Layer 1 (consistency checks) + Layer 5 (golden evals) | ✅ Shipped 2026-05-19 | `applyConsistencyChecks` in `amplify/backend/function/newsEconomicImpact/src/index.js` · `quality/golden_evals.json` (12 fixtures) · `quality/run_golden_evals.js` (38 checks). Validator: 54 tests. |
+| **B** | Layer 2 (LLM-as-judge) | ✅ Shipped 2026-05-20 | `newsEconomicQuality` Lambda · EventBridge `TriggerNewsEconomicQuality` cron(0 8) · frontend `QualityFlag` atom · `Disclosures.jsx` methodology paragraph · 26-test suite. |
+| **C** | Layer 4 (human spot-check) | ✅ Infrastructure shipped 2026-05-20; data accumulating | `quality/pick_weekly_review.js` · `quality/build_dashboard.js` · `quality/reviews/2026-21.md` (first week, awaits grading). |
+| **D** | Layer 3 (direction-call backtest) | ⏸ Blocked — needs 30+ days of records | First ECON# records 2026-05-19, so unblocks **~2026-06-18**. Not started. |
+| **E** | Calibrate judge against human | ⏸ Blocked — needs ≥4 weeks of human reviews | First review week is 2026-21. Earliest meaningful comparison **~2026-06-17** (4 weeks logged). |
+
+### Concrete check-back dates
+
+- **2026-05-21** (next day) — verify the 08:00 UTC judge cron ran successfully against today's records. Check by querying DDB for `quality_judged_at` field on `ECON#THREAD#*` items. Expectation: 15 records (cap) have `qualityScores`. Logs: `aws logs tail /aws/lambda/newsEconomicQuality --since 24h`.
+- **Every Monday** — run `node quality/pick_weekly_review.js`, fill rubrics through the week, then `node quality/build_dashboard.js`. First three weeks are baseline only — don't draw conclusions yet.
+- **~2026-06-17** — fifth week of human reviews available. Start comparing per-record human grades against auto-judge `is_low_quality` flag. Mismatches → revise the judge prompt in `newsEconomicQuality/src/index.js` `buildJudgePrompt()`.
+- **~2026-06-18** — 30 days of ECON# records exist. Start Phase D: build the backtest Lambda + `/economy/backtest` page (spec at §"Layer 3"). Estimated 1.5 days.
+- **~2026-08-20** (~3 months in) — sufficient data to publish a public "would-publish %" or "BRENT 7d hit rate" on `/disclosures`. Plan §"What v2 + v3 add" calls this the "credibility moat."
+
+### What to NOT do in the interim
+
+- **Don't tune the judge prompt yet.** With <4 weeks of human reviews, any change is calibrating against noise. Phase E requires Phase C data.
+- **Don't widen `LOW_QUALITY_THRESHOLD` past 2.** That threshold is the contract between judge output and the frontend `QualityFlag` chip; moving it silently inflates or deflates the visible quality flag rate.
+- **Don't add new instruments to the allowlist** in `newsEconomicImpact/src/index.js` without re-running the golden evals — the 38 checks include allowlist-bound assertions.
+- **Don't publish dashboard numbers externally until Month 3.** N is too small; readers will overweight noise.
+
+### Open questions still on the table (verbatim from §"Open questions" below)
+
+1. By-instrument vs aggregated public hit rate?
+2. Gemini 2.5 Flash judge vs Claude Sonnet judge — A/B test once data exists.
+3. Who owns the weekly human review long-term?
+4. What's the operator action on a low-quality record? (Hide? Mark? Re-run?)
+
+---
 
 ## Why this needs a plan
 

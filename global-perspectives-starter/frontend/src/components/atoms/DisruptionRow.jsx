@@ -7,6 +7,7 @@
 import { Link } from 'react-router-dom';
 import SeverityBadge from './SeverityBadge.jsx';
 import DirectionArrow from './DirectionArrow.jsx';
+import QualityFlag from './QualityFlag.jsx';
 
 function timeAgo(iso) {
   if (!iso) return null;
@@ -32,6 +33,7 @@ export default function DisruptionRow({ disruption, showTime = true }) {
       <div className="drow-head">
         <SeverityBadge level={severity} score={severityScore} size="sm" />
         <div className="drow-headline">{headline || 'Disruption detected'}</div>
+        <QualityFlag impact={disruption} size="sm" />
       </div>
 
       {top.length > 0 && (

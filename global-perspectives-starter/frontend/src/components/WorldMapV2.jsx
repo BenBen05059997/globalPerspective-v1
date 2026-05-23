@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import SeverityBadge from './atoms/SeverityBadge';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import { useCountrySignal } from '../hooks/useCountrySignal';
@@ -232,6 +233,21 @@ export default function WorldMapV2() {
   }, [allDisruptions, nameToISO]);
   const econRef = useRef({});
   econRef.current = econByISO;
+
+  // Selected-country disruptions — top 3 active records mentioning the country
+  // by name in winners/losers. Used by the detail panel.
+  const selectedCountryDisruptions = useMemo(() => {
+    if (!selectedName) return [];
+    const sevRank = { severe: 3, moderate: 2, minor: 1 };
+    return allDisruptions
+      .filter(d => {
+        const inWinners = (d.winners || []).some(w => w.type === 'country' && w.name === selectedName);
+        const inLosers  = (d.losers  || []).some(l => l.type === 'country' && l.name === selectedName);
+        return inWinners || inLosers;
+      })
+      .sort((a, b) => (sevRank[b.severity] || 0) - (sevRank[a.severity] || 0))
+      .slice(0, 3);
+  }, [allDisruptions, selectedName]);
 
   // Keep nameToISO ref in sync for drawMap (imperative context)
   useEffect(() => { nameToISORef.current = nameToISO; }, [nameToISO]);
@@ -1075,6 +1091,37 @@ export default function WorldMapV2() {
                   </div>
                 );
               })()}
+
+              {/* Economic Disruption — top-3 active records mentioning this country */}
+              {selectedCountryDisruptions.length > 0 && (
+                <div className="section">
+                  <h4 style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.08em', color: 'var(--ink-dim)', margin: '0 0 8px 0' }}>
+                    ECONOMIC DISRUPTION
+                    <span style={{ float: 'right', color: 'var(--ink-faint)' }}>{selectedCountryDisruptions.length} active</span>
+                  </h4>
+                  {selectedCountryDisruptions.map((d, i) => (
+                    <Link
+                      key={d.scopeId || i}
+                      to={`/weekly/thread/${encodeURIComponent(d.scopeId || '')}?tab=economy`}
+                      style={{
+                        display: 'block',
+                        padding: '6px 0',
+                        borderBottom: i < selectedCountryDisruptions.length - 1 ? '1px dotted var(--line)' : 'none',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <SeverityBadge level={d.severity} size="sm" />
+                        <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-faint)', letterSpacing: '0.04em' }}>
+                          {(d.winners || []).some(w => w.name === selectedName) ? 'WINNER' : 'LOSER'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12.5, lineHeight: 1.35, color: 'var(--ink)' }}>{d.headline}</div>
+                    </Link>
+                  ))}
+                </div>
+              )}
 
               {/* Intel headline + trajectory */}
               {intel?.headline && (

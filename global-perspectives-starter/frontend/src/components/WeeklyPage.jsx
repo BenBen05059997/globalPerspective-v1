@@ -4,8 +4,6 @@ import IntelligenceLoader from './IntelligenceLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
-import { useDisruptionsList } from '../hooks/useDisruptionsList';
-import SeverityBadge from './atoms/SeverityBadge';
 import { getTopicRegion } from '../utils/countryMapping';
 import { formatDateLabel } from '../utils/dateUtils';
 import TrendBadge, { getTrend } from './TrendBadge';
@@ -270,7 +268,7 @@ function FeaturedSection({ threads, threadAnalyses, compact = false }) {
 
 // ─── Story Card ───────────────────────────────────────────────────────────────
 
-function StoryCard({ thread, analysis, disruption }) {
+function StoryCard({ thread, analysis }) {
   const isMulti = thread.articleCount > 1;
   const displayTitle = analysis?.threadTitle || thread.latestTitle;
   const category = thread.entries[0]?.category?.toLowerCase();
@@ -320,9 +318,6 @@ function StoryCard({ thread, analysis, disruption }) {
               {isMulti ? ` · ${thread.dayCount} day${thread.dayCount !== 1 ? 's' : ''}` : ''}
             </span>
             <TrendBadge entries={thread.entries} />
-            {disruption?.hasImpact !== false && disruption?.severity && (
-              <SeverityBadge level={disruption.severity} size="sm" />
-            )}
             <span className="story-activity-dot" style={{ color: activity.color }}>
               ● {activity.label}
             </span>
@@ -547,14 +542,6 @@ export default function WeeklyPage() {
     [threads],
   );
   const { analyses: threadAnalyses } = useThreadAnalyses(qualifyingThreadIds);
-  const { data: allDisruptions = [] } = useDisruptionsList({ limit: 200 });
-  const disruptionsByThread = useMemo(() => {
-    const map = {};
-    for (const d of allDisruptions) {
-      if (d.scopeId) map[d.scopeId] = d;
-    }
-    return map;
-  }, [allDisruptions]);
 
   const sortedThreads = useMemo(() => {
     const copy = [...threads];
@@ -815,7 +802,7 @@ export default function WeeklyPage() {
                 {!isCollapsed && (
                   <>
                     {visibleThreads.map(thread => (
-                      <StoryCard key={thread.threadId} thread={thread} analysis={threadAnalyses?.[thread.threadId]} disruption={disruptionsByThread[thread.threadId]} />
+                      <StoryCard key={thread.threadId} thread={thread} analysis={threadAnalyses?.[thread.threadId]} />
                     ))}
                     {hiddenCount > 0 && (
                       <button

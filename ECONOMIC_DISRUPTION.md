@@ -107,6 +107,52 @@ The catalog is intentionally finite. When the LLM cites an event we don't have, 
 
 **Marginal cost:** ~$0.30/month at current daily volume.
 
+## Where it surfaces in the UI
+
+The Economic Disruption layer is intentionally cross-cutting — almost every page that shows news content also surfaces the economic dimension. The flagship `/economy` page is the index; everywhere else, a `SeverityBadge` chip or short preview links *into* the relevant thread's Economy tab so the full record (`MechanismCard`) is one click away.
+
+### Per-page surface map
+
+| Page | What you see | Hook(s) | UI atom(s) |
+|---|---|---|---|
+| **`/economy`** — flagship index (`EconomyPage.jsx`) | 3-col EditorialShell: left rail facets (severity / horizon / instrument / country), center severity-grouped list of all active disruptions, right rail "Today's Top Movers" panel | `useDisruptionsList`, `useTopMovers` | `DisruptionRow`, `SeverityBadge` |
+| **`/`** — Home (`Home.jsx`) | Inline `SeverityBadge` chip on each topic-card kicker line. Click → `/weekly/thread/{id}?tab=economy` | `useDisruptionsList` (keyed by `scopeId`) | `SeverityBadge` |
+| **`/daily`** — Daily Brief (`DailyPage.jsx`) | "Today's Economic Footprint" section between masthead and Top Stories. Lead disruption headline + severity badge + "View all →" link to `/economy` | `useDisruptionsList` | `SeverityBadge` |
+| **`/weekly/thread/:id`** — Thread page (`ThreadPage.jsx`) | (a) 4th content tab "Economy" rendering the full `MechanismCard`: severity meta · instruments · mechanism paragraph · winners/losers · historical analog · watch signals. (b) Right-rail `DisruptionPreview` that, when clicked, jumps to the Economy tab. | `useEconomicImpact(threadId)` | `MechanismCard`, `DisruptionPreview` |
+| **`/weekly/country/:name`** — Country page (`CountryPage.jsx`) | Right-rail "Economic Disruption" panel — top 3 disruptions filtered by country, each row a deep link to `/weekly/thread/{scopeId}?tab=economy` | `useDisruptionsList({ country, limit: 5 })` | `SeverityBadge` |
+| **`/weekly`** — Weekly archive (`WeeklyPage.jsx`) | `SeverityBadge` inline on each StoryCard where the underlying thread has a disruption | `useDisruptionsList` (max-per-thread map) | `SeverityBadge` |
+| **`/weekly/countries`** — Country list (`CountryListPage.jsx`) | `SeverityBadge` chip on each country card + new **"Disruption"** sort option (orders countries by max active severity) | `useDisruptionsList` (max-per-country map) | `SeverityBadge` |
+| **`/map`** — WorldMapV2 (`WorldMapV2.jsx`) | 4th lens **"Economy"** in the lens menu. When toggled, draws severity-colored rings on affected countries' centroids | `useDisruptionsList({ limit: 200 })` | (D3, no atom) |
+| **Layout** — header + footer (`Layout.jsx`) | Nav link and footer link to `/economy` | — | — |
+| **`/disclosures`** (`Disclosures.jsx`) | Methodology section: anti-hallucination guards · severity-is-not-a-percentage · automated quality-judge methodology (LLM-as-judge, Zheng et al. 2023) | — | — |
+
+### The linking spine
+
+Every disruption record carries a `scopeId` field which equals the source thread's `threadId`. Every chip / preview / row across the site uses this to deep-link into:
+
+```
+/weekly/thread/{scopeId}?tab=economy
+```
+
+That URL is the canonical "see the full record" path. Reaching it always lands the user on `MechanismCard` rendered inside `ThreadPage`'s center tab — single source of truth for the full record's presentation.
+
+### Two reading hooks, two purposes
+
+- **`useEconomicImpact(threadId)`** — fetches one full `ECON#THREAD#{id}` record. Used only on `ThreadPage`. 1-hour LocalStorage cache.
+- **`useDisruptionsList({ country?, minSeverity?, limit })`** — fetches the bulk list (paginated DDB Scan server-side). Used everywhere else, with optional filters. Bulk fetch lets every other page derive its own per-thread / per-country slice without N+1 lookups. 1-hour LocalStorage cache.
+
+(Plus `useTopMovers({ limit })` for the instrument-level aggregation panel on `/economy` only.)
+
+### Quality flag propagation
+
+When the [Layer 2 LLM-as-judge](ECONOMIC_DISRUPTION_QUALITY_PLAN.md) flags a record (`is_low_quality: true`), the warning chip ("⚑ auto-judged: review") propagates automatically because three atoms render it internally:
+
+- `MechanismCard` → appears in ThreadPage Economy tab
+- `DisruptionRow` → appears on `/economy` list
+- `DisruptionPreview` → appears on ThreadPage right rail
+
+That's why one Phase B backend deploy was enough to surface the flag across every UI touchpoint without per-page wiring — the atom is the integration point.
+
 ## How to read a disruption record (the UX vocabulary)
 
 When you open the Economy tab on a thread, here's what to look for:

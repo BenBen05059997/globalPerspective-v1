@@ -6,6 +6,7 @@
 import { Link } from 'react-router-dom';
 import InstrumentChip from './InstrumentChip.jsx';
 import SeverityBadge from './SeverityBadge.jsx';
+import QualityFlag from './QualityFlag.jsx';
 
 function EntityLine({ ent }) {
   if (!ent?.name) return null;
@@ -44,6 +45,7 @@ export default function MechanismCard({ impact }) {
           <SeverityBadge level={severity} score={severityScore} size="sm" />
           <span className="mc-meta-item">Confidence: <b>{confidence || 'medium'}</b></span>
           <span className="mc-meta-item">Horizon: <b>{horizon || 'days'}</b></span>
+          <QualityFlag impact={impact} size="md" />
           {updatedAgo && <span className="mc-meta-ago">upd {updatedAgo}h ago</span>}
         </div>
       </div>

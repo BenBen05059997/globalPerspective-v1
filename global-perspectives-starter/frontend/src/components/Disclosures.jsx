@@ -89,6 +89,16 @@ function Disclosures() {
           Caldara &amp; Iacoviello (2022) Geopolitical Risk Index and the BlackRock Investment Institute's
           Geopolitical Risk Dashboard.
         </p>
+        <p style={{ marginBottom: '0.75rem' }}>
+          <strong>Automated quality check (LLM-as-judge).</strong> After every Economic Disruption record is
+          generated, a separate model (Gemini 2.5 Flash, different family from the author model) re-reads the
+          record and scores it 1–5 on five axes: <em>coherence</em>, <em>citation fidelity</em>,
+          <em> analog match</em>, <em>severity calibration</em>, and <em>no-BS</em> (no unsupported point
+          estimates, no fabricated tickers, no hallucinated mechanisms). If any axis scores ≤ 2 the record is
+          tagged <code>auto-judged: review</code> and surfaces with a warning chip across the site. This is a
+          first-pass filter — it does not replace human review and can itself be wrong. Methodology adapted from
+          Zheng et al., <em>Judging LLM-as-a-Judge</em> (NeurIPS 2023). Aggregate scores are reviewed weekly.
+        </p>
       </section>
 
       <section style={{ marginBottom: '1.75rem' }}>

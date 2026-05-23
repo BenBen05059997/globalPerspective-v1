@@ -663,3 +663,28 @@
 .drow-ago {
   margin-left: auto;
 }
+
+/* ── QualityFlag ──────────────────────────────────────────── */
+.qflag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(214, 158, 46, 0.12);
+  color: #946200;
+  border: 1px solid rgba(214, 158, 46, 0.4);
+  font-family: var(--mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: help;
+  white-space: nowrap;
+}
+
+.qflag-sm { font-size: 9px; padding: 1px 6px; }
+.qflag-md { font-size: 11px; padding: 3px 10px; }
+
+.qflag:hover {
+  background: rgba(214, 158, 46, 0.2);
+}

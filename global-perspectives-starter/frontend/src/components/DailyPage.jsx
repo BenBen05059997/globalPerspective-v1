@@ -114,7 +114,15 @@ function EconomicFootprint() {
 
       {leadHeadline && (
         <p className="daily-footprint-lead">
-          <SeverityBadge level={disruptions[0].severity} size="sm" /> {leadHeadline}
+          <SeverityBadge level={disruptions[0].severity} size="sm" />{' '}
+          {disruptions[0].scopeId ? (
+            <Link
+              to={`/weekly/thread/${encodeURIComponent(disruptions[0].scopeId)}?tab=economy`}
+              style={{ color: 'inherit' }}
+            >
+              {leadHeadline}
+            </Link>
+          ) : leadHeadline}
         </p>
       )}
     </section>

@@ -1,5 +1,124 @@
 # Global Perspectives — Change Log
 
+## 2026-05-21 (Economic Disruption — UI Wiring Phase 4, Batch A)
+
+Follow-up to the 2026-05-21 three-agent design debate ("ambient" vs "minimalist" vs "pragmatist") and the surface-map doc. Plan: [`ECONOMIC_DISRUPTION_WIRING_PLAN.md`](ECONOMIC_DISRUPTION_WIRING_PLAN.md). This batch ships the 4 P0 (safe-win) items.
+
+### Shipped
+
+- **P0.1 — DailyPage lead-disruption headline → deep link.** The lead headline in "Today's Economic Footprint" previously rendered as plain text. Now links to `/weekly/thread/{scopeId}?tab=economy` when `scopeId` exists. `DailyPage.jsx:115`.
+- **P0.2 — WorldMapV2 country detail panel → "Economic Disruption" section.** The panel previously showed Signal / Articles / Risk Score but never mentioned active disruption. New section lists up to 3 disruptions touching the selected country (matched by name in winners/losers), each labelled WINNER or LOSER, each linking to the underlying thread's Economy tab. `WorldMapV2.jsx` (new `selectedCountryDisruptions` useMemo + panel section above intel headline).
+- **P0.3 — Home "Story arc →" → conditional deep-link to Economy tab.** When the topic's thread has an active disruption record, the link now goes to `/weekly/thread/{id}?tab=economy` and renders as **"Economic impact →"**. Otherwise unchanged. `Home.jsx:388`.
+- **P0.4 — Cut WeeklyPage StoryCard SeverityBadge.** StoryCard meta row already carried 7-9 chips (AI / Story Arc / category / article count / TrendBadge / activity dot / region tags). The SeverityBadge was decoration without a unique destination — clicking the card already goes to the thread. Removed badge + `useDisruptionsList` hook + `disruptionsByThread` map + `disruption` prop. `WeeklyPage.jsx:273, 322, 549-557, 818`.
+
+### Why this batch first
+All four agents in the debate either flagged these explicitly or implicitly accepted them. They're the highest-confidence changes — three additions to *editorial structure* (deep link, panel row, conditional CTA) and one removal of *pure decoration*. Batches B (Home AI button) and C (leaderboard + sidecar line + watch-signal merge) are queued in the wiring plan.
+
+### Verification
+- Frontend vitest: 149/149 pass (pre-existing WorldMap d3-in-jsdom warning unchanged)
+- Build clean (954KB JS / 195KB CSS)
+- Deployed to `docs/`
+
+### Files changed
+- Modified: `global-perspectives-starter/frontend/src/components/{DailyPage,Home,WeeklyPage,WorldMapV2}.jsx`
+- Production: `docs/index.html`, `docs/assets/*`
+- New: `ECONOMIC_DISRUPTION_WIRING_PLAN.md`
+
+---
+
+## 2026-05-20 (Economic Disruption — UI surface map doc)
+
+Added a new section **"Where it surfaces in the UI"** to [`ECONOMIC_DISRUPTION.md`](ECONOMIC_DISRUPTION.md), placed between §"What's running today" and §"How to read a disruption record". Documents:
+
+- **Per-page surface map** — a 10-row table covering `/economy`, `/`, `/daily`, `/weekly/thread/:id`, `/weekly/country/:name`, `/weekly`, `/weekly/countries`, `/map`, Layout, and `/disclosures` — each row lists the visible component, the hook(s) it uses, and the atom(s) it renders.
+- **The linking spine** — explains how every chip/preview deep-links into the canonical `/weekly/thread/{scopeId}?tab=economy` path.
+- **Two reading hooks, two purposes** — `useEconomicImpact` (single record, ThreadPage) vs `useDisruptionsList` (bulk, everywhere else), plus `useTopMovers`.
+- **Quality flag propagation** — why the Phase B `is_low_quality` flag surfaced across all UI touchpoints from one atom change (it lives inside `MechanismCard` / `DisruptionRow` / `DisruptionPreview`).
+
+Pure documentation update — no code changes.
+
+---
+
+## 2026-05-20 (Quality Plan — Status & Roadmap section)
+
+Added a top-of-file **Status & Roadmap** table to [`ECONOMIC_DISRUPTION_QUALITY_PLAN.md`](ECONOMIC_DISRUPTION_QUALITY_PLAN.md) summarising what shipped (Phases A/B/C), what's blocked and on what (Phases D/E), and **concrete check-back dates**:
+
+- **2026-05-21** — verify auto-judge cron ran (check `quality_judged_at` on DDB records, tail CloudWatch logs)
+- **Every Monday** — run picker + dashboard scripts
+- **~2026-06-17** — start Phase E calibration (after 4 weeks of human reviews)
+- **~2026-06-18** — start Phase D backtest (after 30 days of ECON# records)
+- **~2026-08-20** — consider publishing dashboard stats to `/disclosures`
+
+Also captured what NOT to do in the interim (don't tune the judge prompt early, don't widen the low-quality threshold, don't add allowlist instruments without re-running golden evals, don't publish stats prematurely). Pure documentation update — no code changes.
+
+---
+
+## 2026-05-20 (Economic Disruption Quality — Phase C: human spot-check workflow)
+
+### What shipped
+Layer 4 of the [quality plan](ECONOMIC_DISRUPTION_QUALITY_PLAN.md) — passive but essential: a weekly cadence for grading 5 random `ECON#` records by hand against a 7-question rubric, so the LLM-as-judge (Phase B) has ground truth to calibrate against. Without this, the judge slowly drifts toward its own biases with no external check.
+
+### New files
+- **`quality/reviews/README.md`** — workflow explainer (cadence, the 7 questions, when results become meaningful, what not to do).
+- **`quality/reviews/TEMPLATE.md`** — blank per-record rubric block.
+- **`quality/pick_weekly_review.js`** — CLI that scans live DDB (paginated), stratifies records 2 severe / 2 moderate / 1 minor (tops up from larger buckets when one is short), fetches thread analysis for context, and writes a populated `quality/reviews/YYYY-WW.md` ready for the reviewer.
+- **`quality/build_dashboard.js`** — parses all `reviews/*.md` and writes `quality/dashboard.md` with per-week trend, grade distribution, would-publish rate, hallucination levels, and the plan's threshold table. Strict parser — rejects template placeholders so empty rubrics don't inflate stats.
+- **`quality/reviews/2026-21.md`** — first populated week (5 records from production: 1 severe / 3 moderate / 1 minor, reflecting current DDB distribution of 1/17/1). Awaits review.
+- **`quality/dashboard.md`** — current baseline (5 logged, 0 graded). Regenerated by the script.
+
+### Stratification behaviour
+Target is 2 severe / 2 moderate / 1 minor. Production distribution is currently skewed (1 severe / 17 moderate / 1 minor) so the picker correctly fell back to 1/3/1. The "top-up from next-largest bucket" logic prevents the picker from returning fewer than N records when buckets are uneven.
+
+### How the loop closes
+- **Week 1–4:** fill in 5 rubrics per week. Don't draw conclusions yet — just log.
+- **Week 5+:** the dashboard can cross-reference per-record human grades against auto-judge `is_low_quality`. Mismatches feed Phase E (judge-prompt revision).
+- **Month 3+:** publish the would-publish rate on `/disclosures` as the credibility moat.
+
+### Not done (intentional)
+- No frontend changes — `quality/dashboard.md` is operator-only until aggregate stats are meaningful. Plan calls for public publication at Month 3+.
+- No parser test file — parser is ~30 lines and was verified positively (mixed grades A/B/D parsed correctly with 2.67 GPA + correct would-publish/BS distributions) and negatively (template placeholder lines rejected, dashboard shows 0 graded).
+- Phase D (30-day direction-call backtest) — blocked, needs 30+ days of production records. We have ~1.
+
+### Files
+- New: `quality/reviews/{README,TEMPLATE,2026-21}.md`, `quality/pick_weekly_review.js`, `quality/build_dashboard.js`, `quality/dashboard.md`
+
+---
+
+## 2026-05-20 (Economic Disruption Quality — Phase B: LLM-as-judge)
+
+### What shipped
+Layer 2 of the quality-evaluation plan ([`ECONOMIC_DISRUPTION_QUALITY_PLAN.md`](ECONOMIC_DISRUPTION_QUALITY_PLAN.md)): an automated LLM-as-judge pass that re-reads each `ECON#THREAD#` record with a *different model family* (Gemini 2.5 Flash) and scores it 1–5 on five axes — coherence, citation fidelity, analog match, severity calibration, and "no-BS". Records with any axis ≤ 2 are tagged `is_low_quality` and surface a visible warning chip across the site.
+
+Methodology follows Zheng et al., *Judging LLM-as-a-Judge* (NeurIPS 2023): different-family judge for less-correlated errors, strict JSON-only schema, integer 1–5 scoring with single-sentence reasons.
+
+### Backend
+- **NEW Lambda** `newsEconomicQuality` (nodejs22.x, 512MB/600s) — paginated Scan over `ECON#THREAD#` records with `hasImpact:true`, skips records judged in last 7 days, sorts by `severityScore` desc, judges up to 15 per run. Sequential with 13s pacing for Gemini free-tier rate limit. Writes `qualityScores`, `qualityReasons`, `is_low_quality`, `quality_judged_at`, `quality_judge_model` via UpdateCommand. Reuses `newsThreadAnalysis-role-etmr9wj9`.
+- **NEW EventBridge rule** `TriggerNewsEconomicQuality` — `cron(0 8 * * ? *)` daily 08:00 UTC, ENABLED. Runs after `newsEconomicImpact` (07:30) and aligns with Gemini free-tier quota reset.
+- **IAM** — extended `AWSLambdaBasicExecutionRole-725d3974…` policy v2 to allow log-stream writes to `/aws/lambda/newsEconomicQuality:*` as well as `newsThreadAnalysis`.
+
+### Frontend
+- **NEW atom** `QualityFlag.jsx` — small "auto-judged: review" chip that renders only when `is_low_quality === true`. Tooltip lists each failing axis (score ≤ 2) with the judge's one-line reason. CSS in `atoms.css`.
+- **MechanismCard, DisruptionRow, DisruptionPreview** — render `<QualityFlag>` next to severity in their header/badge slot.
+- **Disclosures.jsx** — added "Automated quality check (LLM-as-judge)" paragraph explaining the five axes, threshold, methodology citation, and that aggregate scores are reviewed weekly.
+
+### Tests
+- **NEW** `amplify/backend/function/newsEconomicQuality/test/judge.test.js` — 26 unit tests covering `validateJudgment` (happy path, missing axis, out-of-range, non-numeric, string coercion, unknown-axis filtering, 300-char reason clipping) + `stripCodeFence` + `buildJudgePrompt` structural sanity. All pass.
+- Existing suites unchanged and still passing: `newsEconomicImpact` validator (54/54), golden evals (38/38), frontend vitest (149/149).
+
+### Known limitation
+Manual smoke-test invocation hit Gemini free-tier daily quota (429) — the daily 08:00 UTC schedule was deliberately chosen to land at quota reset. Live judge verification will happen on the next scheduled run; the structural deploy (function active, schedule enabled, IAM correct, log group writing, validate/prompt logic unit-tested) is complete.
+
+### Files changed
+- New: `amplify/backend/function/newsEconomicQuality/src/{index.js,package.json}`
+- New: `amplify/backend/function/newsEconomicQuality/test/judge.test.js`
+- New: `global-perspectives-starter/frontend/src/components/atoms/QualityFlag.jsx`
+- Modified: `global-perspectives-starter/frontend/src/components/atoms/{MechanismCard,DisruptionRow,DisruptionPreview}.jsx`
+- Modified: `global-perspectives-starter/frontend/src/components/atoms/atoms.css` (+ `.qflag` rules)
+- Modified: `global-perspectives-starter/frontend/src/components/Disclosures.jsx` (+ LLM-as-judge paragraph)
+- Production: `docs/index.html`, `docs/assets/*`
+
+---
+
 ## 2026-05-19 (Economic Disruption Layer — Phases 1+2+3 DEPLOYED end-to-end)
 
 ### What this is

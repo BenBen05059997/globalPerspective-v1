@@ -386,7 +386,14 @@ function Home() {
                     : t.title
                   }
                   {t.threadId && (
-                    <Link to="/weekly" className="home-thread-badge">Story arc →</Link>
+                    <Link
+                      to={disruptionByThread[t.threadId]
+                        ? `/weekly/thread/${t.threadId}?tab=economy`
+                        : '/weekly'}
+                      className="home-thread-badge"
+                    >
+                      {disruptionByThread[t.threadId] ? 'Economic impact →' : 'Story arc →'}
+                    </Link>
                   )}
                 </h3>
 

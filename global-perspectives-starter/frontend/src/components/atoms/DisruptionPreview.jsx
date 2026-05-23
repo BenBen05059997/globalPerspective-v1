@@ -6,6 +6,7 @@
 
 import SeverityBadge from './SeverityBadge.jsx';
 import DirectionArrow from './DirectionArrow.jsx';
+import QualityFlag from './QualityFlag.jsx';
 
 export default function DisruptionPreview({ impact, onExpand }) {
   if (!impact || impact.hasImpact === false) return null;
@@ -22,6 +23,7 @@ export default function DisruptionPreview({ impact, onExpand }) {
       <div className="dprev-label">Economic Disruption</div>
       <div className="dprev-badge">
         <SeverityBadge level={severity} score={severityScore} size="sm" />
+        <QualityFlag impact={impact} size="sm" />
       </div>
       <div className="dprev-headline">{headline || 'Disruption detected'}</div>
       {top.length > 0 && (

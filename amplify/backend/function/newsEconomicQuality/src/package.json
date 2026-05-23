@@ -1,0 +1,11 @@
+{
+  "name": "newseconomicquality",
+  "version": "1.0.0",
+  "description": "LLM-as-judge layer (Phase B) — scores each ECON# record on 5 quality axes via Gemini Flash",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}

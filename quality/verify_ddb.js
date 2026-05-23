@@ -68,6 +68,37 @@ function isAllowedInstrument(id, runtimeFx = new Set()) {
   return false;
 }
 
+// Load the union of topicIds across the last `days` of archive entries from NewsCache.
+// Used by L1.16 archive cross-ref check.
+function loadArchiveTopicIds(days) {
+  const ids = new Set();
+  const now = new Date();
+  const keys = ['today-archive'];
+  for (let i = 0; i <= days; i++) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - i);
+    const ymd = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    // NewsCache stores daily snapshots under `archive#YYYY-MM-DD`; the live rolling
+    // pool is `today-archive`. Probe both shapes.
+    keys.push(`archive#${ymd}`);
+  }
+  for (const id of keys) {
+    try {
+      const out = execSync(
+        `aws dynamodb get-item --table-name NewsCache --region ${REGION} --key '${JSON.stringify({ id: { S: id } })}' --projection-expression 'entries' --output json 2>/dev/null`,
+        { maxBuffer: 32 * 1024 * 1024, encoding: 'utf8' },
+      );
+      const j = JSON.parse(out || '{}');
+      const entries = j.Item?.entries?.L || [];
+      for (const e of entries) {
+        const tid = e?.M?.topicId?.S;
+        if (tid) ids.add(tid);
+      }
+    } catch { /* missing archive day is OK */ }
+  }
+  return ids;
+}
+
 function ddbScan() {
   const all = [];
   let lastKey = null;
@@ -246,10 +277,30 @@ function runChecks(records) {
 
   // ─── Citation integrity ───
   const c15 = cr.add('L1.15', 'citedTopicIds.length >= 1', 'citation', true);
+  // L1.16 only checks records < 48h old. Older records can fail purely because
+  // `today-archive` has rotated entries that were valid at generation time but
+  // no longer resolve. Within 48h we have full archive coverage so any miss is
+  // a real hallucination.
+  const c16 = cr.add('L1.16', 'every citedTopicId on records <48h old exists in NewsCache archive', 'citation', true);
   const c17 = cr.add('L1.17', 'instrument.citedTopicIds ⊆ citedTopicIds', 'citation', true);
   const c18 = cr.add('L1.18', 'mechanism contains ≥1 inline citation matching a cited topicId', 'citation', true);
   const c19 = cr.add('L1.19', 'every inline [id] in mechanism is in citedTopicIds', 'citation', true);
-  // L1.16 needs archive cross-ref — see archive-cross-ref pass below.
+
+  // Load archive topicIds once for L1.16
+  console.log('Loading archive entries for cross-ref...');
+  const archiveIds = loadArchiveTopicIds(21);
+  console.log(`Got ${archiveIds.size} unique topicIds from archive.`);
+
+  const RECENT_MS = 48 * 3600 * 1000;
+  const recent = live.filter(r => Date.now() - new Date(r.generatedAt).getTime() < RECENT_MS);
+  for (const r of recent) {
+    cr.hits(c16);
+    for (const id of (r.citedTopicIds || [])) {
+      if (!archiveIds.has(id)) {
+        cr.failed(c16, r.PK, `cited "${id.slice(0, 60)}…" not in archive`);
+      }
+    }
+  }
 
   for (const r of live) {
     const cited = new Set(r.citedTopicIds || []);
@@ -375,6 +426,36 @@ function distributions(live) {
 
 // ─── Report writer ──────────────────────────────────────────────────────────
 
+// State persistence for iteration diffs
+function loadPrevState(outDir) {
+  const p = path.join(outDir, '_state.json');
+  if (!fs.existsSync(p)) return null;
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; }
+}
+function savePrevState(outDir, cr) {
+  const p = path.join(outDir, '_state.json');
+  const snapshot = {
+    ts: nowIso(),
+    checks: cr.results.map(r => ({ id: r.id, fails: r.fails.length, total: r.total })),
+  };
+  fs.writeFileSync(p, JSON.stringify(snapshot, null, 2));
+}
+function computeDiff(prev, cr) {
+  if (!prev) return null;
+  const prevById = Object.fromEntries(prev.checks.map(c => [c.id, c]));
+  const wentGreen = [];
+  const wentRed = [];
+  const stillFail = [];
+  for (const r of cr.results) {
+    const p = prevById[r.id];
+    if (!p) continue;
+    if (p.fails > 0 && r.fails.length === 0) wentGreen.push(`${r.id} (${p.fails}→0)`);
+    if (p.fails === 0 && r.fails.length > 0) wentRed.push(`${r.id} (0→${r.fails.length})`);
+    if (p.fails > 0 && r.fails.length > 0) stillFail.push(`${r.id} (${p.fails}→${r.fails.length})`);
+  }
+  return { wentGreen, wentRed, stillFail, prevTs: prev.ts };
+}
+
 function writeReport(cr, live, tombs, inWindow, allRecords) {
   const summary = cr.summarize();
   const ts = nowIso();
@@ -384,6 +465,9 @@ function writeReport(cr, live, tombs, inWindow, allRecords) {
   const out = path.join(outDir, filename);
   const latest = path.join(outDir, 'latest.md');
 
+  const prev = loadPrevState(outDir);
+  const diff = computeDiff(prev, cr);
+
   const lines = [];
   lines.push(`# Verification Iteration — ${ts}`);
   lines.push('');
@@ -392,6 +476,18 @@ function writeReport(cr, live, tombs, inWindow, allRecords) {
   lines.push(`**Total ECON records scanned:** ${allRecords.length} (${inWindow.length} in window)`);
   lines.push(`**hasImpact=true:** ${live.length}  ·  **tombstones:** ${tombs.length}`);
   lines.push('');
+
+  if (diff) {
+    lines.push(`## Diff vs previous iteration (${diff.prevTs})`);
+    lines.push('');
+    if (diff.wentGreen.length) lines.push(`- ✅ went green: ${diff.wentGreen.join(', ')}`);
+    if (diff.wentRed.length)   lines.push(`- ❌ went red:   ${diff.wentRed.join(', ')}`);
+    if (diff.stillFail.length) lines.push(`- 🟡 still failing: ${diff.stillFail.join(', ')}`);
+    if (!diff.wentGreen.length && !diff.wentRed.length && !diff.stillFail.length) {
+      lines.push('- (no changes since previous iteration)');
+    }
+    lines.push('');
+  }
 
   const d = distributions(live);
   lines.push('## Distributions (in window)');
@@ -455,6 +551,7 @@ function writeReport(cr, live, tombs, inWindow, allRecords) {
 
   fs.writeFileSync(out, lines.join('\n'));
   fs.writeFileSync(latest, lines.join('\n'));
+  savePrevState(outDir, cr);
   console.log(`Report: ${out}`);
   return summary.requiredOk;
 }

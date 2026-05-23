@@ -33,10 +33,13 @@ const GEMINI_ENDPOINT = process.env.GROK_API_URL || 'https://generativelanguage.
 const INTER_CALL_DELAY_MS = parseInt(process.env.INTER_CALL_DELAY_MS || '13000', 10);
 const MAX_RECORDS = parseInt(process.env.QUALITY_MAX_RECORDS || '15', 10);
 const RECENT_DAYS = parseInt(process.env.QUALITY_RECENT_DAYS || '7', 10);
-// Gemini 2.5 Flash uses "thinking" tokens that count against max_tokens. At 1200
-// the model burns most of the budget on reasoning and truncates the JSON output.
-// 4000 reliably leaves room for the 5-axis judgment + reasons after thinking.
-const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '4000', 10);
+// Gemini 2.5 Flash uses "thinking" tokens that count against max_tokens. Observed
+// 2026-05-23: at max_tokens=4000, finish_reason=length with completion_tokens=147 —
+// the model burns ~3800 tokens on hidden thinking before emitting JSON, truncating
+// the visible output. Two-pronged fix: (1) disable thinking via Gemini's extra_body
+// config (see judgeRecord), (2) leave a generous ceiling in case thinking_config
+// is silently ignored on the OpenAI-compat endpoint.
+const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '16000', 10);
 
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const ECON_PK_PREFIX = 'ECON#THREAD#';
@@ -253,6 +256,11 @@ async function judgeRecord(record, threadAnalysis, topicSummaries) {
       max_tokens: MAX_TOKENS,
       temperature: 0.2,
       response_format: { type: 'json_object' },
+      // Disable extended thinking — judgment is a simple 5-axis score, no reasoning
+      // chain needed. Without this Gemini 2.5 Flash burns most of max_tokens on
+      // hidden thinking and truncates the visible JSON.
+      extra_body: { google: { thinking_config: { thinking_budget: 0 } } },
+      reasoning_effort: 'none',
     }),
   });
 

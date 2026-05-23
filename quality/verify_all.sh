@@ -61,6 +61,10 @@ else
   # ─── L4 — REST proxy contract ───
   run_layer "L4  REST proxy contract (verify_proxy.sh)" \
     bash quality/verify_proxy.sh
+
+  # ─── L2.5 — Lambda + cron health ───
+  run_layer "L2.5 Lambda + cron health (verify_lambdas.sh)" \
+    bash quality/verify_lambdas.sh
 fi
 
 # ─── Summary ───

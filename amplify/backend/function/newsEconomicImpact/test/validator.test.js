@@ -327,6 +327,64 @@ console.log('\n── TEST 20: tombstone passes through unchanged ──');
   assertEq('no other fields added', Object.keys(r).length, 1);
 }
 
+console.log('\n── TEST 21: production-format topicId (no "topic-" prefix) satisfies inline-citation rule ──');
+{
+  // Real production topicIds are title-slug-N (e.g. "Alberta to hold October 2026 referendum-5").
+  // The 2026-05-23 regex bug treated only `[topic-xxx]` as a valid citation; this test guards against regression.
+  const r = applyConsistencyChecks(makeRecord({
+    mechanism: 'Alberta\'s announcement [Alberta to hold October 2026 referendum-5] introduces uncertainty.',
+    citedTopicIds: ['Alberta to hold October 2026 referendum-5'],
+    instruments: [{ instrumentId: 'BRENT', direction: 'up', magnitude: 'moderate', citedTopicIds: ['Alberta to hold October 2026 referendum-5'] }],
+  }), thread, FRESH_MARKETS);
+  assertTrue('NO mechanism_missing_inline_citation flag (citation correctly recognized)',
+    !(r.qualityFlags || []).includes('mechanism_missing_inline_citation'));
+}
+
+console.log('\n── TEST 22: validateImpact harvests inline [id] mentions into citedTopicIds ──');
+{
+  // The LLM sometimes cites a topicId inline in mechanism without echoing it into the
+  // top-level citedTopicIds array. Validator must harvest those so L1.19 stays green.
+  const localThread = { threadId: 'thread-x', entries: [
+    { topicId: 'topic-abc', title: 'A' },
+    { topicId: 'topic-def', title: 'D' },
+    { topicId: 'inline-only-id', title: 'Inline' },
+  ]};
+  const parsed = {
+    headline: 'h',
+    severity: 'moderate', severityScore: 50,
+    confidence: 'medium', horizon: 'days',
+    instruments: [
+      { instrumentId: 'BRENT', direction: 'up', magnitude: 'moderate', rationale: 'r', citedTopicIds: ['topic-abc'] },
+    ],
+    winners: [{ name: 'W', type: 'country', why: 'x' }],
+    losers: [{ name: 'L', type: 'country', why: 'x' }],
+    mechanism: 'See [inline-only-id] and [topic-abc] for details',
+    citedTopicIds: ['topic-abc'],   // intentionally NOT including inline-only-id
+  };
+  const out = validateImpact(parsed, localThread, new Set());
+  assertTrue('hasImpact still true', out.hasImpact);
+  assertTrue('inline-only-id harvested into citedTopicIds', (out.citedTopicIds || []).includes('inline-only-id'));
+  assertTrue('topic-abc preserved', (out.citedTopicIds || []).includes('topic-abc'));
+}
+
+console.log('\n── TEST 23: validateImpact ignores brackets that match no validTopicId ──');
+{
+  // The harvester must NOT pull in arbitrary bracketed text; only IDs that exist in
+  // the thread's entries. Guards against the LLM inventing fake topicIds.
+  const localThread = { threadId: 'thread-x', entries: [{ topicId: 'topic-abc', title: 'A' }]};
+  const parsed = {
+    severity: 'moderate', severityScore: 50,
+    confidence: 'medium', horizon: 'days',
+    instruments: [{ instrumentId: 'BRENT', direction: 'up', magnitude: 'moderate', rationale: 'r', citedTopicIds: ['topic-abc'] }],
+    mechanism: 'Some prose with [made-up-id] and [topic-abc] and [another-fake]',
+    citedTopicIds: ['topic-abc'],
+  };
+  const out = validateImpact(parsed, localThread, new Set());
+  assertTrue('made-up-id NOT harvested', !(out.citedTopicIds || []).includes('made-up-id'));
+  assertTrue('another-fake NOT harvested', !(out.citedTopicIds || []).includes('another-fake'));
+  assertTrue('only topic-abc in cited', out.citedTopicIds.length === 1 && out.citedTopicIds[0] === 'topic-abc');
+}
+
 console.log('\n══════════════════════════════════');
 console.log(`Result: ${passed} passed, ${failed} failed`);
 process.exit(failed === 0 ? 0 : 1);

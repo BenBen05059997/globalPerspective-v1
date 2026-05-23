@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Pre-push hook: run the fast verification stack before allowing a push.
+# Installed via scripts/install_hooks.sh (sets core.hooksPath=.githooks).
+# Bypass with `git push --no-verify` only in genuine emergency.
+
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+# Only run if economic-layer files changed in the push range.
+RANGE=$(git rev-parse --abbrev-ref HEAD)@{u}..HEAD 2>/dev/null || RANGE='HEAD~10..HEAD'
+
+if git diff --name-only $RANGE 2>/dev/null | grep -qE '(newsEconomicImpact|newsEconomicQuality|useEconomicImpact|useDisruptionsList|useTopMovers|atoms/(Mechanism|Disruption|Severity|Quality)|EconomyPage|Home\.jsx|DailyPage|ThreadPage|CountryPage|CountryListPage|WorldMapV2|WeeklyPage|Layout\.jsx|Disclosures|quality/)'; then
+  echo "==> Economic-layer files changed — running fast verifier (bypass with --no-verify)"
+  bash quality/verify_all.sh --fast
+else
+  echo "==> No economic-layer files changed — skipping verifier."
+fi

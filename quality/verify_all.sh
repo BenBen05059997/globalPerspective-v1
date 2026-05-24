@@ -69,6 +69,10 @@ else
   # ─── L2.5 — Lambda + cron health ───
   run_layer "L2.5 Lambda + cron health (verify_lambdas.sh)" \
     bash quality/verify_lambdas.sh
+
+  # ─── M — Markets data integrity ───
+  run_layer "M    Markets data integrity (verify_market.sh)" \
+    bash quality/verify_market.sh
 fi
 
 # ─── L8 — Browser E2E (opt-in; needs `npm run e2e:install` once per clone) ───

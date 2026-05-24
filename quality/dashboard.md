@@ -1,6 +1,6 @@
 # Economic Disruption — Health Dashboard
 
-_Auto-generated at 2026-05-24T10:37:34.701Z. Regenerate with `node quality/dashboard.js`._
+_Auto-generated at 2026-05-24T11:30:56.058Z. Regenerate with `node quality/dashboard.js`._
 
 ## Verifier — latest iteration
 
@@ -13,6 +13,13 @@ _Auto-generated at 2026-05-24T10:37:34.701Z. Regenerate with `node quality/dashb
 - ✅ went green: L1.19 (1→0)
 - ❌ went red:   L1.16 (0→5)
 - 🟡 still failing: L1.27 (1→1)
+
+## Markets data layer
+
+- Summary: 55 pass / 1 fail
+
+**Open issues:**
+- M.fresh asOf < 26h old (got: 36.8h) —
 
 ## Phase status
 
@@ -40,10 +47,10 @@ _Auto-generated at 2026-05-24T10:37:34.701Z. Regenerate with `node quality/dashb
 |---|---|
 | `newsEconomicImpact/src/index.js` | 2026-05-23 (69794de: Verification plan + iteration 1: schema verifier, REST proxy verifier, atom tests, 3 root-cause fixes) |
 | `newsEconomicQuality/src/index.js` | 2026-05-24 (374f2b8: Iteration 2: Gemini thinking disabled, L1.16 archive cross-ref, page guards, calibration report, orchestrator) |
-| `quality/verify_ddb.js` | 2026-05-24 (bbe3f45: Iteration 4: Playwright E2E, sigma drift, QualityFlag guard, report retention, daily remote routine) |
+| `quality/verify_ddb.js` | 2026-05-24 (a39c573: Iteration 5: IAM + code-drift checks, dashboard, L4.10 deep contract, transient retry) |
 | `quality/calibration_report.js` | 2026-05-24 (bbe3f45: Iteration 4: Playwright E2E, sigma drift, QualityFlag guard, report retention, daily remote routine) |
 | `quality/verify_pages.sh` | 2026-05-24 (bbe3f45: Iteration 4: Playwright E2E, sigma drift, QualityFlag guard, report retention, daily remote routine) |
-| `quality/verify_lambdas.sh` | 2026-05-24 (617988c: Iteration 3: CI workflow, Lambda health verifier, pre-push hook, new producer tests) |
+| `quality/verify_lambdas.sh` | 2026-05-24 (a39c573: Iteration 5: IAM + code-drift checks, dashboard, L4.10 deep contract, transient retry) |
 | `components/atoms/MechanismCard.jsx` | 2026-05-23 (d8719f9: Phase B+C + UI Wiring Batch A: LLM-as-judge, human spot-check, deeper integration) |
 | `components/atoms/QualityFlag.jsx` | 2026-05-23 (d8719f9: Phase B+C + UI Wiring Batch A: LLM-as-judge, human spot-check, deeper integration) |
 

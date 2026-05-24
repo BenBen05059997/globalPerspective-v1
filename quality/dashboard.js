@@ -76,6 +76,30 @@ function buildCalibrationBlock() {
   return lines;
 }
 
+function buildMarketsBlock() {
+  const lines = ['## Markets data layer', ''];
+  // Run verify_market.sh and capture the summary line + any failures.
+  let out = '';
+  try {
+    out = execSync('bash quality/verify_market.sh 2>&1 | tail -20', { cwd: ROOT, encoding: 'utf8' });
+  } catch (e) {
+    out = (e.stdout || '').toString() + '\n' + (e.stderr || '').toString();
+  }
+  const summary = (out.match(/Summary: .*pass.*fail/) || ['(no summary)'])[0]
+    .replace(/\x1b\[[0-9;]*m/g, '');
+  lines.push(`- ${summary}`);
+  const fails = out
+    .split('\n')
+    .filter(l => l.startsWith('  - '))
+    .map(l => l.replace(/\x1b\[[0-9;]*m/g, '').trim());
+  if (fails.length) {
+    lines.push('', '**Open issues:**');
+    fails.forEach(f => lines.push(f));
+  }
+  lines.push('');
+  return lines;
+}
+
 function buildPhaseStatus() {
   const lines = ['## Phase status', ''];
   const hist = safeJson(path.join(CALIB, '_history.json')) || [];
@@ -169,6 +193,7 @@ function main() {
   const body = [
     ...header,
     ...buildVerifyBlock(),
+    ...buildMarketsBlock(),
     ...buildPhaseStatus(),
     ...buildCalibrationBlock(),
     ...buildHumanReviews(),

@@ -84,9 +84,8 @@ function loadArchiveTopicIds(days) {
   }
   for (const id of keys) {
     try {
-      const out = execSync(
+      const out = awsExecSync(
         `aws dynamodb get-item --table-name NewsCache --region ${REGION} --key '${JSON.stringify({ id: { S: id } })}' --projection-expression 'entries' --output json 2>/dev/null`,
-        { maxBuffer: 32 * 1024 * 1024, encoding: 'utf8' },
       );
       const j = JSON.parse(out || '{}');
       const entries = j.Item?.entries?.L || [];
@@ -97,6 +96,41 @@ function loadArchiveTopicIds(days) {
     } catch { /* missing archive day is OK */ }
   }
   return ids;
+}
+
+// Run an aws CLI command with one retry on known-transient errors
+// (throttling, transient credential refresh, network blip).
+function awsExec(cmd) {
+  const TRANSIENT = /Throttl|RequestLimitExceeded|ProvisionedThroughputExceeded|RequestTimeout|RequestExpired|ServiceUnavailable|InternalError|EAI_AGAIN|ETIMEDOUT|ECONNRESET/i;
+  try {
+    return execSync(cmd, { maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' });
+  } catch (e) {
+    const msg = (e.stderr || e.message || '').toString();
+    if (TRANSIENT.test(msg)) {
+      console.warn(`[retry] transient error, retrying once: ${msg.split('\n')[0].slice(0, 120)}`);
+      return new Promise(r => setTimeout(r, 2000))
+        .then(() => execSync(cmd, { maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' }))
+        // Sync fallback — convert promise to sync via deasync isn't worth it; just throw if retry also fails
+        .catch(e2 => { throw e2; });
+    }
+    throw e;
+  }
+}
+
+// Synchronous version of awsExec — retry happens in-line.
+function awsExecSync(cmd) {
+  const TRANSIENT = /Throttl|RequestLimitExceeded|ProvisionedThroughputExceeded|RequestTimeout|RequestExpired|ServiceUnavailable|InternalError|EAI_AGAIN|ETIMEDOUT|ECONNRESET/i;
+  try {
+    return execSync(cmd, { maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' });
+  } catch (e) {
+    const msg = (e.stderr || e.message || '').toString();
+    if (TRANSIENT.test(msg)) {
+      console.warn(`[retry] transient AWS error, retrying once: ${msg.split('\n')[0].slice(0, 120)}`);
+      execSync('sleep 2');
+      return execSync(cmd, { maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' });
+    }
+    throw e;
+  }
 }
 
 function ddbScan() {
@@ -119,7 +153,7 @@ function ddbScan() {
       args.push('--starting-token', Buffer.from(JSON.stringify(lastKey)).toString('base64'));
     }
     const cmd = `aws ${args.map(a => /[\s"]/.test(a) ? `'${a.replace(/'/g, `'\\''`)}'` : a).join(' ')}`;
-    const out = execSync(cmd, { maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' });
+    const out = awsExecSync(cmd);
     const j = JSON.parse(out);
     all.push(...(j.Items || []));
     lastKey = j.LastEvaluatedKey || null;

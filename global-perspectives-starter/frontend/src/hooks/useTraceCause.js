@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import graphqlService from '../utils/graphqlService';
+import contentService from '../utils/contentService';
 
 /**
  * Custom hook for retrieving cached Gemini trace cause (Deep Context) analysis.
@@ -29,7 +29,7 @@ export const useTraceCause = () => {
                 throw new Error('Trace Cause is only available for cached Gemini topics (missing topicId).');
             }
 
-            const traceData = await graphqlService.getTopicTraceCause(topicId);
+            const traceData = await contentService.getTopicTraceCause(topicId);
             const content = traceData?.content || traceData?.impact_analysis || '';
 
             const generationTime = Date.now() - startTime;

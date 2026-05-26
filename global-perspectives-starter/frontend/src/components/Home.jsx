@@ -7,7 +7,7 @@ import TraceCauseDisplay from './TraceCauseDisplay';
 import TopicNav from './TopicNav';
 import TodayArchiveSidebar from './TodayArchiveSidebar';
 import { useTodayArchive } from '../hooks/useTodayArchive';
-import graphqlService from '../utils/graphqlService';
+import contentService from '../utils/contentService';
 import { categorizeTopicsByRegion } from '../utils/countryMapping';
 import { useError } from '../contexts/ErrorContext';
 import StatusStrip from './atoms/StatusStrip';
@@ -136,7 +136,7 @@ function Home() {
     setSummaryErrors(prev => ({ ...prev, [id]: null }));
     const start = Date.now();
     try {
-      const data = await graphqlService.getTopicSummary(id);
+      const data = await contentService.getTopicSummary(id);
       const content = data?.content || '';
       setSummaries(prev => ({ ...prev, [id]: {
         content, service: 'cache',
@@ -192,7 +192,7 @@ function Home() {
     setPredictionErrors(prev => ({ ...prev, [id]: null }));
     const start = Date.now();
     try {
-      const data = await graphqlService.getTopicPrediction(id);
+      const data = await contentService.getTopicPrediction(id);
       const content = data?.content || data?.impact_analysis || '';
       setPredictions(prev => ({ ...prev, [id]: {
         content, service: 'cache',
@@ -239,7 +239,7 @@ function Home() {
     setTraceCauseLoading(prev => ({ ...prev, [id]: true }));
     setTraceCauseErrors(prev => ({ ...prev, [id]: null }));
     try {
-      const data = await graphqlService.getTopicTraceCause(id);
+      const data = await contentService.getTopicTraceCause(id);
       const content = data?.content || '';
       setTraceCauses(prev => ({ ...prev, [id]: {
         content, service: 'cache',

@@ -51,7 +51,7 @@ function createStableTopicId(topic, index) {
   return `${normalizedTitle}-${index}`;
 }
 
-class GraphQLService {
+class ContentService {
   async getGeminiTopics(limit = 5) {
     const payload = await fetchTopicsCache();
     const isStaleWithData = payload?.success === false &&
@@ -187,5 +187,5 @@ class GraphQLService {
   }
 }
 
-export const graphqlService = new GraphQLService();
-export default graphqlService;
+export const contentService = new ContentService();
+export default contentService;

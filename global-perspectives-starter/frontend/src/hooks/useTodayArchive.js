@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { graphqlService } from '../utils/graphqlService';
+import { contentService } from '../utils/contentService';
 
 const CACHE_KEY = 'today_archive_cache_v1';
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -30,7 +30,7 @@ export function useTodayArchive() {
 
     setLoading(true);
     try {
-      const data = await graphqlService.getTodayArchive();
+      const data = await contentService.getTodayArchive();
       setEntries(data.entries);
       setUpdatedAt(data.updatedAt);
       try {

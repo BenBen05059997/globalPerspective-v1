@@ -24,7 +24,7 @@ export default function AboutContact() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '12px' }}>
           {[
             { step: '1', title: 'Collect', desc: 'RSS feeds + Brave Search surface global news from hundreds of sources every hour.' },
-            { step: '2', title: 'Analyze', desc: 'xAI Grok identifies topics, assigns categories, and links articles into narrative threads.' },
+            { step: '2', title: 'Analyze', desc: 'DeepSeek V4 identifies topics, assigns categories, and links articles into narrative threads.' },
             { step: '3', title: 'Synthesize', desc: 'AI generates summaries, predictions, root cause analysis, and country-level intelligence briefings.' },
             { step: '4', title: 'Visualize', desc: 'Interactive maps, timelines, and structured briefings make the intelligence accessible at a glance.' },
           ].map(s => (

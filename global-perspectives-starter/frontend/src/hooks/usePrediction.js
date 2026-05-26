@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import graphqlService from '../utils/graphqlService';
+import contentService from '../utils/contentService';
 
 /**
  * Custom hook for retrieving cached Gemini impact predictions.
@@ -29,7 +29,7 @@ export const usePrediction = () => {
         throw new Error('Predictions are only available for cached Gemini topics (missing topicId).');
       }
 
-      const predictionData = await graphqlService.getTopicPrediction(topicId);
+      const predictionData = await contentService.getTopicPrediction(topicId);
       const content = predictionData?.content || predictionData?.impact_analysis || '';
 
       const generationTime = Date.now() - startTime;

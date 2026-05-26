@@ -249,7 +249,7 @@ export default function ThreadPage() {
     <div className="tp-ai-rail">
       <div className="tp-ai-hd">
         <div className="tp-ai-hd-label"><span className="tp-ai-dot" />Arc Intelligence</div>
-        <span className="tp-ai-model">Grok · xAI</span>
+        <span className="tp-ai-model">AI analysis</span>
       </div>
       <div className="tp-ai-tabs">
         {aiTabs.map(tab => (

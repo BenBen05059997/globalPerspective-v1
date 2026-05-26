@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import graphqlService from '../utils/graphqlService';
+import contentService from '../utils/contentService';
 
 /**
  * Custom hook for fetching cached Gemini summaries.
@@ -29,7 +29,7 @@ export const useSummary = () => {
         throw new Error('Summaries are only available for cached Gemini topics (missing topicId).');
       }
 
-      const summaryData = await graphqlService.getTopicSummary(topicId);
+      const summaryData = await contentService.getTopicSummary(topicId);
       const content = summaryData?.content || '';
 
       const generationTime = Date.now() - startTime;

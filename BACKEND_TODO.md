@@ -22,6 +22,8 @@ Billing is **not in use and not planned to return.** The earlier "fix the Paddle
 - Optionally drop `tier`/`paddleCustomerId`/`paddleSubscriptionId` from `USERS_TABLE` records.
 - Left intact for now to avoid source↔deploy drift and risky production-proxy redeploys without confirmation. The actions are inert (JWT-gated, nothing calls them).
 
+**Stale subscription copy on public pages (DEFERRED — needs wording decision):** `PrivacyTerms.jsx` still says paid subscriptions exist + "payments processed by Stripe"; `Contact.jsx` still has "Billing & Account" + "Enterprise" cards. These contradict the billing deprecation but are legal/marketing copy — left for the operator to reword. (Found in the 2026-05-26 page audit.)
+
 ### B. Resolved since the 2026-04-17 list — verified done
 - **#4 / architectural note:** `newsPairIntelligence` is documented in ARCHITECTURE.md and confirmed manual-only (no schedule), deployed on DeepSeek. No longer "uncertain."
 - **#6:** `newsPostDevTo` is deployed and live (DeepSeek for the brief, OpenRouter `deepseek/deepseek-v4-flash:free` for the Dev.to overview). The undeclared-reference worry was a WIP that shipped.

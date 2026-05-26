@@ -44,7 +44,7 @@ function Disclosures() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Data Sources</h2>
         <ul style={{ paddingLeft: '1.25rem' }}>
-          <li>Topic detection and AI analysis: xAI Grok using globally syndicated publishers and Brave Search.</li>
+          <li>Topic detection and AI analysis: DeepSeek V4 and Google Gemini, using globally syndicated publishers and Brave Search.</li>
           <li>Geocoding and map layers: Google Maps Platform.</li>
         </ul>
         <p style={{ marginTop: '0.75rem' }}>

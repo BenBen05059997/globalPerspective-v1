@@ -1,5 +1,32 @@
 # Global Perspectives — Change Log
 
+## 2026-05-26b (Full page audit — problem → fix log)
+
+Ran the multi-agent page audit (all 16 page components, 3 parallel auditors) per `AGENT_REVIEW_METHOD.md`. Each problem + the fix applied:
+
+### Doc drift fixed (`ARCHITECTURE.md`)
+- **Home description stale** ("Daily topics, region grouping, AI toolbar") → rewrote to the real 3-col EditorialShell + StatusStrip + AI toolbar + per-topic economic-disruption badge + sidebars.
+- **WeeklyPage wrong** ("grouped by region") → feed groups **by category** (region is a left-rail filter); added 3-col + lazy `WeeklyMap` view.
+- **ThreadPage too thin** → documented Arc Intelligence AI rail + Timeline/Actors/Sources/**Economy** tabs + `useEconomicImpact`.
+- **DailyPage incomplete** → added the `EconomicFootprint` section.
+- **SignIn incomplete** → added guest/anonymous sign-in.
+- **Google Maps API row wrong** → WorldMapV2 uses **d3 + topojson**, not Google Maps; Google Maps is WeeklyMap (embedded by CountryPage) + legacy WorldMap.
+- **`useDisruptionsList` under-described** → lists all consumers, not just `/economy`.
+- **"1 service (restProxy.js)" wrong** → documented `contentService.js` as the 2nd module.
+
+### Code fixed
+- **Misnamed `graphqlService.js`** (no GraphQL — a restProxy wrapper) → renamed to `utils/contentService.js` (class `GraphQLService`→`ContentService`) across 8 files (Home, MapSidePanel, useGeminiTopics, useSummary, usePrediction, useTraceCause, useTodayArchive).
+- **`ThreadPage` "Grok · xAI" model chip** (stale provider, user-facing) → "AI analysis" (provider-agnostic, won't drift again).
+- **Stale "xAI Grok" provider credit** in `PrivacyTerms` (×2), `Disclosures`, `AboutContact` → DeepSeek / Google Gemini. (Privacy-relevant: discloses the real third parties receiving data.)
+
+### Deferred (needs your decision — written down, not changed)
+- **Subscription copy still live** in `PrivacyTerms.jsx` (paid plans + "payments processed by Stripe") and `Contact.jsx` ("Billing & Account" / "Enterprise" cards). Contradicts the billing deprecation, but it's legal/marketing wording — left for you to direct. Tracked in `BACKEND_TODO.md`.
+
+### Verification
+- Lint 0 errors; build clean; vitest 171/171 (1 pre-existing `layers.test.jsx` d3-in-jsdom failure, unrelated). Independent review agent run post-fix.
+
+---
+
 ## 2026-05-26 (Subscriptions deprecated + frontend billing cleanup + doc re-verification)
 
 Subscriptions/billing are not in use and are now **deprecated** (not "coming soon"). Removed the dormant billing UI from the frontend and brought `ARCHITECTURE.md` back in line with reality via a multi-agent review (see [`AGENT_REVIEW_METHOD.md`](AGENT_REVIEW_METHOD.md)).

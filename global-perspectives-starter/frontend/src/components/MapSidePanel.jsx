@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import SummaryDisplay from './SummaryDisplay';
 import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
-import graphqlService from '../utils/graphqlService';
+import contentService from '../utils/contentService';
 import { useError } from '../contexts/ErrorContext';
 import './AIComponents.css';
 
@@ -86,7 +86,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     const id = ++aiOpId.current;
     window.dispatchEvent(new CustomEvent('gp-ai-start', { detail: { id, message: 'Generating summary…' } }));
     try {
-      const data = await graphqlService.getTopicSummary(topicId);
+      const data = await contentService.getTopicSummary(topicId);
       setSummary(processContent(data));
       setSummaryCollapsed(false);
     } catch (e) {
@@ -122,7 +122,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     const id = ++aiOpId.current;
     window.dispatchEvent(new CustomEvent('gp-ai-start', { detail: { id, message: 'Mapping chain reactions…' } }));
     try {
-      const data = await graphqlService.getTopicPrediction(topicId);
+      const data = await contentService.getTopicPrediction(topicId);
       setPrediction(processContent({ content: data?.content || data?.impact_analysis || '', ...data }));
       setPredictionCollapsed(false);
     } catch (e) {
@@ -148,7 +148,7 @@ function TopicCard({ topic, countryCodes, selectedTopicId, onTopicSelect, isArch
     const id = ++aiOpId.current;
     window.dispatchEvent(new CustomEvent('gp-ai-start', { detail: { id, message: 'Tracing origins…' } }));
     try {
-      const data = await graphqlService.getTopicTraceCause(topicId);
+      const data = await contentService.getTopicTraceCause(topicId);
       setTraceCause(processContent(data));
       setTraceCauseCollapsed(false);
     } catch (e) {

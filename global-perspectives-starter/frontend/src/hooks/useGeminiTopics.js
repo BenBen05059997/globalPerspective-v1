@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { graphqlService } from '../utils/graphqlService';
+import { contentService } from '../utils/contentService';
 
 const CACHE_KEY = 'gemini_topics_cache_v2';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -41,7 +41,7 @@ export function useGeminiTopics() {
     window.dispatchEvent(new CustomEvent('gp-loading-start'));
     try {
       // Explicitly request 10 topics from the service
-      const data = await graphqlService.getGeminiTopics(13);
+      const data = await contentService.getGeminiTopics(13);
       const list = Array.isArray(data?.topics) ? data.topics : [];
       setTopics(list);
       setIsStale(Boolean(data?.stale));
@@ -81,7 +81,7 @@ export function useGeminiTopics() {
     const POLL_INTERVAL = 10 * 60 * 1000;
     const intervalId = setInterval(async () => {
       try {
-        const data = await graphqlService.getGeminiTopics(13);
+        const data = await contentService.getGeminiTopics(13);
         const newUpdatedAt = data?.updatedAt;
         if (newUpdatedAt && newUpdatedAt !== updatedAt) {
           setHasNewData(true);

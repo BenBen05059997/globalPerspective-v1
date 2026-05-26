@@ -710,7 +710,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | Wikidata (SPARQL) | newsCountryFactsUpdater | Head of state/government data |
 | ACLED API | newsCountryFactsUpdater | Active conflict data (approval pending) |
 | Mapbox Geocoding | newsSensitiveData | Location name → lat/lng |
-| Google Maps | WorldMap.jsx, WorldMapV2.jsx, WeeklyMap.jsx, CountryPage.jsx | Interactive map rendering |
+| Google Maps | WeeklyMap.jsx (embedded by CountryPage), WorldMap.jsx (legacy, unrouted) | Interactive map rendering. **Note:** WorldMapV2 (`/map`) uses **d3 + topojson**, not Google Maps |
 | Paddle | newsStripeWebhook, newsSensitiveData | ⚠️ DEPRECATED 2026-05-26 — billing + Customer Portal no longer in use |
 | Firebase Auth | AuthContext.jsx + newsSensitiveData + newsSavedItems | Passwordless sign-in + JWT verification |
 
@@ -758,23 +758,23 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | Component | Purpose |
 |-----------|---------|
 | `Layout.jsx` | Nav shell with hamburger menu |
-| `Home.jsx` | Daily topics, region grouping, AI toolbar |
+| `Home.jsx` | 3-col EditorialShell: StatusStrip + region-grouped daily topics with per-topic AI toolbar (Summarize/Predict/Trace Cause) + per-topic economic-disruption badge ("Economic impact →" when a thread has a disruption); `TodayArchiveSidebar` + `TopicNav` rails |
 | `WorldMapV2.jsx` | The live map at `/map` — stacked layer lenses, arc overlays, "Today's pulse" |
 | `WorldMap.jsx` | Legacy Google Maps view — file kept, no longer routed |
 | `EconomyPage.jsx` | Economic disruption dashboard (`/economy`) — disruptions list, top movers, markets |
 | `MapSidePanel.jsx` | Per-country topic cards with AI toolbar |
-| `WeeklyPage.jsx` | Narrative threads grouped by region, trending section, filter bar |
+| `WeeklyPage.jsx` | 3-col EditorialShell: narrative threads grouped **by category** in the feed (region is a left-rail filter), StatusStrip, left rail (search/period/sort/region/view-toggle), right rail "Rising This Week"; lazy-loaded `WeeklyMap` view mode |
 | `WeeklyMap.jsx` | Thread-colored markers, date playback, thread sidebar |
-| `ThreadPage.jsx` | Single thread deep-dive with AI intelligence |
+| `ThreadPage.jsx` | 3-col EditorialShell thread deep-dive: StatusStrip, "Arc Intelligence" AI rail (tabs + key actors + grounding sources), 4-stat row, content tabs Timeline/Actors/Sources/**Economy** (economic disruption via `useEconomicImpact` + `MechanismCard`/`DisruptionPreview`) |
 | `CountryListPage.jsx` | Grid index of all countries with intelligence |
 | `CountryPage.jsx` | Map-first country page: Google Map hero, AI tabs, story arcs, coverage |
-| `DailyPage.jsx` | Daily Intelligence Brief display (`/daily`, `/daily/:dateKey`) |
+| `DailyPage.jsx` | Daily Intelligence Brief display (`/daily`, `/daily/:dateKey`) + an `EconomicFootprint` section aggregating top instruments from `useDisruptionsList` |
 | `StoryEntryCard.jsx` | Entry card with Summarize/Predict/Trace Cause toggle |
 | `ThreadIntelligence.jsx` | Thread-level AI analysis display (storyArc, trajectory, etc.) |
 | `BriefingCard.jsx` | Formatted intelligence briefing card |
 | `BackgroundTimeline.jsx` | Historical timeline display for country/thread context |
 | `SaveButton.jsx` | Heart bookmark button — saves threads/countries/dailies to account |
-| `SignIn.jsx` | Firebase magic link + Google Sign-In form |
+| `SignIn.jsx` | Firebase sign-in form — magic link + Google + **guest/anonymous** (`signInAsGuest`, "Continue as guest") |
 | `Account.jsx` | User account tabs: saved items + profile |
 | `IntelligenceLoader.jsx` | Animated loading states (typewriter + explode variants) |
 
@@ -793,7 +793,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `usePairAnalyses()` | Fetch all pair analyses list; 30min cache |
 | `useDailyBrief(dateKey)` | Fetch Daily Intelligence Brief for a date |
 | `useEconomicImpact(threadId)` | Fetch per-thread economic disruption analysis |
-| `useDisruptionsList()` | Fetch all economic-impact records (powers `/economy`) |
+| `useDisruptionsList()` | Fetch all economic-impact records (powers `/economy`, Home topic badges, DailyPage footprint, CountryPage, WorldMapV2, CountryListPage) |
 | `useTopMovers()` | Fetch highest-magnitude economic-impact threads |
 | `useMarketsGlobal()` | Fetch global FX/rates/commodities/equities/crypto snapshot |
 | `useMarketsCountry(countryName)` | Fetch country macro snapshot |
@@ -811,6 +811,8 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 > Note: there is **no** `usePairIntelligence` hook — single-pair data is fetched via `restProxy.fetchPairAnalysis(slug)` directly.
 
 ### Service Layer
+
+Two modules: `restProxy.js` (the actual transport) and `utils/contentService.js` (a thin wrapper over restProxy that adds normalization/sentence-trimming for topic content — **renamed 2026-05-26 from the misleading `graphqlService.js`; there is no GraphQL**). The topic AI hooks (`useGeminiTopics`, `useSummary`, `usePrediction`, `useTraceCause`, `useTodayArchive`) and `Home`/`MapSidePanel` call through `contentService`; everything else calls `restProxy` directly.
 
 ```
 restProxy.js

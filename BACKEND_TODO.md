@@ -16,7 +16,7 @@ Billing is **not in use and not planned to return.** The earlier "fix the Paddle
 - Removed `fetchUserProfile` / `fetchPortalSession` from `restProxy.js` and the dead mocks from `redesign.test.jsx`.
 - Lint 0 errors, build OK, 171 tests pass.
 
-**Backend teardown — REMAINING (destructive AWS infra; needs explicit go-ahead):**
+**Backend teardown — DEFERRED by user 2026-05-26 ("leave it later"), do when convenient (destructive AWS infra):**
 - Delete the deployed `newsStripeWebhook` Lambda + its API Gateway endpoint.
 - Remove `resolveUserTier` / `user_profile` / `portal_session` from `newsSensitiveData` source, then redeploy the Lambda (verify with a `topics` test invoke after).
 - Optionally drop `tier`/`paddleCustomerId`/`paddleSubscriptionId` from `USERS_TABLE` records.

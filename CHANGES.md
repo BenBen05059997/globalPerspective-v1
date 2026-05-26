@@ -1,5 +1,21 @@
 # Global Perspectives — Change Log
 
+## 2026-05-26c (Static-page content audit — removed false subscription copy)
+
+Content-staleness audit of the 5 static pages (1 auditor) found **materially false billing/subscription claims** still live, contradicting the billing deprecation. Fixed (mostly deletions + the "free during early access" framing already used elsewhere):
+
+- **Disclosures.jsx** — deleted the entire "Subscription Terms" section ($15/mo Member, Enterprise pricing, 14-day trial, cancellation, refund policy, Stripe/PCI DSS) → replaced with a short "Access & Pricing" note (all free, no plans). "For billing questions" → "For account issues."
+- **PrivacyTerms.jsx** — Overview no longer claims paid subscription required; deleted the Stripe "Payment data" bullet + the Stripe third-party-services line; dropped the "subscriptions cancelled on deletion" clause; bumped Last updated → 2026-05-26.
+- **Contact.jsx** — "Billing & Account" card → "Account & Data" (deletion/data requests); "Enterprise" card → "Partnerships" (API/integrations); removed "urgent billing issues" line.
+- **WhitepaperPage.jsx** — relabeled the Free/Member/Enterprise paywall tiers as "Level 1/2/3" depth (all free, no paywall); removed "team access"/"enterprise account management"; added an explicit "all three levels currently free" note.
+- **AboutContact.jsx** — clean (no billing copy).
+
+Also recorded the reusable **page-audit run-book** in `AGENT_REVIEW_METHOD.md`.
+
+Verification: lint 0 errors, build clean, 171 tests pass; review agent verified. Provider names + dead-route links already clean from 2026-05-26b.
+
+---
+
 ## 2026-05-26b (Full page audit — problem → fix log)
 
 Ran the multi-agent page audit (all 16 page components, 3 parallel auditors) per `AGENT_REVIEW_METHOD.md`. Each problem + the fix applied:

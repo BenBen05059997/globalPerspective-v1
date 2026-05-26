@@ -145,3 +145,48 @@ Each variant reuses the same orchestrator + parallel-auditor loop. What changes 
 ## Adding a new variant
 
 Copy the shape above and answer four questions: **(1)** What's the trigger? **(2)** What is the *primary source* (the live thing, not a doc)? **(3)** What are the independent slices (one auditor each)? **(4)** What's the pass/fail gate and where do actionable findings go? Keep the cardinal rule intact.
+
+---
+
+# Playbook: frontend page audit + fix (run-book)
+
+This is the concrete, repeatable procedure we ran on 2026-05-26 to make the frontend section of `ARCHITECTURE.md` trustworthy and to catch stale user-facing content. Follow it step by step.
+
+### 0. Scope
+Decide the slice: the **routed pages** (route + component-table + hooks + service correctness) and/or **static content pages** (copy that can be factually wrong — billing, pricing, provider names, dead links). These are two different audits — run them separately (route/structure vs. content).
+
+### 1. Enumerate the targets
+- Routes: read `src/App.jsx` `<Routes>` — that's the authoritative page list, not the doc.
+- Group pages into 3–4 independent slices so each auditor has a coherent set (e.g. heavy data pages / map+country+daily / auth+static).
+
+### 2. Fan out auditors (one message, parallel)
+Brief each auditor with: the pages it owns, the doc sections to check against, the **cardinal rule** (verify from code, never from the doc/memory/plan), and the punch-list output format (`CONFIRMED / WRONG / GAP` with `file:line`). Tell them **not to edit**.
+For a **content** audit, give them the current reality to check copy against (e.g. "billing is deprecated — flag any subscription/Stripe/pricing claim"; "providers are DeepSeek+Gemini, not Grok"; "these routes were removed — flag links to them").
+
+### 3. Quick wins you do yourself (cheap greps)
+- Dead internal links: `grep -rnE 'to="/(removed|routes|here)'` across `src/`.
+- Residual stale strings after fixing: `grep -rni "grok\|xai\|stripe\|subscription" src/components/`.
+
+### 4. Consolidate + write the problem → fix log
+Group findings `CONFIRMED / WRONG / GAP`. Write each **problem and the fix** into `CHANGES.md` (and route latent/legal items to `BACKEND_TODO.md`). This log is also what the review agent verifies against.
+
+### 5. Trust-but-verify before sweeping changes
+If a finding is surprising, contradicts memory, or implies a deletion/rename across many files, re-verify it yourself first (read `App.jsx`, grep the symbol). Don't act on an auditor's claim you haven't confirmed.
+
+### 6. Apply fixes
+- Doc drift → edit `ARCHITECTURE.md`.
+- Misnamed module → rename file + `git mv`, then `replace_all` the identifier across every importer (build will catch a miss). Document the rename in the doc.
+- Stale user-facing copy → prefer **deleting false claims** over writing new (esp. legal copy); reuse wording already in the codebase ("currently free during early access").
+- Anything destructive or legal-sensitive that isn't a clear-cut deletion → write it down and confirm, don't freelance.
+
+### 7. Gate: lint + build + test
+`npm run lint` (0 *new* errors), `npm run build` (succeeds), `npx vitest run` (note pre-existing failures like the `layers.test.jsx` d3-in-jsdom one so they aren't mistaken for regressions). For auth-gated pages you can't exercise without a login, say so — don't claim "verified."
+
+### 8. Independent review of the fixes
+Spawn a **fresh** review agent. Give it the problem→fix list and tell it to verify each fix against the actual code (rename complete? doc matches code? no residual stale strings? no broken refs?). Address anything it flags before shipping.
+
+### 9. Deploy + commit
+`rm -rf docs/assets && cp -r dist/assets docs/assets && cp dist/index.html docs/index.html` — **never** touch `docs/config.js`. Stage explicitly (avoid stray untracked files), commit with a problem→fix summary, push.
+
+### Worked run (2026-05-26)
+Two passes. Pass 1 (route/structure): 3 auditors over 16 pages → fixed Home/Weekly/Thread/Daily/SignIn descriptions, the Google-Maps API row, `useDisruptionsList` consumers; renamed `graphqlService.js`→`contentService.js` (8 files); killed the "Grok · xAI" chip. Pass 2 (content): 1 auditor over the 5 static pages → removed materially false subscription/Stripe/pricing copy from Disclosures, PrivacyTerms, Contact, WhitepaperPage. Each pass: problem→fix log in `CHANGES.md`, review agent verified, lint/build/test gate, deploy, commit.

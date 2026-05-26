@@ -20,28 +20,28 @@ export default function Contact() {
         </div>
 
         <div style={{ padding: '16px', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '10px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '6px' }}>Billing & Account</div>
-          <a href="mailto:globalperspectives.app@gmail.com?subject=Billing%20inquiry" style={{ fontSize: '1rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '6px' }}>Account & Data</div>
+          <a href="mailto:globalperspectives.app@gmail.com?subject=Account%20request" style={{ fontSize: '1rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>
             globalperspectives.app@gmail.com
           </a>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
-            Subscription questions, refund requests, account deletion
+            Account deletion and data requests
           </p>
         </div>
 
         <div style={{ padding: '16px', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '10px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '6px' }}>Enterprise</div>
-          <a href="mailto:globalperspectives.app@gmail.com?subject=Enterprise%20inquiry" style={{ fontSize: '1rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '6px' }}>Partnerships</div>
+          <a href="mailto:globalperspectives.app@gmail.com?subject=Partnership%20inquiry" style={{ fontSize: '1rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>
             globalperspectives.app@gmail.com
           </a>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
-            Custom intelligence, team access, API integration, partnerships
+            API access, integrations, and partnerships
           </p>
         </div>
       </div>
 
       <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-        We aim to respond within 2 business days. For urgent billing issues, include your account email in the subject line.
+        We aim to respond within 2 business days.
       </p>
 
       <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, #e5e7eb)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>

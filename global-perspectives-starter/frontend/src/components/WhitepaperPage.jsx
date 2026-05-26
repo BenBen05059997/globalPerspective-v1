@@ -278,10 +278,14 @@ export default function WhitepaperPage() {
       {/* Part IV */}
       <Section title="Part IV: The Platform">
         <SubSection title="Intelligence at Three Levels">
+          <p style={{ lineHeight: 1.7, marginBottom: '1rem' }}>
+            All three levels are <strong>currently free</strong> during early access — there are no paid plans.
+            The levels below describe increasing depth of analysis, not a paywall.
+          </p>
           {[
             {
-              tier: 'Free — The Daily Picture',
-              sub: 'Everything needed to understand today\'s world, at no cost. No account required.',
+              tier: 'Level 1 — The Daily Picture',
+              sub: 'Everything needed to understand today\'s world. No account required.',
               items: [
                 'Today\'s AI-clustered global topics, refreshed hourly',
                 'AI Summary, Prediction, and Trace Cause analysis per topic',
@@ -292,8 +296,8 @@ export default function WhitepaperPage() {
               color: '#6b7280',
             },
             {
-              tier: 'Member — The Narrative Layer',
-              sub: 'For professionals who need to understand how stories evolve, not just what happened today.',
+              tier: 'Level 2 — The Narrative Layer',
+              sub: 'For readers who need to understand how stories evolve, not just what happened today.',
               items: [
                 '7-day narrative archive',
                 'Full weekly narrative view: stories grouped by thread, trend indicators (Rising / Stable / Fading / New)',
@@ -305,13 +309,13 @@ export default function WhitepaperPage() {
               color: '#3b82f6',
             },
             {
-              tier: 'Enterprise — The Full Intelligence Stack',
-              sub: 'For organizations that need comprehensive historical intelligence, team access, and custom use.',
+              tier: 'Level 3 — The Full Intelligence Stack',
+              sub: 'Comprehensive historical and cross-domain intelligence.',
               items: [
                 '30-day archive',
-                'All Member features',
-                'Priority access to new intelligence capabilities',
-                'Enterprise account management',
+                'All narrative-layer features',
+                'Economic disruption analysis and cross-domain causal graphs',
+                'Pair and systems-level intelligence',
               ],
               color: '#8b5cf6',
             },
@@ -417,7 +421,7 @@ export default function WhitepaperPage() {
       <div style={{ textAlign: 'center', padding: '2.5rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 12, marginBottom: '2rem' }}>
         <p style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Try Global Perspectives free</p>
         <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-          No account required. For enterprise access, partnerships, or press inquiries, contact us below.
+          No account required. For partnerships, API access, or press inquiries, contact us below.
         </p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/" style={{ padding: '0.7rem 1.75rem', background: '#3b82f6', color: '#fff', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>

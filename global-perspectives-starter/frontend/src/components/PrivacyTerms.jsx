@@ -8,9 +8,10 @@ function PrivacyTerms() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Overview</h2>
         <p>
-          Global Perspectives is an AI-powered global news intelligence platform. Core content (today's topics and the
-          interactive map) is freely accessible without an account. Premium features (weekly narrative analysis, country
-          intelligence, thread tracking) require a signed-in account and a paid subscription.
+          Global Perspectives is an AI-powered global news intelligence platform. All content — today's topics, the
+          interactive map, weekly narrative analysis, country and thread intelligence, and economic analysis — is
+          currently free and accessible without an account. An optional account (email magic link or Google sign-in)
+          only enables saving items; there are no paid plans or subscriptions at this time.
         </p>
       </section>
 
@@ -26,9 +27,7 @@ function PrivacyTerms() {
             We do not sell or share your email with third parties.
           </li>
           <li>
-            <strong>Payment data:</strong> If you subscribe to a paid plan, payment is processed securely by Stripe.
-            We do not store your credit card details. All payment data is handled directly by Stripe in accordance with
-            PCI DSS Level 1 compliance standards. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">Stripe's Privacy Policy</a>.
+            <strong>Payment data:</strong> None collected. The service is free and does not process payments.
           </li>
           <li>
             Aggregated server logs (error messages, request counts) may be retained briefly for reliability monitoring.
@@ -69,7 +68,6 @@ function PrivacyTerms() {
           <li>Brave Search &mdash; supplementary news source discovery</li>
           <li>Google Maps Platform &mdash; geocoding and visual map tiles</li>
           <li>Firebase Authentication &mdash; passwordless email sign-in</li>
-          <li>Stripe &mdash; subscription billing and payment processing</li>
           <li>AWS Lambda and DynamoDB &mdash; API backend and data storage</li>
           <li>Google Analytics (GA4) &mdash; anonymized usage metrics</li>
         </ul>
@@ -85,7 +83,7 @@ function PrivacyTerms() {
           To delete your account and all associated data, email{' '}
           <a href="mailto:globalperspectives.app@gmail.com">globalperspectives.app@gmail.com</a> from the
           email address associated with your account. We will remove your account data within 5 business days
-          and confirm by email. Active subscriptions will be cancelled as part of the deletion process.
+          and confirm by email.
         </p>
       </section>
 
@@ -105,7 +103,7 @@ function PrivacyTerms() {
           Significant updates will be announced on the About page.
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          Last updated: 2026-03-19
+          Last updated: 2026-05-26
         </p>
       </section>
     </div>

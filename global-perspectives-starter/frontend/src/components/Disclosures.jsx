@@ -112,44 +112,19 @@ function Disclosures() {
       </section>
 
       <section style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Subscription Terms</h2>
-        <h3 style={{ fontSize: '1.05rem', marginTop: '1rem' }}>Plans &amp; Pricing</h3>
-        <ul style={{ paddingLeft: '1.25rem' }}>
-          <li><strong>Free</strong> — access to today's global topics and the interactive map. No account required.</li>
-          <li><strong>Member ($15/month)</strong> — 7-day narrative archive, story arc intelligence, thread analysis, country briefings with AI-powered risk signals, and the weekly map with date playback.</li>
-          <li><strong>Enterprise</strong> — everything in Member plus 30-day archive depth and priority data access. <a href="mailto:globalperspectives.app@gmail.com">Contact us</a> for pricing.</li>
-        </ul>
-        <p>All paid plans are billed monthly. Prices are in USD and exclude applicable taxes.</p>
-
-        <h3 style={{ fontSize: '1.05rem', marginTop: '1rem' }}>Free Trial</h3>
-        <p>New accounts receive a 14-day free trial of Member features automatically upon sign-up. No credit card is required to start the trial. After the trial period, continued access to paid features requires a subscription.</p>
-
-        <h3 style={{ fontSize: '1.05rem', marginTop: '1rem' }}>Cancellation</h3>
+        <h2 style={{ fontSize: '1.25rem' }}>Access &amp; Pricing</h2>
         <p>
-          You may cancel your subscription at any time from your Account page via the Customer Portal.
-          Cancellation takes effect at the end of your current billing period — you retain access until then.
-          No partial refunds are issued for unused time within a billing cycle.
-        </p>
-
-        <h3 style={{ fontSize: '1.05rem', marginTop: '1rem' }}>Refund Policy</h3>
-        <p>
-          Refunds are considered on a case-by-case basis within 7 days of a charge. To request a refund,
-          email <a href="mailto:globalperspectives.app@gmail.com">globalperspectives.app@gmail.com</a> with
-          your account email and the reason for the request. We aim to respond within 2 business days.
-        </p>
-
-        <h3 style={{ fontSize: '1.05rem', marginTop: '1rem' }}>Payment Processing</h3>
-        <p>
-          Payments are processed securely by <a href="https://stripe.com" target="_blank" rel="noopener noreferrer">Stripe</a>.
-          We do not store your credit card details. All payment data is handled directly by Stripe in accordance with
-          PCI DSS Level 1 compliance standards.
+          All content is currently <strong>free</strong> during early access — every feature (today's topics,
+          the interactive map, narrative archive, thread and country intelligence, and economic analysis) is
+          fully open with no account or payment required. There are no paid plans, subscriptions, or trials at
+          this time. An optional account (email magic link or Google sign-in) only enables saving items.
         </p>
       </section>
 
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Contact</h2>
         <p>
-          For billing questions, account issues, or general inquiries:<br />
+          For account issues or general inquiries:<br />
           Email: <a href="mailto:globalperspectives.app@gmail.com">globalperspectives.app@gmail.com</a>
         </p>
         <p>
@@ -164,7 +139,7 @@ function Disclosures() {
           mentioned. If that changes, the disclosure will be updated here.
         </p>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '1rem' }}>
-          Last updated: 2026-03-21
+          Last updated: 2026-05-26
         </p>
       </section>
     </div>

@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-05-26g (Markets: store commodities + rates history for sparklines)
+
+Prerequisite for the planned `/economy` price sparklines (see `ECONOMIC_DISRUPTION_VIZ_PLAN.md`).
+
+- `newsMarketsData` now writes `COMMODITIES#GLOBAL` and `RATES#GLOBAL` `HISTORY#YYYY-MM-DD` daily snapshots (90-day TTL), mirroring FX/equities/crypto. Previously only `LATEST` was stored for these — so `/economy` couldn't sparkline Brent/gold/US10Y (the most-cited instruments).
+- Deployed + verified: invoked the commodities + yields sources, both `HISTORY#2026-05-26` rows confirmed in DynamoDB. History accrues daily from 2026-05-26.
+- File: `amplify/backend/function/newsMarketsData/src/index.js`.
+
+---
+
 ## 2026-05-26f (Expose equities + crypto in markets_global; surface on /economy)
 
 `newsMarketsData` already ingested `EQUITIES#GLOBAL` and `CRYPTO#GLOBAL` rows, but the `markets_global` API never served them — so `/economy`'s instrument pivot couldn't show a live level for SPX/N225/BTC etc.

@@ -113,6 +113,7 @@ async function fetchYields() {
   }
   const payload = { ...results, asOf: NOW_ISO() };
   await putItem('RATES#GLOBAL', 'LATEST', payload, 2);
+  await putItem('RATES#GLOBAL', `HISTORY#${TODAY()}`, payload, 90);
   console.log('[YIELDS] stored:', results);
   return payload;
 }
@@ -313,6 +314,7 @@ async function fetchCommodities() {
     result.vix = null;
   }
   await putItem('COMMODITIES#GLOBAL', 'LATEST', result, 1);
+  await putItem('COMMODITIES#GLOBAL', `HISTORY#${TODAY()}`, result, 90);
   console.log('[COMMODITIES] stored:', result);
   return result;
 }

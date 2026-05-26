@@ -28,8 +28,12 @@ function levelFor(instrumentId, markets) {
   const id = String(instrumentId).toUpperCase();
   const c = markets.commodities || {};
   const y = markets.yields || {};
+  const eq = markets.equities || {};
+  const cr = markets.crypto || {};
   if (COMMODITY_KEY[id] && c[COMMODITY_KEY[id]] != null) return { value: c[COMMODITY_KEY[id]], kind: 'commodity' };
   if (y[id] != null) return { value: y[id], kind: 'yield' };
+  if (eq[id] != null) return { value: eq[id], kind: 'equity' };
+  if (cr[id] != null) return { value: cr[id], kind: 'crypto' };
   return null;
 }
 
@@ -41,9 +45,11 @@ function fmtLevel(level) {
 
 // Right-rail market-context groups (label → [instrumentId, displayName])
 const MARKET_GROUPS = [
+  { hd: 'Equities', rows: [['SPX', 'S&P 500'], ['NDX', 'Nasdaq 100'], ['N225', 'Nikkei'], ['HSI', 'Hang Seng'], ['DAX', 'DAX']] },
   { hd: 'Commodities', rows: [['BRENT', 'Brent'], ['WTI', 'WTI'], ['GOLD', 'Gold'], ['COPPER', 'Copper']] },
   { hd: 'Risk', rows: [['VIX', 'VIX'], ['DXY', 'Dollar (DXY)']] },
   { hd: 'Rates', rows: [['US10Y', 'US 10Y'], ['US2Y', 'US 2Y'], ['DE10Y', 'Bund 10Y'], ['JP10Y', 'JGB 10Y'], ['UK10Y', 'Gilt 10Y']] },
+  { hd: 'Crypto', rows: [['BTC', 'Bitcoin'], ['ETH', 'Ethereum']] },
 ];
 
 export default function EconomyPage() {

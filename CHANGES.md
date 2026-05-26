@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-05-26f (Expose equities + crypto in markets_global; surface on /economy)
+
+`newsMarketsData` already ingested `EQUITIES#GLOBAL` and `CRYPTO#GLOBAL` rows, but the `markets_global` API never served them — so `/economy`'s instrument pivot couldn't show a live level for SPX/N225/BTC etc.
+
+- **Backend (`newsSensitiveData`):** `markets_global` now also returns `equities` (SPX, NDX, DJI, N225, HSI, DAX + sector ETFs) and `crypto` (BTC, ETH + 24h changes), via a `stripMeta` helper. Additive + in the existing try/catch. **Deployed + verified** through the live API Gateway (markets_global returns equities/crypto; `topics` still returns 13 → proxy healthy).
+- **Frontend (`EconomyPage`):** `levelFor` now resolves equity/crypto instrument levels, and the right-rail Market Context adds **Equities** + **Crypto** groups. Degrades gracefully if absent. (Ships when the GitHub Pages outage clears — backend is already live.)
+- Files: `amplify/backend/function/newsSensitiveData/src/index.js`, `EconomyPage.jsx`.
+
+---
+
 ## 2026-05-26e (Quality judge fixed — was rejecting every record on a Gemini 400)
 
 `newsEconomicQuality` (the LLM-as-judge) had been failing **every** record since deploy, which is why **zero** production economic-impact records ever carried quality scores.

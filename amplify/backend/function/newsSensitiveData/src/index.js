@@ -842,17 +842,19 @@ exports.handler = async (event) => {
     if (action === 'markets_global') {
       try {
         const mClient = getDynamoClient();
-        const [fx, rates, comms] = await Promise.all([
-          mClient.send(new GetCommand({ TableName: 'GlobalPerspectiveMarkets', Key: { pk: 'FX#USD', sk: 'LATEST' } })),
-          mClient.send(new GetCommand({ TableName: 'GlobalPerspectiveMarkets', Key: { pk: 'RATES#GLOBAL', sk: 'LATEST' } })),
-          mClient.send(new GetCommand({ TableName: 'GlobalPerspectiveMarkets', Key: { pk: 'COMMODITIES#GLOBAL', sk: 'LATEST' } })),
+        const mGet = (pk) => mClient.send(new GetCommand({ TableName: 'GlobalPerspectiveMarkets', Key: { pk, sk: 'LATEST' } }));
+        const [fx, rates, comms, eq, cr] = await Promise.all([
+          mGet('FX#USD'), mGet('RATES#GLOBAL'), mGet('COMMODITIES#GLOBAL'), mGet('EQUITIES#GLOBAL'), mGet('CRYPTO#GLOBAL'),
         ]);
+        const stripMeta = (it) => { if (!it) return null; const { pk, sk, ttl, updatedAt, ...rest } = it; return rest; };
         return {
           statusCode: 200, headers,
           body: JSON.stringify({ success: true, data: {
             fx:          fx.Item   ? { rates: fx.Item.rates,   base: fx.Item.base, asOf: fx.Item.asOf } : null,
             yields:      rates.Item ? { US10Y: rates.Item.US10Y, US2Y: rates.Item.US2Y, UK10Y: rates.Item.UK10Y, DE10Y: rates.Item.DE10Y, JP10Y: rates.Item.JP10Y, asOf: rates.Item.asOf } : null,
             commodities: comms.Item ? { brent: comms.Item.brent, wti: comms.Item.wti, gold: comms.Item.gold, copper: comms.Item.copper, dxy: comms.Item.dxy, vix: comms.Item.vix, asOf: comms.Item.asOf } : null,
+            equities:    stripMeta(eq.Item),
+            crypto:      stripMeta(cr.Item),
           }}),
         };
       } catch (e) {

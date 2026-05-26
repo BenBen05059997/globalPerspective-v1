@@ -130,14 +130,6 @@ export async function fetchThreadAnalyses(threadIds) {
   return proxyActionWithAuth('thread_analysis', { threadIds });
 }
 
-export async function fetchPortalSession() {
-  return proxyActionWithAuth('portal_session', {});
-}
-
-export async function fetchUserProfile() {
-  return proxyActionWithAuth('user_profile', {});
-}
-
 export async function fetchNarrativeThread(threadId) {
   return proxyActionWithAuth('narrative_thread', { threadId });
 }

@@ -1,38 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchUserProfile, fetchPortalSession } from '../services/restProxy';
 import { useSavedItems } from '../hooks/useSavedItems';
 import './Account.css';
-
-const TIER_LABELS = {
-  free: 'Free',
-  member: 'Member',
-  enterprise: 'Enterprise',
-};
-
-const TIER_COLORS = {
-  free: { background: '#f3f4f6', color: '#374151' },
-  member: { background: '#dbeafe', color: '#1e40af' },
-  enterprise: { background: '#f3e8ff', color: '#6b21a8' },
-};
-
-const TIER_PERKS = {
-  member: [
-    { icon: '📰', text: 'Weekly Analysis — 7-day narrative archive' },
-    { icon: '🗺️', text: 'Weekly Map — story evolution with date playback' },
-    { icon: '🧵', text: 'Thread Intelligence — Story Arc, Trajectory, Root Causes' },
-    { icon: '📈', text: 'Trending This Week — rising & new stories' },
-  ],
-  enterprise: [
-    { icon: '📰', text: 'Weekly Analysis — 30-day narrative archive' },
-    { icon: '🗺️', text: 'Weekly Map — story evolution with date playback' },
-    { icon: '🧵', text: 'Thread Intelligence — Story Arc, Trajectory, Root Causes' },
-    { icon: '📈', text: 'Trending This Week — rising & new stories' },
-    { icon: '🔍', text: 'Narrative Thread lookup — trace any thread back 30 days' },
-  ],
-  free: [],
-};
 
 const TYPE_COLORS = {
   thread:  { border: '#3b82f6', badge: '#dbeafe', badgeText: '#1e40af' },
@@ -238,25 +208,8 @@ function SavedPanel({ savedItems, savedLoading, onUnsave }) {
   );
 }
 
-function ProfilePanel({ user, profile, tier, tierStyle, perks, memberSince, isActive, handleSignOut }) {
+function ProfilePanel({ user, memberSince, handleSignOut }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [, setPortalLoading] = useState(false);
-  const [, setError] = useState(null);
-
-  async function handleManageBilling() {
-    setPortalLoading(true);
-    setError(null);
-    try {
-      const res = await fetchPortalSession();
-      if (res?.url) window.location.href = res.url;
-      else setError('Could not open billing portal. Please try again.');
-    } catch (err) {
-      setError(err?.message || 'Failed to open billing portal');
-    } finally {
-      setPortalLoading(false);
-    }
-  }
-  void handleManageBilling;
 
   return (
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
@@ -274,62 +227,11 @@ function ProfilePanel({ user, profile, tier, tierStyle, perks, memberSince, isAc
           <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user.email}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-            <span style={{
-              display: 'inline-block', padding: '2px 10px', borderRadius: 999,
-              fontSize: '0.75rem', fontWeight: 700, ...tierStyle,
-            }}>
-              {TIER_LABELS[tier] || tier}
-            </span>
-            {(tier === 'member' || tier === 'enterprise') && (
-              <span style={{ fontSize: '0.75rem', color: isActive ? '#16a34a' : '#ef4444', fontWeight: 500 }}>
-                ● {isActive ? 'Active' : profile.subscriptionStatus}
-              </span>
-            )}
-            {memberSince && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Since {memberSince}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Plan perks */}
-      {perks.length > 0 && (
-        <div style={SECTION}>
-          <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Your plan includes</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-            {perks.map((perk, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                <span style={{ flexShrink: 0 }}>{perk.icon}</span>
-                <span>{perk.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Quick access */}
-      {(tier === 'member' || tier === 'enterprise') && (
-        <div style={SECTION}>
-          <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Quick access</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <Link to="/weekly" style={{ fontSize: '0.875rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 500 }}>
-              Weekly Analysis →
-            </Link>
-            <Link to="/weekly-map" style={{ fontSize: '0.875rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 500 }}>
-              Weekly Map →
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Plan status */}
-      <div style={SECTION}>
-        <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Plan</div>
-        <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-          All features are currently free for early users. We'll notify you by email before paid plans go live.
+          {memberSince && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              Since {memberSince}
+            </div>
+          )}
         </div>
       </div>
 
@@ -370,7 +272,7 @@ function ProfilePanel({ user, profile, tier, tierStyle, perks, memberSince, isAc
             }}>
               <div style={{ fontWeight: 600, color: '#b91c1c', marginBottom: 6 }}>Are you sure?</div>
               <div style={{ color: '#6b7280', marginBottom: 10, lineHeight: 1.5 }}>
-                To delete your account and cancel your subscription, email us at{' '}
+                To delete your account, email us at{' '}
                 <a href="mailto:globalperspectives.app@gmail.com?subject=Delete%20my%20account" style={{ color: '#3b82f6' }}>
                   globalperspectives.app@gmail.com
                 </a>
@@ -395,8 +297,6 @@ export default function Account() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { savedItems, loading: savedLoading, unsave } = useSavedItems();
-  const [profile, setProfile] = useState(null);
-  const [profileLoading, setProfileLoading] = useState(false);
 
   const tab = searchParams.get('tab') || 'saved';
 
@@ -407,11 +307,6 @@ export default function Account() {
   useEffect(() => {
     if (authLoading) return;
     if (!user || user.isAnonymous) { navigate('/signin'); return; }
-    setProfileLoading(true);
-    fetchUserProfile()
-      .then(res => setProfile(res?.data || { tier: 'free' }))
-      .catch(() => setProfile({ tier: 'free' }))
-      .finally(() => setProfileLoading(false));
   }, [user, authLoading, navigate]);
 
   async function handleSignOut() {
@@ -419,17 +314,13 @@ export default function Account() {
     navigate('/');
   }
 
-  if (authLoading || profileLoading) {
+  if (authLoading) {
     return <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>Loading account…</div>;
   }
 
   if (!user) return null;
 
-  const tier = profile?.tier || 'free';
-  const tierStyle = TIER_COLORS[tier] || TIER_COLORS.free;
-  const perks = TIER_PERKS[tier] || [];
   const memberSince = formatMemberSince(user.metadata?.creationTime);
-  const isActive = !profile?.subscriptionStatus || profile.subscriptionStatus === 'active';
 
   return (
     <div style={{ maxWidth: 900, margin: '2rem auto', padding: '0 1rem' }}>
@@ -456,12 +347,7 @@ export default function Account() {
       {tab === 'profile' && (
         <ProfilePanel
           user={user}
-          profile={profile}
-          tier={tier}
-          tierStyle={tierStyle}
-          perks={perks}
           memberSince={memberSince}
-          isActive={isActive}
           handleSignOut={handleSignOut}
         />
       )}

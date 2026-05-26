@@ -9,9 +9,7 @@ import { formatDateLabel } from '../utils/dateUtils';
 import CompactTimeline from './CompactTimeline';
 import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
 import CopyBriefing, { formatThreadBriefing } from './CopyBriefing';
-import TrialBanner from './TrialBanner';
 import { SaveButton } from './SaveButton';
-import { useUserProfile } from '../hooks/useUserProfile';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
 import MechanismCard from './atoms/MechanismCard';
@@ -56,7 +54,6 @@ export default function ThreadPage() {
   const [searchParams] = useSearchParams();
   const fromCountry = searchParams.get('from') === 'country' ? searchParams.get('country') : null;
   const { loading: authLoading } = useAuth();
-  const { profile } = useUserProfile();
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
   const [contentTab, setContentTab] = useState('timeline');
   const [aiTab, setAiTab] = useState('summary');
@@ -361,8 +358,6 @@ export default function ThreadPage() {
           <SaveButton itemType="thread" itemId={threadId} metadata={{ title: displayTitle, category }} />
         </div>
       </div>
-
-      {profile?.isTrial && <TrialBanner daysLeft={profile.trialDaysLeft} />}
 
       <EditorialShell
         strip={

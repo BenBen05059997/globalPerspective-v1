@@ -4,6 +4,35 @@ Tracked issues from code review of all 11 Lambda functions (2026-04-17).
 
 ---
 
+## 2026-05-26 audit findings (full ARCHITECTURE.md re-verification vs. live AWS)
+
+### A. Subscriptions / billing — DEPRECATED 2026-05-26 (do not fix, plan for removal)
+Billing is **not in use and not planned to return.** The earlier "fix the Paddle/Stripe env mismatch before re-enabling billing" item is **withdrawn** — there is nothing to re-enable. The deployed `newsStripeWebhook` is broken (reads `PADDLE_WEBHOOK_SECRET`, only has stale `STRIPE_*` vars) but that no longer matters.
+
+**Frontend cleanup — DONE 2026-05-26 (built + deployed to `docs/`):**
+- Deleted `TrialBanner.jsx`, `UpgradeSuccess.jsx`, `WeeklyLockedPreview.jsx`, `useUserProfile.js`.
+- Removed the `/upgrade/success` route + TrialBanner usage from CountryPage/ThreadPage/WeeklyPage.
+- Stripped tier/perks/billing + `fetchPortalSession`/`fetchUserProfile` from `Account.jsx` (kept the Saved-items feature + basic profile).
+- Removed `fetchUserProfile` / `fetchPortalSession` from `restProxy.js` and the dead mocks from `redesign.test.jsx`.
+- Lint 0 errors, build OK, 171 tests pass.
+
+**Backend teardown — REMAINING (destructive AWS infra; needs explicit go-ahead):**
+- Delete the deployed `newsStripeWebhook` Lambda + its API Gateway endpoint.
+- Remove `resolveUserTier` / `user_profile` / `portal_session` from `newsSensitiveData` source, then redeploy the Lambda (verify with a `topics` test invoke after).
+- Optionally drop `tier`/`paddleCustomerId`/`paddleSubscriptionId` from `USERS_TABLE` records.
+- Left intact for now to avoid source↔deploy drift and risky production-proxy redeploys without confirmation. The actions are inert (JWT-gated, nothing calls them).
+
+### B. Resolved since the 2026-04-17 list — verified done
+- **#4 / architectural note:** `newsPairIntelligence` is documented in ARCHITECTURE.md and confirmed manual-only (no schedule), deployed on DeepSeek. No longer "uncertain."
+- **#6:** `newsPostDevTo` is deployed and live (DeepSeek for the brief, OpenRouter `deepseek/deepseek-v4-flash:free` for the Dev.to overview). The undeclared-reference worry was a WIP that shipped.
+- **"Add `newsSavedItems`":** done — plus `newsMarketsData`, `newsEconomicImpact`, `newsEconomicQuality` are now all documented (16 Lambdas total).
+
+### C. Lower-priority follow-ups surfaced by the audit
+- Env-var **rename** `XAI_API_KEY`/`GROK_MODEL`/`GROK_API_URL` → `LLM_*`: every Lambda's name now lies about its provider. Tracked in `OPTIMIZATION_REPORT.md` OPT-2b; raising visibility here.
+- Known-broken integrations (from `AI_PROVIDER_MIGRATION_PLAN.md`): `linkedInAutoPost` LinkedIn token expired (401); `newsPostDevTo` Dev.to publish key 401. Brief generation still works.
+
+---
+
 ## Verified issues (found in code)
 
 ### 1. Dead code in `newsSensitiveData`

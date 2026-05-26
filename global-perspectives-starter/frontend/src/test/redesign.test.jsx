@@ -26,10 +26,6 @@ vi.mock('../hooks/useCountryIntelligence', () => ({
   useCountryIntelligence: () => ({ intelligence: countryIntelFixture.data, loading: false, error: null }),
 }));
 
-vi.mock('../hooks/useUserProfile', () => ({
-  useUserProfile: () => ({ profile: null, loading: false }),
-}));
-
 // Auth context — bypass with a minimal stub
 vi.mock('../contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
@@ -46,7 +42,6 @@ vi.mock('../components/CountryOverviewMap', () => ({
 vi.mock('../components/WeeklyMap', () => ({
   default: () => <div data-testid="weekly-map" />,
 }));
-vi.mock('../components/TrialBanner', () => ({ default: () => null }));
 
 // Router wrapper
 function renderWithRouter(ui) {

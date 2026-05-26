@@ -18,7 +18,6 @@ import DailyPage from './components/DailyPage';
 import SignIn from './components/SignIn';
 import AuthCallback from './components/AuthCallback';
 import Account from './components/Account';
-import UpgradeSuccess from './components/UpgradeSuccess';
 import WhitepaperPage from './components/WhitepaperPage';
 import WorldMapV2 from './components/WorldMapV2';
 import EconomyPage from './components/EconomyPage';
@@ -97,7 +96,6 @@ export default function App() {
               <Route path="/signin" element={<SignIn />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/account" element={<Account />} />
-              <Route path="/upgrade/success" element={<UpgradeSuccess />} />
               <Route path="/whitepaper" element={<WhitepaperPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -7,8 +7,6 @@ import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { getTopicRegion } from '../utils/countryMapping';
 import { formatDateLabel } from '../utils/dateUtils';
 import TrendBadge, { getTrend } from './TrendBadge';
-import TrialBanner from './TrialBanner';
-import { useUserProfile } from '../hooks/useUserProfile';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
 import './WeeklyPage.css';
@@ -499,7 +497,6 @@ function FilterControls({ regionGroups, activeRegion, setActiveRegion, timeRange
 
 export default function WeeklyPage() {
   const { loading: authLoading } = useAuth();
-  const { profile } = useUserProfile();
   const [welcome, setWelcome] = useState(() => {
     if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('gp_just_signed_in')) {
       sessionStorage.removeItem('gp_just_signed_in');
@@ -749,7 +746,6 @@ export default function WeeklyPage() {
 
   return (
     <EditorialShell strip={strip} left={leftRail} right={rightRail} className="wp-shell">
-      {profile?.isTrial && <TrialBanner daysLeft={profile.trialDaysLeft} />}
 
       {welcome && (
         <div className="welcome-banner">

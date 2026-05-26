@@ -17,8 +17,6 @@ import WeeklyMap from './WeeklyMap';
 import ShareButtons from './ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from './CopyBriefing';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
-import TrialBanner from './TrialBanner';
-import { useUserProfile } from '../hooks/useUserProfile';
 import BackgroundTimeline from './BackgroundTimeline';
 import { SaveButton } from './SaveButton';
 import EditorialShell from './atoms/EditorialShell';
@@ -242,7 +240,6 @@ export default function CountryPage() {
   const { countryName } = useParams();
   const paramName = decodeURIComponent(countryName);
   const navigate = useNavigate();
-  const { profile } = useUserProfile();
   const [searchParams] = useSearchParams(); // eslint-disable-line no-unused-vars
   const { loading: authLoading } = useAuth();
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
@@ -738,8 +735,6 @@ export default function CountryPage() {
         </div>
         <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} />
       </div>
-
-      {profile?.isTrial && <TrialBanner daysLeft={profile.trialDaysLeft} />}
 
       {!countryData ? (
         <div className="cpg-empty" style={{ paddingTop: 80, textAlign: 'center' }}>

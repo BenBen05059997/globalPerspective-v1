@@ -1,14 +1,16 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-05-18
+**Last verified:** 2026-05-26
 
 > **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](./SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md).**
 
 Global Perspectives is an AI-powered global news aggregation platform. It fetches real news from RSS feeds and Brave Search, clusters articles into topics using DeepSeek V4, generates AI insights (summaries, predictions, root-cause analysis), and displays everything on an interactive world map and weekly narrative timeline.
 
-**AI Provider (as of 2026-05-16):** All LLM calls migrated off xAI Grok (credits exhausted 2026-05-03). See `AI_PROVIDER_MIGRATION_PLAN.md` for full migration history.
-- `newsInvokeGemini-dev`, `NewsProjectInvokeAgentLambda-dev`, `newsCountryIntelligence`, `newsPostDevTo`, `newsSystemsAnalysis` → **DeepSeek V4 Flash** (`deepseek-chat`, $0.14/M in · $0.28/M out)
-- `newsThreadAnalysis` → **Gemini 2.5 Flash** (free tier, 13s pacing between calls)
+**AI Provider (as of 2026-05-16):** All LLM calls migrated off xAI Grok (credits exhausted 2026-05-03). See `AI_PROVIDER_MIGRATION_PLAN.md` for full migration history. Env var names (`XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL`) are **legacy** — they hold DeepSeek/Gemini values in production. Always confirm the real provider with `aws lambda get-function-configuration`, never infer from the variable name.
+- `newsInvokeGemini-dev`, `NewsProjectInvokeAgentLambda-dev`, `newsCountryIntelligence`, `newsPostDevTo`, `newsSystemsAnalysis`, `newsEconomicImpact` → **DeepSeek V4 Flash** (`deepseek-chat`, $0.14/M in · $0.28/M out)
+- `newsThreadAnalysis`, `newsEconomicQuality` → **Gemini 2.5 Flash** (free tier, 13s pacing between calls, thinking disabled)
+- `newsPairIntelligence` → **DeepSeek V4** (deployed env vars verified `deepseek-chat` / `api.deepseek.com` — its source default still reads Grok, and the migration plan's Phase 2 box was never checked, but the live function is on DeepSeek). Manual-invoke only.
+- `newsMarketsData`, `newsCountryFactsUpdater`, `newsSavedItems`, `newsPostLinkedIn`, `linkedInAutoPost` → **no LLM** (data feeds or cached AI from DDB)
 
 - **Production URL:** https://globalperspective.net (custom domain)
 - **GitHub Pages URL:** https://benben05059997.github.io/globalPerspective-v1/
@@ -86,7 +88,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
                     ┌───────────────▼───────────────┐
                     │         newsSensitiveData       │
                     │   API Gateway REST endpoint    │
-                    │   16 actions — all content     │
+                    │   ~27 actions — all content    │
                     │   public during early access   │
                     └───────────────┬───────────────┘
                                     │
@@ -129,29 +131,25 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 
 ---
 
-## Tier System
+## Tier System ⚠️ DEPRECATED
 
-| Tier | Access |
+> **DEPRECATED as of 2026-05-26 — subscriptions/billing are not in use and are not planned to return.** The site is fully public; there is no paid tier, no checkout, and no active billing integration. The machinery below is documented for historical context and because dormant code/records still exist — treat it as **deprecated, not "coming soon."** Do not wire new features to tier gating, and do not spend effort "fixing" the billing path; favour removal over repair.
+
+| Tier (legacy) | Intended access |
 |------|--------|
 | `free` | Public topics only (no auth required) |
 | `member` | 7-day archive + thread/country intelligence |
 | `enterprise` | 90-day archive + all features |
 
-**Storage:** DynamoDB `USERS_TABLE`, keyed by Firebase UID (`uid`).
+In practice **every visitor gets full access** — tier is display-only metadata and enforces nothing.
 
-**Lifecycle:** Managed by `newsStripeWebhook` Lambda (name is legacy — now handles **Paddle**):
-- `subscription.created` → creates/upgrades user to `member`, stores `paddleCustomerId` + `paddleSubscriptionId`
-- `subscription.updated` → updates tier based on plan change
-- `subscription.canceled` → downgrades to `free`
+**Storage (legacy):** DynamoDB `USERS_TABLE`, keyed by Firebase UID (`uid`). Records may still carry `tier` / `paddleCustomerId` / `paddleSubscriptionId` fields from before deprecation.
 
-Signature verification: HMAC-SHA256 of `${ts}:${rawBody}` using `PADDLE_WEBHOOK_SECRET`. UID passed via `data.custom_data.uid` in checkout URL params.
+**Lifecycle (deprecated):** `newsStripeWebhook` Lambda (handles Paddle) once mapped `subscription.created/updated/canceled` → tier changes. The webhook is no longer a maintained path (see Lambda #12).
 
-**🚀 Early access mode (ACTIVE as of 2026-04-11):** ALL auth gates removed from `newsSensitiveData`. Every action is fully public — no Firebase JWT required. `resolveUserTier` is only called for `user_profile` and `portal_session`. Archive, thread analysis, country intelligence, narrative thread, and daily brief are all open. This will be re-gated when Paddle billing goes live.
+**Enforcement:** None. All auth gates were removed from `newsSensitiveData` on 2026-04-11; `resolveUserTier` survives only behind the deprecated `user_profile` / `portal_session` actions. Archive, thread/country intelligence, narrative thread, economic, and daily-brief actions are all open with no JWT.
 
-**Enforcement (backend):**
-Auth gates disabled in early access. When re-enabling: `newsSensitiveData` verifies Firebase JWT via lightweight Node `crypto` + Google cert endpoint (no firebase-admin). Reads USERS_TABLE for tier, enforces day limits (`member`=7, `enterprise`=90).
-
-**Paddle Customer Portal:** accessible from `/account` via the `portal_session` action. Calls Paddle auth-token API using `PADDLE_API_KEY`, returns redirect URL.
+**Paddle Customer Portal (removed):** the `/account` billing UI and its `portal_session` call were deleted from the frontend on 2026-05-26. The backend `portal_session` action still exists (inert, `PADDLE_API_KEY` unset) pending backend teardown.
 
 ---
 
@@ -166,11 +164,11 @@ Despite the name, now uses **DeepSeek V4 Flash** (`deepseek-chat`) — no Gemini
 **What it does:**
 1. Fetches articles from:
    - **RSS feeds** (26): Global outlets (BBC, Al Jazeera, France24, SCMP, etc.) + climate (Inside Climate News, Grist) + tech (Ars Technica, MIT Tech Review)
-   - **Brave Search** (9 dynamic queries): News + web search for climate/energy, science, business/society, regional topics
+   - **Brave Search** (10 dynamic queries): News + web search for regional outlets (Reuters, AP, Straits Times, Times of India, Korea Herald, Kyiv Independent, Latin America) + climate/energy, science, business/society
 2. Filters articles older than 48 hours; deduplicates by URL
 3. Checks soft-deduplication table (24hr window) to avoid re-covering the same story
-4. Sends to xAI Grok to cluster into topics with category diversity quota
-5. Validates all URLs returned by Grok against actually-fetched articles (hallucination filter)
+4. Sends to DeepSeek V4 to cluster into topics with category diversity quota
+5. Validates all URLs returned by the LLM against actually-fetched articles (hallucination filter)
 6. Assigns `continues_topic` field by scanning 7 days of past archive
 7. Writes to DynamoDB Topics table as `id=staging`
 
@@ -238,7 +236,7 @@ Despite the name, now uses **DeepSeek V4 Flash** (`deepseek-chat`) — no Gemini
 1. Reads 30 days of archive entries from Topics table
 2. Groups entries by `threadId`; selects top 10 threads with 2+ entries
 3. For each thread, searches Brave News + Web for external grounding
-4. Calls xAI Grok to generate:
+4. Calls **Gemini 2.5 Flash** (13s pacing between calls for the free-tier RPM ceiling, thinking disabled, `MAX_TOKENS=6000`) to generate:
    - `threadTitle` — sharp 6-10 word journalistic title
    - `entryShortTitles` — micro-headline per entry (`{topicId, shortTitle}`)
    - `storyArc` — 2-3 paragraphs on how the story evolved
@@ -246,22 +244,24 @@ Despite the name, now uses **DeepSeek V4 Flash** (`deepseek-chat`) — no Gemini
    - `rootCauseChain` — 3-layer root cause (immediate trigger → medium-term condition → structural factor)
    - `watchQuestions` — 3 specific, actionable watch questions
 5. Skips threads where `entryCount` hasn't changed since last run
-6. Writes to `SUMMARIZE_PREDICT_TABLE` at `THREAD#{threadId}` / `THREAD_ANALYSIS` (31-day TTL)
+6. Writes to `SUMMARIZE_PREDICT_TABLE` at `THREAD#{threadId}` / `THREAD_ANALYSIS` (90-day TTL)
 
-**Key env vars:** `XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL`, `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
+**Key env vars:** `XAI_API_KEY` (legacy name — holds **Gemini** key), `GROK_MODEL` (= `gemini-2.5-flash`), `GROK_API_URL` (= Gemini OpenAI-compat endpoint), `INTER_CALL_DELAY_MS` (= `13000`), `MAX_TOKENS` (= `6000`), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
+
+> ⚠️ Gemini free tier caps at ~20 requests/day. Fine for one scheduled run (7-10 calls), but manual test invokes the same day can exhaust quota.
 
 ---
 
 ### 4. `newsCountryIntelligence`
 **Path:** `amplify/backend/function/newsCountryIntelligence/src/index.js`
-**Trigger:** EventBridge Scheduler — `countryIntelliegence` — `cron(0 2/10 * * ? *)` (every 10 hours: 02:00, 12:00, 22:00 UTC)
+**Trigger:** EventBridge Scheduler — `countryIntelliegence` — `cron(0 7 * * ? *)` (daily 07:00 UTC; reduced from 3×/day on 2026-05-16 to cut cost after the DeepSeek migration)
 
 **What it does:**
 1. Reads 30 days of archive entries; groups by country (`regions` field)
 2. Loads existing thread analyses for cross-thread enrichment
 3. Selects top 20 countries with 2+ articles
 4. For each country, searches Brave News for fresh context
-5. Calls xAI Grok to generate:
+5. Calls **DeepSeek V4** to generate:
    - `headline` — 8-12 word sharp situation headline
    - `situationSummary` — 2-3 paragraph intelligence briefing
    - `crossThreadInsight` — connections between story arcs
@@ -269,7 +269,7 @@ Despite the name, now uses **DeepSeek V4 Flash** (`deepseek-chat`) — no Gemini
    - `riskSignals` — 3-4 specific, concrete watch events
    - `riskLevel` — `low` | `moderate` | `elevated` | `high`
 6. Skips countries where `totalArticles` count hasn't changed
-7. Writes to `SUMMARIZE_PREDICT_TABLE` at `COUNTRY#{countryName}` / `COUNTRY_INTELLIGENCE` (31-day TTL)
+7. Writes to `SUMMARIZE_PREDICT_TABLE` at `COUNTRY#{countryName}` / `COUNTRY_INTELLIGENCE` (90-day TTL)
 
 **Key env vars:** `XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL` (legacy names; hold DeepSeek values in production — see Lambda #1 notes), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`, `LLM_CONCURRENCY` (default `4`; added 2026-05-18 — 5.8× speedup).
 
@@ -287,19 +287,29 @@ Read-only REST proxy. All supported actions:
 | `summary` | None | `{ topicId }` | Returns cached SUMMARY |
 | `prediction` | None | `{ topicId }` | Returns cached PREDICTION |
 | `trace_cause` | None | `{ topicId }` | Returns cached TRACE_CAUSE |
+| `research_briefing` | None | `{ topicId }` | Returns cached RESEARCH_BRIEFING |
 | `geocode` | None | `{ address }` | Mapbox lat/lng lookup |
 | `today` | None | — | Today's archive entries |
+| `rss` | None (GET) | — | RSS 2.0 XML feed of latest topics |
 | `country_preview` | None | `{ countryName }` | Public SEO preview: headline, bluf, keyDevelopments, riskLevel, trajectory |
 | `thread_preview` | None | `{ threadId }` | Public SEO preview: threadTitle, entryShortTitles |
 | `archive_range` | None (early access) | `{ days }` | N days of archive (member=7, enterprise=90) |
 | `narrative_thread` | None (early access) | `{ threadId }` | All entries for a thread across days |
 | `thread_analysis` | None (early access) | `{ threadIds }` | Thread-level AI analyses |
 | `country_intelligence` | None (early access) | `{ countryNames }` | Country-level AI intelligence |
+| `country_history` | None (early access) | `{ countryName }` | Historical archive entries for a country |
+| `systems_analysis` | None (early access) | `{ countryName }` | Causal graph (nodes/edges) for a country |
 | `daily_brief` | None (early access) | `{ dateKey }` | Daily Intelligence Brief for a specific date |
 | `pair_analysis` | None (early access) | `{ pair: "slug" }` | Bilateral relationship analysis for a country pair |
 | `pair_analyses_list` | None (early access) | — | All pair analyses (DDB Scan, sorted list) |
-| `user_profile` | Firebase JWT | — | User tier + subscription info from USERS_TABLE |
-| `portal_session` | Firebase JWT | — | Paddle Customer Portal session URL |
+| `economic_impact` | None (early access) | `{ threadId }` | Per-thread economic disruption analysis |
+| `economic_impact_list` | None (early access) | — | All economic-impact records (DDB Scan) |
+| `economic_top_movers` | None (early access) | — | Highest-magnitude economic-impact threads |
+| `markets_global` | None (early access) | — | Global FX / rates / commodities / equities / crypto snapshot |
+| `markets_country` | None (early access) | `{ countryName }` | Country macro snapshot (GDP, CPI, reserves, etc.) |
+| `markets_history` | None (early access) | `{ key }` | Historical market series for sparklines |
+| `user_profile` | Firebase JWT | — | ⚠️ DEPRECATED (billing) — user tier + subscription info from USERS_TABLE |
+| `portal_session` | Firebase JWT | — | ⚠️ DEPRECATED (billing) — Paddle Customer Portal session URL; no-op (PADDLE_API_KEY unset) |
 
 **Early access:** All content actions are currently public (no auth required). When billing goes live, gated actions will require `Authorization: Bearer <firebase-id-token>`.
 
@@ -310,10 +320,11 @@ Read-only REST proxy. All supported actions:
 |----------|-------|
 | `TOPICS_DDB_TABLE` | Required |
 | `SUMMARIZE_PREDICT_TABLE` | Required |
+| `MARKETS_DDB_TABLE` | Required (markets actions; default `GlobalPerspectiveMarkets`) |
 | `USERS_DDB_TABLE` | Required (for tier lookup) |
 | `MAPBOX_GEOCODING_KEY` | Required |
 | `FIREBASE_PROJECT_ID` | Required (JWT verification) |
-| `PADDLE_API_KEY` | Required (portal sessions) |
+| `PADDLE_API_KEY` | Portal sessions only — unset in deployed `newsSensitiveData-dev` while billing is dormant |
 | `TOPICS_CACHE_MAX_AGE_SECONDS` | Default: `9000` |
 
 ---
@@ -326,10 +337,10 @@ Read-only REST proxy. All supported actions:
 1. Reads `latest` topics + AI summaries from DynamoDB
 2. Generates platform-specific post copy per topic
 3. Checks `SOCIAL_POSTS_TABLE` to skip already-posted topics
-4. Posts to configured platforms (LinkedIn, Bluesky, X/Twitter, Threads)
+4. Posts to **LinkedIn + Bluesky** (the long-tail platforms — X/Twitter, Threads, Mastodon, Telegram, Farcaster — were cut 2026-05-18; `buildPlatformList()` now wires only these two)
 5. Records each post with 30-day TTL
 
-**Key env vars:** `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET`, `THREADS_ACCESS_TOKEN`, `THREADS_USER_ID`, `SOCIAL_POSTS_TABLE`, `MAX_POSTS_PER_RUN` (default: 5), `MAX_POSTS_PER_DAY` (default: 100)
+**Key env vars:** `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `SOCIAL_POSTS_TABLE`, `MAX_POSTS_PER_RUN` (default: 5), `MAX_POSTS_PER_DAY` (default: 100)
 
 ---
 
@@ -341,11 +352,11 @@ Posts a daily AI-written summary article to [Dev.to](https://dev.to).
 
 **What it does:**
 1. Reads `latest` topics from Topics Table
-2. Calls OpenRouter AI (`deepseek/deepseek-r1:free`) to generate a long-form Dev.to article
+2. Calls OpenRouter AI (`AI_MODEL`, default `deepseek/deepseek-v4-flash:free`) to generate a long-form Dev.to article
 3. Checks `SOCIAL_POSTS_TABLE` to skip if already posted today
 4. Posts to Dev.to via API; records post with 90-day TTL
 
-**Key env vars:** `DEVTO_API_KEY`, `OPENROUTER_API_KEY`, `TOPICS_DDB_TABLE`, `SOCIAL_POSTS_TABLE`, `SITE_URL`
+**Key env vars:** `DEVTO_API_KEY`, `OPENROUTER_API_KEY`, `AI_MODEL` (default `deepseek/deepseek-v4-flash:free`), `TOPICS_DDB_TABLE`, `SOCIAL_POSTS_TABLE`, `SITE_URL`
 
 > **Note:** A deploy.zip is staged at `amplify/backend/function/newsPostDevTo/deploy.zip` — needs manual upload to AWS.
 
@@ -362,13 +373,15 @@ Bilateral relationship analysis between country pairs.
 1. Default run: analyzes 10 predefined pairs; manual run: single pair specified in payload
 2. Reads 30-day archive; deduplicates events by Jaccard title similarity
 3. Loads `country_facts.json` editorial layer + existing country intelligence + thread analyses
-4. Calls xAI Grok to generate: `pairTitle`, `currentState`, `timeline`, `trajectory` (3 scenarios), `rootDriver` (3 layers), `predictions`, `watchItems`
+4. Calls the LLM to generate: `pairTitle`, `currentState`, `timeline`, `trajectory` (3 scenarios), `rootDriver` (3 layers), `predictions`, `watchItems`
 5. Writes to `SUMMARIZE_PREDICT_TABLE` at `PAIR#{slug}` / `PAIR_ANALYSIS`
 
-**Frontend:** `/weekly/pairs` (PairListPage) + `/weekly/pair/:slug` (PairPage)
-**API actions:** `pair_analysis` (single pair by slug) + `pair_analyses_list` (all pairs, DDB Scan)
+> **Provider note:** The source default still reads Grok and the migration plan's Phase 2 checkbox was never ticked, but the **deployed** function's env vars point at DeepSeek (`GROK_MODEL=deepseek-chat`, `GROK_API_URL=https://api.deepseek.com/chat/completions`, verified 2026-05-26). Manual-invoke only — not on any EventBridge schedule.
 
-**Key env vars:** `XAI_API_KEY`, `GROK_MODEL`, `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
+**Frontend:** none — the PairListPage/PairPage components and their `/weekly/pairs` + `/weekly/pair/:slug` routes were deleted in the "Cut: orphans" cleanup. The backend data + API actions remain; nothing renders them.
+**API actions:** `pair_analysis` (single pair by slug) + `pair_analyses_list` (all pairs, DDB Scan) — still served, currently unconsumed by the UI
+
+**Key env vars:** `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` (legacy names — deployed function holds **DeepSeek** values), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
 
 ---
 
@@ -382,8 +395,8 @@ Cross-domain causal relationship analysis. Maps how events across categories con
 **What it does:**
 1. Reads 30-day archive entries; groups by country
 2. Identifies threads (2+ articles per threadId) per country; loads thread analyses
-3. For each country: builds nodes from threads, calls Grok with anti-hallucination prompt
-4. Grok returns nodes + edges. Validation: all IDs must be real, edges cite real topicIds, confidence calibrated
+3. For each country: builds nodes from threads, calls **DeepSeek V4** with anti-hallucination prompt
+4. The LLM returns nodes + edges. Validation: all IDs must be real, edges cite real topicIds, confidence calibrated
 5. Dropped edges: unknown IDs, self-loops, 0 citations, confidence downgraded if citation count misses threshold
 6. Writes to `SUMMARIZE_PREDICT_TABLE` at `SYSTEMS#{countryName}` / `SYSTEMS_ANALYSIS` (14-day TTL)
 
@@ -397,7 +410,7 @@ Cross-domain causal relationship analysis. Maps how events across categories con
 
 **Phase 1 (current):** Test countries only (`SYSTEMS_TEST_COUNTRIES=Argentina,Iran`). First run: Iran 15 nodes, 8 valid edges.
 
-**Key env vars:** `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY`, `GROK_MODEL`, `GROK_API_URL`, `SYSTEMS_TOP_N` (default: 5), `SYSTEMS_TEST_COUNTRIES`
+**Key env vars:** `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` (legacy names — hold **DeepSeek** values in production), `SYSTEMS_TOP_N` (default: 5), `SYSTEMS_TEST_COUNTRIES`
 
 ---
 
@@ -432,27 +445,85 @@ Keeps country facts in DynamoDB current without manual editing.
 5. Supports partial updates for specific countries via payload
 
 **DDB key:** `FACTS#{countryName}` / `COUNTRY_FACTS`
-**Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `ACLED_API_KEY` (optional)
+**Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `ACLED_USERNAME` + `ACLED_PASSWORD` (OAuth token flow against `acleddata.com/oauth/token` — there is **no** `ACLED_API_KEY`)
 
 ---
 
-### 12. `newsStripeWebhook` (name is legacy — handles Paddle)
+### 12. `newsStripeWebhook` (name is legacy — handled Paddle) ⚠️ DEPRECATED
 **Path:** `amplify/backend/function/newsStripeWebhook/src/index.js`
 **Trigger:** Paddle webhook (separate API Gateway endpoint)
 
-Handles Paddle billing events to keep USERS_TABLE in sync.
+> **DEPRECATED 2026-05-26 — billing is not in use.** This Lambda once kept `USERS_TABLE` tiers in sync with Paddle subscription events (`subscription.created/updated/canceled`, HMAC-SHA256 of `${ts}:${rawBody}` with `PADDLE_WEBHOOK_SECRET`, UID via `data.custom_data.uid`). It is **no longer a maintained path.** It is also broken as deployed — the code reads `PADDLE_WEBHOOK_SECRET` but the live function only has stale `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` vars, so every signature check fails. Since subscriptions are deprecated this is **not a bug to fix** — it's a removal candidate. Do not build on it.
 
-| Paddle Event | Action |
-|---|---|
-| `subscription.created` | Create/upgrade user to `member`; store `paddleCustomerId` + `paddleSubscriptionId` |
-| `subscription.updated` | Update tier based on plan change |
-| `subscription.canceled` | Downgrade user to `free` |
+---
 
-**Signature verification:** HMAC-SHA256 of `${ts}:${rawBody}` using `PADDLE_WEBHOOK_SECRET`. Uses Node built-in `crypto` — no external dependencies.
+### 13. `newsMarketsData`
+**Path:** `amplify/backend/function/newsMarketsData/src/index.js`
+**Triggers:** EventBridge Rules — `MarketsDataHourly` (`rate(1 hour)`), `MarketsYieldsDaily` (`cron(0 6 ? * MON-FRI *)`), `MarketsMacrosWeekly` (`cron(0 2 ? * SUN *)`)
 
-**UID resolution:** `data.custom_data.uid` — passed via checkout URL params (`checkout[custom][uid]={uid}`).
+Free economic-data ingest — **no LLM**, all free feeds.
 
-**Key env vars:** `PADDLE_WEBHOOK_SECRET`, `USERS_DDB_TABLE`
+**What it does:**
+1. **FX** — Frankfurter (ECB rates, no key), hourly
+2. **Bond yields** — FRED (free key), daily on weekdays
+3. **Commodities + equities + crypto** — Stooq CSV (15-min delayed, no key) / CoinGecko, hourly
+4. **Country macros** — World Bank (no key), weekly
+5. Writes `LATEST` rows plus dated `HISTORY#` rows (for sparklines) to `MARKETS_DDB_TABLE`
+
+**Payload:** `{}` runs all sources appropriate for the time; `{ "source": "fx" | "yields" | "macros" | "commodities" | "equities" | "crypto" }` runs one.
+
+**Key env vars:** `MARKETS_DDB_TABLE` (default `GlobalPerspectiveMarkets`), `FRED_API_KEY`
+
+---
+
+### 14. `newsEconomicImpact`
+**Path:** `amplify/backend/function/newsEconomicImpact/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerNewsEconomicImpact` — `cron(30 7 * * ? *)` (daily 07:30 UTC, after thread analysis)
+
+Per-thread economic disruption analysis — the "Economic Disruption Layer." Uses **DeepSeek V4**.
+
+**What it does:**
+1. Reads 30 days of archive + each thread's `THREAD_ANALYSIS` and topic `SUMMARY` records
+2. For threads with an economic dimension, calls DeepSeek with a **closed instrument allowlist** (any unknown ticker → dropped)
+3. Output is qualitative only — `direction` (up/down/mixed), `magnitude` (small/moderate/large), **never a fabricated %**; every claim must cite real `topicId`s (uncited claims dropped post-parse)
+4. Snapshots **actual** prices from `MARKETS_DDB_TABLE` (compute, don't generate)
+5. Writes tombstone records `{ hasImpact: false }` for threads with no economic dimension
+6. Writes to `SUMMARIZE_PREDICT_TABLE` at `ECON#THREAD#{threadId}` / `ECONOMIC_IMPACT` (21-day TTL)
+
+**Key env vars:** `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` (legacy names — hold **DeepSeek** values), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `MARKETS_DDB_TABLE`, `LLM_CONCURRENCY` (default `4`), `ECON_MIN_ENTRIES` (default `2`), `ECON_MAX_THREADS` (default `15`)
+
+---
+
+### 15. `newsEconomicQuality`
+**Path:** `amplify/backend/function/newsEconomicQuality/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerNewsEconomicQuality` — `cron(0 8 * * ? *)` (daily 08:00 UTC, after economic impact; aligned with Gemini quota reset)
+
+LLM-as-judge quality gate for economic-impact records. Deliberately a **different model family** from the producer (DeepSeek produces, **Gemini 2.5 Flash** judges) so judge errors are less correlated with producer errors.
+
+**What it does:**
+1. Scans recent `ECON#THREAD#` records (`hasImpact: true`, not judged in last 7 days)
+2. Builds a judge prompt, calls Gemini, parses 5-axis scores: `coherence`, `citation_fidelity`, `analog_match`, `severity_calibration`, `no_bs`
+3. Flags the record `is_low_quality: true` if any axis ≤ 2
+4. Writes `qualityScores` + `is_low_quality` + `quality_judged_at` back to the record
+
+**Key env vars:** `XAI_API_KEY` (legacy name — holds **Gemini** key), `GROK_MODEL` (= `gemini-2.5-flash`), `GROK_API_URL` (= Gemini OpenAI-compat endpoint), `INTER_CALL_DELAY_MS` (= `13000`), `MAX_TOKENS` (= `16000`, large because Gemini thinking tokens count against the cap), `QUALITY_MAX_RECORDS` (default `15`), `QUALITY_RECENT_DAYS` (default `7`), `SUMMARIZE_PREDICT_TABLE`
+
+---
+
+### 16. `newsSavedItems`
+**Path:** `amplify/backend/function/newsSavedItems/src/index.js`
+**Trigger:** User-triggered — Lambda Function URL (`window.SAVED_ITEMS_ENDPOINT`) or AppSync resolver (auto-detected). **No LLM.**
+
+Per-user save/bookmark store.
+
+**What it does:**
+1. Verifies a **Firebase JWT** (lightweight Node `crypto` + Google certs — no firebase-admin) on every action
+2. Actions: `save_item`, `unsave_item`, `get_saved_items`
+3. Item types allowed: `thread`, `country`, `daily`, `pair`. Caps: 500 items/user, 4KB metadata/item
+
+**DDB:** `SAVED_ITEMS_TABLE` — **PK** `uid`, **SK** `savedKey` (= `{itemType}#{itemId}`)
+
+**Key env vars:** `SAVED_ITEMS_TABLE`, `FIREBASE_PROJECT_ID`
 
 ---
 
@@ -513,6 +584,8 @@ Handles Paddle billing events to keep USERS_TABLE in sync.
 | `SYSTEMS#{countryName}` | `SYSTEMS_ANALYSIS` | newsSystemsAnalysis | nodes[], edges[] with causal graph, confidence levels, citations (14-day TTL) |
 | `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL) |
 | `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata), active conflicts (ACLED), leadership change detection (90-day TTL) |
+| `ECON#THREAD#{threadId}` | `ECONOMIC_IMPACT` | newsEconomicImpact | direction, magnitude, instruments, analog, marketSnapshot, citations; quality scores added by newsEconomicQuality (21-day TTL) |
+| `TOPIC#{topicId}` | `RESEARCH_BRIEFING` | NewsProjectInvokeAgentLambda | Research briefing (first pass of two-pass prediction) |
 
 ---
 
@@ -535,7 +608,28 @@ Handles Paddle billing events to keep USERS_TABLE in sync.
 ---
 
 ### Social Posts Table (`SOCIAL_POSTS_TABLE`)
-**PK:** `topicId` + `platform`. Deduplication table for LinkedIn/Bluesky/X/Threads/Dev.to posts. TTL: 30 days (90 days for Dev.to).
+**PK:** `topicId` + `platform`. Deduplication table for LinkedIn/Bluesky/Dev.to posts. TTL: 30 days (90 days for Dev.to).
+
+---
+
+### Markets Table (`MARKETS_DDB_TABLE`, default `GlobalPerspectiveMarkets`, ap-northeast-1)
+**PK:** `pk` / **SK:** `sk`. Written by `newsMarketsData`, read by `newsSensitiveData`.
+
+| pk | sk | Contents |
+|----|-----|---------|
+| `FX#USD` | `LATEST` / `HISTORY#YYYY-MM-DD` | USD-base FX rates |
+| `RATES#GLOBAL` | `LATEST` | US/UK/DE/JP bond yields |
+| `COMMODITIES#GLOBAL` | `LATEST` | Brent, WTI, gold, copper, VIX, DXY |
+| `EQUITIES#GLOBAL` | `LATEST` / `HISTORY#YYYY-MM-DD` | Indices + sector ETFs |
+| `CRYPTO#GLOBAL` | `LATEST` / `HISTORY#YYYY-MM-DD` | BTC, ETH + 24h change |
+| `MACRO#{country}` | `LATEST` / `HISTORY#YYYY-Q#` | GDP, CPI, reserves, debt/GDP, current account, unemployment |
+
+All rows carry `asOf` timestamps + TTL. Honesty contract: never display stale data without labeling it.
+
+---
+
+### Saved Items Table (`SAVED_ITEMS_TABLE`, default `GlobalPerspectiveSavedItems`)
+**PK:** `uid` (Firebase UID) / **SK:** `savedKey` (= `{itemType}#{itemId}`). Written/read by `newsSavedItems`. Item types: `thread`, `country`, `daily`, `pair`.
 
 ---
 
@@ -549,35 +643,38 @@ Domain is registered and DNS-managed in Cloudflare. Orange cloud (proxy) is enab
 
 **Full source:** `WORKER_FULL_CODE.md`
 
-The Worker handles three cases:
+The Worker handles these cases:
 
 | Path | Visitor type | What happens |
 |------|-------------|--------------|
 | `/rss` | Anyone | Proxied to `newsSensitiveData ?action=rss`, returns RSS 2.0 XML, 30 min edge cache |
-| `/weekly/country/:name` | Bot (25+ patterns) | POSTs `country_preview` to Lambda, returns pre-rendered HTML with OG tags |
-| `/weekly/thread/:id` | Bot (25+ patterns) | POSTs `thread_preview` to Lambda, returns pre-rendered HTML with OG tags |
+| `/weekly/country/:name` | Bot (24 patterns) | POSTs `country_preview` to Lambda, returns pre-rendered HTML with OG tags |
+| `/weekly/thread/:id` | Bot (24 patterns) | POSTs `thread_preview` to Lambda, returns pre-rendered HTML with OG tags |
+| `/daily` and `/daily/:dateKey` | Bot (24 patterns) | POSTs `daily_brief` to Lambda (with 7-day fallback lookback), returns pre-rendered HTML with OG tags |
 | Everything else | Anyone | Passed through to GitHub Pages unchanged |
 
-**Bot patterns detected:** Twitterbot, facebookexternalhit, LinkedInBot, Slackbot, Discordbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Googlebot, Bingbot, and 14 others.
+**Bot patterns detected:** Twitterbot, facebookexternalhit, LinkedInBot, Slackbot, Discordbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Googlebot, Bingbot, and 13 others (24 total in `BOT_PATTERNS`).
 
 **Why this matters:**
 - Social shares of country/thread pages show rich previews (real headline, description, image) instead of blank cards
 - AI crawlers (ChatGPT, Perplexity, Claude, Google) can read and cite page content — previously invisible due to React SPA empty shell
 - Human visitors always get the full React app unchanged
 
-**Key implementation detail:** Both `country_preview` and `thread_preview` require POST with JSON body (`{ action, payload }`). The Lambda's `payload` field is only populated from POST body, not GET query params.
+**Key implementation detail:** The preview actions (`country_preview`, `thread_preview`, `daily_brief`) require POST with JSON body (`{ action, payload }`). The Lambda's `payload` field is only populated from POST body, not GET query params.
 
 ---
 
-## Scheduling — EventBridge Rules + Scheduler (VERIFIED 2026-04-27)
+## Scheduling — EventBridge Rules + Scheduler (VERIFIED via AWS CLI 2026-05-26)
 
-Most schedules use **EventBridge Scheduler** (separate service from EventBridge Rules). Two use EventBridge Rules. All times UTC.
+Most schedules use **EventBridge Scheduler** (separate service from EventBridge Rules). Several use EventBridge Rules. All times UTC.
 
 ### EventBridge Rules
 | Rule name | Schedule | Target |
 |-----------|----------|--------|
 | `TriggerDailyAnalysis` | `cron(30 6 * * ? *)` | newsThreadAnalysis (06:30 UTC daily) |
 | `TriggerNewsSystemsAnalysis` | `cron(15 7 * * ? *)` | newsSystemsAnalysis (07:15 UTC daily) |
+| `TriggerNewsEconomicImpact` | `cron(30 7 * * ? *)` | newsEconomicImpact (07:30 UTC daily) |
+| `TriggerNewsEconomicQuality` | `cron(0 8 * * ? *)` | newsEconomicQuality (08:00 UTC daily) |
 | `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
 | `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |
 | `MarketsMacrosWeekly` | `cron(0 2 ? * SUN *)` | newsMarketsData |
@@ -585,13 +682,15 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 ### EventBridge Scheduler
 | Schedule name | Cron | Target |
 |---------------|------|--------|
-| `InvokeGoogleGemini` | `cron(0 */2 * * ? *)` | newsInvokeGemini-dev (every 2h) |
-| `InvokeNewsAgent` | `cron(5 */2 * * ? *)` | NewsProjectInvokeAgentLambda-dev (every 2h at :05) |
-| `countryIntelliegence` | `cron(0 2/10 * * ? *)` | newsCountryIntelligence (02:00 / 12:00 / 22:00 UTC) |
+| `InvokeGoogleGemini` | `cron(0 */4 * * ? *)` | newsInvokeGemini-dev (every 4h) |
+| `InvokeNewsAgent` | `cron(5 */4 * * ? *)` | NewsProjectInvokeAgentLambda-dev (every 4h at :05) |
+| `countryIntelliegence` | `cron(0 7 * * ? *)` | newsCountryIntelligence (daily 07:00 UTC) |
 | `InvokeLinkedIn` | `cron(20 */3 * * ? *)` | newsPostLinkedin (every 3h at :20) |
 | `LinkedinThreadsDaily` | `cron(30 7/12 * * ? *)` | linkedInAutoPost (07:30 / 19:30 UTC) |
 | `InvokeDev` | `cron(0 23 * * ? *)` | newsPostDevTo (23:00 UTC daily) |
 | `Fact` | `cron(0 5 * * ? *)` | newsCountryFactsUpdater (05:00 UTC daily) |
+
+> The every-2h pipeline cadence and 3×/day country-intelligence schedule were both reduced on 2026-05-16 alongside the DeepSeek migration to control cost.
 
 ### No schedule (manual only)
 - `newsPairIntelligence` — invoke manually or via ad-hoc AWS CLI call
@@ -604,13 +703,15 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 
 | API | Used by | Purpose |
 |-----|---------|---------|
-| xAI Grok (`api.x.ai`) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsThreadAnalysis, newsCountryIntelligence, newsPairIntelligence, newsPostDevTo | Topic clustering + AI content generation |
+| DeepSeek V4 (`api.deepseek.com`) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsCountryIntelligence, newsSystemsAnalysis, newsEconomicImpact, newsPairIntelligence, newsPostDevTo | Topic clustering + AI content generation |
+| Gemini 2.5 Flash (OpenAI-compat endpoint) | newsThreadAnalysis, newsEconomicQuality | Editorial analysis + LLM-as-judge (free tier, 13s pacing) |
 | Brave Search (news + web) | newsInvokeGemini, newsThreadAnalysis, newsCountryIntelligence, newsPairIntelligence | News article search + grounding |
+| Frankfurter / FRED / Stooq / World Bank / CoinGecko | newsMarketsData | Free FX, bond yields, commodities, equities, macros, crypto |
 | Wikidata (SPARQL) | newsCountryFactsUpdater | Head of state/government data |
 | ACLED API | newsCountryFactsUpdater | Active conflict data (approval pending) |
 | Mapbox Geocoding | newsSensitiveData | Location name → lat/lng |
 | Google Maps | WorldMap.jsx, WorldMapV2.jsx, WeeklyMap.jsx, CountryPage.jsx | Interactive map rendering |
-| Paddle | newsStripeWebhook, newsSensitiveData | Billing + Customer Portal (MoR — handles VAT/JCT globally) — dormant in early access |
+| Paddle | newsStripeWebhook, newsSensitiveData | ⚠️ DEPRECATED 2026-05-26 — billing + Customer Portal no longer in use |
 | Firebase Auth | AuthContext.jsx + newsSensitiveData + newsSavedItems | Passwordless sign-in + JWT verification |
 
 ---
@@ -625,43 +726,42 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 
 Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.
 
+Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch-all. Content is fully public in early-access mode.
+
 | Path | Component | Access |
 |------|-----------|--------|
 | `/` | `Home.jsx` | Public |
-| `/map` | `WorldMap.jsx` | Public |
+| `/map` | `WorldMapV2.jsx` | Public |
 | `/about` | `AboutContact.jsx` | Public |
 | `/contact` | `Contact.jsx` | Public |
 | `/privacy` | `PrivacyTerms.jsx` | Public |
 | `/disclosures` | `Disclosures.jsx` | Public |
 | `/whitepaper` | `WhitepaperPage.jsx` | Public |
-| `/cli` | `CLIPage.jsx` | Public |
-| `/signin` | `SignIn.jsx` | Public |
-| `/auth/callback` | `AuthCallback.jsx` | Public |
 | `/daily` | `DailyPage.jsx` | Public |
 | `/daily/:dateKey` | `DailyPage.jsx` | Public |
+| `/economy` | `EconomyPage.jsx` | Public |
 | `/weekly` | `WeeklyPage.jsx` | Public |
 | `/weekly/thread/:threadId` | `ThreadPage.jsx` | Public |
 | `/weekly/countries` | `CountryListPage.jsx` | Public |
 | `/weekly/country/:countryName` | `CountryPage.jsx` | Public |
-| `/weekly-map` | `WeeklyMap.jsx` | Auth |
-| `/intelligence-map` | `IntelligenceMap.jsx` | Public |
-| `/map-v2` | `WorldMapV2.jsx` | Public (dev/preview) |
-| `/test/briefing-card` | `BriefingCardTest.jsx` | Dev/preview only |
+| `/signin` | `SignIn.jsx` | Public |
+| `/auth/callback` | `AuthCallback.jsx` | Public |
 | `/account` | `Account.jsx` | Auth |
-| `/upgrade/success` | `UpgradeSuccess.jsx` | Auth |
+| `*` | `NotFound` (inline in App.jsx) | Public catch-all (404) |
 
-**Note:** `/pricing` route removed from routing and nav (Pricing.jsx kept in codebase). `/weekly/pairs` + `/weekly/pair/:slug` hidden 2026-04-23 (PairPage/PairListPage kept, backend active).
+**Removed/never-wired:** a "Cut: orphans" cleanup deleted several components and routes, and the 2026-05-26 subscription deprecation removed billing UI. The following are **no longer routed and the component files no longer exist**: `/cli` (CLIPage), `/intelligence-map` (IntelligenceMap), `/test/briefing-card` (BriefingCardTest), `/pricing` (Pricing), `/weekly/pairs` + `/weekly/pair/:slug` (PairPage/PairListPage), `/upgrade/success` (UpgradeSuccess — billing). Also deleted in the billing cleanup: `TrialBanner.jsx`, `WeeklyLockedPreview.jsx`, `useUserProfile.js`. `WorldMap.jsx` and `WeeklyMap.jsx` still exist as files but are **not routed** (`/map` uses WorldMapV2; there is no `/weekly-map` or `/map-v2` route).
 
 ### Key Components
 
-58 total components. Key ones:
+63 total component files (50 in `src/components/` + 13 in `src/components/atoms/`) after the 2026-05-26 billing cleanup. Key ones:
 
 | Component | Purpose |
 |-----------|---------|
 | `Layout.jsx` | Nav shell with hamburger menu |
 | `Home.jsx` | Daily topics, region grouping, AI toolbar |
-| `WorldMap.jsx` | Google Maps with topic markers, geodesic polylines, side panel |
-| `WorldMapV2.jsx` | Enhanced map with pair intelligence arc overlays (`/map-v2`) |
+| `WorldMapV2.jsx` | The live map at `/map` — stacked layer lenses, arc overlays, "Today's pulse" |
+| `WorldMap.jsx` | Legacy Google Maps view — file kept, no longer routed |
+| `EconomyPage.jsx` | Economic disruption dashboard (`/economy`) — disruptions list, top movers, markets |
 | `MapSidePanel.jsx` | Per-country topic cards with AI toolbar |
 | `WeeklyPage.jsx` | Narrative threads grouped by region, trending section, filter bar |
 | `WeeklyMap.jsx` | Thread-colored markers, date playback, thread sidebar |
@@ -669,8 +769,6 @@ Construction gate removed — all routes render real components in production. A
 | `CountryListPage.jsx` | Grid index of all countries with intelligence |
 | `CountryPage.jsx` | Map-first country page: Google Map hero, AI tabs, story arcs, coverage |
 | `DailyPage.jsx` | Daily Intelligence Brief display (`/daily`, `/daily/:dateKey`) |
-| `PairListPage.jsx` | All country-pair analyses (hidden from nav/routes, component kept) |
-| `PairPage.jsx` | Single pair deep-dive (hidden from nav/routes, component kept) |
 | `StoryEntryCard.jsx` | Entry card with Summarize/Predict/Trace Cause toggle |
 | `ThreadIntelligence.jsx` | Thread-level AI analysis display (storyArc, trajectory, etc.) |
 | `BriefingCard.jsx` | Formatted intelligence briefing card |
@@ -679,12 +777,10 @@ Construction gate removed — all routes render real components in production. A
 | `SignIn.jsx` | Firebase magic link + Google Sign-In form |
 | `Account.jsx` | User account tabs: saved items + profile |
 | `IntelligenceLoader.jsx` | Animated loading states (typewriter + explode variants) |
-| `Pricing.jsx` | Subscription tiers (removed from routing, kept in codebase) |
-| `TrialBanner.jsx` | Trial countdown banner (dormant until billing re-enabled) |
 
 ### Key Hooks
 
-17 total hooks:
+23 total hooks (in `src/hooks/`) after the 2026-05-26 billing cleanup:
 
 | Hook | Purpose |
 |------|---------|
@@ -692,11 +788,17 @@ Construction gate removed — all routes render real components in production. A
 | `useWeeklyArchive()` | Fetch `archive_range` (30 days, fully public in early access); 30min cache |
 | `useThreadAnalyses(threadIds)` | Fetch thread-level AI analyses; 30min cache; no auth required |
 | `useCountryIntelligence(countryNames)` | Fetch country-level AI intelligence; 30min cache; no auth required |
+| `useCountryHistory(countryName)` | Fetch historical archive entries for a country |
+| `useSystemsAnalysis(countryName)` | Fetch causal-graph (nodes/edges) for a country |
 | `usePairAnalyses()` | Fetch all pair analyses list; 30min cache |
-| `usePairIntelligence(pairSlug)` | Fetch single pair analysis; 30min cache |
 | `useDailyBrief(dateKey)` | Fetch Daily Intelligence Brief for a date |
+| `useEconomicImpact(threadId)` | Fetch per-thread economic disruption analysis |
+| `useDisruptionsList()` | Fetch all economic-impact records (powers `/economy`) |
+| `useTopMovers()` | Fetch highest-magnitude economic-impact threads |
+| `useMarketsGlobal()` | Fetch global FX/rates/commodities/equities/crypto snapshot |
+| `useMarketsCountry(countryName)` | Fetch country macro snapshot |
+| `useResearchBriefing(topicId)` | Fetch cached research briefing |
 | `useSavedItems(itemType)` | Manage user bookmarks via newsSavedItems Lambda (JWT required) |
-| `useUserProfile()` | Fetch `user_profile`; returns `{ tier, trialDaysLeft, isTrial }` |
 | `useSummary(topicId)` | Fetch AI summary for a topic |
 | `usePrediction(topicId)` | Fetch AI prediction for a topic |
 | `useTraceCause(topicId)` | Fetch trace_cause deep context for a topic |
@@ -706,30 +808,42 @@ Construction gate removed — all routes render real components in production. A
 | `useBookmarks()` | Bookmark state management |
 | `useIsMobile(breakpoint)` | Responsive breakpoint (default 600px) |
 
+> Note: there is **no** `usePairIntelligence` hook — single-pair data is fetched via `restProxy.fetchPairAnalysis(slug)` directly.
+
 ### Service Layer
 
 ```
 restProxy.js
+  configureProxy() / setAuthProvider(getIdToken)   ← wired by AuthBridge on mount
   proxyAction(action, payload)            ← no auth (public actions)
     └─ fetchTopicsCache()
     └─ fetchSummaryCache(topicId)
     └─ fetchPredictionCache(topicId)
     └─ fetchTraceCauseCache(topicId)
+    └─ fetchResearchBriefingCache(topicId)
     └─ fetchTodayArchive()
     └─ fetchArchiveRange(days)            ← public in early access
     └─ fetchNarrativeThread(threadId)     ← public in early access
     └─ fetchThreadAnalyses(threadIds)     ← public in early access
     └─ fetchCountryIntelligence(names)    ← public in early access
+    └─ fetchCountryHistory(countryName)   ← public in early access
+    └─ fetchSystemsAnalysis(countryName)  ← public in early access
     └─ fetchDailyBrief(dateKey)           ← public in early access
     └─ fetchPairAnalysis(slug)
     └─ fetchPairAnalysesList()
+    └─ fetchEconomicImpact(threadId)      ← economic_impact
+    └─ fetchDisruptionsList()             ← economic_impact_list
+    └─ fetchTopMovers()                   ← economic_top_movers
+    └─ fetchMarketsGlobal()
+    └─ fetchMarketsCountry(countryName)
+    └─ fetchMarketsHistory(key)
     └─ geocodeProxy(address)
     └─ fetchCountryPreview(countryName)   ← SEO public preview
     └─ fetchThreadPreview(threadId)       ← SEO public preview
 
-  proxyActionWithAuth(action, payload)    ← Authorization: Bearer <firebase-id-token>
-    └─ fetchUserProfile()
-    └─ fetchPortalSession()
+  proxyActionWithAuth(action, payload)    ← attaches Bearer token if signed in; backend no longer requires it
+    └─ (used internally by the archive/thread/country/daily helpers above; the billing
+        helpers fetchUserProfile/fetchPortalSession were removed in the 2026-05-26 cleanup)
 
   savedItemsProxy (window.SAVED_ITEMS_ENDPOINT — separate Function URL)
     └─ saveItem(itemType, itemId, metadata)
@@ -742,9 +856,11 @@ restProxy.js
 | Data | LocalStorage key | TTL |
 |------|-----------------|-----|
 | Daily topics | `gemini_topics_cache_v2` | 1 hour |
-| Weekly archive | `gp_weekly_archive_v1` (keyed by user.uid) | 30 min |
-| Thread analyses | keyed by user.uid + threadIds | 30 min |
-| Country intelligence | keyed by user.uid + countryNames | 30 min |
+| Weekly archive | `gp_weekly_archive_v1` | 30 min |
+| Thread analyses | `gp_thread_analyses_v2` | 30 min |
+| Country intelligence | `gp_country_intel_v1` | 30 min |
+
+> The cache keys are plain (not user-scoped) since all content is public in early-access mode.
 
 ### Narrative Threading
 
@@ -825,6 +941,10 @@ git push
 | Lambda: thread-level analysis | `amplify/backend/function/newsThreadAnalysis/src/index.js` |
 | Lambda: country-level intelligence | `amplify/backend/function/newsCountryIntelligence/src/index.js` |
 | Lambda: causal graph analysis | `amplify/backend/function/newsSystemsAnalysis/src/index.js` |
+| Lambda: economic disruption | `amplify/backend/function/newsEconomicImpact/src/index.js` |
+| Lambda: economic quality judge | `amplify/backend/function/newsEconomicQuality/src/index.js` |
+| Lambda: markets data ingest | `amplify/backend/function/newsMarketsData/src/index.js` |
+| Lambda: save/bookmark | `amplify/backend/function/newsSavedItems/src/index.js` |
 | Lambda: REST proxy | `amplify/backend/function/newsSensitiveData/src/index.js` |
 | Lambda: social posting | `amplify/backend/function/newsPostLinkedIn/src/index.js` |
 | Lambda: Dev.to posting | `amplify/backend/function/newsPostDevTo/src/index.js` |
@@ -841,7 +961,7 @@ git push
 
 1. **Pushing frontend source without building** — changes won't appear in production
 2. **Overwriting `docs/config.js`** — it sets the Firebase config and API Gateway endpoint at runtime
-3. **Referring to docs that mention Gemini or OpenAI** — the backend uses xAI Grok; older docs are outdated
-4. **Reading old planning docs** — `HYBRID_NEWS_ARCHITECTURE.md`, `INTEGRATION_NOTES_Gemini_AppSync.md`, `NEWS_API_INTEGRATION_PLAN.md` are all pre-xAI and should be ignored
+3. **Inferring the AI provider from env var names** — `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` are legacy names that hold **DeepSeek** (or **Gemini**) values in production. Confirm with `aws lambda get-function-configuration`.
+4. **Reading old planning docs** — `HYBRID_NEWS_ARCHITECTURE.md`, `INTEGRATION_NOTES_Gemini_AppSync.md`, `NEWS_API_INTEGRATION_PLAN.md` are all outdated and should be ignored
 5. **Using `x-api-key` for auth** — gated endpoints now use `Authorization: Bearer <firebase-id-token>`, not static API keys
 6. **Assuming archive keys are `YYYY-MM-DD`** — the actual DynamoDB key format is `archive#YYYY-MM-DD`

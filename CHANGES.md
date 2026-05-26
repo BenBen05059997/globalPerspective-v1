@@ -1,5 +1,33 @@
 # Global Perspectives — Change Log
 
+## 2026-05-26 (Subscriptions deprecated + frontend billing cleanup + doc re-verification)
+
+Subscriptions/billing are not in use and are now **deprecated** (not "coming soon"). Removed the dormant billing UI from the frontend and brought `ARCHITECTURE.md` back in line with reality via a multi-agent review (see [`AGENT_REVIEW_METHOD.md`](AGENT_REVIEW_METHOD.md)).
+
+### Shipped (frontend)
+- Deleted `TrialBanner.jsx`, `UpgradeSuccess.jsx`, `WeeklyLockedPreview.jsx` (orphan), `useUserProfile.js`.
+- Removed the `/upgrade/success` route and TrialBanner usage from `CountryPage`, `ThreadPage`, `WeeklyPage`.
+- Stripped tier/perks/billing + the Paddle portal call from `Account.jsx` — kept the Saved-items feature and a basic profile (email, member-since, sign out, delete account).
+- Removed `fetchUserProfile` / `fetchPortalSession` from `restProxy.js` and the dead mocks from `redesign.test.jsx`.
+
+### Docs
+- `ARCHITECTURE.md`: marked the Tier System, `newsStripeWebhook`, `user_profile`/`portal_session`, and Paddle DEPRECATED; corrected drift the auditors found (TTLs, Brave query count, dead social platforms, ACLED auth vars, `/daily` worker route, frontend routes/components/hooks counts).
+- `BACKEND_TODO.md`: frontend cleanup marked done; backend Lambda/API-Gateway teardown logged as a remaining destructive step pending explicit go-ahead.
+- New `AGENT_REVIEW_METHOD.md` documenting the orchestrator + parallel-auditor + independent-verification workflow.
+
+### Verification
+- Lint 0 errors; build clean (949KB JS / 195KB CSS); vitest 171/171 pass (1 pre-existing `layers.test.jsx` d3-in-jsdom failure, unrelated).
+- `/account` is auth-gated so no signed-in browser click-through was possible here — verified via lint/build/tests.
+- Deployed to `docs/`.
+
+### Files changed
+- Modified: `global-perspectives-starter/frontend/src/{App.jsx, services/restProxy.js, components/{CountryPage,ThreadPage,WeeklyPage,Account}.jsx, test/redesign.test.jsx}`
+- Deleted: `components/{TrialBanner,UpgradeSuccess,WeeklyLockedPreview}.jsx`, `hooks/useUserProfile.js`
+- Docs: `ARCHITECTURE.md`, `BACKEND_TODO.md`, `CHANGES.md`, new `AGENT_REVIEW_METHOD.md`
+- Production: `docs/index.html`, `docs/assets/*`
+
+---
+
 ## 2026-05-21 (Economic Disruption — UI Wiring Phase 4, Batch A)
 
 Follow-up to the 2026-05-21 three-agent design debate ("ambient" vs "minimalist" vs "pragmatist") and the surface-map doc. Plan: [`ECONOMIC_DISRUPTION_WIRING_PLAN.md`](ECONOMIC_DISRUPTION_WIRING_PLAN.md). This batch ships the 4 P0 (safe-win) items.

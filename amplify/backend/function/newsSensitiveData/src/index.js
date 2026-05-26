@@ -894,17 +894,35 @@ exports.handler = async (event) => {
     if (action === 'markets_history') {
       const { symbol, days = 30 } = payload || {};
       if (!symbol) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing symbol' }) };
+      const SYM = String(symbol).toUpperCase();
+      const COMMODITY_KEY = { BRENT: 'brent', WTI: 'wti', GOLD: 'gold', COPPER: 'copper', DXY: 'dxy', VIX: 'vix' };
+      const histScan = (pk) => getDynamoClient().send(new ScanCommand({
+        TableName: 'GlobalPerspectiveMarkets',
+        FilterExpression: 'pk = :pk AND begins_with(sk, :prefix)',
+        ExpressionAttributeValues: { ':pk': pk, ':prefix': 'HISTORY#' },
+      }));
+      const seriesFrom = (items, valueOf) => (items || [])
+        .sort((a, b) => a.sk.localeCompare(b.sk))
+        .map(i => ({ date: i.sk.replace('HISTORY#', ''), value: valueOf(i) }))
+        .filter(p => p.value != null)
+        .slice(-(days));
       try {
-        const { Items } = await getDynamoClient().send(new ScanCommand({
-          TableName: 'GlobalPerspectiveMarkets',
-          FilterExpression: 'pk = :pk AND begins_with(sk, :prefix)',
-          ExpressionAttributeValues: { ':pk': `FX#${symbol.toUpperCase()}`, ':prefix': 'HISTORY#' },
-        }));
-        const sorted = (Items || [])
-          .sort((a, b) => a.sk.localeCompare(b.sk))
-          .slice(-(days))
-          .map(i => ({ date: i.sk.replace('HISTORY#', ''), rates: i.rates, asOf: i.asOf }));
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: sorted }) };
+        // Per-instrument categories — each HISTORY row holds many tickers as top-level fields.
+        const cats = [
+          ['COMMODITIES#GLOBAL', COMMODITY_KEY[SYM] || SYM.toLowerCase()],
+          ['RATES#GLOBAL', SYM],
+          ['EQUITIES#GLOBAL', SYM],
+          ['CRYPTO#GLOBAL', SYM],
+        ];
+        for (const [pk, field] of cats) {
+          const { Items } = await histScan(pk);
+          const s = seriesFrom(Items, (i) => i[field]);
+          if (s.length) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: s }) };
+        }
+        // FX: FX#USD HISTORY rows carry a `rates` object keyed by currency code.
+        const { Items: fxItems } = await histScan('FX#USD');
+        const fx = seriesFrom(fxItems, (i) => i.rates?.[SYM]);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: fx }) };
       } catch (e) {
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: [], error: e.message }) };
       }

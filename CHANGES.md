@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-05-26j (Real-price sparklines on /economy + markets_history for all instruments)
+
+- **Backend:** `markets_history` (in `newsSensitiveData`) extended from **FX-only** to resolve any `symbol` across commodities / rates / equities / crypto / FX, returning `[{date, value}]`. Deployed + verified (SPX → 2 pts, BRENT → 1 pt, `topics` still healthy → no regression).
+- **Frontend:** new `useMarketsHistory(symbol)` hook + `Sparkline` atom in the instrument-pivot expand. Equities/crypto/FX show a trend now; **commodities/rates** (Brent/gold/US10Y) fill in over the next days (history began 2026-05-26) — renders **nothing** until ≥2 points (honest, no fabricated line).
+- **Honesty (audited):** the sparkline plots only real fetched price history; no forecast/interpolated points.
+- **Docs updated** ("the outdated file"): `ARCHITECTURE.md` `markets_history` row (was wrongly `{ key }` + "FX-only"), hooks table (+`useMarketsHistory`, 24 total), EconomyPage row; `ECONOMIC_DISRUPTION_VIZ_PLAN.md` (sparkline marked done).
+
+Verified: lint clean, build OK, 176 tests pass (new `.ep-spark svg` assertion), independent review clean.
+
+- Files: `newsSensitiveData/src/index.js`, `hooks/useMarketsHistory.js`, `EconomyPage.jsx`, `EconomyPage.css`, `test/economyPage.test.jsx`, `ARCHITECTURE.md`, `ECONOMIC_DISRUPTION_VIZ_PLAN.md`.
+
+---
+
 ## 2026-05-26i (/economy pivot: source + rationale + deep links on expand)
 
 Reaction to the live page — a row showed *what* ("BRENT ↑ 83% · 96.39 · 23 stories") but not *why* or *who*. Expanding an instrument now answers both:

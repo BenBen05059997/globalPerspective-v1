@@ -13,6 +13,8 @@ import DirectionArrow from './atoms/DirectionArrow';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { useTopMovers } from '../hooks/useTopMovers';
 import { useMarketsGlobal } from '../hooks/useMarketsGlobal';
+import { useMarketsHistory } from '../hooks/useMarketsHistory';
+import Sparkline from './atoms/Sparkline';
 import './EconomyPage.css';
 
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];
@@ -64,6 +66,7 @@ export default function EconomyPage() {
   const { data: disruptions = [], loading, error } = useDisruptionsList({ limit: 200 });
   const { data: topMovers = [], loading: moversLoading } = useTopMovers(12);
   const { data: markets, loading: marketsLoading, asOf: marketsAsOf } = useMarketsGlobal();
+  const { data: openHistory } = useMarketsHistory(openMover);
 
   const toggle = (key, value) => {
     setFilters(prev => {
@@ -243,6 +246,13 @@ export default function EconomyPage() {
                   </button>
                 </div>
                 {open && (
+                  <div className="ep-pivot-detail">
+                    {openHistory.length >= 2 && (
+                      <div className="ep-spark">
+                        <Sparkline data={openHistory} width={150} height={32} />
+                        <span className="ep-spark-label">price · last {openHistory.length} days</span>
+                      </div>
+                    )}
                   <ul className="ep-pivot-examples">
                     {stories.map(s => (
                       <li key={s.scopeId}>
@@ -259,6 +269,7 @@ export default function EconomyPage() {
                     ))}
                     {stories.length === 0 && <li className="ep-rail-empty">No linked stories in the loaded window</li>}
                   </ul>
+                  </div>
                 )}
               </div>
             );

@@ -307,7 +307,7 @@ Read-only REST proxy. All supported actions:
 | `economic_top_movers` | None (early access) | — | Highest-magnitude economic-impact threads |
 | `markets_global` | None (early access) | — | Global FX / rates / commodities / equities / crypto snapshot |
 | `markets_country` | None (early access) | `{ countryName }` | Country macro snapshot (GDP, CPI, reserves, etc.) |
-| `markets_history` | None (early access) | `{ key }` | Historical market series for sparklines |
+| `markets_history` | None (early access) | `{ symbol, days }` | Per-instrument price history `[{date, value}]` for sparklines — resolves `symbol` across commodities / rates / equities / crypto / FX (was FX-only before 2026-05-26) |
 | `user_profile` | Firebase JWT | — | ⚠️ DEPRECATED (billing) — user tier + subscription info from USERS_TABLE |
 | `portal_session` | Firebase JWT | — | ⚠️ DEPRECATED (billing) — Paddle Customer Portal session URL; no-op (PADDLE_API_KEY unset) |
 
@@ -761,7 +761,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `Home.jsx` | 3-col EditorialShell: StatusStrip + region-grouped daily topics with per-topic AI toolbar (Summarize/Predict/Trace Cause) + per-topic economic-disruption badge ("Economic impact →" when a thread has a disruption); `TodayArchiveSidebar` + `TopicNav` rails |
 | `WorldMapV2.jsx` | The live map at `/map` — stacked layer lenses, arc overlays, "Today's pulse" |
 | `WorldMap.jsx` | Legacy Google Maps view — file kept, no longer routed |
-| `EconomyPage.jsx` | `/economy` — the markets-meets-news hub. Center: instrument pivot ("Most-repriced instruments" — cross-story consensus per instrument from `useTopMovers`, expandable to the stories) + severity-grouped by-story list. Right rail: live Market Context (`useMarketsGlobal` — commodities/risk/rates). Left rail facets. (Rebuilt 2026-05-26; also fixed a latent bug where the center column never rendered — it was passed as a `center` prop EditorialShell ignores instead of as children.) |
+| `EconomyPage.jsx` | `/economy` — the markets-meets-news hub. Center: instrument pivot ("Most-repriced instruments" — cross-story consensus per instrument from `useTopMovers`; **expand** shows a price sparkline (`useMarketsHistory`) + each driving story's headline (→ thread Economy tab), per-instrument rationale, and direction/magnitude) + severity-grouped by-story list. Right rail: live Market Context (`useMarketsGlobal` — equities/commodities/risk/rates/crypto). Left rail facets. (Rebuilt 2026-05-26; fixed a latent bug where the center column never rendered — passed as a `center` prop EditorialShell ignores instead of as children.) |
 | `MapSidePanel.jsx` | Per-country topic cards with AI toolbar |
 | `WeeklyPage.jsx` | 3-col EditorialShell: narrative threads grouped **by category** in the feed (region is a left-rail filter), StatusStrip, left rail (search/period/sort/region/view-toggle), right rail "Rising This Week"; lazy-loaded `WeeklyMap` view mode |
 | `WeeklyMap.jsx` | Thread-colored markers, date playback, thread sidebar |
@@ -780,7 +780,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 
 ### Key Hooks
 
-23 total hooks (in `src/hooks/`) after the 2026-05-26 billing cleanup:
+24 total hooks (in `src/hooks/`):
 
 | Hook | Purpose |
 |------|---------|
@@ -794,6 +794,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `useDailyBrief(dateKey)` | Fetch Daily Intelligence Brief for a date |
 | `useEconomicImpact(threadId)` | Fetch per-thread economic disruption analysis |
 | `useDisruptionsList()` | Fetch all economic-impact records (powers `/economy`, Home topic badges, DailyPage footprint, CountryPage, WorldMapV2, CountryListPage) |
+| `useMarketsHistory(symbol)` | Fetch per-instrument price history `[{date,value}]` for `/economy` sparklines; session-cached |
 | `useTopMovers()` | Fetch highest-magnitude economic-impact threads |
 | `useMarketsGlobal()` | Fetch global FX/rates/commodities/equities/crypto snapshot |
 | `useMarketsCountry(countryName)` | Fetch country macro snapshot |

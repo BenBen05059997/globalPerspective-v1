@@ -43,6 +43,9 @@ vi.mock('../hooks/useTopMovers', () => ({
 vi.mock('../hooks/useMarketsGlobal', () => ({
   useMarketsGlobal: () => ({ data: markets, loading: false, error: null, asOf: markets.fx.asOf }),
 }));
+vi.mock('../hooks/useMarketsHistory', () => ({
+  useMarketsHistory: () => ({ data: [{ date: '2026-05-24', value: 80 }, { date: '2026-05-26', value: 96.4 }] }),
+}));
 
 let EconomyPage;
 function renderPage() {
@@ -87,6 +90,7 @@ describe('EconomyPage — instrument-first hub', () => {
     expect(examples.textContent).toMatch(/OPEC\+ surprise cut/);   // source/reference (headline → thread)
     expect(examples.textContent).toMatch(/supply cut/);            // the per-instrument rationale (the "why")
     expect(examples.querySelector('.ep-ex-why')).toBeInTheDocument();
+    expect(brentItem.querySelector('.ep-spark svg')).toBeInTheDocument();  // price sparkline (≥2 points)
   });
 
   it('filters the by-story list when an instrument is clicked', () => {

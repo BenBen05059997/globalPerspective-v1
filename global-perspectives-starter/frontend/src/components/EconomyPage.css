@@ -491,6 +491,22 @@
   color: var(--ink-mid);
 }
 
+/* expand detail wrapper + price sparkline */
+.ep-pivot-detail { padding-top: 2px; }
+.ep-spark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 2px;
+}
+.ep-spark-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
+}
+
 .ep-ex-sev {
   width: 7px;
   height: 7px;

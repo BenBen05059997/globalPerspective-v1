@@ -1,5 +1,31 @@
 # Global Perspectives — Change Log
 
+## 2026-05-26i (/economy pivot: source + rationale + deep links on expand)
+
+Reaction to the live page — a row showed *what* ("BRENT ↑ 83% · 96.39 · 23 stories") but not *why* or *who*. Expanding an instrument now answers both:
+
+- **Per driving story:** the headline → deep-link to the thread's Economy tab (source/reference), plus that story's **per-instrument rationale** (the "why") + qualitative direction/magnitude. All pulled from the already-loaded `useDisruptionsList` data matched by `instrumentId` — **no backend change**.
+- Tooltip on the consensus % so the number explains itself ("83% of N cited stories agree on ↑").
+- **Honesty preserved (audited):** only real cited rationale + qualitative direction/magnitude — no numeric forecast / fake %.
+
+**Sparkline deferred:** `markets_history` is FX-only (hardcodes `pk=FX#…`), so it can't chart BRENT/GOLD/SPX/US10Y — needs a backend extension + accrued commodities/rates history (started 2026-05-26). See `ECONOMIC_DISRUPTION_VIZ_PLAN.md`.
+
+Verified: lint 0 errors, build clean, 176 tests pass (5 economy-page tests incl. new rationale assertion), independent review clean.
+
+- Files: `EconomyPage.jsx`, `EconomyPage.css`, `test/economyPage.test.jsx`, `ECONOMIC_DISRUPTION_VIZ_PLAN.md`.
+
+---
+
+## 2026-05-26h (Remove verify-economic GitHub Action — redundant with local pre-push hook)
+
+Deleted `.github/workflows/verify.yml`. It re-ran `verify_all.sh --fast` on GitHub Actions after every economic-layer push — but the committed `.githooks/pre-push` hook runs the **identical** checks **locally before push** (a stronger gate), the repo is **private** so the Action consumed metered Actions minutes, and it was failing to even start (account hit a $0 Actions spending limit after exhausting included minutes — *not* a code or workflow problem).
+
+- Installed the pre-push hook (`scripts/install_hooks.sh` → `core.hooksPath=.githooks`) so the local gate is active going forward.
+- No loss of coverage: `bash quality/verify_all.sh` (full, with live AWS checks) / `--fast` (pre-commit) still run locally; the hook auto-runs `--fast` when economic-layer files change.
+- Pages deploys are unaffected (that's a GitHub-managed Pages workflow, not a repo workflow file).
+
+---
+
 ## 2026-05-26g (Markets: store commodities + rates history for sparklines)
 
 Prerequisite for the planned `/economy` price sparklines (see `ECONOMIC_DISRUPTION_VIZ_PLAN.md`).

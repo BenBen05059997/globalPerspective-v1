@@ -12,6 +12,12 @@ Make the economic data + (qualitative) prediction **visual and easy to read** fo
 
 ---
 
+## ⭐ Workstream C0 — "Source / reference / explanation" on the instrument pivot (BUILD FIRST — frontend-only)
+Reaction to the live page: a pivot row ("BRENT ↑ 83% · 96.39 · 23 stories") shows *what* but not *why* or *who*. On expand, replace the bare headline list with, **per driving story**: the headline (→ thread Economy tab), that story's **per-instrument `rationale`** (the "why") + direction/magnitude, severity, and the link as the source/reference. All from `useDisruptionsList` (already loaded, limit 200) matched by `instrumentId` — **no backend change.** Confirmed live: `instruments[]` carries `{rationale, citedTopicIds, direction, magnitude}`. Add a consensus label so "83%" explains itself ("83% of N cited stories say ↑").
+
+## ⚠️ Sparkline reality check (2026-05-26) — DEFERRED
+`markets_history` is **FX-only**: its handler hardcodes `pk = FX#${symbol}`, so it returns nothing for BRENT/GOLD/SPX/US10Y/BTC (the instruments actually on `/economy`). Sparklines therefore need **(a)** a backend extension to `markets_history` to read `COMMODITIES#/RATES#/EQUITIES#/CRYPTO# HISTORY#` rows per instrument, **and (b)** accrued history (commodities/rates only started 2026-05-26; equities/crypto/FX have it). Build A1 as a fast-follow after the backend extension + a few days of data.
+
 ## Workstream A — Visualize the real data (sparklines)
 - **A1. Per-instrument real-price sparkline** on `/economy` pivot rows (and optionally right-rail Market Context), next to the qualitative call. Uses the existing `Sparkline` atom + `markets_history` action.
 - **Backend prerequisite — ✅ DONE 2026-05-26:** HISTORY# rows were written only for FX/equities/crypto, not commodities/rates. Added `COMMODITIES#GLOBAL` + `RATES#GLOBAL` `HISTORY#YYYY-MM-DD` writes (90-day TTL) to `newsMarketsData`, deployed + verified (both rows present in DDB). History now **accrues daily from 2026-05-26** — sparklines for Brent/gold/US10Y will have data after a few days.

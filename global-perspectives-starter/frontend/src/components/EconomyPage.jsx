@@ -173,6 +173,16 @@ export default function EconomyPage() {
     </div>
   );
 
+  // Stories driving a given instrument, with that instrument's per-story rationale
+  // (source + reference + the "why"). Pulled from the already-loaded disruptions list.
+  const storiesForInstrument = (instrumentId) =>
+    disruptions
+      .filter(d => (d.instruments || []).some(i => i.instrumentId === instrumentId))
+      .map(d => {
+        const inst = (d.instruments || []).find(i => i.instrumentId === instrumentId) || {};
+        return { scopeId: d.scopeId, headline: d.headline, severity: d.severity, dir: inst.direction, magnitude: inst.magnitude, rationale: inst.rationale };
+      });
+
   // ── CENTER: instrument pivot (hero) + by-story list ──────────
   const center = (
     <div className="ep-center">
@@ -209,6 +219,7 @@ export default function EconomyPage() {
             const open = openMover === m.instrumentId;
             const level = levelFor(m.instrumentId, markets);
             const active = filters.instrument === m.instrumentId;
+            const stories = open ? storiesForInstrument(m.instrumentId) : [];
             return (
               <div key={m.instrumentId} className={`ep-pivot-item${active ? ' on' : ''}`}>
                 <div className="ep-pivot-head">
@@ -220,7 +231,7 @@ export default function EconomyPage() {
                     {m.instrumentId}
                   </button>
                   <DirectionArrow dir={m.consensus} />
-                  <span className="ep-pivot-strength">{m.consensusStrength}% consensus</span>
+                  <span className="ep-pivot-strength" title={`${m.consensusStrength}% of ${m.citations} cited stories agree on the ${m.consensus} direction`}>{m.consensusStrength}% consensus</span>
                   {level && <span className="ep-pivot-level">{fmtLevel(level)}</span>}
                   <span className="ep-pivot-cite">{m.citations} stor{m.citations === 1 ? 'y' : 'ies'}</span>
                   <button
@@ -233,15 +244,20 @@ export default function EconomyPage() {
                 </div>
                 {open && (
                   <ul className="ep-pivot-examples">
-                    {(m.examples || []).map(ex => (
-                      <li key={ex.threadId}>
-                        <Link to={`/weekly/thread/${ex.threadId}?tab=economy`}>
-                          <span className={`ep-ex-sev ep-ex-${ex.severity}`} />
-                          {ex.headline}
+                    {stories.map(s => (
+                      <li key={s.scopeId}>
+                        <Link to={`/weekly/thread/${s.scopeId}?tab=economy`} className="ep-ex-link">
+                          <span className={`ep-ex-sev ep-ex-${s.severity}`} />
+                          <span className="ep-ex-head">{s.headline}</span>
                         </Link>
+                        {s.rationale && (
+                          <div className="ep-ex-why">
+                            <DirectionArrow dir={s.dir} /> <span className="ep-ex-mag">{s.magnitude}</span> · {s.rationale}
+                          </div>
+                        )}
                       </li>
                     ))}
-                    {(!m.examples || m.examples.length === 0) && <li className="ep-rail-empty">No linked stories</li>}
+                    {stories.length === 0 && <li className="ep-rail-empty">No linked stories in the loaded window</li>}
                   </ul>
                 )}
               </div>

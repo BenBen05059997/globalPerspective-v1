@@ -459,18 +459,37 @@
   border-top: 1px dashed var(--line);
 }
 
-.ep-pivot-examples li { padding: 5px 0; }
+.ep-pivot-examples li { padding: 7px 0; border-bottom: 1px solid var(--line); }
+.ep-pivot-examples li:last-child { border-bottom: none; }
 
-.ep-pivot-examples a {
+.ep-pivot-examples a, .ep-ex-link {
   display: flex;
   align-items: center;
   gap: 8px;
   font-family: var(--sans);
   font-size: 13px;
-  color: var(--ink-mid);
+  font-weight: 600;
+  color: var(--ink);
   text-decoration: none;
 }
-.ep-pivot-examples a:hover { color: var(--accent); }
+.ep-ex-link:hover { color: var(--accent); }
+.ep-ex-head { flex: 1; }
+
+/* per-story rationale (source + the "why") */
+.ep-ex-why {
+  margin: 4px 0 1px 15px;
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+.ep-ex-mag {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-mid);
+}
 
 .ep-ex-sev {
   width: 7px;

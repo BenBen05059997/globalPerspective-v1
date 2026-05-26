@@ -84,7 +84,9 @@ describe('EconomyPage — instrument-first hub', () => {
     fireEvent.click(toggle);
     const examples = brentItem.querySelector('.ep-pivot-examples');
     expect(examples).toBeInTheDocument();
-    expect(examples.textContent).toMatch(/OPEC\+ surprise cut/);
+    expect(examples.textContent).toMatch(/OPEC\+ surprise cut/);   // source/reference (headline → thread)
+    expect(examples.textContent).toMatch(/supply cut/);            // the per-instrument rationale (the "why")
+    expect(examples.querySelector('.ep-ex-why')).toBeInTheDocument();
   });
 
   it('filters the by-story list when an instrument is clicked', () => {

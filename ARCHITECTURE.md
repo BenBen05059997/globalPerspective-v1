@@ -761,7 +761,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `Home.jsx` | 3-col EditorialShell: StatusStrip + region-grouped daily topics with per-topic AI toolbar (Summarize/Predict/Trace Cause) + per-topic economic-disruption badge ("Economic impact →" when a thread has a disruption); `TodayArchiveSidebar` + `TopicNav` rails |
 | `WorldMapV2.jsx` | The live map at `/map` — stacked layer lenses, arc overlays, "Today's pulse" |
 | `WorldMap.jsx` | Legacy Google Maps view — file kept, no longer routed |
-| `EconomyPage.jsx` | Economic disruption dashboard (`/economy`) — disruptions list, top movers, markets |
+| `EconomyPage.jsx` | `/economy` — the markets-meets-news hub. Center: instrument pivot ("Most-repriced instruments" — cross-story consensus per instrument from `useTopMovers`, expandable to the stories) + severity-grouped by-story list. Right rail: live Market Context (`useMarketsGlobal` — commodities/risk/rates). Left rail facets. (Rebuilt 2026-05-26; also fixed a latent bug where the center column never rendered — it was passed as a `center` prop EditorialShell ignores instead of as children.) |
 | `MapSidePanel.jsx` | Per-country topic cards with AI toolbar |
 | `WeeklyPage.jsx` | 3-col EditorialShell: narrative threads grouped **by category** in the feed (region is a left-rail filter), StatusStrip, left rail (search/period/sort/region/view-toggle), right rail "Rising This Week"; lazy-loaded `WeeklyMap` view mode |
 | `WeeklyMap.jsx` | Thread-colored markers, date playback, thread sidebar |

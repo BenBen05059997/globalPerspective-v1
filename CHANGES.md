@@ -1,5 +1,20 @@
 # Global Perspectives — Change Log
 
+## 2026-05-26d (EconomyPage rebuilt — instrument-first hub + center-render bugfix)
+
+Investigated `/economy` against the docs + cross-page references first (it was a documented but thin "index" that turned out to be an orphan). Then rebuilt it with a new goal: the **markets-meets-news command center**.
+
+- **New center hero — "Most-repriced instruments":** cross-story consensus per instrument (`useTopMovers`) with direction, % consensus, **live level** (e.g. BRENT → 82.5), and story count; each row expands to the stories pushing it (link to the thread Economy tab). The aggregate view the per-thread tab can't give.
+- **New right rail — live Market Context:** `useMarketsGlobal` commodities / risk / rates with an "as of" date.
+- **Kept** the severity-grouped by-story list + facets; clicking an instrument filters the list.
+- **🐞 Bugfix (latent, affected the original page too):** the center column **never rendered** — EconomyPage passed `center={center}`, but `EditorialShell` renders center as `children`. Now passed as children. This is why `/economy` looked like just facets + a movers panel.
+- **Fixes:** surfaced the `useDisruptionsList` error state; added top-movers/markets loading states; horizon facet now shows counts.
+- **Docs:** new goal recorded in `ARCHITECTURE.md` + `ECONOMIC_DISRUPTION.md`; the wiring plan's "do not redesign /economy" non-goal marked **superseded**.
+
+Verification: 5 new render tests (`economyPage.test.jsx`) covering pivot / market context / expand / instrument-filter / by-story — all pass. Full suite 176 pass (1 pre-existing `layers.test.jsx` d3-in-jsdom failure, unrelated); lint 0 errors; build clean. (No live browser click-through — this session has no browser automation.)
+
+---
+
 ## 2026-05-26c (Static-page content audit — removed false subscription copy)
 
 Content-staleness audit of the 5 static pages (1 auditor) found **materially false billing/subscription claims** still live, contradicting the billing deprecation. Fixed (mostly deletions + the "free during early access" framing already used elsewhere):

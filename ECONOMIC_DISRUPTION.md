@@ -109,7 +109,9 @@ The catalog is intentionally finite. When the LLM cites an event we don't have, 
 
 ## Where it surfaces in the UI
 
-The Economic Disruption layer is intentionally cross-cutting — almost every page that shows news content also surfaces the economic dimension. The flagship `/economy` page is the index; everywhere else, a `SeverityBadge` chip or short preview links *into* the relevant thread's Economy tab so the full record (`MechanismCard`) is one click away.
+The Economic Disruption layer is intentionally cross-cutting — almost every page that shows news content also surfaces the economic dimension. Per-story detail lives on the thread's Economy tab (`MechanismCard`); inline surfaces link there.
+
+**`/economy` goal (revised 2026-05-26):** originally specced as a thin severity-grouped *index*, it was found to be an orphan (only the nav + one Daily link pointed at it) and its center column wasn't even rendering (passed as a `center` prop `EditorialShell` ignores). It has been **rebuilt as the "markets-meets-news command center"**: the aggregate, **instrument-first** view of what global news is repricing right now (cross-story consensus per instrument + live market context) — the one view the per-thread tab structurally can't give. It deliberately does NOT duplicate the thread tab's full per-story analysis. _(This supersedes the wiring plan's "do not redesign /economy" non-goal.)_
 
 ### Per-page surface map
 

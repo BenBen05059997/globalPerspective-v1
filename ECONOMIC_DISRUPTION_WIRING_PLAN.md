@@ -6,7 +6,7 @@ Follow-on to [`ECONOMIC_DISRUPTION.md`](ECONOMIC_DISRUPTION.md) §"Where it surf
 Make the economic layer feel like it travels with the news without crowding card chrome. Cut decoration that has no unique destination. Add structural slots where readers are already looking.
 
 ## Non-goals
-- Do **not** redesign `/economy` — it's the destination index, already correct.
+- ~~Do **not** redesign `/economy` — it's the destination index, already correct.~~ **SUPERSEDED 2026-05-26:** `/economy` was rebuilt into the instrument-first "markets-meets-news command center" (it was an orphan with a non-rendering center column). See `ECONOMIC_DISRUPTION.md` → "Where it surfaces in the UI".
 - Do **not** kill the ThreadPage Economy tab or `MechanismCard` — that's the deepest reading surface.
 - Do **not** cut the Home topic-kicker `SeverityBadge` yet — it's the only ambient discovery hook on the front door. Instrument CTR first (out of scope for this plan).
 

@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-05-26e (Quality judge fixed — was rejecting every record on a Gemini 400)
+
+`newsEconomicQuality` (the LLM-as-judge) had been failing **every** record since deploy, which is why **zero** production economic-impact records ever carried quality scores.
+
+- **Root cause:** the Gemini request sent *both* `extra_body.google.thinking_config` **and** `reasoning_effort: 'none'`. Gemini rejects having both → `400 "Expected one of either reasoning_effort or custom thinking_config; found both"` → "0 judged, 15 failed" on every daily run.
+- **Fix:** removed `reasoning_effort`, kept the explicit `thinking_budget: 0`. Redeployed via `update-function-code` (LastUpdateStatus Successful) and async test-invoked.
+- **Verified:** run reported **"9 judged, 0 low-quality, 6 failed"** with **zero 400s**; DynamoDB now has ~9 `ECON#THREAD#` records with `qualityScores` (was 0). The 6 failures were transient **Gemini 503s** (will be re-judged next run).
+- File: `amplify/backend/function/newsEconomicQuality/src/index.js`. (Diagnosed via CloudWatch — the EventBridge rule + schedule were fine all along.)
+
+---
+
 ## 2026-05-26d (EconomyPage rebuilt — instrument-first hub + center-render bugfix)
 
 Investigated `/economy` against the docs + cross-page references first (it was a documented but thin "index" that turned out to be an orphan). Then rebuilt it with a new goal: the **markets-meets-news command center**.

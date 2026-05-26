@@ -259,8 +259,10 @@ async function judgeRecord(record, threadAnalysis, topicSummaries) {
       // Disable extended thinking — judgment is a simple 5-axis score, no reasoning
       // chain needed. Without this Gemini 2.5 Flash burns most of max_tokens on
       // hidden thinking and truncates the visible JSON.
+      // NOTE: send ONLY thinking_config OR reasoning_effort, never both — Gemini
+      // rejects having both with a 400 ("found both"). thinking_budget:0 is the
+      // explicit disable for 2.5 Flash.
       extra_body: { google: { thinking_config: { thinking_budget: 0 } } },
-      reasoning_effort: 'none',
     }),
   });
 

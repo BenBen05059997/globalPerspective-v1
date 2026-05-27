@@ -74,7 +74,8 @@ describe('EconomyPage — instrument-first leaderboard', () => {
     expect(screen.getByText(/Repricing today/i)).toBeInTheDocument();
     const row = brentRow();
     expect(within(row).getByText('BRENT')).toBeInTheDocument();
-    expect(row.textContent).toMatch(/75% consensus/);   // our own aggregate
+    expect(row.textContent).toMatch(/agree/);            // line-1 "X of Y agree" (replaced the consensus float)
+    expect(row.textContent).toMatch(/Stories:/);         // row-2 direction-split label
     expect(row.textContent).toMatch(/82\.5/);            // live commodity level
     expect(row.textContent).toMatch(/3 stories/);        // citation count
   });

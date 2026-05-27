@@ -467,9 +467,8 @@ export default function EconomyPage() {
                 <div className="ep-row-l2">
                   <div className="ep-spacer" />
                   <span className="ep-dirsplit" title={`${m.consensusStrength}% of ${m.citations} cited stories agree on the ${topDir} direction`}>
-                    {splitParts.join(' · ') || '—'}
+                    <span className="ep-dirsplit-label">Stories:</span> {splitParts.join(' · ') || '—'}
                   </span>
-                  <span className="ep-consensus">{m.consensusStrength}% consensus</span>
                 </div>
                 {open && (
                   <ExpandedPanel

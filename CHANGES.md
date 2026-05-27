@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-05-27h (/economy leaderboard polish — synced from mockup refinements)
+
+Mirrored four design refinements made to the `Economy.html` mockup onto the live React page (3 applied; #4 was a mockup-only CSS bugfix our build already excludes):
+- **Expand containment** — the expanded panel (`.ep-expand`) now has `border-left: 3px solid var(--ink)` + a `--paper-2` tint, so each open row reads as visually belonging to the row above it.
+- **"Stories:" label** — the row-2 direction split now reads "Stories: 22 ↑ · 3 ↓ · 1 ↔" (faint mono label), clarifying what the split counts.
+- **Removed the redundant consensus float** — dropped the right-aligned "X% consensus" from each row; line 1's "X of Y agree" already conveys it. Row-2 grid simplified `84px 1fr auto → 84px 1fr`.
+- (#4: the mockup's `.affected{}` unclosed-brace fix is mockup-only — our `ep-`-prefixed CSS builds clean.)
+
+Verified: build OK, 177 tests (economy 6/6 — updated the consensus assertion to the new "agree"/"Stories:" reality), browser screenshot confirms (0 consensus floats, "Stories:" label, containment border). Frontend-only.
+
+- Files: `EconomyPage.jsx`, `EconomyPage.css`, `test/economyPage.test.jsx`, `CHANGES.md`.
+
+---
+
 ## 2026-05-27g (Discovery check + PAGES_GUIDE /economy entry)
 
 Investigated whether `/economy` has a discovery problem (the old wiring audit called it a near-orphan). **It doesn't** — verified via a CloudWatch action-count proxy on `newsSensitiveData-dev` (GA4 `G-VT6QENX4MB` is wired but not API-readable from here): over the last 7 days `/economy` is the **#2 content page** after Home, well ahead of Threads/Daily/Map/Countries (it's in nav + footer + the Daily "View all" link). So no discovery funnel was built — it would have solved a non-problem. The real lever is low site-wide traffic (growth/distribution), not economy-page wiring.

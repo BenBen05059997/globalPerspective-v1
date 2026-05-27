@@ -254,7 +254,7 @@
 
 .ep-row-l2 {
   display: grid;
-  grid-template-columns: 84px 1fr auto;
+  grid-template-columns: 84px 1fr;
   align-items: center;
   padding: 0 0 12px;
 }
@@ -264,16 +264,14 @@
   color: var(--ink-mid);
   letter-spacing: 0.04em;
 }
-.ep-consensus {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--ink-dim);
-  letter-spacing: 0.06em;
-  padding-right: 26px;
-}
+.ep-dirsplit-label { color: var(--ink-faint); }
 
-/* Expanded panel */
-.ep-expand { padding: 0 0 20px; }
+/* Expanded panel — visually contained + tied to the row above */
+.ep-expand {
+  padding: 12px 0 20px 16px;
+  border-left: 3px solid var(--ink);
+  background: var(--paper-2);
+}
 
 .ep-spark-block {
   display: grid;

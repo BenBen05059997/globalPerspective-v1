@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-05-27 (Economy dashboard: complete the GICS sector map + small-caps)
+
+Step 1 of the instrument-universe plan (`ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`). Grounded in a citation-coverage audit of live `SummarizeAndPredict` (30 active records, ~117 citations): the oil/gold/VIX complex dominates (top-4 = 58%) and **sector ETFs barely register** (XLE 4, ITA 1; SOXX/XLF zero). Verdict → **two-layer model**: the right-rail "Market Context" is a *standing economic dashboard* (live levels, AI-independent, shown always); the leaderboard stays the *news-cited subset*. So sectors are added to the **dashboard only** — no prompt/allowlist change.
+
+- **Backend** (`newsMarketsData`): `STOOQ_ETFS` += the 9 missing GICS sectors (XLK/XLV/XLI/XLY/XLP/XLU/XLB/XLRE/XLC, `*.us`); `STOOQ_INDICES` += `IWM` (iShares Russell 2000 ETF — small-cap gauge). They flow through `fetchEquitiesAndETFs` → `EQUITIES#GLOBAL`; `markets_global` serves them via generic `stripMeta` (no serving change). **Deployed + invoked live — all 10 return real prices** (IWM 290.51, XLK 185.18, XLV 148.51, XLRE 44.71, XLC 115.55, …).
+- **Frontend** (`EconomyPage`): right-rail `MARKET_GROUPS` gains a **Sectors** group (11 GICS + ITA/SOXX) and Russell 2000 in Equities. Rows whose level is null are filtered out (graceful-degrade), so a sector shows only once priced.
+- **Live-symbol check caught a dead symbol:** Stooq returns N/D for `^rut`; switched to the `iwm.us` ETF proxy (consistent with the existing INDA/EIS pattern) — exactly the "verify against the live thing, not the name" rule.
+
+Method: plan → executor agent → independent reviewer agent (verdict GO) → orchestrator live-symbol verification + fix. Verified: backend `node --check` OK, frontend lint 0 new / build OK / vitest 176 pass, live invoke confirms all 10 tickers fetch.
+
+- Files: `newsMarketsData/src/index.js`, `EconomyPage.jsx`, `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-26j (Real-price sparklines on /economy + markets_history for all instruments)
 
 - **Backend:** `markets_history` (in `newsSensitiveData`) extended from **FX-only** to resolve any `symbol` across commodities / rates / equities / crypto / FX, returning `[{date, value}]`. Deployed + verified (SPX → 2 pts, BRENT → 1 pt, `topics` still healthy → no regression).

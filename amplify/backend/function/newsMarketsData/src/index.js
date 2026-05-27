@@ -248,6 +248,7 @@ const STOOQ_INDICES = {
   SPX:   '^spx',     // S&P 500
   NDX:   '^ndx',     // Nasdaq 100
   DJI:   '^dji',     // Dow Jones Industrial
+  IWM:   'iwm.us',   // iShares Russell 2000 ETF (proxy — Stooq lacks ^rut; small-cap/domestic-economy gauge)
   FTM:   '^ftm',     // FTSE 100
   DAX:   '^dax',     // DAX
   N225:  '^nkx',     // Nikkei 225
@@ -274,6 +275,15 @@ const STOOQ_ETFS = {
   SHY:  'shy.us',    // Short Treasuries
   EMB:  'emb.us',    // EM USD bonds
   HYG:  'hyg.us',    // US high yield
+  XLK:  'xlk.us',    // Technology
+  XLV:  'xlv.us',    // Health Care
+  XLI:  'xli.us',    // Industrials
+  XLY:  'xly.us',    // Consumer Discretionary
+  XLP:  'xlp.us',    // Consumer Staples
+  XLU:  'xlu.us',    // Utilities
+  XLB:  'xlb.us',    // Materials
+  XLRE: 'xlre.us',   // Real Estate
+  XLC:  'xlc.us',    // Communication Services
 };
 
 async function fetchStooqSymbol(symbol) {

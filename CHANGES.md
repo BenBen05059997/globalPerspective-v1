@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-05-27d (Real 30-day sparkline trend — Yahoo history seed)
+
+The `/economy` sparklines were empty because our stored price history only had 2–3 accrued daily points (Stooq's history endpoint is now API-key-gated). Fixed by seeding 30 days from **Yahoo Finance** — no backfill-as-ongoing-process, just a one-time download; the existing daily cron + DynamoDB TTL maintain the rolling window from here.
+
+- **`newsMarketsData`** gains a `seedHistory()` routine (invoke `{ "source": "seed_history" }`): pulls each instrument's daily series from Yahoo (`chart?interval=1d&range=2mo`, sequential at 300ms to dodge Yahoo's burst rate-limit), transposes into the existing per-date `HISTORY#YYYY-MM-DD` rows (35-day TTL), writing only dates **before today** and **skipping any row that already exists** (never clobbers a daily-cron row). All 46 Yahoo symbols verified live before trusting the map (the `^rut` lesson); zero drops.
+- **No serving/frontend change:** `markets_history` reads the same per-date rows; the rebuilt EconomyPage already renders the `Sparkline` + Key-levels when ≥2 points. So the **live site now shows the trend with no redeploy** — only the data was missing.
+- **Verified live:** ran the seed; `markets_history` now returns **30 points** for BRENT/SPX/BTC/GOLD; public API (frontend shape) returns 30; browser screenshot confirms the sparkline draws a real 30-day line + Key Levels (Today / 30d high / low / Δ) populate.
+
+Why this shape (vs re-fetching 30 days daily, or fetch-through-on-request): the universe is fixed + daily-cadence + the upstream (Yahoo) is unofficial and rate-limits, so the standard pattern is scheduled-ingest-then-serve-from-DB with the third party off the request path. Seed once, append the new day daily (already running), TTL expires the old — nothing to re-fetch.
+
+- Files: `newsMarketsData/src/index.js`, `ARCHITECTURE.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-27c (/economy visual rebuild to match the editorial mockup)
 
 Rebuilt `EconomyPage` to match the `Economy.html` design mockup, wired entirely to real data (no mock values). Masthead band + 3-col shell (220/1fr/260), instrument leaderboard with one-open-at-a-time expand → price sparkline + Key-levels box + a 5-col driving-stories sub-table (Severity·Story·Direction·Mechanism·Closest analog) + affected-country chips, a dormant-instruments drawer, a by-story "Active disruptions" bridge, and the right-rail Market Context (Equities/Sectors/Commodities/Ags&Materials/Risk/Rates/Crypto).

@@ -470,7 +470,7 @@ Free economic-data ingest — **no LLM**, all free feeds.
 4. **Country macros** — World Bank (no key), weekly
 5. Writes `LATEST` rows plus dated `HISTORY#` rows (for sparklines) to `MARKETS_DDB_TABLE`
 
-**Payload:** `{}` runs all sources appropriate for the time; `{ "source": "fx" | "yields" | "macros" | "commodities" | "equities" | "crypto" }` runs one.
+**Payload:** `{}` runs all sources appropriate for the time; `{ "source": "fx" | "yields" | "macros" | "commodities" | "equities" | "crypto" }` runs one; `{ "source": "seed_history" }` is a **one-time** backfill that downloads ~30 days of daily closes per instrument from **Yahoo Finance** (`chart?interval=1d&range=2mo`, sequential/throttled — Yahoo rate-limits bursts) and writes the past `HISTORY#YYYY-MM-DD` rows (35-day TTL, only dates < today, skips existing rows). Needed because Stooq's history CSV is now API-key-gated; the daily cron still appends today's row from the Stooq LATEST quote, and TTL keeps the window at ~30 days. This is what powers the `/economy` sparklines + Key-levels.
 
 **Key env vars:** `MARKETS_DDB_TABLE` (default `GlobalPerspectiveMarkets`), `FRED_API_KEY`
 

@@ -32,7 +32,7 @@
  */
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, PutCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 // Table name: GlobalPerspectiveMarkets (ap-northeast-1)
@@ -381,6 +381,190 @@ async function fetchEquitiesAndETFs() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SEED HISTORY — one-time backfill of ~30 days of daily closes from Yahoo Finance
+//
+// Writes the SAME per-date row shape the daily cron writes:
+//   COMMODITIES#GLOBAL  HISTORY#YYYY-MM-DD   { brent, wti, gold, copper, dxy, vix, natgas, asOf }
+//   EQUITIES#GLOBAL     HISTORY#YYYY-MM-DD   { SPX, NDX, ..., XLE, ..., asOf }
+//   CRYPTO#GLOBAL       HISTORY#YYYY-MM-DD   { BTC, ETH, asOf }
+//
+// Only fills dates strictly BEFORE today (UTC) — today is left to the daily cron.
+// Skips any date that already has a row so a real cron-written row is never clobbered.
+// Fetches sequentially with a delay (Yahoo blocks bursts); a failed/empty symbol is
+// logged and skipped, never crashing the run.
+//
+// Invoke: { "source": "seed_history" }
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Our instrument key → Yahoo symbol. ALL verified live 2026-05-27 (range=5d returned
+// timestamps + closes for every symbol; zero drops).
+const YAHOO_COMMODITIES = {
+  brent:  'BZ=F',
+  wti:    'CL=F',
+  gold:   'GC=F',
+  copper: 'HG=F',
+  natgas: 'NG=F',
+  vix:    '^VIX',
+  dxy:    'DX-Y.NYB',
+};
+
+const YAHOO_EQUITIES = {
+  // Indices
+  SPX:   '^GSPC',
+  NDX:   '^NDX',
+  DJI:   '^DJI',
+  FTM:   '^FTSE',
+  DAX:   '^GDAXI',
+  N225:  '^N225',
+  HSI:   '^HSI',
+  SSEC:  '000001.SS',
+  KS11:  '^KS11',
+  TWII:  '^TWII',
+  BVSP:  '^BVSP',
+  MERV:  '^MERV',
+  XU100: 'XU100.IS',
+  INDA:  'INDA',
+  EIS:   'EIS',
+  IWM:   'IWM',
+  // Sector / thematic ETFs
+  XLE:  'XLE',
+  XLF:  'XLF',
+  XLK:  'XLK',
+  XLV:  'XLV',
+  XLI:  'XLI',
+  XLY:  'XLY',
+  XLP:  'XLP',
+  XLU:  'XLU',
+  XLB:  'XLB',
+  XLRE: 'XLRE',
+  XLC:  'XLC',
+  ITA:  'ITA',
+  SOXX: 'SOXX',
+  GDX:  'GDX',
+  EEM:  'EEM',
+  EFA:  'EFA',
+  SHY:  'SHY',
+  EMB:  'EMB',
+  HYG:  'HYG',
+  DBA:  'DBA',
+  REMX: 'REMX',
+};
+
+const YAHOO_CRYPTO = {
+  BTC: 'BTC-USD',
+  ETH: 'ETH-USD',
+};
+
+const SEED_DELAY_MS = 300; // ≥250ms between Yahoo calls — defensive against burst blocking
+
+// Fetch a Yahoo daily series. Returns { 'YYYY-MM-DD': close, ... } (null closes skipped),
+// or null on any failure/empty response (caller logs + skips the symbol).
+async function fetchYahooDailySeries(yahooSymbol) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1d&range=2mo`;
+  const res = await safeFetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+  const json = await res.json();
+  const result = json?.chart?.result?.[0];
+  const timestamps = result?.timestamp;
+  const closes = result?.indicators?.quote?.[0]?.close;
+  if (!Array.isArray(timestamps) || !Array.isArray(closes)) return null;
+  const series = {};
+  for (let i = 0; i < timestamps.length; i++) {
+    const close = closes[i];
+    if (close === null || close === undefined || isNaN(close)) continue;
+    const date = new Date(timestamps[i] * 1000).toISOString().slice(0, 10);
+    series[date] = close;
+  }
+  return Object.keys(series).length ? series : null;
+}
+
+// Fetch every instrument in a map sequentially (with delay) and transpose into a
+// per-date field map: { 'YYYY-MM-DD': { field: value, ... } }.
+async function buildCategorySeries(category, instrumentMap) {
+  const byDate = {};            // date → { field: close }
+  const perInstrument = {};     // field → point count
+  const skipped = [];
+  for (const [field, yahooSymbol] of Object.entries(instrumentMap)) {
+    try {
+      const series = await fetchYahooDailySeries(yahooSymbol);
+      if (!series) {
+        console.warn(`[SEED][${category}] ${field} (${yahooSymbol}) returned empty — skipping`);
+        skipped.push(`${field}=${yahooSymbol}`);
+      } else {
+        let count = 0;
+        for (const [date, value] of Object.entries(series)) {
+          (byDate[date] || (byDate[date] = {}))[field] = value;
+          count++;
+        }
+        perInstrument[field] = count;
+        console.log(`[SEED][${category}] ${field} (${yahooSymbol}): ${count} points`);
+      }
+    } catch (e) {
+      console.warn(`[SEED][${category}] ${field} (${yahooSymbol}) failed: ${e.message} — skipping`);
+      skipped.push(`${field}=${yahooSymbol}`);
+    }
+    await new Promise(r => setTimeout(r, SEED_DELAY_MS));
+  }
+  return { byDate, perInstrument, skipped };
+}
+
+// Does a HISTORY row already exist for this pk/date? Used to skip (never clobber) a
+// real daily-cron row.
+async function historyRowExists(pk, date) {
+  const res = await ddb.send(new GetCommand({
+    TableName: TABLE,
+    Key: { pk, sk: `HISTORY#${date}` },
+  }));
+  return !!res.Item;
+}
+
+// Write the per-date rows for one category, skipping today (UTC) and any date that
+// already has a row.
+async function writeCategoryHistory(pk, byDate, today) {
+  let written = 0;
+  const skippedDates = [];
+  for (const date of Object.keys(byDate).sort()) {
+    if (date >= today) continue;          // leave today (and anything future) to the daily cron
+    if (await historyRowExists(pk, date)) {
+      skippedDates.push(date);            // never clobber an existing (cron) row
+      continue;
+    }
+    const asOf = `${date}T00:00:00.000Z`;
+    await putItem(pk, `HISTORY#${date}`, { ...byDate[date], asOf }, 35);
+    written++;
+  }
+  return { written, skippedDates };
+}
+
+async function seedHistory() {
+  console.log('[SEED] one-time history backfill from Yahoo Finance...');
+  const today = TODAY();
+
+  const categories = [
+    { name: 'commodities', pk: 'COMMODITIES#GLOBAL', map: YAHOO_COMMODITIES },
+    { name: 'equities',    pk: 'EQUITIES#GLOBAL',    map: YAHOO_EQUITIES },
+    { name: 'crypto',      pk: 'CRYPTO#GLOBAL',       map: YAHOO_CRYPTO },
+  ];
+
+  const seeded = {};
+  const perInstrument = {};
+  const skippedSymbols = [];
+
+  for (const cat of categories) {
+    console.log(`[SEED] === ${cat.name} ===`);
+    const { byDate, perInstrument: pi, skipped } = await buildCategorySeries(cat.name, cat.map);
+    Object.assign(perInstrument, pi);
+    skippedSymbols.push(...skipped);
+    const { written, skippedDates } = await writeCategoryHistory(cat.pk, byDate, today);
+    seeded[cat.name] = written;
+    console.log(`[SEED] ${cat.name}: wrote ${written} date rows, skipped ${skippedDates.length} existing (${skippedDates.join(', ') || 'none'})`);
+  }
+
+  const summary = { seeded, perInstrument, skippedSymbols };
+  console.log('[SEED] done:', JSON.stringify(summary, null, 2));
+  return summary;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // HANDLER
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -397,6 +581,14 @@ exports.handler = async (event = {}) => {
   const dayUTC  = new Date().getUTCDay(); // 0=Sun
 
   const results = {};
+
+  // Seed history — one-time backfill, manual invoke only ({ "source": "seed_history" })
+  if (source === 'seed_history') {
+    try { results.seed_history = await seedHistory(); }
+    catch (e) { console.error('[SEED] failed:', e.message); results.seed_history = { error: e.message }; }
+    console.log('[newsMarketsData] done:', JSON.stringify(results, null, 2));
+    return { statusCode: 200, body: results };
+  }
 
   // FX — run if source=fx or source=all (hourly)
   if (source === 'fx' || source === 'all') {

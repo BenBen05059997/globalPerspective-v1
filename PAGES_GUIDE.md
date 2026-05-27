@@ -146,6 +146,20 @@ Use this when:
   3. Toggle "Anchor only" facet — arc list filters.
 - **Known issues:** Causal Graph shares the `summary`/`threadId` fix from WorldMapV2 (line 599-600).
 
+## `/economy` · `components/EconomyPage.jsx`
+
+- **Purpose:** The "markets-meets-news command center" — an instrument-first view of what today's news is repricing, across all active stories. Rebuilt to the editorial mockup 2026-05-27 (own masthead band + 3-col shell, **not** EditorialShell).
+- **Primary user job:** Start from an instrument ("what's moving Brent, and why?") rather than reading story-by-story; trace a move back to the news driving it.
+- **Data sources:** `useDisruptionsList` (economic-impact records), `useTopMovers` (`economic_top_movers` — leaderboard), `useMarketsGlobal` (`markets_global`, incl. the `series` map for change% + sparklines), `useMarketsHistory` (`markets_history` — the 30-day expand sparkline). Price history is Yahoo-seeded (`newsMarketsData {source:"seed_history"}`).
+- **Auth gate:** None — fully public.
+- **Inbound links:** Primary nav "Economy" (last of 6); footer; Daily "Today's Economic Footprint → View all". (Most in-content economic surfaces deep-link to the per-story *thread* Economy tab `?tab=economy`, not here.)
+- **Outbound links:** Leaderboard expand + by-story bridge → `/weekly/thread/:scopeId?tab=economy`; affected-country chips → `/weekly/country/:name`; disclaimer → `/disclosures`.
+- **Key UI elements:** Two-layer model — center **leaderboard** ("Repricing today": per-instrument consensus + magnitude + live level + day-over-day change% + story count; expand → 30-day sparkline + Key-levels + 5-col driving-stories sub-table incl. analog *realized move* + country chips) + dormant drawer + severity-grouped by-story bridge; right rail **watchlist Market Context** (mini-sparkline + level + ▲/▼ change% per row, AI-independent). Left rail facets (severity/horizon/country).
+- **States:** loading/empty/error inline; honest degradation where data is absent (no faked %/sparkline/analog).
+- **Smoke-test:** (1) `/economy` — leaderboard + watchlist rail render with real levels. (2) Click an instrument row — expands to sparkline + driving-stories table. (3) Click a driving story — lands on its thread Economy tab.
+- **Usage (CloudWatch proxy, 2026-05-27):** the **#2 content page** after Home — well ahead of Threads/Daily/Map/Countries (≈28 `economic_top_movers` loads/wk + 31 expands vs. ≤9 for other sections). Discovery is **not** a gap; site-wide traffic is low overall.
+- **Known issues:** a heavily-cited instrument lists all its stories on expand (no "top N" cap yet); `markets_global` is over-counted in logs because the hook background-refreshes every 5 min.
+
 ## `/weekly-map` · `components/WeeklyMap.jsx`
 
 - **Purpose:** Standalone Google-Maps-based weekly story map with date playback per thread / per country.
@@ -325,7 +339,7 @@ ORPHAN / SECONDARY
 
 | Route | Nav/footer reachable? | Notes |
 |---|---|---|
-| `/`, `/daily`, `/map`, `/weekly`, `/weekly/countries` | ✓ (primary nav) | |
+| `/`, `/daily`, `/map`, `/weekly`, `/weekly/countries`, `/economy` | ✓ (primary nav) | `/economy` is in nav (last) + footer; CloudWatch proxy shows it's the #2 content page — NOT an orphan |
 | `/weekly/thread/:id`, `/weekly/country/:name` | ✓ (indirect via list pages) | |
 | `/signin`, `/account` | ✓ (Layout right-side) | |
 | `/auth/callback`, `/upgrade/success` | ✓ (inbound from email / Paddle) | |

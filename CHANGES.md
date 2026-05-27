@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-05-27g (Discovery check + PAGES_GUIDE /economy entry)
+
+Investigated whether `/economy` has a discovery problem (the old wiring audit called it a near-orphan). **It doesn't** — verified via a CloudWatch action-count proxy on `newsSensitiveData-dev` (GA4 `G-VT6QENX4MB` is wired but not API-readable from here): over the last 7 days `/economy` is the **#2 content page** after Home, well ahead of Threads/Daily/Map/Countries (it's in nav + footer + the Daily "View all" link). So no discovery funnel was built — it would have solved a non-problem. The real lever is low site-wide traffic (growth/distribution), not economy-page wiring.
+
+- **Docs:** added the missing `/economy` entry to `PAGES_GUIDE.md` (the audit flagged it had none) following the page schema, incl. the usage finding; corrected the orphan-check table (`/economy` is primary-nav, #2 page — not an orphan).
+- No code change. Usage-measurement method recorded in memory (`reference_observability_usage`).
+
+- Files: `PAGES_GUIDE.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-27f (Analog realized-move join + economy doc catch-up)
 
 **Feature — the differentiator cell.** In `/economy`'s expanded driving-stories sub-table, the "Closest analog" now shows the analog's **real historical realized move for that instrument** (e.g. BRENT · "Houthi Red Sea attacks (2024) → +5-8% on each escalation, retraced as Cape rerouting absorbed it"), not just the analog name.

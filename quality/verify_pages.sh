@@ -47,7 +47,8 @@ must_have "$SRC/components/Layout.jsx" "to=.{1,3}/economy" "nav link to /economy
 # ─── EconomyPage ───
 must_have "$SRC/components/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
 must_have "$SRC/components/EconomyPage.jsx" "useTopMovers" "uses useTopMovers"
-must_have "$SRC/components/EconomyPage.jsx" "DisruptionRow" "renders DisruptionRow"
+must_have "$SRC/components/EconomyPage.jsx" "useMarketsGlobal" "renders Market Context rail"
+must_have "$SRC/components/EconomyPage.jsx" "tab=economy" "deep-links stories to thread economy tab"
 
 # ─── Home ───
 must_have "$SRC/components/Home.jsx" "useDisruptionsList" "uses useDisruptionsList"

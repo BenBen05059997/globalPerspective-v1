@@ -847,6 +847,54 @@ exports.handler = async (event) => {
           mGet('FX#USD'), mGet('RATES#GLOBAL'), mGet('COMMODITIES#GLOBAL'), mGet('EQUITIES#GLOBAL'), mGet('CRYPTO#GLOBAL'),
         ]);
         const stripMeta = (it) => { if (!it) return null; const { pk, sk, ttl, updatedAt, ...rest } = it; return rest; };
+
+        // ── Watchlist series (additive): per-instrument daily-close spark + day-over-day change ──
+        // Scan each category's HISTORY# rows once, transpose into per-instrument series.
+        // Commodities are stored lowercase → map up to the frontend's UPPERCASE instrument ids.
+        const COMMODITY_UP = { brent: 'BRENT', wti: 'WTI', gold: 'GOLD', copper: 'COPPER', dxy: 'DXY', vix: 'VIX', natgas: 'NATGAS' };
+        const META_FIELDS = new Set(['pk', 'sk', 'ttl', 'updatedAt', 'asOf']);
+        const histScanG = (pk) => mClient.send(new ScanCommand({
+          TableName: 'GlobalPerspectiveMarkets',
+          FilterExpression: 'pk = :pk AND begins_with(sk, :prefix)',
+          ExpressionAttributeValues: { ':pk': pk, ':prefix': 'HISTORY#' },
+        }));
+        const series = {};
+        const buildSeries = (items, idFor) => {
+          const sorted = (items || []).slice().sort((a, b) => String(a.sk).localeCompare(String(b.sk)));
+          const cols = {}; // instrumentId → [values oldest→newest]
+          for (const row of sorted) {
+            for (const field of Object.keys(row)) {
+              if (META_FIELDS.has(field)) continue;
+              const id = idFor(field);
+              if (!id) continue;
+              const v = row[field];
+              if (v == null || typeof v !== 'number' || Number.isNaN(v)) continue;
+              (cols[id] = cols[id] || []).push(v);
+            }
+          }
+          for (const [id, vals] of Object.entries(cols)) {
+            if (!vals.length) continue;
+            const spark = vals.slice(-20);
+            let change = null;
+            if (vals.length >= 2) {
+              const last = vals[vals.length - 1];
+              const prev = vals[vals.length - 2];
+              if (prev) change = Math.round(((last - prev) / prev) * 100 * 100) / 100;
+            }
+            series[id] = { spark, change };
+          }
+        };
+        try {
+          const [hComm, hRates, hEq, hCr] = await Promise.all([
+            histScanG('COMMODITIES#GLOBAL'), histScanG('RATES#GLOBAL'),
+            histScanG('EQUITIES#GLOBAL'), histScanG('CRYPTO#GLOBAL'),
+          ]);
+          buildSeries(hComm.Items, (f) => COMMODITY_UP[f] || null);   // commodities: lowercase → UPPER
+          buildSeries(hRates.Items, (f) => f.toUpperCase());          // rates/equities/crypto: already uppercase ids
+          buildSeries(hEq.Items, (f) => f.toUpperCase());
+          buildSeries(hCr.Items, (f) => f.toUpperCase());
+        } catch { /* series is best-effort — never block the LATEST snapshot */ }
+
         return {
           statusCode: 200, headers,
           body: JSON.stringify({ success: true, data: {
@@ -855,6 +903,7 @@ exports.handler = async (event) => {
             commodities: comms.Item ? { brent: comms.Item.brent, wti: comms.Item.wti, gold: comms.Item.gold, copper: comms.Item.copper, dxy: comms.Item.dxy, vix: comms.Item.vix, natgas: comms.Item.natgas, asOf: comms.Item.asOf } : null,
             equities:    stripMeta(eq.Item),
             crypto:      stripMeta(cr.Item),
+            series,
           }}),
         };
       } catch (e) {

@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-05-27e (Watchlist right rail: day-over-day % change + mini-sparklines)
+
+Made `/economy`'s right-rail Market Context look like a stock-app watchlist — each row now shows a **mini price sparkline** + a **change vs yesterday** (green ▲ / red ▼ / muted →), and the same change % sits on the leaderboard rows next to the price.
+
+- **Backend** (`markets_global`, additive): added a `series: { [INSTRUMENT_ID]: { spark:[≤20 closes], change:%vs-prior-day } }` map, built by scanning the `HISTORY#` rows once per category and transposing. Commodities keyed lowercase→UPPER (`brent→BRENT`…); rates/equities/crypto pass through. `change = (last−prev)/prev·100`, null when <2 points (guards prev=0). The existing `commodities/yields/equities/crypto/fx` LATEST objects are byte-for-byte unchanged — purely additive, so `levelFor` and other consumers are unaffected.
+- **Frontend** (`EconomyPage`): a `ChangePill` (green/red/muted, renders nothing when null); right-rail rows became `[name] [mini-sparkline] [level] [▲/▼ %]` (dropped the redundant ticker so the friendly name has room — fixed a single-char truncation caught in browser-verify); leaderboard rows show the change next to the price. Graceful throughout — no series / <2 points → level only, never a fabricated arrow or 0%.
+- **Honest data:** change + spark come straight from the seeded daily closes. A few instruments show `→ 0.0%` when their last two *stored* closes coincide (e.g. rates, which FRED feeds and weren't in the Yahoo seed) — real, not faked.
+- **Browser-verified** (Playwright): 35 right-rail mini-sparklines + 24 change pills + 7 leaderboard pills rendering, **zero console errors**; screenshot confirms the watchlist look. Verified: `markets_global` returns `series` for 53 instruments live; lint 0 new, build OK, 177 tests (economyPage 6/6), independent review GO.
+
+- Files: `newsSensitiveData/src/index.js`, `EconomyPage.jsx`, `EconomyPage.css`, `test/economyPage.test.jsx`, `CHANGES.md`.
+
+---
+
 ## 2026-05-27d (Real 30-day sparkline trend — Yahoo history seed)
 
 The `/economy` sparklines were empty because our stored price history only had 2–3 accrued daily points (Stooq's history endpoint is now API-key-gated). Fixed by seeding 30 days from **Yahoo Finance** — no backfill-as-ongoing-process, just a one-time download; the existing daily cron + DynamoDB TTL maintain the rolling window from here.

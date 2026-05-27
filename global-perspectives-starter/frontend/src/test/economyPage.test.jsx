@@ -34,6 +34,11 @@ const markets = {
   commodities: { brent: 82.5, wti: 78.1, gold: 2350, copper: 4.2, dxy: 104.3, vix: 14.8 },
   yields: { US10Y: 4.25, US2Y: 4.9, DE10Y: 2.4, JP10Y: 0.9, UK10Y: 4.1 },
   fx: { asOf: '2026-05-26T08:00:00.000Z', base: 'USD', rates: { EUR: 0.92 } },
+  series: {
+    BRENT: { spark: [80, 82, 82.5], change: 0.61 },
+    SPX:   { spark: [5100, 5150, 5180], change: 0.58 },
+    US10Y: { spark: [4.2, 4.3, 4.25], change: -1.16 },
+  },
 };
 
 vi.mock('../hooks/useDisruptionsList', () => ({
@@ -83,6 +88,17 @@ describe('EconomyPage — instrument-first leaderboard', () => {
     expect(body).toMatch(/82\.5/);
     expect(body).toMatch(/US 10Y/);
     expect(body).toMatch(/4\.25%/);                       // yield formatted with %
+  });
+
+  it('renders a watchlist change % and mini-sparkline in the right rail', () => {
+    renderPage();
+    const right = document.querySelector('.ep-rail-right');
+    // day-over-day change pills come straight from markets.series
+    expect(right.textContent).toMatch(/▲ \+0\.6%/);   // BRENT +0.61 → +0.6%
+    expect(right.textContent).toMatch(/▼ −1\.2%/);    // US10Y -1.16 → −1.2%
+    // mini-sparklines (≥2 points) render as SVGs inside the watchlist rows
+    const sparks = right.querySelectorAll('.ep-mkt-row .spk svg');
+    expect(sparks.length).toBeGreaterThanOrEqual(2);
   });
 
   it('expands a row to reveal driving stories, rationale, and a price sparkline', () => {

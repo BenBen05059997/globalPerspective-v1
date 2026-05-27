@@ -90,6 +90,16 @@ function keyLevels(series, level) {
 const DIR_GLYPH = { up: '↑', down: '↓', mixed: '↔' };
 const DIR_CLASS = { up: 'up', down: 'dn', mixed: 'mx' };
 
+// Day-over-day change pill — real % from history closes. Renders nothing if null/absent.
+// >0 green ▲ · <0 red ▼ · ~0 muted →. Never fabricates a value.
+function ChangePill({ change }) {
+  if (change == null || Number.isNaN(change)) return null;
+  const abs = Math.abs(change).toFixed(1);
+  if (change > 0) return <span className="ep-chg ep-chg-up">▲ +{abs}%</span>;
+  if (change < 0) return <span className="ep-chg ep-chg-dn">▼ −{abs}%</span>;
+  return <span className="ep-chg ep-chg-flat">→ 0.0%</span>;
+}
+
 // Right-rail market-context groups (label → [instrumentId, displayName])
 const MARKET_GROUPS = [
   { hd: 'Equities', rows: [['SPX', 'S&P 500'], ['NDX', 'Nasdaq 100'], ['N225', 'Nikkei'], ['HSI', 'Hang Seng'], ['DAX', 'DAX'], ['IWM', 'Russell 2000']] },
@@ -428,7 +438,10 @@ export default function EconomyPage() {
                     <span className={`ep-arrow ${DIR_CLASS[topDir] || 'mx'}`}>{DIR_GLYPH[topDir] || '↔'}</span>
                     {mag && <span className="ep-mag">{mag}</span>}
                   </div>
-                  <span className="ep-price">{priceLevel || ''}</span>
+                  <span className="ep-price">
+                    {priceLevel || ''}
+                    <ChangePill change={markets?.series?.[m.instrumentId]?.change} />
+                  </span>
                   <div className="ep-cites">
                     <b>{m.citations}</b> stor{m.citations === 1 ? 'y' : 'ies'}
                     {total > 0 && <> · {topDirCount} of {total} agree</>}
@@ -554,13 +567,21 @@ export default function EconomyPage() {
             return (
               <div key={g.hd} className="ep-mkt-group">
                 <div className="ep-glabel">{g.hd}</div>
-                {rows.map(([id, name, val]) => (
-                  <div key={id} className="ep-mkt-row">
-                    <span className="tk">{id}</span>
-                    <span className="nm">{name}</span>
-                    <span className="vl">{val}</span>
-                  </div>
-                ))}
+                {rows.map(([id, name, val]) => {
+                  const s = markets.series?.[id];
+                  return (
+                    <div key={id} className="ep-mkt-row">
+                      <span className="nm" title={id}>{name}</span>
+                      <span className="spk">
+                        {Array.isArray(s?.spark) && s.spark.length >= 2
+                          ? <Sparkline data={s.spark} width={56} height={18} />
+                          : null}
+                      </span>
+                      <span className="vl">{val}</span>
+                      <span className="chg"><ChangePill change={s?.change} /></span>
+                    </div>
+                  );
+                })}
               </div>
             );
           })}

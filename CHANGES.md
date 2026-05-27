@@ -1,5 +1,22 @@
 # Global Perspectives — Change Log
 
+## 2026-05-27b (Economy Step 2: commodity menu expansion — NATGAS / DBA / REMX)
+
+Step 2 of `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`. Unlike sectors (dashboard-only), these geopolitics-flow commodities have plausible *latent leaderboard demand* (Russia energy → natgas, Ukraine/food → grains, China leverage → rare earths), so they're wired into the **AI's instrument menu** to make them citable — then we re-audit to see if the news actually reprices them.
+
+- **Producer:** `newsMarketsData` fetches **NATGAS** (`ng.f` → COMMODITIES#GLOBAL) + **DBA** (agriculture, `dba.us`) + **REMX** (rare earths, `remx.us` → EQUITIES#GLOBAL). `newsEconomicImpact`: added all three to `INSTRUMENT_ALLOWLIST` + `buildInstrumentTable` (the prompt menu), plus 3 real `economic_analogs.json` entries (2022 Europe gas crisis, 2022 Black Sea grain disruption, 2010 China rare-earth curbs) with realized historical moves.
+- **Serving:** `markets_global` commodities projection += `natgas` (DBA/REMX flow via the generic `stripMeta` equities path; `markets_history` already generic — no change).
+- **Frontend** (`EconomyPage`): `COMMODITY_KEY` += NATGAS; right rail gains Nat Gas in Commodities + a new **Ags & Materials** group (DBA/REMX). All page *consumers* (MechanismCard / DisruptionRow / thread Economy tab) render `instruments[]` generically — zero consumer-side edits needed (confirmed via `PAGES_GUIDE.md` + wiring review).
+- **SILVER deliberately excluded** — its `si.f` feed returns an implausible value (7725 vs ~$30/oz); gated until the symbol/scaling is fixed.
+
+Method: plan → executor agent → independent reviewer (GO) → orchestrator deploy + live-verify. **Deployed all 3 Lambdas + verified live:** natgas 3.004 / DBA 27.47 / REMX 98.96 in DDB and served by `markets_global`. Verified: `node --check` ×3, analogs JSON parses (25 events), lint 0 new, build OK, vitest 176 pass, review GO.
+
+**Next:** re-run the citation-coverage audit in ~1–2 weeks to see whether the AI cites NATGAS/DBA/REMX from real news — keep those that earn it on the leaderboard, demote the rest to dashboard-only (compare vs the Step-1 baseline BRENT 23/GOLD 18/VIX 14/WTI 13).
+
+- Files: `newsMarketsData/src/index.js`, `newsEconomicImpact/src/index.js`, `newsEconomicImpact/src/economic_analogs.json`, `newsSensitiveData/src/index.js`, `EconomyPage.jsx`, `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-27 (Economy dashboard: complete the GICS sector map + small-caps)
 
 Step 1 of the instrument-universe plan (`ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`). Grounded in a citation-coverage audit of live `SummarizeAndPredict` (30 active records, ~117 citations): the oil/gold/VIX complex dominates (top-4 = 58%) and **sector ETFs barely register** (XLE 4, ITA 1; SOXX/XLF zero). Verdict → **two-layer model**: the right-rail "Market Context" is a *standing economic dashboard* (live levels, AI-independent, shown always); the leaderboard stays the *news-cited subset*. So sectors are added to the **dashboard only** — no prompt/allowlist change.

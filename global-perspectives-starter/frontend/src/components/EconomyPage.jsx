@@ -23,7 +23,7 @@ const HORIZONS = ['immediate', 'days', 'weeks', 'months'];
 
 // markets_global exposes commodities + yields (not equities/FX pairs).
 // Map a disruption instrumentId → its live level so the qualitative call sits next to the real number.
-const COMMODITY_KEY = { BRENT: 'brent', WTI: 'wti', GOLD: 'gold', COPPER: 'copper', DXY: 'dxy', VIX: 'vix' };
+const COMMODITY_KEY = { BRENT: 'brent', WTI: 'wti', GOLD: 'gold', COPPER: 'copper', DXY: 'dxy', VIX: 'vix', NATGAS: 'natgas' };
 
 function levelFor(instrumentId, markets) {
   if (!markets || !instrumentId) return null;
@@ -49,7 +49,8 @@ function fmtLevel(level) {
 const MARKET_GROUPS = [
   { hd: 'Equities', rows: [['SPX', 'S&P 500'], ['NDX', 'Nasdaq 100'], ['N225', 'Nikkei'], ['HSI', 'Hang Seng'], ['DAX', 'DAX'], ['IWM', 'Russell 2000']] },
   { hd: 'Sectors', rows: [['XLK', 'Technology'], ['XLF', 'Financials'], ['XLE', 'Energy'], ['XLV', 'Health Care'], ['XLI', 'Industrials'], ['XLY', 'Cons. Disc.'], ['XLP', 'Cons. Staples'], ['XLU', 'Utilities'], ['XLB', 'Materials'], ['XLRE', 'Real Estate'], ['XLC', 'Comm. Svcs'], ['ITA', 'Defense'], ['SOXX', 'Semiconductors']] },
-  { hd: 'Commodities', rows: [['BRENT', 'Brent'], ['WTI', 'WTI'], ['GOLD', 'Gold'], ['COPPER', 'Copper']] },
+  { hd: 'Commodities', rows: [['BRENT', 'Brent'], ['WTI', 'WTI'], ['GOLD', 'Gold'], ['COPPER', 'Copper'], ['NATGAS', 'Nat Gas']] },
+  { hd: 'Ags & Materials', rows: [['DBA', 'Agriculture'], ['REMX', 'Rare Earths']] },
   { hd: 'Risk', rows: [['VIX', 'VIX'], ['DXY', 'Dollar (DXY)']] },
   { hd: 'Rates', rows: [['US10Y', 'US 10Y'], ['US2Y', 'US 2Y'], ['DE10Y', 'Bund 10Y'], ['JP10Y', 'JGB 10Y'], ['UK10Y', 'Gilt 10Y']] },
   { hd: 'Crypto', rows: [['BTC', 'Bitcoin'], ['ETH', 'Ethereum']] },

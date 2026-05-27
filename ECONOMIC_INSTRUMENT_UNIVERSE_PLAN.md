@@ -114,6 +114,49 @@ Per ticker, all small mechanical edits in `newsEconomicImpact/src/index.js` (+ d
 3. **Leaderboard stays news-driven.** No padding. Wire it to degrade gracefully (no price/sparkline for the 4 qualitative buckets, "no close analog" empty state — the mockup already shows this pattern).
 4. **Re-audit cadence.** Re-run the citation tally each time the news cycle shifts materially, to confirm the leaderboard reflects reality and to catch latent demand for new instruments.
 
+---
+
+## Step 2 — Commodity menu expansion (detailed plan)
+
+**Status:** PLANNED 2026-05-27 (after Step 1 shipped). Goal: let the AI *cite* the geopolitics-flow commodities it currently can't, then **measure** whether the news actually reprices them (re-audit). Unlike sectors (dashboard-only), these have plausible *latent leaderboard demand*: Russia energy → natgas, Ukraine/food → grains, China leverage → rare earths.
+
+### What the page-wiring review established (why this is safe)
+Every page that renders the economic layer reads `instruments[]` **generically** — `MechanismCard` (ThreadPage `?tab=economy`, the deepest surface), `DisruptionRow`, `DisruptionPreview`, the EconomyPage pivot/leaderboard, and the planned Home/Daily/Country surfaces (`ECONOMIC_DISRUPTION_WIRING_PLAN.md`). So a new instrument propagates to **all consumers with zero consumer-side edits**. The producer chain is also clean: `loadMarketContext()` stores the *whole* `COMMODITIES#GLOBAL` row, so a new key is auto-available to `buildInstrumentTable`. The **only hardcoded chokepoints** are the commodity *serving* projection and the frontend pivot's level map.
+
+### Candidate instruments + live-verified Stooq symbols
+| Instrument | Symbol | Live check (2026-05-27) | Store → row |
+|---|---|---|---|
+| NATGAS (Henry Hub) | `ng.f` | ✅ 2.995 (sane) | `STOOQ_SYMBOLS` → COMMODITIES#GLOBAL |
+| SILVER (COMEX) | `si.f` | ⚠️ **7725.3 — implausible for $/oz (~$30 expected)**; investigate symbol/scaling before trusting | `STOOQ_SYMBOLS` → COMMODITIES#GLOBAL |
+| Grains/Agriculture | `dba.us` (DBA ETF) | ✅ 27.47 (sane) | `STOOQ_ETFS` → EQUITIES#GLOBAL |
+| Rare earths / critical minerals | `remx.us` (REMX ETF) | ✅ 98.96 (sane) | `STOOQ_ETFS` → EQUITIES#GLOBAL |
+
+**Gate:** do not ship SILVER until the value is sane (find the correct Stooq symbol or apply a scaling factor + a Variant-4 range assertion in `verify_market.sh`). NATGAS/DBA/REMX can proceed.
+
+### Exact edit map
+**Producer — make them citable:**
+1. `newsMarketsData/src/index.js` — `STOOQ_SYMBOLS` += `natgas:'ng.f'`, (`silver:'si.f'` gated); `STOOQ_ETFS` += `DBA:'dba.us'`, `REMX:'remx.us'`. (DBA/REMX flow through `fetchEquitiesAndETFs` automatically; natgas/silver through `fetchCommodities`.)
+2. `newsEconomicImpact/src/index.js`:
+   - `buildInstrumentTable()` (:329) — commodities block: `push('NATGAS','Henry Hub natural gas',fmt(C.natgas,'$'))`, (`SILVER` gated); ETF loop array (:355) += `'DBA','REMX'`.
+   - `INSTRUMENT_ALLOWLIST` (:66) += `NATGAS`,`DBA`,`REMX` (+ `SILVER` when sane).
+   - `economic_analogs.json` — add entries with `realizedMoves` keyed by the new tickers. Suggested real events: **2022 Europe gas crisis** (NATGAS, TTF/HH spike), **2010-11 / 2022 grain price spike** (DBA — Black Sea/Ukraine wheat), **2010 China rare-earth embargo on Japan** (REMX). Each: real trigger + realized move + `lessonForToday` + caveat.
+
+**Serving — surface them (the one real chokepoint):**
+3. `newsSensitiveData/src/index.js` — `markets_global` commodities projection (:855) is **hardcoded** `{brent,wti,gold,copper,dxy,vix}`; add `natgas`, `silver`. (DBA/REMX already flow via `equities: stripMeta(eq.Item)`.) `markets_history` (:894) is **already generic** — commodities fall back to `SYM.toLowerCase()`, equities use `SYM` directly — **no change needed**.
+
+**Frontend — pivot live-level + dashboard display:**
+4. `EconomyPage.jsx` — `COMMODITY_KEY` map (:26) += `NATGAS:'natgas'` (+`SILVER:'silver'` when sane), so `levelFor` resolves the pivot level. (DBA/REMX resolve via `eq[id]` already.) Optionally add NATGAS/SILVER to the right-rail Commodities group and DBA/REMX to a small "Ags & Materials" group.
+
+### Execution sequencing (same playbook as Step 1)
+1. **Orchestrator:** finalize symbols (resolve SILVER), then brief an **executor agent** for the producer + serving + frontend edits (NATGAS/DBA/REMX first; SILVER only if fixed).
+2. **Independent reviewer agent:** verify edits vs. this map + cardinal rule (symbols correct, allowlist+table+analog in sync, `markets_global` projection updated, no consumer-side breakage, honesty intact).
+3. **Orchestrator live-verify:** deploy `newsMarketsData` + `newsEconomicImpact`; invoke `source=commodities` and confirm new keys land with sane values; spot-check `markets_global` returns them; confirm `buildInstrumentTable` now lists them (read the deployed prompt input via a dry-run/log).
+4. **Re-audit (the measurement — the whole point):** after ~1–2 weeks of news, re-run the citation tally (query in "Audit reproduction" below). **Keep** instruments that earn citations on the leaderboard; **demote** the rest to dashboard-only. Record the verdict here.
+
+### Risk notes
+- Changing `buildInstrumentTable` changes the AI's menu → it could shift citation distribution for *existing* instruments too. The re-audit compares against the Step-1 baseline (BRENT 23/GOLD 18/VIX 14/WTI 13) to catch unintended drift.
+- New `economic_analogs.json` entries must follow the existing honesty rule: real past events with widely-cited realized moves, never fabricated — the frontend shows the analog's *actual* past move, not a forecast.
+
 ## Honesty constraints (unchanged)
 - Real prices + our own aggregates only. **Never a numeric forecast.** Direction (up/down/mixed) + magnitude (small/moderate/large) for the call; real price history beside it.
 - Every served level carries an `asOf`. Stale data is labeled, never hidden.

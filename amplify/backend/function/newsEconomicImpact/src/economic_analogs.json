@@ -314,6 +314,43 @@
         "USD/XOF": "no peg break (CFA franc holds)"
       },
       "lessonForToday": "Sahel political instability has remarkably muted commodity impact because mining/extraction continues under whoever's in power. The real signal is uranium for Niger, supply-chain risk for French companies (Orano), and Russian sphere expansion."
+    },
+    {
+      "id": "europe-gas-2022",
+      "name": "2022 European natural gas crisis",
+      "year": "2022",
+      "category": ["energy", "sanctions", "conflict"],
+      "trigger": "Russian pipeline gas cuts to Europe after the Ukraine invasion; Henry Hub and TTF spiked on supply fear and LNG redirection",
+      "realizedMoves": {
+        "NATGAS": "US Henry Hub roughly doubled into Aug 2022 (~$9/MMBtu) then fully retraced by early 2023 on a mild winter + high storage",
+        "EUROPE_TTF": "TTF spiked ~10x to >EUR300/MWh at peak, then collapsed through 2023",
+        "EQUITIES_DM": "European equities underperformed on the energy-cost shock"
+      },
+      "lessonForToday": "Gas spikes on supply-cut fear are violent but often retrace fast once storage/weather/LNG rebalance. Distinguish a genuine multi-quarter supply loss from a transient fear spike."
+    },
+    {
+      "id": "ukraine-grain-2022",
+      "name": "2022 Black Sea grain disruption",
+      "year": "2022",
+      "category": ["conflict", "food", "sanctions"],
+      "trigger": "Russia's invasion blocked Ukrainian Black Sea grain exports; wheat and broad agriculture spiked as a major exporter went offline",
+      "realizedMoves": {
+        "DBA": "broad agriculture rallied roughly mid-teens % in the weeks after the invasion, then gave most back by late 2022 as the grain-corridor deal and demand destruction set in",
+        "WHEAT": "Chicago wheat spiked ~+40% to multi-year highs in March 2022, then retraced through the year"
+      },
+      "lessonForToday": "Food-commodity spikes from a single-exporter disruption tend to overshoot then mean-revert once substitution, corridors, or demand destruction kick in. Watch for an export-corridor deal."
+    },
+    {
+      "id": "china-rare-earth-2010",
+      "name": "2010 China rare-earth export curbs",
+      "year": "2010",
+      "category": ["trade", "sanctions", "materials"],
+      "trigger": "China cut rare-earth export quotas and briefly halted shipments to Japan amid a territorial dispute, exposing global supply concentration",
+      "realizedMoves": {
+        "REMX": "rare-earth miners/producers surged in 2010-2011 on supply-security fear, then collapsed as prices normalized and ex-China supply responded",
+        "RARE_EARTH_PRICES": "spot rare-earth oxide prices spiked several-fold into 2011, then fell ~80% over the following 2 years"
+      },
+      "lessonForToday": "Critical-mineral 'weaponization' produces sharp initial spikes on concentration fear, but high prices pull in alternative supply and substitution within 1-2 years; the first move overshoots the durable one."
     }
   ]
 }

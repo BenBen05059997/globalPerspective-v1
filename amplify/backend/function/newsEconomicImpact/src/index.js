@@ -65,7 +65,7 @@ const ECONOMIC_CATEGORIES = new Set([
 // This is the single most important hallucination guard in the system.
 const INSTRUMENT_ALLOWLIST = new Set([
   // Commodities
-  'BRENT', 'WTI', 'GOLD', 'COPPER', 'VIX', 'DXY',
+  'BRENT', 'WTI', 'GOLD', 'COPPER', 'VIX', 'DXY', 'NATGAS',
   // Rates
   'US10Y', 'US2Y', 'UK10Y', 'DE10Y', 'JP10Y',
   // Equity indices (NSEI/TA125 replaced with INDA/EIS US-listed ETF proxies — Stooq coverage)
@@ -73,6 +73,8 @@ const INSTRUMENT_ALLOWLIST = new Set([
   'KS11', 'TWII', 'INDA', 'BVSP', 'MERV', 'XU100', 'EIS',
   // Sector + credit ETFs
   'XLE', 'ITA', 'SOXX', 'XLF', 'EEM', 'EFA', 'GDX', 'SHY', 'EMB', 'HYG',
+  // Commodity ETFs
+  'DBA', 'REMX',
   // Qualitative buckets (when no specific instrument fits)
   'EQUITIES_EM', 'EQUITIES_DM', 'CREDIT_EM', 'CREDIT_DM',
   // Crypto (Phase 2 — tag with geopoliticalRelevance when used)
@@ -338,6 +340,7 @@ function buildInstrumentTable(marketContext, fxKeys) {
   push('COPPER', 'COMEX copper',            fmt(C.copper, '$'));
   push('VIX',    'CBOE VIX',                fmt(C.vix));
   push('DXY',    'US dollar index',         fmt(C.dxy));
+  push('NATGAS', 'Henry Hub natural gas',     fmt(C.natgas, '$'));
 
   // Rates
   const R = marketContext.RATES || {};
@@ -352,8 +355,9 @@ function buildInstrumentTable(marketContext, fxKeys) {
   for (const id of ['SPX','NDX','DJI','FTM','DAX','N225','HSI','SSEC','KS11','TWII','INDA','BVSP','MERV','XU100','EIS']) {
     push(id, id === 'INDA' ? 'INDA (India proxy ETF)' : id === 'EIS' ? 'EIS (Israel proxy ETF)' : `${id} index`, fmt(E[id]));
   }
-  for (const id of ['XLE','ITA','SOXX','XLF','EEM','EFA','GDX','SHY','EMB','HYG']) {
-    push(id, `${id} ETF`, fmt(E[id], '$'));
+  const ETF_LABEL = { DBA: 'DBA (agriculture/grains ETF)', REMX: 'REMX (rare-earth/critical-minerals ETF)' };
+  for (const id of ['XLE','ITA','SOXX','XLF','EEM','EFA','GDX','SHY','EMB','HYG','DBA','REMX']) {
+    push(id, ETF_LABEL[id] || `${id} ETF`, fmt(E[id], '$'));
   }
 
   // FX (top 10 most relevant)

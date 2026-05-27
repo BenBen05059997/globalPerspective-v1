@@ -852,7 +852,7 @@ exports.handler = async (event) => {
           body: JSON.stringify({ success: true, data: {
             fx:          fx.Item   ? { rates: fx.Item.rates,   base: fx.Item.base, asOf: fx.Item.asOf } : null,
             yields:      rates.Item ? { US10Y: rates.Item.US10Y, US2Y: rates.Item.US2Y, UK10Y: rates.Item.UK10Y, DE10Y: rates.Item.DE10Y, JP10Y: rates.Item.JP10Y, asOf: rates.Item.asOf } : null,
-            commodities: comms.Item ? { brent: comms.Item.brent, wti: comms.Item.wti, gold: comms.Item.gold, copper: comms.Item.copper, dxy: comms.Item.dxy, vix: comms.Item.vix, asOf: comms.Item.asOf } : null,
+            commodities: comms.Item ? { brent: comms.Item.brent, wti: comms.Item.wti, gold: comms.Item.gold, copper: comms.Item.copper, dxy: comms.Item.dxy, vix: comms.Item.vix, natgas: comms.Item.natgas, asOf: comms.Item.asOf } : null,
             equities:    stripMeta(eq.Item),
             crypto:      stripMeta(cr.Item),
           }}),

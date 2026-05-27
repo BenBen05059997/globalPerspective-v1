@@ -240,6 +240,7 @@ const STOOQ_SYMBOLS = {
   gold:   'gc.f',   // COMEX Gold
   copper: 'hg.f',   // COMEX Copper
   dxy:    'dx.f',   // US Dollar Index
+  natgas: 'ng.f',    // Henry Hub natural gas
 };
 
 // Stooq index symbols (^ prefix). If any symbol fails at runtime, value is null.
@@ -284,6 +285,8 @@ const STOOQ_ETFS = {
   XLB:  'xlb.us',    // Materials
   XLRE: 'xlre.us',   // Real Estate
   XLC:  'xlc.us',    // Communication Services
+  DBA:  'dba.us',    // Agriculture / grains
+  REMX: 'remx.us',   // Rare earths / critical minerals
 };
 
 async function fetchStooqSymbol(symbol) {

@@ -11,7 +11,7 @@ const disruptions = [
     confidence: 'high', horizon: 'days', hasImpact: true, generatedAt: '2026-05-26T08:00:00.000Z',
     instruments: [{ instrumentId: 'BRENT', direction: 'up', magnitude: 'large', rationale: 'supply cut' }],
     winners: [{ name: 'Saudi Arabia', type: 'country' }], losers: [{ name: 'India', type: 'country' }],
-    historicalAnalog: { event: '2019 Hormuz attacks', year: 2019, outcome: 'spike then fade' },
+    historicalAnalog: { event: '2019 Abqaiq Saudi facility attack', year: 2019, outcome: 'spike then fade' },
   },
   {
     scopeId: 't-bond', headline: 'US fiscal worries lift long yields', severity: 'moderate', severityScore: 60,
@@ -110,7 +110,11 @@ describe('EconomyPage — instrument-first leaderboard', () => {
     expect(drivingRow).toBeInTheDocument();
     expect(drivingRow.textContent).toMatch(/OPEC\+ surprise cut/);   // source/reference (headline → thread)
     expect(row.querySelector('.ep-dr-mech').textContent).toMatch(/supply cut/);  // the "why" rationale
-    expect(row.querySelector('.ep-dr-analog').textContent).toMatch(/2019 Hormuz attacks/); // real analog
+    const analogCell = row.querySelector('.ep-dr-analog');
+    expect(analogCell.textContent).toMatch(/2019 Abqaiq Saudi facility attack/); // real analog name
+    // catalog join: the analog's REAL realized BRENT move (verbatim from economic_analogs.json)
+    expect(analogCell.querySelector('.ep-amove')).toBeInTheDocument();
+    expect(analogCell.textContent).toMatch(/\+15% intraday, retraced ~60% within 2 weeks/);
     expect(row.querySelector('.ep-spark-area svg')).toBeInTheDocument();  // price sparkline (>=2 points)
   });
 

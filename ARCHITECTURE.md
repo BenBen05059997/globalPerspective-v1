@@ -305,7 +305,7 @@ Read-only REST proxy. All supported actions:
 | `economic_impact` | None (early access) | `{ threadId }` | Per-thread economic disruption analysis |
 | `economic_impact_list` | None (early access) | — | All economic-impact records (DDB Scan) |
 | `economic_top_movers` | None (early access) | — | Highest-magnitude economic-impact threads |
-| `markets_global` | None (early access) | — | Global FX / rates / commodities / equities / crypto snapshot |
+| `markets_global` | None (early access) | — | Global FX / rates / commodities / equities / crypto snapshot, **plus an additive `series` map (`{ [INSTRUMENT_ID]: { spark:[≤20 daily closes], change:%vs-yesterday } }`) built from the `HISTORY#` rows — powers the `/economy` watchlist mini-sparklines + day-over-day change pills** |
 | `markets_country` | None (early access) | `{ countryName }` | Country macro snapshot (GDP, CPI, reserves, etc.) |
 | `markets_history` | None (early access) | `{ symbol, days }` | Per-instrument price history `[{date, value}]` for sparklines — resolves `symbol` across commodities / rates / equities / crypto / FX (was FX-only before 2026-05-26) |
 | `user_profile` | Firebase JWT | — | ⚠️ DEPRECATED (billing) — user tier + subscription info from USERS_TABLE |

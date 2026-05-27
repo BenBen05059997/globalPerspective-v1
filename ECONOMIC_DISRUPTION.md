@@ -31,7 +31,7 @@ Per news thread, on `/weekly/thread/<id>` (Economy tab) and `/economy`:
 
 Cross-cutting views:
 
-- `/economy` — flagship index, severity-grouped, with facet filters (severity / horizon / instrument / country) and "Today's Top Movers" panel
+- `/economy` — the instrument-first command center: a "Repricing today" leaderboard (per-instrument consensus + live level + day-over-day change + expand-to-driving-stories) + a watchlist Market Context rail (see "Where it surfaces" below)
 - `/map` — 4th lens "Economy" shows severity-colored rings on affected countries
 - `/daily` — "Today's Economic Footprint" section with top 5 instruments + lead disruption
 - Cards across `/weekly`, `/weekly/countries`, Home — show inline severity badges so you can spot economy-relevant stories at a glance
@@ -52,7 +52,7 @@ This is the load-bearing distinction. **Compute the numbers. Generate the narrat
 
 ### The four anti-hallucination guards
 
-1. **Closed instrument allowlist.** The LLM may only reference instruments from a fixed list of ~55 tickers (commodities, sovereign yields, major equity indices + ETFs, FX pairs from our Frankfurter snapshot, and BTC/ETH). Any ticker outside the list — including individual stocks like AAPL/TSM/RTX — is dropped server-side. The LLM literally cannot publish a recommendation on something we don't track.
+1. **Closed instrument allowlist.** The LLM may only reference instruments from a fixed allowlist (commodities incl. natural gas, sovereign yields, the major equity indices + Russell 2000, the full 11 GICS sector SPDR ETFs + thematic ETFs incl. agriculture/rare-earths, FX pairs from our Frankfurter snapshot, and BTC/ETH — expanded 2026-05-27; the canonical list lives in `INSTRUMENT_ALLOWLIST` + `buildInstrumentTable`, see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`). Any ticker outside the list — including individual stocks like AAPL/TSM/RTX — is dropped server-side. The LLM literally cannot publish a recommendation on something we don't track.
 
 2. **Citation requirement.** Every instrument claim must cite topicIds from the thread's actual articles. The mechanism paragraph must cite topicIds inline (`[topic-abc]`). Claims without citations are dropped. Citations to topicIds outside the thread are dropped.
 
@@ -78,7 +78,7 @@ The catalog is intentionally finite. When the LLM cites an event we don't have, 
 
 - **Not investment advice.** Disclaimed in the UI, in `/disclosures`, and in the underlying schema. We pick directions and severity bands; we don't tell you to buy, sell, or hold anything.
 - **Not real-time alerting.** Records refresh roughly daily (07:30 UTC scheduled). For 30-second tape moves, use Bloomberg/Reuters.
-- **Not a Bloomberg replacement.** Bloomberg has 29 risk categories cascading to 7M companies. We have ~55 instruments and run on a $0.30/month budget. We work where the analyst question is *"which markets should I be watching today?"*, not *"what's the trade in COTY 9% senior unsecured?"*
+- **Not a Bloomberg replacement.** Bloomberg has 29 risk categories cascading to 7M companies. We have ~50 instruments and run on a $0.30/month budget. We work where the analyst question is *"which markets should I be watching today?"*, not *"what's the trade in COTY 9% senior unsecured?"*
 - **Not point-precision.** No price forecasts. No "+4.2%". Severity bands only.
 - **Not opinionated on the politics.** The methodology cares whether oil moves; it doesn't care whether the war is justified.
 
@@ -111,13 +111,17 @@ The catalog is intentionally finite. When the LLM cites an event we don't have, 
 
 The Economic Disruption layer is intentionally cross-cutting — almost every page that shows news content also surfaces the economic dimension. Per-story detail lives on the thread's Economy tab (`MechanismCard`); inline surfaces link there.
 
-**`/economy` goal (revised 2026-05-26):** originally specced as a thin severity-grouped *index*, it was found to be an orphan (only the nav + one Daily link pointed at it) and its center column wasn't even rendering (passed as a `center` prop `EditorialShell` ignores). It has been **rebuilt as the "markets-meets-news command center"**: the aggregate, **instrument-first** view of what global news is repricing right now (cross-story consensus per instrument + live market context) — the one view the per-thread tab structurally can't give. It deliberately does NOT duplicate the thread tab's full per-story analysis. _(This supersedes the wiring plan's "do not redesign /economy" non-goal.)_
+**`/economy` goal (rebuilt 2026-05-26, visual rebuild to the editorial mockup 2026-05-27):** originally a thin severity-grouped *index* (orphan; center column wasn't even rendering). Now the **"markets-meets-news command center"** — the aggregate, **instrument-first** view of what global news is repricing right now. It deliberately does NOT duplicate the thread tab's per-story analysis. _(Supersedes the wiring plan's "do not redesign /economy" non-goal.)_
+
+**Two-layer model** (see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`): the right-rail **Market Context** is a *standing dashboard* — live levels for the full instrument universe, shown always, **AI-independent**. The center **leaderboard** ("Repricing today") is the *news-cited subset* — only instruments the AI actually cites in an active disruption, so it adapts to the news cycle. Adding an instrument to the dashboard ≠ adding it to the leaderboard.
+
+**Watchlist right rail (2026-05-27):** each Market Context row shows a **mini price sparkline** + a **day-over-day change %** (▲/▼), fed by the additive `series` map on `markets_global`. Price **history is Yahoo-seeded** (a one-time `newsMarketsData {source:"seed_history"}` pull of ~30 days, since Stooq's history CSV is now API-key-gated) + the daily cron appends + DDB TTL keeps a rolling ~30-day window — this is why a freshly-tracked instrument may show an empty sparkline or `→ 0.0%` (honest, not faked).
 
 ### Per-page surface map
 
 | Page | What you see | Hook(s) | UI atom(s) |
 |---|---|---|---|
-| **`/economy`** — flagship index (`EconomyPage.jsx`) | 3-col EditorialShell: left rail facets (severity / horizon / instrument / country), center severity-grouped list of all active disruptions, right rail "Today's Top Movers" panel | `useDisruptionsList`, `useTopMovers` | `DisruptionRow`, `SeverityBadge` |
+| **`/economy`** — instrument-first command center (`EconomyPage.jsx`, rebuilt to the mockup 2026-05-27; own masthead band + 3-col shell, **not** `EditorialShell`) | Left rail facets (severity / horizon / country). **Center** = "Repricing today" leaderboard (per instrument: consensus direction + magnitude + live level + day-over-day change% + story count; **expand** → 30-day price sparkline + Key-levels box + a 5-col driving-stories sub-table [Severity · Story→thread Economy tab · Direction · Mechanism (rationale) · Closest analog with its **real historical realized move** joined from `economic_analogs.json`] + affected-country chips), then a dormant-instruments drawer + a severity-grouped by-story "Active disruptions" bridge. **Right rail** = watchlist Market Context (Equities / Sectors / Commodities / Ags&Materials / Risk / Rates / Crypto — each row: mini-sparkline + level + ▲/▼ change%). All real data; honest degradation where absent. | `useDisruptionsList`, `useTopMovers`, `useMarketsGlobal` (incl. `.series`), `useMarketsHistory` | `Sparkline`, `DirectionArrow`, `ChangePill` |
 | **`/`** — Home (`Home.jsx`) | Inline `SeverityBadge` chip on each topic-card kicker line. Click → `/weekly/thread/{id}?tab=economy` | `useDisruptionsList` (keyed by `scopeId`) | `SeverityBadge` |
 | **`/daily`** — Daily Brief (`DailyPage.jsx`) | "Today's Economic Footprint" section between masthead and Top Stories. Lead disruption headline + severity badge + "View all →" link to `/economy` | `useDisruptionsList` | `SeverityBadge` |
 | **`/weekly/thread/:id`** — Thread page (`ThreadPage.jsx`) | (a) 4th content tab "Economy" rendering the full `MechanismCard`: severity meta · instruments · mechanism paragraph · winners/losers · historical analog · watch signals. (b) Right-rail `DisruptionPreview` that, when clicked, jumps to the Economy tab. | `useEconomicImpact(threadId)` | `MechanismCard`, `DisruptionPreview` |
@@ -139,8 +143,8 @@ That URL is the canonical "see the full record" path. Reaching it always lands t
 
 ### Two reading hooks, two purposes
 
-- **`useEconomicImpact(threadId)`** — fetches one full `ECON#THREAD#{id}` record. Used only on `ThreadPage`. 1-hour LocalStorage cache.
-- **`useDisruptionsList({ country?, minSeverity?, limit })`** — fetches the bulk list (paginated DDB Scan server-side). Used everywhere else, with optional filters. Bulk fetch lets every other page derive its own per-thread / per-country slice without N+1 lookups. 1-hour LocalStorage cache.
+- **`useEconomicImpact(threadId)`** — fetches one full `ECON#THREAD#{id}` record. Used only on `ThreadPage`. 30-minute LocalStorage cache.
+- **`useDisruptionsList({ country?, minSeverity?, limit })`** — fetches the bulk list (paginated DDB Scan server-side). Used everywhere else, with optional filters. Bulk fetch lets every other page derive its own per-thread / per-country slice without N+1 lookups. 30-minute LocalStorage cache. (`useTopMovers` and `useMarketsGlobal` also feed `/economy`; top-movers caches 30 min, markets 5 min.)
 
 (Plus `useTopMovers({ limit })` for the instrument-level aggregation panel on `/economy` only.)
 

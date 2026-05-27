@@ -1,5 +1,7 @@
 # Economic Disruption — UI Wiring Plan (Phase 4)
 
+> **STATUS: partially shipped.** The "do not redesign /economy" non-goal is **SUPERSEDED** (page rebuilt to the mockup 2026-05-27). Several P0 items landed; treat the remaining P0/P1/P2 as the open backlog (no per-item status tracked here yet). Current page state lives in `ECONOMIC_DISRUPTION.md`.
+
 Follow-on to [`ECONOMIC_DISRUPTION.md`](ECONOMIC_DISRUPTION.md) §"Where it surfaces in the UI" and the 2026-05-21 three-agent design debate. Phases 1–3 surfaced the layer as **card decoration** (`SeverityBadge` chip stamped on Home / Weekly / CountryList cards). Phase 4 shifts to **structural integration** — plugging the economic dimension into editorial slots each page already has (sidecars, leaderboards, expandable buttons, deep links), the way FT, Bloomberg and Reuters do it at the body level.
 
 ## Goal

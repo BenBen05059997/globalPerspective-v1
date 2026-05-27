@@ -15,6 +15,7 @@ import { useTopMovers } from '../hooks/useTopMovers';
 import { useMarketsGlobal } from '../hooks/useMarketsGlobal';
 import { useMarketsHistory } from '../hooks/useMarketsHistory';
 import Sparkline from './atoms/Sparkline';
+import { realizedMoveFor } from '../data/economicAnalogs';
 import './EconomyPage.css';
 
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];
@@ -174,7 +175,15 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories }) {
             {s.analog ? (
               <>
                 <span className="ep-aname">{s.analog.event}{s.analog.year ? ` (${s.analog.year})` : ''}</span>
-                {s.analog.outcome && <span className="ep-aout">{s.analog.outcome}</span>}
+                {s.analogMove ? (
+                  // Real historical realized move for this instrument — verbatim from the
+                  // catalog. The page's differentiator: what actually happened, not a forecast.
+                  <span className="ep-amove">
+                    <span className="ep-amove-tk">{s.instrumentId}</span> {s.analogMove}
+                  </span>
+                ) : s.analog.outcome ? (
+                  <span className="ep-aout">{s.analog.outcome}</span>
+                ) : null}
               </>
             ) : (
               <span className="ep-faint">no close analog</span>
@@ -299,10 +308,17 @@ export default function EconomyPage() {
           ...(d.winners || []).filter(w => w.type === 'country').map(w => w.name),
           ...(d.losers || []).filter(l => l.type === 'country').map(l => l.name),
         ];
+        const analog = d.historicalAnalog || null;
+        // Join the LLM-named analog against the bundled catalog to surface its REAL
+        // realized move for THIS instrument (verbatim from realizedMoves[instrumentId]).
+        // null when the event/instrument isn't catalogued — never fabricated.
+        const analogMove = analog
+          ? realizedMoveFor(analog.event, analog.year, instrumentId)
+          : null;
         return {
           scopeId: d.scopeId, headline: d.headline, severity: d.severity,
           dir: inst.direction, magnitude: inst.magnitude, rationale: inst.rationale,
-          analog: d.historicalAnalog || null, countries,
+          analog, analogMove, instrumentId, countries,
         };
       });
 

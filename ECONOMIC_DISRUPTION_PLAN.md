@@ -1,5 +1,7 @@
 # Economic Disruption Layer — Plan
 
+> **STATUS: SHIPPED (Phases 1–3) — historical spec.** For current state see `ECONOMIC_DISRUPTION.md` (concept/methodology) + `ARCHITECTURE.md` (contract). The instrument allowlist + counts below are **OUTDATED** — they predate the 2026-05-27 GICS/commodity expansion; `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md` is canonical for the universe.
+
 **Status:** APPROVED 2026-05-18
 **Target:** Phase 1 ships in ~2 days. Phase 2 + 3 in ~3 more days.
 **Marginal infra cost:** <$1/month

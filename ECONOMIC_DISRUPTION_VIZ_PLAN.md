@@ -1,5 +1,7 @@
 # Economic Disruption — Visualization + Deep-Link Plan
 
+> **STATUS: partially shipped.** Sparklines + the watchlist day-over-day change% / `markets_global.series` (Workstreams A/B) shipped 2026-05-27, and real 30-day history is now Yahoo-seeded. The analog realized-move join (C-differentiator) shipped 2026-05-27. Remaining deep-link / trust-signal items (C2–C3, D) are still open. Current page state: `ECONOMIC_DISRUPTION.md`.
+
 **Created:** 2026-05-26. Frontend-heavy → ships when the GitHub Pages outage clears; backend bits deploy via CLI anytime.
 
 ## Goal

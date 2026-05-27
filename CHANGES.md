@@ -1,5 +1,22 @@
 # Global Perspectives — Change Log
 
+## 2026-05-27f (Analog realized-move join + economy doc catch-up)
+
+**Feature — the differentiator cell.** In `/economy`'s expanded driving-stories sub-table, the "Closest analog" now shows the analog's **real historical realized move for that instrument** (e.g. BRENT · "Houthi Red Sea attacks (2024) → +5-8% on each escalation, retraced as Cape rerouting absorbed it"), not just the analog name.
+- Bundled `economic_analogs.json` into the frontend (`src/data/economicAnalogs.json` + `.js` with `realizedMoveFor(event, year, instrumentId)`), a mirror of the canonical `newsEconomicImpact/src/economic_analogs.json` (sync note in-file). Join: normalize the story's `historicalAnalog.event` → catalog entry (year as tiebreaker) → `realizedMoves[instrumentId]`, rendered verbatim. Fallback chain: realized-move → `historicalAnalog.outcome` → "no close analog". **Never fabricated** — only verbatim catalog strings.
+- The backend prompt already steers the LLM to use the catalog's exact event name+year, so the join hits on real records — **browser-verified: 17 of 26 analog cells matched live** (rest fall back gracefully). Frontend-only; no backend change.
+- Verified: lint 0 new, build OK, 177 tests (economyPage 6/6, asserts the real "2019 Abqaiq → BRENT +15%" join), independent review GO, browser screenshot confirms.
+
+**Docs — economy subsystem catch-up** (a doc audit found the concept doc + verification plan lagged the last 48h of rebuilds):
+- `ARCHITECTURE.md`: `markets_global` row now documents the additive `series` map (spark + change vs yesterday).
+- `ECONOMIC_DISRUPTION.md`: `/economy` surface-map row rebuilt to the current mockup page (was still describing the old EditorialShell page); added the **two-layer model**, the **watchlist rail + Yahoo `seed_history`** note, and corrected the stale "~55 instruments" allowlist description.
+- Status banners added to the three spent plans (`ECONOMIC_DISRUPTION_PLAN` = SHIPPED/historical, `..._WIRING_PLAN` = partially shipped, `..._VIZ_PLAN` = partially shipped) so the canonical hierarchy is clear.
+- Still open (lower priority): `PAGES_GUIDE.md` has no `/economy` entry; `ECONOMIC_VERIFICATION_PLAN` §9.1 checks the retired page.
+
+- Files: `EconomyPage.jsx`, `EconomyPage.css`, `test/economyPage.test.jsx`, `src/data/economicAnalogs.{json,js}`, `ARCHITECTURE.md`, `ECONOMIC_DISRUPTION.md`, `ECONOMIC_DISRUPTION_PLAN.md`, `ECONOMIC_DISRUPTION_WIRING_PLAN.md`, `ECONOMIC_DISRUPTION_VIZ_PLAN.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-27e (Watchlist right rail: day-over-day % change + mini-sparklines)
 
 Made `/economy`'s right-rail Market Context look like a stock-app watchlist — each row now shows a **mini price sparkline** + a **change vs yesterday** (green ▲ / red ▼ / muted →), and the same change % sits on the leaderboard rows next to the price.

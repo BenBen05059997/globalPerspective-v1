@@ -1,5 +1,21 @@
 # Global Perspectives — Change Log
 
+## 2026-05-27c (/economy visual rebuild to match the editorial mockup)
+
+Rebuilt `EconomyPage` to match the `Economy.html` design mockup, wired entirely to real data (no mock values). Masthead band + 3-col shell (220/1fr/260), instrument leaderboard with one-open-at-a-time expand → price sparkline + Key-levels box + a 5-col driving-stories sub-table (Severity·Story·Direction·Mechanism·Closest analog) + affected-country chips, a dormant-instruments drawer, a by-story "Active disruptions" bridge, and the right-rail Market Context (Equities/Sectors/Commodities/Ags&Materials/Risk/Rates/Crypto).
+
+- **Honest degradations** (match the look, never fabricate — these are known data gaps): severity-distribution bar → real direction split from `directions`; dominant-category tag → omitted; analog "+12%/3wk" realized-move → real `historicalAnalog.event/year/outcome` (catalog-join deferred); ISO chips → real country names linking to `/weekly/country/:name`; dormant "last cited" date → omitted; by-story article/outlet counts → omitted; right-rail "% change" → omitted (levels only); 30d high/low/Δ → computed from real history, "—" when too few points.
+- **Preserved:** deep links to `/weekly/thread/:id?tab=economy`, per-story rationale on expand, consensus tooltip, instrument→by-story filter, honesty disclaimer → `/disclosures`, loading/empty/error states.
+- **Browser-verified** (Playwright, dev server): 20 real leaderboard rows, real market levels, expand renders the sub-table, **zero console errors**. Caught + fixed two layout bugs the static review flagged: sticky rails were overlapping the global nav+LIVE strip (offset `top` to `--nav-h + --strip-h`), and the page wasn't full-bleed (added the `:has(.ep-page)` container escape, matching the other redesigned pages).
+
+Method: plan → executor agent → independent reviewer (GO, no fabricated data) → orchestrator browser-verify + CSS fixes. Verified: lint 0 new, build OK, 176 tests pass (economyPage 5/5), screenshots match the mockup.
+
+Known follow-up (polish, not blocking): a heavily-cited instrument (e.g. BRENT, 23 stories) lists all citing stories on expand — consider a "top N + show more" cap. Medium data gaps still open per `economy-page-design-brief.md`: right-rail % change, dominant-category persist, analog realized-move catalog join.
+
+- Files: `EconomyPage.jsx`, `EconomyPage.css`, `test/economyPage.test.jsx`, `CHANGES.md`.
+
+---
+
 ## 2026-05-27b (Economy Step 2: commodity menu expansion — NATGAS / DBA / REMX)
 
 Step 2 of `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`. Unlike sectors (dashboard-only), these geopolitics-flow commodities have plausible *latent leaderboard demand* (Russia energy → natgas, Ukraine/food → grains, China leverage → rare earths), so they're wired into the **AI's instrument menu** to make them citable — then we re-audit to see if the news actually reprices them.

@@ -2,14 +2,14 @@
 // The aggregate, instrument-first view of what global news is repricing right now.
 // Per-story detail lives on the thread Economy tab (/weekly/thread/:id?tab=economy);
 // this page owns the cross-story picture the thread tab structurally can't show.
-// 3-col EditorialShell: left=facets, center=instrument pivot + by-story list, right=live market context.
+//
+// Layout mirrors the editorial mockup: a masthead band, then a 3-col shell —
+// left rail (filters) / center (instrument leaderboard + dormant drawer + by-story bridge)
+// / right rail (live Market Context). EditorialShell intentionally NOT used so the
+// masthead-band + sticky rails match the mockup exactly.
 
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import EditorialShell from './atoms/EditorialShell';
-import StatusStrip from './atoms/StatusStrip';
-import DisruptionRow from './atoms/DisruptionRow';
-import DirectionArrow from './atoms/DirectionArrow';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { useTopMovers } from '../hooks/useTopMovers';
 import { useMarketsGlobal } from '../hooks/useMarketsGlobal';
@@ -20,10 +20,31 @@ import './EconomyPage.css';
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];
 const SEVERITY_LABEL = { severe: 'Severe', moderate: 'Moderate', minor: 'Minor' };
 const HORIZONS = ['immediate', 'days', 'weeks', 'months'];
+const MAG_RANK = { large: 3, moderate: 2, small: 1 };
 
-// markets_global exposes commodities + yields (not equities/FX pairs).
+// markets_global exposes commodities + yields + equities + crypto.
 // Map a disruption instrumentId → its live level so the qualitative call sits next to the real number.
 const COMMODITY_KEY = { BRENT: 'brent', WTI: 'wti', GOLD: 'gold', COPPER: 'copper', DXY: 'dxy', VIX: 'vix', NATGAS: 'natgas' };
+
+// The priced tracked universe — used to compute the "not cited today" dormant drawer.
+// [ticker, displayName]
+const TRACKED_UNIVERSE = [
+  ['BRENT', 'Brent crude'], ['WTI', 'WTI crude'], ['GOLD', 'Gold spot'], ['COPPER', 'Copper'],
+  ['VIX', 'Volatility (VIX)'], ['DXY', 'Dollar index'], ['NATGAS', 'Natural gas'],
+  ['US10Y', 'US 10yr yield'], ['US2Y', 'US 2yr yield'], ['UK10Y', 'Gilt 10yr yield'],
+  ['DE10Y', 'Bund 10yr yield'], ['JP10Y', 'JGB 10yr yield'],
+  ['SPX', 'S&P 500'], ['NDX', 'Nasdaq 100'], ['DJI', 'Dow Jones'], ['FTM', 'FTSE 100'],
+  ['DAX', 'DAX 40'], ['N225', 'Nikkei 225'], ['HSI', 'Hang Seng'], ['SSEC', 'Shanghai Comp'],
+  ['KS11', 'KOSPI'], ['TWII', 'Taiwan Weighted'], ['INDA', 'India (INDA)'], ['BVSP', 'Bovespa'],
+  ['MERV', 'Merval'], ['XU100', 'BIST 100'], ['EIS', 'Israel (EIS)'], ['IWM', 'Russell 2000'],
+  ['XLE', 'Energy sector'], ['XLF', 'Financials'], ['XLK', 'Technology'], ['XLV', 'Health Care'],
+  ['XLI', 'Industrials'], ['XLY', 'Cons. Disc.'], ['XLP', 'Cons. Staples'], ['XLU', 'Utilities'],
+  ['XLB', 'Materials'], ['XLRE', 'Real Estate'], ['XLC', 'Comm. Svcs'], ['ITA', 'Defense'],
+  ['SOXX', 'Semiconductors'], ['GDX', 'Gold miners'], ['EEM', 'Emerging mkts'], ['EFA', 'Developed ex-US'],
+  ['SHY', 'Short Treasuries'], ['EMB', 'EM bonds'], ['HYG', 'High yield'], ['DBA', 'Agriculture'],
+  ['REMX', 'Rare earths'], ['BTC', 'Bitcoin'], ['ETH', 'Ethereum'],
+];
+const TRACKED_TOTAL = TRACKED_UNIVERSE.length;
 
 function levelFor(instrumentId, markets) {
   if (!markets || !instrumentId) return null;
@@ -45,6 +66,30 @@ function fmtLevel(level) {
   return Number(level.value).toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+// 30d high/low/delta from a [{date,value}] series, formatted to the instrument's kind.
+function keyLevels(series, level) {
+  if (!Array.isArray(series) || series.length < 2) return null;
+  const vals = series.map(p => (typeof p === 'number' ? p : p?.value)).filter(v => v != null && !Number.isNaN(v));
+  if (vals.length < 2) return null;
+  const high = Math.max(...vals);
+  const low = Math.min(...vals);
+  const first = vals[0];
+  const last = vals[vals.length - 1];
+  const kind = level?.kind;
+  const fmt = (v) => fmtLevel({ value: v, kind });
+  let delta;
+  if (kind === 'yield') {
+    delta = `${last - first >= 0 ? '+' : ''}${(last - first).toFixed(2)}pp`;
+  } else {
+    const pct = first ? ((last - first) / first) * 100 : 0;
+    delta = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
+  }
+  return { high: fmt(high), low: fmt(low), delta, deltaDir: last >= first ? 'up' : 'dn' };
+}
+
+const DIR_GLYPH = { up: '↑', down: '↓', mixed: '↔' };
+const DIR_CLASS = { up: 'up', down: 'dn', mixed: 'mx' };
+
 // Right-rail market-context groups (label → [instrumentId, displayName])
 const MARKET_GROUPS = [
   { hd: 'Equities', rows: [['SPX', 'S&P 500'], ['NDX', 'Nasdaq 100'], ['N225', 'Nikkei'], ['HSI', 'Hang Seng'], ['DAX', 'DAX'], ['IWM', 'Russell 2000']] },
@@ -56,6 +101,97 @@ const MARKET_GROUPS = [
   { hd: 'Crypto', rows: [['BTC', 'Bitcoin'], ['ETH', 'Ethereum']] },
 ];
 
+function timeAgo(iso) {
+  if (!iso) return null;
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// One expanded instrument's price panel — lives in its own component so the
+// useMarketsHistory hook fires only for the open row.
+function ExpandedPanel({ instrumentId, level, marketsAsOf, stories }) {
+  const { data: history } = useMarketsHistory(instrumentId);
+  const kl = keyLevels(history, level);
+  const today = fmtLevel(level);
+  const asOfLabel = marketsAsOf ? new Date(marketsAsOf).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' }) : null;
+
+  return (
+    <div className="ep-expand">
+      <div className="ep-spark-block">
+        <div className="ep-spark-area">
+          <div className="ep-slabel">
+            <span>Price · last {history.length || 0} days</span>
+            {asOfLabel && <span className="ep-sts">as of {asOfLabel}</span>}
+          </div>
+          {history.length >= 2 ? (
+            <Sparkline data={history} width={400} height={56} color="var(--ink)" />
+          ) : (
+            <div className="ep-spark-empty">Price history accruing — not enough points yet</div>
+          )}
+        </div>
+        <div className="ep-key-levels">
+          <div className="ep-klabel">Key levels</div>
+          <div className="ep-kv"><span className="kk">Today</span><span className="vv">{today || '—'}</span></div>
+          <div className="ep-kv"><span className="kk">30d high</span><span className="vv">{kl?.high || '—'}</span></div>
+          <div className="ep-kv"><span className="kk">30d low</span><span className="vv">{kl?.low || '—'}</span></div>
+          <div className="ep-kv"><span className="kk">30d Δ</span><span className={`vv ${kl ? kl.deltaDir : ''}`}>{kl?.delta || '—'}</span></div>
+        </div>
+      </div>
+
+      {/* Driving-stories sub-table: Severity · Story · Direction · Mechanism · Closest analog */}
+      <div className="ep-driving-hd">
+        <div>Severity</div><div>Story</div><div>Direction</div><div>Mechanism</div><div>Closest analog</div>
+      </div>
+      {stories.map(s => (
+        <div className="ep-driving-row" key={s.scopeId}>
+          <div className="ep-dr-sev">
+            <span className={`ep-sev-bar ${s.severity}`} />
+            <span className={`ep-sev-word ${s.severity}`}>{SEVERITY_LABEL[s.severity] || s.severity}</span>
+          </div>
+          <div className="ep-dr-headline">
+            <Link to={`/weekly/thread/${encodeURIComponent(s.scopeId)}?tab=economy`}>{s.headline}</Link>
+          </div>
+          <div className="ep-dr-dir">
+            <span className={`ep-arr ${DIR_CLASS[s.dir] || 'mx'}`}>{DIR_GLYPH[s.dir] || '↔'}</span>
+            {s.magnitude && <span className="ep-dm">{s.magnitude}</span>}
+          </div>
+          <div className="ep-dr-mech">{s.rationale || <span className="ep-faint">no mechanism recorded</span>}</div>
+          <div className="ep-dr-analog">
+            {s.analog ? (
+              <>
+                <span className="ep-aname">{s.analog.event}{s.analog.year ? ` (${s.analog.year})` : ''}</span>
+                {s.analog.outcome && <span className="ep-aout">{s.analog.outcome}</span>}
+              </>
+            ) : (
+              <span className="ep-faint">no close analog</span>
+            )}
+          </div>
+        </div>
+      ))}
+      {stories.length === 0 && <div className="ep-rail-empty ep-driving-empty">No linked stories in the loaded window</div>}
+
+      {/* Affected-country chips */}
+      {(() => {
+        const countries = stories.flatMap(s => s.countries);
+        const uniq = [...new Set(countries)];
+        if (uniq.length === 0) return null;
+        return (
+          <div className="ep-affected">
+            <b>Affected countries</b>
+            {uniq.map(name => (
+              <Link key={name} className="ep-country-chip" to={`/weekly/country/${encodeURIComponent(name)}`}>{name}</Link>
+            ))}
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
 export default function EconomyPage() {
   const [filters, setFilters] = useState({
     severity: new Set(),     // empty = all
@@ -64,11 +200,11 @@ export default function EconomyPage() {
     country: null,
   });
   const [openMover, setOpenMover] = useState(null);
+  const [dormantOpen, setDormantOpen] = useState(false);
 
   const { data: disruptions = [], loading, error } = useDisruptionsList({ limit: 200 });
-  const { data: topMovers = [], loading: moversLoading } = useTopMovers(12);
+  const { data: topMovers = [], loading: moversLoading } = useTopMovers(20);
   const { data: markets, loading: marketsLoading, asOf: marketsAsOf } = useMarketsGlobal();
-  const { data: openHistory } = useMarketsHistory(openMover);
 
   const toggle = (key, value) => {
     setFilters(prev => {
@@ -107,13 +243,18 @@ export default function EconomyPage() {
     return g;
   }, [filtered]);
 
-  const updatedAt = disruptions[0]?.generatedAt || null;
+  // severity counts across the *full* set (for the left-rail facet counts)
+  const severityCounts = useMemo(() => {
+    const m = { severe: 0, moderate: 0, minor: 0 };
+    for (const d of disruptions) if (m[d.severity] != null) m[d.severity]++;
+    return m;
+  }, [disruptions]);
 
-  const statusStats = [
-    { label: 'active', value: filtered.length },
-    { label: 'severe', value: grouped.severe.length },
-    { label: 'instruments', value: topMovers.length },
-  ];
+  const horizonCounts = useMemo(() => {
+    const m = {};
+    for (const h of HORIZONS) m[h] = disruptions.filter(d => d.horizon === h).length;
+    return m;
+  }, [disruptions]);
 
   const countryFacets = useMemo(() => {
     const set = new Set();
@@ -121,227 +262,316 @@ export default function EconomyPage() {
       for (const w of (d.winners || [])) if (w.type === 'country') set.add(w.name);
       for (const l of (d.losers || [])) if (l.type === 'country') set.add(l.name);
     }
-    return [...set].sort().slice(0, 15);
+    return [...set].sort();
   }, [disruptions]);
 
-  const horizonCounts = useMemo(() => {
-    const m = {};
-    for (const h of HORIZONS) m[h] = filtered.filter(d => d.horizon === h).length;
-    return m;
-  }, [filtered]);
+  // Modal (most-common) magnitude among disruptions citing this instrument.
+  const magnitudeFor = (instrumentId) => {
+    const counts = {};
+    for (const d of disruptions) {
+      const inst = (d.instruments || []).find(i => i.instrumentId === instrumentId);
+      if (inst?.magnitude) counts[inst.magnitude] = (counts[inst.magnitude] || 0) + 1;
+    }
+    let best = null, bestN = 0;
+    for (const [mag, n] of Object.entries(counts)) {
+      if (n > bestN || (n === bestN && MAG_RANK[mag] > MAG_RANK[best])) { best = mag; bestN = n; }
+    }
+    return best;
+  };
 
-  // ── LEFT RAIL: facet filters ─────────────────────────────────
-  const leftRail = (
-    <div className="ep-rail">
-      <div className="ep-breadcrumb">
-        <Link to="/">Home</Link><span> / </span><span>Economy</span>
-      </div>
-
-      <div className="ep-facet">
-        <div className="ep-facet-label">Severity</div>
-        {SEVERITY_ORDER.map(s => (
-          <label key={s} className="ep-check">
-            <input type="checkbox" checked={filters.severity.has(s)} onChange={() => toggle('severity', s)} />
-            <span>{SEVERITY_LABEL[s]}</span>
-            <span className="ep-check-count">{grouped[s].length}</span>
-          </label>
-        ))}
-      </div>
-
-      <div className="ep-facet">
-        <div className="ep-facet-label">Horizon</div>
-        {HORIZONS.map(h => (
-          <label key={h} className="ep-check">
-            <input type="checkbox" checked={filters.horizon.has(h)} onChange={() => toggle('horizon', h)} />
-            <span>{h}</span>
-            <span className="ep-check-count">{horizonCounts[h]}</span>
-          </label>
-        ))}
-      </div>
-
-      {countryFacets.length > 0 && (
-        <div className="ep-facet">
-          <div className="ep-facet-label">Country</div>
-          <div className="ep-chips">
-            {countryFacets.map(c => (
-              <button key={c} className={`ep-chip${filters.country === c ? ' on' : ''}`} onClick={() => setSingle('country', c)}>
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {(filters.severity.size || filters.horizon.size || filters.instrument || filters.country) ? (
-        <button className="ep-clear" onClick={clearFilters}>Clear filters</button>
-      ) : null}
-    </div>
-  );
-
-  // Stories driving a given instrument, with that instrument's per-story rationale
-  // (source + reference + the "why"). Pulled from the already-loaded disruptions list.
+  // Stories driving a given instrument, with that instrument's per-story rationale + analog + countries.
   const storiesForInstrument = (instrumentId) =>
     disruptions
       .filter(d => (d.instruments || []).some(i => i.instrumentId === instrumentId))
       .map(d => {
         const inst = (d.instruments || []).find(i => i.instrumentId === instrumentId) || {};
-        return { scopeId: d.scopeId, headline: d.headline, severity: d.severity, dir: inst.direction, magnitude: inst.magnitude, rationale: inst.rationale };
+        const countries = [
+          ...(d.winners || []).filter(w => w.type === 'country').map(w => w.name),
+          ...(d.losers || []).filter(l => l.type === 'country').map(l => l.name),
+        ];
+        return {
+          scopeId: d.scopeId, headline: d.headline, severity: d.severity,
+          dir: inst.direction, magnitude: inst.magnitude, rationale: inst.rationale,
+          analog: d.historicalAnalog || null, countries,
+        };
       });
 
-  // ── CENTER: instrument pivot (hero) + by-story list ──────────
-  const center = (
-    <div className="ep-center">
-      <div className="ep-masthead">
-        <div className="ep-kicker">/ ECONOMY</div>
-        <h1 className="ep-title">Economic Disruption</h1>
-        <p className="ep-sub">What global news is repricing right now — across every active story.</p>
+  // Dormant = tracked universe minus the cited (top-movers) instruments.
+  const citedIds = useMemo(() => new Set(topMovers.map(m => String(m.instrumentId).toUpperCase())), [topMovers]);
+  const dormant = useMemo(
+    () => TRACKED_UNIVERSE.filter(([tk]) => !citedIds.has(tk)),
+    [citedIds]
+  );
+
+  const marketsTime = marketsAsOf ? new Date(marketsAsOf).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' }) : null;
+  const filtersActive = filters.severity.size || filters.horizon.size || filters.instrument || filters.country;
+
+  return (
+    <div className="ep-page">
+      {/* ===== MASTHEAD BAND ===== */}
+      <div className="ep-masthead-band">
+        <div>
+          <h1>Economy</h1>
+          <p className="ep-deck">What today&apos;s news is repricing — instrument-first.</p>
+        </div>
+        <div className="ep-timestamp">
+          {marketsTime ? <>as of <b>{marketsTime}</b><br /></> : null}
+          5-min snapshot · refreshes hourly<br />
+          prices: Frankfurter / Stooq / CoinGecko
+        </div>
       </div>
 
-      {error && (
-        <div className="ep-error">Couldn't load economic disruptions. {error}</div>
-      )}
+      {/* ===== THREE-COLUMN SHELL ===== */}
+      <div className="ep-shell">
 
-      {loading && disruptions.length === 0 && (
-        <div className="ep-empty">Loading active disruptions…</div>
-      )}
+        {/* ===== LEFT RAIL — FILTERS ===== */}
+        <aside className="ep-rail-left">
+          <div className="ep-filter-block">
+            <h5>Severity</h5>
+            {SEVERITY_ORDER.map(s => (
+              <label key={s} className={`ep-fcheck${filters.severity.has(s) ? ' on' : ''}`}>
+                <input type="checkbox" checked={filters.severity.has(s)} onChange={() => toggle('severity', s)} />
+                {SEVERITY_LABEL[s]}
+                <span className="ep-fc">{severityCounts[s]}</span>
+              </label>
+            ))}
+          </div>
 
-      {!loading && !error && disruptions.length === 0 && (
-        <div className="ep-empty">
-          No active disruptions detected. This happens when no news threads have a measurable
-          economic dimension or the analysis pipeline hasn't run yet.
-        </div>
-      )}
+          <div className="ep-filter-block">
+            <h5>Horizon</h5>
+            <label className={`ep-fradio${filters.horizon.size === 0 ? ' on' : ''}`}>
+              <input type="radio" name="ep-hor" checked={filters.horizon.size === 0}
+                onChange={() => setFilters(p => ({ ...p, horizon: new Set() }))} />
+              All
+            </label>
+            {HORIZONS.map(h => (
+              <label key={h} className={`ep-fradio${filters.horizon.has(h) ? ' on' : ''}`}>
+                <input type="radio" name="ep-hor" checked={filters.horizon.has(h)}
+                  onChange={() => setFilters(p => ({ ...p, horizon: new Set([h]) }))} />
+                <span className="ep-cap">{h}</span>
+                <span className="ep-fc">{horizonCounts[h]}</span>
+              </label>
+            ))}
+          </div>
 
-      {/* Instrument pivot — the cross-story aggregate the thread tab can't show */}
-      {(topMovers.length > 0 || moversLoading) && (
-        <section className="ep-pivot">
-          <h2 className="ep-section-hd">
-            Most-repriced instruments
-            <span className="ep-section-sub">net direction across all active stories</span>
-          </h2>
-          {moversLoading && topMovers.length === 0 && <div className="ep-rail-empty">Loading movers…</div>}
+          {countryFacets.length > 0 && (
+            <div className="ep-filter-block">
+              <h5>Country</h5>
+              {countryFacets.slice(0, 9).map(c => (
+                <label key={c} className={`ep-fcountry${filters.country === c ? ' on' : ''}`} onClick={() => setSingle('country', c)}>
+                  <input type="checkbox" readOnly checked={filters.country === c} />
+                  {c}
+                </label>
+              ))}
+            </div>
+          )}
+
+          {filtersActive ? (
+            <div className="ep-filter-block">
+              <button className="ep-clear" onClick={clearFilters}>Clear filters</button>
+            </div>
+          ) : null}
+        </aside>
+
+        {/* ===== MAIN COLUMN ===== */}
+        <main className="ep-main">
+
+          {error && (
+            <div className="ep-error">Couldn&apos;t load economic disruptions. {String(error)}</div>
+          )}
+
+          {/* LEADERBOARD HEADER */}
+          <div className="ep-lhd">
+            <h2>Repricing today</h2>
+            <div className="ep-lhd-meta"><b>{topMovers.length}</b> of {TRACKED_TOTAL} tracked instruments cited</div>
+          </div>
+
+          {moversLoading && topMovers.length === 0 && (
+            <div className="ep-empty">Loading repriced instruments…</div>
+          )}
+
+          {!moversLoading && topMovers.length === 0 && !loading && (
+            <div className="ep-empty">
+              No instruments cited today. This happens when no news threads have a measurable
+              economic dimension or the analysis pipeline hasn&apos;t run yet.
+            </div>
+          )}
+
+          {/* ===== INSTRUMENT ROWS ===== */}
           {topMovers.map(m => {
             const open = openMover === m.instrumentId;
             const level = levelFor(m.instrumentId, markets);
             const active = filters.instrument === m.instrumentId;
-            const stories = open ? storiesForInstrument(m.instrumentId) : [];
+            const dirs = m.directions || {};
+            const total = (dirs.up || 0) + (dirs.down || 0) + (dirs.mixed || 0);
+            const topDir = m.consensus;
+            const topDirCount = dirs[topDir] != null ? dirs[topDir] : Math.max(dirs.up || 0, dirs.down || 0, dirs.mixed || 0);
+            const mag = magnitudeFor(m.instrumentId);
+            const priceLevel = fmtLevel(level);
+            // real direction split — replaces the mockup's (unsourceable) severity bar + category tag
+            const splitParts = [];
+            if (dirs.up) splitParts.push(`${dirs.up} ↑`);
+            if (dirs.down) splitParts.push(`${dirs.down} ↓`);
+            if (dirs.mixed) splitParts.push(`${dirs.mixed} ↔`);
+
             return (
-              <div key={m.instrumentId} className={`ep-pivot-item${active ? ' on' : ''}`}>
-                <div className="ep-pivot-head">
+              <div key={m.instrumentId} className={`ep-instr-row${open ? ' open' : ''}${active ? ' filtering' : ''}`}>
+                <div className="ep-row-l1" onClick={() => setOpenMover(open ? null : m.instrumentId)}>
                   <button
-                    className="ep-pivot-id"
-                    onClick={() => setSingle('instrument', m.instrumentId)}
+                    className="ep-name"
+                    onClick={(e) => { e.stopPropagation(); setSingle('instrument', m.instrumentId); }}
                     title="Filter the story list by this instrument"
                   >
                     {m.instrumentId}
                   </button>
-                  <DirectionArrow dir={m.consensus} />
-                  <span className="ep-pivot-strength" title={`${m.consensusStrength}% of ${m.citations} cited stories agree on the ${m.consensus} direction`}>{m.consensusStrength}% consensus</span>
-                  {level && <span className="ep-pivot-level">{fmtLevel(level)}</span>}
-                  <span className="ep-pivot-cite">{m.citations} stor{m.citations === 1 ? 'y' : 'ies'}</span>
-                  <button
-                    className="ep-pivot-toggle"
-                    onClick={() => setOpenMover(open ? null : m.instrumentId)}
-                    aria-expanded={open}
-                  >
-                    {open ? '−' : '+'}
-                  </button>
+                  <div className="ep-dirprice">
+                    <span className={`ep-arrow ${DIR_CLASS[topDir] || 'mx'}`}>{DIR_GLYPH[topDir] || '↔'}</span>
+                    {mag && <span className="ep-mag">{mag}</span>}
+                  </div>
+                  <span className="ep-price">{priceLevel || ''}</span>
+                  <div className="ep-cites">
+                    <b>{m.citations}</b> stor{m.citations === 1 ? 'y' : 'ies'}
+                    {total > 0 && <> · {topDirCount} of {total} agree</>}
+                  </div>
+                  <span className="ep-chev">›</span>
+                </div>
+                <div className="ep-row-l2">
+                  <div className="ep-spacer" />
+                  <span className="ep-dirsplit" title={`${m.consensusStrength}% of ${m.citations} cited stories agree on the ${topDir} direction`}>
+                    {splitParts.join(' · ') || '—'}
+                  </span>
+                  <span className="ep-consensus">{m.consensusStrength}% consensus</span>
                 </div>
                 {open && (
-                  <div className="ep-pivot-detail">
-                    {openHistory.length >= 2 && (
-                      <div className="ep-spark">
-                        <Sparkline data={openHistory} width={150} height={32} />
-                        <span className="ep-spark-label">price · last {openHistory.length} days</span>
-                      </div>
-                    )}
-                  <ul className="ep-pivot-examples">
-                    {stories.map(s => (
-                      <li key={s.scopeId}>
-                        <Link to={`/weekly/thread/${s.scopeId}?tab=economy`} className="ep-ex-link">
-                          <span className={`ep-ex-sev ep-ex-${s.severity}`} />
-                          <span className="ep-ex-head">{s.headline}</span>
-                        </Link>
-                        {s.rationale && (
-                          <div className="ep-ex-why">
-                            <DirectionArrow dir={s.dir} /> <span className="ep-ex-mag">{s.magnitude}</span> · {s.rationale}
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                    {stories.length === 0 && <li className="ep-rail-empty">No linked stories in the loaded window</li>}
-                  </ul>
-                  </div>
+                  <ExpandedPanel
+                    instrumentId={m.instrumentId}
+                    level={level}
+                    marketsAsOf={marketsAsOf}
+                    stories={storiesForInstrument(m.instrumentId)}
+                  />
                 )}
               </div>
             );
           })}
-        </section>
-      )}
 
-      {/* By-story view — severity-grouped index */}
-      {SEVERITY_ORDER.map(sev => grouped[sev].length > 0 && (
-        <section key={sev} className={`ep-group ep-group-${sev}`}>
-          <h2 className="ep-group-hd">{SEVERITY_LABEL[sev]}<span className="ep-group-count">{grouped[sev].length}</span></h2>
-          {grouped[sev].map(d => <DisruptionRow key={d.scopeId} disruption={d} />)}
-        </section>
-      ))}
-
-      {filtered.length > 0 && filtered.length !== disruptions.length && (
-        <div className="ep-filter-info">
-          Showing {filtered.length} of {disruptions.length} active disruptions.
-          <button onClick={clearFilters}>Clear filters</button>
-        </div>
-      )}
-
-      <div className="ep-disclaimer">
-        Not investment advice. Severity bands and direction calls are qualitative analyst judgments, not price targets —
-        see <Link to="/disclosures">methodology</Link>.
-      </div>
-    </div>
-  );
-
-  // ── RIGHT RAIL: live market context ──────────────────────────
-  const rightRail = (
-    <div className="ep-rail">
-      <div className="ep-rail-section">
-        <div className="ep-rail-hd">
-          Market Context
-          {marketsAsOf && <span className="ep-asof">as of {new Date(marketsAsOf).toLocaleDateString()}</span>}
-        </div>
-        {marketsLoading && !markets && <div className="ep-rail-empty">Loading markets…</div>}
-        {!marketsLoading && !markets && <div className="ep-rail-empty">Market data unavailable</div>}
-        {markets && MARKET_GROUPS.map(g => {
-          const rows = g.rows.map(([id, name]) => [name, fmtLevel(levelFor(id, markets))]).filter(([, v]) => v != null);
-          if (rows.length === 0) return null;
-          return (
-            <div key={g.hd} className="ep-mkt-group">
-              <div className="ep-mkt-hd">{g.hd}</div>
-              {rows.map(([name, val]) => (
-                <div key={name} className="ep-mkt-row"><span>{name}</span><b>{val}</b></div>
-              ))}
+          {/* ===== DORMANT DRAWER ===== */}
+          {dormant.length > 0 && (
+            <div className="ep-dormant-row">
+              <span className="ep-dormant-trigger" onClick={() => setDormantOpen(o => !o)}>
+                {dormant.length} tracked instruments not cited today — {dormantOpen ? 'hide ←' : 'show all →'}
+              </span>
+              {dormantOpen && (
+                <div className="ep-dormant-table">
+                  <div className="ep-dormant-hd"><div>Ticker</div><div>Name</div></div>
+                  {dormant.map(([tk, name]) => (
+                    <div className="ep-dormant-item" key={tk}>
+                      <div className="dn">{tk}</div>
+                      <div className="dd">{name}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          );
-        })}
-        <div className="ep-rail-note">Live levels for the instruments stories are repricing. Equities &amp; FX pairs not shown.</div>
-      </div>
+          )}
 
-      <div className="ep-rail-section">
-        <div className="ep-rail-hd">Horizon</div>
-        {HORIZONS.map(h => (
-          <div key={h} className="ep-horizon-row"><span>{h}</span><b>{horizonCounts[h]}</b></div>
-        ))}
+          {/* ===== BY-STORY BRIDGE ===== */}
+          <div className="ep-bridge">
+            <div className="ep-bridge-hd">
+              <h2>Active disruptions</h2>
+              <span className="ep-bmeta">{filtered.length} stories citing markets · grouped by severity</span>
+            </div>
+
+            {loading && disruptions.length === 0 && (
+              <div className="ep-empty">Loading active disruptions…</div>
+            )}
+
+            {!loading && !error && disruptions.length === 0 && (
+              <div className="ep-empty">
+                No active disruptions detected. This happens when no news threads have a measurable
+                economic dimension or the analysis pipeline hasn&apos;t run yet.
+              </div>
+            )}
+
+            {SEVERITY_ORDER.map(sev => grouped[sev].length > 0 && (
+              <div key={sev} className={`ep-sev-section ep-sev-${sev}`}>
+                <div className={`ep-sev-label ${sev}`}>
+                  {SEVERITY_LABEL[sev]} <span className="ct">{grouped[sev].length} stor{grouped[sev].length === 1 ? 'y' : 'ies'}</span>
+                </div>
+                {grouped[sev].map(d => {
+                  const insts = (d.instruments || []).slice(0, 6);
+                  return (
+                    <div className="ep-sev-story" key={d.scopeId}>
+                      <h4>
+                        <Link to={`/weekly/thread/${encodeURIComponent(d.scopeId)}?tab=economy`}>
+                          {d.headline || 'Disruption detected'}
+                        </Link>
+                      </h4>
+                      {insts.length > 0 && (
+                        <div className="ep-chips">
+                          {insts.map(i => (
+                            <span className="ep-inst-chip" key={i.instrumentId} title={i.rationale || ''}>
+                              {i.instrumentId} <span className={`ca ${DIR_CLASS[i.direction] || 'mx'}`}>{DIR_GLYPH[i.direction] || '↔'}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="ep-smeta">
+                        {d.generatedAt && <span>updated {timeAgo(d.generatedAt)}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {filtered.length > 0 && filtered.length !== disruptions.length && (
+            <div className="ep-filter-info">
+              Showing {filtered.length} of {disruptions.length} active disruptions.
+              <button onClick={clearFilters}>Clear filters</button>
+            </div>
+          )}
+
+          <div className="ep-disclaimer">
+            Not investment advice. Severity bands and direction calls are qualitative analyst judgments, not price targets —
+            see <Link to="/disclosures">methodology</Link>.
+          </div>
+        </main>
+
+        {/* ===== RIGHT RAIL — MARKET CONTEXT ===== */}
+        <aside className="ep-rail-right">
+          <div className="ep-mkt-head">
+            <span className="ep-rail-hd">Market Context</span>
+            {marketsTime && <span className="ep-hts">{marketsTime}</span>}
+          </div>
+          {marketsLoading && !markets && <div className="ep-rail-empty ep-mkt-empty">Loading markets…</div>}
+          {!marketsLoading && !markets && <div className="ep-rail-empty ep-mkt-empty">Market data unavailable</div>}
+          {markets && MARKET_GROUPS.map(g => {
+            const rows = g.rows
+              .map(([id, name]) => [id, name, fmtLevel(levelFor(id, markets))])
+              .filter(([, , v]) => v != null);
+            if (rows.length === 0) return null;
+            return (
+              <div key={g.hd} className="ep-mkt-group">
+                <div className="ep-glabel">{g.hd}</div>
+                {rows.map(([id, name, val]) => (
+                  <div key={id} className="ep-mkt-row">
+                    <span className="tk">{id}</span>
+                    <span className="nm">{name}</span>
+                    <span className="vl">{val}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+          <div className="ep-mkt-foot">
+            Snapshot refreshes hourly.<br />
+            {marketsTime && <>Last refresh {marketsTime}.<br /></>}
+            Source: Frankfurter · Stooq · CoinGecko.
+          </div>
+        </aside>
+
       </div>
     </div>
-  );
-
-  return (
-    <EditorialShell
-      strip={<StatusStrip label="LIVE" stats={statusStats} updatedAt={updatedAt} />}
-      left={leftRail}
-      right={rightRail}
-    >
-      {center}
-    </EditorialShell>
   );
 }

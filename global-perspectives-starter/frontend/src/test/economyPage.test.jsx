@@ -1,5 +1,5 @@
-// Render tests for the rebuilt EconomyPage (instrument-first hub).
-// Mocks the three data hooks with realistic shapes and exercises the new UI + interactions.
+// Render tests for the rebuilt EconomyPage (instrument-first leaderboard).
+// Mocks the four data hooks with realistic shapes and exercises the new UI + interactions.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
@@ -11,12 +11,14 @@ const disruptions = [
     confidence: 'high', horizon: 'days', hasImpact: true, generatedAt: '2026-05-26T08:00:00.000Z',
     instruments: [{ instrumentId: 'BRENT', direction: 'up', magnitude: 'large', rationale: 'supply cut' }],
     winners: [{ name: 'Saudi Arabia', type: 'country' }], losers: [{ name: 'India', type: 'country' }],
+    historicalAnalog: { event: '2019 Hormuz attacks', year: 2019, outcome: 'spike then fade' },
   },
   {
     scopeId: 't-bond', headline: 'US fiscal worries lift long yields', severity: 'moderate', severityScore: 60,
     confidence: 'medium', horizon: 'weeks', hasImpact: true, generatedAt: '2026-05-26T07:00:00.000Z',
     instruments: [{ instrumentId: 'US10Y', direction: 'up', magnitude: 'moderate', rationale: 'issuance' }],
     winners: [], losers: [{ name: 'United States', type: 'country' }],
+    historicalAnalog: null,
   },
 ];
 
@@ -52,19 +54,24 @@ function renderPage() {
   return render(<MemoryRouter><EconomyPage /></MemoryRouter>);
 }
 
-describe('EconomyPage — instrument-first hub', () => {
+function brentRow() {
+  return Array.from(document.querySelectorAll('.ep-instr-row'))
+    .find(el => el.textContent.includes('BRENT'));
+}
+
+describe('EconomyPage — instrument-first leaderboard', () => {
   beforeEach(async () => {
     EconomyPage = (await import('../components/EconomyPage')).default;
   });
 
-  it('renders the instrument pivot with consensus, live level, and story count', () => {
+  it('renders the leaderboard row with consensus, live level, and story count', () => {
     renderPage();
-    expect(screen.getByText(/Most-repriced instruments/i)).toBeInTheDocument();
-    const pivot = document.querySelector('.ep-pivot');
-    expect(within(pivot).getByText('BRENT')).toBeInTheDocument();
-    expect(pivot.textContent).toMatch(/75% consensus/);
-    expect(pivot.textContent).toMatch(/82\.5/);          // live commodity level
-    expect(pivot.textContent).toMatch(/3 stories/);
+    expect(screen.getByText(/Repricing today/i)).toBeInTheDocument();
+    const row = brentRow();
+    expect(within(row).getByText('BRENT')).toBeInTheDocument();
+    expect(row.textContent).toMatch(/75% consensus/);   // our own aggregate
+    expect(row.textContent).toMatch(/82\.5/);            // live commodity level
+    expect(row.textContent).toMatch(/3 stories/);        // citation count
   });
 
   it('renders the right-rail market context with real numeric levels', () => {
@@ -78,26 +85,24 @@ describe('EconomyPage — instrument-first hub', () => {
     expect(body).toMatch(/4\.25%/);                       // yield formatted with %
   });
 
-  it('expands a pivot row to reveal example stories', () => {
+  it('expands a row to reveal driving stories, rationale, and a price sparkline', () => {
     renderPage();
-    const brentItem = Array.from(document.querySelectorAll('.ep-pivot-item'))
-      .find(el => el.textContent.includes('BRENT'));
-    const toggle = brentItem.querySelector('.ep-pivot-toggle');
-    expect(brentItem.querySelector('.ep-pivot-examples')).toBeNull();
-    fireEvent.click(toggle);
-    const examples = brentItem.querySelector('.ep-pivot-examples');
-    expect(examples).toBeInTheDocument();
-    expect(examples.textContent).toMatch(/OPEC\+ surprise cut/);   // source/reference (headline → thread)
-    expect(examples.textContent).toMatch(/supply cut/);            // the per-instrument rationale (the "why")
-    expect(examples.querySelector('.ep-ex-why')).toBeInTheDocument();
-    expect(brentItem.querySelector('.ep-spark svg')).toBeInTheDocument();  // price sparkline (≥2 points)
+    const row = brentRow();
+    expect(row.querySelector('.ep-driving-row')).toBeNull();
+    fireEvent.click(row.querySelector('.ep-row-l1'));
+    const drivingRow = row.querySelector('.ep-driving-row');
+    expect(drivingRow).toBeInTheDocument();
+    expect(drivingRow.textContent).toMatch(/OPEC\+ surprise cut/);   // source/reference (headline → thread)
+    expect(row.querySelector('.ep-dr-mech').textContent).toMatch(/supply cut/);  // the "why" rationale
+    expect(row.querySelector('.ep-dr-analog').textContent).toMatch(/2019 Hormuz attacks/); // real analog
+    expect(row.querySelector('.ep-spark-area svg')).toBeInTheDocument();  // price sparkline (>=2 points)
   });
 
-  it('filters the by-story list when an instrument is clicked', () => {
+  it('filters the by-story list when an instrument name is clicked', () => {
     renderPage();
     // both disruptions visible initially (no "Showing X of Y" bar)
     expect(document.querySelector('.ep-filter-info')).toBeNull();
-    const brentBtn = Array.from(document.querySelectorAll('.ep-pivot-id')).find(b => b.textContent === 'BRENT');
+    const brentBtn = Array.from(document.querySelectorAll('.ep-name')).find(b => b.textContent === 'BRENT');
     fireEvent.click(brentBtn);
     const info = document.querySelector('.ep-filter-info');
     expect(info).toBeInTheDocument();
@@ -106,8 +111,8 @@ describe('EconomyPage — instrument-first hub', () => {
 
   it('renders the by-story severity groups', () => {
     renderPage();
-    expect(document.querySelector('.ep-group-severe')).toBeInTheDocument();
-    expect(document.querySelector('.ep-group-moderate')).toBeInTheDocument();
+    expect(document.querySelector('.ep-sev-severe')).toBeInTheDocument();
+    expect(document.querySelector('.ep-sev-moderate')).toBeInTheDocument();
     expect(document.body.textContent).toMatch(/OPEC\+ surprise cut tightens crude/);
   });
 });

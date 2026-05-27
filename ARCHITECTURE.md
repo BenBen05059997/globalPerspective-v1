@@ -466,7 +466,7 @@ Free economic-data ingest — **no LLM**, all free feeds.
 **What it does:**
 1. **FX** — Frankfurter (ECB rates, no key), hourly
 2. **Bond yields** — FRED (free key), daily on weekdays
-3. **Commodities + equities + crypto** — Stooq CSV (15-min delayed, no key) / CoinGecko, hourly
+3. **Commodities + equities + crypto** — Stooq CSV (15-min delayed, no key) / CoinGecko / Yahoo (VIX), hourly. Priced universe (~51 instruments, the spine behind `/economy` — see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`): commodities (Brent, WTI, gold, copper, DXY, VIX, **natural gas**), bond yields, equity indices + Russell 2000 (**IWM** proxy; Stooq lacks `^rut`), the **full 11 GICS sector SPDR ETFs** + thematic ETFs (defense/semis/gold-miners/**agriculture DBA**/**rare-earths REMX**), and BTC/ETH. (SILVER intentionally excluded — `si.f` returns an implausible value.)
 4. **Country macros** — World Bank (no key), weekly
 5. Writes `LATEST` rows plus dated `HISTORY#` rows (for sparklines) to `MARKETS_DDB_TABLE`
 
@@ -484,7 +484,7 @@ Per-thread economic disruption analysis — the "Economic Disruption Layer." Use
 
 **What it does:**
 1. Reads 30 days of archive + each thread's `THREAD_ANALYSIS` and topic `SUMMARY` records
-2. For threads with an economic dimension, calls DeepSeek with a **closed instrument allowlist** (any unknown ticker → dropped)
+2. For threads with an economic dimension, calls DeepSeek with a **closed instrument allowlist** (commodities incl. natural gas, rates, equity indices, GICS sector + thematic ETFs incl. agriculture/rare-earths, crypto; any unknown ticker → dropped), presented as a live-priced menu via `buildInstrumentTable`, plus a curated `economic_analogs.json` catalog of real past events with realized moves (the model picks the closest by mechanism; the frontend shows the analog's *actual* past move, never a forecast)
 3. Output is qualitative only — `direction` (up/down/mixed), `magnitude` (small/moderate/large), **never a fabricated %**; every claim must cite real `topicId`s (uncited claims dropped post-parse)
 4. Snapshots **actual** prices from `MARKETS_DDB_TABLE` (compute, don't generate)
 5. Writes tombstone records `{ hasImpact: false }` for threads with no economic dimension
@@ -761,7 +761,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `Home.jsx` | 3-col EditorialShell: StatusStrip + region-grouped daily topics with per-topic AI toolbar (Summarize/Predict/Trace Cause) + per-topic economic-disruption badge ("Economic impact →" when a thread has a disruption); `TodayArchiveSidebar` + `TopicNav` rails |
 | `WorldMapV2.jsx` | The live map at `/map` — stacked layer lenses, arc overlays, "Today's pulse" |
 | `WorldMap.jsx` | Legacy Google Maps view — file kept, no longer routed |
-| `EconomyPage.jsx` | `/economy` — the markets-meets-news hub. Center: instrument pivot ("Most-repriced instruments" — cross-story consensus per instrument from `useTopMovers`; **expand** shows a price sparkline (`useMarketsHistory`) + each driving story's headline (→ thread Economy tab), per-instrument rationale, and direction/magnitude) + severity-grouped by-story list. Right rail: live Market Context (`useMarketsGlobal` — equities/commodities/risk/rates/crypto). Left rail facets. (Rebuilt 2026-05-26; fixed a latent bug where the center column never rendered — passed as a `center` prop EditorialShell ignores instead of as children.) |
+| `EconomyPage.jsx` | `/economy` — the markets-meets-news command center, **rebuilt 2026-05-27 to match the editorial mockup** (own masthead band + 3-col shell, no longer `EditorialShell`; full-bleed via a `:has(.ep-page)` container escape, sticky rails offset by `--nav-h + --strip-h`). **Two-layer model** (see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`): the right-rail **Market Context** is a *standing dashboard* — live levels for the full universe (Equities / Sectors / Commodities / Ags&Materials / Risk / Rates / Crypto via `useMarketsGlobal`), shown always, AI-independent. The center **leaderboard** ("Repricing today") is the *news-cited subset* (`useTopMovers` — consensus + direction-split + live level per instrument; **expand** → price sparkline (`useMarketsHistory`) + Key-levels box + a 5-col driving-stories sub-table [Severity · Story → thread Economy tab · Direction · Mechanism (per-instrument rationale) · Closest analog] + affected-country chips), then a dormant-instruments drawer + a severity-grouped by-story "Active disruptions" bridge. Left rail facets (severity / horizon / country). All real data — **honest degradation** where data is absent (no fabricated % change, severity bars, ISO codes, or analog %). |
 | `MapSidePanel.jsx` | Per-country topic cards with AI toolbar |
 | `WeeklyPage.jsx` | 3-col EditorialShell: narrative threads grouped **by category** in the feed (region is a left-rail filter), StatusStrip, left rail (search/period/sort/region/view-toggle), right rail "Rising This Week"; lazy-loaded `WeeklyMap` view mode |
 | `WeeklyMap.jsx` | Thread-colored markers, date playback, thread sidebar |

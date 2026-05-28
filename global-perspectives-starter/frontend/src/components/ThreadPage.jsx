@@ -94,9 +94,9 @@ export default function ThreadPage() {
     };
   }, [dayMap, sortedDates, threadId, loading]);
 
-  const { analyses } = useThreadAnalyses(thread ? [threadId] : []);
+  const { analyses } = useThreadAnalyses([threadId]);
   const analysis = analyses?.[threadId];
-  const { data: economicImpact } = useEconomicImpact(thread ? threadId : null);
+  const { data: economicImpact } = useEconomicImpact(threadId);
   const hasEconomy = economicImpact && economicImpact.hasImpact !== false;
   const category = thread?.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
@@ -158,6 +158,49 @@ export default function ThreadPage() {
   if (loading) return <IntelligenceLoader type="typewriter" />;
 
   if (!thread) {
+    // Archive aged out, but we may still hold the analysis and/or economic-impact
+    // record (keyed by the same threadId). Show a focused fallback instead of a dead end.
+    const fallbackEconomy = economicImpact && economicImpact.hasImpact !== false;
+    if (analysis || fallbackEconomy) {
+      const fallbackTitle = analysis?.threadTitle || economicImpact?.headline || humanizeThreadId(threadId);
+      return (
+        <div className="container" style={{ paddingTop: 48, paddingBottom: 60, maxWidth: 760 }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '0.08em', marginBottom: 14 }}>
+            <Link to="/economy" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Back to Economy</Link>
+            <span style={{ margin: '0 10px', color: 'var(--line-2)' }}>·</span>
+            <Link to="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Home</Link>
+          </div>
+          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 30, lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 12px' }}>{fallbackTitle}</h1>
+          <p style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--ink-mid)', lineHeight: 1.5, margin: '0 0 24px' }}>
+            Full timeline isn&apos;t available for this story (it&apos;s aged out of the 30-day window),
+            but here&apos;s the analysis we have.
+          </p>
+
+          {fallbackEconomy && (
+            <div style={{ marginBottom: 24 }}>
+              <MechanismCard impact={economicImpact} />
+            </div>
+          )}
+
+          {analysis && (analysis.storyArc || analysis.trajectory) && (
+            <div style={{ marginTop: 4 }}>
+              {analysis.storyArc && (
+                <>
+                  <div className="tp-section-lbl" style={{ marginBottom: 8 }}>Story arc</div>
+                  <p style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.6, margin: '0 0 20px' }}>{analysis.storyArc}</p>
+                </>
+              )}
+              {analysis.trajectory && (
+                <>
+                  <div className="tp-section-lbl" style={{ marginBottom: 8 }}>What&apos;s next</div>
+                  <p style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.6, margin: 0 }}>{analysis.trajectory}</p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
     return (
       <div className="tp-page" style={{ paddingTop: 60, textAlign: 'center' }}>
         <h3 style={{ fontFamily: 'var(--serif)', fontSize: 28, marginBottom: 12 }}>Story arc not found</h3>

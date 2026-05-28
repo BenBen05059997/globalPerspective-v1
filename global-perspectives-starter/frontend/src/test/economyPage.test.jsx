@@ -78,6 +78,21 @@ describe('EconomyPage — instrument-first leaderboard', () => {
     expect(row.textContent).toMatch(/Stories:/);         // row-2 direction-split label
     expect(row.textContent).toMatch(/82\.5/);            // live commodity level
     expect(row.textContent).toMatch(/3 stories/);        // citation count
+    // day-over-day change pill now lives in its own grid cell (not inside .ep-price)
+    expect(row.querySelector('.ep-chg-cell')).toBeInTheDocument();
+    expect(row.querySelector('.ep-chg-cell').textContent).toMatch(/▲ \+0\.6%/);
+    expect(row.querySelector('.ep-price .ep-chg')).toBeNull();
+  });
+
+  it('labels the leaderboard columns with a header row', () => {
+    renderPage();
+    const head = document.querySelector('.ep-lb-head');
+    expect(head).toBeInTheDocument();
+    expect(head.textContent).toMatch(/Instrument/i);
+    expect(head.textContent).toMatch(/Signal/i);
+    expect(head.textContent).toMatch(/Last/i);
+    expect(head.textContent).toMatch(/Chg/i);
+    expect(head.textContent).toMatch(/Stories/i);
   });
 
   it('renders the right-rail market context with real numeric levels', () => {

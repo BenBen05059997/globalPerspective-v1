@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-05-29 (/economy UX fixes + dead-link graceful fallback)
+
+From live-user feedback on the `/economy` page:
+- **Fixed leaderboard row overlap.** The day-over-day change pill was crammed into the price cell (110px) and overflowed into the "X stories" column ("−1.0%21 stories"). Gave the change its own grid column — `.ep-row-l1` is now `84/110/92/76/1fr/22` (Instrument · Signal · Last · Chg · Stories · chev), pill moved to `.ep-chg-cell`.
+- **Added labeled column headers** (`.ep-lb-head`) to the leaderboard — `INSTRUMENT · SIGNAL · LAST · CHG · STORIES` — matching finance-watchlist convention (Yahoo/Bloomberg/FT). The numbers were previously unlabeled.
+- **Clarified "Closest analog"** — added a caption + tooltip: "closest past event + what this instrument actually did then — history, not a forecast."
+- **Fixed "Story arc not found" on driving-story clicks.** Verified ~32% (11/34) of driving-story links point to a `threadId` that has drifted/aged out of the 30-day archive → `ThreadPage` dead-ended. Now, when the archive thread is missing but we still hold its `thread_analysis`/`economic_impact` record, ThreadPage renders a **focused fallback** (title + "full timeline aged out" note + the `MechanismCard` + back-links) instead of "Story arc not found." Change is isolated to the `!thread` branch — the normal render path is byte-for-byte unchanged (verified).
+
+Method: executor → independent review (GO; confirmed normal ThreadPage path untouched) → browser-verify (no overlap, headers aligned, stale thread → fallback not 404). lint clean, build OK, 178 tests (economyPage 7/7).
+
+- Files: `EconomyPage.jsx`, `EconomyPage.css`, `ThreadPage.jsx`, `test/economyPage.test.jsx`, `CHANGES.md`.
+
+---
+
 ## 2026-05-28 (Frontend page audit + country-page cold-500 fix)
 
 **Audit:** browser-swept all 17 routes (Playwright). All render and are correctly wired — nav + footer links resolve, list→detail works (real `threadId`/country pulled from list pages), data hooks load, real params work; 0 console errors on 16/17; `/account`→sign-in and `NotFound` both correct. (PAGES_GUIDE still lists 4 dead routes — `/weekly-map`, `/intelligence-map`, `/cli`, `/upgrade/success` — noted, not yet pruned.)

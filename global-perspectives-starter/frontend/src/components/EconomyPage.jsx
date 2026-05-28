@@ -155,7 +155,14 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories }) {
 
       {/* Driving-stories sub-table: Severity · Story · Direction · Mechanism · Closest analog */}
       <div className="ep-driving-hd">
-        <div>Severity</div><div>Story</div><div>Direction</div><div>Mechanism</div><div>Closest analog</div>
+        <div>Severity</div><div>Story</div><div>Direction</div><div>Mechanism</div>
+        <div
+          className="ep-analog-hd"
+          title="closest past event + what this instrument actually did then — history, not a forecast"
+        >
+          Closest analog
+          <span className="ep-analog-cap">past event + what it did then — not a forecast</span>
+        </div>
       </div>
       {stories.map(s => (
         <div className="ep-driving-row" key={s.scopeId}>
@@ -423,6 +430,18 @@ export default function EconomyPage() {
             </div>
           )}
 
+          {/* Column labels — finance watchlists always name their fields */}
+          {topMovers.length > 0 && (
+            <div className="ep-lb-head" aria-hidden="true">
+              <div>Instrument</div>
+              <div>Signal</div>
+              <div>Last</div>
+              <div>Chg</div>
+              <div>Stories</div>
+              <div />
+            </div>
+          )}
+
           {/* ===== INSTRUMENT ROWS ===== */}
           {topMovers.map(m => {
             const open = openMover === m.instrumentId;
@@ -456,6 +475,8 @@ export default function EconomyPage() {
                   </div>
                   <span className="ep-price">
                     {priceLevel || ''}
+                  </span>
+                  <span className="ep-chg-cell">
                     <ChangePill change={markets?.series?.[m.instrumentId]?.change} />
                   </span>
                   <div className="ep-cites">

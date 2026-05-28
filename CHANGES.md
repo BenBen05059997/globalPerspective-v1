@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-05-28 (Frontend page audit + country-page cold-500 fix)
+
+**Audit:** browser-swept all 17 routes (Playwright). All render and are correctly wired — nav + footer links resolve, list→detail works (real `threadId`/country pulled from list pages), data hooks load, real params work; 0 console errors on 16/17; `/account`→sign-in and `NotFound` both correct. (PAGES_GUIDE still lists 4 dead routes — `/weekly-map`, `/intelligence-map`, `/cli`, `/upgrade/success` — noted, not yet pruned.)
+
+**Fix — `/weekly/country/:name` cold-start 500s.** The page mounts ~13 hooks that each hit the proxy *simultaneously*, spinning up a burst of cold Lambda containers; a few returned HTTP 500 (recovered on retry, so the page rendered, but with error-flashes + first-load latency). Two-part fix:
+- **Backend:** bumped `newsSensitiveData-dev` 128 → 512 MB (memory scales CPU → faster cold starts). Helped (cold 500s 6→4) but the burst was the dominant cause.
+- **Frontend:** added a **concurrency limiter** to `restProxy.js` — `runLimited`/`limitedProxyFetch` caps in-flight proxy requests at `MAX_PROXY_CONCURRENCY = 4` (both `proxyAction` + `proxyActionWithAuth` route through it). The 13-call burst now runs in waves of ≤4; the first wave warms the function, later waves hit warm containers. Site-wide (benefits any data-heavy page), additive, drains on success AND error (no deadlock), preserves the 503-stale-topics + Lambda-envelope + pre-limiter token semantics; `savedItemsRequest` (different endpoint) left alone.
+- **Verified (Playwright):** forced cold load of the country page → **0× 500** (was 4–6), `maxConcurrent` capped at 4, page fully renders. 5-page smoke (Home/economy/weekly/map/countries) all load clean, cap held, no hangs (a drain leak would have shrunk capacity across sequential loads — it didn't). lint clean, build OK, 177 tests, independent review GO. (The 2× `systems_analysis` 404 for most countries is expected — only ~2 have records — and graceful.)
+
+- Files: `restProxy.js`, `CHANGES.md` (+ `newsSensitiveData-dev` memory config via CLI).
+
+---
+
 ## 2026-05-27h (/economy leaderboard polish — synced from mockup refinements)
 
 Mirrored four design refinements made to the `Economy.html` mockup onto the live React page (3 applied; #4 was a mockup-only CSS bugfix our build already excludes):

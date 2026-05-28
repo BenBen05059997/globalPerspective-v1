@@ -22,20 +22,47 @@ function assertProxy() {
   PROXY_ENDPOINT = endpoint;
 }
 
+// Concurrency limiter for the shared proxy Lambda. Pages like /economy and
+// /weekly/country mount many hooks at once; firing every request simultaneously
+// spins up a burst of cold Lambda containers, some of which error (HTTP 500).
+// Capping in-flight proxy requests turns the burst into small waves — the first
+// wave warms the function, later waves hit warm containers. Tune MAX_PROXY_CONCURRENCY
+// if cold-start 500s persist (lower = fewer simultaneous cold starts, slightly slower load).
+const MAX_PROXY_CONCURRENCY = 4;
+let inFlight = 0;
+const waiting = [];
+function runLimited(task) {
+  return new Promise((resolve, reject) => {
+    const start = () => {
+      inFlight++;
+      Promise.resolve().then(task).then(resolve, reject).finally(() => {
+        inFlight--;
+        const next = waiting.shift();
+        if (next) next();
+      });
+    };
+    if (inFlight < MAX_PROXY_CONCURRENCY) start();
+    else waiting.push(start);
+  });
+}
+
+// Single proxy POST + JSON parse, run through the concurrency limiter.
+async function limitedProxyFetch(headers, action, payload) {
+  return runLimited(async () => {
+    const res = await fetch(PROXY_ENDPOINT, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ action, payload }),
+    });
+    let body;
+    try { body = await res.json(); } catch { body = null; }
+    return { res, body };
+  });
+}
+
 export async function proxyAction(action, payload = {}) {
   assertProxy();
-  const res = await fetch(PROXY_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, payload }),
-  });
-
-  let body;
-  try {
-    body = await res.json();
-  } catch {
-    body = null;
-  }
+  const { res, body } = await limitedProxyFetch({ 'Content-Type': 'application/json' }, action, payload);
 
   if (!res.ok) {
     // Special case: 503 with stale data should return the data, not throw
@@ -105,13 +132,7 @@ async function proxyActionWithAuth(action, payload = {}) {
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(PROXY_ENDPOINT, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ action, payload }),
-  });
-  let body;
-  try { body = await res.json(); } catch { body = null; }
+  const { res, body } = await limitedProxyFetch(headers, action, payload);
   if (!res.ok) {
     const details = typeof body === 'object' ? JSON.stringify(body) : String(body);
     throw new Error(`Proxy HTTP ${res.status}: ${details}`);

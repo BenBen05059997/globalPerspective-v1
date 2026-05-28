@@ -34,6 +34,8 @@ Use this when:
 
 ---
 
+> **⛔ Removed routes (correction 2026-05-28):** the following entries appear below but are **no longer registered in `App.jsx`** — they've been removed and are retained here for history only: `/weekly-map`, `/intelligence-map`, `/cli`, `/upgrade/success`, `/test/briefing-card`. The live route list is the 17 in `App.jsx` (incl. `/economy`).
+
 ## `/` · `components/Home.jsx`
 
 - **Purpose:** Today's global topics grouped by region with on-demand AI Summary / Predict / Trace Cause per topic.
@@ -342,13 +344,10 @@ ORPHAN / SECONDARY
 | `/`, `/daily`, `/map`, `/weekly`, `/weekly/countries`, `/economy` | ✓ (primary nav) | `/economy` is in nav (last) + footer; CloudWatch proxy shows it's the #2 content page — NOT an orphan |
 | `/weekly/thread/:id`, `/weekly/country/:name` | ✓ (indirect via list pages) | |
 | `/signin`, `/account` | ✓ (Layout right-side) | |
-| `/auth/callback`, `/upgrade/success` | ✓ (inbound from email / Paddle) | |
+| `/auth/callback` | ✓ (inbound from email magic-link) | |
 | `/about`, `/privacy`, `/disclosures`, `/whitepaper` | ✓ (footer) | |
-| `/weekly-map` | ⚠️ secondary (Weekly toggle + Account quick-link) | not in primary nav |
 | `/contact` | ❌ effectively orphan | footer "Contact" is a mailto |
-| `/intelligence-map` | ❌ orphan | direct URL only |
-| `/cli` | ❌ orphan | direct URL only |
-| `/test/briefing-card` | ❌ dev-only, exposed in prod | should be gated or removed |
+| `/weekly-map`, `/intelligence-map`, `/cli`, `/upgrade/success`, `/test/briefing-card` | ⛔ REMOVED 2026-05-28 | no longer registered in `App.jsx` — entries above are historical |
 
 ---
 

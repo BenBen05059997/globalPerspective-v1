@@ -104,12 +104,17 @@ export function composeBriefing({ topMovers = [], disruptions = [], markets = nu
     clusterText = ` The most-cited: ${joinList(parts)}.`;
   }
 
-  // S2 — sharpest story (highest severity, first in feed order)
-  let sharpest = null;
-  for (const d of disruptions) {
-    if (!d.headline) continue;
-    if (!sharpest || (SEV_RANK[d.severity] || 0) > (SEV_RANK[sharpest.severity] || 0)) sharpest = d;
-  }
+  // S2 — sharpest story (highest severity, first in feed order). Never headline a
+  // record the quality judge flagged (is_low_quality) unless nothing else exists.
+  const pickSharpest = (pool) => {
+    let best = null;
+    for (const d of pool) {
+      if (!d.headline) continue;
+      if (!best || (SEV_RANK[d.severity] || 0) > (SEV_RANK[best.severity] || 0)) best = d;
+    }
+    return best;
+  };
+  const sharpest = pickSharpest(disruptions.filter((d) => !d.is_low_quality)) || pickSharpest(disruptions);
   const s2 = sharpest ? ` The sharpest is **${sharpest.headline.replace(/\.+$/, '')}.**` : '';
 
   // S3 — divergence (a top mover whose consensus opposes its realized move) or biggest real move
@@ -170,8 +175,8 @@ export function composeInstrumentWhy({ mover, magnitude = null, stories = [] } =
   text += '.';
   if (magnitude) text += ` Typical magnitude: ${magnitude}.`;
 
-  // One real analog: first driving story that has a catalog realized-move for this instrument.
-  const withAnalog = (stories || []).find((s) => s.analogMove && s.analog && s.analog.event);
+  // One real analog: first NON-flagged driving story with a catalog realized-move for this instrument.
+  const withAnalog = (stories || []).find((s) => s.analogMove && s.analog && s.analog.event && !s.is_low_quality);
   if (withAnalog) {
     const yr = withAnalog.analog.year ? ` (${withAnalog.analog.year})` : '';
     text += ` Closest analog: ${withAnalog.analog.event}${yr} moved ${name} ${withAnalog.analogMove} then — history, not a forecast.`;

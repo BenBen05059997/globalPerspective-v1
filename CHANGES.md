@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-05-29 (/economy: consume quality-judge verdict + cap expanded story list)
+
+Two optimizations from the post-build re-read:
+- **Consume the quality judge** — `is_low_quality` / `qualityScores` are on every record (written by `newsEconomicQuality`) but `/economy` ignored them. Now: flagged stories show the existing `QualityFlag` ⚑ chip in the by-story bridge AND the expanded driving-stories sub-table (transparency, not hiding); and the briefing's **sharpest-story pick + the instrument analog pick now skip flagged records** (never headline a story the judge flagged unless nothing else exists). `storiesForInstrument` now carries the quality fields.
+- **Cap the expanded driving-stories list** — a heavily-cited instrument (BRENT=27) dumped every row. Now sorted by severity and capped at 6 + a "Show N more stories" toggle. Verified: BRENT 6 → 27 on expand.
+
+Eval re-run green (briefing 5/5, instrument-why 10/10, assertions self-test). Browser-verified: cap toggle works, ⚑ badges render (4 live), 0 console errors. lint clean, build OK.
+
+- Files: `composeEconomyBriefing.js`, `EconomyPage.jsx`, `EconomyPage.css`, `PAGES_GUIDE.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-29 (/economy per-instrument "Why it's moving" synthesis + SPT debate)
 
 After a 3-agent debate (recorded in `FUNCTION_DEBATE_OUTPUT.md`) on whether `/economy` should adopt Home's Summary/Predict/Trace-Cause toolbar: **unanimous "kill Predict"** (a forward forecast violates the page's no-forecast contract), none endorsed full SPT, but all agreed the per-story "why" is thin. Decision: build a **cross-story, instrument-level** synthesis instead — the value the thread Economy tab structurally can't show.

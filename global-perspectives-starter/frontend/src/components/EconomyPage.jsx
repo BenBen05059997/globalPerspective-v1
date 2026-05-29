@@ -17,6 +17,7 @@ import { useMarketsHistory } from '../hooks/useMarketsHistory';
 import Sparkline from './atoms/Sparkline';
 import { realizedMoveFor } from '../data/economicAnalogs';
 import { composeBriefing, composeInstrumentWhy } from '../utils/composeEconomyBriefing';
+import QualityFlag from './atoms/QualityFlag';
 import './EconomyPage.css';
 
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];
@@ -153,6 +154,15 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
   const asOfLabel = marketsAsOf ? new Date(marketsAsOf).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' }) : null;
   // Cross-story "What's priced in" synthesis — instrument-level, deterministic, no forecast.
   const why = composeInstrumentWhy({ mover, magnitude, stories });
+  // Sort driving stories by severity (severe first); cap the list so a heavily-cited
+  // instrument (e.g. BRENT=27) doesn't dump every row at once.
+  const STORY_CAP = 6;
+  const [showAllStories, setShowAllStories] = useState(false);
+  const sortedStories = useMemo(
+    () => [...stories].sort((a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity)),
+    [stories]
+  );
+  const visibleStories = showAllStories ? sortedStories : sortedStories.slice(0, STORY_CAP);
 
   return (
     <div className="ep-expand">
@@ -194,7 +204,7 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
           <span className="ep-analog-cap">past event + what it did then — not a forecast</span>
         </div>
       </div>
-      {stories.map(s => (
+      {visibleStories.map(s => (
         <div className="ep-driving-row" key={s.scopeId}>
           <div className="ep-dr-sev">
             <span className={`ep-sev-bar ${s.severity}`} />
@@ -202,6 +212,7 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
           </div>
           <div className="ep-dr-headline">
             <Link to={`/weekly/thread/${encodeURIComponent(s.scopeId)}?tab=economy`}>{s.headline}</Link>
+            <QualityFlag impact={s} size="sm" />
           </div>
           <div className="ep-dr-dir">
             <span className={`ep-arr ${DIR_CLASS[s.dir] || 'mx'}`}>{DIR_GLYPH[s.dir] || '↔'}</span>
@@ -228,6 +239,11 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
           </div>
         </div>
       ))}
+      {sortedStories.length > STORY_CAP && (
+        <button className="ep-stories-more" onClick={() => setShowAllStories(v => !v)}>
+          {showAllStories ? 'Show fewer' : `Show ${sortedStories.length - STORY_CAP} more ${sortedStories.length - STORY_CAP === 1 ? 'story' : 'stories'}`}
+        </button>
+      )}
       {stories.length === 0 && <div className="ep-rail-empty ep-driving-empty">No linked stories in the loaded window</div>}
 
       {/* Affected-country chips */}
@@ -356,6 +372,8 @@ export default function EconomyPage() {
           scopeId: d.scopeId, headline: d.headline, severity: d.severity,
           dir: inst.direction, magnitude: inst.magnitude, rationale: inst.rationale,
           analog, analogMove, instrumentId, countries,
+          // quality-judge verdict (so the sub-table can badge + the analog pick can skip flagged)
+          is_low_quality: d.is_low_quality, qualityScores: d.qualityScores, qualityReasons: d.qualityReasons,
         };
       });
 
@@ -604,6 +622,7 @@ export default function EconomyPage() {
                         <Link to={`/weekly/thread/${encodeURIComponent(d.scopeId)}?tab=economy`}>
                           {d.headline || 'Disruption detected'}
                         </Link>
+                        <QualityFlag impact={d} size="sm" />
                       </h4>
                       {insts.length > 0 && (
                         <div className="ep-chips">

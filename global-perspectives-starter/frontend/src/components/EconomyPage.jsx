@@ -8,7 +8,7 @@
 // / right rail (live Market Context). EditorialShell intentionally NOT used so the
 // masthead-band + sticky rails match the mockup exactly.
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { useTopMovers } from '../hooks/useTopMovers';
@@ -274,6 +274,40 @@ export default function EconomyPage() {
   const [openMover, setOpenMover] = useState(null);
   const [dormantOpen, setDormantOpen] = useState(false);
 
+  // Right-rail (Market Context) is drag-resizable so truncated instrument names
+  // ("Techno…", "Semico…") can be revealed. Width persists per-browser. The
+  // .nm column is 1fr, so widening the rail reveals the full labels for free.
+  const RAIL_MIN = 220, RAIL_MAX = 560, RAIL_DEFAULT = 260;
+  const [railWidth, setRailWidth] = useState(() => {
+    const saved = Number(localStorage.getItem('ep-rail-w'));
+    return saved >= RAIL_MIN && saved <= RAIL_MAX ? saved : RAIL_DEFAULT;
+  });
+  const dragStart = useRef(null);
+  const startRailDrag = (e) => {
+    e.preventDefault();
+    dragStart.current = { x: e.clientX, w: railWidth };
+    const onMove = (ev) => {
+      const { x, w } = dragStart.current;
+      // Rail sits on the right edge → dragging the handle left widens it.
+      setRailWidth(Math.min(RAIL_MAX, Math.max(RAIL_MIN, w + (x - ev.clientX))));
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      setRailWidth(curr => { localStorage.setItem('ep-rail-w', String(curr)); return curr; });
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+  const resetRailWidth = () => {
+    setRailWidth(RAIL_DEFAULT);
+    localStorage.setItem('ep-rail-w', String(RAIL_DEFAULT));
+  };
+
   const { data: disruptions = [], loading, error } = useDisruptionsList({ limit: 200 });
   const { data: topMovers = [], loading: moversLoading } = useTopMovers(20);
   const { data: markets, loading: marketsLoading, asOf: marketsAsOf } = useMarketsGlobal();
@@ -421,7 +455,7 @@ export default function EconomyPage() {
       )}
 
       {/* ===== THREE-COLUMN SHELL ===== */}
-      <div className="ep-shell">
+      <div className="ep-shell" style={{ '--ep-rail-w': `${railWidth}px` }}>
 
         {/* ===== LEFT RAIL — FILTERS ===== */}
         <aside className="ep-rail-left">
@@ -658,6 +692,15 @@ export default function EconomyPage() {
 
         {/* ===== RIGHT RAIL — MARKET CONTEXT ===== */}
         <aside className="ep-rail-right">
+          <div
+            className="ep-rail-resize"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize Market Context panel"
+            title="Drag to resize · double-click to reset"
+            onMouseDown={startRailDrag}
+            onDoubleClick={resetRailWidth}
+          />
           <div className="ep-mkt-head">
             <span className="ep-rail-hd">Market Context</span>
             {marketsTime && <span className="ep-hts">{marketsTime}</span>}

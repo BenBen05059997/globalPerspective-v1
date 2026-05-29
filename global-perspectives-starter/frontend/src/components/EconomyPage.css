@@ -128,7 +128,7 @@
 /* ===== THREE-COLUMN SHELL ===== */
 .ep-shell {
   display: grid;
-  grid-template-columns: 220px 1fr 260px;
+  grid-template-columns: 220px minmax(0, 1fr) var(--ep-rail-w, 260px);
   align-items: start;
   /* Mockup keeps the left/right rail vertical rules running full-height even when
      content is short. Mirror that: fill the viewport below nav+strip+footer. */
@@ -710,6 +710,32 @@
   max-height: calc(100vh - var(--nav-h) - var(--strip-h));
   overflow-y: auto;
   padding: 0;
+}
+/* Drag handle on the rail's left edge — widens/narrows the panel (width driven
+   by --ep-rail-w on .ep-shell). Sits inside the sticky rail so it tracks scroll. */
+.ep-rail-resize {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 6;
+  touch-action: none;
+}
+.ep-rail-resize::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.ep-rail-resize:hover::before,
+.ep-rail-resize:active::before {
+  background: var(--accent);
 }
 .ep-mkt-head {
   padding: 14px 16px 10px;

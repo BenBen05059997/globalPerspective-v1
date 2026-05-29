@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-05-29 (/economy: drag-resizable Market Context rail)
+
+The right-side **Market Context** rail was locked at 260px, truncating instrument names ("Techno…", "Semico…", "Health …"). Made it drag-resizable:
+- A thin drag handle on the rail's left edge (`.ep-rail-resize`, rust accent on hover) lets the user widen/narrow the panel; the `.nm` column is `1fr`, so widening reveals full labels for free.
+- Width is bound through `--ep-rail-w` on `.ep-shell` (`grid-template-columns: 220px minmax(0,1fr) var(--ep-rail-w, 260px)`), clamped **220–560px**, and persisted per-browser in `localStorage` (`ep-rail-w`). Double-click the handle resets to 260px. Mobile stacking unaffected (media query still forces single-column).
+- Browser-verified (Playwright): 260→410 on drag, persists, max clamp 560, double-click reset to 260, 0 component errors. Build OK.
+- Files: `EconomyPage.jsx`, `EconomyPage.css`, `CHANGES.md`.
+
+---
+
 ## 2026-05-29 (/economy: consume quality-judge verdict + cap expanded story list)
 
 Two optimizations from the post-build re-read:

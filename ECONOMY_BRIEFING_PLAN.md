@@ -218,7 +218,7 @@ optimize a prompt without a fixed target that comes from outside the optimizer.
 | W1 | **Eval set** — frozen fixtures + programmatic assertion harness + candidate target briefings | agent | — | ✅ done — `quality/briefing/` (12/12 self-test) |
 | W1-gate | **Ratify targets** — operator approves/corrects the candidate target briefings → these become ground truth | **Ben (human)** | W1 | ✅ RATIFIED 2026-05-29 by Ben — `quality/briefing/targets/*.md` are now ground truth |
 | W2 | **Markets `series` garbage-keys bug** — `ETH_24H_CHANGE -311%` etc. (independent live bug) | agent | — | ✅ fixed + DEPLOYED to `newsSensitiveData-dev` 2026-05-29; verified live (0 junk keys) |
-| W3 | **Phase 1 deterministic lead** — compose + render briefing on `/economy` | claude | W1-gate | ✅ built + browser-verified 2026-05-29 — `composeEconomyBriefing.js` + `.ep-briefing-band`; 5/5 fixtures pass `verify_compose.mjs`. **Staged in `docs/`, awaits `git push`.** |
+| W3 | **Phase 1 deterministic lead** — compose + render briefing on `/economy` | claude | W1-gate | ✅ **SHIPPED + pushed to `main` 2026-05-29** (commit `7018247`) — `composeEconomyBriefing.js` + `.ep-briefing-band`; 5/5 fixtures pass `verify_compose.mjs`; browser-verified, 0 console errors. Live on GitHub Pages. |
 | W4 | **Phase 2 LLM briefing + quality stack** — only if approved | tbd | W3 + decision | not started |
 
 ### Eval set layout (W1) — lives in `quality/briefing/` (matches existing `quality/` convention)

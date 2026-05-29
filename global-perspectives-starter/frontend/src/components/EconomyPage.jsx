@@ -16,6 +16,7 @@ import { useMarketsGlobal } from '../hooks/useMarketsGlobal';
 import { useMarketsHistory } from '../hooks/useMarketsHistory';
 import Sparkline from './atoms/Sparkline';
 import { realizedMoveFor } from '../data/economicAnalogs';
+import { composeBriefing } from '../utils/composeEconomyBriefing';
 import './EconomyPage.css';
 
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];
@@ -111,6 +112,27 @@ const MARKET_GROUPS = [
   { hd: 'Rates', rows: [['US10Y', 'US 10Y'], ['US2Y', 'US 2Y'], ['DE10Y', 'Bund 10Y'], ['JP10Y', 'JGB 10Y'], ['UK10Y', 'Gilt 10Y']] },
   { hd: 'Crypto', rows: [['BTC', 'Bitcoin'], ['ETH', 'Ethereum']] },
 ];
+
+// Renders the briefing text, turning the **bolded** sharpest headline into a
+// link to its thread Economy tab. The text comes verbatim from composeBriefing
+// (the honesty-checked source) — we only swap the bold token for a link.
+function BriefingText({ briefing }) {
+  if (!briefing || briefing.empty) {
+    return <p className="ep-brief-text ep-brief-empty">{briefing ? briefing.text : ''}</p>;
+  }
+  const segs = briefing.text.split(/\*\*(.+?)\*\*/);
+  const sid = briefing.sharpest?.scopeId;
+  return (
+    <p className="ep-brief-text">
+      {segs.map((s, i) => {
+        if (i % 2 === 0) return <span key={i}>{s}</span>;
+        return sid
+          ? <Link key={i} className="ep-brief-story" to={`/weekly/thread/${encodeURIComponent(sid)}?tab=economy`}>{s}</Link>
+          : <strong key={i}>{s}</strong>;
+      })}
+    </p>
+  );
+}
 
 function timeAgo(iso) {
   if (!iso) return null;
@@ -339,6 +361,16 @@ export default function EconomyPage() {
   const marketsTime = marketsAsOf ? new Date(marketsAsOf).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' }) : null;
   const filtersActive = filters.severity.size || filters.horizon.size || filters.instrument || filters.country;
 
+  // Deterministic "Today in the economy" lead briefing — composed from the same
+  // data already loaded; honesty-checked by quality/briefing/assertions.js.
+  const briefing = useMemo(
+    () => composeBriefing({ topMovers, disruptions, markets }),
+    [topMovers, disruptions, markets]
+  );
+  // Show the band once data has settled; while still loading with nothing yet, stay quiet.
+  const briefingReady = !loading && !moversLoading;
+  const showBriefing = disruptions.length > 0 || topMovers.length > 0 || briefingReady;
+
   return (
     <div className="ep-page">
       {/* ===== MASTHEAD BAND ===== */}
@@ -353,6 +385,14 @@ export default function EconomyPage() {
           prices: Frankfurter / Stooq / CoinGecko
         </div>
       </div>
+
+      {/* ===== TODAY-IN-THE-ECONOMY BRIEFING (lead synthesis) ===== */}
+      {showBriefing && (
+        <div className="ep-briefing-band">
+          <span className="ep-brief-kicker">Today in the economy</span>
+          <BriefingText briefing={briefing} />
+        </div>
+      )}
 
       {/* ===== THREE-COLUMN SHELL ===== */}
       <div className="ep-shell">

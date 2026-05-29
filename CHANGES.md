@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-05-29 (/economy "Today in the economy" briefing + markets series bugfix)
+
+Added a synthesis **lead briefing** to `/economy`, closing the gap that made it the only major content page with no narrative entry point (Home/Daily lead with synthesis; Economy led straight into a leaderboard table). Built eval-driven — the standard came before the prompt.
+
+- **New deterministic briefing band** under the masthead (`.ep-briefing-band`): one analyst-depth paragraph composed from data already on the page (`useTopMovers` / `useDisruptionsList` / `useMarketsGlobal`) — story count + severity split + most-cited cluster + sharpest story (links to its thread Economy tab) + sanitized realized moves with the **consensus-vs-realized divergence flagged**. NO LLM, NO fabrication.
+- **Honesty contract enforced by an eval set** (`quality/briefing/`): frozen fixtures (1 real day + 4 edge cases), `assertions.js` (no fabricated numbers / stories resolve / severity counts match / sanitized series / divergence-aware directional check), human-ratified target briefings, and `verify_compose.mjs` which runs the **actual shipped compose function** through the assertions for every fixture (5/5 pass).
+- **Markets `series` garbage-keys bug fixed + deployed** (`newsSensitiveData`): crypto `*_24h_change` fields were transposed into fake instruments yielding impossible day-over-day values (`ETH_24H_CHANGE -311%`). Now whitelisted to BTC/ETH + `|change| < 100` bound. Verified live (0 junk keys).
+
+Method: eval set built + ratified (standard before optimizer) → compose verified against it (5/5) → browser-verified band renders with live data, story link works, 0 console errors. lint clean, build OK. Plan: `ECONOMY_BRIEFING_PLAN.md`.
+
+- Files: `composeEconomyBriefing.js` (new), `EconomyPage.jsx`, `EconomyPage.css`, `quality/briefing/*` (new), `newsSensitiveData/src/index.js` (deployed), `PAGES_GUIDE.md`, `ECONOMY_BRIEFING_PLAN.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-29 (/economy UX fixes + dead-link graceful fallback)
 
 From live-user feedback on the `/economy` page:

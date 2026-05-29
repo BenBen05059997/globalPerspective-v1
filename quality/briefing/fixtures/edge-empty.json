@@ -1,0 +1,14 @@
+{
+  "capturedAt": "2026-05-29T00:00:00.000Z",
+  "_note": "Edge fixture: empty disruptions + empty topMovers. Briefing must produce an honest empty state, not invent content.",
+  "topMovers": [],
+  "disruptions": [],
+  "markets": {
+    "fx": { "asOf": "2026-05-29T00:00:00Z" },
+    "commodities": {},
+    "yields": {},
+    "equities": {},
+    "crypto": {},
+    "series": {}
+  }
+}

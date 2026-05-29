@@ -1,0 +1,48 @@
+{
+  "capturedAt": "2026-05-29T00:00:00.000Z",
+  "_note": "Edge fixture: series map contains junk keys (ETH_24H_CHANGE -311, BTC_24H_CHANGE -166, |change|>100). These must be filtered out of any 'biggest move' pick. The only legit tracked move is GOLD +0.8%.",
+  "topMovers": [
+    {
+      "instrumentId": "GOLD",
+      "citations": 4,
+      "directions": { "up": 3, "down": 1, "mixed": 0 },
+      "consensus": "up",
+      "consensusStrength": 75,
+      "examples": [
+        { "threadId": "thread-gold-safe-haven-bid-aa1111", "headline": "Safe-haven demand lifts gold", "severity": "moderate" }
+      ]
+    }
+  ],
+  "disruptions": [
+    {
+      "scopeId": "thread-gold-safe-haven-bid-aa1111",
+      "threadId": "thread-gold-safe-haven-bid-aa1111",
+      "headline": "Safe-haven demand lifts gold",
+      "severity": "moderate",
+      "horizon": "days",
+      "instruments": [
+        { "instrumentId": "GOLD", "direction": "up", "magnitude": "moderate", "rationale": "Risk-off bid" }
+      ],
+      "winners": [{ "name": "Switzerland", "type": "country", "why": "Gold-linked reserves" }],
+      "losers": [],
+      "historicalAnalog": { "event": "2020 pandemic gold rally", "year": 2020 },
+      "marketContext": { "GOLD": { "value": 2410, "asOf": "2026-05-29T00:00:00Z" } },
+      "generatedAt": "2026-05-29T00:00:00Z"
+    }
+  ],
+  "markets": {
+    "fx": { "asOf": "2026-05-29T00:00:00Z" },
+    "commodities": {},
+    "yields": {},
+    "equities": {},
+    "crypto": {},
+    "series": {
+      "GOLD": { "spark": [2400, 2405, 2410], "change": 0.77 },
+      "BRENT": { "spark": [70, 70.5, 70.2], "change": -0.41 },
+      "ETH_24H_CHANGE": { "spark": [3000, 200], "change": -311.32 },
+      "BTC_24H_CHANGE": { "spark": [60000, 20000], "change": -166.55 },
+      "ETH": { "spark": [3000, 3010, 3005], "change": -0.16 },
+      "BTC": { "spark": [60000, 60100, 60050], "change": 0.08 }
+    }
+  }
+}

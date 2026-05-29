@@ -1,0 +1,45 @@
+{
+  "capturedAt": "2026-05-29T00:00:00.000Z",
+  "_note": "Edge fixture: BRENT news consensus is 'up' (88% of stories see it higher) but realized series change is NEGATIVE (-2.4%). The briefing must FLAG this consensus-vs-realized divergence, not smooth it into 'oil is surging'.",
+  "topMovers": [
+    {
+      "instrumentId": "BRENT",
+      "citations": 18,
+      "directions": { "up": 16, "down": 1, "mixed": 1 },
+      "consensus": "up",
+      "consensusStrength": 88,
+      "examples": [
+        { "threadId": "thread-opec-supply-cut-bb2222", "headline": "OPEC+ signals deeper supply cuts", "severity": "severe" }
+      ]
+    }
+  ],
+  "disruptions": [
+    {
+      "scopeId": "thread-opec-supply-cut-bb2222",
+      "threadId": "thread-opec-supply-cut-bb2222",
+      "headline": "OPEC+ signals deeper supply cuts ahead of summit",
+      "severity": "severe",
+      "horizon": "days",
+      "instruments": [
+        { "instrumentId": "BRENT", "direction": "up", "magnitude": "high", "rationale": "Supply tightening" }
+      ],
+      "winners": [{ "name": "Saudi Arabia", "type": "country", "why": "Oil exporter" }],
+      "losers": [{ "name": "Japan", "type": "country", "why": "Oil importer" }],
+      "historicalAnalog": { "event": "2016 OPEC cut", "year": 2016 },
+      "marketContext": { "BRENT": { "value": 71, "asOf": "2026-05-29T00:00:00Z" } },
+      "generatedAt": "2026-05-29T00:00:00Z"
+    }
+  ],
+  "markets": {
+    "fx": { "asOf": "2026-05-29T00:00:00Z" },
+    "commodities": {},
+    "yields": {},
+    "equities": {},
+    "crypto": {},
+    "series": {
+      "BRENT": { "spark": [73, 72, 71], "change": -2.4 },
+      "WTI": { "spark": [69, 68, 67.5], "change": -2.1 },
+      "GOLD": { "spark": [2400, 2402, 2405], "change": 0.21 }
+    }
+  }
+}

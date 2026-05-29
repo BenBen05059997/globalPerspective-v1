@@ -879,7 +879,13 @@ exports.handler = async (event) => {
             if (vals.length >= 2) {
               const last = vals[vals.length - 1];
               const prev = vals[vals.length - 2];
-              if (prev) change = Math.round(((last - prev) / prev) * 100 * 100) / 100;
+              // A real price series can't move by 100%+ day-over-day; a magnitude
+              // that large means the "series" isn't a price (e.g. a *_24h_change
+              // field mistakenly transposed as an instrument) — drop the change.
+              if (prev) {
+                const pct = Math.round(((last - prev) / prev) * 100 * 100) / 100;
+                if (Math.abs(pct) < 100) change = pct;
+              }
             }
             series[id] = { spark, change };
           }
@@ -890,9 +896,13 @@ exports.handler = async (event) => {
             histScanG('EQUITIES#GLOBAL'), histScanG('CRYPTO#GLOBAL'),
           ]);
           buildSeries(hComm.Items, (f) => COMMODITY_UP[f] || null);   // commodities: lowercase → UPPER
-          buildSeries(hRates.Items, (f) => f.toUpperCase());          // rates/equities/crypto: already uppercase ids
+          buildSeries(hRates.Items, (f) => f.toUpperCase());          // rates/equities: already uppercase ids
           buildSeries(hEq.Items, (f) => f.toUpperCase());
-          buildSeries(hCr.Items, (f) => f.toUpperCase());
+          // Crypto rows carry both price fields (BTC, ETH) AND 24h-change fields
+          // (BTC_24h_change, ETH_24h_change). Only the prices are real instruments;
+          // the *_24h_change fields are not price series and must NOT become series ids.
+          const CRYPTO_PRICE = new Set(['BTC', 'ETH']);
+          buildSeries(hCr.Items, (f) => CRYPTO_PRICE.has(f) ? f : null);
         } catch { /* series is best-effort — never block the LATEST snapshot */ }
 
         return {

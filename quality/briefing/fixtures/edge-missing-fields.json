@@ -1,0 +1,39 @@
+{
+  "capturedAt": "2026-05-29T00:00:00.000Z",
+  "_note": "Edge fixture: records with absent fields — no historicalAnalog, no winners/losers, no marketContext, and series entries with missing/non-numeric change. The briefing must OMIT these (no analog clause, no realized-move clause), never guess a value.",
+  "topMovers": [
+    {
+      "instrumentId": "COPPER",
+      "citations": 2,
+      "directions": { "up": 1, "down": 1, "mixed": 0 },
+      "consensus": "mixed",
+      "consensusStrength": 50,
+      "examples": [
+        { "threadId": "thread-quiet-supply-note-cc3333", "headline": "Quiet supply note with no analog", "severity": "minor" }
+      ]
+    }
+  ],
+  "disruptions": [
+    {
+      "scopeId": "thread-quiet-supply-note-cc3333",
+      "threadId": "thread-quiet-supply-note-cc3333",
+      "headline": "Quiet supply note with no analog",
+      "severity": "minor",
+      "horizon": "weeks",
+      "instruments": [
+        { "instrumentId": "COPPER", "direction": "mixed" }
+      ]
+    }
+  ],
+  "markets": {
+    "fx": { "asOf": "2026-05-29T00:00:00Z" },
+    "commodities": {},
+    "yields": {},
+    "equities": {},
+    "crypto": {},
+    "series": {
+      "COPPER": { "spark": [4.1, 4.1] },
+      "BRENT": { "spark": [70] }
+    }
+  }
+}

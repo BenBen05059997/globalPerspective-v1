@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-05-29 (/economy per-instrument "Why it's moving" synthesis + SPT debate)
+
+After a 3-agent debate (recorded in `FUNCTION_DEBATE_OUTPUT.md`) on whether `/economy` should adopt Home's Summary/Predict/Trace-Cause toolbar: **unanimous "kill Predict"** (a forward forecast violates the page's no-forecast contract), none endorsed full SPT, but all agreed the per-story "why" is thin. Decision: build a **cross-story, instrument-level** synthesis instead — the value the thread Economy tab structurally can't show.
+
+- **New "Why it's moving" line** at the top of each expanded leaderboard drawer (`.ep-why`): a deterministic "What's priced in" readout — consensus split + lean strength + modal magnitude + the closest analog's *real realized move* ("history, not a forecast"). Pure fn `composeInstrumentWhy` in `composeEconomyBriefing.js`; no LLM, no forecast; doesn't duplicate the thread tab's per-story `MechanismCard`.
+- **Honesty-checked** by `quality/briefing/verify_instrument_why.mjs` (every number traces to the mover's own counts; 10/10 movers pass).
+- **Fixed a latent bug in the eval standard:** `assertions.js` check (a) now scrubs instrument tickers/names before number extraction, so digit-bearing names ("S&P 500", "Russell 2000", "US 10Y") aren't misread as fabricated data. Briefing verify + unit self-test still green.
+
+Method: 3-agent debate → synthesis → build instrument-level synthesis → honesty-verified (10/10) → browser-verified (drawer renders, 0 console errors). lint clean, build OK.
+
+- Files: `composeEconomyBriefing.js`, `EconomyPage.jsx`, `EconomyPage.css`, `quality/briefing/{assertions.js,verify_instrument_why.mjs}`, `FUNCTION_DEBATE_OUTPUT.md`, `PAGES_GUIDE.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-29 (/economy "Today in the economy" briefing + markets series bugfix)
 
 Added a synthesis **lead briefing** to `/economy`, closing the gap that made it the only major content page with no narrative entry point (Home/Daily lead with synthesis; Economy led straight into a leaderboard table). Built eval-driven — the standard came before the prompt.

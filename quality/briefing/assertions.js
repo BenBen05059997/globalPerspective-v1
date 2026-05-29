@@ -137,9 +137,14 @@ function checkBriefing(briefingText, fixture) {
   const text = briefingText || '';
   const lower = text.toLowerCase();
 
-  // (a) No fabricated numbers.
+  // (a) No fabricated numbers. First scrub instrument tickers + friendly names —
+  // several contain digits ("S&P 500", "Russell 2000", "US 10Y") that must not be
+  // mistaken for data claims. split() on a string literal needs no regex escaping.
   const whitelist = buildNumberWhitelist(fixture);
-  for (const n of extractNumbers(text)) {
+  let scrubbed = text.toLowerCase();
+  for (const nm of Object.values(NAME_OF)) scrubbed = scrubbed.split(nm).join(' ');
+  for (const id of TRACKED) scrubbed = scrubbed.split(id.toLowerCase()).join(' ');
+  for (const n of extractNumbers(scrubbed)) {
     // years (4-digit, e.g. 2026) and standalone small integers used as story
     // counts are covered by the whitelist; anything else must trace.
     if (!numberAllowed(n, whitelist)) {

@@ -140,3 +140,41 @@ export function composeBriefing({ topMovers = [], disruptions = [], markets = nu
 
   return { empty: false, text: (s1 + clusterText + s2 + s3).trim(), sharpest, divergence, tally, cluster };
 }
+
+// Per-instrument "What's priced in" synthesis — the cross-story line for the
+// expanded leaderboard drawer (decided by the 2026-05-29 SPT debate: instrument-
+// level synthesis, NOT story-level SPT, NOT a forecast). Pure + deterministic:
+// every number traces to the mover's own counts; the analog clause is a verbatim
+// realized past move from the catalog (never a forecast). Returns { text } or null.
+//   mover    — a useTopMovers row: { instrumentId, citations, directions:{up,down,mixed}, consensus, consensusStrength }
+//   magnitude — the modal magnitude string (small|moderate|large) or null
+//   stories  — storiesForInstrument(id) rows; used only to surface one real analog realized-move
+export function composeInstrumentWhy({ mover, magnitude = null, stories = [] } = {}) {
+  if (!mover || !mover.instrumentId) return null;
+  const name = nameFor(mover.instrumentId);
+  const d = mover.directions || {};
+  const up = d.up || 0, down = d.down || 0, mixed = d.mixed || 0;
+  const cites = typeof mover.citations === 'number' ? mover.citations : (up + down + mixed);
+  if (cites <= 0) return null;
+
+  const splits = [];
+  if (up) splits.push(`${up} see it higher`);
+  if (down) splits.push(`${down} lower`);
+  if (mixed) splits.push(`${mixed} mixed`);
+
+  let text = `What's priced in: ${cites} ${cites === 1 ? 'story cites' : 'stories cite'} ${name}`;
+  if (splits.length) text += ` — ${joinList(splits)}`;
+  if (typeof mover.consensusStrength === 'number' && mover.consensus) {
+    text += ` (${mover.consensusStrength}% lean ${dirWord(mover.consensus)})`;
+  }
+  text += '.';
+  if (magnitude) text += ` Typical magnitude: ${magnitude}.`;
+
+  // One real analog: first driving story that has a catalog realized-move for this instrument.
+  const withAnalog = (stories || []).find((s) => s.analogMove && s.analog && s.analog.event);
+  if (withAnalog) {
+    const yr = withAnalog.analog.year ? ` (${withAnalog.analog.year})` : '';
+    text += ` Closest analog: ${withAnalog.analog.event}${yr} moved ${name} ${withAnalog.analogMove} then — history, not a forecast.`;
+  }
+  return { text };
+}

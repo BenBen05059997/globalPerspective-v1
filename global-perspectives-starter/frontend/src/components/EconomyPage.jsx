@@ -16,7 +16,7 @@ import { useMarketsGlobal } from '../hooks/useMarketsGlobal';
 import { useMarketsHistory } from '../hooks/useMarketsHistory';
 import Sparkline from './atoms/Sparkline';
 import { realizedMoveFor } from '../data/economicAnalogs';
-import { composeBriefing } from '../utils/composeEconomyBriefing';
+import { composeBriefing, composeInstrumentWhy } from '../utils/composeEconomyBriefing';
 import './EconomyPage.css';
 
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];
@@ -146,14 +146,22 @@ function timeAgo(iso) {
 
 // One expanded instrument's price panel — lives in its own component so the
 // useMarketsHistory hook fires only for the open row.
-function ExpandedPanel({ instrumentId, level, marketsAsOf, stories }) {
+function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magnitude }) {
   const { data: history } = useMarketsHistory(instrumentId);
   const kl = keyLevels(history, level);
   const today = fmtLevel(level);
   const asOfLabel = marketsAsOf ? new Date(marketsAsOf).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' }) : null;
+  // Cross-story "What's priced in" synthesis — instrument-level, deterministic, no forecast.
+  const why = composeInstrumentWhy({ mover, magnitude, stories });
 
   return (
     <div className="ep-expand">
+      {why && (
+        <div className="ep-why">
+          <span className="ep-why-kicker">Why it&apos;s moving</span>
+          <p className="ep-why-text">{why.text}</p>
+        </div>
+      )}
       <div className="ep-spark-block">
         <div className="ep-spark-area">
           <div className="ep-slabel">
@@ -537,6 +545,8 @@ export default function EconomyPage() {
                     level={level}
                     marketsAsOf={marketsAsOf}
                     stories={storiesForInstrument(m.instrumentId)}
+                    mover={m}
+                    magnitude={mag}
                   />
                 )}
               </div>

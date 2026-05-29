@@ -252,3 +252,32 @@ If you only have 10 minutes for this doc:
 - **Look at "Now" in the action set.** That's the unambiguous to-do list.
 
 Everything else is supporting evidence.
+
+---
+
+# Addendum 2026-05-29 — `/economy`: adopt Home's Summary/Predict/Trace Cause?
+
+**Question debated:** Should `/economy` mimic the Home page's per-item Summary / Predict / Trace Cause (SPT) AI toolbar to "better explain" what's happening? Three parallel agents, distinct mandates, no fence-sitting, each verified against the live code (`EconomyPage.jsx`, `Home.jsx`, the SPT hooks, the thread Economy tab + `MechanismCard`, `ARCHITECTURE.md`).
+
+| Agent (lens) | Verdict | One-line |
+| --- | --- | --- |
+| A — UX / explanatory depth | **ADAPT** | Add *Trace-Cause-only* at the story (driving-row) level, reusing already-fetched `mechanism`+`watchSignals`; kill Summary + Predict. |
+| B — Information architect | **REJECT** | SPT is `topicId`-keyed; economy is `scopeId`/instrument-keyed; story-level SPT duplicates the thread Economy tab. Do an instrument-level synthesis instead. |
+| C — Editorial / honesty | **ADAPT** | Keep Trace Cause; **kill Predict** (a winners/losers forecast = category violation on a no-forecast page); replace it with a deterministic "What's priced in" consensus + realized-analog readout. |
+
+## Convergence (the strong signals)
+- **Unanimous: do NOT import "Predict."** All three independently call it a category violation — Home's Predict is a forward winners/losers forecast, and `/economy` is engineered to refuse forecasts (analog = "not a forecast", `ChangePill` never fabricates, the briefing flags consensus-vs-realized divergence).
+- **None endorse full ADOPT-SPT.** The literal "mimic Home" proposal is rejected by all three.
+- **The "explain better" concern is validated.** The per-story "why" is genuinely thin today (one `rationale` clause; can dead-end at "no mechanism recorded").
+- **Hard technical fact:** there is no cached SUMMARY/TRACE_CAUSE for an instrument ("copper" isn't a topic) — adopting Home's hooks literally would need *new* backend LLM generation (cost + fresh hallucination surface).
+
+## The split & the call
+A wants *story-level* depth; B & C want *instrument-level* synthesis. **B's objection is decisive:** story-level depth is the thread Economy tab's job (where `MechanismCard` lives, and which the page already links to) — inlining it duplicates the one thing the page header says it must not do. The economy page's unique, non-duplicative value is the **cross-story instrument-level** picture.
+
+## Synthesis / decision
+**REJECT the SPT mimicry. KILL Predict outright. BUILD a per-instrument deterministic "Why it's moving / What's priced in" synthesis line** at the top of the expanded drawer:
+- consensus split + strength ("4 of 5 cited stories expect ↑, 85% agree") + modal magnitude
+- closest-analog *realized* move (already computed, verbatim from the catalog)
+- built with the existing `composeEconomyBriefing` + `quality/briefing/assertions.js` machinery — deterministic, no LLM, no forecast, honesty-checked, no duplication.
+
+The honest answer to "explain like Home?" is **yes — but as a cross-story instrument synthesis, not Home's per-story forecasting UI.**

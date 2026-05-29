@@ -88,6 +88,30 @@
 }
 .ep-brief-story:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 
+/* ===== EXPANDED-DRAWER "WHY IT'S MOVING" SYNTHESIS ===== */
+.ep-why {
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border-left: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--paper));
+}
+.ep-why-kicker {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 5px;
+}
+.ep-why-text {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+}
+
 /* ===== THREE-COLUMN SHELL ===== */
 .ep-shell {
   display: grid;

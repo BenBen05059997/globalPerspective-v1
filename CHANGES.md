@@ -1,5 +1,21 @@
 # Global Perspectives — Change Log
 
+## 2026-05-29 (/economy briefing: story-led re-anchor)
+
+After a 3-agent debate (recorded in `FUNCTION_DEBATE_OUTPUT.md`), re-anchored the "Today in the economy" lead briefing to mimic how real sell-side morning notes open. **Before:** it led with a severity COUNT ("N stories repricing — X severe…") then an instrument-citation cluster — page plumbing, and redundant with the leaderboard/right-rail directly below. **Now** the sentence order is:
+- **S1 — the driver:** the dominant story (picker changed from *highest-severity, first-in-feed* → **most-cited-among-the-severe**, i.e. the severe story tied to the day's most-cited instrument) + the instruments it cites. Headline stays bolded → links to the thread Economy tab.
+- **S2 — the tape:** real sector winners/losers from `markets.series` ("splitting along it — Brent down 1.6% while KOSPI leads, up 3.3%"); the up/down word is always taken from the realized change, so it can't contradict the data.
+- **S3 — the divergence caveat** (consensus vs realized, kept separate).
+- **trailing tag:** the severity count, demoted from lead to footnote.
+
+Operator chose the **analyst-leaning** option: a direction-consistent rotation read is allowed even when the sector ETF isn't directly cited, but the non-negotiable core contract holds — no fabricated numbers, no forecasts, consensus-direction never blurred with the realized move. New eval assertion **(e)** bans forecast/prediction language (will/could/expect/rebound/next week…) outside quoted headlines.
+
+Eval: all 5 fixtures pass the honesty contract under the new output (`verify_compose.mjs`), assertions self-test green incl. the new forecast case. Browser-verified live via proxy-mocked fixture — briefing renders, headline links correctly, 0 console errors.
+
+- Files: `composeEconomyBriefing.js`, `quality/briefing/assertions.js`, `quality/briefing/targets/real-2026-05-29.md`, `FUNCTION_DEBATE_OUTPUT.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-29 (/economy: drag-resizable Market Context rail)
 
 The right-side **Market Context** rail was locked at 260px, truncating instrument names ("Techno…", "Semico…", "Health …"). Made it drag-resizable:

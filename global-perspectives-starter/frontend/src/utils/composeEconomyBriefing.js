@@ -82,42 +82,76 @@ export function composeBriefing({ topMovers = [], disruptions = [], markets = nu
   const tally = { severe: 0, moderate: 0, minor: 0 };
   for (const d of disruptions) if (tally[d.severity] != null) tally[d.severity]++;
 
-  // S1 — shape
-  const sevParts = [];
-  if (tally.severe) sevParts.push(`${tally.severe} severe`);
-  if (tally.moderate) sevParts.push(`${tally.moderate} moderate`);
-  if (tally.minor) sevParts.push(`${tally.minor} minor`);
-  let s1 = `${N} ${N === 1 ? 'story' : 'stories'} ${N === 1 ? 'is' : 'are'} repricing markets today`;
-  if (sevParts.length) s1 += ` — ${joinList(sevParts)}`;
-  s1 += '.';
+  // citation lookup (instrumentId → how many stories cite it) and the set of
+  // instruments each disruption cites — used to find the day's protagonist.
+  const citeOf = {};
+  for (const m of movers) citeOf[String(m.instrumentId).toUpperCase()] = m.citations || 0;
+  const citedInstr = (d) => (Array.isArray(d.instruments) ? d.instruments : [])
+    .map((i) => String(i && i.instrumentId || '').toUpperCase())
+    .filter(Boolean);
+  const maxCites = (d) => { const c = citedInstr(d).map((id) => citeOf[id] || 0); return c.length ? Math.max(...c) : 0; };
 
-  // S1b — most-cited cluster
-  let clusterText = '';
-  const cluster = movers.slice(0, 3);
-  if (cluster.length) {
-    const parts = cluster.map((m, i) => {
-      const name = nameFor(m.instrumentId);
-      const dw = dirWord(m.consensus);
-      if (i === 0) return `${name} (${m.citations} ${m.citations === 1 ? 'story' : 'stories'}, ${m.consensusStrength}% ${dw})`;
-      return `${name} (${m.consensusStrength}% ${dw})`;
-    });
-    clusterText = ` The most-cited: ${joinList(parts)}.`;
-  }
-
-  // S2 — sharpest story (highest severity, first in feed order). Never headline a
-  // record the quality judge flagged (is_low_quality) unless nothing else exists.
-  const pickSharpest = (pool) => {
-    let best = null;
+  // ── S1 — THE DRIVER (the anchor) ──────────────────────────────────────────
+  // Lead with the day's protagonist, not a count. Pick = highest severity tier
+  // present, then most-cited-among-ties (the story tied to the day's most-cited
+  // instrument — how a strategist identifies THE catalyst). Skip quality-flagged
+  // records unless nothing else qualifies.
+  const pickDominant = (pool) => {
+    let best = null, bestRank = -1, bestCites = -1;
     for (const d of pool) {
       if (!d.headline) continue;
-      if (!best || (SEV_RANK[d.severity] || 0) > (SEV_RANK[best.severity] || 0)) best = d;
+      const rank = SEV_RANK[d.severity] || 0;
+      const cites = maxCites(d);
+      if (rank > bestRank || (rank === bestRank && cites > bestCites)) {
+        best = d; bestRank = rank; bestCites = cites;
+      }
     }
     return best;
   };
-  const sharpest = pickSharpest(disruptions.filter((d) => !d.is_low_quality)) || pickSharpest(disruptions);
-  const s2 = sharpest ? ` The sharpest is **${sharpest.headline.replace(/\.+$/, '')}.**` : '';
+  const sharpest = pickDominant(disruptions.filter((d) => !d.is_low_quality)) || pickDominant(disruptions);
 
-  // S3 — divergence (a top mover whose consensus opposes its realized move) or biggest real move
+  let s1 = '';
+  if (sharpest) {
+    const names = [];
+    for (const id of citedInstr(sharpest)) {
+      const nm = nameFor(id);
+      if (nm && !names.includes(nm)) names.push(nm);
+      if (names.length >= 3) break;
+    }
+    const topCites = maxCites(sharpest);
+    s1 = `Today's driver: **${sharpest.headline.replace(/\.+$/, '')}.**`;
+    if (names.length) {
+      s1 += ` It's repricing ${joinList(names)}`;
+      if (topCites > 0) s1 += ` — cited in ${topCites} ${topCites === 1 ? 'story' : 'stories'} today`;
+      s1 += '.';
+    } else if (topCites > 0) {
+      s1 += ` Cited in ${topCites} ${topCites === 1 ? 'story' : 'stories'} today.`;
+    }
+  }
+
+  // ── S2 — THE TAPE (real moves; the analyst's rotation read) ───────────────
+  // Sector/instrument winners-and-losers from markets.series (the only real
+  // numbers). Sign always taken from the realized change, so a "down"/"up" word
+  // can never contradict the data. Analyst-leaning: frame the two-sided tape as
+  // a split, which is the rotation read the dashboards below can't synthesize.
+  let gainer = null, loser = null, biggest = null;
+  for (const [id, c] of Object.entries(clean)) {
+    if (c > 0 && (!gainer || c > gainer.change)) gainer = { id, change: c };
+    if (c < 0 && (!loser || c < loser.change)) loser = { id, change: c };
+    if (!biggest || Math.abs(c) > Math.abs(biggest.change)) biggest = { id, change: c };
+  }
+  let s2 = '';
+  if (loser && gainer && loser.id !== gainer.id) {
+    s2 = ` The tape is splitting along it — ${nameFor(loser.id)} down ${fmtPct(loser.change)} while ${nameFor(gainer.id)} leads, up ${fmtPct(gainer.change)}.`;
+  } else if (biggest) {
+    s2 = ` The biggest real move is ${nameFor(biggest.id)}, ${biggest.change > 0 ? 'up' : 'down'} ${fmtPct(biggest.change)} on the day.`;
+  } else {
+    s2 = ' No tracked instrument shows a clean day-over-day move.';
+  }
+
+  // ── S3 — THE DIVERGENCE CAVEAT (the one read no dashboard shows) ──────────
+  // A top mover whose news consensus opposes its realized move. Kept separate
+  // from the tape so consensus-direction is never blurred with the actual %.
   let divergence = null;
   for (const m of movers) {
     const c = clean[m.instrumentId];
@@ -125,25 +159,26 @@ export function composeBriefing({ topMovers = [], disruptions = [], markets = nu
     if (m.consensus === 'up' && c < 0) { divergence = { id: m.instrumentId, consensus: 'up', change: c }; break; }
     if (m.consensus === 'down' && c > 0) { divergence = { id: m.instrumentId, consensus: 'down', change: c }; break; }
   }
-  let gainer = null, biggest = null;
-  for (const [id, c] of Object.entries(clean)) {
-    if (c > 0 && (!gainer || c > gainer.change)) gainer = { id, change: c };
-    if (!biggest || Math.abs(c) > Math.abs(biggest.change)) biggest = { id, change: c };
-  }
-
-  let s3;
+  let s3 = '';
   if (divergence) {
     const fell = divergence.change < 0;
-    s3 = ` But note the divergence — news consensus sees ${nameFor(divergence.id)} ${divergence.consensus === 'up' ? 'higher' : 'lower'}, yet it actually ${fell ? 'fell' : 'rose'} ${fmtPct(divergence.change)} on the day`;
-    if (gainer && gainer.id !== divergence.id) s3 += `, while ${nameFor(gainer.id)} led real gains, up ${fmtPct(gainer.change)}`;
-    s3 += '.';
-  } else if (biggest) {
-    s3 = ` The biggest real move is ${nameFor(biggest.id)}, ${biggest.change > 0 ? 'up' : 'down'} ${fmtPct(biggest.change)} on the day.`;
-  } else {
-    s3 = ' No tracked instrument shows a clean day-over-day move.';
+    s3 = ` But note the divergence — news consensus sees ${nameFor(divergence.id)} ${divergence.consensus === 'up' ? 'higher' : 'lower'}, yet it actually ${fell ? 'fell' : 'rose'} ${fmtPct(divergence.change)} on the day.`;
   }
 
-  return { empty: false, text: (s1 + clusterText + s2 + s3).trim(), sharpest, divergence, tally, cluster };
+  // ── Trailing tag — the severity count, demoted from lead to footnote ──────
+  const sevParts = [];
+  if (tally.severe) sevParts.push(`${tally.severe} severe`);
+  if (tally.moderate) sevParts.push(`${tally.moderate} moderate`);
+  if (tally.minor) sevParts.push(`${tally.minor} minor`);
+  let tag = '';
+  if (N > 0) {
+    tag = ` ${N} ${N === 1 ? 'story' : 'stories'} repricing today`;
+    if (sevParts.length) tag += ` — ${joinList(sevParts)}`;
+    tag += '.';
+  }
+
+  const cluster = movers.slice(0, 3);
+  return { empty: false, text: (s1 + s2 + s3 + tag).trim(), sharpest, divergence, tally, cluster };
 }
 
 // Per-instrument "What's priced in" synthesis — the cross-story line for the

@@ -281,3 +281,28 @@ A wants *story-level* depth; B & C want *instrument-level* synthesis. **B's obje
 - built with the existing `composeEconomyBriefing` + `quality/briefing/assertions.js` machinery — deterministic, no LLM, no forecast, honesty-checked, no duplication.
 
 The honest answer to "explain like Home?" is **yes — but as a cross-story instrument synthesis, not Home's per-story forecasting UI.**
+
+---
+
+# Addendum — /economy briefing ANCHOR (2026-05-29, story-led re-anchor)
+
+**Question debated:** What should *anchor* the "Today in the economy" lead briefing? It currently leads with a severity COUNT ("N stories repricing — X severe…") then an instrument-citation cluster. Operator asked: should it instead mimic how real markets analysis opens (lead with the dominant catalyst, then sector winners/losers)? Three debaters, opposing mandates, each instructed to research real market-brief conventions.
+
+## Verdicts
+| Debater | Verdict on the anchor |
+|---|---|
+| A — Markets Analyst | **RE-ANCHOR:** S1 = dominant catalyst story (picker → *most-cited-among-the-severe*), S2 = real sector winners/losers, S3 = mechanism, S4 = divergence; demote the count. Cited Schwab/JPM/Bloomberg "Five Things" — all lead with the protagonist, not an inventory. |
+| B — Honesty Guardian | **RE-ANCHOR, GATED:** lead with the story, but never join a story to a sector move by a causal verb unless the story actually cites that instrument; ban flow language + forecasts; add 5 eval assertions. Cited the narrative-fallacy literature (Morningstar/HeyGoTrade): the explanation always *follows* the price. |
+| C — Reader-Value Editor | **RE-ANCHOR:** sentence 1 = the named story with a market verb; CUT the count and the most-cited cluster as a lead — both are *redundant* with the leaderboard + right-rail directly below. Cited Axios Smart Brevity / Bloomberg / Matt Levine: the lede is a claim, never a stat. |
+
+## Convergence
+- **Unanimous: kill the count as the lead.** It's page plumbing, not a takeaway.
+- **Unanimous: anchor on the dominant story, stated cause→effect.** It's the one synthesis the dashboards structurally can't show.
+- **Agreement: change the picker** from "highest-severity, first-in-feed" → **most-cited-among-the-severe** (the story moving the most instruments).
+- **Reader-Value's redundancy point is decisive** for cutting the old S1b cluster: the leaderboard already lists most-cited instruments six inches lower.
+
+## The split & the call
+A vs B on the "why" clause: A wants a free rotation narrative; B forbids causation unless the instrument is cited. C's own rewrite ("Energy −X% *as the move reads as demand-destructive*") would FAIL B's gate — that collision is the signal. **Operator decision (2026-05-29): Analyst-leaning** — allow a direction-consistent rotation read even when the sector ETF isn't directly cited, with lighter gating, but keep the non-negotiable core contract (no fabricated numbers, no forecasts, consensus-direction kept separate from realized move).
+
+## Synthesis / shipped
+Re-anchored `composeBriefing` to: **S1 driver** (most-cited-among-severe headline + the instruments it cites) · **S2 tape** ("splitting along it" — real winners/losers from `markets.series`, sign always from the realized change) · **S3 divergence caveat** · **trailing severity tag**. Added assertion **(e)** forecast-ban. All 5 fixtures pass the contract; self-test green; verified live in-browser (headline links to the thread Economy tab). The dull-but-true sector % line carries the analyst payload honestly; an omitted "why" is a feature, not a gap.

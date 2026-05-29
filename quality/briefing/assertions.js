@@ -222,6 +222,15 @@ function checkBriefing(briefingText, fixture) {
     }
   }
 
+  // (e) No forecast / prediction language. The briefing reports what HAS moved,
+  // never what will. Scan only the prose OUTSIDE bolded/quoted story headlines
+  // (a real headline may legitimately contain "could"/"will"). Core contract —
+  // survives the 2026-05-29 story-led re-anchor regardless of narrative style.
+  let proseOnly = text.replace(/\*\*(.+?)\*\*/g, ' ').replace(/[“"](.+?)[”"]/g, ' ');
+  const FORECAST = /\b(will|won't|could|would|should|may|might|expect(?:ed|s)?|forecast(?:ed|s)?|project(?:ed|s)?|outlook|price target|set to|poised to|likely to|going to|reverse|rebound|next week|next month|coming (?:days|weeks|months)|by year[- ]end)\b/i;
+  const fc = proseOnly.match(FORECAST);
+  if (fc) failures.push(`(e) forecast/prediction language "${fc[0]}" — briefing must report realized moves, not predictions`);
+
   return { passed: failures.length === 0, failures };
 }
 
@@ -298,6 +307,12 @@ function main() {
   runCase('edge-divergence / smooths it over', false,
     'Brent is surging today as stories pile in.',
     diverg);
+
+  // (e) forecast ban: a realized-move claim passes; a prediction fails — even
+  // when every number is grounded. Story-led re-anchor (2026-05-29) guardrail.
+  runCase('real / forecast language rejected', false,
+    'Today’s driver: **Strait of Hormuz escalation threatens global oil supply chokepoint.** Brent could rebound next week as tensions persist.',
+    real);
 
   // edge-missing-fields: must omit absent fields, not guess.
   const missing = loadFixture('edge-missing-fields.json');

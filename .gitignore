@@ -37,3 +37,6 @@ amplify/**/*.zip
 *.sw?
 # Firebase Admin SDK service account (sensitive credentials)
 *-firebase-adminsdk-*.json
+
+# smoke-test screenshots
+scripts/smoke-artifacts/

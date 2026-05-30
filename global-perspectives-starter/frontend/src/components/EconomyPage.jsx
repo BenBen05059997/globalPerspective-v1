@@ -534,7 +534,6 @@ export default function EconomyPage() {
       ? { key, dir: prev.dir === 'desc' ? 'asc' : 'desc' }
       : { key, dir: key === 'instrument' ? 'asc' : 'desc' }));
   };
-  const ariaSort = (key) => (sort.key === key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined);
   const sortCaret = (key) => (sort.key === key ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : '');
 
   const marketsTime = marketsAsOf ? new Date(marketsAsOf).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' }) : null;
@@ -746,19 +745,22 @@ export default function EconomyPage() {
             </div>
           )}
 
-          {/* Column labels — sortable per WAI-ARIA APG (aria-sort on active col only) */}
+          {/* Column labels. The body rows below are role="button" (an expander
+              list), not grid rows, so this is NOT an ARIA table — using role=row
+              here orphaned it (aria-required-parent). Sort state is conveyed to
+              AT via the aria-live region below + the visual sort caret. */}
           {topMovers.length > 0 && (
-            <div className="ep-lb-head" role="row">
-              <div role="columnheader" aria-sort={ariaSort('instrument')}>
-                <button className={`ep-sortbtn${sort.key === 'instrument' ? ' on' : ''}`} onClick={() => toggleSort('instrument')}>Instrument{sortCaret('instrument')}</button>
+            <div className="ep-lb-head">
+              <div>
+                <button className={`ep-sortbtn${sort.key === 'instrument' ? ' on' : ''}`} aria-pressed={sort.key === 'instrument'} onClick={() => toggleSort('instrument')}>Instrument{sortCaret('instrument')}</button>
               </div>
               <div>Signal</div>
               <div>Last</div>
-              <div role="columnheader" aria-sort={ariaSort('chg')}>
-                <button className={`ep-sortbtn${sort.key === 'chg' ? ' on' : ''}`} onClick={() => toggleSort('chg')}>Chg{sortCaret('chg')}</button>
+              <div>
+                <button className={`ep-sortbtn${sort.key === 'chg' ? ' on' : ''}`} aria-pressed={sort.key === 'chg'} onClick={() => toggleSort('chg')}>Chg{sortCaret('chg')}</button>
               </div>
-              <div role="columnheader" aria-sort={ariaSort('cites')}>
-                <button className={`ep-sortbtn${sort.key === 'cites' ? ' on' : ''}`} onClick={() => toggleSort('cites')}>Stories{sortCaret('cites')}</button>
+              <div>
+                <button className={`ep-sortbtn${sort.key === 'cites' ? ' on' : ''}`} aria-pressed={sort.key === 'cites'} onClick={() => toggleSort('cites')}>Stories{sortCaret('cites')}</button>
               </div>
               <div />
             </div>

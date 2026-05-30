@@ -8,8 +8,8 @@
 // / right rail (live Market Context). EditorialShell intentionally NOT used so the
 // masthead-band + sticky rails match the mockup exactly.
 
-import { useState, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { useTopMovers } from '../hooks/useTopMovers';
 import { useMarketsGlobal } from '../hooks/useMarketsGlobal';
@@ -264,15 +264,66 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
   );
 }
 
+// ── URL ⇆ state plumbing (P1/P3/P9) ──────────────────────────────────────────
+// Flat query params so a filtered/sorted view is shareable & survives refresh:
+//   ?sev=severe,moderate&hor=days&instrument=BRENT&country=Iran&sort=chg&dir=asc&open=BRENT
+// replace-mode writes keep history clean (no per-keystroke spam).
+const SORT_KEYS = new Set(['cites', 'chg', 'instrument']);
+const DEFAULT_SORT = { key: 'cites', dir: 'desc' };
+
+function parseFiltersFromParams(sp) {
+  const sev = (sp.get('sev') || '').split(',').filter((s) => SEVERITY_ORDER.includes(s));
+  const hor = (sp.get('hor') || '').split(',').filter((h) => HORIZONS.includes(h));
+  return {
+    severity: new Set(sev),
+    horizon: new Set(hor),
+    instrument: sp.get('instrument') || null,
+    country: sp.get('country') || null,
+  };
+}
+function parseSortFromParams(sp) {
+  const key = sp.get('sort');
+  const dir = sp.get('dir') === 'asc' ? 'asc' : 'desc';
+  return SORT_KEYS.has(key) ? { key, dir } : { ...DEFAULT_SORT };
+}
+function buildParams(filters, sort, openMover) {
+  const p = new URLSearchParams();
+  if (filters.severity.size) p.set('sev', [...filters.severity].join(','));
+  if (filters.horizon.size) p.set('hor', [...filters.horizon].join(','));
+  if (filters.instrument) p.set('instrument', filters.instrument);
+  if (filters.country) p.set('country', filters.country);
+  if (sort && (sort.key !== DEFAULT_SORT.key || sort.dir !== DEFAULT_SORT.dir)) {
+    p.set('sort', sort.key);
+    p.set('dir', sort.dir);
+  }
+  if (openMover) p.set('open', openMover);
+  return p;
+}
+
 export default function EconomyPage() {
-  const [filters, setFilters] = useState({
-    severity: new Set(),     // empty = all
-    horizon: new Set(),
-    instrument: null,        // single value
-    country: null,
-  });
-  const [openMover, setOpenMover] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filters, setFilters] = useState(() => parseFiltersFromParams(searchParams));
+  const [sort, setSort] = useState(() => parseSortFromParams(searchParams));
+  const [openMover, setOpenMover] = useState(() => searchParams.get('open') || null);
   const [dormantOpen, setDormantOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  // Self-write guard: distinguishes our own URL writes from back/forward changes.
+  const lastWritten = useRef(null);
+  useEffect(() => {
+    const str = buildParams(filters, sort, openMover).toString();
+    if (str === lastWritten.current) return;
+    lastWritten.current = str;
+    setSearchParams(new URLSearchParams(str), { replace: true });
+  }, [filters, sort, openMover, setSearchParams]);
+  useEffect(() => {
+    const cur = searchParams.toString();
+    if (cur === lastWritten.current) return; // our own write echoing back
+    lastWritten.current = cur;               // external (back/forward) change → reseed
+    setFilters(parseFiltersFromParams(searchParams));
+    setSort(parseSortFromParams(searchParams));
+    setOpenMover(searchParams.get('open') || null);
+  }, [searchParams]);
 
   // Right-rail (Market Context) is drag-resizable so truncated instrument names
   // ("Techno…", "Semico…") can be revealed. Width persists per-browser. The
@@ -307,6 +358,40 @@ export default function EconomyPage() {
     setRailWidth(RAIL_DEFAULT);
     localStorage.setItem('ep-rail-w', String(RAIL_DEFAULT));
   };
+
+  // Left-rail (Filters) is independently drag-resizable so a long, searched
+  // country list has room. Mirrors the right rail but the handle sits on the
+  // RIGHT edge, so dragging right widens it (w + (ev.clientX - x)).
+  const LRAIL_MIN = 200, LRAIL_MAX = 420, LRAIL_DEFAULT = 220;
+  const [lRailWidth, setLRailWidth] = useState(() => {
+    const saved = Number(localStorage.getItem('ep-lrail-w'));
+    return saved >= LRAIL_MIN && saved <= LRAIL_MAX ? saved : LRAIL_DEFAULT;
+  });
+  const lDragStart = useRef(null);
+  const startLRailDrag = (e) => {
+    e.preventDefault();
+    lDragStart.current = { x: e.clientX, w: lRailWidth };
+    const onMove = (ev) => {
+      const { x, w } = lDragStart.current;
+      setLRailWidth(Math.min(LRAIL_MAX, Math.max(LRAIL_MIN, w + (ev.clientX - x))));
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      setLRailWidth(curr => { localStorage.setItem('ep-lrail-w', String(curr)); return curr; });
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+  const resetLRailWidth = () => {
+    setLRailWidth(LRAIL_DEFAULT);
+    localStorage.setItem('ep-lrail-w', String(LRAIL_DEFAULT));
+  };
+  const [countrySearch, setCountrySearch] = useState('');
 
   const { data: disruptions = [], loading, error } = useDisruptionsList({ limit: 200 });
   const { data: topMovers = [], loading: moversLoading } = useTopMovers(20);
@@ -418,8 +503,56 @@ export default function EconomyPage() {
     [citedIds]
   );
 
+  // Client-side leaderboard sort (P3). Server order is citations-desc; we re-order
+  // a copy so 'chg' (realized %) and 'instrument' (alpha) lenses are available too.
+  // Nulls always sink to the bottom regardless of direction.
+  const sortedMovers = useMemo(() => {
+    const arr = [...topMovers];
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    const chgOf = (m) => {
+      const c = markets?.series?.[m.instrumentId]?.change;
+      return typeof c === 'number' && !Number.isNaN(c) ? c : null;
+    };
+    const cmp = (a, b) => {
+      if (sort.key === 'instrument') {
+        return String(a.instrumentId).localeCompare(String(b.instrumentId)) * dir;
+      }
+      let av, bv;
+      if (sort.key === 'chg') { av = chgOf(a); bv = chgOf(b); }
+      else { av = a.citations || 0; bv = b.citations || 0; } // 'cites'
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;   // nulls last
+      if (bv == null) return -1;
+      return (av - bv) * dir;
+    };
+    return arr.sort(cmp);
+  }, [topMovers, sort, markets]);
+
+  // Header-click sort toggle: first click on a new column → desc; re-click flips dir.
+  const toggleSort = (key) => {
+    setSort((prev) => (prev.key === key
+      ? { key, dir: prev.dir === 'desc' ? 'asc' : 'desc' }
+      : { key, dir: key === 'instrument' ? 'asc' : 'desc' }));
+  };
+  const ariaSort = (key) => (sort.key === key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined);
+  const sortCaret = (key) => (sort.key === key ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : '');
+
   const marketsTime = marketsAsOf ? new Date(marketsAsOf).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit' }) : null;
+  // Freshness state (P6) — make stale data look stale. amber > 3h, red > 12h.
+  const marketsAgeMs = marketsAsOf ? Date.now() - new Date(marketsAsOf).getTime() : null;
+  const freshness = marketsAgeMs == null ? null
+    : marketsAgeMs > 12 * 3600e3 ? 'stale'
+    : marketsAgeMs > 3 * 3600e3 ? 'aging'
+    : 'live';
   const filtersActive = filters.severity.size || filters.horizon.size || filters.instrument || filters.country;
+  const activeFilterCount = filters.severity.size + filters.horizon.size + (filters.instrument ? 1 : 0) + (filters.country ? 1 : 0);
+
+  // Active-filter chips (P2) — flat list of { kind, label, clear } for the chip bar.
+  const activeChips = [];
+  for (const s of filters.severity) activeChips.push({ key: `sev-${s}`, label: `Severity: ${SEVERITY_LABEL[s] || s}`, clear: () => toggle('severity', s) });
+  for (const h of filters.horizon) activeChips.push({ key: `hor-${h}`, label: `Horizon: ${h}`, clear: () => setFilters((p) => ({ ...p, horizon: new Set() })) });
+  if (filters.instrument) activeChips.push({ key: 'instr', label: `Instrument: ${filters.instrument}`, clear: () => setFilters((p) => ({ ...p, instrument: null })) });
+  if (filters.country) activeChips.push({ key: 'ctry', label: `Country: ${filters.country}`, clear: () => setFilters((p) => ({ ...p, country: null })) });
 
   // Deterministic "Today in the economy" lead briefing — composed from the same
   // data already loaded; honesty-checked by quality/briefing/assertions.js.
@@ -454,11 +587,35 @@ export default function EconomyPage() {
         </div>
       )}
 
+      {/* Mobile-only trigger — opens the filters as a bottom sheet (P7). */}
+      <button className="ep-mobile-filter-btn" onClick={() => setMobileFiltersOpen(true)}>
+        Filters{activeFilterCount > 0 && <span className="ep-mfb-n">{activeFilterCount}</span>}
+      </button>
+
       {/* ===== THREE-COLUMN SHELL ===== */}
-      <div className="ep-shell" style={{ '--ep-rail-w': `${railWidth}px` }}>
+      <div className="ep-shell" style={{ '--ep-rail-w': `${railWidth}px`, '--ep-lrail-w': `${lRailWidth}px` }}>
+
+        {/* Backdrop behind the mobile filter sheet. */}
+        {mobileFiltersOpen && (
+          <button className="ep-sheet-backdrop" aria-label="Close filters" onClick={() => setMobileFiltersOpen(false)} />
+        )}
 
         {/* ===== LEFT RAIL — FILTERS ===== */}
-        <aside className="ep-rail-left">
+        <aside className={`ep-rail-left${mobileFiltersOpen ? ' sheet-open' : ''}`}>
+          <div
+            className="ep-rail-lresize"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize Filters panel"
+            title="Drag to resize · double-click to reset"
+            onMouseDown={startLRailDrag}
+            onDoubleClick={resetLRailWidth}
+          />
+          {/* Mobile sheet header (hidden on desktop). */}
+          <div className="ep-sheet-head">
+            <span>Filters</span>
+            <button className="ep-sheet-close" aria-label="Close filters" onClick={() => setMobileFiltersOpen(false)}>×</button>
+          </div>
           <div className="ep-filter-block">
             <h5>Severity</h5>
             {SEVERITY_ORDER.map(s => (
@@ -490,12 +647,33 @@ export default function EconomyPage() {
           {countryFacets.length > 0 && (
             <div className="ep-filter-block">
               <h5>Country</h5>
-              {countryFacets.slice(0, 9).map(c => (
-                <label key={c} className={`ep-fcountry${filters.country === c ? ' on' : ''}`} onClick={() => setSingle('country', c)}>
-                  <input type="checkbox" readOnly checked={filters.country === c} />
-                  {c}
-                </label>
-              ))}
+              <input
+                type="search"
+                className="ep-csearch"
+                placeholder="Search countries…"
+                value={countrySearch}
+                onChange={e => setCountrySearch(e.target.value)}
+                aria-label="Search countries"
+              />
+              {(() => {
+                const q = countrySearch.trim().toLowerCase();
+                const matches = q ? countryFacets.filter(c => c.toLowerCase().includes(q)) : countryFacets;
+                if (matches.length === 0) {
+                  return <div className="ep-csearch-empty">No match</div>;
+                }
+                return matches.map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`ep-fcountry${filters.country === c ? ' on' : ''}`}
+                    aria-pressed={filters.country === c}
+                    onClick={() => setSingle('country', c)}
+                  >
+                    <span className="ep-fcountry-box" aria-hidden="true" />
+                    {c}
+                  </button>
+                ));
+              })()}
             </div>
           )}
 
@@ -504,6 +682,13 @@ export default function EconomyPage() {
               <button className="ep-clear" onClick={clearFilters}>Clear filters</button>
             </div>
           ) : null}
+
+          {/* Mobile sheet sticky action bar (hidden on desktop). NN/g: keep Apply/Clear
+              always in view. Filtering is interactive, so "Done" just dismisses. */}
+          <div className="ep-sheet-foot">
+            <button className="ep-sheet-clear" onClick={clearFilters} disabled={!filtersActive}>Clear all</button>
+            <button className="ep-sheet-done" onClick={() => setMobileFiltersOpen(false)}>Show results</button>
+          </div>
         </aside>
 
         {/* ===== MAIN COLUMN ===== */}
@@ -513,14 +698,45 @@ export default function EconomyPage() {
             <div className="ep-error">Couldn&apos;t load economic disruptions. {String(error)}</div>
           )}
 
+          {/* ACTIVE-FILTER CHIP BAR (P2) — page-level filter state, above the leaderboard */}
+          {activeChips.length > 0 && (
+            <div className="ep-chipbar" role="region" aria-label="Active filters">
+              <span className="ep-chipbar-lead">Filtered <span className="ep-chipbar-n">{activeFilterCount}</span></span>
+              {activeChips.map((c) => (
+                <button key={c.key} className="ep-chip" onClick={c.clear} aria-label={`Remove filter ${c.label}`}>
+                  {c.label}<span className="ep-chip-x" aria-hidden="true">×</span>
+                </button>
+              ))}
+              <button className="ep-chip-clearall" onClick={clearFilters}>Clear all</button>
+            </div>
+          )}
+
           {/* LEADERBOARD HEADER */}
           <div className="ep-lhd">
             <h2>Repricing today</h2>
-            <div className="ep-lhd-meta"><b>{topMovers.length}</b> of {TRACKED_TOTAL} tracked instruments cited</div>
+            <div className="ep-lhd-meta">
+              <span><b>{topMovers.length}</b> of {TRACKED_TOTAL} tracked instruments cited</span>
+              {marketsTime && (
+                <span className={`ep-fresh ep-fresh-${freshness}`} title={`Market data ${freshness === 'live' ? 'is current' : freshness === 'aging' ? 'is a few hours old' : 'is stale (over 12h)'}`}>
+                  <span className="ep-fresh-dot" aria-hidden="true" /> as of {marketsTime} · {timeAgo(marketsAsOf)}
+                </span>
+              )}
+            </div>
           </div>
 
           {moversLoading && topMovers.length === 0 && (
-            <div className="ep-empty">Loading repriced instruments…</div>
+            <div className="ep-skel-list" aria-hidden="true">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div className="ep-skel-row" key={i}>
+                  <span className="ep-skel-bar w-name" />
+                  <span className="ep-skel-bar w-sig" />
+                  <span className="ep-skel-bar w-last" />
+                  <span className="ep-skel-bar w-chg" />
+                  <span className="ep-skel-bar w-stories" />
+                  <span />
+                </div>
+              ))}
+            </div>
           )}
 
           {!moversLoading && topMovers.length === 0 && !loading && (
@@ -530,20 +746,29 @@ export default function EconomyPage() {
             </div>
           )}
 
-          {/* Column labels — finance watchlists always name their fields */}
+          {/* Column labels — sortable per WAI-ARIA APG (aria-sort on active col only) */}
           {topMovers.length > 0 && (
-            <div className="ep-lb-head" aria-hidden="true">
-              <div>Instrument</div>
+            <div className="ep-lb-head" role="row">
+              <div role="columnheader" aria-sort={ariaSort('instrument')}>
+                <button className={`ep-sortbtn${sort.key === 'instrument' ? ' on' : ''}`} onClick={() => toggleSort('instrument')}>Instrument{sortCaret('instrument')}</button>
+              </div>
               <div>Signal</div>
               <div>Last</div>
-              <div>Chg</div>
-              <div>Stories</div>
+              <div role="columnheader" aria-sort={ariaSort('chg')}>
+                <button className={`ep-sortbtn${sort.key === 'chg' ? ' on' : ''}`} onClick={() => toggleSort('chg')}>Chg{sortCaret('chg')}</button>
+              </div>
+              <div role="columnheader" aria-sort={ariaSort('cites')}>
+                <button className={`ep-sortbtn${sort.key === 'cites' ? ' on' : ''}`} onClick={() => toggleSort('cites')}>Stories{sortCaret('cites')}</button>
+              </div>
               <div />
             </div>
           )}
+          <div className="ep-sr-only" aria-live="polite">
+            Sorted by {sort.key === 'cites' ? 'stories' : sort.key === 'chg' ? 'change' : 'instrument'}, {sort.dir === 'asc' ? 'ascending' : 'descending'}
+          </div>
 
           {/* ===== INSTRUMENT ROWS ===== */}
-          {topMovers.map(m => {
+          {sortedMovers.map(m => {
             const open = openMover === m.instrumentId;
             const level = levelFor(m.instrumentId, markets);
             const active = filters.instrument === m.instrumentId;
@@ -561,13 +786,22 @@ export default function EconomyPage() {
 
             return (
               <div key={m.instrumentId} className={`ep-instr-row${open ? ' open' : ''}${active ? ' filtering' : ''}`}>
-                <div className="ep-row-l1" onClick={() => setOpenMover(open ? null : m.instrumentId)}>
+                <div
+                  className="ep-row-l1"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={open}
+                  aria-label={`${m.instrumentId} — ${open ? 'collapse' : 'expand'} detail`}
+                  onClick={() => setOpenMover(open ? null : m.instrumentId)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenMover(open ? null : m.instrumentId); } }}
+                >
                   <button
                     className="ep-name"
                     onClick={(e) => { e.stopPropagation(); setSingle('instrument', m.instrumentId); }}
                     title="Filter the story list by this instrument"
                   >
                     {m.instrumentId}
+                    <svg className="ep-name-fi" aria-hidden="true" viewBox="0 0 16 16" width="11" height="11"><path d="M1 2h14l-5.5 6.5V14l-3 1V8.5L1 2z" fill="currentColor"/></svg>
                   </button>
                   <div className="ep-dirprice">
                     <span className={`ep-arrow ${DIR_CLASS[topDir] || 'mx'}`}>{DIR_GLYPH[topDir] || '↔'}</span>
@@ -608,9 +842,9 @@ export default function EconomyPage() {
           {/* ===== DORMANT DRAWER ===== */}
           {dormant.length > 0 && (
             <div className="ep-dormant-row">
-              <span className="ep-dormant-trigger" onClick={() => setDormantOpen(o => !o)}>
+              <button type="button" className="ep-dormant-trigger" aria-expanded={dormantOpen} onClick={() => setDormantOpen(o => !o)}>
                 {dormant.length} tracked instruments not cited today — {dormantOpen ? 'hide ←' : 'show all →'}
-              </span>
+              </button>
               {dormantOpen && (
                 <div className="ep-dormant-table">
                   <div className="ep-dormant-hd"><div>Ticker</div><div>Name</div></div>
@@ -633,7 +867,14 @@ export default function EconomyPage() {
             </div>
 
             {loading && disruptions.length === 0 && (
-              <div className="ep-empty">Loading active disruptions…</div>
+              <div className="ep-skel-list ep-skel-bridge" aria-hidden="true">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div className="ep-skel-card" key={i}>
+                    <span className="ep-skel-bar w-title" />
+                    <span className="ep-skel-bar w-line" />
+                  </div>
+                ))}
+              </div>
             )}
 
             {!loading && !error && disruptions.length === 0 && (

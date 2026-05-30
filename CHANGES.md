@@ -1,5 +1,38 @@
 # Global Perspectives — Change Log
 
+## 2026-05-30 (/economy UX overhaul: 3-phase industry-standard pass)
+
+Three phases of UX work on `/economy`, planned in `ECONOMY_UX_PLAN.md`. Strategy (operator-aligned): **conform to industry conventions** for table-stakes interactions (Jakob's Law — users expect the same patterns they know from other markets dashboards), **differentiate** only on the news→economy linkage (briefing, "What's priced in" synthesis, trace-cause). Standards drawn from NN/g, GitLab Pajamas, Material, WAI-ARIA APG.
+
+**Phase 1 — URL-synced filters + active-filter chips + sortable headers:**
+- Filter/sort/open-drawer state now mirrors to the URL (`?sev=&hor=&instrument=&country=&sort=&dir=&open=`) via `useSearchParams`, replace-mode (clean history) with a `lastWritten` ref guarding the write/read effects against loops — so filtered views are **deep-linkable** and back/forward works.
+- **Active-filter chip bar** above "Repricing today" (`.ep-chipbar`): a count badge, one removable chip per active facet (per-chip `×`), and a **Clear all** link. Mirrors the convention of surfacing applied filters above results.
+- **Sortable column headers** (Instrument / Chg / Stories) as real `<button>`s inside `role="columnheader"` cells; `aria-sort` set only on the active column (omitted elsewhere per APG), with an `aria-live` region announcing the new sort. Default sort = citations-desc.
+
+**Phase 2 — perceived-speed + freshness honesty + row affordance:**
+- **Skeleton screens** replace spinners for the leaderboard (`.ep-skel-list`) and bridge cards (`.ep-skel-bridge`) — shimmer animation, with a `prefers-reduced-motion` guard.
+- **Freshness pill** in the leaderboard meta: green "live" ≤3h, **amber** >3h, **red** >12h (stale data must *look* stale), with the `as of …` time-ago.
+- Expandable rows are now real `role="button"` elements (Enter/Space to expand, `aria-expanded`, focus-visible outline); a funnel glyph (`.ep-name-fi`) reveals on hover/focus to signal the instrument name filters the story list.
+
+**Phase 3 — mobile + a11y conversions:**
+- Mobile (≤1024px): the left Filters rail is hidden and opens as a **bottom sheet** via a "Filters" trigger (with active-count badge); backdrop, sticky sheet header (× close) and sticky footer (Clear all / Show results). Drag-resize handle hidden on mobile.
+- Country facet converted from `<label>`+checkbox to a `<button aria-pressed>` with a CSS checkbox box; dormant-drawer trigger converted from `<span onClick>` to `<button aria-expanded>`.
+
+Browser-verified (standalone Playwright, live-data fixtures preseeded into localStorage): chip bar (count badge + per-chip `×` removal + Clear all), one `aria-sort` active at a time, keyboard Enter expands a row, sort/filter both sync to the URL, amber pill @5h + red pill @14h, and the mobile sheet opens/closes with working country `aria-pressed` toggle — 0 component console errors (only the known localhost-CORS proxy block). Lint 0 errors, build OK.
+- Files: `EconomyPage.jsx`, `EconomyPage.css`, `ECONOMY_UX_PLAN.md`, `CHANGES.md`, `docs/` (built assets).
+
+---
+
+## 2026-05-30 (/economy: left Filters rail — drag-resize, scroll, country search)
+
+The left-side **Filters** rail matched none of the polish the right rail just got: it was a fixed 220px column, couldn't be resized, never scrolled (nothing overflowed), and the Country facet was a hard-capped `slice(0,9)` with no way to find a country further down the list. Three fixes:
+- **Drag-to-resize**, mirroring the Market Context rail but with the handle on the rail's RIGHT edge (`.ep-rail-lresize`, rust accent on hover); dragging right widens it (`w + (ev.clientX - x)`). Width bound through a parallel `--ep-lrail-w` on `.ep-shell` (col 1 now `var(--ep-lrail-w, 220px)`), clamped **200–420px**, persisted in `localStorage` (`ep-lrail-w`). Double-click resets to 220px.
+- **Country search** (`.ep-csearch`): a search input now filters the full `countryFacets` list (the `slice(0,9)` cap is gone), with a "No match" message when nothing matches. The longer list lets the rail's existing `overflow-y:auto` actually scroll.
+- Browser-verified (Playwright, proxy-mocked 22-country fixture): search → `Iran`, empty-state shows, rail overflows + scrolls (scrollHeight 1000 > clientHeight 630, scrollTop honored), drag 220→336 (cssvar tracks), double-click reset → 220, 0 console errors. Build OK, lint 0 errors.
+- Files: `EconomyPage.jsx`, `EconomyPage.css`, `CHANGES.md`.
+
+---
+
 ## 2026-05-29 (/economy briefing: story-led re-anchor)
 
 After a 3-agent debate (recorded in `FUNCTION_DEBATE_OUTPUT.md`), re-anchored the "Today in the economy" lead briefing to mimic how real sell-side morning notes open. **Before:** it led with a severity COUNT ("N stories repricing — X severe…") then an instrument-citation cluster — page plumbing, and redundant with the leaderboard/right-rail directly below. **Now** the sentence order is:

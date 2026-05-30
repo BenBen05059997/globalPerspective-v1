@@ -4,6 +4,7 @@ import IntelligenceLoader from './IntelligenceLoader';
 import ShareButtons from './ShareButtons';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
+import { useNarrativeThread } from '../hooks/useNarrativeThread';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { formatDateLabel } from '../utils/dateUtils';
 import CompactTimeline from './CompactTimeline';
@@ -54,30 +55,30 @@ export default function ThreadPage() {
   const [searchParams] = useSearchParams();
   const fromCountry = searchParams.get('from') === 'country' ? searchParams.get('country') : null;
   const { loading: authLoading } = useAuth();
-  const { dayMap, sortedDates, loading } = useWeeklyArchive();
+  // Source of truth: durable by-ID timeline (90-day server-side reconstruction),
+  // so deep-links resolve long after a story's articles age out of the 30-day
+  // rolling archive. The weekly archive (below) is used only for the
+  // related-threads sidebar — it's a best-effort enhancement, not load-bearing.
+  const { entries: narrativeEntries, loading: threadLoading } = useNarrativeThread(threadId);
+  const { dayMap, sortedDates } = useWeeklyArchive();
   const [contentTab, setContentTab] = useState('timeline');
   const [aiTab, setAiTab] = useState('summary');
 
   const thread = useMemo(() => {
-    if (!dayMap || loading) return null;
-    const entries = [];
+    if (!narrativeEntries || !narrativeEntries.length) return null;
+    // Newest-first, matching the prior archive-derived ordering (entries[0] = latest).
+    const entries = [...narrativeEntries].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     const allRegions = new Set();
     const primarySources = new Set();
     const secondarySources = new Set();
-    for (const date of sortedDates) {
-      for (const entry of (dayMap[date]?.entries || [])) {
-        if (entry.threadId === threadId) {
-          entries.push({ ...entry, date });
-          for (const r of (entry.regions || [])) allRegions.add(r);
-          for (const s of (entry.sources || [])) {
-            const name = s.source || s.title || 'Source';
-            if (s.tier === 'secondary') secondarySources.add(name);
-            else primarySources.add(name);
-          }
-        }
+    for (const entry of entries) {
+      for (const r of (entry.regions || [])) allRegions.add(r);
+      for (const s of (entry.sources || [])) {
+        const name = s.source || s.title || 'Source';
+        if (s.tier === 'secondary') secondarySources.add(name);
+        else primarySources.add(name);
       }
     }
-    if (!entries.length) return null;
     const dates = [...new Set(entries.map(e => e.date))].sort();
     return {
       threadId,
@@ -92,11 +93,11 @@ export default function ThreadPage() {
       dates,
       dayCount: dates.length,
     };
-  }, [dayMap, sortedDates, threadId, loading]);
+  }, [narrativeEntries, threadId]);
 
-  const { analyses } = useThreadAnalyses([threadId]);
+  const { analyses, loading: analysisLoading } = useThreadAnalyses([threadId]);
   const analysis = analyses?.[threadId];
-  const { data: economicImpact } = useEconomicImpact(threadId);
+  const { data: economicImpact, loading: economicLoading } = useEconomicImpact(threadId);
   const hasEconomy = economicImpact && economicImpact.hasImpact !== false;
   const category = thread?.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
@@ -155,11 +156,15 @@ export default function ThreadPage() {
   }, [displayTitle]);
 
   if (authLoading) return null;
-  if (loading) return <IntelligenceLoader type="typewriter" />;
+  if (threadLoading) return <IntelligenceLoader type="typewriter" />;
 
   if (!thread) {
-    // Archive aged out, but we may still hold the analysis and/or economic-impact
-    // record (keyed by the same threadId). Show a focused fallback instead of a dead end.
+    // Beyond the 90-day durable window the timeline can't be rebuilt. Wait for the
+    // analysis + economic records before deciding, so we never flash a dead-end
+    // while those by-ID fetches are still in flight.
+    if (analysisLoading || economicLoading) return <IntelligenceLoader type="typewriter" />;
+    // We may still hold the analysis and/or economic-impact record (keyed by the
+    // same threadId). Show a focused fallback instead of a dead end.
     const fallbackEconomy = economicImpact && economicImpact.hasImpact !== false;
     if (analysis || fallbackEconomy) {
       const fallbackTitle = analysis?.threadTitle || economicImpact?.headline || humanizeThreadId(threadId);
@@ -172,7 +177,7 @@ export default function ThreadPage() {
           </div>
           <h1 style={{ fontFamily: 'var(--serif)', fontSize: 30, lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 12px' }}>{fallbackTitle}</h1>
           <p style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--ink-mid)', lineHeight: 1.5, margin: '0 0 24px' }}>
-            Full timeline isn&apos;t available for this story (it&apos;s aged out of the 30-day window),
+            Full timeline isn&apos;t available for this story (it&apos;s aged out of the 90-day window),
             but here&apos;s the analysis we have.
           </p>
 

@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-05-30 (fix: /economy story-arc links dead-ending — durable by-ID thread pages + automated guard)
+
+The `/economy` page links each "economic disruption" to its story arc at `/weekly/thread/:threadId`. Many of those threads are older than the **30-day rolling archive** that `ThreadPage` used to scan, so ~11 of 36 economy links dead-ended at "Story arc not found." A degraded fallback was shipped earlier (`90b5482`), but the right fix is a durable permalink: serve the detail page by fetching the entity by ID, never by re-scanning a rolling feed (how every permalink-based platform handles this).
+
+- **Permalink fix.** `ThreadPage` now builds its timeline from the **durable 90-day `narrative_thread`** endpoint (by-ID server-side reconstruction over the archive), not the 30-day `useWeeklyArchive`. The weekly archive is demoted to powering only the related-threads sidebar (best-effort, non-load-bearing). Confirmed against production: aged-out economy threads now return full 5–9-entry timelines spanning back to mid-April. New hook `src/hooks/useNarrativeThread.js` (sessionStorage cache, 30-min TTL). Files: `ThreadPage.jsx`, `useNarrativeThread.js` (new). `fetchNarrativeThread` already existed in `restProxy.js`; no backend change (the `narrative_thread` action was already deployed). A loading gate (`threadLoading`, plus an `analysisLoading || economicLoading` guard) prevents a premature "not found" flash; beyond the 90-day window the page still falls back to the analysis/economic record, then to the dead-end as a last resort.
+- **Automated regression guard.** `scripts/smoke-test.mjs` gained an **ECONOMY STORY-LINK INTEGRITY** check: it scrapes every `/weekly/thread/*` link off `/economy` (deduped, capped at 20) and asserts each opens the **full** thread page (`.tp-content-tabs`, which renders only on the full path — after both the dead-end and the aged-out fallback return early), never the dead-end and never the aged-out fallback. Folded into the exit code so the playbook fails if economy deep-links rot again.
+
+---
+
 ## 2026-05-30 (a11y: clear /economy nested-interactive + CountryList aria-command-name)
 
 Two serious (non-blocking) a11y items the health-check playbook had been reporting.

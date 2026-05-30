@@ -275,6 +275,59 @@ async function discover(browser, listPath, linkSelector) {
 const passed = (r) =>
   r.loads && r.content && r.refresh && r.network && r.consoleClean && r.a11y && r.garbageClean;
 
+// ---- /economy story-arc link integrity ----------------------------------
+// /economy lists "economic disruptions" that deep-link to /weekly/thread/:id.
+// Those threads can be older than the 30-day rolling archive, so ThreadPage
+// must rebuild them from the durable 90-day `narrative_thread` endpoint.
+// Regression guard: every economy story link must resolve to the FULL thread
+// page (`.tp-content-tabs` only renders on the full-render path — it comes
+// AFTER both the "Story arc not found" dead-end and the analysis-only fallback
+// return early), never the dead-end and never the aged-out fallback.
+const STORY_DEAD_TEXT = 'Story arc not found';
+const STORY_FALLBACK_TEXT = 'aged out of the';
+
+async function checkEconomyStoryLinks(browser, cap = 20) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: VIEWPORTS.desktop });
+  const page = await context.newPage();
+  const out = { total: 0, ok: 0, dead: [] };
+  try {
+    await page.goto(urlFor('/economy'), { waitUntil: 'load', timeout: 30000 });
+    await page.locator('a[href*="/weekly/thread/"]').first()
+      .waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT }).catch(() => {});
+    const hrefs = await page.locator('a[href*="/weekly/thread/"]').evaluateAll(
+      (els) => els.map((e) => e.getAttribute('href')).filter(Boolean)
+    );
+    // dedupe by thread path (ignore query string), cap to bound runtime
+    const seen = new Set();
+    const paths = [];
+    for (const h of hrefs) {
+      let p;
+      try { p = new URL(h, BASE).pathname.replace(/^\/globalPerspective-v1/, ''); }
+      catch { p = h; }
+      if (seen.has(p)) continue;
+      seen.add(p);
+      paths.push(p);
+    }
+    out.total = paths.length;
+    for (const p of paths.slice(0, cap)) {
+      await page.goto(urlFor(p), { waitUntil: 'load', timeout: 30000 });
+      const rendered = await page.locator('.tp-content-tabs').first()
+        .waitFor({ state: 'visible', timeout: CONTENT_TIMEOUT })
+        .then(() => true).catch(() => false);
+      if (rendered) { out.ok++; continue; }
+      const body = await page.evaluate(() => document.body.innerText || '');
+      const reason = body.includes(STORY_DEAD_TEXT) ? 'dead-end (Story arc not found)'
+        : body.includes(STORY_FALLBACK_TEXT) ? 'analysis-only fallback (timeline aged out)'
+        : 'no full thread page rendered';
+      out.dead.push({ path: p, reason });
+    }
+  } catch (e) {
+    out.error = (e.message || String(e)).slice(0, 160);
+  }
+  await context.close();
+  return out;
+}
+
 // ---- main ----------------------------------------------------------------
 (async () => {
   console.log(`\nProduction smoke-test against ${BASE}`);
@@ -305,6 +358,12 @@ const passed = (r) =>
       console.log(passed(r) ? 'PASS' : 'FAIL');
     }
   }
+
+  process.stdout.write(`  • ${'EconomyStoryLinks'.padEnd(22)} /economy → /weekly/thread/* ... `);
+  const story = await checkEconomyStoryLinks(browser);
+  const storyOk = !story.error && story.dead.length === 0;
+  console.log(storyOk ? `PASS (${story.ok}/${Math.min(story.total, 20)})` : 'FAIL');
+
   await browser.close();
 
   // ---- table ----
@@ -370,8 +429,22 @@ const passed = (r) =>
     [...new Set(minorA11y.map((v) => `  ${v.page}: ${v.id} [${v.impact}] (${v.n})`))].forEach((l) => console.log(l));
   }
 
+  // ---- economy story-link integrity ----
+  console.log(`\n${'-'.repeat(90)}\nECONOMY STORY-LINK INTEGRITY (every /economy disruption must open a full thread page)`);
+  if (story.error) {
+    console.log(`  error: ${story.error}`);
+  } else {
+    const checked = Math.min(story.total, 20);
+    console.log(`  ${story.ok}/${checked} resolved to a full thread page (of ${story.total} unique links)`);
+    story.dead.forEach((d) => console.log(`  DEAD: ${d.path} — ${d.reason}`));
+  }
+  const storyFailed = story.error ? 1 : story.dead.length;
+
+  const totalChecks = results.length + 1;
+  const totalFailed = failed + (storyOk ? 0 : 1);
   console.log(`\n${'='.repeat(72)}`);
-  console.log(failed === 0 ? `ALL ${results.length} CHECKS HEALTHY` : `${failed}/${results.length} CHECKS FAILED`);
+  console.log(totalFailed === 0 ? `ALL ${totalChecks} CHECKS HEALTHY` : `${totalFailed}/${totalChecks} CHECKS FAILED`);
+  if (storyFailed) console.log(`  (${storyFailed} economy story link${storyFailed === 1 ? '' : 's'} dead)`);
   console.log(`Screenshots: ${SHOTS_DIR}`);
-  process.exit(failed === 0 ? 0 : 1);
+  process.exit(totalFailed === 0 ? 0 : 1);
 })();

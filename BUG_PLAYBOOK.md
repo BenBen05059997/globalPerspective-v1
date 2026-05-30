@@ -28,13 +28,18 @@ These are the failure modes that have bitten this site. Every check below maps t
 6. **Empty-state mishandling** — a daily batch job (thread analysis, country intel,
    brief) hasn't run yet and the page renders blank/garbage instead of an empty state.
 
-## The two automated checks (run these)
+## The four automated checks (run these)
 
-Both are standalone Playwright scripts under `scripts/`. They target production
-(`globalperspective.net`) by default; override with `SMOKE_BASE`. They block service
-workers and judge health from the **rendered DOM**, not the HTTP status (every SPA
-route returns the 200/404.html fallback, so status codes are useless for "is this
-page actually broken").
+All four are standalone scripts under `scripts/`, runnable by hand. The two Playwright
+ones target production (`globalperspective.net`) by default (override with `SMOKE_BASE`),
+block service workers, and judge health from the **rendered DOM**, not the HTTP status
+(every SPA route returns the 200/404.html fallback, so status codes are useless for "is
+this page actually broken"). The other two are a static grep (no browser) and a live-API
+schema probe.
+
+Quick map: `smoke-test.mjs` (classes 1,3,5,6) · `link-crawl.mjs` (class 1, site-wide) ·
+`auth-guard-check.mjs` (class 2) · `contract-check.mjs` (class 4). The per-class
+*detect/green/if-red* contracts are in **The loop contract** section below.
 
 ### 1. Page health-check — `scripts/smoke-test.mjs`
 ```bash
@@ -70,21 +75,41 @@ destination and classifies it from the DOM:
 This is what catches a dangling reference on *any* page, not just the one route the
 smoke-test happens to sample. **It is how we found the `/daily` Rising-Thread bug.**
 
+### 3. Auth-guard regression tripwire — `scripts/auth-guard-check.mjs`
+```bash
+node scripts/auth-guard-check.mjs
+```
+Static grep (no browser, instant). Asserts an allowlist of public-content hooks never
+gains an `if (!user) return` early-bail (class 2). `useSavedItems` is deliberately *off*
+the allowlist — saving genuinely needs auth. Exit non-zero if a guard crept in.
+
+### 4. API contract-drift check — `scripts/contract-check.mjs`
+```bash
+node scripts/contract-check.mjs
+```
+Calls each key proxy action against the live backend and validates the response against
+a Zod schema encoding only the fields the frontend reads (class 4). Catches a field that
+was renamed/removed or changed type (e.g. a number arriving as a string → NaN% in the
+UI). `zod` is a script-only devDependency, never bundled. Exit non-zero on drift.
+
 ## The bug-fighting playbook (ordered, run on demand)
 
-Steps 1–6 are automatable into a pre-deploy run; 7 is inherently manual.
+Steps 1–8 are automatable into a pre-deploy run; 9 is inherently manual.
 
 1. **Lint + build** — `cd global-perspectives-starter/frontend && npm run lint && npm run build`.
-   Catches class 4 (and the `if (!user) return` class 2 if you grep for it). 0 errors required.
-2. **404 fallback parity** — after copying the build to `docs/`, `cp docs/index.html
+   Catches class 4 garbage at edit time. 0 errors required.
+2. **Auth-guard tripwire** — `node scripts/auth-guard-check.mjs` (class 2).
+3. **404 fallback parity** — after copying the build to `docs/`, `cp docs/index.html
    docs/404.html` then `diff docs/index.html docs/404.html` must be empty (class 3).
-3. **Unit/integration tests** — `npm run test` (Vitest). Cover data-shaping and
+4. **Unit/integration tests** — `npm run test` (Vitest). Cover data-shaping and
    **empty-state branches** (mock "batch job hasn't run" → expect empty state, not
-   blank/NaN — classes 4, 6).
-4. **Page health-check** — `node scripts/smoke-test.mjs` (classes 1, 3, 4, 5, 6).
-5. **Link-integrity crawl** — `node scripts/link-crawl.mjs` (class 1, site-wide).
-6. **Deploy**, then re-run steps 4–5 against production to confirm green.
-7. **5-minute exploratory pass** — click each nav route, refresh one nested route,
+   blank/NaN — classes 4, 6). Exit code must be 0 (watch for unhandled rejections, not
+   just failed assertions).
+5. **Contract-drift check** — `node scripts/contract-check.mjs` (class 4, live API).
+6. **Page health-check** — `node scripts/smoke-test.mjs` (classes 1, 3, 4, 5, 6).
+7. **Link-integrity crawl** — `node scripts/link-crawl.mjs` (class 1, site-wide).
+8. **Deploy**, then re-run steps 5–7 against production to confirm green.
+9. **5-minute exploratory pass** — click each nav route, refresh one nested route,
    open one aged-out detail link, sign in/out once. Humans catch the unscripted.
 
 ## Highest-ROI techniques for this project (why these and not others)

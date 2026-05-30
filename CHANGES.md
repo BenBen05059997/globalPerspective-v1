@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-05-30 (bug playbook: loop contract + two new checks for the remaining bug classes)
+
+Extended `BUG_PLAYBOOK.md` into a **loop-runnable spec** and closed the two gaps so a fix-until-green loop has a runnable check for all six bug classes.
+
+- **`BUG_PLAYBOOK.md` — "The loop contract" section.** Each of the six bug classes now has a closed, machine-checkable contract: *detect command → green criterion → if-red action → scope*, plus loop guardrails (no deploy/commit without confirmation, never touch `docs/config.js`, etc.) and a stopping condition. Each class is tied to a real commit receipt — a class earns a contract only once this repo has actually shipped that bug.
+- **New — `scripts/auth-guard-check.mjs` (class 2).** A regression tripwire: greps an allowlist of 7 public-content hooks (`useWeeklyArchive`, `useThreadAnalyses`, `useCountryIntelligence`, `useDailyBrief`, `useGeminiTopics`, `useMarketsGlobal`, `useMarketsCountry`) for an `if (!user) return` early-bail and fails if any creep in. Three times a leftover guard has shipped and blocked anonymous/incognito visitors from public content (receipts: `94e9b29`, `e3e2875`, `b430159`). `useSavedItems` is deliberately **off** the allowlist — saving genuinely needs auth. Verified the regex fires on a real guard. Result: PASS (all clean).
+- **New — `scripts/contract-check.mjs` (class 4).** Zod schemas for 7 key proxy actions (`topics`, `markets_global`, `economic_impact_list`, `daily_brief`, `narrative_thread`, `thread_analysis`, `country_intelligence`), validated against the **live backend**. Schemas encode only the fields the frontend reads, lenient about extra fields. Catches the `b0f84bc` failure mode (a numeric field arriving as a string → NaN% in the UI) — verified by negative test. `daily_brief`'s `data: null` empty state is allowed, not failed. `zod` added as a **script-only devDependency** (never imported by `src/`, so zero bundle weight). Result: PASS (7/7).
+
+These are tooling-only changes (`scripts/` + a devDependency + docs) — no frontend build/deploy required.
+
+---
+
 ## 2026-05-30 (bug hunt: site-wide link-integrity crawl finds /daily dead link; fix + playbook)
 
 After fixing the `/economy` dangling-reference bug, ran a **site-wide link-integrity crawl** to check whether other pages share the same class of bug. They mostly don't — 179 of 180 linked destinations were healthy — but the crawl found **one more dead link**: the `/daily` "Rising Thread" deep-link.

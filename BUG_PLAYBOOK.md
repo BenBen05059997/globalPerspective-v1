@@ -93,9 +93,11 @@ Steps 1–6 are automatable into a pre-deploy run; 7 is inherently manual.
   at edit time. *Highest ROI.*
 - **The two Playwright playbooks above** — our synthetic-monitoring + E2E + a11y +
   link-integrity layer. Extending them beats adding new frameworks.
-- **Boundary schema validation** — validating each proxy action's response shape in
-  `restProxy.js` (e.g. with Zod) is the single best defense against class 4 (API
-  drift). *Not yet implemented — top candidate for next investment.*
+- **Boundary schema validation** — validating each proxy action's response shape with
+  Zod is the single best defense against class 4 (API drift). *Implemented as the
+  on-demand `scripts/contract-check.mjs` (schemas live in the script, validated against
+  the live backend; zod is a script-only devDependency, never bundled). A future step
+  could import the same schemas into `restProxy.js` for soft runtime logging.*
 - **Error monitoring (Sentry-style)** — a passive net for what slips past manual
   runs. High ROI for a no-QA team. *Not yet implemented.*
 
@@ -103,3 +105,72 @@ Deliberately skipped: consumer-driven contract testing (Pact) — overkill for a
 internal consumer; boundary schema validation gives ~80% of the value. Canary/chaos —
 no release/traffic infra to justify it. Visual regression — maintenance-heavy for one
 dev; if added, limit to 2–3 stable hero routes.
+
+## The loop contract (machine-checkable spec, one per class)
+
+This is the part a **fix-until-green loop** consumes. Each class below is a closed
+contract: a *detect* command, the *green* criterion that ends the loop for that class,
+the *if-red* action, and the *scope* (what is deliberately out of bounds, so the loop
+doesn't chase non-bugs). The loop runs every contract, fixes what's red, re-runs, and
+stops when **all six are green**. It is a convergence engine, not a detector — these
+contracts are what tell it "broken" from "done."
+
+Why these six and not others: every contract maps to a failure mode this repo has
+**actually shipped** (commit refs are the receipts), not a hypothetical. New bug class →
+add a seventh contract; don't widen an existing one past its evidence.
+
+### 1 — Dangling references  *(receipts: ecf54e4, 74510da, b0f84bc)*
+- **Detect:** `node scripts/link-crawl.mjs` then `SMOKE_STORY_CAP=100 node scripts/smoke-test.mjs`
+- **Green:** crawl exits 0 (DEAD 0); every `/economy` story link renders `.tp-content-tabs`.
+- **If red:** the link is built from a non-durable field. Fix at the source (use the real
+  `threadId`/`scopeId`, or guard the link with a fallback). Frontend guard for live bad
+  records *and* backend root fix so new ones aren't written — both, as with `/daily`.
+- **Scope:** DEGRADED (aged-out-of-window thread) is surfaced, not failed. Don't "fix" it.
+
+### 2 — Auth-guard regressions  *(receipts: 94e9b29, e3e2875, b430159)*
+- **Detect:** `node scripts/auth-guard-check.mjs` (greps the public-hook allowlist).
+- **Green:** these hooks contain **zero** `!user` early-returns —
+  `useWeeklyArchive`, `useThreadAnalyses`, `useCountryIntelligence`, `useDailyBrief`,
+  `useGeminiTopics`, `useMarketsGlobal`, `useMarketsCountry`.
+- **If red:** delete the guard. The backend for these actions is fully public (gates
+  removed 2026-04-22); a `!user` return blocks anonymous + incognito visitors.
+- **Scope:** `useSavedItems` *must keep* its `!user` guard — saving genuinely needs auth.
+  This is a **regression tripwire on an allowlist**, not a blanket "no guards" rule.
+
+### 3 — SPA deep-link blank  *(receipts: 32e0735, 34643b7, ed59e50)*
+- **Detect:** `diff docs/index.html docs/404.html` + smoke-test deep-link-refresh leg.
+- **Green:** diff is empty; refreshing every nested route renders content, not blank.
+- **If red:** resync `cp docs/index.html docs/404.html` (the postbuild should already do
+  this — if it drifted, the postbuild hook is the real fix). Re-check Vite `base`.
+- **Scope:** document-level 404 is the *expected* GH Pages fallback — not a failure.
+
+### 4 — API contract drift  *(receipts: b0f84bc — threadId strings + NaN% confidence)*
+- **Detect:** `node scripts/contract-check.mjs` (Zod schemas per proxy action, validated
+  against the live backend) + the smoke-test garbage-guard (NaN/undefined/Invalid
+  Date/[object Object]) as the rendered-DOM backstop.
+- **Green:** every probed action matches the fields the frontend reads (schema parses);
+  no garbage tokens in any rendered route.
+- **If red:** the frontend reads a field the backend renamed/removed. Align the reader to
+  the live shape; never silently coerce `undefined`.
+- **Scope:** validate at the proxy boundary only — don't add per-component runtime checks.
+
+### 5 — a11y critical  *(continuous — axe gates only on `critical`)*
+- **Detect:** smoke-test axe-core leg.
+- **Green:** `critical` violations = 0 across all routes × {desktop, mobile}.
+- **If red:** fix the unlabeled control / nested-interactive / orphaned ARIA role.
+- **Scope:** `serious` + color-contrast are **non-blocking debt** — log, don't loop on them.
+
+### 6 — Empty-state mishandling  *(batch job hasn't run → blank/garbage instead of empty state)*
+- **Detect:** `npm run test` (Vitest empty-state branches) + smoke-test content-render leg.
+- **Green:** mocking "batch job hasn't run" renders an explicit empty state, never blank/NaN.
+- **If red:** add the empty-state branch to the component; cover it with a Vitest case.
+- **Scope:** real empty data is a valid state to render — distinguish it from a fetch error.
+
+### Loop guardrails (non-negotiable, same as the standing project rules)
+- **No deploy / commit / push without explicit confirmation.** The loop fixes source and
+  re-runs checks; shipping is a separate, human-gated step.
+- **Never** overwrite `docs/config.js`; **never** `git add -A`/`.`.
+- Deploy Lambdas only via manual `aws lambda update-function-code` — never inside the loop.
+- Stop and ask if a "fix" would remove a user-facing feature (layout-intent ≠ feature-list).
+- **Stopping condition:** all six contracts green on a clean re-run, *or* a contract is red
+  for a reason outside these scopes (then surface it, don't thrash).

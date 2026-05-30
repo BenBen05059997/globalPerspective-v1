@@ -790,12 +790,7 @@ export default function EconomyPage() {
               <div key={m.instrumentId} className={`ep-instr-row${open ? ' open' : ''}${active ? ' filtering' : ''}`}>
                 <div
                   className="ep-row-l1"
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={open}
-                  aria-label={`${m.instrumentId} — ${open ? 'collapse' : 'expand'} detail`}
                   onClick={() => setOpenMover(open ? null : m.instrumentId)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenMover(open ? null : m.instrumentId); } }}
                 >
                   <button
                     className="ep-name"
@@ -819,7 +814,13 @@ export default function EconomyPage() {
                     <b>{m.citations}</b> stor{m.citations === 1 ? 'y' : 'ies'}
                     {total > 0 && <> · {topDirCount} of {total} agree</>}
                   </div>
-                  <span className="ep-chev">›</span>
+                  <button
+                    type="button"
+                    className="ep-chev"
+                    aria-expanded={open}
+                    aria-label={`${m.instrumentId} — ${open ? 'collapse' : 'expand'} detail`}
+                    onClick={(e) => { e.stopPropagation(); setOpenMover(open ? null : m.instrumentId); }}
+                  >›</button>
                 </div>
                 <div className="ep-row-l2">
                   <div className="ep-spacer" />

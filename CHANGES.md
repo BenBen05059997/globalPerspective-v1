@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-05-30 (a11y: clear /economy nested-interactive + CountryList aria-command-name)
+
+Two serious (non-blocking) a11y items the health-check playbook had been reporting.
+
+- **`/economy` `nested-interactive` (20 nodes).** Each leaderboard row was a `role="button"` div that *contained* a real `<button>` (the instrument-name filter) — a button nested inside a button. **Fix:** the row is now a plain `<div>` (mouse-click still toggles, as a convenience), and the chevron `›` was promoted to the real disclosure `<button>` carrying `aria-expanded` + an accessible label. The instrument-name filter button is now a sibling, not a child, of any interactive role — no more nesting, and keyboard users get a proper focusable expand control. Files: `EconomyPage.jsx`, `EconomyPage.css`.
+- **`/weekly/countries` `aria-command-name` (66 nodes).** The Google Maps risk markers are clickable (`role="button"`) but had no accessible name. **Fix:** gave each marker a `title` (`"<country> — <n> articles[, <risk> risk]"`), which Google surfaces as the marker's accessible name. File: `CountryOverviewMap.jsx`.
+
+---
+
 ## 2026-05-30 (fix: dated daily briefs blank for anonymous visitors + /weekly/country select a11y critical)
 
 Two issues surfaced by the page health-check playbook (`scripts/smoke-test.mjs`).

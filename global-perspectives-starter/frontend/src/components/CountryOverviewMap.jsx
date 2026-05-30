@@ -87,6 +87,7 @@ function InnerMap({ countries, onCountryClick }) {
       const marker = new window.google.maps.Marker({
         position: pos,
         map,
+        title: `${c.name} — ${c.articles} articles${c.riskLevel ? `, ${c.riskLevel} risk` : ''}`,
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale,

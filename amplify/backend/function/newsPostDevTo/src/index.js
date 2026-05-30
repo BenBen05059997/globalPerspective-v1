@@ -64,6 +64,25 @@ async function loadCountryIntelligence(entries) {
   return intel;
 }
 
+// The LLM never sees a trustworthy threadId list, so it tends to echo the
+// thread's title into risingThread.threadId — which then dead-ends the
+// /daily "Rising Thread" deep-link (ThreadPage looks up by real id). Resolve
+// the real id deterministically by matching the rising thread's title against
+// the loaded thread analyses; return null when there's no confident match so
+// the frontend links to /weekly instead of a broken thread page.
+function resolveRealThreadId(title, threadAnalyses) {
+  const norm = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const target = norm(title);
+  if (!target) return null;
+  const pairs = Object.entries(threadAnalyses || {});
+  for (const [tid, t] of pairs) if (norm(t.threadTitle) === target) return tid;
+  for (const [tid, t] of pairs) {
+    const tt = norm(t.threadTitle);
+    if (tt && (tt.includes(target) || target.includes(tt))) return tid;
+  }
+  return null;
+}
+
 function buildBriefPrompt(entries, threadAnalyses, countryIntel, displayDate, dateKey) {
   const headlineBlock = entries
     .filter(e => e && e.title)
@@ -81,7 +100,7 @@ function buildBriefPrompt(entries, threadAnalyses, countryIntel, displayDate, da
   const threadBlock = threadEntries.length > 0
     ? threadEntries.slice(0, 5).map(([tid, t]) => {
         const arc = t.storyArc ? t.storyArc.substring(0, 200) : '';
-        return `- "${t.threadTitle}" [${t.entryCount} articles]: ${arc}`;
+        return `- threadId=${tid} "${t.threadTitle}" [${t.entryCount} articles]: ${arc}`;
       }).join('\n')
     : 'No thread analyses available today.';
 
@@ -182,6 +201,10 @@ async function generateAndStoreDailyBrief(entries, dateKey) {
   const brief = JSON.parse(content);
   if (!brief.headline || !brief.summary) {
     throw new Error(`Missing required fields: ${Object.keys(brief).join(', ')}`);
+  }
+
+  if (brief.risingThread) {
+    brief.risingThread.threadId = resolveRealThreadId(brief.risingThread.title, threadAnalyses);
   }
 
   const uniqueCountries = new Set();

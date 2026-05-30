@@ -347,7 +347,7 @@ export default function DailyPage() {
       {/* Rising Thread */}
       {brief.risingThread?.title && (
         <Link
-          to={brief.risingThread.threadId ? `/weekly/thread/${brief.risingThread.threadId}` : '/weekly'}
+          to={/^thread-/.test(brief.risingThread.threadId || '') ? `/weekly/thread/${brief.risingThread.threadId}` : '/weekly'}
           className="daily-rising"
         >
           <div className="daily-rising-badge">

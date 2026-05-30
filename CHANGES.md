@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-05-30 (bug hunt: site-wide link-integrity crawl finds /daily dead link; fix + playbook)
+
+After fixing the `/economy` dangling-reference bug, ran a **site-wide link-integrity crawl** to check whether other pages share the same class of bug. They mostly don't — 179 of 180 linked destinations were healthy — but the crawl found **one more dead link**: the `/daily` "Rising Thread" deep-link.
+
+- **Root cause (backend).** The daily-brief generator (`newsPostDevTo`) asks the LLM for `risingThread.threadId`, but the prompt never showed it real thread IDs — so the model echoed the thread **title** into the `threadId` field. ThreadPage then looked that up by id and dead-ended at "Story arc not found" (e.g. `/weekly/thread/Ebola%20Outbreak%20Escalates...`). **Fixes:**
+  - *Backend:* the arc block now includes `threadId=…`, and after parsing the brief we **deterministically resolve** `risingThread.threadId` by matching the rising thread's title against the loaded thread analyses (`resolveRealThreadId`), setting `null` when there's no confident match. File: `amplify/backend/function/newsPostDevTo/src/index.js`. *(Deploy via AWS CLI `update-function-code`; brief regenerates daily at 23:00 UTC.)*
+  - *Frontend guard (ships now, fixes existing bad records immediately):* `DailyPage` only renders the thread link when `threadId` matches `/^thread-/`; otherwise it links to `/weekly`, so a malformed/legacy `threadId` can never dead-end. File: `global-perspectives-starter/frontend/src/components/DailyPage.jsx`.
+- **New automated check — `scripts/link-crawl.mjs`.** A standalone Playwright **site-wide link-integrity crawler**: from every hub page it collects all internal links, visits each, and classifies HEALTHY / DEGRADED / DEAD from the rendered DOM (the standard SPA-aware approach — HTTP status is meaningless behind the 404.html fallback). This is the generalized defense against the dangling-reference class on *any* page, not just the one route the smoke-test samples. It is what found this bug.
+- **New — `BUG_PLAYBOOK.md`.** A research-grounded bug-fighting playbook: the bug classes we keep hitting, the two automated checks, an ordered run-on-demand checklist, and a project-tailored ROI ranking of techniques (with what we deliberately skip and why).
+
+---
+
 ## 2026-05-30 (fix: /economy story-arc links dead-ending — durable by-ID thread pages + automated guard)
 
 The `/economy` page links each "economic disruption" to its story arc at `/weekly/thread/:threadId`. Many of those threads are older than the **30-day rolling archive** that `ThreadPage` used to scan, so ~11 of 36 economy links dead-ended at "Story arc not found." A degraded fallback was shipped earlier (`90b5482`), but the right fix is a durable permalink: serve the detail page by fetching the entity by ID, never by re-scanning a rolling feed (how every permalink-based platform handles this).

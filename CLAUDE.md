@@ -32,6 +32,11 @@ If you modify ANY files in `global-perspectives-starter/frontend/src/`, you MUST
    cp -r dist/assets ../../docs/assets
    cp dist/index.html ../../docs/index.html
 
+   # CRITICAL: source maps are PRIVATE (build.sourcemap:'hidden' emits .map into
+   # dist/ for local stack resolution via scripts/errors.mjs). They must NEVER be
+   # served publicly — strip them from docs/ after the copy.
+   rm -f ../../docs/assets/*.map
+
    # CRITICAL: 404.html is the GitHub Pages SPA fallback for deep-link refreshes
    # (e.g. refreshing /economy). It MUST be a byte-for-byte copy of index.html,
    # otherwise it keeps pointing at a stale (deleted) bundle hash and every

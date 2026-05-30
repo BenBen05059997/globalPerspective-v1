@@ -124,7 +124,13 @@ Steps 1–8 are automatable into a pre-deploy run; 9 is inherently manual.
   the live backend; zod is a script-only devDependency, never bundled). A future step
   could import the same schemas into `restProxy.js` for soft runtime logging.*
 - **Error monitoring (Sentry-style)** — a passive net for what slips past manual
-  runs. High ROI for a no-QA team. *Not yet implemented.*
+  runs. High ROI for a no-QA team. *Implemented 2026-05-30 as a roll-your-own sink:*
+  `src/services/errorSink.js` (window `error`+`unhandledrejection` → fire-and-forget
+  POST) → `newsClientErrors` Lambda + Function URL → `GlobalPerspectiveClientErrors`
+  DynamoDB table (counter rows keyed by `day#fingerprint`, TTL 30d). Read back with
+  `node scripts/errors.mjs` (de-minifies via the private `dist/` source map). This is
+  the **passive** complement to the six active contracts below: a contract only exists
+  once a bug has shipped, so a novel uncaught error lands in the sink first.
 
 Deliberately skipped: consumer-driven contract testing (Pact) — overkill for a single
 internal consumer; boundary schema validation gives ~80% of the value. Canary/chaos —

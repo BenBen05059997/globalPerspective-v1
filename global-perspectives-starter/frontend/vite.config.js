@@ -9,6 +9,13 @@ export default defineConfig({
   // 301-redirects to the custom domain, so '/' is correct for the live site.
   base: '/',
   plugins: [react()],
+  build: {
+    // 'hidden' emits .map files into dist/ (gitignored) WITHOUT appending a
+    // //# sourceMappingURL comment to the bundle — so production never exposes
+    // the maps, but `scripts/errors.mjs` can still resolve minified stacks
+    // locally. The deploy step strips any .map from docs/ as a belt-and-braces.
+    sourcemap: 'hidden',
+  },
   test: {
     environment: 'jsdom',
     globals: true,

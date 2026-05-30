@@ -1,0 +1,11 @@
+{
+  "name": "newsclienterrors",
+  "version": "1.0.0",
+  "description": "Passive client-error sink Lambda for Global Perspectives",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}

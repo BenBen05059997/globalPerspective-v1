@@ -1,5 +1,20 @@
 # Global Perspectives — Change Log
 
+## 2026-05-30 (passive error monitoring: roll-your-own client-error sink — BUILT, DEPLOYED, LIVE)
+
+Stood up a passive error-monitoring layer (no paid Sentry) — the complement to the active `BUG_PLAYBOOK.md` checks. Those six contracts detect bug classes we already know; a contract only exists once a bug has shipped, so this sink catches the **novel** uncaught errors first.
+
+- **Frontend catcher — `src/services/errorSink.js`** (wired in `main.jsx` via `installErrorSink()`). Listens for window `error` + `unhandledrejection`, then fire-and-forget `fetch` POSTs `{kind,message,stack,url,userAgent,timestamp}` with `keepalive:true`. Self-protections so a reporter never makes things worse: in-session dedup, 20-send/session cap, never throws, no-ops when the endpoint is unset.
+- **Lambda `newsClientErrors` + public Function URL** (ap-northeast-1, nodejs24.x, 128MB). AuthType NONE (errors come from anonymous visitors), CORS limited to the two site origins, POST only. Abuse-bounded: 16KB body cap → 413, per-field length caps. Source: `amplify/backend/function/newsClientErrors/src/`.
+- **DynamoDB `GlobalPerspectiveClientErrors`** (PAY_PER_REQUEST, TTL 30d). Counter design: identical errors `ADD count` into one row keyed `day#fingerprint` (sha1 of message + first stack frame, volatile bits normalized out), so a flood collapses to one row + a sample. Least-privilege IAM role (`dynamodb:UpdateItem` on the one table).
+- **Read-back — `scripts/errors.mjs`** (`--days N`, `--raw`). Scans the table via the AWS CLI (no SDK dep), folds rows by fingerprint, sorts by count, and de-minifies the top stack frame against the local source map.
+- **Private source maps — `vite.config.js` `build.sourcemap:'hidden'`.** Maps emit into gitignored `dist/` with NO `sourceMappingURL` comment in the bundle (never exposed publicly); `source-map` added as a script-only devDependency. **Deploy now strips `docs/assets/*.map`** after the asset copy (documented in `CLAUDE.md`) so maps never ship.
+- **`docs/config.js`** — added `window.CLIENT_ERRORS_ENDPOINT` (surgical one-line add; all existing runtime config preserved).
+
+Verified end-to-end against the live Function URL: valid POST → 202; duplicate → same row `count 2×`; oversize → 413; `errors.mjs` read it back and de-minified. Files: `src/services/errorSink.js`, `src/main.jsx`, `vite.config.js`, `docs/` (build), `docs/config.js`, `amplify/backend/function/newsClientErrors/src/`, `scripts/errors.mjs`, `BUG_PLAYBOOK.md`, `CLAUDE.md`.
+
+---
+
 ## 2026-05-30 (loop run: all six bug-class contracts green; fixed stale test scaffolding)
 
 First full run of the bug-fighting loop (all six `BUG_PLAYBOOK.md` contracts). Five passed immediately; the unit-test contract (class 6) was red — all from **stale/incomplete test scaffolding**, not product bugs. Fixed so the loop reports green honestly:

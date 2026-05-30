@@ -31,6 +31,12 @@ If you modify ANY files in `global-perspectives-starter/frontend/src/`, you MUST
    # Copy new build
    cp -r dist/assets ../../docs/assets
    cp dist/index.html ../../docs/index.html
+
+   # CRITICAL: 404.html is the GitHub Pages SPA fallback for deep-link refreshes
+   # (e.g. refreshing /economy). It MUST be a byte-for-byte copy of index.html,
+   # otherwise it keeps pointing at a stale (deleted) bundle hash and every
+   # deep-link refresh renders a blank page. Regenerate it on EVERY deploy.
+   cp ../../docs/index.html ../../docs/404.html
    ```
 
    **NEVER overwrite** `docs/config.js` - it contains runtime configuration.
@@ -38,7 +44,7 @@ If you modify ANY files in `global-perspectives-starter/frontend/src/`, you MUST
 3. **Commit both source and production files:**
    ```bash
    cd ../..
-   git add docs/assets docs/index.html global-perspectives-starter/frontend/src/
+   git add docs/assets docs/index.html docs/404.html global-perspectives-starter/frontend/src/
    git commit -m "Descriptive message about changes"
    git push
    ```

@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-05-30 (fix: deep-link refresh blank page — sync 404.html to index.html)
+
+Refreshing or deep-linking `/economy` (and any other route) rendered a blank page. **Root cause:** `docs/404.html` is the GitHub Pages SPA fallback (GitHub serves it for any path that isn't a real file; it must be a byte-for-byte copy of `index.html` so the React app boots and the router renders the requested route). But the deploy workflow only copied `dist/index.html → docs/index.html` and never updated `404.html` — so `404.html` kept pointing at an old content-hashed bundle (`index-BHgBA_dZ.js`) that later builds deleted. On a deep-link refresh, GitHub served `404.html` → it loaded a non-existent JS bundle → blank. `/economy` looked uniquely broken only because, while the old bundle still existed, the fallback booted a stale app version that predated the `/economy` route.
+
+- Synced `docs/404.html` to the current `docs/index.html` (now references the live bundle `index-CM13gMRN.js`; the two files are identical).
+- Baked `cp docs/index.html docs/404.html` into the deploy workflow in `CLAUDE.md` (+ `git add docs/404.html`) so the fallback is regenerated every deploy and can't drift again. This recurred once before (commit `32e0735`) because the workflow gap was never closed.
+- Files: `docs/404.html`, `CLAUDE.md`, `CHANGES.md`.
+
+---
+
 ## 2026-05-30 (/economy UX overhaul: 3-phase industry-standard pass)
 
 Three phases of UX work on `/economy`, planned in `ECONOMY_UX_PLAN.md`. Strategy (operator-aligned): **conform to industry conventions** for table-stakes interactions (Jakob's Law — users expect the same patterns they know from other markets dashboards), **differentiate** only on the news→economy linkage (briefing, "What's priced in" synthesis, trace-cause). Standards drawn from NN/g, GitLab Pajamas, Material, WAI-ARIA APG.

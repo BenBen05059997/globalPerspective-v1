@@ -286,7 +286,9 @@ const passed = (r) =>
 const STORY_DEAD_TEXT = 'Story arc not found';
 const STORY_FALLBACK_TEXT = 'aged out of the';
 
-async function checkEconomyStoryLinks(browser, cap = 20) {
+const STORY_LINK_CAP = Number(process.env.SMOKE_STORY_CAP) || 20;
+
+async function checkEconomyStoryLinks(browser, cap = STORY_LINK_CAP) {
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: VIEWPORTS.desktop });
   const page = await context.newPage();
   const out = { total: 0, ok: 0, dead: [] };
@@ -362,7 +364,7 @@ async function checkEconomyStoryLinks(browser, cap = 20) {
   process.stdout.write(`  • ${'EconomyStoryLinks'.padEnd(22)} /economy → /weekly/thread/* ... `);
   const story = await checkEconomyStoryLinks(browser);
   const storyOk = !story.error && story.dead.length === 0;
-  console.log(storyOk ? `PASS (${story.ok}/${Math.min(story.total, 20)})` : 'FAIL');
+  console.log(storyOk ? `PASS (${story.ok}/${Math.min(story.total, STORY_LINK_CAP)})` : 'FAIL');
 
   await browser.close();
 
@@ -434,7 +436,7 @@ async function checkEconomyStoryLinks(browser, cap = 20) {
   if (story.error) {
     console.log(`  error: ${story.error}`);
   } else {
-    const checked = Math.min(story.total, 20);
+    const checked = Math.min(story.total, STORY_LINK_CAP);
     console.log(`  ${story.ok}/${checked} resolved to a full thread page (of ${story.total} unique links)`);
     story.dead.forEach((d) => console.log(`  DEAD: ${d.path} — ${d.reason}`));
   }

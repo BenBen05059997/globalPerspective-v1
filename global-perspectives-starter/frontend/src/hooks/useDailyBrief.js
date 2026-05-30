@@ -1,26 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchDailyBrief } from '../services/restProxy';
-import { useAuth } from '../contexts/AuthContext';
 
 const CACHE_KEY = 'gp_daily_brief_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
 export function useDailyBrief(dateKey) {
-  const { user } = useAuth();
   const [brief, setBrief] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const today = new Date().toISOString().slice(0, 10);
   const effectiveDateKey = dateKey || today;
-  const isToday = effectiveDateKey === today;
 
   const load = useCallback(async () => {
-    if (!isToday && !user && !import.meta.env.DEV) {
-      setLoading(false);
-      return;
-    }
-
     try {
       const raw = localStorage.getItem(CACHE_KEY);
       if (raw) {
@@ -64,7 +56,7 @@ export function useDailyBrief(dateKey) {
     } finally {
       setLoading(false);
     }
-  }, [effectiveDateKey, user, isToday]);
+  }, [effectiveDateKey]);
 
   useEffect(() => { load(); }, [load]);
 

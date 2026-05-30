@@ -711,6 +711,7 @@ export default function CountryPage() {
             <Link to="/weekly/countries" className="cpg-map-back">← Countries</Link>
             <select
               className="cpg-country-select"
+              aria-label="Select country"
               value={decodedName}
               onChange={e => selectCountry(e.target.value)}
             >

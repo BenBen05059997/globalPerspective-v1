@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-05-30 (fix: dated daily briefs blank for anonymous visitors + /weekly/country select a11y critical)
+
+Two issues surfaced by the page health-check playbook (`scripts/smoke-test.mjs`).
+
+- **`/daily/:dateKey` rendered "No brief available" for signed-out visitors** even when the brief existed. Root cause: `useDailyBrief` had a leftover `if (!isToday && !user && !import.meta.env.DEV) return;` guard that bailed out of the fetch for any non-today date when no user was signed in — the same `!user` anti-pattern that was removed from the other public hooks on 2026-04-22. The backend `daily_brief` action is fully public (verified: `2026-05-29` returns a brief anonymously), so the guard was pure dead weight that blanked dated briefs for the anonymous majority. **Fix:** removed the guard (and the now-unused `useAuth`/`user`/`isToday` references). File: `global-perspectives-starter/frontend/src/hooks/useDailyBrief.js`. (Today's brief still legitimately shows the empty state until it generates at 23:00 UTC.)
+- **`/weekly/country/:name` accessibility — critical `select-name`.** The country-switcher `<select>` in the map hero had no accessible name. **Fix:** added `aria-label="Select country"`. File: `global-perspectives-starter/frontend/src/components/CountryPage.jsx`.
+
+---
+
 ## 2026-05-30 (fix: nested-route deep-link blank page + /economy a11y critical; add page health-check)
 
 Found via a new automated page health-check playbook (`scripts/smoke-test.mjs`) run against live production.

@@ -53,14 +53,22 @@ rm -rf ../../docs/assets
 # Copy new build
 cp -r dist/assets ../../docs/assets
 cp dist/index.html ../../docs/index.html
+
+# CRITICAL: docs/404.html is the GitHub Pages SPA fallback served on every
+# deep-link refresh (e.g. refreshing /economy). It MUST be byte-for-byte
+# identical to index.html, or it keeps pointing at a deleted bundle hash and
+# every deep-link refresh renders a blank page. (npm run build also auto-emits
+# dist/404.html via the postbuild script, but resync here too to be safe.)
+cp ../../docs/index.html ../../docs/404.html
 ```
 
 **CRITICAL:** Do NOT copy or modify `docs/config.js` - it contains the runtime API endpoint configuration.
 
-**Verify copy succeeded:**
+**Verify copy succeeded (404.html must equal index.html):**
 ```bash
 ls -la ../../docs/assets
 ls -la ../../docs/index.html
+diff ../../docs/index.html ../../docs/404.html && echo "404.html in sync"
 ```
 
 ### Step 3: Update CHANGES.md
@@ -88,7 +96,7 @@ git status
 
 **Stage the correct files:**
 ```bash
-git add docs/assets docs/index.html global-perspectives-starter/frontend/src/ CHANGES.md
+git add docs/assets docs/index.html docs/404.html global-perspectives-starter/frontend/src/ CHANGES.md
 ```
 
 **Create commit with proper message:**

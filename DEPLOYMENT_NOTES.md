@@ -28,6 +28,8 @@ Use these steps every time frontend source files are changed.
    rm -rf ../../docs/assets
    cp -r dist/assets ../../docs/assets
    cp dist/index.html ../../docs/index.html
+   # SPA fallback for deep-link refreshes — MUST mirror index.html (see note below)
+   cp ../../docs/index.html ../../docs/404.html
    ```
 
    **NEVER overwrite `docs/config.js`** — it contains runtime configuration:
@@ -35,12 +37,19 @@ Use these steps every time frontend source files are changed.
    - `window.FIREBASE_CONFIG` — Firebase project config
    - `window.GOOGLE_MAPS_API_KEY` — Google Maps key
 
+   **`docs/404.html` MUST stay byte-for-byte identical to `docs/index.html`.** It
+   is the GitHub Pages SPA fallback served on every deep-link refresh (e.g.
+   refreshing `/economy`); if it points at an old/deleted bundle hash, every
+   deep-link refresh renders a blank page. `npm run build` auto-emits a matching
+   `dist/404.html` (postbuild script), but resync it here too. Verify:
+   `diff ../../docs/index.html ../../docs/404.html` must be empty.
+
 4. **Update CHANGES.md** with a dated entry describing what changed.
 
 5. **Commit and push**
    ```bash
    cd ../..
-   git add docs/assets docs/index.html global-perspectives-starter/frontend/src/ CHANGES.md
+   git add docs/assets docs/index.html docs/404.html global-perspectives-starter/frontend/src/ CHANGES.md
    git commit -m "Descriptive message"
    git push
    ```

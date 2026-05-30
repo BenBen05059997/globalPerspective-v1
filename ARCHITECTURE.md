@@ -919,11 +919,18 @@ rm -rf ../../docs/assets
 cp -r dist/assets ../../docs/assets
 cp dist/index.html ../../docs/index.html
 
+# 2b. Resync the SPA fallback. docs/404.html MUST be byte-for-byte identical to
+#     index.html — GitHub Pages serves it on every deep-link refresh (e.g.
+#     refreshing /economy); a stale hash here = blank page on refresh. (npm run
+#     build also auto-emits dist/404.html via the postbuild script.)
+cp ../../docs/index.html ../../docs/404.html
+diff ../../docs/index.html ../../docs/404.html && echo "404.html in sync"
+
 # 3. NEVER overwrite docs/config.js (contains FIREBASE_CONFIG, SENSITIVE_PROXY_ENDPOINT, GOOGLE_MAPS_API_KEY)
 
 # 4. Update CHANGES.md, then commit
 cd ../..
-git add docs/assets docs/index.html global-perspectives-starter/frontend/src/ CHANGES.md
+git add docs/assets docs/index.html docs/404.html global-perspectives-starter/frontend/src/ CHANGES.md
 git commit -m "Description of changes"
 git push
 ```

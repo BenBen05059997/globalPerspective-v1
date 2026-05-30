@@ -27,9 +27,6 @@ const LINKEDIN_API_VERSION = '202601';
 const BLUESKY_IDENTIFIER = process.env.BLUESKY_IDENTIFIER || '';
 const BLUESKY_APP_PASSWORD = process.env.BLUESKY_APP_PASSWORD || '';
 
-// X/Twitter, Threads, Farcaster, Mastodon, Telegram all removed 2026-05-18.
-// Live channels are LinkedIn + Bluesky only.
-
 const MAX_POSTS_PER_RUN = parseInt(process.env.MAX_POSTS_PER_RUN || '5', 10);
 const MAX_POSTS_PER_DAY = parseInt(process.env.MAX_POSTS_PER_DAY || '100', 10);
 
@@ -133,10 +130,6 @@ function buildPlatformList() {
       supportsImage: true,
     });
   }
-
-  // Mastodon, Telegram, Farcaster, X/Twitter, Threads removed 2026-05-18
-  // (long-tail platforms with token-rotation burden and minimal audience reach).
-  // Live channels are LinkedIn + Bluesky only.
 
   return platforms;
 }

@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-05-30 (loop run: all six bug-class contracts green; fixed stale test scaffolding)
+
+First full run of the bug-fighting loop (all six `BUG_PLAYBOOK.md` contracts). Five passed immediately; the unit-test contract (class 6) was red — all from **stale/incomplete test scaffolding**, not product bugs. Fixed so the loop reports green honestly:
+
+- **`economyPage.test.jsx`** — `getByText(/Repricing today/i)` matched *two* nodes after the "Today in the economy" briefing prose started containing that phrase (alongside the `<h2>` section header). Tightened to `getByRole('heading', { name: /Repricing today/i })`.
+- **`vite.config.js`** — vitest's default glob was picking up the Playwright `e2e/` spec (which errors on Playwright-only globals). Added `test.exclude` for `e2e/**` (Playwright specs run under Playwright, not vitest).
+- **Three map-test d3 mocks** (`layers`, `searchBar`, `signalFilters`) — the mocked projection only exposed `fitSize` *after* `.translate().scale()`, but `WorldMapV2` calls `projection.fitSize(...)` directly; `geoCentroid`/`geoGraticule10` weren't mocked at all. This leaked 16 unhandled rejections that flipped the vitest exit code to 1 despite all assertions passing. Replaced with a self-chaining projection stub + the two missing functions.
+
+Final loop state: class 1 (link-crawl 180/180 HEALTHY + smoke economy-links 37/37), class 2 (auth-guard PASS), class 3 (404 parity + deep-link PASS), class 4 (contract-check 7/7), class 5 (smoke axe — 33 checks healthy), class 6 (vitest 178/178, exit 0). Test-only changes — no product code, no build/deploy.
+
+---
+
 ## 2026-05-30 (bug playbook: loop contract + two new checks for the remaining bug classes)
 
 Extended `BUG_PLAYBOOK.md` into a **loop-runnable spec** and closed the two gaps so a fix-until-green loop has a runnable check for all six bug classes.

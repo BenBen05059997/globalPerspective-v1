@@ -71,7 +71,7 @@ describe('EconomyPage — instrument-first leaderboard', () => {
 
   it('renders the leaderboard row with consensus, live level, and story count', () => {
     renderPage();
-    expect(screen.getByText(/Repricing today/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Repricing today/i })).toBeInTheDocument();
     const row = brentRow();
     expect(within(row).getByText('BRENT')).toBeInTheDocument();
     expect(row.textContent).toMatch(/agree/);            // line-1 "X of Y agree" (replaced the consensus float)

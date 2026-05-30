@@ -127,11 +127,20 @@ globalThis.fetch = vi.fn(() =>
     json: () => Promise.resolve({ type: 'Topology', objects: { countries: { type: 'GeometryCollection', geometries: [] } }, arcs: [] }),
   })
 );
-vi.mock('d3', () => ({
-  select: () => ({ selectAll: () => ({ remove: vi.fn() }), append: () => ({ attr: () => ({ attr: () => ({}) }) }) }),
-  geoEqualEarth: () => ({ translate: () => ({ scale: () => ({ fitSize: () => ({}) }) }) }),
-  geoPath: () => () => '',
-}));
+vi.mock('d3', () => {
+  const makeProjection = () => {
+    const p = () => [0, 0];
+    for (const m of ['fitSize', 'scale', 'translate', 'center', 'rotate', 'precision', 'clipExtent']) p[m] = () => p;
+    return p;
+  };
+  return {
+    select: () => ({ selectAll: () => ({ remove: vi.fn() }), append: () => ({ attr: () => ({ attr: () => ({}) }) }) }),
+    geoEqualEarth: () => makeProjection(),
+    geoPath: () => () => '',
+    geoCentroid: () => [0, 0],
+    geoGraticule10: () => ({}),
+  };
+});
 vi.mock('topojson-client', () => ({
   feature: () => ({ features: [] }),
 }));

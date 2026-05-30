@@ -6,7 +6,8 @@ Refreshing or deep-linking `/economy` (and any other route) rendered a blank pag
 
 - Synced `docs/404.html` to the current `docs/index.html` (now references the live bundle `index-CM13gMRN.js`; the two files are identical).
 - Baked `cp docs/index.html docs/404.html` into the deploy workflow in `CLAUDE.md` (+ `git add docs/404.html`) so the fallback is regenerated every deploy and can't drift again. This recurred once before (commit `32e0735`) because the workflow gap was never closed.
-- Files: `docs/404.html`, `CLAUDE.md`, `CHANGES.md`.
+- **Defense in depth so it can't recur:** (1) added a `postbuild` npm script (`cp dist/index.html dist/404.html`) so `npm run build` always emits a matching `dist/404.html` automatically; (2) added a dedicated "Common Mistakes" entry + a Verification-Checklist line in `CLAUDE.md` (resync + `diff` must be empty before pushing).
+- Files: `docs/404.html`, `CLAUDE.md`, `CHANGES.md`, `global-perspectives-starter/frontend/package.json`.
 
 ---
 

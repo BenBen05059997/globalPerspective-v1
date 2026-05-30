@@ -154,6 +154,14 @@ npx vite preview
    - Always run `npm run build` successfully
    - Check for build errors before pushing
 
+5. ❌ **Forgetting to resync `docs/404.html`** ← bit us twice (commits `32e0735`, `34643b7`)
+   - `docs/404.html` is the GitHub Pages SPA fallback served on every deep-link
+     refresh (e.g. refreshing `/economy`). It MUST be a byte-for-byte copy of
+     `docs/index.html`, or it keeps pointing at an old/deleted bundle hash and
+     every deep-link refresh renders a blank page.
+   - After copying `index.html`, ALWAYS run: `cp docs/index.html docs/404.html`
+   - Verify before committing: `diff docs/index.html docs/404.html` must be empty.
+
 ## Verification Checklist
 
 Before pushing frontend changes:
@@ -161,8 +169,9 @@ Before pushing frontend changes:
 - [ ] Source files modified
 - [ ] `npm run build` executed successfully
 - [ ] Build output copied to `/docs/`
+- [ ] **`docs/404.html` resynced** → `cp docs/index.html docs/404.html`, then `diff docs/index.html docs/404.html` is empty
 - [ ] **CHANGES.md updated** with new entry
-- [ ] Both source and `/docs/` staged for commit
+- [ ] Both source and `/docs/` (incl. `docs/404.html`) staged for commit
 - [ ] Commit message is descriptive
 - [ ] No sensitive data in commit
 - [ ] Ready to push

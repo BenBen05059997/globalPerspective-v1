@@ -20,6 +20,12 @@
  *   • ECONOMY STORY-LINK INTEGRITY — every /economy disruption opens a full thread (class 1)
  *   • MAP LAYER RENDER — /map's data-backed layers (Pulse, Connections) must each draw
  *                        >0 SVG elements, guarding the "silent empty render" bug (class 7)
+ *   • VISUAL PAINT — each route's key content region must render visible "ink" and not
+ *                    silently collapse to a blank box (the GENERAL class-7 guard). We grid-
+ *                    sample the region and assert a minimum fraction of points land on real
+ *                    rendered content (text / img / svg / colored bg). This is robust to news
+ *                    churn (different headlines → similar ink) and needs no baseline image,
+ *                    so unlike pixel-diff visual regression it can't rot on a live data site.
  *
  * Param routes (/weekly/thread/:id, /weekly/country/:name, /daily/:dateKey) are
  * auto-discovered by scraping their listing page, so the test never rots on a
@@ -86,12 +92,16 @@ const GARBAGE = [
 
 // ---- routes --------------------------------------------------------------
 // content selectors should prove REAL data rendered, not just the shell.
+// `region` (optional) = the key content region the VISUAL PAINT guard samples for
+// the general class-7 silent-empty-render check. Defaults to content[0] when unset.
+// `skipPaint` opts a route out (e.g. /weekly, whose empty-state is a legit class-6
+// condition, not the data-present-but-blank class-7 bug).
 const STATIC_ROUTES = [
   { name: 'Home',        path: '/',                 content: ['.home-shell'] },
   { name: 'Map',         path: '/map',              content: ['.mv2'] },
   { name: 'Daily',       path: '/daily',            content: ['.daily-footprint'] },
   { name: 'Economy',     path: '/economy',          content: ['.ep-row-l1'] },
-  { name: 'Weekly',      path: '/weekly',           content: ['.weekly-feed', '.arc-dots', '.weekly-empty-state'] },
+  { name: 'Weekly',      path: '/weekly',           content: ['.weekly-feed', '.arc-dots', '.weekly-empty-state'], skipPaint: true },
   { name: 'CountryList', path: '/weekly/countries', content: ['.clp-card'] },
   { name: 'About',       path: '/about',            content: ['.card'] },
   { name: 'Contact',     path: '/contact',          content: ['.card'] },
@@ -101,6 +111,13 @@ const STATIC_ROUTES = [
   { name: 'SignIn',      path: '/signin',           content: ['.weekly-gate'] },
   { name: 'Account',     path: '/account',          content: [] }, // shell/redirect page
 ];
+
+// VISUAL PAINT calibration (measured against prod 2026-06-01): healthy regions
+// scored 0.19–0.96 coverage; an empty/collapsed region scores ~0. 0.06 sits 3× below
+// the lowest healthy region with wide churn margin. A region that exists but can't be
+// sampled (sampled < PAINT_MIN_SAMPLES after scrollIntoView) is also treated as blank.
+const PAINT_MIN = 0.06;
+const PAINT_MIN_SAMPLES = 40;
 
 const urlFor = (p) => BASE + p;
 const slug = (s) => s.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '') || 'root';
@@ -163,6 +180,37 @@ async function scanGarbage(page) {
   return hits;
 }
 
+// Runs IN THE BROWSER. Grid-samples a region and returns the fraction of points
+// that land on real rendered content (text / img / svg / colored bg) vs bare
+// background. A silently-empty region collapses this toward 0 regardless of which
+// news content rendered, so it generalizes class 7 across every page.
+function measurePaintInPage(sel, grid = 26) {
+  const root = document.querySelector(sel);
+  if (!root) return { found: false };
+  root.scrollIntoView({ block: 'center' });
+  const b = root.getBoundingClientRect();
+  if (b.width < 4 || b.height < 4) return { found: true, w: b.width, h: b.height, sampled: 0, hits: 0, coverage: 0 };
+  const pageBg = getComputedStyle(document.body).backgroundColor;
+  const x0 = Math.max(0, b.left), y0 = Math.max(0, b.top);
+  const x1 = Math.min(window.innerWidth, b.right), y1 = Math.min(window.innerHeight, b.bottom);
+  let hits = 0, sampled = 0;
+  for (let i = 0; i < grid; i++) {
+    for (let j = 0; j < grid; j++) {
+      const x = x0 + ((x1 - x0) * (i + 0.5)) / grid;
+      const y = y0 + ((y1 - y0) * (j + 0.5)) / grid;
+      const el = document.elementFromPoint(x, y);
+      if (!el || !root.contains(el)) continue;
+      sampled++;
+      if (['IMG', 'SVG', 'CANVAS', 'VIDEO', 'PATH', 'CIRCLE', 'RECT', 'LINE', 'POLYGON', 'IMAGE'].includes(el.tagName)) { hits++; continue; }
+      const cs = getComputedStyle(el);
+      if (cs.backgroundImage && cs.backgroundImage !== 'none') { hits++; continue; }
+      if (cs.backgroundColor && cs.backgroundColor !== pageBg && cs.backgroundColor !== 'rgba(0, 0, 0, 0)') { hits++; continue; }
+      if (Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent.trim().length)) hits++;
+    }
+  }
+  return { found: true, w: Math.round(b.width), h: Math.round(b.height), sampled, hits, coverage: sampled ? +(hits / sampled).toFixed(3) : 0 };
+}
+
 function attachListeners(page) {
   const consoleErrors = [];
   const netFailures = [];
@@ -218,7 +266,7 @@ async function checkRoute(browser, route, viewport) {
     name: route.name, path: route.path, viewport,
     loads: false, content: false, refresh: false, network: false,
     a11y: false, garbageClean: false, matched: null,
-    consoleErrors, netFailures, axe: [], garbage: [],
+    consoleErrors, netFailures, axe: [], garbage: [], paint: null, paintRegion: null,
   };
 
   try {
@@ -235,6 +283,14 @@ async function checkRoute(browser, route, viewport) {
     // a11y + garbage + screenshot on the settled page
     r.axe = await runAxe(page);
     r.garbage = await scanGarbage(page);
+
+    // VISUAL PAINT (general class-7 guard) — desktop only, reusing this settled page.
+    const region = route.skipPaint ? null : route.region || route.content[0];
+    if (viewport === 'desktop' && region) {
+      r.paint = await page.evaluate(measurePaintInPage, region).catch(() => null);
+      r.paintRegion = region;
+    }
+
     fs.mkdirSync(path.join(SHOTS_DIR, viewport), { recursive: true });
     await page
       .screenshot({ path: path.join(SHOTS_DIR, viewport, slug(route.path) + '.png'), fullPage: true })
@@ -396,11 +452,11 @@ async function checkMapLayers(browser) {
   const routes = [...STATIC_ROUTES];
 
   const threadPath = await discover(browser, '/weekly', 'a[href*="/weekly/thread/"]');
-  if (threadPath) routes.push({ name: 'Thread', path: threadPath, content: ['.tp-section-lbl', '.container'] });
+  if (threadPath) routes.push({ name: 'Thread', path: threadPath, content: ['.tp-section-lbl', '.container'], region: '.tp-content-tabs' });
   else console.log('  ! could not discover a thread id from /weekly — skipping Thread');
 
   const countryPath = await discover(browser, '/weekly/countries', 'a[href*="/weekly/country/"]');
-  if (countryPath) routes.push({ name: 'Country', path: countryPath, content: ['.cpg-hd-h1', '.cp-coverage'] });
+  if (countryPath) routes.push({ name: 'Country', path: countryPath, content: ['.cpg-hd-h1', '.cp-coverage'], region: '.cp-coverage' });
   else console.log('  ! could not discover a country from /weekly/countries — skipping Country');
 
   const dailyPath = await discover(browser, '/daily', 'a[href*="/daily/2"]');
@@ -519,12 +575,35 @@ async function checkMapLayers(browser) {
   }
   const mapFailed = mapOk ? 0 : 1;
 
-  const totalChecks = results.length + 2;
-  const totalFailed = failed + (storyOk ? 0 : 1) + mapFailed;
+  // ---- visual paint (general class-7 guard) ----
+  console.log(`\n${'-'.repeat(90)}\nVISUAL PAINT (class 7 — key content regions must not silently render blank)`);
+  const measured = results.filter((r) => r.paint && r.paint.found);
+  const paintBlank = measured.filter(
+    (r) => r.paint.coverage < PAINT_MIN || r.paint.sampled < PAINT_MIN_SAMPLES
+  );
+  if (!measured.length) {
+    console.log('  (no regions measured)');
+  } else {
+    for (const r of measured) {
+      const blank = r.paint.coverage < PAINT_MIN || r.paint.sampled < PAINT_MIN_SAMPLES;
+      console.log(
+        `  ${blank ? 'BLANK' : 'ok'} ${r.name.padEnd(12)} ${String(r.paintRegion).padEnd(18)} ` +
+          `coverage ${(r.paint.coverage * 100).toFixed(0)}% (${r.paint.hits}/${r.paint.sampled} pts)`
+      );
+    }
+    paintBlank.forEach((r) =>
+      console.log(`  SILENT-EMPTY: ${r.name} ${r.paintRegion} painted only ${(r.paint.coverage * 100).toFixed(0)}% — region rendered blank (class 7 regression)`)
+    );
+  }
+  const paintFailed = paintBlank.length ? 1 : 0;
+
+  const totalChecks = results.length + 3;
+  const totalFailed = failed + (storyOk ? 0 : 1) + mapFailed + paintFailed;
   console.log(`\n${'='.repeat(72)}`);
   console.log(totalFailed === 0 ? `ALL ${totalChecks} CHECKS HEALTHY` : `${totalFailed}/${totalChecks} CHECKS FAILED`);
   if (storyFailed) console.log(`  (${storyFailed} economy story link${storyFailed === 1 ? '' : 's'} dead)`);
   if (mapFailed) console.log(`  (/map: ${mapEmpty.length ? mapEmpty.join(' + ') + ' layer empty' : 'did not load'})`);
+  if (paintFailed) console.log(`  (${paintBlank.length} region${paintBlank.length === 1 ? '' : 's'} painted blank: ${paintBlank.map((r) => r.name).join(', ')})`);
   console.log(`Screenshots: ${SHOTS_DIR}`);
   process.exit(totalFailed === 0 ? 0 : 1);
 })();

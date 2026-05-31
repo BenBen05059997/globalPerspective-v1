@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-01 (smoke-test: general class-7 guard — VISUAL PAINT leg)
+
+Added a second, *general* class-7 detector to `scripts/smoke-test.mjs`, complementing the page-specific MAP LAYER RENDER leg.
+
+- **New VISUAL PAINT leg.** For each route (desktop, reusing the existing settled-page navigation — no extra passes) it grid-samples the key content region and asserts a minimum fraction of points land on real rendered content (text / img / svg / colored bg) vs bare background. A region that silently collapses to blank drops toward 0% and trips `SILENT-EMPTY`. Unlike the MAP LAYER leg (which only knows about Pulse `.today-ring` + Connections `.flow`), this catches *any* region going blank without needing a per-view child selector to count.
+- **Why not pixel-diff visual regression.** A `toHaveScreenshot()` baseline would false-positive on every run as headlines churn, rot, and get ignored. Paint-coverage is robust to content churn (different headlines → similar ink) and keeps no baseline image, so it can't rot on a live-data site.
+- **Calibrated against prod (2026-06-01).** Healthy regions paint 19–96% (Daily footprint lowest at 19%, CountryList card highest at 96%); `PAINT_MIN=0.06` sits 3× below the floor with churn margin. `/weekly` opts out via `skipPaint` (its empty-state is a legit class-6 condition, not data-present-but-blank). Negative test confirmed teeth: gutting `.ep-row-l1` dropped it 37.7% → 0% → CAUGHT.
+- **Final full sweep ran green** before this change: auth-guard 7/7, contract 7/7, link-crawl 184/184 (0 dead), smoke-test all checks healthy. After adding this leg: **ALL 35 CHECKS HEALTHY**.
+
+Files: `scripts/smoke-test.mjs`, `BUG_PLAYBOOK.md`.
+
 ## 2026-05-31 (/map urgency halo: same silent-empty-render bug, 2nd instance + BUG_PLAYBOOK class 7)
 
 Follow-up to the Pulse/Connections fix earlier today. Generalized the root cause into a new bug class and found a second live instance of it.

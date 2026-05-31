@@ -65,8 +65,16 @@ guard** (NaN/undefined/Invalid Date/[object Object] — class 4). Also runs an
 **ECONOMY STORY-LINK INTEGRITY** check that opens every `/economy` disruption's
 story link and asserts the full thread page renders (class 1), and a **MAP LAYER
 RENDER** check that toggles `/map`'s data-backed layers and asserts each draws >0
-SVG elements — Pulse `.today-ring` + Connections `.flow` (class 7). Writes a
-screenshot per route+viewport. Exit code non-zero on any failure.
+SVG elements — Pulse `.today-ring` + Connections `.flow` (class 7). Finally a
+**VISUAL PAINT** check (the *general* class-7 guard): grid-samples each route's key
+content region and asserts a minimum fraction of points land on real rendered
+content (text/img/svg/colored bg) vs bare background, so any region that silently
+collapses to blank is caught — not just the two hard-coded map layers. It's robust
+to news churn (different headlines → similar ink) and uses no baseline image, so
+unlike pixel-diff visual regression it can't rot on a live-data site. Threshold
+`PAINT_MIN=0.06`, calibrated against prod (healthy regions paint 19–96%; an empty
+region ~0). `/weekly` opts out (`skipPaint` — its empty-state is a legit class-6
+condition). Writes a screenshot per route+viewport. Exit code non-zero on any failure.
 
 ### 2. Site-wide link-integrity crawl — `scripts/link-crawl.mjs`
 ```bash
@@ -211,15 +219,21 @@ add a seventh contract; don't widen an existing one past its evidence.
 - **Scope:** real empty data is a valid state to render — distinguish it from a fetch error.
 
 ### 7 — Silent empty render (mis-keyed / over-aggressive client filter)  *(receipts: d9b26ae, 8dd1d76 — /map Pulse, Connections, urgency-halo)*
-- **Detect:** the smoke-test **MAP LAYER RENDER** leg — loads `/map`, toggles each
-  data-backed layer on, and asserts it draws >0 SVG elements (`.today-ring` for Pulse,
-  `.flow` for Connections; topics + pairs are reliably present on prod). Backstops: a
+- **Detect:** two complementary smoke-test legs. (a) **MAP LAYER RENDER** — loads `/map`,
+  toggles each data-backed layer on, and asserts it draws >0 SVG elements (`.today-ring`
+  for Pulse, `.flow` for Connections; topics + pairs are reliably present on prod). This
+  is the *specific* guard for the two known map layers. (b) **VISUAL PAINT** — the
+  *general* guard: grid-samples each route's key content region and asserts ≥`PAINT_MIN`
+  (0.06) of points land on real rendered content, so ANY region collapsing to blank is
+  caught even on pages with no per-item child selector to count. Robust to news churn,
+  no baseline image (can't rot). Backstops: a
   static smell-grep for a client `.filter(...)`/window-cutoff/`continue` keyed on a
   **per-item** time field (`.timestamp`, `.generatedAt`, `.date`) where the payload only
   carries that field at the **envelope** level (e.g. `useGeminiTopics` topics have no
   per-item `timestamp` — only batch `updatedAt`); plus the manual layer-toggle in step 9.
-- **Green:** smoke-test MAP LAYER RENDER passes (every asserted layer > 0); no filter
-  predicate references a per-item field absent from that action's contract.
+- **Green:** smoke-test MAP LAYER RENDER passes (every asserted layer > 0) AND VISUAL
+  PAINT passes (every sampled region paints ≥ 6%); no filter predicate references a
+  per-item field absent from that action's contract.
 - **If red:** fall back to the envelope-level field (Pulse: batch `updatedAt`), or stop
   hard-dropping and render the out-of-window data with a degraded treatment (Connections:
   faded + dashed + a "stale" tag) instead of silently removing it.

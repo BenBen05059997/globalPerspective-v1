@@ -190,6 +190,11 @@ export default function WorldMapV2() {
 
   const topicsRef = useRef([]);
   topicsRef.current = topics;
+  // Topics carry no per-item timestamp — expose the batch-level updatedAt to the
+  // imperative drawMap so freshness gates fall back to it instead of 0 (which would
+  // silently drop everything). Same fix as todaySignal.
+  const topicsUpdatedAtRef = useRef(0);
+  topicsUpdatedAtRef.current = topicsUpdatedAt ? new Date(topicsUpdatedAt).getTime() : 0;
 
   // Today's pulse — rolling 24h window of fresh news per country
   const todaySignal = useMemo(() => {
@@ -593,8 +598,8 @@ export default function WorldMapV2() {
       const haloISOs = new Set();
       for (const topic of topicsRef.current) {
         if (topic.urgency !== 'high') continue;
-        const ts = topic.timestamp ? new Date(topic.timestamp).getTime() : 0;
-        if (now - ts > dayMs) continue;
+        const ts = topic.timestamp ? new Date(topic.timestamp).getTime() : topicsUpdatedAtRef.current;
+        if (!ts || now - ts > dayMs) continue;
         const pc = topic.primaryCountry || (Array.isArray(topic.regions) ? topic.regions[0] : null);
         if (!pc) continue;
         const iso = nameToISORef.current[pc.toLowerCase()] || EXTRA_ALIASES[pc.toLowerCase()];

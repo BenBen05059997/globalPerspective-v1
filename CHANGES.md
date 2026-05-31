@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-05-31 (/map urgency halo: same silent-empty-render bug, 2nd instance + BUG_PLAYBOOK class 7)
+
+Follow-up to the Pulse/Connections fix earlier today. Generalized the root cause into a new bug class and found a second live instance of it.
+
+- **New bug class — `BUG_PLAYBOOK.md` Class 7 "Silent empty render (mis-keyed / over-aggressive client filter)".** A data-backed toggleable view renders zero items even though data is present, because a client filter reads a per-item field the payload doesn't carry (topics have no per-item `timestamp`, only batch `updatedAt`) or hard-drops windowed data. Invisible to classes 4/6 + the page-level health checks — the *page* is fine, only the *view* is empty. Added to the class list, the loop contract (detect/green/if-red/scope, receipt `d9b26ae`), exploratory step 9, and bumped the loop from six→seven contracts.
+- **2nd instance fixed — `WorldMapV2.jsx:596` urgency halo.** `ts` defaulted to `0`, so `now - 0 > 24h` was always true → no halo ever rendered. Same fix as the Pulse path: fall back to the batch `updatedAt` (via a new `topicsUpdatedAtRef` so the imperative `drawMap` can read it). Found by grepping the whole frontend for the smell after recording the class.
+
+Files: `BUG_PLAYBOOK.md`, `global-perspectives-starter/frontend/src/components/WorldMapV2.jsx`, `docs/` (build → `index-KyQnq70L.js`).
+
 ## 2026-05-31 (/map WorldMapV2: fix Connections near-empty + Pulse never-showing — frontend)
 
 Two data-driven map bugs, both confirmed against live production data (not assumptions):

@@ -27,6 +27,15 @@ These are the failure modes that have bitten this site. Every check below maps t
    nested interactive, orphaned ARIA role).
 6. **Empty-state mishandling** — a daily batch job (thread analysis, country intel,
    brief) hasn't run yet and the page renders blank/garbage instead of an empty state.
+7. **Silent empty render (mis-keyed / over-aggressive client filter)** — a data-backed,
+   toggleable view (a map layer, a filtered list) renders **zero items** even though the
+   data is present, because a client-side filter predicate either reads a *per-item* field
+   the payload doesn't carry, or drops data that should still show. No error, no `NaN`, the
+   *page* looks healthy — only the *view* is empty, so classes 4/6 and the page-level health
+   checks all pass. *Seen:* `/map` **Pulse** filtered topics on a per-item `t.timestamp` the
+   topics payload never carries (only a batch-level `updatedAt` exists) → every topic failed
+   the predicate → no rings; `/map` **Connections** hard-dropped every pair outside the time
+   window → near-empty layer.
 
 ## The four automated checks (run these)
 
@@ -110,7 +119,9 @@ Steps 1–8 are automatable into a pre-deploy run; 9 is inherently manual.
 7. **Link-integrity crawl** — `node scripts/link-crawl.mjs` (class 1, site-wide).
 8. **Deploy**, then re-run steps 5–7 against production to confirm green.
 9. **5-minute exploratory pass** — click each nav route, refresh one nested route,
-   open one aged-out detail link, sign in/out once. Humans catch the unscripted.
+   open one aged-out detail link, sign in/out once, and **toggle every layer/filter on a
+   data-backed view (`/map`) with live data loaded, confirming each renders >0 items**
+   (class 7). Humans catch the unscripted.
 
 ## Highest-ROI techniques for this project (why these and not others)
 
@@ -143,7 +154,7 @@ This is the part a **fix-until-green loop** consumes. Each class below is a clos
 contract: a *detect* command, the *green* criterion that ends the loop for that class,
 the *if-red* action, and the *scope* (what is deliberately out of bounds, so the loop
 doesn't chase non-bugs). The loop runs every contract, fixes what's red, re-runs, and
-stops when **all six are green**. It is a convergence engine, not a detector — these
+stops when **all seven are green**. It is a convergence engine, not a detector — these
 contracts are what tell it "broken" from "done."
 
 Why these six and not others: every contract maps to a failure mode this repo has
@@ -196,6 +207,23 @@ add a seventh contract; don't widen an existing one past its evidence.
 - **Green:** mocking "batch job hasn't run" renders an explicit empty state, never blank/NaN.
 - **If red:** add the empty-state branch to the component; cover it with a Vitest case.
 - **Scope:** real empty data is a valid state to render — distinguish it from a fetch error.
+
+### 7 — Silent empty render (mis-keyed / over-aggressive client filter)  *(receipts: d9b26ae — /map Pulse + Connections)*
+- **Detect:** the exploratory pass (step 9), extended: on any page with toggleable
+  layers/filters (`/map` today), **turn each one on with live data loaded and confirm it
+  renders >0 items**. Static smell-grep backstop: a client `.filter(...)`/window-cutoff/
+  `continue` keyed on a **per-item** time field (`\.timestamp`, `\.generatedAt`, `\.date`)
+  for a payload whose contract only carries that field at the **envelope** level
+  (e.g. `useGeminiTopics` topics have no per-item `timestamp` — only batch `updatedAt`).
+- **Green:** no data-backed view renders empty while its source array is non-empty; no
+  filter predicate references a per-item field absent from that action's contract.
+- **If red:** fall back to the envelope-level field (Pulse: batch `updatedAt`), or stop
+  hard-dropping and render the out-of-window data with a degraded treatment (Connections:
+  faded + dashed + a "stale" tag) instead of silently removing it.
+- **Scope:** a genuinely empty source array is a valid empty state (that's class 6) — this
+  class is specifically *data present, view empty*. Not yet auto-detected; the planned
+  automation is a smoke-test "toggle layer → assert expected SVG/DOM element count > 0 when
+  the backing hook returned data" leg. Until then it's caught by the manual toggle in step 9.
 
 ### Loop guardrails (non-negotiable, same as the standing project rules)
 - **No deploy / commit / push without explicit confirmation.** The loop fixes source and

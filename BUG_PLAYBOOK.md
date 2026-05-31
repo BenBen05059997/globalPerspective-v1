@@ -46,7 +46,7 @@ block service workers, and judge health from the **rendered DOM**, not the HTTP 
 this page actually broken"). The other two are a static grep (no browser) and a live-API
 schema probe.
 
-Quick map: `smoke-test.mjs` (classes 1,3,5,6) · `link-crawl.mjs` (class 1, site-wide) ·
+Quick map: `smoke-test.mjs` (classes 1,3,5,6,7) · `link-crawl.mjs` (class 1, site-wide) ·
 `auth-guard-check.mjs` (class 2) · `contract-check.mjs` (class 4). The per-class
 *detect/green/if-red* contracts are in **The loop contract** section below.
 
@@ -63,8 +63,10 @@ GH Pages fallback, **not** a failure), **axe-core a11y** (gates on `critical` on
 `serious`/color-contrast = non-blocking debt — class 5), and a **garbage-content
 guard** (NaN/undefined/Invalid Date/[object Object] — class 4). Also runs an
 **ECONOMY STORY-LINK INTEGRITY** check that opens every `/economy` disruption's
-story link and asserts the full thread page renders (class 1). Writes a screenshot
-per route+viewport. Exit code non-zero on any failure.
+story link and asserts the full thread page renders (class 1), and a **MAP LAYER
+RENDER** check that toggles `/map`'s data-backed layers and asserts each draws >0
+SVG elements — Pulse `.today-ring` + Connections `.flow` (class 7). Writes a
+screenshot per route+viewport. Exit code non-zero on any failure.
 
 ### 2. Site-wide link-integrity crawl — `scripts/link-crawl.mjs`
 ```bash
@@ -208,22 +210,24 @@ add a seventh contract; don't widen an existing one past its evidence.
 - **If red:** add the empty-state branch to the component; cover it with a Vitest case.
 - **Scope:** real empty data is a valid state to render — distinguish it from a fetch error.
 
-### 7 — Silent empty render (mis-keyed / over-aggressive client filter)  *(receipts: d9b26ae — /map Pulse + Connections)*
-- **Detect:** the exploratory pass (step 9), extended: on any page with toggleable
-  layers/filters (`/map` today), **turn each one on with live data loaded and confirm it
-  renders >0 items**. Static smell-grep backstop: a client `.filter(...)`/window-cutoff/
-  `continue` keyed on a **per-item** time field (`\.timestamp`, `\.generatedAt`, `\.date`)
-  for a payload whose contract only carries that field at the **envelope** level
-  (e.g. `useGeminiTopics` topics have no per-item `timestamp` — only batch `updatedAt`).
-- **Green:** no data-backed view renders empty while its source array is non-empty; no
-  filter predicate references a per-item field absent from that action's contract.
+### 7 — Silent empty render (mis-keyed / over-aggressive client filter)  *(receipts: d9b26ae, 8dd1d76 — /map Pulse, Connections, urgency-halo)*
+- **Detect:** the smoke-test **MAP LAYER RENDER** leg — loads `/map`, toggles each
+  data-backed layer on, and asserts it draws >0 SVG elements (`.today-ring` for Pulse,
+  `.flow` for Connections; topics + pairs are reliably present on prod). Backstops: a
+  static smell-grep for a client `.filter(...)`/window-cutoff/`continue` keyed on a
+  **per-item** time field (`.timestamp`, `.generatedAt`, `.date`) where the payload only
+  carries that field at the **envelope** level (e.g. `useGeminiTopics` topics have no
+  per-item `timestamp` — only batch `updatedAt`); plus the manual layer-toggle in step 9.
+- **Green:** smoke-test MAP LAYER RENDER passes (every asserted layer > 0); no filter
+  predicate references a per-item field absent from that action's contract.
 - **If red:** fall back to the envelope-level field (Pulse: batch `updatedAt`), or stop
   hard-dropping and render the out-of-window data with a degraded treatment (Connections:
   faded + dashed + a "stale" tag) instead of silently removing it.
 - **Scope:** a genuinely empty source array is a valid empty state (that's class 6) — this
-  class is specifically *data present, view empty*. Not yet auto-detected; the planned
-  automation is a smoke-test "toggle layer → assert expected SVG/DOM element count > 0 when
-  the backing hook returned data" leg. Until then it's caught by the manual toggle in step 9.
+  class is specifically *data present, view empty*. The smoke-test leg deliberately asserts
+  **only** Pulse + Connections (data always present on prod); Economy/Editorial layers can
+  legitimately be empty (no active disruptions / no elevated-signal picks) so they're not
+  asserted. Adding a new asserted layer requires its backing data to be reliably non-empty.
 
 ### Loop guardrails (non-negotiable, same as the standing project rules)
 - **No deploy / commit / push without explicit confirmation.** The loop fixes source and

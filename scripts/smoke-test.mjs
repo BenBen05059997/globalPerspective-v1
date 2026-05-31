@@ -16,6 +16,11 @@
  *                                     [object Object] / error-boundary text
  * It also writes a screenshot per route+viewport for quick visual eyeballing.
  *
+ * Two aggregate checks run after the per-route table:
+ *   • ECONOMY STORY-LINK INTEGRITY — every /economy disruption opens a full thread (class 1)
+ *   • MAP LAYER RENDER — /map's data-backed layers (Pulse, Connections) must each draw
+ *                        >0 SVG elements, guarding the "silent empty render" bug (class 7)
+ *
  * Param routes (/weekly/thread/:id, /weekly/country/:name, /daily/:dateKey) are
  * auto-discovered by scraping their listing page, so the test never rots on a
  * hard-coded id.
@@ -330,6 +335,56 @@ async function checkEconomyStoryLinks(browser, cap = STORY_LINK_CAP) {
   return out;
 }
 
+// ---- /map layer-render integrity (class 7) -------------------------------
+// Class 7 = "silent empty render": a data-backed, toggleable view draws ZERO
+// items though the data is present (a mis-keyed or over-aggressive client
+// filter). The page looks healthy — only the *layer* is empty — so every other
+// check passes. This is the only class no other script covers.
+//
+// Guard: on /map, with live data loaded, each layer whose backing data is
+// reliably present on prod must render >0 of its SVG element:
+//   • Today's pulse → `.today-ring` (drawn from topics — always present)
+//   • Connections   → `.flow`       (drawn from pair analyses — always present)
+// We deliberately do NOT assert the Economy/Editorial layers: their backing
+// data (active disruptions / elevated-signal picks) can legitimately be empty,
+// which would be a class-6 empty-state, not this bug. Per the class-7 scope, a
+// genuinely empty source is valid — we only fail on data-present-but-view-empty.
+const MAP_LAYERS = [
+  { label: "Today's pulse", el: '.today-ring', key: 'pulse' },
+  { label: 'Connections',   el: '.flow',       key: 'connections' },
+];
+
+async function checkMapLayers(browser) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: VIEWPORTS.desktop });
+  const page = await context.newPage();
+  const out = { ran: false, layers: {}, error: null };
+  try {
+    await page.goto(urlFor('/map'), { waitUntil: 'load', timeout: 30000 });
+    // Wait for the map itself to draw (the sphere path is drawn first), then let
+    // data hooks resolve + the debounced (240ms) redraw settle.
+    await page.locator('svg .sphere').first().waitFor({ state: 'attached', timeout: CONTENT_TIMEOUT });
+    await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(1200);
+    out.ran = true;
+
+    for (const layer of MAP_LAYERS) {
+      const opt = page.locator('.mv2-rail .opt', { hasText: layer.label }).first();
+      // Toggle the layer ON if it isn't already (default state has Pulse on).
+      const isOn = await opt.evaluate((e) => e.classList.contains('on')).catch(() => false);
+      if (!isOn) {
+        await opt.click().catch(() => {});
+        await page.waitForTimeout(900); // debounced redraw
+      }
+      const count = await page.locator(`svg ${layer.el}`).count().catch(() => 0);
+      out.layers[layer.key] = count;
+    }
+  } catch (e) {
+    out.error = (e.message || String(e)).slice(0, 160);
+  }
+  await context.close();
+  return out;
+}
+
 // ---- main ----------------------------------------------------------------
 (async () => {
   console.log(`\nProduction smoke-test against ${BASE}`);
@@ -365,6 +420,16 @@ async function checkEconomyStoryLinks(browser, cap = STORY_LINK_CAP) {
   const story = await checkEconomyStoryLinks(browser);
   const storyOk = !story.error && story.dead.length === 0;
   console.log(storyOk ? `PASS (${story.ok}/${Math.min(story.total, STORY_LINK_CAP)})` : 'FAIL');
+
+  process.stdout.write(`  • ${'MapLayers'.padEnd(22)} /map pulse + connections render ... `);
+  const mapLayers = await checkMapLayers(browser);
+  const mapEmpty = mapLayers.ran
+    ? Object.entries(mapLayers.layers).filter(([, n]) => n === 0).map(([k]) => k)
+    : [];
+  const mapOk = mapLayers.ran && !mapLayers.error && mapEmpty.length === 0;
+  console.log(mapOk
+    ? `PASS (${Object.entries(mapLayers.layers).map(([k, n]) => `${k}:${n}`).join(', ')})`
+    : 'FAIL');
 
   await browser.close();
 
@@ -442,11 +507,24 @@ async function checkEconomyStoryLinks(browser, cap = STORY_LINK_CAP) {
   }
   const storyFailed = story.error ? 1 : story.dead.length;
 
-  const totalChecks = results.length + 1;
-  const totalFailed = failed + (storyOk ? 0 : 1);
+  // ---- /map layer-render integrity (class 7) ----
+  console.log(`\n${'-'.repeat(90)}\nMAP LAYER RENDER (class 7 — data-backed layers must not silently render empty)`);
+  if (!mapLayers.ran || mapLayers.error) {
+    console.log(`  error: ${mapLayers.error || 'map did not load'}`);
+  } else {
+    for (const [k, n] of Object.entries(mapLayers.layers)) {
+      console.log(`  ${n > 0 ? 'ok' : 'EMPTY'} ${k}: ${n} element${n === 1 ? '' : 's'} rendered`);
+    }
+    mapEmpty.forEach((k) => console.log(`  SILENT-EMPTY: ${k} layer drew 0 elements with data present (class 7 regression)`));
+  }
+  const mapFailed = mapOk ? 0 : 1;
+
+  const totalChecks = results.length + 2;
+  const totalFailed = failed + (storyOk ? 0 : 1) + mapFailed;
   console.log(`\n${'='.repeat(72)}`);
   console.log(totalFailed === 0 ? `ALL ${totalChecks} CHECKS HEALTHY` : `${totalFailed}/${totalChecks} CHECKS FAILED`);
   if (storyFailed) console.log(`  (${storyFailed} economy story link${storyFailed === 1 ? '' : 's'} dead)`);
+  if (mapFailed) console.log(`  (/map: ${mapEmpty.length ? mapEmpty.join(' + ') + ' layer empty' : 'did not load'})`);
   console.log(`Screenshots: ${SHOTS_DIR}`);
   process.exit(totalFailed === 0 ? 0 : 1);
 })();

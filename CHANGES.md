@@ -9,6 +9,8 @@ Follow-up to the Pulse/Connections fix earlier today. Generalized the root cause
 
 Files: `BUG_PLAYBOOK.md`, `global-perspectives-starter/frontend/src/components/WorldMapV2.jsx`, `docs/` (build → `index-KyQnq70L.js`).
 
+- **Class 7 now auto-detected (2026-06-01).** Added a **MAP LAYER RENDER** leg to `scripts/smoke-test.mjs`: loads `/map`, toggles each data-backed layer, and asserts it draws >0 SVG elements (Pulse `.today-ring`, Connections `.flow` — topics + pairs are reliably present on prod). Economy/Editorial deliberately not asserted (can be legit-empty → that's class 6). Validated against prod: `pulse:12, connections:6`. With the pre-fix bundle Pulse would be 0 → `SILENT-EMPTY` → FAIL, so it catches the regression. Playbook + script header + bug-loop memory updated to reflect class 7 is now machine-checked. Files: `scripts/smoke-test.mjs`, `BUG_PLAYBOOK.md`.
+
 ## 2026-05-31 (/map WorldMapV2: fix Connections near-empty + Pulse never-showing — frontend)
 
 Two data-driven map bugs, both confirmed against live production data (not assumptions):

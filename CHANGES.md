@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-05-31 (/map WorldMapV2: fix Connections near-empty + Pulse never-showing — frontend)
+
+Two data-driven map bugs, both confirmed against live production data (not assumptions):
+
+- **Pulse layer showed nothing.** `todaySignal` counted topics within a rolling 24h window using `t.timestamp`, but topics carry **no per-item timestamp** — so the value was always `0`, every topic was filtered out, and zero rings drew. Fix: fall back to the **batch-level `updatedAt`** from `useGeminiTopics()` (the topics batch refreshes every 2h, so it's reliably within 24h). `WorldMapV2.jsx` — wired `updatedAt: topicsUpdatedAt`, added `batchMs` fallback, added it to the `todaySignal` deps.
+- **Connections layer showed ≤1 arc.** `realFlows` hard-`continue`d any pair whose `generatedAt` was outside the time window; 6 of 7 live pairs were ~43d old, so the 30d window dropped them all. Fix: stop dropping — push **all** resolvable pairs, tag out-of-window ones as `stale`, and render them **faded (×0.45 opacity) + dashed**. Active in-window arcs render solid/weighted as before.
+- **Rail polish:** the "30 days" count read total pair count (misleading 7); now counts pairs actually refreshed within 30d. Added a note: "Count = relationships refreshed in this window. Older ones still show, faded." Empty-state text updated ("No pair relationships available yet").
+
+Note: changes verified by lint (0 errors) + build; **not** browser-clicked (no browser-automation tooling in session) — confirm Connections arcs + Pulse rings on the live site. Backend durability (scheduling `newsPairIntelligence` so pairs stay fresh) is a separate LLM-cost step, not done here. Files: `global-perspectives-starter/frontend/src/components/WorldMapV2.jsx`, `docs/` (build).
+
 ## 2026-05-30 (passive error monitoring: roll-your-own client-error sink — BUILT, DEPLOYED, LIVE)
 
 Stood up a passive error-monitoring layer (no paid Sentry) — the complement to the active `BUG_PLAYBOOK.md` checks. Those six contracts detect bug classes we already know; a contract only exists once a bug has shipped, so this sink catches the **novel** uncaught errors first.

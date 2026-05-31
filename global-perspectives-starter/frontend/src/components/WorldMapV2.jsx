@@ -160,7 +160,7 @@ export default function WorldMapV2() {
 
   const { signal, loading: sigLoading, ready: sigReady } = useCountrySignal(nameToISO);
   const { analyses: pairAnalyses } = usePairAnalyses();
-  const { topics } = useGeminiTopics();
+  const { topics, updatedAt: topicsUpdatedAt } = useGeminiTopics();
   const { dayMap } = useWeeklyArchive();
 
   // Derived: canonical name for selected country
@@ -195,9 +195,12 @@ export default function WorldMapV2() {
   const todaySignal = useMemo(() => {
     if (!Array.isArray(topics) || topics.length === 0) return {};
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    // Topics carry no per-item timestamp; fall back to the batch-level updatedAt
+    // so the pulse reflects "this batch is fresh" instead of silently rendering nothing.
+    const batchMs = topicsUpdatedAt ? new Date(topicsUpdatedAt).getTime() : 0;
     const counts = {};
     for (const t of topics) {
-      const ts = t.timestamp ? new Date(t.timestamp).getTime() : 0;
+      const ts = t.timestamp ? new Date(t.timestamp).getTime() : batchMs;
       if (!ts || ts < cutoff) continue;
       const seen = new Set();
       const regions = Array.isArray(t.regions) ? t.regions : [];
@@ -211,7 +214,7 @@ export default function WorldMapV2() {
       }
     }
     return counts;
-  }, [topics, nameToISO]);
+  }, [topics, topicsUpdatedAt, nameToISO]);
   const todaySignalRef = useRef({});
   todaySignalRef.current = todaySignal;
 
@@ -265,10 +268,12 @@ export default function WorldMapV2() {
 
     const out = [];
     for (const p of pairAnalyses) {
-      // Time filter — skip if generatedAt is outside the window
+      // Time filter — don't hard-drop older pairs (that leaves the layer near-empty);
+      // show them faded + dashed and tag as stale.
+      let stale = false;
       if (p.generatedAt) {
         const genMs = new Date(p.generatedAt).getTime();
-        if (!isNaN(genMs) && genMs < cutoffMs) continue;
+        if (!isNaN(genMs) && genMs < cutoffMs) stale = true;
       }
 
       let c1, c2;
@@ -297,7 +302,7 @@ export default function WorldMapV2() {
       // Flow-type filter
       if (!flowFilters[g]) continue;
 
-      out.push({ a, b, w, g, label: p.pairTitle || `${a}×${b}`, slug: p.slug });
+      out.push({ a, b, w, g, label: p.pairTitle || `${a}×${b}`, slug: p.slug, stale });
     }
     return out;
   }, [pairAnalyses, signal, nameToISO, flowFilters, timeWindow]);
@@ -624,9 +629,9 @@ export default function WorldMapV2() {
           d: `M${x1},${y1} Q${cx},${cy} ${x2},${y2}`,
           'data-slug': fl.slug || '',
           stroke: FLOW_COLOR[fl.g],
-          'stroke-opacity': fl.w === 'strong' ? 0.75 : 0.35,
+          'stroke-opacity': (fl.w === 'strong' ? 0.75 : 0.35) * (fl.stale ? 0.45 : 1),
           'stroke-width': fl.w === 'strong' ? 1.8 : 1.0,
-          'stroke-dasharray': fl.w === 'strong' ? '' : '3 3',
+          'stroke-dasharray': (fl.stale || fl.w !== 'strong') ? '3 3' : '',
           style: fl.slug ? 'cursor: pointer' : '',
         });
         if (fl.slug) arc.addEventListener('click', () => navigate(`/weekly/pair/${fl.slug}`));
@@ -829,7 +834,7 @@ export default function WorldMapV2() {
               })}
               {flowsRef.current.length === 0 && (
                 <div style={{ fontSize: 11, color: 'var(--ink-dim)', marginTop: 8, fontStyle: 'italic' }}>
-                  No pair analyses in this window yet.
+                  No pair relationships available yet.
                 </div>
               )}
               {flowsRef.current.length > 0 && (
@@ -894,7 +899,13 @@ export default function WorldMapV2() {
                 }).length || '—'}</span>
               </div>
               <div className={`opt${timeWindow === '30d' ? ' on' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setTimeWindow('30d')}>
-                <span className="box" />30 days<span className="c">{(pairAnalyses || []).length || '—'}</span>
+                <span className="box" />30 days<span className="c">{(pairAnalyses || []).filter(p => {
+                  const t = new Date(p.generatedAt || 0).getTime();
+                  return t > Date.now() - 30 * 86400000;
+                }).length || '—'}</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--ink-dim)', marginTop: 8, lineHeight: 1.5 }}>
+                Count = relationships refreshed in this window. Older ones still show, <span style={{ opacity: 0.55 }}>faded</span>.
               </div>
             </div>
           )}

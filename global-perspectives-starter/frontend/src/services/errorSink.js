@@ -53,6 +53,17 @@ function report(kind, message, stack) {
   }
 }
 
+// Called by the React ErrorBoundary's componentDidCatch. A working boundary
+// CATCHES the throw, so it never reaches the window 'error' listener above —
+// without this the crash would be invisible to the sink. componentStack is
+// folded into the stack field so the backend Lambda needs no change.
+export function reportBoundaryError(error, componentStack) {
+  const stack =
+    (error?.stack || String(error || '')) +
+    (componentStack ? '\n--- React component stack ---' + componentStack : '');
+  report('react', error?.message || String(error), stack);
+}
+
 export function installErrorSink() {
   if (installed || typeof window === 'undefined') return;
   installed = true;

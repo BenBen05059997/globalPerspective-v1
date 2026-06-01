@@ -9,6 +9,7 @@ import AboutContact from './components/AboutContact';
 import Disclosures from './components/Disclosures';
 import Contact from './components/Contact';
 import { ErrorProvider } from './contexts/ErrorContext';
+import { ErrorBoundary } from './components/ErrorHandling';
 import ErrorModal from './components/ErrorModal';
 import WeeklyPage from './components/WeeklyPage';
 import ThreadPage from './components/ThreadPage';
@@ -25,6 +26,13 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+
+// Deliberate render crash — the deterministic trigger the smoke-test ERROR
+// BOUNDARY leg drives (and a quick manual /__boom check). Not linked anywhere in
+// nav; harmless in prod unless explicitly navigated to.
+function Boom() {
+  throw new Error('BOOM: deliberate error-boundary test crash');
+}
 
 function NotFound() {
   return (
@@ -79,6 +87,7 @@ export default function App() {
         <BrowserRouter basename={basename}>
           <AuthBridge />
           <Layout>
+            <ErrorBoundary>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/map" element={<WorldMapV2 />} />
@@ -97,8 +106,10 @@ export default function App() {
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/account" element={<Account />} />
               <Route path="/whitepaper" element={<WhitepaperPage />} />
+              <Route path="/__boom" element={<Boom />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </ErrorBoundary>
           </Layout>
         </BrowserRouter>
         <ErrorModal />

@@ -26,6 +26,11 @@
  *                    rendered content (text / img / svg / colored bg). This is robust to news
  *                    churn (different headlines → similar ink) and needs no baseline image,
  *                    so unlike pixel-diff visual regression it can't rot on a live data site.
+ *   • ERROR BOUNDARY — a render crash (/__boom) must be CONTAINED (persistent nav/chrome
+ *                    survives, not a blank white screen) AND reported to the client-error
+ *                    sink. The boundary renders NO fallback UI on purpose: a generic card
+ *                    reads as real content/state on an intelligence site → misinformation.
+ *                    The sink POST is intercepted + aborted so the test never writes to DynamoDB.
  *
  * Param routes (/weekly/thread/:id, /weekly/country/:name, /daily/:dateKey) are
  * auto-discovered by scraping their listing page, so the test never rots on a
@@ -441,6 +446,44 @@ async function checkMapLayers(browser) {
   return out;
 }
 
+// ---- error-boundary integrity (white-screen guard + capture) -------------
+// The app must have a WORKING React error boundary: a render crash should
+// degrade to a fallback card (not a blank white screen) AND be reported to the
+// client-error sink. `/__boom` is a deliberate-throw route wired inside the
+// boundary. We assert (a) the fallback renders + the app isn't blank, and (b)
+// the sink POST fires — intercepting and ABORTING that POST so the test never
+// writes a row to the prod DynamoDB table.
+const CLIENT_ERRORS_HOST = 'ooi55v2xlsgwyphl4bpyc7gwpu0lhhcq.lambda-url.ap-northeast-1.on.aws';
+
+async function checkErrorBoundary(browser) {
+  const context = await browser.newContext({ serviceWorkers: 'block', viewport: VIEWPORTS.desktop });
+  const page = await context.newPage();
+  const out = { ran: false, caught: false, reported: false, endpointSet: false, error: null, payloadMsg: null };
+  let posted = null;
+  try {
+    await page.route(`**${CLIENT_ERRORS_HOST}/**`, async (route) => {
+      if (route.request().method() === 'POST') posted = route.request().postData();
+      await route.abort(); // never let the test error reach the table
+    });
+    await page.goto(urlFor('/__boom'), { waitUntil: 'load', timeout: 30000 });
+    out.ran = true;
+    // The boundary renders NO fallback (a card would read as real content →
+    // misinformation). "caught" = the crash was contained to the routed content
+    // area while the persistent chrome (nav) survived. An UNCAUGHT crash unmounts
+    // the whole React tree, so .gp-nav would be gone — that's the failure signal.
+    out.caught = await page.locator('.gp-nav').first()
+      .waitFor({ state: 'visible', timeout: CONTENT_TIMEOUT }).then(() => true).catch(() => false);
+    await page.waitForTimeout(700); // let the fire-and-forget report dispatch
+    out.endpointSet = await page.evaluate(() => !!window.CLIENT_ERRORS_ENDPOINT).catch(() => false);
+    out.reported = !!posted && /BOOM/.test(posted);
+    if (posted) { try { out.payloadMsg = JSON.parse(posted).message; } catch { out.payloadMsg = posted.slice(0, 80); } }
+  } catch (e) {
+    out.error = (e.message || String(e)).slice(0, 160);
+  }
+  await context.close();
+  return out;
+}
+
 // ---- main ----------------------------------------------------------------
 (async () => {
   console.log(`\nProduction smoke-test against ${BASE}`);
@@ -486,6 +529,11 @@ async function checkMapLayers(browser) {
   console.log(mapOk
     ? `PASS (${Object.entries(mapLayers.layers).map(([k, n]) => `${k}:${n}`).join(', ')})`
     : 'FAIL');
+
+  process.stdout.write(`  • ${'ErrorBoundary'.padEnd(22)} /__boom catches + reports ... `);
+  const eb = await checkErrorBoundary(browser);
+  const ebOk = eb.ran && !eb.error && eb.caught && (!eb.endpointSet || eb.reported);
+  console.log(ebOk ? `PASS (caught${eb.endpointSet ? ', reported' : ''})` : 'FAIL');
 
   await browser.close();
 
@@ -597,13 +645,28 @@ async function checkMapLayers(browser) {
   }
   const paintFailed = paintBlank.length ? 1 : 0;
 
-  const totalChecks = results.length + 3;
-  const totalFailed = failed + (storyOk ? 0 : 1) + mapFailed + paintFailed;
+  // ---- error-boundary integrity ----
+  console.log(`\n${'-'.repeat(90)}\nERROR BOUNDARY (a render crash must be contained + reported — NO fallback UI, which would read as misinformation)`);
+  if (!eb.ran || eb.error) {
+    console.log(`  error: ${eb.error || '/__boom did not load'}`);
+  } else {
+    console.log(`  ${eb.caught ? 'ok' : 'X '} crash contained → nav/chrome survived${eb.caught ? '' : ' (WHITE SCREEN — whole app unmounted, boundary not working)'}`);
+    if (eb.endpointSet) {
+      console.log(`  ${eb.reported ? 'ok' : 'X '} crash reported to client-error sink${eb.reported ? ` (msg: ${eb.payloadMsg})` : ' (no POST fired)'}`);
+    } else {
+      console.log('  -  sink endpoint not configured on this base — skipping report assertion');
+    }
+  }
+  const ebFailed = ebOk ? 0 : 1;
+
+  const totalChecks = results.length + 4;
+  const totalFailed = failed + (storyOk ? 0 : 1) + mapFailed + paintFailed + ebFailed;
   console.log(`\n${'='.repeat(72)}`);
   console.log(totalFailed === 0 ? `ALL ${totalChecks} CHECKS HEALTHY` : `${totalFailed}/${totalChecks} CHECKS FAILED`);
   if (storyFailed) console.log(`  (${storyFailed} economy story link${storyFailed === 1 ? '' : 's'} dead)`);
   if (mapFailed) console.log(`  (/map: ${mapEmpty.length ? mapEmpty.join(' + ') + ' layer empty' : 'did not load'})`);
   if (paintFailed) console.log(`  (${paintBlank.length} region${paintBlank.length === 1 ? '' : 's'} painted blank: ${paintBlank.map((r) => r.name).join(', ')})`);
+  if (ebFailed) console.log(`  (error boundary: ${!eb.caught ? 'white-screened instead of catching' : 'crash not reported to sink'})`);
   console.log(`Screenshots: ${SHOTS_DIR}`);
   process.exit(totalFailed === 0 ? 0 : 1);
 })();

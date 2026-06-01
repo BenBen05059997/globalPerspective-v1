@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-06-01 (render-crash containment: real error boundary → client-error sink, NO fallback UI)
+
+Turned the passive client-error sink from "captures `window.error`/`unhandledrejection` only" into "also captures React render crashes" — and made render crashes degrade gracefully instead of white-screening the whole app.
+
+- **Root problem.** The app's `ErrorBoundary` was a *function* component (React function components physically cannot catch render errors — only class components with `getDerivedStateFromError`/`componentDidCatch` can) and it wasn't mounted anywhere. Any component that threw during render unmounted the whole tree → blank white page, and React swallows render throws before they reach `window.error`, so the sink never saw them. Render crashes were completely invisible.
+- **Real class boundary.** Rewrote `components/ErrorHandling.jsx` `ErrorBoundary` as a class component and mounted it around `<Routes>` in `App.jsx`, so a crash is contained to the routed content area while the nav/chrome outside it survives. `componentDidCatch` reports via a new `reportBoundaryError` export in `services/errorSink.js` (a working boundary swallows the throw, so this is the ONLY path a render crash reaches the sink → `newsClientErrors` Lambda → DynamoDB).
+- **NO fallback UI — deliberate.** The boundary renders `null` on a caught crash; it does **not** show a "something went wrong" card. On an intelligence site a generic fallback reads as real content/state — a reader can't distinguish a *broken* render from an *intentionally-empty* one, so a friendly card is **misinformation**. The boundary's only jobs are to contain the crash and report it.
+- **`/__boom` test route + automated regression leg.** Added a dev/test `/__boom` route (throws on render) and a permanent **ERROR BOUNDARY** leg in `scripts/smoke-test.mjs`: it navigates to `/__boom`, asserts the persistent nav (`.gp-nav`) survived (crash contained, not a full white-screen), and on prod asserts a sink report POST fired (intercepted + aborted so the test never writes to DynamoDB). New **class 8** documented in `BUG_PLAYBOOK.md`.
+- **Verified.** Local smoke-test green (crash contained, no fallback card, no white screen). Prod reporting path verified post-deploy via `node scripts/errors.mjs`.
+
+Files: `global-perspectives-starter/frontend/src/components/ErrorHandling.jsx`, `App.jsx`, `services/errorSink.js`, `scripts/smoke-test.mjs`, `BUG_PLAYBOOK.md`, `docs/` (build).
+
 ## 2026-06-01 (smoke-test: general class-7 guard — VISUAL PAINT leg)
 
 Added a second, *general* class-7 detector to `scripts/smoke-test.mjs`, complementing the page-specific MAP LAYER RENDER leg.

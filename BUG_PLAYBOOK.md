@@ -46,7 +46,7 @@ block service workers, and judge health from the **rendered DOM**, not the HTTP 
 this page actually broken"). The other two are a static grep (no browser) and a live-API
 schema probe.
 
-Quick map: `smoke-test.mjs` (classes 1,3,5,6,7) · `link-crawl.mjs` (class 1, site-wide) ·
+Quick map: `smoke-test.mjs` (classes 1,3,5,6,7,8) · `link-crawl.mjs` (class 1, site-wide) ·
 `auth-guard-check.mjs` (class 2) · `contract-check.mjs` (class 4). The per-class
 *detect/green/if-red* contracts are in **The loop contract** section below.
 
@@ -242,6 +242,29 @@ add a seventh contract; don't widen an existing one past its evidence.
   **only** Pulse + Connections (data always present on prod); Economy/Editorial layers can
   legitimately be empty (no active disruptions / no elevated-signal picks) so they're not
   asserted. Adding a new asserted layer requires its backing data to be reliably non-empty.
+
+### 8 — Render crash (uncaught component throw white-screens the app)
+- **Detect:** the smoke-test **ERROR BOUNDARY** leg. It navigates to `/__boom` (a route
+  whose only job is to throw during render), then asserts (a) the persistent nav/chrome
+  (`.gp-nav`) is still visible — proving the crash was *contained* to the routed content
+  area, not a full-tree unmount — and (b) on a base where the client-error sink endpoint
+  is configured, that a report POST fired (intercepted + aborted so the test never writes
+  to DynamoDB). The real boundary is the class component in `components/ErrorHandling.jsx`
+  mounted around `<Routes>` in `App.jsx`; it reports via `reportBoundaryError` in
+  `services/errorSink.js` (a working boundary swallows the throw, so `componentDidCatch`
+  is the ONLY place a render crash reaches the sink).
+- **NO FALLBACK UI — by design.** The boundary renders `null` on a caught crash; it does
+  **not** show a "something went wrong" card. On an intelligence site a generic fallback
+  reads as real content/state — a reader can't tell a *broken* render from an
+  *intentionally-empty* one, so a friendly card is **misinformation**. The boundary's only
+  two jobs are: stop one crash from white-screening the whole app, and report it. The
+  crashed region simply renders nothing; nav/chrome outside the boundary survives.
+- **Green:** `/__boom` keeps the nav mounted (crash contained) AND, on prod, a sink POST
+  fired containing the crash message.
+- **If red:** if the whole app white-screens, the boundary is not a class component
+  (function components can't catch) or isn't mounted around the routes; if contained but
+  not reported, `componentDidCatch` → `reportBoundaryError` → `window.CLIENT_ERRORS_ENDPOINT`
+  is broken. Read captured crashes back with `node scripts/errors.mjs --days N`.
 
 ### Loop guardrails (non-negotiable, same as the standing project rules)
 - **No deploy / commit / push without explicit confirmation.** The loop fixes source and

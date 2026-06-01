@@ -555,7 +555,7 @@ The passive complement to the on-demand `scripts/` checks: catches a pipeline st
 
 **What it does:**
 1. Hits the public proxy `?action=topics`, reads `asOf` (= latest topics `updatedAt`).
-2. Alerts via SNS if content age > `STALE_HOURS` (=5) **or** the proxy is unreachable / returns no timestamp (so it doubles as a read-path uptime check, no DDB coupling).
+2. Alerts via SNS if content age > `STALE_HOURS` (=9; the content pipeline runs every ~4h, so 9h tolerates ~2 missed cycles) **or** the proxy is unreachable / returns no timestamp (so it doubles as a read-path uptime check, no DDB coupling).
 3. Honest-failure: only alerts on a real problem, never a fake "all clear".
 
 **Alerts → SNS topic `GlobalPerspectiveAlerts`** → email. **Key env vars:** `PROXY_URL`, `SNS_TOPIC_ARN`, `STALE_HOURS`, `SITE_URL`. **Role:** `newsFreshnessMonitor-role` (sns:Publish only).

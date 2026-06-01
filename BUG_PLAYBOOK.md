@@ -125,9 +125,12 @@ problem; they never emit a fake "all clear" that could be mistaken for a guarant
 - **`newsFreshnessMonitor`** — data-freshness dead-man's-switch. EventBridge
   `TriggerFreshnessMonitor` (every 2h at :30) invokes it; it hits the public proxy
   `?action=topics`, reads `asOf`, and alerts if content is older than `STALE_HOURS`
-  (=5) **or** the proxy is unreachable/timestampless (so it doubles as a read-path
-  uptime check). Catches the #1 silent failure for a news site: the pipeline stalls
-  and the site quietly serves stale content. Role `newsFreshnessMonitor-role`
+  (=9 — the content pipeline runs every ~4h, so 9h tolerates ~2 missed cycles) **or**
+  the proxy is unreachable/timestampless (so it doubles as a read-path uptime check).
+  Catches the #1 silent failure for a news site: the pipeline stalls and the site
+  quietly serves stale content — and it earned its keep on 2026-06-01, surfacing a
+  multi-hour freeze (DeepSeek JSON output truncated past `max_tokens`; the throw was
+  caught/logged so CloudWatch Errors stayed 0). Role `newsFreshnessMonitor-role`
   (sns:Publish only). Source: `amplify/backend/function/newsFreshnessMonitor/src/`.
 - **`newsErrorDigest`** — the alerting/triage layer over the passive client-error sink
   (`newsClientErrors`). EventBridge `TriggerErrorDigest` (every 6h) invokes it; it

@@ -7,8 +7,9 @@ Fixed the live content stall that `newsFreshnessMonitor` surfaced — content ha
 - **Root cause.** `newsInvokeGemini-dev` was throwing `Failed to parse JSON from model output` on **every** run since 2026-06-01T00:00 UTC. DeepSeek's `{"topics":[…]}` responses grew past the `max_tokens: 8000` ceiling (`json_object` mode), so the output was truncated mid-object and all four `extractJson` branches failed. The throw is caught and logged, so CloudWatch's Errors metric stayed at 0 — the function looked healthy while silently producing nothing (the exact blind spot the freshness monitor exists to cover). Diagnostic on the recovered run: `finish_reason: stop, completion_tokens: 7830` — output sits right at the cap.
 - **Fix (deployed via AWS CLI).** Raised `max_tokens` 8000 → 8192 (model ceiling) for headroom; added `salvageTruncatedTopics()` as a last-resort branch in `extractJson` that walks the `topics` array and recovers every fully-closed object up to the truncation point instead of discarding the whole batch (only runs after the existing branches fail, so the healthy path is unchanged); added `finish_reason`/`completion_tokens`/char-length logging so a future truncation is diagnosable at a glance.
 - **Verified.** Manual invoke → 14 topics, fresh `updatedAt`; public proxy `asOf` advanced to 2026-06-01T09:48, `stale: false`; agent Lambda promoted + enriched it server-side.
+- **Monitor retune.** Bumped `newsFreshnessMonitor`'s `STALE_HOURS` 5 → 9 (env var, via CLI) — the content pipeline runs every ~4h, so 5h tolerated only ~1 missed cycle (false-positive risk); 9h tolerates ~2. Docs (`BUG_PLAYBOOK.md`, `ARCHITECTURE.md`) updated to match.
 
-Files (no frontend build — backend Lambda): `amplify/backend/function/newsInvokeGemini/src/index.js`.
+Files (no frontend build — backend Lambda + docs): `amplify/backend/function/newsInvokeGemini/src/index.js`, `BUG_PLAYBOOK.md`, `ARCHITECTURE.md`.
 
 ## 2026-06-01 (passive 24/7 monitoring: freshness dead-man's-switch + client-error digest + dependabot)
 

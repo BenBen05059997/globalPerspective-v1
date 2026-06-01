@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-01 (billing teardown: removed newsStripeWebhook + tier/portal code from the proxy)
+
+Completed the backend subscription/billing teardown deferred on 2026-05-26. The frontend billing UI and static-page copy were already removed; this removes the dormant backend. Subscriptions are deprecated and not returning — see `project-billing-deprecated`.
+
+- **Deleted `newsStripeWebhook`.** Backed up the deployed code, then deleted the Lambda, its **public Function URL** (`…tu2abnue3kefs2lkeczezoez3m0fzztr.lambda-url…`; it used a Function URL, never API Gateway; 0 invocations in 30 days), its IAM role `newsStripeWebhook-role-kercpkn5`, and the orphaned per-function exec policy. (Detached the shared `AmazonDynamoDBFullAccess` before role deletion — did not delete that shared managed policy.) Source kept in-repo for reference.
+- **Stripped billing code from `newsSensitiveData`.** Removed `resolveUserTier()`, the `user_profile` + `portal_session` actions, the dead `resolveTier()`, and the unused `MEMBER_API_KEYS`/`ENTERPRISE_API_KEYS`/`MEMBER_MAX_DAYS`/`USERS_TABLE`/`PADDLE_API_KEY`/`PADDLE_PORTAL_BASE`/`LOOPS_API_KEY` consts. Kept the generic `verifyFirebaseToken`/`getGoogleCerts`/`FIREBASE_PROJECT_ID` helpers (still used by `newsSavedItems`) and `ENTERPRISE_MAX_DAYS` (live archive cap). `node --check` clean.
+- **Redeployed + verified.** `newsSensitiveData-dev` updated via CLI; `topics` test invoke returns fresh data.
+- **Optional leftover (not done):** drop `tier`/`paddleCustomerId`/`paddleSubscriptionId` attributes from `USERS_TABLE` records — dormant, no urgency.
+
+Files (no frontend build — backend Lambda + docs): `amplify/backend/function/newsSensitiveData/src/index.js`, `ARCHITECTURE.md`, `BACKEND_TODO.md`. Infra changes via AWS CLI.
+
 ## 2026-06-01 (stale-pipeline fix: DeepSeek JSON truncation in newsInvokeGemini)
 
 Fixed the live content stall that `newsFreshnessMonitor` surfaced — content had been frozen since 2026-05-31T20:01 UTC.

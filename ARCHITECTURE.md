@@ -144,13 +144,13 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 
 In practice **every visitor gets full access** — tier is display-only metadata and enforces nothing.
 
-**Storage (legacy):** DynamoDB `USERS_TABLE`, keyed by Firebase UID (`uid`). Records may still carry `tier` / `paddleCustomerId` / `paddleSubscriptionId` fields from before deprecation.
+**Storage (legacy):** DynamoDB `USERS_TABLE`, keyed by Firebase UID (`uid`). Records may still carry `tier` / `paddleCustomerId` / `paddleSubscriptionId` fields from before deprecation (these fields are now never read).
 
-**Lifecycle (deprecated):** `newsStripeWebhook` Lambda (handles Paddle) once mapped `subscription.created/updated/canceled` → tier changes. The webhook is no longer a maintained path (see Lambda #12).
+**Lifecycle (removed 2026-06-01):** the `newsStripeWebhook` Lambda (handled Paddle) was deleted along with its Function URL and IAM role. There is no billing/subscription sync path anymore.
 
-**Enforcement:** None. All auth gates were removed from `newsSensitiveData` on 2026-04-11; `resolveUserTier` survives only behind the deprecated `user_profile` / `portal_session` actions. Archive, thread/country intelligence, narrative thread, economic, and daily-brief actions are all open with no JWT.
+**Enforcement:** None. All auth gates were removed from `newsSensitiveData` on 2026-04-11. The `resolveUserTier` helper and the `user_profile` / `portal_session` proxy actions were removed 2026-06-01. Archive, thread/country intelligence, narrative thread, economic, and daily-brief actions are all open with no JWT.
 
-**Paddle Customer Portal (removed):** the `/account` billing UI and its `portal_session` call were deleted from the frontend on 2026-05-26. The backend `portal_session` action still exists (inert, `PADDLE_API_KEY` unset) pending backend teardown.
+**Paddle Customer Portal (removed):** the `/account` billing UI and its `portal_session` call were deleted from the frontend on 2026-05-26; the backend `portal_session` action was removed 2026-06-01.
 
 ---
 
@@ -309,10 +309,8 @@ Read-only REST proxy. All supported actions:
 | `markets_global` | None (early access) | — | Global FX / rates / commodities / equities / crypto snapshot, **plus an additive `series` map (`{ [INSTRUMENT_ID]: { spark:[≤20 daily closes], change:%vs-yesterday } }`) built from the `HISTORY#` rows — powers the `/economy` watchlist mini-sparklines + day-over-day change pills** |
 | `markets_country` | None (early access) | `{ countryName }` | Country macro snapshot (GDP, CPI, reserves, etc.) |
 | `markets_history` | None (early access) | `{ symbol, days }` | Per-instrument price history `[{date, value}]` for sparklines — resolves `symbol` across commodities / rates / equities / crypto / FX (was FX-only before 2026-05-26) |
-| `user_profile` | Firebase JWT | — | ⚠️ DEPRECATED (billing) — user tier + subscription info from USERS_TABLE |
-| `portal_session` | Firebase JWT | — | ⚠️ DEPRECATED (billing) — Paddle Customer Portal session URL; no-op (PADDLE_API_KEY unset) |
 
-**Early access:** All content actions are currently public (no auth required). When billing goes live, gated actions will require `Authorization: Bearer <firebase-id-token>`.
+**All content actions are public** (no auth required). The billing-gated `user_profile` / `portal_session` actions and `resolveUserTier()` were removed 2026-06-01 along with the rest of the subscription stack — see [Lambda #12](#) below. The generic `verifyFirebaseToken` helper remains for future per-user features (currently only the separate `newsSavedItems` Lambda uses Firebase JWT).
 
 **CORS origins:** `benben05059997.github.io`, `globalperspective.net`, `www.globalperspective.net`, `localhost:5173`, `127.0.0.1:5173`
 
@@ -450,11 +448,10 @@ Keeps country facts in DynamoDB current without manual editing.
 
 ---
 
-### 12. `newsStripeWebhook` (name is legacy — handled Paddle) ⚠️ DEPRECATED
-**Path:** `amplify/backend/function/newsStripeWebhook/src/index.js`
-**Trigger:** Paddle webhook (separate API Gateway endpoint)
+### 12. `newsStripeWebhook` (name was legacy — handled Paddle) ❌ REMOVED 2026-06-01
+**Source kept for reference:** `amplify/backend/function/newsStripeWebhook/src/index.js`
 
-> **DEPRECATED 2026-05-26 — billing is not in use.** This Lambda once kept `USERS_TABLE` tiers in sync with Paddle subscription events (`subscription.created/updated/canceled`, HMAC-SHA256 of `${ts}:${rawBody}` with `PADDLE_WEBHOOK_SECRET`, UID via `data.custom_data.uid`). It is **no longer a maintained path.** It is also broken as deployed — the code reads `PADDLE_WEBHOOK_SECRET` but the live function only has stale `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` vars, so every signature check fails. Since subscriptions are deprecated this is **not a bug to fix** — it's a removal candidate. Do not build on it.
+> **REMOVED 2026-06-01 — billing teardown complete.** The deployed Lambda, its public Function URL (`https://tu2abnue3kefs2lkeczezoez3m0fzztr.lambda-url.ap-northeast-1.on.aws/`, 0 invocations in 30 days), its IAM role `newsStripeWebhook-role-kercpkn5`, and the orphaned per-function exec policy were all deleted via CLI. The `resolveUserTier()` logic and the `user_profile` / `portal_session` proxy actions were stripped from `newsSensitiveData` in the same pass. Source remains in-repo for reference only; nothing invokes it. Subscriptions are not coming back — do not rebuild on this. See [[project-billing-deprecated]].
 
 ---
 
@@ -759,7 +756,6 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 
 ### No schedule (manual only)
 - `newsPairIntelligence` — invoke manually or via ad-hoc AWS CLI call
-- `newsStripeWebhook` — event-driven (Paddle webhook via API Gateway)
 - `newsSensitiveData` / `newsSavedItems` — user-triggered via REST
 
 ---
@@ -776,8 +772,9 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | ACLED API | newsCountryFactsUpdater | Active conflict data (approval pending) |
 | Mapbox Geocoding | newsSensitiveData | Location name → lat/lng |
 | Google Maps | WeeklyMap.jsx (embedded by CountryPage), WorldMap.jsx (legacy, unrouted) | Interactive map rendering. **Note:** WorldMapV2 (`/map`) uses **d3 + topojson**, not Google Maps |
-| Paddle | newsStripeWebhook, newsSensitiveData | ⚠️ DEPRECATED 2026-05-26 — billing + Customer Portal no longer in use |
 | Firebase Auth | AuthContext.jsx + newsSensitiveData + newsSavedItems | Passwordless sign-in + JWT verification |
+
+> Paddle (billing + Customer Portal) was removed 2026-06-01 — the `newsStripeWebhook` Lambda and the billing proxy actions are gone. See [Lambda #12](#12-newsstripewebhook-name-was-legacy--handled-paddle--removed-2026-06-01).
 
 ---
 
@@ -1023,7 +1020,6 @@ git push
 | Lambda: REST proxy | `amplify/backend/function/newsSensitiveData/src/index.js` |
 | Lambda: social posting | `amplify/backend/function/newsPostLinkedIn/src/index.js` |
 | Lambda: Dev.to posting | `amplify/backend/function/newsPostDevTo/src/index.js` |
-| Lambda: Paddle webhooks | `amplify/backend/function/newsStripeWebhook/src/index.js` |
 | Frontend source | `global-perspectives-starter/frontend/src/` |
 | Production build | `docs/` |
 | Runtime config | `docs/config.js` (sets `window.FIREBASE_CONFIG`, `window.SENSITIVE_PROXY_ENDPOINT`, Google Maps key) |

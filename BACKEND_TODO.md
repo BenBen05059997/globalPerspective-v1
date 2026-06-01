@@ -6,8 +6,16 @@ Tracked issues from code review of all 11 Lambda functions (2026-04-17).
 
 ## 2026-05-26 audit findings (full ARCHITECTURE.md re-verification vs. live AWS)
 
-### A. Subscriptions / billing — DEPRECATED 2026-05-26 (do not fix, plan for removal)
-Billing is **not in use and not planned to return.** The earlier "fix the Paddle/Stripe env mismatch before re-enabling billing" item is **withdrawn** — there is nothing to re-enable. The deployed `newsStripeWebhook` is broken (reads `PADDLE_WEBHOOK_SECRET`, only has stale `STRIPE_*` vars) but that no longer matters.
+### A. Subscriptions / billing — ✅ TEARDOWN COMPLETE 2026-06-01
+Billing is **not in use and not planned to return.** The backend teardown deferred on 2026-05-26 is now done.
+
+**Backend teardown — DONE 2026-06-01:**
+- Deleted the deployed `newsStripeWebhook` Lambda, its public Function URL (`https://tu2abnue3kefs2lkeczezoez3m0fzztr.lambda-url.ap-northeast-1.on.aws/`, 0 invocations/30d — it used a Function URL, **not** API Gateway), its IAM role `newsStripeWebhook-role-kercpkn5`, and the orphaned per-function exec policy. (Source kept in-repo for reference.)
+- Stripped `resolveUserTier` + the `user_profile` / `portal_session` actions (and dead `resolveTier`, `MEMBER_API_KEYS`/`ENTERPRISE_API_KEYS`/`USERS_TABLE`/`PADDLE_*`/`LOOPS_API_KEY` consts) from `newsSensitiveData` source; redeployed to `newsSensitiveData-dev`; verified `topics` action returns fresh data. Generic `verifyFirebaseToken` kept (still used by `newsSavedItems`).
+
+**Still optional (not done):** drop `tier`/`paddleCustomerId`/`paddleSubscriptionId` from `USERS_TABLE` records. No urgency — just dormant attributes.
+
+_(Original deferred-state context below.)_ The earlier "fix the Paddle/Stripe env mismatch before re-enabling billing" item is **withdrawn** — there is nothing to re-enable. The deployed `newsStripeWebhook` was broken (read `PADDLE_WEBHOOK_SECRET`, only had stale `STRIPE_*` vars) — moot now that it's deleted.
 
 **Frontend cleanup — DONE 2026-05-26 (built + deployed to `docs/`):**
 - Deleted `TrialBanner.jsx`, `UpgradeSuccess.jsx`, `WeeklyLockedPreview.jsx`, `useUserProfile.js`.
@@ -15,12 +23,6 @@ Billing is **not in use and not planned to return.** The earlier "fix the Paddle
 - Stripped tier/perks/billing + `fetchPortalSession`/`fetchUserProfile` from `Account.jsx` (kept the Saved-items feature + basic profile).
 - Removed `fetchUserProfile` / `fetchPortalSession` from `restProxy.js` and the dead mocks from `redesign.test.jsx`.
 - Lint 0 errors, build OK, 171 tests pass.
-
-**Backend teardown — DEFERRED by user 2026-05-26 ("leave it later"), do when convenient (destructive AWS infra):**
-- Delete the deployed `newsStripeWebhook` Lambda + its API Gateway endpoint.
-- Remove `resolveUserTier` / `user_profile` / `portal_session` from `newsSensitiveData` source, then redeploy the Lambda (verify with a `topics` test invoke after).
-- Optionally drop `tier`/`paddleCustomerId`/`paddleSubscriptionId` from `USERS_TABLE` records.
-- Left intact for now to avoid source↔deploy drift and risky production-proxy redeploys without confirmation. The actions are inert (JWT-gated, nothing calls them).
 
 **Stale subscription copy on public pages (DEFERRED — needs wording decision):** `PrivacyTerms.jsx` still says paid subscriptions exist + "payments processed by Stripe"; `Contact.jsx` still has "Billing & Account" + "Enterprise" cards. These contradict the billing deprecation but are legal/marketing copy — left for the operator to reword. (Found in the 2026-05-26 page audit.)
 
@@ -37,14 +39,8 @@ Billing is **not in use and not planned to return.** The earlier "fix the Paddle
 
 ## Verified issues (found in code)
 
-### 1. Dead code in `newsSensitiveData`
-**File:** `amplify/backend/function/newsSensitiveData/src/index.js`
-
-- `MEMBER_API_KEYS` and `ENTERPRISE_API_KEYS` env var parsing (lines ~18-23)
-- `resolveTier(apiKey)` function (line ~863)
-- Never called in the handler — all auth flows through `resolveUserTier` (JWT)
-
-**Action:** Delete the dead code.
+### 1. Dead code in `newsSensitiveData` — ✅ DONE 2026-06-01
+Removed in the billing teardown: `MEMBER_API_KEYS`/`ENTERPRISE_API_KEYS` parsing, `resolveTier(apiKey)`, `resolveUserTier`, and the `user_profile`/`portal_session` actions. Source redeployed + verified.
 
 ---
 

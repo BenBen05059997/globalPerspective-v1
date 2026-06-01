@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-01 (stale-pipeline fix: DeepSeek JSON truncation in newsInvokeGemini)
+
+Fixed the live content stall that `newsFreshnessMonitor` surfaced — content had been frozen since 2026-05-31T20:01 UTC.
+
+- **Root cause.** `newsInvokeGemini-dev` was throwing `Failed to parse JSON from model output` on **every** run since 2026-06-01T00:00 UTC. DeepSeek's `{"topics":[…]}` responses grew past the `max_tokens: 8000` ceiling (`json_object` mode), so the output was truncated mid-object and all four `extractJson` branches failed. The throw is caught and logged, so CloudWatch's Errors metric stayed at 0 — the function looked healthy while silently producing nothing (the exact blind spot the freshness monitor exists to cover). Diagnostic on the recovered run: `finish_reason: stop, completion_tokens: 7830` — output sits right at the cap.
+- **Fix (deployed via AWS CLI).** Raised `max_tokens` 8000 → 8192 (model ceiling) for headroom; added `salvageTruncatedTopics()` as a last-resort branch in `extractJson` that walks the `topics` array and recovers every fully-closed object up to the truncation point instead of discarding the whole batch (only runs after the existing branches fail, so the healthy path is unchanged); added `finish_reason`/`completion_tokens`/char-length logging so a future truncation is diagnosable at a glance.
+- **Verified.** Manual invoke → 14 topics, fresh `updatedAt`; public proxy `asOf` advanced to 2026-06-01T09:48, `stale: false`; agent Lambda promoted + enriched it server-side.
+
+Files (no frontend build — backend Lambda): `amplify/backend/function/newsInvokeGemini/src/index.js`.
+
 ## 2026-06-01 (passive 24/7 monitoring: freshness dead-man's-switch + client-error digest + dependabot)
 
 Added the always-on, push-alert complement to the on-demand bug checks. The four `scripts/` checks only run when a human runs them, so a scheduled stall (pipeline dies overnight) or a transient outage is their blind spot. These monitors watch continuously and alert via one SNS topic `GlobalPerspectiveAlerts` → email. All free-tier; no CI added (per solo-dev constraint).

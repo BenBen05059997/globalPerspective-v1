@@ -215,7 +215,46 @@ function extractJson(text) {
     const objStr = text.slice(startObj, endObj + 1);
     try { return JSON.parse(objStr); } catch (_) { }
   }
+  // Last resort: the model output was truncated mid-stream (json_object +
+  // max_tokens cutoff), so the trailing object/array bracket never arrived and
+  // every parse above fails. Salvage every COMPLETE topic object up to the cut.
+  const salvaged = salvageTruncatedTopics(text);
+  if (salvaged && salvaged.topics.length) {
+    console.warn(`extractJson: salvaged ${salvaged.topics.length} topics from truncated output`);
+    return salvaged;
+  }
   throw new Error('Failed to parse JSON from model output');
+}
+
+// Walk the `"topics": [ ... ]` array and collect only fully-closed objects,
+// stopping at the first incomplete one. Handles strings/escapes so braces
+// inside values don't confuse depth tracking. Returns null if nothing usable.
+function salvageTruncatedTopics(text) {
+  const keyIdx = text.indexOf('"topics"');
+  const arrStart = text.indexOf('[', keyIdx === -1 ? 0 : keyIdx);
+  if (arrStart === -1) return null;
+  const items = [];
+  let i = arrStart + 1;
+  while (i < text.length) {
+    while (i < text.length && /[\s,]/.test(text[i])) i++;
+    if (i >= text.length || text[i] === ']') break;
+    if (text[i] !== '{') break;
+    let depth = 0, inStr = false, esc = false, j = i, closed = false;
+    for (; j < text.length; j++) {
+      const c = text[j];
+      if (inStr) {
+        if (esc) esc = false;
+        else if (c === '\\') esc = true;
+        else if (c === '"') inStr = false;
+      } else if (c === '"') inStr = true;
+      else if (c === '{') depth++;
+      else if (c === '}') { depth--; if (depth === 0) { j++; closed = true; break; } }
+    }
+    if (!closed) break;
+    try { items.push(JSON.parse(text.slice(i, j))); } catch (_) { break; }
+    i = j;
+  }
+  return items.length ? { topics: items } : null;
 }
 
 function parseAgeToHours(ageStr) {
@@ -699,10 +738,15 @@ exports.handler = async (event) => {
       ],
       response_format: { type: 'json_object' },
       temperature: 0.5,
-      max_tokens: 8000,
+      max_tokens: 8192,
     });
     const text = result?.choices?.[0]?.message?.content || '';
 
+    console.log(
+      'Grok finish_reason:', result?.choices?.[0]?.finish_reason,
+      'chars:', text.length,
+      'completion_tokens:', result?.usage?.completion_tokens,
+    );
     console.log('Grok response preview:', text?.substring(0, 500));
 
     if (!text) {

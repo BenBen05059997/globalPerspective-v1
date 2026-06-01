@@ -111,6 +111,56 @@ a Zod schema encoding only the fields the frontend reads (class 4). Catches a fi
 was renamed/removed or changed type (e.g. a number arriving as a string → NaN% in the
 UI). `zod` is a script-only devDependency, never bundled. Exit non-zero on drift.
 
+## Passive monitoring (24/7 — the always-on complement)
+
+The four checks above are **active**: they only run when a human runs them, so a
+failure that happens on a schedule (the content pipeline stalling overnight) or
+between runs (a transient outage) is their blind spot. These passive monitors watch
+continuously and **push an alert** instead of waiting to be asked. All alerts go to
+one SNS topic `GlobalPerspectiveAlerts` → email (benlai310@gmail.com). They follow the
+same **honest-failure rule** as the rest of the site: they only ever alert on a real
+problem; they never emit a fake "all clear" that could be mistaken for a guarantee.
+
+**Deployed (AWS-native, free-tier):**
+- **`newsFreshnessMonitor`** — data-freshness dead-man's-switch. EventBridge
+  `TriggerFreshnessMonitor` (every 2h at :30) invokes it; it hits the public proxy
+  `?action=topics`, reads `asOf`, and alerts if content is older than `STALE_HOURS`
+  (=5) **or** the proxy is unreachable/timestampless (so it doubles as a read-path
+  uptime check). Catches the #1 silent failure for a news site: the pipeline stalls
+  and the site quietly serves stale content. Role `newsFreshnessMonitor-role`
+  (sns:Publish only). Source: `amplify/backend/function/newsFreshnessMonitor/src/`.
+- **`newsErrorDigest`** — the alerting/triage layer over the passive client-error sink
+  (`newsClientErrors`). EventBridge `TriggerErrorDigest` (every 6h) invokes it; it
+  scans `GlobalPerspectiveClientErrors`, folds rows to per-fingerprint totals, diffs
+  against the prior run (stored in one `DIGEST#STATE` row), and alerts ONLY on **new**
+  or **spiking** (Δ ≥ `SPIKE_MIN_DELTA`=5) fingerprints — never re-alerting known
+  errors (that's alert fatigue). First run just establishes the baseline. Turns the
+  sink's capture into a push alert without a paid Sentry. Role `newsErrorDigest-role`
+  (sns:Publish + dynamodb Scan/Get/Put on the errors table). Source:
+  `amplify/backend/function/newsErrorDigest/src/`.
+
+**Repo setting (no CI, runs on GitHub's infra):**
+- **`.github/dependabot.yml`** — weekly grouped npm version-update PRs for the frontend
+  + cli. The higher-value half — **Dependabot security alerts** — is a separate repo
+  toggle you must flip once (see external setup #3 below).
+
+**External setups — these require YOUR account login (no API key can create them):**
+1. **UptimeRobot** (free tier) — external availability + SSL-expiry monitor.
+   Sign up at uptimerobot.com → Add New Monitor → type **HTTP(s)**, URL
+   `https://globalperspective.net`, interval 5 min → enable the **SSL expiry** alert →
+   add your email as the alert contact. Optionally add a 2nd monitor for the proxy
+   health URL. Catches "site is down / cert expired" from outside AWS.
+2. **Google Search Console** (free) — surfaces 404s, indexing + mobile issues *Google*
+   sees (tied to the discovery goal). search.google.com/search-console → add property
+   **globalperspective.net** → verify via DNS TXT (or the HTML-file method) → check the
+   **Pages** and **Core Web Vitals** reports.
+3. **Dependabot security alerts** (free) — GitHub repo Settings → **Code security and
+   analysis** → enable **Dependabot alerts** + **Dependabot security updates**. This is
+   the security half the committed `dependabot.yml` does not control.
+4. *(optional)* **Cloudflare Web Analytics** (free RUM) — real-user Core Web Vitals
+   without a traffic threshold. Cloudflare dash → Web Analytics → add site → it issues a
+   `<script>` token to drop in the site `<head>`. Lower priority at low traffic.
+
 ## The bug-fighting playbook (ordered, run on demand)
 
 Steps 1–8 are automatable into a pre-deploy run; 9 is inherently manual.

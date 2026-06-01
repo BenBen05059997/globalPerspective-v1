@@ -1,0 +1,36 @@
+# Dependency security alerts + version updates.
+#
+# This is a repo SETTING, not a CI workflow — GitHub runs it on its own infra,
+# so it costs no Actions minutes and fits the "no CI" constraint for this solo
+# project. Its job is to surface vulnerable npm deps before they ship.
+#
+# NOTE: the highest-value half — Dependabot SECURITY ALERTS — is a separate
+# repo toggle that this file does NOT control. Enable it once at:
+#   Settings → Code security and analysis → Dependabot alerts (+ security updates)
+# This file controls the routine (non-security) version-update PRs below.
+#
+# Updates are grouped + weekly to keep PR noise low for a single maintainer.
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/global-perspectives-starter/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      frontend-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/cli"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      cli-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"

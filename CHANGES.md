@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-06-01 (passive 24/7 monitoring: freshness dead-man's-switch + client-error digest + dependabot)
+
+Added the always-on, push-alert complement to the on-demand bug checks. The four `scripts/` checks only run when a human runs them, so a scheduled stall (pipeline dies overnight) or a transient outage is their blind spot. These monitors watch continuously and alert via one SNS topic `GlobalPerspectiveAlerts` → email. All free-tier; no CI added (per solo-dev constraint).
+
+- **`newsFreshnessMonitor` (data-freshness dead-man's-switch).** New Lambda (ap-northeast-1, nodejs24.x, 128MB) invoked by EventBridge `TriggerFreshnessMonitor` every 2h at :30. Hits the public proxy `?action=topics`, reads `asOf`, and alerts if content is older than `STALE_HOURS`=5 **or** the proxy is unreachable/timestampless (doubles as a read-path uptime check). Catches the #1 silent failure for a news site — pipeline stalls, site quietly serves stale content. Role `newsFreshnessMonitor-role` (sns:Publish only). **Found a live stall on first run: content was 9.5h stale.**
+- **`newsErrorDigest` (alerting/triage over the client-error sink).** New Lambda invoked by EventBridge `TriggerErrorDigest` every 6h. Scans `GlobalPerspectiveClientErrors`, folds to per-fingerprint totals, diffs vs the prior run (one `DIGEST#STATE` row), and alerts ONLY on new/spiking (Δ ≥ `SPIKE_MIN_DELTA`=5) fingerprints — first run just baselines, known errors never re-alert (no fatigue). Turns the sink's capture into a push alert without a paid Sentry. Role `newsErrorDigest-role` (sns:Publish + dynamodb Scan/Get/Put on the errors table).
+- **`GlobalPerspectiveAlerts` SNS topic** + email subscription (benlai310@gmail.com) — **pending the one-time confirmation click** AWS emailed.
+- **`.github/dependabot.yml`** — weekly grouped npm version-update PRs for frontend + cli (a repo setting, not CI). The security-alert half is a repo toggle the operator enables once (documented).
+- **Honest-failure policy applied:** monitors only ever alert on a real problem; no fake "all clear".
+- **Docs:** new "Passive monitoring (24/7)" section in `BUG_PLAYBOOK.md` covering both deployed monitors and the 3 external setups that need the operator's own account (UptimeRobot, Google Search Console, Dependabot alerts toggle; optional Cloudflare Web Analytics).
+
+Files (no frontend build — backend infra + docs): `amplify/backend/function/newsFreshnessMonitor/src/`, `amplify/backend/function/newsErrorDigest/src/`, `.github/dependabot.yml`, `BUG_PLAYBOOK.md`. Infra deployed via AWS CLI (2 Lambdas, 2 IAM roles, 2 EventBridge rules, 1 SNS topic).
+
 ## 2026-06-01 (render-crash containment: real error boundary → client-error sink, NO fallback UI)
 
 Turned the passive client-error sink from "captures `window.error`/`unhandledrejection` only" into "also captures React render crashes" — and made render crashes degrade gracefully instead of white-screening the whole app.

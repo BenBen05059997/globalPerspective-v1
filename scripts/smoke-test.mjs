@@ -447,12 +447,14 @@ async function checkMapLayers(browser) {
 }
 
 // ---- error-boundary integrity (white-screen guard + capture) -------------
-// The app must have a WORKING React error boundary: a render crash should
-// degrade to a fallback card (not a blank white screen) AND be reported to the
-// client-error sink. `/__boom` is a deliberate-throw route wired inside the
-// boundary. We assert (a) the fallback renders + the app isn't blank, and (b)
-// the sink POST fires — intercepting and ABORTING that POST so the test never
-// writes a row to the prod DynamoDB table.
+// The app must have a WORKING React error boundary: a render crash must be
+// CONTAINED (the persistent chrome/nav outside the boundary survives instead of
+// the whole tree white-screening) AND reported to the client-error sink. The
+// boundary renders NO fallback UI by design — a generic card would read as real
+// content/state on an intelligence site and become misinformation. `/__boom` is
+// a deliberate-throw route wired inside the boundary. We assert (a) .gp-nav
+// survived the crash, and (b) the sink POST fires — intercepting and ABORTING
+// that POST so the test never writes a row to the prod DynamoDB table.
 const CLIENT_ERRORS_HOST = 'ooi55v2xlsgwyphl4bpyc7gwpu0lhhcq.lambda-url.ap-northeast-1.on.aws';
 
 async function checkErrorBoundary(browser) {

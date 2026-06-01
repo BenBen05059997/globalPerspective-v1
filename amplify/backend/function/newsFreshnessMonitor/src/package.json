@@ -1,0 +1,10 @@
+{
+  "name": "newsfreshnessmonitor",
+  "version": "1.0.0",
+  "description": "Data-freshness dead-man's-switch for Global Perspectives — scheduled probe that alerts via SNS when content goes stale or the proxy is unreachable",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-sns": "^3.0.0"
+  }
+}

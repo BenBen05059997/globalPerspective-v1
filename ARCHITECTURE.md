@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-05-26
+**Last verified:** 2026-06-01
 
 > **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](./SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md).**
 
@@ -11,6 +11,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 - `newsThreadAnalysis`, `newsEconomicQuality` → **Gemini 2.5 Flash** (free tier, 13s pacing between calls, thinking disabled)
 - `newsPairIntelligence` → **DeepSeek V4** (deployed env vars verified `deepseek-chat` / `api.deepseek.com` — its source default still reads Grok, and the migration plan's Phase 2 box was never checked, but the live function is on DeepSeek). Manual-invoke only.
 - `newsMarketsData`, `newsCountryFactsUpdater`, `newsSavedItems`, `newsPostLinkedIn`, `linkedInAutoPost` → **no LLM** (data feeds or cached AI from DDB)
+- `newsClientErrors`, `newsFreshnessMonitor`, `newsErrorDigest` → **no LLM** (observability — passive error capture + 24/7 monitoring; see Lambdas #17–19 and "Observability & Monitoring")
 
 - **Production URL:** https://globalperspective.net (custom domain)
 - **GitHub Pages URL:** https://benben05059997.github.io/globalPerspective-v1/
@@ -527,6 +528,67 @@ Per-user save/bookmark store.
 
 ---
 
+### 17. `newsClientErrors`
+**Path:** `amplify/backend/function/newsClientErrors/src/index.js`
+**Trigger:** User-triggered — public Lambda Function URL (AuthType NONE; errors come from anonymous visitors). **No LLM.**
+**Built:** 2026-05-30. Roll-your-own passive error sink (no paid Sentry).
+
+Receives uncaught frontend errors and aggregates them into one counter row per fingerprint.
+
+**What it does:**
+1. Frontend `services/errorSink.js` (installed in `main.jsx`) listens for window `error` + `unhandledrejection`, and — via `reportBoundaryError` — React render crashes caught by the class `ErrorBoundary` around `<Routes>`. Fire-and-forget `fetch` POST, no-ops until `window.CLIENT_ERRORS_ENDPOINT` is set in `docs/config.js`.
+2. Lambda fingerprints each error (sha1 of message + normalized top stack frame) and `ADD count`s into one DynamoDB row, so a flood of identical errors collapses to a single row + sample.
+3. Abuse-bounded: 16KB body cap, per-field length caps, CORS locked to the two site origins.
+
+**DDB:** `GlobalPerspectiveClientErrors` — **PK** `errKey` (= `day#hash`), TTL 30d.
+**Read-back:** `node scripts/errors.mjs [--days N]` — source-map-resolves the top frame (maps are `build.sourcemap:'hidden'`, stripped from `docs/` on deploy).
+**Key env vars:** `CLIENT_ERRORS_TABLE`, `ERROR_TTL_DAYS`. **Role:** `newsClientErrors-role` (dynamodb:UpdateItem on the table only).
+
+---
+
+### 18. `newsFreshnessMonitor`
+**Path:** `amplify/backend/function/newsFreshnessMonitor/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerFreshnessMonitor` — `cron(30 0/2 * * ? *)` (every 2h at :30). **No LLM.**
+**Built:** 2026-06-01. Data-freshness dead-man's-switch.
+
+The passive complement to the on-demand `scripts/` checks: catches a pipeline stall that happens on a schedule (the active checks' blind spot).
+
+**What it does:**
+1. Hits the public proxy `?action=topics`, reads `asOf` (= latest topics `updatedAt`).
+2. Alerts via SNS if content age > `STALE_HOURS` (=5) **or** the proxy is unreachable / returns no timestamp (so it doubles as a read-path uptime check, no DDB coupling).
+3. Honest-failure: only alerts on a real problem, never a fake "all clear".
+
+**Alerts → SNS topic `GlobalPerspectiveAlerts`** → email. **Key env vars:** `PROXY_URL`, `SNS_TOPIC_ARN`, `STALE_HOURS`, `SITE_URL`. **Role:** `newsFreshnessMonitor-role` (sns:Publish only).
+
+---
+
+### 19. `newsErrorDigest`
+**Path:** `amplify/backend/function/newsErrorDigest/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerErrorDigest` — `cron(15 0/6 * * ? *)` (every 6h). **No LLM.**
+**Built:** 2026-06-01. The alerting/triage layer over the `newsClientErrors` sink (#17).
+
+Turns the sink's passive capture into a push alert without a paid Sentry.
+
+**What it does:**
+1. Scans `GlobalPerspectiveClientErrors`, folds rows to per-fingerprint totals.
+2. Diffs against the prior run (stored in one `DIGEST#STATE` row in the same table).
+3. Alerts via SNS ONLY on **new** or **spiking** (Δ ≥ `SPIKE_MIN_DELTA`=5) fingerprints — first run just baselines; known errors never re-alert (the alert-fatigue guard).
+
+**Alerts → SNS topic `GlobalPerspectiveAlerts`** → email. **Key env vars:** `CLIENT_ERRORS_TABLE`, `SNS_TOPIC_ARN`, `SPIKE_MIN_DELTA`. **Role:** `newsErrorDigest-role` (sns:Publish + dynamodb Scan/Get/Put on the errors table).
+
+---
+
+## Observability & Monitoring
+
+Two layers, both roll-your-own (the user rejects paid Sentry on cost):
+
+- **Active / on-demand** — four standalone Playwright/static checks under `scripts/` (`smoke-test.mjs`, `link-crawl.mjs`, `auth-guard-check.mjs`, `contract-check.mjs`), run by hand against production. They detect the 8 bug classes in `BUG_PLAYBOOK.md`. They only run when invoked.
+- **Passive / 24-7** — the always-on complement that pushes alerts: `newsClientErrors` (#17) captures errors → `newsErrorDigest` (#19) alerts on new/spiking; `newsFreshnessMonitor` (#18) alerts on stale content / proxy down. All alerts route to one SNS topic **`GlobalPerspectiveAlerts`** (`arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectiveAlerts`) → email (confirmed subscription). Dependency security via `.github/dependabot.yml` + the repo Dependabot-alerts toggle.
+
+External monitors that need the operator's own account (UptimeRobot, Google Search Console, optional Cloudflare Web Analytics) are documented in `BUG_PLAYBOOK.md` → "Passive monitoring (24/7)".
+
+---
+
 ## DynamoDB Tables
 
 ### Topics Table (`TOPICS_DDB_TABLE`)
@@ -630,6 +692,9 @@ All rows carry `asOf` timestamps + TTL. Honesty contract: never display stale da
 
 ### Saved Items Table (`SAVED_ITEMS_TABLE`, default `GlobalPerspectiveSavedItems`)
 **PK:** `uid` (Firebase UID) / **SK:** `savedKey` (= `{itemType}#{itemId}`). Written/read by `newsSavedItems`. Item types: `thread`, `country`, `daily`, `pair`.
+
+### Client Errors Table (`GlobalPerspectiveClientErrors`, ap-northeast-1)
+**PK:** `errKey` (= `day#hash`), TTL 30d. Written by `newsClientErrors` (#17) — identical errors `ADD count` into one row (fingerprint = sha1 of message + normalized top frame). Scanned by `newsErrorDigest` (#19), which also stores its run baseline in a single `DIGEST#STATE` row here. Read back with `node scripts/errors.mjs`.
 
 ---
 

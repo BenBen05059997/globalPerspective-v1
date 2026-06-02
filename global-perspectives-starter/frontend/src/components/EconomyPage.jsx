@@ -15,8 +15,8 @@ import { useTopMovers } from '../hooks/useTopMovers';
 import { useMarketsGlobal } from '../hooks/useMarketsGlobal';
 import { useMarketsHistory } from '../hooks/useMarketsHistory';
 import Sparkline from './atoms/Sparkline';
-import { realizedMoveFor } from '../data/economicAnalogs';
 import { composeBriefing, composeInstrumentWhy } from '../utils/composeEconomyBriefing';
+import { gateInstrument, isFxPair } from '../utils/disruptionGate.js';
 import QualityFlag from './atoms/QualityFlag';
 import './EconomyPage.css';
 
@@ -193,17 +193,8 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
         </div>
       </div>
 
-      {/* Driving-stories sub-table: Severity · Story · Direction · Mechanism · Closest analog */}
-      <div className="ep-driving-hd">
-        <div>Severity</div><div>Story</div><div>Direction</div><div>Mechanism</div>
-        <div
-          className="ep-analog-hd"
-          title="closest past event + what this instrument actually did then — history, not a forecast"
-        >
-          Closest analog
-          <span className="ep-analog-cap">past event + what it did then — not a forecast</span>
-        </div>
-      </div>
+      {/* Lean driving-stories list: severity · headline (→ Economy tab) · direction.
+          Mechanism + historical analog are demoted to each story's thread Economy tab. */}
       {visibleStories.map(s => (
         <div className="ep-driving-row" key={s.scopeId}>
           <div className="ep-dr-sev">
@@ -215,30 +206,19 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
             <QualityFlag impact={s} size="sm" />
           </div>
           <div className="ep-dr-dir">
-            <span className={`ep-arr ${DIR_CLASS[s.dir] || 'mx'}`}>{DIR_GLYPH[s.dir] || '↔'}</span>
+            {(() => {
+              const g = gateInstrument({ instrumentId: s.instrumentId, direction: s.dir, rationale: s.rationale });
+              return g.suppressed
+                ? <span className="ep-arr mx" title="Direction not determinable from rationale">·</span>
+                : <span className={`ep-arr ${DIR_CLASS[g.direction] || 'mx'}`}>{DIR_GLYPH[g.direction] || '↔'}</span>;
+            })()}
             {s.magnitude && <span className="ep-dm">{s.magnitude}</span>}
-          </div>
-          <div className="ep-dr-mech">{s.rationale || <span className="ep-faint">no mechanism recorded</span>}</div>
-          <div className="ep-dr-analog">
-            {s.analog ? (
-              <>
-                <span className="ep-aname">{s.analog.event}{s.analog.year ? ` (${s.analog.year})` : ''}</span>
-                {s.analogMove ? (
-                  // Real historical realized move for this instrument — verbatim from the
-                  // catalog. The page's differentiator: what actually happened, not a forecast.
-                  <span className="ep-amove">
-                    <span className="ep-amove-tk">{s.instrumentId}</span> {s.analogMove}
-                  </span>
-                ) : s.analog.outcome ? (
-                  <span className="ep-aout">{s.analog.outcome}</span>
-                ) : null}
-              </>
-            ) : (
-              <span className="ep-faint">no close analog</span>
-            )}
           </div>
         </div>
       ))}
+      {visibleStories.length > 0 && (
+        <p className="ep-depth-pointer">Full mechanism + historical analog on each story&apos;s Economy tab →</p>
+      )}
       {sortedStories.length > STORY_CAP && (
         <button className="ep-stories-more" onClick={() => setShowAllStories(v => !v)}>
           {showAllStories ? 'Show fewer' : `Show ${sortedStories.length - STORY_CAP} more ${sortedStories.length - STORY_CAP === 1 ? 'story' : 'stories'}`}
@@ -470,7 +450,7 @@ export default function EconomyPage() {
     return best;
   };
 
-  // Stories driving a given instrument, with that instrument's per-story rationale + analog + countries.
+  // Stories driving a given instrument, with that instrument's per-story rationale + countries.
   const storiesForInstrument = (instrumentId) =>
     disruptions
       .filter(d => (d.instruments || []).some(i => i.instrumentId === instrumentId))
@@ -480,21 +460,42 @@ export default function EconomyPage() {
           ...(d.winners || []).filter(w => w.type === 'country').map(w => w.name),
           ...(d.losers || []).filter(l => l.type === 'country').map(l => l.name),
         ];
-        const analog = d.historicalAnalog || null;
-        // Join the LLM-named analog against the bundled catalog to surface its REAL
-        // realized move for THIS instrument (verbatim from realizedMoves[instrumentId]).
-        // null when the event/instrument isn't catalogued — never fabricated.
-        const analogMove = analog
-          ? realizedMoveFor(analog.event, analog.year, instrumentId)
-          : null;
         return {
           scopeId: d.scopeId, headline: d.headline, severity: d.severity,
           dir: inst.direction, magnitude: inst.magnitude, rationale: inst.rationale,
-          analog, analogMove, instrumentId, countries,
-          // quality-judge verdict (so the sub-table can badge + the analog pick can skip flagged)
+          instrumentId, countries,
+          // quality-judge verdict (so the row can badge via QualityFlag)
           is_low_quality: d.is_low_quality, qualityScores: d.qualityScores, qualityReasons: d.qualityReasons,
         };
       });
+
+  // FX leaderboard rows are labelled `USD/XXX` and the server consensus is built from a
+  // stored `direction` that follows no consistent quoting convention — so for FX we throw
+  // away the server aggregate and rebuild it deterministically from each story's rationale
+  // (relabel to the foreign currency, derive per-story direction, re-tally). See disruptionGate.
+  const fxAggForId = useMemo(() => {
+    const out = {};
+    for (const m of topMovers) {
+      const id = m.instrumentId;
+      if (!isFxPair(id)) continue;
+      const counts = { up: 0, down: 0, mixed: 0, na: 0 };
+      let label = id;
+      for (const d of disruptions) {
+        const inst = (d.instruments || []).find(i => i.instrumentId === id);
+        if (!inst) continue;
+        const g = gateInstrument({ instrumentId: id, direction: inst.direction, rationale: inst.rationale });
+        label = g.label;
+        if (g.suppressed || !g.direction) counts.na++;
+        else counts[g.direction] += 1;
+      }
+      const ranked = ['up', 'down', 'mixed'].filter(k => counts[k] > 0).sort((a, b) => counts[b] - counts[a]);
+      const consensus = ranked.length ? ranked[0] : null;
+      const agree = consensus ? counts[consensus] : 0;
+      const total = counts.up + counts.down + counts.mixed;
+      out[id] = { label, consensus, counts, agree, total };
+    }
+    return out;
+  }, [topMovers, disruptions]);
 
   // Dormant = tracked universe minus the cited (top-movers) instruments.
   const citedIds = useMemo(() => new Set(topMovers.map(m => String(m.instrumentId).toUpperCase())), [topMovers]);
@@ -774,10 +775,14 @@ export default function EconomyPage() {
             const open = openMover === m.instrumentId;
             const level = levelFor(m.instrumentId, markets);
             const active = filters.instrument === m.instrumentId;
-            const dirs = m.directions || {};
-            const total = (dirs.up || 0) + (dirs.down || 0) + (dirs.mixed || 0);
-            const topDir = m.consensus;
-            const topDirCount = dirs[topDir] != null ? dirs[topDir] : Math.max(dirs.up || 0, dirs.down || 0, dirs.mixed || 0);
+            // FX rows use the deterministically re-derived aggregate (relabelled + sign-checked);
+            // every other instrument keeps the server consensus.
+            const fxAgg = fxAggForId[m.instrumentId];
+            const displayLabel = fxAgg ? fxAgg.label : m.instrumentId;
+            const dirs = fxAgg ? fxAgg.counts : (m.directions || {});
+            const total = fxAgg ? fxAgg.total : ((dirs.up || 0) + (dirs.down || 0) + (dirs.mixed || 0));
+            const topDir = fxAgg ? fxAgg.consensus : m.consensus;
+            const topDirCount = fxAgg ? fxAgg.agree : (dirs[topDir] != null ? dirs[topDir] : Math.max(dirs.up || 0, dirs.down || 0, dirs.mixed || 0));
             const mag = magnitudeFor(m.instrumentId);
             const priceLevel = fmtLevel(level);
             // real direction split — replaces the mockup's (unsourceable) severity bar + category tag
@@ -797,11 +802,13 @@ export default function EconomyPage() {
                     onClick={(e) => { e.stopPropagation(); setSingle('instrument', m.instrumentId); }}
                     title="Filter the story list by this instrument"
                   >
-                    {m.instrumentId}
+                    {displayLabel}
                     <svg className="ep-name-fi" aria-hidden="true" viewBox="0 0 16 16" width="11" height="11"><path d="M1 2h14l-5.5 6.5V14l-3 1V8.5L1 2z" fill="currentColor"/></svg>
                   </button>
                   <div className="ep-dirprice">
-                    <span className={`ep-arrow ${DIR_CLASS[topDir] || 'mx'}`}>{DIR_GLYPH[topDir] || '↔'}</span>
+                    {fxAgg && !topDir
+                      ? <span className="ep-arrow mx" title="Direction not determinable from rationales">·</span>
+                      : <span className={`ep-arrow ${DIR_CLASS[topDir] || 'mx'}`}>{DIR_GLYPH[topDir] || '↔'}</span>}
                     {mag && <span className="ep-mag">{mag}</span>}
                   </div>
                   <span className="ep-price">

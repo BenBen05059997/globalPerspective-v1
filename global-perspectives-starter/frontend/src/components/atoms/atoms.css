@@ -293,6 +293,12 @@
   letter-spacing: 0.05em;
 }
 
+.ichip-dir-na {
+  color: var(--ink-faint);
+  font-weight: 700;
+  padding: 0 2px;
+}
+
 .ichip-rationale {
   margin-top: 4px;
   color: var(--ink-mid);
@@ -462,6 +468,13 @@
   font-size: 11px;
   color: var(--ink-faint);
   font-style: italic;
+}
+
+.mc-analog-unverified {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-faint);
 }
 
 .mc-watch {

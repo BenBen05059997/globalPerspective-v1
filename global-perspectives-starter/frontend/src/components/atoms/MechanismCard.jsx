@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import InstrumentChip from './InstrumentChip.jsx';
 import SeverityBadge from './SeverityBadge.jsx';
 import QualityFlag from './QualityFlag.jsx';
+import { gateAnalog } from '../../utils/disruptionGate.js';
 
 function EntityLine({ ent }) {
   if (!ent?.name) return null;
@@ -89,18 +90,25 @@ export default function MechanismCard({ impact }) {
         </div>
       )}
 
-      {historicalAnalog?.event && (
-        <div className="mc-section mc-analog">
-          <div className="mc-section-label">Historical analog</div>
-          <div className="mc-analog-body">
-            <span className="mc-analog-mark">⚑</span>
-            <b className="mc-analog-event">{historicalAnalog.event}</b>
-            {historicalAnalog.year && <span className="mc-analog-year">({historicalAnalog.year})</span>}
-            {historicalAnalog.outcome && <div className="mc-analog-outcome">{historicalAnalog.outcome}</div>}
-            {historicalAnalog.caveat && <div className="mc-analog-caveat">Caveat: {historicalAnalog.caveat}</div>}
+      {historicalAnalog?.event && (() => {
+        // Only render the realized-move "outcome" when the named event resolves against
+        // our curated analog catalog; otherwise it's an unverifiable claimed number.
+        const analog = gateAnalog(historicalAnalog);
+        return (
+          <div className="mc-section mc-analog">
+            <div className="mc-section-label">Historical analog</div>
+            <div className="mc-analog-body">
+              <span className="mc-analog-mark">⚑</span>
+              <b className="mc-analog-event">{historicalAnalog.event}</b>
+              {historicalAnalog.year && <span className="mc-analog-year">({historicalAnalog.year})</span>}
+              {analog.backed
+                ? (historicalAnalog.outcome && <div className="mc-analog-outcome">{historicalAnalog.outcome}</div>)
+                : <div className="mc-analog-unverified">Realized-move detail omitted — event not in verified analog catalog.</div>}
+              {historicalAnalog.caveat && <div className="mc-analog-caveat">Caveat: {historicalAnalog.caveat}</div>}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {watchSignals.length > 0 && (
         <div className="mc-section">

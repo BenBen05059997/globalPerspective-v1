@@ -1,5 +1,27 @@
 # Global Perspectives — Change Log
 
+## 2026-06-02 (/economy: deterministic display gate for FX direction + unbacked analogs)
+
+Two LLM-produced signals on the economic-disruption data were rendering as analyst-grade fact when they shouldn't: FX rows labelled `USD/XXX` whose stored `direction` follows **no consistent quoting convention** across rows (so the arrow was wrong ~1/3 of the time), and `historicalAnalog` realized-move "outcomes" shown even when the named event isn't in our curated catalog (~26% unbacked). Added a pure, no-LLM gate that either produces a trustworthy relabelled signal or suppresses it — never invents a value.
+
+- **New `utils/disruptionGate.js`.** FX: relabels the chip to the foreign currency (`USD/CAD` → `CAD`), derives direction from the rationale's polarity verb nearest the named currency (weaken/pressure→down, strengthen/support→up; inverts when the verb describes USD), and suppresses the arrow when undetectable/conflicting. Analog: resolves the event via `findAnalogEvent`; suppresses the realized-move block (with an honest "not in verified catalog" note) when unbacked.
+- **Wired into all three render surfaces:** `EconomyPage` leaderboard (relabel + consensus re-tallied from gated per-story directions) and lean story list; `InstrumentChip` (thread Economy tab); `MechanismCard` analog block.
+- **Proof:** `scripts/test-disruption-gate.mjs` over a live ECONOMIC_IMPACT scan — 15 FX rows: 5 had the WRONG raw direction and were flipped (all verified against rationale text), 2 suppressed; 11/43 analogs (26%) gated.
+- Also demotes the /economy expand-panel mechanism + closest-analog columns to each story's thread Economy tab (lean row = severity · headline · direction).
+
+Files: `global-perspectives-starter/frontend/src/utils/disruptionGate.js` (new), `scripts/test-disruption-gate.mjs` + `scripts/json-as-module-loader.mjs` (new), `components/EconomyPage.jsx` + `.css`, `components/atoms/InstrumentChip.jsx`, `components/atoms/MechanismCard.jsx`, `components/atoms/atoms.css`, `docs/` build.
+
+## 2026-06-02 (prediction calibration / track record — full 3-phase pipeline)
+
+Built forecast accountability end-to-end: every published prediction is logged with dated, falsifiable triggers, scored as deadlines pass, and surfaced publicly at `/track-record` with a running Brier score + calibration. Hybrid resolution (LLM proposes, human confirms). See `ARCHITECTURE.md` → "Prediction calibration / track record".
+
+- **New table `GlobalPerspectivePredictionLog`** (ap-northeast-1, PAY_PER_REQUEST, no TTL — immutable). PK `PRED#{topicId}` / SK `YYYY-MM-DD` daily snapshot.
+- **Phase 1 — capture.** `NewsProjectInvokeAgentLambda` now writes a snapshot whenever it generates a `prediction` (scenarios → numeric probability midpoint + dated triggers parsed from trigger text). Wrapped in try/catch — never throws into the content pipeline. Deployed + verified (1 snapshot, 9 dated triggers).
+- **Phase 2 — resolve (hybrid).** New `newsPredictionResolver` Lambda (daily cron `TriggerPredictionResolver` 09:00 UTC) proposes fired/not_fired/unclear verdicts grounded in Brave Search; honest `unclear` rather than guessing. Human confirms via `node predictions/review.js` (interactive / `--list` / `--accept-all`) — no public auth surface. Roundtrip verified.
+- **Phase 3 — score + surface.** New `prediction_track_record` proxy action computes totals, Brier score (mean (p−outcome)² per resolved trigger, `unclear` excluded), calibration buckets, recent resolved list. New `/track-record` route (`TrackRecordPage.jsx` + `useTrackRecord`) renders it with an **honest empty state** — no fabricated score until human-confirmed verdicts exist. Nav + footer links added.
+
+Files: `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`, `amplify/backend/function/newsPredictionResolver/src/index.js` (new), `predictions/review.js` (new), `amplify/backend/function/newsSensitiveData/src/index.js`, frontend `services/restProxy.js`, `hooks/useTrackRecord.js` (new), `components/TrackRecordPage.jsx` + `.css` (new), `App.jsx`, `Layout.jsx`, `ARCHITECTURE.md`, `docs/` build. Infra (table, Lambda, cron, env vars) via AWS CLI.
+
 ## 2026-06-01 (billing teardown: removed newsStripeWebhook + tier/portal code from the proxy)
 
 Completed the backend subscription/billing teardown deferred on 2026-05-26. The frontend billing UI and static-page copy were already removed; this removes the dormant backend. Subscriptions are deprecated and not returning — see `project-billing-deprecated`.

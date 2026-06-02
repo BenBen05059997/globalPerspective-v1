@@ -1,0 +1,74 @@
+/* Theme override for driver.js popovers — matches the Global Perspectives design tokens.
+   Loaded after driver.js/dist/driver.css so these win. Scoped to .gp-tour (popoverClass). */
+
+.driver-popover.gp-tour {
+  background: var(--card);
+  color: var(--ink-mid);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  font-family: var(--sans);
+  max-width: 340px;
+  padding: 16px 18px 14px;
+}
+
+.driver-popover.gp-tour .driver-popover-title {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-family: var(--sans);
+}
+
+.driver-popover.gp-tour .driver-popover-description {
+  color: var(--ink-mid);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.driver-popover.gp-tour .driver-popover-progress-text {
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-family: var(--mono);
+}
+
+.driver-popover.gp-tour .driver-popover-footer {
+  margin-top: 12px;
+  gap: 8px;
+}
+
+.driver-popover.gp-tour .driver-popover-footer button {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 7px;
+  padding: 6px 12px;
+  text-shadow: none;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink-mid);
+  transition: background var(--fast), border-color var(--fast), color var(--fast);
+}
+
+.driver-popover.gp-tour .driver-popover-footer button:hover {
+  background: var(--paper-3);
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+
+.driver-popover.gp-tour .driver-popover-next-btn {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #fff !important;
+}
+.driver-popover.gp-tour .driver-popover-next-btn:hover {
+  background: var(--accent-deep) !important;
+  border-color: var(--accent-deep) !important;
+}
+
+.driver-popover.gp-tour .driver-popover-close-btn {
+  color: var(--ink-faint);
+}
+.driver-popover.gp-tour .driver-popover-close-btn:hover {
+  color: var(--ink);
+}

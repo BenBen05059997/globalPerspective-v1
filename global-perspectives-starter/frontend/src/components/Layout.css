@@ -115,6 +115,22 @@
   justify-content: flex-end;
 }
 
+/* Help / guided-tour trigger */
+.gp-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: border-color var(--fast), color var(--fast);
+}
+.gp-help:hover { border-color: var(--line-2); color: var(--ink); }
+
 /* Search bar */
 .gp-search {
   display: inline-flex;

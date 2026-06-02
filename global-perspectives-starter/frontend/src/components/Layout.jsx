@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingBar from './LoadingBar';
 import AIToast from './AIToast';
+import { useAutoTour, startTourForPath } from '../onboarding/useOnboarding';
 import './Layout.css';
 
 function Layout({ children }) {
@@ -10,6 +11,8 @@ function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [topicCount, setTopicCount] = useState(null);
   const { user, loading: authLoading } = useAuth();
+
+  useAutoTour(location.pathname);
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
@@ -53,7 +56,7 @@ function Layout({ children }) {
       <AIToast />
 
       <nav className="gp-nav">
-        <div className="gp-brand">
+        <div className="gp-brand" data-tour="nav-brand">
           <Link to="/" className="gp-brand-link">
             <span className="gp-logo">G</span>
             <span className="gp-name">
@@ -67,6 +70,7 @@ function Layout({ children }) {
             <Link
               key={to}
               to={to}
+              data-tour={`nav-${to}`}
               className={`gp-nav-link${isActive(to, exact) ? ' active' : ''}`}
             >
               {label}
@@ -75,6 +79,20 @@ function Layout({ children }) {
         </div>
 
         <div className="gp-nav-right">
+          <button
+            type="button"
+            className="gp-help"
+            data-tour="nav-help"
+            aria-label="How to read this page"
+            title="How to read this page"
+            onClick={() => startTourForPath(location.pathname)}
+          >
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="8" cy="8" r="6.5" />
+              <path d="M6.2 6.1a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" strokeLinecap="round" />
+              <circle cx="8" cy="11.6" r="0.6" fill="currentColor" stroke="none" />
+            </svg>
+          </button>
           <button className="gp-search" aria-label="Search (⌘K)">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="7" cy="7" r="5"/>

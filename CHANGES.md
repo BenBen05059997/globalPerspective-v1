@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-02 (onboarding: guided product tour for new users)
+
+New visitors had no guidance on how to read the site (especially the dense `/economy` page). Added a lightweight guided tour built on driver.js.
+
+- **New `src/onboarding/`**: `tours.js` (definitions — a site-wide intro anchored to the nav + a per-page `/economy` tour), `useOnboarding.js` (runner + auto-show logic), `tour-theme.css` (popover theme matching the design tokens — rust Next button, card surface).
+- **Auto-show, once each**: the site intro plays on a visitor's first ever load; each page tour plays once per page. Gated by versioned `localStorage` keys (`gp_tour_v1_*`); never chains two tours in one navigation; waits for the anchor element to exist before starting (handles async data). Steps whose anchor is missing are dropped, so a tour never points at nothing.
+- **Persistent "?" trigger** in the nav (`Layout.jsx`) replays the current page's tour on demand, ignoring the seen-flag.
+- **Bundle-conscious**: driver.js (~25kb) + its CSS are lazy-loaded on first tour run into their own chunk, keeping them out of the main bundle for the majority of views that never start a tour.
+
+Files: `src/onboarding/tours.js` + `useOnboarding.js` + `tour-theme.css` (new), `components/Layout.jsx` + `Layout.css`, `ARCHITECTURE.md`, `package.json` (driver.js dep), `docs/` build.
+
 ## 2026-06-02 (/economy: deterministic display gate for FX direction + unbacked analogs)
 
 Two LLM-produced signals on the economic-disruption data were rendering as analyst-grade fact when they shouldn't: FX rows labelled `USD/XXX` whose stored `direction` follows **no consistent quoting convention** across rows (so the arrow was wrong ~1/3 of the time), and `historicalAnalog` realized-move "outcomes" shown even when the named event isn't in our curated catalog (~26% unbacked). Added a pure, no-LLM gate that either produces a trustworthy relabelled signal or suppresses it — never invents a value.

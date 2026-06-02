@@ -201,6 +201,11 @@ export async function fetchEconomicImpact(threadId) {
   return proxyAction('economic_impact', { threadId });
 }
 
+// ── Prediction track record (calibration / forecast accountability) ──────────
+export async function fetchPredictionTrackRecord() {
+  return proxyAction('prediction_track_record');
+}
+
 export async function fetchDisruptionsList({ minSeverity, country, limit } = {}) {
   const payload = {};
   if (minSeverity) payload.minSeverity = minSeverity;

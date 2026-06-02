@@ -30,6 +30,7 @@ const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
 const RESEARCH_BRIEFING_SK = 'RESEARCH_BRIEFING';
 const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '3600', 10);
 const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3600', 10);
+const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
 const ARCHIVE_ITEM_ID = 'today-archive';
 const ARCHIVE_TTL_HOURS = 24;
@@ -400,6 +401,11 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
 
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
   const item = await writeCache(topic, kind, response, ttlSeconds, generationId);
+
+  if (kind === 'prediction') {
+    await logPredictionSnapshot(topic, response.content, response, generationId, generatedYear);
+  }
+
   return item;
 }
 
@@ -563,6 +569,117 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId) {
 
   console.log(`Cached ${kind} for ${topic.id} (generationId: ${generationId})`);
   return item;
+}
+
+// "55-65%" → 0.60 (midpoint, 0-1). "60%" → 0.60. Returns null if unparseable.
+function probabilityMidpoint(range) {
+  if (!range || typeof range !== 'string') return null;
+  const nums = (range.match(/\d{1,3}(?:\.\d+)?/g) || []).map(Number).filter(n => n >= 0 && n <= 100);
+  if (!nums.length) return null;
+  const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+  return Math.round((avg / 100) * 1000) / 1000;
+}
+
+const MONTHS = {
+  january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6,
+  august: 7, september: 8, october: 9, november: 10, december: 11,
+  jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11,
+};
+
+function lastDayOfMonth(year, monthIdx) {
+  return new Date(Date.UTC(year, monthIdx + 1, 0)).getUTCDate();
+}
+
+function isoDate(year, monthIdx, day) {
+  if (!year || monthIdx == null) return null;
+  const d = String(day).padStart(2, '0');
+  const m = String(monthIdx + 1).padStart(2, '0');
+  return `${year}-${m}-${d}`;
+}
+
+// Best-effort: pull a deadline date out of a free-text trigger.
+// Handles ISO, "Month D, YYYY", "D Month YYYY", "end of Month YYYY", "Month YYYY", "QN YYYY".
+function parseTriggerDeadline(text, fallbackYear) {
+  if (!text || typeof text !== 'string') return null;
+  const t = text.toLowerCase();
+
+  let m = t.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+
+  const monthNames = Object.keys(MONTHS).join('|');
+
+  // "june 9, 2026" / "june 9 2026"
+  m = t.match(new RegExp(`\\b(${monthNames})\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})`));
+  if (m) return isoDate(Number(m[3]), MONTHS[m[1]], Number(m[2]));
+
+  // "9 june 2026"
+  m = t.match(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${monthNames})\\s+(\\d{4})`));
+  if (m) return isoDate(Number(m[3]), MONTHS[m[2]], Number(m[1]));
+
+  // "end of june 2026" / "late june 2026" → last day of month
+  m = t.match(new RegExp(`\\b(?:end of|late)\\s+(${monthNames})\\s+(\\d{4})`));
+  if (m) { const y = Number(m[2]); const mi = MONTHS[m[1]]; return isoDate(y, mi, lastDayOfMonth(y, mi)); }
+
+  // "qN 2026" → quarter end
+  m = t.match(/\bq([1-4])\s+(\d{4})/);
+  if (m) { const q = Number(m[1]); const y = Number(m[2]); const mi = q * 3 - 1; return isoDate(y, mi, lastDayOfMonth(y, mi)); }
+
+  // bare "june 2026" → last day of month (loosest, keep last so dated forms win)
+  m = t.match(new RegExp(`\\b(${monthNames})\\s+(\\d{4})`));
+  if (m) { const y = Number(m[2]); const mi = MONTHS[m[1]]; return isoDate(y, mi, lastDayOfMonth(y, mi)); }
+
+  return null;
+}
+
+// Immutable daily snapshot of a prediction so it survives its 1h cache TTL and
+// can be scored once its dated triggers come due. Best-effort: never throws into
+// the pipeline (logging a forecast must not break generating one).
+async function logPredictionSnapshot(topic, contentStr, response, generationId, generatedYear) {
+  try {
+    let parsed;
+    try { parsed = JSON.parse(contentStr); } catch { return; }
+    if (!parsed || !Array.isArray(parsed.scenarios)) return;
+
+    const day = new Date().toISOString().slice(0, 10);
+    const scenarios = parsed.scenarios.map((s, si) => {
+      const prob = probabilityMidpoint(s.probability_range);
+      const triggers = (Array.isArray(s.triggers) ? s.triggers : []).map((text, ti) => ({
+        id: `${si}-${ti}`,
+        text: String(text),
+        deadline: parseTriggerDeadline(String(text), generatedYear),
+        status: 'pending',
+      }));
+      return {
+        label: s.label || `Scenario ${si + 1}`,
+        probabilityRange: s.probability_range || null,
+        probability: prob,
+        horizon: s.horizon || null,
+        rationale: s.rationale || null,
+        triggers,
+      };
+    });
+
+    const item = {
+      PK: `PRED#${topic.id}`,
+      SK: day,
+      topicId: topic.id,
+      title: topic.title,
+      category: topic.category || null,
+      generatedAt: new Date().toISOString(),
+      generationId,
+      model: response.modelId,
+      scenarios,
+      winners: Array.isArray(parsed.winners) ? parsed.winners : [],
+      losers: Array.isArray(parsed.losers) ? parsed.losers : [],
+      status: 'open',
+    };
+
+    await ddb.send(new PutCommand({ TableName: PREDICTION_LOG_TABLE, Item: item }));
+    const dated = scenarios.reduce((n, s) => n + s.triggers.filter(t => t.deadline).length, 0);
+    console.log(`Logged prediction snapshot ${item.PK}/${day} (${dated} dated triggers)`);
+  } catch (err) {
+    console.warn(`logPredictionSnapshot failed for ${topic.id}: ${err.message}`);
+  }
 }
 
 async function swapStagingToActive(stagingItem, generationId) {

@@ -1,0 +1,279 @@
+/* =============================================================
+   TrackRecordPage — forecast calibration scoreboard
+   ============================================================= */
+
+.tr-page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: var(--space-10) var(--space-5) var(--space-16);
+}
+
+/* ── Header ───────────────────────────────────────── */
+.tr-head {
+  margin-bottom: var(--space-10);
+}
+.tr-head h1 {
+  font-family: var(--serif);
+  font-size: var(--text-4xl);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 var(--space-4);
+  letter-spacing: -0.01em;
+}
+.tr-sub {
+  font-size: var(--text-md);
+  line-height: 1.65;
+  color: var(--ink-mid);
+  max-width: 64ch;
+  margin: 0;
+}
+
+/* ── Stat cards ───────────────────────────────────── */
+.tr-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-12);
+}
+.tr-stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tr-stat-num {
+  font-family: var(--mono);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1;
+}
+.tr-stat-label {
+  font-size: var(--text-xs);
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+}
+
+/* ── Brier section ────────────────────────────────── */
+.tr-brier {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--space-8);
+  margin-bottom: var(--space-12);
+}
+.tr-brier-score {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.tr-brier-num {
+  font-family: var(--mono);
+  font-size: var(--text-6xl);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1;
+}
+.tr-brier-verdict {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+}
+.tr-brier-verdict.excellent { background: var(--risk-l-soft); color: var(--risk-l); }
+.tr-brier-verdict.strong    { background: var(--risk-l-soft); color: var(--risk-l); }
+.tr-brier-verdict.fair      { background: var(--risk-e-soft); color: var(--risk-e); }
+.tr-brier-verdict.weak      { background: var(--risk-h-soft); color: var(--risk-h); }
+.tr-brier-explain {
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--ink-mid);
+  max-width: 64ch;
+  margin: 0;
+}
+
+/* ── Calibration table ────────────────────────────── */
+.tr-cal {
+  margin-bottom: var(--space-12);
+}
+.tr-cal h2,
+.tr-recent h2,
+.tr-pending h2 {
+  font-family: var(--serif);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 var(--space-3);
+}
+.tr-cal-sub {
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--ink-mid);
+  max-width: 64ch;
+  margin: 0 0 var(--space-5);
+}
+.tr-cal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-base);
+}
+.tr-cal-table th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--line-2);
+}
+.tr-cal-table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-mid);
+  vertical-align: middle;
+}
+.tr-cal-table td:first-child {
+  font-family: var(--mono);
+  color: var(--ink);
+}
+.tr-bar-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 120px;
+}
+.tr-bar {
+  height: 8px;
+  background: var(--accent);
+  border-radius: var(--r-pill);
+  min-width: 2px;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+.tr-bar-wrap span {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  color: var(--ink-mid);
+}
+
+/* ── Recent resolved ──────────────────────────────── */
+.tr-recent {
+  margin-bottom: var(--space-8);
+}
+.tr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.tr-item {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--space-5);
+}
+.tr-item-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.tr-item-prob {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  font-weight: 500;
+}
+.tr-item-date {
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  color: var(--ink-dim);
+  margin-left: auto;
+}
+.tr-item-trigger {
+  font-size: var(--text-md);
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0 0 var(--space-2);
+}
+.tr-item-meta {
+  font-size: var(--text-sm);
+  color: var(--ink-dim);
+  margin: 0;
+}
+.tr-item-cite {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--ink-mid);
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line-2);
+}
+
+/* ── Verdict pill ─────────────────────────────────── */
+.tr-verdict {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: var(--r-sm);
+}
+.tr-verdict.fired    { background: var(--risk-h-soft); color: var(--risk-h); }
+.tr-verdict.notfired { background: var(--risk-l-soft); color: var(--risk-l); }
+
+/* ── Pending / empty states ───────────────────────── */
+.tr-pending {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--space-8);
+}
+.tr-pending p {
+  font-size: var(--text-md);
+  line-height: 1.65;
+  color: var(--ink-mid);
+  max-width: 64ch;
+  margin: 0 0 var(--space-4);
+}
+.tr-pending strong {
+  font-family: var(--mono);
+  color: var(--ink);
+}
+.tr-pending-note {
+  font-size: var(--text-base) !important;
+  color: var(--ink-dim) !important;
+  font-style: italic;
+  margin-bottom: 0 !important;
+}
+.tr-empty {
+  font-size: var(--text-md);
+  color: var(--ink-mid);
+  padding: var(--space-8) 0;
+}
+
+/* ── Mobile ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .tr-page { padding: var(--space-6) var(--space-4) var(--space-12); }
+  .tr-head h1 { font-size: var(--text-3xl); }
+  .tr-stats { grid-template-columns: repeat(2, 1fr); }
+  .tr-brier-num { font-size: var(--text-5xl); }
+  .tr-cal-table { font-size: var(--text-sm); }
+  .tr-cal-table th, .tr-cal-table td { padding: var(--space-2); }
+  .tr-item-date { margin-left: 0; }
+}

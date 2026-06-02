@@ -10,6 +10,7 @@ const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
 const TOPICS_MAX_AGE_SECONDS = Number(process.env.TOPICS_CACHE_MAX_AGE_SECONDS || '9000');
 
 const SUMMARIZE_PREDICT_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
+const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
 const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
 const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
 const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
@@ -510,6 +511,95 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: list }) };
       } catch (e) {
         console.error('pair_analyses_list error', e);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Internal error' }) };
+      }
+    }
+
+    if (action === 'prediction_track_record') {
+      const client = getDynamoClient();
+      try {
+        const items = [];
+        let ExclusiveStartKey;
+        do {
+          const res = await client.send(new ScanCommand({
+            TableName: PREDICTION_LOG_TABLE,
+            ProjectionExpression: 'title, category, generatedAt, scenarios',
+            ExclusiveStartKey,
+          }));
+          items.push(...(res.Items || []));
+          ExclusiveStartKey = res.LastEvaluatedKey;
+        } while (ExclusiveStartKey);
+
+        // A "resolved" trigger is one a human confirmed as fired/not_fired
+        // (unclear is excluded from scoring). Score each against its parent
+        // scenario's probability midpoint: Brier = mean((p - outcome)^2).
+        const buckets = [0, 0.2, 0.4, 0.6, 0.8, 1.0001];
+        const cal = buckets.slice(0, -1).map((lo, i) => ({ lo, hi: buckets[i + 1], n: 0, predicted: 0, fired: 0 }));
+        const resolved = [];
+        let totalTriggers = 0;
+        let pendingCount = 0;
+        let brierSum = 0;
+        let scored = 0;
+        let firedCount = 0;
+
+        for (const it of items) {
+          for (const s of it.scenarios || []) {
+            const p = typeof s.probability === 'number' ? s.probability : null;
+            for (const t of s.triggers || []) {
+              if (!t.deadline) continue;
+              totalTriggers++;
+              const v = t.finalVerdict;
+              if (v !== 'fired' && v !== 'not_fired') {
+                if (!v) pendingCount++;
+                continue;
+              }
+              const outcome = v === 'fired' ? 1 : 0;
+              if (v === 'fired') firedCount++;
+              if (p != null) {
+                brierSum += (p - outcome) ** 2;
+                scored++;
+                const b = cal.find(c => p >= c.lo && p < c.hi);
+                if (b) { b.n++; b.predicted += p; b.fired += outcome; }
+              }
+              resolved.push({
+                title: it.title,
+                category: it.category || null,
+                scenario: s.label,
+                probability: p,
+                trigger: t.text,
+                deadline: t.deadline,
+                verdict: v,
+                citation: t.proposal?.citation || null,
+                confirmedAt: t.confirmedAt || null,
+              });
+            }
+          }
+        }
+
+        resolved.sort((a, b) => (b.confirmedAt || '').localeCompare(a.confirmedAt || ''));
+        const calibration = cal
+          .filter(c => c.n > 0)
+          .map(c => ({
+            bucket: `${Math.round(c.lo * 100)}-${Math.round(c.hi * 100)}%`,
+            n: c.n,
+            meanPredicted: Math.round((c.predicted / c.n) * 1000) / 1000,
+            actualFiredRate: Math.round((c.fired / c.n) * 1000) / 1000,
+          }));
+
+        const data = {
+          totalPredictionsLogged: items.length,
+          totalDatedTriggers: totalTriggers,
+          resolvedTriggers: scored,
+          pendingTriggers: pendingCount,
+          firedTriggers: firedCount,
+          brierScore: scored ? Math.round((brierSum / scored) * 1000) / 1000 : null,
+          calibration,
+          recent: resolved.slice(0, 30),
+        };
+        console.info('prediction_track_record', { logged: data.totalPredictionsLogged, resolved: data.resolvedTriggers });
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data }) };
+      } catch (e) {
+        console.error('prediction_track_record error', e);
         return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Internal error' }) };
       }
     }

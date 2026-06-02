@@ -306,6 +306,7 @@ Read-only REST proxy. All supported actions:
 | `economic_impact` | None (early access) | `{ threadId }` | Per-thread economic disruption analysis |
 | `economic_impact_list` | None (early access) | — | All economic-impact records (DDB Scan) |
 | `economic_top_movers` | None (early access) | — | Highest-magnitude economic-impact threads |
+| `prediction_track_record` | None | — | Forecast calibration scoreboard (DDB Scan of `GlobalPerspectivePredictionLog`): totals, Brier score, calibration buckets, recently-resolved triggers. Honest empty state until human-confirmed verdicts exist — see [Prediction calibration](#prediction-calibration-track-record) |
 | `markets_global` | None (early access) | — | Global FX / rates / commodities / equities / crypto snapshot, **plus an additive `series` map (`{ [INSTRUMENT_ID]: { spark:[≤20 daily closes], change:%vs-yesterday } }`) built from the `HISTORY#` rows — powers the `/economy` watchlist mini-sparklines + day-over-day change pills** |
 | `markets_country` | None (early access) | `{ countryName }` | Country macro snapshot (GDP, CPI, reserves, etc.) |
 | `markets_history` | None (early access) | `{ symbol, days }` | Per-instrument price history `[{date, value}]` for sparklines — resolves `symbol` across commodities / rates / equities / crypto / FX (was FX-only before 2026-05-26) |
@@ -575,6 +576,17 @@ Turns the sink's passive capture into a push alert without a paid Sentry.
 
 ---
 
+### 20. `newsPredictionResolver`
+**Path:** `amplify/backend/function/newsPredictionResolver/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerPredictionResolver` — `cron(0 9 * * ? *)` (daily 09:00 UTC).
+**Built:** 2026-06-02. Phase 2 of the prediction-calibration pipeline — see [Prediction calibration](#prediction-calibration-track-record).
+
+The **proposal** half of hybrid resolution. Reads `GlobalPerspectivePredictionLog` (status=`open`), finds dated triggers whose `deadline` ≤ today with no `proposal`/`finalVerdict`, grounds each against **Brave Search**, and asks the LLM (DeepSeek, `response_format: json_object`) for a fired/not_fired/unclear verdict + citation. Attaches `trigger.proposal = { verdict, confidence, citation, reasoning, sources, proposedAt }` + `needsConfirm=true` and writes the snapshot back. **Never finalizes** — a human confirms via `predictions/review.js` (no public auth surface). `MAX_RESOLVE_PER_RUN=40`, `LLM_CONCURRENCY=3`. Honest "unclear" when the news record is ambiguous rather than guessing.
+
+**Key env vars:** `PREDICTION_LOG_TABLE`, `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (hold DeepSeek values, see [[feedback-misleading-grok-naming]]), `BRAVE_SEARCH_API_KEY`.
+
+---
+
 ## Observability & Monitoring
 
 Two layers, both roll-your-own (the user rejects paid Sentry on cost):
@@ -693,6 +705,22 @@ All rows carry `asOf` timestamps + TTL. Honesty contract: never display stale da
 ### Client Errors Table (`GlobalPerspectiveClientErrors`, ap-northeast-1)
 **PK:** `errKey` (= `day#hash`), TTL 30d. Written by `newsClientErrors` (#17) — identical errors `ADD count` into one row (fingerprint = sha1 of message + normalized top frame). Scanned by `newsErrorDigest` (#19), which also stores its run baseline in a single `DIGEST#STATE` row here. Read back with `node scripts/errors.mjs`.
 
+### Prediction Log Table (`PREDICTION_LOG_TABLE`, default `GlobalPerspectivePredictionLog`, ap-northeast-1)
+**PK:** `PRED#{topicId}` / **SK:** `{YYYY-MM-DD}` (daily snapshot). **No TTL — immutable forecast record.** PAY_PER_REQUEST. See [Prediction calibration](#prediction-calibration-track-record). Written by `NewsProjectInvokeAgentLambda` (snapshot at generation, status=`open`), mutated by `newsPredictionResolver` (#20, attaches `proposal` to due triggers) and `predictions/review.js` (human sets `finalVerdict`, flips status→`resolved` when all dated triggers confirmed). Scanned by the `prediction_track_record` proxy action. Each item: `{ topicId, title, category, generatedAt, generationId, model, scenarios[{ label, probability(numeric midpoint), triggers[{ id, text, deadline, status, proposal?, finalVerdict?, confirmedAt?, confirmedBy? }] }], winners, losers, status }`.
+
+---
+
+## Prediction calibration / track record
+
+Forecast accountability pipeline (built 2026-06-02). Every published prediction is logged with dated, falsifiable triggers; as deadlines pass, each trigger is scored fired/not_fired and the running Brier score + calibration are shown publicly at `/track-record`.
+
+**Three phases:**
+1. **Capture** — `NewsProjectInvokeAgentLambda` writes an immutable snapshot to `GlobalPerspectivePredictionLog` whenever it generates a `prediction` (scenarios → numeric probability midpoint + dated triggers). Never throws into the pipeline.
+2. **Resolve (hybrid)** — `newsPredictionResolver` (#20, daily 09:00 UTC) **proposes** verdicts grounded in Brave Search; a human **confirms** via `node predictions/review.js` (interactive / `--list` / `--accept-all`). No public auth surface — mirrors the economic-quality human-review pattern.
+3. **Score + surface** — `prediction_track_record` proxy action computes Brier (mean (p−outcome)² per resolved trigger, `unclear` excluded), calibration buckets (predicted vs actual fired-rate), and recent resolved list. `TrackRecordPage.jsx` (`/track-record`, hook `useTrackRecord`) renders it with an **honest empty state** — shows nothing rather than a fabricated score until human-confirmed verdicts exist ([[feedback-no-misinformation-fallback]]).
+
+**The calibration unit is the trigger** (binary, dated), not the scenario — a scenario's stated probability scores each of its triggers.
+
 ---
 
 ## Cloudflare Workers
@@ -737,6 +765,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `TriggerNewsSystemsAnalysis` | `cron(15 7 * * ? *)` | newsSystemsAnalysis (07:15 UTC daily) |
 | `TriggerNewsEconomicImpact` | `cron(30 7 * * ? *)` | newsEconomicImpact (07:30 UTC daily) |
 | `TriggerNewsEconomicQuality` | `cron(0 8 * * ? *)` | newsEconomicQuality (08:00 UTC daily) |
+| `TriggerPredictionResolver` | `cron(0 9 * * ? *)` | newsPredictionResolver (09:00 UTC daily) |
 | `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
 | `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |
 | `MarketsMacrosWeekly` | `cron(0 2 ? * SUN *)` | newsMarketsData |
@@ -802,6 +831,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `/daily` | `DailyPage.jsx` | Public |
 | `/daily/:dateKey` | `DailyPage.jsx` | Public |
 | `/economy` | `EconomyPage.jsx` | Public |
+| `/track-record` | `TrackRecordPage.jsx` | Public |
 | `/weekly` | `WeeklyPage.jsx` | Public |
 | `/weekly/thread/:threadId` | `ThreadPage.jsx` | Public |
 | `/weekly/countries` | `CountryListPage.jsx` | Public |
@@ -839,6 +869,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `SignIn.jsx` | Firebase sign-in form — magic link + Google + **guest/anonymous** (`signInAsGuest`, "Continue as guest") |
 | `Account.jsx` | User account tabs: saved items + profile |
 | `IntelligenceLoader.jsx` | Animated loading states (typewriter + explode variants) |
+| `TrackRecordPage.jsx` | `/track-record` — forecast calibration scoreboard (stat cards, Brier score + verdict, calibration table, recently-resolved triggers); honest empty state until human-confirmed verdicts exist. See [Prediction calibration](#prediction-calibration-track-record) |
 
 ### Key Hooks
 
@@ -858,6 +889,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `useDisruptionsList()` | Fetch all economic-impact records (powers `/economy`, Home topic badges, DailyPage footprint, CountryPage, WorldMapV2, CountryListPage) |
 | `useMarketsHistory(symbol)` | Fetch per-instrument price history `[{date,value}]` for `/economy` sparklines; session-cached |
 | `useTopMovers()` | Fetch highest-magnitude economic-impact threads |
+| `useTrackRecord()` | Fetch forecast calibration scoreboard (`prediction_track_record`); 30min cache; powers `/track-record` |
 | `useMarketsGlobal()` | Fetch global FX/rates/commodities/equities/crypto snapshot |
 | `useMarketsCountry(countryName)` | Fetch country macro snapshot |
 | `useResearchBriefing(topicId)` | Fetch cached research briefing |

@@ -39,6 +39,7 @@ function Layout({ children }) {
     { to: '/weekly', label: 'Threads' },
     { to: '/weekly/countries', label: 'Countries' },
     { to: '/economy', label: 'Economy' },
+    { to: '/track-record', label: 'Track Record' },
   ];
 
   const isActive = (to, exact) => {
@@ -151,6 +152,7 @@ function Layout({ children }) {
         <span>Global Perspectives™ — AI news intelligence</span>
         <div className="gp-footer-links">
           <Link to="/economy">Economy</Link>
+          <Link to="/track-record">Track Record</Link>
           <Link to="/about">About</Link>
           <Link to="/whitepaper">White Paper</Link>
           <Link to="/privacy">Privacy</Link>

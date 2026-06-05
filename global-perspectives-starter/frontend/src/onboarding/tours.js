@@ -3,11 +3,29 @@
 // selector resolved at drive time; steps whose element is missing are dropped by the
 // runner (useOnboarding), so a tour degrades gracefully on empty/loading pages.
 //
-// Two kinds of tour:
-//   • SITE_INTRO — the generic "what is this product" walk, anchored to the persistent
-//     nav, shown once on a visitor's first ever load.
+// Three kinds of tour:
+//   • SITE_WELCOME — a single centered popover (no anchor), shown once on a visitor's
+//     first ever load. One glance, no step-by-step procedure.
+//   • SITE_INTRO — the fuller "what is this product" walk, anchored to the persistent
+//     nav. NOT auto-shown; replayed on demand from the "?" button on pages without a
+//     page tour.
 //   • PAGE_TOURS[path] — per-page walks anchored to that page's real controls, shown
 //     once per page (and replayable from the "?" button).
+
+// A step with no `element` renders as a screen-centered modal in driver.js. Single step,
+// so the runner shows no progress chrome — just a title, blurb, and Done.
+export const SITE_WELCOME = {
+  id: 'welcome',
+  steps: [
+    {
+      popover: {
+        title: 'Welcome to Global Perspectives',
+        description:
+          'AI-curated intelligence on world news. <b>Topics</b> is the live feed; <b>Threads</b> follows stories over time; <b>Economy</b> shows what the news is repricing; <b>Track Record</b> scores our predictions. Click the <b>?</b> in the top bar any time for a guided walkthrough of the page you’re on.',
+      },
+    },
+  ],
+};
 
 export const SITE_INTRO = {
   id: 'site',

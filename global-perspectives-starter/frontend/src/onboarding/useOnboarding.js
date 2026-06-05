@@ -6,7 +6,7 @@
 // never points at nothing.
 
 import { useEffect } from 'react';
-import { SITE_INTRO, pageTourForPath } from './tours.js';
+import { SITE_WELCOME, SITE_INTRO, pageTourForPath } from './tours.js';
 
 // Lazy-load driver.js + its styles on first tour run, so the ~25kb library stays out of
 // the main bundle for the (majority) of page views that never trigger a tour. Cached after
@@ -74,17 +74,18 @@ export function startTourForPath(pathname) {
   runTour(tour || SITE_INTRO);
 }
 
-// Auto-show on first visit: site intro once ever, then each page tour once per page.
+// Auto-show on first visit: a single welcome popover once ever, then each page tour once
+// per page. The fuller SITE_INTRO walk is on-demand only (the "?" button), never auto-shown.
 // Never chains two tours in one navigation.
 export function useAutoTour(pathname) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!hasSeen(SITE_INTRO.id)) {
+      if (!hasSeen(SITE_WELCOME.id)) {
         const ok = await waitFor('[data-tour="nav-brand"]', 1500);
         if (cancelled || !ok) return;
-        markSeen(SITE_INTRO.id);
-        runTour(SITE_INTRO);
+        markSeen(SITE_WELCOME.id);
+        runTour(SITE_WELCOME);
         return;
       }
       const tour = pageTourForPath(pathname);

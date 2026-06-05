@@ -909,11 +909,11 @@ A lightweight guided-tour system in `src/onboarding/`, built on **driver.js** (l
 
 | File | Purpose |
 |------|---------|
-| `tours.js` | Tour definitions. `SITE_INTRO` (anchored to the persistent nav via `[data-tour="nav-*"]`) + `PAGE_TOURS[path]` (per-page, anchored to that page's real controls). `pageTourForPath()` resolves a tour by route (prefix match for nested routes). Steps whose anchor is missing at drive time are dropped, so a tour never points at nothing. |
-| `useOnboarding.js` | Runner. `useAutoTour(pathname)` (called in `Layout`) auto-shows the site intro once ever, then each page tour once per page — gated by versioned `localStorage` keys (`gp_tour_v1_<id>`), never chaining two tours in one navigation, waiting (`waitFor`) for the anchor to exist before starting. `startTourForPath()` (the nav "?" button) always replays, ignoring the seen-flag. |
+| `tours.js` | Tour definitions. `SITE_WELCOME` (a single screen-centered popover — no anchor — auto-shown on first visit) + `SITE_INTRO` (the fuller nav walk via `[data-tour="nav-*"]`, **on-demand only**) + `PAGE_TOURS[path]` (per-page, anchored to that page's real controls). `pageTourForPath()` resolves a tour by route (prefix match for nested routes). Steps whose anchor is missing at drive time are dropped, so a tour never points at nothing. |
+| `useOnboarding.js` | Runner. `useAutoTour(pathname)` (called in `Layout`) auto-shows the `SITE_WELCOME` popover once ever, then each page tour once per page — gated by versioned `localStorage` keys (`gp_tour_v1_<id>`), never chaining two tours in one navigation, waiting (`waitFor`) for the anchor to exist before starting. `startTourForPath()` (the nav "?" button) always replays, ignoring the seen-flag, and falls back to the fuller `SITE_INTRO` walk on pages without their own page tour. |
 | `tour-theme.css` | Popover theme matching the design tokens (rust `--accent` Next button, `--card` surface). Higher specificity than driver's defaults via `.driver-popover.gp-tour`. |
 
-Currently shipped: site intro + the `/economy` tour. Adding a page tour is data-only — a new entry in `PAGE_TOURS` + (optionally) `data-tour` anchors on the page.
+Currently shipped: the `SITE_WELCOME` popover (auto), the `SITE_INTRO` walk ("?" on-demand), and the `/economy` page tour. Adding a page tour is data-only — a new entry in `PAGE_TOURS` + (optionally) `data-tour` anchors on the page.
 
 > Note: there is **no** `usePairIntelligence` hook — single-pair data is fetched via `restProxy.fetchPairAnalysis(slug)` directly.
 

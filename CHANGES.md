@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-06-05 (onboarding: auto-show is now a single welcome popover, not a 6-step walk)
+
+The first-visit experience was a 6-step nav walkthrough — too much procedure to greet a new user with. Replaced the auto-shown tour with a single screen-centered welcome popover (`SITE_WELCOME`) that names the four sections in one glance and points at the "?" for more. The fuller multi-step `SITE_INTRO` walk is now on-demand only — replayed from the "?" button on pages without their own page tour. The `/economy` per-page tour is unchanged.
+
+Files: `src/onboarding/tours.js` (new `SITE_WELCOME`), `useOnboarding.js` (auto-show `SITE_WELCOME` instead of `SITE_INTRO`), `docs/` build.
+
 ## 2026-06-02 (onboarding: guided product tour for new users)
 
 New visitors had no guidance on how to read the site (especially the dense `/economy` page). Added a lightweight guided tour built on driver.js.

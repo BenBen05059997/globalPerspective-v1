@@ -13,13 +13,15 @@
 // `{ uid?, limit? }` for the digest cron.
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, QueryCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, QueryCommand, UpdateCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { buildInterestProfile, isColdStart, rankRecommendations } = require('./scoring');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const SAVED_ITEMS_TABLE = process.env.SAVED_ITEMS_TABLE;
 const USER_PREFS_TABLE = process.env.USER_PREFS_TABLE;
+const BREAKING_ALERTS_TABLE = process.env.BREAKING_ALERTS_TABLE || 'GlobalPerspectiveBreakingAlerts';
+const SITE_URL = (process.env.SITE_URL || 'https://globalperspective.net').replace(/\/$/, '');
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 
 const DEFAULT_LIMIT = 8;
@@ -195,6 +197,37 @@ async function setPrefs(uid, email, patch = {}) {
   return getPrefs(uid);
 }
 
+// ── In-app notification feed (the bell) ────────────────────────────────────────
+// PUBLIC, no auth — the breaking-alert feed is a broadcast (the same global, already-
+// public stories for everyone). Returns confirmed/sent alerts, newest first. Read-state
+// (unread badge) is client-side (localStorage), so no per-user write is needed here.
+// Returns [] honestly if the table is absent/empty (it stays empty until the breaking
+// pipeline starts producing confirmed alerts).
+async function listAlerts() {
+  try {
+    const out = await ddb().send(new ScanCommand({
+      TableName: BREAKING_ALERTS_TABLE,
+      FilterExpression: '#s = :confirmed OR #s = :sent',
+      ExpressionAttributeNames: { '#s': 'status' },
+      ExpressionAttributeValues: { ':confirmed': 'confirmed', ':sent': 'sent' },
+    }));
+    return (out.Items || [])
+      .map((it) => ({
+        threadId: it.alertKey,
+        title: it.title || 'Breaking story',
+        url: `${SITE_URL}/weekly/thread/${it.alertKey}`,
+        at: it.confirmedAt || it.alertedAt || it.cycle || null,
+      }))
+      .filter((a) => a.at)
+      .sort((a, b) => String(b.at).localeCompare(String(a.at)))
+      .slice(0, 30);
+  } catch (err) {
+    // Missing table / access issue → honest empty feed, never an error in the UI.
+    console.warn('listAlerts failed (returning empty):', err.message);
+    return [];
+  }
+}
+
 function httpReply(statusCode, body) {
   return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
 }
@@ -219,6 +252,11 @@ exports.handler = async (event = {}) => {
   }
 
   const action = body.action || 'recommend';
+
+  // Public in-app notification feed (the bell) — no auth.
+  if (action === 'list_alerts') {
+    return httpReply(200, { ok: true, alerts: await listAlerts() });
+  }
 
   // Notification-preference actions require a signed-in user.
   if (action === 'get_prefs' || action === 'set_prefs') {

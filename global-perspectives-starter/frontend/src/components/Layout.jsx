@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingBar from './LoadingBar';
 import AIToast from './AIToast';
+import NotificationBell from './NotificationBell';
 import { useAutoTour, startTourForPath } from '../onboarding/useOnboarding';
 import './Layout.css';
 
@@ -101,6 +102,8 @@ function Layout({ children }) {
             <span>Search</span>
             <span className="gp-kbd">⌘K</span>
           </button>
+
+          <NotificationBell />
 
           {!authLoading && (
             user && !user.isAnonymous ? (

@@ -619,6 +619,7 @@ Single owner of `GlobalPerspectiveUserPrefs`. Two responsibilities:
    - `get_prefs` → `{ breakingOptIn, digestOptIn, digestCadence }` (defaults OFF — opt-in/GDPR).
    - `set_prefs` `{ breakingOptIn?, digestOptIn?, digestCadence? }` → writes those + reserves compliance fields (`email`, `consentAt`, `unsubToken`, `breakingVerified`, `digestVerified`) for when email delivery goes live; never clobbers `interestProfile`.
    - Both require `Authorization: Bearer <firebase-id-token>` (`uid` = token sub); no token → 401. Powers the Account → Notifications tab.
+3. **In-app notification feed** (added 2026-06-10) — **public** `list_alerts` (no auth): scans `GlobalPerspectiveBreakingAlerts` for `status ∈ {confirmed, sent}`, newest-first, returns `[{ threadId, title, url, at }]` (or `[]`). Powers the nav notification bell. Read-state is client-side (localStorage), so no per-user write.
 
 **Key env vars:** `TOPICS_DDB_TABLE` (=`NewsCache`), `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE` (=`GlobalPerspectiveUserPrefs`), `FIREBASE_PROJECT_ID`. **Role:** `newsRecommend-role` (Get/Update/Put on UserPrefs, read on NewsCache + SavedItems).
 
@@ -748,8 +749,8 @@ All rows carry `asOf` timestamps + TTL. Honesty contract: never display stale da
 ### Prediction Log Table (`PREDICTION_LOG_TABLE`, default `GlobalPerspectivePredictionLog`, ap-northeast-1)
 **PK:** `PRED#{topicId}` / **SK:** `{YYYY-MM-DD}` (daily snapshot). **No TTL — immutable forecast record.** PAY_PER_REQUEST. See [Prediction calibration](#prediction-calibration-track-record). Written by `NewsProjectInvokeAgentLambda` (snapshot at generation, status=`open`), mutated by `newsPredictionResolver` (#20, attaches `proposal` to due triggers) and `predictions/review.js` (human sets `finalVerdict`, flips status→`resolved` when all dated triggers confirmed). Scanned by the `prediction_track_record` proxy action. Each item: `{ topicId, title, category, generatedAt, generationId, model, scenarios[{ label, probability(numeric midpoint), triggers[{ id, text, deadline, status, proposal?, finalVerdict?, confirmedAt?, confirmedBy? }] }], winners, losers, status }`.
 
-### Breaking Alerts Table (`BREAKING_ALERTS_TABLE`, default `GlobalPerspectiveBreakingAlerts`, ap-northeast-1) ⚠️ NOT CREATED YET
-**PK:** `alertKey` (= `threadId`). PAY_PER_REQUEST, TTL ~14d. Written by `newsBreakingAlert` (#21) as the dedupe anchor + proposal store; mutated by `breaking/review.js` (human confirm/reject). Each item: `{ alertKey, status('proposed'|'confirmed'|'rejected'), score, reasons[], title, cycle, alertedAt, sent(bool), dryRun(bool), draft{subject,text}, editorNote?, verify{status,note}, ttl }`. Part of the dry-run breaking-alerts system — see [Lambda #21](#21-newsbreakingalert-️-built-2026-06-10--not-deployed-dry-run) + `BREAKING_ALERTS_PLAN.md`.
+### Breaking Alerts Table (`BREAKING_ALERTS_TABLE`, default `GlobalPerspectiveBreakingAlerts`, ap-northeast-1)
+**PK:** `alertKey` (= `threadId`). PAY_PER_REQUEST, TTL on `ttl` (~14d). **Created 2026-06-10** (empty until the detector runs). Written by `newsBreakingAlert` (#21) as the dedupe anchor + proposal store; mutated by `breaking/review.js` (human confirm/reject); scanned by `newsRecommend` `list_alerts` (#22) for the in-app notification bell. Each item: `{ alertKey, status('proposed'|'confirmed'|'rejected'), score, reasons[], title, cycle, alertedAt, sent(bool), dryRun(bool), draft{subject,text}, editorNote?, verify{status,note}, ttl }`. Part of the dry-run breaking-alerts system — see [Lambda #21](#21-newsbreakingalert-️-built-2026-06-10--not-deployed-dry-run) + `BREAKING_ALERTS_PLAN.md`.
 
 ---
 
@@ -940,6 +941,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `useResearchBriefing(topicId)` | Fetch cached research briefing |
 | `useSavedItems(itemType)` | Manage user bookmarks via newsSavedItems Lambda (JWT required) |
 | `usePreferences()` | Read/write notification opt-ins via newsRecommend `get/set_prefs` (JWT); optimistic save, revert-on-error; powers Account → Notifications tab |
+| `useNotifications()` | Fetch the public breaking-alert feed (newsRecommend `list_alerts`, 5-min poll) + a localStorage read-marker for the unread badge; powers the nav `NotificationBell` |
 | `useSummary(topicId)` | Fetch AI summary for a topic |
 | `usePrediction(topicId)` | Fetch AI prediction for a topic |
 | `useTraceCause(topicId)` | Fetch trace_cause deep context for a topic |

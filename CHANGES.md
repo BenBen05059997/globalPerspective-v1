@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-10 (in-app notification bell: nav bell + global alerts feed)
+
+Added a persistent **notification bell** to the nav so users can pull up missed breaking alerts on-site — the reliable fallback when email lands in spam, and (zero email-compliance burden) the first live delivery channel ahead of email. Spec in `BREAKING_ALERTS_PLAN.md` (Component 5); rationale in `NOTIFICATION_GAP_ANALYSIS.md`.
+
+- **Cheap by design — reuses the broadcast model, not a per-user fanout.** Backend: a **public** `list_alerts` action on `newsRecommend` (co-located with prefs) scans `GlobalPerspectiveBreakingAlerts` for `status ∈ {confirmed,sent}`, newest-first; returns `[]` honestly if empty/absent. Deployed via CLI; **created the `GlobalPerspectiveBreakingAlerts` table** (PAY_PER_REQUEST + TTL on `ttl`) + IAM Scan for `newsRecommend-role`. Curl-verified: `{ok:true, alerts:[]}`.
+- **Read-state is client-side** — a `localStorage` "last read" timestamp drives the unread badge (no per-user backend write in v1; cross-device sync deferred).
+- Frontend: `hooks/useNotifications.js` (5-min poll), `components/NotificationBell.jsx` + `.css` (badge + dropdown + honest "You're all caught up" empty state; renders for everyone since the feed is public; hides if the endpoint isn't configured), wired into `Layout.jsx` nav.
+- **Currently empty by design** — the feed populates once the breaking detector is deployed and alerts are confirmed via `breaking/review.js`. Build compiles (`vite build`); preview served HTTP 200. Deployed to `docs/`.
+
+Files: `amplify/backend/function/newsRecommend/src/index.js`, `global-perspectives-starter/frontend/src/{hooks/useNotifications.js,components/NotificationBell.jsx,components/NotificationBell.css,components/Layout.jsx,services/restProxy.js}` + `docs/` build, `BREAKING_ALERTS_PLAN.md`.
+
 ## 2026-06-10 (notification settings menu: Account → Notifications tab + prefs API on newsRecommend)
 
 User-facing email-notification preferences — the foundation for who the breaking-alert/digest senders target. Spec in `SETTINGS_MENU_PLAN.md`; design rationale in `NOTIFICATION_GAP_ANALYSIS.md`.

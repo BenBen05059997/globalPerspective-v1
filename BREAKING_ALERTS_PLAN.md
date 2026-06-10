@@ -94,6 +94,19 @@ To trust the detector + verify agent we need a labeled set: take N past pipeline
 4. **Email send (Resend) + opt-in UI.** ✅ send seam BUILT — `sendEmail.js` (Resend via `fetch`, no npm dep, key from `RESEND_API_KEY`) + `breaking/send-test.js` (renders a sample and sends it). Remaining: add `breakingOptIn`/`breakingVerified` to `GlobalPerspectiveUserPrefs` + confirmation flow, build the sender that picks up `status:'confirmed'` rows, flip `DRY_RUN=false`. Shares the digest's send infra.
    - **First real test → `benlai310@gmail.com`.** Create a Resend account (sign up with `benlai310@gmail.com`), grab an API key, then: `RESEND_API_KEY=re_xxx node breaking/send-test.js`. Using Resend's built-in `onboarding@resend.dev` test sender this delivers to the account's own email with **zero domain setup**. Once that looks right, verify `globalperspective.net` in Resend and switch `from` to `alerts@globalperspective.net` to send to anyone.
 
+## In-app notification bell (Component 5 — SHIPPED 2026-06-10, currently empty)
+
+A persistent **bell in the nav** (`Layout.jsx`) so users can pull up missed alerts on-site — the reliable fallback for when email lands in spam or isn't opened, and (because it has zero email-compliance burden) the **first live delivery channel**, ahead of email. Rationale + competitive basis in `NOTIFICATION_GAP_ANALYSIS.md` (this is the web equivalent of the push/quiet-hours surface news apps use).
+
+**Deliberately cheap, reusing the broadcast model — NOT a per-user fanout system:**
+- The feed is the **global broadcast** of confirmed alerts (the same public stories for everyone). Backend: a **public** `list_alerts` action on `newsRecommend` (co-located with prefs) scans `GlobalPerspectiveBreakingAlerts` for `status ∈ {confirmed, sent}`, newest-first; returns `[]` honestly if absent/empty.
+- **Read-state is client-side** — a `localStorage` "last read" timestamp drives the unread badge (unread = alerts newer than last open). No per-user backend write in v1. (Cross-device read-sync via a `notifReadAt` field on `UserPrefs` is a deferred enhancement.)
+- Frontend: `useNotifications` hook (5-min poll) + `NotificationBell.jsx` (badge + dropdown + honest empty state "You're all caught up"). Renders for everyone (broadcast feed is public); returns `null` if the endpoint isn't configured.
+
+**Status:** shipped + deployed, but the feed **stays empty until the breaking detector is deployed and alerts are confirmed** via `breaking/review.js` (`status → confirmed`). The mechanism is live and will populate automatically. The `GlobalPerspectiveBreakingAlerts` table was created (PAY_PER_REQUEST + TTL on `ttl`) this pass.
+
+**Sequencing note:** this is why the bell is the natural first channel — deploy the detector (dry-run) → confirm a few real alerts → they appear in the bell with no email/SES dependency. Email follows once the domain is verified in Resend.
+
 ## Honesty contract
 
 - Never manufacture a "breaking" story to fill a quota — silence is a valid, correct output.

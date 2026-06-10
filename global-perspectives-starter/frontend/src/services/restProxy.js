@@ -281,3 +281,19 @@ export async function savePrefs(patch = {}) {
   return prefsRequest('set_prefs', patch);
 }
 
+// Public in-app notification feed (the bell) — no auth; the breaking-alert feed is a
+// global broadcast. Returns { ok, alerts: [{ threadId, title, url, at }] }.
+export async function fetchAlerts() {
+  const endpoint = typeof window !== 'undefined' && window.USER_PREFS_ENDPOINT;
+  if (!endpoint) throw new Error('Missing USER_PREFS_ENDPOINT');
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'list_alerts' }),
+  });
+  let body;
+  try { body = await res.json(); } catch { body = null; }
+  if (!res.ok) throw new Error(`Alerts HTTP ${res.status}`);
+  return body;
+}
+

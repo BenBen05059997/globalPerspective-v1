@@ -37,7 +37,9 @@ exports.handler = async (event = {}) => {
   if (!LLM_KEY) return fail('Missing LLM key (XAI_API_KEY)');
 
   const weekKey = (event.weekKey || new Date().toISOString().slice(0, 10));
-  console.log(`[weekly] generating brief for week ending ${weekKey}`);
+  const mode = event.mode === 'free' ? 'free' : 'grounded';
+  const SK = mode === 'free' ? 'WEEKLY_BRIEF_FREE' : 'WEEKLY_BRIEF'; // free draft kept separate
+  console.log(`[weekly] generating ${mode} brief for week ending ${weekKey}`);
 
   const entries = await readArchiveEntries(WEEK_DAYS);
   console.log(`[weekly] ${entries.length} archive entries over ${WEEK_DAYS}d`);
@@ -59,7 +61,7 @@ exports.handler = async (event = {}) => {
     if (ci) countryCtx.push({ name, ...ci });
   }
 
-  const prompt = buildPrompt(weekKey, threadCtx, countryCtx);
+  const prompt = buildPrompt(weekKey, threadCtx, countryCtx, mode);
   const { content, modelId } = await invokeLLM(prompt);
   const brief = parseBrief(content);
 
@@ -71,7 +73,8 @@ exports.handler = async (event = {}) => {
 
   const item = {
     PK: `WEEKLY_BRIEF#${weekKey}`,
-    SK: 'WEEKLY_BRIEF',
+    SK,
+    mode,
     weekOf: weekKey,
     status: 'draft', // draft → published (human approves via weekly/review.js)
     headline: brief.headline || `Weekly Intelligence Brief — week of ${weekKey}`,
@@ -160,7 +163,7 @@ async function getRecord(pk, sk) {
 // estimative-probability ladder, Heuer's bias traps, and analytical-journalism craft
 // (nut graf / BLUF / Economist leader). The model writes free-form Markdown prose — NOT a
 // rigid field schema — because forcing fixed fields produces formulaic, summary-like output.
-function buildPrompt(weekKey, threadCtx, countryCtx) {
+function buildPrompt(weekKey, threadCtx, countryCtx, mode = 'grounded') {
   const threadBlock = threadCtx.map((t, i) => {
     const a = t.analysis || {};
     const econ = t.econ
@@ -179,10 +182,15 @@ function buildPrompt(weekKey, threadCtx, countryCtx) {
     `COUNTRY: ${c.name} — ${c.headline || ''} (risk: ${c.riskLevel || 'n/a'}${c.riskScore != null ? ` ${c.riskScore}/100` : ''})\n  ${(c.situationSummary || '').slice(0, 400)}`
   ).join('\n\n');
 
+  const groundingBlock = mode === 'free'
+    ? `=== GROUNDING (free mode) ===
+Use the analysis below as your factual foundation and primary source for what happened this week. You MAY draw on your broader knowledge to add historical context, connect to deeper structural forces, and sharpen the analysis where it genuinely strengthens the brief. Do not contradict the provided material, and prefer it for current-week specifics. Write the best possible professional brief.`
+    : `=== HARD GROUNDING RULE ===
+Use ONLY the analysis provided below. Never introduce an event, number, name, or date that is not present in this material. Your value is CONNECTING and JUDGING what's here, not adding facts. If the week's material is thin, say so plainly — do not pad or invent.`;
+
   return `You are the lead analyst at a global-intelligence desk writing this week's INTELLIGENCE BRIEF for the week ending ${weekKey}. Your readers are professionals (analysts, investors, policymakers). Write a genuine analytical brief in Markdown — prose, not a list of headline summaries.
 
-=== HARD GROUNDING RULE ===
-Use ONLY the analysis provided below. Never introduce an event, number, name, or date that is not present in this material. Your value is CONNECTING and JUDGING what's here, not adding facts. If the week's material is thin, say so plainly — do not pad or invent.
+${groundingBlock}
 
 === WHAT MAKES THIS ANALYSIS, NOT SUMMARY ===
 A summary says what happened; analysis says what it MEANS, why it matters, and what comes next. If a sentence merely restates an event without a judgment or implication, cut it. Compose the brief by moving through these functions (free-form — use your own subheads, don't label them mechanically):

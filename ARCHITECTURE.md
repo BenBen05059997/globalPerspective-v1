@@ -899,6 +899,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `/daily/:dateKey` | `DailyPage.jsx` | Public |
 | `/weekly-brief` | `WeeklyBriefPage.jsx` | Public (serif long-read of the latest published weekly brief) |
 | `/economy` | `EconomyPage.jsx` | Public |
+| `/analyze` | `AnalysisStudio.jsx` | Public (BYOK self-serve analysis — see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)) |
 | `/track-record` | `TrackRecordPage.jsx` | Public |
 | `/weekly` | `WeeklyPage.jsx` | Public |
 | `/weekly/thread/:threadId` | `ThreadPage.jsx` | Public |
@@ -913,7 +914,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 
 ### Key Components
 
-64 total component files (50 in `src/components/` + 14 in `src/components/atoms/`, incl. `LedeBand.jsx` added 2026-06-10) after the 2026-05-26 billing cleanup. Key ones:
+~66 component files (in `src/components/` + 14 in `src/components/atoms/`), incl. `LedeBand.jsx` and the Analysis Studio pair `AnalysisStudio.jsx`/`ProviderModal.jsx` added 2026-06-10. Key ones:
 
 | Component | Purpose |
 |-----------|---------|
@@ -939,6 +940,8 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `Account.jsx` | User account tabs: saved items + profile |
 | `IntelligenceLoader.jsx` | Animated loading states (typewriter + explode variants) |
 | `TrackRecordPage.jsx` | `/track-record` — forecast calibration scoreboard (stat cards, Brier score + verdict, calibration table, recently-resolved triggers); honest empty state until human-confirmed verdicts exist. See [Prediction calibration](#prediction-calibration-track-record) |
+| `AnalysisStudio.jsx` | `/analyze` — **BYOK self-serve analysis** (see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)). Pick ≤4 stories → **Guided lens** (5 templates) or **Free-form** → cited deep-dive synthesized from our cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE`. Runs on the user's own key (browser-only). |
+| `ProviderModal.jsx` | The `/analyze` provider/model/key chooser modal (OpenAI · DeepSeek · Gemini · OpenRouter · Anthropic). Writes `{provider,model,key}` to `localStorage` only — never sent to our servers. |
 
 ### Key Hooks
 
@@ -989,9 +992,19 @@ Currently shipped: the `SITE_WELCOME` popover (auto), the `SITE_INTRO` walk ("?"
 
 > Note: there is **no** `usePairIntelligence` hook — single-pair data is fetched via `restProxy.fetchPairAnalysis(slug)` directly.
 
+### Analysis Studio (BYOK self-serve analysis)
+
+`/analyze` (`AnalysisStudio.jsx`) — SHIPPED 2026-06-10 (commit `c1ef5f6`). The first "analyze it yourself" surface: a reader picks ≤4 real stories and gets a **cited deep-dive** built from our own intelligence. Full spec: `ANALYSIS_STUDIO_PLAN.md`. It is the feature the future **Polar credits** will meter (`POLAR_BILLING_PLAN.md`) — **build-first, monetize later**; see [[project-analysis-studio]].
+
+- **Two input modes, same honesty guardrails under both** (the A/B is input style, not safety): **Guided** = 5 fixed lenses (Scenario forecast / Winners & losers / Economic ripple / Root-cause chain / Compare); **Free-form** = ask anything about the selected stories. Both cite sources with `[n]`, refuse on insufficient data, never fabricate figures, and stay locked to the selected stories. Lenses + the guardrailed system prompt + the cited-context builder live in `utils/analysis.js`.
+- **BYOK, key never leaves the browser.** `ProviderModal.jsx` chooses provider + model + key; `utils/byok.js` persists `{provider,model,key}` to `localStorage` only. `services/llm.js` calls the provider **directly from the browser** — one OpenAI-compatible path (OpenAI / DeepSeek / Gemini / OpenRouter) + a separate Anthropic adapter (uses the `anthropic-dangerous-direct-browser-access` header). **No new backend** this phase: the page fetches story records from the existing public proxy, then the LLM call goes browser → provider; our servers never see the key.
+- **Caveats:** per-provider browser-CORS is confirmed only at run time (a blocked provider would need a no-store pass-through Lambda fallback); the Anthropic model IDs use current session values. No daily cap during BYOK testing — the cap/credit lands when Polar billing goes live.
+
 ### Service Layer
 
 Two modules: `restProxy.js` (the actual transport) and `utils/contentService.js` (a thin wrapper over restProxy that adds normalization/sentence-trimming for topic content — **renamed 2026-05-26 from the misleading `graphqlService.js`; there is no GraphQL**). The topic AI hooks (`useGeminiTopics`, `useSummary`, `usePrediction`, `useTraceCause`, `useTodayArchive`) and `Home`/`MapSidePanel` call through `contentService`; everything else calls `restProxy` directly.
+
+> **BYOK exception (Analysis Studio):** `/analyze` does **not** route its LLM calls through `restProxy`. `services/llm.js` calls the user's chosen provider directly from the browser with the user's own key (see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)); only the *story records* it analyzes come from `restProxy`'s public actions.
 
 ```
 restProxy.js

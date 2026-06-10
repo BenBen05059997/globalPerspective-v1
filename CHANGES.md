@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-10 (Analysis Studio: BYOK self-serve analysis at /analyze)
+
+Shipped the first version of **"analyze it yourself"** — a new `/analyze` page where a reader picks real stories from our data and gets a cited deep-dive, run on **their own LLM API key** (BYOK). Build-first: the feature exists before any billing; later the free BYOK run becomes a Polar credit. Plans: `ANALYSIS_STUDIO_PLAN.md` (feature) + `POLAR_BILLING_PLAN.md` (the subscription/credits direction it feeds).
+
+- **Two input modes, one engine + the same honesty guardrails under both** (the experiment is input style, not safety): **Guided lens** (5 fixed templates — Scenario forecast / Winners & losers / Economic ripple / Root-cause chain / Compare) and **Free-form** (ask anything about the selected stories). Both cite sources with `[n]`, refuse on insufficient data, never fabricate figures, and stay locked to the user's selected stories.
+- **BYOK, no cap, key never leaves the browser.** A provider/model chooser modal (OpenAI · DeepSeek · Gemini · OpenRouter via one OpenAI-compatible path + **Anthropic** via its own adapter with the direct-browser-access header). Key + choice stored in `localStorage` only; the analysis call goes browser → provider directly — our servers never see it. So no new backend for this phase.
+- **Synthesizes our own intelligence, cited.** The context builder pulls each selected topic's cached `SUMMARY` / `PREDICTION` / `TRACE_CAUSE` from the public proxy and assembles a numbered, citable block; the report renders via `Markdown.jsx` with a Sources list + an analyst-input disclaimer.
+- Wired `/analyze` route + nav entry. ⚠️ First live runs will reveal each provider's browser-CORS support (CORS-blocked providers get a no-store pass-through fallback later); Anthropic model IDs use current session values.
+
+Files: `global-perspectives-starter/frontend/src/{services/llm.js,utils/byok.js,utils/analysis.js,components/AnalysisStudio.jsx,components/AnalysisStudio.css,components/ProviderModal.jsx,components/ProviderModal.css,App.jsx,components/Layout.jsx}` + `docs/` build. Docs: `ANALYSIS_STUDIO_PLAN.md`, `POLAR_BILLING_PLAN.md` (new); deprecation banners + cross-links in `TIERS.md`, `PADDLE_SETUP.md`, `ARCHITECTURE.md`, `SYSTEM_WIRING.md`.
+
 ## 2026-06-10 (weekly brief: free-form tradecraft prompt + /weekly-brief serif long-read page)
 
 Finished the weekly brief's analysis quality + made it viewable on-site.

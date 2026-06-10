@@ -271,7 +271,8 @@ Plans that fully shipped — archive (do not treat as live spec):
 - REDESIGN_PLAN.md, REDESIGN_V2_PLAN.md, PAIR_INTELLIGENCE_PLAN.md, PAIR_UI_PLAN.md, RSS_CLOUDFLARE_TODO.md, docs/MAP_UPGRADE_FEATURES.md, docs/STALE_CACHE_PLAN.md, continue-news.md.
 
 Actively misleading — banner or rewrite:
-- TIERS.md, docs/ENTERPRISE_WEEKLY_ANALYSIS.md (tier checks removed 2026-04-11).
+- TIERS.md, PADDLE_SETUP.md (Paddle-era; tier checks removed 2026-04-11, Paddle stack removed 2026-06-01). **Both now carry a deprecation banner pointing at [`POLAR_BILLING_PLAN.md`](./POLAR_BILLING_PLAN.md) — the live spec for the Polar-based subscription rebuild (in planning, not yet built).**
+- docs/ENTERPRISE_WEEKLY_ANALYSIS.md (tier checks removed 2026-04-11).
 - docs/WEEKLY_KNOWN_ISSUES.md (issue from older clustering pipeline).
 - MOBILE_APP_DEVELOPMENT_GUIDE.md (no mobile app exists).
 - DEPLOYMENT_NOTES.md (duplicates CLAUDE.md; pick one).

@@ -44,6 +44,7 @@ function Layout({ children }) {
     { to: '/weekly', label: 'Threads' },
     { to: '/weekly/countries', label: 'Countries' },
     { to: '/economy', label: 'Economy' },
+    { to: '/analyze', label: 'Analyze' },
     { to: '/track-record', label: 'Track Record' },
   ];
 

@@ -1,0 +1,108 @@
+.pm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: rgba(10, 10, 10, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.pm-modal {
+  width: 100%;
+  max-width: 440px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6);
+}
+
+.pm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+.pm-header h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: var(--text-2xl);
+  color: var(--ink);
+}
+.pm-close {
+  border: none;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink-dim);
+  cursor: pointer;
+}
+.pm-close:hover { color: var(--ink); }
+
+.pm-note {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--ink-dim);
+  line-height: 1.55;
+}
+
+.pm-form { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.pm-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.pm-label select,
+.pm-label input {
+  font-family: var(--sans);
+  font-size: var(--text-base);
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper);
+}
+.pm-label select:focus,
+.pm-label input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.pm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.pm-clear {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 8px 14px;
+  font-size: var(--text-sm);
+  color: var(--ink-dim);
+  cursor: pointer;
+}
+.pm-clear:hover { border-color: var(--line-2); color: var(--ink); }
+.pm-save {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  padding: 8px 18px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+.pm-save:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+.pm-save:disabled { opacity: 0.5; cursor: not-allowed; }

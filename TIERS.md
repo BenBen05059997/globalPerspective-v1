@@ -1,9 +1,15 @@
 # Global Perspectives — Tier Design
 
-**Last updated: 2026-04-11**
-**Status: SCHEMA PRESENT — DORMANT DURING EARLY ACCESS**
+**Last updated: 2026-04-11** · **Banner added 2026-06-10**
+**Status: ⚠️ SUPERSEDED — describes the deleted Paddle-era design. Current spec → [`POLAR_BILLING_PLAN.md`](./POLAR_BILLING_PLAN.md).**
 
-> ⚠️ **IMPORTANT FOR AI AGENTS:** The tier system described in this document is **infrastructure that exists in the codebase but is not enforced**. As of 2026-04-11, all content is public — no auth gates, no tier checks on any content action. Firebase Auth exists only for personalization (save feature). Paddle billing infrastructure is built but users are not charged. This document describes the **intended future design**, not current behavior. Do NOT propose re-adding tier enforcement based on this document.
+> 🛑 **DO NOT BUILD FROM THIS FILE.** Two things changed since this was written:
+> 1. The Paddle billing stack + all tier enforcement were **deleted** (gates removed 2026-04-11; `newsStripeWebhook`, `resolveUserTier`, `user_profile`/`portal_session`, and the frontend billing UI removed by 2026-06-01). The "infrastructure exists / will be re-enforced when Paddle goes live" claims below are **no longer true**.
+> 2. A **new** subscription system is being designed on **Polar.sh** (Merchant of Record), not Paddle — different provider, different schema (`polarCustomerId`/`polarSubscriptionId`, plus a future `creditBalance` for a "custom analysis" feature). The live spec is **[`POLAR_BILLING_PLAN.md`](./POLAR_BILLING_PLAN.md)** (Phase 1 = subscription for full read access; credits parked for Phase 2).
+>
+> The tier *concept* (free vs. paid read access) below is still useful background, but every provider name, pricing number, schema field, and "COMPLETED ✅" claim is stale. Treat as historical.
+
+> ⚠️ **(original 2026-04-11 note, retained for history):** The tier system described in this document is **infrastructure that exists in the codebase but is not enforced**. As of 2026-04-11, all content is public — no auth gates, no tier checks on any content action. Firebase Auth exists only for personalization (save feature). Paddle billing infrastructure is built but users are not charged. This document describes the **intended future design**, not current behavior.
 >
 > **Current reality:** `archive_range`, `thread_analysis`, `country_intelligence`, `narrative_thread`, `daily_brief` (all dates) are fully public. Only `user_profile` and `portal_session` require Firebase JWT. Tiers will be re-enforced when Paddle billing goes live.
 >

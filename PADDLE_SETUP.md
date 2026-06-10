@@ -1,7 +1,9 @@
 # Paddle Setup — Global Perspectives
 
-**Status:** INFRASTRUCTURE COMPLETE — dormant during early access (no users charged)
-**Last updated:** 2026-04-11
+**Status:** ❌ OBSOLETE — Paddle was fully removed 2026-06-01. We are moving to **Polar.sh**.
+**Last updated:** 2026-04-11 · **Banner added 2026-06-10**
+
+> 🛑 **OBSOLETE — do not follow these steps.** The entire Paddle stack (`newsStripeWebhook` Lambda + Function URL + IAM role, the `portal_session`/`user_profile` proxy actions, and the frontend billing UI) was **deleted by 2026-06-01**. Paddle is not the payment provider going forward. The replacement is **Polar.sh** (Merchant of Record) — see the live spec **[`POLAR_BILLING_PLAN.md`](./POLAR_BILLING_PLAN.md)**. This file is kept only as a record of the previous integration's shape.
 
 ---
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedItems } from '../hooks/useSavedItems';
+import { usePreferences } from '../hooks/usePreferences';
 import './Account.css';
 
 const TYPE_COLORS = {
@@ -292,6 +293,115 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
   );
 }
 
+function Toggle({ checked, disabled, onChange, label }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      style={{
+        flexShrink: 0, width: 44, height: 26, borderRadius: 13, border: 'none',
+        cursor: disabled ? 'not-allowed' : 'pointer', padding: 0,
+        background: checked ? '#a2442e' : '#cfcfca', opacity: disabled ? 0.55 : 1,
+        position: 'relative', transition: 'background .15s',
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 3, left: checked ? 21 : 3, width: 20, height: 20,
+        borderRadius: '50%', background: '#fff', transition: 'left .15s',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+      }} />
+    </button>
+  );
+}
+
+function ToggleRow({ label, desc, checked, disabled, onChange }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+      gap: '1rem', padding: '0.85rem 0', borderBottom: '1px solid var(--border-color, #eee)',
+    }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)' }}>{label}</div>
+        {desc && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>{desc}</div>}
+      </div>
+      <Toggle checked={checked} disabled={disabled} onChange={onChange} label={label} />
+    </div>
+  );
+}
+
+function NotificationsPanel() {
+  const { prefs, loading, saving, error, save, endpointMissing } = usePreferences();
+
+  return (
+    <div style={{ maxWidth: 520, margin: '0 auto' }}>
+      <div style={SECTION}>
+        <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Email notifications</div>
+
+        {endpointMissing ? (
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            Email delivery isn’t live yet. Notification settings will appear here once it’s enabled.
+          </div>
+        ) : loading ? (
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Loading preferences…</div>
+        ) : (
+          <>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+              Email delivery is being set up — your choices are saved and apply as soon as it’s live.
+            </div>
+
+            <ToggleRow
+              label="Breaking news alerts"
+              desc="An email the moment a major story breaks, with our analysis."
+              checked={prefs.breakingOptIn}
+              disabled={saving}
+              onChange={(v) => save({ breakingOptIn: v })}
+            />
+            <ToggleRow
+              label="Weekly digest"
+              desc="A roundup of the most significant stories."
+              checked={prefs.digestOptIn}
+              disabled={saving}
+              onChange={(v) => save({ digestOptIn: v })}
+            />
+
+            {prefs.digestOptIn && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 0', borderBottom: '1px solid var(--border-color, #eee)' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Frequency</span>
+                <select
+                  value={prefs.digestCadence}
+                  disabled={saving}
+                  onChange={(e) => save({ digestCadence: e.target.value })}
+                  style={{ padding: '0.35rem 0.5rem', borderRadius: 6, border: '1.5px solid var(--border-color, #e5e7eb)', fontSize: '0.85rem' }}
+                >
+                  <option value="weekly">Weekly</option>
+                  <option value="daily">Daily</option>
+                </select>
+              </div>
+            )}
+
+            {(prefs.breakingOptIn || prefs.digestOptIn) && (
+              <button
+                onClick={() => save({ breakingOptIn: false, digestOptIn: false })}
+                disabled={saving}
+                style={{ marginTop: '0.95rem', background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: '#ef4444', cursor: saving ? 'not-allowed' : 'pointer' }}
+              >
+                Unsubscribe from all
+              </button>
+            )}
+
+            {error && (
+              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#b91c1c' }}>{error}</div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Account() {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -342,6 +452,12 @@ export default function Account() {
             <span className="account-tab-badge">{savedItems.length}</span>
           )}
         </button>
+        <button
+          className={`account-tab${tab === 'notifications' ? ' account-tab--active' : ''}`}
+          onClick={() => setTab('notifications')}
+        >
+          Notifications
+        </button>
       </div>
 
       {tab === 'profile' && (
@@ -359,6 +475,8 @@ export default function Account() {
           onUnsave={unsave}
         />
       )}
+
+      {tab === 'notifications' && <NotificationsPanel />}
     </div>
   );
 }

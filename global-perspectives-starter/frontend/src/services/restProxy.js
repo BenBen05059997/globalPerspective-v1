@@ -256,3 +256,28 @@ export async function fetchSavedItems(itemType = null) {
   return savedItemsRequest('get_saved_items', itemType ? { itemType } : {});
 }
 
+// ── Notification preferences (newsRecommend Lambda, separate Function URL) ──
+async function prefsRequest(action, payload = {}) {
+  const endpoint = typeof window !== 'undefined' && window.USER_PREFS_ENDPOINT;
+  if (!endpoint) throw new Error('Missing USER_PREFS_ENDPOINT');
+  const token = getAuthToken ? await getAuthToken() : null;
+  if (!token) throw new Error('Sign in required');
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ action, payload }),
+  });
+  let body;
+  try { body = await res.json(); } catch { body = null; }
+  if (!res.ok) throw new Error(`Prefs HTTP ${res.status}: ${JSON.stringify(body)}`);
+  return body;
+}
+
+export async function fetchPrefs() {
+  return prefsRequest('get_prefs');
+}
+
+export async function savePrefs(patch = {}) {
+  return prefsRequest('set_prefs', patch);
+}
+

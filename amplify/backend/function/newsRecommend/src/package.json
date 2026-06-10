@@ -1,0 +1,14 @@
+{
+  "name": "newsrecommend",
+  "version": "1.0.0",
+  "description": "Content-based recommendation engine for Global Perspectives (shared scorer for on-site rail + email digest)",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node test-scoring.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}

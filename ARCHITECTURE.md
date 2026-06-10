@@ -12,6 +12,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 - `newsPairIntelligence` → **DeepSeek V4** (deployed env vars verified `deepseek-chat` / `api.deepseek.com` — its source default still reads Grok, and the migration plan's Phase 2 box was never checked, but the live function is on DeepSeek). Manual-invoke only.
 - `newsMarketsData`, `newsCountryFactsUpdater`, `newsSavedItems`, `newsPostLinkedIn`, `linkedInAutoPost` → **no LLM** (data feeds or cached AI from DDB)
 - `newsClientErrors`, `newsFreshnessMonitor`, `newsErrorDigest` → **no LLM** (observability — passive error capture + 24/7 monitoring; see Lambdas #17–19 and "Observability & Monitoring")
+- `newsBreakingAlert` → **no LLM today** (deterministic significance detector; the Phase-3 verify step will add **Gemini** as a judge). Built 2026-06-10, **not deployed** — see Lambda #21.
 
 - **Production URL:** https://globalperspective.net (custom domain)
 - **GitHub Pages URL:** https://benben05059997.github.io/globalPerspective-v1/
@@ -588,6 +589,41 @@ The **proposal** half of hybrid resolution. Reads `GlobalPerspectivePredictionLo
 
 ---
 
+### 21. `newsBreakingAlert` ⚠️ BUILT 2026-06-10 — NOT DEPLOYED (dry-run)
+**Path:** `amplify/backend/function/newsBreakingAlert/src/index.js`
+**Trigger (planned):** EventBridge — `cron(15 */4 * * ? *)` (:15 each 4h cycle, after `NewsProjectInvokeAgentLambda` writes the analysis). **No schedule, no table, no email yet** — code exists in-repo, runs in `DRY_RUN` mode only.
+
+Breaking-news email channel — **Component 4** of the recommendations/digest work (`RECOMMENDATIONS_AND_DIGEST_PLAN.md`); full design in `BREAKING_ALERTS_PLAN.md`. v1 is a **broadcast** alert (global significance, not personalized), pairing a breaking headline with the site's own analysis. Detects deterministically, then proposes for human review — **never auto-sends**.
+
+**What it does:**
+1. Groups `latest.topics[]` into stories by `threadId`; scores each with the **deterministic, no-LLM** `significance.js` on four real signals: popularity (`sources.length`), breadth (concurrent angles), max country `riskScore` (0–100, from `COUNTRY_INTELLIGENCE`), and economic `magnitude` (from `ECONOMIC_IMPACT`). Most cycles clear nothing — **silence is the correct output** ([[feedback-no-misinformation-fallback]]).
+2. For the top story above threshold (deduped 5d, one/run), assembles the email from real records — `SUMMARY` (*What happened*), parsed `TRACE_CAUSE` JSON (*How we got here*: trigger → building → root + underreported angle + Signal-vs-Noise), `PREDICTION` (*Our read*), `ECONOMIC_IMPACT` (market pill), sources.
+3. `render.js` returns `{subject, text, html}` — brand-styled, email-safe table layout + inline CSS, XSS-escaped, empty sections omitted.
+4. Writes a `status:'proposed'` row to `GlobalPerspectiveBreakingAlerts` (doubles as the dedupe anchor). `verifyStory()` is a **stub seam** for the Phase-3 LLM verify (Gemini judges the DeepSeek-written analysis, like `newsEconomicQuality`).
+
+**Email provider: Resend** (chosen over SES 2026-06-10 for DX + no sandbox-approval wait) — `sendEmail.js` is the single provider seam (`fetch`, no npm dep, key from `RESEND_API_KEY`).
+
+**Human-in-the-loop (no public auth surface, mirrors `predictions/review.js`):** `breaking/review.js` — operator reviews each proposal, **adds their own words** (an editor note that leads the email), confirms (`status:'confirmed'`) or rejects. `breaking/send-test.js` renders a sample and sends it via Resend (`RESEND_API_KEY=re_xxx node breaking/send-test.js`).
+
+**Key env vars (planned):** `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BREAKING_ALERTS_TABLE`, `RESEND_API_KEY`, `SITE_URL`, `DRY_RUN` (default `true`), `SIGNIFICANCE_THRESHOLD`, `DEDUPE_DAYS`.
+
+---
+
+### 22. `newsRecommend`
+**Path:** `amplify/backend/function/newsRecommend/src/index.js`
+**Trigger:** Lambda **Function URL** (`window.USER_PREFS_ENDPOINT`, auth NONE + CORS) and direct invoke (digest cron). **No LLM.** Built 2026-06-05 (Component 1 of `RECOMMENDATIONS_AND_DIGEST_PLAN.md`); prefs actions added + Function URL created 2026-06-10.
+
+Single owner of `GlobalPerspectiveUserPrefs`. Two responsibilities:
+1. **Recommendations** — content-based ranking of `latest.topics[]` for a user (shared `scoring.js`; personalized via the user's `SavedItems` interest profile when a JWT is present, else "Trending"). On-site rail not yet wired.
+2. **Notification preferences** (added 2026-06-10) — JWT-gated `get_prefs` / `set_prefs`:
+   - `get_prefs` → `{ breakingOptIn, digestOptIn, digestCadence }` (defaults OFF — opt-in/GDPR).
+   - `set_prefs` `{ breakingOptIn?, digestOptIn?, digestCadence? }` → writes those + reserves compliance fields (`email`, `consentAt`, `unsubToken`, `breakingVerified`, `digestVerified`) for when email delivery goes live; never clobbers `interestProfile`.
+   - Both require `Authorization: Bearer <firebase-id-token>` (`uid` = token sub); no token → 401. Powers the Account → Notifications tab.
+
+**Key env vars:** `TOPICS_DDB_TABLE` (=`NewsCache`), `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE` (=`GlobalPerspectiveUserPrefs`), `FIREBASE_PROJECT_ID`. **Role:** `newsRecommend-role` (Get/Update/Put on UserPrefs, read on NewsCache + SavedItems).
+
+---
+
 ## Observability & Monitoring
 
 Two layers, both roll-your-own (the user rejects paid Sentry on cost):
@@ -703,11 +739,17 @@ All rows carry `asOf` timestamps + TTL. Honesty contract: never display stale da
 ### Saved Items Table (`SAVED_ITEMS_TABLE`, default `GlobalPerspectiveSavedItems`)
 **PK:** `uid` (Firebase UID) / **SK:** `savedKey` (= `{itemType}#{itemId}`). Written/read by `newsSavedItems`. Item types: `thread`, `country`, `daily`, `pair`.
 
+### User Prefs Table (`USER_PREFS_TABLE`, default `GlobalPerspectiveUserPrefs`, ap-northeast-1)
+**PK:** `uid` (Firebase UID). PAY_PER_REQUEST. Written/read by `newsRecommend` (#22). Holds two concerns on one row: `interestProfile` (M, recommendation cache) and notification prefs — `breakingOptIn`/`digestOptIn` (BOOL, default false), `digestCadence` (`weekly`|`daily`), plus compliance fields reserved for when email delivery is live: `email`, `consentAt`, `unsubToken`, `breakingVerified`, `digestVerified`. Read by the breaking-alert/digest senders to know who to target.
+
 ### Client Errors Table (`GlobalPerspectiveClientErrors`, ap-northeast-1)
 **PK:** `errKey` (= `day#hash`), TTL 30d. Written by `newsClientErrors` (#17) — identical errors `ADD count` into one row (fingerprint = sha1 of message + normalized top frame). Scanned by `newsErrorDigest` (#19), which also stores its run baseline in a single `DIGEST#STATE` row here. Read back with `node scripts/errors.mjs`.
 
 ### Prediction Log Table (`PREDICTION_LOG_TABLE`, default `GlobalPerspectivePredictionLog`, ap-northeast-1)
 **PK:** `PRED#{topicId}` / **SK:** `{YYYY-MM-DD}` (daily snapshot). **No TTL — immutable forecast record.** PAY_PER_REQUEST. See [Prediction calibration](#prediction-calibration-track-record). Written by `NewsProjectInvokeAgentLambda` (snapshot at generation, status=`open`), mutated by `newsPredictionResolver` (#20, attaches `proposal` to due triggers) and `predictions/review.js` (human sets `finalVerdict`, flips status→`resolved` when all dated triggers confirmed). Scanned by the `prediction_track_record` proxy action. Each item: `{ topicId, title, category, generatedAt, generationId, model, scenarios[{ label, probability(numeric midpoint), triggers[{ id, text, deadline, status, proposal?, finalVerdict?, confirmedAt?, confirmedBy? }] }], winners, losers, status }`.
+
+### Breaking Alerts Table (`BREAKING_ALERTS_TABLE`, default `GlobalPerspectiveBreakingAlerts`, ap-northeast-1) ⚠️ NOT CREATED YET
+**PK:** `alertKey` (= `threadId`). PAY_PER_REQUEST, TTL ~14d. Written by `newsBreakingAlert` (#21) as the dedupe anchor + proposal store; mutated by `breaking/review.js` (human confirm/reject). Each item: `{ alertKey, status('proposed'|'confirmed'|'rejected'), score, reasons[], title, cycle, alertedAt, sent(bool), dryRun(bool), draft{subject,text}, editorNote?, verify{status,note}, ttl }`. Part of the dry-run breaking-alerts system — see [Lambda #21](#21-newsbreakingalert-️-built-2026-06-10--not-deployed-dry-run) + `BREAKING_ALERTS_PLAN.md`.
 
 ---
 
@@ -803,6 +845,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | Mapbox Geocoding | newsSensitiveData | Location name → lat/lng |
 | Google Maps | WeeklyMap.jsx (embedded by CountryPage), WorldMap.jsx (legacy, unrouted) | Interactive map rendering. **Note:** WorldMapV2 (`/map`) uses **d3 + topojson**, not Google Maps |
 | Firebase Auth | AuthContext.jsx + newsSensitiveData + newsSavedItems | Passwordless sign-in + JWT verification |
+| Resend (`api.resend.com`) | newsBreakingAlert (#21, not deployed) | Transactional/alert email send. Chosen over SES 2026-06-10 (DX + no sandbox-approval wait). Key from `RESEND_API_KEY`. The recs/digest email also targets Resend. |
 
 > Paddle (billing + Customer Portal) was removed 2026-06-01 — the `newsStripeWebhook` Lambda and the billing proxy actions are gone. See [Lambda #12](#12-newsstripewebhook-name-was-legacy--handled-paddle--removed-2026-06-01).
 
@@ -896,6 +939,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `useMarketsCountry(countryName)` | Fetch country macro snapshot |
 | `useResearchBriefing(topicId)` | Fetch cached research briefing |
 | `useSavedItems(itemType)` | Manage user bookmarks via newsSavedItems Lambda (JWT required) |
+| `usePreferences()` | Read/write notification opt-ins via newsRecommend `get/set_prefs` (JWT); optimistic save, revert-on-error; powers Account → Notifications tab |
 | `useSummary(topicId)` | Fetch AI summary for a topic |
 | `usePrediction(topicId)` | Fetch AI prediction for a topic |
 | `useTraceCause(topicId)` | Fetch trace_cause deep context for a topic |

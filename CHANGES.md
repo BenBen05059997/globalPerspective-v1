@@ -1,13 +1,37 @@
 # Global Perspectives — Change Log
 
+## 2026-06-10 (notification settings menu: Account → Notifications tab + prefs API on newsRecommend)
+
+User-facing email-notification preferences — the foundation for who the breaking-alert/digest senders target. Spec in `SETTINGS_MENU_PLAN.md`; design rationale in `NOTIFICATION_GAP_ANALYSIS.md`.
+
+- **Backend — DEPLOYED & verified.** Added `get_prefs` / `set_prefs` actions to `newsRecommend` (it already owns `GlobalPerspectiveUserPrefs` + the Firebase-JWT helper). Both require a JWT (`uid` from the token); `set_prefs` writes `breakingOptIn`/`digestOptIn`/`digestCadence` (defaults OFF, opt-in/GDPR) and reserves the compliance fields (`email`, `consentAt`, `unsubToken`, `*Verified`) for when delivery goes live; never clobbers `interestProfile`. Created a **Lambda Function URL** (auth NONE, CORS to the site origins) + public-invoke permission via AWS CLI. IAM already had Get/Update on the prefs table. Curl-verified: no-token → 401 `sign_in_required`; default `recommend` path still 200 (backward compatible).
+- **Frontend — built, staged in `docs/`, pending a signed-in browser pass.** New `hooks/usePreferences.js` (optimistic save, revert-on-error, no fake success), `services/restProxy.js` `fetchPrefs`/`savePrefs` (→ `window.USER_PREFS_ENDPOINT`), and an Account → **Notifications** tab (`components/Account.jsx`): Breaking-alerts toggle, Weekly-digest toggle + daily/weekly cadence, unsubscribe-from-all, and an honest "email delivery is being set up" banner (degrades gracefully if the endpoint isn't configured — [[feedback-no-misinformation-fallback]]).
+- `docs/config.js` — added `window.USER_PREFS_ENDPOINT` (surgical edit, all existing endpoints preserved).
+- **Not committed/pushed** — awaiting a signed-in click-through (sign in → Account → Notifications → toggle → reload → persists) per [[feedback-test-ui-in-browser]].
+
+Files: `amplify/backend/function/newsRecommend/src/index.js`, `global-perspectives-starter/frontend/src/{hooks/usePreferences.js,services/restProxy.js,components/Account.jsx}`, `docs/config.js` + `docs/` build, `SETTINGS_MENU_PLAN.md`.
+
+## 2026-06-10 (breaking alerts: notification gap analysis + novelty/velocity in the significance scorer)
+
+Researched how best-in-class news/notification products decide *what to send and why* and how they design *preference centers* (NYT, Apple News, Google News, Bloomberg, Techmeme, Substack, Axios, Ground News + academic First-Story-Detection/burst-detection work), then mapped it against our system to find gaps. Wrote `NOTIFICATION_GAP_ANALYSIS.md` (full synthesis + prioritized roadmap + compliance checklist, all cited).
+
+**Top finding, fixed:** our significance score was magnitude-heavy with **no novelty signal** — it couldn't tell a brand-new event from the Nth update to an ongoing thread (the #1 cause of alert fatigue in clustered-news systems). Added two deterministic signals using data we already carry:
+- **Velocity term** (`significance.js`) — new angles this cycle vs the thread's prior `entryCount` (burst signal); a story going 2→8 scores far above one flat at 8.
+- **Continuation-aware threshold** — a continuation (lead topic has `continues_topic`, or the thread already had a `THREAD_ANALYSIS`) must clear `SIGNIFICANCE_THRESHOLD × 1.8`, so it only re-alerts on genuine escalation (carried by velocity/magnitude), never on staying loud. Deterministic stand-in for First Story Detection.
+- `index.js` computes velocity + `isContinuation` per story and gates on `effectiveThreshold(...)`. 39 unit tests pass (added velocity + continuation cases).
+
+**Next (spec'd in the gap analysis, not yet built):** the user-facing settings menu — Account → "Notifications" tab + JWT `get/set_prefs` on `newsRecommend` + opt-in fields (default OFF), separate Breaking vs Digest, double opt-in + one-click unsubscribe when email goes live.
+
+Files: `NOTIFICATION_GAP_ANALYSIS.md` (new), `amplify/backend/function/newsBreakingAlert/src/significance.js` + `index.js` + `test-significance.mjs`.
+
 ## 2026-06-10 (breaking-news email alerts: detector + human-review queue + Resend send seam, dry-run)
 
 Started the breaking-news email channel — Component 4 of the recommendations/digest plan (shares its `GlobalPerspectiveUserPrefs` table + compliance). v1 is a **broadcast** alert (global significance, not personalized) that fires when a genuinely significant story breaks, pairing the headline with our already-generated analysis. **Detection + human review + send seam built; nothing sends yet (dry-run, no deploy, no Resend key wired).**
 
 - **New `newsBreakingAlert` Lambda** (`amplify/backend/function/newsBreakingAlert/src/`):
-  - `significance.js` — pure, deterministic story scorer (no LLM). Aggregates topics by `threadId`, scores on popularity (`sources.length`), breadth (concurrent angles), country `riskScore` (0–100), and economic `magnitude`. Alerts only above a tuned threshold — **most cycles send nothing, which is the correct, honest outcome**. Emits `reasons[]` for tuning. 17 unit tests pass (`test-significance.mjs`).
-  - `render.js` — email subject/body from real, already-generated analysis only; empty sections omitted, never placeholdered (honesty contract).
-  - `index.js` — loads `latest` topics + enrichment, dedupes (`GlobalPerspectiveBreakingAlerts`, 5-day window), caps to one story/run, **proposes** (`status:'proposed'`) — never auto-sends. `DRY_RUN=true` default. `verifyStory()` stub seam for the Phase-3 LLM judge.
+  - `significance.js` — pure, deterministic story scorer (no LLM). Aggregates topics by `threadId`, scores on popularity (`sources.length`), breadth (concurrent angles), country `riskScore` (0–100), and economic `magnitude`. Alerts only above a tuned threshold — **most cycles send nothing, which is the correct, honest outcome**. Emits `reasons[]` for tuning. 32 unit tests pass (scorer + render text/HTML + trace + XSS-escape, `test-significance.mjs`).
+  - `render.js` — returns `{subject, text, html}` from real, already-generated analysis only; empty sections omitted, never placeholdered (honesty contract). Sections: *What happened* (SUMMARY) → *How we got here* (TRACE_CAUSE causal chain: trigger → building factors → structural root + underreported angle + Signal-vs-Noise verdict) → *Our read* (PREDICTION) → market impact → sources. HTML is brand-styled (rust `#a2442e` masthead + "BREAKING" badge, serif headline, editor-note callout, CTA button) using email-safe table layout + inline CSS; XSS-escaped. Plain text is the fallback.
+  - `index.js` — loads `latest` topics + enrichment (incl. parsing the `TRACE_CAUSE` JSON), dedupes (`GlobalPerspectiveBreakingAlerts`, 5-day window), caps to one story/run, **proposes** (`status:'proposed'`) — never auto-sends. `DRY_RUN=true` default. `verifyStory()` stub seam for the Phase-3 LLM judge.
   - `sendEmail.js` — provider seam. **Resend** (chosen over SES for DX + no sandbox-approval wait), via `fetch`, no npm dep, key from `RESEND_API_KEY`.
 - **New `breaking/review.js`** — human confirmation queue (AWS CLI, no npm deps, mirrors `predictions/review.js`): review each proposed alert, **add your own words** (editor note that leads the email), confirm/reject.
 - **New `breaking/send-test.js`** — renders a sample and actually sends it: `RESEND_API_KEY=re_xxx node breaking/send-test.js` → delivers to your Resend account email via `onboarding@resend.dev`, zero domain setup.
@@ -39,20 +63,6 @@ Added a deterministic one-line orientation band to the top of Home and the Map s
 > **Known follow-up (next):** live `latest` topics currently carry no `threadId`, so the lede headline (and Home's existing "Story arc →" / "Economic impact →" badges) don't link. Fixing the pipeline `threadId` surfacing is the next task.
 
 Files: `src/utils/composeTopicsLede.js` (new), `src/components/atoms/LedeBand.{jsx,css}` (new), `src/components/Home.jsx`, `src/components/WorldMapV2.jsx`, `src/hooks/useDailyBrief.js`, `src/components/DailyPage.{jsx,css}`, `quality/briefing/verify_lede.mjs` (new).
-
-## 2026-06-10 (breaking-news email alerts: detector + human-review queue, dry-run only)
-
-Started the breaking-news email channel — Component 4 of the recommendations/digest plan (shares its `GlobalPerspectiveUserPrefs` table + SES path + compliance). v1 is a **broadcast** alert (global significance, not personalized) that fires when a genuinely significant story breaks, pairing the headline with our already-generated analysis. **Detection + human review only this pass; no email is sent (dry-run).**
-
-- **New `newsBreakingAlert` Lambda** (`amplify/backend/function/newsBreakingAlert/src/`):
-  - `significance.js` — pure, deterministic story scorer (no LLM). Aggregates topics by `threadId`, scores a story on popularity (`sources.length`), breadth (concurrent angles), country `riskScore` (0–100), and economic `magnitude`. A story alerts only above a tuned threshold — **most cycles send nothing, which is the correct, honest outcome**. Emits `reasons[]` for tuning. 17 unit tests pass (`test-significance.mjs`).
-  - `render.js` — builds the email subject/body from real, already-generated analysis only; missing sections are omitted, never placeholdered (honesty contract).
-  - `index.js` — loads `latest` topics + enrichment, dedupes (`GlobalPerspectiveBreakingAlerts`, 5-day window), caps to one story/run, and **proposes** (`status:'proposed'`) — it never auto-sends. `DRY_RUN=true` by default. `verifyStory()` is a stub seam for the Phase-3 LLM judge.
-- **New `breaking/review.js`** — human confirmation queue (AWS CLI, no npm deps, mirrors `predictions/review.js`): review each proposed alert, **add your own words** (an editor note that leads the email), confirm (`status:'confirmed'`) or reject.
-- **Pipeline shape:** detect → propose → LLM verify (Phase 3, Gemini judges the DeepSeek-written analysis) → human confirm + words → send (Phase 4, SES; first real test to the operator's verified inbox via SES sandbox). Benchmark of detector+verdict deferred until dry-run history exists to label.
-- Plan: `BREAKING_ALERTS_PLAN.md`. Not yet deployed; no schedule, no table created, no SES.
-
-Files: `amplify/backend/function/newsBreakingAlert/src/{significance,render,index}.js` + `test-significance.mjs` + `package.json` (new), `breaking/review.js` (new), `BREAKING_ALERTS_PLAN.md` (new).
 
 ## 2026-06-05 (onboarding: auto-show is now a single welcome popover, not a 6-step walk)
 

@@ -1,0 +1,13 @@
+{
+  "name": "news-breaking-alert",
+  "version": "1.0.0",
+  "description": "Detect a genuinely significant breaking story per pipeline cycle and propose a broadcast email for human review (dry-run until SES is wired). See BREAKING_ALERTS_PLAN.md.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test-significance.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0"
+  }
+}

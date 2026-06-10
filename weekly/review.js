@@ -71,7 +71,8 @@ function show(b) {
   console.log('────────────────────────────────────────────');
   if (Array.isArray(b.signals)) {
     b.signals.forEach((s, i) => {
-      console.log(`\n${i + 1}. ${s.lede}   [${(s.riskLevel || 'n/a').toUpperCase()}]`);
+      const tag = s.kind === 'development' ? 'DEVELOPMENT' : `${(s.riskLevel || 'n/a').toUpperCase()} RISK`;
+      console.log(`\n${i + 1}. ${s.lede}   [${tag}]`);
       console.log(`   ${s.region || '—'} · as of ${s.asOf || '—'}`);
       console.log(`   FACT: ${s.fact}`);
       if (s.soWhat) console.log(`   SO WHAT: ${s.soWhat}`);

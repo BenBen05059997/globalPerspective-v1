@@ -88,6 +88,7 @@ exports.handler = async (event = {}) => {
       if (!s || !s.lede || !s.fact) return null;
       return {
         threadId: t.threadId,
+        kind: s.kind === 'development' ? 'development' : 'threat', // default threat (shows risk chip)
         lede: String(s.lede).trim(),
         fact: String(s.fact).trim(),
         soWhat: s.soWhat ? String(s.soWhat).trim() : '',
@@ -246,7 +247,8 @@ function buildSignalsPrompt(weekKey, threadCtx) {
 
   return `You are an intelligence-desk editor compiling this week's SIGNALS BRIEF (week ending ${weekKey}) for professional readers. This is a SIGNALS DIGEST, not an essay. You surface the week's discrete signals cleanly and let the reader connect them. You do NOT write a grand thesis, a "theme of the week", or a cross-cutting synthesis.
 
-For each SIGNAL below, write three short fields, grounded ONLY in the material provided for that signal:
+For each SIGNAL below, write these short fields, grounded ONLY in the material provided for that signal:
+- "kind": "threat" or "development". Use "threat" when the signal is an escalation, conflict, crisis, disaster, attack, outbreak, or a threat to stability. Use "development" when it is a cooperative agreement, framework, policy, deal, or other non-threatening event — even if it is significant. (This controls whether the reader sees a red risk chip or a neutral one, so classify honestly: a cooperative climate framework is a "development", not a "threat".)
 - "lede": the development in <= 10 words (a scannable headline phrase, not a sentence).
 - "fact": 1-2 sentences of what happened. VERB-MARK epistemic status: state verified events plainly; mark anything attributed/unconfirmed with "reportedly" or "according to <outlet>"; if a key point is the ABSENCE of something (e.g. a readout did not mention nukes), say so plainly. Use ONLY facts present in this signal's material — never add an event, number, name, or date that isn't here.
 - "soWhat": ONE calibrated sentence on why it matters. Allowed: "raises the odds that…", "signals…", "points to…", "a test of…". FORBIDDEN: bare "will", "is going to", "this means X happens", and vague filler ("tensions may rise", "time will tell"). If there is no real so-what, return "" (empty) rather than padding.
@@ -265,7 +267,7 @@ ${threadBlock || '(none)'}
 
 Return ONLY valid JSON, no code fences:
 {
-  "signals": [ { "threadId": "...", "lede": "...", "fact": "...", "soWhat": "...", "related": null } ],
+  "signals": [ { "threadId": "...", "kind": "threat", "lede": "...", "fact": "...", "soWhat": "...", "related": null } ],
   "watch": [ { "event": "...", "date": "", "stake": "..." } ]
 }
 Include one signals entry per SIGNAL above, using its exact threadId.`;

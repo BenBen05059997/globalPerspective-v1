@@ -11,12 +11,23 @@ function formatWeekOf(weekKey) {
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
-function RiskChip({ level }) {
+function SignalChip({ kind, level }) {
+  // Honest semantics: a color-coded RISK chip only for genuine threats; a neutral
+  // "DEVELOPMENT" chip for cooperative/non-threat stories (so a climate framework isn't
+  // shown as a red "elevated risk").
+  if (kind === 'development') {
+    return (
+      <span className="wb-chip" style={{ color: '#6a6a6e', borderColor: '#6a6a6e33', background: '#6a6a6e12' }}>
+        <span className="wb-chip-dot" style={{ background: '#6a6a6e' }} />
+        DEVELOPMENT
+      </span>
+    );
+  }
   const c = RISK_COLOR[level] || '#6a6a6e';
   return (
     <span className="wb-chip" style={{ color: c, borderColor: `${c}33`, background: `${c}14` }}>
       <span className="wb-chip-dot" style={{ background: c }} />
-      {(level || 'n/a').toUpperCase()}
+      {(level || 'n/a').toUpperCase()} RISK
     </span>
   );
 }
@@ -37,7 +48,7 @@ function SignalCard({ s }) {
     <div className="wb-sig">
       <div className="wb-sig-top">
         <div className="wb-sig-lede">{s.lede}</div>
-        <RiskChip level={s.riskLevel} />
+        <SignalChip kind={s.kind} level={s.riskLevel} />
       </div>
       <div className="wb-sig-meta">{s.region || '—'} <span className="wb-dot">·</span> as of {s.asOf || '—'}</div>
       <p className="wb-sig-fact">{s.fact}</p>
@@ -63,8 +74,10 @@ export default function WeeklyBriefPage() {
   const { brief, loading, error } = useWeeklyBrief();
   const signals = brief && Array.isArray(brief.signals) ? brief.signals : null;
   const watch = brief && Array.isArray(brief.watch) ? brief.watch : [];
-  const highRisk = signals ? signals.filter((s) => s.riskLevel === 'high').length : 0;
-  const highest = signals && signals.length ? signals[0].riskLevel : null;
+  // Risk KPIs count THREAT signals only (a cooperative "development" isn't a risk).
+  const threats = signals ? signals.filter((s) => s.kind !== 'development') : [];
+  const highRisk = threats.filter((s) => s.riskLevel === 'high').length;
+  const highest = threats.length ? threats[0].riskLevel : null;
 
   return (
     <div className="wb-page">

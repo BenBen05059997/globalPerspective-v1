@@ -1,11 +1,28 @@
 # Global Perspectives — Change Log
 
+## 2026-06-10 (breaking-news email alerts: detector + human-review queue + Resend send seam, dry-run)
+
+Started the breaking-news email channel — Component 4 of the recommendations/digest plan (shares its `GlobalPerspectiveUserPrefs` table + compliance). v1 is a **broadcast** alert (global significance, not personalized) that fires when a genuinely significant story breaks, pairing the headline with our already-generated analysis. **Detection + human review + send seam built; nothing sends yet (dry-run, no deploy, no Resend key wired).**
+
+- **New `newsBreakingAlert` Lambda** (`amplify/backend/function/newsBreakingAlert/src/`):
+  - `significance.js` — pure, deterministic story scorer (no LLM). Aggregates topics by `threadId`, scores on popularity (`sources.length`), breadth (concurrent angles), country `riskScore` (0–100), and economic `magnitude`. Alerts only above a tuned threshold — **most cycles send nothing, which is the correct, honest outcome**. Emits `reasons[]` for tuning. 17 unit tests pass (`test-significance.mjs`).
+  - `render.js` — email subject/body from real, already-generated analysis only; empty sections omitted, never placeholdered (honesty contract).
+  - `index.js` — loads `latest` topics + enrichment, dedupes (`GlobalPerspectiveBreakingAlerts`, 5-day window), caps to one story/run, **proposes** (`status:'proposed'`) — never auto-sends. `DRY_RUN=true` default. `verifyStory()` stub seam for the Phase-3 LLM judge.
+  - `sendEmail.js` — provider seam. **Resend** (chosen over SES for DX + no sandbox-approval wait), via `fetch`, no npm dep, key from `RESEND_API_KEY`.
+- **New `breaking/review.js`** — human confirmation queue (AWS CLI, no npm deps, mirrors `predictions/review.js`): review each proposed alert, **add your own words** (editor note that leads the email), confirm/reject.
+- **New `breaking/send-test.js`** — renders a sample and actually sends it: `RESEND_API_KEY=re_xxx node breaking/send-test.js` → delivers to your Resend account email via `onboarding@resend.dev`, zero domain setup.
+- **Pipeline:** detect → propose → LLM verify (Phase 3, Gemini judges the DeepSeek-written analysis) → human confirm + words → send (Phase 4, Resend; first test to `benlai310@gmail.com`). Benchmark deferred until dry-run history exists to label.
+- Plans: `BREAKING_ALERTS_PLAN.md` (new); `RECOMMENDATIONS_AND_DIGEST_PLAN.md` (provider note: digest switches to Resend too).
+
+Files: `amplify/backend/function/newsBreakingAlert/src/{significance,render,index,sendEmail}.js` + `test-significance.mjs` + `package.json` (new), `breaking/{review,send-test}.js` (new), `BREAKING_ALERTS_PLAN.md` (new), `RECOMMENDATIONS_AND_DIGEST_PLAN.md`.
+
 ## 2026-06-10 (fix: `latest` topics now carry `threadId` — narrative links restored)
 
 The served `latest` topics carried **no `threadId`** (0/13 live), so the lede headline, Home's "Story arc →" / "Economic impact →" badges, and the per-topic economic-severity match all silently failed to link. Root cause: `swapStagingToActive` wrote the **raw staging topics** (no threadId) to `latest`, while threadId was only assigned later inside `buildAndWriteArchive` — and computed from `buildTopic`-processed topics that **drop `continues_topic` and `category`**, so archive threading was itself running degraded.
 
 - **`NewsProjectInvokeAgentLambda`** now computes threadIds from the **raw** staging topics (full fields: `continues_topic`, `category`, `search_keywords`) once, stamps `threadId` onto each topic before the swap, and passes the same map to `buildAndWriteArchive` so `latest` and the archive stay in sync. Single-topic manual invokes fall back to local assignment.
 - Deployed to `NewsProjectInvokeAgentLambda-dev` (ap-northeast-1) + triggered one run. **Verified: 13/13 live `latest` topics now carry `threadId`**, inheriting prior threads via `continues_topic`/Jaccard.
+- **Follow-up (same day):** `buildTopic()` also dropped `search_keywords` + `continues_topic`, so **archive entries** stored empty keywords — starving next-day Jaccard threading. `buildTopic()` now carries both through, so the keyword-overlap fallback works going forward. Deployed + verified: today's 13 fresh archive entries now carry `search_keywords` (older entries age out via the 24h TTL).
 
 Files: `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`.
 

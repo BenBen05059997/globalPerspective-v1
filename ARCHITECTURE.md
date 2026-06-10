@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-06-01
+**Last verified:** 2026-06-10
 
 > **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](./SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md).**
 
@@ -201,9 +201,10 @@ Despite the name, now uses **DeepSeek V4 Flash** (`deepseek-chat`) — no Gemini
    - If topic has `continues_topic` → inherit parent's `threadId`
    - Else → Jaccard similarity (keywords + regions + category, threshold 0.4) against 7 days of archive
    - Else → generate new `thread-{slug}-{hash}`
+   - **threadId is computed from the RAW staging topics (which retain `continues_topic`/`category`/`search_keywords`) and stamped onto each topic BEFORE the swap, so the served `latest` topics carry `threadId`** (fixed 2026-06-10 — previously only archive entries got it, so `latest` had none and narrative links silently failed). The same map is reused for the archive so `latest` and the archive stay in sync.
 4. Writes each to Summary/Prediction DDB table with TTL
-5. Swaps Topics `staging` → `latest`
-6. Writes today's topics as `today-archive` entry
+5. Swaps Topics `staging` → `latest` (now threadId-stamped)
+6. Writes today's topics as `today-archive` entry (entries carry `threadId` + `search_keywords` for next-day threading)
 7. Prunes old cache entries
 
 **Payload options:**
@@ -845,13 +846,14 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 
 ### Key Components
 
-63 total component files (50 in `src/components/` + 13 in `src/components/atoms/`) after the 2026-05-26 billing cleanup. Key ones:
+64 total component files (50 in `src/components/` + 14 in `src/components/atoms/`, incl. `LedeBand.jsx` added 2026-06-10) after the 2026-05-26 billing cleanup. Key ones:
 
 | Component | Purpose |
 |-----------|---------|
 | `Layout.jsx` | Nav shell with hamburger menu + a persistent "?" guided-tour trigger (`startTourForPath`); auto-runs the onboarding tour via `useAutoTour` (see [Onboarding](#onboarding-guided-tours)) |
-| `Home.jsx` | 3-col EditorialShell: StatusStrip + region-grouped daily topics with per-topic AI toolbar (Summarize/Predict/Trace Cause) + per-topic economic-disruption badge ("Economic impact →" when a thread has a disruption); `TodayArchiveSidebar` + `TopicNav` rails |
-| `WorldMapV2.jsx` | The live map at `/map` — stacked layer lenses, arc overlays, "Today's pulse" |
+| `Home.jsx` | 3-col EditorialShell: a deterministic **"Today's lede" band** (`LedeBand`) directly under the StatusStrip, then region-grouped daily topics with per-topic AI toolbar (Summarize/Predict/Trace Cause) + per-topic economic-disruption badge ("Economic impact →" when a thread has a disruption); `TodayArchiveSidebar` + `TopicNav` rails |
+| `WorldMapV2.jsx` | The live map at `/map` — the **"Today's lede" band** (`LedeBand`) between the map title and the search box, then stacked layer lenses, arc overlays, "Today's pulse" |
+| `LedeBand.jsx` (atom) | Deterministic one-line "Today's lede" orientation strip on Home + Map. Fed by `utils/composeTopicsLede` (pure, no LLM — picks the day's story by disruption severity → urgency → trending → source count; counts trace to real inputs; headline is a verbatim topic title). Renders **nothing** when there is no real lede (honest empty state). Headline links to the story-arc thread page **only when the topic carries a real `threadId`** — no fallback link. Honesty eval: `quality/briefing/verify_lede.mjs`. SHIPPED 2026-06-10. |
 | `WorldMap.jsx` | Legacy Google Maps view — file kept, no longer routed |
 | `EconomyPage.jsx` | `/economy` — the markets-meets-news command center. **Leads with a deterministic "Today in the economy" briefing band** (`.ep-briefing-band`, above the 3-col shell) — a one-paragraph synthesis composed by `utils/composeEconomyBriefing.js` from the same data already loaded (story count + severity split + most-cited cluster + sharpest story link + sanitized realized moves with consensus-vs-realized divergence flagged); no LLM, honesty-checked by `quality/briefing/assertions.js` (run `node quality/briefing/verify_compose.mjs`). **Rebuilt 2026-05-27 to match the editorial mockup** (own masthead band + 3-col shell, no longer `EditorialShell`; full-bleed via a `:has(.ep-page)` container escape, sticky rails offset by `--nav-h + --strip-h`). **Two-layer model** (see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`): the right-rail **Market Context** is a *standing dashboard* — live levels for the full universe (Equities / Sectors / Commodities / Ags&Materials / Risk / Rates / Crypto via `useMarketsGlobal`), shown always, AI-independent. The center **leaderboard** ("Repricing today") is the *news-cited subset* (`useTopMovers` — consensus + direction-split + live level per instrument; **expand** → price sparkline (`useMarketsHistory`) + Key-levels box + a **lean** driving-stories list [Severity · Story → thread Economy tab · Direction] + affected-country chips; mechanism + historical analog are demoted to each story's thread Economy tab), then a dormant-instruments drawer + a severity-grouped by-story "Active disruptions" bridge. Left rail facets (severity / horizon / country). All real data — **honest degradation** where data is absent (no fabricated % change, severity bars, ISO codes, or analog %). **Deterministic display gate** (`utils/disruptionGate.js`): FX rows are relabelled to the foreign currency with direction derived from the rationale (the `USD/XXX` label + stored direction follow no consistent quoting convention), arrow suppressed when undetectable; historical-analog realized moves render only when the event resolves against the curated catalog (`findAnalogEvent`). Proven by `scripts/test-disruption-gate.mjs`. |
 | `MapSidePanel.jsx` | Per-country topic cards with AI toolbar |
@@ -860,7 +862,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `ThreadPage.jsx` | 3-col EditorialShell thread deep-dive: StatusStrip, "Arc Intelligence" AI rail (tabs + key actors + grounding sources), 4-stat row, content tabs Timeline/Actors/Sources/**Economy** (economic disruption via `useEconomicImpact` + `MechanismCard`/`DisruptionPreview`) |
 | `CountryListPage.jsx` | Grid index of all countries with intelligence |
 | `CountryPage.jsx` | Map-first country page: Google Map hero, AI tabs, story arcs, coverage |
-| `DailyPage.jsx` | Daily Intelligence Brief display (`/daily`, `/daily/:dateKey`) + an `EconomicFootprint` section aggregating top instruments from `useDisruptionsList` |
+| `DailyPage.jsx` | Daily Intelligence Brief display (`/daily`, `/daily/:dateKey`) + an `EconomicFootprint` section aggregating top instruments from `useDisruptionsList`. **Honest date (2026-06-10):** shows a relative pill ("Yesterday" / "N days ago") when the served brief is older than the requested date, and a fallback notice ("Today's brief publishes at the end of the day — showing &lt;date&gt;") when you open `/daily` before today's brief is generated (the daily brief is written once/day at 23:00 UTC by `newsPostDevTo`, so most of the day `/daily` serves the prior day). |
 | `StoryEntryCard.jsx` | Entry card with Summarize/Predict/Trace Cause toggle |
 | `ThreadIntelligence.jsx` | Thread-level AI analysis display (storyArc, trajectory, etc.) |
 | `BriefingCard.jsx` | Formatted intelligence briefing card |
@@ -884,7 +886,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `useCountryHistory(countryName)` | Fetch historical archive entries for a country |
 | `useSystemsAnalysis(countryName)` | Fetch causal-graph (nodes/edges) for a country |
 | `usePairAnalyses()` | Fetch all pair analyses list; 30min cache |
-| `useDailyBrief(dateKey)` | Fetch Daily Intelligence Brief for a date |
+| `useDailyBrief(dateKey)` | Fetch Daily Intelligence Brief for a date; falls back up to 7 days back and exposes `servedDateKey` (the date that actually returned data) so the UI can label "Yesterday"/"N days ago" honestly |
 | `useEconomicImpact(threadId)` | Fetch per-thread economic disruption analysis |
 | `useDisruptionsList()` | Fetch all economic-impact records (powers `/economy`, Home topic badges, DailyPage footprint, CountryPage, WorldMapV2, CountryListPage) |
 | `useMarketsHistory(symbol)` | Fetch per-instrument price history `[{date,value}]` for `/economy` sparklines; session-cached |
@@ -977,6 +979,8 @@ Stories are linked across days via `threadId`:
 1. `continues_topic` field → inherit parent's `threadId`
 2. Jaccard similarity (keywords + regions + category) against 7-day archive, threshold 0.4 → match existing thread
 3. Neither → generate new `thread-{slug}-{hash}`
+
+`threadId` is assigned by `NewsProjectInvokeAgentLambda` from the **raw** staging topics and stamped onto BOTH the served `latest` topics and the archive entries (fixed 2026-06-10 — see Lambda #2). Archive entries also carry `search_keywords` so the next day's Jaccard step has real keywords to match (both fields were previously dropped by `buildTopic()`, leaving `latest` link-less and Jaccard threading blind). The frontend relies on `topic.threadId` for the lede headline link and Home's "Story arc →" / "Economic impact →" badges, so this field must be present on `latest`.
 
 Weekly pages group topics by `threadId` to show how a story evolves across dates and geographies. `newsThreadAnalysis` runs daily to generate narrative-level AI analysis for top threads.
 

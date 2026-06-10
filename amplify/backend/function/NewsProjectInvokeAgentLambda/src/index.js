@@ -266,6 +266,12 @@ function buildTopic(t, idx) {
     primary_location: t.primary_location,
     location_context: t.location_context,
     sources: t.sources || [],
+    // Carried through so archive entries retain the fields next-day narrative
+    // threading reads (Jaccard keyword overlap + continues_topic inheritance).
+    // Without these, past archive entries had empty search_keywords and the
+    // Jaccard threading fallback was effectively blind.
+    search_keywords: Array.isArray(t.search_keywords) ? t.search_keywords : [],
+    ...(t.continues_topic ? { continues_topic: t.continues_topic } : {}),
   };
 }
 

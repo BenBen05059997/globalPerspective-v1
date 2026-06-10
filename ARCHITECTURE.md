@@ -133,9 +133,11 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 
 ---
 
-## Tier System ⚠️ DEPRECATED
+## Tier System ⚠️ DEPRECATED (Paddle) — revival planned (Polar)
 
-> **DEPRECATED as of 2026-05-26 — subscriptions/billing are not in use and are not planned to return.** The site is fully public; there is no paid tier, no checkout, and no active billing integration. The machinery below is documented for historical context and because dormant code/records still exist — treat it as **deprecated, not "coming soon."** Do not wire new features to tier gating, and do not spend effort "fixing" the billing path; favour removal over repair.
+> **STATUS UPDATE 2026-06-10:** Paid subscriptions are being **reintroduced via Polar.sh** (Merchant of Record), reversing the 2026-05-26 teardown. Live spec → **[`POLAR_BILLING_PLAN.md`](./POLAR_BILLING_PLAN.md)**. Phase 1 = subscription for full read access (no credits-to-read); a credits-funded "custom analysis" feature is parked for Phase 2. **Nothing is built yet** — *current production is still fully public with no enforcement*, so everything below remains accurate for the live system. The old Paddle machinery is **not** what's being rebuilt; Polar is a different provider with a different schema (`polarCustomerId`/`polarSubscriptionId`, `creditBalance`). The Firebase-JWT verification helper and the dormant `USERS_DDB_TABLE` are reusable; the deleted `newsStripeWebhook`/Paddle path is not.
+
+> **DEPRECATED (Paddle) as of 2026-05-26 — the prior billing stack was torn down and is not being repaired.** The site is currently fully public; there is no paid tier, no checkout, and no active billing integration *today*. The machinery below is documented for historical context and because dormant code/records still exist. Do not "fix" the old Paddle path — the rebuild goes through Polar (see the status update above), so favour the [`POLAR_BILLING_PLAN.md`](./POLAR_BILLING_PLAN.md) approach over reviving anything here.
 
 | Tier (legacy) | Intended access |
 |------|--------|
@@ -303,6 +305,7 @@ Read-only REST proxy. All supported actions:
 | `country_history` | None (early access) | `{ countryName }` | Historical archive entries for a country |
 | `systems_analysis` | None (early access) | `{ countryName }` | Causal graph (nodes/edges) for a country |
 | `daily_brief` | None (early access) | `{ dateKey }` | Daily Intelligence Brief for a specific date |
+| `weekly_brief` | None | — | Latest **published** Weekly Intelligence Brief (`{ headline, dek, brief(Markdown), weekOf }`); null until one is published via weekly/review.js. Powers `/weekly-brief` |
 | `pair_analysis` | None (early access) | `{ pair: "slug" }` | Bilateral relationship analysis for a country pair |
 | `pair_analyses_list` | None (early access) | — | All pair analyses (DDB Scan, sorted list) |
 | `economic_impact` | None (early access) | `{ threadId }` | Per-thread economic disruption analysis |
@@ -894,6 +897,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `/whitepaper` | `WhitepaperPage.jsx` | Public |
 | `/daily` | `DailyPage.jsx` | Public |
 | `/daily/:dateKey` | `DailyPage.jsx` | Public |
+| `/weekly-brief` | `WeeklyBriefPage.jsx` | Public (serif long-read of the latest published weekly brief) |
 | `/economy` | `EconomyPage.jsx` | Public |
 | `/track-record` | `TrackRecordPage.jsx` | Public |
 | `/weekly` | `WeeklyPage.jsx` | Public |
@@ -961,6 +965,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `useSavedItems(itemType)` | Manage user bookmarks via newsSavedItems Lambda (JWT required) |
 | `usePreferences()` | Read/write notification opt-ins via newsRecommend `get/set_prefs` (JWT); optimistic save, revert-on-error; powers Account → Notifications tab |
 | `useNotifications()` | Fetch the public breaking-alert feed (newsRecommend `list_alerts`, 5-min poll) + a localStorage read-marker for the unread badge; powers the nav `NotificationBell` |
+| `useWeeklyBrief()` | Fetch the latest published weekly brief (`weekly_brief`); 30-min cache; powers `/weekly-brief` (rendered via the dependency-free `Markdown.jsx`) |
 | `useSummary(topicId)` | Fetch AI summary for a topic |
 | `usePrediction(topicId)` | Fetch AI prediction for a topic |
 | `useTraceCause(topicId)` | Fetch trace_cause deep context for a topic |

@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-10 (weekly brief: free-form tradecraft prompt + /weekly-brief serif long-read page)
+
+Finished the weekly brief's analysis quality + made it viewable on-site.
+
+- **Free-form, tradecraft-grounded prompt** (replaced the rigid JSON field schema, which produced formulaic output). Encodes IC analytic tradecraft (ICD 203), Sherman Kent's estimative-probability ladder, Heuer's bias traps, and BLUF/nut-graf/Economist-leader composition. Output `{ headline, dek, brief(Markdown) }`. **Free generation is the default** (richer; model may add context), with the mandatory `weekly/review.js` human approve as the grounding safety net before publish; `{mode:'grounded'}` forces strict.
+- **`/weekly-brief` page — serif long-read.** New `WeeklyBriefPage` + `useWeeklyBrief` + a dependency-free `Markdown.jsx` renderer (## / lists / **bold**, XSS-safe). Georgia serif body 19px/1.7 in a 680px reading column (Economist/NYT/Stratechery reading experience), rust section headings, dek, reading time. Honest empty state until a brief is published. Linked in nav.
+- **Backend serving:** public `weekly_brief` action on `newsSensitiveData` (latest *published* brief) — deployed to `newsSensitiveData-dev`, curl-verified.
+- The page shows the empty state until the operator publishes a draft via `weekly/review.js` — auto-publishing is intentionally not done (the human gate is the safety net; the AWS guard also blocks it).
+
+Files: `amplify/backend/function/newsWeeklyBrief/src/index.js`, `amplify/backend/function/newsSensitiveData/src/index.js`, `global-perspectives-starter/frontend/src/{components/WeeklyBriefPage.jsx,components/WeeklyBriefPage.css,components/Markdown.jsx,hooks/useWeeklyBrief.js,services/restProxy.js,components/Layout.jsx,App.jsx}` + `docs/` build, `WEEKLY_DIGEST_PLAN.md`.
+
 ## 2026-06-10 (weekly intelligence brief: professional analyst-grade synthesis engine)
 
 The second email type — a **weekly intelligence brief** (distinct from the daily brief): a professional, analyst-grade 7-day synthesis, not a link roundup. Plan: `WEEKLY_DIGEST_PLAN.md`. Decided: on-site `/weekly-brief` page + email, one-click human approve, Sunday send, broadcast v1.

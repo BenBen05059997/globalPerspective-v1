@@ -33,9 +33,10 @@ Everyone reading this site is a pro reader ([[feedback-audience-depth]]). The we
 - [x] Plan
 - [x] `newsWeeklyBrief` engine + prompt → **DEPLOYED + manual-invoke verified** (real draft for week of 2026-06-10: BLUF + 5 ranked developments + cross-currents + markets read + watch-next, all grounded). No schedule yet.
 - [x] `weekly/review.js` (one-click publish/hold/reject)
-- [ ] serving action (`weekly_brief`) + `/weekly-brief` page + nav/bell link  ← **next**
-- [ ] forecast-scorecard section merged from `prediction_track_record` at serve time
+- [x] serving action (`weekly_brief`, latest published) on `newsSensitiveData` + **`/weekly-brief` serif long-read page** (`WeeklyBriefPage` + `useWeeklyBrief` + dependency-free `Markdown.jsx`) + nav link. SHIPPED 2026-06-10. (Page shows honest empty state until a brief is published via `weekly/review.js`.)
+- [ ] forecast-scorecard section merged from `prediction_track_record` at serve time  ← **next**
 - [ ] email render + EventBridge Sunday schedule (with email go-live)
+- [ ] (optional) bell link to the latest weekly brief
 
 ## Storage
 `SUMMARIZE_PREDICT_TABLE`, **PK** `WEEKLY_BRIEF#{weekKey}` / **SK** `WEEKLY_BRIEF`. Fields: `weekOf`, `bluf`, `keyDevelopments[]` ({title, whatHappened, whyItMatters, trajectory, threadId}), `crossCurrents`, `marketsRead`, `watchNext[]`, `threadIds[]`, `status` (draft|published), `generatedAt`, `approvedAt`, `model`, `ttl` (~180d).

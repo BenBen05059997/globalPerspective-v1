@@ -23,6 +23,7 @@ import WhitepaperPage from './components/WhitepaperPage';
 import WorldMapV2 from './components/WorldMapV2';
 import EconomyPage from './components/EconomyPage';
 import TrackRecordPage from './components/TrackRecordPage';
+import WeeklyBriefPage from './components/WeeklyBriefPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
@@ -100,6 +101,7 @@ export default function App() {
               <Route path="/daily/:dateKey" element={<DailyPage />} />
               <Route path="/economy" element={<EconomyPage />} />
               <Route path="/track-record" element={<TrackRecordPage />} />
+              <Route path="/weekly-brief" element={<WeeklyBriefPage />} />
               <Route path="/weekly" element={<WeeklyPage />} />
               <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
               <Route path="/weekly/countries" element={<CountryListPage />} />

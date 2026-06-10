@@ -39,6 +39,7 @@ function Layout({ children }) {
   const navLinks = [
     { to: '/', label: 'Topics', exact: true },
     { to: '/daily', label: 'Daily' },
+    { to: '/weekly-brief', label: 'Weekly Brief' },
     { to: '/map', label: 'Map' },
     { to: '/weekly', label: 'Threads' },
     { to: '/weekly/countries', label: 'Countries' },

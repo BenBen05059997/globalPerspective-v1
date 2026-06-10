@@ -1,0 +1,114 @@
+/* Serif long-read layout for the Weekly Intelligence Brief. Reading column + generous
+   typography (Economist/NYT/Stratechery reading experience). */
+
+.wb-page {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 1.25rem 4rem;
+  background: var(--paper, #fbfbf9);
+}
+
+.wb-article {
+  width: 100%;
+  max-width: 680px; /* ~68 chars at 19px — the readable measure */
+}
+
+.wb-eyebrow {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a2442e; /* rust */
+  margin-bottom: 1rem;
+}
+
+.wb-status { color: var(--muted, #6b6b66); font-size: 15px; }
+
+.wb-headline {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 34px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ink, #0a0a0a);
+  margin: 0 0 0.6rem;
+  letter-spacing: -0.01em;
+}
+
+.wb-dek {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 20px;
+  line-height: 1.5;
+  font-style: italic;
+  color: #444;
+  margin: 0 0 1rem;
+}
+
+.wb-meta {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  color: var(--muted, #6b6b66);
+  padding-bottom: 1.6rem;
+  margin-bottom: 1.8rem;
+  border-bottom: 1px solid var(--line, #e5e5e3);
+}
+.wb-meta-sep { margin: 0 0.5rem; }
+
+/* The reading body */
+.wb-body { color: #1a1a1a; }
+.gp-md.wb-body p {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.72;
+  margin: 0 0 1.35rem;
+}
+.gp-md.wb-body h2 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a2442e;
+  margin: 2.4rem 0 0.9rem;
+  padding-top: 0.3rem;
+}
+.gp-md.wb-body h3 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink, #0a0a0a);
+  margin: 1.8rem 0 0.7rem;
+}
+.gp-md.wb-body ul { margin: 0 0 1.35rem; padding-left: 1.3rem; }
+.gp-md.wb-body li {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.65;
+  margin-bottom: 0.5rem;
+}
+.gp-md.wb-body strong { font-weight: 700; color: var(--ink, #0a0a0a); }
+.gp-md.wb-body em { font-style: italic; }
+.gp-md.wb-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: #f1f1ee;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.wb-footer {
+  margin-top: 2.5rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--line, #e5e5e3);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  color: var(--muted, #6b6b66);
+}
+
+.wb-empty { padding: 2rem 0; }
+
+@media (max-width: 600px) {
+  .wb-headline { font-size: 27px; }
+  .wb-dek { font-size: 18px; }
+  .gp-md.wb-body p, .gp-md.wb-body li { font-size: 17.5px; line-height: 1.68; }
+}

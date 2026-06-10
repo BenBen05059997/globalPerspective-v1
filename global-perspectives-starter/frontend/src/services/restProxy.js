@@ -175,6 +175,10 @@ export async function fetchPairAnalysis(slug) {
   return proxyAction('pair_analysis', { pair: slug });
 }
 
+export async function fetchWeeklyBrief() {
+  return proxyAction('weekly_brief');
+}
+
 export async function fetchPairAnalysesList() {
   return proxyAction('pair_analyses_list');
 }

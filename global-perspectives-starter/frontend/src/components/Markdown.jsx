@@ -40,14 +40,24 @@ export default function Markdown({ text, className = 'gp-md' }) {
     }
   };
 
+  // A heading marker followed by a long sentence is a model formatting slip, not a real
+  // heading — render it as a paragraph (strip the marker) so we never show a giant heading.
+  const isRealHeading = (txt) => txt.length <= 80 && !/[.!?]$/.test(txt);
+
   for (const raw of lines) {
     const t = raw.trim();
     if (!t) { flushPara(); flushList(); continue; }
-    if (t.startsWith('### ')) { flushPara(); flushList(); out.push(<h3 key={`h${n++}`}>{inline(t.slice(4), `h${n}`)}</h3>); }
-    else if (t.startsWith('## ')) { flushPara(); flushList(); out.push(<h2 key={`h${n++}`}>{inline(t.slice(3), `h${n}`)}</h2>); }
-    else if (t.startsWith('# ')) { flushPara(); flushList(); out.push(<h2 key={`h${n++}`}>{inline(t.slice(2), `h${n}`)}</h2>); }
-    else if (/^[-*]\s+/.test(t)) { flushPara(); list.push(t.replace(/^[-*]\s+/, '')); }
-    else { flushList(); para.push(t); }
+    const h = t.startsWith('### ') ? t.slice(4) : t.startsWith('## ') ? t.slice(3) : t.startsWith('# ') ? t.slice(2) : null;
+    if (h !== null && isRealHeading(h)) {
+      flushPara(); flushList();
+      const Tag = t.startsWith('### ') ? 'h3' : 'h2';
+      out.push(<Tag key={`h${n++}`}>{inline(h, `h${n}`)}</Tag>);
+    } else if (/^[-*]\s+/.test(t)) {
+      flushPara(); list.push(t.replace(/^[-*]\s+/, ''));
+    } else {
+      flushList();
+      para.push(h !== null ? h : t); // strip a stray heading marker off a long line
+    }
   }
   flushPara();
   flushList();

@@ -63,25 +63,64 @@ exports.handler = async (event = {}) => {
     if (ci) countryCtx.push({ name, ...ci });
   }
 
-  const prompt = buildPrompt(weekKey, threadCtx, countryCtx, mode);
-  const { content, modelId } = await invokeLLM(prompt);
-  const brief = parseBrief(content);
-
-  // Free-form: the analysis is `brief` (Markdown prose); headline/dek are metadata for
-  // the email subject + on-site preview. Require a substantive body.
-  if (!brief.brief || brief.brief.trim().length < 200) {
-    return fail(`Model returned an unusable brief (keys: ${Object.keys(brief).join(', ')})`);
+  // Deterministic risk per thread: thread analysis risk, else max risk of its regions.
+  const countryRisk = {};
+  for (const c of countryCtx) if (Number.isFinite(Number(c.riskScore))) countryRisk[c.name] = Number(c.riskScore);
+  for (const t of threadCtx) {
+    const a = t.analysis || {};
+    const regionMax = Math.max(0, ...t.regions.map((r) => countryRisk[r] || 0));
+    const score = Number.isFinite(Number(a.riskScore)) ? Number(a.riskScore) : (regionMax > 0 ? regionMax : null);
+    t.riskScore = score;
+    t.riskLevel = riskLevelFromScore(score);
   }
+
+  const prompt = buildSignalsPrompt(weekKey, threadCtx);
+  const { content, modelId } = await invokeLLM(prompt);
+  const parsed = parseJson(content);
+
+  // Join the LLM's per-signal TEXT with the DETERMINISTIC data (risk, region, sources,
+  // as-of). The model never supplies risk levels, sources, or dates — those are our data.
+  const byId = {};
+  for (const s of (parsed.signals || [])) if (s && s.threadId) byId[s.threadId] = s;
+  const signals = threadCtx
+    .map((t) => {
+      const s = byId[t.threadId];
+      if (!s || !s.lede || !s.fact) return null;
+      return {
+        threadId: t.threadId,
+        lede: String(s.lede).trim(),
+        fact: String(s.fact).trim(),
+        soWhat: s.soWhat ? String(s.soWhat).trim() : '',
+        related: s.related ? String(s.related).trim() : null,
+        riskLevel: t.riskLevel,        // deterministic
+        riskScore: t.riskScore,        // deterministic
+        region: t.regions.slice(0, 3).join(' · '),
+        asOf: t.latestDate,            // deterministic
+        sources: t.sources,            // real article links, deterministic
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (b.riskScore || 0) - (a.riskScore || 0)); // most significant first
+
+  if (signals.length === 0) return fail('No usable signals produced — failing empty (honest).');
+
+  const watch = Array.isArray(parsed.watch)
+    ? parsed.watch.filter((w) => w && w.event).map((w) => ({
+        event: String(w.event).trim(),
+        date: w.date ? String(w.date).trim() : '',
+        stake: w.stake ? String(w.stake).trim() : '',
+      })).slice(0, 6)
+    : [];
 
   const item = {
     PK: `WEEKLY_BRIEF#${weekKey}`,
     SK,
-    mode,
+    format: 'signals', // distinguishes from the old prose shape
     weekOf: weekKey,
+    asOf: new Date().toISOString().slice(0, 10),
     status: 'draft', // draft → published (human approves via weekly/review.js)
-    headline: brief.headline || `Weekly Intelligence Brief — week of ${weekKey}`,
-    dek: brief.dek || '',
-    brief: brief.brief.trim(), // Markdown analytical prose
+    signals,
+    watch,
     threadIds: threads.map((t) => t.threadId),
     generatedAt: new Date().toISOString(),
     model: modelId || LLM_MODEL,
@@ -89,8 +128,8 @@ exports.handler = async (event = {}) => {
   };
   await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
 
-  console.log(`[weekly] draft stored: WEEKLY_BRIEF#${weekKey} (${item.brief.length} chars). Approve via weekly/review.js.`);
-  return { ok: true, weekKey, status: 'draft', chars: item.brief.length };
+  console.log(`[weekly] draft stored: WEEKLY_BRIEF#${weekKey} (${signals.length} signals, ${watch.length} watch). Approve via weekly/review.js.`);
+  return { ok: true, weekKey, status: 'draft', signals: signals.length, watch: watch.length };
 };
 
 function fail(msg) {
@@ -122,6 +161,7 @@ async function readArchiveEntries(days) {
             entries.push({
               topicId: e.topicId, threadId: e.threadId, title: e.title, date: dateStr,
               regions: e.regions || [], category: e.category || '', ai: e.ai || {},
+              sources: Array.isArray(e.sources) ? e.sources : [],
             });
           }
         }
@@ -142,9 +182,30 @@ function groupByThread(entries) {
   return Object.entries(map)
     .map(([threadId, arr]) => {
       arr.sort((a, b) => a.date.localeCompare(b.date));
-      return { threadId, entries: arr, latestTitle: arr[arr.length - 1].title, category: arr[0].category };
+      const regions = [...new Set(arr.flatMap((e) => e.regions || []))];
+      const seen = new Set();
+      const sources = [];
+      for (const e of arr) {
+        for (const s of e.sources || []) {
+          if (s && s.url && !seen.has(s.url)) { seen.add(s.url); sources.push({ title: s.title || s.source || '', url: s.url, source: s.source || '' }); }
+        }
+      }
+      return {
+        threadId, entries: arr, regions,
+        latestTitle: arr[arr.length - 1].title, category: arr[0].category,
+        latestDate: arr[arr.length - 1].date, sources: sources.slice(0, 4),
+      };
     })
     .sort((a, b) => b.entries.length - a.entries.length);
+}
+
+// Map a 0–100 risk score to the site's four-tier level (null when unknown — honest, no chip).
+function riskLevelFromScore(score) {
+  if (!Number.isFinite(score)) return null;
+  if (score < 25) return 'low';
+  if (score < 50) return 'moderate';
+  if (score < 75) return 'elevated';
+  return 'high';
 }
 
 function topCountries(entries, n) {
@@ -160,74 +221,60 @@ async function getRecord(pk, sk) {
   } catch { return null; }
 }
 
-// ── Prompt — free-form, tradecraft-grounded analysis ───────────────────────────
-// Composition + rules distilled from IC analytic tradecraft (ICD 203), Sherman Kent's
-// estimative-probability ladder, Heuer's bias traps, and analytical-journalism craft
-// (nut graf / BLUF / Economist leader). The model writes free-form Markdown prose — NOT a
-// rigid field schema — because forcing fixed fields produces formulaic, summary-like output.
-function buildPrompt(weekKey, threadCtx, countryCtx, mode = 'grounded') {
+// ── Prompt — SIGNALS digest (not a synthesized essay) ──────────────────────────
+// Distilled from how rigorous weeklies actually work (Economist "world this week",
+// ISW assessments, Semafor "Semaform"): surface discrete signals, separate fact from
+// judgment, verb-mark every claim, calibrate, and DO NOT manufacture a grand thesis or
+// force connections. The LLM writes only per-signal TEXT; we attach risk/sources/dates.
+function buildSignalsPrompt(weekKey, threadCtx) {
   const threadBlock = threadCtx.map((t, i) => {
     const a = t.analysis || {};
+    const outlets = (t.sources || []).map((s) => s.source || s.title).filter(Boolean).slice(0, 5).join(', ');
     const econ = t.econ
-      ? `\n  Economic read: ${(t.econ.instruments || []).map((x) => `${x.instrumentId} ${x.direction}/${x.magnitude}`).slice(0, 4).join(', ') || 'flagged'}`
+      ? `\n  Economic read (already computed): ${(t.econ.instruments || []).map((x) => `${x.instrumentId} ${x.direction}/${x.magnitude}`).slice(0, 4).join(', ') || 'flagged'}`
       : '';
     return [
-      `THREAD ${i + 1} [${t.threadId}] — ${a.threadTitle || t.latestTitle} (${t.entries.length} entries, ${t.category || 'n/a'})`,
-      a.storyArc ? `  Story arc: ${a.storyArc}` : `  Latest: ${t.latestTitle}`,
-      a.trajectory ? `  Trajectory: ${a.trajectory}` : '',
-      a.riskScore != null ? `  Risk: ${a.riskScore}/100` : '',
+      `SIGNAL ${i + 1} [threadId: ${t.threadId}] — ${a.threadTitle || t.latestTitle}`,
+      `  Latest development: ${t.latestTitle} (as of ${t.latestDate})`,
+      a.storyArc ? `  Story arc: ${a.storyArc}` : '',
+      a.trajectory ? `  Trajectory (already assessed): ${a.trajectory}` : '',
+      Array.isArray(a.watchQuestions) && a.watchQuestions.length ? `  Watch questions: ${a.watchQuestions.join(' | ')}` : '',
+      outlets ? `  Covered by: ${outlets}` : '',
       econ,
     ].filter(Boolean).join('\n');
   }).join('\n\n');
 
-  const countryBlock = countryCtx.map((c) =>
-    `COUNTRY: ${c.name} — ${c.headline || ''} (risk: ${c.riskLevel || 'n/a'}${c.riskScore != null ? ` ${c.riskScore}/100` : ''})\n  ${(c.situationSummary || '').slice(0, 400)}`
-  ).join('\n\n');
+  return `You are an intelligence-desk editor compiling this week's SIGNALS BRIEF (week ending ${weekKey}) for professional readers. This is a SIGNALS DIGEST, not an essay. You surface the week's discrete signals cleanly and let the reader connect them. You do NOT write a grand thesis, a "theme of the week", or a cross-cutting synthesis.
 
-  const groundingBlock = mode === 'free'
-    ? `=== GROUNDING (free mode) ===
-Use the analysis below as your factual foundation and primary source for what happened this week. You MAY draw on your broader knowledge to add historical context, connect to deeper structural forces, and sharpen the analysis where it genuinely strengthens the brief. Do not contradict the provided material, and prefer it for current-week specifics. Write the best possible professional brief.`
-    : `=== HARD GROUNDING RULE ===
-Use ONLY the analysis provided below. Never introduce an event, number, name, or date that is not present in this material. Your value is CONNECTING and JUDGING what's here, not adding facts. If the week's material is thin, say so plainly — do not pad or invent.`;
+For each SIGNAL below, write three short fields, grounded ONLY in the material provided for that signal:
+- "lede": the development in <= 10 words (a scannable headline phrase, not a sentence).
+- "fact": 1-2 sentences of what happened. VERB-MARK epistemic status: state verified events plainly; mark anything attributed/unconfirmed with "reportedly" or "according to <outlet>"; if a key point is the ABSENCE of something (e.g. a readout did not mention nukes), say so plainly. Use ONLY facts present in this signal's material — never add an event, number, name, or date that isn't here.
+- "soWhat": ONE calibrated sentence on why it matters. Allowed: "raises the odds that…", "signals…", "points to…", "a test of…". FORBIDDEN: bare "will", "is going to", "this means X happens", and vague filler ("tensions may rise", "time will tell"). If there is no real so-what, return "" (empty) rather than padding.
+- "related": OPTIONAL. Only set this if two signals are LITERALLY the same actor or event with a real causal link — name the other signal. If you are not certain it is a real link, OMIT it. Never infer a thematic connection.
 
-  return `You are the lead analyst at a global-intelligence desk writing this week's INTELLIGENCE BRIEF for the week ending ${weekKey}. Your readers are professionals (analysts, investors, policymakers). Write a genuine analytical brief in Markdown — prose, not a list of headline summaries.
+EPISTEMIC DISCIPLINE (this is the whole point):
+- Do NOT pick the most dramatic interpretation. If the evidence is ambiguous, say it is ambiguous. If a competing reading is better supported, reflect that in the "fact"/"soWhat" rather than asserting the dramatic one.
+- Separate fact from judgment: "fact" = what happened; "soWhat" = your assessment.
+- No invented specifics. Do NOT state precise figures, dates, or quotes not present in the material.
+- Do NOT write any overall summary, BLUF, or connecting narrative. Only the per-signal fields and the watch list.
 
-${groundingBlock}
+Also produce "watch": 3-5 forward items to watch next week, derived from the trajectories/watch-questions above. Each: { "event": named event/actor/decision, "date": specific date if known else "", "stake": one calibrated line on why it matters }. Frame as what to watch, NOT as predictions.
 
-=== WHAT MAKES THIS ANALYSIS, NOT SUMMARY ===
-A summary says what happened; analysis says what it MEANS, why it matters, and what comes next. If a sentence merely restates an event without a judgment or implication, cut it. Compose the brief by moving through these functions (free-form — use your own subheads, don't label them mechanically):
-1. BLUF: open with the single most important JUDGMENT of the week in the first sentence — the conclusion, before the evidence. No throat-clearing ("it's been a busy week").
-2. The nut: why this matters now, the through-line tying the week together.
-3. Stand back: the structural context — how this developed, the larger pattern, what changed versus the prior trend.
-4. The evidence, one argument per paragraph, naming specific actors, institutions, places.
-5. Cross-currents: how the threads CONNECT — second-order effects, contagion, how one domain (conflict / energy / politics / markets / health) feeds another. This systems view is the point.
-6. The strongest ALTERNATIVE reading: state the most credible competing interpretation, then adjudicate it honestly (don't strawman, don't false-balance).
-7. Forward view: calibrated forecasts + concrete, falsifiable indicators to watch next week.
-
-=== CALIBRATION (use these exact probability words, consistently) ===
-almost certain (~95%+) · very likely (~80–95%) · likely (~55–80%) · roughly even chance (~45–55%) · unlikely (~20–45%) · very unlikely (~5–20%) · almost no chance (<5%). Keep each word's meaning fixed. Separate LIKELIHOOD from CONFIDENCE (high/moderate/low) when the evidence is uneven — e.g. "very likely, but low confidence given a single source." Never invent a precise percentage you didn't reason to.
-
-=== DON'Ts ===
-No throat-clearing intros. No vague hedging ("tensions may rise," "time will tell," "remains to be seen," "could go either way"). No listicle-without-synthesis. No false balance. No false precision. Don't let the most dramatic event crowd out the most important one. Don't blend sourced fact with your own inference — make clear which is which. Being boring is a failure.
-
-=== THIS WEEK'S ANALYZED THREADS ===
+=== THIS WEEK'S SIGNALS (already-analyzed; ground each item ONLY in its own block) ===
 ${threadBlock || '(none)'}
 
-=== COUNTRY INTELLIGENCE ===
-${countryBlock || '(none)'}
-
-Return ONLY valid JSON, no markdown code fences, with exactly these fields:
+Return ONLY valid JSON, no code fences:
 {
-  "headline": "6-12 word title capturing the week's single defining judgment (not a topic label)",
-  "dek": "one-sentence standfirst that sharpens the headline",
-  "brief": "the full analytical brief as Markdown prose, ~700-1000 words. Use ## subheads as you see fit. This is free-form — write it like a real analyst, following the composition and rules above."
-}`;
+  "signals": [ { "threadId": "...", "lede": "...", "fact": "...", "soWhat": "...", "related": null } ],
+  "watch": [ { "event": "...", "date": "", "stake": "..." } ]
+}
+Include one signals entry per SIGNAL above, using its exact threadId.`;
 }
 
-function parseBrief(content) {
+function parseJson(content) {
   const cleaned = stripCodeFence(content);
   try { return JSON.parse(cleaned); }
-  catch (err) { throw new Error(`Failed to parse brief JSON: ${err.message}\nRaw: ${cleaned.slice(0, 200)}`); }
+  catch (err) { throw new Error(`Failed to parse JSON: ${err.message}\nRaw: ${cleaned.slice(0, 200)}`); }
 }
 
 // ── LLM call (OpenAI-compatible; mirrors newsThreadAnalysis) ────────────────────

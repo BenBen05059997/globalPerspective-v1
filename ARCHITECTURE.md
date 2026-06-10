@@ -305,7 +305,7 @@ Read-only REST proxy. All supported actions:
 | `country_history` | None (early access) | `{ countryName }` | Historical archive entries for a country |
 | `systems_analysis` | None (early access) | `{ countryName }` | Causal graph (nodes/edges) for a country |
 | `daily_brief` | None (early access) | `{ dateKey }` | Daily Intelligence Brief for a specific date |
-| `weekly_brief` | None | — | Latest **published** Weekly Intelligence Brief (`{ headline, dek, brief(Markdown), weekOf }`); null until one is published via weekly/review.js. Powers `/weekly-brief` |
+| `weekly_brief` | None | — | Latest **published** Weekly Signals Brief (`{ format:'signals', weekOf, asOf, signals[], watch[] }`); null until one is published via weekly/review.js. Powers `/weekly-brief` |
 | `pair_analysis` | None (early access) | `{ pair: "slug" }` | Bilateral relationship analysis for a country pair |
 | `pair_analyses_list` | None (early access) | — | All pair analyses (DDB Scan, sorted list) |
 | `economic_impact` | None (early access) | `{ threadId }` | Per-thread economic disruption analysis |
@@ -630,17 +630,17 @@ Single owner of `GlobalPerspectiveUserPrefs`. Two responsibilities:
 
 ### 23. `newsWeeklyBrief`
 **Path:** `amplify/backend/function/newsWeeklyBrief/src/index.js`
-**Trigger:** Manual-invoke only (no EventBridge schedule yet — dry-run until output quality is trusted). Built + deployed 2026-06-10. Uses **DeepSeek V4**.
+**Trigger:** EventBridge `TriggerWeeklyBrief` — `cron(0 6 ? * SUN *)` (Sundays 06:00 UTC). Built 2026-06-10. Uses **DeepSeek V4**.
 
-Generates the **Weekly Intelligence Brief** — a professional, analyst-grade 7-day synthesis (distinct from the daily `DAILY_BRIEF`). Plan: `WEEKLY_DIGEST_PLAN.md`.
+Generates the **Weekly Signals Brief** — a *signals digest* (NOT a synthesized essay; distinct from the daily `DAILY_BRIEF`). The pivot to signals followed research into how rigorous weeklies work (Economist "world this week", ISW, Semafor): surface discrete signals, keep fact separate from judgment, never manufacture a grand thesis (an automated synthesizer overreaches).
 
 **What it does:**
-1. Reads the last 7 days of archive entries; groups by `threadId`; selects the top threads (by coverage) + top countries (by volume).
-2. Pulls each one's **already-generated, already-cited** analysis (`THREAD_ANALYSIS`, `COUNTRY_INTELLIGENCE`, `ECONOMIC_IMPACT`).
-3. Calls DeepSeek with a **grounded-synthesis** prompt (connect/elevate only; never mint new facts; fail empty on a thin week) → `{ bluf, keyDevelopments[{title,whatHappened,whyItMatters,trajectory,threadId}], crossCurrents, marketsRead, watchNext[] }`.
-4. Writes `WEEKLY_BRIEF#{weekKey}` / `WEEKLY_BRIEF`, `status:'draft'` (180-day TTL).
+1. Reads the last 7 days of archive entries; groups by `threadId`; selects top threads + top countries.
+2. Computes **deterministic** per-signal data: `riskLevel`/`riskScore`, `region`, `asOf`, `sources` (real article links from our data).
+3. Calls DeepSeek for ONLY the per-signal **text** (`lede`, `fact`, `soWhat`) under strict epistemic rules (verb-mark claims; calibrated so-what; no thesis; no forced cross-links; no invented specifics) + a `watch` list. The risk/sources/dates are never the LLM's.
+4. Joins them → writes `WEEKLY_BRIEF#{weekKey}` / `WEEKLY_BRIEF`, `format:'signals'`, `status:'draft'` (180-day TTL).
 
-**Human approval:** `weekly/review.js` (one-click publish/hold/reject) flips `status → published` before it's served/sent — no public auth surface, mirrors `breaking/review.js`.
+**Human approval (gate kept):** the schedule generates a **draft**; a human publishes via `weekly/review.js` (`status → published`) before it's served. Generation scheduled; publishing manual.
 
 **Key env vars:** `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values), `TOPICS_DDB_TABLE` (=`NewsCache`), `SUMMARIZE_PREDICT_TABLE`, `MAX_TOKENS`, `WEEKLY_TOP_THREADS`, `WEEKLY_TOP_COUNTRIES`. **Role:** `newsWeeklyBrief-role` (read NewsCache, Get/Put SummarizeAndPredict).
 
@@ -713,7 +713,7 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 | `PAIR#{pairSlug}` | `PAIR_ANALYSIS` | newsPairIntelligence | pairTitle, currentState, timeline, trajectory, rootDriver, predictions, watchItems |
 | `SYSTEMS#{countryName}` | `SYSTEMS_ANALYSIS` | newsSystemsAnalysis | nodes[], edges[] with causal graph, confidence levels, citations (14-day TTL) |
 | `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL) |
-| `WEEKLY_BRIEF#{weekKey}` | `WEEKLY_BRIEF` | newsWeeklyBrief (#23) | Analyst-grade weekly synthesis (bluf, keyDevelopments[], crossCurrents, marketsRead, watchNext[]); `status` draft→published via weekly/review.js (180-day TTL) |
+| `WEEKLY_BRIEF#{weekKey}` | `WEEKLY_BRIEF` | newsWeeklyBrief (#23) | Weekly **signals** digest (`format:'signals'`): `signals[{lede,fact,soWhat,riskLevel,riskScore,region,asOf,sources,related}]` + `watch[{event,date,stake}]`. LLM writes lede/fact/soWhat only; risk/region/asOf/sources are deterministic. `status` draft→published via weekly/review.js (180-day TTL) |
 | `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata), active conflicts (ACLED), leadership change detection (90-day TTL) |
 | `ECON#THREAD#{threadId}` | `ECONOMIC_IMPACT` | newsEconomicImpact | direction, magnitude, instruments, analog, marketSnapshot, citations; quality scores added by newsEconomicQuality (21-day TTL) |
 | `TOPIC#{topicId}` | `RESEARCH_BRIEFING` | NewsProjectInvokeAgentLambda | Research briefing (first pass of two-pass prediction) |
@@ -832,6 +832,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `TriggerNewsEconomicImpact` | `cron(30 7 * * ? *)` | newsEconomicImpact (07:30 UTC daily) |
 | `TriggerNewsEconomicQuality` | `cron(0 8 * * ? *)` | newsEconomicQuality (08:00 UTC daily) |
 | `TriggerPredictionResolver` | `cron(0 9 * * ? *)` | newsPredictionResolver (09:00 UTC daily) |
+| `TriggerWeeklyBrief` | `cron(0 6 ? * SUN *)` | newsWeeklyBrief (Sundays 06:00 UTC — generates the weekly signals draft) |
 | `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
 | `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |
 | `MarketsMacrosWeekly` | `cron(0 2 ? * SUN *)` | newsMarketsData |

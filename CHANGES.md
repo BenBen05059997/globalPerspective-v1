@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-10 (weekly brief → SIGNALS format + /weekly-brief signals page + weekly schedule)
+
+Pivoted the weekly brief from a synthesized "deep analysis" essay to a **signals digest** — after research into how rigorous weeklies actually work (Economist "world this week", ISW assessments, Semafor "Semaform"): they surface discrete signals and keep fact separate from judgment, never melting a grand thesis into the stream. An automated synthesizer overreaches when forced to connect (it led with the dramatic read + invented specifics — the failure the user's audit caught). The signals model fixes all three failure modes.
+
+- **`newsWeeklyBrief` reworked to emit signals** (`format:'signals'`): per-signal `{ lede, fact, soWhat }` written by the LLM under strict epistemic rules (verb-mark claims, calibrated so-what only, no grand thesis, no forced cross-links, no invented specifics), joined with **deterministic** `{ riskLevel, riskScore, region, asOf, sources }` (risk + real article links + dates are our data, never the LLM's). Plus a `watch` list. Sorted by risk. Deployed + generated (6 signals, real source links, disciplined Xi/NK read).
+- **`/weekly-brief` rebuilt as the signals layout** (`WeeklyBriefPage`): KPI row (mono stat-cards) → color-coded signal cards (lede + risk chip + region/as-of + fact + "So what" + real source links) → "What to watch" → honesty footer. Matches site tokens (Fraunces/Inter/JetBrains Mono, rust, `--risk-*`). Mirrors the design-agent mock the user approved.
+- **Weekly schedule:** EventBridge `TriggerWeeklyBrief` `cron(0 6 ? * SUN *)` generates a **draft** each Sunday; the human publishes via `weekly/review.js` (gate kept — generation is scheduled, publishing stays manual). `review.js` updated for the signals shape.
+
+Files: `amplify/backend/function/newsWeeklyBrief/src/index.js`, `weekly/review.js`, `global-perspectives-starter/frontend/src/components/{WeeklyBriefPage.jsx,WeeklyBriefPage.css}` + `docs/` build, `WEEKLY_DIGEST_PLAN.md`.
+
 ## 2026-06-10 (Analysis Studio: BYOK self-serve analysis at /analyze)
 
 Shipped the first version of **"analyze it yourself"** — a new `/analyze` page where a reader picks real stories from our data and gets a cited deep-dive, run on **their own LLM API key** (BYOK). Build-first: the feature exists before any billing; later the free BYOK run becomes a Polar credit. Plans: `ANALYSIS_STUDIO_PLAN.md` (feature) + `POLAR_BILLING_PLAN.md` (the subscription/credits direction it feeds).

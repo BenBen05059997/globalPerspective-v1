@@ -67,11 +67,27 @@ function setStatus(pk, status) {
 
 function show(b) {
   console.log('\n════════════════════════════════════════════');
-  console.log(`Weekly Brief — week of ${b.weekOf}   [${b.status}]   model: ${b.model}`);
-  console.log(`HEADLINE: ${b.headline || ''}`);
-  if (b.dek) console.log(`DEK: ${b.dek}`);
-  console.log('────────────────────────────────────────────\n');
-  console.log(b.brief || '(no body)'); // free-form Markdown analysis
+  console.log(`Weekly Signals Brief — week of ${b.weekOf}   [${b.status}]   model: ${b.model}`);
+  console.log('────────────────────────────────────────────');
+  if (Array.isArray(b.signals)) {
+    b.signals.forEach((s, i) => {
+      console.log(`\n${i + 1}. ${s.lede}   [${(s.riskLevel || 'n/a').toUpperCase()}]`);
+      console.log(`   ${s.region || '—'} · as of ${s.asOf || '—'}`);
+      console.log(`   FACT: ${s.fact}`);
+      if (s.soWhat) console.log(`   SO WHAT: ${s.soWhat}`);
+      const src = (s.sources || []).map((x) => x.source || x.title).filter(Boolean).join(', ');
+      console.log(`   SOURCES: ${src || '(none)'}`);
+    });
+    if (Array.isArray(b.watch) && b.watch.length) {
+      console.log('\n── What to watch ──');
+      b.watch.forEach((w, i) => console.log(`  ${i + 1}. ${w.event}${w.date ? ` (${w.date})` : ''} — ${w.stake || ''}`));
+    }
+  } else {
+    // older prose format
+    console.log(`HEADLINE: ${b.headline || ''}`);
+    if (b.dek) console.log(`DEK: ${b.dek}`);
+    console.log('\n' + (b.brief || '(no body)'));
+  }
   console.log('\n════════════════════════════════════════════');
 }
 

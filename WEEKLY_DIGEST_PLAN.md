@@ -1,6 +1,8 @@
 # Weekly Intelligence Brief — Plan
 
-**Date:** 2026-06-10 · **Status:** building (engine first)
+> **PIVOT 2026-06-10 → SIGNALS, not deep analysis.** After an expert audit caught the LLM overstating the lead (dramatic read over the better-supported one) + stale/unsourced numbers, and research into how rigorous weeklies actually work (Economist "world this week", ISW, Semafor "Semaform" — they surface discrete signals and keep fact separate from judgment, never melting a grand thesis into the stream), the product became a **Weekly Signals Brief**, not an essay. The LLM writes only per-signal `lede/fact/soWhat` under strict epistemic rules (verb-mark, calibrate, no thesis, no forced cross-links, no invented specifics); **risk level, region, as-of date, and sources are deterministic (our data).** SHIPPED: signals engine + `/weekly-brief` signals page + `TriggerWeeklyBrief` Sunday schedule (draft → human publish via `weekly/review.js`). The sections below predate the pivot (kept for history).
+
+**Date:** 2026-06-10 · **Status:** SIGNALS format shipped (engine + page + schedule); human-publish gate kept
 **Decided:** professional analyst-grade weekly (NOT a link roundup) · LLM synthesis grounded in our already-generated, already-cited analysis · **on-site `/weekly-brief` page + email** · **one-click human approve** before publish/send · Sunday ~9am local send · broadcast v1.
 
 The second of the two email types ([[project-breaking-alerts]] is the first). Distinct from the existing **daily** brief (`DAILY_BRIEF`, `/daily`) — this is a 7-day *strategic synthesis* with trajectory + a forecast scorecard.

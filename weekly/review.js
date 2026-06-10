@@ -68,18 +68,11 @@ function setStatus(pk, status) {
 function show(b) {
   console.log('\n════════════════════════════════════════════');
   console.log(`Weekly Brief — week of ${b.weekOf}   [${b.status}]   model: ${b.model}`);
-  console.log('──── BLUF ────\n' + (b.bluf || ''));
-  console.log('\n──── Key developments ────');
-  (b.keyDevelopments || []).forEach((d, i) => {
-    console.log(`${i + 1}. ${d.title}`);
-    console.log(`   Why: ${d.whyItMatters || ''}`);
-    console.log(`   Trajectory: ${d.trajectory || ''}`);
-  });
-  console.log('\n──── Cross-currents ────\n' + (b.crossCurrents || ''));
-  console.log('\n──── Markets read ────\n' + (b.marketsRead || ''));
-  console.log('\n──── Watch next ────');
-  (b.watchNext || []).forEach((w, i) => console.log(`  ${i + 1}. ${w}`));
-  console.log('════════════════════════════════════════════');
+  console.log(`HEADLINE: ${b.headline || ''}`);
+  if (b.dek) console.log(`DEK: ${b.dek}`);
+  console.log('────────────────────────────────────────────\n');
+  console.log(b.brief || '(no body)'); // free-form Markdown analysis
+  console.log('\n════════════════════════════════════════════');
 }
 
 async function main() {

@@ -63,7 +63,9 @@ exports.handler = async (event = {}) => {
   const { content, modelId } = await invokeLLM(prompt);
   const brief = parseBrief(content);
 
-  if (!brief.bluf || !Array.isArray(brief.keyDevelopments) || brief.keyDevelopments.length === 0) {
+  // Free-form: the analysis is `brief` (Markdown prose); headline/dek are metadata for
+  // the email subject + on-site preview. Require a substantive body.
+  if (!brief.brief || brief.brief.trim().length < 200) {
     return fail(`Model returned an unusable brief (keys: ${Object.keys(brief).join(', ')})`);
   }
 
@@ -72,11 +74,9 @@ exports.handler = async (event = {}) => {
     SK: 'WEEKLY_BRIEF',
     weekOf: weekKey,
     status: 'draft', // draft → published (human approves via weekly/review.js)
-    bluf: brief.bluf,
-    keyDevelopments: (brief.keyDevelopments || []).slice(0, 6),
-    crossCurrents: brief.crossCurrents || '',
-    marketsRead: brief.marketsRead || '',
-    watchNext: Array.isArray(brief.watchNext) ? brief.watchNext.slice(0, 6) : [],
+    headline: brief.headline || `Weekly Intelligence Brief — week of ${weekKey}`,
+    dek: brief.dek || '',
+    brief: brief.brief.trim(), // Markdown analytical prose
     threadIds: threads.map((t) => t.threadId),
     generatedAt: new Date().toISOString(),
     model: modelId || LLM_MODEL,
@@ -84,8 +84,8 @@ exports.handler = async (event = {}) => {
   };
   await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
 
-  console.log(`[weekly] draft stored: WEEKLY_BRIEF#${weekKey} (${item.keyDevelopments.length} developments). Approve via weekly/review.js.`);
-  return { ok: true, weekKey, status: 'draft', developments: item.keyDevelopments.length };
+  console.log(`[weekly] draft stored: WEEKLY_BRIEF#${weekKey} (${item.brief.length} chars). Approve via weekly/review.js.`);
+  return { ok: true, weekKey, status: 'draft', chars: item.brief.length };
 };
 
 function fail(msg) {
@@ -155,7 +155,11 @@ async function getRecord(pk, sk) {
   } catch { return null; }
 }
 
-// ── Prompt — grounded synthesis ────────────────────────────────────────────────
+// ── Prompt — free-form, tradecraft-grounded analysis ───────────────────────────
+// Composition + rules distilled from IC analytic tradecraft (ICD 203), Sherman Kent's
+// estimative-probability ladder, Heuer's bias traps, and analytical-journalism craft
+// (nut graf / BLUF / Economist leader). The model writes free-form Markdown prose — NOT a
+// rigid field schema — because forcing fixed fields produces formulaic, summary-like output.
 function buildPrompt(weekKey, threadCtx, countryCtx) {
   const threadBlock = threadCtx.map((t, i) => {
     const a = t.analysis || {};
@@ -163,7 +167,7 @@ function buildPrompt(weekKey, threadCtx, countryCtx) {
       ? `\n  Economic read: ${(t.econ.instruments || []).map((x) => `${x.instrumentId} ${x.direction}/${x.magnitude}`).slice(0, 4).join(', ') || 'flagged'}`
       : '';
     return [
-      `THREAD ${i + 1} [threadId: ${t.threadId}] — ${a.threadTitle || t.latestTitle} (${t.entries.length} entries, category: ${t.category || 'n/a'})`,
+      `THREAD ${i + 1} [${t.threadId}] — ${a.threadTitle || t.latestTitle} (${t.entries.length} entries, ${t.category || 'n/a'})`,
       a.storyArc ? `  Story arc: ${a.storyArc}` : `  Latest: ${t.latestTitle}`,
       a.trajectory ? `  Trajectory: ${a.trajectory}` : '',
       a.riskScore != null ? `  Risk: ${a.riskScore}/100` : '',
@@ -175,28 +179,39 @@ function buildPrompt(weekKey, threadCtx, countryCtx) {
     `COUNTRY: ${c.name} — ${c.headline || ''} (risk: ${c.riskLevel || 'n/a'}${c.riskScore != null ? ` ${c.riskScore}/100` : ''})\n  ${(c.situationSummary || '').slice(0, 400)}`
   ).join('\n\n');
 
-  return `You are the lead analyst at a global-intelligence desk writing the WEEKLY INTELLIGENCE BRIEF for the week ending ${weekKey}. Your readers are professionals — write at analyst depth, no filler, no hedging clichés ("tensions may rise"). Name specific actors, institutions, dates.
+  return `You are the lead analyst at a global-intelligence desk writing this week's INTELLIGENCE BRIEF for the week ending ${weekKey}. Your readers are professionals (analysts, investors, policymakers). Write a genuine analytical brief in Markdown — prose, not a list of headline summaries.
 
-CRITICAL GROUNDING RULE: synthesize ONLY from the analysis provided below. Do NOT introduce events, numbers, or claims not present here. Your job is to CONNECT and ELEVATE — find the through-line, the cross-currents, and the forward view across these threads. If the material is thin, say so plainly rather than inventing.
+=== HARD GROUNDING RULE ===
+Use ONLY the analysis provided below. Never introduce an event, number, name, or date that is not present in this material. Your value is CONNECTING and JUDGING what's here, not adding facts. If the week's material is thin, say so plainly — do not pad or invent.
 
-=== THIS WEEK'S STORY THREADS (already-analyzed) ===
+=== WHAT MAKES THIS ANALYSIS, NOT SUMMARY ===
+A summary says what happened; analysis says what it MEANS, why it matters, and what comes next. If a sentence merely restates an event without a judgment or implication, cut it. Compose the brief by moving through these functions (free-form — use your own subheads, don't label them mechanically):
+1. BLUF: open with the single most important JUDGMENT of the week in the first sentence — the conclusion, before the evidence. No throat-clearing ("it's been a busy week").
+2. The nut: why this matters now, the through-line tying the week together.
+3. Stand back: the structural context — how this developed, the larger pattern, what changed versus the prior trend.
+4. The evidence, one argument per paragraph, naming specific actors, institutions, places.
+5. Cross-currents: how the threads CONNECT — second-order effects, contagion, how one domain (conflict / energy / politics / markets / health) feeds another. This systems view is the point.
+6. The strongest ALTERNATIVE reading: state the most credible competing interpretation, then adjudicate it honestly (don't strawman, don't false-balance).
+7. Forward view: calibrated forecasts + concrete, falsifiable indicators to watch next week.
+
+=== CALIBRATION (use these exact probability words, consistently) ===
+almost certain (~95%+) · very likely (~80–95%) · likely (~55–80%) · roughly even chance (~45–55%) · unlikely (~20–45%) · very unlikely (~5–20%) · almost no chance (<5%). Keep each word's meaning fixed. Separate LIKELIHOOD from CONFIDENCE (high/moderate/low) when the evidence is uneven — e.g. "very likely, but low confidence given a single source." Never invent a precise percentage you didn't reason to.
+
+=== DON'Ts ===
+No throat-clearing intros. No vague hedging ("tensions may rise," "time will tell," "remains to be seen," "could go either way"). No listicle-without-synthesis. No false balance. No false precision. Don't let the most dramatic event crowd out the most important one. Don't blend sourced fact with your own inference — make clear which is which. Being boring is a failure.
+
+=== THIS WEEK'S ANALYZED THREADS ===
 ${threadBlock || '(none)'}
 
 === COUNTRY INTELLIGENCE ===
 ${countryBlock || '(none)'}
 
-Return ONLY valid JSON, no markdown fences, with exactly these fields:
+Return ONLY valid JSON, no markdown code fences, with exactly these fields:
 {
-  "bluf": "2-3 sentences: the single defining development of the week and the through-line connecting the rest. This is the executive summary a busy principal reads first.",
-  "keyDevelopments": [
-    { "title": "sharp 6-12 word headline", "whatHappened": "2-3 sentences, specific", "whyItMatters": "1-2 sentences on the stakes/implications", "trajectory": "1-2 sentences on where it's heading (escalating/easing + what to watch)", "threadId": "the threadId from above" }
-  ],
-  "crossCurrents": "1-2 paragraphs on how these threads CONNECT — second-order effects, contagion, how one domain (conflict/energy/politics/markets) feeds another. This is the systems view that distinguishes a brief from a headline list.",
-  "marketsRead": "1 paragraph on the week's economic/market dimension grounded in the economic reads above. Use direction and magnitude qualitatively; never fabricate a percentage.",
-  "watchNext": ["3-5 specific, forward-looking watch items for next week — name the actor, event, or deadline. Each is one sentence."]
-}
-
-keyDevelopments: include the ${Math.min(5, threadCtx.length)} most consequential threads, most important first. Every threadId MUST be one of those listed above. Output only the JSON object.`;
+  "headline": "6-12 word title capturing the week's single defining judgment (not a topic label)",
+  "dek": "one-sentence standfirst that sharpens the headline",
+  "brief": "the full analytical brief as Markdown prose, ~700-1000 words. Use ## subheads as you see fit. This is free-form — write it like a real analyst, following the composition and rules above."
+}`;
 }
 
 function parseBrief(content) {

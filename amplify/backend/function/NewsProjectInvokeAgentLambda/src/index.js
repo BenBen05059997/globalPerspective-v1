@@ -102,13 +102,34 @@ exports.handler = async (event) => {
 
     console.log(`Generation complete: ${outputs.length} items, ${failed} failed (generationId: ${generationId})`);
 
+    // Assign threadIds from the RAW staging topics (which retain continues_topic,
+    // category, and search_keywords — fields buildTopic() drops) and stamp them
+    // onto the topics that become `latest`, so the served topics carry threadId
+    // for narrative links (the lede band + Home story-arc/economic badges). The
+    // same map is reused by the archive write so latest and archive stay in sync.
+    let threadIdById = {};
+    if (outputs.length > 0 && stagingItem && Array.isArray(stagingItem.topics)) {
+      try {
+        const pastEntries = await readPastArchiveEntries(7);
+        stagingItem.topics.forEach((raw, idx) => {
+          const id = buildStableTopicId(raw, idx);
+          const tid = assignThreadId(raw, pastEntries);
+          raw.threadId = tid;
+          threadIdById[id] = tid;
+        });
+        console.log(`Assigned threadIds to ${stagingItem.topics.length} latest topics`);
+      } catch (threadErr) {
+        console.warn('threadId assignment for latest failed:', threadErr.message);
+      }
+    }
+
     const swapped = outputs.length > 0
       ? await swapStagingToActive(stagingItem, generationId)
       : false;
 
     if (!readOnly && swapped) {
       try {
-        await buildAndWriteArchive(filteredTopics, generationId);
+        await buildAndWriteArchive(filteredTopics, generationId, threadIdById);
       } catch (archiveErr) {
         console.warn('Archive write encountered an issue:', archiveErr);
       }
@@ -920,7 +941,7 @@ async function readPastArchiveEntries(days) {
   }
 }
 
-async function buildAndWriteArchive(topics, generationId) {
+async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {}) {
   if (!TOPICS_TABLE || !SUMMARY_TABLE) {
     console.warn('Cannot write archive: missing table config');
     return false;
@@ -941,10 +962,12 @@ async function buildAndWriteArchive(topics, generationId) {
       readPastArchiveEntries(7),
     ]);
 
-    // Assign threadIds to all topics
+    // Reuse the threadIds computed from the raw topics for `latest` so the
+    // archive stays in sync; fall back to local assignment for any topic the
+    // map is missing (e.g. single-topic manual invokes).
     const threadIdByTopic = {};
     for (const topic of topics) {
-      threadIdByTopic[topic.id] = assignThreadId(topic, pastEntries);
+      threadIdByTopic[topic.id] = threadIdByTopicArg[topic.id] || assignThreadId(topic, pastEntries);
     }
 
     // --- Today archive (free tier, 24h TTL, 3 sources) ---

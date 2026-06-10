@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-06-10 (fix: `latest` topics now carry `threadId` — narrative links restored)
+
+The served `latest` topics carried **no `threadId`** (0/13 live), so the lede headline, Home's "Story arc →" / "Economic impact →" badges, and the per-topic economic-severity match all silently failed to link. Root cause: `swapStagingToActive` wrote the **raw staging topics** (no threadId) to `latest`, while threadId was only assigned later inside `buildAndWriteArchive` — and computed from `buildTopic`-processed topics that **drop `continues_topic` and `category`**, so archive threading was itself running degraded.
+
+- **`NewsProjectInvokeAgentLambda`** now computes threadIds from the **raw** staging topics (full fields: `continues_topic`, `category`, `search_keywords`) once, stamps `threadId` onto each topic before the swap, and passes the same map to `buildAndWriteArchive` so `latest` and the archive stay in sync. Single-topic manual invokes fall back to local assignment.
+- Deployed to `NewsProjectInvokeAgentLambda-dev` (ap-northeast-1) + triggered one run. **Verified: 13/13 live `latest` topics now carry `threadId`**, inheriting prior threads via `continues_topic`/Jaccard.
+
+Files: `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`.
+
 ## 2026-06-10 ("Today's lede" orientation band on Home + Map; honest daily-brief date)
 
 Added a deterministic one-line orientation band to the top of Home and the Map so a visitor immediately sees what the day is about and can click into the analysis — mirrors the proven `/economy` "Today in the economy" briefing pattern (pure function, no LLM, honesty-checked).

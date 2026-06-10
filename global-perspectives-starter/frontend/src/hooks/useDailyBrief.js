@@ -6,6 +6,7 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 
 export function useDailyBrief(dateKey) {
   const [brief, setBrief] = useState(null);
+  const [servedDateKey, setServedDateKey] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -21,6 +22,7 @@ export function useDailyBrief(dateKey) {
             (Date.now() - cached[effectiveDateKey].timestamp) < CACHE_TTL_MS &&
             cached[effectiveDateKey].data) {
           setBrief(cached[effectiveDateKey].data);
+          setServedDateKey(cached[effectiveDateKey].served || effectiveDateKey);
           setLoading(false);
           return;
         }
@@ -31,19 +33,21 @@ export function useDailyBrief(dateKey) {
     setError(null);
     try {
       let data = null;
+      let served = null;
       const base = new Date(effectiveDateKey + 'T00:00:00Z');
       for (let daysBack = 0; daysBack <= 7; daysBack++) {
         const d = new Date(base);
         d.setUTCDate(d.getUTCDate() - daysBack);
         const tryKey = d.toISOString().slice(0, 10);
         const result = await fetchDailyBrief(tryKey);
-        if (result?.data) { data = result.data; break; }
+        if (result?.data) { data = result.data; served = tryKey; break; }
       }
       setBrief(data);
+      setServedDateKey(served);
       try {
         if (!data) return;
         const existing = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-        existing[effectiveDateKey] = { data, timestamp: Date.now() };
+        existing[effectiveDateKey] = { data, served, timestamp: Date.now() };
         const keys = Object.keys(existing);
         if (keys.length > 7) {
           const oldest = keys.sort()[0];
@@ -60,5 +64,5 @@ export function useDailyBrief(dateKey) {
 
   useEffect(() => { load(); }, [load]);
 
-  return { brief, loading, error, refetch: load };
+  return { brief, servedDateKey, loading, error, refetch: load };
 }

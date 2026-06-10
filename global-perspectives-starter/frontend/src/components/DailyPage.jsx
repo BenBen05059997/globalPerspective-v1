@@ -33,6 +33,17 @@ function prevDateKey(dk) {
   d.setUTCDate(d.getUTCDate() - 1);
   return d.toISOString().slice(0, 10);
 }
+// Relative label for how old the *served* brief is vs today (UTC day diff).
+// Returns null when it's actually today's brief.
+function relativeDayLabel(servedKey, todayKey) {
+  if (!servedKey || servedKey === todayKey) return null;
+  const a = new Date(servedKey + 'T00:00:00Z').getTime();
+  const b = new Date(todayKey + 'T00:00:00Z').getTime();
+  const days = Math.round((b - a) / 86400000);
+  if (days <= 0) return null;
+  if (days === 1) return 'Yesterday';
+  return `${days} days ago`;
+}
 function nextDateKey(dk) {
   const d = new Date(dk + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() + 1);
@@ -138,7 +149,11 @@ export default function DailyPage() {
   const prev = prevDateKey(dateKey);
   const next = nextDateKey(dateKey);
 
-  const { brief, loading } = useDailyBrief(dateKey);
+  const { brief, servedDateKey, loading } = useDailyBrief(dateKey);
+  // The served brief may be older than the requested date (today's isn't
+  // generated until end of day; the hook falls back up to 7 days).
+  const relLabel = relativeDayLabel(servedDateKey, today);
+  const servedIsOlderThanRequest = servedDateKey && servedDateKey !== dateKey;
 
   useEffect(() => {
     const title = brief?.displayDate || dateKey;
@@ -186,7 +201,8 @@ export default function DailyPage() {
         <Link to="/">← Home</Link>
         <div className="daily-date-nav">
           <Link to={`/daily/${prev}`} className="daily-date-arrow" title="Previous day">←</Link>
-          <span className="daily-date-label">{brief.displayDate || dateKey}</span>
+          <span className="daily-date-label">{brief.displayDate || servedDateKey || dateKey}</span>
+          {relLabel && <span className="daily-rel-tag">{relLabel}</span>}
           {!isToday && <Link to={`/daily/${next}`} className="daily-date-arrow" title="Next day">→</Link>}
           {!isToday && <Link to="/daily">Today</Link>}
         </div>
@@ -196,6 +212,15 @@ export default function DailyPage() {
           <SaveButton itemType="daily" itemId={dateKey} metadata={{ headline: brief.headline, date: brief.displayDate }} />
         </div>
       </div>
+
+      {/* Honest fallback notice — requested "today" but today's brief isn't out yet */}
+      {isToday && servedIsOlderThanRequest && (
+        <div className="daily-fallback-note">
+          Today&rsquo;s brief publishes at the end of the day — showing{' '}
+          <strong>{brief.displayDate || servedDateKey}</strong>
+          {relLabel ? ` (${relLabel.toLowerCase()})` : ''}.
+        </div>
+      )}
 
       {/* Masthead */}
       <header className="daily-masthead">

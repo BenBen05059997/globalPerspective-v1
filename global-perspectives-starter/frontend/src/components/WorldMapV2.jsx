@@ -12,6 +12,8 @@ import { useCountryHistory } from '../hooks/useCountryHistory';
 import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
 import { useMarketsCountry } from '../hooks/useMarketsCountry';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
+import LedeBand from './atoms/LedeBand';
+import { composeTopicsLede } from '../utils/composeTopicsLede';
 import './WorldMapV2.css';
 
 // UN M.49 numeric → ISO 3166-1 alpha-3
@@ -225,6 +227,12 @@ export default function WorldMapV2() {
 
   // Economic disruption exposure — country ISO → max severity from active disruptions
   const { data: allDisruptions = [] } = useDisruptionsList({ limit: 200 });
+
+  // Today's lede — deterministic orientation band shared with Home
+  const lede = useMemo(
+    () => composeTopicsLede({ topics, disruptions: allDisruptions }),
+    [topics, allDisruptions],
+  );
   const econByISO = useMemo(() => {
     const out = {};
     const rank = { severe: 3, moderate: 2, minor: 1 };
@@ -944,6 +952,9 @@ export default function WorldMapV2() {
               )}
             </div>
           </div>
+
+          {/* Today's lede — deterministic orientation band (composeTopicsLede) */}
+          <LedeBand {...lede} />
 
           {/* Country search — in document flow, above the map */}
           <div className={`mv2-search${searchFocused ? ' focused' : ''}`}>

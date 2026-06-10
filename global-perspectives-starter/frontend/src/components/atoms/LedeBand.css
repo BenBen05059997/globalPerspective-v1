@@ -1,0 +1,70 @@
+/* LedeBand — "Today's lede" orientation strip (Home + Map). Compact, editorial,
+   sits directly under the StatusStrip / map title. */
+.lede-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  padding: 10px 14px;
+  margin: 0 0 16px;
+  border: 1px solid var(--rule, rgba(0, 0, 0, 0.1));
+  border-left: 3px solid var(--accent, #b4502e);
+  background: var(--card, #fbf9f4);
+  border-radius: 2px;
+  line-height: 1.4;
+}
+
+.lede-kicker {
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent, #b4502e);
+  font-weight: 600;
+  flex: none;
+}
+
+.lede-headline {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink, #1b1714);
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.lede-headline-link {
+  color: var(--ink, #1b1714);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.lede-headline-link:hover {
+  color: var(--accent, #b4502e);
+  border-bottom-color: var(--accent, #b4502e);
+}
+
+.lede-reason {
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #6b6258);
+  background: rgba(0, 0, 0, 0.04);
+  padding: 2px 7px;
+  border-radius: 999px;
+  flex: none;
+  white-space: nowrap;
+}
+
+.lede-meta {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  color: var(--ink-dim, #6b6258);
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .lede-meta { margin-left: 0; }
+}

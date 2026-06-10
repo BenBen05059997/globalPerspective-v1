@@ -13,7 +13,9 @@ import { useError } from '../contexts/ErrorContext';
 import StatusStrip from './atoms/StatusStrip';
 import EditorialShell from './atoms/EditorialShell';
 import SeverityBadge from './atoms/SeverityBadge';
+import LedeBand from './atoms/LedeBand';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
+import { composeTopicsLede } from '../utils/composeTopicsLede';
 import './AIComponents.css';
 import './Home.css';
 
@@ -77,6 +79,11 @@ function Home() {
   }, [archiveEntries, topics]);
 
   const categorizedTopics = React.useMemo(() => categorizeTopicsByRegion(topics), [topics]);
+
+  const lede = React.useMemo(
+    () => composeTopicsLede({ topics, disruptions: allDisruptions }),
+    [topics, allDisruptions],
+  );
 
   const sortedRegions = React.useMemo(() =>
     Object.entries(categorizedTopics)
@@ -310,6 +317,9 @@ function Home() {
       right={rightRail}
       className="home-shell"
     >
+      {/* Today's lede — deterministic orientation band (composeTopicsLede) */}
+      {!loading && <LedeBand {...lede} />}
+
       {/* Masthead */}
       <div className="home-masthead">
         <div className="home-masthead-kicker">{getDayString()}</div>

@@ -43,6 +43,29 @@
 }
 .daily-date-arrow:hover { border-color: var(--ink); background: var(--paper-2); }
 .daily-date-label { color: var(--ink); font-weight: 500; }
+.daily-rel-tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: var(--paper-2);
+  border: 1px solid var(--rule, rgba(0, 0, 0, 0.12));
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.daily-fallback-note {
+  font-size: 13px;
+  color: var(--ink-dim);
+  background: var(--paper-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 2px;
+  padding: 9px 13px;
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+.daily-fallback-note strong { color: var(--ink); font-weight: 600; }
 
 .daily-topbar-right {
   display: flex;

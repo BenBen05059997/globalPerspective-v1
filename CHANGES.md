@@ -1,5 +1,33 @@
 # Global Perspectives — Change Log
 
+## 2026-06-10 ("Today's lede" orientation band on Home + Map; honest daily-brief date)
+
+Added a deterministic one-line orientation band to the top of Home and the Map so a visitor immediately sees what the day is about and can click into the analysis — mirrors the proven `/economy` "Today in the economy" briefing pattern (pure function, no LLM, honesty-checked).
+
+- **New `utils/composeTopicsLede.js`** — pure compose over the `topics` + economic-disruption data the pages already load. Picks the day's lede by severity of a cited disruption → urgency → trending → source count. Every count traces to a real input; the headline is a verbatim topic title. No fabrication.
+- **New `components/atoms/LedeBand.jsx` + `.css`** — the strip. Renders **nothing** when there is no real lede (honest empty state). Headline links into the story-arc thread page **only when the topic carries a real `threadId`** — no fallback link (an unlinked headline is honest; a guessed destination is not).
+- **Wired into** `Home.jsx` (between the StatusStrip and masthead) and `WorldMapV2.jsx` (between the map title and search) — no new fetches.
+- **Honesty eval:** `quality/briefing/verify_lede.mjs` (4 cases, all pass). Verified against live production data.
+- **Daily brief honesty:** `useDailyBrief.js` now exposes `servedDateKey` (the date that actually returned data after the up-to-7-day fallback). `DailyPage.jsx` shows a relative pill ("Yesterday" / "N days ago") next to the date, and an honest notice when you open `/daily` before today's brief is generated ("Today's brief publishes at the end of the day — showing <date>"). Title NOT renamed (would be wrong on archive views).
+
+> **Known follow-up (next):** live `latest` topics currently carry no `threadId`, so the lede headline (and Home's existing "Story arc →" / "Economic impact →" badges) don't link. Fixing the pipeline `threadId` surfacing is the next task.
+
+Files: `src/utils/composeTopicsLede.js` (new), `src/components/atoms/LedeBand.{jsx,css}` (new), `src/components/Home.jsx`, `src/components/WorldMapV2.jsx`, `src/hooks/useDailyBrief.js`, `src/components/DailyPage.{jsx,css}`, `quality/briefing/verify_lede.mjs` (new).
+
+## 2026-06-10 (breaking-news email alerts: detector + human-review queue, dry-run only)
+
+Started the breaking-news email channel — Component 4 of the recommendations/digest plan (shares its `GlobalPerspectiveUserPrefs` table + SES path + compliance). v1 is a **broadcast** alert (global significance, not personalized) that fires when a genuinely significant story breaks, pairing the headline with our already-generated analysis. **Detection + human review only this pass; no email is sent (dry-run).**
+
+- **New `newsBreakingAlert` Lambda** (`amplify/backend/function/newsBreakingAlert/src/`):
+  - `significance.js` — pure, deterministic story scorer (no LLM). Aggregates topics by `threadId`, scores a story on popularity (`sources.length`), breadth (concurrent angles), country `riskScore` (0–100), and economic `magnitude`. A story alerts only above a tuned threshold — **most cycles send nothing, which is the correct, honest outcome**. Emits `reasons[]` for tuning. 17 unit tests pass (`test-significance.mjs`).
+  - `render.js` — builds the email subject/body from real, already-generated analysis only; missing sections are omitted, never placeholdered (honesty contract).
+  - `index.js` — loads `latest` topics + enrichment, dedupes (`GlobalPerspectiveBreakingAlerts`, 5-day window), caps to one story/run, and **proposes** (`status:'proposed'`) — it never auto-sends. `DRY_RUN=true` by default. `verifyStory()` is a stub seam for the Phase-3 LLM judge.
+- **New `breaking/review.js`** — human confirmation queue (AWS CLI, no npm deps, mirrors `predictions/review.js`): review each proposed alert, **add your own words** (an editor note that leads the email), confirm (`status:'confirmed'`) or reject.
+- **Pipeline shape:** detect → propose → LLM verify (Phase 3, Gemini judges the DeepSeek-written analysis) → human confirm + words → send (Phase 4, SES; first real test to the operator's verified inbox via SES sandbox). Benchmark of detector+verdict deferred until dry-run history exists to label.
+- Plan: `BREAKING_ALERTS_PLAN.md`. Not yet deployed; no schedule, no table created, no SES.
+
+Files: `amplify/backend/function/newsBreakingAlert/src/{significance,render,index}.js` + `test-significance.mjs` + `package.json` (new), `breaking/review.js` (new), `BREAKING_ALERTS_PLAN.md` (new).
+
 ## 2026-06-05 (onboarding: auto-show is now a single welcome popover, not a 6-step walk)
 
 The first-visit experience was a 6-step nav walkthrough — too much procedure to greet a new user with. Replaced the auto-shown tour with a single screen-centered welcome popover (`SITE_WELCOME`) that names the four sections in one glance and points at the "?" for more. The fuller multi-step `SITE_INTRO` walk is now on-demand only — replayed from the "?" button on pages without their own page tour. The `/economy` per-page tour is unchanged.

@@ -16,8 +16,10 @@ Everyone reading this site is a pro reader ([[feedback-audience-depth]]). The we
 5. **Forecast scorecard** — what we predicted & how it's tracking (deterministic, from `prediction_track_record`; honest empty state until verdicts exist). *Computed, not LLM-narrated, to keep numbers honest.*
 6. **What to watch next week** — forward watch items.
 
-## Honesty principle (professional AND grounded)
-LLM-written synthesis, but grounded **entirely in analysis we already generated and cited** — `THREAD_ANALYSIS`, `COUNTRY_INTELLIGENCE`, `ECONOMIC_IMPACT`, the prediction log. The model *connects and elevates* grounded analysis; it never mints new facts. Same discipline as the rest of the pipeline. Fail-empty on a thin week rather than ship filler.
+## Composition & honesty (decided 2026-06-10)
+**Free-form Markdown prose, not a rigid field schema** — fixed fields produced formulaic, summary-like output. The prompt encodes real tradecraft (ICD 203 analytic standards, Sherman Kent's estimative-probability ladder, Heuer's bias traps, BLUF + nut-graf + Economist-leader arc): lead with the judgment, stand-back context, evidence per beat, cross-currents, a steel-manned alternative reading, calibrated forward view with falsifiable indicators.
+
+**Generation mode = FREE by default** (model may enrich with its own knowledge for richer analysis), pass `{mode:'grounded'}` for strict. The honesty guarantee is the **mandatory one-click human review** (`weekly/review.js`) before publish — the human is the grounding/verification layer, scanning for any too-specific ungrounded number/date. This is acceptable for the *weekly* (not time-pressured) in a way it isn't for breaking. Output stored at the canonical `WEEKLY_BRIEF` SK as `{ headline, dek, brief(Markdown), mode, status }`.
 
 ## Pipeline
 1. **`newsWeeklyBrief` Lambda** (dedicated; [[feedback-clean-architecture]]). Gathers the 7-day window → selects top threads/countries by significance → feeds their real analyses into a **DeepSeek V4** synthesis prompt → produces the qualitative sections → stores `WEEKLY_BRIEF#{weekKey}` / `WEEKLY_BRIEF`, `status: 'draft'`. **Manual-invoke first (no schedule) until output quality is trusted** — mirrors the breaking-detector dry-run approach.

@@ -37,8 +37,10 @@ exports.handler = async (event = {}) => {
   if (!LLM_KEY) return fail('Missing LLM key (XAI_API_KEY)');
 
   const weekKey = (event.weekKey || new Date().toISOString().slice(0, 10));
-  const mode = event.mode === 'free' ? 'free' : 'grounded';
-  const SK = mode === 'free' ? 'WEEKLY_BRIEF_FREE' : 'WEEKLY_BRIEF'; // free draft kept separate
+  // Default is FREE (richer analysis); the mandatory human review (weekly/review.js) is the
+  // grounding/verification layer before publish. Pass {mode:'grounded'} to force strict.
+  const mode = event.mode === 'grounded' ? 'grounded' : 'free';
+  const SK = 'WEEKLY_BRIEF'; // canonical record the serving layer reads (mode stored as an attr)
   console.log(`[weekly] generating ${mode} brief for week ending ${weekKey}`);
 
   const entries = await readArchiveEntries(WEEK_DAYS);

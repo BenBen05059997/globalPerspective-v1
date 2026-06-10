@@ -621,7 +621,25 @@ Single owner of `GlobalPerspectiveUserPrefs`. Two responsibilities:
    - Both require `Authorization: Bearer <firebase-id-token>` (`uid` = token sub); no token → 401. Powers the Account → Notifications tab.
 3. **In-app notification feed** (added 2026-06-10) — **public** `list_alerts` (no auth): scans `GlobalPerspectiveBreakingAlerts` for `status ∈ {confirmed, sent}`, newest-first, returns `[{ threadId, title, url, at }]` (or `[]`). Powers the nav notification bell. Read-state is client-side (localStorage), so no per-user write.
 
-**Key env vars:** `TOPICS_DDB_TABLE` (=`NewsCache`), `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE` (=`GlobalPerspectiveUserPrefs`), `FIREBASE_PROJECT_ID`. **Role:** `newsRecommend-role` (Get/Update/Put on UserPrefs, read on NewsCache + SavedItems).
+**Key env vars:** `TOPICS_DDB_TABLE` (=`NewsCache`), `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE` (=`GlobalPerspectiveUserPrefs`), `BREAKING_ALERTS_TABLE`, `SITE_URL`, `FIREBASE_PROJECT_ID`. **Role:** `newsRecommend-role` (Get/Update/Put on UserPrefs, read on NewsCache + SavedItems, Scan on BreakingAlerts).
+
+---
+
+### 23. `newsWeeklyBrief`
+**Path:** `amplify/backend/function/newsWeeklyBrief/src/index.js`
+**Trigger:** Manual-invoke only (no EventBridge schedule yet — dry-run until output quality is trusted). Built + deployed 2026-06-10. Uses **DeepSeek V4**.
+
+Generates the **Weekly Intelligence Brief** — a professional, analyst-grade 7-day synthesis (distinct from the daily `DAILY_BRIEF`). Plan: `WEEKLY_DIGEST_PLAN.md`.
+
+**What it does:**
+1. Reads the last 7 days of archive entries; groups by `threadId`; selects the top threads (by coverage) + top countries (by volume).
+2. Pulls each one's **already-generated, already-cited** analysis (`THREAD_ANALYSIS`, `COUNTRY_INTELLIGENCE`, `ECONOMIC_IMPACT`).
+3. Calls DeepSeek with a **grounded-synthesis** prompt (connect/elevate only; never mint new facts; fail empty on a thin week) → `{ bluf, keyDevelopments[{title,whatHappened,whyItMatters,trajectory,threadId}], crossCurrents, marketsRead, watchNext[] }`.
+4. Writes `WEEKLY_BRIEF#{weekKey}` / `WEEKLY_BRIEF`, `status:'draft'` (180-day TTL).
+
+**Human approval:** `weekly/review.js` (one-click publish/hold/reject) flips `status → published` before it's served/sent — no public auth surface, mirrors `breaking/review.js`.
+
+**Key env vars:** `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values), `TOPICS_DDB_TABLE` (=`NewsCache`), `SUMMARIZE_PREDICT_TABLE`, `MAX_TOKENS`, `WEEKLY_TOP_THREADS`, `WEEKLY_TOP_COUNTRIES`. **Role:** `newsWeeklyBrief-role` (read NewsCache, Get/Put SummarizeAndPredict).
 
 ---
 
@@ -692,6 +710,7 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 | `PAIR#{pairSlug}` | `PAIR_ANALYSIS` | newsPairIntelligence | pairTitle, currentState, timeline, trajectory, rootDriver, predictions, watchItems |
 | `SYSTEMS#{countryName}` | `SYSTEMS_ANALYSIS` | newsSystemsAnalysis | nodes[], edges[] with causal graph, confidence levels, citations (14-day TTL) |
 | `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL) |
+| `WEEKLY_BRIEF#{weekKey}` | `WEEKLY_BRIEF` | newsWeeklyBrief (#23) | Analyst-grade weekly synthesis (bluf, keyDevelopments[], crossCurrents, marketsRead, watchNext[]); `status` draft→published via weekly/review.js (180-day TTL) |
 | `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata), active conflicts (ACLED), leadership change detection (90-day TTL) |
 | `ECON#THREAD#{threadId}` | `ECONOMIC_IMPACT` | newsEconomicImpact | direction, magnitude, instruments, analog, marketSnapshot, citations; quality scores added by newsEconomicQuality (21-day TTL) |
 | `TOPIC#{topicId}` | `RESEARCH_BRIEFING` | NewsProjectInvokeAgentLambda | Research briefing (first pass of two-pass prediction) |

@@ -1,0 +1,10 @@
+{
+  "name": "news-weekly-brief",
+  "version": "1.0.0",
+  "description": "Generates a professional analyst-grade weekly intelligence brief by grounded LLM synthesis of the week's THREAD_ANALYSIS / COUNTRY_INTELLIGENCE / ECONOMIC_IMPACT; writes a draft for one-click human approval. See WEEKLY_DIGEST_PLAN.md.",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0"
+  }
+}

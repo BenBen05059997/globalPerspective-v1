@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-10 (weekly intelligence brief: professional analyst-grade synthesis engine)
+
+The second email type — a **weekly intelligence brief** (distinct from the daily brief): a professional, analyst-grade 7-day synthesis, not a link roundup. Plan: `WEEKLY_DIGEST_PLAN.md`. Decided: on-site `/weekly-brief` page + email, one-click human approve, Sunday send, broadcast v1.
+
+- **New `newsWeeklyBrief` Lambda — DEPLOYED + verified.** Grounded LLM synthesis (**DeepSeek V4**): gathers the week's `THREAD_ANALYSIS` / `COUNTRY_INTELLIGENCE` / `ECONOMIC_IMPACT`, selects the top threads/countries by significance, and synthesizes a brief — **BLUF, ranked key developments (what/why/trajectory), cross-currents (systems view), markets read, watch-next**. Critical grounding rule: connects/elevates already-cited analysis, never mints new facts; fails empty on a thin week. Writes `WEEKLY_BRIEF#{weekKey}` / `WEEKLY_BRIEF`, `status:'draft'`. Created the Lambda + `newsWeeklyBrief-role` (read NewsCache, R/W SummarizeAndPredict) + DeepSeek env via CLI (secret passed via temp file, never in the command). **No schedule yet** (manual-invoke until quality is trusted). First real draft (week of 2026-06-10) verified — analyst-grade output grounded in the live week.
+- **New `weekly/review.js`** — one-click human approval (AWS CLI, no deps): list drafts, preview, publish (`status → published`) / hold / reject. Mirrors `breaking/review.js`.
+- **Next (not built):** public `weekly_brief` serving action + `/weekly-brief` page + nav/bell link; forecast-scorecard section from `prediction_track_record`; email render + Sunday EventBridge schedule.
+
+Files: `amplify/backend/function/newsWeeklyBrief/src/{index.js,package.json}` (new), `weekly/review.js` (new), `WEEKLY_DIGEST_PLAN.md` (new).
+
 ## 2026-06-10 (in-app notification bell: nav bell + global alerts feed)
 
 Added a persistent **notification bell** to the nav so users can pull up missed breaking alerts on-site — the reliable fallback when email lands in spam, and (zero email-compliance burden) the first live delivery channel ahead of email. Spec in `BREAKING_ALERTS_PLAN.md` (Component 5); rationale in `NOTIFICATION_GAP_ANALYSIS.md`.

@@ -61,9 +61,12 @@ export default function AnalysisStudio() {
     setWebSources([]);
     setChecks(null);
     try {
-      const { context, citations: cites } = await buildAnalysisContext(selectedTopics);
+      const { context, citations: cites, thin } = await buildAnalysisContext(selectedTopics);
       const deep = mode === 'deep';
-      const user = buildUserMessage({ context, mode, lensId, focus, freeform });
+      // Thin material only over-reaches in the closed-book modes; deep mode pulls
+      // fresh material from the web, so the guard doesn't apply there.
+      const thinGuard = thin && !deep;
+      const user = buildUserMessage({ context, mode, lensId, focus, freeform, thin: thinGuard });
       const { text, webSources: web } = await runChat({
         provider: byok.provider,
         model: byok.model,
@@ -80,7 +83,9 @@ export default function AnalysisStudio() {
       // asks; this verifies). In deep mode the web legitimately introduces figures
       // beyond our material, so the invented-figure check (context) is skipped —
       // phantom [n] citations are still checked.
-      setChecks(validateAnalysis(text, deep ? { citations: cites } : { citations: cites, context }));
+      setChecks(validateAnalysis(text, deep
+        ? { citations: cites }
+        : { citations: cites, context, thinInput: thinGuard }));
     } catch (err) {
       setError(err?.message || 'Analysis failed.');
     } finally {

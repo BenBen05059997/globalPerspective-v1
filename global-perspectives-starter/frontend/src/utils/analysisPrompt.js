@@ -96,9 +96,33 @@ export function clip(text, max = 1200) {
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
+// How much real material backs a single enriched story. A story with only a bare
+// headline (no summary/prediction/background) can't support a confident forecast —
+// forcing the Scenario lens onto it produces false precision (the overreach the
+// audit caught). We measure the cached prose; sources alone don't carry an analysis.
+const THIN_CHARS = 240;
+
+function storyMaterialLength(e) {
+  return [e.summary, e.prediction, e.trace].filter(Boolean).join(' ').trim().length;
+}
+
+// Assess whether the selected set is too thin to support a confident deep forecast.
+// `thin` is true when even the RICHEST selected story is below the bar — i.e. there
+// is nowhere near enough material anywhere in the set. Returns the thin story titles.
+export function assessRichness(enriched) {
+  if (!enriched || !enriched.length) return { thin: true, thinTitles: [] };
+  const lengths = enriched.map(storyMaterialLength);
+  const thinTitles = enriched
+    .filter((e, i) => lengths[i] < THIN_CHARS)
+    .map((e) => e.topic?.title)
+    .filter(Boolean);
+  const thin = Math.max(...lengths) < THIN_CHARS;
+  return { thin, thinTitles };
+}
+
 // Pure context assembler. Takes already-fetched, enriched topics:
 //   [{ topic:{ title, category, regions, sources:[{url}] }, summary, prediction, trace }]
-// and returns { context, citations:[{ n, title, regions, sources }] }.
+// and returns { context, citations:[{ n, title, regions, sources }], thin, thinTitles }.
 // No network — buildAnalysisContext() (in analysis.js) does the fetching and calls this.
 export function assembleContext(enriched) {
   const citations = [];
@@ -121,12 +145,23 @@ export function assembleContext(enriched) {
   });
 
   const context = `STORIES (cite by bracket number):\n\n${blocks.join('\n\n')}`;
-  return { context, citations };
+  const { thin, thinTitles } = assessRichness(enriched);
+  return { context, citations, thin, thinTitles };
 }
+
+// Anti-overreach instruction appended when the selected material is thin (see
+// assessRichness). Without it the lens template pressures the model into
+// manufacturing scenarios/probabilities a bare headline can't support.
+const THIN_GUARD =
+  'IMPORTANT — the material on the selected stor(y/ies) is thin (little beyond a headline). ' +
+  'Do NOT manufacture scenarios, probabilities, or specific figures the material cannot support. ' +
+  'State plainly what can and cannot be concluded, and exactly what additional information would be needed, under a "Limits of this analysis" heading. A short honest answer beats false precision.';
 
 // Compose the final user-message. `mode` is 'guided' (lens), 'freeform' (open prompt),
 // or 'deep' (web research — pair with DEEP_SYSTEM_PROMPT + a search-capable provider).
-export function buildUserMessage({ context, mode, lensId, focus, freeform }) {
+// `thin` (from assembleContext) appends the anti-overreach guard. In deep mode thin
+// is less relevant (the web supplies material) so the guard is skipped there.
+export function buildUserMessage({ context, mode, lensId, focus, freeform, thin }) {
   let task;
   if (mode === 'deep') {
     task =
@@ -142,5 +177,6 @@ export function buildUserMessage({ context, mode, lensId, focus, freeform }) {
     task = `TASK — ${lens.label}: ${lens.task}`;
     if (focus && focus.trim()) task += `\nAdditional focus from the reader: ${focus.trim()}`;
   }
-  return `${context}\n\n---\n${task}\n\nRemember: cite with [n], and flag anything the stories don't support.`;
+  const guard = thin ? `\n\n${THIN_GUARD}` : '';
+  return `${context}\n\n---\n${task}${guard}\n\nRemember: cite with [n], and flag anything the stories don't support.`;
 }

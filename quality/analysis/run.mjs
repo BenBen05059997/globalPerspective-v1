@@ -20,10 +20,11 @@ import { validateAnalysis } from '../../global-perspectives-starter/frontend/src
 import {
   SYSTEM_PROMPT,
   assembleContext,
+  assessRichness,
   buildUserMessage,
 } from '../../global-perspectives-starter/frontend/src/utils/analysisPrompt.js';
 import { runChat, getProvider } from '../../global-perspectives-starter/frontend/src/services/llm.js';
-import { GOLDEN, LIVE_FIXTURES } from './fixtures.mjs';
+import { GOLDEN, LIVE_FIXTURES, RICHNESS_CASES } from './fixtures.mjs';
 
 const C = { red: '\x1b[31m', grn: '\x1b[32m', yel: '\x1b[33m', dim: '\x1b[2m', rst: '\x1b[0m' };
 const ok = (s) => `${C.grn}${s}${C.rst}`;
@@ -42,7 +43,7 @@ function eq(a, b) {
 function layerA() {
   console.log('\n── Layer A · validator golden fixtures ──────────────────────');
   for (const g of GOLDEN) {
-    const res = validateAnalysis(g.text, { citations: g.citations, context: g.context });
+    const res = validateAnalysis(g.text, { citations: g.citations, context: g.context, thinInput: g.thinInput });
     const gotCodes = res.warnings.map((w) => w.code);
     const codesOk = eq(gotCodes, g.expect.codes);
     const errorOk = res.hasError === g.expect.hasError;
@@ -59,14 +60,32 @@ function layerA() {
   }
 }
 
+// ── Layer A2 — assessRichness (thin-input detector) regression ───────────────
+function layerRichness() {
+  console.log('\n── Layer A2 · assessRichness (thin-input guard) ─────────────');
+  for (const r of RICHNESS_CASES) {
+    const got = assessRichness(r.enriched).thin;
+    if (got === r.expectThin) {
+      passed++;
+      console.log(`  ${ok('✓')} ${r.name} → thin=${got}`);
+    } else {
+      failed++;
+      failures.push(r.name);
+      console.log(`  ${bad('✗')} ${r.name} → thin=${got}, expected ${r.expectThin}`);
+    }
+  }
+}
+
 // ── Layer B — live generation + validation ───────────────────────────────────
 async function layerB(provider, model, apiKey) {
   console.log(`\n── Layer B · live generation (${getProvider(provider)?.label || provider} · ${model}) ──`);
   for (const fx of LIVE_FIXTURES) {
-    const { context, citations } = assembleContext(fx.enriched);
+    const { context, citations, thin } = assembleContext(fx.enriched);
     for (const c of fx.cases) {
-      const label = c.mode === 'freeform' ? `freeform: "${c.freeform}"` : `lens: ${c.lensId}`;
-      const user = buildUserMessage({ context, mode: c.mode, lensId: c.lensId, freeform: c.freeform });
+      const label =
+        (c.mode === 'freeform' ? `freeform: "${c.freeform}"` : `lens: ${c.lensId}`) +
+        (thin ? ' [thin-guard]' : '');
+      const user = buildUserMessage({ context, mode: c.mode, lensId: c.lensId, freeform: c.freeform, thin });
       let text;
       try {
         ({ text } = await runChat({ provider, model, apiKey, system: SYSTEM_PROMPT, user }));
@@ -76,7 +95,7 @@ async function layerB(provider, model, apiKey) {
         console.log(`  ${bad('✗')} ${fx.name} — ${label}\n      call failed: ${err.message}`);
         continue;
       }
-      const res = validateAnalysis(text, { citations, context });
+      const res = validateAnalysis(text, { citations, context, thinInput: thin });
       const errs = res.warnings.filter((w) => w.severity === 'error');
       const warns = res.warnings.filter((w) => w.severity === 'warn');
       // A live case "passes" iff no hard error (phantom source). Soft warns are
@@ -100,6 +119,7 @@ async function layerB(provider, model, apiKey) {
 
 async function main() {
   layerA();
+  layerRichness();
 
   const apiKey = process.env.ANALYSIS_EVAL_KEY;
   const provider = process.env.ANALYSIS_EVAL_PROVIDER || 'deepseek';

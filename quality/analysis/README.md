@@ -11,8 +11,10 @@ nothing verifying the model obeyed them. These tests close that gap.
 |------|------------|
 | `../../global-perspectives-starter/frontend/src/utils/analysisValidator.js` | The shared guardrail checker. Pure/dependency-free. Used by **both** the live Studio (warning banner) and this eval. |
 | `../../global-perspectives-starter/frontend/src/utils/analysisPrompt.js` | The pure prompt layer (system prompt, lenses, context assembler, user-message builder) the Studio ships — imported here so the eval tests exactly what runs in production. |
-| `fixtures.mjs` | `GOLDEN` (frozen validator cases) + `LIVE_FIXTURES` (story-sets for live generation). |
-| `run.mjs` | The runner. Layer A always; Layer B with a key. |
+| `fixtures.mjs` | `GOLDEN` (frozen validator cases) + `RICHNESS_CASES` (thin-input detector) + `LIVE_FIXTURES` (story-sets for live generation). |
+| `run.mjs` | The runner. Layer A (validator) + A2 (`assessRichness`) always; Layer B (live) with a key. |
+| `compare.mjs` | A/B free-form vs grounded-lens on one story-set, full text + verdict. |
+| `judge.mjs` | **Layer C** — LLM-as-judge: grades live output on faithfulness/overreach/calibration/citations/insight. Needs a key. |
 
 ## What the validator flags
 
@@ -22,6 +24,7 @@ nothing verifying the model obeyed them. These tests close that gap.
 | `no_citations` | warn | A long answer that anchors none of its claims. |
 | `invented_figure` | warn | A `%` figure that appears nowhere in the source material. Soft (the model may round). |
 | `unused_source` | info | A provided story was never referenced — coverage note, not a defect. |
+| `thin_input` | info | The source material was thin; scenario specifics are lightly supported (set when the [thin-input guard](../../ANALYSIS_STUDIO_TESTING_PLAN.md) is active). |
 
 ## Running
 
@@ -35,7 +38,18 @@ ANALYSIS_EVAL_KEY=sk-… \
 ANALYSIS_EVAL_PROVIDER=deepseek \
 ANALYSIS_EVAL_MODEL=deepseek-chat \
   node quality/analysis/run.mjs
+
+# A/B free-form vs grounded lens on one story-set (full text):
+ANALYSIS_EVAL_KEY=sk-… node quality/analysis/compare.mjs 0 scenario
+
+# Layer C — LLM-as-judge (semantic quality grading):
+ANALYSIS_EVAL_KEY=sk-… node quality/analysis/judge.mjs
 ```
+
+The **judge is a quality report, not a hard gate** — its scores are model-judged
+and vary run to run. A non-zero exit means a case scored below the PASS bar
+(faithfulness ≥4, overreach ≥4, no dimension <2); read the notes, don't just trust
+the exit code.
 
 `ANALYSIS_EVAL_PROVIDER` accepts any id from `services/llm.js` (`deepseek`,
 `openai`, `gemini`, `openrouter`, `anthropic`). `ANALYSIS_EVAL_MODEL` defaults to

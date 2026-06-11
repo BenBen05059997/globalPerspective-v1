@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-11 (Analysis Studio: thin-input overreach guard + LLM-as-judge eval)
+
+Closed the one real quality gap the audit found — the guided Scenario lens manufacturing false-precision scenarios on bare-headline stories — and added a semantic-quality eval layer. Plan: `ANALYSIS_STUDIO_TESTING_PLAN.md` (Phases 2–4, 6).
+
+- **Thin-input guard (Phase 2):** `assessRichness()` (pure) scores source material per story (combined summary/prediction/background; bar = 240 chars on the richest story). When thin, `buildUserMessage` appends an anti-overreach instruction ("don't manufacture scenarios/figures; state what can and can't be concluded under Limits"), and the validator emits a `thin_input` *info* signal (banner caveat). Skipped in deep mode (the web supplies fresh material). **Verified live:** the thin-rumor Scenario output dropped ~3000→~1600 chars and now LEADS with "Limits of this analysis" instead of fabricating three scenarios.
+- **LLM-as-judge (Phase 3, `quality/analysis/judge.mjs`):** grades live closed-book output on faithfulness/overreach/calibration/citations/insight (1–5); catches semantic drift the regex validator can't. On first run it independently scored the thin case faithfulness 5/overreach 5 (confirming the Phase 2 fix) and **flagged the Scenario lens for inventing a date-stamped trigger ("June 15")** — logged as Phase 6 (tighten the lens's "dated where possible" wording).
+- **Eval expansion (Phase 4):** added a `thin_input` golden case + `RICHNESS_CASES` (new Layer A2 in `run.mjs`); `run.mjs`/`compare.mjs` now thread the `thin` flag. **17/17 pass** (Layer A + A2 + B, DeepSeek).
+- **Held with reasons (not built):** OpenAI Responses / Gemini grounding deep paths (can't verify without those keys — won't ship blind); Polar usage logging (billing, Phase 5).
+
+Files: `global-perspectives-starter/frontend/src/{utils/analysisPrompt.js,utils/analysisValidator.js,components/AnalysisStudio.jsx}` + `docs/` build; `quality/analysis/{run.mjs,compare.mjs,judge.mjs,fixtures.mjs,README.md}`; `ANALYSIS_STUDIO_TESTING_PLAN.md`.
+
 ## 2026-06-11 (Analysis Studio: deep-research prompt upgraded to elite analyst bar)
 
 Raised `DEEP_SYSTEM_PROMPT` from "competent desk summary" to "analyst you'd subscribe to," after an honest craft critique (it had structure + calibration but no view, soft numbers, no base rates, no non-obvious insight). The deep-research path already retrieves real sources, so we can demand rigor without loosening honesty. Plan: `ANALYSIS_STUDIO_DEEP_RESEARCH_PLAN.md`.

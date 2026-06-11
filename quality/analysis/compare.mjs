@@ -53,17 +53,19 @@ async function main() {
   const fx = LIVE_FIXTURES[fxIdx];
   if (!fx) { console.error(`No fixture at index ${fxIdx}.`); process.exit(1); }
 
-  const { context, citations } = assembleContext(fx.enriched);
+  const { context, citations, thin } = assembleContext(fx.enriched);
+  if (thin) console.log(`${C.yel}[thin-input guard active]${C.rst}`);
   console.log(`${C.bold}Story-set:${C.rst} ${fx.name}`);
   console.log(`${C.dim}${citations.map((c) => `[${c.n}] ${c.title}`).join('\n')}${C.rst}`);
   console.log(`${C.dim}Provider: ${getProvider(provider)?.label} · ${model}${C.rst}`);
 
   // Same stories, two input styles.
-  const guidedUser = buildUserMessage({ context, mode: 'guided', lensId });
+  const guidedUser = buildUserMessage({ context, mode: 'guided', lensId, thin });
   const freeUser = buildUserMessage({
     context,
     mode: 'freeform',
     freeform: 'Give a sharp intelligence analysis of the selected stories.',
+    thin,
   });
 
   const [guidedRes, freeRes] = await Promise.all([

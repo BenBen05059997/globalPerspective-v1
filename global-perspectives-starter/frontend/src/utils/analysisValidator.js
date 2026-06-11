@@ -53,13 +53,15 @@ function stripCode(text) {
  *
  *  - citations: [{ n, title, ... }] the numbered stories that were provided.
  *  - context:   the assembled STORIES block (for the invented-figure check). Optional.
+ *  - thinInput: true when the source material was thin (assessRichness) — surfaces a
+ *               coverage caveat so the reader weights scenario specifics accordingly.
  *
  * Each warning: { code, severity: 'error'|'warn'|'info', message }.
  *   error → a hard guardrail breach (phantom source). hasError=true.
  *   warn  → likely problem a reader should verify.
  *   info  → coverage note, not a defect.
  */
-export function validateAnalysis(text, { citations = [], context = '' } = {}) {
+export function validateAnalysis(text, { citations = [], context = '', thinInput = false } = {}) {
   const warnings = [];
   const raw = (text || '').trim();
   const body = stripCode(raw);
@@ -139,6 +141,16 @@ export function validateAnalysis(text, { citations = [], context = '' } = {}) {
           `${unused.map((n) => `[${n}]`).join(', ')} not referenced in the analysis.`,
       });
     }
+  }
+
+  // 5) Thin input — coverage caveat (not a defect in the output itself). Surfaced so a
+  //    reader treats any scenario specifics as lightly-supported.
+  if (thinInput) {
+    warnings.push({
+      code: 'thin_input',
+      severity: 'info',
+      message: 'Limited source material backed this analysis — treat scenario specifics as lightly supported.',
+    });
   }
 
   const hasError = warnings.some((w) => w.severity === 'error');

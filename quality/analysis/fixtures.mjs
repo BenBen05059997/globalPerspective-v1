@@ -87,6 +87,48 @@ export const GOLDEN = [
     context: 'STORIES\n[1] A\nSummary: navies traded warnings.\n[2] B\nSummary: talks reopened.',
     expect: { codes: [], hasError: false },
   },
+  {
+    name: 'thin_input — coverage caveat surfaces when material was thin',
+    text: '## Read\nThe core driver sits in [1]; little can be concluded from the limited material.',
+    citations: [{ n: 1, title: 'A' }],
+    context: 'STORIES\n[1] A',
+    thinInput: true,
+    expect: { codes: ['thin_input'], hasError: false },
+  },
+];
+
+// ── assessRichness (thin-input detector) cases ───────────────────────────────
+export const RICHNESS_CASES = [
+  {
+    name: 'rich set — substantive summaries',
+    enriched: [
+      { topic: { title: 'A' }, summary: 'x'.repeat(300), prediction: '', trace: '' },
+      { topic: { title: 'B' }, summary: 'y'.repeat(50), prediction: '', trace: '' },
+    ],
+    expectThin: false, // the richest story clears the bar
+  },
+  {
+    name: 'thin set — single bare-headline rumor',
+    enriched: [
+      { topic: { title: 'Unconfirmed reshuffle' }, summary: 'Unverified posts claim a removal.', prediction: '', trace: '' },
+    ],
+    expectThin: true,
+  },
+  {
+    name: 'thin set — every story below the bar',
+    enriched: [
+      { topic: { title: 'A' }, summary: 'short', prediction: '', trace: '' },
+      { topic: { title: 'B' }, summary: '', prediction: 'tiny', trace: '' },
+    ],
+    expectThin: true,
+  },
+  {
+    name: 'rich via combined fields — summary+prediction+trace clear the bar',
+    enriched: [
+      { topic: { title: 'A' }, summary: 'a'.repeat(100), prediction: 'b'.repeat(80), trace: 'c'.repeat(80) },
+    ],
+    expectThin: false,
+  },
 ];
 
 // ── LIVE story-sets ──────────────────────────────────────────────────────────

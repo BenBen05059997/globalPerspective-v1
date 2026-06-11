@@ -98,25 +98,34 @@ Per `CLAUDE.md`:
 
 ---
 
-## 6. Future phases (not built yet)
+## 6. Phases
 
-- **Phase 2 — thin-input overreach guard.** Before generation, score context
-  richness (does any selected story have summary/prediction/figures, or just a
-  bare headline?). If thin, either (a) strengthen the system prompt's refusal
-  instruction for that run, or (b) for the Scenario lens specifically, downshift to
-  a "what we can/can't say" template instead of forcing N scenarios. Add a
-  `thin_input` *info* signal to the validator so the banner notes low support.
-- **Phase 3 — LLM-as-judge (Layer C).** A second model grades each output for
-  faithfulness/calibration/overreach (mirrors the economic-quality judge,
-  `project_economic_quality_judge`). Heuristics catch the obvious; a judge catches
-  semantic drift the regex can't. Run in the eval, not live (cost).
-- **Phase 4 — benchmark set.** Grow `fixtures.mjs` into a graded golden set
-  (good/adversarial outputs per lens) so regressions and prompt edits are measured,
-  not vibe-checked. Capture real flagged outputs from production as new fixtures.
-- **Phase 5 — production usage logging.** Once metered (Polar credits, see
+- **Phase 2 — thin-input overreach guard. ✅ SHIPPED 2026-06-11.** `assessRichness()`
+  scores context richness (combined summary/prediction/background length; bar =
+  240 chars on the richest story). When thin, `buildUserMessage` appends an
+  anti-overreach instruction (don't manufacture scenarios/figures; state limits) and
+  the validator emits a `thin_input` *info* signal. Verified live: the thin-rumor
+  Scenario output dropped from ~3000→~1600 chars and now LEADS with "Limits of this
+  analysis" instead of fabricating three scenarios; the LLM-judge scores it
+  faithfulness 5 / overreach 5. Skipped in deep mode (the web supplies material).
+- **Phase 3 — LLM-as-judge (Layer C). ✅ SHIPPED 2026-06-11** (`quality/analysis/judge.mjs`).
+  Grades live closed-book output on faithfulness / overreach / calibration /
+  citations / insight (1–5), PASS = faithfulness ≥4 ∧ overreach ≥4 ∧ no dim <2.
+  Quality report, not a hard gate. **Finding on first run:** it flagged the Scenario
+  lens for inventing a *date-stamped* trigger ("June 15") — a real overreach the
+  regex can't catch (not a `%`, not a phantom `[n]`). → see Phase 6.
+- **Phase 4 — benchmark set. ✅ STARTED 2026-06-11.** `fixtures.mjs` grew a
+  `thin_input` golden case + `RICHNESS_CASES` (Layer A2). Still TODO: capture real
+  flagged production outputs as fixtures; per-lens adversarial goldens.
+- **Phase 5 — production usage logging.** (unbuilt) Once metered (Polar credits,
   `project_billing_deprecated` / `POLAR_BILLING_PLAN.md`), log per-run validator
-  verdicts (codes only, never the user's key or full text) to measure how often
-  each guardrail fires by mode/lens/provider — the real-world quality signal.
+  verdicts (codes only, never the user's key or full text) to measure how often each
+  guardrail fires by mode/lens/provider.
+- **Phase 6 — Scenario-lens date discipline.** (NEW, from the Phase 3 finding) The
+  lens's "dated where possible" wording nudges the model to invent dates when the
+  material has none. Tighten to "dated ONLY where a date is in the material; else say
+  'timing unclear'." Consider a validator check for dates absent from context (harder
+  than the `%` check — many date forms).
 
 ---
 

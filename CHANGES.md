@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-06-11 (Analysis Studio: deep-research prompt upgraded to elite analyst bar)
+
+Raised `DEEP_SYSTEM_PROMPT` from "competent desk summary" to "analyst you'd subscribe to," after an honest craft critique (it had structure + calibration but no view, soft numbers, no base rates, no non-obvious insight). The deep-research path already retrieves real sources, so we can demand rigor without loosening honesty. Plan: `ANALYSIS_STUDIO_DEEP_RESEARCH_PLAN.md`.
+
+- New required sections: **Bottom line** (a directional, ideally non-consensus *thesis* + confidence — a view, not a summary); **What happened** (dense with *hard numbers pulled from sources*, attributed — "a large share" is a failure); **Why** (concrete transmission mechanism); **What might happen next** (scenarios each with a *historical analog/base rate* justifying the probability + a *dated, falsifiable trigger*); **What the consensus is missing** (one genuinely non-obvious insight); **Who is affected**.
+- Honesty kept intact: distinguish fact from judgment, give ranges + which source you trust on conflict, confident "we can't call this yet" over false precision. Validated by running the assistant as the engine on a live story (US–Iran/Hormuz + Broadcom): v2 produced a non-consensus thesis, sourced numbers (~20m b/d, +143% AI rev, $16B vs $17.2B), the 2019 Abqaiq analog (+19.5%→round-tripped ~2wks), and a China-leverage read — guardrail check `ok:true`, 0 warnings.
+
+Files: `global-perspectives-starter/frontend/src/utils/analysisPrompt.js` + `docs/` build; `ANALYSIS_STUDIO_DEEP_RESEARCH_PLAN.md` (new).
+
 ## 2026-06-11 (Analysis Studio: "Deep research (web)" mode + Perplexity provider)
 
 Answered "shouldn't the free-form prompt say *search the internet and find as many resources as you can*?" the industry-standard way. A plain chat API **cannot** search — prompting it to would make the model fake having searched (fabricated sources, our worst failure). Deep-research products (Perplexity, OpenAI/Gemini deep research) all wire a **real retrieval tool** into the call; we now do the same, gated to providers whose API genuinely searches.

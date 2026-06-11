@@ -133,6 +133,26 @@
   cursor: pointer;
 }
 .as-mode.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.as-mode:disabled { opacity: 0.45; cursor: not-allowed; }
+.as-mode-tag {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft, #f3e6df);
+  color: var(--accent, #b4552d);
+  font-family: var(--mono);
+  font-size: var(--text-2xs, 10px);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.as-mode.on .as-mode-tag { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.as-deep-note {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--ink-mid);
+  line-height: 1.5;
+}
 
 /* ── Lenses ─────────────────────────────────────── */
 .as-lenses { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-3); }

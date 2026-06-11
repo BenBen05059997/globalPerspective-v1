@@ -106,3 +106,13 @@
 }
 .pm-save:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
 .pm-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pm-search-note {
+  margin: 2px 0 0;
+  padding: 7px 10px;
+  border-radius: var(--r-md);
+  background: var(--paper-2);
+  font-size: var(--text-xs);
+  color: var(--ink-mid);
+  line-height: 1.45;
+}

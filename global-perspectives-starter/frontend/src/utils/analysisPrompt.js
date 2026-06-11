@@ -19,6 +19,21 @@ export const SYSTEM_PROMPT = [
   'Write clean Markdown: short ## section headings and concise, specific bullet points. Be analytical, not generic.',
 ].join(' ');
 
+// Deep-research variant — ONLY for providers whose API actually searches the web
+// (Perplexity sonar; Anthropic with the web_search tool attached). The closed-book
+// SYSTEM_PROMPT forbids outside material; this one instructs the model to gather it —
+// via REAL retrieval, never from memory. Sending this to a no-search API would make
+// the model fake having searched, so services/llm.js hard-refuses that combination.
+export const DEEP_SYSTEM_PROMPT = [
+  'You are a senior geopolitical and markets intelligence analyst writing for professional readers.',
+  'You are given a set of seed stories (numbered [1], [2], …) from our intelligence pipeline.',
+  'Search the web for additional current reporting and context on these specific stories — gather as many relevant, reputable sources as you can.',
+  'Then produce a DEEP ANALYSIS structured as: ## What happened (the verified picture across sources); ## Why it happened (root causes and drivers); ## What might happen next (2–3 scenarios with rough probabilities and what to watch); ## Who is affected (actors, sectors, markets).',
+  'Cite the seed stories with their bracket numbers [n]. Claims from web research must come from sources you actually retrieved — never cite from memory, never invent a source, figure, or date.',
+  'Where sources conflict, say so. If your search surfaces little beyond the seed stories, say that plainly under "Limits of this analysis" instead of padding.',
+  'Write clean Markdown: short ## section headings and concise, specific bullet points. Be analytical, not generic.',
+].join(' ');
+
 // Guided lenses — fixed templates. Each `task` is appended after the cited context.
 export const LENSES = [
   {
@@ -104,9 +119,16 @@ export function assembleContext(enriched) {
   return { context, citations };
 }
 
-// Compose the final user-message. `mode` is 'guided' (lens) or 'freeform' (open prompt).
+// Compose the final user-message. `mode` is 'guided' (lens), 'freeform' (open prompt),
+// or 'deep' (web research — pair with DEEP_SYSTEM_PROMPT + a search-capable provider).
 export function buildUserMessage({ context, mode, lensId, focus, freeform }) {
   let task;
+  if (mode === 'deep') {
+    task =
+      'DEEP RESEARCH REQUEST: Search the web for additional current reporting on the seed stories above and produce the structured deep analysis (What happened / Why / What might happen next / Who is affected).';
+    if (freeform && freeform.trim()) task += `\nReader's focus: ${freeform.trim()}`;
+    return `${context}\n\n---\n${task}\n\nCite seed stories with [n]; web claims only from sources you actually retrieved.`;
+  }
   if (mode === 'freeform') {
     task = (freeform || '').trim() || 'Give a sharp intelligence analysis of the selected stories.';
     task = `ANALYST REQUEST: ${task}`;

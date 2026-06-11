@@ -78,6 +78,14 @@ export default function ProviderModal({ onClose, onSaved }) {
             </select>
           </label>
 
+          {p.webSearch && (
+            <p className="pm-search-note">
+              {p.webSearch === 'always'
+                ? '🔎 This model searches the web on every run — it powers the Deep research mode.'
+                : '🔎 Supports web search via the provider’s tool — unlocks the Deep research mode.'}
+            </p>
+          )}
+
           <label className="pm-label">
             API key
             <input

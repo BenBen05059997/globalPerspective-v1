@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-11 (Analysis Studio: "Deep research (web)" mode + Perplexity provider)
+
+Answered "shouldn't the free-form prompt say *search the internet and find as many resources as you can*?" the industry-standard way. A plain chat API **cannot** search — prompting it to would make the model fake having searched (fabricated sources, our worst failure). Deep-research products (Perplexity, OpenAI/Gemini deep research) all wire a **real retrieval tool** into the call; we now do the same, gated to providers whose API genuinely searches.
+
+- **Perplexity joins the BYOK chooser** (`sonar-pro`, `sonar`, `sonar-reasoning-pro`, `sonar-deep-research` — OpenAI-compatible at `api.perplexity.ai`; every run searches natively and returns `citations`/`search_results`). Anthropic gains its official `web_search_20250305` server tool, attached only in deep mode. Verified against both providers' docs.
+- **Third mode: "Deep research 🔎web"** alongside Guided/Free-form: our stories seed a real web search; `DEEP_SYSTEM_PROMPT` instructs gather-as-many-reputable-sources-as-you-can → structured deep analysis (What happened / Why / What might happen next / Who is affected), seed stories cited `[n]`, web claims only from retrieved sources, conflicts flagged, thin search = honest "Limits" instead of padding.
+- **Honest gating, never silent degradation:** the mode is disabled (with the reason in the tooltip) for DeepSeek/OpenAI/Gemini whose APIs can't search via our path; `runChat` also hard-refuses `webResearch` on a no-search provider. Switching to a no-search provider drops you out of deep mode. The provider modal labels search-capable choices.
+- **Web sources rendered + validator adapted:** model-retrieved sources listed under the analysis ("Web sources (model-retrieved)"), disclaimer notes they're not pipeline-verified; phantom-`[n]`-citation check still enforced in deep mode, the invented-figure check is skipped there (the web legitimately introduces new figures). `runChat` now returns `{ text, webSources }` (eval scripts updated; 12/12 still pass).
+
+Files: `global-perspectives-starter/frontend/src/{services/llm.js,utils/analysisPrompt.js,utils/analysis.js,components/AnalysisStudio.jsx,components/AnalysisStudio.css,components/ProviderModal.jsx,components/ProviderModal.css}` + `docs/` build; `quality/analysis/{run.mjs,compare.mjs}`.
+
 ## 2026-06-11 (Analysis Studio: output guardrail validator + banner + eval harness)
 
 Made the Analysis Studio (`/analyze`) honest *in fact*, not just in instruction. Its guardrails — cite real sources, never invent figures, refuse on thin data — previously lived only as system-prompt text, with nothing verifying the model obeyed them. On an intelligence product an analysis that cites a non-existent source or invents a percentage is misinformation, so the output now gets checked. Plan: `ANALYSIS_STUDIO_TESTING_PLAN.md`.

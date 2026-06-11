@@ -66,10 +66,12 @@ async function main() {
     freeform: 'Give a sharp intelligence analysis of the selected stories.',
   });
 
-  const [guided, free] = await Promise.all([
+  const [guidedRes, freeRes] = await Promise.all([
     runChat({ provider, model, apiKey, system: SYSTEM_PROMPT, user: guidedUser }),
     runChat({ provider, model, apiKey, system: SYSTEM_PROMPT, user: freeUser }),
   ]);
+  const guided = guidedRes.text;
+  const free = freeRes.text;
 
   printResult(`GROUNDED · guided lens: ${getLens(lensId).label}`, guided, validateAnalysis(guided, { citations, context }));
   printResult('FREE-FORM · open prompt', free, validateAnalysis(free, { citations, context }));

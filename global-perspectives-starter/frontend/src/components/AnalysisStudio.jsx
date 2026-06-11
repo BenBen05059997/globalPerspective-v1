@@ -3,7 +3,7 @@ import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import { getProvider } from '../services/llm';
 import { runChat } from '../services/llm';
 import { loadByok } from '../utils/byok';
-import { LENSES, SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '../utils/analysis';
+import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '../utils/analysis';
 import { validateAnalysis } from '../utils/analysisValidator';
 import ProviderModal from './ProviderModal';
 import Markdown from './Markdown';
@@ -26,11 +26,16 @@ export default function AnalysisStudio() {
   const [running, setRunning] = useState(false);
   const [report, setReport] = useState(null);
   const [citations, setCitations] = useState([]);
+  const [webSources, setWebSources] = useState([]);
   const [checks, setChecks] = useState(null);
   const [error, setError] = useState(null);
 
   const provider = byok ? getProvider(byok.provider) : null;
   const modelChip = byok ? `${provider?.label || byok.provider} · ${byok.model}` : 'Choose model';
+  // Deep research needs an API that actually searches the web (Perplexity native,
+  // Anthropic via its web_search tool). For others the mode is disabled with an
+  // honest reason — a "search the web" prompt to a no-search API fakes its sources.
+  const canDeepResearch = !byok || Boolean(provider?.webSearch);
 
   const selectedTopics = useMemo(
     () => topics.filter((t) => selected.includes(t.topicId || t.id)),
@@ -53,22 +58,29 @@ export default function AnalysisStudio() {
     setRunning(true);
     setReport(null);
     setCitations([]);
+    setWebSources([]);
     setChecks(null);
     try {
       const { context, citations: cites } = await buildAnalysisContext(selectedTopics);
+      const deep = mode === 'deep';
       const user = buildUserMessage({ context, mode, lensId, focus, freeform });
-      const text = await runChat({
+      const { text, webSources: web } = await runChat({
         provider: byok.provider,
         model: byok.model,
         apiKey: byok.key,
-        system: SYSTEM_PROMPT,
+        system: deep ? DEEP_SYSTEM_PROMPT : SYSTEM_PROMPT,
         user,
+        webResearch: deep,
+        maxTokens: deep ? 3000 : 1600,
       });
       setReport(text);
       setCitations(cites);
+      setWebSources(web || []);
       // Enforce the honesty guardrails on what actually came back (the prompt only
-      // asks; this verifies). Surfaced as a banner above the analysis.
-      setChecks(validateAnalysis(text, { citations: cites, context }));
+      // asks; this verifies). In deep mode the web legitimately introduces figures
+      // beyond our material, so the invented-figure check (context) is skipped —
+      // phantom [n] citations are still checked.
+      setChecks(validateAnalysis(text, deep ? { citations: cites } : { citations: cites, context }));
     } catch (err) {
       setError(err?.message || 'Analysis failed.');
     } finally {
@@ -148,9 +160,35 @@ export default function AnalysisStudio() {
             <button className={`as-mode${mode === 'freeform' ? ' on' : ''}`} onClick={() => setMode('freeform')}>
               Free-form
             </button>
+            <button
+              className={`as-mode${mode === 'deep' ? ' on' : ''}`}
+              onClick={() => canDeepResearch && setMode('deep')}
+              disabled={!canDeepResearch}
+              title={canDeepResearch
+                ? 'The model searches the web for extra reporting on your stories'
+                : `${provider?.label || 'This provider'}'s API can't search the web — choose Perplexity or Anthropic`}
+            >
+              Deep research <span className="as-mode-tag">web</span>
+            </button>
           </div>
 
-          {mode === 'guided' ? (
+          {mode === 'deep' ? (
+            <>
+              <p className="as-deep-note">
+                Our stories seed a real web search ({provider?.webSearch === 'always'
+                  ? 'built into this model'
+                  : 'via the provider’s search tool'}) — the model gathers current reporting,
+                then writes: what happened · why · what might happen next · who’s affected.
+              </p>
+              <textarea
+                className="as-textarea"
+                placeholder="Optional focus — e.g. 'emphasize the energy supply angle' (leave empty for the full deep analysis)"
+                value={freeform}
+                onChange={(e) => setFreeform(e.target.value)}
+                rows={3}
+              />
+            </>
+          ) : mode === 'guided' ? (
             <>
               <div className="as-lenses">
                 {LENSES.map((l) => (
@@ -228,6 +266,18 @@ export default function AnalysisStudio() {
                 </div>
               )}
               <Markdown text={report} className="as-md" />
+              {webSources.length > 0 && (
+                <div className="as-cites">
+                  <div className="label">Web sources (model-retrieved)</div>
+                  <ol>
+                    {webSources.map((w) => (
+                      <li key={w.url}>
+                        <a href={w.url} target="_blank" rel="noopener noreferrer">{w.title}</a>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
               {citations.length > 0 && (
                 <div className="as-cites">
                   <div className="label">Sources</div>
@@ -249,8 +299,9 @@ export default function AnalysisStudio() {
                 </div>
               )}
               <p className="as-disclaimer">
-                Generated by your chosen model from our story data. Treat as analyst input, not fact —
-                verify load-bearing claims against the linked sources.
+                Generated by your chosen model from our story data
+                {webSources.length > 0 && ' plus model-retrieved web sources (not verified by our pipeline)'}.
+                Treat as analyst input, not fact — verify load-bearing claims against the linked sources.
               </p>
             </>
           )}
@@ -260,7 +311,12 @@ export default function AnalysisStudio() {
       {modalOpen && (
         <ProviderModal
           onClose={() => setModalOpen(false)}
-          onSaved={() => setByok(loadByok())}
+          onSaved={() => {
+            const next = loadByok();
+            setByok(next);
+            // If they switched to a provider that can't search, drop out of deep mode.
+            if (mode === 'deep' && next && !getProvider(next.provider)?.webSearch) setMode('guided');
+          }}
         />
       )}
     </div>

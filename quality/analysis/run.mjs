@@ -69,7 +69,7 @@ async function layerB(provider, model, apiKey) {
       const user = buildUserMessage({ context, mode: c.mode, lensId: c.lensId, freeform: c.freeform });
       let text;
       try {
-        text = await runChat({ provider, model, apiKey, system: SYSTEM_PROMPT, user });
+        ({ text } = await runChat({ provider, model, apiKey, system: SYSTEM_PROMPT, user }));
       } catch (err) {
         failed++;
         failures.push(`${fx.name} / ${label}`);

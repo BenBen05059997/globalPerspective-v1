@@ -14,6 +14,7 @@ import { assembleContext, pickText, clip } from './analysisPrompt';
 // keep working unchanged.
 export {
   SYSTEM_PROMPT,
+  DEEP_SYSTEM_PROMPT,
   LENSES,
   getLens,
   buildUserMessage,

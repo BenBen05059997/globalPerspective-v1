@@ -232,3 +232,52 @@
   color: var(--ink-faint);
   line-height: 1.5;
 }
+
+/* ── Guardrail check banner ─────────────────────── */
+.as-checks {
+  margin: 0 0 var(--space-5);
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--risk-e);
+  background: var(--risk-e-soft);
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+.as-checks.err {
+  border-color: var(--risk-h);
+  background: var(--risk-h-soft);
+}
+.as-checks.ok {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-color: var(--risk-l);
+  background: var(--risk-l-soft);
+  color: var(--ink-mid);
+}
+.as-checks-head {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+.as-checks ul { margin: 0; padding: 0; list-style: none; }
+.as-checks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0;
+  color: var(--ink-mid);
+  line-height: 1.45;
+}
+.as-check-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+.as-checks li.sev-error .as-check-dot { background: var(--risk-h); }
+.as-checks li.sev-warn .as-check-dot  { background: var(--risk-e); }
+.as-checks li.sev-info .as-check-dot  { background: var(--ink-faint); }
+.as-checks.ok .as-check-dot { background: var(--risk-l); margin-top: 0; }

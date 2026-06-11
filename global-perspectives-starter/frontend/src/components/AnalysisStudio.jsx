@@ -4,6 +4,7 @@ import { getProvider } from '../services/llm';
 import { runChat } from '../services/llm';
 import { loadByok } from '../utils/byok';
 import { LENSES, SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '../utils/analysis';
+import { validateAnalysis } from '../utils/analysisValidator';
 import ProviderModal from './ProviderModal';
 import Markdown from './Markdown';
 import './AnalysisStudio.css';
@@ -25,6 +26,7 @@ export default function AnalysisStudio() {
   const [running, setRunning] = useState(false);
   const [report, setReport] = useState(null);
   const [citations, setCitations] = useState([]);
+  const [checks, setChecks] = useState(null);
   const [error, setError] = useState(null);
 
   const provider = byok ? getProvider(byok.provider) : null;
@@ -51,6 +53,7 @@ export default function AnalysisStudio() {
     setRunning(true);
     setReport(null);
     setCitations([]);
+    setChecks(null);
     try {
       const { context, citations: cites } = await buildAnalysisContext(selectedTopics);
       const user = buildUserMessage({ context, mode, lensId, focus, freeform });
@@ -63,6 +66,9 @@ export default function AnalysisStudio() {
       });
       setReport(text);
       setCitations(cites);
+      // Enforce the honesty guardrails on what actually came back (the prompt only
+      // asks; this verifies). Surfaced as a banner above the analysis.
+      setChecks(validateAnalysis(text, { citations: cites, context }));
     } catch (err) {
       setError(err?.message || 'Analysis failed.');
     } finally {
@@ -198,6 +204,29 @@ export default function AnalysisStudio() {
             <div className="as-muted">Running on {modelChip}…</div>
           ) : (
             <>
+              {checks && checks.warnings.length > 0 && (
+                <div className={`as-checks${checks.hasError ? ' err' : ''}`}>
+                  <div className="as-checks-head">
+                    {checks.hasError
+                      ? 'Guardrail check flagged a problem in this output'
+                      : 'Guardrail check — please verify the flagged items'}
+                  </div>
+                  <ul>
+                    {checks.warnings.map((w, i) => (
+                      <li key={i} className={`sev-${w.severity}`}>
+                        <span className="as-check-dot" aria-hidden />
+                        {w.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {checks && checks.ok && (
+                <div className="as-checks ok">
+                  <span className="as-check-dot" aria-hidden />
+                  Guardrail check passed — every source cited exists and no unsupported figures were detected.
+                </div>
+              )}
               <Markdown text={report} className="as-md" />
               {citations.length > 0 && (
                 <div className="as-cites">

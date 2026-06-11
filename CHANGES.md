@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-06-11 (Analysis Studio: output guardrail validator + banner + eval harness)
+
+Made the Analysis Studio (`/analyze`) honest *in fact*, not just in instruction. Its guardrails — cite real sources, never invent figures, refuse on thin data — previously lived only as system-prompt text, with nothing verifying the model obeyed them. On an intelligence product an analysis that cites a non-existent source or invents a percentage is misinformation, so the output now gets checked. Plan: `ANALYSIS_STUDIO_TESTING_PLAN.md`.
+
+- **Shared guardrail validator** (`utils/analysisValidator.js`, pure/dependency-free): flags `phantom_citation` (cites `[n]` for a story that wasn't provided — **error**), `no_citations` (long answer anchoring nothing — warn), `invented_figure` (a `%` stated as a sourced fact but absent from the material — warn), `unused_source` (info). **Precision rules** keep the banner from crying wolf: scenario probabilities (`~60%`, `(15%)`) and roundings (`about 12%`) are excluded as analyst judgment, not fabrication; code is stripped before checking.
+- **Live banner in the Studio** (`AnalysisStudio.{jsx,css}`): every generated analysis is validated and shown a green-pass / amber-verify / red-flag banner above the output, using the site `--risk-*` tokens.
+- **Refactor for test-parity:** the pure prompt layer (system prompt, lenses, context assembler, user-message builder) was extracted to `utils/analysisPrompt.js` (no browser-only imports) so the eval imports **exactly what ships**; `utils/analysis.js` keeps `buildAnalysisContext()` and re-exports the pieces (no change for existing importers).
+- **Offline eval harness** (`quality/analysis/`): `run.mjs` Layer A (validator regression vs frozen golden fixtures, no key) + Layer B (real prompt → provider → validate live output, with a key); `compare.mjs` A/Bs free-form vs grounded-lens on the same stories with full text + verdict; `fixtures.mjs`, `README.md`. **12/12 pass** (8 golden + 4 live, DeepSeek).
+- **Audit finding** (recorded in the plan): both modes stayed honest and self-flagged limits; the guided lens is more decision-grade (probabilities + falsification criteria), but **overreaches on thin inputs** (manufactured scenarios on a single unconfirmed rumor where free-form correctly refused) — the validator catches *fabrication*, not *overreach* → Phase 2 thin-input guard.
+
+Files: `global-perspectives-starter/frontend/src/{utils/analysisValidator.js,utils/analysisPrompt.js,utils/analysis.js,components/AnalysisStudio.jsx,components/AnalysisStudio.css}` + `docs/` build; `quality/analysis/{run.mjs,compare.mjs,fixtures.mjs,README.md}`; `ANALYSIS_STUDIO_TESTING_PLAN.md` (new).
+
 ## 2026-06-10 (weekly brief → SIGNALS format + /weekly-brief signals page + weekly schedule)
 
 Pivoted the weekly brief from a synthesized "deep analysis" essay to a **signals digest** — after research into how rigorous weeklies actually work (Economist "world this week", ISW assessments, Semafor "Semaform"): they surface discrete signals and keep fact separate from judgment, never melting a grand thesis into the stream. An automated synthesizer overreaches when forced to connect (it led with the dramatic read + invented specifics — the failure the user's audit caught). The signals model fixes all three failure modes.

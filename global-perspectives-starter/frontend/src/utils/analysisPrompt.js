@@ -46,7 +46,7 @@ export const LENSES = [
     label: 'Scenario forecast',
     blurb: 'Named scenarios with probabilities and dated triggers',
     task:
-      'Produce a SCENARIO FORECAST: 2–3 named scenarios. For each, give a rough probability, the key (dated where possible) triggers, and what evidence would confirm or kill it. End with the single most important thing to watch.',
+      'Produce a SCENARIO FORECAST: 2–3 named scenarios. For each, give a rough probability, the key triggers, and what evidence would confirm or kill it. Attach a date to a trigger ONLY if that date appears in the material; otherwise write "timing unclear" or use a relative horizon ("within weeks") — never invent a specific calendar date. End with the single most important thing to watch.',
   },
   {
     id: 'winners_losers',

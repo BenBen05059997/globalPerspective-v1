@@ -95,6 +95,27 @@ export const GOLDEN = [
     thinInput: true,
     expect: { codes: ['thin_input'], hasError: false },
   },
+  {
+    name: 'invented_date — a fabricated trigger date not in the material',
+    text: '## Scenario\n- Escalation (~25%): a clash by June 15 breaks the talks [1].',
+    citations: [{ n: 1, title: 'A' }],
+    context: 'STORIES\n[1] A\nSummary: talks continue with no timeline given.',
+    expect: { codes: ['invented_date'], hasError: false },
+  },
+  {
+    name: 'date_in_context_ok — a date present in the material is not flagged',
+    text: '## Scenario\n- The June 30 deadline [1] is the key trigger to watch.',
+    citations: [{ n: 1, title: 'A' }],
+    context: 'STORIES\n[1] A\nSummary: the parties set a June 30 deadline for the framework.',
+    expect: { codes: [], hasError: false },
+  },
+  {
+    name: 'relative_horizon_ok — "within weeks" is not a fabricated date',
+    text: '## Scenario\n- A limited incident within weeks remains plausible; timing unclear [1].',
+    citations: [{ n: 1, title: 'A' }],
+    context: 'STORIES\n[1] A\nSummary: tensions persist.',
+    expect: { codes: [], hasError: false },
+  },
 ];
 
 // ── assessRichness (thin-input detector) cases ───────────────────────────────

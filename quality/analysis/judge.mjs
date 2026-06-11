@@ -28,8 +28,9 @@ import { LIVE_FIXTURES } from './fixtures.mjs';
 const C = { red: '\x1b[31m', grn: '\x1b[32m', yel: '\x1b[33m', dim: '\x1b[2m', rst: '\x1b[0m' };
 
 const JUDGE_SYSTEM = [
-  'You are a strict editor grading an intelligence analyst\'s work. You are given the SOURCE MATERIAL the analyst was restricted to, and their ANALYSIS.',
+  'You are a strict editor grading an intelligence analyst\'s work. You are given the SOURCE MATERIAL the analyst was restricted to, the REQUEST they were answering, and their ANALYSIS.',
   'Grade ONLY against the source material — the analyst was told to use nothing else and to cite with [n].',
+  'If the REQUEST poses a hypothetical ("what would X mean?"), exploring that hypothetical with clearly-conditional reasoning is REQUIRED, not overreach — only penalise overreach when conditional consequences are stated as established facts or invent specific figures/dates absent from the material.',
   'Score each dimension 1–5 (5 best):',
   '- faithfulness: every substantive claim is supported by the source material; nothing contradicts it.',
   '- overreach: 5 = no false precision; the analyst did NOT invent figures, dates, or confident scenarios the thin material cannot support. 1 = heavy overreach.',
@@ -78,7 +79,8 @@ async function main() {
       let analysis, judgment;
       try {
         ({ text: analysis } = await runChat({ provider, model, apiKey, system: SYSTEM_PROMPT, user }));
-        const judgeUser = `SOURCE MATERIAL:\n${context}\n\n---\nANALYSIS TO GRADE:\n${analysis}`;
+        const request = c.mode === 'freeform' ? c.freeform : `Guided lens: ${c.lensId}`;
+        const judgeUser = `SOURCE MATERIAL:\n${context}\n\n---\nREQUEST:\n${request}\n\n---\nANALYSIS TO GRADE:\n${analysis}`;
         ({ text: judgment } = await runChat({ provider, model, apiKey, system: JUDGE_SYSTEM, user: judgeUser, temperature: 0 }));
       } catch (err) {
         failed++;

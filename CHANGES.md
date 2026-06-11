@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-11 (Analysis Studio: Scenario-lens date discipline — Phase 6)
+
+Fixed the overreach the LLM-judge caught: the Scenario lens invented calendar dates ("June 15") for triggers when the material had none.
+
+- **Lens wording tightened:** "attach a date to a trigger ONLY if that date appears in the material; otherwise 'timing unclear' or a relative horizon — never invent a specific calendar date."
+- **New `invented_date` validator check (warn):** explicit Month+Day / ISO dates normalized to M-D and flagged when absent from the source material; relative horizons ("within weeks") are never flagged; gated on context so deep/web mode is exempt. Golden cases added (invented_date / date_in_context_ok / relative_horizon_ok); validator suite 16/16.
+- **Verified live:** the judge that previously flagged "June 15" now scores the Scenario lens 5/5. Also improved the judge harness to receive the analyst's REQUEST, so it stops mis-flagging a user-posed hypothetical ("what would a failure of the talks mean?") as overreach — judge now 4/4 pass.
+
+Files: `global-perspectives-starter/frontend/src/{utils/analysisPrompt.js,utils/analysisValidator.js}` + `docs/` build; `quality/analysis/{fixtures.mjs,judge.mjs}`; `ANALYSIS_STUDIO_TESTING_PLAN.md`.
+
 ## 2026-06-11 (Analysis Studio: thin-input overreach guard + LLM-as-judge eval)
 
 Closed the one real quality gap the audit found — the guided Scenario lens manufacturing false-precision scenarios on bare-headline stories — and added a semantic-quality eval layer. Plan: `ANALYSIS_STUDIO_TESTING_PLAN.md` (Phases 2–4, 6).

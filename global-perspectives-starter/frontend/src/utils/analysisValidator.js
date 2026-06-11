@@ -22,6 +22,28 @@ function normPct(s) {
   return s.replace(/\s+/g, '');
 }
 
+// Specific calendar dates, for the invented-date check. We match only EXPLICIT
+// month+day forms ("June 15", "15 June", "June 15, 2026", ISO 2026-06-15) — never
+// relative horizons ("within weeks", "next month"), which are legitimate. Normalized
+// to "M-D" so "June 15" and "2026-06-15" compare equal.
+const MONTHS = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+function extractDates(text) {
+  const out = new Set();
+  const s = text || '';
+  // Month name + day: "June 15", "Jun 15th", "15 June"
+  const reMD = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b/gi;
+  const reDM = /\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/gi;
+  const reISO = /\b\d{4}-(\d{2})-(\d{2})\b/g;
+  let m;
+  while ((m = reMD.exec(s))) out.add(`${MONTHS[m[1].slice(0, 3).toLowerCase()]}-${Number(m[2])}`);
+  while ((m = reDM.exec(s))) out.add(`${MONTHS[m[2].slice(0, 3).toLowerCase()]}-${Number(m[1])}`);
+  while ((m = reISO.exec(s))) out.add(`${Number(m[1])}-${Number(m[2])}`);
+  return out;
+}
+
 // Estimative / approximation context. A percentage near these is an analyst JUDGMENT
 // the model was asked to give (scenario probabilities) or an explicit rounding — not
 // a sourced fact. The Scenario lens literally requests "a rough probability" per
@@ -124,6 +146,23 @@ export function validateAnalysis(text, { citations = [], context = '', thinInput
         message:
           `Figure${list.length > 1 ? 's' : ''} stated as fact but not found in the source material: ` +
           `${list.join(', ')}. Verify before relying on ${list.length > 1 ? 'them' : 'it'}.`,
+      });
+    }
+  }
+
+  // 3b) Invented date — a specific calendar date in the output that appears nowhere
+  //     in the source material (the Scenario lens used to fabricate trigger dates).
+  //     Closed-book only (gated on context); relative horizons are never flagged.
+  if (context) {
+    const ctxDates = extractDates(context);
+    const invented = [...extractDates(body)].filter((d) => !ctxDates.has(d));
+    if (invented.length) {
+      warnings.push({
+        code: 'invented_date',
+        severity: 'warn',
+        message:
+          `Specific date${invented.length > 1 ? 's' : ''} not found in the source material — ` +
+          'verify this is not a fabricated timeline (use a relative horizon if undated).',
       });
     }
   }

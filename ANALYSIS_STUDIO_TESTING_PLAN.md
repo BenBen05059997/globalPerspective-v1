@@ -121,11 +121,16 @@ Per `CLAUDE.md`:
   `project_billing_deprecated` / `POLAR_BILLING_PLAN.md`), log per-run validator
   verdicts (codes only, never the user's key or full text) to measure how often each
   guardrail fires by mode/lens/provider.
-- **Phase 6 — Scenario-lens date discipline.** (NEW, from the Phase 3 finding) The
-  lens's "dated where possible" wording nudges the model to invent dates when the
-  material has none. Tighten to "dated ONLY where a date is in the material; else say
-  'timing unclear'." Consider a validator check for dates absent from context (harder
-  than the `%` check — many date forms).
+- **Phase 6 — Scenario-lens date discipline. ✅ SHIPPED 2026-06-11.** Lens wording
+  changed to "attach a date ONLY if it appears in the material; else 'timing unclear'
+  / a relative horizon — never invent a calendar date." Added an `invented_date`
+  validator check (warn): explicit Month+Day / ISO dates, normalized to M-D, flagged
+  when absent from context; relative horizons ("within weeks") never flagged; gated on
+  context so deep/web mode is exempt. Golden cases: invented_date / date_in_context_ok
+  / relative_horizon_ok. **Verified:** the judge that caught "June 15" now scores the
+  Scenario lens 5/5. Also fixed the judge itself to receive the analyst's REQUEST, so
+  it no longer mis-flags a user-posed hypothetical ("what would a failure mean?") as
+  overreach — judge now 4/4 pass.
 
 ---
 

@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-06-12 (build version stamp in footer)
+
+Added a visible build version so prod deploys can be confirmed at a glance (e.g. on `/analyze` after a deploy). Vite `define` injects the git short SHA + build date at build time (`__APP_VERSION__` / `__BUILD_DATE__`); the global footer shows `v<sha> · <date>`. To keep the stamp pointing at the exact deployed commit (not its parent), the source is committed first, then the build is made against that commit, then `docs/` is committed.
+
+Files: `global-perspectives-starter/frontend/{vite.config.js,src/components/Layout.jsx,src/components/Layout.css}` + `docs/` build.
+
 ## 2026-06-11 (Analysis Studio: Scenario-lens date discipline — Phase 6)
 
 Fixed the overreach the LLM-judge caught: the Scenario lens invented calendar dates ("June 15") for triggers when the material had none.

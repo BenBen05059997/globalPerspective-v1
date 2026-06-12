@@ -7,6 +7,12 @@ import NotificationBell from './NotificationBell';
 import { useAutoTour, startTourForPath } from '../onboarding/useOnboarding';
 import './Layout.css';
 
+// Build stamp injected by Vite `define` (git SHA + date). `typeof` guard keeps it
+// safe under vitest/dev where the globals may be absent (returns 'dev').
+const _ver = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
+const _date = typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : '';
+const BUILD_LABEL = `v${_ver}${_date ? ` · ${_date}` : ''}`;
+
 function Layout({ children }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -182,6 +188,7 @@ function Layout({ children }) {
           <Link to="/disclosures">Disclosures</Link>
           <a href="mailto:globalperspectives.app@gmail.com">Contact</a>
         </div>
+        <span className="gp-footer-ver" title="Deployed build">{BUILD_LABEL}</span>
       </footer>
     </div>
   );

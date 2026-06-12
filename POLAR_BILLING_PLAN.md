@@ -17,6 +17,22 @@
 
 ---
 
+## Polar account — resources & IDs (live; update as we go)
+
+**Account (set during onboarding 2026-06-12):** type **Individual** (sole proprietor); payout country **Japan** (payout currency JPY); default **charge** currency **USD**. Org slug: `global-perspective-net` *(confirm final)*.
+
+**Product — "Global Perspectives Membership"** ($15/mo + $150/yr, USD, recurring). Created as a **DRAFT — do NOT enable live selling until the Phase-1 access-gating is built** (today all content is public, so a subscriber would be paying for what's free).
+| Plan | Product ID |
+|------|-----------|
+| Monthly ($15) | `e53eeb9a-4e2e-4b33-9c18-f0e779c07677` |
+| Yearly ($150) | `cd375325-0fd2-4223-8b10-8e02d50798fd` |
+
+> ⚠️ **Confirm environment:** Polar **Sandbox** and **Production** are fully separate, with different IDs. The IDs above were created in the onboarding flow → almost certainly **Production**. We'll build/test against **Sandbox** first (create matching Sandbox products there), then swap to these Production IDs at launch.
+
+**Still needed for the build — you generate, secrets go straight into the Lambda env vars (NOT this file):** Organization Access Token + Webhook signing secret. (Product IDs above are public checkout identifiers — safe in-repo; tokens/secrets are not.)
+
+---
+
 ## OPEN DECISIONS (we work through these one by one)
 
 ### 1. Payout country & tax registration  ← **CURRENT**

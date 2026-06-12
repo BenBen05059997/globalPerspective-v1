@@ -278,19 +278,19 @@
 
 /* ── Footer (26px status bar) ────────────────────────────── */
 .gp-footer {
-  height: var(--footer-h);
+  min-height: var(--footer-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 8px 24px;
   border-top: 1px solid var(--line);
   font-family: var(--mono);
   font-size: 10.5px;
   color: var(--ink-faint);
   letter-spacing: 0.04em;
   background: var(--paper-2);
-  white-space: nowrap;
-  overflow: hidden;
 }
 .gp-footer-links {
   display: flex;

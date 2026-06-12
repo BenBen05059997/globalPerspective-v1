@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-06-12 (fix: footer version was clipped, not missing)
+
+The build-version stamp added earlier WAS deploying correctly (verified in the live bundle) but wasn't visible: the footer was a fixed-height single row with `overflow: hidden` + `white-space: nowrap`, so on narrower windows the version span on the far right got clipped off. Fixed by letting the footer wrap (`flex-wrap: wrap`, `min-height` instead of `height`, removed the overflow clip), so the version always shows (it drops to a second line when the row is crowded). It lives at the bottom of every page.
+
+Files: `global-perspectives-starter/frontend/src/components/Layout.css` + `docs/` build.
+
 ## 2026-06-12 (Analysis Studio: registered-only gate + API-key management)
 
 Two fixes from prod use: no way to reset a wrong API key, and the feature was usable without an account.

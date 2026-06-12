@@ -73,7 +73,7 @@ export default function ProviderModal({ onClose, onSaved }) {
             Model
             <select value={model} onChange={(e) => setModel(e.target.value)}>
               {p.models.map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>{p.modelLabels?.[m] || m}</option>
               ))}
             </select>
           </label>

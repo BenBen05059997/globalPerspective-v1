@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-12 (Analysis Studio: show the actual DeepSeek model VERSION)
+
+The model picker showed opaque aliases (`deepseek-chat`/`deepseek-reasoner`) — no way to tell if you were on V3 or V4. Verified against the live DeepSeek `/models` endpoint: the only current IDs are **`deepseek-v4-flash`** and **`deepseek-v4-pro`** (both smoke-tested OK through our OpenAI-compat path; the API echoes the version in the response `model` field). The old aliases are now just legacy pointers to V4-Flash and **retire 2026-07-24**.
+
+- Picker now offers the explicit V4 IDs first (`deepseek-v4-flash` default, `deepseek-v4-pro` = strongest, best for analysis), with friendly `modelLabels` so the version is visible; the legacy aliases are kept but clearly labelled with their retirement date.
+- ProviderModal renders `modelLabels[id] || id`.
+- ⚠️ Note (backend, not fixed here): the content-pipeline Lambdas still call `deepseek-chat` via env vars — that alias retires 2026-07-24 and should be migrated to `deepseek-v4-flash`/`-pro` before then.
+
+Files: `global-perspectives-starter/frontend/src/{services/llm.js,components/ProviderModal.jsx}` + `docs/` build.
+
 ## 2026-06-12 (fix: footer version was clipped, not missing)
 
 The build-version stamp added earlier WAS deploying correctly (verified in the live bundle) but wasn't visible: the footer was a fixed-height single row with `overflow: hidden` + `white-space: nowrap`, so on narrower windows the version span on the far right got clipped off. Fixed by letting the footer wrap (`flex-wrap: wrap`, `min-height` instead of `height`, removed the overflow clip), so the version always shows (it drops to a second line when the row is crowded). It lives at the bottom of every page.

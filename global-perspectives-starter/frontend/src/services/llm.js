@@ -25,7 +25,16 @@ export const PROVIDERS = [
     type: 'openai',
     baseUrl: 'https://api.deepseek.com/v1',
     keyHint: 'sk-…',
-    models: ['deepseek-chat', 'deepseek-reasoner'],
+    // Explicit V4 IDs (verified against the live /models endpoint 2026-06-12) so the
+    // version is visible. The old deepseek-chat/-reasoner aliases now just point at
+    // V4-Flash and retire 2026-07-24 — kept as clearly-labelled legacy fallbacks.
+    models: ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-reasoner'],
+    modelLabels: {
+      'deepseek-v4-flash': 'DeepSeek V4 Flash — fast',
+      'deepseek-v4-pro': 'DeepSeek V4 Pro — strongest (best for analysis)',
+      'deepseek-chat': 'deepseek-chat (legacy → V4 Flash, retires Jul 24 2026)',
+      'deepseek-reasoner': 'deepseek-reasoner (legacy → V4 Flash thinking, retires Jul 24 2026)',
+    },
   },
   {
     id: 'perplexity',

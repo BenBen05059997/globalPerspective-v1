@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-06-12 (Analysis Studio: force DeepSeek non-thinking mode for V4)
+
+Follow-up to the V4 picker: DeepSeek's V4 models **default to thinking mode** (emit `reasoning_content`, burn the token budget, can truncate the answer) — different from the old `deepseek-chat` non-thinking behavior the Studio expects. Added a per-provider `extraBody: { thinking: { type: 'disabled' } }` to the DeepSeek entry, spread into the OpenAI-compat request body only for DeepSeek (OpenAI/Gemini/OpenRouter unaffected; Anthropic uses its own path). Verified all four DeepSeek model IDs accept the param and return clean non-thinking content; eval 20/20 on `deepseek-v4-flash`. So the picker keeps the visible V4 versions AND behaves like the known-good non-thinking model.
+
+(Separately: the backend content Lambdas were left on `deepseek-chat` — a config-only V4 swap regressed them via the same thinking-mode issue and was reverted; correct backend migration needs the same code change + redeploy before 2026-07-24, see `BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md`.)
+
+Files: `global-perspectives-starter/frontend/src/services/llm.js` + `docs/` build.
+
 ## 2026-06-12 (Analysis Studio: show the actual DeepSeek model VERSION)
 
 The model picker showed opaque aliases (`deepseek-chat`/`deepseek-reasoner`) — no way to tell if you were on V3 or V4. Verified against the live DeepSeek `/models` endpoint: the only current IDs are **`deepseek-v4-flash`** and **`deepseek-v4-pro`** (both smoke-tested OK through our OpenAI-compat path; the API echoes the version in the response `model` field). The old aliases are now just legacy pointers to V4-Flash and **retire 2026-07-24**.

@@ -35,6 +35,10 @@ export const PROVIDERS = [
       'deepseek-chat': 'deepseek-chat (legacy → V4 Flash, retires Jul 24 2026)',
       'deepseek-reasoner': 'deepseek-reasoner (legacy → V4 Flash thinking, retires Jul 24 2026)',
     },
+    // V4 models default to THINKING mode (emit reasoning_content, burn the token
+    // budget, and can truncate the answer). Force the plain non-thinking chat the
+    // Studio expects — verified accepted by all four DeepSeek model IDs above.
+    extraBody: { thinking: { type: 'disabled' } },
   },
   {
     id: 'perplexity',
@@ -120,6 +124,9 @@ async function runOpenAICompat(provider, { model, apiKey, system, user, maxToken
         { role: 'system', content: system },
         { role: 'user', content: user },
       ],
+      // Provider-specific extras (e.g. DeepSeek's thinking:disabled). Only present
+      // on providers that declare it, so OpenAI/Gemini/OpenRouter are unaffected.
+      ...(provider.extraBody || {}),
     }),
   });
   const body = await res.json().catch(() => null);

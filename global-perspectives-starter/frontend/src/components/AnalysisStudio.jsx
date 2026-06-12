@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
+import { useAuth } from '../contexts/AuthContext';
 import { getProvider } from '../services/llm';
 import { runChat } from '../services/llm';
 import { loadByok } from '../utils/byok';
@@ -13,6 +15,12 @@ const MAX_STORIES = 4;
 
 export default function AnalysisStudio() {
   const { topics, loading: topicsLoading } = useGeminiTopics();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  // Analysis Studio is a registered-only feature (anonymous guests count as
+  // not-registered). This gate is scoped to THIS feature only — it does not touch
+  // the public data hooks.
+  const isRegistered = Boolean(user && !user.isAnonymous);
 
   const [byok, setByok] = useState(() => loadByok());
   const [modalOpen, setModalOpen] = useState(false);
@@ -37,6 +45,13 @@ export default function AnalysisStudio() {
   // honest reason — a "search the web" prompt to a no-search API fakes its sources.
   const canDeepResearch = !byok || Boolean(provider?.webSearch);
 
+  // A wrong/expired key surfaces as a 401/403/auth error from the provider — point
+  // the user straight at the key editor (the #1 fix is changing the key).
+  const looksLikeKeyError = Boolean(error) && /401|403|invalid|unauthor|api key|authentication/i.test(error);
+
+  // Block the whole feature for non-registered users (anonymous guests included).
+  const blocked = !authLoading && !isRegistered;
+
   const selectedTopics = useMemo(
     () => topics.filter((t) => selected.includes(t.topicId || t.id)),
     [topics, selected]
@@ -52,6 +67,7 @@ export default function AnalysisStudio() {
 
   async function onRun() {
     setError(null);
+    if (!isRegistered) return; // the sign-in gate overlay handles this
     if (!byok) { setModalOpen(true); return; }
     if (selectedTopics.length === 0) { setError('Pick at least one story to analyze.'); return; }
 
@@ -230,7 +246,17 @@ export default function AnalysisStudio() {
           {!byok && (
             <div className="as-hint">You'll be asked to choose a model + paste your API key first.</div>
           )}
-          {error && <div className="as-error">{error}</div>}
+          {error && (
+            <div className="as-error">
+              <div>{error}</div>
+              {looksLikeKeyError && (
+                <div className="as-error-actions">
+                  This usually means the API key is wrong or expired.
+                  <button className="as-link-btn" onClick={() => setModalOpen(true)}>Change API key</button>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       </div>
 
@@ -323,6 +349,23 @@ export default function AnalysisStudio() {
             if (mode === 'deep' && next && !getProvider(next.provider)?.webSearch) setMode('guided');
           }}
         />
+      )}
+
+      {blocked && (
+        <div className="as-gate" role="dialog" aria-modal="true" aria-label="Sign in required">
+          <div className="as-gate-card">
+            <div className="label">Analysis Studio</div>
+            <h2>Sign in to analyze</h2>
+            <p>
+              Analysis Studio is available to registered accounts. Sign in (free) to pick
+              stories and run your own cited analysis.
+            </p>
+            <div className="as-gate-actions">
+              <button className="as-run" onClick={() => navigate('/signin')}>Sign in</button>
+              <button className="as-gate-back" onClick={() => navigate('/')}>Back to home</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

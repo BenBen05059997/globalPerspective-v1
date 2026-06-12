@@ -3,7 +3,79 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedItems } from '../hooks/useSavedItems';
 import { usePreferences } from '../hooks/usePreferences';
+import { loadByok, clearByok } from '../utils/byok';
+import { getProvider } from '../services/llm';
+import ProviderModal from './ProviderModal';
 import './Account.css';
+
+// Mask a key for display: keep a few head/tail chars, hide the middle.
+function maskKey(k) {
+  if (!k) return '';
+  if (k.length <= 10) return `${k.slice(0, 2)}••••`;
+  return `${k.slice(0, 5)}••••${k.slice(-4)}`;
+}
+
+// Analysis Studio BYOK key management — view / change / remove the key the reader
+// stored in this browser (it never touches our servers; see utils/byok.js).
+function AnalysisKeyPanel() {
+  const [byok, setByok] = useState(() => loadByok());
+  const [modalOpen, setModalOpen] = useState(false);
+  const provider = byok ? getProvider(byok.provider) : null;
+
+  function handleRemove() {
+    clearByok();
+    setByok(null);
+  }
+
+  return (
+    <div className="account-panel">
+      <h2 className="account-panel-title">Analysis Studio API key</h2>
+      <p className="account-panel-desc">
+        Your key is stored only in this browser and is sent straight to the provider you
+        pick — never to our servers. Use this to update it if it’s wrong or expired.
+      </p>
+
+      {byok ? (
+        <div className="account-key-card">
+          <div className="account-key-row">
+            <span className="account-key-label">Provider</span>
+            <span className="account-key-val">{provider?.label || byok.provider}</span>
+          </div>
+          <div className="account-key-row">
+            <span className="account-key-label">Model</span>
+            <span className="account-key-val">{byok.model}</span>
+          </div>
+          <div className="account-key-row">
+            <span className="account-key-label">Key</span>
+            <span className="account-key-val account-key-mono">{maskKey(byok.key)}</span>
+          </div>
+          <div className="account-key-actions">
+            <button className="account-key-btn" onClick={() => setModalOpen(true)}>Change key</button>
+            <button className="account-key-btn account-key-btn--danger" onClick={handleRemove}>Remove key</button>
+          </div>
+        </div>
+      ) : (
+        <div className="account-key-card">
+          <p className="account-panel-desc" style={{ margin: 0 }}>No API key set in this browser.</p>
+          <div className="account-key-actions">
+            <button className="account-key-btn" onClick={() => setModalOpen(true)}>Set up a key</button>
+          </div>
+        </div>
+      )}
+
+      <p className="account-panel-desc" style={{ marginTop: 12 }}>
+        <Link to="/analyze">Go to Analysis Studio →</Link>
+      </p>
+
+      {modalOpen && (
+        <ProviderModal
+          onClose={() => setModalOpen(false)}
+          onSaved={() => setByok(loadByok())}
+        />
+      )}
+    </div>
+  );
+}
 
 const TYPE_COLORS = {
   thread:  { border: '#3b82f6', badge: '#dbeafe', badgeText: '#1e40af' },
@@ -458,6 +530,12 @@ export default function Account() {
         >
           Notifications
         </button>
+        <button
+          className={`account-tab${tab === 'analysis' ? ' account-tab--active' : ''}`}
+          onClick={() => setTab('analysis')}
+        >
+          Analysis key
+        </button>
       </div>
 
       {tab === 'profile' && (
@@ -477,6 +555,8 @@ export default function Account() {
       )}
 
       {tab === 'notifications' && <NotificationsPanel />}
+
+      {tab === 'analysis' && <AnalysisKeyPanel />}
     </div>
   );
 }

@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-12 (Analysis Studio: registered-only gate + API-key management)
+
+Two fixes from prod use: no way to reset a wrong API key, and the feature was usable without an account.
+
+- **Registered-only gate:** `/analyze` now requires a signed-in (non-anonymous) account. Non-registered visitors get a blocking "Sign in to analyze" modal (Sign in → `/signin`, or Back to home). Scoped to this BYOK feature only — it does NOT touch the public data hooks (those stay anonymous-accessible).
+- **API-key management in Account:** new **"Analysis key"** tab on `/account` shows the stored provider/model + masked key, with **Change key** (re-opens the provider modal) and **Remove key** (clears it from the browser). Fixes "entered the wrong key, nowhere to reset it."
+- **Wrong-key affordance in the Studio:** when a run fails with an auth-style error (401/403/invalid key), the error now shows a one-click **"Change API key"** link that re-opens the modal — instead of leaving the user stuck.
+
+Files: `global-perspectives-starter/frontend/src/components/{AnalysisStudio.jsx,AnalysisStudio.css,Account.jsx,Account.css}` + `docs/` build.
+
 ## 2026-06-12 (build version stamp in footer)
 
 Added a visible build version so prod deploys can be confirmed at a glance (e.g. on `/analyze` after a deploy). Vite `define` injects the git short SHA + build date at build time (`__APP_VERSION__` / `__BUILD_DATE__`); the global footer shows `v<sha> · <date>`. To keep the stamp pointing at the exact deployed commit (not its parent), the source is committed first, then the build is made against that commit, then `docs/` is committed.

@@ -207,3 +207,39 @@
   font-size: 0.83rem;
   line-height: 1.6;
 }
+
+/* ── Analysis Studio key panel ──────────────────── */
+.account-panel { padding: 8px 2px; }
+.account-panel-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 6px; }
+.account-panel-desc { color: var(--text-muted, #6b7280); font-size: 0.875rem; line-height: 1.5; margin: 0 0 16px; max-width: 60ch; }
+.account-key-card {
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--card, #fff);
+  max-width: 460px;
+}
+.account-key-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 0.9rem;
+}
+.account-key-label { color: var(--text-muted, #6b7280); }
+.account-key-val { color: var(--ink, #111827); font-weight: 500; }
+.account-key-mono { font-family: var(--mono, monospace); font-weight: 400; }
+.account-key-actions { display: flex; gap: 10px; margin-top: 14px; }
+.account-key-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--line, #d1d5db);
+  border-radius: 8px;
+  background: var(--paper, #fff);
+  font-size: 0.875rem;
+  color: var(--ink, #111827);
+  cursor: pointer;
+}
+.account-key-btn:hover { border-color: var(--line-2, #9ca3af); }
+.account-key-btn--danger { color: #c0392b; border-color: #e7b9b1; }
+.account-key-btn--danger:hover { background: #fbe9e3; border-color: #c0392b; }

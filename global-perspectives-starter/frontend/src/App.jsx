@@ -23,6 +23,7 @@ import WhitepaperPage from './components/WhitepaperPage';
 import WorldMapV2 from './components/WorldMapV2';
 import EconomyPage from './components/EconomyPage';
 import AnalysisStudio from './components/AnalysisStudio';
+import MembershipPage from './components/MembershipPage';
 import TrackRecordPage from './components/TrackRecordPage';
 import WeeklyBriefPage from './components/WeeklyBriefPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -102,6 +103,7 @@ export default function App() {
               <Route path="/daily/:dateKey" element={<DailyPage />} />
               <Route path="/economy" element={<EconomyPage />} />
               <Route path="/analyze" element={<AnalysisStudio />} />
+              <Route path="/membership" element={<MembershipPage />} />
               <Route path="/track-record" element={<TrackRecordPage />} />
               <Route path="/weekly-brief" element={<WeeklyBriefPage />} />
               <Route path="/weekly" element={<WeeklyPage />} />

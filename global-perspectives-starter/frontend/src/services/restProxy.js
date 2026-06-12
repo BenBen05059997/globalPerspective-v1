@@ -301,3 +301,36 @@ export async function fetchAlerts() {
   return body;
 }
 
+// ── Polar billing (newsPolarBilling Lambda, separate Function URL) ──────────────
+// All membership actions require a Firebase JWT. The endpoint is set in docs/config.js
+// (window.POLAR_BILLING_ENDPOINT); when it's unset the Membership UI stays hidden.
+export function billingConfigured() {
+  return typeof window !== 'undefined' && !!window.POLAR_BILLING_ENDPOINT;
+}
+
+async function polarRequest(action, extra = {}) {
+  const endpoint = typeof window !== 'undefined' && window.POLAR_BILLING_ENDPOINT;
+  if (!endpoint) throw new Error('Missing POLAR_BILLING_ENDPOINT');
+  const token = getAuthToken ? await getAuthToken() : null;
+  if (!token) throw new Error('Sign in required');
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ action, ...extra }),
+  });
+  let body;
+  try { body = await res.json(); } catch { body = null; }
+  if (!res.ok) throw new Error(body?.error || `Polar HTTP ${res.status}`);
+  return body;
+}
+
+// Create a Polar Checkout Session for the signed-in user; returns { url } to redirect to.
+export async function createCheckout(plan) {
+  return polarRequest('create_checkout', { plan });
+}
+
+// Current membership for the signed-in user: { tier, status, currentPeriodEnd }.
+export async function fetchMembership() {
+  return polarRequest('get_membership');
+}
+

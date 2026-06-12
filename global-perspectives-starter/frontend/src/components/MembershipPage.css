@@ -1,0 +1,83 @@
+.mp-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-10) var(--space-5) var(--space-16);
+}
+
+.mp-head { text-align: center; margin-bottom: var(--space-8); }
+.mp-head h1 {
+  font-family: var(--serif);
+  font-size: var(--text-4xl);
+  margin: 8px 0 12px;
+  color: var(--ink);
+}
+.mp-sub {
+  max-width: 52ch;
+  margin: 0 auto;
+  color: var(--ink-mid);
+  font-size: var(--text-md);
+  line-height: 1.6;
+}
+
+.mp-benefits {
+  list-style: none;
+  margin: 0 0 var(--space-8);
+  padding: var(--space-5) var(--space-6);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  display: grid;
+  gap: 10px;
+}
+.mp-benefits li { display: flex; gap: 10px; align-items: flex-start; color: var(--ink-mid); font-size: var(--text-base); }
+.mp-check { color: var(--risk-l); font-weight: 700; flex: none; }
+
+.mp-plans { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+@media (max-width: 600px) { .mp-plans { grid-template-columns: 1fr; } }
+
+.mp-plan { position: relative; padding: var(--space-6); text-align: center; }
+.mp-plan.best { border-color: var(--accent); }
+.mp-plan-tag {
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: #fff;
+  font-family: var(--mono); font-size: var(--text-xs);
+  padding: 2px 10px; border-radius: var(--r-pill);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.mp-plan-name { font-size: var(--text-md); font-weight: 600; color: var(--ink-dim); }
+.mp-plan-price { font-family: var(--serif); font-size: var(--text-4xl); color: var(--ink); margin: 6px 0; }
+.mp-plan-price span { font-family: var(--sans); font-size: var(--text-md); color: var(--ink-dim); }
+.mp-plan-note { font-size: var(--text-sm); color: var(--ink-dim); margin-bottom: var(--space-5); min-height: 2.6em; }
+
+.mp-subscribe {
+  display: block; width: 100%;
+  padding: 11px;
+  background: var(--accent); color: #fff;
+  border: 1px solid var(--accent); border-radius: var(--r-md);
+  font-size: var(--text-base); font-weight: 600;
+  cursor: pointer; text-decoration: none; text-align: center;
+}
+.mp-subscribe:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+.mp-subscribe:disabled { opacity: 0.6; cursor: progress; }
+.mp-subscribe-link { background: var(--ink); border-color: var(--ink); }
+
+.mp-active { padding: var(--space-6); text-align: center; }
+.mp-active-badge { color: var(--risk-l); font-weight: 700; font-size: var(--text-lg); margin-bottom: 8px; }
+.mp-active p { color: var(--ink-mid); margin: 0 0 var(--space-4); }
+
+.mp-notice, .mp-error {
+  padding: var(--space-4);
+  border-radius: var(--r-md);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+.mp-notice { background: var(--paper-2); color: var(--ink-dim); }
+.mp-error { background: var(--risk-h-soft); color: var(--risk-h); margin-top: var(--space-4); }
+
+.mp-fineprint {
+  margin-top: var(--space-8);
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  line-height: 1.6;
+}

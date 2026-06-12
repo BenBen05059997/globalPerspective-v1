@@ -27,9 +27,25 @@
 | Monthly ($15) | `e53eeb9a-4e2e-4b33-9c18-f0e779c07677` |
 | Yearly ($150) | `cd375325-0fd2-4223-8b10-8e02d50798fd` |
 
-> ⚠️ **Confirm environment:** Polar **Sandbox** and **Production** are fully separate, with different IDs. The IDs above were created in the onboarding flow → almost certainly **Production**. We'll build/test against **Sandbox** first (create matching Sandbox products there), then swap to these Production IDs at launch.
+> ✅ **Environment: PRODUCTION** (confirmed 2026-06-12 — no Sandbox toggle/badge in the dashboard). The IDs above are **live Production** product IDs. For the build we'll still spin up matching **Sandbox** products to test against (Polar test cards), then point the live config at these Production IDs at launch.
 
 **Still needed for the build — you generate, secrets go straight into the Lambda env vars (NOT this file):** Organization Access Token + Webhook signing secret. (Product IDs above are public checkout identifiers — safe in-repo; tokens/secrets are not.)
+
+---
+
+## Build status — Phase 1 (updated 2026-06-12)
+
+**Code BUILT (not deployed/live yet):**
+- ✅ **`newsPolarBilling` Lambda** (`amplify/backend/function/newsPolarBilling/`) — one Function URL, three jobs: Polar **webhook** (Standard-Webhooks signature verify → grant/revoke `tier=member` in `USERS_TABLE`), **`create_checkout`** (Firebase-JWT → Polar Checkout Session with `customer_external_id=uid` → `{url}`), **`get_membership`** (Firebase-JWT read). Deploy + Polar-config steps in its `README.md`.
+- ✅ **Frontend** — `restProxy.js` (`createCheckout`/`fetchMembership`/`billingConfigured`), `hooks/useMembership.js`, `components/MembershipPage.jsx` (+css) at route **`/membership`** ($15/mo + $150/yr cards, current-status, honest "not available yet" state until `window.POLAR_BILLING_ENDPOINT` is set). No nav link yet (route is hidden until go-live).
+
+**NOT done yet (the go-live checklist):**
+1. Deploy `newsPolarBilling` to AWS + IAM (see README) — needs your `POLAR_ACCESS_TOKEN` + `POLAR_WEBHOOK_SECRET` in Lambda env.
+2. Create the Polar **webhook endpoint** (→ Function URL) + copy its signing secret.
+3. Set `window.POLAR_BILLING_ENDPOINT` in `docs/config.js`, then build+deploy the frontend.
+4. **Public-content gating** in `newsSensitiveData` (Decision #3 — what members actually get). ← the real "go-live" gate; deliberately not built until decided.
+5. Sandbox test (Polar test cards / 100%-off code), then flip the product live.
+6. (Later) "Manage subscription" → Polar customer portal link.
 
 ---
 

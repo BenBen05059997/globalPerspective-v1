@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-06-13 (benchmark: auditor-panel experiment — single pass is too noisy)
+
+Tested whether a single auditor pass is reliable or needs a panel. Extracted the rubric to a shared `auditor.mjs` (single source of truth for `run.mjs` + the new `panel.mjs`). `panel.mjs` generates the analysis once then audits it N×3 at temp 0.5, reporting per-pass scores, per-dimension range, and verdict flips.
+
+**Finding:** on 3 cases the pass/flag verdict **flipped on 2 of 3 (67%)** with a worst per-dimension swing of **3 points** (overreach 2→5 on the same output). A single `v4-pro` pass is unreliable → a **3-pass panel (average + majority verdict)** is justified. Next: make the panel the default in `run.mjs`, and target human review at cases where the panel disagrees internally.
+
+Files: `quality/analysis/benchmark/{auditor.mjs,panel.mjs,run.mjs}`.
+
 ## 2026-06-13 (Analysis Studio: reproducible benchmark + cross-model auditor)
 
 Built the test+benchmark from `ANALYSIS_STUDIO_BENCHMARK_PLAN.md` so analysis quality is *measured*, not vibe-checked, and graded by a **different agent than the analyst** (self-grading is biased).

@@ -1,8 +1,17 @@
 # Analysis Studio — Test & Benchmark Plan
 
-**Status:** BUILT + first baseline 2026-06-13 (60% pass, cross-model auditor v4-pro). Builds on `ANALYSIS_STUDIO_TESTING_PLAN.md` (the
-validator + eval Layers A/A2/B/C already shipped). This plan adds a **reproducible
-benchmark** so prompt/model/provider changes are *measured*, not vibe-checked.
+> **⚠️ REFRAMED 2026-06-13 — the "benchmark" framing is SUPERSEDED by a "check".**
+> Analysis has **no ground truth** (there is no single correct forecast of a story),
+> so SCORING it against a gold answer is a category error — proven empirically: the
+> panel pass-rate swung **40–80% on identical configs** (see DASHBOARD findings),
+> i.e. it wasn't measuring a stable quantity. The honest verify system is therefore a
+> **CHECK, not a benchmark**: the deterministic validator (did it fabricate?) + an
+> auditor *faithfulness flag* (does any claim contradict the sources?) + a **human
+> vibe-check** of quality. See **`quality/analysis/check.mjs`** (the keeper) and
+> `ANALYSIS_STUDIO_TESTING_PLAN.md`. The scorecard/pass-rate/panel machinery below is
+> retained for reference but its numeric scores are **not** treated as a metric.
+
+**Status:** SUPERSEDED by `check.mjs` (see banner). Original intent below.
 
 ## 1. Why a benchmark (vs the eval we already have)
 

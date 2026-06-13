@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-13 (verify system reframed: a CHECK, not a benchmark + emailed samples)
+
+Caught a conceptual error: analysis has **no ground truth**, so scoring it against a gold answer is a category error (proven — the panel pass-rate swung 40–80% on identical configs; it wasn't measuring a stable quantity). Reframed the verify system to a **check**, not a benchmark.
+
+- **`quality/analysis/check.mjs`** (the keeper): generates a few real analyses from live stories, runs the deterministic **validator** (objective: did it fabricate? phantom cite / invented figure / invented date) + a one-line auditor **faithfulness flag** (does any claim contradict the sources?), and optionally renders them to HTML (`--out`) or emails them (`--email`, Resend). No 1–5 scores, no pass-rate — **quality/sharpness stays a human vibe-check**.
+- **`ANALYSIS_STUDIO_BENCHMARK_PLAN.md` marked SUPERSEDED** — the scorecard/pass-rate/panel machinery is kept for reference but its numeric scores are no longer treated as a metric.
+- Generated 3 live samples (Iran-deal scenario, Iran/EU/Venezuela compare, SpaceX-IPO economic) and delivered them to the operator (Gmail draft) for the human vibe-check. The check caught real issues: an `invented_figure` to verify, and subtle auditor faithfulness flags ("extracted under pressure", "core valuation component" not in sources).
+
+Files: `quality/analysis/check.mjs` (new), `ANALYSIS_STUDIO_BENCHMARK_PLAN.md`.
+
 ## 2026-06-13 (benchmark: panel default + targeted human review + one-command automation)
 
 After the panel experiment proved single-pass auditing flips verdicts ~67%, baked the panel in and automated the whole flow.

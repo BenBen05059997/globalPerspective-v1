@@ -20,6 +20,36 @@ demonstrated:
 
 Faithfulness ≠ truth. Right now we have **zero coverage** on truth.
 
+## How other developers do it (researched 2026-06-13)
+
+The field has a precise name for our gap. **Groundedness vs factuality** ([Azure AI Content
+Safety](https://learn.microsoft.com/en-us/azure/ai-services/content-safety/concepts/groundedness)):
+*"a response may be grounded but incorrect if the source itself is wrong or misinterpreted."* Our
+two checks measure **groundedness**; the missing layer is **factuality**. The standard ways
+products close it:
+
+1. **Source-credibility scoring.** Rate the *outlet*, not just count it.
+   [NewsGuard](https://www.newsguardtech.com/solutions/news-reliability-ratings/) scores domains on
+   9 journalistic criteria → 0–100, **≥60 = trustworthy ("green"), <60 = "proceed with caution"
+   ("red")**; [Media Bias/Fact Check](https://mediabiasfactcheck.com/newsguard/) is the open
+   analogue. → our **L1**.
+2. **Cross-source corroboration.** Treat a claim carried by **multiple independent** outlets as
+   stronger than a single-source claim; single-source / social-only ⇒ low confidence. Standard
+   misinformation signal. → our **L1 / L3**.
+3. **Automated claim-verification pipeline** ([survey](https://www.arxiv.org/pdf/2601.02574),
+   [ClaimCheck](https://arxiv.org/abs/2510.01226)): **claim extraction → evidence retrieval →
+   verdict (supported / refuted / unverifiable) → explanation**; ClaimCheck = query-plan → retrieve
+   → synthesize → re-retrieve → verdict. → our **L3** (we already have the retrieval path in
+   Deep-research mode).
+4. **Reflection / verify-before-answer** (Self-RAG reflection markers; Azure *groundedness
+   detection* as a shipped API): the model/critic flags claims needing verification. → our **L2**
+   (surface the auditor in the live Studio). The literature's line: *users of knowledge apps care
+   more about **verifiability** than raw correctness — ground before production.*
+
+Takeaway: our layered plan matches the field. L1 = source-credibility + corroboration; L2 =
+groundedness/reflection surfacing; L3 = the claim-verification pipeline; L4 = characterization.
+We don't need to invent anything — just implement the known patterns at our scale.
+
 ## Layers (cheapest/highest-leverage first)
 
 **L1 — Source robustness (buildable now; data already exists).**

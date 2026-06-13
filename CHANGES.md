@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-06-13 (saved analysis samples + professional-quality comparison study)
+
+Persisted the generated analyses and started a standalone study of how our output compares to professional analysis (separate from the no-fabrication verify system; this asks "is it professional-grade?").
+
+- **Saved samples:** `quality/analysis/samples/2026-06-13.md` (the 3 live examples + their automated checks). Regenerate via `check.mjs --out`.
+- **`ANALYSIS_QUALITY_COMPARISON_PLAN.md`** (new): synthesizes 3 professional traditions — intelligence (ICD-203's 9 analytic standards), equity research (thesis-that-names-what-the-market-misses + the documented #1 flaw "weak linkage"), geopolitics (Stratfor: structural constraints over personality) — into a 9-point rubric, then compares our samples against it. **Match:** analysis-of-alternatives, fact-vs-judgment, calibrated uncertainty, so-what/limits, citations. **Gaps:** (1) guided lenses rarely lead with a non-consensus *thesis* (only the deep lens does); (5) **weak linkage** — economic lens gives directional labels ("likely mixed") not tied to magnitude/mechanism (the textbook equity-research weakness, also caught by the auditor); (6) leans on events over structural drivers; flat probability differentiation. Recommended prompt fixes listed (test via check.mjs + human vibe, no score). Quality has no ground truth → rubric-and-compare, not a benchmark.
+
+Files: `quality/analysis/samples/2026-06-13.md`, `ANALYSIS_QUALITY_COMPARISON_PLAN.md` (new).
+
 ## 2026-06-13 (verify system reframed: a CHECK, not a benchmark + emailed samples)
 
 Caught a conceptual error: analysis has **no ground truth**, so scoring it against a gold answer is a category error (proven — the panel pass-rate swung 40–80% on identical configs; it wasn't measuring a stable quantity). Reframed the verify system to a **check**, not a benchmark.

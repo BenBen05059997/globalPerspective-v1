@@ -2,109 +2,121 @@
   "date": "2026-06-13",
   "analyst": "deepseek-v4-flash",
   "auditor": "deepseek-v4-pro",
-  "passRate": 60,
-  "hardFails": 0,
+  "panel": 3,
+  "passRate": 80,
+  "hardFails": 1,
+  "panelSplits": [
+    "compare-mixed",
+    "freeform-open",
+    "geopolitics-multi",
+    "top-story-solo"
+  ],
   "means": {
     "faithfulness": 3.8,
-    "overreach": 4.2,
-    "calibration": 4.2,
-    "differentiation": 4,
-    "citations": 4.2,
-    "insight": 4
+    "overreach": 4.3,
+    "calibration": 3.9,
+    "differentiation": 3.9,
+    "citations": 4.3,
+    "insight": 3.7
   },
-  "meanProbSpread": 27.5,
+  "meanProbSpread": 45,
   "cases": [
     {
       "name": "compare-mixed",
       "lens": "compare",
       "pass": true,
       "hardError": false,
+      "panelSplit": true,
+      "needsHuman": true,
       "validator": [],
       "probSpread": null,
       "scores": {
         "faithfulness": 4,
-        "overreach": 4,
-        "calibration": 4,
-        "differentiation": 5,
-        "citations": 5,
-        "insight": 4,
-        "verdict": "pass",
-        "notes": "The analysis is largely faithful and well-cited, but the claim that all three events cluster within a 48-hour window is slightly imprecise—the EU talks are confirmed for June 15, but the deal text finalization and IPO occurred June 13, making it a 48-hour span, which is accurate but the 'coordinated or opportunistic timing' inference is unsupported by sources."
-      }
+        "overreach": 5,
+        "calibration": 4.3,
+        "differentiation": 4.3,
+        "citations": 4.7,
+        "insight": 3.7
+      },
+      "notes": "The analysis correctly notes no direct causal connection, but the 'Shared Drivers' section overstates 'coordinated or coincidental scheduling' as a driver without source support, and the timing clustering claim is speculative."
     },
     {
       "name": "freeform-open",
       "lens": "freeform",
       "pass": true,
       "hardError": false,
+      "panelSplit": true,
+      "needsHuman": true,
       "validator": [],
       "probSpread": null,
       "scores": {
-        "faithfulness": 4,
-        "overreach": 5,
-        "calibration": 5,
-        "differentiation": 5,
-        "citations": 5,
-        "insight": 5,
-        "verdict": "pass",
-        "notes": "The analysis correctly identifies structural asymmetries and data gaps, avoids inventing figures, and makes sharp, distinct calls; the only minor faithfulness issue is the unsupported claim that the Iran deal 'likely precedes or accompanies sanctions relief,' which goes slightly beyond the source material."
-      }
+        "faithfulness": 3.7,
+        "overreach": 4.7,
+        "calibration": 4.3,
+        "differentiation": 4.3,
+        "citations": 4.7,
+        "insight": 4.3
+      },
+      "notes": "The analysis correctly identifies structural mistrust and implementation risks, but it overstates the certainty of 'Iranian crude could re-enter global markets within weeks' given that the source material only mentions asset unlocks and sanctions relief as triggers, not a confirmed timeline or mechanism for oil exports."
     },
     {
       "name": "geopolitics-multi",
       "lens": "scenario",
-      "pass": false,
+      "pass": true,
       "hardError": false,
+      "panelSplit": true,
+      "needsHuman": true,
       "validator": [],
-      "probSpread": 0,
+      "probSpread": 45,
       "scores": {
-        "faithfulness": 4,
-        "overreach": 3,
-        "calibration": 4,
-        "differentiation": 2,
-        "citations": 4,
-        "insight": 3,
-        "verdict": "flag",
-        "notes": "The analysis faithfully reproduces the source material's most-likely probabilities but collapses all three scenarios to 60-70% with no meaningful differentiation, and it treats the June 20 date from the prediction section as an analyst inference without clearly flagging it as unsupported by the source summaries."
-      }
+        "faithfulness": 4.3,
+        "overreach": 4.3,
+        "calibration": 4.3,
+        "differentiation": 4.7,
+        "citations": 5,
+        "insight": 4.3
+      },
+      "notes": "Scenario 2's horizon of '2-4 weeks' is not sourced from [1] and invents a timeframe; Scenario 2's probability range is also duplicated from the source's 'Optimistic' scenario without acknowledging the source labeled it differently, slightly misrepresenting the original framing."
     },
     {
       "name": "markets-econ",
       "lens": "economic",
       "pass": false,
-      "hardError": false,
-      "validator": [],
+      "hardError": true,
+      "panelSplit": false,
+      "needsHuman": false,
+      "validator": [
+        "phantom_citation"
+      ],
       "probSpread": null,
       "scores": {
-        "faithfulness": 3,
+        "faithfulness": 3.3,
         "overreach": 4,
         "calibration": 3,
-        "differentiation": 3,
+        "differentiation": 2.7,
         "citations": 3,
-        "insight": 3,
-        "verdict": "flag",
-        "notes": "The analysis invents unsupported details (e.g., 'likely ticker SPCE or similar', 'AI potential' as a valuation driver from a source that actually says 'valued for its AI potential' without elaboration) and makes confident directional calls on other equities and sectors with no source data, while failing to cite the provided sources precisely."
-      }
+        "insight": 3
+      },
+      "notes": "The analysis correctly notes missing data but still makes unsupported directional calls (e.g., 'Likely mixed' for Tesla, 'Positive' for satellite internet) without grounding them in the source material, and the differentiation is weak—most judgments are vague and clustered around 'likely'/'could' without sharp probability distinctions."
     },
     {
       "name": "top-story-solo",
       "lens": "scenario",
       "pass": true,
       "hardError": false,
-      "validator": [
-        "invented_figure"
-      ],
-      "probSpread": 55,
+      "panelSplit": true,
+      "needsHuman": true,
+      "validator": [],
+      "probSpread": 45,
       "scores": {
-        "faithfulness": 4,
-        "overreach": 5,
-        "calibration": 5,
-        "differentiation": 5,
+        "faithfulness": 3.7,
+        "overreach": 3.7,
+        "calibration": 3.7,
+        "differentiation": 3.7,
         "citations": 4,
-        "insight": 5,
-        "verdict": "pass",
-        "notes": "The analysis faithfully reflects the source material, avoids inventing dates or figures, and spreads probabilities meaningfully; the only minor flaw is that some trigger/evidence items lack explicit [1] citations, though they are clearly derived from the provided story."
-      }
+        "insight": 3
+      },
+      "notes": "The analyst invents specific probability ranges, scenario labels, and a JCPOA precedent not present in the source material; the material provides only a single prediction block with no basis for the analyst's own numerical splits."
     }
   ]
 }

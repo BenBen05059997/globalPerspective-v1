@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-13 (benchmark: panel default + targeted human review + one-command automation)
+
+After the panel experiment proved single-pass auditing flips verdicts ~67%, baked the panel in and automated the whole flow.
+
+- **`run.mjs` now runs a 3-pass auditor panel by default** (`AUDIT_PASSES`/`AUDIT_TEMP` tunable): averages the 6 rubric scores, takes a **majority pass/flag verdict**, and flags **panel-split** cases (per-pass verdicts disagree) as the human-review queue. Scorecard + `DASHBOARD.md` gained `panel` and `splits` columns.
+- **`review.mjs`** — targeted human review: surfaces ONLY panel-split + flagged cases (not every run), records good/bad + notes to `scorecard-<date>.human.json`. Auto-audit handles volume; the human judges the genuinely-ambiguous ones.
+- **`bench.sh`** — one command: pulls the DeepSeek key from the Lambda (operator never handles it) → panel benchmark → scorecard/dashboard → points at the review queue. `--capture` refreshes frozen cases; `--pro` swaps the analyst to v4-pro. On-demand, no CI ([[feedback-no-ci-solo-dev]]).
+- **Paneled baseline (2026-06-13):** 80% majority-pass, 1 hard-fail, 4 panel-splits; means faithfulness 3.8 / overreach 4.3 / calibration 3.9 / differentiation 3.9 / citations 4.3 / insight 3.7. (High split rate at temp 0.5 confirms many cases are genuinely borderline — exactly what the human queue is for; tune via `AUDIT_TEMP`.)
+
+Files: `quality/analysis/benchmark/{run.mjs,review.mjs,bench.sh,DASHBOARD.md,scorecard-2026-06-13.json}`.
+
 ## 2026-06-13 (benchmark: auditor-panel experiment — single pass is too noisy)
 
 Tested whether a single auditor pass is reliable or needs a panel. Extracted the rubric to a shared `auditor.mjs` (single source of truth for `run.mjs` + the new `panel.mjs`). `panel.mjs` generates the analysis once then audits it N×3 at temp 0.5, reporting per-pass scores, per-dimension range, and verdict flips.

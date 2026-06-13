@@ -1,0 +1,158 @@
+{
+  "name": "top-story-solo",
+  "lens": "scenario",
+  "mode": "guided",
+  "freeform": null,
+  "capturedAt": "2026-06-13T04:34:02.742Z",
+  "enriched": [
+    {
+      "topic": {
+        "regions": [
+          "Iran",
+          "United States",
+          "Pakistan",
+          "United Arab Emirates"
+        ],
+        "sources": [
+          {
+            "snippet": "The deal which will pave the way for hostilities to end is close to being finalised, the US, Iran and mediators Pakistan say.",
+            "tier": "primary",
+            "source": "bbc.com",
+            "outletType": "national",
+            "title": "Deal to end fighting would lead to Hormuz reopening, Iran says",
+            "outletCountry": "GB",
+            "url": "https://www.bbc.com/news/articles/c39y02x98k8o?at_medium=RSS&amp;at_campaign=rss",
+            "age": "3 hours ago"
+          },
+          {
+            "snippet": "Four activists from Palestine Action jailed by a British court over protest raid on Israeli arms firm in UK.",
+            "tier": "primary",
+            "source": "aljazeera.com",
+            "outletType": "national",
+            "title": "Iran war live: US, Tehran signal peace deal within reach but not signed yet",
+            "outletCountry": "QA",
+            "url": "https://www.aljazeera.com/news/liveblog/2026/6/13/iran-war-live-us-tehran-signal-peace-deal-within-reach-but-not-signed-yet?traffic_source=rss",
+            "age": "4 hours ago"
+          },
+          {
+            "snippet": "Iran's foreign minister Abbas Araghchi said Friday that a draft agreement to end the war with the United States could be signed remotely within days, adding that negotiations had reached their final stages.",
+            "tier": "primary",
+            "source": "france24.com",
+            "outletType": "national",
+            "title": "Middle East live: Iran says US war deal could be signed remotely in 'coming days'",
+            "outletCountry": "FR",
+            "url": "https://www.france24.com/en/middle-east/20260612-middle-east-live-iran-says-us-war-deal-could-be-signed-remotely-in-coming-days",
+            "age": "6 hours ago"
+          },
+          {
+            "snippet": "Analysts say a litany of sticking points have delayed finalizing an accord and will complicate its implementation.",
+            "tier": "secondary",
+            "source": "japantimes.co.jp",
+            "outletType": "national",
+            "title": "Why is a ‘very close’ Iran-U.S. deal taking so long?",
+            "outletCountry": "JP",
+            "url": "https://www.japantimes.co.jp/news/2026/06/13/world/us-iran-deal-complications/",
+            "age": "1 hour ago"
+          },
+          {
+            "snippet": "A senior U.S. administration official said both sides had agreed on a text and that Washington expects to sign an initial deal in the coming days.",
+            "tier": "primary",
+            "source": "japantimes.co.jp",
+            "outletType": "national",
+            "title": "Iran peace deal looms while new military action flares near Strait of Hormuz",
+            "outletCountry": "JP",
+            "url": "https://www.japantimes.co.jp/news/2026/06/13/world/us-iran-deal-looms/",
+            "age": "1 hour ago"
+          },
+          {
+            "snippet": "President Trump had previously been amping up his rhetoric against Iran.",
+            "tier": "primary",
+            "source": "npr.org",
+            "outletType": "national",
+            "title": "Trump now says a peace deal will be announced 'soon,' cancels further strikes",
+            "outletCountry": "US",
+            "url": "https://www.npr.org/2026/06/11/nx-s1-5854970/trump-iran-peace-deal-cancel-strikes",
+            "age": "1 day ago"
+          },
+          {
+            "snippet": "The United States and Iran signaled on Friday that an agreement to end their war was close, with a senior U.S. administration official saying both sides had agreed on a text and that Washington expects to sign an initial deal in the coming days.",
+            "tier": "primary",
+            "source": "al-monitor.com",
+            "outletType": "regional",
+            "title": "Iran peace deal looms while new military action flares near Strait of Hormuz",
+            "outletCountry": "US",
+            "url": "https://www.al-monitor.com/originals/2026/06/iran-peace-deal-looms-while-new-military-action-flares-near-strait-hormuz",
+            "age": "2 hours ago"
+          },
+          {
+            "snippet": "The United Arab Emirates has agreed to unlock billions of dollars for Iran, four sources said, in a tactical shift after weeks of Iranian attacks on the wealthy Gulf Arab state during the U.S.",
+            "tier": "secondary",
+            "source": "al-monitor.com",
+            "outletType": "regional",
+            "title": "Exclusive-UAE to unlock billions of dollars for Iran, sources say",
+            "outletCountry": "US",
+            "url": "https://www.al-monitor.com/originals/2026/06/exclusive-uae-unlock-billions-dollars-iran-sources-say",
+            "age": "9 hours ago"
+          },
+          {
+            "snippet": "Iran's foreign minister said that while changes in the deal were still possible, the tentative agreement showed his country had emerged stronger from the conflict.",
+            "tier": "primary",
+            "source": "channelnewsasia.com",
+            "outletType": "national",
+            "title": "Iran peace deal looms while new military action flares near Strait of Hormuz",
+            "outletCountry": "SG",
+            "url": "https://www.channelnewsasia.com/world/iran-us-peace-deal-near-abbas-araghchi-trump-6180676",
+            "age": "1 hour ago"
+          },
+          {
+            "snippet": "The United States and Iran have agreed to wording of an agreement meant to end their war, Pakistan’s prime minister said Friday, just one day before President Donald Trump's birthday.",
+            "tier": "primary",
+            "source": "apnews.com",
+            "outletType": "wire",
+            "title": "Parties agree on ‘final’ text of a peace deal, Pakistan says",
+            "outletCountry": "US",
+            "url": "https://apnews.com/live/trump-administration-updates-06-12-2026",
+            "age": "1 day ago"
+          },
+          {
+            "snippet": "Trump canceled new Iran strikes and signaled that a peace deal could come soon, but Iran says it hasn&apos;t been finalized. And, the U.S. men&apos;s soccer team plays its first 2026 World Cup match today.",
+            "enrichScore": 0.256,
+            "tier": "secondary",
+            "source": "npr.org",
+            "outletType": "national",
+            "title": "Trump cancels further Iran strikes. And, U.S. men&apos;s soccer takes on Paraguay",
+            "outletCountry": "US",
+            "url": "https://www.npr.org/2026/06/12/g-s1-127711/up-first-newsletter-iran-peace-national-intelligence-director-world-cup",
+            "age": "17 hours ago"
+          }
+        ],
+        "title": "US and Iran finalize peace deal text, Pakistan mediates as Trump cancels further strikes",
+        "search_keywords": [
+          "Iran",
+          "US",
+          "peace deal",
+          "Hormuz",
+          "Pakistan"
+        ],
+        "significance": "high",
+        "threadId": "thread-trump-says-iran-shot-down-us-a-7ed4a3",
+        "topicId": "US and Iran finalize peace deal text, Pakistan mediates as Trump cancels further strikes-0",
+        "urgency": "high",
+        "continues_topic": "US and Iran finalize peace deal text, Pakistan mediates as Trump cancels further strikes",
+        "id": "US and Iran finalize peace deal text, Pakistan mediates as Trump cancels further strikes-0",
+        "x_trending": true,
+        "category": "conflict",
+        "primaryCountry": "Iran",
+        "urgencyReason": "Peace deal text agreed, but final signing not yet complete; military clashes continue near Strait of Hormuz.",
+        "mentionedCountries": [
+          "United States",
+          "Pakistan",
+          "United Arab Emirates"
+        ]
+      },
+      "summary": "- The United States and Iran have finalized the text of a peace deal, with Pakistan serving as the mediator in the negotiations.\n- President Trump has canceled further military strikes against Iran, signaling a shift toward diplomatic resolution.\n- The agreement marks a significant de-escalation following heightened tensions and potential military confrontation.\n- **Main countries/regions involved:** United States, Iran, Pakistan.",
+      "prediction": "{\n  \"scenarios\": [\n    {\n      \"label\": \"Most Likely\",\n      \"probability_range\": \"60-70%\",\n      \"horizon\": \"1-2 weeks\",\n      \"rationale\": \"Both the US and Iran have agreed on a text, with Pakistan mediating and Trump canceling further strikes. The senior US official and Iran's foreign minister both expect a remote signing within days, consistent with the JCPOA precedent of swift finalization once text is agreed. Key actors are motivated by domestic timelines: Trump wants a victory before midterms, and Iran wants sanctions relief and UAE funds unlocked.\",\n      \"triggers\": [\n        \"Remote signing of deal by June 20, 2026\",\n        \"UAE announces release of billions in frozen Iranian assets by June 30, 2026\",\n        \"Trump publicly claims peace deal as foreign policy win before July 4, 2026\"\n      ]\n    },\n    {\n      \"label\": \"Optimistic\",\n      \"probability_range\": \"15-25%\",\n      \"horizon\": \"3-5 days\",\n      \"rationale\": \"If hardliners in Iran's IRGC and parliament are sidelined by Supreme Leader Khamenei, and Trump accepts a remote signing without further demands, the deal could be finalized within days. Pakistan's PM Shehbaz Sharif would gain maximum diplomatic credit, and…",
+      "trace": "{\n  \"proximate\": {\n    \"what\": \"US and Iran finalize the text of a peace deal to end their war, with Pakistan mediating and Trump canceling further strikes.\",\n    \"when\": \"June 13, 2026\"\n  },\n  \"contributing\": [\n    {\n      \"factor\": \"Military escalation and economic pressure\",\n      \"evidence\": \"Trump had been amping up rhetoric against Iran and canceled new strikes just before the deal; UAE unlocked billions for Iran after Iranian attacks on the Gulf state.\"\n    },\n    {\n      \"factor\": \"Mediation by Pakistan\",\n      \"evidence\": \"Pakistan's prime minister confirmed both sides agreed on wording of the agreement, and Pakistan is named as a mediator by BBC and AP.\"\n    },\n    {\n      \"factor\": \"Sticking points in negotiations\",\n      \"evidence\": \"Analysts note a litany of sticking points delayed finalizing the accord and will complicate implementation (Japan Times).\"\n    },\n    {\n      \"factor\": \"Iran's perceived strength from conflict\",\n      \"evidence\": \"Iran's foreign minister said the tentative agreement showed Iran emerged stronger from the conflict (Channel News Asia).\"\n    }\n  ],\n  \"structural\": {\n    \"factor\": \"Decades-long US-Iran geopolitical rivalry and mistrust, rooted i…"
+    }
+  ]
+}

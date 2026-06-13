@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-13 (Analysis Studio: reproducible benchmark + cross-model auditor)
+
+Built the test+benchmark from `ANALYSIS_STUDIO_BENCHMARK_PLAN.md` so analysis quality is *measured*, not vibe-checked, and graded by a **different agent than the analyst** (self-grading is biased).
+
+- `quality/analysis/benchmark/capture.mjs` — freezes real live story-sets (topics + cached summary/prediction/trace) into committed `cases/*.json` so runs are reproducible (live stories change daily). Seeded 5 cases from today's stories (Iran deal, EU–Ukraine, Venezuela, SpaceX IPO, free-form).
+- `quality/analysis/benchmark/run.mjs` — for each case: analyst model generates → deterministic validator (hard guardrails) → **cross-model auditor** (`v4-pro` grading `v4-flash`) scores faithfulness / overreach / calibration / **differentiation** (new) / citations / insight (1–5), plus a deterministic probability-spread metric. Writes `scorecard-<date>.json` + appends `DASHBOARD.md` (quality trend in git). PASS = no hard error ∧ faithfulness≥4 ∧ overreach≥4 ∧ calibration≥3.5 ∧ no dim <2.
+- **First baseline (2026-06-13):** 60% pass, 0 hard-fails; means faithfulness 3.8 / overreach 4.2 / calibration 4.2 / differentiation 4.0 / citations 4.2 / insight 4.0. The auditor caught real issues the regex validator can't: a multi-story scenario collapsing to a flat ~60–70% (differentiation 2, spread 0) and an economic run inventing an unsupported ticker/elaboration.
+- On-demand, no CI ([[feedback-no-ci-solo-dev]]).
+
+Files: `quality/analysis/benchmark/{capture.mjs,run.mjs,cases/*.json,scorecard-2026-06-13.json,DASHBOARD.md}`, `ANALYSIS_STUDIO_BENCHMARK_PLAN.md`.
+
 ## 2026-06-12 (Analysis Studio: force DeepSeek non-thinking mode for V4)
 
 Follow-up to the V4 picker: DeepSeek's V4 models **default to thinking mode** (emit `reasoning_content`, burn the token budget, can truncate the answer) — different from the old `deepseek-chat` non-thinking behavior the Studio expects. Added a per-provider `extraBody: { thinking: { type: 'disabled' } }` to the DeepSeek entry, spread into the OpenAI-compat request body only for DeepSeek (OpenAI/Gemini/OpenRouter unaffected; Anthropic uses its own path). Verified all four DeepSeek model IDs accept the param and return clean non-thinking content; eval 20/20 on `deepseek-v4-flash`. So the picker keeps the visible V4 versions AND behaves like the known-good non-thinking model.

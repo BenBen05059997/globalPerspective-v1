@@ -1,0 +1,110 @@
+{
+  "date": "2026-06-13",
+  "analyst": "deepseek-v4-flash",
+  "auditor": "deepseek-v4-pro",
+  "passRate": 60,
+  "hardFails": 0,
+  "means": {
+    "faithfulness": 3.8,
+    "overreach": 4.2,
+    "calibration": 4.2,
+    "differentiation": 4,
+    "citations": 4.2,
+    "insight": 4
+  },
+  "meanProbSpread": 27.5,
+  "cases": [
+    {
+      "name": "compare-mixed",
+      "lens": "compare",
+      "pass": true,
+      "hardError": false,
+      "validator": [],
+      "probSpread": null,
+      "scores": {
+        "faithfulness": 4,
+        "overreach": 4,
+        "calibration": 4,
+        "differentiation": 5,
+        "citations": 5,
+        "insight": 4,
+        "verdict": "pass",
+        "notes": "The analysis is largely faithful and well-cited, but the claim that all three events cluster within a 48-hour window is slightly imprecise—the EU talks are confirmed for June 15, but the deal text finalization and IPO occurred June 13, making it a 48-hour span, which is accurate but the 'coordinated or opportunistic timing' inference is unsupported by sources."
+      }
+    },
+    {
+      "name": "freeform-open",
+      "lens": "freeform",
+      "pass": true,
+      "hardError": false,
+      "validator": [],
+      "probSpread": null,
+      "scores": {
+        "faithfulness": 4,
+        "overreach": 5,
+        "calibration": 5,
+        "differentiation": 5,
+        "citations": 5,
+        "insight": 5,
+        "verdict": "pass",
+        "notes": "The analysis correctly identifies structural asymmetries and data gaps, avoids inventing figures, and makes sharp, distinct calls; the only minor faithfulness issue is the unsupported claim that the Iran deal 'likely precedes or accompanies sanctions relief,' which goes slightly beyond the source material."
+      }
+    },
+    {
+      "name": "geopolitics-multi",
+      "lens": "scenario",
+      "pass": false,
+      "hardError": false,
+      "validator": [],
+      "probSpread": 0,
+      "scores": {
+        "faithfulness": 4,
+        "overreach": 3,
+        "calibration": 4,
+        "differentiation": 2,
+        "citations": 4,
+        "insight": 3,
+        "verdict": "flag",
+        "notes": "The analysis faithfully reproduces the source material's most-likely probabilities but collapses all three scenarios to 60-70% with no meaningful differentiation, and it treats the June 20 date from the prediction section as an analyst inference without clearly flagging it as unsupported by the source summaries."
+      }
+    },
+    {
+      "name": "markets-econ",
+      "lens": "economic",
+      "pass": false,
+      "hardError": false,
+      "validator": [],
+      "probSpread": null,
+      "scores": {
+        "faithfulness": 3,
+        "overreach": 4,
+        "calibration": 3,
+        "differentiation": 3,
+        "citations": 3,
+        "insight": 3,
+        "verdict": "flag",
+        "notes": "The analysis invents unsupported details (e.g., 'likely ticker SPCE or similar', 'AI potential' as a valuation driver from a source that actually says 'valued for its AI potential' without elaboration) and makes confident directional calls on other equities and sectors with no source data, while failing to cite the provided sources precisely."
+      }
+    },
+    {
+      "name": "top-story-solo",
+      "lens": "scenario",
+      "pass": true,
+      "hardError": false,
+      "validator": [
+        "invented_figure"
+      ],
+      "probSpread": 55,
+      "scores": {
+        "faithfulness": 4,
+        "overreach": 5,
+        "calibration": 5,
+        "differentiation": 5,
+        "citations": 4,
+        "insight": 5,
+        "verdict": "pass",
+        "notes": "The analysis faithfully reflects the source material, avoids inventing dates or figures, and spreads probabilities meaningfully; the only minor flaw is that some trigger/evidence items lack explicit [1] citations, though they are clearly derived from the provided story."
+      }
+    }
+  ]
+}

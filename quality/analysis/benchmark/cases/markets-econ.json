@@ -1,0 +1,79 @@
+{
+  "name": "markets-econ",
+  "lens": "economic",
+  "mode": "guided",
+  "freeform": null,
+  "capturedAt": "2026-06-13T04:34:04.196Z",
+  "enriched": [
+    {
+      "topic": {
+        "regions": [
+          "United States"
+        ],
+        "sources": [
+          {
+            "snippet": "Musk is now worth $1.11tn according to the Bloomberg rich list, while SpaceX listed on the Nasdaq stock exchange with a value of $2.2tn.",
+            "tier": "primary",
+            "source": "bbc.com",
+            "outletType": "national",
+            "title": "Elon Musk becomes world's first trillionaire as SpaceX soars in stock market debut",
+            "outletCountry": "GB",
+            "url": "https://www.bbc.com/news/articles/c4gypy3wwl7o?at_medium=RSS&amp;at_campaign=rss",
+            "age": "5 hours ago"
+          },
+          {
+            "snippet": "The launch was smoother than many observers expected, with trading kicking off late on Friday morning without any hiccups.",
+            "tier": "primary",
+            "source": "japantimes.co.jp",
+            "outletType": "national",
+            "title": "SpaceX surges past $2 trillion in Nasdaq debut, closes in on Amazon",
+            "outletCountry": "JP",
+            "url": "https://www.japantimes.co.jp/business/2026/06/13/markets/spacex-ipo-nasdaq-debut/",
+            "age": "1 hour ago"
+          },
+          {
+            "snippet": "As of today, SpaceX is owned by investors who will want to see it make money.",
+            "tier": "secondary",
+            "source": "arstechnica.com",
+            "outletType": "specialist",
+            "title": "SpaceX is now a public company valued for its AI potential, so what comes next?",
+            "outletCountry": "US",
+            "url": "https://arstechnica.com/space/2026/06/spacex-is-now-a-public-company-valued-for-its-ai-potential-so-what-comes-next/",
+            "age": "5 hours ago"
+          },
+          {
+            "snippet": "",
+            "tier": "secondary",
+            "source": "channelnewsasia.com",
+            "outletType": "national",
+            "title": "Retail investors build big dreams on small slices of SpaceX",
+            "outletCountry": "SG",
+            "url": "https://www.channelnewsasia.com/business/retail-investors-build-big-dreams-small-slices-spacex-6180696",
+            "age": "2 hours ago"
+          }
+        ],
+        "title": "SpaceX IPO makes Elon Musk world's first trillionaire as shares begin trading on Nasdaq",
+        "search_keywords": [
+          "SpaceX",
+          "IPO",
+          "Elon Musk",
+          "trillionaire",
+          "Nasdaq"
+        ],
+        "significance": "high",
+        "threadId": "thread-anthropic-files-for-us-ipo-pla-417c5a",
+        "topicId": "SpaceX IPO makes Elon Musk world's first trillionaire as shares begin trading on Nasdaq-1",
+        "urgency": "high",
+        "continues_topic": "SpaceX IPO makes Elon Musk world's first trillionaire as shares begin trading on Nasdaq",
+        "id": "SpaceX IPO makes Elon Musk world's first trillionaire as shares begin trading on Nasdaq-1",
+        "x_trending": true,
+        "category": "business",
+        "primaryCountry": "United States",
+        "urgencyReason": "IPO completed today, making Musk world's first trillionaire; immediate market impact."
+      },
+      "summary": "- SpaceX's initial public offering (IPO) on the Nasdaq on June 13, 2026, propelled Elon Musk to become the world's first trillionaire, as shares began trading at a valuation exceeding $1 trillion.\n- The IPO marks a historic milestone in financial markets, with SpaceX's valuation driven by its dominance in commercial spaceflight, Starlink satellite internet, and government contracts.\n- Main countries/regions involved: United States (Nasdaq listing, SpaceX headquarters, primary market), with global investor participation.",
+      "prediction": "{\n  \"scenarios\": [\n    {\n      \"label\": \"Most Likely\",\n      \"probability_range\": \"60-70%\",\n      \"horizon\": \"3-6 months\",\n      \"rationale\": \"SpaceX's strong debut and $2.2tn valuation suggest initial stability, but the first earnings report in July 2026 and SEC filings in August will test investor confidence. Institutional investors like Fidelity and BlackRock will push for profitability, while Musk's long-term Mars vision may create tension with quarterly earnings pressure.\",\n      \"triggers\": [\n        \"SpaceX Q2 2026 earnings report in July 2026\",\n        \"SEC Form 10-Q filing deadline in August 2026\",\n        \"Lock-up period expiration for early investors around December 2026\"\n      ]\n    },\n    {\n      \"label\": \"Optimistic\",\n      \"probability_range\": \"15-25%\",\n      \"horizon\": \"6-12 months\",\n      \"rationale\": \"If SpaceX exceeds Starlink subscriber growth expectations and demonstrates cost control on Starship, the stock could rally further, boosting Musk's net worth. The board and Musk would need to align on transparent communication and near-term profitability milestones to sustain momentum.\",\n      \"triggers\": [\n        \"SpaceX announces Starlink subscriber growth above 2…",
+      "trace": "{\n  \"proximate\": {\n    \"what\": \"SpaceX began trading on the Nasdaq stock exchange, making Elon Musk the world's first trillionaire with a net worth of $1.11tn.\",\n    \"when\": \"June 13, 2026\"\n  },\n  \"contributing\": [\n    {\n      \"factor\": \"Successful IPO execution\",\n      \"evidence\": \"Trading kicked off late Friday morning without any hiccups, smoother than many observers expected (japantimes.co.jp).\"\n    },\n    {\n      \"factor\": \"High market valuation of SpaceX\",\n      \"evidence\": \"SpaceX listed with a value of $2.2tn on the Nasdaq (bbc.com).\"\n    },\n    {\n      \"factor\": \"Shift to profit-oriented ownership\",\n      \"evidence\": \"SpaceX is now owned by investors who will want to see it make money (arstechnica.com).\"\n    }\n  ],\n  \"structural\": {\n    \"factor\": \"Decades of private space industry growth and Musk's accumulation of wealth through multiple ventures\",\n    \"depth\": \"20 years\"\n  },\n  \"impactScores\": {\n    \"humanImpact\": 3,\n    \"economicReach\": 9,\n    \"geopolitical\": 6\n  },\n  \"biasNote\": \"Coverage is largely celebratory and market-focused, with no critical geopolitical framing; sources are Western mainstream outlets.\",\n  \"alternativePerspective\": \"Critics in developing nations a…"
+    }
+  ]
+}

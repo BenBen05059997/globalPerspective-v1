@@ -1,6 +1,6 @@
 # Analysis Studio — Test & Benchmark Plan
 
-**Status:** PLANNED 2026-06-13. Builds on `ANALYSIS_STUDIO_TESTING_PLAN.md` (the
+**Status:** BUILT + first baseline 2026-06-13 (60% pass, cross-model auditor v4-pro). Builds on `ANALYSIS_STUDIO_TESTING_PLAN.md` (the
 validator + eval Layers A/A2/B/C already shipped). This plan adds a **reproducible
 benchmark** so prompt/model/provider changes are *measured*, not vibe-checked.
 

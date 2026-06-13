@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-13 (Analysis Studio: reviewer-driven scenario + citation fixes; source-truth gap planned)
+
+Acted on external-reviewer feedback on the samples.
+
+- **Scenario design (the reviewer's #1 design flaw): fixed.** Scenarios now fork on **distinct outcomes** (holds / stalls / collapses), **must include a downside tail**, and probabilities **partition (~100%)** — verified: a re-sample produced "Fragile Limbo / Breakthrough / Collapse" with midpoints summing to 97.5% (vs the old success-biased tempo-forks that summed to ~102%).
+- **Citation laundering: fixed.** `SYSTEM_PROMPT` now forbids stapling `[n]` to dates/figures from our *Prediction/Background* fields or to **external world-knowledge** (mark "(our forecast)" / present as uncited analyst context) — `[n]` is reserved strictly for claims the story actually reported.
+- **Economic lens: earn magnitudes + cut padding** — justify why small/moderate/large; include only ripples with a real non-trivial mechanism (drop noise like "rare earths → up → small"); 3–5 high-conviction over an exhaustive checklist.
+- **Source-truth gap PLANNED** (`ANALYSIS_SOURCE_TRUTH_PLAN.md`): the reviewer's most important point — both our checks verify *faithfulness to the source*, nothing verifies the source is *true/correctly characterized* (a rumor/thin/satirical source → confident, well-cited, fabrication-free reasoning on a rotten premise). This is also the original "review agent to review if it is true or not" ask. Layered plan: L1 source-robustness from `sources[]` metadata (buildable now), L2 surface the auditor flag in the live Studio, L3 claim-truth via deep-research/operator fact layer, L4 characterization completeness. **Not built yet** — proposed L1 first.
+
+Files: `global-perspectives-starter/frontend/src/utils/analysisPrompt.js` + `docs/` build; `ANALYSIS_SOURCE_TRUTH_PLAN.md` (new).
+
 ## 2026-06-13 (Analysis Studio: prompt fixes to close the professional-quality gaps)
 
 Applied the `ANALYSIS_QUALITY_COMPARISON_PLAN.md` fixes to `analysisPrompt.js`: (1) `SYSTEM_PROMPT` opens with a **"Bottom line" view** (only where supported, never manufactured) + **favor structural drivers over personalities**; (2) **economic lens** enforces direction → magnitude → mechanism (no bare "mixed"/"positive"; "mechanism unclear" if not derivable) — fixes the textbook "weak linkage" flaw; (3) **scenario lens** requires meaningfully-different probabilities (no clustering).

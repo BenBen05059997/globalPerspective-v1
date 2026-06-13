@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-06-13 (Analysis Studio: prompt fixes to close the professional-quality gaps)
+
+Applied the `ANALYSIS_QUALITY_COMPARISON_PLAN.md` fixes to `analysisPrompt.js`: (1) `SYSTEM_PROMPT` opens with a **"Bottom line" view** (only where supported, never manufactured) + **favor structural drivers over personalities**; (2) **economic lens** enforces direction → magnitude → mechanism (no bare "mixed"/"positive"; "mechanism unclear" if not derivable) — fixes the textbook "weak linkage" flaw; (3) **scenario lens** requires meaningfully-different probabilities (no clustering).
+
+**Caught + fixed a self-inflicted regression via the verify loop:** the first pass at sharpening induced fabrication — a 1-story scenario cited phantom `[1][3][4][5]`, plus invented investor names (Fidelity/BlackRock) and a date (July 4). Added a hard counterweight to `SYSTEM_PROMPT`: "cite ONLY numbers that exist (one story → only [1])" + "sharpness must never become fabrication — don't invent names/orgs/dates/figures; stay general rather than fabricate." Re-sampled clean: correct citations (`[1]`/`[1-3]`/`[1]`), Bottom line present, differentiated probabilities (60-70/20-30/10-15), economic linkage with honest "mechanism unclear." Saved `quality/analysis/samples/2026-06-13-improved.html`.
+
+Files: `global-perspectives-starter/frontend/src/utils/analysisPrompt.js` + `docs/` build; `quality/analysis/samples/2026-06-13-improved.html`, `ANALYSIS_QUALITY_COMPARISON_PLAN.md`.
+
 ## 2026-06-13 (saved analysis samples + professional-quality comparison study)
 
 Persisted the generated analyses and started a standalone study of how our output compares to professional analysis (separate from the no-fabrication verify system; this asks "is it professional-grade?").

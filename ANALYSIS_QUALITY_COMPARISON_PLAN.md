@@ -74,6 +74,25 @@ uncertainty**; **(4) analysis of alternatives** (named scenarios); **(5) specifi
 Each is a small `analysisPrompt.js` edit, shipped through build/deploy, then **re-sample +
 human-read** (the verify system proves it still doesn't fabricate; the human judges if it's sharper).
 
+## 4a. Fixes applied 2026-06-13 (+ the key lesson)
+
+Applied to `analysisPrompt.js`: (1) `SYSTEM_PROMPT` now opens with a **"Bottom line"**
+view (only where supported, never manufactured) + **favor structural drivers over
+personalities**; (2) economic lens enforces **direction → magnitude → mechanism** (no bare
+"mixed"/"positive"; "mechanism unclear" if it can't be derived); (3) scenario lens requires
+**meaningfully different probabilities** (no clustering).
+
+**Lesson — sharpening induced fabrication, and the verify check caught it.** First pass: the
+push for specificity made the model invent **phantom citations** (a 1-story scenario cited
+`[1][3][4][5]`), **invented investor names** (Fidelity/BlackRock) and an **invented date**
+(July 4) — hard-fail + auditor flags. Fix: added a hard counterweight to `SYSTEM_PROMPT` —
+"cite ONLY numbers that exist (one story → only [1])" and "sharpness must never become
+fabrication: do not invent specific names/orgs/dates/figures; stay general rather than
+fabricate." Re-sample (saved `samples/2026-06-13-improved.html`): all clean, citations correct
+(`[1]` / `[1-3]` / `[1]`), Bottom line present, probabilities differentiated (60-70/20-30/10-15),
+economic linkage present with honest "mechanism unclear". **Sharp AND honest.** This is the
+verify loop working: change the prompt → check catches the regression → counterweight → re-check.
+
 ## 5. Cadence
 
 On each notable prompt change: regenerate samples → `samples/<date>.md` → compare against §2

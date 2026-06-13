@@ -50,6 +50,31 @@ Takeaway: our layered plan matches the field. L1 = source-credibility + corrobor
 groundedness/reflection surfacing; L3 = the claim-verification pipeline; L4 = characterization.
 We don't need to invent anything — just implement the known patterns at our scale.
 
+## Why a source is wrong — concrete failure taxonomy (investigated 2026-06-13)
+
+Incorrectness enters at **two levels**, and faithfulness checks miss both because each step is
+faithful to the *previous* (already-drifted) step. Real example: the live "China tungsten curbs"
+story (1 source, SCMP, 1h old):
+
+**Level 1 — the world source is shaky (before we touch it):**
+- **Single-source / uncorroborated.** Tungsten, Antarctica, and the hydrogen-engine stories each
+  had **1 source / 1 outlet** today — yet all stamped `significance: high`. Significance ≠ verified.
+- **Breaking & unrevised** (1h old; initial reports get corrected). **Hedged-as-fact** (snippet:
+  "could halt production"). Plus: rumor/satire/opinion/propaganda/low-credibility outlet, outdated,
+  trending≠true.
+
+**Level 2 — our OWN summary drifts from the source (we introduce the error):**
+- Hedge-stripping: "could halt" → "causing disruptions."
+- Over-generalization: tungsten-*hexafluoride* +200% → "tungsten prices surged."
+- **Added framing not in the source:** our summary asserted "China leveraging its dominance in
+  rare-earth/strategic-mineral processing" — not in the single SCMP snippet. The analyst then
+  amplified this into "China ~80% of tungsten." The error was manufactured *inside our pipeline*.
+- Also: incompleteness (SpaceX/xAI), stale cache, Prediction-field-treated-as-fact.
+
+**Implication:** L1 catches Level-1 (corroboration/credibility). Level-2 needs a NEW
+**summary-faithfulness check** — compare our cached summary back to the raw article snippet/text
+(distinct from analysis-faithfulness) — plus L3 (verify load-bearing claims vs the actual article).
+
 ## Layers (cheapest/highest-leverage first)
 
 **L1 — Source robustness (buildable now; data already exists).**

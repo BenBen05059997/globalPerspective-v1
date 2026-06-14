@@ -75,6 +75,23 @@ story (1 source, SCMP, 1h old):
 **summary-faithfulness check** — compare our cached summary back to the raw article snippet/text
 (distinct from analysis-faithfulness) — plus L3 (verify load-bearing claims vs the actual article).
 
+## First run of the check (`quality/analysis/source_check.mjs`, 2026-06-14)
+
+L1 + L1.5 built and run on 6 live stories. Findings:
+- **L1 (robustness):** 3/6 were **single-source** (AI-resurrect, Adichie, Norway trial) — all
+  `significance` medium/high yet one outlet. Confirms the corroboration signal is real and useful.
+- **L1.5 (summary-faithfulness) surfaced a BIGGER, upstream problem:** our cached summaries
+  routinely **over-assert vs the source** — e.g. "US and Iran *announce* peace deal" when the story
+  is that **Iran disputes** it; a Switzerland summary asserting a vote *result/date/margin* the
+  snippet doesn't contain; hedge-stripping ("trying to stop" → "deliberately delaying"). This is the
+  **content-pipeline summarizer** (newsInvokeGemini etc.), affecting the whole site, not just /analyze.
+
+**HONEST CAVEAT on L1.5:** it compares our summary to the source **snippet** (a ~200-char teaser),
+NOT the full article — so some "drift" is really full-article content the snippet omitted (a false
+positive). It reliably flags *contradiction-with-the-headline* and *invented results*, but to
+*confirm* drift we must compare against the **full article text** (fetch the URL) — that's the L3
+upgrade. Treat L1.5-vs-snippet as "claims to verify against the full article", not proven fabrication.
+
 ## Layers (cheapest/highest-leverage first)
 
 **L1 — Source robustness (buildable now; data already exists).**

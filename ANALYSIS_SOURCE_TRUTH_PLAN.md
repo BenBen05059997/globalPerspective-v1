@@ -86,11 +86,22 @@ L1 + L1.5 built and run on 6 live stories. Findings:
   snippet doesn't contain; hedge-stripping ("trying to stop" → "deliberately delaying"). This is the
   **content-pipeline summarizer** (newsInvokeGemini etc.), affecting the whole site, not just /analyze.
 
-**HONEST CAVEAT on L1.5:** it compares our summary to the source **snippet** (a ~200-char teaser),
-NOT the full article — so some "drift" is really full-article content the snippet omitted (a false
-positive). It reliably flags *contradiction-with-the-headline* and *invented results*, but to
-*confirm* drift we must compare against the **full article text** (fetch the URL) — that's the L3
-upgrade. Treat L1.5-vs-snippet as "claims to verify against the full article", not proven fabrication.
+**HONEST CAVEAT on L1.5 (snippet version):** it compared our summary to the source **snippet**
+(~200-char teaser), so some "drift" was really full-article content the snippet omitted.
+
+**L1.5 UPGRADED to full-article 2026-06-14** (`fetchArticle()` in `source_check.mjs`): now fetches
+the source URL, strips HTML→text, and compares the summary against the **full article**. News sites
+(BBC, Al Jazeera, …) fetch fine from Node with a UA header. Precision jumped:
+- **False positives eliminated:** UK-tanker ("shadow fleet" etc.) and Adichie (hedge) → now "OK —
+  supported" (the detail WAS in the full article; the snippet just didn't show it). The caveat was correct.
+- **Real drift CONFIRMED:** Switzerland — our summary asserts the referendum was "rejected by a wide
+  margin"; the article says **the vote is happening Sunday, no result reported** → our summarizer
+  **fabricated an outcome that hasn't occurred.** AI-resurrect — summary says "AI chatbots /
+  conversations"; article is about **deepfake photos/videos** → mischaracterization.
+- **Recurring pattern:** multiple summaries staple a specific date (e.g. "June 14, 2026") the article
+  never gives — pipeline injecting the run-date / a forecast date as if reported.
+Root cause is UPSTREAM (the content-pipeline summarizer, e.g. newsInvokeGemini), affecting the whole
+site — not the Analysis Studio. Fallback to snippet only when a fetch fails (logged).
 
 ## Layers (cheapest/highest-leverage first)
 

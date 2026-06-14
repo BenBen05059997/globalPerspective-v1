@@ -49,10 +49,38 @@ function robustness(sources) {
 }
 
 const DRIFT_SYS = [
-  'You are a source auditor. You are given RAW SOURCE SNIPPETS from news articles and OUR SUMMARY of them.',
-  'List any claim in OUR SUMMARY that is NOT supported by the snippets — especially: (a) a hedge turned into an assertion ("could"→"is/causing"); (b) a specific generalized beyond what the snippet says; (c) framing or interpretation ADDED that is not in the snippets.',
-  'Be terse: one short line per drift, or reply EXACTLY "OK — summary supported by the sources." if there is none. Do not invent drift; only flag real unsupported additions.',
+  'You are a source auditor. You are given the FULL ARTICLE TEXT (as extracted from the page; it may include some nav/boilerplate noise — ignore that) and OUR SUMMARY of it.',
+  'List any claim in OUR SUMMARY that is NOT supported by the article text — especially: (a) a hedge turned into an assertion ("could"→"is/causing"); (b) a specific generalized or invented beyond the article; (c) framing or interpretation ADDED that is not in the article.',
+  'Only flag claims genuinely absent from or contradicted by the article text — if the article supports it anywhere, do not flag it. Be terse: one short line per drift, or reply EXACTLY "OK — summary supported by the article." if there is none.',
 ].join(' ');
+
+// Strip HTML to readable-ish text (no deps). Crude but enough for an LLM to judge support.
+function htmlToText(html) {
+  return (html || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'").replace(/&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Fetch + extract one article. Returns { ok, text } or { ok:false, status }.
+async function fetchArticle(url) {
+  try {
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GP-source-check/1.0; +https://globalperspective.net)', Accept: 'text/html' },
+      signal: AbortSignal.timeout(15000),
+      redirect: 'follow',
+    });
+    if (!r.ok) return { ok: false, status: String(r.status) };
+    const text = htmlToText(await r.text());
+    if (text.length < 500) return { ok: false, status: 'thin' };
+    return { ok: true, text };
+  } catch (e) { return { ok: false, status: e.name === 'TimeoutError' ? 'timeout' : (e.name || 'err') }; }
+}
 
 async function main() {
   const topics = (await proxy('topics')).data?.topics || [];
@@ -69,15 +97,30 @@ async function main() {
     console.log(`   L1: ${r.n} sources · ${r.outlets} outlets · ${r.primary} primary · ${JSON.stringify(r.types)}${C.dim} (significance=${t.significance})${C.rst}`);
 
     if (!L1_ONLY) {
-      const snippets = sources.map((s, i) => `(${i + 1}) [${s.source}] ${s.snippet || ''}`).join('\n').slice(0, 4000);
       const sm = await proxy('summary', { topicId: t.topicId || t.id });
       const summary = (sm?.data?.content || sm?.data?.summary || sm?.content || '').slice(0, 1500);
       if (!summary) { console.log(`   ${C.dim}L1.5: (no cached summary)${C.rst}`); continue; }
+
+      // Try to fetch the FULL article (top sources, in order) — fall back to snippet.
+      let basis = '', mode = '', usedOutlet = '';
+      const urls = sources.filter((s) => s.url).slice(0, 4);
+      for (const s of urls) {
+        const a = await fetchArticle(s.url);
+        if (a.ok) { basis = a.text.slice(0, 9000); mode = 'full article'; usedOutlet = s.source; break; }
+      }
+      if (!basis) {
+        basis = sources.map((s, i) => `(${i + 1}) [${s.source}] ${s.snippet || ''}`).join('\n').slice(0, 4000);
+        mode = `SNIPPET-fallback (article fetch failed: ${urls.map((s) => s.source).join(',')})`;
+      }
+      const label = mode === 'full article' ? `full article via ${usedOutlet}` : mode;
       let drift = '';
-      try { ({ text: drift } = await runChat({ provider: 'deepseek', model: MODEL, apiKey: KEY, system: DRIFT_SYS, user: `RAW SOURCE SNIPPETS:\n${snippets}\n\n---\nOUR SUMMARY:\n${summary}`, temperature: 0 })); }
-      catch (e) { drift = `(drift check failed: ${e.message})`; }
+      try {
+        ({ text: drift } = await runChat({ provider: 'deepseek', model: MODEL, apiKey: KEY, system: DRIFT_SYS,
+          user: `ARTICLE TEXT (${label}):\n${basis}\n\n---\nOUR SUMMARY:\n${summary}`, temperature: 0 }));
+      } catch (e) { drift = `(drift check failed: ${e.message})`; }
       const clean = /^OK —/.test(drift.trim());
-      console.log(`   ${clean ? C.grn : C.yel}L1.5 summary-faithfulness: ${drift.trim().slice(0, 400)}${C.rst}`);
+      console.log(`   ${C.dim}L1.5 basis: ${label}${C.rst}`);
+      console.log(`   ${clean ? C.grn : C.yel}L1.5 summary-faithfulness: ${drift.trim().slice(0, 450)}${C.rst}`);
     }
   }
   console.log(`\n${single}/${Math.min(N, topics.length)} stories are single-source (would be confidence-downgraded).`);

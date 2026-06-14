@@ -276,12 +276,25 @@ function buildTopic(t, idx) {
 }
 
 function buildSummaryPrompt(topic, generatedDate) {
+  // Ground the summary in the ACTUAL article snippets — not just the headline. Summarizing
+  // from title alone made the model confabulate (e.g. asserting a vote "rejected" before it
+  // happened, stapling the run-date into the text). The snippets are the only material.
+  const snippets = topic.sources && topic.sources.length
+    ? topic.sources.map((s) => `- (${s.source || 'source'}) ${s.snippet || ''}`).filter((l) => l.trim().length > 6).join('\n')
+    : '';
+
   return [
-    `You are an analyst summarizing news from ${generatedDate}. Write directly — do not preface with any introduction, meta-commentary, or restatement of these instructions.`,
-    'Summarize this topic in 3-4 bullet points.',
+    'You are an analyst summarizing a news story. Write directly — no preface, meta-commentary, or restatement of these instructions.',
+    'Summarize, in 3-4 bullet points, ONLY what the source snippets below actually report.',
+    'Strict rules — accuracy over richness:',
+    '1) Use ONLY facts present in the snippets. Do NOT add outside knowledge, history, or framing the snippets do not contain.',
+    '2) Preserve hedges exactly: if a source says "could", "may", "is expected to", "is voting on", or "reportedly", keep it hedged — never turn it into a settled fact or a result.',
+    '3) Do NOT state an outcome, verdict, vote result, casualty figure, or number the snippets do not report.',
+    '4) Do NOT invent or infer dates. Include a date ONLY if it appears in a snippet; otherwise omit it. Do not add today\'s date.',
+    '5) If the snippets are thin or the event is unresolved, say so plainly (e.g. "the vote is pending; no result reported") rather than filling the gap.',
     `Title: ${topic.title || 'Untitled Topic'}`,
-    `Description: ${topic.description || 'No description provided.'}`,
-    'Also highlight the main countries or regions involved if present.',
+    snippets ? `Source article snippets (your ONLY material):\n${snippets}` : 'No source snippets were provided — summarize only what the title states, and say the material is limited.',
+    'Also note the main countries or regions involved if the snippets mention them.',
   ].join('\n\n');
 }
 

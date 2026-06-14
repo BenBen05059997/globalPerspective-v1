@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-14 (ROOT-CAUSE FIX: summarizer was fabricating — grounded it in the sources)
+
+The source-truth check (`quality/analysis/source_check.mjs`) traced the site's confident-but-false summaries to the **summarizer prompt** in `NewsProjectInvokeAgentLambda` (`buildSummaryPrompt`): it summarized from the **title only — never the article snippets** — and was told it was "summarizing news from {date}", so it confabulated (e.g. asserting a Swiss referendum was "rejected by a wide margin" before the vote happened) and stapled the run-date into summaries. Site-wide, since every page uses these summaries.
+
+- **Fix:** feed the prompt the actual `topic.sources[].snippet` material, and add strict rules — summarize ONLY what the snippets report; preserve hedges ("could" ≠ "is"); never assert an unreported outcome/result/figure; never invent a date; say "pending/unresolved" when thin.
+- **Deployed** (NewsProjectInvokeAgentLambda-dev, nodejs22) and **all 13 live summaries regenerated**.
+- **Verified before→after on the same stories:** Switzerland's invented "rejected by a wide margin" → gone; AI-resurrect "chatbots" (was deepfake photos) → OK; Norway invented verdict date → OK; Adichie hedge-strip → OK. From ~5/6 stories with real drift to **0 fabrications**; 2 residual soft flags (a hedge nuance; a claim attributed to a 2nd outlet the check didn't fetch). Plan: `ANALYSIS_SOURCE_TRUTH_PLAN.md`.
+
+Files: `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`, `ANALYSIS_SOURCE_TRUTH_PLAN.md`.
+
 ## 2026-06-13 (Analysis Studio: reviewer-driven scenario + citation fixes; source-truth gap planned)
 
 Acted on external-reviewer feedback on the samples.

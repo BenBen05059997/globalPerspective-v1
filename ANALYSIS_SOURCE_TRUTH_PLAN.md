@@ -103,6 +103,25 @@ the source URL, strips HTML→text, and compares the summary against the **full 
 Root cause is UPSTREAM (the content-pipeline summarizer, e.g. newsInvokeGemini), affecting the whole
 site — not the Analysis Studio. Fallback to snippet only when a fetch fails (logged).
 
+## ROOT-CAUSE FIX SHIPPED 2026-06-14 — the summarizer
+
+`source_check.mjs` traced the fabrications to the **summarizer prompt** in
+`NewsProjectInvokeAgentLambda` (`buildSummaryPrompt`): it summarized from the **title only**
+(never the article snippets) and was told it was "summarizing news from {date}" — so it
+confabulated (invented vote results) and stapled the run-date. Fix: (1) feed it the actual
+`topic.sources[].snippet` material; (2) strict rules — summarize ONLY what the snippets report,
+preserve hedges ("could"≠"is"), never assert an unreported outcome/result/figure, never invent
+a date, say "unresolved/pending" when thin. Deployed + all 13 summaries regenerated.
+
+**Before → after (same stories):** Switzerland "rejected by a wide margin" (invented) → gone;
+AI-resurrect "chatbots" (was deepfakes) → OK; Norway invented verdict date → OK; Adichie
+hedge-strip → OK. From ~5/6 with real drift to **0 fabrications**; the 2 residual flags are soft
+(a hedge nuance, and a claim attributed to a 2nd outlet the check didn't fetch).
+
+**Check limitation noted:** `source_check.mjs` fetches only the FIRST source article; a summary
+claim correctly drawn from a *different* cited outlet reads as "unsupported". Refinement: fetch the
+outlet the summary attributes the claim to (or all sources).
+
 ## Layers (cheapest/highest-leverage first)
 
 **L1 — Source robustness (buildable now; data already exists).**

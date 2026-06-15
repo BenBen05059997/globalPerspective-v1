@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-06-15 (swept the other AI generators for the summarizer's bug — not replicated)
+
+Checked whether the "fabricate from the headline" flaw lived in the other content generators. **It didn't** — the summarizer was the only title-only offender:
+- `trace_cause`/`research` (NewsProjectInvokeAgentLambda) use the article snippets; `newsThreadAnalysis` uses thread entries + live web refs; `newsCountryIntelligence` uses tracked coverage; `newsEconomicImpact` builds on threads+summaries+market context and already says "cite every claim". None summarize from the title alone.
+- **Hardened `trace_cause` for consistency:** added a grounding rule — the proximate event and any specific name/figure/date must come from the snippets (no inventing, no hedge-stripping); structural/contributing fields may reason from background but must not fabricate specifics. Deployed; regenerated trace_cause verified still valid JSON.
+- **"Automate all" coverage:** the daily `newsSourceAudit` correctly targets the **summary** — the strictly source-bound factual field that the analyst and the rest of the site build on. The other fields are analytical (`trace_cause`, country, systems — use background by design) or forecasts (`prediction` — speculative by design); auditing them for source-faithfulness would false-positive, so they're not bolted onto the audit. Catching summary drift catches fabrication at its root for the whole chain.
+
+Files: `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`.
+
 ## 2026-06-15 (AUTOMATED: scheduled source-truth audit Lambda — summarizer dead-man's-switch)
 
 Automated the source-truth audit so summarizer regressions are caught without running it by hand (the freshness-monitor pattern, not CI).

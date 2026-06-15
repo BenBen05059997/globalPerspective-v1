@@ -311,6 +311,7 @@ function buildTraceCausePrompt(topic, generatedDate) {
     'Article Snippets:',
     snippets,
     '',
+    'Grounding rule: the "proximate" event and ANY specific name, figure, or date must come from the Article Snippets — do not invent them or turn a hedge ("could") into a settled fact. The structural/contributing/alternativePerspective fields may use general background reasoning, but never fabricate a specific fact the snippets do not support; if unknown, keep it general.',
     'Return this exact JSON structure (all fields required):',
     `{
   "proximate": { "what": "string — the immediate trigger event in 1-2 sentences", "when": "string — approximate date or period" },

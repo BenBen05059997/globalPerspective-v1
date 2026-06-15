@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-06-10
+**Last verified:** 2026-06-15
 
 > **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](./SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md).**
 
@@ -197,9 +197,9 @@ Despite the name, now uses **DeepSeek V4 Flash** (`deepseek-chat`) — no Gemini
 **What it does:**
 1. Reads topics from `id=staging` in Topics table
 2. For each topic, calls DeepSeek V4 (via native `fetch()`) to generate:
-   - **SUMMARY** — 3-4 bullet-point key takeaways
-   - **PREDICTION** — chain-reaction analysis with winners/losers
-   - **TRACE_CAUSE** — historical context and root cause
+   - **SUMMARY** — 3-4 bullet-point key takeaways. **Grounded in the article snippets (fixed 2026-06-14):** previously the prompt summarized from the *title only*, so it confabulated (e.g. asserting a referendum was "rejected by a wide margin" before the vote) and stapled the run-date in. Now it is fed `topic.sources[].snippet` with strict rules — only what the snippets report, preserve hedges, no unreported results/figures, no invented dates. Site-wide impact (everything downstream consumes SUMMARY). Audited daily by `newsSourceAudit` (#24).
+   - **PREDICTION** — chain-reaction analysis with winners/losers (forecast — speculative by design)
+   - **TRACE_CAUSE** — historical context and root cause (grounded in snippets; 2026-06-14 added: proximate event + specific names/figures/dates must come from snippets, no hedge-stripping)
 3. Assigns `threadId` to each topic:
    - If topic has `continues_topic` → inherit parent's `threadId`
    - Else → Jaccard similarity (keywords + regions + category, threshold 0.4) against 7 days of archive
@@ -644,6 +644,14 @@ Generates the **Weekly Signals Brief** — a *signals digest* (NOT a synthesized
 
 **Key env vars:** `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values), `TOPICS_DDB_TABLE` (=`NewsCache`), `SUMMARIZE_PREDICT_TABLE`, `MAX_TOKENS`, `WEEKLY_TOP_THREADS`, `WEEKLY_TOP_COUNTRIES`. **Role:** `newsWeeklyBrief-role` (read NewsCache, Get/Put SummarizeAndPredict).
 
+### 24. `newsSourceAudit` — source-truth dead-man's-switch (SHIPPED 2026-06-15)
+**Path:** `amplify/backend/function/newsSourceAudit/src/index.js`
+**Trigger:** EventBridge `newsSourceAuditDaily` — `cron(30 8 ? * * *)` (daily 08:30 UTC).
+
+**What it does:** the automated half of the **source-truth layer** (`ANALYSIS_SOURCE_TRUTH_PLAN.md`) — faithfulness checks verify the *output*; this verifies the *input* is trustworthy and that OUR summary didn't drift from the source. Self-contained port of `quality/analysis/source_check.mjs`. Per run, for the top `AUDIT_N` (=6) live topics: **L1** deterministic source-robustness from `sources[]` (single-source / low-tier ⇒ "unverified"); **L1.5** fetches the full article(s) from up to 3 cited outlets and asks a DeepSeek auditor whether the cached `SUMMARY` drifted (hedge-strip / invented result / added framing). If confirmed-drift ≥ `DRIFT_ALERT_THRESHOLD` (=2) it **SNS-publishes an alert** to `GlobalPerspectiveAlerts`; always logs to CloudWatch.
+
+**Key env vars:** `XAI_API_KEY`/`GROK_API_URL` (DeepSeek, copied from newsEconomicImpact), `AUDIT_MODEL` (=`deepseek-v4-pro`), `PROXY_ENDPOINT`, `SNS_TOPIC_ARN`, `AUDIT_N`, `DRIFT_ALERT_THRESHOLD`. **Role:** `newsSourceAudit-role` (basic-exec logs + `sns:Publish` to GlobalPerspectiveAlerts). Reads content via the public proxy (no DDB perms).
+
 ---
 
 ## Observability & Monitoring
@@ -651,7 +659,7 @@ Generates the **Weekly Signals Brief** — a *signals digest* (NOT a synthesized
 Two layers, both roll-your-own (the user rejects paid Sentry on cost):
 
 - **Active / on-demand** — four standalone Playwright/static checks under `scripts/` (`smoke-test.mjs`, `link-crawl.mjs`, `auth-guard-check.mjs`, `contract-check.mjs`), run by hand against production. They detect the 8 bug classes in `BUG_PLAYBOOK.md`. They only run when invoked.
-- **Passive / 24-7** — the always-on complement that pushes alerts: `newsClientErrors` (#17) captures errors → `newsErrorDigest` (#19) alerts on new/spiking; `newsFreshnessMonitor` (#18) alerts on stale content / proxy down. All alerts route to one SNS topic **`GlobalPerspectiveAlerts`** (`arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectiveAlerts`) → email (confirmed subscription). Dependency security via `.github/dependabot.yml` + the repo Dependabot-alerts toggle.
+- **Passive / 24-7** — the always-on complement that pushes alerts: `newsClientErrors` (#17) captures errors → `newsErrorDigest` (#19) alerts on new/spiking; `newsFreshnessMonitor` (#18) alerts on stale content / proxy down; **`newsSourceAudit` (#24)** alerts when our summaries fabricate / drift from their sources (source-truth dead-man's-switch). All alerts route to one SNS topic **`GlobalPerspectiveAlerts`** (`arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectiveAlerts`) → email (confirmed subscription). Dependency security via `.github/dependabot.yml` + the repo Dependabot-alerts toggle.
 
 External monitors that need the operator's own account (UptimeRobot, Google Search Console, optional Cloudflare Web Analytics) are documented in `BUG_PLAYBOOK.md` → "Passive monitoring (24/7)".
 
@@ -833,6 +841,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `TriggerNewsEconomicQuality` | `cron(0 8 * * ? *)` | newsEconomicQuality (08:00 UTC daily) |
 | `TriggerPredictionResolver` | `cron(0 9 * * ? *)` | newsPredictionResolver (09:00 UTC daily) |
 | `TriggerWeeklyBrief` | `cron(0 6 ? * SUN *)` | newsWeeklyBrief (Sundays 06:00 UTC — generates the weekly signals draft) |
+| `newsSourceAuditDaily` | `cron(30 8 ? * * *)` | newsSourceAudit (#24 — daily source-truth audit; SNS-alerts on summary drift) |
 | `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
 | `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |
 | `MarketsMacrosWeekly` | `cron(0 2 ? * SUN *)` | newsMarketsData |
@@ -941,8 +950,8 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `Account.jsx` | User account tabs: saved items + profile |
 | `IntelligenceLoader.jsx` | Animated loading states (typewriter + explode variants) |
 | `TrackRecordPage.jsx` | `/track-record` — forecast calibration scoreboard (stat cards, Brier score + verdict, calibration table, recently-resolved triggers); honest empty state until human-confirmed verdicts exist. See [Prediction calibration](#prediction-calibration-track-record) |
-| `AnalysisStudio.jsx` | `/analyze` — **BYOK self-serve analysis** (see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)). Pick ≤4 stories → **Guided lens** (5 templates) or **Free-form** → cited deep-dive synthesized from our cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE`. Runs on the user's own key (browser-only). |
-| `ProviderModal.jsx` | The `/analyze` provider/model/key chooser modal (OpenAI · DeepSeek · Gemini · OpenRouter · Anthropic). Writes `{provider,model,key}` to `localStorage` only — never sent to our servers. |
+| `AnalysisStudio.jsx` | `/analyze` — **BYOK self-serve analysis** (registered-only; see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)). Pick ≤4 stories → **Guided lens** / **Free-form** / **Deep research (web)** → cited deep-dive from cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE` (deep mode also web-searches). Output runs through the validator + source-robustness banner. Runs on the user's own key (browser-only). |
+| `ProviderModal.jsx` | The `/analyze` provider/model/key chooser modal (OpenAI · DeepSeek `v4-flash`/`-pro` · **Perplexity** · Gemini · OpenRouter · Anthropic; labels which can web-search). Writes `{provider,model,key}` to `localStorage` only — never sent to our servers. |
 
 ### Key Hooks
 
@@ -997,9 +1006,10 @@ Currently shipped: the `SITE_WELCOME` popover (auto), the `SITE_INTRO` walk ("?"
 
 `/analyze` (`AnalysisStudio.jsx`) — SHIPPED 2026-06-10 (commit `c1ef5f6`). The first "analyze it yourself" surface: a reader picks ≤4 real stories and gets a **cited deep-dive** built from our own intelligence. Full spec: `ANALYSIS_STUDIO_PLAN.md`. It is the feature the future **Polar credits** will meter (`POLAR_BILLING_PLAN.md`) — **build-first, monetize later**; see [[project-analysis-studio]].
 
-- **Two input modes, same honesty guardrails under both** (the A/B is input style, not safety): **Guided** = 5 fixed lenses (Scenario forecast / Winners & losers / Economic ripple / Root-cause chain / Compare); **Free-form** = ask anything about the selected stories. Both cite sources with `[n]`, refuse on insufficient data, never fabricate figures, and stay locked to the selected stories. Lenses + the guardrailed system prompt + the cited-context builder live in `utils/analysis.js`.
-- **BYOK, key never leaves the browser.** `ProviderModal.jsx` chooses provider + model + key; `utils/byok.js` persists `{provider,model,key}` to `localStorage` only. `services/llm.js` calls the provider **directly from the browser** — one OpenAI-compatible path (OpenAI / DeepSeek / Gemini / OpenRouter) + a separate Anthropic adapter (uses the `anthropic-dangerous-direct-browser-access` header). **No new backend** this phase: the page fetches story records from the existing public proxy, then the LLM call goes browser → provider; our servers never see the key.
-- **Caveats:** per-provider browser-CORS is confirmed only at run time (a blocked provider would need a no-store pass-through Lambda fallback); the Anthropic model IDs use current session values. No daily cap during BYOK testing — the cap/credit lands when Polar billing goes live.
+- **Three input modes** (2026-06-11): **Guided** = 5 fixed lenses (Scenario forecast / Winners & losers / Economic ripple / Root-cause chain / Compare); **Free-form** = ask anything; **Deep research 🔎web** = the model does REAL web search (Perplexity sonar native, or Anthropic's `web_search_20250305` tool) seeded by the selected stories → What happened / Why / What next / Who's affected. Deep mode is **gated to search-capable providers** (disabled with a reason for DeepSeek/OpenAI/Gemini; `runChat` hard-refuses faking it). Pure prompt layer = `utils/analysisPrompt.js`; `utils/analysis.js` keeps the cited-context fetch + re-exports. Prompts upgraded to analyst-grade (Bottom-line thesis, structural drivers, scenario forks-on-distinct-outcomes + partition, economic direction→magnitude→mechanism) with a hard anti-fabrication counterweight.
+- **Verify system (every run) + source-truth (2026-06-11..15):** `utils/analysisValidator.js` checks the output for `phantom_citation` (error), `invented_figure`, `invented_date`, `no_citations`, `thin_input` → a pass/verify/flag banner. `utils/sourceRobustness.js` adds a **"Source basis"** line (single-source ⇒ "unverified, corroborate"). Quality has no ground truth → it's a **check, not a benchmark** (the auditor/scorers live offline in `quality/analysis/`: `run.mjs`, `judge.mjs`, `check.mjs`, `source_check.mjs`; the daily `newsSourceAudit` #24 is the automated guard). See `ANALYSIS_STUDIO_TESTING_PLAN.md` + `ANALYSIS_SOURCE_TRUTH_PLAN.md`.
+- **BYOK, key never leaves the browser.** `ProviderModal.jsx` chooses provider + model + key; `utils/byok.js` persists to `localStorage` only. `services/llm.js` calls the provider **directly from the browser** — one OpenAI-compatible path (OpenAI / DeepSeek / **Perplexity** / Gemini / OpenRouter) + an Anthropic adapter. DeepSeek shows explicit **V4 model versions** (`deepseek-v4-flash`/`-pro`; legacy `deepseek-chat` retires 2026-07-24) and sends `thinking:{type:'disabled'}` (V4 defaults to thinking, which broke output). **Registered-only:** `/analyze` requires a signed-in (non-anonymous) account — a blocking "Sign in to analyze" gate otherwise; key management (change/remove) lives on the Account "Analysis key" tab.
+- **Status:** DeepSeek browser-CORS verified for both prod origins; live BYOK call verified end-to-end. Deep-research (Perplexity/Anthropic) plumbing not yet live-tested (no key). No daily cap during BYOK testing — the cap/credit lands when Polar billing goes live. (Footer shows the deployed build version `v<sha>·<date>` for deploy confirmation.)
 
 ### Service Layer
 

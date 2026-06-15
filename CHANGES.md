@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-15 (AUTOMATED: scheduled source-truth audit Lambda — summarizer dead-man's-switch)
+
+Automated the source-truth audit so summarizer regressions are caught without running it by hand (the freshness-monitor pattern, not CI).
+
+- **New `newsSourceAudit` Lambda** (nodejs22, self-contained port of `quality/analysis/source_check.mjs`): daily it pulls the top live topics, computes L1 source robustness, fetches the full article(s) from up to 3 cited outlets, and asks the DeepSeek auditor whether OUR cached summary drifted (hedge-strip / invented result / added framing). If confirmed-drift ≥ `DRIFT_ALERT_THRESHOLD` (default 2) it **SNS-emails an alert**; always logs to CloudWatch.
+- **Infra:** IAM role `newsSourceAudit-role` (basic-exec + `sns:Publish`); env DeepSeek key copied from `newsEconomicImpact` (never exposed); reuses the existing **`GlobalPerspectiveAlerts`** SNS topic (operator email already confirmed). EventBridge `newsSourceAuditDaily` `cron(30 8 ? * * *)`.
+- **First run (test invoke):** checked 6, flagged 2 summary-drift + 1 single-source → alert fired to email. Works end-to-end. (Threshold/cadence/model tunable via env; raise `DRIFT_ALERT_THRESHOLD` if it proves noisy.)
+
+Files: `amplify/backend/function/newsSourceAudit/src/index.js` (new).
+
 ## 2026-06-15 (Analysis Studio: live source-robustness banner (L1) + multi-source check refinement)
 
 Surfaced the source-truth L1 signal to readers and tightened the offline check.

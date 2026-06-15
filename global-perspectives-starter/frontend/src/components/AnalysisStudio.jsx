@@ -7,6 +7,7 @@ import { runChat } from '../services/llm';
 import { loadByok } from '../utils/byok';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '../utils/analysis';
 import { validateAnalysis } from '../utils/analysisValidator';
+import { assessSelection } from '../utils/sourceRobustness';
 import ProviderModal from './ProviderModal';
 import Markdown from './Markdown';
 import './AnalysisStudio.css';
@@ -36,6 +37,7 @@ export default function AnalysisStudio() {
   const [citations, setCitations] = useState([]);
   const [webSources, setWebSources] = useState([]);
   const [checks, setChecks] = useState(null);
+  const [sourceInfo, setSourceInfo] = useState(null);
   const [error, setError] = useState(null);
 
   const provider = byok ? getProvider(byok.provider) : null;
@@ -76,6 +78,9 @@ export default function AnalysisStudio() {
     setCitations([]);
     setWebSources([]);
     setChecks(null);
+    // Source robustness (L1): is this built on corroborated reporting or a single
+    // unverified outlet? Computed client-side from the selected stories' sources.
+    setSourceInfo(assessSelection(selectedTopics));
     try {
       const { context, citations: cites, thin } = await buildAnalysisContext(selectedTopics);
       const deep = mode === 'deep';
@@ -273,6 +278,12 @@ export default function AnalysisStudio() {
             <div className="as-muted">Running on {modelChip}…</div>
           ) : (
             <>
+              {sourceInfo && sourceInfo.total > 0 && (
+                <div className={`as-srcbasis${sourceInfo.severity === 'warn' ? ' warn' : ''}`}>
+                  <span className="as-check-dot" aria-hidden />
+                  <span><strong>Source basis:</strong> {sourceInfo.message}</span>
+                </div>
+              )}
               {checks && checks.warnings.length > 0 && (
                 <div className={`as-checks${checks.hasError ? ' err' : ''}`}>
                   <div className="as-checks-head">

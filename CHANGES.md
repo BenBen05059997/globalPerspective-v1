@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-06-15 (Analysis Studio: live source-robustness banner (L1) + multi-source check refinement)
+
+Surfaced the source-truth L1 signal to readers and tightened the offline check.
+
+- **Live "Source basis" banner in `/analyze`:** new pure `utils/sourceRobustness.js` (`assessSelection`) scores the selected stories' `sources[]` (count, distinct outlets, tier) client-side — no model call. The result now shows, above the analysis, either "All N selected stories are corroborated by multiple outlets" (green) or an amber "**N of M selected stories rest on a single or low-credibility outlet — treat those as unverified**." So a single-source premise visibly downgrades the analysis for the reader. Mirrors `quality/analysis/source_check.mjs` so live + offline agree.
+- **`source_check.mjs` refined:** L1.5 now fetches the full article from **up to 3 cited outlets** and concatenates them (was: first source only), so a summary claim correctly drawn from a *second* outlet is no longer mis-flagged as unsupported (the last residual false-flag from the 2026-06-14 run).
+
+Files: `global-perspectives-starter/frontend/src/{utils/sourceRobustness.js,components/AnalysisStudio.jsx,components/AnalysisStudio.css}` + `docs/` build; `quality/analysis/source_check.mjs`.
+
 ## 2026-06-14 (ROOT-CAUSE FIX: summarizer was fabricating — grounded it in the sources)
 
 The source-truth check (`quality/analysis/source_check.mjs`) traced the site's confident-but-false summaries to the **summarizer prompt** in `NewsProjectInvokeAgentLambda` (`buildSummaryPrompt`): it summarized from the **title only — never the article snippets** — and was told it was "summarizing news from {date}", so it confabulated (e.g. asserting a Swiss referendum was "rejected by a wide margin" before the vote happened) and stapled the run-date into summaries. Site-wide, since every page uses these summaries.

@@ -369,3 +369,22 @@
   cursor: pointer;
 }
 .as-gate-back:hover { border-color: var(--line-2); color: var(--ink); }
+
+/* ── Source basis (L1 source-robustness) ────────── */
+.as-srcbasis {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 var(--space-4);
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--risk-l);
+  background: var(--risk-l-soft);
+  font-size: var(--text-sm);
+  color: var(--ink-mid);
+  line-height: 1.45;
+}
+.as-srcbasis .as-check-dot { background: var(--risk-l); margin-top: 6px; }
+.as-srcbasis.warn { border-color: var(--risk-e); background: var(--risk-e-soft); }
+.as-srcbasis.warn .as-check-dot { background: var(--risk-e); }
+.as-srcbasis strong { color: var(--ink); }

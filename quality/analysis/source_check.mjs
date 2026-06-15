@@ -101,18 +101,17 @@ async function main() {
       const summary = (sm?.data?.content || sm?.data?.summary || sm?.content || '').slice(0, 1500);
       if (!summary) { console.log(`   ${C.dim}L1.5: (no cached summary)${C.rst}`); continue; }
 
-      // Try to fetch the FULL article (top sources, in order) — fall back to snippet.
-      let basis = '', mode = '', usedOutlet = '';
-      const urls = sources.filter((s) => s.url).slice(0, 4);
-      for (const s of urls) {
+      // Fetch the FULL article from MULTIPLE cited outlets (so a claim attributed to any
+      // of them is covered), concatenate; fall back to snippets only if all fetches fail.
+      const parts = [], outletsUsed = [];
+      for (const s of sources.filter((x) => x.url).slice(0, 5)) {
+        if (parts.length >= 3) break;
         const a = await fetchArticle(s.url);
-        if (a.ok) { basis = a.text.slice(0, 9000); mode = 'full article'; usedOutlet = s.source; break; }
+        if (a.ok) { parts.push(`[${s.source}]\n${a.text.slice(0, 5000)}`); outletsUsed.push(s.source); }
       }
-      if (!basis) {
-        basis = sources.map((s, i) => `(${i + 1}) [${s.source}] ${s.snippet || ''}`).join('\n').slice(0, 4000);
-        mode = `SNIPPET-fallback (article fetch failed: ${urls.map((s) => s.source).join(',')})`;
-      }
-      const label = mode === 'full article' ? `full article via ${usedOutlet}` : mode;
+      let basis, label;
+      if (parts.length) { basis = parts.join('\n\n---\n\n').slice(0, 13000); label = `full articles via ${outletsUsed.join(', ')}`; }
+      else { basis = sources.map((s, i) => `(${i + 1}) [${s.source}] ${s.snippet || ''}`).join('\n').slice(0, 4000); label = `SNIPPET-fallback (all fetches failed)`; }
       let drift = '';
       try {
         ({ text: drift } = await runChat({ provider: 'deepseek', model: MODEL, apiKey: KEY, system: DRIFT_SYS,

@@ -39,13 +39,17 @@
 - ✅ **`newsPolarBilling` Lambda** (`amplify/backend/function/newsPolarBilling/`) — one Function URL, three jobs: Polar **webhook** (Standard-Webhooks signature verify → grant/revoke `tier=member` in `USERS_TABLE`), **`create_checkout`** (Firebase-JWT → Polar Checkout Session with `customer_external_id=uid` → `{url}`), **`get_membership`** (Firebase-JWT read). Deploy + Polar-config steps in its `README.md`.
 - ✅ **Frontend** — `restProxy.js` (`createCheckout`/`fetchMembership`/`billingConfigured`), `hooks/useMembership.js`, `components/MembershipPage.jsx` (+css) at route **`/membership`** ($15/mo + $150/yr cards, current-status, honest "not available yet" state until `window.POLAR_BILLING_ENDPOINT` is set). No nav link yet (route is hidden until go-live).
 
-**NOT done yet (the go-live checklist):**
-1. Deploy `newsPolarBilling` to AWS + IAM (see README) — needs your `POLAR_ACCESS_TOKEN` + `POLAR_WEBHOOK_SECRET` in Lambda env.
-2. Create the Polar **webhook endpoint** (→ Function URL) + copy its signing secret.
-3. Set `window.POLAR_BILLING_ENDPOINT` in `docs/config.js`, then build+deploy the frontend.
-4. **Public-content gating** in `newsSensitiveData` (Decision #3 — what members actually get). ← the real "go-live" gate; deliberately not built until decided.
-5. Sandbox test (Polar test cards / 100%-off code), then flip the product live.
-6. (Later) "Manage subscription" → Polar customer portal link.
+**✅ DEPLOYED to AWS 2026-06-16** — `newsPolarBilling` is live:
+- Role `newsPolarBilling-role` (CloudWatch logs + GetItem/UpdateItem on `GlobalPerspectiveUserTable` only). Runtime nodejs20.x, 256MB/15s.
+- Env set: `POLAR_ACCESS_TOKEN` (verified against Polar; **rotate — it was pasted in chat**), `POLAR_PRODUCT_MONTHLY`/`_YEARLY`, `POLAR_API_BASE=https://api.polar.sh`, `USERS_DDB_TABLE=GlobalPerspectiveUserTable`, `FIREBASE_PROJECT_ID=globalperpectives`, `SITE_URL`.
+- **Function URL:** `https://zlf6j2yfk6jxtnctlyfgyl26uy0shwyx.lambda-url.ap-northeast-1.on.aws/` (auth NONE + CORS). Smoke-tested: no-auth→401, unknown-action→400. Products confirmed live ($15/mo `e53eeb9a…`, $150/yr `cd375325…`).
+
+**Remaining (the go-live checklist):**
+1. ⏳ **Create the Polar webhook** → the Function URL above (format Raw; events `subscription.*` + `order.paid`) → copy its signing secret → set `POLAR_WEBHOOK_SECRET` on the Lambda. *(Until then, the webhook path rejects everything — checkout/create still work.)*
+2. Set `window.POLAR_BILLING_ENDPOINT` to the Function URL in `docs/config.js`, then build+deploy the frontend.
+3. **Public-content gating** in `newsSensitiveData` (Decision #3 — what members actually get). ← the real "go-live" gate; deliberately not built until decided.
+4. Sandbox/100%-off-code test of the full unpaid→paid→`tier=member` flow, then flip the product live.
+5. (Later) "Manage subscription" → Polar customer portal link.
 
 ---
 

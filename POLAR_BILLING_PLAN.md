@@ -44,12 +44,20 @@
 - Env set: `POLAR_ACCESS_TOKEN` (verified against Polar; **rotate — it was pasted in chat**), `POLAR_PRODUCT_MONTHLY`/`_YEARLY`, `POLAR_API_BASE=https://api.polar.sh`, `USERS_DDB_TABLE=GlobalPerspectiveUserTable`, `FIREBASE_PROJECT_ID=globalperpectives`, `SITE_URL`.
 - **Function URL:** `https://zlf6j2yfk6jxtnctlyfgyl26uy0shwyx.lambda-url.ap-northeast-1.on.aws/` (auth NONE + CORS). Smoke-tested: no-auth→401, unknown-action→400. Products confirmed live ($15/mo `e53eeb9a…`, $150/yr `cd375325…`).
 
+**✅ DECISION #3 RESOLVED + member side DEPLOYED 2026-06-16** — reading stays **100% free** (no `newsSensitiveData` gating). The **membership = the Analysis Studio on our compute** (no BYOK). New **`newsAnalyze` Lambda** is live:
+- Role `newsAnalyze-role` (logs + GetItem/UpdateItem on `GlobalPerspectiveUserTable`). nodejs20.x, 256MB/30s.
+- Member-gated (Firebase JWT → require `tier=member`), server-pinned honesty prompt, daily fair-use cap (`ANALYZE_DAILY_CAP=50`), runs on **our DeepSeek** (key copied from `newsCountryIntelligence`, never exposed). Smoke-tested no-auth→401.
+- **Function URL:** `https://cahpz2r7c2fins4vsi5udzsdxm0rjxir.lambda-url.ap-northeast-1.on.aws/`
+- Frontend: `AnalysisStudio.jsx` now routes members → server path ("Member · included", no key); free registered users keep BYOK + a "Run it on us with a membership →" nudge. Deep-research stays BYOK (needs web search).
+
 **Remaining (the go-live checklist):**
-1. ⏳ **Create the Polar webhook** → the Function URL above (format Raw; events `subscription.*` + `order.paid`) → copy its signing secret → set `POLAR_WEBHOOK_SECRET` on the Lambda. *(Until then, the webhook path rejects everything — checkout/create still work.)*
-2. Set `window.POLAR_BILLING_ENDPOINT` to the Function URL in `docs/config.js`, then build+deploy the frontend.
-3. **Public-content gating** in `newsSensitiveData` (Decision #3 — what members actually get). ← the real "go-live" gate; deliberately not built until decided.
-4. Sandbox/100%-off-code test of the full unpaid→paid→`tier=member` flow, then flip the product live.
-5. (Later) "Manage subscription" → Polar customer portal link.
+1. ⏳ **Create the Polar webhook** → the billing Function URL (format Raw; events `subscription.*` + `order.paid`) → copy its signing secret → set `POLAR_WEBHOOK_SECRET` on `newsPolarBilling`. *(Until then the webhook path rejects everything — checkout still works.)*
+2. Add to `docs/config.js` (user-owned — never overwrite):
+   - `window.POLAR_BILLING_ENDPOINT = 'https://zlf6j2yfk6jxtnctlyfgyl26uy0shwyx.lambda-url.ap-northeast-1.on.aws/';`
+   - `window.NEWS_ANALYZE_ENDPOINT = 'https://cahpz2r7c2fins4vsi5udzsdxm0rjxir.lambda-url.ap-northeast-1.on.aws/';`
+3. Build + deploy the frontend (ships `/membership` + the member Studio path; both stay inert until the endpoints above are set).
+4. Test: temporarily set a test user `tier=member` in `GlobalPerspectiveUserTable` → run a member analysis; then 100%-off-code test the full unpaid→paid→`tier=member` webhook flow; then flip the Polar product live.
+5. (Later) add a nav link to `/membership`; "Manage subscription" → Polar customer portal link; rotate the access token.
 
 ---
 

@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { getProvider } from '../services/llm';
 import { runChat } from '../services/llm';
 import { loadByok } from '../utils/byok';
+import { useMembership } from '../hooks/useMembership';
+import { runMemberAnalysis, analyzeConfigured } from '../services/restProxy';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '../utils/analysis';
 import { validateAnalysis } from '../utils/analysisValidator';
 import { assessSelection } from '../utils/sourceRobustness';
@@ -22,6 +24,13 @@ export default function AnalysisStudio() {
   // not-registered). This gate is scoped to THIS feature only — it does not touch
   // the public data hooks.
   const isRegistered = Boolean(user && !user.isAnonymous);
+
+  // Members run on OUR compute (no BYOK needed) — that convenience IS the paid product;
+  // reading the site stays free. Free registered users keep BYOK. isMember stays false
+  // until billing is configured (window.POLAR_BILLING_ENDPOINT), so this is a no-op until
+  // go-live. `memberRun` also requires the analyze endpoint to be wired.
+  const { isMember, available: billingAvailable } = useMembership();
+  const memberRun = isMember && analyzeConfigured();
 
   const [byok, setByok] = useState(() => loadByok());
   const [modalOpen, setModalOpen] = useState(false);
@@ -70,7 +79,11 @@ export default function AnalysisStudio() {
   async function onRun() {
     setError(null);
     if (!isRegistered) return; // the sign-in gate overlay handles this
-    if (!byok) { setModalOpen(true); return; }
+    const deep = mode === 'deep';
+    // Members run guided/free-form on our compute; deep research needs a web-search
+    // provider, so it stays BYOK even for members.
+    const useServer = memberRun && !deep;
+    if (!useServer && !byok) { setModalOpen(true); return; }
     if (selectedTopics.length === 0) { setError('Pick at least one story to analyze.'); return; }
 
     setRunning(true);
@@ -83,23 +96,33 @@ export default function AnalysisStudio() {
     setSourceInfo(assessSelection(selectedTopics));
     try {
       const { context, citations: cites, thin } = await buildAnalysisContext(selectedTopics);
-      const deep = mode === 'deep';
       // Thin material only over-reaches in the closed-book modes; deep mode pulls
       // fresh material from the web, so the guard doesn't apply there.
       const thinGuard = thin && !deep;
-      const user = buildUserMessage({ context, mode, lensId, focus, freeform, thin: thinGuard });
-      const { text, webSources: web } = await runChat({
-        provider: byok.provider,
-        model: byok.model,
-        apiKey: byok.key,
-        system: deep ? DEEP_SYSTEM_PROMPT : SYSTEM_PROMPT,
-        user,
-        webResearch: deep,
-        maxTokens: deep ? 3000 : 1600,
-      });
+      const userMsg = buildUserMessage({ context, mode, lensId, focus, freeform, thin: thinGuard });
+
+      let text = '';
+      let web = [];
+      if (useServer) {
+        // Member path: our compute (DeepSeek), server-pinned system prompt + fair-use cap.
+        const r = await runMemberAnalysis(userMsg);
+        text = r.report;
+      } else {
+        const r = await runChat({
+          provider: byok.provider,
+          model: byok.model,
+          apiKey: byok.key,
+          system: deep ? DEEP_SYSTEM_PROMPT : SYSTEM_PROMPT,
+          user: userMsg,
+          webResearch: deep,
+          maxTokens: deep ? 3000 : 1600,
+        });
+        text = r.text;
+        web = r.webSources || [];
+      }
       setReport(text);
       setCitations(cites);
-      setWebSources(web || []);
+      setWebSources(web);
       // Enforce the honesty guardrails on what actually came back (the prompt only
       // asks; this verifies). In deep mode the web legitimately introduces figures
       // beyond our material, so the invented-figure check (context) is skipped —
@@ -108,7 +131,9 @@ export default function AnalysisStudio() {
         ? { citations: cites }
         : { citations: cites, context, thinInput: thinGuard }));
     } catch (err) {
-      setError(err?.message || 'Analysis failed.');
+      if (err?.code === 'daily_limit') setError(`You've reached today's analysis limit${err.limit ? ` (${err.limit})` : ''}. It resets tomorrow.`);
+      else if (err?.code === 'membership_required') setError('This run needs an active membership.');
+      else setError(err?.message || 'Analysis failed.');
     } finally {
       setRunning(false);
     }
@@ -122,12 +147,13 @@ export default function AnalysisStudio() {
           <h1>Analyze the news yourself</h1>
           <p className="as-sub">
             Pick the stories you care about, choose a lens or ask your own question, and get a
-            cited deep-dive built from our intelligence. Runs on your own API key.
+            cited deep-dive built from our intelligence.{' '}
+            {memberRun ? 'Included with your membership — no API key needed.' : 'Runs on your own API key.'}
           </p>
         </div>
         <button className="as-model-chip" onClick={() => setModalOpen(true)} title="Choose provider / model / key">
           <span className="as-chip-dot" />
-          {modelChip}
+          {memberRun && !byok ? 'Member · included' : modelChip}
           <span className="as-chip-caret">▾</span>
         </button>
       </header>
@@ -248,8 +274,16 @@ export default function AnalysisStudio() {
           <button className="as-run" onClick={onRun} disabled={running}>
             {running ? 'Analyzing…' : 'Run analysis'}
           </button>
-          {!byok && (
+          {memberRun ? (
+            <div className="as-hint">Included with your membership — no API key needed.</div>
+          ) : !byok ? (
             <div className="as-hint">You'll be asked to choose a model + paste your API key first.</div>
+          ) : null}
+          {!memberRun && billingAvailable && (
+            <div className="as-hint">
+              Don't want to manage an API key?{' '}
+              <button className="as-link-btn" onClick={() => navigate('/membership')}>Run it on us with a membership →</button>
+            </div>
           )}
           {error && (
             <div className="as-error">
@@ -275,7 +309,7 @@ export default function AnalysisStudio() {
             )}
           </div>
           {running ? (
-            <div className="as-muted">Running on {modelChip}…</div>
+            <div className="as-muted">Running on {memberRun && mode !== 'deep' ? 'Global Perspectives AI' : modelChip}…</div>
           ) : (
             <>
               {sourceInfo && sourceInfo.total > 0 && (
@@ -341,7 +375,7 @@ export default function AnalysisStudio() {
                 </div>
               )}
               <p className="as-disclaimer">
-                Generated by your chosen model from our story data
+                Generated by {memberRun && webSources.length === 0 ? 'Global Perspectives AI' : 'your chosen model'} from our story data
                 {webSources.length > 0 && ' plus model-retrieved web sources (not verified by our pipeline)'}.
                 Treat as analyst input, not fact — verify load-bearing claims against the linked sources.
               </p>

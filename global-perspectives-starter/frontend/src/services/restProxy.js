@@ -334,3 +334,32 @@ export async function fetchMembership() {
   return polarRequest('get_membership');
 }
 
+// ── Member-side Analysis Studio (newsAnalyze Lambda, separate Function URL) ──────
+// Members run analyses on our compute (no BYOK). Endpoint set in docs/config.js
+// (window.NEWS_ANALYZE_ENDPOINT). Throws an Error with `.code` on a structured failure
+// (membership_required / daily_limit) so the UI can message it.
+export function analyzeConfigured() {
+  return typeof window !== 'undefined' && !!window.NEWS_ANALYZE_ENDPOINT;
+}
+
+export async function runMemberAnalysis(userMessage) {
+  const endpoint = typeof window !== 'undefined' && window.NEWS_ANALYZE_ENDPOINT;
+  if (!endpoint) throw new Error('Missing NEWS_ANALYZE_ENDPOINT');
+  const token = getAuthToken ? await getAuthToken() : null;
+  if (!token) throw new Error('Sign in required');
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ user: userMessage }),
+  });
+  let body;
+  try { body = await res.json(); } catch { body = null; }
+  if (!res.ok) {
+    const err = new Error(body?.error || `Analyze HTTP ${res.status}`);
+    err.code = body?.error;
+    err.limit = body?.limit;
+    throw err;
+  }
+  return body; // { report, used, limit }
+}
+

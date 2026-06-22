@@ -5,7 +5,7 @@
  *   - Frankfurter (ECB FX rates, no key)       — hourly
  *   - FRED (bond yields, free key)              — daily
  *   - World Bank (country macros, no key)       — weekly
- *   - Stooq CSV (commodities, no key)           — hourly (15-min delayed)
+ *   - Yahoo Finance (commodities + equities, no key) — hourly (was Stooq until 2026-06-22)
  *
  * DDB table: MARKETS_DDB_TABLE
  *   PK                    SK                   Contents
@@ -26,8 +26,8 @@
  *   { "source": "fx" }       → FX only
  *   { "source": "yields" }   → FRED yields only
  *   { "source": "macros" }   → World Bank macros only
- *   { "source": "commodities" } → Stooq commodities only
- *   { "source": "equities" } → Stooq indices + ETFs only
+ *   { "source": "commodities" } → Yahoo commodities only
+ *   { "source": "equities" } → Yahoo indices + ETFs only
  *   { "source": "crypto" } → CoinGecko BTC + ETH only
  */
 
@@ -233,98 +233,35 @@ async function fetchMacros() {
 // SOURCE 4 — STOOQ CSV (commodities + indices, 15-min delayed, no key)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Stooq symbols: brent=brn.f, wti=cl.f, gold=gc.f, copper=hg.f, vix=^vix, dxy=dx.f
-const STOOQ_SYMBOLS = {
-  brent:  'cb.f',   // ICE Brent Crude
-  wti:    'cl.f',   // NYMEX WTI Crude
-  gold:   'gc.f',   // COMEX Gold
-  copper: 'hg.f',   // COMEX Copper
-  dxy:    'dx.f',   // US Dollar Index
-  natgas: 'ng.f',    // Henry Hub natural gas
-};
+// NOTE: Stooq's free CSV endpoints (/q/l/ last-quote + /q/d/l/ history) were retired in
+// favour of a JS proof-of-work bot wall (2026-06-22) and can no longer be read server-side.
+// Commodities + equities now come from Yahoo Finance via the YAHOO_COMMODITIES /
+// YAHOO_EQUITIES maps below (same maps seed_history already used). VIX was already Yahoo.
 
-// Stooq index symbols (^ prefix). If any symbol fails at runtime, value is null.
-// Verify on stooq.com if a key returns null persistently.
-const STOOQ_INDICES = {
-  SPX:   '^spx',     // S&P 500
-  NDX:   '^ndx',     // Nasdaq 100
-  DJI:   '^dji',     // Dow Jones Industrial
-  IWM:   'iwm.us',   // iShares Russell 2000 ETF (proxy — Stooq lacks ^rut; small-cap/domestic-economy gauge)
-  FTM:   '^ftm',     // FTSE 100
-  DAX:   '^dax',     // DAX
-  N225:  '^nkx',     // Nikkei 225
-  HSI:   '^hsi',     // Hang Seng
-  SSEC:  '^shc',     // Shanghai Composite
-  KS11:  '^kospi',   // KOSPI
-  TWII:  '^twse',    // Taiwan Weighted
-  INDA:  'inda.us',  // iShares MSCI India ETF (proxy — Stooq lacks NSEI)
-  BVSP:  '^bvp',     // Bovespa
-  MERV:  '^mrv',     // Merval (Argentina)
-  XU100: '^xu100',   // BIST 100 (Turkey)
-  EIS:   'eis.us',   // iShares MSCI Israel ETF (proxy — Stooq lacks TA125)
-};
+const QUOTE_DELAY_MS = 200; // small gap between Yahoo quote calls — defensive against burst blocking
 
-// US-listed sector + credit ETFs (.us suffix on Stooq)
-const STOOQ_ETFS = {
-  XLE:  'xle.us',    // Energy
-  ITA:  'ita.us',    // US Defense
-  SOXX: 'soxx.us',   // Semiconductors
-  XLF:  'xlf.us',    // Financials
-  EEM:  'eem.us',    // MSCI EM
-  EFA:  'efa.us',    // MSCI Dev ex-US
-  GDX:  'gdx.us',    // Gold miners
-  SHY:  'shy.us',    // Short Treasuries
-  EMB:  'emb.us',    // EM USD bonds
-  HYG:  'hyg.us',    // US high yield
-  XLK:  'xlk.us',    // Technology
-  XLV:  'xlv.us',    // Health Care
-  XLI:  'xli.us',    // Industrials
-  XLY:  'xly.us',    // Consumer Discretionary
-  XLP:  'xlp.us',    // Consumer Staples
-  XLU:  'xlu.us',    // Utilities
-  XLB:  'xlb.us',    // Materials
-  XLRE: 'xlre.us',   // Real Estate
-  XLC:  'xlc.us',    // Communication Services
-  DBA:  'dba.us',    // Agriculture / grains
-  REMX: 'remx.us',   // Rare earths / critical minerals
-};
-
-async function fetchStooqSymbol(symbol) {
-  const url = `https://stooq.com/q/l/?s=${encodeURIComponent(symbol)}&f=sd2t2ohlcv&h&e=csv`;
-  const res = await safeFetch(url);
-  const text = await res.text();
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return null;
-  // Header: Symbol,Date,Time,Open,High,Low,Close,Volume
-  const parts = lines[1].split(',');
-  const close = parseFloat(parts[6]);
-  return isNaN(close) ? null : close;
-}
-
-async function fetchVIX() {
-  const url = 'https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d';
+// Latest price for a single instrument from Yahoo Finance (free, no key, JSON).
+// Replaces Stooq's /q/l/ CSV endpoint: Stooq put its data behind a JS proof-of-work bot
+// wall and removed /q/l/ entirely (404, 2026-06-22) — a server-side fetch can no longer
+// read it. Uses the YAHOO_* symbol maps below (same maps the seed_history backfill uses).
+async function fetchYahooQuote(yahooSymbol) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1d&range=1d`;
   const res = await safeFetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
   const json = await res.json();
   return json?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null;
 }
 
 async function fetchCommodities() {
-  console.log('[COMMODITIES] fetching from Stooq + Yahoo...');
+  console.log('[COMMODITIES] fetching from Yahoo...');
   const result = { asOf: NOW_ISO() };
-  for (const [key, symbol] of Object.entries(STOOQ_SYMBOLS)) {
+  for (const [key, symbol] of Object.entries(YAHOO_COMMODITIES)) {
     try {
-      result[key] = await fetchStooqSymbol(symbol);
-      await new Promise(r => setTimeout(r, 150));
+      result[key] = await fetchYahooQuote(symbol);
+      await new Promise(r => setTimeout(r, QUOTE_DELAY_MS));
     } catch (e) {
-      console.warn(`[COMMODITIES] ${key} failed: ${e.message}`);
+      console.warn(`[COMMODITIES] ${key} (${symbol}) failed: ${e.message}`);
       result[key] = null;
     }
-  }
-  try {
-    result.vix = await fetchVIX();
-  } catch (e) {
-    console.warn(`[COMMODITIES] vix failed: ${e.message}`);
-    result.vix = null;
   }
   await putItem('COMMODITIES#GLOBAL', 'LATEST', result, 1);
   await putItem('COMMODITIES#GLOBAL', `HISTORY#${TODAY()}`, result, 90);
@@ -361,15 +298,14 @@ async function fetchCrypto() {
 }
 
 async function fetchEquitiesAndETFs() {
-  console.log('[EQUITIES] fetching from Stooq...');
+  console.log('[EQUITIES] fetching from Yahoo...');
   const result = { asOf: NOW_ISO() };
-  const all = { ...STOOQ_INDICES, ...STOOQ_ETFS };
-  for (const [key, symbol] of Object.entries(all)) {
+  for (const [key, symbol] of Object.entries(YAHOO_EQUITIES)) {
     try {
-      result[key] = await fetchStooqSymbol(symbol);
-      await new Promise(r => setTimeout(r, 150));
+      result[key] = await fetchYahooQuote(symbol);
+      await new Promise(r => setTimeout(r, QUOTE_DELAY_MS));
     } catch (e) {
-      console.warn(`[EQUITIES] ${key} failed: ${e.message}`);
+      console.warn(`[EQUITIES] ${key} (${symbol}) failed: ${e.message}`);
       result[key] = null;
     }
   }

@@ -67,7 +67,8 @@ With those honored, the **skeptic's sequencing wins P0**: highest-ROI, lowest-ri
 - **Changes:** Either remove the `gp-search` button or make ⌘K open a minimal jump-to (country/thread) modal firing existing proxy actions. Repoint `WorldMapV2.jsx:650` and `:1206` arc navigation to `/weekly/country/:name` until a real PairPage ships.
 - **Files:** `components/Layout.jsx`, `components/WorldMapV2.jsx`
 - **Philosophy check:** Removes broken/misleading affordances (a control that lies about working). Repointing to a real route is additive and reversible; nothing is faked.
-- [ ] Done
+- **SHIPPED ✅ (2026-06-22):** map pair-arcs repointed to `/weekly/country/:name` (in the P0 commit). Removed the dead `gp-search` button + the ⌘K `preventDefault` (it swallowed the keystroke while opening nothing) — left a comment marking a real command palette as a future enhancement (chose remove-now over rushing a half-built search).
+- [x] Done
 
 ### P2 · L — Surface the systems causal graph as a first-class view
 - **Why:** The single most conceptually differentiated asset (cited, lag-aware causal edges) renders as `edges.slice(0,4)` (`CountryPage.jsx:603` — verified) and is gated to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran`. The why-engine, shown four list-items deep.

@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-06-23 (repo made PUBLIC + downgraded GitHub Pro → Free)
+
+Completed the public-repo prep from the 2026-06-22 entry below.
+
+- **Repo `BenBen05059997/globalPerspective-v1` made PUBLIC** (`gh repo edit --visibility public`). Live site unaffected — home `200`, deep-links served via the `404.html` SPA fallback (bundle `index-xrY7_h4h.js`), relocated internal docs `404` as intended.
+- **Downgraded GitHub Pro → Free.** Pages is free on public repos; verified **0 of the 10 other private repos use Pages** (the only paid-gated feature that would have taken a live site down). No GitHub Actions anywhere; Packages/Codespaces unused. Reversible — re-subscribe if a private-repo Pages site is ever needed.
+
 ## 2026-06-22 (build/deploy/security: unblock build, harden deploy.sh, restrict Maps key, declutter web root — public-repo prep)
 
 A session focused on making the deploy reliable and the project safe to open-source.

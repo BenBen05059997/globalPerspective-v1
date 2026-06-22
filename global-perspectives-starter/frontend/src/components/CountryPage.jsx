@@ -9,6 +9,7 @@ import { useMarketsCountry } from '../hooks/useMarketsCountry';
 import { useCountryHistory } from '../hooks/useCountryHistory';
 import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
+import SystemsGraph from './SystemsGraph';
 import SeverityBadge from './atoms/SeverityBadge';
 import DirectionArrow from './atoms/DirectionArrow';
 import { formatDateLabel } from '../utils/dateUtils';
@@ -595,27 +596,11 @@ export default function CountryPage() {
               {systemsData.edges?.length || 0} links
             </span>
           </div>
-          <div style={{ fontSize: 12, lineHeight: 1.5 }}>
-            {(() => {
-              const nodeMap = (systemsData.nodes || []).reduce((m, n) => { if (n?.threadId) m[n.threadId] = n; return m; }, {});
-              const titleFor = id => nodeMap[id]?.summary || (id || '').replace(/^thread-/, '').replace(/-[a-f0-9]{6}$/, '').replace(/-/g, ' ');
-              const confColor = c => c === 'strong' ? 'var(--risk-h, #c0392b)' : c === 'medium' ? 'var(--risk-e, #d97706)' : 'var(--ink-faint)';
-              return (systemsData.edges || []).slice(0, 4).map((e, i) => (
-                <div key={i} style={{ marginBottom: 8, padding: '7px 9px', background: 'var(--paper, #fbfbf9)', border: '1px solid var(--line)', borderRadius: 5 }}>
-                  <div style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 11.5, lineHeight: 1.35 }}>{titleFor(e.from)}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '3px 0 3px 4px', fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-faint)' }}>
-                    <span style={{ width: 1, height: 12, background: 'var(--line)', display: 'inline-block' }} />
-                    {e.lagDays != null && <span>{e.lagDays}d lag</span>}
-                    {e.confidence && <span style={{ color: confColor(e.confidence) }}>· {e.confidence}</span>}
-                  </div>
-                  <div style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 11.5, lineHeight: 1.35 }}>{titleFor(e.to)}</div>
-                  {e.mechanism && (
-                    <div style={{ marginTop: 5, paddingTop: 5, borderTop: '1px dashed var(--line)', fontSize: 10.5, color: 'var(--ink-dim)', fontStyle: 'italic', lineHeight: 1.4 }}>{e.mechanism}</div>
-                  )}
-                </div>
-              ));
-            })()}
-          </div>
+          <SystemsGraph data={systemsData} countryName={decodedName} />
+          <p className="cpg-causal-note">
+            Cause → effect links inferred across this country's story threads — each node is a real arc,
+            every link cites the entries supporting it. Click a node to open its arc.
+          </p>
         </div>
       )}
 

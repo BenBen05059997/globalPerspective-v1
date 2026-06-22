@@ -75,14 +75,17 @@ With those honored, the **skeptic's sequencing wins P0**: highest-ROI, lowest-ri
 - **Changes:** Build a `SystemsGraph` component rendering full `{nodes, edges}` with `mechanism`/`lagDays`/`confidence` labels + citation links, mounted as a CountryPage tab or `/systems` route. Remove the slice. **Re-verify and widen** the `SYSTEMS_TEST_COUNTRIES` gate against live AWS before relying on coverage.
 - **Files:** `components/CountryPage.jsx`, new `components/SystemsGraph.jsx`, `App.jsx`
 - **Philosophy check:** Surfaces an existing cited, validation-gated asset (uncited edges already dropped backend-side); shows only real edges with confidence labels — no fabricated nodes.
-- [ ] Done
+- **SHIPPED ✅ (2026-06-22):** new `components/SystemsGraph.jsx` (+css) renders the **full** graph (removed the `edges.slice(0,4)` cap → default 6 with "Show all N links"); **each node now links to its arc** (`/weekly/thread/:id?from=country&country=…`), and each edge surfaces its `citedEntries` **count** as an evidence weight (topicIds have no route, so a count — not a fake link). Replaced the inline IIFE in CountryPage's rail + added an explainer note. Build + lint clean. **Chose CountryPage rail over a new `/systems` route** (its natural per-country home; a standalone route needs a country picker — separate scope).
+- **⚠️ Backend follow-up (not done — needs live AWS):** the producer is still gated to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran`, so the richer view only has data for those two until the env gate is widened + re-verified against live AWS (memory flags the scope as possibly stale). Frontend renders honestly wherever data exists; renders nothing where it doesn't.
+- [x] Frontend done · [ ] gate-widening (backend/AWS follow-up)
 
 ### P2 · L — Promote EditorialShell to one shell with density variants + shared tokens
 - **Why:** Three 3-col shells (`EditorialShell`, `ep-shell`, `mv2-body`) and four risk-color sources destroy the positional/color consistency that earns terminal-grade trust.
 - **Changes:** Add `density='compact|comfortable'` to `EditorialShell`; fold `ep-shell` and `mv2-body` in as variants; migrate bespoke status bars to the `StatusStrip` atom; centralize risk/category color into one `tokens.js` and delete the `WeeklyPage`/`DailyPage` import / `WeeklyBrief` `RISK_COLOR` / map-hardcoded duplicates.
 - **Files:** `components/EditorialShell.jsx`, `components/EconomyPage.jsx`, `components/WorldMapV2.jsx`, `components/WeeklyPage.jsx`, `components/DailyPage.jsx`, `components/WeeklyBriefPage.jsx`, new `src/tokens.js`
 - **Philosophy check:** Pure presentation refactor; preserves analyst-grade density (hierarchy, not subtraction) so `crossThreadInsight`/`rootCauseChain` are never stripped.
-- [ ] Done
+- **⏸ DEFERRED BY DESIGN (2026-06-22) — its own focused session:** the debate ranked this last and the skeptic vetoed doing it now (large, regression-prone across 6+ components, moves no trust/conversion metric). It needs careful in-browser visual-regression testing across every page — not safe to land blind at the tail of a long session. Nothing about it blocks the shipped P0/P1/P2-graph work. Recommended first step when picked up: extract the duplicated risk/category colors into one `tokens.js` (low-risk, high-consistency) **before** touching any shell DOM.
+- [ ] Deferred (next session)
 
 ---
 

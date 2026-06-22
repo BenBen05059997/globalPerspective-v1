@@ -184,7 +184,7 @@ async function createCheckout({ uid, email, plan }) {
   const productId = PRODUCTS[plan === 'yearly' ? 'yearly' : 'monthly'];
   if (!productId) throw new Error('product_not_configured');
   if (!POLAR_ACCESS_TOKEN) throw new Error('token_not_configured');
-  const res = await fetch(`${POLAR_API_BASE}/v1/checkouts`, {
+  const res = await fetch(`${POLAR_API_BASE}/v1/checkouts/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${POLAR_ACCESS_TOKEN}` },
     body: JSON.stringify({

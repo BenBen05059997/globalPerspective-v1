@@ -52,12 +52,21 @@
 
 **Remaining (the go-live checklist):**
 1. ✅ **DONE 2026-06-22** — Polar webhook created via API (id `d158b5a9-09cc-4245-b364-453b879c41e7`, → billing Function URL, Raw, 6 events `subscription.*`+`order.paid`); its signing secret captured + set as `POLAR_WEBHOOK_SECRET` on `newsPolarBilling` (config update Successful). Token now also carries `webhooks:write` — **still the same value that leaked in chat; rotate it.** Backend now fully wired (checkout + webhook→`tier=member` + membership read).
-2. Add to `docs/config.js` (user-owned — never overwrite):
-   - `window.POLAR_BILLING_ENDPOINT = 'https://zlf6j2yfk6jxtnctlyfgyl26uy0shwyx.lambda-url.ap-northeast-1.on.aws/';`
-   - `window.NEWS_ANALYZE_ENDPOINT = 'https://cahpz2r7c2fins4vsi5udzsdxm0rjxir.lambda-url.ap-northeast-1.on.aws/';`
-3. Build + deploy the frontend (ships `/membership` + the member Studio path; both stay inert until the endpoints above are set).
-4. Test: temporarily set a test user `tier=member` in `GlobalPerspectiveUserTable` → run a member analysis; then 100%-off-code test the full unpaid→paid→`tier=member` webhook flow; then flip the Polar product live.
-5. (Later) add a nav link to `/membership`; "Manage subscription" → Polar customer portal link; rotate the access token.
+2. ✅ **DONE 2026-06-22** — `docs/config.js` now sets `POLAR_BILLING_ENDPOINT` + `NEWS_ANALYZE_ENDPOINT`.
+3. ✅ **DONE 2026-06-22** — frontend built + deployed (commit `8f15055`): `/membership` page + member Studio run-path live (members → "Member · included" no-key; free users → BYOK + upgrade nudge).
+4. ✅ **MACHINE-TESTED 2026-06-22** (commit history a69aa8b…0d61f13). Verified against LIVE Polar + AWS by simulating signed events + a real checkout-create:
+   - webhook `subscription.created`→`tier=member`, `subscription.canceled`→`tier=free`, forged-signature→`401` (rejected). Test record cleaned up.
+   - `POST /v1/checkouts/` → real $15 USD checkout URL with `customer_external_id` linked. (Fixed Lambda to canonical trailing-slash URL.)
+   - **NOT yet verified (needs a human / real Firebase JWT):** the browser click-through (sign-in → `/membership` → Polar hosted checkout → return) and a real member running `newsAnalyze`.
+
+**Operator must do, to fully launch:**
+- **A) One real 100%-off run** — create a 100%-off discount in Polar → `globalperspective.net/membership` → subscribe → open `/analyze` → confirm "Member · included" + a no-key run works.
+- **B) KYC review** must clear before real (non-$0) payouts.
+- **C) Add a `/membership` nav link** (page is live but unlinked).
+- **D) Rotate the access token** (still the chat-exposed value; now also has `webhooks:write`). Regenerate → I swap it onto the Lambda.
+- E) (Later) "Manage subscription" → Polar customer portal link.
+
+**Live endpoints (recorded):** billing `https://zlf6j2yfk6jxtnctlyfgyl26uy0shwyx.lambda-url.ap-northeast-1.on.aws/` · analyze `https://cahpz2r7c2fins4vsi5udzsdxm0rjxir.lambda-url.ap-northeast-1.on.aws/` · webhook id `d158b5a9-09cc-4245-b364-453b879c41e7`.
 
 ---
 

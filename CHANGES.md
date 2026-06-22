@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-06-22 (docs: PAGES_GUIDE.md — added the 4 new pages + fixed stale references)
+
+Brought `PAGES_GUIDE.md` back in sync with `App.jsx`. The page-by-page reference predated four shipped routes and still cited deleted code.
+
+- **Added full entries** (purpose · user job · data sources · auth · inbound/outbound links · key UI · states · smoke-test · known issues) for `/analyze` (AnalysisStudio — BYOK + member our-compute path, registered-only gate), `/weekly-brief` (WeeklyBriefPage — published signals digest), `/track-record` (TrackRecordPage — Brier scoreboard, honest empty state), and `/membership` (MembershipPage — Polar checkout, dormant until billing is wired). Also noted the dev-only `/__boom` error-boundary route.
+- **Re-pointed cross-references:** site-map nav corrected from the old 5 links to the real 9, footer updated, new "Standalone / nav-only pages" graph block + membership flow in the auth graph; Account entry now shows its 4 tabs and `→ /analyze` link; orphan table + hook×page matrix extended.
+- **Fixed stale parts (all verified false against current source):** removed `useUserProfile`/`fetchUserProfile`/`user_profile` (deleted in the 2026-06-01 billing teardown) from the Weekly/Thread/Account entries; rewrote the Account entry (no tier badge / billing-portal stub / quick-access); cleared the "PrivacyTerms still mentions Stripe" note; marked cross-cutting findings #1–5 resolved (the dead `Pricing`/`PairPage`/`PairListPage`/`Gate` imports and the `/weekly-map`,`/intelligence-map`,`/cli`,`/test/briefing-card` orphans were all removed).
+
+Docs-only — no frontend build/deploy required.
+
+Files: `PAGES_GUIDE.md`.
+
 ## 2026-06-15 (swept the other AI generators for the summarizer's bug — not replicated)
 
 Checked whether the "fabricate from the headline" flaw lived in the other content generators. **It didn't** — the summarizer was the only title-only offender:

@@ -701,3 +701,35 @@
 .qflag:hover {
   background: rgba(214, 158, 46, 0.2);
 }
+
+/* SourceRobustness — the L1 source-truth signal made visible (single-source vs corroborated). */
+.srb {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  cursor: help;
+}
+.srb-sm { font-size: 9px; padding: 1px 6px; }
+.srb-md { font-size: 11px; padding: 3px 10px; }
+
+/* Single-source: amber caution — confidence is reduced, not asserted. */
+.srb-warn {
+  background: rgba(214, 158, 46, 0.12);
+  color: #946200;
+  border: 1px solid rgba(214, 158, 46, 0.4);
+}
+.srb-warn:hover { background: rgba(214, 158, 46, 0.2); }
+
+/* Corroborated: calm green — earned, not default. */
+.srb-ok {
+  background: rgba(79, 160, 123, 0.12);
+  color: #2f6b4f;
+  border: 1px solid rgba(79, 160, 123, 0.38);
+}
+.srb-ok:hover { background: rgba(79, 160, 123, 0.2); }

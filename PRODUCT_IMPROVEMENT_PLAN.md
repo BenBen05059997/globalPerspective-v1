@@ -39,14 +39,17 @@ With those honored, the **skeptic's sequencing wins P0**: highest-ROI, lowest-ri
 - **Changes:** Add `Link`/`useNavigate` to both. WeeklyBrief: each `SignalCard` deep-links to `/weekly/thread/${signal.threadId}`, external outlet link demoted to secondary. TrackRecord: each scored prediction row links to its originating thread; honest empty state preserved.
 - **Files:** `components/WeeklyBriefPage.jsx`, `components/TrackRecordPage.jsx`
 - **Philosophy check:** Adds only real, `threadId`-keyed links over existing data; touches nothing in the fail-empty path. Makes honesty *verifiable* (claim → forecast → source).
-- [ ] Done
+- **WeeklyBrief — SHIPPED ✅ (2026-06-22):** lede + a "Full story arc →" link deep-link to `/weekly/thread/${s.threadId}` (conditional/fail-empty); outlets demoted to a secondary "Sources:" label. `threadId` verified present.
+- **TrackRecord — ⚠️ BLOCKED on a backend capture change (verified):** `prediction_track_record` projects only `title, category, generatedAt, scenarios` and pushes `recent[]` with **no `topicId`/`threadId`** (`newsSensitiveData/src/index.js:548,586-596`); the snapshot stores `topicId` but not `threadId` (`NewsProjectInvokeAgentLambda:703-716`), and `threadId` is assigned (lines 110-124) **after** `logPredictionSnapshot` runs inside the generation loop. No `/weekly/topic/:id` route exists, so `topicId` alone can't link. Wiring needs: reorder the pipeline (or patch PRED# rows from `threadIdById`) → add `threadId` to the snapshot → project it in the proxy → conditional frontend `<Link>`. Deploy-only + future-records-only. **Deliberately deferred** — not reordering the core daily pipeline blind, not shipping a `/weekly/thread/undefined` dead link.
+- [x] WeeklyBrief shipped · [ ] TrackRecord (backend follow-up)
 
 ### P0 · M — Ship the L1 source-robustness pill on Home topic cards + ThreadPage
 - **Why:** The flagship principle ("faithfulness ≠ truth"; single-source stories must visibly downgrade confidence — `ANALYSIS_SOURCE_TRUTH_PLAN.md:161-164`) has **zero user-facing UI outside the BYOK Studio**. Cleanest anti-Bloomberg differentiator; data already computed.
 - **Changes:** New `atoms/SourceRobustness.jsx` pill rendered from existing `sourceCount`/`outletCount`/`countries` (`Home.jsx:414-426`): "Single-source — confidence reduced" vs "Corroborated — N outlets, M regions". Render in the Home topic-card sources block and in ThreadPage's StatusStrip (`ThreadPage.jsx:410-419`). Optionally fold in the `newsSourceAudit` drift signal if present in the payload.
 - **Files:** `components/Home.jsx`, `components/ThreadPage.jsx`, new `components/atoms/SourceRobustness.jsx`
 - **Philosophy check:** Pure presentation over data already in the payload; downgrades confidence rather than inventing it. A thin, corroborated story shows fewer flags (the truthful signal) — no fabricated density. **Empty `sources[]` → render nothing**, never a default "corroborated" badge.
-- [ ] Done
+- **SHIPPED ✅ (2026-06-22):** `atoms/SourceRobustness.jsx` (returns null on no data; amber "⚠ Single-source" vs green "✓ Corroborated · N outlets · M regions"). Rendered in the Home topic-card meta block (reusing the existing `outletCount`/`sourceCount`/`countries`) and in the ThreadPage header kicker (from `thread.allSources.length` + `thread.regions`). Styles in `atoms.css`. Build + lint clean.
+- [x] Done
 
 ### P1 · M — Make the money story coherent + unbreak the conversion funnel
 - **Why:** Live `/membership` ($15/$150 Polar) directly contradicts `Disclosures.jsx:119`, `PrivacyTerms.jsx:14`, `SignIn.jsx:136`, `WhitepaperPage.jsx:282` which all still swear "no paid plans" (all verified) — a trust failure on a site whose whole ethos is honesty. And `SignIn`/`AuthCallback` hard-redirect to `/weekly`, dropping the buyer.

@@ -381,6 +381,7 @@ export default function WorldMapV2() {
           desc: p.pairTitle || p.leadSentence || 'Bilateral',
           w: 'strong',
           slug: p.slug,
+          otherName: other,
         };
       });
 
@@ -647,7 +648,8 @@ export default function WorldMapV2() {
           'stroke-dasharray': (fl.stale || fl.w !== 'strong') ? '3 3' : '',
           style: fl.slug ? 'cursor: pointer' : '',
         });
-        if (fl.slug) arc.addEventListener('click', () => navigate(`/weekly/pair/${fl.slug}`));
+        // /weekly/pair has no route — send the arc to one end's country page instead of NotFound.
+        if (fl.slug && fl.a) arc.addEventListener('click', () => navigate(`/weekly/country/${encodeURIComponent(isoToName[fl.a] || fl.a)}`));
         svg.appendChild(arc);
       });
 
@@ -1202,8 +1204,8 @@ export default function WorldMapV2() {
                     {liveDetail.links.map((l, i) => (
                       <div
                         className="link" key={i}
-                        style={l.slug ? { cursor: 'pointer' } : undefined}
-                        onClick={l.slug ? () => navigate(`/weekly/pair/${l.slug}`) : undefined}
+                        style={l.otherName ? { cursor: 'pointer' } : undefined}
+                        onClick={l.otherName ? () => navigate(`/weekly/country/${encodeURIComponent(l.otherName)}`) : undefined}
                       >
                         <span className="pair">{l.pair}</span>
                         <span className="desc">{l.desc}</span>

@@ -1,5 +1,28 @@
 # Global Perspectives — Change Log
 
+## 2026-06-22 (build/deploy/security: unblock build, harden deploy.sh, restrict Maps key, declutter web root — public-repo prep)
+
+A session focused on making the deploy reliable and the project safe to open-source.
+
+- **Unblocked the frontend build.** `npm run build` was failing at the `prebuild` ESLint step for three compounding reasons, all fixed: (1) the `--rule 'react-hooks/rules-of-hooks: error'` CLI flag crashes on ESLint 9.37 — removed (the flat config already enforces that rule via `recommended-latest`); (2) `__APP_VERSION__`/`__BUILD_DATE__` (Vite `define` globals) flagged `no-undef` — declared as globals in `eslint.config.js`; (3) 22 lint warnings exceeded `--max-warnings 20` — cleared the 18 `no-unused-vars` (optional-catch-binding + dead-code removal, no behavior change), leaving 4 `exhaustive-deps`.
+- **Hardened `deploy.sh` into the single source of truth.** Added: strip `docs/assets/*.map` (sourcemaps are `hidden`, must not be served), resync `docs/404.html` byte-identical to `index.html` with a `diff` guard, and an opt-in `--push` (requires `--commit`). Pointed `CLAUDE.md` + the `deploy-frontend` skill + `DEPLOYMENT_NOTES.md` at it.
+- **Repo public-readiness secret scan.** No real secrets in tree or git history (no AWS keys, private keys, LLM keys, `.env`). Only client-side Google keys (already public on the live site by design).
+- **Restricted the Google Maps key.** It was found **unrestricted** (proved via Geocoding + Static Maps referrer probes). Added HTTP-referrer restrictions (`globalperspective.net`, `www`, `benben05059997.github.io`, `localhost:5173`) via `gcloud` to the "Maps Platform API Key" in project `globalnews-473509`; enforcement confirmed live. Safe because backend geocoding uses Mapbox, so the key is browser-only.
+- **Decluttered the public web root.** Moved internal docs out of `docs/` (served live + crawlable) to `internal-docs/`: `WEEKLY_KNOWN_ISSUES.md`, `LEGAL_NOTES.md`, `CLAUDE-MARKETING-PLAYBOOK.md`, `ENTERPRISE_WEEKLY_ANALYSIS.md`, `STALE_CACHE_PLAN.md`, `MAP_UPGRADE_FEATURES.md`, `marketing/*`. `WHITEPAPER.md` kept (real public content). Live-confirmed the moved URLs now 404. Removed stale `.gh-pages_backup/`.
+
+Files: `global-perspectives-starter/frontend/{eslint.config.js,package.json,src/**,e2e/economic.spec.js}`, `deploy.sh`, `CLAUDE.md`, `.claude/skills/deploy-frontend/SKILL.md`, `DEPLOYMENT_NOTES.md`, `docs/* → internal-docs/*`, removed `.gh-pages_backup/`. (Maps key change applied directly in Google Cloud, no source change.)
+
+## 2026-06-22 (fix: LinkedIn auto-posting restored — expired OAuth token refreshed)
+
+LinkedIn auto-posting had been silently dead since **2026-06-11**: both `newsPostLinkedin` (every 3h) and `linkedInAutoPost` (07:30/19:30 UTC) failed every run with `401 EXPIRED_ACCESS_TOKEN` (serviceErrorCode 65602). The Lambdas ran fine on schedule and Bluesky kept posting in the same runs — the failure was purely the expired LinkedIn `LINKEDIN_ACCESS_TOKEN` (60-day expiry). Diagnosed via CloudWatch; no successful LinkedIn post in 60 days of logs.
+
+- **Fix:** generated a fresh `w_member_social` access token via the LinkedIn token-generator UI (app **globalP** / Client ID `8644gn6c9ruje9`), merged it into both Lambdas' env vars (all other vars preserved), `LastUpdateStatus=Successful`. Next refresh due ~**2026-08-21**.
+- **Dead end documented:** the manual auth-code → `oauth/v2/accessToken` curl flow no longer works — the old client secret `WPL_AP1...==` is stale (`invalid_client`); LinkedIn's `/tools/oauth/redirect` page consumes the code (`authorization code not found`). The token-generator UI (no secret) is the working path.
+- **Auto-refresh:** investigated — only possible if the app issues 365-day refresh tokens (generator UI doesn't return one; needs auth-code flow + valid client secret), and still requires annual manual re-auth. Not built; chose manual refresh.
+- **Docs:** added a full "LinkedIn token refresh runbook" to `BACKEND_GUIDE.md` (Lambda 6 section) and cleared the stale "⚠️ LinkedIn token expired" flag in its Lambda inventory.
+
+Files: `BACKEND_GUIDE.md` (docs only; token change applied directly to AWS Lambda env, no source change).
+
 ## 2026-06-22 (chore: adopt agent-kit operating discipline + add verify gate + green the test suite)
 
 Dropped in the portable **agent-kit** (solo-dev autonomy / verify / git / worktree / deploy discipline) and made the local gate actually green.

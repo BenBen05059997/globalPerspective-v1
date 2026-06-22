@@ -8,7 +8,22 @@ Use these steps every time frontend source files are changed.
 
 ---
 
-## Steps
+## One command: `./deploy.sh`
+
+The canonical deploy is the repo-root **`./deploy.sh`** — it runs the entire checklist below (build → copy to `docs/` → **strip `docs/assets/*.map`** → resync `docs/404.html` byte-identical → hash-guard `docs/config.js`) in one step:
+
+```bash
+./deploy.sh                          # build + copy to docs/ (review diff, push yourself)
+./deploy.sh --commit "msg"           # ...and commit (no push)
+./deploy.sh --commit "msg" --push    # ...and push to origin in one shot
+./deploy.sh --skip-build             # copy an already-built dist/ only
+```
+
+Prefer the script. The manual steps below document exactly what it does (and are the fallback if you can't run it).
+
+---
+
+## Steps (manual reference)
 
 1. **Install dependencies (first time only)**
    ```bash
@@ -28,6 +43,8 @@ Use these steps every time frontend source files are changed.
    rm -rf ../../docs/assets
    cp -r dist/assets ../../docs/assets
    cp dist/index.html ../../docs/index.html
+   # Source maps are PRIVATE (build.sourcemap:'hidden') — never serve them publicly.
+   rm -f ../../docs/assets/*.map
    # SPA fallback for deep-link refreshes — MUST mirror index.html (see note below)
    cp ../../docs/index.html ../../docs/404.html
    ```

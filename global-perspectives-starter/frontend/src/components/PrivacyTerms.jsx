@@ -10,8 +10,9 @@ function PrivacyTerms() {
         <p>
           Global Perspectives is an AI-powered global news intelligence platform. All content — today's topics, the
           interactive map, weekly narrative analysis, country and thread intelligence, and economic analysis — is
-          currently free and accessible without an account. An optional account (email magic link or Google sign-in)
-          only enables saving items; there are no paid plans or subscriptions at this time.
+          free and accessible to read without an account. An optional account (email magic link or Google sign-in)
+          is free and enables saving items and notification preferences. An optional membership does not gate reading —
+          it funds the project and lets members run the Analysis Studio on our compute; reading stays free for everyone.
         </p>
       </section>
 
@@ -27,7 +28,9 @@ function PrivacyTerms() {
             We do not sell or share your email with third parties.
           </li>
           <li>
-            <strong>Payment data:</strong> None collected. The service is free and does not process payments.
+            <strong>Payment data:</strong> Not collected or stored by us. Reading is free; if you choose to buy a
+            membership, payment is processed entirely by Polar (our Merchant of Record) — your card details never
+            touch our servers.
           </li>
           <li>
             Aggregated server logs (error messages, request counts) may be retained briefly for reliability monitoring.

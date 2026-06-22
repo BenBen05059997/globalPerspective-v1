@@ -182,6 +182,7 @@ function Layout({ children }) {
         <div className="gp-footer-links">
           <Link to="/economy">Economy</Link>
           <Link to="/track-record">Track Record</Link>
+          <Link to="/membership">Membership</Link>
           <Link to="/about">About</Link>
           <Link to="/whitepaper">White Paper</Link>
           <Link to="/privacy">Privacy</Link>

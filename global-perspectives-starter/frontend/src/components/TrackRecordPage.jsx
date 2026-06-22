@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useTrackRecord } from '../hooks/useTrackRecord';
 import IntelligenceLoader from './IntelligenceLoader';
 import './TrackRecordPage.css';
@@ -158,6 +159,15 @@ export default function TrackRecordPage() {
           </p>
         </section>
       )}
+
+      <section className="tr-support">
+        <p>
+          Keeping forecasts honest — logging every prediction, resolving each trigger, publishing the score even when
+          it&apos;s unflattering — is the work. Reading stays <strong>free for everyone</strong>; an optional{' '}
+          <Link to="/membership">membership</Link> funds it and unlocks running your own analysis on our compute.
+          It buys compute, not access.
+        </p>
+      </section>
     </div>
   );
 }

@@ -13,7 +13,16 @@ export default function SignIn() {
   const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => { document.title = 'Sign In — Global Perspectives'; }, []);
+  // Where to land after auth. Defaults to /weekly; a ?returnTo= (e.g. from the
+  // membership "sign in to subscribe" link) overrides it. Persist it so the
+  // magic-link round-trip (which may complete in a new tab) can honor it too.
+  const returnTo = new URLSearchParams(window.location.search).get('returnTo') || '/weekly';
+
+  useEffect(() => {
+    document.title = 'Sign In — Global Perspectives';
+    const rt = new URLSearchParams(window.location.search).get('returnTo');
+    if (rt) localStorage.setItem('gp_return_to', rt);
+  }, []);
 
   async function handleGoogle() {
     setGoogleLoading(true);
@@ -21,7 +30,7 @@ export default function SignIn() {
     try {
       await signInWithGoogle();
       sessionStorage.setItem('gp_just_signed_in', '1');
-      navigate('/weekly', { replace: true });
+      navigate(returnTo, { replace: true });
     } catch (err) {
       if (err?.code === 'auth/popup-closed-by-user') {
         // User closed popup, ignore
@@ -40,7 +49,7 @@ export default function SignIn() {
     setError(null);
     try {
       await signInAsGuest();
-      navigate('/weekly', { replace: true });
+      navigate(returnTo, { replace: true });
     } catch (err) {
       setError(err?.message || 'Guest sign-in failed');
     } finally {
@@ -133,7 +142,7 @@ export default function SignIn() {
       </button>
 
       <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '1rem', lineHeight: 1.6 }}>
-        All features are free during our launch period — no credit card required.
+        Reading is always free — no card required. An account just saves your items and preferences.
       </p>
       <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
         By signing in, you agree to our <Link to="/privacy" style={{ color: '#3b82f6' }}>Privacy & Terms</Link> and <Link to="/disclosures" style={{ color: '#3b82f6' }}>Disclosures</Link>.

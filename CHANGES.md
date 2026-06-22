@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-22 (redesign: Daily Brief → sectioned block layout)
+
+Rebuilt the `/daily` page from a text-heavy column into a scannable, block-based intelligence brief — keeping the newspaper-broadsheet identity (Fraunces serif, ink-on-paper, rust accent, functional risk colors), so it stays consistent with the rest of the site rather than turning into a generic dashboard. Motivated by the page leading with a 350–400 word italic `summary` whose paragraphs collapsed into one run-on wall of text (`BoldText` never preserved the `\n\n` breaks the generator emits).
+
+- **Seven numbered sections:** ① The Big Picture (verdict box = headline + a *trimmed 2-sentence* lead, a **Key Takeaways** callout, stat cards) · ② Top Stories (cards with category/region tags + prediction asides) · ③ The Story to Watch (rising thread as a dark highlight box with a trajectory badge) · ④ Country to Watch (colored risk card) · ⑤ Economic Footprint (existing `InstrumentChip`s, restyled) · ⑥ Shape of the Day (`categoryBreakdown` as a horizontal bar chart) · ⑦ Full Analysis (the long summary, **split into real paragraphs** with a drop cap, folded behind a `<details>` toggle so the fast read leads).
+- **Key Takeaways** prefer a server `keyPoints[]` field if present, else derive *honestly* from existing structured fields (rising thread, country watch, top story titles) — no fabricated content; every number shown is a real count or risk level. **Frontend-only — works on every brief already in DynamoDB**, no backend/API change.
+- **Verified:** `eslint` clean, `vite build` ✓, and a Playwright pass on the built bundle (desktop + mobile + the `/daily` today→fallback path) rendered every block with real data and **0 console errors**.
+- Design study artifact (not shipped): `daily-brief-template.html` (repo root) — the standalone style mockup this was ported from.
+
+Files: `global-perspectives-starter/frontend/src/components/{DailyPage.jsx,DailyPage.css}`.
+
 ## 2026-06-22 (docs: PAGES_GUIDE.md — added the 4 new pages + fixed stale references)
 
 Brought `PAGES_GUIDE.md` back in sync with `App.jsx`. The page-by-page reference predated four shipped routes and still cited deleted code.

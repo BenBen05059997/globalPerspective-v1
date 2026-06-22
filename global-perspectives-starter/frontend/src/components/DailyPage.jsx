@@ -13,9 +13,9 @@ import IntelligenceLoader from './IntelligenceLoader';
 import './DailyPage.css';
 
 const TRAJECTORY_LABELS = {
-  escalating:      { arrow: '↗', label: 'Escalating',      color: 'var(--risk-h)' },
-  stable:          { arrow: '→', label: 'Stable',           color: 'var(--ink-dim)' },
-  'de-escalating': { arrow: '↘', label: 'De-escalating',   color: 'var(--risk-l)' },
+  escalating:      { arrow: '↗', label: 'Escalating',      cls: 'up' },
+  stable:          { arrow: '→', label: 'Stable',           cls: 'flat' },
+  'de-escalating': { arrow: '↘', label: 'De-escalating',   cls: 'down' },
 };
 
 function BoldText({ text }) {
@@ -56,6 +56,61 @@ function formatTimeAgo(iso) {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// Strip markdown bold markers for plain-text contexts (e.g. the trimmed lead).
+function stripBold(text) {
+  return (text || '').replace(/\*\*([^*]+)\*\*/g, '$1');
+}
+// First N sentences of a longer block — used for the trimmed lead so the
+// "Big Picture" verdict stays short; the full summary lives in Full Analysis.
+function firstSentences(text, n = 2) {
+  const clean = stripBold(text).trim();
+  if (!clean) return '';
+  const sentences = clean.match(/[^.!?]+[.!?]+/g);
+  if (!sentences) return clean;
+  return sentences.slice(0, n).join(' ').trim();
+}
+// Split the long summary into real paragraphs for the Full Analysis block.
+function toParagraphs(text) {
+  return (text || '').split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+}
+
+// Key Takeaways — the scannable 10-second read.
+// Prefer a server-generated `keyPoints` array; otherwise derive an honest list
+// from the structured fields the brief already carries (no fabrication —
+// these are the real rising thread, country watch, and top story headlines).
+function deriveTakeaways(brief) {
+  if (Array.isArray(brief.keyPoints) && brief.keyPoints.length) {
+    return brief.keyPoints.slice(0, 4).map(p =>
+      typeof p === 'string' ? { text: p } : p
+    );
+  }
+  const out = [];
+  if (brief.risingThread?.oneLiner) {
+    out.push({ tag: 'Rising', text: brief.risingThread.oneLiner });
+  }
+  if (brief.countryToWatch?.headline) {
+    out.push({ tag: brief.countryToWatch.countryName, text: brief.countryToWatch.headline });
+  }
+  for (const s of (brief.topStories || [])) {
+    if (out.length >= 4) break;
+    if (!s?.title) continue;
+    // skip the lead — already implied by the verdict headline
+    if (s.title === brief.headline) continue;
+    out.push({ tag: s.category, text: s.title });
+  }
+  return out.slice(0, 4);
+}
+
+function SectionHeader({ num, title, meta }) {
+  return (
+    <div className="daily-sec-hd">
+      <span className="daily-sec-num">{num}</span>
+      <h2>{title}</h2>
+      {meta && <span className="daily-sec-meta">{meta}</span>}
+    </div>
+  );
 }
 
 function EconomicFootprint() {
@@ -106,14 +161,12 @@ function EconomicFootprint() {
   if (disruptions.length === 0) return null;
 
   return (
-    <section className="daily-footprint">
-      <div className="daily-footprint-hd">
-        <h3>Today's Economic Footprint</h3>
-        <span className="daily-footprint-meta">
-          {disruptions.length} active · {severeCount > 0 && <><b style={{ color: 'var(--risk-h)' }}>{severeCount} severe</b> · </>}
-          <Link to="/economy">View all →</Link>
-        </span>
-      </div>
+    <section className="daily-sec">
+      <SectionHeader
+        num="5"
+        title="Economic Footprint"
+        meta={`${disruptions.length} active${severeCount > 0 ? ` · ${severeCount} severe` : ''}`}
+      />
 
       {topInstruments.length > 0 && (
         <div className="daily-footprint-chips">
@@ -134,6 +187,8 @@ function EconomicFootprint() {
               {leadHeadline}
             </Link>
           ) : leadHeadline}
+          {' '}
+          <Link to="/economy" className="daily-footprint-all">View all →</Link>
         </p>
       )}
     </section>
@@ -184,14 +239,17 @@ export default function DailyPage() {
   const risingTraj = brief.risingThread?.trajectory
     ? (TRAJECTORY_LABELS[brief.risingThread.trajectory] || TRAJECTORY_LABELS.stable)
     : null;
-
-  // Footprint will be rendered inside the page body below
-
   const countryRisk = brief.countryToWatch?.riskLevel
     ? (RISK_COLORS[brief.countryToWatch.riskLevel] || RISK_COLORS.moderate)
     : null;
-  const topPred = brief.topStories?.[0]?.prediction || null;
-  const catEntries = Object.entries(brief.categoryBreakdown || {}).sort((a, b) => b[1] - a[1]);
+  const catEntries = Object.entries(brief.categoryBreakdown || {})
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const catMax = catEntries.length ? catEntries[0][1] : 1;
+
+  const takeaways = deriveTakeaways(brief);
+  const lead = firstSentences(brief.summary, 2);
+  const fullParas = toParagraphs(brief.summary);
 
   return (
     <div className="daily-page">
@@ -239,233 +297,226 @@ export default function DailyPage() {
               ? <>Generated <strong>{formatTimeAgo(brief.generatedAt)}</strong></>
               : 'AI-generated'}
           </span>
-          <div className="daily-masthead-counts">
-            {stats.totalArticles > 0 && (
-              <span className="dc">
-                <span className="daily-masthead-num">{stats.totalArticles}</span>
-                articles
-              </span>
-            )}
-            {stats.countriesCovered > 0 && (
-              <span className="dc">
-                <span className="daily-masthead-num">{stats.countriesCovered}</span>
-                countries
-              </span>
-            )}
-            {stats.sourceOutlets > 0 && (
-              <span className="dc">
-                <span className="daily-masthead-num">{stats.sourceOutlets}</span>
-                outlets
-              </span>
-            )}
-          </div>
           <span>AI-generated · analyst-reviewed</span>
         </div>
       </header>
 
-      {/* Lead story */}
-      {brief.headline && (
-        <section className={`daily-headline${topPred ? '' : ' no-pred'}`}>
-          <div className="daily-headline-left">
-            <div className="daily-headline-kicker">
+      {/* ① THE BIG PICTURE — the 10-second read */}
+      <section className="daily-sec">
+        <SectionHeader num="1" title="The Big Picture" meta="10-second read" />
+
+        {brief.headline && (
+          <div className="daily-verdict">
+            <div className="daily-verdict-kicker">
               <span className="daily-kicker-pill">Lead Story</span>
               {brief.countryToWatch?.countryName && (
-                <span>{brief.countryToWatch.countryName}</span>
+                <span className="daily-verdict-loc">· {brief.countryToWatch.countryName}</span>
               )}
             </div>
-            <h2 className="daily-headline-h2">{brief.headline}</h2>
-            {brief.summary && (
-              <p className="daily-headline-deck">
-                <BoldText text={brief.summary} />
-              </p>
-            )}
-            <div className="daily-headline-meta">
-              {stats.countriesCovered > 0 && (
-                <span>Countries <b>{stats.countriesCovered}</b></span>
-              )}
-              {stats.sourceOutlets > 0 && (
-                <span>Sources <b>{stats.sourceOutlets}</b></span>
-              )}
-              {brief.generatedAt && (
-                <span>Updated <b>{formatTimeAgo(brief.generatedAt)}</b></span>
-              )}
-            </div>
+            <h3 className="daily-verdict-h3">{brief.headline}</h3>
+            {lead && <p className="daily-verdict-lead">{lead}</p>}
           </div>
+        )}
 
-          {topPred && (
-            <aside className="daily-predict-box">
-              <div className="daily-predict-ph">
-                <span className="hz">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/>
-                  </svg>
-                  AI Prediction
-                </span>
-                <span>Lead story</span>
-              </div>
-              <div className="daily-predict-pb">
-                <div className="daily-predict-lbl">Forecast</div>
-                <p>{topPred}</p>
-              </div>
-              <div className="daily-predict-ac">
-                <span>Forecast model v1.2</span>
-                <span>Updates as sources shift</span>
-              </div>
-            </aside>
+        {takeaways.length > 0 && (
+          <div className="daily-callout">
+            <div className="daily-callout-title">★ Key Takeaways</div>
+            <ul className="daily-takeaways">
+              {takeaways.map((t, i) => (
+                <li key={i}>
+                  <span className="daily-tk-n">{i + 1}</span>
+                  <span>
+                    {t.tag && <b className="daily-tk-tag">{t.tag}. </b>}
+                    {t.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="daily-statgrid">
+          {stats.totalArticles > 0 && (
+            <div className="daily-statcard">
+              <div className="daily-stat-val">{stats.totalArticles}</div>
+              <div className="daily-stat-lbl">Articles</div>
+              <div className="daily-stat-sub">24-hour window</div>
+            </div>
           )}
-        </section>
-      )}
-
-      <EconomicFootprint />
-
-      {/* Top Stories */}
-      {brief.topStories?.length > 0 && (
-        <section className="daily-stories">
-          <div className="daily-stories-hd">
-            <h3>Top Stories</h3>
-            <span className="daily-stories-n">
-              {brief.topStories.length} item{brief.topStories.length !== 1 ? 's' : ''} · ordered by signal breadth
-            </span>
-          </div>
-
-          {brief.topStories.map((story, i) => {
-            const catColors = CATEGORY_BADGE_COLORS[(story.category || '').toLowerCase()];
-            const hasPred = !!story.prediction;
-            return (
-              <article key={i} className={`daily-story${hasPred ? '' : ' no-pred'}`}>
-                <div className="daily-story-num">{String(i + 1).padStart(2, '0')}</div>
-
-                <div className="daily-story-body">
-                  <div className="daily-story-kicker">
-                    {story.category && <span className="daily-story-cat">{story.category}</span>}
-                    {(story.regions || []).slice(0, 3).map((r, j) => (
-                      <span key={j} className="daily-story-kicker-region">{r}</span>
-                    ))}
-                    {story.sourceCount > 0 && (
-                      <span style={{ color: 'var(--ink-faint)' }}>{story.sourceCount} source{story.sourceCount !== 1 ? 's' : ''}</span>
-                    )}
-                  </div>
-                  <h4 className="daily-story-h4">{story.title}</h4>
-                  {(story.regions || []).length > 0 && (
-                    <div className="daily-story-regions">
-                      {(story.regions || []).slice(0, 5).map((r, j) => (
-                        <Link key={j} to={`/weekly/country/${encodeURIComponent(r)}`} className="daily-story-region">{r}</Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {hasPred && (
-                  <aside className="daily-story-pred">
-                    <div className="daily-story-pred-lbl">
-                      <span>Prediction</span>
-                    </div>
-                    <p>{story.prediction}</p>
-                  </aside>
-                )}
-              </article>
-            );
-          })}
-        </section>
-      )}
-
-      {/* Rising Thread */}
-      {brief.risingThread?.title && (
-        <Link
-          to={/^thread-/.test(brief.risingThread.threadId || '') ? `/weekly/thread/${brief.risingThread.threadId}` : '/weekly'}
-          className="daily-rising"
-        >
-          <div className="daily-rising-badge">
-            <span>Rising Thread</span>
-            {risingTraj && (
-              <span className="daily-rising-traj" style={{ color: risingTraj.color }}>
-                {risingTraj.arrow} {risingTraj.label}
-              </span>
-            )}
-            {brief.risingThread.articleCount > 0 && (
-              <span style={{ color: 'var(--ink-dim)' }}>
-                {brief.risingThread.articleCount} articles · {brief.risingThread.dayCount || '?'} days
-              </span>
-            )}
-          </div>
-          <div className="daily-rising-h4">{brief.risingThread.title}</div>
-          {brief.risingThread.oneLiner && (
-            <div className="daily-rising-deck">{brief.risingThread.oneLiner}</div>
-          )}
-          <div className="daily-rising-cta">Read full arc →</div>
-        </Link>
-      )}
-
-      {/* Country to Watch */}
-      {brief.countryToWatch?.countryName && (
-        <div>
-          <div className="daily-country-section-lbl">Country to Watch</div>
-          <Link
-            to={`/weekly/country/${encodeURIComponent(brief.countryToWatch.countryName)}`}
-            className="daily-country"
-            style={countryRisk ? { borderColor: countryRisk.color } : {}}
-          >
-            <div className="daily-country-top">
-              <span className="daily-country-name">{brief.countryToWatch.countryName}</span>
-              {countryRisk && (
-                <span
-                  className="daily-risk-badge"
-                  style={{ background: countryRisk.bg, color: countryRisk.color }}
-                >
-                  {brief.countryToWatch.riskLevel}
-                </span>
-              )}
+          {stats.countriesCovered > 0 && (
+            <div className="daily-statcard">
+              <div className="daily-stat-val">{stats.countriesCovered}</div>
+              <div className="daily-stat-lbl">Countries</div>
+              <div className="daily-stat-sub">by signal breadth</div>
             </div>
-            {brief.countryToWatch.headline && (
-              <div className="daily-country-headline">{brief.countryToWatch.headline}</div>
-            )}
-            <div className="daily-country-cta">View full briefing →</div>
-          </Link>
-        </div>
-      )}
-
-      {/* Method */}
-      <section className="daily-method">
-        <div className="daily-method-grid">
-          <div className="daily-method-item">
-            <div className="daily-method-lbl">Articles scanned</div>
-            <div className="daily-method-val">{stats.totalArticles || '—'}</div>
-            <p>Across {stats.sourceOutlets || '?'} outlets in 24h window.</p>
-          </div>
-          <div className="daily-method-item">
-            <div className="daily-method-lbl">Countries covered</div>
-            <div className="daily-method-val">{stats.countriesCovered || '—'}</div>
-            <p>Ranked by signal breadth, not volume.</p>
-          </div>
-          <div className="daily-method-item">
-            <div className="daily-method-lbl">Outlets</div>
-            <div className="daily-method-val">{stats.sourceOutlets || '—'}</div>
-            <p>International wire services + regional sources.</p>
-          </div>
-          <div className="daily-method-item">
-            <div className="daily-method-lbl">Categories</div>
-            <div className="daily-method-val">{catEntries.length || '—'}</div>
-            <p>Predictions are probabilistic, not advice.</p>
-          </div>
+          )}
+          {stats.sourceOutlets > 0 && (
+            <div className="daily-statcard">
+              <div className="daily-stat-val">{stats.sourceOutlets}</div>
+              <div className="daily-stat-lbl">Outlets</div>
+              <div className="daily-stat-sub">wire + regional</div>
+            </div>
+          )}
+          {catEntries.length > 0 && (
+            <div className="daily-statcard">
+              <div className="daily-stat-val">{catEntries.length}</div>
+              <div className="daily-stat-lbl">Categories</div>
+              <div className="daily-stat-sub">active today</div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Category Breakdown */}
-      {catEntries.length > 0 && (
-        <div className="daily-cats">
-          <div className="daily-cats-lbl">Category Breakdown</div>
-          <div className="daily-cats-grid">
-            {catEntries.map(([cat, count]) => {
-              const c = CATEGORY_BADGE_COLORS[cat];
+      {/* ② TOP STORIES */}
+      {brief.topStories?.length > 0 && (
+        <section className="daily-sec">
+          <SectionHeader
+            num="2"
+            title="Top Stories"
+            meta={`${brief.topStories.length} item${brief.topStories.length !== 1 ? 's' : ''} · by signal breadth`}
+          />
+
+          <div className="daily-stories">
+            {brief.topStories.map((story, i) => {
+              const hasPred = !!story.prediction;
               return (
-                <span key={cat} className="daily-cat-pill">
-                  {c && <span className="daily-cat-dot" style={{ background: c.color }} />}
-                  {cat} <b>{count}</b>
-                </span>
+                <article key={i} className={`daily-story${hasPred ? '' : ' no-pred'}`}>
+                  <div className="daily-story-num">{String(i + 1).padStart(2, '0')}</div>
+
+                  <div className="daily-story-body">
+                    <div className="daily-story-kicker">
+                      {story.category && <span className="daily-tag daily-tag-cat">{story.category}</span>}
+                      {(story.regions || []).slice(0, 3).map((r, j) => (
+                        <Link key={j} to={`/weekly/country/${encodeURIComponent(r)}`} className="daily-tag daily-tag-region">{r}</Link>
+                      ))}
+                      {story.sourceCount > 0 && (
+                        <span className="daily-tag-src">{story.sourceCount} source{story.sourceCount !== 1 ? 's' : ''}</span>
+                      )}
+                    </div>
+                    <h4 className="daily-story-h4">{story.title}</h4>
+                  </div>
+
+                  {hasPred && (
+                    <aside className="daily-story-pred">
+                      <div className="daily-story-pred-lbl">Prediction</div>
+                      <p>{story.prediction}</p>
+                    </aside>
+                  )}
+                </article>
               );
             })}
           </div>
-        </div>
+        </section>
+      )}
+
+      {/* ③ THE STORY TO WATCH — rising thread */}
+      {brief.risingThread?.title && (
+        <section className="daily-sec">
+          <SectionHeader num="3" title="The Story to Watch" />
+          <Link
+            to={/^thread-/.test(brief.risingThread.threadId || '') ? `/weekly/thread/${brief.risingThread.threadId}` : '/weekly'}
+            className="daily-highlight"
+          >
+            <div className="daily-highlight-kicker">
+              <span>Rising Thread</span>
+              {risingTraj && (
+                <span className={`daily-highlight-traj ${risingTraj.cls}`}>
+                  {risingTraj.arrow} {risingTraj.label}
+                </span>
+              )}
+              {brief.risingThread.articleCount > 0 && (
+                <span className="daily-highlight-meta">
+                  {brief.risingThread.articleCount} articles · {brief.risingThread.dayCount || '?'} days
+                </span>
+              )}
+            </div>
+            <h3 className="daily-highlight-h3">{brief.risingThread.title}</h3>
+            {brief.risingThread.oneLiner && (
+              <p className="daily-highlight-deck">{brief.risingThread.oneLiner}</p>
+            )}
+            <span className="daily-highlight-cta">Read full arc →</span>
+          </Link>
+        </section>
+      )}
+
+      {/* ④ COUNTRY TO WATCH */}
+      {brief.countryToWatch?.countryName && (
+        <section className="daily-sec">
+          <SectionHeader num="4" title="Country to Watch" />
+          <Link
+            to={`/weekly/country/${encodeURIComponent(brief.countryToWatch.countryName)}`}
+            className="daily-riskcard"
+            style={countryRisk ? { borderLeftColor: countryRisk.color } : {}}
+          >
+            <div className="daily-riskcard-flag">{brief.countryToWatch.countryName}</div>
+            <div className="daily-riskcard-body">
+              <div className="daily-riskcard-top">
+                {countryRisk && (
+                  <span
+                    className="daily-badge-risk"
+                    style={{ background: countryRisk.bg, color: countryRisk.color }}
+                  >
+                    {brief.countryToWatch.riskLevel} risk
+                  </span>
+                )}
+                {brief.countryToWatch.trajectory && TRAJECTORY_LABELS[brief.countryToWatch.trajectory] && (
+                  <span className={`daily-traj ${TRAJECTORY_LABELS[brief.countryToWatch.trajectory].cls}`}>
+                    {TRAJECTORY_LABELS[brief.countryToWatch.trajectory].arrow} {TRAJECTORY_LABELS[brief.countryToWatch.trajectory].label}
+                  </span>
+                )}
+              </div>
+              {brief.countryToWatch.headline && (
+                <div className="daily-riskcard-headline">{brief.countryToWatch.headline}</div>
+              )}
+              <div className="daily-riskcard-cta">View full briefing →</div>
+            </div>
+          </Link>
+        </section>
+      )}
+
+      {/* ⑤ ECONOMIC FOOTPRINT */}
+      <EconomicFootprint />
+
+      {/* ⑥ SHAPE OF THE DAY — category breakdown */}
+      {catEntries.length > 0 && (
+        <section className="daily-sec">
+          <SectionHeader num="6" title="Shape of the Day" meta="stories by category" />
+          <div className="daily-bars">
+            {catEntries.map(([cat, count]) => {
+              const c = CATEGORY_BADGE_COLORS[cat];
+              return (
+                <div key={cat} className="daily-bar-row">
+                  <span className="daily-bar-label">{cat}</span>
+                  <div className="daily-bar-track">
+                    <div
+                      className="daily-bar-fill"
+                      style={{ width: `${Math.max(4, (count / catMax) * 100)}%`, background: c?.color || 'var(--ink)' }}
+                    />
+                  </div>
+                  <span className="daily-bar-val">{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ⑦ FULL ANALYSIS — long-form, folded */}
+      {fullParas.length > 0 && (
+        <section className="daily-sec">
+          <SectionHeader num="7" title="Full Analysis" meta="the complete synthesis" />
+          <details className="daily-fullread">
+            <summary>
+              Read the full intelligence synthesis
+              <span className="daily-chev">▾</span>
+            </summary>
+            <div className="daily-full-body">
+              {fullParas.map((p, i) => (
+                <p key={i}><BoldText text={p} /></p>
+              ))}
+            </div>
+          </details>
+        </section>
       )}
 
       {/* Footer nav */}

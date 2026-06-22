@@ -51,7 +51,7 @@
 - Frontend: `AnalysisStudio.jsx` now routes members → server path ("Member · included", no key); free registered users keep BYOK + a "Run it on us with a membership →" nudge. Deep-research stays BYOK (needs web search).
 
 **Remaining (the go-live checklist):**
-1. ⏳ **Create the Polar webhook** → the billing Function URL (format Raw; events `subscription.*` + `order.paid`) → copy its signing secret → set `POLAR_WEBHOOK_SECRET` on `newsPolarBilling`. *(Until then the webhook path rejects everything — checkout still works.)*
+1. ✅ **DONE 2026-06-22** — Polar webhook created via API (id `d158b5a9-09cc-4245-b364-453b879c41e7`, → billing Function URL, Raw, 6 events `subscription.*`+`order.paid`); its signing secret captured + set as `POLAR_WEBHOOK_SECRET` on `newsPolarBilling` (config update Successful). Token now also carries `webhooks:write` — **still the same value that leaked in chat; rotate it.** Backend now fully wired (checkout + webhook→`tier=member` + membership read).
 2. Add to `docs/config.js` (user-owned — never overwrite):
    - `window.POLAR_BILLING_ENDPOINT = 'https://zlf6j2yfk6jxtnctlyfgyl26uy0shwyx.lambda-url.ap-northeast-1.on.aws/';`
    - `window.NEWS_ANALYZE_ENDPOINT = 'https://cahpz2r7c2fins4vsi5udzsdxm0rjxir.lambda-url.ap-northeast-1.on.aws/';`

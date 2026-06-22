@@ -13,9 +13,22 @@ This file contains critical instructions for Claude to follow when working on th
 
 **IMPORTANT:** Changes to frontend source files do NOT automatically update production. You must build and deploy.
 
-### When Frontend Source Files Are Modified
+### TL;DR — one command
 
-If you modify ANY files in `global-perspectives-starter/frontend/src/`, you MUST follow this workflow:
+The canonical deploy is the repo-root **`./deploy.sh`** script. It does everything below (build → copy to `docs/` → strip `docs/assets/*.map` → resync `docs/404.html` byte-identical → hash-guard `docs/config.js`) in one go:
+
+```bash
+./deploy.sh                      # build + copy to docs/ (review diff, push yourself)
+./deploy.sh --commit "msg"       # ...and commit (still no push)
+./deploy.sh --commit "msg" --push  # ...and push to origin in one shot
+./deploy.sh --skip-build         # copy an already-built dist/ only
+```
+
+Prefer the script over running the manual steps by hand. The manual workflow below documents exactly what the script does (and is the fallback if you can't run it).
+
+### When Frontend Source Files Are Modified (manual reference)
+
+If you modify ANY files in `global-perspectives-starter/frontend/src/`, this is the workflow (automated by `./deploy.sh`):
 
 1. **Build the frontend:**
    ```bash

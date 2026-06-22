@@ -8,6 +8,19 @@ allowed-tools: Bash, Read, Grep, Glob
 
 This skill automates the complete deployment workflow for the Global Perspectives frontend to GitHub Pages.
 
+## Preferred path: `./deploy.sh`
+
+The repo root has a `deploy.sh` that is the single source of truth for deploying. It builds, copies `dist/` → `docs/`, **strips `docs/assets/*.map`**, **resyncs `docs/404.html` byte-identical to `index.html`**, and **hash-guards `docs/config.js`** (aborts if it changed). Prefer it over running the manual steps:
+
+```bash
+./deploy.sh                         # build + copy to docs/ (review the diff, then push yourself)
+./deploy.sh --commit "msg"          # ...and commit (no push)
+./deploy.sh --commit "msg" --push   # ...and push to origin in one shot
+./deploy.sh --skip-build            # copy an already-built dist/ only
+```
+
+After running, verify with `git status docs/` and (if not using `--push`) `git push` when ready. The manual steps below document exactly what the script does and are the fallback if the script can't run.
+
 ## When to Use This Skill
 
 Use this skill when:

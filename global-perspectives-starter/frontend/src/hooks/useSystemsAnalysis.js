@@ -19,14 +19,14 @@ export function useSystemsAnalysis(countryName) {
         const { data: d, ts } = JSON.parse(cached);
         if (Date.now() - ts < CACHE_TTL) { setData(d); return; }
       }
-    } catch (_e) { /* malformed cache */ }
+    } catch { /* malformed cache */ }
 
     setLoading(true);
     fetchSystemsAnalysis(countryName)
       .then((res) => {
         if (res?.success && res.data) {
           setData(res.data);
-          try { localStorage.setItem(cacheKey, JSON.stringify({ data: res.data, ts: Date.now() })); } catch (_e) { /* storage full */ }
+          try { localStorage.setItem(cacheKey, JSON.stringify({ data: res.data, ts: Date.now() })); } catch { /* storage full */ }
         }
       })
       .catch((err) => setError(err.message))

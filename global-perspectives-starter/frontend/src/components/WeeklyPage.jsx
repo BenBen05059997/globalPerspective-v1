@@ -578,18 +578,6 @@ export default function WeeklyPage() {
       });
   }, [sortedThreads, standalone]);
 
-  const countryOptions = useMemo(() => {
-    const counts = {};
-    for (const t of sortedThreads) {
-      for (const r of (t.regions || [])) {
-        counts[r] = (counts[r] || 0) + t.articleCount;
-      }
-    }
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([country, count]) => ({ country, count }));
-  }, [sortedThreads]);
-
   // Flat filtered feed
   const { flatThreads, flatStandalone } = useMemo(() => {
     let filteredThreads = activeRegion

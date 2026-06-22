@@ -153,12 +153,11 @@ test.describe('Economy layer — cross-page journey', () => {
     test.skip(count === 0, 'No threads found on /weekly — skipping tombstone probe');
 
     // Click each up to 5 looking for one without the Economy tab
-    let found = false;
     for (let i = 0; i < Math.min(count, 5); i++) {
       await threadLinks.nth(i).click();
       await page.waitForLoadState('networkidle');
       const hasEconomyTab = await page.locator('button:has-text("Economy"), [role="tab"]:has-text("Economy")').count();
-      if (hasEconomyTab === 0) { found = true; break; }
+      if (hasEconomyTab === 0) { break; }
       await page.goBack();
       await page.waitForLoadState('networkidle');
     }

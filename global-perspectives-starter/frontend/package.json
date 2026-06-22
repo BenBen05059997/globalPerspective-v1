@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "eslint . --rule 'react-hooks/rules-of-hooks: error' --max-warnings 20",
+    "prebuild": "eslint . --max-warnings 20",
     "build": "vite build",
     "postbuild": "cp dist/index.html dist/404.html",
     "lint": "eslint .",

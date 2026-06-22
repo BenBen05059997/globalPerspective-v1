@@ -22,7 +22,7 @@ export function useWeeklyBrief() {
           return;
         }
       }
-    } catch (_) { /* ignore */ }
+    } catch { /* ignore */ }
 
     setLoading(true);
     setError(null);
@@ -30,7 +30,7 @@ export function useWeeklyBrief() {
       const res = await fetchWeeklyBrief();
       const data = res?.data || null;
       setBrief(data);
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() })); } catch (_) { /* ignore */ }
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() })); } catch { /* ignore */ }
     } catch (err) {
       setError(err?.message || 'Failed to load the weekly brief');
     } finally {

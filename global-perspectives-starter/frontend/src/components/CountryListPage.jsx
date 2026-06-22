@@ -16,16 +16,6 @@ import './CountryListPage.css';
 const RISK_ORDER = { high: 0, elevated: 1, moderate: 2, low: 3 };
 const SEVERITY_RANK = { severe: 3, moderate: 2, minor: 1 };
 
-function timeAgo(isoString) {
-  if (!isoString) return null;
-  const m = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
-
 function trajectoryArrow(text = '') {
   const t = text.toLowerCase();
   if (/escalat|intensif|worsen|heighten|spike|surge/.test(t)) return { arrow: '↗', cls: 'traj-up' };

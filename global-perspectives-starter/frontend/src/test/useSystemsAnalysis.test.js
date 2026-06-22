@@ -2,8 +2,8 @@
  * Tests for useSystemsAnalysis hook — cache behavior and fetch lifecycle.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
 
 const MOCK_DATA = {
   nodes: [

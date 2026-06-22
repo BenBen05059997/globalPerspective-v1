@@ -22,7 +22,7 @@ export function useCountryHistory(countryName) {
           return;
         }
       }
-    } catch (_e) { /* malformed cache */ }
+    } catch { /* malformed cache */ }
 
     setLoading(true);
     fetchCountryHistory(countryName)
@@ -30,7 +30,7 @@ export function useCountryHistory(countryName) {
         if (res?.success && Array.isArray(res.snapshots)) {
           const sorted = [...res.snapshots].sort((a, b) => a.dateKey?.localeCompare(b.dateKey));
           setSnapshots(sorted);
-          try { localStorage.setItem(cacheKey, JSON.stringify({ data: sorted, ts: Date.now() })); } catch (_e) { /* storage full */ }
+          try { localStorage.setItem(cacheKey, JSON.stringify({ data: sorted, ts: Date.now() })); } catch { /* storage full */ }
         }
       })
       .catch((err) => setError(err.message))

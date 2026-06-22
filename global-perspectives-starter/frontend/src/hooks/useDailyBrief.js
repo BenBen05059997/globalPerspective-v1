@@ -27,7 +27,7 @@ export function useDailyBrief(dateKey) {
           return;
         }
       }
-    } catch (_) { /* ignore */ }
+    } catch { /* ignore */ }
 
     setLoading(true);
     setError(null);
@@ -54,7 +54,7 @@ export function useDailyBrief(dateKey) {
           delete existing[oldest];
         }
         localStorage.setItem(CACHE_KEY, JSON.stringify(existing));
-      } catch (_) { /* ignore */ }
+      } catch { /* ignore */ }
     } catch (err) {
       setError(err?.message || 'Failed to fetch daily brief');
     } finally {

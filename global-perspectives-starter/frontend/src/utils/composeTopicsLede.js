@@ -16,11 +16,6 @@
 
 const SEV_RANK = { severe: 3, moderate: 2, minor: 1 };
 
-function topicIdOf(t) {
-  const id = t && (t.topicId || t.topic_id || t.id);
-  return id != null ? String(id).trim() : '';
-}
-
 // Build threadId → highest severity cited by the disruption list.
 function severityByThread(disruptions) {
   const m = {};

@@ -39,14 +39,17 @@ With those honored, the **skeptic's sequencing wins P0**: highest-ROI, lowest-ri
 - **Changes:** Add `Link`/`useNavigate` to both. WeeklyBrief: each `SignalCard` deep-links to `/weekly/thread/${signal.threadId}`, external outlet link demoted to secondary. TrackRecord: each scored prediction row links to its originating thread; honest empty state preserved.
 - **Files:** `components/WeeklyBriefPage.jsx`, `components/TrackRecordPage.jsx`
 - **Philosophy check:** Adds only real, `threadId`-keyed links over existing data; touches nothing in the fail-empty path. Makes honesty *verifiable* (claim → forecast → source).
-- [ ] Done
+- **WeeklyBrief — SHIPPED ✅ (2026-06-22):** lede + a "Full story arc →" link deep-link to `/weekly/thread/${s.threadId}` (conditional/fail-empty); outlets demoted to a secondary "Sources:" label. `threadId` verified present.
+- **TrackRecord — ⚠️ BLOCKED on a backend capture change (verified):** `prediction_track_record` projects only `title, category, generatedAt, scenarios` and pushes `recent[]` with **no `topicId`/`threadId`** (`newsSensitiveData/src/index.js:548,586-596`); the snapshot stores `topicId` but not `threadId` (`NewsProjectInvokeAgentLambda:703-716`), and `threadId` is assigned (lines 110-124) **after** `logPredictionSnapshot` runs inside the generation loop. No `/weekly/topic/:id` route exists, so `topicId` alone can't link. Wiring needs: reorder the pipeline (or patch PRED# rows from `threadIdById`) → add `threadId` to the snapshot → project it in the proxy → conditional frontend `<Link>`. Deploy-only + future-records-only. **Deliberately deferred** — not reordering the core daily pipeline blind, not shipping a `/weekly/thread/undefined` dead link.
+- [x] WeeklyBrief shipped · [ ] TrackRecord (backend follow-up)
 
 ### P0 · M — Ship the L1 source-robustness pill on Home topic cards + ThreadPage
 - **Why:** The flagship principle ("faithfulness ≠ truth"; single-source stories must visibly downgrade confidence — `ANALYSIS_SOURCE_TRUTH_PLAN.md:161-164`) has **zero user-facing UI outside the BYOK Studio**. Cleanest anti-Bloomberg differentiator; data already computed.
 - **Changes:** New `atoms/SourceRobustness.jsx` pill rendered from existing `sourceCount`/`outletCount`/`countries` (`Home.jsx:414-426`): "Single-source — confidence reduced" vs "Corroborated — N outlets, M regions". Render in the Home topic-card sources block and in ThreadPage's StatusStrip (`ThreadPage.jsx:410-419`). Optionally fold in the `newsSourceAudit` drift signal if present in the payload.
 - **Files:** `components/Home.jsx`, `components/ThreadPage.jsx`, new `components/atoms/SourceRobustness.jsx`
 - **Philosophy check:** Pure presentation over data already in the payload; downgrades confidence rather than inventing it. A thin, corroborated story shows fewer flags (the truthful signal) — no fabricated density. **Empty `sources[]` → render nothing**, never a default "corroborated" badge.
-- [ ] Done
+- **SHIPPED ✅ (2026-06-22):** `atoms/SourceRobustness.jsx` (returns null on no data; amber "⚠ Single-source" vs green "✓ Corroborated · N outlets · M regions"). Rendered in the Home topic-card meta block (reusing the existing `outletCount`/`sourceCount`/`countries`) and in the ThreadPage header kicker (from `thread.allSources.length` + `thread.regions`). Styles in `atoms.css`. Build + lint clean.
+- [x] Done
 
 ### P1 · M — Make the money story coherent + unbreak the conversion funnel
 - **Why:** Live `/membership` ($15/$150 Polar) directly contradicts `Disclosures.jsx:119`, `PrivacyTerms.jsx:14`, `SignIn.jsx:136`, `WhitepaperPage.jsx:282` which all still swear "no paid plans" (all verified) — a trust failure on a site whose whole ethos is honesty. And `SignIn`/`AuthCallback` hard-redirect to `/weekly`, dropping the buyer.
@@ -54,28 +57,35 @@ With those honored, the **skeptic's sequencing wins P0**: highest-ROI, lowest-ri
 - **Files:** `components/Disclosures.jsx`, `components/PrivacyTerms.jsx`, `components/SignIn.jsx`, `components/WhitepaperPage.jsx`, `components/AuthCallback.jsx`, `components/Layout.jsx`, `components/EconomyPage.jsx`, `components/TrackRecordPage.jsx`
 - **Philosophy check:** Resolves the incoherence **toward** the free-and-public promise; membership is framed as funding accountability work, never gating content.
 - **⚠️ Load-bearing:** the reconciled copy must match what Polar **actually** bills — verify against `POLAR_BILLING_PLAN.md` / live Polar config before editing legal pages. Do not assert a billing model that isn't live.
-- [ ] Done
+- **VERIFIED against `POLAR_BILLING_PLAN.md` (DECISION #3, RESOLVED + DEPLOYED 2026-06-16):** reading is **100% free** (no `newsSensitiveData` gating); **membership = run the Analysis Studio on our compute** (no BYOK), member-gated, `ANALYZE_DAILY_CAP=50`; live products **$15/mo · $150/yr**; Polar = Merchant of Record (real payouts pending KYC). So the reconciled line is accurate AND robust to checkout not being live (the `/membership` page self-states availability).
+- **SHIPPED ✅ (2026-06-22):** rewrote the four "no paid plans" claims → "free and public to read; membership buys compute, not access" (`Disclosures.jsx` [+`Link` import], `PrivacyTerms.jsx` [incl. the now-false "does not process payments" line → "processed by Polar (MoR), card details never touch our servers"], `SignIn.jsx`, `WhitepaperPage.jsx`). Added `?returnTo=` (SignIn reads it + persists to localStorage for the magic-link round-trip; AuthCallback honors+clears it; MembershipPage's "Sign in to subscribe" passes `?returnTo=/membership`). Added `/membership` to the footer (`Layout.jsx`) + a "funds the accountability work" CTA on `/track-record`. Build + lint clean.
+- **Trimmed:** the optional `/economy` funding CTA was **deferred** — the page is already dense; the footer + TrackRecord CTA + Disclosures/Privacy copy cover the funnel without cluttering it.
+- [x] Done (economy CTA deferred)
 
 ### P1 · S — Neutralize the dead affordances (⌘K + map pair arcs)
 - **Why:** A pro hits ⌘K reflexively and gets nothing (`Layout.jsx:28` only `preventDefault`s); every map connection-arc click lands on `NotFound` (`/weekly/pair` has no route — verified). Both scream "unfinished" to the exact audience the product wants.
 - **Changes:** Either remove the `gp-search` button or make ⌘K open a minimal jump-to (country/thread) modal firing existing proxy actions. Repoint `WorldMapV2.jsx:650` and `:1206` arc navigation to `/weekly/country/:name` until a real PairPage ships.
 - **Files:** `components/Layout.jsx`, `components/WorldMapV2.jsx`
 - **Philosophy check:** Removes broken/misleading affordances (a control that lies about working). Repointing to a real route is additive and reversible; nothing is faked.
-- [ ] Done
+- **SHIPPED ✅ (2026-06-22):** map pair-arcs repointed to `/weekly/country/:name` (in the P0 commit). Removed the dead `gp-search` button + the ⌘K `preventDefault` (it swallowed the keystroke while opening nothing) — left a comment marking a real command palette as a future enhancement (chose remove-now over rushing a half-built search).
+- [x] Done
 
 ### P2 · L — Surface the systems causal graph as a first-class view
 - **Why:** The single most conceptually differentiated asset (cited, lag-aware causal edges) renders as `edges.slice(0,4)` (`CountryPage.jsx:603` — verified) and is gated to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran`. The why-engine, shown four list-items deep.
 - **Changes:** Build a `SystemsGraph` component rendering full `{nodes, edges}` with `mechanism`/`lagDays`/`confidence` labels + citation links, mounted as a CountryPage tab or `/systems` route. Remove the slice. **Re-verify and widen** the `SYSTEMS_TEST_COUNTRIES` gate against live AWS before relying on coverage.
 - **Files:** `components/CountryPage.jsx`, new `components/SystemsGraph.jsx`, `App.jsx`
 - **Philosophy check:** Surfaces an existing cited, validation-gated asset (uncited edges already dropped backend-side); shows only real edges with confidence labels — no fabricated nodes.
-- [ ] Done
+- **SHIPPED ✅ (2026-06-22):** new `components/SystemsGraph.jsx` (+css) renders the **full** graph (removed the `edges.slice(0,4)` cap → default 6 with "Show all N links"); **each node now links to its arc** (`/weekly/thread/:id?from=country&country=…`), and each edge surfaces its `citedEntries` **count** as an evidence weight (topicIds have no route, so a count — not a fake link). Replaced the inline IIFE in CountryPage's rail + added an explainer note. Build + lint clean. **Chose CountryPage rail over a new `/systems` route** (its natural per-country home; a standalone route needs a country picker — separate scope).
+- **⚠️ Backend follow-up (not done — needs live AWS):** the producer is still gated to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran`, so the richer view only has data for those two until the env gate is widened + re-verified against live AWS (memory flags the scope as possibly stale). Frontend renders honestly wherever data exists; renders nothing where it doesn't.
+- [x] Frontend done · [ ] gate-widening (backend/AWS follow-up)
 
 ### P2 · L — Promote EditorialShell to one shell with density variants + shared tokens
 - **Why:** Three 3-col shells (`EditorialShell`, `ep-shell`, `mv2-body`) and four risk-color sources destroy the positional/color consistency that earns terminal-grade trust.
 - **Changes:** Add `density='compact|comfortable'` to `EditorialShell`; fold `ep-shell` and `mv2-body` in as variants; migrate bespoke status bars to the `StatusStrip` atom; centralize risk/category color into one `tokens.js` and delete the `WeeklyPage`/`DailyPage` import / `WeeklyBrief` `RISK_COLOR` / map-hardcoded duplicates.
 - **Files:** `components/EditorialShell.jsx`, `components/EconomyPage.jsx`, `components/WorldMapV2.jsx`, `components/WeeklyPage.jsx`, `components/DailyPage.jsx`, `components/WeeklyBriefPage.jsx`, new `src/tokens.js`
 - **Philosophy check:** Pure presentation refactor; preserves analyst-grade density (hierarchy, not subtraction) so `crossThreadInsight`/`rootCauseChain` are never stripped.
-- [ ] Done
+- **⏸ DEFERRED BY DESIGN (2026-06-22) — its own focused session:** the debate ranked this last and the skeptic vetoed doing it now (large, regression-prone across 6+ components, moves no trust/conversion metric). It needs careful in-browser visual-regression testing across every page — not safe to land blind at the tail of a long session. Nothing about it blocks the shipped P0/P1/P2-graph work. Recommended first step when picked up: extract the duplicated risk/category colors into one `tokens.js` (low-risk, high-consistency) **before** touching any shell DOM.
+- [ ] Deferred (next session)
 
 ---
 

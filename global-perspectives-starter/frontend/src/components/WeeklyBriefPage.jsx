@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useWeeklyBrief } from '../hooks/useWeeklyBrief';
 import Markdown from './Markdown';
 import './WeeklyBriefPage.css';
@@ -47,16 +48,23 @@ function SignalCard({ s }) {
   return (
     <div className="wb-sig">
       <div className="wb-sig-top">
-        <div className="wb-sig-lede">{s.lede}</div>
+        {s.threadId ? (
+          <Link className="wb-sig-lede wb-sig-lede-link" to={`/weekly/thread/${s.threadId}`}>{s.lede}</Link>
+        ) : (
+          <div className="wb-sig-lede">{s.lede}</div>
+        )}
         <SignalChip kind={s.kind} level={s.riskLevel} />
       </div>
       <div className="wb-sig-meta">{s.region || '—'} <span className="wb-dot">·</span> as of {s.asOf || '—'}</div>
       <p className="wb-sig-fact">{s.fact}</p>
       {s.soWhat && <p className="wb-sig-sw"><span>So what</span> {s.soWhat}</p>}
-      {(outlets.length > 0 || s.related) && (
+      {(outlets.length > 0 || s.related || s.threadId) && (
         <div className="wb-sig-src">
+          {s.threadId && (
+            <Link className="wb-sig-arc" to={`/weekly/thread/${s.threadId}`}>Full story arc →</Link>
+          )}
           {outlets.length > 0 && (
-            <>Sources: {outlets.map((o, i) => (
+            <>{s.threadId && <span className="wb-dot">·</span>} <span className="wb-src-label">Sources:</span> {outlets.map((o, i) => (
               <span key={o.outlet}>
                 {i > 0 && <span className="wb-dot">·</span>}
                 <a href={o.url} target="_blank" rel="noopener noreferrer">{o.outlet}</a>

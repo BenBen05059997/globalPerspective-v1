@@ -277,3 +277,15 @@
   .tr-cal-table th, .tr-cal-table td { padding: var(--space-2); }
   .tr-item-date { margin-left: 0; }
 }
+
+/* Funding CTA — reading is free; membership funds the accountability work (not a paywall). */
+.tr-support {
+  margin-top: 2rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-muted, #6b7280);
+}
+.tr-support a { color: var(--accent, #b4502f); font-weight: 600; text-decoration: none; }
+.tr-support a:hover { text-decoration: underline; }

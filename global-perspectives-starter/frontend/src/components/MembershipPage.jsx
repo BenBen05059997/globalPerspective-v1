@@ -89,7 +89,7 @@ export default function MembershipPage() {
                       {busy === p.id ? 'Starting checkout…' : `Subscribe ${p.price}${p.cadence}`}
                     </button>
                   ) : (
-                    <Link to="/signin" className="mp-subscribe mp-subscribe-link">Sign in to subscribe</Link>
+                    <Link to="/signin?returnTo=/membership" className="mp-subscribe mp-subscribe-link">Sign in to subscribe</Link>
                   )}
                 </div>
               ))}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 function Disclosures() {
   return (
@@ -114,10 +115,18 @@ function Disclosures() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Access &amp; Pricing</h2>
         <p>
-          All content is currently <strong>free</strong> during early access — every feature (today's topics,
-          the interactive map, narrative archive, thread and country intelligence, and economic analysis) is
-          fully open with no account or payment required. There are no paid plans, subscriptions, or trials at
-          this time. An optional account (email magic link or Google sign-in) only enables saving items.
+          All published intelligence is <strong>free and public to read</strong> — every feature (today's topics,
+          the interactive map, narrative archive, thread and country intelligence, economic analysis, daily and
+          weekly briefs, and the forecast track record) is fully open with no account or payment required to read.
+          An optional account (email magic link or Google sign-in) is free and enables saving items and notification
+          preferences.
+        </p>
+        <p>
+          An optional <strong>membership</strong> never gates reading — it <strong>buys analysis compute, not
+          access</strong>: it lets you run the <Link to="/analyze">Analysis Studio</Link> on our own servers
+          (no API key of your own needed) instead of bringing your own. Reading stays free for everyone. See{' '}
+          <Link to="/membership">Membership</Link> for current availability and pricing; payments, when active, are
+          processed by Polar as Merchant of Record.
         </p>
       </section>
 

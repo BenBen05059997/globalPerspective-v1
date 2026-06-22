@@ -104,3 +104,21 @@
   .wb-h1 { font-size: 24px; }
   .wb-sig-lede { font-size: 17px; }
 }
+
+/* Signal → thread arc linkage (trust-loop): make the lede a quiet link, add an explicit arc CTA. */
+.wb-sig-lede-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.wb-sig-lede-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.wb-sig-arc {
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--accent, #b4502f);
+}
+.wb-sig-arc:hover { text-decoration: underline; }
+.wb-src-label { opacity: 0.7; }

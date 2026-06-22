@@ -25,7 +25,8 @@ function Layout({ children }) {
 
   useEffect(() => {
     const handleKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') e.preventDefault();
+      // (⌘K is intentionally not bound — a global command palette is a future
+      // enhancement. Don't swallow the keystroke until there's something to open.)
       if (e.key === 'Escape') setMenuOpen(false);
     };
     document.addEventListener('keydown', handleKey);
@@ -102,15 +103,6 @@ function Layout({ children }) {
               <circle cx="8" cy="11.6" r="0.6" fill="currentColor" stroke="none" />
             </svg>
           </button>
-          <button className="gp-search" aria-label="Search (⌘K)">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="7" cy="7" r="5"/>
-              <path d="M11 11l3 3"/>
-            </svg>
-            <span>Search</span>
-            <span className="gp-kbd">⌘K</span>
-          </button>
-
           <NotificationBell />
 
           {!authLoading && (
@@ -182,6 +174,7 @@ function Layout({ children }) {
         <div className="gp-footer-links">
           <Link to="/economy">Economy</Link>
           <Link to="/track-record">Track Record</Link>
+          <Link to="/membership">Membership</Link>
           <Link to="/about">About</Link>
           <Link to="/whitepaper">White Paper</Link>
           <Link to="/privacy">Privacy</Link>

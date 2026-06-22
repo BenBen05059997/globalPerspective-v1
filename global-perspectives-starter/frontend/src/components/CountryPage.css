@@ -748,3 +748,11 @@
   .cpg-stats { grid-template-columns: repeat(2, 1fr); }
   .cpg-tab { padding: 10px 12px 8px; font-size: 12.5px; }
 }
+
+/* Causal-graph explainer note (SystemsGraph rail). */
+.cpg-causal-note {
+  margin: 6px 2px 0;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}

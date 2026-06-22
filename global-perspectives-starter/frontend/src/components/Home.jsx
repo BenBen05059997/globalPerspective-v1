@@ -13,6 +13,7 @@ import { useError } from '../contexts/ErrorContext';
 import StatusStrip from './atoms/StatusStrip';
 import EditorialShell from './atoms/EditorialShell';
 import SeverityBadge from './atoms/SeverityBadge';
+import SourceRobustness from './atoms/SourceRobustness';
 import LedeBand from './atoms/LedeBand';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { composeTopicsLede } from '../utils/composeTopicsLede';
@@ -432,6 +433,11 @@ function Home() {
                           ))}
                         </span>
                       )}
+                      <SourceRobustness
+                        outlets={outletCount || sourceCount}
+                        sources={sourceCount}
+                        regions={countries.length}
+                      />
                     </div>
                   );
                 })()}

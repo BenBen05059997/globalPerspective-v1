@@ -13,6 +13,7 @@ import CopyBriefing, { formatThreadBriefing } from './CopyBriefing';
 import { SaveButton } from './SaveButton';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
+import SourceRobustness from './atoms/SourceRobustness';
 import MechanismCard from './atoms/MechanismCard';
 import DisruptionPreview from './atoms/DisruptionPreview';
 import { useEconomicImpact } from '../hooks/useEconomicImpact';
@@ -429,6 +430,7 @@ export default function ThreadPage() {
             {thread?.entries[0]?.urgency === 'high' && (
               <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: '#fff', background: 'var(--risk-h)', padding: '1px 6px', borderRadius: 3 }}>URGENT</span>
             )}
+            <SourceRobustness outlets={thread.allSources.length} regions={thread.regions?.length} size="md" />
             Story Arc · {thread.dayCount} days
           </div>
           <h1 className="tp-hd-h1">{displayTitle}</h1>

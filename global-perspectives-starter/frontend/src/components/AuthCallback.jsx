@@ -14,7 +14,11 @@ export default function AuthCallback() {
       try {
         await completeSignIn(window.location.href);
         sessionStorage.setItem('gp_just_signed_in', '1');
-        navigate('/weekly', { replace: true });
+        // Honor a ?returnTo= captured at sign-in (e.g. the membership funnel),
+        // surviving the magic-link round-trip via localStorage. Default /weekly.
+        const rt = localStorage.getItem('gp_return_to');
+        localStorage.removeItem('gp_return_to');
+        navigate(rt || '/weekly', { replace: true });
       } catch (err) {
         setError(err?.message || 'Sign-in failed. The link may have expired.');
       }

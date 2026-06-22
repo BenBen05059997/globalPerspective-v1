@@ -279,8 +279,9 @@ export default function WhitepaperPage() {
       <Section title="Part IV: The Platform">
         <SubSection title="Intelligence at Three Levels">
           <p style={{ lineHeight: 1.7, marginBottom: '1rem' }}>
-            All three levels are <strong>currently free</strong> during early access — there are no paid plans.
-            The levels below describe increasing depth of analysis, not a paywall.
+            All three levels are <strong>free and public to read</strong> — the levels below describe increasing
+            depth of analysis, not a paywall. An optional membership never gates reading; it buys analysis compute
+            (running the Analysis Studio on our servers), not access.
           </p>
           {[
             {

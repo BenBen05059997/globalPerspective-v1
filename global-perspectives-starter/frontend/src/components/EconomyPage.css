@@ -721,36 +721,6 @@
 .ep-arr.dn { color: var(--dn); }
 .ep-arr.mx { color: var(--mx); }
 .ep-dm { font-family: var(--serif); font-style: italic; font-size: 13px; }
-.ep-dr-mech {
-  font-size: 12.5px;
-  color: var(--ink-mid);
-  line-height: 1.4;
-  padding-right: 12px;
-}
-.ep-dr-analog {
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--ink-dim);
-  letter-spacing: 0.02em;
-  line-height: 1.5;
-}
-.ep-aname { color: var(--ink); font-weight: 600; display: block; }
-.ep-aout { color: var(--ink-dim); }
-/* Real historical realized move — the "what actually happened" data point. */
-.ep-amove {
-  display: block;
-  margin-top: 3px;
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 1.45;
-  color: var(--accent);
-  letter-spacing: 0.01em;
-}
-.ep-amove .ep-amove-tk {
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: 0.04em;
-}
 .ep-faint { color: var(--ink-faint); font-size: 10px; }
 .ep-driving-empty {
   padding: 12px 0;

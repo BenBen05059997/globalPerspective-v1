@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-22 (chore: adopt agent-kit operating discipline + add verify gate + green the test suite)
+
+Dropped in the portable **agent-kit** (solo-dev autonomy / verify / git / worktree / deploy discipline) and made the local gate actually green.
+
+- **Added `agent-kit/`** — the project-agnostic bundle (`CLAUDE.template.md`, `MEMORY_SYSTEM.md`, `README.md`, `playbooks/{VERIFY,COMMIT_PUSH,WORKTREE_CONCURRENCY,AUTOMATION_LOOP}.md`) + a filled **`agent-kit/PROJECT.md`** binding every `<PLACEHOLDER>` to this repo + **`agent-kit/ralph-loop.sh`** (queue-driven autonomous loop wrapper; never deploys, local commits only). Added an "Agent Operating Rules" pointer section to `CLAUDE.md`.
+- **Added `npm run verify`** (`eslint . && vitest run`) to the frontend `package.json` — the single pre-commit gate the kit hangs off.
+- **Greened the suite:** fixed a stale assertion in `src/test/economyPage.test.jsx` (it asserted `.ep-dr-mech`/`.ep-dr-analog`, which were intentionally demoted to the thread Economy tab in the `/economy` rebuild) — this had been failing `vitest`. Now 178/178 pass.
+- **Dead-code sweep:** removed the now-orphaned `.ep-dr-mech` / `.ep-dr-analog` / `.ep-aname` / `.ep-aout` / `.ep-amove` rules from `EconomyPage.css` (verified zero JSX references remain).
+
+Tooling/docs + a test fix + dead-CSS removal — no shipped-behavior change, no deploy required.
+
 ## 2026-06-22 (redesign: Daily Brief → sectioned block layout)
 
 Rebuilt the `/daily` page from a text-heavy column into a scannable, block-based intelligence brief — keeping the newspaper-broadsheet identity (Fraunces serif, ink-on-paper, rust accent, functional risk colors), so it stays consistent with the rest of the site rather than turning into a generic dashboard. Motivated by the page leading with a 350–400 word italic `summary` whose paragraphs collapsed into one run-on wall of text (`BoldText` never preserved the `\n\n` breaks the generator emits).

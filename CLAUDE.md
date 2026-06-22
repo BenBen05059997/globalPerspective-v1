@@ -2,6 +2,25 @@
 
 This file contains critical instructions for Claude to follow when working on this project.
 
+## Agent Operating Rules (agent-kit)
+
+Standing autonomy / verify / git / deploy discipline lives in **`agent-kit/`** (read at session start):
+
+- **`agent-kit/PROJECT.md`** — this repo's bindings: the `<PLACEHOLDER>` values (verify cmd, deploy cmd, prod URL, `NEVER_TOUCH` list) every playbook references. **Start here.**
+- **`agent-kit/CLAUDE.template.md`** — autonomy rules ("keep going" on reversible work), halt conditions, the never-without-auth list, the deploy gate.
+- **`agent-kit/playbooks/`** — `VERIFY.md` (4-layer ladder), `COMMIT_PUSH.md`, `WORKTREE_CONCURRENCY.md`, `AUTOMATION_LOOP.md`.
+- **`agent-kit/ralph-loop.sh`** — the repo-bound autonomous loop wrapper (queue-driven, verify-gated, never deploys).
+
+Quick bindings (full table in `agent-kit/PROJECT.md`):
+
+| What | This repo |
+|---|---|
+| Verify (pre-commit gate) | `cd global-perspectives-starter/frontend && npm run verify` |
+| Deploy (gated — explicit "yes" each time) | `./deploy.sh` → then `curl` `https://globalperspective.net` for `200` |
+| Never touch without fresh auth | `docs/config.js`, `.env*`, Polar/billing, Firebase/Lambda env, `git push`, deploy |
+
+The deploy sections below remain authoritative for **how** `deploy.sh` works; the kit governs **when** (the gate) and the general operating discipline.
+
 ## Project Structure
 
 - **Source Code:** `global-perspectives-starter/frontend/src/`

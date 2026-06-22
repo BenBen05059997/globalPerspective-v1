@@ -117,20 +117,23 @@ describe('EconomyPage — instrument-first leaderboard', () => {
     expect(sparks.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('expands a row to reveal driving stories, rationale, and a price sparkline', () => {
+  it('expands a row to reveal a lean driving-stories list + price sparkline (mechanism/analog demoted to thread Economy tab)', () => {
     renderPage();
     const row = brentRow();
     expect(row.querySelector('.ep-driving-row')).toBeNull();
     fireEvent.click(row.querySelector('.ep-row-l1'));
     const drivingRow = row.querySelector('.ep-driving-row');
     expect(drivingRow).toBeInTheDocument();
-    expect(drivingRow.textContent).toMatch(/OPEC\+ surprise cut/);   // source/reference (headline → thread)
-    expect(row.querySelector('.ep-dr-mech').textContent).toMatch(/supply cut/);  // the "why" rationale
-    const analogCell = row.querySelector('.ep-dr-analog');
-    expect(analogCell.textContent).toMatch(/2019 Abqaiq Saudi facility attack/); // real analog name
-    // catalog join: the analog's REAL realized BRENT move (verbatim from economic_analogs.json)
-    expect(analogCell.querySelector('.ep-amove')).toBeInTheDocument();
-    expect(analogCell.textContent).toMatch(/\+15% intraday, retraced ~60% within 2 weeks/);
+    // Lean row: severity word + headline linking to the story's thread Economy tab + direction.
+    expect(drivingRow.querySelector('.ep-dr-sev')).toBeInTheDocument();
+    const headlineLink = drivingRow.querySelector('.ep-dr-headline a');
+    expect(headlineLink.textContent).toMatch(/OPEC\+ surprise cut/);
+    expect(headlineLink.getAttribute('href')).toMatch(/tab=economy/);
+    expect(drivingRow.querySelector('.ep-dr-dir')).toBeInTheDocument();
+    // Mechanism + historical analog are no longer inline — a pointer demotes them to the Economy tab.
+    expect(row.querySelector('.ep-dr-mech')).toBeNull();
+    expect(row.querySelector('.ep-dr-analog')).toBeNull();
+    expect(row.querySelector('.ep-depth-pointer').textContent).toMatch(/Economy tab/);
     expect(row.querySelector('.ep-spark-area svg')).toBeInTheDocument();  // price sparkline (>=2 points)
   });
 

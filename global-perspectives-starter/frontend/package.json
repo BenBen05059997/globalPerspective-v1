@@ -9,6 +9,7 @@
     "build": "vite build",
     "postbuild": "cp dist/index.html dist/404.html",
     "lint": "eslint .",
+    "verify": "eslint . && vitest run",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",

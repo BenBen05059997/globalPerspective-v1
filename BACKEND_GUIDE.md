@@ -21,7 +21,7 @@ Quick-start guide to the backend system. For a complete architecture overview, s
 | `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | Read-only REST proxy serving 18 actions to frontend via API Gateway |
 | `newsSavedItems` | `amplify/backend/function/newsSavedItems/src/index.js` | Save/bookmark Lambda (separate Function URL, Firebase JWT required) |
 | `newsPostLinkedin` | `amplify/backend/function/newsPostLinkedin/src/index.js` | Every 3h: posts to LinkedIn, Bluesky, Farcaster, Mastodon, Telegram. No LLM. Nostr removed 2026-05-16. |
-| `linkedInAutoPost` | `amplify/backend/function/linkedInAutoPost/src/index.js` | 07:30 + 19:30 UTC: scores threads/country intel, posts best to LinkedIn. ⚠️ LinkedIn token expired. |
+| `linkedInAutoPost` | `amplify/backend/function/linkedInAutoPost/src/index.js` | 07:30 + 19:30 UTC: scores threads/country intel, posts best to LinkedIn. LinkedIn token refreshed 2026-06-22 (60-day expiry → re-auth ~2026-08-21; see "LinkedIn token refresh" runbook below). |
 | `newsStripeWebhook` | `amplify/backend/function/newsStripeWebhook/src/index.js` | **Paddle** webhook → writes/updates tier in DynamoDB Users table (name is legacy) |
 
 ---
@@ -227,6 +227,31 @@ Authorization: Bearer <firebase-id-token>
 Posts top topics to LinkedIn, Bluesky, X/Twitter, Threads. Deduplicates via `SOCIAL_POSTS_TABLE` (30-day TTL).
 
 **Key env vars:** `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET`, `THREADS_ACCESS_TOKEN`, `THREADS_USER_ID`, `SOCIAL_POSTS_TABLE`, `MAX_POSTS_PER_RUN` (5), `MAX_POSTS_PER_DAY` (100)
+
+### LinkedIn token refresh runbook (do this ~every 60 days)
+
+`LINKEDIN_ACCESS_TOKEN` (used by **both** `newsPostLinkedin` and `linkedInAutoPost`) is a LinkedIn OAuth access token that **expires every 60 days**. When it lapses, both Lambdas fail every run with `401 EXPIRED_ACCESS_TOKEN` (serviceErrorCode 65602) — Bluesky in the same run keeps working, so the symptom is "LinkedIn stopped, Bluesky fine". Nothing alerts on this today, so it can go silent for days (it was down 2026-06-11 → 2026-06-22).
+
+**The working refresh method — token-generator UI (no client secret, no curl):**
+1. Go to <https://www.linkedin.com/developers/tools/oauth/token-generator>.
+2. Select app **`globalP`** (Client ID `8644gn6c9ruje9`) — this is the app the live token belongs to.
+3. Tick the **`w_member_social`** scope (the only one that matters for posting). If it doesn't appear, deselect the app, hard-refresh, reselect.
+4. **Request access token** → authorize as the account behind person ID `sMLG9Pk5qY` → copy the `AQ...` token.
+5. Merge it into both Lambdas' env (preserve all other vars), e.g.:
+   ```bash
+   for fn in newsPostLinkedin linkedInAutoPost; do
+     aws lambda get-function-configuration --function-name "$fn" --query 'Environment.Variables' --output json > /tmp/e.json
+     AT='<NEW_AQ_TOKEN>' python3 -c "import json,os;v=json.load(open('/tmp/e.json'));v['LINKEDIN_ACCESS_TOKEN']=os.environ['AT'];json.dump({'Variables':v},open('/tmp/u.json','w'))"
+     aws lambda update-function-configuration --function-name "$fn" --environment file:///tmp/u.json
+   done
+   ```
+
+**Gotchas (cost us a full session 2026-06-22):**
+- ❌ The **manual auth-code → curl exchange** flow no longer works: the old client secret `WPL_AP1...==` is **stale/rotated**, so `oauth/v2/accessToken` returns `invalid_client`. Use the generator UI above instead, or regenerate the client secret first.
+- ❌ Don't use LinkedIn's `/developers/tools/oauth/redirect` page as the redirect — it consumes the code (`authorization code not found`). The historical manual flow used `http://localhost:3000/callback`.
+- ❌ The string under "Application credentials" that looks like `WPL_AP1.xxx.yyy==` is the **Client Secret**, NOT an access token — the Lambda needs the long `AQ...` token.
+- `/v2/userinfo` returns 403 with a `w_member_social`-only token (it needs `openid`/`profile`) — that's expected, not a bad token.
+- **Auto-refresh?** Possible only if the app issues 365-day refresh tokens (the generator UI does not return one — needs the auth-code flow + a valid client secret). Even then it's once-a-year manual re-auth, not infinite. Not implemented; chose manual refresh + (optional) expiry alert.
 
 ---
 

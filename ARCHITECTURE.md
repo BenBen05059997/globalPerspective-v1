@@ -348,6 +348,8 @@ Read-only REST proxy. All supported actions:
 
 **Key env vars:** `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `SOCIAL_POSTS_TABLE`, `MAX_POSTS_PER_RUN` (default: 5), `MAX_POSTS_PER_DAY` (default: 100)
 
+> ⚠️ **`LINKEDIN_ACCESS_TOKEN` expires every 60 days** (shared with `linkedInAutoPost` #10). On lapse, both Lambdas fail every run with `401 EXPIRED_ACCESS_TOKEN` while Bluesky keeps working. Last refreshed 2026-06-22 → next ~2026-08-21. **Refresh procedure (token-generator UI, no client secret) → `BACKEND_GUIDE.md` "LinkedIn token refresh runbook".** Nothing alerts on this today.
+
 ---
 
 ### 7. `newsPostDevTo`
@@ -432,7 +434,7 @@ Intelligent scheduled LinkedIn poster — distinct from `newsPostLinkedIn` (manu
 3. Deduplicates against `SOCIAL_POSTS_TABLE`
 4. Posts highest-scoring eligible item to LinkedIn; records with TTL
 
-**Key env vars:** `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `SUMMARIZE_PREDICT_TABLE`, `SOCIAL_POSTS_TABLE`
+**Key env vars:** `LINKEDIN_ACCESS_TOKEN` (60-day expiry — shares the token + refresh runbook with `newsPostLinkedin` #6, see that note), `LINKEDIN_PERSON_ID`, `SUMMARIZE_PREDICT_TABLE`, `SOCIAL_POSTS_TABLE`
 
 ---
 

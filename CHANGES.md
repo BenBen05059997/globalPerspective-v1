@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-06-23 (/map: right-panel leaderboard headlines now link to their story arc)
+
+The right-panel "Top signal this week" leaderboard (`WorldMapV2.jsx`) computed the matching `topic` for each country and displayed its headline, but the row's only click target was `handleCountryClick(iso)` — it never used the `topic.threadId` it had in scope, so the headline was a dead end (no way to reach the corresponding thread). The left-rail Editorial list already did the right thing (`threadId ? navigate(thread) : selectCountry`); the leaderboard had simply drifted out of sync.
+
+- **Fix:** the leaderboard headline is now a thread link when `topic.threadId` exists — `onClick` with `e.stopPropagation()` so the rest of the row still selects the country (dotted-underline affordance). Verified against live data: `archive_range`/`latest` carry `threadId` on every entry, so this was a pure wiring gap, not a data problem.
+
+Files: `global-perspectives-starter/frontend/src/components/WorldMapV2.jsx`. (Source only — not yet built into `docs/`; deploy is gated.)
+
 ## 2026-06-23 (deploy: ship the product-improvements P0/P1/P2 work to production)
 
 The anti-Bloomberg trust-loop work merged to `main` (`aca1812`) had never been built into `docs/` — production kept serving the pre-merge bundle (`index-xrY7_h4h.js`). Caught by comparing the live bundle hash against `docs/index.html`. Rebuilt `docs/` via `./deploy.sh` to make it live (now unblocked by the repo being public).

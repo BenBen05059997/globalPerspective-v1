@@ -1353,7 +1353,17 @@ export default function WorldMapV2() {
                       <div style={{ fontFamily: 'var(--serif)', fontSize: 15, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>{name}</div>
                       <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color, marginTop: 2 }}>z{sign}{s.z} · {s.last7 ?? '—'} articles</div>
                       {topic && (
-                        <div style={{ fontSize: 11, color: 'var(--ink-mid)', marginTop: 4, lineHeight: 1.4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div
+                          onClick={topic.threadId ? (e) => { e.stopPropagation(); navigate(`/weekly/thread/${topic.threadId}`); } : undefined}
+                          title={topic.threadId ? 'Open story arc' : undefined}
+                          style={{
+                            fontSize: 11, color: 'var(--ink-mid)', marginTop: 4, lineHeight: 1.4,
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                            cursor: topic.threadId ? 'pointer' : 'inherit',
+                            textDecoration: topic.threadId ? 'underline dotted' : 'none',
+                            textUnderlineOffset: 2,
+                          }}
+                        >
                           {topic.title?.slice(0, 52)}
                         </div>
                       )}

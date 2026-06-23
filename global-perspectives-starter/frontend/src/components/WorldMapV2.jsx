@@ -14,6 +14,8 @@ import { useMarketsCountry } from '../hooks/useMarketsCountry';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import LedeBand from './atoms/LedeBand';
 import { composeTopicsLede } from '../utils/composeTopicsLede';
+import { findTopicForCountry, countryNameEq } from '../utils/topicMatch';
+import { threadPath } from '../utils/threadPath';
 import './WorldMapV2.css';
 
 // UN M.49 numeric → ISO 3166-1 alpha-3
@@ -328,9 +330,7 @@ export default function WorldMapV2() {
       .slice(0, 5);
     return ranked.map(([iso, s], i) => {
       const name = isoToName[iso];
-      const topic = topics.find(t =>
-        Array.isArray(t.regions) && t.regions.some(r => r && String(r).toLowerCase() === name?.toLowerCase())
-      );
+      const topic = findTopicForCountry(topics, name);
       return {
         iso,
         n: String(i + 1),
@@ -352,7 +352,7 @@ export default function WorldMapV2() {
       const items = Array.isArray(day) ? day : (day?.entries || []);
       for (const e of items) {
         const regions = Array.isArray(e.regions) ? e.regions : [];
-        if (regions.some(r => r && String(r).toLowerCase() === lc)) {
+        if (regions.some(r => countryNameEq(r, selectedName))) {
           entries.push({ ...e, _date: date });
         }
       }
@@ -689,7 +689,7 @@ export default function WorldMapV2() {
         const lbl = el('text', { class: 'label', x: x + 17, y: y + 3, fill: '#3a3a3c' });
         lbl.textContent = p.t;
         const handler = () => {
-          if (p.threadId) navigate(`/weekly/thread/${p.threadId}`);
+          if (p.threadId) navigate(threadPath(p.threadId));
           else handleCountryClick(p.iso);
         };
         circle.addEventListener('click', handler);
@@ -883,7 +883,7 @@ export default function WorldMapV2() {
                   key={p.iso + p.n}
                   className={`chk${selectedISO === p.iso ? ' on' : ''}`}
                   onClick={() => {
-                    if (p.threadId) navigate(`/weekly/thread/${p.threadId}`);
+                    if (p.threadId) navigate(threadPath(p.threadId));
                     else handleCountryClick(p.iso);
                   }}
                   style={{ alignItems: 'center', cursor: 'pointer' }}
@@ -1131,7 +1131,7 @@ export default function WorldMapV2() {
                   {selectedCountryDisruptions.map((d, i) => (
                     <Link
                       key={d.scopeId || i}
-                      to={`/weekly/thread/${encodeURIComponent(d.scopeId || '')}?tab=economy`}
+                      to={threadPath(d.scopeId, { tab: 'economy' })}
                       style={{
                         display: 'block',
                         padding: '6px 0',
@@ -1182,7 +1182,7 @@ export default function WorldMapV2() {
                       <div
                         className="r" key={i}
                         style={r.threadId ? { cursor: 'pointer' } : undefined}
-                        onClick={r.threadId ? () => navigate(`/weekly/thread/${r.threadId}`) : undefined}
+                        onClick={r.threadId ? () => navigate(threadPath(r.threadId)) : undefined}
                       >
                         <span className="d">{r.d}</span>
                         <span>{r.h}</span>
@@ -1327,9 +1327,7 @@ export default function WorldMapV2() {
                 const name = isoToName[iso] || iso;
                 const color = RISK_MARKER[s.bucket];
                 const sign = s.z > 0 ? '+' : '';
-                const topic = topics.find(t =>
-                  Array.isArray(t.regions) && t.regions.some(r => r && String(r).toLowerCase() === name.toLowerCase())
-                );
+                const topic = findTopicForCountry(topics, name);
                 return (
                   <div
                     key={iso}
@@ -1354,7 +1352,7 @@ export default function WorldMapV2() {
                       <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color, marginTop: 2 }}>z{sign}{s.z} · {s.last7 ?? '—'} articles</div>
                       {topic && (
                         <div
-                          onClick={topic.threadId ? (e) => { e.stopPropagation(); navigate(`/weekly/thread/${topic.threadId}`); } : undefined}
+                          onClick={topic.threadId ? (e) => { e.stopPropagation(); navigate(threadPath(topic.threadId)); } : undefined}
                           title={topic.threadId ? 'Open story arc' : undefined}
                           style={{
                             fontSize: 11, color: 'var(--ink-mid)', marginTop: 4, lineHeight: 1.4,

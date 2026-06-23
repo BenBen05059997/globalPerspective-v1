@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import SeverityBadge from './SeverityBadge.jsx';
 import DirectionArrow from './DirectionArrow.jsx';
 import QualityFlag from './QualityFlag.jsx';
+import { threadPath } from '../../utils/threadPath';
 
 function timeAgo(iso) {
   if (!iso) return null;
@@ -26,7 +27,7 @@ export default function DisruptionRow({ disruption, showTime = true }) {
   } = disruption;
   const top = instruments.slice(0, 3);
   const moreCount = instruments.length - top.length;
-  const href = scopeId ? `/weekly/thread/${encodeURIComponent(scopeId)}?tab=economy` : null;
+  const href = scopeId ? threadPath(scopeId, { tab: 'economy' }) : null;
 
   const body = (
     <>

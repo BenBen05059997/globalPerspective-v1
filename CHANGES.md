@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-23 (refactor: extract topicMatch + threadPath utils, kill duplicated map logic)
+
+Follow-up to the leaderboard fix below. The "find the topic for a country" predicate was pasted verbatim at three sites inside `WorldMapV2.jsx`, and thread-link URLs were hand-built across the app with inconsistent encoding (the map encoded its economic-disruption row but not its editorial/leaderboard nav).
+
+- **New `utils/topicMatch.js`** — `countryNameEq(a,b)` (case-insensitive country-name compare) + `findTopicForCountry(topics, name)`. Replaces the three inline predicates in `WorldMapV2.jsx` (editorial picks, leaderboard, detail-panel coverage filter).
+- **New `utils/threadPath.js`** — `threadPath(threadId, {tab, from, country})`, the single owner of the `/weekly/thread/:id` convention + `encodeURIComponent` + query-param assembly. Migrated all 6 WorldMapV2 thread links and the shared `atoms/DisruptionRow.jsx` (the economy-tab link used by `/economy`, `/daily`, country pages) onto it.
+- **Reviewed by a 3-agent adversarial pass** (completeness / encoding-regression / behavior-parity). Confirmed: refactors are semantically identical to the originals; `ThreadPage` reads `threadId` via `useParams` (auto-decoded) so the centralized `encodeURIComponent` round-trips correctly; real threadIds (`thread-{slug}-{hash}`) contain no special chars, so encoding is a no-op on live data (zero behavioral change). No regression — the ~15 other hand-built thread links across the app are unchanged and queued as a clean follow-up.
+
+Files: `global-perspectives-starter/frontend/src/utils/{topicMatch,threadPath}.js` (new), `…/components/WorldMapV2.jsx`, `…/components/atoms/DisruptionRow.jsx`. (Source only — not yet built into `docs/`; deploy is gated.)
+
 ## 2026-06-23 (/map: right-panel leaderboard headlines now link to their story arc)
 
 The right-panel "Top signal this week" leaderboard (`WorldMapV2.jsx`) computed the matching `topic` for each country and displayed its headline, but the row's only click target was `handleCountryClick(iso)` — it never used the `topic.threadId` it had in scope, so the headline was a dead end (no way to reach the corresponding thread). The left-rail Editorial list already did the right thing (`threadId ? navigate(thread) : selectCountry`); the leaderboard had simply drifted out of sync.

@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-06-15
+**Last verified:** 2026-06-23 (refresh: Stooq→Yahoo markets migration, Polar membership LIVE + `newsAnalyze`/`newsPolarBilling`, `/membership` route, P0/P1/P2 product-improvement components, `newsPostDevTo` TZ correction)
 
 > **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](./SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md).**
 
@@ -10,7 +10,8 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 - `newsInvokeGemini-dev`, `NewsProjectInvokeAgentLambda-dev`, `newsCountryIntelligence`, `newsPostDevTo`, `newsSystemsAnalysis`, `newsEconomicImpact` → **DeepSeek V4 Flash** (`deepseek-chat`, $0.14/M in · $0.28/M out)
 - `newsThreadAnalysis`, `newsEconomicQuality` → **Gemini 2.5 Flash** (free tier, 13s pacing between calls, thinking disabled)
 - `newsPairIntelligence` → **DeepSeek V4** (deployed env vars verified `deepseek-chat` / `api.deepseek.com` — its source default still reads Grok, and the migration plan's Phase 2 box was never checked, but the live function is on DeepSeek). Manual-invoke only.
-- `newsMarketsData`, `newsCountryFactsUpdater`, `newsSavedItems`, `newsPostLinkedIn`, `linkedInAutoPost` → **no LLM** (data feeds or cached AI from DDB)
+- `newsAnalyze` → **DeepSeek V4** (the member-side Analysis Studio "our-compute" run path — same cited-analysis product as BYOK `/analyze` but on our key; member-gated, `ANALYZE_DAILY_CAP=50`; deployed 2026-06-22, the paid Polar membership product)
+- `newsMarketsData`, `newsCountryFactsUpdater`, `newsSavedItems`, `newsPostLinkedIn`, `linkedInAutoPost`, `newsPolarBilling` → **no LLM** (data feeds, cached AI from DDB, or — for `newsPolarBilling` — Polar checkout + webhook, deployed 2026-06-22)
 - `newsClientErrors`, `newsFreshnessMonitor`, `newsErrorDigest` → **no LLM** (observability — passive error capture + 24/7 monitoring; see Lambdas #17–19 and "Observability & Monitoring")
 - `newsBreakingAlert` → **no LLM today** (deterministic significance detector; the Phase-3 verify step will add **Gemini** as a judge). Built 2026-06-10, **not deployed** — see Lambda #21.
 
@@ -133,11 +134,11 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 
 ---
 
-## Tier System ⚠️ DEPRECATED (Paddle) — revival planned (Polar)
+## Membership / Billing (Polar) — LIVE 2026-06-16..22; reading stays free
 
-> **STATUS UPDATE 2026-06-10:** Paid subscriptions are being **reintroduced via Polar.sh** (Merchant of Record), reversing the 2026-05-26 teardown. Live spec → **[`POLAR_BILLING_PLAN.md`](./POLAR_BILLING_PLAN.md)**. Phase 1 = subscription for full read access (no credits-to-read); a credits-funded "custom analysis" feature is parked for Phase 2. **Nothing is built yet** — *current production is still fully public with no enforcement*, so everything below remains accurate for the live system. The old Paddle machinery is **not** what's being rebuilt; Polar is a different provider with a different schema (`polarCustomerId`/`polarSubscriptionId`, `creditBalance`). The Firebase-JWT verification helper and the dormant `USERS_DDB_TABLE` are reusable; the deleted `newsStripeWebhook`/Paddle path is not.
+> **CURRENT MODEL (deployed; source of truth = [`POLAR_BILLING_PLAN.md`](./POLAR_BILLING_PLAN.md)):** All **content is 100% free and public — there is NO read-tier gating** (`newsSensitiveData` enforces nothing; that has not changed). **Membership buys analysis *compute*, not access:** a member runs the Analysis Studio (`/analyze`) on **our** DeepSeek instead of bringing their own key — member-gated via the `newsAnalyze` Lambda with `ANALYZE_DAILY_CAP=50`. Live products: **$15/mo · $150/yr**. **Polar.sh is the Merchant of Record** (handles checkout + card data + tax; real payouts pending operator KYC). Backend deployed + machine-tested 2026-06-22 — `newsPolarBilling` (checkout + webhook, Function URL, signing secret set) and the member-side `newsAnalyze` (our-compute run path). Frontend: `/membership` page + footer link + `?returnTo=` auth funnel (see [[project-billing-deprecated]], [[project-analysis-studio]]). The four legal/marketing pages were reconciled 2026-06-22 to "free to read; membership buys compute, not access." Operator TODO still open: 100%-off comp run, KYC, **rotate the leaked token**.
 
-> **DEPRECATED (Paddle) as of 2026-05-26 — the prior billing stack was torn down and is not being repaired.** The site is currently fully public; there is no paid tier, no checkout, and no active billing integration *today*. The machinery below is documented for historical context and because dormant code/records still exist. Do not "fix" the old Paddle path — the rebuild goes through Polar (see the status update above), so favour the [`POLAR_BILLING_PLAN.md`](./POLAR_BILLING_PLAN.md) approach over reviving anything here.
+> **Paddle is permanently dead** (torn down 2026-05-26..06-01 — `newsStripeWebhook` Lambda + Function URL + IAM role deleted). Do NOT revive it; Polar is a different provider with a different schema (`polarCustomerId`/`polarSubscriptionId`). The legacy `free`/`member`/`enterprise` tier table below is **historical** — the live model is the free-content + compute-membership split described above, not these access tiers.
 
 | Tier (legacy) | Intended access |
 |------|--------|
@@ -351,7 +352,7 @@ Read-only REST proxy. All supported actions:
 
 ### 7. `newsPostDevTo`
 **Path:** `amplify/backend/function/newsPostDevTo/src/index.js`
-**Trigger:** EventBridge Scheduler — `InvokeDev` — `cron(0 23 * * ? *)` (daily 23:00 UTC)
+**Trigger:** EventBridge Scheduler — `InvokeDev` — `cron(0 23 * * ? *)`, **timezone `Asia/Tokyo`** → 23:00 JST = **14:00 UTC daily** (the scheduler is NOT in UTC; live briefs show `generatedAt ≈ 14:01 UTC`, confirming this)
 
 Posts a daily AI-written summary article to [Dev.to](https://dev.to).
 
@@ -470,11 +471,11 @@ Free economic-data ingest — **no LLM**, all free feeds.
 **What it does:**
 1. **FX** — Frankfurter (ECB rates, no key), hourly
 2. **Bond yields** — FRED (free key), daily on weekdays
-3. **Commodities + equities + crypto** — Stooq CSV (15-min delayed, no key) / CoinGecko / Yahoo (VIX), hourly. Priced universe (~51 instruments, the spine behind `/economy` — see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`): commodities (Brent, WTI, gold, copper, DXY, VIX, **natural gas**), bond yields, equity indices + Russell 2000 (**IWM** proxy; Stooq lacks `^rut`), the **full 11 GICS sector SPDR ETFs** + thematic ETFs (defense/semis/gold-miners/**agriculture DBA**/**rare-earths REMX**), and BTC/ETH. (SILVER intentionally excluded — `si.f` returns an implausible value.)
+3. **Commodities + equities** — **Yahoo Finance** (`chart/<sym>?interval=1d`, no key, JSON) / crypto via CoinGecko, hourly. **Migrated off Stooq 2026-06-23** (commit `51ef532`): Stooq put all its CSV endpoints behind a JS proof-of-work bot wall and removed `/q/l/` (404 site-wide), so a server-side fetch can no longer read it — commodities + equities went null in prod until this swap. `fetchYahooQuote()` + the `YAHOO_COMMODITIES`/`YAHOO_EQUITIES` maps (the same maps `seed_history` already used; VIX was already Yahoo). Priced universe (~51 instruments, the spine behind `/economy` — see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`): commodities (Brent `BZ=F`, WTI `CL=F`, gold `GC=F`, copper `HG=F`, DXY `DX-Y.NYB`, VIX `^VIX`, **natural gas** `NG=F`), bond yields, equity indices + Russell 2000 (**IWM** proxy), the **full 11 GICS sector SPDR ETFs** + thematic ETFs (defense/semis/gold-miners/**agriculture DBA**/**rare-earths REMX**), and BTC/ETH.
 4. **Country macros** — World Bank (no key), weekly
 5. Writes `LATEST` rows plus dated `HISTORY#` rows (for sparklines) to `MARKETS_DDB_TABLE`
 
-**Payload:** `{}` runs all sources appropriate for the time; `{ "source": "fx" | "yields" | "macros" | "commodities" | "equities" | "crypto" }` runs one; `{ "source": "seed_history" }` is a **one-time** backfill that downloads ~30 days of daily closes per instrument from **Yahoo Finance** (`chart?interval=1d&range=2mo`, sequential/throttled — Yahoo rate-limits bursts) and writes the past `HISTORY#YYYY-MM-DD` rows (35-day TTL, only dates < today, skips existing rows). Needed because Stooq's history CSV is now API-key-gated; the daily cron still appends today's row from the Stooq LATEST quote, and TTL keeps the window at ~30 days. This is what powers the `/economy` sparklines + Key-levels.
+**Payload:** `{}` runs all sources appropriate for the time; `{ "source": "fx" | "yields" | "macros" | "commodities" | "equities" | "crypto" }` runs one; `{ "source": "seed_history" }` is a **one-time** backfill that downloads ~30 days of daily closes per instrument from **Yahoo Finance** (`chart?interval=1d&range=2mo`, sequential/throttled — Yahoo rate-limits bursts) and writes the past `HISTORY#YYYY-MM-DD` rows (35-day TTL, only dates < today, skips existing rows). The hourly cron appends today's row from the Yahoo LATEST quote, and TTL keeps the window at ~30 days. This is what powers the `/economy` sparklines + Key-levels. (Stooq, the original source for both LATEST quotes and history, is fully dead — see source #4 note above.)
 
 **Key env vars:** `MARKETS_DDB_TABLE` (default `GlobalPerspectiveMarkets`), `FRED_API_KEY`
 
@@ -854,7 +855,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `countryIntelliegence` | `cron(0 7 * * ? *)` | newsCountryIntelligence (daily 07:00 UTC) |
 | `InvokeLinkedIn` | `cron(20 */3 * * ? *)` | newsPostLinkedin (every 3h at :20) |
 | `LinkedinThreadsDaily` | `cron(30 7/12 * * ? *)` | linkedInAutoPost (07:30 / 19:30 UTC) |
-| `InvokeDev` | `cron(0 23 * * ? *)` | newsPostDevTo (23:00 UTC daily) |
+| `InvokeDev` | `cron(0 23 * * ? *)` **TZ Asia/Tokyo** | newsPostDevTo (23:00 JST = **14:00 UTC** daily — scheduler is NOT in UTC) |
 | `Fact` | `cron(0 5 * * ? *)` | newsCountryFactsUpdater (05:00 UTC daily) |
 
 > The every-2h pipeline cadence and 3×/day country-intelligence schedule were both reduced on 2026-05-16 alongside the DeepSeek migration to control cost.
@@ -872,7 +873,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | DeepSeek V4 (`api.deepseek.com`) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsCountryIntelligence, newsSystemsAnalysis, newsEconomicImpact, newsPairIntelligence, newsPostDevTo | Topic clustering + AI content generation |
 | Gemini 2.5 Flash (OpenAI-compat endpoint) | newsThreadAnalysis, newsEconomicQuality | Editorial analysis + LLM-as-judge (free tier, 13s pacing) |
 | Brave Search (news + web) | newsInvokeGemini, newsThreadAnalysis, newsCountryIntelligence, newsPairIntelligence | News article search + grounding |
-| Frankfurter / FRED / Stooq / World Bank / CoinGecko | newsMarketsData | Free FX, bond yields, commodities, equities, macros, crypto |
+| Frankfurter / FRED / **Yahoo Finance** / World Bank / CoinGecko | newsMarketsData | Free FX, bond yields, commodities + equities (Yahoo — replaced Stooq 2026-06-23), macros, crypto |
 | Wikidata (SPARQL) | newsCountryFactsUpdater | Head of state/government data |
 | ACLED API | newsCountryFactsUpdater | Active conflict data (approval pending) |
 | Mapbox Geocoding | newsSensitiveData | Location name → lat/lng |
@@ -894,7 +895,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 
 Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.
 
-Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch-all. Content is fully public in early-access mode.
+Wired in `<Routes>` in `App.jsx` — 18 routes incl. catch-all (`/membership` added 2026-06-22). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
 
 | Path | Component | Access |
 |------|-----------|--------|
@@ -917,6 +918,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `/weekly/country/:countryName` | `CountryPage.jsx` | Public |
 | `/signin` | `SignIn.jsx` | Public |
 | `/auth/callback` | `AuthCallback.jsx` | Public |
+| `/membership` | `MembershipPage.jsx` | Public (Polar checkout — $15/mo · $150/yr for Analysis-Studio-on-our-compute; reading stays free) |
 | `/account` | `Account.jsx` | Auth |
 | `*` | `NotFound` (inline in App.jsx) | Public catch-all (404) |
 
@@ -940,7 +942,7 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `ThreadPage.jsx` | 3-col EditorialShell thread deep-dive: StatusStrip, "Arc Intelligence" AI rail (tabs + key actors + grounding sources), 4-stat row, content tabs Timeline/Actors/Sources/**Economy** (economic disruption via `useEconomicImpact` + `MechanismCard`/`DisruptionPreview`) |
 | `CountryListPage.jsx` | Grid index of all countries with intelligence |
 | `CountryPage.jsx` | Map-first country page: Google Map hero, AI tabs, story arcs, coverage |
-| `DailyPage.jsx` | Daily Intelligence Brief display (`/daily`, `/daily/:dateKey`) + an `EconomicFootprint` section aggregating top instruments from `useDisruptionsList`. **Honest date (2026-06-10):** shows a relative pill ("Yesterday" / "N days ago") when the served brief is older than the requested date, and a fallback notice ("Today's brief publishes at the end of the day — showing &lt;date&gt;") when you open `/daily` before today's brief is generated (the daily brief is written once/day at 23:00 UTC by `newsPostDevTo`, so most of the day `/daily` serves the prior day). |
+| `DailyPage.jsx` | Daily Intelligence Brief display (`/daily`, `/daily/:dateKey`) + an `EconomicFootprint` section aggregating top instruments from `useDisruptionsList`. **Honest date (2026-06-10):** shows a relative pill ("Yesterday" / "N days ago") when the served brief is older than the requested date, and a fallback notice ("Today's brief publishes at the end of the day — showing &lt;date&gt;") when you open `/daily` before today's brief is generated (the daily brief is written once/day at 23:00 JST = **14:00 UTC** by `newsPostDevTo`, so until ~14:00 UTC `/daily` serves the prior day). |
 | `StoryEntryCard.jsx` | Entry card with Summarize/Predict/Trace Cause toggle |
 | `ThreadIntelligence.jsx` | Thread-level AI analysis display (storyArc, trajectory, etc.) |
 | `BriefingCard.jsx` | Formatted intelligence briefing card |
@@ -952,6 +954,9 @@ Wired in `<Routes>` in `App.jsx` (verified 2026-05-26) — 17 routes incl. catch
 | `TrackRecordPage.jsx` | `/track-record` — forecast calibration scoreboard (stat cards, Brier score + verdict, calibration table, recently-resolved triggers); honest empty state until human-confirmed verdicts exist. See [Prediction calibration](#prediction-calibration-track-record) |
 | `AnalysisStudio.jsx` | `/analyze` — **BYOK self-serve analysis** (registered-only; see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)). Pick ≤4 stories → **Guided lens** / **Free-form** / **Deep research (web)** → cited deep-dive from cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE` (deep mode also web-searches). Output runs through the validator + source-robustness banner. Runs on the user's own key (browser-only). |
 | `ProviderModal.jsx` | The `/analyze` provider/model/key chooser modal (OpenAI · DeepSeek `v4-flash`/`-pro` · **Perplexity** · Gemini · OpenRouter · Anthropic; labels which can web-search). Writes `{provider,model,key}` to `localStorage` only — never sent to our servers. |
+| `MembershipPage.jsx` | `/membership` — Polar checkout ($15/mo · $150/yr = run Analysis Studio on our compute; reading stays free). Self-states availability; "Sign in to subscribe" passes `?returnTo=/membership`. Added 2026-06-22 (footer-linked, not in top nav). |
+| `SystemsGraph.jsx` | First-class causal-graph view (P2, 2026-06-22) — renders the **full** `systems_analysis` `{nodes,edges}` with `mechanism`/`lagDays`/`confidence`; each node links to its arc (`/weekly/thread/:id`), each edge shows its `citedEntries` count as evidence weight. Replaced the old `edges.slice(0,4)` inline cap in CountryPage's rail. Backend still gated to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran` until the env gate is widened. |
+| `atoms/SourceRobustness.jsx` | L1 source-robustness pill (P0, 2026-06-22) — amber "⚠ Single-source" vs green "✓ Corroborated · N outlets · M regions", from existing `outletCount`/`sourceCount`/`countries`. **Renders null on no data** (never a default "corroborated" badge). On Home topic-card meta + ThreadPage header kicker. The "faithfulness ≠ truth" principle made user-facing outside the BYOK Studio. |
 
 ### Key Hooks
 
@@ -1004,12 +1009,12 @@ Currently shipped: the `SITE_WELCOME` popover (auto), the `SITE_INTRO` walk ("?"
 
 ### Analysis Studio (BYOK self-serve analysis)
 
-`/analyze` (`AnalysisStudio.jsx`) — SHIPPED 2026-06-10 (commit `c1ef5f6`). The first "analyze it yourself" surface: a reader picks ≤4 real stories and gets a **cited deep-dive** built from our own intelligence. Full spec: `ANALYSIS_STUDIO_PLAN.md`. It is the feature the future **Polar credits** will meter (`POLAR_BILLING_PLAN.md`) — **build-first, monetize later**; see [[project-analysis-studio]].
+`/analyze` (`AnalysisStudio.jsx`) — SHIPPED 2026-06-10 (commit `c1ef5f6`). The first "analyze it yourself" surface: a reader picks ≤4 real stories and gets a **cited deep-dive** built from our own intelligence. Full spec: `ANALYSIS_STUDIO_PLAN.md`. This is the feature **Polar membership monetizes** (`POLAR_BILLING_PLAN.md`): as of 2026-06-22 a **member runs it on our compute** via the `newsAnalyze` Lambda (our DeepSeek key, member-gated, `ANALYZE_DAILY_CAP=50`) instead of bringing their own — the BYOK path below stays free/public; see [[project-analysis-studio]], [[project-billing-deprecated]].
 
 - **Three input modes** (2026-06-11): **Guided** = 5 fixed lenses (Scenario forecast / Winners & losers / Economic ripple / Root-cause chain / Compare); **Free-form** = ask anything; **Deep research 🔎web** = the model does REAL web search (Perplexity sonar native, or Anthropic's `web_search_20250305` tool) seeded by the selected stories → What happened / Why / What next / Who's affected. Deep mode is **gated to search-capable providers** (disabled with a reason for DeepSeek/OpenAI/Gemini; `runChat` hard-refuses faking it). Pure prompt layer = `utils/analysisPrompt.js`; `utils/analysis.js` keeps the cited-context fetch + re-exports. Prompts upgraded to analyst-grade (Bottom-line thesis, structural drivers, scenario forks-on-distinct-outcomes + partition, economic direction→magnitude→mechanism) with a hard anti-fabrication counterweight.
 - **Verify system (every run) + source-truth (2026-06-11..15):** `utils/analysisValidator.js` checks the output for `phantom_citation` (error), `invented_figure`, `invented_date`, `no_citations`, `thin_input` → a pass/verify/flag banner. `utils/sourceRobustness.js` adds a **"Source basis"** line (single-source ⇒ "unverified, corroborate"). Quality has no ground truth → it's a **check, not a benchmark** (the auditor/scorers live offline in `quality/analysis/`: `run.mjs`, `judge.mjs`, `check.mjs`, `source_check.mjs`; the daily `newsSourceAudit` #24 is the automated guard). See `ANALYSIS_STUDIO_TESTING_PLAN.md` + `ANALYSIS_SOURCE_TRUTH_PLAN.md`.
 - **BYOK, key never leaves the browser.** `ProviderModal.jsx` chooses provider + model + key; `utils/byok.js` persists to `localStorage` only. `services/llm.js` calls the provider **directly from the browser** — one OpenAI-compatible path (OpenAI / DeepSeek / **Perplexity** / Gemini / OpenRouter) + an Anthropic adapter. DeepSeek shows explicit **V4 model versions** (`deepseek-v4-flash`/`-pro`; legacy `deepseek-chat` retires 2026-07-24) and sends `thinking:{type:'disabled'}` (V4 defaults to thinking, which broke output). **Registered-only:** `/analyze` requires a signed-in (non-anonymous) account — a blocking "Sign in to analyze" gate otherwise; key management (change/remove) lives on the Account "Analysis key" tab.
-- **Status:** DeepSeek browser-CORS verified for both prod origins; live BYOK call verified end-to-end. Deep-research (Perplexity/Anthropic) plumbing not yet live-tested (no key). No daily cap during BYOK testing — the cap/credit lands when Polar billing goes live. (Footer shows the deployed build version `v<sha>·<date>` for deploy confirmation.)
+- **Status:** DeepSeek browser-CORS verified for both prod origins; live BYOK call verified end-to-end. Deep-research (Perplexity/Anthropic) plumbing not yet live-tested (no key). The **member "our-compute" path is live** (`newsAnalyze`, `ANALYZE_DAILY_CAP=50`, deployed 2026-06-22) — BYOK remains uncapped/free. (Footer shows the deployed build version `v<sha>·<date>` for deploy confirmation.)
 
 ### Service Layer
 

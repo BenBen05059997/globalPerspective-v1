@@ -1,0 +1,14 @@
+{
+  "name": "newssignals",
+  "version": "1.0.0",
+  "description": "Horizontal Signal API — maps internal analysis records into a stable v1 signal envelope (build) and serves them key-gated (serve). See SIGNAL_API_PLAN.md",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node test-adapter.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
+  }
+}

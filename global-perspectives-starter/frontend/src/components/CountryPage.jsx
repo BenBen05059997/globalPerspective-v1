@@ -17,7 +17,7 @@ import { getBroadRegionsForCountry } from '../utils/countryMapping';
 import WeeklyMap from './WeeklyMap';
 import ShareButtons from './ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from './CopyBriefing';
-import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
+import { CATEGORY_BADGE_COLORS, RISK_COLORS } from '../tokens';
 import BackgroundTimeline from './BackgroundTimeline';
 import { SaveButton } from './SaveButton';
 import EditorialShell from './atoms/EditorialShell';

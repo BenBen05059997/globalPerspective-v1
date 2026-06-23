@@ -4,18 +4,8 @@ import PredictionDisplay from './PredictionDisplay';
 import TraceCauseDisplay from './TraceCauseDisplay';
 import contentService from '../utils/contentService';
 import { useError } from '../contexts/ErrorContext';
+import { CATEGORY_DOT as CATEGORY_COLORS } from '../tokens';
 import './AIComponents.css';
-
-const CATEGORY_COLORS = {
-  conflict:   '#ef4444',
-  military:   '#ef4444',
-  disaster:   '#f97316',
-  politics:   '#3b82f6',
-  economy:    '#22c55e',
-  technology: '#8b5cf6',
-  health:     '#14b8a6',
-  other:      '#6b7280',
-};
 
 const getFlagEmoji = (code) => {
   if (!code || code === 'Unknown' || code.length !== 2) return '🌍';

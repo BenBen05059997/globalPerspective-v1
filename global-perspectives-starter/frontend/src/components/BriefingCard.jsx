@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { prepareWithSegments, layoutNextLine, layoutWithLines, walkLineRanges } from '@chenglou/pretext';
+import { RISK_RGB as RISK_COLORS } from '../tokens';
 
 const BODY_FONT = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 const BODY_LINE_HEIGHT = 26;
@@ -11,13 +12,6 @@ const MIN_SLOT_WIDTH = 40;
 const ORB_H_PAD = 16;
 const ORB_V_PAD = 4;
 const GUTTER = 32;
-
-const RISK_COLORS = {
-  critical: [239, 68, 68],
-  elevated: [249, 115, 22],
-  moderate: [234, 179, 8],
-  low: [34, 197, 94],
-};
 
 function carveSlots(base, blocked) {
   let slots = [base];

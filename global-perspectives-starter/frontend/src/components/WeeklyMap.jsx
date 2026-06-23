@@ -9,7 +9,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import StoryEntryCard from './StoryEntryCard';
 import ThreadIntelligence from './ThreadIntelligence';
-import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
+import { CATEGORY_BADGE_COLORS } from '../tokens';
 import CompactTimeline from './CompactTimeline';
 import './WeeklyPage.css';
 import './WeeklyMap.css';

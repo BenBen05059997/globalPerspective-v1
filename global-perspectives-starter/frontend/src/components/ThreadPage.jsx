@@ -8,7 +8,7 @@ import { useNarrativeThread } from '../hooks/useNarrativeThread';
 import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { formatDateLabel } from '../utils/dateUtils';
 import CompactTimeline from './CompactTimeline';
-import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
+import { CATEGORY_BADGE_COLORS, riskScoreToVar as RISK_COLOR } from '../tokens';
 import CopyBriefing, { formatThreadBriefing } from './CopyBriefing';
 import { SaveButton } from './SaveButton';
 import EditorialShell from './atoms/EditorialShell';
@@ -44,12 +44,6 @@ function formatDateRange(from, to) {
   return `${a} — ${formatDateLabel(to)}`;
 }
 
-const RISK_COLOR = (score) => {
-  if (score == null) return 'var(--ink)';
-  if (score >= 75) return 'var(--risk-h)';
-  if (score >= 50) return 'var(--risk-e)';
-  return 'var(--risk-l)';
-};
 
 export default function ThreadPage() {
   const { threadId } = useParams();

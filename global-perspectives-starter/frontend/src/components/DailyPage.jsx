@@ -5,7 +5,7 @@ import { useDailyBrief } from '../hooks/useDailyBrief';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import InstrumentChip from './atoms/InstrumentChip';
 import SeverityBadge from './atoms/SeverityBadge';
-import { CATEGORY_BADGE_COLORS, RISK_COLORS } from './WeeklyPage';
+import { CATEGORY_BADGE_COLORS, RISK_COLORS } from '../tokens';
 import ShareButtons from './ShareButtons';
 import CopyBriefing, { formatDailyBrief } from './CopyBriefing';
 import { SaveButton } from './SaveButton';

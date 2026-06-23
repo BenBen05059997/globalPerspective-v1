@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CATEGORY_BADGE_COLORS } from './WeeklyPage';
+import { CATEGORY_BADGE_COLORS } from '../tokens';
 
 export default function StoryEntryCard({ entry, compact }) {
   const [activeTab, setActiveTab] = useState(null);

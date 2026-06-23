@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useWeeklyBrief } from '../hooks/useWeeklyBrief';
 import Markdown from './Markdown';
+import { RISK_SOLID as RISK_COLOR } from '../tokens';
 import './WeeklyBriefPage.css';
-
-const RISK_COLOR = { low: '#4fa07b', moderate: '#caa23a', elevated: '#d89540', high: '#c94a33' };
 
 function formatWeekOf(weekKey) {
   if (!weekKey) return '';

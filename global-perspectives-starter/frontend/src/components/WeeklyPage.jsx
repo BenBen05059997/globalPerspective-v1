@@ -9,6 +9,7 @@ import { formatDateLabel } from '../utils/dateUtils';
 import TrendBadge, { getTrend } from './TrendBadge';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
+import { CATEGORY_BADGE_COLORS } from '../tokens';
 import './WeeklyPage.css';
 import './AIComponents.css';
 
@@ -24,29 +25,7 @@ const REGION_COLORS = {
   World:         { bg: '#f3f4f6', border: '#d1d5db', text: '#6b7280' },
 };
 
-export const CATEGORY_BADGE_COLORS = {
-  conflict:   { bg: '#fee2e2', color: '#b91c1c' },
-  military:   { bg: '#fee2e2', color: '#b91c1c' },
-  disaster:   { bg: '#ffedd5', color: '#c2410c' },
-  politics:   { bg: '#dbeafe', color: '#1d4ed8' },
-  economy:    { bg: '#d1fae5', color: '#065f46' },
-  technology: { bg: '#ede9fe', color: '#5b21b6' },
-  health:     { bg: '#ccfbf1', color: '#0f766e' },
-  climate:    { bg: '#d1fae5', color: '#047857' },
-  science:    { bg: '#fae8ff', color: '#86198f' },
-  business:   { bg: '#e0f2fe', color: '#0369a1' },
-  society:    { bg: '#fef3c7', color: '#92400e' },
-  energy:     { bg: '#fefce8', color: '#713f12' },
-};
-
 export const CATEGORY_ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
-
-export const RISK_COLORS = {
-  low:      { bg: '#d1fae5', color: '#065f46' },
-  moderate: { bg: '#fef9c3', color: '#854d0e' },
-  elevated: { bg: '#ffedd5', color: '#9a3412' },
-  high:     { bg: '#fee2e2', color: '#991b1b' },
-};
 
 function getActivityStatus(lastDateStr) {
   const diffDays = Math.floor(

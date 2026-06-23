@@ -4,7 +4,7 @@ import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '../hooks/useCountryIntelligence';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { getTopicRegion } from '../utils/countryMapping';
-import { RISK_COLORS, CATEGORY_BADGE_COLORS } from './WeeklyPage';
+import { RISK_COLORS, CATEGORY_BADGE_COLORS } from '../tokens';
 import CountryOverviewMap from './CountryOverviewMap';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';

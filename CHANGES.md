@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-06-23 (deploy: ship the product-improvements P0/P1/P2 work to production)
+
+The anti-Bloomberg trust-loop work merged to `main` (`aca1812`) had never been built into `docs/` — production kept serving the pre-merge bundle (`index-xrY7_h4h.js`). Caught by comparing the live bundle hash against `docs/index.html`. Rebuilt `docs/` via `./deploy.sh` to make it live (now unblocked by the repo being public).
+
+- **Shipped to production** (`docs/` rebuild, no source change): the P0 trust-loop (source-robustness pill on Home/ThreadPage, WeeklyBrief/TrackRecord → thread links, repointed dead map arcs), P1 money-coherence copy + `?returnTo=` funnel + `/membership` in footer + dead-⌘K removal, and the P2 systems causal-graph view (CountryPage tab).
+- **Pre-deploy verification:** `npm run verify` green (0 ESLint errors, 178 vitest tests); browser-smoke of the build confirmed Home/Disclosures render with the new copy (the smoke script's "blank region" flags were false negatives from the onboarding modal overlay on a data-less preview).
+
+Files: `docs/assets`, `docs/index.html`, `docs/404.html`.
+
 ## 2026-06-23 (repo made PUBLIC + downgraded GitHub Pro → Free)
 
 Completed the public-repo prep from the 2026-06-22 entry below.

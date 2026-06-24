@@ -4,6 +4,8 @@
 
 **Decision (2026-06-22):** build **everything below (P0 → P2)** across focused worktree sessions, sequenced as written. This doc is the source of truth for that work; check items off as they ship.
 
+**Status (2026-06-24):** P0/P1 + the P2 systems-graph view are **live in production**. P2a color-tokens (`tokens.js`) is **on `main`/`origin`, pending a `docs/` deploy**. Remaining open items are deliberate: **P0·S TrackRecord links** (backend `threadId`-capture follow-up), **P2 systems gate-widening** (`SYSTEMS_TEST_COUNTRIES`, live-AWS), and **P2b shell-DOM merge** (skipped by design — shells are behaviorally distinct, not density variants).
+
 ---
 
 ## North star
@@ -85,7 +87,9 @@ With those honored, the **skeptic's sequencing wins P0**: highest-ROI, lowest-ri
 - **Files:** `components/EditorialShell.jsx`, `components/EconomyPage.jsx`, `components/WorldMapV2.jsx`, `components/WeeklyPage.jsx`, `components/DailyPage.jsx`, `components/WeeklyBriefPage.jsx`, new `src/tokens.js`
 - **Philosophy check:** Pure presentation refactor; preserves analyst-grade density (hierarchy, not subtraction) so `crossThreadInsight`/`rootCauseChain` are never stripped.
 - **⏸ DEFERRED BY DESIGN (2026-06-22) — its own focused session:** the debate ranked this last and the skeptic vetoed doing it now (large, regression-prone across 6+ components, moves no trust/conversion metric). It needs careful in-browser visual-regression testing across every page — not safe to land blind at the tail of a long session. Nothing about it blocks the shipped P0/P1/P2-graph work. Recommended first step when picked up: extract the duplicated risk/category colors into one `tokens.js` (low-risk, high-consistency) **before** touching any shell DOM.
-- [ ] Deferred (next session)
+- **P2a (colors) — SHIPPED ✅ (2026-06-24, commit `e1b0337`):** created `src/tokens.js` as the single source for risk + category colors; consolidated the 4 divergent risk representations (pastel `{bg,color}` badge, solid editorial hex, canvas RGB arrays, score→CSS-var) and 3 category maps, repointing 11 components (`WeeklyPage`/`CountryPage`/`CountryListPage`/`DailyPage`/`ThreadPage`/`StoryEntryCard`/`WeeklyMap`/`BriefingCard`/`WeeklyBriefPage`/`MapSidePanel`/`WorldMap`). Hex unchanged (visuals identical); MapSidePanel gains real climate/science/business/society/energy dot colors instead of grey. Verify green (178 tests) + browser click-through (9 pages, 0 console errors). **On `main`/`origin`, not yet deployed to `docs/`.**
+- **P2b (shell-DOM merge) — SKIPPED BY DESIGN (2026-06-24):** investigation showed the three shells are **behaviorally distinct, not density variants** — `ep-shell` has drag-resizable rails + full-bleed masthead + mobile sheet; `mv2-body` has 3 collapsible-rail grid states for the map layer controls; `EditorialShell` is static 3-col. A `density` prop can't express resize/collapse/full-bleed, so folding them into one shell would either regress those behaviors or pollute the shared shell with page-specific logic. Low value (the visible inconsistency was color, now fixed by P2a) for real regression risk. Revisit only if a future redesign genuinely needs one shell.
+- [x] P2a colors (tokens.js) shipped · [⊘] P2b shell-DOM merge skipped by design
 
 ---
 

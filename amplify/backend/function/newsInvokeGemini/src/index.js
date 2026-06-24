@@ -666,7 +666,7 @@ exports.handler = async (event) => {
         '',
         'CRITICAL RULES:',
         '1. ONE EVENT PER TOPIC: Each topic = ONE specific newsworthy event',
-        '2. BE SPECIFIC: Include key details (names, numbers, locations, actions)',
+        '2. BE SPECIFIC BUT GROUNDED: Include key details (names, numbers, locations, actions) — but EVERY figure, date, death toll, or superlative ("record", "first ever", "since YYYY", "worst in history") in the title MUST appear verbatim in a source article above. Do NOT invent, round up, extrapolate, or sharpen a number/year/superlative the sources do not state. A grounded vague title beats a specific fabricated one.',
         '3. ONLY USE ARTICLES FROM ABOVE: Source URLs must match exactly',
         '4. DO NOT INVENT URLs: Do NOT fabricate any URLs',
         '5. GROUP AGGRESSIVELY: Articles about the SAME underlying event MUST be grouped into ONE topic, even if they use different headlines, angles, framings, or names for the same actors/locations. Example: "Iran shoots down US jet", "Pentagon confirms aircraft loss near Hormuz", and "US warplane downed in Gulf" are ALL the same event — group them. Err on the side of merging, not splitting.',

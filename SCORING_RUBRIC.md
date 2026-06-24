@@ -219,3 +219,37 @@ dedupe/continuation (1/run, 5-day, ×1.8) unspecified under the two-layer model.
    data, not from anecdote.
 7. **Specify:** dedupe (1/run, 5-day) + continuation (×1.8) stay **deterministic**, upstream of
    the judge.
+
+---
+
+## 8. How professionals weight risk (external methods, researched 2026-06-24)
+
+Surveyed five established methodologies for how serious systems score risk/significance. One
+pattern is universal and it directly indicts our v1 design: **they never collapse everything
+into one number with a dominant standing-risk term. They separate event-type, instance
+intensity, urgency/timeliness, and certainty into orthogonal axes — and the serious ones learn
+the weights from labeled data.**
+
+| Method | How it weights risk | What we take from it |
+|---|---|---|
+| **CAP** (Common Alerting Protocol — OASIS/NWS, the global public-warning standard) | Three **separate, independent axes**: **urgency** (Immediate/Expected/Future/Past), **severity** (Extreme/Severe/Moderate/Minor), **certainty** (Observed/Likely/Possible/Unlikely). Kept distinct — *not* combined into one rank. | Gold-standard validation of the panel's call: urgency/severity/credibility are **separate dimensions**, not one score. Our verify-agent's multi-dimension output is correct; our single v1 composite is the anti-pattern. |
+| **GDELT Goldstein scale** | Assigns each **event *type*** a latent impact score (−10…+10) by type, *independent of the specific instance* (a 10-person and a 10,000-person riot get the same Goldstein); instance intensity comes from **separate** signals (tone −100…+100, mention count). | The missing piece: a **per-event-type severity prior**, kept separate from instance loudness. We have *no* event-type weight — a genocide finding and a "fee discussion" ride the identical loudness signals. Add an event-class prior × instance magnitude. |
+| **ICRG** (PRS Group country-risk index) | 22 components in 3 buckets; political (100 pts) weighted **2× financial/economic** (50 each); composite = sum/2; **weights published and user-customizable**. | Confirms two things: (a) professional risk scores are **decomposed into many components with deliberate, documented weights** — not one term carrying 88%; (b) ICRG-style country risk is a **standing country-comparison score** (willingness/ability to pay), *not* an event signal — using it as our heaviest alert weight is a category error. |
+| **News values** (Galtung-Ruge lineage; Boukes et al. 2022; Reuters Tracer) | ~7 criteria (timeliness, proximity, impact, prominence, unusualness, conflict, human interest); significance = **hitting *multiple* at once**; empirically **conflict + eliteness** most predict prominence; **timeliness/unusualness are first-class**. | Significance is multi-signal with **none dominant**, and **timeliness + novelty are first-class** — exactly what our loudness-only signals lack (velocity is a weak novelty proxy). |
+| **Dataminr First Alert** (real-time critical-event detection) | Severity from multiple orthogonal **"valuers"** — location, **time**, response, **categorization** (event-type), **impact** — combined; **weights derived dynamically via ML on a historical-events database**; normalized to a 1–5 rank; relevance filter cuts false positives. | The production blueprint: orthogonal valuers incl. **time (immediacy)** and **categorization (event-type)**; **weights are *learned* from labeled history, not hand-set** — direct external backing for the panel's "build the gold set, don't guess weights"; a relevance/precision filter on top (= our LLM gate). |
+
+**What this changes in our plan (folds into §7):**
+- **Strong external support** for: separating urgency/severity/certainty (CAP), the recall→precision filter (Dataminr's relevance layer), and **learning weights from a labeled set** rather than hand-tuning (Dataminr; ICRG shows even hand-set weights are *documented and deliberate*, not vibes).
+- **New, well-precedented idea to add:** an **event-type severity prior** (Goldstein-style) — a small deterministic weight by event class (e.g. atrocity-finding / coup / default ≫ inspection / lawsuit-filing / fee-talk), kept **separate** from instance loudness. This is the principled version of the event-state gate, and it's how GDELT, CAP-severity and news "impact" all encode magnitude.
+- **Strong external confirmation of the core bug:** standing country-risk (ICRG-style) is a *country-comparison* instrument, not an event-urgency signal — so capping/demoting it (§7 step 1) is right, and ideally it becomes a minor modifier, not a primary axis.
+
+**Sources:** [OASIS CAP v1.2 spec](https://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2-os.html) ·
+[NWS CAP docs](https://vlab.noaa.gov/web/nws-common-alerting-protocol/cap-documentation) ·
+[GDELT Event Codebook v2.0](http://data.gdeltproject.org/documentation/GDELT-Event_Codebook-V2.0.pdf) ·
+[ONS GDELT appendix](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/methodologies/globaldatabaseofeventslanguageandtonegdeltappendix) ·
+[ICRG methodology (PRS Group)](https://www.prsgroup.com/wp-content/uploads/2014/08/icrgmethodology.pdf) ·
+[Harvey — Political/Economic/Financial Risk](https://people.duke.edu/~charvey/Country_risk/pol/pol.htm) ·
+[Newsworthiness criteria](https://journalism.university/media-information-literacy/what-makes-news-key-criteria-newsworthiness/) ·
+[Boukes et al. 2022, news factors & prominence](https://journals.sagepub.com/doi/10.1177/1464884919899313) ·
+[Reuters Tracer](https://arxiv.org/pdf/1711.04068) ·
+[Dataminr real-time alerting](https://www.dataminr.com/resources/blog/real-time-alerting-101-how-it-works-and-why-its-a-business-imperative/)

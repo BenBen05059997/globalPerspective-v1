@@ -48,17 +48,17 @@ must_have "$SRC/components/Layout.jsx" "to=.{1,3}/economy" "nav link to /economy
 must_have "$SRC/components/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
 must_have "$SRC/components/EconomyPage.jsx" "useTopMovers" "uses useTopMovers"
 must_have "$SRC/components/EconomyPage.jsx" "useMarketsGlobal" "renders Market Context rail"
-must_have "$SRC/components/EconomyPage.jsx" "tab=economy" "deep-links stories to thread economy tab"
+must_have "$SRC/components/EconomyPage.jsx" "tab.{1,4}economy" "deep-links stories to thread economy tab"
 
 # ─── Home ───
 must_have "$SRC/components/Home.jsx" "useDisruptionsList" "uses useDisruptionsList"
 must_have "$SRC/components/Home.jsx" "disruptionByThread" "builds per-thread map"
-must_have "$SRC/components/Home.jsx" "tab=economy" "deep-links to economy tab"
+must_have "$SRC/components/Home.jsx" "tab.{1,4}economy" "deep-links to economy tab"
 must_have "$SRC/components/Home.jsx" "SeverityBadge" "renders SeverityBadge"
 
 # ─── DailyPage ───
 must_have "$SRC/components/DailyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/components/DailyPage.jsx" "tab=economy" "deep-links to economy tab"
+must_have "$SRC/components/DailyPage.jsx" "tab.{1,4}economy" "deep-links to economy tab"
 must_have "$SRC/components/DailyPage.jsx" "SeverityBadge" "renders SeverityBadge"
 
 # ─── ThreadPage ───
@@ -70,7 +70,7 @@ must_have "$SRC/components/ThreadPage.jsx" "hasEconomy" "computes hasEconomy gat
 # ─── CountryPage ───
 must_have "$SRC/components/CountryPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
 must_have "$SRC/components/CountryPage.jsx" "country:" "passes country filter"
-must_have "$SRC/components/CountryPage.jsx" "tab=economy" "deep-links to economy tab"
+must_have "$SRC/components/CountryPage.jsx" "tab.{1,4}economy" "deep-links to economy tab"
 
 # ─── CountryListPage ───
 must_have "$SRC/components/CountryListPage.jsx" "useDisruptionsList" "uses useDisruptionsList"

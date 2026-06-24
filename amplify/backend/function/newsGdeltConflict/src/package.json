@@ -1,0 +1,12 @@
+{
+  "name": "newsgdeltconflict",
+  "version": "1.0.0",
+  "description": "Shadow ingest of GDELT 2.0 material-conflict events — open conflict-impact feed (ACLED replacement). Never touches the live feed. See IMPACT_FIRST_REDESIGN_PLAN.md §3.5",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0"
+  }
+}

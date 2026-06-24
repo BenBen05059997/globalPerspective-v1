@@ -31,6 +31,11 @@ const VALID_CATEGORIES = [
 ];
 const CACHE_TABLE = process.env.TOPICS_DDB_TABLE;
 const CACHE_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
+// Capture harness (foundation of IMPACT_VALIDATION_METHODOLOGY.md): log what the selector SAW vs
+// what it CHOSE each cycle, so an auditor can later check for missed high-impact events and a human
+// reference set can be built. Additive + fully fenced — never affects ingestion.
+const CAPTURE_TABLE = process.env.INGEST_CAPTURE_TABLE || 'GlobalPerspectiveIngestCapture';
+const CAPTURE_TTL_DAYS = Number(process.env.CAPTURE_TTL_DAYS) || 45;
 const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY;
 const BRAVE_NEWS_ENDPOINT = 'https://api.search.brave.com/res/v1/news/search';
 
@@ -566,6 +571,44 @@ async function writeCache({ topics, model, limit }) {
 // MAIN HANDLER
 // ============================================================
 
+// Log the cycle's input (every fetched article the selector saw) + output (chosen topics) to the
+// capture table. Fully fenced: any failure is swallowed so it can never break ingestion.
+async function captureIngestion(inputArticles, chosenTopics, generationId) {
+  if (!ddbDoc) return;
+  try {
+    const input = (inputArticles || []).slice(0, 300).map((a) => ({
+      title: (a.title || '').slice(0, 200),
+      source: a.source || '',
+      url: a.url || '',
+      age: a.age || '',
+      snippet: (a.description || '').slice(0, 200),
+    }));
+    const chosen = (chosenTopics || []).map((t) => ({
+      title: t.title || '',
+      category: t.category || null,
+      regions: t.regions || [],
+      threadId: t.threadId || null,
+      sourceUrls: (t.sources || []).map((s) => s.url).filter(Boolean),
+    }));
+    const { PutCommand } = require('@aws-sdk/lib-dynamodb');
+    await ddbDoc.send(new PutCommand({
+      TableName: CAPTURE_TABLE,
+      Item: {
+        runId: new Date().toISOString(),
+        generationId: generationId || null,
+        inputCount: input.length,
+        chosenCount: chosen.length,
+        input,   // what the selector SAW (the audit basis for "missed high-impact?")
+        chosen,  // what it CHOSE
+        ttl: Math.floor(Date.now() / 1000) + CAPTURE_TTL_DAYS * 86400,
+      },
+    }));
+    console.log(`[capture] ${input.length} input articles -> ${chosen.length} chosen topics`);
+  } catch (e) {
+    console.warn('[capture] failed (non-fatal):', e.message);
+  }
+}
+
 exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -864,6 +907,9 @@ exports.handler = async (event) => {
     })), null, 2));
 
     const cacheResult = await writeCache({ topics: filtered, model: MODEL_NAME, limit });
+
+    // Capture harness — fire-and-forget; fenced internally so it never affects ingestion.
+    await captureIngestion(allArticles, filtered, cacheResult.generationId);
 
     // Update seen topics for soft dedup
     const now = Date.now();

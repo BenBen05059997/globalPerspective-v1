@@ -36,6 +36,16 @@ Pattern: *"Under-coverage of African crises and environmental disasters; over-se
 domestic politics and routine economic news."* Confirms same-model auditing works with the primed
 prompt.
 
+### Coverage-gap analysis added 2026-06-25 (the OBJECTIVE second angle)
+The auditor now ALSO does a **deterministic, no-LLM** check against the GDACS feed
+(`gdacsCoverageGap`): for each **Orange/Red** disaster ingested in the last 5 days, is its country
+even present in today's chosen topics? If not → `country_absent` (a hard, objective coverage gap);
+country present but no disaster-flavored topic → `no_disaster_topic`. Hard gaps are stored
+(`gdacsGaps`) and **trigger the alert on their own** (independent of the LLM miss count). So the
+daily audit now reports misses from **two independent angles** — LLM judgment + an authoritative
+disaster feed — and a GDACS gap needs no opinion to be believed. Verified by injecting a synthetic
+Orange flood (Mozambique, absent from the news) → correctly flagged `country_absent`, then removed.
+
 ---
 
 ## First run — capture cycle 2026-06-24T14:21Z (179 seen → 16 chosen)

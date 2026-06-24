@@ -21,6 +21,7 @@ const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const CAPTURE_TABLE = process.env.INGEST_CAPTURE_TABLE || 'GlobalPerspectiveIngestCapture';
 const AUDIT_TABLE = process.env.IMPACT_AUDIT_TABLE || 'GlobalPerspectiveImpactAudit';
+const GDACS_TABLE = process.env.GDACS_TABLE || 'GlobalPerspectiveGdacsEvents';
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 const MISS_ALERT_THRESHOLD = Number(process.env.MISS_ALERT_THRESHOLD) || 2;
 const API_KEY = process.env.XAI_API_KEY; // legacy name — holds the DeepSeek key in prod
@@ -84,6 +85,45 @@ async function audit(input, chosen) {
   return JSON.parse(data.choices?.[0]?.message?.content || '{}');
 }
 
+// Deterministic, OBJECTIVE coverage gap: GDACS Orange/Red disasters the selector did not cover.
+// No LLM opinion — a hard signal. "country_absent" = the disaster's country isn't even in today's
+// selection (strong gap); "no_disaster_topic" = country present but no disaster-flavored topic.
+const DISASTER_WORDS = ['flood', 'quake', 'earthquake', 'cyclone', 'hurricane', 'typhoon', 'storm',
+  'wildfire', 'fire', 'volcan', 'eruption', 'drought', 'tsunami', 'landslide', 'disaster'];
+
+async function gdacsCoverageGap(chosen) {
+  let events;
+  try {
+    const out = await ddb.send(new ScanCommand({
+      TableName: GDACS_TABLE,
+      FilterExpression: 'alertLevel = :o OR alertLevel = :r',
+      ExpressionAttributeValues: { ':o': 'Orange', ':r': 'Red' },
+    }));
+    events = out.Items || [];
+  } catch (e) { console.warn('[gdacs-gap] scan failed:', e.message); return []; }
+
+  // recent only (last 5 days) — ignore stale/closed events
+  const cutoff = new Date(Date.now() - 5 * 86400 * 1000).toISOString().slice(0, 10);
+  events = events.filter((e) => String(e.fromDate || e.dateModified || '').slice(0, 10) >= cutoff);
+
+  const hay = chosen.map((c) => `${c.title} ${(c.regions || []).join(' ')} ${c.category || ''}`.toLowerCase()).join(' || ');
+  const disasterMentioned = DISASTER_WORDS.some((w) => hay.includes(w));
+  const gaps = [];
+  for (const ev of events) {
+    const countries = [String(ev.country || ''), ...String(ev.affectedCountries || '').split(/[;,]/)]
+      .map((s) => s.trim().toLowerCase()).filter((s) => s.length > 3);
+    const countryMentioned = countries.some((c) => hay.includes(c));
+    if (!countryMentioned || !disasterMentioned) {
+      gaps.push({
+        eventKey: ev.eventKey, alertLevel: ev.alertLevel, type: ev.eventType,
+        country: ev.country, name: ev.name, severityText: ev.severityText || '',
+        gap: !countryMentioned ? 'country_absent' : 'no_disaster_topic',
+      });
+    }
+  }
+  return gaps;
+}
+
 exports.handler = async () => {
   const cap = await latestCapture();
   if (!cap) { console.warn('[impact-audit] no capture rows'); return { ok: false, reason: 'no_capture' }; }
@@ -95,6 +135,8 @@ exports.handler = async () => {
   catch (e) { console.error('[impact-audit] audit failed:', e.message); return { ok: false, error: e.message }; }
 
   const missed = Array.isArray(result.missed) ? result.missed : [];
+  const gdacsGaps = await gdacsCoverageGap(chosen);          // objective coverage gap (GDACS feed)
+  const hardGaps = gdacsGaps.filter((g) => g.gap === 'country_absent');
   const now = new Date().toISOString();
   const item = {
     auditId: `AUDIT#${now}`,
@@ -108,32 +150,36 @@ exports.handler = async () => {
     qualityNote: result.quality_note || null,
     missed,
     questionable: Array.isArray(result.questionable) ? result.questionable : [],
+    gdacsGapCount: gdacsGaps.length,
+    gdacsGaps,
     ttl: Math.floor(Date.now() / 1000) + AUDIT_TTL_DAYS * 86400,
   };
   try { await ddb.send(new PutCommand({ TableName: AUDIT_TABLE, Item: item })); }
   catch (e) { console.warn('[impact-audit] write failed:', e.message); }
 
-  console.log(`[impact-audit] missed=${missed.length} verdict=${result.verdict} pattern=${result.dominant_pattern || ''}`);
+  console.log(`[impact-audit] missed=${missed.length} gdacsGaps=${gdacsGaps.length}(hard=${hardGaps.length}) verdict=${result.verdict} pattern=${result.dominant_pattern || ''}`);
 
-  // Alert only — never modifies the live feed.
-  if (missed.length >= MISS_ALERT_THRESHOLD && SNS_TOPIC_ARN) {
+  // Alert only — never modifies the live feed. Fire on LLM-judged misses OR an objective GDACS gap.
+  if ((missed.length >= MISS_ALERT_THRESHOLD || hardGaps.length > 0) && SNS_TOPIC_ARN) {
     const body = [
-      `The news selector MISSED ${missed.length} high-impact events (cycle ${cap.runId}).`,
-      `Verdict: ${result.verdict}. Pattern: ${result.dominant_pattern || ''}`,
+      `Impact audit (cycle ${cap.runId}):`,
+      `• ${missed.length} high-impact events the auditor judged MISSED. Verdict: ${result.verdict}. Pattern: ${result.dominant_pattern || ''}`,
+      ...missed.map((m, i) => `   ${i + 1}. [${m.dimension}] ${m.title} (${m.source}) → ${m.why}`),
       '',
-      ...missed.map((m, i) => `${i + 1}. [${m.dimension}] ${m.title} (${m.source})\n   → ${m.why}`),
+      `• ${hardGaps.length} GDACS Orange/Red disaster(s) NOT covered (objective coverage gap):`,
+      ...hardGaps.map((g, i) => `   ${i + 1}. [${g.alertLevel} ${g.type}] ${g.name} — ${g.country} (${g.severityText})`),
       '',
-      'This is a measurement + alert. It does NOT change what readers saw. Review and decide.',
+      'Measurement + alert only. It does NOT change what readers saw. Review and decide.',
     ].join('\n');
     try {
       await sns.send(new PublishCommand({
         TopicArn: SNS_TOPIC_ARN,
-        Subject: `⚠ Impact audit: ${missed.length} high-impact stories missed`,
+        Subject: `⚠ Impact audit: ${missed.length} missed + ${hardGaps.length} GDACS disaster gap(s)`,
         Message: body,
       }));
       console.log('[impact-audit] SNS alert sent');
     } catch (e) { console.warn('[impact-audit] SNS failed:', e.message); }
   }
 
-  return { ok: true, missed: missed.length, verdict: result.verdict };
+  return { ok: true, missed: missed.length, gdacsGaps: gdacsGaps.length, verdict: result.verdict };
 };

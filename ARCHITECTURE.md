@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-06-23 (refresh: Stooq→Yahoo markets migration, Polar membership LIVE + `newsAnalyze`/`newsPolarBilling`, `/membership` route, P0/P1/P2 product-improvement components, `newsPostDevTo` TZ correction)
+**Last verified:** 2026-06-24 (refresh: `src/tokens.js` single source for risk/category colors [P2a]; P0/P1 + systems-graph product-improvement work deployed live; Stooq→Yahoo markets migration, Polar membership LIVE + `newsAnalyze`/`newsPolarBilling`, `/membership` route, `newsPostDevTo` TZ correction)
 
 > **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](./SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md).**
 
@@ -1021,6 +1021,10 @@ Currently shipped: the `SITE_WELCOME` popover (auto), the `SITE_INTRO` walk ("?"
 ### Service Layer
 
 Two modules: `restProxy.js` (the actual transport) and `utils/contentService.js` (a thin wrapper over restProxy that adds normalization/sentence-trimming for topic content — **renamed 2026-05-26 from the misleading `graphqlService.js`; there is no GraphQL**). The topic AI hooks (`useGeminiTopics`, `useSummary`, `usePrediction`, `useTraceCause`, `useTodayArchive`) and `Home`/`MapSidePanel` call through `contentService`; everything else calls `restProxy` directly.
+
+### Design Tokens (colors)
+
+`src/tokens.js` (added 2026-06-24, P2a) is the **single source of truth for risk + category colors** — import from here, never redefine. It exports `RISK_COLORS` (pastel `{bg,color}` badge), `RISK_SOLID` (editorial hex, matches the `--risk-*` CSS vars), `RISK_RGB` (canvas arrays), `riskScoreToVar(score)` (score→`--risk-*`), `CATEGORY_BADGE_COLORS` (`{bg,color}` chip), and `CATEGORY_DOT` (map-marker hex). It consolidated four divergent risk representations + three category maps previously copy-pasted across ~11 components. (The risk **layout shells** — `EditorialShell` vs Economy's resizable `ep-shell` vs the Map's collapsible `mv2-body` — were intentionally **not** merged; they are behaviorally distinct, not density variants. See `PRODUCT_IMPROVEMENT_PLAN.md` P2.)
 
 > **BYOK exception (Analysis Studio):** `/analyze` does **not** route its LLM calls through `restProxy`. `services/llm.js` calls the user's chosen provider directly from the browser with the user's own key (see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)); only the *story records* it analyzes come from `restProxy`'s public actions.
 

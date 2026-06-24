@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-24 (P2a color tokens shipped to main; P2 shell-merge skipped by design)
+
+Continuation of the anti-Bloomberg `PRODUCT_IMPROVEMENT_PLAN.md` work. After confirming P0/P1 + the P2 systems-graph were live (see the 2026-06-23 deploy entry below), tackled the remaining P2 "shared tokens + one shell" workstream — landing the safe half and consciously dropping the risky half.
+
+- **P2a — `src/tokens.js`, the single source for risk + category colors (commit `e1b0337`, on `main`/`origin`).** Consolidated four divergent risk representations (pastel `{bg,color}` badge, solid editorial hex, canvas RGB arrays, `riskScore`→CSS-var) and three category maps that were copy-pasted across the app, repointing 11 components: `WeeklyPage`, `CountryPage`, `CountryListPage`, `DailyPage`, `ThreadPage`, `StoryEntryCard`, `WeeklyMap`, `BriefingCard`, `WeeklyBriefPage`, `MapSidePanel`, `WorldMap`. Hex values unchanged (visuals identical); the one intentional improvement is `MapSidePanel` now drawing real climate/science/business/society/energy dot colors instead of falling back to grey. Net −59 lines.
+- **P2b — shell unification SKIPPED by design.** Investigation found the three 3-col shells are **behaviorally distinct, not density variants**: `ep-shell` (Economy) has drag-resizable rails + full-bleed masthead + mobile bottom-sheet; `mv2-body` (Map) has three collapsible-rail grid states for the layer controls; `EditorialShell` is static 3-col. A `density` prop can't express resize/collapse/full-bleed, so a merge would either regress those behaviors or pollute a shared shell with page-specific logic — low value (the visible inconsistency was color, fixed by P2a) for real regression risk. Documented in `PRODUCT_IMPROVEMENT_PLAN.md`.
+- **Verified:** `npm run verify` green (0 ESLint errors, 178 vitest tests) on the merged `main`; browser click-through of 9 pages (Home/Weekly/Thread/Country/WeeklyBrief/Map/Economy/Daily/chrome) — every button exercised, **0 console errors**, colors + source-robustness pills render correctly.
+- **Housekeeping:** updated `PRODUCT_IMPROVEMENT_PLAN.md` (P2a shipped, P2b skipped, top status banner); removed the spent `finish-product-plan` worktree + branch.
+
+Files: `global-perspectives-starter/frontend/src/tokens.js` (new) + the 11 components above; `PRODUCT_IMPROVEMENT_PLAN.md`. (Source only — `tokens.js` is on `main`/`origin` but **not yet built into `docs/`**; deploy is gated.)
+
 ## 2026-06-23 (refactor: extract topicMatch + threadPath utils, kill duplicated map logic)
 
 Follow-up to the leaderboard fix below. The "find the topic for a country" predicate was pasted verbatim at three sites inside `WorldMapV2.jsx`, and thread-link URLs were hand-built across the app with inconsistent encoding (the map encoded its economic-disruption row but not its editorial/leaderboard nav).

@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-06-24 (deploy: ship P2a color-tokens + threadPath centralization to production)
+
+Rebuilt `docs/` to push the accumulated `main` work live: the **P2a `src/tokens.js`** single-color-source consolidation (see entry below) and the completed **`threadPath` centralization**. Verify gate green on the merged tree (0 ESLint errors, 178 tests). Deployed via `./deploy.sh`; production bundle confirmed updated.
+
+Files: `docs/assets`, `docs/index.html`, `docs/404.html` (build output only — source already on `main`).
+
 ## 2026-06-24 (refactor: finish the threadPath centralization across the app)
 
 Completes the `threadPath` migration. Every remaining hand-built `/weekly/thread/:id` link across the frontend now routes through `utils/threadPath.js`, so the URL convention + `encodeURIComponent` + query-param assembly live in exactly one place.

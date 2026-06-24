@@ -253,3 +253,85 @@ the weights from labeled data.**
 [Boukes et al. 2022, news factors & prominence](https://journals.sagepub.com/doi/10.1177/1464884919899313) ·
 [Reuters Tracer](https://arxiv.org/pdf/1711.04068) ·
 [Dataminr real-time alerting](https://www.dataminr.com/resources/blog/real-time-alerting-101-how-it-works-and-why-its-a-business-imperative/)
+
+---
+
+## 9. Fit analysis — why we use / don't use each standard, and how to adopt it
+
+The five standards are **not the same kind of thing**, so "why aren't we using them?" has a
+different answer for each (researched 2026-06-24).
+
+| Standard | What it actually is | Why we don't use it (yet) | Conflict / how to adopt |
+|---|---|---|---|
+| **GDELT** | A **free, real-time event *database*** (15-min): "Actor A → action → Actor B" (CAMEO) + Goldstein event-type impact + global tone + mention counts. Free via file feeds / BigQuery. | No good reason — we built our own RSS+Brave clustering and overlooked it. **The real miss.** | **Adoptable, low conflict.** Supplies the 3 things our scorer lacks: event-type magnitude (Goldstein), country *relationship* (actor→actor, not max-risk), independent corroboration/velocity (mentions). Conflict: it's noisy machine-coding on a rigid taxonomy → use as an **enrichment feed** matched to our editorial threads, not a replacement. |
+| **CAP** | An **XML *output format*** for broadcasting alerts (urgency/severity/certainty/area). Used by FEMA/IPAWS, NWS, MetService NZ, Google Public Alerts. | It's a format, **not a scoring method** — nothing to "use" for significance. | **No conflict — adopt for OUTPUT.** Emit our alerts + Signal-API records in CAP's 3-axis schema → interoperable with Google Public Alerts etc. A product/distribution win. |
+| **ICRG** | A **paid standing country-risk index** (PRS Group), analyst-scored. | We **already built our own** (`COUNTRY_INTELLIGENCE.riskScore`). | **No adoption needed — fix our USAGE** (see §9a). We're misusing our copy as an event signal. |
+| **News values** | A journalism **framework** (Harcup & O'Neill 2017: 15 values). | A theory, not a system. | **Adopt as the LLM judge's checklist** (§9c). |
+| **Dataminr** | A **paid competitor** (multi-"valuer" severity + ML-learned weights + relevance filter). | It's a rival you pay for. | **Copy the architecture, not the product** — it *is* our recall→precision + learn-from-labels plan. |
+
+### 9a. ICRG — deeper, and how we use it
+ICRG decomposes country risk into **22 analyst-scored components**, weighted deliberately:
+- **Political risk = 100 pts** (=2× the others), from **12 components**: five worth 12 pts each
+  (*government stability, socioeconomic conditions, investment profile, internal conflict,
+  external conflict*), six worth 6 pts (*corruption, military in politics, religious tensions,
+  law & order, ethnic tensions, democratic accountability*), and *bureaucracy quality* worth 4.
+- **Financial risk = 50 pts**, **Economic risk = 50 pts** (5 components each).
+- Composite = (P + F + E) / 2, on 0–100 (higher = *lower* risk). Scored by editors via
+  **pre-set questions** for consistency across countries and time.
+
+**Three lessons for us:**
+1. **It is explicitly a STANDING country-comparison baseline** ("willingness/ability to pay") —
+   confirming our central bug: a standing index must be a *baseline/modifier*, never the
+   event-urgency driver. → §7 cap/demote is right; ideally country-risk becomes one minor axis.
+2. **Risk is decomposed into many transparent, deliberately-weighted sub-components** — not one
+   term carrying 88%. Our `riskScore` is an opaque single 0–100. We could give it ICRG-style
+   sub-structure (internal-conflict / external-conflict / govt-stability …) so it's auditable
+   and so the *event* can map to the *relevant* sub-component (a coup → government-stability; a
+   border clash → external-conflict) instead of inheriting the whole blob.
+3. **Weights are documented + customizable** — the opposite of our "vibes" constants.
+
+### 9b. Framework → our scoring axis (the adoption map)
+Every axis our scorer needs maps to a battle-tested framework — we should *copy*, not invent:
+
+| Axis we need | Framework to copy | How the agent/scorer uses it |
+|---|---|---|
+| Event-type magnitude | **CAMEO + Goldstein** (GDELT) | a per-event-class severity prior, separate from loudness |
+| Country *relationship* | **GDELT actor→actor + Goldstein cooperation/conflict** | replace max-country-risk with "what A did to B, hostile or cooperative" |
+| Country baseline | **ICRG** (decomposed) | one minor modifier axis, sub-component matched to the event |
+| Newsworthiness / significance | **Harcup & O'Neill news values** (§9c) | the LLM judge scores the story against the 15 values |
+| Credibility / corroboration | **Admiralty (NATO) code** (§9c) | grade source reliability (A–F) × info credibility (1–6) — *not* a hard ≥2-source gate |
+| Urgency / severity / certainty | **CAP** (separate axes) | keep distinct; also the output schema |
+| Forecast probability & confidence | **ICD 203 / Words of Estimative Probability** (§9c) | standardized bands; separate likelihood from confidence; explain the basis |
+| Avoiding confirmation bias | **Structured Analytic Techniques / ACH** | judge weighs alternative explanations before ruling (ICD 203 mandates this) |
+
+### 9c. The frameworks the verify-agent should copy (analytic tradecraft)
+The LLM verify-agent becomes an **analytic-tradecraft agent** applying established standards:
+- **News values — Harcup & O'Neill (2017), 15 values:** exclusivity, bad news, conflict,
+  surprise, audio-visual, **shareability**, entertainment, drama, follow-up, **the power elite**,
+  **relevance**, **magnitude**, celebrity, good news, news-org agenda. ("Shareability +
+  immediacy increasingly determine what gets reported.") The judge scores the story against
+  these → significance is **hitting several at once**, none dominant.
+- **Admiralty / NATO 6×6 code (Five Eyes standard):** source **reliability A–F** (A very
+  trustworthy … F known false) × information **credibility 1–6** (1 confirmed by independent
+  sources … 6 cannot be judged). e.g. *B2* = usually-reliable source, probably-true info. This
+  is the **scoop-safe** replacement for our ≥2-source hard gate: a single trustworthy source =
+  *A2/B2*, still high — corroboration becomes a graded confidence input, not a kill switch.
+- **ICD 203 / Words of Estimative Probability (US IC tradecraft):** fixed probability bands —
+  *almost no chance* 1–5%, *very unlikely* 5–20%, *unlikely* 20–45%, *roughly even* 45–55%,
+  *likely* 55–80%, *very likely* 80–95%, *almost certainly* 95–99%; **never blend likelihood
+  with confidence**; **explain the basis** (evidence, assumptions, alternatives). Plugs straight
+  into our forecast layer (already uses probability midpoints) and the calibration differentiator.
+
+**Net:** the verify-agent isn't a bespoke prompt — it's a thin wrapper that makes the LLM apply
+news-values significance + Admiralty credibility + CAP urgency/severity + ICD-203 probability,
+with a Goldstein/ICRG-informed deterministic prior underneath. Standards-grounded, not vibes.
+
+**Sources (§9):** [GDELT data access](https://www.gdeltproject.org/data.html) ·
+[CAMEO event codes](https://www.gdeltproject.org/data/lookups/CAMEO.eventcodes.txt) ·
+[FEMA CAP/IPAWS](https://www.fema.gov/emergency-managers/practitioners/integrated-public-alert-warning-system/technology-developers/common-alerting-protocol) ·
+[ICRG methodology](https://www.prsgroup.com/wp-content/uploads/2014/08/icrgmethodology.pdf) ·
+[Admiralty code](https://en.wikipedia.org/wiki/Admiralty_code) ·
+[SANS — Admiralty system in CTI](https://www.sans.org/blog/enhance-your-cyber-threat-intelligence-with-the-admiralty-system) ·
+[Harcup & O'Neill 2017](https://eprints.whiterose.ac.uk/95423/) ·
+[ICD 203 analytic standards](https://github.com/wesinator/ICD203-intel-analysis) ·
+[Words of Estimative Probability (CIS)](https://www.cisecurity.org/ms-isac/services/words-of-estimative-probability-analytic-confidences-and-structured-analytic-techniques)

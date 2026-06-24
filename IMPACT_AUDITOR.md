@@ -22,10 +22,19 @@ the cross-domain 0–100 scale (normalize reach×severity, lift for irreversibil
 2. **QUESTIONABLE PICKS:** chosen events that are actually low-impact (loud/routine).
 3. **VERDICT:** did it capture the highest-impact events + the dominant failure pattern.
 
-## Status
-Prototyped as an **agent on real captured data** (offline/shadow — correct per the
-"validate before infra" discipline). Next: a scheduled **Gemini** Lambda (different family from
-the DeepSeek selector) running this on every capture row, writing verdicts for metrics.
+## Status — DEPLOYED 2026-06-24
+Scheduled Lambda **`newsImpactAudit`** (DeepSeek, operator's choice — prompt primed to hunt the
+known atrocity/Africa blind spot to offset same-model correlation). **`TriggerImpactAudit`
+cron(0 9 * * ? *)** audits the latest `GlobalPerspectiveIngestCapture` row daily → writes the
+verdict to **`GlobalPerspectiveImpactAudit`** (the metric) → **SNS-alerts** the operator
+(`GlobalPerspectiveAlerts`) when misses ≥ `MISS_ALERT_THRESHOLD` (=2). **It does NOT modify the
+live feed — measure + alert only.** Auto-correction is a later, gated step.
+
+First live run (DeepSeek on the 179→16 cycle): **verdict `weak`, 6 missed** — matched the Claude
+prototype (Sudan atrocity, Ghana flood) + more (Nigeria ISIS-financier sanctions, SE-Asia haze).
+Pattern: *"Under-coverage of African crises and environmental disasters; over-selection of US
+domestic politics and routine economic news."* Confirms same-model auditing works with the primed
+prompt.
 
 ---
 

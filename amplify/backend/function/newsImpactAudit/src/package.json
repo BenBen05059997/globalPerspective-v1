@@ -1,0 +1,12 @@
+{
+  "name": "newsimpactaudit",
+  "version": "1.0.0",
+  "description": "Daily independent impact-audit of the news selector — finds high-impact events it missed; measure + alert only (never modifies the live feed). See IMPACT_AUDITOR.md",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
+    "@aws-sdk/client-sns": "^3.600.0"
+  }
+}

@@ -25,6 +25,14 @@ story; the table is the doc map.
    impact); **ACLED creds valid but data-access pending** (operator TODO). → redesign plan §3.5.
 8. **Validation methodology** — defined how we prove any of this is good without ground truth
    (input→producer→auditor loop, 4 failure modes, human reference set). → `IMPACT_VALIDATION_METHODOLOGY.md`.
+9. **Capture harness — DEPLOYED** (`8077ba7`) — `newsInvokeGemini` now logs each cycle's input
+   (all fetched articles) vs chosen topics to `GlobalPerspectiveIngestCapture`. The data the
+   auditor + reference set need. (Also brought the A3 title-grounding fix live.)
+10. **Impact auditor — DEPLOYED** (`4a79d80`) → `IMPACT_AUDITOR.md`. Daily `newsImpactAudit`
+    (DeepSeek) reads the capture, finds high-impact MISSES, writes metrics + alerts the operator.
+    **Measure + alert only, never modifies the live feed.** First live run: verdict `weak`, 6 missed
+    (Sudan atrocity, Ghana flood, Nigeria ISIS sanctions, SE-Asia haze) — the loudness bias PROVEN
+    on live data.
 
 ## Doc map
 | Doc | What it is |
@@ -39,10 +47,14 @@ story; the table is the doc map.
 | `SIGNAL_API_PLAN.md` | The Signal API product spec |
 
 ## Current state
-- **Shipped to code (branch `signal-api`, NOT merged, NOT redeployed):** Stage-1 scorer fix
-  (`f8a3de0`), A3 title grounding (`fb47cdf`). Source-only — live Lambdas unchanged until redeploy.
-- **Deployed live earlier:** `newsSignals` Signal API; `newsBreakingAlert` auto-send (old scorer).
-- **Verified feeds:** GDACS ✅ keyless; ACLED ⚠️ access pending.
+- **DEPLOYED LIVE this session:** capture harness in `newsInvokeGemini` + the A3 title fix
+  (`8077ba7`); daily impact auditor `newsImpactAudit` (`4a79d80`); earlier: `newsSignals` Signal API,
+  `newsBreakingAlert` auto-send. New tables: `GlobalPerspectiveIngestCapture`, `…ImpactAudit`.
+- **Shipped to code only (branch `signal-api`, NOT redeployed):** Stage-1 scorer fix (`f8a3de0`).
+- **Validation loop is LIVE:** capture every cycle → audit daily → alert+measure. A real miss-rate
+  metric now accumulates.
+- **Verified feeds:** GDACS ✅ keyless (next build); ACLED ⚠️ access pending (operator).
+- **Branch `signal-api` NOT merged to main.**
 
 ## Open decisions (waiting on operator)
 - Get **ACLED API access approved** (acleddata.com, `benlai310@gmail.com`).

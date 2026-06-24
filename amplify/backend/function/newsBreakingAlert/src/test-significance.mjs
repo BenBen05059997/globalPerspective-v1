@@ -2,7 +2,8 @@
 // No AWS, no network — run with: node test-significance.mjs
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const { scoreStory, isBreaking, effectiveThreshold, SIGNIFICANCE_THRESHOLD, CONTINUATION_THRESHOLD_MULT } = require('./significance.js');
+const { scoreStory, isBreaking, effectiveThreshold, SIGNIFICANCE_THRESHOLD, CONTINUATION_THRESHOLD_MULT, _internals } = require('./significance.js');
+const { risk } = _internals;
 const { renderAlert } = require('./render.js');
 
 let pass = 0;
@@ -18,9 +19,24 @@ console.log('significance.scoreStory');
 const ordinary = scoreStory({ sourceCount: 2, topicCount: 1, riskScore: 10, econMagnitude: null });
 ok('ordinary story stays below threshold', !isBreaking(ordinary));
 
-// A war/crisis story (high country risk) should clear it on risk alone.
-const crisis = scoreStory({ sourceCount: 5, topicCount: 2, riskScore: 85, econMagnitude: null });
-ok('high-risk crisis clears threshold', isBreaking(crisis));
+// STAGE-1: country risk is CAPPED at 0.5 of its normalized signal (RISK_CAP=50).
+ok('risk(88) caps at 0.5', risk(88) === 0.5);
+ok('risk(100) caps at 0.5', risk(100) === 0.5);
+ok('risk(40) is uncapped (0.4)', risk(40) === 0.4);
+
+// A high-risk but otherwise routine story (1 source-thin, single angle, no econ) must
+// NOT clear on standing country risk alone — it previously did under the old weight.
+const highRiskRoutine = scoreStory({ sourceCount: 2, topicCount: 1, riskScore: 88, econMagnitude: null });
+ok('high-risk routine story stays below threshold', !isBreaking(highRiskRoutine));
+
+// A genuine multi-signal story (broad, well-sourced, market-moving) still clears.
+const multiSignal = scoreStory({ sourceCount: 9, topicCount: 4, riskScore: 30, econMagnitude: 'large' });
+ok('genuine multi-signal story still clears', isBreaking(multiSignal));
+
+// A war/crisis story now needs REAL event signals too — high risk only tilts it.
+// (Well-sourced + multi-angle + market-moving in a high-risk country.)
+const crisis = scoreStory({ sourceCount: 8, topicCount: 4, riskScore: 85, econMagnitude: 'large' });
+ok('high-risk crisis with real signals clears threshold', isBreaking(crisis));
 ok('crisis reasons mention country risk', crisis.reasons.some((r) => r.includes('risk')));
 
 // A widely-covered, multi-angle market shock should clear via popularity+breadth+econ.
@@ -57,7 +73,7 @@ ok('continuation threshold is higher', effectiveThreshold(2.0, true) === 2.0 * C
 ok('new-event threshold is the base', effectiveThreshold(2.0, false) === 2.0);
 
 // A modest story that clears as a NEW event must NOT clear as a continuation (no escalation)...
-const modest = scoreStory({ sourceCount: 7, topicCount: 3, riskScore: 40, velocity: 0 });
+const modest = scoreStory({ sourceCount: 8, topicCount: 4, riskScore: 40, velocity: 0 });
 ok('modest story clears as new event', modest.score >= effectiveThreshold(SIGNIFICANCE_THRESHOLD, false));
 ok('same story suppressed as a flat continuation', modest.score < effectiveThreshold(SIGNIFICANCE_THRESHOLD, true));
 // ...but a genuine escalation (high velocity) carries a continuation over the raised bar.

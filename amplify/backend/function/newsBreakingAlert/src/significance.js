@@ -20,7 +20,7 @@
 const WEIGHTS = Object.freeze({
   popularity: 1.0, // many outlets corroborating the same story
   breadth: 1.0, // story breaking across several simultaneous angles
-  risk: 2.0, // country-level risk (war / crisis / collapse) dominates
+  risk: 1.0, // country-level risk TILTS the decision; capped (RISK_CAP) so it can't dominate
   economic: 1.5, // market-moving magnitude
   velocity: 1.5, // rate of change — a story accelerating *now* (burst), not just loud
 });
@@ -59,8 +59,14 @@ function breadth(topicCount) {
   return clamp01((k - 1) / 3);
 }
 
+// Standing country riskScore is a STANDING posture, not event evidence — an uncapped
+// 88/100 country could clear the bar on its own (62-88% of threshold) for a routine
+// story. Cap the contribution at 0.5 so risk only TILTS the decision; real event
+// signals (sources/breadth/economic/velocity) must do the rest.
+// See SCORING_RUBRIC.md §2a / BREAKING_ALERT_V2_BUILD_PLAN.md (Stage 1).
+const RISK_CAP = 50;
 function risk(riskScore) {
-  return clamp01((Number(riskScore) || 0) / 100);
+  return clamp01(Math.min(Number(riskScore) || 0, RISK_CAP) / 100);
 }
 
 function economic(magnitude) {

@@ -68,7 +68,41 @@ Impact-first can mean two different things; they pull apart and shape the rubric
   rank by the *impact rubric* so the herd doesn't dominate. Best of both; it's also the
   differentiated product position (not just another Bloomberg firehose).
 
-**→ DECISION NEEDED: attention / impact / hybrid?** (Recommend hybrid.) Everything else follows.
+**→ DECISION: IMPACT-DRIVEN (operator, 2026-06-24).** "What materially changes lives, even if
+underreported." Feasibility checked — see §3.5.
+
+## 3.5 Impact IS measurable — direct-impact feeds (verified 2026-06-24)
+
+The hard part of impact-driven is "underreported = no media signal." **Solved by measuring impact
+from authoritative bodies, not media volume.** Free feeds that quantify real-world impact directly:
+
+| Feed | Measures (direct impact) | Domain | Access |
+|------|--------------------------|--------|--------|
+| **GDACS** (UN+EU) | alert level Red/Orange/Green + **affected population** | natural disasters (quake/cyclone/flood/volcano/wildfire/drought) | free API, keyless |
+| **ACLED** | **fatalities** + actors + locations, real-time, 200+ countries | political violence + protests | free w/ registration — **we already hold creds** (`newsCountryFactsUpdater` ACLED_USERNAME/PASSWORD, was "approval pending" → verify) |
+| **INFORM Severity Index** (ACAPS/EU JRC) | composite **crisis severity** — 31 indicators, weighted impact 20% / conditions-of-affected 50% / complexity 30%, 191 countries | humanitarian crises | open-source |
+| **ReliefWeb** (UN OCHA) | curated humanitarian disasters + reports | humanitarian | free API, 1000/day |
+
+**Two big wins:**
+1. **A quiet flood/famine/massacre with little Western coverage still gets a high GDACS/ACLED/
+   INFORM signal** — exactly the underreported-but-high-impact case our 26 RSS feeds miss. This is
+   what makes impact-driven actually work.
+2. **INFORM is a ready-made, published severity rubric** (like ICRG/CAP in §9) — adopt its
+   dimensions instead of inventing our own.
+
+**Design implication — impact is TYPED by domain** (no single number fits all news):
+- disaster → GDACS (affected population + alert level)
+- conflict → ACLED (fatalities)
+- humanitarian → INFORM severity / ReliefWeb
+- economy → our existing `newsEconomicImpact` severity
+- politics / tech / science / other → editorial impact rubric (reach / severity / irreversibility / novelty)
+
+So the impact filter = **direct-impact feeds where they exist, the rubric elsewhere** — and GDELT
+(attention/breadth) stays only as the *wide net* so nothing is missed, never as the ranker.
+
+Sources: [GDACS API](https://www.gdacs.org/) · [ACLED](https://acleddata.com/) ·
+[INFORM Severity Index](https://www.acaps.org/en/thematics/all-topics/inform-severity-index) ·
+[ReliefWeb API](https://reliefweb.int/help/api)
 
 ## 4. Safe sequencing — NOT a big-bang (this is mandatory)
 
@@ -100,8 +134,13 @@ The live pipeline feeds the whole site; we change it the way we changed scoring 
 
 ## 6. What we can safely start NOW
 - **P0 reference set** — needs no new infra; unblocks measuring *everything*. Highest-value first step.
-- **P1 GDELT shadow ingester** — new isolated Lambda, zero production risk, tells us immediately
-  how much we're missing.
+- **P1 shadow ingesters (impact-driven)** — new isolated Lambda(s), zero production risk, that pull
+  the **direct-impact feeds (§3.5)**: GDACS (disasters), ACLED (conflict fatalities — verify our
+  existing creds first), ReliefWeb/INFORM (humanitarian), + GDELT only as the wide attention net.
+  Compare what impact-first *would* surface vs the current 13, against P0 → measures exactly how
+  many high-impact events we currently miss.
+- **Quick check first:** confirm the ACLED credentials in `newsCountryFactsUpdater` actually work
+  (was "approval pending") — that's free conflict-fatality data we may already be able to pull.
 Both are additive and reversible. The risky part (P3 migrate) is gated on P0+P1+P2 data.
 
 **Honest stance:** "fix everything" = this sequence, root-first, measured. We do NOT rewrite the

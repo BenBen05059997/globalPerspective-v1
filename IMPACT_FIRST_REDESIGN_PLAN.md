@@ -76,12 +76,12 @@ underreported." Feasibility checked — see §3.5.
 The hard part of impact-driven is "underreported = no media signal." **Solved by measuring impact
 from authoritative bodies, not media volume.** Free feeds that quantify real-world impact directly:
 
-| Feed | Measures (direct impact) | Domain | Access |
+| Feed | Measures (direct impact) | Domain | Access — **VERIFIED 2026-06-24** |
 |------|--------------------------|--------|--------|
-| **GDACS** (UN+EU) | alert level Red/Orange/Green + **affected population** | natural disasters (quake/cyclone/flood/volcano/wildfire/drought) | free API, keyless |
-| **ACLED** | **fatalities** + actors + locations, real-time, 200+ countries | political violence + protests | free w/ registration — **we already hold creds** (`newsCountryFactsUpdater` ACLED_USERNAME/PASSWORD, was "approval pending" → verify) |
-| **INFORM Severity Index** (ACAPS/EU JRC) | composite **crisis severity** — 31 indicators, weighted impact 20% / conditions-of-affected 50% / complexity 30%, 191 countries | humanitarian crises | open-source |
-| **ReliefWeb** (UN OCHA) | curated humanitarian disasters + reports | humanitarian | free API, 1000/day |
+| **GDACS** (UN+EU) | alert level Red/Orange/Green + **affected population** | natural disasters (quake/cyclone/flood/volcano/wildfire/drought) | ✅ **WORKS NOW, keyless** — pulled 100 live events (`/gdacsapi/api/events/geteventlist/EVENTS4APP`). Build P1 on this. |
+| **ACLED** | **fatalities** + actors + locations, real-time, 200+ countries | political violence + protests | ⚠️ **creds valid but DATA ACCESS DENIED** — OAuth token obtained (form-encoded password grant, `client_id=acled`), but `/api/acled/read` returns **HTTP 403 "Access denied"**, token has **no scopes**. The "approval pending" is still pending. **OPERATOR TODO:** get account `benlai310@gmail.com` approved for API data access at acleddata.com. |
+| **INFORM Severity Index** (ACAPS/EU JRC) | composite **crisis severity** — 31 indicators, weighted impact 20% / conditions-of-affected 50% / complexity 30%, 191 countries | humanitarian crises | open-source (not yet wired) |
+| **ReliefWeb** (UN OCHA) | curated humanitarian disasters + reports | humanitarian | free API, 1000/day (not yet wired) |
 
 **Two big wins:**
 1. **A quiet flood/famine/massacre with little Western coverage still gets a high GDACS/ACLED/

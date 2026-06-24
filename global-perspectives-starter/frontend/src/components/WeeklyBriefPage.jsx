@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import { useWeeklyBrief } from '../hooks/useWeeklyBrief';
 import Markdown from './Markdown';
 import { RISK_SOLID as RISK_COLOR } from '../tokens';
@@ -48,7 +49,7 @@ function SignalCard({ s }) {
     <div className="wb-sig">
       <div className="wb-sig-top">
         {s.threadId ? (
-          <Link className="wb-sig-lede wb-sig-lede-link" to={`/weekly/thread/${s.threadId}`}>{s.lede}</Link>
+          <Link className="wb-sig-lede wb-sig-lede-link" to={threadPath(s.threadId)}>{s.lede}</Link>
         ) : (
           <div className="wb-sig-lede">{s.lede}</div>
         )}
@@ -60,7 +61,7 @@ function SignalCard({ s }) {
       {(outlets.length > 0 || s.related || s.threadId) && (
         <div className="wb-sig-src">
           {s.threadId && (
-            <Link className="wb-sig-arc" to={`/weekly/thread/${s.threadId}`}>Full story arc →</Link>
+            <Link className="wb-sig-arc" to={threadPath(s.threadId)}>Full story arc →</Link>
           )}
           {outlets.length > 0 && (
             <>{s.threadId && <span className="wb-dot">·</span>} <span className="wb-src-label">Sources:</span> {outlets.map((o, i) => (

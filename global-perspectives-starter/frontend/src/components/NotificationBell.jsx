@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import { useNotifications } from '../hooks/useNotifications';
 import './NotificationBell.css';
 
@@ -72,7 +73,7 @@ export default function NotificationBell() {
               {alerts.map((a) => (
                 <li key={a.threadId}>
                   <Link
-                    to={`/weekly/thread/${a.threadId}`}
+                    to={threadPath(a.threadId)}
                     className="gp-bell-item"
                     role="menuitem"
                     onClick={() => setOpen(false)}

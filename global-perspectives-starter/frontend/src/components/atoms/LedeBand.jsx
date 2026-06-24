@@ -3,9 +3,10 @@
 // NOTHING when there is no real lede, so it can never show a fabricated headline.
 //
 // Props: the spread result of composeTopicsLede() — { empty, lede, topicCount,
-// countryCount, threadCount } — plus optional `threadHrefBase` (default
-// "/weekly/thread") so the headline links into the story-arc analysis.
+// countryCount, threadCount }. The headline links into the story-arc analysis
+// via the shared threadPath() helper.
 import { Link } from 'react-router-dom';
+import { threadPath } from '../../utils/threadPath';
 import './LedeBand.css';
 
 export default function LedeBand({
@@ -14,7 +15,6 @@ export default function LedeBand({
   topicCount = 0,
   countryCount = 0,
   threadCount = 0,
-  threadHrefBase = '/weekly/thread',
 }) {
   if (empty || !lede || !lede.title) return null;
 
@@ -25,7 +25,7 @@ export default function LedeBand({
   // Link into the story-arc analysis ONLY when the topic carries a real threadId.
   // No fallback link — an unlinked headline is honest; a guessed destination is not.
   const headline = lede.threadId
-    ? <Link to={`${threadHrefBase}/${lede.threadId}`} className="lede-headline-link">{lede.title} →</Link>
+    ? <Link to={threadPath(lede.threadId)} className="lede-headline-link">{lede.title} →</Link>
     : <span className="lede-headline-text">{lede.title}</span>;
 
   return (

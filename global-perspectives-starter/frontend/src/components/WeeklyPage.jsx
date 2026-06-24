@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import IntelligenceLoader from './IntelligenceLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
@@ -177,7 +178,7 @@ function FeaturedSection({ threads, threadAnalyses, compact = false }) {
           const fCategory = thread.entries[0]?.category?.toLowerCase();
           const fCatColors = CATEGORY_BADGE_COLORS[fCategory];
           return (
-            <Link key={thread.threadId} to={`/weekly/thread/${thread.threadId}`} className="fs-compact-row">
+            <Link key={thread.threadId} to={threadPath(thread.threadId)} className="fs-compact-row">
               {fCatColors && (
                 <span className="fs-compact-cat" style={{ background: fCatColors.bg, color: fCatColors.color }}>
                   {fCategory}
@@ -210,7 +211,7 @@ function FeaturedSection({ threads, threadAnalyses, compact = false }) {
             return sentence.length > 110 ? sentence.slice(0, 107) + '…' : sentence;
           })();
           return (
-            <Link key={thread.threadId} to={`/weekly/thread/${thread.threadId}`} className="featured-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Link key={thread.threadId} to={threadPath(thread.threadId)} className="featured-card" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div className="featured-card-top">
                 <span className="story-arc-label">Story Arc</span>
                 {fCatColors && (
@@ -278,7 +279,7 @@ function StoryCard({ thread, analysis }) {
   })();
 
   return (
-    <Link to={`/weekly/thread/${thread.threadId}`} className="story-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+    <Link to={threadPath(thread.threadId)} className="story-card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <div className="story-card-main">
         <div className="story-card-content">
           <div className="story-card-title">{displayTitle}</div>

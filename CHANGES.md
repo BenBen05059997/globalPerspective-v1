@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-24 (refactor: finish the threadPath centralization across the app)
+
+Completes the `threadPath` migration. Every remaining hand-built `/weekly/thread/:id` link across the frontend now routes through `utils/threadPath.js`, so the URL convention + `encodeURIComponent` + query-param assembly live in exactly one place.
+
+- **13 files migrated:** `ThreadPage`, `CountryPage`, `WeeklyPage`, `DailyPage`, `WeeklyBriefPage`, `Home`, `NotificationBell`, `SystemsGraph`, `EconomyPage`, `Account`, `ShareButtons`, `CopyBriefing`, and `atoms/LedeBand`. The `?tab=economy`, `?from=country&country=…` query shapes and the `/^thread-/` guard (DailyPage) are all preserved.
+- **Removed `LedeBand`'s dead `threadHrefBase` prop** — no caller ever passed it; it only duplicated the convention. Now uses `threadPath(lede.threadId)`.
+- **Equivalence confirmed:** real threadIds (`thread-{slug}-{hash}`) contain no special chars, so the now-uniform `encodeURIComponent` is a no-op on live data; `country=` spaces serialize as `+` (URLSearchParams) vs the old `%20` but both decode identically via `useSearchParams`. Independently reviewed by an Explore agent (completeness / equivalence / imports — all clean). `npm run verify` green (0 ESLint errors, 178 tests).
+
+Files: `…/src/components/{ThreadPage,CountryPage,WeeklyPage,DailyPage,WeeklyBriefPage,Home,NotificationBell,SystemsGraph,EconomyPage,Account,ShareButtons,CopyBriefing}.jsx`, `…/src/components/atoms/LedeBand.jsx`. (Source only — not yet built into `docs/`; deploy is gated.)
+
 ## 2026-06-24 (P2a color tokens shipped to main; P2 shell-merge skipped by design)
 
 Continuation of the anti-Bloomberg `PRODUCT_IMPROVEMENT_PLAN.md` work. After confirming P0/P1 + the P2 systems-graph were live (see the 2026-06-23 deploy entry below), tackled the remaining P2 "shared tokens + one shell" workstream — landing the safe half and consciously dropping the risky half.

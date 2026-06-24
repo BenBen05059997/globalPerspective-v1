@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { threadPath } from '../utils/threadPath';
 
 export default function CopyBriefing({ getText }) {
   const [copied, setCopied] = useState(false);
@@ -55,7 +56,7 @@ export function formatThreadBriefing(thread, analysis) {
     lines.push('');
   }
 
-  lines.push(`— Global Perspectives · globalperspective.net/weekly/thread/${thread.threadId}`);
+  lines.push(`— Global Perspectives · globalperspective.net${threadPath(thread.threadId)}`);
 
   return lines.join('\n');
 }

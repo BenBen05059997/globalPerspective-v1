@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import IntelligenceLoader from './IntelligenceLoader';
 import ShareButtons from './ShareButtons';
 import { useAuth } from '../contexts/AuthContext';
@@ -258,7 +259,7 @@ export default function ThreadPage() {
           {relatedThreads.sameCategory.map(t => {
             const c = CATEGORY_BADGE_COLORS[t.category];
             return (
-              <Link key={t.threadId} to={`/weekly/thread/${t.threadId}`} className="tp-related">
+              <Link key={t.threadId} to={threadPath(t.threadId)} className="tp-related">
                 <div className="tp-related-kicker" style={{ color: c?.color || 'var(--ink-dim)' }}>
                   {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
                 </div>
@@ -274,7 +275,7 @@ export default function ThreadPage() {
         <>
           <div className="tp-left-hd" style={{ marginTop: 20 }}>Watching · region</div>
           {relatedThreads.sameRegion.map(t => (
-            <Link key={t.threadId} to={`/weekly/thread/${t.threadId}`} className="tp-related">
+            <Link key={t.threadId} to={threadPath(t.threadId)} className="tp-related">
               <div className="tp-related-kicker">
                 {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
               </div>

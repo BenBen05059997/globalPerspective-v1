@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import './SystemsGraph.css';
 
 // SystemsGraph — the cited, lag-aware causal graph made first-class (the "why-engine").
@@ -31,10 +32,8 @@ export default function SystemsGraph({ data, countryName }) {
 
   // Send the reader to the node's full arc; carry the country breadcrumb so the
   // thread page can route back here (mirrors the arc-link convention).
-  const threadHref = (id) => {
-    const base = `/weekly/thread/${encodeURIComponent(id)}`;
-    return countryName ? `${base}?from=country&country=${encodeURIComponent(countryName)}` : base;
-  };
+  const threadHref = (id) =>
+    threadPath(id, countryName ? { from: 'country', country: countryName } : {});
 
   const NodeRef = ({ id }) => {
     const label = titleFor(id);

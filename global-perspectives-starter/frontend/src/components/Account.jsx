@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedItems } from '../hooks/useSavedItems';
 import { usePreferences } from '../hooks/usePreferences';
@@ -92,7 +93,7 @@ const TYPE_LABELS = {
 };
 
 function getItemHref(item) {
-  if (item.itemType === 'thread')  return `/weekly/thread/${item.itemId}`;
+  if (item.itemType === 'thread')  return threadPath(item.itemId);
   if (item.itemType === 'country') return `/weekly/country/${encodeURIComponent(item.itemId)}`;
   if (item.itemType === 'daily')   return `/daily/${item.itemId}`;
   return null;

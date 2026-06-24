@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import { useAuth } from '../contexts/AuthContext';
 import { useDailyBrief } from '../hooks/useDailyBrief';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
@@ -181,7 +182,7 @@ function EconomicFootprint() {
           <SeverityBadge level={disruptions[0].severity} size="sm" />{' '}
           {disruptions[0].scopeId ? (
             <Link
-              to={`/weekly/thread/${encodeURIComponent(disruptions[0].scopeId)}?tab=economy`}
+              to={threadPath(disruptions[0].scopeId, { tab: 'economy' })}
               style={{ color: 'inherit' }}
             >
               {leadHeadline}
@@ -414,7 +415,7 @@ export default function DailyPage() {
         <section className="daily-sec">
           <SectionHeader num="3" title="The Story to Watch" />
           <Link
-            to={/^thread-/.test(brief.risingThread.threadId || '') ? `/weekly/thread/${brief.risingThread.threadId}` : '/weekly'}
+            to={/^thread-/.test(brief.risingThread.threadId || '') ? threadPath(brief.risingThread.threadId) : '/weekly'}
             className="daily-highlight"
           >
             <div className="daily-highlight-kicker">

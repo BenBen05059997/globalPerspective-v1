@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import SummaryDisplay from './SummaryDisplay';
 import PredictionDisplay from './PredictionDisplay';
@@ -376,7 +377,7 @@ function Home() {
                   {t.urgency === 'high' && <span className="home-urgency-pill">URGENT</span>}
                   {t.threadId && disruptionByThread[t.threadId]?.severity && (
                     <Link
-                      to={`/weekly/thread/${t.threadId}?tab=economy`}
+                      to={threadPath(t.threadId, { tab: 'economy' })}
                       style={{ textDecoration: 'none' }}
                       title="Economic disruption — click for analysis"
                     >
@@ -393,13 +394,13 @@ function Home() {
 
                 <h3>
                   {t.threadId
-                    ? <Link to={`/weekly/thread/${t.threadId}`}>{t.title}</Link>
+                    ? <Link to={threadPath(t.threadId)}>{t.title}</Link>
                     : t.title
                   }
                   {t.threadId && (
                     <Link
                       to={disruptionByThread[t.threadId]
-                        ? `/weekly/thread/${t.threadId}?tab=economy`
+                        ? threadPath(t.threadId, { tab: 'economy' })
                         : '/weekly'}
                       className="home-thread-badge"
                     >

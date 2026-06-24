@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import IntelligenceLoader from './IntelligenceLoader';
 import { useAuth } from '../contexts/AuthContext';
 import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
@@ -172,7 +173,7 @@ function CoverageList({ entries }) {
                               View Google News ↗
                             </a>
                             {entry.threadId && (
-                              <Link to={`/weekly/thread/${entry.threadId}`} className="cp-view-arc-btn">
+                              <Link to={threadPath(entry.threadId)} className="cp-view-arc-btn">
                                 View full story →
                               </Link>
                             )}
@@ -614,7 +615,7 @@ export default function CountryPage() {
           {countryDisruptions.slice(0, 3).map((d, i) => (
             <Link
               key={d.scopeId || i}
-              to={`/weekly/thread/${encodeURIComponent(d.scopeId)}?tab=economy`}
+              to={threadPath(d.scopeId, { tab: 'economy' })}
               className="cpg-disruption-row"
               style={{ display: 'block', padding: '8px 0', borderBottom: i < 2 && i < countryDisruptions.length - 1 ? '1px dotted var(--line)' : 'none', textDecoration: 'none', color: 'inherit' }}
             >
@@ -892,7 +893,7 @@ export default function CountryPage() {
                   return (
                     <Link
                       key={arc.threadId}
-                      to={`/weekly/thread/${arc.threadId}?from=country&country=${encodeURIComponent(decodedName)}`}
+                      to={threadPath(arc.threadId, { from: 'country', country: decodedName })}
                       className={`cpg-arc-card${arc.isAnchor ? ' anchor' : ' linked'}`}
                     >
                       <div className="cpg-arc-card-dot" style={{ background: c?.color || 'var(--ink-faint)' }} />

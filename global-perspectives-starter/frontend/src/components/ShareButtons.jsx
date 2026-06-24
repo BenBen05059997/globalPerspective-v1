@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { threadPath } from '../utils/threadPath';
 
 const IconLink = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
@@ -49,7 +50,7 @@ const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
 export default function ShareButtons({ path, title, threadId, preview }) {
   const [copied, setCopied] = useState(false);
-  const linkPath = path || (threadId ? `/weekly/thread/${threadId}` : '/');
+  const linkPath = path || (threadId ? threadPath(threadId) : '/');
   const baseUrl = `${window.location.origin}${linkPath}`;
   const previewQs = buildPreviewParams(preview);
   const url = previewQs ? `${baseUrl}?${previewQs}` : baseUrl;

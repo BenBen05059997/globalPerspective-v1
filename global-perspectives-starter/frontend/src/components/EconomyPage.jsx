@@ -10,6 +10,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { threadPath } from '../utils/threadPath';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { useTopMovers } from '../hooks/useTopMovers';
 import { useMarketsGlobal } from '../hooks/useMarketsGlobal';
@@ -128,7 +129,7 @@ function BriefingText({ briefing }) {
       {segs.map((s, i) => {
         if (i % 2 === 0) return <span key={i}>{s}</span>;
         return sid
-          ? <Link key={i} className="ep-brief-story" to={`/weekly/thread/${encodeURIComponent(sid)}?tab=economy`}>{s}</Link>
+          ? <Link key={i} className="ep-brief-story" to={threadPath(sid, { tab: 'economy' })}>{s}</Link>
           : <strong key={i}>{s}</strong>;
       })}
     </p>
@@ -202,7 +203,7 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
             <span className={`ep-sev-word ${s.severity}`}>{SEVERITY_LABEL[s.severity] || s.severity}</span>
           </div>
           <div className="ep-dr-headline">
-            <Link to={`/weekly/thread/${encodeURIComponent(s.scopeId)}?tab=economy`}>{s.headline}</Link>
+            <Link to={threadPath(s.scopeId, { tab: 'economy' })}>{s.headline}</Link>
             <QualityFlag impact={s} size="sm" />
           </div>
           <div className="ep-dr-dir">
@@ -904,7 +905,7 @@ export default function EconomyPage() {
                   return (
                     <div className="ep-sev-story" key={d.scopeId}>
                       <h4>
-                        <Link to={`/weekly/thread/${encodeURIComponent(d.scopeId)}?tab=economy`}>
+                        <Link to={threadPath(d.scopeId, { tab: 'economy' })}>
                           {d.headline || 'Disruption detected'}
                         </Link>
                         <QualityFlag impact={d} size="sm" />

@@ -22,6 +22,7 @@ const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const CAPTURE_TABLE = process.env.INGEST_CAPTURE_TABLE || 'GlobalPerspectiveIngestCapture';
 const AUDIT_TABLE = process.env.IMPACT_AUDIT_TABLE || 'GlobalPerspectiveImpactAudit';
 const GDACS_TABLE = process.env.GDACS_TABLE || 'GlobalPerspectiveGdacsEvents';
+const GDELT_TABLE = process.env.GDELT_TABLE || 'GlobalPerspectiveGdeltConflict';
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 const MISS_ALERT_THRESHOLD = Number(process.env.MISS_ALERT_THRESHOLD) || 2;
 const API_KEY = process.env.XAI_API_KEY; // legacy name — holds the DeepSeek key in prod
@@ -124,6 +125,35 @@ async function gdacsCoverageGap(chosen) {
   return gaps;
 }
 
+// Objective CONFLICT coverage gap: countries with serious GDELT material-conflict today that the
+// selector did not cover. Serious = worst Goldstein ≤ -7 (fight/combat/mass violence) or high
+// mention volume. US/UK etc. are always in the news, so they self-exclude via the presence check.
+async function gdeltCoverageGap(chosen) {
+  const cutoff = new Date(Date.now() - 2 * 86400 * 1000).toISOString().slice(0, 10); // last 2 days
+  let rows;
+  try {
+    const out = await ddb.send(new ScanCommand({ TableName: GDELT_TABLE }));
+    rows = (out.Items || []).filter((r) => String(r.day || '') >= cutoff);
+  } catch (e) { console.warn('[gdelt-gap] scan failed:', e.message); return []; }
+
+  const hay = chosen.map((c) => `${c.title} ${(c.regions || []).join(' ')}`.toLowerCase()).join(' || ');
+  const gaps = [];
+  for (const r of rows) {
+    const country = String(r.country || '').toLowerCase();
+    if (country.length < 4) continue; // skip unresolved geo codes (e.g. "GG")
+    // Sustained coverage is the best significance proxy in a sparse 15-min window: a single
+    // violent CRIME gets ~10 mentions and is noise; a real conflict accumulates more. (Goldstein
+    // alone fires on any -10 assault, so it's NOT used as the trigger.) Full-day aggregation is
+    // the proper future refinement; until then this bar keeps the conflict-gap signal honest.
+    const serious = (Number(r.totalMentions) || 0) >= 30 || (Number(r.eventCount) || 0) >= 3;
+    if (!serious) continue;
+    if (!hay.includes(country)) {
+      gaps.push({ country: r.country, mentions: r.totalMentions, worstGoldstein: r.minGoldstein, topEvent: r.topEvent });
+    }
+  }
+  return gaps;
+}
+
 exports.handler = async () => {
   const cap = await latestCapture();
   if (!cap) { console.warn('[impact-audit] no capture rows'); return { ok: false, reason: 'no_capture' }; }
@@ -135,7 +165,8 @@ exports.handler = async () => {
   catch (e) { console.error('[impact-audit] audit failed:', e.message); return { ok: false, error: e.message }; }
 
   const missed = Array.isArray(result.missed) ? result.missed : [];
-  const gdacsGaps = await gdacsCoverageGap(chosen);          // objective coverage gap (GDACS feed)
+  const gdacsGaps = await gdacsCoverageGap(chosen);          // objective disaster gap (GDACS feed)
+  const gdeltGaps = await gdeltCoverageGap(chosen);          // objective conflict gap (GDELT feed)
   const hardGaps = gdacsGaps.filter((g) => g.gap === 'country_absent');
   const now = new Date().toISOString();
   const item = {
@@ -152,34 +183,39 @@ exports.handler = async () => {
     questionable: Array.isArray(result.questionable) ? result.questionable : [],
     gdacsGapCount: gdacsGaps.length,
     gdacsGaps,
+    gdeltGapCount: gdeltGaps.length,
+    gdeltGaps,
     ttl: Math.floor(Date.now() / 1000) + AUDIT_TTL_DAYS * 86400,
   };
   try { await ddb.send(new PutCommand({ TableName: AUDIT_TABLE, Item: item })); }
   catch (e) { console.warn('[impact-audit] write failed:', e.message); }
 
-  console.log(`[impact-audit] missed=${missed.length} gdacsGaps=${gdacsGaps.length}(hard=${hardGaps.length}) verdict=${result.verdict} pattern=${result.dominant_pattern || ''}`);
+  console.log(`[impact-audit] missed=${missed.length} gdacsGaps=${hardGaps.length} gdeltGaps=${gdeltGaps.length} verdict=${result.verdict} pattern=${result.dominant_pattern || ''}`);
 
-  // Alert only — never modifies the live feed. Fire on LLM-judged misses OR an objective GDACS gap.
-  if ((missed.length >= MISS_ALERT_THRESHOLD || hardGaps.length > 0) && SNS_TOPIC_ARN) {
+  // Alert only — never modifies the live feed. Fire on LLM-judged misses OR an objective feed gap.
+  if ((missed.length >= MISS_ALERT_THRESHOLD || hardGaps.length > 0 || gdeltGaps.length > 0) && SNS_TOPIC_ARN) {
     const body = [
       `Impact audit (cycle ${cap.runId}):`,
       `• ${missed.length} high-impact events the auditor judged MISSED. Verdict: ${result.verdict}. Pattern: ${result.dominant_pattern || ''}`,
       ...missed.map((m, i) => `   ${i + 1}. [${m.dimension}] ${m.title} (${m.source}) → ${m.why}`),
       '',
-      `• ${hardGaps.length} GDACS Orange/Red disaster(s) NOT covered (objective coverage gap):`,
+      `• ${hardGaps.length} GDACS Orange/Red disaster(s) NOT covered (objective):`,
       ...hardGaps.map((g, i) => `   ${i + 1}. [${g.alertLevel} ${g.type}] ${g.name} — ${g.country} (${g.severityText})`),
+      '',
+      `• ${gdeltGaps.length} country/countries with serious GDELT conflict NOT covered (objective):`,
+      ...gdeltGaps.map((g, i) => `   ${i + 1}. ${g.country} — ${g.topEvent}, worst Goldstein ${g.worstGoldstein} (${g.mentions} mentions)`),
       '',
       'Measurement + alert only. It does NOT change what readers saw. Review and decide.',
     ].join('\n');
     try {
       await sns.send(new PublishCommand({
         TopicArn: SNS_TOPIC_ARN,
-        Subject: `⚠ Impact audit: ${missed.length} missed + ${hardGaps.length} GDACS disaster gap(s)`,
+        Subject: `⚠ Impact audit: ${missed.length} missed · ${hardGaps.length} disaster gap · ${gdeltGaps.length} conflict gap`,
         Message: body,
       }));
       console.log('[impact-audit] SNS alert sent');
     } catch (e) { console.warn('[impact-audit] SNS failed:', e.message); }
   }
 
-  return { ok: true, missed: missed.length, gdacsGaps: gdacsGaps.length, verdict: result.verdict };
+  return { ok: true, missed: missed.length, gdacsGaps: hardGaps.length, gdeltGaps: gdeltGaps.length, verdict: result.verdict };
 };

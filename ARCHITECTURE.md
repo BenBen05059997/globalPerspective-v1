@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-06-24 (refresh: `src/tokens.js` single source for risk/category colors [P2a]; P0/P1 + systems-graph product-improvement work deployed live; Stooq→Yahoo markets migration, Polar membership LIVE + `newsAnalyze`/`newsPolarBilling`, `/membership` route, `newsPostDevTo` TZ correction)
+**Last verified:** 2026-06-26 (refresh: breaking-alert **web surface** LIVE — `/breaking` feed + `/breaking/:id` detail + Home/Map `BreakingStrip`, bell rewired off the thread page; `newsRecommend` `get_alert` + enriched `list_alerts` deployed. Prior: `src/tokens.js` single source for risk/category colors [P2a]; P0/P1 + systems-graph product-improvement work deployed live; Stooq→Yahoo markets migration, Polar membership LIVE + `newsAnalyze`/`newsPolarBilling`, `/membership` route, `newsPostDevTo` TZ correction)
 
 > **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](./SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md).**
 
@@ -605,7 +605,9 @@ Breaking-news email channel — **Component 4** of the recommendations/digest wo
 1. Groups `latest.topics[]` into stories by `threadId`; scores each with the **deterministic, no-LLM** `significance.js` on four real signals: popularity (`sources.length`), breadth (concurrent angles), max country `riskScore` (0–100, from `COUNTRY_INTELLIGENCE`), and economic `magnitude` (from `ECONOMIC_IMPACT`). Most cycles clear nothing — **silence is the correct output** ([[feedback-no-misinformation-fallback]]).
 2. For the top story above threshold (deduped 5d, one/run), assembles the email from real records — `SUMMARY` (*What happened*), parsed `TRACE_CAUSE` JSON (*How we got here*: trigger → building → root + underreported angle + Signal-vs-Noise), `PREDICTION` (*Our read*), `ECONOMIC_IMPACT` (market pill), sources.
 3. `render.js` returns `{subject, text, html}` — brand-styled, email-safe table layout + inline CSS, XSS-escaped, empty sections omitted.
-4. Writes a `status:'proposed'` row to `GlobalPerspectiveBreakingAlerts` (doubles as the dedupe anchor). `verifyStory()` is a **stub seam** for the Phase-3 LLM verify (Gemini judges the DeepSeek-written analysis, like `newsEconomicQuality`).
+4. Writes a `status:'proposed'` row to `GlobalPerspectiveBreakingAlerts` (doubles as the dedupe anchor). As of 2026-06-26 the proposal also persists the **structured story** (`story:{summary,prediction,traceCause,economic,sources}`) plus flat fields the web surface reads — `category`, `regions`, `leadTopicId`, the **real** `threadId` (null when un-threaded), `hasArc` (a real multi-entry thread with `THREAD_ANALYSIS`), `outletCount`/`sourceCount` — so `/breaking/:id` reads clean fields instead of re-parsing the email. `verifyStory()` is a **stub seam** for the Phase-3 LLM verify (Gemini judges the DeepSeek-written analysis, like `newsEconomicQuality`).
+
+> **Web surface (LIVE 2026-06-26):** confirmed alerts now have an on-site home at `/breaking` (feed) + `/breaking/:id` (detail) — served by `newsRecommend`'s `list_alerts`/`get_alert` (see Lambda #22), surfaced via the nav bell + a fresh-only `BreakingStrip` on Home/Map. This replaced the old bell→`/weekly/thread/:id` link, which mis-resolved (a breaking story is a point-in-time snapshot, not a narrative thread; the linked id was often a topic id or a single-entry thread). `newsBreakingAlert` itself stays dry-run/un-deployed — existing confirmed records render via the saved-email-text fallback in `get_alert`; redeploying it later upgrades future alerts to the richer structured layout.
 
 **Email provider: Resend** (chosen over SES 2026-06-10 for DX + no sandbox-approval wait) — `sendEmail.js` is the single provider seam (`fetch`, no npm dep, key from `RESEND_API_KEY`).
 
@@ -625,9 +627,10 @@ Single owner of `GlobalPerspectiveUserPrefs`. Two responsibilities:
    - `get_prefs` → `{ breakingOptIn, digestOptIn, digestCadence }` (defaults OFF — opt-in/GDPR).
    - `set_prefs` `{ breakingOptIn?, digestOptIn?, digestCadence? }` → writes those + reserves compliance fields (`email`, `consentAt`, `unsubToken`, `breakingVerified`, `digestVerified`) for when email delivery goes live; never clobbers `interestProfile`.
    - Both require `Authorization: Bearer <firebase-id-token>` (`uid` = token sub); no token → 401. Powers the Account → Notifications tab.
-3. **In-app notification feed** (added 2026-06-10) — **public** `list_alerts` (no auth): scans `GlobalPerspectiveBreakingAlerts` for `status ∈ {confirmed, sent}`, newest-first, returns `[{ threadId, title, url, at }]` (or `[]`). Powers the nav notification bell. Read-state is client-side (localStorage), so no per-user write.
+3. **In-app notification feed** (added 2026-06-10; enriched 2026-06-26) — **public** `list_alerts` (no auth): scans `GlobalPerspectiveBreakingAlerts` for `status ∈ {confirmed, sent}`, newest-first, returns `[{ id, threadId, title, url(→/breaking/:id), category, regions, reasons, economic, outletCount, sourceCount, at }]` (or `[]`). Powers the nav bell, the `/breaking` feed, and the `BreakingStrip`. Read-state is client-side (localStorage), so no per-user write.
+4. **Single breaking alert** (added 2026-06-26) — **public** `get_alert` `{ payload:{ id } }` (no auth): `GetCommand` by `alertKey`, returns the full alert **only when `status ∈ {confirmed, sent}`** (never a raw proposal). Surfaces the structured `story` when present, else `fallbackText` = the saved email body for legacy records; includes `hasArc`/`threadUrl` so the page gates the arc link. Powers `/breaking/:id` (`useBreakingAlert`). Returns `{ alert: null }` for unknown/unconfirmed ids → honest not-found.
 
-**Key env vars:** `TOPICS_DDB_TABLE` (=`NewsCache`), `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE` (=`GlobalPerspectiveUserPrefs`), `BREAKING_ALERTS_TABLE`, `SITE_URL`, `FIREBASE_PROJECT_ID`. **Role:** `newsRecommend-role` (Get/Update/Put on UserPrefs, read on NewsCache + SavedItems, Scan on BreakingAlerts).
+**Key env vars:** `TOPICS_DDB_TABLE` (=`NewsCache`), `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE` (=`GlobalPerspectiveUserPrefs`), `BREAKING_ALERTS_TABLE`, `SITE_URL`, `FIREBASE_PROJECT_ID`. **Role:** `newsRecommend-role` (Get/Update/Put on UserPrefs, read on NewsCache + SavedItems, Scan + GetItem on BreakingAlerts).
 
 ---
 
@@ -783,7 +786,7 @@ All rows carry `asOf` timestamps + TTL. Honesty contract: never display stale da
 **PK:** `PRED#{topicId}` / **SK:** `{YYYY-MM-DD}` (daily snapshot). **No TTL — immutable forecast record.** PAY_PER_REQUEST. See [Prediction calibration](#prediction-calibration-track-record). Written by `NewsProjectInvokeAgentLambda` (snapshot at generation, status=`open`), mutated by `newsPredictionResolver` (#20, attaches `proposal` to due triggers) and `predictions/review.js` (human sets `finalVerdict`, flips status→`resolved` when all dated triggers confirmed). Scanned by the `prediction_track_record` proxy action. Each item: `{ topicId, title, category, generatedAt, generationId, model, scenarios[{ label, probability(numeric midpoint), triggers[{ id, text, deadline, status, proposal?, finalVerdict?, confirmedAt?, confirmedBy? }] }], winners, losers, status }`.
 
 ### Breaking Alerts Table (`BREAKING_ALERTS_TABLE`, default `GlobalPerspectiveBreakingAlerts`, ap-northeast-1)
-**PK:** `alertKey` (= `threadId`). PAY_PER_REQUEST, TTL on `ttl` (~14d). **Created 2026-06-10** (empty until the detector runs). Written by `newsBreakingAlert` (#21) as the dedupe anchor + proposal store; mutated by `breaking/review.js` (human confirm/reject); scanned by `newsRecommend` `list_alerts` (#22) for the in-app notification bell. Each item: `{ alertKey, status('proposed'|'confirmed'|'rejected'), score, reasons[], title, cycle, alertedAt, sent(bool), dryRun(bool), draft{subject,text}, editorNote?, verify{status,note}, ttl }`. Part of the dry-run breaking-alerts system — see [Lambda #21](#21-newsbreakingalert-️-built-2026-06-10--not-deployed-dry-run) + `BREAKING_ALERTS_PLAN.md`.
+**PK:** `alertKey` (= `threadId`). PAY_PER_REQUEST, TTL on `ttl` (~14d). **Created 2026-06-10** (empty until the detector runs). Written by `newsBreakingAlert` (#21) as the dedupe anchor + proposal store; mutated by `breaking/review.js` (human confirm/reject); **scanned** by `newsRecommend` `list_alerts` + **`GetItem`-read** by `get_alert` (#22) for the bell, the `/breaking` feed, and the `/breaking/:id` detail page. Each item: `{ alertKey, status('proposed'|'confirmed'|'rejected'), score, reasons[], title, category, regions[], leadTopicId, threadId(real, nullable), hasArc, outletCount, sourceCount, story{summary,prediction,traceCause,economic,sources}, cycle, alertedAt, sent(bool), dryRun(bool), draft{subject,text,html}, editorNote?, verify{status,note}, ttl }`. (The structured `story`/flat fields were added 2026-06-26 for the web surface; records written before that carry only `draft` + `title` + `reasons`, and `get_alert` falls back to `draft.text`.) Part of the dry-run breaking-alerts system — see [Lambda #21](#21-newsbreakingalert-️-built-2026-06-10--not-deployed-dry-run) + `BREAKING_ALERTS_PLAN.md`.
 
 ---
 
@@ -897,7 +900,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 
 Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.
 
-Wired in `<Routes>` in `App.jsx` — 18 routes incl. catch-all (`/membership` added 2026-06-22). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
+Wired in `<Routes>` in `App.jsx` — 20 routes incl. catch-all (`/membership` added 2026-06-22; `/breaking` + `/breaking/:id` added 2026-06-26). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
 
 | Path | Component | Access |
 |------|-----------|--------|
@@ -911,6 +914,8 @@ Wired in `<Routes>` in `App.jsx` — 18 routes incl. catch-all (`/membership` ad
 | `/daily` | `DailyPage.jsx` | Public |
 | `/daily/:dateKey` | `DailyPage.jsx` | Public |
 | `/weekly-brief` | `WeeklyBriefPage.jsx` | Public (serif long-read of the latest published weekly brief) |
+| `/breaking` | `BreakingFeedPage.jsx` | Public (the breaking-alert feed — confirmed alerts grouped by day; honest empty state) |
+| `/breaking/:id` | `BreakingDetailPage.jsx` | Public (single breaking alert: What happened / How we got here / Our read / Market impact / Sources) |
 | `/economy` | `EconomyPage.jsx` | Public |
 | `/analyze` | `AnalysisStudio.jsx` | Public (BYOK self-serve analysis — see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)) |
 | `/track-record` | `TrackRecordPage.jsx` | Public |
@@ -958,11 +963,14 @@ Wired in `<Routes>` in `App.jsx` — 18 routes incl. catch-all (`/membership` ad
 | `ProviderModal.jsx` | The `/analyze` provider/model/key chooser modal (OpenAI · DeepSeek `v4-flash`/`-pro` · **Perplexity** · Gemini · OpenRouter · Anthropic; labels which can web-search). Writes `{provider,model,key}` to `localStorage` only — never sent to our servers. |
 | `MembershipPage.jsx` | `/membership` — Polar checkout ($15/mo · $150/yr = run Analysis Studio on our compute; reading stays free). Self-states availability; "Sign in to subscribe" passes `?returnTo=/membership`. Added 2026-06-22 (footer-linked, not in top nav). |
 | `SystemsGraph.jsx` | First-class causal-graph view (P2, 2026-06-22) — renders the **full** `systems_analysis` `{nodes,edges}` with `mechanism`/`lagDays`/`confidence`; each node links to its arc (`/weekly/thread/:id`), each edge shows its `citedEntries` count as evidence weight. Replaced the old `edges.slice(0,4)` inline cap in CountryPage's rail. Backend still gated to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran` until the env gate is widened. |
+| `BreakingFeedPage.jsx` | `/breaking` (2026-06-26) — the breaking-alert feed. Reuses `useNotifications`; groups confirmed alerts by Today/Yesterday/date; each card = BREAKING chip · category·regions · market pill · `SourceRobustness`. Honest empty state ("Quiet is the normal state"). |
+| `BreakingDetailPage.jsx` | `/breaking/:id` (2026-06-26) — native breaking-alert page via `useBreakingAlert`. Renders the structured story (What happened / How we got here [normalized TRACE_CAUSE] / Our read / Market impact / Sources); region chips → country/map; **story-arc link only when `hasArc`** (a real multi-entry thread). Falls back to the saved email text for legacy records. Honest not-found when the id isn't a confirmed alert. |
+| `atoms/BreakingStrip.jsx` | Slim pulsing "BREAKING" entry strip atop Home + Map (2026-06-26). Renders **only** when the newest confirmed alert is <24h old — else nothing (no stale/fabricated banner). Links to `/breaking/:id`. |
 | `atoms/SourceRobustness.jsx` | L1 source-robustness pill (P0, 2026-06-22) — amber "⚠ Single-source" vs green "✓ Corroborated · N outlets · M regions", from existing `outletCount`/`sourceCount`/`countries`. **Renders null on no data** (never a default "corroborated" badge). On Home topic-card meta + ThreadPage header kicker. The "faithfulness ≠ truth" principle made user-facing outside the BYOK Studio. |
 
 ### Key Hooks
 
-24 total hooks (in `src/hooks/`):
+25 total hooks (in `src/hooks/`):
 
 | Hook | Purpose |
 |------|---------|
@@ -984,7 +992,8 @@ Wired in `<Routes>` in `App.jsx` — 18 routes incl. catch-all (`/membership` ad
 | `useResearchBriefing(topicId)` | Fetch cached research briefing |
 | `useSavedItems(itemType)` | Manage user bookmarks via newsSavedItems Lambda (JWT required) |
 | `usePreferences()` | Read/write notification opt-ins via newsRecommend `get/set_prefs` (JWT); optimistic save, revert-on-error; powers Account → Notifications tab |
-| `useNotifications()` | Fetch the public breaking-alert feed (newsRecommend `list_alerts`, 5-min poll) + a localStorage read-marker for the unread badge; powers the nav `NotificationBell` |
+| `useNotifications()` | Fetch the public breaking-alert feed (newsRecommend `list_alerts`, 5-min poll) + a localStorage read-marker for the unread badge; powers the nav `NotificationBell`, the `/breaking` feed, and the `BreakingStrip` |
+| `useBreakingAlert(id)` | Fetch a single breaking alert (newsRecommend `get_alert`); powers `/breaking/:id`. Null (→ honest not-found) when the id isn't a confirmed alert |
 | `useWeeklyBrief()` | Fetch the latest published weekly brief (`weekly_brief`); 30-min cache; powers `/weekly-brief` (rendered via the dependency-free `Markdown.jsx`) |
 | `useSummary(topicId)` | Fetch AI summary for a topic |
 | `usePrediction(topicId)` | Fetch AI prediction for a topic |

@@ -16,6 +16,7 @@ import EditorialShell from './atoms/EditorialShell';
 import SeverityBadge from './atoms/SeverityBadge';
 import SourceRobustness from './atoms/SourceRobustness';
 import LedeBand from './atoms/LedeBand';
+import BreakingStrip from './atoms/BreakingStrip';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { composeTopicsLede } from '../utils/composeTopicsLede';
 import './AIComponents.css';
@@ -319,6 +320,9 @@ function Home() {
       right={rightRail}
       className="home-shell"
     >
+      {/* Breaking strip — only renders when a confirmed alert is <24h old */}
+      <BreakingStrip />
+
       {/* Today's lede — deterministic orientation band (composeTopicsLede) */}
       {!loading && <LedeBand {...lede} />}
 

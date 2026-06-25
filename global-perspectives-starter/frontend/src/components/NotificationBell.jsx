@@ -1,8 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { threadPath } from '../utils/threadPath';
 import { useNotifications } from '../hooks/useNotifications';
 import './NotificationBell.css';
+
+// A breaking alert is a point-in-time story snapshot, NOT a narrative thread — it
+// has its own page (/breaking/:id), keyed on the alert id. (Previously this linked
+// to /weekly/thread/:id, which rendered a thin/"not found" shell for the new,
+// single-entry stories breaking alerts are by definition.)
+function alertPath(a) {
+  return `/breaking/${encodeURIComponent(a.id || a.threadId)}`;
+}
 
 function relTime(iso) {
   if (!iso) return '';
@@ -69,21 +76,31 @@ export default function NotificationBell() {
               You’re all caught up. Major breaking stories will show up here.
             </div>
           ) : (
-            <ul className="gp-bell-list">
-              {alerts.map((a) => (
-                <li key={a.threadId}>
-                  <Link
-                    to={threadPath(a.threadId)}
-                    className="gp-bell-item"
-                    role="menuitem"
-                    onClick={() => setOpen(false)}
-                  >
-                    <span className="gp-bell-title">{a.title}</span>
-                    <span className="gp-bell-time">{relTime(a.at)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="gp-bell-list">
+                {alerts.map((a) => (
+                  <li key={a.id || a.threadId}>
+                    <Link
+                      to={alertPath(a)}
+                      className="gp-bell-item"
+                      role="menuitem"
+                      onClick={() => setOpen(false)}
+                    >
+                      <span className="gp-bell-title">{a.title}</span>
+                      <span className="gp-bell-time">{relTime(a.at)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/breaking"
+                className="gp-bell-all"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
+                See all breaking alerts →
+              </Link>
+            </>
           )}
         </div>
       )}

@@ -213,9 +213,17 @@ async function listAlerts() {
     }));
     return (out.Items || [])
       .map((it) => ({
-        threadId: it.alertKey,
+        id: it.alertKey,
+        threadId: it.alertKey, // legacy name (bell) — kept for back-compat
         title: it.title || 'Breaking story',
-        url: `${SITE_URL}/weekly/thread/${it.alertKey}`,
+        // The in-app home for a breaking alert is its own page, not the thread arc.
+        url: `${SITE_URL}/breaking/${encodeURIComponent(it.alertKey)}`,
+        category: it.category || null,
+        regions: Array.isArray(it.regions) ? it.regions : [],
+        reasons: Array.isArray(it.reasons) ? it.reasons : [],
+        economic: it.story?.economic || null,
+        outletCount: Number(it.outletCount) || 0,
+        sourceCount: Number(it.sourceCount) || 0,
         at: it.confirmedAt || it.alertedAt || it.cycle || null,
       }))
       .filter((a) => a.at)
@@ -225,6 +233,43 @@ async function listAlerts() {
     // Missing table / access issue → honest empty feed, never an error in the UI.
     console.warn('listAlerts failed (returning empty):', err.message);
     return [];
+  }
+}
+
+// Full single alert for the native detail page (/breaking/:id). Returns the
+// structured story when present (new records), falling back to the rendered
+// email body for older records written before structured fields existed.
+async function getAlert(alertKey) {
+  if (!alertKey) return null;
+  try {
+    const out = await ddb().send(new GetCommand({
+      TableName: BREAKING_ALERTS_TABLE,
+      Key: { alertKey },
+    }));
+    const it = out.Item;
+    // Only surface human-confirmed/sent alerts publicly — never raw proposals.
+    if (!it || (it.status !== 'confirmed' && it.status !== 'sent')) return null;
+    return {
+      id: it.alertKey,
+      title: it.title || 'Breaking story',
+      category: it.category || null,
+      regions: Array.isArray(it.regions) ? it.regions : [],
+      reasons: Array.isArray(it.reasons) ? it.reasons : [],
+      editorNote: it.editorNote || null,
+      hasArc: !!it.hasArc,
+      threadId: it.threadId || null,
+      threadUrl: it.hasArc && it.threadId
+        ? `${SITE_URL}/weekly/thread/${encodeURIComponent(it.threadId)}`
+        : null,
+      outletCount: Number(it.outletCount) || 0,
+      sourceCount: Number(it.sourceCount) || 0,
+      story: it.story || null,        // { summary, prediction, traceCause, economic, sources }
+      fallbackText: it.story ? null : (it.draft?.text || null), // legacy records
+      at: it.confirmedAt || it.alertedAt || it.cycle || null,
+    };
+  } catch (err) {
+    console.warn('getAlert failed (returning null):', err.message);
+    return null;
   }
 }
 
@@ -256,6 +301,12 @@ exports.handler = async (event = {}) => {
   // Public in-app notification feed (the bell) — no auth.
   if (action === 'list_alerts') {
     return httpReply(200, { ok: true, alerts: await listAlerts() });
+  }
+
+  // Public single breaking alert for the /breaking/:id detail page — no auth.
+  if (action === 'get_alert') {
+    const alert = await getAlert((body.payload && body.payload.id) || body.id);
+    return httpReply(200, { ok: true, alert });
   }
 
   // Notification-preference actions require a signed-in user.

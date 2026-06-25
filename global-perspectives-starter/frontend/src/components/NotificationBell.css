@@ -81,6 +81,17 @@
 .gp-bell-title { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
 .gp-bell-time { font-size: 11px; color: var(--muted, #6b6b66); }
 
+.gp-bell-all {
+  display: block;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line, #e5e5e3);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #a2442e;
+  text-decoration: none;
+}
+.gp-bell-all:hover { background: #faf3f1; }
+
 @media (max-width: 600px) {
   .gp-bell-panel { position: fixed; top: 56px; right: 12px; left: 12px; width: auto; }
 }

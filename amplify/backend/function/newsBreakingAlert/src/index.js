@@ -127,10 +127,25 @@ function recentlyAlerted(rec, now) {
 }
 
 // ── Assemble the story object the renderer needs ────────────────────────────────
+function distinctOutlets(sources) {
+  const set = new Set();
+  for (const s of sources || []) {
+    const name = (s && (s.source || s.url)) ? String(s.source || s.url).trim().toLowerCase() : '';
+    if (name) set.add(name);
+  }
+  return set.size;
+}
+
 async function assembleStory(group, scored) {
   const lead = group.leadTopic || {};
   const leadId = lead.topicId || lead.id;
-  const threadAnalysis = await getRecord(`THREAD#${group.threadId}`, 'THREAD_ANALYSIS');
+  // The REAL thread id (what the narrative-thread page resolves) — distinct from
+  // group.threadId, which falls back to a topic id for un-threaded breaking stories.
+  // We only ever link to the story arc when a real multi-entry thread exists.
+  const realThreadId = lead.threadId || null;
+  const threadAnalysis = realThreadId
+    ? await getRecord(`THREAD#${realThreadId}`, 'THREAD_ANALYSIS')
+    : null;
   const summaryRec = await getRecord(`TOPIC#${leadId}`, 'SUMMARY');
   const predictionRec = await getRecord(`TOPIC#${leadId}`, 'PREDICTION');
   const traceRec = await getRecord(`TOPIC#${leadId}`, 'TRACE_CAUSE');
@@ -152,16 +167,25 @@ async function assembleStory(group, scored) {
     } catch { /* unparseable → omit the section */ }
   }
 
+  const sources = (lead.sources || []).map((s) => ({ title: s.title, url: s.url }));
+  const hasArc = !!threadAnalysis; // a real, multi-entry thread with narrative analysis
   return {
     title: threadAnalysis?.threadTitle || lead.title || 'Developing story',
     category: group.category,
     regions: group.regions,
-    threadUrl: `${SITE_URL}/weekly/thread/${group.threadId}`,
+    // Arc link is conditional: only when a real thread arc exists (else the thread
+    // page renders a thin/"not found" shell — the bug this surface replaces).
+    leadTopicId: leadId,
+    threadId: realThreadId,
+    hasArc,
+    threadUrl: hasArc ? `${SITE_URL}/weekly/thread/${realThreadId}` : null,
     summary: summaryText,
     prediction: predictionText,
     traceCause,
     economic: econ ? { direction: econ.direction, magnitude: econ.magnitude } : null,
-    sources: (lead.sources || []).map((s) => ({ title: s.title, url: s.url })),
+    sources,
+    outletCount: distinctOutlets(lead.sources),
+    sourceCount: group.sourceCount,
     reasons: scored.reasons,
   };
 }
@@ -184,11 +208,28 @@ async function writeProposal(group, scored, story, verify, email) {
     score: scored.score,
     reasons: scored.reasons,
     title: story.title,
+    // Flat fields the in-app feed (/breaking) reads without re-parsing the email.
+    category: story.category || null,
+    regions: story.regions || [],
+    leadTopicId: story.leadTopicId || null,
+    threadId: story.threadId || null, // real thread id (null when un-threaded)
+    hasArc: !!story.hasArc,
+    outletCount: story.outletCount || 0,
+    sourceCount: story.sourceCount || 0,
+    // Structured story for the native detail page (/breaking/:id). The rendered
+    // email (`draft`) stays as the reviewer/legacy fallback.
+    story: {
+      summary: story.summary || '',
+      prediction: story.prediction || '',
+      traceCause: story.traceCause || null,
+      economic: story.economic || null,
+      sources: story.sources || [],
+    },
     cycle: now.toISOString(),
     alertedAt: now.toISOString(), // dedupe anchor
     sent: false,
     dryRun: DRY_RUN,
-    draft: email, // { subject, text } for the reviewer
+    draft: email, // { subject, text, html } for the reviewer / legacy fallback
     verify,
     ttl: Math.floor((now.getTime() + DEDUPE_TTL_DAYS * DAY_MS) / 1000),
   };

@@ -301,6 +301,22 @@ export async function fetchAlerts() {
   return body;
 }
 
+// Single breaking alert for the /breaking/:id detail page — no auth.
+// Returns { ok, alert } where alert is null when the id isn't a confirmed alert.
+export async function fetchAlert(id) {
+  const endpoint = typeof window !== 'undefined' && window.USER_PREFS_ENDPOINT;
+  if (!endpoint) throw new Error('Missing USER_PREFS_ENDPOINT');
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_alert', payload: { id } }),
+  });
+  let body;
+  try { body = await res.json(); } catch { body = null; }
+  if (!res.ok) throw new Error(`Alert HTTP ${res.status}`);
+  return body;
+}
+
 // ── Polar billing (newsPolarBilling Lambda, separate Function URL) ──────────────
 // All membership actions require a Firebase JWT. The endpoint is set in docs/config.js
 // (window.POLAR_BILLING_ENDPOINT); when it's unset the Membership UI stays hidden.

@@ -26,6 +26,8 @@ import AnalysisStudio from './components/AnalysisStudio';
 import MembershipPage from './components/MembershipPage';
 import TrackRecordPage from './components/TrackRecordPage';
 import WeeklyBriefPage from './components/WeeklyBriefPage';
+import BreakingFeedPage from './components/BreakingFeedPage';
+import BreakingDetailPage from './components/BreakingDetailPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
@@ -106,6 +108,8 @@ export default function App() {
               <Route path="/membership" element={<MembershipPage />} />
               <Route path="/track-record" element={<TrackRecordPage />} />
               <Route path="/weekly-brief" element={<WeeklyBriefPage />} />
+              <Route path="/breaking" element={<BreakingFeedPage />} />
+              <Route path="/breaking/:id" element={<BreakingDetailPage />} />
               <Route path="/weekly" element={<WeeklyPage />} />
               <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
               <Route path="/weekly/countries" element={<CountryListPage />} />

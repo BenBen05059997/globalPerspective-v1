@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-06-26 (feat: dedicated breaking-alert web surface — fixes the bell → thread mismatch)
+
+The notification bell linked breaking alerts to `/weekly/thread/:id`, but a breaking story is a point-in-time snapshot, not a narrative thread — and the linked id was often a *topic* id (the `t.threadId || t.topicId || t.id` fallback in `newsBreakingAlert/index.js`) or a brand-new single-entry thread with no `THREAD_ANALYSIS`. Result: the rich content lived only in the email, while the bell sent readers to a thin "1 event / 1 source" page or a "Story arc not found" shell. Built breaking alerts their own home.
+
+- **New surface (Feed + detail):** `/breaking` (`BreakingFeedPage`) lists confirmed alerts grouped by Today/Yesterday/date with category·regions, market pill, source-robustness, and an honest empty state; `/breaking/:id` (`BreakingDetailPage`) is a native on-brand page — *What happened · How we got here · Our read · Market impact · Sources*, region chips → country/map, and the story-arc link **only when a real multi-entry thread exists** (`hasArc`).
+- **`BreakingStrip` atom** atop Home + Map — pulsing slim entry point, shown only when a confirmed alert is **<24h old** (renders nothing otherwise — honest, no stale banner).
+- **Bell rewired** to `/breaking/:id` + a "See all breaking alerts →" footer.
+- **Backend:** `newsRecommend` — enriched `list_alerts` (id/category/regions/economic/source counts + `/breaking/` urls) + new public `get_alert` action (returns the structured story; **falls back to the saved email text for legacy records**, so existing alerts render with no detector rerun). `newsBreakingAlert` — `writeProposal` now persists the structured story + `hasArc`/real `threadId`/`leadTopicId`; the arc link is gated on a real thread arc (root-cause fix).
+- **Deployed:** `newsRecommend` Lambda live (ap-northeast-1) — `list_alerts`/`get_alert` smoke-tested against the Function URL (existing EU/Ukraine alert returns the email-text fallback, `hasArc:false`). `npm run verify` green (0 ESLint errors, 178 tests); frontend built + shipped via `./deploy.sh`. `newsBreakingAlert` redeploy NOT required for the fix (legacy records use the fallback); deploying it later upgrades future alerts to the richer native layout.
+
+Files: `…/src/components/{BreakingFeedPage,BreakingDetailPage,NotificationBell}.jsx`, `…/src/components/BreakingPage.css`, `…/src/components/atoms/{BreakingStrip.jsx,BreakingStrip.css}`, `…/src/hooks/useBreakingAlert.js`, `…/src/services/restProxy.js`, `…/src/App.jsx`, `…/src/components/{Home,WorldMapV2}.jsx`, `…/src/components/NotificationBell.css`, `amplify/backend/function/{newsRecommend,newsBreakingAlert}/src/index.js`, `docs/assets`, `docs/index.html`, `docs/404.html`.
+
 ## 2026-06-24 (deploy: ship P2a color-tokens + threadPath centralization to production)
 
 Rebuilt `docs/` to push the accumulated `main` work live: the **P2a `src/tokens.js`** single-color-source consolidation (see entry below) and the completed **`threadPath` centralization**. Verify gate green on the merged tree (0 ESLint errors, 178 tests). Deployed via `./deploy.sh`; production bundle confirmed updated.

@@ -13,6 +13,7 @@ import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
 import { useMarketsCountry } from '../hooks/useMarketsCountry';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import LedeBand from './atoms/LedeBand';
+import BreakingStrip from './atoms/BreakingStrip';
 import { composeTopicsLede } from '../utils/composeTopicsLede';
 import { findTopicForCountry, countryNameEq } from '../utils/topicMatch';
 import { threadPath } from '../utils/threadPath';
@@ -954,6 +955,9 @@ export default function WorldMapV2() {
               )}
             </div>
           </div>
+
+          {/* Breaking strip — only renders when a confirmed alert is <24h old */}
+          <BreakingStrip />
 
           {/* Today's lede — deterministic orientation band (composeTopicsLede) */}
           <LedeBand {...lede} />

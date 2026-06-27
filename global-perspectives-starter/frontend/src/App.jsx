@@ -28,6 +28,7 @@ import TrackRecordPage from './components/TrackRecordPage';
 import WeeklyBriefPage from './components/WeeklyBriefPage';
 import BreakingFeedPage from './components/BreakingFeedPage';
 import BreakingDetailPage from './components/BreakingDetailPage';
+import SpiderDemo from './components/SpiderDemo';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { setAuthProvider } from './services/restProxy';
 import { useEffect } from 'react';
@@ -118,6 +119,7 @@ export default function App() {
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/account" element={<Account />} />
               <Route path="/whitepaper" element={<WhitepaperPage />} />
+              <Route path="/spider-demo" element={<SpiderDemo />} />
               <Route path="/__boom" element={<Boom />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

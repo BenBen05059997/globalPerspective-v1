@@ -1,0 +1,10 @@
+{
+  "name": "news-weekly-markets",
+  "version": "1.0.0",
+  "description": "Generates a price-first WEEKLY MARKETS REPORT: computes each tracked instrument's deterministic week-over-week % move from GlobalPerspectiveMarkets HISTORY#, then grounds each mover in our own ECONOMIC_IMPACT coverage (DeepSeek note) or a clearly-labeled self-searching web context (Perplexity sonar), never fabricating a cause. Writes a draft for one-click human approval. See WEEKLY_MARKETS_PLAN.md.",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0"
+  }
+}

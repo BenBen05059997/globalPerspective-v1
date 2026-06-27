@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-06-27 (feat: Weekly Markets Report — price-first weekly wrap, `/weekly-markets`)
+
+A new **price-first** weekly markets surface — "what moved this week and why" — the instrument→explanation counterpart of `/economy` (news→instrument). Sibling of the Weekly Signals Brief: generate draft → human approve → publish → serve. Plan: `WEEKLY_MARKETS_PLAN.md`.
+
+- **New Lambda `newsWeeklyMarkets`** (deployed, manual-invoke first, no schedule): computes each instrument's ~1-week move **deterministically** from `GlobalPerspectiveMarkets` history (never AI), selects top movers, and grounds each in three visibly-distinct trust tiers — **our coverage** (a DB `ECONOMIC_IMPACT` thread → short DeepSeek note grounded only in our records, restricted to a ~9-day window), **web context** (Perplexity `sonar` self-searches + cites, framed as candidate drivers not causation), or honest **"no clear driver found."** Writes `WEEKLY_MARKETS#{week}` draft (180-day TTL). Dedicated IAM role `newsWeeklyMarkets-role`.
+- **Honesty guards:** rejects a stale week-ago anchor across a data gap (`MAX_ANCHOR_AGE_DAYS=14` — caught a bogus COPPER −99% from the mid-June ingest gap), the ≥100% sanity ceiling, and a flat-mover filter (`MIN_MOVE_PCT`). Web-context degrades to "no driver" when `PERPLEXITY_API_KEY` is unset (not yet set).
+- **Serve:** `weekly_markets` action in `newsSensitiveData` (latest **published**, honest null-when-none) + `fetchWeeklyMarkets` in restProxy. Review/publish via `node weekly-markets/review.js`.
+- **Frontend:** `/weekly-markets` (`WeeklyMarketsPage` + `useWeeklyMarkets`), honest empty state until published; hub-and-spoke cross-links from Home, Map, Country, Thread (Economy tab, deep-link `#<instrument>`), and `/economy`.
+- **Known data issue (pre-existing, not this feature):** `GlobalPerspectiveMarkets` history has a 16-day gap (06-06→06-21) for commodities/equities from the Stooq→Yahoo migration — `seed_history` backfill never run — so this week's report is thin (only continuously-covered VIX/crypto/yields). Self-heals next week, or backfill via `newsMarketsData {"source":"seed_history"}`.
+- **Deployed:** `newsWeeklyMarkets` created + `newsSensitiveData-dev` updated (both ap-northeast-1); `weekly_markets` serve verified via proxy (honest null); draft generated. `npm run verify` green (0 ESLint errors, 178 tests); frontend shipped via `./deploy.sh`. No draft published yet (human gate).
+
+Files: `amplify/backend/function/newsWeeklyMarkets/src/{index.js,package.json}`, `amplify/backend/function/newsSensitiveData/src/index.js`, `weekly-markets/review.js`, `…/src/components/{WeeklyMarketsPage.jsx,WeeklyMarketsPage.css,Home.jsx,Home.css,WorldMapV2.jsx,WorldMapV2.css,CountryPage.jsx,ThreadPage.jsx,EconomyPage.jsx,EconomyPage.css}`, `…/src/hooks/useWeeklyMarkets.js`, `…/src/services/restProxy.js`, `…/src/App.jsx`, `WEEKLY_MARKETS_PLAN.md`, `docs/assets`, `docs/index.html`, `docs/404.html`.
+
 ## 2026-06-26 (feat: dedicated breaking-alert web surface — fixes the bell → thread mismatch)
 
 The notification bell linked breaking alerts to `/weekly/thread/:id`, but a breaking story is a point-in-time snapshot, not a narrative thread — and the linked id was often a *topic* id (the `t.threadId || t.topicId || t.id` fallback in `newsBreakingAlert/index.js`) or a brand-new single-entry thread with no `THREAD_ANALYSIS`. Result: the rich content lived only in the email, while the bell sent readers to a thin "1 event / 1 source" page or a "Story arc not found" shell. Built breaking alerts their own home.

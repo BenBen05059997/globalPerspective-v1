@@ -572,6 +572,7 @@ export default function EconomyPage() {
         <div>
           <h1>Economy</h1>
           <p className="ep-deck">What today&apos;s news is repricing — instrument-first.</p>
+          <Link className="ep-weekly-wrap" to="/weekly-markets">Weekly wrap →</Link>
         </div>
         <div className="ep-timestamp">
           {marketsTime ? <>as of <b>{marketsTime}</b><br /></> : null}

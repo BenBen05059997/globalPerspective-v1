@@ -333,6 +333,7 @@ function Home() {
         <p className="home-masthead-sub">
           Trending topics from around the world, organised by region. Summarise, predict, or trace the cause of any one.
         </p>
+        <Link className="home-markets-link" to="/weekly-markets">Markets this week →</Link>
 
         {isStale && (
           <div className="home-alert stale">

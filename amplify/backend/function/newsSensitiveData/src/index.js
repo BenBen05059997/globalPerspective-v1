@@ -354,6 +354,29 @@ exports.handler = async (event) => {
       }
     }
 
+    if (action === 'weekly_markets') {
+      // Latest PUBLISHED weekly markets report (human-approved via weekly-markets/review.js).
+      // Honest null-when-none-published, exactly like the weekly_brief action above.
+      try {
+        const { Items = [] } = await getDynamoClient().send(new ScanCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          FilterExpression: 'SK = :sk AND #s = :pub',
+          ExpressionAttributeNames: { '#s': 'status' },
+          ExpressionAttributeValues: { ':sk': 'WEEKLY_MARKETS', ':pub': 'published' },
+        }));
+        if (!Items.length) {
+          return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
+        }
+        const latest = Items.sort((a, b) => String(b.weekOf).localeCompare(String(a.weekOf)))[0];
+        const { PK, SK, ttl, ...rest } = latest;
+        console.info('newsSensitiveData weekly_markets response', { weekOf: rest.weekOf });
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest }) };
+      } catch (err) {
+        console.error('weekly_markets read error:', err);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
+      }
+    }
+
     if (action === 'narrative_thread') {
       const threadId = payload?.threadId;
       if (!threadId || typeof threadId !== 'string') {

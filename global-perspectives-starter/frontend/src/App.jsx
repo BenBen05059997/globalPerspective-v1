@@ -26,6 +26,7 @@ import AnalysisStudio from './components/AnalysisStudio';
 import MembershipPage from './components/MembershipPage';
 import TrackRecordPage from './components/TrackRecordPage';
 import WeeklyBriefPage from './components/WeeklyBriefPage';
+import WeeklyMarketsPage from './components/WeeklyMarketsPage';
 import BreakingFeedPage from './components/BreakingFeedPage';
 import BreakingDetailPage from './components/BreakingDetailPage';
 import SpiderDemo from './components/SpiderDemo';
@@ -109,6 +110,7 @@ export default function App() {
               <Route path="/membership" element={<MembershipPage />} />
               <Route path="/track-record" element={<TrackRecordPage />} />
               <Route path="/weekly-brief" element={<WeeklyBriefPage />} />
+              <Route path="/weekly-markets" element={<WeeklyMarketsPage />} />
               <Route path="/breaking" element={<BreakingFeedPage />} />
               <Route path="/breaking/:id" element={<BreakingDetailPage />} />
               <Route path="/weekly" element={<WeeklyPage />} />

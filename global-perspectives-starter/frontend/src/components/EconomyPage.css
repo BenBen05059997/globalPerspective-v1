@@ -43,6 +43,18 @@
   color: var(--ink-dim);
   margin: 0;
 }
+.ep-weekly-wrap {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--accent);
+}
+.ep-weekly-wrap:hover { text-decoration: underline; text-underline-offset: 2px; }
 .ep-timestamp {
   font-family: var(--mono);
   font-size: 11px;

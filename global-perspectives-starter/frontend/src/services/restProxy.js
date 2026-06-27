@@ -179,6 +179,10 @@ export async function fetchWeeklyBrief() {
   return proxyAction('weekly_brief');
 }
 
+export async function fetchWeeklyMarkets() {
+  return proxyAction('weekly_markets');
+}
+
 export async function fetchPairAnalysesList() {
   return proxyAction('pair_analyses_list');
 }

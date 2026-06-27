@@ -779,6 +779,8 @@ export default function WorldMapV2() {
                 <span className="c">{l.sub}</span>
               </div>
             ))}
+            {/* Zoom out from the live Economy lens to the weekly markets wrap */}
+            <Link className="mv2-markets-link" to="/weekly-markets">Markets this week →</Link>
           </div>
 
           {/* Signal level — always shown (drives base country fills) */}

@@ -635,6 +635,13 @@ export default function CountryPage() {
               </div>
             </Link>
           ))}
+          {/* Zoom out to the weekly markets wrap (global v1; country deep-link is a v2 nicety) */}
+          <Link
+            to="/weekly-markets"
+            style={{ display: 'inline-block', marginTop: 10, fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textDecoration: 'none', color: 'var(--accent)' }}
+          >
+            How markets moved this week →
+          </Link>
         </div>
       )}
 

@@ -122,6 +122,13 @@
   color: var(--ink-dim);
 }
 .mv2-rail .grp { margin-bottom: 18px; }
+.mv2-markets-link {
+  display: inline-block;
+  margin: 8px 0 0 8px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  text-decoration: none; color: var(--ink);
+}
+.mv2-markets-link:hover { text-decoration: underline; text-underline-offset: 2px; }
 .mv2-rail h5 {
   margin: 0 0 10px;
   font-size: 11px; font-weight: 600; letter-spacing: 0.08em;

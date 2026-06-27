@@ -566,7 +566,22 @@ export default function ThreadPage() {
 
         {/* Economy tab */}
         {contentTab === 'economy' && hasEconomy && (
-          <MechanismCard impact={economicImpact} />
+          <>
+            <MechanismCard impact={economicImpact} />
+            {/* Up-link to the weekly markets wrap — deep-link to this story's first instrument */}
+            {(() => {
+              const firstInstrument = economicImpact.instruments?.[0]?.instrumentId;
+              const to = firstInstrument ? `/weekly-markets#${firstInstrument}` : '/weekly-markets';
+              return (
+                <Link
+                  to={to}
+                  style={{ display: 'inline-block', marginTop: 16, fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textDecoration: 'none', color: 'var(--accent)' }}
+                >
+                  This story moved markets this week →
+                </Link>
+              );
+            })()}
+          </>
         )}
 
         {/* Watch questions (below timeline if no AI rail) */}

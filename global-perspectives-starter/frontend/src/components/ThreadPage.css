@@ -399,6 +399,13 @@
   white-space: pre-line;
 }
 
+/* Stacked synthesis sections (replaced the old in-rail tab widget) */
+.tp-ai-block + .tp-ai-block {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dotted var(--line);
+}
+
 /* AI footer */
 .tp-ai-foot {
   padding: 10px 18px;

@@ -588,22 +588,7 @@ export default function CountryPage() {
         </div>
       )}
 
-      {/* Causal graph */}
-      {systemsData?.nodes?.length > 0 && (
-        <div className="cpg-rail-section">
-          <div className="cpg-rail-hd">
-            Causal Graph
-            <span style={{ fontWeight: 400, textTransform: 'none', fontSize: 9.5, color: 'var(--ink-faint)' }}>
-              {systemsData.edges?.length || 0} links
-            </span>
-          </div>
-          <SystemsGraph data={systemsData} countryName={decodedName} />
-          <p className="cpg-causal-note">
-            Cause → effect links inferred across this country's story threads — each node is a real arc,
-            every link cites the entries supporting it. Click a node to open its arc.
-          </p>
-        </div>
-      )}
+      {/* Causal graph promoted to a center tab — see "Causal Web" below */}
 
       {/* Economic Disruption — event-driven, dated to the hour */}
       {countryDisruptions?.length > 0 && (
@@ -810,6 +795,11 @@ export default function CountryPage() {
             <button className={`cpg-tab${mainTab === 'arcs' ? ' on' : ''}`} onClick={() => setMainTab('arcs')}>
               Story Arcs <span className="c">{filteredArcs.length}</span>
             </button>
+            {systemsData?.nodes?.length > 0 && (
+              <button className={`cpg-tab${mainTab === 'causal' ? ' on' : ''}`} onClick={() => setMainTab('causal')}>
+                Causal Web <span className="c">{systemsData.nodes.length}</span>
+              </button>
+            )}
             <button className={`cpg-tab${mainTab === 'coverage' ? ' on' : ''}`} onClick={() => setMainTab('coverage')}>
               Coverage <span className="c">{countryData.totalArticles}</span>
             </button>
@@ -931,6 +921,25 @@ export default function CountryPage() {
               ) : (
                 <div className="cpg-empty">No story arcs match this filter</div>
               )}
+            </div>
+          )}
+
+          {/* Causal Web tab — promoted from the right rail so the graph gets full center width */}
+          {mainTab === 'causal' && systemsData?.nodes?.length > 0 && (
+            <div className="cpg-tab-content">
+              <div className="cpg-section-lbl">
+                Causal Web
+                <span style={{ color: 'var(--ink-faint)', fontWeight: 400, marginLeft: 6 }}>
+                  {systemsData.nodes.length} arcs · {systemsData.edges?.length || 0} links
+                </span>
+              </div>
+              <div className="cpg-causal-center">
+                <SystemsGraph data={systemsData} countryName={decodedName} />
+              </div>
+              <p className="cpg-causal-note">
+                Cause → effect links inferred across this country's story threads — each node is a real arc,
+                every link cites the entries supporting it. Click a node to open its arc.
+              </p>
             </div>
           )}
 

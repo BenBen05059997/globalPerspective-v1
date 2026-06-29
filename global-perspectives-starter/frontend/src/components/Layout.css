@@ -180,6 +180,29 @@
 .gp-btn-primary { background: var(--ink); color: #fff; border-color: var(--ink); }
 .gp-btn-primary:hover { background: var(--ink-mid); border-color: var(--ink-mid); }
 
+/* Header credits pill — at-a-glance balance, links to Account → Membership. */
+.gp-credits-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--fast), border-color var(--fast);
+}
+.gp-credits-pill:hover { background: var(--paper-2); border-color: var(--line-2); }
+.gp-credits-pill.is-member { border-color: var(--accent); }
+.gp-credits-dot { color: var(--accent); font-size: 9px; line-height: 1; }
+.gp-credits-n { font-weight: 700; }
+.gp-credits-label { color: var(--ink-dim); }
+@media (max-width: 760px) { .gp-credits-label { display: none; } }
+
 /* Mobile hamburger */
 .gp-hamburger {
   display: none;

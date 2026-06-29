@@ -17,7 +17,11 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
-const { createHmac, timingSafeEqual, createVerify } = require('crypto');
+const { createVerify } = require('crypto');
+const {
+  parseCreditPacks, packCreditsByProduct, packCreditsForOrder,
+  tierForStatus, extractUid, verifyPolarSignature,
+} = require('./lib');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const USERS_TABLE = process.env.USERS_DDB_TABLE;
@@ -26,6 +30,13 @@ const POLAR_API_BASE = (process.env.POLAR_API_BASE || 'https://api.polar.sh').re
 const POLAR_ACCESS_TOKEN = process.env.POLAR_ACCESS_TOKEN;
 const POLAR_WEBHOOK_SECRET = process.env.POLAR_WEBHOOK_SECRET;
 const PRODUCTS = { monthly: process.env.POLAR_PRODUCT_MONTHLY, yearly: process.env.POLAR_PRODUCT_YEARLY };
+
+// Credit packs are one-time Polar products. The operator creates them in Polar and sets
+// POLAR_CREDIT_PACKS as JSON: { "<packKey>": { "productId": "...", "credits": 50 }, ... }.
+// Credit amounts are server-authoritative (the webhook maps the *paid product* → credits;
+// the client never supplies an amount). Empty/invalid env ⇒ no packs (buy-credits disabled).
+const CREDIT_PACKS = parseCreditPacks(process.env.POLAR_CREDIT_PACKS);
+const PACK_CREDITS_BY_PRODUCT = packCreditsByProduct(CREDIT_PACKS);
 const SITE_URL = (process.env.SITE_URL || 'https://globalperspective.net').replace(/\/$/, '');
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS
   || 'https://globalperspective.net,https://www.globalperspective.net,https://benben05059997.github.io,http://localhost:5173,http://127.0.0.1:5173')
@@ -76,51 +87,6 @@ async function verifyFirebaseToken(authHeader) {
   }
 }
 
-// ── Polar webhook signature (Standard Webhooks) ─────────────────────────────────
-// sig = base64( HMAC-SHA256( `${id}.${ts}.${rawBody}`, secret ) ), prefixed `v1,`.
-// The header may carry several space-separated `v1,<b64>` signatures. Polar's secret is
-// raw UTF-8 (sometimes `whsec_`-prefixed); Svix-style is base64 — we try both keyings.
-function verifyPolarSignature(rawBody, headers) {
-  const id = headers['webhook-id'];
-  const ts = headers['webhook-timestamp'];
-  const sigHeader = headers['webhook-signature'];
-  if (!id || !ts || !sigHeader || !POLAR_WEBHOOK_SECRET) return false;
-  // Replay guard: reject timestamps more than 5 minutes from now.
-  const now = Math.floor(Date.now() / 1000);
-  if (!Number.isFinite(Number(ts)) || Math.abs(now - Number(ts)) > 300) return false;
-
-  const signed = `${id}.${ts}.${rawBody.toString('utf8')}`;
-  const secret = POLAR_WEBHOOK_SECRET.startsWith('whsec_') ? POLAR_WEBHOOK_SECRET.slice(6) : POLAR_WEBHOOK_SECRET;
-  const keys = [Buffer.from(secret, 'utf8')];
-  try { const b = Buffer.from(secret, 'base64'); if (b.length) keys.push(b); } catch { /* not base64 */ }
-  const expected = keys.map((k) => createHmac('sha256', k).update(signed).digest('base64'));
-  const provided = sigHeader.split(' ').map((s) => (s.includes(',') ? s.split(',')[1] : s)).filter(Boolean);
-
-  for (const p of provided) {
-    for (const e of expected) {
-      try {
-        const pb = Buffer.from(p, 'base64');
-        const eb = Buffer.from(e, 'base64');
-        if (pb.length === eb.length && timingSafeEqual(pb, eb)) return true;
-      } catch { /* skip malformed */ }
-    }
-  }
-  return false;
-}
-
-// We set customer_external_id = Firebase uid at checkout; recover it from the webhook object.
-function extractUid(data) {
-  return data?.customer?.external_id
-    || data?.customer_external_id
-    || data?.metadata?.uid
-    || data?.customer?.metadata?.uid
-    || null;
-}
-
-function tierForStatus(status) {
-  return (status === 'active' || status === 'trialing') ? 'member' : 'free';
-}
-
 async function applyMembership({ uid, tier, status, customerId, subscriptionId, currentPeriodEnd, email }) {
   if (!uid || !USERS_TABLE) return;
   const sets = ['tier = :t', 'subscriptionStatus = :s', 'billingProvider = :prov', 'updatedAt = :now'];
@@ -137,8 +103,37 @@ async function applyMembership({ uid, tier, status, customerId, subscriptionId, 
   }));
 }
 
+// Idempotent credit grant. processedOrders (a string set) dedupes webhook retries so a
+// single order can never be credited twice. A repeat delivery hits the condition and no-ops.
+async function grantCredits({ uid, credits, orderId, email }) {
+  if (!uid || !USERS_TABLE || !(credits > 0)) return;
+  const sets = ['creditUpdatedAt = :now', 'billingProvider = :prov'];
+  const vals = { ':n': credits, ':now': new Date().toISOString(), ':prov': 'polar' };
+  let addExpr = 'creditBalance :n';
+  let condition;
+  if (orderId) {
+    vals[':oidSet'] = new Set([String(orderId)]);
+    vals[':oid'] = String(orderId);
+    addExpr += ', processedOrders :oidSet';
+    condition = 'attribute_not_exists(processedOrders) OR NOT contains(processedOrders, :oid)';
+  }
+  if (email) { sets.push('email = if_not_exists(email, :e)'); vals[':e'] = email; }
+  try {
+    await ddb().send(new UpdateCommand({
+      TableName: USERS_TABLE,
+      Key: { uid },
+      UpdateExpression: `ADD ${addExpr} SET ${sets.join(', ')}`,
+      ...(condition ? { ConditionExpression: condition } : {}),
+      ExpressionAttributeValues: vals,
+    }));
+  } catch (err) {
+    if (err.name === 'ConditionalCheckFailedException') return; // already processed — idempotent
+    throw err;
+  }
+}
+
 async function handleWebhook(rawBody, headers) {
-  if (!verifyPolarSignature(rawBody, headers)) return httpReply(401, { error: 'bad_signature' });
+  if (!verifyPolarSignature(rawBody, headers, POLAR_WEBHOOK_SECRET)) return httpReply(401, { error: 'bad_signature' });
   let evt;
   try { evt = JSON.parse(rawBody.toString('utf8')); } catch { return httpReply(400, { error: 'bad_json' }); }
 
@@ -158,18 +153,24 @@ async function handleWebhook(rawBody, headers) {
         email: data.customer?.email,
       });
     } else if (type === 'order.paid' || type === 'order.created') {
-      // First payment / one-off — grant if we can identify the user. Subscription events
-      // remain the source of truth for ongoing status.
+      // A paid order is EITHER a one-time credit pack OR a subscription payment. Credit-pack
+      // orders top up the balance (no tier change); everything else grants/keeps membership.
+      // Subscription.* events remain the source of truth for ongoing membership status.
       const uid = extractUid(data);
       if (uid && data.paid !== false) {
-        await applyMembership({
-          uid,
-          tier: 'member',
-          status: 'active',
-          customerId: data.customer_id || data.customer?.id,
-          subscriptionId: data.subscription_id || data.subscription?.id,
-          email: data.customer?.email,
-        });
+        const credits = packCreditsForOrder(data, PACK_CREDITS_BY_PRODUCT);
+        if (credits > 0) {
+          await grantCredits({ uid, credits, orderId: data.id, email: data.customer?.email });
+        } else {
+          await applyMembership({
+            uid,
+            tier: 'member',
+            status: 'active',
+            customerId: data.customer_id || data.customer?.id,
+            subscriptionId: data.subscription_id || data.subscription?.id,
+            email: data.customer?.email,
+          });
+        }
       }
     }
     // Every other event type is acknowledged (200) without action, so Polar stops retrying.
@@ -180,9 +181,22 @@ async function handleWebhook(rawBody, headers) {
   return httpReply(200, { received: true });
 }
 
-async function createCheckout({ uid, email, plan }) {
+// Resolve the Polar product for a checkout. kind:'credits' → a one-time credit pack (by
+// `pack` key); otherwise a subscription plan (monthly/yearly). The client only ever names a
+// pack/plan key — the product id and (for packs) the credit amount are server-side.
+function resolveCheckoutProduct({ kind, plan, pack }) {
+  if (kind === 'credits') {
+    const def = CREDIT_PACKS[pack];
+    if (!def?.productId) throw new Error('pack_not_configured');
+    return { productId: def.productId, kind: 'credits', ref: pack };
+  }
   const productId = PRODUCTS[plan === 'yearly' ? 'yearly' : 'monthly'];
   if (!productId) throw new Error('product_not_configured');
+  return { productId, kind: 'subscription', ref: plan === 'yearly' ? 'yearly' : 'monthly' };
+}
+
+async function createCheckout({ uid, email, plan, pack, kind }) {
+  const { productId, kind: resolvedKind, ref } = resolveCheckoutProduct({ kind, plan, pack });
   if (!POLAR_ACCESS_TOKEN) throw new Error('token_not_configured');
   const res = await fetch(`${POLAR_API_BASE}/v1/checkouts/`, {
     method: 'POST',
@@ -191,7 +205,7 @@ async function createCheckout({ uid, email, plan }) {
       products: [productId],
       success_url: `${SITE_URL}/account?checkout=success`,
       customer_external_id: uid,
-      metadata: { uid },
+      metadata: { uid, kind: resolvedKind, ref },
     }),
   });
   const j = await res.json().catch(() => null);
@@ -210,6 +224,7 @@ async function getMembership(uid) {
     status: it.subscriptionStatus || null,
     currentPeriodEnd: it.currentPeriodEnd || null,
     provider: it.billingProvider || null,
+    creditBalance: Number(it.creditBalance) || 0,
   };
 }
 
@@ -258,9 +273,11 @@ exports.handler = async (event = {}) => {
   if (action === 'create_checkout') {
     if (!uid) return httpReply(401, { error: 'sign_in_required' }, origin);
     try {
-      return httpReply(200, await createCheckout({ uid, email, plan: body.plan }), origin);
+      return httpReply(200, await createCheckout({ uid, email, plan: body.plan, pack: body.pack, kind: body.kind }), origin);
     } catch (err) {
       console.error('create_checkout error', err.message);
+      const known = ['pack_not_configured', 'product_not_configured', 'token_not_configured'];
+      if (known.includes(err.message)) return httpReply(400, { error: err.message }, origin);
       return httpReply(502, { error: 'checkout_failed' }, origin);
     }
   }

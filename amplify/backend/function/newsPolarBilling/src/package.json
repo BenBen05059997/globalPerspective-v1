@@ -1,8 +1,11 @@
 {
   "name": "newspolarbilling",
   "version": "1.0.0",
-  "description": "Polar.sh billing integration: webhook (grant/revoke membership) + create_checkout + get_membership",
+  "description": "Polar.sh billing integration: webhook (grant/revoke membership, top up credits) + create_checkout (subscription + credit packs) + get_membership",
   "main": "index.js",
+  "scripts": {
+    "test": "node --test ../test/lib.test.js"
+  },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.600.0",
     "@aws-sdk/lib-dynamodb": "^3.600.0"

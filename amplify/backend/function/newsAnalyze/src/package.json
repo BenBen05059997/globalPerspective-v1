@@ -1,8 +1,11 @@
 {
   "name": "newsanalyze",
   "version": "1.0.0",
-  "description": "Member-side Analysis Studio: runs analyses on our DeepSeek key for tier=member users (Firebase JWT + daily fair-use cap)",
+  "description": "Member-side Analysis Studio: runs analyses on our DeepSeek key, paid by member monthly allowance then per-run credits (Firebase JWT)",
   "main": "index.js",
+  "scripts": {
+    "test": "node --test ../test/lib.test.js"
+  },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.600.0",
     "@aws-sdk/lib-dynamodb": "^3.600.0"

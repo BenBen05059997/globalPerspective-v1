@@ -16,6 +16,7 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { createVerify } = require('crypto');
+const { decidePayment } = require('./lib');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const USERS_TABLE = process.env.USERS_DDB_TABLE;
@@ -25,7 +26,9 @@ const LLM_KEY = process.env.XAI_API_KEY;
 const LLM_URL_RAW = process.env.GROK_API_URL || 'https://api.deepseek.com';
 const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-chat';
 const MAX_TOKENS = Number(process.env.MAX_TOKENS) || 1600;
-const DAILY_CAP = Number(process.env.ANALYZE_DAILY_CAP) || 50;
+// Members get MEMBER_MONTHLY_ALLOWANCE free runs per calendar month; beyond that (and for
+// non-members) each run spends 1 credit (bought via newsPolarBilling credit packs).
+const MONTHLY_ALLOWANCE = Number(process.env.MEMBER_MONTHLY_ALLOWANCE) || 100;
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS
   || 'https://globalperspective.net,https://www.globalperspective.net,https://benben05059997.github.io,http://localhost:5173,http://127.0.0.1:5173')
   .split(',').map((s) => s.trim());
@@ -92,20 +95,40 @@ async function getUser(uid) {
   return out.Item || {};
 }
 
-// Daily fair-use cap, tracked on the user record (read-modify-write; fine for a soft limit).
-// Returns { ok, used } — `ok:false` means the cap is hit for today.
-async function checkAndBumpCap(uid, user) {
-  const today = new Date().toISOString().slice(0, 10);
-  const sameDay = user.analyzeDay === today;
-  const used = sameDay ? (Number(user.analyzeCount) || 0) : 0;
-  if (used >= DAILY_CAP) return { ok: false, used };
-  await ddb().send(new UpdateCommand({
-    TableName: USERS_TABLE,
-    Key: { uid },
-    UpdateExpression: 'SET analyzeDay = :d, analyzeCount = :c, analyzeUpdatedAt = :now',
-    ExpressionAttributeValues: { ':d': today, ':c': used + 1, ':now': new Date().toISOString() },
-  }));
-  return { ok: true, used: used + 1 };
+// Decide how this run is paid for, and consume it. Order:
+//   1) Member within the monthly allowance → free run (bump the monthly counter; soft limit).
+//   2) Otherwise (member over allowance, or any signed-in non-member) → spend 1 credit.
+//      The decrement is ATOMIC and conditional (creditBalance >= 1), so concurrent runs can
+//      never push the balance below zero — credits are real money, unlike the soft allowance.
+// Returns { ok, source, ... } or { ok:false, reason:'out_of_credits' }.
+async function consume(uid, user) {
+  const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const decision = decidePayment(user, month, MONTHLY_ALLOWANCE);
+
+  if (decision.mode === 'allowance') {
+    await ddb().send(new UpdateCommand({
+      TableName: USERS_TABLE,
+      Key: { uid },
+      UpdateExpression: 'SET analyzeMonth = :m, analyzeCount = :c, analyzeUpdatedAt = :now',
+      ExpressionAttributeValues: { ':m': month, ':c': decision.nextCount, ':now': new Date().toISOString() },
+    }));
+    return { ok: true, source: 'allowance', allowanceUsed: decision.nextCount, allowanceLimit: MONTHLY_ALLOWANCE };
+  }
+
+  try {
+    const out = await ddb().send(new UpdateCommand({
+      TableName: USERS_TABLE,
+      Key: { uid },
+      UpdateExpression: 'ADD creditBalance :neg SET analyzeUpdatedAt = :now',
+      ConditionExpression: 'creditBalance >= :one',
+      ExpressionAttributeValues: { ':neg': -1, ':one': 1, ':now': new Date().toISOString() },
+      ReturnValues: 'UPDATED_NEW',
+    }));
+    return { ok: true, source: 'credit', creditBalance: Number(out.Attributes?.creditBalance) || 0 };
+  } catch (err) {
+    if (err.name === 'ConditionalCheckFailedException') return { ok: false, reason: 'out_of_credits' };
+    throw err;
+  }
 }
 
 async function runDeepSeek(userMessage) {
@@ -157,21 +180,42 @@ exports.handler = async (event = {}) => {
   if (!uid) return reply(401, { error: 'sign_in_required' }, origin);
 
   const user = await getUser(uid);
-  if (user.tier !== 'member') return reply(403, { error: 'membership_required' }, origin);
 
   let body = {};
   try { body = event.body ? JSON.parse(event.body) : {}; } catch { /* tolerate */ }
   const userMessage = typeof body.user === 'string' ? body.user.slice(0, 24000) : '';
   if (!userMessage.trim()) return reply(400, { error: 'empty_request' }, origin);
 
-  const cap = await checkAndBumpCap(uid, user);
-  if (!cap.ok) return reply(429, { error: 'daily_limit', limit: DAILY_CAP }, origin);
+  // Pay for the run: member monthly allowance first, then a purchased credit. No funds →
+  // 402 Payment Required so the UI can prompt to subscribe or buy credits.
+  const grant = await consume(uid, user);
+  if (!grant.ok) {
+    return reply(402, { error: 'out_of_credits', creditBalance: Number(user.creditBalance) || 0 }, origin);
+  }
 
   try {
     const report = await runDeepSeek(userMessage);
-    return reply(200, { report, used: cap.used, limit: DAILY_CAP }, origin);
+    return reply(200, {
+      report,
+      source: grant.source,
+      allowanceUsed: grant.allowanceUsed,
+      allowanceLimit: grant.allowanceLimit,
+      creditBalance: grant.creditBalance,
+    }, origin);
   } catch (err) {
     console.error('analyze error', err.message);
+    // The run failed after we already charged — refund a spent credit so the user isn't
+    // billed for nothing. (The soft monthly allowance isn't worth a second write to restore.)
+    if (grant.source === 'credit') {
+      try {
+        await ddb().send(new UpdateCommand({
+          TableName: USERS_TABLE,
+          Key: { uid },
+          UpdateExpression: 'ADD creditBalance :one SET analyzeUpdatedAt = :now',
+          ExpressionAttributeValues: { ':one': 1, ':now': new Date().toISOString() },
+        }));
+      } catch (refundErr) { console.error('credit refund failed', refundErr.message); }
+    }
     return reply(502, { error: 'analysis_failed' }, origin);
   }
 };

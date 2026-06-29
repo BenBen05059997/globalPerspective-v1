@@ -19,18 +19,31 @@ Three jobs on one Function URL:
 | `POLAR_WEBHOOK_SECRET` | `whsec_…` | **secret.** From the webhook endpoint you create in Polar (below). |
 | `POLAR_PRODUCT_MONTHLY` | `e53eeb9a-4e2e-4b33-9c18-f0e779c07677` | Membership monthly ($15). |
 | `POLAR_PRODUCT_YEARLY` | `cd375325-0fd2-4223-8b10-8e02d50798fd` | Membership yearly ($150). |
+| `POLAR_CREDIT_PACKS` | `{"small":{"productId":"…","credits":50}}` | (credits) JSON map of pack key → one-time Polar product + credit amount. Credit grants are server-authoritative from THIS map (webhook resolves the paid product → credits); the client only names a pack key. Unset ⇒ buy-credits disabled. |
 | `POLAR_API_BASE` | `https://api.polar.sh` | Use `https://sandbox-api.polar.sh` to test against Sandbox. |
 | `SITE_URL` | `https://globalperspective.net` | success redirect base. |
 | `CORS_ORIGINS` | (optional) | Comma list; sensible site defaults baked in. |
 
 Secrets go in plaintext Lambda env vars (the project's chosen secret store — see `feedback-no-secrets-manager`). Never commit them.
 
+## Local logic test (no AWS, no network)
+
+Pure billing helpers (signature verify, order→credits routing, pack parsing) live in
+`src/lib.js` and are unit-tested:
+
+```bash
+cd amplify/backend/function/newsPolarBilling/src && npm test   # node --test ../test/lib.test.js
+```
+
+Run this before any deploy. The atomic credit decrement + webhook idempotency are DynamoDB
+conditional-write behaviors — exercise those in the Sandbox round-trip (below), not locally.
+
 ## Create the Lambda (AWS CLI sketch)
 
 ```bash
 cd amplify/backend/function/newsPolarBilling/src
 npm install            # bundles @aws-sdk v3 (or rely on the nodejs20.x runtime's built-in)
-zip -r ../deploy.zip . >/dev/null
+zip -r ../deploy.zip . >/dev/null   # NOTE: must include lib.js (index.js requires ./lib)
 
 aws lambda create-function \
   --function-name newsPolarBilling \
@@ -60,5 +73,13 @@ Set env vars with `aws lambda update-function-configuration --environment '{"Var
 Set `window.POLAR_BILLING_ENDPOINT = '<Function URL>'` in `docs/config.js` (same place as the other endpoints). The frontend `services/polar.js` reads it; the Membership UI stays hidden until it's set.
 
 ## Test (Sandbox first)
-- Point `POLAR_API_BASE` at `https://sandbox-api.polar.sh`, create matching Sandbox products, use Polar test cards.
+- **Isolated sandbox deploy:** `../_sandbox/deploy-sandbox.sh` stands up `newsPolarBilling-sandbox`
+  + `newsAnalyze-sandbox` (Function URLs, prod roles reused, `POLAR_API_BASE=sandbox`) WITHOUT
+  touching production. Export the `*_SANDBOX` env vars it lists, run it, then point the Polar
+  Sandbox webhook at the printed billing URL. Test with Polar test cards.
+- Point `POLAR_API_BASE` at `https://sandbox-api.polar.sh`, create matching Sandbox products
+  (subscription **and** one-time credit packs), use Polar test cards.
 - Polar's onboarding "test with a 100% discount code" satisfies the product-verification step: create a 100%-off code, run the full unpaid → checkout → `subscription.created` webhook → `tier=member` flow.
+- **Credit flow to verify:** buy a credit pack (test card) → `order.paid` webhook → `creditBalance`
+  increments; re-deliver the same webhook → balance unchanged (idempotent); run an analysis as a
+  non-member → one credit spent; exhaust credits → `402 out_of_credits`.

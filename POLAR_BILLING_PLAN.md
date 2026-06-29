@@ -93,7 +93,40 @@
 - How many tiers, monthly price points, currency display (JPY/USD), trial?
 - **Status:** to decide.
 
-### 5. Credit mechanics — the "Custom Analysis" feature  → now spec'd in [`ANALYSIS_STUDIO_PLAN.md`](./ANALYSIS_STUDIO_PLAN.md)
+### 5. Credit mechanics — the "Custom Analysis" feature  ✅ DECIDED + BUILT 2026-06-30 (not deployed)
+
+**Decisions locked with the operator 2026-06-30:**
+- **Relationship to subscription:** *subscription + credit top-ups beyond cap.* A member gets a **monthly allowance** (`MEMBER_MONTHLY_ALLOWANCE`, env on `newsAnalyze`) of free runs; once exhausted they spend purchased credits.
+- **Who can buy/use credits:** *anyone signed in.* A non-member can buy credit packs and run pay-as-you-go — `newsAnalyze` no longer hard-gates on `tier=member`; it gates on allowance-or-credit-or-`402`.
+- **Granularity:** *flat — 1 credit = 1 run* (guided / free-form / deep all cost the same; deep still requires BYOK because it needs web search).
+
+**Built (code only — `npm run verify` green; NOT deployed):**
+- `newsAnalyze` — new `consume()`: member allowance (monthly `analyzeMonth`/`analyzeCount`) → atomic conditional credit decrement (`ADD creditBalance -1` if `>= 1`) → `402 out_of_credits`. Refunds the credit if the LLM call fails after charging.
+- `newsPolarBilling` — `create_checkout` `kind:'credits'`+`pack` → one-time Polar product; webhook `order.paid` routes credit-pack orders to an **idempotent** `grantCredits` (`processedOrders` string-set dedupe) vs subscription orders to `tier=member`; `get_membership` returns `creditBalance`. Credit amounts are server-authoritative via env `POLAR_CREDIT_PACKS` = JSON `{ "<packKey>": { "productId": "...", "credits": N } }`.
+- Frontend — `MembershipPage` "Analysis credits" section (balance + buy cards, honest "coming soon" until `window.POLAR_CREDIT_PACKS` set); `AnalysisStudio` opens the our-compute path to members AND credit-holders; `restProxy.createCreditCheckout`/`creditPacks`; `useMembership.creditBalance`. **Balance + plan surfaced 2026-06-30:** a header credits pill + an Account → Membership tab.
+- Local logic tests — pure helpers extracted to `src/lib.js` in both functions; `node --test` suites (`npm test`): 13 tests covering the webhook signature, order→credits routing, pack parsing, and the allowance-vs-credit decision.
+
+**✅ SANDBOX-VERIFIED 2026-06-30 (Polar sandbox + real DynamoDB):**
+- Isolated twins `newsPolarBilling-sandbox` / `newsAnalyze-sandbox` deployed via `amplify/backend/function/_sandbox/deploy-sandbox.sh` (reuse prod roles, `POLAR_API_BASE=https://sandbox-api.polar.sh`, `MEMBER_MONTHLY_ALLOWANCE=2`). 5 sandbox products created (monthly/yearly + 50/200/500-credit packs).
+- Signed-`order.paid` webhook test: grant → **50**; replay same order → **stays 50** (idempotent); 2nd pack → **250**; `subscription.created` → `tier=member`, credits **unchanged** (routing correct). Test row cleaned up.
+- Frontend exercised against sandbox via the gitignored `frontend/public/config.js` (sandbox endpoints + `window.POLAR_CREDIT_PACKS`).
+- **BUG FOUND + FIXED — dual CORS → "Failed to fetch":** the Lambda code sets CORS *and* the Function URL had its own CORS config → duplicate `Access-Control-Allow-Origin` header → browser checkout failed (server-side curl didn't catch it). Fixed by clearing the Function-URL CORS (code owns CORS) on **both sandbox and the two prod functions**; the deploy script no longer sets `--cors`. Recorded in `ARCHITECTURE.md` Common Mistakes #7.
+- **Not yet browser-confirmed:** the live credit *spend* + `402` (needs a signed-in checkout with a Polar test card — operator step).
+
+**Operator go-live steps for credits (still open — you do these):**
+0. **Deploy the new code to PROD** — prod `newsAnalyze`/`newsPolarBilling` still run the **pre-credits** code; the credit logic only exists in the sandbox twins + the repo. Zip `src/` (must include the new `lib.js`) and `aws lambda update-function-code` both.
+1. Create **one-time** credit-pack products in Polar (pick sizes + prices). Record each product ID.
+2. Set `POLAR_CREDIT_PACKS` env on `newsPolarBilling` (the `{packKey:{productId,credits}}` map) and `MEMBER_MONTHLY_ALLOWANCE` on `newsAnalyze` (the X free runs/month — pick the number).
+3. Add `window.POLAR_CREDIT_PACKS = [{ key, credits, price }]` to `docs/config.js` (operator-owned) so the buy-UI renders. The `key`s must match the env map.
+4. Deploy both Lambdas. Verify a credit-pack checkout → webhook → balance increment, and a non-member run spending a credit.
+
+> **Original open sub-items (now resolved by the decisions above):**
+
+- **Granularity (open):** flat 1 credit = 1 analysis (Claude's lean — simple/predictable) vs. scaled by depth (quick summary 1 / full report 3).
+- **Allowance vs. deposit (open):** subscription includes *N* analyses/month; extras via top-up credit packs. (How many/month?)
+- **Free taste (open):** give logged-in free users ~1–2 free analyses as a conversion hook? (Claude's lean: yes.) — **still open** (currently a non-member starts at 0 credits; the conversion hook would be a small starting grant).
+
+For reference, the original spec lived in [`ANALYSIS_STUDIO_PLAN.md`](./ANALYSIS_STUDIO_PLAN.md).
 > **Resequenced 2026-06-10:** we are building the analysis feature (`/analyze`, "Analysis Studio") **FIRST, free-but-capped**, before billing — you can't sell per-run credits for a feature that isn't built/proven. Full design (both input modes + guardrails + lenses) lives in **[`ANALYSIS_STUDIO_PLAN.md`](./ANALYSIS_STUDIO_PLAN.md)**. Credits attach later: the free daily cap simply becomes a credit balance. Granularity/allowance/pricing stay parked until the feature has usage data.
 
 The single credit-consuming action: a **user-initiated custom analysis over our data**. New backend path (working name `newsAnalyze` / "Analysis Studio").

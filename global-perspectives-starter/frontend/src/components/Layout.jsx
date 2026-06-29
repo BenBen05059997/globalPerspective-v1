@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useMembership } from '../hooks/useMembership';
 import LoadingBar from './LoadingBar';
 import AIToast from './AIToast';
 import NotificationBell from './NotificationBell';
@@ -18,6 +19,7 @@ function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [topicCount, setTopicCount] = useState(null);
   const { user, loading: authLoading } = useAuth();
+  const { isMember, creditBalance, available: billingAvailable } = useMembership();
 
   useAutoTour(location.pathname);
 
@@ -104,6 +106,18 @@ function Layout({ children }) {
             </svg>
           </button>
           <NotificationBell />
+
+          {!authLoading && user && !user.isAnonymous && billingAvailable && (
+            <Link
+              to="/account?tab=membership"
+              className={`gp-credits-pill${isMember ? ' is-member' : ''}`}
+              title={`${creditBalance} analysis credit${creditBalance === 1 ? '' : 's'}${isMember ? ' · Member' : ''} — manage`}
+            >
+              {isMember && <span className="gp-credits-dot" aria-hidden>●</span>}
+              <span className="gp-credits-n">{creditBalance}</span>
+              <span className="gp-credits-label">credits</span>
+            </Link>
+          )}
 
           {!authLoading && (
             user && !user.isAnonymous ? (

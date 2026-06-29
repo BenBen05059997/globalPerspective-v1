@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-06-30 (test+fix: credits sandbox-verified; CORS "Failed to fetch" fixed; balance in header + Account)
+
+Continuation of the credit-buying feature (entry below): sandbox-tested it end-to-end, fixed a real CORS bug (also latent in prod), and surfaced balance/plan in the UI.
+
+- **Sandbox round-trip proven.** New `amplify/backend/function/_sandbox/deploy-sandbox.sh` stands up isolated `newsPolarBilling-sandbox` + `newsAnalyze-sandbox` (reuse prod roles, `POLAR_API_BASE=sandbox`, `MEMBER_MONTHLY_ALLOWANCE=2`); 5 sandbox Polar products created. A signed-`order.paid` test against real DynamoDB proved: grant (50), **idempotent replay** (stays 50), accumulation (+200 → 250), and **sub-vs-pack routing** (`subscription.created` → `tier=member`, credits unchanged). Pure helpers extracted to `src/lib.js` in both functions with `node --test` suites (`npm test`) — 13 logic tests (signature verify, order→credits routing, payment decision).
+- **CORS bug fixed (prod + sandbox).** The billing/analyze Lambdas set CORS in code **and** had a Function-URL CORS config → duplicate `Access-Control-Allow-Origin` → browser "**Failed to fetch**" at checkout (server-side `curl` never caught it). Cleared the Function-URL CORS so the code is the sole CORS source; deploy script no longer sets `--cors`. See ARCHITECTURE "Common Mistakes" #7.
+- **Balance/plan in the UI.** Header **credits pill** (signed-in → links to Account → Membership) + new **Account → Membership tab** (plan + renew date + credit balance + buy/manage CTAs), both via `useMembership`. Local sandbox testing wired through the gitignored `public/config.js` (uncommitted).
+- **Still pending for prod credits:** deploy the new `newsAnalyze`/`newsPolarBilling` code to prod (prod still runs the pre-credits code) + set prod `POLAR_CREDIT_PACKS` / `MEMBER_MONTHLY_ALLOWANCE` + add `window.POLAR_CREDIT_PACKS` to `docs/config.js`.
+
+Files: `amplify/backend/function/_sandbox/deploy-sandbox.sh`, `…/{newsPolarBilling,newsAnalyze}/src/{index.js,lib.js,package.json}`, `…/{newsPolarBilling,newsAnalyze}/test/lib.test.js`, `…/{newsPolarBilling}/README.md`, `…/src/components/{Account.jsx,Layout.jsx,Layout.css}`, `ARCHITECTURE.md`.
+
 ## 2026-06-30 (feat: consolidate Weekly Markets into /economy — Today/This-week toggle)
 
 The standalone `/weekly-markets` page is now a **second mode of `/economy`**, behind a **Today / This week** segmented toggle — one markets home, two clearly-tagged modes. Avoids a second econ nav item + page fragmentation while keeping the calm weekly read distinct from the dense live dashboard. Merged to main (`41f2b5a`); `npm run verify` green (0 ESLint errors, 178 tests); **not yet built/deployed**.

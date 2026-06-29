@@ -4,6 +4,7 @@ import { threadPath } from '../utils/threadPath';
 import { useAuth } from '../contexts/AuthContext';
 import { useSavedItems } from '../hooks/useSavedItems';
 import { usePreferences } from '../hooks/usePreferences';
+import { useMembership } from '../hooks/useMembership';
 import { loadByok, clearByok } from '../utils/byok';
 import { getProvider } from '../services/llm';
 import ProviderModal from './ProviderModal';
@@ -366,6 +367,76 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
   );
 }
 
+// Membership & credits at a glance — current plan + credit balance, with links into the
+// /membership page to subscribe / buy more. Reads the same hook the header pill uses.
+function MembershipPanel() {
+  const { membership, isMember, creditBalance, available, loading } = useMembership();
+
+  if (!available) {
+    return (
+      <div style={{ maxWidth: 520, margin: '0 auto' }}>
+        <div style={SECTION}>
+          <div style={LABEL}>Membership</div>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            Membership &amp; credits aren't available yet.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const renews = membership?.currentPeriodEnd
+    ? new Date(membership.currentPeriodEnd).toLocaleDateString()
+    : null;
+
+  return (
+    <div style={{ maxWidth: 520, margin: '0 auto' }}>
+      {/* Plan */}
+      <div style={SECTION}>
+        <div style={LABEL}>Plan</div>
+        {loading ? (
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading…</div>
+        ) : isMember ? (
+          <>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <span style={{ color: 'var(--risk-l, #2e7d32)' }}>✓</span> Member
+            </div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              {membership?.status === 'active' ? 'Active' : (membership?.status || 'Active')}
+              {renews ? ` · renews ${renews}` : ''}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>Free</div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.45 }}>
+              Reading stays free. A membership includes a monthly allowance of custom analyses.
+            </div>
+          </>
+        )}
+        <Link to="/membership" className="btn-gp" style={{ display: 'inline-block', marginTop: '0.85rem' }}>
+          {isMember ? 'Manage membership' : 'See membership'}
+        </Link>
+      </div>
+
+      {/* Credits */}
+      <div style={SECTION}>
+        <div style={LABEL}>Analysis credits</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>{loading ? '—' : creditBalance}</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>credit{creditBalance === 1 ? '' : 's'}</span>
+        </div>
+        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.45 }}>
+          Each custom analysis in the Analysis Studio uses one credit{isMember ? ', after your included monthly allowance' : ''}.
+        </div>
+        <Link to="/membership" className="btn-gp" style={{ display: 'inline-block', marginTop: '0.85rem' }}>
+          Buy credits
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function Toggle({ checked, disabled, onChange, label }) {
   return (
     <button
@@ -517,6 +588,12 @@ export default function Account() {
           Profile
         </button>
         <button
+          className={`account-tab${tab === 'membership' ? ' account-tab--active' : ''}`}
+          onClick={() => setTab('membership')}
+        >
+          Membership
+        </button>
+        <button
           className={`account-tab${tab === 'saved' ? ' account-tab--active' : ''}`}
           onClick={() => setTab('saved')}
         >
@@ -546,6 +623,8 @@ export default function Account() {
           handleSignOut={handleSignOut}
         />
       )}
+
+      {tab === 'membership' && <MembershipPanel />}
 
       {tab === 'saved' && (
         <SavedPanel

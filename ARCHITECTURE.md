@@ -663,7 +663,7 @@ Generates the **Weekly Signals Brief** — a *signals digest* (NOT a synthesized
 
 ### 25. `newsWeeklyMarkets` — Weekly Markets Report (SHIPPED + first report PUBLISHED 2026-06-29)
 **Path:** `amplify/backend/function/newsWeeklyMarkets/src/index.js`
-**Trigger:** **Manual-invoke only** (no EventBridge schedule yet — mirrors the weekly-brief dry-run; add a `cron(0 7 ? * SUN *)`-class rule when trusted). Uses **DeepSeek V4** (coverage notes) + **Perplexity `sonar`** (web-context fallback). Plan: `WEEKLY_MARKETS_PLAN.md`.
+**Trigger:** EventBridge Rule `TriggerWeeklyMarkets` — `cron(30 8 ? * SUN *)` (Sundays 08:30 UTC, after the daily econ-impact pipeline so coverage is fresh). **Generates a DRAFT only** — a human still publishes via `weekly-markets/review.js` (the gate is kept). Uses **DeepSeek V4** (coverage notes) + **Perplexity `sonar`** (web-context fallback). Plan: `WEEKLY_MARKETS_PLAN.md`.
 
 The **price-first** weekly markets wrap — "what moved this week and why" — the instrument→explanation counterpart of `/economy` (news→instrument). Sibling of `newsWeeklyBrief`: generate draft → human approve → publish → serve.
 
@@ -866,6 +866,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `TriggerNewsEconomicQuality` | `cron(0 8 * * ? *)` | newsEconomicQuality (08:00 UTC daily) |
 | `TriggerPredictionResolver` | `cron(0 9 * * ? *)` | newsPredictionResolver (09:00 UTC daily) |
 | `TriggerWeeklyBrief` | `cron(0 6 ? * SUN *)` | newsWeeklyBrief (Sundays 06:00 UTC — generates the weekly signals draft) |
+| `TriggerWeeklyMarkets` | `cron(30 8 ? * SUN *)` | newsWeeklyMarkets (Sundays 08:30 UTC — generates the weekly markets-report draft) |
 | `newsSourceAuditDaily` | `cron(30 8 ? * * *)` | newsSourceAudit (#24 — daily source-truth audit; SNS-alerts on summary drift) |
 | `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
 | `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |

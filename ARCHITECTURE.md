@@ -920,7 +920,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 
 Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.
 
-Wired in `<Routes>` in `App.jsx` — 20 routes incl. catch-all (`/membership` added 2026-06-22; `/breaking` + `/breaking/:id` added 2026-06-26). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
+Wired in `<Routes>` in `App.jsx` — 21 routes incl. catch-all (`/membership` added 2026-06-22; `/breaking` + `/breaking/:id` added 2026-06-26; `/spider-demo` **unlisted throwaway prototype** added 2026-06-27). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
 
 | Path | Component | Access |
 |------|-----------|--------|
@@ -948,6 +948,7 @@ Wired in `<Routes>` in `App.jsx` — 20 routes incl. catch-all (`/membership` ad
 | `/auth/callback` | `AuthCallback.jsx` | Public |
 | `/membership` | `MembershipPage.jsx` | Public (Polar checkout — $15/mo · $150/yr for Analysis-Studio-on-our-compute; reading stays free) |
 | `/account` | `Account.jsx` | Auth |
+| `/spider-demo` | `SpiderDemo.jsx` | Public — ⚠ **unlisted throwaway prototype** (d3-force "causal web" demo over `systems_analysis`, Iran-only, not in nav; deployed for design-partner discovery). See `SPIDER_WEB_MODEL_PLAN.md` + `ANALYST_TOOL_DIRECTION.md` for the analyst-tool product direction it explores. |
 | `*` | `NotFound` (inline in App.jsx) | Public catch-all (404) |
 
 **Removed/never-wired:** a "Cut: orphans" cleanup deleted several components and routes, and the 2026-05-26 subscription deprecation removed billing UI. The following are **no longer routed and the component files no longer exist**: `/cli` (CLIPage), `/intelligence-map` (IntelligenceMap), `/test/briefing-card` (BriefingCardTest), `/pricing` (Pricing), `/weekly/pairs` + `/weekly/pair/:slug` (PairPage/PairListPage), `/upgrade/success` (UpgradeSuccess — billing). Also deleted in the billing cleanup: `TrialBanner.jsx`, `WeeklyLockedPreview.jsx`, `useUserProfile.js`. `WorldMap.jsx` and `WeeklyMap.jsx` still exist as files but are **not routed** (`/map` uses WorldMapV2; there is no `/weekly-map` or `/map-v2` route).

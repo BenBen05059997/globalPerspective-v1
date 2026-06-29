@@ -97,6 +97,21 @@ curl -s -o /dev/null -w "%{http_code}" <PROD_URL>   # MUST be 200
 
 `rm -rf <CLEAN_BUILD_DIRS>` first or you risk a no-op deploy (stale code ships, smoke still passes).
 
+## Deploy cadence — one push at a time (GitHub Pages concurrency trap)
+
+**Bit us 2026-06-30.** GitHub Pages deploys via a `github-pages` environment with **cancel-in-progress** concurrency: every push (or manual `POST /pages/builds`, or `gh run rerun`) creates a new deployment that **cancels the one still publishing**. Stacking ~5 pushes/triggers in a few minutes (source commit → deploy commit → docs commit → force-rebuild → empty re-trigger) made the *build* succeed every time but the *deploy* step fail with **"Deployment cancelled"** — looked like a hard breakage, was just self-inflicted thrash. After enough rapid failures, new pushes may **stop triggering builds at all** (Pages back-pressure). The site kept serving the prior-good bundle the whole time (200), so users saw nothing.
+
+Rules:
+- **Batch first, push once.** Land source + `docs/` + any doc updates in as few pushes as possible, then **let that one deploy settle** before the next push. `deploy.sh --commit … --push` already bundles build+docs into one commit — don't chase it with more pushes.
+- **Don't hammer to "fix" a failing deploy.** More triggers prolong the thrash. Wait for the in-flight run to finish.
+- **Diagnose before re-triggering:** the *build* vs *deploy* job tells you which half failed —
+  ```bash
+  gh api repos/<OWNER>/<REPO>/actions/runs --jq '.workflow_runs[0:5][]|{head:.head_sha[0:7],status,conclusion}'
+  gh api repos/<OWNER>/<REPO>/pages/builds/latest --jq '{status,commit:.commit[0:7],error:.error.message}'
+  ```
+  Build-OK + deploy-"cancelled" = concurrency, not content. Confirm it's not a real outage: GitHub Pages component on githubstatus.com.
+- **Verdict on liveness = the served bundle, not the API "errored" flag.** A superseded attempt shows `errored`/`cancelled` even though an earlier attempt published. Trust `curl <PROD_URL>/index.html | grep -o 'index-[A-Za-z0-9]*\.js'` matching the freshly-built hash.
+
 ## Quick checklist
 
 - [ ] `<VERIFY_CMD>` green
@@ -105,4 +120,5 @@ curl -s -o /dev/null -w "%{http_code}" <PROD_URL>   # MUST be 200
 - [ ] No generated artifacts / `.env*` / foreign files staged
 - [ ] `git commit -F -` with attribution trailer
 - [ ] Land via PR (diverged) or fast-forward (clean)
+- [ ] Deploying? → **one push, then let it settle** — don't stack pushes/reruns (Pages cancel-in-progress thrash)
 - [ ] If "live" is the goal → deploy is a separate, gated step

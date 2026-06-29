@@ -80,15 +80,6 @@
   flex-shrink: 0;
 }
 
-.spider-legend-dash {
-  width: 18px;
-  height: 2px;
-  border-top: 2px dashed #c08020;
-  display: inline-block;
-  flex-shrink: 0;
-  opacity: 0.7;
-}
-
 /* ── Body (graph + panel) ────────────────────────────────────────────────── */
 
 .spider-body {
@@ -129,10 +120,19 @@
 
 .spider-node-label {
   font-family: var(--sans);
-  font-size: 9px;
+  font-weight: 600;
   pointer-events: none;
   user-select: none;
-  fill: rgba(255, 255, 255, 0.92);
+  fill: var(--ink);
+  /* Halo so labels stay legible over edges / other nodes */
+  paint-order: stroke;
+  stroke: var(--paper-2);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.spider-node-label-selected {
+  fill: var(--accent-deep);
 }
 
 .spider-edge-g:hover line:last-of-type {
@@ -402,20 +402,6 @@
 }
 
 /* Edge panel */
-.spider-panel-temporal {
-  opacity: 0.85;
-}
-
-.spider-panel-temporal-note {
-  font-size: 0.78rem;
-  color: #c08020;
-  background: #fef9e7;
-  border: 1px solid #f0c060;
-  border-radius: 4px;
-  padding: 8px 10px;
-  line-height: 1.5;
-}
-
 .spider-panel-edge-flow {
   display: flex;
   flex-direction: column;
@@ -481,10 +467,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-}
-
-.spider-footer-flag {
-  color: #c08020;
 }
 
 .spider-footer-ts {

@@ -59,6 +59,24 @@ function parseCitation(s) {
   return (s || '').replace(/-\d+$/, '').trim();
 }
 
+// Short, readable STORY label for a node, derived from its summary so the graph
+// is legible without clicking. Drops a leading filler clause, trims trailing
+// punctuation, and keeps the first `maxWords` words.
+const LABEL_STOPWORDS = new Set(['the', 'a', 'an', 'in', 'of', 'on', 'and', 'to', 'as', 'at', 'for']);
+function storyLabel(summary, maxWords = 5) {
+  if (!summary) return '';
+  let words = summary
+    .replace(/[".]+$/g, '')
+    .split(/\s+/)
+    .filter(Boolean);
+  // Skip a leading stopword so the label opens on a content word.
+  while (words.length > maxWords + 1 && LABEL_STOPWORDS.has(words[0].toLowerCase())) {
+    words = words.slice(1);
+  }
+  const kept = words.slice(0, maxWords).join(' ').replace(/[,;:]$/, '');
+  return words.length > maxWords ? `${kept}…` : kept;
+}
+
 // Prediction content is a JSON-encoded { scenarios:[{label,probability_range,
 // horizon,rationale,triggers}] } string. Parse it into a renderable shape;
 // fall back to plain text if it isn't the expected JSON.
@@ -229,7 +247,7 @@ function SpiderGraph({ graphData, selectedNodeId, selectedEdgeId: selectedEdgeId
       aria-label="Iran causal web"
     >
       <defs>
-        {['strong', 'medium', 'weak', 'flagged'].map(k => (
+        {['strong', 'medium', 'weak'].map(k => (
           <marker
             key={k}
             id={`spider-arrow-${k}`}
@@ -240,18 +258,17 @@ function SpiderGraph({ graphData, selectedNodeId, selectedEdgeId: selectedEdgeId
             <path
               d="M0,0 L0,6 L8,3 z"
               fill={
-                k === 'strong'  ? '#c94a33'
-                : k === 'medium'  ? '#d89540'
-                : k === 'flagged' ? '#c08020'
-                :                   '#9a9a9e'
+                k === 'strong' ? '#c94a33'
+                : k === 'medium' ? '#d89540'
+                :                  '#9a9a9e'
               }
             />
           </marker>
         ))}
       </defs>
 
-      {/* Edges */}
-      {edges.map((e, i) => {
+      {/* Edges (temporal-anomaly / negative-lag edges are hidden entirely) */}
+      {edges.filter(e => !e._temporalFlag).map((e, i) => {
         const s = positions[e.from];
         const t = positions[e.to];
         if (!s || !t) return null;
@@ -272,16 +289,12 @@ function SpiderGraph({ graphData, selectedNodeId, selectedEdgeId: selectedEdgeId
         const mx = (x1 + x2) / 2;
         const my = (y1 + y2) / 2;
 
-        const isFlagged = e._temporalFlag;
-        const stroke = isSelected ? '#a2442e'
-          : isFlagged             ? '#c08020'
-          : confColor(e.confidence);
+        const stroke = isSelected ? '#a2442e' : confColor(e.confidence);
         const sw = isSelected ? 3
           : e.confidence === 'strong' ? 2.5
           : e.confidence === 'medium' ? 1.8
           : 1.2;
-        const markerId = isFlagged ? 'spider-arrow-flagged'
-          : e.confidence === 'strong' ? 'spider-arrow-strong'
+        const markerId = e.confidence === 'strong' ? 'spider-arrow-strong'
           : e.confidence === 'medium' ? 'spider-arrow-medium'
           : 'spider-arrow-weak';
 
@@ -300,8 +313,7 @@ function SpiderGraph({ graphData, selectedNodeId, selectedEdgeId: selectedEdgeId
               x1={x1} y1={y1} x2={x2} y2={y2}
               stroke={stroke}
               strokeWidth={sw}
-              strokeDasharray={isFlagged ? '5,3' : undefined}
-              opacity={isFlagged ? 0.5 : 0.75}
+              opacity={0.75}
               markerEnd={`url(#${markerId})`}
               className={isSelected ? 'spider-edge-selected' : ''}
             />
@@ -311,9 +323,9 @@ function SpiderGraph({ graphData, selectedNodeId, selectedEdgeId: selectedEdgeId
                 x={mx} y={my - 5}
                 className="spider-edge-lag"
                 textAnchor="middle"
-                fill={isFlagged ? '#c08020' : 'var(--ink-dim)'}
+                fill="var(--ink-dim)"
               >
-                {isFlagged ? `⚠ ${e.lagDays}d` : `${e.lagDays}d`}
+                {`${e.lagDays}d`}
               </text>
             )}
           </g>
@@ -327,7 +339,9 @@ function SpiderGraph({ graphData, selectedNodeId, selectedEdgeId: selectedEdgeId
         const r = nodeRadius(n.threadId);
         const isSelected = n.threadId === selectedNodeId;
         const fill = catFill(n.category);
-        const catLabel = (n.category || '').slice(0, 9);
+        // Story label below the node (category stays as the COLOR). Selected node
+        // gets a slightly fuller label.
+        const label = storyLabel(n.summary, isSelected ? 8 : 5);
 
         return (
           <g
@@ -344,18 +358,17 @@ function SpiderGraph({ graphData, selectedNodeId, selectedEdgeId: selectedEdgeId
             <circle
               r={r}
               fill={fill}
-              opacity={isSelected ? 1 : 0.8}
+              opacity={isSelected ? 1 : 0.85}
               stroke="var(--card)"
               strokeWidth={isSelected ? 2.5 : 1.5}
             />
             <text
               textAnchor="middle"
-              dy="0.35em"
-              className="spider-node-label"
-              fontSize={r > 28 ? 10 : 9}
-              fill="rgba(255,255,255,0.92)"
+              y={r + 13}
+              className={`spider-node-label${isSelected ? ' spider-node-label-selected' : ''}`}
+              fontSize={isSelected ? 12 : 10.5}
             >
-              {catLabel}
+              {label}
             </text>
           </g>
         );
@@ -500,16 +513,7 @@ function EdgePanel({ edge, nodeMap, onClose }) {
         style={{ background: confColor(edge.confidence), color: '#fff' }}
       >
         {edge.confidence || 'unrated'} confidence
-        {edge._temporalFlag && (
-          <span className="spider-panel-temporal"> · ⚠ temporal anomaly</span>
-        )}
       </div>
-
-      {edge._temporalFlag && (
-        <div className="spider-panel-temporal-note">
-          lagDays = {edge.lagDays} — effect precedes cause. This edge is flagged as temporally impossible for causal interpretation.
-        </div>
-      )}
 
       <div className="spider-panel-edge-flow">
         <div className="spider-panel-edge-node">{fromNode?.summary || edge.from}</div>
@@ -563,10 +567,6 @@ function Legend() {
           {label}
         </span>
       ))}
-      <span className="spider-legend-item">
-        <span className="spider-legend-dash" />
-        temporal anomaly
-      </span>
     </div>
   );
 }
@@ -606,7 +606,8 @@ export default function SpiderDemo() {
   }, []);
 
   const hasPanel = !!(selectedNode || selectedEdge);
-  const temporalFlagCount = graphData?.edges?.filter(e => e._temporalFlag).length || 0;
+  // Visible edges only — temporal-anomaly (negative-lag) edges are hidden.
+  const visibleEdgeCount = graphData?.edges?.filter(e => !e._temporalFlag).length || 0;
 
   return (
     <div className="spider-demo">
@@ -660,10 +661,7 @@ export default function SpiderDemo() {
 
       {graphData && !loading && (
         <div className="spider-footer">
-          {graphData.nodes.length} nodes · {graphData.edges.length} edges
-          {temporalFlagCount > 0 && (
-            <span className="spider-footer-flag"> · {temporalFlagCount} temporal anomaly flagged (dashed, ⚠)</span>
-          )}
+          {graphData.nodes.length} nodes · {visibleEdgeCount} edges
           {graphData.generatedAt && (
             <span className="spider-footer-ts"> · generated {graphData.generatedAt}</span>
           )}

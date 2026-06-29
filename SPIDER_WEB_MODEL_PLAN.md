@@ -81,7 +81,7 @@ Automated causal extraction from news is genuinely unreliable — this is the ev
 
 - This is a refinement of the **causal-web core** (Phase 2 of `ENTERPRISE_ANALYST_TOOL_PLAN.md`) + the prototype.
 - **Still gated by discovery** — don't rebuild before the analyst conversations confirm the wedge. The flip makes the *eventual* build right; it does not change the rule that validation comes first.
-- Cheap interim: the prototype's "labels = category" and foregrounded-anomaly issues can be fixed independently to make `/spider-demo` demo-safe (see prior review).
+- Cheap interim: ✅ DONE 2026-06-29 (commit `034cfe2`, deployed live) — `/spider-demo` now shows story-headline labels (not the category word) and hides the temporal-anomaly edges, making it demo-safe. The full flipped-model rebuild below remains gated by discovery.
 
 ---
 

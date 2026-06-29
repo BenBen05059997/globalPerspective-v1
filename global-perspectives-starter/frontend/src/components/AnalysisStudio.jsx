@@ -25,12 +25,12 @@ export default function AnalysisStudio() {
   // the public data hooks.
   const isRegistered = Boolean(user && !user.isAnonymous);
 
-  // Members run on OUR compute (no BYOK needed) — that convenience IS the paid product;
-  // reading the site stays free. Free registered users keep BYOK. isMember stays false
-  // until billing is configured (window.POLAR_BILLING_ENDPOINT), so this is a no-op until
-  // go-live. `memberRun` also requires the analyze endpoint to be wired.
-  const { isMember, available: billingAvailable } = useMembership();
-  const memberRun = isMember && analyzeConfigured();
+  // Running on OUR compute (no BYOK) is paid for by a member's monthly allowance OR by
+  // purchased credits — so any signed-in user with an allowance or a credit balance can use
+  // it. Free users with their own key keep BYOK (free). All gated behind the analyze endpoint
+  // being wired, so this is a no-op until go-live.
+  const { isMember, creditBalance, available: billingAvailable, refresh: refreshMembership } = useMembership();
+  const serverCapable = analyzeConfigured() && (isMember || creditBalance > 0);
 
   const [byok, setByok] = useState(() => loadByok());
   const [modalOpen, setModalOpen] = useState(false);
@@ -47,6 +47,7 @@ export default function AnalysisStudio() {
   const [webSources, setWebSources] = useState([]);
   const [checks, setChecks] = useState(null);
   const [sourceInfo, setSourceInfo] = useState(null);
+  const [ranOnServer, setRanOnServer] = useState(false); // did the last result use our compute?
   const [error, setError] = useState(null);
 
   const provider = byok ? getProvider(byok.provider) : null;
@@ -80,9 +81,10 @@ export default function AnalysisStudio() {
     setError(null);
     if (!isRegistered) return; // the sign-in gate overlay handles this
     const deep = mode === 'deep';
-    // Members run guided/free-form on our compute; deep research needs a web-search
-    // provider, so it stays BYOK even for members.
-    const useServer = memberRun && !deep;
+    // Server (our-compute) path for guided/free-form: members spend allowance-then-credits,
+    // non-members spend credits — but a non-member who has their own key keeps BYOK (free).
+    // Deep research needs a web-search provider, so it stays BYOK for everyone.
+    const useServer = serverCapable && !deep && (isMember || !byok);
     if (!useServer && !byok) { setModalOpen(true); return; }
     if (selectedTopics.length === 0) { setError('Pick at least one story to analyze.'); return; }
 
@@ -104,9 +106,11 @@ export default function AnalysisStudio() {
       let text = '';
       let web = [];
       if (useServer) {
-        // Member path: our compute (DeepSeek), server-pinned system prompt + fair-use cap.
+        // Our-compute path (DeepSeek), server-pinned system prompt; paid by allowance/credit.
         const r = await runMemberAnalysis(userMsg);
         text = r.report;
+        // Reflect the spent credit / used allowance in the chip + nudges.
+        if (refreshMembership) refreshMembership();
       } else {
         const r = await runChat({
           provider: byok.provider,
@@ -121,6 +125,7 @@ export default function AnalysisStudio() {
         web = r.webSources || [];
       }
       setReport(text);
+      setRanOnServer(useServer);
       setCitations(cites);
       setWebSources(web);
       // Enforce the honesty guardrails on what actually came back (the prompt only
@@ -131,8 +136,7 @@ export default function AnalysisStudio() {
         ? { citations: cites }
         : { citations: cites, context, thinInput: thinGuard }));
     } catch (err) {
-      if (err?.code === 'daily_limit') setError(`You've reached today's analysis limit${err.limit ? ` (${err.limit})` : ''}. It resets tomorrow.`);
-      else if (err?.code === 'membership_required') setError('This run needs an active membership.');
+      if (err?.code === 'out_of_credits') setError("You're out of analysis credits, and any monthly allowance is used up. Add credits or subscribe to keep analyzing.");
       else setError(err?.message || 'Analysis failed.');
     } finally {
       setRunning(false);
@@ -148,12 +152,14 @@ export default function AnalysisStudio() {
           <p className="as-sub">
             Pick the stories you care about, choose a lens or ask your own question, and get a
             cited deep-dive built from our intelligence.{' '}
-            {memberRun ? 'Included with your membership — no API key needed.' : 'Runs on your own API key.'}
+            {serverCapable
+              ? (isMember ? 'Included with your membership — no API key needed.' : `Runs on our compute — 1 credit per analysis (${creditBalance} left).`)
+              : 'Runs on your own API key.'}
           </p>
         </div>
         <button className="as-model-chip" onClick={() => setModalOpen(true)} title="Choose provider / model / key">
           <span className="as-chip-dot" />
-          {memberRun && !byok ? 'Member · included' : modelChip}
+          {serverCapable && !byok ? (isMember ? 'Member · included' : `Credits · ${creditBalance}`) : modelChip}
           <span className="as-chip-caret">▾</span>
         </button>
       </header>
@@ -274,15 +280,19 @@ export default function AnalysisStudio() {
           <button className="as-run" onClick={onRun} disabled={running}>
             {running ? 'Analyzing…' : 'Run analysis'}
           </button>
-          {memberRun ? (
-            <div className="as-hint">Included with your membership — no API key needed.</div>
+          {serverCapable ? (
+            <div className="as-hint">
+              {isMember
+                ? 'Included with your membership — no API key needed.'
+                : `Runs on our compute — uses 1 credit per analysis (${creditBalance} left).`}
+            </div>
           ) : !byok ? (
             <div className="as-hint">You'll be asked to choose a model + paste your API key first.</div>
           ) : null}
-          {!memberRun && billingAvailable && (
+          {!serverCapable && billingAvailable && (
             <div className="as-hint">
               Don't want to manage an API key?{' '}
-              <button className="as-link-btn" onClick={() => navigate('/membership')}>Run it on us with a membership →</button>
+              <button className="as-link-btn" onClick={() => navigate('/membership')}>Subscribe or buy credits to run it on us →</button>
             </div>
           )}
           {error && (
@@ -309,7 +319,7 @@ export default function AnalysisStudio() {
             )}
           </div>
           {running ? (
-            <div className="as-muted">Running on {memberRun && mode !== 'deep' ? 'Global Perspectives AI' : modelChip}…</div>
+            <div className="as-muted">Running on {serverCapable && mode !== 'deep' && (isMember || !byok) ? 'Global Perspectives AI' : modelChip}…</div>
           ) : (
             <>
               {sourceInfo && sourceInfo.total > 0 && (
@@ -375,7 +385,7 @@ export default function AnalysisStudio() {
                 </div>
               )}
               <p className="as-disclaimer">
-                Generated by {memberRun && webSources.length === 0 ? 'Global Perspectives AI' : 'your chosen model'} from our story data
+                Generated by {ranOnServer && webSources.length === 0 ? 'Global Perspectives AI' : 'your chosen model'} from our story data
                 {webSources.length > 0 && ' plus model-retrieved web sources (not verified by our pipeline)'}.
                 Treat as analyst input, not fact — verify load-bearing claims against the linked sources.
               </p>

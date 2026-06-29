@@ -31,6 +31,7 @@ export function useMembership() {
   return {
     membership,
     isMember: membership?.tier === 'member',
+    creditBalance: Number(membership?.creditBalance) || 0,
     available,
     loading,
     error,

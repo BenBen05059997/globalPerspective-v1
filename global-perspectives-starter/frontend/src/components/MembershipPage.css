@@ -81,3 +81,13 @@
   color: var(--ink-faint);
   line-height: 1.6;
 }
+
+/* Credit packs — top-ups for the Analysis Studio (added with the credit-buying feature). */
+.mp-credits { margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--line); }
+.mp-credits-title { font-family: var(--serif); font-size: var(--text-2xl); color: var(--ink); margin: 0 0 6px; text-align: center; }
+.mp-credits-sub { font-size: var(--text-sm); color: var(--ink-dim); text-align: center; margin: 0 0 var(--space-5); }
+.mp-packs { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+@media (max-width: 600px) { .mp-packs { grid-template-columns: 1fr; } }
+.mp-pack { padding: var(--space-5); text-align: center; }
+.mp-pack-credits { font-size: var(--text-md); font-weight: 600; color: var(--ink-dim); }
+.mp-pack-price { font-family: var(--serif); font-size: var(--text-3xl); color: var(--ink); margin: 6px 0 var(--space-4); }

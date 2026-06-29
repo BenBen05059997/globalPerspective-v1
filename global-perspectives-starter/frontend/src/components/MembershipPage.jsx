@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useMembership } from '../hooks/useMembership';
-import { createCheckout } from '../services/restProxy';
+import { createCheckout, createCreditCheckout, creditPacks } from '../services/restProxy';
 import './MembershipPage.css';
 
 const PLANS = [
@@ -15,22 +15,36 @@ const BENEFITS = [
   'Economic-impact / disruption analysis',
   'Daily + weekly intelligence briefings',
   'Forecast track record',
-  'Coming soon: credits for custom self-serve analysis',
+  'A monthly allowance of custom self-serve analyses (top up with credits anytime)',
 ];
 
 export default function MembershipPage() {
   const { user } = useAuth();
-  const { membership, isMember, available, loading } = useMembership();
+  const { membership, isMember, creditBalance, available, loading } = useMembership();
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
 
   const signedIn = user && !user.isAnonymous;
+  const packs = creditPacks();
 
   async function subscribe(plan) {
     setError(null);
     setBusy(plan);
     try {
       const { url } = await createCheckout(plan);
+      if (url) window.location.href = url;
+      else throw new Error('No checkout URL returned');
+    } catch (err) {
+      setError(err?.message || 'Could not start checkout.');
+      setBusy(null);
+    }
+  }
+
+  async function buyCredits(pack) {
+    setError(null);
+    setBusy(`credits:${pack.key}`);
+    try {
+      const { url } = await createCreditCheckout(pack.key);
       if (url) window.location.href = url;
       else throw new Error('No checkout URL returned');
     } catch (err) {
@@ -94,9 +108,40 @@ export default function MembershipPage() {
                 </div>
               ))}
             </div>
-            {error && <div className="mp-error">{error}</div>}
           </>
         )}
+
+        {available && signedIn && (
+          <section className="mp-credits">
+            <h2 className="mp-credits-title">Analysis credits</h2>
+            <p className="mp-credits-sub">
+              Each custom analysis in the <Link to="/analyze">Analysis Studio</Link> uses one credit.
+              Members get a monthly allowance included; anyone can top up.
+              {' '}You have <strong>{creditBalance}</strong> credit{creditBalance === 1 ? '' : 's'}.
+            </p>
+            {packs.length > 0 ? (
+              <div className="mp-packs">
+                {packs.map((p) => (
+                  <div key={p.key} className="mp-pack card-gp">
+                    <div className="mp-pack-credits">{p.credits} credits</div>
+                    {p.price && <div className="mp-pack-price">{p.price}</div>}
+                    <button
+                      className="mp-subscribe"
+                      onClick={() => buyCredits(p)}
+                      disabled={busy !== null || loading}
+                    >
+                      {busy === `credits:${p.key}` ? 'Starting checkout…' : 'Buy credits'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mp-notice">Credit packs are coming soon.</div>
+            )}
+          </section>
+        )}
+
+        {error && <div className="mp-error">{error}</div>}
 
         <p className="mp-fineprint">
           Payments are processed securely by Polar (our Merchant of Record). Informational intelligence

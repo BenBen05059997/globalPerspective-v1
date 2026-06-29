@@ -1,5 +1,27 @@
 # Global Perspectives — Change Log
 
+## 2026-06-30 (feat: consolidate Weekly Markets into /economy — Today/This-week toggle)
+
+The standalone `/weekly-markets` page is now a **second mode of `/economy`**, behind a **Today / This week** segmented toggle — one markets home, two clearly-tagged modes. Avoids a second econ nav item + page fragmentation while keeping the calm weekly read distinct from the dense live dashboard. Merged to main (`41f2b5a`); `npm run verify` green (0 ESLint errors, 178 tests); **not yet built/deployed**.
+
+- **Toggle + URL state.** `EconomyPage` gains a `view` state seeded from `?view=` (`week` → This-week, else Today; default Today), folded into the existing `buildParams`/parse helpers and both URL effects so the choice is **shareable, refresh-safe, and survives a filter/sort rewrite** (the old `buildParams` rebuilt the whole query string and would have dropped a stray param). Segmented control in the masthead; the live timestamp shows only in Today mode.
+- **New `WeeklyMarketsView` component** (extracted from the old page) renders the "This week" wrap in its **own centered editorial layout** (NOT the 3-col dashboard grid): explained movers (coverage/web tiers) featured as cards (note + linked stories + severity chips); the ~80% "no clear driver found" collapse into a quiet, scannable compact list (honest absence, not an error); deterministic % move + week range as the trustworthy anchor (green ▲ / red ▼); reviewed/weekly tagging; honest empty state.
+- **`/weekly-markets` is now a redirect permalink** — `WeeklyMarketsPage` returns `<Navigate to="/economy?view=week">` preserving the `#instrument` hash, so all inbound deep-links (Home, Map, Country, Thread economy tab) and shared/SEO links keep landing on the right mover row (`WeeklyMarketsView` re-scrolls once async data renders).
+- **Removed the standalone "Markets" nav item** from `Layout.jsx` — one "Economy" entry.
+
+Files: `…/src/components/{EconomyPage.jsx,EconomyPage.css,Layout.jsx,WeeklyMarketsPage.jsx}`, new `…/src/components/{WeeklyMarketsView.jsx,WeeklyMarketsView.css}`, deleted `…/src/components/WeeklyMarketsPage.css`, `ARCHITECTURE.md`.
+
+## 2026-06-30 (feat: purchasable analysis credits — subscription allowance + credit top-ups)
+
+Adds **credit-buying** to the Analysis Studio billing model, extending the pure-subscription setup. Decisions locked with the operator: members get a **monthly allowance** of free runs, then spend **credits**; **any signed-in user** can buy credits and run pay-as-you-go (no subscription required); **1 credit = 1 run**, flat. Code built + `npm run verify` green (0 ESLint errors, 178 tests); **not deployed** (Lambda upload + Polar product creation are operator steps).
+
+- **`newsAnalyze` metering reworked.** Dropped the hard `tier=member` gate and the daily counter. New `consume()`: (1) member within `MEMBER_MONTHLY_ALLOWANCE` → free run (monthly counter `analyzeMonth`/`analyzeCount`); (2) else (member over allowance, or any signed-in non-member) → **atomic, conditional** credit decrement (`ADD creditBalance -1` guarded by `creditBalance >= 1`) so concurrent runs can't go negative; (3) neither → `402 out_of_credits`. A failed LLM call after a credit was spent **refunds** the credit.
+- **`newsPolarBilling` credit packs.** `create_checkout` gains a `kind:'credits'` + `pack` path → one-time Polar product (server-resolved). Webhook `order.paid` now distinguishes a **credit-pack order** (→ idempotent `ADD creditBalance`, deduped by a `processedOrders` string set so retries can't double-credit) from a **subscription order** (→ `tier=member`, unchanged). `get_membership` returns `creditBalance`. Credit amounts are server-authoritative (env `POLAR_CREDIT_PACKS`, never client-supplied).
+- **Frontend.** `MembershipPage` gains an "Analysis credits" section (balance + buy-pack cards; honest "coming soon" until `window.POLAR_CREDIT_PACKS` is set). `AnalysisStudio` server path now opens to members **and** credit-holders (non-members with their own key keep BYOK); chip/hints show membership-vs-credit state; `out_of_credits` prompts to subscribe/buy. `restProxy` adds `createCreditCheckout`/`creditPacks`; `useMembership` exposes `creditBalance`.
+- **Operator to-do before go-live:** create one-time credit-pack products in Polar; set `POLAR_CREDIT_PACKS` (billing Lambda) + `MEMBER_MONTHLY_ALLOWANCE` (analyze Lambda); add `window.POLAR_CREDIT_PACKS` to `docs/config.js`; deploy both Lambdas. See `POLAR_BILLING_PLAN.md`.
+
+Files: `amplify/backend/function/{newsPolarBilling,newsAnalyze}/src/index.js`, `…/src/services/restProxy.js`, `…/src/hooks/useMembership.js`, `…/src/components/{MembershipPage.jsx,MembershipPage.css,AnalysisStudio.jsx}`, `POLAR_BILLING_PLAN.md`, `ARCHITECTURE.md`.
+
 ## 2026-06-29 (feat: weekly-markets quality benchmark — Gemini LLM-as-judge gate)
 
 Coverage notes in the Weekly Markets Report must now **clear a quality benchmark or be dropped to "no clear driver found"** — an honest blank beats weak/backwards analysis. A multi-agent review of the first report flagged 2 of 4 notes (VIX explained a volatility *drop* with risk-off headlines that imply the opposite; REMX grounded a rare-earths ETF in a tangential coal/solar story with filler).

@@ -344,20 +344,33 @@ async function polarRequest(action, extra = {}) {
   return body;
 }
 
-// Create a Polar Checkout Session for the signed-in user; returns { url } to redirect to.
+// Create a subscription Polar Checkout Session; returns { url } to redirect to.
 export async function createCheckout(plan) {
   return polarRequest('create_checkout', { plan });
 }
 
-// Current membership for the signed-in user: { tier, status, currentPeriodEnd }.
+// Create a one-time credit-pack checkout (pack = a key from window.POLAR_CREDIT_PACKS).
+export async function createCreditCheckout(pack) {
+  return polarRequest('create_checkout', { kind: 'credits', pack });
+}
+
+// Credit packs the operator has configured (set in docs/config.js). Each entry:
+// { key, label?, credits, price? }. Empty/unset ⇒ buy-credits UI shows an honest "coming soon".
+export function creditPacks() {
+  const packs = (typeof window !== 'undefined' && window.POLAR_CREDIT_PACKS) || [];
+  return Array.isArray(packs) ? packs : [];
+}
+
+// Current membership for the signed-in user: { tier, status, currentPeriodEnd, creditBalance }.
 export async function fetchMembership() {
   return polarRequest('get_membership');
 }
 
 // ── Member-side Analysis Studio (newsAnalyze Lambda, separate Function URL) ──────
 // Members run analyses on our compute (no BYOK). Endpoint set in docs/config.js
-// (window.NEWS_ANALYZE_ENDPOINT). Throws an Error with `.code` on a structured failure
-// (membership_required / daily_limit) so the UI can message it.
+// (window.NEWS_ANALYZE_ENDPOINT). A run is paid by the member monthly allowance, else a
+// purchased credit. Throws an Error with `.code` on a structured failure (out_of_credits)
+// so the UI can prompt to subscribe / buy credits.
 export function analyzeConfigured() {
   return typeof window !== 'undefined' && !!window.NEWS_ANALYZE_ENDPOINT;
 }

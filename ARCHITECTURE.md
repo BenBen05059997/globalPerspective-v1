@@ -1,6 +1,6 @@
 # Global Perspectives — Architecture Overview
 
-**Last verified:** 2026-06-26 (refresh: breaking-alert **web surface** LIVE — `/breaking` feed + `/breaking/:id` detail + Home/Map `BreakingStrip`, bell rewired off the thread page; `newsRecommend` `get_alert` + enriched `list_alerts` deployed. Prior: `src/tokens.js` single source for risk/category colors [P2a]; P0/P1 + systems-graph product-improvement work deployed live; Stooq→Yahoo markets migration, Polar membership LIVE + `newsAnalyze`/`newsPolarBilling`, `/membership` route, `newsPostDevTo` TZ correction)
+**Last verified:** 2026-06-29 (refresh: **Weekly Markets Report** LIVE — price-first `/weekly-markets` "what moved & why" wrap via the new `newsWeeklyMarkets` Lambda [#25] + `weekly_markets` serve action, first report published & browser-tested; deterministic moves + 3 honesty-layered grounding tiers; a markets-history gap [06-06..06-21] was backfilled (delete-null-rows → seed_history), also fixing `/economy` sparklines. Prior: breaking-alert **web surface** LIVE — `/breaking` feed + `/breaking/:id` detail + Home/Map `BreakingStrip`, bell rewired off the thread page; `newsRecommend` `get_alert` + enriched `list_alerts` deployed. Prior: `src/tokens.js` single source for risk/category colors [P2a]; P0/P1 + systems-graph product-improvement work deployed live; Stooq→Yahoo markets migration, Polar membership LIVE + `newsAnalyze`/`newsPolarBilling`, `/membership` route, `newsPostDevTo` TZ correction)
 
 > **For the code-grounded, evidence-based wiring of frontend↔backend↔DDB, see [`SYSTEM_WIRING.md`](./SYSTEM_WIRING.md). For evidence-based optimization findings (incl. measured speedups), see [`OPTIMIZATION_REPORT.md`](./OPTIMIZATION_REPORT.md).**
 
@@ -307,6 +307,7 @@ Read-only REST proxy. All supported actions:
 | `systems_analysis` | None (early access) | `{ countryName }` | Causal graph (nodes/edges) for a country |
 | `daily_brief` | None (early access) | `{ dateKey }` | Daily Intelligence Brief for a specific date |
 | `weekly_brief` | None | — | Latest **published** Weekly Signals Brief (`{ format:'signals', weekOf, asOf, signals[], watch[] }`); null until one is published via weekly/review.js. Powers `/weekly-brief` |
+| `weekly_markets` | None | — | Latest **published** Weekly Markets Report (`{ weekOf, asOf, movers[], excluded[] }`); null until one is published via weekly-markets/review.js. Powers `/weekly-markets` |
 | `pair_analysis` | None (early access) | `{ pair: "slug" }` | Bilateral relationship analysis for a country pair |
 | `pair_analyses_list` | None (early access) | — | All pair analyses (DDB Scan, sorted list) |
 | `economic_impact` | None (early access) | `{ threadId }` | Per-thread economic disruption analysis |
@@ -660,6 +661,23 @@ Generates the **Weekly Signals Brief** — a *signals digest* (NOT a synthesized
 
 ---
 
+### 25. `newsWeeklyMarkets` — Weekly Markets Report (SHIPPED + first report PUBLISHED 2026-06-29)
+**Path:** `amplify/backend/function/newsWeeklyMarkets/src/index.js`
+**Trigger:** **Manual-invoke only** (no EventBridge schedule yet — mirrors the weekly-brief dry-run; add a `cron(0 7 ? * SUN *)`-class rule when trusted). Uses **DeepSeek V4** (coverage notes) + **Perplexity `sonar`** (web-context fallback). Plan: `WEEKLY_MARKETS_PLAN.md`.
+
+The **price-first** weekly markets wrap — "what moved this week and why" — the instrument→explanation counterpart of `/economy` (news→instrument). Sibling of `newsWeeklyBrief`: generate draft → human approve → publish → serve.
+
+**What it does:**
+1. Scans `GlobalPerspectiveMarkets` `HISTORY#` rows for the tracked universe and computes each instrument's ~1-week % move **deterministically** (never via LLM — same transpose the `markets_global` serve action uses). Guards: `MAX_ANCHOR_AGE_DAYS=14` (reject a stale week-ago anchor across a data gap — caught a bogus COPPER −99%), `MIN_MOVE_PCT` (drop flat rows), ≥100% sanity ceiling. Thin/gappy instruments → `excluded[]` ("history accruing").
+2. Selects the top movers by |%|. Per mover, three **honesty-layered** grounding tiers, kept visibly distinct: **coverage** (recent `ECON#THREAD#`/`ECONOMIC_IMPACT` records citing it, ~9-day window → a short DeepSeek note grounded only in our headlines), **web** (Perplexity `sonar` self-searches + cites, framed as candidate drivers not causation), or honest **none** ("no clear driver found"). Every tier degrades gracefully — an LLM/key error never blocks the report or fabricates a cause.
+3. Writes `WEEKLY_MARKETS#{weekKey}` / `WEEKLY_MARKETS`, `status:'draft'` (180-day TTL). A human publishes via `node weekly-markets/review.js` (status → published) before it's served; served by the `weekly_markets` proxy action → `/weekly-markets` (`useWeeklyMarkets`).
+
+**Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `MARKETS_DDB_TABLE` (=`GlobalPerspectiveMarkets`), `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values), `PERPLEXITY_API_KEY` (the only genuinely new var — **unset today**, so the web tier degrades to "none"; optional `PERPLEXITY_MODEL`/`PERPLEXITY_API_URL`), `WEEKLY_TOP_MOVERS`, `MIN_MOVE_PCT`, `COVERAGE_WINDOW_DAYS`. **Role:** `newsWeeklyMarkets-role` (Scan/Get on GlobalPerspectiveMarkets, Scan/Get/Put on SummarizeAndPredict).
+
+> **Markets-history backfill gotcha (2026-06-29):** `newsMarketsData` `seed_history` **skips dates whose `HISTORY#` row already exists** (`historyRowExists`). The Stooq→Yahoo outage left **null-valued** rows for 06-06..06-21, so seed_history wouldn't refill them. Fix = **delete the null rows, then re-run seed_history** (Yahoo `range=2mo` refills weekdays). This also repaired the `/economy` sparklines. Cross-page links into `/weekly-markets` live on Home/Map/Country/Thread (Economy tab)/Economy.
+
+---
+
 ## Observability & Monitoring
 
 Two layers, both roll-your-own (the user rejects paid Sentry on cost):
@@ -728,6 +746,7 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 | `SYSTEMS#{countryName}` | `SYSTEMS_ANALYSIS` | newsSystemsAnalysis | nodes[], edges[] with causal graph, confidence levels, citations (14-day TTL) |
 | `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL) |
 | `WEEKLY_BRIEF#{weekKey}` | `WEEKLY_BRIEF` | newsWeeklyBrief (#23) | Weekly **signals** digest (`format:'signals'`): `signals[{kind('threat'|'development'),lede,fact,soWhat,riskLevel,riskScore,region,asOf,sources,related}]` + `watch[{event,date,stake}]`. LLM writes kind/lede/fact/soWhat only; risk/region/asOf/sources are deterministic. `kind` drives the chip — threats get a color-coded RISK chip, developments a neutral chip (so cooperative stories aren't shown as red risks). `status` draft→published via weekly/review.js (180-day TTL) |
+| `WEEKLY_MARKETS#{weekKey}` | `WEEKLY_MARKETS` | newsWeeklyMarkets (#25) | Weekly **markets** report (price-first): `movers[{instrumentId,name,changePct,direction,weekStart,weekEnd,grounding('coverage'|'web'|'none'),note,coverage[{threadId,headline,severity}],sources[{title,url}]}]` + `excluded[]` (thin/gappy history). The %/direction/anchors are **deterministic** (from MARKETS history, never LLM); the LLM writes only the per-mover `note`. `status` draft→published via weekly-markets/review.js (180-day TTL) |
 | `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata), active conflicts (ACLED), leadership change detection (90-day TTL) |
 | `ECON#THREAD#{threadId}` | `ECONOMIC_IMPACT` | newsEconomicImpact | direction, magnitude, instruments, analog, marketSnapshot, citations; quality scores added by newsEconomicQuality (21-day TTL) |
 | `TOPIC#{topicId}` | `RESEARCH_BRIEFING` | NewsProjectInvokeAgentLambda | Research briefing (first pass of two-pass prediction) |
@@ -885,6 +904,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | Google Maps | WeeklyMap.jsx (embedded by CountryPage), WorldMap.jsx (legacy, unrouted) | Interactive map rendering. **Note:** WorldMapV2 (`/map`) uses **d3 + topojson**, not Google Maps |
 | Firebase Auth | AuthContext.jsx + newsSensitiveData + newsSavedItems | Passwordless sign-in + JWT verification |
 | Resend (`api.resend.com`) | newsBreakingAlert (#21, not deployed) | Transactional/alert email send. Chosen over SES 2026-06-10 (DX + no sandbox-approval wait). Key from `RESEND_API_KEY`. The recs/digest email also targets Resend. |
+| Perplexity `sonar` (`api.perplexity.ai`) | newsWeeklyMarkets (#25) | Self-searching LLM for the weekly-markets **web-context** tier (model searches + cites). Key `PERPLEXITY_API_KEY` — **unset today**, so the tier degrades to "no clear driver found" (honest). |
 
 > Paddle (billing + Customer Portal) was removed 2026-06-01 — the `newsStripeWebhook` Lambda and the billing proxy actions are gone. See [Lambda #12](#12-newsstripewebhook-name-was-legacy--handled-paddle--removed-2026-06-01).
 
@@ -914,6 +934,7 @@ Wired in `<Routes>` in `App.jsx` — 20 routes incl. catch-all (`/membership` ad
 | `/daily` | `DailyPage.jsx` | Public |
 | `/daily/:dateKey` | `DailyPage.jsx` | Public |
 | `/weekly-brief` | `WeeklyBriefPage.jsx` | Public (serif long-read of the latest published weekly brief) |
+| `/weekly-markets` | `WeeklyMarketsPage.jsx` | Public (price-first weekly markets report — "what moved this week & why"; honest empty state until published) |
 | `/breaking` | `BreakingFeedPage.jsx` | Public (the breaking-alert feed — confirmed alerts grouped by day; honest empty state) |
 | `/breaking/:id` | `BreakingDetailPage.jsx` | Public (single breaking alert: What happened / How we got here / Our read / Market impact / Sources) |
 | `/economy` | `EconomyPage.jsx` | Public |
@@ -995,6 +1016,7 @@ Wired in `<Routes>` in `App.jsx` — 20 routes incl. catch-all (`/membership` ad
 | `useNotifications()` | Fetch the public breaking-alert feed (newsRecommend `list_alerts`, 5-min poll) + a localStorage read-marker for the unread badge; powers the nav `NotificationBell`, the `/breaking` feed, and the `BreakingStrip` |
 | `useBreakingAlert(id)` | Fetch a single breaking alert (newsRecommend `get_alert`); powers `/breaking/:id`. Null (→ honest not-found) when the id isn't a confirmed alert |
 | `useWeeklyBrief()` | Fetch the latest published weekly brief (`weekly_brief`); 30-min cache; powers `/weekly-brief` (rendered via the dependency-free `Markdown.jsx`) |
+| `useWeeklyMarkets()` | Fetch the latest published weekly markets report (`weekly_markets`); 30-min cache; powers `/weekly-markets`. Null (→ honest empty state) until one is published |
 | `useSummary(topicId)` | Fetch AI summary for a topic |
 | `usePrediction(topicId)` | Fetch AI prediction for a topic |
 | `useTraceCause(topicId)` | Fetch trace_cause deep context for a topic |
@@ -1065,6 +1087,8 @@ restProxy.js
     └─ geocodeProxy(address)
     └─ fetchCountryPreview(countryName)   ← SEO public preview
     └─ fetchThreadPreview(threadId)       ← SEO public preview
+    └─ fetchWeeklyBrief()                 ← weekly_brief (latest published)
+    └─ fetchWeeklyMarkets()               ← weekly_markets (latest published)
 
   proxyActionWithAuth(action, payload)    ← attaches Bearer token if signed in; backend no longer requires it
     └─ (used internally by the archive/thread/country/daily helpers above; the billing

@@ -577,7 +577,7 @@ export default function EconomyPage() {
         <div className="ep-timestamp">
           {marketsTime ? <>as of <b>{marketsTime}</b><br /></> : null}
           5-min snapshot · refreshes hourly<br />
-          prices: Frankfurter / Stooq / CoinGecko
+          prices: Frankfurter / Yahoo / CoinGecko
         </div>
       </div>
 
@@ -989,7 +989,7 @@ export default function EconomyPage() {
           <div className="ep-mkt-foot">
             Snapshot refreshes hourly.<br />
             {marketsTime && <>Last refresh {marketsTime}.<br /></>}
-            Source: Frankfurter · Stooq · CoinGecko.
+            Source: Frankfurter · Yahoo · CoinGecko.
           </div>
         </aside>
 

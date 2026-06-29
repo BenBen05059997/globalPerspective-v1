@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-06-29 (feat: weekly-markets quality benchmark — Gemini LLM-as-judge gate)
+
+Coverage notes in the Weekly Markets Report must now **clear a quality benchmark or be dropped to "no clear driver found"** — an honest blank beats weak/backwards analysis. A multi-agent review of the first report flagged 2 of 4 notes (VIX explained a volatility *drop* with risk-off headlines that imply the opposite; REMX grounded a rare-earths ETF in a tangential coal/solar story with filler).
+
+- **`newsWeeklyMarkets` gate:** after DeepSeek writes a coverage note, **Gemini 2.5 Flash** (different model family → less-correlated errors, mirrors `newsEconomicQuality`) judges it on three binary axes — **faithful** / **direction-coherent** / **informative**. Fail any → grounding drops to `none`; the rejected note + reason are kept (`noteJudge`/`rejectedNote`). Fail-open only if no judge key. Added `JUDGE_*` env vars + timeout 300s.
+- **Verified live:** regenerated 06-29 report — Gemini independently reproduced the multi-agent verdict (VIX + REMX dropped; BRENT + WTI passed). Live report = 2 vetted coverage notes + 8 honest blanks.
+
+Files: `amplify/backend/function/newsWeeklyMarkets/src/index.js`, `ARCHITECTURE.md`.
+
 ## 2026-06-29 (ux: unify ThreadPage tabs + promote CountryPage causal graph to a center tab)
 
 Layout cleanup on the two narrative-intelligence pages, after a review flagged the right rail being overloaded and ThreadPage having two competing tab systems. Built + reviewed live in an isolated worktree, approved, merged.

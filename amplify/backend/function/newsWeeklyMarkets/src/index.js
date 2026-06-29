@@ -38,6 +38,15 @@ const PPLX_KEY = process.env.PERPLEXITY_API_KEY || '';
 const PPLX_MODEL = process.env.PERPLEXITY_MODEL || 'sonar';
 const PPLX_ENDPOINT = process.env.PERPLEXITY_API_URL || 'https://api.perplexity.ai/chat/completions';
 
+// Quality gate (LLM-as-judge). A coverage note must CLEAR THE BENCHMARK or it's dropped to
+// "no clear driver found" rather than shipped weak. Judged by Gemini — a DIFFERENT model
+// family from the DeepSeek producer, so judge errors are less correlated (mirrors
+// newsEconomicQuality). Off (fail-open) only if no judge key is configured.
+const JUDGE_KEY = process.env.JUDGE_API_KEY || '';
+const JUDGE_MODEL = process.env.JUDGE_MODEL || 'gemini-2.5-flash';
+const JUDGE_ENDPOINT = process.env.JUDGE_API_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+const JUDGE_DELAY_MS = parseInt(process.env.JUDGE_DELAY_MS || '6000', 10); // Gemini free-tier pacing
+
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 // The markets table is a fixed public table (same constant the markets_global serve action uses).
 const MARKETS_TABLE = process.env.MARKETS_DDB_TABLE || 'GlobalPerspectiveMarkets';
@@ -121,10 +130,25 @@ exports.handler = async (event = {}) => {
     };
 
     if (coverage.length) {
-      // (a) We have a story → DeepSeek writes a SHORT note grounded ONLY in our records.
-      mover.grounding = 'coverage';
-      mover.coverage = coverage.slice(0, 4);
-      mover.note = await coverageNote(m, mover.coverage);
+      // (a) We have a story → DeepSeek writes a SHORT note grounded ONLY in our records,
+      // then it must CLEAR THE QUALITY BENCHMARK (Gemini judge: faithful + direction-coherent +
+      // informative). A note that fails is DROPPED to "no clear driver found" rather than
+      // shipped weak — an honest blank beats a backwards/irrelevant explanation.
+      const cov = coverage.slice(0, 4);
+      const note = await coverageNote(m, cov);
+      const verdict = await judgeCoverageNote(m, note, cov);
+      if (verdict.pass) {
+        mover.grounding = 'coverage';
+        mover.coverage = cov;
+        mover.note = note;
+        mover.noteJudge = verdict;            // transparency: why it passed
+      } else {
+        // Failed the benchmark → honest blank, but keep the rejected note + reason for review/debug.
+        mover.noteJudge = verdict;
+        mover.rejectedNote = note;
+        console.log(`[weekly-markets] ${m.instrumentId} note FAILED benchmark (${verdict.reason}) → "no clear driver found"`);
+      }
+      if (JUDGE_KEY) await sleep(JUDGE_DELAY_MS); // Gemini free-tier RPM pacing
     } else {
       // (b) No story → Perplexity sonar (self-searching LLM) returns a CITED web-context note.
       const web = await webContextNote(m);
@@ -329,6 +353,66 @@ Return ONLY valid JSON, no code fences: { "note": "..." }`;
   }
 }
 
+// ── Quality benchmark (LLM-as-judge, Gemini — different family from the producer) ──
+// A coverage note must pass THREE binary axes or it's dropped to "no clear driver found":
+//   faithful  — grounded in the provided coverage; uses the MOST relevant headline; no invented specifics
+//   coherent  — the cited cause plausibly explains a move in the ACTUAL direction (a cause that
+//               would push the instrument the opposite way fails — e.g. "risk-off → VIX down")
+//   informative — a concrete candidate reason, not vague filler ("may impact … dynamics")
+// Fail-open ONLY when no judge key is configured (so the gate never silently blocks everything).
+// Returns { pass, faithful, coherent, informative, reason }.
+async function judgeCoverageNote(mover, note, coverage) {
+  if (!JUDGE_KEY) return { pass: true, skipped: 'no judge key', faithful: null, coherent: null, informative: null, reason: 'gate disabled (no JUDGE_API_KEY)' };
+
+  const dir = mover.direction === 'up' ? 'UP' : 'DOWN';
+  const prompt = `You are a strict markets-analysis QUALITY JUDGE. An AI wrote a one-line note explaining why an instrument moved this week. Judge it on three BINARY axes. Be skeptical; when in doubt, fail.
+
+INSTRUMENT: ${mover.name} (${mover.instrumentId}) moved ${dir} ${Math.abs(mover.changePct)}% this week.
+NOTE: "${note}"
+OUR COVERAGE (the only allowed grounding):
+${coverage.map((c, i) => `${i + 1}. ${c.headline || '(no headline)'}`).join('\n')}
+
+Axes (true = passes):
+- "faithful": the note's cause appears in the coverage above, and it uses the MOST relevant headline (not a tangential one while ignoring a clearly on-point one); no invented events/figures/dates.
+- "coherent": the cited cause plausibly explains a move in the ACTUAL direction (${dir}). If the cause would normally push this instrument the OPPOSITE way (e.g. risk-off/sell-off/escalation normally pushes VIX UP, eased supply pushes oil DOWN), mark FALSE.
+- "informative": gives a concrete candidate reason, not vague filler like "may impact sector dynamics".
+
+"pass" = faithful AND coherent AND informative.
+Return ONLY valid JSON, no code fences: { "faithful": true, "coherent": true, "informative": true, "pass": true, "reason": "<= 12 words" }`;
+
+  try {
+    const content = await invokeJudge(prompt);
+    const p = parseJson(content);
+    const faithful = p.faithful === true, coherent = p.coherent === true, informative = p.informative === true;
+    const pass = faithful && coherent && informative;
+    return { pass, faithful, coherent, informative, reason: typeof p.reason === 'string' ? p.reason.trim() : '' };
+  } catch (err) {
+    // Judge failure is fail-OPEN (keep the note) — the human review gate is the backstop, and we
+    // don't want a transient Gemini error to blank an otherwise-good report. Logged for visibility.
+    console.warn(`[weekly-markets] judge failed for ${mover.instrumentId}: ${err.message} — keeping note (review gate backstop)`);
+    return { pass: true, error: err.message, faithful: null, coherent: null, informative: null, reason: 'judge unavailable' };
+  }
+}
+
+// Gemini call (OpenAI-compatible). Large max_tokens because Gemini 2.5 thinking tokens count
+// against the cap (mirrors newsEconomicQuality); we only need the small JSON verdict back.
+async function invokeJudge(prompt) {
+  const res = await fetch(JUDGE_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${JUDGE_KEY}` },
+    body: JSON.stringify({
+      model: JUDGE_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 4000,
+      temperature: 0,
+    }),
+  });
+  const raw = await res.text();
+  let parsed; try { parsed = JSON.parse(raw); } catch { parsed = raw; }
+  if (!res.ok) throw new Error(`judge error: ${parsed?.error?.message || raw || res.status}`);
+  return extractContent(parsed);
+}
+
 // ── Web-context note (Perplexity sonar — the model searches the web itself) ───────
 // Returns { note, sources:[{title,url}] } or null. Graceful degrade: missing key / error /
 // no citations ⇒ null, so the mover falls back to grounding:'none' ("No clear driver found").
@@ -421,3 +505,5 @@ function stripCodeFence(v) {
   if (typeof v !== 'string') return v;
   return v.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').replace(/,(\s*[\]}])/g, '$1').trim();
 }
+
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }

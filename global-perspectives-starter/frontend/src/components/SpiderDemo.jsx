@@ -2,19 +2,12 @@
 // Deletable in one commit: remove this file, SpiderDemo.css, and the route line in App.jsx.
 // Do NOT touch any other component, hook, or backend.
 //
-// Renders a d3-force node-link causal graph of Iran systems-analysis data.
+// Renders a timeline+lane causal web of Iran systems-analysis data.
 // Reuses: useSystemsAnalysis, useNarrativeThread, fetchPredictionCache,
 //         threadPath, CompactTimeline — all read-only.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  forceSimulation,
-  forceLink,
-  forceManyBody,
-  forceCenter,
-  forceCollide,
-} from 'd3-force';
 import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
 import { useNarrativeThread } from '../hooks/useNarrativeThread';
 import { fetchPredictionCache } from '../services/restProxy';
@@ -23,35 +16,47 @@ import CompactTimeline from './CompactTimeline';
 import './SpiderDemo.css';
 
 const DEMO_COUNTRY = 'Iran';
-const SVG_W = 880;
-const SVG_H = 620;
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Category / lane config ────────────────────────────────────────────────────
 
+const LANE_ORDER = ['conflict', 'diplo', 'energy', 'econ', 'politics', 'other'];
+
+const LANE_META = {
+  conflict: { label: 'Military / Conflict', color: '#c0492f', soft: '#f7e6e1' },
+  diplo:    { label: 'Diplomacy',           color: '#3a6ea5', soft: '#e6eef6' },
+  energy:   { label: 'Energy',              color: '#3f8f6b', soft: '#e6f1ec' },
+  econ:     { label: 'Economics',           color: '#c9912f', soft: '#f8f0dd' },
+  politics: { label: 'Politics',            color: '#8a3526', soft: '#f3e4e0' },
+  other:    { label: 'Other',               color: '#7d5ba6', soft: '#efe9f5' },
+};
+
+function categoryToLane(category) {
+  if (!category) return 'other';
+  const lower = category.toLowerCase();
+  if (/military|conflict|war|security/.test(lower)) return 'conflict';
+  if (/diplomacy|diplomatic/.test(lower)) return 'diplo';
+  if (/energy|oil/.test(lower)) return 'energy';
+  if (/economy|economics|economic|business|markets|trade/.test(lower)) return 'econ';
+  if (/politics|political|government/.test(lower)) return 'politics';
+  return 'other';
+}
+
+// ── Layout constants ──────────────────────────────────────────────────────────
+
+const COL_W = 78;
+const RIBBON_H = 34;
+const LANE_H = 118;
+const MARGIN = { top: 34, left: 130, right: 40, bottom: 20 };
+const LANES_TOP = MARGIN.top + RIBBON_H + 12;
+const DAY_MS = 86400000;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+// confColor: used in EdgePanel category tag background
 function confColor(c) {
   return c === 'strong' ? 'var(--risk-h)'
     : c === 'medium' ? 'var(--risk-e)'
     : 'var(--ink-faint)';
-}
-
-const CAT_COLOR_MAP = [
-  ['military',   '#c94a33'],
-  ['conflict',   '#c94a33'],
-  ['economics',  '#d89540'],
-  ['economy',    '#d89540'],
-  ['energy',     '#4fa07b'],
-  ['diplomacy',  '#2a5f8a'],
-  ['diplomatic', '#2a5f8a'],
-  ['politics',   '#a2442e'],
-  ['political',  '#a2442e'],
-];
-function catFill(category) {
-  if (!category) return '#9a9a9e';
-  const lower = category.toLowerCase();
-  for (const [key, color] of CAT_COLOR_MAP) {
-    if (lower.includes(key)) return color;
-  }
-  return '#7a3a8f';
 }
 
 // Strip trailing "-N" index from citedEntry strings produced by the backend
@@ -59,17 +64,10 @@ function parseCitation(s) {
   return (s || '').replace(/-\d+$/, '').trim();
 }
 
-// Short, readable STORY label for a node, derived from its summary so the graph
-// is legible without clicking. Drops a leading filler clause, trims trailing
-// punctuation, and keeps the first `maxWords` words.
 const LABEL_STOPWORDS = new Set(['the', 'a', 'an', 'in', 'of', 'on', 'and', 'to', 'as', 'at', 'for']);
 function storyLabel(summary, maxWords = 5) {
   if (!summary) return '';
-  let words = summary
-    .replace(/[".]+$/g, '')
-    .split(/\s+/)
-    .filter(Boolean);
-  // Skip a leading stopword so the label opens on a content word.
+  let words = summary.replace(/[".]+$/g, '').split(/\s+/).filter(Boolean);
   while (words.length > maxWords + 1 && LABEL_STOPWORDS.has(words[0].toLowerCase())) {
     words = words.slice(1);
   }
@@ -77,9 +75,6 @@ function storyLabel(summary, maxWords = 5) {
   return words.length > maxWords ? `${kept}…` : kept;
 }
 
-// Prediction content is a JSON-encoded { scenarios:[{label,probability_range,
-// horizon,rationale,triggers}] } string. Parse it into a renderable shape;
-// fall back to plain text if it isn't the expected JSON.
 function parsePrediction(raw) {
   if (!raw || typeof raw !== 'string') return raw ? { text: String(raw) } : null;
   const trimmed = raw.trim();
@@ -92,30 +87,31 @@ function parsePrediction(raw) {
   return { text: trimmed };
 }
 
-// Stable edge identifier (used for selection state)
-function edgeId(e, i) {
-  return `${e.from}|${e.to}|${i}`;
+// Parse peakDate "YYYY-MM-DD" to UTC epoch ms. No Date.now() / new Date() with no args.
+function parsePeakDate(s) {
+  if (!s || typeof s !== 'string') return null;
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  return Date.UTC(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
 }
 
-// ── Client-side curation ─────────────────────────────────────────────────────
-// Applied once on raw Iran data before rendering.
-//  1. Deduplicate NEAR-identical node summaries (collapse tautological pairs).
-//     Exact-string matching missed the real Iran duplicate — the two ceasefire
-//     nodes differ by one word ("tentative" / "final"). Use Jaccard word-set
-//     overlap and merge when overlap ≥ JACCARD_MERGE.
-//  2. Remap edge endpoints to canonical IDs; remove self-loops (incl. the
-//     tautological A→A' edge between the merged ceasefire nodes).
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function msToLabel(ms) {
+  const d = new Date(ms);
+  return `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+// ── Client-side curation (preserved exactly from original) ────────────────────
+//  1. Deduplicate near-identical node summaries via Jaccard word-set overlap.
+//  2. Remap edge endpoints to canonical IDs; remove self-loops.
 //  3. Flag temporally-impossible edges (lagDays < 0).
 
 const JACCARD_MERGE = 0.8;
 
 function tokenSet(s) {
   return new Set(
-    (s || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9 ]/g, ' ')
-      .split(/\s+/)
-      .filter(Boolean),
+    (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean),
   );
 }
 
@@ -130,11 +126,9 @@ function curateData(raw) {
   if (!raw) return null;
   const { nodes = [], edges = [], ...rest } = raw;
 
-  // Greedy near-duplicate clustering: each node either joins an existing
-  // canonical cluster (≥ JACCARD_MERGE overlap) or becomes a new canonical.
-  const canonicalMap = {};      // threadId -> canonical threadId
-  const dedupedNodes = [];      // canonical nodes
-  const canonicalTokens = [];   // parallel: { id, tokens }
+  const canonicalMap = {};
+  const dedupedNodes = [];
+  const canonicalTokens = [];
 
   for (const n of nodes) {
     const tokens = tokenSet(n.summary);
@@ -165,211 +159,297 @@ function curateData(raw) {
   return { ...rest, nodes: dedupedNodes, edges: dedupedEdges };
 }
 
-// ── Force layout ─────────────────────────────────────────────────────────────
+// ── Timeline layout hook ──────────────────────────────────────────────────────
 
-function useForceLayout(nodes, edges) {
-  const [positions, setPositions] = useState({});
+function useTimelineLayout(nodes, edges) {
+  return useMemo(() => {
+    if (!nodes?.length) return null;
 
-  useEffect(() => {
-    if (!nodes?.length) return;
+    // Annotate each node with derived lane + parsed date
+    const dated = nodes.map(n => ({
+      ...n,
+      _dateMs: parsePeakDate(n.peakDate),
+      _lane: categoryToLane(n.category),
+    }));
 
-    const nodeIds = new Set(nodes.map(n => n.threadId));
-    const simNodes = nodes.map(n => ({ id: n.threadId, degree: 0 }));
-    const simLinks = edges
-      .filter(e => nodeIds.has(e.from) && nodeIds.has(e.to))
-      .map(e => ({ source: e.from, target: e.to }));
+    // as-of = max node date (derived from data, not Date.now())
+    const validMs = dated.map(n => n._dateMs).filter(Boolean);
+    if (!validMs.length) return null;
+    const minMs = Math.min(...validMs);
+    const maxMs = Math.max(...validMs);
+    const totalDays = Math.round((maxMs - minMs) / DAY_MS) + 1;
 
-    const degreeMap = {};
-    edges.forEach(e => {
-      degreeMap[e.from] = (degreeMap[e.from] || 0) + 1;
-      degreeMap[e.to]   = (degreeMap[e.to]   || 0) + 1;
+    const xForMs = (ms) => {
+      const dayIdx = ms != null ? Math.round((ms - minMs) / DAY_MS) : totalDays - 1;
+      return MARGIN.left + dayIdx * COL_W + COL_W / 2;
+    };
+
+    // Edge degree → importance (1..5) → radius
+    const degMap = {};
+    nodes.forEach(n => { degMap[n.threadId] = 0; });
+    (edges || []).forEach(e => {
+      if (degMap[e.from] != null) degMap[e.from]++;
+      if (degMap[e.to]   != null) degMap[e.to]++;
     });
-    simNodes.forEach(n => { n.degree = degreeMap[n.id] || 0; });
 
-    const radius = (d) => Math.max(18, Math.min(38, 18 + d.degree * 4));
+    const impForDeg = (deg) => {
+      if (deg === 0) return 2;
+      if (deg <= 2) return 3;
+      if (deg <= 4) return 4;
+      return 5;
+    };
+    const rForImp = (imp) => 13 + imp * 4.5;
+    const yForLane = (lane) => LANES_TOP + LANE_ORDER.indexOf(lane) * LANE_H + LANE_H / 2;
 
-    const sim = forceSimulation(simNodes)
-      .force('link',    forceLink(simLinks).id(d => d.id).distance(170).strength(0.4))
-      .force('charge',  forceManyBody().strength(-380))
-      .force('center',  forceCenter(SVG_W / 2, SVG_H / 2))
-      .force('collide', forceCollide(d => radius(d) + 14))
-      .stop();
-
-    for (let i = 0; i < 300; i++) sim.tick();
-
-    const pos = {};
-    simNodes.forEach(n => {
-      const r = radius(n);
-      pos[n.id] = {
-        x: Math.max(r + 8, Math.min(SVG_W - r - 8, n.x || SVG_W / 2)),
-        y: Math.max(r + 8, Math.min(SVG_H - r - 8, n.y || SVG_H / 2)),
-      };
+    // Vertical jitter: nodes sharing the same lane+day are spread apart
+    const buckets = {};
+    dated.forEach(n => {
+      const dayIdx = n._dateMs != null ? Math.round((n._dateMs - minMs) / DAY_MS) : totalDays - 1;
+      const key = `${n._lane}_${dayIdx}`;
+      buckets[key] = buckets[key] || [];
+      buckets[key].push(n.threadId);
     });
-    setPositions(pos);
+
+    const positioned = dated.map(n => {
+      const deg = degMap[n.threadId] || 0;
+      const imp = impForDeg(deg);
+      const dayIdx = n._dateMs != null ? Math.round((n._dateMs - minMs) / DAY_MS) : totalDays - 1;
+      const key = `${n._lane}_${dayIdx}`;
+      const grp = buckets[key];
+      const laneY = yForLane(n._lane);
+      const idx = grp.indexOf(n.threadId);
+      const y = grp.length > 1 ? laneY + (idx - (grp.length - 1) / 2) * 34 : laneY;
+      return { ...n, _imp: imp, _r: rForImp(imp), _x: xForMs(n._dateMs), _y: y, _degree: deg };
+    });
+
+    // Coverage ribbon: node-peak histogram per day column
+    // (no per-day article count in this payload; node peaks are the honest proxy)
+    const volByDay = Array(totalDays).fill(0);
+    dated.forEach(n => {
+      const dayIdx = n._dateMs != null ? Math.round((n._dateMs - minMs) / DAY_MS) : totalDays - 1;
+      if (dayIdx >= 0 && dayIdx < totalDays) volByDay[dayIdx]++;
+    });
+    const volMax = Math.max(...volByDay, 1);
+
+    const svgW = MARGIN.left + totalDays * COL_W + MARGIN.right;
+    const svgH = LANES_TOP + LANE_ORDER.length * LANE_H + MARGIN.bottom;
+    const laneBottom = LANES_TOP + LANE_ORDER.length * LANE_H;
+
+    const nodeById = {};
+    positioned.forEach(n => { nodeById[n.threadId] = n; });
+
+    return { positioned, nodeById, totalDays, minMs, maxMs, volByDay, volMax, svgW, svgH, laneBottom, xForMs };
   }, [nodes, edges]);
-
-  return positions;
 }
 
-// ── SVG graph ────────────────────────────────────────────────────────────────
+// ── Causal web SVG ────────────────────────────────────────────────────────────
 
-function SpiderGraph({ graphData, selectedNodeId, selectedEdgeId: selectedEdgeIdProp, onNodeClick, onEdgeClick }) {
-  const { nodes, edges } = graphData;
-  const positions = useForceLayout(nodes, edges);
+function CausalWebSVG({
+  layout,
+  edges,
+  activeLanes,
+  causalOn,
+  selectedNodeId,
+  selectedEdgeKey,
+  onNodeClick,
+  onEdgeClick,
+  onNodeHover,
+  onNodeLeave,
+  onEdgeHover,
+  onEdgeLeave,
+}) {
+  const { positioned, nodeById, totalDays, minMs, maxMs, volByDay, volMax, svgW, svgH, laneBottom, xForMs } = layout;
 
-  const degreeMap = useMemo(() => {
-    const m = {};
-    edges.forEach(e => {
-      m[e.from] = (m[e.from] || 0) + 1;
-      m[e.to]   = (m[e.to]   || 0) + 1;
+  // Neighbors of selected node (for dim/highlight)
+  const neighbors = useMemo(() => {
+    if (!selectedNodeId) return null;
+    const s = new Set();
+    (edges || []).filter(e => !e._temporalFlag).forEach(e => {
+      if (e.from === selectedNodeId || e.to === selectedNodeId) {
+        s.add(e.from);
+        s.add(e.to);
+      }
     });
-    return m;
-  }, [edges]);
+    return s;
+  }, [selectedNodeId, edges]);
 
-  const nodeRadius = (id) => Math.max(18, Math.min(38, 18 + (degreeMap[id] || 0) * 4));
-
-  const ready = Object.keys(positions).length > 0;
-
-  if (!ready) {
-    return (
-      <div className="spider-computing">
-        <span className="spider-computing-dot" />
-        Computing layout…
-      </div>
-    );
-  }
+  const visibleEdges = useMemo(
+    () => (causalOn ? (edges || []).filter(e => !e._temporalFlag) : []),
+    [causalOn, edges],
+  );
 
   return (
     <svg
-      className="spider-svg"
-      viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-      preserveAspectRatio="xMidYMid meet"
-      aria-label="Iran causal web"
+      className="spider-web-svg"
+      width={svgW}
+      height={svgH}
+      viewBox={`0 0 ${svgW} ${svgH}`}
+      aria-label="Iran causal web timeline"
     >
       <defs>
-        {['strong', 'medium', 'weak'].map(k => (
-          <marker
-            key={k}
-            id={`spider-arrow-${k}`}
-            markerWidth="8" markerHeight="8"
-            refX="7" refY="3"
-            orient="auto"
-          >
-            <path
-              d="M0,0 L0,6 L8,3 z"
-              fill={
-                k === 'strong' ? '#c94a33'
-                : k === 'medium' ? '#d89540'
-                :                  '#9a9a9e'
-              }
-            />
-          </marker>
-        ))}
+        <marker id="sw-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)" />
+        </marker>
+        <marker id="sw-arrow-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#3a6ea5" />
+        </marker>
       </defs>
 
-      {/* Edges (temporal-anomaly / negative-lag edges are hidden entirely) */}
-      {edges.filter(e => !e._temporalFlag).map((e, i) => {
-        const s = positions[e.from];
-        const t = positions[e.to];
-        if (!s || !t) return null;
-
-        const key = edgeId(e, i);
-        const isSelected = key === selectedEdgeIdProp;
-        const rFrom = nodeRadius(e.from);
-        const rTo   = nodeRadius(e.to);
-
-        // Trim line to node perimeters
-        const dx = t.x - s.x, dy = t.y - s.y;
-        const len = Math.sqrt(dx * dx + dy * dy) || 1;
-        const ux = dx / len, uy = dy / len;
-        const x1 = s.x + ux * (rFrom + 2);
-        const y1 = s.y + uy * (rFrom + 2);
-        const x2 = t.x - ux * (rTo + 11);
-        const y2 = t.y - uy * (rTo + 11);
-        const mx = (x1 + x2) / 2;
-        const my = (y1 + y2) / 2;
-
-        const stroke = isSelected ? '#a2442e' : confColor(e.confidence);
-        const sw = isSelected ? 3
-          : e.confidence === 'strong' ? 2.5
-          : e.confidence === 'medium' ? 1.8
-          : 1.2;
-        const markerId = e.confidence === 'strong' ? 'spider-arrow-strong'
-          : e.confidence === 'medium' ? 'spider-arrow-medium'
-          : 'spider-arrow-weak';
-
+      {/* Lane bands */}
+      {LANE_ORDER.map((lane, i) => {
+        const meta = LANE_META[lane];
+        const y0 = LANES_TOP + i * LANE_H;
+        const active = activeLanes.has(lane);
         return (
-          <g
-            key={key}
-            className="spider-edge-g"
-            onClick={() => onEdgeClick(e, key)}
-            style={{ cursor: 'pointer' }}
-          >
-            {/* Wide transparent hit area */}
-            <line x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke="transparent" strokeWidth="14" />
-            {/* Visible line */}
-            <line
-              x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke={stroke}
-              strokeWidth={sw}
-              opacity={0.75}
-              markerEnd={`url(#${markerId})`}
-              className={isSelected ? 'spider-edge-selected' : ''}
-            />
-            {/* Lag label */}
-            {e.lagDays != null && (
-              <text
-                x={mx} y={my - 5}
-                className="spider-edge-lag"
-                textAnchor="middle"
-                fill="var(--ink-dim)"
-              >
-                {`${e.lagDays}d`}
+          <g key={lane}>
+            <rect x={0} y={y0} width={svgW} height={LANE_H} fill={meta.soft} opacity={active ? 0.4 : 0.12} />
+            <line x1={0} y1={y0} x2={svgW} y2={y0} className="spider-lane-rule" />
+            <text x={16} y={y0 + 18} className="spider-lane-label" fill={meta.color}>
+              {meta.label}
+            </text>
+          </g>
+        );
+      })}
+      <line x1={0} y1={laneBottom} x2={svgW} y2={laneBottom} className="spider-lane-rule" />
+
+      {/* Axis / ribbon labels */}
+      <text x={MARGIN.left} y={13} className="spider-axis-label">
+        {MONTH_NAMES[new Date(minMs).getUTCMonth()]} {new Date(minMs).getUTCFullYear()} →
+      </text>
+      <text x={16} y={MARGIN.top + RIBBON_H - 2} className="spider-coverage-label">COVERAGE</text>
+
+      {/* Coverage ribbon bars */}
+      {volByDay.map((v, dayIdx) => {
+        const x = MARGIN.left + dayIdx * COL_W + COL_W / 2;
+        const bh = (v / volMax) * (RIBBON_H - 8);
+        const by = MARGIN.top + (RIBBON_H - 4) - bh;
+        return bh > 0.5 ? (
+          <rect key={dayIdx} x={x - COL_W / 2 + 8} y={by} width={COL_W - 16} height={bh} rx={1} className="spider-vol-bar" />
+        ) : null;
+      })}
+      <line
+        x1={MARGIN.left - 8} y1={MARGIN.top + RIBBON_H - 4}
+        x2={svgW} y2={MARGIN.top + RIBBON_H - 4}
+        className="spider-ribbon-base"
+      />
+
+      {/* Day ticks + dashed gridlines */}
+      {Array.from({ length: totalDays }, (_, dayIdx) => {
+        const x = MARGIN.left + dayIdx * COL_W + COL_W / 2;
+        const ms = minMs + dayIdx * DAY_MS;
+        const d = new Date(ms);
+        const tickLabel = `${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}`;
+        return (
+          <g key={dayIdx}>
+            <line x1={x} y1={LANES_TOP} x2={x} y2={laneBottom} className="spider-gridline" />
+            {dayIdx % 2 === 0 && (
+              <text x={x} y={LANES_TOP - 6} textAnchor="middle" className="spider-tick-label">
+                {tickLabel}
               </text>
             )}
           </g>
         );
       })}
 
-      {/* Nodes */}
-      {nodes.map((n) => {
-        const pos = positions[n.threadId];
-        if (!pos) return null;
-        const r = nodeRadius(n.threadId);
+      {/* As-of marker derived from maxMs (latest node date) */}
+      {(() => {
+        const tx = xForMs(maxMs);
+        return (
+          <g>
+            <line x1={tx} y1={MARGIN.top} x2={tx} y2={laneBottom} className="spider-today-line" />
+            <text x={tx + 6} y={LANES_TOP - 6} className="spider-today-label">
+              as of {msToLabel(maxMs)}
+            </text>
+          </g>
+        );
+      })()}
+
+      {/* Causal edges (backbone layer empty — not rendered) */}
+      {visibleEdges.map((e, i) => {
+        const a = nodeById[e.from];
+        const b = nodeById[e.to];
+        if (!a || !b) return null;
+        if (!activeLanes.has(a._lane) || !activeLanes.has(b._lane)) return null;
+
+        const key = `${e.from}|${e.to}|${i}`;
+        const isSelected = key === selectedEdgeKey;
+
+        let dirCls = '';
+        if (selectedNodeId) {
+          if (e.to === selectedNodeId) dirCls = 'sw-edge-in';
+          else if (e.from === selectedNodeId) dirCls = 'sw-edge-out';
+          else dirCls = 'sw-edge-mute';
+        }
+
+        const mx = (a._x + b._x) / 2;
+        const cy = Math.min(a._y, b._y) - 40;
+        const sw = e.confidence === 'strong' ? 2.6 : e.confidence === 'medium' ? 1.8 : 1;
+        const marker = e.to === selectedNodeId ? 'url(#sw-arrow-in)' : 'url(#sw-arrow)';
+
+        return (
+          <g
+            key={key}
+            className={`spider-edge-grp ${dirCls}${isSelected ? ' spider-edge-grp-sel' : ''}`}
+            onClick={() => onEdgeClick(e, key)}
+            onMouseEnter={(ev) => onEdgeHover(ev, e)}
+            onMouseLeave={onEdgeLeave}
+            style={{ cursor: 'pointer' }}
+          >
+            {/* Wide transparent hit area */}
+            <path d={`M${a._x},${a._y} Q${mx},${cy} ${b._x},${b._y}`} fill="none" stroke="transparent" strokeWidth={14} />
+            <path
+              d={`M${a._x},${a._y} Q${mx},${cy} ${b._x},${b._y}`}
+              fill="none"
+              className={`spider-causal-edge ${e.confidence || 'weak'}`}
+              strokeWidth={sw}
+              markerEnd={marker}
+            />
+            <text x={mx} y={cy + 14} textAnchor="middle" className="spider-edge-lag-label">
+              {e.lagDays != null ? `${e.lagDays}d` : ''}{e.lagDays != null && e.confidence ? ' · ' : ''}{e.confidence || ''}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Nodes (rendered above edges) */}
+      {positioned.map(n => {
+        if (!activeLanes.has(n._lane)) return null;
+        const meta = LANE_META[n._lane];
         const isSelected = n.threadId === selectedNodeId;
-        const fill = catFill(n.category);
-        // Story label below the node (category stays as the COLOR). Selected node
-        // gets a slightly fuller label.
+        const isDimmed = !!(selectedNodeId && !isSelected && !(neighbors?.has(n.threadId)));
+        const isIsolated = n._degree === 0;
+        const showLabel = n._imp >= 4 || isSelected || !!(neighbors?.has(n.threadId));
         const label = storyLabel(n.summary, isSelected ? 8 : 5);
+        const labelY = n._y + n._r + 14;
+        const lw = label.length * 6.2;
 
         return (
           <g
             key={n.threadId}
-            className="spider-node-g"
-            transform={`translate(${pos.x},${pos.y})`}
+            className={[
+              'spider-node',
+              isIsolated ? 'spider-node-iso' : '',
+              isSelected ? 'spider-node-sel' : '',
+              isDimmed ? 'spider-node-dim' : '',
+            ].filter(Boolean).join(' ')}
             onClick={() => onNodeClick(n)}
+            onMouseEnter={(ev) => onNodeHover(ev, n)}
+            onMouseLeave={onNodeLeave}
             style={{ cursor: 'pointer' }}
-            aria-label={n.summary}
           >
-            {isSelected && (
-              <circle r={r + 6} fill="none" stroke="var(--ink)" strokeWidth="2" opacity="0.35" />
+            {isIsolated && (
+              <circle cx={n._x} cy={n._y} r={n._r + 5}
+                fill="none" stroke={meta.color} strokeWidth={1} strokeDasharray="2 3" opacity={0.5} />
             )}
-            <circle
-              r={r}
-              fill={fill}
-              opacity={isSelected ? 1 : 0.85}
-              stroke="var(--card)"
-              strokeWidth={isSelected ? 2.5 : 1.5}
-            />
-            <text
-              textAnchor="middle"
-              y={r + 13}
-              className={`spider-node-label${isSelected ? ' spider-node-label-selected' : ''}`}
-              fontSize={isSelected ? 12 : 10.5}
-            >
-              {label}
-            </text>
+            <circle cx={n._x} cy={n._y} r={n._r} fill={meta.color} stroke="#fff" strokeWidth={2} />
+            {showLabel && (
+              <>
+                <rect x={n._x - lw / 2 - 3} y={labelY - 11} width={lw + 6} height={15} rx={2} fill="#fff" opacity={0.82} />
+                <text x={n._x} y={labelY} textAnchor="middle" className="spider-node-label">
+                  {label}
+                </text>
+              </>
+            )}
           </g>
         );
       })}
@@ -377,24 +457,52 @@ function SpiderGraph({ graphData, selectedNodeId, selectedEdgeId: selectedEdgeId
   );
 }
 
-// ── Node panel ───────────────────────────────────────────────────────────────
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+
+function Tooltip({ tip }) {
+  if (!tip) return null;
+  const { x, y, node, edge } = tip;
+  return (
+    <div className="spider-tip" style={{ left: x, top: y }}>
+      {node && (
+        <>
+          <div className="spider-tip-cat" style={{ color: LANE_META[node._lane]?.color }}>
+            {LANE_META[node._lane]?.label}
+          </div>
+          <div className="spider-tip-head">{node.summary}</div>
+          <div className="spider-tip-meta">
+            {node.peakDate} · importance {node._imp}/5
+          </div>
+          <div className="spider-tip-hint">click to open →</div>
+        </>
+      )}
+      {edge && !node && (
+        <>
+          <div className="spider-tip-cat" style={{ color: 'var(--accent)' }}>Causal link</div>
+          <div className="spider-tip-meta">
+            {edge.confidence}{edge.lagDays != null ? ` · ${edge.lagDays}d lag` : ''}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Node panel (all data logic preserved exactly; markup restyled to mockup) ──
 
 function NodePanel({ node, onClose }) {
   const { entries, loading: tlLoading, error: tlError } = useNarrativeThread(node?.threadId);
   const [prediction, setPrediction] = useState(null);
   const [predLoading, setPredLoading] = useState(false);
 
-  // Predictions are keyed per-TOPIC, not per-thread, so fetchPredictionCache(threadId)
-  // always returned nothing. Derive a representative topicId from the thread's
-  // narrative entries — prefer an entry flagged as the inflection/peak, else the
-  // most recent entry that actually carries a topicId.
+  // Predictions are keyed per-TOPIC, not per-thread. Derive representative topicId
+  // from thread narrative entries — prefer inflection/peak entry, else most recent.
   const repTopicId = useMemo(() => {
     if (!Array.isArray(entries) || entries.length === 0) return null;
     const withId = entries.filter(e => e?.topicId);
     if (withId.length === 0) return null;
     const inflection = withId.find(e => e.isInflection || e.isPeak || e.inflection || e.peak);
     if (inflection) return inflection.topicId;
-    // Most recent by date; fall back to last in array if dates are missing.
     const sorted = [...withId].sort((a, b) => {
       const da = a.date ? Date.parse(a.date) : 0;
       const db = b.date ? Date.parse(b.date) : 0;
@@ -412,9 +520,7 @@ function NodePanel({ node, onClose }) {
       .then(r => {
         if (cancelled) return;
         // fetchPredictionCache returns the raw cache envelope { success, data, ... };
-        // the actual model output is data.content (a JSON-encoded {scenarios:[...]}
-        // string). Unwrap here — this is NOT done for us like usePrediction's
-        // contentService does.
+        // unwrap the actual model output (JSON-encoded {scenarios:[...]} string).
         const raw = r?.data?.content ?? r?.content ?? r?.impact_analysis ?? null;
         setPrediction(parsePrediction(raw));
       })
@@ -424,79 +530,81 @@ function NodePanel({ node, onClose }) {
   }, [repTopicId]);
 
   if (!node) return null;
+  const meta = LANE_META[node._lane] || LANE_META.other;
 
   return (
-    <aside className="spider-panel" aria-label="Node detail">
-      <button className="spider-panel-close" onClick={onClose} aria-label="Close panel">×</button>
+    <div className="spider-panel" aria-label="Node detail">
+      <div className="spider-panel-inner">
+        <div className="spider-panel-top">
+          <span className="spider-panel-cat-tag" style={{ background: meta.color }}>
+            {meta.label.split(' ')[0]}
+          </span>
+          <button className="spider-panel-close" onClick={onClose} aria-label="Close panel">✕</button>
+        </div>
 
-      <div className="spider-panel-category" style={{ background: catFill(node.category) }}>
-        {node.category || 'thread'}
-      </div>
+        <h2 className="spider-panel-h2">{node.summary}</h2>
 
-      <h2 className="spider-panel-title">{node.summary}</h2>
+        {node.peakDate && (
+          <div className="spider-panel-peak">
+            Peak: <strong>{node.peakDate}</strong> · importance {node._imp}/5
+          </div>
+        )}
 
-      {node.peakDate && (
-        <div className="spider-panel-meta">Peak: {node.peakDate}</div>
-      )}
+        <Link
+          className="spider-panel-arclink"
+          to={threadPath(node.threadId, { from: 'country', country: DEMO_COUNTRY })}
+        >
+          View full thread arc →
+        </Link>
 
-      <Link
-        className="spider-panel-thread-link"
-        to={threadPath(node.threadId, { from: 'country', country: DEMO_COUNTRY })}
-      >
-        View full thread arc →
-      </Link>
-
-      <section className="spider-panel-section">
-        <h3 className="spider-panel-section-title">Genesis timeline</h3>
+        <div className="spider-panel-sec-label">Genesis timeline</div>
         {tlLoading && <div className="spider-panel-loading">Loading…</div>}
         {tlError && <div className="spider-panel-error">Could not load timeline: {tlError}</div>}
         {!tlLoading && !tlError && entries && entries.length > 0 && (
           <CompactTimeline entries={entries} />
         )}
-        {!tlLoading && !tlError && entries && entries.length === 0 && (
-          <div className="spider-panel-empty">No timeline entries found</div>
+        {!tlLoading && !tlError && (!entries || entries.length === 0) && (
+          <div className="spider-panel-empty">Single-day story — no multi-day genesis tracked yet.</div>
         )}
-      </section>
 
-      <section className="spider-panel-section spider-panel-prediction">
-        <h3 className="spider-panel-section-title">Scenario reasoning</h3>
-        <div className="spider-panel-judgment">
-          💭 model judgment — interpretation, not sourced fact
-        </div>
-        {(predLoading || tlLoading) && <div className="spider-panel-loading">Loading…</div>}
-        {!predLoading && !tlLoading && prediction?.scenarios && (
-          <div className="spider-panel-scenarios">
-            {prediction.scenarios.map((s, i) => (
-              <div key={i} className="spider-scenario">
-                <div className="spider-scenario-head">
-                  <span className="spider-scenario-label">{s.label}</span>
-                  {s.probability_range && (
-                    <span className="spider-scenario-prob">{s.probability_range}</span>
+        <div className="spider-panel-scenario">
+          <div className="spider-panel-scenario-lbl">Scenario reasoning</div>
+          <div className="spider-panel-jtag">model judgment — interpretation, not sourced fact</div>
+          {(predLoading || tlLoading) && <div className="spider-panel-loading">Loading…</div>}
+          {!predLoading && !tlLoading && prediction?.scenarios && (
+            <div className="spider-panel-scenarios">
+              {prediction.scenarios.map((s, i) => (
+                <div key={i} className="spider-scenario">
+                  <div className="spider-scenario-head">
+                    <span className="spider-scenario-lbl">{s.label}</span>
+                    {s.probability_range && (
+                      <span className="spider-scenario-prob">{s.probability_range}</span>
+                    )}
+                    {s.horizon && <span className="spider-scenario-horizon">{s.horizon}</span>}
+                  </div>
+                  {s.rationale && <p className="spider-scenario-rationale">{s.rationale}</p>}
+                  {Array.isArray(s.triggers) && s.triggers.length > 0 && (
+                    <ul className="spider-scenario-triggers">
+                      {s.triggers.map((t, j) => <li key={j}>{t}</li>)}
+                    </ul>
                   )}
-                  {s.horizon && <span className="spider-scenario-horizon">{s.horizon}</span>}
                 </div>
-                {s.rationale && <p className="spider-scenario-rationale">{s.rationale}</p>}
-                {Array.isArray(s.triggers) && s.triggers.length > 0 && (
-                  <ul className="spider-scenario-triggers">
-                    {s.triggers.map((t, j) => <li key={j}>{t}</li>)}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-        {!predLoading && !tlLoading && prediction?.text && (
-          <div className="spider-panel-prediction-text">{prediction.text}</div>
-        )}
-        {!predLoading && !tlLoading && !prediction && (
-          <div className="spider-panel-empty">No prediction cached for this thread</div>
-        )}
-      </section>
-    </aside>
+              ))}
+            </div>
+          )}
+          {!predLoading && !tlLoading && prediction?.text && (
+            <p className="spider-panel-pred-text">{prediction.text}</p>
+          )}
+          {!predLoading && !tlLoading && !prediction && (
+            <div className="spider-panel-empty">No prediction cached for this thread.</div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ── Edge panel ───────────────────────────────────────────────────────────────
+// ── Edge panel (all data logic preserved exactly; markup restyled) ─────────────
 
 function EdgePanel({ edge, nodeMap, onClose }) {
   if (!edge) return null;
@@ -505,90 +613,78 @@ function EdgePanel({ edge, nodeMap, onClose }) {
   const citations = Array.isArray(edge.citedEntries) ? edge.citedEntries : [];
 
   return (
-    <aside className="spider-panel" aria-label="Edge detail">
-      <button className="spider-panel-close" onClick={onClose} aria-label="Close panel">×</button>
-
-      <div
-        className="spider-panel-category"
-        style={{ background: confColor(edge.confidence), color: '#fff' }}
-      >
-        {edge.confidence || 'unrated'} confidence
-      </div>
-
-      <div className="spider-panel-edge-flow">
-        <div className="spider-panel-edge-node">{fromNode?.summary || edge.from}</div>
-        <div className="spider-panel-edge-arrow">
-          ↓ {edge.lagDays != null ? `${edge.lagDays} day lag` : 'lag unknown'}
+    <div className="spider-panel" aria-label="Edge detail">
+      <div className="spider-panel-inner">
+        <div className="spider-panel-top">
+          <span className="spider-panel-cat-tag" style={{ background: confColor(edge.confidence), color: '#fff' }}>
+            Causal link
+          </span>
+          <button className="spider-panel-close" onClick={onClose} aria-label="Close panel">✕</button>
         </div>
-        <div className="spider-panel-edge-node">{toNode?.summary || edge.to}</div>
-      </div>
 
-      {edge.mechanism && (
-        <section className="spider-panel-section">
-          <h3 className="spider-panel-section-title">Mechanism</h3>
-          <p className="spider-panel-mechanism">{edge.mechanism}</p>
-        </section>
-      )}
+        <div className="spider-link-pair">
+          <div className="spider-link-box">{fromNode?.summary || edge.from}</div>
+          <div className="spider-link-arr">→</div>
+          <div className="spider-link-box">{toNode?.summary || edge.to}</div>
+        </div>
 
-      <section className="spider-panel-section">
-        <h3 className="spider-panel-section-title">
-          {citations.length > 0 ? `✅ Citations (${citations.length})` : 'Citations'}
-        </h3>
+        <span className={`spider-edge-conf-badge spider-conf-${edge.confidence || 'weak'}`}>
+          {edge.confidence || 'unrated'} confidence
+          {edge.lagDays != null ? ` · ${edge.lagDays}d lag` : ''}
+        </span>
+
+        {edge.mechanism && (
+          <>
+            <div className="spider-panel-sec-label">Mechanism</div>
+            <p className="spider-panel-mech">{edge.mechanism}</p>
+          </>
+        )}
+
+        <div className="spider-panel-scenario" style={{ marginTop: 0 }}>
+          <div className="spider-panel-jtag">model judgment — interpretation, not sourced fact</div>
+        </div>
+
+        <div className="spider-panel-sec-label">
+          Citations{citations.length > 0 ? ` (${citations.length})` : ''}
+        </div>
         {citations.length > 0 ? (
-          <ul className="spider-panel-citations">
+          <div className="spider-citations">
             {citations.map((c, i) => (
-              <li key={i} className="spider-panel-citation">{parseCitation(c)}</li>
+              <div key={i} className="spider-cite">{parseCitation(c)}</div>
             ))}
-          </ul>
+          </div>
         ) : (
           <div className="spider-panel-empty">No citations on this edge</div>
         )}
-      </section>
-    </aside>
-  );
-}
-
-// ── Legend ───────────────────────────────────────────────────────────────────
-
-function Legend() {
-  const items = [
-    { label: 'military / conflict', color: '#c94a33' },
-    { label: 'economics',           color: '#d89540' },
-    { label: 'politics',            color: '#a2442e' },
-    { label: 'diplomacy',           color: '#2a5f8a' },
-    { label: 'energy',              color: '#4fa07b' },
-    { label: 'other',               color: '#7a3a8f' },
-  ];
-  return (
-    <div className="spider-legend">
-      {items.map(({ label, color }) => (
-        <span key={label} className="spider-legend-item">
-          <span className="spider-legend-dot" style={{ background: color }} />
-          {label}
-        </span>
-      ))}
+      </div>
     </div>
   );
 }
 
-// ── Root component ────────────────────────────────────────────────────────────
+// ── Root component ─────────────────────────────────────────────────────────────
 
 export default function SpiderDemo() {
   const { data: rawData, loading, error } = useSystemsAnalysis(DEMO_COUNTRY);
 
   const graphData = useMemo(() => curateData(rawData), [rawData]);
 
+  // nodeMap keyed by threadId for EdgePanel summary lookup
   const nodeMap = useMemo(() => {
     if (!graphData?.nodes) return {};
     return graphData.nodes.reduce((m, n) => { m[n.threadId] = n; return m; }, {});
   }, [graphData]);
 
+  const layout = useTimelineLayout(graphData?.nodes, graphData?.edges || []);
+
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
   const [selectedEdgeKey, setSelectedEdgeKey] = useState(null);
+  const [activeLanes, setActiveLanes] = useState(new Set(LANE_ORDER));
+  const [causalOn, setCausalOn] = useState(true); // default ON — backbone is empty
+  const [tip, setTip] = useState(null);
 
   const handleNodeClick = useCallback((node) => {
-    setSelectedNode(node);
+    setSelectedNode(prev => prev?.threadId === node.threadId ? null : node);
     setSelectedEdge(null);
     setSelectedEdgeKey(null);
   }, []);
@@ -605,68 +701,140 @@ export default function SpiderDemo() {
     setSelectedEdgeKey(null);
   }, []);
 
+  const handleNodeHover = useCallback((ev, node) => {
+    setTip({ x: ev.clientX + 14, y: ev.clientY + 14, node });
+  }, []);
+  const handleNodeLeave = useCallback(() => setTip(null), []);
+
+  const handleEdgeHover = useCallback((ev, edge) => {
+    setTip({ x: ev.clientX + 14, y: ev.clientY + 14, edge });
+  }, []);
+  const handleEdgeLeave = useCallback(() => setTip(null), []);
+
+  const toggleLane = useCallback((lane) => {
+    setActiveLanes(prev => {
+      const next = new Set(prev);
+      if (next.has(lane)) next.delete(lane); else next.add(lane);
+      return next;
+    });
+  }, []);
+
   const hasPanel = !!(selectedNode || selectedEdge);
-  // Visible edges only — temporal-anomaly (negative-lag) edges are hidden.
-  const visibleEdgeCount = graphData?.edges?.filter(e => !e._temporalFlag).length || 0;
+
+  const visibleNodeCount = layout
+    ? layout.positioned.filter(n => activeLanes.has(n._lane)).length
+    : 0;
+
+  const causalEdgeCount = graphData?.edges?.filter(e => !e._temporalFlag).length ?? 0;
 
   return (
-    <div className="spider-demo">
-      <div className="spider-header">
+    <div className="spider-shell">
+      {/* Header */}
+      <header className="spider-header">
         <div className="spider-header-row">
           <h1 className="spider-title">Causal Web — Iran</h1>
-          <span className="spider-prototype-badge">⚠ prototype — throwaway</span>
+          <span className="spider-proto-badge">prototype</span>
         </div>
-        <p className="spider-subtitle">
-          Force-layout causal graph from live systems-analysis data.
-          Nodes = narrative threads (click for genesis + scenario). Edges = validated cause→effect links (click for mechanism + citations).
+        <p className="spider-desc">
+          Stories laid out by <strong>time</strong> (left → right) and <strong>category</strong> (lanes).
+          Dashed lines = model-judged cause→effect (toggle on/off).
+          Click a story for its genesis; click a link for the mechanism.
         </p>
-        <Legend />
+      </header>
+
+      {/* Control bar */}
+      <div className="spider-controls">
+        <div className="spider-legend">
+          {LANE_ORDER.map(lane => {
+            const meta = LANE_META[lane];
+            const off = !activeLanes.has(lane);
+            return (
+              <button
+                key={lane}
+                className={`spider-lg${off ? ' spider-lg-off' : ''}`}
+                onClick={() => toggleLane(lane)}
+              >
+                <span className="spider-lg-dot" style={{ background: meta.color }} />
+                {meta.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="spider-controls-spacer" />
+        <button
+          className={`spider-toggle${causalOn ? ' spider-toggle-on' : ''}`}
+          onClick={() => setCausalOn(v => !v)}
+        >
+          Causal overlay
+          <span className="spider-toggle-switch" />
+          <span className="spider-toggle-ck">dashed · model judgment</span>
+        </button>
       </div>
 
-      <div className={`spider-body${hasPanel ? ' spider-body--split' : ''}`}>
-        <div className="spider-graph-area">
-          {loading && (
-            <div className="spider-loading">
-              <span className="spider-loading-dot" />
-              Loading Iran systems analysis…
-            </div>
-          )}
-          {error && (
-            <div className="spider-error">
-              <strong>Error loading data:</strong> {error}
-              <div className="spider-error-hint">Check that window.SENSITIVE_PROXY_ENDPOINT is configured (public/config.js in dev).</div>
-            </div>
-          )}
-          {!loading && !error && graphData && graphData.nodes.length === 0 && (
-            <div className="spider-empty">No graph data returned for Iran.</div>
-          )}
-          {!loading && graphData && graphData.nodes.length > 0 && (
-            <SpiderGraph
-              graphData={graphData}
-              selectedNodeId={selectedNode?.threadId}
-              selectedEdgeId={selectedEdgeKey}
-              onNodeClick={handleNodeClick}
-              onEdgeClick={handleEdgeClick}
-            />
-          )}
+      {/* Body: graph area + sliding panel */}
+      <div className={`spider-body${hasPanel ? ' spider-body-panel' : ''}`}>
+        <div className="spider-graph-wrap">
+          <div className="spider-graph-scroll">
+            {loading && (
+              <div className="spider-state">
+                <span className="spider-loading-dot" />
+                Loading Iran systems analysis…
+              </div>
+            )}
+            {error && (
+              <div className="spider-state spider-error-state">
+                <strong>Error loading data:</strong> {error}
+                <span className="spider-error-hint">Check that SENSITIVE_PROXY_ENDPOINT is configured.</span>
+              </div>
+            )}
+            {!loading && !error && graphData && graphData.nodes.length === 0 && (
+              <div className="spider-state">No graph data returned for Iran.</div>
+            )}
+            {!loading && layout && (
+              <CausalWebSVG
+                layout={layout}
+                edges={graphData.edges}
+                activeLanes={activeLanes}
+                causalOn={causalOn}
+                selectedNodeId={selectedNode?.threadId}
+                selectedEdgeKey={selectedEdgeKey}
+                onNodeClick={handleNodeClick}
+                onEdgeClick={handleEdgeClick}
+                onNodeHover={handleNodeHover}
+                onNodeLeave={handleNodeLeave}
+                onEdgeHover={handleEdgeHover}
+                onEdgeLeave={handleEdgeLeave}
+              />
+            )}
+          </div>
         </div>
 
         {selectedNode && (
           <NodePanel node={selectedNode} onClose={closePanel} />
         )}
-        {selectedEdge && (
+        {selectedEdge && !selectedNode && (
           <EdgePanel edge={selectedEdge} nodeMap={nodeMap} onClose={closePanel} />
         )}
       </div>
 
-      {graphData && !loading && (
-        <div className="spider-footer">
-          {graphData.nodes.length} nodes · {visibleEdgeCount} edges
-          {graphData.generatedAt && (
-            <span className="spider-footer-ts"> · generated {graphData.generatedAt}</span>
-          )}
-        </div>
+      {!hasPanel && (
+        <div className="spider-hint">Click any story · scroll horizontally for full span</div>
       )}
+
+      {/* Footer */}
+      <footer className="spider-footer">
+        <span><strong>{visibleNodeCount}</strong> stories</span>
+        <span><strong>0</strong> backbone links (shared-actor backbone not yet generated)</span>
+        <span><strong>{causalEdgeCount}</strong> causal links</span>
+        <span className="spider-footer-spacer" />
+        <span>Confidence shown as weak / medium / strong — never a fabricated %</span>
+        {graphData?.generatedAt && (
+          <span>generated <strong>{graphData.generatedAt}</strong></span>
+        )}
+      </footer>
+
+      {/* Fixed-position hover tooltip */}
+      {tip && <Tooltip tip={tip} />}
     </div>
   );
 }

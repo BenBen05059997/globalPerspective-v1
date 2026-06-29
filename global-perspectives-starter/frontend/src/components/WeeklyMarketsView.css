@@ -1,0 +1,285 @@
+/* WeeklyMarketsView — the "This week" markets wrap as a calm editorial read.
+   Rendered inside /economy's "This week" mode (and the /weekly-markets permalink),
+   in its OWN centered layout — deliberately NOT the dense 3-col dashboard grid.
+   Mirrors the site's design tokens (--mono, --serif, --sans, rust --accent).
+   Gain/loss are price semantics (not risk), so they get their own local tokens;
+   severity ink-shades match EconomyPage's taxonomy. */
+
+.wm-view {
+  --wm-gain: #1a7f5a;
+  --wm-loss: #c0392b;
+  width: 100%;
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 2.2rem 1.5rem 4rem;
+  background: var(--paper, #fbfbf9);
+  font-family: var(--sans);
+}
+
+/* ===== HEADER (tags reviewed/weekly, not live) ===== */
+.wm-head { margin-bottom: 2rem; }
+.wm-kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent, #a2442e);
+}
+.wm-h1 {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink, #0a0a0a);
+  margin: 0.5rem 0 0.5rem;
+  line-height: 1.15;
+}
+.wm-dateline {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-dim, #6a6a6e);
+  letter-spacing: 0.06em;
+}
+.wm-lede {
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-mid, #444);
+  max-width: 66ch;
+  margin: 1rem 0 0;
+}
+
+.wm-status { color: var(--ink-dim, #6a6a6e); font-size: 15px; line-height: 1.6; }
+.wm-empty { padding: 2.5rem 0; }
+.wm-inline-link, .wm-status .wm-inline-link {
+  color: var(--accent, #a2442e);
+  text-decoration: none;
+  border-bottom: 1.5px solid var(--accent, #a2442e);
+  font-weight: 600;
+}
+.wm-inline-link:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* ===== Section headers ===== */
+.wm-section { margin-top: 2.4rem; }
+.wm-sec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink, #0a0a0a);
+  border-bottom: 2px solid var(--ink, #0a0a0a);
+  padding-bottom: 8px;
+  margin: 0 0 1rem;
+}
+/* The "no clear driver" header is intentionally quieter — subordinate to the stars. */
+.wm-sec-muted {
+  color: var(--ink-dim, #6a6a6e);
+  border-bottom-color: var(--line, #e5e5e3);
+}
+.wm-sec-n {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-dim, #6a6a6e);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  border-radius: 20px;
+  padding: 2px 7px;
+}
+.wm-sec-note {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--ink-dim, #6a6a6e);
+  margin: -0.4rem 0 1rem;
+  max-width: 62ch;
+}
+
+/* ===== Shared move stat (the trustworthy anchor) ===== */
+.wm-move { flex-shrink: 0; text-align: right; }
+.wm-change {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.wm-move-lg .wm-change { font-size: 26px; }
+.wm-move-sm .wm-change { font-size: 16px; }
+.wm-up { color: var(--wm-gain); }
+.wm-down { color: var(--wm-loss); }
+.wm-arrow { font-size: 0.62em; }
+.wm-levels {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-dim, #6a6a6e);
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+}
+.wm-levels-arrow { color: var(--line, #e5e5e3); margin: 0 2px; }
+.wm-dot { margin: 0 6px; color: var(--line, #e5e5e3); }
+
+/* ===== FEATURED mover (explained — the stars) ===== */
+.wm-feat {
+  background: var(--card, #fff);
+  border: 1px solid var(--line, #e5e5e3);
+  border-left: 3px solid var(--accent, #a2442e);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  scroll-margin-top: 80px;
+}
+.wm-feat-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.wm-feat-id { display: flex; flex-direction: column; gap: 2px; }
+.wm-feat-name {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink, #0a0a0a);
+  margin: 0;
+}
+.wm-feat-ticker {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim, #6a6a6e);
+}
+
+/* ===== Grounding tiers — visibly distinct (label color) ===== */
+.wm-ground { padding-top: 2px; }
+.wm-ground-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.wm-label-coverage { color: var(--accent, #a2442e); }
+.wm-label-web { color: var(--ink-dim, #6a6a6e); }
+
+.wm-note {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 10px;
+  color: #1a1a1a;
+}
+
+.wm-cov-list { list-style: none; margin: 0; padding: 0; }
+.wm-cov-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.wm-cov-link { font-weight: 600; font-size: 14px; text-decoration: none; color: var(--accent, #a2442e); }
+.wm-cov-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+.wm-sev {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border: 1px solid;
+  border-radius: 20px;
+  white-space: nowrap;
+  /* default (unknown severity) — muted */
+  color: var(--ink-dim, #6a6a6e);
+  border-color: var(--line, #e5e5e3);
+}
+/* Severity is its own taxonomy (severe/moderate/minor); ink-shade ramp matches EconomyPage. */
+.wm-sev-severe { color: var(--ink, #0a0a0a); border-color: var(--ink, #0a0a0a); }
+.wm-sev-moderate { color: var(--ink-mid, #555); border-color: var(--ink-mid, #555); }
+.wm-sev-minor { color: var(--ink-faint, #999); border-color: var(--ink-faint, #999); }
+
+.wm-src { font-family: var(--mono); font-size: 11px; color: var(--ink-dim, #6a6a6e); }
+.wm-src-label { opacity: 0.7; }
+.wm-src a { color: var(--ink-dim, #6a6a6e); text-decoration: underline; text-underline-offset: 2px; }
+.wm-src a:hover { color: var(--accent, #a2442e); }
+
+/* ===== COMPACT list (tier "none" — honest, subordinate) ===== */
+.wm-list {
+  border: 1px solid var(--line, #e5e5e3);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card, #fff);
+}
+.wm-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line, #e5e5e3);
+  scroll-margin-top: 80px;
+}
+.wm-row:first-child { border-top: none; }
+.wm-row:target { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.wm-row-id { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.wm-row-name {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink, #0a0a0a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wm-row-ticker {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint, #999);
+  flex-shrink: 0;
+}
+.wm-nodriver {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint, #999);
+  white-space: nowrap;
+  font-style: normal;
+}
+
+.wm-excluded {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-dim, #6a6a6e);
+  margin: 1.6rem 0 0;
+}
+
+.wm-foot {
+  margin-top: 2.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line, #e5e5e3);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--ink-dim, #6a6a6e);
+}
+
+@media (max-width: 600px) {
+  .wm-view { padding: 1.6rem 1rem 3rem; }
+  .wm-h1 { font-size: 25px; }
+  .wm-feat-name { font-size: 19px; }
+  .wm-move-lg .wm-change { font-size: 22px; }
+  .wm-feat-top { flex-direction: column; gap: 8px; }
+  .wm-move { text-align: left; }
+  /* Compact row: stack the driver tag under the name/move on narrow screens. */
+  .wm-row { grid-template-columns: 1fr auto; }
+  .wm-nodriver { grid-column: 1 / -1; }
+}

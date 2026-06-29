@@ -19,6 +19,7 @@ import Sparkline from './atoms/Sparkline';
 import { composeBriefing, composeInstrumentWhy } from '../utils/composeEconomyBriefing';
 import { gateInstrument, isFxPair } from '../utils/disruptionGate.js';
 import QualityFlag from './atoms/QualityFlag';
+import WeeklyMarketsView from './WeeklyMarketsView';
 import './EconomyPage.css';
 
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];
@@ -267,8 +268,14 @@ function parseSortFromParams(sp) {
   const dir = sp.get('dir') === 'asc' ? 'asc' : 'desc';
   return SORT_KEYS.has(key) ? { key, dir } : { ...DEFAULT_SORT };
 }
-function buildParams(filters, sort, openMover) {
+// ?view=week selects the "This week" mode; today is the default (param omitted).
+function parseViewFromParams(sp) {
+  return sp.get('view') === 'week' ? 'week' : 'today';
+}
+function buildParams(filters, sort, openMover, view) {
   const p = new URLSearchParams();
+  // view goes first so the shared link reads /economy?view=week (the headline state).
+  if (view === 'week') p.set('view', 'week');
   if (filters.severity.size) p.set('sev', [...filters.severity].join(','));
   if (filters.horizon.size) p.set('hor', [...filters.horizon].join(','));
   if (filters.instrument) p.set('instrument', filters.instrument);
@@ -283,6 +290,7 @@ function buildParams(filters, sort, openMover) {
 
 export default function EconomyPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [view, setView] = useState(() => parseViewFromParams(searchParams));
   const [filters, setFilters] = useState(() => parseFiltersFromParams(searchParams));
   const [sort, setSort] = useState(() => parseSortFromParams(searchParams));
   const [openMover, setOpenMover] = useState(() => searchParams.get('open') || null);
@@ -290,17 +298,20 @@ export default function EconomyPage() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Self-write guard: distinguishes our own URL writes from back/forward changes.
+  // view is part of the serialized state so the Today/This-week choice is
+  // shareable + refresh-safe (and survives a filter/sort write that rebuilds the qs).
   const lastWritten = useRef(null);
   useEffect(() => {
-    const str = buildParams(filters, sort, openMover).toString();
+    const str = buildParams(filters, sort, openMover, view).toString();
     if (str === lastWritten.current) return;
     lastWritten.current = str;
     setSearchParams(new URLSearchParams(str), { replace: true });
-  }, [filters, sort, openMover, setSearchParams]);
+  }, [filters, sort, openMover, view, setSearchParams]);
   useEffect(() => {
     const cur = searchParams.toString();
     if (cur === lastWritten.current) return; // our own write echoing back
     lastWritten.current = cur;               // external (back/forward) change → reseed
+    setView(parseViewFromParams(searchParams));
     setFilters(parseFiltersFromParams(searchParams));
     setSort(parseSortFromParams(searchParams));
     setOpenMover(searchParams.get('open') || null);
@@ -571,15 +582,39 @@ export default function EconomyPage() {
       <div className="ep-masthead-band">
         <div>
           <h1>Economy</h1>
-          <p className="ep-deck">What today&apos;s news is repricing — instrument-first.</p>
-          <Link className="ep-weekly-wrap" to="/weekly-markets">Weekly wrap →</Link>
+          <p className="ep-deck">
+            {view === 'week'
+              ? 'The week in markets — a reviewed, published wrap.'
+              : 'What today’s news is repricing — instrument-first.'}
+          </p>
+          {/* Today / This week mode toggle — segmented control. Persists to ?view=. */}
+          <div className="ep-mode-toggle" role="tablist" aria-label="Markets view">
+            <button
+              type="button" role="tab" aria-selected={view === 'today'}
+              className={`ep-mode-btn${view === 'today' ? ' on' : ''}`}
+              onClick={() => setView('today')}
+            >Today</button>
+            <button
+              type="button" role="tab" aria-selected={view === 'week'}
+              className={`ep-mode-btn${view === 'week' ? ' on' : ''}`}
+              onClick={() => setView('week')}
+            >This week</button>
+          </div>
         </div>
-        <div className="ep-timestamp">
-          {marketsTime ? <>as of <b>{marketsTime}</b><br /></> : null}
-          5-min snapshot · refreshes hourly<br />
-          prices: Frankfurter / Yahoo / CoinGecko
-        </div>
+        {view === 'today' && (
+          <div className="ep-timestamp">
+            {marketsTime ? <>as of <b>{marketsTime}</b><br /></> : null}
+            5-min snapshot · refreshes hourly<br />
+            prices: Frankfurter / Yahoo / CoinGecko
+          </div>
+        )}
       </div>
+
+      {/* ===== "THIS WEEK" MODE — calm editorial wrap, its own layout ===== */}
+      {view === 'week' && <WeeklyMarketsView />}
+
+      {/* ===== "TODAY" MODE — the live instrument dashboard (unchanged) ===== */}
+      {view === 'today' && <>
 
       {/* ===== TODAY-IN-THE-ECONOMY BRIEFING (lead synthesis) ===== */}
       {showBriefing && (
@@ -994,6 +1029,7 @@ export default function EconomyPage() {
         </aside>
 
       </div>
+      </>}
     </div>
   );
 }

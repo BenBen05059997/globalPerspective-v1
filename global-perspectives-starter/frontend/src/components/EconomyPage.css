@@ -43,18 +43,32 @@
   color: var(--ink-dim);
   margin: 0;
 }
-.ep-weekly-wrap {
-  display: inline-block;
-  margin-top: 8px;
+/* Today / This week segmented control — sits under the deck in the masthead. */
+.ep-mode-toggle {
+  display: inline-flex;
+  margin-top: 14px;
+  border: 1px solid var(--ink);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.ep-mode-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  text-decoration: none;
-  color: var(--accent);
+  color: var(--ink-dim);
+  padding: 7px 16px;
+  transition: background 0.12s ease, color 0.12s ease;
 }
-.ep-weekly-wrap:hover { text-decoration: underline; text-underline-offset: 2px; }
+.ep-mode-btn + .ep-mode-btn { border-left: 1px solid var(--ink); }
+.ep-mode-btn:hover { color: var(--ink); }
+.ep-mode-btn.on { background: var(--ink); color: var(--paper); }
 .ep-timestamp {
   font-family: var(--mono);
   font-size: 11px;

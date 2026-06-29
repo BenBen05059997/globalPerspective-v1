@@ -64,7 +64,8 @@ must_have "$SRC/components/DailyPage.jsx" "SeverityBadge" "renders SeverityBadge
 # ─── ThreadPage ───
 must_have "$SRC/components/ThreadPage.jsx" "useEconomicImpact" "uses useEconomicImpact"
 must_have "$SRC/components/ThreadPage.jsx" "MechanismCard" "renders MechanismCard"
-must_have "$SRC/components/ThreadPage.jsx" "DisruptionPreview" "renders DisruptionPreview"
+# DisruptionPreview removed 2026-06-29 — economy now lives in the center Economy
+# tab (MechanismCard) after the rail was de-duplicated; preview atom no longer used here.
 must_have "$SRC/components/ThreadPage.jsx" "hasEconomy" "computes hasEconomy gate"
 
 # ─── CountryPage ───

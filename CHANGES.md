@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-06-29 (ux: unify ThreadPage tabs + promote CountryPage causal graph to a center tab)
+
+Layout cleanup on the two narrative-intelligence pages, after a review flagged the right rail being overloaded and ThreadPage having two competing tab systems. Built + reviewed live in an isolated worktree, approved, merged.
+
+- **ThreadPage (`/weekly/thread/:threadId`) — one tab system, not two.** The right "Arc Intelligence" rail was its own tab widget (Summary / What's Next / Trace / Watch) competing with the center content tabs (Timeline / Actors / Sources / Economy), and it **duplicated** key actors + the economic-impact preview that already live in the center tabs. The rail is now a single **stacked synthesis column** (Summary → What's Next → Trace → Watch → Live Web Evidence, dotted dividers between sections); the center tab bar is the only tab system and solely owns actors + economy. Removed the now-dead `aiTab` state, `aiTabs`/`aiContent`, the in-rail actors/`DisruptionPreview` blocks, and the `DisruptionPreview` import; the below-timeline watch fallback now keys off `!hasAiRail`.
+- **CountryPage (`/weekly/country/:countryName`) — causal graph promoted out of the rail.** The `SystemsGraph` causal web was buried as the 5th of 8 stacked right-rail modules at rail width. It's now a first-class center **"Causal Web"** tab (shown only when `systemsData.nodes` exist — i.e. Iran/Argentina under the current `SYSTEMS_TEST_COUNTRIES` gate), getting full center width; the rail drops to 7 modules.
+- **Verify green:** `npm run verify` (0 ESLint errors, 178 tests) + production build clean.
+
+Files: `…/src/components/{ThreadPage.jsx,ThreadPage.css,CountryPage.jsx,CountryPage.css}`, `docs/assets`, `docs/index.html`, `docs/404.html`.
+
 ## 2026-06-27 (feat: Weekly Markets Report — price-first weekly wrap, `/weekly-markets`)
 
 A new **price-first** weekly markets surface — "what moved this week and why" — the instrument→explanation counterpart of `/economy` (news→instrument). Sibling of the Weekly Signals Brief: generate draft → human approve → publish → serve. Plan: `WEEKLY_MARKETS_PLAN.md`.

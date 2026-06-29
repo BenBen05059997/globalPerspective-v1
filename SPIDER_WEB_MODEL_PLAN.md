@@ -73,6 +73,8 @@ Automated causal extraction from news is genuinely unreliable — this is the ev
 - **Causal overlay OFF by default**; expand-on-demand; filter/lens by actor / time / severity / layer.
 - This one change fixes the "scattered dots" feel more than anything else.
 
+> ✅ **SHIPPED 2026-06-30** — the country-tier **timeline-anchored layout** is live at `/spider-demo` (x=peakDate, y=category lanes; causal edges = dashed confidence-weighted toggle overlay; coverage ribbon + as-of marker + lane filters). Built from founder-provided mockups (`Causal Web.html` / `World Causal Overview.html`); field-by-field data contract in **`SPIDER_BUILD_SPEC.md`**. NOTE: I shipped the causal toggle **ON by default** (not off) only because the backbone layer is empty (see below) — flip to OFF once the backbone exists. The **backbone is the remaining gap**, and it is DATA not layout.
+
 > Research caveat: the formalism + visualization conclusions are reasoned from established/textbook practice — the verification harness rate-limited on both angles across two passes, so they are NOT independently verified here. The accuracy/defensible-edge section IS verified (peer-reviewed/arXiv).
 
 ---
@@ -81,7 +83,9 @@ Automated causal extraction from news is genuinely unreliable — this is the ev
 
 - This is a refinement of the **causal-web core** (Phase 2 of `ENTERPRISE_ANALYST_TOOL_PLAN.md`) + the prototype.
 - **Still gated by discovery** — don't rebuild before the analyst conversations confirm the wedge. The flip makes the *eventual* build right; it does not change the rule that validation comes first.
-- Cheap interim: ✅ DONE 2026-06-29 (commit `034cfe2`, deployed live) — `/spider-demo` now shows story-headline labels (not the category word) and hides the temporal-anomaly edges, making it demo-safe. The full flipped-model rebuild below remains gated by discovery.
+- Cheap interim: ✅ DONE 2026-06-29 (commit `034cfe2`, deployed live) — `/spider-demo` now shows story-headline labels (not the category word) and hides the temporal-anomaly edges, making it demo-safe.
+- **Layout half of the rebuild: ✅ SHIPPED + DEPLOYED 2026-06-30** (source `d4ae6de`, deploy `8a6a2dc`) — timeline+lane country view per the mockups (see Visualization note above). What this DIDN'T do: the **backbone (co-occurrence/shared-actor) layer is still empty** because the backend doesn't produce it. The remaining work is the DATA half ↓.
+- **Next backend unlock (the gating piece, per `SPIDER_BUILD_SPEC.md`):** add `actors[]` to each node + `class: 'backbone' | 'causal'` to each edge in `newsSystemsAnalysis` (one extra field in the existing LLM call) + a deterministic backbone-edge post-process (shared_actor weight, narrative_continuation, temporal_sequence). This lights up the solid backbone the design is built around AND unblocks the **world tier** (situation-clustering + cross-region). Still gated by discovery for the world tier / coverage widening; the country backbone is a contained, non-gated backend add whenever you want it.
 
 ---
 

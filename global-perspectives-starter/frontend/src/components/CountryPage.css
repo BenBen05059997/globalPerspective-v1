@@ -756,3 +756,11 @@
   line-height: 1.45;
   color: var(--ink-faint);
 }
+
+/* Causal Web promoted to the center column — give the graph breathing room */
+.cpg-causal-center {
+  margin-top: 4px;
+}
+.cpg-causal-center .sysg {
+  max-height: none;
+}

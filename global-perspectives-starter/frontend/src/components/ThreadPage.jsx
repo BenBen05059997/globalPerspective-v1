@@ -16,7 +16,6 @@ import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
 import SourceRobustness from './atoms/SourceRobustness';
 import MechanismCard from './atoms/MechanismCard';
-import DisruptionPreview from './atoms/DisruptionPreview';
 import { useEconomicImpact } from '../hooks/useEconomicImpact';
 import './ThreadPage.css';
 
@@ -58,7 +57,6 @@ export default function ThreadPage() {
   const { entries: narrativeEntries, loading: threadLoading } = useNarrativeThread(threadId);
   const { dayMap, sortedDates } = useWeeklyArchive();
   const [contentTab, setContentTab] = useState('timeline');
-  const [aiTab, setAiTab] = useState('summary');
 
   const thread = useMemo(() => {
     if (!narrativeEntries || !narrativeEntries.length) return null;
@@ -227,21 +225,6 @@ export default function ThreadPage() {
     ? `⚑ INFLECTION · ${formatDateLabel(inflectionEntry.date).toUpperCase()}`
     : null;
 
-  // AI tabs
-  const aiTabs = [
-    analysis?.storyArc       && { key: 'summary',    label: 'Summary' },
-    analysis?.trajectory     && { key: 'trajectory', label: "What's Next" },
-    analysis?.rootCauseChain && { key: 'trace',      label: 'Trace Cause' },
-    analysis?.watchQuestions?.length && { key: 'watch', label: 'Watch' },
-  ].filter(Boolean);
-
-  const aiContent = {
-    summary:    analysis?.storyArc,
-    trajectory: analysis?.trajectory,
-    trace:      analysis?.rootCauseChain,
-    watch:      null,
-  };
-
   // Left rail
   const leftRail = (
     <div className="tp-left">
@@ -288,69 +271,51 @@ export default function ThreadPage() {
     </div>
   );
 
-  // Right AI rail
-  const rightRail = aiTabs.length > 0 && (
+  // Right AI rail — a single stacked "Arc Intelligence" synthesis column.
+  // No longer a competing tab widget: the AI narrative reads top-to-bottom here,
+  // while the center tab bar (Timeline/Actors/Sources/Economy) owns the evidence —
+  // so actors + economy live in the center, not duplicated in the rail.
+  const hasAiRail = analysis && (
+    analysis.storyArc || analysis.trajectory || analysis.rootCauseChain ||
+    analysis.watchQuestions?.length || analysis.groundingSources?.length
+  );
+  const rightRail = hasAiRail && (
     <div className="tp-ai-rail">
       <div className="tp-ai-hd">
         <div className="tp-ai-hd-label"><span className="tp-ai-dot" />Arc Intelligence</div>
         <span className="tp-ai-model">AI analysis</span>
       </div>
-      <div className="tp-ai-tabs">
-        {aiTabs.map(tab => (
-          <button
-            key={tab.key}
-            className={`tp-ai-tab${aiTab === tab.key ? ' on' : ''}`}
-            onClick={() => setAiTab(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
       <div className="tp-ai-body">
-        {aiTab === 'watch' ? (
-          analysis?.watchQuestions?.length > 0 ? (
-            <ul className="tp-watch-list">
-              {analysis.watchQuestions.map((q, i) => (
-                <li key={i}>{q}</li>
-              ))}
-            </ul>
-          ) : null
-        ) : aiContent[aiTab] ? (
-          <p className="tp-ai-text">{aiContent[aiTab]}</p>
-        ) : (
-          <div className="tp-ai-empty">No analysis available</div>
-        )}
-
-        {/* Key actors */}
-        {analysis?.keyActors?.length > 0 && (
-          <div className="tp-ai-actors">
-            <div className="tp-ai-section-lbl">Key Actors</div>
-            {analysis.keyActors.map((a, i) => (
-              <div key={i} className="tp-actor-row">
-                <div className="tp-actor-av">{(a.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
-                <div className="tp-actor-body">
-                  <div className="tp-actor-name">{a.name}</div>
-                  <div className="tp-actor-role">{a.role}</div>
-                </div>
-                <div className="tp-actor-count">{a.mentionCount}</div>
-              </div>
-            ))}
+        {analysis?.storyArc && (
+          <div className="tp-ai-block">
+            <div className="tp-ai-section-lbl">Summary</div>
+            <p className="tp-ai-text">{analysis.storyArc}</p>
           </div>
         )}
-
-        {/* Economic Disruption preview — jumps to center Economy tab */}
-        {hasEconomy && (
-          <div style={{ marginTop: 18 }}>
-            <DisruptionPreview
-              impact={economicImpact}
-              onExpand={() => setContentTab('economy')}
-            />
+        {analysis?.trajectory && (
+          <div className="tp-ai-block">
+            <div className="tp-ai-section-lbl">What&apos;s Next</div>
+            <p className="tp-ai-text">{analysis.trajectory}</p>
+          </div>
+        )}
+        {analysis?.rootCauseChain && (
+          <div className="tp-ai-block">
+            <div className="tp-ai-section-lbl">Trace Cause</div>
+            <p className="tp-ai-text">{analysis.rootCauseChain}</p>
+          </div>
+        )}
+        {analysis?.watchQuestions?.length > 0 && (
+          <div className="tp-ai-block">
+            <div className="tp-ai-section-lbl">Watch</div>
+            <ul className="tp-watch-list">
+              {analysis.watchQuestions.map((q, i) => <li key={i}>{q}</li>)}
+            </ul>
           </div>
         )}
 
         {/* Grounding sources */}
         {analysis?.groundingSources?.length > 0 && (
-          <div style={{ marginTop: 18 }}>
+          <div className="tp-ai-block">
             <div className="tp-ai-section-lbl">Live Web Evidence</div>
             {analysis.groundingSources.slice(0, 3).map((s, i) => (
               <div key={i} className="tp-grounding-card">
@@ -584,8 +549,9 @@ export default function ThreadPage() {
           </>
         )}
 
-        {/* Watch questions (below timeline if no AI rail) */}
-        {aiTabs.length === 0 && analysis?.watchQuestions?.length > 0 && (
+        {/* Watch questions fallback — only when the AI rail isn't shown (e.g. thread
+            has key actors but no narrative/grounding), so the watch list still lands. */}
+        {!hasAiRail && analysis?.watchQuestions?.length > 0 && (
           <div style={{ marginTop: 24 }}>
             <div className="tp-section-lbl">Questions to Watch</div>
             <ul className="tp-watch-list">

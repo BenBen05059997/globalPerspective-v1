@@ -2,6 +2,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { assembleDossier } = require('./dossier');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -503,6 +504,56 @@ exports.handler = async (event) => {
       } catch (err) {
         console.error('systems_analysis error', err);
         return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Lookup failed' }) };
+      }
+    }
+
+    if (action === 'event_dossier') {
+      const countryName = payload?.countryName || qs?.countryName;
+      const threadId = payload?.threadId || qs?.threadId;
+      const hops = Math.max(1, Math.min(2, parseInt(payload?.hops || 1, 10)));
+      if (!countryName || !threadId) {
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing countryName or threadId' }) };
+      }
+      const client = getDynamoClient();
+      try {
+        const { Item } = await client.send(new GetCommand({
+          TableName: SUMMARIZE_PREDICT_TABLE,
+          Key: { PK: `SYSTEMS#${countryName}`, SK: 'SYSTEMS_ANALYSIS' },
+        }));
+        if (!Item) {
+          return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Systems analysis not found for this country' }) };
+        }
+        const { PK, SK, ttl, ...graph } = Item;
+
+        // Structural pass to learn the subgraph node set, then fetch genesis for those.
+        const base = assembleDossier(graph, threadId, { countryName, hops });
+        if (!base) {
+          return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Focal thread not found in this graph' }) };
+        }
+        const ids = base.nodes.map(n => n.id).slice(0, 10); // bound genesis reads
+        const genesisByThread = {};
+        await Promise.all(ids.map(async (id) => {
+          try {
+            const resp = await readNarrativeThread(id, ENTERPRISE_MAX_DAYS);
+            const entries = resp?.body?.data;
+            if (Array.isArray(entries) && entries.length) {
+              genesisByThread[id] = entries.slice(0, 12).map(e => ({
+                date: e.date || null,
+                event: e.title || e.summary || e.headline || null,
+                sources: e.sourceCount ?? (Array.isArray(e.sources) ? e.sources.length : (Array.isArray(e.sourceUrls) ? e.sourceUrls.length : null)),
+              }));
+            }
+          } catch { /* genesis is best-effort */ }
+        }));
+
+        const dossier = assembleDossier(graph, threadId, { countryName, hops, genesisByThread });
+        console.info('newsSensitiveData event_dossier response', {
+          countryName, threadId, hops, nodes: dossier.nodes.length, edges: dossier.edges.length, backbone: dossier.backbone.length,
+        });
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: dossier }) };
+      } catch (err) {
+        console.error('event_dossier error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Dossier build failed' }) };
       }
     }
 

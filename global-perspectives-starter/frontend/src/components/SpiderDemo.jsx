@@ -15,7 +15,9 @@ import { threadPath } from '../utils/threadPath';
 import CompactTimeline from './CompactTimeline';
 import './SpiderDemo.css';
 
-const DEMO_COUNTRY = 'Iran';
+// Countries with a live systems_analysis graph (SYSTEMS_TEST_COUNTRIES gate).
+const COUNTRIES = ['Iran', 'United States', 'China', 'Ukraine', 'Venezuela'];
+const DEFAULT_COUNTRY = 'Iran';
 
 // ── Category / lane config ────────────────────────────────────────────────────
 
@@ -300,7 +302,7 @@ function CausalWebSVG({
       width={svgW}
       height={svgH}
       viewBox={`0 0 ${svgW} ${svgH}`}
-      aria-label="Iran causal web timeline"
+      aria-label="Causal web timeline"
     >
       <defs>
         <marker id="sw-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -540,7 +542,7 @@ function Tooltip({ tip }) {
 
 // ── Node panel (all data logic preserved exactly; markup restyled to mockup) ──
 
-function NodePanel({ node, onClose }) {
+function NodePanel({ node, country, onClose }) {
   const { entries, loading: tlLoading, error: tlError } = useNarrativeThread(node?.threadId);
   const [prediction, setPrediction] = useState(null);
   const [predLoading, setPredLoading] = useState(false);
@@ -602,7 +604,7 @@ function NodePanel({ node, onClose }) {
 
         <Link
           className="spider-panel-arclink"
-          to={threadPath(node.threadId, { from: 'country', country: DEMO_COUNTRY })}
+          to={threadPath(node.threadId, { from: 'country', country })}
         >
           View full thread arc →
         </Link>
@@ -714,7 +716,8 @@ function EdgePanel({ edge, nodeMap, onClose }) {
 // ── Root component ─────────────────────────────────────────────────────────────
 
 export default function SpiderDemo() {
-  const { data: rawData, loading, error } = useSystemsAnalysis(DEMO_COUNTRY);
+  const [country, setCountry] = useState(DEFAULT_COUNTRY);
+  const { data: rawData, loading, error } = useSystemsAnalysis(country);
 
   const graphData = useMemo(() => curateData(rawData), [rawData]);
 
@@ -746,6 +749,13 @@ export default function SpiderDemo() {
   }, []);
 
   const closePanel = useCallback(() => {
+    setSelectedNode(null);
+    setSelectedEdge(null);
+    setSelectedEdgeKey(null);
+  }, []);
+
+  const handleCountryChange = useCallback((c) => {
+    setCountry(c);
     setSelectedNode(null);
     setSelectedEdge(null);
     setSelectedEdgeKey(null);
@@ -783,7 +793,15 @@ export default function SpiderDemo() {
       {/* Header */}
       <header className="spider-header">
         <div className="spider-header-row">
-          <h1 className="spider-title">Causal Web — Iran</h1>
+          <h1 className="spider-title">Causal Web — {country}</h1>
+          <select
+            className="spider-country-select"
+            value={country}
+            onChange={(e) => handleCountryChange(e.target.value)}
+            aria-label="Select country"
+          >
+            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
           <span className="spider-proto-badge">prototype</span>
         </div>
         <p className="spider-desc">
@@ -829,7 +847,7 @@ export default function SpiderDemo() {
             {loading && (
               <div className="spider-state">
                 <span className="spider-loading-dot" />
-                Loading Iran systems analysis…
+                Loading {country} systems analysis…
               </div>
             )}
             {error && (
@@ -839,7 +857,7 @@ export default function SpiderDemo() {
               </div>
             )}
             {!loading && !error && graphData && graphData.nodes.length === 0 && (
-              <div className="spider-state">No graph data returned for Iran.</div>
+              <div className="spider-state">No graph data returned for {country}.</div>
             )}
             {!loading && layout && (
               <CausalWebSVG
@@ -862,7 +880,7 @@ export default function SpiderDemo() {
         </div>
 
         {selectedNode && (
-          <NodePanel node={selectedNode} onClose={closePanel} />
+          <NodePanel node={selectedNode} country={country} onClose={closePanel} />
         )}
         {selectedEdge && !selectedNode && (
           <EdgePanel edge={selectedEdge} nodeMap={nodeMap} onClose={closePanel} />

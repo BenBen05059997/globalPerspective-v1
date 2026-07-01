@@ -54,6 +54,24 @@
   font-weight: 600;
 }
 
+.spider-country-select {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  padding: 4px 26px 4px 10px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236a6a6a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+}
+.spider-country-select:hover { border-color: var(--ink-dim); }
+.spider-country-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 .spider-desc {
   font-size: 13px;
   color: var(--ink-dim);

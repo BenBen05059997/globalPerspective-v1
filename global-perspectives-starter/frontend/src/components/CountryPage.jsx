@@ -11,6 +11,7 @@ import { useCountryHistory } from '../hooks/useCountryHistory';
 import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import SystemsGraph from './SystemsGraph';
+import CountryWhatChanged from './atoms/CountryWhatChanged';
 import SeverityBadge from './atoms/SeverityBadge';
 import DirectionArrow from './atoms/DirectionArrow';
 import { formatDateLabel } from '../utils/dateUtils';
@@ -786,6 +787,9 @@ export default function CountryPage() {
               </div>
             </div>
           </div>
+
+          {/* What changed — living-analysis Phase 1a (deterministic, honest-empty if no material move) */}
+          <CountryWhatChanged snapshots={riskHistory} />
 
           {/* Tabs */}
           <div className="cpg-tabs">

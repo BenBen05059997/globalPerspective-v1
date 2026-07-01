@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-07-01 (fix: label causal-web nodes when sparse — no more anonymous dots)
+
+The `/spider-demo` causal web rendered stories as unlabeled colored dots on sparse country graphs — you couldn't tell what any story was without clicking each one, defeating the "understand at a glance" purpose. Node labels were gated on `_imp >= 4` (degree ≥3), which no node clears on a small graph.
+
+- **Level-of-detail labels** (`SpiderDemo.jsx`): when the visible graph is **sparse (≤12 nodes)**, label **every** node (short headline below the bubble); only once it's **dense** does it fall back to importance-gating + reveal-on-hover/select, to avoid overlapping-text clutter. Selection still spotlights (focus + neighbors bright, others dimmed — labels included). Pattern: Google-Maps-style semantic zoom + TradingView-style focus reveal.
+- Built + reviewed in an isolated worktree (`worktree-spider-node-labels`), `npm run verify` green (0 ESLint errors, 178 tests), merged to main.
+
+Files: `…/src/components/SpiderDemo.jsx`, `docs/assets`, `docs/index.html`, `docs/404.html`.
+
 ## 2026-07-01 (feat: surface dossier provenance on /spider-demo — fact vs inference made visible)
 
 The event dossier already computes a fact/inference honesty layer, but the UI discarded it after rendering the AI prose. Now it's shown — turning a real-but-hidden strength into a visible one (the #1 wedge from the code-grounded pitch audit; display-only, the data already existed).

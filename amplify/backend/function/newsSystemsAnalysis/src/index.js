@@ -242,6 +242,8 @@ CONFIDENCE LEVELS (use these exactly):
 
 CAUSAL DIRECTION: "from" = cause, "to" = effect. lagDays = days from cause's peakDate to effect's peakDate (can be negative if effect preceded cause in the archive, indicating reverse causation or co-movement). Must be between -90 and 90.
 
+ACTORS: for EVERY node, list 3-8 canonical named entities central to that thread — countries, leaders, organizations, armed groups, chokepoints/places, or key commodities (e.g. "Israel", "Hezbollah", "Strait of Hormuz", "Benjamin Netanyahu", "crude oil"). Use canonical names (no abbreviations, no duplicates). Be SPECIFIC — these are used to link related stories, so prefer "Strait of Hormuz" over "the region". It is fine (expected) to include ${country.countryName} itself, but always add the other specific actors too.
+
 Return ONLY this JSON structure — no commentary, no markdown:
 
 {
@@ -250,6 +252,7 @@ Return ONLY this JSON structure — no commentary, no markdown:
       "threadId": "<exact threadId from above>",
       "category": "<category>",
       "peakDate": "<YYYY-MM-DD>",
+      "actors": ["<canonical entity>", "<canonical entity>", "..."],
       "summary": "<1 sentence describing the thread's core development>"
     }
   ],
@@ -266,6 +269,26 @@ Return ONLY this JSON structure — no commentary, no markdown:
 }`;
 }
 
+// Normalize an LLM-provided actors array: coerce to strings, trim, collapse
+// whitespace, dedupe case-insensitively (keep first display form), cap length.
+const MAX_ACTORS_PER_NODE = 8;
+function normalizeActors(raw) {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const a of raw) {
+    if (typeof a !== 'string') continue;
+    const disp = a.replace(/\s+/g, ' ').trim();
+    if (!disp) continue;
+    const key = disp.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(disp);
+    if (out.length >= MAX_ACTORS_PER_NODE) break;
+  }
+  return out;
+}
+
 function validateGraph(parsed, country) {
   const validThreadIds = new Set(country.threads.map(t => t.threadId));
   const validTopicIds = new Set(country.allTopicIds);
@@ -278,6 +301,8 @@ function validateGraph(parsed, country) {
     }
     return true;
   });
+  // Normalize actors on every surviving node (default to [] if absent)
+  for (const n of nodes) n.actors = normalizeActors(n.actors);
   const validNodeIds = new Set(nodes.map(n => n.threadId));
 
   // Validate + filter edges
@@ -302,6 +327,10 @@ function validateGraph(parsed, country) {
     if (e.confidence === 'strong' && validCited.length < 3) e.confidence = 'medium';
     if (e.confidence === 'medium' && validCited.length < 2) e.confidence = 'weak';
 
+    // Tag layer: these LLM-inferred edges are the CAUSAL overlay (model judgment).
+    e.class = 'causal';
+    e.relation = 'inferred_influence';
+
     // Cap edges per source node
     edgesPerNode[e.from] = (edgesPerNode[e.from] || 0) + 1;
     if (edgesPerNode[e.from] > MAX_EDGES_PER_NODE) {
@@ -313,6 +342,69 @@ function validateGraph(parsed, country) {
   });
 
   return { nodes, edges };
+}
+
+// ─── Backbone edges (deterministic, no LLM) ───────────────────────────────────
+// The reliable, dense layer: two threads are linked if they share SPECIFIC named
+// actors. Excludes "ambient" actors — the country itself and any actor present in
+// ≥ AMBIENT_FRACTION of nodes — because those are the topic, not a link (linking
+// every Iran thread on "Iran" would make a useless complete graph). Weight = number
+// of specific shared actors. Undirected in meaning; `from`/`to` ordered by peakDate
+// (earlier → later) purely so the frontend can draw it. Per-node degree is capped.
+const BACKBONE_MAX_DEGREE = 4;
+const AMBIENT_FRACTION = 0.6;
+
+function buildBackboneEdges(nodes, countryName) {
+  const n = nodes.length;
+  if (n < 2) return [];
+
+  // Case-insensitive actor set per node + document frequency across nodes
+  const df = {};
+  const actorSets = nodes.map(nd => {
+    const m = new Map(); // key -> display
+    for (const a of (nd.actors || [])) m.set(a.toLowerCase(), a);
+    for (const key of m.keys()) df[key] = (df[key] || 0) + 1;
+    return m;
+  });
+
+  const ambientThreshold = Math.max(2, Math.ceil(AMBIENT_FRACTION * n));
+  const countryKey = (countryName || '').toLowerCase();
+  const isAmbient = (key) => key === countryKey || df[key] >= ambientThreshold;
+
+  // Candidate shared_actor edges over specific (non-ambient) actors
+  const candidates = [];
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const shared = [];
+      for (const [key, disp] of actorSets[i]) {
+        if (actorSets[j].has(key) && !isAmbient(key)) shared.push(disp);
+      }
+      if (shared.length === 0) continue;
+      const a = nodes[i], b = nodes[j];
+      const [from, to] = (a.peakDate || '') <= (b.peakDate || '') ? [a, b] : [b, a];
+      candidates.push({
+        from: from.threadId,
+        to: to.threadId,
+        class: 'backbone',
+        relation: 'shared_actor',
+        sharedActors: shared,
+        weight: shared.length,
+        directed: false,
+      });
+    }
+  }
+
+  // Greedy: keep highest-weight edges first, cap per-node degree to avoid a hairball
+  candidates.sort((x, y) => y.weight - x.weight);
+  const deg = {};
+  const kept = [];
+  for (const e of candidates) {
+    if ((deg[e.from] || 0) >= BACKBONE_MAX_DEGREE || (deg[e.to] || 0) >= BACKBONE_MAX_DEGREE) continue;
+    kept.push(e);
+    deg[e.from] = (deg[e.from] || 0) + 1;
+    deg[e.to] = (deg[e.to] || 0) + 1;
+  }
+  return kept;
 }
 
 async function generateSystemsAnalysis(country) {
@@ -329,7 +421,10 @@ async function generateSystemsAnalysis(country) {
 
   const graph = validateGraph(parsed, country);
 
-  console.log(`  Raw: ${parsed.nodes?.length || 0} nodes, ${parsed.edges?.length || 0} edges → Valid: ${graph.nodes.length} nodes, ${graph.edges.length} edges`);
+  // Deterministic reliable backbone from shared actors (separate layer from causal)
+  graph.backbone = buildBackboneEdges(graph.nodes, country.countryName);
+
+  console.log(`  Raw: ${parsed.nodes?.length || 0} nodes, ${parsed.edges?.length || 0} edges → Valid: ${graph.nodes.length} nodes, ${graph.edges.length} causal edges, ${graph.backbone.length} backbone edges`);
 
   return graph;
 }
@@ -347,6 +442,7 @@ async function writeAnalysis(countryName, graph, country) {
       countryName,
       nodes: graph.nodes,
       edges: graph.edges,
+      backbone: graph.backbone || [],
       totalArticles: country.totalArticles,
       threadCount: country.threads.length,
       generatedAt: new Date().toISOString(),
@@ -394,3 +490,7 @@ function stripCodeFence(value) {
   if (typeof value !== 'string') return value;
   return value.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').trim();
 }
+
+// Exported for unit testing the pure, deterministic helpers (no AWS/LLM needed).
+module.exports.buildBackboneEdges = buildBackboneEdges;
+module.exports.normalizeActors = normalizeActors;

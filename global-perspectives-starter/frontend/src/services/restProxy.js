@@ -209,6 +209,11 @@ export async function fetchDossierAnalysis(countryName, threadId, hops = 1) {
   return proxyAction('dossier_analysis', { countryName, threadId, hops });
 }
 
+// World overview — per-country situation stats across all systems graphs
+export async function fetchWorldOverview() {
+  return proxyAction('world_overview', {});
+}
+
 // ── Economic Impact (per-thread economic disruption) ─────────────────────────
 export async function fetchEconomicImpact(threadId) {
   return proxyAction('economic_impact', { threadId });

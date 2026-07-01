@@ -858,3 +858,31 @@
   cursor: pointer;
 }
 .spider-ai-link:hover { text-decoration: underline; }
+
+/* ── Mode toggle (World / Country) + world bubbles ───────────────────────── */
+.spider-mode-toggle {
+  display: inline-flex;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.spider-mode-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: var(--paper);
+  border: none;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.spider-mode-btn + .spider-mode-btn { border-left: 1px solid var(--line-2); }
+.spider-mode-on { background: var(--accent); color: #fff; }
+.spider-world-count {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  fill: #fff;
+  pointer-events: none;
+}

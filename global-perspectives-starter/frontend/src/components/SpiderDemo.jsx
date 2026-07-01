@@ -13,6 +13,7 @@ import { useNarrativeThread } from '../hooks/useNarrativeThread';
 import { fetchPredictionCache, fetchDossierAnalysis } from '../services/restProxy';
 import { threadPath } from '../utils/threadPath';
 import CompactTimeline from './CompactTimeline';
+import WorldOverview from './SpiderWorld';
 import './SpiderDemo.css';
 
 // Countries with a live systems_analysis graph (SYSTEMS_TEST_COUNTRIES gate).
@@ -784,6 +785,7 @@ export default function SpiderDemo() {
   const [activeLanes, setActiveLanes] = useState(new Set(LANE_ORDER));
   const [causalOn, setCausalOn] = useState(false); // default OFF — backbone is the primary structure
   const [tip, setTip] = useState(null);
+  const [mode, setMode] = useState('country'); // 'country' | 'world'
 
   const handleNodeClick = useCallback((node) => {
     setSelectedNode(prev => prev?.threadId === node.threadId ? null : node);
@@ -805,6 +807,15 @@ export default function SpiderDemo() {
 
   const handleCountryChange = useCallback((c) => {
     setCountry(c);
+    setSelectedNode(null);
+    setSelectedEdge(null);
+    setSelectedEdgeKey(null);
+  }, []);
+
+  // Drill from the world overview into a country's causal web.
+  const handleDrill = useCallback((c) => {
+    setCountry(c);
+    setMode('country');
     setSelectedNode(null);
     setSelectedEdge(null);
     setSelectedEdgeKey(null);
@@ -842,25 +853,36 @@ export default function SpiderDemo() {
       {/* Header */}
       <header className="spider-header">
         <div className="spider-header-row">
-          <h1 className="spider-title">Causal Web — {country}</h1>
-          <select
-            className="spider-country-select"
-            value={country}
-            onChange={(e) => handleCountryChange(e.target.value)}
-            aria-label="Select country"
-          >
-            {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <h1 className="spider-title">{mode === 'world' ? 'Causal Web — World' : `Causal Web — ${country}`}</h1>
+          <div className="spider-mode-toggle">
+            <button className={`spider-mode-btn${mode === 'world' ? ' spider-mode-on' : ''}`} onClick={() => setMode('world')}>World</button>
+            <button className={`spider-mode-btn${mode === 'country' ? ' spider-mode-on' : ''}`} onClick={() => setMode('country')}>Country</button>
+          </div>
+          {mode === 'country' && (
+            <select
+              className="spider-country-select"
+              value={country}
+              onChange={(e) => handleCountryChange(e.target.value)}
+              aria-label="Select country"
+            >
+              {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
           <span className="spider-proto-badge">prototype</span>
         </div>
         <p className="spider-desc">
-          Stories laid out by <strong>time</strong> (left → right) and <strong>category</strong> (lanes).
-          <strong> Solid lines</strong> = shared-actor backbone (factual). <strong>Dashed lines</strong> = model-judged cause→effect (toggle on).
-          Click a story for its genesis; click a dashed link for the mechanism.
+          {mode === 'world' ? (
+            <>Global overview — each bubble is a country&apos;s situation on its <strong>region</strong> lane, sized by <strong>thread count</strong>. Click a bubble to open its causal web.</>
+          ) : (
+            <>Stories laid out by <strong>time</strong> (left → right) and <strong>category</strong> (lanes).{' '}
+            <strong>Solid lines</strong> = shared-actor backbone (factual). <strong>Dashed lines</strong> = model-judged cause→effect (toggle on).
+            Click a story for its genesis; click a dashed link for the mechanism.</>
+          )}
         </p>
       </header>
 
-      {/* Control bar */}
+      {/* Control bar (country mode only) */}
+      {mode === 'country' && (
       <div className="spider-controls">
         <div className="spider-legend">
           {LANE_ORDER.map(lane => {
@@ -888,8 +910,14 @@ export default function SpiderDemo() {
           <span className="spider-toggle-ck">dashed · model judgment</span>
         </button>
       </div>
+      )}
 
-      {/* Body: graph area + sliding panel */}
+      {/* Body: world overview OR country graph + sliding panel */}
+      {mode === 'world' ? (
+        <div className="spider-body">
+          <WorldOverview onDrill={handleDrill} />
+        </div>
+      ) : (
       <div className={`spider-body${hasPanel ? ' spider-body-panel' : ''}`}>
         <div className="spider-graph-wrap">
           <div className="spider-graph-scroll">
@@ -935,22 +963,31 @@ export default function SpiderDemo() {
           <EdgePanel edge={selectedEdge} nodeMap={nodeMap} onClose={closePanel} />
         )}
       </div>
+      )}
 
-      {!hasPanel && (
+      {mode === 'country' && !hasPanel && (
         <div className="spider-hint">Click any story · scroll horizontally for full span</div>
       )}
 
       {/* Footer */}
-      <footer className="spider-footer">
-        <span><strong>{visibleNodeCount}</strong> stories</span>
-        <span><strong>{backboneCount}</strong> backbone links (shared-actor)</span>
-        <span><strong>{causalEdgeCount}</strong> causal links</span>
-        <span className="spider-footer-spacer" />
-        <span>Confidence shown as weak / medium / strong — never a fabricated %</span>
-        {graphData?.generatedAt && (
-          <span>generated <strong>{graphData.generatedAt}</strong></span>
-        )}
-      </footer>
+      {mode === 'world' ? (
+        <footer className="spider-footer">
+          <span>Each bubble = a country&apos;s situation · sized by thread count</span>
+          <span className="spider-footer-spacer" />
+          <span>Click a bubble to drill into its causal web</span>
+        </footer>
+      ) : (
+        <footer className="spider-footer">
+          <span><strong>{visibleNodeCount}</strong> stories</span>
+          <span><strong>{backboneCount}</strong> backbone links (shared-actor)</span>
+          <span><strong>{causalEdgeCount}</strong> causal links</span>
+          <span className="spider-footer-spacer" />
+          <span>Confidence shown as weak / medium / strong — never a fabricated %</span>
+          {graphData?.generatedAt && (
+            <span>generated <strong>{graphData.generatedAt}</strong></span>
+          )}
+        </footer>
+      )}
 
       {/* Fixed-position hover tooltip */}
       {tip && <Tooltip tip={tip} />}

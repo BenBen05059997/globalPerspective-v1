@@ -73,14 +73,23 @@ The UI renders it as **"What changed since <date> — because <event>"**; the an
 1. **Note, never silent overwrite.** The correction is *recorded and shown* ("we said A; Z happened; revised B"). Silently editing the read = hindsight editing = the trust-killer.
 2. **Gate on the conclusion.** Fire only when risk/trajectory/direction materially moved — not on headline rewording (37% noise) or raw count change. Deterministic pre-filter → small LLM judge.
 3. **Ground or it's fabrication.** The corrector must cite the **real dated event** that caused the drift; label its own inference 💭. No ungrounded "corrections."
-4. **Different model family for the corrector** (mirror `newsEconomicQuality`) — a same-model reviewer rubber-stamps itself.
+4. **Model choice, scoped by task.** The family-bias rule (a model over-rates its own/same-provider output — [arXiv 2410.21819]) applies to a model **judging another's output quality**. The drift-corrector does NOT rate the analyzer's prose — it **grounds a causal explanation in a real dated event** (generation, not judging). So **same-family is fine here → corrector = DeepSeek** (decided 2026-07-01, cheaper/consistent). The different-family rule stays **reserved for a future quality-JUDGE step** (like `newsEconomicQuality`).
 5. **Human checkpoint only on conclusion-flips** — not every note; just the load-bearing ones (keeps it honest without a review bottleneck).
 
 ---
 
 ## Phased build (smallest real loop first)
 
-> **Decisions 2026-07-01:** corrector = a **dedicated `newsDriftCorrector` Lambda** (keeps the analyzer clean; matches the new-infra-is-easy preference). Phase 1 splits into **1a (deterministic, frontend-only — ship first)** and **1b (grounded corrector Lambda + narrative snapshot)** — deterministic-first, so we surface real change before adding any LLM.
+> **STATUS 2026-07-01:**
+> - **Phase 1a — ✅ SHIPPED + DEPLOYED** (`3c6766b`). `utils/countryDrift.js` (deterministic conclusion-gate, 6 tests) + `atoms/CountryWhatChanged.jsx` "What changed" band on `CountryPage` (revives `RiskDeltaPill`). Verified live: Ukraine (elevated→high fresh), Iran (high→elevated 19d ago), China (honest-empty). No LLM; honest-empty when stable.
+> - **Phase 1b — IN BUILD** (worktree `drift-corrector`). Decisions below.
+>
+> **Decisions 2026-07-01:**
+> - Corrector = a **dedicated `newsDriftCorrector` Lambda** (keeps the analyzer clean; matches the new-infra-is-easy preference).
+> - **Model = DeepSeek** (same family as the analyzer). Reconciled with the family-bias rule in non-negotiable #4: the corrector grounds a causal explanation in a real event (generation), it does not judge the analyzer's prose (which is where family-bias bites). Different-family stays reserved for a future quality-judge.
+> - **Defer the `HISTORY#` narrative-snapshot extension.** The scalar `HISTORY#` (risk/trajectory/headline) + the archive is enough to ground "why did risk move" → **no `newsCountryIntelligence` change** (one fewer prod deploy).
+> - **Deploy footprint for 1b:** new `newsDriftCorrector` Lambda (+ IAM role + EventBridge schedule ~07:20 UTC) + `newsSensitiveData` `country_history` serve update + frontend. The corrector→analyzer **feed-forward** (country-intel reads drift notes into its prompt) is a follow-up (1b.5).
+> - **Sequencing: build → prove locally against live data (borrow a key, real archive+history via the proxy) → show real grounded notes → deploy only if good.** Prove-before-ship.
 
 **Phase 1a — "What changed" from the history we already log (frontend-only, deterministic, no LLM).**
 - We *already* serve `country_history` (dated risk level/score/trajectory/headline). Compute the drift **deterministically** client-side: risk-level flips, |Δscore|≥8, trajectory/headline shifts between the last two materially-different snapshots.

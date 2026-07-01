@@ -353,7 +353,7 @@ export default function CountryPage() {
   const { intelligence } = useCountryIntelligence(decodedName ? [decodedName] : []);
   const intel = intelligence?.[decodedName];
   const { data: markets } = useMarketsCountry(decodedName);
-  const { snapshots: riskHistory } = useCountryHistory(decodedName);
+  const { snapshots: riskHistory, driftNotes } = useCountryHistory(decodedName);
   const { data: systemsData } = useSystemsAnalysis(decodedName);
   const { data: countryDisruptions } = useDisruptionsList(decodedName ? { country: decodedName, limit: 5 } : {});
 
@@ -789,7 +789,7 @@ export default function CountryPage() {
           </div>
 
           {/* What changed — living-analysis Phase 1a (deterministic, honest-empty if no material move) */}
-          <CountryWhatChanged snapshots={riskHistory} />
+          <CountryWhatChanged snapshots={riskHistory} driftNotes={driftNotes} />
 
           {/* Tabs */}
           <div className="cpg-tabs">

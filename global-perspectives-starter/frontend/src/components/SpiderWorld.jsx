@@ -1,8 +1,9 @@
 // SpiderWorld.jsx — World Overview tier for the /spider-demo prototype.
-// Top altitude of the causal-web system: region lanes × time, one "situation"
-// bubble per country that has a systems graph (sized by thread count). Click a
-// bubble to drill into that country's causal web. Throwaway prototype; deletable
-// with SpiderDemo.jsx. Uses only read-only fetchWorldOverview.
+// Top altitude of the causal-web system: region lanes, one "situation" bubble
+// per country that has a systems graph (sized by thread count), packed evenly
+// within its lane and labelled with its latest-activity date. Click a bubble to
+// drill into that country's causal web. Throwaway prototype; deletable with
+// SpiderDemo.jsx. Uses only read-only fetchWorldOverview.
 
 import { useState, useEffect, useMemo } from 'react';
 import { fetchWorldOverview } from '../services/restProxy';
@@ -28,6 +29,10 @@ const COUNTRY_REGION = {
 };
 function regionOf(country) { return COUNTRY_REGION[country] || 'gl'; }
 
+// Shorten a few long country names for on-canvas labels.
+const SHORT_NAME = { 'Democratic Republic of the Congo': 'DR Congo', 'United States': 'United States' };
+function shortName(c) { return SHORT_NAME[c] || c; }
+
 // Broad category → bubble color (matches the country-tier palette family).
 const CAT_COLOR = {
   conflict: '#c0492f', military: '#c0492f', war: '#c0492f',
@@ -42,16 +47,15 @@ function catColor(c) {
   return '#7d5ba6';
 }
 
-const COL_W = 96;
-const LANE_H = 120;
-const MARGIN = { top: 30, left: 150, right: 48, bottom: 24 };
-const DAY_MS = 86400000;
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function parseDate(s) {
+function shortDate(s) {
   const m = typeof s === 'string' && s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
+  return m ? `${MONTHS[+m[2] - 1]} ${+m[3]}` : '';
 }
+
+const COL_W = 158;
+const LANE_H = 128;
+const MARGIN = { top: 16, left: 150, right: 40, bottom: 24 };
 const rForThreads = (t) => 16 + Math.sqrt(Math.max(1, t)) * 4.2;
 
 export default function WorldOverview({ onDrill }) {
@@ -64,7 +68,7 @@ export default function WorldOverview({ onDrill }) {
     let cancelled = false;
     setLoading(true);
     fetchWorldOverview()
-      .then(r => { if (!cancelled) { setSituations(Array.isArray(r?.data) ? r.data : []); } })
+      .then(r => { if (!cancelled) setSituations(Array.isArray(r?.data) ? r.data : []); })
       .catch(e => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -72,35 +76,23 @@ export default function WorldOverview({ onDrill }) {
 
   const layout = useMemo(() => {
     if (!situations || !situations.length) return null;
-    const withDate = situations.map(s => ({ ...s, _ms: parseDate(s.latest) || parseDate(s.earliest) }));
-    const ms = withDate.map(s => s._ms).filter(Boolean);
-    const minMs = ms.length ? Math.min(...ms) : 0;
-    const maxMs = ms.length ? Math.max(...ms) : 0;
-    const totalDays = Math.max(1, Math.round((maxMs - minMs) / DAY_MS) + 1);
-    const xForMs = (m) => MARGIN.left + (m != null ? Math.round((m - minMs) / DAY_MS) : totalDays - 1) * COL_W + COL_W / 2;
-    const yForLane = (rk) => MARGIN.top + REGION_LANES.findIndex(l => l.key === rk) * LANE_H + LANE_H / 2;
+    // Group by region; pack evenly left→right within each lane (biggest first).
+    const byRegion = {};
+    situations.forEach(s => { const rk = regionOf(s.country); (byRegion[rk] = byRegion[rk] || []).push(s); });
+    Object.values(byRegion).forEach(arr => arr.sort((a, b) => b.threadCount - a.threadCount));
 
-    // jitter within same lane+day
-    const buckets = {};
-    withDate.forEach(s => {
-      const rk = regionOf(s.country);
-      const day = s._ms != null ? Math.round((s._ms - minMs) / DAY_MS) : totalDays - 1;
-      (buckets[`${rk}_${day}`] = buckets[`${rk}_${day}`] || []).push(s.country);
+    const placed = [];
+    REGION_LANES.forEach((lane, li) => {
+      const arr = byRegion[lane.key] || [];
+      const laneY = MARGIN.top + li * LANE_H + LANE_H / 2;
+      arr.forEach((s, i) => {
+        placed.push({ ...s, _rk: lane.key, _x: MARGIN.left + i * COL_W + COL_W / 2, _y: laneY - 6, _r: rForThreads(s.threadCount) });
+      });
     });
-
-    const placed = withDate.map(s => {
-      const rk = regionOf(s.country);
-      const day = s._ms != null ? Math.round((s._ms - minMs) / DAY_MS) : totalDays - 1;
-      const grp = buckets[`${rk}_${day}`];
-      const idx = grp.indexOf(s.country);
-      const baseY = yForLane(rk);
-      const y = grp.length > 1 ? baseY + (idx - (grp.length - 1) / 2) * 40 : baseY;
-      return { ...s, _rk: rk, _x: xForMs(s._ms), _y: y, _r: rForThreads(s.threadCount) };
-    });
-
-    const svgW = MARGIN.left + totalDays * COL_W + MARGIN.right;
+    const maxCols = Math.max(1, ...REGION_LANES.map(l => (byRegion[l.key] || []).length));
+    const svgW = MARGIN.left + maxCols * COL_W + MARGIN.right;
     const svgH = MARGIN.top + REGION_LANES.length * LANE_H + MARGIN.bottom;
-    return { placed, minMs, maxMs, totalDays, svgW, svgH };
+    return { placed, svgW, svgH };
   }, [situations]);
 
   return (
@@ -129,20 +121,20 @@ export default function WorldOverview({ onDrill }) {
               y2={MARGIN.top + REGION_LANES.length * LANE_H} className="spider-lane-rule" />
 
             {/* Situation bubbles */}
-            {layout.placed.map(s => {
-              const color = catColor(s.topCategory);
-              return (
-                <g key={s.country} style={{ cursor: 'pointer' }}
-                  onClick={() => onDrill(s.country)}
-                  onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, s })}
-                  onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
-                  onMouseLeave={() => setHover(null)}>
-                  <circle cx={s._x} cy={s._y} r={s._r} fill={color} opacity={0.9} stroke="#fff" strokeWidth={2} />
-                  <text x={s._x} y={s._y + 5} textAnchor="middle" className="spider-world-count">{s.threadCount}</text>
-                  <text x={s._x} y={s._y + s._r + 15} textAnchor="middle" className="spider-node-label">{s.country}</text>
-                </g>
-              );
-            })}
+            {layout.placed.map(s => (
+              <g key={s.country} style={{ cursor: 'pointer' }}
+                onClick={() => onDrill(s.country)}
+                onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, s })}
+                onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
+                onMouseLeave={() => setHover(null)}>
+                <circle cx={s._x} cy={s._y} r={s._r} fill={catColor(s.topCategory)} opacity={0.9} stroke="#fff" strokeWidth={2} />
+                <text x={s._x} y={s._y + 5} textAnchor="middle" className="spider-world-count">{s.threadCount}</text>
+                <text x={s._x} y={s._y + s._r + 16} textAnchor="middle" className="spider-node-label">{shortName(s.country)}</text>
+                <text x={s._x} y={s._y + s._r + 31} textAnchor="middle" className="spider-world-date">
+                  {s.latest ? `latest ${shortDate(s.latest)}` : ''}
+                </text>
+              </g>
+            ))}
           </svg>
         )}
       </div>
@@ -154,6 +146,7 @@ export default function WorldOverview({ onDrill }) {
           <div className="spider-tip-head">{hover.s.country}</div>
           <div className="spider-tip-meta">
             {hover.s.threadCount} threads · {hover.s.backboneCount} backbone links · mostly {hover.s.topCategory || 'mixed'}
+            {hover.s.latest ? ` · latest ${shortDate(hover.s.latest)}` : ''}
           </div>
           <div className="spider-tip-hint">click to open the causal web →</div>
         </div>

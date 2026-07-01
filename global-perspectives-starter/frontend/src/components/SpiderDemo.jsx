@@ -813,7 +813,7 @@ export default function SpiderDemo() {
   const [activeLanes, setActiveLanes] = useState(new Set(LANE_ORDER));
   const [causalOn, setCausalOn] = useState(false); // default OFF — backbone is the primary structure
   const [tip, setTip] = useState(null);
-  const [mode, setMode] = useState('country'); // 'country' | 'world'
+  const [mode, setMode] = useState('world'); // 'world' (top altitude) | 'country'
 
   const handleNodeClick = useCallback((node) => {
     setSelectedNode(prev => prev?.threadId === node.threadId ? null : node);

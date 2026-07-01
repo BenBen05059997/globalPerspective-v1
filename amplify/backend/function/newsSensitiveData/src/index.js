@@ -544,8 +544,46 @@ exports.handler = async (event) => {
             generatedAt: it.generatedAt || null,
           };
         }).filter(s => s.country && s.threadCount > 0);
-        console.info('newsSensitiveData world_overview response', { situations: situations.length });
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: situations }) };
+
+        // Cross-country links: two countries connect if their graphs share SPECIFIC
+        // actors. Exclude ambient actors (present in ≥40% of countries — Trump, G7,
+        // big-power names) so it forms regional clusters, not a Trump/G7 hairball.
+        const actorsByCountry = {};
+        const disp = {};
+        for (const it of items) {
+          const set = new Set();
+          for (const nd of (Array.isArray(it.nodes) ? it.nodes : [])) {
+            for (const a of (Array.isArray(nd.actors) ? nd.actors : [])) {
+              const raw = String(a).trim();
+              const k = raw.toLowerCase();
+              if (!k || k === String(it.countryName || '').toLowerCase()) continue;
+              set.add(k);
+              if (!disp[k]) disp[k] = raw;
+            }
+          }
+          if (it.countryName) actorsByCountry[it.countryName] = set;
+        }
+        const df = {};
+        Object.values(actorsByCountry).forEach(set => set.forEach(a => { df[a] = (df[a] || 0) + 1; }));
+        const nCountries = Object.keys(actorsByCountry).length;
+        const ambientThresh = Math.max(4, Math.ceil(0.4 * nCountries));
+        const names = Object.keys(actorsByCountry);
+        const links = [];
+        for (let i = 0; i < names.length; i++) {
+          for (let j = i + 1; j < names.length; j++) {
+            const A = actorsByCountry[names[i]];
+            const B = actorsByCountry[names[j]];
+            const shared = [];
+            for (const a of A) if (B.has(a) && df[a] < ambientThresh) shared.push(a);
+            if (shared.length >= 2) {
+              shared.sort((x, y) => df[x] - df[y]); // most-specific first
+              links.push({ from: names[i], to: names[j], weight: shared.length, sharedActors: shared.slice(0, 6).map(k => disp[k] || k) });
+            }
+          }
+        }
+
+        console.info('newsSensitiveData world_overview response', { situations: situations.length, links: links.length });
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: { situations, links } }) };
       } catch (err) {
         console.error('world_overview error', err);
         return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'World overview failed' }) };

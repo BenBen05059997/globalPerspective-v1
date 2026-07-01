@@ -6,6 +6,7 @@ const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 export function useCountryHistory(countryName) {
   const [snapshots, setSnapshots] = useState([]);
+  const [driftNotes, setDriftNotes] = useState([]); // living-analysis 1b grounded "what changed" notes
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -16,9 +17,10 @@ export function useCountryHistory(countryName) {
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
-        const { data, ts } = JSON.parse(cached);
+        const { data, notes, ts } = JSON.parse(cached);
         if (Date.now() - ts < CACHE_TTL) {
-          setSnapshots(data);
+          setSnapshots(Array.isArray(data) ? data : []);
+          setDriftNotes(Array.isArray(notes) ? notes : []);
           return;
         }
       }
@@ -29,13 +31,15 @@ export function useCountryHistory(countryName) {
       .then((res) => {
         if (res?.success && Array.isArray(res.snapshots)) {
           const sorted = [...res.snapshots].sort((a, b) => a.dateKey?.localeCompare(b.dateKey));
+          const notes = Array.isArray(res.driftNotes) ? res.driftNotes : [];
           setSnapshots(sorted);
-          try { localStorage.setItem(cacheKey, JSON.stringify({ data: sorted, ts: Date.now() })); } catch { /* storage full */ }
+          setDriftNotes(notes);
+          try { localStorage.setItem(cacheKey, JSON.stringify({ data: sorted, notes, ts: Date.now() })); } catch { /* storage full */ }
         }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [countryName]);
 
-  return { snapshots, loading, error };
+  return { snapshots, driftNotes, loading, error };
 }

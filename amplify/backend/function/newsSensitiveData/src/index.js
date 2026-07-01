@@ -470,15 +470,26 @@ exports.handler = async (event) => {
       }
       const client = getDynamoClient();
       try {
-        const { Items } = await client.send(new QueryCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
-          ExpressionAttributeValues: { ':pk': `COUNTRY#${countryName}`, ':prefix': 'HISTORY#' },
-          ScanIndexForward: false,
-          Limit: 90,
-        }));
-        const snapshots = (Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, countryName, snapshots }) };
+        const [histOut, driftOut] = await Promise.all([
+          client.send(new QueryCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+            ExpressionAttributeValues: { ':pk': `COUNTRY#${countryName}`, ':prefix': 'HISTORY#' },
+            ScanIndexForward: false,
+            Limit: 90,
+          })),
+          // Drift notes (living-analysis 1b: grounded "what changed & why"). Newest first, few.
+          client.send(new QueryCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+            ExpressionAttributeValues: { ':pk': `COUNTRY#${countryName}`, ':prefix': 'DRIFT#' },
+            ScanIndexForward: false,
+            Limit: 10,
+          })),
+        ]);
+        const snapshots = (histOut.Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
+        const driftNotes = (driftOut.Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, countryName, snapshots, driftNotes }) };
       } catch (err) {
         console.error('country_history error', err);
         return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Query failed' }) };

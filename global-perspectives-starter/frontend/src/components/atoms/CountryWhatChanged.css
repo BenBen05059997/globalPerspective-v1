@@ -46,3 +46,10 @@
   font-size: 11px;
   color: var(--ink-dim);
 }
+
+/* Grounded "because <event>: <why>" (living-analysis 1b — from newsDriftCorrector). */
+.cwc-why { margin-top: 9px; }
+.cwc-because { font-size: 13px; color: var(--ink-mid); }
+.cwc-because b { color: var(--ink); }
+.cwc-evdate { color: var(--ink-dim); font-family: var(--mono); font-size: 11px; }
+.cwc-whytext { margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--ink); }

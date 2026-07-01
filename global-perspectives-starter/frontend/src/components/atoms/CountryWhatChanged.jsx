@@ -1,6 +1,8 @@
-// "What changed" band on CountryPage — the first pixel of the living-analysis wedge.
-// Deterministic, from the daily risk snapshots we already log (no LLM). Renders nothing
-// when the read hasn't materially changed (honest-empty). See utils/countryDrift.js.
+// "What changed" band on CountryPage — the living-analysis wedge.
+// 1a: deterministic risk/trajectory drift from the daily snapshots (no LLM).
+// 1b: when the newsDriftCorrector wrote a GROUNDED note for this move, show the "because
+// <real cited event>: <why>" line (model judgment, grounded in a real event).
+// Renders nothing when the read hasn't materially changed (honest-empty).
 import { computeCountryDrift } from '../../utils/countryDrift';
 import RiskDeltaPill from './RiskDeltaPill';
 import './CountryWhatChanged.css';
@@ -11,9 +13,13 @@ function fmtDay(s) {
   return m ? `${MONTHS[+m[2] - 1]} ${+m[3]}` : s;
 }
 
-export default function CountryWhatChanged({ snapshots }) {
+export default function CountryWhatChanged({ snapshots, driftNotes = [] }) {
   const drift = computeCountryDrift(snapshots);
   if (!drift) return null;
+
+  // A grounded note applies only if the corrector explained THIS move (same as-of date).
+  const note = (Array.isArray(driftNotes) ? driftNotes : []).find((n) => n.asOf === drift.asOf);
+  const grounded = note && note.whyChanged;
 
   return (
     <div className="cwc" aria-label="What changed in this country's read">
@@ -36,14 +42,30 @@ export default function CountryWhatChanged({ snapshots }) {
         ))}
       </div>
 
-      {drift.headlineChanged && (
+      {grounded && (
+        <div className="cwc-why">
+          {note.triggerEvent?.title && (
+            <div className="cwc-because">
+              ↳ Because: <b>{note.triggerEvent.title}</b>
+              {note.triggerEvent.date ? <span className="cwc-evdate"> · {fmtDay(note.triggerEvent.date)}</span> : null}
+            </div>
+          )}
+          <div className="cwc-whytext">{note.whyChanged}</div>
+        </div>
+      )}
+
+      {!grounded && drift.headlineChanged && (
         <div className="cwc-heads">
           <div className="cwc-prev">“{drift.prior.headline}”</div>
           <div className="cwc-now">“{drift.current.headline}”</div>
         </div>
       )}
 
-      <div className="cwc-foot">Computed from our daily risk assessments — not a forecast.</div>
+      <div className="cwc-foot">
+        {grounded
+          ? '💭 Grounded in our coverage of the cited event — interpretation, not a forecast.'
+          : 'Computed from our daily risk assessments — not a forecast.'}
+      </div>
     </div>
   );
 }

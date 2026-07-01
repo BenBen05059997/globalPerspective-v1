@@ -82,7 +82,9 @@ The UI renders it as **"What changed since <date> — because <event>"**; the an
 
 > **STATUS 2026-07-01:**
 > - **Phase 1a — ✅ SHIPPED + DEPLOYED** (`3c6766b`). `utils/countryDrift.js` (deterministic conclusion-gate, 6 tests) + `atoms/CountryWhatChanged.jsx` "What changed" band on `CountryPage` (revives `RiskDeltaPill`). Verified live: Ukraine (elevated→high fresh), Iran (high→elevated 19d ago), China (honest-empty). No LLM; honest-empty when stable.
-> - **Phase 1b — IN BUILD** (worktree `drift-corrector`). Decisions below.
+> - **Phase 1b — ✅ SHIPPED + DEPLOYED** (`1f86e46`). `newsDriftCorrector` Lambda (grounded "↳ Because: <cited event>" notes, daily `TriggerDriftCorrector` cron; DeepSeek; gate→ground→note, never overwrites) + `country_history` serves `driftNotes[]` + `CountryWhatChanged` renders them. First prod run: grounded notes for Ukraine/US/Russia/Japan/France; honest no-note for Iran/China.
+> - **Phase 1b.5 (feed-forward) — ✅ SHIPPED + DEPLOYED.** `newsCountryIntelligence` reads the last 2 `DRIFT#` notes as a low-authority "RECENT CORRECTIONS" block → the next read builds on its own grounded corrections. Safe by construction (try/caught → graceful no-block). Loop closed.
+> - Decisions below.
 >
 > **Decisions 2026-07-01:**
 > - Corrector = a **dedicated `newsDriftCorrector` Lambda** (keeps the analyzer clean; matches the new-infra-is-easy preference).

@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-07-01 (feat: feed-forward drift notes into the analyzer — living-analysis 1b.5, DEPLOYED)
+
+Closes the **corrector → note → analyzer** loop. `newsCountryIntelligence` now reads the last 2 grounded `DRIFT#` notes (from `newsDriftCorrector`) and injects them as a low-authority **"RECENT CORRECTIONS"** block, so the next country read builds on its own event-grounded corrections (continuity) instead of re-discovering them — while explicitly never overriding new evidence (bottom of the authority hierarchy).
+
+- **Safe by construction:** `buildDriftBlock` is try/caught (→ `''` on any error) and the block only appears when a grounded note exists, so a failure degrades to "no block" and can never break the core country read. `node --check` clean; deployed to prod (`newsCountryIntelligence`). Takes effect on the next country regeneration.
+- Backend-only (no frontend change; the notes already render via 1b).
+
+Files: `amplify/backend/function/newsCountryIntelligence/src/index.js`, `LIVING_ANALYSIS_PLAN.md`.
+
 ## 2026-07-01 (feat: newsDriftCorrector — grounded "what changed & why" (living-analysis 1b), DEPLOYED)
 
 The corrector loop from `LIVING_ANALYSIS_PLAN.md`: when a country's read materially moves, explain **why**, grounded in a real cited event. Built + proven against live data, then deployed.

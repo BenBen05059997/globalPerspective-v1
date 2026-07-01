@@ -60,6 +60,7 @@ const rForThreads = (t) => 16 + Math.sqrt(Math.max(1, t)) * 4.2;
 
 export default function WorldOverview({ onDrill }) {
   const [situations, setSituations] = useState(null);
+  const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hover, setHover] = useState(null);
@@ -68,7 +69,12 @@ export default function WorldOverview({ onDrill }) {
     let cancelled = false;
     setLoading(true);
     fetchWorldOverview()
-      .then(r => { if (!cancelled) setSituations(Array.isArray(r?.data) ? r.data : []); })
+      .then(r => {
+        if (cancelled) return;
+        const dd = r?.data;
+        setSituations(Array.isArray(dd) ? dd : (dd?.situations || []));
+        setLinks(Array.isArray(dd?.links) ? dd.links : []);
+      })
       .catch(e => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -92,7 +98,9 @@ export default function WorldOverview({ onDrill }) {
     const maxCols = Math.max(1, ...REGION_LANES.map(l => (byRegion[l.key] || []).length));
     const svgW = MARGIN.left + maxCols * COL_W + MARGIN.right;
     const svgH = MARGIN.top + REGION_LANES.length * LANE_H + MARGIN.bottom;
-    return { placed, svgW, svgH };
+    const pos = {};
+    placed.forEach(s => { pos[s.country] = { x: s._x, y: s._y }; });
+    return { placed, pos, svgW, svgH };
   }, [situations]);
 
   return (
@@ -120,6 +128,23 @@ export default function WorldOverview({ onDrill }) {
             <line x1={0} y1={MARGIN.top + REGION_LANES.length * LANE_H} x2={layout.svgW}
               y2={MARGIN.top + REGION_LANES.length * LANE_H} className="spider-lane-rule" />
 
+            {/* Cross-country shared-actor links (drawn under bubbles) */}
+            {links.map((lk, i) => {
+              const a = layout.pos[lk.from];
+              const b = layout.pos[lk.to];
+              if (!a || !b) return null;
+              const mx = (a.x + b.x) / 2;
+              const my = (a.y + b.y) / 2 - 26;
+              const w = Math.min(4.5, 1 + lk.weight * 0.45);
+              return (
+                <path key={`lk${i}`} d={`M${a.x},${a.y} Q${mx},${my} ${b.x},${b.y}`}
+                  className="spider-world-link" strokeWidth={w} style={{ cursor: 'pointer' }}
+                  onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, link: lk })}
+                  onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
+                  onMouseLeave={() => setHover(null)} />
+              );
+            })}
+
             {/* Situation bubbles */}
             {layout.placed.map(s => (
               <g key={s.country} style={{ cursor: 'pointer' }}
@@ -138,7 +163,7 @@ export default function WorldOverview({ onDrill }) {
           </svg>
         )}
       </div>
-      {hover && (
+      {hover && hover.s && (
         <div className="spider-tip" style={{ left: hover.x, top: hover.y }}>
           <div className="spider-tip-cat" style={{ color: catColor(hover.s.topCategory) }}>
             {REGION_LANES.find(l => l.key === regionOf(hover.s.country))?.label}
@@ -149,6 +174,13 @@ export default function WorldOverview({ onDrill }) {
             {hover.s.latest ? ` · latest ${shortDate(hover.s.latest)}` : ''}
           </div>
           <div className="spider-tip-hint">click to open the causal web →</div>
+        </div>
+      )}
+      {hover && hover.link && (
+        <div className="spider-tip" style={{ left: hover.x, top: hover.y }}>
+          <div className="spider-tip-cat" style={{ color: 'var(--ink-dim)' }}>Shared-actor link</div>
+          <div className="spider-tip-head">{hover.link.from} — {hover.link.to}</div>
+          <div className="spider-tip-meta">shared: {hover.link.sharedActors.join(', ')}</div>
         </div>
       )}
     </div>

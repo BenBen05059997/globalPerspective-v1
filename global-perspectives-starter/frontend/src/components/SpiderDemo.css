@@ -895,3 +895,11 @@
   letter-spacing: 0.03em;
   pointer-events: none;
 }
+
+.spider-world-link {
+  stroke: var(--ink-faint);
+  fill: none;
+  opacity: 0.4;
+  transition: opacity 0.12s;
+}
+.spider-world-link:hover { stroke: var(--accent); opacity: 0.95; }

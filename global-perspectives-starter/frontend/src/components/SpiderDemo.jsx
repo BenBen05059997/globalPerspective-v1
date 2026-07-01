@@ -124,7 +124,7 @@ function jaccard(a, b) {
 
 function curateData(raw) {
   if (!raw) return null;
-  const { nodes = [], edges = [], ...rest } = raw;
+  const { nodes = [], edges = [], backbone = [], ...rest } = raw;
 
   const canonicalMap = {};
   const dedupedNodes = [];
@@ -156,12 +156,22 @@ function curateData(raw) {
     .filter(e => e.from !== e.to)
     .map(e => ({ ...e, _temporalFlag: e.lagDays != null && e.lagDays < 0 }));
 
-  return { ...rest, nodes: dedupedNodes, edges: dedupedEdges };
+  // Backbone (shared-actor) edges: remap endpoints through the same canonical map,
+  // drop self-loops. Reliable/factual layer — no temporal flag.
+  const dedupedBackbone = backbone
+    .map(e => ({
+      ...e,
+      from: canonicalMap[e.from] || e.from,
+      to:   canonicalMap[e.to]   || e.to,
+    }))
+    .filter(e => e.from !== e.to);
+
+  return { ...rest, nodes: dedupedNodes, edges: dedupedEdges, backbone: dedupedBackbone };
 }
 
 // ── Timeline layout hook ──────────────────────────────────────────────────────
 
-function useTimelineLayout(nodes, edges) {
+function useTimelineLayout(nodes, edges, backbone) {
   return useMemo(() => {
     if (!nodes?.length) return null;
 
@@ -184,12 +194,19 @@ function useTimelineLayout(nodes, edges) {
       return MARGIN.left + dayIdx * COL_W + COL_W / 2;
     };
 
-    // Edge degree → importance (1..5) → radius
-    const degMap = {};
-    nodes.forEach(n => { degMap[n.threadId] = 0; });
-    (edges || []).forEach(e => {
-      if (degMap[e.from] != null) degMap[e.from]++;
-      if (degMap[e.to]   != null) degMap[e.to]++;
+    // Two degrees:
+    //  • causalDeg (visible causal edges only) → importance/size + labels
+    //  • totalDeg  (causal + backbone)         → isolation ring (truly unconnected)
+    const causalDeg = {};
+    const totalDeg = {};
+    nodes.forEach(n => { causalDeg[n.threadId] = 0; totalDeg[n.threadId] = 0; });
+    (edges || []).filter(e => !(e.lagDays != null && e.lagDays < 0)).forEach(e => {
+      if (causalDeg[e.from] != null) { causalDeg[e.from]++; totalDeg[e.from]++; }
+      if (causalDeg[e.to]   != null) { causalDeg[e.to]++;   totalDeg[e.to]++; }
+    });
+    (backbone || []).forEach(e => {
+      if (totalDeg[e.from] != null) totalDeg[e.from]++;
+      if (totalDeg[e.to]   != null) totalDeg[e.to]++;
     });
 
     const impForDeg = (deg) => {
@@ -211,15 +228,14 @@ function useTimelineLayout(nodes, edges) {
     });
 
     const positioned = dated.map(n => {
-      const deg = degMap[n.threadId] || 0;
-      const imp = impForDeg(deg);
+      const imp = impForDeg(causalDeg[n.threadId] || 0);
       const dayIdx = n._dateMs != null ? Math.round((n._dateMs - minMs) / DAY_MS) : totalDays - 1;
       const key = `${n._lane}_${dayIdx}`;
       const grp = buckets[key];
       const laneY = yForLane(n._lane);
       const idx = grp.indexOf(n.threadId);
       const y = grp.length > 1 ? laneY + (idx - (grp.length - 1) / 2) * 34 : laneY;
-      return { ...n, _imp: imp, _r: rForImp(imp), _x: xForMs(n._dateMs), _y: y, _degree: deg };
+      return { ...n, _imp: imp, _r: rForImp(imp), _x: xForMs(n._dateMs), _y: y, _degree: totalDeg[n.threadId] || 0 };
     });
 
     // Coverage ribbon: node-peak histogram per day column
@@ -239,7 +255,7 @@ function useTimelineLayout(nodes, edges) {
     positioned.forEach(n => { nodeById[n.threadId] = n; });
 
     return { positioned, nodeById, totalDays, minMs, maxMs, volByDay, volMax, svgW, svgH, laneBottom, xForMs };
-  }, [nodes, edges]);
+  }, [nodes, edges, backbone]);
 }
 
 // ── Causal web SVG ────────────────────────────────────────────────────────────
@@ -247,6 +263,7 @@ function useTimelineLayout(nodes, edges) {
 function CausalWebSVG({
   layout,
   edges,
+  backbone,
   activeLanes,
   causalOn,
   selectedNodeId,
@@ -260,18 +277,17 @@ function CausalWebSVG({
 }) {
   const { positioned, nodeById, totalDays, minMs, maxMs, volByDay, volMax, svgW, svgH, laneBottom, xForMs } = layout;
 
-  // Neighbors of selected node (for dim/highlight)
+  // Neighbors of selected node (for dim/highlight) — via causal AND backbone
   const neighbors = useMemo(() => {
     if (!selectedNodeId) return null;
     const s = new Set();
-    (edges || []).filter(e => !e._temporalFlag).forEach(e => {
-      if (e.from === selectedNodeId || e.to === selectedNodeId) {
-        s.add(e.from);
-        s.add(e.to);
-      }
+    const consider = (arr) => (arr || []).forEach(e => {
+      if (e.from === selectedNodeId || e.to === selectedNodeId) { s.add(e.from); s.add(e.to); }
     });
+    consider((edges || []).filter(e => !e._temporalFlag));
+    consider(backbone);
     return s;
-  }, [selectedNodeId, edges]);
+  }, [selectedNodeId, edges, backbone]);
 
   const visibleEdges = useMemo(
     () => (causalOn ? (edges || []).filter(e => !e._temporalFlag) : []),
@@ -364,7 +380,33 @@ function CausalWebSVG({
         );
       })()}
 
-      {/* Causal edges (backbone layer empty — not rendered) */}
+      {/* Backbone edges — solid, factual (shared-actor). Drawn UNDER causal + nodes. */}
+      {(backbone || []).map((e, i) => {
+        const a = nodeById[e.from];
+        const b = nodeById[e.to];
+        if (!a || !b) return null;
+        if (!activeLanes.has(a._lane) || !activeLanes.has(b._lane)) return null;
+
+        const touchesSel = selectedNodeId && (e.from === selectedNodeId || e.to === selectedNodeId);
+        const muted = selectedNodeId && !touchesSel;
+        const mx = (a._x + b._x) / 2;
+        const cy = Math.min(a._y, b._y) - 22; // gentle arc
+        const w = e.weight >= 3 ? 2.6 : e.weight === 2 ? 2 : 1.4;
+
+        return (
+          <g
+            key={`bb|${e.from}|${e.to}|${i}`}
+            className={`spider-backbone-grp${muted ? ' spider-bb-mute' : ''}`}
+            onMouseEnter={(ev) => onEdgeHover(ev, e)}
+            onMouseLeave={onEdgeLeave}
+          >
+            <path d={`M${a._x},${a._y} Q${mx},${cy} ${b._x},${b._y}`} fill="none" stroke="transparent" strokeWidth={12} />
+            <path d={`M${a._x},${a._y} Q${mx},${cy} ${b._x},${b._y}`} fill="none" className="spider-backbone-edge" strokeWidth={w} />
+          </g>
+        );
+      })}
+
+      {/* Causal edges — dashed overlay (model judgment), toggle-gated */}
       {visibleEdges.map((e, i) => {
         const a = nodeById[e.from];
         const b = nodeById[e.to];
@@ -476,7 +518,15 @@ function Tooltip({ tip }) {
           <div className="spider-tip-hint">click to open →</div>
         </>
       )}
-      {edge && !node && (
+      {edge && !node && edge.class === 'backbone' && (
+        <>
+          <div className="spider-tip-cat" style={{ color: 'var(--ink-dim)' }}>Shared-actor link</div>
+          <div className="spider-tip-meta">
+            {Array.isArray(edge.sharedActors) ? edge.sharedActors.join(', ') : 'shared actors'}
+          </div>
+        </>
+      )}
+      {edge && !node && edge.class !== 'backbone' && (
         <>
           <div className="spider-tip-cat" style={{ color: 'var(--accent)' }}>Causal link</div>
           <div className="spider-tip-meta">
@@ -674,13 +724,13 @@ export default function SpiderDemo() {
     return graphData.nodes.reduce((m, n) => { m[n.threadId] = n; return m; }, {});
   }, [graphData]);
 
-  const layout = useTimelineLayout(graphData?.nodes, graphData?.edges || []);
+  const layout = useTimelineLayout(graphData?.nodes, graphData?.edges || [], graphData?.backbone || []);
 
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedEdge, setSelectedEdge] = useState(null);
   const [selectedEdgeKey, setSelectedEdgeKey] = useState(null);
   const [activeLanes, setActiveLanes] = useState(new Set(LANE_ORDER));
-  const [causalOn, setCausalOn] = useState(true); // default ON — backbone is empty
+  const [causalOn, setCausalOn] = useState(false); // default OFF — backbone is the primary structure
   const [tip, setTip] = useState(null);
 
   const handleNodeClick = useCallback((node) => {
@@ -726,6 +776,7 @@ export default function SpiderDemo() {
     : 0;
 
   const causalEdgeCount = graphData?.edges?.filter(e => !e._temporalFlag).length ?? 0;
+  const backboneCount = graphData?.backbone?.length ?? 0;
 
   return (
     <div className="spider-shell">
@@ -737,8 +788,8 @@ export default function SpiderDemo() {
         </div>
         <p className="spider-desc">
           Stories laid out by <strong>time</strong> (left → right) and <strong>category</strong> (lanes).
-          Dashed lines = model-judged cause→effect (toggle on/off).
-          Click a story for its genesis; click a link for the mechanism.
+          <strong> Solid lines</strong> = shared-actor backbone (factual). <strong>Dashed lines</strong> = model-judged cause→effect (toggle on).
+          Click a story for its genesis; click a dashed link for the mechanism.
         </p>
       </header>
 
@@ -794,6 +845,7 @@ export default function SpiderDemo() {
               <CausalWebSVG
                 layout={layout}
                 edges={graphData.edges}
+                backbone={graphData.backbone}
                 activeLanes={activeLanes}
                 causalOn={causalOn}
                 selectedNodeId={selectedNode?.threadId}
@@ -824,7 +876,7 @@ export default function SpiderDemo() {
       {/* Footer */}
       <footer className="spider-footer">
         <span><strong>{visibleNodeCount}</strong> stories</span>
-        <span><strong>0</strong> backbone links (shared-actor backbone not yet generated)</span>
+        <span><strong>{backboneCount}</strong> backbone links (shared-actor)</span>
         <span><strong>{causalEdgeCount}</strong> causal links</span>
         <span className="spider-footer-spacer" />
         <span>Confidence shown as weak / medium / strong — never a fabricated %</span>

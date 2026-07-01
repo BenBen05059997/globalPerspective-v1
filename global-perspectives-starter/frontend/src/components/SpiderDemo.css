@@ -283,6 +283,18 @@
   font-weight: 600;
 }
 
+/* ── Backbone edges (solid, factual) ─────────────────────────────────────── */
+
+.spider-backbone-grp { cursor: default; }
+.spider-backbone-edge {
+  stroke: var(--ink-faint);
+  fill: none;
+  opacity: 0.55;
+  transition: opacity 0.12s;
+}
+.spider-backbone-grp:hover .spider-backbone-edge { opacity: 0.9; stroke: var(--ink-dim); }
+.spider-bb-mute { opacity: 0.18; }
+
 /* ── Causal edges ────────────────────────────────────────────────────────── */
 
 .spider-causal-edge {

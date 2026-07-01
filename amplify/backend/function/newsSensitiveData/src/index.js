@@ -417,12 +417,24 @@ exports.handler = async (event) => {
       const client = getDynamoClient();
       await Promise.all(threadIds.map(async (tid) => {
         try {
-          const { Item } = await client.send(new GetCommand({
-            TableName: SUMMARIZE_PREDICT_TABLE,
-            Key: { PK: `THREAD#${tid}`, SK: 'THREAD_ANALYSIS' },
-          }));
-          if (Item) {
-            const { PK, SK, ttl, ...rest } = Item;
+          const [analysisOut, driftOut] = await Promise.all([
+            client.send(new GetCommand({
+              TableName: SUMMARIZE_PREDICT_TABLE,
+              Key: { PK: `THREAD#${tid}`, SK: 'THREAD_ANALYSIS' },
+            })),
+            // Living-analysis Phase 3: the latest grounded "what changed" note for this thread.
+            client.send(new QueryCommand({
+              TableName: SUMMARIZE_PREDICT_TABLE,
+              KeyConditionExpression: 'PK = :pk AND begins_with(SK, :d)',
+              ExpressionAttributeValues: { ':pk': `THREAD#${tid}`, ':d': 'DRIFT#' },
+              ScanIndexForward: false,
+              Limit: 1,
+            })),
+          ]);
+          if (analysisOut.Item) {
+            const { PK, SK, ttl, ...rest } = analysisOut.Item;
+            const driftItem = (driftOut.Items || [])[0];
+            if (driftItem) { const { PK: _p, SK: _s, ttl: _t, ...dn } = driftItem; rest.driftNote = dn; }
             data[tid] = rest;
           }
         } catch {}

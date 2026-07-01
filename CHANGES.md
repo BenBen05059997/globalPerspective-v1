@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-07-01 (feat: "What changed" band on CountryPage — living-analysis Phase 1a)
+
+First pixel of the living / self-correcting-analysis wedge (`LIVING_ANALYSIS_PLAN.md`): surface the change we already log but never showed. Deterministic, no LLM, honest-empty — proves the value before building the grounded corrector (Phase 1b).
+
+- **`utils/countryDrift.js`** (pure, 6 unit tests): finds the most recent country snapshot whose *conclusion* differs from today's read — gated on **risk level / |Δscore|≥8 / trajectory**, deliberately **not** the headline (the 2026-06-30 backtest showed ~37% of daily updates are cosmetic headline rewording = noise; ~18% are genuine risk moves = signal). Grounded in prior art (`LIVING_ANALYSIS_PLAN.md` — DeepMind self-correction limits, LLM-judge family bias, "living systematic reviews" signal-detection, Tetlock Bayesian updating).
+- **`atoms/CountryWhatChanged.jsx`**: a "What changed since <date> · Nd ago" band on `CountryPage`; revives the dead-but-tested `RiskDeltaPill`. Footer: "Computed from our daily risk assessments — not a forecast."
+- Verified against LIVE `country_history`: Ukraine (elevated→high, fresh escalation), Iran (high→elevated 19d ago), US (trajectory shift), China (honest-empty — nothing rendered).
+- Built + verified in an isolated worktree; `npm run verify` green (0 ESLint errors, 184 tests); merged to main.
+
+Files: `…/src/{utils/countryDrift.js, components/atoms/CountryWhatChanged.jsx, components/atoms/CountryWhatChanged.css, components/CountryPage.jsx, test/countryDrift.test.js}`, `LIVING_ANALYSIS_PLAN.md`, `docs/assets`, `docs/index.html`, `docs/404.html`.
+
 ## 2026-07-01 (fix: label causal-web nodes when sparse — no more anonymous dots)
 
 The `/spider-demo` causal web rendered stories as unlabeled colored dots on sparse country graphs — you couldn't tell what any story was without clicking each one, defeating the "understand at a glance" purpose. Node labels were gated on `_imp >= 4` (degree ≥3), which no node clears on a small graph.

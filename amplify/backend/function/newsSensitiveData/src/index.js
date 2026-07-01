@@ -507,52 +507,42 @@ exports.handler = async (event) => {
       }
     }
 
-    if (action === 'event_dossier') {
+    if (action === 'event_dossier' || action === 'dossier_analysis') {
       const countryName = payload?.countryName || qs?.countryName;
       const threadId = payload?.threadId || qs?.threadId;
       const hops = Math.max(1, Math.min(2, parseInt(payload?.hops || 1, 10)));
       if (!countryName || !threadId) {
         return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing countryName or threadId' }) };
       }
-      const client = getDynamoClient();
       try {
-        const { Item } = await client.send(new GetCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          Key: { PK: `SYSTEMS#${countryName}`, SK: 'SYSTEMS_ANALYSIS' },
-        }));
-        if (!Item) {
-          return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Systems analysis not found for this country' }) };
+        const built = await buildEventDossier(countryName, threadId, hops);
+        if (!built.dossier) {
+          return { statusCode: built.statusCode || 500, headers, body: JSON.stringify({ success: false, error: built.error || 'Dossier build failed' }) };
         }
-        const { PK, SK, ttl, ...graph } = Item;
+        const dossier = built.dossier;
 
-        // Structural pass to learn the subgraph node set, then fetch genesis for those.
-        const base = assembleDossier(graph, threadId, { countryName, hops });
-        if (!base) {
-          return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Focal thread not found in this graph' }) };
+        if (action === 'event_dossier') {
+          console.info('newsSensitiveData event_dossier response', {
+            countryName, threadId, hops, nodes: dossier.nodes.length, edges: dossier.edges.length, backbone: dossier.backbone.length,
+          });
+          return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: dossier }) };
         }
-        const ids = base.nodes.map(n => n.id).slice(0, 10); // bound genesis reads
-        const genesisByThread = {};
-        await Promise.all(ids.map(async (id) => {
-          try {
-            const resp = await readNarrativeThread(id, ENTERPRISE_MAX_DAYS);
-            const entries = resp?.body?.data;
-            if (Array.isArray(entries) && entries.length) {
-              genesisByThread[id] = entries.slice(0, 12).map(e => ({
-                date: e.date || null,
-                event: e.title || e.summary || e.headline || null,
-                sources: e.sourceCount ?? (Array.isArray(e.sources) ? e.sources.length : (Array.isArray(e.sourceUrls) ? e.sourceUrls.length : null)),
-              }));
-            }
-          } catch { /* genesis is best-effort */ }
-        }));
 
-        const dossier = assembleDossier(graph, threadId, { countryName, hops, genesisByThread });
-        console.info('newsSensitiveData event_dossier response', {
-          countryName, threadId, hops, nodes: dossier.nodes.length, edges: dossier.edges.length, backbone: dossier.backbone.length,
+        // dossier_analysis: an AI reasons over the dossier under its own honesty contract.
+        let analysis = null;
+        let analysisError = null;
+        try {
+          analysis = await analyzeDossierWithLLM(dossier);
+        } catch (err) {
+          console.error('dossier_analysis LLM error', err.message);
+          analysisError = 'analysis_unavailable';
+        }
+        console.info('newsSensitiveData dossier_analysis response', {
+          countryName, threadId, hops, analyzed: !!analysis, err: analysisError,
         });
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: dossier }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: { dossier, analysis, analysisError } }) };
       } catch (err) {
-        console.error('event_dossier error', err);
+        console.error('event_dossier/dossier_analysis error', err);
         return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Dossier build failed' }) };
       }
     }
@@ -1365,6 +1355,77 @@ async function readArchiveRange(days) {
       body: { success: false, error: 'Failed to read archive range' },
     };
   }
+}
+
+// Build the event dossier for {countryName, threadId, hops}: fetch the stored
+// systems graph, assemble the k-hop subgraph, attach per-node genesis (bounded).
+// Shared by the event_dossier + dossier_analysis actions.
+async function buildEventDossier(countryName, threadId, hops) {
+  const client = getDynamoClient();
+  const { Item } = await client.send(new GetCommand({
+    TableName: SUMMARIZE_PREDICT_TABLE,
+    Key: { PK: `SYSTEMS#${countryName}`, SK: 'SYSTEMS_ANALYSIS' },
+  }));
+  if (!Item) return { statusCode: 404, error: 'Systems analysis not found for this country' };
+  const { PK, SK, ttl, ...graph } = Item;
+
+  const base = assembleDossier(graph, threadId, { countryName, hops });
+  if (!base) return { statusCode: 404, error: 'Focal thread not found in this graph' };
+
+  const ids = base.nodes.map(n => n.id).slice(0, 10); // bound genesis reads
+  const genesisByThread = {};
+  await Promise.all(ids.map(async (id) => {
+    try {
+      const resp = await readNarrativeThread(id, ENTERPRISE_MAX_DAYS);
+      const entries = resp?.body?.data;
+      if (Array.isArray(entries) && entries.length) {
+        genesisByThread[id] = entries.slice(0, 12).map(e => ({
+          date: e.date || null,
+          event: e.title || e.summary || e.headline || null,
+          sources: e.sourceCount ?? (Array.isArray(e.sources) ? e.sources.length : (Array.isArray(e.sourceUrls) ? e.sourceUrls.length : null)),
+        }));
+      }
+    } catch { /* genesis is best-effort */ }
+  }));
+
+  const dossier = assembleDossier(graph, threadId, { countryName, hops, genesisByThread });
+  return { statusCode: 200, dossier };
+}
+
+// Reason over a dossier with the honesty contract (DeepSeek — public, ungated,
+// bounded by token cap; same engine as newsAnalyze/newsSystemsAnalysis).
+const DOSSIER_LLM_URL = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
+const DOSSIER_LLM_MODEL = process.env.GROK_MODEL || 'deepseek-chat';
+async function analyzeDossierWithLLM(dossier) {
+  const key = process.env.XAI_API_KEY;
+  if (!key) throw new Error('LLM key not configured');
+  const contract = dossier.reasoning_contract?.instructions || '';
+  const system = 'You are a geopolitical intelligence analyst. Reason ONLY over the event-dossier JSON provided. '
+    + `Grounding rules: ${contract} Cite entry titles for factual claims; label interpretation as "💭 judgment"; never invent a connection not in the dossier.`;
+  const user = `Here is an event dossier (JSON) — the neighborhood of a focal news event in a causal web, with provenance tags. Write a concise analyst read (max ~320 words) in three sections:
+1. **What formed this** — from the focal node's genesis timeline.
+2. **What it's connected to** — name the shared-actor backbone links (factual) and the causal links (model judgment), stating the mechanism for each causal link.
+3. **What it may trigger next + one counter-scenario** — labeled "💭 judgment".
+Treat any edge with flags.temporal_anomaly=true as CO-MOVEMENT, not proven causation.
+
+DOSSIER:
+${JSON.stringify(dossier)}`;
+
+  const res = await fetch(DOSSIER_LLM_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: DOSSIER_LLM_MODEL,
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+      max_tokens: 800,
+      temperature: 0.4,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`LLM ${res.status}: ${JSON.stringify(data).slice(0, 180)}`);
+  const text = (data?.choices?.[0]?.message?.content || '').trim();
+  if (!text) throw new Error('empty LLM response');
+  return text;
 }
 
 async function readNarrativeThread(threadId, days) {

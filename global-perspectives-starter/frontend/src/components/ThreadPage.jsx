@@ -28,6 +28,16 @@ function humanizeThreadId(id) {
     .join(' ') || 'Story Arc';
 }
 
+// Living-analysis drift note helpers (Phase 3): tidy the "event [n]" artifact + format the date.
+const DRIFT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function driftDay(s) {
+  const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${DRIFT_MONTHS[+m[2] - 1]} ${+m[3]}` : s;
+}
+function driftClean(s) {
+  return String(s || '').replace(/\bevent\s*\[\d+\]/gi, 'the cited event').replace(/\s*\[\d+\]/g, '').trim();
+}
+
 function formatTimeAgo(isoString) {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
   if (mins < 1) return 'just now';
@@ -286,6 +296,17 @@ export default function ThreadPage() {
         <span className="tp-ai-model">AI analysis</span>
       </div>
       <div className="tp-ai-body">
+        {analysis?.driftNote?.whyChanged && (
+          <div className="tp-ai-block tp-ai-drift">
+            <div className="tp-ai-section-lbl">
+              What changed{analysis.driftNote.since ? ` · since ${driftDay(analysis.driftNote.since)}` : ''}
+            </div>
+            {analysis.driftNote.triggerEvent?.title && (
+              <div className="tp-ai-drift-because">↳ Because: <b>{analysis.driftNote.triggerEvent.title}</b></div>
+            )}
+            <p className="tp-ai-text">{driftClean(analysis.driftNote.whyChanged)}</p>
+          </div>
+        )}
         {analysis?.storyArc && (
           <div className="tp-ai-block">
             <div className="tp-ai-section-lbl">Summary</div>

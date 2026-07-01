@@ -61,3 +61,22 @@ test('parseDriftResponse: explicit noSingleDriver (0) + empty/garbage handled', 
   assert.equal(parseDriftResponse('not json', events), null);
   assert.equal(parseDriftResponse('{"triggerEventNumber":1,"whyChanged":""}', events), null); // no why
 });
+
+const { threadConclusionMoved, findThreadDrift } = require('../src/lib');
+const tsnap = (dateKey, riskScore, threadTitle = '', trajectory = '') => ({ dateKey, riskScore, threadTitle, trajectory });
+
+test('threadConclusionMoved: score jump / title change / trajectory shift = moved; reword = not', () => {
+  assert.equal(threadConclusionMoved(tsnap('a', 40, 'Talks stall'), tsnap('b', 55, 'Talks stall')).any, true); // Δ15
+  assert.equal(threadConclusionMoved(tsnap('a', 40, 'Ceasefire holds in region'), tsnap('b', 42, 'War resumes as ceasefire collapses')).any, true); // title
+  assert.equal(threadConclusionMoved(tsnap('a', 40, 'Talks continue', 'diplomacy proceeds slowly'), tsnap('b', 42, 'Talks continue', 'diplomacy proceeds slowly')).any, false); // stable
+});
+
+test('findThreadDrift: finds most recent materially-different prior; null when stable', () => {
+  const d = findThreadDrift([
+    tsnap('2026-06-01', 30, 'Quiet diplomacy', 'calm'),
+    tsnap('2026-06-02', 70, 'Open conflict erupts', 'escalating fast'),
+  ]);
+  assert.ok(d);
+  assert.equal(d.prior.dateKey, '2026-06-01');
+  assert.equal(findThreadDrift([tsnap('a', 50, 'X', 't'), tsnap('b', 53, 'X', 't')]), null); // Δ3, same title/traj
+});

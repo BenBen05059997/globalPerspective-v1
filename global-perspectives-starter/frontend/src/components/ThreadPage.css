@@ -716,3 +716,8 @@
   .tp-tl-row { grid-template-columns: 64px 14px 1fr; gap: 10px; }
   .tp-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
 }
+
+/* Living-analysis "What changed" block in the Arc Intelligence rail (Phase 3). */
+.tp-ai-drift { border-left: 3px solid var(--accent); padding-left: 10px; }
+.tp-ai-drift-because { font-size: 13px; color: var(--ink-mid); margin: 2px 0 6px; }
+.tp-ai-drift-because b { color: var(--ink); }

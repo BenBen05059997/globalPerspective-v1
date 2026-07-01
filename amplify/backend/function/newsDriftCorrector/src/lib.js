@@ -45,18 +45,46 @@ function findDrift(snapshots) {
   return null;
 }
 
+// Thread conclusion move: threads have no riskLevel, but do have riskScore + threadTitle +
+// trajectory. A material move = big score shift, or the title (compressed conclusion) or
+// trajectory genuinely changed. Title change is the strongest single signal for a thread.
+const TITLE_SIM = 0.5;
+function threadConclusionMoved(prior, current) {
+  const ps = Number(prior.riskScore); const cs = Number(current.riskScore);
+  const scoreChg = Number.isFinite(ps) && Number.isFinite(cs) && Math.abs(cs - ps) >= SCORE_MOVE;
+  const na = tokens(prior.threadTitle); const nb = tokens(current.threadTitle);
+  const titleChg = na.size > 0 && nb.size > 0 && jaccard(na, nb) < TITLE_SIM;
+  const ta = tokens(prior.trajectory); const tb = tokens(current.trajectory);
+  const trajChg = ta.size > 0 && tb.size > 0 && jaccard(ta, tb) < TRAJ_SIM;
+  return { scoreChg, titleChg, trajChg, any: !!(scoreChg || titleChg || trajChg) };
+}
+
+function findThreadDrift(snapshots) {
+  if (!Array.isArray(snapshots) || snapshots.length < 2) return null;
+  const sorted = [...snapshots].sort((a, b) => String(a.dateKey || '').localeCompare(String(b.dateKey || '')));
+  const current = sorted[sorted.length - 1];
+  for (let i = sorted.length - 2; i >= 0; i--) {
+    const moved = threadConclusionMoved(sorted[i], current);
+    if (moved.any) return { current, prior: sorted[i], moved };
+  }
+  return null;
+}
+
 // The grounding prompt. Events = [{topicId, title, date}] within the change window; the
 // model must pick ONE real event id (or declare no single driver) — never invent.
-function buildDriftPrompt(countryName, prior, current, events) {
+function buildDriftPrompt(subject, prior, current, events) {
   // Number the events — models cite a small [n] far more reliably than a long hash id.
   const evLines = events.map((e, i) => `  [${i + 1}] (${e.date || '?'}) ${e.title}`).join('\n');
+  // Works for both countries (riskLevel/score + headline) and threads (score + threadTitle).
+  const riskStr = (s) => `${s.riskLevel ? `${s.riskLevel}/` : ''}${s.riskScore}`;
+  const label = (s) => s.headline || s.threadTitle || '';
   return [
-    `Our automated risk read on ${countryName} moved between two dates. Explain WHY, grounded ONLY in the real news events listed.`,
+    `Our automated read on ${subject} moved between two dates. Explain WHY, grounded ONLY in the real news events listed.`,
     '',
-    `PRIOR (${prior.dateKey}): risk ${prior.riskLevel}/${prior.riskScore} — "${prior.headline || ''}"`,
-    `NOW  (${current.dateKey}): risk ${current.riskLevel}/${current.riskScore} — "${current.headline || ''}"`,
+    `PRIOR (${prior.dateKey}): risk ${riskStr(prior)} — "${label(prior)}"`,
+    `NOW  (${current.dateKey}): risk ${riskStr(current)} — "${label(current)}"`,
     '',
-    'Real news events for this country in the window (numbered):',
+    'Real news events in the window (numbered):',
     evLines || '  (none provided)',
     '',
     'Pick the SINGLE event above (by its number) that best explains the change. Rules:',
@@ -88,4 +116,4 @@ function parseDriftResponse(text, events) {
   };
 }
 
-module.exports = { conclusionMoved, findDrift, buildDriftPrompt, parseDriftResponse, tokens, jaccard };
+module.exports = { conclusionMoved, findDrift, threadConclusionMoved, findThreadDrift, buildDriftPrompt, parseDriftResponse, tokens, jaccard };

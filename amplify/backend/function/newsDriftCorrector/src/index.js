@@ -14,7 +14,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { findDrift, buildDriftPrompt, parseDriftResponse } = require('./lib');
+const { findDrift, findThreadDrift, buildDriftPrompt, parseDriftResponse } = require('./lib');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
@@ -128,15 +128,112 @@ async function processCountry(country) {
   return { country, status: note.noSingleDriver ? 'noted-no-driver' : 'noted', trigger: note.triggerEvent?.title };
 }
 
-exports.handler = async (event = {}) => {
-  const only = event.country ? [event.country] : COUNTRIES;
-  const results = [];
-  for (const country of only) {
-    try { results.push(await processCountry(country)); }
-    catch (err) { results.push({ country, status: 'error', error: err.message }); }
+// ─── Thread drift (living-analysis Phase 3) ──────────────────────────────────
+const THREAD_PK = (id) => `THREAD#${id}`;
+
+async function readThreadHistory(threadId) {
+  const out = await ddb.send(new QueryCommand({
+    TableName: SUMMARY_TABLE,
+    KeyConditionExpression: 'PK = :pk AND begins_with(SK, :h)',
+    ExpressionAttributeValues: { ':pk': THREAD_PK(threadId), ':h': 'THREAD_HISTORY#' },
+  }));
+  return (out.Items || []).map((it) => ({
+    dateKey: it.dateKey || String(it.SK || '').replace('THREAD_HISTORY#', ''),
+    riskScore: it.riskScore, trajectory: it.trajectory, threadTitle: it.threadTitle,
+  }));
+}
+
+// Archive events belonging to this thread in the window (filter by threadId, not region).
+async function readThreadEvents(threadId, fromDate, toDate) {
+  const from = parseDay(fromDate); const to = parseDay(toDate);
+  if (from == null || to == null) return [];
+  const todayKey = fmtDay(Date.now());
+  const seen = new Set(); const events = [];
+  for (let ms = from; ms <= to; ms += DAY) {
+    const dateKey = fmtDay(ms);
+    const id = dateKey === todayKey ? 'today-archive' : `archive#${dateKey}`;
+    let Item;
+    try { ({ Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id } }))); } catch { Item = null; }
+    for (const e of (Item?.entries || [])) {
+      if (e.threadId !== threadId) continue;
+      const key = e.topicId || e.id;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      events.push({ topicId: key, title: e.title || '', date: dateKey });
+    }
   }
+  return events.slice(-MAX_EVENTS);
+}
+
+async function threadAlreadyNoted(threadId, dateKey) {
+  const { Item } = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: THREAD_PK(threadId), SK: `DRIFT#${dateKey}` } }));
+  return !!Item;
+}
+
+async function writeThreadNote(threadId, drift, note) {
+  const { current: cur, prior } = drift;
+  const ttl = Math.floor(Date.now() / 1000) + DRIFT_TTL_DAYS * DAY / 1000;
+  await ddb.send(new PutCommand({
+    TableName: SUMMARY_TABLE,
+    Item: {
+      PK: THREAD_PK(threadId), SK: `DRIFT#${cur.dateKey}`,
+      threadId, asOf: cur.dateKey, since: prior.dateKey,
+      changeScore: { from: Number(prior.riskScore), to: Number(cur.riskScore), delta: Number(cur.riskScore) - Number(prior.riskScore) },
+      priorTitle: prior.threadTitle, currentTitle: cur.threadTitle,
+      triggerEvent: note.triggerEvent || undefined,
+      whyChanged: note.whyChanged,
+      noSingleDriver: !!note.noSingleDriver,
+      generatedAt: new Date().toISOString(), ttl,
+    },
+  }));
+}
+
+async function processThread(threadId) {
+  const history = await readThreadHistory(threadId);
+  if (history.length < 2) return { threadId, status: 'no-history' };
+  const latestMs = Math.max(...history.map((h) => parseDay(h.dateKey) || 0));
+  const recent = history.filter((h) => { const d = parseDay(h.dateKey); return d != null && d >= latestMs - LOOKBACK_DAYS * DAY; });
+  const drift = findThreadDrift(recent);
+  if (!drift) return { threadId, status: 'no-recent-drift' };
+  if (await threadAlreadyNoted(threadId, drift.current.dateKey)) return { threadId, status: 'already-noted' };
+  const events = await readThreadEvents(threadId, drift.prior.dateKey, drift.current.dateKey);
+  if (!LLM_KEY) return { threadId, status: 'no-llm-key' };
+  const subject = `the story "${drift.current.threadTitle || threadId}"`;
+  const text = await callLLM(buildDriftPrompt(subject, drift.prior, drift.current, events));
+  const note = parseDriftResponse(text, events);
+  if (!note) return { threadId, status: 'parse-fail' };
+  await writeThreadNote(threadId, drift, note);
+  return { threadId, status: note.noSingleDriver ? 'noted-no-driver' : 'noted', trigger: note.triggerEvent?.title };
+}
+
+// Discover active threads from the served `latest` topics (bounded, cheap).
+async function discoverThreadIds() {
+  try {
+    const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: 'latest' } }));
+    const topics = Item?.topics || Item?.data?.topics || [];
+    return [...new Set(topics.map((t) => t.threadId).filter(Boolean))];
+  } catch { return []; }
+}
+
+exports.handler = async (event = {}) => {
+  const results = { countries: [], threads: [] };
+
+  const countries = event.country ? [event.country] : COUNTRIES;
+  for (const country of countries) {
+    try { results.countries.push(await processCountry(country)); }
+    catch (err) { results.countries.push({ country, status: 'error', error: err.message }); }
+  }
+
+  const threadIds = event.threadId ? [event.threadId] : await discoverThreadIds();
+  for (const threadId of threadIds) {
+    try { results.threads.push(await processThread(threadId)); }
+    catch (err) { results.threads.push({ threadId, status: 'error', error: err.message }); }
+  }
+
   console.log('drift-corrector', JSON.stringify(results));
-  return { results };
+  return results;
 };
+
+module.exports.processThread = processThread;
 
 module.exports.processCountry = processCountry; // for local proving

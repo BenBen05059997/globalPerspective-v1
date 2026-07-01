@@ -321,6 +321,25 @@ async function writeAnalysis(threadId, analysis, entryCount) {
       ttl,
     },
   }));
+
+  // Point-in-time snapshot for the living-analysis loop (THREAD_HISTORY#<date>): lets
+  // newsDriftCorrector diff a thread's read over time. Scalars only (title/trajectory/risk),
+  // shorter TTL — mirrors the country HISTORY# pattern.
+  const dateKey = new Date().toISOString().slice(0, 10);
+  await ddb.send(new PutCommand({
+    TableName: SUMMARY_TABLE,
+    Item: {
+      PK: `${THREAD_PK_PREFIX}${threadId}`,
+      SK: `THREAD_HISTORY#${dateKey}`,
+      threadId, dateKey,
+      threadTitle: analysis.threadTitle,
+      trajectory: analysis.trajectory || null,
+      riskScore: typeof analysis.riskScore === 'number' ? Math.max(0, Math.min(100, Math.round(analysis.riskScore))) : null,
+      entryCount,
+      generatedAt: new Date().toISOString(),
+      ttl: Math.floor(Date.now() / 1000) + 60 * 86400,
+    },
+  }));
 }
 
 async function invokeGrok(prompt) {

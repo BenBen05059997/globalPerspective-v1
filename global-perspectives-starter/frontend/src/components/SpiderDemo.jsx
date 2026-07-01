@@ -338,14 +338,17 @@ function CausalWebSVG({
     [causalOn, edges],
   );
 
-  // Level-of-detail labels: when the graph is sparse, label EVERY node (otherwise the
-  // reader just sees anonymous dots — the whole point is lost). Only once it gets dense do
-  // we fall back to importance-gating + reveal-on-focus, to avoid a wall of overlapping text.
-  const LABEL_ALL_MAX = 12;
-  const labelAllNodes = useMemo(
-    () => positioned.filter(n => activeLanes.has(n._lane)).length <= LABEL_ALL_MAX,
-    [positioned, activeLanes],
-  );
+  // Level-of-detail labels: always label the TOP-K most important visible nodes (by degree,
+  // then importance bucket) — guarantees readable labels on ANY graph size. Sparse graphs
+  // (≤K) get every node labeled; dense graphs (e.g. Iran's 15) get the K most-connected
+  // labeled + the rest revealed on hover/select. (The earlier "label-all-when-≤12" left dense
+  // flagship graphs as anonymous dots — the exact bug this replaces.)
+  const LABEL_TOP_K = 10;
+  const labelIds = useMemo(() => {
+    const vis = positioned.filter(n => activeLanes.has(n._lane));
+    const ranked = [...vis].sort((a, b) => (b._degree - a._degree) || (b._imp - a._imp));
+    return new Set(ranked.slice(0, LABEL_TOP_K).map(n => n.threadId));
+  }, [positioned, activeLanes]);
 
   return (
     <svg
@@ -513,7 +516,7 @@ function CausalWebSVG({
         const isSelected = n.threadId === selectedNodeId;
         const isDimmed = !!(selectedNodeId && !isSelected && !(neighbors?.has(n.threadId)));
         const isIsolated = n._degree === 0;
-        const showLabel = labelAllNodes || n._imp >= 4 || isSelected || !!(neighbors?.has(n.threadId));
+        const showLabel = labelIds.has(n.threadId) || isSelected || !!(neighbors?.has(n.threadId));
         const label = storyLabel(n.summary, isSelected ? 8 : 5);
         const labelY = n._y + n._r + 14;
         const lw = label.length * 6.2;

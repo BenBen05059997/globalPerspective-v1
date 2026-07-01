@@ -17,7 +17,10 @@ import WorldOverview from './SpiderWorld';
 import './SpiderDemo.css';
 
 // Countries with a live systems_analysis graph (SYSTEMS_TEST_COUNTRIES gate).
-const COUNTRIES = ['Iran', 'United States', 'China', 'Ukraine', 'Venezuela'];
+const COUNTRIES = [
+  'Iran', 'Israel', 'United States', 'Venezuela', 'China', 'Japan',
+  'Ukraine', 'Russia', 'France', 'Germany', 'Democratic Republic of the Congo', 'South Africa',
+];
 const DEFAULT_COUNTRY = 'Iran';
 
 // ── Category / lane config ────────────────────────────────────────────────────
@@ -136,6 +139,31 @@ function jaccard(a, b) {
   let inter = 0;
   for (const t of a) if (b.has(t)) inter++;
   return inter / (a.size + b.size - inter);
+}
+
+// Genesis timelines restate the same development for days ("...peace deal
+// signing for Sunday" ×4). Collapse consecutive near-duplicate headlines into
+// one milestone (keeping the most-sourced wording) so the panel reads as a few
+// distinct beats, not 30 granular rows.
+function timelineSources(e) {
+  return e?.sourceCount
+    ?? (Array.isArray(e?.sources) ? e.sources.length
+      : (Array.isArray(e?.sourceUrls) ? e.sourceUrls.length : 0));
+}
+function collapseTimeline(entries) {
+  if (!Array.isArray(entries) || entries.length <= 8) return entries;
+  const out = [];
+  for (const e of entries) {
+    const prev = out[out.length - 1];
+    const et = tokenSet(e.title || e.summary || '');
+    if (prev && jaccard(tokenSet(prev.title || prev.summary || ''), et) >= 0.55) {
+      // near-duplicate of the running milestone → keep the richer (more-sourced) wording
+      if (timelineSources(e) > timelineSources(prev)) out[out.length - 1] = e;
+      continue;
+    }
+    out.push(e);
+  }
+  return out;
 }
 
 function curateData(raw) {
@@ -641,7 +669,7 @@ function NodePanel({ node, country, onClose }) {
         {tlLoading && <div className="spider-panel-loading">Loading…</div>}
         {tlError && <div className="spider-panel-error">Could not load timeline: {tlError}</div>}
         {!tlLoading && !tlError && entries && entries.length > 0 && (
-          <CompactTimeline entries={entries} />
+          <CompactTimeline entries={collapseTimeline(entries)} />
         )}
         {!tlLoading && !tlError && (!entries || entries.length === 0) && (
           <div className="spider-panel-empty">Single-day story — no multi-day genesis tracked yet.</div>
@@ -865,7 +893,9 @@ export default function SpiderDemo() {
               onChange={(e) => handleCountryChange(e.target.value)}
               aria-label="Select country"
             >
-              {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {(COUNTRIES.includes(country) ? COUNTRIES : [country, ...COUNTRIES]).map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
             </select>
           )}
           <span className="spider-proto-badge">prototype</span>

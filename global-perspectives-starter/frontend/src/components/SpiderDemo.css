@@ -216,11 +216,12 @@
   position: absolute;
   inset: 0;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 
 .spider-graph-scroll::-webkit-scrollbar {
   height: 6px;
+  width: 6px;
 }
 .spider-graph-scroll::-webkit-scrollbar-thumb {
   background: var(--line-2);

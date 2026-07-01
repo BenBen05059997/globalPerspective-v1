@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-07-01 (feat: newsDriftCorrector — grounded "what changed & why" (living-analysis 1b), DEPLOYED)
+
+The corrector loop from `LIVING_ANALYSIS_PLAN.md`: when a country's read materially moves, explain **why**, grounded in a real cited event. Built + proven against live data, then deployed.
+
+- **`newsDriftCorrector` Lambda (LIVE):** per country — gate deterministically on *recent* HISTORY# conclusion moves (risk level / |Δscore|≥8 / trajectory), then ground the "why" in the country's real archive events (DeepSeek picks the single numbered event, or honest no-single-driver; never invents). Writes `COUNTRY#/DRIFT#<date>` notes — never overwrites. Reuses `newsCountryIntelligence-role`; scheduled daily after country-intel. Pure core `lib.js` (7 `node --test`). First prod run wrote grounded notes for Ukraine / US / Russia / Japan / France; honest no-note for Iran (19d-stale) / China / etc.
+- **`newsSensitiveData` `country_history`** now returns `driftNotes[]`.
+- **Frontend:** `CountryWhatChanged` shows "↳ Because: <real cited event> — <why>" (labeled 💭, grounded) when a note matches the current move; else deterministic 1a; else honest-empty. Sanitizes the model's "event [n]" prose artifact.
+- Prove-before-deploy caught + fixed the citation scheme (number events, cite `[n]` — models won't echo hash ids). Model = DeepSeek (same family): the corrector grounds a causal explanation (generation), doesn't judge prose, so family-bias doesn't apply.
+- `npm run verify` green (0 ESLint, 184 tests); corrector lib 7/7.
+
+Files: `amplify/backend/function/newsDriftCorrector/*`, `amplify/backend/function/newsSensitiveData/src/index.js`, `…/src/{hooks/useCountryHistory.js, components/CountryPage.jsx, components/atoms/CountryWhatChanged.{jsx,css}}`, `LIVING_ANALYSIS_PLAN.md`, `docs/*`.
+
 ## 2026-07-01 (feat: "What changed" band on CountryPage — living-analysis Phase 1a)
 
 First pixel of the living / self-correcting-analysis wedge (`LIVING_ANALYSIS_PLAN.md`): surface the change we already log but never showed. Deterministic, no LLM, honest-empty — proves the value before building the grounded corrector (Phase 1b).

@@ -7,6 +7,12 @@ import { computeCountryDrift } from '../../utils/countryDrift';
 import RiskDeltaPill from './RiskDeltaPill';
 import './CountryWhatChanged.css';
 
+// The corrector sometimes references the event by its prompt number ("event [6] shows…").
+// Strip that artifact for display — the triggerEvent already names the event.
+function cleanWhy(s) {
+  return String(s || '').replace(/\bevent\s*\[\d+\]/gi, 'the cited event').replace(/\s*\[\d+\]/g, '').trim();
+}
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function fmtDay(s) {
   const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -50,7 +56,7 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [] }) {
               {note.triggerEvent.date ? <span className="cwc-evdate"> · {fmtDay(note.triggerEvent.date)}</span> : null}
             </div>
           )}
-          <div className="cwc-whytext">{note.whyChanged}</div>
+          <div className="cwc-whytext">{cleanWhy(note.whyChanged)}</div>
         </div>
       )}
 

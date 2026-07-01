@@ -531,8 +531,13 @@ exports.handler = async (event) => {
           const nodes = Array.isArray(it.nodes) ? it.nodes : [];
           const dates = nodes.map(n => n.peakDate).filter(Boolean).sort();
           const cats = {};
-          for (const n of nodes) { const c = n.category || 'other'; cats[c] = (cats[c] || 0) + 1; }
+          const dateCount = {};
+          for (const n of nodes) {
+            const c = n.category || 'other'; cats[c] = (cats[c] || 0) + 1;
+            if (n.peakDate) dateCount[n.peakDate] = (dateCount[n.peakDate] || 0) + 1;
+          }
           const topCategory = Object.entries(cats).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+          const peak = Object.entries(dateCount).sort((a, b) => b[1] - a[1])[0]?.[0] || (dates[dates.length - 1] || null);
           return {
             country: it.countryName,
             threadCount: nodes.length,
@@ -540,6 +545,7 @@ exports.handler = async (event) => {
             backboneCount: Array.isArray(it.backbone) ? it.backbone.length : 0,
             topCategory,
             earliest: dates[0] || null,
+            peak,
             latest: dates[dates.length - 1] || null,
             generatedAt: it.generatedAt || null,
           };

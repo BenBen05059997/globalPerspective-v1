@@ -817,3 +817,44 @@
   letter-spacing: 0.06em;
   margin-top: 3px;
 }
+
+/* ── AI analysis (dossier_analysis) ──────────────────────────────────────── */
+.spider-ai-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.spider-ai-btn {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 7px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.spider-ai-btn:hover { background: var(--accent-deep); }
+.spider-ai-body {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.spider-ai-line { margin: 0 0 6px; }
+.spider-ai-line strong { font-weight: 600; color: var(--ink); }
+.spider-ai-gap { height: 6px; }
+.spider-ai-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent-deep);
+  cursor: pointer;
+}
+.spider-ai-link:hover { text-decoration: underline; }

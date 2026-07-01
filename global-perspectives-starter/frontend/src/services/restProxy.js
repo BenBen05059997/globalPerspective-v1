@@ -204,6 +204,11 @@ export async function fetchSystemsAnalysis(countryName) {
   return proxyAction('systems_analysis', { countryName });
 }
 
+// Event dossier + AI analysis over the causal web (see EVENT_DOSSIER_SPEC.md)
+export async function fetchDossierAnalysis(countryName, threadId, hops = 1) {
+  return proxyAction('dossier_analysis', { countryName, threadId, hops });
+}
+
 // ── Economic Impact (per-thread economic disruption) ─────────────────────────
 export async function fetchEconomicImpact(threadId) {
   return proxyAction('economic_impact', { threadId });

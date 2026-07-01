@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
 import { useNarrativeThread } from '../hooks/useNarrativeThread';
-import { fetchPredictionCache } from '../services/restProxy';
+import { fetchPredictionCache, fetchDossierAnalysis } from '../services/restProxy';
 import { threadPath } from '../utils/threadPath';
 import CompactTimeline from './CompactTimeline';
 import './SpiderDemo.css';
@@ -75,6 +75,19 @@ function storyLabel(summary, maxWords = 5) {
   }
   const kept = words.slice(0, maxWords).join(' ').replace(/[,;:]$/, '');
   return words.length > maxWords ? `${kept}…` : kept;
+}
+
+// Minimal rich-text render for the AI analysis: **bold** + line breaks.
+function renderRich(text) {
+  return String(text || '').split('\n').map((line, i) => {
+    if (!line.trim()) return <div key={i} className="spider-ai-gap" />;
+    const parts = line.split(/(\*\*[^*]+\*\*)/g).map((p, j) =>
+      p.startsWith('**') && p.endsWith('**')
+        ? <strong key={j}>{p.slice(2, -2)}</strong>
+        : <span key={j}>{p}</span>,
+    );
+    return <p key={i} className="spider-ai-line">{parts}</p>;
+  });
 }
 
 function parsePrediction(raw) {
@@ -546,6 +559,7 @@ function NodePanel({ node, country, onClose }) {
   const { entries, loading: tlLoading, error: tlError } = useNarrativeThread(node?.threadId);
   const [prediction, setPrediction] = useState(null);
   const [predLoading, setPredLoading] = useState(false);
+  const [ai, setAi] = useState(null); // null | {loading} | {text} | {error}
 
   // Predictions are keyed per-TOPIC, not per-thread. Derive representative topicId
   // from thread narrative entries — prefer inflection/peak entry, else most recent.
@@ -580,6 +594,19 @@ function NodePanel({ node, country, onClose }) {
       .finally(() => { if (!cancelled) setPredLoading(false); });
     return () => { cancelled = true; };
   }, [repTopicId]);
+
+  // AI analysis over the event dossier (public dossier_analysis action).
+  useEffect(() => { setAi(null); }, [node?.threadId]);
+  const runAnalysis = useCallback(() => {
+    if (!node?.threadId) return;
+    setAi({ loading: true });
+    fetchDossierAnalysis(country, node.threadId)
+      .then(r => {
+        const a = r?.data?.analysis;
+        setAi(a ? { text: a } : { error: r?.data?.analysisError || 'unavailable' });
+      })
+      .catch(() => setAi({ error: 'request failed' }));
+  }, [country, node?.threadId]);
 
   if (!node) return null;
   const meta = LANE_META[node._lane] || LANE_META.other;
@@ -649,6 +676,28 @@ function NodePanel({ node, country, onClose }) {
           )}
           {!predLoading && !tlLoading && !prediction && (
             <div className="spider-panel-empty">No prediction cached for this thread.</div>
+          )}
+        </div>
+
+        <div className="spider-ai-section">
+          {!ai && (
+            <button className="spider-ai-btn" onClick={runAnalysis}>
+              ✦ Analyze this event with AI
+            </button>
+          )}
+          {ai?.loading && <div className="spider-panel-loading">Reasoning over the causal web…</div>}
+          {ai?.error && (
+            <div className="spider-panel-empty">
+              Analysis unavailable.{' '}
+              <button className="spider-ai-link" onClick={runAnalysis}>retry</button>
+            </div>
+          )}
+          {ai?.text && (
+            <>
+              <div className="spider-panel-jtag">💭 AI read of this event&apos;s dossier — grounded in the web; interpretation labeled</div>
+              <div className="spider-ai-body">{renderRich(ai.text)}</div>
+              <button className="spider-ai-link" onClick={runAnalysis}>↻ re-run</button>
+            </>
           )}
         </div>
       </div>

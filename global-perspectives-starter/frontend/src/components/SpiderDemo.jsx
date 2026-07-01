@@ -338,6 +338,15 @@ function CausalWebSVG({
     [causalOn, edges],
   );
 
+  // Level-of-detail labels: when the graph is sparse, label EVERY node (otherwise the
+  // reader just sees anonymous dots — the whole point is lost). Only once it gets dense do
+  // we fall back to importance-gating + reveal-on-focus, to avoid a wall of overlapping text.
+  const LABEL_ALL_MAX = 12;
+  const labelAllNodes = useMemo(
+    () => positioned.filter(n => activeLanes.has(n._lane)).length <= LABEL_ALL_MAX,
+    [positioned, activeLanes],
+  );
+
   return (
     <svg
       className="spider-web-svg"
@@ -504,7 +513,7 @@ function CausalWebSVG({
         const isSelected = n.threadId === selectedNodeId;
         const isDimmed = !!(selectedNodeId && !isSelected && !(neighbors?.has(n.threadId)));
         const isIsolated = n._degree === 0;
-        const showLabel = n._imp >= 4 || isSelected || !!(neighbors?.has(n.threadId));
+        const showLabel = labelAllNodes || n._imp >= 4 || isSelected || !!(neighbors?.has(n.threadId));
         const label = storyLabel(n.summary, isSelected ? 8 : 5);
         const labelY = n._y + n._r + 14;
         const lw = label.length * 6.2;

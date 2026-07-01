@@ -403,7 +403,7 @@ Bilateral relationship analysis between country pairs.
 ### 9. `newsSystemsAnalysis`
 **Path:** `amplify/backend/function/newsSystemsAnalysis/src/index.js`
 **Trigger:** EventBridge Rule — `TriggerNewsSystemsAnalysis` — `cron(15 7 * * ? *)` (daily 07:15 UTC)
-**Deployed:** 2026-04-25. IAM logging fixed 2026-04-27 (log group now exists). Phase 1: restricted to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran`
+**Deployed:** 2026-04-25. IAM logging fixed 2026-04-27 (log group now exists). Coverage gate `SYSTEMS_TEST_COUNTRIES` widened 2026-07-01 → `Iran,United States,China,Ukraine,Venezuela` (56 countries eligible; daily cron keeps them fresh)
 
 Cross-domain causal relationship analysis. Maps how events across categories connect with time lags and confidence.
 
@@ -426,7 +426,7 @@ Cross-domain causal relationship analysis. Maps how events across categories con
 ```
 Two layers: `edges` = sparse causal overlay (💭 model judgment); `backbone` = dense shared-actor web (✅ factual). Frontend draws backbone as solid always-on lines, causal as a dashed toggle (`SpiderDemo.jsx`).
 
-**Phase 1 (current):** Test countries only (`SYSTEMS_TEST_COUNTRIES=Argentina,Iran`). Iran regen 2026-07-01: 15 nodes, 10 causal edges, 16 backbone edges (isolated nodes 5→2).
+**Coverage (current):** `SYSTEMS_TEST_COUNTRIES=Iran,United States,China,Ukraine,Venezuela` (widened 2026-07-01; 56 eligible). Regen 2026-07-01 — Iran 15n/8c/19bb, US 15n/6c/20bb, China 15n/7c/13bb, Ukraine 13n/6c/11bb, Venezuela 2n/1c/0bb.
 
 **Key env vars:** `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` (legacy names — hold **DeepSeek** values in production), `SYSTEMS_TOP_N` (default: 5), `SYSTEMS_TEST_COUNTRIES`
 
@@ -962,7 +962,7 @@ Wired in `<Routes>` in `App.jsx` — 21 routes incl. catch-all (`/membership` ad
 | `/auth/callback` | `AuthCallback.jsx` | Public |
 | `/membership` | `MembershipPage.jsx` | Public (Polar checkout — $15/mo · $150/yr for Analysis-Studio-on-our-compute; reading stays free) |
 | `/account` | `Account.jsx` | Auth |
-| `/spider-demo` | `SpiderDemo.jsx` | Public — ⚠ **unlisted throwaway prototype** (timeline+lane "causal web" over `systems_analysis`: x=time, y=category lanes; solid shared-actor **backbone** + dashed causal toggle overlay; Iran-only, not in nav; deployed for design-partner discovery). Rebuilt from d3-force→timeline 2026-06-30; backbone layer added 2026-07-01. See `SPIDER_WEB_MODEL_PLAN.md` + `SPIDER_BUILD_SPEC.md` + `EVENT_DOSSIER_SPEC.md` + `ANALYST_TOOL_DIRECTION.md` for the product direction. |
+| `/spider-demo` | `SpiderDemo.jsx` | Public — ⚠ **unlisted throwaway prototype** (timeline+lane "causal web" over `systems_analysis`: x=time, y=category lanes; solid shared-actor **backbone** + dashed causal toggle overlay; country selector — Iran/US/China/Ukraine/Venezuela; not in nav; deployed for design-partner discovery). Rebuilt from d3-force→timeline 2026-06-30; backbone layer + country selector added 2026-07-01. See `SPIDER_WEB_MODEL_PLAN.md` + `SPIDER_BUILD_SPEC.md` + `EVENT_DOSSIER_SPEC.md` + `ANALYST_TOOL_DIRECTION.md` for the product direction. |
 | `*` | `NotFound` (inline in App.jsx) | Public catch-all (404) |
 
 **Removed/never-wired:** a "Cut: orphans" cleanup deleted several components and routes, and the 2026-05-26 subscription deprecation removed billing UI. The following are **no longer routed and the component files no longer exist**: `/cli` (CLIPage), `/intelligence-map` (IntelligenceMap), `/test/briefing-card` (BriefingCardTest), `/pricing` (Pricing), `/weekly/pairs` + `/weekly/pair/:slug` (PairPage/PairListPage), `/upgrade/success` (UpgradeSuccess — billing). Also deleted in the billing cleanup: `TrialBanner.jsx`, `WeeklyLockedPreview.jsx`, `useUserProfile.js`. `WorldMap.jsx` and `WeeklyMap.jsx` still exist as files but are **not routed** (`/map` uses WorldMapV2; there is no `/weekly-map` or `/map-v2` route).
@@ -998,7 +998,7 @@ Wired in `<Routes>` in `App.jsx` — 21 routes incl. catch-all (`/membership` ad
 | `AnalysisStudio.jsx` | `/analyze` — **BYOK self-serve analysis** (registered-only; see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)). Pick ≤4 stories → **Guided lens** / **Free-form** / **Deep research (web)** → cited deep-dive from cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE` (deep mode also web-searches). Output runs through the validator + source-robustness banner. Runs on the user's own key (browser-only). |
 | `ProviderModal.jsx` | The `/analyze` provider/model/key chooser modal (OpenAI · DeepSeek `v4-flash`/`-pro` · **Perplexity** · Gemini · OpenRouter · Anthropic; labels which can web-search). Writes `{provider,model,key}` to `localStorage` only — never sent to our servers. |
 | `MembershipPage.jsx` | `/membership` — Polar checkout ($15/mo · $150/yr = run Analysis Studio on our compute; reading stays free). Self-states availability; "Sign in to subscribe" passes `?returnTo=/membership`. Added 2026-06-22 (footer-linked, not in top nav). |
-| `SystemsGraph.jsx` | First-class causal-graph view (P2, 2026-06-22) — renders the **full** `systems_analysis` `{nodes,edges}` with `mechanism`/`lagDays`/`confidence`; each node links to its arc (`/weekly/thread/:id`), each edge shows its `citedEntries` count as evidence weight. Replaced the old `edges.slice(0,4)` inline cap. **Promoted out of CountryPage's right rail into a full-width center "Causal Web" tab 2026-06-29** (it was buried as the 5th of 8 stacked rail modules at rail width). Backend still gated to `SYSTEMS_TEST_COUNTRIES=Argentina,Iran` until the env gate is widened. |
+| `SystemsGraph.jsx` | First-class causal-graph view (P2, 2026-06-22) — renders the **full** `systems_analysis` `{nodes,edges}` with `mechanism`/`lagDays`/`confidence`; each node links to its arc (`/weekly/thread/:id`), each edge shows its `citedEntries` count as evidence weight. Replaced the old `edges.slice(0,4)` inline cap. **Promoted out of CountryPage's right rail into a full-width center "Causal Web" tab 2026-06-29** (it was buried as the 5th of 8 stacked rail modules at rail width). Backend coverage `SYSTEMS_TEST_COUNTRIES` widened 2026-07-01 to Iran/US/China/Ukraine/Venezuela. |
 | `BreakingFeedPage.jsx` | `/breaking` (2026-06-26) — the breaking-alert feed. Reuses `useNotifications`; groups confirmed alerts by Today/Yesterday/date; each card = BREAKING chip · category·regions · market pill · `SourceRobustness`. Honest empty state ("Quiet is the normal state"). |
 | `BreakingDetailPage.jsx` | `/breaking/:id` (2026-06-26) — native breaking-alert page via `useBreakingAlert`. Renders the structured story (What happened / How we got here [normalized TRACE_CAUSE] / Our read / Market impact / Sources); region chips → country/map; **story-arc link only when `hasArc`** (a real multi-entry thread). Falls back to the saved email text for legacy records. Honest not-found when the id isn't a confirmed alert. |
 | `atoms/BreakingStrip.jsx` | Slim pulsing "BREAKING" entry strip atop Home + Map (2026-06-26). Renders **only** when the newest confirmed alert is <24h old — else nothing (no stale/fabricated banner). Links to `/breaking/:id`. |

@@ -507,6 +507,51 @@ exports.handler = async (event) => {
       }
     }
 
+    if (action === 'world_overview') {
+      const client = getDynamoClient();
+      try {
+        // Paginate the scan — SYSTEMS# items are spread across the table's 1MB pages.
+        const items = [];
+        let ExclusiveStartKey;
+        let pages = 0;
+        do {
+          const resp = await client.send(new ScanCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            FilterExpression: 'begins_with(PK, :p) AND SK = :sk',
+            ExpressionAttributeValues: { ':p': 'SYSTEMS#', ':sk': 'SYSTEMS_ANALYSIS' },
+            ProjectionExpression: 'countryName, nodes, edges, backbone, generatedAt',
+            ExclusiveStartKey,
+          }));
+          items.push(...(resp.Items || []));
+          ExclusiveStartKey = resp.LastEvaluatedKey;
+          pages += 1;
+        } while (ExclusiveStartKey && pages < 25);
+
+        const situations = items.map(it => {
+          const nodes = Array.isArray(it.nodes) ? it.nodes : [];
+          const dates = nodes.map(n => n.peakDate).filter(Boolean).sort();
+          const cats = {};
+          for (const n of nodes) { const c = n.category || 'other'; cats[c] = (cats[c] || 0) + 1; }
+          const topCategory = Object.entries(cats).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+          return {
+            country: it.countryName,
+            threadCount: nodes.length,
+            causalCount: Array.isArray(it.edges) ? it.edges.length : 0,
+            backboneCount: Array.isArray(it.backbone) ? it.backbone.length : 0,
+            topCategory,
+            earliest: dates[0] || null,
+            latest: dates[dates.length - 1] || null,
+            generatedAt: it.generatedAt || null,
+          };
+        }).filter(s => s.country && s.threadCount > 0);
+        console.info('newsSensitiveData world_overview response', { situations: situations.length });
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: situations }) };
+      } catch (err) {
+        console.error('world_overview error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'World overview failed' }) };
+      }
+    }
+
     if (action === 'event_dossier' || action === 'dossier_analysis') {
       const countryName = payload?.countryName || qs?.countryName;
       const threadId = payload?.threadId || qs?.threadId;

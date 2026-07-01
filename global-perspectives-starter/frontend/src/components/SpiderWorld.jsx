@@ -1,14 +1,13 @@
 // SpiderWorld.jsx — World Overview tier for the /spider-demo prototype.
-// Top altitude of the causal-web system: region lanes, one "situation" bubble
-// per country that has a systems graph (sized by thread count), packed evenly
-// within its lane and labelled with its latest-activity date. Click a bubble to
-// drill into that country's causal web. Throwaway prototype; deletable with
-// SpiderDemo.jsx. Uses only read-only fetchWorldOverview.
+// Top altitude: a global TIMELINE. x = date, y = region lane. Each country's
+// situation is a bubble at its PEAK-activity date, sized by thread count, with a
+// span bar showing how long the situation ran (earliest → latest). Lines connect
+// countries whose graphs share key actors. Click a bubble to drill into its
+// causal web. Throwaway prototype; deletable with SpiderDemo.jsx.
 
 import { useState, useEffect, useMemo } from 'react';
 import { fetchWorldOverview } from '../services/restProxy';
 
-// Region lanes (y) — the world is laid out by region.
 const REGION_LANES = [
   { key: 'me', label: 'Middle East' },
   { key: 'eu', label: 'Europe' },
@@ -18,7 +17,6 @@ const REGION_LANES = [
   { key: 'gl', label: 'Global' },
 ];
 
-// Country → region. Extend as coverage widens; unknown → Global.
 const COUNTRY_REGION = {
   'Iran': 'me', 'Israel': 'me', 'Saudi Arabia': 'me', 'Qatar': 'me', 'Lebanon': 'me',
   'Turkey': 'me', 'Syria': 'me', 'Yemen': 'me', 'United Arab Emirates': 'me',
@@ -29,11 +27,9 @@ const COUNTRY_REGION = {
 };
 function regionOf(country) { return COUNTRY_REGION[country] || 'gl'; }
 
-// Shorten a few long country names for on-canvas labels.
-const SHORT_NAME = { 'Democratic Republic of the Congo': 'DR Congo', 'United States': 'United States' };
+const SHORT_NAME = { 'Democratic Republic of the Congo': 'DR Congo' };
 function shortName(c) { return SHORT_NAME[c] || c; }
 
-// Broad category → bubble color (matches the country-tier palette family).
 const CAT_COLOR = {
   conflict: '#c0492f', military: '#c0492f', war: '#c0492f',
   politics: '#8a3526', diplomacy: '#3a6ea5',
@@ -48,14 +44,15 @@ function catColor(c) {
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function shortDate(s) {
+const DAY_MS = 86400000;
+const DAY_W = 44;
+const LANE_H = 116;
+const MARGIN = { top: 44, left: 150, right: 48, bottom: 26 };
+function parseDate(s) {
   const m = typeof s === 'string' && s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? `${MONTHS[+m[2] - 1]} ${+m[3]}` : '';
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
 }
-
-const COL_W = 158;
-const LANE_H = 128;
-const MARGIN = { top: 16, left: 150, right: 40, bottom: 24 };
+function fmtMs(ms) { const d = new Date(ms); return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`; }
 const rForThreads = (t) => 16 + Math.sqrt(Math.max(1, t)) * 4.2;
 
 export default function WorldOverview({ onDrill }) {
@@ -82,25 +79,45 @@ export default function WorldOverview({ onDrill }) {
 
   const layout = useMemo(() => {
     if (!situations || !situations.length) return null;
-    // Group by region; pack evenly left→right within each lane (biggest first).
+    const withMs = situations.map(s => ({
+      ...s,
+      _peakMs: parseDate(s.peak) || parseDate(s.latest),
+      _startMs: parseDate(s.earliest),
+      _endMs: parseDate(s.latest),
+    }));
+    const all = [];
+    withMs.forEach(s => [s._peakMs, s._startMs, s._endMs].forEach(m => { if (m != null) all.push(m); }));
+    if (!all.length) return null;
+    const minMs = Math.min(...all);
+    const maxMs = Math.max(...all);
+    const totalDays = Math.max(1, Math.round((maxMs - minMs) / DAY_MS) + 1);
+    const xForMs = (m) => MARGIN.left + (m != null ? Math.round((m - minMs) / DAY_MS) : totalDays - 1) * DAY_W + DAY_W / 2;
+
     const byRegion = {};
-    situations.forEach(s => { const rk = regionOf(s.country); (byRegion[rk] = byRegion[rk] || []).push(s); });
-    Object.values(byRegion).forEach(arr => arr.sort((a, b) => b.threadCount - a.threadCount));
+    withMs.forEach(s => { const rk = regionOf(s.country); (byRegion[rk] = byRegion[rk] || []).push(s); });
 
     const placed = [];
+    const pos = {};
     REGION_LANES.forEach((lane, li) => {
-      const arr = byRegion[lane.key] || [];
+      const arr = (byRegion[lane.key] || []).slice().sort((a, b) => (a._peakMs || 0) - (b._peakMs || 0));
       const laneY = MARGIN.top + li * LANE_H + LANE_H / 2;
-      arr.forEach((s, i) => {
-        placed.push({ ...s, _rk: lane.key, _x: MARGIN.left + i * COL_W + COL_W / 2, _y: laneY - 6, _r: rForThreads(s.threadCount) });
+      let lastX = -1e9; let toggle = 1;
+      arr.forEach(s => {
+        const r = rForThreads(s.threadCount);
+        const x = xForMs(s._peakMs);
+        let y = laneY - 4;
+        if (x - lastX < 2 * r + 8) { y = laneY - 4 + toggle * 30; toggle *= -1; } else { toggle = 1; }
+        lastX = x;
+        const o = { ...s, _rk: lane.key, _x: x, _y: y, _r: r, _x0: xForMs(s._startMs), _x1: xForMs(s._endMs) };
+        placed.push(o);
+        pos[s.country] = { x, y };
       });
     });
-    const maxCols = Math.max(1, ...REGION_LANES.map(l => (byRegion[l.key] || []).length));
-    const svgW = MARGIN.left + maxCols * COL_W + MARGIN.right;
+
+    const svgW = MARGIN.left + totalDays * DAY_W + MARGIN.right;
     const svgH = MARGIN.top + REGION_LANES.length * LANE_H + MARGIN.bottom;
-    const pos = {};
-    placed.forEach(s => { pos[s.country] = { x: s._x, y: s._y }; });
-    return { placed, pos, svgW, svgH };
+    const laneBottom = MARGIN.top + REGION_LANES.length * LANE_H;
+    return { placed, pos, minMs, maxMs, totalDays, svgW, svgH, laneBottom, xForMs };
   }, [situations]);
 
   return (
@@ -113,7 +130,7 @@ export default function WorldOverview({ onDrill }) {
         )}
         {!loading && layout && (
           <svg className="spider-web-svg" width={layout.svgW} height={layout.svgH}
-            viewBox={`0 0 ${layout.svgW} ${layout.svgH}`} aria-label="World causal overview">
+            viewBox={`0 0 ${layout.svgW} ${layout.svgH}`} aria-label="World causal overview timeline">
             {/* Region lanes */}
             {REGION_LANES.map((lane, i) => {
               const y0 = MARGIN.top + i * LANE_H;
@@ -125,10 +142,24 @@ export default function WorldOverview({ onDrill }) {
                 </g>
               );
             })}
-            <line x1={0} y1={MARGIN.top + REGION_LANES.length * LANE_H} x2={layout.svgW}
-              y2={MARGIN.top + REGION_LANES.length * LANE_H} className="spider-lane-rule" />
+            <line x1={0} y1={layout.laneBottom} x2={layout.svgW} y2={layout.laneBottom} className="spider-lane-rule" />
 
-            {/* Cross-country shared-actor links (drawn under bubbles) */}
+            {/* Time axis — date ticks + gridlines */}
+            <text x={MARGIN.left} y={14} className="spider-axis-label">
+              {MONTHS[new Date(layout.minMs).getUTCMonth()]} {new Date(layout.minMs).getUTCFullYear()} →
+            </text>
+            {Array.from({ length: layout.totalDays }, (_, d) => d).filter(d => d % 4 === 0).map(d => {
+              const ms = layout.minMs + d * DAY_MS;
+              const x = MARGIN.left + d * DAY_W + DAY_W / 2;
+              return (
+                <g key={`t${d}`}>
+                  <line x1={x} y1={MARGIN.top - 4} x2={x} y2={layout.laneBottom} className="spider-gridline" />
+                  <text x={x} y={MARGIN.top - 12} textAnchor="middle" className="spider-tick-label">{fmtMs(ms)}</text>
+                </g>
+              );
+            })}
+
+            {/* Cross-country shared-actor links (under bubbles) */}
             {links.map((lk, i) => {
               const a = layout.pos[lk.from];
               const b = layout.pos[lk.to];
@@ -145,18 +176,21 @@ export default function WorldOverview({ onDrill }) {
               );
             })}
 
-            {/* Situation bubbles */}
+            {/* Situation span bars + bubbles */}
             {layout.placed.map(s => (
               <g key={s.country} style={{ cursor: 'pointer' }}
                 onClick={() => onDrill(s.country)}
                 onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, s })}
                 onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
                 onMouseLeave={() => setHover(null)}>
-                <circle cx={s._x} cy={s._y} r={s._r} fill={catColor(s.topCategory)} opacity={0.9} stroke="#fff" strokeWidth={2} />
+                {s._x1 > s._x0 + 1 && (
+                  <line x1={s._x0} y1={s._y} x2={s._x1} y2={s._y} className="spider-world-span" />
+                )}
+                <circle cx={s._x} cy={s._y} r={s._r} fill={catColor(s.topCategory)} opacity={0.92} stroke="#fff" strokeWidth={2} />
                 <text x={s._x} y={s._y + 5} textAnchor="middle" className="spider-world-count">{s.threadCount}</text>
                 <text x={s._x} y={s._y + s._r + 16} textAnchor="middle" className="spider-node-label">{shortName(s.country)}</text>
                 <text x={s._x} y={s._y + s._r + 31} textAnchor="middle" className="spider-world-date">
-                  {s.latest ? `latest ${shortDate(s.latest)}` : ''}
+                  {s.peak ? `peak ${fmtMs(parseDate(s.peak))}` : ''}
                 </text>
               </g>
             ))}
@@ -170,8 +204,9 @@ export default function WorldOverview({ onDrill }) {
           </div>
           <div className="spider-tip-head">{hover.s.country}</div>
           <div className="spider-tip-meta">
-            {hover.s.threadCount} threads · {hover.s.backboneCount} backbone links · mostly {hover.s.topCategory || 'mixed'}
-            {hover.s.latest ? ` · latest ${shortDate(hover.s.latest)}` : ''}
+            {hover.s.threadCount} threads · mostly {hover.s.topCategory || 'mixed'}
+            {hover.s.earliest && hover.s.latest ? ` · active ${fmtMs(parseDate(hover.s.earliest))}–${fmtMs(parseDate(hover.s.latest))}` : ''}
+            {hover.s.peak ? ` · peak ${fmtMs(parseDate(hover.s.peak))}` : ''}
           </div>
           <div className="spider-tip-hint">click to open the causal web →</div>
         </div>

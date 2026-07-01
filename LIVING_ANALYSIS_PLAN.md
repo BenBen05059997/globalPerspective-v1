@@ -107,7 +107,7 @@ The UI renders it as **"What changed since <date> — because <event>"**; the an
 
 **Phase 2 — harden the gate.** Replace the deterministic pre-filter's blunt edges with the small different-family judge ("did the conclusion move?"); retrofit onto `newsSystemsAnalysis` (kills its unconditional re-spend).
 
-**Phase 3 — threads + systems.** Give them the `DRIFT#` note + feed-forward; causal-web shows "these edges/actors are new since <date>."
+**Phase 3 — threads + systems.** ✅ **THREADS SHIPPED + DEPLOYED 2026-07-01** (`newsThreadAnalysis` THREAD_HISTORY# snapshot + `newsDriftCorrector` thread pass + `thread_analysis` driftNote + ThreadPage "What changed" block). Notes populate over ~2 daily cycles as snapshots accrue. Anchored on thread `riskScore`/`threadTitle`/`trajectory`. **Systems/causal-web = still pending.** (Phase 2 LLM-gate deferred as marginal; Phase 4 predictions-as-drift-source BLOCKED on the empty track record.)
 
 **Phase 4 — predictions as a drift source.** The resolver's fired/not-fired verdict is a *high-value* drift signal ("a counter-event undercut this thesis"). Wire resolver verdicts into drift notes → closes the loop with the (deferred) track record.
 

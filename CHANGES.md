@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-07-01 (feat: living-analysis Phase 3 — extend the loop to story threads, DEPLOYED)
+
+Story threads now get the same corrector → note → show loop as countries, anchored on the thread's `riskScore` + `threadTitle` + `trajectory`.
+
+- **`newsThreadAnalysis`** writes a `THREAD_HISTORY#<date>` snapshot (title/trajectory/riskScore) — gives the corrector a prior to diff.
+- **`newsDriftCorrector`** gained `threadConclusionMoved` (|Δscore|≥8 / title-jaccard<0.5 / trajectory-shift) + `findThreadDrift` + `processThread`; discovers active threads from `latest`; grounds the "why" in the thread's own archive events; writes `THREAD#/DRIFT#<date>`. `buildDriftPrompt` generalized to a subject (country OR "the story <title>").
+- **`newsSensitiveData`** `thread_analysis` attaches the latest `driftNote` per thread.
+- **`ThreadPage`** shows a "What changed — ↳ Because: <cited event>" block atop the Arc Intelligence rail (only when a grounded note exists).
+- Deployed all 4 (`newsThreadAnalysis`, `newsDriftCorrector`, `newsSensitiveData-dev`, frontend). **Additive + graceful** — no `THREAD_HISTORY#` yet, so thread notes **populate over ~2 daily cycles** as snapshots accrue. Proxy regression-checked (topics + country_history intact). `npm run verify` green (184 tests); corrector lib 9/9.
+- **Honestly NOT built:** Phase 2 (LLM gate) — marginal, deterministic gate tests clean; Phase 4 (predictions as drift source) — BLOCKED on the empty track record (0 confirmed verdicts).
+
+Files: `amplify/backend/function/{newsThreadAnalysis,newsDriftCorrector,newsSensitiveData}/src/*`, `…/src/components/{ThreadPage.jsx,ThreadPage.css}`, `LIVING_ANALYSIS_PLAN.md`, `docs/*`.
+
 ## 2026-07-01 (feat: feed-forward drift notes into the analyzer — living-analysis 1b.5, DEPLOYED)
 
 Closes the **corrector → note → analyzer** loop. `newsCountryIntelligence` now reads the last 2 grounded `DRIFT#` notes (from `newsDriftCorrector`) and injects them as a low-authority **"RECENT CORRECTIONS"** block, so the next country read builds on its own event-grounded corrections (continuity) instead of re-discovering them — while explicitly never overriding new evidence (bottom of the authority hierarchy).

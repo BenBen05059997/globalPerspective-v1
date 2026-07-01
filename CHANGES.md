@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-07-01 (feat: surface dossier provenance on /spider-demo — fact vs inference made visible)
+
+The event dossier already computes a fact/inference honesty layer, but the UI discarded it after rendering the AI prose. Now it's shown — turning a real-but-hidden strength into a visible one (the #1 wedge from the code-grounded pitch audit; display-only, the data already existed).
+
+- **Provenance strip in the AI panel** (`SpiderDemo.jsx` `DossierProvenance`): after "Analyze this event with AI", a chip row appears above the read — **✅ N events · M factual (shared-actor) links** (sourced) · **💭 K inferred links** (model judgment) · **⚠ J co-movement** (when present) — with a note that fact (✅ from our sources) is kept separate from inference (💭 model judgment). Captured from the `dossier_analysis` response (`r.data.dossier`), which was previously thrown away.
+- **Co-movement disclosure in the footer**: negative-lag edges (effect precedes cause) were silently dropped from the graph; the footer now discloses **"⚠ N co-movement hidden"** with a tooltip (treated as correlation, not causation) rather than hiding them without a trace.
+- Verify green: `npm run verify` (0 ESLint errors, 178 tests).
+
+Files: `…/src/components/{SpiderDemo.jsx,SpiderDemo.css}`, `docs/assets`, `docs/index.html`, `docs/404.html`. Note: this build also first-ships the dormant credit UI (header pill / Account → Membership tab / `/membership` "coming soon") — prod backend still pre-credits, so it renders "0 credits"; prod CORS fix still pending (see `PROD_CREDITS_NEXT_STEPS.md`).
+
 ## 2026-06-30 (test+fix: credits sandbox-verified; CORS "Failed to fetch" fixed; balance in header + Account)
 
 Continuation of the credit-buying feature (entry below): sandbox-tested it end-to-end, fixed a real CORS bug (also latent in prod), and surfaced balance/plan in the UI.

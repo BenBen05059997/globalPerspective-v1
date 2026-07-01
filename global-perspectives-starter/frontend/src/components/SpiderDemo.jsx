@@ -582,6 +582,39 @@ function Tooltip({ tip }) {
   );
 }
 
+// ── Dossier provenance strip ──────────────────────────────────────────────────
+// Surfaces the honesty layer the dossier already carries but the UI used to discard:
+// what the AI read is built on, with FACT (✅ from our sources) kept separate from
+// INFERENCE (💭 model judgment), and co-movement (effect-precedes-cause) called out.
+function DossierProvenance({ dossier }) {
+  const events = Array.isArray(dossier?.nodes) ? dossier.nodes.length : 0;
+  const factual = Array.isArray(dossier?.backbone) ? dossier.backbone.length : 0;
+  const causal = Array.isArray(dossier?.edges) ? dossier.edges.length : 0;
+  const anomaly = Array.isArray(dossier?.edges)
+    ? dossier.edges.filter(e => e?.flags?.temporal_anomaly).length
+    : 0;
+  return (
+    <div className="spider-prov">
+      <div className="spider-prov-chips">
+        <span className="spider-prov-chip spider-prov-fact" title="Events + shared-actor links — sourced from our archive, auditable">
+          ✅ {events} events · {factual} factual links
+        </span>
+        <span className="spider-prov-chip spider-prov-judge" title="Model-judged cause→effect — interpretation backed by cited facts, not itself fact">
+          💭 {causal} inferred links
+        </span>
+        {anomaly > 0 && (
+          <span className="spider-prov-chip spider-prov-warn" title="Effect peaks before cause — treated as co-movement, not causation">
+            ⚠ {anomaly} co-movement
+          </span>
+        )}
+      </div>
+      <div className="spider-prov-note">
+        Fact (✅ from our sources) kept separate from inference (💭 model judgment). The read below reasons over this dossier under that contract.
+      </div>
+    </div>
+  );
+}
+
 // ── Node panel (all data logic preserved exactly; markup restyled to mockup) ──
 
 function NodePanel({ node, country, onClose }) {
@@ -632,7 +665,8 @@ function NodePanel({ node, country, onClose }) {
     fetchDossierAnalysis(country, node.threadId)
       .then(r => {
         const a = r?.data?.analysis;
-        setAi(a ? { text: a } : { error: r?.data?.analysisError || 'unavailable' });
+        const dossier = r?.data?.dossier || null; // carry provenance so we can show it, not just the prose
+        setAi(a ? { text: a, dossier } : { error: r?.data?.analysisError || 'unavailable', dossier });
       })
       .catch(() => setAi({ error: 'request failed' }));
   }, [country, node?.threadId]);
@@ -721,6 +755,7 @@ function NodePanel({ node, country, onClose }) {
               <button className="spider-ai-link" onClick={runAnalysis}>retry</button>
             </div>
           )}
+          {ai?.dossier && <DossierProvenance dossier={ai.dossier} />}
           {ai?.text && (
             <>
               <div className="spider-panel-jtag">💭 AI read of this event&apos;s dossier — grounded in the web; interpretation labeled</div>
@@ -875,6 +910,9 @@ export default function SpiderDemo() {
 
   const causalEdgeCount = graphData?.edges?.filter(e => !e._temporalFlag).length ?? 0;
   const backboneCount = graphData?.backbone?.length ?? 0;
+  // Edges where the "effect" peaks before the "cause" — hidden from the tangle, but we
+  // disclose the count honestly rather than silently dropping them.
+  const anomalyCount = graphData?.edges?.filter(e => e._temporalFlag).length ?? 0;
 
   return (
     <div className="spider-shell">
@@ -1011,6 +1049,11 @@ export default function SpiderDemo() {
           <span><strong>{visibleNodeCount}</strong> stories</span>
           <span><strong>{backboneCount}</strong> backbone links (shared-actor)</span>
           <span><strong>{causalEdgeCount}</strong> causal links</span>
+          {anomalyCount > 0 && (
+            <span title="Effect peaks before the cause — hidden from the graph, treated as co-movement (not causation) in the AI read">
+              ⚠ <strong>{anomalyCount}</strong> co-movement hidden
+            </span>
+          )}
           <span className="spider-footer-spacer" />
           <span>Confidence shown as weak / medium / strong — never a fabricated %</span>
           {graphData?.generatedAt && (

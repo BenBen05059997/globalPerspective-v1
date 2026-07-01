@@ -1,7 +1,7 @@
 'use strict';
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 
 let EDITORIAL_FACTS = {};
 try {
@@ -238,6 +238,32 @@ async function readExisting(countryName) {
   }
 }
 
+// Feed-forward (living-analysis 1b.5): recent GROUNDED drift notes written by
+// newsDriftCorrector, so the next read builds on its own corrections (continuity) rather
+// than re-discovering them. Low authority — informational trajectory, update on new evidence.
+async function buildDriftBlock(countryName) {
+  try {
+    const { Items } = await ddb.send(new QueryCommand({
+      TableName: SUMMARY_TABLE,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :d)',
+      ExpressionAttributeValues: { ':pk': `${COUNTRY_PK_PREFIX}${countryName}`, ':d': 'DRIFT#' },
+      ScanIndexForward: false,
+      Limit: 2,
+    }));
+    const notes = (Items || []).filter((n) => n && n.whyChanged);
+    if (!notes.length) return '';
+    const lines = notes.map((n) => {
+      const lvl = n.changeLevel ? `${n.changeLevel.from}→${n.changeLevel.to}` : '';
+      const sc = n.changeScore ? `${n.changeScore.from}→${n.changeScore.to}` : '';
+      const ev = n.triggerEvent?.title ? ` — because: ${n.triggerEvent.title}` : '';
+      return `- As of ${n.asOf}: risk moved ${[lvl, sc].filter(Boolean).join(' / ')}${ev}. ${n.whyChanged}`;
+    }).join('\n');
+    return `\n\n=== RECENT CORRECTIONS TO OUR READ (${countryName}) — continuity, low authority ===\nThese are our own recently-logged, event-grounded shifts. Maintain continuity with them: do NOT re-announce a shift we already noted as if it were new; but DO revise if today's evidence contradicts them.\n${lines}\n`;
+  } catch {
+    return '';
+  }
+}
+
 // ─── AI generation ───────────────────────────────────────────────────────────
 
 async function searchCountryNews(countryName) {
@@ -392,9 +418,10 @@ async function generateCountryIntelligence(country) {
   await loadAndMergeDDBFacts(country.countryName);
   const editorialBlock = buildEditorialBlock(country.countryName);
 
-  const [searchResults, groundingBlock] = await Promise.all([
+  const [searchResults, groundingBlock, driftBlock] = await Promise.all([
     searchCountryNews(country.countryName),
     gatherCountryGrounding(country.countryName),
+    buildDriftBlock(country.countryName),
   ]);
   const referenceBlock = searchResults.length > 0
     ? '\n\n=== EXTERNAL REFERENCES (live web search) ===\n' +
@@ -412,7 +439,8 @@ AUTHORITY HIERARCHY (apply in order when facts conflict):
   2. VERIFIED GROUNDING FACTS (live web search)
   3. ARCHIVE ENTRIES + THREAD ANALYSES
   4. EXTERNAL REFERENCES (Brave News)
-${editorialBlock || ''}${groundingBlock || ''}
+  5. RECENT CORRECTIONS (our own logged trajectory — continuity only, never overrides new evidence)
+${editorialBlock || ''}${groundingBlock || ''}${driftBlock || ''}
 === OVERVIEW ===
 Country: ${country.countryName}
 Total articles: ${country.totalArticles} across ${country.dayCount} days

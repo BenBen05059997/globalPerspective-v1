@@ -310,7 +310,7 @@ Read-only REST proxy. All supported actions:
 | `thread_analysis` | None (early access) | `{ threadIds }` | Thread-level AI analyses |
 | `country_intelligence` | None (early access) | `{ countryNames }` | Country-level AI intelligence |
 | `country_history` | None (early access) | `{ countryName }` | Historical archive entries for a country |
-| `systems_analysis` | None (early access) | `{ countryName }` | Causal graph (nodes/edges) for a country |
+| `systems_analysis` | None (early access) | `{ countryName }` | Causal graph for a country: `nodes` (+`actors[]`), causal `edges`, shared-actor `backbone[]` |
 | `daily_brief` | None (early access) | `{ dateKey }` | Daily Intelligence Brief for a specific date |
 | `weekly_brief` | None | — | Latest **published** Weekly Signals Brief (`{ format:'signals', weekOf, asOf, signals[], watch[] }`); null until one is published via weekly/review.js. Powers `/weekly-brief` |
 | `weekly_markets` | None | — | Latest **published** Weekly Markets Report (`{ weekOf, asOf, movers[], excluded[] }`); null until one is published via weekly-markets/review.js. Powers `/economy`'s "This week" mode (`?view=week`); `/weekly-markets` redirects there |
@@ -411,19 +411,22 @@ Cross-domain causal relationship analysis. Maps how events across categories con
 1. Reads 30-day archive entries; groups by country
 2. Identifies threads (2+ articles per threadId) per country; loads thread analyses
 3. For each country: builds nodes from threads, calls **DeepSeek V4** with anti-hallucination prompt
-4. The LLM returns nodes + edges. Validation: all IDs must be real, edges cite real topicIds, confidence calibrated
-5. Dropped edges: unknown IDs, self-loops, 0 citations, confidence downgraded if citation count misses threshold
-6. Writes to `SUMMARIZE_PREDICT_TABLE` at `SYSTEMS#{countryName}` / `SYSTEMS_ANALYSIS` (14-day TTL)
+4. The LLM returns nodes (with `actors[]`) + causal edges. Validation: all IDs must be real, edges cite real topicIds, confidence calibrated
+5. Dropped edges: unknown IDs, self-loops, 0 citations, confidence downgraded if citation count misses threshold. Surviving causal edges tagged `class:'causal'`
+6. **Backbone layer (deterministic, no LLM):** `buildBackboneEdges` links threads sharing SPECIFIC named actors (weight = # shared); excludes "ambient" actors — the country itself + any actor in ≥60% of nodes — so it connects the graph without a topic-wide hairball. Added 2026-07-01 (per `SPIDER_BUILD_SPEC.md` / `SPIDER_WEB_MODEL_PLAN.md`)
+7. Writes to `SUMMARIZE_PREDICT_TABLE` at `SYSTEMS#{countryName}` / `SYSTEMS_ANALYSIS` (14-day TTL)
 
 **Output shape:**
 ```json
 {
-  "nodes": [{"threadId", "category", "peakDate", "summary"}],
-  "edges": [{"from", "to", "lagDays", "mechanism", "confidence", "citedEntries"}]
+  "nodes": [{"threadId", "category", "peakDate", "actors": ["Israel","Strait of Hormuz"], "summary"}],
+  "edges": [{"from", "to", "lagDays", "mechanism", "confidence", "citedEntries", "class":"causal"}],
+  "backbone": [{"from", "to", "class":"backbone", "relation":"shared_actor", "sharedActors":[…], "weight", "directed":false}]
 }
 ```
+Two layers: `edges` = sparse causal overlay (💭 model judgment); `backbone` = dense shared-actor web (✅ factual). Frontend draws backbone as solid always-on lines, causal as a dashed toggle (`SpiderDemo.jsx`).
 
-**Phase 1 (current):** Test countries only (`SYSTEMS_TEST_COUNTRIES=Argentina,Iran`). First run: Iran 15 nodes, 8 valid edges.
+**Phase 1 (current):** Test countries only (`SYSTEMS_TEST_COUNTRIES=Argentina,Iran`). Iran regen 2026-07-01: 15 nodes, 10 causal edges, 16 backbone edges (isolated nodes 5→2).
 
 **Key env vars:** `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` (legacy names — hold **DeepSeek** values in production), `SYSTEMS_TOP_N` (default: 5), `SYSTEMS_TEST_COUNTRIES`
 
@@ -750,7 +753,7 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 | `THREAD#{threadId}` | `THREAD_ANALYSIS` | newsThreadAnalysis | threadTitle, storyArc, trajectory, rootCauseChain, watchQuestions |
 | `COUNTRY#{countryName}` | `COUNTRY_INTELLIGENCE` | newsCountryIntelligence | headline, situationSummary, crossThreadInsight, trajectory, riskSignals, riskLevel |
 | `PAIR#{pairSlug}` | `PAIR_ANALYSIS` | newsPairIntelligence | pairTitle, currentState, timeline, trajectory, rootDriver, predictions, watchItems |
-| `SYSTEMS#{countryName}` | `SYSTEMS_ANALYSIS` | newsSystemsAnalysis | nodes[], edges[] with causal graph, confidence levels, citations (14-day TTL) |
+| `SYSTEMS#{countryName}` | `SYSTEMS_ANALYSIS` | newsSystemsAnalysis | nodes[] (+actors[]), causal edges[] (confidence, citations), shared-actor backbone[] (14-day TTL) |
 | `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL) |
 | `WEEKLY_BRIEF#{weekKey}` | `WEEKLY_BRIEF` | newsWeeklyBrief (#23) | Weekly **signals** digest (`format:'signals'`): `signals[{kind('threat'|'development'),lede,fact,soWhat,riskLevel,riskScore,region,asOf,sources,related}]` + `watch[{event,date,stake}]`. LLM writes kind/lede/fact/soWhat only; risk/region/asOf/sources are deterministic. `kind` drives the chip — threats get a color-coded RISK chip, developments a neutral chip (so cooperative stories aren't shown as red risks). `status` draft→published via weekly/review.js (180-day TTL) |
 | `WEEKLY_MARKETS#{weekKey}` | `WEEKLY_MARKETS` | newsWeeklyMarkets (#25) | Weekly **markets** report (price-first): `movers[{instrumentId,name,changePct,direction,weekStart,weekEnd,grounding('coverage'|'web'|'none'),note,coverage[{threadId,headline,severity}],sources[{title,url}]}]` + `excluded[]` (thin/gappy history). The %/direction/anchors are **deterministic** (from MARKETS history, never LLM); the LLM writes only the per-mover `note`. `status` draft→published via weekly-markets/review.js (180-day TTL) |
@@ -959,7 +962,7 @@ Wired in `<Routes>` in `App.jsx` — 21 routes incl. catch-all (`/membership` ad
 | `/auth/callback` | `AuthCallback.jsx` | Public |
 | `/membership` | `MembershipPage.jsx` | Public (Polar checkout — $15/mo · $150/yr for Analysis-Studio-on-our-compute; reading stays free) |
 | `/account` | `Account.jsx` | Auth |
-| `/spider-demo` | `SpiderDemo.jsx` | Public — ⚠ **unlisted throwaway prototype** (d3-force "causal web" demo over `systems_analysis`, Iran-only, not in nav; deployed for design-partner discovery). See `SPIDER_WEB_MODEL_PLAN.md` + `ANALYST_TOOL_DIRECTION.md` for the analyst-tool product direction it explores. |
+| `/spider-demo` | `SpiderDemo.jsx` | Public — ⚠ **unlisted throwaway prototype** (timeline+lane "causal web" over `systems_analysis`: x=time, y=category lanes; solid shared-actor **backbone** + dashed causal toggle overlay; Iran-only, not in nav; deployed for design-partner discovery). Rebuilt from d3-force→timeline 2026-06-30; backbone layer added 2026-07-01. See `SPIDER_WEB_MODEL_PLAN.md` + `SPIDER_BUILD_SPEC.md` + `EVENT_DOSSIER_SPEC.md` + `ANALYST_TOOL_DIRECTION.md` for the product direction. |
 | `*` | `NotFound` (inline in App.jsx) | Public catch-all (404) |
 
 **Removed/never-wired:** a "Cut: orphans" cleanup deleted several components and routes, and the 2026-05-26 subscription deprecation removed billing UI. The following are **no longer routed and the component files no longer exist**: `/cli` (CLIPage), `/intelligence-map` (IntelligenceMap), `/test/briefing-card` (BriefingCardTest), `/pricing` (Pricing), `/weekly/pairs` + `/weekly/pair/:slug` (PairPage/PairListPage), `/upgrade/success` (UpgradeSuccess — billing). Also deleted in the billing cleanup: `TrialBanner.jsx`, `WeeklyLockedPreview.jsx`, `useUserProfile.js`. `WorldMap.jsx` and `WeeklyMap.jsx` still exist as files but are **not routed** (`/map` uses WorldMapV2; there is no `/weekly-map` or `/map-v2` route).

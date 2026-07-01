@@ -1,0 +1,48 @@
+/* "What changed" band — living-analysis Phase 1a (deterministic, from daily risk history). */
+.cwc {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--paper-2);
+  padding: 12px 14px;
+  margin: 14px 0;
+}
+.cwc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cwc-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.cwc-since {
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+.cwc-dims {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ink-mid);
+}
+.cwc-dim b { color: var(--ink); }
+.cwc-heads {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.cwc-prev { color: var(--ink-dim); text-decoration: line-through; text-decoration-color: var(--line); }
+.cwc-now { color: var(--ink); margin-top: 2px; }
+.cwc-foot {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--ink-dim);
+}

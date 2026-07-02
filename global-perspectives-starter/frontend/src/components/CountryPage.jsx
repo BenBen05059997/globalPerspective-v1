@@ -49,7 +49,6 @@ const TRAJECTORY_BADGES = {
   'de-escalating': { arrow: '↘', label: 'De-escalating', color: 'var(--risk-l)' },
 };
 
-const RISK_DOTS = ['low', 'moderate', 'elevated', 'high'];
 
 function BoldText({ text }) {
   if (!text) return null;
@@ -366,7 +365,6 @@ export default function CountryPage() {
 
   const risk = intel ? (RISK_COLORS[intel.riskLevel] || RISK_COLORS.moderate) : null;
   const trajectory = intel?.trajectory ? (TRAJECTORY_BADGES[intel.trajectory] || TRAJECTORY_BADGES.stable) : null;
-  const riskIdx = intel ? RISK_DOTS.indexOf(intel.riskLevel) : -1;
 
   // Facet counts
   const allArcs = countryData?.arcs || [];
@@ -532,48 +530,8 @@ export default function CountryPage() {
         </div>
       )}
 
-      {/* Risk assessment */}
-      {risk && (
-        <div className="cpg-rail-section">
-          <div className="cpg-rail-hd">Risk Assessment</div>
-          <div className="cpg-risk-row">
-            {RISK_DOTS.map((level, i) => (
-              <span
-                key={level}
-                className="cpg-risk-dot"
-                style={i <= riskIdx ? { background: risk.color } : {}}
-              />
-            ))}
-            <span className="cpg-risk-label" style={{ color: risk.color }}>
-              {intel.riskLevel?.toUpperCase()}
-            </span>
-          </div>
-          {trajectory && (
-            <div className="cpg-traj-row" style={{ color: trajectory.color }}>
-              {trajectory.arrow} {trajectory.label}
-            </div>
-          )}
-          {riskHistory.length >= 2 && (
-            <div style={{ marginTop: 8 }}>
-              <RiskSparkline snapshots={riskHistory} color={risk.color} />
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-faint)', marginLeft: 4 }}>7-day trend</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Watch signals */}
-      {intel?.riskSignals?.length > 0 && (
-        <div className="cpg-rail-section">
-          <div className="cpg-rail-hd">What to Watch</div>
-          {intel.riskSignals.slice(0, 5).map((s, i) => (
-            <div key={i} className="cpg-rail-watch">
-              <span className="cpg-rail-watch-icon">⚡</span>
-              {s}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Risk Assessment moved UP into the header pill + stats strip (was a redundant rail block).
+          What to Watch moved into the Situation tab ("the read"). — Phase 1 IA cleanup */}
 
       {/* Live web evidence */}
       {intel?.groundingSources?.length > 0 && (
@@ -823,6 +781,17 @@ export default function CountryPage() {
                 <>
                   <div className="cpg-section-lbl">Why It Matters</div>
                   <div className="cpg-why-text"><BoldText text={intel.whyItMatters} /></div>
+                </>
+              )}
+
+              {intel?.riskSignals?.length > 0 && (
+                <>
+                  <div className="cpg-section-lbl">What to Watch</div>
+                  <ul className="cpg-watch-list">
+                    {intel.riskSignals.slice(0, 5).map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
                 </>
               )}
 

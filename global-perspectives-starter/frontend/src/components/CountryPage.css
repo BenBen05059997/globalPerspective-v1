@@ -764,3 +764,14 @@
 .cpg-causal-center .sysg {
   max-height: none;
 }
+
+/* "What to Watch" moved into the Situation tab (Phase 1 IA cleanup) */
+.cpg-watch-list { margin: 6px 0 4px; padding-left: 0; list-style: none; }
+.cpg-watch-list li {
+  position: relative; padding: 6px 0 6px 22px; font-size: 14px; line-height: 1.5;
+  color: var(--ink); border-bottom: 1px dotted var(--line);
+}
+.cpg-watch-list li:last-child { border-bottom: none; }
+.cpg-watch-list li::before {
+  content: '⚡'; position: absolute; left: 0; top: 6px; font-size: 12px; opacity: .7;
+}

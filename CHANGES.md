@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-07-02 (feat: correction-history chain on CountryPage, DEPLOYED + verified live)
+
+The "What changed" band now surfaces the **full day-by-day correction chain**, not just the latest move. Collapsed by default; a "N earlier corrections" toggle expands rows of date / risk from→to / cited event. Makes the *continuous* auto-correction visible (data already served via `driftNotes[]`). Playwright-verified live on `/weekly/country/Japan` (5-row chain renders + expands). Files: `atoms/CountryWhatChanged.{jsx,css}`.
+
 ## 2026-07-02 (feat: drift-corrector backfills EVERY ungrounded move — "keep it not drifted", DEPLOYED)
 
 The corrector grounded only the single newest move per run, so pre-live history / any missed cron day stayed permanently un-corrected. Now it grounds **every** ungrounded material move in its lookback window (`findAllDrifts` → the day-by-day chain; `processCountry`/`processThread` ground each move lacking a DRIFT# note). Self-heals to full coverage.

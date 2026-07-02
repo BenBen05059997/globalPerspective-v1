@@ -80,3 +80,17 @@ test('findThreadDrift: finds most recent materially-different prior; null when s
   assert.equal(d.prior.dateKey, '2026-06-01');
   assert.equal(findThreadDrift([tsnap('a', 50, 'X', 't'), tsnap('b', 53, 'X', 't')]), null); // Δ3, same title/traj
 });
+
+const { findAllDrifts } = require('../src/lib');
+test('findAllDrifts: returns every consecutive material move (the chain), not just the latest', () => {
+  const snaps = [
+    { dateKey: '2026-06-25', riskLevel: 'elevated', riskScore: 50, trajectory: 'calm' },
+    { dateKey: '2026-06-26', riskLevel: 'elevated', riskScore: 50, trajectory: 'calm' },   // no move
+    { dateKey: '2026-06-27', riskLevel: 'high', riskScore: 62, trajectory: 'escalating' },  // move 1
+    { dateKey: '2026-06-28', riskLevel: 'high', riskScore: 80, trajectory: 'war footing' }, // move 2 (Δ18)
+  ];
+  const d = findAllDrifts(snaps);
+  assert.equal(d.length, 2);
+  assert.equal(d[0].current.dateKey, '2026-06-27');
+  assert.equal(d[1].current.dateKey, '2026-06-28');
+});

@@ -2,7 +2,10 @@
 // 1a: deterministic risk/trajectory drift from the daily snapshots (no LLM).
 // 1b: when the newsDriftCorrector wrote a GROUNDED note for this move, show the "because
 // <real cited event>: <why>" line (model judgment, grounded in a real event).
+// Correction chain: the full day-by-day history of grounded moves (expandable) — proves the
+// read auto-corrects continuously, not just once.
 // Renders nothing when the read hasn't materially changed (honest-empty).
+import { useState } from 'react';
 import { computeCountryDrift } from '../../utils/countryDrift';
 import RiskDeltaPill from './RiskDeltaPill';
 import './CountryWhatChanged.css';
@@ -19,13 +22,28 @@ function fmtDay(s) {
   return m ? `${MONTHS[+m[2] - 1]} ${+m[3]}` : s;
 }
 
+// Compact from→to label for a history row (level if it changed, else score).
+function deltaLabel(n) {
+  if (n.changeLevel && n.changeLevel.from !== n.changeLevel.to) return `${n.changeLevel.from} → ${n.changeLevel.to}`;
+  const cs = n.changeScore;
+  if (cs && cs.from != null && cs.to != null) return `${cs.from} → ${cs.to}`;
+  return 'reframed';
+}
+
 export default function CountryWhatChanged({ snapshots, driftNotes = [] }) {
+  const [openChain, setOpenChain] = useState(false);
   const drift = computeCountryDrift(snapshots);
   if (!drift) return null;
 
+  const notes = Array.isArray(driftNotes) ? driftNotes : [];
   // A grounded note applies only if the corrector explained THIS move (same as-of date).
-  const note = (Array.isArray(driftNotes) ? driftNotes : []).find((n) => n.asOf === drift.asOf);
+  const note = notes.find((n) => n.asOf === drift.asOf);
   const grounded = note && note.whyChanged;
+
+  // The earlier corrections (everything except the one shown in the band), newest first.
+  const chain = notes
+    .filter((n) => n.asOf !== drift.asOf && (n.whyChanged || n.triggerEvent?.title || n.noSingleDriver))
+    .sort((a, b) => String(b.asOf).localeCompare(String(a.asOf)));
 
   return (
     <div className="cwc" aria-label="What changed in this country's read">
@@ -64,6 +82,34 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [] }) {
         <div className="cwc-heads">
           <div className="cwc-prev">“{drift.prior.headline}”</div>
           <div className="cwc-now">“{drift.current.headline}”</div>
+        </div>
+      )}
+
+      {chain.length > 0 && (
+        <div className="cwc-chain">
+          <button
+            type="button"
+            className="cwc-chain-toggle"
+            onClick={() => setOpenChain((v) => !v)}
+            aria-expanded={openChain}
+          >
+            {openChain ? '▾ Hide correction history' : `▸ ${chain.length} earlier correction${chain.length > 1 ? 's' : ''}`}
+          </button>
+          {openChain && (
+            <ol className="cwc-chain-list">
+              {chain.map((n, i) => (
+                <li key={i} className="cwc-chain-row">
+                  <span className="cwc-chain-date">{fmtDay(n.asOf)}</span>
+                  <span className="cwc-chain-delta">{deltaLabel(n)}</span>
+                  <span className="cwc-chain-because">
+                    {n.noSingleDriver
+                      ? <em>no single driver</em>
+                      : (n.triggerEvent?.title || cleanWhy(n.whyChanged))}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
       )}
 

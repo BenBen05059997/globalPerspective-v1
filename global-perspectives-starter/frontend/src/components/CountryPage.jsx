@@ -673,19 +673,19 @@ export default function CountryPage() {
           <CountryWhatChanged snapshots={riskHistory} driftNotes={driftNotes} />
 
           {/* Tabs */}
-          <div className="cpg-tabs">
-            <button className={`cpg-tab${mainTab === 'situation' ? ' on' : ''}`} onClick={() => setMainTab('situation')}>
+          <div className="cpg-tabs" role="tablist" aria-label="Country views">
+            <button role="tab" aria-selected={mainTab === 'situation'} className={`cpg-tab${mainTab === 'situation' ? ' on' : ''}`} onClick={() => setMainTab('situation')}>
               Situation
             </button>
-            <button className={`cpg-tab${mainTab === 'arcs' ? ' on' : ''}`} onClick={() => setMainTab('arcs')}>
+            <button role="tab" aria-selected={mainTab === 'arcs'} className={`cpg-tab${mainTab === 'arcs' ? ' on' : ''}`} onClick={() => setMainTab('arcs')}>
               Story Arcs <span className="c">{filteredArcs.length}</span>
             </button>
             {systemsData?.nodes?.length > 0 && (
-              <button className={`cpg-tab${mainTab === 'causal' ? ' on' : ''}`} onClick={() => setMainTab('causal')}>
+              <button role="tab" aria-selected={mainTab === 'causal'} className={`cpg-tab${mainTab === 'causal' ? ' on' : ''}`} onClick={() => setMainTab('causal')}>
                 Causal Web <span className="c">{systemsData.nodes.length}</span>
               </button>
             )}
-            <button className={`cpg-tab${mainTab === 'coverage' ? ' on' : ''}`} onClick={() => setMainTab('coverage')}>
+            <button role="tab" aria-selected={mainTab === 'coverage'} className={`cpg-tab${mainTab === 'coverage' ? ' on' : ''}`} onClick={() => setMainTab('coverage')}>
               Coverage <span className="c">{countryData.totalArticles}</span>
             </button>
           </div>
@@ -781,7 +781,7 @@ export default function CountryPage() {
 
               {/* Filters live HERE now (contextual to arcs), not floating in the left rail — Phase 3 IA */}
               {allArcs.length > 0 && (
-                <div className="cpg-arc-filters">
+                <div className="cpg-arc-filters" role="group" aria-label="Filter story arcs">
                   <div className="cpg-fgroup">
                     <span className="cpg-fgroup-lbl">Type</span>
                     {[
@@ -789,7 +789,7 @@ export default function CountryPage() {
                       ['anchor', 'Anchor', anchorCount],
                       ['linked', 'Linked', linkedCount],
                     ].map(([type, label, count]) => (
-                      <button key={type} className={`cpg-fchip${arcTypeFilter === type ? ' on' : ''}`} onClick={() => setArcTypeFilter(type)}>
+                      <button key={type} aria-pressed={arcTypeFilter === type} className={`cpg-fchip${arcTypeFilter === type ? ' on' : ''}`} onClick={() => setArcTypeFilter(type)}>
                         {label} <span className="c">{count}</span>
                       </button>
                     ))}
@@ -797,12 +797,13 @@ export default function CountryPage() {
                   {catCounts.length > 1 && (
                     <div className="cpg-fgroup">
                       <span className="cpg-fgroup-lbl">Category</span>
-                      <button className={`cpg-fchip${!catFilter ? ' on' : ''}`} onClick={() => setCatFilter(null)}>All</button>
+                      <button aria-pressed={!catFilter} className={`cpg-fchip${!catFilter ? ' on' : ''}`} onClick={() => setCatFilter(null)}>All</button>
                       {catCounts.map(([cat, count]) => {
                         const c = CATEGORY_BADGE_COLORS[cat];
                         return (
                           <button
                             key={cat}
+                            aria-pressed={catFilter === cat}
                             className={`cpg-fchip${catFilter === cat ? ' on' : ''}`}
                             style={catFilter === cat && c ? { color: c.color, borderColor: c.color } : {}}
                             onClick={() => setCatFilter(catFilter === cat ? null : cat)}
@@ -816,9 +817,9 @@ export default function CountryPage() {
                   {urgCounts.length > 1 && (
                     <div className="cpg-fgroup">
                       <span className="cpg-fgroup-lbl">Urgency</span>
-                      <button className={`cpg-fchip${!urgFilter ? ' on' : ''}`} onClick={() => setUrgFilter(null)}>All</button>
+                      <button aria-pressed={!urgFilter} className={`cpg-fchip${!urgFilter ? ' on' : ''}`} onClick={() => setUrgFilter(null)}>All</button>
                       {urgCounts.map(([urg, count]) => (
-                        <button key={urg} className={`cpg-fchip${urgFilter === urg ? ' on' : ''}`} onClick={() => setUrgFilter(urgFilter === urg ? null : urg)}>
+                        <button key={urg} aria-pressed={urgFilter === urg} className={`cpg-fchip${urgFilter === urg ? ' on' : ''}`} onClick={() => setUrgFilter(urgFilter === urg ? null : urg)}>
                           {urg} <span className="c">{count}</span>
                         </button>
                       ))}

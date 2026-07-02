@@ -721,3 +721,21 @@
 .tp-ai-drift { border-left: 3px solid var(--accent); padding-left: 10px; }
 .tp-ai-drift-because { font-size: 13px; color: var(--ink-mid); margin: 2px 0 6px; }
 .tp-ai-drift-because b { color: var(--ink); }
+
+/* Collapsible Arc-Intelligence rail blocks (progressive disclosure) */
+.tp-ai-toggle {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  width: 100%; margin: 18px 0 8px; padding: 0;
+  background: none; border: none; cursor: pointer; text-align: left;
+}
+.tp-ai-toggle .tp-ai-section-lbl { margin: 0; }
+.tp-ai-toggle:hover .tp-ai-section-lbl { color: var(--ink); }
+.tp-ai-chev { font-size: 10px; color: var(--ink-faint); transition: transform .15s ease; }
+.tp-ai-chev:not(.open) { transform: rotate(-90deg); }
+
+/* Keyboard focus rings — a11y parity with CountryPage (none existed before) */
+.tp-content-tab:focus-visible,
+.tp-ai-toggle:focus-visible,
+.tp-related:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px;
+}

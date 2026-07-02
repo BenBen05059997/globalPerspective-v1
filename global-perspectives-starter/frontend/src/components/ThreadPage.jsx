@@ -38,6 +38,21 @@ function driftClean(s) {
   return String(s || '').replace(/\bevent\s*\[\d+\]/gi, 'the cited event').replace(/\s*\[\d+\]/g, '').trim();
 }
 
+// Collapsible block for the Arc-Intelligence rail (progressive disclosure — the synthesis
+// column was a wall of text; secondary sections now collapse). Self-contained state.
+function RailBlock({ label, defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={`tp-ai-block${open ? '' : ' collapsed'}`}>
+      <button type="button" className="tp-ai-toggle" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+        <span className="tp-ai-section-lbl">{label}</span>
+        <span className={`tp-ai-chev${open ? ' open' : ''}`} aria-hidden="true">▾</span>
+      </button>
+      {open && <div className="tp-ai-block-body">{children}</div>}
+    </div>
+  );
+}
+
 function formatTimeAgo(isoString) {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
   if (mins < 1) return 'just now';
@@ -314,30 +329,26 @@ export default function ThreadPage() {
           </div>
         )}
         {analysis?.trajectory && (
-          <div className="tp-ai-block">
-            <div className="tp-ai-section-lbl">What&apos;s Next</div>
+          <RailBlock label="What's Next" defaultOpen>
             <p className="tp-ai-text">{analysis.trajectory}</p>
-          </div>
+          </RailBlock>
         )}
         {analysis?.rootCauseChain && (
-          <div className="tp-ai-block">
-            <div className="tp-ai-section-lbl">Trace Cause</div>
+          <RailBlock label="Trace Cause">
             <p className="tp-ai-text">{analysis.rootCauseChain}</p>
-          </div>
+          </RailBlock>
         )}
         {analysis?.watchQuestions?.length > 0 && (
-          <div className="tp-ai-block">
-            <div className="tp-ai-section-lbl">Watch</div>
+          <RailBlock label="Watch">
             <ul className="tp-watch-list">
               {analysis.watchQuestions.map((q, i) => <li key={i}>{q}</li>)}
             </ul>
-          </div>
+          </RailBlock>
         )}
 
         {/* Grounding sources */}
         {analysis?.groundingSources?.length > 0 && (
-          <div className="tp-ai-block">
-            <div className="tp-ai-section-lbl">Live Web Evidence</div>
+          <RailBlock label="Live Web Evidence">
             {analysis.groundingSources.slice(0, 3).map((s, i) => (
               <div key={i} className="tp-grounding-card">
                 <div className="tp-grounding-title">{s.title}</div>
@@ -345,7 +356,7 @@ export default function ThreadPage() {
                 <div className="tp-grounding-meta">{s.source}{s.age ? ` · ${s.age}` : ''}</div>
               </div>
             ))}
-          </div>
+          </RailBlock>
         )}
       </div>
       <div className="tp-ai-foot">
@@ -464,10 +475,12 @@ export default function ThreadPage() {
         </div>
 
         {/* Content tabs */}
-        <div className="tp-content-tabs">
+        <div className="tp-content-tabs" role="tablist" aria-label="Thread evidence views">
           {contentTabs.map(tab => (
             <button
               key={tab.key}
+              role="tab"
+              aria-selected={contentTab === tab.key}
               className={`tp-content-tab${contentTab === tab.key ? ' on' : ''}`}
               onClick={() => setContentTab(tab.key)}
             >

@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-07-02 (feat: drift-corrector backfills EVERY ungrounded move — "keep it not drifted", DEPLOYED)
+
+The corrector grounded only the single newest move per run, so pre-live history / any missed cron day stayed permanently un-corrected. Now it grounds **every** ungrounded material move in its lookback window (`findAllDrifts` → the day-by-day chain; `processCountry`/`processThread` ground each move lacking a DRIFT# note). Self-heals to full coverage.
+
+- **Proven on last week live:** backtest over the 12 tracked countries — 11 material moves, **11 grounded (100% coverage)** after one backfill invoke (was 2/18%). Notes grounded in real cited events (Japan: China export-controls → 40→62; Russia: Ukraine cruise-missile strike → 68→82); honest "no single driver" preserved (US 62→62 framing-only). Quiet countries correctly show 0.
+- Deployed `newsDriftCorrector`; 10 lib tests green.
+
 ## 2026-07-01 (feat: living-analysis Phase 3 — extend the loop to story threads, DEPLOYED)
 
 Story threads now get the same corrector → note → show loop as countries, anchored on the thread's `riskScore` + `threadTitle` + `trajectory`.

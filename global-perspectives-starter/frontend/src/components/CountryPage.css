@@ -7,9 +7,10 @@
 /* ── Map hero ────────────────────────────────────────────── */
 .cpg-map-hero {
   position: relative;
-  height: 52vh;
-  min-height: 320px;
-  max-height: 480px;
+  height: 200px;          /* Phase 2 IA: was 52vh (up to 480px) — a compact locator band, not a
+                             fold-eating hero. Reclaims above-the-fold for the verdict + what-changed. */
+  min-height: 160px;
+  max-height: 220px;
   overflow: hidden;
   background: var(--paper-2);
   border-bottom: 1px solid var(--line);
@@ -744,7 +745,7 @@
 @media (max-width: 600px) {
   .cpg-body { padding: 0 16px 60px; }
   .cpg-hd-h1 { font-size: 32px; }
-  .cpg-map-hero { height: 40vh; }
+  .cpg-map-hero { height: 150px; min-height: 130px; }
   .cpg-stats { grid-template-columns: repeat(2, 1fr); }
   .cpg-tab { padding: 10px 12px 8px; font-size: 12.5px; }
 }

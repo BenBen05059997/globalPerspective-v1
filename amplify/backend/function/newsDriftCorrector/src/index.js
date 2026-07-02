@@ -14,7 +14,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { findDrift, findThreadDrift, buildDriftPrompt, parseDriftResponse } = require('./lib');
+const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse } = require('./lib');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
@@ -115,17 +115,21 @@ async function processCountry(country) {
   // Only consider RECENT drift: restrict to snapshots within the lookback window.
   const latestMs = Math.max(...history.map((h) => parseDay(h.dateKey) || 0));
   const recent = history.filter((h) => { const d = parseDay(h.dateKey); return d != null && d >= latestMs - LOOKBACK_DAYS * DAY; });
-  const drift = findDrift(recent);
-  if (!drift) return { country, status: 'no-recent-drift' };
-  if (await alreadyNoted(country, drift.current.dateKey)) return { country, status: 'already-noted' };
-
-  const events = await readCountryEvents(country, drift.prior.dateKey, drift.current.dateKey);
+  const drifts = findAllDrifts(recent);
+  if (!drifts.length) return { country, status: 'no-recent-drift' };
   if (!LLM_KEY) return { country, status: 'no-llm-key' };
-  const text = await callLLM(buildDriftPrompt(country, drift.prior, drift.current, events));
-  const note = parseDriftResponse(text, events);
-  if (!note) return { country, status: 'parse-fail' };
-  await writeNote(country, drift, note);
-  return { country, status: note.noSingleDriver ? 'noted-no-driver' : 'noted', trigger: note.triggerEvent?.title };
+
+  // Ground EVERY move we haven't grounded yet (backfill) — keeps the read from drifting.
+  let noted = 0, skipped = 0; const triggers = [];
+  for (const drift of drifts) {
+    if (await alreadyNoted(country, drift.current.dateKey)) { skipped++; continue; }
+    const events = await readCountryEvents(country, drift.prior.dateKey, drift.current.dateKey);
+    const note = parseDriftResponse(await callLLM(buildDriftPrompt(country, drift.prior, drift.current, events)), events);
+    if (!note) continue;
+    await writeNote(country, drift, note);
+    noted++; if (note.triggerEvent?.title) triggers.push(note.triggerEvent.title);
+  }
+  return { country, status: noted ? 'noted' : (skipped ? 'already-noted' : 'parse-fail'), moves: drifts.length, noted, skipped, triggers };
 }
 
 // ─── Thread drift (living-analysis Phase 3) ──────────────────────────────────
@@ -193,17 +197,21 @@ async function processThread(threadId) {
   if (history.length < 2) return { threadId, status: 'no-history' };
   const latestMs = Math.max(...history.map((h) => parseDay(h.dateKey) || 0));
   const recent = history.filter((h) => { const d = parseDay(h.dateKey); return d != null && d >= latestMs - LOOKBACK_DAYS * DAY; });
-  const drift = findThreadDrift(recent);
-  if (!drift) return { threadId, status: 'no-recent-drift' };
-  if (await threadAlreadyNoted(threadId, drift.current.dateKey)) return { threadId, status: 'already-noted' };
-  const events = await readThreadEvents(threadId, drift.prior.dateKey, drift.current.dateKey);
+  const drifts = findAllDrifts(recent, threadConclusionMoved);
+  if (!drifts.length) return { threadId, status: 'no-recent-drift' };
   if (!LLM_KEY) return { threadId, status: 'no-llm-key' };
-  const subject = `the story "${drift.current.threadTitle || threadId}"`;
-  const text = await callLLM(buildDriftPrompt(subject, drift.prior, drift.current, events));
-  const note = parseDriftResponse(text, events);
-  if (!note) return { threadId, status: 'parse-fail' };
-  await writeThreadNote(threadId, drift, note);
-  return { threadId, status: note.noSingleDriver ? 'noted-no-driver' : 'noted', trigger: note.triggerEvent?.title };
+
+  let noted = 0, skipped = 0; const triggers = [];
+  for (const drift of drifts) {
+    if (await threadAlreadyNoted(threadId, drift.current.dateKey)) { skipped++; continue; }
+    const events = await readThreadEvents(threadId, drift.prior.dateKey, drift.current.dateKey);
+    const subject = `the story "${drift.current.threadTitle || threadId}"`;
+    const note = parseDriftResponse(await callLLM(buildDriftPrompt(subject, drift.prior, drift.current, events)), events);
+    if (!note) continue;
+    await writeThreadNote(threadId, drift, note);
+    noted++; if (note.triggerEvent?.title) triggers.push(note.triggerEvent.title);
+  }
+  return { threadId, status: noted ? 'noted' : (skipped ? 'already-noted' : 'parse-fail'), moves: drifts.length, noted, skipped, triggers };
 }
 
 // Discover active threads from the served `latest` topics (bounded, cheap).

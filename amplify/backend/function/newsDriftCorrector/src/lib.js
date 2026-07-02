@@ -45,6 +45,21 @@ function findDrift(snapshots) {
   return null;
 }
 
+// EVERY consecutive material move (day-by-day chain), not just the latest. This is what keeps
+// the read "not drifted": the corrector grounds each move it hasn't grounded yet, so a missed
+// day (or pre-live history) self-heals on the next run instead of leaving a stale gap.
+// `moved(prev, cur)` is the conclusion-move test (country or thread variant).
+function findAllDrifts(snapshots, moved = conclusionMoved) {
+  if (!Array.isArray(snapshots) || snapshots.length < 2) return [];
+  const sorted = [...snapshots].sort((a, b) => String(a.dateKey || '').localeCompare(String(b.dateKey || '')));
+  const out = [];
+  for (let i = 1; i < sorted.length; i++) {
+    const m = moved(sorted[i - 1], sorted[i]);
+    if (m.any) out.push({ current: sorted[i], prior: sorted[i - 1], moved: m });
+  }
+  return out;
+}
+
 // Thread conclusion move: threads have no riskLevel, but do have riskScore + threadTitle +
 // trajectory. A material move = big score shift, or the title (compressed conclusion) or
 // trajectory genuinely changed. Title change is the strongest single signal for a thread.
@@ -116,4 +131,4 @@ function parseDriftResponse(text, events) {
   };
 }
 
-module.exports = { conclusionMoved, findDrift, threadConclusionMoved, findThreadDrift, buildDriftPrompt, parseDriftResponse, tokens, jaccard };
+module.exports = { conclusionMoved, findDrift, findAllDrifts, threadConclusionMoved, findThreadDrift, buildDriftPrompt, parseDriftResponse, tokens, jaccard };

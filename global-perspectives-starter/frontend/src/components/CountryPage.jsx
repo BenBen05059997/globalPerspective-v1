@@ -425,86 +425,9 @@ export default function CountryPage() {
         </>
       )}
 
-      {countryData && allArcs.length > 0 && (
-        <>
-          <div className="cpg-left-hd" style={{ marginTop: 20 }}>Filter threads</div>
-          {[
-            ['all', 'All threads', allArcs.length],
-            ['anchor', `Anchor (${decodedName.length > 10 ? decodedName.slice(0, 10) + '…' : decodedName} primary)`, anchorCount],
-            ['linked', 'Linked (mentioned)', linkedCount],
-          ].map(([type, label, count]) => (
-            <button
-              key={type}
-              className={`cpg-facet${arcTypeFilter === type ? ' on' : ''}`}
-              onClick={() => { setArcTypeFilter(type); setMainTab('arcs'); }}
-            >
-              <span>{label}</span>
-              <span className="cpg-facet-c">{count}</span>
-            </button>
-          ))}
+      {/* Thread/Category/Urgency filters moved into the Story Arcs tab (contextual). — Phase 3 IA */}
 
-          {catCounts.length > 1 && (
-            <>
-              <div className="cpg-left-hd" style={{ marginTop: 16 }}>Category</div>
-              <button
-                className={`cpg-facet${!catFilter ? ' on' : ''}`}
-                onClick={() => setCatFilter(null)}
-              >
-                <span>All</span>
-                <span className="cpg-facet-c">{allArcs.length}</span>
-              </button>
-              {catCounts.map(([cat, count]) => {
-                const c = CATEGORY_BADGE_COLORS[cat];
-                return (
-                  <button
-                    key={cat}
-                    className={`cpg-facet${catFilter === cat ? ' on' : ''}`}
-                    style={catFilter === cat && c ? { color: c.color } : {}}
-                    onClick={() => { setCatFilter(catFilter === cat ? null : cat); setMainTab('arcs'); }}
-                  >
-                    <span>{cat}</span>
-                    <span className="cpg-facet-c">{count}</span>
-                  </button>
-                );
-              })}
-            </>
-          )}
-
-          {urgCounts.length > 1 && (
-            <>
-              <div className="cpg-left-hd" style={{ marginTop: 16 }}>Urgency</div>
-              <button
-                className={`cpg-facet${!urgFilter ? ' on' : ''}`}
-                onClick={() => setUrgFilter(null)}
-              >
-                <span>All</span>
-                <span className="cpg-facet-c">{allArcs.length}</span>
-              </button>
-              {urgCounts.map(([urg, count]) => (
-                <button
-                  key={urg}
-                  className={`cpg-facet${urgFilter === urg ? ' on' : ''}`}
-                  onClick={() => { setUrgFilter(urgFilter === urg ? null : urg); setMainTab('arcs'); }}
-                >
-                  <span>{urg}</span>
-                  <span className="cpg-facet-c">{count}</span>
-                </button>
-              ))}
-            </>
-          )}
-        </>
-      )}
-
-      {intel?.keyActors?.length > 0 && (
-        <>
-          <div className="cpg-left-hd" style={{ marginTop: 20 }}>Actors tracked</div>
-          <div className="cpg-actor-chips">
-            {intel.keyActors.map((a, i) => (
-              <span key={i} className="cpg-actor-chip" title={a.role}>{a.name}</span>
-            ))}
-          </div>
-        </>
-      )}
+      {/* "Actors tracked" removed — it duplicated the right-rail Key Actors. — Phase 3 IA */}
     </div>
   );
 
@@ -855,6 +778,55 @@ export default function CountryPage() {
                   </button>
                 )}
               </div>
+
+              {/* Filters live HERE now (contextual to arcs), not floating in the left rail — Phase 3 IA */}
+              {allArcs.length > 0 && (
+                <div className="cpg-arc-filters">
+                  <div className="cpg-fgroup">
+                    <span className="cpg-fgroup-lbl">Type</span>
+                    {[
+                      ['all', 'All', allArcs.length],
+                      ['anchor', 'Anchor', anchorCount],
+                      ['linked', 'Linked', linkedCount],
+                    ].map(([type, label, count]) => (
+                      <button key={type} className={`cpg-fchip${arcTypeFilter === type ? ' on' : ''}`} onClick={() => setArcTypeFilter(type)}>
+                        {label} <span className="c">{count}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {catCounts.length > 1 && (
+                    <div className="cpg-fgroup">
+                      <span className="cpg-fgroup-lbl">Category</span>
+                      <button className={`cpg-fchip${!catFilter ? ' on' : ''}`} onClick={() => setCatFilter(null)}>All</button>
+                      {catCounts.map(([cat, count]) => {
+                        const c = CATEGORY_BADGE_COLORS[cat];
+                        return (
+                          <button
+                            key={cat}
+                            className={`cpg-fchip${catFilter === cat ? ' on' : ''}`}
+                            style={catFilter === cat && c ? { color: c.color, borderColor: c.color } : {}}
+                            onClick={() => setCatFilter(catFilter === cat ? null : cat)}
+                          >
+                            {cat} <span className="c">{count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {urgCounts.length > 1 && (
+                    <div className="cpg-fgroup">
+                      <span className="cpg-fgroup-lbl">Urgency</span>
+                      <button className={`cpg-fchip${!urgFilter ? ' on' : ''}`} onClick={() => setUrgFilter(null)}>All</button>
+                      {urgCounts.map(([urg, count]) => (
+                        <button key={urg} className={`cpg-fchip${urgFilter === urg ? ' on' : ''}`} onClick={() => setUrgFilter(urgFilter === urg ? null : urg)}>
+                          {urg} <span className="c">{count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {filteredArcs.length > 0 ? (
                 filteredArcs.map(arc => {
                   const c = CATEGORY_BADGE_COLORS[arc.category];

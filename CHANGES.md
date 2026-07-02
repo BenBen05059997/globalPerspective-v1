@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-07-02 (polish: ThreadPage a11y + progressive-disclosure rail, DEPLOYED)
+
+ThreadPage was already well-structured (2026-06-29 rework), so only the two applicable items from the CountryPage IA work: (1) **a11y** — content tabs get role=tablist/tab + aria-selected, plus :focus-visible rings (none existed); (2) **density** — the Arc-Intelligence synthesis rail was a wall of text, so Summary + What's Next stay open (the core read) and Trace Cause / Watch / Live Web Evidence now collapse (new `RailBlock`, aria-expanded). Playwright-verified. Files: `components/ThreadPage.{jsx,css}`.
+
 ## 2026-07-02 (refactor: CountryPage information-architecture overhaul — Phases 1-4, DEPLOYED + live-verified)
 
 The country page was an overwhelming 4-zone widget-soup (full-width map hero + 3 columns, no hierarchy). Regrouped so each column has ONE job — nav / content / reference — and the answer is above the fold.

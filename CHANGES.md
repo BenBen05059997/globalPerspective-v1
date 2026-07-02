@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-07-02 (refactor: CountryPage information-architecture overhaul — Phases 1-4, DEPLOYED + live-verified)
+
+The country page was an overwhelming 4-zone widget-soup (full-width map hero + 3 columns, no hierarchy). Regrouped so each column has ONE job — nav / content / reference — and the answer is above the fold.
+- **P1 — thin the rail (7→4):** removed the redundant Risk Assessment block (already in the header pill + stats); moved "What to Watch" into the Situation read.
+- **P2 — map hero → 200px locator band** (was 52vh/480px); verdict + stats + "What changed" now clear the fold.
+- **P3 — filters → Story Arcs tab** as a contextual horizontal filter bar (were floating in the left rail as if global); removed the duplicate "Actors tracked" (dup of right-rail Key Actors); left rail is now a thin nav (Most covered only).
+- **P4 — a11y:** tabs get role=tablist/tab + aria-selected; filter chips get aria-pressed; added :focus-visible rings (none existed).
+- Each phase Playwright-verified live on prod (Japan). Files: `components/CountryPage.{jsx,css}`. Plan/analysis captured in-session.
+
 ## 2026-07-02 (feat: correction-history chain on CountryPage, DEPLOYED + verified live)
 
 The "What changed" band now surfaces the **full day-by-day correction chain**, not just the latest move. Collapsed by default; a "N earlier corrections" toggle expands rows of date / risk from→to / cited event. Makes the *continuous* auto-correction visible (data already served via `driftNotes[]`). Playwright-verified live on `/weekly/country/Japan` (5-row chain renders + expands). Files: `atoms/CountryWhatChanged.{jsx,css}`.

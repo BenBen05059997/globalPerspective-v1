@@ -776,3 +776,22 @@
 .cpg-watch-list li::before {
   content: '⚡'; position: absolute; left: 0; top: 6px; font-size: 12px; opacity: .7;
 }
+
+/* Story Arcs filter bar (Phase 3 IA — moved from the left rail, now horizontal + contextual) */
+.cpg-arc-filters {
+  display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center;
+  margin: 4px 0 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line);
+}
+.cpg-fgroup { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cpg-fgroup-lbl {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-faint); margin-right: 2px;
+}
+.cpg-fchip {
+  font: inherit; font-size: 12.5px; cursor: pointer;
+  padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--paper); color: var(--ink-mid); line-height: 1.2; text-transform: capitalize;
+}
+.cpg-fchip:hover { border-color: var(--ink-faint); color: var(--ink); }
+.cpg-fchip.on { border-color: currentColor; color: var(--ink); font-weight: 600; background: var(--paper-2); }
+.cpg-fchip .c { color: var(--ink-faint); font-weight: 400; margin-left: 3px; font-size: 11px; }

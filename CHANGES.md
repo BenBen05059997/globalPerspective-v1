@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-07-03 (feat: countries index — risk-tier bands + fix 10-of-20 briefing under-fetch, DEPLOYED)
+
+Two issues on `/weekly/countries`:
+- **Under-fetch + false label (correctness bug):** the page requested AI briefings for only the **top 10** countries (`slice(0, 10)`) while the backend generates them for **20** (`newsCountryIntelligence` `MAX_COUNTRIES`). The ~10 countries that *had* a briefing but weren't fetched were dumped into "Others — **not enough coverage for AI briefing**" — a false statement. Raised the (single, batched) fetch to top-**24** (backend cap + margin for ranking drift between the two sides). Live result: **15 briefings now show** (was capped at 10); "Others" correctly lists only genuinely-uncovered countries.
+- **Flat grid → risk-tier bands:** the briefings grid was one flat risk-sorted grid. Grouped it into **High / Elevated / Moderate / Low** bands with density decay — **High = full cards, calmer tiers = condensed rows** (`CountryRow`) — the country analog of the `/weekly` time bands (risk, not time, is the meaningful axis for persistent country entities; extends the risk-tiers epic onto this surface). Banding applies on the **default risk sort**; an explicit non-risk sort (Coverage / Disruption / A→Z) keeps the flat grid so the sort intent is honored.
+- Verify green (192; the redesign country tests are now form-agnostic — a country entry is `.clp-card` **or** `.clp-row`). Playwright-verified prod (High 3 cards / Elevated 11 rows / Moderate 1 row = 15 briefings, Coverage sort flattens, 0 page errors). Files: `components/CountryListPage.{jsx,css}`, `test/redesign.test.jsx`. Commit `e87bd5d`.
+
 ## 2026-07-03 (feat: /weekly time-banded river + category filter chips, DEPLOYED)
 
 The `/weekly` river dumped **all ~73 days** of threads into fixed category piles by default (period defaulted to `'all'`) — "too many threads," no recency hierarchy. Restructured the river to be **time-primary with progressive density decay** (the Techmeme recency-decay pattern the P3 research pointed at):

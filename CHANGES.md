@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-07-03 (feat: /weekly front-page hierarchy — LEAD + DEVELOPING — RISK_TIERS_PLAN.md P3, DEPLOYED)
+
+The threads front page (`/weekly`) was a flat, uniform card list in a fixed category order — the dominant story of the day could sit below the fold under a 2-article business item. Added a **tier-based hierarchy above the category river** (research-verified pattern: every serious news product ships 1 lead + few secondary + river, nobody ships a flat list):
+- **LEAD (exactly 1):** qualifies = tier `high` AND new events ≤24h. Techmeme-style text-forward card: rule label ("Top story · HIGH risk · new events today"), big serif headline, one-line why-it-matters, evidence row (`HIGH · 56 events · 26 days · updated today`), arc-dot trail, and — when the living-analysis loop has moved the conclusion — a **"↳ What changed: <cited event>"** delta line (unique to us). Freshest-then-most-covered tie-break; never two leads.
+- **DEVELOPING (≤3):** fresh drift note OR (tier ≥ elevated AND events ≤48h). Half-width rows. **Deliberately dropped the plan's bare "rising" qualifier** — volume-rising is already the right-rail "Rising This Week", so DEVELOPING is the *risk/living-analysis* signal (no center↔rail duplication; the rail now also excludes promoted threads so every story appears once).
+- **Guards:** hierarchy renders **only on the default view** — searching/filtering (work mode) shows the flat river exactly as before; promoted threads are removed from the river so nothing shows twice; honest-empty if nothing qualifies (no forced promotion).
+- Verified locally on live data (LEAD = Ebola/HIGH, 3 DEVELOPING incl. Ukraine/HIGH; river 12 groups/60 cards; zero rail overlap; hierarchy hides on search), 0 page errors, 192 tests. Files: `components/WeeklyPage.{jsx,css}`. Completes RISK_TIERS_PLAN.md (P1+P2+P3).
+
 ## 2026-07-03 (feat: state displays go tier-first — RISK_TIERS_PLAN.md P2, DEPLOYED)
 
 Building on P1's shared tier util, every place that shows a country's/thread's **current** risk now leads with the **tier word** (colored headline) and demotes the raw score to muted fine print — killing the false precision of a jittery 0-100 number as the headline. Rule held: **state = tier · change = audit numbers** (the "What changed" band, correction chain, and delta pill stay numeric — untouched).

@@ -10,7 +10,8 @@ import { formatDateLabel } from '../utils/dateUtils';
 import TrendBadge, { getTrend } from './TrendBadge';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
-import { CATEGORY_BADGE_COLORS } from '../tokens';
+import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '../tokens';
+import { tierFromScore, tierLabel } from '../utils/riskTiers';
 import './WeeklyPage.css';
 import './AIComponents.css';
 
@@ -40,6 +41,22 @@ function getActivityStatus(lastDateStr) {
 function regionTagStyle(region) {
   const c = REGION_COLORS[region] || REGION_COLORS.World;
   return { background: c.bg, borderColor: c.border, color: c.text };
+}
+
+// Whole days since a YYYY-MM-DD archive date (archive is day-granular).
+function daysSince(dateStr) {
+  return Math.floor((Date.now() - new Date(dateStr + 'T00:00:00').getTime()) / 86400000);
+}
+function updatedLabel(dateStr) {
+  const d = daysSince(dateStr);
+  if (d <= 0) return 'updated today';
+  if (d === 1) return 'updated yesterday';
+  return `updated ${d}d ago`;
+}
+function firstSentence(text, max = 150) {
+  if (!text) return null;
+  const s = text.split(/(?<=[.!?])\s/)[0] || text;
+  return s.length > max ? s.slice(0, max - 1) + '…' : s;
 }
 
 function filterDatesByRange(sortedDates, range) {
@@ -157,16 +174,16 @@ function ArcIntro({ onDismiss }) {
 
 // ─── Featured Section (Rising arcs) ──────────────────────────────────────────
 
-function FeaturedSection({ threads, threadAnalyses, compact = false }) {
+function FeaturedSection({ threads, threadAnalyses, compact = false, excludeIds }) {
   const featured = useMemo(() => threads
-    .filter(t => (t.trend === 'rising' || t.trend === 'new') && t.articleCount >= 2)
+    .filter(t => (t.trend === 'rising' || t.trend === 'new') && t.articleCount >= 2 && !excludeIds?.has(t.threadId))
     .sort((a, b) => {
       if (a.trend === 'rising' && b.trend !== 'rising') return -1;
       if (b.trend === 'rising' && a.trend !== 'rising') return 1;
       return b.articleCount - a.articleCount;
     })
     .slice(0, compact ? 5 : 3),
-  [threads, compact]);
+  [threads, compact, excludeIds]);
 
   if (featured.length === 0) return null;
 
@@ -240,6 +257,89 @@ function FeaturedSection({ threads, threadAnalyses, compact = false }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ─── Front-page hierarchy: LEAD + DEVELOPING ──────────────────────────────────
+// Above the category river, promote the dominant story of the day (1 LEAD) and a
+// few secondary ones (DEVELOPING). Qualification is tier-based, not a blended
+// score — see RISK_TIERS_PLAN.md P3. Only shown on the default (unfiltered) view.
+
+function DriftLine({ analysis }) {
+  const t = analysis?.driftNote?.triggerEvent?.title;
+  if (!t) return null;
+  return <div className="wp-lead-drift">↳ What changed: <b>{t}</b></div>;
+}
+
+function LeadStory({ item }) {
+  const { t, a, tier, hasDrift } = item;
+  const title = a?.threadTitle || t.latestTitle;
+  const category = t.entries[0]?.category?.toLowerCase();
+  const catColors = CATEGORY_BADGE_COLORS[category];
+  const why = firstSentence(a?.storyArc || t.entries[0]?.ai?.summary, 180);
+  const color = riskScoreToVar(a?.riskScore);
+  const ruleBits = [`Top story · ${tierLabel(tier)} risk`];
+  if (daysSince(t.dateRange.to) <= 1) ruleBits.push('new events today');
+  return (
+    <Link to={threadPath(t.threadId)} className="wp-lead" style={{ borderTopColor: color }}>
+      <div className="wp-lead-rule" style={{ color }}>{ruleBits.join(' · ')}</div>
+      <div className="wp-lead-head">
+        {catColors && (
+          <span className="story-category-badge" style={{ background: catColors.bg, color: catColors.color }}>{category}</span>
+        )}
+        <TrendBadge entries={t.entries} />
+      </div>
+      <h2 className="wp-lead-title">{title}</h2>
+      {why && <p className="wp-lead-why">{why}</p>}
+      <div className="wp-lead-evidence">
+        <span className="wp-lead-tier" style={{ color }}>{tierLabel(tier)}</span>
+        <span>{t.articleCount} event{t.articleCount !== 1 ? 's' : ''}</span>
+        <span>{t.dayCount} day{t.dayCount !== 1 ? 's' : ''}</span>
+        <span>{updatedLabel(t.dateRange.to)}</span>
+      </div>
+      <ArcDots entries={t.entries} />
+      {hasDrift && <DriftLine analysis={a} />}
+    </Link>
+  );
+}
+
+function DevelopingRow({ item }) {
+  const { t, a, tier, hasDrift } = item;
+  const title = a?.threadTitle || t.latestTitle;
+  const category = t.entries[0]?.category?.toLowerCase();
+  const catColors = CATEGORY_BADGE_COLORS[category];
+  const color = tier ? riskScoreToVar(a?.riskScore) : null;
+  return (
+    <Link to={threadPath(t.threadId)} className="wp-dev-row">
+      <div className="wp-dev-top">
+        {catColors && (
+          <span className="story-category-badge" style={{ background: catColors.bg, color: catColors.color }}>{category}</span>
+        )}
+        {tier && <span className="wp-dev-tier" style={{ color }}>{tierLabel(tier)}</span>}
+        <TrendBadge entries={t.entries} />
+      </div>
+      <div className="wp-dev-title">{title}</div>
+      {hasDrift
+        ? <div className="wp-dev-drift">↳ {t.entries.length && a?.driftNote?.triggerEvent?.title ? a.driftNote.triggerEvent.title : 'conclusion updated'}</div>
+        : <div className="wp-dev-meta">{t.articleCount} events · {updatedLabel(t.dateRange.to)}</div>}
+    </Link>
+  );
+}
+
+function LeadHierarchy({ lead, developing }) {
+  if (!lead && (!developing || developing.length === 0)) return null;
+  return (
+    <div className="wp-hierarchy">
+      {lead && <LeadStory item={lead} />}
+      {developing.length > 0 && (
+        <div className="wp-dev">
+          <div className="wp-dev-label">Developing</div>
+          <div className="wp-dev-grid">
+            {developing.map(item => <DevelopingRow key={item.t.threadId} item={item} />)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -587,6 +687,60 @@ export default function WeeklyPage() {
     return { flatThreads: filteredThreads, flatStandalone: filteredStandalone };
   }, [sortedThreads, standalone, activeRegion, searchQuery, activeCountry]);
 
+  // Front-page hierarchy (LEAD + DEVELOPING) — only on the default, unfiltered
+  // view; filtering/searching is "work mode" and shows the flat river as before.
+  const { lead, developing, promotedIds } = useMemo(() => {
+    const empty = { lead: null, developing: [], promotedIds: new Set() };
+    if (activeRegion || activeCountry || searchQuery.trim()) return empty;
+
+    const tierRank = { high: 0, elevated: 1, moderate: 2, low: 3 };
+    const items = threads
+      .filter(t => t.articleCount >= 2)
+      .map(t => {
+        const a = threadAnalyses?.[t.threadId];
+        const tier = tierFromScore(a?.riskScore);
+        const fresh = daysSince(t.dateRange.to);
+        return {
+          t, a, tier,
+          hasDrift: !!a?.driftNote?.whyChanged,
+          fresh,
+        };
+      });
+
+    // LEAD: high tier AND new events within ~24h. Freshest, then most-covered.
+    const leadCands = items
+      .filter(x => x.tier === 'high' && x.fresh <= 1)
+      .sort((x, y) => y.t.dateRange.to.localeCompare(x.t.dateRange.to) || y.t.articleCount - x.t.articleCount);
+    const chosenLead = leadCands[0] || null;
+
+    // DEVELOPING (≤3): fresh drift note OR (≥elevated & ≤48h). Not the lead.
+    // (Volume-"rising" threads are already surfaced in the right-rail "Rising This
+    // Week" — DEVELOPING is the risk/living-analysis signal, so no duplication.)
+    const devCands = items
+      .filter(x => x !== chosenLead && (
+        x.hasDrift ||
+        ((x.tier === 'high' || x.tier === 'elevated') && x.fresh <= 2)
+      ))
+      .sort((x, y) => {
+        if (x.hasDrift !== y.hasDrift) return x.hasDrift ? -1 : 1;
+        const tx = tierRank[x.tier] ?? 4, ty = tierRank[y.tier] ?? 4;
+        if (tx !== ty) return tx - ty;
+        if (x.t.dateRange.to !== y.t.dateRange.to) return y.t.dateRange.to.localeCompare(x.t.dateRange.to);
+        return y.t.articleCount - x.t.articleCount;
+      })
+      .slice(0, 3);
+
+    const ids = new Set([chosenLead, ...devCands].filter(Boolean).map(x => x.t.threadId));
+    return { lead: chosenLead, developing: devCands, promotedIds: ids };
+  }, [threads, threadAnalyses, activeRegion, activeCountry, searchQuery]);
+
+  // River excludes promoted threads so nothing shows twice (promotedIds is empty
+  // in work mode, so this is a no-op there).
+  const riverThreads = useMemo(
+    () => flatThreads.filter(t => !promotedIds.has(t.threadId)),
+    [flatThreads, promotedIds],
+  );
+
   useEffect(() => { document.title = 'Story Intelligence — Global Perspectives'; }, []);
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
@@ -708,7 +862,7 @@ export default function WeeklyPage() {
 
   const rightRail = (
     <div className="wp-rail-right">
-      <FeaturedSection threads={threads} threadAnalyses={threadAnalyses} compact />
+      <FeaturedSection threads={threads} threadAnalyses={threadAnalyses} compact excludeIds={promotedIds} />
     </div>
   );
 
@@ -731,10 +885,11 @@ export default function WeeklyPage() {
             <p>No stories match your current filters.</p>
           </div>
         )}
+        <LeadHierarchy lead={lead} developing={developing} />
         {(() => {
           const ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
           const groupMap = {};
-          for (const t of flatThreads) {
+          for (const t of riverThreads) {
             const cat = t.entries[0]?.category?.toLowerCase() || 'other';
             const key = ORDER.includes(cat) ? cat : 'other';
             if (!groupMap[key]) groupMap[key] = [];

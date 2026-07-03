@@ -203,7 +203,7 @@ function Layout({ children }) {
           <Link to="/whitepaper">White Paper</Link>
           <Link to="/privacy">Privacy</Link>
           <Link to="/disclosures">Disclosures</Link>
-          <a href="mailto:globalperspectives.app@gmail.com">Contact</a>
+          <Link to="/contact">Contact</Link>
         </div>
         <span className="gp-footer-ver" title="Deployed build">{BUILD_LABEL}</span>
       </footer>

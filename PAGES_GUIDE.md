@@ -1,7 +1,7 @@
 # PAGES_GUIDE.md — Page-by-Page Reference & Verification
 
 **Generated:** 2026-05-18, from on-disk source under `global-perspectives-starter/frontend/src/`.
-**Updated:** 2026-06-22 — added the four pages that shipped after the original sweep (`/analyze`, `/weekly-brief`, `/track-record`, `/membership`), re-pointed existing entries' inbound/outbound links at them, and corrected stale references (removed `useUserProfile`, the deleted `Pricing`/`PairPage`/`PairListPage`/`Gate` imports, the Account tier/billing-portal UI, the Stripe mention in `/privacy`, and the nav/footer link sets).
+**Updated:** 2026-07-03 — refreshed the `/weekly` and `/weekly/countries` entries for the risk-tiers IA (`RISK_TIERS_PLAN.md`): `/weekly` LEAD+DEVELOPING hierarchy + time-banded river + category filter chips; `/weekly/countries` risk-tier bands + top-24 briefing fetch (was top-10); corrected the ThreadPage `RISK_COLOR` threshold note (now the canonical 25/50/75 tier bands). Prior update 2026-06-22 — added the four pages that shipped after the original sweep (`/analyze`, `/weekly-brief`, `/track-record`, `/membership`), re-pointed existing entries' inbound/outbound links at them, and corrected stale references (removed `useUserProfile`, the deleted `Pricing`/`PairPage`/`PairListPage`/`Gate` imports, the Account tier/billing-portal UI, the Stripe mention in `/privacy`, and the nav/footer link sets).
 
 This doc combines two industry conventions:
 
@@ -89,18 +89,18 @@ Use this when:
 
 ## `/weekly` · `components/WeeklyPage.jsx`
 
-- **Purpose:** Story-arc browser — multi-day threads grouped by category, filterable by region/country/time.
-- **Primary user job:** Find evolving multi-day stories and jump into one.
+- **Purpose:** Story-arc browser — a tier-based front-page hierarchy over a time-banded river, filterable by category/region/country/time.
+- **Primary user job:** See the dominant stories of the day first, then browse the rest by recency.
 - **Data sources:** `useWeeklyArchive()` (action `archive_range`, 30 days, 30 min cache), `useThreadAnalyses(qualifyingThreadIds)`. *(The `useUserProfile()` tier-display hook the original sweep listed here was removed in the 2026-06-01 billing teardown.)*
 - **Auth gate:** None.
 - **Inbound links:** Top-nav "Threads"; rising-thread cards from Daily; "Weekly Analysis →" from Daily.
-- **Outbound links:** StoryCard → `/weekly/thread/:threadId`; tab toggle "Map" lazy-loads `WeeklyMap` in-page.
-- **Key UI elements:** EditorialShell with left rail (search, period, sort, region, view toggle), right rail "Rising This Week" featured list, center category-grouped collapsible StoryCard list, Standalone Section for single-mention entries.
+- **Outbound links:** LEAD / DEVELOPING / StoryCard / condensed row → `/weekly/thread/:threadId`; tab toggle "Map" lazy-loads `WeeklyMap` in-page.
+- **Key UI elements:** EditorialShell with left rail (search, period, sort, region, view toggle) + right rail "Rising This Week". Center (2026-07-03 IA): **LEAD + ≤3 DEVELOPING tier hierarchy** (`RISK_TIERS_PLAN.md` P3; hidden in work mode — search/region/country/category filter) → **category filter-chip row** → **time-banded river** (This week = full `StoryCard`s · Earlier this month = condensed `BandRow`s · Older = collapsed count) → Standalone Section. Promoted threads are removed from both the river and the rail (no double-show).
 - **States:** loading = typewriter loader; **empty** = `weekly-empty-state` card; **filter empty** = "No stories match your current filters"; error = inline `weekly-error`.
 - **Smoke-test:**
-  1. `/weekly` — category groups render with story cards.
-  2. Type in left-rail search — cards filter live.
-  3. Click a StoryCard — navigates to `/weekly/thread/:threadId`.
+  1. `/weekly` — LEAD card + Developing rows render above the "This week" band.
+  2. Type in left-rail search (or click a category chip) — hierarchy hides, bands refilter live.
+  3. Click a StoryCard / row — navigates to `/weekly/thread/:threadId`.
 - **Known issues:** Exports color/order constants consumed by Daily / Thread / CountryPage / CountryListPage — central source of truth lives here.
 
 ## `/weekly/thread/:threadId` · `components/ThreadPage.jsx`
@@ -117,21 +117,21 @@ Use this when:
   1. From `/weekly`, click any card — page renders with H1, dek, 4-stat row.
   2. Switch AI rail tab to "What's Next" — trajectory text appears.
   3. Switch content tab to "Sources" — source rollup renders.
-- **Known issues:** `RISK_COLOR` switches at hard thresholds 75/50.
+- **Known issues:** `RISK_COLOR` (= `tokens.riskScoreToVar`) now delegates to the canonical `utils/riskTiers` bands 25/50/75 (low/moderate/elevated/high) — `RISK_TIERS_PLAN.md` P1; boundary flap at tier edges is inherent to tiering, by design.
 
 ## `/weekly/countries` · `components/CountryListPage.jsx`
 
-- **Purpose:** Index of countries with AI briefings — map hero + sortable grid + leaderboard.
-- **Primary user job:** Browse to a specific country's intel page.
-- **Data sources:** `useWeeklyArchive()`, `useCountryIntelligence(top 10 country names)` (lines 213-214).
+- **Purpose:** Index of countries with AI briefings — map hero + risk-tier-banded grid + leaderboard.
+- **Primary user job:** Browse to a specific country's intel page, highest-risk first.
+- **Data sources:** `useWeeklyArchive()`, `useCountryIntelligence(top **24** country names)` — requests a small margin over the backend's `MAX_COUNTRIES=20` so every generated briefing is fetched (was capped at top-10, which mislabeled ~10 briefing-having countries as "no coverage"; fixed 2026-07-03 `e87bd5d`).
 - **Auth gate:** None.
 - **Inbound links:** Top-nav "Countries".
-- **Outbound links:** Every card / leaderboard row / map pin → `/weekly/country/:name`.
-- **Key UI elements:** Full-bleed `CountryOverviewMap` hero with legend; EditorialShell with left rail (search/sort/region) and right rail leaderboards (Highest Risk + Most Covered, 5 each); center "AI Briefings" grid + "Other countries" (no AI briefing yet) section.
+- **Outbound links:** Every card / condensed row / leaderboard row / map pin → `/weekly/country/:name`.
+- **Key UI elements:** Full-bleed `CountryOverviewMap` hero with legend; EditorialShell with left rail (search/sort/region) and right rail leaderboards (Highest Risk + Most Covered, 5 each). Center (2026-07-03 IA): briefings grouped into **risk-tier bands** — High = full `CountryCard`s, Elevated/Moderate/Low = condensed `CountryRow`s (density decay; risk is the axis for persistent country entities). Banding shows on the **default risk sort**; explicit non-risk sorts (Coverage/Disruption/A→Z) render a flat grid. Below: "Other countries" (genuinely no AI briefing) section.
 - **States:** loading text only; filter-no-match silently hides featured grid.
 - **Smoke-test:**
-  1. `/weekly/countries` — map + grid render.
-  2. Click a country pin on the map — navigates to its page.
+  1. `/weekly/countries` — map + risk-tier bands render (High cards, Elevated rows).
+  2. Click "Coverage" sort — grid flattens (bands off); click a country pin on the map — navigates to its page.
   3. Sort "Coverage" — cards reorder.
 - **Known issues:** Only fetches intel for top 10 — others fall into "no AI briefing" even when intel exists in DDB.
 

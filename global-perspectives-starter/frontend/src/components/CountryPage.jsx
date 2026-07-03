@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { threadPath } from '../utils/threadPath';
 import IntelligenceLoader from './IntelligenceLoader';
 import { useAuth } from '../contexts/AuthContext';
@@ -244,9 +244,10 @@ function RiskSparkline({ snapshots, color = '#a2442e' }) {
 
 export default function CountryPage() {
   const { countryName } = useParams();
-  const paramName = decodeURIComponent(countryName);
+  // React Router v6 useParams() already URL-decodes path params — decoding again
+  // double-decodes and throws URIError on any name containing a literal '%'.
+  const paramName = countryName;
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams(); // eslint-disable-line no-unused-vars
   const { loading: authLoading } = useAuth();
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
   const [mainTab, setMainTab] = useState('situation');

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { threadPath } from '../utils/threadPath';
 import IntelligenceLoader from './IntelligenceLoader';
 import { useAuth } from '../contexts/AuthContext';
@@ -698,7 +698,18 @@ export default function WeeklyPage() {
   const [timeRange, setTimeRange] = useState('all');
   const [sortBy, setSortBy] = useState('articles');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState(null);
+  // Seed the category filter from ?category= (ThreadPage's breadcrumb links here,
+  // e.g. /weekly?category=politics). Only accept a known category.
+  const [searchParams] = useSearchParams();
+  const categoryParam = searchParams.get('category');
+  const [activeCategory, setActiveCategory] = useState(() =>
+    categoryParam && CATEGORY_ORDER.includes(categoryParam) ? categoryParam : null);
+  // Re-sync when the URL param itself changes (back/forward, or a fresh
+  // ?category link while already on /weekly). Chip clicks don't touch the URL,
+  // so this only fires on real navigation — it won't fight manual selection.
+  useEffect(() => {
+    setActiveCategory(categoryParam && CATEGORY_ORDER.includes(categoryParam) ? categoryParam : null);
+  }, [categoryParam]);
   const [showIntro, setShowIntro] = useState(
     () => !localStorage.getItem('gp_arc_intro_dismissed')
   );

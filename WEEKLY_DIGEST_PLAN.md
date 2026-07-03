@@ -28,7 +28,7 @@ Everyone reading this site is a pro reader ([[feedback-audience-depth]]). The we
 2. **`weekly/review.js`** — one-click human approve: list drafts, preview, `status → published` (or hold). No public auth surface (mirrors `predictions/review.js`).
 3. **Serving** — public `weekly_brief` action (latest published) on `newsSensitiveData`; the forecast-scorecard section merged in from `prediction_track_record` at serve time (deterministic).
 4. **Frontend** — `/weekly-brief` page (`WeeklyBriefPage` + `useWeeklyBrief`), linked from nav + the bell + the email.
-5. **Email** — the Sunday send renders/links the published brief (shares the Resend send path; gated on email going live).
+5. **Email** — the Sunday send renders/links the published brief. **BUILT + DEPLOYED (dry-run) 2026-07-03** as `newsEmailSender` (Lambda #29; shared Resend seam; `TriggerWeeklyEmailSend` Sunday cron). Gated only on operator Resend domain-verification. See `EMAIL_SENDER_PLAN.md`.
 6. **Schedule** — EventBridge early-Sunday generation once quality is trusted; send Sunday ~9am local.
 
 ## Build order
@@ -37,7 +37,7 @@ Everyone reading this site is a pro reader ([[feedback-audience-depth]]). The we
 - [x] `weekly/review.js` (one-click publish/hold/reject)
 - [x] serving action (`weekly_brief`, latest published) on `newsSensitiveData` + **`/weekly-brief` signals page** (`WeeklyBriefPage` + `useWeeklyBrief`) + nav link. SHIPPED 2026-06-10; **serving scan paginated + auto-publish 2026-07-03** → page is live (WEEK OF JUNE 28) and self-refreshes each Sunday.
 - [ ] forecast-scorecard section merged from `prediction_track_record` at serve time  ← **next**
-- [ ] email render + EventBridge Sunday **send** (schedule already generates; **email subscription go-live is the open item** — see Resend investigation 2026-07-03)
+- [x] email render + EventBridge Sunday **send** → **`newsEmailSender` BUILT + DEPLOYED (dry-run) 2026-07-03** (Lambda #29, `renderWeeklyEmail.js`, `TriggerWeeklyEmailSend` cron ENABLED, one real send-to-self verified). Subscribe UI (`SubscribeCard`) **LIVE on Home + `/weekly-brief`**. **Remaining = operator only:** verify `globalperspective.net` in Resend → flip `EMAIL_FROM`+`EMAIL_SEND_DRY_RUN=false`+clear `TEST_RECIPIENT`. See `EMAIL_SENDER_PLAN.md`, [[project-email-sender]].
 - [ ] (optional) bell link to the latest weekly brief
 
 ## Storage

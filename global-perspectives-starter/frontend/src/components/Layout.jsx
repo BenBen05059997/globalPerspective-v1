@@ -25,6 +25,16 @@ function Layout({ children }) {
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
+  // Sign-in link that returns you to the page you came from. Guard against auth
+  // routes (signin/callback/account) so post-login doesn't loop back here; those
+  // fall through to SignIn's own /weekly default.
+  const signInHref = (() => {
+    const path = location.pathname;
+    if (/^\/(signin|auth|account)\b/.test(path)) return '/signin';
+    const origin = path + location.search;
+    return `/signin?returnTo=${encodeURIComponent(origin)}`;
+  })();
+
   useEffect(() => {
     const handleKey = (e) => {
       // (⌘K is intentionally not bound — a global command palette is a future
@@ -125,7 +135,7 @@ function Layout({ children }) {
                 {user.email?.split('@')[0] || 'Account'}
               </Link>
             ) : (
-              <Link to="/signin" className="gp-btn gp-btn-primary">Sign in</Link>
+              <Link to={signInHref} className="gp-btn gp-btn-primary">Sign in</Link>
             )
           )}
 
@@ -155,7 +165,7 @@ function Layout({ children }) {
           user && !user.isAnonymous ? (
             <Link to="/account" className="gp-mobile-link">{user.email}</Link>
           ) : (
-            <Link to="/signin" className="gp-mobile-link">Sign in →</Link>
+            <Link to={signInHref} className="gp-mobile-link">Sign in →</Link>
           )
         )}
       </div>

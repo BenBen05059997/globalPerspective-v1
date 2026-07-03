@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-07-03 (fix: sign-in returns to originating page, not always /weekly)
+
+Signing in from the nav always dumped you on `/weekly` (the threads page) regardless of the page you were on. Root cause: `SignIn.jsx` defaults its post-auth destination to `/weekly` unless the URL carries `?returnTo=`, but the nav "Sign in" links (`Layout.jsx`, desktop + mobile) navigated to a bare `/signin` and never captured the current location. Fixed by building a `signInHref` in `Layout.jsx` that appends `?returnTo=<current path+search>`, with an origin guard (`/signin`, `/auth`, `/account` fall through to the plain link so post-login doesn't loop back to sign-in). The receiving side needed no change — `SignIn.jsx` already reads `?returnTo=` and persists it to `localStorage` (`gp_return_to`) so the magic-link email round-trip honors it too; Google, guest, and magic-link now all return you to where you left. Verify green (192 tests). Files: `components/Layout.jsx`.
+
 ## 2026-07-03 (feat: countries index — risk-tier bands + fix 10-of-20 briefing under-fetch, DEPLOYED)
 
 Two issues on `/weekly/countries`:

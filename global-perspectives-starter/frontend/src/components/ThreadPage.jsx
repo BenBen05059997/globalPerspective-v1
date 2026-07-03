@@ -82,7 +82,11 @@ export default function ThreadPage() {
   // related-threads sidebar — it's a best-effort enhancement, not load-bearing.
   const { entries: narrativeEntries, loading: threadLoading } = useNarrativeThread(threadId);
   const { dayMap, sortedDates } = useWeeklyArchive();
-  const [contentTab, setContentTab] = useState('timeline');
+  // Honor deep-linked tabs (threadPath's ?tab= contract — e.g. ?tab=economy from
+  // disruption links on Economy/Daily/Country/Map). Unknown values → timeline.
+  const requestedTab = searchParams.get('tab');
+  const [contentTab, setContentTab] = useState(() =>
+    ['timeline', 'actors', 'sources', 'economy'].includes(requestedTab) ? requestedTab : 'timeline');
 
   const thread = useMemo(() => {
     if (!narrativeEntries || !narrativeEntries.length) return null;
@@ -169,6 +173,15 @@ export default function ThreadPage() {
     }
     return Object.values(map).sort((a, b) => b.count - a.count);
   }, [thread]);
+
+  // Deep-linked tabs depend on async data (economy/actors/sources only exist for
+  // some threads). Once the relevant fetch settles, fall back to the timeline if
+  // the requested tab never materialized — never an empty content area.
+  useEffect(() => {
+    if (contentTab === 'economy' && !economicLoading && !hasEconomy) setContentTab('timeline');
+    if (contentTab === 'actors' && !analysisLoading && !(analysis?.keyActors?.length > 0)) setContentTab('timeline');
+    if (contentTab === 'sources' && !threadLoading && sourceRollup.length === 0) setContentTab('timeline');
+  }, [contentTab, economicLoading, hasEconomy, analysisLoading, analysis, threadLoading, sourceRollup]);
 
   const displayTitle = analysis?.threadTitle || thread?.latestTitle || humanizeThreadId(threadId);
   useEffect(() => {

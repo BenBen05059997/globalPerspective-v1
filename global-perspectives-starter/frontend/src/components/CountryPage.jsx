@@ -61,7 +61,7 @@ function BoldText({ text }) {
   )}</>;
 }
 
-function CoverageList({ entries }) {
+function CoverageList({ entries, country }) {
   const [open, setOpen] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [activeAi, setActiveAi] = useState(null);
@@ -174,7 +174,10 @@ function CoverageList({ entries }) {
                               View Google News ↗
                             </a>
                             {entry.threadId && (
-                              <Link to={threadPath(entry.threadId)} className="cp-view-arc-btn">
+                              <Link
+                                to={threadPath(entry.threadId, country ? { from: 'country', country } : {})}
+                                className="cp-view-arc-btn"
+                              >
                                 View full story →
                               </Link>
                             )}
@@ -487,7 +490,7 @@ export default function CountryPage() {
           {countryDisruptions.slice(0, 3).map((d, i) => (
             <Link
               key={d.scopeId || i}
-              to={threadPath(d.scopeId, { tab: 'economy' })}
+              to={threadPath(d.scopeId, { tab: 'economy', from: 'country', country: decodedName })}
               className="cpg-disruption-row"
               style={{ display: 'block', padding: '8px 0', borderBottom: i < 2 && i < countryDisruptions.length - 1 ? '1px dotted var(--line)' : 'none', textDecoration: 'none', color: 'inherit' }}
             >
@@ -898,7 +901,7 @@ export default function CountryPage() {
           {/* Coverage tab */}
           {mainTab === 'coverage' && (
             <div className="cpg-tab-content">
-              <CoverageList entries={countryData.entries} />
+              <CoverageList entries={countryData.entries} country={decodedName} />
             </div>
           )}
         </EditorialShell>

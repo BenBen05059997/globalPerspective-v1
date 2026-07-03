@@ -55,6 +55,9 @@ export const riskScoreToVar = (score) => {
   return tier ? TIER_VAR[tier] : 'var(--ink)';
 };
 
+// tier string → editorial CSS var (for when you already have a tier, not a score).
+export const riskTierToVar = (tier) => (tier ? TIER_VAR[tier] : 'var(--ink)');
+
 // ── Category ────────────────────────────────────────────────────────────────
 
 // Pastel badge palette ({ bg, text-color }) for category chips.

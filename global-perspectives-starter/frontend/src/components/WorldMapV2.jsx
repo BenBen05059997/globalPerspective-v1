@@ -17,6 +17,8 @@ import BreakingStrip from './atoms/BreakingStrip';
 import { composeTopicsLede } from '../utils/composeTopicsLede';
 import { findTopicForCountry, countryNameEq } from '../utils/topicMatch';
 import { threadPath } from '../utils/threadPath';
+import { tierFromScore, tierFromLevel, tierLabel } from '../utils/riskTiers';
+import { riskTierToVar } from '../tokens';
 import './WorldMapV2.css';
 
 // UN M.49 numeric → ISO 3166-1 alpha-3
@@ -717,7 +719,10 @@ export default function WorldMapV2() {
   const highCount = sigValues.filter(s => s.bucket === 'H').length;
   const elevCount = sigValues.filter(s => s.bucket === 'E').length;
 
-  const riskColor = intel?.riskLevel === 'high' ? 'var(--risk-h)' : intel?.riskLevel === 'elevated' ? 'var(--risk-e)' : intel?.riskLevel === 'low' ? 'var(--risk-l)' : 'var(--ink-dim)';
+  // Canonical tier — score-first, level fallback — so the header chip and the
+  // stat tile agree, and "moderate" gets its own amber (not grey ink-dim).
+  const panelTier = intel ? (intel.riskScore != null ? tierFromScore(intel.riskScore) : tierFromLevel(intel.riskLevel)) : null;
+  const riskColor = panelTier ? riskTierToVar(panelTier) : 'var(--ink-dim)';
 
   // Search matches across canonical names + extra aliases
   const searchMatches = useMemo(() => {
@@ -1068,9 +1073,9 @@ export default function WorldMapV2() {
                 <div>
                   <div className="cc">
                     {selectedISO}
-                    {intel?.riskLevel && (
+                    {panelTier && (
                       <span style={{ marginLeft: 8, color: riskColor, fontWeight: 600 }}>
-                        · {intel.riskLevel.toUpperCase()}
+                        · {tierLabel(panelTier)}
                       </span>
                     )}
                   </div>
@@ -1114,14 +1119,14 @@ export default function WorldMapV2() {
                       <div className="d">{s ? `vs ~${s.prior7} baseline` : 'last 7d'}</div>
                     </div>
                     <div className="stat">
-                      <div className="k">Risk Score</div>
-                      <div className="v" style={intel?.riskScore != null ? { color: riskColor } : {}}>
-                        {intel?.riskScore != null ? intel.riskScore : '—'}
+                      <div className="k">Risk Level</div>
+                      <div className="v tier" style={panelTier ? { color: riskColor } : {}}>
+                        {panelTier ? tierLabel(panelTier) : '—'}
                         {intel?.riskScore != null && snapshots?.length >= 2 && (
                           <Sparkline snapshots={snapshots} />
                         )}
                       </div>
-                      <div className="d">/100</div>
+                      <div className="d">{intel?.riskScore != null ? `${intel.riskScore} / 100` : '/100'}</div>
                     </div>
                   </div>
                 );

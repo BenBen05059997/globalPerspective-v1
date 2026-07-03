@@ -216,6 +216,10 @@
   color: var(--ink);
 }
 .cpg-stat-v.accent { color: var(--accent); }
+/* Tier word as the value (vs a number) — smaller so long tiers fit. */
+.cpg-stat-v.tier { font-size: 20px; letter-spacing: 0.02em; padding-top: 4px; }
+.cpg-stat-num { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.cpg-arc-card-num { color: var(--ink-dim); font-weight: 500; }
 
 .cpg-stat-d {
   font-family: var(--mono);

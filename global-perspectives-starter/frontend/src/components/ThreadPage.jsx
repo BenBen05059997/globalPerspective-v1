@@ -10,6 +10,7 @@ import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { formatDateLabel } from '../utils/dateUtils';
 import CompactTimeline from './CompactTimeline';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar as RISK_COLOR } from '../tokens';
+import { tierFromScore, tierLabel } from '../utils/riskTiers';
 import CopyBriefing, { formatThreadBriefing } from './CopyBriefing';
 import { SaveButton } from './SaveButton';
 import EditorialShell from './atoms/EditorialShell';
@@ -240,7 +241,7 @@ export default function ThreadPage() {
 
   // Status strip
   const statusStats = [
-    analysis?.riskScore != null && { value: analysis.riskScore, unit: 'risk' },
+    analysis?.riskScore != null && { value: tierLabel(tierFromScore(analysis.riskScore)), unit: 'risk' },
     { value: thread.entries.length, unit: 'events' },
     { value: thread.allSources.length, unit: 'sources' },
     thread.regions.length > 0 && { value: thread.regions.slice(0, 3).join(' · '), unit: '' },
@@ -436,8 +437,9 @@ export default function ThreadPage() {
             {category && <span>Category <b>{thread.entries[0]?.category}</b></span>}
             {thread.regions.length > 0 && <span>Countries <b>{thread.regions.slice(0, 3).join(', ')}{thread.regions.length > 3 ? ` +${thread.regions.length - 3}` : ''}</b></span>}
             {analysis?.riskScore != null && (
-              <span style={{ color: RISK_COLOR(analysis.riskScore) }}>
-                Risk <b>{analysis.riskScore}/100</b>
+              <span>
+                Risk <b style={{ color: RISK_COLOR(analysis.riskScore) }}>{tierLabel(tierFromScore(analysis.riskScore))}</b>
+                <span className="tp-hd-fine"> {analysis.riskScore}</span>
               </span>
             )}
             {analysis?.sentiment != null && (
@@ -450,10 +452,10 @@ export default function ThreadPage() {
         <div className="tp-stats">
           <div className="tp-stat">
             <div className="tp-stat-k">Thread Risk</div>
-            <div className="tp-stat-v" style={{ color: RISK_COLOR(analysis?.riskScore) }}>
-              {analysis?.riskScore != null ? analysis.riskScore : '—'}
+            <div className="tp-stat-v tier" style={{ color: RISK_COLOR(analysis?.riskScore) }}>
+              {analysis?.riskScore != null ? tierLabel(tierFromScore(analysis.riskScore)) : '—'}
             </div>
-            <div className="tp-stat-d">/100</div>
+            <div className="tp-stat-d">{analysis?.riskScore != null ? `${analysis.riskScore} / 100` : '/100'}</div>
           </div>
           <div className="tp-stat">
             <div className="tp-stat-k">Events</div>

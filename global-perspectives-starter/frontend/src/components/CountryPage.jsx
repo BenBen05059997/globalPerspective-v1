@@ -19,7 +19,8 @@ import { getBroadRegionsForCountry } from '../utils/countryMapping';
 import WeeklyMap from './WeeklyMap';
 import ShareButtons from './ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from './CopyBriefing';
-import { CATEGORY_BADGE_COLORS, RISK_COLORS } from '../tokens';
+import { CATEGORY_BADGE_COLORS, RISK_COLORS, riskScoreToVar, riskTierToVar } from '../tokens';
+import { tierFromScore, tierFromLevel, tierLabel } from '../utils/riskTiers';
 import BackgroundTimeline from './BackgroundTimeline';
 import { SaveButton } from './SaveButton';
 import EditorialShell from './atoms/EditorialShell';
@@ -363,7 +364,11 @@ export default function CountryPage() {
   if (authLoading) return null;
   if (loading) return <IntelligenceLoader type="typewriter" />;
 
-  const risk = intel ? (RISK_COLORS[intel.riskLevel] || RISK_COLORS.moderate) : null;
+  // Canonical tier for this country — score-first, level fallback — so the pill,
+  // stat tile and sparkline all agree (and "moderate" no longer reads as elevated).
+  const riskTier = intel ? (intel.riskScore != null ? tierFromScore(intel.riskScore) : tierFromLevel(intel.riskLevel)) : null;
+  const riskVar = riskTier ? riskTierToVar(riskTier) : null;
+  const risk = riskTier ? (RISK_COLORS[riskTier] || RISK_COLORS.moderate) : null;
   const trajectory = intel?.trajectory ? (TRAJECTORY_BADGES[intel.trajectory] || TRAJECTORY_BADGES.stable) : null;
 
   // Facet counts
@@ -398,7 +403,7 @@ export default function CountryPage() {
     anchorCount > 0 && { value: anchorCount, unit: 'anchor' },
     linkedCount > 0 && { value: linkedCount, unit: 'linked' },
     countryData && { value: countryData.totalArticles, unit: 'articles' },
-    intel?.riskScore != null && { value: intel.riskScore, unit: 'risk' },
+    intel?.riskScore != null && { value: tierLabel(riskTier), unit: 'risk' },
   ].filter(Boolean);
 
   // Left rail
@@ -584,7 +589,7 @@ export default function CountryPage() {
             {risk && (
               <span className="cpg-risk-pill" style={{ color: risk.color, borderColor: risk.color + '44' }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: risk.color, display: 'inline-block' }} />
-                {(intel.riskLevel || 'moderate').toUpperCase()}
+                {tierLabel(riskTier)}
               </span>
             )}
             {trajectory && (
@@ -655,11 +660,12 @@ export default function CountryPage() {
               <div className="cpg-stat-d">{formatDateLabel(countryData.dateRange.from)} – {formatDateLabel(countryData.dateRange.to)}</div>
             </div>
             <div className="cpg-stat">
-              <div className="cpg-stat-k">Risk score</div>
-              <div className="cpg-stat-v" style={risk ? { color: risk.color } : {}}>
-                {intel?.riskScore != null ? intel.riskScore : (intel?.riskLevel || '—')}
+              <div className="cpg-stat-k">Risk level</div>
+              <div className="cpg-stat-v tier" style={riskVar ? { color: riskVar } : {}}>
+                {riskTier ? tierLabel(riskTier) : '—'}
               </div>
               <div className="cpg-stat-d">
+                {intel?.riskScore != null && <span className="cpg-stat-num">{intel.riskScore} · </span>}
                 {riskHistory.length >= 2 ? (
                   <RiskSparkline snapshots={riskHistory} color={risk?.color} />
                 ) : (
@@ -856,8 +862,8 @@ export default function CountryPage() {
                         <div><b>{arc.articleCount}</b> articles</div>
                         <div><b>{arc.dayCount}</b> days</div>
                         {ta?.riskScore != null && (
-                          <div style={{ color: ta.riskScore >= 50 ? 'var(--risk-h)' : ta.riskScore >= 25 ? 'var(--risk-e)' : 'var(--risk-l)' }}>
-                            <b>{ta.riskScore}</b> risk
+                          <div style={{ color: riskScoreToVar(ta.riskScore) }}>
+                            <b>{tierLabel(tierFromScore(ta.riskScore))}</b> <span className="cpg-arc-card-num">{ta.riskScore}</span>
                           </div>
                         )}
                       </div>

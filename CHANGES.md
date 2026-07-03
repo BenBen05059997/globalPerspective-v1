@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-07-03 (feat: state displays go tier-first — RISK_TIERS_PLAN.md P2, DEPLOYED)
+
+Building on P1's shared tier util, every place that shows a country's/thread's **current** risk now leads with the **tier word** (colored headline) and demotes the raw score to muted fine print — killing the false precision of a jittery 0-100 number as the headline. Rule held: **state = tier · change = audit numbers** (the "What changed" band, correction chain, and delta pill stay numeric — untouched).
+- **ThreadPage:** header meta "Risk **MODERATE** 45"; Thread Risk stat tile shows the tier + "45 / 100" sub; evidence strip "MODERATE risk".
+- **CountryPage:** Risk stat tile → tier + "62 · ▁▂▅" spark; map-overlay pill and evidence strip derive their tier from the **score** (score-first, level fallback) so pill / tile / strip always agree. Fixed a **fourth** divergent band hiding in the arc cards (`riskScore >= 50 ? risk-h ...` — wrong colors) → now `riskScoreToVar` + tier word.
+- **WorldMapV2:** country panel Risk Level tile → tier + "62 / 100"; header chip derives tier from score; `riskColor` rewritten off the tier util (adds moderate, which previously fell through to grey).
+- New `tokens.riskTierToVar(tier)`; `--risk-m` mirrored into the `.mv2` scope. Playwright-verified locally on ThreadPage + CountryPage + WorldMapV2 (Japan ELEVATED, US-judge thread MODERATE — the score-45→moderate boundary from P1 now visible), 0 page errors. Verify green (192 tests). Files: `tokens.js`, `components/{ThreadPage,CountryPage,WorldMapV2}.{jsx,css}`. Next: P3 (/weekly LEAD/DEVELOPING hierarchy).
+
 ## 2026-07-03 (refactor: shared risk-tier utility — RISK_TIERS_PLAN.md P1, DEPLOYED)
 
 The frontend had **three conflicting risk-band definitions** — `tokens.js riskScoreToVar` (75/50, no "moderate"), `RiskScoreBadge` (70/40), and a `moderate→elevated` string alias — so a score of 72 read "high" in one place and "elevated" in another, and every "moderate" rendered as orange "elevated". Consolidated onto one source of truth: new **`utils/riskTiers.js`** with the canonical backend calibration (**25 / 50 / 75** → low / moderate / elevated / high) exporting `tierFromScore`, `tierFromLevel` (fixes the moderate alias), `TIER_ORDER`, `tierLabel`.

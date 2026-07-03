@@ -20,9 +20,11 @@
   --accent-deep: #000000;
   --risk-h: #c94a33;
   --risk-e: #d89540;
+  --risk-m: #caa23a;
   --risk-l: #4fa07b;
   --risk-h-soft: #fbe9e3;
   --risk-e-soft: #fbf0dc;
+  --risk-m-soft: #f8f1d6;
   --risk-l-soft: #e4f1e9;
   --amber: #c98510;
   --serif: 'Fraunces', Georgia, serif;
@@ -375,6 +377,8 @@
 }
 .mv2-panel .stat .v.h { color: var(--risk-h); }
 .mv2-panel .stat .v.e { color: var(--risk-e); }
+/* Tier word as the value (vs a number) — smaller so long tiers fit inline. */
+.mv2-panel .stat .v.tier { font-size: 14px; letter-spacing: 0.03em; }
 .mv2-panel .stat .d {
   font-size: 10.5px; color: var(--ink-dim); margin-top: 2px;
   font-family: var(--mono);

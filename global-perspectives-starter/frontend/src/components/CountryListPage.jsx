@@ -4,8 +4,8 @@ import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '../hooks/useCountryIntelligence';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { getTopicRegion } from '../utils/countryMapping';
-import { RISK_COLORS, CATEGORY_BADGE_COLORS } from '../tokens';
-import { TIER_ORDER, tierFromLevel } from '../utils/riskTiers';
+import { RISK_COLORS, CATEGORY_BADGE_COLORS, riskTierToVar } from '../tokens';
+import { TIER_ORDER, tierFromLevel, tierFromScore } from '../utils/riskTiers';
 import CountryOverviewMap from './CountryOverviewMap';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
@@ -60,6 +60,67 @@ function CountryCard({ country, intel, disruptionSeverity }) {
         )}
       </div>
     </Link>
+  );
+}
+
+// Country risk tier — score-first (agrees with the badge), level fallback.
+function countryTier(intel) {
+  if (!intel) return 'low';
+  return (intel.riskScore != null ? tierFromScore(intel.riskScore) : tierFromLevel(intel.riskLevel)) || 'low';
+}
+
+// Risk bands for the briefings grid — the country analog of /weekly's time bands,
+// but risk is the meaningful axis (countries are persistent). High = full cards,
+// calmer tiers = condensed rows (density decay).
+const RISK_BANDS = [
+  { tier: 'high', label: 'High risk', cards: true },
+  { tier: 'elevated', label: 'Elevated', cards: false },
+  { tier: 'moderate', label: 'Moderate', cards: false },
+  { tier: 'low', label: 'Low', cards: false },
+];
+
+// ─── Condensed country row (calmer tiers) ─────────────────────────────────────
+
+function CountryRow({ country, intel }) {
+  const traj = trajectoryArrow(intel?.trajectory);
+  return (
+    <Link to={`/weekly/country/${encodeURIComponent(country.name)}`} className="clp-row">
+      <RiskScoreBadge level={intel?.riskLevel} size="sm" />
+      <span className="clp-row-name">{country.name}</span>
+      <span className={`clp-row-traj ${traj.cls}`}>{traj.arrow}</span>
+      {intel?.headline && <span className="clp-row-headline">{intel.headline}</span>}
+      <span className="clp-row-meta">{country.articles} art</span>
+    </Link>
+  );
+}
+
+// ─── Risk band (one tier) ─────────────────────────────────────────────────────
+
+function RiskBand({ band, items, intelligence, maxSeverityByCountry }) {
+  if (!items.length) return null;
+  return (
+    <section className="clp-band">
+      <div className="clp-band-header">
+        <span className="clp-band-label" style={{ color: riskTierToVar(band.tier) }}>{band.label}</span>
+        <span className="clp-band-count">{items.length}</span>
+      </div>
+      {band.cards ? (
+        <div className="clp-cards">
+          {items.map(c => (
+            <CountryCard
+              key={c.name}
+              country={c}
+              intel={intelligence?.[c.name]}
+              disruptionSeverity={maxSeverityByCountry[c.name]}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="clp-rows">
+          {items.map(c => <CountryRow key={c.name} country={c} intel={intelligence?.[c.name]} />)}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -206,7 +267,11 @@ export default function CountryListPage() {
       .sort((a, b) => b.articles - a.articles);
   }, [dayMap, sortedDates, loading]);
 
-  const countryNames = useMemo(() => countries.slice(0, 10).map(c => c.name), [countries]);
+  // Request briefings for every country the backend generates one for. The backend
+  // caps at MAX_COUNTRIES=20 (newsCountryIntelligence); fetch a small margin over
+  // that so ranking drift between the two sides can't strand a real briefing in the
+  // "not enough coverage" bucket. Single batched call — no request-burst cost.
+  const countryNames = useMemo(() => countries.slice(0, 24).map(c => c.name), [countries]);
   const { intelligence } = useCountryIntelligence(countryNames);
   const { data: allDisruptions = [] } = useDisruptionsList({ limit: 200 });
 
@@ -337,24 +402,41 @@ export default function CountryListPage() {
         </div>
       </div>
 
-      {/* AI Briefings grid */}
+      {/* AI Briefings — grouped into risk-tier bands (default risk sort); an
+          explicit non-risk sort keeps the flat grid so the sort intent is honored. */}
       {filteredFeatured.length > 0 && (
-        <>
-          <div className="clp-section-header">
-            <span className="clp-section-title">AI Briefings</span>
-            <span className="clp-section-hint">{filteredFeatured.length} countries</span>
-          </div>
-          <div className="clp-cards">
-            {filteredFeatured.map(c => (
-              <CountryCard
-                key={c.name}
-                country={c}
-                intel={intelligence?.[c.name]}
-                disruptionSeverity={maxSeverityByCountry[c.name]}
+        sortBy === 'risk' ? (
+          (() => {
+            const byTier = { high: [], elevated: [], moderate: [], low: [] };
+            for (const c of filteredFeatured) byTier[countryTier(intelligence?.[c.name])].push(c);
+            return RISK_BANDS.map(band => (
+              <RiskBand
+                key={band.tier}
+                band={band}
+                items={byTier[band.tier]}
+                intelligence={intelligence}
+                maxSeverityByCountry={maxSeverityByCountry}
               />
-            ))}
-          </div>
-        </>
+            ));
+          })()
+        ) : (
+          <>
+            <div className="clp-section-header">
+              <span className="clp-section-title">AI Briefings</span>
+              <span className="clp-section-hint">{filteredFeatured.length} countries</span>
+            </div>
+            <div className="clp-cards">
+              {filteredFeatured.map(c => (
+                <CountryCard
+                  key={c.name}
+                  country={c}
+                  intel={intelligence?.[c.name]}
+                  disruptionSeverity={maxSeverityByCountry[c.name]}
+                />
+              ))}
+            </div>
+          </>
+        )
       )}
 
       {/* Others */}

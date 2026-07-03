@@ -161,19 +161,20 @@ describe('Redesign v2 — CountryListPage', () => {
     expect(rows.length).toBeGreaterThan(0);
   });
 
-  it('renders at least one CountryCard with a real name', () => {
+  it('renders at least one country entry (card or condensed row) with a real name', () => {
     renderWithRouter(<CountryListPage />);
-    const cards = document.querySelectorAll('.clp-card');
-    expect(cards.length).toBeGreaterThan(0);
-    // Card name should match a real country from the fixture
+    // The briefings grid is risk-banded: high-risk = full cards, calmer tiers =
+    // condensed rows. Either form is a valid country entry.
+    const entries = document.querySelectorAll('.clp-card, .clp-row');
+    expect(entries.length).toBeGreaterThan(0);
     const realCountries = Object.keys(countryIntelFixture.data);
-    const cardText = Array.from(cards).map(c => c.textContent).join(' ');
-    expect(realCountries.some(n => cardText.includes(n))).toBe(true);
+    const entryText = Array.from(entries).map(c => c.textContent).join(' ');
+    expect(realCountries.some(n => entryText.includes(n))).toBe(true);
   });
 
-  it('CountryCard surfaces the headline from intelligence fixture', () => {
+  it('country entry surfaces the headline from intelligence fixture', () => {
     renderWithRouter(<CountryListPage />);
-    const headlines = document.querySelectorAll('.clp-card-headline');
+    const headlines = document.querySelectorAll('.clp-card-headline, .clp-row-headline');
     expect(headlines.length).toBeGreaterThan(0);
     // At least one headline should be non-empty text
     const hasReal = Array.from(headlines).some(h => h.textContent.trim().length > 10);
@@ -187,12 +188,12 @@ describe('Redesign v2 — CountryListPage', () => {
     expect(btn).toHaveClass('active');
   });
 
-  it('search filter narrows the visible cards', () => {
+  it('search filter narrows the visible entries', () => {
     renderWithRouter(<CountryListPage />);
-    const before = document.querySelectorAll('.clp-card').length;
+    const before = document.querySelectorAll('.clp-card, .clp-row').length;
     const input = screen.getByPlaceholderText(/filter countries/i);
     fireEvent.change(input, { target: { value: 'ZZZZNOMATCH' } });
-    const after = document.querySelectorAll('.clp-card').length;
+    const after = document.querySelectorAll('.clp-card, .clp-row').length;
     expect(after).toBeLessThan(before);
   });
 

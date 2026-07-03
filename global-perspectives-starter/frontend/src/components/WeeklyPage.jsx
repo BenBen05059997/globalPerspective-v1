@@ -102,6 +102,21 @@ function filterDatesByRange(sortedDates, range) {
   return sortedDates.slice(0, days);
 }
 
+// Time bands for the river — recency buys density. Bucketed by a thread's LAST
+// activity (dateRange.to), the same "is this still moving" signal the LEAD /
+// DEVELOPING hierarchy uses. This week = full cards; older = condensed rows.
+const TIME_BANDS = [
+  { key: 'week', label: 'This week', max: 7 },
+  { key: 'month', label: 'Earlier this month', max: 30 },
+  { key: 'older', label: 'Older', max: Infinity },
+];
+function bandOf(dateStr) {
+  const d = daysSince(dateStr);
+  if (d <= 7) return 'week';
+  if (d <= 30) return 'month';
+  return 'older';
+}
+
 function groupByThread(dayMap, sortedDates) {
   const threadMap = {};
   const standalone = [];
@@ -381,6 +396,62 @@ function LeadHierarchy({ lead, developing }) {
   );
 }
 
+// ─── Condensed row (older bands) ──────────────────────────────────────────────
+
+function BandRow({ thread, analysis }) {
+  const t = thread, a = analysis;
+  const title = a?.threadTitle || t.latestTitle;
+  const tier = tierFromScore(a?.riskScore);
+  const category = t.entries[0]?.category?.toLowerCase();
+  const catColors = CATEGORY_BADGE_COLORS[category];
+  return (
+    <Link to={threadPath(t.threadId)} className="wp-band-row">
+      <span className="wp-band-tier" style={tier ? { color: riskScoreToVar(a?.riskScore) } : {}}>
+        {tier ? tierLabel(tier) : '—'}
+      </span>
+      <span className="wp-band-title">{title}</span>
+      {catColors && <span className="wp-band-cat" style={{ color: catColors.color }}>{category}</span>}
+      <span className="wp-band-meta">{t.articleCount} ev · {updatedLabel(t.dateRange.to)}</span>
+    </Link>
+  );
+}
+
+// A single time band. "This week" renders full cards; older bands render
+// condensed rows. The "Older" band starts collapsed (a count you expand), so a
+// long tail of stale stories never walls the page.
+function TimeBand({ band, items, threadAnalyses, defaultCollapsed }) {
+  const isWeek = band.key === 'week';
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [showAll, setShowAll] = useState(false);
+  const initial = isWeek ? 8 : 12;
+  const visible = showAll ? items : items.slice(0, initial);
+  const hidden = items.length - visible.length;
+  return (
+    <section className="wp-band">
+      <button
+        className="wp-band-header"
+        onClick={() => setCollapsed(c => !c)}
+        aria-expanded={!collapsed}
+      >
+        <span className="wp-band-label">{band.label}</span>
+        <span className="wp-band-count">{items.length}</span>
+        <span className={`wp-band-chevron ${collapsed ? 'collapsed' : ''}`}>›</span>
+      </button>
+      {!collapsed && (
+        <div className={`wp-band-body ${isWeek ? 'is-cards' : 'is-rows'}`}>
+          {visible.map(t => isWeek
+            ? <StoryCard key={t.threadId} thread={t} analysis={threadAnalyses?.[t.threadId]} />
+            : <BandRow key={t.threadId} thread={t} analysis={threadAnalyses?.[t.threadId]} />
+          )}
+          {hidden > 0 && (
+            <button className="wp-band-more" onClick={() => setShowAll(true)}>Show {hidden} more</button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── Story Card ───────────────────────────────────────────────────────────────
 
 function StoryCard({ thread, analysis }) {
@@ -627,11 +698,10 @@ export default function WeeklyPage() {
   const [timeRange, setTimeRange] = useState('all');
   const [sortBy, setSortBy] = useState('articles');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState(null);
   const [showIntro, setShowIntro] = useState(
     () => !localStorage.getItem('gp_arc_intro_dismissed')
   );
-  const [collapsedCategories, setCollapsedCategories] = useState(new Set());
-  const [expandedGroups, setExpandedGroups] = useState(new Set());
   function dismissIntro() {
     localStorage.setItem('gp_arc_intro_dismissed', '1');
     setShowIntro(false);
@@ -728,7 +798,7 @@ export default function WeeklyPage() {
   // view; filtering/searching is "work mode" and shows the flat river as before.
   const { lead, developing, promotedIds } = useMemo(() => {
     const empty = { lead: null, developing: [], promotedIds: new Set() };
-    if (activeRegion || activeCountry || searchQuery.trim()) return empty;
+    if (activeRegion || activeCountry || searchQuery.trim() || activeCategory) return empty;
 
     const tierRank = { high: 0, elevated: 1, moderate: 2, low: 3 };
     const items = threads
@@ -781,14 +851,30 @@ export default function WeeklyPage() {
 
     const ids = new Set([chosenLead, ...devCands].filter(Boolean).map(x => x.t.threadId));
     return { lead: chosenLead, developing: devCands, promotedIds: ids };
-  }, [threads, threadAnalyses, activeRegion, activeCountry, searchQuery]);
+  }, [threads, threadAnalyses, activeRegion, activeCountry, searchQuery, activeCategory]);
 
-  // River excludes promoted threads so nothing shows twice (promotedIds is empty
-  // in work mode, so this is a no-op there).
+  // River excludes promoted threads (no double-show) and applies the category
+  // filter chip. promotedIds is empty in work mode, so that clause is a no-op there.
   const riverThreads = useMemo(
-    () => flatThreads.filter(t => !promotedIds.has(t.threadId)),
-    [flatThreads, promotedIds],
+    () => flatThreads.filter(t =>
+      !promotedIds.has(t.threadId) &&
+      (!activeCategory || (t.entries[0]?.category?.toLowerCase() || 'other') === activeCategory)
+    ),
+    [flatThreads, promotedIds, activeCategory],
   );
+
+  // Category filter chips — computed from the browsable set (pre-category-filter)
+  // so chips don't vanish when you pick one. Ordered, with counts.
+  const categoryChips = useMemo(() => {
+    const counts = {};
+    for (const t of flatThreads) {
+      if (promotedIds.has(t.threadId)) continue;
+      const cat = t.entries[0]?.category?.toLowerCase() || 'other';
+      const key = CATEGORY_ORDER.includes(cat) ? cat : 'other';
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    return CATEGORY_ORDER.filter(k => counts[k]).map(k => ({ cat: k, count: counts[k] }));
+  }, [flatThreads, promotedIds]);
 
   useEffect(() => { document.title = 'Story Intelligence — Global Perspectives'; }, []);
 
@@ -935,58 +1021,57 @@ export default function WeeklyPage() {
           </div>
         )}
         <LeadHierarchy lead={lead} developing={developing} />
+
+        {categoryChips.length > 1 && (
+          <div className="wp-cat-filter" role="group" aria-label="Filter by category">
+            <button
+              className={`wp-cat-chip ${!activeCategory ? 'active' : ''}`}
+              aria-pressed={!activeCategory}
+              onClick={() => setActiveCategory(null)}
+            >
+              All
+            </button>
+            {categoryChips.map(({ cat, count }) => (
+              <button
+                key={cat}
+                className={`wp-cat-chip ${activeCategory === cat ? 'active' : ''}`}
+                aria-pressed={activeCategory === cat}
+                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+              >
+                {cat} <span className="wp-cat-chip-n">{count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {(() => {
-          const ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];
-          const groupMap = {};
-          for (const t of riverThreads) {
-            const cat = t.entries[0]?.category?.toLowerCase() || 'other';
-            const key = ORDER.includes(cat) ? cat : 'other';
-            if (!groupMap[key]) groupMap[key] = [];
-            groupMap[key].push(t);
-          }
-          const groups = ORDER.filter(k => groupMap[k]).map(k => ({ category: k, threads: groupMap[k] }));
-          return groups.map(({ category, threads }) => {
-            const isCollapsed = collapsedCategories.has(category);
-            const c = CATEGORY_BADGE_COLORS[category];
-            const toggleCollapse = () => setCollapsedCategories(prev => {
-              const next = new Set(prev);
-              next.has(category) ? next.delete(category) : next.add(category);
-              return next;
-            });
-            const showAll = expandedGroups.has(category);
-            const visibleThreads = showAll ? threads : threads.slice(0, 5);
-            const hiddenCount = threads.length - visibleThreads.length;
+          const buckets = { week: [], month: [], older: [] };
+          for (const t of riverThreads) buckets[bandOf(t.dateRange.to)].push(t);
+          // "Older" collapses only when a fresher band has content — so a quiet
+          // period (everything old) still shows an open band, never a wall of
+          // collapsed headers.
+          const hasFresher = buckets.week.length > 0 || buckets.month.length > 0;
+          return TIME_BANDS.map(band => {
+            const items = buckets[band.key];
+            if (!items.length) return null;
             return (
-              <div key={category} className="weekly-category-group">
-                <button
-                  className="weekly-category-group-header"
-                  onClick={toggleCollapse}
-                  style={c ? { borderLeftColor: c.bg } : {}}
-                >
-                  <span className="weekly-category-group-name" style={c ? { color: c.color } : {}}>{category}</span>
-                  <span className="weekly-category-group-count">{threads.length}</span>
-                  <span className={`weekly-category-group-chevron ${isCollapsed ? 'collapsed' : ''}`}>›</span>
-                </button>
-                {!isCollapsed && (
-                  <>
-                    {visibleThreads.map(thread => (
-                      <StoryCard key={thread.threadId} thread={thread} analysis={threadAnalyses?.[thread.threadId]} />
-                    ))}
-                    {hiddenCount > 0 && (
-                      <button
-                        className="weekly-category-show-more"
-                        onClick={() => setExpandedGroups(prev => { const n = new Set(prev); n.add(category); return n; })}
-                      >
-                        Show {hiddenCount} more
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
+              <TimeBand
+                key={band.key}
+                band={band}
+                items={items}
+                threadAnalyses={threadAnalyses}
+                defaultCollapsed={band.key === 'older' && hasFresher}
+              />
             );
           });
         })()}
-        {flatStandalone.length > 0 && <StandaloneSection entries={flatStandalone} />}
+
+        {(() => {
+          const s = activeCategory
+            ? flatStandalone.filter(e => (e.category?.toLowerCase() || 'other') === activeCategory)
+            : flatStandalone;
+          return s.length > 0 ? <StandaloneSection entries={s} /> : null;
+        })()}
       </div>
     </EditorialShell>
   );

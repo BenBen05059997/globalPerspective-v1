@@ -11,7 +11,21 @@ import threadAnalysesFixture from '../../tests/fixtures/thread_analyses.json';
 import countryIntelFixture from '../../tests/fixtures/country_intelligence.json';
 
 // ── Mock all data hooks ────────────────────────────────────────────
-const dayMap = archiveFixture.data;
+// Remap the fixture's (frozen April) date keys onto the most recent N days so
+// the newest fixture day is "today". The WeeklyPage river now buckets stories by
+// recency (This week / Earlier this month / Older) and only the fresh band shows
+// full StoryCards — prod always has threads updated today, so the test must too.
+const rawDayMap = archiveFixture.data;
+const rawDates = Object.keys(rawDayMap).sort((a, b) => a.localeCompare(b));
+const dayMap = {};
+{
+  const today = new Date();
+  rawDates.forEach((d, i) => {
+    const shifted = new Date(today);
+    shifted.setDate(today.getDate() - (rawDates.length - 1 - i));
+    dayMap[shifted.toISOString().slice(0, 10)] = rawDayMap[d];
+  });
+}
 const sortedDates = Object.keys(dayMap).sort((a, b) => b.localeCompare(a));
 
 vi.mock('../hooks/useWeeklyArchive', () => ({

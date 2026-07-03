@@ -1,6 +1,12 @@
 # Risk Tiers — score → tier migration + /weekly front-page hierarchy
 
-**Status:** PLANNED (not started). Created 2026-07-03.
+**Status:** ✅ **COMPLETE — P1+P2+P3 all shipped + prod-verified 2026-07-03** (commits `fe80176`, `9201bf0`, `30cc344`). Created 2026-07-03.
+
+> **Completion summary (2026-07-03):**
+> - **P1 `fe80176`** — `utils/riskTiers.js` (`tierFromScore`/`tierFromLevel`/`TIER_ORDER`/`tierLabel`, canonical 25/50/75). Migrated `tokens.riskScoreToVar`, `RiskScoreBadge`, `CountryListPage` sort. Fixed the moderate→elevated alias + added the missing moderate paint (`--risk-m`, `.rsb-moderate`). New `test/riskTiers.test.js`.
+> - **P2 `9201bf0`** — tier-first state displays: ThreadPage (header + stat tile + strip), CountryPage (stat tile + pill + strip + arc cards — killed a **4th** divergent band hiding in the arc cards), WorldMapV2 (panel + chip + `riskColor`). Pill/tile/strip derive tier from the score so they always agree. Added `tokens.riskTierToVar`.
+> - **P3 `30cc344`** — `/weekly` LEAD + DEVELOPING hierarchy above the category river; drift "↳ What changed" delta line; hides on search/filter; promoted threads removed from river + rail (no double-show); honest-empty. **DEVIATION:** dropped the bare "rising" DEVELOPING qualifier — that overlaps the existing right-rail "Rising This Week"; DEVELOPING is the risk/living-analysis signal instead.
+> - Rule held throughout: **state = tier · change = audit numbers** (What-changed band / chain / delta pill stayed numeric). Playwright-verified live on every surface; 192 tests green.
 **Decision (operator, 2026-07-03):** tiers, NOT a blended dominance score — scores are jittery (Japan 40↔62 daily oscillation, ~37% cosmetic noise) and opaque; tiers are explainable ("a sentence you can print on the card"), stable, and match how the pro tools work (Dataminr Flash>Urgent>standard, CrisisWatch categorical deltas). Display style decided: **tier-first + small number** (tier word is the headline; raw score stays as muted fine print — datum inspectable, false precision killed).
 
 ---

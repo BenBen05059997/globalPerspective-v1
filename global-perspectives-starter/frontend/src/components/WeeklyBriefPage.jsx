@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { threadPath } from '../utils/threadPath';
 import { useWeeklyBrief } from '../hooks/useWeeklyBrief';
 import Markdown from './Markdown';
+import SubscribeCard from './SubscribeCard';
 import { RISK_SOLID as RISK_COLOR } from '../tokens';
 import './WeeklyBriefPage.css';
 
@@ -115,6 +116,8 @@ export default function WeeklyBriefPage() {
               <div className="wb-kpi"><div className="wb-kpi-n">{highRisk}</div><div className="wb-kpi-l">At high risk</div></div>
               <div className="wb-kpi"><div className="wb-kpi-n">{watch.length}</div><div className="wb-kpi-l">To watch</div></div>
             </div>
+
+            <SubscribeCard variant="weekly" />
 
             <div className="wb-sec">Signals this week</div>
             {signals.map((s) => <SignalCard key={s.threadId} s={s} />)}

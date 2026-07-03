@@ -17,6 +17,7 @@ import SeverityBadge from './atoms/SeverityBadge';
 import SourceRobustness from './atoms/SourceRobustness';
 import LedeBand from './atoms/LedeBand';
 import BreakingStrip from './atoms/BreakingStrip';
+import SubscribeCard from './SubscribeCard';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { composeTopicsLede } from '../utils/composeTopicsLede';
 import './AIComponents.css';
@@ -348,6 +349,9 @@ function Home() {
           </div>
         )}
       </div>
+
+      {/* Weekly Brief email subscribe */}
+      <SubscribeCard variant="home" />
 
       {/* Loading */}
       {loading && (

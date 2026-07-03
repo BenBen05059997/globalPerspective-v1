@@ -277,6 +277,44 @@ function httpReply(statusCode, body) {
   return { statusCode, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
 }
 
+// ── Public one-click unsubscribe (the token IS the auth; no sign-in) ──────────
+function htmlPage(title, msg) {
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    body: `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>`
+      + `<body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:520px;margin:12vh auto;padding:0 24px;color:#1a1a1a;text-align:center;">`
+      + `<h1 style="font:600 22px/1.3 Georgia,serif;">${title}</h1>`
+      + `<p style="color:#555;line-height:1.6;">${msg}</p>`
+      + `<p><a href="https://globalperspective.net" style="color:#3b82f6;text-decoration:none;">← Global Perspectives</a></p></body></html>`,
+  };
+}
+
+async function handleUnsubscribe(uid, token, kind = 'all') {
+  if (!uid || !token) return htmlPage('Invalid link', 'This unsubscribe link is missing its parameters.');
+  // GetItem by uid (the table key) — no Scan needed; the token proves the link is genuine.
+  const out = await ddb().send(new GetCommand({ TableName: USER_PREFS_TABLE, Key: { uid } }));
+  const user = out.Item;
+  if (!user || user.unsubToken !== token) {
+    return htmlPage('Link not recognized', "This unsubscribe link is no longer valid. If you keep receiving emails, just reply and we'll remove you.");
+  }
+  const patch = {};
+  if (kind === 'digest' || kind === 'all') patch.digestOptIn = false;
+  if (kind === 'breaking' || kind === 'all') patch.breakingOptIn = false;
+  if (!Object.keys(patch).length) patch.digestOptIn = false;
+  const names = {}; const vals = { ':now': new Date().toISOString() }; const sets = [];
+  Object.keys(patch).forEach((k, i) => { names[`#k${i}`] = k; vals[`:v${i}`] = patch[k]; sets.push(`#k${i} = :v${i}`); });
+  await ddb().send(new UpdateCommand({
+    TableName: USER_PREFS_TABLE,
+    Key: { uid: user.uid },
+    UpdateExpression: `SET ${sets.join(', ')}, unsubbedAt = :now`,
+    ExpressionAttributeNames: names,
+    ExpressionAttributeValues: vals,
+  }));
+  const what = kind === 'all' ? 'all emails' : kind === 'breaking' ? 'breaking alerts' : 'the weekly brief';
+  return htmlPage('Unsubscribed', `You've been unsubscribed from ${what}. Your other preferences are unchanged.`);
+}
+
 exports.handler = async (event = {}) => {
   // Direct invoke (e.g. digest cron): { uid?, limit? }
   const isHttp = typeof event.body === 'string' || event.requestContext || event.headers;
@@ -296,7 +334,19 @@ exports.handler = async (event = {}) => {
     if (claims) { uid = claims.user_id || claims.sub; email = claims.email || null; }
   }
 
-  const action = body.action || 'recommend';
+  // Query params carry the action for email-link GETs (no body).
+  const qs = event.queryStringParameters || {};
+  const action = qs.action || body.action || 'recommend';
+
+  // Public one-click unsubscribe from an email — the token IS the auth (no sign-in).
+  // GET (clicked link) + POST (RFC 8058 List-Unsubscribe-Post) both land here.
+  if (action === 'unsubscribe') {
+    const p = body.payload || {};
+    const unsubUid = qs.uid || p.uid || body.uid;
+    const token = qs.token || p.token || body.token;
+    const kind = qs.kind || p.kind || 'all';
+    return handleUnsubscribe(unsubUid, token, kind);
+  }
 
   // Public in-app notification feed (the bell) — no auth.
   if (action === 'list_alerts') {

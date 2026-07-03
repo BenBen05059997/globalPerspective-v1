@@ -642,8 +642,9 @@ Single owner of `GlobalPerspectiveUserPrefs`. Two responsibilities:
    - Both require `Authorization: Bearer <firebase-id-token>` (`uid` = token sub); no token → 401. Powers the Account → Notifications tab.
 3. **In-app notification feed** (added 2026-06-10; enriched 2026-06-26) — **public** `list_alerts` (no auth): scans `GlobalPerspectiveBreakingAlerts` for `status ∈ {confirmed, sent}`, newest-first, returns `[{ id, threadId, title, url(→/breaking/:id), category, regions, reasons, economic, outletCount, sourceCount, at }]` (or `[]`). Powers the nav bell, the `/breaking` feed, and the `BreakingStrip`. Read-state is client-side (localStorage), so no per-user write.
 4. **Single breaking alert** (added 2026-06-26) — **public** `get_alert` `{ payload:{ id } }` (no auth): `GetCommand` by `alertKey`, returns the full alert **only when `status ∈ {confirmed, sent}`** (never a raw proposal). Surfaces the structured `story` when present, else `fallbackText` = the saved email body for legacy records; includes `hasArc`/`threadUrl` so the page gates the arc link. Powers `/breaking/:id` (`useBreakingAlert`). Returns `{ alert: null }` for unknown/unconfirmed ids → honest not-found.
+5. **Public one-click unsubscribe** (added 2026-07-03) — `unsubscribe` action (no auth; the token IS the auth). Reached as a GET link from emails (`?action=unsubscribe&uid=<uid>&token=<unsubToken>&kind=<digest|breaking|all>`) or a RFC 8058 `List-Unsubscribe-Post` POST. **GetItem by `uid`** (the table key — deliberately not a Scan, so the existing role suffices), verifies `unsubToken` matches, flips `digestOptIn`/`breakingOptIn`, returns a small HTML confirmation page. Consumed by the `newsEmailSender` unsubscribe links (Lambda #29).
 
-**Key env vars:** `TOPICS_DDB_TABLE` (=`NewsCache`), `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE` (=`GlobalPerspectiveUserPrefs`), `BREAKING_ALERTS_TABLE`, `SITE_URL`, `FIREBASE_PROJECT_ID`. **Role:** `newsRecommend-role` (Get/Update/Put on UserPrefs, read on NewsCache + SavedItems, Scan + GetItem on BreakingAlerts).
+**Key env vars:** `TOPICS_DDB_TABLE` (=`NewsCache`), `SAVED_ITEMS_TABLE`, `USER_PREFS_TABLE` (=`GlobalPerspectiveUserPrefs`), `BREAKING_ALERTS_TABLE`, `SITE_URL`, `FIREBASE_PROJECT_ID`. **Role:** `newsRecommend-role` (Get/Update/Put on UserPrefs — the unsubscribe uses Get+Update, no Scan; read on NewsCache + SavedItems, Scan + GetItem on BreakingAlerts).
 
 ---
 
@@ -657,11 +658,11 @@ Generates the **Weekly Signals Brief** — a *signals digest* (NOT a synthesized
 1. Reads the last 7 days of archive entries; groups by `threadId`; selects top threads + top countries.
 2. Computes **deterministic** per-signal data: `riskLevel`/`riskScore`, `region`, `asOf`, `sources` (real article links from our data).
 3. Calls DeepSeek for ONLY the per-signal **text** (`lede`, `fact`, `soWhat`) under strict epistemic rules (verb-mark claims; calibrated so-what; no thesis; no forced cross-links; no invented specifics) + a `watch` list. The risk/sources/dates are never the LLM's.
-4. Joins them → writes `WEEKLY_BRIEF#{weekKey}` / `WEEKLY_BRIEF`, `format:'signals'`, `status:'draft'` (180-day TTL).
+4. Joins them → writes `WEEKLY_BRIEF#{weekKey}` / `WEEKLY_BRIEF`, `format:'signals'`, `status:'published'` (180-day TTL).
 
-**Human approval (gate kept):** the schedule generates a **draft**; a human publishes via `weekly/review.js` (`status → published`) before it's served. Generation scheduled; publishing manual.
+**Auto-publish (gate removed 2026-07-03):** the schedule now writes `status:'published'` directly. The old manual `weekly/review.js` gate went stale (nothing published 2026-06-10..07-03 → `/weekly-brief` sat empty); the synthesis prompt is already strictly grounded, so the gate added stale-risk without quality upside for a solo operator. "Set a brief to draft" remains a manual kill-switch. (Serving-scan pagination was also fixed the same day — the published row had grown past the 1 MB scan page.)
 
-**Key env vars:** `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values), `TOPICS_DDB_TABLE` (=`NewsCache`), `SUMMARIZE_PREDICT_TABLE`, `MAX_TOKENS`, `WEEKLY_TOP_THREADS`, `WEEKLY_TOP_COUNTRIES`. **Role:** `newsWeeklyBrief-role` (read NewsCache, Get/Put SummarizeAndPredict).
+**Key env vars:** `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values), `TOPICS_DDB_TABLE` (=`NewsCache`), `SUMMARIZE_PREDICT_TABLE`, `MAX_TOKENS`, `WEEKLY_TOP_THREADS`, `WEEKLY_TOP_COUNTRIES`. **Role:** `newsWeeklyBrief-role` (read NewsCache, Get/Put SummarizeAndPredict). **Email delivery:** a separate `newsEmailSender` (Lambda #29) emails the published brief to subscribers — this function only generates/stores.
 
 ### 24. `newsSourceAudit` — source-truth dead-man's-switch (SHIPPED 2026-06-15)
 **Path:** `amplify/backend/function/newsSourceAudit/src/index.js`
@@ -739,6 +740,22 @@ Owns the billing surface: `create_checkout`, the signed `order.paid` webhook, an
 Writes the live Polar/credits fields to `USERS_DDB_TABLE` (`billingProvider:'polar'`, `polarCustomerId`, `polarSubscriptionId`, `currentPeriodEnd`, `creditBalance`, `processedOrders`).
 
 **Key code refs:** `grantCredits`, `processedOrders`, `POLAR_CREDIT_PACKS`, `get_membership` (`src/index.js:38,108,117`). **Key env vars:** `USERS_DDB_TABLE`, `POLAR_API_BASE`, `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_CREDIT_PACKS`. See [[project_billing_deprecated]], [[project_credit_billing]].
+
+---
+
+### 29. `newsEmailSender` — one sender for weekly brief + breaking alerts (DEPLOYED in DRY-RUN 2026-07-03)
+**Path:** `amplify/backend/function/newsEmailSender/src/index.js`
+**Trigger:** EventBridge `TriggerWeeklyEmailSend` — `cron(0 14 ? * SUN *)` (Sundays 14:00 UTC, ~8h after the brief is generated) **ENABLED**; `TriggerBreakingEmailSend` — `rate(15 minutes)` **DISABLED until go-live**. Both invoke with `{mode}`. **No LLM.** Built + deployed 2026-07-03; plan → `EMAIL_SENDER_PLAN.md`.
+
+The email **send** path both products were missing (content flowed, nothing sent — the Resend seam was orphaned). One Lambda, `event.mode` dispatch:
+1. `weekly` — paginated-scan the latest **published** `WEEKLY_BRIEF`, scan `GlobalPerspectiveUserPrefs` for `digestOptIn`, render (`renderWeeklyEmail.js`) + send one personalized email each, write idempotency marker `EMAILLOG#weekly#<weekOf>` in `SummarizeAndPredict` (re-invoke = no-op unless `{force:true}`).
+2. `breaking` — scan `GlobalPerspectiveBreakingAlerts` for `status:'confirmed'` **AND `emailedAt` unset AND `alertedAt` ≤48h** (freshness gate skips the ~50 historical `sent` alerts), reuse each alert's pre-rendered `draft{subject,html,text}`, send, stamp `emailedAt`.
+
+Emails carry `List-Unsubscribe`/`List-Unsubscribe-Post` headers; each links to `newsRecommend`'s public `unsubscribe` (uid+token). **Safe-by-default:** `EMAIL_SEND_DRY_RUN` defaults ON (logs recipients + would-be email, sends nothing); `TEST_RECIPIENT` overrides the audience for send-to-self; real delivery additionally needs a verified `EMAIL_FROM` domain.
+
+**Key env vars:** `EMAIL_SEND_DRY_RUN`, `EMAIL_FROM`, `TEST_RECIPIENT`, `RESEND_API_KEY`, `UNSUB_BASE_URL` (=newsRecommend Function URL), `SITE_URL`, `USER_PREFS_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BREAKING_ALERTS_TABLE`. **Role:** reuses `newsprojectLambdaRolefcb19312-dev` (`AmazonDynamoDBFullAccess` — chosen to avoid creating a new IAM role). **Go-live (operator):** verify `globalperspective.net` in Resend → flip `EMAIL_FROM`+`EMAIL_SEND_DRY_RUN=false`+clear `TEST_RECIPIENT` → enable the breaking rule. **Verified:** 28/28 hermetic tests (`test-sender.js`), live dry-run both modes, one real weekly sent to the owner. See [[project_email_sender]].
+
+**Subscribe UI:** `SubscribeCard` (Home under the masthead + `/weekly-brief` under the KPIs) surfaces the `digestOptIn` opt-in (via `usePreferences` → `set_prefs`) — signed-in users subscribe in one click; anonymous users sign in (Google), then the intent is set immediately.
 
 ---
 

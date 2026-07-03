@@ -1,0 +1,7 @@
+{
+  "name": "news-email-sender",
+  "version": "1.0.0",
+  "description": "One Lambda that emails the weekly signals brief + confirmed breaking alerts to opted-in subscribers (Resend). Dispatched by event.mode ('weekly'|'breaking'). No bundled deps — nodejs20 runtime provides @aws-sdk; fetch is global.",
+  "main": "index.js",
+  "private": true
+}

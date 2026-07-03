@@ -34,6 +34,8 @@
   --risk-h-soft:   #fbe9e3;
   --risk-e:        #d89540;
   --risk-e-soft:   #fbf0dc;
+  --risk-m:        #caa23a;
+  --risk-m-soft:   #f8f1d6;
   --risk-l:        #4fa07b;
   --risk-l-soft:   #e4f1e9;
 
@@ -164,7 +166,7 @@ body {
 }
 .risk-pill.high     { background: var(--risk-h-soft); color: var(--risk-h); }
 .risk-pill.elevated { background: var(--risk-e-soft); color: var(--risk-e); }
-.risk-pill.moderate { background: var(--risk-e-soft); color: var(--risk-e); }
+.risk-pill.moderate { background: var(--risk-m-soft); color: var(--risk-m); }
 .risk-pill.low      { background: var(--risk-l-soft); color: var(--risk-l); }
 
 /* AI action buttons */

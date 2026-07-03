@@ -1,28 +1,18 @@
 // RiskScoreBadge — 0-100 numeric risk score with risk-color coding.
 // Falls back to riskLevel enum if numeric score absent.
+// Bands come from the shared tier util (25/50/75) — see utils/riskTiers.js.
 // Props:
 //   score:     number 0-100 (from intel.riskScore)
-//   level:     "high"|"elevated"|"low" (from intel.riskLevel) — used for color when score absent
+//   level:     "high"|"elevated"|"moderate"|"low" (from intel.riskLevel) — used for color when score absent
 //   size:      "sm" | "md" | "lg"  default "md"
-
-const LEVEL_FROM_SCORE = (n) =>
-  n >= 70 ? 'high' : n >= 40 ? 'elevated' : 'low';
-
-const LEVEL_FROM_STRING = (s = '') => {
-  const l = s.toLowerCase();
-  if (l === 'high' || l === 'critical') return 'high';
-  if (l === 'elevated' || l === 'medium' || l === 'moderate') return 'elevated';
-  return 'low';
-};
+import { tierFromScore, tierFromLevel } from '../../utils/riskTiers';
 
 export default function RiskScoreBadge({ score, level, size = 'md' }) {
   const numScore = score != null ? Math.round(Number(score)) : null;
-  const riskLevel = numScore != null
-    ? LEVEL_FROM_SCORE(numScore)
-    : LEVEL_FROM_STRING(level);
+  const tier = numScore != null ? tierFromScore(numScore) : tierFromLevel(level);
 
   const display = numScore != null ? numScore : level || '—';
-  const cls = `rsb rsb-${size} rsb-${riskLevel}`;
+  const cls = `rsb rsb-${size} rsb-${tier || 'low'}`;
 
   return <span className={cls}>{display}</span>;
 }

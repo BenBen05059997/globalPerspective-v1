@@ -5,6 +5,7 @@ import { useCountryIntelligence } from '../hooks/useCountryIntelligence';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import { getTopicRegion } from '../utils/countryMapping';
 import { RISK_COLORS, CATEGORY_BADGE_COLORS } from '../tokens';
+import { TIER_ORDER, tierFromLevel } from '../utils/riskTiers';
 import CountryOverviewMap from './CountryOverviewMap';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
@@ -13,7 +14,8 @@ import SeverityBadge from './atoms/SeverityBadge';
 import './WeeklyPage.css';
 import './CountryListPage.css';
 
-const RISK_ORDER = { high: 0, elevated: 1, moderate: 2, low: 3 };
+// riskLevel string → sort rank (high first). Normalized via the shared tier util.
+const riskRank = (level) => TIER_ORDER[tierFromLevel(level)] ?? 3;
 const SEVERITY_RANK = { severe: 3, moderate: 2, minor: 1 };
 
 function trajectoryArrow(text = '') {
@@ -124,8 +126,8 @@ function RightRail({ featured, intelligence }) {
   const topRisk = useMemo(() =>
     [...featured]
       .sort((a, b) => {
-        const ra = RISK_ORDER[intelligence?.[a.name]?.riskLevel] ?? 3;
-        const rb = RISK_ORDER[intelligence?.[b.name]?.riskLevel] ?? 3;
+        const ra = riskRank(intelligence?.[a.name]?.riskLevel);
+        const rb = riskRank(intelligence?.[b.name]?.riskLevel);
         return ra !== rb ? ra - rb : b.articles - a.articles;
       })
       .slice(0, 5),
@@ -232,8 +234,8 @@ export default function CountryListPage() {
   const featured = useMemo(() => countries
     .filter(c => intelligence?.[c.name])
     .sort((a, b) => {
-      const ra = RISK_ORDER[intelligence[a.name]?.riskLevel] ?? 3;
-      const rb = RISK_ORDER[intelligence[b.name]?.riskLevel] ?? 3;
+      const ra = riskRank(intelligence[a.name]?.riskLevel);
+      const rb = riskRank(intelligence[b.name]?.riskLevel);
       return ra !== rb ? ra - rb : b.articles - a.articles;
     }),
   [countries, intelligence]);

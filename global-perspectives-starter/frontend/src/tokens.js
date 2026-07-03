@@ -1,5 +1,7 @@
 // Single source of truth for risk + category colors across the app.
 //
+// Band SEMANTICS (score → tier) live in utils/riskTiers.js; this file is paint.
+//
 // Consolidates what were four divergent risk representations (pastel badge
 // pairs, solid editorial hex, canvas RGB arrays, score→CSS-var) and three
 // category maps, previously copy-pasted across ~10 components
@@ -9,6 +11,8 @@
 // one intentional improvement: MapSidePanel now uses the full CATEGORY_DOT
 // palette, so climate/science/business/society/energy markers get their real
 // colors (matching WorldMap/WeeklyPage) instead of falling back to grey.
+
+import { tierFromScore } from './utils/riskTiers';
 
 // ── Risk ──────────────────────────────────────────────────────────────────
 
@@ -38,12 +42,17 @@ export const RISK_RGB = {
   low:      [34, 197, 94],
 };
 
-// riskScore (0–100) → editorial CSS var. Mirrors the WorldMapV2 --risk-* ramp.
+// riskScore (0–100) → editorial CSS var. Bands come from the shared tier util
+// (25/50/75, incl. "moderate"); this just maps tier → the --risk-* ramp.
+const TIER_VAR = {
+  high:     'var(--risk-h)',
+  elevated: 'var(--risk-e)',
+  moderate: 'var(--risk-m)',
+  low:      'var(--risk-l)',
+};
 export const riskScoreToVar = (score) => {
-  if (score == null) return 'var(--ink)';
-  if (score >= 75) return 'var(--risk-h)';
-  if (score >= 50) return 'var(--risk-e)';
-  return 'var(--risk-l)';
+  const tier = tierFromScore(score);
+  return tier ? TIER_VAR[tier] : 'var(--ink)';
 };
 
 // ── Category ────────────────────────────────────────────────────────────────

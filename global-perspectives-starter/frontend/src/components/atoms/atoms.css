@@ -120,6 +120,7 @@
 
 .rsb-high     { background: var(--risk-h-soft); color: var(--risk-h); }
 .rsb-elevated { background: var(--risk-e-soft); color: var(--risk-e); }
+.rsb-moderate { background: var(--risk-m-soft); color: var(--risk-m); }
 .rsb-low      { background: var(--risk-l-soft); color: var(--risk-l); }
 
 /* ── Sparkline (none needed — inline SVG) ─────────────────── */

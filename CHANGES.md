@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-07-03 (refactor: shared risk-tier utility — RISK_TIERS_PLAN.md P1, DEPLOYED)
+
+The frontend had **three conflicting risk-band definitions** — `tokens.js riskScoreToVar` (75/50, no "moderate"), `RiskScoreBadge` (70/40), and a `moderate→elevated` string alias — so a score of 72 read "high" in one place and "elevated" in another, and every "moderate" rendered as orange "elevated". Consolidated onto one source of truth: new **`utils/riskTiers.js`** with the canonical backend calibration (**25 / 50 / 75** → low / moderate / elevated / high) exporting `tierFromScore`, `tierFromLevel` (fixes the moderate alias), `TIER_ORDER`, `tierLabel`.
+- Migrated `tokens.riskScoreToVar` (delegates bands to the util), `atoms/RiskScoreBadge.jsx` (was 70/40), and `CountryListPage`'s local `RISK_ORDER` sort onto it. ThreadPage's `RISK_COLOR` (= `riskScoreToVar`) inherits the fix for free.
+- Added the previously-missing **moderate** paint: `--risk-m` / `--risk-m-soft` (amber #caa23a) + `.rsb-moderate`; fixed `.risk-pill.moderate` (was aliased to elevated's orange).
+- ⚠️ **Honest behavior change** — boundary scores now render their correct tier consistently: e.g. score **72 → "elevated"** (was "high" in the badge), **45 → "moderate"** (was "elevated"), and 25-49 scores paint amber instead of green. This is the divergence being corrected, not a regression.
+- Verify green (0 errors); new `test/riskTiers.test.js` (boundary + bug-fix coverage), 192 tests pass. Files: `utils/riskTiers.js` (new), `tokens.js`, `atoms/RiskScoreBadge.jsx`, `atoms/atoms.css`, `styles/tokens.css`, `components/CountryListPage.jsx`. Scope: P1 of `RISK_TIERS_PLAN.md` (state→tier displays = P2, /weekly hierarchy = P3).
+
 ## 2026-07-02 (polish: ThreadPage a11y + progressive-disclosure rail, DEPLOYED)
 
 ThreadPage was already well-structured (2026-06-29 rework), so only the two applicable items from the CountryPage IA work: (1) **a11y** — content tabs get role=tablist/tab + aria-selected, plus :focus-visible rings (none existed); (2) **density** — the Arc-Intelligence synthesis rail was a wall of text, so Summary + What's Next stay open (the core read) and Trace Cause / Watch / Live Web Evidence now collapse (new `RailBlock`, aria-expanded). Playwright-verified. Files: `components/ThreadPage.{jsx,css}`.

@@ -119,7 +119,12 @@ exports.handler = async (event = {}) => {
     format: 'signals', // distinguishes from the old prose shape
     weekOf: weekKey,
     asOf: new Date().toISOString().slice(0, 10),
-    status: 'draft', // draft → published (human approves via weekly/review.js)
+    // Auto-publish: the synthesis prompt is strictly grounded (uses only facts
+    // present in each signal's material, VERB-MARKs unconfirmed claims), so the
+    // launch-time human-approval gate was training wheels that went stale and
+    // left the page empty. To hold a bad brief back, set its status to 'draft'
+    // (the serving action only serves 'published').
+    status: 'published',
     signals,
     watch,
     threadIds: threads.map((t) => t.threadId),
@@ -129,8 +134,8 @@ exports.handler = async (event = {}) => {
   };
   await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
 
-  console.log(`[weekly] draft stored: WEEKLY_BRIEF#${weekKey} (${signals.length} signals, ${watch.length} watch). Approve via weekly/review.js.`);
-  return { ok: true, weekKey, status: 'draft', signals: signals.length, watch: watch.length };
+  console.log(`[weekly] published: WEEKLY_BRIEF#${weekKey} (${signals.length} signals, ${watch.length} watch).`);
+  return { ok: true, weekKey, status: 'published', signals: signals.length, watch: watch.length };
 };
 
 function fail(msg) {

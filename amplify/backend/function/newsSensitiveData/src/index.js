@@ -336,12 +336,23 @@ exports.handler = async (event) => {
     if (action === 'weekly_brief') {
       // Latest PUBLISHED weekly intelligence brief (human-approved via weekly/review.js).
       try {
-        const { Items = [] } = await getDynamoClient().send(new ScanCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          FilterExpression: 'SK = :sk AND #s = :pub',
-          ExpressionAttributeNames: { '#s': 'status' },
-          ExpressionAttributeValues: { ':sk': 'WEEKLY_BRIEF', ':pub': 'published' },
-        }));
+        // Paginate — the table outgrew the 1MB scan page, so a single-page scan
+        // misses published briefs that sit past the first page (bit us 2026-07-03).
+        const Items = [];
+        let ExclusiveStartKey;
+        let pages = 0;
+        do {
+          const resp = await getDynamoClient().send(new ScanCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            FilterExpression: 'SK = :sk AND #s = :pub',
+            ExpressionAttributeNames: { '#s': 'status' },
+            ExpressionAttributeValues: { ':sk': 'WEEKLY_BRIEF', ':pub': 'published' },
+            ExclusiveStartKey,
+          }));
+          Items.push(...(resp.Items || []));
+          ExclusiveStartKey = resp.LastEvaluatedKey;
+          pages += 1;
+        } while (ExclusiveStartKey && pages < 25);
         if (!Items.length) {
           return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
         }
@@ -359,12 +370,23 @@ exports.handler = async (event) => {
       // Latest PUBLISHED weekly markets report (human-approved via weekly-markets/review.js).
       // Honest null-when-none-published, exactly like the weekly_brief action above.
       try {
-        const { Items = [] } = await getDynamoClient().send(new ScanCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          FilterExpression: 'SK = :sk AND #s = :pub',
-          ExpressionAttributeNames: { '#s': 'status' },
-          ExpressionAttributeValues: { ':sk': 'WEEKLY_MARKETS', ':pub': 'published' },
-        }));
+        // Paginate — same 1MB-page miss as weekly_brief (this one only worked by
+        // luck of where its published row sat in the table).
+        const Items = [];
+        let ExclusiveStartKey;
+        let pages = 0;
+        do {
+          const resp = await getDynamoClient().send(new ScanCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            FilterExpression: 'SK = :sk AND #s = :pub',
+            ExpressionAttributeNames: { '#s': 'status' },
+            ExpressionAttributeValues: { ':sk': 'WEEKLY_MARKETS', ':pub': 'published' },
+            ExclusiveStartKey,
+          }));
+          Items.push(...(resp.Items || []));
+          ExclusiveStartKey = resp.LastEvaluatedKey;
+          pages += 1;
+        } while (ExclusiveStartKey && pages < 25);
         if (!Items.length) {
           return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
         }
@@ -684,12 +706,23 @@ exports.handler = async (event) => {
     if (action === 'pair_analyses_list') {
       const client = getDynamoClient();
       try {
-        const { Items = [] } = await client.send(new ScanCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk',
-          ExpressionAttributeValues: { ':prefix': 'PAIR#', ':sk': 'PAIR_ANALYSIS' },
-          ProjectionExpression: 'PK, pairTitle, currentState, dataQuality, countries, generatedAt',
-        }));
+        // Paginate — same 1MB-page miss as weekly_brief; unpaginated this would
+        // silently drop pairs that sit past the first scan page.
+        const Items = [];
+        let ExclusiveStartKey;
+        let pages = 0;
+        do {
+          const resp = await client.send(new ScanCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk',
+            ExpressionAttributeValues: { ':prefix': 'PAIR#', ':sk': 'PAIR_ANALYSIS' },
+            ProjectionExpression: 'PK, pairTitle, currentState, dataQuality, countries, generatedAt',
+            ExclusiveStartKey,
+          }));
+          Items.push(...(resp.Items || []));
+          ExclusiveStartKey = resp.LastEvaluatedKey;
+          pages += 1;
+        } while (ExclusiveStartKey && pages < 25);
         const qualityOrder = { rich: 0, moderate: 1, sparse: 2, thin: 3 };
         const list = Items
           .map(item => {

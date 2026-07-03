@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-07-03 (fix: /weekly hierarchy — abbreviation-safe lead sentence + story de-dup, DEPLOYED)
+
+Two polish fixes to the P3 front-page hierarchy after live review:
+- **LEAD "why" line was cut mid-sentence** — `firstSentence()` split on the period in abbreviations, so the Ukraine lead read *"...targeting a St."*. Now skips known abbreviations (`St.`, `U.S.`, `Dr.`, `Inc.`, …) and single-letter initials, so it runs the full sentence (then truncates cleanly at the char boundary with an ellipsis).
+- **Near-duplicate stories filled two DEVELOPING slots** — two near-identical US-Iran clusters ("US-Iran Peace Efforts…" and "US Iran Peace Deal…") both appeared. Added a Jaccard title-similarity check (≥0.5 content-word overlap, vs the lead and already-chosen rows); the same story clustered twice no longer double-shows, and the freed slot goes to the next distinct story (El Niño).
+- Prod-verified live (lead sentence intact through "St. Petersburg…"; DEVELOPING now 3 distinct stories), 0 page errors, verify green (192 tests). Files: `components/WeeklyPage.jsx`. Commit `8420f90`.
+
 ## 2026-07-03 (feat: /weekly front-page hierarchy — LEAD + DEVELOPING — RISK_TIERS_PLAN.md P3, DEPLOYED)
 
 The threads front page (`/weekly`) was a flat, uniform card list in a fixed category order — the dominant story of the day could sit below the fold under a 2-article business item. Added a **tier-based hierarchy above the category river** (research-verified pattern: every serious news product ships 1 lead + few secondary + river, nobody ships a flat list):

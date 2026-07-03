@@ -1,7 +1,7 @@
 # PAGES_GUIDE.md — Page-by-Page Reference & Verification
 
 **Generated:** 2026-05-18, from on-disk source under `global-perspectives-starter/frontend/src/`.
-**Updated:** 2026-07-03 — refreshed the `/weekly` and `/weekly/countries` entries for the risk-tiers IA (`RISK_TIERS_PLAN.md`): `/weekly` LEAD+DEVELOPING hierarchy + time-banded river + category filter chips; `/weekly/countries` risk-tier bands + top-24 briefing fetch (was top-10); corrected the ThreadPage `RISK_COLOR` threshold note (now the canonical 25/50/75 tier bands). Prior update 2026-06-22 — added the four pages that shipped after the original sweep (`/analyze`, `/weekly-brief`, `/track-record`, `/membership`), re-pointed existing entries' inbound/outbound links at them, and corrected stale references (removed `useUserProfile`, the deleted `Pricing`/`PairPage`/`PairListPage`/`Gate` imports, the Account tier/billing-portal UI, the Stripe mention in `/privacy`, and the nav/footer link sets).
+**Updated:** 2026-07-03 — refreshed the `/weekly` and `/weekly/countries` entries for the risk-tiers IA (`RISK_TIERS_PLAN.md`): `/weekly` LEAD+DEVELOPING hierarchy + time-banded river + category filter chips; `/weekly/countries` risk-tier bands + top-24 briefing fetch (was top-10); corrected the ThreadPage `RISK_COLOR` threshold note (now the canonical 25/50/75 tier bands). Also caught up two long-stale entries: `/` (Home) now notes the "Today's lede" band + why topics carry no tier, and `/map` notes the lede band + the P2 tier-first Risk Level tile (and that its H/E/L filter is the news-signal axis, not the risk tier). Prior update 2026-06-22 — added the four pages that shipped after the original sweep (`/analyze`, `/weekly-brief`, `/track-record`, `/membership`), re-pointed existing entries' inbound/outbound links at them, and corrected stale references (removed `useUserProfile`, the deleted `Pricing`/`PairPage`/`PairListPage`/`Gate` imports, the Account tier/billing-portal UI, the Stripe mention in `/privacy`, and the nav/footer link sets).
 
 This doc combines two industry conventions:
 
@@ -47,10 +47,10 @@ Use this when:
 - **Auth gate:** None — fully public.
 - **Inbound links:** Default landing, top-nav "Topics", brand logo (`Layout.jsx:55`), Home backlinks from Daily/Thread/Country topbars.
 - **Outbound links:** Country pills → `/weekly/country/:name` (line 351); thread titles → `/weekly/thread/:threadId` (line 360); "Story arc →" → `/weekly`; external source URLs.
-- **Key UI elements:** EditorialShell 3-col; left rail `TodayArchiveSidebar` + Coffee CTA; right rail `TopicNav`; center masthead + per-region topic cards with AI button trio + collapsible Sources.
+- **Key UI elements:** EditorialShell 3-col; **"Today's lede" band** (`LedeBand`, deterministic `composeTopicsLede` — no LLM) directly under the StatusStrip; left rail `TodayArchiveSidebar` + Coffee CTA; right rail `TopicNav`; center masthead + per-region topic cards (with per-topic economic-disruption badge) + AI button trio + collapsible Sources. Topics are the day's Gemini set (not archive threads), so they carry **no risk score** — the lede band, not a tier hierarchy, provides the "what matters most today" ordering.
 - **States:** loading spinner (lines 320-324); **no empty-state UI** if `topics.length === 0` (silent); errors push to global `ErrorModal`; stale/fresh banners with refresh.
 - **Smoke-test:**
-  1. Open `/` — topics render grouped by region.
+  1. Open `/` — "Today's lede" band + topics render grouped by region.
   2. Click "Summary" on any topic — AI summary appears below it.
   3. Click a country pill — navigates to `/weekly/country/<name>`.
 - **Known issues:** AI buttons retry 6× on cache-miss/503; collision risk in `getTopicId` if titles ever repeat in one array.
@@ -79,12 +79,12 @@ Use this when:
 - **Auth gate:** None.
 - **Inbound links:** Top-nav "Map".
 - **Outbound links:** Country panel → `/weekly/country/:name`.
-- **Key UI elements:** SVG world map; layer toggles (Today / Connections / Editorial); signal-level checkboxes (H/E/L); flow-color filters; time-window selector; country search bar (in document flow as of commit e4a1d99); collapsible rail + detail panel with sparkline.
+- **Key UI elements:** **"Today's lede" band** (`LedeBand`) between the map title and search box; SVG world map; layer toggles (Today / Connections / Editorial); **map signal-level** checkboxes (H/E/L — the news-concentration signal, a *separate* axis from the risk tier); flow-color filters; time-window selector; country search bar (in document flow as of commit e4a1d99); collapsible rail + detail panel. The detail-panel **Risk Level tile is tier-first** (`RISK_TIERS_PLAN.md` P2: `panelTier` → `tierLabel`, colored via `riskTierToVar`, raw score as fine print) with a country sparkline.
 - **States:** map renders when TopoJSON resolves; no explicit loading UI for the map itself.
 - **Smoke-test:**
-  1. `/map` — world renders with country fills + markers.
+  1. `/map` — world renders with country fills + markers, "Today's lede" band above.
   2. Toggle "Connections" layer — bilateral arcs appear between countries.
-  3. Click a country — detail panel populates with intel + sparkline + systems edges.
+  3. Click a country — detail panel populates with the **tier-first Risk Level** tile + sparkline + systems edges.
 - **Known issues:** Causal Graph fix landed 2026-04-27/28 (use `nodeMap[id].summary`, treat `e.confidence` as string label not 0-1 float).
 
 ## `/weekly` · `components/WeeklyPage.jsx`

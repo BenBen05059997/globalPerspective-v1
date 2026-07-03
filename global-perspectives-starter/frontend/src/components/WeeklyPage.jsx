@@ -53,10 +53,47 @@ function updatedLabel(dateStr) {
   if (d === 1) return 'updated yesterday';
   return `updated ${d}d ago`;
 }
+// Abbreviations that end in a period but do NOT end a sentence (so "deep inside
+// Russian territory, targeting a St. Petersburg refinery" isn't cut at "St.").
+const SENTENCE_ABBREV = new Set([
+  'st', 'mr', 'mrs', 'ms', 'dr', 'prof', 'sr', 'jr', 'vs', 'etc', 'inc', 'ltd',
+  'co', 'corp', 'gen', 'sen', 'rep', 'gov', 'sgt', 'lt', 'col', 'capt', 'maj',
+  'rev', 'hon', 'no', 'vol', 'u.s', 'u.k', 'u.n', 'a.m', 'p.m',
+]);
 function firstSentence(text, max = 150) {
   if (!text) return null;
-  const s = text.split(/(?<=[.!?])\s/)[0] || text;
-  return s.length > max ? s.slice(0, max - 1) + '…' : s;
+  const re = /[.!?]+\s+(?=[A-Z0-9"'“])/g;
+  let m, end = text.length;
+  while ((m = re.exec(text)) !== null) {
+    const before = text.slice(0, m.index);
+    const lastWord = (before.match(/(\S+)$/)?.[1] || '').replace(/[.]+$/, '').toLowerCase();
+    // Skip abbreviations and single-letter initials ("J. Smith").
+    if (SENTENCE_ABBREV.has(lastWord) || /^[a-z]$/.test(lastWord)) continue;
+    end = m.index + m[0].trimEnd().length; // include the punctuation, drop trailing space
+    break;
+  }
+  const s = text.slice(0, end).trim();
+  return s.length > max ? s.slice(0, max - 1).trimEnd() + '…' : s;
+}
+
+// Rough title similarity so we don't surface the same story twice in the
+// hierarchy (e.g. two near-identical US-Iran clusters). Jaccard over content
+// words; ≥0.5 overlap ⇒ treat as the same story.
+const TITLE_STOP = new Set([
+  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'on', 'for', 'with', 'as',
+  'at', 'by', 'into', 'amid', 'over', 'face', 'faces', 'navigates',
+]);
+function titleKey(s) {
+  return new Set(
+    String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+      .filter(w => w.length > 1 && !TITLE_STOP.has(w))
+  );
+}
+function tooSimilar(aKey, bKey) {
+  if (!aKey.size || !bKey.size) return false;
+  let inter = 0;
+  for (const w of aKey) if (bKey.has(w)) inter++;
+  return inter / (aKey.size + bKey.size - inter) >= 0.5;
 }
 
 function filterDatesByRange(sortedDates, range) {
@@ -716,7 +753,7 @@ export default function WeeklyPage() {
     // DEVELOPING (≤3): fresh drift note OR (≥elevated & ≤48h). Not the lead.
     // (Volume-"rising" threads are already surfaced in the right-rail "Rising This
     // Week" — DEVELOPING is the risk/living-analysis signal, so no duplication.)
-    const devCands = items
+    const devSorted = items
       .filter(x => x !== chosenLead && (
         x.hasDrift ||
         ((x.tier === 'high' || x.tier === 'elevated') && x.fresh <= 2)
@@ -727,8 +764,20 @@ export default function WeeklyPage() {
         if (tx !== ty) return tx - ty;
         if (x.t.dateRange.to !== y.t.dateRange.to) return y.t.dateRange.to.localeCompare(x.t.dateRange.to);
         return y.t.articleCount - x.t.articleCount;
-      })
-      .slice(0, 3);
+      });
+
+    // Greedily take up to 3, skipping any near-duplicate of the lead or an
+    // already-chosen row (same story clustered twice shouldn't fill two slots).
+    const displayTitle = x => x.a?.threadTitle || x.t.latestTitle;
+    const seenKeys = chosenLead ? [titleKey(displayTitle(chosenLead))] : [];
+    const devCands = [];
+    for (const x of devSorted) {
+      const k = titleKey(displayTitle(x));
+      if (seenKeys.some(prev => tooSimilar(k, prev))) continue;
+      seenKeys.push(k);
+      devCands.push(x);
+      if (devCands.length === 3) break;
+    }
 
     const ids = new Set([chosenLead, ...devCands].filter(Boolean).map(x => x.t.threadId));
     return { lead: chosenLead, developing: devCands, promotedIds: ids };

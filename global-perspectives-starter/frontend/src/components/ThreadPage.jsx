@@ -174,15 +174,6 @@ export default function ThreadPage() {
     return Object.values(map).sort((a, b) => b.count - a.count);
   }, [thread]);
 
-  // Deep-linked tabs depend on async data (economy/actors/sources only exist for
-  // some threads). Once the relevant fetch settles, fall back to the timeline if
-  // the requested tab never materialized — never an empty content area.
-  useEffect(() => {
-    if (contentTab === 'economy' && !economicLoading && !hasEconomy) setContentTab('timeline');
-    if (contentTab === 'actors' && !analysisLoading && !(analysis?.keyActors?.length > 0)) setContentTab('timeline');
-    if (contentTab === 'sources' && !threadLoading && sourceRollup.length === 0) setContentTab('timeline');
-  }, [contentTab, economicLoading, hasEconomy, analysisLoading, analysis, threadLoading, sourceRollup]);
-
   const displayTitle = analysis?.threadTitle || thread?.latestTitle || humanizeThreadId(threadId);
   useEffect(() => {
     document.title = `${displayTitle} — Story Arc | Global Perspectives`;
@@ -388,6 +379,11 @@ export default function ThreadPage() {
     hasEconomy && { key: 'economy', label: 'Economy', count: economicImpact.instruments?.length || 0, severity: economicImpact.severity },
   ].filter(Boolean);
 
+  // Effective tab, derived (not reset via effects — no race with async fetches).
+  // A deep-linked tab (?tab=economy) shows the timeline until its data arrives,
+  // switches over when it does, and stays on timeline if it never materializes.
+  const activeTab = contentTabs.some(t => t.key === contentTab) ? contentTab : 'timeline';
+
   return (
     <div className="tp-page">
 
@@ -495,8 +491,8 @@ export default function ThreadPage() {
             <button
               key={tab.key}
               role="tab"
-              aria-selected={contentTab === tab.key}
-              className={`tp-content-tab${contentTab === tab.key ? ' on' : ''}`}
+              aria-selected={activeTab === tab.key}
+              className={`tp-content-tab${activeTab === tab.key ? ' on' : ''}`}
               onClick={() => setContentTab(tab.key)}
             >
               {tab.label}
@@ -506,7 +502,7 @@ export default function ThreadPage() {
         </div>
 
         {/* Timeline tab */}
-        {contentTab === 'timeline' && (
+        {activeTab === 'timeline' && (
           analysis && thread.dayCount > 1 ? (
             <CompactTimeline
               entries={thread.entries}
@@ -542,7 +538,7 @@ export default function ThreadPage() {
         )}
 
         {/* Actors tab */}
-        {contentTab === 'actors' && analysis?.keyActors?.length > 0 && (
+        {activeTab === 'actors' && analysis?.keyActors?.length > 0 && (
           <div className="tp-actors-list">
             {analysis.keyActors.map((a, i) => (
               <div key={i} className="tp-actor-card">
@@ -561,7 +557,7 @@ export default function ThreadPage() {
         )}
 
         {/* Sources tab */}
-        {contentTab === 'sources' && (
+        {activeTab === 'sources' && (
           <div className="tp-sources-list">
             <div className="tp-sources-hd">
               {sourceRollup.length} outlets · {thread.primarySources.length} primary · {thread.secondarySources.length} secondary
@@ -579,7 +575,7 @@ export default function ThreadPage() {
         )}
 
         {/* Economy tab */}
-        {contentTab === 'economy' && hasEconomy && (
+        {activeTab === 'economy' && hasEconomy && (
           <>
             <MechanismCard impact={economicImpact} />
             {/* Up-link to the weekly markets wrap — deep-link to this story's first instrument */}

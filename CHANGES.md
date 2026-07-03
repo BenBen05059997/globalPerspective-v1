@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-07-03 (feat: /weekly time-banded river + category filter chips, DEPLOYED)
+
+The `/weekly` river dumped **all ~73 days** of threads into fixed category piles by default (period defaulted to `'all'`) — "too many threads," no recency hierarchy. Restructured the river to be **time-primary with progressive density decay** (the Techmeme recency-decay pattern the P3 research pointed at):
+- **This week** (last activity ≤7d) → full story cards (the live front).
+- **Earlier this month** (8–30d) → condensed one-line rows (tier · title · category · events · when).
+- **Older** (>30d) → collapsed to a count you expand — and it only collapses **when a fresher band has content**, so a quiet period never shows an all-collapsed wall (the topmost populated band always renders open).
+- **Category demoted from grouping axis to a filter chip row** (All · Politics · Conflict · …, with counts). Picking a chip is "work mode" — it hides the LEAD/DEVELOPING hierarchy and refilters the bands, consistent with region/country/search.
+- Threads bucket by `dateRange.to` (last activity) — the same signal the hierarchy uses, so the two stay coherent. The LEAD + 3 DEVELOPING still skim the hottest stories off the top.
+- Test fixture (`tests/fixtures/archive.json`, frozen April dates) is now **remapped relative to today** in `redesign.test.jsx` so the fresh-band card path is exercised (prod always has threads updated today; a static past-dated fixture would land everything in "Older"). Removed the old per-category collapse state.
+- Verify green (192 tests); Playwright-verified locally + prod (This week = 8 cards, Earlier this month = 12 rows, 13 chips, chip-filter hides hierarchy, 0 page errors). Files: `components/WeeklyPage.{jsx,css}`, `test/redesign.test.jsx`. Commit `bd5e323`.
+
 ## 2026-07-03 (fix: /weekly hierarchy — abbreviation-safe lead sentence + story de-dup, DEPLOYED)
 
 Two polish fixes to the P3 front-page hierarchy after live review:

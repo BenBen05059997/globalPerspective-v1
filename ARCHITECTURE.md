@@ -338,11 +338,9 @@ Read-only REST proxy. All supported actions:
 |----------|-------|
 | `TOPICS_DDB_TABLE` | Required |
 | `SUMMARIZE_PREDICT_TABLE` | Required |
-| `MARKETS_DDB_TABLE` | Required (markets actions; default `GlobalPerspectiveMarkets`) |
-| `USERS_DDB_TABLE` | Required (for tier lookup) |
+| `MARKETS_DDB_TABLE` | Markets actions. **NOTE:** the read path hard-codes the literal `'GlobalPerspectiveMarkets'` — this env var is **not** read by `newsSensitiveData` code (it is by `newsMarketsData`). |
 | `MAPBOX_GEOCODING_KEY` | Required |
 | `FIREBASE_PROJECT_ID` | Required (JWT verification) |
-| `PADDLE_API_KEY` | Portal sessions only — unset in deployed `newsSensitiveData-dev` while billing is dormant |
 | `TOPICS_CACHE_MAX_AGE_SECONDS` | Default: `9000` |
 
 ---
@@ -693,6 +691,57 @@ The **price-first** weekly markets wrap — "what moved this week and why" — t
 
 ---
 
+### 26. `newsDriftCorrector` — living-analysis drift corrector (LIVE 2026-07-02)
+**Path:** `amplify/backend/function/newsDriftCorrector/src/index.js`
+**Trigger:** EventBridge — `TriggerDriftCorrector` — daily ~07:20 UTC. Uses **DeepSeek V4** (reuses `newsCountryIntelligence-role`). Plan: `LIVING_ANALYSIS_PLAN.md`; memory [[project_living_analysis]].
+
+The "self-correcting analysis" engine — detects when a country/thread read's **conclusion** moved (risk level / |Δscore|≥8 / trajectory — gated on the conclusion, NOT the headline; ~37% of daily updates are cosmetic reword = noise) and grounds the "why" in a **real cited archive event**, never inventing one.
+
+**What it does:**
+1. Reads the dated `HISTORY#`/`THREAD_HISTORY#` snapshots written by `newsCountryIntelligence`/`newsThreadAnalysis`.
+2. `findAllDrifts` finds **every** ungrounded conclusion-move in a 10-day window (so a missed cron day or pre-live history self-heals — last-week backtest = 11/11 moves grounded = 100%).
+3. Grounds each move with a numbered-event prompt → a single real trigger id or an honest `noSingleDriver` (never fabricates).
+4. Writes `COUNTRY#{name}/DRIFT#{date}` + `THREAD#{threadId}/DRIFT#{date}` notes (never overwrites; `DRIFT_TTL_DAYS=60`).
+
+**Feed-forward (1b.5):** `newsCountryIntelligence` reads the last 2 notes as a low-authority "RECENT CORRECTIONS" block. **Serve:** `newsSensitiveData` `country_history` returns `driftNotes[]`; `thread_analysis` attaches the latest `driftNote`. **UI:** `atoms/CountryWhatChanged` "What changed" band + correction-history chain on CountryPage; a "What changed" block on ThreadPage.
+
+**Key code refs:** `findAllDrifts`, `COUNTRY#…/DRIFT#`, `THREAD#…/DRIFT#`, `DRIFT_TTL_DAYS=60` (`src/index.js:17,33,76,136,26`). **Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (legacy names — hold **DeepSeek** values), `BRAVE_SEARCH_API_KEY`.
+
+---
+
+### 27. `newsAnalyze` — member "our-compute" Analysis Studio run path (LIVE 2026-06-22)
+**Path:** `amplify/backend/function/newsAnalyze/src/index.js`
+**Trigger:** Lambda **Function URL** (CORS owned in code — keep the Function-URL CORS empty, see Common Mistakes #7). Uses **DeepSeek V4**. The paid Polar-membership product; full design → `POLAR_BILLING_PLAN.md`.
+
+Runs the same cited-analysis product as the BYOK `/analyze` studio, but on **our** DeepSeek key instead of the user's — this is what membership/credits monetize.
+
+**What it does:**
+1. Verifies a Firebase JWT, then gates the run through **`consume()`**: member **monthly allowance** (`MEMBER_MONTHLY_ALLOWANCE` free runs via `analyzeMonth`/`analyzeCount`) → atomic conditional **credit** decrement → `402 out_of_credits` when neither remains. Refunds on LLM failure.
+2. Builds the cited context from cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE` and calls DeepSeek.
+
+**Credits layer (built 2026-06-30, prod deploy pending):** replaced the old hard `tier=member` gate + `ANALYZE_DAILY_CAP` daily counter. Pure helpers live in `src/lib.js` with a `node --test` suite (`npm test`).
+
+**Key code refs:** `consume()`, `MEMBER_MONTHLY_ALLOWANCE`, `out_of_credits` (`src/index.js:31,104,129`). **Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `USERS_DDB_TABLE`, `MEMBER_MONTHLY_ALLOWANCE`, `FIREBASE_PROJECT_ID`, `XAI_API_KEY`/`GROK_API_URL`/`GROK_MODEL` (hold **DeepSeek** values). See [[project_credit_billing]], [[project_analysis_studio]].
+
+---
+
+### 28. `newsPolarBilling` — Polar checkout + webhook (LIVE 2026-06-22)
+**Path:** `amplify/backend/function/newsPolarBilling/src/index.js`
+**Trigger:** Lambda **Function URL** (CORS owned in code — keep the Function-URL CORS empty, see Common Mistakes #7). **No LLM.** Polar.sh is the Merchant of Record. Full design → `POLAR_BILLING_PLAN.md` §5.
+
+Owns the billing surface: `create_checkout`, the signed `order.paid` webhook, and `get_membership`.
+
+**What it does:**
+1. `create_checkout` — subscription (`$15/mo · $150/yr`) or, with `kind:'credits'`+`pack`, a one-time credit-pack Polar product (server-authoritative amounts via `POLAR_CREDIT_PACKS`).
+2. Webhook `order.paid` — routes **credit-pack** orders to an idempotent **`grantCredits`** (`processedOrders` String-Set dedupe so an order can't double-credit) vs **subscription** orders to `tier=member`.
+3. `get_membership` — returns `{ tier, creditBalance, currentPeriodEnd, … }`; powers the Account → Membership tab + the header credits pill (`useMembership`).
+
+Writes the live Polar/credits fields to `USERS_DDB_TABLE` (`billingProvider:'polar'`, `polarCustomerId`, `polarSubscriptionId`, `currentPeriodEnd`, `creditBalance`, `processedOrders`).
+
+**Key code refs:** `grantCredits`, `processedOrders`, `POLAR_CREDIT_PACKS`, `get_membership` (`src/index.js:38,108,117`). **Key env vars:** `USERS_DDB_TABLE`, `POLAR_API_BASE`, `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_CREDIT_PACKS`. See [[project_billing_deprecated]], [[project_credit_billing]].
+
+---
+
 ## Observability & Monitoring
 
 Two layers, both roll-your-own (the user rejects paid Sentry on cost):
@@ -912,7 +961,8 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 
 | API | Used by | Purpose |
 |-----|---------|---------|
-| DeepSeek V4 (`api.deepseek.com`) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsCountryIntelligence, newsSystemsAnalysis, newsEconomicImpact, newsPairIntelligence, newsPostDevTo | Topic clustering + AI content generation |
+| DeepSeek V4 (`api.deepseek.com`) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsCountryIntelligence, newsSystemsAnalysis, newsEconomicImpact, newsPairIntelligence, newsDriftCorrector, newsAnalyze | Topic clustering + AI content generation |
+| OpenRouter (`openrouter.ai`) | newsPostDevTo (#7) | Long-form Dev.to article generation via `AI_MODEL` (default `deepseek/deepseek-v4-flash:free`) — NOT the direct DeepSeek API |
 | Gemini 2.5 Flash (OpenAI-compat endpoint) | newsThreadAnalysis, newsEconomicQuality, **newsWeeklyMarkets** (#25 — quality judge gating coverage notes) | Editorial analysis + LLM-as-judge (free tier, pacing) |
 | Brave Search (news + web) | newsInvokeGemini, newsThreadAnalysis, newsCountryIntelligence, newsPairIntelligence | News article search + grounding |
 | Frankfurter / FRED / **Yahoo Finance** / World Bank / CoinGecko | newsMarketsData | Free FX, bond yields, commodities + equities (Yahoo — replaced Stooq 2026-06-23), macros, crypto |
@@ -938,7 +988,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 
 Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.
 
-Wired in `<Routes>` in `App.jsx` — 21 routes incl. catch-all (`/membership` added 2026-06-22; `/breaking` + `/breaking/:id` added 2026-06-26; `/spider-demo` **unlisted throwaway prototype** added 2026-06-27). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
+Wired in `<Routes>` in `App.jsx` — 27 `<Route>` elements incl. catch-all (`/membership` added 2026-06-22; `/breaking` + `/breaking/:id` added 2026-06-26; `/spider-demo` **unlisted throwaway prototype** added 2026-06-27). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
 
 | Path | Component | Access |
 |------|-----------|--------|
@@ -968,13 +1018,14 @@ Wired in `<Routes>` in `App.jsx` — 21 routes incl. catch-all (`/membership` ad
 | `/membership` | `MembershipPage.jsx` | Public (Polar checkout — $15/mo · $150/yr for Analysis-Studio-on-our-compute; reading stays free) |
 | `/account` | `Account.jsx` | Auth |
 | `/spider-demo` | `SpiderDemo.jsx` + `SpiderWorld.jsx` | Public — ⚠ **unlisted throwaway prototype**, the full 3-altitude analyst tool, **opens on World**: **World** tier (a global timeline: x = each country's peak-activity date, y = region lane, span bar = how long the situation ran, **connected by cross-country shared-actor links** — ambient actors excluded so regional clusters show, not a hairball; click-to-drill) ⇄ **Country** tier (timeline+lane causal web: x=time, y=category; solid shared-actor **backbone** + dashed causal toggle) ⇄ **Event** ("✦ Analyze with AI" → `dossier_analysis` grounded read). 12-country selector; not in nav; for design-partner discovery. Rebuilt d3-force→timeline 2026-06-30; backbone + selector + dossier consumer + World tier 2026-07-01. See `SPIDER_WEB_MODEL_PLAN.md` + `SPIDER_BUILD_SPEC.md` + `EVENT_DOSSIER_SPEC.md` + `ANALYST_TOOL_DIRECTION.md`. |
+| `/__boom` | `Boom` (inline in App.jsx) | ⚠ **Deliberate test route — keep, it's load-bearing.** `Boom()` throws on render to exercise the `ErrorBoundary` + `newsClientErrors` capture path. `scripts/smoke-test.mjs` drives it (`checkErrorBoundary`, navigates to `/__boom`) to verify a render crash is CONTAINED (persistent nav/chrome, no white screen) and reported — one of the `BUG_PLAYBOOK.md` bug-class checks. Ships in the prod bundle; not linked in nav; harmless unless navigated to. Do **not** delete without also updating the smoke test. |
 | `*` | `NotFound` (inline in App.jsx) | Public catch-all (404) |
 
 **Removed/never-wired:** a "Cut: orphans" cleanup deleted several components and routes, and the 2026-05-26 subscription deprecation removed billing UI. The following are **no longer routed and the component files no longer exist**: `/cli` (CLIPage), `/intelligence-map` (IntelligenceMap), `/test/briefing-card` (BriefingCardTest), `/pricing` (Pricing), `/weekly/pairs` + `/weekly/pair/:slug` (PairPage/PairListPage), `/upgrade/success` (UpgradeSuccess — billing). Also deleted in the billing cleanup: `TrialBanner.jsx`, `WeeklyLockedPreview.jsx`, `useUserProfile.js`. `WorldMap.jsx` and `WeeklyMap.jsx` still exist as files but are **not routed** (`/map` uses WorldMapV2; there is no `/weekly-map` or `/map-v2` route).
 
 ### Key Components
 
-~66 component files (in `src/components/` + 14 in `src/components/atoms/`), incl. `LedeBand.jsx` and the Analysis Studio pair `AnalysisStudio.jsx`/`ProviderModal.jsx` added 2026-06-10. Key ones:
+~64 component files (in `src/components/` + 17 in `src/components/atoms/`), incl. `LedeBand.jsx` and the Analysis Studio pair `AnalysisStudio.jsx`/`ProviderModal.jsx` added 2026-06-10. Key ones:
 
 | Component | Purpose |
 |-----------|---------|
@@ -1011,13 +1062,14 @@ Wired in `<Routes>` in `App.jsx` — 21 routes incl. catch-all (`/membership` ad
 
 ### Key Hooks
 
-25 total hooks (in `src/hooks/`):
+32 hook files (in `src/hooks/`):
 
 | Hook | Purpose |
 |------|---------|
 | `useGeminiTopics()` | Fetch daily topics; 1hr LocalStorage cache + 10min background poll |
 | `useWeeklyArchive()` | Fetch `archive_range` (30 days, fully public in early access); 30min cache |
 | `useThreadAnalyses(threadIds)` | Fetch thread-level AI analyses; 30min cache; no auth required |
+| `useNarrativeThread(threadId)` | Fetch all entries for a single thread across days (`narrative_thread`) — powers `ThreadPage` |
 | `useCountryIntelligence(countryNames)` | Fetch country-level AI intelligence; 30min cache; no auth required |
 | `useCountryHistory(countryName)` | Fetch historical archive entries for a country |
 | `useSystemsAnalysis(countryName)` | Fetch causal-graph (nodes/edges) for a country |
@@ -1037,6 +1089,7 @@ Wired in `<Routes>` in `App.jsx` — 21 routes incl. catch-all (`/membership` ad
 | `useBreakingAlert(id)` | Fetch a single breaking alert (newsRecommend `get_alert`); powers `/breaking/:id`. Null (→ honest not-found) when the id isn't a confirmed alert |
 | `useWeeklyBrief()` | Fetch the latest published weekly brief (`weekly_brief`); 30-min cache; powers `/weekly-brief` (rendered via the dependency-free `Markdown.jsx`) |
 | `useWeeklyMarkets()` | Fetch the latest published weekly markets report (`weekly_markets`); 30-min cache; powers `/economy`'s "This week" mode (`WeeklyMarketsView`). Null (→ honest empty state) until one is published |
+| `useMembership()` | Fetch the signed-in user's membership + `creditBalance` via `newsPolarBilling` `get_membership` (#28); powers the header credits pill, Account → Membership tab, and the `/analyze` server-run gate. Exposes `available` (false until billing is wired) |
 | `useSummary(topicId)` | Fetch AI summary for a topic |
 | `usePrediction(topicId)` | Fetch AI prediction for a topic |
 | `useTraceCause(topicId)` | Fetch trace_cause deep context for a topic |
@@ -1241,7 +1294,7 @@ git push
 1. **Pushing frontend source without building** — changes won't appear in production
 2. **Overwriting `docs/config.js`** — it sets the Firebase config and API Gateway endpoint at runtime
 3. **Inferring the AI provider from env var names** — `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` are legacy names that hold **DeepSeek** (or **Gemini**) values in production. Confirm with `aws lambda get-function-configuration`.
-4. **Reading old planning docs** — `HYBRID_NEWS_ARCHITECTURE.md`, `INTEGRATION_NOTES_Gemini_AppSync.md`, `NEWS_API_INTEGRATION_PLAN.md` are all outdated and should be ignored
+4. **Inferring the AI provider from env var names** — see #3 (kept here as a reminder). The old "ignore these outdated docs" list (`HYBRID_NEWS_ARCHITECTURE.md`, `INTEGRATION_NOTES_Gemini_AppSync.md`, `NEWS_API_INTEGRATION_PLAN.md`) was removed — none of those files exist in the repo anymore
 5. **Using `x-api-key` for auth** — gated endpoints now use `Authorization: Bearer <firebase-id-token>`, not static API keys
 6. **Assuming archive keys are `YYYY-MM-DD`** — the actual DynamoDB key format is `archive#YYYY-MM-DD`
 7. **Double CORS on Lambda Function URLs** — our billing/analyze Lambdas (`newsPolarBilling`, `newsAnalyze`, `newsSavedItems`, `newsRecommend`) set CORS **in code** (`corsHeaders` + an OPTIONS 204 handler). If the Function URL **also** has a CORS config, AWS *and* the code each add `Access-Control-Allow-Origin` → duplicate header → the browser rejects the response with "**Failed to fetch**" (server-side `curl` doesn't enforce CORS, so it passes tests and only breaks in a real browser). Keep the Function-URL CORS **empty** for any function whose code owns CORS. (Bit us at the Polar checkout 2026-06-30.)

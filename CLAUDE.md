@@ -21,12 +21,22 @@ Quick bindings (full table in `agent-kit/PROJECT.md`):
 
 The deploy sections below remain authoritative for **how** `deploy.sh` works; the kit governs **when** (the gate) and the general operating discipline.
 
+## Prod AWS Lambda deploys — operator authorization (recorded 2026-07-01)
+
+The operator has **standing authorization for the agent to run production AWS Lambda/infra mutations directly** (`update-function-url-config`, `update-function-configuration`, `update-function-code`, `aws lambda`/`aws events`/`aws dynamodb`/`aws scheduler`) — `settings.local.json` already allowlists these. The prior blocker was the Claude Code auto-mode classifier, **not** the permission allowlist or an authorization gap.
+
+- **Active task:** ship the analysis-credits feature to prod. **Ordered checklist → `PROD_CREDITS_NEXT_STEPS.md`** (canonical); full design → `POLAR_BILLING_PLAN.md` §5.
+- **Order is load-bearing:** set the prod env vars (`POLAR_CREDIT_PACKS` on `newsPolarBilling`, `MEMBER_MONTHLY_ALLOWANCE` on `newsAnalyze`) **BEFORE** the code deploy, or a paid credit-pack order can be mis-granted as a membership.
+- **Merge-don't-clobber env:** `update-function-configuration` **replaces** the whole Variables map — fetch current env, merge, write back; secrets via a temp file, never inline.
+- **Dual-CORS gotcha (`ARCHITECTURE.md` Common Mistakes #7):** functions that own CORS in code (`newsPolarBilling`, `newsAnalyze`, `newsSavedItems`, `newsRecommend`) must have an **empty** Function-URL CORS config, else the browser gets a duplicate `Access-Control-Allow-Origin` → "Failed to fetch" (server-side `curl` won't catch it). Verify with one ACAO header on an `Origin`-bearing request.
+- Still operator-only (dashboard / KYC): creating Polar products, KYC clearance, editing operator-owned `docs/config.js`.
+
 ## Project Structure
 
 - **Source Code:** `global-perspectives-starter/frontend/src/`
 - **Build Output:** `global-perspectives-starter/frontend/dist/`
 - **Production Files:** `/docs/` (served by GitHub Pages)
-- **Production URL:** https://benben05059997.github.io/globalPerspective-v1/
+- **Production URL:** https://globalperspective.net (custom domain via Cloudflare; the `benben05059997.github.io/globalPerspective-v1/` Pages URL still resolves but is not canonical)
 
 ## CRITICAL: Frontend Deployment Workflow
 
@@ -163,7 +173,7 @@ npx vite preview
 ## Important Project Files
 
 - **DEPLOYMENT_NOTES.md** - Full deployment documentation
-- **FRONTEND_ARCHITECTURE.md** - Frontend architecture overview
+- **ARCHITECTURE.md** - Authoritative architecture overview (Lambda inventory, DDB schemas, frontend routes/components/hooks)
 - **CHANGES.md** - Change log
 
 ## Backend Integration
@@ -216,5 +226,5 @@ Before pushing frontend changes:
 ## Questions?
 
 - Check **DEPLOYMENT_NOTES.md** for detailed deployment steps
-- Check **FRONTEND_ARCHITECTURE.md** for frontend structure
+- Check **ARCHITECTURE.md** for frontend structure (routes, components, hooks) and the full backend
 - Review recent `git log` for commit patterns

@@ -1,6 +1,13 @@
 # Email Sender — one Lambda for Weekly Brief + Breaking Alerts
 
-**Date:** 2026-07-03 · **Branch:** `email-sender` · **Status:** DEPLOYED in DRY-RUN mode (real send-to-self verified) — awaiting operator domain-verification to go live
+**Date:** 2026-07-03 · **Branch:** `email-sender` (merged to main) · **Status:** ✅ **LIVE 2026-07-04** — domain verified in Resend, `EMAIL_SEND_DRY_RUN=false`, real weekly send to first subscriber confirmed; both EventBridge rules ENABLED
+
+## GO-LIVE — DONE 2026-07-04
+- ✅ `globalperspective.net` verified in Resend (Cloudflare **Auto configure** → DKIM/SPF/MX/DMARC live, confirmed via `dig`).
+- ✅ `newsEmailSender` env flipped (merged): `EMAIL_SEND_DRY_RUN=false`, `EMAIL_FROM=brief@globalperspective.net`, `TEST_RECIPIENT` cleared.
+- ✅ `TriggerBreakingEmailSend` ENABLED (both rules now on).
+- ✅ Real `{mode:weekly,force:true}` send to the first subscriber: `sent:1, errors:[]`.
+- **Kill-switch:** set `EMAIL_SEND_DRY_RUN=true` to revert to log-only.
 
 ## Deployed state (2026-07-03)
 - **`newsEmailSender`** created (nodejs20, 256MB/120s), reusing role `newsprojectLambdaRolefcb19312-dev` (has `AmazonDynamoDBFullAccess` — no new IAM). Env: `EMAIL_SEND_DRY_RUN=true`, `EMAIL_FROM=onboarding@resend.dev`, `TEST_RECIPIENT=benlai310@gmail.com`, `RESEND_API_KEY` (merged from newsBreakingAlert), `UNSUB_BASE_URL`=newsRecommend func URL, table names.

@@ -37,7 +37,7 @@ Everyone reading this site is a pro reader ([[feedback-audience-depth]]). The we
 - [x] `weekly/review.js` (one-click publish/hold/reject)
 - [x] serving action (`weekly_brief`, latest published) on `newsSensitiveData` + **`/weekly-brief` signals page** (`WeeklyBriefPage` + `useWeeklyBrief`) + nav link. SHIPPED 2026-06-10; **serving scan paginated + auto-publish 2026-07-03** → page is live (WEEK OF JUNE 28) and self-refreshes each Sunday.
 - [ ] forecast-scorecard section merged from `prediction_track_record` at serve time  ← **next**
-- [x] email render + EventBridge Sunday **send** → **`newsEmailSender` BUILT + DEPLOYED (dry-run) 2026-07-03** (Lambda #29, `renderWeeklyEmail.js`, `TriggerWeeklyEmailSend` cron ENABLED, one real send-to-self verified). Subscribe UI (`SubscribeCard`) **LIVE on Home + `/weekly-brief`**. **Remaining = operator only:** verify `globalperspective.net` in Resend → flip `EMAIL_FROM`+`EMAIL_SEND_DRY_RUN=false`+clear `TEST_RECIPIENT`. See `EMAIL_SENDER_PLAN.md`, [[project-email-sender]].
+- [x] email render + EventBridge Sunday **send** → **`newsEmailSender` BUILT + DEPLOYED (dry-run) 2026-07-03** (Lambda #29, `renderWeeklyEmail.js`, `TriggerWeeklyEmailSend` cron ENABLED, one real send-to-self verified). Subscribe UI (`SubscribeCard`) **LIVE on Home + `/weekly-brief`**. **✅ FULLY LIVE 2026-07-04** — `globalperspective.net` verified in Resend, `EMAIL_SEND_DRY_RUN=false`, from `brief@globalperspective.net`; real weekly send to first subscriber confirmed. Auto-sends every Sunday. See `EMAIL_SENDER_PLAN.md`, [[project-email-sender]].
 - [ ] (optional) bell link to the latest weekly brief
 
 ## Storage

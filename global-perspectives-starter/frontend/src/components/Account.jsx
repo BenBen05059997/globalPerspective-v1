@@ -478,6 +478,14 @@ function ToggleRow({ label, desc, checked, disabled, onChange }) {
 
 function NotificationsPanel() {
   const { prefs, loading, saving, error, save, endpointMissing } = usePreferences();
+  const [notice, setNotice] = useState(null); // transient subscribe/unsubscribe confirmation
+
+  // Save a change, then show a confirmation only if it actually persisted.
+  async function change(patch, msg) {
+    setNotice(null);
+    const ok = await save(patch);
+    if (ok && msg) setNotice(msg);
+  }
 
   return (
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
@@ -493,7 +501,7 @@ function NotificationsPanel() {
         ) : (
           <>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
-              Email delivery is being set up — your choices are saved and apply as soon as it’s live.
+              Email delivery is live. Turn a channel on to subscribe, off to unsubscribe — changes take effect immediately.
             </div>
 
             <ToggleRow
@@ -501,14 +509,14 @@ function NotificationsPanel() {
               desc="An email the moment a major story breaks, with our analysis."
               checked={prefs.breakingOptIn}
               disabled={saving}
-              onChange={(v) => save({ breakingOptIn: v })}
+              onChange={(v) => change({ breakingOptIn: v }, v ? 'Subscribed to breaking alerts.' : 'Unsubscribed from breaking alerts.')}
             />
             <ToggleRow
               label="Weekly digest"
               desc="A roundup of the most significant stories."
               checked={prefs.digestOptIn}
               disabled={saving}
-              onChange={(v) => save({ digestOptIn: v })}
+              onChange={(v) => change({ digestOptIn: v }, v ? 'Subscribed to the weekly digest.' : 'Unsubscribed from the weekly digest.')}
             />
 
             {prefs.digestOptIn && (
@@ -528,12 +536,18 @@ function NotificationsPanel() {
 
             {(prefs.breakingOptIn || prefs.digestOptIn) && (
               <button
-                onClick={() => save({ breakingOptIn: false, digestOptIn: false })}
+                onClick={() => change({ breakingOptIn: false, digestOptIn: false }, 'You’ve unsubscribed from all emails.')}
                 disabled={saving}
                 style={{ marginTop: '0.95rem', background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: '#ef4444', cursor: saving ? 'not-allowed' : 'pointer' }}
               >
                 Unsubscribe from all
               </button>
+            )}
+
+            {notice && (
+              <div style={{ marginTop: '0.85rem', fontSize: '0.82rem', color: '#3f8f6b', lineHeight: 1.5 }}>
+                ✓ {notice}
+              </div>
             )}
 
             {error && (

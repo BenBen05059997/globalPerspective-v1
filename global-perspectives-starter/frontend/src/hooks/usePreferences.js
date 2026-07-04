@@ -36,9 +36,11 @@ export function usePreferences() {
     try {
       const res = await savePrefs(patch);
       if (res?.prefs) setPrefs(res.prefs);
+      return true; // persisted — callers can show a confirmation
     } catch (e) {
       setPrefs(prev); // revert — no fake success
       setError(e.message || 'Could not save');
+      return false;
     } finally {
       setSaving(false);
     }

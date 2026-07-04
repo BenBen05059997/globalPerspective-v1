@@ -17,6 +17,10 @@
 /* Breaking variant: red kicker to match the BREAKING accent. */
 .subcard--breaking .subcard-kicker { color: #b03328; }
 
+/* Thank-you state (just subscribed): green accent, wins over the per-kind kicker color. */
+.subcard--thanks { border-color: rgba(63, 143, 107, 0.45); }
+.subcard--thanks .subcard-kicker { color: #3f8f6b; }
+
 .subcard-body { flex: 1 1 auto; min-width: 0; }
 
 .subcard-kicker {

@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const lib = require('./lib');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
   DynamoDBDocumentClient,
@@ -31,6 +32,12 @@ const RESEARCH_BRIEFING_SK = 'RESEARCH_BRIEFING';
 const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '3600', 10);
 const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3600', 10);
 const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
+// v1 (methodology-v1) generation inputs — see PREDICTION_METHODOLOGY_V1_PLAN.md §3.
+const BRAVE_SEARCH_API_KEY = process.env.BRAVE_SEARCH_API_KEY || '';
+const FACTS_PK_PREFIX = 'FACTS#';
+const FACTS_SK = 'COUNTRY_FACTS';
+const ARC_DIGEST_DAYS = parseInt(process.env.ARC_DIGEST_DAYS || '7', 10);
+const ARC_DIGEST_MAX = parseInt(process.env.ARC_DIGEST_MAX || '12', 10);
 const CACHE_CLEANUP_ENABLED = String(process.env.CACHE_CLEANUP_ENABLED || 'true').toLowerCase() !== 'false';
 const ARCHIVE_ITEM_ID = 'today-archive';
 const ARCHIVE_TTL_HOURS = 24;
@@ -78,20 +85,30 @@ exports.handler = async (event) => {
 
     console.log(`Starting generation for ${filteredTopics.length} topics (generationId: ${generationId})`);
 
+    // v1 shared context, loaded ONCE per invocation (reused by every topic + by the later
+    // threadId assignment): the recent dated archive (for the arc digest + threading) and
+    // verified FACTS# leaders for every region in play (for the premise block + G5 gate).
+    const needsPrediction = action === 'prediction' || action === 'both';
+    const pastEntries = await readPastArchiveEntries(7);
+    const factsByCountry = needsPrediction
+      ? await loadFactsForRegions(collectRegions(filteredTopics))
+      : {};
+    const genCtx = { pastEntries, factsByCountry, generatedAtDay: (generatedDate || new Date().toISOString()).slice(0, 10) };
+
     const outputs = [];
     let failed = 0;
     await mapWithConcurrency(filteredTopics, LLM_CONCURRENCY, async (topic) => {
       try {
         if (action === 'summary' || action === 'both') {
-          const summary = await generateAndStore(topic, 'summary', generationId, generatedDate, generatedYear);
+          const summary = await generateAndStore(topic, 'summary', generationId, generatedDate, generatedYear, genCtx);
           outputs.push(summary);
         }
         if (action === 'trace_cause' || action === 'both') {
-          const traceCause = await generateAndStore(topic, 'trace_cause', generationId, generatedDate, generatedYear);
+          const traceCause = await generateAndStore(topic, 'trace_cause', generationId, generatedDate, generatedYear, genCtx);
           outputs.push(traceCause);
         }
         if (action === 'prediction' || action === 'both') {
-          const prediction = await generateAndStore(topic, 'prediction', generationId, generatedDate, generatedYear);
+          const prediction = await generateAndStore(topic, 'prediction', generationId, generatedDate, generatedYear, genCtx);
           outputs.push(prediction);
         }
       } catch (topicErr) {
@@ -110,7 +127,6 @@ exports.handler = async (event) => {
     let threadIdById = {};
     if (outputs.length > 0 && stagingItem && Array.isArray(stagingItem.topics)) {
       try {
-        const pastEntries = await readPastArchiveEntries(7);
         stagingItem.topics.forEach((raw, idx) => {
           const id = buildStableTopicId(raw, idx);
           const tid = assignThreadId(raw, pastEntries);
@@ -334,7 +350,7 @@ function buildTraceCausePrompt(topic, generatedDate) {
 
 const RESEARCH_MAX_TOKENS = 800;
 
-function buildResearchPrompt(topic, generatedDate, generatedYear) {
+function buildResearchPrompt(topic, generatedDate, generatedYear, v1 = {}) {
   const snippets = topic.sources
     ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
     : '';
@@ -343,13 +359,18 @@ function buildResearchPrompt(topic, generatedDate, generatedYear) {
     ? `\nArticle Snippets:\n${snippets}\n`
     : '';
 
+  const { premiseBlock, arcDigest, webContext } = v1;
+
   return [
     `You are a geopolitical research analyst preparing a structured briefing. Today is ${generatedDate} (year ${generatedYear}).`,
     '',
     `Topic: ${topic.title}`,
     `Description: ${topic.description}`,
     `Regions: ${(topic.regions || []).join(', ') || 'Unknown'}`,
+    premiseBlock || '',
+    arcDigest ? `\nHow this story has evolved (our archive — use to ground trajectory, do not restate):\n${arcDigest}\n` : '',
     snippetBlock,
+    webContext ? `\nLive web context (fresh search — treat as leads, cite the outlet, do not over-trust):\n${webContext}\n` : '',
     'Produce a concise research briefing with these sections. Be specific — name real people, institutions, treaties, and dates.',
     '',
     '**HISTORICAL PRECEDENTS**: List 2-3 similar historical events. For each: what happened, what was the outcome, and how long it took to resolve. This establishes the base rate.',
@@ -364,7 +385,7 @@ function buildResearchPrompt(topic, generatedDate, generatedYear) {
   ].join('\n');
 }
 
-function buildPredictionPrompt(topic, generatedDate, generatedYear, researchContext) {
+function buildPredictionPrompt(topic, generatedDate, generatedYear, researchContext, v1 = {}) {
   const snippets = topic.sources
     ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
     : '';
@@ -373,11 +394,15 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
     ? `\nArticle Snippets:\n${snippets}\n`
     : '';
 
+  const today = (generatedDate || new Date().toISOString()).slice(0, 10);
+  const horizonEnd = lib.addDays(today, lib.HORIZON_DAYS);
+
   return [
-    `You are a geopolitical forecasting analyst. Today is ${generatedDate} (year ${generatedYear}). Respond with ONLY valid JSON — no markdown, no code fences, no commentary before or after.`,
+    `You are a geopolitical forecasting analyst. Today is ${today} (year ${generatedYear}). Respond with ONLY valid JSON — no markdown, no code fences, no commentary before or after.`,
     '',
     `Topic: ${topic.title}`,
     `Description: ${topic.description}`,
+    v1.premiseBlock || '',
     snippetBlock,
     '=== RESEARCH BRIEFING (prepared by research analyst) ===',
     researchContext,
@@ -391,32 +416,41 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
       "probability_range": "string — e.g. '55-65%'",
       "horizon": "string — e.g. '2-4 weeks'",
       "rationale": "string — 2-4 sentences grounded in the research briefing, naming specific actors and mechanisms",
-      "triggers": ["string — specific falsifiable event with date/deadline", "string", "string"]
+      "triggers": [
+        { "text": "specific falsifiable FUTURE event", "deadline": "YYYY-MM-DD" },
+        { "text": "...", "deadline": "YYYY-MM-DD" }
+      ]
     },
     {
       "label": "Optimistic",
       "probability_range": "string",
       "horizon": "string",
       "rationale": "string — name which actors from the briefing would need to act differently",
-      "triggers": ["string", "string"]
+      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD" } ]
     },
     {
       "label": "Pessimistic",
       "probability_range": "string",
       "horizon": "string",
       "rationale": "string — name the specific miscalculation or trigger from the briefing",
-      "triggers": ["string", "string"]
+      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD" } ]
     }
   ],
   "winners": ["string — country, industry, or leader name"],
   "losers": ["string — population, economy, or alliance name"]
 }`,
     '',
-    `probability_range: must be a range string like "55-65%". All three probability_range values must sum to ~100%. triggers: each must reference a specific date, deadline, or named event from ${generatedYear}. Output only the JSON object.`,
+    'TRIGGER RULES (a trigger we cannot score is worthless — follow exactly):',
+    `- deadline MUST be an absolute date in YYYY-MM-DD form, strictly AFTER ${today} and on/before ${horizonEnd}.`,
+    '- The trigger must describe a FUTURE event that has NOT happened yet — never restate something already reported in the briefing or snippets (that is not a prediction).',
+    '- If a claim has a window ("within 2 weeks"), put the END of the window as the deadline — never a relative phrase, never a past "precedent" date.',
+    '- text must be a single, concrete, checkable event (who does what) — not a vague mood ("tensions rise").',
+    '- Only name a person in an office if the VERIFIED FACTS above (or the briefing) support it.',
+    `probability_range: a range string like "55-65%"; all three must sum to ~100%. Output only the JSON object.`,
   ].join('\n');
 }
 
-async function generateAndStore(topic, kind, generationId, generatedDate, generatedYear) {
+async function generateAndStore(topic, kind, generationId, generatedDate, generatedYear, ctx = {}) {
   let prompt;
   let maxTokens = DEFAULT_MAX_TOKENS;
   if (kind === 'summary') {
@@ -424,13 +458,18 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
   } else if (kind === 'trace_cause') {
     prompt = buildTraceCausePrompt(topic, generatedDate);
   } else {
-    // Two-pass prediction: Research Agent → Prediction Agent
-    const researchPrompt = buildResearchPrompt(topic, generatedDate, generatedYear);
+    // Two-pass prediction: Research Agent → Prediction Agent.
+    // v1: the research pass is grounded (verified FACTS# premises + the story's own arc digest
+    // + optional live Brave web context) instead of relying on the model's parametric memory.
+    const premiseBlock = buildPremiseBlock(topic, ctx.factsByCountry);
+    const arcDigest = buildArcDigest(topic, ctx.pastEntries);
+    const webContext = await braveGroundResearch(topic);
+    const researchPrompt = buildResearchPrompt(topic, generatedDate, generatedYear, { premiseBlock, arcDigest, webContext });
     const researchResponse = await invokeGrok(researchPrompt, RESEARCH_MAX_TOKENS);
     console.log(`Research pass complete for "${topic.title?.substring(0, 40)}" (${researchResponse.latencyMs}ms)`);
     await writeCache(topic, 'research_briefing', researchResponse, PREDICTION_TTL_SECONDS, generationId);
 
-    prompt = buildPredictionPrompt(topic, generatedDate, generatedYear, researchResponse.content);
+    prompt = buildPredictionPrompt(topic, generatedDate, generatedYear, researchResponse.content, { premiseBlock });
     maxTokens = PREDICTION_MAX_TOKENS;
   }
 
@@ -444,7 +483,7 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
   const item = await writeCache(topic, kind, response, ttlSeconds, generationId);
 
   if (kind === 'prediction') {
-    await logPredictionSnapshot(topic, response.content, response, generationId, generatedYear);
+    await logPredictionSnapshot(topic, response.content, response, generationId, generatedYear, ctx);
   }
 
   return item;
@@ -612,92 +651,127 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId) {
   return item;
 }
 
-// "55-65%" → 0.60 (midpoint, 0-1). "60%" → 0.60. Returns null if unparseable.
-function probabilityMidpoint(range) {
-  if (!range || typeof range !== 'string') return null;
-  const nums = (range.match(/\d{1,3}(?:\.\d+)?/g) || []).map(Number).filter(n => n >= 0 && n <= 100);
-  if (!nums.length) return null;
-  const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
-  return Math.round((avg / 100) * 1000) / 1000;
+// Deadline parsing + probability midpoint now live in ./lib (single source, unit-tested) so the
+// capture gates and the log write can't drift apart. See lib.parseTriggerDeadline / probabilityMidpoint.
+
+/* ---- v1 grounded-generation helpers (PREDICTION_METHODOLOGY_V1_PLAN.md §3) ---- */
+
+// De-duplicated list of every region named across the topics we're about to predict on.
+function collectRegions(topics) {
+  const set = new Set();
+  for (const t of topics) for (const r of (t.regions || [])) if (r) set.add(String(r));
+  return [...set];
 }
 
-const MONTHS = {
-  january: 0, february: 1, march: 2, april: 3, may: 4, june: 5, july: 6,
-  august: 7, september: 8, october: 9, november: 10, december: 11,
-  jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11,
-};
-
-function lastDayOfMonth(year, monthIdx) {
-  return new Date(Date.UTC(year, monthIdx + 1, 0)).getUTCDate();
+// Load verified FACTS# leadership for a set of countries, once per invocation. Coverage-honest:
+// countries with no FACTS row simply don't appear in the map (→ premise block + G5 skip them).
+// Shape per country: { country, current:[names], stale:[] } — `stale` is empty until a source of
+// FORMER office-holders exists (newsCountryFactsUpdater detects changes but doesn't yet record the
+// outgoing name), so the G5 *gate* stays dormant while the premise *injection* does the real work.
+const _factsCache = new Map();
+async function loadFactsForRegions(regions) {
+  const out = {};
+  for (const country of regions) {
+    if (!_factsCache.has(country)) {
+      let rec = null;
+      try {
+        const { Item } = await ddb.send(new GetCommand({
+          TableName: SUMMARY_TABLE,
+          Key: { PK: `${FACTS_PK_PREFIX}${country}`, SK: FACTS_SK },
+        }));
+        if (Item) {
+          const current = [Item.headOfState?.name, Item.headOfGovernment?.name].filter(Boolean);
+          rec = { country, current, stale: [], leadershipString: Item.leadershipString || '' };
+        }
+      } catch (err) {
+        console.warn(`FACTS load failed for ${country}: ${err.message}`);
+      }
+      _factsCache.set(country, rec);
+    }
+    const rec = _factsCache.get(country);
+    if (rec) out[country] = rec;
+  }
+  return out;
 }
 
-function isoDate(year, monthIdx, day) {
-  if (!year || monthIdx == null) return null;
-  const d = String(day).padStart(2, '0');
-  const m = String(monthIdx + 1).padStart(2, '0');
-  return `${year}-${m}-${d}`;
+// The facts rows relevant to one topic (its regions).
+function factsForTopic(topic, factsByCountry = {}) {
+  return (topic.regions || []).map(r => factsByCountry[r]).filter(Boolean);
 }
 
-// Best-effort: pull a deadline date out of a free-text trigger.
-// Handles ISO, "Month D, YYYY", "D Month YYYY", "end of Month YYYY", "Month YYYY", "QN YYYY".
-function parseTriggerDeadline(text, fallbackYear) {
-  if (!text || typeof text !== 'string') return null;
-  const t = text.toLowerCase();
+// Verified-premise block injected into both prompts so the model builds on real, current
+// office-holders instead of its (stale) parametric memory. Prevents the false-leader defect
+// class (pilot #15: "Nyusi" vs verified Chapo) at the source.
+function buildPremiseBlock(topic, factsByCountry = {}) {
+  const facts = factsForTopic(topic, factsByCountry);
+  if (!facts.length) return '';
+  const lines = facts
+    .map(f => f.leadershipString || (f.current.length ? `${f.country}: ${f.current.join('; ')}` : ''))
+    .filter(Boolean);
+  if (!lines.length) return '';
+  return `\nVERIFIED FACTS (authoritative — override anything you recall; do NOT name a different office-holder):\n${lines.map(l => `- ${l}`).join('\n')}\n`;
+}
 
-  let m = t.match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+// A compact dated digest of how THIS story has evolved, from our own archive — so the forecast
+// builds on the arc, not just today's 48h snapshot. Matches past entries to the topic by the
+// same continues_topic + Jaccard logic used for threading (threadId isn't assigned until after
+// generation, so we can't key on it here). Returns "" when there's no real prior coverage.
+function buildArcDigest(topic, pastEntries = []) {
+  if (!pastEntries.length) return '';
+  const related = pastEntries.filter(e =>
+    (topic.continues_topic && e.title === topic.continues_topic) || computeJaccardScore(topic, e) >= 0.4,
+  );
+  const seen = new Set();
+  const rows = [];
+  for (const e of related) {
+    const key = `${e.date || ''}|${e.title || ''}`;
+    if (seen.has(key) || !e.title) continue;
+    seen.add(key);
+    rows.push({ date: e.date || '', title: e.title });
+  }
+  rows.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  if (!rows.length) return '';
+  return rows.slice(-ARC_DIGEST_MAX).map(r => `- ${r.date || '(undated)'}: ${r.title}`).join('\n');
+}
 
-  const monthNames = Object.keys(MONTHS).join('|');
-
-  // "june 9, 2026" / "june 9 2026"
-  m = t.match(new RegExp(`\\b(${monthNames})\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})`));
-  if (m) return isoDate(Number(m[3]), MONTHS[m[1]], Number(m[2]));
-
-  // "9 june 2026"
-  m = t.match(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${monthNames})\\s+(\\d{4})`));
-  if (m) return isoDate(Number(m[3]), MONTHS[m[2]], Number(m[1]));
-
-  // "end of june 2026" / "late june 2026" → last day of month
-  m = t.match(new RegExp(`\\b(?:end of|late)\\s+(${monthNames})\\s+(\\d{4})`));
-  if (m) { const y = Number(m[2]); const mi = MONTHS[m[1]]; return isoDate(y, mi, lastDayOfMonth(y, mi)); }
-
-  // "qN 2026" → quarter end
-  m = t.match(/\bq([1-4])\s+(\d{4})/);
-  if (m) { const q = Number(m[1]); const y = Number(m[2]); const mi = q * 3 - 1; return isoDate(y, mi, lastDayOfMonth(y, mi)); }
-
-  // bare "june 2026" → last day of month (loosest, keep last so dated forms win)
-  m = t.match(new RegExp(`\\b(${monthNames})\\s+(\\d{4})`));
-  if (m) { const y = Number(m[2]); const mi = MONTHS[m[1]]; return isoDate(y, mi, lastDayOfMonth(y, mi)); }
-
-  return null;
+// Optional live web grounding for the research pass (1a). No-ops without BRAVE_SEARCH_API_KEY,
+// and never throws into generation — a failed/absent search just yields no web context.
+async function braveGroundResearch(topic) {
+  if (!BRAVE_SEARCH_API_KEY) return '';
+  const q = [topic.title, ...(topic.search_keywords || [])].filter(Boolean).join(' ').slice(0, 380);
+  if (!q) return '';
+  try {
+    const url = `https://api.search.brave.com/res/v1/news/search?q=${encodeURIComponent(q)}&count=5&freshness=pw`;
+    const res = await fetch(url, { headers: { Accept: 'application/json', 'X-Subscription-Token': BRAVE_SEARCH_API_KEY } });
+    if (!res.ok) return '';
+    const data = await res.json();
+    const items = (data?.results || []).slice(0, 5)
+      .map(r => `- (${r.meta_url?.hostname || r.source || 'web'}) ${r.title}${r.age ? ` [${r.age}]` : ''}`);
+    return items.join('\n');
+  } catch (err) {
+    console.warn(`Brave grounding failed for "${topic.title?.slice(0, 40)}": ${err.message}`);
+    return '';
+  }
 }
 
 // Immutable daily snapshot of a prediction so it survives its 1h cache TTL and
 // can be scored once its dated triggers come due. Best-effort: never throws into
 // the pipeline (logging a forecast must not break generating one).
-async function logPredictionSnapshot(topic, contentStr, response, generationId, generatedYear) {
+async function logPredictionSnapshot(topic, contentStr, response, generationId, generatedYear, ctx = {}) {
   try {
     let parsed;
     try { parsed = JSON.parse(contentStr); } catch { return; }
     if (!parsed || !Array.isArray(parsed.scenarios)) return;
 
     const day = new Date().toISOString().slice(0, 10);
-    const scenarios = parsed.scenarios.map((s, si) => {
-      const prob = probabilityMidpoint(s.probability_range);
-      const triggers = (Array.isArray(s.triggers) ? s.triggers : []).map((text, ti) => ({
-        id: `${si}-${ti}`,
-        text: String(text),
-        deadline: parseTriggerDeadline(String(text), generatedYear),
-        status: 'pending',
-      }));
-      return {
-        label: s.label || `Scenario ${si + 1}`,
-        probabilityRange: s.probability_range || null,
-        probability: prob,
-        horizon: s.horizon || null,
-        rationale: s.rationale || null,
-        triggers,
-      };
+    // v1 capture gates: turn raw scenarios into structured, validated triggers. Malformed
+    // triggers (retrodictions, relative windows, false premises, unparseable dates) are dropped
+    // and recorded in `capture.dropped` — they never enter the scoreable record. See lib.js.
+    const facts = factsForTopic(topic, ctx.factsByCountry);
+    const { scenarios, capture } = lib.buildGatedScenarios(parsed.scenarios, {
+      generatedAtDay: (ctx.generatedAtDay || day),
+      fallbackYear: generatedYear,
+      facts,
     });
 
     const item = {
@@ -709,15 +783,16 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
       generatedAt: new Date().toISOString(),
       generationId,
       model: response.modelId,
+      methodologyVersion: lib.METHODOLOGY_VERSION,
       scenarios,
+      capture,
       winners: Array.isArray(parsed.winners) ? parsed.winners : [],
       losers: Array.isArray(parsed.losers) ? parsed.losers : [],
       status: 'open',
     };
 
     await ddb.send(new PutCommand({ TableName: PREDICTION_LOG_TABLE, Item: item }));
-    const dated = scenarios.reduce((n, s) => n + s.triggers.filter(t => t.deadline).length, 0);
-    console.log(`Logged prediction snapshot ${item.PK}/${day} (${dated} dated triggers)`);
+    console.log(`Logged prediction snapshot ${item.PK}/${day} v${lib.METHODOLOGY_VERSION} (${capture.kept} triggers kept, ${capture.dropped.length} gated out)`);
   } catch (err) {
     console.warn(`logPredictionSnapshot failed for ${topic.id}: ${err.message}`);
   }
@@ -949,6 +1024,7 @@ async function readPastArchiveEntries(days) {
             search_keywords: e.search_keywords || [],
             regions: e.regions || [],
             category: e.category || '',
+            date: key.replace(/^archive#/, ''), // for the v1 arc digest (buildArcDigest)
           })));
         }
       } catch (_) {}

@@ -993,7 +993,7 @@ export default function SpiderDemo() {
         </div>
         <p className="spider-desc">
           {mode === 'world' ? (
-            <>Global timeline — each bubble is a country&apos;s situation at its <strong>peak-activity date</strong> (x) on its <strong>region</strong> lane (y); size = <strong>thread count</strong> (hover for how long it ran). <strong>Lines</strong> connect countries whose stories share key actors. Click a bubble to open its causal web.</>
+            <>Global timeline — each bubble is a country&apos;s situation at its <strong>peak-activity date</strong> (x) on its <strong>region</strong> lane (y); size = <strong>thread count</strong> (hover for how long it ran). <strong>Lines</strong> connect countries whose stories share key actors — <strong>click a line</strong> to see them. Click a bubble to open its causal web.</>
           ) : (
             <>Stories laid out by <strong>time</strong> (left → right) and <strong>category</strong> (lanes).{' '}
             <strong>Solid lines</strong> = shared-actor backbone (factual). <strong>Dashed lines</strong> = model-judged cause→effect (toggle on).

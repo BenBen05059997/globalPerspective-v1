@@ -64,6 +64,7 @@ export default function WorldOverview({ onDrill }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hover, setHover] = useState(null);
+  const [linkSel, setLinkSel] = useState(null); // clicked shared-actor link → floating card
   const scrollRef = useRef(null);
   const [avail, setAvail] = useState({ w: 0, h: 0 }); // measured size of the scroll area
 
@@ -215,7 +216,9 @@ export default function WorldOverview({ onDrill }) {
               const w = Math.min(4.5, 1 + lk.weight * 0.45);
               return (
                 <path key={`lk${i}`} d={`M${a.x},${a.y} Q${mx},${my} ${b.x},${b.y}`}
-                  className="spider-world-link" strokeWidth={w} style={{ cursor: 'pointer' }}
+                  className={`spider-world-link${linkSel === lk ? ' spider-world-link-sel' : ''}`}
+                  strokeWidth={w} style={{ cursor: 'pointer' }}
+                  onClick={() => { setLinkSel(lk); setHover(null); }}
                   onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, link: lk })}
                   onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
                   onMouseLeave={() => setHover(null)} />
@@ -240,6 +243,22 @@ export default function WorldOverview({ onDrill }) {
           </svg>
         )}
       </div>
+      {linkSel && (
+        <div className="spider-world-linkcard" aria-label="Shared-actor link detail">
+          <div className="spider-world-linkcard-top">
+            <span className="spider-tip-cat">Shared-actor link · weight {linkSel.weight}</span>
+            <button className="spider-world-linkcard-close" onClick={() => setLinkSel(null)} aria-label="Close">✕</button>
+          </div>
+          <div className="spider-tip-head">{linkSel.from} — {linkSel.to}</div>
+          <div className="spider-world-linkcard-actors">
+            {Array.isArray(linkSel.sharedActors) ? linkSel.sharedActors.join(' · ') : ''}
+          </div>
+          <div className="spider-world-linkcard-btns">
+            <button onClick={() => onDrill(linkSel.from)}>Open {shortName(linkSel.from)}&apos;s web →</button>
+            <button onClick={() => onDrill(linkSel.to)}>Open {shortName(linkSel.to)}&apos;s web →</button>
+          </div>
+        </div>
+      )}
       {hover && hover.s && (
         <div className="spider-tip" style={{ left: hover.x, top: hover.y }}>
           <div className="spider-tip-cat" style={{ color: catColor(hover.s.topCategory) }}>

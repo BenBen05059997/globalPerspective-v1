@@ -6,8 +6,8 @@
 // Reuses: useSystemsAnalysis, useNarrativeThread, fetchPredictionCache,
 //         threadPath, CompactTimeline — all read-only.
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
 import { useNarrativeThread } from '../hooks/useNarrativeThread';
 import { fetchPredictionCache, fetchDossierAnalysis } from '../services/restProxy';
@@ -838,10 +838,26 @@ function EdgePanel({ edge, nodeMap, onClose }) {
   );
 }
 
+// ── URL state (?view=country&country=X — world is the default, params omitted) ─
+// Mirrors the EconomyPage pattern. Node/edge selection is deliberately NOT
+// serialized (too ephemeral to share).
+
+export function parseSpiderParams(sp) {
+  const mode = sp.get('view') === 'country' ? 'country' : 'world';
+  return { mode, country: sp.get('country') || DEFAULT_COUNTRY };
+}
+
+export function buildSpiderParams(mode, country) {
+  const p = new URLSearchParams();
+  if (mode === 'country') { p.set('view', 'country'); p.set('country', country); }
+  return p;
+}
+
 // ── Root component ─────────────────────────────────────────────────────────────
 
 export default function SpiderDemo() {
-  const [country, setCountry] = useState(DEFAULT_COUNTRY);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [country, setCountry] = useState(() => parseSpiderParams(searchParams).country);
   const { data: rawData, loading, error } = useSystemsAnalysis(country);
 
   const graphData = useMemo(() => curateData(rawData), [rawData]);
@@ -860,7 +876,32 @@ export default function SpiderDemo() {
   const [activeLanes, setActiveLanes] = useState(new Set(LANE_ORDER));
   const [causalOn, setCausalOn] = useState(false); // default OFF — backbone is the primary structure
   const [tip, setTip] = useState(null);
-  const [mode, setMode] = useState('world'); // 'world' (top altitude) | 'country'
+  const [mode, setMode] = useState(() => parseSpiderParams(searchParams).mode); // 'world' (top altitude) | 'country'
+
+  // State → URL (push, so back/forward traverse world→country drills). The
+  // lastWritten ref breaks the write→parse echo loop (EconomyPage pattern).
+  const lastWritten = useRef(null);
+  useEffect(() => {
+    const str = buildSpiderParams(mode, country).toString();
+    if (str === lastWritten.current) return;
+    if (str === '' && lastWritten.current === null) { lastWritten.current = ''; return; } // bare first load — no spurious history entry
+    lastWritten.current = str;
+    setSearchParams(new URLSearchParams(str));
+  }, [mode, country, setSearchParams]);
+
+  // URL → state (back/forward, hand-edited URL). Clears selection so a stale
+  // panel never survives a history navigation.
+  useEffect(() => {
+    const cur = searchParams.toString();
+    if (cur === lastWritten.current) return; // our own write echoing back
+    lastWritten.current = cur;
+    const parsed = parseSpiderParams(searchParams);
+    setMode(parsed.mode);
+    setCountry(parsed.country);
+    setSelectedNode(null);
+    setSelectedEdge(null);
+    setSelectedEdgeKey(null);
+  }, [searchParams]);
 
   const handleNodeClick = useCallback((node) => {
     setSelectedNode(prev => prev?.threadId === node.threadId ? null : node);

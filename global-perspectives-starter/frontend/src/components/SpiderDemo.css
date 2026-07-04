@@ -921,13 +921,3 @@
 .spider-prov-warn  { color: var(--risk-e); border-color: color-mix(in srgb, var(--risk-e) 42%, var(--line)); background: color-mix(in srgb, var(--risk-e) 8%, transparent); }
 .spider-prov-note  { margin-top: 6px; font-size: 11.5px; line-height: 1.45; color: var(--ink-dim); }
 
-/* A situation's active window (earliest → latest) drawn under its bubble.
-   Deliberately lighter than .spider-world-link (the actual connectors) and
-   dotted, so it reads as a duration axis, not an edge joining two dots. */
-.spider-world-span {
-  stroke: var(--ink-faint);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-dasharray: 1 5;
-  opacity: 0.22;
-}

@@ -114,7 +114,7 @@ export default function WorldOverview({ onDrill }) {
         let y = laneY - 4;
         if (x - lastX < 2 * r + 8) { y = laneY - 4 + toggle * 30; toggle *= -1; } else { toggle = 1; }
         lastX = x;
-        const o = { ...s, _rk: lane.key, _x: x, _y: y, _r: r, _x0: xForMs(s._startMs), _x1: xForMs(s._endMs) };
+        const o = { ...s, _rk: lane.key, _x: x, _y: y, _r: r };
         placed.push(o);
         pos[s.country] = { x, y };
       });
@@ -182,16 +182,16 @@ export default function WorldOverview({ onDrill }) {
               );
             })}
 
-            {/* Situation span bars + bubbles */}
+            {/* Situation bubbles. No span bar: multiple bubbles share a lane and
+               each situation runs most of the month, so per-country duration bars
+               overlap into one rule that reads as a connector joining nothing. The
+               active window lives in the hover tooltip instead ("active X–Y"). */}
             {layout.placed.map(s => (
               <g key={s.country} style={{ cursor: 'pointer' }}
                 onClick={() => onDrill(s.country)}
                 onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, s })}
                 onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
                 onMouseLeave={() => setHover(null)}>
-                {s._x0 != null && s._x1 != null && s._x1 > s._x0 + 1 && (
-                  <line x1={s._x0} y1={s._y} x2={s._x1} y2={s._y} className="spider-world-span" />
-                )}
                 <circle cx={s._x} cy={s._y} r={s._r} fill={catColor(s.topCategory)} opacity={0.92} stroke="#fff" strokeWidth={2} />
                 <text x={s._x} y={s._y + 5} textAnchor="middle" className="spider-world-count">{s.threadCount}</text>
                 <text x={s._x} y={s._y + s._r + 16} textAnchor="middle" className="spider-node-label">{shortName(s.country)}</text>

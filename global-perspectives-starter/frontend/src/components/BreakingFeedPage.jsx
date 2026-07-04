@@ -58,13 +58,23 @@ function AlertCard({ a }) {
   );
 }
 
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
 export default function BreakingFeedPage() {
   const { alerts, loading, endpointMissing } = useNotifications();
+
+  // Only show the past week (last 7 days → today); older alerts are dropped.
+  // Keep any alert whose timestamp can't be parsed (fail-open, don't hide real news).
+  const cutoff = Date.now() - WEEK_MS;
+  const recent = alerts.filter((a) => {
+    const t = new Date(a.at).getTime();
+    return Number.isFinite(t) ? t >= cutoff : true;
+  });
 
   // Group by day, newest first (alerts already arrive sorted newest-first).
   const groups = [];
   const seen = new Map();
-  for (const a of alerts) {
+  for (const a of recent) {
     const k = dayKey(a.at);
     if (!seen.has(k)) { seen.set(k, []); groups.push([k, seen.get(k)]); }
     seen.get(k).push(a);
@@ -76,8 +86,8 @@ export default function BreakingFeedPage() {
         <span className="bk-chip">BREAKING</span>
         <h1 className="bk-page-title">Breaking alerts</h1>
         <p className="bk-page-sub">
-          Major stories the pipeline flags as genuinely significant — paired with our own analysis,
-          not just a headline. We stay silent when nothing rises to the bar.
+          Major stories from the past 7 days that the pipeline flagged as genuinely significant —
+          paired with our own analysis, not just a headline. We stay silent when nothing rises to the bar.
         </p>
       </header>
 
@@ -85,13 +95,13 @@ export default function BreakingFeedPage() {
 
       {loading ? (
         <div className="bk-skel" />
-      ) : alerts.length === 0 ? (
+      ) : recent.length === 0 ? (
         <div className="bk-empty">
-          <h2>No major breaking stories right now</h2>
+          <h2>No major breaking stories this week</h2>
           <p>
             {endpointMissing
               ? 'Breaking alerts aren’t configured on this site yet.'
-              : 'When a story crosses the significance bar, it’ll appear here. Quiet is the normal state.'}
+              : 'Nothing has crossed the significance bar in the past 7 days. Quiet is the normal state.'}
           </p>
           <Link to="/" className="bk-maplink">Back to today’s briefing →</Link>
         </div>

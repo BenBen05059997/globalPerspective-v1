@@ -79,19 +79,25 @@ export default function WorldOverview({ onDrill }) {
 
   const layout = useMemo(() => {
     if (!situations || !situations.length) return null;
-    const withMs = situations.map(s => ({
-      ...s,
-      _peakMs: parseDate(s.peak) || parseDate(s.latest),
-      _startMs: parseDate(s.earliest),
-      _endMs: parseDate(s.latest),
-    }));
+    // A bubble is placed at its PEAK day — that is its only honest x. If a
+    // situation has no real peak date we drop it rather than invent a position
+    // (no fallback). earliest/latest are optional: they only draw the span bar.
+    const withMs = situations
+      .map(s => ({
+        ...s,
+        _peakMs: parseDate(s.peak),
+        _startMs: parseDate(s.earliest),
+        _endMs: parseDate(s.latest),
+      }))
+      .filter(s => s._peakMs != null);
+    if (!withMs.length) return null;
     const all = [];
     withMs.forEach(s => [s._peakMs, s._startMs, s._endMs].forEach(m => { if (m != null) all.push(m); }));
-    if (!all.length) return null;
     const minMs = Math.min(...all);
     const maxMs = Math.max(...all);
     const totalDays = Math.max(1, Math.round((maxMs - minMs) / DAY_MS) + 1);
-    const xForMs = (m) => MARGIN.left + (m != null ? Math.round((m - minMs) / DAY_MS) : totalDays - 1) * DAY_W + DAY_W / 2;
+    // Strict: a null date has no x. Callers must guard — never snap to an edge.
+    const xForMs = (m) => m == null ? null : MARGIN.left + Math.round((m - minMs) / DAY_MS) * DAY_W + DAY_W / 2;
 
     const byRegion = {};
     withMs.forEach(s => { const rk = regionOf(s.country); (byRegion[rk] = byRegion[rk] || []).push(s); });
@@ -183,7 +189,7 @@ export default function WorldOverview({ onDrill }) {
                 onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, s })}
                 onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
                 onMouseLeave={() => setHover(null)}>
-                {s._x1 > s._x0 + 1 && (
+                {s._x0 != null && s._x1 != null && s._x1 > s._x0 + 1 && (
                   <line x1={s._x0} y1={s._y} x2={s._x1} y2={s._y} className="spider-world-span" />
                 )}
                 <circle cx={s._x} cy={s._y} r={s._r} fill={catColor(s.topCategory)} opacity={0.92} stroke="#fff" strokeWidth={2} />

@@ -93,7 +93,9 @@ exports.handler = async (event) => {
     const factsByCountry = needsPrediction
       ? await loadFactsForRegions(collectRegions(filteredTopics))
       : {};
-    const genCtx = { pastEntries, factsByCountry, generatedAtDay: (generatedDate || new Date().toISOString()).slice(0, 10) };
+    // generatedDate here is a HUMAN string ("July 4, 2026") — never slice it for a date.
+    // The gates need a real ISO day; use UTC today (matches the log snapshot's `day`).
+    const genCtx = { pastEntries, factsByCountry, generatedAtDay: new Date().toISOString().slice(0, 10) };
 
     const outputs = [];
     let failed = 0;
@@ -394,7 +396,8 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
     ? `\nArticle Snippets:\n${snippets}\n`
     : '';
 
-  const today = (generatedDate || new Date().toISOString()).slice(0, 10);
+  // generatedDate is a human string ("July 4, 2026"); use UTC today for date math.
+  const today = new Date().toISOString().slice(0, 10);
   const horizonEnd = lib.addDays(today, lib.HORIZON_DAYS);
 
   return [

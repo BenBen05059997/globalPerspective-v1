@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-07-05 (feat: /spider-demo enhancement pass — shareable URLs, fit-to-width World tier, clickable links, risk-tier bubbles, drift badges, honest edge wording)
+
+Six planned enhancements to the analyst-tool prototype (plan approved; backend + 6 frontend commits `b6e1983..d3306df`):
+- **Backend `world_overview` enrichment (DEPLOYED to `newsSensitiveData-dev`):** after the SYSTEMS# scan, an additive best-effort pass attaches each country's `riskLevel`/`riskScore` (GetItem on `COUNTRY_INTELLIGENCE`) + `latestDrift` (newest `DRIFT#` note via Query, Limit 1). Double try/catch — any failure degrades to the prior payload; curl-verified 12/12 enriched, 6 drift notes; `topics`/`country_intelligence`/`systems_analysis` sentinels unchanged; single ACAO header. Rollback artifact `deploy.zip.bak`.
+- **A1 URL state sync:** `?view=country&country=X` (world = bare URL) via the EconomyPage `lastWritten`-guard pattern, push navigation so back/forward traverse drills, selection cleared on history nav. Deep links incl. "Democratic Republic of the Congo" verified; the page is finally shareable.
+- **A2 fit-to-width:** the World month now compresses `dayW` (clamped 26–44px) to the ResizeObserver-measured width — no horizontal scroll in the common case (bubbles scale gently); below the floor the scroll opens at the **newest** edge, not the oldest.
+- **A3 clickable shared-actor links:** click a world link → floating top-right card (shared actors, weight, "Open X's web →" drill buttons); selected curve highlighted; links got a 14px transparent hit area (country-tier pattern — a 1–4px stroke is no click target).
+- **A4 risk-tier bubbles:** fill = canonical tier (`riskTiers.js` + `RISK_SOLID`; "state = tier" rule) — the World tier now answers "where is it bad," not just "where is it busy." No risk read = neutral grey (honest); category moved to the tooltip; legend overlay added; `catColor` deleted.
+- **A5 drift badges:** countries whose read changed within 7 days get a pulsing rim dot + tooltip line ("Read changed 2026-07-02: elevated → high"; `· no single driver` when ungrounded) — the living-analysis loop surfaced on the analyst map.
+- **A6 defensible-edge wording:** per `SPIDER_WEB_MODEL_PLAN.md`'s verified rule (nothing has analyst sign-off yet) every causal-edge surface now reads **"possibly related," never "caused"** — EdgePanel tag/badge/disclosure, tooltip, "Inferred links" toggle, header desc, footer count.
+- Verify green (192 tests); Playwright-verified end-to-end (fit/no-scroll, URL round-trips incl. back/forward + DRC deep link, card open/close/drill, 12/12 tier-colored bubbles, 6 drift dots, tooltip lines, wording sweep) — 0 console errors. Files: `components/{SpiderWorld.jsx,SpiderDemo.jsx,SpiderDemo.css}`, `amplify/backend/function/newsSensitiveData/src/index.js`.
+
 ## 2026-07-04 (feat: BreakingStrip surfaces today's breaking on Home + Map — latest + "+N more")
 
 The slim `BreakingStrip` (top of Home + Map) showed only the single latest <24h alert. Now it counts **all** fresh (<24h) confirmed alerts and, when there's more than one, adds a **"+N more today"** pill and links the strip to `/breaking` (a single fresh alert still deep-links to its detail page). Renders nothing when there's no fresh alert (unchanged honesty rule). Verified via API-intercept (3 fresh + 1 old → "latest + +2 more today → /breaking") and live on prod (Home + Map both show "+5 more today"). Files: `components/atoms/{BreakingStrip.jsx,BreakingStrip.css}`.

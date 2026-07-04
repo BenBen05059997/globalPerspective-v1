@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-07-04 (feat: BreakingStrip surfaces today's breaking on Home + Map — latest + "+N more")
+
+The slim `BreakingStrip` (top of Home + Map) showed only the single latest <24h alert. Now it counts **all** fresh (<24h) confirmed alerts and, when there's more than one, adds a **"+N more today"** pill and links the strip to `/breaking` (a single fresh alert still deep-links to its detail page). Renders nothing when there's no fresh alert (unchanged honesty rule). Verified via API-intercept (3 fresh + 1 old → "latest + +2 more today → /breaking") and live on prod (Home + Map both show "+5 more today"). Files: `components/atoms/{BreakingStrip.jsx,BreakingStrip.css}`.
+
 ## 2026-07-04 (fix: /spider-demo World tier — fit all region lanes without vertical scroll)
 
 Countries in lower region lanes (Americas, Africa) were hidden below the fold and needed vertical scrolling to find. The lanes were a fixed 116px each × 6 lanes = a ~766px SVG inside a ~480px viewport area. Made the World tier fit the visible height: (1) only render **populated** region lanes (drops the always-empty "Global" lane); (2) measure the scroll area via `ResizeObserver` and size each lane to fit it (`LANE_H` now clamped `84–132px`, computed from measured height ÷ lane count); (3) reclaimed vertical room by trimming the SVG margins, slightly shrinking the bubble radius, and **removing the redundant per-bubble "peak Jun X" subtext** (the peak is already encoded by the bubble's x-position on the date axis and shown in the hover tooltip). Result: all 5 populated lanes + 12 country bubbles visible with **no vertical scroll** (verified at 1500×800 and 1440×720 — `scrollHeight == clientHeight`, 0 console errors). The timeline still scrolls **horizontally** (inherent to a date axis; later-peaking countries sit further right). Files: `components/{SpiderWorld.jsx,SpiderDemo.css}`.

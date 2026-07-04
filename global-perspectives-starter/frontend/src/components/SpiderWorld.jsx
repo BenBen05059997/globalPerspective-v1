@@ -5,7 +5,7 @@
 // countries whose graphs share key actors. Click a bubble to drill into its
 // causal web. Throwaway prototype; deletable with SpiderDemo.jsx.
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { fetchWorldOverview } from '../services/restProxy';
 
 const REGION_LANES = [
@@ -46,14 +46,17 @@ function catColor(c) {
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAY_MS = 86400000;
 const DAY_W = 44;
-const LANE_H = 116;
-const MARGIN = { top: 44, left: 150, right: 48, bottom: 26 };
+// Lane height is computed to fit every populated region into the visible area
+// (no vertical scroll) — clamped so bubbles + labels stay legible.
+const LANE_H_MIN = 84;
+const LANE_H_MAX = 132;
+const MARGIN = { top: 38, left: 150, right: 48, bottom: 16 };
 function parseDate(s) {
   const m = typeof s === 'string' && s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
 }
 function fmtMs(ms) { const d = new Date(ms); return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`; }
-const rForThreads = (t) => 16 + Math.sqrt(Math.max(1, t)) * 4.2;
+const rForThreads = (t) => 14 + Math.sqrt(Math.max(1, t)) * 3.4;
 
 export default function WorldOverview({ onDrill }) {
   const [situations, setSituations] = useState(null);
@@ -61,6 +64,20 @@ export default function WorldOverview({ onDrill }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hover, setHover] = useState(null);
+  const scrollRef = useRef(null);
+  const [availH, setAvailH] = useState(0); // measured height of the scroll area
+
+  // Measure the visible area so lanes can be sized to fit it (no vertical scroll).
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(entries => {
+      const h = entries[0]?.contentRect?.height;
+      if (h) setAvailH(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,17 +119,25 @@ export default function WorldOverview({ onDrill }) {
     const byRegion = {};
     withMs.forEach(s => { const rk = regionOf(s.country); (byRegion[rk] = byRegion[rk] || []).push(s); });
 
+    // Only render lanes that actually contain a country, then size each lane to
+    // fit the measured height so every region is visible without vertical scroll.
+    const lanes = REGION_LANES.filter(l => (byRegion[l.key] || []).length > 0);
+    const nLanes = Math.max(1, lanes.length);
+    const usableH = (availH > 0 ? availH : 520) - MARGIN.top - MARGIN.bottom;
+    const laneH = Math.max(LANE_H_MIN, Math.min(LANE_H_MAX, usableH / nLanes));
+    const nudge = Math.min(26, laneH * 0.22); // collision offset for near-overlapping bubbles
+
     const placed = [];
     const pos = {};
-    REGION_LANES.forEach((lane, li) => {
+    lanes.forEach((lane, li) => {
       const arr = (byRegion[lane.key] || []).slice().sort((a, b) => (a._peakMs || 0) - (b._peakMs || 0));
-      const laneY = MARGIN.top + li * LANE_H + LANE_H / 2;
+      const laneY = MARGIN.top + li * laneH + laneH / 2;
       let lastX = -1e9; let toggle = 1;
       arr.forEach(s => {
         const r = rForThreads(s.threadCount);
         const x = xForMs(s._peakMs);
         let y = laneY - 4;
-        if (x - lastX < 2 * r + 8) { y = laneY - 4 + toggle * 30; toggle *= -1; } else { toggle = 1; }
+        if (x - lastX < 2 * r + 8) { y = laneY - 4 + toggle * nudge; toggle *= -1; } else { toggle = 1; }
         lastX = x;
         const o = { ...s, _rk: lane.key, _x: x, _y: y, _r: r };
         placed.push(o);
@@ -121,14 +146,14 @@ export default function WorldOverview({ onDrill }) {
     });
 
     const svgW = MARGIN.left + totalDays * DAY_W + MARGIN.right;
-    const svgH = MARGIN.top + REGION_LANES.length * LANE_H + MARGIN.bottom;
-    const laneBottom = MARGIN.top + REGION_LANES.length * LANE_H;
-    return { placed, pos, minMs, maxMs, totalDays, svgW, svgH, laneBottom, xForMs };
-  }, [situations]);
+    const svgH = MARGIN.top + nLanes * laneH + MARGIN.bottom;
+    const laneBottom = MARGIN.top + nLanes * laneH;
+    return { placed, pos, lanes, laneH, minMs, maxMs, totalDays, svgW, svgH, laneBottom, xForMs };
+  }, [situations, availH]);
 
   return (
     <div className="spider-graph-wrap">
-      <div className="spider-graph-scroll">
+      <div className="spider-graph-scroll" ref={scrollRef}>
         {loading && <div className="spider-state"><span className="spider-loading-dot" />Loading world overview…</div>}
         {error && <div className="spider-state spider-error-state"><strong>Error:</strong> {error}</div>}
         {!loading && !error && situations && situations.length === 0 && (
@@ -137,12 +162,12 @@ export default function WorldOverview({ onDrill }) {
         {!loading && layout && (
           <svg className="spider-web-svg" width={layout.svgW} height={layout.svgH}
             viewBox={`0 0 ${layout.svgW} ${layout.svgH}`} aria-label="World causal overview timeline">
-            {/* Region lanes */}
-            {REGION_LANES.map((lane, i) => {
-              const y0 = MARGIN.top + i * LANE_H;
+            {/* Region lanes (only populated ones, sized to fit) */}
+            {layout.lanes.map((lane, i) => {
+              const y0 = MARGIN.top + i * layout.laneH;
               return (
                 <g key={lane.key}>
-                  <rect x={0} y={y0} width={layout.svgW} height={LANE_H} fill={i % 2 ? 'var(--paper-2)' : 'var(--paper)'} opacity={0.6} />
+                  <rect x={0} y={y0} width={layout.svgW} height={layout.laneH} fill={i % 2 ? 'var(--paper-2)' : 'var(--paper)'} opacity={0.6} />
                   <line x1={0} y1={y0} x2={layout.svgW} y2={y0} className="spider-lane-rule" />
                   <text x={16} y={y0 + 20} className="spider-lane-label" fill="var(--ink-dim)">{lane.label}</text>
                 </g>
@@ -194,10 +219,7 @@ export default function WorldOverview({ onDrill }) {
                 onMouseLeave={() => setHover(null)}>
                 <circle cx={s._x} cy={s._y} r={s._r} fill={catColor(s.topCategory)} opacity={0.92} stroke="#fff" strokeWidth={2} />
                 <text x={s._x} y={s._y + 5} textAnchor="middle" className="spider-world-count">{s.threadCount}</text>
-                <text x={s._x} y={s._y + s._r + 16} textAnchor="middle" className="spider-node-label">{shortName(s.country)}</text>
-                <text x={s._x} y={s._y + s._r + 31} textAnchor="middle" className="spider-world-date">
-                  {s.peak ? `peak ${fmtMs(parseDate(s.peak))}` : ''}
-                </text>
+                <text x={s._x} y={s._y + s._r + 15} textAnchor="middle" className="spider-node-label">{shortName(s.country)}</text>
               </g>
             ))}
           </svg>

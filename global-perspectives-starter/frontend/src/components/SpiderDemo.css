@@ -888,13 +888,6 @@
   pointer-events: none;
 }
 
-.spider-world-date {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  fill: var(--ink-faint);
-  letter-spacing: 0.03em;
-  pointer-events: none;
-}
 
 .spider-world-link {
   stroke: var(--ink-faint);

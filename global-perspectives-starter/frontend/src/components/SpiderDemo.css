@@ -895,7 +895,7 @@
   opacity: 0.4;
   transition: opacity 0.12s;
 }
-.spider-world-link:hover { stroke: var(--accent); opacity: 0.95; }
+.spider-world-link-grp:hover .spider-world-link { stroke: var(--accent); opacity: 0.95; }
 .spider-world-link-sel { stroke: var(--accent); opacity: 0.95; }
 
 /* Drift badge — the country's read changed within the last week

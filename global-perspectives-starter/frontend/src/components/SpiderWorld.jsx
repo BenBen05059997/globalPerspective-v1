@@ -221,14 +221,17 @@ export default function WorldOverview({ onDrill }) {
               const mx = (a.x + b.x) / 2;
               const my = (a.y + b.y) / 2 - 26;
               const w = Math.min(4.5, 1 + lk.weight * 0.45);
+              const d = `M${a.x},${a.y} Q${mx},${my} ${b.x},${b.y}`;
               return (
-                <path key={`lk${i}`} d={`M${a.x},${a.y} Q${mx},${my} ${b.x},${b.y}`}
-                  className={`spider-world-link${linkSel === lk ? ' spider-world-link-sel' : ''}`}
-                  strokeWidth={w} style={{ cursor: 'pointer' }}
+                <g key={`lk${i}`} className="spider-world-link-grp" style={{ cursor: 'pointer' }}
                   onClick={() => { setLinkSel(lk); setHover(null); }}
                   onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, link: lk })}
                   onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
-                  onMouseLeave={() => setHover(null)} />
+                  onMouseLeave={() => setHover(null)}>
+                  {/* Wide transparent hit area — a 1-4px stroke is no click target */}
+                  <path d={d} fill="none" stroke="transparent" strokeWidth={14} />
+                  <path d={d} className={`spider-world-link${linkSel === lk ? ' spider-world-link-sel' : ''}`} strokeWidth={w} />
+                </g>
               );
             })}
 

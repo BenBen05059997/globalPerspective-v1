@@ -7,6 +7,8 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { fetchWorldOverview } from '../services/restProxy';
+import { tierFromLevel, tierFromScore, tierLabel } from '../utils/riskTiers';
+import { RISK_SOLID } from '../tokens';
 
 const REGION_LANES = [
   { key: 'me', label: 'Middle East' },
@@ -30,17 +32,22 @@ function regionOf(country) { return COUNTRY_REGION[country] || 'gl'; }
 const SHORT_NAME = { 'Democratic Republic of the Congo': 'DR Congo' };
 function shortName(c) { return SHORT_NAME[c] || c; }
 
-const CAT_COLOR = {
-  conflict: '#c0492f', military: '#c0492f', war: '#c0492f',
-  politics: '#8a3526', diplomacy: '#3a6ea5',
-  energy: '#3f8f6b', economy: '#c9912f', business: '#c9912f',
-  technology: '#7d5ba6', society: '#7d5ba6',
-};
-function catColor(c) {
-  if (!c) return '#7d5ba6';
-  const l = c.toLowerCase();
-  for (const k of Object.keys(CAT_COLOR)) if (l.includes(k)) return CAT_COLOR[k];
-  return '#7d5ba6';
+// Bubble color = the country's current risk tier ("state = tier" display rule;
+// canonical bands via riskTiers.js). No risk read → neutral grey, never a fake
+// tier. Category moved to the tooltip text.
+const NO_RISK_COLOR = 'var(--ink-faint)';
+function riskTierOf(s) {
+  return tierFromLevel(s?.riskLevel) || tierFromScore(s?.riskScore);
+}
+
+// A drift note counts as "fresh" (badge-worthy) within this window; stale,
+// missing, or future-dated notes get no badge — honestly nothing to show.
+const DRIFT_FRESH_MS = 7 * 86400000;
+function freshDrift(s) {
+  const ms = parseDate(s?.latestDrift?.asOf);
+  if (ms == null) return null;
+  const age = Date.now() - ms;
+  return age >= 0 && age <= DRIFT_FRESH_MS ? s.latestDrift : null;
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -229,20 +236,41 @@ export default function WorldOverview({ onDrill }) {
                each situation runs most of the month, so per-country duration bars
                overlap into one rule that reads as a connector joining nothing. The
                active window lives in the hover tooltip instead ("active X–Y"). */}
-            {layout.placed.map(s => (
-              <g key={s.country} style={{ cursor: 'pointer' }}
-                onClick={() => onDrill(s.country)}
-                onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, s })}
-                onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
-                onMouseLeave={() => setHover(null)}>
-                <circle cx={s._x} cy={s._y} r={s._r} fill={catColor(s.topCategory)} opacity={0.92} stroke="#fff" strokeWidth={2} />
-                <text x={s._x} y={s._y + 5} textAnchor="middle" className="spider-world-count">{s.threadCount}</text>
-                <text x={s._x} y={s._y + s._r + 15} textAnchor="middle" className="spider-node-label">{shortName(s.country)}</text>
-              </g>
-            ))}
+            {layout.placed.map(s => {
+              const tier = riskTierOf(s);
+              return (
+                <g key={s.country} style={{ cursor: 'pointer' }}
+                  onClick={() => onDrill(s.country)}
+                  onMouseEnter={(e) => setHover({ x: e.clientX + 14, y: e.clientY + 14, s })}
+                  onMouseMove={(e) => setHover(h => h ? { ...h, x: e.clientX + 14, y: e.clientY + 14 } : h)}
+                  onMouseLeave={() => setHover(null)}>
+                  <circle cx={s._x} cy={s._y} r={s._r} fill={tier ? RISK_SOLID[tier] : NO_RISK_COLOR} opacity={0.92} stroke="#fff" strokeWidth={2} />
+                  {freshDrift(s) && (
+                    <circle cx={s._x + s._r * 0.71} cy={s._y - s._r * 0.71} r={4.5} className="spider-drift-dot" />
+                  )}
+                  <text x={s._x} y={s._y + 5} textAnchor="middle" className="spider-world-count">{s.threadCount}</text>
+                  <text x={s._x} y={s._y + s._r + 15} textAnchor="middle" className="spider-node-label">{shortName(s.country)}</text>
+                </g>
+              );
+            })}
           </svg>
         )}
       </div>
+      {!loading && layout && (
+        <div className="spider-world-legend" aria-label="Bubble color legend">
+          {['low', 'moderate', 'elevated', 'high'].map(t => (
+            <span key={t} className="spider-world-legend-item">
+              <span className="spider-world-legend-dot" style={{ background: RISK_SOLID[t] }} />{t}
+            </span>
+          ))}
+          <span className="spider-world-legend-item">
+            <span className="spider-world-legend-dot" style={{ background: 'var(--ink-faint)' }} />no risk read
+          </span>
+          <span className="spider-world-legend-item">
+            <span className="spider-world-legend-dot spider-world-legend-drift" />read changed this week
+          </span>
+        </div>
+      )}
       {linkSel && (
         <div className="spider-world-linkcard" aria-label="Shared-actor link detail">
           <div className="spider-world-linkcard-top">
@@ -259,20 +287,40 @@ export default function WorldOverview({ onDrill }) {
           </div>
         </div>
       )}
-      {hover && hover.s && (
-        <div className="spider-tip" style={{ left: hover.x, top: hover.y }}>
-          <div className="spider-tip-cat" style={{ color: catColor(hover.s.topCategory) }}>
-            {REGION_LANES.find(l => l.key === regionOf(hover.s.country))?.label}
+      {hover && hover.s && (() => {
+        const tier = riskTierOf(hover.s);
+        const drift = freshDrift(hover.s);
+        const dl = drift?.changeLevel;
+        const ds = drift?.changeScore;
+        return (
+          <div className="spider-tip" style={{ left: hover.x, top: hover.y }}>
+            <div className="spider-tip-cat" style={{ color: tier ? RISK_SOLID[tier] : 'var(--ink-dim)' }}>
+              {REGION_LANES.find(l => l.key === regionOf(hover.s.country))?.label}
+            </div>
+            <div className="spider-tip-head">{hover.s.country}</div>
+            <div className="spider-tip-meta">
+              {tier
+                ? `Risk: ${tierLabel(tier)}${hover.s.riskScore != null ? ` (${hover.s.riskScore})` : ''}`
+                : 'Risk: no current read'}
+            </div>
+            <div className="spider-tip-meta">
+              {hover.s.threadCount} threads · mostly {hover.s.topCategory || 'mixed'}
+              {hover.s.earliest && hover.s.latest ? ` · active ${fmtMs(parseDate(hover.s.earliest))}–${fmtMs(parseDate(hover.s.latest))}` : ''}
+              {hover.s.peak ? ` · peak ${fmtMs(parseDate(hover.s.peak))}` : ''}
+            </div>
+            {drift && (
+              <div className="spider-tip-meta spider-tip-drift">
+                Read changed {drift.asOf}
+                {dl?.from && dl?.to
+                  ? `: ${dl.from} → ${dl.to}`
+                  : ds ? `: score ${ds.from} → ${ds.to} (${ds.delta >= 0 ? '+' : ''}${ds.delta})` : ''}
+                {drift.noSingleDriver ? ' · no single driver' : ''}
+              </div>
+            )}
+            <div className="spider-tip-hint">click to open the causal web →</div>
           </div>
-          <div className="spider-tip-head">{hover.s.country}</div>
-          <div className="spider-tip-meta">
-            {hover.s.threadCount} threads · mostly {hover.s.topCategory || 'mixed'}
-            {hover.s.earliest && hover.s.latest ? ` · active ${fmtMs(parseDate(hover.s.earliest))}–${fmtMs(parseDate(hover.s.latest))}` : ''}
-            {hover.s.peak ? ` · peak ${fmtMs(parseDate(hover.s.peak))}` : ''}
-          </div>
-          <div className="spider-tip-hint">click to open the causal web →</div>
-        </div>
-      )}
+        );
+      })()}
       {hover && hover.link && (
         <div className="spider-tip" style={{ left: hover.x, top: hover.y }}>
           <div className="spider-tip-cat" style={{ color: 'var(--ink-dim)' }}>Shared-actor link</div>

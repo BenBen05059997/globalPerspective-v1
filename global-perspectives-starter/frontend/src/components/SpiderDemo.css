@@ -898,6 +898,51 @@
 .spider-world-link:hover { stroke: var(--accent); opacity: 0.95; }
 .spider-world-link-sel { stroke: var(--accent); opacity: 0.95; }
 
+/* Drift badge — the country's read changed within the last week
+   (living-analysis loop surfacing on the world tier). */
+.spider-drift-dot {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 1.5;
+  animation: spider-drift-pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes spider-drift-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* Risk-tier legend — overlay, bottom-left of the graph area. */
+.spider-world-legend {
+  position: absolute;
+  left: 14px;
+  bottom: 10px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-dim);
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  border-radius: 6px;
+  padding: 4px 8px;
+  pointer-events: none;
+}
+.spider-world-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.spider-world-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.spider-world-legend-drift {
+  background: var(--accent);
+  animation: spider-drift-pulse 2s ease-in-out infinite;
+}
+.spider-tip-drift { color: var(--accent-deep, var(--accent)); }
+
 /* Floating detail card for a clicked shared-actor link (world tier).
    Fixed slot top-right of the graph area — no anchoring math, never clipped. */
 .spider-world-linkcard {

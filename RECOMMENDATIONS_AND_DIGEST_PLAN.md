@@ -19,7 +19,7 @@ Key insight driving the architecture: **the digest and the recommendations are t
 - **Content pool with tags, no joins needed:** `TOPICS_DDB_TABLE` → `latest.topics[]`, each topic carrying `category`, `regions[]` (countries), `threadId`, and `sources[]` (source count = a clean popularity proxy).
 - **Interest signal:** `GlobalPerspectiveSavedItems` (PK `uid` / SK `{itemType}#{itemId}`, item types `thread|country|daily|pair`, free-form `metadata`, `savedAt`).
 - **Identity:** Firebase auth (verified email available from the JWT), `USERS_DDB_TABLE`.
-- **No user-facing email exists.** Only operator alerts via the SNS `GlobalPerspectiveAlerts` topic (`newsErrorDigest`, `newsFreshnessMonitor`).
+- **User-facing email — sender BUILT + DEPLOYED (dry-run) 2026-07-03** as `newsEmailSender` (weekly brief + breaking; shared Resend seam; subscribe UI live on Home + `/weekly-brief`; public unsubscribe on `newsRecommend`). Real delivery gated only on operator Resend domain-verification. See `EMAIL_SENDER_PLAN.md` / [[project-email-sender]]. (Historically the only email was operator alerts via the SNS `GlobalPerspectiveAlerts` topic — `newsErrorDigest`, `newsFreshnessMonitor`.)
 
 ## The engine
 

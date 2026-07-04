@@ -47,7 +47,7 @@ Use this when:
 - **Auth gate:** None — fully public.
 - **Inbound links:** Default landing, top-nav "Topics", brand logo (`Layout.jsx:55`), Home backlinks from Daily/Thread/Country topbars.
 - **Outbound links:** Country pills → `/weekly/country/:name` (line 351); thread titles → `/weekly/thread/:threadId` (line 360); "Story arc →" → `/weekly`; external source URLs.
-- **Key UI elements:** EditorialShell 3-col; **"Today's lede" band** (`LedeBand`, deterministic `composeTopicsLede` — no LLM) directly under the StatusStrip; left rail `TodayArchiveSidebar` + Coffee CTA; right rail `TopicNav`; center masthead + per-region topic cards (with per-topic economic-disruption badge) + AI button trio + collapsible Sources. Topics are the day's Gemini set (not archive threads), so they carry **no risk score** — the lede band, not a tier hierarchy, provides the "what matters most today" ordering.
+- **Key UI elements:** EditorialShell 3-col; **"Today's lede" band** (`LedeBand`, deterministic `composeTopicsLede` — no LLM) directly under the StatusStrip; left rail `TodayArchiveSidebar` + Coffee CTA; right rail `TopicNav`; center masthead + **`SubscribeCard`** (Weekly Brief email opt-in, directly under the masthead — reuses the `digestOptIn` opt-in via `usePreferences`; signed-in = 1-click, anon = Google sign-in then auto opt-in) + per-region topic cards (with per-topic economic-disruption badge) + AI button trio + collapsible Sources. Topics are the day's Gemini set (not archive threads), so they carry **no risk score** — the lede band, not a tier hierarchy, provides the "what matters most today" ordering.
 - **States:** loading spinner (lines 320-324); **no empty-state UI** if `topics.length === 0` (silent); errors push to global `ErrorModal`; stale/fresh banners with refresh.
 - **Smoke-test:**
   1. Open `/` — "Today's lede" band + topics render grouped by region.
@@ -186,11 +186,11 @@ Use this when:
 
 - **Purpose:** A serif long-read of the latest **published** Weekly Signals Brief — a *signals digest* (discrete signals ranked by risk + a "what to watch" list), **not** a synthesized essay.
 - **Primary user job:** Catch up on the week in one screen: the highest-risk signals, each with a one-line "so what" and its sources.
-- **Data sources:** `useWeeklyBrief()` → `weekly_brief` action (latest `status:'published'` brief; null until one is published via `weekly/review.js`); 30-min cache. `Markdown.jsx` is used only for the backward-compatible legacy prose format.
+- **Data sources:** `useWeeklyBrief()` → `weekly_brief` action (latest `status:'published'` brief; **auto-published by `newsWeeklyBrief` each Sunday since 2026-07-03** — the old manual `weekly/review.js` gate was removed); 30-min cache. `Markdown.jsx` is used only for the backward-compatible legacy prose format.
 - **Auth gate:** None.
 - **Inbound links:** Primary nav "Weekly Brief" (`Layout.jsx:48`).
 - **Outbound links:** Per-signal **source outlets** (external article URLs) only — signals do **not** currently deep-link into thread/country pages; `related` is plain text.
-- **Key UI elements:** eyebrow + dateline (week-of / compiled / N signals); KPI row (signals tracked / highest risk / at high risk / to watch); `SignalCard` list — lede + **kind chip** (a color-coded `RISK` chip for `threat` signals, a neutral `DEVELOPMENT` chip for cooperative stories so they aren't shown as red risk) + region/as-of + fact + "So what" + source outlets; "What to watch" rows; methodology footer (risk/sources/dates are computed; the "so what" is editorial, not a prediction).
+- **Key UI elements:** eyebrow + dateline (week-of / compiled / N signals); KPI row (signals tracked / highest risk / at high risk / to watch); **`SubscribeCard`** (Weekly Brief email opt-in, between the KPIs and the signal list — same component/opt-in as Home); `SignalCard` list — lede + **kind chip** (a color-coded `RISK` chip for `threat` signals, a neutral `DEVELOPMENT` chip for cooperative stories so they aren't shown as red risk) + region/as-of + fact + "So what" + source outlets; "What to watch" rows; methodology footer (risk/sources/dates are computed; the "so what" is editorial, not a prediction).
 - **States:** loading / error / **no brief published yet** (honest empty) / signals success / legacy-prose fallback.
 - **Smoke-test:**
   1. `/weekly-brief` — the latest published brief renders with a dateline + KPI row.

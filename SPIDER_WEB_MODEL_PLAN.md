@@ -60,6 +60,8 @@ Automated causal extraction from news is genuinely unreliable — this is the ev
 
 **DEFENSIBLE-EDGE RULE-SET (encode this):** an overlay causal edge is promoted from "possible" → "defensible" only with **temporal precedence + an explicit textual causal signal + external corroboration (≥1 independent source) + human sign-off.** Anything short of that renders as "possibly related," never "caused." Reference benchmark for any extraction component = **MAVEN-ERE**.
 
+> ✅ **Rendering half ENCODED 2026-07-05:** since no edge has human sign-off yet, every causal-edge surface in `/spider-demo` now reads "**possibly related**," never "caused" (EdgePanel tag/badge + sign-off disclosure line, tooltip, "Inferred links" toggle, header desc, footer count). The **promotion pipeline** itself (temporal-precedence check + textual-signal detection + corroboration + an analyst sign-off surface) is NOT built — still gated by discovery.
+
 ## Overlay formalism (DECIDED from established practice; research throttled but textbook)
 
 - **NOT a Pearl DAG.** Use a **directed, signed, weighted graph that ALLOWS cycles** — a Causal-Loop-Diagram-style "influence" layer (edges marked amplifies/dampens, feedback loops permitted). We don't need do-calculus (no intervention inference) or FCM simulation (no dynamics).
@@ -73,7 +75,7 @@ Automated causal extraction from news is genuinely unreliable — this is the ev
 - **Causal overlay OFF by default**; expand-on-demand; filter/lens by actor / time / severity / layer.
 - This one change fixes the "scattered dots" feel more than anything else.
 
-> ✅ **SHIPPED 2026-06-30** — the country-tier **timeline-anchored layout** is live at `/spider-demo` (x=peakDate, y=category lanes; causal edges = dashed confidence-weighted toggle overlay; coverage ribbon + as-of marker + lane filters). Built from founder-provided mockups (`Causal Web.html` / `World Causal Overview.html`); field-by-field data contract in **`SPIDER_BUILD_SPEC.md`**. NOTE: I shipped the causal toggle **ON by default** (not off) only because the backbone layer is empty (see below) — flip to OFF once the backbone exists. The **backbone is the remaining gap**, and it is DATA not layout.
+> ✅ **SHIPPED 2026-06-30** — the country-tier **timeline-anchored layout** is live at `/spider-demo` (x=peakDate, y=category lanes; causal edges = dashed confidence-weighted toggle overlay; coverage ribbon + as-of marker + lane filters). Built from founder-provided mockups (`Causal Web.html` / `World Causal Overview.html`); field-by-field data contract in **`SPIDER_BUILD_SPEC.md`**. NOTE: I shipped the causal toggle **ON by default** (not off) only because the backbone layer is empty (see below) — flip to OFF once the backbone exists. The **backbone is the remaining gap**, and it is DATA not layout. *(✅ Both resolved 2026-07-01: backbone shipped, toggle now OFF by default — see the Sequencing status notes below.)*
 
 > Research caveat: the formalism + visualization conclusions are reasoned from established/textbook practice — the verification harness rate-limited on both angles across two passes, so they are NOT independently verified here. The accuracy/defensible-edge section IS verified (peer-reviewed/arXiv).
 
@@ -86,6 +88,9 @@ Automated causal extraction from news is genuinely unreliable — this is the ev
 - Cheap interim: ✅ DONE 2026-06-29 (commit `034cfe2`, deployed live) — `/spider-demo` now shows story-headline labels (not the category word) and hides the temporal-anomaly edges, making it demo-safe.
 - **Layout half of the rebuild: ✅ SHIPPED + DEPLOYED 2026-06-30** (source `d4ae6de`, deploy `8a6a2dc`) — timeline+lane country view per the mockups (see Visualization note above). What this DIDN'T do: the **backbone (co-occurrence/shared-actor) layer is still empty** because the backend doesn't produce it. The remaining work is the DATA half ↓.
 - **Next backend unlock (the gating piece, per `SPIDER_BUILD_SPEC.md`):** add `actors[]` to each node + `class: 'backbone' | 'causal'` to each edge in `newsSystemsAnalysis` (one extra field in the existing LLM call) + a deterministic backbone-edge post-process (shared_actor weight, narrative_continuation, temporal_sequence). This lights up the solid backbone the design is built around AND unblocks the **world tier** (situation-clustering + cross-region). Still gated by discovery for the world tier / coverage widening; the country backbone is a contained, non-gated backend add whenever you want it.
+- **Data half: ✅ SHIPPED 2026-07-01** — `actors[]` + backbone post-process live in `newsSystemsAnalysis`; coverage widened to 12 countries; causal toggle flipped to OFF-by-default (backbone is the primary structure, per the note above); **world tier live** via the `world_overview` proxy action (deterministic per-country situations + cross-country shared-actor links, ambient-actor exclusion).
+- **World-tier polish + honesty pass: ✅ SHIPPED 2026-07-04..05** (readability 07-04: false-connector span bar removed, fit-to-height lanes; enhancements 07-05: `?view=country&country=X` URL state, month fit-to-width, clickable link cards, **risk-tier bubble fill + drift badges** off the enriched `world_overview` [riskLevel/riskScore/latestDrift per country], "possibly related" wording per the rule-set above). Detail: `CHANGES.md` 2026-07-04/05 + `ARCHITECTURE.md` route table.
+- **Still open (discovery-gated):** coverage beyond 12 countries; the defensible-edge *promotion pipeline* + analyst sign-off surface; actor-lens/time-brush focus+context; ego-network mode.
 
 ---
 

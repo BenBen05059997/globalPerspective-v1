@@ -81,6 +81,8 @@ Ground truth, verified 2026-06-30 against `newsSystemsAnalysis/src/index.js`:
 
 **→ World tier is NOT feedable yet:** needs the situation layer + actor extraction + cross-region pass + coverage beyond 1 country. Gated by the analyst-discovery conversations per the plan; do **not** fake it with placeholder data.
 
+> ✅ **SUPERSEDED — World tier SHIPPED 2026-07-01, enhanced 2026-07-05.** The blockers above were all resolved: `actors[]` + `class` landed in `newsSystemsAnalysis` (2026-07-01), coverage widened to **12 countries**, and the "situation layer" was satisfied *deterministically* — the `world_overview` proxy action derives one situation per country from its SYSTEMS# graph (threadCount, earliest/peak/latest from node peakDates, topCategory) + cross-country `links` from shared node actors (ambient-actor exclusion, df < 40% of countries), no LLM clustering needed. **Enriched 2026-07-05:** each situation also carries `riskLevel`/`riskScore` (from `COUNTRY_INTELLIGENCE`) + `latestDrift` (newest `DRIFT#` note) — additive/best-effort — feeding risk-tier bubble fill + "read changed this week" badges. Rendered by `SpiderWorld.jsx` (region lanes fit-to-height, month fit-to-width, clickable shared-actor links, `?view=`/`?country=` URL state). The `trend ▲/▼/■` and `affects[]` halo fields spec'd above were NOT built (cut as non-essential). Cross-situation *causal* edges remain unbuilt — world links are backbone-class (shared-actor) only.
+
 ---
 
 ## The new backend pieces (in dependency order)
@@ -104,3 +106,4 @@ Everything else the frontend needs is derivable client-side from data we already
 - Overlay: existing causal edges (HAVE).
 - Derived chrome: ribbon, axis, importance, isolated rings (DERIVE).
 - Backend ask deferred to a follow-up: add `actors[]` + `class` to `newsSystemsAnalysis` to light up the `shared_actor` backbone and unblock the world tier.
+  > ✅ **DONE 2026-07-01** — `actors[]` + backbone post-process shipped in `newsSystemsAnalysis`; world tier live (see the SUPERSEDED note in Tier 1 above). Of the numbered backend pieces: #1 ✅, #2 ✅, #3 ✅ (12 countries), #4 ✅ (deterministic per-country situations, not LLM clusters), #5 partially (importance/region ✅; trend/affects[] cut).

@@ -42,8 +42,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.bk-strip-more {
+  flex-shrink: 0;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  white-space: nowrap;
+}
 .bk-strip-go { flex-shrink: 0; font-size: 15px; }
 
 @media (max-width: 600px) {
   .bk-strip-title { font-size: 14px; }
+  .bk-strip-more { display: none; } /* keep the strip to one line on small screens */
 }

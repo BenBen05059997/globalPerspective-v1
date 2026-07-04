@@ -596,6 +596,48 @@ exports.handler = async (event) => {
           };
         }).filter(s => s.country && s.threadCount > 0);
 
+        // Enrichment (additive, best-effort): attach the country's current risk
+        // read + its latest drift note so the world tier can color by risk tier
+        // and badge "read changed" — a failure here must never fail the action;
+        // absent fields render honestly (grey bubble / no badge), never invented.
+        try {
+          await Promise.all(situations.map(async (s) => {
+            try {
+              const [intelOut, driftOut] = await Promise.all([
+                client.send(new GetCommand({
+                  TableName: SUMMARIZE_PREDICT_TABLE,
+                  Key: { PK: `COUNTRY#${s.country}`, SK: 'COUNTRY_INTELLIGENCE' },
+                })),
+                client.send(new QueryCommand({
+                  TableName: SUMMARIZE_PREDICT_TABLE,
+                  KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+                  ExpressionAttributeValues: { ':pk': `COUNTRY#${s.country}`, ':prefix': 'DRIFT#' },
+                  ScanIndexForward: false,
+                  Limit: 1,
+                })),
+              ]);
+              if (intelOut.Item) {
+                if (intelOut.Item.riskLevel != null) s.riskLevel = intelOut.Item.riskLevel;
+                if (intelOut.Item.riskScore != null) s.riskScore = intelOut.Item.riskScore;
+              }
+              const d = (driftOut.Items || [])[0];
+              if (d) {
+                s.latestDrift = {
+                  asOf: d.asOf,
+                  changeLevel: d.changeLevel,
+                  changeScore: d.changeScore,
+                  whyChanged: d.whyChanged,
+                  noSingleDriver: d.noSingleDriver,
+                };
+              }
+            } catch (e) {
+              console.warn('world_overview enrichment failed for', s.country, e?.message);
+            }
+          }));
+        } catch (e) {
+          console.warn('world_overview enrichment skipped', e?.message);
+        }
+
         // Cross-country links: two countries connect if their graphs share SPECIFIC
         // actors. Exclude ambient actors (present in ≥40% of countries — Trump, G7,
         // big-power names) so it forms regional clusters, not a Trump/G7 hairball.
@@ -633,7 +675,7 @@ exports.handler = async (event) => {
           }
         }
 
-        console.info('newsSensitiveData world_overview response', { situations: situations.length, links: links.length });
+        console.info('newsSensitiveData world_overview response', { situations: situations.length, links: links.length, enriched: situations.filter(s => s.riskLevel != null).length });
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: { situations, links } }) };
       } catch (err) {
         console.error('world_overview error', err);

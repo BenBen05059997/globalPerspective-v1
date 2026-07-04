@@ -584,7 +584,7 @@ function Tooltip({ tip }) {
       )}
       {edge && !node && edge.class !== 'backbone' && (
         <>
-          <div className="spider-tip-cat" style={{ color: 'var(--accent)' }}>Causal link</div>
+          <div className="spider-tip-cat" style={{ color: 'var(--accent)' }}>Possibly related</div>
           <div className="spider-tip-meta">
             {edge.confidence}{edge.lagDays != null ? ` · ${edge.lagDays}d lag` : ''}
           </div>
@@ -794,7 +794,7 @@ function EdgePanel({ edge, nodeMap, onClose }) {
       <div className="spider-panel-inner">
         <div className="spider-panel-top">
           <span className="spider-panel-cat-tag" style={{ background: confColor(edge.confidence), color: '#fff' }}>
-            Causal link
+            Possibly related
           </span>
           <button className="spider-panel-close" onClick={onClose} aria-label="Close panel">✕</button>
         </div>
@@ -806,7 +806,7 @@ function EdgePanel({ edge, nodeMap, onClose }) {
         </div>
 
         <span className={`spider-edge-conf-badge spider-conf-${edge.confidence || 'weak'}`}>
-          {edge.confidence || 'unrated'} confidence
+          {edge.confidence || 'unrated'} model confidence
           {edge.lagDays != null ? ` · ${edge.lagDays}d lag` : ''}
         </span>
 
@@ -818,7 +818,9 @@ function EdgePanel({ edge, nodeMap, onClose }) {
         )}
 
         <div className="spider-panel-scenario" style={{ marginTop: 0 }}>
-          <div className="spider-panel-jtag">model judgment — interpretation, not sourced fact</div>
+          <div className="spider-panel-jtag">
+            possibly related — model judgment; &quot;caused&quot; requires corroboration + analyst sign-off (none yet)
+          </div>
         </div>
 
         <div className="spider-panel-sec-label">
@@ -996,7 +998,7 @@ export default function SpiderDemo() {
             <>Global timeline — each bubble is a country&apos;s situation at its <strong>peak-activity date</strong> (x) on its <strong>region</strong> lane (y); size = <strong>thread count</strong>, color = <strong>current risk tier</strong> (grey = no risk read; ↗ dot = our read changed this week). <strong>Lines</strong> connect countries whose stories share key actors — <strong>click a line</strong> to see them. Click a bubble to open its causal web.</>
           ) : (
             <>Stories laid out by <strong>time</strong> (left → right) and <strong>category</strong> (lanes).{' '}
-            <strong>Solid lines</strong> = shared-actor backbone (factual). <strong>Dashed lines</strong> = model-judged cause→effect (toggle on).
+            <strong>Solid lines</strong> = shared-actor backbone (factual). <strong>Dashed lines</strong> = possibly-related links — model judgment, not verified causation (toggle on).
             Click a story for its genesis; click a dashed link for the mechanism.</>
           )}
         </p>
@@ -1026,9 +1028,9 @@ export default function SpiderDemo() {
           className={`spider-toggle${causalOn ? ' spider-toggle-on' : ''}`}
           onClick={() => setCausalOn(v => !v)}
         >
-          Causal overlay
+          Inferred links
           <span className="spider-toggle-switch" />
-          <span className="spider-toggle-ck">dashed · model judgment</span>
+          <span className="spider-toggle-ck">dashed · possibly related</span>
         </button>
       </div>
       )}
@@ -1101,7 +1103,7 @@ export default function SpiderDemo() {
         <footer className="spider-footer">
           <span><strong>{visibleNodeCount}</strong> stories</span>
           <span><strong>{backboneCount}</strong> backbone links (shared-actor)</span>
-          <span><strong>{causalEdgeCount}</strong> causal links</span>
+          <span><strong>{causalEdgeCount}</strong> possibly-related links</span>
           {anomalyCount > 0 && (
             <span title="Effect peaks before the cause — hidden from the graph, treated as co-movement (not causation) in the AI read">
               ⚠ <strong>{anomalyCount}</strong> co-movement hidden

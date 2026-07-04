@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useNotifications } from '../hooks/useNotifications';
 import SourceRobustness from './atoms/SourceRobustness';
+import SubscribeCard from './SubscribeCard';
 import './BreakingPage.css';
 
 function relTime(iso) {
@@ -79,6 +80,8 @@ export default function BreakingFeedPage() {
           not just a headline. We stay silent when nothing rises to the bar.
         </p>
       </header>
+
+      <SubscribeCard kind="breaking" variant="breaking" />
 
       {loading ? (
         <div className="bk-skel" />

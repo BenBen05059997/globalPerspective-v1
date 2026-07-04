@@ -9,9 +9,13 @@
   margin: 1.25rem 0;
 }
 
-/* Home: sits under the masthead. Weekly: sits under the KPIs. */
+/* Home: sits under the masthead. Weekly: sits under the KPIs. Breaking: under the header. */
 .subcard--home { margin: 1.4rem 0 0.75rem; }
 .subcard--weekly { margin: 1.4rem 0; }
+.subcard--breaking { margin: 1.25rem 0 1.75rem; }
+
+/* Breaking variant: red kicker to match the BREAKING accent. */
+.subcard--breaking .subcard-kicker { color: #b03328; }
 
 .subcard-body { flex: 1 1 auto; min-width: 0; }
 

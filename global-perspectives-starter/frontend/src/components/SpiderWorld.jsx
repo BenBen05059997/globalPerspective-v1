@@ -65,15 +65,16 @@ export default function WorldOverview({ onDrill }) {
   const [error, setError] = useState(null);
   const [hover, setHover] = useState(null);
   const scrollRef = useRef(null);
-  const [availH, setAvailH] = useState(0); // measured height of the scroll area
+  const [avail, setAvail] = useState({ w: 0, h: 0 }); // measured size of the scroll area
 
-  // Measure the visible area so lanes can be sized to fit it (no vertical scroll).
+  // Measure the visible area so lanes fit the height (no vertical scroll) and
+  // the month fits the width (no horizontal scroll in the common case).
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(entries => {
-      const h = entries[0]?.contentRect?.height;
-      if (h) setAvailH(h);
+      const r = entries[0]?.contentRect;
+      if (r?.width || r?.height) setAvail({ w: r.width || 0, h: r.height || 0 });
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -113,8 +114,15 @@ export default function WorldOverview({ onDrill }) {
     const minMs = Math.min(...all);
     const maxMs = Math.max(...all);
     const totalDays = Math.max(1, Math.round((maxMs - minMs) / DAY_MS) + 1);
+    // Day width compresses so the whole window fits the measured width (no
+    // horizontal scroll in the common case); below the 26px floor the SVG
+    // overflows and an effect opens the scroll at the newest edge.
+    const availW = avail.w > 0 ? avail.w : 1280;
+    const dayW = Math.max(26, Math.min(DAY_W, (availW - MARGIN.left - MARGIN.right) / totalDays));
+    // Bubbles shrink gently with the day width so compressed layouts stay readable.
+    const rScale = 0.65 + 0.35 * Math.min(1, dayW / DAY_W);
     // Strict: a null date has no x. Callers must guard — never snap to an edge.
-    const xForMs = (m) => m == null ? null : MARGIN.left + Math.round((m - minMs) / DAY_MS) * DAY_W + DAY_W / 2;
+    const xForMs = (m) => m == null ? null : MARGIN.left + Math.round((m - minMs) / DAY_MS) * dayW + dayW / 2;
 
     const byRegion = {};
     withMs.forEach(s => { const rk = regionOf(s.country); (byRegion[rk] = byRegion[rk] || []).push(s); });
@@ -123,7 +131,7 @@ export default function WorldOverview({ onDrill }) {
     // fit the measured height so every region is visible without vertical scroll.
     const lanes = REGION_LANES.filter(l => (byRegion[l.key] || []).length > 0);
     const nLanes = Math.max(1, lanes.length);
-    const usableH = (availH > 0 ? availH : 520) - MARGIN.top - MARGIN.bottom;
+    const usableH = (avail.h > 0 ? avail.h : 520) - MARGIN.top - MARGIN.bottom;
     const laneH = Math.max(LANE_H_MIN, Math.min(LANE_H_MAX, usableH / nLanes));
     const nudge = Math.min(26, laneH * 0.22); // collision offset for near-overlapping bubbles
 
@@ -134,7 +142,7 @@ export default function WorldOverview({ onDrill }) {
       const laneY = MARGIN.top + li * laneH + laneH / 2;
       let lastX = -1e9; let toggle = 1;
       arr.forEach(s => {
-        const r = rForThreads(s.threadCount);
+        const r = rForThreads(s.threadCount) * rScale;
         const x = xForMs(s._peakMs);
         let y = laneY - 4;
         if (x - lastX < 2 * r + 8) { y = laneY - 4 + toggle * nudge; toggle *= -1; } else { toggle = 1; }
@@ -145,11 +153,18 @@ export default function WorldOverview({ onDrill }) {
       });
     });
 
-    const svgW = MARGIN.left + totalDays * DAY_W + MARGIN.right;
+    const svgW = MARGIN.left + totalDays * dayW + MARGIN.right;
     const svgH = MARGIN.top + nLanes * laneH + MARGIN.bottom;
     const laneBottom = MARGIN.top + nLanes * laneH;
-    return { placed, pos, lanes, laneH, minMs, maxMs, totalDays, svgW, svgH, laneBottom, xForMs };
-  }, [situations, availH]);
+    return { placed, pos, lanes, laneH, dayW, minMs, maxMs, totalDays, svgW, svgH, laneBottom, xForMs };
+  }, [situations, avail]);
+
+  // Floor fallback: when the month can't compress enough to fit, open the
+  // scroll at the newest edge (recent activity first, history to the left).
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && layout && layout.svgW > el.clientWidth) el.scrollLeft = el.scrollWidth;
+  }, [layout]);
 
   return (
     <div className="spider-graph-wrap">
@@ -181,7 +196,7 @@ export default function WorldOverview({ onDrill }) {
             </text>
             {Array.from({ length: layout.totalDays }, (_, d) => d).filter(d => d % 4 === 0).map(d => {
               const ms = layout.minMs + d * DAY_MS;
-              const x = MARGIN.left + d * DAY_W + DAY_W / 2;
+              const x = MARGIN.left + d * layout.dayW + layout.dayW / 2;
               return (
                 <g key={`t${d}`}>
                   <line x1={x} y1={MARGIN.top - 4} x2={x} y2={layout.laneBottom} className="spider-gridline" />

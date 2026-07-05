@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-07-05 (feat: Phase 3 — /track-record becomes the "Accountability" hub)
+
+Turns the honest-empty forecast scoreboard into the accountability front door (PITCH.md pillar 4 + the living-analysis wedge, one URL). Kept the `/track-record` URL (reversible; a nicer alias is a trivial future add).
+- **Backend (`newsSensitiveData-dev`, DEPLOYED + curl-verified):** `prediction_track_record` now scores **only `methodologyVersion>=1`** records (the era cut) — returns `eraCutFrom`/`legacyPredictionsExcluded`, reads v1 `agentVerdict` citations. Live: 38 v1 scored-eligible, **2418 legacy excluded**, 0 resolved (honest-empty until ~2026-07-11). New **`corrections_feed`** action — site-wide ledger of recent grounded drift notes across all countries + threads (scans DRIFT# rows; live-verified 26 notes).
+- **Frontend (`/track-record` → "Accountability"):** three sections — **Forecast record** (era-cut-framed stats + honest-empty pending state), **Corrections ledger** (`useCorrectionsFeed` — "United States… · DR Congo elevated → high · ↳ Because: <cited event>"), **How this works** (published methodology incl. the pre-v1 exclusion disclosure). New `useCorrectionsFeed` hook + `fetchCorrectionsFeed`. Build passes, lint clean.
+- Plan `PREDICTION_METHODOLOGY_V1_PLAN.md` §5. Files: `amplify/backend/function/newsSensitiveData/src/index.js`, `components/TrackRecordPage.{jsx,css}`, `hooks/useCorrectionsFeed.js`, `services/restProxy.js`.
+
 ## 2026-07-04 (feat: prediction methodology v1 — capture gates + grounded generation, DEPLOYED + era-cut)
 
 Rebuilt the forecast-generation half of `NewsProjectInvokeAgentLambda` so a malformed trigger can never reach the immutable prediction log — the root cause behind a 50-trigger resolution pilot's defects (2026-07-04): **28% retrodictions** (trigger `deadline ≤ generatedAt` → automatic wins → silent Brier inflation), false-premise triggers (nonexistent elections, misnamed leaders), and date-extraction artifacts. Decision: **clean-start** — don't score the legacy backlog, start the scored track record at the deploy date (the **era-cut = 2026-07-04**), score only `methodologyVersion:1` records.

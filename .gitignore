@@ -40,3 +40,5 @@ amplify/**/*.zip
 
 # smoke-test screenshots
 scripts/smoke-artifacts/
+worklist*.json
+verdicts*.json

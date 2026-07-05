@@ -530,6 +530,51 @@ exports.handler = async (event) => {
       }
     }
 
+    // Site-wide corrections ledger — the living-analysis loop's aggregate view. Recent grounded
+    // drift notes across ALL countries + threads ("<name>: elevated → high · Because: <event>").
+    // Scans DRIFT# rows (60d-TTL, bounded; same Scan pattern as economic_impact_list). Cached 30min
+    // on the client. (Future optimization: have newsDriftCorrector append to one CORRECTIONS_FEED
+    // row so the serve is a single GetItem — see PREDICTION_METHODOLOGY_V1_PLAN.md §5.)
+    if (action === 'corrections_feed') {
+      const client = getDynamoClient();
+      try {
+        const limit = Math.min(Number(payload?.limit || qs?.limit || 40), 100);
+        const items = [];
+        let ExclusiveStartKey;
+        do {
+          const res = await client.send(new ScanCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            FilterExpression: 'begins_with(SK, :d)',
+            ExpressionAttributeValues: { ':d': 'DRIFT#' },
+            ProjectionExpression: 'PK, SK, asOf, changeLevel, changeScore, triggerEvent, whyChanged, noSingleDriver',
+            ExclusiveStartKey,
+          }));
+          items.push(...(res.Items || []));
+          ExclusiveStartKey = res.LastEvaluatedKey;
+        } while (ExclusiveStartKey);
+
+        const notes = items.map((it) => {
+          const pk = String(it.PK || '');
+          const scope = pk.startsWith('COUNTRY#') ? 'country' : pk.startsWith('THREAD#') ? 'thread' : 'other';
+          return {
+            scope,
+            name: pk.replace(/^(COUNTRY#|THREAD#)/, ''),
+            asOf: it.asOf || String(it.SK || '').replace(/^DRIFT#/, ''),
+            changeLevel: it.changeLevel || null,
+            changeScore: it.changeScore || null,
+            triggerEvent: it.triggerEvent || null,
+            whyChanged: it.whyChanged || null,
+            noSingleDriver: !!it.noSingleDriver,
+          };
+        }).filter(n => n.asOf && n.scope !== 'other');
+        notes.sort((a, b) => String(b.asOf).localeCompare(String(a.asOf)));
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, notes: notes.slice(0, limit), total: notes.length }) };
+      } catch (err) {
+        console.error('corrections_feed error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Query failed' }) };
+      }
+    }
+
     if (action === 'systems_analysis') {
       const countryName = payload?.countryName || qs?.countryName;
       if (!countryName) {
@@ -796,16 +841,24 @@ exports.handler = async (event) => {
         do {
           const res = await client.send(new ScanCommand({
             TableName: PREDICTION_LOG_TABLE,
-            ProjectionExpression: 'title, category, generatedAt, scenarios',
+            ProjectionExpression: 'title, category, generatedAt, scenarios, methodologyVersion',
             ExclusiveStartKey,
           }));
           items.push(...(res.Items || []));
           ExclusiveStartKey = res.LastEvaluatedKey;
         } while (ExclusiveStartKey);
 
-        // A "resolved" trigger is one a human confirmed as fired/not_fired
-        // (unclear is excluded from scoring). Score each against its parent
-        // scenario's probability midpoint: Brier = mean((p - outcome)^2).
+        // Methodology-v1 era cut (2026-07-04): only records written by the rebuilt,
+        // gated capture (methodologyVersion >= 1) are scored. The legacy backlog is kept
+        // immutable but excluded — it carries the trigger-generation defects the pilot
+        // found (retrodictions, false premises). See PREDICTION_METHODOLOGY_V1_PLAN.md.
+        const ERA_CUT_FROM = '2026-07-04';
+        const v1Items = items.filter(it => Number(it.methodologyVersion || 0) >= 1);
+        const legacyExcluded = items.length - v1Items.length;
+
+        // A "resolved" trigger is one confirmed as fired/not_fired (unclear is excluded from
+        // scoring). Score each against its parent scenario's probability midpoint:
+        // Brier = mean((p - outcome)^2).
         const buckets = [0, 0.2, 0.4, 0.6, 0.8, 1.0001];
         const cal = buckets.slice(0, -1).map((lo, i) => ({ lo, hi: buckets[i + 1], n: 0, predicted: 0, fired: 0 }));
         const resolved = [];
@@ -815,7 +868,7 @@ exports.handler = async (event) => {
         let scored = 0;
         let firedCount = 0;
 
-        for (const it of items) {
+        for (const it of v1Items) {
           for (const s of it.scenarios || []) {
             const p = typeof s.probability === 'number' ? s.probability : null;
             for (const t of s.triggers || []) {
@@ -834,6 +887,11 @@ exports.handler = async (event) => {
                 const b = cal.find(c => p >= c.lo && p < c.hi);
                 if (b) { b.n++; b.predicted += p; b.fired += outcome; }
               }
+              // v1 verdicts carry the agent's cited evidence; fall back to a legacy proposal citation.
+              const citation = t.agentVerdict?.evidence?.[0]?.url
+                || t.agentVerdict?.evidence?.[0]?.title
+                || t.proposal?.citation
+                || null;
               resolved.push({
                 title: it.title,
                 category: it.category || null,
@@ -842,7 +900,8 @@ exports.handler = async (event) => {
                 trigger: t.text,
                 deadline: t.deadline,
                 verdict: v,
-                citation: t.proposal?.citation || null,
+                citation,
+                confirmedBy: t.confirmedBy || null,
                 confirmedAt: t.confirmedAt || null,
               });
             }
@@ -860,7 +919,10 @@ exports.handler = async (event) => {
           }));
 
         const data = {
-          totalPredictionsLogged: items.length,
+          methodologyVersion: 1,
+          eraCutFrom: ERA_CUT_FROM,
+          totalPredictionsLogged: v1Items.length,
+          legacyPredictionsExcluded: legacyExcluded,
           totalDatedTriggers: totalTriggers,
           resolvedTriggers: scored,
           pendingTriggers: pendingCount,
@@ -869,7 +931,7 @@ exports.handler = async (event) => {
           calibration,
           recent: resolved.slice(0, 30),
         };
-        console.info('prediction_track_record', { logged: data.totalPredictionsLogged, resolved: data.resolvedTriggers });
+        console.info('prediction_track_record', { v1Logged: data.totalPredictionsLogged, legacyExcluded, resolved: data.resolvedTriggers });
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, data }) };
       } catch (e) {
         console.error('prediction_track_record error', e);

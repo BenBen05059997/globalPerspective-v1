@@ -103,11 +103,11 @@
 .tr-cal {
   margin-bottom: var(--space-12);
 }
-.tr-cal h2,
-.tr-recent h2,
-.tr-pending h2 {
+.tr-cal h3,
+.tr-recent h3,
+.tr-pending h3 {
   font-family: var(--serif);
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: 600;
   color: var(--ink);
   margin: 0 0 var(--space-3);
@@ -289,3 +289,52 @@
 }
 .tr-support a { color: var(--accent, #b4502f); font-weight: 600; text-decoration: none; }
 .tr-support a:hover { text-decoration: underline; }
+
+/* ---- Phase 3: accountability-hub sections (forecast record / corrections / methodology) ---- */
+.tr-section { margin-bottom: var(--space-14, 4.5rem); }
+.tr-section-head {
+  display: flex; align-items: baseline; gap: var(--space-3);
+  border-bottom: 1px solid var(--line); padding-bottom: var(--space-3); margin-bottom: var(--space-6);
+}
+.tr-section-head h2, .tr-method h2 {
+  font-family: var(--serif); font-size: var(--text-2xl); font-weight: 600; color: var(--ink); margin: 0;
+}
+.tr-eracut, .tr-section-tag {
+  font-family: var(--mono); font-size: var(--text-xs); letter-spacing: .04em;
+  color: var(--ink-dim); text-transform: uppercase; margin-left: auto;
+}
+.tr-section-tag {
+  margin-left: auto; padding: 2px 8px; border: 1px solid var(--line);
+  border-radius: 999px; color: var(--accent, #b4502f);
+}
+.tr-section-sub {
+  font-size: var(--text-base); line-height: 1.6; color: var(--ink-mid);
+  max-width: 68ch; margin: 0 0 var(--space-6);
+}
+
+/* Corrections ledger */
+.tr-cl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.tr-cl-item {
+  background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent, #b4502f);
+  border-radius: var(--r-lg); padding: var(--space-4) var(--space-5);
+}
+.tr-cl-top { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-3); }
+.tr-cl-scope {
+  font-family: var(--mono); font-size: var(--text-2xs, .68rem); letter-spacing: .05em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 4px; background: var(--paper-2); color: var(--ink-dim);
+}
+.tr-cl-scope.country { color: var(--risk-e, #b4502f); }
+.tr-cl-name { font-weight: 600; color: var(--ink); text-decoration: none; }
+.tr-cl-name:hover { text-decoration: underline; }
+.tr-cl-delta { font-family: var(--mono); font-size: var(--text-sm); color: var(--ink-mid); }
+.tr-cl-date { font-family: var(--mono); font-size: var(--text-xs); color: var(--ink-dim); margin-left: auto; }
+.tr-cl-why { font-size: var(--text-sm); line-height: 1.55; color: var(--ink-mid); margin: var(--space-2) 0 0; }
+.tr-cl-why.nsd { font-style: italic; color: var(--ink-dim); }
+.tr-cl-why strong { color: var(--ink); font-weight: 600; }
+.tr-cl-evdate { color: var(--ink-dim); }
+.tr-cl-empty, .tr-cl-loading { font-size: var(--text-base); color: var(--ink-dim); line-height: 1.6; max-width: 60ch; }
+
+/* Methodology */
+.tr-method-list { margin: 0; padding-left: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
+.tr-method-list li { font-size: var(--text-base); line-height: 1.6; color: var(--ink-mid); }
+.tr-method-list strong { color: var(--ink); }

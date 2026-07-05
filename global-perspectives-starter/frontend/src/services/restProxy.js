@@ -224,6 +224,10 @@ export async function fetchPredictionTrackRecord() {
   return proxyAction('prediction_track_record');
 }
 
+export async function fetchCorrectionsFeed(limit = 40) {
+  return proxyAction('corrections_feed', { limit });
+}
+
 export async function fetchDisruptionsList({ minSeverity, country, limit } = {}) {
   const payload = {};
   if (minSeverity) payload.minSeverity = minSeverity;

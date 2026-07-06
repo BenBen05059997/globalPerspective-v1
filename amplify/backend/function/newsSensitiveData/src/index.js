@@ -2,6 +2,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { capForTier } = require('./lib');
 const { assembleDossier } = require('./dossier');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -70,6 +71,34 @@ const getDynamoClient = () => {
   }
   return dynamoDocClient;
 };
+
+// Membership tier for the *self-correction depth* gate (MEMBER_GATING_PLAN.md). The users
+// table (written by newsPolarBilling on payment) holds tier='member'|'free'. This Lambda's
+// role already has DynamoDBFullAccess, so no IAM change — only USERS_DDB_TABLE.
+const USERS_DDB_TABLE = process.env.USERS_DDB_TABLE || 'GlobalPerspectiveUserTable';
+
+// Best-effort tier from the request's Firebase JWT → 'member' | 'free'. NEVER throws and
+// NEVER blocks: no/invalid token or any DDB hiccup ⇒ 'free', so anonymous/free callers always
+// still get a 200 with capped (not withheld) data. This is a depth cap, not an auth gate —
+// deliberately avoids the 2026-04-22 anon-guard regression (feedback_auth_guard_hooks).
+async function resolveTier(event) {
+  try {
+    const authHeader = event?.headers?.authorization || event?.headers?.Authorization;
+    if (!authHeader) return 'free';
+    const claims = await verifyFirebaseToken(authHeader);
+    const uid = claims && (claims.user_id || claims.sub);
+    if (!uid) return 'free';
+    const { Item } = await getDynamoClient().send(new GetCommand({
+      TableName: USERS_DDB_TABLE,
+      Key: { uid },
+      ProjectionExpression: 'tier',
+    }));
+    return Item?.tier === 'member' ? 'member' : 'free';
+  } catch (err) {
+    console.warn('resolveTier failed (defaulting free):', err.message);
+    return 'free';
+  }
+}
 
 const allowedOrigins = [
   'https://benben05059997.github.io',
@@ -522,8 +551,14 @@ exports.handler = async (event) => {
           })),
         ]);
         const snapshots = (histOut.Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
-        const driftNotes = (driftOut.Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, countryName, snapshots, driftNotes }) };
+        // Correction-history DEPTH is the member perk (MEMBER_GATING_PLAN.md): non-members get the
+        // latest note free + an honest count of how many more; members get the full chain. The
+        // snapshots (the analysis itself) are always fully public — only the drift depth caps.
+        const allDriftNotes = (driftOut.Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
+        const tier = await resolveTier(event);
+        const capped = capForTier(allDriftNotes, tier, 1);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, countryName, snapshots,
+          driftNotes: capped.items, driftNotesTotal: capped.total, driftNotesGated: capped.gated }) };
       } catch (err) {
         console.error('country_history error', err);
         return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Query failed' }) };
@@ -568,7 +603,13 @@ exports.handler = async (event) => {
           };
         }).filter(n => n.asOf && n.scope !== 'other');
         notes.sort((a, b) => String(b.asOf).localeCompare(String(a.asOf)));
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, notes: notes.slice(0, limit), total: notes.length }) };
+        // Ledger DEPTH is the member perk: non-members see the newest few + the honest total;
+        // members see the full history. The total is always the real full count (feeds the
+        // "Showing n of N — members see all" affordance). See MEMBER_GATING_PLAN.md.
+        const tier = await resolveTier(event);
+        const CORRECTIONS_TEASER = 5;
+        const visible = tier === 'member' ? notes.slice(0, limit) : notes.slice(0, CORRECTIONS_TEASER);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, notes: visible, total: notes.length, gated: tier !== 'member' && notes.length > visible.length }) };
       } catch (err) {
         console.error('corrections_feed error', err);
         return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Query failed' }) };

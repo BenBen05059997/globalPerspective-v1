@@ -398,8 +398,8 @@ Bilateral relationship analysis between country pairs.
 
 > **Provider note:** The source default still reads Grok and the migration plan's Phase 2 checkbox was never ticked, but the **deployed** function's env vars point at DeepSeek (`GROK_MODEL=deepseek-chat`, `GROK_API_URL=https://api.deepseek.com/chat/completions`, verified 2026-05-26). Manual-invoke only — not on any EventBridge schedule.
 
-**Frontend:** none — the PairListPage/PairPage components and their `/weekly/pairs` + `/weekly/pair/:slug` routes were deleted in the "Cut: orphans" cleanup. The backend data + API actions remain; nothing renders them.
-**API actions:** `pair_analysis` (single pair by slug) + `pair_analyses_list` (all pairs, DDB Scan) — still served, currently unconsumed by the UI
+**Frontend:** the dedicated pair pages (PairListPage/PairPage, `/weekly/pairs` + `/weekly/pair/:slug`) were deleted in the "Cut: orphans" cleanup — but **`pair_analyses_list` is LIVE-consumed by `/map`** (verified in code 2026-07-06): `WorldMapV2.jsx` → `usePairAnalyses` renders the cross-country **arc overlays** (bilateral links, 7d/30d time-window filters, legend counts, selected-country link list). Do NOT remove it.
+**API actions:** `pair_analyses_list` (all pairs, DDB Scan) — **consumed by WorldMapV2 arc overlays**; `pair_analysis` (single pair by slug) — served but unconsumed (`fetchPairAnalysis` in restProxy has no callers); kept as a harmless read-only action
 
 **Key env vars:** `XAI_API_KEY` / `GROK_MODEL` / `GROK_API_URL` (legacy names — deployed function holds **DeepSeek** values), `TOPICS_DDB_TABLE`, `SUMMARIZE_PREDICT_TABLE`, `BRAVE_SEARCH_API_KEY`
 

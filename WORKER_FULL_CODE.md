@@ -33,7 +33,7 @@ function escapeHtml(str) {
   }[c]));
 }
 
-function buildBotHtml({ title, description, url, heading, bodyHtml }) {
+function buildBotHtml({ title, description, url, heading, bodyHtml, ogType }) {
   const t = escapeHtml(title);
   const d = escapeHtml(description);
   const u = escapeHtml(url);
@@ -44,7 +44,7 @@ function buildBotHtml({ title, description, url, heading, bodyHtml }) {
 <title>${t}</title>
 <meta name="description" content="${d}">
 <link rel="canonical" href="${u}">
-<meta property="og:type" content="article">
+<meta property="og:type" content="${ogType || 'article'}">
 <meta property="og:url" content="${u}">
 <meta property="og:title" content="${t}">
 <meta property="og:description" content="${d}">
@@ -61,6 +61,47 @@ function buildBotHtml({ title, description, url, heading, bodyHtml }) {
 <footer><p><a href="${u}">Read the full briefing at Global Perspectives</a></p></footer>
 </body>
 </html>`;
+}
+
+// Root URL — static positioning + page directory. Deliberately no Lambda call:
+// static copy can't go stale-wrong, and this is the most-linked URL on the site.
+function renderRootPage() {
+  const bodyHtml = `
+<p>Global Perspectives is an AI-powered global news intelligence platform that <strong>shows its work</strong>:
+every forecast is logged the moment it is made with dated, falsifiable triggers and scored in public as
+deadlines pass; every revised conclusion is recorded in an open corrections ledger with the real event that
+changed the read — never silently overwritten. The running record, including the Brier score and calibration,
+is published at <a href="${SITE_URL}/track-record">${SITE_URL}/track-record</a>.</p>
+<h2>Briefings</h2>
+<ul>
+<li><a href="${SITE_URL}/">Today's Topics</a> — today's global stories by region, with on-demand AI summary, forecast, and root-cause for any story</li>
+<li><a href="${SITE_URL}/daily">Daily Brief</a> — the end-of-day intelligence brief: one synthesised read of what mattered today</li>
+<li><a href="${SITE_URL}/weekly-brief">Weekly Brief</a> — Sunday signals digest: the week's discrete signals with fact kept separate from judgment; also delivered by email</li>
+<li><a href="${SITE_URL}/breaking">Breaking</a> — rare, human-confirmed alerts for genuinely significant events; quiet is the normal state</li>
+</ul>
+<h2>Intelligence</h2>
+<ul>
+<li><a href="${SITE_URL}/weekly">Story Threads</a> — ongoing story arcs ranked by risk, each with a living forecast board that resolves in public</li>
+<li><a href="${SITE_URL}/weekly/countries">Countries</a> — every covered country ranked by risk tier, with a standing intelligence briefing; each read self-corrects as news arrives</li>
+<li><a href="${SITE_URL}/map">World Map</a> — today's coverage as a spatial view</li>
+</ul>
+<h2>Markets &amp; analysis</h2>
+<ul>
+<li><a href="${SITE_URL}/economy">Economy</a> — live instrument dashboard plus which stories are repricing markets today, with a weekly what-moved-and-why wrap</li>
+<li><a href="${SITE_URL}/analyze">Analysis Studio</a> — run a cited AI deep-dive across up to 4 stories</li>
+</ul>
+<h2>Accountability</h2>
+<ul>
+<li><a href="${SITE_URL}/track-record">Track Record</a> — every forecast publicly scored (Brier + calibration), every revised conclusion logged, methodology published</li>
+</ul>`;
+  return buildBotHtml({
+    title: 'Global Perspectives™ — AI news intelligence that shows its work',
+    description: 'AI-powered global news intelligence: forecasts publicly scored against dated triggers, revised conclusions logged in an open corrections ledger. Story arcs, country risk, narrative analysis across 190+ countries.',
+    url: `${SITE_URL}/`,
+    heading: 'Global Perspectives — AI news intelligence that shows its work',
+    bodyHtml,
+    ogType: 'website',
+  });
 }
 
 async function renderThreadPage(threadId) {
@@ -192,6 +233,17 @@ export default {
 
     // Bot pre-rendering
     if (isBotRequest(userAgent)) {
+      // Root URL: static positioning + page directory (no Lambda call)
+      if (url.pathname === '/') {
+        return new Response(renderRootPage(), {
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'public, max-age=86400',
+            'X-Rendered-By': 'cf-worker-bot',
+          },
+        });
+      }
+
       // Thread page: /weekly/thread/:threadId
       const threadMatch = url.pathname.match(/^\/weekly\/thread\/([^/]+)\/?$/);
       if (threadMatch) {
@@ -253,6 +305,7 @@ export default {
 
 | Route | Data source | What bots see |
 |-------|-------------|---------------|
+| `/` | static (no Lambda) | Value prop (accountability model) + grouped page directory with per-page descriptions. Added 2026-07-06 (`SITE_ORIENTATION_PLAN.md` P4) — previously bots saw the empty SPA shell at the most-linked URL. Static by design: can't go stale-wrong; 24h edge cache |
 | `/weekly/country/:name` | `country_preview` | Headline, risk level, summary, key developments, trajectory |
 | `/weekly/thread/:id` | `thread_preview` | Thread title, story timeline |
 | `/daily` | `daily_brief` (today) | Headline, summary, top stories with predictions, stats |

@@ -100,13 +100,29 @@ query-param contract is introduced (prefer plain paths — none planned).
 **Verify:** `curl -A "Twitterbot" https://globalperspective.net/` returns the
 pre-render; normal UA returns the SPA.
 
-## Phase 5 — Pairs decision (cleanup, independent)
+**Status 2026-07-06:** (1) DONE — `index.html` meta/OG/Twitter descriptions now carry the
+accountability value prop; noscript gained the Public Accountability bullet + link row fixed
+(the old row linked `/pricing`, a deleted route → now `/track-record` + `/membership`); FAQ
+schema gained an accountability Q&A; WebApplication featureList gained the track-record +
+corrections-ledger entries. (2) CODE READY — `WORKER_FULL_CODE.md` updated with
+`renderRootPage()` (static, no Lambda, 24h edge cache, og:type website) + the `/` bot branch;
+JS syntax-checked + render smoke-tested. **OPERATOR ACTION: paste the updated
+`WORKER_FULL_CODE.md` code block into the Cloudflare Worker editor and Deploy** (note: the doc
+may lag any hand-edits made directly in the CF editor since 2026-04 — diff before replacing),
+then run the curl check above.
 
-Backend `pair_analysis`/`pair_analyses_list` are served but unconsumed since the
-orphan cleanup. Pick one:
-- **(a) Remove** the two actions from `newsSensitiveData` (+ ARCHITECTURE.md note), or
-- **(b) Resurface** minimally (out of scope here — would be its own plan).
-Default recommendation: (a). Operator decides.
+## Phase 5 — Pairs decision (cleanup, independent) — ✅ RESOLVED 2026-07-06: premise was FALSE
+
+The "unconsumed" claim (from ARCHITECTURE.md Lambda #8) was **stale**. Verified in code:
+- `pair_analyses_list` is **live-consumed by `/map`** — `WorldMapV2.jsx` → `usePairAnalyses`
+  renders the cross-country arc overlays (links, 7d/30d time-window filters, legend counts,
+  selected-country link list). Removing it would have broken the map. **KEEP.**
+- `pair_analysis` (single) is genuinely dead (`fetchPairAnalysis` in restProxy has no callers),
+  but removing one read-only action isn't worth a redeploy of the highest-traffic Lambda.
+  **KEEP, documented.**
+
+Outcome: no backend change; ARCHITECTURE.md Lambda #8 corrected. Lesson: verify "unconsumed"
+against code, not docs, before deleting.
 
 ---
 

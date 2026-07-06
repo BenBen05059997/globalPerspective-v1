@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-07-06 (feat: site orientation P4+P5 — root-URL crawler positioning; pairs premise corrected)
+
+Closes out `SITE_ORIENTATION_PLAN.md`.
+- **P4a — `index.html` (build+deploy):** meta/OG/Twitter descriptions now lead with the accountability value prop ("shows its work — forecasts publicly scored against dated triggers, revised conclusions logged in an open corrections ledger"); noscript block gained a Public Accountability feature bullet and its link row fixed — it linked **`/pricing`, a route deleted in the orphans cleanup** (404 for every crawler that followed it) → now `/track-record` + `/membership`; FAQ schema gained an accountability Q&A; WebApplication featureList gained track-record + corrections-ledger entries. All 3 JSON-LD blocks validated.
+- **P4b — Cloudflare Worker (code ready, operator paste pending):** `WORKER_FULL_CODE.md` gained `renderRootPage()` — a **static** `/` bot branch (no Lambda call; can't go stale-wrong; 24h edge cache; `og:type website`) serving the value prop + the grouped page directory with per-page descriptions. Previously bots/AI crawlers saw the empty SPA shell at the most-linked URL. Syntax-checked + render smoke-tested. Operator: paste into the CF Worker editor + Deploy, then `curl -A Twitterbot https://globalperspective.net/`.
+- **P5 — pairs cleanup CANCELLED, premise was false:** ARCHITECTURE.md claimed `pair_analysis`/`pair_analyses_list` were "unconsumed by the UI" — stale. **`pair_analyses_list` powers the `/map` arc overlays** (`WorldMapV2.jsx` → `usePairAnalyses`: bilateral links, 7d/30d filters, legend counts); removing it would have broken the map. `pair_analysis` (single) is dead but harmless. No backend change; ARCHITECTURE.md Lambda #8 corrected. Lesson recorded: verify "unconsumed" against code before deleting.
+
 ## 2026-07-06 (feat: site orientation — make `/` land + make the pages legible)
 
 No new pages and no backend change — the site had a feature-surplus with an orientation gap: `/` pitched itself as a generic aggregator while the real differentiators (public forecast scoring, corrections ledger, self-correcting analysis) were invisible, and the flat 8-item nav gave no hierarchy. Plan `SITE_ORIENTATION_PLAN.md`; all three phases browser-verified against live prod data, 0 console errors, verify green (0 errors, 192/192), build clean.

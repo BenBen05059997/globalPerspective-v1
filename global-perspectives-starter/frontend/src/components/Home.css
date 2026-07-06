@@ -98,6 +98,49 @@
 }
 .home-markets-link:hover { text-decoration: underline; text-underline-offset: 2px; }
 
+.home-masthead-sub a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.home-masthead-sub a:hover { color: var(--accent-deep); }
+
+/* ── Trust strip (accountability proof, real data only) ──── */
+.home-trust-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  max-width: 720px;
+  margin: -32px auto 40px;
+}
+.home-trust-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  color: inherit;
+}
+.home-trust-card.is-link { transition: border-color var(--fast), background var(--fast); }
+.home-trust-card.is-link:hover { border-color: var(--accent); background: var(--card); }
+.home-trust-n {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+}
+.home-trust-label {
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-mid);
+}
+
 /* ── Loading ─────────────────────────────────────────────── */
 .home-loading {
   text-align: center;

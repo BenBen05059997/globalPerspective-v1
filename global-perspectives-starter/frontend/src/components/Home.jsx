@@ -19,6 +19,8 @@ import LedeBand from './atoms/LedeBand';
 import BreakingStrip from './atoms/BreakingStrip';
 import SubscribeCard from './SubscribeCard';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
+import { useTrackRecord } from '../hooks/useTrackRecord';
+import { useCorrectionsFeed } from '../hooks/useCorrectionsFeed';
 import { composeTopicsLede } from '../utils/composeTopicsLede';
 import './AIComponents.css';
 import './Home.css';
@@ -88,6 +90,32 @@ function Home() {
     () => composeTopicsLede({ topics, disruptions: allDisruptions }),
     [topics, allDisruptions],
   );
+
+  // Trust strip — the "why this is different" proof, built ONLY from real returned
+  // data (each card omitted when its number is absent; never a placeholder — see
+  // the no-misinformation-fallback rule). Sits above SubscribeCard as its motivation.
+  const { data: trackRecord } = useTrackRecord();
+  const { notes: corrections } = useCorrectionsFeed(100);
+  const trustStats = React.useMemo(() => {
+    const cards = [];
+    const forecastsN = Number(trackRecord?.totalDatedTriggers) || 0;
+    const correctionsN = Array.isArray(corrections) ? corrections.length : 0;
+    const sourcesN = topics.reduce(
+      (sum, t) => sum + (Array.isArray(t.sources) ? t.sources.length : 0), 0);
+    if (forecastsN > 0) cards.push({
+      to: '/track-record', n: forecastsN,
+      label: 'dated, falsifiable forecast triggers — scored in public as each deadline passes',
+    });
+    if (correctionsN > 0) cards.push({
+      to: '/track-record', n: correctionsN,
+      label: 'revised conclusions logged, each with the event that changed our read',
+    });
+    if (sourcesN > 0 && topics.length > 0) cards.push({
+      to: null, n: sourcesN,
+      label: `sources across ${topics.length} stories tracked today`,
+    });
+    return cards;
+  }, [trackRecord, corrections, topics]);
 
   const sortedRegions = React.useMemo(() =>
     Object.entries(categorizedTopics)
@@ -332,7 +360,9 @@ function Home() {
         <div className="home-masthead-kicker">{getDayString()}</div>
         <h1>Today's Global Topics</h1>
         <p className="home-masthead-sub">
-          Trending topics from around the world, organised by region. Summarise, predict, or trace the cause of any one.
+          AI-driven global intelligence that shows its work — every forecast{' '}
+          <Link to="/track-record">publicly scored</Link>, every revised conclusion{' '}
+          <Link to="/track-record">logged</Link>. Summarise, predict, or trace the cause of any story below.
         </p>
         <Link className="home-markets-link" to="/weekly-markets">Markets this week →</Link>
 
@@ -349,6 +379,23 @@ function Home() {
           </div>
         )}
       </div>
+
+      {/* Trust strip — real-data proof of the accountability model; honest-empty */}
+      {!loading && trustStats.length > 0 && (
+        <div className="home-trust-strip">
+          {trustStats.map((c, i) => {
+            const inner = (
+              <>
+                <span className="home-trust-n">{c.n.toLocaleString()}</span>
+                <span className="home-trust-label">{c.label}</span>
+              </>
+            );
+            return c.to
+              ? <Link key={i} to={c.to} className="home-trust-card is-link">{inner}</Link>
+              : <div key={i} className="home-trust-card">{inner}</div>;
+          })}
+        </div>
+      )}
 
       {/* Weekly Brief email subscribe */}
       <SubscribeCard variant="home" />

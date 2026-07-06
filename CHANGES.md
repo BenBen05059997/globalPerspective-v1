@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-07-06 (fix: Predict card crashed on methodology-v1 structured triggers)
+
+Clicking Summarise/Predict on Home (and MapSidePanel) crashed with React error #31 ("object with keys {text, deadline}") for every prediction generated since the 2026-07-04 methodology-v1 deploy: triggers changed from plain strings to structured `{text, deadline}` objects, but the display components still rendered each trigger directly as a React child. Backend was healthy — all 13 live topics served predictions fine.
+- **`PredictionDisplay.jsx`:** new `normalizeTrigger()` accepts both shapes (string → `{text, deadline:null}`; object → validated `{text, deadline}`; anything else dropped) — "Watch for" rows render `text` plus a mono "by YYYY-MM-DD" deadline chip when present. Pre-v1 cached string triggers still render.
+- **`SpiderDemo.jsx` (+ `.css`):** same both-shapes handling in the Event-panel scenario triggers list, with a `.spider-scenario-deadline` chip style.
+- Verify green (lint 0 errors, 192/192 tests). Playwright-verified in the browser against prod data: Predict on Home renders the full Scenario Forecast (3 scenarios, trigger rows with deadline chips), no console/React errors. Files: `components/{PredictionDisplay.jsx,SpiderDemo.jsx,SpiderDemo.css}`.
+
 ## 2026-07-05 (feat: Phase 3 — /track-record becomes the "Accountability" hub)
 
 Turns the honest-empty forecast scoreboard into the accountability front door (PITCH.md pillar 4 + the living-analysis wedge, one URL). Kept the `/track-record` URL (reversible; a nicer alias is a trivial future add).

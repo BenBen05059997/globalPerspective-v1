@@ -656,6 +656,13 @@
   line-height: 1.4;
 }
 
+.spider-scenario-deadline {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
 /* ── Edge panel ──────────────────────────────────────────────────────────── */
 
 .spider-link-pair {

@@ -6,6 +6,16 @@ function tryParseJson(content) {
   try { return JSON.parse(content); } catch { return null; }
 }
 
+// Methodology-v1 triggers (2026-07-04) are structured { text, deadline } objects;
+// pre-v1 cached content has plain strings. Normalize both, drop anything else.
+function normalizeTrigger(t) {
+  if (typeof t === 'string') return { text: t, deadline: null };
+  if (t && typeof t === 'object' && typeof t.text === 'string') {
+    return { text: t.text, deadline: typeof t.deadline === 'string' ? t.deadline : null };
+  }
+  return null;
+}
+
 function ScenarioCard({ scenario, index }) {
   const colors = ['#a2442e', '#4fa07b', '#c94a33'];
   const color = colors[index % colors.length];
@@ -24,10 +34,15 @@ function ScenarioCard({ scenario, index }) {
       {scenario.triggers?.length > 0 && (
         <div>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888', marginBottom: 6 }}>Watch for</div>
-          {scenario.triggers.map((t, i) => (
+          {scenario.triggers.map(normalizeTrigger).filter(Boolean).map((t, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
               <span style={{ color, fontSize: 12, flexShrink: 0 }}>›</span>
-              <span style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>{t}</span>
+              <span style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+                {t.text}
+                {t.deadline && (
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#888', marginLeft: 6, whiteSpace: 'nowrap' }}>by {t.deadline}</span>
+                )}
+              </span>
             </div>
           ))}
         </div>

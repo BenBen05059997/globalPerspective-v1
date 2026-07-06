@@ -739,7 +739,12 @@ function NodePanel({ node, country, onClose }) {
                   {s.rationale && <p className="spider-scenario-rationale">{s.rationale}</p>}
                   {Array.isArray(s.triggers) && s.triggers.length > 0 && (
                     <ul className="spider-scenario-triggers">
-                      {s.triggers.map((t, j) => <li key={j}>{t}</li>)}
+                      {s.triggers.map((t, j) => {
+                        const text = typeof t === 'string' ? t : t?.text;
+                        if (typeof text !== 'string') return null;
+                        const deadline = typeof t === 'object' && typeof t?.deadline === 'string' ? t.deadline : null;
+                        return <li key={j}>{text}{deadline && <span className="spider-scenario-deadline"> by {deadline}</span>}</li>;
+                      })}
                     </ul>
                   )}
                 </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useMembership } from '../hooks/useMembership';
@@ -55,16 +55,19 @@ function Layout({ children }) {
     } catch { /* ignore malformed cache */ }
   }, []);
 
+  // Grouped so the temporal briefings sit together, the entity intelligence views
+  // together, then markets/analysis, then accountability — with a description on each
+  // (title tooltip) so the difference between Daily / Weekly Brief / Threads is legible.
   const navLinks = [
-    { to: '/', label: 'Topics', exact: true },
-    { to: '/daily', label: 'Daily' },
-    { to: '/weekly-brief', label: 'Weekly Brief' },
-    { to: '/map', label: 'Map' },
-    { to: '/weekly', label: 'Threads' },
-    { to: '/weekly/countries', label: 'Countries' },
-    { to: '/economy', label: 'Economy' },
-    { to: '/analyze', label: 'Analyze' },
-    { to: '/track-record', label: 'Track Record' },
+    { to: '/', label: 'Topics', exact: true, group: 'brief', title: "Today's global stories by region — summarise, forecast, or trace the cause of any one." },
+    { to: '/daily', label: 'Daily', group: 'brief', title: 'The end-of-day intelligence brief: one synthesised read of what mattered today.' },
+    { to: '/weekly-brief', label: 'Weekly Brief', group: 'brief', title: "Sunday signals digest — the week's discrete signals, fact kept separate from judgment. Also emailed." },
+    { to: '/weekly', label: 'Threads', group: 'intel', title: 'Ongoing story arcs ranked by risk — what leads, what develops, how each has evolved.' },
+    { to: '/weekly/countries', label: 'Countries', group: 'intel', title: 'Every covered country ranked by risk tier, with a standing intelligence briefing.' },
+    { to: '/map', label: 'Map', group: 'intel', title: "Today's coverage on a world map — the spatial view of the same live topics." },
+    { to: '/economy', label: 'Economy', group: 'markets', title: 'Live markets dashboard + which stories are repricing markets today; toggle for the weekly wrap.' },
+    { to: '/analyze', label: 'Analyze', group: 'markets', title: 'Analysis Studio — run a cited AI deep-dive across up to 4 stories (your key, or ours as a member).' },
+    { to: '/track-record', label: 'Track Record', group: 'acct', title: 'Accountability hub — every forecast publicly scored, every revised conclusion logged.' },
   ];
 
   const isActive = (to, exact) => {
@@ -88,15 +91,20 @@ function Layout({ children }) {
         </div>
 
         <div className="gp-nav-links">
-          {navLinks.map(({ to, label, exact }) => (
-            <Link
-              key={to}
-              to={to}
-              data-tour={`nav-${to}`}
-              className={`gp-nav-link${isActive(to, exact) ? ' active' : ''}`}
-            >
-              {label}
-            </Link>
+          {navLinks.map(({ to, label, exact, group, title }, i) => (
+            <Fragment key={to}>
+              {i > 0 && navLinks[i - 1].group !== group && (
+                <span className="gp-nav-div" aria-hidden="true" />
+              )}
+              <Link
+                to={to}
+                title={title}
+                data-tour={`nav-${to}`}
+                className={`gp-nav-link${isActive(to, exact) ? ' active' : ''}`}
+              >
+                {label}
+              </Link>
+            </Fragment>
           ))}
         </div>
 
@@ -152,10 +160,11 @@ function Layout({ children }) {
       </nav>
 
       <div className={`gp-mobile-menu${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)}>
-        {navLinks.map(({ to, label, exact }) => (
+        {navLinks.map(({ to, label, exact, title }) => (
           <Link
             key={to}
             to={to}
+            title={title}
             className={`gp-mobile-link${isActive(to, exact) ? ' active' : ''}`}
           >
             {label}

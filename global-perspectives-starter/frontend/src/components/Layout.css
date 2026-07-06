@@ -92,7 +92,14 @@
 .gp-nav-links {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 2px;
+}
+.gp-nav-div {
+  width: 1px;
+  align-self: stretch;
+  margin: 6px 7px;
+  background: var(--line);
 }
 .gp-nav-link {
   padding: 7px 14px;

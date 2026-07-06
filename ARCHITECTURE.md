@@ -925,7 +925,7 @@ The Worker handles these cases:
 | Path | Visitor type | What happens |
 |------|-------------|--------------|
 | `/rss` | Anyone | Proxied to `newsSensitiveData ?action=rss`, returns RSS 2.0 XML, 30 min edge cache |
-| `/` | Bot (24 patterns) | ⚠ **code-ready, operator paste pending** (2026-07-06, `SITE_ORIENTATION_PLAN.md` P4b): static `renderRootPage()` — accountability value prop + grouped page directory, no Lambda call, 24h edge cache. In `WORKER_FULL_CODE.md`; NOT yet deployed to the live Worker — until pasted, bots get the SPA shell (mitigated by the enriched `index.html` meta, live) |
+| `/` | Bot (24 patterns) | **LIVE 2026-07-06** (`SITE_ORIENTATION_PLAN.md` P4b, deployed via `wrangler deploy`, version `8b73c9c7`): static `renderRootPage()` — accountability value prop + grouped page directory, no Lambda call, 24h edge cache, `x-rendered-by: cf-worker-bot`. Previously bots/AI crawlers got the empty SPA shell at the most-linked URL. Deploy recipe in the plan doc §P4 (wrangler with `workers_dev=false` + no routes preserves the dashboard routes) |
 | `/weekly/country/:name` | Bot (24 patterns) | POSTs `country_preview` to Lambda, returns pre-rendered HTML with OG tags |
 | `/weekly/thread/:id` | Bot (24 patterns) | POSTs `thread_preview` to Lambda, returns pre-rendered HTML with OG tags |
 | `/daily` and `/daily/:dateKey` | Bot (24 patterns) | POSTs `daily_brief` to Lambda (with 7-day fallback lookback), returns pre-rendered HTML with OG tags |

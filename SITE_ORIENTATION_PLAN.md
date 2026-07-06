@@ -106,10 +106,14 @@ accountability value prop; noscript gained the Public Accountability bullet + li
 schema gained an accountability Q&A; WebApplication featureList gained the track-record +
 corrections-ledger entries. (2) CODE READY — `WORKER_FULL_CODE.md` updated with
 `renderRootPage()` (static, no Lambda, 24h edge cache, og:type website) + the `/` bot branch;
-JS syntax-checked + render smoke-tested. **OPERATOR ACTION: paste the updated
-`WORKER_FULL_CODE.md` code block into the Cloudflare Worker editor and Deploy** (note: the doc
-may lag any hand-edits made directly in the CF editor since 2026-04 — diff before replacing),
-then run the curl check above.
+JS syntax-checked + render smoke-tested. **DEPLOYED 2026-07-06 via `wrangler deploy`**
+(version `8b73c9c7`; explicit operator yes; drift-checked first — the live Worker was untouched
+since 2026-04-11, exactly when the doc was last synced, so nothing was clobbered). Verified
+live: bot UA (Twitterbot/GPTBot) on `/` → the pre-render (`x-rendered-by: cf-worker-bot`,
+24h cache, full directory links); normal UA → SPA; `/rss` + thread/country/daily bot
+pre-renders intact. Deploy recipe: extract the doc's code block to `index.js` + a minimal
+`wrangler.toml` (`name = "globalperspective-rss"`, `workers_dev = false`, no routes — existing
+dashboard routes are preserved) → `wrangler deploy`.
 
 ## Phase 5 — Pairs decision (cleanup, independent) — ✅ RESOLVED 2026-07-06: premise was FALSE
 

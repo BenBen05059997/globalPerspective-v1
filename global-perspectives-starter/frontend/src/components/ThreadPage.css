@@ -783,6 +783,11 @@
   grid-column: 2; font-size: 11px; color: var(--accent-deep); text-decoration: none; width: fit-content;
 }
 .tp-fc-cite:hover { text-decoration: underline; }
+.tp-fc-foot { margin-top: 12px; }
+.tp-fc-foot a {
+  font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none;
+}
+.tp-fc-foot a:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 /* trigger states */
 .tp-fc-item.fired .tp-fc-mark { color: var(--risk-l); }

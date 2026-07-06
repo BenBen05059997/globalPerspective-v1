@@ -290,6 +290,14 @@
 .tr-support a { color: var(--accent, #b4502f); font-weight: 600; text-decoration: none; }
 .tr-support a:hover { text-decoration: underline; }
 
+.tr-section-foot {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: var(--text-muted, #6b7280);
+}
+.tr-section-foot a { color: var(--accent, #b4502f); font-weight: 600; text-decoration: none; }
+.tr-section-foot a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
 /* ---- Phase 3: accountability-hub sections (forecast record / corrections / methodology) ---- */
 .tr-section { margin-bottom: var(--space-14, 4.5rem); }
 .tr-section-head {

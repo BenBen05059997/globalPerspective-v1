@@ -224,6 +224,11 @@ export default function TrackRecordPage() {
             </p>
           </div>
         )}
+
+        <p className="tr-section-foot">
+          Every forecast lives on its story&apos;s page as a checklist that resolves in public.{' '}
+          <Link to="/weekly">See the live forecast boards →</Link>
+        </p>
       </section>
 
       {/* ---- Corrections ledger (the living-analysis loop) ---- */}

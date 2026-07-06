@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const FC_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function fcDay(s) {
   const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -80,6 +82,10 @@ export default function ThreadForecast({ snapshot }) {
           </ul>
         </div>
       ))}
+
+      <div className="tp-fc-foot">
+        <Link to="/track-record">How these forecasts are scored →</Link>
+      </div>
     </div>
   );
 }

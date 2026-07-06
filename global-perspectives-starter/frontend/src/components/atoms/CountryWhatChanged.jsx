@@ -6,6 +6,7 @@
 // read auto-corrects continuously, not just once.
 // Renders nothing when the read hasn't materially changed (honest-empty).
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { computeCountryDrift } from '../../utils/countryDrift';
 import RiskDeltaPill from './RiskDeltaPill';
 import './CountryWhatChanged.css';
@@ -114,9 +115,12 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [] }) {
       )}
 
       <div className="cwc-foot">
-        {grounded
-          ? '💭 Grounded in our coverage of the cited event — interpretation, not a forecast.'
-          : 'Computed from our daily risk assessments — not a forecast.'}
+        <span>
+          {grounded
+            ? '💭 Grounded in our coverage of the cited event — interpretation, not a forecast.'
+            : 'Computed from our daily risk assessments — not a forecast.'}
+        </span>
+        <Link className="cwc-foot-link" to="/track-record">All corrections →</Link>
       </div>
     </div>
   );

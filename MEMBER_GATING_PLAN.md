@@ -67,7 +67,7 @@ Built in worktree `feat/autofix-gating`, `npm run verify` green + commit-per-ite
 - [x] **P0** Rewrite this plan (redirect to depth-gating).
 - [ ] **P1** Backend: `resolveTier` + `capForTier` (+ `node --test`) → cap `country_history` driftNotes & `corrections_feed` for non-members; `USERS_DDB_TABLE` env documented for deploy.
 - [ ] **P2** Frontend: lock affordance on CountryPage history chain + /track-record ledger (honest count + Join link).
-- [ ] **P3** *(next)* Foundation: `newsDriftCorrector` also writes a permanent `DRIFTLOG#{date}` row (no TTL) so history accrues past 60d; a member-only per-country drift timeline serve reads it.
+- [x] **P3** Foundation: `newsDriftCorrector` now writes a permanent `DRIFTLOG#{date}` row (no TTL) alongside the 60d `DRIFT#{date}` (idempotent, both country + thread). `country_history` unions archive+live (`dedupeByAsOf`) so members get the full accruing history; empty archive ⇒ no-op (band unaffected). `node --test` 9/9. **⚠️ DEPLOY:** redeploy `newsDriftCorrector` (+ `newsSensitiveData` from P1) — the archive starts accruing on its next cron (~07:20 UTC). Optional one-time backfill: copy existing `DRIFT#`→`DRIFTLOG#` so the current 26 notes survive past their TTL (else pre-deploy history caps at 60d). `begins_with('DRIFT#')` does NOT match `DRIFTLOG#` (verified) — no double-count in the ledger.
 - [ ] **P4** *(next)* Membership-promise copy update across `/membership` + the 4 legal/marketing pages — **operator sign-off.**
 - [ ] **P5** *(later)* Drift-alert email — "notify me when a country's read changes" — via `newsEmailSender` (send infra exists) + a subscribe opt-in + a trigger. The perk analysts actually pay for.
 

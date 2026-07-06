@@ -17,4 +17,15 @@ function capForTier(arr, tier, teaser) {
   return { items: list.slice(0, n), total: list.length, gated: list.length > n };
 }
 
-module.exports = { capForTier };
+// Union drift notes from the permanent archive (DRIFTLOG#) + the live TTL'd notes (DRIFT#),
+// dedup by `asOf` date (first occurrence wins — pass archive first, it's the superset), newest
+// first. Empty archive ⇒ returns the live notes unchanged, so the on-page band is never affected.
+function dedupeByAsOf(items) {
+  const byAsOf = new Map();
+  for (const it of Array.isArray(items) ? items : []) {
+    if (it && it.asOf && !byAsOf.has(it.asOf)) byAsOf.set(it.asOf, it);
+  }
+  return [...byAsOf.values()].sort((a, b) => String(b.asOf).localeCompare(String(a.asOf)));
+}
+
+module.exports = { capForTier, dedupeByAsOf };

@@ -90,23 +90,29 @@ async function callLLM(prompt) {
   return text;
 }
 
+// Write a drift note twice, idempotently (same SK per date):
+//  - DRIFT#<date>    — 60d TTL; powers the live "what changed" band + corrections ledger.
+//  - DRIFTLOG#<date> — NO TTL; the PERMANENT archive the member-only full correction history
+//    accrues into (MEMBER_GATING_PLAN.md P3). Without this, "full history" would cap at 60 days.
+async function putDriftNote(pk, dateKey, base, ttl) {
+  await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: { ...base, PK: pk, SK: `DRIFT#${dateKey}`, ttl } }));
+  await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: { ...base, PK: pk, SK: `DRIFTLOG#${dateKey}` } }));
+}
+
 async function writeNote(country, drift, note) {
   const { current: cur, prior } = drift;
   const ttl = Math.floor(Date.now() / 1000) + DRIFT_TTL_DAYS * DAY / 1000;
-  await ddb.send(new PutCommand({
-    TableName: SUMMARY_TABLE,
-    Item: {
-      PK: COUNTRY_PK(country), SK: `DRIFT#${cur.dateKey}`,
-      countryName: country, asOf: cur.dateKey, since: prior.dateKey,
-      changeLevel: prior.riskLevel !== cur.riskLevel ? { from: prior.riskLevel, to: cur.riskLevel } : undefined,
-      changeScore: { from: Number(prior.riskScore), to: Number(cur.riskScore), delta: Number(cur.riskScore) - Number(prior.riskScore) },
-      priorHeadline: prior.headline, currentHeadline: cur.headline,
-      triggerEvent: note.triggerEvent || undefined,
-      whyChanged: note.whyChanged,
-      noSingleDriver: !!note.noSingleDriver,
-      generatedAt: new Date().toISOString(), ttl,
-    },
-  }));
+  const base = {
+    countryName: country, asOf: cur.dateKey, since: prior.dateKey,
+    changeLevel: prior.riskLevel !== cur.riskLevel ? { from: prior.riskLevel, to: cur.riskLevel } : undefined,
+    changeScore: { from: Number(prior.riskScore), to: Number(cur.riskScore), delta: Number(cur.riskScore) - Number(prior.riskScore) },
+    priorHeadline: prior.headline, currentHeadline: cur.headline,
+    triggerEvent: note.triggerEvent || undefined,
+    whyChanged: note.whyChanged,
+    noSingleDriver: !!note.noSingleDriver,
+    generatedAt: new Date().toISOString(),
+  };
+  await putDriftNote(COUNTRY_PK(country), cur.dateKey, base, ttl);
 }
 
 async function processCountry(country) {
@@ -177,19 +183,16 @@ async function threadAlreadyNoted(threadId, dateKey) {
 async function writeThreadNote(threadId, drift, note) {
   const { current: cur, prior } = drift;
   const ttl = Math.floor(Date.now() / 1000) + DRIFT_TTL_DAYS * DAY / 1000;
-  await ddb.send(new PutCommand({
-    TableName: SUMMARY_TABLE,
-    Item: {
-      PK: THREAD_PK(threadId), SK: `DRIFT#${cur.dateKey}`,
-      threadId, asOf: cur.dateKey, since: prior.dateKey,
-      changeScore: { from: Number(prior.riskScore), to: Number(cur.riskScore), delta: Number(cur.riskScore) - Number(prior.riskScore) },
-      priorTitle: prior.threadTitle, currentTitle: cur.threadTitle,
-      triggerEvent: note.triggerEvent || undefined,
-      whyChanged: note.whyChanged,
-      noSingleDriver: !!note.noSingleDriver,
-      generatedAt: new Date().toISOString(), ttl,
-    },
-  }));
+  const base = {
+    threadId, asOf: cur.dateKey, since: prior.dateKey,
+    changeScore: { from: Number(prior.riskScore), to: Number(cur.riskScore), delta: Number(cur.riskScore) - Number(prior.riskScore) },
+    priorTitle: prior.threadTitle, currentTitle: cur.threadTitle,
+    triggerEvent: note.triggerEvent || undefined,
+    whyChanged: note.whyChanged,
+    noSingleDriver: !!note.noSingleDriver,
+    generatedAt: new Date().toISOString(),
+  };
+  await putDriftNote(THREAD_PK(threadId), cur.dateKey, base, ttl);
 }
 
 async function processThread(threadId) {

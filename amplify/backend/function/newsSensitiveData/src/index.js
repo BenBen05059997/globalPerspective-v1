@@ -2,7 +2,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
-const { capForTier } = require('./lib');
+const { capForTier, dedupeByAsOf } = require('./lib');
 const { assembleDossier } = require('./dossier');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -533,7 +533,7 @@ exports.handler = async (event) => {
       }
       const client = getDynamoClient();
       try {
-        const [histOut, driftOut] = await Promise.all([
+        const [histOut, driftOut, archiveOut] = await Promise.all([
           client.send(new QueryCommand({
             TableName: SUMMARIZE_PREDICT_TABLE,
             KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
@@ -541,7 +541,7 @@ exports.handler = async (event) => {
             ScanIndexForward: false,
             Limit: 90,
           })),
-          // Drift notes (living-analysis 1b: grounded "what changed & why"). Newest first, few.
+          // Live drift notes (60d TTL) — grounded "what changed & why". Newest first, few.
           client.send(new QueryCommand({
             TableName: SUMMARIZE_PREDICT_TABLE,
             KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
@@ -549,12 +549,26 @@ exports.handler = async (event) => {
             ScanIndexForward: false,
             Limit: 10,
           })),
+          // Permanent archive (no TTL) — the full correction history members unlock (P3). Empty
+          // until newsDriftCorrector runs post-deploy; unioned below so the live band is unaffected.
+          client.send(new QueryCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+            ExpressionAttributeValues: { ':pk': `COUNTRY#${countryName}`, ':prefix': 'DRIFTLOG#' },
+            ScanIndexForward: false,
+            Limit: 90,
+          })),
         ]);
         const snapshots = (histOut.Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
         // Correction-history DEPTH is the member perk (MEMBER_GATING_PLAN.md): non-members get the
         // latest note free + an honest count of how many more; members get the full chain. The
         // snapshots (the analysis itself) are always fully public — only the drift depth caps.
-        const allDriftNotes = (driftOut.Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
+        // Union archive (DRIFTLOG#, superset) + live (DRIFT#), dedup by asOf, newest first.
+        const strip = ({ PK, SK, ttl, ...rest }) => rest;
+        const allDriftNotes = dedupeByAsOf([
+          ...(archiveOut.Items || []).map(strip),
+          ...(driftOut.Items || []).map(strip),
+        ]);
         const tier = await resolveTier(event);
         const capped = capForTier(allDriftNotes, tier, 1);
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, countryName, snapshots,

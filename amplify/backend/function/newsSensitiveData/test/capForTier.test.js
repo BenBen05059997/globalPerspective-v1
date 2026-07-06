@@ -43,3 +43,23 @@ test('unknown tier is treated as non-member (fails safe to capped)', () => {
   assert.equal(r.items.length, 1);
   assert.equal(r.gated, true);
 });
+
+const { dedupeByAsOf } = require('../src/lib.js');
+
+test('dedupeByAsOf: union archive+live, dedup by asOf, newest first', () => {
+  const archive = [{ asOf: '2026-07-01', s: 'a' }, { asOf: '2026-06-20', s: 'a' }];
+  const live = [{ asOf: '2026-07-06', s: 'L' }, { asOf: '2026-07-01', s: 'L' }]; // 07-01 dup
+  const r = dedupeByAsOf([...archive, ...live]);
+  assert.deepEqual(r.map(x => x.asOf), ['2026-07-06', '2026-07-01', '2026-06-20']);
+  assert.equal(r.find(x => x.asOf === '2026-07-01').s, 'a'); // archive wins (listed first)
+});
+
+test('dedupeByAsOf: empty archive returns live unchanged', () => {
+  const live = [{ asOf: '2026-07-06' }, { asOf: '2026-07-01' }];
+  assert.deepEqual(dedupeByAsOf([...[], ...live]).map(x => x.asOf), ['2026-07-06', '2026-07-01']);
+});
+
+test('dedupeByAsOf: skips items without asOf; safe on non-array', () => {
+  assert.deepEqual(dedupeByAsOf([{ x: 1 }, { asOf: '2026-07-01' }]).map(x => x.asOf), ['2026-07-01']);
+  assert.deepEqual(dedupeByAsOf(null), []);
+});

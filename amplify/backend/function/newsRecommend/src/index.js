@@ -21,6 +21,7 @@ const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const SAVED_ITEMS_TABLE = process.env.SAVED_ITEMS_TABLE;
 const USER_PREFS_TABLE = process.env.USER_PREFS_TABLE;
 const BREAKING_ALERTS_TABLE = process.env.BREAKING_ALERTS_TABLE || 'GlobalPerspectiveBreakingAlerts';
+const USERS_DDB_TABLE = process.env.USERS_DDB_TABLE || 'GlobalPerspectiveUserTable';
 const SITE_URL = (process.env.SITE_URL || 'https://globalperspective.net').replace(/\/$/, '');
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 
@@ -158,7 +159,21 @@ async function recommend({ uid, email, limit }) {
 // row that already caches their interestProfile. Defaults are OFF (opt-in, GDPR). The
 // *Verified / unsubToken / consentAt fields are written here but only enforced once email
 // delivery is live (the sender checks breakingOptIn && breakingVerified).
-const DEFAULT_PREFS = Object.freeze({ breakingOptIn: false, digestOptIn: false, digestCadence: 'weekly' });
+const DEFAULT_PREFS = Object.freeze({ breakingOptIn: false, digestOptIn: false, digestCadence: 'weekly', driftOptIn: false, followedCountries: [] });
+
+// Membership tier — the drift-alert "follow a country" feature is a MEMBER perk
+// (MEMBER_GATING_PLAN.md P5). Reads the tier authority written by newsPolarBilling.
+// Fail-CLOSED (any miss/error → 'free'): a paid gate must not open on a lookup failure.
+// ⚠️ DEPLOY: needs USERS_DDB_TABLE env + dynamodb:GetItem on GlobalPerspectiveUserTable.
+async function getTier(uid) {
+  if (!uid || !USERS_DDB_TABLE) return 'free';
+  try {
+    const { Item } = await ddb().send(new GetCommand({
+      TableName: USERS_DDB_TABLE, Key: { uid }, ProjectionExpression: 'tier',
+    }));
+    return Item && Item.tier === 'member' ? 'member' : 'free';
+  } catch (err) { console.warn('getTier failed (defaulting free):', err.message); return 'free'; }
+}
 
 async function getPrefs(uid) {
   if (!USER_PREFS_TABLE) return { ...DEFAULT_PREFS };
@@ -168,6 +183,9 @@ async function getPrefs(uid) {
     breakingOptIn: !!it.breakingOptIn,
     digestOptIn: !!it.digestOptIn,
     digestCadence: it.digestCadence === 'daily' ? 'daily' : 'weekly',
+    driftOptIn: !!it.driftOptIn,
+    // DocumentClient unmarshals a DynamoDB String Set to a JS Set; normalize to a sorted array.
+    followedCountries: it.followedCountries ? Array.from(it.followedCountries).sort() : [],
   };
 }
 
@@ -178,11 +196,12 @@ async function setPrefs(uid, email, patch = {}) {
 
   if (typeof patch.breakingOptIn === 'boolean') { sets.push('breakingOptIn = :b'); vals[':b'] = patch.breakingOptIn; }
   if (typeof patch.digestOptIn === 'boolean') { sets.push('digestOptIn = :d'); vals[':d'] = patch.digestOptIn; }
+  if (typeof patch.driftOptIn === 'boolean') { sets.push('driftOptIn = :dr'); vals[':dr'] = patch.driftOptIn; }
   if (patch.digestCadence === 'daily' || patch.digestCadence === 'weekly') { sets.push('digestCadence = :c'); vals[':c'] = patch.digestCadence; }
   if (email) { sets.push('email = if_not_exists(email, :e)'); vals[':e'] = email; }
 
   // First time the user turns anything on, stamp consent + mint a stable unsubscribe token.
-  if (patch.breakingOptIn === true || patch.digestOptIn === true) {
+  if (patch.breakingOptIn === true || patch.digestOptIn === true || patch.driftOptIn === true) {
     sets.push('consentAt = if_not_exists(consentAt, :now)');
     sets.push('unsubToken = if_not_exists(unsubToken, :tok)');
     vals[':tok'] = require('crypto').randomUUID();
@@ -194,6 +213,42 @@ async function setPrefs(uid, email, patch = {}) {
     UpdateExpression: 'SET ' + sets.join(', '),
     ExpressionAttributeValues: vals,
   }));
+  return getPrefs(uid);
+}
+
+// Follow / unfollow a country's living analysis (the drift-alert perk, MEMBER_GATING_PLAN.md P5).
+// followedCountries is a DynamoDB String Set — ADD/DELETE are atomic + idempotent (re-follow or
+// unfollow-when-absent are no-ops, no read-modify-write race). Following also opts the user into
+// drift email (unless they've explicitly muted it before) and stamps consent + unsub token, so a
+// follow is a complete, sendable subscription on its own.
+async function followCountry(uid, email, country, follow) {
+  if (!USER_PREFS_TABLE) throw new Error('USER_PREFS_TABLE not configured');
+  const name = String(country || '').trim();
+  if (!name) throw new Error('country required');
+  const vals = { ':now': new Date().toISOString(), ':c': new Set([name]) };
+  if (follow) {
+    // ADD to the set + default-on the opt-in/consent/token/email without clobbering existing values.
+    const sets = [
+      'updatedAt = :now',
+      'driftOptIn = if_not_exists(driftOptIn, :true)',
+      'consentAt = if_not_exists(consentAt, :now)',
+      'unsubToken = if_not_exists(unsubToken, :tok)',
+    ];
+    vals[':true'] = true;
+    vals[':tok'] = require('crypto').randomUUID();
+    if (email) { sets.push('email = if_not_exists(email, :e)'); vals[':e'] = email; }
+    await ddb().send(new UpdateCommand({
+      TableName: USER_PREFS_TABLE, Key: { uid },
+      UpdateExpression: `ADD followedCountries :c SET ${sets.join(', ')}`,
+      ExpressionAttributeValues: vals,
+    }));
+  } else {
+    await ddb().send(new UpdateCommand({
+      TableName: USER_PREFS_TABLE, Key: { uid },
+      UpdateExpression: 'DELETE followedCountries :c SET updatedAt = :now',
+      ExpressionAttributeValues: { ':now': vals[':now'], ':c': vals[':c'] },
+    }));
+  }
   return getPrefs(uid);
 }
 
@@ -301,6 +356,7 @@ async function handleUnsubscribe(uid, token, kind = 'all') {
   const patch = {};
   if (kind === 'digest' || kind === 'all') patch.digestOptIn = false;
   if (kind === 'breaking' || kind === 'all') patch.breakingOptIn = false;
+  if (kind === 'drift' || kind === 'all') patch.driftOptIn = false;
   if (!Object.keys(patch).length) patch.digestOptIn = false;
   const names = {}; const vals = { ':now': new Date().toISOString() }; const sets = [];
   Object.keys(patch).forEach((k, i) => { names[`#k${i}`] = k; vals[`:v${i}`] = patch[k]; sets.push(`#k${i} = :v${i}`); });
@@ -311,7 +367,7 @@ async function handleUnsubscribe(uid, token, kind = 'all') {
     ExpressionAttributeNames: names,
     ExpressionAttributeValues: vals,
   }));
-  const what = kind === 'all' ? 'all emails' : kind === 'breaking' ? 'breaking alerts' : 'the weekly brief';
+  const what = kind === 'all' ? 'all emails' : kind === 'breaking' ? 'breaking alerts' : kind === 'drift' ? 'country change-alerts' : 'the weekly brief';
   return htmlPage('Unsubscribed', `You've been unsubscribed from ${what}. Your other preferences are unchanged.`);
 }
 
@@ -369,6 +425,21 @@ exports.handler = async (event = {}) => {
       return httpReply(200, { ok: true, prefs });
     } catch (err) {
       console.error('prefs error', err);
+      return httpReply(500, { ok: false, error: 'internal_error' });
+    }
+  }
+
+  // Follow / unfollow a country's living analysis → member-only drift email alerts (P5).
+  // Signed-in AND member-tier (paid perk); fail-closed on the tier check.
+  if (action === 'follow_country' || action === 'unfollow_country') {
+    if (!uid) return httpReply(401, { ok: false, error: 'sign_in_required' });
+    if ((await getTier(uid)) !== 'member') return httpReply(403, { ok: false, error: 'members_only' });
+    try {
+      const country = (body.payload && body.payload.country) || body.country;
+      const prefs = await followCountry(uid, email, country, action === 'follow_country');
+      return httpReply(200, { ok: true, prefs });
+    } catch (err) {
+      console.error('follow error', err);
       return httpReply(500, { ok: false, error: 'internal_error' });
     }
   }

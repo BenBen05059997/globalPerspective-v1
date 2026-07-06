@@ -19,6 +19,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, ScanCommand, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { sendEmail } = require('./sendEmail');
 const { renderWeeklyEmail } = require('./renderWeeklyEmail');
+const { renderDriftEmail } = require('./renderDriftEmail');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const PREFS_TABLE = process.env.USER_PREFS_TABLE || 'GlobalPerspectiveUserPrefs';
@@ -30,6 +31,7 @@ const UNSUB_BASE = process.env.UNSUB_BASE_URL || ''; // newsRecommend Function U
 const TEST_RECIPIENT = process.env.TEST_RECIPIENT || null;
 const DRY_RUN = process.env.EMAIL_SEND_DRY_RUN !== 'false'; // default ON
 const BREAKING_FRESH_HOURS = Number(process.env.BREAKING_FRESH_HOURS || 48);
+const DRIFT_FRESH_HOURS = Number(process.env.DRIFT_FRESH_HOURS || 36);
 
 let _ddb;
 function ddb() {
@@ -201,11 +203,76 @@ async function runBreaking() {
   return { ok: true, mode: 'breaking', alerts: alerts.length, recipients: recipients.length, sent: totalSent, perAlert, dryRun: DRY_RUN };
 }
 
+// ── DRIFT ALERTS (the member "follow a country" perk, MEMBER_GATING_PLAN.md P5) ──
+// Fresh, not-yet-emailed COUNTRY drift notes (DRIFT#<date>, 60d-TTL rows). begins_with
+// 'DRIFT#' excludes the permanent 'DRIFTLOG#' archive (6th char differs). Country only
+// (PK 'COUNTRY#…') — threads aren't followable yet. The corrector's alreadyNoted guard
+// means a note is written once, so the emailedAt we stamp below is never clobbered.
+async function loadFreshCountryDrift() {
+  const cutoff = new Date(Date.now() - DRIFT_FRESH_HOURS * 3600 * 1000).toISOString();
+  return scanAll({
+    TableName: SUMMARY_TABLE,
+    FilterExpression: 'begins_with(PK, :cpk) AND begins_with(SK, :dsk) AND attribute_not_exists(emailedAt) AND generatedAt >= :cut',
+    ExpressionAttributeValues: { ':cpk': 'COUNTRY#', ':dsk': 'DRIFT#', ':cut': cutoff },
+  });
+}
+
+// Drift subscribers: opted in + have a follow list + an email. Each carries their set of
+// followed country names (DocumentClient unmarshals a DynamoDB String Set to a JS Set).
+async function driftAudience() {
+  const subs = await scanAll({
+    TableName: PREFS_TABLE,
+    FilterExpression: 'driftOptIn = :true AND attribute_exists(email) AND attribute_exists(followedCountries)',
+    ExpressionAttributeValues: { ':true': true },
+  });
+  return subs.map((s) => ({
+    email: s.email, uid: s.uid, token: s.unsubToken || null,
+    follows: s.followedCountries instanceof Set ? s.followedCountries : new Set(Array.from(s.followedCountries || [])),
+  }));
+}
+
+async function markDriftEmailed(pk, sk, count) {
+  await ddb().send(new UpdateCommand({
+    TableName: SUMMARY_TABLE, Key: { PK: pk, SK: sk },
+    UpdateExpression: 'SET emailedAt = :t, emailedCount = :n',
+    ExpressionAttributeValues: { ':t': new Date().toISOString(), ':n': count },
+  }));
+}
+
+async function runDrift() {
+  const notes = await loadFreshCountryDrift();
+  if (!notes.length) { console.log('[email:drift] no fresh country drift notes'); return { ok: true, mode: 'drift_alert', countries: 0, sent: 0 }; }
+  // Group fresh notes by country → one email per country, batching that country's changes.
+  const byCountry = new Map();
+  for (const nt of notes) {
+    const c = nt.countryName || String(nt.PK || '').replace(/^COUNTRY#/, '');
+    if (!c) continue;
+    if (!byCountry.has(c)) byCountry.set(c, []);
+    byCountry.get(c).push(nt);
+  }
+  const subs = await driftAudience();
+  console.log(`[email:drift] ${notes.length} note(s) across ${byCountry.size} country(ies) · ${subs.length} subscriber(s) · DRY_RUN=${DRY_RUN} · from=${FROM}`);
+  let totalSent = 0;
+  const perCountry = [];
+  for (const [country, cNotes] of byCountry) {
+    let recipients = subs.filter((s) => s.follows.has(country)).map((s) => ({ email: s.email, uid: s.uid, token: s.token }));
+    if (TEST_RECIPIENT) recipients = [{ email: TEST_RECIPIENT, uid: null, token: null }]; // send-to-self smoke test
+    if (!recipients.length) { perCountry.push({ country, notes: cNotes.length, followers: 0, sent: 0 }); continue; }
+    const { sent, errors } = await deliver(recipients, (uUrl) => renderDriftEmail(country, cNotes, { siteUrl: SITE_URL, unsubUrl: uUrl }), 'drift');
+    totalSent += sent;
+    perCountry.push({ country, notes: cNotes.length, followers: recipients.length, sent, errors });
+    // Stamp each note emailed once — idempotency (mirrors markAlertEmailed). Real sends only.
+    if (!DRY_RUN && sent > 0) { for (const nt of cNotes) await markDriftEmailed(nt.PK, nt.SK, sent); }
+  }
+  return { ok: true, mode: 'drift_alert', countries: byCountry.size, subscribers: subs.length, sent: totalSent, perCountry, dryRun: DRY_RUN };
+}
+
 exports.handler = async (event = {}) => {
   const mode = event.mode || 'weekly';
   try {
     if (mode === 'weekly') return await runWeekly(event);
     if (mode === 'breaking') return await runBreaking(event);
+    if (mode === 'drift_alert') return await runDrift(event);
     return { ok: false, error: `unknown mode: ${mode}` };
   } catch (err) {
     console.error(`[email] ${mode} failed:`, err);

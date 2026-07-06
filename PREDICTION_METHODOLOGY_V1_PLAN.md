@@ -1,6 +1,6 @@
 # Prediction Methodology v1 — clean-start forecast pipeline
 
-**Status:** Phase 1 **DEPLOYED 2026-07-04** (era-cut date) — `NewsProjectInvokeAgentLambda-dev` live on v1 code; verified in prod (27 `methodologyVersion:1` snapshots, gates firing live: G4 caught 3 relative-window triggers, 0 retrodictions). Phase 2 **tooling built** (`predictions/resolve-v1-*.js` + runbook; awaits ~2026-07-11 deadlines). Phase 3 **SHIPPED 2026-07-05** — `/track-record` → "Accountability" hub live (§5). Phase 4 pending.
+**Status:** Phase 1 **DEPLOYED 2026-07-04** (era-cut date) — `NewsProjectInvokeAgentLambda-dev` live on v1 code; verified in prod (27 `methodologyVersion:1` snapshots, gates firing live: G4 caught 3 relative-window triggers, 0 retrodictions). Phase 2 **tooling built** (`predictions/resolve-v1-*.js` + runbook; awaits ~2026-07-11 deadlines). Phase 3 **SHIPPED 2026-07-05** — `/track-record` → "Accountability" hub live (§5). Phase 4 **SHIPPED 2026-07-06** — "Living forecast" board on ThreadPage (§5). **All four phases shipped;** only the first live resolution run (weekly agent-in-session, once ~2026-07-11 deadlines pass) remains to light up verdicts.
 **Decision (operator, 2026-07-04):** do NOT score the existing prediction-log backlog — rebuild the pipeline first, start the public track record at a methodology cut-date. The old log stays immutable but unscored.
 **Depends on / relates to:** `LIVING_ANALYSIS_PLAN.md` (drift notes feed the accountability page; Phase 4 unblocks when verdicts flow), `PITCH.md` pillar 4, `ARCHITECTURE.md` Lambda #2/#20.
 
@@ -78,14 +78,21 @@ The page (`components/TrackRecordPage.jsx` → "Accountability") ships three sec
 - NEW `corrections_feed` action: Scans DRIFT# rows (same pattern as `economic_impact_list`); newest-first; client-cached 30min. **Deferred optimization (not built):** the cheap-serve `CORRECTIONS_FEED` single-row GetItem (have `newsDriftCorrector` append) — the Scan is fine at current scale + cache.
 - GOTCHA: `update-function-code` replaces the whole package, so `newsSensitiveData` needs the FULL src zip (index.js + dossier.js + node_modules, ~13MB), not just index.js.
 
-ThreadPage **living scenario board** (strikethrough) remains **Phase 4**, after verdicts exist: struck = trigger with `not_fired` verdict (cited), check = `fired`, dimmed "superseded" = revision without invalidation. Never strike prose, only dated triggers.
+### Phase 4 — "Living forecast" board on ThreadPage ✅ SHIPPED 2026-07-06
+
+**DECISION: latest-forecast board** (not the evolution-down-thread view — that's a later follow-on). Commits `d53e40a` (source) + `6192fcb` (deploy); prod-verified (live bundle ~30s). Built now even though verdicts don't exist yet — it renders every trigger **pending** today and the strike/check states light up automatically as Phase 2 resolution writes verdicts (~2026-07-11+). This is the user's original "living prediction" vision.
+
+- **Backend (`newsSensitiveData/src/index.js`):** new `prediction_snapshot` action — given the thread's topicIds, parallel Query-latest per topic → returns the NEWEST `methodologyVersion>=1` `PRED#` snapshot (scenarios + dated triggers + `finalVerdict`/`agentVerdict` citations). **v1-only** (legacy snapshots never surface). Honest-empty (`snapshot:null`) when the thread has no v1 forecast.
+- **Frontend:** `hooks/useThreadForecast.js` (fetches for the thread's entry topicIds) + presentational `components/ThreadForecast.jsx` rendered at the top of ThreadPage's Arc Intelligence rail (rail gate widened to `hasAiRail || hasForecast`). Scenarios (label + probability pill) → trigger checklist; states struck = `not_fired` (cited), check = `fired`, `⌛` = deadline passed / awaiting check, `☐` = open. **Never strikes prose, only dated triggers.**
+- **Wiring proven:** 55/145 active threads carry a v1 forecast whose `topicId` matches its `PRED#` key.
+- Follow-on (not built): evolution-down-thread view (a board per timeline entry showing forecasts made→struck→remade); "superseded/dimmed" state for revised-not-invalidated triggers.
 
 ## 6. Rollout order
 
 1. Phase 1 (generation) — first v1 predictions within ~4h of deploy (next `InvokeNewsAgent` cycle); **every day of delay costs a day off the front of the record**
 2. Phase 2 first batch — ~3–7 days later (first v1 deadlines pass)
 3. Phase 3 page — ✅ SHIPPED 2026-07-05 (honest-empty scorecard + live corrections ledger)
-4. Phase 4 scenario board — after first verdicts (~2026-07-11)
+4. Phase 4 scenario board — ✅ SHIPPED 2026-07-06 (renders pending now; verdicts light up ~2026-07-11)
 
 ## 7. Open decisions (operator)
 

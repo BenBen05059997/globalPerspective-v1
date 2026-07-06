@@ -289,9 +289,10 @@ export default function TrackRecordPage() {
       <section className="tr-support">
         <p>
           Keeping forecasts honest — logging every prediction, resolving each trigger, publishing the score even when
-          it&apos;s unflattering — is the work. Reading stays <strong>free for everyone</strong>; an optional{' '}
-          <Link to="/membership">membership</Link> funds it and unlocks running your own analysis on our compute.
-          It buys compute, not access.
+          it&apos;s unflattering — is the work. Reading stays <strong>free for everyone</strong>: every forecast, every
+          score, and the latest correction on each read. An optional <Link to="/membership">membership</Link> funds this
+          work and adds the depth — the full correction history, change-alerts when a country&apos;s read moves, and
+          running your own analysis on our compute.
         </p>
       </section>
     </div>

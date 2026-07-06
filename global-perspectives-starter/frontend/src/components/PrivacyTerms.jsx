@@ -11,8 +11,9 @@ function PrivacyTerms() {
           Global Perspectives is an AI-powered global news intelligence platform. All content — today's topics, the
           interactive map, weekly narrative analysis, country and thread intelligence, and economic analysis — is
           free and accessible to read without an account. An optional account (email magic link or Google sign-in)
-          is free and enables saving items and notification preferences. An optional membership does not gate reading —
-          it funds the project and lets members run the Analysis Studio on our compute; reading stays free for everyone.
+          is free and enables saving items and notification preferences. An optional membership does not paywall reading —
+          every analysis stays free. It funds the project and adds depth for members: the full self-correction history,
+          email change-alerts on the countries they follow, and running the Analysis Studio on our compute.
         </p>
       </section>
 

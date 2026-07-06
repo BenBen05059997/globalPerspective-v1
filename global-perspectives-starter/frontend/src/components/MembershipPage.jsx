@@ -11,11 +11,10 @@ const PLANS = [
 ];
 
 const BENEFITS = [
-  'Full archive depth + all narrative-thread & country intelligence',
-  'Economic-impact / disruption analysis',
-  'Daily + weekly intelligence briefings',
-  'Forecast track record',
-  'A monthly allowance of custom self-serve analyses (top up with credits anytime)',
+  'The full self-correction history on every country & thread — how each read changed over time, not just the latest note',
+  'Change-alerts: get emailed when a country you follow materially changes, grounded in the event that moved it',
+  'Run the Analysis Studio on our compute — a monthly allowance of custom analyses (top up with credits anytime)',
+  'You fund independent, self-correcting intelligence — and keep the analysis free for everyone else',
 ];
 
 export default function MembershipPage() {
@@ -59,8 +58,9 @@ export default function MembershipPage() {
         <div className="label">Membership</div>
         <h1>Global Perspectives Membership</h1>
         <p className="mp-sub">
-          Full access to the intelligence layer — briefings, country &amp; thread analysis,
-          economic disruption, and forecast track records.
+          Every analysis and our public track record stay free to read. Membership adds the depth —
+          the full history of how each read changed, alerts when a country you follow moves, and
+          your own analyses on our compute.
         </p>
       </header>
 

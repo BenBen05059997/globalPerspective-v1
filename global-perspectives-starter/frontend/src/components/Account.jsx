@@ -410,7 +410,7 @@ function MembershipPanel() {
           <>
             <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>Free</div>
             <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.45 }}>
-              Reading stays free. A membership includes a monthly allowance of custom analyses.
+              Reading stays free. Membership adds the full correction history, country change-alerts, and a monthly allowance of custom analyses.
             </div>
           </>
         )}

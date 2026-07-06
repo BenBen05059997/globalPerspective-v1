@@ -280,8 +280,9 @@ export default function WhitepaperPage() {
         <SubSection title="Intelligence at Three Levels">
           <p style={{ lineHeight: 1.7, marginBottom: '1rem' }}>
             All three levels are <strong>free and public to read</strong> — the levels below describe increasing
-            depth of analysis, not a paywall. An optional membership never gates reading; it buys analysis compute
-            (running the Analysis Studio on our servers), not access.
+            depth of analysis, not a paywall. An optional membership never paywalls reading; it adds depth for
+            members (the full self-correction history and change-alerts when a followed country&apos;s read moves)
+            and runs the Analysis Studio on our servers.
           </p>
           {[
             {

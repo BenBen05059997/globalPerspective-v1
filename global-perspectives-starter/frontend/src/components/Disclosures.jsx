@@ -122,9 +122,10 @@ function Disclosures() {
           preferences.
         </p>
         <p>
-          An optional <strong>membership</strong> never gates reading — it <strong>buys analysis compute, not
-          access</strong>: it lets you run the <Link to="/analyze">Analysis Studio</Link> on our own servers
-          (no API key of your own needed) instead of bringing your own. Reading stays free for everyone. See{' '}
+          An optional <strong>membership</strong> doesn&apos;t paywall reading — every analysis stays free. It adds
+          <strong> depth</strong>: the full history of how each country and thread read has changed (non-members see the
+          latest correction on each), email alerts when a country you follow materially changes, and running the{' '}
+          <Link to="/analyze">Analysis Studio</Link> on our own servers (no API key of your own needed). See{' '}
           <Link to="/membership">Membership</Link> for current availability and pricing; payments, when active, are
           processed by Polar as Merchant of Record.
         </p>

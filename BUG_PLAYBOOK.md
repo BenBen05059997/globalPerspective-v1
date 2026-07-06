@@ -111,6 +111,15 @@ a Zod schema encoding only the fields the frontend reads (class 4). Catches a fi
 was renamed/removed or changed type (e.g. a number arriving as a string → NaN% in the
 UI). `zod` is a script-only devDependency, never bundled. Exit non-zero on drift.
 
+Covered actions include `prediction`, whose `data.content` is a JSON string the
+renderers parse and mount: the check parses it and asserts every `scenarios[].triggers[]`
+is a **renderable** shape (a string, or an object with a string `text`). This is the exact
+class of break behind the 2026-07-04→07-06 Predict-card crash — methodology-v1 changed
+triggers from strings to `{text, deadline}` objects, the renderer still emitted the raw
+object, and React error #31 crashed the card. A backend-only deploy that reshapes an
+LLM-JSON payload the frontend mounts is invisible to a `curl` 200/`success:true` check;
+only parsing + asserting the mounted shape catches it.
+
 ## Passive monitoring (24/7 — the always-on complement)
 
 The four checks above are **active**: they only run when a human runs them, so a

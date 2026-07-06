@@ -111,6 +111,40 @@ const SCHEMAS = {
       riskLevel: z.string(),
     }).passthrough()),
   }),
+
+  // PREDICTION content is a JSON STRING inside data.content. PredictionDisplay /
+  // SpiderDemo parse it and render scenarios[].triggers[] as React children.
+  // The methodology-v1 deploy (2026-07-04) changed each trigger from a plain
+  // string to a { text, deadline } object; the renderers still emitted the raw
+  // trigger -> React error #31 crashed the Predict card on every topic (fixed
+  // 2026-07-06). This asserts every trigger is a RENDERABLE shape — a string or
+  // an object carrying a string `text` — exactly what the frontend normalizes.
+  // A bare object/array/number here = a crash-on-render contract break.
+  prediction: z.object({
+    success: z.literal(true),
+    data: z.object({ content: z.string() }).passthrough(),
+  }).superRefine((val, ctx) => {
+    let parsed;
+    // Non-JSON content is a valid state (renderer shows "generation failed", no
+    // crash) — only validate the trigger shape when scenarios actually parse.
+    try { parsed = JSON.parse(val.data.content); } catch { return; }
+    const scenarios = parsed?.scenarios;
+    if (!Array.isArray(scenarios)) return;
+    scenarios.forEach((s, i) => {
+      if (!Array.isArray(s?.triggers)) return;
+      s.triggers.forEach((t, j) => {
+        const renderable = typeof t === 'string'
+          || (t && typeof t === 'object' && !Array.isArray(t) && typeof t.text === 'string');
+        if (!renderable) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['data.content', 'scenarios', i, 'triggers', j],
+            message: `trigger is not renderable (expected string or {text,...}, got ${t === null ? 'null' : Array.isArray(t) ? 'array' : typeof t}) — PredictionDisplay would crash with React #31`,
+          });
+        }
+      });
+    });
+  }),
 };
 
 (async () => {
@@ -125,6 +159,14 @@ const SCHEMAS = {
     tid = (list?.data?.[0]?.scopeId) || (list?.data?.[0]?.threadId) || '';
   } catch { /* ignore */ }
 
+  // A real topicId to probe the prediction contract.
+  let topicId = '';
+  try {
+    const t = await call('topics', {});
+    const first = t?.data?.topics?.[0];
+    topicId = first?.topicId || first?.id || '';
+  } catch { /* ignore */ }
+
   const PAYLOADS = {
     topics: {},
     markets_global: {},
@@ -133,12 +175,17 @@ const SCHEMAS = {
     narrative_thread: { threadId: tid },
     thread_analysis: { threadIds: [tid] },
     country_intelligence: { countryNames: ['United States'] },
+    prediction: { topicId },
   };
 
   let failed = 0;
   for (const [action, schema] of Object.entries(SCHEMAS)) {
     if ((action === 'narrative_thread' || action === 'thread_analysis') && !tid) {
       console.log(`  ?  ${action} — skipped (no threadId available to probe)`);
+      continue;
+    }
+    if (action === 'prediction' && !topicId) {
+      console.log(`  ?  ${action} — skipped (no topicId available to probe)`);
       continue;
     }
     let resp;

@@ -1,6 +1,6 @@
 # Prediction Methodology v1 — clean-start forecast pipeline
 
-**Status:** Phase 1 **DEPLOYED 2026-07-04** (era-cut date) — `NewsProjectInvokeAgentLambda-dev` live on v1 code; verified in prod (27 `methodologyVersion:1` snapshots, gates firing live: G4 caught 3 relative-window triggers, 0 retrodictions). Phases 2–4 pending.
+**Status:** Phase 1 **DEPLOYED 2026-07-04** (era-cut date) — `NewsProjectInvokeAgentLambda-dev` live on v1 code; verified in prod (27 `methodologyVersion:1` snapshots, gates firing live: G4 caught 3 relative-window triggers, 0 retrodictions). Phase 2 **tooling built** (`predictions/resolve-v1-*.js` + runbook; awaits ~2026-07-11 deadlines). Phase 3 **SHIPPED 2026-07-05** — `/track-record` → "Accountability" hub live (§5). Phase 4 pending.
 **Decision (operator, 2026-07-04):** do NOT score the existing prediction-log backlog — rebuild the pipeline first, start the public track record at a methodology cut-date. The old log stays immutable but unscored.
 **Depends on / relates to:** `LIVING_ANALYSIS_PLAN.md` (drift notes feed the accountability page; Phase 4 unblocks when verdicts flow), `PITCH.md` pillar 4, `ARCHITECTURE.md` Lambda #2/#20.
 
@@ -64,24 +64,33 @@ Weekly (or on-demand) agent-driven batch, per the pilot's validated design:
 5. Write `finalVerdict`, `confirmedAt`, `confirmedBy: 'agent-verified'`, `methodologyVersion: 1`. Operator blind-spot-checks ~10% per batch; agreement rate is published on the methodology page.
 6. `newsPredictionResolver` (#20) may keep running as a cheap hint layer (pilot: 86% punts — hints only). Optionally point it at v1 triggers only.
 
-## 5. Phase 3 — accountability page (new page + redirect)
+## 5. Phase 3 — accountability page ✅ SHIPPED 2026-07-05
 
-- **New route** (name TBD by operator — working candidate `/accountability`); **`/track-record` becomes a redirect** into it (pattern: `/weekly-markets` → `/economy?view=week`).
-- Content: (1) scored v1 forecast record — Brier, calibration buckets, recently resolved, "scored from <cut date>", honest-empty "record accruing since <date>" until verdicts land; (2) **corrections ledger** — recent DRIFT# notes across countries+threads (the living-analysis loop's site-level home; content flows from day one); (3) **published methodology** — gates, double-pass, spot-check agreement, pre-v1 disclosure.
-- Backend: extend/replace `prediction_track_record` with a v1-filtered variant; new `corrections_feed` serve action. Cheap-serve option: `newsDriftCorrector` also appends to a single `CORRECTIONS_FEED` row (GetItem, no Scan) — matches the `latest` single-row pattern.
-- ThreadPage **living scenario board** (strikethrough) is Phase 4, after verdicts exist: struck = trigger with `not_fired` verdict (cited), check = `fired`, dimmed "superseded" = revision without invalidation. Never strike prose, only dated triggers.
+**DECISION: reused `/track-record`** (not a new route) — reversible, no equity to lose; a nicer alias + redirect stays a trivial future add. Commits `8f94806` (source) + `c76fbd9` (deploy); prod-verified (live bundle within ~30s, 404 byte-identical, both API actions curl-verified live).
+
+The page (`components/TrackRecordPage.jsx` → "Accountability") ships three sections, exactly as scoped:
+1. **Forecast record** — era-cut-framed stats + honest-empty "Scoring begins as deadlines pass" (live: eraCutFrom 2026-07-04, resolved 0, 2418 legacy excluded). Brier/calibration/recently-resolved render only once `resolvedTriggers > 0`.
+2. **Corrections ledger** — `hooks/useCorrectionsFeed.js` → `corrections_feed`; recent DRIFT# notes across all countries+threads (live: 26 country notes, "elevated → high · ↳ Because: <cited event>"). The living-analysis loop's site-level home.
+3. **How this works** — published methodology incl. the pre-v1 exclusion disclosure ("2418 earlier predictions … excluded rather than cherry-pick").
+
+**Backend (`newsSensitiveData/src/index.js`, deployed):**
+- `prediction_track_record` now scores **only `methodologyVersion >= 1`** — returns `eraCutFrom` + `legacyPredictionsExcluded`, reads v1 `agentVerdict.evidence` citations. Legacy backlog stays immutable + unscored.
+- NEW `corrections_feed` action: Scans DRIFT# rows (same pattern as `economic_impact_list`); newest-first; client-cached 30min. **Deferred optimization (not built):** the cheap-serve `CORRECTIONS_FEED` single-row GetItem (have `newsDriftCorrector` append) — the Scan is fine at current scale + cache.
+- GOTCHA: `update-function-code` replaces the whole package, so `newsSensitiveData` needs the FULL src zip (index.js + dossier.js + node_modules, ~13MB), not just index.js.
+
+ThreadPage **living scenario board** (strikethrough) remains **Phase 4**, after verdicts exist: struck = trigger with `not_fired` verdict (cited), check = `fired`, dimmed "superseded" = revision without invalidation. Never strike prose, only dated triggers.
 
 ## 6. Rollout order
 
 1. Phase 1 (generation) — first v1 predictions within ~4h of deploy (next `InvokeNewsAgent` cycle); **every day of delay costs a day off the front of the record**
 2. Phase 2 first batch — ~3–7 days later (first v1 deadlines pass)
-3. Phase 3 page — parallel with 2 (ships honest-empty + live corrections ledger)
-4. Phase 4 scenario board — after first verdicts
+3. Phase 3 page — ✅ SHIPPED 2026-07-05 (honest-empty scorecard + live corrections ledger)
+4. Phase 4 scenario board — after first verdicts (~2026-07-11)
 
 ## 7. Open decisions (operator)
 
-- [ ] Accountability page URL/name (`/accountability`? `/scorecard`?) — `/track-record` redirects either way
-- [ ] Resolution cadence: agent-in-session weekly vs scheduled routine
+- [x] Accountability page URL/name — **reused `/track-record`** (2026-07-05); alias + redirect deferred as trivial future add.
+- [x] Resolution cadence — **agent-in-session weekly** (2026-07-05); first run once ~2026-07-11 deadlines pass.
 - [x] Era-cut date = **2026-07-04** (Phase 1 deploy). `/track-record` v1 scoring starts here; pre-v1 records stay unscored.
 
 ## 8. Appendix — worked example (real data, 2026-07-04)

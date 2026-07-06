@@ -346,3 +346,18 @@
 .tr-method-list { margin: 0; padding-left: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
 .tr-method-list li { font-size: var(--text-base); line-height: 1.6; color: var(--ink-mid); }
 .tr-method-list strong { color: var(--ink); }
+
+/* Depth gate — corrections ledger "members see full history" affordance (P2). */
+.tr-cl-locked {
+  display: block;
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-lg);
+  font-size: var(--text-sm);
+  color: var(--ink-dim);
+  text-decoration: none;
+}
+.tr-cl-locked:hover { border-color: var(--accent, #b4502f); }
+.tr-cl-locked strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.tr-cl-locked-cta { color: var(--accent, #b4502f); font-weight: 600; }

@@ -31,7 +31,7 @@ function deltaLabel(n) {
   return 'reframed';
 }
 
-export default function CountryWhatChanged({ snapshots, driftNotes = [] }) {
+export default function CountryWhatChanged({ snapshots, driftNotes = [], driftNotesTotal = 0, driftNotesGated = false }) {
   const [openChain, setOpenChain] = useState(false);
   const drift = computeCountryDrift(snapshots);
   if (!drift) return null;
@@ -112,6 +112,15 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [] }) {
             </ol>
           )}
         </div>
+      )}
+
+      {/* Depth gate: the server capped the history for non-members. Honest count + join CTA
+          (never a fake/blurred teaser — feedback_no_misinformation_fallback). */}
+      {driftNotesGated && driftNotesTotal > notes.length && (
+        <Link to="/membership" className="cwc-locked">
+          🔒 {driftNotesTotal - notes.length} earlier correction{driftNotesTotal - notes.length > 1 ? 's' : ''} —{' '}
+          <span className="cwc-locked-cta">Join to see the full history →</span>
+        </Link>
       )}
 
       <div className="cwc-foot">

@@ -88,3 +88,18 @@
 .cwc-chain-delta { color: var(--ink-mid, #6b6656); font-weight: 600; font-variant-numeric: tabular-nums; }
 .cwc-chain-because { color: var(--ink, #2b2924); }
 .cwc-chain-because em { color: var(--ink-soft, #8a8577); font-style: italic; }
+
+/* Depth gate — honest "N earlier corrections behind membership" affordance (P2). */
+.cwc-locked {
+  display: block;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--ink-dim);
+  text-decoration: none;
+  background: var(--paper-2, transparent);
+}
+.cwc-locked:hover { border-color: var(--accent); }
+.cwc-locked-cta { color: var(--accent, #b45309); font-weight: 600; white-space: nowrap; }

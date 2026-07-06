@@ -38,7 +38,7 @@ function changeLabel(n) {
 }
 
 function CorrectionsLedger() {
-  const { notes, loading } = useCorrectionsFeed(40);
+  const { notes, total, gated, loading } = useCorrectionsFeed(40);
   if (loading) return <p className="tr-cl-loading">Loading recent corrections…</p>;
   if (!notes || notes.length === 0) {
     return (
@@ -49,32 +49,40 @@ function CorrectionsLedger() {
     );
   }
   return (
-    <ul className="tr-cl-list">
-      {notes.map((n, i) => {
-        const to = n.scope === 'country'
-          ? `/weekly/country/${encodeURIComponent(n.name)}`
-          : `/weekly/thread/${encodeURIComponent(n.name)}`;
-        return (
-          <li key={i} className="tr-cl-item">
-            <div className="tr-cl-top">
-              <span className={`tr-cl-scope ${n.scope}`}>{n.scope === 'country' ? 'Country' : 'Story'}</span>
-              <Link className="tr-cl-name" to={to}>{n.scope === 'country' ? n.name : `thread ${String(n.name).slice(0, 24)}…`}</Link>
-              <span className="tr-cl-delta">{changeLabel(n)}</span>
-              <span className="tr-cl-date">{fmtDay(n.asOf)}</span>
-            </div>
-            {n.noSingleDriver ? (
-              <p className="tr-cl-why nsd">No single driver — a gradual shift across the coverage, not one event.</p>
-            ) : n.triggerEvent?.title ? (
-              <p className="tr-cl-why">↳ Because: <strong>{n.triggerEvent.title}</strong>
-                {n.triggerEvent.date ? <span className="tr-cl-evdate"> · {fmtDay(n.triggerEvent.date)}</span> : null}
-              </p>
-            ) : n.whyChanged ? (
-              <p className="tr-cl-why">{n.whyChanged}</p>
-            ) : null}
-          </li>
-        );
-      })}
-    </ul>
+    <>
+      <ul className="tr-cl-list">
+        {notes.map((n, i) => {
+          const to = n.scope === 'country'
+            ? `/weekly/country/${encodeURIComponent(n.name)}`
+            : `/weekly/thread/${encodeURIComponent(n.name)}`;
+          return (
+            <li key={i} className="tr-cl-item">
+              <div className="tr-cl-top">
+                <span className={`tr-cl-scope ${n.scope}`}>{n.scope === 'country' ? 'Country' : 'Story'}</span>
+                <Link className="tr-cl-name" to={to}>{n.scope === 'country' ? n.name : `thread ${String(n.name).slice(0, 24)}…`}</Link>
+                <span className="tr-cl-delta">{changeLabel(n)}</span>
+                <span className="tr-cl-date">{fmtDay(n.asOf)}</span>
+              </div>
+              {n.noSingleDriver ? (
+                <p className="tr-cl-why nsd">No single driver — a gradual shift across the coverage, not one event.</p>
+              ) : n.triggerEvent?.title ? (
+                <p className="tr-cl-why">↳ Because: <strong>{n.triggerEvent.title}</strong>
+                  {n.triggerEvent.date ? <span className="tr-cl-evdate"> · {fmtDay(n.triggerEvent.date)}</span> : null}
+                </p>
+              ) : n.whyChanged ? (
+                <p className="tr-cl-why">{n.whyChanged}</p>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      {gated && total > notes.length && (
+        <Link to="/membership" className="tr-cl-locked">
+          Showing the {notes.length} most recent of <strong>{total}</strong> corrections.{' '}
+          <span className="tr-cl-locked-cta">Members see the full history →</span>
+        </Link>
+      )}
+    </>
   );
 }
 

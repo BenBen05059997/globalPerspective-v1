@@ -477,7 +477,7 @@ function ToggleRow({ label, desc, checked, disabled, onChange }) {
 }
 
 function NotificationsPanel() {
-  const { prefs, loading, saving, error, save, endpointMissing } = usePreferences();
+  const { prefs, loading, saving, error, save, follow, endpointMissing } = usePreferences();
   const [notice, setNotice] = useState(null); // transient subscribe/unsubscribe confirmation
 
   // Save a change, then show a confirmation only if it actually persisted.
@@ -556,6 +556,48 @@ function NotificationsPanel() {
           </>
         )}
       </div>
+
+      {/* Country change-alerts — the member "follow a country's read" list (drift alerts, P5). */}
+      {!endpointMissing && !loading && (
+        <div style={SECTION}>
+          <div style={{ ...LABEL, marginBottom: '0.35rem' }}>Country change-alerts</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+            We email you when our read on a country you follow materially changes — grounded in the cited event that moved it.
+            Follow a country from its page (tap <span style={{ whiteSpace: 'nowrap' }}>🔔 Follow</span>).
+          </div>
+
+          {(prefs.followedCountries || []).length === 0 ? (
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              You’re not following any countries yet.
+            </div>
+          ) : (
+            <>
+              {(prefs.followedCountries || []).map((c) => (
+                <div key={c} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: '1rem', padding: '0.7rem 0', borderBottom: '1px solid var(--border-color, #eee)',
+                }}>
+                  <Link to={`/weekly/country/${encodeURIComponent(c)}`} style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>{c}</Link>
+                  <button
+                    onClick={async () => { const ok = await follow(c, false); if (ok) setNotice(`Stopped following ${c}.`); }}
+                    disabled={saving}
+                    style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: '#ef4444', cursor: saving ? 'not-allowed' : 'pointer' }}
+                  >
+                    Unfollow
+                  </button>
+                </div>
+              ))}
+              <ToggleRow
+                label="Pause all change-alerts"
+                desc="Keep your follow list but stop the emails. Turn off to resume."
+                checked={!prefs.driftOptIn}
+                disabled={saving}
+                onChange={(paused) => change({ driftOptIn: !paused }, paused ? 'Change-alerts paused.' : 'Change-alerts resumed.')}
+              />
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

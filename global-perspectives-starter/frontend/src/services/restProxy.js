@@ -308,6 +308,17 @@ export async function savePrefs(patch = {}) {
   return prefsRequest('set_prefs', patch);
 }
 
+// Follow / unfollow a country's living analysis → member drift-alert emails (member-only;
+// the Lambda returns 403 members_only for non-members). Returns { ok, prefs } incl the
+// updated followedCountries list, so callers can reflect state without a re-fetch.
+export async function followCountry(country) {
+  return prefsRequest('follow_country', { country });
+}
+
+export async function unfollowCountry(country) {
+  return prefsRequest('unfollow_country', { country });
+}
+
 // Public in-app notification feed (the bell) — no auth; the breaking-alert feed is a
 // global broadcast. Returns { ok, alerts: [{ threadId, title, url, at }] }.
 export async function fetchAlerts() {

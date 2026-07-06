@@ -23,6 +23,7 @@ import { CATEGORY_BADGE_COLORS, RISK_COLORS, riskScoreToVar, riskTierToVar } fro
 import { tierFromScore, tierFromLevel, tierLabel } from '../utils/riskTiers';
 import BackgroundTimeline from './BackgroundTimeline';
 import { SaveButton } from './SaveButton';
+import { FollowButton } from './FollowButton';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
 import './WeeklyPage.css';
@@ -643,6 +644,7 @@ export default function CountryPage() {
               <ShareButtons path={`/weekly/country/${encodeURIComponent(decodedName)}`} title={`${decodedName} — Country Intelligence`} preview={{ h: intel?.headline, n: countryData?.totalArticles, d: countryData?.dayCount }} />
               <CopyBriefing getText={() => formatCountryBriefing(decodedName, intel, countryData)} />
               <SaveButton itemType="country" itemId={decodedName} metadata={{ name: decodedName }} />
+              <FollowButton country={decodedName} />
             </div>
           </div>
 

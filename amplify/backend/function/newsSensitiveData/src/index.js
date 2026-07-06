@@ -575,6 +575,62 @@ exports.handler = async (event) => {
       }
     }
 
+    // Phase 4 — per-thread "Living forecast" board. Given the thread's topicIds, returns the
+    // single NEWEST methodologyVersion>=1 prediction snapshot among them (scenarios + dated
+    // triggers with their verdicts). v1-only: legacy snapshots (retrodiction-prone) never surface.
+    // Triggers render pending today and strike/check as verdicts land (Phase 2 resolution loop).
+    if (action === 'prediction_snapshot') {
+      const client = getDynamoClient();
+      try {
+        let topicIds = payload?.topicIds ?? qs?.topicIds ?? payload?.topicId ?? qs?.topicId;
+        if (typeof topicIds === 'string') topicIds = topicIds.split(',').map(s => s.trim()).filter(Boolean);
+        if (!Array.isArray(topicIds)) topicIds = topicIds ? [topicIds] : [];
+        topicIds = [...new Set(topicIds.filter(Boolean))].slice(0, 25);
+        if (!topicIds.length) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'topicIds required' }) };
+
+        // Newest snapshot per topic (SK = date, newest first). Best-effort per topic.
+        const latest = await Promise.all(topicIds.map(tid =>
+          client.send(new QueryCommand({
+            TableName: PREDICTION_LOG_TABLE,
+            KeyConditionExpression: 'PK = :pk',
+            ExpressionAttributeValues: { ':pk': `PRED#${tid}` },
+            ScanIndexForward: false,
+            Limit: 1,
+          })).then(r => (r.Items || [])[0] || null).catch(() => null)
+        ));
+
+        const v1 = latest.filter(Boolean).filter(it => Number(it.methodologyVersion || 0) >= 1);
+        if (!v1.length) return { statusCode: 200, headers, body: JSON.stringify({ success: true, snapshot: null }) };
+        v1.sort((a, b) => String(b.generatedAt || b.SK || '').localeCompare(String(a.generatedAt || a.SK || '')));
+        const it = v1[0];
+
+        const scenarios = (it.scenarios || []).map(s => ({
+          label: s.label,
+          probability: typeof s.probability === 'number' ? s.probability : null,
+          triggers: (s.triggers || []).filter(t => t.deadline).map(t => ({
+            id: t.id,
+            text: t.text,
+            deadline: t.deadline,
+            verdict: t.finalVerdict || null,
+            confirmedBy: t.confirmedBy || null,
+            citation: t.agentVerdict?.evidence?.[0]?.url || t.agentVerdict?.evidence?.[0]?.title || null,
+          })),
+        })).filter(s => s.triggers.length);
+
+        const snapshot = scenarios.length ? {
+          topicId: it.topicId,
+          title: it.title || null,
+          generatedAt: it.generatedAt || it.SK || null,
+          status: it.status || 'open',
+          scenarios,
+        } : null;
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, snapshot }) };
+      } catch (err) {
+        console.error('prediction_snapshot error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Query failed' }) };
+      }
+    }
+
     if (action === 'systems_analysis') {
       const countryName = payload?.countryName || qs?.countryName;
       if (!countryName) {

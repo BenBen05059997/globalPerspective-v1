@@ -17,7 +17,9 @@ import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
 import SourceRobustness from './atoms/SourceRobustness';
 import MechanismCard from './atoms/MechanismCard';
+import ThreadForecast from './ThreadForecast';
 import { useEconomicImpact } from '../hooks/useEconomicImpact';
+import { useThreadForecast } from '../hooks/useThreadForecast';
 import './ThreadPage.css';
 
 function humanizeThreadId(id) {
@@ -174,6 +176,15 @@ export default function ThreadPage() {
     return Object.values(map).sort((a, b) => b.count - a.count);
   }, [thread]);
 
+  // Phase 4 — Living forecast. Fetch the thread's newest v1 prediction snapshot (across all its
+  // topic entries). Hook is unconditional (before early returns); honest-empty when no v1 forecast.
+  const forecastTopicIds = useMemo(
+    () => [...new Set((thread?.entries || []).map(e => e.topicId).filter(Boolean))],
+    [thread]
+  );
+  const { snapshot: forecast } = useThreadForecast(forecastTopicIds);
+  const hasForecast = !!(forecast && forecast.scenarios?.length);
+
   const displayTitle = analysis?.threadTitle || thread?.latestTitle || humanizeThreadId(threadId);
   useEffect(() => {
     document.title = `${displayTitle} — Story Arc | Global Perspectives`;
@@ -309,13 +320,14 @@ export default function ThreadPage() {
     analysis.storyArc || analysis.trajectory || analysis.rootCauseChain ||
     analysis.watchQuestions?.length || analysis.groundingSources?.length
   );
-  const rightRail = hasAiRail && (
+  const rightRail = (hasAiRail || hasForecast) && (
     <div className="tp-ai-rail">
       <div className="tp-ai-hd">
         <div className="tp-ai-hd-label"><span className="tp-ai-dot" />Arc Intelligence</div>
         <span className="tp-ai-model">AI analysis</span>
       </div>
       <div className="tp-ai-body">
+        <ThreadForecast snapshot={forecast} />
         {analysis?.driftNote?.whyChanged && (
           <div className="tp-ai-block tp-ai-drift">
             <div className="tp-ai-section-lbl">

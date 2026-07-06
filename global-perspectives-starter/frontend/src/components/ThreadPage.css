@@ -750,3 +750,46 @@
 .tp-related:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px;
 }
+
+/* ---- Phase 4: Living forecast board (ThreadForecast) ---- */
+.tp-fc { border-left: 3px solid var(--accent); padding-left: 10px; }
+.tp-fc-intro {
+  font-size: 12px; line-height: 1.55; color: var(--ink-mid); margin: 0 0 12px;
+}
+.tp-fc-k { font-family: var(--mono); font-size: 11px; white-space: nowrap; }
+.tp-fc-k.pending { color: var(--ink-dim); }
+.tp-fc-k.fired { color: var(--risk-l); }
+.tp-fc-k.notfired { color: var(--ink-dim); }
+
+.tp-fc-scenario + .tp-fc-scenario { margin-top: 12px; }
+.tp-fc-shead { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.tp-fc-slabel {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  font-weight: 600; color: var(--ink);
+}
+.tp-fc-prob {
+  font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--accent-deep);
+  background: var(--accent-soft); padding: 1px 6px; border-radius: 999px;
+}
+.tp-fc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.tp-fc-item {
+  display: grid; grid-template-columns: 16px 1fr; column-gap: 8px; row-gap: 1px;
+  align-items: start; font-size: 12.5px; line-height: 1.45;
+}
+.tp-fc-mark { font-family: var(--mono); font-size: 12px; text-align: center; user-select: none; }
+.tp-fc-text { color: var(--ink); }
+.tp-fc-meta { grid-column: 2; font-family: var(--mono); font-size: 10.5px; color: var(--ink-dim); }
+.tp-fc-cite {
+  grid-column: 2; font-size: 11px; color: var(--accent-deep); text-decoration: none; width: fit-content;
+}
+.tp-fc-cite:hover { text-decoration: underline; }
+
+/* trigger states */
+.tp-fc-item.fired .tp-fc-mark { color: var(--risk-l); }
+.tp-fc-item.fired .tp-fc-text { color: var(--ink); }
+.tp-fc-item.notfired .tp-fc-mark { color: var(--ink-dim); }
+.tp-fc-item.notfired .tp-fc-text { text-decoration: line-through; color: var(--ink-dim); }
+.tp-fc-item.unclear .tp-fc-mark,
+.tp-fc-item.unclear .tp-fc-text { color: var(--ink-dim); }
+.tp-fc-item.awaiting .tp-fc-mark { color: var(--accent); }
+.tp-fc-item.pending .tp-fc-mark { color: var(--ink-dim); }

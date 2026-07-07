@@ -75,7 +75,9 @@ export const BREADTH_MIN = 3;
 // { score, why } object. Anything else → null.
 function axisScore(v) {
   if (v == null) return null;
-  const n = Number(typeof v === 'object' ? v.score : v);
+  const raw = typeof v === 'object' ? v.score : v;
+  if (raw == null || raw === '') return null; // {score:null}/empty is "no signal", not 0
+  const n = Number(raw);
   return Number.isNaN(n) ? null : n;
 }
 function axisWhy(v) {

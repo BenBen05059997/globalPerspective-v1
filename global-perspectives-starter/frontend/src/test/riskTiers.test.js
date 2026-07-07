@@ -92,6 +92,12 @@ describe('headlineFromDimensions — worst axis + breadth (scoring v2)', () => {
     expect(h.axes.map((a) => a.axis)).toEqual(['political', 'economic', 'conflict']);
   });
 
+  it('treats {score:null} as no-signal (sparsity), not 0', () => {
+    const h = headlineFromDimensions({ conflict: { score: null, why: 'x' }, economic: 60 });
+    expect(h.axes.map((a) => a.axis)).toEqual(['economic']); // conflict dropped, not scored 0
+    expect(h.leadAxis).toBe('economic');
+  });
+
   it('empty / all-null vector → stable empty headline', () => {
     for (const v of [null, undefined, {}, { conflict: null, political: null }]) {
       const h = headlineFromDimensions(v);

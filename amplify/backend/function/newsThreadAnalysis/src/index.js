@@ -2,6 +2,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { normalizeDimensions, deriveRisk, clampScore } = require('./riskDimensions');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const GROK_MODEL = process.env.GROK_MODEL || 'grok-4-1-fast-non-reasoning';
@@ -259,7 +260,7 @@ Generate a JSON object with exactly these fields:
 
 7. "inflectionTopicId": The topicId of the single entry that represents the narrative inflection point — the event that most clearly changed the story's direction, confirmed a hypothesis, or crossed a threshold. If no clear inflection exists, return null. Must be one of these topicIds or null: ${thread.entries.map(e => `"${e.topicId}"`).join(', ')}
 
-8. "riskScore": Integer 0-100 measuring the risk level of this narrative thread right now. Calibration: 0-24 = routine/low stakes (policy debates, standard diplomacy), 25-49 = meaningful political or economic stress (sanctions threat, political crisis, market volatility), 50-74 = active conflict or major crisis, 75-100 = open war, state failure, or imminent systemic collapse.
+8. "dimensions": Object scoring THIS thread's current risk across four INDEPENDENT axes. For each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific development in this thread that justifies the score} — or null when the thread gives genuinely no signal for that axis. Be sparing — use null rather than a filler mid-number. Axes: "conflict" (armed violence, military operations, armed-actor intensity), "political" (institutional stability, governance, legitimacy, unrest), "economic" (financial stress, sanctions, market disruption), "humanitarian" (displacement, civilian harm, disaster). Per-axis calibration: 0-24 = low, 25-49 = moderate, 50-74 = elevated, 75-100 = severe. (riskScore is derived from these — do NOT output it separately.)
 
 9. "sentiment": Float from -1.0 to 1.0 measuring the overall emotional valence of coverage. -1.0 = highly alarming/negative (war, atrocity, collapse), 0.0 = neutral/factual reporting, +1.0 = highly positive (resolution, breakthrough, recovery). One decimal place. Most geopolitical threads will be in -0.8 to 0.0 range.
 
@@ -296,6 +297,14 @@ Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 async function writeAnalysis(threadId, analysis, entryCount) {
   const ttl = Math.floor(Date.now() / 1000) + THREAD_TTL_DAYS * 86400;
 
+  // Scoring v2: derive riskScore from the dimensions vector (worst axis); fall
+  // back to a legacy riskScore if a transitional response omits dimensions.
+  const dimensions = normalizeDimensions(analysis.dimensions);
+  let { riskScore, lead } = deriveRisk(dimensions);
+  if (riskScore == null && typeof analysis.riskScore === 'number') {
+    riskScore = clampScore(analysis.riskScore);
+  }
+
   await ddb.send(new PutCommand({
     TableName: SUMMARY_TABLE,
     Item: {
@@ -310,7 +319,9 @@ async function writeAnalysis(threadId, analysis, entryCount) {
       watchQuestions: Array.isArray(analysis.watchQuestions) ? analysis.watchQuestions.slice(0, 3) : [],
       groundingSources: Array.isArray(analysis.groundingSources) ? analysis.groundingSources : [],
       inflectionTopicId: analysis.inflectionTopicId || null,
-      riskScore: typeof analysis.riskScore === 'number' ? Math.max(0, Math.min(100, Math.round(analysis.riskScore))) : null,
+      riskScore,
+      dimensions,
+      lead,
       sentiment: typeof analysis.sentiment === 'number' ? Math.max(-1, Math.min(1, analysis.sentiment)) : null,
       keyActors: Array.isArray(analysis.keyActors) ? analysis.keyActors.slice(0, 5) : [],
       entryCount,
@@ -334,7 +345,9 @@ async function writeAnalysis(threadId, analysis, entryCount) {
       threadId, dateKey,
       threadTitle: analysis.threadTitle,
       trajectory: analysis.trajectory || null,
-      riskScore: typeof analysis.riskScore === 'number' ? Math.max(0, Math.min(100, Math.round(analysis.riskScore))) : null,
+      riskScore,
+      dimensions,
+      lead,
       entryCount,
       generatedAt: new Date().toISOString(),
       ttl: Math.floor(Date.now() / 1000) + 60 * 86400,

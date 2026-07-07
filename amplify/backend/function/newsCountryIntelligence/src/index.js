@@ -2,6 +2,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { normalizeDimensions, deriveRisk, clampScore, tierFromScore } = require('./riskDimensions');
 
 let EDITORIAL_FACTS = {};
 try {
@@ -483,11 +484,14 @@ Generate a JSON object with exactly these fields:
 
 9. "riskSignals": Array of 3-4 strings — specific, concrete events or thresholds to watch in the NEXT 1-2 weeks from today (${new Date().toISOString().slice(0, 10)}). All dates must be in the future. Name institutions, actors, and approximate dates. Example: "Congressional vote on defense spending expected by April 1" — NOT references to past events or vague statements.
 
-10. "riskLevel": One of "low", "moderate", "elevated", "high" — based on the interaction of active story arcs and trajectory.
+10. "dimensions": Object scoring this country's CURRENT risk across four INDEPENDENT axes. For each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific arc/event from the data above that justifies the score} — or null when the data gives genuinely no signal for that axis. Be sparing: most countries are NOT elevated on all four — use null rather than a filler mid-number. Axes:
+   - "conflict": armed violence, military operations, armed-actor intensity
+   - "political": institutional stability, governance, legitimacy, protest/unrest
+   - "economic": financial stress, sanctions, trade/market disruption
+   - "humanitarian": displacement, civilian harm, disaster, aid crisis
+   Per-axis calibration: 0-24 = low, 25-49 = moderate, 50-74 = elevated, 75-100 = severe. (riskScore and riskLevel are derived from these — do NOT output them separately.)
 
-11. "riskScore": Integer 0-100 on a continuous scale. Calibration: 0-24 = low (stable democracy, no active conflict, ordinary policy friction), 25-49 = moderate (meaningful political or economic stress, limited violence), 50-74 = elevated (active conflict, major sanctions, political crisis, or systemic economic instability), 75-100 = high (open war, state failure, mass atrocity, or imminent systemic collapse). Must be consistent with riskLevel: low→0-24, moderate→25-49, elevated→50-74, high→75-100.
-
-12. "keyActors": Array of up to 8 objects — the most important named individuals or institutions in this country's coverage. Each object: {"name": full name, "role": institutional role (e.g. "President", "Economy Minister", "Central Bank Governor"), "threadCount": number of story arcs they appear in}. Sort by prominence (threadCount desc, then overall importance). Include current leaders from editorial context even if mentioned only briefly. Do NOT include country names as actors — only named people or institutions.
+11. "keyActors": Array of up to 8 objects — the most important named individuals or institutions in this country's coverage. Each object: {"name": full name, "role": institutional role (e.g. "President", "Economy Minister", "Central Bank Governor"), "threadCount": number of story arcs they appear in}. Sort by prominence (threadCount desc, then overall importance). Include current leaders from editorial context even if mentioned only briefly. Do NOT include country names as actors — only named people or institutions.
 
 Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 
@@ -524,9 +528,15 @@ async function writeAnalysis(countryName, analysis, country) {
   const generatedAt = now.toISOString();
   const dateKey = generatedAt.slice(0, 10);
 
-  const riskScore = typeof analysis.riskScore === 'number'
-    ? Math.max(0, Math.min(100, Math.round(analysis.riskScore)))
-    : null;
+  // Scoring v2: derive the legacy scalar (riskScore/riskLevel) from the dimensions
+  // vector — the WORST axis. Fall back to a legacy riskScore/riskLevel if a
+  // transitional model response omits dimensions, so a rollout can never write null.
+  const dimensions = normalizeDimensions(analysis.dimensions);
+  let { riskScore, riskLevel, lead } = deriveRisk(dimensions);
+  if (riskScore == null && typeof analysis.riskScore === 'number') {
+    riskScore = clampScore(analysis.riskScore);
+    riskLevel = analysis.riskLevel || tierFromScore(riskScore);
+  }
 
   const coreItem = {
     countryName,
@@ -540,8 +550,10 @@ async function writeAnalysis(countryName, analysis, country) {
     trajectory: analysis.trajectory || 'stable',
     trajectoryDetail: analysis.trajectoryDetail || null,
     riskSignals: Array.isArray(analysis.riskSignals) ? analysis.riskSignals.slice(0, 4) : [],
-    riskLevel: analysis.riskLevel || 'moderate',
+    riskLevel: riskLevel || 'moderate',
     riskScore,
+    dimensions,
+    lead,
     groundingSources: Array.isArray(analysis.groundingSources) ? analysis.groundingSources : [],
     keyActors: Array.isArray(analysis.keyActors) ? analysis.keyActors.slice(0, 8) : [],
     dominantCategory: country.dominantCategory,
@@ -572,6 +584,8 @@ async function writeAnalysis(countryName, analysis, country) {
       dateKey,
       riskLevel: coreItem.riskLevel,
       riskScore,
+      dimensions,
+      lead,
       trajectory: coreItem.trajectory,
       headline: coreItem.headline,
       generatedAt,

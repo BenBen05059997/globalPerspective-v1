@@ -12,6 +12,7 @@ import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
 import { useDisruptionsList } from '../hooks/useDisruptionsList';
 import SystemsGraph from './SystemsGraph';
 import CountryWhatChanged from './atoms/CountryWhatChanged';
+import RiskScorecard from './atoms/RiskScorecard';
 import SeverityBadge from './atoms/SeverityBadge';
 import DirectionArrow from './atoms/DirectionArrow';
 import { formatDateLabel } from '../utils/dateUtils';
@@ -680,6 +681,10 @@ export default function CountryPage() {
               </div>
             </div>
           </div>
+
+          {/* Risk profile — scoring-model-v2 dimension breakdown (renders only when the
+              record carries a dimensions vector; scalar-only records show nothing here) */}
+          <RiskScorecard record={intel} />
 
           {/* What changed — living-analysis Phase 1a (deterministic, honest-empty if no material move) */}
           <CountryWhatChanged snapshots={riskHistory} driftNotes={driftNotes} driftNotesTotal={driftNotesTotal} driftNotesGated={driftNotesGated} />

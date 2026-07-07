@@ -1,0 +1,132 @@
+/* Scoring-model-v2 risk scorecard (Phase C). Themes via the app's --ink/--line/
+   --paper tokens + the --risk-* vars from riskScoreToVar, so it follows light/dark. */
+.riskcard {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper-2, rgba(0, 0, 0, 0.015));
+  padding: 12px 14px 13px;
+  margin: 14px 0 4px;
+}
+
+.riskcard-hd {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+
+.riskcard-title {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  font-weight: 600;
+}
+
+.riskcard-headline {
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+}
+
+.riskcard-breadth {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-mid);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.riskcard-axes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.riskcard-axis {
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  grid-template-areas:
+    'k bar n'
+    'why why why';
+  column-gap: 10px;
+  row-gap: 3px;
+  align-items: center;
+}
+
+.riskcard-axis-k {
+  grid-area: k;
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.riskcard-lead-tag {
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.riskcard-bar-track {
+  grid-area: bar;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.riskcard-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  min-width: 3px;
+  transition: width 0.4s ease;
+}
+
+.riskcard-axis-n {
+  grid-area: n;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 22px;
+  text-align: right;
+}
+
+.riskcard-axis-why {
+  grid-area: why;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink-mid);
+}
+
+.riskcard-axis.is-null {
+  grid-template-columns: 96px 1fr;
+  grid-template-areas: 'k null';
+  opacity: 0.55;
+}
+
+.riskcard-axis-null {
+  grid-area: null;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .riskcard-bar-fill { transition: none; }
+}

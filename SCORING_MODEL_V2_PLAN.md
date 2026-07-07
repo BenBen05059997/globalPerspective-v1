@@ -1,6 +1,6 @@
 # Scoring Model v2 — dimensions, not one risk number
 
-**Status:** PROPOSED (2026-07-07, brainstorm + code-grounded audit). Not built. Independent of the member-gating work.
+**Status:** PROPOSED (2026-07-07, brainstorm + code-grounded audit). **Phase 0 spike PASSED 2026-07-07** — dimensional prompt run against 8 real countries; axes differentiate, sparsity holds, grounding is specific (see §9). Not built. Independent of the member-gating work.
 **Owner decisions needed** before build — see §10.
 
 ---
@@ -36,6 +36,8 @@ riskLevel  = tierFromScore(riskScore) // existing 25/50/75 bands, unchanged
 lead       = argmax(dimensions)       // which axis drives the headline
 ```
 So `{conflict:88, political:55, economic:40, humanitarian:20}` → headline **"HIGH — Conflict 88"**. `max` preserves the worst-axis signal (a war zone stays HIGH even with a calm economy), avoids averaging-washout, and needs **no arbitrary weights**. `lead` makes the headline self-explaining.
+
+**Breadth flag** (added after the Phase 0 spike showed hot countries lighting up multiple axes): when **≥3 of 4 axes are elevated (≥50)**, surface a compound marker (`⚠ 3/4 axes elevated`) beside the headline. `max` alone hides breadth — a country stressed on all four is more fragile than one high on a single axis, and the scorecard/flag makes that visible without averaging.
 
 > Explicit non-goal (the trap we already talked through): **no `0.3·conflict + 0.2·econ + …` total.** Weights are arbitrary and an average hides the very decomposition that makes this useful.
 
@@ -97,19 +99,28 @@ Both change to: ask for the 4 axes (with per-axis calibration + **grounding**, s
 
 ## 8. Phased migration (additive, pausable)
 
+- **Phase 0 — prompt spike (DONE, 2026-07-07).** ✅ Ran the dimensional prompt on 8 real countries in isolation (no schema, no deploy) to check the core premise *before* building plumbing. Result: axes differentiate, sparsity holds, grounding is specific — see §9. Gate passed → proceed to Phase A. (Spike script: `scratchpad/dim-spike.mjs`.)
 - **Phase A — seam foundation (no visible change).** Define the axis vocabulary (one shared constant). Add `headlineFromDimensions()` to `riskTiers.js`. Route the 3 escape hatches + `WeeklyBriefPage` equality through the adapter. Everything still renders identically from the scalar. Ships invisibly; de-risks the seam.
 - **Phase B — generators emit the vector + derived scalar.** Rewrite the 2 prompts (§6) with per-axis calibration + grounding. Write `dimensions`+`lead`+derived scalar. **Nothing downstream changes** — new records are just richer. This is the go/no-go gate: inspect real output for boilerplate (§9) before Phase C.
 - **Phase C — upgrade the display VEC consumers.** CountryPage/ThreadPage headline shows the lead axis + breakdown; SpiderWorld bubbles by lead; CountryWhatChanged per-axis; `/weekly` LEAD qualifies on a specific worst axis.
 - **Phase D — upgrade the scalar-consuming triggers.** Drift per-axis detection + which-axis-moved in the note; breaking scorer uses the category axis; weekly-brief single derivation.
 - **Phase E — per-axis calibration (later, gated on verdicts).** Track-record each axis separately — the real accountability payoff, but needs resolved outcomes; defer like prediction calibration [[project_prediction_methodology_v1]].
 
-## 9. The real risk: 4 boilerplate numbers instead of 1
+## 9. The boilerplate risk — TESTED, held (Phase 0 spike, 2026-07-07)
 
-More LLM numbers ≠ more signal. The failure mode is the model emitting `{conflict:70, political:60, economic:65, humanitarian:55}` — smooth, plausible, meaningless. Mitigations (bake into Phase B, gate Phase C on them):
-- **Per-axis grounding required.** Each non-null axis must cite the arc(s)/event(s) that justify it — mirror the prediction capture-gate discipline ([[project_prediction_methodology_v1]]). Consider a per-axis short `evidence` string.
-- **Force sparsity.** Most countries are NOT elevated on all four; allow/encourage `null` (honest "no signal on this axis") rather than a filler mid-number.
-- **Inspect before propagating.** Phase B ships without changing any display — so we can read the raw vectors on real countries and kill it if they're boilerplate, with zero user-visible risk.
-- **Keep `max` (not average)** so one well-grounded axis carries the headline even if the others are noisy.
+The feared failure mode: the model emitting `{conflict:70, political:60, economic:65, humanitarian:55}` — smooth, plausible, meaningless. We had prior evidence to worry (the boilerplate 65% prediction probabilities). So we ran it before building anything: the `newsCountryIntelligence` DeepSeek model, a ~20-line dimensional prompt, 8 real countries (Ukraine, Russia, Iran, Japan, Israel, United States, China, DR Congo). **It held on the first try:**
+
+- **Axes differentiate** (not flat): `conflict 50–90`, `political 25–70`, `economic 40–80`, `humanitarian null×3 else 50–75`. Boilerplate would cluster at 55–65; it doesn't.
+- **Sparsity worked** — Russia / Japan / China got `humanitarian: null` (honest "no signal") instead of a filler number. This is the key result: the model will decline an axis.
+- **Grounding is specific**, quoting the actual analysis, e.g. Japan econ 75 → *"yen hits a 40-year low against the dollar, breaking ¥162, driving bankruptcies to their highest since 2022"*; DRC humanitarian 75 → *"Ebola outbreak surpasses 400 deaths, reaches urban center Kisangani."*
+- **Canonical win — the headline flip:** Japan's blended single score `elevated/62` became **`HIGH — economic 75`** (conflict only 50). The single number *hid* that Japan's risk is a currency story, not a military one. That flip is the entire value proposition, demonstrated on real data.
+
+**Watch-items the spike surfaced (carry into Phase B):**
+1. **Breadth inflation** — "hot" countries lit up 3–4 axes (Ukraine/Iran/Israel/DRC all 4/4). Mostly correct (genuine multi-dimensional crises) and the breadth flag (§2) surfaces it honestly, but keep the sparsity instruction strong so "hot" ≠ automatic four.
+2. **`max` shifts tiers up** — Japan `elevated → HIGH` on one axis crossing 75; expect *more* HIGH countries than the blended score gave. Make that calibration choice consciously (it's the worst-axis design working as intended).
+3. **GIGO** — the scorer faithfully grounds on the source analysis, *including* any shaky facts already in that news layer (the spike surfaced a speculative "Khamenei killed" claim living in the source record). That's a pre-existing data-quality issue, not a scoring one; the vector inherits it exactly as the current single score does.
+
+**Standing requirements (bake into Phase B):** per-axis grounding string required; sparsity (`null`) encouraged; Phase B still ships display-invisibly so real vectors can be re-inspected at scale before Phase C; keep `max` (not average).
 
 ## 10. Open decisions (operator)
 

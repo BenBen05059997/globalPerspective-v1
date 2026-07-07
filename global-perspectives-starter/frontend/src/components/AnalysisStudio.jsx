@@ -342,8 +342,9 @@ export default function AnalysisStudio() {
           ) : null}
           {!serverCapable && billingAvailable && (
             <div className="as-hint">
-              Don't want to manage an API key?{' '}
-              <button className="as-link-btn" onClick={() => navigate('/membership')}>Subscribe or buy credits to run it on us →</button>
+              Don't want to manage an API key? Buy credits to run it on our compute — or a{' '}
+              <strong>membership</strong> adds a monthly allowance plus the full self-correction history and country change-alerts.{' '}
+              <button className="as-link-btn" onClick={() => navigate('/membership')}>See membership →</button>
             </div>
           )}
           {error && (

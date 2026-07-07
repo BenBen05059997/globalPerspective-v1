@@ -1,9 +1,45 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { conclusionMoved, findDrift, buildDriftPrompt, parseDriftResponse } = require('../src/lib');
+const { conclusionMoved, findDrift, buildDriftPrompt, parseDriftResponse, axisMoves, changeDimensionsFrom } = require('../src/lib');
 
 const snap = (dateKey, riskLevel, riskScore, trajectory = '', headline = '') => ({ dateKey, riskLevel, riskScore, trajectory, headline });
+const dsnap = (dateKey, dimensions, riskLevel = 'elevated', riskScore = 60) => ({ dateKey, riskLevel, riskScore, dimensions, trajectory: 'x', headline: 'h' });
+
+test('axisMoves: reports axes that shifted >=8; ignores small moves, nulls, missing vectors', () => {
+  const p = { dimensions: { conflict: 40, economic: 70, humanitarian: null } };
+  const c = { dimensions: { conflict: 75, economic: 66, humanitarian: 50 } };
+  const m = axisMoves(p, c);
+  assert.deepEqual(m.map((x) => x.axis).sort(), ['conflict']); // conflict +35; economic -4 (skip); humanitarian null→skip
+  assert.equal(m[0].from, 40); assert.equal(m[0].to, 75); assert.equal(m[0].delta, 35);
+  assert.deepEqual(axisMoves({}, {}), []); // no vectors → nothing (degrades gracefully)
+});
+
+test('conclusionMoved: an axis swing the scalar MAX hides still counts as a move', () => {
+  // max stays ~70 (Δ5, below threshold), level same — but conflict 40→78 and economy 70→40 are huge.
+  const prior = { riskLevel: 'elevated', riskScore: 70, dimensions: { conflict: 40, economic: 70 } };
+  const cur = { riskLevel: 'elevated', riskScore: 75, dimensions: { conflict: 78, economic: 40 } };
+  const moved = conclusionMoved(prior, cur);
+  assert.equal(moved.scoreChg, false); // |75-70| = 5 < 8
+  assert.equal(moved.levelChg, false);
+  assert.equal(moved.axisChg, true);   // but axes moved
+  assert.equal(moved.any, true);
+  assert.equal(moved.axisMoves.length, 2);
+});
+
+test('changeDimensionsFrom: axisMoves[] → {axis:{from,to,delta}} map (undefined if none)', () => {
+  const moved = conclusionMoved(dsnap('a', { economic: 30 }), dsnap('b', { economic: 72 }));
+  assert.deepEqual(changeDimensionsFrom(moved), { economic: { from: 30, to: 72, delta: 42 } });
+  assert.equal(changeDimensionsFrom({ axisMoves: [] }), undefined);
+});
+
+test('buildDriftPrompt: names the axis that moved so the LLM grounds on the right dimension', () => {
+  const p = dsnap('2026-07-01', { conflict: 55, economic: 30 });
+  const c = dsnap('2026-07-02', { conflict: 55, economic: 72 });
+  const prompt = buildDriftPrompt('Japan', p, c, [{ topicId: 't1', title: 'yen hits 40-year low', date: '2026-07-02' }]);
+  assert.match(prompt, /Axes that moved/);
+  assert.match(prompt, /economic 30→72 \(\+42\)/);
+});
 
 test('conclusionMoved: level flip / big score / trajectory shift = moved; cosmetic = not', () => {
   assert.equal(conclusionMoved(snap('a', 'elevated', 65), snap('b', 'high', 85)).any, true);

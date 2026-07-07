@@ -2,7 +2,7 @@
 // No AWS, no network — run with: node test-significance.mjs
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const { scoreStory, isBreaking, effectiveThreshold, SIGNIFICANCE_THRESHOLD, CONTINUATION_THRESHOLD_MULT } = require('./significance.js');
+const { scoreStory, isBreaking, effectiveThreshold, SIGNIFICANCE_THRESHOLD, CONTINUATION_THRESHOLD_MULT, axisForCategory, regionRiskScore } = require('./significance.js');
 const { renderAlert } = require('./render.js');
 
 let pass = 0;
@@ -17,6 +17,22 @@ console.log('significance.scoreStory');
 // An ordinary, low-signal story must NOT clear the threshold (silence is correct).
 const ordinary = scoreStory({ sourceCount: 2, topicCount: 1, riskScore: 10, econMagnitude: null });
 ok('ordinary story stays below threshold', !isBreaking(ordinary));
+
+console.log('significance.regionRiskScore — category-aware (dominance fix)');
+// A war-torn country: conflict 90, economic 30.
+const warCountry = { riskScore: 90, dimensions: { conflict: 90, economic: 30, political: 60, humanitarian: 80 } };
+ok('category → axis mapping', axisForCategory('economy') === 'economic' && axisForCategory('conflict') === 'conflict' && axisForCategory('diplomacy') === 'political');
+ok('unknown category → null (blended fallback)', axisForCategory('sports') === null);
+// The dominance fix: an ECONOMIC story feels the economic axis (30), NOT the conflict-driven blended 90.
+ok('economic story uses economic axis, not blended max', regionRiskScore(warCountry, 'economy') === 30);
+ok('conflict story still uses conflict axis', regionRiskScore(warCountry, 'conflict') === 90);
+// Pre-v2 record (no dimensions) → blended scalar fallback.
+ok('scalar-only record falls back to blended riskScore', regionRiskScore({ riskScore: 72 }, 'economy') === 72);
+// Concrete effect: with risk the deciding factor, the same story clears the bar on the
+// inflated blended 90 but correctly stays quiet on the true economic axis (30).
+const econSignals = { sourceCount: 5, topicCount: 1, econMagnitude: null };
+ok('blended risk would over-alert', isBreaking(scoreStory({ ...econSignals, riskScore: 90 })));
+ok('axis-relevant risk correctly stays quiet', !isBreaking(scoreStory({ ...econSignals, riskScore: 30 })));
 
 // A war/crisis story (high country risk) should clear it on risk alone.
 const crisis = scoreStory({ sourceCount: 5, topicCount: 2, riskScore: 85, econMagnitude: null });

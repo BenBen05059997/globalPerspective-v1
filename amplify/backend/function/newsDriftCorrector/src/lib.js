@@ -20,14 +20,50 @@ function jaccard(a, b) {
 const SCORE_MOVE = 8;
 const TRAJ_SIM = 0.6;
 
-// Did the CONCLUSION move between two country snapshots? (risk level / |Δscore|≥8 / trajectory)
+// scoring-model-v2: per-axis drift. Snapshots now carry a `dimensions` vector, so a
+// conflict spike masked by a falling economy (which barely moves the max scalar) still
+// registers as a material move — and we can say WHICH axis moved.
+const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
+function axisScoreOf(dims, axis) {
+  const v = dims && dims[axis];
+  if (v == null) return null;
+  const n = Number(typeof v === 'object' ? v.score : v);
+  return Number.isFinite(n) ? n : null;
+}
+// Which axes moved >= SCORE_MOVE between two snapshots' `dimensions`. Empty when either
+// snapshot lacks a vector (pre-v2 history) — the scalar/level/traj tests still fire, so
+// old data degrades gracefully.
+function axisMoves(prior, current) {
+  const out = [];
+  for (const axis of AXES) {
+    const from = axisScoreOf(prior && prior.dimensions, axis);
+    const to = axisScoreOf(current && current.dimensions, axis);
+    if (from == null || to == null) continue;
+    const delta = to - from;
+    if (Math.abs(delta) >= SCORE_MOVE) out.push({ axis, from, to, delta });
+  }
+  return out;
+}
+// axisMoves[] → { axis: {from,to,delta} } for the drift note (undefined if none moved).
+function changeDimensionsFrom(moved) {
+  const arr = moved && Array.isArray(moved.axisMoves) ? moved.axisMoves : [];
+  if (!arr.length) return undefined;
+  const out = {};
+  for (const m of arr) out[m.axis] = { from: m.from, to: m.to, delta: m.delta };
+  return out;
+}
+
+// Did the CONCLUSION move between two country snapshots? (risk level / |Δscore|≥8 / any
+// axis |Δ|≥8 / trajectory)
 function conclusionMoved(prior, current) {
   const levelChg = !!(prior.riskLevel && current.riskLevel && prior.riskLevel !== current.riskLevel);
   const ps = Number(prior.riskScore); const cs = Number(current.riskScore);
   const scoreChg = Number.isFinite(ps) && Number.isFinite(cs) && Math.abs(cs - ps) >= SCORE_MOVE;
   const ta = tokens(prior.trajectory); const tb = tokens(current.trajectory);
   const trajChg = ta.size > 0 && tb.size > 0 && jaccard(ta, tb) < TRAJ_SIM;
-  return { levelChg, scoreChg, trajChg, any: !!(levelChg || scoreChg || trajChg) };
+  const moves = axisMoves(prior, current);
+  const axisChg = moves.length > 0;
+  return { levelChg, scoreChg, trajChg, axisChg, axisMoves: moves, any: !!(levelChg || scoreChg || trajChg || axisChg) };
 }
 
 // From dated snapshots (any order), return {current, prior} where prior is the most recent
@@ -71,7 +107,9 @@ function threadConclusionMoved(prior, current) {
   const titleChg = na.size > 0 && nb.size > 0 && jaccard(na, nb) < TITLE_SIM;
   const ta = tokens(prior.trajectory); const tb = tokens(current.trajectory);
   const trajChg = ta.size > 0 && tb.size > 0 && jaccard(ta, tb) < TRAJ_SIM;
-  return { scoreChg, titleChg, trajChg, any: !!(scoreChg || titleChg || trajChg) };
+  const moves = axisMoves(prior, current);
+  const axisChg = moves.length > 0;
+  return { scoreChg, titleChg, trajChg, axisChg, axisMoves: moves, any: !!(scoreChg || titleChg || trajChg || axisChg) };
 }
 
 function findThreadDrift(snapshots) {
@@ -93,11 +131,18 @@ function buildDriftPrompt(subject, prior, current, events) {
   // Works for both countries (riskLevel/score + headline) and threads (score + threadTitle).
   const riskStr = (s) => `${s.riskLevel ? `${s.riskLevel}/` : ''}${s.riskScore}`;
   const label = (s) => s.headline || s.threadTitle || '';
+  // Name the axis/axes that shifted so the model grounds its "why" on the RIGHT dimension
+  // (e.g. an economic move, not the conflict the country is generally known for).
+  const moves = axisMoves(prior, current);
+  const axisLine = moves.length
+    ? `Axes that moved (0-100): ${moves.map((m) => `${m.axis} ${m.from}→${m.to} (${m.delta >= 0 ? '+' : ''}${m.delta})`).join(', ')}`
+    : '';
   return [
     `Our automated read on ${subject} moved between two dates. Explain WHY, grounded ONLY in the real news events listed.`,
     '',
     `PRIOR (${prior.dateKey}): risk ${riskStr(prior)} — "${label(prior)}"`,
     `NOW  (${current.dateKey}): risk ${riskStr(current)} — "${label(current)}"`,
+    ...(axisLine ? [axisLine] : []),
     '',
     'Real news events in the window (numbered):',
     evLines || '  (none provided)',
@@ -131,4 +176,4 @@ function parseDriftResponse(text, events) {
   };
 }
 
-module.exports = { conclusionMoved, findDrift, findAllDrifts, threadConclusionMoved, findThreadDrift, buildDriftPrompt, parseDriftResponse, tokens, jaccard };
+module.exports = { conclusionMoved, findDrift, findAllDrifts, threadConclusionMoved, findThreadDrift, buildDriftPrompt, parseDriftResponse, axisMoves, changeDimensionsFrom, tokens, jaccard };

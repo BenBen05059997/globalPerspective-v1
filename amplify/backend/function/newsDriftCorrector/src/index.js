@@ -14,7 +14,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse } = require('./lib');
+const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse, changeDimensionsFrom } = require('./lib');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
@@ -45,7 +45,7 @@ async function readHistory(country) {
   }));
   return (out.Items || []).map((it) => ({
     dateKey: it.dateKey || String(it.SK || '').replace('HISTORY#', ''),
-    riskLevel: it.riskLevel, riskScore: it.riskScore, trajectory: it.trajectory, headline: it.headline,
+    riskLevel: it.riskLevel, riskScore: it.riskScore, dimensions: it.dimensions, trajectory: it.trajectory, headline: it.headline,
   }));
 }
 
@@ -106,6 +106,7 @@ async function writeNote(country, drift, note) {
     countryName: country, asOf: cur.dateKey, since: prior.dateKey,
     changeLevel: prior.riskLevel !== cur.riskLevel ? { from: prior.riskLevel, to: cur.riskLevel } : undefined,
     changeScore: { from: Number(prior.riskScore), to: Number(cur.riskScore), delta: Number(cur.riskScore) - Number(prior.riskScore) },
+    changeDimensions: changeDimensionsFrom(drift.moved),
     priorHeadline: prior.headline, currentHeadline: cur.headline,
     triggerEvent: note.triggerEvent || undefined,
     whyChanged: note.whyChanged,
@@ -149,7 +150,7 @@ async function readThreadHistory(threadId) {
   }));
   return (out.Items || []).map((it) => ({
     dateKey: it.dateKey || String(it.SK || '').replace('THREAD_HISTORY#', ''),
-    riskScore: it.riskScore, trajectory: it.trajectory, threadTitle: it.threadTitle,
+    riskScore: it.riskScore, dimensions: it.dimensions, trajectory: it.trajectory, threadTitle: it.threadTitle,
   }));
 }
 
@@ -186,6 +187,7 @@ async function writeThreadNote(threadId, drift, note) {
   const base = {
     threadId, asOf: cur.dateKey, since: prior.dateKey,
     changeScore: { from: Number(prior.riskScore), to: Number(cur.riskScore), delta: Number(cur.riskScore) - Number(prior.riskScore) },
+    changeDimensions: changeDimensionsFrom(drift.moved),
     priorTitle: prior.threadTitle, currentTitle: cur.threadTitle,
     triggerEvent: note.triggerEvent || undefined,
     whyChanged: note.whyChanged,

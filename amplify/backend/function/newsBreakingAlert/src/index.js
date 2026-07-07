@@ -14,7 +14,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { scoreStory, effectiveThreshold, SIGNIFICANCE_THRESHOLD } = require('./significance');
+const { scoreStory, effectiveThreshold, SIGNIFICANCE_THRESHOLD, regionRiskScore } = require('./significance');
 const { renderAlert } = require('./render');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -96,12 +96,14 @@ function groupByThread(topics) {
   }));
 }
 
-// Max country riskScore across the story's regions (COUNTRY_INTELLIGENCE).
-async function maxRegionRisk(regions) {
+// Max risk across the story's regions (COUNTRY_INTELLIGENCE), felt on the story's
+// CATEGORY-RELEVANT dimension axis (regionRiskScore) rather than the blended max —
+// so an economic story doesn't inherit a war-torn region's conflict score.
+async function maxRegionRisk(regions, category) {
   let max = 0;
   for (const r of regions) {
     const rec = await getRecord(`COUNTRY#${r}`, 'COUNTRY_INTELLIGENCE');
-    const score = Number(rec?.riskScore);
+    const score = regionRiskScore(rec, category);
     if (Number.isFinite(score) && score > max) max = score;
   }
   return max;
@@ -255,7 +257,7 @@ async function run() {
   //    so they only re-alert on genuine escalation, never on staying loud.
   const candidates = [];
   for (const g of groups) {
-    const riskScore = await maxRegionRisk(g.regions);
+    const riskScore = await maxRegionRisk(g.regions, g.category);
     const econ = await econMagnitude(g.threadId);
     const ta = await getRecord(`THREAD#${g.threadId}`, 'THREAD_ANALYSIS');
     const priorSize = Number(ta?.entryCount) || 0;

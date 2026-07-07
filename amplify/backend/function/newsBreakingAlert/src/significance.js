@@ -63,6 +63,32 @@ function risk(riskScore) {
   return clamp01((Number(riskScore) || 0) / 100);
 }
 
+// scoring-model-v2: which risk DIMENSION a story's category feels. Fixes the
+// country-risk *dominance* bug — an economic story in a war-torn country used to
+// inherit that country's conflict-driven blended risk (weight 2.0) and over-alert.
+// Now it feels the ECONOMIC axis instead. Unknown category → null → blended fallback.
+const CATEGORY_AXIS = Object.freeze({
+  conflict: 'conflict', security: 'conflict',
+  politics: 'political', diplomacy: 'political',
+  economy: 'economic',
+  society: 'humanitarian', disaster: 'humanitarian', humanitarian: 'humanitarian',
+});
+function axisForCategory(category) {
+  return CATEGORY_AXIS[String(category || '').toLowerCase()] || null;
+}
+// The 0-100 risk one region contributes to a story: the category-relevant dimension
+// axis when present, else the legacy blended scalar (pre-v2 records / unmapped category).
+function regionRiskScore(record, category) {
+  const axis = axisForCategory(category);
+  if (axis && record && record.dimensions) {
+    const v = record.dimensions[axis];
+    const n = Number(v && typeof v === 'object' ? v.score : v);
+    if (Number.isFinite(n)) return n;
+  }
+  const blended = Number(record && record.riskScore);
+  return Number.isFinite(blended) ? blended : 0;
+}
+
 function economic(magnitude) {
   return MAGNITUDE_WEIGHT[magnitude] || 0;
 }
@@ -125,6 +151,8 @@ module.exports = {
   scoreStory,
   isBreaking,
   effectiveThreshold,
+  axisForCategory,
+  regionRiskScore,
   // exported for tests
   _internals: { popularity, breadth, risk, economic, velocity, clamp01 },
 };

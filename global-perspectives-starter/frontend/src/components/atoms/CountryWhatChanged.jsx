@@ -58,11 +58,18 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [], driftNo
 
       <div className="cwc-dims">
         {drift.dims.map((d, i) => (
-          <span key={i} className="cwc-dim">
+          <span key={i} className={`cwc-dim${d.axis ? ' cwc-dim-axis' : ''}`}>
             {d.k}:{' '}
             {d.shifted
               ? <b>shifted</b>
-              : <b>{d.from}{d.from != null ? ' → ' : ''}{d.to}</b>}
+              : (
+                <b>
+                  {d.from}{d.from != null ? ' → ' : ''}{d.to}
+                  {d.axis && d.delta != null && (
+                    <span className="cwc-dim-delta"> ({d.delta > 0 ? '+' : ''}{d.delta})</span>
+                  )}
+                </b>
+              )}
           </span>
         ))}
       </div>

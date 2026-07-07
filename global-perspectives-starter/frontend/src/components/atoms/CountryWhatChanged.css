@@ -34,6 +34,18 @@
   color: var(--ink-mid);
 }
 .cwc-dim b { color: var(--ink); }
+/* Axis moves read as distinct pills — they name WHICH dimension drove the change. */
+.cwc-dim-axis {
+  padding: 0 8px;
+  border: 1px solid var(--border, rgba(127, 127, 127, 0.28));
+  border-radius: 999px;
+  line-height: 1.7;
+}
+.cwc-dim-delta {
+  color: var(--ink-dim);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 .cwc-heads {
   margin-top: 8px;
   font-size: 12.5px;

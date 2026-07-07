@@ -1,10 +1,16 @@
 // Deterministic "what changed" for a country's read, computed from the daily HISTORY#
 // snapshots we already log (risk level/score/trajectory/headline). No LLM, no fabrication.
 //
-// Gated on the CONCLUSION (risk level / score / trajectory) — NOT the headline: the
-// 2026-06-30 backtest showed ~37% of daily updates are cosmetic headline rewording
-// (noise) vs ~18% genuine risk-level/score moves (signal). So we find the most recent
-// snapshot whose *conclusion* differs from the current read, and report that move.
+// Gated on the CONCLUSION (risk level / score / trajectory / a moved DIMENSION axis)
+// — NOT the headline: the 2026-06-30 backtest showed ~37% of daily updates are cosmetic
+// headline rewording (noise) vs ~18% genuine risk-level/score moves (signal). So we find
+// the most recent snapshot whose *conclusion* differs from the current read, and report it.
+//
+// scoring-model-v2: snapshots now carry a `dimensions` vector, so we also detect which
+// AXIS moved (economic/conflict/…). This catches a real per-axis swing the blended-max
+// scalar hides — the same masking the D1 newsDriftCorrector fix addresses server-side —
+// and names the driving dimension in the band. Mirrors that Lambda's axisMoves logic.
+import { AXES, AXIS_LABELS } from './riskTiers';
 
 const STOP = new Set(['the', 'a', 'an', 'of', 'in', 'on', 'and', 'to', 'as', 'at', 'for', 'amid', 'with']);
 function tokens(s) {
@@ -22,6 +28,30 @@ const SCORE_MOVE = 8;        // |Δscore| ≥ 8 = material (backtest: ~18% of da
 const TRAJ_SIM = 0.6;        // trajectory jaccard below this = materially different
 const HEADLINE_SIM = 0.4;    // headline jaccard below this = genuinely new framing
 
+// One axis's numeric score from a snapshot's dimensions vector, or null (sparsity-safe:
+// {score:null}/absent axis = "no signal", NEVER 0).
+function axisScoreOf(dims, axis) {
+  const v = dims && dims[axis];
+  if (v == null) return null;
+  const n = Number(typeof v === 'object' ? v.score : v);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Per-axis moves ≥ SCORE_MOVE between two snapshots. Needs BOTH sides scored on an axis
+// to compare — a null either side is skipped, so legacy scalar-only snapshots never
+// produce a false axis move. Worst-first by |delta|.
+function axisMoves(prior, current) {
+  const out = [];
+  for (const axis of AXES) {
+    const from = axisScoreOf(prior && prior.dimensions, axis);
+    const to = axisScoreOf(current && current.dimensions, axis);
+    if (from == null || to == null) continue;
+    const delta = to - from;
+    if (Math.abs(delta) >= SCORE_MOVE) out.push({ axis, from, to, delta });
+  }
+  return out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+}
+
 function conclusionMoved(prior, current) {
   const levelChg = prior.riskLevel && current.riskLevel && prior.riskLevel !== current.riskLevel;
   const ps = Number(prior.riskScore); const cs = Number(current.riskScore);
@@ -30,7 +60,11 @@ function conclusionMoved(prior, current) {
   // two empty/near-empty token sets must NOT read as a change (jaccard(∅,∅)=0).
   const ta = tokens(prior.trajectory); const tb = tokens(current.trajectory);
   const trajChg = ta.size > 0 && tb.size > 0 && jaccard(ta, tb) < TRAJ_SIM;
-  return { levelChg, scoreChg, trajChg, any: !!(levelChg || scoreChg || trajChg) };
+  // A dimension axis moving is itself a conclusion move — even if the blended scalar
+  // stayed flat (the masking case). Gated at the same |Δ|≥8 materiality bar.
+  const moves = axisMoves(prior, current);
+  const axisChg = moves.length > 0;
+  return { levelChg, scoreChg, trajChg, axisChg, axisMoves: moves, any: !!(levelChg || scoreChg || trajChg || axisChg) };
 }
 
 // Returns null (no prior / no material change → honest-empty) or a drift descriptor.
@@ -51,11 +85,15 @@ export function computeCountryDrift(snapshots) {
   if (moved.levelChg) dims.push({ k: 'Risk level', from: prior.riskLevel, to: current.riskLevel });
   const delta = Number(current.riskScore) - Number(prior.riskScore);
   if (moved.scoreChg) dims.push({ k: 'Risk score', from: Number(prior.riskScore), to: Number(current.riskScore), delta });
+  // Which DIMENSION drove the move (economic/conflict/…) — the v2 legibility win, worst-first.
+  for (const m of moved.axisMoves) {
+    dims.push({ k: AXIS_LABELS[m.axis] || m.axis, from: m.from, to: m.to, delta: m.delta, axis: true });
+  }
   if (moved.trajChg) dims.push({ k: 'Trajectory', shifted: true });
 
   const headlineChanged = jaccard(tokens(prior.headline), tokens(current.headline)) < HEADLINE_SIM;
   const daysSince = daysBetween(prior.dateKey, current.dateKey);
-  return { since: prior.dateKey, asOf: current.dateKey, daysSince, prior, current, dims, headlineChanged, scoreDelta: delta };
+  return { since: prior.dateKey, asOf: current.dateKey, daysSince, prior, current, dims, axisMoves: moved.axisMoves, headlineChanged, scoreDelta: delta };
 }
 
 function daysBetween(a, b) {

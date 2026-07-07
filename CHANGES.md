@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-07-07 (feat: scoring model v2 — per-axis drift in the "What changed" band)
+
+Closes the D1 loop on the read side: the CountryPage **"What changed"** band now names
+**which dimension** drove a move, not just the blended scalar.
+
+- **`utils/countryDrift.js` — axis-aware.** The client-side drift detector (computed from the daily `HISTORY#` snapshots, which now carry the `dimensions` vector — pure pass-through, no serve change) gained `axisMoves`/`axisScoreOf`, mirroring the D1 `newsDriftCorrector` logic. A dimension axis moving `|Δ|≥8` now counts as a conclusion move on its own — so a real per-axis swing the **blended-max scalar hides** (e.g. conflict flat at 80 while economic surges 30→72) surfaces the band instead of staying silent. Sparsity-safe: an axis needs a real score on *both* sides to compare, so legacy scalar-only snapshots never fire a false move. Moves are emitted worst-first as extra `dims` after the scalar score.
+- **`atoms/CountryWhatChanged.jsx` + `.css`.** Axis moves render as distinct pills — `Economic: 30 → 72 (+42)` — reusing `AXIS_LABELS`, with a signed delta and a bordered-pill style separating them from the scalar level/score dims.
+- **Tests:** `countryDrift.test.js` +4 (masking case, sparsity-safe, sub-threshold ignore, worst-first + `{score}` object shape); new `countryWhatChanged.test.jsx` render test proves the pill + signed delta appear in the DOM and honest-empty returns null. Full gate green (211 tests, 0 eslint errors, build clean).
+- **Note:** the band is dormant on live data until a country accrues *two* dimension-bearing daily snapshots (Phase B started writing them 2026-07-07), so it lights up from the next country-intelligence cron day onward — no backfill.
+
 ## 2026-07-07 (feat: scoring model v2 — Phase D1+D2 — per-axis drift + the dominance-bug fix, DEPLOYED)
 
 The dimensional model reaches the two scalar-consuming triggers (`main` `52687a4`).

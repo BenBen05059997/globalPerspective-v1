@@ -157,10 +157,14 @@ async function runWeekly(event) {
 
 // ── BREAKING ────────────────────────────────────────────────────────────────
 function appendUnsub(draft, uUrl) {
-  const footT = uUrl ? `\n\n—\nGlobal Perspectives breaking alerts.\nUnsubscribe: ${uUrl}` : '';
+  // Contextual member-perk tease (P6b) — breaking-alert readers already want push updates.
+  const memberUrl = `${SITE_URL}/membership`;
+  const perkT = `\n\nMembers can follow countries and get alerted when our read on them changes: ${memberUrl}`;
+  const perkH = `<div style="margin-top:16px;font:400 12px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#666;background:#faf7f2;border:1px solid #eee3d6;border-radius:6px;padding:11px 13px;"><b style="color:#1a1a1a;">Members get change-alerts.</b> Follow the countries you track — we email you the moment our read shifts. <a href="${memberUrl}" style="color:#b45309;text-decoration:none;">Become a member →</a></div>`;
+  const footT = uUrl ? `${perkT}\n\n—\nGlobal Perspectives breaking alerts.\nUnsubscribe: ${uUrl}` : perkT;
   const footH = uUrl
-    ? `<div style="padding-top:18px;margin-top:18px;border-top:1px solid #ececea;font:400 11px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#999;">Global Perspectives breaking alerts. <a href="${uUrl}" style="color:#999;">Unsubscribe</a></div>`
-    : '';
+    ? `${perkH}<div style="padding-top:18px;margin-top:18px;border-top:1px solid #ececea;font:400 11px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#999;">Global Perspectives breaking alerts. <a href="${uUrl}" style="color:#999;">Unsubscribe</a></div>`
+    : perkH;
   return {
     subject: draft.subject,
     text: (draft.text || '') + footT,

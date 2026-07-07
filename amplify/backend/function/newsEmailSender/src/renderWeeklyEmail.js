@@ -26,7 +26,9 @@ function renderWeeklyEmail(brief, { siteUrl, unsubUrl } = {}) {
   const watch = Array.isArray(brief.watch) ? brief.watch : [];
   const threats = signals.filter((s) => s.kind !== 'development');
   const highRisk = threats.filter((s) => s.riskLevel === 'high').length;
-  const briefUrl = `${siteUrl || 'https://globalperspective.net'}/weekly-brief`;
+  const site = siteUrl || 'https://globalperspective.net';
+  const briefUrl = `${site}/weekly-brief`;
+  const memberUrl = `${site}/membership`;
 
   const subject = `Weekly Signals Brief — week of ${weekLabel}`;
 
@@ -52,6 +54,8 @@ function renderWeeklyEmail(brief, { siteUrl, unsubUrl } = {}) {
     tLines.push('');
   }
   tLines.push(`Read on the site: ${briefUrl}`);
+  tLines.push('');
+  tLines.push(`Members can follow countries and get alerted the moment our read on them changes: ${memberUrl}`);
   if (unsubUrl) tLines.push(`Unsubscribe: ${unsubUrl}`);
   const text = tLines.join('\n');
 
@@ -90,6 +94,11 @@ function renderWeeklyEmail(brief, { siteUrl, unsubUrl } = {}) {
         <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${sigHtml}${watchHtml}</table></td></tr>
         <tr><td style="padding-top:24px;">
           <a href="${esc(briefUrl)}" style="display:inline-block;background:#1a1a1a;color:#fff;font:600 13px/1 -apple-system,Helvetica,Arial,sans-serif;text-decoration:none;padding:11px 18px;border-radius:6px;">Read on the site →</a>
+        </td></tr>
+        <tr><td style="padding-top:20px;">
+          <div style="font:400 12px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#666;background:#faf7f2;border:1px solid #eee3d6;border-radius:6px;padding:12px 14px;">
+            <b style="color:#1a1a1a;">Members get change-alerts.</b> Follow the countries you track and we&#39;ll email you the moment our read on them shifts — grounded in the event that moved it. <a href="${esc(memberUrl)}" style="color:#b45309;text-decoration:none;">Become a member →</a>
+          </div>
         </td></tr>
         <tr><td style="padding-top:22px;border-top:1px solid #ececea;margin-top:22px;">
           <div style="font:400 11px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#999;">

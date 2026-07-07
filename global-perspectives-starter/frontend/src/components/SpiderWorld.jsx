@@ -7,8 +7,10 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { fetchWorldOverview } from '../services/restProxy';
-import { tierFromLevel, tierFromScore, tierLabel } from '../utils/riskTiers';
-import { RISK_SOLID } from '../tokens';
+import { tierFromLevel, tierFromScore, tierLabel, deriveHeadline, AXES } from '../utils/riskTiers';
+import { RISK_SOLID, riskScoreToVar } from '../tokens';
+
+const AXIS_SHORT = { conflict: 'Conf', political: 'Pol', economic: 'Econ', humanitarian: 'Hum' };
 
 const REGION_LANES = [
   { key: 'me', label: 'Middle East' },
@@ -295,6 +297,7 @@ export default function WorldOverview({ onDrill }) {
         const drift = freshDrift(hover.s);
         const dl = drift?.changeLevel;
         const ds = drift?.changeScore;
+        const h = deriveHeadline(hover.s); // scoring-v2: lead axis + per-axis breakdown (empty pre-v2)
         return (
           <div className="spider-tip" style={{ left: hover.x, top: hover.y }}>
             <div className="spider-tip-cat" style={{ color: tier ? RISK_SOLID[tier] : 'var(--ink-dim)' }}>
@@ -303,9 +306,21 @@ export default function WorldOverview({ onDrill }) {
             <div className="spider-tip-head">{hover.s.country}</div>
             <div className="spider-tip-meta">
               {tier
-                ? `Risk: ${tierLabel(tier)}${hover.s.riskScore != null ? ` (${hover.s.riskScore})` : ''}`
+                ? `Risk: ${tierLabel(tier)}${h.leadLabel ? ` · ${h.leadLabel} ${h.score}` : hover.s.riskScore != null ? ` (${hover.s.riskScore})` : ''}`
                 : 'Risk: no current read'}
             </div>
+            {h.axes.length > 0 && (
+              <div className="spider-tip-meta" style={{ display: 'flex', gap: 9, flexWrap: 'wrap', marginTop: 2 }}>
+                {AXES.map((ax) => {
+                  const a = h.axes.find((x) => x.axis === ax);
+                  return (
+                    <span key={ax} style={{ color: a ? riskScoreToVar(a.score) : 'var(--ink-faint)', fontVariantNumeric: 'tabular-nums' }}>
+                      {AXIS_SHORT[ax]} {a ? a.score : '—'}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
             <div className="spider-tip-meta">
               {hover.s.threadCount} threads · mostly {hover.s.topCategory || 'mixed'}
               {hover.s.earliest && hover.s.latest ? ` · active ${fmtMs(parseDate(hover.s.earliest))}–${fmtMs(parseDate(hover.s.latest))}` : ''}

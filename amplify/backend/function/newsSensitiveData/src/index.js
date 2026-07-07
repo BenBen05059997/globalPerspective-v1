@@ -775,6 +775,10 @@ exports.handler = async (event) => {
               if (intelOut.Item) {
                 if (intelOut.Item.riskLevel != null) s.riskLevel = intelOut.Item.riskLevel;
                 if (intelOut.Item.riskScore != null) s.riskScore = intelOut.Item.riskScore;
+                // scoring-model-v2: carry the dimension vector + lead axis so SpiderWorld
+                // can show WHICH axis drives each bubble (null on pre-v2 records).
+                if (intelOut.Item.dimensions != null) s.dimensions = intelOut.Item.dimensions;
+                if (intelOut.Item.lead != null) s.lead = intelOut.Item.lead;
               }
               const d = (driftOut.Items || [])[0];
               if (d) {

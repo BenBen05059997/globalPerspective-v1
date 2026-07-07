@@ -14,6 +14,7 @@ import { tierFromScore, tierLabel } from '../utils/riskTiers';
 import CopyBriefing, { formatThreadBriefing } from './CopyBriefing';
 import { SaveButton } from './SaveButton';
 import EditorialShell from './atoms/EditorialShell';
+import RiskScorecard from './atoms/RiskScorecard';
 import StatusStrip from './atoms/StatusStrip';
 import SourceRobustness from './atoms/SourceRobustness';
 import MechanismCard from './atoms/MechanismCard';
@@ -328,6 +329,7 @@ export default function ThreadPage() {
       </div>
       <div className="tp-ai-body">
         <ThreadForecast snapshot={forecast} />
+        <RiskScorecard record={analysis} />
         {analysis?.driftNote?.whyChanged && (
           <div className="tp-ai-block tp-ai-drift">
             <div className="tp-ai-section-lbl">

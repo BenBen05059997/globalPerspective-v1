@@ -11,7 +11,7 @@ import TrendBadge, { getTrend } from './TrendBadge';
 import EditorialShell from './atoms/EditorialShell';
 import StatusStrip from './atoms/StatusStrip';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '../tokens';
-import { tierFromScore, tierLabel } from '../utils/riskTiers';
+import { tierFromScore, tierLabel, deriveHeadline } from '../utils/riskTiers';
 import './WeeklyPage.css';
 import './AIComponents.css';
 
@@ -325,13 +325,13 @@ function DriftLine({ analysis }) {
 }
 
 function LeadStory({ item }) {
-  const { t, a, tier, hasDrift } = item;
+  const { t, a, tier, hasDrift, leadLabel } = item;
   const title = a?.threadTitle || t.latestTitle;
   const category = t.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
   const why = firstSentence(a?.storyArc || t.entries[0]?.ai?.summary, 180);
   const color = riskScoreToVar(a?.riskScore);
-  const ruleBits = [`Top story · ${tierLabel(tier)} risk`];
+  const ruleBits = [`Top story · ${tierLabel(tier)}${leadLabel ? ` · ${leadLabel}` : ''} risk`];
   if (daysSince(t.dateRange.to) <= 1) ruleBits.push('new events today');
   return (
     <Link to={threadPath(t.threadId)} className="wp-lead" style={{ borderTopColor: color }}>
@@ -345,7 +345,7 @@ function LeadStory({ item }) {
       <h2 className="wp-lead-title">{title}</h2>
       {why && <p className="wp-lead-why">{why}</p>}
       <div className="wp-lead-evidence">
-        <span className="wp-lead-tier" style={{ color }}>{tierLabel(tier)}</span>
+        <span className="wp-lead-tier" style={{ color }}>{tierLabel(tier)}{leadLabel ? ` · ${leadLabel}` : ''}</span>
         <span>{t.articleCount} event{t.articleCount !== 1 ? 's' : ''}</span>
         <span>{t.dayCount} day{t.dayCount !== 1 ? 's' : ''}</span>
         <span>{updatedLabel(t.dateRange.to)}</span>
@@ -357,7 +357,7 @@ function LeadStory({ item }) {
 }
 
 function DevelopingRow({ item }) {
-  const { t, a, tier, hasDrift } = item;
+  const { t, a, tier, hasDrift, leadLabel } = item;
   const title = a?.threadTitle || t.latestTitle;
   const category = t.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
@@ -368,7 +368,7 @@ function DevelopingRow({ item }) {
         {catColors && (
           <span className="story-category-badge" style={{ background: catColors.bg, color: catColors.color }}>{category}</span>
         )}
-        {tier && <span className="wp-dev-tier" style={{ color }}>{tierLabel(tier)}</span>}
+        {tier && <span className="wp-dev-tier" style={{ color }}>{tierLabel(tier)}{leadLabel ? ` · ${leadLabel}` : ''}</span>}
         <TrendBadge entries={t.entries} />
       </div>
       <div className="wp-dev-title">{title}</div>
@@ -820,6 +820,7 @@ export default function WeeklyPage() {
         const fresh = daysSince(t.dateRange.to);
         return {
           t, a, tier,
+          leadLabel: deriveHeadline(a).leadLabel, // scoring-v2: which axis drives it (null pre-v2)
           hasDrift: !!a?.driftNote?.whyChanged,
           fresh,
         };

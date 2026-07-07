@@ -140,6 +140,15 @@
   line-height: 1.4;
   color: var(--ink-mid);
 }
+/* Contextual member-perk tease (P6a) — quiet, one notch below the label. */
+.home-trust-hint {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-top: 2px;
+}
 
 /* ── Loading ─────────────────────────────────────────────── */
 .home-loading {

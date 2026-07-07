@@ -100,11 +100,13 @@ function Home() {
   // data (each card omitted when its number is absent; never a placeholder — see
   // the no-misinformation-fallback rule). Sits above SubscribeCard as its motivation.
   const { data: trackRecord } = useTrackRecord();
-  const { notes: corrections } = useCorrectionsFeed(100);
+  // The ledger itself is member-gated (anon sees the newest 5), but the COUNT is public —
+  // use the server's honest `total`, never notes.length, or Home undersells its own number.
+  const { notes: corrections, total: correctionsTotal } = useCorrectionsFeed(100);
   const trustStats = React.useMemo(() => {
     const cards = [];
     const forecastsN = Number(trackRecord?.totalDatedTriggers) || 0;
-    const correctionsN = Array.isArray(corrections) ? corrections.length : 0;
+    const correctionsN = Number(correctionsTotal) || (Array.isArray(corrections) ? corrections.length : 0);
     const sourcesN = topics.reduce(
       (sum, t) => sum + (Array.isArray(t.sources) ? t.sources.length : 0), 0);
     if (forecastsN > 0) cards.push({
@@ -114,13 +116,16 @@ function Home() {
     if (correctionsN > 0) cards.push({
       to: '/track-record', n: correctionsN,
       label: 'revised conclusions logged, each with the event that changed our read',
+      // Contextual perk tease (P6a) — the card links to /track-record, where the ledger's
+      // "Members see the full history" CTA lives; plain text (no nested link).
+      hint: 'Members follow countries for change-alerts + the full history',
     });
     if (sourcesN > 0 && topics.length > 0) cards.push({
       to: null, n: sourcesN,
       label: `sources across ${topics.length} stories tracked today`,
     });
     return cards;
-  }, [trackRecord, corrections, topics]);
+  }, [trackRecord, corrections, correctionsTotal, topics]);
 
   const sortedRegions = React.useMemo(() =>
     Object.entries(categorizedTopics)
@@ -395,6 +400,7 @@ function Home() {
               <>
                 <span className="home-trust-n">{c.n.toLocaleString()}</span>
                 <span className="home-trust-label">{c.label}</span>
+                {c.hint && <span className="home-trust-hint">{c.hint}</span>}
               </>
             );
             return c.to

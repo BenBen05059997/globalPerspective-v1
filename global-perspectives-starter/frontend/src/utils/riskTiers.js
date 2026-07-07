@@ -46,3 +46,81 @@ export function tierFromLevel(level) {
 export function tierLabel(tier) {
   return tier ? tier.toUpperCase() : '—';
 }
+
+// ---------------------------------------------------------------------------
+// Scoring model v2 — multi-dimensional risk (SCORING_MODEL_V2_PLAN.md).
+//
+// A record may carry a `dimensions` vector (new) and/or the legacy scalar
+// riskScore/riskLevel (always written, derived from the vector in Phase B).
+// This adapter is the single seam: it yields ONE headline for both shapes, so
+// consumers migrate lazily. Headline = the WORST axis + its label (never a
+// weighted average); breadth flag = how many axes are elevated.
+// ---------------------------------------------------------------------------
+
+// Canonical axis vocabulary (order = display order).
+export const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
+export const AXIS_LABELS = {
+  conflict: 'Conflict',
+  political: 'Political',
+  economic: 'Economic',
+  humanitarian: 'Humanitarian',
+};
+
+// An axis with score >= this reads "elevated" (matches the elevated band).
+export const AXIS_ELEVATED = 50;
+// Surface the compound breadth flag when at least this many axes are elevated.
+export const BREADTH_MIN = 3;
+
+// Pull a numeric 0-100 out of an axis value that may be a bare number or a
+// { score, why } object. Anything else → null.
+function axisScore(v) {
+  if (v == null) return null;
+  const n = Number(typeof v === 'object' ? v.score : v);
+  return Number.isNaN(n) ? null : n;
+}
+function axisWhy(v) {
+  return v && typeof v === 'object' && v.why ? String(v.why) : null;
+}
+
+// The stable empty headline — same shape whether from an empty vector or a
+// scalar-only record, so callers never branch on presence.
+function emptyHeadline() {
+  return { score: null, tier: null, leadAxis: null, leadLabel: null, breadth: 0, elevated: [], axes: [] };
+}
+
+// dimensions vector → headline. `dims` = { conflict: N|{score,why}, ... }.
+// score = max axis, tier = its band, leadAxis = the argmax, breadth = # elevated.
+// `axes` is the per-axis breakdown (sorted worst-first) for the scorecard UI.
+export function headlineFromDimensions(dims) {
+  if (!dims || typeof dims !== 'object') return emptyHeadline();
+  const axes = AXES
+    .map((axis) => ({ axis, label: AXIS_LABELS[axis], score: axisScore(dims[axis]), why: axisWhy(dims[axis]) }))
+    .filter((a) => a.score != null)
+    .map((a) => ({ ...a, tier: tierFromScore(a.score) }))
+    .sort((a, b) => b.score - a.score);
+  if (!axes.length) return emptyHeadline();
+  const lead = axes[0];
+  const elevated = axes.filter((a) => a.score >= AXIS_ELEVATED).map((a) => a.axis);
+  return {
+    score: lead.score,
+    tier: lead.tier,
+    leadAxis: lead.axis,
+    leadLabel: lead.label,
+    breadth: elevated.length,
+    elevated,
+    axes,
+  };
+}
+
+// The migration entry point: one headline for any record shape. Prefers the
+// `dimensions` vector; falls back to the legacy scalar (riskScore, then
+// riskLevel) so pre-v2 records still render — with an empty `axes` breakdown.
+export function deriveHeadline(record) {
+  if (!record || typeof record !== 'object') return emptyHeadline();
+  const fromVector = headlineFromDimensions(record.dimensions);
+  if (fromVector.axes.length) return fromVector;
+  const score = axisScore(record.riskScore);
+  const tier = tierFromScore(score) ?? tierFromLevel(record.riskLevel);
+  if (score == null && tier == null) return emptyHeadline();
+  return { ...emptyHeadline(), score, tier };
+}

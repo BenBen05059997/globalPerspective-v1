@@ -46,6 +46,7 @@ The deploy date of this phase = the birthday of the track record. Everything els
 | G3 horizon | `deadline ≤ generatedAt + 180d` | far-future junk |
 | G4 falsifiability lint | reject relative windows ("within N days of…"), precedent references ("as seen in…"), and no-event texts | #29 (window-as-anchor), #1 (2023 precedent) |
 | G5 premise check | leader names in trigger text must match `FACTS#` leadership when a row exists; skip when no coverage | #15-class (Nyusi/Chapo) — flagged at capture instead of resolution |
+| G6 capture-scope (added 2026-07-07) | reject pure sporting results — requires BOTH a sporting-competition context (world cup, match, round of N, …) AND a result/participation verb (wins, starts, scores, …); sport-adjacent governance survives (no result verb) | Trump–FIFA/Balogun box-score triggers ("U.S. wins its round of 16 match", "Balogun starts"); corpus-validated: drops 2/1038, 0 false positives |
 
 Failing triggers are **dropped from the log and counted** in the capture report (`{ dropped: [{text, gate}] }`); a scenario with zero surviving dated triggers is logged but marked unscoreable. Gates are pure functions — no LLM, no network.
 

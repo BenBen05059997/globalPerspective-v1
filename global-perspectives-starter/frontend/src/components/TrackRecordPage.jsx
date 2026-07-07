@@ -263,8 +263,10 @@ export default function TrackRecordPage() {
           </li>
           <li>
             <strong>Triggers are gate-validated at capture.</strong> Each trigger must be a single, forward-dated,
-            checkable event (absolute deadline, within ~180 days). Malformed triggers are dropped at capture and
-            recorded — they never enter the score.
+            checkable event (absolute deadline, within ~180 days) that carries a real geopolitical, economic, or
+            institutional signal. Malformed or out-of-scope triggers are dropped at capture and recorded — they
+            never enter the score. <span className="tr-meth-note">(From 2026-07-07 we also gate out pure
+            sporting results, e.g. who wins a match; earlier ones already published remain scored.)</span>
           </li>
           <li>
             <strong>Verified independently as deadlines pass.</strong> Each due trigger is checked against the news

@@ -290,6 +290,8 @@
 .tr-support a { color: var(--accent, #b4502f); font-weight: 600; text-decoration: none; }
 .tr-support a:hover { text-decoration: underline; }
 
+.tr-meth-note { color: var(--text-muted, #6b7280); font-style: italic; }
+
 .tr-section-foot {
   margin-top: 20px;
   font-size: 0.9rem;

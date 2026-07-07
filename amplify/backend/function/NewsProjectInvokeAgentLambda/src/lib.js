@@ -8,7 +8,8 @@
 // triggers that are safe to write to the immutable prediction log. Every defect class the
 // 2026-07-04 resolution pilot found (retrodictions, false premises, date artifacts, relative
 // windows) is rejectable HERE, mechanically, before it can inflate the public track record.
-// See PREDICTION_METHODOLOGY_V1_PLAN.md §3 (gates G1–G5) and PREDICTION_V1_EXAMPLE.md.
+// G6 (added 2026-07-07) additionally scopes out pure sporting results.
+// See PREDICTION_METHODOLOGY_V1_PLAN.md §3 (gates G1–G6) and PREDICTION_V1_EXAMPLE.md.
 
 const METHODOLOGY_VERSION = 1;
 const HORIZON_DAYS = 180;
@@ -95,6 +96,19 @@ const G4_PATTERNS = [
   { re: /\bas seen in\b|\bprecedent\b|\bsimilar to (?:the )?\d{4}/i, why: 'references a historical precedent, not a forward falsifiable event' },
 ];
 
+// G6 — capture-scope: no pure sporting-RESULT triggers. A match/tournament outcome or a
+// player's on-field participation carries no geopolitical / economic / institutional signal
+// (the product's remit), so it is gated out at capture. Requires BOTH a sporting-competition
+// CONTEXT and a RESULT/participation claim, so sport-ADJACENT governance triggers survive —
+// "Belgium files a protest with FIFA", "CAS grants an interim measure", "FIFA lifts the ban"
+// are institutional events (no result verb) and pass. Added 2026-07-07 after the Trump–FIFA /
+// Balogun story's box-score triggers ("U.S. wins its round of 16 match", "Balogun starts")
+// drifted into the log; the story stayed, only the sporting results were dropped. The AND of
+// the two signals is what keeps political "wins/advances/starts" (elections, bills, talks)
+// from being caught — those lack the sporting context.
+const G6_SPORT_CONTEXT = /\b(?:world cup|olympics?|tournament|match(?:es)?|fixtures?|quarter-?finals?|semi-?finals?|group stage|knockout stage|playoffs?|grand prix|gold medal|starting xi|penalty shootout|round of \d+|premier league|la liga|bundesliga|serie a|\bnba\b|\bnfl\b|\bnhl\b|\bmlb\b)\b/i;
+const G6_SPORT_RESULT = /\b(?:wins?|won|loses?|lost|defeats?|beats?|advances?|advanced|eliminat\w+|qualif\w+|starts?|started|scores?|scored|goals?|substitute|clean sheet)\b/i;
+
 /**
  * Validate one normalized trigger at capture time. Pure — no LLM, no network.
  * @param {{text:string, deadline:string|null}} trigger
@@ -124,6 +138,10 @@ function validateTrigger(trigger, generatedAtDay, facts = []) {
   // G4 — falsifiability lint
   for (const p of G4_PATTERNS)
     if (p.re.test(text)) return { ok: false, gate: 'G4', why: p.why };
+
+  // G6 — capture-scope: drop pure sporting results (context AND result signal both present).
+  if (G6_SPORT_CONTEXT.test(text) && G6_SPORT_RESULT.test(text))
+    return { ok: false, gate: 'G6', why: 'sporting result/participation, not a geopolitical/economic/institutional event' };
 
   // G5 — premise check: a trigger naming a country's office-holder must match verified FACTS#.
   // Only fires where we have coverage AND the text names a KNOWN-STALE holder for that country

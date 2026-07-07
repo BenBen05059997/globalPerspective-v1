@@ -89,6 +89,54 @@ test('G4 rejects a precedent reference (pilot #1)', () => {
   assert.equal(r.gate, 'G4');
 });
 
+// ---------- G6: capture-scope — pure sporting results dropped, sport-adjacent governance kept ----------
+// Uses the REAL triggers from the 2026-07-07 first resolution run (Trump–FIFA / Balogun story).
+
+test('G6 drops a box-score participation trigger (Balogun starts vs Belgium)', () => {
+  const r = validateTrigger(
+    { text: 'Folarin Balogun starts or appears as a substitute in the U.S. vs. Belgium round of 16 match', deadline: '2026-07-07' },
+    '2026-07-06',
+  );
+  assert.equal(r.ok, false);
+  assert.equal(r.gate, 'G6');
+});
+
+test('G6 drops a match-outcome trigger (U.S. wins its round of 16 match)', () => {
+  const r = validateTrigger(
+    { text: 'U.S. wins its round of 16 match against Belgium on July 7', deadline: '2026-07-07' },
+    '2026-07-06',
+  );
+  assert.equal(r.ok, false);
+  assert.equal(r.gate, 'G6');
+});
+
+test('G6 KEEPS the institutional sport-adjacent trigger (Belgium files a FIFA protest)', () => {
+  const r = validateTrigger(
+    { text: "Belgium files an official protest with FIFA's Disciplinary Committee regarding the ban reversal", deadline: '2026-07-07' },
+    '2026-07-06',
+  );
+  assert.equal(r.ok, true); // FIFA governance action, no result verb — this is in-remit
+});
+
+test('G6 KEEPS a legal-action trigger even when it mentions "match" (CAS interim measure)', () => {
+  const r = validateTrigger(
+    { text: "CAS grants an emergency interim measure suspending Balogun's clearance before the match", deadline: '2026-07-07' },
+    '2026-07-06',
+  );
+  assert.equal(r.ok, true); // "match" is context but there is no result/participation verb
+});
+
+test('G6 does NOT catch political "wins/advances/starts" (no sporting context)', () => {
+  const gen = '2026-07-04';
+  const political = [
+    { text: 'The incumbent party wins an outright majority in the July 20 parliamentary election', deadline: '2026-07-20' },
+    { text: 'The challenger advances to the second round of the presidential election', deadline: '2026-07-25' },
+    { text: 'The government starts formal accession talks with the bloc', deadline: '2026-08-30' },
+    { text: 'Brent crude scores its largest weekly gain amid the supply shock', deadline: '2026-07-18' },
+  ];
+  for (const t of political) assert.equal(validateTrigger(t, gen).ok, true, t.text);
+});
+
 // ---------- G5: premise check against verified FACTS# ----------
 
 test('G5 rejects a trigger naming a stale office-holder (pilot #15: Nyusi vs verified Chapo)', () => {

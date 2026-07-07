@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-07-07 (feat: scoring model v2 — Phase D1+D2 — per-axis drift + the dominance-bug fix, DEPLOYED)
+
+The dimensional model reaches the two scalar-consuming triggers (`main` `52687a4`).
+
+- **D1 — per-axis drift (`newsDriftCorrector`, DEPLOYED).** Country/thread `HISTORY#` snapshots now carry the `dimensions` vector, so the corrector: (a) **fires on ANY axis moving ≥8** — catching a conflict spike masked by a simultaneously-falling economy, a move the blended-max scalar barely registers; (b) records `changeDimensions {axis:{from,to,delta}}` on the drift note; and (c) **names the moved axis in the grounding prompt** so the LLM's "why" lands on the right dimension (an economic move, not the conflict the country is generally known for). New pure helpers `axisMoves` / `changeDimensionsFrom`; 14/14 `node --test` green. Degrades gracefully on pre-v2 history (scalar/level/trajectory tests still fire).
+- **D2 — category-aware breaking scorer (`newsBreakingAlert`, DEPLOYED) — fixes the country-risk *dominance* bug.** The significance scorer's `risk` signal (weight 2.0) used the **blended max** `COUNTRY_INTELLIGENCE.riskScore` over the story's regions — so an economic or diplomatic story in a war-torn country inherited that country's conflict-driven risk and over-alerted (~14% precision). It now feels risk on the story's **category-relevant axis** via `regionRiskScore`/`axisForCategory` (conflict/security→conflict, politics/diplomacy→political, economy→economic, society/disaster→humanitarian); an economic story in a conflict-90 country now feels its economic-30 axis instead. Falls back to the blended scalar for pre-v2 records / unmapped categories. 46/46 tests green, including the concrete over-alert-vs-quiet case.
+- **D3 (weekly-brief single derivation) deferred** — the duplicate band logic is cross-runtime (backend Lambda can't import the frontend adapter) and low value; not worth the churn.
+
 ## 2026-07-07 (feat: scoring model v2 — Phase C UI LIVE — risk scorecard on the site)
 
 The visible layer of the dimensional model shipped to prod (`main` `66230fc`; branch `scoring-model-v2` merged). Risk now explains itself on the page.

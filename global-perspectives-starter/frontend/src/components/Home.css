@@ -359,6 +359,8 @@
 .home-ai-btn.sum:hover { background: var(--ai-summary-soft); border-color: var(--ai-summary); color: var(--ai-summary); }
 .home-ai-btn.pre:hover { background: var(--ai-predict-soft); border-color: var(--ai-predict); color: var(--ai-predict); }
 .home-ai-btn.tra:hover { background: var(--ai-trace-soft); border-color: var(--ai-trace); color: var(--ai-trace); }
+.home-ai-btn.ana { text-decoration: none; }
+.home-ai-btn.ana:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }
 
 /* Active state */
 .home-ai-btn.sum.active { background: var(--ai-summary-soft); border-color: var(--ai-summary); color: var(--ai-summary); }

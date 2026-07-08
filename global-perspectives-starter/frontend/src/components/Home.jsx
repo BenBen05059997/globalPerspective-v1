@@ -41,6 +41,11 @@ const TraIcon = () => (
     <circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/>
   </svg>
 );
+const AnaIcon = () => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="7" cy="7" r="4.5"/><path d="M10.3 10.3L13.5 13.5"/>
+  </svg>
+);
 
 function getDayString() {
   const d = new Date();
@@ -365,6 +370,8 @@ function Home() {
           <Link to="/track-record">logged</Link>. Summarise, predict, or trace the cause of any story below.
         </p>
         <Link className="home-markets-link" to="/weekly-markets">Markets this week →</Link>
+        {' '}
+        <Link className="home-markets-link" to="/analyze">Run a cited, fabrication-checked AI deep-dive →</Link>
 
         {isStale && (
           <div className="home-alert stale">
@@ -545,6 +552,12 @@ function Home() {
                       }
                       Trace Cause
                     </button>
+
+                    {/* Analyze (Analysis Studio) */}
+                    <Link className="home-ai-btn ana" to={`/analyze?stories=${encodeURIComponent(id)}`}>
+                      <AnaIcon />
+                      Analyze
+                    </Link>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

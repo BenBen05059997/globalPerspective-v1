@@ -24,6 +24,16 @@
 .tp-topbar-sep { color: var(--ink-faint); }
 .tp-topbar-current { color: var(--ink); font-weight: 500; }
 .tp-topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.tp-topbar-right .tp-analyze-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.tp-topbar-right .tp-analyze-link:hover { color: var(--accent-deep); text-decoration: underline; }
 
 /* ── Thread header ────────────────────────────────────────── */
 .tp-hd {

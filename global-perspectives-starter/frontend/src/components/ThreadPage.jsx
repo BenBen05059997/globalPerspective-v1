@@ -287,6 +287,11 @@ export default function ThreadPage() {
     );
   }
 
+  // Lead/primary topic for this thread — the newest entry (entries are sorted
+  // newest-first). A thread can span many regions/entries, but Analysis Studio
+  // takes a single topicId per story, so we deep-link the lead entry only.
+  const primaryTopicId = thread.entries[0]?.topicId || null;
+
   const inflectionEntry = analysis?.inflectionTopicId
     ? thread.entries.find(e => e.topicId === analysis.inflectionTopicId)
     : null;
@@ -438,6 +443,13 @@ export default function ThreadPage() {
         )}
         <span className="tp-topbar-current">{displayTitle.length > 48 ? displayTitle.slice(0, 48) + '…' : displayTitle}</span>
         <div className="tp-topbar-right">
+          <Link
+            to={primaryTopicId ? `/analyze?stories=${encodeURIComponent(primaryTopicId)}` : '/analyze'}
+            className="tp-analyze-link"
+            title="Analyze this arc in the Analysis Studio"
+          >
+            Analyze this arc →
+          </Link>
           <ShareButtons threadId={thread.threadId} title={displayTitle} preview={{ t: displayTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: category }} />
           <CopyBriefing getText={() => formatThreadBriefing(thread, analysis)} />
           <SaveButton itemType="thread" itemId={threadId} metadata={{ title: displayTitle, category }} />

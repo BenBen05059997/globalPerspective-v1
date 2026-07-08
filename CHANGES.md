@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-07-08 (feat: drift-alert email — per-axis view, scoring-model-v2 Phase D-email)
+
+Brings the member drift-alert email onto the v2 4-axis model — it was the last surface still showing the blended scalar (`risk 78 → 82`) while the CountryPage shows the per-axis vector. Renders via a richest-available degradation ladder, so old and new notes both render honestly.
+- **`newsDriftCorrector`** now persists the current axis vector onto every new `DRIFT#`/`DRIFTLOG#` country note — `currentDimensions`, `currentLead`, `currentRiskScore`, `currentRiskLevel` (the vector was already loaded to compute `changeDimensions`; +`lead` added to the HISTORY# mapper). Thread notes untouched (email is country-only). **Not retroactive** (no backfill — SCORING_MODEL_V2_PLAN §7); Level B lights up from the next 07:20 UTC cron.
+- **`newsEmailSender/renderDriftEmail.js`** — degradation ladder: `currentDimensions` → **Level B** compact scorecard (`HIGH · Humanitarian 82` + `Conflict 65 · Political 70 · Economic 55 · Humanitarian 82` with lead bolded + `⚠ N/4 elevated` when ≥3 axes ≥50); else `changeDimensions` → **Level A** per-axis change pills (`Political 55→70 (+15)`); else the original scalar. No frontend-util import (reads derived headline fields off the note; breadth flag computed inline). Sparsity-safe (a `null` axis is dropped, no false flag).
+- Tests: `test-sender.js` 28 → **38 pass** (Level B / Level A / scalar / no-crash). Deployed both Lambdas (zip, no node_modules; bytes verified); corrector live-invoke ran clean. Built by a Sonnet agent in worktree `drift-email-axes`, verified independently. Files: `amplify/backend/function/newsDriftCorrector/src/index.js`, `amplify/backend/function/newsEmailSender/src/{renderDriftEmail.js,test-sender.js}`. Plan: `SCORING_MODEL_V2_PLAN.md` §12.
+
 ## 2026-07-08 (feat: ThreadPage layout — Overview tab + thin "Live Signals" rail)
 
 Fixes information overload on the story-arc page. On a big thread (e.g. the 56-event Ukraine drone-war arc) the old right "Arc Intelligence" rail dumped the full `storyArc` (~2k chars) **and** `trajectory` (~1.5k chars) open by default — two walls of text — while risk/sources/sentiment were printed in three places (StatusStrip + header meta + stat cards).

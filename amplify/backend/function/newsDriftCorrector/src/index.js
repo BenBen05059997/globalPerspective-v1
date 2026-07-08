@@ -46,6 +46,7 @@ async function readHistory(country) {
   return (out.Items || []).map((it) => ({
     dateKey: it.dateKey || String(it.SK || '').replace('HISTORY#', ''),
     riskLevel: it.riskLevel, riskScore: it.riskScore, dimensions: it.dimensions, trajectory: it.trajectory, headline: it.headline,
+    lead: it.lead,
   }));
 }
 
@@ -108,6 +109,10 @@ async function writeNote(country, drift, note) {
     changeScore: { from: Number(prior.riskScore), to: Number(cur.riskScore), delta: Number(cur.riskScore) - Number(prior.riskScore) },
     changeDimensions: changeDimensionsFrom(drift.moved),
     priorHeadline: prior.headline, currentHeadline: cur.headline,
+    currentDimensions: cur.dimensions,
+    currentRiskScore: Number(cur.riskScore),
+    currentRiskLevel: cur.riskLevel,
+    currentLead: cur.lead,
     triggerEvent: note.triggerEvent || undefined,
     whyChanged: note.whyChanged,
     noSingleDriver: !!note.noSingleDriver,

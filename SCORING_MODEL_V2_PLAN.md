@@ -104,6 +104,8 @@ Both change to: ask for the 4 axes (with per-axis calibration + **grounding**, s
 - **Phase B — generators emit the vector + derived scalar. ✅ BUILT (commit `c7a18f4`), NOT DEPLOYED.** Both generators now ask for the `dimensions` vector (per-axis calibration + grounding + sparsity) and derive `riskScore`/`riskLevel` from the worst axis via a shared `riskDimensions.js` helper (byte-identical in both functions). Both core + snapshot writes carry `dimensions`+`lead`+derived scalar; transitional fallback to a legacy `riskScore` if a response omits dimensions. **← DEPLOY GATE + go/no-go: deploy, let it run, inspect real vectors at scale for boilerplate (§9) before Phase C.**
 - **Phase C — upgrade the display VEC consumers.** CountryPage/ThreadPage headline shows the lead axis + breakdown; SpiderWorld bubbles by lead; CountryWhatChanged per-axis; `/weekly` LEAD qualifies on a specific worst axis.
 - **Phase D — upgrade the scalar-consuming triggers. ✅ D1+D2 DEPLOYED (main `52687a4`).** D1 `newsDriftCorrector`: fires on any axis |Δ|≥8, writes `changeDimensions`, names the moved axis in the grounding prompt. D2 `newsBreakingAlert`: significance scorer feels risk on the **category-relevant axis** (`regionRiskScore`/`axisForCategory`) not the blended max — **fixes the country-risk dominance bug** (an economic story no longer inherits a war-torn region's conflict score). Both fall back to the blended scalar for pre-v2 records. **D3 (weekly-brief single derivation) DEFERRED** — cross-runtime, low value. **D1 read-side follow-on DEPLOYED (main `bed8291`):** CountryPage "What changed" band is axis-aware — `computeCountryDrift` now detects per-axis moves (`|Δ|≥8`) from the snapshots' `dimensions` vector (pure serve pass-through, no backend change) and names the driving dimension as a pill (`Economic: 30 → 72 (+42)`); surfaces the same masking a scalar-only band would miss. Dormant until a country accrues two dimension-bearing daily snapshots.
+- **Phase D-email — the drift *email* renderer (the one surviving scalar-only surface). SPEC'D 2026-07-08, NOT BUILT.** When Phase D upgraded the drift note (`changeDimensions`) + the CountryPage band (per-axis pills), the member drift-alert **email** (`newsEmailSender/src/renderDriftEmail.js`, built in member-gating P5 2026-07-06) was missed — it still renders the blended scalar (`risk 78 → 82`). Verified live 2026-07-08: today's DR Congo `DRIFT#` note carries `changeDimensions{political:55→70, economic:40→55}` and the core carries the full current vector, but the email's `changeLabel()` reads only `changeScore`. See §12 below for the full build spec.
+
 - **Phase E — per-axis calibration (later, gated on verdicts).** Track-record each axis separately — the real accountability payoff, but needs resolved outcomes; defer like prediction calibration [[project_prediction_methodology_v1]].
 
 ## 9. The boilerplate risk — TESTED, held (Phase 0 spike, 2026-07-07)
@@ -132,3 +134,67 @@ The feared failure mode: the model emitting `{conflict:70, political:60, economi
 ## 11. Not touched (confirmed independent)
 
 `/track-record` + Brier/calibration (scores `probability`, never risk), `newsSystemsAnalysis`, `newsEconomicImpact` (instrument `magnitude`, not risk), `newsWeeklyMarkets`, `newsInvokeGemini`, `NewsProjectInvokeAgentLambda`. `SeverityBadge` only *borrows* the `--risk-*` colors for economic severity — not a risk-score consumer.
+
+---
+
+## 12. Phase D-email — drift-alert email renderer build spec (SPEC'D 2026-07-08, NOT BUILT)
+
+**Problem.** The member drift-alert email shows the blended scalar (`risk 78 → 82`) while the CountryPage shows the v2 per-axis view. The email is the last scalar-only surface. `renderDriftEmail.js` → `changeLabel()` reads `changeLevel` then falls back to `changeScore`, and never touches `changeDimensions` or the current vector.
+
+**All facts below verified against live code + DDB on 2026-07-08.**
+
+### Two levels (ship both; they layer)
+
+**Level A — per-axis change (matches the plan's decided design + the CountryPage).**
+Render the axes that MOVED instead of the blended scalar. **Data already on the note** (`changeDimensions{axis:{from,to,delta}}`) — no corrector change, no new data. This is the minimum to bring the email in line with `CountryWhatChanged.jsx` (lines 61–69, per-axis pills `Economic: 30 → 72 (+42)`).
+
+**Level B — current 4-axis standing + what moved (the richer "where it stands now" view).**
+Also show the country's full current profile (e.g. `HIGH · Humanitarian 82` lead + `Conflict 65 / Political 70 / Economic 55 / Humanitarian 82` + `⚠ 3/4 elevated` breadth flag). Needs the current vector persisted onto the note (it is NOT today).
+
+### Build — three changes
+
+**Change 1 (Level B data) — `newsDriftCorrector/src/index.js`, ~4 lines, trivial.**
+The current vector is **already loaded** — `readHistory` (line ~48) maps the HISTORY# snapshot and `cur`/`prior` already carry `dimensions` (used by `changeDimensionsFrom` at line 109). The HISTORY# snapshot **also carries `lead`** (verified: DRC HISTORY#2026-07-08 has `lead:"humanitarian"` + `dimensions`), but the mapper drops it.
+1. In the `readHistory` mapper (~line 48) add `lead: it.lead` to the returned object.
+2. In `writeNote`'s `base` object (~line 103–110) add:
+   ```js
+   currentDimensions: cur.dimensions,        // full 4-axis {axis:{score,why}} — already in scope
+   currentRiskScore:  Number(cur.riskScore), // already in scope
+   currentRiskLevel:  cur.riskLevel,         // already in scope
+   currentLead:       cur.lead,              // from step 1
+   ```
+   The thread path (`writeThreadNote`, ~line 185) can get the same treatment for symmetry, but the email is country-only, so country is the requirement.
+   **Consequence:** only notes written AFTER this deploy carry `currentDimensions`. Do NOT backfill (§7 rule). The renderer degrades (below).
+
+**Change 2 (render) — `newsEmailSender/src/renderDriftEmail.js`.**
+Replace the single `changeLabel()` line with a **degradation ladder**, richest available first:
+1. `note.currentDimensions` present → **Level B block**: a compact email-safe scorecard — headline line `{RISKLEVEL} · {LeadLabel} {score}` (read `currentRiskLevel`/`currentLead`/`currentRiskScore` straight off the note — **do NOT import the frontend `riskTiers.js`; the note already carries the derived headline fields**), then a 4-axis row (`Conflict 65 · Political 70 · Economic 55 · Humanitarian 82`, lead axis bolded), then a `⚠ N/4 elevated` flag computed inline (`count axes with score≥50`; only show when N≥3). Then the existing "what changed" rows below it.
+2. else `note.changeDimensions` present → **Level A**: per-axis change pills `Political 55→70 (+15) · Economic 40→55 (+15)` (mirror `CountryWhatChanged` lines 61–69).
+3. else `changeLevel`/`changeScore` → today's scalar behavior (unchanged).
+Keep the `why`/`triggerEvent`/`noSingleDriver` lines exactly as-is. Design call: **compact** — axis+score+lead marker, NOT the four per-axis `why` paragraphs (those are what the CountryPage is for; the email is glance + click-through). Both `text` and `html` variants. Escape everything (`esc()`), email-client-safe inline styles + table layout (match the existing file's idiom).
+
+**Change 3 (tests) — `newsEmailSender/src/test-sender.js`.**
+`renderDriftEmail` is currently UNtested there. Add cases (the harness is a custom require-intercept runner — add to its existing pattern, keep `node test-sender.js` green, bump the count in the summary):
+- Level B: a note with `currentDimensions`+`currentLead`+`currentRiskScore` → html contains the lead label, all four axis scores, the breadth flag when ≥3 elevated; text variant too.
+- Level A: a note with `changeDimensions` but NO `currentDimensions` → renders per-axis pills, NOT "risk X → Y".
+- Fallback: a note with only `changeScore` → unchanged scalar behavior.
+- No-crash on a note missing all three (returns `read revised`).
+Optionally extend `newsDriftCorrector/test/lib.test.js` if any pure helper is factored out (only if the axis/breadth formatting is pulled into a testable function — not required if it stays inline in the renderer).
+
+### Deploy (GATED — build + verify only; do NOT deploy without a fresh explicit operator "yes")
+1. `newsDriftCorrector` — zip `src/{index.js,lib.js,package.json}` (no node_modules; runtime `@aws-sdk`), `aws lambda update-function-code`. New notes carry the vector from the next 07:20 UTC cron.
+2. `newsEmailSender` — zip `src/*` (must include `renderDriftEmail.js` + `test-sender.js` not needed at runtime; include the four render/send modules), `update-function-code`.
+3. No frontend build. No new IAM (both functions already read/write `SummarizeAndPredict`).
+4. Verify live: after the next corrector cron, re-check a fresh `DRIFT#` note has `currentDimensions`; run the Layer-1 drift-email invoke (`DRIFT_EMAIL_ACTIVATION_PLAN.md` L1) and confirm the payload/preview shows the axis view.
+
+### Verify (pre-commit gate, no deploy)
+- `cd amplify/backend/function/newsEmailSender/src && node test-sender.js` → all pass incl. new drift cases.
+- `cd amplify/backend/function/newsDriftCorrector && node --test` → lib suite still green.
+- `cd global-perspectives-starter/frontend && npm run verify` → unaffected but confirms no cross-break.
+- Manual: `node -e` render a Level-B fixture note through `renderDriftEmail`, eyeball the html.
+
+### Non-negotiables
+- **Not retroactive** — old notes render at Level A/scalar; only post-deploy notes reach Level B (§7 no-backfill / [[feedback_no_misinformation_fallback]]).
+- **No frontend-util import in the Lambda** — read the derived headline fields off the note; compute only the breadth flag inline.
+- **Compact email** — standing + what-moved, not the full reasoning (that's the click-through).
+- Honest-empty preserved: `noSingleDriver` and the "we alert only when a conclusion moves" footer stay.

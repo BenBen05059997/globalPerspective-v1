@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGeminiTopics } from '../hooks/useGeminiTopics';
 import { useAuth } from '../contexts/AuthContext';
 import { getProvider } from '../services/llm';
@@ -20,6 +20,7 @@ export default function AnalysisStudio() {
   const { topics, loading: topicsLoading } = useGeminiTopics();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   // Analysis Studio is a registered-only feature (anonymous guests count as
   // not-registered). This gate is scoped to THIS feature only — it does not touch
   // the public data hooks.
@@ -36,6 +37,7 @@ export default function AnalysisStudio() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const [selected, setSelected] = useState([]); // topicIds
+  const didSeedFromParams = useRef(false);
   const [mode, setMode] = useState('guided'); // 'guided' | 'freeform'
   const [lensId, setLensId] = useState(LENSES[0].id);
   const [focus, setFocus] = useState('');
@@ -68,6 +70,20 @@ export default function AnalysisStudio() {
     () => topics.filter((t) => selected.includes(t.topicId || t.id)),
     [topics, selected]
   );
+
+  useEffect(() => {
+    if (didSeedFromParams.current) return;
+    if (topicsLoading || topics.length === 0) return;
+    didSeedFromParams.current = true;
+    const raw = searchParams.get('stories');
+    if (!raw) return;
+    const requested = raw.split(',').map((s) => s.trim()).filter(Boolean);
+    if (requested.length === 0) return;
+    const known = new Set(topics.map((t) => t.topicId || t.id));
+    const valid = requested.filter((id) => known.has(id)).slice(0, MAX_STORIES);
+    if (valid.length > 0) setSelected(valid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topicsLoading, topics]);
 
   function toggle(id) {
     setSelected((cur) => {

@@ -43,6 +43,18 @@
   color: var(--ink-dim);
   margin: 0;
 }
+.ep-analyze-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--accent);
+}
+.ep-analyze-link:hover { text-decoration: underline; text-underline-offset: 2px; }
 /* Today / This week segmented control — sits under the deck in the masthead. */
 .ep-mode-toggle {
   display: inline-flex;

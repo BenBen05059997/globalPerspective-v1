@@ -587,6 +587,7 @@ export default function EconomyPage() {
               ? 'The week in markets — a reviewed, published wrap.'
               : 'What today’s news is repricing — instrument-first.'}
           </p>
+          <Link className="ep-analyze-link" to="/analyze">Analyze what's repricing markets today →</Link>
           {/* Today / This week mode toggle — segmented control. Persists to ?view=. */}
           <div className="ep-mode-toggle" role="tablist" aria-label="Markets view">
             <button

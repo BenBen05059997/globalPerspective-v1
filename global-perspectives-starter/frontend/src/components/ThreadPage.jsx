@@ -10,7 +10,7 @@ import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
 import { formatDateLabel } from '../utils/dateUtils';
 import CompactTimeline from './CompactTimeline';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar as RISK_COLOR } from '../tokens';
-import { tierFromScore, tierLabel } from '../utils/riskTiers';
+import { tierFromScore, tierLabel, deriveHeadline } from '../utils/riskTiers';
 import CopyBriefing, { formatThreadBriefing } from './CopyBriefing';
 import { SaveButton } from './SaveButton';
 import EditorialShell from './atoms/EditorialShell';
@@ -57,6 +57,41 @@ function RailBlock({ label, defaultOpen = false, children }) {
   );
 }
 
+// Overview-tab section: a labeled, collapsible band in the center reading column.
+// The synthesis (story arc, trajectory, root cause, watch) moved here out of the
+// right rail so the page reads as one column of short sections instead of a wall.
+function OverviewSection({ label, count, defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={`tp-ov-sec${open ? ' open' : ''}`}>
+      <button type="button" className="tp-ov-head" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+        <span className="tp-ov-lbl">
+          {label}{count != null && <span className="tp-ov-count">{count}</span>}
+        </span>
+        <span className={`tp-ov-chev${open ? ' open' : ''}`} aria-hidden="true">▾</span>
+      </button>
+      {open && <div className="tp-ov-body">{children}</div>}
+    </div>
+  );
+}
+
+// Long analysis paragraph, clamped to a few lines with an inline Read-more toggle —
+// so an open section previews rather than dumping 2-3 paragraphs at once.
+function ClampText({ text, threshold = 360 }) {
+  const [expanded, setExpanded] = useState(false);
+  const long = (text || '').length > threshold;
+  return (
+    <>
+      <p className={`tp-ov-text${long && !expanded ? ' clamp' : ''}`}>{text}</p>
+      {long && (
+        <button type="button" className="tp-ov-more" onClick={() => setExpanded(e => !e)}>
+          {expanded ? 'Show less ▴' : 'Read more ▾'}
+        </button>
+      )}
+    </>
+  );
+}
+
 function formatTimeAgo(isoString) {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
   if (mins < 1) return 'just now';
@@ -86,10 +121,11 @@ export default function ThreadPage() {
   const { entries: narrativeEntries, loading: threadLoading } = useNarrativeThread(threadId);
   const { dayMap, sortedDates } = useWeeklyArchive();
   // Honor deep-linked tabs (threadPath's ?tab= contract — e.g. ?tab=economy from
-  // disruption links on Economy/Daily/Country/Map). Unknown values → timeline.
+  // disruption links on Economy/Daily/Country/Map). Unknown values → Overview
+  // (the synthesis-first landing tab; falls back to Timeline when no analysis yet).
   const requestedTab = searchParams.get('tab');
   const [contentTab, setContentTab] = useState(() =>
-    ['timeline', 'actors', 'sources', 'economy'].includes(requestedTab) ? requestedTab : 'timeline');
+    ['overview', 'timeline', 'actors', 'sources', 'economy'].includes(requestedTab) ? requestedTab : 'overview');
 
   const thread = useMemo(() => {
     if (!narrativeEntries || !narrativeEntries.length) return null;
@@ -313,24 +349,26 @@ export default function ThreadPage() {
     </div>
   );
 
-  // Right AI rail — a single stacked "Arc Intelligence" synthesis column.
-  // No longer a competing tab widget: the AI narrative reads top-to-bottom here,
-  // while the center tab bar (Timeline/Actors/Sources/Economy) owns the evidence —
-  // so actors + economy live in the center, not duplicated in the rail.
-  const hasAiRail = analysis && (
-    analysis.storyArc || analysis.trajectory || analysis.rootCauseChain ||
-    analysis.watchQuestions?.length || analysis.groundingSources?.length
-  );
-  const rightRail = (hasAiRail || hasForecast) && (
+  // Right rail — a THIN "Live Signals" strip. It carries only the time-sensitive,
+  // dynamic bits (forecast, what-changed drift note, live web evidence). The static
+  // synthesis (story arc / trajectory / root cause / watch) now lives in the center
+  // "Overview" tab, so the page reads as one column instead of two competing walls.
+  const hasDrift = !!analysis?.driftNote?.whyChanged;
+  const hasGrounding = analysis?.groundingSources?.length > 0;
+  // Scoring-v2 per-axis risk breakdown (renders only for v2 records, else null) —
+  // include it in the rail gate so it survives the thin-rail redesign.
+  const hasScorecard = !!analysis && deriveHeadline(analysis).axes.length > 0;
+  const hasSignalRail = hasForecast || hasDrift || hasGrounding || hasScorecard;
+  const rightRail = hasSignalRail && (
     <div className="tp-ai-rail">
       <div className="tp-ai-hd">
-        <div className="tp-ai-hd-label"><span className="tp-ai-dot" />Arc Intelligence</div>
-        <span className="tp-ai-model">AI analysis</span>
+        <div className="tp-ai-hd-label"><span className="tp-ai-dot" />Live Signals</div>
+        <span className="tp-ai-model">AI</span>
       </div>
       <div className="tp-ai-body">
         <ThreadForecast snapshot={forecast} />
         <RiskScorecard record={analysis} />
-        {analysis?.driftNote?.whyChanged && (
+        {hasDrift && (
           <div className="tp-ai-block tp-ai-drift">
             <div className="tp-ai-section-lbl">
               What changed{analysis.driftNote.since ? ` · since ${driftDay(analysis.driftNote.since)}` : ''}
@@ -341,33 +379,8 @@ export default function ThreadPage() {
             <p className="tp-ai-text">{driftClean(analysis.driftNote.whyChanged)}</p>
           </div>
         )}
-        {analysis?.storyArc && (
-          <div className="tp-ai-block">
-            <div className="tp-ai-section-lbl">Summary</div>
-            <p className="tp-ai-text">{analysis.storyArc}</p>
-          </div>
-        )}
-        {analysis?.trajectory && (
-          <RailBlock label="What's Next" defaultOpen>
-            <p className="tp-ai-text">{analysis.trajectory}</p>
-          </RailBlock>
-        )}
-        {analysis?.rootCauseChain && (
-          <RailBlock label="Trace Cause">
-            <p className="tp-ai-text">{analysis.rootCauseChain}</p>
-          </RailBlock>
-        )}
-        {analysis?.watchQuestions?.length > 0 && (
-          <RailBlock label="Watch">
-            <ul className="tp-watch-list">
-              {analysis.watchQuestions.map((q, i) => <li key={i}>{q}</li>)}
-            </ul>
-          </RailBlock>
-        )}
-
-        {/* Grounding sources */}
-        {analysis?.groundingSources?.length > 0 && (
-          <RailBlock label="Live Web Evidence">
+        {hasGrounding && (
+          <RailBlock label="Live Web Evidence" defaultOpen={!hasForecast && !hasDrift}>
             {analysis.groundingSources.slice(0, 3).map((s, i) => (
               <div key={i} className="tp-grounding-card">
                 <div className="tp-grounding-title">{s.title}</div>
@@ -379,14 +392,21 @@ export default function ThreadPage() {
         )}
       </div>
       <div className="tp-ai-foot">
-        <span>AI-generated · analyst context</span>
+        <span>AI-generated · live signals</span>
         {analysis?.generatedAt && <span>{formatTimeAgo(analysis.generatedAt)}</span>}
       </div>
     </div>
   );
 
-  // Content tabs: Timeline | Actors | Sources | Economy
+  // The Overview tab holds the synthesis (moved out of the rail). It exists only
+  // once we actually have narrative analysis to show.
+  const hasOverview = !!(analysis && (
+    analysis.storyArc || analysis.trajectory || analysis.rootCauseChain || analysis.watchQuestions?.length
+  ));
+
+  // Content tabs: Overview | Timeline | Actors | Sources | Economy
   const contentTabs = [
+    hasOverview && { key: 'overview', label: 'Overview' },
     { key: 'timeline', label: 'Timeline', count: thread.entries.length },
     analysis?.keyActors?.length > 0 && { key: 'actors', label: 'Actors', count: analysis.keyActors.length },
     sourceRollup.length > 0 && { key: 'sources', label: 'Sources', count: sourceRollup.length },
@@ -394,9 +414,9 @@ export default function ThreadPage() {
   ].filter(Boolean);
 
   // Effective tab, derived (not reset via effects — no race with async fetches).
-  // A deep-linked tab (?tab=economy) shows the timeline until its data arrives,
-  // switches over when it does, and stays on timeline if it never materializes.
-  const activeTab = contentTabs.some(t => t.key === contentTab) ? contentTab : 'timeline';
+  // A deep-linked tab (?tab=economy) shows the first available tab until its data
+  // arrives, switches over when it does, and stays put if it never materializes.
+  const activeTab = contentTabs.some(t => t.key === contentTab) ? contentTab : (contentTabs[0]?.key || 'timeline');
 
   return (
     <div className="tp-page">
@@ -455,19 +475,13 @@ export default function ThreadPage() {
               {analysis.storyArc.split(/[.!?]/)[0].trim()}.
             </p>
           )}
+          {/* Meta line carries only what the stat cards below DON'T (timeframe,
+              category, countries). Risk + sentiment live in the stat cards — not
+              repeated here. */}
           <div className="tp-hd-meta">
             <span>{formatDateRange(thread.dateRange.from, thread.dateRange.to)}</span>
             {category && <span>Category <b>{thread.entries[0]?.category}</b></span>}
             {thread.regions.length > 0 && <span>Countries <b>{thread.regions.slice(0, 3).join(', ')}{thread.regions.length > 3 ? ` +${thread.regions.length - 3}` : ''}</b></span>}
-            {analysis?.riskScore != null && (
-              <span>
-                Risk <b style={{ color: RISK_COLOR(analysis.riskScore) }}>{tierLabel(tierFromScore(analysis.riskScore))}</b>
-                <span className="tp-hd-fine"> {analysis.riskScore}</span>
-              </span>
-            )}
-            {analysis?.sentiment != null && (
-              <span>Sentiment <b>{analysis.sentiment > 0 ? '+' : ''}{analysis.sentiment.toFixed(1)}</b></span>
-            )}
           </div>
         </div>
 
@@ -514,6 +528,34 @@ export default function ThreadPage() {
             </button>
           ))}
         </div>
+
+        {/* Overview tab — the synthesis, as short collapsible sections in reading order */}
+        {activeTab === 'overview' && hasOverview && (
+          <div className="tp-overview">
+            {analysis.storyArc && (
+              <OverviewSection label="Bottom line" defaultOpen>
+                <ClampText text={analysis.storyArc} />
+              </OverviewSection>
+            )}
+            {analysis.trajectory && (
+              <OverviewSection label="What's next">
+                <ClampText text={analysis.trajectory} />
+              </OverviewSection>
+            )}
+            {analysis.rootCauseChain && (
+              <OverviewSection label="Root cause">
+                <ClampText text={analysis.rootCauseChain} />
+              </OverviewSection>
+            )}
+            {analysis.watchQuestions?.length > 0 && (
+              <OverviewSection label="Watch" count={analysis.watchQuestions.length}>
+                <ul className="tp-watch-list">
+                  {analysis.watchQuestions.map((q, i) => <li key={i}>{q}</li>)}
+                </ul>
+              </OverviewSection>
+            )}
+          </div>
+        )}
 
         {/* Timeline tab */}
         {activeTab === 'timeline' && (
@@ -608,16 +650,6 @@ export default function ThreadPage() {
           </>
         )}
 
-        {/* Watch questions fallback — only when the AI rail isn't shown (e.g. thread
-            has key actors but no narrative/grounding), so the watch list still lands. */}
-        {!hasAiRail && analysis?.watchQuestions?.length > 0 && (
-          <div style={{ marginTop: 24 }}>
-            <div className="tp-section-lbl">Questions to Watch</div>
-            <ul className="tp-watch-list">
-              {analysis.watchQuestions.map((q, i) => <li key={i}>{q}</li>)}
-            </ul>
-          </div>
-        )}
       </EditorialShell>
     </div>
   );

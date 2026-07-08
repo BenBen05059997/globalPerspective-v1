@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-07-08 (feat: ThreadPage layout — Overview tab + thin "Live Signals" rail)
+
+Fixes information overload on the story-arc page. On a big thread (e.g. the 56-event Ukraine drone-war arc) the old right "Arc Intelligence" rail dumped the full `storyArc` (~2k chars) **and** `trajectory` (~1.5k chars) open by default — two walls of text — while risk/sources/sentiment were printed in three places (StatusStrip + header meta + stat cards).
+- **New "Overview" tab (default landing):** the synthesis moved out of the rail into short, collapsible center sections in reading order — **Bottom line → What's next → Root cause → Watch**. Only *Bottom line* is open on load and is clamped to ~6 lines with a **"Read more"** toggle (`OverviewSection` + `ClampText`). Deep-links (`?tab=economy` etc.) still resolve; falls back to Timeline when a thread has no AI analysis yet.
+- **Right rail slimmed to "Live Signals":** carries only the time-sensitive/dynamic bits — the risk scorecard, living forecast, "what changed" drift note, live web evidence. The static narrative no longer duplicates between rail and center (one reading column).
+- **De-duplicated stats:** header meta line now carries only what the stat cards don't (timeframe · category · countries); risk + sentiment live in the cards only. Removed the orphaned watch-questions fallback (watch is now a first-class Overview section).
+- Build passes, lint clean. Playwright-verified in-browser against live prod data: tabs `Overview · Timeline 56 · Actors 5 · Sources 24 · Economy 3`, Overview default, only Bottom line open, section toggles + Read-more work, rail reads "Live Signals", no console errors. Files: `components/ThreadPage.{jsx,css}`.
+
 ## 2026-07-07 (feat: scoring model v2 — per-axis drift in the "What changed" band)
 
 Closes the D1 loop on the read side: the CountryPage **"What changed"** band now names
@@ -72,7 +80,6 @@ No new pages and no backend change — the site had a feature-surplus with an or
 - **P2 — nav grouping + descriptions (`Layout.jsx`, `Layout.css`):** the 9 nav items are grouped (Briefings · Intelligence · Markets/Analysis · Accountability) with hairline dividers, each carrying a `title` tooltip describing its job (so Daily vs Weekly Brief vs Threads is finally legible). Map moved next to Countries. (Analyze→Membership funnel was already wired in `AnalysisStudio`.)
 - **P3 — trust-chain cross-links (`ThreadForecast.jsx`+`ThreadPage.css`, `TrackRecordPage.jsx`+`.css`, `atoms/CountryWhatChanged.jsx`+`.css`):** forecast board → "How these forecasts are scored → /track-record"; Track Record forecast record → "See the live forecast boards → /weekly"; CountryPage "What changed" band → "All corrections → /track-record". (Corrections-ledger → source-page links already existed.)
 - Deferred (need operator / backend, in the plan): P4 root-URL bot pre-render (Worker paste + index.html meta), P5 remove the unconsumed `pair_analysis`/`pair_analyses_list` actions. Coffee-button relocation left in place (flagged vetoable, not done).
-
 ## 2026-07-06 (fix: Predict card crashed on methodology-v1 structured triggers)
 
 Clicking Summarise/Predict on Home (and MapSidePanel) crashed with React error #31 ("object with keys {text, deadline}") for every prediction generated since the 2026-07-04 methodology-v1 deploy: triggers changed from plain strings to structured `{text, deadline}` objects, but the display components still rendered each trigger directly as a React child. Backend was healthy — all 13 live topics served predictions fine.

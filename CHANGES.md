@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-07-09 (feat: surface Analysis Studio across Home, ThreadPage, Economy + `?stories=` preselect)
+
+Analysis Studio (`/analyze`) — a cited, fabrication-checked AI deep-dive over our own SUMMARY/PREDICTION/TRACE_CAUSE — was discoverable from **one nav link and nothing else**, the likely reason usage sat at ~2 runs/30d (a discovery problem, not a quality one — the engine was live-tested the same day: 0/3 fabrication on real stories, desk-grade scenario output, the honesty contract holding). Surfaced it at the moments of highest reading-intent.
+- **Enabler** (`AnalysisStudio.jsx`): reads `?stories=<id>[,…]` and seeds the story selection once topics load — intersected against real topicIds, unknown/stale ids silently dropped, capped at MAX_STORIES. Absent param = unchanged (empty selection). Makes every "Analyze →" a deep-link.
+- **Home** (`Home.jsx`/`.css`): a per-story **"Analyze →"** pill (4th control beside Summary/Predict/Trace, deep-links that story) + a one-line hero value-prop link so first-timers learn the Studio exists.
+- **ThreadPage** (`ThreadPage.jsx`/`.css`): **"Analyze this arc →"** in the topbar, deep-linking the thread's lead (newest) entry topicId; falls back to plain `/analyze` if none — no invented target.
+- **Economy** (`EconomyPage.jsx`/`.css`): **"Analyze what's repricing markets today →"** cross-link under the masthead deck.
+- The Studio's own signed-in-non-anon run gate is unchanged — these are pre-auth navigation Links + preselect only. Every new control is a sibling `<Link>` (no anchor nesting). Verify 213/213 + the economic pre-push verifier all-green (4 layers, 35/35 grep guards). Built by a Sonnet subagent (4 commits), reviewed + pushed + deployed by Opus. Plan: `ANALYZE_SURFACING_PLAN.md`. Credits themselves remain PARKED — this surfaces the free/BYOK funnel, not the paywall.
+
 ## 2026-07-08 (feat: surface the country-follow control on the /track-record corrections ledger)
 
 The member "follow a country's read → change-alert email" control (`FollowButton`) was rendered on **one page only** (CountryPage) — the likely reason the feature has 0 followers, which keeps the drift-email cron disabled. Surfaced it at the highest-intent new location.

@@ -1,6 +1,6 @@
 # Follow-Button Surfacing Plan — put the country-follow control where reading-intent is highest
 
-**Status: READY TO EXECUTE (frontend build + deploy authorized 2026-07-08).**
+**Status: ✅ SHIPPED + DEPLOYED 2026-07-08 (main `b455ee1`, bundle `index-ByAC31Ev.js` live-verified, 404 byte-identical).** Ledger surface done (2-file change, verify 213/213). Countries-index + ThreadPage remain DEFERRED (§3 reasons). Built by a Sonnet agent, reviewed + deployed by Opus.
 **Self-contained for a hand-off agent.** Parents: `MEMBER_GATING_PLAN.md` P5 (the follow feature), `DRIFT_EMAIL_ACTIVATION_PLAN.md` (the email this unlocks), `SCORING_MODEL_V2_PLAN.md` §12 (the per-axis email it feeds).
 
 ---

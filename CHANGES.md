@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-07-08 (feat: surface the country-follow control on the /track-record corrections ledger)
+
+The member "follow a country's read → change-alert email" control (`FollowButton`) was rendered on **one page only** (CountryPage) — the likely reason the feature has 0 followers, which keeps the drift-email cron disabled. Surfaced it at the highest-intent new location.
+- **`/track-record` corrections ledger** (`TrackRecordPage.jsx` `CorrectionsLedger`) now renders `<FollowButton country={n.name} />` on each **country-scope** correction row — the accountability hub is the "reading corrections" destination, so it's the natural "get the next one emailed" moment. Placed as a sibling of the name `<Link>` (no anchor nesting); thread-scope rows get no button (following is country-only). One CSS rule (`.tr-cl-follow`); groups right with the existing `margin-left:auto` date.
+- Management unchanged — `/account?tab=notifications` already handles the followed-country list + email opt-ins. Deferred (with reasons): the CountryWhatChanged band (redundant — CountryPage already has the button), ThreadPage (multi-country ambiguity), countries-index (card-is-a-Link nesting + grid + anon-nag). Verify 213/213; built by a Sonnet agent, reviewed + deployed by Opus. Files: `components/TrackRecordPage.{jsx,css}`. Plan: `FOLLOW_SURFACING_PLAN.md`. Unblocks the first follower → `DRIFT_EMAIL_ACTIVATION_PLAN.md` L3–L4.
+
 ## 2026-07-08 (feat: drift-alert email — per-axis view, scoring-model-v2 Phase D-email)
 
 Brings the member drift-alert email onto the v2 4-axis model — it was the last surface still showing the blended scalar (`risk 78 → 82`) while the CountryPage shows the per-axis vector. Renders via a richest-available degradation ladder, so old and new notes both render honestly.

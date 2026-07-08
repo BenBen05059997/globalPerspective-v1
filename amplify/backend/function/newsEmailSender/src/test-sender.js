@@ -220,6 +220,58 @@ function loadSender(env) {
   res = await recHandler({ requestContext: { http: { method: 'GET' } }, headers: {}, queryStringParameters: { action: 'unsubscribe', uid: 'ghost', token: 'x', kind: 'digest' } });
   check('unknown uid → not-recognized page', /Link not recognized/.test(res.body));
 
+  // 8) DRIFT EMAIL renderer — degradation ladder (scoring-model-v2 axes, SCORING_MODEL_V2_PLAN.md §12)
+  console.log('\n[drift-email] degradation ladder');
+  const { renderDriftEmail } = require('./renderDriftEmail');
+
+  // Level B — currentDimensions present (richest): lead axis + score + all 4 axes + breadth flag.
+  const levelBNote = {
+    asOf: '2026-07-08', since: '2026-07-01',
+    currentDimensions: {
+      conflict: { score: 65, why: 'x' }, political: { score: 70, why: 'x' },
+      economic: { score: 45, why: 'x' }, humanitarian: { score: 82, why: 'x' },
+    },
+    currentRiskScore: 82, currentRiskLevel: 'high', currentLead: 'humanitarian',
+    changeDimensions: { humanitarian: { from: 60, to: 82, delta: 22 } },
+    triggerEvent: { title: 'Camp attack confirmed', date: '2026-07-07' },
+  };
+  let out = renderDriftEmail('Democratic Republic of the Congo', [levelBNote], { siteUrl: 'https://globalperspective.net' });
+  check('Level B html shows lead label', /Humanitarian 82/.test(out.html));
+  check('Level B html shows all four axis scores', /Conflict 65/.test(out.html) && /Political 70/.test(out.html) && /Economic 45/.test(out.html) && /Humanitarian 82/.test(out.html));
+  check('Level B html shows breadth flag (3/4 axes ≥50)', /3\/4 elevated/.test(out.html));
+  check('Level B html shows RISKLEVEL headline', /HIGH/.test(out.html));
+  check('Level B text shows axis scores too', /Conflict 65/.test(out.text) && /Humanitarian 82/.test(out.text));
+  check('Level B text shows breadth flag', /3\/4 elevated/.test(out.text));
+
+  // Level A — changeDimensions present but NO currentDimensions (older note, post-corrector-
+  // upgrade but pre-Level-B-deploy shape) → per-axis pills, not the current-standing scorecard.
+  const levelANote = {
+    asOf: '2026-07-05', since: '2026-06-28',
+    changeDimensions: {
+      political: { from: 55, to: 70, delta: 15 },
+      economic: { from: 40, to: 55, delta: 15 },
+    },
+    whyChanged: 'Coalition talks collapsed.',
+  };
+  out = renderDriftEmail('Test Country A', [levelANote], { siteUrl: 'https://globalperspective.net' });
+  check('Level A html shows a per-axis pill', /55→70/.test(out.html));
+  check('Level A html does NOT show the old scalar phrasing', !/risk \d+ → \d+/.test(out.html));
+
+  // Fallback — only changeScore (pre-v2 note, no dimensions at all) → unchanged scalar behavior.
+  const scalarNote = {
+    asOf: '2026-07-02', since: '2026-06-25',
+    changeScore: { from: 78, to: 82, delta: 4 },
+    whyChanged: 'Steady deterioration.',
+  };
+  out = renderDriftEmail('Test Country B', [scalarNote], { siteUrl: 'https://globalperspective.net' });
+  check('fallback shows unchanged scalar "risk 78 → 82"', /risk 78 → 82/.test(out.html) && /risk 78 → 82/.test(out.text));
+
+  // No-crash — a note with none of the three (changeLevel/changeScore/changeDimensions/
+  // currentDimensions all absent) still renders without throwing.
+  const bareNote = { asOf: '2026-07-01', since: '2026-06-24' };
+  out = renderDriftEmail('Test Country C', [bareNote], { siteUrl: 'https://globalperspective.net' });
+  check('no-crash note falls back to "read revised"', /read revised/.test(out.html) && /read revised/.test(out.text));
+
   // ── summary ──
   console.log(`\n${'─'.repeat(48)}\n${fail === 0 ? 'ALL PASS' : 'FAILURES'}: ${pass} passed, ${fail} failed`);
   process.exit(fail === 0 ? 0 : 1);

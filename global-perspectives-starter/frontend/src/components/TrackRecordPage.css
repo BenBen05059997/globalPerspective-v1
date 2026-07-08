@@ -338,6 +338,7 @@
 .tr-cl-name:hover { text-decoration: underline; }
 .tr-cl-delta { font-family: var(--mono); font-size: var(--text-sm); color: var(--ink-mid); }
 .tr-cl-date { font-family: var(--mono); font-size: var(--text-xs); color: var(--ink-dim); margin-left: auto; }
+.tr-cl-follow { display: inline-flex; align-items: center; line-height: 1; }
 .tr-cl-why { font-size: var(--text-sm); line-height: 1.55; color: var(--ink-mid); margin: var(--space-2) 0 0; }
 .tr-cl-why.nsd { font-style: italic; color: var(--ink-dim); }
 .tr-cl-why strong { color: var(--ink); font-weight: 600; }

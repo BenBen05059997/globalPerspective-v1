@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTrackRecord } from '../hooks/useTrackRecord';
 import { useCorrectionsFeed } from '../hooks/useCorrectionsFeed';
 import IntelligenceLoader from './IntelligenceLoader';
+import { FollowButton } from './FollowButton';
 import './TrackRecordPage.css';
 
 function brierVerdict(b) {
@@ -62,6 +63,9 @@ function CorrectionsLedger() {
                 <Link className="tr-cl-name" to={to}>{n.scope === 'country' ? n.name : `thread ${String(n.name).slice(0, 24)}…`}</Link>
                 <span className="tr-cl-delta">{changeLabel(n)}</span>
                 <span className="tr-cl-date">{fmtDay(n.asOf)}</span>
+                {n.scope === 'country' && (
+                  <span className="tr-cl-follow"><FollowButton country={n.name} /></span>
+                )}
               </div>
               {n.noSingleDriver ? (
                 <p className="tr-cl-why nsd">No single driver — a gradual shift across the coverage, not one event.</p>

@@ -1,0 +1,153 @@
+/* AnalysisVisuals — Analysis Studio ```gp-struct``` visual atoms.
+   Compact summary strip, not a hero chart — sits below the prose in AnalysisStudio.jsx. */
+
+.av-block {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.av-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 10px;
+}
+
+/* ── ScenarioBars ─────────────────────────────────────────── */
+.av-sbar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.av-sbar-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 26%) 1fr 64px;
+  align-items: center;
+  gap: 10px;
+}
+
+.av-sbar-name {
+  font-size: 13px;
+  color: var(--ink-mid);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.av-sbar-track {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--paper-3);
+}
+
+.av-sbar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.av-sbar-range {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* ── IndicatorMatrix ──────────────────────────────────────── */
+.av-itable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.av-itable th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 10px 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.av-itable td {
+  padding: 8px 10px 8px 0;
+  border-bottom: 1px dotted var(--line);
+  vertical-align: top;
+  color: var(--ink-mid);
+}
+
+.av-itable tr:last-child td {
+  border-bottom: none;
+}
+
+.av-isignal {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.av-iconfirm {
+  color: var(--risk-l);
+}
+
+.av-ikill {
+  color: var(--risk-h);
+}
+
+/* ── RippleTable ──────────────────────────────────────────── */
+.av-rlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.av-rrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.av-rinst {
+  min-width: 90px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.av-rdir {
+  font-weight: 700;
+}
+
+.av-rdir-up { color: var(--risk-h); }
+.av-rdir-down { color: var(--risk-l); }
+.av-rdir-mixed { color: var(--ink-mid); }
+
+.av-rmag {
+  color: var(--ink-faint);
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  .av-sbar-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .av-sbar-range {
+    text-align: left;
+  }
+}

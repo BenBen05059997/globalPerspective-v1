@@ -9,9 +9,11 @@ import { useMembership } from '../hooks/useMembership';
 import { runMemberAnalysis, analyzeConfigured } from '../services/restProxy';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '../utils/analysis';
 import { validateAnalysis } from '../utils/analysisValidator';
+import { extractStruct, validateStruct } from '../utils/analysisStruct';
 import { assessSelection } from '../utils/sourceRobustness';
 import ProviderModal from './ProviderModal';
 import Markdown from './Markdown';
+import { ScenarioBars, IndicatorMatrix, RippleTable } from './atoms/AnalysisVisuals.jsx';
 import './AnalysisStudio.css';
 
 const MAX_STORIES = 4;
@@ -48,6 +50,7 @@ export default function AnalysisStudio() {
   const [citations, setCitations] = useState([]);
   const [webSources, setWebSources] = useState([]);
   const [checks, setChecks] = useState(null);
+  const [struct, setStruct] = useState(null); // sanitized ```gp-struct``` block, or null
   const [sourceInfo, setSourceInfo] = useState(null);
   const [ranOnServer, setRanOnServer] = useState(false); // did the last result use our compute?
   const [error, setError] = useState(null);
@@ -109,6 +112,7 @@ export default function AnalysisStudio() {
     setCitations([]);
     setWebSources([]);
     setChecks(null);
+    setStruct(null);
     // Source robustness (L1): is this built on corroborated reporting or a single
     // unverified outlet? Computed client-side from the selected stories' sources.
     setSourceInfo(assessSelection(selectedTopics));
@@ -140,7 +144,14 @@ export default function AnalysisStudio() {
         text = r.text;
         web = r.webSources || [];
       }
-      setReport(text);
+      // Pull out the optional ```gp-struct``` block (guided scenario/economic lenses
+      // only) BEFORE anything else touches the text: the validator and <Markdown>
+      // must only ever see the stripped prose — the raw JSON's bare numbers would
+      // false-trigger the invented_figure check, and it isn't meant to render as prose.
+      const { struct: rawStruct, prose } = extractStruct(text);
+      const sanitizedStruct = validateStruct(rawStruct, prose);
+      setStruct(sanitizedStruct);
+      setReport(prose);
       setRanOnServer(useServer);
       setCitations(cites);
       setWebSources(web);
@@ -148,7 +159,7 @@ export default function AnalysisStudio() {
       // asks; this verifies). In deep mode the web legitimately introduces figures
       // beyond our material, so the invented-figure check (context) is skipped —
       // phantom [n] citations are still checked.
-      setChecks(validateAnalysis(text, deep
+      setChecks(validateAnalysis(prose, deep
         ? { citations: cites }
         : { citations: cites, context, thinInput: thinGuard }));
     } catch (err) {
@@ -368,6 +379,13 @@ export default function AnalysisStudio() {
                 </div>
               )}
               <Markdown text={report} className="as-md" />
+              {struct && (
+                <>
+                  <ScenarioBars scenarios={struct.scenarios} />
+                  <IndicatorMatrix indicators={struct.indicators} />
+                  <RippleTable ripples={struct.ripples} />
+                </>
+              )}
               {webSources.length > 0 && (
                 <div className="as-cites">
                   <div className="label">Web sources (model-retrieved)</div>

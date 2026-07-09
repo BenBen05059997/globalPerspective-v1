@@ -17,6 +17,7 @@ import { writeFileSync } from 'node:fs';
 import { runChat } from '../../global-perspectives-starter/frontend/src/services/llm.js';
 import { SYSTEM_PROMPT, assembleContext, buildUserMessage, pickText, clip } from '../../global-perspectives-starter/frontend/src/utils/analysisPrompt.js';
 import { validateAnalysis } from '../../global-perspectives-starter/frontend/src/utils/analysisValidator.js';
+import { extractStruct } from '../../global-perspectives-starter/frontend/src/utils/analysisStruct.js';
 
 const PROXY = 'https://ba4q3fnwq6.execute-api.ap-northeast-1.amazonaws.com/default/proxy';
 const KEY = process.env.ANALYSIS_EVAL_KEY;
@@ -79,7 +80,10 @@ async function main() {
     }
     const { context, citations, thin } = assembleContext(enriched);
     const user = buildUserMessage({ context, mode: ex.mode, lensId: ex.lens, thin });
-    const { text: analysis } = await runChat({ provider: 'deepseek', model: MODEL, apiKey: KEY, system: SYSTEM_PROMPT, user });
+    const { text: rawAnalysis } = await runChat({ provider: 'deepseek', model: MODEL, apiKey: KEY, system: SYSTEM_PROMPT, user });
+    // Strip the optional ```gp-struct``` block before validation/faithfulness/render —
+    // same reason as AnalysisStudio.jsx: its bare numbers would false-trigger invented_figure.
+    const { prose: analysis } = extractStruct(rawAnalysis);
     const checks = validateAnalysis(analysis, { citations, context, thinInput: thin });
     const flag = await faithfulnessFlag(context, `Guided lens: ${ex.lens}`, analysis);
     const item = { lens: ex.lens, citations, analysis, checks, flag };

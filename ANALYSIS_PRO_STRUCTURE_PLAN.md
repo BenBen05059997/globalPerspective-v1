@@ -1,6 +1,6 @@
 # Analysis Studio — professional structure upgrade (Key Judgments · ICD-203 vocabulary · Indicators table · visuals)
 
-**Status: 🔨 IN BUILD 2026-07-10.** Self-contained for a hand-off agent.
+**Status: ✅ SHIPPED + DEPLOYED 2026-07-10.** P1+P2 built by Sonnet, reviewed/tested by the main agent (Fable). Review caught 4 real bugs pre-deploy: newsAnalyze server prompt had DRIFTED (missing all 06-13 upgrades — synced verbatim); gp-struct truncation at 1600 tokens (extraction now truncation-safe, budget→2400); two validator false-positives from the new structure (threshold criteria ">50%", scenario-heading ranges — both fixed + goldens). Final live run: full structure present, zero warnings, zero fabrication. ⚠️ Prod newsAnalyze deploy = PROMPT-PATCHED the deployed (pre-credits) code — repo code carries the PARKED credits feature and must NOT be zipped to prod until PROD_CREDITS_NEXT_STEPS runs. Self-contained for a hand-off agent.
 Parents: `ANALYSIS_QUALITY_COMPARISON_PLAN.md` (the rubric study this extends — content gaps fixed 06-13; THIS plan fixes the **packaging/structure** gaps), `ANALYSIS_STUDIO_PLAN.md` (the feature), `ANALYSIS_STUDIO_TESTING_PLAN.md` (the verify system every change must re-pass).
 
 ---

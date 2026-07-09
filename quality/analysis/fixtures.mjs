@@ -49,6 +49,18 @@ export const GOLDEN = [
     expect: { codes: [], hasError: false },
   },
   {
+    name: 'scenario_heading_range — "(Downside tail, 25–35%)" in a scenario heading is estimative',
+    text:
+      '## Read\nEscalation risk is rising per [1].\n\n' +
+      '### Scenario 2: Accidental war (Downside tail, 25–35%)\nA miscalculation spirals.\n\n' +
+      '### Scenario 3: Face-saving truce (Optimistic, 5–15%)\nA brokered freeze holds.',
+    citations: [{ n: 1, title: 'A' }],
+    context: 'STORIES\n[1] A\nSummary: strikes resumed.',
+    // The estimative keyword ("Scenario") sits at the START of the heading — the
+    // look-behind window must reach it (was 32 chars → false-flagged; now 48).
+    expect: { codes: [], hasError: false },
+  },
+  {
     name: 'no_citations — long answer anchoring nothing',
     text:
       'The situation is broadly destabilising and the implications ripple across markets and ' +

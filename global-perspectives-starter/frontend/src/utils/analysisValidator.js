@@ -136,7 +136,11 @@ export function validateAnalysis(text, { citations = [], context = '', thinInput
       // table produces these), not facts asserted about the world.
       const justBefore = body.slice(Math.max(0, pm.index - 3), pm.index);
       if (/[(~≈<>≥≤]\s*$/.test(justBefore)) continue;
-      const around = body.slice(Math.max(0, pm.index - 32), pm.index + pm[0].length + 14);
+      // Look-behind widened 32→48: scenario headings put the estimative keyword at the
+      // START of the line — "### Scenario 2: Accidental war (Downside tail, 25–35%)" —
+      // and at 32 chars the word "Scenario" fell outside the window, false-flagging the
+      // probability range (seen live 2026-07-10). The keyword requirement itself stays.
+      const around = body.slice(Math.max(0, pm.index - 48), pm.index + pm[0].length + 14);
       if (ESTIMATIVE_RE.test(around)) continue; // a probability/rounding, not a fact
       invented.add(pct);
     }

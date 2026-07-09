@@ -13,6 +13,11 @@
 // with no browser globals.
 
 const FENCE_RE = /```gp-struct\s*\n?([\s\S]*?)```/;
+// Truncation guard: the block comes LAST in the model's output, so a token-cap cutoff
+// leaves an OPENING fence with no closing ``` — the closed-fence regex won't match and
+// the partial JSON would leak into the prose (false-triggering invented_figure and
+// rendering as garbage). Caught live 2026-07-10 on the first structured re-sample.
+const OPEN_FENCE_RE = /```gp-struct[^\n]*\n?/;
 
 // extractStruct(text) → { struct, prose }
 //   - struct: the parsed JSON object, or null if no fence / malformed JSON / not an object.
@@ -20,11 +25,17 @@ const FENCE_RE = /```gp-struct\s*\n?([\s\S]*?)```/;
 //     renderer and the honesty validator must see; the raw JSON must never reach either
 //     (bare percentages in the block would false-trigger the validator's invented_figure
 //     check, and the block itself is not meant to be read as prose).
-// Never throws — a malformed block degrades to "no struct", not a crash.
+// Never throws — a malformed or truncated block degrades to "no struct", not a crash.
 export function extractStruct(text) {
   const raw = typeof text === 'string' ? text : '';
   const m = raw.match(FENCE_RE);
-  if (!m) return { struct: null, prose: raw };
+  if (!m) {
+    // No closed fence — check for a truncated (unclosed) one and strip it to the end:
+    // a half-emitted JSON block is never renderable content.
+    const open = raw.match(OPEN_FENCE_RE);
+    if (open) return { struct: null, prose: raw.slice(0, open.index).trim() };
+    return { struct: null, prose: raw };
+  }
 
   const prose = (raw.slice(0, m.index) + raw.slice(m.index + m[0].length)).trim();
 

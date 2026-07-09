@@ -80,7 +80,7 @@ async function main() {
     }
     const { context, citations, thin } = assembleContext(enriched);
     const user = buildUserMessage({ context, mode: ex.mode, lensId: ex.lens, thin });
-    const { text: rawAnalysis } = await runChat({ provider: 'deepseek', model: MODEL, apiKey: KEY, system: SYSTEM_PROMPT, user });
+    const { text: rawAnalysis } = await runChat({ provider: 'deepseek', model: MODEL, apiKey: KEY, system: SYSTEM_PROMPT, user, maxTokens: 2400 });
     // Strip the optional ```gp-struct``` block before validation/faithfulness/render —
     // same reason as AnalysisStudio.jsx: its bare numbers would false-trigger invented_figure.
     const { prose: analysis } = extractStruct(rawAnalysis);

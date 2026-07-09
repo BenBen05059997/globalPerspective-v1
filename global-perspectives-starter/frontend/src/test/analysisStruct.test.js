@@ -76,6 +76,18 @@ describe('extractStruct', () => {
     const { struct } = extractStruct(text);
     expect(struct).toBeNull();
   });
+
+  it('strips a TRUNCATED (unclosed) fence to end-of-text — the token-cap case', () => {
+    // The block comes last, so a max_tokens cutoff leaves an opening fence with no
+    // closing ``` and half-emitted JSON. Seen live 2026-07-10: the partial block
+    // leaked into the prose and false-triggered invented_figure.
+    const text = `${GOOD_PROSE}\n\n\`\`\`gp-struct\n{ "scenarios": [ { "name": "Holds", "pLow": 55,`;
+    const { struct, prose } = extractStruct(text);
+    expect(struct).toBeNull();
+    expect(prose).toBe(GOOD_PROSE);
+    expect(prose).not.toContain('gp-struct');
+    expect(prose).not.toContain('pLow');
+  });
 });
 
 describe('validateStruct', () => {

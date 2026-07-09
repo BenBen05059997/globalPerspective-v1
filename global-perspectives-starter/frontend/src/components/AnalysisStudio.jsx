@@ -139,7 +139,10 @@ export default function AnalysisStudio() {
           system: deep ? DEEP_SYSTEM_PROMPT : SYSTEM_PROMPT,
           user: userMsg,
           webResearch: deep,
-          maxTokens: deep ? 3000 : 1600,
+          // 1600 → 2400: the P1/P2 structure (Key judgments + indicators table +
+          // gp-struct block) adds real output length — at 1600 the block, which
+          // comes last, gets truncated mid-JSON (seen live 2026-07-10).
+          maxTokens: deep ? 3000 : 2400,
         });
         text = r.text;
         web = r.webSources || [];

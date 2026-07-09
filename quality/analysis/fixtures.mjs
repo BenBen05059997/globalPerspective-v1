@@ -37,6 +37,18 @@ export const GOLDEN = [
     expect: { codes: ['invented_figure'], hasError: false },
   },
   {
+    name: 'threshold_criterion — ">50%" in an indicators-table row is a watch criterion, not a fact',
+    text:
+      '## Read\nEscalation risk is elevated per [1].\n\n' +
+      '| Indicator to watch | Confirms | Kills |\n|---|---|---|\n' +
+      '| Strait transits recover to >50% of pre-crisis levels | De-escalation | Tit-for-tat |',
+    citations: [{ n: 1, title: 'A' }],
+    context: 'STORIES\n[1] A\nSummary: strikes resumed and traffic plunged.',
+    // The P1 indicators table produces comparison-operator thresholds (">50%"); the
+    // analyst DEFINES these as criteria — they are not sourced-fact claims to flag.
+    expect: { codes: [], hasError: false },
+  },
+  {
     name: 'no_citations — long answer anchoring nothing',
     text:
       'The situation is broadly destabilising and the implications ripple across markets and ' +

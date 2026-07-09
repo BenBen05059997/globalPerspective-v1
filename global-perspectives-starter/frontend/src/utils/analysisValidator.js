@@ -131,9 +131,11 @@ export function validateAnalysis(text, { citations = [], context = '', thinInput
       const pct = normPct(pm[0]);
       if (ctxPcts.has(pct)) continue;
       // Parenthetical / tilde'd annotation — "(15%)", "~60%" — is a probability or
-      // share, not an inline factual claim.
+      // share, not an inline factual claim. Comparison-operator thresholds —
+      // ">50%", "≥30%" — are watch CRITERIA the analyst defines (the P1 indicators
+      // table produces these), not facts asserted about the world.
       const justBefore = body.slice(Math.max(0, pm.index - 3), pm.index);
-      if (/[(~≈]\s*$/.test(justBefore)) continue;
+      if (/[(~≈<>≥≤]\s*$/.test(justBefore)) continue;
       const around = body.slice(Math.max(0, pm.index - 32), pm.index + pm[0].length + 14);
       if (ESTIMATIVE_RE.test(around)) continue; // a probability/rounding, not a fact
       invented.add(pct);

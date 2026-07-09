@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-07-10 (feat: Analysis Studio professional structure — Key Judgments, ICD-203 yardstick, indicators table, visuals)
+
+Upgraded the Studio's output from prose-only to professional intelligence-report packaging (ICD-203 / desk-note conventions), plus machine-renderable visuals. Plan: `ANALYSIS_PRO_STRUCTURE_PLAN.md`.
+- **Prompt (P1, `utils/analysisPrompt.js`):** analyses now open with a **Key Judgments box** (2–4 bullets, each a decision-relevant judgment); all likelihoods use the **ICD-203 probability yardstick** verbatim (e.g. "very likely (80–95%)"); **confidence is a separate axis** (low/moderate/high, justified by material depth — "single-source caps confidence at low"); the scenario lens closes with a consolidated **`| Indicator to watch | Confirms | Kills |` table**. Every new rule carries an omit-when-unsupported escape hatch (the 06-13 lesson: structure pressure induces fabrication) — live re-samples confirmed no regression.
+- **Visuals (P2):** scenario/economic runs append a fenced `gp-struct` JSON block — a machine-readable INDEX of the prose (never new content). New pure parser `utils/analysisStruct.js` (truncation-safe; drops any scenario whose probability digits aren't literally in the prose) + atoms `ScenarioBars`/`IndicatorMatrix`/`RippleTable` (pure CSS, no new deps). Validator and Markdown always receive the STRIPPED prose; malformed/missing block → prose renders alone (honest fallback).
+- **Fixes found in review:** `newsAnalyze`'s server-pinned prompt had **drifted** (missing all 06-13 upgrades — member runs got a weaker analyst than BYOK; synced verbatim, prod deploy = prompt patched into the DEPLOYED pre-credits code, NOT the repo file which carries the parked credits feature); guided `maxTokens` 1600→2400 (the block truncated mid-JSON); two validator false-positives fixed with goldens (comparison-operator thresholds `>50%`, scenario-heading ranges `(Downside tail, 25–35%)` — look-behind 32→48).
+- Verify 235/235 + all Layer-A goldens (2 new); 3 live e2e generations, final run zero warnings/zero fabrication. Built by Sonnet, reviewed + live-tested + deployed by the main agent.
+
 ## 2026-07-09 (feat: surface Analysis Studio across Home, ThreadPage, Economy + `?stories=` preselect)
 
 Analysis Studio (`/analyze`) — a cited, fabrication-checked AI deep-dive over our own SUMMARY/PREDICTION/TRACE_CAUSE — was discoverable from **one nav link and nothing else**, the likely reason usage sat at ~2 runs/30d (a discovery problem, not a quality one — the engine was live-tested the same day: 0/3 fabrication on real stories, desk-grade scenario output, the honesty contract holding). Surfaced it at the moments of highest reading-intent.

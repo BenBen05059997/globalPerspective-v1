@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-07-10 (config: Analysis Studio member path → deepseek-v4-pro)
+
+**Prod-config only — Lambda env vars + a patched-deployed-zip code patch, NOT a repo code change.** Member "our-compute" Analysis Studio (`newsAnalyze`) reconfigured:
+- **Model switched** `deepseek-chat` (V4 Flash) → **`deepseek-v4-pro`** (env `GROK_MODEL`) — the qwen-vs-deepseek bake-off's stronger analyst (tighter calibration, 3/3 full desk-note structure vs Flash's occasional indicators-only run).
+- **Code patch (load-bearing):** `runDeepSeek` now sends `thinking:{type:'disabled'}` — v4-pro defaults to thinking mode, which otherwise burns the whole `MAX_TOKENS` budget on `reasoning_content` and returns **empty output** (`len=0, finish_reason=length`, proven live). Deployed via the patched-deployed-zip method, and deployed BEFORE the model env flip so there was no broken window (same fix the frontend BYOK deepseek provider already had).
+- **`ANALYZE_DAILY_CAP` raised 50 → 100** (applies to all members).
+- **`Timeout` raised 30s → 120s** — v4-pro takes ~40–60s; the old 30s timeout was surfacing in-browser as a fake-CORS **"Failed to fetch" / "No 'Access-Control-Allow-Origin' header"** error. Confirmed the Function-URL CORS config was correctly empty throughout (not the dual-CORS trap) — a timed-out synchronous Function-URL Lambda just returns a bare platform error with no CORS headers, which looks like CORS but is actually a timeout. Trade-off: members now wait ~40–60s per run instead of Flash's ~20s.
+- Also confirmed (no change): `ben@globalperspective.net` (uid `hYwIxdTleKdl1W3q6rjYfkEDOjg2`) was already `tier=member`/active; Polar membership runs on production `api.polar.sh` (the `-sandbox` Lambda pair is a separate isolated credits-test env); credits still not deployed to prod.
+
 ## 2026-07-10 (fix: DeepSeek gp-struct visual-block reliability + feat: Alibaba Qwen BYOK provider)
 
 Two independent fixes to the Analysis Studio, both live-tested against the real DeepSeek/Qwen APIs. Plan: `QWEN_AND_VISUAL_BLOCK_PLAN.md`.

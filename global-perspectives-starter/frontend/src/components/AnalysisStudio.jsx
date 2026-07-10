@@ -136,6 +136,7 @@ export default function AnalysisStudio() {
           provider: byok.provider,
           model: byok.model,
           apiKey: byok.key,
+          baseUrl: byok.baseUrl,
           system: deep ? DEEP_SYSTEM_PROMPT : SYSTEM_PROMPT,
           user: userMsg,
           webResearch: deep,

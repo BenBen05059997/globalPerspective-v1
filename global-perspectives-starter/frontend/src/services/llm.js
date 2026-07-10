@@ -67,6 +67,36 @@ export const PROVIDERS = [
     models: ['gemini-2.5-flash', 'gemini-2.5-pro'],
   },
   {
+    id: 'qwen',
+    label: 'Alibaba Qwen',
+    type: 'openai',
+    // OpenAI-compatible ("compatible-mode") endpoint of Alibaba Cloud Model Studio /
+    // DashScope. International endpoint — verified against the Model Studio docs
+    // 2026-07-10. (China-region key holders use dashscope.aliyuncs.com instead.)
+    baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+    keyHint: 'sk-… (workspace keys: sk-ws-…)',
+    // qwen3.7-max is the current flagship (Alibaba Cloud Summit, May 2026) — 1M ctx,
+    // strongest for reasoning/analysis. qwen3-max is the prior-gen flagship; -plus is
+    // the low-cost multimodal tier. Flagship listed first (Studio defaults to models[0]).
+    models: ['qwen3.7-max', 'qwen3-max', 'qwen3.7-plus'],
+    // Alibaba's WORKSPACE-scoped international keys (sk-ws-…) 401 against the generic
+    // host above — they need a workspace-specific host with the WorkspaceId baked in,
+    // e.g. https://<WorkspaceId>.ap-northeast-1.maas.aliyuncs.com/compatible-mode/v1
+    // (Tokyo) or …ap-southeast-1… (Singapore). Verified live 2026-07-10: generic host
+    // 401s an sk-ws- key, workspace host returns 200. Let the user override the host.
+    allowBaseUrlOverride: true,
+    modelLabels: {
+      'qwen3.7-max': 'Qwen3.7-Max — flagship (strongest for analysis)',
+      'qwen3-max': 'Qwen3-Max — prior-gen flagship',
+      'qwen3.7-plus': 'Qwen3.7-Plus — low-cost',
+    },
+    // qwen3.x models default to extended-thinking (reasoning_content), which on a
+    // NON-streaming call (what the Studio makes) burns the token budget and can
+    // truncate the answer — same failure mode we disabled for DeepSeek V4. Force
+    // plain non-thinking chat. (First thing to confirm live before trusting output.)
+    extraBody: { enable_thinking: false },
+  },
+  {
     id: 'openrouter',
     label: 'OpenRouter',
     type: 'openai',
@@ -109,8 +139,12 @@ function openAIWebSources(body) {
   return [];
 }
 
-async function runOpenAICompat(provider, { model, apiKey, system, user, maxTokens, temperature }) {
-  const res = await fetch(`${provider.baseUrl}/chat/completions`, {
+async function runOpenAICompat(provider, { model, apiKey, system, user, maxTokens, temperature, baseUrl }) {
+  // Per-provider base-URL override (currently only `qwen`, for workspace-scoped
+  // sk-ws- keys that need a WorkspaceId-specific host). Falls back to the provider
+  // default for everyone else — unchanged behaviour when unset.
+  const base = baseUrl || provider.baseUrl;
+  const res = await fetch(`${base}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -188,7 +222,7 @@ async function runAnthropic(provider, { model, apiKey, system, user, maxTokens, 
 // Run one analysis. `system` + `user` are plain strings.
 // Returns { text, webSources:[{title,url}] } — webSources is [] unless the provider
 // searched the web (Perplexity always; Anthropic when `webResearch` is set).
-export async function runChat({ provider, model, apiKey, system, user, maxTokens = 1600, temperature = 0.3, webResearch = false }) {
+export async function runChat({ provider, model, apiKey, system, user, maxTokens = 1600, temperature = 0.3, webResearch = false, baseUrl }) {
   const p = getProvider(provider);
   if (!p) throw new Error(`Unknown provider: ${provider}`);
   if (!apiKey) throw new Error('No API key set');
@@ -197,6 +231,6 @@ export async function runChat({ provider, model, apiKey, system, user, maxTokens
     // produces invented sources — the exact failure this feature exists to prevent.
     throw new Error(`${p.label} cannot search the web from its API. Pick Perplexity or Anthropic for Deep research.`);
   }
-  const args = { model, apiKey, system, user, maxTokens, temperature, webResearch };
+  const args = { model, apiKey, system, user, maxTokens, temperature, webResearch, baseUrl };
   return p.type === 'anthropic' ? runAnthropic(p, args) : runOpenAICompat(p, args);
 }

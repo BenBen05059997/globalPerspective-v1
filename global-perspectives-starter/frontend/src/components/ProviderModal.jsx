@@ -10,6 +10,7 @@ export default function ProviderModal({ onClose, onSaved }) {
   const [provider, setProvider] = useState(existing?.provider || PROVIDERS[0].id);
   const [model, setModel] = useState(existing?.model || PROVIDERS[0].models[0]);
   const [key, setKey] = useState(existing?.key || '');
+  const [baseUrl, setBaseUrl] = useState(existing?.baseUrl || '');
 
   const p = getProvider(provider) || PROVIDERS[0];
 
@@ -18,6 +19,7 @@ export default function ProviderModal({ onClose, onSaved }) {
     setProvider(id);
     const next = getProvider(id);
     if (next && !next.models.includes(model)) setModel(next.models[0]);
+    setBaseUrl(next?.allowBaseUrlOverride ? next.baseUrl : '');
   }
 
   useEffect(() => {
@@ -31,7 +33,13 @@ export default function ProviderModal({ onClose, onSaved }) {
   function handleSave(e) {
     e.preventDefault();
     if (!key.trim()) return;
-    saveByok({ provider, model, key: key.trim() });
+    const trimmedBaseUrl = baseUrl.trim();
+    saveByok({
+      provider,
+      model,
+      key: key.trim(),
+      ...(p.allowBaseUrlOverride && trimmedBaseUrl ? { baseUrl: trimmedBaseUrl } : {}),
+    });
     onSaved?.({ provider, model });
     onClose();
   }
@@ -77,6 +85,25 @@ export default function ProviderModal({ onClose, onSaved }) {
               ))}
             </select>
           </label>
+
+          {p.allowBaseUrlOverride && (
+            <label className="pm-label">
+              Endpoint URL (optional)
+              <input
+                type="text"
+                value={baseUrl}
+                placeholder={p.baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                autoComplete="off"
+                spellCheck="false"
+              />
+              <p className="pm-search-note">
+                Workspace-scoped keys (sk-ws-…) need your workspace host, e.g.{' '}
+                https://&lt;WorkspaceId&gt;.ap-northeast-1.maas.aliyuncs.com/compatible-mode/v1
+                — leave blank to use the default.
+              </p>
+            </label>
+          )}
 
           {p.webSearch && (
             <p className="pm-search-note">

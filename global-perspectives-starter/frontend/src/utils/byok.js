@@ -1,6 +1,8 @@
 // Browser-only storage for the Analysis Studio BYOK config.
-// Holds { provider, model, key } in localStorage. This NEVER goes to our servers —
-// it is read in the browser and passed straight to the chosen LLM provider.
+// Holds { provider, model, key, baseUrl? } in localStorage. This NEVER goes to our
+// servers — it is read in the browser and passed straight to the chosen LLM provider.
+// `baseUrl` is optional (only providers with allowBaseUrlOverride use it, e.g. `qwen`
+// workspace-scoped keys) — existing records saved before it existed still load fine.
 
 const STORE_KEY = 'gp_analyze_byok_v1';
 
@@ -16,9 +18,11 @@ export function loadByok() {
   }
 }
 
-export function saveByok({ provider, model, key }) {
+export function saveByok({ provider, model, key, baseUrl }) {
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify({ provider, model, key }));
+    const record = { provider, model, key };
+    if (baseUrl) record.baseUrl = baseUrl;
+    localStorage.setItem(STORE_KEY, JSON.stringify(record));
   } catch {
     // ignore quota / private-mode write errors
   }

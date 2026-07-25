@@ -73,13 +73,6 @@ export const LENSES = [
       'Map the ECONOMIC RIPPLE. For EACH affected instrument, sector or commodity give the chain: direction (up/down/mixed) → rough magnitude (small/moderate/large) → the transmission mechanism (what specifically moves it, and why). JUSTIFY the magnitude — say WHY it is small vs moderate vs large; never just assert the label. Include ONLY ripples with a real, non-trivial mechanism, and prefer 3–5 high-conviction ones over an exhaustive checklist — OMIT negligible or speculative links rather than padding to fill categories (e.g. a financing/listing event does not move commodity markets; if a chain is hand-wavy or could plausibly run the other way, drop it). Do NOT invent percentage moves; if a mechanism cannot be derived from the material, write "mechanism unclear" rather than asserting a direction. FINALLY, after the prose, you MUST append the machine-readable ```gp-struct``` JSON block described in the system instructions, listing each instrument you named with its direction and magnitude in the `ripples` array — this is a required part of the economic-ripple output, not an optional add-on. Include a short "Who\'s exposed" read — the specific actors/sectors that gain or lose from this repricing, each tied to the direction→magnitude→mechanism above (name only actors present in the material; never invent firms/tickers).',
   },
   {
-    id: 'root_cause',
-    label: 'Root-cause chain',
-    blurb: 'Immediate trigger → medium-term condition → structural factor',
-    task:
-      'Give the ROOT-CAUSE CHAIN in three layers: (1) immediate trigger, (2) medium-term condition, (3) structural factor. Then name one commonly underreported angle.',
-  },
-  {
     id: 'compare',
     label: 'Compare stories',
     blurb: 'Shared drivers, divergences, combined outlook',

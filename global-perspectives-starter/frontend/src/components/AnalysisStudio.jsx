@@ -42,6 +42,10 @@ export default function AnalysisStudio() {
   const didSeedFromParams = useRef(false);
   const [mode, setMode] = useState('guided'); // 'guided' | 'freeform'
   const [lensId, setLensId] = useState(LENSES[0].id);
+  // Guard: a stale/deep-linked lensId that no longer matches a LENSES entry
+  // (e.g. a lens removed in a later prune) must never render/run as a broken
+  // or empty lens — fall back to the safest default instead.
+  const activeLensId = LENSES.some((l) => l.id === lensId) ? lensId : 'scenario';
   const [focus, setFocus] = useState('');
   const [freeform, setFreeform] = useState('');
 
@@ -121,7 +125,7 @@ export default function AnalysisStudio() {
       // Thin material only over-reaches in the closed-book modes; deep mode pulls
       // fresh material from the web, so the guard doesn't apply there.
       const thinGuard = thin && !deep;
-      const userMsg = buildUserMessage({ context, mode, lensId, focus, freeform, thin: thinGuard });
+      const userMsg = buildUserMessage({ context, mode, lensId: activeLensId, focus, freeform, thin: thinGuard });
 
       let text = '';
       let web = [];
@@ -283,7 +287,7 @@ export default function AnalysisStudio() {
                 {LENSES.map((l) => (
                   <button
                     key={l.id}
-                    className={`as-lens${lensId === l.id ? ' on' : ''}`}
+                    className={`as-lens${activeLensId === l.id ? ' on' : ''}`}
                     onClick={() => setLensId(l.id)}
                   >
                     <span className="as-lens-label">{l.label}</span>

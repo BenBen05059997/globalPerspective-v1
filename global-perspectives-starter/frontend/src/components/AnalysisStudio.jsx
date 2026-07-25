@@ -50,8 +50,12 @@ export default function AnalysisStudio() {
   const [lensId, setLensId] = useState(LENSES[0].id);
   // Guard: a stale/deep-linked lensId that no longer matches a LENSES entry
   // (e.g. a lens removed in a later prune) must never render/run as a broken
-  // or empty lens — fall back to the safest default instead.
-  const activeLensId = LENSES.some((l) => l.id === lensId) ? lensId : 'scenario';
+  // or empty lens — fall back to the safest default instead. Also covers
+  // 'compare' becoming invalid if the selection drops below 2 stories.
+  const activeLensId =
+    LENSES.some((l) => l.id === lensId) && !(lensId === 'compare' && selected.length < 2)
+      ? lensId
+      : 'scenario';
   const [focus, setFocus] = useState('');
   const [freeform, setFreeform] = useState('');
 
@@ -290,16 +294,22 @@ export default function AnalysisStudio() {
           ) : mode === 'guided' ? (
             <>
               <div className="as-lenses">
-                {LENSES.map((l) => (
-                  <button
-                    key={l.id}
-                    className={`as-lens${activeLensId === l.id ? ' on' : ''}`}
-                    onClick={() => setLensId(l.id)}
-                  >
-                    <span className="as-lens-label">{l.label}</span>
-                    <span className="as-lens-blurb">{l.blurb}</span>
-                  </button>
-                ))}
+                {LENSES.map((l) => {
+                  // Compare is meaningless with a single story — gate it on 2+ selected.
+                  const compareDisabled = l.id === 'compare' && selected.length < 2;
+                  return (
+                    <button
+                      key={l.id}
+                      className={`as-lens${activeLensId === l.id ? ' on' : ''}`}
+                      onClick={() => setLensId(l.id)}
+                      disabled={compareDisabled}
+                      title={compareDisabled ? 'Select 2+ stories to compare them' : undefined}
+                    >
+                      <span className="as-lens-label">{l.label}</span>
+                      <span className="as-lens-blurb">{l.blurb}</span>
+                    </button>
+                  );
+                })}
               </div>
               <input
                 className="as-input"

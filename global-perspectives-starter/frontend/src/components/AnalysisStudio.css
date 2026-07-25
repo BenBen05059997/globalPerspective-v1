@@ -167,6 +167,8 @@
 }
 .as-lens:hover { border-color: var(--line-2); }
 .as-lens.on { border-color: var(--accent); background: var(--accent-soft); }
+.as-lens:disabled { opacity: 0.5; cursor: not-allowed; }
+.as-lens:disabled:hover { border-color: var(--line); }
 .as-lens-label { font-size: var(--text-base); font-weight: 600; color: var(--ink); }
 .as-lens-blurb { font-size: var(--text-xs); color: var(--ink-dim); }
 

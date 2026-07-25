@@ -27,7 +27,7 @@ if green, commit locally (`refactor(analyze): …`), mark `[x]`, append a log li
 - [x] **6. Remove Root-cause chain lens (conservative CUT — reversible).** Recipe: remove the `root_cause` entry from `LENSES` in `src/utils/analysisPrompt.js`, and drop its picker button in `AnalysisStudio.jsx` if hard-coded (else it's data-driven from LENSES and needs no JSX change). Item 1's guard catches any `?lens=root_cause` deep-link → scenario. Do NOT touch `TRACE_CAUSE` context assembly (still valuable as INPUT). Scope: analysisPrompt.js (+ picker if hard-coded). Verify.
   - NOTE: the "reborn as Challenge-our-causal-chain" option (plan P1b) is a NEW FEATURE, out of scope for this prune loop — a separate future plan if wanted.
 
-- [ ] **7. CHANGES.md entry.** Recipe: add a dated entry recording the intentional option prune (OpenRouter retired; Qwen grandfathered; lenses 5→3: winners/losers merged into economic, root-cause cut, compare gated ≥2 stories) and WHY (hardened-lens coverage + choice-as-friction). This is the recorded-not-silent removal per [[feedback_no_unauthorized_removal]]. Scope: CHANGES.md. Verify (docs-only, verify still runs clean).
+- [x] **7. CHANGES.md entry.** Recipe: add a dated entry recording the intentional option prune (OpenRouter retired; Qwen grandfathered; lenses 5→3: winners/losers merged into economic, root-cause cut, compare gated ≥2 stories) and WHY (hardened-lens coverage + choice-as-friction). This is the recorded-not-silent removal per [[feedback_no_unauthorized_removal]]. Scope: CHANGES.md. Verify (docs-only, verify still runs clean).
 
 ## BLOCKED / human-only (NOT for the loop — needs judgment, eyes, or a key)
 - BLOCKED: **Provider modal tiering** (Recommended: DeepSeek+Gemini / "More" drawer). UI layout = eye judgment → do interactively.
@@ -44,3 +44,4 @@ if green, commit locally (`refactor(analyze): …`), mark `[x]`, append a log li
 - 2026-07-26 · item 4 · verify green (0 errors, 235 tests pass) · AnalysisStudio.jsx +22/-10 (compare button disabled <2 stories + activeLensId fallback), AnalysisStudio.css +2 disabled style
 - 2026-07-26 · item 5 · verify green (0 errors, 235 tests pass) · analysisPrompt.js net -7 (winners_losers entry removed, "Who's exposed" sentence appended to economic task)
 - 2026-07-26 · item 6 · verify green (0 errors, 235 tests pass) · analysisPrompt.js -6 (root_cause entry removed; picker is data-driven, no JSX change; TRACE_CAUSE context untouched)
+- 2026-07-26 · item 7 · verify green (0 errors, 235 tests pass) · CHANGES.md +5 (dated entry recording the prune + why)

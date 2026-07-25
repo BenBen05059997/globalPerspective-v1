@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-07-26 (refactor: Analysis Studio option prune — providers + lenses)
+
+Intentional, recorded prune of Analysis Studio choices (not a silent removal — see `feedback_no_unauthorized_removal`). Why: hardened-lens coverage over breadth, and choice-as-friction — more BYOK providers and guided lenses than the desk-note engine could keep uniformly reliable/relevant. Plan: `ANALYZE_OPTIONS_PRUNE_PLAN.md`.
+- **Providers (`services/llm.js`, `components/ProviderModal.jsx`):** **OpenRouter retired** — removed from `PROVIDERS`; a previously-saved byok record with `provider:'openrouter'` is now treated as "no valid key" so the normal chooser flow picks up instead of erroring. **Alibaba Qwen grandfathered** — stays in `PROVIDERS` (saved keys keep working) but is filtered out of the fresh-pick provider list in `ProviderModal`; only visible again if a byok record already has `provider:'qwen'`.
+- **Guided lenses (`utils/analysisPrompt.js`, `components/AnalysisStudio.jsx`): 5 → 3.** "Winners & losers" merged into "Economic ripple" as a "Who's exposed" sentence appended to its task (same anti-fabrication wording: name only actors present in the material, never invent firms/tickers). "Root-cause chain" cut outright (conservative, reversible) — its `TRACE_CAUSE` context assembly stays as an INPUT, just no longer a standalone output lens. "Compare stories" is now **gated on 2+ selected stories** (disabled button + tooltip below that threshold) since it's meaningless with one story.
+- **Safety net:** `AnalysisStudio.jsx` now falls back to the `scenario` lens whenever the current `lensId` doesn't match a live `LENSES` entry (a lens removed by this prune, or `compare` dropping below 2 stories) — no broken/empty lens can render.
+- Files: `services/llm.js`, `components/ProviderModal.jsx`, `components/AnalysisStudio.jsx`, `components/AnalysisStudio.css`, `utils/analysisPrompt.js`. `validateStruct`/`utils/analysisValidator.js` untouched. Verify 235/235 green at every step (5 local commits). Deploy pending operator review — member-path `newsAnalyze` SYSTEM_PROMPT stays FE-synced only if the merged economic-lens task text ships to members (patched-deployed-zip method).
+
 ## 2026-07-10 (config: Analysis Studio member path → deepseek-v4-pro)
 
 **Prod-config only — Lambda env vars + a patched-deployed-zip code patch, NOT a repo code change.** Member "our-compute" Analysis Studio (`newsAnalyze`) reconfigured:

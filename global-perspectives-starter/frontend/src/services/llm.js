@@ -5,7 +5,7 @@
 // directly — our servers never see, log, or store it.
 //
 // Two code paths:
-//   - OpenAI-compatible chat/completions: OpenAI, DeepSeek, Gemini (compat), OpenRouter
+//   - OpenAI-compatible chat/completions: OpenAI, DeepSeek, Gemini (compat)
 //   - Anthropic Messages API: separate shape + the direct-browser-access header
 //
 // ⚠️ Direct browser calls depend on each provider's CORS policy. Where a provider
@@ -97,19 +97,6 @@ export const PROVIDERS = [
     extraBody: { enable_thinking: false },
   },
   {
-    id: 'openrouter',
-    label: 'OpenRouter',
-    type: 'openai',
-    baseUrl: 'https://openrouter.ai/api/v1',
-    keyHint: 'sk-or-…',
-    models: [
-      'deepseek/deepseek-chat',
-      'openai/gpt-4o',
-      'anthropic/claude-sonnet-4.6',
-      'google/gemini-2.5-flash',
-    ],
-  },
-  {
     id: 'anthropic',
     label: 'Anthropic (Claude)',
     type: 'anthropic',
@@ -159,7 +146,7 @@ async function runOpenAICompat(provider, { model, apiKey, system, user, maxToken
         { role: 'user', content: user },
       ],
       // Provider-specific extras (e.g. DeepSeek's thinking:disabled). Only present
-      // on providers that declare it, so OpenAI/Gemini/OpenRouter are unaffected.
+      // on providers that declare it, so OpenAI/Gemini are unaffected.
       ...(provider.extraBody || {}),
     }),
   });

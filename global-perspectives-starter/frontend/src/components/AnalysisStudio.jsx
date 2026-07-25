@@ -35,7 +35,13 @@ export default function AnalysisStudio() {
   const { isMember, creditBalance, available: billingAvailable, refresh: refreshMembership } = useMembership();
   const serverCapable = analyzeConfigured() && (isMember || creditBalance > 0);
 
-  const [byok, setByok] = useState(() => loadByok());
+  // A previously-saved byok record whose provider id no longer exists (e.g. a
+  // retired provider like OpenRouter) must not silently misbehave — treat it as
+  // "no valid key" so the normal choose-a-model flow (ProviderModal) picks up.
+  const [byok, setByok] = useState(() => {
+    const saved = loadByok();
+    return saved && getProvider(saved.provider) ? saved : null;
+  });
   const [modalOpen, setModalOpen] = useState(false);
 
   const [selected, setSelected] = useState([]); // topicIds

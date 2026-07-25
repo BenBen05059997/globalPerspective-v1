@@ -56,7 +56,9 @@ export const PROVIDERS = [
     type: 'openai',
     baseUrl: 'https://api.openai.com/v1',
     keyHint: 'sk-…',
-    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini'],
+    // GPT-5.6 family (released 2026-07-09): gpt-5.6 = Sol (flagship, alias), terra =
+    // balanced, luna = fast/cheap. Flagship first (Studio defaults to models[0]).
+    models: ['gpt-5.6', 'gpt-5.6-terra', 'gpt-5.6-luna'],
   },
   {
     id: 'gemini',
@@ -64,7 +66,9 @@ export const PROVIDERS = [
     type: 'openai',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
     keyHint: 'AIza…',
-    models: ['gemini-2.5-flash', 'gemini-2.5-pro'],
+    // Gemini 3.x (GA mid-2026): 3.6-flash (latest stable), 3.5-flash (named stable),
+    // 3.5-flash-lite (low-cost). Verified vs ai.google.dev model docs 2026-07-26.
+    models: ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'],
   },
   {
     id: 'qwen',
@@ -102,8 +106,8 @@ export const PROVIDERS = [
     type: 'anthropic',
     baseUrl: 'https://api.anthropic.com/v1',
     keyHint: 'sk-ant-…',
-    // Current Claude model IDs (confirm against the claude-api reference before shipping).
-    models: ['claude-sonnet-4-6', 'claude-opus-4-8', 'claude-haiku-4-5-20251001', 'claude-fable-5'],
+    // Current Claude model IDs (verified 2026-07-26; re-confirm vs the claude-api ref if a run 404s).
+    models: ['claude-sonnet-5', 'claude-opus-4-8', 'claude-haiku-4-5-20251001', 'claude-fable-5'],
     webSearch: 'tool',
   },
 ];

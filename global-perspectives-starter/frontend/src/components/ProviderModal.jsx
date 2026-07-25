@@ -14,6 +14,11 @@ export default function ProviderModal({ onClose, onSaved }) {
 
   const p = getProvider(provider) || PROVIDERS[0];
 
+  // Qwen is grandfathered: keep it selectable for anyone who already saved a
+  // qwen byok record, but stop offering it as a fresh pick in the provider list
+  // (choice-as-friction prune — the entry stays in llm.js so saved keys keep working).
+  const selectableProviders = PROVIDERS.filter((pp) => pp.id !== 'qwen' || existing?.provider === 'qwen');
+
   // Keep the model valid when the provider changes.
   function handleProvider(id) {
     setProvider(id);
@@ -71,7 +76,7 @@ export default function ProviderModal({ onClose, onSaved }) {
           <label className="pm-label">
             Provider
             <select value={provider} onChange={(e) => handleProvider(e.target.value)}>
-              {PROVIDERS.map((pp) => (
+              {selectableProviders.map((pp) => (
                 <option key={pp.id} value={pp.id}>{pp.label}</option>
               ))}
             </select>

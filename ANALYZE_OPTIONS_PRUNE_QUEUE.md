@@ -18,7 +18,7 @@ if green, commit locally (`refactor(analyze): …`), mark `[x]`, append a log li
 
 - [x] **2. Remove OpenRouter provider.** Recipe: in `src/services/llm.js` delete the `openrouter` object from the `PROVIDERS` array (and any `openrouter`-only helper branch). Back-compat: a saved byok record with `provider:'openrouter'` must not crash — the existing "unknown provider → prompt to re-choose via ProviderModal" path should handle it; if there is no such guard, add one (treat unknown provider id as "no valid key" → show the chooser). Scope: llm.js (+ minimal guard). Verify.
 
-- [ ] **3. Qwen: grandfather-only visibility.** Recipe: in `src/components/ProviderModal.jsx`, filter the qwen row OUT of the selectable provider list UNLESS a saved byok record already has `provider:'qwen'` (read via the existing byok loader). Do NOT delete the qwen entry from `llm.js` (saved keys must keep working). Scope: ProviderModal.jsx render filter only. Verify.
+- [x] **3. Qwen: grandfather-only visibility.** Recipe: in `src/components/ProviderModal.jsx`, filter the qwen row OUT of the selectable provider list UNLESS a saved byok record already has `provider:'qwen'` (read via the existing byok loader). Do NOT delete the qwen entry from `llm.js` (saved keys must keep working). Scope: ProviderModal.jsx render filter only. Verify.
 
 - [ ] **4. Compare lens: conditional on ≥2 stories.** Recipe: in `AnalysisStudio.jsx`, hide/disable the `compare` lens option when fewer than 2 stories are selected (it is meaningless with 1). If `compare` was selected and selection drops below 2, fall back to `'scenario'` (item 1's guard covers the render). Scope: lens-picker render + selection effect. Verify.
 
@@ -40,3 +40,4 @@ if green, commit locally (`refactor(analyze): …`), mark `[x]`, append a log li
 <!-- one line per commit: date · item# · verify result · net diff -->
 - 2026-07-26 · item 1 · verify green (0 errors, 235 tests pass) · +6/-2 AnalysisStudio.jsx
 - 2026-07-26 · item 2 · verify green (0 errors, 235 tests pass) · llm.js -14 (openrouter entry removed), AnalysisStudio.jsx +5/-1 (unknown-provider byok guard)
+- 2026-07-26 · item 3 · verify green (0 errors, 235 tests pass) · ProviderModal.jsx +6/-1 (qwen filtered from fresh-pick list, kept selectable if already saved)

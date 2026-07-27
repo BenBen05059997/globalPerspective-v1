@@ -1,12 +1,25 @@
-# Backend Migration — `deepseek-chat` → `deepseek-v4-flash`
+# Backend Migration — `deepseek-chat` → DeepSeek V4
 
-**Status:** ⚠️ **ATTEMPTED config-only migration 2026-06-12 → REGRESSED → REVERTED.**
-All 9 are back on `deepseek-chat` (known-good, verified `0 failed`). A correct
-migration needs a **code change** (see §3, rewritten). **Deadline:** the
-`deepseek-chat`/`deepseek-reasoner` aliases **retire 2026-07-24** — after that any
-Lambda still set to them fails (silently — caught parse/throw, 0 CloudWatch errors;
-only [[project-freshness-monitor]] would catch it, like the Grok-credit exhaustion).
-See [[project-ai-provider-migration]]. ~6 weeks of runway; prod is safe meanwhile.
+**Status:** ✅ **DONE 2026-07-26/27 — but the deadline was MISSED and it became a live incident.**
+The migration below was written 2026-06-12 with ~6 weeks of runway and was **not executed in time**.
+`deepseek-chat` retired **2026-07-24** exactly as predicted → the whole DeepSeek fleet went dark for
+~36h (silent: caught parse/throw, 0 CloudWatch errors — surfaced only by [[project-freshness-monitor]]'s
+stale-content alert, precisely the failure mode this doc called out). Fixed under fire on 07-26 using the
+**code-change recipe in §3** (the config-only path stayed wrong). See CHANGES.md 2026-07-27 and
+[[project-ai-provider-migration]].
+
+**Deviation from the original plan:** the plan targeted **all → `deepseek-v4-flash`**. Actual outcome uses
+an **intent-based pro/flash split** (operator decision): **`deepseek-v4-pro`** for the 3 open-analytical
+reads (`newsCountryIntelligence`, `newsSystemsAnalysis`, `newsEconomicImpact`) and **`deepseek-v4-flash`**
+for the mechanical/constrained/high-volume rest. All send `thinking:{type:'disabled'}`. Repo `src/index.js`
+of the 10 on-main functions now carries the patch (main `8f6c82f`), so a zip-from-repo deploy won't regress.
+The 2 PPA* functions were migrated 2026-07-27 too (→ `deepseek-v4-flash`; `PPAfetchMarketNews` smoke-tested green).
+
+**Lesson:** a doc-with-a-deadline is not a reminder — nothing was watching the 07-24 date, so a known,
+planned, trivial migration became a production outage. Future dated-deadline migrations need an actual
+scheduled check (cron/calendar), not just a plan file.
+
+<details><summary>Original 2026-06-12 plan (retained for the record — now executed)</summary>
 
 ## 0. What we learned the hard way (2026-06-12)
 
@@ -104,8 +117,10 @@ way. (No data migration, no schema change.)
 
 ## 7. Done-check
 
-- [ ] 9 Lambdas show `GROK_MODEL=deepseek-v4-flash`
-- [ ] re-scan clean (only PPA* remain)
-- [ ] 3 source fallbacks updated + committed
-- [ ] frontend picker already on V4 (commit `6c2acb0`, shipped)
-- [ ] PPA* flagged to owner
+- [x] 9 Lambdas migrated to V4 (`GROK_MODEL`=`deepseek-v4-pro` ×3 / `deepseek-v4-flash` ×6) + `thinking:disabled` code patch — 2026-07-26
+- [x] re-scan clean — no `deepseek-chat` left in the GP fleet
+- [x] `thinking:disabled` ported into repo `src/index.js` (10 on-main functions, main `8f6c82f`) — supersedes the "3 source fallbacks" item; the fallback defaults matter less now that the request body is patched
+- [x] frontend picker already on V4 (commit `6c2acb0`, shipped)
+- [x] PPA* migrated too (2026-07-27) — `PPAcomputeWardProfiles-dev` + `PPAfetchMarketNews-dev` → `deepseek-v4-flash` + patch
+
+</details>

@@ -1759,7 +1759,7 @@ async function buildEventDossier(countryName, threadId, hops) {
 // Reason over a dossier with the honesty contract (DeepSeek — public, ungated,
 // bounded by token cap; same engine as newsAnalyze/newsSystemsAnalysis).
 const DOSSIER_LLM_URL = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
-const DOSSIER_LLM_MODEL = process.env.GROK_MODEL || 'deepseek-chat';
+const DOSSIER_LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash';
 async function analyzeDossierWithLLM(dossier) {
   const key = process.env.XAI_API_KEY;
   if (!key) throw new Error('LLM key not configured');
@@ -1783,6 +1783,9 @@ ${JSON.stringify(dossier)}`;
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
       max_tokens: 800,
       temperature: 0.4,
+      // DeepSeek V4 defaults to thinking mode -> burns max_tokens on invisible
+      // reasoning and truncates/empties output (2026-07-26 outage). Disable.
+      thinking: { type: 'disabled' },
     }),
   });
   const data = await res.json();

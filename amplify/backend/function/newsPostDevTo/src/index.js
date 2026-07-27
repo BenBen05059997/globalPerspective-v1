@@ -171,6 +171,9 @@ async function callGrok(prompt) {
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 2000,
       temperature: 0.3,
+      // DeepSeek V4 defaults to thinking mode -> burns max_tokens on invisible
+      // reasoning and truncates/empties output (2026-07-26 outage). Disable.
+      thinking: { type: 'disabled' },
     }),
   });
   const raw = await res.text();

@@ -159,9 +159,10 @@ async function handleWebhook(rawBody, headers) {
       const uid = extractUid(data);
       if (uid && data.paid !== false) {
         const credits = packCreditsForOrder(data, PACK_CREDITS_BY_PRODUCT);
+        const productId = data.product_id || data.product?.id;
         if (credits > 0) {
           await grantCredits({ uid, credits, orderId: data.id, email: data.customer?.email });
-        } else {
+        } else if (productId && Object.values(PRODUCTS).includes(productId)) {
           await applyMembership({
             uid,
             tier: 'member',
@@ -170,6 +171,13 @@ async function handleWebhook(rawBody, headers) {
             subscriptionId: data.subscription_id || data.subscription?.id,
             email: data.customer?.email,
           });
+        } else {
+          // Neither a known credit pack nor a known subscription product. Previously this
+          // fell through to applyMembership(), so a credit-pack order paid BEFORE
+          // POLAR_CREDIT_PACKS was set would be mis-granted as a full membership
+          // (PROD_CREDITS_NEXT_STEPS.md ordering hazard). Grant nothing, log loudly.
+          console.error('order.paid for unrecognized product — granting nothing',
+            { orderId: data.id, productId, uid });
         }
       }
     }

@@ -25,6 +25,10 @@ frontend/dist-ssr/
 
 # Lambda deploy artifacts
 amplify/**/*.zip
+amplify/**/*.zip.bak
+
+# Local design mockups / scratch archives (public repo — keep them out)
+global perspective.zip
 
 # IDE/editor
 .vscode/*

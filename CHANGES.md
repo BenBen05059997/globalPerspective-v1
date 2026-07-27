@@ -1,5 +1,22 @@
 # Global Perspectives — Change Log
 
+## 2026-07-27 (follow-up: last 3 DeepSeek stragglers + Brave 429s + Polar webhook guard)
+
+Closes the gaps a post-migration audit found still open after the entry below. Plan: `DEEPSEEK_V4_STRAGGLERS_PLAN.md`.
+
+- **The alias came back — and that is not a fix.** `deepseek-chat` answers again as of 07-27, but the response body echoes `"model": "deepseek-v4-flash"` — DeepSeek re-aliased it. So the un-migrated functions were working **by grace, not design**: the alias can be pulled again (it already was once), the failure mode is silent (catch → exit 200 → CloudWatch `Errors` stays 0), and `newsFreshnessMonitor` only watches `topics`, so a `/daily` or dossier outage would go unseen.
+- **Migrated the last 2 real consumers** (same proven recipe — `thinking:{type:'disabled'}` patch → deploy → *then* env flip, never env-first):
+  - **`newsSensitiveData-dev`** — the `dossier_analysis` LLM call (powers `/spider-demo` "✦ Analyze with AI"). Was **double-exposed**: env `GROK_MODEL=deepseek-chat` *and* a hardcoded `|| 'deepseek-chat'` fallback at the `DOSSIER_LLM_MODEL` definition; both now `deepseek-v4-flash`.
+  - **`newsPostDevTo`** — `callGrok`, which builds the `DAILY_BRIEF` behind `/daily` (not just the Dev.to article). Its stored `model` metadata field had also been mislabelling briefs as `deepseek-chat`.
+  - Both were **repo `src/index.js` === deployed `index.js` byte-for-byte**, so the repo port and the deploy are the same content (no drift trap — unlike `newsAnalyze`, whose repo file still carries the parked credits code). Still deployed via patched-deployed-zip to preserve packaging: `newsSensitiveData-dev` ships 5 files with **no** `node_modules`; `newsPostDevTo` bundles 4511 files (8.3 MB) incl. `buildDailySummary.js`.
+  - Verified live: `dossier_analysis` → 1927-char grounded analyst read; `newsPostDevTo` → `dailyBrief.stored:true`, and `daily_brief` now serves `model: deepseek-v4-flash`.
+  - `newsAnalyze-sandbox` left on the alias deliberately — off every request path, rebuilt by `deploy-sandbox.sh`.
+- **Brave 429s (`newsInvokeGemini-dev`):** 18 rate-limit rejections/run, leaving `153 RSS + 10 Brave` articles. `BRAVE_CONCURRENCY` was **unset** → code default 3 parallel workers against a ~1 req/s free tier, with no retry/backoff in code. Set `BRAVE_CONCURRENCY=1` (env-only; ~10 serial queries add ~10-15s to a 600s-timeout function). Grounding breadth had been running mostly on RSS.
+- **`newsPolarBilling` webhook guard (repo only — NOT deployed).** The `order.paid` handler's `else` branch granted `tier:'member'` for *any* paid order that didn't match a known credit pack — so a credit-pack order paid before `POLAR_CREDIT_PACKS` was set would be mis-granted as a full membership (the `PROD_CREDITS_NEXT_STEPS.md` ordering hazard). Now membership is granted only when the product id matches `POLAR_PRODUCT_MONTHLY`/`_YEARLY`; anything else logs loudly and grants nothing. This makes the env-before-code ordering non-fatal rather than replacing it. `npm test` 8/8. **Deliberately not deployed** — that file carries the parked credits code and must wait for `PROD_CREDITS_NEXT_STEPS.md`.
+- **Repo hygiene:** `.gitignore` now covers `amplify/**/*.zip.bak` and `global perspective.zip` — two untracked archives (~420 KB) that a `git add -A` would have committed to a **public** repo. Scanned first: design mockups + a deploy zip with `node_modules`, no secrets.
+- No frontend source changed → no `./deploy.sh`, no `docs/` rebuild.
+- Files: `amplify/backend/function/{newsSensitiveData,newsPostDevTo,newsPolarBilling}/src/index.js`, `.gitignore`, `DEEPSEEK_V4_STRAGGLERS_PLAN.md`, `CHANGES.md`.
+
 ## 2026-07-27 (incident + fix: `deepseek-chat` retirement outage → full V4 migration; doc staleness audit)
 
 **INCIDENT (resolved).** DeepSeek retired the `deepseek-chat` alias on **2026-07-24**, silently breaking the entire DeepSeek Lambda fleet (11 GP + 2 PPA) for ~36h. Doubly silent: most functions catch the LLM error and exit 200, so CloudWatch's Errors metric stayed 0 — the failure surfaced only via `newsFreshnessMonitor`'s stale-content SNS alerts (content frozen at `2026-07-24T16:01`). The weekly brief had additionally been failing since 07-12 (a low DeepSeek balance rejected its larger request as "Insufficient Balance" while smaller calls still passed).

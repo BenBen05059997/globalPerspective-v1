@@ -82,7 +82,7 @@ async function callLLM(prompt) {
   const res = await fetch(LLM_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LLM_KEY}` },
-    body: JSON.stringify({ model: LLM_MODEL, temperature: 0.2, max_tokens: 500, messages: [{ role: 'user', content: prompt }] }),
+    body: JSON.stringify({ model: LLM_MODEL, temperature: 0.2, max_tokens: 500, thinking: { type: 'disabled' } /* V4 thinking burns max_tokens; deepseek-chat retired 2026-07-24 */, messages: [{ role: 'user', content: prompt }] }),
   });
   const body = await res.json().catch(() => null);
   if (!res.ok) throw new Error(`llm ${res.status}: ${body?.error?.message || res.statusText}`);

@@ -523,6 +523,9 @@ async function invokeGrok(prompt, maxTokens) {
       max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
       temperature: DEFAULT_TEMPERATURE,
       top_p: DEFAULT_TOP_P,
+      // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
+      // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
+      thinking: { type: 'disabled' },
     }),
   });
 

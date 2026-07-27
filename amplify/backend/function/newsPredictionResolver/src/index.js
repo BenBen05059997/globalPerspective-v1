@@ -115,6 +115,9 @@ async function invokeLLM(prompt) {
       temperature: 0.1,
       max_tokens: 400,
       response_format: { type: 'json_object' },
+      // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
+      // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
+      thinking: { type: 'disabled' },
     }),
   });
   if (!resp.ok) throw new Error(`LLM ${resp.status}: ${(await resp.text()).slice(0, 200)}`);

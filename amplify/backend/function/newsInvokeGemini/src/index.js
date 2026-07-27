@@ -739,6 +739,9 @@ exports.handler = async (event) => {
       response_format: { type: 'json_object' },
       temperature: 0.5,
       max_tokens: 8192,
+      // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
+      // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
+      thinking: { type: 'disabled' },
     });
     const text = result?.choices?.[0]?.message?.content || '';
 

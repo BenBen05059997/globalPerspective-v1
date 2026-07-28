@@ -32,7 +32,7 @@ const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib
 const ANALOG_CATALOG = require('./economic_analogs.json');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-chat';
+const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash';
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '1500', 10);

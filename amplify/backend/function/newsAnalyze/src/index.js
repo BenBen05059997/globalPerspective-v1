@@ -24,7 +24,7 @@ const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 // Legacy GROK_* names hold DeepSeek values in production (see feedback-misleading-grok-naming).
 const LLM_KEY = process.env.XAI_API_KEY;
 const LLM_URL_RAW = process.env.GROK_API_URL || 'https://api.deepseek.com';
-const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-chat';
+const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash';
 const MAX_TOKENS = Number(process.env.MAX_TOKENS) || 1600;
 // Members get MEMBER_MONTHLY_ALLOWANCE free runs per calendar month; beyond that (and for
 // non-members) each run spends 1 credit (bought via newsPolarBilling credit packs).

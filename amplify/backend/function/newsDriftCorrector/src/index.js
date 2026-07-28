@@ -20,7 +20,7 @@ const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 // Legacy GROK_* names hold DeepSeek values in production (see feedback-misleading-grok-naming).
-const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-chat';
+const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash';
 const LLM_URL = (process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions');
 const LLM_KEY = process.env.XAI_API_KEY || '';
 const DRIFT_TTL_DAYS = parseInt(process.env.DRIFT_TTL_DAYS || '60', 10);

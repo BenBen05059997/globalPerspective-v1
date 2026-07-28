@@ -783,12 +783,22 @@ Four Lambdas are **deployed and ENABLED in prod** but their **source lives only 
 
 ---
 
+### 30. `newsModelGuard` — model-retirement dead-man's-switch (LIVE 2026-07-28)
+**Path:** `amplify/backend/function/newsModelGuard/src/index.js`
+**Trigger:** EventBridge Rule — `TriggerModelGuard` — **ENABLED** — `cron(0 12 * * ? *)` (daily 12:00 UTC). **No LLM** (one cheap authenticated `GET /models`).
+
+The passive guard against a repeat of the **2026-07-24 `deepseek-chat` retirement** (which became a 36h silent outage because nothing was watching the deadline — see `BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md`). Daily it `ListFunctions` across the whole account, reads each function's env for model-ID vars (`GROK_MODEL`/`LLM_MODEL`/`MODEL`/`AUDIT_MODEL`/`JUDGE_MODEL`/`PPLX_MODEL`/`AI_MODEL`), and flags any **direct DeepSeek id** (`/^deepseek-/`; the OpenRouter `deepseek/…` namespaced form is skipped) that is either a **deprecated alias** (`deepseek-chat`/`deepseek-reasoner`) or **absent from DeepSeek's live `/models` list** (already retired/invalid). Findings → SNS `GlobalPerspectiveAlerts` with the proven fix recipe; **honest-empty** (silent when all clear). Skips `*-sandbox` functions + `IGNORE_FUNCTIONS` to avoid nagging on throwaway test envs. **Known gap:** env-scan only — a function hitting the retired model via a hardcoded code default (`process.env.X || 'deepseek-chat'`) is invisible here; those were separately hardened to `deepseek-v4-flash` defaults 2026-07-28.
+
+**Key env vars:** `DEEPSEEK_API_KEY` (copied from the fleet — auths the `/models` call), `DEEPSEEK_MODELS_URL` (=`https://api.deepseek.com/models`), `SNS_TOPIC_ARN` (=`GlobalPerspectiveAlerts`), optional `MODEL_VARS`/`DEPRECATED_ALIASES`/`IGNORE_FUNCTIONS`. **Role:** `newsModelGuard-role` (basic-exec logs + `lambda:ListFunctions`/`GetFunctionConfiguration` account-wide read + `sns:Publish` to the alerts topic only).
+
+---
+
 ## Observability & Monitoring
 
 Two layers, both roll-your-own (the user rejects paid Sentry on cost):
 
 - **Active / on-demand** — four standalone Playwright/static checks under `scripts/` (`smoke-test.mjs`, `link-crawl.mjs`, `auth-guard-check.mjs`, `contract-check.mjs`), run by hand against production. They detect the 8 bug classes in `BUG_PLAYBOOK.md`. They only run when invoked.
-- **Passive / 24-7** — the always-on complement that pushes alerts: `newsClientErrors` (#17) captures errors → `newsErrorDigest` (#19) alerts on new/spiking; `newsFreshnessMonitor` (#18) alerts on stale content / proxy down; **`newsSourceAudit` (#24)** alerts when our summaries fabricate / drift from their sources (source-truth dead-man's-switch). All alerts route to one SNS topic **`GlobalPerspectiveAlerts`** (`arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectiveAlerts`) → email (confirmed subscription). Dependency security via `.github/dependabot.yml` + the repo Dependabot-alerts toggle.
+- **Passive / 24-7** — the always-on complement that pushes alerts: `newsClientErrors` (#17) captures errors → `newsErrorDigest` (#19) alerts on new/spiking; `newsFreshnessMonitor` (#18) alerts on stale content / proxy down; **`newsSourceAudit` (#24)** alerts when our summaries fabricate / drift from their sources (source-truth dead-man's-switch); **`newsModelGuard` (#30)** alerts when any Lambda is left on a deprecated/retired DeepSeek model (the model-retirement dead-man's-switch, born from the 2026-07-24 `deepseek-chat` outage). All alerts route to one SNS topic **`GlobalPerspectiveAlerts`** (`arn:aws:sns:ap-northeast-1:280362093938:GlobalPerspectiveAlerts`) → email (confirmed subscription). Dependency security via `.github/dependabot.yml` + the repo Dependabot-alerts toggle.
 
 External monitors that need the operator's own account (UptimeRobot, Google Search Console, optional Cloudflare Web Analytics) are documented in `BUG_PLAYBOOK.md` → "Passive monitoring (24/7)".
 
@@ -993,6 +1003,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `TriggerWeeklyBrief` | `cron(0 6 ? * SUN *)` | newsWeeklyBrief (Sundays 06:00 UTC — generates the weekly signals draft) |
 | `TriggerWeeklyMarkets` | `cron(30 8 ? * SUN *)` | newsWeeklyMarkets (Sundays 08:30 UTC — generates the weekly markets-report draft) |
 | `newsSourceAuditDaily` | `cron(30 8 ? * * *)` | newsSourceAudit (#24 — daily source-truth audit; SNS-alerts on summary drift) |
+| `TriggerModelGuard` | `cron(0 12 * * ? *)` | newsModelGuard (#30 — daily model-retirement guard; SNS-alerts on deprecated/retired DeepSeek model) |
 | `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
 | `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |
 | `MarketsMacrosWeekly` | `cron(0 2 ? * SUN *)` | newsMarketsData |

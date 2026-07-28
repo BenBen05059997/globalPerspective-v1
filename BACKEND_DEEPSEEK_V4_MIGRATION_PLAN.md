@@ -95,13 +95,19 @@ Old §3 (config-only) is retained below struck-through as the cautionary record:
 > ~~1. get env → 2. set GROK_MODEL=deepseek-v4-flash → 3. update-function-configuration
 > → 4. verify.~~ **WRONG on its own — V4 defaults to thinking mode; broke JSON parsing.**
 
-## 4. Source hygiene (repo, optional redeploy)
+## 4. Source hygiene (repo, optional redeploy) — ✅ DONE 2026-07-28
 
-3 Lambdas hardcode the fallback default `|| 'deepseek-chat'`
-(`newsEconomicImpact`, `newsPredictionResolver`, `newsWeeklyBrief`). Update those to
+Lambdas hardcoded the fallback default `|| 'deepseek-chat'`. Updated all of them to
 `|| 'deepseek-v4-flash'` so the dormant fallback isn't a future landmine if the env var
-is ever removed. The env var is authoritative, so this needs **no redeploy to take
-effect now** — it's belt-and-braces for the repo.
+is ever removed. The env var is authoritative, so this needed **no redeploy**. Fixed:
+`newsAnalyze`, `newsDriftCorrector`, `newsEconomicImpact`, `newsPredictionResolver`,
+`newsWeeklyBrief`, `newsWeeklyMarkets` (the `deepseek-chat` code default in
+`newsSensitiveData`/`newsPostDevTo` was cleared separately in `c232624`).
+
+**Ongoing guard:** `newsModelGuard` (Lambda #30, `TriggerModelGuard` daily) now watches
+the deployed **env** of every function and SNS-alerts on any deprecated/retired DeepSeek
+model — so the next alias retirement pages the operator instead of silently breaking the
+fleet. It cannot see code-default fallbacks (hence this §4 hardening), only env values.
 
 ## 5. Verification
 

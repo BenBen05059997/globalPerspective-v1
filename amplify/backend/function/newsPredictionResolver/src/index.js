@@ -21,7 +21,7 @@ const BRAVE_WEB_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
 // uses; in production they hold DeepSeek values (see ARCHITECTURE.md note).
 const LLM_KEY = process.env.XAI_API_KEY || '';
 const LLM_ENDPOINT = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
-const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-chat';
+const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash';
 
 const MAX_RESOLVE_PER_RUN = parseInt(process.env.MAX_RESOLVE_PER_RUN || '40', 10);
 const LLM_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '3', 10);

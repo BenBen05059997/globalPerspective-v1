@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-07-28 (feat: `newsModelGuard` — model-retirement dead-man's-switch + code-default hardening)
+
+The 2026-07-24 `deepseek-chat` retirement became a 36h silent outage because nothing watched the deadline (a plan file is not a reminder). This wires the passive guard against a repeat, mirroring `newsFreshnessMonitor`/`newsErrorDigest`.
+- **New Lambda `newsModelGuard`** (`amplify/backend/function/newsModelGuard/src/index.js`, no deps — `@aws-sdk/*` v3 + `fetch` from the Node 20 runtime). Daily (`TriggerModelGuard` EventBridge rule, `cron(0 12 * * ? *)`, ENABLED) it `ListFunctions` across the account, reads model-ID env vars (`GROK_MODEL`/`LLM_MODEL`/`MODEL`/`AUDIT_MODEL`/`JUDGE_MODEL`/`PPLX_MODEL`/`AI_MODEL`), and SNS-alerts to `GlobalPerspectiveAlerts` on any direct DeepSeek id (`/^deepseek-/`; OpenRouter `deepseek/…` skipped) that is a **deprecated alias** (`deepseek-chat`/`deepseek-reasoner`) or **absent from the live `/models` list**. Honest-empty (silent when clean); skips `*-sandbox`. IAM `newsModelGuard-role` = basic-exec + `lambda:ListFunctions`/`GetFunctionConfiguration` (read) + `sns:Publish` to the alerts topic only. **Live-verified:** scans 87 functions, live list `[deepseek-v4-flash, deepseek-v4-pro]`; caught `newsAnalyze-sandbox` on `deepseek-chat` (then correctly ignored as a sandbox → clean baseline).
+- **Known-gap hardening:** an env-scan can't see a function that hits the retired model via a hardcoded code default. Fixed the 6 dormant `process.env.GROK_MODEL || 'deepseek-chat'` fallbacks → `'deepseek-v4-flash'` (`newsAnalyze`, `newsDriftCorrector`, `newsEconomicImpact`, `newsPredictionResolver`, `newsWeeklyBrief`, `newsWeeklyMarkets`). Dormant (env is authoritative + set), so no redeploy needed — belt-and-braces per `BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md` §4.
+- Files: `amplify/backend/function/newsModelGuard/src/index.js` (new), the 6 functions above, `ARCHITECTURE.md` (Lambda #30 + observability + schedule table), `BACKEND_DEEPSEEK_V4_MIGRATION_PLAN.md`, `CHANGES.md`.
+
+
 ## 2026-07-27 (follow-up: last 3 DeepSeek stragglers + Brave 429s + Polar webhook guard)
 
 Closes the gaps a post-migration audit found still open after the entry below. Plan: `DEEPSEEK_V4_STRAGGLERS_PLAN.md`.

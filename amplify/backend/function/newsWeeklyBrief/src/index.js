@@ -14,7 +14,7 @@ const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 // Legacy GROK_* names hold DeepSeek values in production (see feedback-misleading-grok-naming).
-const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-chat';
+const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash';
 const LLM_ENDPOINT = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
 const LLM_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3500', 10);

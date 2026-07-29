@@ -1,5 +1,30 @@
 # Global Perspectives — Change Log
 
+## 2026-07-29 (fix: newsSystemsAnalysis output-truncation ceiling; doc staleness sweep)
+
+**`newsSystemsAnalysis` was silently dropping the biggest countries' causal graphs.** The 07-29 run went `7 generated, 3 failed` — `Failed to parse Grok response: Unterminated string in JSON at position 10929` for Iran and Ukraine. `MAX_TOKENS` was **unset**, so it ran on the code default **3000**.
+
+- **Measured, not guessed.** Replayed the real prompts (same builder, same DDB data, same `deepseek-v4-pro` + `thinking:disabled`) at an 8000 ceiling: **Iran 3214** completion tokens, **Ukraine 3062**, **United States 3038** — all `finish_reason: stop`, all valid JSON. The whole cohort had drifted into a **3038–3214 band straddling the 3000 limit**, so *which* countries failed was luck, not content: US "passed" that morning at 3038 and was already over the line. Truncation arithmetic closes exactly — Iran's full output is 12032 chars, clipped at 10929 = 1103 chars ≈ the 214-token overshoot.
+- **Fix:** env `MAX_TOKENS=6000` on `newsSystemsAnalysis` (merge-don't-clobber, 8 vars preserved). ~87% headroom over the measured peak. `max_tokens` is a **ceiling, not spend** — cost is unchanged. Re-ran immediately: **Iran now generates (12 nodes, 9 edges)**, the country that had been failing.
+- **Why nothing caught it:** failures are caught per-country and the function exits 200, so CloudWatch `Errors` stayed `0.0`. `newsFreshnessMonitor` only watches `topics`; the new `newsModelGuard` (#30) only watches model ids. Same silent-failure family as the 06-01 `newsInvokeGemini` JSON-truncation stall. If graphs later exceed ~20 threads, port that function's `salvageTruncatedTopics()` pattern — this one's `JSON.parse` has no salvage branch.
+
+**Doc staleness sweep (`ARCHITECTURE.md`):**
+- **`newsPostDevTo` (#7) was materially wrong** — documented only as a Dev.to poster, but it is also the **sole producer of the Daily Intelligence Brief behind `/daily`**, via a *different* provider (`callGrok` → DeepSeek `GROK_MODEL`, vs the Dev.to article's OpenRouter `AI_MODEL`). `/daily` has no other producer, so a failure there silently empties the page while Dev.to is unaffected — and nothing in the doc pointed a triager at this Lambda. Added the two-job warning, the brief step, and the missing `XAI_API_KEY`/`GROK_MODEL`/`GROK_API_URL`/`SUMMARIZE_PREDICT_TABLE` env vars.
+- Resend row in External APIs still read `newsBreakingAlert (#21, not deployed)` — contradicted the already-corrected #21. Now "deployed + scheduled", and credits `newsEmailSender` (#29) as the other consumer.
+- The header's "Note to reconcile: CLAUDE.md + memory still carry the old 4-function CORS list" is **resolved** — verified both already carry the corrected list, re-confirmed against live `get-function-url-config`.
+- Recorded the `MAX_TOKENS` ceiling + the measurement under Lambda #9.
+
+Files: `ARCHITECTURE.md`, `CHANGES.md`. No code change, no frontend build.
+
+## 2026-07-29 (deploy: newsPolarBilling webhook guard → prod; credits still parked)
+
+Shipped ONLY the `newsPolarBilling` webhook hardening to prod — the `order.paid` guard that grants membership **only** for the two real subscription product IDs (`POLAR_PRODUCT_MONTHLY`/`_YEARLY`) and routes credit-pack orders to `grantCredits`. Previously the deployed prod code granted `tier:'member'` for **any** paid order (the `PROD_CREDITS_NEXT_STEPS.md` mis-grant hazard) — now an unrecognized product grants nothing and logs loudly. This makes the env-before-code ordering non-fatal rather than replacing it.
+- **Deploy scope:** `newsPolarBilling` code only, via `update-function-code` (zip of `src/`, no `node_modules`). Deliberately did **NOT** run `deploy-credits-prod.sh` (which also deploys `newsAnalyze` and would unpark member credit-metering by dropping the `tier=member` gate).
+- **Credits remain parked:** env untouched — no `POLAR_CREDIT_PACKS` set (→ `parseCreditPacks('')={}` → every credit lookup returns 0, buy-credits path dormant), and `newsAnalyze` still runs the pre-credits code (`ANALYZE_DAILY_CAP=100`, hard `tier=member` gate). So the credits code now shipped in `newsPolarBilling` is present-but-inert; nothing can be bought.
+- **Live subscription checkout unaffected:** subscription.* events still `applyMembership` directly, and a real subscription `order.paid` matches a known product id → membership. Verified: deployed `index.js` byte-identical to repo HEAD, guard present; `POLAR_CREDIT_PACKS=None`; `get_membership` (unauth) → `401 sign_in_required` with a single ACAO header (CORS intact). `node --test` 8/8.
+- Still OPEN (unchanged): the leaked Polar token rotation (operator/dashboard); full credits go-live per `PROD_CREDITS_NEXT_STEPS.md` steps 4–8.
+- Files: prod Lambda `newsPolarBilling` (code deploy only — no repo source change; already committed in `c232624`). `CHANGES.md`.
+
 ## 2026-07-29 (fix: remove the dead Economy lens from `/map`)
 
 `/map`'s fourth layer lens ("Economy — active disruption exposure") never rendered a single ring. `econByISO` looked up `nameToISO[e.name]` **without lowercasing**, but `nameToISO` is built exclusively with lowercased keys (`nISO[rawName.toLowerCase()]`) while disruption entity names are canonical/capitalized (`"United States"`) — so every lookup missed, the map returned `{}`, and toggling the layer on did nothing. The two sibling code paths get this right and are unaffected (`todaySignal` and `realFlows` both lowercase *and* fall back to `EXTRA_ALIASES`).

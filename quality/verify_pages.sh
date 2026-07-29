@@ -81,7 +81,14 @@ must_have "$SRC/components/CountryListPage.jsx" "Disruption" "exposes Disruption
 # ─── WorldMapV2 ───
 must_have "$SRC/components/WorldMapV2.jsx" "useDisruptionsList" "uses useDisruptionsList"
 must_have "$SRC/components/WorldMapV2.jsx" "selectedCountryDisruptions" "builds selected-country slice"
-must_have "$SRC/components/WorldMapV2.jsx" "economy" "exposes economy lens"
+# The map's 4th "Economy" layer lens was removed 2026-07-29 (its econByISO lookup
+# missed nameToISO's lowercased keys, so it never rendered a ring — see CHANGES.md).
+# The disruption records still reach this page two ways, which is what we guard:
+# the lede band (composeTopicsLede) and the detail panel's deep-link to the thread
+# Economy tab. The old bare-"economy" grep would pass on either string, so it kept
+# asserting a lens that no longer exists.
+must_have "$SRC/components/WorldMapV2.jsx" "composeTopicsLede" "feeds disruptions into the lede band"
+must_have "$SRC/components/WorldMapV2.jsx" "tab: 'economy'" "deep-links disruptions to the thread economy tab"
 
 # ─── Disclosures ───
 must_have "$SRC/components/Disclosures.jsx" "Economic Disruption" "has Economic Disruption section"

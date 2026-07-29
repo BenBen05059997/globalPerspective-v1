@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-07-29 (fix: remove the dead Economy lens from `/map`)
+
+`/map`'s fourth layer lens ("Economy — active disruption exposure") never rendered a single ring. `econByISO` looked up `nameToISO[e.name]` **without lowercasing**, but `nameToISO` is built exclusively with lowercased keys (`nISO[rawName.toLowerCase()]`) while disruption entity names are canonical/capitalized (`"United States"`) — so every lookup missed, the map returned `{}`, and toggling the layer on did nothing. The two sibling code paths get this right and are unaffected (`todaySignal` and `realFlows` both lowercase *and* fall back to `EXTRA_ALIASES`).
+
+- **Removed rather than repaired.** A layer whose only honest output is "nothing" is worse than no layer — a user toggling it reads the empty map as "no economic exposure anywhere," which is misinformation ([[feedback_no_misinformation_fallback]]). The exposure data already has two working homes on this page, so fixing the lookup would have added a third, weaker view of the same records.
+- Deleted: the `{ id:'economy' }` `LAYERS` entry (rail checkbox), `economy:false` from the `layers` state, the `econByISO` memo + `econRef`, the `ECON_RING_COLOR`/`ECON_RING_RADIUS` constants, and the ring-drawing block in `drawMap()` (plus `econByISO` from the redraw deps). No CSS to remove — the rings were styled inline.
+- **Kept (working, and independent of the lens):** `useDisruptionsList` still feeds `composeTopicsLede` (the "Today's lede" band) and `selectedCountryDisruptions`; the right panel's **Economic Disruption** section still matches on exact canonical names (`w.name === selectedName`, never the broken lowercase lookup) and deep-links each record to its thread's Economy tab; the rail's "Markets this week →" link is untouched.
+- Verify: `npm run verify` → eslint 0 errors, vitest 235/235 across 19 files. Net −48 lines.
+- Files: `global-perspectives-starter/frontend/src/components/WorldMapV2.jsx`, `ARCHITECTURE.md`, `CHANGES.md`.
+
 ## 2026-07-28 (feat: `newsModelGuard` — model-retirement dead-man's-switch + code-default hardening)
 
 The 2026-07-24 `deepseek-chat` retirement became a 36h silent outage because nothing watched the deadline (a plan file is not a reminder). This wires the passive guard against a repeat, mirroring `newsFreshnessMonitor`/`newsErrorDigest`.

@@ -116,11 +116,7 @@ const LAYERS = [
   { id: 'today',       label: "Today's pulse", sub: 'last 24h news + signal' },
   { id: 'connections', label: 'Connections',   sub: 'bilateral arcs'         },
   { id: 'editorial',   label: 'Editorial',     sub: "this week's top stories" },
-  { id: 'economy',     label: 'Economy',       sub: 'active disruption exposure' },
 ];
-
-const ECON_RING_COLOR = { severe: '#c94a33', moderate: '#c98510', minor: '#4fa07b' };
-const ECON_RING_RADIUS = { severe: 12, moderate: 9, minor: 7 };
 
 function Sparkline({ snapshots }) {
   if (!snapshots || snapshots.length < 2) return null;
@@ -148,7 +144,7 @@ export default function WorldMapV2() {
   const d3Ref   = useRef(null);
   const worldRef = useRef(null);
 
-  const [layers, setLayers] = useState({ today: true, connections: false, editorial: false, economy: false });
+  const [layers, setLayers] = useState({ today: true, connections: false, editorial: false });
   const [selectedISO, setSelectedISO] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [railOpen, setRailOpen] = useState(true);
@@ -230,7 +226,7 @@ export default function WorldMapV2() {
   const todaySignalRef = useRef({});
   todaySignalRef.current = todaySignal;
 
-  // Economic disruption exposure — country ISO → max severity from active disruptions
+  // Active economic disruptions — feeds the lede band + the selected-country panel section
   const { data: allDisruptions = [] } = useDisruptionsList({ limit: 200 });
 
   // Today's lede — deterministic orientation band shared with Home
@@ -238,22 +234,6 @@ export default function WorldMapV2() {
     () => composeTopicsLede({ topics, disruptions: allDisruptions }),
     [topics, allDisruptions],
   );
-  const econByISO = useMemo(() => {
-    const out = {};
-    const rank = { severe: 3, moderate: 2, minor: 1 };
-    for (const d of allDisruptions) {
-      const sev = d.severity;
-      for (const e of [...(d.winners || []), ...(d.losers || [])]) {
-        if (e.type !== 'country' || !e.name) continue;
-        const iso = nameToISO[e.name];
-        if (!iso) continue;
-        if (!out[iso] || rank[sev] > rank[out[iso]]) out[iso] = sev;
-      }
-    }
-    return out;
-  }, [allDisruptions, nameToISO]);
-  const econRef = useRef({});
-  econRef.current = econByISO;
 
   // Selected-country disruptions — top 3 active records mentioning the country
   // by name in winners/losers. Used by the detail panel.
@@ -464,7 +444,7 @@ export default function WorldMapV2() {
     if (!worldRef.current) return;
     const t = setTimeout(() => drawMap(layers, selectedISO, zoom), 240);
     return () => clearTimeout(t);
-  }, [layers, selectedISO, zoom, railOpen, panelOpen, sigReady, realFlows, editorialPicks, flowFilters, signalFilters, timeWindow, todaySignal, econByISO]); // eslint-disable-line
+  }, [layers, selectedISO, zoom, railOpen, panelOpen, sigReady, realFlows, editorialPicks, flowFilters, signalFilters, timeWindow, todaySignal]); // eslint-disable-line
 
   function drawMap(currentLayers, currentISO, currentZoom) {
     const svg  = svgRef.current;
@@ -532,29 +512,6 @@ export default function WorldMapV2() {
           'stroke-width': 1.4,
           'stroke-opacity': 0.55,
           class: 'today-ring',
-        });
-        svg.appendChild(ring);
-      });
-    }
-
-    // Economy lens — disruption exposure rings (severity-colored)
-    if (currentLayers.economy) {
-      Object.entries(econRef.current).forEach(([iso, severity]) => {
-        const center = isoToCenterRef.current[iso];
-        if (!center) return;
-        const pt = projection(center);
-        if (!pt) return;
-        const [x, y] = pt;
-        const color = ECON_RING_COLOR[severity] || ECON_RING_COLOR.moderate;
-        const r = ECON_RING_RADIUS[severity] || ECON_RING_RADIUS.moderate;
-        const ring = el('circle', {
-          cx: x, cy: y, r,
-          fill: color,
-          'fill-opacity': severity === 'severe' ? 0.22 : 0.12,
-          stroke: color,
-          'stroke-width': severity === 'severe' ? 2 : 1.4,
-          'stroke-opacity': 0.85,
-          class: 'econ-ring',
         });
         svg.appendChild(ring);
       });
@@ -784,7 +741,7 @@ export default function WorldMapV2() {
                 <span className="c">{l.sub}</span>
               </div>
             ))}
-            {/* Zoom out from the live Economy lens to the weekly markets wrap */}
+            {/* Zoom out from the live signal map to the weekly markets wrap */}
             <Link className="mv2-markets-link" to="/weekly-markets">Markets this week →</Link>
           </div>
 

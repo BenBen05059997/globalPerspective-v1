@@ -13,9 +13,10 @@
 // proposal/dedupe row, sends nothing. See BREAKING_ALERTS_PLAN.md.
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { scoreStory, effectiveThreshold, SIGNIFICANCE_THRESHOLD, regionRiskScore } = require('./significance');
 const { renderAlert } = require('./render');
+const { sendEmail } = require('./sendEmail');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
@@ -24,6 +25,11 @@ const ALERTS_TABLE = process.env.BREAKING_ALERTS_TABLE || 'GlobalPerspectiveBrea
 const SITE_URL = (process.env.SITE_URL || 'https://globalperspective.net').replace(/\/$/, '');
 
 const DRY_RUN = process.env.DRY_RUN !== 'false'; // default ON — never sends until explicitly disabled
+// Auto-send target. Audience of one for now ("send me first so I can eyeball"): each new
+// detection emails the operator directly, no human-confirm step. The recipient list
+// becomes real subscribers once the public signup + domain verification land.
+const ALERT_EMAIL_TO = process.env.ALERT_EMAIL_TO || 'benlai310@gmail.com';
+const ALERT_EMAIL_FROM = process.env.ALERT_EMAIL_FROM || 'onboarding@resend.dev';
 const THRESHOLD = Number(process.env.SIGNIFICANCE_THRESHOLD) || SIGNIFICANCE_THRESHOLD;
 const DEDUPE_DAYS = Number(process.env.DEDUPE_DAYS) || 5;
 const DEDUPE_TTL_DAYS = Number(process.env.DEDUPE_TTL_DAYS) || 14;
@@ -243,6 +249,21 @@ async function writeProposal(group, scored, story, verify, email) {
   return item;
 }
 
+// Mark a proposal row as sent (so the in-app feed reflects it + it isn't resent).
+async function markSent(threadId) {
+  try {
+    await ddb().send(new UpdateCommand({
+      TableName: ALERTS_TABLE,
+      Key: { alertKey: threadId },
+      UpdateExpression: 'SET #s = :sent, sent = :true, sentAt = :now',
+      ExpressionAttributeNames: { '#s': 'status' },
+      ExpressionAttributeValues: { ':sent': 'sent', ':true': true, ':now': new Date().toISOString() },
+    }));
+  } catch (err) {
+    console.warn(`markSent failed for ${threadId} (non-fatal): ${err.message}`);
+  }
+}
+
 // ── Core ────────────────────────────────────────────────────────────────────────
 async function run() {
   const now = Date.now();
@@ -312,11 +333,28 @@ async function run() {
   console.log('---- body ----');
   console.log(email.text);
   console.log('─────────────────────────────────────────');
-  console.log(DRY_RUN
-    ? '[breaking] DRY_RUN: proposal written; NO email sent. Review via breaking/review.js.'
-    : '[breaking] proposal written; awaiting human confirmation before send.');
+  if (DRY_RUN) {
+    console.log('[breaking] DRY_RUN: proposal written; NO email sent.');
+    return { ok: true, proposed: 1, sent: false, threadId: chosen.group.threadId, score: chosen.scored.score, dryRun: true };
+  }
 
-  return { ok: true, proposed: 1, threadId: chosen.group.threadId, score: chosen.scored.score, dryRun: DRY_RUN };
+  // Auto-send (no human gate): email the operator directly, then mark sent.
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('[breaking] DRY_RUN off but RESEND_API_KEY unset — wrote proposal, sent nothing.');
+    return { ok: true, proposed: 1, sent: false, threadId: chosen.group.threadId, reason: 'no_key' };
+  }
+  try {
+    const r = await sendEmail({
+      from: ALERT_EMAIL_FROM, to: ALERT_EMAIL_TO,
+      subject: email.subject, text: email.text, html: email.html,
+    });
+    await markSent(chosen.group.threadId);
+    console.log(`[breaking] SENT → ${ALERT_EMAIL_TO} (id: ${r.id || 'n/a'})`);
+    return { ok: true, proposed: 1, sent: true, to: ALERT_EMAIL_TO, threadId: chosen.group.threadId, score: chosen.scored.score };
+  } catch (err) {
+    console.error(`[breaking] send failed (proposal kept): ${err.message}`);
+    return { ok: true, proposed: 1, sent: false, threadId: chosen.group.threadId, error: err.message };
+  }
 }
 
 exports.handler = async () => {

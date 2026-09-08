@@ -91,7 +91,7 @@ Changes: `DRY_RUN=false` (flipped, live-verified); per-transition metrics (Opene
 Docs to update: `ARCHITECTURE.md` ✅ · `DATA_STRATEGY.md` (archive prefix) ✅ · `CHANGES.md` ✅ · memory ✅
 Verify / exit: ✅ live invoke → `world/latest.json` real (China flood), Worker serves it (not fixture), inbox → 4 processed; alarms created; digest runs; 7 tests pass. Freshness handled by the `situation-tracker-stalled` alarm (cleaner than a `newsFreshnessMonitor` probe — that probe is NOT needed).
 Done-check: [x] flip  [x] alarms  [x] metrics/knobs  [x] archive  [x] digest  [x] docs  [x] CHANGES
-Commit: <pending>
+Commit: `4eb3442`
 Notes: tune over the next days with `node scripts/situations-log.mjs --days 3`; watch `Cooled`/`Closed` vs `Observations` — if GDACS's ~100-event window drops active events and causes flapping, raise `CLOSE_AFTER_COOL_CHECKS` via `update-function-configuration` (merge env).
 
 ---

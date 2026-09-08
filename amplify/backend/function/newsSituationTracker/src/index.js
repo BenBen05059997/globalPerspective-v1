@@ -93,7 +93,7 @@ function summarize(state) {
     id: state.situationId, source: state.source, verb_label: state.verb_label,
     axis: state.axis, tier: state.tier, state: state.state,
     escalating: state.state === 'escalating',
-    centroid: state.centroid, iso3_affected: state.iso3_affected, spread_arcs: state.spread_arcs || [],
+    centroid: state.centroid, iso3_affected: state.iso3_affected, affected_names: state.affected_names || [], spread_arcs: state.spread_arcs || [],
     opened_at: state.opened_at, last_change_at: state.last_change_at,
     what_changed: state.what_changed, threadId: state.threadId || null,
   };
@@ -111,16 +111,23 @@ function deriveRanked(summaries) {
   return summaries.filter((s) => s.state !== 'closed').sort((a, b) => {
     const ka = rankKey(a); const kb = rankKey(b);
     return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
-  }).map((s) => ({ id: s.id, title: s.verb_label, tier: s.tier, escalating: s.escalating, href: situationHref(s) }));
+  }).map((s) => ({ id: s.id, title: s.verb_label, tier: s.tier, axis: s.axis, escalating: s.escalating, href: situationHref(s) }));
 }
 
+const TIER_WORD = { high: 'high-severity', elevated: 'elevated', moderate: 'moderate', low: 'low-level' };
+const article = (w) => (/^[aeiou]/i.test(w) ? 'an' : 'a');
 function deriveLede(ranked, summaries) {
   const open = summaries.filter((s) => s.state !== 'closed');
-  if (!open.length) return 'No critical situations being tracked right now.';
+  if (!open.length) return 'No critical situations are being tracked right now — the map is quiet.';
   const top = ranked[0];
+  const tierWord = TIER_WORD[top.tier] || top.tier;
+  const axisWord = top.axis || 'humanitarian';
   const escalating = open.filter((s) => s.escalating).length;
-  const lead = `${top.title}${top.escalating ? ' is escalating' : ''}`;
-  return escalating > 1 ? `${lead}; ${escalating} situations are spreading.` : `${lead}.`;
+  if (open.length === 1) {
+    return `${top.title} — ${article(tierWord)} ${tierWord} ${axisWord} alert${top.escalating ? ', escalating' : ''}. It is the only situation currently being tracked.`;
+  }
+  const tail = escalating ? ` ${escalating} of them ${escalating === 1 ? 'is' : 'are'} escalating.` : '';
+  return `${open.length} situations are being tracked; the most severe is ${top.title} (${tierWord}).${tail}`;
 }
 
 function computeStale(sources, nowIso, thresholds = {}) {

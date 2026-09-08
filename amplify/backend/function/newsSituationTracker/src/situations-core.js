@@ -56,12 +56,24 @@ function affectedIso3(p) {
   return out;
 }
 
+function affectedNames(p) {
+  const out = [];
+  const push = (v) => { const s = String(v || '').trim(); if (s && !out.includes(s)) out.push(s); };
+  push(p.country);
+  for (const c of Array.isArray(p.affectedcountries) ? p.affectedcountries : []) push(c && c.countryname);
+  return out;
+}
+
 // GDACS severitytext is often a placeholder like "Magnitude 0" (no real scale, e.g. floods).
 function cleanSeverity(sevText) {
   const s = String(sevText || '').trim();
   if (!s) return '';
   if (/^magnitude\s*0(\.0+)?\b/i.test(s)) return '';
   return s;
+}
+
+function stripHtml(s) {
+  return String(s || '').replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function verbLabel(p) {
@@ -88,8 +100,10 @@ function buildObservation(feature, observedAt) {
     axis: 'humanitarian',
     iso3_origin: p.iso3 ? [String(p.iso3).toUpperCase()] : affected.slice(0, 1),
     iso3_affected: affected,
+    affected_names: affectedNames(p),
     centroid: parseGeometry(feature),
     severityText: cleanSeverity(p.severitydata && p.severitydata.severitytext),
+    description: stripHtml(p.htmldescription || p.description).slice(0, 400) || null,
     reportUrl: (p.url && p.url.report) || null,
     dateModified: p.datemodified || null,
     observed_at: observedAt || null,
@@ -124,6 +138,7 @@ function buildSituation(prev, obs, nowIso, ttl) {
     gdacs_severity_text: sevText,
     gdacs_report_url: obs.reportUrl || null,
     gdacs_date_modified: obs.dateModified || null,
+    gdacs_description: obs.description || null,
     affected_count: affected.length,
   };
   const base = {
@@ -137,6 +152,7 @@ function buildSituation(prev, obs, nowIso, ttl) {
     tier,
     iso3_origin: obs.iso3_origin && obs.iso3_origin.length ? obs.iso3_origin : affected.slice(0, 1),
     iso3_affected: affected,
+    affected_names: obs.affected_names || [],
     centroid: obs.centroid || (prev && prev.centroid) || null,
     spread_arcs: Array.isArray(prev && prev.spread_arcs) ? prev.spread_arcs : [],
     opened_at: (prev && prev.opened_at) || nowIso,

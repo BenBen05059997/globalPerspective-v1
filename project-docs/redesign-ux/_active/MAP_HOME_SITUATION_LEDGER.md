@@ -155,7 +155,7 @@ Notes: topology-load-failure path is moot now (bundled, not fetched). Full `?t=`
 ## Stage S4.5 — Legibility & honesty pass (added 2026-09-08 after the first browser review; plan §12) — **gate before any prod deploy of /map**
 
 ### S4.5 · T1 — Legend-as-coverage + briefing lede + coverage note
-Status: 🔭 todo
+Status: ✅ done — legend coverage-statement + briefing lede + coverage note + empty-state; browser-verified
 Reads/refs: plan §12 (findings 1–3); `SituationHome.jsx`, `SituationMap.jsx`; tracker `deriveLede` (`newsSituationTracker/src/index.js`)
 Changes: legend with live per-axis counts (conflict/political/economic/humanitarian; inactive dimmed "none active"); tracker `deriveLede` → real briefing sentence from counts by axis + top item + what is NOT tracked; coverage note while the news layer is absent ("Tracking severe natural disasters (GDACS). Conflict, political and economic situations arrive with the news layer."); in-map empty/low-coverage state (<3 situations) showing legend + note
 Docs to update: `DATA_STRATEGY.md` §5 (lede contract) · `CHANGES.md`
@@ -164,7 +164,7 @@ Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] browser
 Commit: —
 
 ### S4.5 · T2 — Freshness: fix future-time bug + one truthful claim
-Status: 🔭 todo
+Status: ✅ done — fmtIn future-time fix + app 'Updated hourly' strip hidden on /map (Layout useLocation); one freshness claim
 Reads/refs: `SituationHome.jsx` `fmtAgo`; app header `StatusStrip` ("LIVE · Updated hourly") in `Layout.jsx`/`atoms/StatusStrip`
 Changes: `fmtIn()` for future stamps ("next in 25 min"); hide the app StatusStrip on this page or drive it from the bundle — never two freshness claims
 Docs to update: `CHANGES.md`
@@ -173,7 +173,7 @@ Done-check: [ ] code  [ ] CHANGES  [ ] browser
 Commit: —
 
 ### S4.5 · T3 — Rich, plain-language detail card + richer GDACS observation
-Status: 🔭 todo
+Status: ✅ done — rich card: GDACS description + severity + affected_names + timeline + report-first + plain state labels + honest no-AI note; observation += description/affected_names
 Reads/refs: plan §12 (findings 6–7); `situations-core.js buildObservation` (both copies); `SituationHome.jsx` detail panel; GDACS feed fields (`description`, `severitydata`, population in `htmldescription`)
 Changes: observation += `description`, `population` (parse from GDACS), keep `severityText`; card: report link first, description, severity text, population affected, full country names (via `countryMapping`), timeline (opened / last change), state labels New/Getting worse/Ongoing/Easing/Ended, "Deterministic alert from UN/EU GDACS — no AI analysis at Orange level" (Option A wording); for `threadId` situations: outlets count + latest headlines (S3 data)
 Docs to update: `DATA_STRATEGY.md` §5 (observation/summary fields) · `ARCHITECTURE.md` (Situations object shape) · `CHANGES.md`
@@ -182,7 +182,7 @@ Done-check: [ ] backend  [ ] frontend  [ ] docs  [ ] CHANGES  [ ] browser
 Commit: —
 
 ### S4.5 · T4 — Map basics: crop ±60°, hover tooltip, zoom/pan, stronger severity scale
-Status: 🔭 todo
+Status: ✅ done — crop ±60° (FRAME fitSize), hover tooltip, d3-zoom pan/zoom, wider TIER_R + glow on elevated
 Reads/refs: `SituationMap.jsx`; plan §12 (findings 4, 8)
 Changes: `fitExtent` to ±60° lat; d3-zoom pan/zoom; hover tooltip (label · tier · state · ago); radius scale widened + glow for elevated too (interim until S5 columns)
 Docs to update: `CHANGES.md`

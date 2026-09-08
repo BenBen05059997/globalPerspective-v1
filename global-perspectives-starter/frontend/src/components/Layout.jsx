@@ -179,6 +179,9 @@ function Layout({ children }) {
         )}
       </div>
 
+      {/* The situation map carries its own live, per-source freshness line — hide the static
+          "Updated hourly" strip there so the page never shows two conflicting freshness claims. */}
+      {location.pathname !== '/map' && (
       <div className="gp-strip">
         <span className="gp-strip-live">
           <span className="gp-dot-live" />
@@ -195,6 +198,7 @@ function Layout({ children }) {
         <span className="gp-strip-sep">·</span>
         <span>AI-powered global news intelligence</span>
       </div>
+      )}
 
       <main className="gp-main">
         <div className="container">

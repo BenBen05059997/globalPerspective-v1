@@ -45,3 +45,26 @@
 .sh-muted { color: var(--sh-muted); font-size: 13px; }
 .sh-detail a { color: #6cb6ff; text-decoration: none; }
 .sh-detail a:hover { text-decoration: underline; }
+
+/* S4.5: map overlays, tooltip, richer card */
+.sh-mapwrap { position: relative; }
+.sh-mapinner { position: relative; }
+.sm-wrap { position: relative; }
+.sm-tip { position: absolute; pointer-events: none; opacity: 0; transition: opacity 0.12s; background: #0d1017; border: 1px solid var(--sh-border); color: var(--sh-text); font-size: 12px; padding: 6px 9px; border-radius: 7px; z-index: 5; max-width: 240px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+.sh-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; position: absolute; left: 12px; bottom: 12px; z-index: 4; background: rgba(13,16,23,0.72); border: 1px solid var(--sh-border); border-radius: 9px; padding: 8px 12px; font-size: 12px; backdrop-filter: blur(3px); }
+.sh-leg { display: inline-flex; align-items: center; gap: 6px; color: var(--sh-text); }
+.sh-leg b { color: var(--sh-muted); font-weight: 500; }
+.sh-leg-off { opacity: 0.4; }
+.sh-leg-dot { width: 9px; height: 9px; border-radius: 50%; }
+.sh-coverage { margin: 10px 2px 0; font-size: 13px; color: var(--sh-muted); }
+
+.sh-badge { font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--sh-border); }
+.sh-badge-high { color: #ffb4a2; border-color: #6b2f22; background: #2a140f; }
+.sh-badge-elevated { color: #f2d492; border-color: #4a3f16; background: #241f0d; }
+.sh-badge-moderate, .sh-badge-low { color: var(--sh-muted); }
+.sh-report { font-weight: 600; }
+.sh-desc { font-size: 13px; margin: 8px 0; color: var(--sh-text); }
+.sh-facts { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 10px 0; font-size: 13px; }
+.sh-facts dt { color: var(--sh-muted); }
+.sh-facts dd { margin: 0; }
+.sh-note { font-size: 12px; color: var(--sh-muted); font-style: italic; margin-top: 8px; }

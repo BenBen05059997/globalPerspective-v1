@@ -53,7 +53,7 @@ Changes: DONE — IAM user `gp-worker-s3-reader` + read-only policy (GetObject o
 Docs to update: `ARCHITECTURE.md` (S3 read path + reader user) ✅ · memory `project_cloudflare_worker` ✅ · `CHANGES.md` ✅
 Verify / exit: ✅ **SigV4 proven against real S3 from Node** (200, correct fixture, then test key deleted). ⛔ remaining (operator): mint fresh `gp-worker-s3-reader` key → set Worker secrets `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` → deploy Worker → `curl https://globalperspective.net/data/world/latest.json` returns 200. `npm run dev` render-from-fixture verifies in S4·T1 (consumer doesn't exist yet).
 Done-check: [x] worker code  [x] fixture+upload  [x] reader IAM  [x] SigV4 proven  [ ] **Cloudflare deploy (operator)**  [x] docs  [x] CHANGES
-Commit: <pending>
+Commit: `065b4be` (code; Cloudflare deploy pending operator)
 Notes: reader user currently has 0 access keys (test key deleted after proving SigV4 — secret never entered repo/transcript). `world/latest.json` currently serves the fixture; the tracker (S2) overwrites it with live data.
 
 ---

@@ -28,8 +28,8 @@ const METRIC_NS = process.env.METRIC_NS || 'GlobalPerspective/Situations';
 
 // Prefixes differ in shadow so DRY_RUN is a fully parallel universe.
 const P = DRY_RUN
-  ? { state: 'shadow/situations/state', index: 'shadow/situations/index.json', history: 'shadow/situations/history', world: 'world/shadow/latest.json', worldSnap: 'world/shadow', worldMember: 'world/shadow/latest.member.json' }
-  : { state: 'situations/state', index: 'situations/index.json', history: 'situations/history', world: 'world/latest.json', worldSnap: 'world', worldMember: 'world/latest.member.json' };
+  ? { state: 'shadow/situations/state', index: 'shadow/situations/index.json', history: 'shadow/situations/history', archive: 'shadow/situations/archive', world: 'world/shadow/latest.json', worldSnap: 'world/shadow', worldMember: 'world/shadow/latest.member.json' }
+  : { state: 'situations/state', index: 'situations/index.json', history: 'situations/history', archive: 'situations/archive', world: 'world/latest.json', worldSnap: 'world', worldMember: 'world/latest.member.json' };
 const INBOX_PREFIX = 'situations/inbox/';
 const TIER_RANK = { high: 0, elevated: 1, moderate: 2, low: 3 };
 
@@ -58,13 +58,14 @@ function foldSweep(priorStates, observations, nowIso, ttl, opts = {}) {
     if (change !== 'unchanged') changes.push({ id, change });
   }
 
+  const dropped = [];
   // Situations in prior state but absent from the snapshot → cool, then maybe close.
   for (const [id, prev] of Object.entries(priorStates)) {
     if (obsById.has(id)) continue;
     if (prev.state === 'closed') {
-      // keep briefly for the map's grey-out, then drop
+      // keep briefly for the map's grey-out, then drop (→ handler archives the object)
       const ageH = (new Date(nowIso) - new Date(prev.closed_at || prev.last_change_at || nowIso)) / 3.6e6;
-      if (ageH <= (opts.keepHours ?? CLOSED_KEEP_HOURS)) states[id] = prev; // else dropped (omitted)
+      if (ageH <= (opts.keepHours ?? CLOSED_KEEP_HOURS)) states[id] = prev; else dropped.push(id);
       continue;
     }
     const { change, item } = coolSituation(prev, null, nowIso, ttl);
@@ -82,7 +83,7 @@ function foldSweep(priorStates, observations, nowIso, ttl, opts = {}) {
     }
     states[id] = item;
   }
-  return { states, changes, counts };
+  return { states, changes, counts, dropped };
 }
 
 function summarize(state) {
@@ -216,13 +217,25 @@ exports.handler = async () => {
   const ttl = Math.floor(Date.now() / 1000) + SITUATION_TTL_DAYS * 86400;
 
   const [{ observations, gdacsObservedAt, processedKeys }, priorStates] = await Promise.all([readObservations(), loadPriorStates()]);
-  const { states, changes, counts } = foldSweep(priorStates, observations, now, ttl);
+  const { states, changes, counts, dropped } = foldSweep(priorStates, observations, now, ttl);
 
   // Persist changed state objects; write index; write history + world bundle.
   const openIds = Object.keys(states);
   const summaries = Object.values(states).map(summarize);
   await Promise.all(Object.entries(states).map(([id, st]) => putJson(`${P.state}/${encodeURIComponent(id)}.json`, st)));
   await putJson(P.index, { updated_at: now, ids: openIds, situations: summaries });
+
+  // Aged-out closed situations: move state → archive (durable record of the full life story),
+  // don't orphan them. (Prior state we still hold, so we can write the archive from memory.)
+  for (const id of dropped) {
+    const prev = priorStates[id];
+    if (!prev) continue;
+    try {
+      await putJson(`${P.archive}/${encodeURIComponent(id)}.json`, { ...prev, archived_at: now });
+      const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
+      await s3().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: `${P.state}/${encodeURIComponent(id)}.json` }));
+    } catch (e) { console.warn('[tracker] archive failed', id, e.message); }
+  }
 
   const world = assembleWorld(states, now, { gdacs: gdacsObservedAt });
   const memberWorld = { ...world, _member: true }; // same content for now; gated depth arrives with stories (S3)
@@ -247,7 +260,14 @@ exports.handler = async () => {
   }
 
   const openCount = summaries.filter((s) => s.state !== 'closed').length;
-  await Promise.all([putMetric('SituationsOpen', openCount), putMetric('ChecksRun', 1), putMetric('Changes', changes.length), putMetric('LLMCallsToday', 0)]);
+  // Per-transition counts make the cooling/close rule tunable against live churn (CLOSE_AFTER_COOL_CHECKS,
+  // GDACS_STALE_MIN are env knobs — no redeploy needed to tune).
+  await Promise.all([
+    putMetric('SituationsOpen', openCount), putMetric('ChecksRun', 1), putMetric('Changes', changes.length),
+    putMetric('Opened', counts.opened || 0), putMetric('Raised', counts.raised || 0), putMetric('Spread', counts.spread || 0),
+    putMetric('Cooled', counts.cooled || 0), putMetric('Closed', counts.closed || 0),
+    putMetric('Observations', observations.length), putMetric('Stale', world.stale ? 1 : 0), putMetric('LLMCallsToday', 0),
+  ]);
   const result = { ok: true, mode: DRY_RUN ? 'shadow' : 'live', observations: observations.length, open: openCount, counts, changes: changes.length, movedInbox: moved, stale: world.stale };
   console.log(`[tracker] ${JSON.stringify(result)}`);
   return result;

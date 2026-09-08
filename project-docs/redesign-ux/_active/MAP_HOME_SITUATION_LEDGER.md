@@ -84,13 +84,15 @@ Done-check: [x] code  [x] IAM  [x] deploy+schedule  [x] shadow-bundle verified  
 Commit: `d390c72`
 Notes: lede is deterministic-from-situations for now (composeTopicsLede/topics enrichment + systemic-from-markets deferred — good S2·T2 or S3 add). `situations-core.js` duplicated in newsGdacsIngest + newsSituationTracker (manual-deploy repo, no layers) — keep in sync; candidate for a Lambda layer later.
 
-### S2 · T2 — Flip tracker from shadow to live `world/latest.json`
-Status: 🔭 todo (gated on S2·T1 shadow week + S4·T1)
-Changes: `DRY_RUN=false`; Worker cache purge; `newsFreshnessMonitor` probes `world/latest.json` age
-Docs to update: `ARCHITECTURE.md` · `CHANGES.md`
-Verify / exit: live bundle updates every 10 min; monitor alarms on a stalled tracker
-Done-check: [ ] flip  [ ] monitor  [ ] docs  [ ] CHANGES
-Commit: —
+### S2 · T2 — Flip tracker to live `world/latest.json` + continuous tuning (replaces the shadow week)
+Status: ✅ done (2026-09-08)
+Reasoning: the shadow week was to tune NEWS-driven escalation thresholds — but those signals arrive with S3; GDACS input is deterministic (nothing to tune). Live is safe because nothing consumes `world/latest.json` in the UI yet (S4). So we flip now and move the safety to metrics + alarms + env knobs, tuning against real churn continuously.
+Changes: `DRY_RUN=false` (flipped, live-verified); per-transition metrics (Opened/Raised/Spread/Cooled/Closed/Observations/Stale); env-tunable knobs `CLOSE_AFTER_COOL_CHECKS`/`GDACS_STALE_MIN`/`CLOSED_KEEP_HOURS` (no redeploy); **archive-on-drop** (closed+aged → `situations/archive/<id>.json`, IA-30d rule) so life stories aren't orphaned; `scripts/situations-log.mjs` transition digest; two alarms → `GlobalPerspectiveAlerts` (`situation-tracker-stalled` 30-min no-sweep, `situation-tracker-errors`)
+Docs to update: `ARCHITECTURE.md` ✅ · `DATA_STRATEGY.md` (archive prefix) ✅ · `CHANGES.md` ✅ · memory ✅
+Verify / exit: ✅ live invoke → `world/latest.json` real (China flood), Worker serves it (not fixture), inbox → 4 processed; alarms created; digest runs; 7 tests pass. Freshness handled by the `situation-tracker-stalled` alarm (cleaner than a `newsFreshnessMonitor` probe — that probe is NOT needed).
+Done-check: [x] flip  [x] alarms  [x] metrics/knobs  [x] archive  [x] digest  [x] docs  [x] CHANGES
+Commit: <pending>
+Notes: tune over the next days with `node scripts/situations-log.mjs --days 3`; watch `Cooled`/`Closed` vs `Observations` — if GDACS's ~100-event window drops active events and causes flapping, raise `CLOSE_AFTER_COOL_CHECKS` via `update-function-configuration` (merge env).
 
 ---
 

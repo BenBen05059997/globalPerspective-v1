@@ -52,9 +52,10 @@ t('fold: disappearance → cools, then closes after N sweeps', () => {
 t('fold: closed situation dropped after keepHours', () => {
   let states = foldSweep({}, [obs()], NOW, TTL).states;
   for (let i = 1; i <= 3; i++) states = foldSweep(states, [], `2026-09-08T0${i}:00:00.000Z`, TTL, { closeAfter: 3 }).states;
-  // closed_at ≈ 03:00; fold 2h later with a 1h keep window → dropped
-  const after = foldSweep(states, [], '2026-09-08T05:00:00.000Z', TTL, { keepHours: 1 }).states;
-  assert.ok(!('gdacs#FL#1' in after), 'closed situation should be dropped');
+  // closed_at ≈ 03:00; fold 2h later with a 1h keep window → dropped (and reported for archiving)
+  const r2 = foldSweep(states, [], '2026-09-08T05:00:00.000Z', TTL, { keepHours: 1 });
+  assert.ok(!('gdacs#FL#1' in r2.states), 'closed situation should be dropped from state');
+  assert.deepStrictEqual(r2.dropped, ['gdacs#FL#1'], 'dropped id reported for archiving');
 });
 
 t('assembleWorld: shape + ranked order (high+escalating first)', () => {

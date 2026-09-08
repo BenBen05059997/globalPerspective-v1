@@ -42,7 +42,8 @@ Nothing else goes in DynamoDB. A new table needs an explicit exception recorded 
 | `stories/state/<storyId>.json`, `stories/index.json` | `newsSituationIngest` | hourly | tracker, map detail |
 | `situations/inbox/<ts>-<source>-<id>.json` | **openers** (`newsGdacsIngest`, `newsBreakingAlert`, later GDELT) — append only | 20 min / 4h | tracker |
 | `situations/state/<id>.json`, `situations/index.json` | `newsSituationTracker` | 10-min sweep | map, thread/country pages |
-| `situations/history/YYYY/MM/DD/HHMM.json` | `newsSituationTracker` | each sweep | scrubber |
+| `situations/archive/<id>.json` | `newsSituationTracker` | on close+age-out | audit / life-story record (IA 30d) |
+| `situations/history/YYYY/MM/DD/HH/HHMM.json` | `newsSituationTracker` | each sweep | scrubber, `scripts/situations-log.mjs` |
 | `world/latest.json`, `world/YYYY/MM/DD/HHMM.json` | `newsSituationTracker` (assembles at end of sweep) | each sweep | **frontend** (via Worker) |
 | `world/latest.member.json` | `newsSituationTracker` | each sweep | frontend, JWT-gated at the Worker |
 | `world/shadow/…` | tracker in `DRY_RUN` | each sweep | humans, tuning |

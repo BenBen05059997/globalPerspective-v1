@@ -47,14 +47,14 @@ Commit: `bce4193`
 Notes: **could not** test PutObject *as the gdacs role* — Lambda execution roles trust `lambda.amazonaws.com`, not the admin user, so no assume-role path. Verified the grant by policy inspection + admin round-trip; the role's actual write is exercised when GDACS runs in S1. `world/` expire rule is safe for `latest*.json` (continuously overwritten → never ages to 400d).
 
 ### S0 · T3 — Cloudflare Worker `/data/*` route + fixture
-Status: 🔧 active — code+infra done; ⛔ **BLOCKED ON OPERATOR** for the Cloudflare deploy (no Cloudflare creds here)
-Reads/refs: `project-docs/distribution/WORKER_FULL_CODE.md` (Worker source doc); `DATA_STRATEGY.md` §3.6, §5; memory `project_cloudflare_worker`
-Changes: DONE — IAM user `gp-worker-s3-reader` + read-only policy (GetObject on world/*, situations/state/*, stories/state/*); SigV4 GET + `/data/*` route written into `WORKER_FULL_CODE.md` (`env` param added, key whitelist `DATA_ALLOWED`, `s-maxage=300`, member fail-closed stub); `frontend/fixtures/world.json` authored + uploaded to `s3://…/world/latest.json`; `fixtures/README.md` (VITE_WORLD_URL dev convention)
-Docs to update: `ARCHITECTURE.md` (S3 read path + reader user) ✅ · memory `project_cloudflare_worker` ✅ · `CHANGES.md` ✅
-Verify / exit: ✅ **SigV4 proven against real S3 from Node** (200, correct fixture, then test key deleted). ⛔ remaining (operator): mint fresh `gp-worker-s3-reader` key → set Worker secrets `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` → deploy Worker → `curl https://globalperspective.net/data/world/latest.json` returns 200. `npm run dev` render-from-fixture verifies in S4·T1 (consumer doesn't exist yet).
-Done-check: [x] worker code  [x] fixture+upload  [x] reader IAM  [x] SigV4 proven  [ ] **Cloudflare deploy (operator)**  [x] docs  [x] CHANGES
-Commit: `065b4be` (code; Cloudflare deploy pending operator)
-Notes: reader user currently has 0 access keys (test key deleted after proving SigV4 — secret never entered repo/transcript). `world/latest.json` currently serves the fixture; the tracker (S2) overwrites it with live data.
+Status: ✅ done (2026-09-08, deployed to prod + live-verified)
+Reads/refs: `project-docs/distribution/WORKER_FULL_CODE.md`; `DATA_STRATEGY.md` §3.6, §5; memory `project_cloudflare_worker`
+Changes: IAM user `gp-worker-s3-reader` + read-only policy; SigV4 GET + `/data/*` route in `WORKER_FULL_CODE.md` (key whitelist `DATA_ALLOWED`, `s-maxage=300`, member fail-closed, **403→404 map** for missing keys since the reader has no ListBucket); `frontend/fixtures/world.json` uploaded to `s3://…/world/latest.json`; `fixtures/README.md`; **deployed to `globalperspective-rss`** (compat date matched at 2026-04-01, routes preserved) with secrets `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` set via stdin
+Docs to update: `ARCHITECTURE.md` ✅ · memory `project_cloudflare_worker` ✅ · `CHANGES.md` ✅
+Verify / exit: ✅ proven in a throwaway CF worker first, then LIVE on `globalperspective.net`: `/data/world/latest.json`→200 (`x-rendered-by: cf-worker-data`, correct bundle), missing→404, member→401, disallowed→404; **regression-clean** — `/rss`→200 XML, bot pre-render→`cf-worker-bot`, passthrough→200
+Done-check: [x] worker code  [x] fixture+upload  [x] reader IAM  [x] SigV4 proven  [x] **Cloudflare deploy (live)**  [x] docs  [x] CHANGES
+Commit: `065b4be` (code) + <this commit> (403→404 fix + deploy record)
+Notes: deploy done by me via authenticated `wrangler` (user added `Bash(wrangler:*)` allow + authorized). Reader user holds exactly 1 active key = the prod Worker secret; test/probe keys deleted, temp files scrubbed — no secret in repo/transcript. `world/latest.json` serves the fixture until the tracker (S2) overwrites it. **Minor follow-up:** the deploy warned that Preview URLs are enabled for the prod worker (workers.dev route on); `/data` there serves the same public bundle, so no data exposure — optionally disable preview_urls later.
 
 ---
 

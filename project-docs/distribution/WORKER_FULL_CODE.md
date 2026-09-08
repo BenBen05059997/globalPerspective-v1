@@ -278,7 +278,10 @@ export default {
       }
       try {
         const upstream = await s3Get(key, env);
-        if (upstream.status === 404) {
+        // The reader IAM user has GetObject but not ListBucket, so S3 answers a MISSING key with
+        // 403 (not 404) to avoid leaking existence. Auth is proven working by the bundles that do
+        // resolve, so treat 403/404 here as "not there yet" for the client.
+        if (upstream.status === 404 || upstream.status === 403) {
           return new Response(JSON.stringify({ error: 'not generated yet' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
         }
         if (!upstream.ok) {

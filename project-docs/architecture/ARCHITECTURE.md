@@ -828,7 +828,7 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 
 **IAM (per-writer, least-privilege):** `newsGdacsIngest-role` has `s3:PutObject` on `situations/inbox/*` + `gdacs/*` (added S0·T2; its temporary DDB `GlobalPerspectiveSituations` grant is removed in S1). Tracker/ingest roles are created with their Lambdas (S2/S3), each `PutObject` scoped to its own prefixes. **Reader:** IAM user `gp-worker-s3-reader` (created S0·T3), inline policy `gp-worker-s3-read` = `s3:GetObject` on `world/*`, `situations/state/*`, `stories/state/*` — its access key lives in the Cloudflare Worker's secret store (`S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY`).
 
-**Read path:** the browser fetches `/data/<key>` from the Cloudflare Worker (`WORKER_FULL_CODE.md` `/data/*` route), which SigV4-signs a GET to this bucket and edge-caches public bundles (`s-maxage=300`). The SigV4 code was proven against real S3 (2026-09-08). `*.member.json` is fail-closed until the Firebase JWKS check ships. **Bucket stays private** — no public-read.
+**Read path (LIVE 2026-09-08):** the browser fetches `/data/<key>` from the Cloudflare Worker `globalperspective-rss` (`WORKER_FULL_CODE.md` `/data/*` route), which SigV4-signs a GET to this bucket and edge-caches public bundles (`s-maxage=300`). Verified live: `https://globalperspective.net/data/world/latest.json` → 200 (`x-rendered-by: cf-worker-data`). A missing key returns 404 (Worker maps S3's 403 → 404, since the reader has no ListBucket). `*.member.json` is fail-closed (401) until the Firebase JWKS check ships. **Bucket stays private** — no public-read.
 
 ## DynamoDB Tables
 

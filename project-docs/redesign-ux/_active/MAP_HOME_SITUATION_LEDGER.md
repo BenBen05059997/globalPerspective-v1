@@ -204,7 +204,7 @@ Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
 ### S5 · T2 — Globe fly-to, idle tour, scrubber, honesty states
-Status: 🔭 todo
+Status: ✅ done (fly-to + tour + source-aware card; browser-verified, source only) — click/tour flies the camera to a situation (FlyToInterpolator); idle tour auto-advances through the top 6 (⏸/▶ toggle, localStorage gp_map_tour, pauses on manual click, 3D-only); detail card source-aware (news → outlets/coverage/spread + headlines + "aggregated from live news" note; GDACS → official report + deterministic note); stale grey-out already covered by page-level .sh-stale filter. **Scrubber (history replay) deferred** — separate follow-up; needs a timeline UI over world/YYYY/MM/DD/HH snapshots.
 Changes: fly-to; tour (`gp_map_tour`); scrubber over `world/YYYY/MM/DD/HHMM.json`; grey-out on `stale`; empty-world line; hover facts
 Docs to update: `ARCHITECTURE.md` · `CHANGES.md`
 Verify / exit: scrubber replays real shadow history; forced-stale greys; tour pauses on input

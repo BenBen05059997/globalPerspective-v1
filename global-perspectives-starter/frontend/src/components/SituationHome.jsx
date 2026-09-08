@@ -1,4 +1,4 @@
-import { useMemo, useCallback, lazy, Suspense } from 'react';
+import { useMemo, useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '../hooks/useWorld.js';
 import SituationMap, { AXIS_HUE } from './SituationMap.jsx';
@@ -51,7 +51,22 @@ export default function SituationHome() {
     setParams((p) => { const n = new URLSearchParams(p); if (id) n.set('focus', id); else n.delete('focus'); return n; }, { replace: true });
   }, [setParams]);
 
-  const ranked = world?.ranked || [];
+  const ranked = useMemo(() => world?.ranked || [], [world]);
+
+  // Idle tour — fly between the top situations; pause on manual interaction (3D only).
+  const [tourOn, setTourOn] = useState(() => { try { return USE_3D && localStorage.getItem('gp_map_tour') !== 'off'; } catch { return false; } });
+  const tourIdx = useRef(0);
+  useEffect(() => {
+    if (!tourOn || !USE_3D) return undefined;
+    const top = ranked.slice(0, 6);
+    if (top.length < 2) return undefined;
+    const iv = setInterval(() => { tourIdx.current = (tourIdx.current + 1) % top.length; select(top[tourIdx.current].id); }, 6500);
+    return () => clearInterval(iv);
+  }, [tourOn, ranked, select]);
+  const setTour = useCallback((on) => { setTourOn(on); try { localStorage.setItem('gp_map_tour', on ? 'on' : 'off'); } catch { /* storage blocked */ } }, []);
+  // A manual click takes control: stop the tour, then select.
+  const userSelect = useCallback((id) => { setTour(false); select(id); }, [setTour, select]);
+
   const open = useMemo(() => situations.filter((s) => s.state !== 'closed'), [situations]);
   const counts = useMemo(() => {
     const c = { conflict: 0, political: 0, economic: 0, humanitarian: 0 };
@@ -71,6 +86,11 @@ export default function SituationHome() {
           {world?.next_expected_at && !stale ? <span className="sh-next"> · next {fmtIn(world.next_expected_at)}</span> : null}
         </div>
         <div className="sh-title">What’s happening in the world right now</div>
+        {USE_3D && ranked.length >= 2 ? (
+          <button className="sh-tour" onClick={() => setTour(!tourOn)} aria-pressed={tourOn} title="Auto-tour the top situations">
+            {tourOn ? '⏸ Pause tour' : '▶ Tour'}
+          </button>
+        ) : null}
       </header>
 
       {world?.lede ? <p className="sh-lede">{world.lede}</p> : null}
@@ -80,10 +100,10 @@ export default function SituationHome() {
         <div className="sh-mapinner">
           {USE_3D ? (
             <Suspense fallback={<div className="sh-maploading">Loading map…</div>}>
-              <SituationMap3D situations={situations} selectedId={focus} onSelect={select} />
+              <SituationMap3D situations={situations} selectedId={focus} onSelect={userSelect} />
             </Suspense>
           ) : (
-            <SituationMap situations={situations} selectedId={focus} onSelect={select} />
+            <SituationMap situations={situations} selectedId={focus} onSelect={userSelect} />
           )}
           <div className="sh-legend" aria-label="What the map watches">
             {AXES.map((a) => (
@@ -110,7 +130,7 @@ export default function SituationHome() {
               const s = situations.find((x) => x.id === r.id);
               return (
                 <li key={r.id} className={r.id === focus ? 'sh-active' : ''}>
-                  <button onClick={() => select(r.id)}>
+                  <button onClick={() => userSelect(r.id)}>
                     <span className="sh-chip" style={{ background: AXIS_HUE[s?.axis] || '#9aa4b2' }} />
                     <span className="sh-rt">{TIER_LABEL[r.tier] || r.tier}{r.escalating ? ' ▲' : ''}</span>
                     <span className="sh-rl">{r.title}</span>
@@ -132,15 +152,25 @@ export default function SituationHome() {
               </div>
               {ev.gdacs_report_url ? <p><a className="sh-report" href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a></p> : null}
               {ev.gdacs_description ? <p className="sh-desc">{ev.gdacs_description}</p> : (selected.what_changed ? <p className="sh-desc">{selected.what_changed}</p> : null)}
+              {selected.source === 'news' && ev.headlines?.length ? (
+                <ul className="sh-heads">
+                  {ev.headlines.slice(0, 4).map((h) => (
+                    <li key={h.url}><a href={h.url} target="_blank" rel="noreferrer">{h.title}</a> <span className="sh-src">{h.domain}</span></li>
+                  ))}
+                </ul>
+              ) : null}
               <dl className="sh-facts">
                 {ev.gdacs_severity_text ? <><dt>Severity</dt><dd>{ev.gdacs_severity_text}</dd></> : null}
+                {selected.source === 'news' && ev.outlets ? <><dt>Coverage</dt><dd>{ev.outlets} outlet{ev.outlets === 1 ? '' : 's'}</dd></> : null}
                 {(selected.affected_names?.length || selected.iso3_affected?.length)
                   ? <><dt>Affected</dt><dd>{selected.affected_names?.length ? selected.affected_names.join(', ') : selected.iso3_affected.join(', ')}</dd></> : null}
                 <dt>First seen</dt><dd>{fmtAgo(selected.opened_at)}</dd>
               </dl>
               {selected.threadId
                 ? <p><Link to={`/weekly/thread/${encodeURIComponent(selected.threadId)}`}>Full analysis →</Link></p>
-                : <p className="sh-note">Deterministic alert from UN/EU GDACS — no AI analysis is generated at this level.</p>}
+                : <p className="sh-note">{selected.source === 'gdacs'
+                    ? 'Deterministic alert from UN/EU GDACS — no AI analysis is generated at this level.'
+                    : 'Aggregated from live news coverage — AI analysis is not yet generated for this situation.'}</p>}
             </>
           ) : (
             <p className="sh-muted">Select a situation to see what changed and why.</p>

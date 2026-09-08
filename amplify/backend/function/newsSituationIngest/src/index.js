@@ -145,7 +145,7 @@ exports.handler = async () => {
   const hk = now.slice(0, 13).replace(/[:T-]/g, '/');
   await putObj(`corpus/${hk.slice(0, 10)}/${now.slice(11, 13)}.jsonl`, classified.map((c) => JSON.stringify(c)).join('\n'), 'application/x-ndjson');
   await Promise.all(stories.map((s) => putObj(`stories/state/${storyKey(s.storyId)}.json`, s)));
-  await putObj('stories/index.json', { updated_at: now, count: stories.length, stories: stories.map((s) => ({ storyId: s.storyId, axis: s.axis, category: s.category, title: s.title, iso3: s.iso3, centroid: s.centroid, max_severity: s.max_severity, outlets: s.outlets, velocity: s.velocity, spread_new_iso3: s.spread_new_iso3, first_seen: s.first_seen, last_seen: s.last_seen, entities: s.entities })) });
+  await putObj('stories/index.json', { updated_at: now, count: stories.length, stories: stories.map((s) => ({ storyId: s.storyId, axis: s.axis, category: s.category, title: s.title, iso3: s.iso3, centroid: s.centroid, max_severity: s.max_severity, outlets: s.outlets, velocity: s.velocity, spread_new_iso3: s.spread_new_iso3, first_seen: s.first_seen, last_seen: s.last_seen, entities: s.entities, headlines: (s.headlines || []).slice(0, 3) })) });
 
   await Promise.all([putMetric('IngestArticles', classified.length), putMetric('IngestStories', stories.length), putMetric('ClassifierLLMCallsToday', llmCalls)]);
   const top = stories.slice(0, 5).map((s) => `${s.title} [${s.axis} sev${s.max_severity} ${s.outlets}o]`);

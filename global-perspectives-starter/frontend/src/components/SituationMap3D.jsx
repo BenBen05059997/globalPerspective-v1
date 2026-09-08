@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
-import { MapView } from '@deck.gl/core';
+import { MapView, FlyToInterpolator } from '@deck.gl/core';
 import { GeoJsonLayer, ColumnLayer, ScatterplotLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import topoData from '../assets/countries-110m.json';
@@ -29,6 +29,17 @@ const INITIAL_VIEW = { longitude: 12, latitude: 18, zoom: 1.2, pitch: 54, bearin
  */
 export default function SituationMap3D({ situations = [], selectedId, onSelect, height = 560 }) {
   const [viewState, setViewState] = useState(INITIAL_VIEW);
+  const userMoved = useRef(false);
+
+  // Fly to the selected situation (from a click or the tour); fly back to the overview when cleared.
+  useEffect(() => {
+    const sel = situations.find((s) => s.id === selectedId && s.centroid);
+    if (sel) {
+      setViewState((v) => ({ ...v, longitude: sel.centroid.lon, latitude: sel.centroid.lat - 6, zoom: 3.2, pitch: 52, transitionDuration: 1400, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }) }));
+    } else if (userMoved.current) {
+      setViewState((v) => ({ ...v, ...INITIAL_VIEW, transitionDuration: 1200, transitionInterpolator: new FlyToInterpolator() }));
+    }
+  }, [selectedId, situations]);
 
   const active = useMemo(() => situations.filter((s) => s.state !== 'closed' && s.centroid), [situations]);
   const closed = useMemo(() => situations.filter((s) => s.state === 'closed' && s.centroid), [situations]);
@@ -75,7 +86,7 @@ export default function SituationMap3D({ situations = [], selectedId, onSelect, 
       <DeckGL
         views={new MapView({ repeat: false })}
         viewState={viewState}
-        onViewStateChange={(e) => setViewState(e.viewState)}
+        onViewStateChange={(e) => { if (e.interactionState?.isDragging || e.interactionState?.isZooming) userMoved.current = true; setViewState(e.viewState); }}
         controller={{ dragRotate: true }}
         layers={layers}
         getTooltip={getTooltip}

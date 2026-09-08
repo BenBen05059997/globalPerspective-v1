@@ -50,7 +50,7 @@ Changes: created table `GlobalPerspectiveSituations` (PK situationId; GSI `state
 Docs to update: `ARCHITECTURE.md` ✅ · `BACKEND_GUIDE.md` ✅ · `IMPACT_FIRST_REDESIGN_PLAN.md` ✅ · `CHANGES.md` ✅
 Verify / exit: ✅ 100/100 events carry coordinates; live Orange event opened 1 situation with 0 model calls; re-run idempotent (`unchanged`); `rate(20 minutes)` confirmed ENABLED; 9 unit tests pass
 Done-check: [x] code  [x] docs  [x] CHANGES  [x] verify/deploy
-Commit: <pending this commit>
+Commit: `623247f`
 Notes: tier vocabulary reconciled — Red→high, Orange→elevated (canonical `riskTiers.js`, no "critical"; map renders critical = high+escalating). GDACS role now allows Situations PutItem/Query. Deployed bundle is index.js+package.json only (SDK from nodejs22.x runtime). One pre-fix artifact: the test row `gdacs#FL#1104081` keeps its original "Magnitude 0" what_changed until its next real change (correct — unchanged preserves prior text).
 
 ### P1 · T2 — `newsArticleClassifier` (per-article structured classification)

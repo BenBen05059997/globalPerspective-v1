@@ -170,6 +170,9 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 - **[REDESIGN_PLAN.md](redesign-ux/_shipped/REDESIGN_PLAN.md)** — v1 redesign + markets data — shipped.
 - **[SITE_ORIENTATION_PLAN.md](redesign-ux/_shipped/SITE_ORIENTATION_PLAN.md)** — Home/nav orientation + bot pre-render — shipped.
 
+**🔧 active**
+- **[MAP_HOME_SITUATION_PLAN.md](redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md)** — Map becomes the home page: per-article ingest classification + GDELT (drops Brave from ingest), GDACS un-shadowed, new `newsSituationTracker` (adaptive re-check cadence), WebGL 2.5D hue-by-crisis-type map. Approved 2026-09-08; execution started P0. Tracked in **[MAP_HOME_SITUATION_LEDGER.md](redesign-ux/_active/MAP_HOME_SITUATION_LEDGER.md)**.
+
 **🔭 proposed**
 - **[REDESIGN_V2_PLAN.md](redesign-ux/_proposed/REDESIGN_V2_PLAN.md)** — v2 redesign — Changes A/B/F built via later plans.
 
@@ -203,6 +206,8 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 - **[AGENT_REVIEW_METHOD.md](playbooks/AGENT_REVIEW_METHOD.md)** — Multi-agent doc/code verification method (used for the 2026-09-08 sweep).
 - **[BUG_PLAYBOOK.md](playbooks/BUG_PLAYBOOK.md)** — On-demand bug-fighting checks (no CI by design).
+- **[PLAN_EXECUTION_PLAYBOOK.md](playbooks/PLAN_EXECUTION_PLAYBOOK.md)** — Declare→do→update loop for a multi-phase plan worked task-by-task across sessions/agents; the durable execution-ledger convention (extends TASK_WORKFLOW).
+- **[TASK_WORKFLOW.md](playbooks/TASK_WORKFLOW.md)** — Single-task declare-then-update (docs-as-code, same-commit rule).
 
 ## Ops & deployment
 

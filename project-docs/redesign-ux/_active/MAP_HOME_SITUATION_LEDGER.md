@@ -61,13 +61,14 @@ Notes: deploy done by me via authenticated `wrangler` (user added `Bash(wrangler
 ## Stage S1 — Openers → inbox
 
 ### S1 · T1 — Re-point `newsGdacsIngest` to inbox events; drop the DDB table
-Status: 🔭 todo
-Reads/refs: `amplify/backend/function/newsGdacsIngest/src/index.js` (as shipped in `623247f`; re-diff vs deployed first); `DATA_STRATEGY.md` §3.2, §4; plan §3.2
-Changes: replace `syncSituations`/DDB writes with `putInboxEvent()` → `situations/inbox/<ts>-gdacs-<eventKey>.json` for every Orange/Red feature **and** for open→Green transitions the tracker needs to know about (emit a `level_changed`/`gone` event by comparing against the previous run's own mirror — GDACS keeps a tiny `gdacs/last-seen.json` it owns); keep `buildEventItem` mirror to DDB until S8; move `buildSituation`/`coolSituation` helpers + tests to a shared `situations-core` module for the tracker; IAM: PutObject `situations/inbox/*` + `gdacs/*`, remove DDB Situations grant; **`aws dynamodb delete-table GlobalPerspectiveSituations`** after confirming zero readers
-Docs to update: `ARCHITECTURE.md` (Situations Table → supersession note; Lambda row) · `BACKEND_GUIDE.md` (row) · `CHANGES.md`
-Verify / exit: inbox objects appear within 20 min for the live Orange event; zero LLM; table deleted; unit tests still pass in the new module
-Done-check: [ ] code  [ ] IAM  [ ] table dropped  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
+Status: ✅ done (2026-09-08, deployed + live-verified)
+Reads/refs: `newsGdacsIngest/src/index.js` (deployed == committed re-verified); `DATA_STRATEGY.md` §3.2, §4
+Changes: new `situations-core.js` (pure: `buildObservation` + fold `buildSituation`/`coolSituation` refactored to take observations) + `situations-core.test.mjs` (11 tests); GDACS rewritten to mirror events (unchanged) + write ONE snapshot `situations/inbox/<ts>-gdacs.json` of current Orange/Red observations (lazy S3 client, no state, NO LLM); removed the DDB Situations grant from `newsGdacsIngest-pol`; **dropped `GlobalPerspectiveSituations`**
+Docs to update: `ARCHITECTURE.md` (table → deleted; Lambda + IAM rows) ✅ · `BACKEND_GUIDE.md` ✅ · `CHANGES.md` ✅
+Verify / exit: ✅ 11 tests pass; deployed; live invoke wrote `situations/inbox/…-gdacs.json` (1 Orange observation, China flood, centroid ok), events mirror still 100/100 geo; zero readers confirmed (code + roles); table gone from `list-tables`
+Done-check: [x] code  [x] IAM  [x] table dropped  [x] docs  [x] CHANGES  [x] verify
+Commit: <pending>
+Notes: **design refinement vs the original ledger** — instead of GDACS diffing against `gdacs/last-seen.json` and emitting per-event level_changed/gone events, GDACS writes a single **observation snapshot** per run and the S2 tracker computes transitions (opened/raised/spread/gone) by folding the snapshot against its own state. Cleaner event-sourcing: openers observe, the folder decides. The fold logic + tests already live in `situations-core.js` ready for S2. `gdacs/last-seen.json` is not needed. Deployed bundle = index.js + situations-core.js + package.json (SDK from runtime).
 
 ---
 

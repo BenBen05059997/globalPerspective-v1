@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-09-08 (fix: newsImpactAudit → deepseek-v4-flash + thinking guard)
+
+Closed the `deepseek-chat` landmine (BACKEND_TODO #3). Confirmed via DeepSeek's current API that `deepseek-chat`/`deepseek-reasoner` were hard-retired 2026-07-24 and the live flash model is `deepseek-v4-flash` (no newer flash since).
+
+- `newsImpactAudit/src/index.js:30` default `'deepseek-chat'` → `'deepseek-v4-flash'`.
+- **Also** added the missing `thinking:{type:'disabled'}` to its request body. `newsImpactAudit` is a signal-api-derived function that missed the 2026-07-26 fleet thinking-patch, so running on V4 it burned `max_tokens` on hidden reasoning (risk of truncated/empty JSON, silently swallowed). Now matches the fleet.
+- ⚠️ **Source-only — not yet deployed** (`update-function-code` on `newsImpactAudit`). Still open: 7 other Lambda sources carry a dead `grok-4-1-fast-non-reasoning` default (env always overrides — lower risk).
+
 ## 2026-09-08 (docs: plan-doc staleness sweep + full docs reorg into `project-docs/`)
 
 Ran a 7-cluster parallel-auditor sweep (`project-docs/playbooks/AGENT_REVIEW_METHOD.md`) over all 53 plan/spec docs, verifying each **Status** claim against real source + live AWS, then a second Sonnet full-read pass that overturned/sharpened 12 verdicts and closed every NEEDS-LIVE-CHECK. Then physically reorganized the docs.

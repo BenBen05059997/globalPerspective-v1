@@ -27,7 +27,7 @@ const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 const MISS_ALERT_THRESHOLD = Number(process.env.MISS_ALERT_THRESHOLD) || 2;
 const API_KEY = process.env.XAI_API_KEY; // legacy name — holds the DeepSeek key in prod
 const API_URL = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
-const MODEL = process.env.GROK_MODEL || 'deepseek-chat';
+const MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash'; // deepseek-chat retired 2026-07-24; v4-flash is the current flash model (verified 2026-09-08)
 const AUDIT_TTL_DAYS = Number(process.env.AUDIT_TTL_DAYS) || 90;
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
@@ -75,6 +75,7 @@ async function audit(input, chosen) {
     headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
+      thinking: { type: 'disabled' }, // V4 thinking-mode burns max_tokens on reasoning_content → truncated/empty output; disable (matches the fleet; this straggler missed the 2026-07-26 patch, added 2026-09-08)
       messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
       temperature: 0.2,
       max_tokens: 2500,

@@ -826,7 +826,9 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 
 **Lifecycle rules:** `corpus/` → IA 30d, expire 400d · `situations/history/` → IA 30d · `world/` → IA 30d, expire 400d (safe: `world/latest*.json` is overwritten every sweep so its age never reaches expiry; only dated snapshots age out) · `situations/inbox/processed/` expire 30d · abort incomplete MPUs 7d.
 
-**IAM (per-writer, least-privilege):** `newsGdacsIngest-role` has `s3:PutObject` on `situations/inbox/*` + `gdacs/*` (added S0·T2; its temporary DDB `GlobalPerspectiveSituations` grant is removed in S1). Tracker/ingest roles are created with their Lambdas (S2/S3), each `PutObject` scoped to its own prefixes; the Worker gets read-only `GetObject` on `world/*`, `situations/state/*`, `stories/state/*` (S0·T3).
+**IAM (per-writer, least-privilege):** `newsGdacsIngest-role` has `s3:PutObject` on `situations/inbox/*` + `gdacs/*` (added S0·T2; its temporary DDB `GlobalPerspectiveSituations` grant is removed in S1). Tracker/ingest roles are created with their Lambdas (S2/S3), each `PutObject` scoped to its own prefixes. **Reader:** IAM user `gp-worker-s3-reader` (created S0·T3), inline policy `gp-worker-s3-read` = `s3:GetObject` on `world/*`, `situations/state/*`, `stories/state/*` — its access key lives in the Cloudflare Worker's secret store (`S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY`).
+
+**Read path:** the browser fetches `/data/<key>` from the Cloudflare Worker (`WORKER_FULL_CODE.md` `/data/*` route), which SigV4-signs a GET to this bucket and edge-caches public bundles (`s-maxage=300`). The SigV4 code was proven against real S3 (2026-09-08). `*.member.json` is fail-closed until the Firebase JWKS check ships. **Bucket stays private** — no public-read.
 
 ## DynamoDB Tables
 

@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "generated_at": "2026-09-08T14:20:00Z",
+  "next_expected_at": "2026-09-08T14:30:00Z",
+  "sources": {
+    "gdacs": "2026-09-08T14:18:00Z",
+    "ingest": "2026-09-08T14:00:00Z",
+    "topics": "2026-09-08T12:00:00Z",
+    "markets": "2026-09-08T14:00:00Z"
+  },
+  "stale": false,
+  "situations": [
+    {
+      "id": "gdacs#FL#1104081",
+      "source": "gdacs",
+      "verb_label": "China — flood",
+      "axis": "humanitarian",
+      "tier": "elevated",
+      "state": "emerging",
+      "escalating": false,
+      "centroid": { "lat": 28.0, "lon": 116.0 },
+      "iso3_affected": ["CHN"],
+      "spread_arcs": [],
+      "opened_at": "2026-09-08T09:20:00Z",
+      "last_change_at": "2026-09-08T09:20:00Z",
+      "what_changed": "GDACS Orange alert opened · flood · 1 country affected",
+      "threadId": null
+    },
+    {
+      "id": "gdacs#TC#1104120",
+      "source": "gdacs",
+      "verb_label": "Philippines — tropical cyclone",
+      "axis": "humanitarian",
+      "tier": "high",
+      "state": "escalating",
+      "escalating": true,
+      "centroid": { "lat": 13.0, "lon": 122.0 },
+      "iso3_affected": ["PHL", "VNM"],
+      "spread_arcs": [{ "from": "PHL", "to": "VNM", "since": "2026-09-08T11:00:00Z" }],
+      "opened_at": "2026-09-08T06:00:00Z",
+      "last_change_at": "2026-09-08T11:00:00Z",
+      "what_changed": "Alert raised Orange→Red · Spread to 1 new country: VNM",
+      "threadId": null
+    },
+    {
+      "id": "breaking#thread-iran-strait-2026-09-08",
+      "source": "breaking",
+      "verb_label": "Hormuz — shipping disrupted",
+      "axis": "conflict",
+      "tier": "high",
+      "state": "escalating",
+      "escalating": true,
+      "centroid": { "lat": 26.6, "lon": 56.3 },
+      "iso3_affected": ["IRN", "ARE", "OMN"],
+      "spread_arcs": [],
+      "opened_at": "2026-09-08T08:00:00Z",
+      "last_change_at": "2026-09-08T13:30:00Z",
+      "what_changed": "9 outlets in the last cycle · velocity 2.4× prior",
+      "threadId": "thread-iran-strait-2026-09-08"
+    }
+  ],
+  "lede": "A Red-alert cyclone is spreading across the western Pacific while shipping disruption in the Strait of Hormuz draws widening coverage.",
+  "systemic": [
+    { "label": "Brent $91 ▲4%", "href": "/economy" },
+    { "label": "Fed hold", "href": "/economy" }
+  ],
+  "ranked": [
+    { "id": "gdacs#TC#1104120", "title": "Philippines — tropical cyclone", "tier": "high", "href": "/map?focus=gdacs%23TC%231104120" },
+    { "id": "breaking#thread-iran-strait-2026-09-08", "title": "Hormuz — shipping disrupted", "tier": "high", "href": "/weekly/thread/thread-iran-strait-2026-09-08" },
+    { "id": "gdacs#FL#1104081", "title": "China — flood", "tier": "elevated", "href": "/map?focus=gdacs%23FL%231104081" }
+  ],
+  "_note": "FIXTURE — hand-authored 2026-09-08 for S0·T3 (read-path proof + local dev). Replaced by the live tracker bundle from S2."
+}

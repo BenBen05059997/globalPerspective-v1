@@ -75,13 +75,14 @@ Notes: **design refinement vs the original ledger** — instead of GDACS diffing
 ## Stage S2 — Tracker (the folder)
 
 ### S2 · T1 — `newsSituationTracker` sweep: inbox → state/index/history → `world/`
-Status: 🔭 todo
-Reads/refs: plan §3.1, WS2 (REVISED), §4 cadence table; `DATA_STRATEGY.md` §4–§5; `situations-core` helpers from S1; `composeTopicsLede` (frontend util → port to Node); `getGeminiTopics` source for lede/ranked inputs; `newsMarketsData` output for `systemic`
-Changes: new Lambda `newsSituationTracker` (Node 22, 512MB, 120s, `rate(10 minutes)`, `DRY_RUN=true` initially → writes `world/shadow/`); role `newsSituationTracker-role` with PutObject on `situations/state|index|history/*`, `world/*`, GetObject on `situations/inbox/*`, `stories/*`, and DeleteObject/move on processed inbox events (`situations/inbox/processed/`); fold logic; `next_check_at` cadence; cheap-detect; templated `what_changed`; LLM narrative gate + `TrackerLLMCallsToday` metric (cap 300); `stale` computation from per-source stamps; assemble `world/latest.json` + `latest.member.json` + `world/YYYY/MM/DD/HHMM.json`
-Docs to update: `ARCHITECTURE.md` (Lambda, schedule, bucket prefixes) · `BACKEND_GUIDE.md` · `CHANGES.md` · memory `project_map_home_situation`
-Verify / exit: unit tests for fold/state machine; 7 days of `world/shadow/` snapshots; thresholds tuned; disasters = 0 model calls; forced-stale fixture → `stale:true`
-Done-check: [ ] code  [ ] IAM  [ ] shadow week  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
+Status: ✅ done — tracker built, deployed, shadow sweeping every 10 min (the ~1-week shadow accrual is the S2·T2 gate, not this row)
+Reads/refs: plan §3.1, WS2 (REVISED), §4; `DATA_STRATEGY.md` §4–§5; `situations-core` from S1
+Changes: new Lambda `newsSituationTracker` (Node 22, 512MB, 120s) + role `newsSituationTracker-role` (least-priv S3 situations/*,world/*,shadow/*,stories/* + scoped ListBucket + PutMetricData); `TriggerSituationTracker` `rate(10 minutes)` + target/permission; fold sweep (buildSituation/coolSituation + close-after-3-cool + drop-after-48h), `situations/state|index|history` + `world/latest.json`(+member+HHMM snapshot); `stale`/`sources`/`lede`/`ranked` derived; `systemic` empty (markets later); NO LLM; metrics `GlobalPerspective/Situations`; `situations-core.js` copied into tracker dir (byte-identical, sync note); 7 unit tests
+Docs to update: `ARCHITECTURE.md` (Lambda + schedule + S3 writers) ✅ · `CHANGES.md` ✅ · memory `project_map_home_situation` ✅
+Verify / exit: ✅ 7 tests pass; deployed; live shadow invoke wrote `world/shadow/latest.json` (China flood, tier elevated, lede/ranked/sources correct) + state/index/history; `movedInbox:0` (shadow doesn't consume inbox); stale=false. **Pending (S2·T2 gate):** ~7 days of shadow snapshots + threshold tuning + forced-stale check.
+Done-check: [x] code  [x] IAM  [x] deploy+schedule  [x] shadow-bundle verified  [x] docs  [x] CHANGES  [ ] shadow-week (→S2·T2)
+Commit: <pending>
+Notes: lede is deterministic-from-situations for now (composeTopicsLede/topics enrichment + systemic-from-markets deferred — good S2·T2 or S3 add). `situations-core.js` duplicated in newsGdacsIngest + newsSituationTracker (manual-deploy repo, no layers) — keep in sync; candidate for a Lambda layer later.
 
 ### S2 · T2 — Flip tracker from shadow to live `world/latest.json`
 Status: 🔭 todo (gated on S2·T1 shadow week + S4·T1)

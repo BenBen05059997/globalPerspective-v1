@@ -828,6 +828,8 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 
 **IAM (per-writer, least-privilege):** `newsGdacsIngest-role` has `s3:PutObject` on `situations/inbox/*` + `gdacs/*` (its temporary DDB `GlobalPerspectiveSituations` grant was removed in S1 when the table was dropped). Tracker/ingest roles are created with their Lambdas (S2/S3), each `PutObject` scoped to its own prefixes. **Reader:** IAM user `gp-worker-s3-reader` (created S0·T3), inline policy `gp-worker-s3-read` = `s3:GetObject` on `world/*`, `situations/state/*`, `stories/state/*` — its access key lives in the Cloudflare Worker's secret store (`S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY`).
 
+**Writers so far:** `newsGdacsIngest` → `situations/inbox/<ts>-gdacs.json` (observation snapshots, every 20 min). `newsSituationTracker` (`TriggerSituationTracker` `rate(10 minutes)`, Node 22 / 512MB / 120s, role `newsSituationTracker-role`) — the **folder**: reads the latest inbox snapshot, folds via `situations-core.js` (`buildSituation`/`coolSituation`) into `situations/state/<id>.json` + `situations/index.json` + `situations/history/…`, and assembles `world/latest.json` (+ `latest.member.json` + `world/YYYY/MM/DD/HH/HHMM.json`). Situations cool when absent from the snapshot and close after 3 cool sweeps (kept 48h for the map's grey-out). Freshness (`stale`, `sources`) is computed here; `lede`/`ranked` are derived from situations; `systemic` is empty until markets wiring. **NO LLM in S2.** Currently `DRY_RUN=true` → writes a parallel universe under `world/shadow/` + `shadow/situations/`, does **not** consume the inbox; flips to live (`world/latest.json`) in S2·T2 after a ~1-week shadow. Metrics: `GlobalPerspective/Situations` (SituationsOpen, ChecksRun, Changes, LLMCallsToday).
+
 **Read path (LIVE 2026-09-08):** the browser fetches `/data/<key>` from the Cloudflare Worker `globalperspective-rss` (`WORKER_FULL_CODE.md` `/data/*` route), which SigV4-signs a GET to this bucket and edge-caches public bundles (`s-maxage=300`). Verified live: `https://globalperspective.net/data/world/latest.json` → 200 (`x-rendered-by: cf-worker-data`). A missing key returns 404 (Worker maps S3's 403 → 404, since the reader has no ListBucket). `*.member.json` is fail-closed (401) until the Firebase JWKS check ships. **Bucket stays private** — no public-read.
 
 ## DynamoDB Tables
@@ -1051,6 +1053,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `TriggerSignalsBuild` | `cron(0 10 * * ? *)` | newsSignals (Signal-API — deployed to prod; source merged to `main` 2026-08-01) |
 | `TriggerImpactAudit` | `cron(0 9 * * ? *)` | newsImpactAudit (impact-first — source merged to `main` 2026-08-01) |
 | `TriggerGdacsIngest` | `rate(20 minutes)` (was `cron(0 */6 * * ? *)`, 2026-09-08) | newsGdacsIngest (GDACS ingest + situation opener) |
+| `TriggerSituationTracker` | `rate(10 minutes)` (2026-09-08) | newsSituationTracker (situation folder; **DRY_RUN shadow** until flipped in S2·T2) |
 | `TriggerGdeltConflict` | `cron(0 */6 * * ? *)` | newsGdeltConflict (GDELT ingest — source merged to `main` 2026-08-01) |
 
 ### EventBridge Scheduler

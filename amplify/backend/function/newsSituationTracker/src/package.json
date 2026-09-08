@@ -1,0 +1,11 @@
+{
+  "name": "newssituationtracker",
+  "version": "1.0.0",
+  "description": "Situation tracker — folds situations/inbox observations into situation state and assembles world/latest.json. Sole writer of situation state (DATA_STRATEGY.md). No LLM in S2.",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/client-cloudwatch": "^3.600.0"
+  }
+}

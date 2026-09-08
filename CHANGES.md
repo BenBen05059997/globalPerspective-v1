@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-09-08 (cleanup: remove dead frontend code — utils/api.js + hooks/useArticles.js)
+
+Removed two orphaned files found during a page-wiring audit:
+- `utils/api.js` — a leftover pre-proxy client targeting a hardcoded `http://localhost:8000` FastAPI backend (`/api/headlines`, `/api/search`, …). Not part of the live wiring; the live seam is `services/restProxy.js`.
+- `hooks/useArticles.js` — the sole importer of `utils/api.js`, itself imported by nothing.
+
+Neither was in the module graph, so the built bundle is unchanged (no redeploy needed); `npm run build` passes. Verified zero remaining references before deletion.
+
 ## 2026-09-08 (fix: LinkedIn deep-links — posts link to the specific story, not a landing page)
 
 Both LinkedIn Lambdas linked readers to a generic page instead of the story they read about. Fixed:

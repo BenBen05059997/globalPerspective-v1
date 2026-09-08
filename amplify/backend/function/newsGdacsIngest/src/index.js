@@ -72,6 +72,11 @@ function buildEventItem(feature, nowIso, ttl) {
   };
 }
 
+// GDACS is a FULL-SNAPSHOT source: each run reports the complete current Orange/Red set. So it writes
+// a STABLE current pointer (situations/inbox/gdacs-latest.json, overwritten), which the tracker reads
+// every sweep as the authoritative GDACS truth. (Contrast with per-event sources like breaking-alert,
+// which append timestamped events.) A stable pointer means a tracker run never sees an empty inbox and
+// spuriously cools live situations.
 async function writeInboxSnapshot(feats, nowIso) {
   const events = [];
   for (const f of feats) {
@@ -80,7 +85,7 @@ async function writeInboxSnapshot(feats, nowIso) {
     if (OPENING_LEVELS.has(p.alertlevel)) events.push(buildObservation(f, nowIso));
   }
   const body = JSON.stringify({ source: 'gdacs', observed_at: nowIso, events });
-  const key = `${INBOX_PREFIX}/${nowIso.replace(/[:.]/g, '-')}-gdacs.json`;
+  const key = `${INBOX_PREFIX}/gdacs-latest.json`;
   const { PutObjectCommand } = require('@aws-sdk/client-s3');
   await s3().send(new PutObjectCommand({ Bucket: WORLD_BUCKET, Key: key, Body: body, ContentType: 'application/json' }));
   return { key, count: events.length };

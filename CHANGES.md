@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-09-08 (S4: frontend map data layer + SituationHome map — browser-verified; + 3 contract fixes)
+
+Built the frontend that makes the pipeline visible (source only — NOT deployed to prod; `./deploy.sh` is a separate gated step). `services/worldData.js` (fetch `world/latest.json` + per-situation detail via the Worker `/data/*`), `hooks/useWorld.js` (`useWorld`/`useSituationDetail`, 5-min visible-tab refresh, `asOf` from oldest source stamp, `stale` = bundle flag ∪ 90-min client guard), `components/SituationMap.jsx` (dark D3 Equal-Earth map; situations from pre-resolved centroids → hue = axis, radius = tier, pulsing ring = escalating, respects reduced-motion), `components/SituationHome.jsx`+css (freshness bar with whole-map grey-out, lede, ranked list, detail panel, `?focus=` URL state). Topology bundled locally (`assets/countries-110m.json`, pinned 2.0.2 — no more unpinned CDN). Routed at `/map`; old z-score map → `/map-legacy` (S6 deletes it). Build + lint clean. **Browser-tested headless (Playwright+chromium): map renders (177 country paths + marker), freshness/lede/list correct, click updates the detail panel + URL, zero console errors.**
+
+Three real contract bugs found and fixed during that testing:
+1. **Tracker spuriously cooled live situations + went stale.** The tracker *consumed* (moved to `processed/`) the GDACS snapshot, so a sweep landing between GDACS runs saw an empty inbox → cooled everything, `sources.gdacs:null`. Fix: GDACS is a full-snapshot source, so it now writes a STABLE pointer `situations/inbox/gdacs-latest.json` (overwritten each run) that the tracker reads every sweep. (amends S1/S2)
+2. **Situation detail 404'd (double-encoding).** situationIds contain `#`; the tracker stored state under `encodeURIComponent` (literal `%23`) while the Worker decodes the path once. Fix: both sides use a URL/S3-safe `stateKey` (`gdacs#FL#1104081` → `gdacs_FL_1104081`).
+3. **Worker 404/401 lacked CORS headers**, so a missing object surfaced as a browser CORS error instead of a clean 404. Fix: all `/data/*` error responses now carry `Access-Control-Allow-Origin`. (Worker redeployed.)
+
+Backend fixes deployed + verified live; Worker redeployed; 7 tracker + 11 gdacs tests pass.
+
 ## 2026-09-08 (tune: situation tracker cadence 10min → 30min)
 
 `world/latest.json` refreshes every 30 min instead of 10 — GDACS only produces new observations every 20 min, so 10-min sweeps mostly folded nothing. `TriggerSituationTracker` → `rate(30 minutes)`, `SWEEP_MIN=30` (drives `next_expected_at`); `situation-tracker-stalled` alarm widened to a 60-min window (period 1800 × 2) to suit the slower cadence. Config only.

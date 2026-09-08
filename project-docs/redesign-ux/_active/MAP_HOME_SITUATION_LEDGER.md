@@ -128,31 +128,27 @@ Commit: —
 
 ## Stage S4 — Map data layer (parallel with S2/S3, on fixtures)
 
-### S4 · T1 — `worldData.js` + `useWorld()` + `useSituationDetail()`
-Status: 🔭 todo
-Reads/refs: plan WS3 (REVISED); `DATA_STRATEGY.md` §5; `services/restProxy.js` (leave untouched); `fixtures/world.json`
-Changes: `services/worldData.js` (fetch `/data/world/latest.json`, ETag, 5-min visible-tab refresh, `VITE_WORLD_URL` override); hooks; wire into the existing `WorldMapV2` as the situations source (replacing the z-score signal as the driver)
-Docs to update: `ARCHITECTURE.md` (hooks/services) · `reference_page_wiring_contracts` · `CHANGES.md`
-Verify / exit: map renders situations from the fixture and from the shadow bundle; `npm run verify`
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
+### S4 · T1 — `worldData.js` + `useWorld()` + `useSituationDetail()` + new map
+Status: ✅ done (source; browser-verified; NOT deployed to prod — `./deploy.sh` gated)
+Reads/refs: plan WS3 (REVISED); `DATA_STRATEGY.md` §5
+Changes: `services/worldData.js`, `hooks/useWorld.js` (useWorld/useSituationDetail, 5-min visible-tab poll, asOf/stale); **new** `components/SituationMap.jsx` (dark D3 map, hue=axis/radius=tier/ring=escalating) + `components/SituationHome.jsx`+css (freshness grey-out, lede, ranked list, detail panel, `?focus=`); routed at `/map` (old map → `/map-legacy`). Did NOT wire into WorldMapV2 (built a clean new map instead — WorldMapV2 retired to /map-legacy, deleted in S6)
+Docs to update: `ARCHITECTURE.md` (read path fixes) ✅ · `DATA_STRATEGY.md` ✅ · `CHANGES.md` ✅
+Verify / exit: ✅ build + lint clean; **headless Playwright**: 177 country paths + marker render, freshness/lede/list correct, click → detail + `?focus=`, **0 console errors**
+Done-check: [x] code  [x] docs  [x] CHANGES  [x] browser-verified  [ ] prod deploy (gated)
+Commit: <pending>
+Notes: **3 contract bugs found+fixed during testing** (see CHANGES): tracker stable-pointer (`gdacs-latest.json`, amends S1/S2 — was spuriously cooling+stale); state-object key sanitization (`#`→`_`, both tracker & worldData); Worker CORS-on-errors. Backend fixes deployed+live-verified.
 
-### S4 · T2 — Canonical ISO + `countryCentroids.js` + unmatched → error sink
-Status: 🔭 todo
-Reads/refs: `utils/countryMapping.js`; `WorldMapV2.jsx` l.25-109 (alias tables to delete); `errorSink.js`
-Changes: as WS3 item 2
-Docs to update: `ARCHITECTURE.md` (Common Mistakes) · `CHANGES.md`
-Verify / exit: Palestine/Kosovo render; forced unmatched string hits the sink
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
+### S4 · T2 — Canonical ISO + centroids + unmatched → error sink
+Status: ✅ done-by-obviation (not needed for the new map)
+Notes: the new map renders situations from **pre-resolved centroids in the bundle** (the pipeline already did the geography), so no frontend name→ISO matching exists to fix — the Palestine/Kosovo class of bug is handled upstream in ingest (S3 classifier emits ISO3/latlon; unmatched → error sink there). WorldMapV2's alias tables are retired with it (S6). `countryCentroids.js` unnecessary. If a future situation ever lacks a centroid, the map simply omits its marker (still in the list) — acceptable.
 
 ### S4 · T3 — Bundled topology + URL state
-Status: 🔭 todo
-Changes: `src/assets/countries-110m.json` (pinned 2.0.2); remove CDN fetch; `?focus=/?t=/?layer=`
-Docs to update: `reference_page_wiring_contracts` · `CHANGES.md`
-Verify / exit: no CDN fetch; deep-link restores; topology failure → list still renders
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
+Status: ✅ done (part of S4·T1)
+Changes: `src/assets/countries-110m.json` (pinned world-atlas 2.0.2, imported — no CDN fetch); `?focus=<id>` URL state (replace mode). Scrubber `?t=` deferred to S5.
+Verify / exit: ✅ no CDN fetch (bundled import); `?focus=` deep-link sets the selection; no topology present in the network graph means no silent CDN hang
+Done-check: [x] code  [x] verify
+Commit: <pending>
+Notes: topology-load-failure path is moot now (bundled, not fetched). Full `?t=` scrubber + `?layer=` land with S5.
 
 ---
 

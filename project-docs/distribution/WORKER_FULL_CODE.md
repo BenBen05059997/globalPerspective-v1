@@ -269,12 +269,14 @@ export default {
     // e.g. /data/world/latest.json, /data/situations/state/<id>.json
     if (url.pathname.startsWith('/data/')) {
       const key = decodeURIComponent(url.pathname.slice('/data/'.length));
+      // CORS header on ALL responses (incl. errors) so a 404/401 isn't masked as a CORS failure.
+      const dataErr = (obj, status) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
       if (!DATA_ALLOWED.some((re) => re.test(key))) {
-        return new Response(JSON.stringify({ error: 'not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+        return dataErr({ error: 'not found' }, 404);
       }
       const isMember = key.includes('.member.');
       if (isMember && !(await isMemberAuthorized(request, env))) {
-        return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+        return dataErr({ error: 'unauthorized' }, 401);
       }
       try {
         const upstream = await s3Get(key, env);
@@ -282,10 +284,10 @@ export default {
         // 403 (not 404) to avoid leaking existence. Auth is proven working by the bundles that do
         // resolve, so treat 403/404 here as "not there yet" for the client.
         if (upstream.status === 404 || upstream.status === 403) {
-          return new Response(JSON.stringify({ error: 'not generated yet' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+          return dataErr({ error: 'not generated yet' }, 404);
         }
         if (!upstream.ok) {
-          return new Response(JSON.stringify({ error: 'upstream', status: upstream.status }), { status: 502, headers: { 'Content-Type': 'application/json' } });
+          return dataErr({ error: 'upstream', status: upstream.status }, 502);
         }
         // Public bundles cache at the edge; member bundles are private to the viewer.
         const cacheControl = isMember
@@ -302,7 +304,7 @@ export default {
           },
         });
       } catch (err) {
-        return new Response(JSON.stringify({ error: 'fetch failed' }), { status: 502, headers: { 'Content-Type': 'application/json' } });
+        return dataErr({ error: 'fetch failed' }, 502);
       }
     }
 

@@ -40,7 +40,8 @@ Nothing else goes in DynamoDB. A new table needs an explicit exception recorded 
 |---|---|---|---|
 | `corpus/YYYY/MM/DD/HH.jsonl` | `newsSituationIngest` | hourly | audit, replay, reclassify |
 | `stories/state/<storyId>.json`, `stories/index.json` | `newsSituationIngest` | hourly | tracker, map detail |
-| `situations/inbox/<ts>-<source>-<id>.json` | **openers** (`newsGdacsIngest`, `newsBreakingAlert`, later GDELT) — append only | 20 min / 4h | tracker |
+| `situations/inbox/gdacs-latest.json` (stable pointer, overwritten) | `newsGdacsIngest` — full-snapshot source | 20 min | tracker (read every sweep) |
+| `situations/inbox/<ts>-<source>-<id>.json` (append) | per-event openers (`newsBreakingAlert`, later GDELT) | 4h | tracker (read + move to `processed/`) |
 | `situations/state/<id>.json`, `situations/index.json` | `newsSituationTracker` | 10-min sweep | map, thread/country pages |
 | `situations/archive/<id>.json` | `newsSituationTracker` | on close+age-out | audit / life-story record (IA 30d) |
 | `situations/history/YYYY/MM/DD/HH/HHMM.json` | `newsSituationTracker` | each sweep | scrubber, `scripts/situations-log.mjs` |
@@ -74,7 +75,8 @@ IAM: one inline policy per Lambda, `s3:PutObject` scoped to its own prefix(es) o
 
 - The page shows the **oldest** `sources.*` stamp as its freshness line. `stale:true` → whole-map grey-out + banner.
 - Tiers are canonical `low | moderate | elevated | high` (`utils/riskTiers.js`). There is no `critical`; the map renders "critical" as `tier:high && escalating:true`.
-- Per-situation detail (history, evidence, spillover) is in `situations/state/<id>.json`, fetched on click.
+- Per-situation detail (history, evidence, spillover) is in `situations/state/<key>.json`, fetched on click — where `<key>` is the situationId made URL/S3-safe (`gdacs#FL#1104081` → `gdacs_FL_1104081`; `#` is unsafe in keys/paths). Both the tracker (writer) and `worldData.js` (reader) apply the same sanitization.
+- The Worker returns `Access-Control-Allow-Origin` on **every** `/data/*` response including 404/401, so a missing object reads as a clean 404 client-side, not a CORS failure.
 - The scrubber fetches `world/YYYY/MM/DD/HHMM.json`.
 
 ## 6. Migration of existing tables (incremental, never big-bang)

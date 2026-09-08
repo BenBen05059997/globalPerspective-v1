@@ -32,6 +32,8 @@ const P = DRY_RUN
   : { state: 'situations/state', index: 'situations/index.json', history: 'situations/history', archive: 'situations/archive', world: 'world/latest.json', worldSnap: 'world', worldMember: 'world/latest.member.json' };
 const INBOX_PREFIX = 'situations/inbox/';
 const TIER_RANK = { high: 0, elevated: 1, moderate: 2, low: 3 };
+// URL/S3-safe object-key form of a situationId (ids contain '#', unsafe in keys/paths).
+const stateKey = (id) => id.replace(/[^A-Za-z0-9._-]/g, '_');
 
 let _s3, _cw;
 function s3() { if (!_s3) { const { S3Client } = require('@aws-sdk/client-s3'); _s3 = new S3Client({ region: REGION }); } return _s3; }
@@ -180,18 +182,14 @@ async function listKeys(prefix, stopAtProcessed = true) {
   return out;
 }
 
-// Read all unprocessed inbox snapshots; for GDACS (full snapshot per run) the latest wins.
+// GDACS is a full-snapshot source: read its STABLE current pointer every sweep (never consumed), so
+// an empty inbox never spuriously cools live situations. (Per-event sources like breaking-alert append
+// timestamped events under INBOX_PREFIX; those are read + moved to processed/ — added with S3.)
 async function readObservations() {
-  const keys = (await listKeys(INBOX_PREFIX)).sort();
-  const gdacsKeys = keys.filter((k) => k.endsWith('-gdacs.json'));
-  const latestGdacs = gdacsKeys[gdacsKeys.length - 1];
-  let observations = [];
-  let gdacsObservedAt = null;
-  if (latestGdacs) {
-    const snap = await getJson(latestGdacs);
-    if (snap) { observations = snap.events || []; gdacsObservedAt = snap.observed_at || null; }
-  }
-  return { observations, gdacsObservedAt, processedKeys: gdacsKeys };
+  const snap = await getJson(`${INBOX_PREFIX}gdacs-latest.json`);
+  const observations = (snap && snap.events) || [];
+  const gdacsObservedAt = (snap && snap.observed_at) || null;
+  return { observations, gdacsObservedAt, processedKeys: [] };
 }
 
 async function loadPriorStates() {
@@ -199,7 +197,7 @@ async function loadPriorStates() {
   const ids = (index && index.ids) || [];
   const states = {};
   await Promise.all(ids.map(async (id) => {
-    const st = await getJson(`${P.state}/${encodeURIComponent(id)}.json`);
+    const st = await getJson(`${P.state}/${stateKey(id)}.json`);
     if (st) states[id] = st;
   }));
   return states;
@@ -222,7 +220,7 @@ exports.handler = async () => {
   // Persist changed state objects; write index; write history + world bundle.
   const openIds = Object.keys(states);
   const summaries = Object.values(states).map(summarize);
-  await Promise.all(Object.entries(states).map(([id, st]) => putJson(`${P.state}/${encodeURIComponent(id)}.json`, st)));
+  await Promise.all(Object.entries(states).map(([id, st]) => putJson(`${P.state}/${stateKey(id)}.json`, st)));
   await putJson(P.index, { updated_at: now, ids: openIds, situations: summaries });
 
   // Aged-out closed situations: move state → archive (durable record of the full life story),
@@ -231,9 +229,9 @@ exports.handler = async () => {
     const prev = priorStates[id];
     if (!prev) continue;
     try {
-      await putJson(`${P.archive}/${encodeURIComponent(id)}.json`, { ...prev, archived_at: now });
+      await putJson(`${P.archive}/${stateKey(id)}.json`, { ...prev, archived_at: now });
       const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
-      await s3().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: `${P.state}/${encodeURIComponent(id)}.json` }));
+      await s3().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: `${P.state}/${stateKey(id)}.json` }));
     } catch (e) { console.warn('[tracker] archive failed', id, e.message); }
   }
 

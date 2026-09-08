@@ -377,9 +377,27 @@ Ordering principle: **prove the read path first; add producers in the order that
 | **S2 Tracker (folder)** | `newsSituationTracker` 10-min sweep: inbox → `situations/state|index|history`; assembles `world/latest.json` (+member, +snapshots); **shadow to `world/shadow/` ~1 week**; `stale` logic; lede + ranked precompute | 7 days of shadow snapshots; thresholds tuned; disasters cost 0 model calls; forced-stale fixture greys the map | **S4 starts here on fixtures** |
 | **S3 Ingest (Option A)** | `newsSituationIngest` hourly: RSS + GDELT → classify (flash, batched, 600/day cap) → cluster → `corpus/` + `stories/`; `newsBreakingAlert` becomes an inbox writer; tracker consumes stories (escalation + one-event-one-pin merge) | stories index populated across languages; GDACS + news cluster → one situation; LLM-cap metrics live | **S5 starts here** |
 | **S4 Map data layer** | `worldData.js`, `useWorld()`, `useSituationDetail()`; canonical ISO + `countryCentroids.js`; bundled topology; URL state; unmatched → error sink — on the **existing** renderer | Palestine/Kosovo render; deep-links restore; grey-out driven by `stale`; forced unmatched string hits the sink | with S2/S3 |
+| **S4.5 Legibility & honesty pass** (added 2026-09-08 after the first browser review — see §12) | legend with live per-axis counts (inactive dimmed); real briefing lede from counts + explicit coverage note; fix `next ~just now` + reconcile with the app header strip (one freshness claim); rich detail card (GDACS description, severity text, population affected, country names, timeline, report-link first; "Deterministic UN/EU alert — no AI analysis at Orange level" instead of "not generated"); plain-language states (New / Getting worse / Ongoing / Easing / Ended); crop ±60°, hover tooltip, zoom/pan; in-map empty/low-coverage state; add `description`+population to the GDACS observation | browser re-test shows: a stranger can tell what the map watches, why it's sparse, and what each dot is — **before any prod deploy** | — |
 | **S5 Map UI (WebGL)** | deck.gl 2.5D world, hue/height/ripple/luminance, spread arcs, tour, scrubber (reads `world/…/HHMM.json`), globe fly-to, honesty states — behind `/map`; rewrite/delete the 4 z-score tests | browser click-through; mobile; reduced-motion; scrubber replays real shadow history; `npm run verify` green | with S3 |
 | **S6 Home swap** | `/` → `SituationHome`; `/map` redirect; `Layout.jsx` nav; `BreakingDetailPage` link; `/weekly/pair/:slug` back; delete legacy WorldMap/MapSidePanel/MiniMap (fix `tokens.js`); Option B (Red → thread); Worker pre-render for `/`; smoke-test routes | smoke-test + link-crawl pass; SEO text in DOM; no dangling `/map` links | — |
 | **S7 Editorial switch** | selector consumes `stories/index.json`; **remove Brave from `newsInvokeGemini`**; `captureIngestion` → points at `corpus/` | brief quality unchanged per `IMPACT_VALIDATION_METHODOLOGY`; Brave ingest calls → 0 | — |
 | **S8 Table migrations** | one mini-plan each, in order: PredictionLog → `predictions/` (+Athena); GDACS/GDELT/audit/capture mirrors → `corpus/`+`audit/`; Markets snapshots; ClientErrors logs; Signals; BreakingAlerts (after review→inbox); Topics/SummarizeAndPredict via dual-write last | "nothing reads the table" (grep + CloudWatch) before each `delete-table` | after S6 |
 
 Gates are enforced through the ledger (`PLAN_EXECUTION_PLAYBOOK.md`). Deploys remain per-step gated; prod mutations are bare single `aws` commands.
+
+## 12. Design review of the first S4 build (2026-09-08) — why S4.5 exists
+
+Reviewed the browser-verified S4 build (D3 map at `/map`, one live situation: China flood). It proves the pipeline; it does **not** yet deliver the designed experience. Findings, in the order they hurt:
+
+1. **The map doesn't say what it watches.** One dot, no legend, no inactive categories → a visitor can't tell "broken", "calm", or "floods only". Fix: legend with live per-axis counts, inactive axes dimmed — a *coverage statement*, and the mechanism by which a reader learns that conflict/political/economic situations exist (they light up when S3 lands).
+2. **Lede is a fragment** ("China — flood.") — must read like a desk briefing, incl. what is *not* being tracked.
+3. **Emptiness reads as failure.** The "calm dark world" honesty state needs words in-map, not silence.
+4. **Severity encoding too weak** (3→10 px radius). Real fix is S5's 2.5D height; interim: glow + stronger radius scale.
+5. **Freshness bug + contradiction:** `fmtAgo` mangles future times ("next ~just now"); the app header strip says "Updated hourly" while the page says "next 30 min" — two claims, one wrong. One truthful claim only.
+6. **Jargon** (Elevated · emerging · just now) → plain-language state labels.
+7. **Detail card thin and negatively framed** — GDACS gives description, severity text, population, report; show them; explain *why* there's no AI analysis (Option A) rather than "not generated".
+8. **No interactivity**, Antarctica wastes canvas.
+
+Structural truth recorded: **the map will feel thin until S3 exists** regardless of rendering. Sequence: S4.5 makes one-flood legible and honest → S3 makes the map worth looking at → S5 makes it beautiful. **No prod deploy of `/map` before S4.5.**
+
+"How does a user understand there are articles going on?" — three mechanisms, all to build: (a) the legend-as-coverage-statement; (b) evidence in the card (outlet count + latest headlines for news situations; UN/EU alert level + population for disasters); (c) an explicit coverage note while the news layer is absent.

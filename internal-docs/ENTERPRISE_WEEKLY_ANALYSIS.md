@@ -1,9 +1,8 @@
 # Enterprise Feature: Weekly Narrative Analysis
 
-> **LEGACY PLANNING DOC — All features described here are shipped as of 2026-03-18.**
-> Phase 0 (data foundation), Phase 1 (narrative threading), and Phase 3 (frontend) are complete.
-> Phase 2 (hindsight / framing shift AI) is the only part not yet built.
-> For current architecture, see `ARCHITECTURE.md` and `BACKEND_GUIDE.md`.
+> **LEGACY PLANNING DOC (corrected 2026-09-08).** Narrative threading + frontend (Phases 0/1/3) shipped; Phase 2 (hindsight AI) never built.
+> ⚠️ The **API-key-gated member/enterprise tier system** this doc describes was **NEVER implemented** — the live code (`newsSensitiveData` `resolveTier`) only distinguishes **free vs. member** via Firebase auth (no `MEMBER_API_KEYS`/`ENTERPRISE_API_KEYS`, no enterprise tier, no archive-depth gating). Access is now the **Polar compute-membership** model. Historical only.
+> For current architecture, see `../project-docs/architecture/ARCHITECTURE.md` + `../project-docs/architecture/BACKEND_GUIDE.md`.
 
 ---
 

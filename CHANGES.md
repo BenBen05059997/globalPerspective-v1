@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-09-08 (docs: plan-doc staleness sweep + full docs reorg into `project-docs/`)
+
+Ran a 7-cluster parallel-auditor sweep (`project-docs/playbooks/AGENT_REVIEW_METHOD.md`) over all 53 plan/spec docs, verifying each **Status** claim against real source + live AWS, then a second Sonnet full-read pass that overturned/sharpened 12 verdicts and closed every NEEDS-LIVE-CHECK. Then physically reorganized the docs.
+
+- **Staleness fixes (11 STALE headers corrected, bodies untouched, each dated + evidence-cited):** `ANALYSIS_STUDIO_PLAN`, `ANALYZE_OPTIONS_PRUNE_PLAN`, `WEEKLY_MARKETS_PLAN`, `SOURCE_DIVERSITY_PLAN`, `SETTINGS_MENU_PLAN`, `REDESIGN_V2_PLAN`, `SIGNAL_API_PLAN`, `ECONOMIC_VERIFICATION_PLAN`, `PAIR_INTELLIGENCE_PLAN`, `PAIR_UI_PLAN` (NOT-built note), `BREAKING_ALERT_V2_BUILD_PLAN` (prod-deploy-gap note).
+- **3 real (non-doc) findings routed to `project-docs/audits/BACKEND_TODO.md`:** (1) leaked Polar `POLAR_ACCESS_TOKEN` still live in prod — operator must rotate; (2) deployed `newsBreakingAlert` still runs the OLD uncapped scorer (Stage-1 fix on main, never deployed); (3) `newsImpactAudit/src/index.js:30` `deepseek-chat` fallback landmine.
+- **Docs reorg:** moved all 95 root docs into a `project-docs/` tree grouped by **feature domain**, with plans split by status inside each domain (`_shipped` / `_active` / `_proposed` / `_reference`): `analysis-studio/ economy/ prediction/ billing/ alerts-email/ causal-web/ pairs/ pipeline-ingest/ ai-provider/ redesign-ux/ distribution/` plus cross-cutting `architecture/ audits/ strategy/ playbooks/ ops/ _legacy/`. `CLAUDE.md` + `CHANGES.md` stay at repo root. `project-docs/INDEX.md` maps every doc → domain · purpose · status. Clickable markdown links auto-rewritten by true-path resolution (37 in the initial move + 102 in the domain regroup, incl. INDEX); `CLAUDE.md` + memory-index pointers updated to the new `ARCHITECTURE.md`/`DEPLOYMENT_NOTES.md` paths. Bare-name prose cross-references left intact (INDEX + `find` cover lookup; rewriting them risked corrupting the dated audit trail). Verified no build/deploy script reads a relocated doc by path.
+- **Removed 4 dead/orphaned docs** (git history retains them): `PADDLE_SETUP.md` (❌ obsolete — Paddle torn down 2026-06-01), `ANALYZE_OPTIONS_PRUNE_QUEUE.md` (spent Ralph-loop queue — the prune is done), `IMPACT_FIRST_INDEX.md` (index for the merged `signal-api` branch), `PAIR_BENCHMARK.md` (folded into `PAIR_INTELLIGENCE_PLAN.md`, 0 inbound refs). Kept deliberately-superseded docs (`TIERS.md` w/ banner, `ANALYSIS_STUDIO_BENCHMARK_PLAN.md`) — audit-trail by convention.
+- **Doc-usage audit (6 Sonnet subagents):** verified whether each doc's feature is actually present + wired in current code. Plan docs were mostly accurate (live, or honestly-labeled `_proposed`/`_partial`); the real drift was in frozen reference/guide docs. Actions: **archived 7 obsolete/spent docs to `_legacy/` with banners** — `MOBILE_APP_DEVELOPMENT_GUIDE.md` (no mobile app; direction abandoned), `GAMMA_PITCH_WITH_CITATIONS.md` (superseded by `PITCH.md`; dead xAI-Grok moat), `RESEARCH_EVIDENCE_COMPILATION.md` (abandoned consumer angle), and spent one-time artifacts `AUDIT_FINDINGS_2026-06-24.md` / `FIX_BACKLOG.md` / `FUNCTION_DEBATE.md` / `FUNCTION_DEBATE_OUTPUT.md`. **Refreshed 4 more guides** (`PAGES_GUIDE`, `ANALYTICS_GUIDE`, `SECURITY_DEPLOYMENT_NOTES`, `DOMAIN_SETUP`) — first bannered, then fully corrected: `PAGES_GUIDE`'s banner was over-flagged (doc was current to 2026-07-03; added the 4 newer routes + a REMOVED marker on `/upgrade/success`); `ANALYTICS_GUIDE` Conversion-Tracking Stripe/`upgrade/success` → Polar/`/membership`; `SECURITY_DEPLOYMENT_NOTES` Paddle webhook/keys → Polar `newsPolarBilling`; `DOMAIN_SETUP` DNS-only → **Proxied required** (bot-pre-render Worker) + corrected a false "beacon in docs/index.html" claim (analytics is GA4). **Fixed a misfile:** `SCORING_MODEL_V2_PLAN.md` moved `prediction/_proposed/` → `_shipped/` (code shows Phases A–D deployed despite its 'PROPOSED' header). **Refreshed the 2 load-bearing reference docs** (`architecture/SYSTEM_WIRING.md`, `architecture/BACKEND_GUIDE.md`): added a "trust ARCHITECTURE.md" authority banner and corrected the material drift — Paddle→Polar billing throughout, `newsStripeWebhook` REMOVED, ~33-Lambda inventory (pointing to ARCHITECTURE.md rather than duplicating), dead routes `/cli`//`upgrade/success` removed, provider corrected to DeepSeek v4 (incl. two backwards claims: `newsThreadAnalysis`=Gemini and `newsPostDevTo`=DeepSeek/OpenRouter). Corrections grounded in a Sonnet code+AWS audit; unverified sub-sections left flagged.
+- **Extended the audit to the previously-unaudited doc trees** (`agent-kit/`, `quality/`, `internal-docs/`, `amplify/**/README.md`, `predictions/`, + a deep ARCHITECTURE.md verify). `agent-kit`/READMEs/predictions/ARCHITECTURE all checked out (ARCHITECTURE trustworthy vs live AWS; only 2 schedule-TZ labels + a reorg-induced self-path fixed). Found + fixed **6 genuinely stale docs missed by the project-docs-scoped sweep**: `internal-docs/LEGAL_NOTES.md` + `marketing/brand-context.md` (named xAI Grok as provider → DeepSeek/Gemini; brand-context also "paid plans not yet live" → Polar LIVE since 06-22), `internal-docs/ENTERPRISE_WEEKLY_ANALYSIS.md` (claimed a shipped API-key member/enterprise tier that never existed — code is free/member only), `internal-docs/WEEKLY_KNOWN_ISSUES.md` (issues since resolved), `quality/dashboard.md` + its generator `dashboard.js` (asserted a GitHub Actions CI workflow that doesn't exist — repo is CI-free). Also removed the orphaned `quality/analysis/benchmark/` harness (superseded by `check.mjs`).
+- **Workspace management (new-agent clarity):** a Sonnet "cold-arrival" audit found the docs well-organized but the *filesystem* landmine-adjacent. Fixed: removed the stale `.claude/worktrees/signal-api/` full-repo worktree (a duplicate of pre-reorg docs at old paths — the worst grep trap; branch kept) + stale root `dist/`; fixed 2 now-broken doc paths in `CLAUDE.md`; added a root **`README.md`** (orientation + traps: `docs/`=Pages output, root `src/`=legacy scaffold, GROK/xAI legacy naming, prod↔main drift); expanded `INDEX.md` to describe the sibling trees. **Adopted docs-as-code discipline** (from a survey of how teams manage docs): new `project-docs/playbooks/TASK_WORKFLOW.md` (declare touched files up front → update the listed docs in the SAME commit → CHANGES entry; names our ADR-like status-folder lifecycle + Diátaxis folder mapping), and a docs-as-code rule added to `CLAUDE.md`. This repo is CI-free, so this convention + the AGENT_REVIEW_METHOD sweep are the drift-prevention. **Wired the convention as a harness:** a non-blocking `Stop` hook in `.claude/settings.json` (shared) reminds when a turn changed code (`amplify/**`, `frontend/src/**`) but no `project-docs/` doc or `CHANGES.md` — pipe-tested + end-to-end verified.
+- Note: `POLAR_BILLING_PLAN.md` + `PROD_CREDITS_NEXT_STEPS.md` also carried pre-session edits (unrelated) that ride along in their move commit, being the same files.
+- Files: 92 renames under `project-docs/`, `project-docs/INDEX.md` (new), `CLAUDE.md`, `CHANGES.md`, plus link-rewrite touch-ups in a few `quality/`/`amplify` READMEs.
+
 ## 2026-08-01 (chore: worktree consolidation — merge `signal-api`, ship P6 perk surfacing, prune 20 worktrees)
 
 Surveyed all 21 parallel worktrees. **19 were finished** — 16 with zero unmerged commits, plus three that only *looked* unfinished: `spider-label-topk`'s uncommitted `LABEL_TOP_K` edit is already on `main`; `fix-prediction-triggers`' untracked plan doc is already on `main`; and `email-sender` showed "4 ahead" but a content-level diff proved `main` is **strictly ahead** (its 3 branch-only lines — `DEFAULT_PREFS`, the opt-in condition, the `what` label — all have equivalents on `main`). Commit counts lie when work re-lands as a minimal delta; only content comparison settles it.
@@ -1572,7 +1586,7 @@ Ran the multi-agent page audit (all 16 page components, 3 parallel auditors) per
 
 ## 2026-05-26 (Subscriptions deprecated + frontend billing cleanup + doc re-verification)
 
-Subscriptions/billing are not in use and are now **deprecated** (not "coming soon"). Removed the dormant billing UI from the frontend and brought `ARCHITECTURE.md` back in line with reality via a multi-agent review (see [`AGENT_REVIEW_METHOD.md`](AGENT_REVIEW_METHOD.md)).
+Subscriptions/billing are not in use and are now **deprecated** (not "coming soon"). Removed the dormant billing UI from the frontend and brought `ARCHITECTURE.md` back in line with reality via a multi-agent review (see [`AGENT_REVIEW_METHOD.md`](project-docs/playbooks/AGENT_REVIEW_METHOD.md)).
 
 ### Shipped (frontend)
 - Deleted `TrialBanner.jsx`, `UpgradeSuccess.jsx`, `WeeklyLockedPreview.jsx` (orphan), `useUserProfile.js`.
@@ -1600,7 +1614,7 @@ Subscriptions/billing are not in use and are now **deprecated** (not "coming soo
 
 ## 2026-05-21 (Economic Disruption — UI Wiring Phase 4, Batch A)
 
-Follow-up to the 2026-05-21 three-agent design debate ("ambient" vs "minimalist" vs "pragmatist") and the surface-map doc. Plan: [`ECONOMIC_DISRUPTION_WIRING_PLAN.md`](ECONOMIC_DISRUPTION_WIRING_PLAN.md). This batch ships the 4 P0 (safe-win) items.
+Follow-up to the 2026-05-21 three-agent design debate ("ambient" vs "minimalist" vs "pragmatist") and the surface-map doc. Plan: [`ECONOMIC_DISRUPTION_WIRING_PLAN.md`](project-docs/economy/_reference/ECONOMIC_DISRUPTION_WIRING_PLAN.md). This batch ships the 4 P0 (safe-win) items.
 
 ### Shipped
 
@@ -1626,7 +1640,7 @@ All four agents in the debate either flagged these explicitly or implicitly acce
 
 ## 2026-05-20 (Economic Disruption — UI surface map doc)
 
-Added a new section **"Where it surfaces in the UI"** to [`ECONOMIC_DISRUPTION.md`](ECONOMIC_DISRUPTION.md), placed between §"What's running today" and §"How to read a disruption record". Documents:
+Added a new section **"Where it surfaces in the UI"** to [`ECONOMIC_DISRUPTION.md`](project-docs/economy/ECONOMIC_DISRUPTION.md), placed between §"What's running today" and §"How to read a disruption record". Documents:
 
 - **Per-page surface map** — a 10-row table covering `/economy`, `/`, `/daily`, `/weekly/thread/:id`, `/weekly/country/:name`, `/weekly`, `/weekly/countries`, `/map`, Layout, and `/disclosures` — each row lists the visible component, the hook(s) it uses, and the atom(s) it renders.
 - **The linking spine** — explains how every chip/preview deep-links into the canonical `/weekly/thread/{scopeId}?tab=economy` path.
@@ -1639,7 +1653,7 @@ Pure documentation update — no code changes.
 
 ## 2026-05-20 (Quality Plan — Status & Roadmap section)
 
-Added a top-of-file **Status & Roadmap** table to [`ECONOMIC_DISRUPTION_QUALITY_PLAN.md`](ECONOMIC_DISRUPTION_QUALITY_PLAN.md) summarising what shipped (Phases A/B/C), what's blocked and on what (Phases D/E), and **concrete check-back dates**:
+Added a top-of-file **Status & Roadmap** table to [`ECONOMIC_DISRUPTION_QUALITY_PLAN.md`](project-docs/economy/_reference/ECONOMIC_DISRUPTION_QUALITY_PLAN.md) summarising what shipped (Phases A/B/C), what's blocked and on what (Phases D/E), and **concrete check-back dates**:
 
 - **2026-05-21** — verify auto-judge cron ran (check `quality_judged_at` on DDB records, tail CloudWatch logs)
 - **Every Monday** — run picker + dashboard scripts
@@ -1654,7 +1668,7 @@ Also captured what NOT to do in the interim (don't tune the judge prompt early, 
 ## 2026-05-20 (Economic Disruption Quality — Phase C: human spot-check workflow)
 
 ### What shipped
-Layer 4 of the [quality plan](ECONOMIC_DISRUPTION_QUALITY_PLAN.md) — passive but essential: a weekly cadence for grading 5 random `ECON#` records by hand against a 7-question rubric, so the LLM-as-judge (Phase B) has ground truth to calibrate against. Without this, the judge slowly drifts toward its own biases with no external check.
+Layer 4 of the [quality plan](project-docs/economy/_reference/ECONOMIC_DISRUPTION_QUALITY_PLAN.md) — passive but essential: a weekly cadence for grading 5 random `ECON#` records by hand against a 7-question rubric, so the LLM-as-judge (Phase B) has ground truth to calibrate against. Without this, the judge slowly drifts toward its own biases with no external check.
 
 ### New files
 - **`quality/reviews/README.md`** — workflow explainer (cadence, the 7 questions, when results become meaningful, what not to do).
@@ -1685,7 +1699,7 @@ Target is 2 severe / 2 moderate / 1 minor. Production distribution is currently 
 ## 2026-05-20 (Economic Disruption Quality — Phase B: LLM-as-judge)
 
 ### What shipped
-Layer 2 of the quality-evaluation plan ([`ECONOMIC_DISRUPTION_QUALITY_PLAN.md`](ECONOMIC_DISRUPTION_QUALITY_PLAN.md)): an automated LLM-as-judge pass that re-reads each `ECON#THREAD#` record with a *different model family* (Gemini 2.5 Flash) and scores it 1–5 on five axes — coherence, citation fidelity, analog match, severity calibration, and "no-BS". Records with any axis ≤ 2 are tagged `is_low_quality` and surface a visible warning chip across the site.
+Layer 2 of the quality-evaluation plan ([`ECONOMIC_DISRUPTION_QUALITY_PLAN.md`](project-docs/economy/_reference/ECONOMIC_DISRUPTION_QUALITY_PLAN.md)): an automated LLM-as-judge pass that re-reads each `ECON#THREAD#` record with a *different model family* (Gemini 2.5 Flash) and scores it 1–5 on five axes — coherence, citation fidelity, analog match, severity calibration, and "no-BS". Records with any axis ≤ 2 are tagged `is_low_quality` and surface a visible warning chip across the site.
 
 Methodology follows Zheng et al., *Judging LLM-as-a-Judge* (NeurIPS 2023): different-family judge for less-correlated errors, strict JSON-only schema, integer 1–5 scoring with single-sentence reasons.
 
@@ -1722,7 +1736,7 @@ Manual smoke-test invocation hit Gemini free-tier daily quota (429) — the dail
 ### What this is
 New cross-cutting layer that, for every news thread Global Perspectives tracks, surfaces *how the economy is being repriced*: which instruments move, in what direction, with what severity, the causal mechanism, who wins/loses, and what historical event is the closest analog — all with citations back to the underlying articles.
 
-Concept doc: [`ECONOMIC_DISRUPTION.md`](ECONOMIC_DISRUPTION.md). Implementation plan: [`ECONOMIC_DISRUPTION_PLAN.md`](ECONOMIC_DISRUPTION_PLAN.md).
+Concept doc: [`ECONOMIC_DISRUPTION.md`](project-docs/economy/ECONOMIC_DISRUPTION.md). Implementation plan: [`ECONOMIC_DISRUPTION_PLAN.md`](project-docs/economy/_shipped/ECONOMIC_DISRUPTION_PLAN.md).
 
 ### Backend (DEPLOYED via `aws lambda` CLI, ap-northeast-1)
 - **`newsEconomicImpact`** (NEW Lambda, nodejs22.x, 512MB/300s) — per-thread economic disruption analysis. Reads thread analyses + today/archive entries + market snapshots, calls DeepSeek with a closed instrument allowlist (~55 tickers), validates JSON, drops uncited claims and out-of-allowlist instruments, writes `ECON#THREAD#{id}/ECONOMIC_IMPACT` records to `SummarizeAndPredict` with 21-day TTL. Reuses `newsCountryIntelligence-role-xqboqh2y` IAM role.

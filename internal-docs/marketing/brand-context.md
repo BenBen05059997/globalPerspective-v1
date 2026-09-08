@@ -73,7 +73,7 @@ Global Perspectives is the only platform that:
 | **Member** | $15/month | 7-day archive + narrative threads + country briefings + weekly map |
 | **Enterprise** | Contact us | 30-day archive + custom requirements |
 
-**Current status (launch mode):** All Member features are free for signed-in users during launch. Paid plans will go live with advance notice. 14-day free trial coded for when billing activates.
+**Current status (corrected 2026-09-08):** Polar membership billing is **LIVE** (since 2026-06-22): **$15/mo · $150/yr**. All content stays free/public; membership buys analysis **compute** (`/analyze` on our key) + living-analysis depth — not archive access. (The "Enterprise" 30-day tier above is aspirational positioning, not an implemented tier — the live code only distinguishes free vs. member.)
 
 ---
 
@@ -115,7 +115,7 @@ Global Perspectives is the only platform that:
 - Weekly map with date playback
 - Hallucination filter: every URL in AI output verified against actual ingested articles
 - Free tier: no account required
-- Platform: globalperspective.net (React frontend, AWS Lambda backend, xAI Grok)
+- Platform: globalperspective.net (React frontend, AWS Lambda backend, DeepSeek/Gemini inference — migrated off xAI 2026-05)
 
 ---
 

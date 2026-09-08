@@ -2,6 +2,8 @@
 
 Last updated: 2026-03-17
 
+> ⚠️ **HISTORICAL (flagged 2026-09-08) — the issues below are RESOLVED in current code.** Issue 1 (same-day duplicate topics): the aggressive same-event merge prompt is live in `newsInvokeGemini/src/index.js`. Issue 2 (`threadId`/`search_keywords` missing from `archive_range`): shipped in `newsSensitiveData`. Kept for history.
+
 ## Issue 1: Duplicate Topics Within Same Day
 
 **Severity:** Medium

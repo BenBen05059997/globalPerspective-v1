@@ -2,9 +2,9 @@
 
 Per-thread economic disruption analysis. Reads news threads, calls DeepSeek with a closed instrument allowlist + market snapshot, validates the JSON, writes records to `SummarizeAndPredict` table.
 
-For the full concept + methodology, see [`ECONOMIC_DISRUPTION.md`](../../../../ECONOMIC_DISRUPTION.md) at the repo root.
+For the full concept + methodology, see [`ECONOMIC_DISRUPTION.md`](../../../../project-docs/economy/ECONOMIC_DISRUPTION.md) at the repo root.
 
-For the implementation plan, see [`ECONOMIC_DISRUPTION_PLAN.md`](../../../../ECONOMIC_DISRUPTION_PLAN.md).
+For the implementation plan, see [`ECONOMIC_DISRUPTION_PLAN.md`](../../../../project-docs/economy/_shipped/ECONOMIC_DISRUPTION_PLAN.md).
 
 ## Run tests
 

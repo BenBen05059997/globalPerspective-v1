@@ -1,6 +1,6 @@
 # newsPolarBilling — deploy & configure
 
-Single Lambda (Function URL) that runs the Polar.sh billing integration. Plan: [`../../../../POLAR_BILLING_PLAN.md`](../../../../POLAR_BILLING_PLAN.md).
+Single Lambda (Function URL) that runs the Polar.sh billing integration. Plan: [`../../../../POLAR_BILLING_PLAN.md`](../../../../project-docs/billing/_active/POLAR_BILLING_PLAN.md).
 
 Three jobs on one Function URL:
 1. **Polar webhook** (POST, Standard-Webhooks signature) → grants/revokes `tier=member` in `USERS_TABLE`.

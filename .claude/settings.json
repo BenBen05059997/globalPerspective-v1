@@ -2,5 +2,18 @@
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": true,
     "code-review@claude-plugins-official": true
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "s=$(git status --porcelain 2>/dev/null); c=$(printf '%s\\n' \"$s\" | grep -E 'amplify/|global-perspectives-starter/frontend/src/' | grep -vE 'package-lock|node_modules'); d=$(printf '%s\\n' \"$s\" | grep -E 'project-docs/|CHANGES\\.md'); if [ -n \"$c\" ] && [ -z \"$d\" ]; then printf '%s' '{\"systemMessage\":\"📝 Docs reminder: code changed but no project-docs/ or CHANGES.md update is in the working tree — update the docs it references in the SAME commit (see project-docs/playbooks/TASK_WORKFLOW.md).\"}'; fi; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }

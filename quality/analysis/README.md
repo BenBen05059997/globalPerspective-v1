@@ -24,7 +24,7 @@ nothing verifying the model obeyed them. These tests close that gap.
 | `no_citations` | warn | A long answer that anchors none of its claims. |
 | `invented_figure` | warn | A `%` figure that appears nowhere in the source material. Soft (the model may round). |
 | `unused_source` | info | A provided story was never referenced — coverage note, not a defect. |
-| `thin_input` | info | The source material was thin; scenario specifics are lightly supported (set when the [thin-input guard](../../ANALYSIS_STUDIO_TESTING_PLAN.md) is active). |
+| `thin_input` | info | The source material was thin; scenario specifics are lightly supported (set when the [thin-input guard](../../project-docs/analysis-studio/_reference/ANALYSIS_STUDIO_TESTING_PLAN.md) is active). |
 
 ## Running
 

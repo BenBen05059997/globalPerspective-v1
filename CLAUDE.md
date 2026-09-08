@@ -2,6 +2,12 @@
 
 This file contains critical instructions for Claude to follow when working on this project.
 
+## Orientation & docs discipline
+
+- **New here?** `README.md` (repo root) + **`project-docs/INDEX.md`** map the whole workspace; **`project-docs/architecture/ARCHITECTURE.md`** is the authoritative system reference — trust it over any other doc on drift.
+- **Docs-as-code rule (anti-drift):** when a code change makes a `project-docs/` doc, an `ARCHITECTURE.md` section, or `CHANGES.md` stale, **update it in the same commit**. Declare a task's referenced/changed files up front and update the listed docs on completion — see `project-docs/playbooks/TASK_WORKFLOW.md`. This repo is **CI-free by design**, so this discipline (plus the on-demand `project-docs/playbooks/AGENT_REVIEW_METHOD.md` sweep) is the only thing preventing doc drift.
+- Root `src/` is a legacy Amplify scaffold, **not** the frontend (that's `global-perspectives-starter/frontend/src/`); `docs/` is Pages build output, never hand-edited except `config.js`.
+
 ## Agent Operating Rules (agent-kit)
 
 Standing autonomy / verify / git / deploy discipline lives in **`agent-kit/`** (read at session start):
@@ -25,10 +31,10 @@ The deploy sections below remain authoritative for **how** `deploy.sh` works; th
 
 The operator has **standing authorization for the agent to run production AWS Lambda/infra mutations directly** (`update-function-url-config`, `update-function-configuration`, `update-function-code`, `aws lambda`/`aws events`/`aws dynamodb`/`aws scheduler`) — `settings.local.json` already allowlists these. The prior blocker was the Claude Code auto-mode classifier, **not** the permission allowlist or an authorization gap.
 
-- **Active task:** ship the analysis-credits feature to prod. **Ordered checklist → `PROD_CREDITS_NEXT_STEPS.md`** (canonical); full design → `POLAR_BILLING_PLAN.md` §5.
+- **Active task:** ship the analysis-credits feature to prod. **Ordered checklist → `project-docs/billing/_active/PROD_CREDITS_NEXT_STEPS.md`** (canonical); full design → `project-docs/billing/_active/POLAR_BILLING_PLAN.md` §5.
 - **Order is load-bearing:** set the prod env vars (`POLAR_CREDIT_PACKS` on `newsPolarBilling`, `MEMBER_MONTHLY_ALLOWANCE` on `newsAnalyze`) **BEFORE** the code deploy, or a paid credit-pack order can be mis-granted as a membership.
 - **Merge-don't-clobber env:** `update-function-configuration` **replaces** the whole Variables map — fetch current env, merge, write back; secrets via a temp file, never inline.
-- **Dual-CORS gotcha (`ARCHITECTURE.md` Common Mistakes #7; corrected 2026-07-25 via live-AWS audit):** only **`newsPolarBilling` and `newsAnalyze`** own CORS in code — their Function-URL CORS config must stay **empty**, else the browser gets a duplicate `Access-Control-Allow-Origin` → "Failed to fetch" (server-side `curl` won't catch it). **`newsSavedItems` and `newsRecommend` are the opposite** — their code emits no ACAO and they rely on a **populated** Function-URL CORS config; do **not** clear theirs (it would remove all CORS and break them). Before touching any function's Function-URL CORS, `grep` its source for `Access-Control-Allow-Origin`: code emits it ⇒ Function-URL CORS empty; code doesn't ⇒ Function-URL CORS populated. Verify with one ACAO header on an `Origin`-bearing request.
+- **Dual-CORS gotcha (`project-docs/architecture/ARCHITECTURE.md` Common Mistakes #7; corrected 2026-07-25 via live-AWS audit):** only **`newsPolarBilling` and `newsAnalyze`** own CORS in code — their Function-URL CORS config must stay **empty**, else the browser gets a duplicate `Access-Control-Allow-Origin` → "Failed to fetch" (server-side `curl` won't catch it). **`newsSavedItems` and `newsRecommend` are the opposite** — their code emits no ACAO and they rely on a **populated** Function-URL CORS config; do **not** clear theirs (it would remove all CORS and break them). Before touching any function's Function-URL CORS, `grep` its source for `Access-Control-Allow-Origin`: code emits it ⇒ Function-URL CORS empty; code doesn't ⇒ Function-URL CORS populated. Verify with one ACAO header on an `Origin`-bearing request.
 - Still operator-only (dashboard / KYC): creating Polar products, KYC clearance, editing operator-owned `docs/config.js`.
 
 ## Project Structure
@@ -172,9 +178,10 @@ npx vite preview
 
 ## Important Project Files
 
-- **DEPLOYMENT_NOTES.md** - Full deployment documentation
-- **ARCHITECTURE.md** - Authoritative architecture overview (Lambda inventory, DDB schemas, frontend routes/components/hooks)
-- **CHANGES.md** - Change log
+- **project-docs/INDEX.md** - Map of all docs (type · purpose · status). START HERE to find the right doc.
+- **project-docs/ops/DEPLOYMENT_NOTES.md** - Full deployment documentation
+- **project-docs/architecture/ARCHITECTURE.md** - Authoritative architecture overview (Lambda inventory, DDB schemas, frontend routes/components/hooks)
+- **CHANGES.md** - Change log (kept at repo root)
 
 ## Backend Integration
 
@@ -225,6 +232,6 @@ Before pushing frontend changes:
 
 ## Questions?
 
-- Check **DEPLOYMENT_NOTES.md** for detailed deployment steps
-- Check **ARCHITECTURE.md** for frontend structure (routes, components, hooks) and the full backend
+- Check **project-docs/ops/DEPLOYMENT_NOTES.md** for detailed deployment steps
+- Check **project-docs/architecture/ARCHITECTURE.md** for frontend structure (routes, components, hooks) and the full backend
 - Review recent `git log` for commit patterns

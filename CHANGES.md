@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-09-08 (fix: newsPostLinkedin — render prediction JSON as prose, not raw JSON)
+
+Found by reconstructing a real LinkedIn post body from live DDB data (the historical posts had TTL'd out): since methodology-v1 (2026-07-04) the `PREDICTION` content is **structured JSON** (`contentFormat:'json'`), but `formatLinkedInPost` treated `content` as prose — so **every LinkedIn post since ~07-04 dumped raw `{"scenarios":[…]}` truncated mid-object.** (LinkedIn was then dark ~08-21→09-08 on the expired token, so it wasn't visible.)
+
+- New `formatPredictionText()` parses the JSON and renders the top 1–2 scenarios as `Label (probability, horizon): rationale` (falls back to `stripMarkdown` for legacy prose records). Label `Prediction:` → `Forecast:`.
+- Applied LinkedIn 2026 best practices (researched): hashtags trimmed **7 → 3–4** (>5 measurably hurts reach), dropped `#WorldNews`/`#AI`. Result on a live topic: 2,013 chars, clean scenarios, no JSON.
+- `node --check` passes. Source-only; deploy needs the full zip (this Lambda bundles `node_modules` + map assets). The deploy also drops 2 deployed-only platform-removal comments (no functional change). ⚠️ CTA link still points at the homepage, not the specific story — separate follow-up.
+
 ## 2026-09-08 (deploy: newsBreakingAlert — fixed scorer + operator auto-send live)
 
 Deployed `newsBreakingAlert` (`update-function-code`), closing BACKEND_TODO #2. A pre-deploy deployed-vs-repo diff confirmed prod was still running the OLD uncapped scorer (`risk: 2.0`, no cap) while `main` had the Stage-1 fix — and, critically, caught that the repo `index.js` also carried an **unshipped auto-send** path.

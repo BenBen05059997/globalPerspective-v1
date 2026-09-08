@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Brief — Template / Style Study (2026-06-21)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     DAILY BRIEF — STYLE TEMPLATE
+     Palette A: existing broadsheet identity + report-style blocks.
+     Tokens copied verbatim from styles/tokens.css so this maps
+     1:1 onto the real site. Each block is labelled with the brief
+     field it renders.
+     ============================================================ */
+  :root{
+    --paper:#fbfbf9; --paper-2:#f4f4f2; --paper-3:#ececea; --card:#ffffff;
+    --ink:#0a0a0a; --ink-mid:#3a3a3c; --ink-dim:#6a6a6e; --ink-faint:#9a9a9e;
+    --line:#e5e5e3; --line-2:#d2d2d0; --line-3:#b8b8b6;
+    --accent:#a2442e; --accent-deep:#7a2f1e; --accent-soft:#f3e2da;
+    --risk-h:#c94a33; --risk-h-soft:#fbe9e3;
+    --risk-e:#d89540; --risk-e-soft:#fbf0dc;
+    --risk-l:#4fa07b; --risk-l-soft:#e4f1e9;
+    --amber:#c98510;
+    --serif:'Fraunces',Georgia,serif; --sans:'Inter',-apple-system,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+    --r-sm:4px; --r-md:7px; --r-lg:10px; --r-xl:14px;
+    --fast:120ms;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;font-size:15px;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .page{max-width:1120px;margin:0 auto;padding:0 24px 80px}
+
+  /* ── Topbar (date nav) — unchanged from today ───────────── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-dim);gap:12px;flex-wrap:wrap}
+  .topbar a{text-decoration:none;color:var(--ink-dim)}
+  .date-nav{display:flex;align-items:center;gap:10px}
+  .date-arrow{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid var(--line);border-radius:5px;color:var(--ink-mid);text-decoration:none;font-size:13px}
+  .date-label{color:var(--ink);font-weight:500}
+  .rel-tag{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);background:var(--paper-2);border:1px solid var(--line);border-radius:999px;padding:2px 7px}
+
+  /* ── Masthead ───────────────────────────────────────────── */
+  .mast{padding:28px 0 18px;border-bottom:2px solid var(--ink)}
+  .mast-top{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-mid);margin-bottom:14px}
+  .mast-center{color:var(--ink);font-weight:600}
+  .mast-h1{font-family:var(--serif);font-weight:600;font-size:68px;letter-spacing:-.035em;line-height:.95;text-align:center;margin:0 0 10px}
+  .mast-h1 em{font-style:italic;font-weight:500}
+  .mast-sub{font-family:var(--serif);font-style:italic;text-align:center;color:var(--ink-mid);font-size:15.5px;margin-bottom:18px}
+  .mast-bar{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--ink-mid);text-transform:uppercase;flex-wrap:wrap;gap:10px}
+
+  /* ── Reusable section header (report's numbered bar, broadsheet skin) ── */
+  .sec{margin-top:38px}
+  .sec-hd{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:2px solid var(--ink);margin-bottom:20px}
+  .sec-num{font-family:var(--mono);font-size:12px;font-weight:600;width:26px;height:26px;border:1.5px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .sec-hd h2{font-family:var(--serif);font-weight:600;font-size:26px;letter-spacing:-.02em;margin:0}
+  .sec-hd .sec-meta{margin-left:auto;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--ink-dim);text-transform:uppercase}
+
+  /* ── BLOCK: verdict box  → headline + trimmed lead ──────── */
+  .verdict{border:1.5px solid var(--ink);border-left:4px solid var(--accent);border-radius:0 var(--r-md) var(--r-md) 0;padding:22px 26px;background:var(--card);margin-bottom:20px}
+  .verdict .v-kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .verdict .v-kicker .pin{color:var(--ink-dim)}
+  .verdict h3{font-family:var(--serif);font-weight:600;font-size:32px;line-height:1.12;letter-spacing:-.02em;margin:0 0 12px}
+  .verdict p{font-family:var(--serif);font-size:17px;line-height:1.55;color:var(--ink-mid)}
+  .verdict strong{color:var(--ink);font-weight:600}
+
+  /* ── BLOCK: callout (key takeaways) → derived/new keyPoints ── */
+  .callout{border-radius:0 var(--r-md) var(--r-md) 0;padding:16px 20px;margin-bottom:20px;border-left:4px solid var(--accent);background:var(--accent-soft)}
+  .callout .c-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--accent-deep);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .takeaways{list-style:none;display:grid;gap:10px}
+  .takeaways li{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;line-height:1.45;color:var(--ink-mid)}
+  .takeaways li b{color:var(--ink)}
+  .takeaways .tk-n{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent);background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+
+  /* ── BLOCK: stat cards → stats{} ────────────────────────── */
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .statcard{border:1px solid var(--line);border-radius:var(--r-md);padding:16px 18px;background:var(--card)}
+  .statcard .s-val{font-family:var(--serif);font-size:38px;font-weight:600;letter-spacing:-.02em;line-height:1;color:var(--ink)}
+  .statcard .s-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);margin-top:8px}
+  .statcard .s-sub{font-size:12px;color:var(--ink-faint);margin-top:4px}
+
+  /* ── BLOCK: lead split — story + prediction aside ───────── */
+  .lead{display:grid;grid-template-columns:1fr 320px;gap:40px;align-items:start}
+  .predict{background:var(--card);border:1px solid var(--ink)}
+  .predict .ph{padding:10px 14px;border-bottom:1px solid var(--ink);display:flex;justify-content:space-between;align-items:center;background:var(--ink);color:#fff;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+  .predict .pb{padding:16px 18px}
+  .predict .pb .plbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px;font-weight:600}
+  .predict .pb p{font-family:var(--serif);font-size:15.5px;line-height:1.5;font-weight:500;color:var(--ink)}
+
+  /* ── BLOCK: story cards → topStories[] ──────────────────── */
+  .stories{display:grid;gap:0}
+  .story{display:grid;grid-template-columns:50px 1fr 280px;gap:22px;padding:22px 0;border-bottom:1px solid var(--line);align-items:start}
+  .story .num{font-family:var(--serif);font-style:italic;font-size:34px;color:var(--ink);line-height:1}
+  .story .kicker{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .story h4{font-family:var(--serif);font-weight:500;font-size:20px;line-height:1.22;letter-spacing:-.015em;margin:0 0 8px}
+  .story-pred{background:var(--paper-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:12px 14px}
+  .story-pred .plbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:6px}
+  .story-pred p{font-family:var(--serif);font-size:13.5px;line-height:1.45;color:var(--ink-mid)}
+
+  /* tags / pills */
+  .tag{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;padding:2px 8px;border-radius:var(--r-sm)}
+  .tag-cat{background:var(--ink);color:#fff}
+  .tag-region{background:var(--paper-2);border:1px solid var(--line);color:var(--ink-dim);font-weight:500}
+  .tag-src{color:var(--ink-faint);font-weight:500}
+
+  /* ── BLOCK: highlight box → risingThread ────────────────── */
+  .highlight{background:var(--ink);color:#fff;border-radius:var(--r-lg);padding:24px 26px;position:relative;overflow:hidden}
+  .highlight .hl-kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--risk-e);font-weight:600;margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .highlight .hl-traj{display:inline-flex;gap:5px;align-items:center;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.1);color:#fff}
+  .highlight .hl-meta{color:rgba(255,255,255,.55);font-weight:500;letter-spacing:.08em}
+  .highlight h3{font-family:var(--serif);font-weight:600;font-size:24px;line-height:1.15;margin:0 0 8px}
+  .highlight p{color:rgba(255,255,255,.8);font-size:14.5px;line-height:1.55;max-width:70ch}
+  .highlight .hl-cta{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--risk-e);margin-top:14px;display:inline-block}
+
+  /* ── BLOCK: risk card → countryToWatch ──────────────────── */
+  .riskcard{display:flex;gap:18px;align-items:stretch;border:1px solid var(--line);border-left:4px solid var(--risk-h);border-radius:0 var(--r-md) var(--r-md) 0;background:var(--card);padding:18px 22px}
+  .riskcard .rc-flag{font-family:var(--serif);font-weight:600;font-size:30px;color:var(--ink);align-self:center;white-space:nowrap}
+  .riskcard .rc-body{flex:1}
+  .riskcard .rc-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .riskcard .rc-headline{font-size:14.5px;color:var(--ink-mid);line-height:1.45}
+  .badge-risk{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:var(--r-sm)}
+  .badge-risk.high{background:var(--risk-h-soft);color:var(--risk-h)}
+  .badge-risk.elevated,.badge-risk.moderate{background:var(--risk-e-soft);color:var(--risk-e)}
+  .badge-risk.low{background:var(--risk-l-soft);color:var(--risk-l)}
+  .traj{font-family:var(--mono);font-size:11px;font-weight:600;display:inline-flex;gap:4px;align-items:center}
+  .traj.up{color:var(--risk-h)} .traj.flat{color:var(--ink-dim)} .traj.down{color:var(--risk-l)}
+
+  /* ── BLOCK: economic meter → EconomicFootprint instruments ── */
+  .econ-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+  .econ-box{border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;background:var(--card);text-align:left}
+  .econ-box .e-inst{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--ink);display:flex;align-items:center;justify-content:space-between}
+  .econ-box .e-dir{font-family:var(--mono);font-size:15px;font-weight:600}
+  .econ-box .e-mag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin-top:6px}
+  .e-up{color:var(--risk-h)} .e-down{color:var(--risk-l)} .e-mixed{color:var(--ink-dim)}
+  .econ-lead{font-family:var(--serif);font-size:14px;color:var(--ink-mid);line-height:1.5;margin-top:14px;display:flex;gap:8px;align-items:baseline}
+  .sev-dot{width:9px;height:9px;border-radius:50%;background:var(--risk-h);flex-shrink:0;align-self:center}
+
+  /* ── BLOCK: bar chart → categoryBreakdown ───────────────── */
+  .bars{display:grid;gap:9px}
+  .bar-row{display:flex;align-items:center;gap:14px}
+  .bar-label{width:120px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:capitalize;color:var(--ink-mid);flex-shrink:0;text-align:right}
+  .bar-track{flex:1;background:var(--paper-3);border-radius:var(--r-sm);height:18px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:var(--r-sm);background:var(--ink);min-width:2px}
+  .bar-val{width:30px;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink)}
+
+  /* ── BLOCK: collapsible full analysis → summary (long) ──── */
+  details.fullread{border:1px solid var(--line);border-radius:var(--r-md);background:var(--card);overflow:hidden}
+  details.fullread summary{cursor:pointer;list-style:none;padding:14px 20px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--ink-mid);display:flex;align-items:center;justify-content:space-between}
+  details.fullread summary::-webkit-details-marker{display:none}
+  details.fullread summary .chev{transition:transform var(--fast)}
+  details.fullread[open] summary .chev{transform:rotate(180deg)}
+  details.fullread .full-body{padding:4px 26px 24px;border-top:1px solid var(--line)}
+  details.fullread .full-body p{font-family:var(--serif);font-size:16px;line-height:1.65;color:var(--ink-mid);margin-top:16px}
+  details.fullread .full-body p:first-child::first-letter{font-size:48px;font-weight:600;float:left;line-height:.8;padding:4px 10px 0 0;color:var(--ink)}
+  details.fullread .full-body strong{color:var(--ink);font-weight:600}
+
+  .foot-nav{display:flex;justify-content:space-between;padding:18px 0;border-top:1px solid var(--line);margin-top:38px;font-family:var(--mono);font-size:11.5px}
+  .foot-nav a{color:var(--ink-mid);text-decoration:none}
+
+  /* annotation chips so you can read this as a spec, not a page */
+  .anno{position:relative}
+  .anno::before{content:attr(data-anno);position:absolute;top:-9px;right:0;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent-soft);padding:1px 7px;border-radius:999px}
+
+  @media(max-width:860px){
+    .lead{grid-template-columns:1fr}
+    .story{grid-template-columns:40px 1fr}
+    .story-pred{display:none}
+    .mast-h1{font-size:46px}
+    .bar-label{width:84px}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <a href="#">← Home</a>
+    <div class="date-nav">
+      <a href="#" class="date-arrow">←</a>
+      <span class="date-label">June 21, 2026</span>
+      <span class="rel-tag">Yesterday</span>
+      <a href="#" class="date-arrow">→</a>
+      <a href="#">Today</a>
+    </div>
+    <div style="display:flex;gap:8px">Share · Copy · Save</div>
+  </div>
+
+  <!-- Masthead -->
+  <header class="mast">
+    <div class="mast-top"><span>Daily Intelligence Brief</span><span class="mast-center">Global Perspectives™</span><span>June 21, 2026</span></div>
+    <h1 class="mast-h1">Today's <em>Brief</em></h1>
+    <div class="mast-sub">A single read on what the world's newsroom cycle was actually about.</div>
+    <div class="mast-bar">
+      <span>Generated <strong style="color:var(--ink)">10h ago</strong></span>
+      <span>AI-generated · analyst-reviewed</span>
+    </div>
+  </header>
+
+  <!-- ① THE BIG PICTURE = verdict + takeaways (the 10-second read) -->
+  <section class="sec">
+    <div class="sec-hd"><span class="sec-num">1</span><h2>The Big Picture</h2><span class="sec-meta">10-second read</span></div>
+
+    <div class="verdict anno" data-anno="headline + trimmed summary">
+      <div class="v-kicker">Lead Story <span class="pin">· Iran</span></div>
+      <h3>Iran closes Strait of Hormuz as US-Iran talks proceed amid Israeli strikes on Lebanon</h3>
+      <p>The day is defined by a <strong>cascade of interconnected crises</strong>, with Iran's closure of the Strait of Hormuz — in response to Israeli strikes on Lebanon — emerging as the single most disruptive event, directly threatening global energy supply even as US-Iran talks continue in Switzerland.</p>
+    </div>
+
+    <div class="callout anno" data-anno="keyPoints[] (new field or derived)">
+      <div class="c-title">★ Key Takeaways</div>
+      <ul class="takeaways">
+        <li><span class="tk-n">1</span><span><b>Hormuz closed.</b> Iran shut the strait after Israeli strikes on Lebanon — a direct threat to global energy supply and a flashpoint that could pull in broader actors.</span></li>
+        <li><span class="tk-n">2</span><span><b>Mideast war widens.</b> Israeli strikes killed six in Gaza (incl. an Al Jazeera cameraman) and 16 in Lebanon, complicating any ceasefire.</span></li>
+        <li><span class="tk-n">3</span><span><b>Europe wobbles.</b> UK PM Starmer is reportedly ready to resign; Meloni and Trump feud over a G7 photo as a record French heatwave tops 40°C.</span></li>
+        <li><span class="tk-n">4</span><span><b>Compounding pressure.</b> Geopolitical, climatic and economic shocks are landing at once — testing global institutions and alliances.</span></li>
+      </ul>
+    </div>
+
+    <div class="statgrid anno" data-anno="stats{}">
+      <div class="statcard"><div class="s-val">50</div><div class="s-lbl">Articles</div><div class="s-sub">24-hour window</div></div>
+      <div class="statcard"><div class="s-val">35</div><div class="s-lbl">Countries</div><div class="s-sub">ranked by signal breadth</div></div>
+      <div class="statcard"><div class="s-val">15</div><div class="s-lbl">Outlets</div><div class="s-sub">wire + regional</div></div>
+      <div class="statcard"><div class="s-val">10</div><div class="s-lbl">Categories</div><div class="s-sub">active today</div></div>
+    </div>
+  </section>
+
+  <!-- ② TOP STORIES = cards with prediction asides -->
+  <section class="sec">
+    <div class="sec-hd"><span class="sec-num">2</span><h2>Top Stories</h2><span class="sec-meta">7 items · by signal breadth</span></div>
+    <div class="stories">
+
+      <article class="story">
+        <div class="num">01</div>
+        <div>
+          <div class="kicker"><span class="tag tag-cat">conflict</span><span class="tag tag-region">Iran</span><span class="tag tag-region">United States</span><span class="tag tag-region">Israel</span><span class="tag tag-src">3 sources</span></div>
+          <h4>Iran closes Strait of Hormuz as US-Iran talks proceed in Switzerland amid Israeli strikes on Lebanon</h4>
+        </div>
+        <aside class="story-pred"><div class="plbl">Prediction</div><p>Strait stays closed 48–72h, spiking oil prices and triggering emergency US–Gulf diplomacy to de-escalate.</p></aside>
+      </article>
+
+      <article class="story">
+        <div class="num">02</div>
+        <div>
+          <div class="kicker"><span class="tag tag-cat">conflict</span><span class="tag tag-region">Israel</span><span class="tag tag-region">Palestine</span><span class="tag tag-region">Lebanon</span><span class="tag tag-src">3 sources</span></div>
+          <h4>Israeli strikes kill six in Gaza including Al Jazeera cameraman, and kill 16 in Lebanon</h4>
+        </div>
+        <aside class="story-pred"><div class="plbl">Prediction</div><p>International condemnation mounts; Hezbollah likely retaliates with rocket fire into northern Israel within 24h.</p></aside>
+      </article>
+
+      <article class="story">
+        <div class="num">03</div>
+        <div>
+          <div class="kicker"><span class="tag tag-cat">politics</span><span class="tag tag-region">United Kingdom</span><span class="tag tag-src">1 source</span></div>
+          <h4>UK PM Starmer reportedly ready to quit amid growing leadership pressure</h4>
+        </div>
+        <aside class="story-pred"><div class="plbl">Prediction</div><p>Starmer announces resignation Monday, triggering a Conservative leadership contest dominating UK politics for two months.</p></aside>
+      </article>
+
+      <article class="story">
+        <div class="num">04</div>
+        <div>
+          <div class="kicker"><span class="tag tag-cat">military</span><span class="tag tag-region">Ukraine</span><span class="tag tag-region">Russia</span><span class="tag tag-src">1 source</span></div>
+          <h4>Ukraine drones hit oil refinery in Russia's Tyumen region, claims new 3,000 km range</h4>
+        </div>
+        <aside class="story-pred"><div class="plbl">Prediction</div><p>Russia retaliates against Ukrainian energy infrastructure; new strike range forces air-defense redeployment deeper inland.</p></aside>
+      </article>
+
+      <article class="story">
+        <div class="num">05</div>
+        <div>
+          <div class="kicker"><span class="tag tag-cat">climate</span><span class="tag tag-region">France</span><span class="tag tag-src">1 source</span></div>
+          <h4>France swelters under record-breaking heatwave with temperatures topping 40°C</h4>
+        </div>
+        <aside class="story-pred"><div class="plbl">Prediction</div><p>Heatwave peaks over next 48h, driving heat-related deaths and emergency measures across multiple European countries.</p></aside>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ③ Lead prediction featured (optional split) + Rising thread highlight -->
+  <section class="sec">
+    <div class="sec-hd"><span class="sec-num">3</span><h2>The Story to Watch</h2></div>
+    <a href="#" class="highlight anno" data-anno="risingThread" style="text-decoration:none;display:block">
+      <div class="hl-kicker">Rising Thread <span class="hl-traj">↗ Escalating</span><span class="hl-meta">16 articles · 15 days</span></div>
+      <h3>US Iran Conflict De-escalates Towards Interim Peace Deal</h3>
+      <p>The closure of the Strait of Hormuz by Iran has reversed the de-escalation trend, making an interim peace deal far less likely and raising the risk of direct US military intervention.</p>
+      <span class="hl-cta">Read full arc →</span>
+    </a>
+  </section>
+
+  <!-- ④ Country to watch (risk card) -->
+  <section class="sec">
+    <div class="sec-hd"><span class="sec-num">4</span><h2>Country to Watch</h2></div>
+    <a href="#" class="riskcard anno" data-anno="countryToWatch" style="text-decoration:none">
+      <div class="rc-flag">Iran</div>
+      <div class="rc-body">
+        <div class="rc-top"><span class="badge-risk high">High Risk</span><span class="traj up">↗ Escalating</span></div>
+        <div class="rc-headline">Iran closes Strait of Hormuz in response to Israeli strikes on Lebanon, risking direct confrontation with the US and a global energy crisis.</div>
+      </div>
+    </a>
+  </section>
+
+  <!-- ⑤ Economic footprint (instrument meter) -->
+  <section class="sec">
+    <div class="sec-hd"><span class="sec-num">5</span><h2>Economic Footprint</h2><span class="sec-meta">50 active · 3 severe</span></div>
+    <div class="econ-grid anno" data-anno="EconomicFootprint instruments">
+      <div class="econ-box"><div class="e-inst">BRENT <span class="e-dir e-up">↑</span></div><div class="e-mag">Large move · 4 cites</div></div>
+      <div class="econ-box"><div class="e-inst">WTI <span class="e-dir e-up">↑</span></div><div class="e-mag">Large move · 3 cites</div></div>
+      <div class="econ-box"><div class="e-inst">GOLD <span class="e-dir e-up">↑</span></div><div class="e-mag">Moderate · 3 cites</div></div>
+      <div class="econ-box"><div class="e-inst">VIX <span class="e-dir e-up">↑</span></div><div class="e-mag">Moderate · 4 cites</div></div>
+      <div class="econ-box"><div class="e-inst">NATGAS <span class="e-dir e-up">↑</span></div><div class="e-mag">Moderate · 1 cite</div></div>
+    </div>
+    <div class="econ-lead"><span class="sev-dot"></span><span><b>Severe</b> — US-Iran conflict drives oil prices, threatens global supply</span></div>
+  </section>
+
+  <!-- ⑥ Category breakdown bar chart -->
+  <section class="sec">
+    <div class="sec-hd"><span class="sec-num">6</span><h2>Shape of the Day</h2><span class="sec-meta">categoryBreakdown</span></div>
+    <div class="bars anno" data-anno="categoryBreakdown{}">
+      <div class="bar-row"><span class="bar-label">politics</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">8</span></div>
+      <div class="bar-row"><span class="bar-label">society</span><div class="bar-track"><div class="bar-fill" style="width:37%"></div></div><span class="bar-val">3</span></div>
+      <div class="bar-row"><span class="bar-label">climate</span><div class="bar-track"><div class="bar-fill" style="width:25%"></div></div><span class="bar-val">2</span></div>
+      <div class="bar-row"><span class="bar-label">conflict</span><div class="bar-track"><div class="bar-fill" style="width:25%"></div></div><span class="bar-val">2</span></div>
+      <div class="bar-row"><span class="bar-label">health</span><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div><span class="bar-val">1</span></div>
+      <div class="bar-row"><span class="bar-label">military</span><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div><span class="bar-val">1</span></div>
+      <div class="bar-row"><span class="bar-label">economy</span><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div><span class="bar-val">1</span></div>
+      <div class="bar-row"><span class="bar-label">energy</span><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div><span class="bar-val">1</span></div>
+    </div>
+  </section>
+
+  <!-- ⑦ Full analysis — folded, the long-form lives here -->
+  <section class="sec">
+    <div class="sec-hd"><span class="sec-num">7</span><h2>Full Analysis</h2><span class="sec-meta">~400 words · optional</span></div>
+    <details class="fullread anno" data-anno="summary (long-form, folded)">
+      <summary>Read the full intelligence synthesis <span class="chev">▾</span></summary>
+      <div class="full-body">
+        <p>The global landscape on June 21, 2026, is defined by a cascade of interconnected crises, with the <strong>closure of the Strait of Hormuz by Iran</strong> emerging as the single most disruptive event of the day. This action, taken in response to Israeli strikes on Lebanon, directly threatens global energy supplies and has already prompted assessments that Australia could become an Asia-Pacific energy superpower. The move comes as US-Iran talks continue in Switzerland, highlighting a precarious dual-track approach of diplomacy and escalation. <strong>The convergence of the Hormuz closure and the escalating Israel-Lebanon-Gaza conflict represents a critical flashpoint</strong> that could draw in broader international actors and destabilize energy markets for months.</p>
+        <p>In Europe, political instability is mounting. UK Prime Minister Keir Starmer is reportedly ready to resign amid growing leadership pressure, a development that would trigger a significant political vacuum in a key NATO ally. Italy's Giorgia Meloni is engaged in a public row with former US President Donald Trump over a G7 photo. Meanwhile, France is battling a record-breaking heatwave, with temperatures topping 40°C.</p>
+        <p>In the Americas, Colombia's presidential runoff pits a leftist senator against a Trump-endorsed outsider. In Asia, Japan is seeking G7 support to break China's grip on rare earth minerals, while the Philippines secured the release of 24 citizens from Russian detention. <strong>The overarching pattern is one of simultaneous, compounding pressures</strong> — geopolitical, climatic, and economic — that are testing the resilience of global institutions and alliances.</p>
+      </div>
+    </details>
+  </section>
+
+  <div class="foot-nav">
+    <a href="#">← Previous day</a>
+    <a href="#">Weekly Analysis →</a>
+    <a href="#" style="color:var(--ink-faint)">Latest</a>
+  </div>
+
+</div>
+</body>
+</html>

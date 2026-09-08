@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Global Perspectives — Today's Global Topics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;}
+:root{
+  --bg:#ffffff;
+  --bg2:#f7f7f5;
+  --bg3:#efefed;
+  --ink:#000000;
+  --ink-mid:#444444;
+  --ink-dim:#777777;
+  --ink-faint:#aaaaaa;
+  --line:#e5e5e5;
+  --line-2:#d0d0d0;
+  --ai-sum:#2a5f8a; --ai-sum-soft:#eaf1f8;
+  --ai-pre:#7a3a8f; --ai-pre-soft:#f2eaf5;
+  --ai-tra:#3a7a5e; --ai-tra-soft:#e8f2ec;
+  --serif:'Fraunces',Georgia,serif;
+  --sans:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+a{color:inherit;text-decoration:none;}
+
+/* ===== NAV ===== */
+nav{display:flex;align-items:center;height:52px;border-bottom:1px solid var(--line);padding:0 20px;gap:24px;position:sticky;top:0;background:#fff;z-index:20;}
+.nav-brand{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-weight:600;font-size:14px;white-space:nowrap;}
+.nav-logo{width:24px;height:24px;border-radius:5px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0;}
+.nav-tm{font-size:9px;vertical-align:super;color:var(--ink-dim);}
+.nav-links{display:flex;gap:2px;margin-left:8px;}
+.nav-links a{padding:5px 12px;font-size:13px;font-weight:500;color:var(--ink-mid);border-radius:6px;}
+.nav-links a.active{color:var(--ink);background:var(--bg2);}
+.nav-links a:hover{color:var(--ink);}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.nav-search{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;color:var(--ink-dim);min-width:180px;}
+.nav-search .k{margin-left:auto;padding:1px 5px;background:var(--bg2);border:1px solid var(--line);font-family:var(--mono);font-size:9px;border-radius:3px;color:var(--ink-mid);}
+.nav-user{font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:0.06em;}
+
+/* ===== THREE-COLUMN SHELL ===== */
+.shell{display:grid;grid-template-columns:220px 1fr 220px;min-height:calc(100vh - 52px);border-left:1px solid transparent;}
+
+/* ===== LEFT RAIL ===== */
+.rail-left{border-right:1px solid var(--line);padding:0;display:flex;flex-direction:column;position:sticky;top:52px;height:calc(100vh - 52px);overflow:hidden;}
+.rl-head{padding:14px 16px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.rl-head .title{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink);}
+.rl-head .count{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);}
+.rl-search{padding:8px 12px;border-bottom:1px solid var(--line);flex-shrink:0;}
+.rl-search input{width:100%;padding:5px 8px;border:1px solid var(--line);border-radius:5px;font-size:12px;font-family:var(--sans);background:var(--bg2);color:var(--ink);outline:none;}
+.rl-search input:focus{border-color:var(--line-2);}
+.rl-cats{padding:8px 12px 6px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0;}
+.rl-cats .cat{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:3px 7px;border:1px solid var(--line);border-radius:3px;cursor:pointer;color:var(--ink-dim);}
+.rl-cats .cat.active,.rl-cats .cat:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+.rl-items{flex:1;overflow-y:auto;padding:4px 0;}
+.rl-items::-webkit-scrollbar{width:3px;} .rl-items::-webkit-scrollbar-thumb{background:var(--line-2);}
+.rl-group{padding:10px 16px 4px;}
+.rl-group .lbl{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:4px;}
+.rl-item{padding:6px 16px;cursor:pointer;border-left:2px solid transparent;}
+.rl-item:hover{background:var(--bg2);}
+.rl-item.active{border-left-color:var(--ink);background:var(--bg2);}
+.rl-item .t{font-size:12.5px;line-height:1.35;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.rl-item .m{font-family:var(--mono);font-size:10px;color:var(--ink-dim);margin-top:2px;letter-spacing:0.04em;}
+
+/* ===== COFFEE PLACEMENT — LEFT RAIL BOTTOM ===== */
+.rl-coffee{flex-shrink:0;border-top:1px solid var(--line);padding:14px 16px;}
+.rl-coffee p{font-size:11.5px;color:var(--ink-dim);margin:0 0 8px;line-height:1.4;}
+.rl-coffee a.cof-btn{display:block;text-align:center;padding:7px 12px;border:1px solid var(--ink);font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:var(--ink);cursor:pointer;}
+.rl-coffee a.cof-btn:hover{background:var(--ink);color:#fff;}
+
+/* ===== MIDDLE FEED ===== */
+.feed{padding:0 32px 100px;max-width:680px;margin:0 auto;}
+
+/* Masthead */
+.masthead{text-align:center;padding:44px 0 36px;border-bottom:1px solid var(--line);margin-bottom:0;}
+.masthead .kicker{font-family:var(--mono);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:14px;}
+.masthead h1{font-family:var(--serif);font-weight:600;font-size:46px;letter-spacing:-0.025em;line-height:1.05;margin:0 0 10px;}
+.masthead .sub{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--ink-mid);margin:0 auto;max-width:420px;line-height:1.5;}
+
+/* COFFEE PLACEMENT — MASTHEAD META STRIP */
+.meta-strip{margin-top:20px;display:flex;align-items:center;justify-content:center;gap:0;font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);letter-spacing:0.06em;flex-wrap:wrap;}
+.meta-strip .live{display:inline-flex;align-items:center;gap:5px;}
+.meta-strip .live .dot{width:5px;height:5px;border-radius:50%;background:#3a7a5e;box-shadow:0 0 0 3px rgba(58,122,94,0.2);}
+.meta-strip .sep{padding:0 10px;color:var(--ink-faint);}
+.meta-strip b{color:var(--ink);font-weight:500;}
+.meta-strip .support{display:inline-flex;align-items:center;gap:5px;color:var(--ink-dim);padding:1px 8px;border-left:1px solid var(--line);margin-left:6px;}
+.meta-strip .support a{color:var(--ink-mid);font-weight:600;border-bottom:1px solid var(--line-2);padding-bottom:1px;}
+.meta-strip .support a:hover{color:var(--ink);border-color:var(--ink);}
+
+/* Region sections */
+.region{padding:32px 0 8px;}
+.region-hd{display:flex;align-items:baseline;gap:14px;padding-bottom:12px;margin-bottom:20px;border-bottom:2px solid var(--ink);}
+.region-hd h2{font-family:var(--serif);font-weight:600;font-size:26px;letter-spacing:-0.02em;margin:0;line-height:1;}
+.region-hd .n{font-family:var(--mono);font-size:10px;letter-spacing:0.1em;color:var(--ink-dim);text-transform:uppercase;}
+
+/* Topic */
+.topic{padding:20px 0;border-bottom:1px solid var(--line);}
+.topic:last-child{border-bottom:none;}
+.topic .kicker{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:6px;}
+.topic .kicker .cat{color:var(--ink);font-weight:700;}
+.topic h3{font-family:var(--serif);font-weight:500;font-size:21px;line-height:1.25;letter-spacing:-0.01em;margin:0 0 5px;}
+.topic h3 a:hover{text-decoration:underline;text-underline-offset:3px;}
+.topic .ctx{font-family:var(--serif);font-style:italic;font-size:14px;line-height:1.5;color:var(--ink-mid);margin:0 0 14px;}
+
+/* Meta line — sources / outlets / updated */
+.topic .meta{font-family:var(--mono);font-size:10px;letter-spacing:0.06em;color:var(--ink-dim);margin-bottom:12px;display:flex;gap:14px;flex-wrap:wrap;}
+.topic .meta .m{display:inline-flex;gap:5px;align-items:center;}
+.topic .meta .m b{color:var(--ink);font-weight:600;}
+
+/* AI actions */
+.actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.ai-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;background:#fff;border:1px solid var(--line);border-radius:20px;font-family:var(--sans);font-size:11.5px;font-weight:500;color:var(--ink-mid);cursor:pointer;transition:all 0.12s;line-height:1;}
+.ai-btn:hover{border-color:var(--line-2);color:var(--ink);}
+.ai-btn.sum.active{background:var(--ai-sum-soft);border-color:var(--ai-sum);color:var(--ai-sum);}
+.ai-btn.pre.active{background:var(--ai-pre-soft);border-color:var(--ai-pre);color:var(--ai-pre);}
+.ai-btn.tra.active{background:var(--ai-tra-soft);border-color:var(--ai-tra);color:var(--ai-tra);}
+.ai-btn .dot{width:4px;height:4px;border-radius:50%;background:currentColor;}
+.src-link{margin-left:auto;font-family:var(--mono);font-size:10.5px;letter-spacing:0.06em;color:var(--ink-dim);}
+.src-link:hover{color:var(--ink);}
+
+/* AI result cards */
+.ai-result{margin-top:14px;border:1px solid var(--line);background:#fff;animation:fade 0.2s ease-out;}
+@keyframes fade{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:none;}}
+.ai-result .rh{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--bg2);}
+.ai-result .rh .rt{font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;}
+.ai-result.sum .rh .rt{color:var(--ai-sum);}
+.ai-result.pre .rh .rt{color:var(--ai-pre);}
+.ai-result.tra .rh .rt{color:var(--ai-tra);}
+.ai-result .rh .rx{font-family:var(--mono);font-size:10px;color:var(--ink-dim);display:flex;gap:10px;align-items:center;}
+.ai-result .rh .rx .close{cursor:pointer;padding:1px 4px;}
+.ai-result .rh .rx .close:hover{color:var(--ink);}
+.ai-result .rb{padding:14px 16px;}
+.ai-result .rb ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;}
+.ai-result .rb li{font-size:13.5px;line-height:1.55;display:grid;grid-template-columns:14px 1fr;gap:8px;}
+.ai-result .rb li::before{content:'';width:4px;height:4px;border-radius:50%;background:currentColor;margin-top:8px;margin-left:5px;}
+.ai-result.sum .rb li::before{color:var(--ai-sum);}
+.ai-result.pre .rb li::before{color:var(--ai-pre);}
+.ai-result.tra .rb li::before{color:var(--ai-tra);}
+.ai-result .rf{padding:8px 14px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10px;color:var(--ink-faint);display:flex;justify-content:space-between;}
+
+/* ===== RIGHT RAIL ===== */
+.rail-right{border-left:1px solid var(--line);position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;padding:0;}
+.rail-right::-webkit-scrollbar{width:3px;} .rail-right::-webkit-scrollbar-thumb{background:var(--line-2);}
+.rr-head{padding:14px 16px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.rr-head .title{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink);}
+.rr-head .count{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);}
+.rr-region{padding:10px 16px 4px;}
+.rr-region .lbl{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
+.rr-region .lbl .n{font-weight:400;}
+.rr-item{padding:6px 16px;cursor:pointer;border-left:2px solid transparent;}
+.rr-item:hover,.rr-item.active{background:var(--bg2);}
+.rr-item.active{border-left-color:var(--ink);}
+.rr-item .t{font-size:12px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--ink);}
+.rr-item .m{font-family:var(--mono);font-size:9.5px;color:var(--ink-dim);margin-top:2px;display:flex;gap:8px;}
+</style>
+<template id="__bundler_thumbnail" data-bg-color="#ffffff">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <!-- Nav bar -->
+    <rect x="0" y="0" width="1200" height="52" fill="#fff"/>
+    <rect x="0" y="51" width="1200" height="1" fill="#e5e5e5"/>
+    <rect x="20" y="14" width="24" height="24" rx="5" fill="#000"/>
+    <rect x="54" y="18" width="120" height="16" rx="3" fill="#e5e5e5"/>
+    <!-- Left rail -->
+    <rect x="0" y="52" width="220" height="748" fill="#f7f7f5"/>
+    <rect x="220" y="52" width="1" height="748" fill="#e5e5e5"/>
+    <rect x="16" y="70" width="80" height="10" rx="2" fill="#aaa"/>
+    <rect x="16" y="100" width="188" height="8" rx="2" fill="#ddd"/>
+    <rect x="16" y="116" width="160" height="8" rx="2" fill="#ddd"/>
+    <rect x="16" y="140" width="188" height="8" rx="2" fill="#ddd"/>
+    <rect x="16" y="156" width="140" height="8" rx="2" fill="#ddd"/>
+    <rect x="16" y="180" width="188" height="8" rx="2" fill="#ddd"/>
+    <rect x="16" y="196" width="120" height="8" rx="2" fill="#ddd"/>
+    <!-- Coffee block bottom left -->
+    <rect x="16" y="720" width="188" height="60" rx="3" fill="#fff" stroke="#e5e5e5"/>
+    <rect x="24" y="730" width="140" height="8" rx="2" fill="#ddd"/>
+    <rect x="24" y="752" width="160" height="18" rx="2" fill="#000"/>
+    <!-- Middle feed -->
+    <rect x="280" y="100" width="400" height="36" rx="3" fill="#000"/>
+    <rect x="340" y="148" width="280" height="14" rx="2" fill="#ddd"/>
+    <rect x="280" y="220" width="440" height="2" fill="#000"/>
+    <rect x="280" y="240" width="200" height="22" rx="2" fill="#e5e5e5"/>
+    <rect x="280" y="272" width="440" height="10" rx="2" fill="#eee"/>
+    <rect x="280" y="290" width="380" height="10" rx="2" fill="#eee"/>
+    <rect x="280" y="316" width="80" height="24" rx="12" fill="#eaf1f8" stroke="#2a5f8a"/>
+    <rect x="370" y="316" width="72" height="24" rx="12" fill="#f5f5f5" stroke="#e5e5e5"/>
+    <rect x="452" y="316" width="96" height="24" rx="12" fill="#f5f5f5" stroke="#e5e5e5"/>
+    <!-- AI result card -->
+    <rect x="280" y="352" width="440" height="80" rx="4" fill="#fff" stroke="#e5e5e5"/>
+    <rect x="280" y="352" width="440" height="28" rx="4" fill="#eaf1f8"/>
+    <rect x="294" y="363" width="100" height="8" rx="2" fill="#2a5f8a"/>
+    <rect x="294" y="392" width="400" height="8" rx="2" fill="#ddd"/>
+    <rect x="294" y="408" width="320" height="8" rx="2" fill="#ddd"/>
+    <!-- Right rail -->
+    <rect x="980" y="52" width="220" height="748" fill="#f7f7f5"/>
+    <rect x="980" y="52" width="1" height="748" fill="#e5e5e5"/>
+    <rect x="996" y="70" width="80" height="10" rx="2" fill="#aaa"/>
+    <rect x="996" y="100" width="188" height="8" rx="2" fill="#ddd"/>
+    <rect x="996" y="116" width="140" height="8" rx="2" fill="#ddd"/>
+    <rect x="996" y="140" width="188" height="8" rx="2" fill="#ddd"/>
+  </svg>
+</template>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <span class="nav-logo">G</span>
+    Global Perspectives<span class="nav-tm">™</span>
+  </div>
+  <div class="nav-links">
+    <a class="active">Topics</a>
+    <a href="Daily.html">Daily</a>
+    <a href="Map Redesign.html">Map</a>
+    <a href="Thread Detail.html">Threads</a>
+    <a href="Country Detail.html">Countries</a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-search">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3"/></svg>
+      Search topics…
+      <span class="k">⌘K</span>
+    </div>
+    <span class="nav-user">benia|310</span>
+  </div>
+</nav>
+
+<div class="shell">
+
+  <!-- ===== LEFT RAIL ===== -->
+  <aside class="rail-left">
+    <div class="rl-head">
+      <span class="title">Today's Archive</span>
+      <span class="count">39</span>
+    </div>
+    <div class="rl-search">
+      <input type="text" placeholder="Search topics…"/>
+    </div>
+    <div class="rl-cats">
+      <span class="cat active">All</span>
+      <span class="cat">Conflict</span>
+      <span class="cat">Politics</span>
+      <span class="cat">Economy</span>
+      <span class="cat">Military</span>
+      <span class="cat">Health</span>
+    </div>
+    <div class="rl-items">
+      <div class="rl-group"><div class="lbl">Conflict</div></div>
+      <div class="rl-item"><div class="t">Iran FM Araghchi arrives in Moscow for Putin talks as Trump…</div><div class="m">7h ago</div></div>
+      <div class="rl-item"><div class="t">Satellite images reveal massive Israeli destruction of south…</div><div class="m">7h ago</div></div>
+      <div class="rl-item"><div class="t">Highway bomb kills 19, injures dozens in Colombia's Cauca…</div><div class="m">7h ago</div></div>
+      <div class="rl-item active"><div class="t">Cole Tomas Allen identified as gunman targeting Trump and cabinet…</div><div class="m">5h ago</div></div>
+      <div class="rl-item"><div class="t">Kim Jong-un reaffirms North Korea support for Russia's Ukraine war…</div><div class="m">5h ago</div></div>
+
+      <div class="rl-group"><div class="lbl">Politics</div></div>
+      <div class="rl-item"><div class="t">King Charles state visit to US proceeds as planned despite Whi…</div><div class="m">5h ago</div></div>
+      <div class="rl-item"><div class="t">Syrian court holds first hearing in trial of ousted Assad, brother</div><div class="m">5h ago</div></div>
+      <div class="rl-item"><div class="t">King Charles III begins 4-day US visit amid transatlantic tensions…</div><div class="m">5h ago</div></div>
+
+      <div class="rl-group"><div class="lbl">Economy</div></div>
+      <div class="rl-item"><div class="t">Oil prices rise above $107 / barrel as Trump cancels US delegation to…</div><div class="m">4h ago</div></div>
+      <div class="rl-item"><div class="t">Iran FM Araghchi blames US for talks failure after arriving in…</div><div class="m">4h ago</div></div>
+      <div class="rl-item"><div class="t">Argentina signals new IMF agreement as peso volatility…</div><div class="m">3h ago</div></div>
+
+      <div class="rl-group"><div class="lbl">Health</div></div>
+      <div class="rl-item"><div class="t">Nearly 20% of Americans exposed to high nitrate levels in drinking water…</div><div class="m">2h ago</div></div>
+      <div class="rl-item"><div class="t">Measles kills 70 in Sudan's East Darfur amid war-driven healthcare…</div><div class="m">2h ago</div></div>
+    </div>
+
+    <!-- ★ COFFEE PLACEMENT 1: LEFT RAIL BOTTOM -->
+    <div class="rl-coffee">
+      <p>We run ad-free. If Global Perspectives is useful to you, consider supporting it.</p>
+      <a class="cof-btn" href="#" style="background-color: rgb(255, 198, 33)">Support this project ↗</a>
+    </div>
+  </aside>
+
+  <!-- ===== MIDDLE FEED ===== -->
+  <main class="feed">
+
+    <!-- MASTHEAD -->
+    <div class="masthead">
+      <div class="kicker">Monday · April 27 · 2026</div>
+      <h1>Today's Global Topics</h1>
+      <p class="sub">Trending topics from around the world, organised by region. Summarise, predict, or trace the cause of any one.</p>
+
+      <!-- ★ COFFEE PLACEMENT 2: MASTHEAD META STRIP -->
+      <div class="meta-strip">
+        <span class="live"><span class="dot"></span> LIVE</span>
+        <span class="sep">·</span>
+        <span><b>11</b> topics</span>
+        <span class="sep">·</span>
+        <span>updated <b>1h ago</b></span>
+        <span class="sep">·</span>
+        <span>April 27, 2026</span>
+        <span class="support">Ad-free · <a href="#">Support this project ↗</a></span>
+      </div>
+    </div>
+
+    <!-- NORTH AMERICA -->
+    <section class="region">
+      <div class="region-hd">
+        <h2>North America</h2>
+        <span class="n">3 Topics</span>
+      </div>
+
+      <!-- Topic 1 — ACTIVE with Summary open -->
+      <article class="topic">
+        <div class="kicker"><span class="cat">POLITICS</span> <span style="background:#ef4444;color:#fff;font-size:9px;padding:2px 5px;border-radius:2px;font-weight:700;letter-spacing:0.08em;vertical-align:1px;">TRENDING</span> · United States</div>
+        <h3><a href="Thread Detail.html">Cole Tomas Allen identified as gunman targeting Trump and cabinet at White House Correspondents' Dinner</a></h3>
+        <div class="meta">
+          <span class="m"><b>1</b> source</span>
+          <span class="m"><b>1</b> outlet</span>
+          <span class="m">updated <b>5h ago</b></span>
+        </div>
+        <div class="actions">
+          <button class="ai-btn sum active" data-topic="t1" data-ai="sum"><span class="dot"></span> Summary</button>
+          <button class="ai-btn pre" data-topic="t1" data-ai="pre">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/></svg>
+            Predict
+          </button>
+          <button class="ai-btn tra" data-topic="t1" data-ai="tra">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/></svg>
+            Trace Cause
+          </button>
+          <a class="src-link" href="#">1 source ↗</a>
+        </div>
+        <div class="ai-result sum" data-for="t1" data-ai="sum">
+          <div class="rh"><div class="rt">AI Key Takeaways</div><div class="rx"><span>Fast-Track Summary v1.0</span><span class="close" data-for="t1" data-ai="sum">✕</span></div></div>
+          <div class="rb"><ul>
+            <li>Cole Tomas Allen was identified as the gunman who targeted President Trump and multiple cabinet members at the White House Correspondents' Dinner, with investigators confirming his plan to assassinate the US president and top officials.</li>
+            <li>Investigators stated the gunman specifically planned to assassinate the US president and multiple top officials, indicating targeted intent.</li>
+            <li>The attack occurred at the White House Correspondents' Dinner, a major gathering of political and media elites including Trump and cabinet.</li>
+          </ul></div>
+          <div class="rf"><span>Generated just now</span><span>~30s read</span></div>
+        </div>
+      </article>
+
+      <!-- Topic 2 -->
+      <article class="topic">
+        <div class="kicker"><span class="cat">HEALTH</span> · United States</div>
+        <h3><a href="#">Nearly 20% of Americans exposed to high nitrate levels in drinking water from agricultural runoff</a></h3>
+        <div class="meta">
+          <span class="m"><b>3</b> sources</span>
+          <span class="m"><b>2</b> outlets</span>
+          <span class="m">updated <b>2h ago</b></span>
+        </div>
+        <div class="actions">
+          <button class="ai-btn sum" data-topic="t2" data-ai="sum">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h10M3 12h6"/></svg>
+            Summary
+          </button>
+          <button class="ai-btn pre" data-topic="t2" data-ai="pre">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/></svg>
+            Predict
+          </button>
+          <button class="ai-btn tra" data-topic="t2" data-ai="tra">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/></svg>
+            Trace Cause
+          </button>
+          <a class="src-link" href="#">3 sources ↗</a>
+        </div>
+      </article>
+
+      <!-- Topic 3 -->
+      <article class="topic">
+        <div class="kicker"><span class="cat">POLITICS</span> · United Kingdom</div>
+        <h3><a href="#">King Charles III begins 4-day US visit amid transatlantic tensions over trade policy</a></h3>
+        <div class="meta">
+          <span class="m"><b>2</b> sources</span>
+          <span class="m"><b>2</b> outlets</span>
+          <span class="m">updated <b>5h ago</b></span>
+        </div>
+        <div class="actions">
+          <button class="ai-btn sum" data-topic="t3" data-ai="sum">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h10M3 12h6"/></svg>
+            Summary
+          </button>
+          <button class="ai-btn pre" data-topic="t3" data-ai="pre">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/></svg>
+            Predict
+          </button>
+          <button class="ai-btn tra" data-topic="t3" data-ai="tra">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/></svg>
+            Trace Cause
+          </button>
+          <a class="src-link" href="#">2 sources ↗</a>
+        </div>
+      </article>
+    </section>
+
+    <!-- ASIA -->
+    <section class="region">
+      <div class="region-hd">
+        <h2>Asia</h2>
+        <span class="n">3 Topics</span>
+      </div>
+      <article class="topic">
+        <div class="kicker"><span class="cat">ECONOMY</span> · Japan</div>
+        <h3><a href="#">Japan lifts all advisories one week after magnitude 7.7 earthquake</a></h3>
+        <div class="meta">
+          <span class="m"><b>2</b> sources</span>
+          <span class="m"><b>1</b> outlet</span>
+          <span class="m">updated <b>6h ago</b></span>
+        </div>
+        <div class="actions">
+          <button class="ai-btn sum" data-topic="t4" data-ai="sum"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h10M3 12h6"/></svg> Summary</button>
+          <button class="ai-btn pre" data-topic="t4" data-ai="pre"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/></svg> Predict</button>
+          <button class="ai-btn tra" data-topic="t4" data-ai="tra"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/></svg> Trace Cause</button>
+          <a class="src-link" href="#">2 sources ↗</a>
+        </div>
+      </article>
+      <article class="topic">
+        <div class="kicker"><span class="cat">ECONOMY</span> · China</div>
+        <h3><a href="#">China industrial profits hit 8-month high amid Iran war disruptions</a></h3>
+        <div class="meta">
+          <span class="m"><b>1</b> source</span>
+          <span class="m"><b>1</b> outlet</span>
+          <span class="m">updated <b>7h ago</b></span>
+        </div>
+        <div class="actions">
+          <button class="ai-btn sum" data-topic="t5" data-ai="sum"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h10M3 12h6"/></svg> Summary</button>
+          <button class="ai-btn pre" data-topic="t5" data-ai="pre"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/></svg> Predict</button>
+          <button class="ai-btn tra" data-topic="t5" data-ai="tra"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/></svg> Trace Cause</button>
+          <a class="src-link" href="#">1 source ↗</a>
+        </div>
+      </article>
+    </section>
+
+    <!-- AFRICA -->
+    <section class="region">
+      <div class="region-hd">
+        <h2>Africa</h2>
+        <span class="n">2 Topics</span>
+      </div>
+      <article class="topic">
+        <div class="kicker"><span class="cat">HEALTH</span> · Sudan</div>
+        <h3><a href="#">Measles kills 70 in Sudan's East Darfur amid war-driven healthcare collapse</a></h3>
+        <div class="meta">
+          <span class="m"><b>1</b> source</span>
+          <span class="m"><b>1</b> outlet</span>
+          <span class="m">updated <b>3h ago</b></span>
+        </div>
+        <div class="actions">
+          <button class="ai-btn sum" data-topic="t6" data-ai="sum"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h10M3 12h6"/></svg> Summary</button>
+          <button class="ai-btn pre" data-topic="t6" data-ai="pre"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/></svg> Predict</button>
+          <button class="ai-btn tra" data-topic="t6" data-ai="tra"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/></svg> Trace Cause</button>
+          <a class="src-link" href="#">1 source ↗</a>
+        </div>
+      </article>
+    </section>
+
+    <!-- EUROPE -->
+    <section class="region">
+      <div class="region-hd">
+        <h2>Europe</h2>
+        <span class="n">2 Topics</span>
+      </div>
+      <article class="topic">
+        <div class="kicker"><span class="cat">POLITICS</span> · Netherlands</div>
+        <h3><a href="#">Amsterdam becomes first world capital to legally ban fossil fuel advertising</a></h3>
+        <div class="meta">
+          <span class="m"><b>2</b> sources</span>
+          <span class="m"><b>2</b> outlets</span>
+          <span class="m">updated <b>4h ago</b></span>
+        </div>
+        <div class="actions">
+          <button class="ai-btn sum" data-topic="t7" data-ai="sum"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M3 8h10M3 12h6"/></svg> Summary</button>
+          <button class="ai-btn pre" data-topic="t7" data-ai="pre"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13l4-4 3 3 5-6"/><path d="M11 6h3v3"/></svg> Predict</button>
+          <button class="ai-btn tra" data-topic="t7" data-ai="tra"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/><path d="M5.5 8h5"/></svg> Trace Cause</button>
+          <a class="src-link" href="#">2 sources ↗</a>
+        </div>
+      </article>
+    </section>
+
+  </main>
+
+  <!-- ===== RIGHT RAIL ===== -->
+  <aside class="rail-right">
+    <div class="rr-head">
+      <span class="title">Topics</span>
+      <span class="count">11</span>
+    </div>
+
+    <div class="rr-region">
+      <div class="lbl">North America <span class="n">3</span></div>
+    </div>
+    <div class="rr-item active"><div class="t">Cole Tomas Allen identified as gunman targeting Trump and cabinet…</div><div class="m"><span>Politics</span><span>5h ago</span></div></div>
+    <div class="rr-item"><div class="t">Nearly 20% of Americans exposed to high nitrate levels in drinking…</div><div class="m"><span>Health</span><span>2h ago</span></div></div>
+    <div class="rr-item"><div class="t">King Charles III begins 4-day US visit amid transatlantic tensions…</div><div class="m"><span>Politics</span><span>5h ago</span></div></div>
+
+    <div class="rr-region">
+      <div class="lbl">Asia <span class="n">3</span></div>
+    </div>
+    <div class="rr-item"><div class="t">China industrial profits hit 8-month high amid Iran war disruptions</div><div class="m"><span>Economy</span><span>7h ago</span></div></div>
+    <div class="rr-item"><div class="t">Japan lifts all advisories one week after magnitude 7.7 earthquake</div><div class="m"><span>Economy</span><span>6h ago</span></div></div>
+
+    <div class="rr-region">
+      <div class="lbl">Africa <span class="n">1</span></div>
+    </div>
+    <div class="rr-item"><div class="t">Measles kills 70 in Sudan's East Darfur amid war-driven healthcare…</div><div class="m"><span>Health</span><span>3h ago</span></div></div>
+
+    <div class="rr-region">
+      <div class="lbl">Europe <span class="n">2</span></div>
+    </div>
+    <div class="rr-item"><div class="t">Amsterdam becomes first world capital to legally ban fossil fuel…</div><div class="m"><span>Politics</span><span>4h ago</span></div></div>
+    <div class="rr-item"><div class="t">Israel strikes kill 14 in southern Lebanon despite ceasefire…</div><div class="m"><span>Conflict</span><span>6h ago</span></div></div>
+
+    <div class="rr-region">
+      <div class="lbl">Middle East <span class="n">1</span></div>
+    </div>
+    <div class="rr-item"><div class="t">Israeli strikes kill 14 in southern Lebanon despite ceasefire…</div><div class="m"><span>Conflict</span><span>6h ago</span></div></div>
+
+    <div class="rr-region">
+      <div class="lbl">World <span class="n">1</span></div>
+    </div>
+    <div class="rr-item"><div class="t">Oil prices rise above $107/barrel as Trump cancels US delegation…</div><div class="m"><span>Economy</span><span>4h ago</span></div></div>
+  </aside>
+
+</div><!-- /shell -->
+
+<script>
+/* AI button toggle */
+document.querySelectorAll('.ai-btn[data-ai]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const topic=btn.dataset.topic, ai=btn.dataset.ai;
+    const article=btn.closest('.topic');
+    const wasActive=btn.classList.contains('active');
+
+    // deactivate all in this topic
+    article.querySelectorAll('.ai-btn').forEach(b=>b.classList.remove('active'));
+    article.querySelectorAll('.ai-result').forEach(r=>r.remove());
+
+    if(wasActive) return;
+
+    btn.classList.add('active');
+    const labels={sum:'AI Key Takeaways',pre:'AI Prediction',tra:'AI Trace Cause'};
+    const bodies={
+      sum:'<ul><li>Generating concise takeaways from available sources…</li><li>Cross-checking against thread history and prior context.</li></ul>',
+      pre:'<ul><li>Near-term: analysing signal breadth and comparable precedents…</li><li>Medium-term: drawing on causal model v1.2.</li></ul>',
+      tra:'<ul><li>Proximate cause: identifying direct trigger…</li><li>Contributing factors: regional and structural conditions…</li><li>Structural backdrop: long-running forces underlying today\'s event.</li></ul>'
+    };
+    const el=document.createElement('div');
+    el.className=`ai-result ${ai}`;
+    el.dataset.for=topic; el.dataset.ai=ai;
+    el.innerHTML=`<div class="rh"><div class="rt">${labels[ai]}</div><div class="rx"><span>Generating…</span><span class="close">✕</span></div></div><div class="rb">${bodies[ai]}</div><div class="rf"><span>Connecting to AI service…</span><span></span></div>`;
+    article.appendChild(el);
+    el.querySelector('.close').addEventListener('click',()=>{
+      btn.classList.remove('active'); el.remove();
+    });
+  });
+});
+
+/* Pre-opened result close */
+document.querySelectorAll('.ai-result .close').forEach(x=>{
+  x.addEventListener('click',()=>{
+    const res=x.closest('.ai-result');
+    const topic=res.dataset.for, ai=res.dataset.ai;
+    const btn=document.querySelector(`.ai-btn[data-topic="${topic}"][data-ai="${ai}"]`);
+    if(btn) btn.classList.remove('active');
+    res.remove();
+  });
+});
+</script>
+</body>
+</html>

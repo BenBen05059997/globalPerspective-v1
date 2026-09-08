@@ -1,7 +1,7 @@
 # Verification Loop — Iteration 2 Summary
 
 **Date:** 2026-05-24
-**Plan:** [`ECONOMIC_VERIFICATION_PLAN.md`](../../ECONOMIC_VERIFICATION_PLAN.md)
+**Plan:** [`ECONOMIC_VERIFICATION_PLAN.md`](../../project-docs/economy/_reference/ECONOMIC_VERIFICATION_PLAN.md)
 **Latest machine-generated report:** [`latest.md`](latest.md)
 
 ## What this iteration shipped

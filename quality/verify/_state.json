@@ -1,120 +1,120 @@
 {
-  "ts": "2026-05-24T10:36:48.828Z",
+  "ts": "2026-09-07T23:39:25.618Z",
   "checks": [
     {
       "id": "L1.01",
       "fails": 0,
-      "total": 38
+      "total": 22
     },
     {
       "id": "L1.02",
       "fails": 0,
-      "total": 38
+      "total": 22
     },
     {
       "id": "L1.03",
       "fails": 0,
-      "total": 38
+      "total": 22
     },
     {
       "id": "L1.04",
       "fails": 0,
-      "total": 38
+      "total": 22
     },
     {
       "id": "L1.05",
       "fails": 0,
-      "total": 38
+      "total": 22
     },
     {
       "id": "L1.06",
       "fails": 0,
-      "total": 38
+      "total": 22
     },
     {
       "id": "L1.07",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.08",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.09",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.10",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.11",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.12",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.13",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.14",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.15",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.16",
-      "fails": 5,
-      "total": 6
+      "fails": 15,
+      "total": 8
     },
     {
       "id": "L1.17",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.18",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.19",
-      "fails": 0,
-      "total": 29
+      "fails": 2,
+      "total": 12
     },
     {
       "id": "L1.20",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.21",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.22",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.23",
       "fails": 0,
-      "total": 9
+      "total": 10
     },
     {
       "id": "L1.24",
@@ -124,27 +124,27 @@
     {
       "id": "L1.25",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.26",
       "fails": 0,
-      "total": 29
+      "total": 12
     },
     {
       "id": "L1.27",
-      "fails": 1,
+      "fails": 0,
       "total": 1
     },
     {
       "id": "L1.28",
       "fails": 0,
-      "total": 0
+      "total": 6
     },
     {
       "id": "L1.29",
       "fails": 0,
-      "total": 0
+      "total": 6
     },
     {
       "id": "L1.30",

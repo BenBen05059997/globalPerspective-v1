@@ -34,7 +34,7 @@ Changes: new `project-docs/architecture/DATA_STRATEGY.md`; plan v2 banner, §3.2
 Docs to update: `INDEX.md` ✅ · `CHANGES.md` ✅ · memory `project_map_home_situation` ✅
 Verify / exit: docs coherent; no build
 Done-check: [x] docs  [x] INDEX  [x] CHANGES
-Commit: <this commit>
+Commit: `0ad78eb`
 
 ### S0 · T2 — S3 bucket, prefixes, lifecycle, IAM
 Status: 🔭 todo

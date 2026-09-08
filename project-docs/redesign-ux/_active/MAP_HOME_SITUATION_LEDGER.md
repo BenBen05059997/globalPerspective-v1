@@ -16,7 +16,7 @@ Changes: `scripts/brave-audit.md` created; plan §2.6 + §5.1 decision table fil
 Docs to update: `MAP_HOME_SITUATION_PLAN.md` §2.6/§5.1 ✅ · `scripts/brave-audit.md` ✅ · `CHANGES.md` ✅ · this ledger ✅
 Verify / exit: decision table filled; ingest-Brave removal go/no-go recorded ✅
 Done-check: [x] numbers  [x] docs updated  [x] CHANGES.md  [x] table filled
-Commit: — (uncommitted; awaiting user go-ahead to commit — branch off main per repo rule)
+Commit: `2bb6ee7` (P0 + playbook + ledger + plan §3.1/§9)
 Notes: **brave_unique_chosen = 0.4%** (12/2,740 chosen over 197 runs) → remove Brave from ingest, no fallback. Brave = 5.8% of pool, ~18% 429-throttled, reuters returns ~0.38/run. Grounding fns log Brave only on failure → true volume needs the Brave dashboard (operator). Incidental: prod `BRAVE_CONCURRENCY=1` (src default 3); Brave key valid (no 401/403). **The live Brave key is in the Lambda env — seen but deliberately NOT written to any doc/commit.**
 
 ### P0 · T2 — Live-bytes drift diff (GDACS / GDELT / breaking-alert)
@@ -43,14 +43,15 @@ Notes: ingest "GROK" alias = **DeepSeek**: `GROK_API_URL=https://api.deepseek.co
 
 ## Phase P1 — ingest (shadow tables only; UI untouched)
 
-### P1 · T1 — `GlobalPerspectiveSituations` table + GDACS writes situations directly (geometry, alertHistory, 20-min)
-Status: 🔭 todo
-Reads/refs: `amplify/backend/function/newsGdacsIngest/src/index.js` (byte-identical to main per P0·T2); EventBridge rule `TriggerGdacsIngest`; plan §3.1 (LLM boundary, decision 6), §4 WS2 record schema
-Changes: **create table `GlobalPerspectiveSituations`** (PK situationId; GSI state+next_check_at; GSI updated_at; TTL 60d); newsGdacsIngest index.js (store `f.geometry`→lat/lon, `alertHistory[]`, upsert situation row on Red/Orange or level-rise — Red→Critical, Orange→High, axis=humanitarian, verb_label; no LLM); rule cron→`rate(20 minutes)`
-Docs to update: `ARCHITECTURE.md` (Lambda + DDB schema + schedule table) · `BACKEND_GUIDE.md` · `pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md` (un-shadow) · `CHANGES.md`
-Verify / exit: new GDACS items carry coordinates; a live Orange/Red event produces a situation row with no model call; 20-min runs visible; deploy gated (explicit yes)
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify/deploy-gate
-Commit: —
+### P1 · T1 — `GlobalPerspectiveSituations` table + GDACS writes situations directly (geometry, history, 20-min)
+Status: ✅ done (2026-09-08, deployed + live-verified)
+Reads/refs: `amplify/backend/function/newsGdacsIngest/src/index.js` (was byte-identical to main; re-verified before edit); EventBridge rule `TriggerGdacsIngest`; plan §3.1, §4 WS2
+Changes: created table `GlobalPerspectiveSituations` (PK situationId; GSI `state-next_check_at-index`; GSI `all-updated_at-index`; TTL 60d); IAM PutItem/Query grant merged into `newsGdacsIngest-pol`; newsGdacsIngest index.js (geometry→lat/lon, situation upsert on Orange/Red with state machine + history + templated what_changed, NO LLM; lazy SDK for testability; `cleanSeverity`); `index.test.mjs` (9 tests); rule → `rate(20 minutes)`
+Docs to update: `ARCHITECTURE.md` ✅ · `BACKEND_GUIDE.md` ✅ · `IMPACT_FIRST_REDESIGN_PLAN.md` ✅ · `CHANGES.md` ✅
+Verify / exit: ✅ 100/100 events carry coordinates; live Orange event opened 1 situation with 0 model calls; re-run idempotent (`unchanged`); `rate(20 minutes)` confirmed ENABLED; 9 unit tests pass
+Done-check: [x] code  [x] docs  [x] CHANGES  [x] verify/deploy
+Commit: <pending this commit>
+Notes: tier vocabulary reconciled — Red→high, Orange→elevated (canonical `riskTiers.js`, no "critical"; map renders critical = high+escalating). GDACS role now allows Situations PutItem/Query. Deployed bundle is index.js+package.json only (SDK from nodejs22.x runtime). One pre-fix artifact: the test row `gdacs#FL#1104081` keeps its original "Magnitude 0" what_changed until its next real change (correct — unchanged preserves prior text).
 
 ### P1 · T2 — `newsArticleClassifier` (per-article structured classification)
 Status: 🔭 todo

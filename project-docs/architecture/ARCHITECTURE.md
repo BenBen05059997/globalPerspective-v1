@@ -792,7 +792,7 @@ Four Lambdas **deployed and ENABLED in prod** whose source lived only on the unm
 |---|---|---|---|
 | **`newsSignals`** | `TriggerSignalsBuild` `cron(0 10 * * ? *)` + a public **Function URL** (AuthType NONE, key-gated in code) | 300s / 512MB | Signal-API v1 builder — writes `GlobalPerspectiveSignals` (120d TTL) from `PredictionLog`/`SummarizeAndPredict`/`BreakingAlerts`; `API_KEYS_TABLE=GlobalPerspectiveApiKeys`, `FREE_DELAY_HOURS=24` (paid-tier freshness gate). |
 | **`newsImpactAudit`** | `TriggerImpactAudit` `cron(0 9 * * ? *)` | 120s / 256MB | Coverage dead-man's-switch — DeepSeek audit of whether high-impact events were MISSED; `IMPACT_AUDIT_TABLE`/`INGEST_CAPTURE_TABLE`, SNS→`GlobalPerspectiveAlerts` when misses ≥ `MISS_ALERT_THRESHOLD=2`. |
-| **`newsGdacsIngest`** | `TriggerGdacsIngest` `cron(0 */6 * * ? *)` | 120s / 256MB | GDACS disaster-alert ingest feed → `GlobalPerspectiveGdacsEvents`. |
+| **`newsGdacsIngest`** | `TriggerGdacsIngest` **`rate(20 minutes)`** (was `cron(0 */6…)`, changed 2026-09-08) | 120s / 256MB | GDACS disaster-alert ingest → `GlobalPerspectiveGdacsEvents` (now with `lat`/`lon`); **also the deterministic situation opener** — upserts Orange/Red events into `GlobalPerspectiveSituations` (NO LLM). See Situations Table + `MAP_HOME_SITUATION_PLAN.md`. |
 | **`newsGdeltConflict`** | `TriggerGdeltConflict` `cron(0 */6 * * ? *)` | 120s / 512MB | GDELT conflict-event ingest feed → `GlobalPerspectiveGdeltConflict`. |
 
 ---
@@ -945,10 +945,13 @@ These exist in prod DynamoDB; their producers' source lived on the unmerged `sig
 |-------|-----|-----------|----------|
 | `GlobalPerspectiveSignals` | `signal_id` | newsSignals | Signal-API v1 records (120d TTL) |
 | `GlobalPerspectiveApiKeys` | `keyHash` | mint-key.mjs / newsSignals | Signal-API access keys |
-| `GlobalPerspectiveGdacsEvents` | (see describe-table) | newsGdacsIngest | GDACS disaster-alert ingest |
+| `GlobalPerspectiveGdacsEvents` | `eventKey` (`type#id`) | newsGdacsIngest | GDACS disaster-alert ingest; **now stores `lat`/`lon`** (from feature geometry) as of 2026-09-08 |
 | `GlobalPerspectiveGdeltConflict` | (see describe-table) | newsGdeltConflict | GDELT conflict-event ingest |
 | `GlobalPerspectiveImpactAudit` | (see describe-table) | newsImpactAudit | Coverage-audit results |
 | `GlobalPerspectiveIngestCapture` | (see describe-table) | ingest feeds | Raw high-impact event capture (audited by newsImpactAudit) |
+
+### Situations Table (`SITUATIONS_TABLE`, default `GlobalPerspectiveSituations`, ap-northeast-1)
+**Created 2026-09-08** for the map-as-home + situation-tracker programme (`redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md`). **PK:** `situationId` (`gdacs#<eventKey>` for disaster opener; `breaking#<threadId>` for the alert opener). PAY_PER_REQUEST, TTL on `ttl` (60d after last touch). **GSIs:** `state-next_check_at-index` (HASH `state` + RANGE `next_check_at` — the tracker sweeps due situations by state) and `all-updated_at-index` (HASH `gsiAll`=`'ALL'` + RANGE `updated_at` — recency listing for `situations_list`). Each item (v1, GDACS opener): `{ situationId, source('gdacs'|'breaking'), gdacsEventKey?, threadId?, title, verb_label ("China — flood"), axis('humanitarian'|'conflict'|'political'|'economic'), tier(low|moderate|elevated|high — GDACS Red→high, Orange→elevated), state('emerging'|'escalating'|'peak'|'cooling'|'closed'), iso3_origin[], iso3_affected[], centroid{lat,lon}, spread_arcs[{from,to,since}], opened_at, updated_at, last_change_at, last_checked_at, check_count, cadence_min, next_check_at, what_changed(templated — LLM only on material news change), evidence{gdacs_level,gdacs_score,gdacs_report_url,affected_count,…}, history[{at,tier,level,score,state,note}] (cap 200), ttl }`. **Written deterministically (NO LLM)** by `newsGdacsIngest` (disaster opener, Orange/Red only; Green cools an open row); to be written by `newsBreakingAlert` (alert opener) and swept by `newsSituationTracker` (state machine + adaptive cadence) — both pending. There is **no `critical` tier**; the map renders "critical" as `high` + escalating. See §3.1 (LLM boundary) of the plan.
 
 ---
 
@@ -1031,7 +1034,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `TriggerErrorDigest` | `cron(15 0/6 * * ? *)` | newsErrorDigest (#19) |
 | `TriggerSignalsBuild` | `cron(0 10 * * ? *)` | newsSignals (Signal-API — deployed to prod; source merged to `main` 2026-08-01) |
 | `TriggerImpactAudit` | `cron(0 9 * * ? *)` | newsImpactAudit (impact-first — source merged to `main` 2026-08-01) |
-| `TriggerGdacsIngest` | `cron(0 */6 * * ? *)` | newsGdacsIngest (GDACS ingest — source merged to `main` 2026-08-01) |
+| `TriggerGdacsIngest` | `rate(20 minutes)` (was `cron(0 */6 * * ? *)`, 2026-09-08) | newsGdacsIngest (GDACS ingest + situation opener) |
 | `TriggerGdeltConflict` | `cron(0 */6 * * ? *)` | newsGdeltConflict (GDELT ingest — source merged to `main` 2026-08-01) |
 
 ### EventBridge Scheduler

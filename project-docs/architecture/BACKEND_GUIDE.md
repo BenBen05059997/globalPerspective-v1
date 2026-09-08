@@ -59,6 +59,7 @@ Function URL           → newsSavedItems → SAVED_ITEMS_TABLE (JWT required)
 | Users | `USERS_DDB_TABLE` | `uid` | Firebase UID, email, `tier`, `polarCustomerId`/`polarSubscriptionId`, `creditBalance` |
 | Social Posts | `SOCIAL_POSTS_TABLE` | composite | Dedup table for all platform posts (30-day TTL; 90-day for Dev.to) |
 | Saved Items | `SAVED_ITEMS_TABLE` | `uid` + `savedKey` | User bookmarks (thread, country, daily, pair — max 500/user) — used by `newsSavedItems` Lambda |
+| Situations | `SITUATIONS_TABLE` | `situationId` | **New 2026-09-08.** Active world "situations" for the map-as-home programme; deterministic disaster opener (`newsGdacsIngest`, Orange/Red, NO LLM) + coming alert opener/tracker. GSIs `state-next_check_at-index`, `all-updated_at-index`. Full schema + item shape in `ARCHITECTURE.md` §Situations Table; design in `redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md`. |
 
 ---
 

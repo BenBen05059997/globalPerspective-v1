@@ -71,6 +71,8 @@ Impact-first can mean two different things; they pull apart and shape the rubric
 **→ DECISION: IMPACT-DRIVEN (operator, 2026-06-24).** "What materially changes lives, even if
 underreported." Feasibility checked — see §3.5.
 
+> **UPDATE 2026-09-08 — GDACS un-shadowed.** `newsGdacsIngest` is no longer shadow-only. It now stores event coordinates and, as the **deterministic situation opener** (Orange/Red → `GlobalPerspectiveSituations`, NO LLM), feeds the map-as-home + situation-tracker programme. Cadence raised to `rate(20 minutes)`. See `redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md` §3.1/§4 and `ARCHITECTURE.md` §Situations Table. GDELT (`newsGdeltConflict`) remains shadow pending its own un-shadowing.
+
 ## 3.5 Impact IS measurable — direct-impact feeds (verified 2026-06-24)
 
 The hard part of impact-driven is "underreported = no media signal." **Solved by measuring impact

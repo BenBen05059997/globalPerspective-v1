@@ -312,14 +312,38 @@ function truncateAtSentence(text, maxLen) {
 }
 
 function buildHashtags(topic) {
+  // LinkedIn 2026 best practice: 3–5 hashtags max (>5 measurably hurts reach), at the end.
   const tags = (topic.regions || [])
-    .slice(0, 3)
+    .slice(0, 2)
     .map(r => `#${r.replace(/[^a-zA-Z0-9]/g, '')}`)
     .filter(t => t.length > 1);
 
   if (topic.category) tags.push(`#${topic.category}`);
-  tags.push('#GlobalPerspectives', '#WorldNews');
+  tags.push('#GlobalPerspectives');
   return tags.join(' ');
+}
+
+// The PREDICTION content is structured JSON (methodology-v1, contentFormat='json'):
+//   { scenarios: [{ label, probability_range, horizon, rationale, triggers:[...] }] }
+// Older records are prose. Render the top scenarios as readable prose either way —
+// NEVER dump raw JSON into a post (was doing exactly that pre-2026-09-08).
+function formatPredictionText(raw) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+  if (s[0] === '{' || s[0] === '[') {
+    try {
+      const obj = JSON.parse(s);
+      const scenarios = Array.isArray(obj) ? obj : (obj.scenarios || []);
+      const lines = scenarios.slice(0, 2).map((sc) => {
+        const label = sc.label || 'Scenario';
+        const meta = [sc.probability_range || sc.probability, sc.horizon].filter(Boolean).join(', ');
+        const rationale = stripMarkdown(sc.rationale || sc.text || '');
+        return rationale ? `${label}${meta ? ` (${meta})` : ''}: ${rationale}` : '';
+      }).filter(Boolean);
+      if (lines.length) return lines.join('\n\n');
+    } catch (_) { /* not valid JSON — fall through to prose */ }
+  }
+  return stripMarkdown(s);
 }
 
 // ---------------------------------------------------------------------------
@@ -432,14 +456,16 @@ function formatLinkedInPost(topic, summary, prediction) {
 
   const header = `[${category}] ${topic.title}\n\n`;
 
-  const footer = `\nRead full analysis: ${SITE_URL}\n\n` +
-    buildHashtags(topic) + ' #AI';
+  // Deep-link to the specific story's thread page (not the homepage). SITE_URL ends in '/'.
+  const link = topic.threadId ? `${SITE_URL}weekly/thread/${topic.threadId}` : SITE_URL;
+  const footer = `\nRead full analysis: ${link}\n\n` +
+    buildHashtags(topic);
 
   const reservedChars = header.length + footer.length + 20;
   const availableChars = MAX_CHARS - reservedChars;
 
   let cleanSummary = summary ? stripMarkdown(summary) : '';
-  let cleanPrediction = prediction ? stripMarkdown(prediction) : '';
+  let cleanPrediction = prediction ? formatPredictionText(prediction) : '';
 
   let body = '';
 
@@ -450,11 +476,11 @@ function formatLinkedInPost(topic, summary, prediction) {
     const trimmedSummary = truncateAtSentence(cleanSummary, summaryBudget);
     const trimmedPrediction = truncateAtSentence(cleanPrediction, predictionBudget);
 
-    body = `${trimmedSummary}\n\n---\nPrediction:\n\n${trimmedPrediction}`;
+    body = `${trimmedSummary}\n\n---\nForecast:\n\n${trimmedPrediction}`;
   } else if (cleanSummary) {
     body = truncateAtSentence(cleanSummary, availableChars);
   } else if (cleanPrediction) {
-    body = `Prediction:\n\n${truncateAtSentence(cleanPrediction, availableChars)}`;
+    body = `Forecast:\n\n${truncateAtSentence(cleanPrediction, availableChars)}`;
   }
 
   let post = `${header}${body}\n${footer}`.trim();

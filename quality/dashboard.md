@@ -65,5 +65,5 @@ node quality/calibration_report.js     # update calibration + drift
 ```
 
 **Daily remote routine:** `trig_01MuDETdraFku7yxBLEs4ZZK` fires 09:00 UTC.
-**CI:** `.github/workflows/verify.yml` runs on every push/PR.
+**CI:** none — this repo is intentionally CI-free; `verify` is a local pre-push gate, not GitHub Actions.
 **Pre-push hook:** install once with `bash scripts/install_hooks.sh`.

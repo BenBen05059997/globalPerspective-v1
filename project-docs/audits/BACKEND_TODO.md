@@ -1,0 +1,133 @@
+# Backend TODO
+
+Tracked issues from code review of all 11 Lambda functions (2026-04-17).
+
+---
+
+## 2026-09-08 doc-staleness sweep — actionable (non-doc) findings
+
+Surfaced while auditing the 53 plan/spec docs against live code (method: `AGENT_REVIEW_METHOD.md`). These are real backend items, not doc drift:
+
+1. **🔒 SECURITY — rotate the leaked Polar token (operator-only).** Prod `newsPolarBilling` `POLAR_ACCESS_TOKEN` still equals the value `POLAR_BILLING_PLAN.md` flags as chat-leaked; rotation never happened. Rotate in the Polar dashboard, then `update-function-configuration` (merge-don't-clobber env). Cannot be done by the agent.
+2. **⚠️ Breaking-alert scorer runs STALE logic in prod.** Deployed `newsBreakingAlert` still runs the OLD uncapped, country-risk-dominant scorer (byte-diffed vs `CodeSha256`); the Stage-1 fix (`RISK_CAP=50`, risk weight `2.0→1.0`) is on `main`/in source but was never `update-function-code`'d. Deploy the current source. See `BREAKING_ALERT_V2_BUILD_PLAN.md` Stage 1.
+3. **🧨 Landmine — `newsImpactAudit/src/index.js:30`** still defaults to the retired `deepseek-chat` alias (`process.env.GROK_MODEL || 'deepseek-chat'`). No live bug today (deployed env overrides to `deepseek-v4-flash`) but it will silently break if the env var is ever unset. Patch the source default to a live model; unmentioned in `DEEPSEEK_V4_STRAGGLERS_PLAN.md` §4.
+
+---
+
+## 2026-05-26 audit findings (full ARCHITECTURE.md re-verification vs. live AWS)
+
+### A. Subscriptions / billing — ✅ TEARDOWN COMPLETE 2026-06-01
+Billing is **not in use and not planned to return.** The backend teardown deferred on 2026-05-26 is now done.
+
+**Backend teardown — DONE 2026-06-01:**
+- Deleted the deployed `newsStripeWebhook` Lambda, its public Function URL (`https://tu2abnue3kefs2lkeczezoez3m0fzztr.lambda-url.ap-northeast-1.on.aws/`, 0 invocations/30d — it used a Function URL, **not** API Gateway), its IAM role `newsStripeWebhook-role-kercpkn5`, and the orphaned per-function exec policy. (Source kept in-repo for reference.)
+- Stripped `resolveUserTier` + the `user_profile` / `portal_session` actions (and dead `resolveTier`, `MEMBER_API_KEYS`/`ENTERPRISE_API_KEYS`/`USERS_TABLE`/`PADDLE_*`/`LOOPS_API_KEY` consts) from `newsSensitiveData` source; redeployed to `newsSensitiveData-dev`; verified `topics` action returns fresh data. Generic `verifyFirebaseToken` kept (still used by `newsSavedItems`).
+
+**Still optional (not done):** drop `tier`/`paddleCustomerId`/`paddleSubscriptionId` from `USERS_TABLE` records. No urgency — just dormant attributes.
+
+_(Original deferred-state context below.)_ The earlier "fix the Paddle/Stripe env mismatch before re-enabling billing" item is **withdrawn** — there is nothing to re-enable. The deployed `newsStripeWebhook` was broken (read `PADDLE_WEBHOOK_SECRET`, only had stale `STRIPE_*` vars) — moot now that it's deleted.
+
+**Frontend cleanup — DONE 2026-05-26 (built + deployed to `docs/`):**
+- Deleted `TrialBanner.jsx`, `UpgradeSuccess.jsx`, `WeeklyLockedPreview.jsx`, `useUserProfile.js`.
+- Removed the `/upgrade/success` route + TrialBanner usage from CountryPage/ThreadPage/WeeklyPage.
+- Stripped tier/perks/billing + `fetchPortalSession`/`fetchUserProfile` from `Account.jsx` (kept the Saved-items feature + basic profile).
+- Removed `fetchUserProfile` / `fetchPortalSession` from `restProxy.js` and the dead mocks from `redesign.test.jsx`.
+- Lint 0 errors, build OK, 171 tests pass.
+
+**Stale subscription copy on public pages (DEFERRED — needs wording decision):** `PrivacyTerms.jsx` still says paid subscriptions exist + "payments processed by Stripe"; `Contact.jsx` still has "Billing & Account" + "Enterprise" cards. These contradict the billing deprecation but are legal/marketing copy — left for the operator to reword. (Found in the 2026-05-26 page audit.)
+
+### B. Resolved since the 2026-04-17 list — verified done
+- **#4 / architectural note:** `newsPairIntelligence` is documented in ARCHITECTURE.md and confirmed manual-only (no schedule), deployed on DeepSeek. No longer "uncertain."
+- **#6:** `newsPostDevTo` is deployed and live (DeepSeek for the brief, OpenRouter `deepseek/deepseek-v4-flash:free` for the Dev.to overview). The undeclared-reference worry was a WIP that shipped.
+- **"Add `newsSavedItems`":** done — plus `newsMarketsData`, `newsEconomicImpact`, `newsEconomicQuality` are now all documented (16 Lambdas total).
+
+### C. Lower-priority follow-ups surfaced by the audit
+- Env-var **rename** `XAI_API_KEY`/`GROK_MODEL`/`GROK_API_URL` → `LLM_*`: every Lambda's name now lies about its provider. Tracked in `OPTIMIZATION_REPORT.md` OPT-2b; raising visibility here.
+- Known-broken integrations (from `AI_PROVIDER_MIGRATION_PLAN.md`): `linkedInAutoPost` LinkedIn token expired (401); `newsPostDevTo` Dev.to publish key 401. Brief generation still works.
+
+---
+
+## Verified issues (found in code)
+
+### 1. Dead code in `newsSensitiveData` — ✅ DONE 2026-06-01
+Removed in the billing teardown: `MEMBER_API_KEYS`/`ENTERPRISE_API_KEYS` parsing, `resolveTier(apiKey)`, `resolveUserTier`, and the `user_profile`/`portal_session` actions. Source redeployed + verified.
+
+---
+
+### 2. `summaryPredictionFresh()` is a stub
+**File:** `amplify/backend/function/newsSensitiveData/src/index.js` (~line 828)
+
+```js
+function summaryPredictionFresh(item) {
+  return true;
+}
+```
+
+Called as `stale: summaryPredictionFresh(Item) ? false : true`, so the `stale` field returned to the frontend is always `false`. Either implement the freshness check (compare `item.generatedAt` against `SUMMARY_PREDICT_MAX_AGE_SECONDS`) or remove the function and the `stale` field.
+
+---
+
+### 3. `archive_range` does sequential DynamoDB reads
+**File:** `amplify/backend/function/newsSensitiveData/src/index.js` (~line 919)
+
+```js
+for (let i = 1; i < days; i++) {
+  const { Item } = await client.send(new GetCommand({...}));
+}
+```
+
+For a 90-day enterprise call, this is 90 serial round-trips. Fine at current tier limits (usually 7 days), but will be slow if anyone requests the full 90.
+
+**Action:** Batch with `BatchGetCommand` (max 100 keys per batch → one round-trip for 90 days).
+
+---
+
+## Uncertain — needs verification before acting
+
+### 4. Is `newsPairIntelligence` scheduled?
+- Folder is untracked in git (`?? amplify/backend/function/newsPairIntelligence/`)
+- Not mentioned in `ARCHITECTURE.md` or `MEMORY.md`
+- Grok prompt + DDB write paths look production-ready
+
+**Action:** Check `amplify/backend/backend-config.json` and AWS Console for an EventBridge rule. If missing, decide on a cadence (weekly? daily? manual?) and wire one up.
+
+---
+
+### 5. Daily brief timing vs. country intelligence
+- `newsCountryIntelligence` runs at 7:00 UTC
+- `newsPostDevTo` generates the Daily Brief by reading thread analyses + country intel
+- If DevTo runs before 7:00 UTC, the brief will miss fresh country data
+- `newsPostDevTo` dedups per-day, so a thin brief won't auto-regenerate
+
+**Action:** Check the EventBridge rule for `newsPostDevTo`. If it fires before ~7:15 UTC, move it later or remove the per-day dedup and let it regenerate on each run.
+
+---
+
+### 6. `newsPostDevTo` has undeclared references
+**File:** `amplify/backend/function/newsPostDevTo/src/index.js`
+
+Variables used but not declared in the portion I read: `POSTS_TABLE`, `DEVTO_API_KEY`, `PLATFORM`, `AI_ENDPOINT`, `AI_MODEL`, `OPENROUTER_API_KEY`, `SITE_URL`, `POST_TTL_DAYS`, `buildDailySummary`, `buildAiOverviewPrompt`.
+
+Memory notes say "BUILT 2026-04-08, pending deploy" — likely a WIP. File shows as `M` in git status.
+
+**Action:** Before deploying, either finish the declarations or stash the changes. `node --check` should catch this.
+
+---
+
+## Architectural notes (not urgent)
+
+### `newsPairIntelligence` not in `ARCHITECTURE.md`
+Once scheduled and deployed, add a section alongside the other Lambdas documenting: trigger, inputs, outputs, DDB keys (`PAIR#{slug}` / `PAIR_ANALYSIS`), TTL (90 days), hardcoded pair list.
+
+### Add `newsSavedItems` to `ARCHITECTURE.md`
+Memory has details but `ARCHITECTURE.md` only lists 8 Lambdas. Both `newsSavedItems` and `newsPairIntelligence` are missing.
+
+---
+
+## What I explicitly chose NOT to put on this list
+
+Things that looked like issues at first glance but aren't worth acting on:
+
+- **Scan operations in `pruneObsoleteEntries` and `linkedInAutoPost`.** Table TTLs keep the steady-state size ~3,000 items. Scans are cheap at that scale.
+- **`newsSensitiveData` being ~1,284 lines.** Splitting would add more deploy surface and cold-start overhead than it saves. Single proxy Lambda is fine.
+- **Lack of unit tests.** Yes, there are none. For a solo-operated Lambda pipeline with AI outputs that change every run, test ROI is genuinely low. Not adding it to the list.

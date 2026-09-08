@@ -1,6 +1,6 @@
 # Human spot-check reviews
 
-Ground-truth layer for the [Economic Disruption quality plan](../../ECONOMIC_DISRUPTION_QUALITY_PLAN.md) (Layer 4 / Phase C). Without this, the LLM-as-judge (Layer 2) drifts toward its own biases — we'd be grading a system against another instance of the same kind of system.
+Ground-truth layer for the [Economic Disruption quality plan](../../project-docs/economy/_reference/ECONOMIC_DISRUPTION_QUALITY_PLAN.md) (Layer 4 / Phase C). Without this, the LLM-as-judge (Layer 2) drifts toward its own biases — we'd be grading a system against another instance of the same kind of system.
 
 ## Weekly cadence
 
@@ -32,7 +32,7 @@ node quality/build_dashboard.js
 
 ## The 7 questions
 
-Verbatim from the [quality plan](../../ECONOMIC_DISRUPTION_QUALITY_PLAN.md#layer-4--human-spot-check-rubric-slow-weekly):
+Verbatim from the [quality plan](../../project-docs/economy/_reference/ECONOMIC_DISRUPTION_QUALITY_PLAN.md#layer-4--human-spot-check-rubric-slow-weekly):
 
 1. **Headline accurate?** — `[Y / N / partial]`
 2. **Direction calls correct (subjective)?** — `[all correct / some wrong / all wrong]`

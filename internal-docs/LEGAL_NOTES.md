@@ -1,12 +1,12 @@
 # Legal Notes — Content Usage & API Terms
 
-**Last reviewed:** 2026-03-20
+**Last reviewed:** 2026-03-20 · **⚠️ Provider corrected 2026-09-08:** production inference is **DeepSeek/Gemini**, not xAI Grok (migrated off xAI 2026-05) — the ToS risk analysis below should be re-reviewed against the actual vendors.
 
 ---
 
 ## Summary Verdict
 
-The Global Perspectives architecture (RSS + Brave Search API → xAI analysis → original AI output with source attribution) matches the industry standard for non-enterprise AI news analysis products. Legal exposure is low.
+The Global Perspectives architecture (RSS + Brave Search API → LLM analysis (DeepSeek/Gemini; migrated off xAI 2026-05) → original AI output with source attribution) matches the industry standard for non-enterprise AI news analysis products. Legal exposure is low.
 
 ---
 
@@ -14,7 +14,7 @@ The Global Perspectives architecture (RSS + Brave Search API → xAI analysis �
 
 - Consume RSS feeds published by news outlets (BBC, Al Jazeera, SCMP, Dawn, etc.)
 - Consume Brave Search API headlines + snippets as AI input signals
-- Feed metadata (title, snippet, URL) into xAI Grok to generate original analysis
+- Feed metadata (title, snippet, URL) into an LLM (DeepSeek/Gemini — env vars are legacy-named `XAI_API_KEY`/`GROK_*`; migrated off xAI 2026-05) to generate original analysis
 - Output is AI-generated synthesis (Summary, Prediction, Trace Cause) — not quoted article text
 - Source attribution and links are maintained in every topic
 

@@ -37,13 +37,14 @@ Done-check: [x] docs  [x] INDEX  [x] CHANGES
 Commit: `0ad78eb`
 
 ### S0 · T2 — S3 bucket, prefixes, lifecycle, IAM
-Status: 🔭 todo
-Reads/refs: `DATA_STRATEGY.md` §3–§4; account 280362093938; existing role naming (`<fn>-role`, inline `<fn>-pol`)
-Changes: bucket `globalperspective-world-280362093938` (private, block public access, SSE-S3, versioning off); prefixes created implicitly; lifecycle rules (corpus/history → IA 30d; corpus expire 400d; `latest` never); inline policies: `newsGdacsIngest-pol` += PutObject `situations/inbox/*` (and remove the DDB Situations grant in S1); new roles for tracker/ingest created with their Lambdas; a read-only IAM user/role for the Worker (GetObject on `world/*`, `situations/state/*`, `stories/state/*`)
-Docs to update: `ARCHITECTURE.md` (new "S3 world bucket" section: bucket, prefixes, per-role IAM) · `DATA_STRATEGY.md` §4 (confirm names) · `CHANGES.md`
-Verify / exit: `aws s3api get-bucket-policy-status` shows not public; a test PutObject from the gdacs role to `situations/inbox/` succeeds and to `situations/state/` is denied
-Done-check: [ ] bucket  [ ] lifecycle  [ ] IAM  [ ] docs  [ ] CHANGES
-Commit: —
+Status: ✅ done (2026-09-08)
+Reads/refs: `DATA_STRATEGY.md` §3–§4; account 280362093938
+Changes: created bucket `globalperspective-world-280362093938` (all public-access-block flags on, no bucket policy, default SSE-S3, versioning off); 5 lifecycle rules; `newsGdacsIngest-pol` += `s3:PutObject` on `situations/inbox/*`+`gdacs/*` (DDB Situations grant kept until S1)
+Docs to update: `ARCHITECTURE.md` (new S3 World Store section) ✅ · `CHANGES.md` ✅
+Verify / exit: ✅ public-access-block all true; `get-bucket-policy-status` = no policy (not public); 5 lifecycle rules present; write/read/delete round-trip on `world/_probe.json` OK
+Done-check: [x] bucket  [x] lifecycle  [x] IAM  [x] docs  [x] CHANGES
+Commit: <pending>
+Notes: **could not** test PutObject *as the gdacs role* — Lambda execution roles trust `lambda.amazonaws.com`, not the admin user, so no assume-role path. Verified the grant by policy inspection + admin round-trip; the role's actual write is exercised when GDACS runs in S1. `world/` expire rule is safe for `latest*.json` (continuously overwritten → never ages to 400d).
 
 ### S0 · T3 — Cloudflare Worker `/data/*` route + fixture
 Status: 🔭 todo

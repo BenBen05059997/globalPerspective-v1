@@ -818,6 +818,16 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 
 ---
 
+## S3 — World Store (`globalperspective-world-280362093938`, ap-northeast-1)
+
+**Created 2026-09-08** (Stage S0·T2 of the map-as-home programme). The source of truth for everything the pipeline computes about the world — see `DATA_STRATEGY.md`. **Private:** all four public-access-block flags on, no bucket policy, default SSE-S3. Read by the browser only through the Cloudflare Worker `/data/*` route (S0·T3).
+
+**Prefixes** (one writer each; created on first write): `corpus/YYYY/MM/DD/HH.jsonl` (← `newsSituationIngest`), `stories/state|index` (← ingest), `situations/inbox/` (← openers: GDACS, breaking-alert — append only), `situations/state|index|history/` + `world/latest.json`+`world/…/HHMM.json`+`world/latest.member.json` (← `newsSituationTracker`, sole writer), `gdacs/last-seen.json` (← GDACS, its own diff state), `fixtures/` (humans). Ownership table: `DATA_STRATEGY.md` §4.
+
+**Lifecycle rules:** `corpus/` → IA 30d, expire 400d · `situations/history/` → IA 30d · `world/` → IA 30d, expire 400d (safe: `world/latest*.json` is overwritten every sweep so its age never reaches expiry; only dated snapshots age out) · `situations/inbox/processed/` expire 30d · abort incomplete MPUs 7d.
+
+**IAM (per-writer, least-privilege):** `newsGdacsIngest-role` has `s3:PutObject` on `situations/inbox/*` + `gdacs/*` (added S0·T2; its temporary DDB `GlobalPerspectiveSituations` grant is removed in S1). Tracker/ingest roles are created with their Lambdas (S2/S3), each `PutObject` scoped to its own prefixes; the Worker gets read-only `GetObject` on `world/*`, `situations/state/*`, `stories/state/*` (S0·T3).
+
 ## DynamoDB Tables
 
 > **Data strategy (adopted 2026-09-08) → `DATA_STRATEGY.md`.** New rule: *S3 for the world, DynamoDB for the user.* Only `Users`, `SavedItems`, `UserPrefs`, `ApiKeys` are meant to stay in DynamoDB long-term; every other table below is a migration candidate (order in DATA_STRATEGY §6). No new table without an exception recorded there.

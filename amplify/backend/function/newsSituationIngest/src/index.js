@@ -37,6 +37,18 @@ const RSS_FEEDS = [
   { name: 'CNA', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml', source: 'channelnewsasia.com' },
   { name: 'Reuters(GN)', url: 'https://news.google.com/rss/search?q=when:24h+world&hl=en-US&gl=US&ceid=US:en', source: 'news.google.com' },
   { name: 'ABC Australia', url: 'https://www.abc.net.au/news/feed/2942460/rss.xml', source: 'abc.net.au' },
+  // Regional / non-Western (fixes the Anglophone blind spot; en_title translates non-English titles).
+  { name: 'Times of India', url: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms', source: 'timesofindia.indiatimes.com' },
+  { name: 'Al Arabiya', url: 'https://english.alarabiya.net/tools/rss', source: 'alarabiya.net' },
+  { name: 'Moscow Times', url: 'https://www.themoscowtimes.com/rss/news', source: 'themoscowtimes.com' },
+  { name: 'Kyiv Independent', url: 'https://kyivindependent.com/feed/', source: 'kyivindependent.com' },
+  { name: 'MercoPress', url: 'https://en.mercopress.com/rss/', source: 'mercopress.com' },
+  { name: 'Rappler', url: 'https://www.rappler.com/feed/', source: 'rappler.com' },
+  { name: 'Daily Sabah', url: 'https://www.dailysabah.com/rssFeed/homepage', source: 'dailysabah.com' },
+  { name: 'Africanews', url: 'https://www.africanews.com/feed/rss', source: 'africanews.com' },
+  { name: 'Le Monde', url: 'https://www.lemonde.fr/rss/une.xml', source: 'lemonde.fr' },
+  { name: 'Jerusalem Post', url: 'https://www.jpost.com/rss/rssfeedsheadlines.aspx', source: 'jpost.com' },
+  { name: 'Buenos Aires Times', url: 'https://www.batimes.com.ar/feed', source: 'batimes.com.ar' },
 ];
 
 let _s3, _cw;
@@ -67,6 +79,42 @@ function parseRss(xml, source) {
   }
   return out;
 }
+// ── GDELT DOC 2.0 — DISABLED by default: unreliable from Lambda (shared egress IPs are IP-throttled
+// / connection-refused / 429'd by GDELT; verified 2026-09-09). Global coverage is instead achieved by
+// the regional RSS feeds above (reliable). Left as opt-in (GDELT_ENABLED=true) if ever routed via the
+// Cloudflare Worker's IPs. ────────────────────────────────────────────────────────────────────────
+const GDELT_ENABLED = process.env.GDELT_ENABLED === 'true';
+const GDELT_QUERIES = [
+  '(airstrike OR shelling OR offensive OR clashes OR militants OR insurgents)',
+  '(protest OR unrest OR coup OR "state of emergency" OR crackdown)',
+  '(sanctions OR tariffs OR default OR devaluation OR "trade war")',
+  '(earthquake OR flood OR cyclone OR wildfire OR famine OR displacement OR outbreak)',
+];
+const GDELT_PER_QUERY = Number(process.env.GDELT_PER_QUERY) || 25;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function fetchGdelt() {
+  if (!GDELT_ENABLED) return [];
+  const out = [];
+  for (let i = 0; i < GDELT_QUERIES.length; i++) {
+    if (i > 0) await sleep(5200); // GDELT limit: 1 request / 5s
+    const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(GDELT_QUERIES[i])}&mode=artlist&format=json&maxrecords=${GDELT_PER_QUERY}&timespan=24h&sort=datedesc`;
+    try {
+      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 12000);
+      const r = await fetch(url, { headers: { 'User-Agent': 'globalperspective/1.0' }, signal: ctl.signal });
+      clearTimeout(to);
+      if (!r.ok) { console.warn(`[ingest][gdelt] q${i} HTTP ${r.status}`); continue; }
+      const txt = await r.text();
+      let arts = [];
+      try { arts = (JSON.parse(txt).articles) || []; } catch { continue; } // GDELT sometimes returns HTML on overload
+      for (const a of arts) {
+        if (a.url && a.title) out.push({ title: decodeEntities(a.title.trim()), url: a.url, description: '', source: a.domain || 'gdelt', ageH: 0, lang: a.language });
+      }
+    } catch (e) { console.warn(`[ingest][gdelt] q${i} ${e.message}`); }
+  }
+  console.log(`[ingest][gdelt] ${out.length} articles across ${GDELT_QUERIES.length} queries`);
+  return out;
+}
+
 async function fetchRss() {
   const results = await Promise.allSettled(RSS_FEEDS.map(async (f) => {
     const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 10000);
@@ -115,8 +163,10 @@ const storyKey = (id) => id.replace(/[^A-Za-z0-9._-]/g, '_');
 exports.handler = async () => {
   if (!API_KEY) { console.error('[ingest] no XAI_API_KEY'); return { ok: false, error: 'no api key' }; }
   const now = new Date().toISOString();
-  const articles = await fetchRss();
-  console.log(`[ingest] ${articles.length} fresh articles`);
+  const [rss, gdelt] = await Promise.all([fetchRss(), fetchGdelt()]);
+  const seen = new Set();
+  const articles = [...rss, ...gdelt].filter((a) => !seen.has(a.url) && seen.add(a.url));
+  console.log(`[ingest] ${articles.length} fresh articles (${rss.length} RSS + ${gdelt.length} GDELT)`);
   const batches = [];
   for (let i = 0; i < articles.length && batches.length < MAX_BATCHES; i += BATCH) batches.push(articles.slice(i, i + BATCH));
 

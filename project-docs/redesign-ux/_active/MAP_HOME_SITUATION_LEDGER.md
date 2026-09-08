@@ -107,6 +107,7 @@ Verify / exit: 24h of corpus + stories across languages; ≥8-outlet cluster nev
 Done-check: [ ] code  [ ] IAM  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
+Notes(2026-09-09): **GDELT source resolved differently than planned.** Tried GDELT DOC 2.0 from the Lambda — unreliable (shared egress IPs IP-throttled/connection-refused/429; 0 articles). Global coverage instead achieved via **11 regional/non-Western RSS feeds** (Times of India, Al Arabiya, Moscow Times, Kyiv Independent, MercoPress, Rappler, Daily Sabah, Africanews, Le Monde, Jerusalem Post, Buenos Aires Times) + classifier `en_title` (translates non-English headlines to a readable map label). Result: 415 articles / 21 domains (was 283/14); cross-outlet counts up. GDELT kept opt-in (`GDELT_ENABLED=true`) for a future Worker-routed path.
 ### S3 · T2 — `newsBreakingAlert` becomes an inbox writer
 Status: 🔭 todo
 Reads/refs: `newsBreakingAlert` (byte-identical to main per P0·T2; re-diff); `significance.js` axisForCategory

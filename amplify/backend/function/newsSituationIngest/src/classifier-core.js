@@ -24,7 +24,8 @@ function buildMessages(articles) {
     '  "axis": one of "conflict"|"political"|"economic"|"humanitarian" (the dominant kind of impact),',
     '  "severity": integer 1-5 (5 = major, world-moving; 1 = minor/routine),',
     '  "kind": "event" (something happened) | "analysis" | "commentary",',
-    '  "entities": [up to 4 key named actors/places/things]',
+    '  "entities": [up to 4 key named actors/places/things],',
+    '  "en_title": a concise ENGLISH title for this story, <= 12 words (translate if the headline is not English)',
     '}',
     'If a headline is not about a real-world situation (sport, celebrity, lifestyle), set severity 1 and category "other".',
     'Headlines:',
@@ -62,8 +63,9 @@ function normalizeClassified(raw, article) {
   const iso3 = Array.isArray(raw.iso3) ? raw.iso3.map((c) => String(c).toUpperCase()).filter((c) => /^[A-Z]{3}$/.test(c)).slice(0, 4) : [];
   const severity = Math.min(5, Math.max(1, Math.round(toNum(raw.severity) || 1)));
   const entities = Array.isArray(raw.entities) ? raw.entities.map((e) => String(e).trim()).filter(Boolean).slice(0, 4) : [];
+  const enTitle = String(raw.en_title || article.title || '').trim().slice(0, 140) || article.title;
   return {
-    title: article.title, url: article.url, domain: domainOf(article.url), source: article.source || domainOf(article.url),
+    title: article.title, en_title: enTitle, url: article.url, domain: domainOf(article.url), source: article.source || domainOf(article.url),
     iso3, latlon, axis, category: String(raw.category || 'other').toLowerCase(),
     severity, kind: ['event', 'analysis', 'commentary'].includes(raw.kind) ? raw.kind : 'event', entities,
   };
@@ -101,7 +103,7 @@ function clusterStories(classified, nowIso, prevIndex = {}) {
       storyId,
       axis: items[0].axis,
       category: items[0].category,
-      title: items.sort((a, b) => b.severity - a.severity)[0].title,
+      title: (() => { const top = items.slice().sort((a, b) => b.severity - a.severity)[0]; return top.en_title || top.title; })(),
       iso3: isoSet,
       centroid: { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 },
       max_severity: maxSev,

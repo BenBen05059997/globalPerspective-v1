@@ -221,8 +221,48 @@ function coolSituation(prev, obs, nowIso, ttl) {
   };
 }
 
+// ── news stories → situations (S3·T3) ────────────────────────────────────────
+// A clustered news story (from newsSituationIngest) → situation state. Tier from severity, axis from
+// the story; escalating when coverage is accelerating or spreading. situationId `news#<storyId>`.
+const SEV_TIER = { 5: 'high', 4: 'elevated', 3: 'moderate', 2: 'low', 1: 'low' };
+function buildStorySituation(prev, story, nowIso, ttl) {
+  const tier = SEV_TIER[story.max_severity] || 'moderate';
+  const affected = Array.isArray(story.iso3) ? story.iso3 : [];
+  const escalating = (Number(story.velocity) || 1) >= 1.5 || (Array.isArray(story.spread_new_iso3) && story.spread_new_iso3.length > 0);
+  const parts = [`${plural(story.outlets || 1, 'outlet', 'outlets')}`];
+  if (Number(story.velocity) >= 1.5) parts.push(`coverage ${story.velocity}× prior`);
+  if (Array.isArray(story.spread_new_iso3) && story.spread_new_iso3.length) parts.push(`spreading to ${story.spread_new_iso3.join(', ')}`);
+  const what = parts.join(' · ');
+  const label = String(story.title || '').slice(0, 90);
+  const base = {
+    situationId: `news#${story.storyId}`, source: 'news', storyId: story.storyId, threadId: null,
+    title: story.title, verb_label: label, axis: story.axis || 'political', tier,
+    iso3_origin: affected.slice(0, 1), iso3_affected: affected, affected_names: [],
+    centroid: story.centroid || (prev && prev.centroid) || null,
+    spread_arcs: Array.isArray(prev && prev.spread_arcs) ? prev.spread_arcs : [],
+    opened_at: (prev && prev.opened_at) || nowIso, updated_at: nowIso, last_checked_at: nowIso,
+    check_count: ((prev && prev.check_count) || 0) + (prev ? 1 : 0),
+    cadence_min: TIER_CADENCE_MIN[tier] || TIER_CADENCE_MIN.low, next_check_at: nextCheckAt(nowIso, tier),
+    evidence: { outlets: story.outlets, max_severity: story.max_severity, velocity: story.velocity, spread_new_iso3: story.spread_new_iso3 || [], category: story.category, headlines: story.headlines || [] },
+    ttl,
+  };
+  let change = 'unchanged';
+  if (!prev) change = 'opened';
+  else if (escalating && prev.state !== 'escalating') change = 'raised';
+  const state = !prev ? 'emerging' : (escalating ? 'escalating' : 'peak');
+  return {
+    change,
+    item: {
+      ...base, state,
+      last_change_at: change === 'unchanged' ? (prev.last_change_at || nowIso) : nowIso,
+      what_changed: change === 'unchanged' ? (prev.what_changed || what) : what,
+      history: change === 'unchanged' ? (Array.isArray(prev.history) ? prev.history : []) : appendHistory(prev, { at: nowIso, tier, state, note: what }),
+    },
+  };
+}
+
 module.exports = {
   OPEN_STATES, OPENING_LEVELS, LEVEL_RANK, LEVEL_TIER, TIER_CADENCE_MIN,
   parseGeometry, eventKeyOf, eventLabel, affectedIso3, cleanSeverity, verbLabel,
-  buildObservation, nextCheckAt, appendHistory, buildSituation, coolSituation,
+  buildObservation, nextCheckAt, appendHistory, buildSituation, coolSituation, buildStorySituation,
 };

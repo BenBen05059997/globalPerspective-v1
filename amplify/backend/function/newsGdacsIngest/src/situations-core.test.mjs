@@ -120,3 +120,21 @@ t('cool: gone from feed (obs null) → "no longer current"', () => {
 });
 
 console.log(`\n${pass} tests passed`);
+
+// buildStorySituation (news, S3·T3)
+t('buildStorySituation: severity→tier, escalating on velocity/spread', () => {
+  const { buildStorySituation } = core;
+  const story = { storyId: 'conflict#IRN#irgc', title: 'Strikes hit Iran energy sites', axis: 'conflict', max_severity: 5, outlets: 6, velocity: 2.1, spread_new_iso3: ['ISR'], centroid: { lat: 32, lon: 53 }, iso3: ['IRN', 'ISR'], category: 'war', headlines: [] };
+  const { change, item } = buildStorySituation(null, story, NOW, TTL);
+  assert.strictEqual(change, 'opened');
+  assert.strictEqual(item.tier, 'high');
+  assert.strictEqual(item.state, 'emerging');
+  assert.strictEqual(item.axis, 'conflict');
+  assert.strictEqual(item.situationId, 'news#conflict#IRN#irgc');
+  assert.deepStrictEqual(item.centroid, { lat: 32, lon: 53 });
+  assert.match(item.what_changed, /6 outlets/);
+  const prev = { ...item, state: 'peak' };
+  const next = buildStorySituation(prev, story, '2026-09-08T01:00:00.000Z', TTL);
+  assert.strictEqual(next.change, 'raised'); // velocity 2.1 → escalating
+  assert.strictEqual(next.item.state, 'escalating');
+});

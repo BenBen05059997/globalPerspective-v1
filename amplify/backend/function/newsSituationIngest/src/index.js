@@ -44,6 +44,10 @@ function s3() { if (!_s3) { const { S3Client } = require('@aws-sdk/client-s3'); 
 function cw() { if (!_cw) { const { CloudWatchClient } = require('@aws-sdk/client-cloudwatch'); _cw = new CloudWatchClient({ region: REGION }); } return _cw; }
 
 // ── RSS (trimmed from newsInvokeGemini) ──────────────────────────────────────
+const ENTS = { '&amp;': '&', '&apos;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>', '&nbsp;': ' ', '&#39;': "'", '&#8217;': '’', '&#8216;': '‘', '&#8220;': '“', '&#8221;': '”', '&#8230;': '…', '&#8211;': '–', '&#8212;': '—' };
+function decodeEntities(s) {
+  return String(s || '').replace(/&(?:amp|apos|quot|lt|gt|nbsp|#39|#8217|#8216|#8220|#8221|#8230|#8211|#8212);/g, (m) => ENTS[m] || m).replace(/&#(\d+);/g, (_, n) => { try { return String.fromCodePoint(+n); } catch { return _; } });
+}
 function parseRss(xml, source) {
   const out = [];
   const re = /<item>([\s\S]*?)<\/item>/gi;
@@ -51,11 +55,11 @@ function parseRss(xml, source) {
   while ((m = re.exec(xml)) !== null) {
     const c = m[1];
     const tt = c.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
-    let title = tt ? tt[1] : ''; title = title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').trim();
+    let title = tt ? tt[1] : ''; title = decodeEntities(title.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').trim());
     const lk = c.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/i);
     let url = lk ? lk[1] : ''; url = url.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
     const dd = c.match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
-    let description = dd ? dd[1] : ''; description = description.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').slice(0, 220).trim();
+    let description = dd ? dd[1] : ''; description = decodeEntities(description.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]*>/g, '').slice(0, 220).trim());
     const pd = c.match(/<pubDate>([\s\S]*?)<\/pubDate>/i);
     let ageH = 0;
     if (pd) { const tms = new Date(pd[1].trim()).getTime(); if (!isNaN(tms)) ageH = (Date.now() - tms) / 3.6e6; }

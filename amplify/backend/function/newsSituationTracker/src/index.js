@@ -14,7 +14,7 @@
 // under world/shadow/ and shadow/situations/ and never consumes the inbox.
 
 const core = require('./situations-core');
-const { buildSituation, coolSituation, LEVEL_TIER } = core;
+const { buildSituation, coolSituation, buildStorySituation, LEVEL_TIER } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
@@ -51,7 +51,7 @@ function foldSweep(priorStates, observations, nowIso, ttl, opts = {}) {
   const obsById = new Map();
   for (const o of observations) obsById.set(`gdacs#${o.eventKey}`, o);
 
-  // Apply observations (open/raise/spread/unchanged).
+  // Apply GDACS observations (open/raise/spread/unchanged).
   for (const [id, obs] of obsById) {
     const prev = priorStates[id] || null;
     const { change, item } = buildSituation(prev, obs, nowIso, ttl);
@@ -59,11 +59,19 @@ function foldSweep(priorStates, observations, nowIso, ttl, opts = {}) {
     counts[change] = (counts[change] || 0) + 1;
     if (change !== 'unchanged') changes.push({ id, change });
   }
+  // Merge pre-built situations from other sources (news stories → buildStorySituation, in the caller).
+  const extraBuilt = opts.extraBuilt || {};
+  for (const [id, r] of Object.entries(extraBuilt)) {
+    states[id] = r.item;
+    counts[r.change] = (counts[r.change] || 0) + 1;
+    if (r.change !== 'unchanged') changes.push({ id, change: r.change });
+  }
+  const presentIds = new Set([...obsById.keys(), ...Object.keys(extraBuilt)]);
 
   const dropped = [];
-  // Situations in prior state but absent from the snapshot → cool, then maybe close.
+  // Situations in prior state but absent from every source this sweep → cool, then maybe close.
   for (const [id, prev] of Object.entries(priorStates)) {
-    if (obsById.has(id)) continue;
+    if (presentIds.has(id)) continue;
     if (prev.state === 'closed') {
       // keep briefly for the map's grey-out, then drop (→ handler archives the object)
       const ageH = (new Date(nowIso) - new Date(prev.closed_at || prev.last_change_at || nowIso)) / 3.6e6;
@@ -199,6 +207,19 @@ async function readObservations() {
   return { observations, gdacsObservedAt, processedKeys: [] };
 }
 
+// News stories worth showing on the map (higher bar than persistence): ≥3 outlets or severity ≥4.
+const STORY_MAP_MIN_OUTLETS = Number(process.env.STORY_MAP_MIN_OUTLETS) || 3;
+const STORY_MAP_MIN_SEVERITY = Number(process.env.STORY_MAP_MIN_SEVERITY) || 4;
+const STORY_MAP_CAP = Number(process.env.STORY_MAP_CAP) || 40;
+async function readStories() {
+  const idx = await getJson('stories/index.json'); // stories are always in the live prefix (single producer)
+  const stories = (idx && idx.stories) || [];
+  const eligible = stories
+    .filter((s) => s.centroid && s.axis && (s.outlets >= STORY_MAP_MIN_OUTLETS || s.max_severity >= STORY_MAP_MIN_SEVERITY))
+    .slice(0, STORY_MAP_CAP);
+  return { stories: eligible, storiesAt: (idx && idx.updated_at) || null };
+}
+
 async function loadPriorStates() {
   const index = await getJson(P.index);
   const ids = (index && index.ids) || [];
@@ -221,8 +242,20 @@ exports.handler = async () => {
   const now = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + SITUATION_TTL_DAYS * 86400;
 
-  const [{ observations, gdacsObservedAt, processedKeys }, priorStates] = await Promise.all([readObservations(), loadPriorStates()]);
-  const { states, changes, counts, dropped } = foldSweep(priorStates, observations, now, ttl);
+  const [{ observations, gdacsObservedAt, processedKeys }, { stories, storiesAt }, priorStates] = await Promise.all([readObservations(), readStories(), loadPriorStates()]);
+
+  // Build news situations from stories. Merge rule (one event, one pin): skip a humanitarian story
+  // that shares a country with a GDACS situation present this sweep — the disaster pin already owns it.
+  const gdacsIso = new Set();
+  for (const o of observations) for (const c of o.iso3_affected || []) gdacsIso.add(c);
+  const extraBuilt = {};
+  for (const st of stories) {
+    if (st.axis === 'humanitarian' && (st.iso3 || []).some((c) => gdacsIso.has(c))) continue;
+    const id = `news#${st.storyId}`;
+    extraBuilt[id] = buildStorySituation(priorStates[id] || null, st, now, ttl);
+  }
+
+  const { states, changes, counts, dropped } = foldSweep(priorStates, observations, now, ttl, { extraBuilt });
 
   // Persist changed state objects; write index; write history + world bundle.
   const openIds = Object.keys(states);
@@ -242,7 +275,7 @@ exports.handler = async () => {
     } catch (e) { console.warn('[tracker] archive failed', id, e.message); }
   }
 
-  const world = assembleWorld(states, now, { gdacs: gdacsObservedAt });
+  const world = assembleWorld(states, now, { gdacs: gdacsObservedAt, news: storiesAt });
   const memberWorld = { ...world, _member: true }; // same content for now; gated depth arrives with stories (S3)
   await putJson(P.world, world, 60);
   await putJson(P.worldMember, memberWorld, 0);

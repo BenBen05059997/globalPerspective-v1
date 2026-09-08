@@ -117,7 +117,7 @@ Done-check: [ ] code  [ ] IAM  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
 ### S3 · T3 — Tracker consumes stories (escalation + merge)
-Status: 🔭 todo
+Status: ✅ done (LIVE + browser-verified) — tracker reads stories/index, buildStorySituation folds significant stories (≥3 outlets or sev≥4, cap 40) into situations alongside GDACS; foldSweep generalized (extraBuilt + union presentIds); one-event-one-pin merge (humanitarian story sharing a country with a GDACS situation is suppressed); news freshness stamp. Live: 40 situations across all 4 axes (conflict 17/political 13/humanitarian 7/economic 3); map shows the world. RSS entity-decode fix in ingest.
 Changes: tracker reads `stories/index.json` in the sweep; escalation dims (spread, velocity, category weight, spillover); merge rule
 Docs to update: `ARCHITECTURE.md` · `CHANGES.md`
 Verify / exit: shadow data shows escalation flips on real spread/velocity; no duplicate pins

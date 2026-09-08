@@ -361,9 +361,11 @@ Read-only REST proxy. All supported actions:
 4. Posts to **LinkedIn + Bluesky** (the long-tail platforms — X/Twitter, Threads, Mastodon, Telegram, Farcaster — were cut 2026-05-18; `buildPlatformList()` now wires only these two)
 5. Records each post with 30-day TTL
 
+> **LinkedIn post body — prose forecast + deep-link (fixed 2026-09-08).** The stored PREDICTION `content` is structured JSON (`contentFormat:'json'`, scenarios), which was being dumped **raw** into the post. `formatPredictionText(raw)` now parses those scenarios into prose (`Label (probability, horizon): rationale`, falling back to `stripMarkdown` for legacy prose predictions); the label reads **`Forecast:`** (was `Prediction:`). Hashtags trimmed to best-practice 3–4 (regions sliced 0–2, dropped `#WorldNews` and the trailing ` #AI`). The footer **deep-links to the specific story** — `topic.threadId ? ${SITE_URL}weekly/thread/${threadId} : SITE_URL` (route `/weekly/thread/:threadId` → ThreadPage; `SITE_URL` ends in `/`), replacing the bare homepage link.
+
 **Key env vars:** `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `LINKEDIN_POSTS_TABLE` (=`NewsProject-linkedin-posts`; the deployed var is **not** `SOCIAL_POSTS_TABLE` — code reads `SOCIAL_POSTS_TABLE || LINKEDIN_POSTS_TABLE` so the fallback wins), `MAX_POSTS_PER_RUN` (default: 5), `MAX_POSTS_PER_DAY` (default: 100)
 
-> ⚠️ **`LINKEDIN_ACCESS_TOKEN` expires every 60 days** (shared with `linkedInAutoPost` #10). On lapse, both Lambdas fail every run with `401 EXPIRED_ACCESS_TOKEN` while Bluesky keeps working. Last refreshed 2026-06-22 → next ~2026-08-21. **Refresh procedure (token-generator UI, no client secret) → `BACKEND_GUIDE.md` "LinkedIn token refresh runbook".** Nothing alerts on this today.
+> ⚠️ **`LINKEDIN_ACCESS_TOKEN` expires every 60 days** (shared with `linkedInAutoPost` #10). On lapse, both Lambdas fail every run with `401 EXPIRED_ACCESS_TOKEN` while Bluesky keeps working. **Last refreshed 2026-09-08 → next ~2026-11-07** (the 08-21 lapse sat dead ~2–3 weeks unnoticed before this refresh). **Refresh procedure (token-generator UI, no client secret) → `BACKEND_GUIDE.md` "LinkedIn token refresh runbook".** Nothing alerts on this today.
 
 ---
 
@@ -459,6 +461,8 @@ Intelligent scheduled LinkedIn poster — distinct from `newsPostLinkedIn` (manu
 2. Scores items by trend (rising/stable/fading) and risk level (critical/elevated/moderate/low)
 3. Deduplicates against `SOCIAL_POSTS_TABLE`
 4. Posts highest-scoring eligible item to LinkedIn; records with TTL
+
+> **Deep-links to the specific story (fixed 2026-09-08).** `formatThreadPost` links to `thread.threadId ? ${SITE_URL}/weekly/thread/${threadId} : ${SITE_URL}/weekly` (route `/weekly/thread/:threadId` → ThreadPage); `formatCountryPost` links to `country.countryName ? ${SITE_URL}/weekly/country/${encodeURIComponent(countryName)} : ${SITE_URL}/weekly/countries` (route `/weekly/country/:countryName` → CountryPage). Here `SITE_URL` has **no** trailing slash (unlike #6). This Lambda posts prose fields directly (no raw-JSON prediction bug).
 
 **Key env vars:** `LINKEDIN_ACCESS_TOKEN` (60-day expiry — shares the token + refresh runbook with `newsPostLinkedin` #6, see that note), `LINKEDIN_PERSON_ID`, `SUMMARIZE_PREDICT_TABLE`, `SOCIAL_POSTS_TABLE`
 

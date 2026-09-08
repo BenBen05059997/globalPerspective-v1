@@ -23,7 +23,7 @@ Quick-start guide to the backend system. For a complete architecture overview, s
 | `newsSensitiveData` | `amplify/backend/function/newsSensitiveData/src/index.js` | Read-only REST proxy serving 18 actions to frontend via API Gateway |
 | `newsSavedItems` | `amplify/backend/function/newsSavedItems/src/index.js` | Save/bookmark Lambda (separate Function URL, Firebase JWT required) |
 | `newsPostLinkedin` | `amplify/backend/function/newsPostLinkedin/src/index.js` | Every 3h: posts to LinkedIn, Bluesky, Farcaster, Mastodon, Telegram. No LLM. Nostr removed 2026-05-16. |
-| `linkedInAutoPost` | `amplify/backend/function/linkedInAutoPost/src/index.js` | 07:30 + 19:30 UTC: scores threads/country intel, posts best to LinkedIn. LinkedIn token refreshed 2026-06-22 (60-day expiry → re-auth ~2026-08-21; see "LinkedIn token refresh" runbook below). |
+| `linkedInAutoPost` | `amplify/backend/function/linkedInAutoPost/src/index.js` | 07:30 + 19:30 UTC: scores threads/country intel, posts best to LinkedIn. LinkedIn token refreshed 2026-09-08 (60-day expiry → re-auth ~2026-11-07; see "LinkedIn token refresh" runbook below). |
 | ~~`newsStripeWebhook`~~ **REMOVED 2026-06-01** → `newsPolarBilling` | `amplify/backend/function/newsPolarBilling/src/index.js` | **Polar** checkout + webhook (LIVE 2026-06-22) → writes/updates `tier` in Users table |
 | _…and ~19 more_ | see `ARCHITECTURE.md` §Lambda Functions | newsAnalyze, newsBreakingAlert, newsRecommend, newsEmailSender, newsWeeklyBrief, newsWeeklyMarkets, newsEconomicImpact, newsEconomicQuality, newsDriftCorrector, newsPredictionResolver, newsSourceAudit, newsSignals/newsImpactAudit/newsGdacsIngest/newsGdeltConflict, newsModelGuard, newsClientErrors/newsFreshnessMonitor/newsErrorDigest |
 
@@ -233,9 +233,11 @@ Posts top topics to LinkedIn, Bluesky, X/Twitter, Threads. Deduplicates via `SOC
 
 **Key env vars:** `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_TOKEN_SECRET`, `THREADS_ACCESS_TOKEN`, `THREADS_USER_ID`, `SOCIAL_POSTS_TABLE`, `MAX_POSTS_PER_RUN` (5), `MAX_POSTS_PER_DAY` (100)
 
+**Post body (fixed 2026-09-08):** the PREDICTION `content` is structured JSON (`contentFormat:'json'`), which was previously dumped raw into the post. `formatPredictionText()` now renders it as prose (`Label (probability, horizon): rationale`; legacy prose falls back to `stripMarkdown`), labelled **`Forecast:`**; hashtags trimmed to 3–4; the footer deep-links to `${SITE_URL}weekly/thread/${threadId}` (the story page, not the homepage). `linkedInAutoPost` (#10 above) deep-links the same way to `/weekly/thread/:threadId` and `/weekly/country/:countryName`.
+
 ### LinkedIn token refresh runbook (do this ~every 60 days)
 
-`LINKEDIN_ACCESS_TOKEN` (used by **both** `newsPostLinkedin` and `linkedInAutoPost`) is a LinkedIn OAuth access token that **expires every 60 days**. When it lapses, both Lambdas fail every run with `401 EXPIRED_ACCESS_TOKEN` (serviceErrorCode 65602) — Bluesky in the same run keeps working, so the symptom is "LinkedIn stopped, Bluesky fine". Nothing alerts on this today, so it can go silent for days (it was down 2026-06-11 → 2026-06-22).
+`LINKEDIN_ACCESS_TOKEN` (used by **both** `newsPostLinkedin` and `linkedInAutoPost`) is a LinkedIn OAuth access token that **expires every 60 days**. When it lapses, both Lambdas fail every run with `401 EXPIRED_ACCESS_TOKEN` (serviceErrorCode 65602) — Bluesky in the same run keeps working, so the symptom is "LinkedIn stopped, Bluesky fine". Nothing alerts on this today, so it can go silent for days (it was down 2026-06-11 → refreshed 2026-06-22; expired again ~08-21 and sat dead ~2–3 weeks unnoticed → **refreshed 2026-09-08, next due ~2026-11-07**).
 
 **The working refresh method — token-generator UI (no client secret, no curl):**
 1. Go to <https://www.linkedin.com/developers/tools/oauth/token-generator>.

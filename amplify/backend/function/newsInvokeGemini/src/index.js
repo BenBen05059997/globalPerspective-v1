@@ -21,7 +21,7 @@ try {
   }
 }
 
-const MODEL_NAME = process.env.GROK_MODEL || 'grok-4-1-fast-non-reasoning';
+const MODEL_NAME = process.env.GROK_MODEL || 'deepseek-v4-flash'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
 const DEFAULT_LIMIT = 15;
 
 // Allowed categories for topic filtering

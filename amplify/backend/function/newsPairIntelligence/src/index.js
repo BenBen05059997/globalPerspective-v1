@@ -11,7 +11,7 @@ try {
 }
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const GROK_MODEL = process.env.GROK_MODEL || 'grok-4-1-fast-non-reasoning';
+const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '4000', 10);

@@ -1,12 +1,13 @@
 # Global Perspectives — Change Log
 
-## 2026-09-08 (fix: newsImpactAudit → deepseek-v4-flash + thinking guard)
+## 2026-09-08 (fix: DeepSeek model-default sweep — newsImpactAudit thinking guard + 7 dead grok defaults)
 
 Closed the `deepseek-chat` landmine (BACKEND_TODO #3). Confirmed via DeepSeek's current API that `deepseek-chat`/`deepseek-reasoner` were hard-retired 2026-07-24 and the live flash model is `deepseek-v4-flash` (no newer flash since).
 
 - `newsImpactAudit/src/index.js:30` default `'deepseek-chat'` → `'deepseek-v4-flash'`.
 - **Also** added the missing `thinking:{type:'disabled'}` to its request body. `newsImpactAudit` is a signal-api-derived function that missed the 2026-07-26 fleet thinking-patch, so running on V4 it burned `max_tokens` on hidden reasoning (risk of truncated/empty JSON, silently swallowed). Now matches the fleet.
-- ⚠️ **Source-only — not yet deployed** (`update-function-code` on `newsImpactAudit`). Still open: 7 other Lambda sources carry a dead `grok-4-1-fast-non-reasoning` default (env always overrides — lower risk).
+- **Swept the 7 remaining dead `grok-4-1-fast-non-reasoning` source defaults** to each function's live model: `NewsProjectInvokeAgentLambda`/`newsInvokeGemini`/`newsPairIntelligence`/`newsPostDevTo` → `deepseek-v4-flash`; `newsCountryIntelligence`/`newsSystemsAnalysis` → `deepseek-v4-pro`; `newsThreadAnalysis` → `gemini-2.5-flash`. No `grok-4-1` default remains. `node --check` passes on all 8 touched files.
+- ⚠️ **All source-only — not yet deployed** (`update-function-code` per function). Noted-not-changed while sweeping: `newsAnalyze` + `newsModelGuard` don't carry the literal `thinking:{type:'disabled'}` string (`newsModelGuard` probes models by design; `newsAnalyze` applies it via a helper / patched-deployed zip) — worth a separate targeted check.
 
 ## 2026-09-08 (docs: plan-doc staleness sweep + full docs reorg into `project-docs/`)
 

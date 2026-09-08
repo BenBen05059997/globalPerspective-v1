@@ -67,7 +67,7 @@ Changes: new `situations-core.js` (pure: `buildObservation` + fold `buildSituati
 Docs to update: `ARCHITECTURE.md` (table → deleted; Lambda + IAM rows) ✅ · `BACKEND_GUIDE.md` ✅ · `CHANGES.md` ✅
 Verify / exit: ✅ 11 tests pass; deployed; live invoke wrote `situations/inbox/…-gdacs.json` (1 Orange observation, China flood, centroid ok), events mirror still 100/100 geo; zero readers confirmed (code + roles); table gone from `list-tables`
 Done-check: [x] code  [x] IAM  [x] table dropped  [x] docs  [x] CHANGES  [x] verify
-Commit: <pending>
+Commit: `1cf8526`
 Notes: **design refinement vs the original ledger** — instead of GDACS diffing against `gdacs/last-seen.json` and emitting per-event level_changed/gone events, GDACS writes a single **observation snapshot** per run and the S2 tracker computes transitions (opened/raised/spread/gone) by folding the snapshot against its own state. Cleaner event-sourcing: openers observe, the folder decides. The fold logic + tests already live in `situations-core.js` ready for S2. `gdacs/last-seen.json` is not needed. Deployed bundle = index.js + situations-core.js + package.json (SDK from runtime).
 
 ---

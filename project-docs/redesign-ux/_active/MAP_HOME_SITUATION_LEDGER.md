@@ -135,7 +135,7 @@ Changes: `services/worldData.js`, `hooks/useWorld.js` (useWorld/useSituationDeta
 Docs to update: `ARCHITECTURE.md` (read path fixes) ✅ · `DATA_STRATEGY.md` ✅ · `CHANGES.md` ✅
 Verify / exit: ✅ build + lint clean; **headless Playwright**: 177 country paths + marker render, freshness/lede/list correct, click → detail + `?focus=`, **0 console errors**
 Done-check: [x] code  [x] docs  [x] CHANGES  [x] browser-verified  [ ] prod deploy (gated)
-Commit: <pending>
+Commit: `4a3ddf2`
 Notes: **3 contract bugs found+fixed during testing** (see CHANGES): tracker stable-pointer (`gdacs-latest.json`, amends S1/S2 — was spuriously cooling+stale); state-object key sanitization (`#`→`_`, both tracker & worldData); Worker CORS-on-errors. Backend fixes deployed+live-verified.
 
 ### S4 · T2 — Canonical ISO + centroids + unmatched → error sink
@@ -147,7 +147,7 @@ Status: ✅ done (part of S4·T1)
 Changes: `src/assets/countries-110m.json` (pinned world-atlas 2.0.2, imported — no CDN fetch); `?focus=<id>` URL state (replace mode). Scrubber `?t=` deferred to S5.
 Verify / exit: ✅ no CDN fetch (bundled import); `?focus=` deep-link sets the selection; no topology present in the network graph means no silent CDN hang
 Done-check: [x] code  [x] verify
-Commit: <pending>
+Commit: `4a3ddf2`
 Notes: topology-load-failure path is moot now (bundled, not fetched). Full `?t=` scrubber + `?layer=` land with S5.
 
 ---

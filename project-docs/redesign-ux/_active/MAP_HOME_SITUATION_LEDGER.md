@@ -53,7 +53,7 @@ Changes: IAM user `gp-worker-s3-reader` + read-only policy; SigV4 GET + `/data/*
 Docs to update: `ARCHITECTURE.md` ✅ · memory `project_cloudflare_worker` ✅ · `CHANGES.md` ✅
 Verify / exit: ✅ proven in a throwaway CF worker first, then LIVE on `globalperspective.net`: `/data/world/latest.json`→200 (`x-rendered-by: cf-worker-data`, correct bundle), missing→404, member→401, disallowed→404; **regression-clean** — `/rss`→200 XML, bot pre-render→`cf-worker-bot`, passthrough→200
 Done-check: [x] worker code  [x] fixture+upload  [x] reader IAM  [x] SigV4 proven  [x] **Cloudflare deploy (live)**  [x] docs  [x] CHANGES
-Commit: `065b4be` (code) + <this commit> (403→404 fix + deploy record)
+Commit: `065b4be` (code) + `86a8a29` (403→404 fix + deploy)
 Notes: deploy done by me via authenticated `wrangler` (user added `Bash(wrangler:*)` allow + authorized). Reader user holds exactly 1 active key = the prod Worker secret; test/probe keys deleted, temp files scrubbed — no secret in repo/transcript. `world/latest.json` serves the fixture until the tracker (S2) overwrites it. **Minor follow-up:** the deploy warned that Preview URLs are enabled for the prod worker (workers.dev route on); `/data` there serves the same public bundle, so no data exposure — optionally disable preview_urls later.
 
 ---

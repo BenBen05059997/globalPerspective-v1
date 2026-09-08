@@ -43,7 +43,7 @@ Changes: created bucket `globalperspective-world-280362093938` (all public-acces
 Docs to update: `ARCHITECTURE.md` (new S3 World Store section) ✅ · `CHANGES.md` ✅
 Verify / exit: ✅ public-access-block all true; `get-bucket-policy-status` = no policy (not public); 5 lifecycle rules present; write/read/delete round-trip on `world/_probe.json` OK
 Done-check: [x] bucket  [x] lifecycle  [x] IAM  [x] docs  [x] CHANGES
-Commit: <pending>
+Commit: `bce4193`
 Notes: **could not** test PutObject *as the gdacs role* — Lambda execution roles trust `lambda.amazonaws.com`, not the admin user, so no assume-role path. Verified the grant by policy inspection + admin round-trip; the role's actual write is exercised when GDACS runs in S1. `world/` expire rule is safe for `latest*.json` (continuously overwritten → never ages to 400d).
 
 ### S0 · T3 — Cloudflare Worker `/data/*` route + fixture

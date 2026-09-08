@@ -14,6 +14,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 - **[ANALYTICS_GUIDE.md](architecture/ANALYTICS_GUIDE.md)** — Where to find GA4 / Cloudflare analytics.
 - **[ARCHITECTURE.md](architecture/ARCHITECTURE.md)** — Authoritative system overview — Lambda inventory, DDB, routes (living doc).
 - **[BACKEND_GUIDE.md](architecture/BACKEND_GUIDE.md)** — Quick-start Lambda function table.
+- **[DATA_STRATEGY.md](architecture/DATA_STRATEGY.md)** — **ADOPTED 2026-09-08.** S3 for the world, DynamoDB for the user: one-writer-per-prefix, inbox/folder event sourcing, `world/latest.json` frontend contract, table-migration order. Binding for all new subsystems.
 - **[OPTIMIZATION_REPORT.md](architecture/OPTIMIZATION_REPORT.md)** — Evidence-based (file:line) perf/cost fix list; companion to SYSTEM_WIRING.
 - **[PAGES_GUIDE.md](architecture/PAGES_GUIDE.md)** — Page-by-page reference + 3-layer smoke-test convention.
 - **[SYSTEM_WIRING.md](architecture/SYSTEM_WIRING.md)** — Code-grounded frontend↔backend↔DDB wiring; overrides ARCHITECTURE on drift.
@@ -171,7 +172,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 - **[SITE_ORIENTATION_PLAN.md](redesign-ux/_shipped/SITE_ORIENTATION_PLAN.md)** — Home/nav orientation + bot pre-render — shipped.
 
 **🔧 active**
-- **[MAP_HOME_SITUATION_PLAN.md](redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md)** — Map becomes the home page: per-article ingest classification + GDELT (drops Brave from ingest), GDACS un-shadowed, new `newsSituationTracker` (adaptive re-check cadence), WebGL 2.5D hue-by-crisis-type map. Approved 2026-09-08; execution started P0. Tracked in **[MAP_HOME_SITUATION_LEDGER.md](redesign-ux/_active/MAP_HOME_SITUATION_LEDGER.md)**.
+- **[MAP_HOME_SITUATION_PLAN.md](redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md)** — Map becomes the home page: per-article ingest classification + GDELT (drops Brave from ingest), GDACS un-shadowed, new `newsSituationTracker` (adaptive re-check cadence), WebGL 2.5D hue-by-crisis-type map. Approved 2026-09-08; **v2 (stages S0–S8) after the DATA_STRATEGY decision** — S3-backed situations/stories/`world/latest.json`, Worker-served. P0 done, P1·T1 shipped-then-superseded. Tracked in **[MAP_HOME_SITUATION_LEDGER.md](redesign-ux/_active/MAP_HOME_SITUATION_LEDGER.md)**.
 
 **🔭 proposed**
 - **[REDESIGN_V2_PLAN.md](redesign-ux/_proposed/REDESIGN_V2_PLAN.md)** — v2 redesign — Changes A/B/F built via later plans.

@@ -1,6 +1,10 @@
 # Map-as-Home + Situation Tracker — Plan
 
-> **STATUS: PROPOSED — approved in discussion 2026-09-08, not built.** Cross-cutting: touches ingest (`pipeline-ingest`), a new backend subsystem (situation tracker), and the frontend home/map. Written for hand-off to an implementing agent. Read `CLAUDE.md`, `agent-kit/PROJECT.md`, and `project-docs/architecture/ARCHITECTURE.md` first; every fact below was verified against source on 2026-09-08 — re-verify anything that touches deployed Lambda bytes (they drift from `main`).
+> **STATUS: ACTIVE — executing (P0 done, P1·T1 shipped then superseded).** Tracked in `MAP_HOME_SITUATION_LEDGER.md`.
+>
+> **REVISION v2 — 2026-09-08 (data strategy).** After P1·T1 shipped, the data layer was rethought: **S3 is the source of truth for everything computed about the world; DynamoDB only for per-user state** — see `project-docs/architecture/DATA_STRATEGY.md` (authoritative). Consequences inside this plan: new §3.2 (prefixes + `world/latest.json` contract), REVISED notes at the top of WS1/WS2/WS3, **§5 phases superseded by §11 stages**, §6/§9 amended. The `GlobalPerspectiveSituations` DDB table from P1·T1 is to be dropped (Stage S1). Older text below is kept for the record (ADR-style: supersede, don't overwrite).
+>
+> Cross-cutting: touches ingest (`pipeline-ingest`), a new backend subsystem (situation tracker), and the frontend home/map. Written for hand-off to an implementing agent. Read `CLAUDE.md`, `agent-kit/PROJECT.md`, and `project-docs/architecture/ARCHITECTURE.md` first; every fact below was verified against source on 2026-09-08 — re-verify anything that touches deployed Lambda bytes (they drift from `main`).
 
 **Status:** PROPOSED 2026-09-08
 **Owner decisions recorded:** map becomes the home page; hue-by-crisis-type; 2.5D tilted world as hero + globe fly-to on click; dark "world at night" theme; idle auto-tour with pause; breaking-alert detector + GDACS as the two situation openers; adaptive re-check cadence per situation; replace Brave in *ingest only* with GDELT DOC 2.0; keep Brave for analysis-time grounding.
@@ -99,9 +103,23 @@ The cost and honesty line of the whole design. **A disaster pin can appear, grow
 6. **Build-order fix.** `GlobalPerspectiveSituations` is created **first** (P1·T1) and **`newsGdacsIngest` writes situations directly** — it is a deterministic opener, so it needs no tracker to exist. The tracker Lambda then only sweeps the table.
 7. **Retention:** closed situations stay on the map 48h (grey outline), in the table 60d (scrubber history).
 
+### 3.2 Data strategy (v2, 2026-09-08) — S3 for the world, DynamoDB for the user
+
+Authoritative text: `project-docs/architecture/DATA_STRATEGY.md`. Summary as it binds this plan:
+
+- **No new DynamoDB tables.** Situations, stories, corpus, snapshots are S3 objects in `globalperspective-world-<account>` (private). `GlobalPerspectiveSituations` (P1·T1) is dropped in S1.
+- **One writer per prefix; openers append events, the tracker folds state:**
+  `corpus/` + `stories/` ← `newsSituationIngest` (hourly) · `situations/inbox/` ← openers (GDACS, breaking-alert; append-only) · `situations/state|index|history/` + `world/` ← `newsSituationTracker` (10-min sweep, sole writer).
+- **The frontend reads one object, `world/latest.json`**, via the Cloudflare Worker (`/data/*`, SigV4 to S3, edge-cached); `world/latest.member.json` is served only with a valid Firebase JWT. Per-situation detail = `situations/state/<id>.json` on click; scrubber = `world/YYYY/MM/DD/HHMM.json`. Contract in DATA_STRATEGY §5.
+- **Freshness is in the data** (`generated_at`, per-source stamps, `stale`) — the page displays it, never computes it. `composeTopicsLede` + the ranked list are computed by the tracker, once per sweep.
+- **WS3's three proxy actions are gone** — replaced by `services/worldData.js` + `useWorld()` + the Worker route. `newsSensitiveData` trends toward user-actions-only.
+- **Local dev on fixtures** (`fixtures/world.json`) — frontend never waits for backend.
+
 ## 4. Workstreams
 
 ### WS1 — Ingest: score every article, then aggregate (replaces "ask the model to pick 13")
+
+> **REVISED v2:** one hourly Lambda **`newsSituationIngest`** (Option A) does fetch → classify → cluster and writes **`corpus/YYYY/MM/DD/HH.jsonl` + `stories/state|index`** in S3. No `GlobalPerspectiveStories` table, no separate classifier Lambda. GDACS (§6 below) becomes an **inbox writer** (`situations/inbox/`), not a state writer. Everything else in WS1 (classification schema, clustering rule, merge rule, eval, GDELT, Brave removal) stands.
 
 **Problem being solved:** fixed slots + category quotas + "prioritize NEW" suppress ongoing crises and can't express importance, spread, or location structurally (§2.1).
 
@@ -121,6 +139,8 @@ The cost and honesty line of the whole design. **A disaster pin can appear, grow
 **Cost:** ~300–600 headlines/hour-window, batched 30/call → ~10–20 flash calls per **hourly** classification run (≈300–500/day, inside the §3.1 daily cap). Brave ingest calls −1,800/mo.
 
 ### WS2 — Situation tracker (new subsystem)
+
+> **REVISED v2:** the tracker is the **folder** and the **sole writer** of `situations/state/<id>.json`, `situations/index.json`, `situations/history/…` and the frontend bundle `world/latest.json` (+ member bundle + timestamped snapshots). Each 10-min sweep: read `situations/inbox/` (new events from openers) → fold into state → read `stories/index.json` for escalation/merge signals → cheap-detect → template `what_changed` (LLM only on material news change, under the daily cap) → write state + index + history + `world/`. Adaptive cadence lives as `next_check_at` inside each state object; the sweep reads `index.json`, not a GSI. `DRY_RUN` writes to `world/shadow/` for the ~1-week shadow. Record schema below is unchanged except: no `gsiAll`, no DDB keys; `situationId` is the object name.
 
 **Problem being solved:** nothing keeps watching a story after it's flagged; cadence is a property of the pipeline, not of the story.
 
@@ -149,7 +169,9 @@ The cost and honesty line of the whole design. **A disaster pin can appear, grow
 - **Closing:** tier Low for 3 checks or GDACS event closed → `closed`; the map fades it (WS4), never deletes. `history` kept for the sparkline and for the scrubber.
 - **Verify/acceptance:** unit tests for the state machine + cadence; a dry-run mode (`DRY_RUN=true` like siblings); CloudWatch metrics `SituationsOpen`, `ChecksRun`, `LLMCallsAvoided`. Add to `newsFreshnessMonitor`'s probe set.
 
-### WS3 — Map data layer (frontend + proxy)
+### WS3 — Map data layer (frontend + Worker)
+
+> **REVISED v2:** item 1 (three proxy actions + polling hooks) is **replaced** by: `services/worldData.js` (fetch `/data/world/latest.json` through the Cloudflare Worker; ETag/If-None-Match; 5-min refresh while the tab is visible), `useWorld()` and `useSituationDetail(id)` hooks, and a Worker `/data/*` route (SigV4 → S3, `s-maxage` ≈ sweep interval, JWT check for `*.member.json`). `freshness_status` is the bundle's own `stale`/`sources` fields. Items 2–5 (canonical ISO + centroids, bundled topology, drop z-score, URL state) stand unchanged.
 
 1. **Proxy actions** in the shared proxy Lambda (`newsSensitiveData`): `situations_list` (open + closed <48h; public, no auth), `situation_get {situationId}` (full record + history), `freshness_status` (latest `newsFreshnessMonitor` result: `{ok, oldest_source_at, next_expected_at}`). Follow `services/restProxy.js` `{action, payload}` pattern; add hooks `useSituations()`, `useFreshness()`; poll every 5 min while tab visible (`document.visibilityState`).
 2. **One canonical name→ISO.** Delete `WorldMapV2`'s `NUM_TO_A3`/`TOPO_NAME_FIXES`/`EXTRA_ALIASES`; import `utils/countryMapping.js`; add a **manual centroid table** for territories with no 110m polygon (`PS`, `XK`, small states) in `utils/countryCentroids.js`. **Any unmatched name → `errorSink` with the raw string** (silent drop forbidden; `feedback_no_misinformation_fallback`).
@@ -190,7 +212,9 @@ Plus **spread arcs** (thin, situation hue) from origin to each newly affected is
 - Delete legacy `components/WorldMap.jsx`, `MapSidePanel.jsx`, `MiniMap.jsx` after a zero-reference grep (`tokens.js` references `MiniMap` — fix that first).
 - Nav/cross-links: "Map" entry becomes "Home"; update `SITE_ORIENTATION_PLAN` follow-ups.
 
-## 5. Build order & phases
+## 5. Build order & phases — **SUPERSEDED 2026-09-08 by §11 (stages S0–S8)**
+
+> Kept for the record. P0 (all tasks) and P1·T1 were executed under this section; P1·T1's DDB-table outcome is reversed in Stage S1. §5.1 (Brave protocol) remains valid and its results stand.
 
 | Phase | Scope | Exit criterion |
 |---|---|---|
@@ -259,7 +283,10 @@ Each phase is a separate branch off `main`, verified with `cd global-perspective
 - Dark theme for the front door.
 - Auto-tour ships with visible pause + remembered preference.
 - Openers = breaking-alert detector + GDACS only (conservative). Escalation score is internal; UI shows evidence.
-- Brave: **remove from ingest** (→ GDELT DOC 2.0); **keep for grounding**; Exa is a later quality trial, not a cost move. The P0 protocol (§5.1) does not re-open this — it sizes the ingest removal (transitional wire-service fallback or not) and decides whether a grounding trial is worth scheduling.
+- Brave: **remove from ingest** (→ GDELT DOC 2.0); **keep for grounding**; Exa is a later quality trial, not a cost move. The P0 protocol (§5.1) does not re-open this — it sizes the ingest removal (transitional wire-service fallback or not) and decides whether a grounding trial is worth scheduling. *(P0 result: `brave_unique_chosen`=0.4% → removed outright.)*
+- **Data strategy (v2):** S3 is the truth for everything computed about the world; DynamoDB only for `Users`/`SavedItems`/`UserPrefs`/`ApiKeys`. One writer per prefix. Openers append inbox events; the tracker is the sole writer of situation state and of `world/latest.json`. Frontend reads S3 through the Cloudflare Worker (private bucket, JWT-gated member bundle). Existing tables migrate incrementally (prediction log first), never big-bang. → `DATA_STRATEGY.md`.
+- **Option A ingest:** one hourly `newsSituationIngest` Lambda (fetch → classify → cluster), not a separate classifier Lambda.
+- **Tiers:** canonical `low/moderate/elevated/high`; "critical" is display-only (`high` + escalating).
 - No "LIVE" badge — batch cadence is shown as `Updated · next`.
 
 ## 7. Open items (decide during build, defaults given)
@@ -322,9 +349,37 @@ Headline: **the topic/thread world is untouched.** Every consumer of `getGeminiT
 ### Backend — unchanged
 thread/country/pair intelligence, prediction methodology + resolver, drift corrector, email sender, LinkedIn/DevTo posters, Signal API, markets, economic-impact/quality, recommend, saved-items, billing, Cloudflare Worker (still pre-renders `/weekly/*`; `/` was never pre-rendered, so SEO posture is unchanged provided the below-fold list is real HTML).
 
+### Data layer (added v2, 2026-09-08)
+| Item | Change |
+|---|---|
+| **New S3 bucket** `globalperspective-world-<account>` (private) | prefixes per `DATA_STRATEGY.md` §4; lifecycle rules; one IAM inline policy per writer Lambda; read-only credentials for the Worker |
+| **Cloudflare Worker** (existing RSS-proxy / pre-render worker) | new `/data/*` route: SigV4 fetch to S3, edge cache, JWT check for `*.member.json`; `/` pre-render reads `world/latest.json` |
+| `newsSensitiveData` (proxy) | **no new actions** (the three planned ones are dropped); trends to user-actions-only as content reads move to the bundle |
+| `services/restProxy.js` | untouched for user actions; content path bypasses it via `services/worldData.js` |
+| `GlobalPerspectiveSituations` (DDB, created P1·T1) | **dropped in S1** before any reader exists |
+| Existing content tables | migrate per `DATA_STRATEGY.md` §6 (S8), gated by "nothing reads the table" |
+
 ### Docs & memory touched by the programme
 `ARCHITECTURE.md`, `BACKEND_GUIDE.md`, `INDEX.md`, `CHANGES.md` per phase, `pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md`, `SOURCE_DIVERSITY_PLAN.md`, `IMPACT_VALIDATION_METHODOLOGY.md`, `SITE_ORIENTATION_PLAN` follow-ups; memories `reference_page_wiring_contracts`, `project_pair_intelligence`, `project_home_map_lede`, `reference_web_data_sources`, `project_map_home_situation`.
 
 ## 10. Docs to update when shipping (docs-as-code)
 
-`ARCHITECTURE.md` (Lambda inventory: new `newsSituationTracker`, `newsArticleClassifier`; new tables; schedule table; frontend routes/components/hooks; Common Mistakes: unmatched-region logging), `BACKEND_GUIDE.md`, `pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md` (mark the un-shadowing), `reference_page_wiring_contracts` (URL params), `CHANGES.md` per phase, `project-docs/INDEX.md` (move this file `_proposed` → `_active` → `_shipped`).
+`ARCHITECTURE.md` (Lambda inventory: new `newsSituationTracker`, `newsSituationIngest`; S3 bucket + prefixes + per-role IAM; table retirements; schedule table; frontend routes/components/hooks; Common Mistakes: unmatched-region logging), `DATA_STRATEGY.md` (prefix table as it grows), `BACKEND_GUIDE.md`, `pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md` (mark the un-shadowing), `reference_page_wiring_contracts` (URL params), Worker docs (`project_cloudflare_worker`), `CHANGES.md` per stage, `project-docs/INDEX.md` (move this file `_active` → `_shipped`).
+
+## 11. Stages (v2, 2026-09-08) — replaces §5
+
+Ordering principle: **prove the read path first; add producers in the order that gives visible value earliest with the least LLM; frontend runs parallel on fixtures.** Each stage is a ledger group; each gate must be true before the next stage starts.
+
+| Stage | Scope | Gate | Parallel |
+|---|---|---|---|
+| **S0 Foundation** | `DATA_STRATEGY.md` ✅; plan/ledger v2 ✅; bucket + prefixes + lifecycle; one IAM policy per writer; Worker `/data/*` route; hand-placed fixture `world/latest.json`; `fixtures/world.json` for `npm run dev` | browser fetches `world/latest.json` through the Worker; dev runs on the fixture — **read path works before any producer exists** | — |
+| **S1 Openers → inbox** | re-point `newsGdacsIngest` to append `situations/inbox/` events (keep geometry + state logic + tests; keep events mirror for now); **drop `GlobalPerspectiveSituations`** | inbox objects at 20-min cadence for Orange/Red; zero LLM; table gone | — |
+| **S2 Tracker (folder)** | `newsSituationTracker` 10-min sweep: inbox → `situations/state|index|history`; assembles `world/latest.json` (+member, +snapshots); **shadow to `world/shadow/` ~1 week**; `stale` logic; lede + ranked precompute | 7 days of shadow snapshots; thresholds tuned; disasters cost 0 model calls; forced-stale fixture greys the map | **S4 starts here on fixtures** |
+| **S3 Ingest (Option A)** | `newsSituationIngest` hourly: RSS + GDELT → classify (flash, batched, 600/day cap) → cluster → `corpus/` + `stories/`; `newsBreakingAlert` becomes an inbox writer; tracker consumes stories (escalation + one-event-one-pin merge) | stories index populated across languages; GDACS + news cluster → one situation; LLM-cap metrics live | **S5 starts here** |
+| **S4 Map data layer** | `worldData.js`, `useWorld()`, `useSituationDetail()`; canonical ISO + `countryCentroids.js`; bundled topology; URL state; unmatched → error sink — on the **existing** renderer | Palestine/Kosovo render; deep-links restore; grey-out driven by `stale`; forced unmatched string hits the sink | with S2/S3 |
+| **S5 Map UI (WebGL)** | deck.gl 2.5D world, hue/height/ripple/luminance, spread arcs, tour, scrubber (reads `world/…/HHMM.json`), globe fly-to, honesty states — behind `/map`; rewrite/delete the 4 z-score tests | browser click-through; mobile; reduced-motion; scrubber replays real shadow history; `npm run verify` green | with S3 |
+| **S6 Home swap** | `/` → `SituationHome`; `/map` redirect; `Layout.jsx` nav; `BreakingDetailPage` link; `/weekly/pair/:slug` back; delete legacy WorldMap/MapSidePanel/MiniMap (fix `tokens.js`); Option B (Red → thread); Worker pre-render for `/`; smoke-test routes | smoke-test + link-crawl pass; SEO text in DOM; no dangling `/map` links | — |
+| **S7 Editorial switch** | selector consumes `stories/index.json`; **remove Brave from `newsInvokeGemini`**; `captureIngestion` → points at `corpus/` | brief quality unchanged per `IMPACT_VALIDATION_METHODOLOGY`; Brave ingest calls → 0 | — |
+| **S8 Table migrations** | one mini-plan each, in order: PredictionLog → `predictions/` (+Athena); GDACS/GDELT/audit/capture mirrors → `corpus/`+`audit/`; Markets snapshots; ClientErrors logs; Signals; BreakingAlerts (after review→inbox); Topics/SummarizeAndPredict via dual-write last | "nothing reads the table" (grep + CloudWatch) before each `delete-table` | after S6 |
+
+Gates are enforced through the ledger (`PLAN_EXECUTION_PLAYBOOK.md`). Deploys remain per-step gated; prod mutations are bare single `aws` commands.

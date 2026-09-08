@@ -820,6 +820,8 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 
 ## DynamoDB Tables
 
+> **Data strategy (adopted 2026-09-08) → `DATA_STRATEGY.md`.** New rule: *S3 for the world, DynamoDB for the user.* Only `Users`, `SavedItems`, `UserPrefs`, `ApiKeys` are meant to stay in DynamoDB long-term; every other table below is a migration candidate (order in DATA_STRATEGY §6). No new table without an exception recorded there.
+
 ### Topics Table (`TOPICS_DDB_TABLE`)
 **PK:** `id` (String)
 
@@ -950,7 +952,9 @@ These exist in prod DynamoDB; their producers' source lived on the unmerged `sig
 | `GlobalPerspectiveImpactAudit` | (see describe-table) | newsImpactAudit | Coverage-audit results |
 | `GlobalPerspectiveIngestCapture` | (see describe-table) | ingest feeds | Raw high-impact event capture (audited by newsImpactAudit) |
 
-### Situations Table (`SITUATIONS_TABLE`, default `GlobalPerspectiveSituations`, ap-northeast-1)
+### Situations Table (`SITUATIONS_TABLE`, default `GlobalPerspectiveSituations`, ap-northeast-1) — ⚠️ SUPERSEDED same day, to be DROPPED (Stage S1)
+> **2026-09-08 later:** `DATA_STRATEGY.md` was adopted ("S3 for the world, DynamoDB for the user"). Situation state moves to S3 (`situations/state/…`, sole writer `newsSituationTracker`; openers append `situations/inbox/`). This table is still being written by `newsGdacsIngest` until Stage S1 re-points it, then it is deleted. **Do not build readers against it.** The item shape below survives as the S3 object shape (minus `gsiAll`).
+
 **Created 2026-09-08** for the map-as-home + situation-tracker programme (`redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md`). **PK:** `situationId` (`gdacs#<eventKey>` for disaster opener; `breaking#<threadId>` for the alert opener). PAY_PER_REQUEST, TTL on `ttl` (60d after last touch). **GSIs:** `state-next_check_at-index` (HASH `state` + RANGE `next_check_at` — the tracker sweeps due situations by state) and `all-updated_at-index` (HASH `gsiAll`=`'ALL'` + RANGE `updated_at` — recency listing for `situations_list`). Each item (v1, GDACS opener): `{ situationId, source('gdacs'|'breaking'), gdacsEventKey?, threadId?, title, verb_label ("China — flood"), axis('humanitarian'|'conflict'|'political'|'economic'), tier(low|moderate|elevated|high — GDACS Red→high, Orange→elevated), state('emerging'|'escalating'|'peak'|'cooling'|'closed'), iso3_origin[], iso3_affected[], centroid{lat,lon}, spread_arcs[{from,to,since}], opened_at, updated_at, last_change_at, last_checked_at, check_count, cadence_min, next_check_at, what_changed(templated — LLM only on material news change), evidence{gdacs_level,gdacs_score,gdacs_report_url,affected_count,…}, history[{at,tier,level,score,state,note}] (cap 200), ttl }`. **Written deterministically (NO LLM)** by `newsGdacsIngest` (disaster opener, Orange/Red only; Green cools an open row); to be written by `newsBreakingAlert` (alert opener) and swept by `newsSituationTracker` (state machine + adaptive cadence) — both pending. There is **no `critical` tier**; the map renders "critical" as `high` + escalating. See §3.1 (LLM boundary) of the plan.
 
 ---

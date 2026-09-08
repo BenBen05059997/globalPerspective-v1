@@ -1,214 +1,225 @@
 # Map-as-Home + Situation Tracker — Execution Ledger
 
-> Execution record for `MAP_HOME_SITUATION_PLAN.md`, per `project-docs/playbooks/PLAN_EXECUTION_PLAYBOOK.md`. One row per task; declare (fill the four fields, set 🔧) before doing; on finish update the listed docs in the same commit, tick the boxes, set ✅ + commit hash. An agent resuming reads the plan then this file; the first 🔧 active row (or first 🔭 todo in phase order) is next.
+> Execution record for `MAP_HOME_SITUATION_PLAN.md`, per `project-docs/playbooks/PLAN_EXECUTION_PLAYBOOK.md`. One row per task; declare (fill the four fields, set 🔧) before doing; on finish update the listed docs in the same commit, tick the boxes, set ✅ + commit hash. An agent resuming reads the plan then this file; the first 🔧 active row (or first 🔭 todo in stage order) is next.
 
-**Legend:** 🔭 todo · 🔧 active · ✅ done · ⛔ blocked
+**Legend:** 🔭 todo · 🔧 active · ✅ done · ⛔ blocked · ♻️ superseded
 **Started:** 2026-09-08 · **Region:** ap-northeast-1 · **Ingest fn deployed name:** `newsInvokeGemini-dev`
+**v2 restructure 2026-09-08:** phases P0–P6 → stages S0–S8 (plan §11) after the data-strategy decision (`architecture/DATA_STRATEGY.md`: S3 for the world, DynamoDB for the user). Completed P0 rows kept below as history; P1·T1 kept with a supersession note.
 
 ---
 
-## Phase P0 — measure (read-only; no code, no deploy)
+## History — Phase P0 (measure; complete)
 
-### P0 · T1 — Brave investigation (protocol §5.1)
-Status: ✅ done (ingest decision conclusive; grounding parts C/D/E ⛔ blocked on operator dashboard, deferred to a separate follow-up)
-Reads/refs: CloudWatch Logs group `/aws/lambda/newsInvokeGemini-dev`; capture table `GlobalPerspectiveIngestCapture`; Lambda `Invocations` for the 5 grounding fns; Brave dashboard (operator, not yet supplied); plan §5.1
-Changes: `scripts/brave-audit.md` created; plan §2.6 + §5.1 decision table filled
-Docs to update: `MAP_HOME_SITUATION_PLAN.md` §2.6/§5.1 ✅ · `scripts/brave-audit.md` ✅ · `CHANGES.md` ✅ · this ledger ✅
-Verify / exit: decision table filled; ingest-Brave removal go/no-go recorded ✅
-Done-check: [x] numbers  [x] docs updated  [x] CHANGES.md  [x] table filled
-Commit: `2bb6ee7` (P0 + playbook + ledger + plan §3.1/§9)
-Notes: **brave_unique_chosen = 0.4%** (12/2,740 chosen over 197 runs) → remove Brave from ingest, no fallback. Brave = 5.8% of pool, ~18% 429-throttled, reuters returns ~0.38/run. Grounding fns log Brave only on failure → true volume needs the Brave dashboard (operator). Incidental: prod `BRAVE_CONCURRENCY=1` (src default 3); Brave key valid (no 401/403). **The live Brave key is in the Lambda env — seen but deliberately NOT written to any doc/commit.**
+### P0 · T1 — Brave investigation (protocol §5.1) — ✅ done · `2bb6ee7`
+brave_unique_chosen = 0.4% (12/2,740 over 197 runs) → remove Brave from ingest, no fallback. Brave = 5.8% of pool, ~18% 429-throttled, reuters ~0.38/run. Grounding volume needs the operator's Brave dashboard (⛔ deferred, separate follow-up). Full audit `scripts/brave-audit.md`. Prod `BRAVE_CONCURRENCY=1`. Brave key seen in env, never written down.
 
-### P0 · T2 — Live-bytes drift diff (GDACS / GDELT / breaking-alert)
-Status: ✅ done
-Reads/refs: deployed code of `newsGdacsIngest`, `newsGdeltConflict`, `newsBreakingAlert` (via `aws lambda get-function` → Code.Location → curl → unzip) vs `amplify/backend/function/*/src` on main
-Changes: none (record findings)
-Docs to update: ledger Notes ✅
-Verify / exit: each fn marked identical-or-drifted ✅
-Done-check: [x] diffed  [x] recorded
-Commit: n/a (read-only)
-Notes: **All three byte-IDENTICAL to main** (gdacs index.js; gdelt index.js; breaking-alert index.js/render.js/sendEmail.js/significance.js). No drift → P1·T1 and P2·T2 may edit these directly from main. (Still re-diff at edit time — this snapshot is 2026-09-08.)
+### P0 · T2 — Live-bytes drift diff — ✅ done
+`newsGdacsIngest`, `newsGdeltConflict`, `newsBreakingAlert` byte-identical to main (2026-09-08). Re-diff at edit time.
 
-### P0 · T3 — Confirm env facts
-Status: ✅ done
-Reads/refs: `aws lambda get-function-configuration` for newsInvokeGemini-dev + newsGdacsIngest; `aws events describe-rule TriggerGdacsIngest`
-Changes: none
-Docs to update: ledger Notes ✅ (plan §2 already correct)
-Verify / exit: `TOPICS_LIMIT`, GDACS cadence, provider aliases confirmed ✅
-Done-check: [x] TOPICS_LIMIT=13  [x] GDACS `cron(0 */6 * * ? *)` ENABLED, default feed (no env override)  [x] provider aliases
-Commit: n/a (read-only)
-Notes: ingest "GROK" alias = **DeepSeek**: `GROK_API_URL=https://api.deepseek.com`, `GROK_MODEL=deepseek-v4-flash` (confirms `feedback_misleading_grok_naming`). **P1·T2 classifier reuses this flash provider/model** — no new provider wiring needed. Also present: XAI_API_KEY(+BACKUP), OPENAI_API_KEY.
+### P0 · T3 — Env facts — ✅ done
+`TOPICS_LIMIT=13`; GDACS was `cron(0 */6…)`; ingest "GROK" alias = DeepSeek `deepseek-v4-flash` (`GROK_API_URL=https://api.deepseek.com`).
+
+## History — P1 · T1 — ♻️ superseded (shipped `623247f`, reversed in S1)
+Shipped 2026-09-08: `GlobalPerspectiveSituations` DDB table (2 GSIs, TTL), GDACS role grant, `newsGdacsIngest` rewrite (geometry → lat/lon; Orange/Red → situation rows; state machine; templated what_changed; lazy SDK; `cleanSeverity`; 9 tests), `TriggerGdacsIngest` → `rate(20 minutes)`. Live-verified (100/100 geo, 1 Orange → 1 situation, idempotent).
+**Superseded the same day** by the data strategy: situation *state* must live in S3 with the tracker as sole writer. **What survives:** geometry capture, the 20-min cadence, the state-machine helpers + tests (they move into the tracker), the IAM lesson. **What S1 reverses:** the DDB table (drop) and GDACS writing state (becomes an inbox writer). Docs written by P1·T1 (ARCHITECTURE Situations Table, BACKEND_GUIDE row) get a supersession note in S1.
 
 ---
 
-## Phase P1 — ingest (shadow tables only; UI untouched)
+## Stage S0 — Foundation (read path before producers)
 
-### P1 · T1 — `GlobalPerspectiveSituations` table + GDACS writes situations directly (geometry, history, 20-min)
-Status: ✅ done (2026-09-08, deployed + live-verified)
-Reads/refs: `amplify/backend/function/newsGdacsIngest/src/index.js` (was byte-identical to main; re-verified before edit); EventBridge rule `TriggerGdacsIngest`; plan §3.1, §4 WS2
-Changes: created table `GlobalPerspectiveSituations` (PK situationId; GSI `state-next_check_at-index`; GSI `all-updated_at-index`; TTL 60d); IAM PutItem/Query grant merged into `newsGdacsIngest-pol`; newsGdacsIngest index.js (geometry→lat/lon, situation upsert on Orange/Red with state machine + history + templated what_changed, NO LLM; lazy SDK for testability; `cleanSeverity`); `index.test.mjs` (9 tests); rule → `rate(20 minutes)`
-Docs to update: `ARCHITECTURE.md` ✅ · `BACKEND_GUIDE.md` ✅ · `IMPACT_FIRST_REDESIGN_PLAN.md` ✅ · `CHANGES.md` ✅
-Verify / exit: ✅ 100/100 events carry coordinates; live Orange event opened 1 situation with 0 model calls; re-run idempotent (`unchanged`); `rate(20 minutes)` confirmed ENABLED; 9 unit tests pass
-Done-check: [x] code  [x] docs  [x] CHANGES  [x] verify/deploy
-Commit: `623247f`
-Notes: tier vocabulary reconciled — Red→high, Orange→elevated (canonical `riskTiers.js`, no "critical"; map renders critical = high+escalating). GDACS role now allows Situations PutItem/Query. Deployed bundle is index.js+package.json only (SDK from nodejs22.x runtime). One pre-fix artifact: the test row `gdacs#FL#1104081` keeps its original "Magnitude 0" what_changed until its next real change (correct — unchanged preserves prior text).
+### S0 · T1 — DATA_STRATEGY.md + plan/ledger v2
+Status: ✅ done (2026-09-08)
+Reads/refs: discussion 2026-09-08; plan §3.1; existing table inventory (ARCHITECTURE §DynamoDB Tables)
+Changes: new `project-docs/architecture/DATA_STRATEGY.md`; plan v2 banner, §3.2, WS1/WS2/WS3 REVISED notes, §5 superseded, §6/§9 amended, new §11 stages; this ledger restructured
+Docs to update: `INDEX.md` ✅ · `CHANGES.md` ✅ · memory `project_map_home_situation` ✅
+Verify / exit: docs coherent; no build
+Done-check: [x] docs  [x] INDEX  [x] CHANGES
+Commit: <this commit>
 
-### P1 · T2 — `newsArticleClassifier` (per-article structured classification)
+### S0 · T2 — S3 bucket, prefixes, lifecycle, IAM
 Status: 🔭 todo
-Reads/refs: plan §4 WS1.2; `newsInvokeGemini/src` (RSS+source shape, model client, `captureIngestion`); `project_ai_provider_migration` (flash model)
-Changes: new Lambda `newsArticleClassifier` (separate; **hourly** rule — decoupled from the 4h editorial run, §3.1.1); reuses `deepseek-v4-flash` via GROK_API_URL/GROK_MODEL; batched JSON schema output; unmatched→error sink; `ClassifierLLMCallsToday` metric + 600/day cap (§3.1.5)
-Docs to update: `ARCHITECTURE.md` · `BACKEND_GUIDE.md` · `CHANGES.md`
-Verify / exit: batch of 30 real headlines → valid per-article JSON (iso3/axis/severity/entities); unmatched logged not dropped
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
+Reads/refs: `DATA_STRATEGY.md` §3–§4; account 280362093938; existing role naming (`<fn>-role`, inline `<fn>-pol`)
+Changes: bucket `globalperspective-world-280362093938` (private, block public access, SSE-S3, versioning off); prefixes created implicitly; lifecycle rules (corpus/history → IA 30d; corpus expire 400d; `latest` never); inline policies: `newsGdacsIngest-pol` += PutObject `situations/inbox/*` (and remove the DDB Situations grant in S1); new roles for tracker/ingest created with their Lambdas; a read-only IAM user/role for the Worker (GetObject on `world/*`, `situations/state/*`, `stories/state/*`)
+Docs to update: `ARCHITECTURE.md` (new "S3 world bucket" section: bucket, prefixes, per-role IAM) · `DATA_STRATEGY.md` §4 (confirm names) · `CHANGES.md`
+Verify / exit: `aws s3api get-bucket-policy-status` shows not public; a test PutObject from the gdacs role to `situations/inbox/` succeeds and to `situations/state/` is denied
+Done-check: [ ] bucket  [ ] lifecycle  [ ] IAM  [ ] docs  [ ] CHANGES
 Commit: —
 
-### P1 · T3 — Deterministic clustering → `GlobalPerspectiveStories`
+### S0 · T3 — Cloudflare Worker `/data/*` route + fixture
 Status: 🔭 todo
-Reads/refs: plan §4 WS1.3
-Changes: clustering stage; new table `GlobalPerspectiveStories` (PK storyId, GSI last_seen, TTL 30d); **merge rule** — cluster with same iso3 + disaster/humanitarian axis within 48h of a GDACS situation attaches to it (§3.1.2, one event one pin)
-Docs to update: `ARCHITECTURE.md` (DDB schema) · `BACKEND_GUIDE.md` · `CHANGES.md`
-Verify / exit: 7 days of stories with outlets/velocity/spread; Red-alert GDACS or ≥8-outlet cluster never absent in its cycle (§4 WS1.5 acceptance)
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
-
-### P1 · T4 — Sources: add GDELT DOC 2.0, remove Brave ingest queries
-Status: 🔭 todo — **UNBLOCKED by P0·T1** (`brave_unique_chosen`=0.4% → remove Brave outright, no transitional fallback)
-Reads/refs: plan §4 WS1.1; GDELT DOC 2.0 (1 req/5s); `newsInvokeGemini` Brave block (l.388-461)
-Changes: newsInvokeGemini — GDELT fetch (serialized), remove or transitional-keep Brave queries per P0 decision
-Docs to update: `ARCHITECTURE.md` · `BACKEND_GUIDE.md` · `pipeline-ingest/SOURCE_DIVERSITY_PLAN.md` · `CHANGES.md` · memory `reference_web_data_sources`
-Verify / exit: GDELT articles ingested across languages; ingest still fills the pool with Brave removed/reduced
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
-
-### P1 · T5 — Extend `captureIngestion` with clusters (eval basis)
-Status: 🔭 todo
-Reads/refs: `captureIngestion` (newsInvokeGemini l.576); `IMPACT_VALIDATION_METHODOLOGY.md`
-Changes: capture write adds `clusters`
-Docs to update: `IMPACT_VALIDATION_METHODOLOGY.md` · `CHANGES.md`
-Verify / exit: missed-high-impact audit runnable on the new field
-Done-check: [ ] code  [ ] docs  [ ] CHANGES
+Reads/refs: existing Worker source (locate via memory `project_cloudflare_worker`; verify repo path); Worker secrets store; `DATA_STRATEGY.md` §3.6, §5
+Changes: Worker route `/data/*` → SigV4 GET to S3 (aws4fetch or hand-rolled), `Cache-Control: s-maxage=300, stale-while-revalidate=600`, ETag pass-through, 404 → JSON error; `*.member.json` requires valid Firebase JWT (verify via Google JWKS); hand-place `fixtures/world.json` → upload as `world/latest.json`; commit `global-perspectives-starter/frontend/fixtures/world.json`; `VITE_WORLD_URL` env for dev pointing at the fixture
+Docs to update: `ARCHITECTURE.md` (Worker routes) · memory `project_cloudflare_worker` · `CHANGES.md`
+Verify / exit: `curl https://globalperspective.net/data/world/latest.json` returns the fixture with cache headers; member URL 401 without JWT; `npm run dev` renders from the local fixture
+Done-check: [ ] worker  [ ] fixture  [ ] dev env  [ ] docs  [ ] CHANGES
 Commit: —
 
 ---
 
-## Phase P2 — situation tracker
+## Stage S1 — Openers → inbox
 
-### P2 · T1 — `newsSituationTracker` (state machine, adaptive cadence, cheap-detect → template → maybe-LLM)
+### S1 · T1 — Re-point `newsGdacsIngest` to inbox events; drop the DDB table
 Status: 🔭 todo
-Reads/refs: plan §3.1 + §4 WS2 (record schema, cadence table, 4 escalation dims, conservative thresholds: spread ≥1 new iso3 OR velocity ≥2×); `newsDriftCorrector` (grounded pattern); `riskTiers.js`; table from P1·T1
-Changes: new Lambda `newsSituationTracker` (rate(10 min), DRY_RUN); templated `what_changed` from deltas, LLM narrative only on material news change and under the 300/day cap; metrics SituationsOpen/ChecksRun/LLMCallsAvoided/TrackerLLMCallsToday
-Docs to update: `ARCHITECTURE.md` · `BACKEND_GUIDE.md` · `CHANGES.md` · memory `project_map_home_situation`
-Verify / exit: state machine unit tests; **≈1 week in DRY_RUN (shadow) before any pin is shown** — thresholds tuned on that data; LLM calls ≈ material changes only; disasters cost 0 calls
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
+Reads/refs: `amplify/backend/function/newsGdacsIngest/src/index.js` (as shipped in `623247f`; re-diff vs deployed first); `DATA_STRATEGY.md` §3.2, §4; plan §3.2
+Changes: replace `syncSituations`/DDB writes with `putInboxEvent()` → `situations/inbox/<ts>-gdacs-<eventKey>.json` for every Orange/Red feature **and** for open→Green transitions the tracker needs to know about (emit a `level_changed`/`gone` event by comparing against the previous run's own mirror — GDACS keeps a tiny `gdacs/last-seen.json` it owns); keep `buildEventItem` mirror to DDB until S8; move `buildSituation`/`coolSituation` helpers + tests to a shared `situations-core` module for the tracker; IAM: PutObject `situations/inbox/*` + `gdacs/*`, remove DDB Situations grant; **`aws dynamodb delete-table GlobalPerspectiveSituations`** after confirming zero readers
+Docs to update: `ARCHITECTURE.md` (Situations Table → supersession note; Lambda row) · `BACKEND_GUIDE.md` (row) · `CHANGES.md`
+Verify / exit: inbox objects appear within 20 min for the live Orange event; zero LLM; table deleted; unit tests still pass in the new module
+Done-check: [ ] code  [ ] IAM  [ ] table dropped  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
-### P2 · T2 — Openers: breaking-alert → openSituation; GDACS Red → Option-B thread
+---
+
+## Stage S2 — Tracker (the folder)
+
+### S2 · T1 — `newsSituationTracker` sweep: inbox → state/index/history → `world/`
 Status: 🔭 todo
-Reads/refs: `newsBreakingAlert` (byte-identical to main per P0·T2); GDACS situation rows from P1·T1; plan §3.1 Option A/B
-Changes: newsBreakingAlert upserts a situation row (threadId, tier from significance, axis via `axisForCategory`); **Red-alert GDACS situations only → create a thread** so the existing analysis pipeline picks it up (Option B); Orange stays deterministic-card-only (Option A) with the card stating "Analysis: not generated for Orange-level events"
-Docs to update: `ARCHITECTURE.md` · `BACKEND_GUIDE.md` · `CHANGES.md`
-Verify / exit: ≥1 real situation opened by each opener; a Red event yields a thread next cycle; no situation-level predictions generated (§3.1.3)
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
+Reads/refs: plan §3.1, WS2 (REVISED), §4 cadence table; `DATA_STRATEGY.md` §4–§5; `situations-core` helpers from S1; `composeTopicsLede` (frontend util → port to Node); `getGeminiTopics` source for lede/ranked inputs; `newsMarketsData` output for `systemic`
+Changes: new Lambda `newsSituationTracker` (Node 22, 512MB, 120s, `rate(10 minutes)`, `DRY_RUN=true` initially → writes `world/shadow/`); role `newsSituationTracker-role` with PutObject on `situations/state|index|history/*`, `world/*`, GetObject on `situations/inbox/*`, `stories/*`, and DeleteObject/move on processed inbox events (`situations/inbox/processed/`); fold logic; `next_check_at` cadence; cheap-detect; templated `what_changed`; LLM narrative gate + `TrackerLLMCallsToday` metric (cap 300); `stale` computation from per-source stamps; assemble `world/latest.json` + `latest.member.json` + `world/YYYY/MM/DD/HHMM.json`
+Docs to update: `ARCHITECTURE.md` (Lambda, schedule, bucket prefixes) · `BACKEND_GUIDE.md` · `CHANGES.md` · memory `project_map_home_situation`
+Verify / exit: unit tests for fold/state machine; 7 days of `world/shadow/` snapshots; thresholds tuned; disasters = 0 model calls; forced-stale fixture → `stale:true`
+Done-check: [ ] code  [ ] IAM  [ ] shadow week  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
-### P2 · T3 — newsFreshnessMonitor: add tracker to probe set
-Status: 🔭 todo
-Reads/refs: `newsFreshnessMonitor`
-Changes: probe situations table freshness
+### S2 · T2 — Flip tracker from shadow to live `world/latest.json`
+Status: 🔭 todo (gated on S2·T1 shadow week + S4·T1)
+Changes: `DRY_RUN=false`; Worker cache purge; `newsFreshnessMonitor` probes `world/latest.json` age
 Docs to update: `ARCHITECTURE.md` · `CHANGES.md`
-Verify / exit: stale tracker triggers SNS
-Done-check: [ ] code  [ ] docs  [ ] CHANGES
+Verify / exit: live bundle updates every 10 min; monitor alarms on a stalled tracker
+Done-check: [ ] flip  [ ] monitor  [ ] docs  [ ] CHANGES
 Commit: —
 
 ---
 
-## Phase P3 — map data layer
+## Stage S3 — Ingest (Option A)
 
-### P3 · T1 — Proxy actions: situations_list / situation_get / freshness_status
+### S3 · T1 — `newsSituationIngest` hourly: RSS + GDELT → classify → cluster → `corpus/` + `stories/`
 Status: 🔭 todo
-Reads/refs: plan §4 WS3.1; `newsSensitiveData/src` (proxy `{action,payload}`); `services/restProxy.js`
-Changes: 3 actions in newsSensitiveData; hooks `useSituations`, `useFreshness` (5-min visible-tab poll)
-Docs to update: `ARCHITECTURE.md` (routes/actions) · `BACKEND_GUIDE.md` · `reference_proxy_request_behavior` (memory) · `CHANGES.md`
-Verify / exit: actions return live data; public no-auth reads OK
+Reads/refs: plan WS1 (REVISED) §1–§3, §3.1.1/.2/.5; `newsInvokeGemini/src` (RSS feed list + parser to reuse, DeepSeek client pattern); GDELT DOC 2.0 (1 req/5s); `DATA_STRATEGY.md` §4
+Changes: new Lambda `newsSituationIngest` (`rate(1 hour)`); reuse feed list; GDELT queries (serialized); batched classification on `deepseek-v4-flash` (30 headlines/call), strict JSON, ISO3-only, unmatched → error sink; `ClassifierLLMCallsToday` metric + 600/day cap; deterministic clustering vs open stories (read `stories/index.json`), one-event-one-pin merge rule vs `situations/index.json`; URL dedup via `corpus/seen/<hash>` objects or a rolling `corpus/seen.json` (owner: ingest); write `corpus/YYYY/MM/DD/HH.jsonl`, `stories/state/<id>.json`, `stories/index.json`
+Docs to update: `ARCHITECTURE.md` · `BACKEND_GUIDE.md` · `SOURCE_DIVERSITY_PLAN.md` · `IMPACT_VALIDATION_METHODOLOGY.md` · `CHANGES.md` · memory `reference_web_data_sources`
+Verify / exit: 24h of corpus + stories across languages; ≥8-outlet cluster never absent; merge rule produces one situation for a GDACS event with news coverage
+Done-check: [ ] code  [ ] IAM  [ ] docs  [ ] CHANGES  [ ] verify
+Commit: —
+
+### S3 · T2 — `newsBreakingAlert` becomes an inbox writer
+Status: 🔭 todo
+Reads/refs: `newsBreakingAlert` (byte-identical to main per P0·T2; re-diff); `significance.js` axisForCategory
+Changes: on writing an alert, also PutObject `situations/inbox/<ts>-breaking-<threadId>.json` (tier from significance, axis, regions → iso3 via canonical mapping); IAM PutObject on `situations/inbox/*`
+Docs to update: `ARCHITECTURE.md` · `BACKEND_GUIDE.md` · `CHANGES.md`
+Verify / exit: a real alert produces an inbox event; tracker opens a `breaking#<threadId>` situation with `threadId` set
+Done-check: [ ] code  [ ] IAM  [ ] docs  [ ] CHANGES  [ ] verify
+Commit: —
+
+### S3 · T3 — Tracker consumes stories (escalation + merge)
+Status: 🔭 todo
+Changes: tracker reads `stories/index.json` in the sweep; escalation dims (spread, velocity, category weight, spillover); merge rule
+Docs to update: `ARCHITECTURE.md` · `CHANGES.md`
+Verify / exit: shadow data shows escalation flips on real spread/velocity; no duplicate pins
 Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
-### P3 · T2 — Canonical name→ISO + centroids + error-sink on miss
+---
+
+## Stage S4 — Map data layer (parallel with S2/S3, on fixtures)
+
+### S4 · T1 — `worldData.js` + `useWorld()` + `useSituationDetail()`
 Status: 🔭 todo
-Reads/refs: plan §4 WS3.2; `utils/countryMapping.js`; `WorldMapV2.jsx` l.25-109; `errorSink.js`
-Changes: delete WorldMapV2 alias tables → import countryMapping; new `utils/countryCentroids.js` (PS/XK/small states); unmatched→errorSink
-Docs to update: `ARCHITECTURE.md` (Common Mistakes: unmatched-region logging) · `reference_page_wiring_contracts` · `CHANGES.md`
-Verify / exit: Palestine/Kosovo render; unmatched string hits error sink (forced test)
+Reads/refs: plan WS3 (REVISED); `DATA_STRATEGY.md` §5; `services/restProxy.js` (leave untouched); `fixtures/world.json`
+Changes: `services/worldData.js` (fetch `/data/world/latest.json`, ETag, 5-min visible-tab refresh, `VITE_WORLD_URL` override); hooks; wire into the existing `WorldMapV2` as the situations source (replacing the z-score signal as the driver)
+Docs to update: `ARCHITECTURE.md` (hooks/services) · `reference_page_wiring_contracts` · `CHANGES.md`
+Verify / exit: map renders situations from the fixture and from the shadow bundle; `npm run verify`
 Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
-### P3 · T3 — Bundle topology locally + URL state
+### S4 · T2 — Canonical ISO + `countryCentroids.js` + unmatched → error sink
 Status: 🔭 todo
-Reads/refs: plan §4 WS3.3/3.5; `threadPath()` convention
-Changes: `src/assets/countries-110m.json` (pinned 2.0.2); remove CDN fetch; `?focus=/?t=/?layer=` URL sync
+Reads/refs: `utils/countryMapping.js`; `WorldMapV2.jsx` l.25-109 (alias tables to delete); `errorSink.js`
+Changes: as WS3 item 2
+Docs to update: `ARCHITECTURE.md` (Common Mistakes) · `CHANGES.md`
+Verify / exit: Palestine/Kosovo render; forced unmatched string hits the sink
+Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
+Commit: —
+
+### S4 · T3 — Bundled topology + URL state
+Status: 🔭 todo
+Changes: `src/assets/countries-110m.json` (pinned 2.0.2); remove CDN fetch; `?focus=/?t=/?layer=`
 Docs to update: `reference_page_wiring_contracts` · `CHANGES.md`
-Verify / exit: no CDN fetch; deep-link restores view; topology failure → list still renders
+Verify / exit: no CDN fetch; deep-link restores; topology failure → list still renders
 Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
 ---
 
-## Phase P4 — map UI (WebGL rewrite; behind /map, not yet home)
+## Stage S5 — Map UI (WebGL; behind /map; parallel with S3)
 
-### P4 · T1 — deck.gl 2.5D world: hue/height/ripple/luminance + spread arcs
+### S5 · T1 — deck.gl 2.5D world: hue/height/ripple/luminance + spread arcs; retire z-score tests
 Status: 🔭 todo
-Reads/refs: plan §4 WS4 (encoding table, palette); plan §10 blast radius
-Changes: new map component(s); deck.gl layers; dark theme; code-split map route; **rewrite/delete the 4 z-score tests** (`test/useCountrySignal.test.js`, `layers.test.jsx`, `signalFilters.test.jsx`, `searchBar.test.jsx`) so `npm run verify` stays green; situation card = Option A deterministic fields + honest "Analysis: …" line
-Docs to update: `ARCHITECTURE.md` (components) · `CHANGES.md`
-Verify / exit: browser click-through (`feedback_test_ui_in_browser`); mobile; reduced-motion fallback; bundle-size checked
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
-
-### P4 · T2 — Globe fly-to, idle tour, scrubber, honesty states
-Status: 🔭 todo
-Reads/refs: plan §4 WS4 (fly-to, tour, scrubber, grey-out/empty/hover-fact states)
-Changes: fly-to view; auto-tour (localStorage `gp_map_tour`); 7-day scrubber over history; freshness grey-out + empty-world + hover-card states
+Reads/refs: plan WS4; §9 blast radius (4 tests)
+Changes: new map component(s); deck.gl layers; dark theme; code-split; rewrite/delete `test/useCountrySignal.test.js`, `layers.test.jsx`, `signalFilters.test.jsx`, `searchBar.test.jsx`; Option-A situation card
 Docs to update: `ARCHITECTURE.md` · `CHANGES.md`
-Verify / exit: grey-out forced via stale fixture; empty state shows honest line; tour pauses on input
+Verify / exit: browser click-through; mobile; reduced-motion; bundle size; `npm run verify` green
+Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
+Commit: —
+
+### S5 · T2 — Globe fly-to, idle tour, scrubber, honesty states
+Status: 🔭 todo
+Changes: fly-to; tour (`gp_map_tour`); scrubber over `world/YYYY/MM/DD/HHMM.json`; grey-out on `stale`; empty-world line; hover facts
+Docs to update: `ARCHITECTURE.md` · `CHANGES.md`
+Verify / exit: scrubber replays real shadow history; forced-stale greys; tour pauses on input
 Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
 ---
 
-## Phase P5 — home swap, routes, cleanup
+## Stage S6 — Home swap, routes, cleanup
 
-### P5 · T1 — `/` → SituationHome; `/map` redirect; below-fold list/SEO
+### S6 · T1 — `/` → SituationHome; `/map` redirect; nav; links; smoke-test; Worker pre-render for `/`
 Status: 🔭 todo
-Reads/refs: plan §4 WS5; `App.jsx` (routes); `Home.jsx` (lede/trust-strip/topics to keep); `project_cloudflare_worker`
-Changes: App.jsx routes (`/map` → `<Navigate to="/" />`); SituationHome page; demote Home content below fold as real HTML; `Layout.jsx:67` remove Map nav entry; `BreakingDetailPage.jsx:106` "See on the map" → `/?focus=<threadId>`; `scripts/smoke-test.mjs:106,423` retarget `/map` checks to `/`; optional ThreadPage/CountryPage "Being watched" chip
+Reads/refs: plan WS5, §9; `App.jsx`, `Home.jsx`, `Layout.jsx:67`, `BreakingDetailPage.jsx:106`, `scripts/smoke-test.mjs:106,423`; Worker pre-render code
+Changes: as WS5 + §9; Worker `/` pre-render from `world/latest.json`
 Docs to update: `ARCHITECTURE.md` (routes) · `SITE_ORIENTATION_PLAN` follow-ups · `reference_page_wiring_contracts` · memory `project_home_map_lede` · `CHANGES.md`
-Verify / exit: `/` is the map; smoke-test + link-crawl pass; SEO text present in DOM; no dangling `/map` links (grep)
+Verify / exit: smoke-test + link-crawl; SEO text in DOM; no dangling `/map` links; `./deploy.sh` gated
 Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
-### P5 · T2 — Restore /weekly/pair/:slug; delete legacy WorldMap/MapSidePanel/MiniMap
+### S6 · T2 — `/weekly/pair/:slug` back; delete legacy WorldMap/MapSidePanel/MiniMap; Option B (Red → thread)
 Status: 🔭 todo
-Reads/refs: plan §4 WS5; `project_pair_intelligence`; `tokens.js` (MiniMap ref), `components/WorldMap.jsx`, `MapSidePanel.jsx`, `MiniMap.jsx`
-Changes: pair route + page; fix tokens.js MiniMap ref then delete the 3 legacy files; add `/weekly/pair/<slug>` to `scripts/smoke-test.mjs`
+Changes: pair route + page; `tokens.js` MiniMap ref then delete 3 files; tracker: Red GDACS situation → create thread (Option B) — LLM under cap
 Docs to update: `ARCHITECTURE.md` · `reference_page_wiring_contracts` · memory `project_pair_intelligence` · `CHANGES.md`
-Verify / exit: arc click opens pair; zero-reference grep before delete; verify passes
+Verify / exit: arc click opens pair; zero-ref grep before delete; a Red event yields a thread next cycle
 Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
 Commit: —
 
 ---
 
-## Phase P6 — editorial switch
+## Stage S7 — Editorial switch
 
-### P6 · T1 — Selector consumes scored clusters (quotas/dedup kept)
+### S7 · T1 — Selector consumes `stories/index.json`; remove Brave from `newsInvokeGemini`; capture → corpus
+Status: 🔭 todo (Brave removal unblocked by P0·T1)
+Reads/refs: `newsInvokeGemini` selection prompt (l.651+), Brave block (l.388-461), `captureIngestion` (l.576)
+Changes: prompt receives top-N clusters; `continues_topic` → `storyId`; delete Brave block; `captureIngestion` records the corpus key instead of truncated input
+Docs to update: `ARCHITECTURE.md` · `BACKEND_GUIDE.md` · `IMPACT_VALIDATION_METHODOLOGY.md` · `SOURCE_DIVERSITY_PLAN.md` · `CHANGES.md`
+Verify / exit: brief quality unchanged per methodology; Brave ingest calls → 0 in CloudWatch
+Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
+Commit: —
+
+---
+
+## Stage S8 — Table migrations (after S6; one mini-plan per table)
+
+### S8 · T1 — PredictionLog → `predictions/` (+ Athena)
 Status: 🔭 todo
-Reads/refs: plan §4 WS1.4; `newsInvokeGemini` selection prompt (l.651+); `GlobalPerspectiveStories`
-Changes: selection prompt receives top-N clusters instead of raw headlines; `continues_topic`→storyId linkage
-Docs to update: `ARCHITECTURE.md` · `IMPACT_VALIDATION_METHODOLOGY.md` · `CHANGES.md`
-Verify / exit: brief quality unchanged per IMPACT_VALIDATION_METHODOLOGY
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
+Gate: nothing reads `GlobalPerspectivePredictionLog` (grep + CloudWatch) before drop
+### S8 · T2 — GDACS/GDELT/ImpactAudit/IngestCapture mirrors → `corpus/` + `audit/`
+Status: 🔭 todo
+### S8 · T3 — Markets snapshots → `markets/`
+Status: 🔭 todo
+### S8 · T4 — ClientErrors → `errors/` logs; Signals → `signals/`; BreakingAlerts (after review→inbox)
+Status: 🔭 todo
+### S8 · T5 — Topics (`NewsCache`) + SummarizeAndPredict via dual-write → flip readers → retire
+Status: 🔭 todo (last; everything reads these)
 
 ---
 
-## On completion of all tasks
-Move `MAP_HOME_SITUATION_PLAN.md` + this ledger `_active/` → `_shipped/`; update `project-docs/INDEX.md`; update memory `project_map_home_situation` to SHIPPED.
+## On completion of all stages
+Move `MAP_HOME_SITUATION_PLAN.md` + this ledger `_active/` → `_shipped/`; update `project-docs/INDEX.md`; update memory `project_map_home_situation` to SHIPPED; `DATA_STRATEGY.md` stays in `architecture/` as standing reference.

@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-09-08 (deploy: newsBreakingAlert — fixed scorer + operator auto-send live)
+
+Deployed `newsBreakingAlert` (`update-function-code`), closing BACKEND_TODO #2. A pre-deploy deployed-vs-repo diff confirmed prod was still running the OLD uncapped scorer (`risk: 2.0`, no cap) while `main` had the Stage-1 fix — and, critically, caught that the repo `index.js` also carried an **unshipped auto-send** path.
+
+- **Scorer fix now live:** `RISK_CAP=50` + risk weight `2.0→1.0` + `axisForCategory` — country-risk can only *tilt* the decision, no longer dominate (was ~14% precision). Live bytes re-diffed byte-for-byte against repo.
+- **Auto-send now live (operator only, by choice):** `DRY_RUN=false` + `RESEND_API_KEY` set → each detection auto-emails **only** `ALERT_EMAIL_TO` (`benlai310@gmail.com`, "audience of one" self-eyeball). **Subscribers are NOT auto-sent** — that path is the separate `newsEmailSender mode:'breaking'` (`TriggerBreakingEmailSend`, 15-min) which broadcasts **human-confirmed** alerts to `breakingOptIn` recipients. Subscriber-auto deliberately deferred until precision is eyeballed on the new scorer.
+- Deploy discipline: mutating `aws` run as a bare single command (auto-mode classifier blocks compound forms); no source change (repo already had the fix).
+
 ## 2026-09-08 (fix: DeepSeek model-default sweep — newsImpactAudit thinking guard + 7 dead grok defaults)
 
 Closed the `deepseek-chat` landmine (BACKEND_TODO #3). Confirmed via DeepSeek's current API that `deepseek-chat`/`deepseek-reasoner` were hard-retired 2026-07-24 and the live flash model is `deepseek-v4-flash` (no newer flash since).

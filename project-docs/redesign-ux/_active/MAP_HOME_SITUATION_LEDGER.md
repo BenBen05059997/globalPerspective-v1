@@ -81,7 +81,7 @@ Changes: new Lambda `newsSituationTracker` (Node 22, 512MB, 120s) + role `newsSi
 Docs to update: `ARCHITECTURE.md` (Lambda + schedule + S3 writers) ✅ · `CHANGES.md` ✅ · memory `project_map_home_situation` ✅
 Verify / exit: ✅ 7 tests pass; deployed; live shadow invoke wrote `world/shadow/latest.json` (China flood, tier elevated, lede/ranked/sources correct) + state/index/history; `movedInbox:0` (shadow doesn't consume inbox); stale=false. **Pending (S2·T2 gate):** ~7 days of shadow snapshots + threshold tuning + forced-stale check.
 Done-check: [x] code  [x] IAM  [x] deploy+schedule  [x] shadow-bundle verified  [x] docs  [x] CHANGES  [ ] shadow-week (→S2·T2)
-Commit: <pending>
+Commit: `d390c72`
 Notes: lede is deterministic-from-situations for now (composeTopicsLede/topics enrichment + systemic-from-markets deferred — good S2·T2 or S3 add). `situations-core.js` duplicated in newsGdacsIngest + newsSituationTracker (manual-deploy repo, no layers) — keep in sync; candidate for a Lambda layer later.
 
 ### S2 · T2 — Flip tracker from shadow to live `world/latest.json`

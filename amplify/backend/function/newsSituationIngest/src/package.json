@@ -1,0 +1,11 @@
+{
+  "name": "newssituationingest",
+  "version": "1.0.0",
+  "description": "News ingest — RSS → flash classify → cluster into stories/ + corpus/. Feeds the situation tracker's news layer (S3). OpenAI-compatible flash model via raw fetch; no openai dep.",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/client-cloudwatch": "^3.600.0"
+  }
+}

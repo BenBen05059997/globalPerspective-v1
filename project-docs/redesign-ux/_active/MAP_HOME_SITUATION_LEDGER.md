@@ -99,7 +99,7 @@ Notes: tune over the next days with `node scripts/situations-log.mjs --days 3`; 
 ## Stage S3 — Ingest (Option A)
 
 ### S3 · T1 — `newsSituationIngest` hourly: RSS + GDELT → classify → cluster → `corpus/` + `stories/`
-Status: 🔭 todo
+Status: ✅ done (LIVE hourly; browser N/A backend) — RSS→flash classify (parallel, thinking-disabled)→cluster→corpus/+stories/; 295 arts→stories across 4 axes verified; role+rule+env+lifecycle set; classifier-core 7 tests. GDELT source deferred (RSS proved the concept); breaking-alert opener = S3·T2; tracker consumes stories = S3·T3.
 Reads/refs: plan WS1 (REVISED) §1–§3, §3.1.1/.2/.5; `newsInvokeGemini/src` (RSS feed list + parser to reuse, DeepSeek client pattern); GDELT DOC 2.0 (1 req/5s); `DATA_STRATEGY.md` §4
 Changes: new Lambda `newsSituationIngest` (`rate(1 hour)`); reuse feed list; GDELT queries (serialized); batched classification on `deepseek-v4-flash` (30 headlines/call), strict JSON, ISO3-only, unmatched → error sink; `ClassifierLLMCallsToday` metric + 600/day cap; deterministic clustering vs open stories (read `stories/index.json`), one-event-one-pin merge rule vs `situations/index.json`; URL dedup via `corpus/seen/<hash>` objects or a rolling `corpus/seen.json` (owner: ingest); write `corpus/YYYY/MM/DD/HH.jsonl`, `stories/state/<id>.json`, `stories/index.json`
 Docs to update: `ARCHITECTURE.md` · `BACKEND_GUIDE.md` · `SOURCE_DIVERSITY_PLAN.md` · `IMPACT_VALIDATION_METHODOLOGY.md` · `CHANGES.md` · memory `reference_web_data_sources`

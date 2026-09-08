@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-09-08 (fix: LinkedIn deep-links — posts link to the specific story, not a landing page)
+
+Both LinkedIn Lambdas linked readers to a generic page instead of the story they read about. Fixed:
+- `newsPostLinkedin` (topic posts): "Read full analysis" now → `/weekly/thread/{topic.threadId}` (falls back to homepage if no threadId).
+- `linkedInAutoPost` (briefings): thread → `/weekly/thread/{threadId}` (was `/weekly`); country → `/weekly/country/{encodeURIComponent(countryName)}` (was `/weekly/countries`).
+
+`node --check` passes both. Routes verified against `App.jsx` (`/weekly/thread/:threadId`, `/weekly/country/:countryName`).
+
+
 ## 2026-09-08 (fix: newsPostLinkedin — render prediction JSON as prose, not raw JSON)
 
 Found by reconstructing a real LinkedIn post body from live DDB data (the historical posts had TTL'd out): since methodology-v1 (2026-07-04) the `PREDICTION` content is **structured JSON** (`contentFormat:'json'`), but `formatLinkedInPost` treated `content` as prose — so **every LinkedIn post since ~07-04 dumped raw `{"scenarios":[…]}` truncated mid-object.** (LinkedIn was then dark ~08-21→09-08 on the expired token, so it wasn't visible.)

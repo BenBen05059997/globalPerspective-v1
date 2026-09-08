@@ -285,7 +285,9 @@ function formatThreadPost(thread) {
     lines.push('');
   }
 
-  lines.push(`📊 Track this story: ${SITE_URL}/weekly`);
+  // Deep-link to this specific thread (not the whole /weekly page). SITE_URL has no trailing slash.
+  const threadLink = thread.threadId ? `${SITE_URL}/weekly/thread/${thread.threadId}` : `${SITE_URL}/weekly`;
+  lines.push(`📊 Track this story: ${threadLink}`);
   lines.push('');
   lines.push('#GlobalPerspectives #Geopolitics #AI #WorldNews');
 
@@ -333,7 +335,9 @@ function formatCountryPost(country) {
     lines.push('');
   }
 
-  lines.push(`📊 Full briefing: ${SITE_URL}/weekly/countries`);
+  // Deep-link to this specific country (not the country list). countryName needs URL-encoding.
+  const countryLink = country.countryName ? `${SITE_URL}/weekly/country/${encodeURIComponent(country.countryName)}` : `${SITE_URL}/weekly/countries`;
+  lines.push(`📊 Full briefing: ${countryLink}`);
   lines.push('');
 
   const countryTag = `#${country.countryName.replace(/[^a-zA-Z0-9]/g, '')}`;

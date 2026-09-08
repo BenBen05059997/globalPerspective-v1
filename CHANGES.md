@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-08 (tune: situation tracker cadence 10min → 30min)
+
+`world/latest.json` refreshes every 30 min instead of 10 — GDACS only produces new observations every 20 min, so 10-min sweeps mostly folded nothing. `TriggerSituationTracker` → `rate(30 minutes)`, `SWEEP_MIN=30` (drives `next_expected_at`); `situation-tracker-stalled` alarm widened to a 60-min window (period 1800 × 2) to suit the slower cadence. Config only.
+
 ## 2026-09-08 (S2·T2: tracker flipped LIVE; tuning metrics + alarms + archive + digest script)
 
 Flipped `newsSituationTracker` `DRY_RUN=false` — `world/latest.json` now serves real tracker output (verified: China flood situation, live via the Worker; the 4 accumulated inbox snapshots moved to `situations/inbox/processed/`). Rather than a fixed shadow week, tuning is now continuous: (1) per-transition CloudWatch metrics added (`Opened/Raised/Spread/Cooled/Closed/Observations/Stale`, namespace `GlobalPerspective/Situations`); (2) the cool/close/stale behaviour is env-tunable without redeploy (`CLOSE_AFTER_COOL_CHECKS`, `GDACS_STALE_MIN`, `CLOSED_KEEP_HOURS`); (3) `scripts/situations-log.mjs` prints a day-by-day transition digest (via AWS CLI, no SDK dep — matches `errors.mjs`) that flags re-open-after-close flapping. Archive-on-drop: closed situations aged past 48h now move to `situations/archive/<id>.json` (durable life-story record; IA-30d lifecycle rule added) instead of orphaning. Two alarms → `GlobalPerspectiveAlerts`: `situation-tracker-stalled` (no sweep in 30 min) and `situation-tracker-errors`. 7 tracker tests still pass (added a `dropped`-ids assertion).

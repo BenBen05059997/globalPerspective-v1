@@ -68,3 +68,7 @@
 .sh-facts dt { color: var(--sh-muted); }
 .sh-facts dd { margin: 0; }
 .sh-note { font-size: 12px; color: var(--sh-muted); font-style: italic; margin-top: 8px; }
+
+/* S5: 3D map loading + deck.gl container */
+.sh-maploading { height: 560px; display: flex; align-items: center; justify-content: center; color: var(--sh-muted); font-size: 13px; }
+.sm-wrap { min-height: 520px; }

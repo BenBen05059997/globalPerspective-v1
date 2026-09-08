@@ -195,7 +195,7 @@ Commit: —
 ## Stage S5 — Map UI (WebGL; behind /map; parallel with S3)
 
 ### S5 · T1 — deck.gl 2.5D world: hue/height/ripple/luminance + spread arcs; retire z-score tests
-Status: 🔭 todo
+Status: ✅ done (2.5D core; browser-verified, source only) — deck.gl ColumnLayer 2.5D world, hue=axis/height=tier, code-split (907KB chunk only on /map), hover tooltip + click-select, escalating halo, WebGL/reduced-motion fallback to the D3 map. **Deferred to S5·T2:** ripple animation, spread arcs (need affected-country centroids), tour, scrubber, globe fly-to. **Deferred to S6:** retire the 4 z-score tests (WorldMapV2 still lives at /map-legacy, tests still valid until it is deleted).
 Reads/refs: plan WS4; §9 blast radius (4 tests)
 Changes: new map component(s); deck.gl layers; dark theme; code-split; rewrite/delete `test/useCountrySignal.test.js`, `layers.test.jsx`, `signalFilters.test.jsx`, `searchBar.test.jsx`; Option-A situation card
 Docs to update: `ARCHITECTURE.md` · `CHANGES.md`

@@ -1,8 +1,20 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, lazy, Suspense } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '../hooks/useWorld.js';
 import SituationMap, { AXIS_HUE } from './SituationMap.jsx';
 import './SituationHome.css';
+
+// deck.gl is heavy — code-split so it loads only on this route.
+const SituationMap3D = lazy(() => import('./SituationMap3D.jsx'));
+
+function canUse3D() {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    const c = document.createElement('canvas');
+    return !!(c.getContext('webgl2') || c.getContext('webgl'));
+  } catch { return false; }
+}
+const USE_3D = typeof window !== 'undefined' && canUse3D();
 
 const TIER_LABEL = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 const STATE_LABEL = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoing', cooling: 'Easing', closed: 'Ended' };
@@ -66,7 +78,13 @@ export default function SituationHome() {
 
       <div className="sh-mapwrap">
         <div className="sh-mapinner">
-          <SituationMap situations={situations} selectedId={focus} onSelect={select} />
+          {USE_3D ? (
+            <Suspense fallback={<div className="sh-maploading">Loading map…</div>}>
+              <SituationMap3D situations={situations} selectedId={focus} onSelect={select} />
+            </Suspense>
+          ) : (
+            <SituationMap situations={situations} selectedId={focus} onSelect={select} />
+          )}
           <div className="sh-legend" aria-label="What the map watches">
             {AXES.map((a) => (
               <span key={a.key} className={`sh-leg${counts[a.key] ? '' : ' sh-leg-off'}`}>

@@ -253,14 +253,15 @@ Commit: —
 **Order revised 2026-09-09** after two independent verifications (code-reader grep/audit + a 7-day CloudWatch metrics pull) surfaced that `PredictionLog` was the **2nd-hottest table** (not lightest-touch, as the old T1 ordering implied) and that `Signals` is **write-only** (0 reads/day over 14 days; `newsSignals` is invoked 1/day, cron-only) — the cheapest possible opener. Full evidence table, corrections, and the T1 design are in `MAP_HOME_SITUATION_PLAN.md` §11.1 (S8 sub-plan). Gate for every drop stays "nothing reads the table" (grep + CloudWatch) before `delete-table`; S8·T3–T6 additionally need explicit operator OK per edit to `newsSensitiveData` — a proxy-action DDB→S3 flip is backend-only (no frontend deploy needed) but the proxy is the live site's spine, so the gate is risk, not deploy surface.
 
 ### S8 · T1 — Signals → S3 (redirect, option 2)
-Status: 🔭 todo — approved 2026-09-09, not started
+Status: ✅ DONE 2026-09-09 — live, table dropped
 Gate: none (0 consumers — 0 reads/day over 14 days; `newsSignals` invoked 1/day, cron-only, zero HTTP)
 Reads/refs: plan §11.1 T1 design; `amplify/backend/function/newsSignals/src/index.js`
 Changes: BUILD writes `signals/latest.json` (+ dated `signals/snapshots/YYYY-MM-DD.json`), preserves `first_emitted_at` from previous `latest.json`; 120d DDB TTL → explicit `event_time ≥ now−120d` filter at build; SERVE (`/v1/signals`, `/v1/signals/{id}`) reads `latest.json` cached in module scope by ETag (identical behaviour to today's per-request full Scan); `/v1/track-record` unchanged until T3; rate-limit + auth stay in `ApiKeys` (DDB); IAM `newsSignals-role` inline policy `newsSignals-ddb` += `s3:GetObject`/`PutObject` on `arn:aws:s3:::globalperspective-world-280362093938/signals/*`; env `WORLD_BUCKET` added, `SIGNALS_TABLE` kept until retirement; lifecycle `signals/snapshots/` → Glacier IR 30d, expire 365d (~20MB/day); Worker rule: deliberately **no** `/data/signals/*` route — paid key-gated product stays behind the Function URL only
-Docs to update: `DATA_STRATEGY.md` §4/§6 ✅ (this pass) · `ARCHITECTURE.md` (newsSignals Lambda row ~l.793; tables rows ~l.962-963) · `pipeline-ingest/_shipped/SIGNAL_API_PLAN.md` (storage note) · `CHANGES.md`
-Verify / exit: one build, `latest.json` count ≈ 5,815 matches table; keyed curl (temp key via `mint-key.mjs`, then revoked) returns same shape; then `delete-table GlobalPerspectiveSignals`
-Done-check: [ ] code  [ ] IAM  [ ] docs  [ ] CHANGES  [ ] verify  [ ] table dropped
-Commit: —
+Docs to update: `DATA_STRATEGY.md` §4/§6 ✅ · `ARCHITECTURE.md` (newsSignals Lambda row + tables row struck) ✅ · `pipeline-ingest/_shipped/SIGNAL_API_PLAN.md` (storage-migrated note) ✅ · `CHANGES.md` ✅
+Verify / exit: build wrote **5,468** current signals (table held 5,815 incl. ~347 non-source stragglers that never TTL-expired — 5,468 is the honest current set); temp paid key confirmed list/get/filter return same v1 envelopes from S3, no-key → 401; table dropped + confirmed gone
+Extras done: scoped `s3:ListBucket` added (missing key → 404 not 403); dead Signals table ARN removed from IAM; `SIGNALS_TABLE` env removed; lifecycle `signals/snapshots/` → Glacier IR 30d/expire 365d applied; 59 tests green
+Done-check: [x] code  [x] IAM  [x] docs  [x] CHANGES  [x] verify  [x] table dropped
+Commit: (this branch `s8-t1-signals-s3`)
 
 ### S8 · T2 — GDACS/GDELT/ImpactAudit/IngestCapture mirrors → `corpus/` + `audit/`
 Status: 🔭 todo

@@ -5,33 +5,42 @@
 // One Lambda, two modes:
 //   • BUILD (direct invoke `{ action:'build' }`, or scheduled): reads the analysis records
 //     we already produce (ECONOMIC_IMPACT, prediction log, COUNTRY_INTELLIGENCE, confirmed
-//     breaking alerts), maps each into the stable v1 envelope via signalAdapter, and upserts
-//     them into the dedicated GlobalPerspectiveSignals table. Idempotent — signal_id is a
-//     deterministic dedupe key, so re-running overwrites in place.
+//     breaking alerts), maps each into the stable v1 envelope via signalAdapter, and writes
+//     them as a single `signals/latest.json` document in S3 (+ a dated `signals/snapshots/`
+//     copy). Idempotent — signal_id is a deterministic dedupe key, so re-running overwrites.
+//     (S8·T1, 2026-09-09: migrated off the GlobalPerspectiveSignals DDB table — the table was
+//     write-only, ~5.8k PutItems/day with zero reads; DATA_STRATEGY.md "S3 for the world".)
 //   • SERVE (HTTP, Function URL): API-key-gated read API —
 //        GET  /v1/signals?since=&type=&country=&min_severity=&limit=
 //        GET  /v1/signals/{signal_id}
 //        GET  /v1/track-record
 //     Free keys are rate-limited and (when configured) see signals on a delay; paid keys
-//     get real-time + higher limits.
+//     get real-time + higher limits. The list/get paths read `signals/latest.json` (cached in
+//     module scope by ETag); track-record still scans the prediction log (until S8·T3).
+//     signals/ is deliberately NOT exposed via the Cloudflare Worker /data/* route — this is
+//     the paid, key-gated product and stays behind the Function URL only.
 //
-// Why a separate Lambda/table and not the public newsSensitiveData proxy: different auth
+// Why a separate Lambda/store and not the public newsSensitiveData proxy: different auth
 // (API keys, not public), different SLA posture, and a clean one-way-door contract. See
 // [[feedback-clean-architecture]].
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
-  DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, ScanCommand, UpdateCommand,
+  DynamoDBDocumentClient, GetCommand, ScanCommand, UpdateCommand,
 } = require('@aws-sdk/lib-dynamodb');
+const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const adapter = require('./signalAdapter');
+const store = require('./signalStore');
 const { extractKey, verifyKey } = require('./apiKeys');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const SUMMARIZE_PREDICT_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
 const BREAKING_ALERTS_TABLE = process.env.BREAKING_ALERTS_TABLE || 'GlobalPerspectiveBreakingAlerts';
-const SIGNALS_TABLE = process.env.SIGNALS_TABLE || 'GlobalPerspectiveSignals';
 const API_KEYS_TABLE = process.env.API_KEYS_TABLE || 'GlobalPerspectiveApiKeys';
+const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
+const SIGNALS_PREFIX = (process.env.SIGNALS_PREFIX || 'signals').replace(/\/$/, '');
+const LATEST_KEY = `${SIGNALS_PREFIX}/latest.json`;
 const SITE_URL = (process.env.SITE_URL || 'https://globalperspective.net').replace(/\/$/, '');
 const SIGNAL_TTL_DAYS = Number(process.env.SIGNAL_TTL_DAYS) || 120;
 const FREE_DELAY_HOURS = Number(process.env.FREE_DELAY_HOURS) || 24; // free tier sees signals delayed
@@ -46,6 +55,28 @@ function ddb() {
     });
   }
   return _ddb;
+}
+
+let _s3 = null;
+function s3() {
+  if (!_s3) _s3 = new S3Client({ region: REGION });
+  return _s3;
+}
+
+async function s3GetJson(key) {
+  try {
+    const r = await s3().send(new GetObjectCommand({ Bucket: WORLD_BUCKET, Key: key }));
+    return { doc: JSON.parse(await r.Body.transformToString()), etag: r.ETag };
+  } catch (err) {
+    if (err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) return { doc: null, etag: null };
+    throw err;
+  }
+}
+
+async function s3PutJson(key, obj) {
+  await s3().send(new PutObjectCommand({
+    Bucket: WORLD_BUCKET, Key: key, Body: JSON.stringify(obj), ContentType: 'application/json',
+  }));
 }
 
 const nowIso = () => new Date().toISOString();
@@ -90,32 +121,25 @@ function computeCalibration(predictionItems) {
   };
 }
 
-async function upsertSignal(env) {
-  const ttl = Math.floor(Date.now() / 1000) + SIGNAL_TTL_DAYS * 86400;
-  // Top-level projections so the read path filters/sorts without unpacking every item.
-  // Recency is keyed on `event_time` (when the event actually happened), NOT emitted_at:
-  // a daily rebuild restamps emitted_at on everything, so it can't order or delay-gate.
-  // `first_emitted_at` is preserved across rebuilds (first time we ever published it).
-  await ddb().send(new PutCommand({
-    TableName: SIGNALS_TABLE,
-    Item: {
-      signal_id: env.signal_id,
-      type: env.type,
-      emitted_at: env.emitted_at,
-      event_time: env.event_time,
-      event_day: (env.event_time || '').slice(0, 10),
-      severity: env.severity,
-      country_isos: env.entities.countries.map((c) => c.iso).filter(Boolean),
-      country_names: env.entities.countries.map((c) => c.name),
-      envelope: env,
-      ttl,
-    },
-  }));
-}
-
 async function build() {
   const emittedAt = nowIso();
-  const summary = { economic_impact: 0, forecast: 0, geopolitical_risk: 0, breaking: 0, skipped: 0 };
+  const nowMs = Date.parse(emittedAt);
+  const summary = { economic_impact: 0, forecast: 0, geopolitical_risk: 0, breaking: 0, skipped: 0, dropped_stale: 0 };
+
+  // Carry first_emitted_at (the first build that ever published a signal_id) across rebuilds.
+  const prev = (await s3GetJson(LATEST_KEY)).doc;
+  const firstSeen = new Map();
+  if (prev && Array.isArray(prev.signals)) {
+    for (const s of prev.signals) firstSeen.set(s.signal_id, s.first_emitted_at || s.emitted_at);
+  }
+
+  const projections = [];
+  const collect = (env, bucket) => {
+    if (!env) { summary.skipped++; return; }
+    if (!store.withinRetention(env, nowMs, SIGNAL_TTL_DAYS)) { summary.dropped_stale++; return; }
+    projections.push(store.toProjection(env, firstSeen.get(env.signal_id)));
+    summary[bucket]++;
+  };
 
   // 1. Economic impact (real records only, tombstones skipped by the adapter)
   const econ = await scanAll({
@@ -123,24 +147,18 @@ async function build() {
     FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk AND hasImpact = :hi',
     ExpressionAttributeValues: { ':prefix': 'ECON#THREAD#', ':sk': 'ECONOMIC_IMPACT', ':hi': true },
   });
-  for (const rec of econ) {
-    const env = adapter.fromEconomicImpact(rec, { emittedAt });
-    if (env) { await upsertSignal(env); summary.economic_impact++; } else summary.skipped++;
-  }
+  for (const rec of econ) collect(adapter.fromEconomicImpact(rec, { emittedAt }), 'economic_impact');
 
   // 2. Forecasts — newest snapshot per prediction, with the global calibration stamp.
   const predItems = await scanAll({ TableName: PREDICTION_LOG_TABLE });
   const calibration = computeCalibration(predItems);
   const latestByTopic = new Map();
   for (const it of predItems) {
-    const prev = latestByTopic.get(it.topicId);
-    if (!prev || String(it.SK || '') > String(prev.SK || '')) latestByTopic.set(it.topicId, it);
+    const p = latestByTopic.get(it.topicId);
+    if (!p || String(it.SK || '') > String(p.SK || '')) latestByTopic.set(it.topicId, it);
   }
   for (const it of latestByTopic.values()) {
-    const env = adapter.fromPredictionLog(it, {
-      emittedAt, calibration, trackRecordUrl: `${SITE_URL}/track-record`,
-    });
-    if (env) { await upsertSignal(env); summary.forecast++; } else summary.skipped++;
+    collect(adapter.fromPredictionLog(it, { emittedAt, calibration, trackRecordUrl: `${SITE_URL}/track-record` }), 'forecast');
   }
 
   // 3. Country intelligence (current standing record per country)
@@ -149,10 +167,7 @@ async function build() {
     FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk',
     ExpressionAttributeValues: { ':prefix': 'COUNTRY#', ':sk': 'COUNTRY_INTELLIGENCE' },
   });
-  for (const rec of countries) {
-    const env = adapter.fromCountryIntelligence(rec, { emittedAt });
-    if (env) { await upsertSignal(env); summary.geopolitical_risk++; } else summary.skipped++;
-  }
+  for (const rec of countries) collect(adapter.fromCountryIntelligence(rec, { emittedAt }), 'geopolitical_risk');
 
   // 4. Confirmed/sent breaking alerts
   let breaking = [];
@@ -164,13 +179,15 @@ async function build() {
       ExpressionAttributeValues: { ':c': 'confirmed', ':sent': 'sent' },
     });
   } catch (err) { console.warn('breaking scan skipped:', err.message); }
-  for (const rec of breaking) {
-    const env = adapter.fromBreakingAlert(rec, { emittedAt });
-    if (env) { await upsertSignal(env); summary.breaking++; } else summary.skipped++;
-  }
+  for (const rec of breaking) collect(adapter.fromBreakingAlert(rec, { emittedAt }), 'breaking');
 
-  console.info('signals build complete', summary, { calibration });
-  return { ok: true, builtAt: emittedAt, summary, calibration };
+  // One document for the world, plus an immutable dated snapshot (versioned history).
+  const doc = store.buildLatestDoc(projections, emittedAt);
+  await s3PutJson(LATEST_KEY, doc);
+  await s3PutJson(`${SIGNALS_PREFIX}/snapshots/${emittedAt.slice(0, 10)}.json`, doc);
+
+  console.info('signals build complete', summary, { calibration, count: doc.count });
+  return { ok: true, builtAt: emittedAt, summary, calibration, count: doc.count };
 }
 
 // ── SERVE MODE ───────────────────────────────────────────────────────────────────────
@@ -210,18 +227,24 @@ async function rateLimit(keyHash, perMin) {
   }
 }
 
-// Filter helper shared by list. A free key only sees signals older than FREE_DELAY_HOURS.
-function passesFilters(item, { type, country, minSeverity, before }) {
-  if (type && item.type !== type) return false;
-  if (minSeverity != null && !(Number(item.severity) >= minSeverity)) return false;
-  if (before && (item.event_time || '') > before) return false;
-  if (country) {
-    const c = country.toUpperCase();
-    const isos = (item.country_isos || []).map((x) => String(x).toUpperCase());
-    const names = (item.country_names || []).map((x) => String(x).toUpperCase());
-    if (!isos.includes(c) && !names.includes(country.toUpperCase())) return false;
+// Load signals/latest.json, cached in module scope. Warm invokes send If-None-Match and take
+// the 304 short-circuit, so a burst of reads costs one small GET per new build, not per request.
+let _cache = { etag: null, signals: null };
+async function loadSignals() {
+  try {
+    const r = await s3().send(new GetObjectCommand({
+      Bucket: WORLD_BUCKET,
+      Key: LATEST_KEY,
+      ...(_cache.etag ? { IfNoneMatch: _cache.etag } : {}),
+    }));
+    const doc = JSON.parse(await r.Body.transformToString());
+    _cache = { etag: r.ETag, signals: Array.isArray(doc.signals) ? doc.signals : [] };
+    return _cache.signals;
+  } catch (err) {
+    if ((err.name === 'NotModified' || err.$metadata?.httpStatusCode === 304) && _cache.signals) return _cache.signals;
+    if (err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) { _cache = { etag: null, signals: [] }; return []; }
+    throw err;
   }
-  return true;
 }
 
 async function serveList(qs, keyCtx) {
@@ -234,14 +257,9 @@ async function serveList(qs, keyCtx) {
     ? new Date(Date.now() - FREE_DELAY_HOURS * 3600 * 1000).toISOString()
     : null;
 
-  // v1: scan + in-Lambda filter/sort. A GSI on (type, emitted_at) is the next step once
-  // volume warrants it (SIGNAL_API_PLAN.md §7) — kept simple + correct for the thin slice.
-  const items = await scanAll({ TableName: SIGNALS_TABLE });
-  const filtered = items
-    .filter((it) => (since ? (it.event_time || '') >= since : true))
-    .filter((it) => passesFilters(it, { type, country, minSeverity, before }))
-    .sort((a, b) => String(b.event_time || '').localeCompare(String(a.event_time || '')))
-    .slice(0, limit)
+  const items = await loadSignals();
+  const filtered = store
+    .filterList(items, { since, type, country, minSeverity, before, limit })
     .map((it) => it.envelope);
 
   return reply(200, {
@@ -254,15 +272,16 @@ async function serveList(qs, keyCtx) {
 }
 
 async function serveGet(signalId, keyCtx) {
-  const out = await ddb().send(new GetCommand({ TableName: SIGNALS_TABLE, Key: { signal_id: signalId } }));
-  if (!out.Item) return reply(404, { ok: false, error: 'not_found' });
+  const items = await loadSignals();
+  const item = items.find((it) => it.signal_id === signalId);
+  if (!item) return reply(404, { ok: false, error: 'not_found' });
   if (keyCtx.tier === 'free') {
     const cutoff = new Date(Date.now() - FREE_DELAY_HOURS * 3600 * 1000).toISOString();
-    if ((out.Item.event_time || '') > cutoff) {
+    if ((item.event_time || '') > cutoff) {
       return reply(402, { ok: false, error: 'upgrade_required', reason: 'recent signals require a paid key' });
     }
   }
-  return reply(200, { ok: true, signal: out.Item.envelope });
+  return reply(200, { ok: true, signal: item.envelope });
 }
 
 async function serveTrackRecord() {

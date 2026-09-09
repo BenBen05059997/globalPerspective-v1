@@ -3,6 +3,7 @@
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const adapter = require('./signalAdapter.js');
+const store = require('./signalStore.js');
 const { hashKey, mintKey, extractKey, verifyKey } = require('./apiKeys.js');
 
 let pass = 0, fail = 0;
@@ -87,6 +88,33 @@ console.log('envelope invariants');
 ok('version is 1', econ.version === '1' && fc.version === '1');
 ok('confidence always present (number|null)', [econ, fc, ci, ba].every(s => s.confidence === null || typeof s.confidence === 'number'));
 ok('entities always shaped', [econ, fc, ci, ba].every(s => Array.isArray(s.entities.countries) && Array.isArray(s.entities.categories)));
+
+console.log('signalStore (S3 projection + list — S8·T1)');
+const baseEnv = {
+  signal_id: 'sig_x', type: 'forecast', emitted_at: '2026-09-09T00:00:00Z',
+  event_time: '2026-09-08T00:00:00Z', severity: 70,
+  entities: { countries: [{ iso: 'UKR', name: 'Ukraine' }, { iso: null, name: 'Nowhere' }], categories: [] },
+};
+const proj = store.toProjection(baseEnv, '2026-09-01T00:00:00Z');
+ok('projection preserves first_emitted_at', proj.first_emitted_at === '2026-09-01T00:00:00Z');
+ok('projection defaults first_emitted_at to emitted_at', store.toProjection(baseEnv).first_emitted_at === '2026-09-09T00:00:00Z');
+ok('projection country_isos drops null', proj.country_isos.length === 1 && proj.country_isos[0] === 'UKR');
+ok('projection event_day sliced', proj.event_day === '2026-09-08');
+ok('projection carries full envelope', proj.envelope === baseEnv);
+const doc = store.buildLatestDoc([
+  store.toProjection({ ...baseEnv, signal_id: 'a', event_time: '2026-09-01T00:00:00Z' }),
+  store.toProjection({ ...baseEnv, signal_id: 'b', event_time: '2026-09-08T00:00:00Z' }),
+], '2026-09-09T00:00:00Z');
+ok('latest doc count', doc.count === 2);
+ok('latest doc newest event first', doc.signals[0].signal_id === 'b' && doc.signals[1].signal_id === 'a');
+const nowMs = Date.parse('2026-09-09T00:00:00Z');
+ok('withinRetention keeps recent', store.withinRetention({ event_time: '2026-09-08T00:00:00Z' }, nowMs, 120) === true);
+ok('withinRetention drops stale', store.withinRetention({ event_time: '2026-01-01T00:00:00Z' }, nowMs, 120) === false);
+ok('withinRetention keeps undatable', store.withinRetention({}, nowMs, 120) === true);
+ok('filterList type + limit', store.filterList(doc.signals, { type: 'forecast', limit: 1 }).length === 1);
+ok('filterList min_severity excludes', store.filterList(doc.signals, { minSeverity: 99, limit: 10 }).length === 0);
+ok('filterList country match by iso', store.filterList(doc.signals, { country: 'UKR', limit: 10 }).length === 2);
+ok('filterList free-tier before-cutoff hides recent', store.filterList(doc.signals, { before: '2026-09-05T00:00:00Z', limit: 10 }).length === 1);
 
 console.log('apiKeys');
 ok('hashKey deterministic', hashKey('gpsk_abc') === hashKey('gpsk_abc') && hashKey('a') !== hashKey('b'));

@@ -790,7 +790,7 @@ Four Lambdas **deployed and ENABLED in prod** whose source lived only on the unm
 
 | Function | Trigger (ENABLED) | Config | Role (from deployed env + tables) |
 |---|---|---|---|
-| **`newsSignals`** | `TriggerSignalsBuild` `cron(0 10 * * ? *)` + a public **Function URL** (AuthType NONE, key-gated in code) | 300s / 512MB | Signal-API v1 builder — writes `GlobalPerspectiveSignals` (120d TTL) from `PredictionLog`/`SummarizeAndPredict`/`BreakingAlerts`; `API_KEYS_TABLE=GlobalPerspectiveApiKeys`, `FREE_DELAY_HOURS=24` (paid-tier freshness gate). |
+| **`newsSignals`** | `TriggerSignalsBuild` `cron(0 10 * * ? *)` + a public **Function URL** (AuthType NONE, key-gated in code) | 300s / 512MB | Signal-API v1 builder — **writes `signals/latest.json` + dated `signals/snapshots/` in S3** (S8·T1, 2026-09-09: migrated off the `GlobalPerspectiveSignals` DDB table, which was write-only — 0 reads/14d) from `PredictionLog`/`SummarizeAndPredict`/`BreakingAlerts`; SERVE reads `signals/latest.json` (ETag-cached); retention = explicit `event_time ≥ now−120d` filter (was DDB TTL); `API_KEYS_TABLE=GlobalPerspectiveApiKeys` (stays DDB), `WORLD_BUCKET`, `FREE_DELAY_HOURS=24`. `signals/` is **never** exposed via the Worker `/data/*` route. |
 | **`newsImpactAudit`** | `TriggerImpactAudit` `cron(0 9 * * ? *)` | 120s / 256MB | Coverage dead-man's-switch — DeepSeek audit of whether high-impact events were MISSED; `IMPACT_AUDIT_TABLE`/`INGEST_CAPTURE_TABLE`, SNS→`GlobalPerspectiveAlerts` when misses ≥ `MISS_ALERT_THRESHOLD=2`. |
 | **`newsGdacsIngest`** | `TriggerGdacsIngest` **`rate(20 minutes)`** (2026-09-08) | 120s / 256MB | GDACS disaster-alert ingest → `GlobalPerspectiveGdacsEvents` (with `lat`/`lon`); **also the deterministic situation opener** — writes one observation snapshot of current Orange/Red events to S3 `situations/inbox/<ts>-gdacs.json` (NO LLM; holds no state). Fold helpers in `situations-core.js`. See `DATA_STRATEGY.md` + `MAP_HOME_SITUATION_PLAN.md`. |
 | **`newsGdeltConflict`** | `TriggerGdeltConflict` `cron(0 */6 * * ? *)` | 120s / 512MB | GDELT conflict-event ingest feed → `GlobalPerspectiveGdeltConflict`. |
@@ -959,8 +959,8 @@ These exist in prod DynamoDB; their producers' source lived on the unmerged `sig
 
 | Table | Key | Written by | Contents |
 |-------|-----|-----------|----------|
-| `GlobalPerspectiveSignals` | `signal_id` | newsSignals | Signal-API v1 records (120d TTL) |
-| `GlobalPerspectiveApiKeys` | `keyHash` | mint-key.mjs / newsSignals | Signal-API access keys |
+| ~~`GlobalPerspectiveSignals`~~ | ~~`signal_id`~~ | ~~newsSignals~~ | **DROPPED 2026-09-09 (S8·T1)** — Signal-API v1 records now live in S3 `signals/latest.json` (+ `signals/snapshots/`); the table was write-only (0 reads/14d) |
+| `GlobalPerspectiveApiKeys` | `keyHash` | mint-key.mjs / newsSignals | Signal-API access keys + rate-limit counter rows (`keyHash='RL#…'`, TTL) — **stays DynamoDB** (user/auth data) |
 | `GlobalPerspectiveGdacsEvents` | `eventKey` (`type#id`) | newsGdacsIngest | GDACS disaster-alert ingest; **now stores `lat`/`lon`** (from feature geometry) as of 2026-09-08 |
 | `GlobalPerspectiveGdeltConflict` | (see describe-table) | newsGdeltConflict | GDELT conflict-event ingest |
 | `GlobalPerspectiveImpactAudit` | (see describe-table) | newsImpactAudit | Coverage-audit results |

@@ -137,6 +137,8 @@ export default function SituationMap3D({ situations = [], selectedId, hero = nul
         controller={{ dragRotate: false }}
         layers={layers}
         getTooltip={getTooltip}
+        pickingRadius={16}
+        getCursor={({ isDragging, isHovering }) => (isDragging ? 'grabbing' : (isHovering ? 'pointer' : 'grab'))}
         style={{ position: 'relative', width: '100%', height: '100%' }}
       />
       {hero && heroXY && hero.id !== selectedId ? (

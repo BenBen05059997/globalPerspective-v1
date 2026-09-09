@@ -20,9 +20,8 @@ const STATE_LABEL = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoi
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };
-const TIER_HINT = {
-  high: 'read this first', elevated: 'worth watching today', moderate: 'developing', low: 'on the record',
-};
+const TIER_HINT = { high: 'read this first', elevated: 'worth watching today', moderate: 'developing', low: 'on the record' };
+const TOUR_MAX = 6;
 
 function fmtAgo(iso) {
   if (!iso) return '—';
@@ -38,6 +37,12 @@ function fmtIn(iso) {
   if (mins <= 0) return 'shortly';
   if (mins < 60) return `in ${mins} min`;
   return `in ${Math.floor(mins / 60)}h`;
+}
+function fmtSince(iso) {
+  const d = new Date(iso); const days = (Date.now() - d.getTime()) / 86400000;
+  if (days < 1) return 'earlier today';
+  if (days < 7) return d.toLocaleDateString(undefined, { weekday: 'long' });
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 // Structured metrics for the detail panel. VS-PRIOR / outlet count are carried inside the
@@ -58,7 +63,6 @@ export default function SituationHome() {
   const focus = params.get('focus');
   const { detail } = useSituationDetail(focus);
 
-  // Selection writes the URL (shareable deep link). The tour NEVER writes the URL.
   const select = useCallback((id) => {
     setParams((p) => { const n = new URLSearchParams(p); if (id) n.set('focus', id); else n.delete('focus'); return n; }, { replace: true });
   }, [setParams]);
@@ -74,21 +78,31 @@ export default function SituationHome() {
   }, [open]);
   const hero = ranked[0] || null;
 
-  // Guided tour: cycle the top situations with a gentle fly-to. DEFAULT OFF — nothing moves on
-  // load, and the tour NEVER writes the URL (it drives a local tourId, not the ?focus param).
+  // "Since you last looked" — compare each situation's opened_at against the last visit stamp
+  // (this browser only). v1 is new-only; "escalated since your visit" needs a tier_changed_at
+  // field the bundle doesn't carry yet (design 3f). Stamp THIS visit on mount.
+  const [lastSeen] = useState(() => { try { return localStorage.getItem('gp_map_last_seen'); } catch { return null; } });
+  useEffect(() => { try { localStorage.setItem('gp_map_last_seen', new Date().toISOString()); } catch { /* storage blocked */ } }, []);
+  const newIds = useMemo(() => {
+    if (!lastSeen) return null;
+    const cut = new Date(lastSeen).getTime(); const s = new Set();
+    for (const x of open) if (x.opened_at && new Date(x.opened_at).getTime() > cut) s.add(x.id);
+    return s.size ? s : null;
+  }, [open, lastSeen]);
+  const newCount = newIds ? newIds.size : 0;
+
+  // Guided tour: manual stepper, NO autoplay (design 3b). Advancing flies the camera (never
+  // writes the URL); the rail highlights the current stop.
+  const tourN = Math.min(ranked.length, TOUR_MAX);
   const [tourOn, setTourOn] = useState(false);
-  const [tourId, setTourId] = useState(null);
-  useEffect(() => {
-    if (!tourOn || ranked.length < 2) return undefined;
-    const top = ranked.slice(0, 6);
-    let i = 0; setTourId(top[0].id);
-    const iv = setInterval(() => { i = (i + 1) % top.length; setTourId(top[i].id); }, 6000);
-    return () => clearInterval(iv);
-  }, [tourOn, ranked]);
-  const startTour = () => setTourOn(true);
-  const stopTour = () => { setTourOn(false); setTourId(null); };
-  const userSelect = useCallback((id) => { setTourOn(false); setTourId(null); select(id); }, [select]);
-  const flyId = focus || tourId;
+  const [tourIdx, setTourIdx] = useState(0);
+  const tourStop = tourOn && ranked.length ? ranked[Math.min(tourIdx, tourN - 1)] : null;
+  const startTour = () => { setTourIdx(0); setTourOn(true); };
+  const stopTour = () => setTourOn(false);
+  const tourNext = () => setTourIdx((i) => (i + 1) % tourN);
+  const tourPrev = () => setTourIdx((i) => (i - 1 + tourN) % tourN);
+  const userSelect = useCallback((id) => { setTourOn(false); select(id); }, [select]);
+  useEffect(() => { const onKey = (e) => { if (e.key === 'Escape' && tourOn) setTourOn(false); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [tourOn]);
 
   const counts = useMemo(() => {
     const c = { conflict: 0, political: 0, economic: 0, humanitarian: 0 };
@@ -96,19 +110,34 @@ export default function SituationHome() {
     return c;
   }, [open]);
   const newsAxesEmpty = counts.conflict + counts.political + counts.economic === 0;
-  const lede = useMemo(() => buildLede(open, hero), [open, hero]);
+  const ledeBase = useMemo(() => buildLede(open, hero), [open, hero]);
+  const lede = newCount && lastSeen ? `${ledeBase} · ${newCount} new since ${fmtSince(lastSeen)}` : ledeBase;
+
   const selected = useMemo(() => situations.find((s) => s.id === focus) || null, [situations, focus]);
+  const focusMissing = focus && !selected;              // deep link to an expired/archived situation
   const ev = detail?.evidence || {};
   const isGdacs = selected?.source === 'gdacs';
   const m = selected ? metricsFor(selected, ev) : null;
   const affected = selected?.iso3_affected?.length ? selected.iso3_affected : [];
 
+  // What the map focuses (fly + highlight) and what card it shows.
+  const focusId = focus || tourStop?.id || null;
+  const callout = focus ? null : (tourStop || hero);
+  const tourProps = tourOn ? { index: Math.min(tourIdx, tourN - 1), total: tourN, onPrev: tourPrev, onNext: tourNext, onStop: stopTour } : null;
+
+  const [legendOpen, setLegendOpen] = useState(false);
+  const [mapH, setMapH] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620));
+  useEffect(() => {
+    const onResize = () => setMapH(window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620);
+    window.addEventListener('resize', onResize); return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   return (
     <div className={`sh-root${stale ? ' sh-stale' : ''}`}>
       <header className="sh-bar">
         <div>
-          <div className="sh-lede">{world ? lede : 'Loading the world…'}</div>
-          <div className="sh-sub">Global news intelligence, scored and mapped. Refreshed every 30 minutes.</div>
+          <div className="sh-lede">{error && !world ? 'The situation feed is unavailable right now.' : (world ? lede : 'Loading the world…')}</div>
+          <div className="sh-sub">Global news intelligence, scored and mapped.{world?.next_expected_at ? ` Next update ${fmtIn(world.next_expected_at)}.` : ''}</div>
         </div>
         <div className="sh-live">
           <span className={`sh-dot${stale ? ' sh-dot-stale' : ''}`} />
@@ -123,26 +152,31 @@ export default function SituationHome() {
         <div className="sh-mapwrap">
           <div className="sh-mapinner">
             {USE_3D ? (
-              <Suspense fallback={<div className="sh-maploading">Loading map…</div>}>
-                <SituationMap3D situations={situations} selectedId={flyId} hero={hero} onSelect={userSelect} height={620} />
+              <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
+                <SituationMap3D
+                  situations={situations} focusId={focusId} callout={callout} tour={tourProps} newIds={newIds}
+                  onSelect={userSelect} onOpenCallout={userSelect} height={mapH}
+                />
               </Suspense>
             ) : (
-              <SituationMap situations={situations} selectedId={focus} onSelect={userSelect} />
+              <SituationMap situations={situations} selectedId={focusId} onSelect={userSelect} />
             )}
 
             <div className="sh-controls">
-              {ranked.length >= 2 ? (
-                tourOn
-                  ? <button className="sh-ctl" onClick={stopTour}>Stop tour</button>
-                  : <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
+              {ranked.length >= 2 && !tourOn ? (
+                <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
               ) : null}
+              <button className="sh-ctl sh-key" onClick={() => setLegendOpen((v) => !v)} aria-expanded={legendOpen}>
+                {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
+              </button>
             </div>
 
             {open.length === 0 && world ? (
               <div className="sh-quiet">Quiet day — no situations open right now.</div>
             ) : null}
 
-            <div className="sh-legend" aria-label="How to read the map">
+            <div className={`sh-legend${legendOpen ? ' sh-legend-open' : ''}`} aria-label="How to read the map">
+              <button className="sh-legend-close" onClick={() => setLegendOpen(false)} aria-label="Close">×</button>
               <div className="sh-legrow">
                 <b>Colour = type</b>
                 {AXES.map((a) => (
@@ -172,17 +206,23 @@ export default function SituationHome() {
         </div>
 
         <aside className="sh-rail" aria-live="polite">
-          {selected ? (
+          {focusMissing ? (
+            <div className="sh-detail sh-gone">
+              <button className="sh-back" onClick={() => userSelect(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
+              <p className="sh-muted" style={{ padding: '16px 15px' }}>That situation is no longer being tracked — it may have closed since the link was shared. Browse the active situations instead.</p>
+            </div>
+          ) : selected ? (
             <div className="sh-detail">
               <button className="sh-back" onClick={() => userSelect(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
               <div className="sh-detail-head">
                 <span className="sh-meta-row">
                   <span className={`sh-badge sh-badge-${selected.tier}`}>{TIER_LABEL[selected.tier] || selected.tier}</span>
                   <span className="sh-axis" style={{ color: AXIS_HUE[selected.axis] }}>{AXIS_LABEL[selected.axis] || selected.axis}</span>
+                  <span className="sh-statelbl">{STATE_LABEL[selected.state] || selected.state}</span>
                   {isGdacs ? <span className="sh-prov">UN/EU GDACS</span>
                     : (selected.escalating ? <span className="sh-esc">▲ escalating</span> : null)}
                 </span>
-                <h3>{selected.verb_label}</h3>
+                <h2 className="sh-detail-title">{selected.verb_label}</h2>
                 <div className="sh-substamp">
                   {isGdacs && ev.gdacs_severity_text ? <span>{ev.gdacs_severity_text}</span> : (selected.what_changed ? <span>{selected.what_changed}</span> : null)}
                   <span className="sh-dim"> · first seen {fmtAgo(selected.opened_at)} · updated {fmtAgo(selected.last_change_at)}</span>
@@ -230,7 +270,7 @@ export default function SituationHome() {
                       </ul>
                     </div>
                   ) : (
-                    <p className="sh-consolidating">Coverage is still consolidating; {m.outlets || 'few'} source{m.outlets === 1 ? '' : 's'} so far. Rechecked every 30 minutes. The tier will move on its own if the count or the spread changes.</p>
+                    <p className="sh-consolidating">Coverage is still consolidating; {m.outlets ?? 'few'} source{m.outlets === 1 ? '' : 's'} so far. Rechecked on the next cycle. The tier will move on its own if the count or the spread changes.</p>
                   )}
                 </>
               )}
@@ -247,16 +287,17 @@ export default function SituationHome() {
             <div className="sh-list">
               <h2>{ranked.length ? `${ranked.length} active situation${ranked.length === 1 ? '' : 's'}` : 'Situations'}<i> ranked by severity</i></h2>
               {loading && !world ? <p className="sh-muted">Loading…</p> : null}
-              {error ? <p className="sh-muted">Couldn’t load the feed.</p> : null}
+              {error && !world ? <p className="sh-muted">Couldn’t load the feed. Retrying automatically.</p> : null}
               {world && !ranked.length ? <p className="sh-muted">No situations open right now — the map is quiet.</p> : null}
               <ul>
                 {ranked.map((s) => (
-                  <li key={s.id} className={s.id === focus ? 'sh-active' : ''}>
+                  <li key={s.id} className={s.id === focusId ? 'sh-active' : ''}>
                     <button onClick={() => userSelect(s.id)}>
                       <span className={`sh-leg-pin sh-pin-${s.tier}`} style={{ '--pin': AXIS_HUE[s.axis] || '#9aa4b2' }} />
                       <span className="sh-row-main">
                         <span className="sh-row-tags">
                           <span className={`sh-tierlbl sh-tierlbl-${s.tier}`}>{TIER_LABEL[s.tier]}</span>
+                          {newIds?.has(s.id) ? <span className="sh-new">◇ new</span> : null}
                           {s.escalating ? <span className="sh-esc-sm">▲ escalating</span> : null}
                         </span>
                         <span className="sh-row-title">{s.verb_label}</span>
@@ -270,6 +311,18 @@ export default function SituationHome() {
           )}
         </aside>
       </div>
+
+      {/* Mobile peek row — the top situation as the mobile lede+hero; tap opens detail. */}
+      {hero && !focus ? (
+        <button className="sh-peek" onClick={() => userSelect(hero.id)}>
+          <span className={`sh-leg-pin sh-pin-${hero.tier}`} style={{ '--pin': AXIS_HUE[hero.axis] || '#9aa4b2' }} />
+          <span className="sh-peek-main">
+            <span className="sh-peek-tags"><span className={`sh-tierlbl sh-tierlbl-${hero.tier}`}>{TIER_LABEL[hero.tier]}</span>{hero.escalating ? <span className="sh-esc-sm">▲</span> : null}</span>
+            <span className="sh-peek-title">{hero.verb_label}</span>
+          </span>
+          <span className="sh-peek-open">Open →</span>
+        </button>
+      ) : null}
 
       <section className="sh-fold">
         <div className="sh-fold-method">

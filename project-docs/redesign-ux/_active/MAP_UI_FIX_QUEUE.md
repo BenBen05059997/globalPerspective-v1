@@ -1,6 +1,6 @@
 # /map UI fix queue + patch-design round (S5.5 follow-up)
 
-Status: OPEN · written 2026-09-09 after the operator's second in-person review of the deployed design port.
+Status: slice 1 + 2a DONE (branch `map-patch-port`, source only, not deployed) · written 2026-09-09 after the operator's second in-person review of the deployed design port.
 Sources: operator report ("dots are unclickable"), an independent Sonnet code audit of the ported files, and a live headless click test. Owner rows reference the ledger (`MAP_HOME_SITUATION_LEDGER.md` S5.5).
 
 ---
@@ -10,7 +10,7 @@ Sources: operator report ("dots are unclickable"), an independent Sonnet code au
 1. **Pick target ≪ visible target.** The visible pin is the glow halo (up to ~24px) but only the 3.4–5.3px core dot was pickable, and deck.gl's click tolerance (`pickingRadius`) defaults to 0. → **Fixed in source** (commit `7d6d152`): `pickingRadius={16}` + pointer cursor on hover. Hover picking verified working.
 2. **Suspected: the 60fps breathing-halo `setPhase` loop** re-renders the map every frame (and the 5-min poll swaps array identities), interfering with deck.gl's click gesture recognition — headless clicks still failed after fix 1. Matches audit items #5/#9 below. → Fix by moving the pulse out of React state (skip the loop when nothing is escalating; throttle to ~10fps; longer-term a shader/native animation) and stabilising effect deps. **Not yet fixed; not deployed.**
 
-## 1 · Audit — top fixes (ranked by user impact; file:line from the Sonnet audit)
+## 1 · Audit — top fixes  [slice 1+2a: #1,2 restructured away by manual tour · #3,4,6,7,8,10,11,12 DONE · #5 (fly-to poll) DONE via focusCentroid memo · #9 (60fps loop) DONE — animation removed]
 
 1. **Tour shows no content.** `tourId` only moves the camera; the rail keeps showing the old list, tooltips need a mouse. The tour is pure motion with zero label/severity per stop (mobile: nothing at all). Fix: render the detail panel (or a compact stop card) off `tourId` without writing the URL + a "1 of 6" indicator. `SituationHome.jsx:79-91`. **medium**
 2. **Tour resets every 5 min.** Effect depends on the `ranked` array reference, which the poll replaces → interval teardown, snap back to stop 1 mid-tour. Fix: depend on a memoised top-6-ids string. `SituationHome.jsx:81-87`. **small**

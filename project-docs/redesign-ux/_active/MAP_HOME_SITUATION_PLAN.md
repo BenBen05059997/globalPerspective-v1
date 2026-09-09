@@ -381,9 +381,49 @@ Ordering principle: **prove the read path first; add producers in the order that
 | **S5 Map UI (WebGL)** | deck.gl 2.5D world, hue/height/ripple/luminance, spread arcs, tour, scrubber (reads `world/…/HHMM.json`), globe fly-to, honesty states — behind `/map`; rewrite/delete the 4 z-score tests | browser click-through; mobile; reduced-motion; scrubber replays real shadow history; `npm run verify` green | with S3 |
 | **S6 Home swap** | `/` → `SituationHome`; `/map` redirect; `Layout.jsx` nav; `BreakingDetailPage` link; `/weekly/pair/:slug` back; delete legacy WorldMap/MapSidePanel/MiniMap (fix `tokens.js`); Option B (Red → thread); Worker pre-render for `/`; smoke-test routes | smoke-test + link-crawl pass; SEO text in DOM; no dangling `/map` links | — |
 | **S7 Editorial switch** | selector consumes `stories/index.json`; **remove Brave from `newsInvokeGemini`**; `captureIngestion` → points at `corpus/` | brief quality unchanged per `IMPACT_VALIDATION_METHODOLOGY`; Brave ingest calls → 0 | — |
-| **S8 Table migrations** | one mini-plan each, in order: PredictionLog → `predictions/` (+Athena); GDACS/GDELT/audit/capture mirrors → `corpus/`+`audit/`; Markets snapshots; ClientErrors logs; Signals; BreakingAlerts (after review→inbox); Topics/SummarizeAndPredict via dual-write last | "nothing reads the table" (grep + CloudWatch) before each `delete-table` | after S6 |
+| **S8 Table migrations** | **revised 2026-09-09** after two independent verifications (§11.1 below): **T1 Signals → S3** (redirect, approved, not started) → **T2** audit-table mirrors (GDACS/GDELT/ImpactAudit/IngestCapture) → **T3** PredictionLog → **T4** Markets + ClientErrors → **T5** BreakingAlerts (folds into S3·T2) → **T6** NewsCache + SummarizeAndPredict via dual-write, last | "nothing reads the table" (grep + CloudWatch) before each `delete-table`; T3–T6 also need explicit operator OK per edit to `newsSensitiveData` (risk gate — the proxy is the live site's spine) | after S6 |
 
 Gates are enforced through the ledger (`PLAN_EXECUTION_PLAYBOOK.md`). Deploys remain per-step gated; prod mutations are bare single `aws` commands.
+
+### 11.1 S8 sub-plan (revised 2026-09-09 after verification)
+
+Two independent verifications — a code-reader grep/audit and a 7-day CloudWatch metrics pull — re-ordered S8. Numbers below are as measured, not estimated.
+
+**Evidence (7-day daily averages, GlobalPerspective tables only):**
+
+| Table | Reads/day | Writes/day | Note |
+|---|---|---|---|
+| SummarizeAndPredict | 13,342 | 2,007 | core; ~8 writers, ~20 proxy actions, ~12 backend readers |
+| PredictionLog | 12,503 | 388 | 2nd hottest: `/track-record` does a full Scan of 5,478 items per load via proxy `prediction_track_record`; also read by `prediction_snapshot`, `newsPredictionResolver`, `newsSignals` |
+| NewsCache | 8,543 | 2,305 | core |
+| BreakingAlerts | 6,907 | 70 | user-facing via `newsRecommend` `list_alerts`/`get_alert` (a direct-call Lambda, NOT the proxy); writer `newsBreakingAlert`; read by `newsEmailSender` + `newsSignals` |
+| IngestCapture | 388 | 344 | read only by `newsImpactAudit` |
+| GdacsEvents | 92 | 1,100 | written by `newsGdacsIngest` (20-min); read only by `newsImpactAudit` |
+| GdeltConflict | 10 | 39 | read only by `newsImpactAudit` |
+| Markets | 12 | 232 | proxy `markets`/`weekly_markets` actions |
+| ClientErrors | 14 | ~ | `newsClientErrors` writer; `errors.mjs` / `newsErrorDigest` readers |
+| Signals | 0 | 23,390 | 14-day check: 0 reads every day; `newsSignals` invoked 1/day (cron only, zero HTTP); 5,815 items ~25MB; only `newsSignals` reads/writes it |
+| ImpactAudit | 0 | 3 | write-only |
+| ApiKeys | 0 | 0 | 0 items, 0 keys ever minted; **stays in DDB** (user table) |
+
+**Corrections this forced:**
+- `PredictionLog` was understated by the earlier "PredictionLog first" framing (implying lightest-touch) — it is the **2nd-hottest table**, almost entirely `/track-record`'s full 5,478-item Scan per page load. Migrating it is real perf/cost work (S8·T3), not a warm-up task.
+- A proxy-action (`newsSensitiveData`) DDB→S3 flip is a **backend-only change needing no frontend deploy** — the frontend already goes through `services/restProxy.js` regardless of what sits behind the action. The real gate is **risk**, not deploy surface: the proxy is the live site's spine, so every proxy-action edit needs explicit operator OK per edit, not a one-time blanket approval.
+- `Signals` is **write-only** (0 reads/day over a 14-day window; `newsSignals` receives zero HTTP invocations, only the daily cron) — it costs nothing to move first (0 consumers) and is the cleanest possible S8 opener.
+- The frontend also reaches DDB via **5 direct-call Lambdas** (`newsRecommend`, `newsAnalyze`, `newsPolarBilling`, `newsSavedItems`, `newsClientErrors`) besides the `newsSensitiveData` proxy — most user reads go through the proxy, but these five bypass it entirely and need their own review when their table migrates (e.g. `BreakingAlerts` via `newsRecommend`).
+- Cost honesty: Signals' ~23K/day on-demand writes cost **≈$1/month** — the win from migrating it is consistency (one fewer world table, strategy conformance), not cost.
+- Account also holds unrelated tables (`ppa-*`, `Polybot*`, `Currency`, `BestWaifu*`) — out of scope, never touch.
+
+**Decision (operator approved 2026-09-09): Signals → S3 via "redirect" (option 2), not pause.**
+
+**Revised order (replaces the old S8 ordering; three-move method unchanged — dual-write → flip readers → retire only when grep + CloudWatch both show zero reads):**
+
+- **S8·T1 Signals → S3.** Design: `newsSignals` BUILD collects envelopes and writes ONE `signals/latest.json` (top-level projections `type`/`event_time`/`severity`/`country_isos`/`country_names` + envelope) plus dated `signals/snapshots/YYYY-MM-DD.json`; reads previous `latest.json` to preserve `first_emitted_at`; replaces the 120-day DDB TTL with an explicit `event_time ≥ now−120d` filter at build. SERVE (`/v1/signals`, `/v1/signals/{id}`) reads `latest.json` cached in module scope by ETag (today it already full-Scans per request, so behaviour is identical); `/v1/track-record` unchanged until T3. Rate-limit + auth stay in `ApiKeys` (DDB). IAM: `newsSignals-role` inline policy `newsSignals-ddb` gains `s3:GetObject`/`PutObject` on `arn:aws:s3:::globalperspective-world-280362093938/signals/*`. Env: add `WORLD_BUCKET`; keep `SIGNALS_TABLE` until retirement. S3 lifecycle: `signals/snapshots/` → Glacier IR after 30d, expire 365d (~20MB/day). Worker: deliberately **no** `/data/signals/*` route — signals are the paid key-gated product and stay behind the Function URL; this is now a standing rule. Verify: one build, `latest.json` count ≈ 5,815 matches table, keyed curl (temp key via `mint-key.mjs` then revoked) returns same shape; then `delete-table GlobalPerspectiveSignals`. Gate: none (0 consumers). Files to change: `amplify/backend/function/newsSignals/src/index.js`, `amplify/backend/function/newsSignals/src/test-adapter.mjs` (add pure snapshot-builder test), `project-docs/architecture/DATA_STRATEGY.md`, `project-docs/architecture/ARCHITECTURE.md` (newsSignals Lambda row ~line 793; tables rows ~962-963), `project-docs/pipeline-ingest/_shipped/SIGNAL_API_PLAN.md` (storage note), `CHANGES.md`, the ledger. Blast radius: zero user-facing; frontend untouched. Status: **APPROVED, not started.**
+- **S8·T2 Audit tables** (`GdacsEvents`, `GdeltConflict`, `IngestCapture`, `ImpactAudit`) → `corpus/` + `audit/`; rewrite `newsImpactAudit` to read S3; stop the 1,100/day GDACS DDB mirror (S3 inbox `situations/inbox/gdacs-latest.json` already exists). Touches `newsGdacsIngest`, `newsGdeltConflict`, `newsInvokeGemini` capture harness, `newsImpactAudit`. Gate: none (backend-only). Status: todo.
+- **S8·T3 PredictionLog → `predictions/`:** dual-write from `NewsProjectInvokeAgentLambda` + `newsPredictionResolver`; daily `predictions/latest.json`; flip proxy `prediction_track_record`/`prediction_snapshot` and `newsSignals` `/v1/track-record` to S3; removes the 5K-item Scan per `/track-record` load (perf + cost + Athena calibration). Gate: operator OK to edit `newsSensitiveData`. Status: todo.
+- **S8·T4 Markets** (proxy `markets`/`weekly_markets`) **+ ClientErrors** (→ `logs/errors/`, `errors.mjs` + `newsErrorDigest` read S3). Gate: proxy edit OK. Status: todo.
+- **S8·T5 BreakingAlerts** — reader `newsRecommend`, writer `newsBreakingAlert`, also `newsEmailSender`; folds into S3·T2 (breaking → analysis threads). Status: later.
+- **S8·T6 NewsCache + SummarizeAndPredict** — dual-write across ~8 writers, flip ~20 proxy actions, retire; LAST, after S6 home swap. Status: later.
 
 ## 12. Design review of the first S4 build (2026-09-08) — why S4.5 exists
 
@@ -401,3 +441,5 @@ Reviewed the browser-verified S4 build (D3 map at `/map`, one live situation: Ch
 Structural truth recorded: **the map will feel thin until S3 exists** regardless of rendering. Sequence: S4.5 makes one-flood legible and honest → S3 makes the map worth looking at → S5 makes it beautiful. **No prod deploy of `/map` before S4.5.**
 
 "How does a user understand there are articles going on?" — three mechanisms, all to build: (a) the legend-as-coverage-statement; (b) evidence in the card (outlet count + latest headlines for news situations; UN/EU alert level + population for disasters); (c) an explicit coverage note while the news layer is absent.
+
+**2026-09-09 decision:** Signals — redirect to S3 (option 2) over pause; Worker never serves `signals/`. See §11.1 (S8 sub-plan) for the evidence and design.

@@ -250,17 +250,57 @@ Commit: —
 
 ## Stage S8 — Table migrations (after S6; one mini-plan per table)
 
-### S8 · T1 — PredictionLog → `predictions/` (+ Athena)
-Status: 🔭 todo
-Gate: nothing reads `GlobalPerspectivePredictionLog` (grep + CloudWatch) before drop
+**Order revised 2026-09-09** after two independent verifications (code-reader grep/audit + a 7-day CloudWatch metrics pull) surfaced that `PredictionLog` was the **2nd-hottest table** (not lightest-touch, as the old T1 ordering implied) and that `Signals` is **write-only** (0 reads/day over 14 days; `newsSignals` is invoked 1/day, cron-only) — the cheapest possible opener. Full evidence table, corrections, and the T1 design are in `MAP_HOME_SITUATION_PLAN.md` §11.1 (S8 sub-plan). Gate for every drop stays "nothing reads the table" (grep + CloudWatch) before `delete-table`; S8·T3–T6 additionally need explicit operator OK per edit to `newsSensitiveData` — a proxy-action DDB→S3 flip is backend-only (no frontend deploy needed) but the proxy is the live site's spine, so the gate is risk, not deploy surface.
+
+### S8 · T1 — Signals → S3 (redirect, option 2)
+Status: 🔭 todo — approved 2026-09-09, not started
+Gate: none (0 consumers — 0 reads/day over 14 days; `newsSignals` invoked 1/day, cron-only, zero HTTP)
+Reads/refs: plan §11.1 T1 design; `amplify/backend/function/newsSignals/src/index.js`
+Changes: BUILD writes `signals/latest.json` (+ dated `signals/snapshots/YYYY-MM-DD.json`), preserves `first_emitted_at` from previous `latest.json`; 120d DDB TTL → explicit `event_time ≥ now−120d` filter at build; SERVE (`/v1/signals`, `/v1/signals/{id}`) reads `latest.json` cached in module scope by ETag (identical behaviour to today's per-request full Scan); `/v1/track-record` unchanged until T3; rate-limit + auth stay in `ApiKeys` (DDB); IAM `newsSignals-role` inline policy `newsSignals-ddb` += `s3:GetObject`/`PutObject` on `arn:aws:s3:::globalperspective-world-280362093938/signals/*`; env `WORLD_BUCKET` added, `SIGNALS_TABLE` kept until retirement; lifecycle `signals/snapshots/` → Glacier IR 30d, expire 365d (~20MB/day); Worker rule: deliberately **no** `/data/signals/*` route — paid key-gated product stays behind the Function URL only
+Docs to update: `DATA_STRATEGY.md` §4/§6 ✅ (this pass) · `ARCHITECTURE.md` (newsSignals Lambda row ~l.793; tables rows ~l.962-963) · `pipeline-ingest/_shipped/SIGNAL_API_PLAN.md` (storage note) · `CHANGES.md`
+Verify / exit: one build, `latest.json` count ≈ 5,815 matches table; keyed curl (temp key via `mint-key.mjs`, then revoked) returns same shape; then `delete-table GlobalPerspectiveSignals`
+Done-check: [ ] code  [ ] IAM  [ ] docs  [ ] CHANGES  [ ] verify  [ ] table dropped
+Commit: —
+
 ### S8 · T2 — GDACS/GDELT/ImpactAudit/IngestCapture mirrors → `corpus/` + `audit/`
 Status: 🔭 todo
-### S8 · T3 — Markets snapshots → `markets/`
+Gate: none (backend-only)
+Reads/refs: `newsGdacsIngest`, `newsGdeltConflict`, `newsInvokeGemini` capture harness, `newsImpactAudit`
+Changes: rewrite `newsImpactAudit` to read S3; stop the 1,100/day GDACS DDB mirror (S3 inbox `situations/inbox/gdacs-latest.json` already exists)
+Docs to update: `ARCHITECTURE.md` · `DATA_STRATEGY.md` · `CHANGES.md`
+Verify / exit: "nothing reads the table" (grep + CloudWatch) before each `delete-table`
+Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
+Commit: —
+
+### S8 · T3 — PredictionLog → `predictions/` (+ Athena)
 Status: 🔭 todo
-### S8 · T4 — ClientErrors → `errors/` logs; Signals → `signals/`; BreakingAlerts (after review→inbox)
+Gate: operator OK to edit `newsSensitiveData` (proxy is the live site's spine — risk gate)
+Reads/refs: proxy `prediction_track_record`/`prediction_snapshot`; `newsPredictionResolver`; `newsSignals` `/v1/track-record`
+Changes: dual-write from `NewsProjectInvokeAgentLambda` + `newsPredictionResolver`; daily `predictions/latest.json`; flip proxy `prediction_track_record`/`prediction_snapshot` and `newsSignals` `/v1/track-record` to S3; removes the 5,478-item Scan per `/track-record` load (perf + cost + Athena calibration)
+Docs to update: `ARCHITECTURE.md` · `DATA_STRATEGY.md` · `CHANGES.md`
+Verify / exit: "nothing reads the table" before drop; `/track-record` load time improves
+Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
+Commit: —
+
+### S8 · T4 — Markets snapshots + ClientErrors
 Status: 🔭 todo
-### S8 · T5 — Topics (`NewsCache`) + SummarizeAndPredict via dual-write → flip readers → retire
-Status: 🔭 todo (last; everything reads these)
+Gate: operator OK to edit `newsSensitiveData` (proxy `markets`/`weekly_markets` actions)
+Changes: `Markets` → `markets/YYYY/MM/DD/HH.json` snapshots; `ClientErrors` → append-only `logs/errors/YYYY/MM/DD.jsonl`; `errors.mjs` + `newsErrorDigest` read S3
+Docs to update: `ARCHITECTURE.md` · `DATA_STRATEGY.md` · `CHANGES.md`
+Verify / exit: "nothing reads the table" before drop
+Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
+Commit: —
+
+### S8 · T5 — BreakingAlerts (after review→inbox)
+Status: 🔭 todo (later — folds into stage S3·T2)
+Reads/refs: reader `newsRecommend` (`list_alerts`/`get_alert`, direct-call, not the proxy), writer `newsBreakingAlert`, also `newsEmailSender`
+Notes: folds into S3·T2 (breaking → analysis threads); no separate mini-plan
+Commit: —
+
+### S8 · T6 — NewsCache + SummarizeAndPredict via dual-write → flip readers → retire
+Status: 🔭 todo (last — after S6; everything reads these)
+Notes: dual-write across ~8 writers, flip ~20 proxy actions, retire
+Commit: —
 
 ---
 

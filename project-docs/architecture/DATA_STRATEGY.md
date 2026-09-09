@@ -49,8 +49,11 @@ Nothing else goes in DynamoDB. A new table needs an explicit exception recorded 
 | `world/latest.member.json` | `newsSituationTracker` | each sweep | frontend, JWT-gated at the Worker |
 | `world/shadow/…` | tracker in `DRY_RUN` | each sweep | humans, tuning |
 | `fixtures/` | humans | — | local dev, Worker smoke |
+| `signals/latest.json`, `signals/snapshots/YYYY-MM-DD.json` (S8·T1, approved 2026-09-09, not started) | `newsSignals` | daily build (cron-only) | `newsSignals` SERVE only — **never** the Worker (paid, key-gated product) |
 
 IAM: one inline policy per Lambda, `s3:PutObject` scoped to its own prefix(es) only; readers get `s3:GetObject` on what they read. The Worker's credentials are read-only on `world/*`, `situations/state/*`, `stories/state/*`.
+
+Lifecycle for the S8·T1 addition: `signals/snapshots/` → Glacier IR after 30d, expire 365d (~20MB/day; `signals/latest.json` never expires, per rule 4 above).
 
 ## 5. The frontend contract — `world/latest.json`
 
@@ -78,20 +81,23 @@ IAM: one inline policy per Lambda, `s3:PutObject` scoped to its own prefix(es) o
 - Per-situation detail (history, evidence, spillover) is in `situations/state/<key>.json`, fetched on click — where `<key>` is the situationId made URL/S3-safe (`gdacs#FL#1104081` → `gdacs_FL_1104081`; `#` is unsafe in keys/paths). Both the tracker (writer) and `worldData.js` (reader) apply the same sanitization.
 - The Worker returns `Access-Control-Allow-Origin` on **every** `/data/*` response including 404/401, so a missing object reads as a clean 404 client-side, not a CORS failure.
 - The scrubber fetches `world/YYYY/MM/DD/HHMM.json`.
+- **`signals/` is excluded from the Worker whitelist (`DATA_ALLOWED`)** — it is the paid, key-gated Signal-API product and stays behind the `newsSignals` Function URL only; it is never reachable via `/data/*`.
 
 ## 6. Migration of existing tables (incremental, never big-bang)
 
+**Order revised 2026-09-09** after two independent verifications (code-reader grep/audit + a 7-day CloudWatch metrics pull, GlobalPerspective tables only) re-ordered S8. Full evidence table, the corrections it forced, and the T1 design are in `MAP_HOME_SITUATION_PLAN.md` §11.1 (S8 sub-plan) and the ledger. Headline numbers (reads/day, writes/day): `SummarizeAndPredict` 13,342 / 2,007 · `PredictionLog` 12,503 / 388 (**2nd-hottest**, driven almost entirely by `/track-record`'s full 5,478-item Scan per page load via the proxy — this table was previously assumed lightest-touch, which was wrong) · `NewsCache` 8,543 / 2,305 · `BreakingAlerts` 6,907 / 70 (user-facing via `newsRecommend` `list_alerts`/`get_alert`, a direct-call Lambda, **not** the proxy) · `IngestCapture` 388 / 344 · `GdacsEvents` 92 / 1,100 · `GdeltConflict` 10 / 39 · `Markets` 12 / 232 · `ClientErrors` 14 / ~ · `Signals` 0 / 23,390 (**write-only** — 0 reads/day over a 14-day check; `newsSignals` is invoked 1/day, cron only, zero HTTP) · `ImpactAudit` 0 / 3 · `ApiKeys` 0 / 0 (0 items, 0 keys ever minted). Cost honesty: Signals' ~23K/day on-demand writes cost **≈$1/month** — migrating it first wins consistency (one fewer world table, strategy conformance), not cost. Flipping a proxy action (`newsSensitiveData`) from DDB→S3 is backend-only and needs no frontend deploy — the real gate on S8·T3–T6 is **risk** (the proxy is the live site's spine), needing explicit operator OK per edit, not a blanket approval.
+
 | Table | Verdict | When |
 |---|---|---|
-| `Users`, `SavedItems`, `UserPrefs`, `ApiKeys` | **stay DynamoDB** | — |
+| `Users`, `SavedItems`, `UserPrefs`, `ApiKeys` | **stay DynamoDB** (`ApiKeys`: 0 items, 0 keys ever minted) | — |
 | `GlobalPerspectiveSituations` (created 2026-09-08, P1·T1) | **drop** before anything reads it; replaced by `situations/` prefix | Stage S1 |
-| `GlobalPerspectivePredictionLog` ("immutable forecast record") | → `predictions/` in S3; calibration via Athena | S8 first |
-| `GdacsEvents`, `GdeltConflict`, `ImpactAudit`, `IngestCapture` | → `corpus/gdacs/`, `corpus/gdelt/`, `audit/`, corpus replaces capture | S8 |
-| `Markets` | → `markets/YYYY/MM/DD/HH.json` snapshots | S8 |
-| `NewsCache` (topics), `SummarizeAndPredict` | dual-write snapshots → flip readers one action at a time → retire | S8, last |
-| `BreakingAlerts` | content, but `review.js` mutates → move after review flow becomes inbox events | S8 |
-| `ClientErrors` | → append-only `errors/YYYY/MM/DD.jsonl`; digest reads files | S8 |
-| `Signals` | → `signals/`; Function URL serves from S3 | S8 |
+| `Signals` | → `signals/latest.json` + `signals/snapshots/`; Function URL serves from S3; **NEVER exposed via Worker `/data/*`** | **S8·T1 — approved 2026-09-09, not started** (gate: none, 0 consumers) |
+| `GdacsEvents`, `GdeltConflict`, `ImpactAudit`, `IngestCapture` | → `corpus/gdacs/`, `corpus/gdelt/`, `audit/`, corpus replaces capture | S8·T2 (gate: none, backend-only) |
+| `GlobalPerspectivePredictionLog` ("immutable forecast record") | → `predictions/` in S3; calibration via Athena; flips proxy `prediction_track_record`/`prediction_snapshot` + `newsSignals` `/v1/track-record` | S8·T3 (gate: operator OK to edit `newsSensitiveData`) |
+| `Markets` | → `markets/YYYY/MM/DD/HH.json` snapshots | S8·T4 (same proxy gate) |
+| `ClientErrors` | → append-only `logs/errors/YYYY/MM/DD.jsonl`; digest reads files | S8·T4 |
+| `BreakingAlerts` | content, but `review.js` mutates → move after review flow becomes inbox events; folds into stage S3·T2 | S8·T5, later |
+| `NewsCache` (topics), `SummarizeAndPredict` | dual-write snapshots → flip readers one action at a time → retire | S8·T6, last (after S6) |
 
 Rule for every drop: **"nothing reads the table"** (grep + CloudWatch) before `delete-table`.
 

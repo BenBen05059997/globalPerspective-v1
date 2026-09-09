@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
-import { MapView, WebMercatorViewport, FlyToInterpolator } from '@deck.gl/core';
+import { MapView, WebMercatorViewport, FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController, _GlobeViewport as GlobeViewport } from '@deck.gl/core';
 import { GeoJsonLayer, ScatterplotLayer, ArcLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
@@ -33,9 +33,19 @@ function iso3Centroid(iso3) {
 }
 function iso3Feature(iso3) { const num = ISO3_TO_NUM[iso3]; return num ? NUM_TO_FEATURE[num] : null; }
 
-// Flat overview (pitch 0). Variant C of the patch design: the globe is the click/tour fly-to
-// (S5.5·T slice 3); the overview stays flat so no situation hides behind a horizon.
+// Flat overview (pitch 0) is the default — every situation legible, nothing behind a horizon.
+// A user toggle swaps to the globe (deck.gl can't morph between the two, so it's a deliberate
+// switch, never an auto-transition). Slice 3 / patch design variant C-as-toggle.
 const INITIAL_VIEW = { longitude: 12, latitude: 20, zoom: 1.15, pitch: 0, bearing: 0, minZoom: 0.6, maxZoom: 8 };
+const GLOBE_VIEW = { longitude: 12, latitude: 18, zoom: 0.55, pitch: 0, bearing: 0, minZoom: -0.5, maxZoom: 6 };
+
+// Is a lon/lat on the near-facing hemisphere of a globe centred at (cLon,cLat)? (cull far-side callouts)
+function onNearSide(lon, lat, cLon, cLat) {
+  const r = Math.PI / 180;
+  const v = [Math.cos(lat * r) * Math.cos(lon * r), Math.cos(lat * r) * Math.sin(lon * r), Math.sin(lat * r)];
+  const c = [Math.cos(cLat * r) * Math.cos(cLon * r), Math.cos(cLat * r) * Math.sin(cLon * r), Math.sin(cLat * r)];
+  return v[0] * c[0] + v[1] * c[1] + v[2] * c[2] > 0.05; // within ~87° of the sub-view point
+}
 
 const CARD_W = 288;
 const CARD_MINH = 128;
@@ -74,10 +84,16 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
  * current tour stop; hover → tooltip; click → onSelect(id).
  */
 export default function SituationMap3D({
-  situations = [], focusId, callout = null, tour = null, newIds = null, onSelect, onOpenCallout, height = 560,
+  situations = [], focusId, callout = null, tour = null, newIds = null, view = 'flat', onSelect, onOpenCallout, height = 560,
 }) {
-  const [viewState, setViewState] = useState(INITIAL_VIEW);
+  const globe = view === 'globe';
+  const [viewState, setViewState] = useState(globe ? GLOBE_VIEW : INITIAL_VIEW);
   const userMoved = useRef(false);
+  // On toggle, reset to that view's default (a gentle transition; not a morph between view types).
+  useEffect(() => {
+    userMoved.current = false;
+    setViewState((v) => ({ ...(globe ? GLOBE_VIEW : INITIAL_VIEW), longitude: v.longitude, latitude: globe ? 15 : v.latitude, transitionDuration: 600, transitionInterpolator: new FlyToInterpolator() }));
+  }, [globe]);
   const wrapRef = useRef(null);
   const [dims, setDims] = useState({ width: 1, height });
   const reduceMotion = useMemo(() => {
@@ -125,11 +141,11 @@ export default function SituationMap3D({
   useEffect(() => {
     if (focusCentroid) {
       const [lon, lat] = focusCentroid.split(',').map(Number);
-      setViewState((v) => ({ ...v, longitude: lon, latitude: lat, zoom: 3.4, transitionDuration: 1300, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }) }));
+      setViewState((v) => ({ ...v, longitude: lon, latitude: globe ? lat - 4 : lat, zoom: globe ? 2.1 : 3.4, transitionDuration: 1300, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }) }));
     } else if (userMoved.current) {
-      setViewState((v) => ({ ...v, ...INITIAL_VIEW, transitionDuration: 1100, transitionInterpolator: new FlyToInterpolator() }));
+      setViewState((v) => ({ ...v, ...(globe ? GLOBE_VIEW : INITIAL_VIEW), transitionDuration: 1100, transitionInterpolator: new FlyToInterpolator() }));
     }
-  }, [focusCentroid]);
+  }, [focusCentroid, globe]);
 
   // Static (non-animated) layers — memoised so the pickable `core` layer keeps a stable instance
   // across breathing-halo frames (a fresh instance each frame was eating clicks).
@@ -213,24 +229,27 @@ export default function SituationMap3D({
     return { html: `<b>${object.verb_label}</b><br/>${tierW} · ${stW}`, style: { background: '#0d1017', color: '#dfe6f2', fontSize: '12px', borderRadius: '7px', padding: '6px 9px', border: '1px solid #232c3a' } };
   }, []);
 
-  // Project the callout situation's centroid to screen space and place the card.
+  // Project the callout situation's centroid to screen space and place the card. On the globe,
+  // use the globe viewport and hide the card when the pin is on the far side of the sphere.
   const place = useMemo(() => {
     if (!callout?.centroid || !dims.width) return null;
     try {
-      const vp = new WebMercatorViewport({ ...viewState, width: dims.width, height: dims.height });
+      if (globe && !onNearSide(callout.centroid.lon, callout.centroid.lat, viewState.longitude, viewState.latitude)) return null;
+      const VP = globe ? GlobeViewport : WebMercatorViewport;
+      const vp = new VP({ ...viewState, width: dims.width, height: dims.height });
       const [x, y] = vp.project([callout.centroid.lon, callout.centroid.lat]);
       if (x < -40 || y < -40 || x > dims.width + 40 || y > dims.height + 40) return null;
       return { px: x, py: y, ...placeCallout(x, y, dims.width, dims.height) };
     } catch { return null; }
-  }, [callout, viewState, dims]);
+  }, [callout, viewState, dims, globe]);
 
   return (
     <div className="sm-wrap" style={{ height }} ref={wrapRef}>
       <DeckGL
-        views={new MapView({ repeat: false })}
+        views={globe ? new GlobeView() : new MapView({ repeat: false })}
         viewState={viewState}
         onViewStateChange={(e) => { if (e.interactionState?.isDragging || e.interactionState?.isZooming) userMoved.current = true; setViewState(e.viewState); }}
-        controller={{ dragRotate: false }}
+        controller={globe ? { type: GlobeController } : { dragRotate: false }}
         layers={layers}
         getTooltip={getTooltip}
         pickingRadius={16}

@@ -125,6 +125,8 @@ export default function SituationHome() {
   const callout = focus ? null : (tourStop || hero);
   const tourProps = tourOn ? { index: Math.min(tourIdx, tourN - 1), total: tourN, onPrev: tourPrev, onNext: tourNext, onStop: stopTour } : null;
 
+  const [view, setViewMode] = useState(() => { try { return localStorage.getItem('gp_map_view') === 'globe' ? 'globe' : 'flat'; } catch { return 'flat'; } });
+  const toggleView = () => setViewMode((v) => { const n = v === 'globe' ? 'flat' : 'globe'; try { localStorage.setItem('gp_map_view', n); } catch { /* storage blocked */ } return n; });
   const [legendOpen, setLegendOpen] = useState(false);
   const [mapH, setMapH] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620));
   useEffect(() => {
@@ -154,7 +156,7 @@ export default function SituationHome() {
             {USE_3D ? (
               <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
                 <SituationMap3D
-                  situations={situations} focusId={focusId} callout={callout} tour={tourProps} newIds={newIds}
+                  situations={situations} focusId={focusId} callout={callout} tour={tourProps} newIds={newIds} view={view}
                   onSelect={userSelect} onOpenCallout={userSelect} height={mapH}
                 />
               </Suspense>
@@ -165,6 +167,11 @@ export default function SituationHome() {
             <div className="sh-controls">
               {ranked.length >= 2 && !tourOn ? (
                 <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
+              ) : null}
+              {USE_3D ? (
+                <button className="sh-ctl" onClick={toggleView} title={view === 'globe' ? 'Switch to the flat map' : 'Switch to the globe'} aria-pressed={view === 'globe'}>
+                  {view === 'globe' ? 'Flat map' : 'Globe'}
+                </button>
               ) : null}
               <button className="sh-ctl sh-key" onClick={() => setLegendOpen((v) => !v)} aria-expanded={legendOpen}>
                 {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key

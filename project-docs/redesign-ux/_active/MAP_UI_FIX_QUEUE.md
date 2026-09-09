@@ -50,7 +50,19 @@ Not design — backend/product (tracked elsewhere, listed for completeness):
 - **Watchlist:** follow a situation → email on tier change (newsEmailSender infra exists).
 - **Worker pre-render for `/map`** (SEO), like /weekly pages.
 
-## 4 · Patch-design round (back to the Claude designer)
+## 4a · Patch-design round — ANSWERED 2026-09-09 (boards in `MAP_HOME_DESIGN_TARGET_PATCH.html`, in-repo)
+
+The designer returned all six boards. Decisions they force (adopt unless the operator objects):
+1. **Hero = variant C (RECOMMENDED by designer, seconded):** flat overview (all pins visible) → user-initiated **globe fly-to** for detail/tour. Quantified argument: at any globe orientation ~9/17 mock situations (incl. 2 of 3 high) sit behind the horizon — "a busy Middle-East day faced at the Americas reads as a calm planet — a false lede." deck.gl shares layers between MapView and GlobeView, so C is also the cheap path to the globe payoff. Variant B (flat + gentle tilt) is the fallback if GlobeView misbehaves.
+2. **Tour = manual stepper, NO autoplay timer** ("a timed mode, if ever, is opt-in per run"). Desktop: hero-callout + tour bar (n of 6, ←/→, Stop, progress ticks; Esc/tap-outside stops; rail row highlights in sync). Mobile: the peek sheet becomes the stop card with a big "Next situation →". This structurally deletes audit bugs #1 and #2 (no interval to reset, content always shown).
+3. **Callout edge rule (implementable as written):** try 4 anchor quadrants around the pin (NE, NW, SE, SW preference), place in the first that fits fully with 8px margin — flip-anchor primary (stub leader stays short); only a literal-corner pin clamps + grows a straight leader ≤180px from the card's nearest corner, never crossing the card; fixed card width, two-line min-height, leader terminates at the card edge nearest the pin.
+4. **Mobile:** ~60vh map; legend collapses to a "Key" chip (4 hue dots) → full legend bottom sheet on tap; **every pin gets an invisible 44px hit area**; bottom-sheet verdict: **build the fixed peek row now** (top-ranked situation, tap → full-screen detail — "the mobile lede and hero in one element, ~90% of the value"), **defer drag physics** until usage justifies.
+5. **Arcs + affected fill = a selection state, not a base layer** (zero arcs/fill unselected — the spaghetti answer). On select: affected polygons tint ~8–10% fill / ~35% 1px border in axis hue under the pins; static arcs origin→destination fading toward the target (direction without arrowheads); destinations get a **hollow ring** so a spread target is never misread as its own situation; all other pins dim ~40%. Motion stays exclusive to escalation.
+6. **"Since you last looked":** lede clause ("· 2 new since Tuesday") + rail markers (◇ diamond = new, outline chevron = tier changed, with "was moderate") + small pin markers; honesty line "Markers use your last visit, kept in this browser"; invisible on first visit; never a banner. Fields: `last_seen` = localStorage; "new" test = our `opened_at` ✓; "changed" test needs **`tier_changed_at`** which the world bundle does NOT carry — designer explicitly flagged it ("if it does not exist… we ship 'new' only"). → Either the tracker emits `tier_changed_at` (small, it already tracks history) or v1 ships new-only.
+
+Backend additions this round asks for (fold into the tracker structured-fields pass): `tier_changed_at`, `coverage_ratio` (already queued), and verify whether GDACS population-exposed exists for the disaster panel's third cell.
+
+## 4b · Original patch-design ask (for the record)
 
 Scope: a PATCH, not a redesign — same palette/encoding/layout system as `MAP_HOME_DESIGN_TARGET.html`. Boards wanted:
 1. **Hero variant A/B(/C):** globe hero vs flat+tilt atmosphere (vs flat with globe fly-to transition), same mock data, so the choice is made visually.

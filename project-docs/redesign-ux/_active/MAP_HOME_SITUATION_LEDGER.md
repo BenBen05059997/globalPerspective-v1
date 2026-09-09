@@ -214,6 +214,29 @@ Commit: —
 
 ---
 
+## Stage S5.5 — Design port (added 2026-09-09 after the in-person review; gates S6)
+
+Trigger: the operator reviewed the live `/map` in person and found it read as a working *renderer*, not a finished *product* (everything at equal weight, camera moving on load, clicks often paying off with an apology). An independent Sonnet critique + a live-data audit confirmed it. A design brief was handed to a fresh Claude designer; two rounds produced an approved static target (all six artboards + a GDACS variant + a no-situation-page footer). Kept in-repo at `project-docs/redesign-ux/_active/MAP_HOME_DESIGN_TARGET.html`.
+
+### S5.5 · T1 — Port the approved design onto the existing data contracts
+Status: ✅ done (browser-verified against LIVE prod data; source only, NOT deployed). Presentation-layer rewrite only — `useWorld`/`useSituationDetail`/`worldData.js`/Worker/`world/latest.json` all untouched.
+- **Encoding:** extruded columns → glow **dots** (hue=axis, luminance+halo=tier, white keyline exclusive to high, 2s breathing halo exclusive to escalating, off under reduced-motion). Palette **normalised to `oklch(0.70 0.155 h)`** across map + list + D3 fallback.
+- **Composition:** count-only templated **lede** (region clause anchored to the ranked hero); anchored **hero callout** (projected via `WebMercatorViewport`); 70/30 **map + rail**, detail **replaces** the rail (back arrow); tour = **"Walk me through today"** button, **default OFF, nothing on load, never writes the URL** (local `tourId`); rail height-capped + internal scroll.
+- **Detail panel:** structured **metric row** (outlets/spread/vs-prior — parsed from the existing `what_changed`, so NO backend change needed), affected-country **name chips** (new `utils/situationLabels.js`), outlet-attributed evidence, **thin-evidence** state, **GDACS disaster variant** (hazard facts + official report + pass-through note; code-complete, visually unverified until an Orange/Red GDACS alert exists — feed was all-Green at port time), **"No dedicated situation page yet"** footer when `threadId` null.
+- **Below the fold:** truthful methodology (mock's invented scoring text NOT shipped), corrected teasers, crawlable axis-grouped situation index (SEO).
+Changes: `SituationHome.jsx`, `SituationMap3D.jsx`, `SituationHome.css` (rewrites), `SituationMap.jsx` (palette), new `utils/situationLabels.js`; design target HTML added to repo.
+Verify / exit: `npm run verify` green (eslint 0 errors, 235 tests); Playwright/SwiftShader on live data at 1440 + 390 — lede, callout, rail, click→fly-to→detail (real metrics/evidence/names), below-fold, mobile; 0 console errors.
+Done-check: [x] code  [x] docs  [x] CHANGES  [x] verify  [ ] deploy (gated — awaiting operator yes)
+Commit: (branch `map-design-port`)
+
+### S5.5 · T2 — On-map side-flag leader labels (P5) — ⏸ deferred
+The design's flight-tracker flag stack for colliding pins. Deferred as its own pass: it's the one genuinely-custom screen-space collision piece, the smaller dots + the rail already carry labels, and a fragile version would look worse than none. Interim (hover tooltip + rail) is acceptable.
+
+### S5.5 · T3 — Feed quality gate (backend) — ⏸ open, HIGH VALUE
+The port surfaced that the feed itself is the bigger noise source: the classifier/tracker **over-tiers single-outlet stories to "high"** (live showed 18 "high", many at 1 outlet) and keeps **stale "Closed — inactive" / "Event no longer current in GDACS" rows** as active. This is a `newsSituationIngest` classifier gate + a `newsSituationTracker` drop-dead-situations tweak — its own focused, diff-before-edit backend pass. Highest-value next step for the "less noise" goal; independent of the design.
+
+---
+
 ## Stage S6 — Home swap, routes, cleanup
 
 > **Status 2026-09-09 — the map is now PROD-DEPLOYED as an unlisted route.** `./deploy.sh` + `git push` (commit `8872cb7`) shipped the built frontend: `https://globalperspective.net/map` is live (SPA deep-link returns 404 status but renders — same as `/economy`; verified). `/` still renders the **old Home** — the actual home-swap below (S6·T1) is still pending. So "source only / NOT deployed" notes on earlier rows (S4·T1, S5·T1, S5·T2) are superseded: those components are now live at `/map`. What remains for S6 is the swap itself + cleanup.

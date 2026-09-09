@@ -4,11 +4,12 @@ import * as topojson from 'topojson-client';
 import topoData from '../assets/countries-110m.json';
 
 // Hue = kind of crisis (DATA_STRATEGY §5 / plan WS4). Colour-blind-checked; no red/green pair.
+// oklch(0.70 0.155 h) normalised — equal luminance so no axis reads as "worse" at equal tier.
 export const AXIS_HUE = {
-  conflict: '#E4572E',      // red-orange
-  political: '#8E6CEF',     // violet
-  economic: '#2BB3D6',      // cyan
-  humanitarian: '#F2B134',  // amber
+  conflict: '#ee7754',      // red-orange
+  political: '#9b8cf8',     // violet
+  economic: '#38b6e0',      // cyan
+  humanitarian: '#d89e28',  // amber
 };
 const AXIS_FALLBACK = '#9aa4b2';
 // Marker radius by tier (severity) — widened so severity reads (interim until S5's 2.5D columns).

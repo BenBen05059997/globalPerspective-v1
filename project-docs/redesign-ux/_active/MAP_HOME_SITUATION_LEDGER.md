@@ -229,6 +229,9 @@ Verify / exit: `npm run verify` green (eslint 0 errors, 235 tests); Playwright/S
 Done-check: [x] code  [x] docs  [x] CHANGES  [x] verify  [ ] deploy (gated — awaiting operator yes)
 Commit: (branch `map-design-port`)
 
+### S5.5 · T1a — Post-deploy review fixes — 🔶 open (queue written)
+Operator review of the deployed port found pins unclickable; a second Sonnet audit found 12 further fixes (tour shows no content per stop, hardcoded mobile height, callout edge detachment, 60fps animation churn, WCAG contrast, …). Full ranked queue + the patch-design round scope → **`MAP_UI_FIX_QUEUE.md`** (same directory). Partial click fix committed (`7d6d152`, source only). Globe-vs-flat hero question reopened there (§3/§4).
+
 ### S5.5 · T2 — On-map side-flag leader labels (P5) — ⏸ deferred
 The design's flight-tracker flag stack for colliding pins. Deferred as its own pass: it's the one genuinely-custom screen-space collision piece, the smaller dots + the rail already carry labels, and a fragile version would look worse than none. Interim (hover tooltip + rail) is acceptable.
 

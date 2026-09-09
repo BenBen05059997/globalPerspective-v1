@@ -14,17 +14,16 @@
 // to hunt the known blind spot (under-covered atrocity/displacement/Africa) to offset the
 // correlated-error risk of same-model auditing.
 
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const CAPTURE_TABLE = process.env.INGEST_CAPTURE_TABLE || 'GlobalPerspectiveIngestCapture'; // still DDB (T2b)
 const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
-// S8·T2 (2026-09-09): GDACS + GDELT read from S3 corpus (written by the ingest Lambdas), and this
-// audit writes its own verdict to S3 `audit/impact/` instead of the GlobalPerspectiveImpactAudit
-// table (dropped — it was write-only). IngestCapture stays on DDB until T2b.
+// S8·T2 (2026-09-09): this audit is now fully S3 — no DynamoDB. GDACS + GDELT are read from the S3
+// corpus (written by the ingest Lambdas); the selector capture is read from S3 (T2b: written by
+// newsInvokeGemini); and the verdict is written to S3 `audit/impact/` (the GdacsEvents/GdeltConflict/
+// ImpactAudit/IngestCapture tables were all dropped).
+const CAPTURE_KEY = process.env.INGEST_CAPTURE_KEY || 'audit/ingest-capture/latest.json';
 const GDACS_CORPUS_KEY = process.env.GDACS_CORPUS_KEY || 'corpus/gdacs/latest.json';
 const GDELT_CORPUS_PREFIX = process.env.GDELT_CORPUS_PREFIX || 'corpus/gdelt';
 const AUDIT_PREFIX = process.env.IMPACT_AUDIT_PREFIX || 'audit/impact';
@@ -34,9 +33,6 @@ const API_KEY = process.env.XAI_API_KEY; // legacy name — holds the DeepSeek k
 const API_URL = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
 const MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash'; // deepseek-chat retired 2026-07-24; v4-flash is the current flash model (verified 2026-09-08)
 
-const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
-  marshallOptions: { removeUndefinedValues: true },
-});
 const s3 = new S3Client({ region: REGION });
 const sns = new SNSClient({ region: REGION });
 
@@ -50,13 +46,9 @@ async function s3GetJson(key) {
   }
 }
 
-// Newest capture row (PK runId is an ISO timestamp; few rows → scan + sort).
+// Latest selector capture — S3 stable pointer written by newsInvokeGemini each generation (T2b).
 async function latestCapture() {
-  const out = await ddb.send(new ScanCommand({ TableName: CAPTURE_TABLE }));
-  const items = out.Items || [];
-  if (!items.length) return null;
-  items.sort((a, b) => String(b.runId).localeCompare(String(a.runId)));
-  return items[0];
+  return s3GetJson(CAPTURE_KEY); // { runId, input, chosen, ... } or null when absent
 }
 
 const RUBRIC =

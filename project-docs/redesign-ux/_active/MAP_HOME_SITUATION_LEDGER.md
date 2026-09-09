@@ -264,7 +264,7 @@ Done-check: [x] code  [x] IAM  [x] docs  [x] CHANGES  [x] verify  [x] table drop
 Commit: (this branch `s8-t1-signals-s3`)
 
 ### S8 · T2 — GDACS/GDELT/ImpactAudit/IngestCapture mirrors → `corpus/` + `audit/`
-Status: ✅ T2a DONE 2026-09-09 (3 tables dropped, audit live off S3) · T2b deferred
+Status: ✅ T2 DONE 2026-09-09 — T2a (3 tables) + T2b (IngestCapture) both live; all 4 tables dropped; newsImpactAudit is now fully DynamoDB-free
 Gate: none (backend-only)
 Reads/refs: `newsGdacsIngest`, `newsGdeltConflict`, `newsInvokeGemini` capture harness, `newsImpactAudit`. Verified drop-gate: `GdacsEvents`/`GdeltConflict`/`ImpactAudit` each touched only by their writer + `newsImpactAudit`; no frontend refs. `IngestCapture` written by `newsInvokeGemini` (the live content pipeline), read only by `newsImpactAudit`.
 
@@ -276,7 +276,7 @@ Reads/refs: `newsGdacsIngest`, `newsGdeltConflict`, `newsInvokeGemini` capture h
 - IAM: `newsGdacsIngest` +PutObject `corpus/gdacs/*`; `newsGdeltConflict` +PutObject `corpus/gdelt/*`; `newsImpactAudit` +GetObject `corpus/*` +PutObject `audit/impact/*` +scoped ListBucket (missing key → 404 not 403).
 - Verify: dual-write a cycle (or invoke producers once), invoke audit, confirm same missed/gap counts reading from S3; then stop GDACS DDB mirror + drop `GdacsEvents`, `GdeltConflict`, `ImpactAudit`.
 
-**T2b (deferred — touches `newsInvokeGemini`, the live editorial pipeline):** migrate `IngestCapture` → `audit/ingest-capture/latest.json` (add a best-effort S3 write to the already-fenced `captureIngestion`), flip the audit's capture read to S3, then drop `IngestCapture`. Held out of T2a so a 344-write/day table doesn't force a content-pipeline deploy in the same change. Only 344 writes/day — low urgency.
+**T2b (DONE 2026-09-09):** `IngestCapture` → `audit/ingest-capture/latest.json` — `captureIngestion` (already fully fenced) swaps its DDB PutItem for a best-effort S3 PutObject; the audit reads it from S3 (now fully DynamoDB-free); seeded from the last DDB row + self-refreshes every 4h; `IngestCapture` dropped (201 items). Deployed via patch-the-deployed-zip (preserves `node_modules` + deployed `MODEL_NAME` default; `GROK_MODEL` env overrides it anyway). IAM: `ingestCapturePut` repurposed DDB→S3; audit DDB grant dropped. Verified: audit ran off S3 (missed 5, gdeltGaps 2, capture input 180/chosen 13).
 Docs to update: `ARCHITECTURE.md` · `DATA_STRATEGY.md` · `CHANGES.md`
 Verify / exit: "nothing reads the table" (grep + CloudWatch) before each `delete-table`
 Done-check (T2a): [x] gdacs corpus  [x] gdelt corpus  [x] audit flip+output  [x] IAM  [x] verify (audit ran off S3: missed 7, gdeltGap Panama)  [x] 3 tables dropped (GdacsEvents 2120 / GdeltConflict 274 / ImpactAudit 53 items)  [x] docs  [x] CHANGES

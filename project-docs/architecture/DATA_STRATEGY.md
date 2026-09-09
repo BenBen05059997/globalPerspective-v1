@@ -53,6 +53,7 @@ Nothing else goes in DynamoDB. A new table needs an explicit exception recorded 
 | `corpus/gdacs/latest.json` (S8·T2, DONE 2026-09-09) | `newsGdacsIngest` | each 20-min run | `newsImpactAudit` |
 | `corpus/gdelt/<day>.json` (S8·T2, DONE 2026-09-09) | `newsGdeltConflict` | each run (overwrite per day) | `newsImpactAudit` |
 | `audit/impact/<date>.json`, `audit/impact/latest.json` (S8·T2, DONE 2026-09-09) | `newsImpactAudit` | daily | audit trail / operator |
+| `audit/ingest-capture/latest.json` (S8·T2b, DONE 2026-09-09) | `newsInvokeGemini` | each generation (every 4h) | `newsImpactAudit` |
 
 IAM: one inline policy per Lambda, `s3:PutObject` scoped to its own prefix(es) only; readers get `s3:GetObject` on what they read (+ a `ListBucket` scoped to their read prefixes so a missing object returns 404, not 403). The Worker's credentials are read-only on `world/*`, `situations/state/*`, `stories/state/*`.
 
@@ -96,7 +97,7 @@ Lifecycle additions: `signals/snapshots/` → Glacier IR 30d, expire 365d (S8·T
 | `GlobalPerspectiveSituations` (created 2026-09-08, P1·T1) | **drop** before anything reads it; replaced by `situations/` prefix | Stage S1 |
 | `Signals` | → `signals/latest.json` + `signals/snapshots/`; Function URL serves from S3; **NEVER exposed via Worker `/data/*`** | **S8·T1 — approved 2026-09-09, not started** (gate: none, 0 consumers) |
 | ~~`GdacsEvents`, `GdeltConflict`, `ImpactAudit`~~ | **DONE 2026-09-09** → `corpus/gdacs/latest.json`, `corpus/gdelt/<day>.json`, `audit/impact/`; `newsImpactAudit` reads corpus + writes verdict to S3; all three tables dropped | S8·T2a ✅ |
-| `IngestCapture` | → `audit/ingest-capture/`; **deferred** (writer is `newsInvokeGemini`, the live content pipeline — held out of T2a) | S8·T2b |
+| ~~`IngestCapture`~~ | **DONE 2026-09-09** → `audit/ingest-capture/latest.json`; `captureIngestion` in `newsInvokeGemini` writes S3 (best-effort, fully fenced); `newsImpactAudit` reads it; table dropped | S8·T2b ✅ |
 | `GlobalPerspectivePredictionLog` ("immutable forecast record") | → `predictions/` in S3; calibration via Athena; flips proxy `prediction_track_record`/`prediction_snapshot` + `newsSignals` `/v1/track-record` | S8·T3 (gate: operator OK to edit `newsSensitiveData`) |
 | `Markets` | → `markets/YYYY/MM/DD/HH.json` snapshots | S8·T4 (same proxy gate) |
 | `ClientErrors` | → append-only `logs/errors/YYYY/MM/DD.jsonl`; digest reads files | S8·T4 |

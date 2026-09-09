@@ -572,9 +572,12 @@ async function writeCache({ topics, model, limit }) {
 // ============================================================
 
 // Log the cycle's input (every fetched article the selector saw) + output (chosen topics) to the
-// capture table. Fully fenced: any failure is swallowed so it can never break ingestion.
+// capture store. Fully fenced: any failure is swallowed so it can never break ingestion.
+// S8·T2b (2026-09-09): writes the selector's saw-vs-chose snapshot to S3
+// (audit/ingest-capture/latest.json), read by newsImpactAudit — replaces the
+// GlobalPerspectiveIngestCapture DDB table (dropped). A stable pointer overwritten each run
+// (the audit only ever needs the latest capture).
 async function captureIngestion(inputArticles, chosenTopics, generationId) {
-  if (!ddbDoc) return;
   try {
     const input = (inputArticles || []).slice(0, 300).map((a) => ({
       title: (a.title || '').slice(0, 200),
@@ -590,20 +593,23 @@ async function captureIngestion(inputArticles, chosenTopics, generationId) {
       threadId: t.threadId || null,
       sourceUrls: (t.sources || []).map((s) => s.url).filter(Boolean),
     }));
-    const { PutCommand } = require('@aws-sdk/lib-dynamodb');
-    await ddbDoc.send(new PutCommand({
-      TableName: CAPTURE_TABLE,
-      Item: {
-        runId: new Date().toISOString(),
-        generationId: generationId || null,
-        inputCount: input.length,
-        chosenCount: chosen.length,
-        input,   // what the selector SAW (the audit basis for "missed high-impact?")
-        chosen,  // what it CHOSE
-        ttl: Math.floor(Date.now() / 1000) + CAPTURE_TTL_DAYS * 86400,
-      },
+    const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+    const s3 = new S3Client({ region: process.env.AWS_REGION || 'ap-northeast-1' });
+    const body = JSON.stringify({
+      runId: new Date().toISOString(),
+      generationId: generationId || null,
+      inputCount: input.length,
+      chosenCount: chosen.length,
+      input,   // what the selector SAW (the audit basis for "missed high-impact?")
+      chosen,  // what it CHOSE
+    });
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.WORLD_BUCKET || 'globalperspective-world-280362093938',
+      Key: `${process.env.INGEST_CAPTURE_PREFIX || 'audit/ingest-capture'}/latest.json`,
+      Body: body,
+      ContentType: 'application/json',
     }));
-    console.log(`[capture] ${input.length} input articles -> ${chosen.length} chosen topics`);
+    console.log(`[capture] ${input.length} input articles -> ${chosen.length} chosen topics (S3)`);
   } catch (e) {
     console.warn('[capture] failed (non-fatal):', e.message);
   }

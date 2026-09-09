@@ -229,11 +229,11 @@ Verify / exit: `npm run verify` green (eslint 0 errors, 235 tests); Playwright/S
 Done-check: [x] code  [x] docs  [x] CHANGES  [x] verify  [ ] deploy (gated — awaiting operator yes)
 Commit: (branch `map-design-port`)
 
-### S5.5 · T1a — Post-deploy review fixes — 🔶 open (queue written)
-Operator review of the deployed port found pins unclickable; a second Sonnet audit found 12 further fixes (tour shows no content per stop, hardcoded mobile height, callout edge detachment, 60fps animation churn, WCAG contrast, …). Full ranked queue + the patch-design round scope → **`MAP_UI_FIX_QUEUE.md`** (same directory). Partial click fix committed (`7d6d152`, source only). Globe-vs-flat hero question reopened there (§3/§4).
+### S5.5 · T1a — Post-deploy review fixes + patch port — ✅ DONE + DEPLOYED
+Operator review of the deployed port found pins unclickable; a Sonnet audit found 12 more fixes; a patch-design round returned 6 boards (in-repo `MAP_HOME_DESIGN_TARGET_PATCH.html`; decisions in `MAP_UI_FIX_QUEUE.md`). Shipped across three deploys to unlisted /map: **slice 1+2a** (`41a3e3f`) — click fix (pickingRadius + static escalating halo; 4/4 headless clicks), manual tour (autoplay removed, tour bar in the card, never writes URL), mobile pass (~60vh, Key chip→legend sheet, peek row, 44px targets), since-you-last-looked (new-only via opened_at + localStorage); **slice 2b** (`aec70d6`) — spread arcs + affected-country fill as a selection state (`utils/countryGeo.js` iso3→geometry join); **slice 3** (`aec70d6`) — flat/globe **toggle** (default flat, "Globe" button persists per visitor; `_GlobeView`/`_GlobeController`, callout via `_GlobeViewport` w/ far-side cull, arcs = great circles). Plus audit fixes (lede error/expired states, WCAG `--sh-dim`, cadence-from-`next_expected_at`, stable fly-to). **Frontend map programme fully shipped.** Verify green (235 tests), browser-verified on live data, 0 console errors.
 
 ### S5.5 · T2 — On-map side-flag leader labels (P5) — ⏸ deferred
-The design's flight-tracker flag stack for colliding pins. Deferred as its own pass: it's the one genuinely-custom screen-space collision piece, the smaller dots + the rail already carry labels, and a fragile version would look worse than none. Interim (hover tooltip + rail) is acceptable.
+The design's flight-tracker flag stack for colliding pins. Deferred as its own pass: it's the one genuinely-custom screen-space collision piece, the smaller dots + the rail + the selection-state arcs already carry the labels/relationships, and a fragile version would look worse than none. Interim (hover tooltip + rail + arcs) is acceptable.
 
 ### S5.5 · T3 — Feed quality gate (backend) — ⏸ open, HIGH VALUE
 The port surfaced that the feed itself is the bigger noise source: the classifier/tracker **over-tiers single-outlet stories to "high"** (live showed 18 "high", many at 1 outlet) and keeps **stale "Closed — inactive" / "Event no longer current in GDACS" rows** as active. This is a `newsSituationIngest` classifier gate + a `newsSituationTracker` drop-dead-situations tweak — its own focused, diff-before-edit backend pass. Highest-value next step for the "less noise" goal; independent of the design.
@@ -266,13 +266,14 @@ Commit: —
 ## Stage S7 — Editorial switch
 
 ### S7 · T1 — Selector consumes `stories/index.json`; remove Brave from `newsInvokeGemini`; capture → corpus
-Status: 🔭 todo (Brave removal unblocked by P0·T1)
-Reads/refs: `newsInvokeGemini` selection prompt (l.651+), Brave block (l.388-461), `captureIngestion` (l.576)
-Changes: prompt receives top-N clusters; `continues_topic` → `storyId`; delete Brave block; `captureIngestion` records the corpus key instead of truncated input
+Status: 🔶 PARTIAL — **Brave removal ✅ DONE + DEPLOYED (2026-09-10, `4fa8b20`)**; the selector-consumes-`stories/index.json` and capture→corpus parts are still 🔭 todo.
+Done (Brave): deleted `fetchBraveNews()` + `BRAVE_*` consts + the RSS/Brave merge → `fetchAllNews()` is RSS-only. Deployed via patch-zip (preserved `node_modules` + the env-overridden grok `MODEL_NAME` default). Verified live: 200/no error, 13 topics from a 168-article RSS-only pool, CloudWatch `COMBINED: 168 RSS + 0 Brave`, zero Brave call/failure lines. Grounding Lambdas keep Brave (separate follow-up). Unused `BRAVE_SEARCH_API_KEY`/`BRAVE_CONCURRENCY` env left in place (harmless).
+Still todo: prompt receives top-N clusters from `stories/index.json`; `continues_topic` → `storyId`; `captureIngestion` records the corpus key instead of truncated input. (These couple newsInvokeGemini to the map's clustered stories — a bigger editorial change, not started.)
+Reads/refs: `newsInvokeGemini` selection prompt (l.651+), `captureIngestion` (l.576)
 Docs to update: `ARCHITECTURE.md` · `BACKEND_GUIDE.md` · `IMPACT_VALIDATION_METHODOLOGY.md` · `SOURCE_DIVERSITY_PLAN.md` · `CHANGES.md`
-Verify / exit: brief quality unchanged per methodology; Brave ingest calls → 0 in CloudWatch
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
+Verify / exit: brief quality unchanged per methodology; Brave ingest calls → 0 in CloudWatch ✅
+Done-check: [x] Brave-removal code  [x] CHANGES  [x] verify · [ ] selector/capture parts
+Commit: `4fa8b20` (Brave removal)
 
 ---
 

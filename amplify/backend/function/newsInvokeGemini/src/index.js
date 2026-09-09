@@ -36,8 +36,6 @@ const CACHE_ID = process.env.TOPICS_CACHE_ITEM_ID || 'staging';
 // reference set can be built. Additive + fully fenced — never affects ingestion.
 const CAPTURE_TABLE = process.env.INGEST_CAPTURE_TABLE || 'GlobalPerspectiveIngestCapture';
 const CAPTURE_TTL_DAYS = Number(process.env.CAPTURE_TTL_DAYS) || 45;
-const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY;
-const BRAVE_NEWS_ENDPOINT = 'https://api.search.brave.com/res/v1/news/search';
 
 // ============================================================
 // SEEN TOPICS - 24h soft dedup
@@ -385,128 +383,23 @@ async function fetchRssFeeds() {
 }
 
 // ============================================================
-// BRAVE SEARCH - Only for sources without working RSS
+// NEWS FETCH — RSS only
 // ============================================================
+// Brave removed from ingest (S7 / plan §2.6, P0·T1 measurement): Brave was ~5.8% of the article
+// pool, ~18% 429-rate-limited, and only 0.4% of chosen topics were sourced solely from Brave-only
+// domains — RSS carries ingest with no meaningful loss and no fallback needed. The wire-service
+// gap (reuters/apnews) it targeted was already near-zero yield (~0.38 articles/run). The five
+// analysis-grounding Lambdas keep Brave; that is a separate provider follow-up.
 
-async function fetchBraveNews(limit) {
-  if (!BRAVE_API_KEY) {
-    console.warn('BRAVE_SEARCH_API_KEY not configured, skipping Brave search');
-    return [];
-  }
-
-  try {
-    // Only query sources that don't have working RSS feeds
-    const queries = [
-      // Wire Services (no RSS available)
-      'site:reuters.com world news today',
-      'site:apnews.com world news today',
-
-      // Asia (no RSS available)
-      'site:straitstimes.com Singapore Asia news today',
-      'site:timesofindia.indiatimes.com India news today',
-      'site:koreaherald.com Korea news today',
-
-      // Specialized conflict tracking (no RSS available)
-      'site:kyivindependent.com Ukraine Russia latest',
-
-      // Broader regional
-      'Latin America Brazil Mexico Argentina news today',
-
-      // Climate & energy (underrepresented in RSS)
-      'climate energy transition renewable oil gas policy news today',
-
-      // Science & health (beyond outbreaks)
-      'scientific research breakthrough discovery published today',
-
-      // Business & society
-      'corporate labor migration society inequality news today',
-    ];
-
-    const articlesPerQuery = Math.max(10, Math.ceil((limit * 4) / queries.length));
-    const allArticles = [];
-    const BRAVE_CONCURRENCY = parseInt(process.env.BRAVE_CONCURRENCY || '3', 10);
-
-    console.log(`Fetching ${queries.length} Brave queries (concurrency=${BRAVE_CONCURRENCY})...`);
-
-    let cursor = 0;
-    const workers = Array.from({ length: Math.min(BRAVE_CONCURRENCY, queries.length) }, async () => {
-      while (cursor < queries.length) {
-        const i = cursor++;
-        const query = queries[i];
-        try {
-          const url = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(query)}&count=${articlesPerQuery}&freshness=pd&search_lang=en`;
-          const response = await fetch(url, {
-            headers: {
-              'Accept': 'application/json',
-              'Accept-Encoding': 'gzip',
-              'X-Subscription-Token': BRAVE_API_KEY,
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const articles = data?.results || [];
-            allArticles.push(...articles);
-            console.log(`Brave "${query.substring(0, 25)}...": ${articles.length} articles`);
-          } else {
-            console.warn(`Brave "${query.substring(0, 25)}..." failed: ${response.status}`);
-          }
-        } catch (queryError) {
-          console.warn(`Brave query error: ${queryError.message}`);
-        }
-      }
-    });
-    await Promise.all(workers);
-
-    // Deduplicate by URL
-    const seen = new Set();
-    const uniqueArticles = allArticles.filter(article => {
-      if (!article.url || seen.has(article.url)) return false;
-      seen.add(article.url);
-      return true;
-    });
-
-    // Filter old articles
-    const freshArticles = uniqueArticles.filter(a => !shouldFilterArticle(a));
-    console.log(`Brave total: ${freshArticles.length} fresh articles (filtered ${uniqueArticles.length - freshArticles.length} old)`);
-
-    return freshArticles.map((article) => ({
-      title: article.title || '',
-      url: article.url || '',
-      description: article.description || '',
-      age: article.age || '',
-      source: article.meta_url?.hostname || article.source || '',
-    }));
-  } catch (error) {
-    console.error('Brave Search API error:', error);
-    return [];
-  }
-}
-
-// ============================================================
-// COMBINED FETCH - RSS + Brave
-// ============================================================
-
-async function fetchAllNews(limit) {
-  // Fetch RSS and Brave in parallel where possible
-  // RSS is instant, Brave takes ~24 seconds due to rate limiting
-  const [rssArticles, braveArticles] = await Promise.all([
-    fetchRssFeeds(),
-    fetchBraveNews(limit),
-  ]);
-
-  // Combine all articles
-  const allArticles = [...rssArticles, ...braveArticles];
-
-  // Deduplicate by URL (in case of overlap)
+async function fetchAllNews() {
+  const rssArticles = await fetchRssFeeds();
   const seen = new Set();
-  const uniqueArticles = allArticles.filter(article => {
+  const uniqueArticles = rssArticles.filter((article) => {
     if (!article.url || seen.has(article.url)) return false;
     seen.add(article.url);
     return true;
   });
-
-  console.log(`COMBINED: ${uniqueArticles.length} unique articles (${rssArticles.length} RSS + ${braveArticles.length} Brave)`);
+  console.log(`COMBINED: ${uniqueArticles.length} unique articles (${rssArticles.length} RSS + 0 Brave; Brave removed S7)`);
   return uniqueArticles;
 }
 
@@ -640,7 +533,7 @@ exports.handler = async (event) => {
 
     // Fetch news + read DynamoDB context in parallel
     const [allArticles, seenEntries, pastArchiveTitles] = await Promise.all([
-      fetchAllNews(limit),
+      fetchAllNews(),
       readSeenTopics(),
       readPastArchiveTitles(7),
     ]);

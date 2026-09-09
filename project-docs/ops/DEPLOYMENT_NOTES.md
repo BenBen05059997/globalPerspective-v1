@@ -82,4 +82,4 @@ Prefer the script. The manual steps below document exactly what it does (and are
 - If the app's base path changes, update the `resolveBasename()` function in `App.jsx` and rebuild.
 - The `docs/config.js` file is never overwritten by the build process and must be updated manually when endpoints or Firebase config changes.
 - Backend (Lambda) changes are deployed separately via the AWS Console or `amplify push` — no frontend build required.
-- Preview mode (`?preview=1`) bypasses the "Under Construction" gate for gated routes, persisted in sessionStorage.
+- **Unlisted routes (no gate):** a route can ship to prod without being surfaced in nav/home — it simply isn't linked. As of 2026-09-09 the 2.5D situation map is live at `/map` this way (nothing links to it; `/` still renders the existing Home — the map-as-home swap is a separate, later step), with `/map-legacy` keeping the old `WorldMapV2`. There is **no** `?preview=1` / "Under Construction" gate in the current app (an earlier such gate was removed); do not rely on one.

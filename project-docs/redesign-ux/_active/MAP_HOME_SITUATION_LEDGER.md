@@ -216,6 +216,8 @@ Commit: —
 
 ## Stage S6 — Home swap, routes, cleanup
 
+> **Status 2026-09-09 — the map is now PROD-DEPLOYED as an unlisted route.** `./deploy.sh` + `git push` (commit `8872cb7`) shipped the built frontend: `https://globalperspective.net/map` is live (SPA deep-link returns 404 status but renders — same as `/economy`; verified). `/` still renders the **old Home** — the actual home-swap below (S6·T1) is still pending. So "source only / NOT deployed" notes on earlier rows (S4·T1, S5·T1, S5·T2) are superseded: those components are now live at `/map`. What remains for S6 is the swap itself + cleanup.
+
 ### S6 · T1 — `/` → SituationHome; `/map` redirect; nav; links; smoke-test; Worker pre-render for `/`
 Status: 🔭 todo
 Reads/refs: plan WS5, §9; `App.jsx`, `Home.jsx`, `Layout.jsx:67`, `BreakingDetailPage.jsx:106`, `scripts/smoke-test.mjs:106,423`; Worker pre-render code

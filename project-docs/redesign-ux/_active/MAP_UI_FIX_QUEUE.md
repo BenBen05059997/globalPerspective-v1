@@ -72,4 +72,12 @@ Scope: a PATCH, not a redesign — same palette/encoding/layout system as `MAP_H
 5. **Spread arcs + affected-country fill** treatments (selected vs unselected states).
 6. **"Since you last looked"** badge/treatment in rail + map.
 
-Execution order proposal: §0.2 + quick wins (#2,#5,#6,#7,#10,#12, polish) as one code pass → patch-design round → port its answers (#1,#3,#4 + arcs/fill/hero) → feed-quality gate (backend, parallel).
+Execution order — OPERATOR-CONFIRMED 2026-09-10:
+1. Deploy slice 1+2a to unlisted /map (per-deploy yes) so the click fix is verifiable in person.
+2. Slice 5 — feed-quality gate (backend; highest value).
+3. Slice 4 — tracker structured fields (tier_changed_at, coverage_ratio).
+4. Slice 2b — spread arcs + affected fill (build the iso3→centroid/polygon join).
+5. Slice 3 — globe fly-to spike → variant C (tilt fallback).
+6. S7 — Brave out of newsInvokeGemini (operator: "after the frontend").
+7. S6 — home swap LAST (operator: "should be the last since that changes our prod view"); own explicit yes.
+S3·T2 (thread depth) slots alongside/after S6 planning — pins need somewhere to go before or with the swap.

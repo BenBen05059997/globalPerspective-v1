@@ -15,25 +15,40 @@
 // correlated-error risk of same-model auditing.
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, ScanCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const CAPTURE_TABLE = process.env.INGEST_CAPTURE_TABLE || 'GlobalPerspectiveIngestCapture';
-const AUDIT_TABLE = process.env.IMPACT_AUDIT_TABLE || 'GlobalPerspectiveImpactAudit';
-const GDACS_TABLE = process.env.GDACS_TABLE || 'GlobalPerspectiveGdacsEvents';
-const GDELT_TABLE = process.env.GDELT_TABLE || 'GlobalPerspectiveGdeltConflict';
+const CAPTURE_TABLE = process.env.INGEST_CAPTURE_TABLE || 'GlobalPerspectiveIngestCapture'; // still DDB (T2b)
+const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
+// S8·T2 (2026-09-09): GDACS + GDELT read from S3 corpus (written by the ingest Lambdas), and this
+// audit writes its own verdict to S3 `audit/impact/` instead of the GlobalPerspectiveImpactAudit
+// table (dropped — it was write-only). IngestCapture stays on DDB until T2b.
+const GDACS_CORPUS_KEY = process.env.GDACS_CORPUS_KEY || 'corpus/gdacs/latest.json';
+const GDELT_CORPUS_PREFIX = process.env.GDELT_CORPUS_PREFIX || 'corpus/gdelt';
+const AUDIT_PREFIX = process.env.IMPACT_AUDIT_PREFIX || 'audit/impact';
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 const MISS_ALERT_THRESHOLD = Number(process.env.MISS_ALERT_THRESHOLD) || 2;
 const API_KEY = process.env.XAI_API_KEY; // legacy name — holds the DeepSeek key in prod
 const API_URL = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
 const MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash'; // deepseek-chat retired 2026-07-24; v4-flash is the current flash model (verified 2026-09-08)
-const AUDIT_TTL_DAYS = Number(process.env.AUDIT_TTL_DAYS) || 90;
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
   marshallOptions: { removeUndefinedValues: true },
 });
+const s3 = new S3Client({ region: REGION });
 const sns = new SNSClient({ region: REGION });
+
+async function s3GetJson(key) {
+  try {
+    const r = await s3.send(new GetObjectCommand({ Bucket: WORLD_BUCKET, Key: key }));
+    return JSON.parse(await r.Body.transformToString());
+  } catch (err) {
+    if (err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) return null;
+    throw err;
+  }
+}
 
 // Newest capture row (PK runId is an ISO timestamp; few rows → scan + sort).
 async function latestCapture() {
@@ -96,13 +111,13 @@ const DISASTER_WORDS = ['flood', 'quake', 'earthquake', 'cyclone', 'hurricane', 
 async function gdacsCoverageGap(chosen) {
   let events;
   try {
-    const out = await ddb.send(new ScanCommand({
-      TableName: GDACS_TABLE,
-      FilterExpression: 'alertLevel = :o OR alertLevel = :r',
-      ExpressionAttributeValues: { ':o': 'Orange', ':r': 'Red' },
-    }));
-    events = out.Items || [];
-  } catch (e) { console.warn('[gdacs-gap] scan failed:', e.message); return []; }
+    const doc = await s3GetJson(GDACS_CORPUS_KEY);
+    // S8·T2: full current event set from S3 (all levels); filter Orange/Red here, as the DDB scan
+    // used to do server-side. This is the current-active feed (what the tracker uses), so a disaster
+    // that already closed and dropped off the feed is no longer flagged — an intentional, honest
+    // narrowing vs the old TTL-accumulating scan.
+    events = (doc?.events || []).filter((e) => e.alertLevel === 'Orange' || e.alertLevel === 'Red');
+  } catch (e) { console.warn('[gdacs-gap] corpus read failed:', e.message); return []; }
 
   // recent only (last 5 days) — ignore stale/closed events
   const cutoff = new Date(Date.now() - 5 * 86400 * 1000).toISOString().slice(0, 10);
@@ -133,9 +148,13 @@ async function gdeltCoverageGap(chosen) {
   const cutoff = new Date(Date.now() - 2 * 86400 * 1000).toISOString().slice(0, 10); // last 2 days
   let rows;
   try {
-    const out = await ddb.send(new ScanCommand({ TableName: GDELT_TABLE }));
-    rows = (out.Items || []).filter((r) => String(r.day || '') >= cutoff);
-  } catch (e) { console.warn('[gdelt-gap] scan failed:', e.message); return []; }
+    // S8·T2: read today + yesterday's per-day corpus files (each overwritten last-run-wins, same as
+    // the old `day#country` DDB upserts) to preserve the 2-day window.
+    const today = new Date().toISOString().slice(0, 10);
+    const yday = new Date(Date.now() - 86400 * 1000).toISOString().slice(0, 10);
+    const docs = await Promise.all([...new Set([today, yday])].map((d) => s3GetJson(`${GDELT_CORPUS_PREFIX}/${d}.json`)));
+    rows = docs.flatMap((doc) => doc?.countries || []).filter((r) => String(r.day || '') >= cutoff);
+  } catch (e) { console.warn('[gdelt-gap] corpus read failed:', e.message); return []; }
 
   const hay = chosen.map((c) => `${c.title} ${(c.regions || []).join(' ')}`.toLowerCase()).join(' || ');
   const gaps = [];
@@ -186,10 +205,15 @@ exports.handler = async () => {
     gdacsGaps,
     gdeltGapCount: gdeltGaps.length,
     gdeltGaps,
-    ttl: Math.floor(Date.now() / 1000) + AUDIT_TTL_DAYS * 86400,
   };
-  try { await ddb.send(new PutCommand({ TableName: AUDIT_TABLE, Item: item })); }
-  catch (e) { console.warn('[impact-audit] write failed:', e.message); }
+  // S8·T2: the verdict is the audit trail, written to S3 (a dated object + a `latest` pointer).
+  // Retention is the bucket lifecycle, not a DDB TTL. Best-effort — a write failure must not stop
+  // the SNS alert below, which is the operator-facing signal.
+  try {
+    const body = JSON.stringify(item);
+    await s3.send(new PutObjectCommand({ Bucket: WORLD_BUCKET, Key: `${AUDIT_PREFIX}/${now.slice(0, 10)}.json`, Body: body, ContentType: 'application/json' }));
+    await s3.send(new PutObjectCommand({ Bucket: WORLD_BUCKET, Key: `${AUDIT_PREFIX}/latest.json`, Body: body, ContentType: 'application/json' }));
+  } catch (e) { console.warn('[impact-audit] S3 write failed:', e.message); }
 
   console.log(`[impact-audit] missed=${missed.length} gdacsGaps=${hardGaps.length} gdeltGaps=${gdeltGaps.length} verdict=${result.verdict} pattern=${result.dominant_pattern || ''}`);
 

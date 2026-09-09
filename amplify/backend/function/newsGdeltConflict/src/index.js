@@ -22,11 +22,20 @@ const MIN_MENTIONS = Number(process.env.GDELT_MIN_MENTIONS) || 10;
 const TOP_N = Number(process.env.GDELT_TOP_N) || 30;
 const TTL_DAYS = Number(process.env.GDELT_TTL_DAYS) || 10;
 
+const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
+const CORPUS_PREFIX = process.env.GDELT_CORPUS_PREFIX || 'corpus/gdelt';
+
 const ROOT_LABEL = { 17: 'Coerce', 18: 'Assault', 19: 'Fight/Combat', 20: 'Mass violence' };
 
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
   marshallOptions: { removeUndefinedValues: true },
 });
+
+let _s3;
+function s3() {
+  if (!_s3) { const { S3Client } = require('@aws-sdk/client-s3'); _s3 = new S3Client({ region: REGION }); }
+  return _s3;
+}
 
 async function latestExportUrl() {
   const res = await fetch(LASTUPDATE);
@@ -87,31 +96,43 @@ exports.handler = async () => {
   const ttl = Math.floor(Date.now() / 1000) + TTL_DAYS * 86400;
   const day = new Date().toISOString().slice(0, 10);
   const nowIso = new Date().toISOString();
-  let stored = 0;
-  for (const r of top) {
-    try {
-      await ddb.send(new PutCommand({
-        TableName: TABLE,
-        Item: {
-          conflictKey: `${day}#${r.country}`,
-          day,
-          country: r.country,
-          totalMentions: r.mentions,
-          eventCount: r.events,
-          minGoldstein: r.minGoldstein,
-          worstTone: Math.round(r.worstTone * 10) / 10,
-          topEvent: r.topEvent,
-          topEventMentions: r.topMentions,
-          sourceUrl: r.sourceUrl,
-          sourceFile: exportUrl,
-          ingestedAt: nowIso,
-          ttl,
-        },
-      }));
-      stored++;
-    } catch (e) { console.warn('[gdelt] put failed', r.country, e.message); }
+  const items = top.map((r) => ({
+    conflictKey: `${day}#${r.country}`,
+    day,
+    country: r.country,
+    totalMentions: r.mentions,
+    eventCount: r.events,
+    minGoldstein: r.minGoldstein,
+    worstTone: Math.round(r.worstTone * 10) / 10,
+    topEvent: r.topEvent,
+    topEventMentions: r.topMentions,
+    sourceUrl: r.sourceUrl,
+    sourceFile: exportUrl,
+    ingestedAt: nowIso,
+  }));
+  const stored = items.length;
+  // S8·T2 (2026-09-09): the GlobalPerspectiveGdeltConflict DDB mirror was DROPPED — its only reader
+  // (newsImpactAudit) now reads the per-day S3 corpus below. Events live only in `corpus/gdelt/<day>.json`.
+
+  // S8·T2 (2026-09-09): the impact audit reads GDELT from S3 instead of scanning the DDB mirror.
+  // One file per day, overwritten each run (last-run-wins, same as the DDB `day#country` upserts);
+  // the audit reads today + yesterday to preserve its 2-day window. Best-effort — never fatal.
+  let corpus = null;
+  try {
+    const key = `${CORPUS_PREFIX}/${day}.json`;
+    const { PutObjectCommand } = require('@aws-sdk/client-s3');
+    await s3().send(new PutObjectCommand({
+      Bucket: WORLD_BUCKET, Key: key,
+      Body: JSON.stringify({ day, generated_at: nowIso, count: items.length, countries: items }),
+      ContentType: 'application/json',
+    }));
+    corpus = { key, count: items.length };
+    console.log(`[gdelt][corpus] wrote ${key} (${items.length} countries)`);
+  } catch (e) {
+    console.error('[gdelt][corpus] write failed:', e.message);
+    corpus = { error: e.message };
   }
 
   console.log(`[gdelt] ${rows.length} rows → ${byCountry.size} conflict countries → stored top ${stored}`);
-  return { ok: true, stored, conflictCountries: byCountry.size };
+  return { ok: true, stored, conflictCountries: byCountry.size, corpus };
 };

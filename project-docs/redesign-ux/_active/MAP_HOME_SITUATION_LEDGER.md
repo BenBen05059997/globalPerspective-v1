@@ -264,14 +264,23 @@ Done-check: [x] code  [x] IAM  [x] docs  [x] CHANGES  [x] verify  [x] table drop
 Commit: (this branch `s8-t1-signals-s3`)
 
 ### S8 · T2 — GDACS/GDELT/ImpactAudit/IngestCapture mirrors → `corpus/` + `audit/`
-Status: 🔭 todo
+Status: ✅ T2a DONE 2026-09-09 (3 tables dropped, audit live off S3) · T2b deferred
 Gate: none (backend-only)
-Reads/refs: `newsGdacsIngest`, `newsGdeltConflict`, `newsInvokeGemini` capture harness, `newsImpactAudit`
-Changes: rewrite `newsImpactAudit` to read S3; stop the 1,100/day GDACS DDB mirror (S3 inbox `situations/inbox/gdacs-latest.json` already exists)
+Reads/refs: `newsGdacsIngest`, `newsGdeltConflict`, `newsInvokeGemini` capture harness, `newsImpactAudit`. Verified drop-gate: `GdacsEvents`/`GdeltConflict`/`ImpactAudit` each touched only by their writer + `newsImpactAudit`; no frontend refs. `IngestCapture` written by `newsInvokeGemini` (the live content pipeline), read only by `newsImpactAudit`.
+
+**T2a (this pass — does NOT touch the content pipeline):**
+- `newsGdacsIngest` += best-effort `corpus/gdacs/latest.json` (full current event array, `buildEventItem` shape). DDB mirror kept during dual-write, then stopped once audit is flipped + verified → drops the 1,100/day writes.
+- `newsGdeltConflict` += best-effort `corpus/gdelt/<day>.json` (top country aggregates). Needs S3 client + `WORLD_BUCKET`.
+- `newsImpactAudit` flips its GDACS + GDELT reads to S3 corpus (today+yesterday for GDELT to preserve the 2-day window), and writes its own output to `audit/impact/<date>.json` + `audit/impact/latest.json` instead of the `ImpactAudit` DDB table. **Still reads `IngestCapture` from DDB** (unchanged).
+- Note: GDACS corpus is the current-active feed (what the tracker already uses) vs the old TTL-accumulating scan — a small, honest narrowing (drops closed-but-recent events); documented in the audit.
+- IAM: `newsGdacsIngest` +PutObject `corpus/gdacs/*`; `newsGdeltConflict` +PutObject `corpus/gdelt/*`; `newsImpactAudit` +GetObject `corpus/*` +PutObject `audit/impact/*` +scoped ListBucket (missing key → 404 not 403).
+- Verify: dual-write a cycle (or invoke producers once), invoke audit, confirm same missed/gap counts reading from S3; then stop GDACS DDB mirror + drop `GdacsEvents`, `GdeltConflict`, `ImpactAudit`.
+
+**T2b (deferred — touches `newsInvokeGemini`, the live editorial pipeline):** migrate `IngestCapture` → `audit/ingest-capture/latest.json` (add a best-effort S3 write to the already-fenced `captureIngestion`), flip the audit's capture read to S3, then drop `IngestCapture`. Held out of T2a so a 344-write/day table doesn't force a content-pipeline deploy in the same change. Only 344 writes/day — low urgency.
 Docs to update: `ARCHITECTURE.md` · `DATA_STRATEGY.md` · `CHANGES.md`
 Verify / exit: "nothing reads the table" (grep + CloudWatch) before each `delete-table`
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
+Done-check (T2a): [x] gdacs corpus  [x] gdelt corpus  [x] audit flip+output  [x] IAM  [x] verify (audit ran off S3: missed 7, gdeltGap Panama)  [x] 3 tables dropped (GdacsEvents 2120 / GdeltConflict 274 / ImpactAudit 53 items)  [x] docs  [x] CHANGES
+Commit: (branch `s8-t2-corpus-audit`)
 
 ### S8 · T3 — PredictionLog → `predictions/` (+ Athena)
 Status: 🔭 todo

@@ -24,6 +24,7 @@ const TTL_DAYS = Number(process.env.GDACS_TTL_DAYS) || 30;
 const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const INBOX_PREFIX = process.env.SITUATIONS_INBOX_PREFIX || 'situations/inbox';
 const INBOX_DISABLED = process.env.SITUATIONS_INBOX_DISABLED === 'true';
+const CORPUS_PREFIX = process.env.GDACS_CORPUS_PREFIX || 'corpus/gdacs';
 
 // Lazy clients so pure helpers (and tests) load without the AWS SDK.
 let _ddb, _s3;
@@ -91,6 +92,18 @@ async function writeInboxSnapshot(feats, nowIso) {
   return { key, count: events.length };
 }
 
+// S8·T2 (2026-09-09): the impact audit reads the current disaster set from S3 instead of scanning
+// the GdacsEvents DDB mirror. Full current event array, SAME field shape as the DDB items, at a
+// stable pointer overwritten each run — so the audit's Orange/Red + recency filter works unchanged.
+// Best-effort: an S3/IAM failure must never fail the events mirror (identical posture to the inbox).
+async function writeCorpusSnapshot(items, nowIso) {
+  const body = JSON.stringify({ source: 'gdacs', observed_at: nowIso, count: items.length, events: items });
+  const key = `${CORPUS_PREFIX}/latest.json`;
+  const { PutObjectCommand } = require('@aws-sdk/client-s3');
+  await s3().send(new PutObjectCommand({ Bucket: WORLD_BUCKET, Key: key, Body: body, ContentType: 'application/json' }));
+  return { key, count: items.length };
+}
+
 exports.handler = async () => {
   let feats;
   try {
@@ -105,9 +118,9 @@ exports.handler = async () => {
 
   const ttl = Math.floor(Date.now() / 1000) + TTL_DAYS * 86400;
   const now = new Date().toISOString();
-  let stored = 0;
   let withGeo = 0;
   const byLevel = { Green: 0, Orange: 0, Red: 0 };
+  const items = [];
 
   for (const f of feats) {
     const p = f.properties || {};
@@ -115,10 +128,23 @@ exports.handler = async () => {
     if (p.alertlevel in byLevel) byLevel[p.alertlevel]++;
     const item = buildEventItem(f, now, ttl);
     if (item.lat !== null) withGeo++;
-    try { await ddb().send(new (ddbCmd('PutCommand'))({ TableName: TABLE, Item: item })); stored++; }
-    catch (e) { console.warn('[gdacs] put failed', item.eventKey, e.message); }
+    items.push(item);
   }
-  console.log(`[gdacs] stored ${stored}/${feats.length} events (${withGeo} with coordinates) | levels=${JSON.stringify(byLevel)}`);
+  const stored = items.length;
+  // S8·T2 (2026-09-09): the GlobalPerspectiveGdacsEvents DDB mirror was DROPPED — its only reader
+  // (newsImpactAudit) now reads the S3 corpus below, and the tracker reads the S3 inbox. This used
+  // to PutItem each event (~1,100 writes/day). The events now live only in `corpus/gdacs/latest.json`.
+  console.log(`[gdacs] ${stored}/${feats.length} events (${withGeo} with coordinates) | levels=${JSON.stringify(byLevel)}`);
+
+  // S8·T2: mirror the full current set to S3 for the impact audit (best-effort, never fatal).
+  let corpus = null;
+  try {
+    corpus = await writeCorpusSnapshot(items, now);
+    console.log(`[gdacs][corpus] wrote ${corpus.key} (${corpus.count} events)`);
+  } catch (e) {
+    console.error('[gdacs][corpus] snapshot failed:', e.message);
+    corpus = { error: e.message };
+  }
 
   let inbox = null;
   if (INBOX_DISABLED) {
@@ -134,7 +160,7 @@ exports.handler = async () => {
     }
   }
 
-  return { ok: true, stored, withGeo, byLevel, inbox };
+  return { ok: true, stored, withGeo, byLevel, inbox, corpus };
 };
 
 exports._internal = { buildEventItem, writeInboxSnapshot };

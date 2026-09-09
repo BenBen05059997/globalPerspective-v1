@@ -1,4 +1,4 @@
-import{c as N}from"./expression-Bl_GL2tO.js";import{g as f,c as v,r as m,f as k,A as M,d as V,e as L,b as S,G as z,h as y,i as R,C as $,j as _}from"./SituationMap3D-BjiOZ2_Z.js";import{k as xe}from"./SituationMap3D-BjiOZ2_Z.js";import"./index-CiOu7Y9f.js";const B=`fn arithmetic_add(x: {TYPE}, y: {TYPE}) -> {TYPE} {
+import{c as N}from"./expression-Bl_GL2tO.js";import{g as f,c as v,r as m,f as k,A as M,d as V,e as L,b as S,G as z,h as y,i as R,C as $,j as _}from"./SituationMap3D-DLPWJ0Vp.js";import{k as xe}from"./SituationMap3D-DLPWJ0Vp.js";import"./index-DnKBQKBi.js";const B=`fn arithmetic_add(x: {TYPE}, y: {TYPE}) -> {TYPE} {
   return x + y;
 }
 

@@ -81,3 +81,11 @@ Execution order — OPERATOR-CONFIRMED 2026-09-10:
 6. S7 — Brave out of newsInvokeGemini (operator: "after the frontend").
 7. S6 — home swap LAST (operator: "should be the last since that changes our prod view"); own explicit yes.
 S3·T2 (thread depth) slots alongside/after S6 planning — pins need somewhere to go before or with the swap.
+
+## 5 · Slice status (2026-09-10)
+
+- **Slice 1+2a** ✅ DONE + DEPLOYED to unlisted /map (commit `41a3e3f`). Click bug fixed (pickingRadius + static escalating halo; 4/4 headless clicks), manual tour, mobile pass, since-you-last-looked.
+- **Slice 2b** ✅ DONE (commit `e641d10`, source only, not yet deployed). Spread arcs + affected-country fill as a selection state; new `utils/countryGeo.js` iso3→geometry join. Browser-verified on a 5-country situation.
+- **Slice 3 (globe)** — SPIKE DONE, decision needed. `_GlobeView`/`_GlobeController` render our land + dots + halos + anchored callout **cleanly, zero errors** (screenshot `globe-hero-spike.png`). BUT: deck.gl cannot smoothly morph between MapView and GlobeView (no cross-view-type interpolation), so the designer's **variant C** (flat overview → animated globe fly-to) is **not buildable as a smooth transition**. The real choice is therefore: (A) **globe as the whole view** (striking, but ~40% of pins hidden behind the horizon at any orientation — the false-lede risk the designer quantified; rotatable), vs keeping the current **flat overview** (all pins legible). A hard-cut flat→globe swap on select is possible but jarring (view remount flicker). **Operator decision required** before building. Spike code was reverted; /map stays flat.
+- **Slice 4** (tracker `tier_changed_at`/`coverage_ratio`), **Slice 5** (feed-quality gate) — backend, paused for a thresholds discussion (operator's call 2026-09-10).
+- **S7** Brave-out, **S6** home swap — after the frontend, home swap last.

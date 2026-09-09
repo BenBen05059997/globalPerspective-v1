@@ -282,15 +282,15 @@ Verify / exit: "nothing reads the table" (grep + CloudWatch) before each `delete
 Done-check (T2a): [x] gdacs corpus  [x] gdelt corpus  [x] audit flip+output  [x] IAM  [x] verify (audit ran off S3: missed 7, gdeltGap Panama)  [x] 3 tables dropped (GdacsEvents 2120 / GdeltConflict 274 / ImpactAudit 53 items)  [x] docs  [x] CHANGES
 Commit: (branch `s8-t2-corpus-audit`)
 
-### S8 · T3 — PredictionLog → `predictions/` (+ Athena)
-Status: 🔭 todo
-Gate: operator OK to edit `newsSensitiveData` (proxy is the live site's spine — risk gate)
-Reads/refs: proxy `prediction_track_record`/`prediction_snapshot`; `newsPredictionResolver`; `newsSignals` `/v1/track-record`
-Changes: dual-write from `NewsProjectInvokeAgentLambda` + `newsPredictionResolver`; daily `predictions/latest.json`; flip proxy `prediction_track_record`/`prediction_snapshot` and `newsSignals` `/v1/track-record` to S3; removes the 5,478-item Scan per `/track-record` load (perf + cost + Athena calibration)
-Docs to update: `ARCHITECTURE.md` · `DATA_STRATEGY.md` · `CHANGES.md`
-Verify / exit: "nothing reads the table" before drop; `/track-record` load time improves
-Done-check: [ ] code  [ ] docs  [ ] CHANGES  [ ] verify
-Commit: —
+### S8 · T3 — PredictionLog track-record aggregate → S3 (read-optimization, table STAYS)
+Status: ✅ DONE 2026-09-09
+Gate: operator OK to edit `newsSensitiveData` — granted; done with a live-Scan fallback so the proxy edit is zero-risk.
+**Reframed on inspection:** `PredictionLog` is a legitimately **mutable per-record store** (resolver updates verdicts in place; `prediction_snapshot` does point Queries) — NOT a drop candidate. What was expensive was the full Scan on every `/track-record` load (12.5k reads/day). So this is a read-optimization, not a table migration.
+Changes: new `newsPredictionsSnapshot` Lambda (`rate(30 min)`, role `newsPredictionsSnapshot-role`) Scans once → writes `predictions/track_record.json`; proxy `prediction_track_record` serves the cache with live-Scan fallback (+GetObject `predictions/*`). Pure `trackRecord.js` (11 tests) byte-verified equal to the proxy's inline compute (v1 3073, resolved 122, brier 0.154, calibration + recent[] identical). `prediction_snapshot` + writers + table stay on DDB. `newsSignals` `/v1/track-record` still Scans (0 consumers) — optional later.
+Docs to update: `ARCHITECTURE.md` ✅ · `DATA_STRATEGY.md` ✅ · `CHANGES.md` ✅
+Verify / exit: builder output == live proxy output (byte-identical); proxy now serves cache with 0 Scan — both verified
+Done-check: [x] builder+tests  [x] proxy flip+fallback  [x] IAM  [x] schedule  [x] verify  [x] docs  [x] CHANGES
+Commit: (branch `s8-t3-track-record-cache`)
 
 ### S8 · T4 — Markets snapshots + ClientErrors
 Status: 🔭 todo

@@ -2,10 +2,23 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { capForTier, dedupeByAsOf } = require('./lib');
 const { assembleDossier } = require('./dossier');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
+
+// S8·T3: the /track-record aggregate is precomputed to S3 by newsPredictionsSnapshot every 30 min,
+// so this proxy serves a cached object instead of Scanning ~5.5k PredictionLog items per page load.
+const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
+const TRACK_RECORD_KEY = process.env.TRACK_RECORD_KEY || 'predictions/track_record.json';
+let _s3;
+async function getTrackRecordCache() {
+  if (!_s3) _s3 = new S3Client({ region: REGION });
+  const r = await _s3.send(new GetObjectCommand({ Bucket: WORLD_BUCKET, Key: TRACK_RECORD_KEY }));
+  const doc = JSON.parse(await r.Body.transformToString());
+  return doc && doc.data ? doc.data : null;
+}
 
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const TOPICS_ITEM_ID = process.env.TOPICS_CACHE_ITEM_ID || 'latest';
@@ -949,6 +962,18 @@ exports.handler = async (event) => {
     }
 
     if (action === 'prediction_track_record') {
+      // S8·T3: serve the precomputed aggregate from S3 (newsPredictionsSnapshot writes it every
+      // 30 min). Only if the cache is missing/unreadable do we fall through to the live Scan below,
+      // so correctness is preserved even if the builder hasn't run yet.
+      try {
+        const cached = await getTrackRecordCache();
+        if (cached) {
+          return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: cached }) };
+        }
+      } catch (e) {
+        console.warn('prediction_track_record cache miss, falling back to scan:', e.message);
+      }
+
       const client = getDynamoClient();
       try {
         const items = [];

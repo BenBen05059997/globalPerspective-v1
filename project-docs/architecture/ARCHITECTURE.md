@@ -794,6 +794,7 @@ Four Lambdas **deployed and ENABLED in prod** whose source lived only on the unm
 | **`newsImpactAudit`** | `TriggerImpactAudit` `cron(0 9 * * ? *)` | 120s / 256MB | Coverage dead-man's-switch — DeepSeek audit of whether high-impact events were MISSED; SNS→`GlobalPerspectiveAlerts` when misses ≥ `MISS_ALERT_THRESHOLD=2`. **S8·T2 (2026-09-09): now fully S3, zero DynamoDB** — reads the selector capture from `audit/ingest-capture/latest.json` (T2b) and GDACS/GDELT from `corpus/gdacs/latest.json`+`corpus/gdelt/<day>.json` (T2a); writes its verdict to `audit/impact/<date>.json`+`latest.json`. |
 | **`newsGdacsIngest`** | `TriggerGdacsIngest` **`rate(20 minutes)`** (2026-09-08) | 120s / 256MB | GDACS disaster-alert ingest; **the deterministic situation opener** — writes one observation snapshot of current Orange/Red events to S3 `situations/inbox/gdacs-latest.json` (NO LLM; holds no state). **S8·T2 (2026-09-09):** the `GlobalPerspectiveGdacsEvents` DDB mirror was **dropped** (~1,100 writes/day) — the full current event set now goes to S3 `corpus/gdacs/latest.json` for the impact audit. Fold helpers in `situations-core.js`. See `DATA_STRATEGY.md` + `MAP_HOME_SITUATION_PLAN.md`. |
 | **`newsGdeltConflict`** | `TriggerGdeltConflict` `cron(0 */6 * * ? *)` | 120s / 512MB | GDELT conflict-event ingest. **S8·T2 (2026-09-09):** the `GlobalPerspectiveGdeltConflict` DDB mirror was **dropped** — per-day country aggregates now go to S3 `corpus/gdelt/<day>.json` for the impact audit. |
+| **`newsPredictionsSnapshot`** (NEW 2026-09-09, S8·T3) | `TriggerPredictionsSnapshot` `rate(30 minutes)` | 120s / 256MB | Precomputes the `/track-record` aggregate — Scans `PredictionLog` once and writes `predictions/track_record.json`, so the `newsSensitiveData` proxy `prediction_track_record` serves a cached object (with live-Scan fallback) instead of Scanning ~5.5k items on every page load (was 12.5k reads/day). Pure aggregation in `trackRecord.js` (11 tests), byte-verified equal to the proxy's inline computation. `PredictionLog` **stays** in DynamoDB (mutable per-record store). |
 
 ---
 
@@ -1052,6 +1053,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `TriggerErrorDigest` | `cron(15 0/6 * * ? *)` | newsErrorDigest (#19) |
 | `TriggerSignalsBuild` | `cron(0 10 * * ? *)` | newsSignals (Signal-API — deployed to prod; source merged to `main` 2026-08-01) |
 | `TriggerImpactAudit` | `cron(0 9 * * ? *)` | newsImpactAudit (impact-first — source merged to `main` 2026-08-01) |
+| `TriggerPredictionsSnapshot` | `rate(30 minutes)` | newsPredictionsSnapshot (S8·T3 — precomputes `predictions/track_record.json`) |
 | `TriggerGdacsIngest` | `rate(20 minutes)` (was `cron(0 */6 * * ? *)`, 2026-09-08) | newsGdacsIngest (GDACS ingest + situation opener) |
 | `TriggerSituationTracker` | `rate(30 minutes)` (2026-09-08) | newsSituationTracker (situation folder; **LIVE** since S2·T2) |
 | `TriggerGdeltConflict` | `cron(0 */6 * * ? *)` | newsGdeltConflict (GDELT ingest — source merged to `main` 2026-08-01) |

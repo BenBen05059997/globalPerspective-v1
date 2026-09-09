@@ -54,6 +54,7 @@ Nothing else goes in DynamoDB. A new table needs an explicit exception recorded 
 | `corpus/gdelt/<day>.json` (S8·T2, DONE 2026-09-09) | `newsGdeltConflict` | each run (overwrite per day) | `newsImpactAudit` |
 | `audit/impact/<date>.json`, `audit/impact/latest.json` (S8·T2, DONE 2026-09-09) | `newsImpactAudit` | daily | audit trail / operator |
 | `audit/ingest-capture/latest.json` (S8·T2b, DONE 2026-09-09) | `newsInvokeGemini` | each generation (every 4h) | `newsImpactAudit` |
+| `predictions/track_record.json` (S8·T3, DONE 2026-09-09) | `newsPredictionsSnapshot` | `rate(30 min)` | `newsSensitiveData` proxy (`prediction_track_record`) — precomputed aggregate; PredictionLog DDB stays as the mutable store |
 
 IAM: one inline policy per Lambda, `s3:PutObject` scoped to its own prefix(es) only; readers get `s3:GetObject` on what they read (+ a `ListBucket` scoped to their read prefixes so a missing object returns 404, not 403). The Worker's credentials are read-only on `world/*`, `situations/state/*`, `stories/state/*`.
 
@@ -98,7 +99,7 @@ Lifecycle additions: `signals/snapshots/` → Glacier IR 30d, expire 365d (S8·T
 | `Signals` | → `signals/latest.json` + `signals/snapshots/`; Function URL serves from S3; **NEVER exposed via Worker `/data/*`** | **S8·T1 — approved 2026-09-09, not started** (gate: none, 0 consumers) |
 | ~~`GdacsEvents`, `GdeltConflict`, `ImpactAudit`~~ | **DONE 2026-09-09** → `corpus/gdacs/latest.json`, `corpus/gdelt/<day>.json`, `audit/impact/`; `newsImpactAudit` reads corpus + writes verdict to S3; all three tables dropped | S8·T2a ✅ |
 | ~~`IngestCapture`~~ | **DONE 2026-09-09** → `audit/ingest-capture/latest.json`; `captureIngestion` in `newsInvokeGemini` writes S3 (best-effort, fully fenced); `newsImpactAudit` reads it; table dropped | S8·T2b ✅ |
-| `GlobalPerspectivePredictionLog` ("immutable forecast record") | → `predictions/` in S3; calibration via Athena; flips proxy `prediction_track_record`/`prediction_snapshot` + `newsSignals` `/v1/track-record` | S8·T3 (gate: operator OK to edit `newsSensitiveData`) |
+| `GlobalPerspectivePredictionLog` | **STAYS in DynamoDB** — read-optimization only (S8·T3, DONE 2026-09-09). Reframed on inspection: it is a legitimately **mutable per-record store** (the resolver updates trigger verdicts in place; `prediction_snapshot` does point Queries) — wrong to force into one JSON. What was expensive was the **full Scan on every `/track-record` load** (12.5k reads/day), so `newsPredictionsSnapshot` (new, `rate(30 min)`) precomputes the aggregate to `predictions/track_record.json` and the proxy `prediction_track_record` serves that with a live-Scan fallback. `prediction_snapshot` + the writers stay on DDB. (`newsSignals` `/v1/track-record` still Scans but has 0 consumers — optional later.) | S8·T3 ✅ |
 | `Markets` | → `markets/YYYY/MM/DD/HH.json` snapshots | S8·T4 (same proxy gate) |
 | `ClientErrors` | → append-only `logs/errors/YYYY/MM/DD.jsonl`; digest reads files | S8·T4 |
 | `BreakingAlerts` | content, but `review.js` mutates → move after review flow becomes inbox events; folds into stage S3·T2 | S8·T5, later |

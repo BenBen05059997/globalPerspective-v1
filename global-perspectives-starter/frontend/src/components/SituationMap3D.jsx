@@ -1,9 +1,11 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
 import { MapView, WebMercatorViewport, FlyToInterpolator } from '@deck.gl/core';
-import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, ScatterplotLayer, ArcLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
+import { geoCentroid } from 'd3-geo';
 import topoData from '../assets/countries-110m.json';
+import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '../utils/countryGeo.js';
 
 // Hue = kind of crisis, as RGB. oklch(0.70 0.155 h) normalised so no axis reads
 // as "worse" than another at equal tier (DATA_STRATEGY §5 / map design target).
@@ -20,6 +22,16 @@ const TIER_HALO = { elevated: 15, high: 24 };                              // so
 const TIER_CORE_ALPHA = { low: 205, moderate: 235, elevated: 255, high: 255 };
 
 const landFeatures = topojson.feature(topoData, topoData.objects.countries).features;
+// ISO-3 → country geometry / centroid, for spread arcs + affected-country fill (slice 2b).
+const NUM_TO_FEATURE = {};
+const NUM_TO_CENTROID = {};
+for (const f of landFeatures) { NUM_TO_FEATURE[f.id] = f; NUM_TO_CENTROID[f.id] = geoCentroid(f); }
+function iso3Centroid(iso3) {
+  const num = ISO3_TO_NUM[iso3];
+  const c = num ? NUM_TO_CENTROID[num] : ISO3_CENTROID_FALLBACK[iso3];
+  return c && Number.isFinite(c[0]) ? c : null;
+}
+function iso3Feature(iso3) { const num = ISO3_TO_NUM[iso3]; return num ? NUM_TO_FEATURE[num] : null; }
 
 // Flat overview (pitch 0). Variant C of the patch design: the globe is the click/tour fly-to
 // (S5.5·T slice 3); the overview stays flat so no situation hides behind a horizon.
@@ -78,6 +90,23 @@ export default function SituationMap3D({
   // reduceMotion kept for future globe-view motion; the map itself is now static (see below).
   void reduceMotion;
 
+  // Spread arcs + affected fill are a SELECTION STATE, never a base layer (the spaghetti answer):
+  // they exist only while one situation is focused. Origin → each affected-country centroid.
+  const selectionGeo = useMemo(() => {
+    const s = focusId && situations.find((x) => x.id === focusId && x.centroid);
+    if (!s) return null;
+    const rgb = AXIS_RGB[s.axis] || AXIS_RGB_FALLBACK;
+    const origin = [s.centroid.lon, s.centroid.lat];
+    const originNum = (s.iso3_affected || []).map((c) => ISO3_TO_NUM[c]).find(Boolean);
+    const fills = []; const arcs = []; const dests = [];
+    for (const iso of (s.iso3_affected || [])) {
+      const feat = iso3Feature(iso); if (feat && ISO3_TO_NUM[iso] !== originNum) fills.push(feat);
+      const c = iso3Centroid(iso);
+      if (c && Math.hypot(c[0] - origin[0], c[1] - origin[1]) > 1.5) { arcs.push({ from: origin, to: c }); dests.push(c); }
+    }
+    return { rgb, fills, arcs, dests };
+  }, [focusId, situations]);
+
   useEffect(() => {
     if (!wrapRef.current) return undefined;
     const ro = new ResizeObserver((entries) => {
@@ -126,12 +155,16 @@ export default function SituationMap3D({
       id: 'core', data: active, pickable: true, radiusUnits: 'pixels',
       getPosition: pos,
       getRadius: (s) => (TIER_R[s.tier] || 3.4) * (s.id === focusId ? 1.25 : 1),
-      getFillColor: (s) => [...hue(s), TIER_CORE_ALPHA[s.tier] || 205],
+      // When a situation is focused, dim every other pin ~40% so the selection reads.
+      getFillColor: (s) => {
+        const a = TIER_CORE_ALPHA[s.tier] || 205;
+        return [...hue(s), focusId && s.id !== focusId ? Math.round(a * 0.4) : a];
+      },
       stroked: true, lineWidthUnits: 'pixels',
-      getLineColor: (s) => (s.tier === 'high' || s.id === focusId ? [255, 255, 255, 235] : [...hue(s), 0]),
+      getLineColor: (s) => (s.tier === 'high' || s.id === focusId ? [255, 255, 255, focusId && s.id !== focusId ? 90 : 235] : [...hue(s), 0]),
       getLineWidth: (s) => (s.id === focusId ? 2 : (s.tier === 'high' ? 1.25 : 0)),
       onClick: (info) => info.object && onSelect && onSelect(info.object.id),
-      updateTriggers: { getRadius: [focusId], getLineColor: [focusId], getLineWidth: [focusId] },
+      updateTriggers: { getRadius: [focusId], getFillColor: [focusId], getLineColor: [focusId], getLineWidth: [focusId] },
     }),
     // "New since your last visit" — a hollow white ring around new pins (design 3f).
     new ScatterplotLayer({
@@ -143,8 +176,35 @@ export default function SituationMap3D({
     }),
   ], [active, focusId, newIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Order: land, halo, escalating, new-marker, core (core last = top for picking).
-  const layers = [baseLayers[0], baseLayers[1], baseLayers[2], baseLayers[4], baseLayers[3]];
+  // Selection-state layers (only when a situation is focused): affected-country tint, spread arcs,
+  // hollow destination rings. Drawn under the pins (fill/arcs) and beside them (dest rings).
+  const selectionLayers = useMemo(() => {
+    if (!selectionGeo) return [];
+    const { rgb, fills, arcs, dests } = selectionGeo;
+    const out = [];
+    if (fills.length) out.push(new GeoJsonLayer({
+      id: 'affected-fill', data: { type: 'FeatureCollection', features: fills },
+      stroked: true, filled: true, getFillColor: [...rgb, 24], getLineColor: [...rgb, 90],
+      lineWidthMinPixels: 1, pickable: false,
+    }));
+    if (arcs.length) out.push(new ArcLayer({
+      id: 'spread-arcs', data: arcs, getSourcePosition: (d) => d.from, getTargetPosition: (d) => d.to,
+      getSourceColor: [...rgb, 210], getTargetColor: [...rgb, 40], getWidth: 1.5, pickable: false,
+    }));
+    if (dests.length) out.push(new ScatterplotLayer({
+      id: 'dest-rings', data: dests, getPosition: (d) => d, radiusUnits: 'pixels', getRadius: 5,
+      filled: false, stroked: true, getLineColor: [...rgb, 200], getLineWidth: 1.2, lineWidthUnits: 'pixels', pickable: false,
+    }));
+    return out;
+  }, [selectionGeo]);
+
+  // Order: land, affected-fill, arcs, halo, escalating, new-marker, core (top=picking), dest-rings.
+  const layers = [
+    baseLayers[0],
+    ...selectionLayers.filter((l) => l.id !== 'dest-rings'),
+    baseLayers[1], baseLayers[2], baseLayers[4], baseLayers[3],
+    ...selectionLayers.filter((l) => l.id === 'dest-rings'),
+  ];
 
   const getTooltip = useCallback(({ object }) => {
     if (!object || !object.verb_label) return null;

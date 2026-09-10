@@ -235,8 +235,17 @@ Operator review of the deployed port found pins unclickable; a Sonnet audit foun
 ### S5.5 · T2 — On-map side-flag leader labels (P5) — ⏸ deferred
 The design's flight-tracker flag stack for colliding pins. Deferred as its own pass: it's the one genuinely-custom screen-space collision piece, the smaller dots + the rail + the selection-state arcs already carry the labels/relationships, and a fragile version would look worse than none. Interim (hover tooltip + rail + arcs) is acceptable.
 
-### S5.5 · T3 — Feed quality gate (backend) — ⏸ open, HIGH VALUE
-The port surfaced that the feed itself is the bigger noise source: the classifier/tracker **over-tiers single-outlet stories to "high"** (live showed 18 "high", many at 1 outlet) and keeps **stale "Closed — inactive" / "Event no longer current in GDACS" rows** as active. This is a `newsSituationIngest` classifier gate + a `newsSituationTracker` drop-dead-situations tweak — its own focused, diff-before-edit backend pass. Highest-value next step for the "less noise" goal; independent of the design.
+### S5.5 · T3 — Feed quality + tracker correctness (backend "slice 5" bundle) — ⏸ open, HIGH VALUE, scope RE-BASED on the 2026-09-10 audit
+Status: ⏸ awaiting operator scope decision (bundle vs cap-only first). **No code changed yet.**
+The 2026-09-10 situation-pipeline audit (`SITUATION_BACKEND_AUDIT.md` — every claim live-verified) re-based this task: the original "over-tiers to high" framing was a symptom; the root cause is **storyId fragmentation** (per-article `axis#iso3#entity-slug` keys; one live event observed split across 6 storyIds), which drives the churn (65 of 118 bundle rows closed; 6-16 closes per 30-min sweep), dilutes outlet corroboration, and fakes escalation. Candidate work in causal order (audit §3):
+1. **Story identity stabilization** (`newsSituationIngest` clustering: entity-slug normalization/aliasing, prefer most-common entity across the cluster) — biggest single win.
+2. **Corroboration cap on tier** (`situations-core.js buildStorySituation`: 1 outlet→moderate max, 2→elevated, ≥3→high; GDACS exempt — proven disjoint). Keep the line-218 OR map-filter.
+3. **Source-aware cooling** (`coolSituation`: news vocabulary, no `gdacs_*` splicing — the "Event no longer current in GDACS" leak is live on news rows; keep pre-cool tier through grey-out).
+4. **Escalation hysteresis** (velocity≥1.5 only with prev outlets≥2; ignore `spread_new_iso3` when prev was null; cooldown on repeat `raised`).
+5. **Suppression ≠ cooling** (one-event-one-pin skip must not push an open news situation into the close path) + **reopen handling** (closed prev → fresh `opened_at`, `emerging`, explicit change).
+6. **Slice 4 rider:** emit `coverage_ratio` (frontend already reads it — live bug: long-tracked situations show "new") + `tier_changed_at` (both builders + `summarize()`); upgrades since-you-last-looked.
+7. **Ops riders** (env/console, standing auth): lifecycle expirations for `situations/history`+`archive`; log the 420-article-cap drop count; `stale` flag to consider `sources.news`.
+Constraints: `situations-core.js` byte-identical in BOTH dirs (gdacs + tracker); zip-diff both Lambdas before edit; thresholds as env-overridable knobs; success metric = tracker CloudWatch churn counts falling + closed-row share dropping.
 
 ---
 
@@ -340,6 +349,39 @@ Commit: —
 Status: 🔭 todo (last — after S6; everything reads these)
 Notes: dual-write across ~8 writers, flip ~20 proxy actions, retire
 Commit: —
+
+---
+
+## Stage S9 — Fleet hygiene & retirements (added 2026-09-10 from `project-docs/architecture/BACKEND_AUDIT_2026-09-10.md`)
+
+> Source: the whole-backend audit (every Lambda read + live-verified). All items below are **planned only — nothing executed**; each needs its own operator yes. Independent of S5.5-S8 ordering; can ride along whenever we're inside the relevant Lambda.
+
+### S9 · T1 — Retire `linkedInAutoPost` (duplicate LinkedIn poster)
+Status: 🔭 todo (operator yes needed — disables a live posting cron)
+Why: both it and `newsPostLinkedin` post to the same account with disjoint dedup namespaces (`POSTED#LINKEDIN_AUTO#` vs `POSTED#LINKEDIN#`) → duplicate-post risk. `newsPostLinkedin` is the richer, actively-developed path.
+Changes: disable Scheduler `LinkedinThreadsDaily` → observe a week → delete function + dir. Optionally port its thread/country-briefing post format into `newsPostLinkedin` as a post type first.
+Verify / exit: no duplicate posts; posting cadence unchanged from `newsPostLinkedin` alone.
+
+### S9 · T2 — Delete `newsStripeWebhook` dir + strip dev.to dead code
+Status: 🔭 todo (low risk — dead source only)
+`newsStripeWebhook` is UNDEPLOYED (and actually a Paddle handler). `newsPostDevTo`'s dev.to publisher/OpenRouter/dedup helpers + `buildDailySummary.js` are unreachable since 2026-05-18 (function is purely the /daily brief generator). Also strip `newsBreakingAlert`'s `verifyStory()` stub note and `NewsProjectInvokeAgentLambda`'s dead HTTP branch at next touch.
+
+### S9 · T3 — Dead env-var cleanup (merge-don't-clobber, one function at a time)
+Status: 🔭 todo (careful env writes — each a bare single `aws` command, fetch-merge-write)
+Targets (audit finding #8): `BRAVE_SEARCH_API_KEY`/`BRAVE_CONCURRENCY` on `newsInvokeGemini-dev`; `XAI_API_KEY_BACKUP` (≥5 functions, referenced by zero); `OPENAI_API_KEY` where unused; `NEWS_CACHE_TABLE` (newsEconomicQuality); `IMPACT_AUDIT_TABLE`/`INGEST_CAPTURE_TABLE` (newsImpactAudit); `DEVTO_API_KEY` (newsPostDevTo); the 4 ghost social-platform secrets on `newsPostLinkedin` — but FIRST zip-diff `newsPostLinkedin` to settle whether deployed code still uses them (unresolved audit question).
+
+### S9 · T4 — Operational decisions (no code)
+Status: 🔭 awaiting operator
+- **Breaking broadcast:** 0 `confirmed` rows ever — run `breaking/review.js` as a habit, add confidence-gated auto-confirm, or disable the 15-min `TriggerBreakingEmailSend` poll.
+- **Prediction backlog:** 37,021 pending triggers vs 40/day resolver cap — triage rule (resolve only ≤N-weeks-old, disclose expiry on /track-record) and/or schedule the proven double-blind sweep as a semi-automated job with 10% spot-check.
+- **`SYSTEMS_TEST_COUNTRIES`** on prod `newsSystemsAnalysis`: confirm intent or remove (may be pinning systems analysis to a stale allow-list).
+
+### S9 · T5 — Hardening riders (do when inside the Lambda anyway)
+Status: 🔭 todo
+- `newsRecommend` `list_alerts`: unauthenticated full-table Scan → GSI/Query or cache (the fleet's weakest abuse surface).
+- Shared vendored modules (`common/` copied at zip time) for the 4× Firebase-JWT verify, 3× track-record scoring, 3× markets transpose, and the two hand-synced pairs.
+- **Audit-feedback loop** (sophistication item): inject `newsImpactAudit`'s latest missed-region verdict into the selector prompt as a standing counter-bias — the system corrects itself instead of only alerting.
+- Morning-chain completion guard: each derivation stage checks its input's `generated_at` before consuming (kills the clock-offset-faith fragility).
 
 ---
 

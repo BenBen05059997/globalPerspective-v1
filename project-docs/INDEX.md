@@ -175,6 +175,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 **🔧 active**
 - **[MAP_HOME_SITUATION_PLAN.md](redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md)** — Map becomes the home page: per-article ingest classification + GDELT (drops Brave from ingest), GDACS un-shadowed, new `newsSituationTracker` (adaptive re-check cadence), WebGL 2.5D hue-by-crisis-type map. Approved 2026-09-08; **v2 (stages S0–S8) after the DATA_STRATEGY decision** — S3-backed situations/stories/`world/latest.json`, Worker-served. P0 done, P1·T1 shipped-then-superseded. Tracked in **[MAP_HOME_SITUATION_LEDGER.md](redesign-ux/_active/MAP_HOME_SITUATION_LEDGER.md)**.
 - **[SITUATION_BACKEND_AUDIT.md](redesign-ux/_active/SITUATION_BACKEND_AUDIT.md)** — Deep live-AWS audit of `newsGdacsIngest`→`newsSituationIngest`→`newsSituationTracker`→S3→Worker→`/map`: 14 ranked findings (storyId fragmentation is the root cause of tracker churn) informing the slice 4+5 tuning plan. 2026-09-10.
+- **[EVENT_REGISTRY_PLAN.md](redesign-ux/_active/EVENT_REGISTRY_PLAN.md)** — One source of truth for event identity: the map's `stories/` layer becomes the canonical event registry, editorial becomes a selection over it; deterministic pins→threads bridge via exact article-URL overlap (fuzzy matching banned per T3c). Phases 0–3, spine change shadow-week-gated. Direction approved 2026-09-10; supersedes S7·T1's "selector consumes stories" remainder.
 
 **🔭 proposed**
 - **[REDESIGN_V2_PLAN.md](redesign-ux/_proposed/REDESIGN_V2_PLAN.md)** — v2 redesign — Changes A/B/F built via later plans.

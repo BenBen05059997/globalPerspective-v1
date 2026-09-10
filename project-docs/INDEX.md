@@ -13,6 +13,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 - **[ANALYTICS_GUIDE.md](architecture/ANALYTICS_GUIDE.md)** — Where to find GA4 / Cloudflare analytics.
 - **[ARCHITECTURE.md](architecture/ARCHITECTURE.md)** — Authoritative system overview — Lambda inventory, DDB, routes (living doc).
+- **[BACKEND_AUDIT_2026-09-10.md](architecture/BACKEND_AUDIT_2026-09-10.md)** — Whole-fleet Lambda audit (37 function dirs, live-AWS-verified): full inventory + 14 ranked cross-backend findings + deploy-model corrections. Evidence base for the 2026-09-10 ARCHITECTURE.md reconciliation.
 - **[BACKEND_GUIDE.md](architecture/BACKEND_GUIDE.md)** — Quick-start Lambda function table.
 - **[DATA_STRATEGY.md](architecture/DATA_STRATEGY.md)** — **ADOPTED 2026-09-08.** S3 for the world, DynamoDB for the user: one-writer-per-prefix, inbox/folder event sourcing, `world/latest.json` frontend contract, table-migration order. Binding for all new subsystems.
 - **[OPTIMIZATION_REPORT.md](architecture/OPTIMIZATION_REPORT.md)** — Evidence-based (file:line) perf/cost fix list; companion to SYSTEM_WIRING.
@@ -173,6 +174,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 **🔧 active**
 - **[MAP_HOME_SITUATION_PLAN.md](redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md)** — Map becomes the home page: per-article ingest classification + GDELT (drops Brave from ingest), GDACS un-shadowed, new `newsSituationTracker` (adaptive re-check cadence), WebGL 2.5D hue-by-crisis-type map. Approved 2026-09-08; **v2 (stages S0–S8) after the DATA_STRATEGY decision** — S3-backed situations/stories/`world/latest.json`, Worker-served. P0 done, P1·T1 shipped-then-superseded. Tracked in **[MAP_HOME_SITUATION_LEDGER.md](redesign-ux/_active/MAP_HOME_SITUATION_LEDGER.md)**.
+- **[SITUATION_BACKEND_AUDIT.md](redesign-ux/_active/SITUATION_BACKEND_AUDIT.md)** — Deep live-AWS audit of `newsGdacsIngest`→`newsSituationIngest`→`newsSituationTracker`→S3→Worker→`/map`: 14 ranked findings (storyId fragmentation is the root cause of tracker churn) informing the slice 4+5 tuning plan. 2026-09-10.
 
 **🔭 proposed**
 - **[REDESIGN_V2_PLAN.md](redesign-ux/_proposed/REDESIGN_V2_PLAN.md)** — v2 redesign — Changes A/B/F built via later plans.

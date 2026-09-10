@@ -77,6 +77,21 @@ function domainOf(url) {
 
 function slug(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40); }
 
+// Conservative entity-key normalization (audit F1 — storyId fragmentation). Folds obvious lexical
+// variants of the SAME actor onto one cluster key (e.g. "President Trump", "Trump administration",
+// "the Trump Administration" → "trump") WITHOUT fuzzy/similarity merging — merging two DISTINCT
+// actors would hide a real situation, which is worse than fragmenting one. Strips a small set of
+// leading honorifics/titles and trailing generic org words only; leaves everything else intact.
+const ENTITY_TITLE_PREFIX = /^(the\s+)?(president|vice[- ]president|prime minister|pm|mr|mrs|ms|dr|sir|king|queen|general|senator|governor|secretary|foreign minister|defense minister|defence minister|minister|chancellor|ambassador|pope)\s+/i;
+const ENTITY_ORG_SUFFIX = /\s+(administration|government|govt|regime|cabinet|ministry|authorities|officials?)$/i;
+function normalizeEntity(s) {
+  let e = String(s || '').toLowerCase().trim();
+  e = e.replace(/^the\s+/, '');       // leading article ("the Trump administration")
+  e = e.replace(ENTITY_ORG_SUFFIX, '');
+  e = e.replace(ENTITY_TITLE_PREFIX, '');
+  return e.trim();
+}
+
 // Deterministic clustering: group classifiable EVENTS by (axis, primary iso3, shared entity) →
 // one story. storyId is stable across runs so velocity/spread accumulate. prevIndex: {storyId: prevStory}.
 function clusterStories(classified, nowIso, prevIndex = {}) {
@@ -84,7 +99,7 @@ function clusterStories(classified, nowIso, prevIndex = {}) {
   const groups = new Map();
   for (const c of events) {
     const iso = c.iso3[0];
-    const ent = (c.entities[0] || c.category || 'general');
+    const ent = normalizeEntity(c.entities[0]) || c.category || 'general';
     const key = `${c.axis}#${iso}#${slug(ent)}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(c);
@@ -122,4 +137,4 @@ function clusterStories(classified, nowIso, prevIndex = {}) {
   return stories;
 }
 
-module.exports = { AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, domainOf, slug };
+module.exports = { AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, domainOf, slug, normalizeEntity };

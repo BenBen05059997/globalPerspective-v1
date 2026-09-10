@@ -195,26 +195,35 @@ function buildSituation(prev, obs, nowIso, ttl) {
 // An open situation whose event is no longer Orange/Red (Green observation, or gone from the feed →
 // obs === null). Marks it cooling at tier 'low' once; the tracker closes it after 3 low checks.
 function coolSituation(prev, obs, nowIso, ttl) {
-  const tier = 'low';
+  const isNews = prev.source === 'news';
+  // Keep the pre-cool tier through the grey-out window — `state: 'cooling'` already conveys
+  // ended-ness; snapping to 'low' hid still-significant events during their cooldown (audit F3).
+  const tier = prev.tier || 'low';
   const base = {
     ...prev, tier, updated_at: nowIso, last_checked_at: nowIso,
     check_count: ((prev.check_count) || 0) + 1,
-    cadence_min: TIER_CADENCE_MIN[tier], next_check_at: nextCheckAt(nowIso, tier), ttl,
+    cadence_min: TIER_CADENCE_MIN.low, next_check_at: nextCheckAt(nowIso, 'low'), ttl,
   };
-  if (prev.tier === 'low' && prev.state === 'cooling') return { change: 'unchanged', item: base };
+  if (prev.state === 'cooling') return { change: 'unchanged', item: base };
+  // Source-aware wording: never leak GDACS vocabulary / gdacs_* fields onto a news situation (audit F3).
   const prevLevel = (prev.evidence && prev.evidence.gdacs_level) || 'Orange';
-  const what = obs ? `Alert lowered ${prevLevel}→Green` : 'Event no longer current in GDACS';
-  return {
-    change: 'cooled',
-    item: {
-      ...base, state: 'cooling', last_change_at: nowIso, what_changed: what,
-      evidence: {
+  const what = isNews
+    ? 'No longer in active coverage'
+    : (obs ? `Alert lowered ${prevLevel}→Green` : 'Event no longer current in GDACS');
+  const evidence = isNews
+    ? { ...(prev.evidence || {}) }
+    : {
         ...(prev.evidence || {}),
         gdacs_level: obs ? 'Green' : 'Gone',
         gdacs_score: obs && typeof obs.score === 'number' ? obs.score : (prev.evidence && prev.evidence.gdacs_score) || null,
         gdacs_date_modified: (obs && obs.dateModified) || (prev.evidence && prev.evidence.gdacs_date_modified) || null,
-      },
-      history: appendHistory(prev, { at: nowIso, tier, level: obs ? 'Green' : 'Gone', score: obs && typeof obs.score === 'number' ? obs.score : null, state: 'cooling', note: what }),
+      };
+  return {
+    change: 'cooled',
+    item: {
+      ...base, state: 'cooling', last_change_at: nowIso, what_changed: what,
+      evidence,
+      history: appendHistory(prev, { at: nowIso, tier, level: isNews ? null : (obs ? 'Green' : 'Gone'), score: obs && typeof obs.score === 'number' ? obs.score : null, state: 'cooling', note: what }),
     },
   };
 }
@@ -223,31 +232,60 @@ function coolSituation(prev, obs, nowIso, ttl) {
 // A clustered news story (from newsSituationIngest) → situation state. Tier from severity, axis from
 // the story; escalating when coverage is accelerating or spreading. situationId `news#<storyId>`.
 const SEV_TIER = { 5: 'high', 4: 'elevated', 3: 'moderate', 2: 'low', 1: 'low' };
-function buildStorySituation(prev, story, nowIso, ttl) {
-  const tier = SEV_TIER[story.max_severity] || 'moderate';
+const TIER_ORDER = ['low', 'moderate', 'elevated', 'high'];
+// Corroboration cap (audit F2): a single-outlet story can't claim 'high' on one LLM severity call.
+// 1 outlet → moderate max, 2 → elevated max, ≥3 → uncapped. GDACS disasters never flow through here
+// (they carry official severity, not outlet counts), so this can never touch their tiers.
+const OUTLET_TIER_CAP = { 1: 'moderate', 2: 'elevated' };
+function capTierByOutlets(tier, outlets, capMap = OUTLET_TIER_CAP) {
+  const cap = capMap[Number(outlets) || 0];
+  if (!cap) return tier; // ≥3 outlets (or unknown) → no cap
+  return TIER_ORDER.indexOf(tier) > TIER_ORDER.indexOf(cap) ? cap : tier;
+}
+function buildStorySituation(prev, story, nowIso, ttl, opts = {}) {
+  const rawTier = SEV_TIER[story.max_severity] || 'moderate';
+  const tier = opts.corroborationCap === false ? rawTier : capTierByOutlets(rawTier, story.outlets, opts.outletTierCap);
   const affected = Array.isArray(story.iso3) ? story.iso3 : [];
-  const escalating = (Number(story.velocity) || 1) >= 1.5 || (Array.isArray(story.spread_new_iso3) && story.spread_new_iso3.length > 0);
+  // Escalation hysteresis (audit F4): a 1→2 outlet bump reads as velocity 2.0 — require prior
+  // corroboration (prev outlets ≥ 2) before velocity counts; ignore spread on a brand-new story
+  // (prev === null re-announces its whole country set); rate-limit repeat 'raised' via a cooldown.
+  const prevOutlets = prev && prev.evidence ? Number(prev.evidence.outlets) || 0 : 0;
+  const velEscalating = (Number(story.velocity) || 1) >= 1.5 && prevOutlets >= 2;
+  const spreadEscalating = !!prev && Array.isArray(story.spread_new_iso3) && story.spread_new_iso3.length > 0;
+  const escalating = velEscalating || spreadEscalating;
   const parts = [`${plural(story.outlets || 1, 'outlet', 'outlets')}`];
-  if (Number(story.velocity) >= 1.5) parts.push(`coverage ${story.velocity}× prior`);
-  if (Array.isArray(story.spread_new_iso3) && story.spread_new_iso3.length) parts.push(`spreading to ${story.spread_new_iso3.join(', ')}`);
+  if (velEscalating) parts.push(`coverage ${story.velocity}× prior`);
+  if (spreadEscalating) parts.push(`spreading to ${story.spread_new_iso3.join(', ')}`);
   const what = parts.join(' · ');
   const label = String(story.title || '').slice(0, 90);
+  // Reopen handling (audit F6): a closed situation whose storyId reappears re-opens fresh — it does
+  // not silently resume at 'peak' with a stale opened_at.
+  const reopened = !!prev && prev.state === 'closed';
+  const tierChanged = !prev || reopened || prev.tier !== tier;
+  const raiseCooldownMs = (opts.raiseCooldownMin ?? 180) * 60000;
+  const lastRaisedAt = prev && prev.last_raised_at ? new Date(prev.last_raised_at).getTime() : 0;
+  const raiseCooledDown = (new Date(nowIso).getTime() - lastRaisedAt) >= raiseCooldownMs;
+  let change = 'unchanged';
+  if (!prev) change = 'opened';
+  else if (reopened) change = 'reopened';
+  else if (escalating && prev.state !== 'escalating' && raiseCooledDown) change = 'raised';
+  const state = (!prev || reopened) ? 'emerging' : (escalating ? 'escalating' : 'peak');
   const base = {
-    situationId: `news#${story.storyId}`, source: 'news', storyId: story.storyId, threadId: null,
+    situationId: `news#${story.storyId}`, source: 'news', storyId: story.storyId, threadId: (prev && prev.threadId) || null,
     title: story.title, verb_label: label, axis: story.axis || 'political', tier,
     iso3_origin: affected.slice(0, 1), iso3_affected: affected, affected_names: [],
     centroid: story.centroid || (prev && prev.centroid) || null,
     spread_arcs: Array.isArray(prev && prev.spread_arcs) ? prev.spread_arcs : [],
-    opened_at: (prev && prev.opened_at) || nowIso, updated_at: nowIso, last_checked_at: nowIso,
+    // reopen resets the age clock; a continuing story keeps its original opened_at.
+    opened_at: (prev && !reopened && prev.opened_at) || nowIso,
+    tier_changed_at: tierChanged ? nowIso : (prev.tier_changed_at || prev.opened_at || nowIso),
+    last_raised_at: change === 'raised' ? nowIso : ((prev && prev.last_raised_at) || null),
+    updated_at: nowIso, last_checked_at: nowIso,
     check_count: ((prev && prev.check_count) || 0) + (prev ? 1 : 0),
     cadence_min: TIER_CADENCE_MIN[tier] || TIER_CADENCE_MIN.low, next_check_at: nextCheckAt(nowIso, tier),
-    evidence: { outlets: story.outlets, max_severity: story.max_severity, velocity: story.velocity, spread_new_iso3: story.spread_new_iso3 || [], category: story.category, headlines: story.headlines || [] },
+    evidence: { outlets: story.outlets, max_severity: story.max_severity, velocity: story.velocity, coverage_ratio: Number(story.velocity) || null, spread_new_iso3: story.spread_new_iso3 || [], category: story.category, headlines: story.headlines || [] },
     ttl,
   };
-  let change = 'unchanged';
-  if (!prev) change = 'opened';
-  else if (escalating && prev.state !== 'escalating') change = 'raised';
-  const state = !prev ? 'emerging' : (escalating ? 'escalating' : 'peak');
   return {
     change,
     item: {
@@ -263,4 +301,5 @@ module.exports = {
   OPEN_STATES, OPENING_LEVELS, LEVEL_RANK, LEVEL_TIER, TIER_CADENCE_MIN,
   parseGeometry, eventKeyOf, eventLabel, affectedIso3, cleanSeverity, verbLabel,
   buildObservation, nextCheckAt, appendHistory, buildSituation, coolSituation, buildStorySituation,
+  capTierByOutlets,
 };

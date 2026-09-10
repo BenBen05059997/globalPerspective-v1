@@ -102,7 +102,7 @@ function summarize(state) {
     axis: state.axis, tier: state.tier, state: state.state,
     escalating: state.state === 'escalating',
     centroid: state.centroid, iso3_affected: state.iso3_affected, affected_names: state.affected_names || [], spread_arcs: state.spread_arcs || [],
-    opened_at: state.opened_at, last_change_at: state.last_change_at,
+    opened_at: state.opened_at, last_change_at: state.last_change_at, tier_changed_at: state.tier_changed_at || null,
     what_changed: state.what_changed, threadId: state.threadId || null,
   };
 }
@@ -211,6 +211,10 @@ async function readObservations() {
 const STORY_MAP_MIN_OUTLETS = Number(process.env.STORY_MAP_MIN_OUTLETS) || 3;
 const STORY_MAP_MIN_SEVERITY = Number(process.env.STORY_MAP_MIN_SEVERITY) || 4;
 const STORY_MAP_CAP = Number(process.env.STORY_MAP_CAP) || 40;
+// Feed-quality knobs (slice 5, env-tunable without redeploy): corroboration cap on news tier
+// (1 outlet→moderate, 2→elevated, ≥3→high) and the min gap between repeat 'raised' transitions.
+const CORROBORATION_CAP = process.env.CORROBORATION_CAP !== 'false'; // default on
+const RAISE_COOLDOWN_MIN = Number(process.env.RAISE_COOLDOWN_MIN) || 180;
 async function readStories() {
   const idx = await getJson('stories/index.json'); // stories are always in the live prefix (single producer)
   const stories = (idx && idx.stories) || [];
@@ -248,11 +252,12 @@ exports.handler = async () => {
   // that shares a country with a GDACS situation present this sweep — the disaster pin already owns it.
   const gdacsIso = new Set();
   for (const o of observations) for (const c of o.iso3_affected || []) gdacsIso.add(c);
+  const storyOpts = { corroborationCap: CORROBORATION_CAP, raiseCooldownMin: RAISE_COOLDOWN_MIN };
   const extraBuilt = {};
   for (const st of stories) {
     if (st.axis === 'humanitarian' && (st.iso3 || []).some((c) => gdacsIso.has(c))) continue;
     const id = `news#${st.storyId}`;
-    extraBuilt[id] = buildStorySituation(priorStates[id] || null, st, now, ttl);
+    extraBuilt[id] = buildStorySituation(priorStates[id] || null, st, now, ttl, storyOpts);
   }
 
   const { states, changes, counts, dropped } = foldSweep(priorStates, observations, now, ttl, { extraBuilt });

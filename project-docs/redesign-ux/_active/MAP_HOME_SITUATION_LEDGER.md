@@ -385,10 +385,9 @@ Commit: —
 > Source: the whole-backend audit (every Lambda read + live-verified). All items below are **planned only — nothing executed**; each needs its own operator yes. Independent of S5.5-S8 ordering; can ride along whenever we're inside the relevant Lambda.
 
 ### S9 · T1 — Retire `linkedInAutoPost` (duplicate LinkedIn poster)
-Status: 🔭 todo (operator yes needed — disables a live posting cron)
-Why: both it and `newsPostLinkedin` post to the same account with disjoint dedup namespaces (`POSTED#LINKEDIN_AUTO#` vs `POSTED#LINKEDIN#`) → duplicate-post risk. `newsPostLinkedin` is the richer, actively-developed path.
-Changes: disable Scheduler `LinkedinThreadsDaily` → observe a week → delete function + dir. Optionally port its thread/country-briefing post format into `newsPostLinkedin` as a post type first.
-Verify / exit: no duplicate posts; posting cadence unchanged from `newsPostLinkedin` alone.
+Status: 🟡 **DISABLED 2026-09-10 (operator approved "all four"; Scheduler `LinkedinThreadsDaily` → DISABLED)** — observe ~a week, then delete function + dir (remaining step).
+Evidence that decided it (Sonnet measurement, read-only): **13 posts EVER** (vs 5,227 from `newsPostLinkedin`, same DDB dedup table `NewsProject-linkedin-posts`); last-14-days 3 vs 90; direct same-day topical duplication (US, Israel/Gaza on 09-09); silently dead on `EXPIRED_ACCESS_TOKEN` 09-05→09-07 with zero visible impact. Fills no coverage gap.
+Verify / exit: no duplicate posts over the observation week; then delete.
 
 ### S9 · T2 — Delete `newsStripeWebhook` dir + strip dev.to dead code
 Status: 🔭 todo (low risk — dead source only)
@@ -398,11 +397,10 @@ Status: 🔭 todo (low risk — dead source only)
 Status: 🔭 todo (careful env writes — each a bare single `aws` command, fetch-merge-write)
 Targets (audit finding #8): `BRAVE_SEARCH_API_KEY`/`BRAVE_CONCURRENCY` on `newsInvokeGemini-dev`; `XAI_API_KEY_BACKUP` (≥5 functions, referenced by zero); `OPENAI_API_KEY` where unused; `NEWS_CACHE_TABLE` (newsEconomicQuality); `IMPACT_AUDIT_TABLE`/`INGEST_CAPTURE_TABLE` (newsImpactAudit); `DEVTO_API_KEY` (newsPostDevTo); the 4 ghost social-platform secrets on `newsPostLinkedin` — but FIRST zip-diff `newsPostLinkedin` to settle whether deployed code still uses them (unresolved audit question).
 
-### S9 · T4 — Operational decisions (no code)
-Status: 🔭 awaiting operator
-- **Breaking broadcast:** 0 `confirmed` rows ever — run `breaking/review.js` as a habit, add confidence-gated auto-confirm, or disable the 15-min `TriggerBreakingEmailSend` poll.
-- **Prediction backlog:** 37,021 pending triggers vs 40/day resolver cap — triage rule (resolve only ≤N-weeks-old, disclose expiry on /track-record) and/or schedule the proven double-blind sweep as a semi-automated job with 10% spot-check.
-- **`SYSTEMS_TEST_COUNTRIES`** on prod `newsSystemsAnalysis`: confirm intent or remove (may be pinning systems analysis to a stale allow-list).
+### S9 · T4 — Operational decisions — ✅ ALL DECIDED + EXECUTED 2026-09-10 (operator: "all four is yes"; evidence via two read-only Sonnet measurements)
+- **Breaking broadcast → email sender cron DISABLED** (`TriggerBreakingEmailSend`, was rate(15 min)). Evidence: exactly **1 breaking subscriber** in `GlobalPerspectiveUserPrefs` (2 users total; digest 2, drift 0, follows 0); alerts table 33 proposed / 3 ever sent, 27 unreviewed in the last 7 days. Alert **generation stays ON** (`TriggerBreakingAlert` untouched — proposed alerts feed the in-app bell via `newsRecommend list_alerts`). Re-enable the sender if subscribers materialize. No auto-confirm built (not for an audience of one).
+- **`SYSTEMS_TEST_COUNTRIES` REMOVED + `SYSTEMS_TOP_N=10` set** (merge-don't-clobber env write on `newsSystemsAnalysis`; 8 env keys preserved). Evidence: the Phase-1 list was binding — fixed 9-of-12 names analyzed daily (Venezuela/DRC/South Africa never matched) while 25-30 eligible countries were excluded per run. Coverage now rotates with actual volume (top 10). Frontend unaffected (systems 404s for uncovered countries are designed behavior).
+- **Prediction backlog → policy adopted: N=2 weeks + disclosed "lapsed unscored" tier.** The measurement corrected the headline: of "37,021 pending", **half (18,715) is legacy excluded-by-design**; the real actionable set is **4,287 due v1 triggers** (+502 proposals awaiting confirm). Decisive finding: **no window converges** — ~1,120 newly-due triggers/week arrive vs ~100/week sweep throughput (resolver's own cap is 280/wk), so every N only slows growth. Policy: resolve only triggers due within the last 2 weeks (in-scope today: 1,553 — also the most web-verifiable), everything older lapses unscored with disclosure; next sweeps run under this rule. The /track-record disclosure TEXT is a frontend ride-along for the next FE deploy (home swap) — NOT built now (operator: no build). **Structural fix flagged for the next generator touch:** ~234-460 triggers/day generated is unsustainable for a human-confirmed pipeline — fewer, sharper triggers per scenario is the only converging path.
 
 ### S9 · T5 — Hardening riders (do when inside the Lambda anyway)
 Status: 🔭 todo

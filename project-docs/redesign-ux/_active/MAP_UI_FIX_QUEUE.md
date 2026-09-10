@@ -74,7 +74,7 @@ Scope: a PATCH, not a redesign — same palette/encoding/layout system as `MAP_H
 
 Execution order — OPERATOR-CONFIRMED 2026-09-10:
 1. ✅ DONE — slices 1+2a (`41a3e3f`) and 2b+3 (`aec70d6`) all deployed to unlisted /map; S7 backend deployed (`4fa8b20`). Frontend map programme fully shipped.
-2. Slice 5 — feed-quality gate (backend; highest value). **Scope RE-BASED 2026-09-10** by the situation-pipeline audit: root cause is storyId fragmentation, not just the tier map — full causal work list in ledger S5.5·T3 + `SITUATION_BACKEND_AUDIT.md` §3. Awaiting operator scope decision (bundle vs cap-only).
+2. Slice 5 — feed-quality gate (backend; highest value). **Scope RE-BASED 2026-09-10** by the situation-pipeline audit: root cause is storyId fragmentation, not just the tier map — full causal work list in ledger S5.5·T3 + `SITUATION_BACKEND_AUDIT.md` §3. **DECIDED 2026-09-10: Option A — full bundle** (conservative identity normalization, env-knob thresholds; one-time storyId re-key wave accepted). Not built yet.
 3. Slice 4 — tracker structured fields (tier_changed_at, coverage_ratio) — now a rider inside the slice-5 deploy (same two Lambdas; `coverage_ratio` fixes a live "new"-mislabel bug the audit found).
 4. Slice 2b — spread arcs + affected fill (build the iso3→centroid/polygon join).
 5. Slice 3 — globe fly-to spike → variant C (tilt fallback).

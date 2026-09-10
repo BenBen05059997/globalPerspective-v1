@@ -282,13 +282,13 @@ export default function SituationHome() {
                 </>
               )}
 
-              <div className="sh-detail-foot">
-                {selected.threadId
-                  ? <Link to={`/weekly/thread/${encodeURIComponent(selected.threadId)}`}>Full analysis →</Link>
-                  : (isGdacs && ev.gdacs_report_url
-                      ? <a href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>
-                      : <span className="sh-nopage">No dedicated situation page yet</span>)}
-              </div>
+              {(selected.threadId || (isGdacs && ev.gdacs_report_url)) && (
+                <div className="sh-detail-foot">
+                  {selected.threadId
+                    ? <Link to={`/weekly/thread/${encodeURIComponent(selected.threadId)}`}>Full analysis →</Link>
+                    : <a href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>}
+                </div>
+              )}
             </div>
           ) : (
             <div className="sh-list">

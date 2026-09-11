@@ -14,6 +14,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 - **[ANALYTICS_GUIDE.md](architecture/ANALYTICS_GUIDE.md)** — Where to find GA4 / Cloudflare analytics.
 - **[ARCHITECTURE.md](architecture/ARCHITECTURE.md)** — Authoritative system overview — Lambda inventory, DDB, routes (living doc).
 - **[BACKEND_AUDIT_2026-09-10.md](architecture/BACKEND_AUDIT_2026-09-10.md)** — Whole-fleet Lambda audit (37 function dirs, live-AWS-verified): full inventory + 14 ranked cross-backend findings + deploy-model corrections. Evidence base for the 2026-09-10 ARCHITECTURE.md reconciliation.
+- **[SYSTEM_USAGE_2026-09-11.md](architecture/SYSTEM_USAGE_2026-09-11.md)** — Functional usage map: 10 verticals traced trigger→Lambda→storage→endpoint→UI element, live-verified; active-vs-dormant verdicts; found /daily broken, This-week ~10wk stale, Worker = whole-site single point of failure. 2026-09-11.
 - **[BACKEND_GUIDE.md](architecture/BACKEND_GUIDE.md)** — Quick-start Lambda function table.
 - **[DATA_STRATEGY.md](architecture/DATA_STRATEGY.md)** — **ADOPTED 2026-09-08.** S3 for the world, DynamoDB for the user: one-writer-per-prefix, inbox/folder event sourcing, `world/latest.json` frontend contract, table-migration order. Binding for all new subsystems.
 - **[OPTIMIZATION_REPORT.md](architecture/OPTIMIZATION_REPORT.md)** — Evidence-based (file:line) perf/cost fix list; companion to SYSTEM_WIRING.

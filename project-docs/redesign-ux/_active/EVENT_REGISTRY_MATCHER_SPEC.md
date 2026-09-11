@@ -1,6 +1,11 @@
 # Matcher build spec — Phase 1 "the bridge" (URL-exact ∪ R3 fingerprint → threads/story-map.json)
 
-Status: REVIEWED 2026-09-11 — accepted with TWO orchestrator corrections (binding, they override the
+Status: ✅ TIER 1 BUILT + DEPLOYED + VERIFIED 2026-09-11 (R3 present, flag-gated off). Live evidence:
+matcher wrote `threads/story-map.json` with **25 Tier-1 pairs, 0 ambiguous, r3_enabled:false** (16 topics × 917 stories); tracker stamped `threadId` on 6 live situations; IAM applied (agent role `matcher-s3-access`; tracker role `+ReadStoryMap`). **Non-fatal isolation proven in production** — the first run (before IAM) logged `[matcher] ... failed (non-fatal): s3:ListBucket denied` and the generation cycle completed normally. **Dead-page concern RESOLVED by verification, not assumption:** stamped threads have NO `THREAD_ANALYSIS` yet (daily-lag), BUT `/weekly/thread` is driven by `readNarrativeThread` (newsSensitiveData:1823) which builds the page from `latest`+`archive#*` entries filtered by threadId — all stamped threads have archive entries → real content-bearing pages (timeline/entries); the deeper analysis overlay fills in on the daily `newsThreadAnalysis` run. "Story arc not found" (`ThreadPage.jsx:233`) fires only on zero entries — not our case. So links are correct AND land on real pages. Latching is safe: archive entries persist 90d in the daily archive.
+
+--- original review corrections (still binding) ---
+
+Reviewed 2026-09-11 — accepted with TWO orchestrator corrections (binding, they override the
 sections they touch):
 
 **Correction 1 — tracker stamping must LATCH, not mirror (anti-flicker).** §5's proposed

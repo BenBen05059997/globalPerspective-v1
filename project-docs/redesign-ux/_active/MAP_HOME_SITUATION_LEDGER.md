@@ -391,8 +391,9 @@ Commit: —
 
 > Source: the whole-backend audit (every Lambda read + live-verified). All items below are **planned only — nothing executed**; each needs its own operator yes. Independent of S5.5-S8 ordering; can ride along whenever we're inside the relevant Lambda.
 
-### S9 · T1 — Retire `linkedInAutoPost` (duplicate LinkedIn poster)
-Status: 🟡 **DISABLED 2026-09-10 (operator approved "all four"; Scheduler `LinkedinThreadsDaily` → DISABLED)** — observe ~a week, then delete function + dir (remaining step).
+### S9 · T1 — Retire `linkedInAutoPost` (duplicate LinkedIn poster) — ✅ DONE 2026-09-11
+Status: ✅ **RETIRED 2026-09-11** (operator "you can do them"): Scheduler `LinkedinThreadsDaily` deleted, Lambda `linkedInAutoPost` deleted (`StatusCode 204`), repo dir `git rm`'d (recoverable from history if ever needed). Observation window concluded early on operator go — safe because the survivor `newsPostLinkedin` (Active, schedule `InvokeLinkedIn` ENABLED — verified) covers LinkedIn at higher volume, and the retiree was disabled+inert since 2026-09-10. Re-enable path if a gap ever appears = redeploy from git.
+Prior: DISABLED 2026-09-10 (operator "all four"; evidence: 13 posts ever vs 5,227, duplicate feed, 3 days dead on an expired token).
 Evidence that decided it (Sonnet measurement, read-only): **13 posts EVER** (vs 5,227 from `newsPostLinkedin`, same DDB dedup table `NewsProject-linkedin-posts`); last-14-days 3 vs 90; direct same-day topical duplication (US, Israel/Gaza on 09-09); silently dead on `EXPIRED_ACCESS_TOKEN` 09-05→09-07 with zero visible impact. Fills no coverage gap.
 Verify / exit: no duplicate posts over the observation week; then delete.
 

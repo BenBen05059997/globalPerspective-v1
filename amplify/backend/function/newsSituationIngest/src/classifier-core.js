@@ -24,7 +24,7 @@ function buildMessages(articles) {
     '  "axis": one of "conflict"|"political"|"economic"|"humanitarian" (the dominant kind of impact),',
     '  "severity": integer 1-5 (5 = major, world-moving; 1 = minor/routine),',
     '  "kind": "event" (something happened) | "analysis" | "commentary",',
-    '  "entities": [up to 4 key named actors/places/things],',
+    '  "entities": [up to 4 SPECIFIC named actors — people, organizations, or groups (e.g. "Donald Trump", "IAEA", "Hezbollah"); NEVER a country, city, place, event, or abstract noun (countries belong in iso3). Most-central actor first],',
     '  "en_title": a concise ENGLISH title for this story, <= 12 words (translate if the headline is not English)',
     '}',
     'If a headline is not about a real-world situation (sport, celebrity, lifestyle), set severity 1 and category "other".',

@@ -289,6 +289,11 @@ function buildTopic(t, idx) {
     // Without these, past archive entries had empty search_keywords and the
     // Jaccard threading fallback was effectively blind.
     search_keywords: Array.isArray(t.search_keywords) ? t.search_keywords : [],
+    // Phase 1b — carry the event fingerprint through so active + archive retain it
+    // (the map↔editorial linking tier reads these; without carry-through they'd be dropped here).
+    iso3: Array.isArray(t.iso3) ? t.iso3 : [],
+    actors: Array.isArray(t.actors) ? t.actors : [],
+    event_type: typeof t.event_type === 'string' ? t.event_type : 'other',
     ...(t.continues_topic ? { continues_topic: t.continues_topic } : {}),
   };
 }
@@ -915,6 +920,9 @@ function buildArchiveEntry(topic, ai, generationId, sourceCap, threadId) {
     category: Array.isArray(topic.categories) ? topic.categories[0] || '' : '',
     regions: topic.regions || [],
     search_keywords: topic.search_keywords || [],
+    iso3: topic.iso3 || [],
+    actors: topic.actors || [],
+    event_type: topic.event_type || 'other',
     sources: (topic.sources || []).slice(0, sourceCap),
     archivedAt: new Date().toISOString(),
     generationId,

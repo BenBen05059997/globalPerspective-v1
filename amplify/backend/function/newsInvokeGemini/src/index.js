@@ -648,6 +648,9 @@ exports.handler = async (event) => {
         '- primaryCountry: string (the single country most central to this event — the anchor)',
         '- mentionedCountries: array of other country names materially involved (not just mentioned in passing)',
         '- continues_topic: string (optional — exact title of a previous topic this story continues)',
+        '- iso3: array of 1-4 ISO 3166-1 alpha-3 country codes for the countries involved (e.g. ["USA","IRN"])',
+        '- actors: array of 1-3 SPECIFIC named people or organizations central to the event (e.g. ["Donald Trump","IAEA"]) — full proper names; NEVER a country, city, or place (those belong in iso3/regions)',
+        '- event_type: string, exactly one of: war, unrest, diplomacy, election, policy, economy, markets, disaster, health, tech, other',
       ].join('\n');
     } else {
       console.warn('No articles available, falling back to Grok X-knowledge mode');
@@ -680,7 +683,9 @@ exports.handler = async (event) => {
       ],
       response_format: { type: 'json_object' },
       temperature: 0.5,
-      max_tokens: 8192,
+      // Raised 8192→12000 (Phase 1b): the added event-fingerprint fields (iso3/actors/event_type)
+      // push the heaviest runs near the old ceiling, where truncation-salvage was already firing.
+      max_tokens: 12000,
       // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
       // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
       thinking: { type: 'disabled' },
@@ -711,6 +716,8 @@ exports.handler = async (event) => {
     let totalSourcesBefore = 0;
     let totalSourcesAfter = 0;
 
+    // Phase 1b event-fingerprint vocabulary (shared with the map classifier's event types).
+    const EVENT_TYPES = new Set(['war', 'unrest', 'diplomacy', 'election', 'policy', 'economy', 'markets', 'disaster', 'health', 'tech', 'other']);
     const normalized = topics.map((t, idx) => {
       const title = String(t?.title || '').trim();
       const topicId = createStableTopicId(title, idx);
@@ -735,6 +742,20 @@ exports.handler = async (event) => {
         ? String(t.urgency).toLowerCase()
         : 'medium';
 
+      // Phase 1b — event fingerprint (additive; validated, never trusts raw LLM output).
+      const iso3 = (Array.isArray(t?.iso3) ? t.iso3 : [])
+        .map(c => String(c).toUpperCase().trim()).filter(c => /^[A-Z]{3}$/.test(c)).slice(0, 4);
+      const countryNames = new Set([
+        ...(Array.isArray(t?.regions) ? t.regions : []),
+        t?.primaryCountry,
+        ...(Array.isArray(t?.mentionedCountries) ? t.mentionedCountries : []),
+      ].filter(Boolean).map(c => String(c).toLowerCase().trim()));
+      const actors = (Array.isArray(t?.actors) ? t.actors : [])
+        .map(a => String(a).trim())
+        .filter(a => a && a.length <= 60 && !countryNames.has(a.toLowerCase())).slice(0, 3);
+      const eventType = EVENT_TYPES.has(String(t?.event_type || '').toLowerCase())
+        ? String(t.event_type).toLowerCase() : 'other';
+
       return {
         id: topicId,
         topicId,
@@ -742,6 +763,9 @@ exports.handler = async (event) => {
         category: String(t?.category || '').trim().toLowerCase(),
         search_keywords: Array.isArray(t?.search_keywords) ? t.search_keywords.map(k => String(k)) : [],
         regions: Array.isArray(t?.regions) ? t.regions.map(r => String(r)) : [],
+        iso3,
+        actors,
+        event_type: eventType,
         sources: validatedSources.map(s => ({
           ...s,
           tier: s.tier === 'secondary' ? 'secondary' : 'primary',

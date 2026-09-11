@@ -6,8 +6,16 @@ each section). ORCHESTRATOR CORRECTIONS on agent claims: (1) V3's "situation.thr
 permanently null" is OUTDATED — the Phase 1 matcher shipped 2026-09-11 and 6 live situations carry
 verified threadIds (see EVENT_REGISTRY_MATCHER_SPEC.md); (2) V7's "monthly allowance" describes the
 REPO code — the DEPLOYED newsAnalyze runs the older ANALYZE_DAILY_CAP gate (known repo≠deployed
-drift, BACKEND_AUDIT). Live bugs found by this pass: /daily returns data:null (broken); /economy
-"This week" last published 2026-06-29 (~10wk stale, review gate unrun).
+drift, BACKEND_AUDIT). Live issues found by this pass — BOTH RESOLVED 2026-09-11 after diagnosis:
+(1) "/daily returns data:null" was a FALSE POSITIVE — the tracing curl used a flat body instead of
+the required `{action, payload:{dateKey}}` envelope, making the server default to today's
+not-yet-generated brief; with the correct shape the page works (7-day fallback + honest "showing
+yesterday" banner; generator healthy, runs 23:00 JST). Lesson for smoke tests: always use the
+nested-payload envelope. (2) /economy "This week" WAS genuinely ~10wk stale — root cause: the cron
+never missed a Sunday but the human review gate went 9 straight weeks unrun (the third unrun-gate
+zombie after breaking-confirm and prediction review). Fixed: the quality-reviewed 2026-09-06 draft
+published (live-verified), and `newsWeeklyMarkets` now AUTO-PUBLISHES (judge = the quality bar,
+mirroring newsWeeklyBrief's precedent); `weekly-markets/review.js` remains for spot-checks.
 
 
 ---

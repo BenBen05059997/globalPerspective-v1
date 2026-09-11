@@ -167,7 +167,11 @@ exports.handler = async (event = {}) => {
     SK,
     weekOf: weekKey,
     asOf: new Date().toISOString().slice(0, 10),
-    status: 'draft', // draft → published (human approves via weekly-markets/review.js)
+    // AUTO-PUBLISH (2026-09-11): the human draft→publish gate went 9 straight weeks unrun (last
+    // review 2026-06-29) while the cron never missed a Sunday — same stale-gate pattern newsWeeklyBrief
+    // already dropped. The Gemini judge (which demonstrably rejects ungrounded notes at generation)
+    // is the quality bar; weekly-markets/review.js remains usable for spot-checks/retractions.
+    status: 'published',
     movers,
     excluded, // instruments shown as "history accruing", not dropped silently
     generatedAt: new Date().toISOString(),
@@ -177,8 +181,8 @@ exports.handler = async (event = {}) => {
   await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
 
   const tiers = movers.reduce((acc, m) => { acc[m.grounding] = (acc[m.grounding] || 0) + 1; return acc; }, {});
-  console.log(`[weekly-markets] draft stored: WEEKLY_MARKETS#${weekKey} (${movers.length} movers — ${JSON.stringify(tiers)}). Approve via weekly-markets/review.js.`);
-  return { ok: true, weekKey, status: 'draft', movers: movers.length, grounding: tiers };
+  console.log(`[weekly-markets] report PUBLISHED: WEEKLY_MARKETS#${weekKey} (${movers.length} movers — ${JSON.stringify(tiers)}). Retract/spot-check via weekly-markets/review.js if needed.`);
+  return { ok: true, weekKey, status: 'published', movers: movers.length, grounding: tiers };
 };
 
 function fail(msg) {

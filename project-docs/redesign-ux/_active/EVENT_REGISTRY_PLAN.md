@@ -45,12 +45,19 @@ that the pins-to-pages investigation missed (it compared titles/entities, not UR
 
 ## 3. Phases (each independently shippable, each gated)
 
-### Phase 0 — Measure the URL-overlap rate (read-only, ~1h, no deploy)
-For the current topics (`Topics` table `latest`/archive) × current+recent stories
-(`stories/state/`): what fraction of topics share ≥1 exact article URL with exactly one story?
-How many share with >1 story (ambiguity rate)? Normalize URLs (strip tracking params, trailing
-slash) and report sensitivity. **Gate for Phase 1:** unambiguous-match rate high enough to be
-useful (rough bar: ≥50% of topics match exactly one story) and ambiguity handled (ties → no link).
+### Phase 0 — Measure the URL-overlap rate (read-only) — ✅ DONE 2026-09-11 (results: `EVENT_REGISTRY_PHASE0_RESULTS.md`)
+Measured (4-day window 09-08→09-11, 164 topics; topics = DDB `NewsCache` id=`latest`/`archive#`, `sources[].url`; stories = `stories/state/*.json` headline URLs):
+- **Unambiguous exact-URL match rate: 31.7%** (windowed ±36h) / 32.9% (all-stories) — **below the ~50% rough gate.**
+- **Zero false positives** (26/26 sampled exactly-1 matches were genuinely the same event) — the deterministic no-false-link property holds perfectly. This is the property that mattered most (T3c's ban on wrong links).
+- Ambiguity (>1 story) 26.2% — 15/15 sampled were the SAME event split across the accepted axis-flip residual → correctly resolve to "no link" (ties → null). Not a defect.
+- **Root cause of the shortfall is structural, not fixable by normalization:** the two pipelines diverge on *which events they select* (only 13 of 26/25 RSS feeds shared); Google-News URL-wrapping is negligible (topics 0%, stories 1.7%), and only 4.5% of zero-match topics would even fuzzy-match by title — so the gap is real event-selection divergence, exactly what Phase 2 (shared ingest) fixes.
+- Matches skew to the topics worth linking (75% of matched topics are `significance:high` vs 33% of unmatched).
+**Gate verdict: MISSED the 50% bar (32%), but the bridge is SAFE and the coverage it does give is the high-value slice.** Decision is now the operator's — see "Phase 0 → Phase 1 decision" below. Do NOT auto-proceed on a missed gate.
+
+**Phase 0 → Phase 1 decision (operator, pending):**
+- **Ship Phase 1 now @ ~32%:** a third of significant situations get a real "Full analysis →" link immediately, safe (no false links), cheap, additive/reversible, and it makes the home-swap front door richer. Cost: 68% keep the panel (fine), and some of the bridge is superseded when Phase 2 lands.
+- **Defer to Phase 2:** shared ingest makes linkage exact-by-construction (~100% for selected events) and fixes the measured root cause — but Phase 2 is the big shadow-gated spine change, not imminent, so pins stay panel-only until then.
+- Lean: ship Phase 1 now (concrete pre-swap win, throwaway cost is small), unless the operator wants to hold all linkage for the Phase-2 rework.
 
 ### Phase 1 — The bridge: topics gain `storyId`; situations gain `threadId` (small, additive)
 - `NewsProjectInvokeAgentLambda` (or a small post-step): after topics are generated, compute each

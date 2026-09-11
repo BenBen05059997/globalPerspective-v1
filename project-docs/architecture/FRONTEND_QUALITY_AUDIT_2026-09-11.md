@@ -1,0 +1,58 @@
+# Frontend Quality/Debt Audit — globalperspective.net
+Scope: `global-perspectives-starter/frontend/src/`. Read-only. Build run locally (writes only `dist/`).
+
+## Ranked findings (top 10)
+
+1. **No route-level code splitting in `App.jsx`.** All ~25 routes (Home, WorldMapV2, SituationHome, EconomyPage, AnalysisStudio, WeeklyPage, CountryPage, DailyPage, TrackRecordPage, AnalysisStudio, etc.) are statically imported (`src/App.jsx:5-32`). Zero `React.lazy()` at the route level (only 2 lazy calls exist anywhere: `WeeklyPage.jsx:18`, `SituationHome.jsx:9`, both for map sub-components, not routes). Result: main chunk `index-*.js` = **1,304.50 kB (423.84 kB gzip)** — every visitor downloads AnalysisStudio, EconomyPage, WeeklyMarkets, TrackRecord, etc. on first load regardless of route. **Highest-value, lowest-risk fix.**
+2. **`WeeklyMap.jsx` is both statically and dynamically imported**, defeating its own split — Vite emits this exact warning on build: `WeeklyMap.jsx is dynamically imported by WeeklyPage.jsx but also statically imported by CountryPage.jsx, dynamic import will not move module into another chunk.` Since `CountryPage` is itself statically imported in `App.jsx`, WeeklyMap's code (Google Maps wrapper + related logic) rides into the main bundle anyway, and the `lazy()` in `WeeklyPage.jsx:18` buys nothing.
+3. **Dead component: `WorldMap.jsx` + `MapSidePanel.jsx`** (the pre-V2 map stack) — `WorldMap.jsx` has **zero importers anywhere** in `src` (verified: `grep "components/WorldMap'"` → no hits outside its own file). `MapSidePanel.jsx` is imported only by the dead `WorldMap.jsx` (`src/components/WorldMap.jsx:7,784`), so it's dead too. Neither is reachable from any route. Safe to delete both `.jsx` + `WorldMap.css`.
+4. **Dead component: `MiniMap.jsx`** — defined (`src/components/MiniMap.jsx:27`) but has zero importers anywhere in `src` (grep for `MiniMap` returns only its own definition file).
+5. **20 of 32 hooks hand-roll an identical localStorage TTL-cache block** (get → parse → check `Date.now() - ts < TTL` → fetch → `try{localStorage.setItem}catch{}`) with no shared helper — `useTodayArchive.js`, `useCountryIntelligence.js`, `useDailyBrief.js`, `useEconomicImpact.js`, `useSystemsAnalysis.js`, `useTopMovers.js`, `useTrackRecord.js`, `useWeeklyArchive.js`, `useWeeklyBrief.js`, `useWeeklyMarkets.js`, `useCorrectionsFeed.js`, `useDisruptionsList.js`, `useCountryHistory.js`, `usePairAnalyses.js`, `useThreadAnalyses.js`, `useGeminiTopics.js`, `useNotifications.js`, `useBookmarks.js`, `useMarketsGlobal.js`, `useMarketsCountry.js`. No `src/utils/cache.js` exists. ~15-20 lines of boilerplate duplicated ×20 (~300-400 lines total); each hook also invents its own cache-key naming convention and TTL constant.
+6. **Test coverage is inverted relative to what's live.** 19 test files / 237 tests concentrate heavily on `WorldMapV2` (the `/map-legacy` route — `signalFilters.test.jsx`, `searchBar.test.jsx`, `layers.test.jsx`, plus references in `macroValues.test.js`, `threadPath.js`, `topicMatch.js` comments) while the **current live `/map` implementation** (`SituationHome.jsx` → `SituationMap.jsx` + lazy `SituationMap3D.jsx`) has **zero dedicated tests**. Only 3 of 32 hooks have tests (`useCountrySignal`, `useEconomicImpact`, `useSystemsAnalysis`). Most page components (Home, CountryPage, ThreadPage, DailyPage, AnalysisStudio, Account, BreakingFeedPage…) are covered only by `routes.test.jsx`'s render-smoke-test, not behavior.
+7. **Inconsistent error surfacing across hooks.** ~20 hooks expose `[error, setError]` to the UI; a smaller set silently swallow fetch failures with no error state at all: `useCountryIntelligence.js` (`catch { /* ignore */ }` at lines 36/47/48, no `error` state), `useThreadAnalyses.js` (same pattern), `useBreakingAlert.js:19` (`.catch(() => setAlert(null))`), `useThreadForecast.js:26`, `useMarketsHistory.js:24`, `useNotifications.js:26` (comment explicitly says "no error UI in the nav"). Some of this is deliberate per the project's "fail empty, don't fake" policy, but it's not consistently one policy — a few hooks track `error` state that nothing renders, which is dead plumbing in the other direction.
+8. **Date formatting duplicated inline in 13 components** instead of using the one exported helper `formatDateLabel` in `src/utils/dateUtils.js:1` — `BreakingFeedPage.jsx`, `CountryPage.jsx`, `MembershipPage.jsx`, `SituationHome.jsx`, `ArticleCard.jsx`, `WeeklyPage.jsx`, `WeeklyMarketsView.jsx`, `WeeklyBriefPage.jsx`, `Account.jsx`, `NotificationBell.jsx`, `BreakingDetailPage.jsx`, `WorldMapV2.jsx`, `Home.jsx` all call `toLocaleDateString` directly (76 call sites total across components) rather than the shared util.
+9. **`aws-amplify` + `@aws-amplify/api-graphql` are unused dependencies** in `package.json` — zero imports anywhere in `src/` (grep across all `.js`/`.jsx`). They don't inflate the runtime bundle (unused ⇒ not imported ⇒ tree-shaken/never pulled in), but they're dead weight in `node_modules`/install time/audit surface and misleading (suggests GraphQL/Amplify backend usage that doesn't exist — actual backend is REST via `restProxy`).
+10. **Accessibility: the live map has almost no ARIA.** `SituationMap.jsx` (the default `/map` visualization) has only 1 `aria-`/`role=` attribute in the whole file; `SituationMap3D.jsx` has 3. Nav (`Layout.jsx`) is reasonably annotated (`aria-label` on menu toggle/help, `aria-expanded`), but the primary data-viz surface is effectively a canvas/SVG black box to screen readers/keyboard users.
+
+## Dead-code kill list (verified zero-ref)
+- `src/components/WorldMap.jsx` + `src/components/WorldMap.css` — zero importers (not `WorldMapV2`, which is live via `/map-legacy` and has 30+ test references).
+- `src/components/MapSidePanel.jsx` — only consumer was the dead `WorldMap.jsx`.
+- `src/components/MiniMap.jsx` — zero importers anywhere.
+- `.sh-nopage` CSS rule in `src/components/SituationHome.css:169` — class string not found anywhere in any `.jsx` file (defined, never applied).
+
+**Not dead (reachable, do not delete without a product decision):**
+- `/map-legacy` route → `WorldMapV2.jsx` — reachable by direct URL, no in-app nav link found (`Layout.jsx`/`SideNav.jsx`/`Home.jsx` have zero references to `map-legacy`), but it's the single most heavily-tested component in the suite (5 test files). It's an orphan route from a nav standpoint even though the code is alive — worth a product call on whether to delete the route+tests together or keep as a fallback.
+- `/spider-demo` → `SpiderDemo.jsx`/`SpiderWorld.jsx` — same orphan-route pattern (no nav link), file's own header comment calls it "throwaway prototype route." Low usage risk to remove but confirm via traffic before deleting (per `reference_page_wiring_contracts` memory, this is a known orphan route).
+
+## Duplication summary
+| Pattern | Instances | Shared util exists? |
+|---|---|---|
+| localStorage TTL-cache boilerplate in hooks | 20 hooks | No |
+| Inline `toLocaleDateString` instead of `dateUtils.formatDateLabel` | 13 components, 76 call sites | Yes, unused |
+| `riskTiers` usage | 10 files | **Yes, consistently used** — no drift found, this one's healthy |
+
+## Bundle: 3 concrete split opportunities
+1. **Route-level `React.lazy()` in `App.jsx` for the ~20 non-critical routes** (everything except `Home`/`Layout`). Expected: main chunk drops from 1,304.5 kB to roughly the size of `Home` + shared deps (nav, contexts, `Layout`) — likely a 60-75% cut to first-load JS, remainder loaded per-route. This is the single biggest lever; no code changes needed inside the components, just import-site changes + `<Suspense>` wrapper.
+2. **Fix the `WeeklyMap` dual-import** (`CountryPage.jsx` static + `WeeklyPage.jsx` dynamic) by making `CountryPage.jsx` also import it via `lazy()`, and doing #1 for `CountryPage` too. Currently the map-only code (Google Maps wrapper, `useMarketsHistory`-adjacent rendering) is forced into the main chunk purely because of this one static import.
+3. **Split `d3`/`topojson-client` usage out of `WorldMapV2.jsx`** — it's the only remaining route statically pulling d3+topojson into the main bundle (`SituationMap3D` already isolates deck.gl+topojson into its own 941.56 kB chunk via `lazy()` in `SituationHome.jsx:9`). Doing #1 (lazy-loading the `/map-legacy` route) accomplishes this same split as a side effect, so #3 is really "verify #1 covers it" rather than separate work.
+
+Bundle numbers from local `npm run build` (2026-09-11): `index-*.js` 1,304.50 kB (423.84 kB gzip), `SituationMap3D-*.js` 941.56 kB (262.04 kB gzip, already lazy), `index-*.css` 312.62 kB (52.81 kB gzip, not code-split at all — single global stylesheet, lower priority than JS).
+
+## Test-coverage shape
+- 19 test files, 237 tests total.
+- Concentrated on: `WorldMapV2` (the legacy/orphan map route — 3+ dedicated test files), pure utils (`analysisStruct`, `countryDrift`, `macroValues`, `riskTiers`, `utils.test.js`), 3 of 32 hooks, and a handful of component/page tests (`economyPage`, `redesign`, `atoms_economic`, `riskScorecard`, `causalGraph`, `countryWhatChanged`).
+- `routes.test.jsx` gives a render-smoke-test safety net across all routes (catches crash-on-mount regressions) but not behavior.
+- **Biggest untested surface**: the actual production `/map` (`SituationHome` + `SituationMap` + `SituationMap3D`) — zero dedicated tests — versus heavy investment in the `/map-legacy` orphan route it replaced.
+- 29 of 32 hooks (91%) have no direct unit test; they're only exercised indirectly through page-level smoke tests where the page renders them at all.
+
+## Build/deploy pipeline notes
+- `vite.config.js` sets `sourcemap: 'hidden'` intentionally (maps emitted to local `dist/` for `scripts/errors.mjs` stack resolution, never referenced by the bundle, stripped from `docs/` by `deploy.sh`) — this is documented and sound, not debt.
+- No `manualChunks` configuration at all — combined with finding #1, this is the direct cause of the 1.3 MB main chunk.
+- `prebuild` runs `eslint . --max-warnings 20` — currently sitting at exactly 4 warnings (all `react-hooks/exhaustive-deps`, see below), comfortable margin before the gate would start failing.
+- The 4 eslint warnings are real (not noise): `MapSidePanel.jsx:70` and `WeeklyMap.jsx:298` (missing effect deps — same file as the dual-import problem above), `useCountryIntelligence.js:53` and `useThreadAnalyses.js:53` (`useCallback` missing `countryNames`/`threadIds` deps) — these are the same two hooks flagged in finding #7 for swallowing errors, suggesting they've had less iteration/attention than the rest of the hook set. Worth fixing alongside #7, not urgent on their own (stale-closure risk on prop-array changes, not a crash).
+- `deploy.sh`'s `docs/404.html` byte-identity requirement is orthogonal to source quality and already well-guarded per project history; no additional debt found there.
+
+## Top 3 fixes for most value / least risk
+1. **Route-level `React.lazy()` in `App.jsx`** (finding #1) — biggest bundle win, mechanical change, no logic touched, `<Suspense>` fallback is the only new surface area.
+2. **Delete confirmed-dead files**: `WorldMap.jsx`, `WorldMap.css`, `MapSidePanel.jsx`, `MiniMap.jsx`, and the unused `.sh-nopage` CSS rule (findings #3, #4, kill list) — zero-ref verified, zero behavior change, removes ~4 files of maintenance surface.
+3. **Extract the localStorage TTL-cache pattern into a shared `useCachedFetch`/`utils/cache.js` helper** (finding #5) — touches 20 hooks but each change is mechanical/low-risk (same shape every time) and eliminates the largest duplication in the codebase; do this one with tests re-run per hook, not all at once.

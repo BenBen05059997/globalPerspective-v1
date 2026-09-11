@@ -67,6 +67,12 @@ Three Lambdas deployed (patch-zip discipline — all drift preserved): `newsSitu
 Behaviour otherwise unchanged (fields are additive; selection + summaries same). `max_tokens` 8192→12000 shipped.
 **NEXT (the gated payoff):** let ~1 week of tagged data accumulate, then re-run the Phase 0c fingerprint measurement on REAL tags. The fingerprint linking tier ships ONLY at **zero hand-labeled false links** + meaningful coverage over the URL tier's 31.7%. Until then no tag-based linking is live.
 
+**Phase 1c — BACKFILL measurement (2026-09-11, `EVENT_REGISTRY_PHASE1C_RESULTS.md`) — the fingerprint concept is VALIDATED (proxy PASS).** Rather than wait a week, Sonnet retroactively tagged the 164 Phase-0 topics + 792 in-window stories with proper fingerprints (exact deployed rules) and re-ran the R1-R5 ladder:
+- **Winning rule = R3** (≥2 shared countries + ≥1 shared genuine named actor, no type gate): **0% false positives** (6/6 hand-labeled true) vs Phase 0c's 17% floor on thin tags. R1/R2/R4/R5 all still carry confirmed FPs — only R3 clears the zero-false-link bar. R3 rejects every known adversarial collision.
+- **Coverage:** R3 adds +6/164 (+3.7 pts) over the URL tier; **combined URL ∪ R3 = 58/164 = 35.4%, still 0 confirmed FP.**
+- **Calibration (proxy trust):** on today's 9 live production-tagged topics vs the backfill — iso3 any-overlap 100% / exact-set 88.9%, event_type 77.8%, actor overlap 66.7%. Actor tagging is the weak link and weak CONSERVATIVELY (headline-only under-detects vs production's full-body) → real R3 coverage likely ≥ measured, not less.
+- **Verdict: PASS, not dead — but confirm on real tags.** This used Sonnet-simulated tags. Re-run the identical protocol on ~1wk of REAL Phase-1b production data; if R3 stays 0-FP, **ship URL ∪ R3 (~35%+, 0 FP)**; if any real-tag FP appears, it's a near-miss needing actor-normalization, not a kill. **Design now de-risked: matcher = URL-exact tier ∪ R3 fingerprint tier → `threads/story-map.json` (S3) → tracker stamps threadId.**
+
 --- (original spec retained below for reference) ---
 ### Phase 1b — TAG EMISSION (operator-chosen route 2026-09-11: "tag route first"; recon GO — spec below)
 Recon evidence: `EVENT_REGISTRY_TAGRECON.md` (field-plumbing whitelists, token headroom, map-side actor quality, deploy state — all verified 2026-09-11).

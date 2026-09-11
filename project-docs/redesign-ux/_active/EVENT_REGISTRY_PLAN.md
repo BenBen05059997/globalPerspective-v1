@@ -121,6 +121,12 @@ regressions vs the impact-audit's miss list). Never flip on vibes. Rollback = re
 (audit-fidelity; confirmed isolated); `continues_topic` inherits storyId; ARCHITECTURE.md
 data-flow diagram gains the registry.
 
+## 3.5 Storage decision (operator-confirmed 2026-09-11)
+
+- **Tag DATA** stays where each pipeline already writes: editorial `iso3`/`actors`/`event_type` on topic records in **DDB `NewsCache`**; map `entities`/`iso3` in **S3** (`corpus/`, `stories/`). Two stores, because the two pipelines already write to two stores — no move needed (live since Phase 1b).
+- **The LINK MAP** (the matcher's output: storyId ↔ threadId pairs) lives in **S3** `threads/story-map.json`, one writer; the **tracker reads it each sweep and stamps `situation.threadId`** into `world/latest.json` → reaches the frontend via the existing Worker `/data/*` (the situation bundle already carries a `threadId` slot). S3 (not DDB) because the whole situation world is S3-backed, one-writer-per-prefix (DATA_STRATEGY). The matcher needs no DB of its own — it reads DDB `NewsCache:latest` + S3 `stories/`, writes the one S3 file.
+- **Deferred:** mirroring editorial fingerprints INTO the S3 registry (so `stories/` is the single place) is coupled to the NewsCache→S3 migration (S8·T6, last) — NOT done now; the matcher is unaffected when that day comes.
+
 ## 4. Honest limits / non-goals
 
 - **Coverage stays scarce by design:** editorial picks ~13 of ~80 events; most pins will never

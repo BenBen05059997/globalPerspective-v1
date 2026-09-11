@@ -49,6 +49,55 @@ const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUn
 
 const LLM_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '4', 10);
 
+// ── Event-registry matcher (Phase 1 "the bridge", MATCHER_SPEC) — additive, fully isolated ──
+// Links map stories (S3 stories/state) to editorial threads via URL-exact (Tier 1) + R3 fingerprint
+// (Tier 2, gated). Writes threads/story-map.json; the tracker reads it and stamps situation.threadId.
+const { buildStoryMap } = require('./matcher');
+const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
+const STORY_MAP_KEY = 'threads/story-map.json';
+const ENABLE_R3_TIER = String(process.env.ENABLE_R3_TIER || 'false').toLowerCase() === 'true'; // gated until real-tag re-measurement
+let _s3;
+function s3() {
+  if (!_s3) { const { S3Client } = require('@aws-sdk/client-s3'); _s3 = new S3Client({ region: REGION }); }
+  return _s3;
+}
+// Read every stories/state/*.json (the full registry, per Phase 0's measured surface — NOT the
+// 80-cap stories/index.json). Best-effort: any failure returns [] so the matcher no-ops safely.
+async function readStoryStates() {
+  const { ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
+  const keys = [];
+  let token;
+  do {
+    const r = await s3().send(new ListObjectsV2Command({ Bucket: WORLD_BUCKET, Prefix: 'stories/state/', ContinuationToken: token }));
+    for (const o of r.Contents || []) if (o.Key.endsWith('.json')) keys.push(o.Key);
+    token = r.IsTruncated ? r.NextContinuationToken : undefined;
+  } while (token);
+  const stories = await mapWithConcurrency(keys, 16, async (key) => {
+    try { const r = await s3().send(new GetObjectCommand({ Bucket: WORLD_BUCKET, Key: key })); return JSON.parse(await r.Body.transformToString()); }
+    catch { return null; }
+  });
+  return stories.filter(Boolean);
+}
+async function writeStoryMap(mapObj) {
+  const { PutObjectCommand } = require('@aws-sdk/client-s3');
+  await s3().send(new PutObjectCommand({ Bucket: WORLD_BUCKET, Key: STORY_MAP_KEY, Body: JSON.stringify(mapObj), ContentType: 'application/json' }));
+}
+// Runs once per generation cycle from the raw staging topics (which now carry threadId + Phase 1b
+// tags). Fully non-fatal: a failure here must never affect topic generation, the swap, or the archive.
+async function runStoryMatcher(rawTopics) {
+  const topics = (rawTopics || []).map((t, idx) => ({
+    id: buildStableTopicId(t, idx), threadId: t.threadId,
+    sources: Array.isArray(t.sources) ? t.sources : [],
+    iso3: Array.isArray(t.iso3) ? t.iso3 : [],
+    actors: Array.isArray(t.actors) ? t.actors : [],
+  }));
+  const stories = await readStoryStates();
+  const map = buildStoryMap(topics, stories, { enableR3: ENABLE_R3_TIER });
+  await writeStoryMap(map);
+  console.log(`[matcher] wrote ${STORY_MAP_KEY}: ${Object.keys(map.pairs).length} pairs (${JSON.stringify(map.counts)}, r3=${ENABLE_R3_TIER})`);
+  return map;
+}
+
 async function mapWithConcurrency(items, limit, worker) {
   const results = new Array(items.length);
   let cursor = 0;
@@ -138,6 +187,16 @@ exports.handler = async (event) => {
         console.log(`Assigned threadIds to ${stagingItem.topics.length} latest topics`);
       } catch (threadErr) {
         console.warn('threadId assignment for latest failed:', threadErr.message);
+      }
+      // Event-registry matcher: link stories→threads via the just-assigned threadIds + Phase 1b tags.
+      // Separate try/catch from threadId assignment so a matcher fault can't disturb it, the swap,
+      // or the archive write (all of which run unconditionally below).
+      if (!readOnly) {
+        try {
+          await runStoryMatcher(stagingItem.topics);
+        } catch (matchErr) {
+          console.warn('[matcher] story-map build failed (non-fatal):', matchErr.message);
+        }
       }
     }
 

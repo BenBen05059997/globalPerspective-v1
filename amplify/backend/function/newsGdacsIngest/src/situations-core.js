@@ -271,7 +271,13 @@ function buildStorySituation(prev, story, nowIso, ttl, opts = {}) {
   else if (escalating && prev.state !== 'escalating' && raiseCooledDown) change = 'raised';
   const state = (!prev || reopened) ? 'emerging' : (escalating ? 'escalating' : 'peak');
   const base = {
-    situationId: `news#${story.storyId}`, source: 'news', storyId: story.storyId, threadId: (prev && prev.threadId) || null,
+    situationId: `news#${story.storyId}`, source: 'news', storyId: story.storyId,
+    // Event-registry link (Phase 1): the current map wins when present; otherwise LATCH the
+    // previously-proven threadId for the situation's lifetime. Latching (not mirroring) because
+    // topics rotate every ~4h while the thread page lives 90 days — a URL-proven link shouldn't
+    // blink off when its topic ages out. Situations close in days ≪ 90d, so a latched link can't
+    // outlive its page.
+    threadId: opts.threadId || (prev && prev.threadId) || null,
     title: story.title, verb_label: label, axis: story.axis || 'political', tier,
     iso3_origin: affected.slice(0, 1), iso3_affected: affected, affected_names: [],
     centroid: story.centroid || (prev && prev.centroid) || null,

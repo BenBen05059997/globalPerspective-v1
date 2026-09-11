@@ -224,6 +224,14 @@ async function readStories() {
   return { stories: eligible, storiesAt: (idx && idx.updated_at) || null };
 }
 
+// Event-registry link map (Phase 1 "the bridge"): storyId → { threadId } written by
+// NewsProjectInvokeAgentLambda. Best-effort read — a missing/unreadable map means "no links this
+// sweep" (fail open to null threadId), never blocks the sweep.
+async function readStoryMap() {
+  const m = await getJson('threads/story-map.json');
+  return (m && m.pairs) || {};
+}
+
 async function loadPriorStates() {
   const index = await getJson(P.index);
   const ids = (index && index.ids) || [];
@@ -246,7 +254,7 @@ exports.handler = async () => {
   const now = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + SITUATION_TTL_DAYS * 86400;
 
-  const [{ observations, gdacsObservedAt, processedKeys }, { stories, storiesAt }, priorStates] = await Promise.all([readObservations(), readStories(), loadPriorStates()]);
+  const [{ observations, gdacsObservedAt, processedKeys }, { stories, storiesAt }, priorStates, storyMap] = await Promise.all([readObservations(), readStories(), loadPriorStates(), readStoryMap()]);
 
   // Build news situations from stories. Merge rule (one event, one pin): skip a humanitarian story
   // that shares a country with a GDACS situation present this sweep — the disaster pin already owns it.
@@ -257,7 +265,9 @@ exports.handler = async () => {
   for (const st of stories) {
     if (st.axis === 'humanitarian' && (st.iso3 || []).some((c) => gdacsIso.has(c))) continue;
     const id = `news#${st.storyId}`;
-    extraBuilt[id] = buildStorySituation(priorStates[id] || null, st, now, ttl, storyOpts);
+    // Link map: stamp the matched thread when present (latched in buildStorySituation, see below).
+    const mapEntry = storyMap[st.storyId];
+    extraBuilt[id] = buildStorySituation(priorStates[id] || null, st, now, ttl, { ...storyOpts, threadId: mapEntry ? mapEntry.threadId : null });
   }
 
   const { states, changes, counts, dropped } = foldSweep(priorStates, observations, now, ttl, { extraBuilt });

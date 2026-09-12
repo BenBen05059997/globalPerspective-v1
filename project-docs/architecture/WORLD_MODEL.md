@@ -1,6 +1,41 @@
-# World Model — the semantic ontology (DRAFT)
+# World Model — the semantic ontology (DECISIONS RECORDED 2026-09-12)
 
-**Status:** DRAFT — operator review pending. This is the binding semantic source of truth for
+## OPERATOR DECISIONS — 2026-09-12 (binding; supersede the debate where they touch it)
+
+Resolving the two operator-review items after the three-way debate (`WORLD_MODEL_DEBATE_2026-09-11.md`):
+
+**D1 — Non-event content: KEEP IT, DEMOTED (the "B / Pluralist-compromise" option).** The site covers
+both geo-anchored EVENTS (map pins) and placeless DEVELOPMENTS (science/generic-tech/climate-policy/
+society that materially change lives without a place+actor to pin). Rationale = the operator's own
+mission line: "what materially changes lives, even if underreported" — which includes a medical/AI/
+science shift with no map coordinates. Constraints (per the debate's convergence, so this stays a
+demotion not a revived quota): DEVELOPMENTS **never get a map pin**, **never a category quota** (they
+earn a spot only by clearing a raised material-change bar), lead position always goes to EVENTS, and
+this adds **no new ID space, no new importance scale, no new taxonomy** — it is a display/classification
+tag over fields that already exist (`iso3[]`/`actors[]` present ⇒ EVENT; absent ⇒ DEVELOPMENT). §3's
+override table is the membership test. How it shows: EVENTS lead the front page; a quieter, clearly-
+secondary "Developments" treatment (band or badge-tagged cards) sits below — NOT a nav page, NOT a
+front-page peer.
+
+**D2 — ONE importance scale (merge the eight → the canonical tier).** Everything a reader experiences
+as "how big a deal is this" resolves to the single canonical tier (low/moderate/elevated/high, the
+`riskTiers.js` bands — precedent confirmed canonical, VERIFY §F). classifier severity + GDACS level are
+already absorbed (done); editorial `significance`/`urgency` and any stray importance rating derive into
+the tier then get deprecated (gated on a one-time consumer-grep, VERIFY §B). **Honest exception — three
+scales are NOT importance and keep their own meaning, clearly labeled as what they are:** (a) prediction
+probabilities = *likelihood*, not importance; (b) the breaking-alert score = an internal *decision gate*
+(ring the bell?), never a displayed rating; (c) economic-impact severity = *market-movement magnitude*,
+its own measure — it may *report into* the tier for display but is not collapsed away. The guardrail
+(§7) stands: no NEW scale may be invented — a feature reuses the tier or it doesn't ship.
+
+**Status of the rest of the doc:** the §3 mapping table's `science→other` and the lossy-five overrides
+remain as drafted (D1 formalizes them as the EVENT/DEVELOPMENT test); §4 deprecation map, §8 convergence
+sequence, and the known-gaps (population/fatalities feeds unwired) are unchanged and still pending build,
+gated as written. Nothing here is built yet — these are recorded rulings that make the ontology binding.
+
+---
+
+**Original draft status:** DRAFT — operator review pending. This is the binding semantic source of truth for
 "what is an event, what identifies it, what type is it, how important is it, how do we know, and
 when does it start/end" across the map (situation) pipeline and the editorial (topic/thread)
 pipeline. It does not describe implementation (that's `ARCHITECTURE.md`) — it describes meaning,

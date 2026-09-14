@@ -56,12 +56,17 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
-        "economic": null,
-        "humanitarian": null
+        "conflict": 80,
+        "political": 35,
+        "economic": 38,
+        "humanitarian": 50
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Intensified long-range strikes on Ukrainian cities killing civilians plus a European sabotage campaign = large-scale ongoing state conflict",
+        "political": "Diplomat expulsions and domestic-dissent crackdown are meaningful strain but no legitimacy crisis inside Russia",
+        "economic": "Sanctions pressure real but record EUR7.3B Arctic gas sales show contained, not broad, financial stress",
+        "humanitarian": "Civilian-killing strikes on Kyiv and trafficking foreigners into combat = large-scale civilian harm attributable to the story"
+      },
       "model_dimensions": {
         "conflict": 88,
         "political": 70,
@@ -119,12 +124,17 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
-        "economic": null,
-        "humanitarian": null
+        "conflict": 85,
+        "political": 55,
+        "economic": 40,
+        "humanitarian": 72
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Full-scale war with intensified strikes and civilian deaths at their highest since May 2022",
+        "political": "Corruption probe inside the president's office, ousted minister demanding wartime elections, succession turbulence = real governance crisis",
+        "economic": "War-economy strain and gas-shortage blowback but no specific financial-stress data given",
+        "humanitarian": "UN-reported civilian deaths highest since May 2022 across the country = large-scale civilian harm, short of mass-displacement detail"
+      },
       "model_dimensions": {
         "conflict": 95,
         "political": 78,
@@ -183,11 +193,14 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
+        "political": 30,
         "economic": null,
-        "humanitarian": null
+        "humanitarian": 60
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "Diplomatic spat with Morocco and multi-crisis institutional strain, no legitimacy crisis",
+        "humanitarian": "~100 migrant deaths, 50,000+ arrivals overwhelming processing, plus wildfire evacuations = aid capacity genuinely impaired"
+      },
       "model_dimensions": {
         "conflict": 35,
         "political": 45,
@@ -237,12 +250,15 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
+        "conflict": 40,
+        "political": 15,
         "economic": null,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Repeated ballistic salvos plus Yongbyon enrichment expansion exceed routine posturing but involve no hostilities",
+        "political": "Regime stable; summit diplomacy and peace-talks proposal are normal-track signals"
+      },
       "model_dimensions": {
         "conflict": 72,
         "political": 55,
@@ -300,12 +316,16 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
-        "economic": null,
+        "conflict": 78,
+        "political": 55,
+        "economic": 75,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "US strike on an Iranian tanker plus active Houthi proxy attacks = direct state-on-state engagement",
+        "political": "Open factional fighting over war strategy under a new Supreme Leader = real governance crisis",
+        "economic": "Sanctions explicitly aimed at collapsing the economy plus a UAE total embargo severing ties = severe broad disruption"
+      },
       "model_dimensions": {
         "conflict": 95,
         "political": 85,
@@ -366,9 +386,11 @@
         "conflict": null,
         "political": null,
         "economic": null,
-        "humanitarian": null
+        "humanitarian": 85
       },
-      "gold_why": {},
+      "gold_why": {
+        "humanitarian": "Deadliest-on-record Ebola trajectory, ~1,500 dead, six provinces, response impaired by health-worker strikes"
+      },
       "model_dimensions": {
         "conflict": null,
         "political": 45,
@@ -426,12 +448,16 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
+        "conflict": 20,
+        "political": 45,
         "economic": null,
-        "humanitarian": null
+        "humanitarian": 75
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "A single maritime attack sinking an Indian ship near Yemen; no sustained hostilities",
+        "political": "Sustained youth movement that already forced a minister's removal = meaningful institutional strain short of legitimacy crisis",
+        "humanitarian": "Assam flooding displaced over one million people = mass-displacement scale"
+      },
       "model_dimensions": {
         "conflict": 45,
         "political": 65,
@@ -489,12 +515,17 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
-        "economic": null,
-        "humanitarian": null
+        "conflict": 82,
+        "political": 30,
+        "economic": 35,
+        "humanitarian": 85
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Active multi-front war including strikes on Syria and Hezbollah engagement",
+        "political": "International isolation pressures the government but the record shows no internal institutional instability",
+        "economic": "Allied trade bans on settlement goods = real but narrow economic action",
+        "humanitarian": "Tightened Gaza blockade driving crisis, atrocity-crime warnings, settler siege trapping families"
+      },
       "model_dimensions": {
         "conflict": 95,
         "political": 85,
@@ -548,12 +579,16 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
+        "conflict": 60,
+        "political": 50,
         "economic": null,
-        "humanitarian": null
+        "humanitarian": 25
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Coordinated militant attacks killing 25+ police with drones = sustained lethal insurgent surge",
+        "political": "Khan detention with Supreme Court intervention plus election unrest with live fire = real governance crisis",
+        "humanitarian": "Avalanche killing ten and citizens killed abroad = real but numerically contained harm"
+      },
       "model_dimensions": {
         "conflict": 78,
         "political": 62,
@@ -612,11 +647,14 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
-        "economic": null,
+        "political": 25,
+        "economic": 20,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "Legislative defeat, opposition funding scandal and diplomatic rows = fragmented but functioning politics",
+        "economic": "Argentine oil-sanction threats and narrow settlement trade bans = threatened, not realized, disruption"
+      },
       "model_dimensions": {
         "conflict": 55,
         "political": 62,
@@ -666,12 +704,16 @@
         ]
       },
       "gold": {
-        "conflict": null,
+        "conflict": 30,
         "political": null,
-        "economic": null,
-        "humanitarian": null
+        "economic": 60,
+        "humanitarian": 12
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "US-Iran strikes in adjacent Gulf waters create spillover exposure without Omani hostilities",
+        "economic": "Hormuz chokepoint disruption pushed oil past $100 with transit-fee schemes = broad cross-sector stress, partially easing",
+        "humanitarian": "Oil spill threatening a nature reserve; minimal direct human impact"
+      },
       "model_dimensions": {
         "conflict": 72,
         "political": 35,
@@ -725,12 +767,17 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
-        "economic": null,
-        "humanitarian": null
+        "conflict": 30,
+        "political": 40,
+        "economic": 35,
+        "humanitarian": 60
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "State-linked sabotage campaign including an airport attack = hostile action short of armed conflict",
+        "political": "AfD state-level consolidation, coalition fragility and migration deadlock = meaningful strain, no collapse",
+        "economic": "VW's largest-ever restructuring signals industrial weakness; offset by EUR40B inbound investment",
+        "humanitarian": "Record 14,000 heat deaths = mass-casualty-scale harm from climate"
+      },
       "model_dimensions": {
         "conflict": 55,
         "political": 70,
@@ -789,11 +836,14 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
-        "economic": null,
+        "political": 18,
+        "economic": 65,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "Annexation rhetoric is external pressure; Canadian institutions remain stable",
+        "economic": "Escalating tariff war on ~$20B of goods with supply chains facing existential threat = broad cross-sector stress"
+      },
       "model_dimensions": {
         "conflict": 15,
         "political": 55,
@@ -848,11 +898,14 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
+        "political": 35,
         "economic": null,
-        "humanitarian": null
+        "humanitarian": 40
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "Opposition leader in ICU during a treason trial = repression and instability signal",
+        "humanitarian": "19 hunger deaths with emergency relief operations = severe but numerically contained crisis"
+      },
       "model_dimensions": {
         "conflict": 35,
         "political": 55,
@@ -910,12 +963,17 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
-        "economic": null,
-        "humanitarian": null
+        "conflict": 40,
+        "political": 30,
+        "economic": 40,
+        "humanitarian": 80
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Myanmar airstrike killing 14 civilians plus China-Taiwan coercion = lethal but localized incidents region-wide",
+        "political": "Philippines/Myanmar instability and Nepal online-abuse crackdown = diffuse moderate strain",
+        "economic": "99.2% anti-dumping duties on Japanese chip inputs = real sector-level trade shock",
+        "humanitarian": "Nepal floods with thousands missing and relief camps short of basics = mass-casualty crisis"
+      },
       "model_dimensions": {
         "conflict": 68,
         "political": 55,
@@ -973,12 +1031,16 @@
         ]
       },
       "gold": {
-        "conflict": null,
+        "conflict": 88,
         "political": null,
-        "economic": null,
-        "humanitarian": null
+        "economic": 78,
+        "humanitarian": 75
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Seventh month of direct US-Iran engagement plus strikes killing civilians in Lebanon and a drone hitting Kuwait City",
+        "economic": "Oil past $97, diesel at all-time highs, 25% of global supply at risk = severe broad disruption",
+        "humanitarian": "Gaza oxygen crisis with 12 of 34 stations working and strikes killing children and medics"
+      },
       "model_dimensions": {
         "conflict": 92,
         "political": 68,
@@ -1004,12 +1066,16 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
-        "economic": null,
+        "conflict": 80,
+        "political": 50,
+        "economic": 70,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "US strikes on Iran plus continuing Israeli operations and Hezbollah infrastructure destruction despite a signed deal",
+        "political": "Hezbollah rejecting the deal with Beirut protests = genuine sovereignty/legitimacy crisis in Lebanon",
+        "economic": "Claimed Hormuz closure conditioning reopening on political terms = major trade-route disruption"
+      },
       "model_dimensions": {
         "conflict": 90,
         "political": 70,
@@ -1036,11 +1102,14 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
-        "economic": null,
+        "political": 12,
+        "economic": 15,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "A sports-governance leadership crisis with no state-institution implication",
+        "economic": "Commercial-rights dispute and boycott threats = contained sector-specific financial risk"
+      },
       "model_dimensions": {
         "conflict": 0,
         "political": 70,
@@ -1068,10 +1137,12 @@
       "gold": {
         "conflict": null,
         "political": null,
-        "economic": null,
+        "economic": 30,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "economic": "Bans on Chinese robots/inverters plus an AI price war = real but contained trade/sector shock"
+      },
       "model_dimensions": {
         "conflict": 0,
         "political": 65,
@@ -1114,11 +1185,14 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
+        "political": 45,
         "economic": null,
-        "humanitarian": null
+        "humanitarian": 20
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "Reduced civil-rights enforcement plus sweeping federal surveillance of protest groups = sustained institutional strain",
+        "humanitarian": "1,200 third-country deportees and punitive enforcement tools = real but small-scale harm"
+      },
       "model_dimensions": {
         "conflict": 35,
         "political": 60,
@@ -1148,12 +1222,15 @@
         ]
       },
       "gold": {
-        "conflict": null,
+        "conflict": 80,
         "political": null,
-        "economic": null,
+        "economic": 80,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Naval blockade with ships attacked and transit at a standstill amid a months-long war",
+        "economic": "Hormuz transit near standstill for months = severe chokepoint disruption"
+      },
       "model_dimensions": {
         "conflict": 85,
         "political": 80,
@@ -1179,12 +1256,15 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
+        "conflict": 78,
+        "political": 68,
         "economic": null,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Supreme Leader killed in US-Israeli airstrikes amid an active interstate war",
+        "political": "Wartime succession with the successor injured and absent plus acknowledged internal fractures = deep legitimacy uncertainty short of collapse"
+      },
       "model_dimensions": {
         "conflict": 85,
         "political": 75,
@@ -1211,11 +1291,14 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
+        "political": 10,
         "economic": null,
-        "humanitarian": null
+        "humanitarian": 70
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "Supermarket scuffles over cooling units = minor societal friction",
+        "humanitarian": "3,700 excess deaths, 12,000 evacuated and a responder death = mass-casualty-scale climate emergency"
+      },
       "model_dimensions": {
         "conflict": null,
         "political": 65,
@@ -1242,11 +1325,14 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
+        "political": 60,
         "economic": null,
-        "humanitarian": null
+        "humanitarian": 15
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "Movement called the biggest challenge of Modi's tenure forced a minister out and met state violence and repression",
+        "humanitarian": "Pellet-gun injuries to protesters = limited-scale civilian harm"
+      },
       "model_dimensions": {
         "conflict": 35,
         "political": 70,
@@ -1273,11 +1359,15 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
-        "economic": null,
-        "humanitarian": null
+        "political": 45,
+        "economic": 40,
+        "humanitarian": 90
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "Mounting public anger and blame deflection expose governance failure without an uprising",
+        "economic": "Fuel shortages, broken grid and no fiscal resilience = real economic incapacity, already-degraded baseline",
+        "humanitarian": "4,000+ dead, 17,000 injured, thousands missing with services overwhelmed"
+      },
       "model_dimensions": {
         "conflict": 0,
         "political": 75,
@@ -1303,12 +1393,16 @@
         ]
       },
       "gold": {
-        "conflict": null,
-        "political": null,
+        "conflict": 30,
+        "political": 55,
         "economic": null,
-        "humanitarian": null
+        "humanitarian": 55
       },
-      "gold_why": {},
+      "gold_why": {
+        "conflict": "Mob violence and looting with deaths during protests = lethal communal violence short of armed conflict",
+        "political": "Biggest migration protests since 2008 with 900+ arrests and strained state capacity plus diplomatic fallout",
+        "humanitarian": "Thousands fleeing and 15,000 repatriated under threat = large forced-displacement event"
+      },
       "model_dimensions": {
         "conflict": 75,
         "political": 60,
@@ -1348,11 +1442,15 @@
       },
       "gold": {
         "conflict": null,
-        "political": null,
-        "economic": null,
-        "humanitarian": null
+        "political": 15,
+        "economic": 25,
+        "humanitarian": 85
       },
-      "gold_why": {},
+      "gold_why": {
+        "political": "Transparency questions toward China and climate-justice demands = mild friction",
+        "economic": "270,000 stranded passengers and two-day airport closures = real but contained shock",
+        "humanitarian": "1,300+ dead and 5,000+ missing in the Nepal floods = mass-casualty crisis"
+      },
       "model_dimensions": {
         "conflict": null,
         "political": 60,
@@ -1380,10 +1478,12 @@
       "gold": {
         "conflict": null,
         "political": null,
-        "economic": null,
+        "economic": 15,
         "humanitarian": null
       },
-      "gold_why": {},
+      "gold_why": {
+        "economic": "Large fines and corporate maneuvers with no systemic financial stress"
+      },
       "model_dimensions": {
         "conflict": null,
         "political": 60,
@@ -1392,5 +1492,7 @@
         "riskScore": 70
       }
     }
-  ]
+  ],
+  "labeledBy": "claude-fable-5 (cross-model judge, blind to model_dimensions; operator may override any label)",
+  "labeledAt": "2026-09-15"
 }

@@ -377,7 +377,7 @@ Read-only REST proxy. All supported actions:
 **Live deploy name:** `newsPostLinkedin` (lowercase "in" — the repo dir's casing does NOT match the deployed function name; verified 2026-09-10)
 **Trigger:** EventBridge Scheduler — `InvokeLinkedIn` — `cron(20 */3 * * ? *)`, **timezone `Asia/Tokyo`** (verified 2026-07-25 — the scheduler is NOT in UTC, same as `newsPostDevTo` #7). Fires at :20 past JST hours 0/3/6/… = **15/18/21/00/… UTC**.
 
-> ⚠️ **Two LinkedIn posters, same account, no shared dedup (BACKEND_AUDIT_2026-09-10.md #3).** `newsPostLinkedin` (this one, 3-hourly, topics+images+Bluesky) and `linkedInAutoPost` (#10, 12-hourly, thread/country) both post to the **same** LinkedIn account under **disjoint dedup namespaces** (`POSTED#LINKEDIN#` here vs `POSTED#LINKEDIN_AUTO#` there) — overlapping posts about the same story are structurally possible. Decide which is primary; retire or cross-dedup the other. Separately, the live env carries **Mastodon/Telegram/Farcaster/Nostr secrets that zero code in this function references** (repo code posts to LinkedIn+Bluesky only) — either dead secrets that should be removed, or a sign of deployed-zip drift not yet resolved by a zip diff.
+> ✅ **Duplicate-poster risk CLOSED 2026-09-11** — `linkedInAutoPost` (#10) was retired in full (schedule + Lambda deleted); `newsPostLinkedin` is now the sole LinkedIn poster. Still open: the live env carries **Mastodon/Telegram/Farcaster/Nostr secrets that zero code in this function references** (repo code posts to LinkedIn+Bluesky only) — either dead secrets that should be removed, or a sign of deployed-zip drift not yet resolved by a zip diff.
 
 **What it does:**
 1. Reads `latest` topics + AI summaries from DynamoDB
@@ -477,21 +477,8 @@ Two layers: `edges` = sparse causal overlay (💭 model judgment); `backbone` = 
 
 ---
 
-### 10. `linkedInAutoPost`
-**Path:** `amplify/backend/function/linkedInAutoPost/src/index.js`
-**Trigger:** EventBridge Scheduler — `LinkedinThreadsDaily` — `cron(30 7/12 * * ? *)` (**TZ Asia/Tokyo** → **22:30 / 10:30 UTC**; the §Scheduler table is authoritative)
-
-Intelligent scheduled LinkedIn poster — distinct from `newsPostLinkedIn` (manual/multi-platform).
-
-**What it does:**
-1. Scans `SUMMARIZE_PREDICT_TABLE` for thread analyses (`THREAD_ANALYSIS`) and country intelligence (`COUNTRY_INTELLIGENCE`)
-2. Scores items by trend (rising/stable/fading) and risk level (critical/elevated/moderate/low)
-3. Deduplicates against `SOCIAL_POSTS_TABLE`
-4. Posts highest-scoring eligible item to LinkedIn; records with TTL
-
-> **Deep-links to the specific story (fixed 2026-09-08).** `formatThreadPost` links to `thread.threadId ? ${SITE_URL}/weekly/thread/${threadId} : ${SITE_URL}/weekly` (route `/weekly/thread/:threadId` → ThreadPage); `formatCountryPost` links to `country.countryName ? ${SITE_URL}/weekly/country/${encodeURIComponent(countryName)} : ${SITE_URL}/weekly/countries` (route `/weekly/country/:countryName` → CountryPage). Here `SITE_URL` has **no** trailing slash (unlike #6). This Lambda posts prose fields directly (no raw-JSON prediction bug).
-
-**Key env vars:** `LINKEDIN_ACCESS_TOKEN` (60-day expiry — shares the token + refresh runbook with `newsPostLinkedin` #6, see that note), `LINKEDIN_PERSON_ID`, `SUMMARIZE_PREDICT_TABLE`, `SOCIAL_POSTS_TABLE`
+### 10. `linkedInAutoPost` — **RETIRED 2026-09-11**
+**Retired in full (S9·T1, see CHANGES.md 2026-09-11):** EventBridge Scheduler `LinkedinThreadsDaily` deleted, Lambda `linkedInAutoPost` deleted from AWS (204), repo dir removed (git-recoverable). Live scheduler listing verified 2026-09-14: only `InvokeDev` + `InvokeLinkedIn` remain. The survivor `newsPostLinkedin` (#6, 3-hourly, LinkedIn+Bluesky) is the sole LinkedIn poster — the two-posters/duplicate-post risk formerly flagged here and at #6 is closed. Historical: it scored `THREAD_ANALYSIS`/`COUNTRY_INTELLIGENCE` items and posted the best to LinkedIn under the disjoint `POSTED#LINKEDIN_AUTO#` dedup namespace (rows may persist in `SOCIAL_POSTS_TABLE` until their 30-day TTL lapses).
 
 ---
 
@@ -1180,7 +1167,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `InvokeNewsAgent` | `cron(5 */4 * * ? *)` | NewsProjectInvokeAgentLambda-dev (every 4h at :05) |
 | `countryIntelliegence` | `cron(0 7 * * ? *)` | newsCountryIntelligence (daily 07:00 UTC) |
 | `InvokeLinkedIn` | `cron(20 */3 * * ? *)` **TZ Asia/Tokyo** | newsPostLinkedin (:20 past JST hours 0/3/6/… = **15/18/21/00/… UTC** — NOT UTC, corrected 2026-07-25) |
-| `LinkedinThreadsDaily` | `cron(30 7/12 * * ? *)` **TZ Asia/Tokyo** | linkedInAutoPost (07:30 / 19:30 **JST** = **22:30 / 10:30 UTC** — corrected 2026-07-25) |
+| ~~`LinkedinThreadsDaily`~~ | ~~`cron(30 7/12 * * ? *)` TZ Asia/Tokyo~~ | **DELETED 2026-09-11** with the linkedInAutoPost retirement (#10) |
 | `InvokeDev` | `cron(0 23 * * ? *)` **TZ Asia/Tokyo** | newsPostDevTo (23:00 JST = **14:00 UTC** daily — scheduler is NOT in UTC) |
 | `Fact` | `cron(0 5 * * ? *)` **TZ Asia/Tokyo** | newsCountryFactsUpdater (05:00 **JST** = **20:00 UTC** prior day — corrected 2026-07-25) |
 

@@ -20,13 +20,17 @@ front-page peer.
 **D2 — ONE importance scale (merge the eight → the canonical tier).** Everything a reader experiences
 as "how big a deal is this" resolves to the single canonical tier (low/moderate/elevated/high, the
 `riskTiers.js` bands — precedent confirmed canonical, VERIFY §F). classifier severity + GDACS level are
-already absorbed (done); editorial `significance`/`urgency` and any stray importance rating derive into
-the tier then get deprecated (gated on a one-time consumer-grep, VERIFY §B). **Honest exception — three
-scales are NOT importance and keep their own meaning, clearly labeled as what they are:** (a) prediction
-probabilities = *likelihood*, not importance; (b) the breaking-alert score = an internal *decision gate*
-(ring the bell?), never a displayed rating; (c) economic-impact severity = *market-movement magnitude*,
-its own measure — it may *report into* the tier for display but is not collapsed away. The guardrail
-(§7) stands: no NEW scale may be invented — a feature reuses the tier or it doesn't ship.
+already absorbed (done); editorial `significance` and any stray importance rating derive into
+the tier then get deprecated (gated on a one-time consumer-grep, VERIFY §B). `significance`'s sole
+known consumer is the LinkedIn post-order sort; the decision (2026-09-15 amendment, see Phase 2 of
+`ONE_TRUTH_EXECUTION_PLAN.md`) is to **leave it as-is (legacy)** for now rather than derive-then-deprecate
+it. **Honest exception — four scales are NOT importance and keep their own meaning, clearly labeled as
+what they are:** (a) prediction probabilities = *likelihood*, not importance; (b) the breaking-alert
+score = an internal *decision gate* (ring the bell?), never a displayed rating; (c) economic-impact
+severity = *market-movement magnitude*, its own measure — it may *report into* the tier for display
+but is not collapsed away; (d) editorial `urgency` = *tempo* (how fresh/breaking a story is right now),
+not importance — kept as a labeled freshness flag (per `IMPORTANCE_SCALE_MAPPING.md`, 2026-09-12). The
+guardrail (§7) stands: no NEW scale may be invented — a feature reuses the tier or it doesn't ship.
 
 **Status of the rest of the doc:** the §3 mapping table's `science→other` and the lossy-five overrides
 remain as drafted (D1 formalizes them as the EVENT/DEVELOPMENT test); §4 deprecation map, §8 convergence
@@ -164,7 +168,7 @@ staying separate. There is no second display scale to invent.
 | Situation tier (low/mod/elevated/high) | **CANONICAL** (this IS the display scale) | all map/situation frontend | — |
 | `riskScore` 0-100 ×4 axes + `riskLevel` | **CANONICAL** (the other survivor) | 11 frontend files via `riskTiers.js` | — |
 | Editorial significance (h/m/l) | **DERIVE-THEN-DEPRECATE** (unconfirmed) | server-side ranking/prompt logic only; no confirmed frontend consumer found (VERIFY §B) | on next touch of `newsInvokeGemini` selection: grep `Home.jsx`/topic-card components for a live consumer; if none, fold into tier and stop persisting a separate field |
-| Editorial urgency (h/m/l) | **DERIVE-THEN-DEPRECATE** (unconfirmed) | same as above | same as above |
+| Editorial urgency (h/m/l) | **KEEP-AS-IS (4th exception — tempo, not importance)** | editorial freshness display only; not an importance signal | none — this is a permanent exception, same pattern as the other three KEEP-AS-IS rows above |
 | Breaking-alert float score | **KEEP-AS-IS** | `newsBreakingAlert` threshold gate (`isBreaking`); `BreakingStrip` send-eligibility | none — this is a decision gate (should we alert), already a downstream *combiner* of canonical inputs (capped riskScore + velocity + outlets + econ magnitude), not a display scale competing with tier; collapsing it into 4 buckets breaks the gate's needed granularity |
 | Economic-impact severity (minor/mod/severe + score 0-100) | **KEEP-AS-IS**, revisit later | `EconomicImpact` UI (rendered band + magnitude) | on next touch of `newsEconomicImpact` severity logic: evaluate porting `SEVERITY_BAND` thresholds onto the riskTiers bands *while preserving* the downgrade state machine (thin winners/losers, low-confidence clamps) — never a bare relabel |
 | Prediction probabilities (ICD-203 bands) | **KEEP-AS-IS** (different semantic) | `/track-record`, `ThreadForecast` | none — this is likelihood, not impact; not commensurable with tier, must stay a separate axis permanently |
@@ -264,6 +268,12 @@ which this doc does not touch.
   per VERIFY's verdicts" — VERIFY's actual verdict is a **PARTIAL/unconfirmed**, not a clean
   DERIVE-THEN-DEPRECATE. I've kept the DERIVE-THEN-DEPRECATE bucket but written the migration
   trigger as "confirm no consumer, then deprecate" rather than asserting it's already safe, to
-  avoid overstating VERIFY's confidence.
+  avoid overstating VERIFY's confidence. **2026-09-15 amendment:** that bucket has since split —
+  `significance` stays in the DERIVE-THEN-DEPRECATE-but-unconfirmed bucket described above, with
+  the Phase-2 build dropped and the decision recorded as "leave as-is (legacy) for now" rather
+  than actively deriving it (`ONE_TRUTH_EXECUTION_PLAN.md`); `urgency` has been moved out of this
+  bucket entirely into the 4th KEEP-AS-IS exception (tempo, not importance, §4). The paragraph
+  above is kept as a historical record of the original drafting deviation and no longer describes
+  `urgency`'s status.
 - No other contradictions found — VERIFY's identity, scale, taxonomy, lifecycle, and registry-gap
   sections were used directly as ground truth throughout.

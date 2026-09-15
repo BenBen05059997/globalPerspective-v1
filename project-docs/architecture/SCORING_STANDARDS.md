@@ -2,6 +2,8 @@
 
 **Date: 2026-09-14. Status: diagnosis only — no code changes proposed.**
 
+Severity's LIVING benchmark status is tracked in `quality/calibration/severity-*.md` reports; this document is the 2026-09-14 audit and is not re-verified per-score.
+
 Grounded in direct `grep`/`Read` of `amplify/backend/function/*/src/` and the `quality/` tree on
 this date, plus `project-docs/architecture/WORLD_MODEL_FRAGMENTS.md`,
 `IMPORTANCE_SCALE_MAPPING.md`, and `project-docs/pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md`.
@@ -64,15 +66,16 @@ pipeline reads thread analyses as background context (`newsCountryIntelligence/s
 `dimensions` (L498). Two independently-produced judgments, sharing a rubric and a derivation
 formula, not a roll-up. (`WORLD_MODEL_FRAGMENTS.md` §3.1.)
 
-**BENCHMARK = NONE.** No hand-labeled reference set, no agreement metric, no gold set of
-"country X should score elevated-conflict on date Y" exists anywhere in `quality/` or
-`project-docs/`. `quality/calibration_report.js` and `quality/calibration/latest.md` monitor
-**economic** severity distribution drift (`ECON#THREAD#` records) — a different score entirely
-(§4 below) — and even that is a self-consistency monitor, not ground truth. Grepping the whole repo
-for a labeled severity set targeting `riskDimensions`/`dimensions`/country-risk returns nothing.
-The operator's worry is confirmed as stated: **this is the score the whole tier system (tier
-pills, halos, "one truth" severity badge) rests on, and it is the least benchmarked score in the
-codebase.** See "The biggest hole" section below.
+**BENCHMARK = NOW EXISTS (as of 2026-09-15), rubric still thin.** A hand-labeled reference set has
+been built: `quality/severity_gold_set.json` (28-record frozen v1 cohort, Claude-labeled
+2026-09-15), an agreement script `quality/severity_agreement.js`, and a first baseline report
+`quality/calibration/severity-2026-09-14.md` (exact 40.3% / within-one 84.7%; political axis worst
+at 22.7% exact; systematic ~1-band inflation; 27 null-violations found). This does not yet mean the
+rubric is fixed — the one-sentence-per-axis calibration text (above) is unchanged pending Phase 4 —
+only that a ground-truth check now exists where none did before. `quality/calibration_report.js`
+and `quality/calibration/latest.md` remain a separate self-consistency drift monitor for
+**economic** severity (§4 below), not this benchmark. See "The biggest hole" section below for the
+2026-09-14 diagnosis this closes.
 
 **Gap:** LLM judgment on a thin four-line calibration rubric, zero ground truth to check it
 against, feeding every severity-tier display surface in the product.
@@ -509,6 +512,9 @@ underlying cases inspectable. None of them do yet.
 
 ## The biggest hole: the severity tier
 
+**UPDATE 2026-09-15: this gap is now closed — the reference set, agreement script and first
+baseline exist (see §1 above); the section below is kept as the original diagnosis.**
+
 The canonical 4-axis severity score (`riskDimensions.js` + its two LLM producers) is the score the
 whole "one source of truth" tier system visibly rests on — it drives the tier pills, the map
 halos, and (per `IMPORTANCE_SCALE_MAPPING.md`) is the eventual target every other importance-ish
@@ -580,9 +586,9 @@ precisely because it sits under the one score everything else is being asked to 
   UNVERIFIED — worth a direct re-check of the full prompt if this becomes an active workstream)
 
 **Needs a BENCHMARK** (rubric may be fine or even excellent, but nothing checks correctness):
-- Canonical severity tier (§1) — the single biggest hole (see above); needed most urgently since
-  the rubric fix and the benchmark fix should probably ship together (you can't tell if a rubric
-  rewrite helped without a way to measure it)
+- Canonical severity tier (§1) — (DONE 2026-09-15 — baseline exists; rubric fix in flight, Phase 4);
+  needed most urgently since the rubric fix and the benchmark fix should probably ship together
+  (you can't tell if a rubric rewrite helped without a way to measure it)
 - Economic quality judge (§5) — needs an actual gold set, not just cross-model diversity
 - Source-audit LLM drift check (§6) — needs a labeled drift/no-drift sample set
 - Breaking-alert threshold (§3) — the plan for this (`BREAKING_ALERTS_PLAN.md:86`) already exists

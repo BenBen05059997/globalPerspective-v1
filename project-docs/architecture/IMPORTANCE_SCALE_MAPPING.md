@@ -1,5 +1,9 @@
 # Importance-Scale Mapping Study
 
+**Superseded by `WORLD_MODEL.md` D2 (amended 2026-09-15)** — this study's recommendations were
+adopted (urgency = 4th kept exception; significance = leave-as-is legacy). Kept for the
+code-citation evidence trail.
+
 _Created 2026-09-12. Read-only, code-grounded feasibility study for **WORLD_MODEL.md D2** ("one importance
 scale — merge the eight into the canonical tier"). Four Sonnet passes traced every producer, consumer,
 prompt definition, and data-availability path for the editorial importance ratings. This is the reference
@@ -144,7 +148,7 @@ named exceptions kept). This study **refines** it with code evidence:
   impact record) — i.e. the topic-level tier is downstream of that work, not a quick win.
 
 **No edit to the binding D2 block has been made here** — this study surfaces the evidence; amending D2 to add the
-4th exception is an operator call.
+4th exception is an operator call. (Done: D2 amended 2026-09-15 per ONE_TRUTH_EXECUTION_PLAN.md Phase 0.)
 
 ---
 

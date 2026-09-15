@@ -1,5 +1,8 @@
 # World Model debate — three adversarial positions (2026-09-11)
 
+**Superseded by `WORLD_MODEL.md` OPERATOR DECISIONS D1/D2 (2026-09-12, amended 2026-09-15) where
+they conflict** — kept as the adversarial-reasoning record.
+
 Three Sonnet advocates argued the operator-review items of WORLD_MODEL.md (the lossy-five mapping, the deprecation calls, gap expectations, the front-page consequence). Synthesis + decisions live in the ledger/plan; these are the full position papers.
 
 ---

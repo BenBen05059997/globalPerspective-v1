@@ -24,8 +24,9 @@ moderate, else low; frontend mirror `src/utils/riskTiers.js`. Built as "Scoring 
 (frontend seam) then Phase B (per-axis LLM scoring + worst-axis derivation), deployed to prod
 2026-07-07, to fix a country's real risk being masked by averaging.
 **Status:** Live — this is the canonical, cross-site importance scale (see D2 below). Per the
-2026-09-14 audit, it is also "the most relied-on and least benchmarked" score on the site: a
-one-sentence rubric with zero human-labeled reference set to check it against (see **P0 reference
+2026-09-14 audit, it is also the most relied-on score; first benchmark baseline exists as of
+2026-09-15 (40% exact / 85% within-one; systematic inflation diagnosed — fix in flight): a
+one-sentence rubric, now checked against a human-labeled reference set (see **P0 reference
 set** and **codebook** below).
 
 ### `urgency` and `significance` (topic enums)
@@ -299,8 +300,9 @@ magnitude, may feed the display tier but stays its own measure).
 (`riskTiers.js`, 25/50/75 bands) predates this decision and was separately confirmed canonical
 2026-09-11 with zero frontend stragglers.
 **Status:** Decision recorded. Classifier severity and GDACS level already fold into the tier
-(done); editorial `significance`/`urgency` still need a one-time consumer check before any
-deprecation — gated, not yet executed.
+(done); the one-time editorial `significance`/`urgency` consumer check is executed as of
+2026-09-15 — `urgency` is kept as the 4th exception (tempo, `WORLD_MODEL.md` D2), `significance` is
+left as-is (legacy), and the Phase-2 replacement was dropped.
 
 ### The convergence build / "Phase 2" (editorial selects from the registry)
 **What it is:** Right now the map side and the editorial side each independently decide what's a big
@@ -343,9 +345,9 @@ item 6, alongside `SCORING_STANDARDS.md`. Proposed in the 2026-09-14 pressure-te
 scoring patterns against this codebase; designed to reuse existing `quality/` conventions
 (`golden_evals.json` shape, `pick_weekly_review.js` labeling workflow). Estimated cost: about half a
 day of engineering plus 1.5-2.5 operator-hours to label 25 events.
-**Status:** Planned/adopted-on-paper, not built — the highest-leverage of the six adopted tools
-below; the current rubric must be baseline-scored against the gold set before any prompt language is
-touched.
+**Status:** Built 2026-09-15 — codebook, 28-record gold set, agreement script, and first baseline all
+exist; the current rubric has been baseline-scored against the gold set, and a prompt fix is pending
+(Phase 4).
 
 ---
 

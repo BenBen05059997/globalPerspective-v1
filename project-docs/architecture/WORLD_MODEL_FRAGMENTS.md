@@ -1,5 +1,7 @@
 # World Model Fragments — catalogue of scattered concepts (2026-09-14)
 
+Dated terrain snapshot (2026-09-14) — current semantics live in `WORLD_MODEL.md`.
+
 **Status: terrain map for consolidation — no code changes proposed.** This document does not
 recommend building anything. It inventories every place the codebase produces the same-or-related
 concept in more than one location, and classifies the relationship between the instances so a

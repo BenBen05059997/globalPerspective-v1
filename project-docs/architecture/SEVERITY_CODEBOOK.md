@@ -65,6 +65,43 @@ is a "high" record overall (driven by conflict), not a moderate one.
 
 ---
 
+## 2.5 Axis-scope rulings (operator-confirmed 2026-09-15)
+
+While adjudicating the first baseline the operator confirmed three binding scope clarifications.
+These are rulings on what each axis *means*, not new bands or cutoffs — §3/§4 are unchanged.
+
+1. **The political axis is DOMESTIC-ONLY.** It measures the stability of a polity's OWN
+   institutions: government legitimacy, coups, unrest, crackdowns, institutional crisis.
+   International pressure on a country (sanctions against it, diplomatic isolation, a foreign
+   leader's rhetoric, being party to a war) is **not** political risk — those belong to the
+   conflict or economic axes, or to no axis at all. "The story involves politics/diplomacy" never
+   by itself justifies a political score. Worked negative examples from the 2026-09-15 baseline
+   adjudication:
+   - The FIFA/UEFA sports-federation leadership crisis is political **low**, not elevated.
+   - The US-Iran Hormuz interstate war/blockade thread is political **null** unless the record
+     shows domestic institutional instability in a specific polity.
+   - The Canada trade-war-plus-foreign-annexation-rhetoric thread is political **low** — external
+     pressure is not internal instability.
+
+2. **War and war-risk live in the CONFLICT axis, and worst-axis-wins means they need no second
+   axis.** A war story already ranks high overall through its conflict (and often economic) score
+   — do not duplicate the same war into the political axis. Within conflict, credible **imminent**
+   escalation may justify the top of the current band (worked example: repeated ballistic-missile
+   salvos plus enrichment expansion with no hostilities = upper-moderate conflict, not low — but
+   not elevated, because nothing is being fought).
+
+3. **Severity scores the PRESENT, not the future.** "This could someday become a war" is a
+   likelihood question, which this system deliberately handles elsewhere (predictions =
+   probability, watch/risk signals = tripwires, trajectory = direction) per `WORLD_MODEL.md` D2's
+   importance-vs-likelihood separation. Future fear enters severity only as the within-band nudge
+   in ruling 2 above, never as a band jump.
+
+The 2026-09-15 baseline labels (`quality/severity_gold_set.json`, Claude-labeled) already follow
+these rulings, so the baseline stands unchanged. Any future prompt fix must implement these same
+scope rules and be re-scored against the same frozen set.
+
+---
+
 ## 3. Bands (identical across axes and record types)
 
 | Band | Range |
@@ -156,6 +193,9 @@ not an abstract description. Use these as calibration points: if the record you'
 
 ## 5. Labeling instructions for the operator (Step 3.4)
 
+0. Read §2.5 (Axis-scope rulings) before labeling — it settles what counts as political vs.
+   conflict vs. no-axis-at-all, and is the operator-confirmed answer to disputes seen in the first
+   baseline.
 1. Open `quality/severity_gold_set.json`. For each record, read only the `narrative` block (do
    **not** look at `model_dimensions` first — it is placed last in each JSON object specifically so
    you can label blind. This is a **soft blind, not a real one**: you authored/reviewed the

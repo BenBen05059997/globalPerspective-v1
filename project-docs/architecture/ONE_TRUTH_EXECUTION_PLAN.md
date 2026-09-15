@@ -295,6 +295,107 @@ After next scheduled generations (06:30/07:00 UTC), verify one fresh DDB record 
 
 **NO-TOUCH list (correctly historical):** `severity-2026-09-14.md`, `severity_gold_set.json` (v1 cohort — future samples must record prompt version), `DESIGN_UPGRADES_2026-09-14.md`, `WORLD_MODEL_FRAGMENTS.md`, dated audit docs.
 
+#### Prepared patch text (staged 2026-09-15 — APPLY ONLY IN THE DEPLOY COMMIT, not before)
+
+Ready-to-apply diffs for the four doc edits (all four must ship in a single commit with the lambda code changes). Each patch anchors on the exact current text so the patcher can find-and-replace by exact match. Placeholders `<DATE>` and `<NUMBERS>` are filled on deploy day.
+
+**(a) `project-docs/architecture/SEVERITY_CODEBOOK.md` — header block (lines 6-9) + §1 heading (line 13)**
+
+Find and replace (lines 6-9):
+```
+**The prompt is not touched by this doc.** This is read-only source material quoted from the live
+generators, plus an anchored expansion for human labeling. No prompt or rubric change to
+`newsCountryIntelligence` or `newsThreadAnalysis` may happen before the Phase 3 baseline
+(`quality/calibration/severity-YYYY-MM-DD.md`) exists — see the plan's Step 3.5 hard rule.
+```
+
+Replace with:
+```
+Prompt v2 (anchored rubric incl. §2.5 scope rulings) DEPLOYED <DATE> per Phase 4; §1 below quotes prompt v1 (the baseline era, superseded); the v2 text lives in quality/prompts/dimensions_v2_*.txt and in the deployed generators.
+```
+
+Also rename the §1 heading (line 13) from:
+```
+## 1. Current rubric (baseline) — quoted verbatim from the live prompts
+```
+
+To:
+```
+## 1. Prompt v1 rubric (baseline era, superseded <DATE>)
+```
+
+**(b) `project-docs/architecture/SCORING_STANDARDS.md` — rubric-quality verdict (lines 69-78) + table cell (line 467)**
+
+Find and replace (lines 69-78):
+```
+**BENCHMARK = NOW EXISTS (as of 2026-09-15), rubric still thin.** A hand-labeled reference set has
+been built: `quality/severity_gold_set.json` (28-record frozen v1 cohort, Claude-labeled
+2026-09-15), an agreement script `quality/severity_agreement.js`, and a first baseline report
+`quality/calibration/severity-2026-09-14.md` (exact 40.3% / within-one 84.7%; political axis worst
+at 22.7% exact; systematic ~1-band inflation; 27 null-violations found). This does not yet mean the
+rubric is fixed — the one-sentence-per-axis calibration text (above) is unchanged pending Phase 4 —
+only that a ground-truth check now exists where none did before. `quality/calibration_report.js`
+and `quality/calibration/latest.md` remain a separate self-consistency drift monitor for
+**economic** severity (§4 below), not this benchmark. See "The biggest hole" section below for the
+2026-09-14 diagnosis this closes.
+```
+
+Replace with:
+```
+**BENCHMARK & RUBRIC = LIVE (as of <DATE>).** A hand-labeled reference set was built: `quality/severity_gold_set.json` (28-record frozen v1 cohort, Claude-labeled 2026-09-15), an agreement script `quality/severity_agreement.js`, and first baseline report `quality/calibration/severity-2026-09-14.md` (exact 40.3% / within-one 84.7%; political axis worst at 22.7% exact; systematic ~1-band inflation; 27 null-violations found). Prompt v2, deployed <DATE>, fixes these three faults with <NUMBERS> offline-verified improvements; the one-sentence-per-axis calibration text has been upgraded to anchored band definitions + §2.5 axis-scope rulings (see SEVERITY_CODEBOOK.md §1 for the v1 baseline, now superseded). `quality/calibration_report.js` and `quality/calibration/latest.md` remain a separate self-consistency drift monitor for **economic** severity (§4 below), not this benchmark.
+```
+
+Also find and replace the table cell (line 467) — the rubric-quality verdict column for the Canonical severity tier row:
+```
+**Thin** — one calibration sentence per axis, no anchors
+```
+
+Replace with:
+```
+Well-specified as of <DATE> — anchored band definitions + §2.5 axis-scope rules deployed as prompt v2 (Phase 4); was one thin sentence during the v1/baseline era.
+```
+
+**(c) `project-docs/GLOSSARY.md` — severity-tier entry (line 30) + Codebook entry (line 348-350)**
+
+In the Severity tier section (line 30), find and replace:
+```
+**Status:** Live — this is the canonical, cross-site importance scale (see D2 below). Per the
+2026-09-14 audit, it is also the most relied-on score; first benchmark baseline exists as of
+2026-09-15 (40% exact / 85% within-one; systematic inflation diagnosed — fix in flight): a
+one-sentence rubric, now checked against a human-labeled reference set (see **P0 reference
+set** and **codebook** below).
+```
+
+Replace with:
+```
+**Status:** Live — this is the canonical, cross-site importance scale (see D2 below). Per the
+2026-09-14 audit, it is also the most relied-on score; benchmark baseline built 2026-09-15 (40% exact / 85% within-one; systematic inflation diagnosed and fixed). Prompt v2 deployed <DATE> with <NUMBERS> improvement; anchored band definitions + §2.5 axis-scope rules now operationalize the scoring (see **codebook** below).
+```
+
+In the Codebook section (lines 348-350), find and replace:
+```
+**Status:** Built 2026-09-15 — codebook, 28-record gold set, agreement script, and first baseline all
+exist; the current rubric has been baseline-scored against the gold set, and a prompt fix is pending
+(Phase 4).
+```
+
+Replace with:
+```
+**Status:** Codebook deployed <DATE>. Prompt v2 shipped <DATE> post-Phase 4 offline eval.
+```
+
+**(d) `project-docs/INDEX.md` — SEVERITY_CODEBOOK row (line 28)**
+
+Find and replace (line 28):
+```
+- **[SEVERITY_CODEBOOK.md](architecture/SEVERITY_CODEBOOK.md)** — The anchored severity rubric (ACLED-style codebook): 4 axes × 4 bands × worked anchors, null rule, worst-axis-wins, operator labeling instructions. Generator prompts NOT changed — baseline measurement first. Pairs with `quality/severity_gold_set.json` + `quality/severity_agreement.js`. 2026-09-15.
+```
+
+Replace with:
+```
+- **[SEVERITY_CODEBOOK.md](architecture/SEVERITY_CODEBOOK.md)** — The anchored severity rubric (ACLED-style codebook): 4 axes × 4 bands × worked anchors, null rule, worst-axis-wins, operator labeling instructions. Prompt v2 deployed <DATE> after passing offline gates (<NUMBERS>). Pairs with `quality/severity_gold_set.json` + `quality/severity_agreement.js`. 2026-09-15 (v1 baseline era) / <DATE> (v2 deployed).
+```
+
 ### Step 4.6 — Bookkeeping
 
 CHANGES.md entry + commit by the ORCHESTRATOR after verifying 4.3's report, 4.4's live-bytes check, and 4.5's diffs.

@@ -258,11 +258,11 @@ Three genuine disputes, resolved by monitor:
 | A4 | `newsAnalyze-sandbox`: env `GROK_MODEL` deepseek-chat → deepseek-v4-pro (merge-not-clobber) | §2.B | **EXECUTED 2026-09-24** — fetched full env, merged only `GROK_MODEL`, wrote back via `update-function-configuration`; verified live value now `deepseek-v4-pro`. |
 
 ### Tier B — SAFE-DELETE, requires `npm run build` verify (deploy rides the NEXT gated deploy, never auto-pushed)
-| # | Action | Evidence |
-|---|---|---|
-| B1 | Frontend sweep: rm ApiKeyGate, BriefingCard, CountryGrouping, PerspectiveComparison, SectionNav, SideNav, LoadingStates, MiniMap, ArticleCard, MapSidePanel (.jsx); hooks usePrediction, useSummary, useBookmarks, useResearchBriefing, useTraceCause; utils/geocoding.js; services/appsyncProxy.js; SummaryDisplay.css; **WorldMap.jsx + WorldMap.css** (pre-V2, zero importers). **Same commit: strike ARCHITECTURE.md rows 1270 / 1310 / 1318-1320 / 1324 + WorldMap rows in map section.** Build must pass; browser click-through before any deploy per standing feedback. | §2.A |
-| B2 | `git rm -r src/` (root legacy Amplify scaffold, 88K, zero refs) | §2.A/§2.C |
-| B3 | `npm uninstall aws-amplify @aws-amplify/api-graphql` (frontend) — check `npm ls` for transitive reintroduction + sanity-read the lockfile diff + clean build | §2.A; Keeper caveat |
+| # | Action | Evidence | Execution status |
+|---|---|---|---|
+| B1 | Frontend sweep: rm ApiKeyGate, BriefingCard, CountryGrouping, PerspectiveComparison, SectionNav, SideNav, LoadingStates, MiniMap, ArticleCard, MapSidePanel (.jsx); hooks usePrediction, useSummary, useBookmarks, useResearchBriefing, useTraceCause; utils/geocoding.js; services/appsyncProxy.js; SummaryDisplay.css; **WorldMap.jsx + WorldMap.css** (pre-V2, zero importers). **Same commit: strike ARCHITECTURE.md rows 1270 / 1310 / 1318-1320 / 1324 + WorldMap rows in map section.** Build must pass; browser click-through before any deploy per standing feedback. | §2.A | **EXECUTED 2026-09-24** — re-grepped every filename for importers before deletion (all zero outside the deletion set); all 20 files removed via `git rm`; `npm run build` passed clean, `npx vitest run` passed 235/235 (19 files, incl. the 3 WorldMapV2 tests — untouched); ARCHITECTURE.md rows/prose struck. Browser click-through / deploy deferred — not run, per instruction (deploy rides the next gated deploy). |
+| B2 | `git rm -r src/` (root legacy Amplify scaffold, 88K, zero refs) | §2.A/§2.C | **EXECUTED 2026-09-24** — 5 tracked files removed via `git rm -r src/`; 2 git-ignored files (`aws-exports.js`, `amplifyconfiguration.json`) went with the directory. |
+| B3 | `npm uninstall aws-amplify @aws-amplify/api-graphql` (frontend) — check `npm ls` for transitive reintroduction + sanity-read the lockfile diff + clean build | §2.A; Keeper caveat | **EXECUTED 2026-09-24** — `npm ls aws-amplify` empty (no transitive reintroduction); `package.json` diff is removal-only (2 lines); build clean afterward. |
 
 ### Tier C — CUT-LATER, explicit gates
 | # | Action | Gate |

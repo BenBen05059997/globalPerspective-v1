@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchMarketsCountry } from '@/services/restProxy';
+import { fetchMarketsCountry } from '@/shared/api/restProxy';
 
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour — macro data updates weekly
 

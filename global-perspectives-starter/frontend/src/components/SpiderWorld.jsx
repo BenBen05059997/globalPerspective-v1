@@ -6,9 +6,9 @@
 // causal web. Throwaway prototype; deletable with SpiderDemo.jsx.
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { fetchWorldOverview } from '@/services/restProxy';
-import { tierFromLevel, tierFromScore, tierLabel, deriveHeadline, AXES } from '@/utils/riskTiers';
-import { RISK_SOLID, riskScoreToVar } from '@/tokens';
+import { fetchWorldOverview } from '@/shared/api/restProxy';
+import { tierFromLevel, tierFromScore, tierLabel, deriveHeadline, AXES } from '@/shared/lib/riskTiers';
+import { RISK_SOLID, riskScoreToVar } from '@/shared/styles/tokens';
 
 const AXIS_SHORT = { conflict: 'Conf', political: 'Pol', economic: 'Econ', humanitarian: 'Hum' };
 

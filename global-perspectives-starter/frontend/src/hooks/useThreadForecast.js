@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchPredictionSnapshot } from '@/services/restProxy.js';
+import { fetchPredictionSnapshot } from '@/shared/api/restProxy.js';
 
 /**
  * useThreadForecast — the Phase 4 "Living forecast" board data for a thread.

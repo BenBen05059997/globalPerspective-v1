@@ -10,7 +10,7 @@
 // AXIS moved (economic/conflict/…). This catches a real per-axis swing the blended-max
 // scalar hides — the same masking the D1 newsDriftCorrector fix addresses server-side —
 // and names the driving dimension in the band. Mirrors that Lambda's axisMoves logic.
-import { AXES, AXIS_LABELS } from '@/utils/riskTiers';
+import { AXES, AXIS_LABELS } from '@/shared/lib/riskTiers';
 
 const STOP = new Set(['the', 'a', 'an', 'of', 'in', 'on', 'and', 'to', 'as', 'at', 'for', 'amid', 'with']);
 function tokens(s) {

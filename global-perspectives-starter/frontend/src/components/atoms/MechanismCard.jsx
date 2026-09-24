@@ -5,7 +5,7 @@
 
 import { Link } from 'react-router-dom';
 import InstrumentChip from '@/components/atoms/InstrumentChip.jsx';
-import SeverityBadge from '@/components/atoms/SeverityBadge.jsx';
+import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
 import QualityFlag from '@/components/atoms/QualityFlag.jsx';
 import { gateAnalog } from '@/utils/disruptionGate.js';
 

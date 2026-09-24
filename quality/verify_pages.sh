@@ -44,9 +44,9 @@ echo "==> Per-page grep guards"
 echo
 
 # ─── App-level ───
-must_have "$SRC/App.jsx" "import EconomyPage" "imports EconomyPage"
-must_have "$SRC/App.jsx" "/economy" "wires /economy route"
-must_have "$SRC/components/Layout.jsx" "to=.{1,3}/economy" "nav link to /economy"
+must_have "$SRC/app/App.jsx" "import EconomyPage" "imports EconomyPage"
+must_have "$SRC/app/App.jsx" "/economy" "wires /economy route"
+must_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/economy" "nav link to /economy"
 
 # ─── EconomyPage ───
 must_have "$SRC/components/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"

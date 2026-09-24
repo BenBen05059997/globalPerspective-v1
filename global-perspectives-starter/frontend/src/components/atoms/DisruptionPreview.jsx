@@ -4,8 +4,8 @@
 //   impact: economic_impact record (must have hasImpact:true)
 //   onExpand?: () => void    // optional click handler (e.g. scroll to Economy tab)
 
-import SeverityBadge from '@/components/atoms/SeverityBadge.jsx';
-import DirectionArrow from '@/components/atoms/DirectionArrow.jsx';
+import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
+import DirectionArrow from '@/shared/ui/DirectionArrow.jsx';
 import QualityFlag from '@/components/atoms/QualityFlag.jsx';
 
 export default function DisruptionPreview({ impact, onExpand }) {

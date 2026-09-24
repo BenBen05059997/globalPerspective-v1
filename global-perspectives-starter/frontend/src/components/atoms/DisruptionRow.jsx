@@ -5,10 +5,10 @@
 //   showTime?: boolean
 
 import { Link } from 'react-router-dom';
-import SeverityBadge from '@/components/atoms/SeverityBadge.jsx';
-import DirectionArrow from '@/components/atoms/DirectionArrow.jsx';
+import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
+import DirectionArrow from '@/shared/ui/DirectionArrow.jsx';
 import QualityFlag from '@/components/atoms/QualityFlag.jsx';
-import { threadPath } from '@/utils/threadPath';
+import { threadPath } from '@/shared/lib/threadPath';
 
 function timeAgo(iso) {
   if (!iso) return null;

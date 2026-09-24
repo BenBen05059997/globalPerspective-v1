@@ -7,7 +7,7 @@ import {
   fetchSummaryCache,
   fetchPredictionCache,
   fetchTraceCauseCache,
-} from '@/services/restProxy';
+} from '@/shared/api/restProxy';
 import { assembleContext, pickText, clip } from '@/utils/analysisPrompt';
 
 // Re-export the pure prompt pieces so existing importers (AnalysisStudio.jsx)

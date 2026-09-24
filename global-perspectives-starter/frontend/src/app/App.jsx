@@ -1,16 +1,16 @@
 // global-perspectives-starter/frontend/src/App.jsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
-import './components/atoms/atoms.css';
-import Layout from '@/components/Layout';
+import '@/shared/ui/atoms.css';
+import Layout from '@/app/layout/Layout';
 import Home from '@/components/Home';
 import PrivacyTerms from '@/components/PrivacyTerms';
 import AboutContact from '@/components/AboutContact';
 import Disclosures from '@/components/Disclosures';
 import Contact from '@/components/Contact';
-import { ErrorProvider } from '@/contexts/ErrorContext';
-import { ErrorBoundary } from '@/components/ErrorHandling';
-import ErrorModal from '@/components/ErrorModal';
+import { ErrorProvider } from '@/shared/contexts/ErrorContext';
+import { ErrorBoundary } from '@/app/errors/ErrorHandling';
+import ErrorModal from '@/app/errors/ErrorModal';
 import WeeklyPage from '@/components/WeeklyPage';
 import ThreadPage from '@/components/ThreadPage';
 import CountryPage from '@/components/CountryPage';
@@ -30,8 +30,8 @@ import WeeklyMarketsPage from '@/components/WeeklyMarketsPage';
 import BreakingFeedPage from '@/components/BreakingFeedPage';
 import BreakingDetailPage from '@/components/BreakingDetailPage';
 import SpiderDemo from '@/components/SpiderDemo';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { setAuthProvider } from '@/services/restProxy';
+import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
+import { setAuthProvider } from '@/shared/api/restProxy';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 

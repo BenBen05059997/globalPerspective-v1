@@ -1,17 +1,17 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { threadPath } from '@/utils/threadPath';
-import IntelligenceLoader from '@/components/IntelligenceLoader';
-import { useAuth } from '@/contexts/AuthContext';
+import { threadPath } from '@/shared/lib/threadPath';
+import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { useWeeklyArchive } from '@/hooks/useWeeklyArchive';
 import { useThreadAnalyses } from '@/hooks/useThreadAnalyses';
-import { getTopicRegion } from '@/utils/countryMapping';
-import { formatDateLabel } from '@/utils/dateUtils';
+import { getTopicRegion } from '@/shared/lib/countryMapping';
+import { formatDateLabel } from '@/shared/lib/dateUtils';
 import TrendBadge, { getTrend } from '@/components/TrendBadge';
-import EditorialShell from '@/components/atoms/EditorialShell';
-import StatusStrip from '@/components/atoms/StatusStrip';
-import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '@/tokens';
-import { tierFromScore, tierLabel, deriveHeadline } from '@/utils/riskTiers';
+import EditorialShell from '@/shared/ui/EditorialShell';
+import StatusStrip from '@/shared/ui/StatusStrip';
+import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '@/shared/styles/tokens';
+import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
 import './WeeklyPage.css';
 import './AIComponents.css';
 

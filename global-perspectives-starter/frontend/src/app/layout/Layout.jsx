@@ -1,11 +1,11 @@
 import { useState, useEffect, Fragment } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/hooks/useMembership';
-import LoadingBar from '@/components/LoadingBar';
-import AIToast from '@/components/AIToast';
+import LoadingBar from '@/app/layout/LoadingBar';
+import AIToast from '@/app/layout/AIToast';
 import NotificationBell from '@/components/NotificationBell';
-import { useAutoTour, startTourForPath } from '@/onboarding/useOnboarding';
+import { useAutoTour, startTourForPath } from '@/app/onboarding/useOnboarding';
 import './Layout.css';
 
 // Build stamp injected by Vite `define` (git SHA + date). `typeof` guard keeps it

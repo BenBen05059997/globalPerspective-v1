@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { fetchThreadAnalyses } from '@/services/restProxy';
+import { fetchThreadAnalyses } from '@/shared/api/restProxy';
 
 const CACHE_KEY = 'gp_thread_analyses_v2';
 const CACHE_TTL_MS = 30 * 60 * 1000;

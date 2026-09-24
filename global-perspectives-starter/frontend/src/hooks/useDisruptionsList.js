@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { fetchDisruptionsList } from '@/services/restProxy.js';
+import { fetchDisruptionsList } from '@/shared/api/restProxy.js';
 
 const CACHE_KEY = (filters) => `gp_disruptions_${JSON.stringify(filters)}`;
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes

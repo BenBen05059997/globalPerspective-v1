@@ -7,7 +7,7 @@
 //   marketSnap?: { value, asOf }   // from marketContext snapshot
 //   compact?: boolean              // strips the rationale line when true
 
-import DirectionArrow from '@/components/atoms/DirectionArrow.jsx';
+import DirectionArrow from '@/shared/ui/DirectionArrow.jsx';
 import { gateInstrument } from '@/utils/disruptionGate.js';
 
 const MAG_PIPS = { small: 1, moderate: 2, large: 3 };

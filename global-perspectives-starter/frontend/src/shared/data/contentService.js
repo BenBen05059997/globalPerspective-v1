@@ -1,4 +1,4 @@
-import { fetchTopicsCache, fetchSummaryCache, fetchPredictionCache, fetchTraceCauseCache, fetchTodayArchive } from '@/services/restProxy.js';
+import { fetchTopicsCache, fetchSummaryCache, fetchPredictionCache, fetchTraceCauseCache, fetchTodayArchive } from '@/shared/api/restProxy.js';
 
 const PREDICTION_WORD_LIMIT = 500;
 

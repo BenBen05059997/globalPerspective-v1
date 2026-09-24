@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTrackRecord } from '@/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/hooks/useCorrectionsFeed';
-import IntelligenceLoader from '@/components/IntelligenceLoader';
+import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
 import { FollowButton } from '@/components/FollowButton';
 import './TrackRecordPage.css';
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { fetchArchiveRange } from '@/services/restProxy';
-import { useAuth } from '@/contexts/AuthContext';
+import { fetchArchiveRange } from '@/shared/api/restProxy';
+import { useAuth } from '@/shared/contexts/AuthContext';
 
 const CACHE_KEY = 'gp_weekly_archive_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes

@@ -115,7 +115,7 @@ Use this when:
   1. From `/weekly`, click any card — page renders with H1, dek, 4-stat row.
   2. Switch AI rail tab to "What's Next" — trajectory text appears.
   3. Switch content tab to "Sources" — source rollup renders.
-- **Known issues:** `RISK_COLOR` (= `tokens.riskScoreToVar`) now delegates to the canonical `utils/riskTiers` bands 25/50/75 (low/moderate/elevated/high) — `RISK_TIERS_PLAN.md` P1; boundary flap at tier edges is inherent to tiering, by design.
+- **Known issues:** `RISK_COLOR` (= `tokens.riskScoreToVar`) now delegates to the canonical `shared/lib/riskTiers` bands 25/50/75 (low/moderate/elevated/high) — `RISK_TIERS_PLAN.md` P1; boundary flap at tier edges is inherent to tiering, by design.
 
 ## `/weekly/countries` · `components/CountryListPage.jsx`
 

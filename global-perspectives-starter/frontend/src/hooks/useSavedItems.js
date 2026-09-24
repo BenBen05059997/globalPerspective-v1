@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { saveItem, unsaveItem, fetchSavedItems } from '@/services/restProxy';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { saveItem, unsaveItem, fetchSavedItems } from '@/shared/api/restProxy';
 
 // In-memory cache shared across hook instances
 let _cache = null;

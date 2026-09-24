@@ -32,12 +32,12 @@ const MOCK_LIST = [
   { ...MOCK_IMPACT, scopeId: 'thread-c', severity: 'minor', severityScore: 25 },
 ];
 
-vi.mock('@/services/restProxy.js', () => ({
+vi.mock('@/shared/api/restProxy.js', () => ({
   fetchEconomicImpact: vi.fn(),
   fetchDisruptionsList: vi.fn(),
 }));
 
-import { fetchEconomicImpact, fetchDisruptionsList } from '@/services/restProxy.js';
+import { fetchEconomicImpact, fetchDisruptionsList } from '@/shared/api/restProxy.js';
 import { useEconomicImpact } from '@/hooks/useEconomicImpact';
 import { useDisruptionsList } from '@/hooks/useDisruptionsList';
 

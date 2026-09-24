@@ -1,5 +1,5 @@
 // Bootstrap REST proxy configuration from window globals and add console test hooks
-import { configureProxy, geocodeProxy } from '@/services/restProxy.js'
+import { configureProxy, geocodeProxy } from '@/shared/api/restProxy.js'
 
 (() => {
   const endpoint = window.SENSITIVE_PROXY_ENDPOINT

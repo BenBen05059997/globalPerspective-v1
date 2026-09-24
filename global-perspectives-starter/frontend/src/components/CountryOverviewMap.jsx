@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { COUNTRY_COORDINATES } from '@/utils/mapConstants';
-import { regionToCountryCode } from '@/utils/countryMapping';
+import { regionToCountryCode } from '@/shared/lib/countryMapping';
 
 const MAP_STYLES = [
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#dde8f0' }] },

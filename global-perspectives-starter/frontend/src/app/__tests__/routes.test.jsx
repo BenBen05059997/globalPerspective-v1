@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ErrorProvider } from '@/contexts/ErrorContext';
+import { AuthProvider } from '@/shared/contexts/AuthContext';
+import { ErrorProvider } from '@/shared/contexts/ErrorContext';
 
 // Mock Google Maps
 vi.mock('@googlemaps/react-wrapper', () => ({

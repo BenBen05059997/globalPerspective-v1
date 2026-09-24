@@ -586,7 +586,7 @@ Per-user save/bookmark store.
 Receives uncaught frontend errors and aggregates them into one counter row per fingerprint.
 
 **What it does:**
-1. Frontend `services/errorSink.js` (installed in `main.jsx`) listens for window `error` + `unhandledrejection`, and — via `reportBoundaryError` — React render crashes caught by the class `ErrorBoundary` around `<Routes>`. Fire-and-forget `fetch` POST, no-ops until `window.CLIENT_ERRORS_ENDPOINT` is set in `docs/config.js`.
+1. Frontend `shared/api/errorSink.js` (installed in `main.jsx`) listens for window `error` + `unhandledrejection`, and — via `reportBoundaryError` — React render crashes caught by the class `ErrorBoundary` around `<Routes>`. Fire-and-forget `fetch` POST, no-ops until `window.CLIENT_ERRORS_ENDPOINT` is set in `docs/config.js`.
 2. Lambda fingerprints each error (sha1 of message + normalized top stack frame) and `ADD count`s into one DynamoDB row, so a flood of identical errors collapses to a single row + sample.
 3. Abuse-bounded: 16KB body cap, per-field length caps, CORS locked to the two site origins.
 
@@ -1224,6 +1224,72 @@ relative. `global-perspectives-starter/frontend/scripts/move-module.mjs` is the 
 restructure's later phases use to relocate a module and rewrite every `@/` reference to it in one
 step.
 
+### Frontend Path map (old → new, feature-folder restructure)
+
+Built up incrementally, one phase's rows per commit, by
+`project-docs/architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`. Old-path citations
+elsewhere in this doc and in other live docs stay valid by basename (relocate-never-rename); this
+table is the authoritative old→new lookup while the restructure is in flight.
+
+**P2 — `app/` + `shared/`:**
+
+| Old | New |
+|---|---|
+| `App.jsx` | `app/App.jsx` |
+| `App.css` | `app/App.css` |
+| `index.css` | `app/index.css` |
+| `bootstrapProxy.js` | `app/bootstrapProxy.js` |
+| `components/Layout.jsx`, `Layout.css` | `app/layout/Layout.jsx`, `Layout.css` |
+| `components/AIToast.jsx` | `app/layout/AIToast.jsx` |
+| `components/LoadingBar.jsx`, `LoadingIndicators.css` | `app/layout/LoadingBar.jsx`, `LoadingIndicators.css` |
+| `components/ErrorHandling.jsx` | `app/errors/ErrorHandling.jsx` |
+| `components/ErrorModal.jsx` | `app/errors/ErrorModal.jsx` |
+| `onboarding/useOnboarding.js`, `tours.js`, `tour-theme.css` | `app/onboarding/` |
+| `test/routes.test.jsx` | `app/__tests__/routes.test.jsx` |
+| `services/restProxy.js` | `shared/api/restProxy.js` |
+| `services/errorSink.js` | `shared/api/errorSink.js` |
+| `contexts/AuthContext.jsx`, `ErrorContext.jsx` | `shared/contexts/` |
+| `hooks/useGeminiTopics.js` | `shared/data/useGeminiTopics.js` |
+| `utils/contentService.js` | `shared/data/contentService.js` |
+| `hooks/useIsMobile.js` | `shared/hooks/useIsMobile.js` |
+| `utils/threadPath.js`, `riskTiers.js`, `countryMapping.js`, `dateUtils.js` | `shared/lib/` |
+| `test/riskTiers.test.js`, `utils.test.js` | `shared/lib/__tests__/` |
+| `styles/tokens.css` | `shared/styles/tokens.css` |
+| `tokens.js` | `shared/styles/tokens.js` |
+| `components/atoms/atoms.css` | `shared/ui/atoms.css` |
+| `components/atoms/EditorialShell.jsx`, `StatusStrip.jsx`, `SeverityBadge.jsx`, `DirectionArrow.jsx`, `SourceRobustness.jsx` | `shared/ui/` |
+| `components/Markdown.jsx`, `IntelligenceLoader.jsx`/`.css`, `CopyBriefing.jsx`, `ShareButtons.jsx` | `shared/ui/` |
+| `components/atoms/RiskScorecard.jsx`/`.css`, `RiskScoreBadge.jsx`, `RiskDeltaPill.jsx` | `shared/ui/risk/` |
+| `test/riskScorecard.test.jsx` | `shared/ui/risk/__tests__/riskScorecard.test.jsx` |
+
+Note: `utils/sourceRobustness.js` (lowercase, the BYOK source-basis scorer) did **not** move in
+P2 — it stays at its flat path until P7 (`features/analysis-studio/lib/sourceRobustness.js`),
+deliberately never sharing a directory with `SourceRobustness.jsx` (case-only collision on
+case-insensitive macOS).
+
+### Feature → Lambda index
+
+Lambdas are **not** grouped into feature subfolders (evaluated and rejected —
+`REPO_RESTRUCTURE_DESIGN_2026-09-24.md` §2.6: cost is 214+ path references across docs/scripts,
+benefit is near zero since each Lambda is already a self-contained deploy unit). This index
+answers "which Lambdas serve feature X" without moving backend code.
+
+| Feature | Lambdas |
+|---|---|
+| home (topics ingest) | newsInvokeGemini, NewsProjectInvokeAgentLambda, newsSourceAudit |
+| map (situations) | newsGdacsIngest, newsGdeltConflict, newsSituationIngest, newsSituationTracker, newsImpactAudit |
+| threads | newsThreadAnalysis, newsDriftCorrector |
+| countries | newsCountryIntelligence, newsCountryFactsUpdater, newsSystemsAnalysis, newsPairIntelligence (dormant, cron DISABLED) |
+| economy | newsMarketsData, newsEconomicImpact, newsEconomicQuality, newsWeeklyMarkets |
+| weekly-brief | newsWeeklyBrief |
+| track-record | newsPredictionResolver, newsPredictionsSnapshot |
+| breaking | newsBreakingAlert |
+| account | newsSavedItems, newsRecommend (prefs + alerts list), newsPolarBilling |
+| analysis-studio | newsAnalyze |
+| distribution | newsPostLinkedIn, newsPostDevTo, newsEmailSender, newsSignals |
+| platform / observability | newsSensitiveData (shared proxy for most pages), newsClientErrors, newsErrorDigest, newsFreshnessMonitor, newsModelGuard |
+| flag | `newsStripeWebhook/` dir still exists but was REMOVED 2026-06-01 (§12) — archive-or-delete is a separate cleanup decision, out of scope here. |
+
 ### Routes
 
 Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.
@@ -1360,13 +1426,13 @@ Currently shipped: the `SITE_WELCOME` popover (auto), the `SITE_INTRO` walk ("?"
 
 ### Service Layer
 
-Two modules: `restProxy.js` (the actual transport) and `utils/contentService.js` (a thin wrapper over restProxy that adds normalization/sentence-trimming for topic content — **renamed 2026-05-26 from the misleading `graphqlService.js`; there is no GraphQL**). `useGeminiTopics`, `useTodayArchive`, and `Home` call through `contentService`; everything else calls `restProxy` directly. (`useSummary`, `usePrediction`, `useTraceCause` and `MapSidePanel.jsx` — formerly also `contentService` callers — were removed 2026-09-24 as dead code; see `CLEANUP_AUDIT_2026-09-24.md` §4 Tier B1.)
+Two modules: `restProxy.js` (the actual transport) and `shared/data/contentService.js` (a thin wrapper over restProxy that adds normalization/sentence-trimming for topic content — **renamed 2026-05-26 from the misleading `graphqlService.js`; there is no GraphQL**). `useGeminiTopics`, `useTodayArchive`, and `Home` call through `contentService`; everything else calls `restProxy` directly. (`useSummary`, `usePrediction`, `useTraceCause` and `MapSidePanel.jsx` — formerly also `contentService` callers — were removed 2026-09-24 as dead code; see `CLEANUP_AUDIT_2026-09-24.md` §4 Tier B1.)
 
 ### Design Tokens (colors)
 
-`src/tokens.js` (added 2026-06-24, P2a) is the **single source of truth for risk + category colors** — import from here, never redefine. It exports `RISK_COLORS` (pastel `{bg,color}` badge), `RISK_SOLID` (editorial hex, matches the `--risk-*` CSS vars), `RISK_RGB` (canvas arrays), `riskScoreToVar(score)` (score→`--risk-*`), `riskTierToVar(tier)` (tier→`--risk-*`), `CATEGORY_BADGE_COLORS` (`{bg,color}` chip), and `CATEGORY_DOT` (map-marker hex). It consolidated four divergent risk representations + three category maps previously copy-pasted across ~11 components.
+`src/shared/styles/tokens.js` (added 2026-06-24, P2a) is the **single source of truth for risk + category colors** — import from here, never redefine. It exports `RISK_COLORS` (pastel `{bg,color}` badge), `RISK_SOLID` (editorial hex, matches the `--risk-*` CSS vars), `RISK_RGB` (canvas arrays), `riskScoreToVar(score)` (score→`--risk-*`), `riskTierToVar(tier)` (tier→`--risk-*`), `CATEGORY_BADGE_COLORS` (`{bg,color}` chip), and `CATEGORY_DOT` (map-marker hex). It consolidated four divergent risk representations + three category maps previously copy-pasted across ~11 components.
 
-**Risk tier SEMANTICS live in `src/utils/riskTiers.js`** (added 2026-07-03, `RISK_TIERS_PLAN.md`) — the single source of truth for score→tier and level→tier, separate from `tokens.js` (which is paint). Exports `tierFromScore(score)`, `tierFromLevel(str)`, `TIER_ORDER`, `tierLabel(tier)` on the **canonical 25/50/75 bands** (low 0-24 · moderate 25-49 · elevated 50-74 · high 75-100, mirroring the `newsThreadAnalysis` prompt calibration). This collapsed **four** divergent band definitions (tokens 75/50 w/ no moderate; `RiskScoreBadge` 70/40; a moderate→elevated string alias; a `WeeklyPage`/CountryPage arc-card 50/25) onto one, and fixed the moderate tier (previously always rendered as orange "elevated"; now amber `--risk-m`). **Display rule: state = tier · change = audit numbers** — current-state displays (ThreadPage/CountryPage/SituationHome header+stat+pill+strip) lead with the **tier word** + demote the raw score to fine print; change/audit contexts (the "What changed" band, correction chain, `RiskDeltaPill`, drift gate) stay numeric. (The risk **layout shells** — `EditorialShell` vs Economy's resizable `ep-shell` vs the Map's collapsible `mv2-body` — were intentionally **not** merged; they are behaviorally distinct, not density variants. See `PRODUCT_IMPROVEMENT_PLAN.md` P2.)
+**Risk tier SEMANTICS live in `src/shared/lib/riskTiers.js`** (added 2026-07-03, `RISK_TIERS_PLAN.md`) — the single source of truth for score→tier and level→tier, separate from `tokens.js` (which is paint). Exports `tierFromScore(score)`, `tierFromLevel(str)`, `TIER_ORDER`, `tierLabel(tier)` on the **canonical 25/50/75 bands** (low 0-24 · moderate 25-49 · elevated 50-74 · high 75-100, mirroring the `newsThreadAnalysis` prompt calibration). This collapsed **four** divergent band definitions (tokens 75/50 w/ no moderate; `RiskScoreBadge` 70/40; a moderate→elevated string alias; a `WeeklyPage`/CountryPage arc-card 50/25) onto one, and fixed the moderate tier (previously always rendered as orange "elevated"; now amber `--risk-m`). **Display rule: state = tier · change = audit numbers** — current-state displays (ThreadPage/CountryPage/SituationHome header+stat+pill+strip) lead with the **tier word** + demote the raw score to fine print; change/audit contexts (the "What changed" band, correction chain, `RiskDeltaPill`, drift gate) stay numeric. (The risk **layout shells** — `EditorialShell` vs Economy's resizable `ep-shell` vs the Map's collapsible `mv2-body` — were intentionally **not** merged; they are behaviorally distinct, not density variants. See `PRODUCT_IMPROVEMENT_PLAN.md` P2.)
 
 > **BYOK exception (Analysis Studio):** `/analyze` does **not** route its LLM calls through `restProxy`. `services/llm.js` calls the user's chosen provider directly from the browser with the user's own key (see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)); only the *story records* it analyzes come from `restProxy`'s public actions.
 
@@ -1494,8 +1560,8 @@ step); several deployed zips differ from the repo source — diff before editing
 | Frontend source | `global-perspectives-starter/frontend/src/` |
 | Production build | `docs/` |
 | Runtime config | `docs/config.js` (sets `window.FIREBASE_CONFIG`, `window.SENSITIVE_PROXY_ENDPOINT`, Google Maps key) |
-| Auth context | `global-perspectives-starter/frontend/src/contexts/AuthContext.jsx` |
-| REST proxy service | `global-perspectives-starter/frontend/src/services/restProxy.js` |
+| Auth context | `global-perspectives-starter/frontend/src/shared/contexts/AuthContext.jsx` |
+| REST proxy service | `global-perspectives-starter/frontend/src/shared/api/restProxy.js` |
 
 ---
 

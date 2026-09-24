@@ -1,5 +1,5 @@
 import { useState, Component } from 'react';
-import { reportBoundaryError } from '@/services/errorSink.js';
+import { reportBoundaryError } from '@/shared/api/errorSink.js';
 
 // Real error boundary: MUST be a class component — function components cannot
 // catch render errors (no getDerivedStateFromError / componentDidCatch lifecycle).

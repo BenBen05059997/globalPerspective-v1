@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { threadPath } from '@/utils/threadPath';
-import { useAuth } from '@/contexts/AuthContext';
+import { threadPath } from '@/shared/lib/threadPath';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSavedItems } from '@/hooks/useSavedItems';
 import { usePreferences } from '@/hooks/usePreferences';
 import { useMembership } from '@/hooks/useMembership';

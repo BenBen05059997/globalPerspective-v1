@@ -13,13 +13,13 @@ and every "Docs to update" item below is staged in that phase's commit or the fi
 orphans; keep DisruptionRow/Preview → economy; design's ambiguous-home calls; Python prototype
 out of scope; no deploy until the end, and that one needs a fresh yes).
 
-**Now:** P2 — not started
+**Now:** P3 — not started
 
 | Phase | What moves / changes (file groups — exact lists in the plan's §2) | Status | Commit |
 |---|---|---|---|
 | P0 | delete 5 orphans; harden verify_pages.sh, pre-push regex, auth-guard-check.mjs | ✅ done | 703995b (monitor ✓: 184 tests, guards 32/32, auth-guard pass, bundle 1,046.07 kB) |
 | P1 | `@/` alias (vite.config.js, jsconfig.json), codemod all imports, move-module.mjs | ✅ done | d11996c (monitor ✓: 184 tests, bundle 1,046.07 kB, 0 stray relative imports, guards 32/32; browser: 11 routes render, console clean from load on /map + /weekly/country/Iran) |
-| P2 | `app/` (routing, layout, onboarding) + `shared/` (api, contexts, data, hooks, lib, ui, styles) | ⬜ remaining | |
+| P2 | `app/` (routing, layout, onboarding) + `shared/` (api, contexts, data, hooks, lib, ui, styles) | ✅ done | see CHANGES |
 | P3 | features/static + features/spider-demo | ⬜ remaining | |
 | P4 | features/weekly-brief, daily, track-record | ⬜ remaining | |
 | P5 | features/map | ⬜ remaining | |
@@ -119,7 +119,7 @@ rewrite, phase by phase, one commit per phase, fully reversible with `git revert
 - [x] P0 — orphans deleted, guards hardened, verified with `npm run verify` + `verify_pages.sh`
 - [x] P1 — `@/` alias + `jsconfig.json` + codemod to absolute imports + `move-module.mjs` helper,
       bundle-hash identical to pre-phase build
-- [ ] P2 — `app/` + `shared/` moved; ARCHITECTURE path map + Feature→Lambda index started
+- [x] P2 — `app/` + `shared/` moved; ARCHITECTURE path map + Feature→Lambda index started
 - [ ] P3 — `static` + `spider-demo` moved
 - [ ] P4 — `weekly-brief`, `daily`, `track-record` moved
 - [ ] P5 — `map` moved

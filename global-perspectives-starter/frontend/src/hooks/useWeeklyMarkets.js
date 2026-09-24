@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchWeeklyMarkets } from '@/services/restProxy';
+import { fetchWeeklyMarkets } from '@/shared/api/restProxy';
 
 const CACHE_KEY = 'gp_weekly_markets_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;

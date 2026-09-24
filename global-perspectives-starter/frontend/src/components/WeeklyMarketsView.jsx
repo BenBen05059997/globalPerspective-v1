@@ -17,7 +17,7 @@
 
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { threadPath } from '@/utils/threadPath';
+import { threadPath } from '@/shared/lib/threadPath';
 import { useWeeklyMarkets } from '@/hooks/useWeeklyMarkets';
 import './WeeklyMarketsView.css';
 

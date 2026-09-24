@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formatDateLabel } from '@/utils/dateUtils';
+import { formatDateLabel } from '@/shared/lib/dateUtils';
 import StoryEntryCard from '@/components/StoryEntryCard';
 
 export default function CompactTimeline({ entries, entryShortTitles, onEntryFocus }) {

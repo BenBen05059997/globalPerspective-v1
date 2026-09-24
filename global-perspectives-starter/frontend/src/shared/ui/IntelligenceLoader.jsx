@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useGeminiTopics } from '@/hooks/useGeminiTopics';
-import { regionToCountryCode } from '@/utils/countryMapping';
+import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
+import { regionToCountryCode } from '@/shared/lib/countryMapping';
 import './IntelligenceLoader.css';
 
 // ── Shared graph utilities ────────────────────────────────────────

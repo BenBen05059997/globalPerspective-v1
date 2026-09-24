@@ -208,7 +208,7 @@ Steps 1–8 are automatable into a pre-deploy run; 9 is inherently manual.
   could import the same schemas into `restProxy.js` for soft runtime logging.*
 - **Error monitoring (Sentry-style)** — a passive net for what slips past manual
   runs. High ROI for a no-QA team. *Implemented 2026-05-30 as a roll-your-own sink:*
-  `src/services/errorSink.js` (window `error`+`unhandledrejection` → fire-and-forget
+  `src/shared/api/errorSink.js` (window `error`+`unhandledrejection` → fire-and-forget
   POST) → `newsClientErrors` Lambda + Function URL → `GlobalPerspectiveClientErrors`
   DynamoDB table (counter rows keyed by `day#fingerprint`, TTL 30d). Read back with
   `node scripts/errors.mjs` (de-minifies via the private `dist/` source map). This is
@@ -311,9 +311,9 @@ add a seventh contract; don't widen an existing one past its evidence.
   (`.gp-nav`) is still visible — proving the crash was *contained* to the routed content
   area, not a full-tree unmount — and (b) on a base where the client-error sink endpoint
   is configured, that a report POST fired (intercepted + aborted so the test never writes
-  to DynamoDB). The real boundary is the class component in `components/ErrorHandling.jsx`
-  mounted around `<Routes>` in `App.jsx`; it reports via `reportBoundaryError` in
-  `services/errorSink.js` (a working boundary swallows the throw, so `componentDidCatch`
+  to DynamoDB). The real boundary is the class component in `app/errors/ErrorHandling.jsx`
+  mounted around `<Routes>` in `app/App.jsx`; it reports via `reportBoundaryError` in
+  `shared/api/errorSink.js` (a working boundary swallows the throw, so `componentDidCatch`
   is the ONLY place a render crash reaches the sink).
 - **NO FALLBACK UI — by design.** The boundary renders `null` on a caught crash; it does
   **not** show a "something went wrong" card. On an intelligence site a generic fallback

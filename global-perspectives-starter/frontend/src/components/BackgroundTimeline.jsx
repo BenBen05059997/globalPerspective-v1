@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { formatDateLabel } from '@/utils/dateUtils';
+import { formatDateLabel } from '@/shared/lib/dateUtils';
 
 const CAT_COLORS = {
   conflict:  '#ef4444',

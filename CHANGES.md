@@ -1,5 +1,65 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P2: `app/` + `shared/`)
+
+Executed P2 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`. Moved 46 files via
+`scripts/move-module.mjs` into two new non-feature directories every later feature will depend
+on: `app/` (routing/layout/onboarding/error-boundary chrome — `App.jsx`, `App.css`, `index.css`,
+`bootstrapProxy.js`, `components/Layout.jsx`→`app/layout/`, `AIToast.jsx`, `LoadingBar.jsx`,
+`LoadingIndicators.css`, `ErrorHandling.jsx`/`ErrorModal.jsx`→`app/errors/`,
+`onboarding/*`→`app/onboarding/`, `test/routes.test.jsx`→`app/__tests__/`) and `shared/`
+(`services/restProxy.js`/`errorSink.js`→`shared/api/`, `contexts/*`→`shared/contexts/`,
+`hooks/useGeminiTopics.js`+`utils/contentService.js`→`shared/data/`, `hooks/useIsMobile.js`→
+`shared/hooks/`, `utils/threadPath.js`/`riskTiers.js`/`countryMapping.js`/`dateUtils.js`→
+`shared/lib/` (+2 tests), `styles/tokens.css`+`tokens.js`→`shared/styles/`, 13
+`components/atoms/*`+`components/{Markdown,IntelligenceLoader,CopyBriefing,ShareButtons}.jsx`→
+`shared/ui/` incl. a `shared/ui/risk/` subfolder for the 3 RiskScorecard/RiskScoreBadge/
+RiskDeltaPill files + their test). No files in this phase are "N" (Node-tooling-imported).
+
+The case-collision pair is now split as designed: `components/atoms/SourceRobustness.jsx` →
+`shared/ui/SourceRobustness.jsx`; the lowercase `utils/sourceRobustness.js` (BYOK source-basis
+scorer) stays flat until P7 (`features/analysis-studio/lib/`) — the two never share a directory
+on case-insensitive macOS.
+
+Fixed 2 relative-import breakages the codemod's `@/`-only rewrite doesn't cover (co-located
+CSS/JS pairs that *didn't* move together): `main.jsx` (unmoved) imported `./index.css` and
+`./bootstrapProxy.js`, both of which moved to `app/` — switched to `@/app/index.css` and
+`@/app/bootstrapProxy.js`. `App.jsx` (moved to `app/App.jsx`) imported
+`./components/atoms/atoms.css`, which moved to `shared/ui/atoms.css` (a different directory,
+unlike `App.css` which moved alongside it) — switched to `@/shared/ui/atoms.css`. Verified with a
+full relative-import resolution sweep across `src/**` afterward (0 broken).
+
+Updated `quality/verify_pages.sh`: `Layout.jsx` and `App.jsx` guard rows now point at
+`app/layout/Layout.jsx` and `app/App.jsx`. `.githooks/pre-push`'s basename-only regex (hardened
+in P0) still matches `Layout.jsx` at its new path — confirmed, no edit needed.
+`quality/dashboard.js:155-156` references `MechanismCard.jsx`/`QualityFlag.jsx` (P8 economy
+files, untouched here) — confirmed no change needed in P2. Updated path-qualified live-doc
+references surfaced by `move-module.mjs`'s leftover-reference grep:
+`project-docs/architecture/ARCHITECTURE.md` (`services/errorSink.js`, `utils/contentService.js`,
+`tokens.js`, `utils/riskTiers.js`, `contexts/AuthContext.jsx`, `services/restProxy.js` — plus new
+"Frontend Path map" and "Feature → Lambda index" sections), `project-docs/architecture/
+SYSTEM_WIRING.md` (`services/restProxy.js`), `project-docs/architecture/PAGES_GUIDE.md`
+(`utils/riskTiers`), `project-docs/playbooks/BUG_PLAYBOOK.md` (`components/ErrorHandling.jsx`,
+`services/errorSink.js`), `project-docs/playbooks/AGENT_REVIEW_METHOD.md` (`src/App.jsx` ×2),
+`project-docs/GLOSSARY.md` (`utils/riskTiers.js`). Left dated-history/audit snapshots untouched
+(`ARCHITECTURE_VERIFICATION_LOG.md`, `WORLD_MODEL_FRAGMENTS.md`, `WORLD_MODEL_VERIFY_2026-09-11.md`,
+`FRONTEND_QUALITY_AUDIT_2026-09-11.md`, `OPTIMIZATION_REPORT.md`) and a completed/cancelled `_active`
+task file (`TASK_2026-09-24_pair_arcs_relocation.md`, status "done (cancelled)") per the
+docs-as-code rule's dated-history exception. The "Key Components"/"Key Hooks" tables' bare
+basenames (e.g. `atoms/SourceRobustness.jsx`) stay as-is by design — they get a "Path" column in
+P11, not here.
+
+Verified: `npm run verify` 15 files / 184 tests (unchanged). `npm run build` — main bundle
+byte-identical, 1,046,069 bytes (same as P1's post-build size; same hash since no commit landed
+between builds). `bash quality/verify_pages.sh` 32/0 (0 fail after the 2 path-row fixes above;
+first run surfaced exactly those 2 as FAIL, confirming the P0-hardened guard fires loudly on a
+stale path instead of silently passing). `node scripts/auth-guard-check.mjs` PASS (7/7 hooks
+resolve via basename search). Browser sweep (fresh `npm run dev`, no stale-HMR errors): `/`,
+`/map`, `/economy`, `/weekly-markets`, `/weekly`, `/weekly/countries`, `/weekly/country/Iran`,
+`/daily`, `/weekly-brief`, `/track-record`, `/breaking`, `/signin`, `/account`, `/membership`,
+`/analyze`, `/about`, `/spider-demo` — 0 console errors on any route; nav/layout chrome, error
+boundary, and page content all render correctly.
+
 ## 2026-09-24 (Frontend feature-folder restructure P1: `@/` alias + absolute-import codemod)
 
 Executed P1 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`. Added a Vite `resolve.alias` (`@` →

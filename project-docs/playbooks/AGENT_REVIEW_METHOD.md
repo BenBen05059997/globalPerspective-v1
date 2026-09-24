@@ -156,7 +156,7 @@ This is the concrete, repeatable procedure we ran on 2026-05-26 to make the fron
 Decide the slice: the **routed pages** (route + component-table + hooks + service correctness) and/or **static content pages** (copy that can be factually wrong — billing, pricing, provider names, dead links). These are two different audits — run them separately (route/structure vs. content).
 
 ### 1. Enumerate the targets
-- Routes: read `src/App.jsx` `<Routes>` — that's the authoritative page list, not the doc.
+- Routes: read `src/app/App.jsx` `<Routes>` — that's the authoritative page list, not the doc.
 - Group pages into 3–4 independent slices so each auditor has a coherent set (e.g. heavy data pages / map+country+daily / auth+static).
 
 ### 2. Fan out auditors (one message, parallel)
@@ -165,7 +165,7 @@ For a **content** audit, give them the current reality to check copy against (e.
 
 ### 3. Quick wins you do yourself (cheap greps)
 - Dead internal links: `grep -rnE 'to="/(removed|routes|here)'` across `src/`.
-- Residual stale strings after fixing: `grep -rni "grok\|xai\|stripe\|subscription" src/components/`.
+- Residual stale strings after fixing: `grep -rni "grok\|xai\|stripe\|subscription" src/`.
 
 ### 4. Consolidate + write the problem → fix log
 Group findings `CONFIRMED / WRONG / GAP`. Write each **problem and the fix** into `CHANGES.md` (and route latent/legal items to `BACKEND_TODO.md`). This log is also what the review agent verifies against.

@@ -20,7 +20,7 @@ four.
 **Where it comes from:** `amplify/backend/function/newsCountryIntelligence/src/riskDimensions.js`
 (byte-identical copy in `newsThreadAnalysis/src/riskDimensions.js`); `AXES =
 ['conflict','political','economic','humanitarian']`; band cutoffs ≥75 high, ≥50 elevated, ≥25
-moderate, else low; frontend mirror `src/utils/riskTiers.js`. Built as "Scoring Model v2" — Phase A
+moderate, else low; frontend mirror `src/shared/lib/riskTiers.js`. Built as "Scoring Model v2" — Phase A
 (frontend seam) then Phase B (per-axis LLM scoring + worst-axis derivation), deployed to prod
 2026-07-07, to fix a country's real risk being masked by averaging.
 **Status:** Live — this is the canonical, cross-site importance scale (see D2 below). Per the

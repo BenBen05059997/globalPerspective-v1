@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-import SeverityBadge from '@/components/atoms/SeverityBadge.jsx';
+import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
 import MechanismCard from '@/components/atoms/MechanismCard.jsx';
 import DisruptionRow from '@/components/atoms/DisruptionRow.jsx';
 import DisruptionPreview from '@/components/atoms/DisruptionPreview.jsx';

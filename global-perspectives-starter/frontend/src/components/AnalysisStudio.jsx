@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useGeminiTopics } from '@/hooks/useGeminiTopics';
-import { useAuth } from '@/contexts/AuthContext';
+import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
+import { useAuth } from '@/shared/contexts/AuthContext';
 import { getProvider } from '@/services/llm';
 import { runChat } from '@/services/llm';
 import { loadByok } from '@/utils/byok';
 import { useMembership } from '@/hooks/useMembership';
-import { runMemberAnalysis, analyzeConfigured } from '@/services/restProxy';
+import { runMemberAnalysis, analyzeConfigured } from '@/shared/api/restProxy';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '@/utils/analysis';
 import { validateAnalysis } from '@/utils/analysisValidator';
 import { extractStruct, validateStruct } from '@/utils/analysisStruct';
 import { assessSelection } from '@/utils/sourceRobustness';
 import ProviderModal from '@/components/ProviderModal';
-import Markdown from '@/components/Markdown';
+import Markdown from '@/shared/ui/Markdown';
 import { ScenarioBars, IndicatorMatrix, RippleTable } from '@/components/atoms/AnalysisVisuals.jsx';
 import './AnalysisStudio.css';
 

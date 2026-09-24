@@ -41,13 +41,13 @@ vi.mock('@/hooks/useCountryIntelligence', () => ({
 }));
 
 // Auth context — bypass with a minimal stub
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/shared/contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => ({ user: null, loading: false }),
 }));
 
 // Heavy/optional components stubbed to keep tests fast & deterministic
-vi.mock('@/components/IntelligenceLoader', () => ({
+vi.mock('@/shared/ui/IntelligenceLoader', () => ({
   default: () => <div data-testid="loader" />,
 }));
 vi.mock('@/components/CountryOverviewMap', () => ({
@@ -208,7 +208,7 @@ describe('Redesign v2 — CountryListPage', () => {
 
 describe('Atom: StatusStrip', () => {
   it('renders without crashing with empty stats', async () => {
-    const { default: StatusStrip } = await import('@/components/atoms/StatusStrip');
+    const { default: StatusStrip } = await import('@/shared/ui/StatusStrip');
     render(<StatusStrip stats={[]} />);
     expect(document.querySelector('.ss-strip')).toBeInTheDocument();
   });
@@ -216,13 +216,13 @@ describe('Atom: StatusStrip', () => {
 
 describe('Atom: RiskScoreBadge', () => {
   it('renders numeric score', async () => {
-    const { default: B } = await import('@/components/atoms/RiskScoreBadge');
+    const { default: B } = await import('@/shared/ui/risk/RiskScoreBadge');
     render(<B score={75} />);
     expect(document.querySelector('.rsb')).toHaveTextContent('75');
     expect(document.querySelector('.rsb-high')).toBeInTheDocument();
   });
   it('renders enum level when score absent', async () => {
-    const { default: B } = await import('@/components/atoms/RiskScoreBadge');
+    const { default: B } = await import('@/shared/ui/risk/RiskScoreBadge');
     render(<B level="elevated" />);
     expect(document.querySelector('.rsb-elevated')).toBeInTheDocument();
   });
@@ -230,12 +230,12 @@ describe('Atom: RiskScoreBadge', () => {
 
 describe('Atom: RiskDeltaPill', () => {
   it('returns null with fewer than 2 snapshots', async () => {
-    const { default: P } = await import('@/components/atoms/RiskDeltaPill');
+    const { default: P } = await import('@/shared/ui/risk/RiskDeltaPill');
     const { container } = render(<P snapshots={[{ riskScore: 50, dateKey: '2026-04-26' }]} />);
     expect(container.firstChild).toBeNull();
   });
   it('renders up arrow for positive delta', async () => {
-    const { default: P } = await import('@/components/atoms/RiskDeltaPill');
+    const { default: P } = await import('@/shared/ui/risk/RiskDeltaPill');
     render(<P snapshots={[
       { riskScore: 50, dateKey: '2026-04-25' },
       { riskScore: 55, dateKey: '2026-04-26' },

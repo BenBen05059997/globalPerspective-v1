@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { contentService } from '@/utils/contentService';
+import { contentService } from '@/shared/data/contentService';
 
 const CACHE_KEY = 'gemini_topics_cache_v2';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour

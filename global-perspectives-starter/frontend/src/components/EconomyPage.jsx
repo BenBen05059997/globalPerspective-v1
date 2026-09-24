@@ -10,7 +10,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { threadPath } from '@/utils/threadPath';
+import { threadPath } from '@/shared/lib/threadPath';
 import { useDisruptionsList } from '@/hooks/useDisruptionsList';
 import { useTopMovers } from '@/hooks/useTopMovers';
 import { useMarketsGlobal } from '@/hooks/useMarketsGlobal';

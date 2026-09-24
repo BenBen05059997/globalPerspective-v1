@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   tierFromScore, tierFromLevel, tierLabel, TIER_ORDER,
   headlineFromDimensions, deriveHeadline, AXES,
-} from '@/utils/riskTiers';
+} from '@/shared/lib/riskTiers';
 
 describe('tierFromScore — canonical 25/50/75 bands', () => {
   it('maps the four bands at their boundaries', () => {

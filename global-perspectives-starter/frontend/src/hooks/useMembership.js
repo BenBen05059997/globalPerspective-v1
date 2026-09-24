@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { fetchMembership, billingConfigured } from '@/services/restProxy';
+import { useAuth } from '@/shared/contexts/AuthContext';
+import { fetchMembership, billingConfigured } from '@/shared/api/restProxy';
 
 // Current user's membership state from newsPolarBilling. Returns { tier:'member'|'free', ... }.
 // `available` is false until window.POLAR_BILLING_ENDPOINT is configured — the UI uses it to

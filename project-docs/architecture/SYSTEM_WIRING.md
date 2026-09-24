@@ -159,7 +159,7 @@ Equivalent block ≈ 60–90 LOC × 6 Lambdas = ~450 LOC of duplication. Extract
 
 Runtime config is read from `window.FIREBASE_CONFIG`, `window.SENSITIVE_PROXY_ENDPOINT`, `window.GOOGLE_MAPS_API_KEY`, `window.SAVED_ITEMS_ENDPOINT`, all set by `docs/config.js` (never bundled). Local dev falls back to `VITE_FIREBASE_*` env vars.
 
-### §3.2 Service layer (`services/restProxy.js`)
+### §3.2 Service layer (`shared/api/restProxy.js`)
 
 Two callers:
 - `proxyAction(action, payload)` — public; no auth header.

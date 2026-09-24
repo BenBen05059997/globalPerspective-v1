@@ -23,7 +23,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 | P3 | features/static + features/spider-demo | ✅ done | 95044fa (monitor ✓: 184 tests, bundles 1,046.07/295.60 kB, 0 stray rel. imports, guards 32/32; browser: 6 routes render incl. /spider-demo causal web, console clean) |
 | P4 | features/weekly-brief, daily, track-record | ✅ done | b225166 (monitor ✓: 184 tests, bundles 1,046.07/295.60 kB, 0 stray, guards 32/32; browser: /, /weekly-brief, /track-record, /daily render; /daily/2026-09-12 full brief renders — today empty = DeepSeek outage, not code) |
 | P5 | features/map | ✅ done | 4f09336 (monitor ✓: 184 tests, main 1,046.07 kB, lazy SituationMap3D chunk 942.99 kB identical, 0 stray, guards 32/32; browser: /map renders, globe toggle lazy-loads + renders deck.gl globe, Key responds, console clean after reload. Empty situation list = same as pre-restructure local state) |
-| P6 | features/breaking + account | ✅ done | see CHANGES |
+| P6 | features/breaking + account | ✅ done | d9e4db6 (monitor ✓: 184 tests, main 1,046.07 kB, 0 stray; diff = import lines only (38/38) — billing logic untouched; browser: /membership, /signin, /account 5 tabs, /breaking, country-page Save render; console clean on fresh load) |
 | P7 | features/analysis-studio | ⬜ remaining | |
 | P8 | features/economy | ⬜ remaining | |
 | P9 | features/home | ⬜ remaining | |

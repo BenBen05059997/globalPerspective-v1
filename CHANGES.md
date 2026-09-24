@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Home/briefings frontend design debated + wireframe; living action checklist)
+
+`HOME_MAP_BRIEFINGS_FRONTEND_DESIGN.md` (Opus) + two Sonnet critiques (reader/a11y, engineering/cost), monitor rulings in §12. Fact-checks: the engineering critic's 'daily_brief returns null' was a wrong request shape (briefs 09-05..09-12 exist); the real /daily bug was the 7-day fallback window (fixed in Stage-0 (i)). Clickable wireframe (desktop home with linked selection + expand-to-full, phone toggle, Daily/Weekly briefings) published as a private artifact. New `project-docs/ACTION_CHECKLIST.md`: operator vs Claude actions and their gates.
+
 ## 2026-09-24 (Stage-0 (b) follow-up: /weekly freshness uses the data's real updatedAt, not fetch time)
 
 Monitor browser check of Stage-0: `/weekly` still showed "LIVE … updated just now" on 11-day-old content — item (b) had replaced the fabricated noon stamp with the client's fetch-completion time (`fetchedAt`), which is always "just now". The archive response DOES carry a real per-day `updatedAt` (verified live: newest real write 2026-09-13T00:07Z; the synthetic "today" day is `source: latest` with its own 09-13 stamp). `useWeeklyArchive` now exposes `dataUpdatedAt` (max real `updatedAt` across days) and `WeeklyPage` uses it → strip reads "Last updated 11d ago" with no LIVE (browser-verified). `redesign.test.jsx` had asserted the old dishonest behaviour; its mock now supplies `dataUpdatedAt`, plus a new test: StatusStrip never claims LIVE for stale data. 185/185.

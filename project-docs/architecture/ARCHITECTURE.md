@@ -1279,6 +1279,18 @@ case-insensitive macOS).
 | `components/SpiderDemo.jsx`, `.css` | `features/spider-demo/SpiderDemo.jsx`, `.css` |
 | `components/SpiderWorld.jsx` | `features/spider-demo/SpiderWorld.jsx` |
 
+**P4 — `features/daily/`, `features/weekly-brief/`, `features/track-record/`:**
+
+| Old | New |
+|---|---|
+| `components/DailyPage.jsx`, `.css` | `features/daily/DailyPage.jsx`, `.css` |
+| `hooks/useDailyBrief.js` | `features/daily/hooks/useDailyBrief.js` |
+| `components/WeeklyBriefPage.jsx`, `.css` | `features/weekly-brief/WeeklyBriefPage.jsx`, `.css` |
+| `hooks/useWeeklyBrief.js` | `features/weekly-brief/hooks/useWeeklyBrief.js` |
+| `components/TrackRecordPage.jsx`, `.css` | `features/track-record/TrackRecordPage.jsx`, `.css` |
+| `hooks/useTrackRecord.js` | `features/track-record/hooks/useTrackRecord.js` |
+| `hooks/useCorrectionsFeed.js` | `features/track-record/hooks/useCorrectionsFeed.js` |
+
 ### Feature → Lambda index
 
 Lambdas are **not** grouped into feature subfolders (evaluated and rejected —

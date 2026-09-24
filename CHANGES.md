@@ -1,5 +1,20 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P4: `features/daily/`, `features/weekly-brief/`, `features/track-record/`)
+
+Executed P4 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — small features with few inbound edges
+(Home imports `useTrackRecord`/`useCorrectionsFeed` cross-feature). Moved 10 files via
+`scripts/move-module.mjs`: `components/DailyPage.jsx`/`.css` + `hooks/useDailyBrief.js` →
+`features/daily/`; `components/WeeklyBriefPage.jsx`/`.css` + `hooks/useWeeklyBrief.js` →
+`features/weekly-brief/`; `components/TrackRecordPage.jsx`/`.css` +
+`hooks/{useTrackRecord,useCorrectionsFeed}.js` → `features/track-record/`. Updated
+`quality/verify_pages.sh`'s 3 `DailyPage.jsx` guard rows and `PAGES_GUIDE.md`'s 3
+path-qualified headings to the new paths. Verified: 15 files / 184 tests (unchanged), main
+bundle 1,046,070 bytes (1,046.07 kB) and CSS bundle 295,600 bytes (295.60 kB) byte-identical to
+baseline, guards 32/32, auth-guard-check 7/7 PASS (confirmed `useDailyBrief.js` still resolves
+via the P0 basename lookup after moving out of `hooks/`), relative-import sweep clean (only the
+2 documented N-file edges remain).
+
 ## 2026-09-24 (Frontend feature-folder restructure P3: `features/static/` + `features/spider-demo/`)
 
 Executed P3 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the shakedown run for

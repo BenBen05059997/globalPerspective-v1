@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import { useWeeklyBrief } from '@/hooks/useWeeklyBrief';
+import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
 import Markdown from '@/shared/ui/Markdown';
 import SubscribeCard from '@/components/SubscribeCard';
 import { RISK_SOLID as RISK_COLOR } from '@/shared/styles/tokens';
-import '@/components/WeeklyBriefPage.css';
+import '@/features/weekly-brief/WeeklyBriefPage.css';
 
 function formatWeekOf(weekKey) {
   if (!weekKey) return '';

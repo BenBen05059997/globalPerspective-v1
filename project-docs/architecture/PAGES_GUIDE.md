@@ -58,7 +58,7 @@ Use this when:
   3. Click a country pill — navigates to `/weekly/country/<name>`.
 - **Known issues:** AI buttons retry 6× on cache-miss/503; collision risk in `getTopicId` if titles ever repeat in one array.
 
-## `/daily` and `/daily/:dateKey` · `components/DailyPage.jsx`
+## `/daily` and `/daily/:dateKey` · `features/daily/DailyPage.jsx`
 
 - **Purpose:** A single editorial Daily Intelligence Brief — lead story, top stories, rising thread, country to watch.
 - **Primary user job:** Read one curated daily summary instead of browsing topics.
@@ -180,7 +180,7 @@ Use this when:
   3. Switch to "Deep research" with a non-search provider — the mode is disabled with an explanatory tooltip.
 - **Known issues:** deep-research (Perplexity/Anthropic web search) plumbing is not yet live-tested (no key on hand); the member "our compute" path is a **no-op until `window.POLAR_BILLING_ENDPOINT` + the analyze endpoint are wired** (`useMembership().available` stays false), so today every run is BYOK.
 
-## `/weekly-brief` · `components/WeeklyBriefPage.jsx`
+## `/weekly-brief` · `features/weekly-brief/WeeklyBriefPage.jsx`
 
 - **Purpose:** A serif long-read of the latest **published** Weekly Signals Brief — a *signals digest* (discrete signals ranked by risk + a "what to watch" list), **not** a synthesized essay.
 - **Primary user job:** Catch up on the week in one screen: the highest-risk signals, each with a one-line "so what" and its sources.
@@ -196,7 +196,7 @@ Use this when:
   3. Click a signal's source outlet — opens the external article in a new tab.
 - **Known issues:** signals link external sources only — there is no internal link into the corresponding `/weekly/thread/:id`, so a reader can't jump from a signal to its full arc.
 
-## `/track-record` · `components/TrackRecordPage.jsx`
+## `/track-record` · `features/track-record/TrackRecordPage.jsx`
 
 - **Purpose:** The public forecast-accountability scoreboard — every published prediction is logged with dated, falsifiable triggers; as deadlines pass and a human confirms each verdict, this page shows the running Brier score + calibration.
 - **Primary user job:** Judge whether the site's forecasts actually pan out before trusting them.

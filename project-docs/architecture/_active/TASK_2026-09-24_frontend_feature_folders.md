@@ -13,7 +13,7 @@ and every "Docs to update" item below is staged in that phase's commit or the fi
 orphans; keep DisruptionRow/Preview → economy; design's ambiguous-home calls; Python prototype
 out of scope; no deploy until the end, and that one needs a fresh yes).
 
-**Now:** P4 — not started
+**Now:** P5 — not started
 
 | Phase | What moves / changes (file groups — exact lists in the plan's §2) | Status | Commit |
 |---|---|---|---|
@@ -21,7 +21,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 | P1 | `@/` alias (vite.config.js, jsconfig.json), codemod all imports, move-module.mjs | ✅ done | d11996c (monitor ✓: 184 tests, bundle 1,046.07 kB, 0 stray relative imports, guards 32/32; browser: 11 routes render, console clean from load on /map + /weekly/country/Iran) |
 | P2 | `app/` (routing, layout, onboarding) + `shared/` (api, contexts, data, hooks, lib, ui, styles) | ✅ done | 915c236 + follow-up (monitor ✓: 184 tests, bundle 1,046.07 kB, CSS 295.60 kB unchanged, guards 32/32; +45 side-effect CSS imports → `@/`) |
 | P3 | features/static + features/spider-demo | ✅ done | 95044fa (monitor ✓: 184 tests, bundles 1,046.07/295.60 kB, 0 stray rel. imports, guards 32/32; browser: 6 routes render incl. /spider-demo causal web, console clean) |
-| P4 | features/weekly-brief, daily, track-record | ⬜ remaining | |
+| P4 | features/weekly-brief, daily, track-record | ✅ done | see CHANGES |
 | P5 | features/map | ⬜ remaining | |
 | P6 | features/breaking + account | ⬜ remaining | |
 | P7 | features/analysis-studio | ⬜ remaining | |
@@ -121,7 +121,7 @@ rewrite, phase by phase, one commit per phase, fully reversible with `git revert
       bundle-hash identical to pre-phase build
 - [x] P2 — `app/` + `shared/` moved; ARCHITECTURE path map + Feature→Lambda index started
 - [x] P3 — `static` + `spider-demo` moved
-- [ ] P4 — `weekly-brief`, `daily`, `track-record` moved
+- [x] P4 — `weekly-brief`, `daily`, `track-record` moved
 - [ ] P5 — `map` moved
 - [ ] P6 — `breaking` + `account` moved
 - [ ] P7 — `analysis-studio` moved (N-file Node-tooling checks pass)

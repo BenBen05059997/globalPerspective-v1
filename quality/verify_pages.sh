@@ -61,9 +61,9 @@ must_have "$SRC/components/Home.jsx" "tab.{1,4}economy" "deep-links to economy t
 must_have "$SRC/components/Home.jsx" "SeverityBadge" "renders SeverityBadge"
 
 # ─── DailyPage ───
-must_have "$SRC/components/DailyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/components/DailyPage.jsx" "tab.{1,4}economy" "deep-links to economy tab"
-must_have "$SRC/components/DailyPage.jsx" "SeverityBadge" "renders SeverityBadge"
+must_have "$SRC/features/daily/DailyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
+must_have "$SRC/features/daily/DailyPage.jsx" "tab.{1,4}economy" "deep-links to economy tab"
+must_have "$SRC/features/daily/DailyPage.jsx" "SeverityBadge" "renders SeverityBadge"
 
 # ─── ThreadPage ───
 must_have "$SRC/components/ThreadPage.jsx" "useEconomicImpact" "uses useEconomicImpact"

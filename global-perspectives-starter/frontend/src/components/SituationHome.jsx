@@ -1,7 +1,6 @@
 import { useMemo, useCallback, useState, useEffect, lazy, Suspense } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '../hooks/useWorld.js';
-import { usePairAnalyses } from '../hooks/usePairAnalyses.js';
 import SituationMap, { AXIS_HUE } from './SituationMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '../utils/situationLabels.js';
 import './SituationHome.css';
@@ -61,10 +60,8 @@ function metricsFor(selected, ev) {
 export default function SituationHome() {
   const { world, situations, loading, error, asOf, stale } = useWorld();
   const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
   const focus = params.get('focus');
   const { detail } = useSituationDetail(focus);
-  const { analyses: pairAnalyses } = usePairAnalyses();
 
   const select = useCallback((id) => {
     setParams((p) => { const n = new URLSearchParams(p); if (id) n.set('focus', id); else n.delete('focus'); return n; }, { replace: true });
@@ -131,12 +128,6 @@ export default function SituationHome() {
   const [view, setViewMode] = useState(() => { try { return localStorage.getItem('gp_map_view') === 'globe' ? 'globe' : 'flat'; } catch { return 'flat'; } });
   const toggleView = () => setViewMode((v) => { const n = v === 'globe' ? 'flat' : 'globe'; try { localStorage.setItem('gp_map_view', n); } catch { /* storage blocked */ } return n; });
   const [legendOpen, setLegendOpen] = useState(false);
-  // "Connections" — bilateral pair-analysis arcs, relocated from the legacy WorldMapV2. Off by
-  // default (monitor decision §8.1) — a visible toggle is enough to keep it reachable.
-  const [showConnections, setShowConnections] = useState(false);
-  const onSelectCountry = useCallback((iso3) => {
-    navigate(`/weekly/country/${encodeURIComponent(iso3Name(iso3))}`);
-  }, [navigate]);
   const [mapH, setMapH] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620));
   useEffect(() => {
     const onResize = () => setMapH(window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620);
@@ -167,7 +158,6 @@ export default function SituationHome() {
                 <SituationMap3D
                   situations={situations} focusId={focusId} callout={callout} tour={tourProps} newIds={newIds} view={view}
                   onSelect={userSelect} onOpenCallout={userSelect} height={mapH}
-                  pairAnalyses={pairAnalyses} showConnections={showConnections} onSelectCountry={onSelectCountry}
                 />
               </Suspense>
             ) : (
@@ -181,11 +171,6 @@ export default function SituationHome() {
               {USE_3D ? (
                 <button className="sh-ctl" onClick={toggleView} title={view === 'globe' ? 'Switch to the flat map' : 'Switch to the globe'} aria-pressed={view === 'globe'}>
                   {view === 'globe' ? 'Flat map' : 'Globe'}
-                </button>
-              ) : null}
-              {USE_3D && pairAnalyses.length ? (
-                <button className="sh-ctl" onClick={() => setShowConnections((v) => !v)} aria-pressed={showConnections} title="Bilateral relationship analyses between countries">
-                  Connections
                 </button>
               ) : null}
               <button className="sh-ctl sh-key" onClick={() => setLegendOpen((v) => !v)} aria-expanded={legendOpen}>

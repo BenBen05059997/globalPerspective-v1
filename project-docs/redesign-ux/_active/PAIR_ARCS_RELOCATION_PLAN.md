@@ -4,6 +4,11 @@ read-only planning agent; execution is a separate pass. Do not start Phase 2 (le
 removal) until this is built, browser-tested, and the task checklist for Phase 1 is checked off.
 -->
 
+> **CANCELLED 2026-09-24 (operator: "no build")** after Phase 1 was built and render/toggle-
+> verified. Port preserved on branch `archive/pair-arcs-port`; code reverted from `main`.
+> Ideas harvested to `_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md`. Kept for the
+> verified-data findings (§0) and as the reference if the port is ever revived.
+
 # Pair-arcs ("Connections") relocation onto SituationMap3D — implementation plan
 
 ## 0. What was verified before writing this plan

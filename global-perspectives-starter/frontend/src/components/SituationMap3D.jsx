@@ -5,7 +5,7 @@ import { GeoJsonLayer, ScatterplotLayer, ArcLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
 import topoData from '../assets/countries-110m.json';
-import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK, NAME_TO_ISO3 } from '../utils/countryGeo.js';
+import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '../utils/countryGeo.js';
 
 // Hue = kind of crisis, as RGB. oklch(0.70 0.155 h) normalised so no axis reads
 // as "worse" than another at equal tier (DATA_STRATEGY §5 / map design target).
@@ -16,11 +16,6 @@ export const AXIS_RGB = {
   humanitarian: [216, 158, 40],
 };
 const AXIS_RGB_FALLBACK = [154, 164, 178];
-// Pair-arcs ("Connections") single neutral accent — desaturated slate/indigo, deliberately
-// distinct from the four AXIS_RGB hues above (which carry crisis-type meaning) so it never
-// reads as a fifth axis. No legend entry; the tooltip (pairTitle) carries the meaning instead.
-const PAIR_ARC_RGB = [124, 134, 168];
-const TOOLTIP_STYLE = { background: '#0d1017', color: '#dfe6f2', fontSize: '12px', borderRadius: '7px', padding: '6px 9px', border: '1px solid #232c3a' };
 // Severity = luminance + halo radius (NOT size alone): size spans ~1.55× so low pins stay clickable.
 const TIER_R = { low: 3.4, moderate: 4.2, elevated: 4.8, high: 5.3 };      // core dot radius (px)
 const TIER_HALO = { elevated: 15, high: 24 };                              // soft outer glow radius (px); low/moderate none
@@ -90,7 +85,6 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
  */
 export default function SituationMap3D({
   situations = [], focusId, callout = null, tour = null, newIds = null, view = 'flat', onSelect, onOpenCallout, height = 560,
-  pairAnalyses = [], showConnections = false, onSelectCountry,
 }) {
   const globe = view === 'globe';
   const [viewState, setViewState] = useState(globe ? GLOBE_VIEW : INITIAL_VIEW);
@@ -128,44 +122,6 @@ export default function SituationMap3D({
     }
     return { rgb, fills, arcs, dests };
   }, [focusId, situations]);
-
-  // Pair-arcs ("Connections") — bilateral relationship arcs from newsPairIntelligence, an
-  // OPT-IN layer independent of any focused situation. Slug-parsed (the `countries` field on
-  // the DDB item is dead — see PAIR_ARCS_RELOCATION_PLAN.md §0); single neutral accent, no
-  // group classification (monitor decision §8.3 — avoids colliding with AXIS_RGB's hue language).
-  const pairArcs = useMemo(() => {
-    if (!showConnections || !Array.isArray(pairAnalyses)) return [];
-    const cutoffMs = Date.now() - 30 * 24 * 60 * 60 * 1000; // fixed 30d — no time-window UI in v1
-    const out = [];
-    for (const p of pairAnalyses) {
-      if (!p.slug || !p.slug.includes('-and-')) continue;
-      const [s1, s2] = p.slug.split('-and-');
-      const c1 = s1.replace(/-/g, ' ').trim();
-      const c2 = s2.replace(/-/g, ' ').trim();
-      const isoA = NAME_TO_ISO3[c1];
-      const isoB = NAME_TO_ISO3[c2];
-      if (!isoA || !isoB) continue;
-      const from = iso3Centroid(isoA);
-      const to = iso3Centroid(isoB);
-      if (!from || !to) continue;
-      const stale = p.generatedAt ? (new Date(p.generatedAt).getTime() < cutoffMs) : false;
-      out.push({ from, to, isoA, stale, label: p.pairTitle || `${isoA}–${isoB}`, slug: p.slug });
-    }
-    return out;
-  }, [pairAnalyses, showConnections]);
-
-  const pairArcLayer = useMemo(() => {
-    if (!pairArcs.length) return null;
-    return new ArcLayer({
-      id: 'pair-arcs', data: pairArcs, pickable: true,
-      getSourcePosition: (d) => d.from, getTargetPosition: (d) => d.to,
-      getSourceColor: (d) => [...PAIR_ARC_RGB, d.stale ? 90 : 190],
-      getTargetColor: (d) => [...PAIR_ARC_RGB, d.stale ? 90 : 190],
-      getWidth: (d) => (d.stale ? 1 : 1.8),
-      onClick: (info) => info.object && onSelectCountry && onSelectCountry(info.object.isoA),
-      updateTriggers: { getSourceColor: [pairArcs], getTargetColor: [pairArcs], getWidth: [pairArcs] },
-    });
-  }, [pairArcs, onSelectCountry]);
 
   useEffect(() => {
     if (!wrapRef.current) return undefined;
@@ -258,26 +214,19 @@ export default function SituationMap3D({
     return out;
   }, [selectionGeo]);
 
-  // Order: land, pair-arcs, affected-fill, arcs, halo, escalating, new-marker, core (top=picking),
-  // dest-rings. pair-arcs sit right above land and under the selection state / pins, so situation
-  // pins (drawn last) stay on top both visually and for click-picking.
+  // Order: land, affected-fill, arcs, halo, escalating, new-marker, core (top=picking), dest-rings.
   const layers = [
     baseLayers[0],
-    ...(pairArcLayer ? [pairArcLayer] : []),
     ...selectionLayers.filter((l) => l.id !== 'dest-rings'),
     baseLayers[1], baseLayers[2], baseLayers[4], baseLayers[3],
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),
   ];
 
   const getTooltip = useCallback(({ object }) => {
-    if (!object) return null;
-    if (object.slug && object.label) {
-      return { html: `<b>${object.label}</b>${object.stale ? '<br/>· older analysis' : ''}`, style: TOOLTIP_STYLE };
-    }
-    if (!object.verb_label) return null;
+    if (!object || !object.verb_label) return null;
     const tierW = TIER_W[object.tier] || object.tier;
     const stW = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoing', cooling: 'Easing' }[object.state] || object.state;
-    return { html: `<b>${object.verb_label}</b><br/>${tierW} · ${stW}`, style: TOOLTIP_STYLE };
+    return { html: `<b>${object.verb_label}</b><br/>${tierW} · ${stW}`, style: { background: '#0d1017', color: '#dfe6f2', fontSize: '12px', borderRadius: '7px', padding: '6px 9px', border: '1px solid #232c3a' } };
   }, []);
 
   // Project the callout situation's centroid to screen space and place the card. On the globe,

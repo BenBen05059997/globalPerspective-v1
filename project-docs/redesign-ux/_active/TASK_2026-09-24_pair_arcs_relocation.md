@@ -5,7 +5,13 @@ relocating it onto the live /map (SituationHome) BEFORE removing the legacy map 
 retiring the feature. Follows from CLEANUP_AUDIT_2026-09-24.md §4 D3.
 -->
 
-## Pair-arcs relocation, then legacy-map removal — 2026-09-24 — active
+> **CANCELLED 2026-09-24 (operator: "no build").** The Phase 1 port was built and verified
+> rendering/toggling, then the operator cancelled the relocation — the new map is the design;
+> legacy ideas are harvested as concepts instead (`_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md`).
+> The working deck.gl port is preserved on branch **`archive/pair-arcs-port`**; the feature code
+> was reverted from `main`. Phase 2 (legacy-map removal) proceeds as pure cleanup.
+
+## Pair-arcs relocation, then legacy-map removal — 2026-09-24 — done (cancelled)
 
 **Goal:** Preserve the pair-arcs ("Connections") feature — currently displayed ONLY by the
 legacy `WorldMapV2` on the unlinked `/map-legacy` route — by relocating it as a toggleable

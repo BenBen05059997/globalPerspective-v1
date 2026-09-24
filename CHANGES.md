@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Fix: test-disruption-gate.mjs crashed under Node 22)
+
+`global-perspectives-starter/frontend/scripts/test-disruption-gate.mjs` failed before it did anything: `disruptionGate.js` → `economicAnalogs.js` imports a bare `./economicAnalogs.json`, which Vite bundles natively but Node 22 rejects without a `with { type: 'json' }` import attribute (`ERR_IMPORT_ATTRIBUTE_MISSING`). The repo already shipped `scripts/json-as-module-loader.mjs` for exactly this, but nothing registered it. Fix: the script now calls `module.register('./json-as-module-loader.mjs', import.meta.url)` and loads `disruptionGate.js` via dynamic import after registration. App source untouched (bundle unchanged). Verified against a live read-only scan of all 139 `ECON#` records: 45 FX rows (41 relabelled, 4 suppressed, 19 direction fixes the gate prevents), 101 analogs (64 catalog-backed, 37 gated) — "All assertions passed.", exit 0; eslint clean; vitest 184.
+
 ## 2026-09-24 (Frontend feature-folder restructure P12: docs closeout — programme complete)
 
 Closed out the frontend feature-folder restructure programme (`FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`,

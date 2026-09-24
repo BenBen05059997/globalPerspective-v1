@@ -3,7 +3,13 @@
 // Reports before/after: FX arrows relabelled vs suppressed, analogs backed vs gated.
 
 import fs from 'node:fs';
-import { gateInstrument, gateFxInstrument, gateAnalog, isFxPair } from '../src/features/economy/lib/disruptionGate.js';
+import { register } from 'node:module';
+
+// disruptionGate.js → economicAnalogs.js imports a bare `.json`, which Vite bundles natively but
+// Node 22 rejects without an import attribute; the loader must be registered before that import
+// is evaluated, hence the dynamic import below.
+register('./json-as-module-loader.mjs', import.meta.url);
+const { gateInstrument, gateFxInstrument, gateAnalog, isFxPair } = await import('../src/features/economy/lib/disruptionGate.js');
 
 const path = process.argv[2] || '/tmp/econ_scan.json';
 const raw = JSON.parse(fs.readFileSync(path, 'utf8'));

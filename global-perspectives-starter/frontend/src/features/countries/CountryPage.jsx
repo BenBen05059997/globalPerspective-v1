@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
 import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
@@ -17,7 +17,10 @@ import SeverityBadge from '@/shared/ui/SeverityBadge';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { getBroadRegionsForCountry } from '@/shared/lib/countryMapping';
-import WeeklyMap from '@/features/threads/components/WeeklyMap';
+// Lazy — matches WeeklyPage.jsx's existing split. A static import here previously defeated
+// that split: both files share the same module graph, so bundlers resolved WeeklyMap into the
+// main chunk regardless of WeeklyPage's own lazy() wrapper (STAGE0_FIXES_PLAN.md item (g)).
+const WeeklyMap = lazy(() => import('@/features/threads/components/WeeklyMap'));
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from '@/shared/ui/CopyBriefing';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS, riskScoreToVar, riskTierToVar } from '@/shared/styles/tokens';
@@ -605,7 +608,9 @@ export default function CountryPage() {
             )}
           </div>
         </div>
-        <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} />
+        <Suspense fallback={<div className="weekly-loading">Loading map…</div>}>
+          <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} />
+        </Suspense>
       </div>
 
       {!countryData ? (

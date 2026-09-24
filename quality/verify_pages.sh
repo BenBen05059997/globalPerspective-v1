@@ -44,7 +44,9 @@ echo "==> Per-page grep guards"
 echo
 
 # ─── App-level ───
-must_have "$SRC/app/App.jsx" "import EconomyPage" "imports EconomyPage"
+# Stage-0 item (g) (STAGE0_FIXES_PLAN.md) converted App.jsx's page imports to React.lazy(); match
+# both the old static form and the new `const EconomyPage = lazy(() => import(...))` form.
+must_have "$SRC/app/App.jsx" "import EconomyPage|EconomyPage = lazy" "imports EconomyPage"
 must_have "$SRC/app/App.jsx" "/economy" "wires /economy route"
 must_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/economy" "nav link to /economy"
 

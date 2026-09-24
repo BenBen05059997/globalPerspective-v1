@@ -1,5 +1,38 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 item (g): route-level code splitting — main chunk 1,046 kB → 425 kB)
+
+`STAGE0_FIXES_PLAN.md` §(g): (1) `CountryPage.jsx` did a **static** `import WeeklyMap from
+'@/features/threads/components/WeeklyMap'` while `WeeklyPage.jsx` already correctly `lazy()`'d the
+same module — since both files share the bundle graph, the static importer pulled `WeeklyMap` into
+the main chunk regardless of `WeeklyPage`'s own lazy wrapper, defeating that split (confirmed by
+Vite's own build warning: "dynamically imported ... but also statically imported"). Converted
+`CountryPage.jsx`'s import to `lazy()` (matching `WeeklyPage.jsx`'s pattern) with a `<Suspense>`
+fallback around its usage; the Vite warning is gone post-fix, and `WeeklyMap` is now a single
+shared 24.47 kB chunk instead of baked into the main bundle.
+(2) `App.jsx`'s 20 static page imports converted to `React.lazy()`, with the `<Routes>` block
+wrapped in one shared `<Suspense fallback>` (fixed min-height, no layout shift). Home is the one
+page kept **eager** — measured both ways: lazy-loading it saved ~14 kB gzipped off the main chunk
+but added a fetch-chunk round-trip to the highest-traffic route (the Worker's `renderRootPage()`
+static bot copy links `/` first) for a bundle whose size is actually dominated by
+`SituationMap3D` (943 kB, already its own lazy chunk since before this change) and shared libs
+(d3/deck.gl/firebase), not Home's own code — not worth it. `Layout`, `ErrorProvider`,
+`ErrorBoundary`, `ErrorModal`, `AuthProvider` stay eager (shell chrome needed on every route).
+`SpiderDemo` and `/__boom` are lazy too (low-traffic/debug), `NotFound` stays eager (trivial, part
+of the route table itself).
+
+**Main chunk: 1,046.05 kB → 425.25 kB raw (gzip 337.07 kB → 131.89 kB), a 59% reduction** — each
+page now ships as its own chunk (2.99 kB–41.72 kB range) fetched on first navigation to that
+route. `quality/verify_pages.sh`'s `App.jsx` import guard updated to match both the old static
+`import EconomyPage` form and the new `EconomyPage = lazy(...)` form (the guard's job — catching a
+silent import removal — is unaffected, just the pattern it matches).
+
+Verify: `npm run verify` 184/184, 0 lint errors; `verify_pages.sh` 32/0 (after the guard-pattern
+update above); `auth-guard-check.mjs` PASS. Browser click-through of all 23 routes (confirming
+each renders with a brief, non-blank loading state and the console stays clean, plus
+`/weekly/country/:name`'s embedded map specifically) deferred to the monitor per this task's hard
+rules (executor does not browser-test).
+
 ## 2026-09-24 (Stage-0 item (f): de-dupe in-flight restProxy requests)
 
 `STAGE0_FIXES_PLAN.md` §(f): `limitedProxyFetch()` in `restProxy.js` (the single choke point both

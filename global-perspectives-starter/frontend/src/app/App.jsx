@@ -3,37 +3,47 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import '@/app/App.css';
 import '@/shared/ui/atoms.css';
 import Layout from '@/app/layout/Layout';
+// Home is kept eager (not React.lazy'd like the other 19 routes below), deliberately, per
+// STAGE0_FIXES_PLAN.md item (g)'s "decide with evidence" instruction: Home is the most-linked
+// URL (the Worker's renderRootPage() page directory) and the most common first paint. Measured
+// both ways during this change — lazy-loading Home saved ~14 kB (gzipped) off the main chunk but
+// added a waterfall (shell paint -> fetch chunk -> render) to the highest-traffic route for a
+// bundle that's already dominated by SituationMap3D (943 kB, already its own lazy chunk) and
+// shared libs (d3/deck.gl/firebase), not Home's own code. Not worth the extra round-trip there.
 import Home from '@/features/home/Home';
-import PrivacyTerms from '@/features/static/PrivacyTerms';
-import AboutContact from '@/features/static/AboutContact';
-import Disclosures from '@/features/static/Disclosures';
-import Contact from '@/features/static/Contact';
 import { ErrorProvider } from '@/shared/contexts/ErrorContext';
 import { ErrorBoundary } from '@/app/errors/ErrorHandling';
 import ErrorModal from '@/app/errors/ErrorModal';
-import WeeklyPage from '@/features/threads/WeeklyPage';
-import ThreadPage from '@/features/threads/ThreadPage';
-import CountryPage from '@/features/countries/CountryPage';
-import CountryListPage from '@/features/countries/CountryListPage';
-import DailyPage from '@/features/daily/DailyPage';
-import SignIn from '@/features/account/SignIn';
-import AuthCallback from '@/features/account/AuthCallback';
-import Account from '@/features/account/Account';
-import WhitepaperPage from '@/features/static/WhitepaperPage';
-import SituationHome from '@/features/map/SituationHome';
-import EconomyPage from '@/features/economy/EconomyPage';
-import AnalysisStudio from '@/features/analysis-studio/AnalysisStudio';
-import MembershipPage from '@/features/account/MembershipPage';
-import TrackRecordPage from '@/features/track-record/TrackRecordPage';
-import WeeklyBriefPage from '@/features/weekly-brief/WeeklyBriefPage';
-import WeeklyMarketsPage from '@/features/economy/WeeklyMarketsPage';
-import BreakingFeedPage from '@/features/breaking/BreakingFeedPage';
-import BreakingDetailPage from '@/features/breaking/BreakingDetailPage';
-import SpiderDemo from '@/features/spider-demo/SpiderDemo';
 import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
 import { setAuthProvider } from '@/shared/api/restProxy';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
+
+// Route-level code splitting (STAGE0_FIXES_PLAN.md item (g)): every other page is its own chunk,
+// fetched on first navigation instead of bundled into the main chunk every visitor downloads.
+const PrivacyTerms = lazy(() => import('@/features/static/PrivacyTerms'));
+const AboutContact = lazy(() => import('@/features/static/AboutContact'));
+const Disclosures = lazy(() => import('@/features/static/Disclosures'));
+const Contact = lazy(() => import('@/features/static/Contact'));
+const WeeklyPage = lazy(() => import('@/features/threads/WeeklyPage'));
+const ThreadPage = lazy(() => import('@/features/threads/ThreadPage'));
+const CountryPage = lazy(() => import('@/features/countries/CountryPage'));
+const CountryListPage = lazy(() => import('@/features/countries/CountryListPage'));
+const DailyPage = lazy(() => import('@/features/daily/DailyPage'));
+const SignIn = lazy(() => import('@/features/account/SignIn'));
+const AuthCallback = lazy(() => import('@/features/account/AuthCallback'));
+const Account = lazy(() => import('@/features/account/Account'));
+const WhitepaperPage = lazy(() => import('@/features/static/WhitepaperPage'));
+const SituationHome = lazy(() => import('@/features/map/SituationHome'));
+const EconomyPage = lazy(() => import('@/features/economy/EconomyPage'));
+const AnalysisStudio = lazy(() => import('@/features/analysis-studio/AnalysisStudio'));
+const MembershipPage = lazy(() => import('@/features/account/MembershipPage'));
+const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPage'));
+const WeeklyBriefPage = lazy(() => import('@/features/weekly-brief/WeeklyBriefPage'));
+const WeeklyMarketsPage = lazy(() => import('@/features/economy/WeeklyMarketsPage'));
+const BreakingFeedPage = lazy(() => import('@/features/breaking/BreakingFeedPage'));
+const BreakingDetailPage = lazy(() => import('@/features/breaking/BreakingDetailPage'));
+const SpiderDemo = lazy(() => import('@/features/spider-demo/SpiderDemo'));
 
 // Deliberate render crash — the deterministic trigger the smoke-test ERROR
 // BOUNDARY leg drives (and a quick manual /__boom check). Not linked anywhere in
@@ -96,6 +106,7 @@ export default function App() {
           <AuthBridge />
           <Layout>
             <ErrorBoundary>
+            <Suspense fallback={<div style={{ padding: '4rem 1rem', textAlign: 'center', minHeight: '40vh' }}>Loading…</div>}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/map" element={<SituationHome />} />
@@ -125,6 +136,7 @@ export default function App() {
               <Route path="/__boom" element={<Boom />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             </ErrorBoundary>
           </Layout>
         </BrowserRouter>

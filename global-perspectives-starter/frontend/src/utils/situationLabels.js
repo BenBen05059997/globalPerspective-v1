@@ -5,7 +5,8 @@
 // raw ISO-3, which an analyst audience reads fine — never a fabricated name.
 
 // Crisis-prone + major countries. Fallback is the code itself, so this need not be exhaustive.
-const ISO3_NAME = {
+// Exported so countryGeo.js can invert it into a name→ISO3 lookup for pair-analysis arcs.
+export const ISO3_NAME = {
   USA: 'United States', GBR: 'United Kingdom', FRA: 'France', DEU: 'Germany', ITA: 'Italy',
   ESP: 'Spain', PRT: 'Portugal', NLD: 'Netherlands', BEL: 'Belgium', CHE: 'Switzerland',
   AUT: 'Austria', SWE: 'Sweden', NOR: 'Norway', DNK: 'Denmark', FIN: 'Finland', POL: 'Poland',

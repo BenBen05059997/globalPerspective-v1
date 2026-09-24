@@ -3,6 +3,21 @@
 // draw spread arcs (origin→destination centroids) and tint affected-country polygons (slice 2b).
 // Regenerate if situationLabels ISO3_NAME or the topojson changes.
 
+import { ISO3_NAME } from './situationLabels.js';
+
+// Name → ISO-3, for resolving pair-analysis country-name strings (from newsPairIntelligence's
+// slug, e.g. "iran-and-israel") to a centroid via ISO3_TO_NUM. Built by inverting
+// situationLabels.ISO3_NAME (same curated country set, same canonical English names the backend's
+// canonicalize() produces) plus a short alias overlay for backend name variants ISO3_NAME
+// doesn't carry verbatim. Verified against live PAIR# records 2026-09-24 (14/14 resolve).
+export const NAME_TO_ISO3 = {
+  ...Object.fromEntries(Object.entries(ISO3_NAME).map(([iso, name]) => [name.toLowerCase(), iso])),
+  'uae': 'ARE',
+  'united arab emirates': 'ARE',
+  'czech republic': 'CZE',
+  'ivory coast': 'CIV',
+};
+
 export const ISO3_TO_NUM = {
   AFG: '004',
   AGO: '024',

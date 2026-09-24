@@ -720,7 +720,7 @@ export default function WeeklyPage() {
 
   useEffect(() => setActiveCountry(null), [activeRegion]);
 
-  const { dayMap, sortedDates: allDates, loading, error } = useWeeklyArchive();
+  const { dayMap, sortedDates: allDates, loading, error, fetchedAt } = useWeeklyArchive();
 
   const sortedDates = useMemo(
     () => filterDatesByRange(allDates, timeRange),
@@ -894,8 +894,6 @@ export default function WeeklyPage() {
 
   const totalArticles = threads.reduce((sum, t) => sum + t.articleCount, 0) + standalone.length;
 
-  const latestDate = allDates[0];
-
   if (viewMode === 'map') {
     return (
       <Suspense fallback={<div className="weekly-loading">Loading map…</div>}>
@@ -923,7 +921,7 @@ export default function WeeklyPage() {
         { value: totalArticles, unit: 'articles' },
         { value: sortedDates.length, unit: 'days' },
       ]}
-      updatedAt={latestDate ? `${latestDate}T12:00:00` : null}
+      updatedAt={fetchedAt}
     />
   );
 

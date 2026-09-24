@@ -40,7 +40,7 @@ export default function AboutContact() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Key Features</h2>
         <ul style={{ paddingLeft: '1.25rem', lineHeight: 1.8 }}>
-          <li><strong>Daily Topics</strong> — ~13 global topics refreshed hourly with AI analysis</li>
+          <li><strong>Daily Topics</strong> — ~13 global topics refreshed every 4 hours with AI analysis</li>
           <li><strong>Story Arc Intelligence</strong> — track how stories evolve across days with narrative threading</li>
           <li><strong>Country Intelligence</strong> — AI-powered country briefings with risk levels, timelines, and watch triggers</li>
           <li><strong>Interactive World Map</strong> — geographic visualization of news connections and country replay</li>

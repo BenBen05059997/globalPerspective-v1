@@ -11,6 +11,11 @@ export function useWeeklyArchive() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tier, setTier] = useState(null);
+  // When this data was actually fetched (cache write or fresh fetch completion) — an honest
+  // client-side "as of" stamp, not a fabricated per-record timestamp. The archive response has
+  // no genuine per-day updatedAt field to thread through, so this is the fetch-completion time,
+  // per STAGE0_FIXES_PLAN.md item (b).
+  const [fetchedAt, setFetchedAt] = useState(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -23,6 +28,7 @@ export function useWeeklyArchive() {
         if (fresh && cached?.dayMap) {
           setDayMap(cached.dayMap);
           setTier(cached.tier || null);
+          setFetchedAt(cached.timestamp);
           return;
         }
       }
@@ -35,14 +41,16 @@ export function useWeeklyArchive() {
       const data = result?.data || {};
       const dayCount = Object.keys(data).length;
       const resolvedTier = dayCount > 7 ? 'enterprise' : 'member';
+      const now = Date.now();
       setDayMap(data);
       setTier(resolvedTier);
+      setFetchedAt(now);
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify({
           dayMap: data,
           tier: resolvedTier,
           uid: user?.uid || 'anon',
-          timestamp: Date.now(),
+          timestamp: now,
         }));
       } catch { /* ignore */ }
     } catch (err) {
@@ -62,5 +70,5 @@ export function useWeeklyArchive() {
     [dayMap]
   );
 
-  return { dayMap, sortedDates, loading, error, tier, refetch: load };
+  return { dayMap, sortedDates, loading, error, tier, fetchedAt, refetch: load };
 }

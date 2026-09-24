@@ -29,7 +29,7 @@ const dayMap = {};
 const sortedDates = Object.keys(dayMap).sort((a, b) => b.localeCompare(a));
 
 vi.mock('@/features/threads/hooks/useWeeklyArchive', () => ({
-  useWeeklyArchive: () => ({ dayMap, sortedDates, loading: false, error: null, tier: 'enterprise', refetch: vi.fn() }),
+  useWeeklyArchive: () => ({ dayMap, sortedDates, loading: false, error: null, tier: 'enterprise', fetchedAt: Date.now(), refetch: vi.fn() }),
 }));
 
 vi.mock('@/features/threads/hooks/useThreadAnalyses', () => ({

@@ -82,7 +82,7 @@ export default function WhitepaperPage() {
           The world produces more news than any analyst, executive, or researcher can meaningfully process. Yet the problem is not a shortage of information — it is a shortage of <em>synthesis</em>. Headlines tell you what happened yesterday. They do not tell you why it happened, how it connects to last week's events, or what comes next.
         </p>
         <p style={{ lineHeight: 1.7, marginBottom: '1rem' }}>
-          Global Perspectives is an AI-powered geopolitical intelligence platform that transforms raw global news into structured, decision-ready insight — updated hourly, available to anyone. Built on a proprietary <strong>Narrative Arc Intelligence</strong> pipeline, it reads the world's news continuously, clusters events into evolving story threads, traces their root causes, and forecasts their likely trajectories.
+          Global Perspectives is an AI-powered geopolitical intelligence platform that transforms raw global news into structured, decision-ready insight — updated every few hours, available to anyone. Built on a proprietary <strong>Narrative Arc Intelligence</strong> pipeline, it reads the world's news continuously, clusters events into evolving story threads, traces their root causes, and forecasts their likely trajectories.
         </p>
         <p style={{ lineHeight: 1.7, marginBottom: '1.25rem' }}>
           The result is not a faster news feed. It is a fundamentally different product: intelligence that shows how stories <em>move</em>, not just what happened today.
@@ -90,7 +90,7 @@ export default function WhitepaperPage() {
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
           <p style={{ fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.9rem', color: '#3b82f6' }}>KEY CAPABILITIES</p>
           <ul style={{ paddingLeft: '1.25rem', margin: 0, lineHeight: 1.8 }}>
-            <li>Hourly AI analysis of 20+ international news sources across 6 continents</li>
+            <li>AI analysis of 20+ international news sources across 6 continents, refreshed every 4 hours</li>
             <li>Narrative threading that links related events across days and geographies</li>
             <li>AI-generated summaries, predictions, and root-cause analysis per topic</li>
             <li>Weekly narrative intelligence: story arcs, trajectory forecasts, watch questions</li>
@@ -163,9 +163,9 @@ export default function WhitepaperPage() {
         </SubSection>
 
         <SubSection title="The Pipeline: From Sources to Intelligence">
-          <Step number={1} title="Global Ingestion (Hourly)">
+          <Step number={1} title="Global Ingestion (Every 4 Hours)">
             <p style={{ lineHeight: 1.7, marginBottom: '1rem' }}>
-              Every hour, Global Perspectives ingests articles from a deliberately diverse set of international sources:
+              Every 4 hours, Global Perspectives ingests articles from a deliberately diverse set of international sources:
             </p>
             <table style={tableStyle}>
               <thead>
@@ -289,7 +289,7 @@ export default function WhitepaperPage() {
               tier: 'Level 1 — The Daily Picture',
               sub: 'Everything needed to understand today\'s world. No account required.',
               items: [
-                'Today\'s AI-clustered global topics, refreshed hourly',
+                'Today\'s AI-clustered global topics, refreshed every 4 hours',
                 'AI Summary, Prediction, and Trace Cause analysis per topic',
                 'Interactive world map with geopolitical connection lines',
                 'Category-colored markers showing conflict, economy, politics, technology, health, and disaster stories',
@@ -334,7 +334,7 @@ export default function WhitepaperPage() {
 
         <SubSection title="The Map Experience">
           <p style={{ lineHeight: 1.7 }}>
-            The Global Perspectives world map is not a geographic novelty — it is an intelligence tool. Each country marker represents the number of distinct geopolitical topics affecting that country. Geodesic connection lines link countries that share a story, creating a visual representation of geopolitical relationships that is updated hourly.
+            The Global Perspectives world map is not a geographic novelty — it is an intelligence tool. Each country marker represents the number of distinct geopolitical topics affecting that country. Geodesic connection lines link countries that share a story, creating a visual representation of geopolitical relationships that is updated every few hours.
           </p>
           <p style={{ lineHeight: 1.7, marginTop: '0.75rem' }}>
             Clicking any country opens a side panel with all active topics affecting it, complete with AI analysis and connections to related countries. The weekly map adds a temporal dimension: date playback allows analysts to watch narratives spread geographically over time, seeing exactly when and how a story moved from one region to another.

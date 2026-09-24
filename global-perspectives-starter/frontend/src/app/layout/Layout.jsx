@@ -180,22 +180,19 @@ function Layout({ children }) {
       </div>
 
       {/* The situation map carries its own live, per-source freshness line — hide the static
-          "Updated hourly" strip there so the page never shows two conflicting freshness claims. */}
+          strip there so the page never shows two conflicting freshness claims.
+          No global "when was this last updated" signal exists at this layout level (this strip
+          renders on every page, many of which fetch independently), so this strip makes no
+          freshness claim ("LIVE"/"Updated hourly") — those were fabricated (STAGE0_FIXES_PLAN.md
+          item (b)). Per-page StatusStrip instances make the real, data-derived freshness claim. */}
       {location.pathname !== '/map' && (
       <div className="gp-strip">
-        <span className="gp-strip-live">
-          <span className="gp-dot-live" />
-          LIVE
-        </span>
-        <span className="gp-strip-sep">·</span>
         {topicCount != null && (
           <>
             <span><b>{topicCount}</b> topics</span>
             <span className="gp-strip-sep">·</span>
           </>
         )}
-        <span>Updated hourly</span>
-        <span className="gp-strip-sep">·</span>
         <span>AI-powered global news intelligence</span>
       </div>
       )}

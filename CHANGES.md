@@ -1,5 +1,35 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 item (b): freshness honesty — fabricated timestamp + always-LIVE label)
+
+Two bugs from `STAGE0_FIXES_PLAN.md` §(b): (1) `WeeklyPage.jsx`'s status strip stamped
+`${latestDate}T12:00:00` — a fabricated time bolted onto the archive's latest date string, never a
+real update time. `useWeeklyArchive.js` now tracks `fetchedAt` (cache-write or fresh-fetch
+completion time, an honest "data as of when we last successfully loaded it" — the archive response
+has no genuine per-day `updatedAt` field to thread through) and `WeeklyPage.jsx` uses that instead.
+(2) `StatusStrip.jsx` defaulted to `label="LIVE"` unconditionally regardless of data age. Added a
+named `STALE_THRESHOLD_MS` (6h, matching the 4-hourly topics-pipeline cadence in
+`ARCHITECTURE.md`) — the default "LIVE" label now only renders when `updatedAt` is within the
+threshold; otherwise it's dropped and the "updated Xh/Xd ago" badge gets a "Last updated" prefix
+instead of a silent freshness claim. `Layout.jsx`'s static top strip ("LIVE · Updated hourly")
+never had a real freshness signal to check against (it renders on every page), so the fabricated
+"LIVE"/"Updated hourly" claims were removed outright rather than gated — the strip now shows only
+the topic count + tagline; each page's own `StatusStrip` makes the real, data-derived freshness
+claim. "Today" copy audit: judged each `today`/`Today's` hit in `Home.jsx` and
+`EconomyPage.jsx` — all are either count labels or backed by daily/4-hourly-refreshed data with
+their own honest "as of" timestamp (Economy's `ep-timestamp`), no changes needed there. Found and
+fixed a real instance of the same class of bug while auditing static pages per the plan's "today"
+sweep note: `AboutContact.jsx` and `WhitepaperPage.jsx` claimed the topics/map pipeline updates
+"hourly" in five places — the real cadence is 4-hourly (`InvokeGoogleGemini`/`InvokeNewsAgent`,
+`ARCHITECTURE.md`) — corrected to "every 4 hours" / "every few hours".
+
+Also updated the `redesign.test.jsx` WeeklyPage mock to supply a real `fetchedAt` (matching prod
+behavior post-fix) and removed the now-unused `latestDate` variable in `WeeklyPage.jsx`.
+
+Verify: `npm run verify` 184/184 tests, 0 lint errors (3 pre-existing unrelated warnings); build
+main chunk unchanged at 1,046.05 kB (baseline 1,046.07 kB, rounding); `verify_pages.sh` 32/0;
+`auth-guard-check.mjs` PASS.
+
 ## 2026-09-24 (Stage-0 item (a): Worker SPA-fallback prepared, not deployed)
 
 `project-docs/distribution/WORKER_FULL_CODE.md`: added a final branch in the Worker's `fetch`

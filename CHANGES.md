@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Page-structure proposal + challenge, adjudicated — discussion, nothing built)
+
+Opus designer proposal (`PAGE_STRUCTURE_PROPOSAL_2026-09-24.md`) vs Sonnet challenger (`PAGE_STRUCTURE_CHALLENGE_2026-09-24.md`), monitor-adjudicated in proposal §8 after verifying the facts. Key: the proposal rejected the approved S6 map-as-home because the news layer hadn't landed, but the ledger (L102) shows it live since 09-10; the map is thin only because news classification fails on DeepSeek 402. Ruling: keep S6, gated on content flowing; no new composed home page. Also found: `/weekly`'s 'updated Nh ago' is fabricated (`WeeklyPage.jsx` stamps the archive date at a hard-coded T12:00:00, ignoring the real `updatedAt`), a new P1. Operator decisions pending.
+
 ## 2026-09-24 (Whole-site page review — findings only, nothing changed)
 
 `project-docs/architecture/PAGE_REVIEW_2026-09-24.md`: checklist → 5 parallel Sonnet reviewers against the live site (Playwright, axe-core, link-crawl, errors/contract checks, sourcemap byte attribution) → monitor browser pass + verification → consolidated, deduplicated, prioritized. Monitor-verified corrections: SEO 404 is site-wide (every route except `/`; curl, browser + Googlebot UA), not just /daily+/weekly; parked-credits finding downgraded to copy (prod config has no credit packs → honest 'coming soon'); 'Summary renders nothing' needs repro; two smoke-test findings were stale-selector false positives. Result: 10 P1 / ~14 P2 / ~14 P3. Feeds the page-structure discussion (proposal in progress).

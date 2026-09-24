@@ -21,7 +21,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 - **[IMPORTANCE_SCALE_MAPPING.md](architecture/IMPORTANCE_SCALE_MAPPING.md)** — Code-grounded feasibility study for WORLD_MODEL D2 (one importance scale). Four Sonnet passes: `urgency`=tempo→reclassified as 4th KEEP exception (not mergeable); `significance`=backend LinkedIn-sort only (no frontend reads); topic surfaces can't show the tier (no topic-level score exists); `impactScores`=keep. Refines D2. 2026-09-12.
 - **[WORLD_MODEL_FRAGMENTS.md](architecture/WORLD_MODEL_FRAGMENTS.md)** — Terrain map for consolidation: every fragmented concept (identity, taxonomy, importance scales, hand-duplicated modules, lifecycles) classified TRUE-MERGE / SERIAL / DISTINCT with file:line evidence. Signal API = the live SERIAL prototype. 2026-09-14.
 - **[SCORING_STANDARDS.md](architecture/SCORING_STANDARDS.md)** — Rubric+benchmark audit of every score the system assigns (formula vs LLM-judgment; rubric quality; benchmark exists?). Verdict: predictions = gold standard; severity tier = most relied-on — its benchmark gap CLOSED 2026-09-15 (gold set + agreement baseline; rubric fix in flight, Phase 4). 2026-09-14, severity rows updated 2026-09-15.
-- **[CLEANUP_AUDIT_2026-09-24.md](architecture/CLEANUP_AUDIT_2026-09-24.md)** — Whole-system dead-weight audit: 3-agent verified inventory (frontend/backend-AWS/repo-data) + Cutter-vs-Keeper debate + tiered plan (Tier A/B safe-delete, C gated, D operator-decision incl. the /map-legacy↔pair-arcs entanglement, E confirmed-alive). NOTHING EXECUTED — awaiting operator go. 2026-09-24.
+- **[CLEANUP_AUDIT_2026-09-24.md](architecture/CLEANUP_AUDIT_2026-09-24.md)** — Whole-system dead-weight audit: 3-agent verified inventory (frontend/backend-AWS/repo-data) + Cutter-vs-Keeper debate + tiered plan (Tier A/B safe-delete, C gated, D operator-decision, E confirmed-alive). Tier A/B EXECUTED; D3 (the former /map-legacy↔pair-arcs entanglement) RESOLVED — legacy map removed 2026-09-24, pair-arcs port cancelled and archived on `archive/pair-arcs-port`.
 - **[DESIGN_UPGRADES_2026-09-14.md](architecture/DESIGN_UPGRADES_2026-09-14.md)** — Six industry patterns pressure-tested against this shop's constraints; verdicts + adopt-list (reconciler script, generic freshness checker, shared-sync diff gate, model-default scan, completion-marker guard, severity codebook+gold set; event-chain/bundler/S3-model-config skipped with revisit conditions). Decision record. 2026-09-14.
 - **[ONE_TRUTH_EXECUTION_PLAN.md](architecture/ONE_TRUTH_EXECUTION_PLAN.md)** — Executable plan for the one-source-of-truth first slice (Phases 0/1/3; Phase 2 significance-replacement DROPPED as new-infra-for-cosmetic-gain). Phases 0-1 + 3.1-3.3 EXECUTED 2026-09-15; 3.4-3.5 DONE 2026-09-15 (Claude-labeled baseline: 40%
   exact / 85% within-one, inflation diagnosed); Phase 4 prompt fix added — offline eval blocked
@@ -195,6 +195,9 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 **🔭 proposed**
 - **[REDESIGN_V2_PLAN.md](redesign-ux/_proposed/REDESIGN_V2_PLAN.md)** — v2 redesign — Changes A/B/F built via later plans.
+
+**📎 reference**
+- **[LEGACY_MAP_IDEA_HARVEST_2026-09-24.md](redesign-ux/_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md)** — Idea harvest from the cancelled pair-arcs-on-`/map` relocation port (`archive/pair-arcs-port`): concepts worth revisiting distilled out before the legacy `WorldMapV2` map was removed 2026-09-24. Reference only, no build.
 
 ## Distribution & channels
 

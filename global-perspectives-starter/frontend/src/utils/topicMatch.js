@@ -2,8 +2,8 @@
 //
 // Region labels in our data are free-text country names ("United States",
 // "France", …) with inconsistent casing across sources, so matching is a
-// case-insensitive exact compare. Extracted from WorldMapV2, where the same
-// predicate had been pasted at three call sites (editorial picks, the
+// case-insensitive exact compare. Extracted from the legacy map, where the
+// same predicate had been pasted at three call sites (editorial picks, the
 // right-panel leaderboard, and the detail-panel coverage filter).
 
 export const countryNameEq = (a, b) =>

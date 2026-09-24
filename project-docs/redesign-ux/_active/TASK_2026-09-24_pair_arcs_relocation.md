@@ -63,10 +63,17 @@ cron (ENABLED) still produces the data. Operator chose preserve-and-relocate ove
 **Completion checklist:**
 - [x] Port plan written + reviewed (Sonnet drafts, monitor reviews) before any code
 - [x] Phase 1: pair-arcs render as a toggleable layer on `/map`; click parity; `npm run build` passes
-- [ ] Browser click-through of `/map` — arcs appear, toggle works, click navigates (standing rule)
-- [ ] Phase 2: legacy map + route + 3 tests removed; `npm run build` + `npx vitest run` pass
-- [ ] Docs updated (same commits as code) — CHANGES.md done for Phase 1; ARCHITECTURE.md/INDEX.md/memory note deferred to Phase 2 (they describe the removal)
-- [x] CHANGES.md entries added (Phase 1 entry added; Phase 2 entry pending)
+- [x] ~~Browser click-through of `/map` — arcs appear, toggle works, click navigates (standing rule)~~
+      MOOT — Phase 1 port reverted from `main` (preserved on `archive/pair-arcs-port`) when the
+      operator cancelled the relocation; the cancelled-path executed is removal-without-port
+      (Phase 2 below), not the port going to production.
+- [x] Phase 2: legacy map + route + 3 tests removed; `npm run build` + `npx vitest run` pass —
+      **EXECUTED 2026-09-24** via the cancelled-path (pure removal, no relocation): `WorldMapV2.jsx`/
+      `.css`, the `/map-legacy` route, `usePairAnalyses.js`, and `signalFilters`/`searchBar`/
+      `layers`.test.jsx deleted; build clean, vitest 16 files / 193 tests passing (was 19/235).
+- [x] Docs updated (same commits as code) — CHANGES.md done for Phase 1; ARCHITECTURE.md/
+      CLEANUP_AUDIT_2026-09-24.md §4 D3/INDEX.md updated in the Phase 2 (removal) commit
+- [x] CHANGES.md entries added (Phase 1 entry added; Phase 2 removal entry added)
 - [ ] Deploy: deferred to an explicit gated `./deploy.sh` (this IS a visible-surface change — needs
       a real deploy to reach prod, unlike the pure dead-code deletions; do NOT auto-push)
-- [ ] Status header flipped to `done`
+- [x] Status header flipped to `done (cancelled)` — see banner at top of this file

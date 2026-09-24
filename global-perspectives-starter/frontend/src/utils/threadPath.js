@@ -1,7 +1,7 @@
 // Single owner of the /weekly/thread/:id URL convention.
 //
 // Thread links were hand-built at ~20 sites with inconsistent encoding — some
-// used encodeURIComponent, some didn't (e.g. WorldMapV2 encoded the economic
+// used encodeURIComponent, some didn't (e.g. the legacy map encoded the economic
 // row but not the editorial/leaderboard nav). Centralize the path + encoding so
 // the convention can't drift again. Callers still choose <Link> vs navigate()
 // themselves — only the string is shared.

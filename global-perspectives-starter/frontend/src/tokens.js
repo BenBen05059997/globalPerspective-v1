@@ -24,8 +24,8 @@ export const RISK_COLORS = {
   high:     { bg: '#fee2e2', color: '#991b1b' },
 };
 
-// Solid editorial palette (single hex per level) — matches the --risk-* CSS
-// vars in WorldMapV2.css (low/elevated/high), plus moderate.
+// Solid editorial palette (single hex per level) — matches the --risk-*
+// CSS vars used across risk displays (low/elevated/high), plus moderate.
 export const RISK_SOLID = {
   low:      '#4fa07b',
   moderate: '#caa23a',

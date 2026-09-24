@@ -1,13 +1,13 @@
 /**
  * Tests for macro value extraction — guards against the {value,year} object bug.
  * World Bank macros from newsMarketsData are stored as {value, year} objects,
- * not raw numbers. Both CountryPage and WorldMapV2 crashed rendering them
- * directly as React children before the fix.
+ * not raw numbers. Both CountryPage and the (since-removed) legacy map
+ * crashed rendering them directly as React children before the fix.
  */
 
 import { describe, it, expect } from 'vitest';
 
-// ── The extraction function (mirrors what's in CountryPage + WorldMapV2) ──
+// ── The extraction function (mirrors what's in CountryPage) ──
 const mv = (f) => (f != null && typeof f === 'object' ? f.value : f);
 
 // ── The formatting function (also used in both components) ───────────

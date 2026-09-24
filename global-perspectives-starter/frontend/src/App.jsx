@@ -20,7 +20,6 @@ import SignIn from './components/SignIn';
 import AuthCallback from './components/AuthCallback';
 import Account from './components/Account';
 import WhitepaperPage from './components/WhitepaperPage';
-import WorldMapV2 from './components/WorldMapV2';
 import SituationHome from './components/SituationHome';
 import EconomyPage from './components/EconomyPage';
 import AnalysisStudio from './components/AnalysisStudio';
@@ -100,7 +99,6 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/map" element={<SituationHome />} />
-              <Route path="/map-legacy" element={<WorldMapV2 />} />
               <Route path="/privacy" element={<PrivacyTerms />} />
               <Route path="/about" element={<AboutContact />} />
               <Route path="/disclosures" element={<Disclosures />} />

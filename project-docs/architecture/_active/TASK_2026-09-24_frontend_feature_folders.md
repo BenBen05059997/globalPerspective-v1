@@ -151,9 +151,7 @@ dead `useCountrySignal.test.js` (9 cases) — every other phase held 184/184 exa
 stop-condition rule that any other drop halts the phase. Three real bugs were caught and fixed
 by the phase-0 monitor along the way, not by the original plan: (1) 45 side-effect CSS imports
 (`import './X.css'`, no `from` clause) that the P1 codemod's `from`-only pattern missed, swept to
-`@/` in a P2 follow-up; (2) `scripts/auth-guard-check.mjs`'s hook-resolution regex assumed a fixed
-`src/hooks/` path and had to be generalized to a basename search before hooks left that directory;
-(3) the realization that Vite's `__BUILD_SHA__`/`__BUILD_DATE__` `define` injection changes the
+`@/` in a P2 follow-up; (2) two plan defects fixed during pre-P0 review — `assets/react.svg` missing from P0's deletion list, and the "test count drops → stop" rule lacking an exception for the one intentionally deleted test file — plus a pre-commit hook bug where a `done (cancelled)` task header was treated as still open, causing false doc reminders on restructure commits (the `auth-guard-check.mjs` basename generalization, by contrast, was planned P0 work, not a catch); (3) the realization that Vite's `__BUILD_SHA__`/`__BUILD_DATE__` `define` injection changes the
 main bundle's filename hash on every commit regardless of code changes, so "bundle hash identical"
 was redefined phase-to-phase as "byte size identical (± the sha literal), prettified-diff clean"
 rather than a literal hash compare — documented as ground rule 5b so no future phase mistook a

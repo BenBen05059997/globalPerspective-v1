@@ -5,7 +5,7 @@ this file's header to `done` only after P12 (or the operator-approved stopping p
 and every "Docs to update" item below is staged in that phase's commit or the final commit.
 -->
 
-## Frontend feature-folder restructure — 2026-09-24 — active
+## Frontend feature-folder restructure — 2026-09-24 — done
 
 ### ▶ LIVE TRACKER (operator-requested: update + clear at the end of EVERY phase, same commit)
 
@@ -13,7 +13,7 @@ and every "Docs to update" item below is staged in that phase's commit or the fi
 orphans; keep DisruptionRow/Preview → economy; design's ambiguous-home calls; Python prototype
 out of scope; no deploy until the end, and that one needs a fresh yes).
 
-**Now:** P12 — not started
+**Now:** ALL PHASES DONE
 
 | Phase | What moves / changes (file groups — exact lists in the plan's §2) | Status | Commit |
 |---|---|---|---|
@@ -29,7 +29,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 | P9 | features/home | ✅ done | e4b4f39 (monitor ✓: 184 tests, main 1,046.07 kB, diff import-only; verify_lede 4/4; guards 32/32; browser: / renders, story controls present; Summary click shows no panel — IDENTICAL on prod (pre-restructure code) → data condition (DeepSeek outage), not a regression; pre-existing UX gap: no "unavailable" message) |
 | P10 | features/countries | ✅ done | cd2b3b5 (monitor ✓: 184 tests, main 1,046.07 kB, diff import-only; useCountryIntelligence still unguarded (public); guards 32/32; browser: /weekly/countries grid, /weekly/country/Ukraine scorecard + What-changed band + Causal Web tab render; console clean) |
 | P11 | features/threads + delete empty old dirs + eslint dependency rule | ✅ done | b09fb19 (monitor ✓: 184 tests, main/CSS/lazy bundles identical; src/ = app+features+shared+test+main.jsx; eslint rule PROVEN to fire (injected shared→features import → error, reverted); guards 32/32; browser: /weekly board, thread page (5 tabs, forecast board, Analyze-this-arc), /signin (borrows WeeklyPage.css) render; console clean) |
-| P12 | docs only (ARCHITECTURE path table, INDEX, feature→Lambda index) | ⬜ remaining | |
+| P12 | docs only (ARCHITECTURE final-tree section, INDEX, README, root CLAUDE.md, task file + plan closeout, CHANGES.md) | ✅ done | see CHANGES (docs-only, no code/src changes; verify: 184 tests unchanged, `verify_pages.sh` 32/0 — no-regression proof for a docs-only phase) |
 
 **End-of-phase ritual (executor, in the phase commit):** flip the row to ✅ with the commit sha
 (fill after commit via a tiny follow-up amend is NOT allowed — record "see CHANGES" and the
@@ -129,8 +129,37 @@ rewrite, phase by phase, one commit per phase, fully reversible with `git revert
 - [x] P9 — `home` moved (N-file Node-tooling checks pass)
 - [x] P10 — `countries` moved
 - [x] P11 — `threads` moved; old flat dirs deleted; eslint `no-restricted-imports` rule added
-- [ ] P12 — README + INDEX + memory pass; task file and design doc flipped to `done`
-- [ ] Every phase: docs updated in the same commit, `CHANGES.md` entry present, `npm run verify`
+- [x] P12 — README + INDEX + memory pass; task file and design doc flipped to `done`
+- [x] Every phase: docs updated in the same commit, `CHANGES.md` entry present, `npm run verify`
       passes with the expected test count, build hash compared, `verify_pages.sh` green, browser
       click-through done for the moved feature's routes
-- [ ] No deploy performed as part of this task (deploy needs a separate fresh "yes" each time)
+- [x] No deploy performed as part of this task (deploy needs a separate fresh "yes" each time)
+
+### Outcome
+
+P0–P12 executed 2026-09-24, one phase per commit (13 commits total, all `git revert`-able). 193
+frontend files were reorganized (minus 5 operator-approved P0 orphan deletions) from a flat
+`components/`/`hooks/`/`utils/`/`services/` tree into `src/app/` + `src/shared/` + 13
+`src/features/<name>/` directories, using a purpose-built `scripts/move-module.mjs` helper
+(`git mv` + repo-wide `@/` specifier rewrite) so every relocation kept `git log --follow`
+history and no file was renamed. Every phase's build was byte-identical to its pre-phase build
+(main bundle 1,046,070 bytes / 1,046.07 kB, CSS 295,600 bytes, `SituationMap3D` lazy chunk
+942,987 bytes — unchanged start to finish) — this was a pure move-and-relink programme with zero
+behavior change, confirmed phase by phase rather than assumed. The test suite went from the
+pre-P0 baseline of 193 tests to 184 (15 files) exclusively from P0's deliberate deletion of the
+dead `useCountrySignal.test.js` (9 cases) — every other phase held 184/184 exactly, per the
+stop-condition rule that any other drop halts the phase. Three real bugs were caught and fixed
+by the phase-0 monitor along the way, not by the original plan: (1) 45 side-effect CSS imports
+(`import './X.css'`, no `from` clause) that the P1 codemod's `from`-only pattern missed, swept to
+`@/` in a P2 follow-up; (2) `scripts/auth-guard-check.mjs`'s hook-resolution regex assumed a fixed
+`src/hooks/` path and had to be generalized to a basename search before hooks left that directory;
+(3) the realization that Vite's `__BUILD_SHA__`/`__BUILD_DATE__` `define` injection changes the
+main bundle's filename hash on every commit regardless of code changes, so "bundle hash identical"
+was redefined phase-to-phase as "byte size identical (± the sha literal), prettified-diff clean"
+rather than a literal hash compare — documented as ground rule 5b so no future phase mistook a
+hash change for a regression. This P12 phase changed no code under `frontend/src` or `amplify/`:
+it consolidated `ARCHITECTURE.md`'s incrementally-built Frontend Path map with a new "Frontend
+layout (final tree)" summary, updated `README.md`/root `CLAUDE.md`/`project-docs/INDEX.md`, and
+closed out this task file and the execution plan's §5 ledger. `npm run verify` (184/184, 0
+lint errors) and `bash quality/verify_pages.sh` (32/0) both stayed green, proving the docs-only
+phase introduced no regression.

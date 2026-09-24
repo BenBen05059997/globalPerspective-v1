@@ -1224,12 +1224,35 @@ relative. `global-perspectives-starter/frontend/scripts/move-module.mjs` is the 
 restructure's later phases use to relocate a module and rewrite every `@/` reference to it in one
 step.
 
-### Frontend Path map (old → new, feature-folder restructure)
+### Frontend layout (final tree, 2026-09-24)
 
-Built up incrementally, one phase's rows per commit, by
-`project-docs/architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`. Old-path citations
-elsewhere in this doc and in other live docs stay valid by basename (relocate-never-rename); this
-table is the authoritative old→new lookup while the restructure is in flight.
+The feature-folder restructure (`FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`, P0–P12) is **complete**.
+`src/` top level is now exactly:
+
+```
+src/
+  app/          routing, Layout/nav chrome, error boundary, onboarding tours, main.jsx (unmoved)
+  shared/       api/ (restProxy, errorSink) · contexts/ (Auth, Error) · data/ (useGeminiTopics,
+                contentService) · hooks/ (useIsMobile) · lib/ (threadPath, riskTiers,
+                countryMapping, dateUtils) · styles/ (tokens) · ui/ (atoms, IntelligenceLoader,
+                Markdown, risk/ badges, SourceRobustness — cross-feature only, never imports
+                features/ or app/)
+  features/     13 feature dirs, each <name>/<Page>.jsx + components/ + hooks/ + lib/ + __tests__/:
+                home, map, threads, countries, economy, analysis-studio, breaking, account,
+                daily, weekly-brief, track-record, static, spider-demo
+  test/         cross-cutting/integration tests not owned by one feature
+```
+
+Dependency direction is enforced by `eslint.config.js`'s `no-restricted-imports` rule (added P11):
+`app → features → shared`; `shared` never imports `features`/`app`; the old flat-dir aliases
+(`@/components/*`, `@/hooks/*`, `@/utils/*`) are banned outright. Feature→feature imports are
+allowed (the design's §2.5 documented cross-feature edges — e.g. countries → threads,
+spider-demo → threads + countries, account → threads).
+
+The old→new path map below (built up one phase's rows per commit) remains the authoritative
+old→new lookup for anyone following a pre-2026-09-24 doc, `CHANGES.md` entry, or commit message
+that still cites a flat `components/`/`hooks/`/`utils/`/`services/` path (relocate-never-rename
+means the basename is unchanged, only the directory moved).
 
 **P2 — `app/` + `shared/`:**
 

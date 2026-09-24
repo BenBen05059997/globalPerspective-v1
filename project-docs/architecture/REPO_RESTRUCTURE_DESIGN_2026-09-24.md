@@ -1,6 +1,10 @@
 # Repo Restructure Design: feature folders (2026-09-24)
 
-**Status:** DESIGN ONLY. Nothing has been moved. Waiting on an operator decision about scope (§5).
+**Status:** EXECUTED 2026-09-24 (P0 through P12, full scope, via
+`project-docs/architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`; see that plan's §5
+ledger and `ARCHITECTURE.md`'s "Frontend layout (final tree)" section for the outcome). This
+document's file-mapping table (§2.3) is the historical old→new record; trust `ARCHITECTURE.md`
+over it on drift.
 **Operator request (verbatim):** "design a clean repo here too by grouping different files into a clean folder and have feature for different part like feature folder right"
 **Scope of evidence:** every claim below was checked against the tree at `a6407d3` (2026-09-24): `App.jsx` routes, a generated import graph of all 193 files in `frontend/src/`, `deploy.sh`, `.githooks/*`, `quality/verify_pages.sh`, `scripts/*.mjs`, `quality/analysis|briefing/*.mjs`, and a grep of `project-docs/`, skills, and memory.
 

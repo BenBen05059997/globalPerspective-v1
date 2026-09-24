@@ -1,5 +1,41 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P12: docs closeout — programme complete)
+
+Closed out the frontend feature-folder restructure programme (`FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`,
+`TASK_2026-09-24_frontend_feature_folders.md`) with the final, docs-only phase. No files under
+`frontend/src` or `amplify/` changed in this commit.
+
+P0–P12 ran as 13 phase commits: 193 frontend files (minus 5 operator-approved P0 orphan
+deletions) moved from a flat `components/`/`hooks/`/`utils/`/`services/` tree into
+`src/app/` + `src/shared/` + 13 `src/features/<name>/` directories, via a purpose-built
+`scripts/move-module.mjs` helper (`git mv` + repo-wide `@/` specifier rewrite) so every move kept
+`git log --follow` history and no file was renamed. Every phase's build stayed byte-size-identical
+to its pre-phase build (main bundle 1,046.07 kB, CSS 295.60 kB, `SituationMap3D` lazy chunk
+942.99 kB, unchanged start to finish); the test suite held at 184/184 (15 files) for every phase
+after P0's one deliberate deletion (`useCountrySignal.test.js`, 9 cases, 193→184). A
+`no-restricted-imports` eslint rule (added P11) now enforces the dependency direction
+(`app → features → shared`; `shared` never imports `features`/`app`; the old flat-dir `@/`
+aliases are banned outright).
+
+This commit: added a "Frontend layout (final tree)" summary section to `ARCHITECTURE.md` ahead
+of the existing incremental old→new Path map (kept as the historical lookup); confirmed the
+Feature → Lambda index, Routes, Key Components/Hooks tables, `@/` alias note, and the
+dependency-direction eslint note are all current; updated `README.md`'s frontend-source row and
+root `CLAUDE.md`'s Layout section (new `app/`/`shared/`/`features/<name>` + dependency-rule
+line, kept short); flipped `project-docs/INDEX.md`'s two restructure rows and
+`REPO_RESTRUCTURE_DESIGN_2026-09-24.md`'s status line to EXECUTED/DONE; flipped this task file's
+header to `done`, added its Outcome paragraph, and closed the execution plan's §5 ledger + §3
+final-acceptance checklist. Final live-doc sweep for stale `src/components/`|`src/hooks/`|
+`src/utils/`|`src/services/` citations across `project-docs`, `README.md`, `CLAUDE.md`,
+`agent-kit`, `.claude` found none in any live (`_active`, playbook, agent-kit, skill) doc — the
+only remaining hits are in `_shipped`/`_reference`/`_proposed`/`_legacy` docs, dated
+point-in-time snapshots, `SYSTEM_WIRING.md` (self-disclaimed stale, defers to `ARCHITECTURE.md`),
+and the (unrelated, separately cancelled) pair-arcs relocation docs citing the already-deleted
+`WorldMapV2.jsx`. Operator auto-memory grepped clean, no edit needed. `npm run verify`
+(184/184, 0 lint errors) and `bash quality/verify_pages.sh` (32/0) both green — no-regression
+proof for a docs-only phase. No deploy performed.
+
 ## 2026-09-24 (Frontend feature-folder restructure P11: `features/threads/` + cleanup + dependency-direction eslint rule)
 
 Executed P11 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the last feature phase (threads has

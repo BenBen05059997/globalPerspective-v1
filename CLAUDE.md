@@ -13,6 +13,12 @@ Auth; Cloudflare Worker in front. Solo developer; no CI by design.
 ## Layout
 - Frontend source: `global-perspectives-starter/frontend/src/`. `docs/` is build output — don't
   hand-edit it; `docs/config.js` is operator-owned runtime config.
+- Frontend is feature-folder organized (restructured 2026-09-24): `src/app/` (routing/layout/chrome),
+  `src/shared/` (cross-feature api/contexts/data/hooks/lib/styles/ui), `src/features/<name>/`
+  (13 features — home, map, threads, countries, economy, analysis-studio, breaking, account,
+  daily, weekly-brief, track-record, static, spider-demo). Dependency direction is enforced by
+  eslint (`no-restricted-imports`): `app → features → shared`, `shared` never imports
+  `features`/`app`; feature→feature imports are allowed (see ARCHITECTURE.md's Frontend Path map).
 - Frontend imports use the `@/` alias (→ `src/`, `vite.config.js`), not relative paths — see
   ARCHITECTURE.md "Frontend imports" for the Node-tooling exceptions.
 - Lambdas: `amplify/backend/function/<name>/src/` (deployed manually with the AWS CLI; the name

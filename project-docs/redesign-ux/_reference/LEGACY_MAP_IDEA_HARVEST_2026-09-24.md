@@ -9,12 +9,16 @@ commitment to build any of it.** Read `project-docs/redesign-ux/_active/PAIR_ARC
 first for the one idea (Connections arcs) that already went through a full verified analysis and
 partial build.
 
-**Status note:** the Connections bilateral-arc layer has *already been relocated* onto
-`SituationMap3D` (commit `76d74d8`, "Relocate pair-arcs onto /map as an off-by-default Connections
-layer (Phase 1)") — it is simplified (no group/strong-mod coloring, no flow-type filter, no
-time-window UI, fixed 30d cutoff) but live and working. If a richer version (group coloring,
-filters, dashing) is ever wanted, **a working deck.gl port already exists in local git history at
-that commit — reference/diff it, don't rebuild the styling logic from scratch.**
+**Status note (corrected 2026-09-24, same day):** a deck.gl port of the Connections layer WAS
+built and render/toggle-verified (commit `76d74d8`) but the operator then **cancelled it
+("no build")** — it was reverted from `main` and preserved on branch **`archive/pair-arcs-port`**.
+It is NOT live. **Operator decision on the capability's future home (2026-09-24): an on-demand
+"Bilateral relationship" LENS in the Analysis Studio** (one lens-template entry in
+`analysisPrompt.js`, frontend-only, grounded in user-selected stories) — recorded here as the
+agreed direction, explicitly NOT built yet. The weekly producer cron
+`TriggerPairIntelligenceWeekly` was DISABLED the same day (output had no display surface); the 15
+DDB `PAIR#` records remain. If the map-arc version is ever revived instead, diff the archive
+branch — don't rebuild from scratch.
 
 Provenance below cites `WorldMapV2.jsx`/`.css` by line number as of the version read for this
 harvest (1362 JS lines / 728 CSS lines).
@@ -40,11 +44,11 @@ and its filter checkboxes, the 7d/30d time-window control, and signal-weighted s
 weight (dropped because `SituationMap3D` has no per-country signal feed, only per-situation data —
 see plan §4).
 
-**Worth-it verdict:** **already covered** (baseline) / **steal someday** (the dropped richness —
-group coloring, filters, signal-weighted width) *if* usage data ever shows people toggling
-Connections on and wanting more control. Don't build speculatively — plan §4 already reasoned
-through why wiring `useCountrySignal` in just for arc width is a lot of hook plumbing for a cosmetic
-delta on ≤15 arcs.
+**Worth-it verdict (corrected same day):** the map-arc form is **cancelled/archived** (branch
+`archive/pair-arcs-port`), not shipped. The capability's agreed future home is a **Studio
+"Bilateral relationship" lens** (see status note above) — on-demand, story-grounded, replacing
+the push-cron model. The map-arc richness notes below stay only as reference if the arc form is
+ever revived; don't build speculatively.
 
 ---
 
@@ -263,7 +267,7 @@ losing information worth surfacing).
 
 | # | Idea | Verdict |
 |---|---|---|
-| 1 | Connections bilateral arcs | Already covered (shipped, simplified); richer version = steal someday |
+| 1 | Connections bilateral arcs | Cancelled/archived (branch `archive/pair-arcs-port`); future home = Studio "Bilateral relationship" lens (recorded, not built); producer cron disabled |
 | 2 | Layer-toggle architecture | Let the architecture die; keep the "one boolean per source" convention |
 | 3 | Per-group flow filters | Let it die (premature at 15 records) |
 | 4 | 7d/30d time-window control | Steal someday, cheap, bundle with #3 |

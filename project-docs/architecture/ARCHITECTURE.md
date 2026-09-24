@@ -14,7 +14,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
   - **`deepseek-v4-flash`** ($0.14/M in · $0.28/M out; mechanical/constrained/judge-protected/high-volume): `newsInvokeGemini-dev`, `NewsProjectInvokeAgentLambda-dev`, `newsDriftCorrector`, `newsPredictionResolver`, `newsWeeklyBrief`, `newsWeeklyMarkets` (producer call), `newsPairIntelligence`, `newsImpactAudit`
   - `newsPostDevTo` uses **OpenRouter** (`deepseek/deepseek-v4-flash:free`), not the direct DeepSeek API — see #7
 - `newsThreadAnalysis`, `newsEconomicQuality` → **Gemini 2.5 Flash** (free tier, 13s pacing between calls, thinking disabled)
-- `newsPairIntelligence` → **DeepSeek v4-flash** (migrated 2026-07-26 from the retired `deepseek-chat`; `api.deepseek.com`, `thinking:disabled`). On the weekly rule `TriggerPairIntelligenceWeekly` + ad-hoc manual invokes.
+- `newsPairIntelligence` → **DeepSeek v4-flash** (migrated 2026-07-26 from the retired `deepseek-chat`; `api.deepseek.com`, `thinking:disabled`). Weekly rule `TriggerPairIntelligenceWeekly` **DISABLED 2026-09-24** (operator: no display surface after the legacy-map removal; future home = a Studio "Bilateral relationship" lens, recorded not built — see `redesign-ux/_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md`). Ad-hoc manual invokes still possible.
 - `newsAnalyze` → **DeepSeek v4-pro** (the member-side Analysis Studio "our-compute" run path — same cited-analysis product as BYOK `/analyze` but on our key; member-gated, `ANALYZE_DAILY_CAP=100`; deployed 2026-06-22, the paid Polar membership product)
 - `newsMarketsData`, `newsCountryFactsUpdater`, `newsSavedItems`, `newsPostLinkedIn`, `linkedInAutoPost`, `newsPolarBilling` → **no LLM** (data feeds, cached AI from DDB, or — for `newsPolarBilling` — Polar checkout + webhook, deployed 2026-06-22)
 - `newsClientErrors`, `newsFreshnessMonitor`, `newsErrorDigest` → **no LLM** (observability — passive error capture + 24/7 monitoring; see Lambdas #17–19 and "Observability & Monitoring")
@@ -420,7 +420,7 @@ Despite the name and the code below, **Dev.to publishing is dead code as of 2026
 
 ### 8. `newsPairIntelligence`
 **Path:** `amplify/backend/function/newsPairIntelligence/src/index.js`
-**Trigger:** EventBridge Rule — `TriggerPairIntelligenceWeekly` — **ENABLED** — `cron(0 8 ? * MON *)` (Mondays 08:00 UTC; **corrected 2026-07-25 — was documented as manual-only**). Also invocable manually with `{"pair":["Country A","Country B"],"forceRegenerate":true}` or `{}` for the default 10 pairs.
+**Trigger:** EventBridge Rule — `TriggerPairIntelligenceWeekly` — **DISABLED 2026-09-24** (operator decision after the legacy-map removal left `pair_analyses_list` with no frontend consumer; the capability's agreed future home is an on-demand Studio "Bilateral relationship" lens — recorded, not built). Was `cron(0 8 ? * MON *)` (Mondays 08:00 UTC; corrected 2026-07-25 — was documented as manual-only). Still invocable manually with `{"pair":["Country A","Country B"],"forceRegenerate":true}` or `{}` for the default 10 pairs.
 **Deployed:** 2026-04-18
 
 Bilateral relationship analysis between country pairs.
@@ -1144,7 +1144,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
 | `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |
 | `MarketsMacrosWeekly` | `cron(0 2 ? * SUN *)` | newsMarketsData |
-| `TriggerPairIntelligenceWeekly` | `cron(0 8 ? * MON *)` | newsPairIntelligence (#8 — Mondays 08:00 UTC; **NOT manual-only**, corrected 2026-07-25) |
+| `TriggerPairIntelligenceWeekly` | `cron(0 8 ? * MON *)` — **DISABLED 2026-09-24** | newsPairIntelligence (#8 — no display surface after legacy-map removal; future home = Studio lens, recorded not built) |
 | `TriggerBreakingAlert` | `cron(15 */4 * * ? *)` | newsBreakingAlert (#21 — 4-hourly, ENABLED, `DRY_RUN=false`) |
 | `TriggerDriftCorrector` | `cron(20 7 * * ? *)` | newsDriftCorrector (#26 — 07:20 UTC daily) |
 | `TriggerWeeklyEmailSend` | `cron(0 14 ? * SUN *)` | newsEmailSender (#29 — weekly digest, ENABLED) |

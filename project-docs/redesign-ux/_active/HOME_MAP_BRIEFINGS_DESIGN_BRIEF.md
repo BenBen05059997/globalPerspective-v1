@@ -67,3 +67,14 @@ the public unit of news) and `PAGE_REVIEW_2026-09-24.md` (the findings this desi
 - Tokens only (`src/shared/styles/tokens.css`), no new hard-coded palettes; no layout shift.
 - The frontend is feature-foldered: `src/app`, `src/shared`, `src/features/<name>`, with an
   eslint dependency rule (app → features → shared).
+
+## Operator decisions — round 2 (2026-09-24): v2 "operations console"
+Supersedes the light-editorial home layout above where they conflict (the linked selection, story cards, honest freshness and /briefings decisions all stand). Wireframe: https://claude.ai/artifact/6AxoScn1r6AFfx1Ngz8AgW (row 2, "v2").
+1. **The map is the default page**, styled as a sci-fi / defence-tech operations console (dark, globe-first). References: XCOM 2 Geoscape (HUD corners around a central globe), Anduril Lattice (a credible "common operating picture"), DEFCON (the big-board abstraction), Territory Studio FUI globes, and GitHub's homepage globe (production proof: dotted continents, halo shader, auto-reduced quality on slow devices).
+2. **Two map modes:**
+   - **GLOBE:** spins on its own; touching or selecting stops it and turns it to face the story.
+   - **RADAR 2D:** a flat big board with a rotating radar beam. Whatever the beam crosses lights up (pin flares, label appears), and its story is gently marked "scanned" in the feed, with no auto-scroll and no focus theft.
+   - A stop/resume control holds either motion. Reduced-motion users get a still globe or a beamless radar.
+   - **Defaults:** desktop opens on the spinning globe; phones and slow devices open on radar (cheap to draw). This replaces the earlier "flat 2D by default, globe on demand" ruling.
+3. **HUD panels:** situation brief (top-left), threat board by severity tier (top-centre), **Sensor status** (top-right: data freshness per source, e.g. GDACS LIVE / news desk PAUSED; honesty as part of the console), Intel feed (the linked story list), incoming-alert card, view + layer switches.
+4. **Open:** theme scope beyond the home. Recommended: console accents site-wide (dark header, monospace HUD labels, accent colours), with long-read pages (stories, countries, the briefings) kept light for readability.

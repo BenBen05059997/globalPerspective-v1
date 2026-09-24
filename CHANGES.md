@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Home design round 2: sci-fi operations console, two map modes)
+
+Operator direction: the map is the default page, restyled as a sci-fi / defence-tech operations console (researched: XCOM 2 Geoscape, Anduril Lattice, DEFCON, Territory Studio FUI, GitHub's homepage globe). Operator's idea added: two map modes, a spinning GLOBE and a RADAR 2D whose sweep lights up what it crosses. The wireframe gains an interactive v2 console (spin, sweep, stop/resume, linked Intel feed, sensor-status freshness). Decisions recorded in `HOME_MAP_BRIEFINGS_DESIGN_BRIEF.md` round 2. Design only.
+
 ## 2026-09-24 (Home/briefings frontend design debated + wireframe; living action checklist)
 
 `HOME_MAP_BRIEFINGS_FRONTEND_DESIGN.md` (Opus) + two Sonnet critiques (reader/a11y, engineering/cost), monitor rulings in §12. Fact-checks: the engineering critic's 'daily_brief returns null' was a wrong request shape (briefs 09-05..09-12 exist); the real /daily bug was the 7-day fallback window (fixed in Stage-0 (i)). Clickable wireframe (desktop home with linked selection + expand-to-full, phone toggle, Daily/Weekly briefings) published as a private artifact. New `project-docs/ACTION_CHECKLIST.md`: operator vs Claude actions and their gates.

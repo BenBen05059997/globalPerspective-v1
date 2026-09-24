@@ -1,5 +1,20 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 item (e): Home member-perk hint links to `/membership`)
+
+`STAGE0_FIXES_PLAN.md` §(e): `Home.jsx`'s corrections trust-card wrapped its number+label AND its
+member-perk hint sentence ("Members follow countries for change-alerts + the full history") in one
+`<Link to="/track-record">` — so the hint inherited the card's stat destination instead of
+pointing where it's actually advertising (`/membership`). Restructured so the card is a `<div>`
+containing an inner `<Link to="/track-record">` around just the number+label, and the hint is a
+sibling `<Link to="/membership">` (avoids an invalid nested-anchor). `Home.css` updated to match:
+box styling moved to the outer div, the inner link gets its own flex-column layout, hover state on
+the card now triggers via `:has()` on the inner link's hover, and the hint link gets its own
+underline-on-hover affordance so it reads as independently clickable.
+
+Verify: `npm run verify` 184/184, 0 lint errors; build main chunk unchanged; `verify_pages.sh`
+32/0; `auth-guard-check.mjs` PASS.
+
 ## 2026-09-24 (Stage-0 item (d): onboarding tour — mobile hamburger + `aria-allowed-attr`)
 
 `STAGE0_FIXES_PLAN.md` §(d), confirmed by reading driver.js 1.4.0's bundled source directly

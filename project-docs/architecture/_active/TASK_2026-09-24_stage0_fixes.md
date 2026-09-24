@@ -21,7 +21,7 @@ plus a **separately gated** Worker deploy for item (a) — both need a fresh exp
 | (b) | Freshness honesty (2 bugs) — `features/threads/WeeklyPage.jsx` (fabricated `updatedAt`), `shared/ui/StatusStrip.jsx` (always-LIVE label), `app/layout/Layout.jsx` (static "Updated hourly"), "today" copy audit (Home, Economy) | ✅ done | see CHANGES |
 | (c) | Parked-credits copy — `features/analysis-studio/AnalysisStudio.jsx:345`, `features/account/Account.jsx:433`, `app/layout/Layout.jsx` credits pill (gate on `creditPacks().length`, pattern already correct in `MembershipPage.jsx`) | ✅ done | see CHANGES |
 | (d) | Onboarding tour mobile-hamburger block + `aria-allowed-attr` — `app/onboarding/useOnboarding.js`, `tour-theme.css` (no `tours.js` change needed — anchor-less welcome step kept) | ✅ done | see CHANGES |
-| (e) | Home member-perk sentence → `/membership` not `/track-record` — `features/home/Home.jsx` (~lines 121, 396-411) | ⬜ not started | — |
+| (e) | Home member-perk sentence → `/membership` not `/track-record` — `features/home/Home.jsx`, `features/home/Home.css` | ✅ done | see CHANGES |
 | (f) | De-dupe in-flight proxy requests — `shared/api/restProxy.js` (`useGeminiTopics` called from Home, AnalysisStudio, IntelligenceLoader) | ⬜ not started | — |
 | (g) | Route-level code splitting — `app/App.jsx` (`React.lazy` for 20 routes), `features/countries/CountryPage.jsx` (fix static `WeeklyMap` import defeating `WeeklyPage`'s existing lazy split) | ⬜ not started | — |
 | (h) | Missing `document.title` (8 pages) — `EconomyPage.jsx`, `TrackRecordPage.jsx`, `AnalysisStudio.jsx`, `MembershipPage.jsx`, `BreakingFeedPage.jsx`, `WeeklyBriefPage.jsx`, `Account.jsx`, `WhitepaperPage.jsx` | ⬜ not started | — |
@@ -120,7 +120,7 @@ migration, page rebuilds) begin.
 - [x] (b) Freshness honesty — both `updatedAt` bugs fixed, "today" copy audited
 - [x] (c) Parked-credits copy gated on `creditPacks().length` in all 3 remaining surfaces
 - [x] (d) Onboarding tour — mobile hamburger unblocked, `aria-allowed-attr` clean
-- [ ] (e) Home member-perk sentence → `/membership`
+- [x] (e) Home member-perk sentence → `/membership`
 - [ ] (f) restProxy in-flight de-dupe shipped, duplicate-request count verified down in DevTools
 - [ ] (g) Route-level code splitting — `App.jsx` lazy routes + `CountryPage.jsx` `WeeklyMap` fix,
       main-chunk size measured before/after

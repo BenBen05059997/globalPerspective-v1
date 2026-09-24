@@ -116,9 +116,12 @@ function Home() {
     if (correctionsN > 0) cards.push({
       to: '/track-record', n: correctionsN,
       label: 'revised conclusions logged, each with the event that changed our read',
-      // Contextual perk tease (P6a) — the card links to /track-record, where the ledger's
-      // "Members see the full history" CTA lives; plain text (no nested link).
+      // Contextual perk tease (P6a). The hint sentence is its own link to /membership
+      // (Stage-0 item (e) — it previously inherited the card's /track-record destination
+      // since it rendered inside the same <Link>, which was wrong: it's advertising the
+      // membership perk, not the corrections ledger).
       hint: 'Members follow countries for change-alerts + the full history',
+      hintTo: '/membership',
     });
     if (sourcesN > 0 && topics.length > 0) cards.push({
       to: null, n: sourcesN,
@@ -396,16 +399,25 @@ function Home() {
       {!loading && trustStats.length > 0 && (
         <div className="home-trust-strip">
           {trustStats.map((c, i) => {
-            const inner = (
+            const body = (
               <>
                 <span className="home-trust-n">{c.n.toLocaleString()}</span>
                 <span className="home-trust-label">{c.label}</span>
-                {c.hint && <span className="home-trust-hint">{c.hint}</span>}
               </>
             );
-            return c.to
-              ? <Link key={i} to={c.to} className="home-trust-card is-link">{inner}</Link>
-              : <div key={i} className="home-trust-card">{inner}</div>;
+            return (
+              <div key={i} className={`home-trust-card${c.to ? ' is-link' : ''}`}>
+                {c.to
+                  ? <Link to={c.to} className="home-trust-card-link">{body}</Link>
+                  : body}
+                {/* Own destination, not nested inside the card's <Link> (invalid HTML +
+                    Stage-0 item (e): the perk hint must go to /membership, not the card's own
+                    /track-record target). */}
+                {c.hint && (
+                  <Link to={c.hintTo || '/membership'} className="home-trust-hint">{c.hint}</Link>
+                )}
+              </div>
+            );
           })}
         </div>
       )}

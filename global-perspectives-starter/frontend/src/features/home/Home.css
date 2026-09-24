@@ -122,11 +122,19 @@
   background: var(--paper-2);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
+}
+/* The n+label group has its own link (to the card's stat destination, e.g.
+   /track-record) — the hint below it (when present) is an independently-clickable
+   sibling link to /membership, not nested inside this one. See Stage-0 item (e). */
+.home-trust-card-link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   text-decoration: none;
   color: inherit;
 }
 .home-trust-card.is-link { transition: border-color var(--fast), background var(--fast); }
-.home-trust-card.is-link:hover { border-color: var(--accent); background: var(--card); }
+.home-trust-card.is-link:has(.home-trust-card-link:hover) { border-color: var(--accent); background: var(--card); }
 .home-trust-n {
   font-family: var(--mono);
   font-size: 26px;
@@ -140,14 +148,23 @@
   line-height: 1.4;
   color: var(--ink-mid);
 }
-/* Contextual member-perk tease (P6a) — quiet, one notch below the label. */
+/* Contextual member-perk tease (P6a) — quiet, one notch below the label. Its own link
+   (to /membership, Stage-0 item (e)) — underline on hover/focus to read as clickable
+   independent of the card's own link above it. */
 .home-trust-hint {
+  display: block;
   font-family: var(--sans);
   font-size: 10.5px;
   line-height: 1.35;
   color: var(--accent);
   opacity: 0.85;
   margin-top: 2px;
+  text-decoration: none;
+}
+.home-trust-hint:hover,
+.home-trust-hint:focus-visible {
+  opacity: 1;
+  text-decoration: underline;
 }
 
 /* ── Loading ─────────────────────────────────────────────── */

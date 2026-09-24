@@ -7,6 +7,36 @@ and every "Docs to update" item below is staged in that phase's commit or the fi
 
 ## Frontend feature-folder restructure — 2026-09-24 — active
 
+### ▶ LIVE TRACKER (operator-requested: update + clear at the end of EVERY phase, same commit)
+
+**Operator decision 2026-09-24:** FULL scope P0–P12, all §0 defaults accepted (delete the 5
+orphans; keep DisruptionRow/Preview → economy; design's ambiguous-home calls; Python prototype
+out of scope; no deploy until the end, and that one needs a fresh yes).
+
+**Now:** P0 — not started
+
+| Phase | What moves / changes (file groups — exact lists in the plan's §2) | Status | Commit |
+|---|---|---|---|
+| P0 | delete 5 orphans; harden verify_pages.sh, pre-push regex, auth-guard-check.mjs | ⬜ remaining | |
+| P1 | `@/` alias (vite.config.js, jsconfig.json), codemod all imports, move-module.mjs | ⬜ remaining | |
+| P2 | `app/` (routing, layout, onboarding) + `shared/` (api, contexts, data, hooks, lib, ui, styles) | ⬜ remaining | |
+| P3 | features/static + features/spider-demo | ⬜ remaining | |
+| P4 | features/weekly-brief, daily, track-record | ⬜ remaining | |
+| P5 | features/map | ⬜ remaining | |
+| P6 | features/breaking + account | ⬜ remaining | |
+| P7 | features/analysis-studio | ⬜ remaining | |
+| P8 | features/economy | ⬜ remaining | |
+| P9 | features/home | ⬜ remaining | |
+| P10 | features/countries | ⬜ remaining | |
+| P11 | features/threads + delete empty old dirs + eslint dependency rule | ⬜ remaining | |
+| P12 | docs only (ARCHITECTURE path table, INDEX, feature→Lambda index) | ⬜ remaining | |
+
+**End-of-phase ritual (executor, in the phase commit):** flip the row to ✅ with the commit sha
+(fill after commit via a tiny follow-up amend is NOT allowed — record "see CHANGES" and the
+monitor fills the sha), advance **Now:**, fill the plan's §5 ledger row, tick the matching row
+in "Completion checklist" below. Monitor then independently re-verifies + browser-tests and
+records "monitor ✓" in the ledger's Notes before the next phase starts.
+
 **Goal:** Reorganize `global-perspectives-starter/frontend/src/` (193 files, flat
 `components/`/`hooks/`/`utils/`/`services/`) into `app/` + `shared/` + 13 `features/`
 directories, per the approved design, so a feature's code lives in one directory instead of

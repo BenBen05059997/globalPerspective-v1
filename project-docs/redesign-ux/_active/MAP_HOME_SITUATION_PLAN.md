@@ -112,7 +112,7 @@ Authoritative text: `project-docs/architecture/DATA_STRATEGY.md`. Summary as it 
   `corpus/` + `stories/` ← `newsSituationIngest` (hourly) · `situations/inbox/` ← openers (GDACS, breaking-alert; append-only) · `situations/state|index|history/` + `world/` ← `newsSituationTracker` (10-min sweep, sole writer).
 - **The frontend reads one object, `world/latest.json`**, via the Cloudflare Worker (`/data/*`, SigV4 to S3, edge-cached); `world/latest.member.json` is served only with a valid Firebase JWT. Per-situation detail = `situations/state/<id>.json` on click; scrubber = `world/YYYY/MM/DD/HHMM.json`. Contract in DATA_STRATEGY §5.
 - **Freshness is in the data** (`generated_at`, per-source stamps, `stale`) — the page displays it, never computes it. `composeTopicsLede` + the ranked list are computed by the tracker, once per sweep.
-- **WS3's three proxy actions are gone** — replaced by `services/worldData.js` + `useWorld()` + the Worker route. `newsSensitiveData` trends toward user-actions-only.
+- **WS3's three proxy actions are gone** — replaced by `features/map/api/worldData.js` + `useWorld()` + the Worker route. `newsSensitiveData` trends toward user-actions-only.
 - **Local dev on fixtures** (`fixtures/world.json`) — frontend never waits for backend.
 
 ## 4. Workstreams
@@ -171,11 +171,11 @@ Authoritative text: `project-docs/architecture/DATA_STRATEGY.md`. Summary as it 
 
 ### WS3 — Map data layer (frontend + Worker)
 
-> **REVISED v2:** item 1 (three proxy actions + polling hooks) is **replaced** by: `services/worldData.js` (fetch `/data/world/latest.json` through the Cloudflare Worker; ETag/If-None-Match; 5-min refresh while the tab is visible), `useWorld()` and `useSituationDetail(id)` hooks, and a Worker `/data/*` route (SigV4 → S3, `s-maxage` ≈ sweep interval, JWT check for `*.member.json`). `freshness_status` is the bundle's own `stale`/`sources` fields. Items 2–5 (canonical ISO + centroids, bundled topology, drop z-score, URL state) stand unchanged.
+> **REVISED v2:** item 1 (three proxy actions + polling hooks) is **replaced** by: `features/map/api/worldData.js` (fetch `/data/world/latest.json` through the Cloudflare Worker; ETag/If-None-Match; 5-min refresh while the tab is visible), `useWorld()` and `useSituationDetail(id)` hooks, and a Worker `/data/*` route (SigV4 → S3, `s-maxage` ≈ sweep interval, JWT check for `*.member.json`). `freshness_status` is the bundle's own `stale`/`sources` fields. Items 2–5 (canonical ISO + centroids, bundled topology, drop z-score, URL state) stand unchanged.
 
 1. **Proxy actions** in the shared proxy Lambda (`newsSensitiveData`): `situations_list` (open + closed <48h; public, no auth), `situation_get {situationId}` (full record + history), `freshness_status` (latest `newsFreshnessMonitor` result: `{ok, oldest_source_at, next_expected_at}`). Follow `services/restProxy.js` `{action, payload}` pattern; add hooks `useSituations()`, `useFreshness()`; poll every 5 min while tab visible (`document.visibilityState`).
 2. **One canonical name→ISO.** Delete `WorldMapV2`'s `NUM_TO_A3`/`TOPO_NAME_FIXES`/`EXTRA_ALIASES`; import `utils/countryMapping.js`; add a **manual centroid table** for territories with no 110m polygon (`PS`, `XK`, small states) in `utils/countryCentroids.js`. **Any unmatched name → `errorSink` with the raw string** (silent drop forbidden; `feedback_no_misinformation_fallback`).
-3. **Bundle topology locally** (`src/assets/countries-110m.json`, ~100KB; pin `world-atlas@2.0.2` in the copy's header comment). Remove CDN fetch. Failure → render the ranked list immediately with the stamp, never a blank hero.
+3. **Bundle topology locally** (`src/features/map/assets/countries-110m.json`, ~100KB; pin `world-atlas@2.0.2` in the copy's header comment). Remove CDN fetch. Failure → render the ranked list immediately with the stamp, never a blank hero.
 4. **Retire the z-score as the visual driver.** `useCountrySignal` stays available for the country drill-down only (label it "attention", not risk). Situations drive the map.
 5. **URL state:** `?focus=<situationId|iso3>`, `?t=<ISO date>` (scrubber), `?layer=` — follow the `threadPath()` query convention (`reference_page_wiring_contracts`). LinkedIn/email links must land on the right view.
 
@@ -355,7 +355,7 @@ thread/country/pair intelligence, prediction methodology + resolver, drift corre
 | **New S3 bucket** `globalperspective-world-<account>` (private) | prefixes per `DATA_STRATEGY.md` §4; lifecycle rules; one IAM inline policy per writer Lambda; read-only credentials for the Worker |
 | **Cloudflare Worker** (existing RSS-proxy / pre-render worker) | new `/data/*` route: SigV4 fetch to S3, edge cache, JWT check for `*.member.json`; `/` pre-render reads `world/latest.json` |
 | `newsSensitiveData` (proxy) | **no new actions** (the three planned ones are dropped); trends to user-actions-only as content reads move to the bundle |
-| `services/restProxy.js` | untouched for user actions; content path bypasses it via `services/worldData.js` |
+| `services/restProxy.js` | untouched for user actions; content path bypasses it via `features/map/api/worldData.js` |
 | `GlobalPerspectiveSituations` (DDB, created P1·T1) | **dropped in S1** before any reader exists |
 | Existing content tables | migrate per `DATA_STRATEGY.md` §6 (S8), gated by "nothing reads the table" |
 

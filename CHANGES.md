@@ -1,5 +1,27 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P5: `features/map/`)
+
+Executed P5 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the situation map (2D D3 + deck.gl 3D
+globe). Moved 9 files via `scripts/move-module.mjs`: `components/SituationHome.jsx`/`.css` →
+`features/map/`; `components/SituationMap.jsx`, `components/SituationMap3D.jsx` →
+`features/map/components/`; `hooks/useWorld.js` → `features/map/hooks/`; `services/worldData.js`
+→ `features/map/api/`; `utils/countryGeo.js`, `utils/situationLabels.js` → `features/map/lib/`;
+`assets/countries-110m.json` → `features/map/assets/` (confirmed the JSON asset has no other
+importers outside these map components, so it belongs in the feature, not `shared/`). Confirmed
+`SituationHome.jsx`'s `lazy(() => import('@/components/SituationMap3D.jsx'))` dynamic-import
+string was correctly rewritten to `@/features/map/components/SituationMap3D.jsx` by the move
+helper, and the resulting build still produces `SituationMap3D` as its own separate chunk
+(942.99 kB, byte-identical to the pre-phase build). Updated `ARCHITECTURE.md`'s Frontend Path
+map with the P5 rows; fixed path-qualified references in `PAGES_GUIDE.md`,
+`MAP_HOME_SITUATION_PLAN.md`, `MAP_HOME_SITUATION_LEDGER.md`, `MAP_UI_FIX_QUEUE.md`,
+`PAIR_ARCS_RELOCATION_PLAN.md`, `TASK_2026-09-24_pair_arcs_relocation.md`, and the 2026-09-11
+frontend audit snapshots. `quality/verify_pages.sh` needed no path edits (its guards reference
+economy/threads files only). Verified: 15 files / 184 tests (unchanged), main bundle 1,046,069
+bytes (1,046.07 kB) and CSS bundle 295,600 bytes (295.60 kB) byte-identical to baseline, guards
+32/32, auth-guard-check 7/7 PASS, relative-import sweep clean (only the 2 documented N-file
+edges remain).
+
 ## 2026-09-24 (Frontend feature-folder restructure P4: `features/daily/`, `features/weekly-brief/`, `features/track-record/`)
 
 Executed P4 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — small features with few inbound edges

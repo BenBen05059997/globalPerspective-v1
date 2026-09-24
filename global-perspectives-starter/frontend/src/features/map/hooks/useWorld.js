@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchWorld, fetchSituationDetail, oldestSource } from '@/services/worldData.js';
+import { fetchWorld, fetchSituationDetail, oldestSource } from '@/features/map/api/worldData.js';
 
 const POLL_MS = 5 * 60 * 1000; // the bundle refreshes ~30 min; poll gently so a new one shows within ~5
 

@@ -4,8 +4,8 @@ import { MapView, WebMercatorViewport, FlyToInterpolator, _GlobeView as GlobeVie
 import { GeoJsonLayer, ScatterplotLayer, ArcLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
-import topoData from '@/assets/countries-110m.json';
-import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/utils/countryGeo.js';
+import topoData from '@/features/map/assets/countries-110m.json';
+import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
 
 // Hue = kind of crisis, as RGB. oklch(0.70 0.155 h) normalised so no axis reads
 // as "worse" than another at equal tier (DATA_STRATEGY §5 / map design target).

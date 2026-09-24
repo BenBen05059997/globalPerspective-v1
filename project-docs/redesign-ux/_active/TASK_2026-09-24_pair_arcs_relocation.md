@@ -26,23 +26,23 @@ cron (ENABLED) still produces the data. Operator chose preserve-and-relocate ove
 - `src/components/WorldMapV2.jsx` — source impl: `usePairAnalyses()` (L165) → `flows` transform
   (L256-306, pair→{a,b ISO, weight, group, label, slug, stale}) → SVG arc paths (L601-613),
   click → `/weekly/country/<name>`; "connections" layer toggle (L117).
-- `src/components/SituationMap3D.jsx` — target impl: already imports `ArcLayer`; already renders
+- `src/features/map/components/SituationMap3D.jsx` — target impl: already imports `ArcLayer`; already renders
   a `spread-arcs` ArcLayer (L206-208) with `getSourcePosition/getTargetPosition` from centroids;
-  centroid resolution via `ISO3_TO_NUM`/`ISO3_CENTROID_FALLBACK` (`utils/countryGeo.js`) +
+  centroid resolution via `ISO3_TO_NUM`/`ISO3_CENTROID_FALLBACK` (`features/map/lib/countryGeo.js`) +
   `geoCentroid`. THIS is the pattern the pair-arcs reuse.
-- `src/components/SituationHome.jsx` — hosts SituationMap3D (lazy), owns layer-toggle UI.
+- `src/features/map/SituationHome.jsx` — hosts SituationMap3D (lazy), owns layer-toggle UI.
 - `src/hooks/usePairAnalyses.js` — the data hook (keep; gains a second consumer).
 - `CLEANUP_AUDIT_2026-09-24.md` §4 D3.
 
 **Changes (code):**
 - Phase 1 (relocate — build the feature):
-  - `src/components/SituationMap3D.jsx` — add a `pair-arcs` ArcLayer fed by pair data transformed
+  - `src/features/map/components/SituationMap3D.jsx` — add a `pair-arcs` ArcLayer fed by pair data transformed
     to `{from:[lon,lat], to:[lon,lat], weight, label, slug}` via the existing centroid resolver;
     reconcile WorldMapV2's name→ISO2 lookup with this file's ISO3→centroid system; click →
     `/weekly/country/<name>` parity; gate on a layer-visible prop.
-  - `src/components/SituationHome.jsx` — call `usePairAnalyses()`, pass arcs + a "Connections"
+  - `src/features/map/SituationHome.jsx` — call `usePairAnalyses()`, pass arcs + a "Connections"
     layer toggle into the existing layer-control UI.
-  - (possibly) `src/utils/countryGeo.js` — add any missing name→ISO helper if the reconciliation
+  - (possibly) `src/features/map/lib/countryGeo.js` — add any missing name→ISO helper if the reconciliation
     needs it; prefer reusing what exists.
 - Phase 2 (remove legacy map — AFTER Phase 1 verified in browser):
   - `src/App.jsx` — remove `WorldMapV2` import (L23) + `/map-legacy` route (L103).

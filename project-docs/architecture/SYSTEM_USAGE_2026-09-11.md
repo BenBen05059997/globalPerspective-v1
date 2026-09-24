@@ -576,7 +576,7 @@ dashboard-deployed with the markdown doc as its only "source control").
 ### Route table
 | Route | Purpose | Caller | Backend |
 |---|---|---|---|
-| `/data/*` | map-as-home data feed | `services/worldData.js` on `/map` | Private S3 (SigV4 by Worker) |
+| `/data/*` | map-as-home data feed | `features/map/api/worldData.js` on `/map` | Private S3 (SigV4 by Worker) |
 | `/rss` | public RSS | RSS readers/aggregators | Lambda `action=rss` |
 | `/` (bot UA) | SEO preview | crawlers | Static string, no backend |
 | `/weekly/thread/:id`, `/weekly/country/:name`, `/daily[/:dateKey]` (bot UA) | SEO/social preview | crawlers | Lambda `thread_preview`/`country_preview`/`daily_brief` |

@@ -41,7 +41,7 @@ map-as-home swap. It still describes `/map` as the old WorldMapV2 experience and
 Per-file purpose in ARCHITECTURE.md's Key Components / Key Hooks tables (lines 1261-1339) was
 spot-checked against source and is accurate **except** it has zero mentions of the map-as-home
 frontend surface — `SituationHome.jsx`, `SituationMap.jsx`, `SituationMap3D.jsx`,
-`hooks/useWorld.js`, `services/worldData.js`, `utils/situationLabels.js` — none of these six
+`features/map/hooks/useWorld.js`, `features/map/api/worldData.js`, `features/map/lib/situationLabels.js` — none of these six
 files appear anywhere in the Frontend section (confirmed via grep, `ARCHITECTURE.md` frontend
 section lines 1216-1445). The backend half of the same programme (`newsSituationTracker`, the S3
 bucket, the Worker `/data/*` route) IS thoroughly documented (lines 838-946) — the frontend
@@ -55,7 +55,7 @@ consumer of that pipeline was never added to the Frontend section when it shippe
   hosts three *separate* Function-URL clients bolted onto the same file: `savedItemsRequest`
   (newsSavedItems), `prefsRequest` (newsRecommend), `polarRequest` (newsPolarBilling), plus a
   standalone `runMemberAnalysis` (newsAnalyze). One file, four backends.
-- `services/worldData.js` — bypasses restProxy entirely: plain `fetch()` of static JSON off
+- `features/map/api/worldData.js` — bypasses restProxy entirely: plain `fetch()` of static JSON off
   the Cloudflare Worker `/data/*` CDN route (`world/latest.json`, `situations/state/<id>.json`).
   No Lambda in this path.
 - `services/appsyncProxy.js` — **dead file.** Grep confirms zero importers anywhere in
@@ -159,7 +159,7 @@ exhaustive inventory — treat it as illustrative only.
      `open` situations by `TIER_WEIGHT`/`escalating`/`last_change_at` — **never reads
      `world.ranked`**.
    - `lede` (SituationHome.jsx:113-114) is built by `buildLede(open, hero)` from
-     `utils/situationLabels.js` — **never reads `world.lede`**.
+     `features/map/lib/situationLabels.js` — **never reads `world.lede`**.
    - Net effect: the backend computes both fields every 30 min for nothing (no consumer),
      and the frontend's version can silently diverge from the backend's intended ranking/lede
      logic since they're two independent implementations of the same rule.

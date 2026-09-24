@@ -1291,6 +1291,19 @@ case-insensitive macOS).
 | `hooks/useTrackRecord.js` | `features/track-record/hooks/useTrackRecord.js` |
 | `hooks/useCorrectionsFeed.js` | `features/track-record/hooks/useCorrectionsFeed.js` |
 
+**P5 — `features/map/`:**
+
+| Old | New |
+|---|---|
+| `components/SituationHome.jsx`, `.css` | `features/map/SituationHome.jsx`, `.css` |
+| `components/SituationMap.jsx` | `features/map/components/SituationMap.jsx` |
+| `components/SituationMap3D.jsx` | `features/map/components/SituationMap3D.jsx` |
+| `hooks/useWorld.js` | `features/map/hooks/useWorld.js` |
+| `services/worldData.js` | `features/map/api/worldData.js` |
+| `utils/countryGeo.js` | `features/map/lib/countryGeo.js` |
+| `utils/situationLabels.js` | `features/map/lib/situationLabels.js` |
+| `assets/countries-110m.json` | `features/map/assets/countries-110m.json` |
+
 ### Feature → Lambda index
 
 Lambdas are **not** grouped into feature subfolders (evaluated and rejected —

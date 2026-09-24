@@ -74,7 +74,7 @@ Use this when:
   3. Click a country chip in a top story — navigates to country page.
 - **Known issues:** Imports color constants from `WeeklyPage` (cross-page coupling). `nextDateKey` can navigate into the future (only the link's visibility is gated).
 
-## `/map` · `components/SituationHome.jsx` (+ `SituationMap.jsx` / `SituationMap3D.jsx`)
+## `/map` · `features/map/SituationHome.jsx` (+ `SituationMap.jsx` / `SituationMap3D.jsx`)
 
 > **Updated 2026-09-24:** this section previously described `WorldMapV2.jsx` (D3 choropleth,
 > Today's-pulse/Connections/Editorial layers, `usePairAnalyses`). That component and its

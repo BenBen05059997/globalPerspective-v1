@@ -20,7 +20,7 @@ import SignIn from '@/components/SignIn';
 import AuthCallback from '@/components/AuthCallback';
 import Account from '@/components/Account';
 import WhitepaperPage from '@/features/static/WhitepaperPage';
-import SituationHome from '@/components/SituationHome';
+import SituationHome from '@/features/map/SituationHome';
 import EconomyPage from '@/components/EconomyPage';
 import AnalysisStudio from '@/components/AnalysisStudio';
 import MembershipPage from '@/components/MembershipPage';

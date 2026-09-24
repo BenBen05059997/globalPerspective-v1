@@ -32,11 +32,11 @@ canonicalized, lowercased, hyphenated, sorted alphabetically, and joined with `-
 (e.g. `"iran-and-israel"`, `"china-and-taiwan"`).
 
 **Coordinate reconciliation is a non-issue for the current data.** All 14 live country names
-match `src/utils/situationLabels.js`'s `ISO3_NAME` table **exactly, verbatim, case-sensitive**
+match `src/features/map/lib/situationLabels.js`'s `ISO3_NAME` table **exactly, verbatim, case-sensitive**
 (CHN→'China', CUB→'Cuba', IRN→'Iran', ISR→'Israel', LBN→'Lebanon', PRK→'North Korea',
 PAK→'Pakistan', RUS→'Russia', SAU→'Saudi Arabia', KOR→'South Korea', TWN→'Taiwan',
 UKR→'Ukraine', GBR→'United Kingdom', USA→'United States') and all 14 ISO3 codes are present in
-`src/utils/countryGeo.js`'s `ISO3_TO_NUM` (so `SituationMap3D`'s existing `iso3Centroid()`
+`src/features/map/lib/countryGeo.js`'s `ISO3_TO_NUM` (so `SituationMap3D`'s existing `iso3Centroid()`
 resolves every one of them today). **Zero unresolvable countries at present.** This is the
 cleanest possible single source of truth: reuse `ISO3_NAME`, inverted, as the name→ISO3 table —
 no need to port `WorldMapV2`'s giant `NUM_TO_A3` / `TOPO_NAME_FIXES` / `EXTRA_ALIASES` tables
@@ -69,7 +69,7 @@ no need to port `WorldMapV2`'s giant `NUM_TO_A3` / `TOPO_NAME_FIXES` / `EXTRA_AL
 
 ## 2. Target files and exact changes
 
-### 2a. `src/utils/countryGeo.js` — add the name→ISO3 table
+### 2a. `src/features/map/lib/countryGeo.js` — add the name→ISO3 table
 
 Add, near the existing exports:
 
@@ -100,9 +100,9 @@ Why `countryGeo.js` and not a new file: the task doc explicitly calls this out a
 location, and it's already the module SituationMap3D imports for `ISO3_TO_NUM` /
 `ISO3_CENTROID_FALLBACK`, so co-locating keeps "country → geometry" logic in one place.
 
-### 2b. `src/components/SituationMap3D.jsx` — add the `pair-arcs` layer
+### 2b. `src/features/map/components/SituationMap3D.jsx` — add the `pair-arcs` layer
 
-1. Import: `import { NAME_TO_ISO3 } from '../utils/countryGeo.js';` (extend the existing
+1. Import: `import { NAME_TO_ISO3 } from '../lib/countryGeo.js';` (extend the existing
    countryGeo import line).
 2. Add two new props: `pairAnalyses = []` and `showConnections = false`, plus a callback
    `onSelectCountry` (called with an ISO3 string on arc click — kept distinct from `onSelect`,
@@ -186,7 +186,7 @@ location, and it's already the module SituationMap3D imports for `ISO3_TO_NUM` /
    a relocation. The arc itself plus click→`/weekly/country/<name>` is the parity contract per
    the task doc (§5 "interaction parity"), and that's fully preserved via `onSelectCountry`.
 
-### 2c. `src/components/SituationHome.jsx` — wire the hook, prop, and toggle
+### 2c. `src/features/map/SituationHome.jsx` — wire the hook, prop, and toggle
 
 1. Imports: add `import { useNavigate } from 'react-router-dom';` (currently only
    `useSearchParams, Link` are imported) and `import { usePairAnalyses } from
@@ -288,11 +288,11 @@ question below rather than decided unilaterally, since it's a genuine scope call
 
 ## 6. Step order for the executor
 
-1. Add `NAME_TO_ISO3` to `src/utils/countryGeo.js` (§2a). Sanity-check by hand against the 14
+1. Add `NAME_TO_ISO3` to `src/features/map/lib/countryGeo.js` (§2a). Sanity-check by hand against the 14
    live country names above (all should resolve).
-2. Extend `src/components/SituationMap3D.jsx`: import, new props, `pairArcs` memo, `pairArcLayer`
+2. Extend `src/features/map/components/SituationMap3D.jsx`: import, new props, `pairArcs` memo, `pairArcLayer`
    memo, splice into `layers`, extend `getTooltip` (§2b).
-3. Extend `src/components/SituationHome.jsx`: imports, `usePairAnalyses()`, `showConnections`
+3. Extend `src/features/map/SituationHome.jsx`: imports, `usePairAnalyses()`, `showConnections`
    state, `onSelectCountry`, prop-thread into `<SituationMap3D>`, toggle button (§2c).
 4. `npm run build` — must pass clean.
 5. Browser click-through on `/map` (standing rule, not optional): toggle "Connections" on, confirm

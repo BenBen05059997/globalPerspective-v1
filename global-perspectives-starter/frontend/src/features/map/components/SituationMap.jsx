@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
-import topoData from '@/assets/countries-110m.json';
+import topoData from '@/features/map/assets/countries-110m.json';
 
 // Hue = kind of crisis (DATA_STRATEGY §5 / plan WS4). Colour-blind-checked; no red/green pair.
 // oklch(0.70 0.155 h) normalised — equal luminance so no axis reads as "worse" at equal tier.

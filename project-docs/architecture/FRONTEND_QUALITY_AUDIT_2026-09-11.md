@@ -18,7 +18,7 @@ Scope: `global-perspectives-starter/frontend/src/`. Read-only. Build run locally
 - `src/components/WorldMap.jsx` + `src/components/WorldMap.css` — zero importers (not `WorldMapV2`, which is live via `/map-legacy` and has 30+ test references).
 - `src/components/MapSidePanel.jsx` — only consumer was the dead `WorldMap.jsx`.
 - `src/components/MiniMap.jsx` — zero importers anywhere.
-- `.sh-nopage` CSS rule in `src/components/SituationHome.css:169` — class string not found anywhere in any `.jsx` file (defined, never applied).
+- `.sh-nopage` CSS rule in `src/features/map/SituationHome.css:169` — class string not found anywhere in any `.jsx` file (defined, never applied).
 
 **Not dead (reachable, do not delete without a product decision):**
 - `/map-legacy` route → `WorldMapV2.jsx` — reachable by direct URL, no in-app nav link found (`Layout.jsx`/`SideNav.jsx`/`Home.jsx` have zero references to `map-legacy`), but it's the single most heavily-tested component in the suite (5 test files). It's an orphan route from a nav standpoint even though the code is alive — worth a product call on whether to delete the route+tests together or keep as a fallback.

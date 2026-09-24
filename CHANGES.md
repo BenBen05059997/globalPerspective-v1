@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Country-intelligence vs Studio: assessed, verdict NO-merge — keep cron, Studio lens later as pure reader)
+
+Read-only Sonnet assessment of the operator's question ("should country intelligence also merge into the Studio like pairs?") written to `project-docs/redesign-ux/_reference/COUNTRY_INTEL_VS_STUDIO_2026-09-24.md`. Verdict: the pair precedent does NOT transfer — pairs had a dead surface and zero consumers; `newsCountryIntelligence` has **7 live production consumers** (public `/weekly/country` pages via `useCountryIntelligence`; `newsWeeklyBrief`; `newsBreakingAlert` risk input; the **paid** Signal API's `geopolitical_risk`; the `newsDriftCorrector` closed loop; `newsEmailSender` drift digest; `newsSensitiveData` history/admin reads) and is one of the TWO live targets of the pending Phase 4 severity-prompt fix. A merge would paywall public pages and force backend jobs onto on-demand paid calls. Recommended path: **C-then-B** — leave the generator untouched until Phase 4 lands, then add a Studio "Country deep-dive" lens that READS the existing `COUNTRY#` record as grounding (serial, not merge). Also corrected two brief assumptions: the LinkedIn poster links threads only (not country pages), and `newsRecommend` is not a consumer; and confirmed the daily cron is the EventBridge *Scheduler* entry `countryIntelliegence` (live typo), 07:00 UTC, chained by `TriggerDriftCorrector` at 07:20. No build, no code change.
+
 ## 2026-09-24 (verify_pages.sh: stale WorldMapV2 guard rows removed — pre-push unblocked)
 
 The pre-push L7 page guards still asserted the deleted `WorldMapV2.jsx` (4 rows) and correctly blocked the push — the verify script was itself an unnoticed "consumer" of the removed file. Rows replaced with a dated removal note; disruption data keeps its 5 live surfaces (Home, CountryPage, CountryListPage, EconomyPage, DailyPage), all still guarded. Re-run: 32/32 pass.

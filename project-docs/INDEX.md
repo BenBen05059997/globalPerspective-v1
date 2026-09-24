@@ -198,6 +198,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 **📎 reference**
 - **[LEGACY_MAP_IDEA_HARVEST_2026-09-24.md](redesign-ux/_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md)** — Idea harvest from the cancelled pair-arcs-on-`/map` relocation port (`archive/pair-arcs-port`): concepts worth revisiting distilled out before the legacy `WorldMapV2` map was removed 2026-09-24. Reference only, no build.
+- **[COUNTRY_INTEL_VS_STUDIO_2026-09-24.md](redesign-ux/_reference/COUNTRY_INTEL_VS_STUDIO_2026-09-24.md)** — Operator-question assessment: should `newsCountryIntelligence` merge into the Analysis Studio like pairs did? Verdict NO — 7 live consumers (public country pages, weekly brief, breaking scorer, PAID Signal API, drift loop, email, admin) + it's a Phase 4 severity-fix target; recommended: keep cron, add a Studio "Country deep-dive" lens later as a pure reader (after Phase 4). Reference, no build. 2026-09-24.
 
 ## Distribution & channels
 

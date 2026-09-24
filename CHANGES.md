@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0: INDEX.md status update — all 9 code items done, deploys pending)
+
+`project-docs/INDEX.md`'s `STAGE0_FIXES_PLAN.md` row updated: items (a)-(i) are all coded and
+committed as of this session (item (a)'s Worker change is prepared, not deployed). Both deploy
+gates — the frontend batch (`./deploy.sh`) covering (b)-(i), and the separate Worker deploy for
+(a) — remain pending a fresh explicit operator "yes", per the task's hard rules. Docs-only.
+
 ## 2026-09-24 (Stage-0 item (i): `/daily` — the fallback WINDOW was the real bug, not just arrows)
 
 `STAGE0_FIXES_PLAN.md` §(i) originally scoped this item narrowly (per §0's contradiction note:

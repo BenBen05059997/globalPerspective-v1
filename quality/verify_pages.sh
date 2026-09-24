@@ -73,14 +73,14 @@ must_have "$SRC/components/ThreadPage.jsx" "MechanismCard" "renders MechanismCar
 must_have "$SRC/components/ThreadPage.jsx" "hasEconomy" "computes hasEconomy gate"
 
 # ─── CountryPage ───
-must_have "$SRC/components/CountryPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/components/CountryPage.jsx" "country:" "passes country filter"
-must_have "$SRC/components/CountryPage.jsx" "tab.{1,4}economy" "deep-links to economy tab"
+must_have "$SRC/features/countries/CountryPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
+must_have "$SRC/features/countries/CountryPage.jsx" "country:" "passes country filter"
+must_have "$SRC/features/countries/CountryPage.jsx" "tab.{1,4}economy" "deep-links to economy tab"
 
 # ─── CountryListPage ───
-must_have "$SRC/components/CountryListPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/components/CountryListPage.jsx" "maxSeverityByCountry" "builds per-country max"
-must_have "$SRC/components/CountryListPage.jsx" "Disruption" "exposes Disruption sort"
+must_have "$SRC/features/countries/CountryListPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
+must_have "$SRC/features/countries/CountryListPage.jsx" "maxSeverityByCountry" "builds per-country max"
+must_have "$SRC/features/countries/CountryListPage.jsx" "Disruption" "exposes Disruption sort"
 
 # ─── WorldMapV2: REMOVED 2026-09-24 (legacy map deleted; /map = SituationHome) ───
 # Its four guards are gone with it. Disruption data keeps its surfaces on Home,

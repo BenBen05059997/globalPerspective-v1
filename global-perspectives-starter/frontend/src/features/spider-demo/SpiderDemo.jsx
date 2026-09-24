@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useSystemsAnalysis } from '@/hooks/useSystemsAnalysis';
+import { useSystemsAnalysis } from '@/features/countries/hooks/useSystemsAnalysis';
 import { useNarrativeThread } from '@/hooks/useNarrativeThread';
 import { fetchPredictionCache, fetchDossierAnalysis } from '@/shared/api/restProxy';
 import { threadPath } from '@/shared/lib/threadPath';

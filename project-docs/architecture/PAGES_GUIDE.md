@@ -117,7 +117,7 @@ Use this when:
   3. Switch content tab to "Sources" — source rollup renders.
 - **Known issues:** `RISK_COLOR` (= `tokens.riskScoreToVar`) now delegates to the canonical `shared/lib/riskTiers` bands 25/50/75 (low/moderate/elevated/high) — `RISK_TIERS_PLAN.md` P1; boundary flap at tier edges is inherent to tiering, by design.
 
-## `/weekly/countries` · `components/CountryListPage.jsx`
+## `/weekly/countries` · `features/countries/CountryListPage.jsx`
 
 - **Purpose:** Index of countries with AI briefings — map hero + risk-tier-banded grid + leaderboard.
 - **Primary user job:** Browse to a specific country's intel page, highest-risk first.
@@ -133,7 +133,7 @@ Use this when:
   3. Sort "Coverage" — cards reorder.
 - **Known issues:** Only fetches intel for top 10 — others fall into "no AI briefing" even when intel exists in DDB.
 
-## `/weekly/country/:countryName` · `components/CountryPage.jsx`
+## `/weekly/country/:countryName` · `features/countries/CountryPage.jsx`
 
 - **Purpose:** Per-country intelligence briefing — situation, story arcs, coverage timeline + actors/risk/markets/causal-graph rails.
 - **Primary user job:** Understand one country's current global signal and drill into its arcs.

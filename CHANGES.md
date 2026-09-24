@@ -1,5 +1,39 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P10: `features/countries/`)
+
+Executed P10 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the countries feature, which
+cross-imports `threads` (still at its pre-move path until P11 — fine, since imports are
+absolute `@/` after P1 and `move-module.mjs` retargets them when threads moves). Moved 18
+files via `scripts/move-module.mjs`, no filename renames, no logic changes:
+`components/CountryListPage.jsx`/`.css`, `components/CountryPage.jsx`/`.css` →
+`features/countries/`; `components/CountryOverviewMap.jsx`, `components/BackgroundTimeline.jsx`,
+`components/SystemsGraph.jsx`/`.css`, `components/atoms/CountryWhatChanged.jsx`/`.css` →
+`features/countries/components/`; `hooks/useCountryIntelligence.js`,
+`hooks/useCountryHistory.js`, `hooks/useSystemsAnalysis.js` → `features/countries/hooks/`;
+`utils/countryDrift.js` → `features/countries/lib/`; `test/countryDrift.test.js`,
+`test/countryWhatChanged.test.jsx`, `test/useSystemsAnalysis.test.js`,
+`test/causalGraph.test.jsx`, `test/macroValues.test.js` → `features/countries/__tests__/`. No
+N files in this phase. Confirmed `features/spider-demo/SpiderDemo.jsx`'s cross-feature import
+of `useSystemsAnalysis` (pointed at the pre-move `@/hooks/useSystemsAnalysis` path since P3) was
+retargeted automatically by `move-module.mjs`'s repo-wide specifier rewrite to
+`@/features/countries/hooks/useSystemsAnalysis.js` — no manual fix needed. Confirmed
+`useCountryIntelligence` (a public hook, no auth gate) moved without gaining a `!user` guard —
+`scripts/auth-guard-check.mjs` still resolves it via basename search and reports PASS.
+`features/countries/CountryListPage.jsx`'s import of `WeeklyPage.css` stays pointed at its
+pre-move `@/components/WeeklyPage.css` path, to be retargeted automatically when `threads`
+moves in P11 (same pattern as the P3/P6/P9 cross-feature notes). Updated
+`quality/verify_pages.sh` (3 `CountryPage.jsx` rows + 3 `CountryListPage.jsx` rows, re-pointed
+to `features/countries/`) and `project-docs/architecture/PAGES_GUIDE.md` (`/weekly/countries`
+and `/weekly/country/:countryName` page headings), and added the P10 "Frontend Path map"
+section to `project-docs/architecture/ARCHITECTURE.md`. Verified: `npm run verify` 15 files /
+184 tests (unchanged), 0 lint errors (3 pre-existing unrelated warnings), `npm run build` main
+bundle 1,046,069 bytes / CSS 295,600 bytes / `SituationMap3D` lazy chunk 942,987 bytes
+(byte-identical to P9), `quality/verify_pages.sh` 32/0, `scripts/auth-guard-check.mjs` PASS
+(7/7), `quality/verify_all.sh --fast` all 4 layers green (32/0 page guards, 34/34 hooks+atoms
+vitest, 26/0 judge unit tests), rule-5c relative-import sweep unchanged (only the 2 documented
+economy N-file edges).
+
 ## 2026-09-24 (Frontend feature-folder restructure P9: `features/home/`)
 
 Executed P9 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the Topics page (Home) + the lede

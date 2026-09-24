@@ -1412,6 +1412,34 @@ updated in this same commit. `AIComponents.css` is imported cross-feature by
 `move-module.mjs`'s repo-wide specifier rewrite retargeted those imports to
 `@/features/home/AIComponents.css` automatically; no import was stranded.
 
+**P10 — `features/countries/`:**
+
+| Old | New |
+|---|---|
+| `components/CountryListPage.jsx`, `.css` | `features/countries/CountryListPage.jsx`, `.css` |
+| `components/CountryPage.jsx`, `.css` | `features/countries/CountryPage.jsx`, `.css` |
+| `components/CountryOverviewMap.jsx` | `features/countries/components/CountryOverviewMap.jsx` |
+| `components/BackgroundTimeline.jsx` | `features/countries/components/BackgroundTimeline.jsx` |
+| `components/SystemsGraph.jsx`, `.css` | `features/countries/components/SystemsGraph.jsx`, `.css` |
+| `components/atoms/CountryWhatChanged.jsx`, `.css` | `features/countries/components/CountryWhatChanged.jsx`, `.css` |
+| `hooks/useCountryIntelligence.js` | `features/countries/hooks/useCountryIntelligence.js` |
+| `hooks/useCountryHistory.js` | `features/countries/hooks/useCountryHistory.js` |
+| `hooks/useSystemsAnalysis.js` | `features/countries/hooks/useSystemsAnalysis.js` |
+| `utils/countryDrift.js` | `features/countries/lib/countryDrift.js` |
+| `test/countryDrift.test.js` | `features/countries/__tests__/countryDrift.test.js` |
+| `test/countryWhatChanged.test.jsx` | `features/countries/__tests__/countryWhatChanged.test.jsx` |
+| `test/useSystemsAnalysis.test.js` | `features/countries/__tests__/useSystemsAnalysis.test.js` |
+| `test/causalGraph.test.jsx` | `features/countries/__tests__/causalGraph.test.jsx` |
+| `test/macroValues.test.js` | `features/countries/__tests__/macroValues.test.js` |
+
+No N files in this phase. `features/spider-demo/SpiderDemo.jsx`'s cross-feature import of
+`useSystemsAnalysis` (still pointed at the pre-move `@/hooks/useSystemsAnalysis` path since P3)
+was retargeted automatically by `move-module.mjs`'s repo-wide specifier rewrite to
+`@/features/countries/hooks/useSystemsAnalysis.js`. `features/countries/CountryListPage.jsx`'s
+import of `WeeklyPage.css` stays pointed at its pre-move `@/components/WeeklyPage.css` path,
+to be retargeted automatically when `threads` moves in P11 (same mechanism as the P3/P6/P9
+cross-feature notes).
+
 ### Feature → Lambda index
 
 Lambdas are **not** grouped into feature subfolders (evaluated and rejected —

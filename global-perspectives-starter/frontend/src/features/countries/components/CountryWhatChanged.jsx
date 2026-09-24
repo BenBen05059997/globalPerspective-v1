@@ -7,9 +7,9 @@
 // Renders nothing when the read hasn't materially changed (honest-empty).
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { computeCountryDrift } from '@/utils/countryDrift';
+import { computeCountryDrift } from '@/features/countries/lib/countryDrift';
 import RiskDeltaPill from '@/shared/ui/risk/RiskDeltaPill';
-import '@/components/atoms/CountryWhatChanged.css';
+import '@/features/countries/components/CountryWhatChanged.css';
 
 // The corrector sometimes references the event by its prompt number ("event [6] shows…").
 // Strip that artifact for display — the triggerEvent already names the event.

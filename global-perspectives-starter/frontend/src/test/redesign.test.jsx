@@ -36,7 +36,7 @@ vi.mock('@/hooks/useThreadAnalyses', () => ({
   useThreadAnalyses: () => ({ analyses: threadAnalysesFixture.data, loading: false, error: null }),
 }));
 
-vi.mock('@/hooks/useCountryIntelligence', () => ({
+vi.mock('@/features/countries/hooks/useCountryIntelligence', () => ({
   useCountryIntelligence: () => ({ intelligence: countryIntelFixture.data, loading: false, error: null }),
 }));
 
@@ -50,7 +50,7 @@ vi.mock('@/shared/contexts/AuthContext', () => ({
 vi.mock('@/shared/ui/IntelligenceLoader', () => ({
   default: () => <div data-testid="loader" />,
 }));
-vi.mock('@/components/CountryOverviewMap', () => ({
+vi.mock('@/features/countries/components/CountryOverviewMap', () => ({
   default: () => <div data-testid="map" />,
 }));
 vi.mock('@/components/WeeklyMap', () => ({
@@ -133,7 +133,7 @@ describe('Redesign v2 — WeeklyPage', () => {
 describe('Redesign v2 — CountryListPage', () => {
   let CountryListPage;
   beforeEach(async () => {
-    CountryListPage = (await import('@/components/CountryListPage')).default;
+    CountryListPage = (await import('@/features/countries/CountryListPage')).default;
   });
 
   it('renders the StatusStrip with briefings/countries stats', () => {

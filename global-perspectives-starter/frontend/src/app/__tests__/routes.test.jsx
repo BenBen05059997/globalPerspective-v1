@@ -33,9 +33,9 @@ import PrivacyTerms from '@/features/static/PrivacyTerms';
 import Disclosures from '@/features/static/Disclosures';
 import SignIn from '@/features/account/SignIn';
 import WeeklyPage from '@/components/WeeklyPage';
-import CountryListPage from '@/components/CountryListPage';
+import CountryListPage from '@/features/countries/CountryListPage';
 import ThreadPage from '@/components/ThreadPage';
-import CountryPage from '@/components/CountryPage';
+import CountryPage from '@/features/countries/CountryPage';
 
 function renderPage(Component, path = '/') {
   return render(

@@ -20,7 +20,7 @@ vi.mock('@/shared/api/restProxy.js', () => ({
 }));
 
 import { fetchSystemsAnalysis } from '@/shared/api/restProxy.js';
-import { useSystemsAnalysis } from '@/hooks/useSystemsAnalysis';
+import { useSystemsAnalysis } from '@/features/countries/hooks/useSystemsAnalysis';
 
 // Minimal localStorage mock
 const localStorageMock = (() => {

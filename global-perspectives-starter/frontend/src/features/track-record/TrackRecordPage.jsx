@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
@@ -91,6 +92,7 @@ function CorrectionsLedger() {
 }
 
 export default function TrackRecordPage() {
+  useEffect(() => { document.title = 'Track Record | Global Perspectives'; }, []);
   const { data, loading, error } = useTrackRecord();
 
   if (loading) return <IntelligenceLoader />;

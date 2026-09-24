@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '@/features/breaking/hooks/useNotifications';
 import SourceRobustness from '@/shared/ui/SourceRobustness';
@@ -61,6 +62,7 @@ function AlertCard({ a }) {
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export default function BreakingFeedPage() {
+  useEffect(() => { document.title = 'Breaking | Global Perspectives'; }, []);
   const { alerts, loading, endpointMissing } = useNotifications();
 
   // Only show the past week (last 7 days → today); older alerts are dropped.

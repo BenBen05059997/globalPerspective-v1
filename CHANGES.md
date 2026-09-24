@@ -1,5 +1,23 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 item (h): `document.title` for the 8 pages missing one)
+
+`STAGE0_FIXES_PLAN.md` §(h): added a static `useEffect(() => { document.title = '<Page> | Global
+Perspectives'; }, [])` to each of the 8 pages confirmed (by grep) to have zero `document.title`
+occurrences: `EconomyPage.jsx` ("Economy"), `TrackRecordPage.jsx` ("Track Record"),
+`AnalysisStudio.jsx` ("Analysis Studio"), `MembershipPage.jsx` ("Membership"),
+`BreakingFeedPage.jsx` ("Breaking"), `WeeklyBriefPage.jsx` ("Weekly Brief"), `Account.jsx`
+("Account"), `WhitepaperPage.jsx` ("White Paper") — matching the existing correct pattern already
+used in `DailyPage.jsx`. Static titles only, per the plan's Stage-0 scope (dynamic titles reflecting
+page content are a nice-to-have, not required here). Added the `useEffect` import to the 5 files
+that didn't already have it (`TrackRecordPage.jsx`, `MembershipPage.jsx`, `BreakingFeedPage.jsx`,
+`WeeklyBriefPage.jsx`, `WhitepaperPage.jsx`).
+
+Verify: `npm run verify` 184/184, 0 lint errors; build succeeds; `verify_pages.sh` 32/0;
+`auth-guard-check.mjs` PASS. Browser click-through of all 8 routes (tab title updates correctly
+and distinctly, including on client-side nav between two of them) deferred to the monitor per this
+task's hard rules (executor does not browser-test).
+
 ## 2026-09-24 (Stage-0 item (g): route-level code splitting — main chunk 1,046 kB → 425 kB)
 
 `STAGE0_FIXES_PLAN.md` §(g): (1) `CountryPage.jsx` did a **static** `import WeeklyMap from

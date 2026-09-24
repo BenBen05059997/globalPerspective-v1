@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/features/account/hooks/useMembership';
@@ -18,6 +18,7 @@ const BENEFITS = [
 ];
 
 export default function MembershipPage() {
+  useEffect(() => { document.title = 'Membership | Global Perspectives'; }, []);
   const { user } = useAuth();
   const { membership, isMember, creditBalance, available, loading } = useMembership();
   const [busy, setBusy] = useState(null);

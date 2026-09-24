@@ -606,6 +606,7 @@ function NotificationsPanel() {
 }
 
 export default function Account() {
+  useEffect(() => { document.title = 'Account | Global Perspectives'; }, []);
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();

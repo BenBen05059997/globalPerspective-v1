@@ -289,6 +289,7 @@ function buildParams(filters, sort, openMover, view) {
 }
 
 export default function EconomyPage() {
+  useEffect(() => { document.title = 'Economy | Global Perspectives'; }, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const [view, setView] = useState(() => parseViewFromParams(searchParams));
   const [filters, setFilters] = useState(() => parseFiltersFromParams(searchParams));

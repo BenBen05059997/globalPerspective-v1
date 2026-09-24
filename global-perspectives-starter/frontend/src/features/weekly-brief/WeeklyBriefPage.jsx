@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
@@ -80,6 +81,7 @@ function SignalCard({ s }) {
 }
 
 export default function WeeklyBriefPage() {
+  useEffect(() => { document.title = 'Weekly Brief | Global Perspectives'; }, []);
   const { brief, loading, error } = useWeeklyBrief();
   const signals = brief && Array.isArray(brief.signals) ? brief.signals : null;
   const watch = brief && Array.isArray(brief.watch) ? brief.watch : [];

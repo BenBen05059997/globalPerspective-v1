@@ -19,6 +19,7 @@ import '@/features/analysis-studio/AnalysisStudio.css';
 const MAX_STORIES = 4;
 
 export default function AnalysisStudio() {
+  useEffect(() => { document.title = 'Analysis Studio | Global Perspectives'; }, []);
   const { topics, loading: topicsLoading } = useGeminiTopics();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();

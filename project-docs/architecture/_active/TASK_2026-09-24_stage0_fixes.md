@@ -24,7 +24,7 @@ plus a **separately gated** Worker deploy for item (a) — both need a fresh exp
 | (e) | Home member-perk sentence → `/membership` not `/track-record` — `features/home/Home.jsx`, `features/home/Home.css` | ✅ done | see CHANGES |
 | (f) | De-dupe in-flight proxy requests — `shared/api/restProxy.js` (`useGeminiTopics` called from Home, AnalysisStudio, IntelligenceLoader) | ✅ done | see CHANGES |
 | (g) | Route-level code splitting — `app/App.jsx` (`React.lazy` for 19 routes, Home kept eager), `features/countries/CountryPage.jsx` (fix static `WeeklyMap` import defeating `WeeklyPage`'s existing lazy split), `quality/verify_pages.sh` guard updated for the new import form | ✅ done | see CHANGES |
-| (h) | Missing `document.title` (8 pages) — `EconomyPage.jsx`, `TrackRecordPage.jsx`, `AnalysisStudio.jsx`, `MembershipPage.jsx`, `BreakingFeedPage.jsx`, `WeeklyBriefPage.jsx`, `Account.jsx`, `WhitepaperPage.jsx` | ⬜ not started | — |
+| (h) | Missing `document.title` (8 pages) — `EconomyPage.jsx`, `TrackRecordPage.jsx`, `AnalysisStudio.jsx`, `MembershipPage.jsx`, `BreakingFeedPage.jsx`, `WeeklyBriefPage.jsx`, `Account.jsx`, `WhitepaperPage.jsx` | ✅ done | see CHANGES |
 | (i) | `/daily` dead end — arrows/empty-state only (fallback-to-latest-edition already exists in `useDailyBrief.js`/`DailyPage.jsx` — see plan §0 contradiction note) — `features/daily/DailyPage.jsx` | ⬜ not started | — |
 | Deploy | Frontend batch (`./deploy.sh`) for (b)-(i); Worker deploy for (a) is separate | ⬜ not started | — |
 
@@ -125,7 +125,7 @@ migration, page rebuilds) begin.
       executor does not browser-test per this task's hard rules)
 - [x] (g) Route-level code splitting — `App.jsx` lazy routes + `CountryPage.jsx` `WeeklyMap` fix,
       main-chunk size measured before/after: 1,046.05 kB → 425.25 kB (gzip 337.07 kB → 131.89 kB)
-- [ ] (h) `document.title` added to all 8 named pages
+- [x] (h) `document.title` added to all 8 named pages
 - [ ] (i) `/daily` date arrows + empty-state fixed (fallback-to-latest-edition already existed —
       confirmed in plan §0, not rebuilt)
 - [ ] Every item: `npm run verify` green, `quality/verify_pages.sh` 32/0, browser click-through

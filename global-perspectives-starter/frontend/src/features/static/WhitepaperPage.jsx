@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const tableStyle = {
@@ -60,6 +61,7 @@ function Capability({ label, description }) {
 }
 
 export default function WhitepaperPage() {
+  useEffect(() => { document.title = 'White Paper | Global Perspectives'; }, []);
   return (
     <div style={{ maxWidth: 820, margin: '0 auto', padding: '2rem 0' }}>
 

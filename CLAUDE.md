@@ -6,7 +6,7 @@ This file contains critical instructions for Claude to follow when working on th
 
 - **New here?** `README.md` (repo root) + **`project-docs/INDEX.md`** map the whole workspace; **`project-docs/architecture/ARCHITECTURE.md`** is the authoritative system reference — trust it over any other doc on drift.
 - **Docs-as-code rule (anti-drift):** when a code change makes a `project-docs/` doc, an `ARCHITECTURE.md` section, or `CHANGES.md` stale, **update it in the same commit**. Declare a task's referenced/changed files up front and update the listed docs on completion — see `project-docs/playbooks/TASK_WORKFLOW.md`. This repo is **CI-free by design**, so this discipline (plus the on-demand `project-docs/playbooks/AGENT_REVIEW_METHOD.md` sweep) is the only thing preventing doc drift.
-- Root `src/` is a legacy Amplify scaffold, **not** the frontend (that's `global-perspectives-starter/frontend/src/`); `docs/` is Pages build output, never hand-edited except `config.js`.
+- The old root `src/` legacy Amplify scaffold was removed 2026-09-24 (git-recoverable); the frontend is `global-perspectives-starter/frontend/src/`; `docs/` is Pages build output, never hand-edited except `config.js`.
 
 ## Agent Operating Rules (agent-kit)
 

@@ -74,21 +74,16 @@ Use this when:
   3. Click a country chip in a top story — navigates to country page.
 - **Known issues:** Imports color constants from `WeeklyPage` (cross-page coupling). `nextDateKey` can navigate into the future (only the link's visibility is gated).
 
-## `/map` · `components/WorldMapV2.jsx`
+## `/map` · `components/SituationHome.jsx` (+ `SituationMap.jsx` / `SituationMap3D.jsx`)
 
-- **Purpose:** Interactive D3 + topojson choropleth with three layers (Today's pulse / Connections / Editorial) and a per-country detail panel.
-- **Primary user job:** See where news is concentrating geographically and drill into a country.
-- **Data sources:** `useCountrySignal`, `usePairAnalyses`, `useGeminiTopics`, `useWeeklyArchive`, `useCountryIntelligence([selected])`, `useCountryHistory`, `useSystemsAnalysis`, `useMarketsCountry` (lines 155-171).
-- **Auth gate:** None.
-- **Inbound links:** Top-nav "Map".
-- **Outbound links:** Country panel → `/weekly/country/:name`.
-- **Key UI elements:** **"Today's lede" band** (`LedeBand`) between the map title and search box; SVG world map; layer toggles (Today / Connections / Editorial); **map signal-level** checkboxes (H/E/L — the news-concentration signal, a *separate* axis from the risk tier); flow-color filters; time-window selector; country search bar (in document flow as of commit e4a1d99); collapsible rail + detail panel. The detail-panel **Risk Level tile is tier-first** (`RISK_TIERS_PLAN.md` P2: `panelTier` → `tierLabel`, colored via `riskTierToVar`, raw score as fine print) with a country sparkline.
-- **States:** map renders when TopoJSON resolves; no explicit loading UI for the map itself.
-- **Smoke-test:**
-  1. `/map` — world renders with country fills + markers, "Today's lede" band above.
-  2. Toggle "Connections" layer — bilateral arcs appear between countries.
-  3. Click a country — detail panel populates with the **tier-first Risk Level** tile + sparkline + systems edges.
-- **Known issues:** Causal Graph fix landed 2026-04-27/28 (use `nodeMap[id].summary`, treat `e.confidence` as string label not 0-1 float).
+> **Updated 2026-09-24:** this section previously described `WorldMapV2.jsx` (D3 choropleth,
+> Today's-pulse/Connections/Editorial layers, `usePairAnalyses`). That component and its
+> `/map-legacy` route were removed 2026-09-24 — `/map` is now `SituationHome` only. Full
+> current behavior (hue=axis/tier deck.gl 2.5D map, GDACS/GDELT-driven situations, freshness
+> grey-out) is tracked in `project-docs/redesign-ux/_active/MAP_HOME_SITUATION_LEDGER.md` and
+> `ARCHITECTURE.md`; this row is not re-authored line-by-line here to avoid drifting from those
+> living docs. Do not reintroduce `usePairAnalyses`/`WorldMapV2` references — `pair_analyses_list`
+> has no frontend consumer as of 2026-09-24.
 
 ## `/weekly` · `components/WeeklyPage.jsx`
 
@@ -152,7 +147,7 @@ Use this when:
   1. `/weekly/country/Iran` — hero + tabs render with non-zero stats.
   2. Click "Story Arcs" tab, pick an arc — navigates to ThreadPage with `?from=country`.
   3. Toggle "Anchor only" facet — arc list filters.
-- **Known issues:** Causal Graph shares the `summary`/`threadId` fix from WorldMapV2 (line 599-600).
+- **Known issues:** Causal Graph shares the `summary`/`threadId` fix originally landed for the (now-removed) WorldMapV2 map (line 599-600).
 
 ## `/economy` · `components/EconomyPage.jsx`
 
@@ -240,8 +235,8 @@ Use this when:
 - **Data sources:** `useWeeklyArchive`, `useThreadAnalyses(qualifyingThreadIds)`, `@googlemaps/react-wrapper`.
 - **Auth gate:** None.
 - **Inbound links:** Weekly "Map" view toggle; Account quick-link. **Not in primary nav.**
-- **Outbound links:** MapSidePanel cards into thread/country pages.
-- **Key UI elements:** Google map; thread highlight via `?thread=`; region filter via `?region=`; date playback; MapSidePanel; CompactTimeline.
+- **Outbound links:** map markers/cards into thread/country pages.
+- **Key UI elements:** Google map; thread highlight via `?thread=`; region filter via `?region=`; date playback; CompactTimeline. (`MapSidePanel.jsx` — REMOVED 2026-09-24, git-recoverable; `WeeklyMap.jsx` does not import it.)
 - **States:** depends on `useWeeklyArchive` loading; no explicit top-level empty.
 - **Smoke-test:**
   1. `/weekly-map` — Google map renders.
@@ -332,7 +327,7 @@ Use this when:
 Marketing about page — What We Do, How It Works, sources, contact. Footer-reachable. Outbound: `/whitepaper`, `/privacy`, `/disclosures`, mailto.
 
 ### `/contact` · `Contact.jsx`
-Three contact-method cards. **Effectively orphaned** — Layout footer "Contact" is a `mailto:` link (`Layout.jsx:156`), bypassing this route.
+Three contact-method cards. **Not an orphan** (corrected 2026-09-24) — Layout footer "Contact" links to this route (`Layout.jsx:219`, `<Link to="/contact">`), not a `mailto:`.
 
 ### `/privacy` · `PrivacyTerms.jsx`
 Privacy + terms combined. Footer-reachable. *(The earlier "still references Stripe" note is resolved — no Stripe/Paddle/Polar string remains in the component as of 2026-06-22.)*
@@ -390,8 +385,8 @@ PRIMARY GRAPH
    ├─ sibling  →  /weekly/country/:other
    └─ arc  →  /weekly/thread/:id?from=country
 
-  /map (WorldMapV2)
-   └─ country panel  →  /weekly/country/:name
+  /map (SituationHome, since 2026-09-24; was WorldMapV2)
+   └─ country/situation detail  →  /weekly/country/:name
 
 STANDALONE / NAV-ONLY PAGES (added 2026-06-22)
   /analyze (AnalysisStudio)   ← nav "Analyze"; Account "Analysis" tab
@@ -417,7 +412,7 @@ ORPHAN / SECONDARY
   /weekly-map         ← only via Weekly toggle / Account quick-link
   /intelligence-map   ← NO INBOUND LINKS — orphan
   /cli                ← NO INBOUND LINKS — orphan
-  /contact            ← effectively orphan (footer Contact is mailto)
+  /contact            ← footer-linked (not an orphan; corrected 2026-09-24)
   /test/briefing-card ← DEV-ONLY, exposed as public route
 ```
 
@@ -434,7 +429,7 @@ ORPHAN / SECONDARY
 | `/signin`, `/account` | ✓ (Layout right-side) | |
 | `/auth/callback` | ✓ (inbound from email magic-link) | |
 | `/about`, `/privacy`, `/disclosures`, `/whitepaper` | ✓ (footer) | |
-| `/contact` | ❌ effectively orphan | footer "Contact" is a mailto |
+| `/contact` | ✓ (footer-linked; corrected 2026-09-24, was mis-described as an effective orphan) | |
 | `/__boom` | ⚠️ dev-only, unlinked | inline `Boom` component that throws — exists to exercise the `ErrorBoundary`; reachable only by typing the URL |
 | `/weekly-map`, `/intelligence-map`, `/cli`, `/upgrade/success`, `/test/briefing-card` | ⛔ REMOVED 2026-05-28 | no longer registered in `App.jsx` — entries above are historical |
 
@@ -498,7 +493,7 @@ For each of `/`, `/daily`, `/weekly-brief`, `/map`, `/weekly`, `/weekly/countrie
 
 ## Cross-cutting findings
 
-1. **~~Map duplication.~~** ✅ Resolved — `/weekly-map` was removed (2026-05-28); `/map` (WorldMapV2 / D3) is now the only routed map. `WeeklyMap.jsx` survives only as an embedded hero inside CountryPage.
+1. **~~Map duplication.~~** ✅ Resolved — `/weekly-map` was removed (2026-05-28); `/map` (`SituationHome`, since 2026-09-24 — was WorldMapV2/D3) is now the only routed map. `WeeklyMap.jsx` survives only as an embedded hero inside CountryPage.
 2. **~~Dead imports in `App.jsx`~~** ✅ Resolved — `Pricing`, `PairPage`, `PairListPage` are no longer imported in `App.jsx` (verified 2026-06-22).
 3. **~~`Gate` wrapper unused~~** ✅ Resolved — the `Gate`/`isPreview` leftover is gone from `App.jsx`.
 4. **~~PrivacyTerms still mentions Stripe~~** ✅ Resolved — no Stripe/Paddle/Polar string remains in `PrivacyTerms.jsx` (2026-06-22).

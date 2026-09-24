@@ -3,7 +3,9 @@
 **Phase 1.6** — surface the 15 pair intelligence records sitting in DDB to users.
 **Target:** production-ready MVP matching existing CountryPage design language.
 
-> **Status (added 2026-09-08 doc-staleness sweep): NOT BUILT.** The pages/routes this plan describes — `/weekly/pair/:slug`, `/weekly/pairs`, `PairPage.jsx`, `PairListPage.jsx`, `usePairIntelligence.js` — do **not** exist in the codebase. The pair *data* is live (see `PAIR_INTELLIGENCE_PLAN.md`) but is consumed **only** by the `/map` arc overlays (`WorldMapV2` → `usePairAnalyses`); `WorldMapV2.jsx:611` explicitly notes `/weekly/pair` has no route. Treat this plan as unimplemented.
+> **Status (added 2026-09-08 doc-staleness sweep): NOT BUILT.** The pages/routes this plan describes — `/weekly/pair/:slug`, `/weekly/pairs`, `PairPage.jsx`, `PairListPage.jsx`, `usePairIntelligence.js` — do **not** exist in the codebase. Treat this plan as unimplemented.
+>
+> **Superseded-by-banner (2026-09-24):** the sentence above (as of 2026-09-08) said the pair data was consumed by the `/map` arc overlays (`WorldMapV2` → `usePairAnalyses`). That map was removed 2026-09-24 along with `usePairAnalyses.js`; `pair_analyses_list` now has **no frontend consumer at all**, and the weekly `TriggerPairIntelligenceWeekly` cron is disabled. The capability's agreed future home is an on-demand "Bilateral relationship" lens in Analysis Studio (recorded, not built). See `CLEANUP_AUDIT_2026-09-24.md` §4 D3.
 
 ---
 

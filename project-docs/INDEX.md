@@ -145,7 +145,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 
 **✅ shipped**
-- **[PAIR_INTELLIGENCE_PLAN.md](pairs/_shipped/PAIR_INTELLIGENCE_PLAN.md)** — Pair intelligence backend — built & live (data feeds /map).
+- **[PAIR_INTELLIGENCE_PLAN.md](pairs/_shipped/PAIR_INTELLIGENCE_PLAN.md)** — Pair intelligence backend — built & live, but as of 2026-09-24 has NO frontend consumer (the `/map-legacy` WorldMapV2 surface it fed was removed; weekly cron disabled). Future home: an on-demand "Bilateral relationship" lens in Analysis Studio (recorded, not built).
 
 **🔭 proposed**
 - **[PAIR_UI_PLAN.md](pairs/_proposed/PAIR_UI_PLAN.md)** — Dedicated pair pages — NOT built (only /map arc consumes the data).

@@ -287,3 +287,33 @@ end-to-end · driver.js + all dynamic-import files · `/__boom` diagnostic · DI
 **Execution note:** Tier A is one commit; Tier B is one commit (build-verified, deploy deferred to
 the next explicitly-approved deploy); C/D fire on their gates. Estimated total: ~25MB repo weight,
 ~2,800 lines dead frontend code, 2 deps, 2 repo dirs, ~270 S3 objects.
+
+## §5 Doc staleness sweep (2026-09-24)
+
+Grepped every `.md` file in the repo (excluding `node_modules`, `docs/` build output) for every
+term touched by today's Tier A/B/D cleanup. Rule applied: correct current-state claims (tables,
+"X powers Y", how-to steps); leave dated audit/plan/ledger bodies and `_legacy/` docs as historical
+record (add a one-line dated banner instead of rewriting, where a status header/how-it-works-now
+section had gone false).
+
+| File | What was stale | Fix |
+|---|---|---|
+| `CLAUDE.md` (root) | "Root `src/` is a legacy Amplify scaffold, not the frontend" — dir deleted today | Reworded to past tense, notes 2026-09-24 removal, git-recoverable |
+| `project-docs/INDEX.md` | `PAIR_INTELLIGENCE_PLAN.md` row: "data feeds /map" | Corrected: no frontend consumer as of 2026-09-24; future home noted |
+| `project-docs/redesign-ux/_shipped/SITE_ORIENTATION_PLAN.md` | Body (dated 2026-07-06) asserts `pair_analyses_list` is live-consumed by `/map` via `WorldMapV2`; P5 premise now false | Added dated supersede-by-banner at top; body left as historical narration |
+| `global-perspectives-starter/frontend/FRONTEND_ARCHITECTURE.md` | Entire doc (Apr 2026, never updated) describes `WorldMap.jsx`, `MapSidePanel.jsx`, `ArticleCard.jsx`, `CountryGrouping.jsx`, `PerspectiveComparison.jsx`, `LoadingStates.jsx`, `MiniMap.jsx`, `SideNav.jsx`, `SectionNav.jsx`, `ApiKeyGate.jsx`, several hooks, `appsyncProxy.js`, `geocoding.js` as current | Added a top banner naming every removed file, pointing to `ARCHITECTURE.md` as authoritative; body left as historical (was already stale pre-dating today by months) |
+| `project-docs/architecture/PAGES_GUIDE.md` | `/map` section fully described the retired `WorldMapV2` (D3 choropleth, layers, `usePairAnalyses`); `/weekly-map` section described `MapSidePanel` (already not actually used there); `/contact` called "effectively orphaned" (mailto) in 3 places; route diagram + cross-cutting findings referenced `WorldMapV2` | Rewrote `/map` section header + summary (points to `MAP_HOME_SITUATION_LEDGER.md`/`ARCHITECTURE.md` for detail instead of re-authoring line-by-line); struck `MapSidePanel` refs; corrected all 3 `/contact` orphan claims (footer now `<Link to="/contact">`, verified in `Layout.jsx:219`); updated route diagram + findings list |
+| `project-docs/architecture/SYSTEM_WIRING.md` | Hooks/components §3.3/§3.5 listed `WorldMapV2` as a live consumer and `MiniMap`/`SectionNav`/`SideNav`/`ApiKeyGate`/`PerspectiveComparison`/hooks as merely "no importers" (now actually deleted); §5 API map listed `WorldMap, WorldMapV2` under Google Maps JS; `appsyncProxy.js` called dead-not-deleted | Updated all to "REMOVED 2026-09-24 (git-recoverable)"; fixed API-map row; noted `aws-amplify` deps uninstalled |
+| `project-docs/architecture/OPTIMIZATION_REPORT.md` | OPT-22 fix-list still listed the now-executed deletions as open backlog | Marked OPT-22 EXECUTED 2026-09-24, split removed vs. still-dead items |
+| `project-docs/architecture/ops/DEPLOYMENT_NOTES.md` (`project-docs/ops/DEPLOYMENT_NOTES.md`) | "As of 2026-09-09 ... `/map-legacy` keeping the old `WorldMapV2`" read as still-current | Added a 2026-09-24 update note: route removed, `/map` now nav-linked |
+| `project-docs/economy/ECONOMIC_DISRUPTION.md` | `/map` row in the per-page surface map described a WorldMapV2 "Economy" lens that was actually already removed pre-cleanup (`d14a2ff`), then the whole map removed today | Row rewritten to reflect both removals and current `/map` state |
+| `project-docs/pairs/_proposed/PAIR_UI_PLAN.md` | 2026-09-08 status banner said pair data's only consumer was the `/map` arc overlays | Added a 2026-09-24 supersede-by-banner: no consumer at all now, future home = Studio lens |
+| `internal-docs/MAP_UPGRADE_FEATURES.md` | Banner said the 4 features "are shipped... live in `WorldMap.jsx`" | Reworded to past tense, notes removal + successor state |
+| `quality/dashboard.md` | Hooks section mentioned only the pre-push hook; the new `.githooks/pre-commit` doc-guard (added today, `TASK_WORKFLOW.md`) wasn't listed alongside it | Added a "Pre-commit hook" line next to the existing "Pre-push hook" line |
+| `project-docs/architecture/ARCHITECTURE.md` | Re-grepped in full | Already thoroughly updated same-day (routes table, Key Components/Hooks, "Removed/never-wired" note, SNS dual-topic section, pair-cron-disabled note all correct) — no further edits needed |
+
+**Left as historical (justified, not fixed):** `project-docs/architecture/{WORLD_MODEL_FRAGMENTS,IMPORTANCE_SCALE_MAPPING,MANAGEMENT_PROPOSAL_2026-09-11,SYSTEM_USAGE_2026-09-11,FRONTEND_STRUCTURE_AUDIT_2026-09-11,FRONTEND_QUALITY_AUDIT_2026-09-11,WORLD_MODEL_VERIFY_2026-09-11}.md` (self-declared dated snapshots, already defer to `ARCHITECTURE.md`/`WORLD_MODEL.md`); `project-docs/_legacy/*` (frozen); `project-docs/redesign-ux/_active/{EVENT_REGISTRY_TAGRECON,PAIR_ARCS_RELOCATION_PLAN,MAP_HOME_SITUATION_PLAN,MAP_HOME_SITUATION_LEDGER,TASK_2026-09-24_pair_arcs_relocation}.md`, `_shipped/{REDESIGN_PLAN,PRODUCT_IMPROVEMENT_PLAN}.md`, `_proposed/REDESIGN_V2_PLAN.md`, `_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md`, `project-docs/economy/_reference/*`, `project-docs/economy/_shipped/ECONOMIC_DISRUPTION_PLAN.md`, `project-docs/prediction/_shipped/RISK_TIERS_PLAN.md` (dated plan/ledger bodies narrating what was true when written, several already banner'd or self-superseding). `significance` field: already correctly documented everywhere as alive (LinkedIn-sort consumer) — no doc called it dead. SNS topics: `ARCHITECTURE.md` already documents both `GlobalPerspectiveAlerts` and `GlobalPerspectivesAlerts` as live — no fix needed.
+
+**Out of scope (code, not docs, flagged for awareness):** `.githooks/pre-push` still greps for `WorldMapV2` in its economic-layer-files trigger pattern — harmless (just means that trigger term can never match again) but is a stale string in a script, not a doc; left untouched per this task's docs-only scope.
+
+**Re-grep after edits:** `grep -rl WorldMapV2 <all .md>` and `grep -rl map-legacy <all .md>` still return the historical/`_legacy`/dated-audit files listed above (expected) plus every file edited in this pass (now correctly framed as past-tense/removed) — no remaining doc asserts either as current.

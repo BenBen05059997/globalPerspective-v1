@@ -1,5 +1,14 @@
 # Frontend Architecture Documentation
 
+> **Stale — superseded (2026-09-24):** this doc predates the 2026-09-24 cleanup (and several
+> earlier redesigns) and describes files no longer in the tree, including `WorldMap.jsx`,
+> `MapSidePanel.jsx`, `BriefingCard.jsx`, `ArticleCard.jsx`, `CountryGrouping.jsx`,
+> `PerspectiveComparison.jsx`, `LoadingStates.jsx`, `MiniMap.jsx`, `SideNav.jsx`, `SectionNav.jsx`,
+> `ApiKeyGate.jsx`, hooks `useSummary`/`usePrediction`/`useTraceCause`/`useBookmarks`/
+> `useResearchBriefing`, `services/appsyncProxy.js`, and `utils/geocoding.js` — all removed
+> 2026-09-24 (git-recoverable). **`project-docs/architecture/ARCHITECTURE.md` is the authoritative,
+> current frontend reference** (routes/components/hooks) — treat everything below as historical.
+
 ## Overview
 
 This is a modern React application focused on AI-powered global news aggregation with sophisticated caching, geographic visualization, and premium UI design. The application provides AI-generated insights (summaries, predictions, root cause analysis) on global news topics, organized geographically and visualized on an interactive map.

@@ -66,4 +66,5 @@ node quality/calibration_report.js     # update calibration + drift
 
 **Daily remote routine:** `trig_01MuDETdraFku7yxBLEs4ZZK` fires 09:00 UTC.
 **CI:** none — this repo is intentionally CI-free; `verify` is a local pre-push gate, not GitHub Actions.
-**Pre-push hook:** install once with `bash scripts/install_hooks.sh`.
+**Pre-push hook:** install once with `bash scripts/install_hooks.sh` (runs `quality/verify_all.sh --fast` when economic-layer files changed).
+**Pre-commit hook:** the same `bash scripts/install_hooks.sh` also activates `.githooks/pre-commit` (added 2026-09-24, `core.hooksPath=.githooks` covers both) — a docs-as-code guard that blocks a commit touching code paths with no `CHANGES.md` entry; see `project-docs/playbooks/TASK_WORKFLOW.md`.

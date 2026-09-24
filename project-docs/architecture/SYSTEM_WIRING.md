@@ -189,16 +189,16 @@ Exported helpers map 1:1 to `newsSensitiveData` actions:
 
 Separate `savedItemsProxy` hits `window.SAVED_ITEMS_ENDPOINT` (newsSavedItems Function URL).
 
-`services/appsyncProxy.js` and `utils/graphqlService.js` are **dead** — no live importers. `aws-amplify` + `@aws-amplify/api-graphql` ride along in `package.json` for no reason.
+`services/appsyncProxy.js` — **REMOVED 2026-09-24** (git-recoverable), was dead/no live importers. (`utils/graphqlService.js` was renamed to `contentService.js` in an earlier pass — no longer exists under that name.) `aws-amplify` + `@aws-amplify/api-graphql` were **removed from `package.json` 2026-09-24** (were riding along for no reason).
 
 ### §3.3 Hooks (22 files; ~14 live)
 
 Live, in active use:
-- `useGeminiTopics` (Home, WorldMapV2)
+- `useGeminiTopics` (Home; formerly also WorldMapV2, removed 2026-09-24)
 - `useTodayArchive` (DailyPage today path)
-- `useWeeklyArchive` (WeeklyPage, WorldMapV2)
+- `useWeeklyArchive` (WeeklyPage; formerly also WorldMapV2, removed 2026-09-24)
 - `useThreadAnalyses` (ThreadPage, WeeklyPage, CountryPage)
-- `useCountryIntelligence` (CountryPage, CountryListPage, WorldMapV2)
+- `useCountryIntelligence` (CountryPage, CountryListPage; formerly also WorldMapV2, removed 2026-09-24)
 - `useDailyBrief` (DailyPage)
 - `useMarketsGlobal` / `useMarketsCountry` (CountryPage right rail, Home)
 - `useCountryHistory` (CountryPage trajectory)
@@ -209,7 +209,8 @@ Live, in active use:
 - `useIsMobile` (Layout, several pages)
 
 Dead / orphaned (no live importers — verified via grep):
-- `useArticles`, `useBookmarks`, `useSummary`, `usePrediction`, `useTraceCause`, `useResearchBriefing`, `usePairAnalyses`, `usePairIntelligence` (the last two only feed PairListPage / PairPage which are imported in App.jsx but not routed).
+- `useArticles`, `usePairIntelligence` (feeds PairListPage / PairPage which are imported in App.jsx but not routed).
+- `useBookmarks`, `useSummary`, `usePrediction`, `useTraceCause`, `useResearchBriefing`, `usePairAnalyses` — **REMOVED 2026-09-24** (git-recoverable), no longer just orphaned.
 
 The 30-minute LocalStorage cache pattern is implemented inline in ~7 hooks with identical try/catch/JSON.parse/staleness/dispatch boilerplate — strong candidate for a `useCachedFetch(key, ttl, fetcher)` extraction.
 
@@ -228,14 +229,12 @@ These three add to bundle size with no UI.
 
 ### §3.5 Components — orphan inventory
 
-Subagent identified live components ≈ 40 of 67 (+6 atoms). Top orphans confirmed via grep:
-- `MiniMap.jsx` — no importers.
+Subagent identified live components ≈ 40 of 67 (+6 atoms) at the time of this snapshot. Top orphans confirmed via grep (status re-verified 2026-09-24 — several since removed):
+- `MiniMap.jsx`, `SectionNav.jsx`, `SideNav.jsx`, `ApiKeyGate.jsx`, `PerspectiveComparison.jsx` — **REMOVED 2026-09-24** (git-recoverable), no longer just orphaned.
 - `TopicNav.jsx` — no importers.
-- `SectionNav.jsx`, `SideNav.jsx` — no importers.
-- `ApiKeyGate.jsx` — superseded by Firebase auth.
 - `KickstarterBanner.jsx` — campaign ended.
 - `WeeklyLockedPreview.jsx` — early-access mode made all content public.
-- `ArchiveTopicModal.jsx`, `PerspectiveComparison.jsx`, `CopyBriefing.jsx`, `ShareButtons.jsx`, `TrialBanner.jsx`, `ErrorHandling.jsx`, `ErrorModal.jsx` (latter exists but ErrorContext rarely triggers it).
+- `ArchiveTopicModal.jsx`, `CopyBriefing.jsx`, `ShareButtons.jsx`, `TrialBanner.jsx`, `ErrorHandling.jsx`, `ErrorModal.jsx` (latter exists but ErrorContext rarely triggers it).
 - Atoms `Sparkline`, `RiskDeltaPill`, `MacroChip` — built in atom library but never imported by any page (only `EditorialShell`, `StatusStrip`, `RiskScoreBadge` are consumed).
 
 ### §3.6 End-to-end traces
@@ -302,7 +301,7 @@ Marketing drafts (move to `marketing/` to declutter root):
 | Dev.to + OpenRouter | newsPostDevTo | — |
 | Loops (welcome email) | newsSensitiveData | — |
 | Firebase Auth | newsSensitiveData, newsSavedItems (verify) | AuthContext.jsx |
-| Google Maps JS | — | WorldMap, WorldMapV2, WeeklyMap, CountryPage |
+| Google Maps JS | — | WeeklyMap, CountryPage (WorldMap.jsx/WorldMapV2.jsx removed 2026-09-24) |
 
 ---
 

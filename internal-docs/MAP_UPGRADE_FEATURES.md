@@ -1,7 +1,7 @@
 # World Map Upgrade — Feature Specifications
 
-> **LEGACY PLANNING DOC — All 4 features described here are shipped.**
-> Features 1 (connection lines), 2 (topic markers), 7 (story flow / Related Countries mode), and 9 (side panel) are live in `WorldMap.jsx`.
+> **LEGACY PLANNING DOC — All 4 features described here shipped, then the map itself was removed.**
+> Features 1 (connection lines), 2 (topic markers), 7 (story flow / Related Countries mode), and 9 (side panel) were live in `WorldMap.jsx`, which — along with its successor `WorldMapV2.jsx` — was **removed 2026-09-24** (`CLEANUP_AUDIT_2026-09-24.md` §4); `/map` is now `SituationHome`.
 > This document is kept for historical context.
 
 ---

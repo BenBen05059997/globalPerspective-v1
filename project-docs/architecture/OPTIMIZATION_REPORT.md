@@ -166,13 +166,15 @@ Items ranked **P0 (broken/security) → P1 (cost or major perf) → P2 (correctn
 
 ## P3 — Hygiene and dead code
 
-### OPT-22. Dead components/hooks/utils on frontend
-- **Components (no live importers):** `MiniMap.jsx`, `TopicNav.jsx`, `SectionNav.jsx`, `SideNav.jsx`, `ApiKeyGate.jsx`, `KickstarterBanner.jsx`, `WeeklyLockedPreview.jsx`, `ArchiveTopicModal.jsx`, `PerspectiveComparison.jsx`, `CopyBriefing.jsx`, `ShareButtons.jsx`, `TrialBanner.jsx`, `ErrorHandling.jsx`. Plus `Pricing`, `PairPage`, `PairListPage` are imported in `App.jsx` but no `<Route>` references them.
-- **Hooks (no live importers):** `useArticles`, `useBookmarks`, `useSummary`, `usePrediction`, `useTraceCause`, `useResearchBriefing`. `usePairAnalyses` + `usePairIntelligence` only feed the dead Pair pages.
-- **Utils:** `services/appsyncProxy.js`, `utils/graphqlService.js` — no live importers; `aws-amplify` + `@aws-amplify/api-graphql` deps ride along in `package.json`.
-- **Atoms:** `Sparkline`, `RiskDeltaPill`, `MacroChip` — built but never imported.
-- **Impact:** Subagent estimated ~5,800 LOC removable. Smaller bundle, less surface to maintain.
-- **Fix:** Single cleanup commit. Easy to verify via grep before deletion.
+### OPT-22. Dead components/hooks/utils on frontend — **EXECUTED 2026-09-24** (see `CLEANUP_AUDIT_2026-09-24.md` §4 Tier B)
+- **Components — REMOVED 2026-09-24 (git-recoverable):** `MiniMap.jsx`, `SectionNav.jsx`, `SideNav.jsx`, `ApiKeyGate.jsx`, `PerspectiveComparison.jsx`, `BriefingCard.jsx`, `CountryGrouping.jsx`, `ArticleCard.jsx`, `LoadingStates.jsx`, `MapSidePanel.jsx`, `WorldMap.jsx`, `WorldMapV2.jsx`.
+- **Components still dead (no live importers, not deleted):** `TopicNav.jsx`, `KickstarterBanner.jsx`, `WeeklyLockedPreview.jsx`, `ArchiveTopicModal.jsx`, `CopyBriefing.jsx`, `ShareButtons.jsx`, `TrialBanner.jsx`, `ErrorHandling.jsx`. `Pricing`, `PairPage`, `PairListPage` are still imported in `App.jsx` with no `<Route>` referencing them.
+- **Hooks — REMOVED 2026-09-24:** `useBookmarks`, `useSummary`, `usePrediction`, `useTraceCause`, `useResearchBriefing`, `usePairAnalyses`.
+- **Hooks still dead (not deleted):** `useArticles`, `usePairIntelligence` (feeds the still-dead Pair pages).
+- **Utils — REMOVED 2026-09-24:** `services/appsyncProxy.js`, `utils/geocoding.js`; `aws-amplify` + `@aws-amplify/api-graphql` deps uninstalled from `package.json`. (`utils/graphqlService.js` was renamed to `contentService.js` in an earlier, unrelated pass.)
+- **Atoms:** `Sparkline`, `RiskDeltaPill`, `MacroChip` — built but never imported (not deleted).
+- **Impact:** ~2,800 LOC removed 2026-09-24; build/vitest verified green.
+- **Remaining fix:** the still-dead items above (Pricing/PairPage/PairListPage, TopicNav, etc.) are separate, un-actioned candidates — easy to verify via grep before deletion.
 
 ### OPT-23. Dead code in `newsPostLinkedIn`
 - **File:** `newsPostLinkedIn/src/index.js`

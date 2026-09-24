@@ -1,5 +1,11 @@
 # Site Orientation Plan — make `/` land, make the pages legible
 
+> **Superseded-by-banner (2026-09-24):** the "Map `/map`" / P5 dead-weight narration below
+> describes the 2026-07-06 state. As of 2026-09-24, `WorldMapV2.jsx` and `/map-legacy` were
+> removed; `/map` is now SituationHome only; `pair_analyses_list` has **no** frontend consumer
+> (P5's premise — that it's live-consumed — no longer holds). See
+> `project-docs/architecture/CLEANUP_AUDIT_2026-09-24.md` §4 D3.
+
 **Status:** PROPOSED (2026-07-06) · **Owner:** solo operator + agent
 **Principle:** the site has no feature gap — it has a feature-surplus with an orientation gap. Nothing here adds a page or a backend. Everything is additive, reversible, frontend-only (except P4's Worker edit).
 

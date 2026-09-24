@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Pre-commit hook: docs-as-code guard (project-docs/playbooks/TASK_WORKFLOW.md).
+# Installed via scripts/install_hooks.sh (sets core.hooksPath=.githooks).
+# Bypass with `SKIP_DOC_GUARD=1 git commit ...` or `git commit --no-verify`.
+
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+# Skip on merge/rebase commits — the hook only cares about ordinary commits.
+git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 && exit 0
+
+# Explicit env bypass.
+[ -n "$SKIP_DOC_GUARD" ] && exit 0
+
+STAGED=$(git diff --cached --name-only)
+[ -z "$STAGED" ] && exit 0
+
+# CODE paths this repo treats as "code" for doc-guard purposes.
+CODE_RE='^(amplify/backend/function/.*|global-perspectives-starter/frontend/src/.*|scripts/.*|quality/[^/]*\.js)$'
+
+CODE_STAGED=$(printf '%s\n' "$STAGED" | grep -E "$CODE_RE" | grep -vx 'docs/config.js' || true)
+
+# Nothing code-shaped staged — nothing to guard.
+[ -z "$CODE_STAGED" ] && exit 0
+
+# RULE 1 (blocking): code staged without a CHANGES.md entry.
+if ! printf '%s\n' "$STAGED" | grep -qx 'CHANGES.md'; then
+  echo "==> Code files are staged but CHANGES.md has no entry (docs-as-code rule, project-docs/playbooks/TASK_WORKFLOW.md)."
+  echo "    Add a dated CHANGES.md entry for this change, re-stage, and commit again."
+  echo "    Bypass (rare, use sparingly): SKIP_DOC_GUARD=1 git commit ...   or   git commit --no-verify"
+  exit 1
+fi
+
+# RULE 2 (reminder only — never blocks, never fails the hook). Best-effort,
+# grep-based, fail-open: any error in this block is swallowed and skipped.
+{
+  TASK_FILES=$(find project-docs -type f -path '*/_active/TASK_*.md' 2>/dev/null)
+  for tf in $TASK_FILES; do
+    [ -f "$tf" ] || continue
+
+    STATUS_LINE=$(grep -m1 -E '^## .+ — [0-9]{4}-[0-9]{2}-[0-9]{2} — ' "$tf" 2>/dev/null || true)
+    [ -n "$STATUS_LINE" ] || continue
+    printf '%s' "$STATUS_LINE" | grep -qi 'done *$' && continue
+
+    AFFECTED_CODE=$(awk '/\*\*Changes \(code/{f=1;next} /^\*\*[A-Z]/{f=0} f' "$tf" 2>/dev/null || true)
+    [ -n "$AFFECTED_CODE" ] || continue
+
+    MATCH=0
+    for f in $CODE_STAGED; do
+      base=$(basename "$f")
+      if printf '%s' "$AFFECTED_CODE" | grep -qF "$f" || printf '%s' "$AFFECTED_CODE" | grep -qF "$base"; then
+        MATCH=1
+        break
+      fi
+    done
+    [ "$MATCH" = "1" ] || continue
+
+    AFFECTED_DOCS=$(awk '/\*\*Docs to update/{f=1;next} /^\*\*[A-Z]/{f=0} f' "$tf" 2>/dev/null || true)
+    [ -n "$AFFECTED_DOCS" ] || continue
+
+    echo "==> Reminder: staged code matches open task '$tf'."
+    echo "    Docs it lists that are not staged in this commit:"
+    printf '%s\n' "$AFFECTED_DOCS" | while IFS= read -r line; do
+      doc=$(printf '%s' "$line" | grep -oE '[A-Za-z0-9_./-]+\.md' | head -1)
+      [ -n "$doc" ] || continue
+      printf '%s\n' "$STAGED" | grep -qF "$doc" || echo "      - $line"
+    done
+  done
+} 2>/dev/null || true
+
+exit 0

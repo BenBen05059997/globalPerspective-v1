@@ -24,7 +24,27 @@ Done-check: [ ] code  [ ] docs updated (same commit)  [ ] CHANGES.md entry  [ ] 
 ## Where task entries live
 
 - **In-session / ephemeral:** the `TodoWrite` tool (no file needed).
-- **Cross-session / worth recording:** append the entry to the relevant `project-docs/<domain>/_active/` plan doc, or start a new one there.
+- **Cross-session / worth recording:** copy `TASK_TEMPLATE.md` (this folder) to
+  `project-docs/<domain>/_active/TASK_<YYYY-MM-DD>_<slug>.md`, or append the entry to the relevant `project-docs/<domain>/_active/` plan doc.
+
+## Task files + pre-commit doc-guard (mechanized enforcement)
+
+The convention above is partially enforced mechanically:
+
+- **Task files:** for any non-trivial multi-file goal, copy `TASK_TEMPLATE.md` to
+  `project-docs/<domain>/_active/TASK_<YYYY-MM-DD>_<slug>.md` before starting. Fill in
+  Goal / Reads / Changes (code) / Docs to update / Completion checklist. Flip the header's
+  status from `active` to `done` when the task finishes, in the same commit as the last doc update.
+- **`.githooks/pre-commit`** (active automatically — `core.hooksPath` is already `.githooks`,
+  same mechanism as `pre-push`):
+  - **Blocks** a commit that stages files under `amplify/backend/function/**`,
+    `global-perspectives-starter/frontend/src/**`, `scripts/**`, or `quality/*.js` without also
+    staging a `CHANGES.md` entry. Bypass with `SKIP_DOC_GUARD=1 git commit ...` or
+    `git commit --no-verify` for genuine one-offs (WIP branches, reverts).
+  - **Reminds (never blocks):** if a staged code file appears in an open (`active`, not `done`)
+    task file's "Changes (code)" list, prints that task file's "Docs to update" entries which
+    aren't staged — a nudge, not a gate. Best-effort grep heuristic; fails open on any parse error.
+  - Regression self-test: `scripts/test_pre_commit_hook.sh` (throwaway repo, never touches this one).
 
 ## Doc lifecycle (our informal ADR model)
 

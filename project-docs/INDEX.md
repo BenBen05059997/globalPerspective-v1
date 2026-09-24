@@ -227,7 +227,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 - **[AGENT_REVIEW_METHOD.md](playbooks/AGENT_REVIEW_METHOD.md)** — Multi-agent doc/code verification method (used for the 2026-09-08 sweep).
 - **[BUG_PLAYBOOK.md](playbooks/BUG_PLAYBOOK.md)** — On-demand bug-fighting checks (no CI by design).
 - **[PLAN_EXECUTION_PLAYBOOK.md](playbooks/PLAN_EXECUTION_PLAYBOOK.md)** — Declare→do→update loop for a multi-phase plan worked task-by-task across sessions/agents; the durable execution-ledger convention (extends TASK_WORKFLOW).
-- **[TASK_WORKFLOW.md](playbooks/TASK_WORKFLOW.md)** — Single-task declare-then-update (docs-as-code, same-commit rule).
+- **[TASK_WORKFLOW.md](playbooks/TASK_WORKFLOW.md)** — Single-task declare-then-update (docs-as-code, same-commit rule); template: `TASK_TEMPLATE.md`; enforced by `.githooks/pre-commit` (blocks code commits missing a CHANGES.md entry, reminds of open task files' unstaged docs).
 
 ## Ops & deployment
 

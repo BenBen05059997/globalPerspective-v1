@@ -46,9 +46,25 @@ function runLimited(task) {
   });
 }
 
-// Single proxy POST + JSON parse, run through the concurrency limiter.
-async function limitedProxyFetch(headers, action, payload) {
-  return runLimited(async () => {
+// In-flight request de-dupe: identical concurrent action+payload(+auth) calls collapse into one
+// network request instead of each caller firing its own (e.g. useGeminiTopics mounted
+// independently by Home, AnalysisStudio, and IntelligenceLoader — up to 9x duplicate requests
+// per page load). Keyed on a stable serialization of [action, payload, Authorization] — payload
+// shapes here are plain objects/arrays of strings (no functions/circular refs), so
+// JSON.stringify is a safe key. Including the Authorization header value in the key scopes
+// proxyActionWithAuth calls per-auth-state, so two different signed-in users (or signed-in vs
+// anon) never share a de-duped response. This is de-dupe, not a cache: the map entry is cleared
+// as soon as the promise settles (success OR failure — an in-flight error is not cached), so the
+// next call after completion always re-fetches. See STAGE0_FIXES_PLAN.md item (f).
+const inFlightRequests = new Map();
+
+// Single proxy POST + JSON parse, run through the concurrency limiter + in-flight de-dupe.
+function limitedProxyFetch(headers, action, payload) {
+  const key = JSON.stringify([action, payload, headers.Authorization || '']);
+  const existing = inFlightRequests.get(key);
+  if (existing) return existing;
+
+  const promise = runLimited(async () => {
     const res = await fetch(PROXY_ENDPOINT, {
       method: 'POST',
       headers,
@@ -57,7 +73,12 @@ async function limitedProxyFetch(headers, action, payload) {
     let body;
     try { body = await res.json(); } catch { body = null; }
     return { res, body };
+  }).finally(() => {
+    inFlightRequests.delete(key);
   });
+
+  inFlightRequests.set(key, promise);
+  return promise;
 }
 
 export async function proxyAction(action, payload = {}) {

@@ -1,5 +1,25 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 item (f): de-dupe in-flight restProxy requests)
+
+`STAGE0_FIXES_PLAN.md` §(f): `limitedProxyFetch()` in `restProxy.js` (the single choke point both
+`proxyAction` and `proxyActionWithAuth` call through) now keeps an in-flight request map keyed on
+`JSON.stringify([action, payload, Authorization])` — a second identical concurrent call returns
+the same pending promise instead of firing its own `fetch`, fixing e.g. `useGeminiTopics` (mounted
+independently by `Home.jsx`, `AnalysisStudio.jsx`, and `IntelligenceLoader.jsx`, all with the same
+`topics` action/no-payload shape — confirmed by grep before assuming de-dupe alone would fix it)
+firing up to 9x duplicate requests per page load. Keying in the `Authorization` header value
+scopes `proxyActionWithAuth` de-dupe per-auth-state, so two different signed-in users (or
+signed-in vs anon) never share a response. The map entry is cleared in a `.finally()` on success
+*or* failure, so this is de-dupe, not a cache — an in-flight error is never cached, and the next
+call after any settlement always re-fetches. The existing 4-slot concurrency limiter
+(`runLimited`) is untouched and still wraps the de-duped fetch.
+
+Verify: `npm run verify` 184/184, 0 lint errors; build main chunk unchanged; `verify_pages.sh`
+32/0; `auth-guard-check.mjs` PASS. DevTools duplicate-request-count verification on `/`,
+`/economy`, `/weekly/country/:name` deferred to the monitor per this task's hard rules (executor
+does not browser-test).
+
 ## 2026-09-24 (Stage-0 item (e): Home member-perk hint links to `/membership`)
 
 `STAGE0_FIXES_PLAN.md` §(e): `Home.jsx`'s corrections trust-card wrapped its number+label AND its

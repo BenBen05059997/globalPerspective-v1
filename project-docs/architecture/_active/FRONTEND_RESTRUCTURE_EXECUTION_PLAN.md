@@ -125,6 +125,8 @@ org/naming decision, not a runtime config knob").
    - Revert with `git revert <phase-sha>` (never `git reset --hard` on a shared branch without
      explicit operator sign-off), then stop and report what broke before attempting the phase
      again.
+5b. **Bundle-hash note (monitor, verified after P0):** `vite.config.js` injects `__BUILD_SHA__` (git short sha) and `__BUILD_DATE__` via `define`, so the main bundle's filename hash changes on EVERY commit even with no code change. **Never treat a hash change alone as a signal.** The per-phase check is instead: (i) main-bundle byte size equals the pre-phase size (±a few bytes for the sha string), and (ii) if size differs, prettify both bundles and diff with the sha literal masked — only import-order/module-id churn is acceptable. Pre-P0 and post-P0 main bundle: **1,046.07 kB**.
+
 6. **Never deploy or touch `amplify/` Lambda paths** as part of this programme. §2.6 of the
    design is final: backend paths are out of scope. If a phase's grep sweep surfaces a
    Lambda-side comment referencing a moved frontend path (e.g. `riskDimensions.js` mentioning

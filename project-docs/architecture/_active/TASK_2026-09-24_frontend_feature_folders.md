@@ -17,7 +17,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 
 | Phase | What moves / changes (file groups — exact lists in the plan's §2) | Status | Commit |
 |---|---|---|---|
-| P0 | delete 5 orphans; harden verify_pages.sh, pre-push regex, auth-guard-check.mjs | ✅ done | see CHANGES |
+| P0 | delete 5 orphans; harden verify_pages.sh, pre-push regex, auth-guard-check.mjs | ✅ done | 703995b (monitor ✓: 184 tests, guards 32/32, auth-guard pass, bundle 1,046.07 kB) |
 | P1 | `@/` alias (vite.config.js, jsconfig.json), codemod all imports, move-module.mjs | ⬜ remaining | |
 | P2 | `app/` (routing, layout, onboarding) + `shared/` (api, contexts, data, hooks, lib, ui, styles) | ⬜ remaining | |
 | P3 | features/static + features/spider-demo | ⬜ remaining | |

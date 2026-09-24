@@ -21,7 +21,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 | P1 | `@/` alias (vite.config.js, jsconfig.json), codemod all imports, move-module.mjs | ✅ done | d11996c (monitor ✓: 184 tests, bundle 1,046.07 kB, 0 stray relative imports, guards 32/32; browser: 11 routes render, console clean from load on /map + /weekly/country/Iran) |
 | P2 | `app/` (routing, layout, onboarding) + `shared/` (api, contexts, data, hooks, lib, ui, styles) | ✅ done | 915c236 + follow-up (monitor ✓: 184 tests, bundle 1,046.07 kB, CSS 295.60 kB unchanged, guards 32/32; +45 side-effect CSS imports → `@/`) |
 | P3 | features/static + features/spider-demo | ✅ done | 95044fa (monitor ✓: 184 tests, bundles 1,046.07/295.60 kB, 0 stray rel. imports, guards 32/32; browser: 6 routes render incl. /spider-demo causal web, console clean) |
-| P4 | features/weekly-brief, daily, track-record | ✅ done | see CHANGES |
+| P4 | features/weekly-brief, daily, track-record | ✅ done | b225166 (monitor ✓: 184 tests, bundles 1,046.07/295.60 kB, 0 stray, guards 32/32; browser: /, /weekly-brief, /track-record, /daily render; /daily/2026-09-12 full brief renders — today empty = DeepSeek outage, not code) |
 | P5 | features/map | ⬜ remaining | |
 | P6 | features/breaking + account | ⬜ remaining | |
 | P7 | features/analysis-studio | ⬜ remaining | |

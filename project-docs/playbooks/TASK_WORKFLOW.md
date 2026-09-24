@@ -23,7 +23,7 @@ Done-check: [ ] code  [ ] docs updated (same commit)  [ ] CHANGES.md entry  [ ] 
 
 ## Where task entries live
 
-- **In-session / ephemeral:** the `TodoWrite` tool (no file needed).
+- **In-session / ephemeral:** the in-session task list (no file needed).
 - **Cross-session / worth recording:** copy `TASK_TEMPLATE.md` (this folder) to
   `project-docs/<domain>/_active/TASK_<YYYY-MM-DD>_<slug>.md`, or append the entry to the relevant `project-docs/<domain>/_active/` plan doc.
 

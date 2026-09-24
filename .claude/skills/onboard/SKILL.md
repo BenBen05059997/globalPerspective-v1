@@ -1,58 +1,22 @@
 ---
 name: onboard
-description: Read project documentation to understand the Global Perspectives architecture. Use when starting a new session, when asked "understand the project", "read the docs", "get context", "what is this project", or when Claude needs to understand the codebase before making changes.
+description: Read project documentation to understand the Global Perspectives architecture. Use when asked to orient, "read the docs", "get context", or "what is this project" — not automatically at every session start.
 allowed-tools: Read, Glob, Grep
 ---
 
 # Onboard: Understand the Global Perspectives Project
 
-## When to Use This Skill
+## Read, in order
 
-Use this skill when:
-- Starting a new conversation about this project
-- User asks "understand the project" or "get familiar with the codebase"
-- User asks "what is this project" or "how does this work"
-- Before making significant changes to understand context
-- User says "read the docs" or "onboard yourself"
+1. `README.md` (repo root) — the router.
+2. `project-docs/INDEX.md` — the full doc map, grouped by domain and status.
+3. `project-docs/architecture/ARCHITECTURE.md` — authoritative system reference (Lambda
+   inventory, DDB schemas, frontend routes/components/hooks). Trust it over any other doc on
+   drift; deployed AWS state beats even this.
 
-## What to Read
+If a task touches active work, also open the relevant `_active/` plan named in INDEX before
+proposing next steps.
 
-Read this single file — it is the authoritative, up-to-date architecture reference:
+## Related skills
 
-```
-/Users/benlai/Downloads/globalPerspective-v1/ARCHITECTURE.md
-```
-
-It covers everything in one place:
-- What the project does
-- All 4 Lambda functions and their actual APIs/models
-- DynamoDB table schemas
-- Frontend routes, components, hooks, and service layers
-- Narrative threading system
-- Deployment workflow
-- Key file locations
-- Common mistakes
-
-## Important Warnings
-
-**Do NOT rely on these older docs — they are outdated:**
-- `HYBRID_NEWS_ARCHITECTURE.md` — pre-xAI design doc
-- `INTEGRATION_NOTES_Gemini_AppSync.md` — Gemini/AppSync era, both since replaced
-- `NEWS_API_INTEGRATION_PLAN.md` — old planning doc
-- `global-perspectives-starter/frontend/FRONTEND_ARCHITECTURE.md` — secondary reference only
-- `BACKEND_GUIDE.md` — secondary reference only
-
-If those files contradict `ARCHITECTURE.md`, trust `ARCHITECTURE.md`.
-
-## After Reading
-
-You should be able to:
-- Explain the full pipeline: RSS/Brave → xAI Grok → DynamoDB → REST proxy → React frontend
-- Identify which Lambda handles what (newsInvokeGemini, NewsProjectInvokeAgentLambda, newsSensitiveData, newsPostLinkedIn)
-- Know the correct deployment workflow (build → copy to docs/ → commit)
-- Navigate the frontend component and hook structure
-- Understand the narrative threading / threadId system
-
-## Related Skills
-
-- `/deploy-frontend` — Deploy frontend changes to production
+- `deploy-frontend` — build and deploy frontend changes to production.

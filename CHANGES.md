@@ -1,5 +1,34 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Context hygiene: repo-file execution of the decision doc's §4a, no code change)
+
+Executed `project-docs/architecture/CONTEXT_HYGIENE_DECISIONS_2026-09-24.md` §4a items 1–12
+(operator-approved). Removed the parked-credits "Active task" framing and the authorization
+contradictions from repo `CLAUDE.md` (rewritten 237→69 lines): `./deploy.sh` still needs a fresh
+"yes" every time, `git push` is standing-allowed once verify/hooks pass (with a note to
+`gh auth switch --user BenBen05059997` on a 403), and the deploy section is a single pointer to
+`deploy.sh` instead of three duplicated copies. `PROD_CREDITS_NEXT_STEPS.md` moved
+`billing/_active/` → `billing/_proposed/` with a PARKED banner (INDEX + GLOSSARY.md updated).
+Deleted `.claude/loop-prompt.md` (stale queue file, git-recoverable). Rewrote
+`.claude/skills/{onboard,deploy-frontend}/SKILL.md` to point at current docs and drop drift
+(wrong Lambda count, `benben05059997.github.io` URL, "Amplify" backend-deploy claim, `Sonnet 4.5`
+footer). Rewrote `.agents/product-marketing-context.md`'s business-model facts (Polar $15/mo or
+$150/yr, no Enterprise tier, reading free, no Loops.so, only LinkedIn+Bluesky active). Reconciled
+`agent-kit/PROJECT.md`'s `<NEVER_TOUCH>` list with `CLAUDE.md`'s authorization wording and
+replaced `[[slug]]` wiki-links with plain text. Fixed the `TodoWrite`/in-session-task-list wording
+in `project-docs/playbooks/{TASK_WORKFLOW,PLAN_EXECUTION_PLAYBOOK}.md`. Removed README.md's
+already-stale "root `src/` legacy scaffold" bullet (the directory no longer exists). Split
+`ARCHITECTURE.md`'s 26KB line-5 history paragraph into a new, append-only
+`project-docs/architecture/ARCHITECTURE_VERIFICATION_LOG.md`, replaced it with a one-line
+pointer, fixed the "AI Provider (as of 2026-05-16)" lead-in to current, and collapsed
+§Deployment Workflow to a 2-line pointer (§Common Mistakes untouched — canonical). Moved
+`global-perspectives-starter/frontend/FRONTEND_ARCHITECTURE.md` → `project-docs/_legacy/`
+(INDEX row added; dated CHANGES.md/audit-doc mentions of the old path left as historical record).
+Verification: `grep -rn "Active task\|MultiEdit\|TodoWrite\|Root \`src/\`"` over the touched
+paths returns nothing; `wc -l CLAUDE.md` = 69; `quality/verify_pages.sh` 32/32;
+`scripts/test_pre_commit_hook.sh` all green. No code under `frontend/src` or `amplify/**/src`
+touched. §4b (auto-memory) and §4c (operator-owned files) are out of scope for this pass.
+
 ## 2026-09-24 (pre-push hook: stale WorldMapV2 trigger token removed)
 
 `.githooks/pre-push`'s economic-layer trigger regex still listed `WorldMapV2` (deleted today) — harmless (never matches) but stale; removed. Flagged by the doc-staleness sweep.

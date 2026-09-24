@@ -1,237 +1,69 @@
-# Claude Instructions for Global Perspectives Project
-
-This file contains critical instructions for Claude to follow when working on this project.
-
-## Orientation & docs discipline
-
-- **New here?** `README.md` (repo root) + **`project-docs/INDEX.md`** map the whole workspace; **`project-docs/architecture/ARCHITECTURE.md`** is the authoritative system reference — trust it over any other doc on drift.
-- **Docs-as-code rule (anti-drift):** when a code change makes a `project-docs/` doc, an `ARCHITECTURE.md` section, or `CHANGES.md` stale, **update it in the same commit**. Declare a task's referenced/changed files up front and update the listed docs on completion — see `project-docs/playbooks/TASK_WORKFLOW.md`. This repo is **CI-free by design**, so this discipline (plus the on-demand `project-docs/playbooks/AGENT_REVIEW_METHOD.md` sweep) is the only thing preventing doc drift.
-- The old root `src/` legacy Amplify scaffold was removed 2026-09-24 (git-recoverable); the frontend is `global-perspectives-starter/frontend/src/`; `docs/` is Pages build output, never hand-edited except `config.js`.
-
-## Agent Operating Rules (agent-kit)
-
-Standing autonomy / verify / git / deploy discipline lives in **`agent-kit/`** (read at session start):
-
-- **`agent-kit/PROJECT.md`** — this repo's bindings: the `<PLACEHOLDER>` values (verify cmd, deploy cmd, prod URL, `NEVER_TOUCH` list) every playbook references. **Start here.**
-- **`agent-kit/CLAUDE.template.md`** — autonomy rules ("keep going" on reversible work), halt conditions, the never-without-auth list, the deploy gate.
-- **`agent-kit/playbooks/`** — `VERIFY.md` (4-layer ladder), `COMMIT_PUSH.md`, `WORKTREE_CONCURRENCY.md`, `AUTOMATION_LOOP.md`.
-- **`agent-kit/ralph-loop.sh`** — the repo-bound autonomous loop wrapper (queue-driven, verify-gated, never deploys).
-
-Quick bindings (full table in `agent-kit/PROJECT.md`):
-
-| What | This repo |
-|---|---|
-| Verify (pre-commit gate) | `cd global-perspectives-starter/frontend && npm run verify` |
-| Deploy (gated — explicit "yes" each time) | `./deploy.sh` → then `curl` `https://globalperspective.net` for `200` |
-| Never touch without fresh auth | `docs/config.js`, `.env*`, Polar/billing, Firebase/Lambda env, `git push`, deploy |
-
-The deploy sections below remain authoritative for **how** `deploy.sh` works; the kit governs **when** (the gate) and the general operating discipline.
-
-## Prod AWS Lambda deploys — operator authorization (recorded 2026-07-01)
-
-The operator has **standing authorization for the agent to run production AWS Lambda/infra mutations directly** (`update-function-url-config`, `update-function-configuration`, `update-function-code`, `aws lambda`/`aws events`/`aws dynamodb`/`aws scheduler`) — `settings.local.json` already allowlists these. The prior blocker was the Claude Code auto-mode classifier, **not** the permission allowlist or an authorization gap.
-
-- **Active task:** ship the analysis-credits feature to prod. **Ordered checklist → `project-docs/billing/_active/PROD_CREDITS_NEXT_STEPS.md`** (canonical); full design → `project-docs/billing/_active/POLAR_BILLING_PLAN.md` §5.
-- **Order is load-bearing:** set the prod env vars (`POLAR_CREDIT_PACKS` on `newsPolarBilling`, `MEMBER_MONTHLY_ALLOWANCE` on `newsAnalyze`) **BEFORE** the code deploy, or a paid credit-pack order can be mis-granted as a membership.
-- **Merge-don't-clobber env:** `update-function-configuration` **replaces** the whole Variables map — fetch current env, merge, write back; secrets via a temp file, never inline.
-- **Dual-CORS gotcha (`project-docs/architecture/ARCHITECTURE.md` Common Mistakes #7; corrected 2026-07-25 via live-AWS audit):** only **`newsPolarBilling` and `newsAnalyze`** own CORS in code — their Function-URL CORS config must stay **empty**, else the browser gets a duplicate `Access-Control-Allow-Origin` → "Failed to fetch" (server-side `curl` won't catch it). **`newsSavedItems` and `newsRecommend` are the opposite** — their code emits no ACAO and they rely on a **populated** Function-URL CORS config; do **not** clear theirs (it would remove all CORS and break them). Before touching any function's Function-URL CORS, `grep` its source for `Access-Control-Allow-Origin`: code emits it ⇒ Function-URL CORS empty; code doesn't ⇒ Function-URL CORS populated. Verify with one ACAO header on an `Origin`-bearing request.
-- Still operator-only (dashboard / KYC): creating Polar products, KYC clearance, editing operator-owned `docs/config.js`.
-
-## Project Structure
-
-- **Source Code:** `global-perspectives-starter/frontend/src/`
-- **Build Output:** `global-perspectives-starter/frontend/dist/`
-- **Production Files:** `/docs/` (served by GitHub Pages)
-- **Production URL:** https://globalperspective.net (custom domain via Cloudflare; the `benben05059997.github.io/globalPerspective-v1/` Pages URL still resolves but is not canonical)
-
-## CRITICAL: Frontend Deployment Workflow
-
-**IMPORTANT:** Changes to frontend source files do NOT automatically update production. You must build and deploy.
-
-### TL;DR — one command
-
-The canonical deploy is the repo-root **`./deploy.sh`** script. It does everything below (build → copy to `docs/` → strip `docs/assets/*.map` → resync `docs/404.html` byte-identical → hash-guard `docs/config.js`) in one go:
-
-```bash
-./deploy.sh                      # build + copy to docs/ (review diff, push yourself)
-./deploy.sh --commit "msg"       # ...and commit (still no push)
-./deploy.sh --commit "msg" --push  # ...and push to origin in one shot
-./deploy.sh --skip-build         # copy an already-built dist/ only
-```
-
-Prefer the script over running the manual steps by hand. The manual workflow below documents exactly what the script does (and is the fallback if you can't run it).
-
-### When Frontend Source Files Are Modified (manual reference)
-
-If you modify ANY files in `global-perspectives-starter/frontend/src/`, this is the workflow (automated by `./deploy.sh`):
-
-1. **Build the frontend:**
-   ```bash
-   cd global-perspectives-starter/frontend
-   npm run build
-   ```
-
-2. **Copy build output to production directory:**
-   ```bash
-   # Remove old assets
-   rm -rf ../../docs/assets
-
-   # Copy new build
-   cp -r dist/assets ../../docs/assets
-   cp dist/index.html ../../docs/index.html
-
-   # CRITICAL: source maps are PRIVATE (build.sourcemap:'hidden' emits .map into
-   # dist/ for local stack resolution via scripts/errors.mjs). They must NEVER be
-   # served publicly — strip them from docs/ after the copy.
-   rm -f ../../docs/assets/*.map
-
-   # CRITICAL: 404.html is the GitHub Pages SPA fallback for deep-link refreshes
-   # (e.g. refreshing /economy). It MUST be a byte-for-byte copy of index.html,
-   # otherwise it keeps pointing at a stale (deleted) bundle hash and every
-   # deep-link refresh renders a blank page. Regenerate it on EVERY deploy.
-   cp ../../docs/index.html ../../docs/404.html
-   ```
-
-   **NEVER overwrite** `docs/config.js` - it contains runtime configuration.
-
-3. **Commit both source and production files:**
-   ```bash
-   cd ../..
-   git add docs/assets docs/index.html docs/404.html global-perspectives-starter/frontend/src/
-   git commit -m "Descriptive message about changes"
-   git push
-   ```
-
-### Files That Require Build + Deploy
-
-- `global-perspectives-starter/frontend/src/**/*.jsx` (React components)
-- `global-perspectives-starter/frontend/src/**/*.css` (Stylesheets)
-- `global-perspectives-starter/frontend/src/**/*.js` (JavaScript utilities)
-- Any files in the frontend source directory
-
-### Files That Don't Require Build
-
-- Markdown documentation files (`*.md`)
-- Backend Lambda functions (`amplify/backend/function/*`)
-- Configuration files outside frontend
-
-## Git Commit Guidelines
-
-### Before Committing
-
-1. **Check what changed:**
-   ```bash
-   git status
-   git diff
-   ```
-
-2. **If frontend source files changed:**
-   - Run build process (see above)
-   - Verify build succeeded
-   - Include both source and `/docs/` in commit
-
-3. **Update CHANGES.md:**
-   - Add entry at the top with today's date (YYYY-MM-DD)
-   - Document what changed and which files were modified
-   - Follow existing format for consistency
-   - Stage CHANGES.md with your commit
-
-4. **Review the changes:**
-   - Ensure no sensitive data (API keys, credentials)
-   - Verify only intended files are staged
-
-### Commit Message Format
-
-Follow the existing pattern from `git log`:
-- Clear, descriptive summary
-- Explain the "why" not just the "what"
-- Use present tense ("Add feature" not "Added feature")
-
-## Development Commands
-
-### Frontend Development
-
-```bash
-cd global-perspectives-starter/frontend
-
-# Install dependencies (first time)
-npm install
-
-# Run dev server (does not affect production)
-npm run dev
-
-# Build for production
-npm run build
-
-# Lint code
-npm run lint
-```
-
-### Testing Production Build Locally
-
-After building, you can test the production build locally before pushing:
-
-```bash
-cd global-perspectives-starter/frontend
-npx vite preview
-```
-
-## Important Project Files
-
-- **project-docs/INDEX.md** - Map of all docs (type · purpose · status). START HERE to find the right doc.
-- **project-docs/ops/DEPLOYMENT_NOTES.md** - Full deployment documentation
-- **project-docs/architecture/ARCHITECTURE.md** - Authoritative architecture overview (Lambda inventory, DDB schemas, frontend routes/components/hooks)
-- **CHANGES.md** - Change log (kept at repo root)
-
-## Backend Integration
-
-- **API Gateway Endpoint:** Configured in `docs/config.js`
-- **Lambda Functions:** In `amplify/backend/function/`
-- **DynamoDB Tables:** Managed by Amplify
-- **Cache Strategy:** LocalStorage (1 hour) + DynamoDB backend
-
-## Common Mistakes to Avoid
-
-1. ❌ **Pushing source changes without building**
-   - Source changes won't appear in production
-   - Always build and update `/docs/`
-
-2. ❌ **Overwriting `docs/config.js`**
-   - Contains runtime API endpoints
-   - Only update manually when needed
-
-3. ❌ **Committing sensitive data**
-   - Check for API keys, credentials
-   - Use environment variables
-
-4. ❌ **Not testing build locally**
-   - Always run `npm run build` successfully
-   - Check for build errors before pushing
-
-5. ❌ **Forgetting to resync `docs/404.html`** ← bit us twice (commits `32e0735`, `34643b7`)
-   - `docs/404.html` is the GitHub Pages SPA fallback served on every deep-link
-     refresh (e.g. refreshing `/economy`). It MUST be a byte-for-byte copy of
-     `docs/index.html`, or it keeps pointing at an old/deleted bundle hash and
-     every deep-link refresh renders a blank page.
-   - After copying `index.html`, ALWAYS run: `cp docs/index.html docs/404.html`
-   - Verify before committing: `diff docs/index.html docs/404.html` must be empty.
-
-## Verification Checklist
-
-Before pushing frontend changes:
-
-- [ ] Source files modified
-- [ ] `npm run build` executed successfully
-- [ ] Build output copied to `/docs/`
-- [ ] **`docs/404.html` resynced** → `cp docs/index.html docs/404.html`, then `diff docs/index.html docs/404.html` is empty
-- [ ] **CHANGES.md updated** with new entry
-- [ ] Both source and `/docs/` (incl. `docs/404.html`) staged for commit
-- [ ] Commit message is descriptive
-- [ ] No sensitive data in commit
-- [ ] Ready to push
-
-## Questions?
-
-- Check **project-docs/ops/DEPLOYMENT_NOTES.md** for detailed deployment steps
-- Check **project-docs/architecture/ARCHITECTURE.md** for frontend structure (routes, components, hooks) and the full backend
-- Review recent `git log` for commit patterns
+# Global Perspectives — working notes for Claude
+
+AI global-news intelligence site (globalperspective.net). React frontend served from `docs/` by
+GitHub Pages; ~33 AWS Lambdas (ap-northeast-1) + S3 world store + a few DynamoDB tables + Firebase
+Auth; Cloudflare Worker in front. Solo developer; no CI by design.
+
+## Where truth lives
+- Doc map: `project-docs/INDEX.md`. System reference: `project-docs/architecture/ARCHITECTURE.md`
+  (trust it over other docs; deployed AWS state beats both — check with the AWS CLI).
+- Active work: the `_active/` plans listed in INDEX. Read the relevant one before proposing next steps.
+- Change log: `CHANGES.md`. Storage rules: `project-docs/architecture/DATA_STRATEGY.md`.
+
+## Layout
+- Frontend source: `global-perspectives-starter/frontend/src/`. `docs/` is build output — don't
+  hand-edit it; `docs/config.js` is operator-owned runtime config.
+- Lambdas: `amplify/backend/function/<name>/src/` (deployed manually with the AWS CLI; the name
+  "amplify" is historical). Several deployed zips differ from the repo — diff before editing.
+  `newsAnalyze` specifically is a prompt-patched deployed zip; the repo file carries parked
+  credits code, so don't deploy the repo file over it without a fresh go-live decision.
+- Scripts/checks: `scripts/`, `quality/`, `predictions/`.
+
+## Verify
+- Pre-commit gate: `cd global-perspectives-starter/frontend && npm run verify`.
+- UI changes: exercise every touched control in a browser before calling it done; if you can't
+  run a browser, say so.
+- Hooks already enforce: a CHANGES.md entry on code commits (pre-commit), page guards (pre-push),
+  a docs reminder (Stop hook). You don't need to re-check what they check.
+
+## Working style
+- On reversible work, keep going without asking; report what changed and why as you go.
+- Stop and ask on: a verify failure you can't fix, genuine ambiguity with irreversible outcomes,
+  a business decision (pricing, positioning, legal copy), or anything on the list below.
+- Diagnose-first requests ("why is X…", "check this"): report findings, then wait.
+- Commits: plain descriptive summaries matching `git log`; stage explicit paths; one coherent
+  change per commit. Update the docs a change makes stale in the same commit.
+
+## Authorization
+Standing (operator, recorded 2026-07-01): Lambda code and configuration updates for work the
+operator asked for — `aws lambda update-function-code/-configuration/-url-config`, `aws events`,
+`aws scheduler`, non-destructive `aws dynamodb` reads/writes. Run each as a single bare command
+(not in a loop). When changing env: fetch → merge → write the full map; pass secrets via a temp
+file. Verify after.
+
+`git push` is allowed once verify/hooks pass — no need to ask each time. The GitHub remote
+belongs to account BenBen05059997; if a push 403s as another account, run
+`gh auth switch --user BenBen05059997`, push, then switch back.
+
+Needs a fresh "yes" in the current message every time:
+- `./deploy.sh` (frontend prod deploy)
+- secret values (API keys/tokens), IAM changes, Firebase auth config, `.env*`, `docs/config.js`
+- Polar / billing code or config (credits are parked — not an active task)
+- enabling user-facing sends (email crons), destructive data ops (delete tables/items/S3 prefixes)
+- new paid APIs or dependencies
+
+## Deploying the frontend
+Run `./deploy.sh` (add `--commit "msg"` freely; add `--push` only with a fresh deploy "yes" —
+`--push` rides along with the deploy gate, not the standing push allowance above). It builds,
+copies to `docs/`, strips source maps, keeps `docs/404.html` identical to `index.html`, and
+guards `docs/config.js`. Afterwards: `curl -s -o /dev/null -w "%{http_code}" https://globalperspective.net`
+→ 200, then push once and let Pages settle. Details: `project-docs/ops/DEPLOYMENT_NOTES.md`.
+
+## Product rules that affect code
+- Never invent facts (prices, dates, URLs, handles) — find them in the repo or ask.
+- No placeholder or "something went wrong" UI: fail empty/honest and report to the error sink.
+- Public data hooks never gate on sign-in; membership limits are server-side.
+- Lambda Function-URL CORS: only `newsPolarBilling` and `newsAnalyze` emit CORS in code, so their
+  Function-URL CORS config must stay empty; `newsSavedItems` and `newsRecommend` are the opposite
+  and rely on a populated Function-URL CORS config. Grep the function's source for
+  `Access-Control-Allow-Origin` before touching either side.

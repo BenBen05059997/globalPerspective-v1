@@ -2,9 +2,9 @@
 
 **How-to.** Extends `TASK_WORKFLOW.md` (single-task declare-then-update) to a **large plan worked task-by-task, possibly across sessions and across agents**. Born 2026-09-08 executing `redesign-ux/_active/MAP_HOME_SITUATION_PLAN.md`. Use this whenever a plan is big enough that "which task am I on and what did the last agent already touch?" is a real question.
 
-## Why a ledger, not just TodoWrite
+## Why a ledger, not just the in-session task list
 
-`TodoWrite` is in-session and evaporates. A multi-phase plan outlives the session and may pass between agents. So each such plan gets one **execution ledger** file that is the durable, single source of truth for *what's done, what's in flight, and exactly which files/docs each task touches*. An agent picking up the plan reads the ledger first and knows precisely where to resume.
+The in-session task list is ephemeral and evaporates. A multi-phase plan outlives the session and may pass between agents. So each such plan gets one **execution ledger** file that is the durable, single source of truth for *what's done, what's in flight, and exactly which files/docs each task touches*. An agent picking up the plan reads the ledger first and knows precisely where to resume.
 
 ## The loop (per task)
 

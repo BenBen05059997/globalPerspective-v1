@@ -1,17 +1,17 @@
 # Product Marketing Context
 
-*Last updated: 2026-03-22*
+*Last updated: 2026-09-24*
 
 ## Product Overview
 **One-liner:** AI-powered geopolitical intelligence platform that tracks how stories evolve — not just what happened today.
 
-**What it does:** Global Perspectives ingests news from 20+ international sources across 6 continents hourly, clusters articles into ~13 important topics per cycle, and generates three-layer AI analysis per topic (Summary, Prediction, Trace Cause). A persistent narrative thread system links related events across days and geographies, revealing how stories develop over time. An interactive world map with geodesic connection lines shows how events span borders. Member and Enterprise tiers unlock 7- and 30-day archives, thread-level intelligence (story arcs, root cause chains, trajectory forecasts), and daily country intelligence briefings.
+**What it does:** Global Perspectives ingests news from 20+ international sources across 6 continents hourly, clusters articles into ~13 important topics per cycle, and generates three-layer AI analysis per topic (Summary, Prediction, Trace Cause). A persistent narrative thread system links related events across days and geographies, revealing how stories develop over time. An interactive world map with geodesic connection lines shows how events span borders. All reading is free, including the archive and thread/country intelligence; Polar membership buys deeper correction history, change-alerts on followed countries, and Analysis Studio compute.
 
 **Product category:** Geopolitical intelligence / AI news analysis
 
 **Product type:** Web platform (B2C + B2B), hosted at globalperspective.net (custom domain on GitHub Pages frontend, AWS Lambda backend)
 
-**Business model:** Three tiers — Free (no account required), Member ($15/month via Paddle), Enterprise (contact us). Launch mode active: all signed-in users currently receive Member features free. 14-day free trial coded for when paid plans activate. Paddle is the Merchant of Record. Welcome emails via Loops.so.
+**Business model:** Reading is free, no account required, no archive gating. Polar membership is $15/month or $150/year — it buys Analysis Studio compute + depth (fuller correction history, country change-alerts via email), not access to reading. There is no Enterprise tier. Paddle is dead; Polar is the live Merchant of Record. No welcome-email service is currently wired (Loops.so is not in use).
 
 ## Target Audience
 **Target users:**
@@ -113,7 +113,7 @@
 
 **Habit:** People default to existing feeds and aggregators. Scrolling feels productive even when it doesn't produce understanding.
 
-**Anxiety:** "Is the AI trustworthy?" — addressed by traceable sources. "Will it stay live?" — platform is live, pipeline runs hourly, paid tiers coming.
+**Anxiety:** "Is the AI trustworthy?" — addressed by traceable sources. "Will it stay live?" — platform is live, pipeline runs hourly, membership is live today.
 
 ## Customer Language
 **How they describe the problem:**
@@ -165,25 +165,19 @@
 
 **Product Hunt:** Launched (see PRODUCT_HUNT_PREP.md)
 
-**Launch mode:** All signed-in users receive Member features free until paid tiers activate. 14-day free trial coded and ready.
+**Launch mode:** Membership ($15/month or $150/year via Polar) is live and billing today; there is no free-launch grace period.
 
 ## Goals
-**Business goal:** Grow user base during free launch period, convert to paid at $15/month (Member) when Paddle account approved, establish narrative intelligence positioning in the $0–$50/month gap.
+**Business goal:** Grow user base on the free reading tier, convert a share to Polar membership for Analysis Studio compute + depth, establish narrative intelligence positioning in the $0–$50/month gap.
 
 **Conversion actions:**
 1. Visit globalperspective.net — use the free tier (no account)
-2. Sign in (Firebase auth — magic link or Google) — unlock Member features during launch
-3. Convert to Member ($15/month) when paid tier activates
+2. Sign in (Firebase auth — magic link or Google)
+3. Convert to Polar membership ($15/month or $150/year) for Analysis Studio compute + deeper correction history + country change-alerts
 4. Share or recommend to colleagues
 
 **Active marketing channels:**
-- LinkedIn auto-post Lambda (top topics posted daily)
-- Bluesky, X/Twitter, Threads (via newsPostLinkedIn Lambda)
-- Dev.to (via newsPostDevTo Lambda — deploy.zip pending upload)
-- Welcome email via Loops.so (fires on first sign-in)
+- LinkedIn (via `newsPostLinkedIn` Lambda, daily)
+- Bluesky (via the same Lambda)
 
-**Pending:**
-- Paddle account approval → activate paid tier
-- LinkedIn bulk post scheduling (Buffer)
-- SEO blog at globalperspective.net/blog
-- Map image generation for richer social posts
+**Pending / not currently active:** X/Twitter, Threads, Dev.to, a Buffer-scheduled bulk-post queue, an SEO blog, and richer map-image social posts — none of these are live; verify current status before citing them as active.

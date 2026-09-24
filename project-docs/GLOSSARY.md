@@ -238,7 +238,7 @@ It feeds no map or user-facing surface.
 **What it is:** A planned pay-per-use option for the AI "Analysis Studio" — members get some free
 runs per month, then buy credit packs; non-members could also buy credits without subscribing.
 **Where it comes from:** `newsAnalyze` / `newsPolarBilling` source (credit metering, webhook grant
-logic); checklist `project-docs/billing/_active/PROD_CREDITS_NEXT_STEPS.md`; design
+logic); checklist `project-docs/billing/_proposed/PROD_CREDITS_NEXT_STEPS.md` (PARKED 2026-07-06); design
 `POLAR_BILLING_PLAN.md` §5. Built and sandbox-verified 2026-06-30. Steps 1-3 of the go-live checklist
 are done (CORS fixed 07-01, code pushed, live Polar credit-pack products created 07-01 — $40/10,
 $70/20, $150/50). Steps 4-8 (set prod env vars, deploy the credit code, wire the frontend, verify,

@@ -103,7 +103,9 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 **🔧 active**
 - **[POLAR_BILLING_PLAN.md](billing/_active/POLAR_BILLING_PLAN.md)** — Live billing spec — subscription live; credits built, not in prod. ⚠ token rotation open.
-- **[PROD_CREDITS_NEXT_STEPS.md](billing/_active/PROD_CREDITS_NEXT_STEPS.md)** — Ordered go-live checklist for analysis credits.
+
+**🔭 proposed / not built**
+- **[PROD_CREDITS_NEXT_STEPS.md](billing/_proposed/PROD_CREDITS_NEXT_STEPS.md)** — Ordered go-live checklist for analysis credits. PARKED 2026-07-06 — not an active task.
 
 ## Alerts, email & notifications
 
@@ -247,6 +249,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 - **[AUDIT_FINDINGS_2026-06-24.md](_legacy/AUDIT_FINDINGS_2026-06-24.md)** — Fact-checked problem register (source-truth + scoring).
 - **[FIX_BACKLOG.md](_legacy/FIX_BACKLOG.md)** — Prioritized action list from the audit session.
+- **[FRONTEND_ARCHITECTURE.md](_legacy/FRONTEND_ARCHITECTURE.md)** — Stale (Apr 2026) frontend doc, moved out of the code tree 2026-09-24; trust `architecture/ARCHITECTURE.md` instead.
 - **[FUNCTION_DEBATE.md](_legacy/FUNCTION_DEBATE.md)** — Multi-agent adversarial critique setup.
 - **[FUNCTION_DEBATE_OUTPUT.md](_legacy/FUNCTION_DEBATE_OUTPUT.md)** — Synthesis of the 3-agent function critique.
 - **[GAMMA_PITCH_WITH_CITATIONS.md](_legacy/GAMMA_PITCH_WITH_CITATIONS.md)** — Superseded Gamma.app pitch prompt.

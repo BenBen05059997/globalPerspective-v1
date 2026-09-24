@@ -1,4 +1,7 @@
-# NEXT TASK — ship analysis credits to production
+# Proposed — ship analysis credits to production
+
+**PARKED 2026-07-06 by operator. Not an active task. Do not execute without a fresh operator
+go-live decision.**
 
 **Status (2026-06-30):** credit-buying feature committed to `main` (`6a80b7e`), **sandbox-verified end-to-end**. Prod is **not** affected yet — prod Lambdas still run the pre-credits code, and the frontend was committed source-only (not built into `docs/`). This file is the ordered go-live checklist.
 

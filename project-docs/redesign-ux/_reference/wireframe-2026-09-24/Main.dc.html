@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home — map and stories (desktop)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#fbfbf9;font-family:Inter,system-ui,sans-serif;color:#0a0a0a}
+a{color:#a2442e;text-decoration:none}a:hover{color:#7a2f1e}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1180px; box-sizing: border-box; background: #fbfbf9; display: flex; flex-direction: column;">
+
+<header style="height: 56px; box-sizing: border-box; padding: 0 32px; display: flex; align-items: center; gap: 28px; border-bottom: 1px solid #e5e5e3;">
+<a href="#" style="display: flex; align-items: center; gap: 10px; color: #0a0a0a;">
+<span style="width: 26px; height: 26px; border-radius: 6px; background: #0a0a0a; color: #fbfbf9; display: flex; align-items: center; justify-content: center; font-family: Fraunces, serif; font-size: 15px;">G</span>
+<span style="font-family: Fraunces, serif; font-size: 17px; font-weight: 600;">Global Perspectives</span>
+</a>
+<nav aria-label="Main" style="display: flex; gap: 22px; font-size: 14px; flex-grow: 1;">
+<a href="#" style="color: #0a0a0a; font-weight: 600;">Home</a>
+<a href="#" style="color: #3a3a3c;">Stories</a>
+<a href="#" style="color: #3a3a3c;">Countries</a>
+<a href="#" style="color: #3a3a3c;">Economy</a>
+<a href="Briefings.dc.html" style="color: #3a3a3c;">Briefings</a>
+<a href="#" style="color: #3a3a3c;">Track record</a>
+</nav>
+<a href="#" style="font-size: 13px; padding: 9px 14px; border: 1px solid #d2d2d0; border-radius: 8px; color: #0a0a0a;">Analysis Studio</a>
+<a href="#" style="font-size: 13px; padding: 9px 14px; border-radius: 8px; background: #a2442e; color: #fbfbf9;">Membership</a>
+</header>
+
+<div style="padding: 10px 32px; border-bottom: 1px solid #e5e5e3; display: flex; align-items: center; gap: 14px; background: #fbfbf9;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #a2442e;">TODAY'S LEDE</span>
+<a href="#" style="font-family: Fraunces, serif; font-size: 16px; color: #0a0a0a;">Tens of Thousands March Across Germany to Protest Far-Right AfD After Saxony-Anhalt Victory →</a>
+</div>
+
+<div style="padding: 9px 32px; background: #f4f4f2; border-bottom: 1px solid #e5e5e3; display: flex; align-items: center; gap: 22px; font-size: 13px; color: #3a3a3c;">
+<span><strong style="color: #0a0a0a;">Watching 1 situation</strong> · 1 elevated (humanitarian)</span>
+<span style="color: #b8b8b6;">|</span>
+<span><strong style="color: #0a0a0a;">17 stories</strong> in the news</span>
+<span style="color: #b8b8b6;">|</span>
+<span>Map updated 56 min ago · next in 27 min</span>
+<span style="color: #b8b8b6;">|</span>
+<span style="color: #9a5f14;">Stories last updated 11 days ago</span>
+</div>
+
+<div style="height: 660px; box-sizing: border-box; padding: 16px 32px; display: flex; gap: 16px;">
+
+<sc-if value="{{showMap}}" hint-placeholder-val="{{ true }}">
+<section aria-label="Map" style="{{mapPaneStyle}}">
+<div style="height: 44px; box-sizing: border-box; padding: 0 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #9a9a9e;">MAP</span>
+<label for="layer" style="font-size: 12px; color: #9a9a9e;">Layer</label>
+<select id="layer" style="font-size: 12px; background: #1a1f26; color: #e8e8e6; border: 1px solid #2c333c; border-radius: 6px; padding: 4px 6px;">
+<option>Situations</option>
+<option>Country risk</option>
+<option>Markets</option>
+</select>
+<span style="flex-grow: 1;"></span>
+<button type="button" style="font-size: 12px; background: #1a1f26; color: #e8e8e6; border: 1px solid #2c333c; border-radius: 6px; padding: 5px 10px;">Flat</button>
+<button type="button" style="font-size: 12px; background: transparent; color: #9a9a9e; border: 1px solid #2c333c; border-radius: 6px; padding: 5px 10px;">Globe</button>
+<button type="button" onClick="{{toggleMapFull}}" aria-label="{{mapExpandLabel}}" style="width: 32px; height: 32px; background: #1a1f26; color: #e8e8e6; border: 1px solid #2c333c; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5h4v4M5.5 12.5h-4v-4M12.5 1.5L8 6M1.5 12.5L6 8"/></svg>
+</button>
+</div>
+
+<div style="position: relative; flex-grow: 1; overflow: hidden;">
+<svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100" style="position: absolute; inset: 0;">
+<g stroke="rgba(255,255,255,0.05)" stroke-width="0.15">
+<line x1="0" y1="16.7" x2="100" y2="16.7"/><line x1="0" y1="33.3" x2="100" y2="33.3"/><line x1="0" y1="50" x2="100" y2="50"/><line x1="0" y1="66.7" x2="100" y2="66.7"/><line x1="0" y1="83.3" x2="100" y2="83.3"/>
+<line x1="16.7" y1="0" x2="16.7" y2="100"/><line x1="33.3" y1="0" x2="33.3" y2="100"/><line x1="50" y1="0" x2="50" y2="100"/><line x1="66.7" y1="0" x2="66.7" y2="100"/><line x1="83.3" y1="0" x2="83.3" y2="100"/>
+</g>
+</svg>
+<div style="position: absolute; left: 22%; top: 22%; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: rgba(255,255,255,0.14);">AMERICAS</div>
+<div style="position: absolute; left: 49%; top: 17%; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: rgba(255,255,255,0.14);">EUROPE</div>
+<div style="position: absolute; left: 50%; top: 52%; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: rgba(255,255,255,0.14);">AFRICA</div>
+<div style="position: absolute; left: 70%; top: 26%; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: rgba(255,255,255,0.14);">ASIA</div>
+
+<sc-for list="{{markers}}" as="m" hint-placeholder-count="2">
+<button type="button" onClick="{{m.pick}}" aria-label="{{m.label}}" style="{{m.style}}"></button>
+<sc-if value="{{m.isCountry}}" hint-placeholder-val="{{ false }}">
+<div style="{{m.countryNoteStyle}}">No live situation here — country shown</div>
+</sc-if>
+</sc-for>
+
+<sc-if value="{{hasSelected}}" hint-placeholder-val="{{ true }}">
+<div style="{{calloutStyle}}">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: {{sel.axisColor}};">{{sel.kicker}}</div>
+<div style="font-family: Fraunces, serif; font-size: 14px; line-height: 1.3; color: #f4f4f2; margin-top: 4px;">{{sel.title}}</div>
+<div style="font-size: 11px; color: #9a9a9e; margin-top: 6px;">Details in the story list →</div>
+</div>
+</sc-if>
+
+<sc-if value="{{showAlert}}" hint-placeholder-val="{{ true }}">
+<div role="status" style="position: absolute; top: 12px; right: 12px; width: 300px; box-sizing: border-box; background: #161b22; border: 1px solid #2c333c; border-left: 3px solid #38b6de; border-radius: 8px; padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start;">
+<div style="flex-grow: 1;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #38b6de;">ALERT · ECONOMIC · NEW</div>
+<button type="button" onClick="{{pickSaudi}}" style="background: none; border: none; padding: 0; margin-top: 4px; text-align: left; font-size: 13px; line-height: 1.35; color: #f4f4f2; cursor: pointer;">Saudi Arabia shuts East-West pipeline after drone attack</button>
+</div>
+<button type="button" onClick="{{dismissAlert}}" aria-label="Dismiss alert" style="width: 28px; height: 28px; flex-shrink: 0; background: none; border: 1px solid #2c333c; border-radius: 6px; color: #9a9a9e;">×</button>
+</div>
+</sc-if>
+
+<sc-if value="{{showBanner}}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; left: 12px; right: 12px; bottom: 12px; box-sizing: border-box; background: #fbfbf9; color: #0a0a0a; border-radius: 10px; padding: 14px 16px; display: flex; gap: 16px; align-items: center; box-shadow: 0 6px 24px rgba(0,0,0,0.35);">
+<div style="flex-grow: 1; font-size: 13px; line-height: 1.5; color: #3a3a3c;">
+<strong style="color: #0a0a0a;">This is the world right now.</strong> The map shows live situations — colour is the type, glow is how serious. The list beside it is every story in the news; select either side and the other follows.
+<span style="display: block; margin-top: 4px; color: #9a5f14;">Story updates are paused since Sep 13 — the disaster feed on the map is still live.</span>
+</div>
+<button type="button" onClick="{{dismissBanner}}" style="flex-shrink: 0; height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid #0a0a0a; background: #0a0a0a; color: #fbfbf9; font-size: 13px;">Got it</button>
+</div>
+</sc-if>
+
+<div style="position: absolute; left: 12px; top: 12px; display: flex; gap: 10px; font-size: 11px; color: #9a9a9e; background: rgba(15,19,24,0.85); padding: 6px 10px; border-radius: 6px;">
+<span style="color: #ee7754;">● Conflict</span><span style="color: #9b8cf8;">● Political</span><span style="color: #38b6de;">● Economic</span><span style="color: #d89e28;">● Humanitarian</span>
+</div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{showList}}" hint-placeholder-val="{{ true }}">
+<section aria-label="Stories" style="{{listPaneStyle}}">
+<div style="padding: 12px 16px 10px; border-bottom: 1px solid #e5e5e3; display: flex; flex-direction: column; gap: 8px;">
+<div style="display: flex; align-items: center; gap: 10px;">
+<h2 style="margin: 0; font-family: Fraunces, serif; font-size: 20px; font-weight: 600;">Stories</h2>
+<span style="font-size: 12px; color: #6a6a6e;">17 · most important first</span>
+<span style="flex-grow: 1;"></span>
+<button type="button" onClick="{{toggleListFull}}" aria-label="{{listExpandLabel}}" style="width: 32px; height: 32px; background: #fbfbf9; color: #3a3a3c; border: 1px solid #d2d2d0; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.5 1.5h4v4M5.5 12.5h-4v-4M12.5 1.5L8 6M1.5 12.5L6 8"/></svg>
+</button>
+</div>
+<div style="display: flex; gap: 6px; flex-wrap: wrap;">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+<button type="button" onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="{{c.style}}">{{c.label}}</button>
+</sc-for>
+</div>
+<div style="font-size: 11px; color: #6a6a6e;">Stories without a live situation highlight their country on the map. <a href="#after-list" style="font-size: 11px;">Skip past the story list</a></div>
+</div>
+<div style="flex-grow: 1; overflow-y: auto; overscroll-behavior: contain;">
+<sc-for list="{{stories}}" as="s" hint-placeholder-count="6">
+<sc-if value="{{s.divider}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 8px 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #9a9a9e; background: #f4f4f2;">DEVELOPMENTS · NO SINGLE PLACE</div>
+</sc-if>
+<article style="{{s.rowStyle}}">
+<button type="button" onClick="{{s.pick}}" aria-expanded="{{s.selected}}" style="display: block; width: 100%; text-align: left; background: none; border: none; padding: 0; cursor: pointer;">
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: {{s.axisInk}};">{{s.kicker}}</span>
+<sc-if value="{{s.hasTier}}" hint-placeholder-val="{{ false }}">
+<span style="{{s.tierStyle}}">{{s.tierLabel}}</span>
+</sc-if>
+<sc-if value="{{s.onMap}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #0f1318; color: #e8e8e6;">On the map</span>
+</sc-if>
+</div>
+<div style="font-family: Fraunces, serif; font-size: 16px; line-height: 1.3; color: #0a0a0a; margin-top: 5px;">{{s.title}}</div>
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 11px; color: #6a6a6e;">
+<sc-if value="{{s.isStory}}" hint-placeholder-val="{{ false }}">
+<span style="display: flex; align-items: center; gap: 6px; color: #3a3a3c;"><span style="display: inline-flex; gap: 2px;"><span style="width: 3px; height: 8px; background: #b8b8b6;"></span><span style="width: 3px; height: 8px; background: #b8b8b6;"></span><span style="width: 3px; height: 8px; background: #b8b8b6;"></span><span style="width: 3px; height: 8px; background: #a2442e;"></span></span>{{s.storyBadge}}</span>
+</sc-if>
+<span>{{s.sources}}</span>
+</div>
+</button>
+
+<sc-if value="{{s.selected}}" hint-placeholder-val="{{ false }}">
+<div style="margin-top: 12px; padding: 14px; border: 1px solid #e5e5e3; border-radius: 10px; background: #ffffff; display: flex; flex-direction: column; gap: 12px;">
+<div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #6a6a6e;">WHAT'S HAPPENING</div>
+<p style="margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: #3a3a3c;">{{s.lead}}</p>
+</div>
+<div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #6a6a6e;">LATEST CHANGE</div>
+<p style="margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: #3a3a3c;">{{s.latest}}</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+<div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #6a6a6e;">TIMELINE</div>
+<ol style="margin: 6px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.6; color: #3a3a3c;">
+<li>{{s.t1}}</li>
+<li>[date] · [event headline]</li>
+<li>[date] · [event headline]</li>
+</ol>
+</div>
+<div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #6a6a6e;">SEVERITY &amp; FORECAST</div>
+<div style="font-size: 12px; line-height: 1.6; color: #3a3a3c; margin-top: 6px;">{{s.severity}}<br>Conflict [score] · Political [score]<br>Economic [score] · Humanitarian [score]<br>Live forecast: [N] triggers pending</div>
+</div>
+</div>
+<div style="font-size: 12px; color: #6a6a6e; border-top: 1px solid #e5e5e3; padding-top: 10px;">Our forecasts so far: Brier 0.154 across 122 resolved — <a href="#" style="font-size: 12px;">see the track record</a></div>
+<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+<a href="#" style="height: 40px; padding: 0 16px; display: inline-flex; align-items: center; border-radius: 8px; background: #a2442e; color: #fbfbf9; font-size: 13px; font-weight: 600;">Read full story →</a>
+<a href="#" style="height: 40px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 8px; border: 1px solid #d2d2d0; color: #0a0a0a; font-size: 13px;">Analyze in Studio</a>
+<a href="#" style="height: 40px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 8px; border: 1px solid #d2d2d0; color: #0a0a0a; font-size: 13px;">Follow</a>
+</div>
+</div>
+</sc-if>
+</article>
+</sc-for>
+</div>
+</section>
+</sc-if>
+</div>
+
+<div id="after-list" style="padding: 8px 32px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+<div style="border: 1px solid #e5e5e3; border-radius: 10px; padding: 18px; background: #ffffff;">
+<div style="font-family: Fraunces, serif; font-size: 30px; font-weight: 600;">20,744</div>
+<div style="font-size: 13px; color: #3a3a3c; margin-top: 4px;">dated, falsifiable forecast triggers — scored in public as each deadline passes</div>
+</div>
+<div style="border: 1px solid #e5e5e3; border-radius: 10px; padding: 18px; background: #ffffff;">
+<div style="font-family: Fraunces, serif; font-size: 30px; font-weight: 600;">0.154</div>
+<div style="font-size: 13px; color: #3a3a3c; margin-top: 4px;">Brier score across 122 resolved forecasts (lower is better) — <a href="#" style="font-size: 13px;">track record</a></div>
+</div>
+<div style="border: 1px solid #e5e5e3; border-radius: 10px; padding: 18px; background: #ffffff;">
+<div style="font-family: Fraunces, serif; font-size: 30px; font-weight: 600;">227</div>
+<div style="font-size: 13px; color: #3a3a3c; margin-top: 4px;">revised conclusions logged, each with the event that changed our read</div>
+</div>
+</div>
+
+<div style="margin: 16px 32px 0; padding: 20px 24px; border: 1px solid #e5e5e3; border-radius: 10px; background: #ffffff; display: flex; align-items: center; gap: 24px;">
+<div style="flex-grow: 1;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #a2442e;">NEWSLETTER · FREE</div>
+<div style="font-family: Fraunces, serif; font-size: 20px; font-weight: 600; margin-top: 4px;">The weekly signals brief, every Sunday</div>
+</div>
+<label for="email" style="font-size: 13px; color: #3a3a3c;">Email</label>
+<input id="email" type="email" placeholder="you@company.com" style="height: 40px; width: 260px; box-sizing: border-box; padding: 0 12px; border: 1px solid #d2d2d0; border-radius: 8px; font-size: 13px;">
+<button type="button" style="height: 40px; padding: 0 16px; border-radius: 8px; border: none; background: #0a0a0a; color: #fbfbf9; font-size: 13px;">Subscribe</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { selected: 'afd', mode: 'split', axis: 'all', banner: true, alert: true };
+  }
+  renderVals() {
+    var AX = {
+      conflict: { dot: '#ee7754', ink: '#b3452a' },
+      political: { dot: '#9b8cf8', ink: '#5b4ec2' },
+      economic: { dot: '#38b6de', ink: '#1f7fa0' },
+      humanitarian: { dot: '#d89e28', ink: '#8c5f0c' }
+    };
+    var TIER = {
+      high: 'font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #fbe9e3; color: #a33a26; font-weight: 600;',
+      elevated: 'font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #fbf0dc; color: #8c5a10; font-weight: 600;'
+    };
+    var raw = [
+      { id: 'afd', title: 'Tens of Thousands March Across Germany to Protest Far-Right AfD After Saxony-Anhalt Victory', kicker: 'POLITICAL · GERMANY', axis: 'political', tier: 'high', onMap: false, story: 'Story · 9 events', sources: '4 outlets · corroborated', x: 52, y: 26, lead: 'The narrative began on September 4, 2026, with reports that Germany’s far-right AfD was poised for a historic state election win in Saxony-Anhalt.', latest: 'Tens of thousands marched across Germany in protest after the result.', t1: 'Sep 4 · AfD poised for historic win in Saxony-Anhalt' },
+      { id: 'cyclone', title: 'India — tropical cyclone', kicker: 'HUMANITARIAN · INDIA · MONITORING', axis: 'humanitarian', tier: 'elevated', onMap: true, story: '', sources: 'GDACS Orange alert · official report ↗', x: 74, y: 40, lead: 'GDACS Orange alert: tropical storm with maximum wind speed of 83 km/h; 1 country affected.', latest: 'Monitoring-only item — no linked news story yet. Links to the official GDACS report.', t1: 'Alert opened · tropical cyclone' },
+      { id: 'saudi', title: 'Saudi Arabia Shuts East-West Pipeline After Drone Attack Launched from Iraq; Houthis Claim Strike', kicker: 'ECONOMIC · SAUDI ARABIA', axis: 'economic', onMap: false, story: 'Story', sources: 'trending', x: 62, y: 37, lead: '[What’s happening — from the story’s analysis]', latest: '[Most recent change in this story]', t1: '[date] · [event headline]' },
+      { id: 'kyiv', title: 'Trump Envoys Arrive in Kyiv in New Push to End Russia’s War After Moscow Talks', kicker: 'CONFLICT · UKRAINE', axis: 'conflict', onMap: false, story: 'Story', sources: '[N] outlets', x: 58, y: 23, lead: '[What’s happening — from the story’s analysis]', latest: '[Most recent change in this story]', t1: '[date] · [event headline]' },
+      { id: 'drone', title: 'Germany Probes Foiled Drone Attack on Leipzig Airport with Leads to Russian GRU', kicker: 'CONFLICT · GERMANY', axis: 'conflict', onMap: false, story: 'Story', sources: '1 source · single-source', x: 53, y: 25, lead: '[What’s happening — from the story’s analysis]', latest: '[Most recent change in this story]', t1: '[date] · [event headline]' },
+      { id: 'ferry', title: 'Death Toll from Philippines Ferry Fire Rises to 76 With 13 Still Missing', kicker: 'HUMANITARIAN · PHILIPPINES', axis: 'humanitarian', onMap: false, story: '', sources: '[N] outlets', x: 83, y: 43, lead: '[What’s happening]', latest: '[Most recent change]', t1: '[date] · [event headline]' },
+      { id: 'chile', title: 'Fire at Nursing Home in Chile Kills 16 Residents', kicker: 'HUMANITARIAN · CHILE', axis: 'humanitarian', onMap: false, story: '', sources: '[N] outlets', x: 30, y: 68, lead: '[What’s happening]', latest: '[Most recent change]', t1: '[date] · [event headline]' },
+      { id: 'brics', title: 'BRICS Summit in New Delhi Adopts Joint Declaration Urging Maximum Restraint in Middle East', kicker: 'POLITICAL · MULTILATERAL', axis: 'political', onMap: false, story: '', sources: '[N] outlets', noPlace: true, lead: '[What’s happening]', latest: '[Most recent change]', t1: '[date] · [event headline]' }
+    ];
+    var self = this;
+    var st = this.state;
+    var filtered = raw.filter(function (r) { return st.axis === 'all' || r.axis === st.axis; });
+    var dividerDone = false;
+    var stories = filtered.map(function (r) {
+      var sel = r.id === st.selected;
+      var divider = false;
+      if (r.noPlace && !dividerDone) { divider = true; dividerDone = true; }
+      return {
+        id: r.id, title: r.title, kicker: r.kicker, onMap: r.onMap, sources: r.sources,
+        isStory: !!r.story, storyBadge: r.story, hasTier: !!r.tier,
+        tierLabel: r.tier === 'high' ? 'HIGH' : (r.tier === 'elevated' ? 'ELEVATED' : ''),
+        tierStyle: r.tier ? TIER[r.tier] : '',
+        axisInk: AX[r.axis].ink, selected: sel, divider: divider,
+        lead: r.lead, latest: r.latest, t1: r.t1,
+        severity: r.tier === 'high' ? 'Severity: HIGH' : (r.tier === 'elevated' ? 'Severity: ELEVATED' : 'Severity: [tier]'),
+        rowStyle: 'padding: 14px 16px; border-bottom: 1px solid #e5e5e3; ' + (sel ? 'background: #f3e2da; box-shadow: inset 3px 0 0 #a2442e;' : 'background: #fbfbf9;'),
+        pick: function () { self.setState({ selected: sel ? null : r.id }); }
+      };
+    });
+    var markers = [];
+    raw.forEach(function (r) {
+      if (r.noPlace) return;
+      var sel = r.id === st.selected;
+      if (!r.onMap && !sel) return;
+      var color = AX[r.axis].dot;
+      var isCountry = !r.onMap;
+      var size = sel ? 22 : 16;
+      var style = isCountry
+        ? 'position: absolute; left: ' + r.x + '%; top: ' + r.y + '%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; border: 2px dashed ' + color + '; background: rgba(255,255,255,0.03); cursor: pointer;'
+        : 'position: absolute; left: ' + r.x + '%; top: ' + r.y + '%; width: ' + size + 'px; height: ' + size + 'px; margin: -' + (size / 2) + 'px 0 0 -' + (size / 2) + 'px; border-radius: 50%; border: 2px solid #0f1318; background: ' + color + '; box-shadow: 0 0 0 ' + (sel ? 6 : 4) + 'px ' + color + '55, 0 0 18px ' + color + '; cursor: pointer; padding: 0;';
+      markers.push({
+        style: style, isCountry: isCountry, label: r.title,
+        countryNoteStyle: 'position: absolute; left: ' + r.x + '%; top: ' + r.y + '%; margin: 38px 0 0 -90px; width: 180px; text-align: center; font-size: 11px; color: #c9c9c7;',
+        pick: function () { self.setState({ selected: r.id }); }
+      });
+    });
+    var selRaw = raw.filter(function (r) { return r.id === st.selected; })[0];
+    var sel = selRaw ? { title: selRaw.title, kicker: selRaw.kicker, axisColor: AX[selRaw.axis].dot } : { title: '', kicker: '', axisColor: '#fff' };
+    var calloutStyle = selRaw && !selRaw.noPlace
+      ? 'position: absolute; left: ' + selRaw.x + '%; top: ' + selRaw.y + '%; margin: ' + (selRaw.onMap ? 18 : 34) + 'px 0 0 18px; width: 240px; box-sizing: border-box; background: #161b22; border: 1px solid #2c333c; border-radius: 8px; padding: 10px 12px;'
+      : 'display: none;';
+    var axes = [['all', 'All'], ['conflict', 'Conflict'], ['political', 'Political'], ['economic', 'Economic'], ['humanitarian', 'Humanitarian']];
+    var chips = axes.map(function (a) {
+      var on = st.axis === a[0];
+      return {
+        label: a[1], pressed: on ? 'true' : 'false',
+        style: 'height: 30px; padding: 0 12px; border-radius: 15px; font-size: 12px; cursor: pointer; ' + (on ? 'background: #0a0a0a; color: #fbfbf9; border: 1px solid #0a0a0a;' : 'background: #fbfbf9; color: #3a3a3c; border: 1px solid #d2d2d0;'),
+        pick: function () { self.setState({ axis: a[0] }); }
+      };
+    });
+    var mode = st.mode;
+    return {
+      stories: stories, markers: markers, chips: chips, sel: sel, calloutStyle: calloutStyle,
+      hasSelected: !!(selRaw && !selRaw.noPlace),
+      showMap: mode !== 'list', showList: mode !== 'map',
+      mapPaneStyle: 'display: flex; flex-direction: column; background: #0f1318; border-radius: 12px; overflow: hidden; ' + (mode === 'map' ? 'flex-grow: 1;' : 'width: 860px; flex-shrink: 0;'),
+      listPaneStyle: 'display: flex; flex-direction: column; background: #fbfbf9; border: 1px solid #e5e5e3; border-radius: 12px; overflow: hidden; flex-grow: 1;',
+      mapExpandLabel: mode === 'map' ? 'Back to split view' : 'Expand map to full width',
+      listExpandLabel: mode === 'list' ? 'Back to split view' : 'Expand story list to full width',
+      toggleMapFull: function () { self.setState({ mode: mode === 'map' ? 'split' : 'map' }); },
+      toggleListFull: function () { self.setState({ mode: mode === 'list' ? 'split' : 'list' }); },
+      showBanner: st.banner, dismissBanner: function () { self.setState({ banner: false }); },
+      showAlert: st.alert, dismissAlert: function () { self.setState({ alert: false }); },
+      pickSaudi: function () { self.setState({ selected: 'saudi', axis: 'all' }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

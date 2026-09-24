@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home — operations console (globe and radar)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif;color:#d6e2ea}
+a{color:#5fd4ff;text-decoration:none}a:hover{color:#a8e8ff}
+button{font-family:inherit}
+@keyframes gp-pulse{0%{transform:scale(1);opacity:.85}100%{transform:scale(2.6);opacity:0}}
+.gp-pulse{animation:gp-pulse 2.4s ease-out infinite}
+@media (prefers-reduced-motion: reduce){.gp-pulse{animation:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: radial-gradient(ellipse at 45% 55%, #0b1a2a 0%, #060c14 55%, #03060a 100%); position: relative; overflow: hidden; display: flex; flex-direction: column;">
+
+<div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(95,212,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(95,212,255,0.035) 1px, transparent 1px); background-size: 48px 48px; pointer-events: none;"></div>
+
+<header style="position: relative; height: 52px; box-sizing: border-box; padding: 0 28px; display: flex; align-items: center; gap: 26px; border-bottom: 1px solid rgba(95,212,255,0.14); background: rgba(4,8,14,0.7);">
+<a href="#" style="display: flex; align-items: center; gap: 10px; color: #eaf3f8;">
+<span style="width: 24px; height: 24px; border-radius: 5px; border: 1px solid #5fd4ff; color: #5fd4ff; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 13px;">G</span>
+<span style="font-family: Fraunces, serif; font-size: 16px; font-weight: 600;">Global Perspectives</span>
+</a>
+<nav aria-label="Main" style="display: flex; gap: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.06em; flex-grow: 1;">
+<a href="#" style="color: #5fd4ff;">CONSOLE</a>
+<a href="#" style="color: #8a99a5;">STORIES</a>
+<a href="#" style="color: #8a99a5;">COUNTRIES</a>
+<a href="#" style="color: #8a99a5;">ECONOMY</a>
+<a href="Briefings.dc.html" style="color: #8a99a5;">BRIEFINGS</a>
+<a href="#" style="color: #8a99a5;">TRACK RECORD</a>
+</nav>
+<a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 8px 12px; border: 1px solid rgba(95,212,255,0.4); border-radius: 6px; color: #5fd4ff;">ANALYSIS STUDIO</a>
+<a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 8px 12px; border-radius: 6px; background: #ffb347; color: #1a1206; font-weight: 600;">MEMBERSHIP</a>
+</header>
+
+<div style="position: relative; flex-grow: 1;">
+
+<sc-if value="{{isGlobe}}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; left: 310px; top: 134px; width: 620px; height: 620px;">
+<svg width="620" height="620" viewBox="0 0 620 620" style="position: absolute; inset: 0;">
+<defs>
+<radialGradient id="halo" cx="50%" cy="50%" r="50%">
+<stop offset="78%" stop-color="#5fd4ff" stop-opacity="0"/>
+<stop offset="88%" stop-color="#5fd4ff" stop-opacity="0.22"/>
+<stop offset="100%" stop-color="#5fd4ff" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="body" cx="38%" cy="34%" r="70%">
+<stop offset="0%" stop-color="#12314a"/>
+<stop offset="60%" stop-color="#0a1b2c"/>
+<stop offset="100%" stop-color="#050d17"/>
+</radialGradient>
+</defs>
+<circle cx="310" cy="310" r="305" fill="url(#halo)"/>
+<circle cx="310" cy="310" r="262" fill="url(#body)" stroke="rgba(95,212,255,0.35)" stroke-width="1"/>
+<path d="{{graticule}}" fill="none" stroke="rgba(95,212,255,0.10)" stroke-width="0.8"/>
+<path d="{{dots}}" fill="none" stroke="rgba(150,225,255,0.55)" stroke-width="2.4" stroke-linecap="round"/>
+</svg>
+<sc-for list="{{pins}}" as="p" hint-placeholder-count="4">
+<sc-if value="{{p.pulse}}" hint-placeholder-val="{{ false }}">
+<span class="gp-pulse" style="{{p.pulseStyle}}"></span>
+</sc-if>
+<button type="button" onClick="{{p.pick}}" aria-label="{{p.label}}" style="{{p.style}}"></button>
+</sc-for>
+<sc-if value="{{hasCallout}}" hint-placeholder-val="{{ true }}">
+<div style="{{calloutStyle}}">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: {{sel.color}};">{{sel.kicker}}</div>
+<div style="font-family: Fraunces, serif; font-size: 14px; line-height: 1.3; color: #eaf3f8; margin-top: 4px;">{{sel.title}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96; margin-top: 6px;">{{sel.note}}</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isRadar}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 190px; top: 214px; width: 840px; height: 420px; border: 1px solid rgba(95,212,255,0.28); border-radius: 4px; background: rgba(6,14,24,0.85); overflow: hidden;">
+<svg width="840" height="420" viewBox="0 0 840 420" style="position: absolute; inset: 0;">
+<path d="{{flatGrid}}" fill="none" stroke="rgba(95,212,255,0.08)" stroke-width="0.8"/>
+<path d="{{flatDots}}" fill="none" stroke="rgba(150,225,255,0.45)" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="420" cy="210" r="110" fill="none" stroke="rgba(95,212,255,0.10)"/>
+<circle cx="420" cy="210" r="230" fill="none" stroke="rgba(95,212,255,0.08)"/>
+<circle cx="420" cy="210" r="360" fill="none" stroke="rgba(95,212,255,0.06)"/>
+</svg>
+<div style="{{sweepStyle}}"></div>
+<sc-for list="{{flatPins}}" as="p" hint-placeholder-count="4">
+<button type="button" onClick="{{p.pick}}" aria-label="{{p.label}}" style="{{p.style}}"></button>
+<sc-if value="{{p.lit}}" hint-placeholder-val="{{ false }}">
+<div style="{{p.labelStyle}}">{{p.short}}</div>
+</sc-if>
+</sc-for>
+<div style="position: absolute; left: 12px; top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #5fd4ff;">RADAR · SCANNING · {{sweepDeg}}°</div>
+</div>
+</sc-if>
+
+<section aria-label="Situation brief" style="position: absolute; left: 24px; top: 20px; width: 330px; box-sizing: border-box; padding: 14px 16px; background: rgba(8,16,26,0.78); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px;">
+<div style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid #5fd4ff; border-top: 2px solid #5fd4ff;"></div>
+<div style="position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-right: 2px solid #5fd4ff; border-bottom: 2px solid #5fd4ff;"></div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #5fd4ff;">SITUATION BRIEF · THU 24 SEP</div>
+<div style="font-family: Fraunces, serif; font-size: 18px; line-height: 1.3; color: #eaf3f8; margin-top: 8px;">Tens of Thousands March Across Germany to Protest Far-Right AfD</div>
+<div style="font-size: 12px; color: #8a99a5; margin-top: 8px; line-height: 1.5;">Lead story by severity and coverage · <a href="#" style="font-size: 12px;">open story →</a></div>
+</section>
+
+<section aria-label="Threat board" style="position: absolute; left: 50%; top: 20px; transform: translateX(-50%); width: 400px; box-sizing: border-box; padding: 12px 16px; background: rgba(8,16,26,0.78); border: 1px solid rgba(255,179,71,0.25); border-radius: 4px;">
+<div style="display: flex; align-items: center; gap: 10px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #ffb347;">THREAT BOARD</span>
+<span style="flex-grow: 1; height: 1px; background: rgba(255,179,71,0.25);"></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8a99a5;">WORST-AXIS TIERS</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 10px;">
+<div style="padding: 6px 8px; border: 1px solid rgba(255,95,70,0.5); border-radius: 3px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #ff6a4d;">1</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #8a99a5;">HIGH</div></div>
+<div style="padding: 6px 8px; border: 1px solid rgba(255,179,71,0.5); border-radius: 3px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #ffb347;">1</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #8a99a5;">ELEVATED</div></div>
+<div style="padding: 6px 8px; border: 1px solid rgba(214,226,234,0.18); border-radius: 3px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #d6e2ea;">[n]</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #8a99a5;">MODERATE</div></div>
+<div style="padding: 6px 8px; border: 1px solid rgba(214,226,234,0.18); border-radius: 3px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #d6e2ea;">[n]</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #8a99a5;">LOW</div></div>
+</div>
+</section>
+
+<section aria-label="Sensor status" style="position: absolute; right: 24px; top: 20px; width: 300px; box-sizing: border-box; padding: 12px 16px; background: rgba(8,16,26,0.78); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #5fd4ff;">SENSOR STATUS</div>
+<div style="display: flex; flex-direction: column; gap: 7px; margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+<div style="display: flex; gap: 8px; align-items: center;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4fe39a; box-shadow: 0 0 8px #4fe39a;"></span><span style="flex-grow: 1; color: #d6e2ea;">DISASTERS · GDACS</span><span style="color: #4fe39a;">LIVE · 56m</span></div>
+<div style="display: flex; gap: 8px; align-items: center;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #ffb347;"></span><span style="flex-grow: 1; color: #d6e2ea;">NEWS DESK</span><span style="color: #ffb347;">PAUSED · SINCE 13 SEP</span></div>
+<div style="display: flex; gap: 8px; align-items: center;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4fe39a; box-shadow: 0 0 8px #4fe39a;"></span><span style="flex-grow: 1; color: #d6e2ea;">MARKETS</span><span style="color: #4fe39a;">LIVE · 1d</span></div>
+<div style="display: flex; gap: 8px; align-items: center;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #5fd4ff;"></span><span style="flex-grow: 1; color: #d6e2ea;">FORECAST LEDGER</span><span style="color: #5fd4ff;">122 SCORED</span></div>
+</div>
+</section>
+
+<section aria-label="Intel feed" style="position: absolute; right: 24px; top: 196px; bottom: 76px; width: 360px; box-sizing: border-box; display: flex; flex-direction: column; background: rgba(8,16,26,0.82); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px;">
+<div style="padding: 12px 16px; border-bottom: 1px solid rgba(95,212,255,0.14); display: flex; align-items: center; gap: 8px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #5fd4ff; flex-grow: 1;">INTEL FEED · 17 STORIES</span>
+<a href="#after-feed" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96;">SKIP</a>
+</div>
+<div style="flex-grow: 1; overflow-y: auto;">
+<sc-for list="{{feed}}" as="f" hint-placeholder-count="5">
+<button type="button" onClick="{{f.pick}}" aria-pressed="{{f.selected}}" style="{{f.style}}">
+<div style="display: flex; gap: 8px; align-items: center;">
+<span style="width: 6px; height: 6px; border-radius: 50%; background: {{f.color}}; box-shadow: 0 0 6px {{f.color}};"></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: {{f.color}};">{{f.kicker}}</span>
+<sc-if value="{{f.hasTier}}" hint-placeholder-val="{{ false }}">
+<span style="{{f.tierStyle}}">{{f.tier}}</span>
+</sc-if>
+<sc-if value="{{f.scanned}}" hint-placeholder-val="{{ false }}">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #5fd4ff;">◉ SCANNED</span>
+</sc-if>
+</div>
+<div style="font-family: Fraunces, serif; font-size: 15px; line-height: 1.3; color: #eaf3f8; margin-top: 5px;">{{f.title}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96; margin-top: 5px;">{{f.meta}}</div>
+</button>
+</sc-for>
+</div>
+<div id="after-feed" style="padding: 10px 16px; border-top: 1px solid rgba(95,212,255,0.14); font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96;">SELECT A STORY OR A PIN — THE OTHER FOLLOWS</div>
+</section>
+
+<sc-if value="{{showAlert}}" hint-placeholder-val="{{ true }}">
+<div role="status" style="position: absolute; left: 24px; top: 196px; width: 300px; box-sizing: border-box; padding: 12px 14px; background: rgba(8,16,26,0.86); border: 1px solid rgba(56,182,222,0.45); border-left: 3px solid #38b6de; border-radius: 4px; display: flex; gap: 10px;">
+<div style="flex-grow: 1;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #38b6de;">INCOMING · ECONOMIC · NEW</div>
+<button type="button" onClick="{{pickSaudi}}" style="background: none; border: none; padding: 0; margin-top: 5px; text-align: left; font-size: 13px; line-height: 1.35; color: #eaf3f8; cursor: pointer;">Saudi Arabia shuts East-West pipeline after drone attack</button>
+</div>
+<button type="button" onClick="{{dismissAlert}}" aria-label="Dismiss alert" style="width: 28px; height: 28px; flex-shrink: 0; background: none; border: 1px solid rgba(95,212,255,0.25); border-radius: 4px; color: #8a99a5;">×</button>
+</div>
+</sc-if>
+
+<div style="position: absolute; left: 24px; bottom: 20px; display: flex; gap: 8px; align-items: center;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #7d8b96;">VIEW</span>
+<button type="button" onClick="{{toGlobe}}" aria-pressed="{{isGlobe}}" style="{{globeBtn}}">GLOBE</button>
+<button type="button" onClick="{{toRadar}}" aria-pressed="{{isRadar}}" style="{{radarBtn}}">RADAR 2D</button>
+<button type="button" onClick="{{toggleMotion}}" style="height: 36px; padding: 0 12px; background: transparent; border: 1px solid rgba(95,212,255,0.25); border-radius: 4px; color: #8a99a5; font-family: 'JetBrains Mono', monospace; font-size: 11px;">{{motionLabel}}</button>
+<span style="width: 1px; height: 20px; background: rgba(95,212,255,0.2); margin: 0 6px;"></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #7d8b96;">LAYER</span>
+<button type="button" style="height: 36px; padding: 0 12px; background: rgba(95,212,255,0.14); border: 1px solid #5fd4ff; border-radius: 4px; color: #5fd4ff; font-family: 'JetBrains Mono', monospace; font-size: 11px;">SITUATIONS</button>
+<button type="button" style="height: 36px; padding: 0 12px; background: transparent; border: 1px solid rgba(95,212,255,0.25); border-radius: 4px; color: #8a99a5; font-family: 'JetBrains Mono', monospace; font-size: 11px;">COUNTRY RISK</button>
+</div>
+
+<div style="position: absolute; left: 50%; bottom: 24px; transform: translateX(-10%); display: flex; gap: 14px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #7d8b96;">
+<span style="color: #ee7754;">● CONFLICT</span><span style="color: #9b8cf8;">● POLITICAL</span><span style="color: #38b6de;">● ECONOMIC</span><span style="color: #d89e28;">● HUMANITARIAN</span><span>◎ COUNTRY, NO LIVE SITUATION</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    this.state = { mode: 'globe', lon0: 20, sweep: 0, moving: !reduce, selected: null, alert: true };
+  }
+  componentDidMount() {
+    var self = this;
+    this.timer = setInterval(function () {
+      var st = self.state;
+      if (!st.moving) return;
+      if (st.mode === 'globe' && !st.selected) self.setState({ lon0: (st.lon0 + 0.9) % 360 });
+      if (st.mode === 'radar') self.setState({ sweep: (st.sweep + 3) % 360 });
+    }, 80);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+  renderVals() {
+    var self = this, st = this.state;
+    var R = 262, C = 310, lat0 = 20 * Math.PI / 180, lon0 = st.lon0 * Math.PI / 180;
+    function proj(lonDeg, latDeg) {
+      var lon = lonDeg * Math.PI / 180, lat = latDeg * Math.PI / 180;
+      var cosc = Math.sin(lat0) * Math.sin(lat) + Math.cos(lat0) * Math.cos(lat) * Math.cos(lon - lon0);
+      return { x: C + R * Math.cos(lat) * Math.sin(lon - lon0), y: C - R * (Math.cos(lat0) * Math.sin(lat) - Math.sin(lat0) * Math.cos(lat) * Math.cos(lon - lon0)), front: cosc > 0.05 };
+    }
+    function land(lo, la) { return (Math.sin(lo * 0.07) + Math.cos(la * 0.11 + lo * 0.03) + Math.sin(la * 0.05 - lo * 0.02)) > 0.35; }
+    var AX = { conflict: '#ee7754', political: '#9b8cf8', economic: '#38b6de', humanitarian: '#d89e28' };
+    var items = [
+      { id: 'cyclone', title: 'India — tropical cyclone', short: 'INDIA · CYCLONE', kicker: 'HUMANITARIAN · INDIA', axis: 'humanitarian', tier: 'ELEVATED', situation: true, lon: 88, lat: 18, meta: 'GDACS ORANGE ALERT · MONITORING', note: 'LIVE SITUATION · GDACS · UPDATED 56m' },
+      { id: 'afd', title: 'Tens of Thousands March Across Germany to Protest Far-Right AfD', short: 'GERMANY · AFD PROTESTS', kicker: 'POLITICAL · GERMANY', axis: 'political', tier: 'HIGH', situation: false, lon: 10, lat: 51, meta: 'STORY · 9 EVENTS · 4 OUTLETS', note: 'COUNTRY SHOWN · NO LIVE SITUATION' },
+      { id: 'saudi', title: 'Saudi Arabia Shuts East-West Pipeline After Drone Attack', short: 'SAUDI · PIPELINE', kicker: 'ECONOMIC · SAUDI ARABIA', axis: 'economic', situation: false, lon: 45, lat: 24, meta: 'STORY · TRENDING', note: 'COUNTRY SHOWN · NO LIVE SITUATION' },
+      { id: 'kyiv', title: 'Trump Envoys Arrive in Kyiv in New Push to End Russia’s War', short: 'UKRAINE · PEACE PUSH', kicker: 'CONFLICT · UKRAINE', axis: 'conflict', situation: false, lon: 31, lat: 49, meta: 'STORY', note: 'COUNTRY SHOWN · NO LIVE SITUATION' },
+      { id: 'kenya', title: 'Kenya’s Rift Valley Lakes Rise to Half-Century Highs', short: 'KENYA · LAKES RISING', kicker: 'HUMANITARIAN · KENYA', axis: 'humanitarian', situation: false, lon: 37, lat: 0, meta: 'STORY', note: 'COUNTRY SHOWN · NO LIVE SITUATION' },
+      { id: 'ferry', title: 'Death Toll from Philippines Ferry Fire Rises to 76', short: 'PHILIPPINES · FERRY FIRE', kicker: 'HUMANITARIAN · PHILIPPINES', axis: 'humanitarian', situation: false, lon: 122, lat: 12, meta: '[N] OUTLETS', note: 'COUNTRY SHOWN · NO LIVE SITUATION' },
+      { id: 'chile', title: 'Fire at Nursing Home in Chile Kills 16 Residents', short: 'CHILE · NURSING HOME FIRE', kicker: 'HUMANITARIAN · CHILE', axis: 'humanitarian', situation: false, lon: -71, lat: -33, meta: '[N] OUTLETS', note: 'COUNTRY SHOWN · NO LIVE SITUATION' }
+    ];
+    var isGlobe = st.mode === 'globe';
+    var graticule = '', dots = '', pins = [];
+    if (isGlobe) {
+      for (var la = -60; la <= 60; la += 30) { var pen = false; for (var lo = -180; lo <= 180; lo += 5) { var p = proj(lo, la); if (p.front) { graticule += (pen ? 'L' : 'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1); pen = true; } else pen = false; } }
+      for (var mlo = -180; mlo < 180; mlo += 30) { var pen2 = false; for (var mla = -85; mla <= 85; mla += 5) { var q = proj(mlo, mla); if (q.front) { graticule += (pen2 ? 'L' : 'M') + q.x.toFixed(1) + ' ' + q.y.toFixed(1); pen2 = true; } else pen2 = false; } }
+      for (var dla = -72; dla <= 72; dla += 8) for (var dlo = -180; dlo < 180; dlo += 8) { if (!land(dlo, dla)) continue; var s = proj(dlo, dla); if (s.front) dots += 'M' + s.x.toFixed(1) + ' ' + s.y.toFixed(1) + 'h0.1'; }
+    }
+    var flatGrid = '', flatDots = '';
+    if (!isGlobe) {
+      for (var gx = 0; gx <= 840; gx += 70) flatGrid += 'M' + gx + ' 0V420';
+      for (var gy = 0; gy <= 420; gy += 70) flatGrid += 'M0 ' + gy + 'H840';
+      for (var fla = -72; fla <= 72; fla += 6) for (var flo = -180; flo < 180; flo += 6) { if (!land(flo, fla)) continue; flatDots += 'M' + ((flo + 180) / 360 * 840).toFixed(1) + ' ' + ((90 - fla) / 180 * 420).toFixed(1) + 'h0.1'; }
+    }
+    var feed = [], flatPins = [];
+    items.forEach(function (it) {
+      var sel = it.id === st.selected, c = AX[it.axis];
+      var scanned = false, glow = 0;
+      if (isGlobe) {
+        var pp = proj(it.lon, it.lat);
+        if (pp.front) {
+          var size = it.situation ? (sel ? 16 : 12) : (sel ? 30 : 22);
+          pins.push({
+            label: it.title, pulse: it.situation,
+            style: it.situation
+              ? 'position: absolute; left: ' + (pp.x - size / 2) + 'px; top: ' + (pp.y - size / 2) + 'px; width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; border: 2px solid #04070c; background: ' + c + '; box-shadow: 0 0 14px ' + c + ', 0 0 0 ' + (sel ? 5 : 3) + 'px ' + c + '55; padding: 0; cursor: pointer;'
+              : 'position: absolute; left: ' + (pp.x - size / 2) + 'px; top: ' + (pp.y - size / 2) + 'px; width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; border: 1.5px ' + (sel ? 'solid' : 'dashed') + ' ' + c + '; background: ' + c + (sel ? '33' : '14') + '; padding: 0; cursor: pointer;',
+            pulseStyle: 'position: absolute; left: ' + (pp.x - 12) + 'px; top: ' + (pp.y - 12) + 'px; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid ' + c + '; pointer-events: none;',
+            pick: function () { self.setState({ selected: it.id, lon0: it.lon }); }
+          });
+        }
+      } else {
+        var fx = (it.lon + 180) / 360 * 840, fy = (90 - it.lat) / 180 * 420;
+        var ang = (Math.atan2(fy - 210, fx - 420) * 180 / Math.PI + 360) % 360;
+        var behind = (st.sweep - ang + 360) % 360;
+        if (behind < 40) { scanned = true; glow = 1 - behind / 40; }
+        var lit = scanned || sel;
+        var fs = it.situation ? 12 : 16;
+        var boost = lit ? Math.round(8 + glow * 18) : 0;
+        flatPins.push({
+          label: it.title, short: it.short, lit: lit,
+          style: 'position: absolute; left: ' + (fx - fs / 2) + 'px; top: ' + (fy - fs / 2) + 'px; width: ' + fs + 'px; height: ' + fs + 'px; border-radius: 50%; padding: 0; cursor: pointer; ' + (it.situation ? 'border: 2px solid #04070c; background: ' + c + ';' : 'border: 1.5px dashed ' + c + '; background: ' + c + '22;') + ' opacity: ' + (lit ? 1 : 0.35) + '; box-shadow: 0 0 ' + boost + 'px ' + c + ';',
+          labelStyle: 'position: absolute; left: ' + (fx + 12) + 'px; top: ' + (fy - 9) + 'px; font-family: JetBrains Mono, monospace; font-size: 10px; letter-spacing: 0.08em; color: ' + c + '; background: rgba(4,8,14,0.85); padding: 2px 6px; border: 1px solid ' + c + '66; border-radius: 2px; opacity: ' + (sel ? 1 : (0.4 + glow * 0.6)).toFixed(2) + ';',
+          pick: function () { self.setState({ selected: it.id }); }
+        });
+      }
+      feed.push({
+        title: it.title, kicker: it.kicker, meta: it.meta, color: c, selected: sel, scanned: scanned && !sel,
+        hasTier: !!it.tier, tier: it.tier || '',
+        tierStyle: 'font-family: JetBrains Mono, monospace; font-size: 9px; letter-spacing: 0.1em; padding: 2px 5px; border-radius: 2px; ' + (it.tier === 'HIGH' ? 'color: #ff6a4d; border: 1px solid rgba(255,95,70,0.6);' : 'color: #ffb347; border: 1px solid rgba(255,179,71,0.6);'),
+        style: 'display: block; width: 100%; text-align: left; padding: 12px 16px; border: none; border-bottom: 1px solid rgba(95,212,255,0.08); cursor: pointer; ' + (sel ? 'background: rgba(95,212,255,0.12); box-shadow: inset 3px 0 0 #5fd4ff;' : (scanned ? 'background: rgba(95,212,255,0.05); box-shadow: inset 2px 0 0 rgba(95,212,255,0.5);' : 'background: transparent;')),
+        pick: function () { self.setState({ selected: sel ? null : it.id, lon0: sel ? st.lon0 : it.lon }); }
+      });
+    });
+    var s = items.filter(function (i) { return i.id === st.selected; })[0];
+    var sp = s && isGlobe ? proj(s.lon, s.lat) : null;
+    var onB = 'height: 36px; padding: 0 12px; background: rgba(95,212,255,0.14); border: 1px solid #5fd4ff; border-radius: 4px; color: #5fd4ff; font-family: JetBrains Mono, monospace; font-size: 11px; cursor: pointer;';
+    var offB = 'height: 36px; padding: 0 12px; background: transparent; border: 1px solid rgba(95,212,255,0.25); border-radius: 4px; color: #8a99a5; font-family: JetBrains Mono, monospace; font-size: 11px; cursor: pointer;';
+    return {
+      isGlobe: isGlobe, isRadar: !isGlobe,
+      graticule: graticule, dots: dots, pins: pins,
+      flatGrid: flatGrid, flatDots: flatDots, flatPins: flatPins,
+      sweepDeg: String(Math.round(st.sweep)).padStart(3, '0'),
+      sweepStyle: st.moving
+        ? 'position: absolute; left: -50px; top: -260px; width: 940px; height: 940px; border-radius: 50%; pointer-events: none; background: conic-gradient(from ' + ((st.sweep + 90 - 40 + 360) % 360) + 'deg, rgba(95,212,255,0) 0deg, rgba(95,212,255,0.26) 39deg, rgba(160,235,255,0.75) 40deg, rgba(95,212,255,0) 40.6deg);'
+        : 'display: none;',
+      feed: feed,
+      hasCallout: !!(sp && sp.front),
+      sel: s ? { title: s.title, kicker: s.kicker, note: s.note, color: AX[s.axis] } : { title: '', kicker: '', note: '', color: '#fff' },
+      calloutStyle: sp ? 'position: absolute; left: ' + (sp.x + 22) + 'px; top: ' + (sp.y - 20) + 'px; width: 230px; box-sizing: border-box; padding: 10px 12px; background: rgba(8,16,26,0.92); border: 1px solid rgba(95,212,255,0.35); border-radius: 4px;' : 'display: none;',
+      globeBtn: isGlobe ? onB : offB, radarBtn: isGlobe ? offB : onB,
+      motionLabel: st.moving ? (isGlobe ? '❚❚ STOP SPIN' : '❚❚ HOLD SCAN') : (isGlobe ? '▶ SPIN' : '▶ SCAN'),
+      toGlobe: function () { self.setState({ mode: 'globe' }); },
+      toRadar: function () { self.setState({ mode: 'radar' }); },
+      toggleMotion: function () { self.setState({ moving: !st.moving, selected: st.moving ? st.selected : null }); },
+      showAlert: st.alert, dismissAlert: function () { self.setState({ alert: false }); },
+      pickSaudi: function () { self.setState({ selected: 'saudi', lon0: 45 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

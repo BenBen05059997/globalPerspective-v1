@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Console wireframe: technique write-up + sources saved)
+
+`CONSOLE_WIREFRAME_TECHNIQUE.md` documents how the v2 console mock was built: orthographic projection of the SVG globe with back-face culling and spin via the centre longitude; the radar beam as a rotating CSS conic-gradient; scan detection by bearing + a 40° trail window with glow decay; feed marking that never scrolls or steals focus; reduced-motion handling; honesty rules; and a mock→production mapping (deck.gl globe with real Earth, rAF animation, adaptive quality, radar as the phone/slow-device mode). Wireframe `.dc.html` sources copied to `project-docs/redesign-ux/_reference/wireframe-2026-09-24/`. Also: a radar-first screen was added to the canvas (it had been hidden behind the view switch).
+
 ## 2026-09-24 (Home design round 2: sci-fi operations console, two map modes)
 
 Operator direction: the map is the default page, restyled as a sci-fi / defence-tech operations console (researched: XCOM 2 Geoscape, Anduril Lattice, DEFCON, Territory Studio FUI, GitHub's homepage globe). Operator's idea added: two map modes, a spinning GLOBE and a RADAR 2D whose sweep lights up what it crosses. The wireframe gains an interactive v2 console (spin, sweep, stop/resume, linked Intel feed, sensor-status freshness). Decisions recorded in `HOME_MAP_BRIEFINGS_DESIGN_BRIEF.md` round 2. Design only.

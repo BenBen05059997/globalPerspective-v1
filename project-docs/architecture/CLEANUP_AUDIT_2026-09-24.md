@@ -250,12 +250,12 @@ Three genuine disputes, resolved by monitor:
 ## §4 Consolidated cleanup plan (nothing executed yet — awaiting operator go)
 
 ### Tier A — SAFE-DELETE, no build/deploy needed (backend + repo-root + S3 + env)
-| # | Action | Evidence |
-|---|---|---|
-| A1 | `git rm -r amplify/backend/function/linkedInAutoPost/` (23MB shell: node_modules + stale zip) **+ fix ARCHITECTURE.md:481** (falsely says dir already removed) same commit | §2.B, both debaters |
-| A2 | `git rm test-gemini.js simple-prompt.js index.html package-lock.json` (repo root) + `git rm global-perspectives-starter/get-pip.py` (2.1MB) + update README.md:24 one-off list | §2.C; test-gemini.js provably broken |
-| A3 | `aws s3 rm --recursive s3://globalperspective-world-280362093938/shadow/` (6 objects, T3c closed per ledger) | §2.C |
-| A4 | `newsAnalyze-sandbox`: env `GROK_MODEL` deepseek-chat → deepseek-v4-pro (merge-not-clobber) | §2.B |
+| # | Action | Evidence | Execution status |
+|---|---|---|---|
+| A1 | `git rm -r amplify/backend/function/linkedInAutoPost/` (23MB shell: node_modules + stale zip) **+ fix ARCHITECTURE.md:481** (falsely says dir already removed) same commit | §2.B, both debaters | **EXECUTED 2026-09-24** — dir was entirely git-ignored/untracked (node_modules + `amplify/**/*.zip`), so removed via plain `rm -rf` rather than `git rm` (nothing was in the index); ARCHITECTURE.md:481 corrected. |
+| A2 | `git rm test-gemini.js simple-prompt.js index.html package-lock.json` (repo root) + `git rm global-perspectives-starter/get-pip.py` (2.1MB) + update README.md:24 one-off list | §2.C; test-gemini.js provably broken | **EXECUTED 2026-09-24** — all 5 files removed via `git rm`; README.md:24 updated. |
+| A3 | `aws s3 rm --recursive s3://globalperspective-world-280362093938/shadow/` (6 objects, T3c closed per ledger) | §2.C | **EXECUTED 2026-09-24** — confirmed exactly 6 objects listed, then deleted. |
+| A4 | `newsAnalyze-sandbox`: env `GROK_MODEL` deepseek-chat → deepseek-v4-pro (merge-not-clobber) | §2.B | **EXECUTED 2026-09-24** — fetched full env, merged only `GROK_MODEL`, wrote back via `update-function-configuration`; verified live value now `deepseek-v4-pro`. |
 
 ### Tier B — SAFE-DELETE, requires `npm run build` verify (deploy rides the NEXT gated deploy, never auto-pushed)
 | # | Action | Evidence |
@@ -271,9 +271,9 @@ Three genuine disputes, resolved by monitor:
 | C2 | S3 `tags/backfill/2026-09-11.json` | ONLY if operator abandons R3 matcher — otherwise KEEP (it's R3's launch-day input) |
 
 ### Tier D — NEEDS-OPERATOR-DECISION (do not touch)
-| # | Question | Options |
-|---|---|---|
-| D1 | `newsStripeWebhook/` repo dir — 2026-06-01 recorded "keep for reference"; still wanted? | keep (default) / delete |
+| # | Question | Options | Execution status |
+|---|---|---|---|
+| D1 | `newsStripeWebhook/` repo dir — 2026-06-01 recorded "keep for reference"; still wanted? | keep (default) / delete | **EXECUTED 2026-09-24** — operator explicitly reversed the 2026-06-01 keep-for-reference decision; `git rm -r amplify/backend/function/newsStripeWebhook` executed, ARCHITECTURE.md #12 updated (git-recoverable from history). |
 | D2 | SNS topic `GlobalPerspectivesAlerts` (plural) — check AWS Chatbot/CloudWatch console: live alarm wiring? | if orphan → delete topic; if live → document in ARCHITECTURE.md as out-of-repo resource |
 | D3 | Pair-arcs surface: `/map-legacy` is the only route to WorldMapV2, sole consumer of pair data; weekly cron produces data almost nobody can find; WorldMapV2 also eagerly ships in the main bundle | (a) keep unlinked + convert import to `lazy()` (cheapest) / (b) re-link `/map-legacy` in nav / (c) port arcs into SituationHome as a **separate feature task**, then retire WorldMapV2+route+tests / (d) retire the whole pair pipeline frontend+cron as one decision |
 

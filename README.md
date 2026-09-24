@@ -21,7 +21,7 @@ AI-powered global-news intelligence platform — [globalperspective.net](https:/
 - **Root `src/` is a legacy Amplify scaffold, NOT the frontend.** The real frontend is `global-perspectives-starter/frontend/src/`.
 - **Lambda env vars named `XAI_API_KEY` / `GROK_*` are legacy** — they hold DeepSeek/Gemini values. Confirm the provider with `aws lambda get-function-configuration`, never from the name.
 - **Deployed Lambda bytes can drift from `main`** (especially the signal-api-derived ones) — diff before changing.
-- Root scratch files (`simple-prompt.js`, `test-gemini.js`, `*.xlsx`, root `index.html`) are one-offs, not load-bearing. Load-bearing root files: `CLAUDE.md`, `deploy.sh`, `package-lock.json`, `.env.example`.
+- Root scratch files (`simple-prompt.js`, `test-gemini.js`, root `index.html`, and the 101-byte empty-stub root `package-lock.json`) were removed 2026-09-24 as dead weight (see `project-docs/architecture/CLEANUP_AUDIT_2026-09-24.md`). Load-bearing root files: `CLAUDE.md`, `deploy.sh`, `.env.example`.
 
 ## No CI by design
 

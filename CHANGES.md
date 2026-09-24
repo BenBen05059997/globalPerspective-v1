@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 fix plan + home/briefings design brief written)
+
+`STAGE0_FIXES_PLAN.md` + task file (9 fixes from the page review, each verified against current code; corrections: the SEO root cause is the Worker's missing SPA fallback; `/daily` already falls back to the latest brief, and only its ±1-day arrows are broken; `StatusStrip` defaults to LIVE for every caller). `HOME_MAP_BRIEFINGS_DESIGN_BRIEF.md` records the operator's home/map/briefings decisions. Docs only.
+
 ## 2026-09-24 (Page-structure proposal + challenge, adjudicated — discussion, nothing built)
 
 Opus designer proposal (`PAGE_STRUCTURE_PROPOSAL_2026-09-24.md`) vs Sonnet challenger (`PAGE_STRUCTURE_CHALLENGE_2026-09-24.md`), monitor-adjudicated in proposal §8 after verifying the facts. Key: the proposal rejected the approved S6 map-as-home because the news layer hadn't landed, but the ledger (L102) shows it live since 09-10; the map is thin only because news classification fails on DeepSeek 402. Ruling: keep S6, gated on content flowing; no new composed home page. Also found: `/weekly`'s 'updated Nh ago' is fabricated (`WeeklyPage.jsx` stamps the archive date at a hard-coded T12:00:00, ignoring the real `updatedAt`), a new P1. Operator decisions pending.

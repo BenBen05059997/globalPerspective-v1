@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 (b) follow-up: /weekly freshness uses the data's real updatedAt, not fetch time)
+
+Monitor browser check of Stage-0: `/weekly` still showed "LIVE … updated just now" on 11-day-old content — item (b) had replaced the fabricated noon stamp with the client's fetch-completion time (`fetchedAt`), which is always "just now". The archive response DOES carry a real per-day `updatedAt` (verified live: newest real write 2026-09-13T00:07Z; the synthetic "today" day is `source: latest` with its own 09-13 stamp). `useWeeklyArchive` now exposes `dataUpdatedAt` (max real `updatedAt` across days) and `WeeklyPage` uses it → strip reads "Last updated 11d ago" with no LIVE (browser-verified). `redesign.test.jsx` had asserted the old dishonest behaviour; its mock now supplies `dataUpdatedAt`, plus a new test: StatusStrip never claims LIVE for stale data. 185/185.
+
 ## 2026-09-24 (Stage-0: INDEX.md status update — all 9 code items done, deploys pending)
 
 `project-docs/INDEX.md`'s `STAGE0_FIXES_PLAN.md` row updated: items (a)-(i) are all coded and

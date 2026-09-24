@@ -9,6 +9,7 @@ import { MemoryRouter } from 'react-router-dom';
 import archiveFixture from '@fixtures/archive.json';
 import threadAnalysesFixture from '@fixtures/thread_analyses.json';
 import countryIntelFixture from '@fixtures/country_intelligence.json';
+import StatusStrip from '@/shared/ui/StatusStrip';
 
 // ── Mock all data hooks ────────────────────────────────────────────
 // Remap the fixture's (frozen April) date keys onto the most recent N days so
@@ -29,7 +30,7 @@ const dayMap = {};
 const sortedDates = Object.keys(dayMap).sort((a, b) => b.localeCompare(a));
 
 vi.mock('@/features/threads/hooks/useWeeklyArchive', () => ({
-  useWeeklyArchive: () => ({ dayMap, sortedDates, loading: false, error: null, tier: 'enterprise', fetchedAt: Date.now(), refetch: vi.fn() }),
+  useWeeklyArchive: () => ({ dayMap, sortedDates, loading: false, error: null, tier: 'enterprise', fetchedAt: Date.now(), dataUpdatedAt: Date.now(), refetch: vi.fn() }),
 }));
 
 vi.mock('@/features/threads/hooks/useThreadAnalyses', () => ({
@@ -77,6 +78,14 @@ describe('Redesign v2 — WeeklyPage', () => {
     expect(strip.textContent).toMatch(/LIVE/);
     expect(strip.textContent).toMatch(/arcs/);
     expect(strip.textContent).toMatch(/articles/);
+  });
+
+  it('never claims LIVE for stale data', () => {
+    const elevenDaysAgo = Date.now() - 11 * 24 * 60 * 60 * 1000;
+    render(<StatusStrip label="LIVE" stats={[{ value: 1, unit: 'arcs' }]} updatedAt={elevenDaysAgo} />);
+    const strip = document.querySelector('.ss-strip');
+    expect(strip.textContent).not.toMatch(/LIVE/);
+    expect(strip.textContent).toMatch(/Last updated 11d ago/);
   });
 
   it('renders the EditorialShell with left + right rails', () => {

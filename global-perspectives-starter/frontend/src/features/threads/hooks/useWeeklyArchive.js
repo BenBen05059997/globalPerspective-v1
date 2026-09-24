@@ -70,5 +70,16 @@ export function useWeeklyArchive() {
     [dayMap]
   );
 
-  return { dayMap, sortedDates, loading, error, tier, fetchedAt, refetch: load };
+  // Newest real content write across the archive. The "today" day can be a `source: latest`
+  // snapshot whose own updatedAt is days old, so the page must never use fetch time instead.
+  const dataUpdatedAt = useMemo(() => {
+    let latest = null;
+    for (const day of Object.values(dayMap)) {
+      const t = Date.parse(day?.updatedAt);
+      if (Number.isFinite(t) && (latest === null || t > latest)) latest = t;
+    }
+    return latest;
+  }, [dayMap]);
+
+  return { dayMap, sortedDates, loading, error, tier, fetchedAt, dataUpdatedAt, refetch: load };
 }

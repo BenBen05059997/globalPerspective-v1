@@ -137,3 +137,6 @@ migration, page rebuilds) begin.
 - [ ] Worker deploy for item (a) — fresh explicit "yes", separate gate, tested via the curl matrix
       in the plan before being considered done
 - [ ] Status header flipped to `done`
+
+
+**Monitor follow-up (2026-09-24):** item (b) used fetch time on /weekly (always "just now"); fixed to the archive's real `updatedAt` + a stale-data test. Browser-verified: /daily shows the 09-12 brief with an honest label; Home has no LIVE badge / "0 credits" pill; /weekly reads "Last updated 11d ago"; code-split routes load with a clean console. Residual (not in Stage-0 scope): Home masthead still shows today's date + "tracked today"; /daily masthead reads "Today's Brief" for an older edition.

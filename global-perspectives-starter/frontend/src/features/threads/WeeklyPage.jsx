@@ -720,7 +720,7 @@ export default function WeeklyPage() {
 
   useEffect(() => setActiveCountry(null), [activeRegion]);
 
-  const { dayMap, sortedDates: allDates, loading, error, fetchedAt } = useWeeklyArchive();
+  const { dayMap, sortedDates: allDates, loading, error, dataUpdatedAt } = useWeeklyArchive();
 
   const sortedDates = useMemo(
     () => filterDatesByRange(allDates, timeRange),
@@ -921,7 +921,7 @@ export default function WeeklyPage() {
         { value: totalArticles, unit: 'articles' },
         { value: sortedDates.length, unit: 'days' },
       ]}
-      updatedAt={fetchedAt}
+      updatedAt={dataUpdatedAt}
     />
   );
 

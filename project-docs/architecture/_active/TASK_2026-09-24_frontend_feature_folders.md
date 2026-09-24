@@ -27,7 +27,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 | P7 | features/analysis-studio | ✅ done | 7b3bff3 (monitor ✓: 184 tests, main 1,046.07 kB, 0 stray; N files + analysisPrompt.js moved at 100% similarity (prompt byte-unchanged → newsAnalyze sync intact); quality/analysis run.mjs 18/18; all other diffs import-only; browser: /analyze renders, provider modal opens, console clean) |
 | P8 | features/economy | ✅ done | 8c47394 (monitor ✓: 184 tests, main 1,046.07 kB, diff import-only; briefing tooling 5/5 + 10/10; verify_all --fast all green; guards 32/32; browser: /economy renders, sort-by-instrument works, This-week toggle loads weekly view + URL state, console clean) |
 | P9 | features/home | ✅ done | e4b4f39 (monitor ✓: 184 tests, main 1,046.07 kB, diff import-only; verify_lede 4/4; guards 32/32; browser: / renders, story controls present; Summary click shows no panel — IDENTICAL on prod (pre-restructure code) → data condition (DeepSeek outage), not a regression; pre-existing UX gap: no "unavailable" message) |
-| P10 | features/countries | ✅ done | see CHANGES |
+| P10 | features/countries | ✅ done | cd2b3b5 (monitor ✓: 184 tests, main 1,046.07 kB, diff import-only; useCountryIntelligence still unguarded (public); guards 32/32; browser: /weekly/countries grid, /weekly/country/Ukraine scorecard + What-changed band + Causal Web tab render; console clean) |
 | P11 | features/threads + delete empty old dirs + eslint dependency rule | ⬜ remaining | |
 | P12 | docs only (ARCHITECTURE path table, INDEX, feature→Lambda index) | ⬜ remaining | |
 

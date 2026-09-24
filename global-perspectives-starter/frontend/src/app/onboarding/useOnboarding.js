@@ -47,6 +47,23 @@ function waitFor(selector, timeoutMs = 4000) {
   });
 }
 
+// driver.js v1.4.0 stages an anchor-less step against a synthetic
+// #driver-dummy-element <div> (no ARIA role) and sets aria-haspopup/aria-expanded/
+// aria-controls on it to describe the popover relationship — axe-core's
+// aria-allowed-attr rule flags those attributes on an element with no widget role.
+// This is a driver.js v1 library pattern (confirmed by reading its bundled source,
+// not a mistake in our tour config), and there is no newer released version that
+// changes it as of 1.4.0. Strip the offending attributes right after they're set.
+// driver.js applies them via its own requestAnimationFrame-scheduled transition, so
+// a double-rAF after d.drive() runs after that scheduled write.
+function stripDummyElementAria() {
+  const dummy = document.getElementById('driver-dummy-element');
+  if (!dummy) return;
+  dummy.removeAttribute('aria-haspopup');
+  dummy.removeAttribute('aria-expanded');
+  dummy.removeAttribute('aria-controls');
+}
+
 // Drive a tour, keeping only steps with an existing (or no) anchor element.
 export async function runTour(tour) {
   if (!tour?.steps?.length) return;
@@ -64,8 +81,10 @@ export async function runTour(tour) {
     prevBtnText: 'Back',
     doneBtnText: 'Done',
     steps,
+    onHighlighted: stripDummyElementAria,
   });
   d.drive();
+  requestAnimationFrame(() => requestAnimationFrame(stripDummyElementAria));
 }
 
 // Imperatively start the right tour for a path (used by the "?" button — always plays).

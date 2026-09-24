@@ -1,5 +1,31 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 item (d): onboarding tour — mobile hamburger + `aria-allowed-attr`)
+
+`STAGE0_FIXES_PLAN.md` §(d), confirmed by reading driver.js 1.4.0's bundled source directly
+(`node_modules/driver.js/dist/driver.js.mjs`): (1) an anchor-less step (the `SITE_WELCOME`
+popover) is staged against a synthetic `#driver-dummy-element` `<div>` with no ARIA role, onto
+which driver.js sets `aria-haspopup="dialog"`, `aria-expanded="true"`, `aria-controls` — flagged
+by axe-core's `aria-allowed-attr` rule since those attributes aren't allowed on an element with no
+widget role. No newer driver.js release changes this (1.4.0 is current). `useOnboarding.js`'s
+`runTour()` now strips those three attributes off the dummy element via driver's own
+`onHighlighted` callback plus a double-`requestAnimationFrame` after `d.drive()` (driver schedules
+the attribute writes via its own rAF, so a single strip-immediately-after-drive() call would race
+it). (2) The mobile hamburger becoming untappable while a tour is open traced to driver.css's own
+`.driver-active *{pointer-events:none}` rule — with no anchor element for `SITE_WELCOME` to except
+via its `.driver-active-element` carve-out, *everything* on the page (including the hamburger)
+loses pointer-events, leaving only the popover's own buttons as an escape route, easy to miss on a
+small screen. `tour-theme.css` adds a higher-specificity `.driver-active .gp-hamburger`/
+`.gp-mobile-menu` `pointer-events: auto` rule (two classes beats driver's `.driver-active *`, no
+`!important` needed) so the hamburger and its menu stay tappable as an explicit escape hatch while
+every other intentional-blocking behavior of the tour is unchanged. No `tours.js` change was
+needed — the anchor-less welcome step is kept (last-resort anchor change avoided).
+
+Verify: `npm run verify` 184/184, 0 lint errors; build main chunk unchanged; `verify_pages.sh`
+32/0; `auth-guard-check.mjs` PASS. Browser/axe verification (fresh localStorage, mobile viewport,
+axe-core scan while the tour is open) deferred to the monitor per this task's hard rules (executor
+does not browser-test).
+
 ## 2026-09-24 (Stage-0 item (c): gate parked-credits copy on `creditPacks()`)
 
 `STAGE0_FIXES_PLAN.md` §(c): three surfaces offered to buy analysis credits regardless of whether

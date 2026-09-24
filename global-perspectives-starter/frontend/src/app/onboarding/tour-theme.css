@@ -1,6 +1,22 @@
 /* Theme override for driver.js popovers — matches the Global Perspectives design tokens.
    Loaded after driver.js/dist/driver.css so these win. Scoped to .gp-tour (popoverClass). */
 
+/* Mobile-hamburger fix (STAGE0_FIXES_PLAN.md item (d)): driver.js's own stylesheet sets
+   `.driver-active *{pointer-events:none}` (with exceptions only for the active/highlighted
+   element and the popover) while a tour is active — the SITE_WELCOME step has no anchor
+   element, so nothing on the page qualifies for that exception, and the hamburger (along
+   with the rest of the page) becomes untappable until the popover's own Done/close button is
+   found, which is easy to miss on a small screen. This keeps the tour's intentional blocking
+   everywhere else but explicitly carves out the hamburger + its menu as an escape hatch, so a
+   mobile visitor is never fully stuck. Higher specificity than driver.css's `*` selector, no
+   `!important` needed since `.driver-active .gp-hamburger` beats `.driver-active *`. */
+.driver-active .gp-hamburger,
+.driver-active .gp-hamburger *,
+.driver-active .gp-mobile-menu,
+.driver-active .gp-mobile-menu * {
+  pointer-events: auto;
+}
+
 .driver-popover.gp-tour {
   background: var(--card);
   color: var(--ink-mid);

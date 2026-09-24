@@ -20,7 +20,7 @@ plus a **separately gated** Worker deploy for item (a) — both need a fresh exp
 | (a) | SEO 404 + bot pre-render + sitemap — `project-docs/distribution/WORKER_FULL_CODE.md` (SPA fallback branch, prepared, not deployed), `project-docs/architecture/_active/STAGE0_sitemap_proposed.xml` (corrected sitemap content, NOT written to `docs/sitemap.xml` — that's deferred to the operator-gated deploy step per hard rules) | 🟡 prepared — awaiting operator deploy yes | see CHANGES |
 | (b) | Freshness honesty (2 bugs) — `features/threads/WeeklyPage.jsx` (fabricated `updatedAt`), `shared/ui/StatusStrip.jsx` (always-LIVE label), `app/layout/Layout.jsx` (static "Updated hourly"), "today" copy audit (Home, Economy) | ✅ done | see CHANGES |
 | (c) | Parked-credits copy — `features/analysis-studio/AnalysisStudio.jsx:345`, `features/account/Account.jsx:433`, `app/layout/Layout.jsx` credits pill (gate on `creditPacks().length`, pattern already correct in `MembershipPage.jsx`) | ✅ done | see CHANGES |
-| (d) | Onboarding tour mobile-hamburger block + `aria-allowed-attr` — `app/onboarding/useOnboarding.js`, `tours.js`, `tour-theme.css` | ⬜ not started | — |
+| (d) | Onboarding tour mobile-hamburger block + `aria-allowed-attr` — `app/onboarding/useOnboarding.js`, `tour-theme.css` (no `tours.js` change needed — anchor-less welcome step kept) | ✅ done | see CHANGES |
 | (e) | Home member-perk sentence → `/membership` not `/track-record` — `features/home/Home.jsx` (~lines 121, 396-411) | ⬜ not started | — |
 | (f) | De-dupe in-flight proxy requests — `shared/api/restProxy.js` (`useGeminiTopics` called from Home, AnalysisStudio, IntelligenceLoader) | ⬜ not started | — |
 | (g) | Route-level code splitting — `app/App.jsx` (`React.lazy` for 20 routes), `features/countries/CountryPage.jsx` (fix static `WeeklyMap` import defeating `WeeklyPage`'s existing lazy split) | ⬜ not started | — |
@@ -119,7 +119,7 @@ migration, page rebuilds) begin.
       deploy **operator-gated** (separate "yes" from frontend deploy) — NOT yet requested/run.
 - [x] (b) Freshness honesty — both `updatedAt` bugs fixed, "today" copy audited
 - [x] (c) Parked-credits copy gated on `creditPacks().length` in all 3 remaining surfaces
-- [ ] (d) Onboarding tour — mobile hamburger unblocked, `aria-allowed-attr` clean
+- [x] (d) Onboarding tour — mobile hamburger unblocked, `aria-allowed-attr` clean
 - [ ] (e) Home member-perk sentence → `/membership`
 - [ ] (f) restProxy in-flight de-dupe shipped, duplicate-request count verified down in DevTools
 - [ ] (g) Route-level code splitting — `App.jsx` lazy routes + `CountryPage.jsx` `WeeklyMap` fix,

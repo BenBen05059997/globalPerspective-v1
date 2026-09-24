@@ -1110,7 +1110,7 @@ The Worker handles these cases:
 | `/weekly/country/:name` | Bot (24 patterns) | POSTs `country_preview` to Lambda, returns pre-rendered HTML with OG tags |
 | `/weekly/thread/:id` | Bot (24 patterns) | POSTs `thread_preview` to Lambda, returns pre-rendered HTML with OG tags |
 | `/daily` and `/daily/:dateKey` | Bot (24 patterns) | POSTs `daily_brief` to Lambda (with 7-day fallback lookback), returns pre-rendered HTML with OG tags |
-| Everything else | Anyone | Passed through to GitHub Pages unchanged |
+| Everything else (non-asset GET path) | Anyone | **PREPARED 2026-09-24, NOT YET DEPLOYED** (Stage-0 item (a), `STAGE0_FIXES_PLAN.md`): SPA shell (`docs/index.html`) fetched and returned with a real **200** (`x-rendered-by: cf-worker-spa-fallback`), fixing the prior behavior where GitHub Pages served `docs/404.html` with HTTP status 404 for every route except `/` and the bot-prerendered three — invisible to crawlers reading status codes before JS executes. Until deployed, this row is still literally "passed through to GitHub Pages unchanged" in prod. |
 
 **Bot patterns detected:** Twitterbot, facebookexternalhit, LinkedInBot, Slackbot, Discordbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Googlebot, Bingbot, and 13 others (24 total in `BOT_PATTERNS`).
 

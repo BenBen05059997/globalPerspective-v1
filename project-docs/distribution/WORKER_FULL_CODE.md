@@ -385,6 +385,37 @@ export default {
       }
     }
 
+    // SPA-aware fallback: any non-asset path (no "." in the last segment) that
+    // wasn't already handled above (not /data/*, not /rss, not bot-prerendered)
+    // gets the SPA shell (docs/index.html) with a real 200, not GitHub Pages'
+    // 404 status for an unrecognised path. This covers every client route
+    // (/economy, /analyze, /membership, /track-record, /weekly-brief,
+    // /weekly-markets, /breaking, /breaking/:id, /weekly, /weekly/countries,
+    // /signin, /account, /whitepaper, /spider-demo, etc.) without enumerating
+    // them, and survives future route additions. A genuinely bogus path still
+    // 200s the shell at the edge — the client router's own catch-all
+    // (`*` -> NotFound in App.jsx) renders the real "not found" UI once the
+    // shell's JS loads; this fix is purely about the HTTP status code a
+    // crawler reads before executing JS.
+    const lastSegment = url.pathname.split('/').pop() || '';
+    const looksLikeAsset = lastSegment.includes('.');
+    if (request.method === 'GET' && !looksLikeAsset) {
+      const shellUrl = new URL('/index.html', url.origin);
+      const shellRes = await fetch(shellUrl.toString(), request);
+      if (shellRes.ok) {
+        return new Response(shellRes.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'public, max-age=0, must-revalidate',
+            'X-Rendered-By': 'cf-worker-spa-fallback',
+          },
+        });
+      }
+      // If fetching the shell itself failed for some reason, fall through to
+      // the default passthrough below rather than surfacing a worker error.
+    }
+
     // Everything else: pass through to GitHub Pages
     return fetch(request);
   },
@@ -410,3 +441,60 @@ export default {
 - Lambda `payload` is only read from POST body, not query string
 - If Lambda returns no data, Worker falls through to GitHub Pages gracefully
 - `/data/*` reads the **private** S3 bucket via SigV4 (no public-read); allowed keys are whitelisted (`DATA_ALLOWED`) on top of the read-only IAM scope. Member bundles are **fail-closed** until the Firebase JWKS check is implemented (do not open that branch without it). See `DATA_STRATEGY.md` §3.6/§5.
+- **SPA fallback (added 2026-09-24, Stage-0 item (a), PREPARED — NOT YET DEPLOYED):** any GET
+  request whose path's last segment has no `.` (i.e. isn't a static asset request) and that wasn't
+  already claimed by `/data/*`, `/rss`, or a bot-prerender branch above now gets `docs/index.html`
+  fetched from GitHub Pages and returned with **status 200** (`X-Rendered-By:
+  cf-worker-spa-fallback`), instead of falling through to GitHub Pages' native 404 for an
+  unrecognized path. This fixes real routes (`/economy`, `/analyze`, `/membership`,
+  `/track-record`, `/weekly-brief`, `/weekly-markets`, `/breaking`, `/breaking/:id`, `/weekly`,
+  `/weekly/countries`, `/signin`, `/account`, `/whitepaper`, `/spider-demo`, etc.) 404ing for
+  browsers and crawlers alike. It sits **after** the `/data/*`, `/rss`, and bot-prerender branches
+  (which all `return` before reaching it) so none of those are affected. A path that genuinely
+  doesn't exist in the SPA still gets a 200'd shell at the edge — the client router's `*` ->
+  `NotFound` route renders the real "not found" UI client-side, same as `docs/404.html` already
+  does today for humans; the only change is the **HTTP status code**, from 404 to 200, for the
+  shell response itself.
+
+### Test plan for the SPA fallback (run before requesting the deploy "yes")
+
+Run against prod (`https://globalperspective.net`) once pasted into the Cloudflare dashboard on a
+preview/staging attempt, or immediately after deploy with a fast manual rollback path ready
+(previous Worker version is in this file's git history):
+
+1. **Every route in `App.jsx`'s `<Routes>`**, both a default browser UA and
+   `-A "Mozilla/5.0 (compatible; Googlebot/2.1)"`:
+   ```bash
+   for r in / /map /privacy /about /disclosures /contact /daily /daily/2026-09-20 /economy \
+            /analyze /membership /track-record /weekly-brief /weekly-markets /breaking \
+            /breaking/some-id /weekly /weekly/thread/some-id /weekly/countries \
+            /weekly/country/Japan /signin /auth/callback /account /whitepaper /spider-demo; do
+     echo "== $r (browser UA) =="; curl -sI "https://globalperspective.net$r" | head -1
+     echo "== $r (googlebot UA) =="; curl -sI -A "Mozilla/5.0 (compatible; Googlebot/2.1)" "https://globalperspective.net$r" | head -1
+   done
+   ```
+   Expect `200` for all of the above, both UAs.
+2. **Genuinely bogus path** — `curl -sI https://globalperspective.net/does-not-exist-xyz` — expect
+   the fallback's `200` (shell serves, client router shows the "not found" UI after JS loads); this
+   is **expected behavior**, not a bug — GitHub Pages already worked this way for humans via
+   `docs/404.html`, this just fixes the status code site-wide.
+3. **Bot pre-render routes still fire and are unregressed** —
+   `curl -sI -A "Mozilla/5.0 (compatible; Googlebot/2.1)" https://globalperspective.net/` and the
+   same for a real `/weekly/country/<name>` and `/weekly/thread/<id>` — confirm
+   `x-rendered-by: cf-worker-bot` (not `cf-worker-spa-fallback`) is still present, proving those
+   branches still return before reaching the new fallback.
+4. **`/data/*` and `/rss` unaffected** —
+   `curl -sI https://globalperspective.net/data/world/latest.json` (expect `200`,
+   `x-rendered-by: cf-worker-data`) and `curl -sI https://globalperspective.net/rss` (expect `200`,
+   `Content-Type: application/rss+xml`) — confirm neither got intercepted by the new branch (both
+   `return` earlier in the handler, so this should be a no-op check, but verify).
+5. **`/daily` bot pre-render** — `curl -A googlebot https://globalperspective.net/daily` and a
+   recent `/daily/:dateKey` — confirm real brief HTML content (not a fallback shell) is returned by
+   the existing `renderDailyPage()` 7-day-lookback logic; if it returns generic/empty content, that
+   is the daily-brief pipeline being stale (operator-side), not this Worker change — do not treat
+   as a regression of this fix.
+6. **`xmllint --noout docs/sitemap.xml`** — confirm the regenerated sitemap (see below) is
+   well-formed, and spot-check a sample of its `<loc>` values 200 per the sweep above.
+
+Status: **prepared — awaiting operator deploy yes.** Not pasted into the Cloudflare dashboard, not
+deployed. No `wrangler deploy` run.

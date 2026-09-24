@@ -13,11 +13,11 @@ operator-requested pattern used in TASK_2026-09-24_frontend_feature_folders.md.
 per-item plan → `STAGE0_FIXES_PLAN.md` (this directory). No deploy until the batched end (frontend)
 plus a **separately gated** Worker deploy for item (a) — both need a fresh explicit "yes".
 
-**Now:** NOT STARTED — plan written, no code changed yet.
+**Now:** item (a) prepared, items (b)-(i) not started.
 
 | Item | What / files | Status | Commit |
 |---|---|---|---|
-| (a) | SEO 404 + bot pre-render + sitemap — `project-docs/distribution/WORKER_FULL_CODE.md`, `docs/sitemap.xml` | ⬜ not started | — |
+| (a) | SEO 404 + bot pre-render + sitemap — `project-docs/distribution/WORKER_FULL_CODE.md` (SPA fallback branch, prepared, not deployed), `project-docs/architecture/_active/STAGE0_sitemap_proposed.xml` (corrected sitemap content, NOT written to `docs/sitemap.xml` — that's deferred to the operator-gated deploy step per hard rules) | 🟡 prepared — awaiting operator deploy yes | see CHANGES |
 | (b) | Freshness honesty (2 bugs) — `features/threads/WeeklyPage.jsx` (fabricated `updatedAt`), `shared/ui/StatusStrip.jsx` (always-LIVE label), `app/layout/Layout.jsx` (static "Updated hourly"), "today" copy audit (Home, Economy) | ⬜ not started | — |
 | (c) | Parked-credits copy — `features/analysis-studio/AnalysisStudio.jsx:345`, `features/account/Account.jsx:433`, `app/layout/Layout.jsx` credits pill (gate on `creditPacks().length`, pattern already correct in `MembershipPage.jsx`) | ⬜ not started | — |
 | (d) | Onboarding tour mobile-hamburger block + `aria-allowed-attr` — `app/onboarding/useOnboarding.js`, `tours.js`, `tour-theme.css` | ⬜ not started | — |
@@ -114,8 +114,9 @@ migration, page rebuilds) begin.
   per the same rule the restructure task used.
 
 **Completion checklist:**
-- [ ] (a) SEO 404 fix + sitemap regen — Worker deploy **operator-gated** (separate "yes" from
-      frontend deploy)
+- [x] (a) SEO 404 fix + sitemap regen — code PREPARED in `WORKER_FULL_CODE.md` + corrected sitemap
+      content written to `STAGE0_sitemap_proposed.xml` (not `docs/sitemap.xml` — deferred). Worker
+      deploy **operator-gated** (separate "yes" from frontend deploy) — NOT yet requested/run.
 - [ ] (b) Freshness honesty — both `updatedAt` bugs fixed, "today" copy audited
 - [ ] (c) Parked-credits copy gated on `creditPacks().length` in all 3 remaining surfaces
 - [ ] (d) Onboarding tour — mobile hamburger unblocked, `aria-allowed-attr` clean

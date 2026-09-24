@@ -1,5 +1,27 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 item (a): Worker SPA-fallback prepared, not deployed)
+
+`project-docs/distribution/WORKER_FULL_CODE.md`: added a final branch in the Worker's `fetch`
+handler, after the existing `/data/*`, `/rss`, and bot-prerender branches, that serves
+`docs/index.html` with a real HTTP **200** (`x-rendered-by: cf-worker-spa-fallback`) for any GET
+request whose path doesn't look like a static asset — fixing the root cause confirmed in
+`STAGE0_FIXES_PLAN.md` §(a): every route except `/` and the three bot-prerendered ones currently
+falls through to GitHub Pages' own 404 for an unrecognized path, so crawlers reading the status
+code before JS executes see every other page as broken. Includes a full curl-matrix test plan
+(browser + Googlebot UA per route, bot-prerender/`/data/*`/`/rss` unregressed, bogus-path still
+200s the shell) documented in the same file. Also wrote the corrected `sitemap.xml` content
+(drops `/pricing`, `/cli` — no such routes; adds `/daily`, `/weekly-brief`, `/breaking`,
+`/economy`, `/analyze`, `/track-record`, `/membership`) to
+`project-docs/architecture/_active/STAGE0_sitemap_proposed.xml` — **not** `docs/sitemap.xml`,
+per the hard rule that nothing under `docs/` is touched mid-plan (it's live GitHub Pages output;
+a `sitemap.xml` push goes live immediately). Confirmed via curl that `/blog/` is still live (200)
+so its sitemap entries stay. `ARCHITECTURE.md`'s Worker behavior table updated to describe the
+prepared-but-undeployed state. **Not deployed** — this is prep only per the operator's hard rule;
+the Worker paste-and-deploy step needs its own separate explicit "yes", independent of the
+frontend batch deploy. `TASK_2026-09-24_stage0_fixes.md` tracker row (a) flipped to "prepared —
+awaiting operator deploy yes".
+
 ## 2026-09-24 (Stage-0 fix plan + home/briefings design brief written)
 
 `STAGE0_FIXES_PLAN.md` + task file (9 fixes from the page review, each verified against current code; corrections: the SEO root cause is the Worker's missing SPA fallback; `/daily` already falls back to the latest brief, and only its ±1-day arrows are broken; `StatusStrip` defaults to LIVE for every caller). `HOME_MAP_BRIEFINGS_DESIGN_BRIEF.md` records the operator's home/map/briefings decisions. Docs only.

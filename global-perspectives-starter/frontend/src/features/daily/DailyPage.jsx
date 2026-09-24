@@ -9,7 +9,7 @@ import SeverityBadge from '@/shared/ui/SeverityBadge';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from '@/shared/styles/tokens';
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatDailyBrief } from '@/shared/ui/CopyBriefing';
-import { SaveButton } from '@/components/SaveButton';
+import { SaveButton } from '@/features/account/components/SaveButton';
 import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
 import '@/features/daily/DailyPage.css';
 

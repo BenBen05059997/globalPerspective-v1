@@ -31,7 +31,7 @@ import AboutContact from '@/features/static/AboutContact';
 import Contact from '@/features/static/Contact';
 import PrivacyTerms from '@/features/static/PrivacyTerms';
 import Disclosures from '@/features/static/Disclosures';
-import SignIn from '@/components/SignIn';
+import SignIn from '@/features/account/SignIn';
 import WeeklyPage from '@/components/WeeklyPage';
 import CountryListPage from '@/components/CountryListPage';
 import ThreadPage from '@/components/ThreadPage';

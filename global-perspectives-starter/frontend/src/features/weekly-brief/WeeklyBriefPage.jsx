@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
 import Markdown from '@/shared/ui/Markdown';
-import SubscribeCard from '@/components/SubscribeCard';
+import SubscribeCard from '@/features/account/components/SubscribeCard';
 import { RISK_SOLID as RISK_COLOR } from '@/shared/styles/tokens';
 import '@/features/weekly-brief/WeeklyBriefPage.css';
 

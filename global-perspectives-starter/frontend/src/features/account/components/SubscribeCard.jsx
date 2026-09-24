@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { usePreferences } from '@/hooks/usePreferences';
-import '@/components/SubscribeCard.css';
+import { usePreferences } from '@/features/account/hooks/usePreferences';
+import '@/features/account/components/SubscribeCard.css';
 
 // Email subscribe entry point. Surfaces the same opt-ins that live in Account →
 // Notifications (newsRecommend set_prefs → GlobalPerspectiveUserPrefs), so it needs no

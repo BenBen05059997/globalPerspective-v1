@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useNotifications } from '@/hooks/useNotifications';
-import '@/components/NotificationBell.css';
+import { useNotifications } from '@/features/breaking/hooks/useNotifications';
+import '@/features/breaking/components/NotificationBell.css';
 
 // A breaking alert is a point-in-time story snapshot, NOT a narrative thread — it
 // has its own page (/breaking/:id), keyed on the alert id. (Previously this linked

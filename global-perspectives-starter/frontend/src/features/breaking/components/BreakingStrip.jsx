@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useNotifications } from '@/hooks/useNotifications';
-import '@/components/atoms/BreakingStrip.css';
+import { useNotifications } from '@/features/breaking/hooks/useNotifications';
+import '@/features/breaking/components/BreakingStrip.css';
 
 const FRESH_MS = 24 * 60 * 60 * 1000; // only surface genuinely fresh alerts (last 24h)
 

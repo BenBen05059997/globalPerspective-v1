@@ -12,7 +12,7 @@ import CompactTimeline from '@/components/CompactTimeline';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar as RISK_COLOR } from '@/shared/styles/tokens';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
 import CopyBriefing, { formatThreadBriefing } from '@/shared/ui/CopyBriefing';
-import { SaveButton } from '@/components/SaveButton';
+import { SaveButton } from '@/features/account/components/SaveButton';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
 import StatusStrip from '@/shared/ui/StatusStrip';

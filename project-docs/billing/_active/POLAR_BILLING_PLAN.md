@@ -37,7 +37,7 @@
 
 **Code BUILT (not deployed/live yet):**
 - ✅ **`newsPolarBilling` Lambda** (`amplify/backend/function/newsPolarBilling/`) — one Function URL, three jobs: Polar **webhook** (Standard-Webhooks signature verify → grant/revoke `tier=member` in `USERS_TABLE`), **`create_checkout`** (Firebase-JWT → Polar Checkout Session with `customer_external_id=uid` → `{url}`), **`get_membership`** (Firebase-JWT read). Deploy + Polar-config steps in its `README.md`.
-- ✅ **Frontend** — `restProxy.js` (`createCheckout`/`fetchMembership`/`billingConfigured`), `hooks/useMembership.js`, `components/MembershipPage.jsx` (+css) at route **`/membership`** ($15/mo + $150/yr cards, current-status, honest "not available yet" state until `window.POLAR_BILLING_ENDPOINT` is set). No nav link yet (route is hidden until go-live).
+- ✅ **Frontend** — `restProxy.js` (`createCheckout`/`fetchMembership`/`billingConfigured`), `features/account/hooks/useMembership.js`, `features/account/MembershipPage.jsx` (+css) at route **`/membership`** ($15/mo + $150/yr cards, current-status, honest "not available yet" state until `window.POLAR_BILLING_ENDPOINT` is set). No nav link yet (route is hidden until go-live).
 
 **✅ DEPLOYED to AWS 2026-06-16** — `newsPolarBilling` is live:
 - Role `newsPolarBilling-role` (CloudWatch logs + GetItem/UpdateItem on `GlobalPerspectiveUserTable` only). Runtime nodejs20.x, 256MB/15s.

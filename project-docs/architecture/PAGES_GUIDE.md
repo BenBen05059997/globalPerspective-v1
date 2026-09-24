@@ -212,7 +212,7 @@ Use this when:
   3. A recently-resolved item shows a Fired/Did-not-fire pill + its citation.
 - **Known issues:** none functional — the page is gated to honesty by design (empty until human-confirmed verdicts exist).
 
-## `/membership` · `components/MembershipPage.jsx`
+## `/membership` · `features/account/MembershipPage.jsx`
 
 - **Purpose:** Polar subscription checkout — the paid tier that runs Analysis Studio on **our** compute (no BYOK) and bundles the full intelligence layer.
 - **Primary user job:** Subscribe (or, if already a member, confirm status and jump to Account).
@@ -260,7 +260,7 @@ Use this when:
   3. Switch tabs back — animations remount via `key`.
 - **Known issues:** Orphan. Only tabs C and D are shipped variants; A and B are experimental.
 
-## `/signin` · `components/SignIn.jsx`
+## `/signin` · `features/account/SignIn.jsx`
 
 - **Purpose:** Authentication entry — Google popup, email magic link, or anonymous guest.
 - **Primary user job:** Get signed in to access account features (saved items).
@@ -276,7 +276,7 @@ Use this when:
   3. Click "Continue with Google" — popup flow opens.
 - **Known issues:** Hardcoded redirect to `/weekly` on success (no `returnTo` support); `auth/popup-closed-by-user` silently swallowed.
 
-## `/auth/callback` · `components/AuthCallback.jsx`
+## `/auth/callback` · `features/account/AuthCallback.jsx`
 
 - **Purpose:** Consume the email magic-link URL and complete Firebase sign-in.
 - **Primary user job:** Finish the handshake from the inbox link.
@@ -292,7 +292,7 @@ Use this when:
   3. Redirects to `/weekly` within ~1 s.
 - **Known issues:** No success state — straight redirect.
 
-## `/account` · `components/Account.jsx`
+## `/account` · `features/account/Account.jsx`
 
 - **Purpose:** User account hub — saved items, notification prefs, and the Analysis Studio BYOK key.
 - **Primary user job:** Manage saved threads/countries/dailies, toggle email notifications, view/change/remove the analysis API key, sign out.

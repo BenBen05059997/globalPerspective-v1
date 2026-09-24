@@ -5,7 +5,7 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { getProvider } from '@/services/llm';
 import { runChat } from '@/services/llm';
 import { loadByok } from '@/utils/byok';
-import { useMembership } from '@/hooks/useMembership';
+import { useMembership } from '@/features/account/hooks/useMembership';
 import { runMemberAnalysis, analyzeConfigured } from '@/shared/api/restProxy';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '@/utils/analysis';
 import { validateAnalysis } from '@/utils/analysisValidator';

@@ -1,5 +1,29 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P6: `features/breaking/`, `features/account/`)
+
+Executed P6 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the two features with the most inbound
+edges so far (app/layout → `useMembership`/`NotificationBell`; 6+ pages → account's
+`SaveButton`/`FollowButton`/`SubscribeCard`). Moved 22 files via `scripts/move-module.mjs`, no
+filename renames, no logic changes: `components/BreakingFeedPage.jsx`,
+`components/BreakingDetailPage.jsx`, `components/BreakingPage.css` →
+`features/breaking/`; `components/NotificationBell.jsx`/`.css`, `components/atoms/BreakingStrip.jsx`/`.css`
+→ `features/breaking/components/`; `hooks/useNotifications.js`, `hooks/useBreakingAlert.js` →
+`features/breaking/hooks/`; `components/Account.jsx`/`.css`, `components/SignIn.jsx`,
+`components/AuthCallback.jsx`, `components/MembershipPage.jsx`/`.css` → `features/account/`;
+`components/SaveButton.jsx`, `components/FollowButton.jsx`, `components/SubscribeCard.jsx`/`.css`
+→ `features/account/components/`; `hooks/useMembership.js`, `hooks/usePreferences.js`,
+`hooks/useSavedItems.js` → `features/account/hooks/`. This touches Polar billing UI
+(`MembershipPage.jsx`, `useMembership.js`) — pure file moves only, no billing logic changed.
+Fixed path-qualified references in `PAGES_GUIDE.md` (`/membership`, `/signin`,
+`/auth/callback`, `/account` route entries), `POLAR_BILLING_PLAN.md` (frontend file list), and
+`MAP_HOME_SITUATION_PLAN.md` (`BreakingDetailPage.jsx:106` citation). `quality/verify_pages.sh`
+needed no path edits (its guards reference economy/threads files only, confirmed by grep).
+Updated `ARCHITECTURE.md`'s Frontend Path map with the P6 rows. Verified: 15 files / 184 tests
+(unchanged), main bundle 1,046.07 kB and CSS bundle 295.60 kB byte-identical to baseline, guards
+32/32, auth-guard-check 7/7 PASS, relative-import sweep clean (only the 2 documented N-file
+edges remain).
+
 ## 2026-09-24 (Frontend feature-folder restructure P5: `features/map/`)
 
 Executed P5 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the situation map (2D D3 + deck.gl 3D

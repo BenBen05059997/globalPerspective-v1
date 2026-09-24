@@ -1304,6 +1304,28 @@ case-insensitive macOS).
 | `utils/situationLabels.js` | `features/map/lib/situationLabels.js` |
 | `assets/countries-110m.json` | `features/map/assets/countries-110m.json` |
 
+**P6 — `features/breaking/` + `features/account/`:**
+
+| Old | New |
+|---|---|
+| `components/BreakingFeedPage.jsx` | `features/breaking/BreakingFeedPage.jsx` |
+| `components/BreakingDetailPage.jsx` | `features/breaking/BreakingDetailPage.jsx` |
+| `components/BreakingPage.css` | `features/breaking/BreakingPage.css` |
+| `components/NotificationBell.jsx`, `.css` | `features/breaking/components/NotificationBell.jsx`, `.css` |
+| `components/atoms/BreakingStrip.jsx`, `.css` | `features/breaking/components/BreakingStrip.jsx`, `.css` |
+| `hooks/useNotifications.js` | `features/breaking/hooks/useNotifications.js` |
+| `hooks/useBreakingAlert.js` | `features/breaking/hooks/useBreakingAlert.js` |
+| `components/Account.jsx`, `.css` | `features/account/Account.jsx`, `.css` |
+| `components/SignIn.jsx` | `features/account/SignIn.jsx` |
+| `components/AuthCallback.jsx` | `features/account/AuthCallback.jsx` |
+| `components/MembershipPage.jsx`, `.css` | `features/account/MembershipPage.jsx`, `.css` |
+| `components/SaveButton.jsx` | `features/account/components/SaveButton.jsx` |
+| `components/FollowButton.jsx` | `features/account/components/FollowButton.jsx` |
+| `components/SubscribeCard.jsx`, `.css` | `features/account/components/SubscribeCard.jsx`, `.css` |
+| `hooks/useMembership.js` | `features/account/hooks/useMembership.js` |
+| `hooks/usePreferences.js` | `features/account/hooks/usePreferences.js` |
+| `hooks/useSavedItems.js` | `features/account/hooks/useSavedItems.js` |
+
 ### Feature → Lambda index
 
 Lambdas are **not** grouped into feature subfolders (evaluated and rejected —

@@ -13,7 +13,7 @@ and every "Docs to update" item below is staged in that phase's commit or the fi
 orphans; keep DisruptionRow/Preview → economy; design's ambiguous-home calls; Python prototype
 out of scope; no deploy until the end, and that one needs a fresh yes).
 
-**Now:** P6 — not started
+**Now:** P7 — not started
 
 | Phase | What moves / changes (file groups — exact lists in the plan's §2) | Status | Commit |
 |---|---|---|---|
@@ -23,7 +23,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 | P3 | features/static + features/spider-demo | ✅ done | 95044fa (monitor ✓: 184 tests, bundles 1,046.07/295.60 kB, 0 stray rel. imports, guards 32/32; browser: 6 routes render incl. /spider-demo causal web, console clean) |
 | P4 | features/weekly-brief, daily, track-record | ✅ done | b225166 (monitor ✓: 184 tests, bundles 1,046.07/295.60 kB, 0 stray, guards 32/32; browser: /, /weekly-brief, /track-record, /daily render; /daily/2026-09-12 full brief renders — today empty = DeepSeek outage, not code) |
 | P5 | features/map | ✅ done | 4f09336 (monitor ✓: 184 tests, main 1,046.07 kB, lazy SituationMap3D chunk 942.99 kB identical, 0 stray, guards 32/32; browser: /map renders, globe toggle lazy-loads + renders deck.gl globe, Key responds, console clean after reload. Empty situation list = same as pre-restructure local state) |
-| P6 | features/breaking + account | ⬜ remaining | |
+| P6 | features/breaking + account | ✅ done | see CHANGES |
 | P7 | features/analysis-studio | ⬜ remaining | |
 | P8 | features/economy | ⬜ remaining | |
 | P9 | features/home | ⬜ remaining | |
@@ -123,7 +123,7 @@ rewrite, phase by phase, one commit per phase, fully reversible with `git revert
 - [x] P3 — `static` + `spider-demo` moved
 - [x] P4 — `weekly-brief`, `daily`, `track-record` moved
 - [x] P5 — `map` moved
-- [ ] P6 — `breaking` + `account` moved
+- [x] P6 — `breaking` + `account` moved
 - [ ] P7 — `analysis-studio` moved (N-file Node-tooling checks pass)
 - [ ] P8 — `economy` moved (N-file Node-tooling checks pass)
 - [ ] P9 — `home` moved (N-file Node-tooling checks pass)

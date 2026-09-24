@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useMembership } from '@/hooks/useMembership';
+import { useMembership } from '@/features/account/hooks/useMembership';
 import { createCheckout, createCreditCheckout, creditPacks } from '@/shared/api/restProxy';
-import '@/components/MembershipPage.css';
+import '@/features/account/MembershipPage.css';
 
 const PLANS = [
   { id: 'monthly', name: 'Monthly', price: '$15', cadence: '/month', note: 'Billed monthly. Cancel anytime.' },

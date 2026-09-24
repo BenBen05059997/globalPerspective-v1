@@ -1,10 +1,10 @@
 import { useState, useEffect, Fragment } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useMembership } from '@/hooks/useMembership';
+import { useMembership } from '@/features/account/hooks/useMembership';
 import LoadingBar from '@/app/layout/LoadingBar';
 import AIToast from '@/app/layout/AIToast';
-import NotificationBell from '@/components/NotificationBell';
+import NotificationBell from '@/features/breaking/components/NotificationBell';
 import { useAutoTour, startTourForPath } from '@/app/onboarding/useOnboarding';
 import '@/app/layout/Layout.css';
 

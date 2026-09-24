@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
 import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
-import { FollowButton } from '@/components/FollowButton';
+import { FollowButton } from '@/features/account/components/FollowButton';
 import '@/features/track-record/TrackRecordPage.css';
 
 function brierVerdict(b) {

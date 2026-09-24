@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '../contexts/AuthContext';
-import { ErrorProvider } from '../contexts/ErrorContext';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ErrorProvider } from '@/contexts/ErrorContext';
 
 // Mock Google Maps
 vi.mock('@googlemaps/react-wrapper', () => ({
@@ -26,16 +26,16 @@ vi.mock('firebase/auth', () => ({
 }));
 
 // Import page components
-import Home from '../components/Home';
-import AboutContact from '../components/AboutContact';
-import Contact from '../components/Contact';
-import PrivacyTerms from '../components/PrivacyTerms';
-import Disclosures from '../components/Disclosures';
-import SignIn from '../components/SignIn';
-import WeeklyPage from '../components/WeeklyPage';
-import CountryListPage from '../components/CountryListPage';
-import ThreadPage from '../components/ThreadPage';
-import CountryPage from '../components/CountryPage';
+import Home from '@/components/Home';
+import AboutContact from '@/components/AboutContact';
+import Contact from '@/components/Contact';
+import PrivacyTerms from '@/components/PrivacyTerms';
+import Disclosures from '@/components/Disclosures';
+import SignIn from '@/components/SignIn';
+import WeeklyPage from '@/components/WeeklyPage';
+import CountryListPage from '@/components/CountryListPage';
+import ThreadPage from '@/components/ThreadPage';
+import CountryPage from '@/components/CountryPage';
 
 function renderPage(Component, path = '/') {
   return render(

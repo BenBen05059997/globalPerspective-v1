@@ -17,8 +17,8 @@
 
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { threadPath } from '../utils/threadPath';
-import { useWeeklyMarkets } from '../hooks/useWeeklyMarkets';
+import { threadPath } from '@/utils/threadPath';
+import { useWeeklyMarkets } from '@/hooks/useWeeklyMarkets';
 import './WeeklyMarketsView.css';
 
 function formatWeekOf(weekKey) {

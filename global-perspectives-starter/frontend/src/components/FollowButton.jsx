@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useMembership } from '../hooks/useMembership';
-import { usePreferences } from '../hooks/usePreferences';
+import { useMembership } from '@/hooks/useMembership';
+import { usePreferences } from '@/hooks/usePreferences';
 
 // Member-only "follow this country's read" control → drift-alert emails (MEMBER_GATING_PLAN.md P5).
 // Members get a live toggle; non-members (incl. anon) see a subtle locked CTA to /membership —

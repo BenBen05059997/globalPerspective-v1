@@ -1206,6 +1206,24 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 **Source:** `global-perspectives-starter/frontend/src/`
 **Production:** `docs/` (served by GitHub Pages)
 
+### Frontend imports
+
+Every import in `src/` is written as an absolute `@/…` specifier (alias for `src/`, defined in
+`vite.config.js`'s `resolve.alias` + mirrored in `jsconfig.json` for editor tooling), not a
+relative `../..` path — added 2026-09-24, P1 of the feature-folder restructure
+(`project-docs/architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`). `test/redesign.test.jsx`'s
+fixture imports use a separate `@fixtures` alias (→ `tests/fixtures/`). **Exception — "N files"**:
+a handful of files are imported by Node tooling *outside* `src/` via relative path (`quality/briefing/*.mjs`,
+`quality/analysis/*.mjs`, `frontend/scripts/test-disruption-gate.mjs`), so their own outgoing
+imports must stay relative (marked with a `// imported by Node tooling outside src/ — keep
+relative imports` header comment): `utils/composeTopicsLede.js`, `utils/composeEconomyBriefing.js`,
+`utils/disruptionGate.js`, `data/economicAnalogs.js`, `services/llm.js`, `utils/analysisPrompt.js`,
+`utils/analysisValidator.js`, `utils/analysisStruct.js`. Everything that imports *those* files
+still uses `@/`; only the N files' own outbound imports (and Node tooling's imports of them) stay
+relative. `global-perspectives-starter/frontend/scripts/move-module.mjs` is the helper the
+restructure's later phases use to relocate a module and rewrite every `@/` reference to it in one
+step.
+
 ### Routes
 
 Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.

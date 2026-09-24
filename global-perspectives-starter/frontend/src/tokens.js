@@ -12,7 +12,7 @@
 // palette, so climate/science/business/society/energy markers get their real
 // colors (matching WorldMap/WeeklyPage) instead of falling back to grey.
 
-import { tierFromScore } from './utils/riskTiers';
+import { tierFromScore } from '@/utils/riskTiers';
 
 // ── Risk ──────────────────────────────────────────────────────────────────
 

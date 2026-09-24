@@ -7,8 +7,8 @@ import {
   fetchSummaryCache,
   fetchPredictionCache,
   fetchTraceCauseCache,
-} from '../services/restProxy';
-import { assembleContext, pickText, clip } from './analysisPrompt';
+} from '@/services/restProxy';
+import { assembleContext, pickText, clip } from '@/utils/analysisPrompt';
 
 // Re-export the pure prompt pieces so existing importers (AnalysisStudio.jsx)
 // keep working unchanged.
@@ -20,7 +20,7 @@ export {
   buildUserMessage,
   pickText,
   clip,
-} from './analysisPrompt';
+} from '@/utils/analysisPrompt';
 
 // Fetch the cached AI for each selected topic and assemble a numbered, citable
 // context block. Returns { context, citations:[{ n, title, regions, sources }] }.

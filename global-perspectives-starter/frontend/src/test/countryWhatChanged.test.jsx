@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import CountryWhatChanged from '../components/atoms/CountryWhatChanged.jsx';
+import CountryWhatChanged from '@/components/atoms/CountryWhatChanged.jsx';
 
 const MASKED_AXIS = [
   { dateKey: '2026-06-01', riskLevel: 'high', riskScore: 80, trajectory: '', headline: '', dimensions: { conflict: 80, economic: 30 } },

@@ -1,16 +1,16 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
-import { useCountryIntelligence } from '../hooks/useCountryIntelligence';
-import { useDisruptionsList } from '../hooks/useDisruptionsList';
-import { getTopicRegion } from '../utils/countryMapping';
-import { RISK_COLORS, CATEGORY_BADGE_COLORS, riskTierToVar } from '../tokens';
-import { TIER_ORDER, tierFromLevel, tierFromScore } from '../utils/riskTiers';
-import CountryOverviewMap from './CountryOverviewMap';
-import EditorialShell from './atoms/EditorialShell';
-import StatusStrip from './atoms/StatusStrip';
-import RiskScoreBadge from './atoms/RiskScoreBadge';
-import SeverityBadge from './atoms/SeverityBadge';
+import { useWeeklyArchive } from '@/hooks/useWeeklyArchive';
+import { useCountryIntelligence } from '@/hooks/useCountryIntelligence';
+import { useDisruptionsList } from '@/hooks/useDisruptionsList';
+import { getTopicRegion } from '@/utils/countryMapping';
+import { RISK_COLORS, CATEGORY_BADGE_COLORS, riskTierToVar } from '@/tokens';
+import { TIER_ORDER, tierFromLevel, tierFromScore } from '@/utils/riskTiers';
+import CountryOverviewMap from '@/components/CountryOverviewMap';
+import EditorialShell from '@/components/atoms/EditorialShell';
+import StatusStrip from '@/components/atoms/StatusStrip';
+import RiskScoreBadge from '@/components/atoms/RiskScoreBadge';
+import SeverityBadge from '@/components/atoms/SeverityBadge';
 import './WeeklyPage.css';
 import './CountryListPage.css';
 

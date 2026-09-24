@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchCountryHistory } from '../services/restProxy.js';
+import { fetchCountryHistory } from '@/services/restProxy.js';
 
 const CACHE_KEY = (name) => `gp_country_history_${name}`;
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour

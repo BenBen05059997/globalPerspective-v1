@@ -1,3 +1,4 @@
+// imported by Node tooling outside src/ — keep relative imports
 // Analysis Studio — output guardrail checker.
 //
 // The whole feature rests on honesty rules that, until now, lived ONLY as

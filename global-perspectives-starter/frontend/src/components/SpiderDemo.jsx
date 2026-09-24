@@ -8,12 +8,12 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
-import { useNarrativeThread } from '../hooks/useNarrativeThread';
-import { fetchPredictionCache, fetchDossierAnalysis } from '../services/restProxy';
-import { threadPath } from '../utils/threadPath';
-import CompactTimeline from './CompactTimeline';
-import WorldOverview from './SpiderWorld';
+import { useSystemsAnalysis } from '@/hooks/useSystemsAnalysis';
+import { useNarrativeThread } from '@/hooks/useNarrativeThread';
+import { fetchPredictionCache, fetchDossierAnalysis } from '@/services/restProxy';
+import { threadPath } from '@/utils/threadPath';
+import CompactTimeline from '@/components/CompactTimeline';
+import WorldOverview from '@/components/SpiderWorld';
 import './SpiderDemo.css';
 
 // Countries with a live systems_analysis graph (SYSTEMS_TEST_COUNTRIES gate).

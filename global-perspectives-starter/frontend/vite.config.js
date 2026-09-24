@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { execSync } from 'node:child_process'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Build stamp so the live site can show exactly which commit is deployed (handy for
 // confirming a deploy actually landed in prod). Git SHA + date, resolved at build.
@@ -20,6 +24,15 @@ export default defineConfig({
   // 301-redirects to the custom domain, so '/' is correct for the live site.
   base: '/',
   plugins: [react()],
+  // '@' -> src/, '@fixtures' -> tests/fixtures/ (used by test/redesign.test.jsx).
+  // Vitest shares this `resolve` block since `test` is defined in the same
+  // defineConfig call, so `vi.mock('@/…')` resolves without extra config.
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+      '@fixtures': path.resolve(__dirname, 'tests/fixtures'),
+    },
+  },
   build: {
     // 'hidden' emits .map files into dist/ (gitignored) WITHOUT appending a
     // //# sourceMappingURL comment to the bundle — so production never exposes

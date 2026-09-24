@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchEconomicImpact } from '../services/restProxy.js';
+import { fetchEconomicImpact } from '@/services/restProxy.js';
 
 const CACHE_KEY = (id) => `gp_econ_${id}`;
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes

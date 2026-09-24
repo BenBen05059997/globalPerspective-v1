@@ -15,12 +15,12 @@ const MOCK_DATA = {
   ],
 };
 
-vi.mock('../services/restProxy.js', () => ({
+vi.mock('@/services/restProxy.js', () => ({
   fetchSystemsAnalysis: vi.fn(),
 }));
 
-import { fetchSystemsAnalysis } from '../services/restProxy.js';
-import { useSystemsAnalysis } from '../hooks/useSystemsAnalysis';
+import { fetchSystemsAnalysis } from '@/services/restProxy.js';
+import { useSystemsAnalysis } from '@/hooks/useSystemsAnalysis';
 
 // Minimal localStorage mock
 const localStorageMock = (() => {

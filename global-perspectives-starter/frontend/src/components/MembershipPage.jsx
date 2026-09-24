@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useMembership } from '../hooks/useMembership';
-import { createCheckout, createCreditCheckout, creditPacks } from '../services/restProxy';
+import { useAuth } from '@/contexts/AuthContext';
+import { useMembership } from '@/hooks/useMembership';
+import { createCheckout, createCreditCheckout, creditPacks } from '@/services/restProxy';
 import './MembershipPage.css';
 
 const PLANS = [

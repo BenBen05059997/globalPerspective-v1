@@ -1,16 +1,16 @@
 import { useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { threadPath } from '../utils/threadPath';
-import { useAuth } from '../contexts/AuthContext';
-import { useDailyBrief } from '../hooks/useDailyBrief';
-import { useDisruptionsList } from '../hooks/useDisruptionsList';
-import InstrumentChip from './atoms/InstrumentChip';
-import SeverityBadge from './atoms/SeverityBadge';
-import { CATEGORY_BADGE_COLORS, RISK_COLORS } from '../tokens';
-import ShareButtons from './ShareButtons';
-import CopyBriefing, { formatDailyBrief } from './CopyBriefing';
-import { SaveButton } from './SaveButton';
-import IntelligenceLoader from './IntelligenceLoader';
+import { threadPath } from '@/utils/threadPath';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDailyBrief } from '@/hooks/useDailyBrief';
+import { useDisruptionsList } from '@/hooks/useDisruptionsList';
+import InstrumentChip from '@/components/atoms/InstrumentChip';
+import SeverityBadge from '@/components/atoms/SeverityBadge';
+import { CATEGORY_BADGE_COLORS, RISK_COLORS } from '@/tokens';
+import ShareButtons from '@/components/ShareButtons';
+import CopyBriefing, { formatDailyBrief } from '@/components/CopyBriefing';
+import { SaveButton } from '@/components/SaveButton';
+import IntelligenceLoader from '@/components/IntelligenceLoader';
 import './DailyPage.css';
 
 const TRAJECTORY_LABELS = {

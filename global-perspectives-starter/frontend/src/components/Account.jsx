@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { threadPath } from '../utils/threadPath';
-import { useAuth } from '../contexts/AuthContext';
-import { useSavedItems } from '../hooks/useSavedItems';
-import { usePreferences } from '../hooks/usePreferences';
-import { useMembership } from '../hooks/useMembership';
-import { loadByok, clearByok } from '../utils/byok';
-import { getProvider } from '../services/llm';
-import ProviderModal from './ProviderModal';
+import { threadPath } from '@/utils/threadPath';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSavedItems } from '@/hooks/useSavedItems';
+import { usePreferences } from '@/hooks/usePreferences';
+import { useMembership } from '@/hooks/useMembership';
+import { loadByok, clearByok } from '@/utils/byok';
+import { getProvider } from '@/services/llm';
+import ProviderModal from '@/components/ProviderModal';
 import './Account.css';
 
 // Mask a key for display: keep a few head/tail chars, hide the middle.

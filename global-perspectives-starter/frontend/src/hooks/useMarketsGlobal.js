@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchMarketsGlobal } from '../services/restProxy';
+import { fetchMarketsGlobal } from '@/services/restProxy';
 
 const CACHE_KEY = 'gp_markets_global_v1';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes — data updates hourly, poll frequently

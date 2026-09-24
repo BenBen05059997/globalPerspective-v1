@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCountryDrift } from '../utils/countryDrift';
+import { computeCountryDrift } from '@/utils/countryDrift';
 
 const snap = (dateKey, riskLevel, riskScore, trajectory = '', headline = '') =>
   ({ dateKey, riskLevel, riskScore, trajectory, headline });

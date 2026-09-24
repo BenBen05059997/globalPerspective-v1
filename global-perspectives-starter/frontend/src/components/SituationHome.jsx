@@ -1,12 +1,12 @@
 import { useMemo, useCallback, useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { useWorld, useSituationDetail } from '../hooks/useWorld.js';
-import SituationMap, { AXIS_HUE } from './SituationMap.jsx';
-import { iso3Name, buildLede, TIER_LABEL } from '../utils/situationLabels.js';
+import { useWorld, useSituationDetail } from '@/hooks/useWorld.js';
+import SituationMap, { AXIS_HUE } from '@/components/SituationMap.jsx';
+import { iso3Name, buildLede, TIER_LABEL } from '@/utils/situationLabels.js';
 import './SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
-const SituationMap3D = lazy(() => import('./SituationMap3D.jsx'));
+const SituationMap3D = lazy(() => import('@/components/SituationMap3D.jsx'));
 
 function canUse3D() {
   try {

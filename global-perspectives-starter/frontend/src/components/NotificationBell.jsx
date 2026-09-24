@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useNotifications } from '../hooks/useNotifications';
+import { useNotifications } from '@/hooks/useNotifications';
 import './NotificationBell.css';
 
 // A breaking alert is a point-in-time story snapshot, NOT a narrative thread — it

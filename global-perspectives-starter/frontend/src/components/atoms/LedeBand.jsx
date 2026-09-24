@@ -6,7 +6,7 @@
 // countryCount, threadCount }. The headline links into the story-arc analysis
 // via the shared threadPath() helper.
 import { Link } from 'react-router-dom';
-import { threadPath } from '../../utils/threadPath';
+import { threadPath } from '@/utils/threadPath';
 import './LedeBand.css';
 
 export default function LedeBand({

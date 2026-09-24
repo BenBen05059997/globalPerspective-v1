@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchDailyBrief } from '../services/restProxy';
+import { fetchDailyBrief } from '@/services/restProxy';
 
 const CACHE_KEY = 'gp_daily_brief_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;

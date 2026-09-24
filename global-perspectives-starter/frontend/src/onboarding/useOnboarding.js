@@ -6,7 +6,7 @@
 // never points at nothing.
 
 import { useEffect } from 'react';
-import { SITE_WELCOME, SITE_INTRO, pageTourForPath } from './tours.js';
+import { SITE_WELCOME, SITE_INTRO, pageTourForPath } from '@/onboarding/tours.js';
 
 // Lazy-load driver.js + its styles on first tour run, so the ~25kb library stays out of
 // the main bundle for the (majority) of page views that never trigger a tour. Cached after
@@ -18,7 +18,7 @@ function loadDriver() {
     driverPromise = Promise.all([
       import('driver.js'),
       import('driver.js/dist/driver.css'),
-      import('./tour-theme.css'),
+      import('@/onboarding/tour-theme.css'),
     ]).then(([mod]) => mod.driver);
   }
   return driverPromise;

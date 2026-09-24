@@ -32,14 +32,14 @@ const MOCK_LIST = [
   { ...MOCK_IMPACT, scopeId: 'thread-c', severity: 'minor', severityScore: 25 },
 ];
 
-vi.mock('../services/restProxy.js', () => ({
+vi.mock('@/services/restProxy.js', () => ({
   fetchEconomicImpact: vi.fn(),
   fetchDisruptionsList: vi.fn(),
 }));
 
-import { fetchEconomicImpact, fetchDisruptionsList } from '../services/restProxy.js';
-import { useEconomicImpact } from '../hooks/useEconomicImpact';
-import { useDisruptionsList } from '../hooks/useDisruptionsList';
+import { fetchEconomicImpact, fetchDisruptionsList } from '@/services/restProxy.js';
+import { useEconomicImpact } from '@/hooks/useEconomicImpact';
+import { useDisruptionsList } from '@/hooks/useDisruptionsList';
 
 const localStorageMock = (() => {
   let store = {};

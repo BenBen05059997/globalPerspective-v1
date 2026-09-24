@@ -1,21 +1,21 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { threadPath } from '../utils/threadPath';
-import IntelligenceLoader from './IntelligenceLoader';
-import { useAuth } from '../contexts/AuthContext';
-import { useWeeklyArchive } from '../hooks/useWeeklyArchive';
-import { useThreadAnalyses } from '../hooks/useThreadAnalyses';
-import { getTopicRegion } from '../utils/countryMapping';
-import { formatDateLabel } from '../utils/dateUtils';
-import TrendBadge, { getTrend } from './TrendBadge';
-import EditorialShell from './atoms/EditorialShell';
-import StatusStrip from './atoms/StatusStrip';
-import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '../tokens';
-import { tierFromScore, tierLabel, deriveHeadline } from '../utils/riskTiers';
+import { threadPath } from '@/utils/threadPath';
+import IntelligenceLoader from '@/components/IntelligenceLoader';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWeeklyArchive } from '@/hooks/useWeeklyArchive';
+import { useThreadAnalyses } from '@/hooks/useThreadAnalyses';
+import { getTopicRegion } from '@/utils/countryMapping';
+import { formatDateLabel } from '@/utils/dateUtils';
+import TrendBadge, { getTrend } from '@/components/TrendBadge';
+import EditorialShell from '@/components/atoms/EditorialShell';
+import StatusStrip from '@/components/atoms/StatusStrip';
+import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '@/tokens';
+import { tierFromScore, tierLabel, deriveHeadline } from '@/utils/riskTiers';
 import './WeeklyPage.css';
 import './AIComponents.css';
 
-const WeeklyMap = lazy(() => import('./WeeklyMap'));
+const WeeklyMap = lazy(() => import('@/components/WeeklyMap'));
 
 const REGION_COLORS = {
   Asia:          { bg: '#fef3c7', border: '#fbbf24', text: '#92400e' },

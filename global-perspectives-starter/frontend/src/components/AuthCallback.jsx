@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import './WeeklyPage.css';
-import IntelligenceLoader from './IntelligenceLoader';
+import IntelligenceLoader from '@/components/IntelligenceLoader';
 
 export default function AuthCallback() {
   const { completeSignIn } = useAuth();

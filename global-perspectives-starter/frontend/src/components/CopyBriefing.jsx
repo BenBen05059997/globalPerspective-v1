@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { threadPath } from '../utils/threadPath';
+import { threadPath } from '@/utils/threadPath';
 
 export default function CopyBriefing({ getText }) {
   const [copied, setCopied] = useState(false);

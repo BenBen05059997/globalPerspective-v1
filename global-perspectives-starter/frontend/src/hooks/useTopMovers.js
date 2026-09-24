@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchTopMovers } from '../services/restProxy.js';
+import { fetchTopMovers } from '@/services/restProxy.js';
 
 const CACHE_KEY = (limit) => `gp_top_movers_${limit}`;
 const CACHE_TTL = 30 * 60 * 1000;

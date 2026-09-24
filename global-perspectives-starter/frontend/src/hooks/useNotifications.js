@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchAlerts } from '../services/restProxy';
+import { fetchAlerts } from '@/services/restProxy';
 
 // In-app notification feed (the bell). The breaking-alert feed is a global broadcast, so
 // this is the same public list for everyone; the unread count is client-side (a

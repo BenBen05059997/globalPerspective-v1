@@ -13,6 +13,8 @@ Auth; Cloudflare Worker in front. Solo developer; no CI by design.
 ## Layout
 - Frontend source: `global-perspectives-starter/frontend/src/`. `docs/` is build output — don't
   hand-edit it; `docs/config.js` is operator-owned runtime config.
+- Frontend imports use the `@/` alias (→ `src/`, `vite.config.js`), not relative paths — see
+  ARCHITECTURE.md "Frontend imports" for the Node-tooling exceptions.
 - Lambdas: `amplify/backend/function/<name>/src/` (deployed manually with the AWS CLI; the name
   "amplify" is historical). Several deployed zips differ from the repo — diff before editing.
   `newsAnalyze` specifically is a prompt-patched deployed zip; the repo file carries parked

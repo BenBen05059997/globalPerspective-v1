@@ -1,5 +1,5 @@
-import { deriveHeadline, AXES, AXIS_LABELS, tierLabel } from '../../utils/riskTiers';
-import { riskScoreToVar } from '../../tokens';
+import { deriveHeadline, AXES, AXIS_LABELS, tierLabel } from '@/utils/riskTiers';
+import { riskScoreToVar } from '@/tokens';
 import './RiskScorecard.css';
 
 // Scoring-model-v2 scorecard (SCORING_MODEL_V2_PLAN.md Phase C). Renders a

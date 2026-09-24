@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchMarketsHistory } from '../services/restProxy';
+import { fetchMarketsHistory } from '@/services/restProxy';
 
 // Fetches per-instrument price history [{date, value}] for a sparkline.
 // Returns [] for unknown/historyless symbols (Sparkline renders nothing under 2 points).

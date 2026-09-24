@@ -1,3 +1,4 @@
+// imported by Node tooling outside src/ — keep relative imports
 // Analysis Studio — the PURE prompt layer (no browser-only imports).
 //
 // This holds the honesty contract, the fixed guided "lenses", the user-message

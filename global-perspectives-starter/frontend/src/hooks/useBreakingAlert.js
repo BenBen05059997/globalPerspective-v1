@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchAlert } from '../services/restProxy';
+import { fetchAlert } from '@/services/restProxy';
 
 // Single breaking alert for the /breaking/:id detail page. Honest by construction:
 // `alert` stays null (→ a not-found state) when the id isn't a confirmed alert or

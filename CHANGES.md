@@ -1,5 +1,45 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P1: `@/` alias + absolute-import codemod)
+
+Executed P1 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`. Added a Vite `resolve.alias` (`@` →
+`src/`, `@fixtures` → `tests/fixtures/`) in `vite.config.js`, mirrored in a new `jsconfig.json`
+for editor/cclsp go-to-definition (no runtime effect). Codemod rewrote every relative specifier
+in `src/**` (`import`/`export … from`, `vi.mock('…')` strings, dynamic `import('…')`) to `@/…`
+— 364 specifiers across 98 files — except the 8 "N files" that Node tooling outside `src/`
+imports by relative path (`utils/composeTopicsLede.js`, `utils/composeEconomyBriefing.js`,
+`utils/disruptionGate.js`, `data/economicAnalogs.js`, `services/llm.js`,
+`utils/analysisPrompt.js`, `utils/analysisValidator.js`, `utils/analysisStruct.js`), each now
+marked with a `// imported by Node tooling outside src/ — keep relative imports` header comment.
+`disruptionGate.js`'s relative import of `../data/economicAnalogs.js` (and
+`economicAnalogs.js`'s `./economicAnalogs.json`) are the only 2 relative imports remaining in
+`src/`, both inside N files, both expected. `test/redesign.test.jsx`'s `../../tests/fixtures/*`
+imports moved to the new `@fixtures` alias. Added
+`global-perspectives-starter/frontend/scripts/move-module.mjs`, the helper P2–P11 will use to
+relocate a module and rewrite every `@/` reference to it in one step — `git mv`s the file,
+rewrites matching `@/<old>` specifiers repo-wide across `src/**`, then prints (without editing)
+any remaining references to the old path in the live doc/scripts/hooks/skills surface, skipping
+`_shipped`/`_legacy`/`_reference` paths. Tested in isolation against a throwaway copy of the repo
+tree under `/private/tmp/...923a878d.../scratchpad/move-module-test` (moved a file, confirmed
+`git status` showed a rename, confirmed both its importers' specifiers were rewritten, confirmed
+a fake `_active/` doc reference was surfaced and a fake `_legacy/` one was correctly skipped);
+the real tree was untouched by that test.
+
+Verified: `npm run verify` still 15 files / 184 tests (unchanged from P0). `npm run build` —
+main bundle byte-identical (1,046,069 bytes, same hash `index-CeZVkN6m.js` since no commit
+landed between builds so the injected git-sha didn't change either) — confirms the codemod is a
+pure specifier rewrite with zero logic change. `bash quality/verify_pages.sh` 32/0.
+`node scripts/auth-guard-check.mjs` passes. N-file Node-tooling consumers all still resolve their
+relative imports post-codemod: `quality/briefing/verify_compose.mjs` (5/5 fixtures),
+`verify_lede.mjs` (4/4 cases), `verify_instrument_why.mjs` (10/10 movers),
+`quality/analysis/{check,compare,judge,run,source_check}.mjs` (import-smoke — `run.mjs`'s
+golden-fixture suite passed 18/18 without a key; the others report "set ANALYSIS_EVAL_KEY" as
+expected, meaning their imports resolved cleanly), and
+`global-perspectives-starter/frontend/scripts/test-disruption-gate.mjs` (confirmed its
+`ERR_IMPORT_ATTRIBUTE_MISSING` on `economicAnalogs.json` is pre-existing — identical failure on
+the unmodified tree via `git stash` — a Node 22 JSON-import-attribute requirement unrelated to
+this phase, not a broken specifier).
+
 ## 2026-09-24 (Frontend feature-folder restructure P0: orphan deletion + guard hardening)
 
 Executed P0 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` (operator-approved full P0–P12 scope, all

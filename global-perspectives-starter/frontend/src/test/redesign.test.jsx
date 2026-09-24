@@ -6,9 +6,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-import archiveFixture from '../../tests/fixtures/archive.json';
-import threadAnalysesFixture from '../../tests/fixtures/thread_analyses.json';
-import countryIntelFixture from '../../tests/fixtures/country_intelligence.json';
+import archiveFixture from '@fixtures/archive.json';
+import threadAnalysesFixture from '@fixtures/thread_analyses.json';
+import countryIntelFixture from '@fixtures/country_intelligence.json';
 
 // ── Mock all data hooks ────────────────────────────────────────────
 // Remap the fixture's (frozen April) date keys onto the most recent N days so
@@ -28,32 +28,32 @@ const dayMap = {};
 }
 const sortedDates = Object.keys(dayMap).sort((a, b) => b.localeCompare(a));
 
-vi.mock('../hooks/useWeeklyArchive', () => ({
+vi.mock('@/hooks/useWeeklyArchive', () => ({
   useWeeklyArchive: () => ({ dayMap, sortedDates, loading: false, error: null, tier: 'enterprise', refetch: vi.fn() }),
 }));
 
-vi.mock('../hooks/useThreadAnalyses', () => ({
+vi.mock('@/hooks/useThreadAnalyses', () => ({
   useThreadAnalyses: () => ({ analyses: threadAnalysesFixture.data, loading: false, error: null }),
 }));
 
-vi.mock('../hooks/useCountryIntelligence', () => ({
+vi.mock('@/hooks/useCountryIntelligence', () => ({
   useCountryIntelligence: () => ({ intelligence: countryIntelFixture.data, loading: false, error: null }),
 }));
 
 // Auth context — bypass with a minimal stub
-vi.mock('../contexts/AuthContext', () => ({
+vi.mock('@/contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => ({ user: null, loading: false }),
 }));
 
 // Heavy/optional components stubbed to keep tests fast & deterministic
-vi.mock('../components/IntelligenceLoader', () => ({
+vi.mock('@/components/IntelligenceLoader', () => ({
   default: () => <div data-testid="loader" />,
 }));
-vi.mock('../components/CountryOverviewMap', () => ({
+vi.mock('@/components/CountryOverviewMap', () => ({
   default: () => <div data-testid="map" />,
 }));
-vi.mock('../components/WeeklyMap', () => ({
+vi.mock('@/components/WeeklyMap', () => ({
   default: () => <div data-testid="weekly-map" />,
 }));
 
@@ -67,7 +67,7 @@ function renderWithRouter(ui) {
 describe('Redesign v2 — WeeklyPage', () => {
   let WeeklyPage;
   beforeEach(async () => {
-    WeeklyPage = (await import('../components/WeeklyPage')).default;
+    WeeklyPage = (await import('@/components/WeeklyPage')).default;
   });
 
   it('renders the StatusStrip with arc/article/day stats', () => {
@@ -133,7 +133,7 @@ describe('Redesign v2 — WeeklyPage', () => {
 describe('Redesign v2 — CountryListPage', () => {
   let CountryListPage;
   beforeEach(async () => {
-    CountryListPage = (await import('../components/CountryListPage')).default;
+    CountryListPage = (await import('@/components/CountryListPage')).default;
   });
 
   it('renders the StatusStrip with briefings/countries stats', () => {
@@ -208,7 +208,7 @@ describe('Redesign v2 — CountryListPage', () => {
 
 describe('Atom: StatusStrip', () => {
   it('renders without crashing with empty stats', async () => {
-    const { default: StatusStrip } = await import('../components/atoms/StatusStrip');
+    const { default: StatusStrip } = await import('@/components/atoms/StatusStrip');
     render(<StatusStrip stats={[]} />);
     expect(document.querySelector('.ss-strip')).toBeInTheDocument();
   });
@@ -216,13 +216,13 @@ describe('Atom: StatusStrip', () => {
 
 describe('Atom: RiskScoreBadge', () => {
   it('renders numeric score', async () => {
-    const { default: B } = await import('../components/atoms/RiskScoreBadge');
+    const { default: B } = await import('@/components/atoms/RiskScoreBadge');
     render(<B score={75} />);
     expect(document.querySelector('.rsb')).toHaveTextContent('75');
     expect(document.querySelector('.rsb-high')).toBeInTheDocument();
   });
   it('renders enum level when score absent', async () => {
-    const { default: B } = await import('../components/atoms/RiskScoreBadge');
+    const { default: B } = await import('@/components/atoms/RiskScoreBadge');
     render(<B level="elevated" />);
     expect(document.querySelector('.rsb-elevated')).toBeInTheDocument();
   });
@@ -230,12 +230,12 @@ describe('Atom: RiskScoreBadge', () => {
 
 describe('Atom: RiskDeltaPill', () => {
   it('returns null with fewer than 2 snapshots', async () => {
-    const { default: P } = await import('../components/atoms/RiskDeltaPill');
+    const { default: P } = await import('@/components/atoms/RiskDeltaPill');
     const { container } = render(<P snapshots={[{ riskScore: 50, dateKey: '2026-04-26' }]} />);
     expect(container.firstChild).toBeNull();
   });
   it('renders up arrow for positive delta', async () => {
-    const { default: P } = await import('../components/atoms/RiskDeltaPill');
+    const { default: P } = await import('@/components/atoms/RiskDeltaPill');
     render(<P snapshots={[
       { riskScore: 50, dateKey: '2026-04-25' },
       { riskScore: 55, dateKey: '2026-04-26' },

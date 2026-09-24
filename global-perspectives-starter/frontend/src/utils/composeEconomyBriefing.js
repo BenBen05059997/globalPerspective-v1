@@ -1,3 +1,4 @@
+// imported by Node tooling outside src/ — keep relative imports
 // composeEconomyBriefing — deterministic "Today in the economy" lead briefing.
 //
 // Pure function over the three data sources the /economy page already loads

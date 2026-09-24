@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { fetchCountryIntelligence } from '../services/restProxy';
+import { fetchCountryIntelligence } from '@/services/restProxy';
 
 const CACHE_KEY = 'gp_country_intel_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;

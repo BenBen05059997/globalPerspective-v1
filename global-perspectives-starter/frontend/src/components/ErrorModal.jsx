@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useError } from '../contexts/ErrorContext';
+import { useError } from '@/contexts/ErrorContext';
 
 function getFriendlyMessage(errorMessage) {
   if (!errorMessage) return 'An unexpected error occurred.';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { formatDateLabel } from '../utils/dateUtils';
-import StoryEntryCard from './StoryEntryCard';
+import { formatDateLabel } from '@/utils/dateUtils';
+import StoryEntryCard from '@/components/StoryEntryCard';
 
 export default function CompactTimeline({ entries, entryShortTitles, onEntryFocus }) {
   const [expandedIdx, setExpandedIdx] = useState(null);

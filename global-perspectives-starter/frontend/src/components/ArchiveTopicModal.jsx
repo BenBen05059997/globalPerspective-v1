@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import SummaryDisplay from './SummaryDisplay';
-import PredictionDisplay from './PredictionDisplay';
-import TraceCauseDisplay from './TraceCauseDisplay';
+import SummaryDisplay from '@/components/SummaryDisplay';
+import PredictionDisplay from '@/components/PredictionDisplay';
+import TraceCauseDisplay from '@/components/TraceCauseDisplay';
 import './TodayArchiveSidebar.css';
 
 function ArchiveTopicModal({ entry, onClose }) {

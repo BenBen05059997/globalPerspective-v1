@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchNarrativeThread } from '../services/restProxy';
+import { fetchNarrativeThread } from '@/services/restProxy';
 
 const CACHE_KEY = (id) => `gp_narrative_thread_${id}`;
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes

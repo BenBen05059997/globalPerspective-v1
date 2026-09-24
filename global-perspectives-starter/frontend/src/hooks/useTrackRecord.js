@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchPredictionTrackRecord } from '../services/restProxy.js';
+import { fetchPredictionTrackRecord } from '@/services/restProxy.js';
 
 const CACHE_KEY = 'gp_track_record';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes

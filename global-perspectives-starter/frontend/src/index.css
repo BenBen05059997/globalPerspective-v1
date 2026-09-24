@@ -1,5 +1,5 @@
 /* Design tokens — single source of truth */
-@import './styles/tokens.css';
+@import '@/styles/tokens.css';
 
 /* Legacy aliases — keeps old component CSS working during incremental migration */
 :root {

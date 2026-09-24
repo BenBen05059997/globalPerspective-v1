@@ -1,3 +1,4 @@
+// imported by Node tooling outside src/ — keep relative imports
 // BYOK (Bring-Your-Own-Key) LLM client for the Analysis Studio (/analyze).
 //
 // The user picks a provider + model and pastes THEIR OWN key. The key lives only

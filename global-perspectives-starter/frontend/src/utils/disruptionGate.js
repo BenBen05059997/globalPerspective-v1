@@ -1,3 +1,4 @@
+// imported by Node tooling outside src/ — keep relative imports
 // Deterministic display gate for economic-disruption instruments.
 //
 // WHY this exists: the LLM-produced `instruments[]` carry two kinds of unreliable

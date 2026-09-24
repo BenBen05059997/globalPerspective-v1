@@ -5,7 +5,7 @@
 //   score:     number 0-100 (from intel.riskScore)
 //   level:     "high"|"elevated"|"moderate"|"low" (from intel.riskLevel) — used for color when score absent
 //   size:      "sm" | "md" | "lg"  default "md"
-import { tierFromScore, tierFromLevel } from '../../utils/riskTiers';
+import { tierFromScore, tierFromLevel } from '@/utils/riskTiers';
 
 export default function RiskScoreBadge({ score, level, size = 'md' }) {
   const numScore = score != null ? Math.round(Number(score)) : null;

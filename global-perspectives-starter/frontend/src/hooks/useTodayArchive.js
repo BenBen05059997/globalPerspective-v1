@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { contentService } from '../utils/contentService';
+import { contentService } from '@/utils/contentService';
 
 const CACHE_KEY = 'today_archive_cache_v1';
 const CACHE_TTL_MS = 10 * 60 * 1000;

@@ -1,3 +1,4 @@
+// imported by Node tooling outside src/ — keep relative imports
 // Frontend-bundled copy of the curated historical-analog catalog.
 // economicAnalogs.json mirrors amplify/backend/function/newsEconomicImpact/src/economic_analogs.json
 // (canonical) — keep them in sync when the catalog changes.

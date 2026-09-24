@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { useNotifications } from '../hooks/useNotifications';
-import SourceRobustness from './atoms/SourceRobustness';
-import SubscribeCard from './SubscribeCard';
+import { useNotifications } from '@/hooks/useNotifications';
+import SourceRobustness from '@/components/atoms/SourceRobustness';
+import SubscribeCard from '@/components/SubscribeCard';
 import './BreakingPage.css';
 
 function relTime(iso) {

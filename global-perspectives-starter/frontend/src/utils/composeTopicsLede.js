@@ -1,3 +1,4 @@
+// imported by Node tooling outside src/ — keep relative imports
 // composeTopicsLede — deterministic "Today's lede" one-line orientation band.
 //
 // Pure function over the data Home + the Map already load (today's `topics` and

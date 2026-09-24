@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { fetchPrefs, savePrefs, followCountry, unfollowCountry } from '../services/restProxy';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchPrefs, savePrefs, followCountry, unfollowCountry } from '@/services/restProxy';
 
 // Per-user email-notification preferences (newsRecommend get_prefs/set_prefs).
 // Defaults are OFF (opt-in). Optimistic save with revert-on-error — never shows a

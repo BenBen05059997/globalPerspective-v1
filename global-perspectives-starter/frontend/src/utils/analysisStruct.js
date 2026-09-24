@@ -1,3 +1,4 @@
+// imported by Node tooling outside src/ — keep relative imports
 // Analysis Studio — parser for the optional ```gp-struct fenced JSON block.
 //
 // The prompt (analysisPrompt.js SYSTEM_PROMPT, guided scenario/economic lenses) asks the

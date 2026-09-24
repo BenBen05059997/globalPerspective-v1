@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchCorrectionsFeed } from '../services/restProxy.js';
+import { fetchCorrectionsFeed } from '@/services/restProxy.js';
 
 const CACHE_KEY = 'gp_corrections_feed';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes

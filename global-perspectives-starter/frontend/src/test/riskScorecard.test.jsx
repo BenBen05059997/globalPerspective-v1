@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import RiskScorecard from '../components/atoms/RiskScorecard.jsx';
+import RiskScorecard from '@/components/atoms/RiskScorecard.jsx';
 
 // Japan from the Phase-0 spike: economy is the story, humanitarian is silent.
 const JAPAN = {

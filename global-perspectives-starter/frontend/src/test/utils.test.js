@@ -4,8 +4,8 @@ import {
   getTopicCountryCodes,
   getTopicRegion,
   getBroadRegionsForCountry,
-} from '../utils/countryMapping';
-import { formatDateLabel } from '../utils/dateUtils';
+} from '@/utils/countryMapping';
+import { formatDateLabel } from '@/utils/dateUtils';
 
 describe('countryMapping', () => {
   it('resolves common country names to codes', () => {

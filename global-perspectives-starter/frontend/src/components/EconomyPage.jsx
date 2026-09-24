@@ -10,16 +10,16 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { threadPath } from '../utils/threadPath';
-import { useDisruptionsList } from '../hooks/useDisruptionsList';
-import { useTopMovers } from '../hooks/useTopMovers';
-import { useMarketsGlobal } from '../hooks/useMarketsGlobal';
-import { useMarketsHistory } from '../hooks/useMarketsHistory';
-import Sparkline from './atoms/Sparkline';
-import { composeBriefing, composeInstrumentWhy } from '../utils/composeEconomyBriefing';
-import { gateInstrument, isFxPair } from '../utils/disruptionGate.js';
-import QualityFlag from './atoms/QualityFlag';
-import WeeklyMarketsView from './WeeklyMarketsView';
+import { threadPath } from '@/utils/threadPath';
+import { useDisruptionsList } from '@/hooks/useDisruptionsList';
+import { useTopMovers } from '@/hooks/useTopMovers';
+import { useMarketsGlobal } from '@/hooks/useMarketsGlobal';
+import { useMarketsHistory } from '@/hooks/useMarketsHistory';
+import Sparkline from '@/components/atoms/Sparkline';
+import { composeBriefing, composeInstrumentWhy } from '@/utils/composeEconomyBriefing';
+import { gateInstrument, isFxPair } from '@/utils/disruptionGate.js';
+import QualityFlag from '@/components/atoms/QualityFlag';
+import WeeklyMarketsView from '@/components/WeeklyMarketsView';
 import './EconomyPage.css';
 
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];

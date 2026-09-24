@@ -19,7 +19,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 |---|---|---|---|
 | P0 | delete 5 orphans; harden verify_pages.sh, pre-push regex, auth-guard-check.mjs | ✅ done | 703995b (monitor ✓: 184 tests, guards 32/32, auth-guard pass, bundle 1,046.07 kB) |
 | P1 | `@/` alias (vite.config.js, jsconfig.json), codemod all imports, move-module.mjs | ✅ done | d11996c (monitor ✓: 184 tests, bundle 1,046.07 kB, 0 stray relative imports, guards 32/32; browser: 11 routes render, console clean from load on /map + /weekly/country/Iran) |
-| P2 | `app/` (routing, layout, onboarding) + `shared/` (api, contexts, data, hooks, lib, ui, styles) | ✅ done | see CHANGES |
+| P2 | `app/` (routing, layout, onboarding) + `shared/` (api, contexts, data, hooks, lib, ui, styles) | ✅ done | 915c236 + follow-up (monitor ✓: 184 tests, bundle 1,046.07 kB, CSS 295.60 kB unchanged, guards 32/32; +45 side-effect CSS imports → `@/`) |
 | P3 | features/static + features/spider-demo | ⬜ remaining | |
 | P4 | features/weekly-brief, daily, track-record | ⬜ remaining | |
 | P5 | features/map | ⬜ remaining | |

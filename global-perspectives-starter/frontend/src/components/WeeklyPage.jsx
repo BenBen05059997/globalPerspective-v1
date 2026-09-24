@@ -12,8 +12,8 @@ import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '@/shared/styles/tokens';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
-import './WeeklyPage.css';
-import './AIComponents.css';
+import '@/components/WeeklyPage.css';
+import '@/components/AIComponents.css';
 
 const WeeklyMap = lazy(() => import('@/components/WeeklyMap'));
 

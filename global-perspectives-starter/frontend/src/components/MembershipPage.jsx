@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/hooks/useMembership';
 import { createCheckout, createCreditCheckout, creditPacks } from '@/shared/api/restProxy';
-import './MembershipPage.css';
+import '@/components/MembershipPage.css';
 
 const PLANS = [
   { id: 'monthly', name: 'Monthly', price: '$15', cadence: '/month', note: 'Billed monthly. Cancel anytime.' },

@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useBreakingAlert } from '@/hooks/useBreakingAlert';
 import SourceRobustness from '@/shared/ui/SourceRobustness';
 import Markdown from '@/shared/ui/Markdown';
-import './BreakingPage.css';
+import '@/components/BreakingPage.css';
 
 function relTime(iso) {
   if (!iso) return '';

@@ -11,8 +11,8 @@ import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import RiskScoreBadge from '@/shared/ui/risk/RiskScoreBadge';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
-import './WeeklyPage.css';
-import './CountryListPage.css';
+import '@/components/WeeklyPage.css';
+import '@/components/CountryListPage.css';
 
 // riskLevel string → sort rank (high first). Normalized via the shared tier util.
 const riskRank = (level) => TIER_ORDER[tierFromLevel(level)] ?? 3;

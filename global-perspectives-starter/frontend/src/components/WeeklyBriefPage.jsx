@@ -4,7 +4,7 @@ import { useWeeklyBrief } from '@/hooks/useWeeklyBrief';
 import Markdown from '@/shared/ui/Markdown';
 import SubscribeCard from '@/components/SubscribeCard';
 import { RISK_SOLID as RISK_COLOR } from '@/shared/styles/tokens';
-import './WeeklyBriefPage.css';
+import '@/components/WeeklyBriefPage.css';
 
 function formatWeekOf(weekKey) {
   if (!weekKey) return '';

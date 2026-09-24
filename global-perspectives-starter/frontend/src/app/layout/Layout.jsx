@@ -6,7 +6,7 @@ import LoadingBar from '@/app/layout/LoadingBar';
 import AIToast from '@/app/layout/AIToast';
 import NotificationBell from '@/components/NotificationBell';
 import { useAutoTour, startTourForPath } from '@/app/onboarding/useOnboarding';
-import './Layout.css';
+import '@/app/layout/Layout.css';
 
 // Build stamp injected by Vite `define` (git SHA + date). `typeof` guard keeps it
 // safe under vitest/dev where the globals may be absent (returns 'dev').

@@ -14,7 +14,7 @@ import { assessSelection } from '@/utils/sourceRobustness';
 import ProviderModal from '@/components/ProviderModal';
 import Markdown from '@/shared/ui/Markdown';
 import { ScenarioBars, IndicatorMatrix, RippleTable } from '@/components/atoms/AnalysisVisuals.jsx';
-import './AnalysisStudio.css';
+import '@/components/AnalysisStudio.css';
 
 const MAX_STORIES = 4;
 

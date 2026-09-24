@@ -27,8 +27,8 @@ import { SaveButton } from '@/components/SaveButton';
 import { FollowButton } from '@/components/FollowButton';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
-import './WeeklyPage.css';
-import './CountryPage.css';
+import '@/components/WeeklyPage.css';
+import '@/components/CountryPage.css';
 
 function formatTimeAgo(isoString) {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);

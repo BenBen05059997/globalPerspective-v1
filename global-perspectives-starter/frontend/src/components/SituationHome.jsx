@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/hooks/useWorld.js';
 import SituationMap, { AXIS_HUE } from '@/components/SituationMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/utils/situationLabels.js';
-import './SituationHome.css';
+import '@/components/SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
 const SituationMap3D = lazy(() => import('@/components/SituationMap3D.jsx'));

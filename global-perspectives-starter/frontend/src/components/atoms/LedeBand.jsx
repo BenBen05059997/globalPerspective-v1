@@ -7,7 +7,7 @@
 // via the shared threadPath() helper.
 import { Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import './LedeBand.css';
+import '@/components/atoms/LedeBand.css';
 
 export default function LedeBand({
   empty,

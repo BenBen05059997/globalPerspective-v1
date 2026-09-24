@@ -127,6 +127,8 @@ org/naming decision, not a runtime config knob").
      again.
 5b. **Bundle-hash note (monitor, verified after P0):** `vite.config.js` injects `__BUILD_SHA__` (git short sha) and `__BUILD_DATE__` via `define`, so the main bundle's filename hash changes on EVERY commit even with no code change. **Never treat a hash change alone as a signal.** The per-phase check is instead: (i) main-bundle byte size equals the pre-phase size (±a few bytes for the sha string), and (ii) if size differs, prettify both bundles and diff with the sha literal masked — only import-order/module-id churn is acceptable. Pre-P0 and post-P0 main bundle: **1,046.07 kB**.
 
+5c. **Relative-import sweep every phase (monitor, after P2):** P1's codemod missed side-effect imports with no `from` (`import './X.css'`) — 45 of them; P2 hit two when a component and its CSS moved apart. They were converted to `@/` in the P2 follow-up commit, so the ONLY relative specifiers left in `src/` are the 2 documented N-file edges. Every phase must end with `grep -rnE "(from\s+|import\s*\(?\s*|mock\()['\"]\.\.?/" src/` returning only those N-file lines; anything else is a stop-and-fix. (CSS has no relative `url()` refs — verified.)
+
 6. **Never deploy or touch `amplify/` Lambda paths** as part of this programme. §2.6 of the
    design is final: backend paths are out of scope. If a phase's grep sweep surfaces a
    Lambda-side comment referencing a moved frontend path (e.g. `riskDimensions.js` mentioning

@@ -1,6 +1,6 @@
 import { deriveHeadline, AXES, AXIS_LABELS, tierLabel } from '@/shared/lib/riskTiers';
 import { riskScoreToVar } from '@/shared/styles/tokens';
-import './RiskScorecard.css';
+import '@/shared/ui/risk/RiskScorecard.css';
 
 // Scoring-model-v2 scorecard (SCORING_MODEL_V2_PLAN.md Phase C). Renders a
 // country/thread record's dimension breakdown: a worst-axis headline + one bar

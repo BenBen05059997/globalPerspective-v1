@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import './WeeklyPage.css';
+import '@/components/WeeklyPage.css';
 import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
 
 export default function AuthCallback() {

@@ -20,7 +20,7 @@ import { composeBriefing, composeInstrumentWhy } from '@/utils/composeEconomyBri
 import { gateInstrument, isFxPair } from '@/utils/disruptionGate.js';
 import QualityFlag from '@/components/atoms/QualityFlag';
 import WeeklyMarketsView from '@/components/WeeklyMarketsView';
-import './EconomyPage.css';
+import '@/components/EconomyPage.css';
 
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];
 const SEVERITY_LABEL = { severe: 'Severe', moderate: 'Moderate', minor: 'Minor' };

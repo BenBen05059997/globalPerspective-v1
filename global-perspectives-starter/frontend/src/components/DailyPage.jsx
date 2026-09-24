@@ -11,7 +11,7 @@ import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatDailyBrief } from '@/shared/ui/CopyBriefing';
 import { SaveButton } from '@/components/SaveButton';
 import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
-import './DailyPage.css';
+import '@/components/DailyPage.css';
 
 const TRAJECTORY_LABELS = {
   escalating:      { arrow: '↗', label: 'Escalating',      cls: 'up' },

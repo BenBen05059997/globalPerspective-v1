@@ -21,7 +21,7 @@ import MechanismCard from '@/components/atoms/MechanismCard';
 import ThreadForecast from '@/components/ThreadForecast';
 import { useEconomicImpact } from '@/hooks/useEconomicImpact';
 import { useThreadForecast } from '@/hooks/useThreadForecast';
-import './ThreadPage.css';
+import '@/components/ThreadPage.css';
 
 function humanizeThreadId(id) {
   return (id || '')

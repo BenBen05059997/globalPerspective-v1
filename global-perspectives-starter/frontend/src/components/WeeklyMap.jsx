@@ -11,8 +11,8 @@ import StoryEntryCard from '@/components/StoryEntryCard';
 import ThreadIntelligence from '@/components/ThreadIntelligence';
 import { CATEGORY_BADGE_COLORS } from '@/shared/styles/tokens';
 import CompactTimeline from '@/components/CompactTimeline';
-import './WeeklyPage.css';
-import './WeeklyMap.css';
+import '@/components/WeeklyPage.css';
+import '@/components/WeeklyMap.css';
 
 function threadHue(threadId) {
   let hash = 0;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import './LoadingIndicators.css';
+import '@/app/layout/LoadingIndicators.css';
 
 export default function AIToast() {
   const [ops, setOps] = useState([]);

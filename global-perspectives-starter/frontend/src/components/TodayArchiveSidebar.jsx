@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import ArchiveTopicModal from '@/components/ArchiveTopicModal';
-import './TodayArchiveSidebar.css';
+import '@/components/TodayArchiveSidebar.css';
 
 const CATEGORY_ORDER = ['conflict', 'politics', 'economy', 'military', 'disaster', 'technology', 'health'];
 

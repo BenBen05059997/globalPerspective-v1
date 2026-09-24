@@ -8,7 +8,7 @@ import { useMembership } from '@/hooks/useMembership';
 import { loadByok, clearByok } from '@/utils/byok';
 import { getProvider } from '@/services/llm';
 import ProviderModal from '@/components/ProviderModal';
-import './Account.css';
+import '@/components/Account.css';
 
 // Mask a key for display: keep a few head/tail chars, hide the middle.
 function maskKey(k) {

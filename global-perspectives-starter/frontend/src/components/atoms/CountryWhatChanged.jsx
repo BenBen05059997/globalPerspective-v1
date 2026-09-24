@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { computeCountryDrift } from '@/utils/countryDrift';
 import RiskDeltaPill from '@/shared/ui/risk/RiskDeltaPill';
-import './CountryWhatChanged.css';
+import '@/components/atoms/CountryWhatChanged.css';
 
 // The corrector sometimes references the event by its prompt number ("event [6] shows…").
 // Strip that artifact for display — the triggerEvent already names the event.

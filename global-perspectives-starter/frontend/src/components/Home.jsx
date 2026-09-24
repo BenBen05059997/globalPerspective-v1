@@ -22,8 +22,8 @@ import { useDisruptionsList } from '@/hooks/useDisruptionsList';
 import { useTrackRecord } from '@/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/hooks/useCorrectionsFeed';
 import { composeTopicsLede } from '@/utils/composeTopicsLede';
-import './AIComponents.css';
-import './Home.css';
+import '@/components/AIComponents.css';
+import '@/components/Home.css';
 
 // SVG icons
 const SumIcon = () => (

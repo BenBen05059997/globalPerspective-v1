@@ -14,7 +14,7 @@ import { fetchPredictionCache, fetchDossierAnalysis } from '@/shared/api/restPro
 import { threadPath } from '@/shared/lib/threadPath';
 import CompactTimeline from '@/components/CompactTimeline';
 import WorldOverview from '@/components/SpiderWorld';
-import './SpiderDemo.css';
+import '@/components/SpiderDemo.css';
 
 // Countries with a live systems_analysis graph (SYSTEMS_TEST_COUNTRIES gate).
 const COUNTRIES = [

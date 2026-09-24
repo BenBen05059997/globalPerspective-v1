@@ -3,7 +3,7 @@ import { useTrackRecord } from '@/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/hooks/useCorrectionsFeed';
 import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
 import { FollowButton } from '@/components/FollowButton';
-import './TrackRecordPage.css';
+import '@/components/TrackRecordPage.css';
 
 function brierVerdict(b) {
   if (b == null) return null;

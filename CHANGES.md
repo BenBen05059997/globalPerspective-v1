@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Restructure P2 follow-up: 45 relative side-effect CSS imports → `@/`)
+
+Monitor verification of P2 found that P1's codemod (and the P1 verification grep) only matched specifiers with `from`/`import(`/`vi.mock(`, missing side-effect imports like `import './Layout.css'` — 45 across 40 files. Harmless while a component and its stylesheet move together, but several components share a stylesheet (e.g. `CountryListPage` imports `./WeeklyPage.css`), so a later phase could split them. Converted all 45 to `@/…` (all resolved; N-file edges untouched), so `move-module.mjs` now rewrites them automatically. Verified: 184 tests, main bundle 1,046.07 kB and CSS bundle 295.60 kB identical before/after, guards 32/32, auth-guard PASS, no relative `url()` in any CSS. Plan §1 gains rule 5c (per-phase relative-specifier sweep).
+
 ## 2026-09-24 (Frontend feature-folder restructure P2: `app/` + `shared/`)
 
 Executed P2 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md`. Moved 46 files via

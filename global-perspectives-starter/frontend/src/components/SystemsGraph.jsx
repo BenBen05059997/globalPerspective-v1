@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import './SystemsGraph.css';
+import '@/components/SystemsGraph.css';
 
 // SystemsGraph — the cited, lag-aware causal graph made first-class (the "why-engine").
 // Each edge is a validated cause→effect link: every node is a real story thread (so it

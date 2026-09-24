@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PROVIDERS, getProvider } from '@/services/llm';
 import { loadByok, saveByok, clearByok } from '@/utils/byok';
-import './ProviderModal.css';
+import '@/components/ProviderModal.css';
 
 // BYOK chooser: pick provider → model → paste key. Stored browser-only.
 export default function ProviderModal({ onClose, onSaved }) {

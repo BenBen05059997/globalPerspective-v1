@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import SummaryDisplay from '@/components/SummaryDisplay';
 import PredictionDisplay from '@/components/PredictionDisplay';
 import TraceCauseDisplay from '@/components/TraceCauseDisplay';
-import './TodayArchiveSidebar.css';
+import '@/components/TodayArchiveSidebar.css';
 
 function ArchiveTopicModal({ entry, onClose }) {
   const overlayRef = useRef(null);

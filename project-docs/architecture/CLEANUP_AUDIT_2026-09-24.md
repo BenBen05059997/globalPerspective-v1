@@ -274,7 +274,7 @@ Three genuine disputes, resolved by monitor:
 | # | Question | Options | Execution status |
 |---|---|---|---|
 | D1 | `newsStripeWebhook/` repo dir — 2026-06-01 recorded "keep for reference"; still wanted? | keep (default) / delete | **EXECUTED 2026-09-24** — operator explicitly reversed the 2026-06-01 keep-for-reference decision; `git rm -r amplify/backend/function/newsStripeWebhook` executed, ARCHITECTURE.md #12 updated (git-recoverable from history). |
-| D2 | SNS topic `GlobalPerspectivesAlerts` (plural) — check AWS Chatbot/CloudWatch console: live alarm wiring? | if orphan → delete topic; if live → document in ARCHITECTURE.md as out-of-repo resource |
+| D2 | SNS topic `GlobalPerspectivesAlerts` (plural) — check AWS Chatbot/CloudWatch console: live alarm wiring? | **RESOLVED 2026-09-24: KEEP — it is ALIVE.** Live AWS check found ~14 CloudWatch alarms (Lambda-Errors-Spike, lambda-errors-\*, dynamodb throttle events, lambda-throttles-\*) targeting it → Chatbot + email; created by `scripts/setup-cloudwatch-alarms.sh`. Not an orphan — the audit grep missed it because it's wired at the CloudWatch layer, not in Lambda source. Documented in ARCHITECTURE.md alerting section. |
 | D3 | Pair-arcs surface: `/map-legacy` is the only route to WorldMapV2, sole consumer of pair data; weekly cron produces data almost nobody can find; WorldMapV2 also eagerly ships in the main bundle | (a) keep unlinked + convert import to `lazy()` (cheapest) / (b) re-link `/map-legacy` in nav / (c) port arcs into SituationHome as a **separate feature task**, then retire WorldMapV2+route+tests / (d) retire the whole pair pipeline frontend+cron as one decision |
 
 ### Tier E — KEEP, confirmed alive (record so nobody re-flags them)

@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Operator-owned context fixes + repo-restructure design recorded)
+
+Outside the repo, operator-approved and backed up to `~/.claude/backups/`: (1) `claudeMdExcludes` added to this repo's local settings for `~/CLAUDE.md` (outdated generic rules) and `~/Downloads/CLAUDE.md` (the separate notetrail project) — both had been loading into every GP session; (2) user-level `autoMode` block rewritten per repo — it had described PropertyAnalysisJP as "this repo" for every session (incl. "Source control: … PropertyAnalysisJP only", plausibly behind past classifier denials here); project scope can't hold `autoMode` (official docs: user/managed only), so facts are now path-scoped with an accurate GP section; no allow rules added; (3) the stray `global perspective.zip` moved to `~/Downloads/globalPerspective-archive/`; (4) 34MB of untracked `newsStripeWebhook/` leftovers (node_modules + a March deploy zip, no source) removed — the morning's `git rm` had only taken the tracked files. Also indexed: `CONTEXT_HYGIENE_DECISIONS_2026-09-24.md` and the new `REPO_RESTRUCTURE_DESIGN_2026-09-24.md` (Opus 5.5 feature-folder design; design only, awaiting go).
+
 ## 2026-09-24 (Context hygiene: repo-file execution of the decision doc's §4a, no code change)
 
 Executed `project-docs/architecture/CONTEXT_HYGIENE_DECISIONS_2026-09-24.md` §4a items 1–12

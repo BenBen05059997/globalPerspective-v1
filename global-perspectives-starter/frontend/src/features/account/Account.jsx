@@ -6,6 +6,7 @@ import { useSavedItems } from '@/features/account/hooks/useSavedItems';
 import { usePreferences } from '@/features/account/hooks/usePreferences';
 import { useMembership } from '@/features/account/hooks/useMembership';
 import { loadByok, clearByok } from '@/features/analysis-studio/lib/byok';
+import { creditPacks } from '@/shared/api/restProxy';
 import { getProvider } from '@/features/analysis-studio/lib/llm';
 import ProviderModal from '@/features/analysis-studio/components/ProviderModal';
 import '@/features/account/Account.css';
@@ -429,9 +430,11 @@ function MembershipPanel() {
         <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.45 }}>
           Each custom analysis in the Analysis Studio uses one credit{isMember ? ', after your included monthly allowance' : ''}.
         </div>
-        <Link to="/membership" className="btn-gp" style={{ display: 'inline-block', marginTop: '0.85rem' }}>
-          Buy credits
-        </Link>
+        {creditPacks().length > 0 && (
+          <Link to="/membership" className="btn-gp" style={{ display: 'inline-block', marginTop: '0.85rem' }}>
+            Buy credits
+          </Link>
+        )}
       </div>
     </div>
   );

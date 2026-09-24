@@ -125,7 +125,7 @@ function Layout({ children }) {
           </button>
           <NotificationBell />
 
-          {!authLoading && user && !user.isAnonymous && billingAvailable && (
+          {!authLoading && user && !user.isAnonymous && billingAvailable && (creditBalance > 0 || isMember) && (
             <Link
               to="/account?tab=membership"
               className={`gp-credits-pill${isMember ? ' is-member' : ''}`}

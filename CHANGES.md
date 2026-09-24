@@ -1,5 +1,23 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 item (c): gate parked-credits copy on `creditPacks()`)
+
+`STAGE0_FIXES_PLAN.md` §(c): three surfaces offered to buy analysis credits regardless of whether
+`POLAR_CREDIT_PACKS` is actually configured (prod has none — the confirmed-correct pattern is
+`MembershipPage.jsx`'s existing `creditPacks().length === 0` gate, "Credit packs are coming
+soon."). Applied the same gate to the three gaps the plan found: `AnalysisStudio.jsx`'s
+"Buy credits to run it on our compute — or a membership…" hint now drops the buy-credits clause
+when `creditPacks()` is empty, keeping the membership half; `Account.jsx`'s "Analysis credits"
+section keeps showing the balance number unconditionally (never hide a real balance) but hides the
+"Buy credits" CTA when packs are empty; `Layout.jsx`'s header `gp-credits-pill` now only renders
+for `creditBalance > 0 || isMember` instead of unconditionally for every signed-in
+billing-available user, so a non-member with 0 credits and no purchase path doesn't see a
+permanent "0 credits" pill. All three re-open automatically once `window.POLAR_CREDIT_PACKS` is
+non-empty — nothing deleted, reuses the existing `creditPacks()` helper.
+
+Verify: `npm run verify` 184/184, 0 lint errors; build main chunk unchanged; `verify_pages.sh`
+32/0; `auth-guard-check.mjs` PASS.
+
 ## 2026-09-24 (Stage-0 item (b): freshness honesty — fabricated timestamp + always-LIVE label)
 
 Two bugs from `STAGE0_FIXES_PLAN.md` §(b): (1) `WeeklyPage.jsx`'s status strip stamped

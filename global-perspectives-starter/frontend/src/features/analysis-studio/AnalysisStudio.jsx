@@ -6,7 +6,7 @@ import { getProvider } from '@/features/analysis-studio/lib/llm';
 import { runChat } from '@/features/analysis-studio/lib/llm';
 import { loadByok } from '@/features/analysis-studio/lib/byok';
 import { useMembership } from '@/features/account/hooks/useMembership';
-import { runMemberAnalysis, analyzeConfigured } from '@/shared/api/restProxy';
+import { runMemberAnalysis, analyzeConfigured, creditPacks } from '@/shared/api/restProxy';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '@/features/analysis-studio/lib/analysis';
 import { validateAnalysis } from '@/features/analysis-studio/lib/analysisValidator';
 import { extractStruct, validateStruct } from '@/features/analysis-studio/lib/analysisStruct';
@@ -342,7 +342,9 @@ export default function AnalysisStudio() {
           ) : null}
           {!serverCapable && billingAvailable && (
             <div className="as-hint">
-              Don't want to manage an API key? Buy credits to run it on our compute — or a{' '}
+              {creditPacks().length > 0
+                ? <>Don't want to manage an API key? Buy credits to run it on our compute — or a{' '}</>
+                : <>Don't want to manage an API key? A{' '}</>}
               <strong>membership</strong> adds a monthly allowance plus the full self-correction history and country change-alerts.{' '}
               <button className="as-link-btn" onClick={() => navigate('/membership')}>See membership →</button>
             </div>

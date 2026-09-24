@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (verify_pages.sh: stale WorldMapV2 guard rows removed — pre-push unblocked)
+
+The pre-push L7 page guards still asserted the deleted `WorldMapV2.jsx` (4 rows) and correctly blocked the push — the verify script was itself an unnoticed "consumer" of the removed file. Rows replaced with a dated removal note; disruption data keeps its 5 live surfaces (Home, CountryPage, CountryListPage, EconomyPage, DailyPage), all still guarded. Re-run: 32/32 pass.
+
 ## 2026-09-24 (Pair capability: cron DISABLED, future home recorded as Studio lens — no build; country-intel-vs-Studio assessment commissioned)
 
 Operator decisions following the legacy-map removal: (1) **`TriggerPairIntelligenceWeekly` DISABLED** (verified via `describe-rule`; was Mondays 08:00 UTC) — with `pair_analyses_list` consumer-less, the weekly DeepSeek pair analyses had no display surface; reversible, 15 `PAIR#` records untouched, manual invoke still possible. (2) The capability's agreed future home: an on-demand **"Bilateral relationship" lens in the Analysis Studio** (frontend-only lens template, grounded in user-selected stories, member-allowance/BYOK billed) — **recorded only, NOT built**, per operator "not now, just record the idea". Harvest doc's same-day "already shipped" claim corrected (the deck.gl port is cancelled/archived on `archive/pair-arcs-port`, not live). ARCHITECTURE.md (#8 trigger, model-split line, schedule table) + CLEANUP_AUDIT §4 D3 updated. Separately, a read-only Sonnet assessment was commissioned on whether `newsCountryIntelligence` should also merge into the Studio (operator question; no build) — report to land at `redesign-ux/_reference/COUNTRY_INTEL_VS_STUDIO_2026-09-24.md`.

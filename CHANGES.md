@@ -1,5 +1,30 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P0: orphan deletion + guard hardening)
+
+Executed P0 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` (operator-approved full P0–P12 scope, all
+§0 defaults). Re-verified zero-importer status by grep (all 4 sweeps clean) then `git rm` the 5
+confirmed-dead files: `src/utils/topicMatch.js`, `src/hooks/useCountrySignal.js`,
+`src/test/useCountrySignal.test.js`, `src/components/atoms/MacroChip.jsx`,
+`src/assets/react.svg`; removed the now-orphaned MacroChip rule block (`.mchip*`, lines 72–103)
+from `src/components/atoms/atoms.css`. Hardened three guard tools ahead of the coming file moves
+(R1 in the design's risk register): `quality/verify_pages.sh`'s `must_not_have()` now fails loudly
+on a missing target file instead of silently passing (grep-on-nonexistent-file previously read as
+"pattern absent" → false PASS); `.githooks/pre-push`'s economic-layer trigger regex switched from
+path-fragment (`atoms/(Mechanism|Disruption|Severity|Quality)`) to basename-only
+(`(MechanismCard|Disruption(Row|Preview)|SeverityBadge|QualityFlag)`) so it still fires once these
+files move out of `components/atoms/`; `scripts/auth-guard-check.mjs`'s hook lookup switched from
+a fixed `src/hooks/` path to a recursive basename search under `src/`. Removed the
+now-dangling `useCountrySignal` row from `ARCHITECTURE.md`'s hooks table.
+
+Verified: `npm run verify` 193→184 tests (15 files, was 16) — drop of exactly 9 matches the
+deleted test file's case count, per the plan's stop-condition exception. `npm run build` succeeds;
+main bundle `index-Dt4Ycdco.js` → `index-ckwjjoRN.js`, byte size unchanged (the 3 orphans had zero
+importers, so nothing was actually in the old bundle). `verify_pages.sh` 32/0 (confirmed the
+hardened `must_not_have` fails loudly by temporarily pointing a guard at a nonexistent file).
+`node scripts/auth-guard-check.mjs` passes (all 7 public hooks still resolve via basename search).
+`bash scripts/test_pre_commit_hook.sh` all 5 cases pass (hooks touched, self-test stays green).
+
 ## 2026-09-24 (Frontend feature-folder restructure: execution plan + task file written — not started)
 
 From the Opus 5.5 design, a Sonnet plan writer produced `project-docs/architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` (§0 operator decisions with defaults; ground rules; P0–P12 each with exact old→new file table, relative-import exceptions for Node-tooling files, ordered verify commands, browser checklist, same-commit doc updates, rollback, estimate; risk register; progress ledger) and the task file `TASK_2026-09-24_frontend_feature_folders.md`. Tree re-verified against the design's 193-file mapping (no drift). Monitor review fixed two executor traps in P0: `assets/react.svg` missing from the deletion list (the git-status check expected 5), and the "test count drops → stop" rule now carries an explicit exception for the one intentionally deleted test file. All 5 orphans re-verified reference-free. Nothing moved.

@@ -952,8 +952,8 @@ directories and the eslint rule — confirm the revert is clean before re-attemp
 
 | Phase | Status | Commit | Verify result | Notes |
 |---|---|---|---|---|
-| §0 decisions | not started | — | — | — |
-| P0 | not started | — | — | — |
+| §0 decisions | done | — | — | Operator approved full P0–P12, all §0 defaults (see task file LIVE TRACKER header) |
+| P0 | done | see CHANGES | verify: 193→184 tests (15 files, was 16; drop of 9 = deleted file's case count, exact match); build OK, bundle `index-Dt4Ycdco.js`→`index-ckwjjoRN.js` (size unchanged, byte-for-byte in the two unaffected chunks); `verify_pages.sh` 32/0 (hardening confirmed by injected-failure test); `auth-guard-check.mjs` PASS (7/7 hooks resolve via basename search); `test_pre_commit_hook.sh` 5/5 PASS | All 4 re-verification greps clean before deleting. Removed dangling `useCountrySignal` row from ARCHITECTURE.md hooks table. |
 | P1 | not started | — | — | — |
 | P2 | not started | — | — | — |
 | P3 | not started | — | — | — |

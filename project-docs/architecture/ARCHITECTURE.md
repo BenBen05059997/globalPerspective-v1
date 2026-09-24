@@ -1313,7 +1313,6 @@ Wired in `<Routes>` in `App.jsx` — 27 `<Route>` elements incl. catch-all (`/me
 | `useMembership()` | Fetch the signed-in user's membership + `creditBalance` via `newsPolarBilling` `get_membership` (#28); powers the header credits pill, Account → Membership tab, and the `/analyze` server-run gate. Exposes `available` (false until billing is wired) |
 | `useTodayArchive()` | Fetch today's archive entries |
 | `useArticles(topicId)` | Fetch article sources for a topic |
-| `useCountrySignal(countryName)` | Country-level signal/metrics hook |
 | `useIsMobile(breakpoint)` | Responsive breakpoint (default 600px) |
 
 ### Onboarding (guided tours)

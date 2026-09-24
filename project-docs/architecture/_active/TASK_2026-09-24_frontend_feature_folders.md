@@ -13,11 +13,11 @@ and every "Docs to update" item below is staged in that phase's commit or the fi
 orphans; keep DisruptionRow/Preview → economy; design's ambiguous-home calls; Python prototype
 out of scope; no deploy until the end, and that one needs a fresh yes).
 
-**Now:** P0 — not started
+**Now:** P1 — not started
 
 | Phase | What moves / changes (file groups — exact lists in the plan's §2) | Status | Commit |
 |---|---|---|---|
-| P0 | delete 5 orphans; harden verify_pages.sh, pre-push regex, auth-guard-check.mjs | ⬜ remaining | |
+| P0 | delete 5 orphans; harden verify_pages.sh, pre-push regex, auth-guard-check.mjs | ✅ done | see CHANGES |
 | P1 | `@/` alias (vite.config.js, jsconfig.json), codemod all imports, move-module.mjs | ⬜ remaining | |
 | P2 | `app/` (routing, layout, onboarding) + `shared/` (api, contexts, data, hooks, lib, ui, styles) | ⬜ remaining | |
 | P3 | features/static + features/spider-demo | ⬜ remaining | |
@@ -116,7 +116,7 @@ rewrite, phase by phase, one commit per phase, fully reversible with `git revert
 
 **Completion checklist:**
 - [ ] Operator decisions recorded (execution plan §0) before P0 starts
-- [ ] P0 — orphans deleted, guards hardened, verified with `npm run verify` + `verify_pages.sh`
+- [x] P0 — orphans deleted, guards hardened, verified with `npm run verify` + `verify_pages.sh`
 - [ ] P1 — `@/` alias + `jsconfig.json` + codemod to absolute imports + `move-module.mjs` helper,
       bundle-hash identical to pre-phase build
 - [ ] P2 — `app/` + `shared/` moved; ARCHITECTURE path map + Feature→Lambda index started

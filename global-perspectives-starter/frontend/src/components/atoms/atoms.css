@@ -69,39 +69,6 @@
 .rdp-up { background: var(--risk-h-soft); color: var(--risk-h); }
 .rdp-dn { background: var(--risk-l-soft); color: var(--risk-l); }
 
-/* ── MacroChip ────────────────────────────────────────────── */
-.mchip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  color: var(--ink-dim);
-}
-
-.mchip-pair {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-}
-
-.mchip-label {
-  font-weight: 500;
-  color: var(--ink-faint);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.mchip-val {
-  font-weight: 600;
-  color: var(--ink-mid);
-}
-
-.mchip-sep {
-  color: var(--line-3);
-}
-
 /* ── RiskScoreBadge ───────────────────────────────────────── */
 .rsb {
   display: inline-flex;

@@ -9,7 +9,7 @@ cd "$(git rev-parse --show-toplevel)"
 # Only run if economic-layer files changed in the push range.
 RANGE=$(git rev-parse --abbrev-ref HEAD)@{u}..HEAD 2>/dev/null || RANGE='HEAD~10..HEAD'
 
-if git diff --name-only $RANGE 2>/dev/null | grep -qE '(newsEconomicImpact|newsEconomicQuality|useEconomicImpact|useDisruptionsList|useTopMovers|atoms/(Mechanism|Disruption|Severity|Quality)|EconomyPage|Home\.jsx|DailyPage|ThreadPage|CountryPage|CountryListPage|WeeklyPage|Layout\.jsx|Disclosures|quality/)'; then
+if git diff --name-only $RANGE 2>/dev/null | grep -qE '(newsEconomicImpact|newsEconomicQuality|useEconomicImpact|useDisruptionsList|useTopMovers|(MechanismCard|Disruption(Row|Preview)|SeverityBadge|QualityFlag)|EconomyPage|Home\.jsx|DailyPage|ThreadPage|CountryPage|CountryListPage|WeeklyPage|Layout\.jsx|Disclosures|quality/)'; then
   echo "==> Economic-layer files changed — running fast verifier (bypass with --no-verify)"
   bash quality/verify_all.sh --fast
 else

@@ -18,7 +18,30 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dir = path.dirname(fileURLToPath(import.meta.url));
-const HOOKS = path.join(__dir, '../global-perspectives-starter/frontend/src/hooks');
+const SRC = path.join(__dir, '../global-perspectives-starter/frontend/src');
+
+// Basename search under src/ (not a fixed src/hooks/ path) — hooks may live in
+// any feature folder after the frontend restructure (see
+// project-docs/architecture/_active/FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md P0).
+function findByBasename(dir, basename) {
+  let entries;
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  for (const entry of entries) {
+    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const found = findByBasename(full, basename);
+      if (found) return found;
+    } else if (entry.name === basename) {
+      return full;
+    }
+  }
+  return null;
+}
 
 // Public-content hooks: their backend actions are public, so a !user gate here
 // blocks anonymous visitors from content that is meant for everyone.
@@ -42,8 +65,8 @@ console.log('\nAuth-guard regression check (class 2)');
 console.log('='.repeat(72));
 
 for (const file of PUBLIC_HOOKS) {
-  const full = path.join(HOOKS, file);
-  if (!fs.existsSync(full)) {
+  const full = findByBasename(SRC, file);
+  if (!full) {
     console.log(`  ?  ${file} — MISSING (hook renamed/removed? update the allowlist)`);
     failed++;
     continue;

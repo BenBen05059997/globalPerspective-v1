@@ -29,6 +29,10 @@ must_have() {
 
 must_not_have() {
   local file="$1"; local pat="$2"; local label="$3"
+  if [ ! -f "$file" ]; then
+    FAIL=$((FAIL + 1)); FAILED+=("$file: target file does not exist"); echo "  $(red FAIL) $file: target file does not exist"
+    return
+  fi
   if ! grep -qE "$pat" "$file" 2>/dev/null; then
     PASS=$((PASS + 1)); echo "  $(green PASS) $file: $label (not present)"
   else

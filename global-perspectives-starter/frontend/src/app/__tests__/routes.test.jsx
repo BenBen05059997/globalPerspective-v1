@@ -32,9 +32,9 @@ import Contact from '@/features/static/Contact';
 import PrivacyTerms from '@/features/static/PrivacyTerms';
 import Disclosures from '@/features/static/Disclosures';
 import SignIn from '@/features/account/SignIn';
-import WeeklyPage from '@/components/WeeklyPage';
+import WeeklyPage from '@/features/threads/WeeklyPage';
 import CountryListPage from '@/features/countries/CountryListPage';
-import ThreadPage from '@/components/ThreadPage';
+import ThreadPage from '@/features/threads/ThreadPage';
 import CountryPage from '@/features/countries/CountryPage';
 
 function renderPage(Component, path = '/') {

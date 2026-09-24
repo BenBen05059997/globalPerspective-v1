@@ -85,7 +85,7 @@ Use this when:
 > living docs. Do not reintroduce `usePairAnalyses`/`WorldMapV2` references — `pair_analyses_list`
 > has no frontend consumer as of 2026-09-24.
 
-## `/weekly` · `components/WeeklyPage.jsx`
+## `/weekly` · `features/threads/WeeklyPage.jsx`
 
 - **Purpose:** Story-arc browser — a tier-based front-page hierarchy over a time-banded river, filterable by category/region/country/time.
 - **Primary user job:** See the dominant stories of the day first, then browse the rest by recency.
@@ -101,7 +101,7 @@ Use this when:
   3. Click a StoryCard / row — navigates to `/weekly/thread/:threadId`.
 - **Known issues:** Exports color/order constants consumed by Daily / Thread / CountryPage / CountryListPage — central source of truth lives here.
 
-## `/weekly/thread/:threadId` · `components/ThreadPage.jsx`
+## `/weekly/thread/:threadId` · `features/threads/ThreadPage.jsx`
 
 - **Purpose:** Single story-arc deep dive — timeline, actors, sources + AI rail with Summary / Trajectory / Trace / Watch.
 - **Primary user job:** Read the full evolution of one narrative thread.
@@ -168,7 +168,7 @@ Use this when:
 
 - **Purpose:** BYOK ("bring your own key") self-serve analysis — pick ≤4 of today's stories, choose a lens or ask your own question, get a **cited deep-dive built from our own intelligence** (cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE`). A member "run it on our compute" path exists alongside BYOK.
 - **Primary user job:** Go beyond reading — interrogate the day's stories with an LLM and get a sourced, honesty-checked write-up.
-- **Data sources:** `useGeminiTopics()` (the selectable story list), `useAuth()` (registration gate), `useMembership()` (member vs BYOK). The analysis itself does **not** go through `restProxy`: `services/llm.js` `runChat()` calls the user's chosen provider **directly from the browser** with the user's own key. Member path instead calls `runMemberAnalysis()` (`restProxy` → `newsAnalyze` Lambda, our DeepSeek compute) when `analyzeConfigured()`. Supporting utils: `utils/analysis` (cited-context builder + prompts), `utils/analysisValidator` (honesty checks), `utils/sourceRobustness` (source-basis line), `utils/byok` (localStorage key store), `ProviderModal`.
+- **Data sources:** `useGeminiTopics()` (the selectable story list), `useAuth()` (registration gate), `useMembership()` (member vs BYOK). The analysis itself does **not** go through `restProxy`: `features/analysis-studio/lib/llm.js` `runChat()` calls the user's chosen provider **directly from the browser** with the user's own key. Member path instead calls `runMemberAnalysis()` (`restProxy` → `newsAnalyze` Lambda, our DeepSeek compute) when `analyzeConfigured()`. Supporting utils: `features/analysis-studio/lib/analysis` (cited-context builder + prompts), `features/analysis-studio/lib/analysisValidator` (honesty checks), `features/analysis-studio/lib/sourceRobustness` (source-basis line), `features/analysis-studio/lib/byok` (localStorage key store), `ProviderModal`.
 - **Auth gate:** **Registered-only** — anonymous/guest users hit a blocking `as-gate` overlay ("Sign in to analyze"). This gate is scoped to this feature; it does not touch the public content hooks.
 - **Inbound links:** Primary nav "Analyze" (`Layout.jsx:53`); Account → "Analysis Studio API key" tab → "Go to Analysis Studio →" (`Account.jsx:67`).
 - **Outbound links:** Gate overlay → `/signin` and `/` (`AnalysisStudio.jsx:409-410`); "Run it on us with a membership →" → `/membership` (`:285`, shown to non-members when billing is available); `ProviderModal` (provider/model/key chooser — writes to `localStorage` only).
@@ -228,7 +228,7 @@ Use this when:
   3. Signed in with billing wired, click a plan — redirects to the Polar checkout URL.
 - **Known issues:** gated behind `window.POLAR_BILLING_ENDPOINT` — `useMembership().available` is false until that's set, so checkout is **not live yet** (the page shows the "not open yet" notice in production today). See `POLAR_BILLING_PLAN.md`.
 
-## `/weekly-map` · `components/WeeklyMap.jsx`
+## `/weekly-map` · `features/threads/components/WeeklyMap.jsx`
 
 - **Purpose:** Standalone Google-Maps-based weekly story map with date playback per thread / per country.
 - **Primary user job:** Watch story evolution geographically over the 30-day window.
@@ -296,7 +296,7 @@ Use this when:
 
 - **Purpose:** User account hub — saved items, notification prefs, and the Analysis Studio BYOK key.
 - **Primary user job:** Manage saved threads/countries/dailies, toggle email notifications, view/change/remove the analysis API key, sign out.
-- **Data sources:** `useAuth()`, `useSavedItems()` (newsSavedItems Function URL), `usePreferences()` (Notifications tab → `newsRecommend get/set_prefs`), `utils/byok` + `ProviderModal` (Analysis key tab). *(The old `fetchUserProfile()` / `user_profile` JWT call and the tier/billing-portal UI were removed in the 2026-06-01 billing teardown — Account no longer reads a profile or a subscription tier.)*
+- **Data sources:** `useAuth()`, `useSavedItems()` (newsSavedItems Function URL), `usePreferences()` (Notifications tab → `newsRecommend get/set_prefs`), `features/analysis-studio/lib/byok` + `ProviderModal` (Analysis key tab). *(The old `fetchUserProfile()` / `user_profile` JWT call and the tier/billing-portal UI were removed in the 2026-06-01 billing teardown — Account no longer reads a profile or a subscription tier.)*
 - **Auth gate:** **Requires real sign-in** — anonymous/guest redirected to `/signin` (`Account.jsx:491`).
 - **Inbound links:** Layout account button (when signed in).
 - **Outbound links:** Analysis-key tab → "Go to Analysis Studio →" `/analyze` (`:67`); saved cards → `/weekly/thread/:id`, `/weekly/country/:name`, `/daily/:dateKey`; sign-out → `/`; delete account → mailto.
@@ -465,7 +465,7 @@ ORPHAN / SECONDARY
 | `useWeeklyBrief` | | ✓ | | |
 | `useTrackRecord` | | | ✓ | |
 
-Plus non-hook data paths: `/analyze` calls `services/llm.js` `runChat()` (BYOK, browser→provider) and `restProxy` `runMemberAnalysis()`/`analyzeConfigured()`; `/membership` calls `restProxy` `createCheckout()`.
+Plus non-hook data paths: `/analyze` calls `features/analysis-studio/lib/llm.js` `runChat()` (BYOK, browser→provider) and `restProxy` `runMemberAnalysis()`/`analyzeConfigured()`; `/membership` calls `restProxy` `createCheckout()`.
 
 **Still not consumed by any routed page:** `useArticles`, `useBookmarks`, `useSummary`, `usePrediction`, `useTraceCause`, `useResearchBriefing`, `usePairAnalyses` (Pair pages are no longer routed), `usePairIntelligence`. See `OPTIMIZATION_REPORT.md` OPT-22 (dead hooks). *(`useMarketsGlobal` was in the original not-consumed list but is consumed by `/economy` — corrected 2026-06-22.)*
 

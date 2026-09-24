@@ -13,7 +13,7 @@ and every "Docs to update" item below is staged in that phase's commit or the fi
 orphans; keep DisruptionRow/Preview → economy; design's ambiguous-home calls; Python prototype
 out of scope; no deploy until the end, and that one needs a fresh yes).
 
-**Now:** P11 — not started
+**Now:** P12 — not started
 
 | Phase | What moves / changes (file groups — exact lists in the plan's §2) | Status | Commit |
 |---|---|---|---|
@@ -28,7 +28,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 | P8 | features/economy | ✅ done | 8c47394 (monitor ✓: 184 tests, main 1,046.07 kB, diff import-only; briefing tooling 5/5 + 10/10; verify_all --fast all green; guards 32/32; browser: /economy renders, sort-by-instrument works, This-week toggle loads weekly view + URL state, console clean) |
 | P9 | features/home | ✅ done | e4b4f39 (monitor ✓: 184 tests, main 1,046.07 kB, diff import-only; verify_lede 4/4; guards 32/32; browser: / renders, story controls present; Summary click shows no panel — IDENTICAL on prod (pre-restructure code) → data condition (DeepSeek outage), not a regression; pre-existing UX gap: no "unavailable" message) |
 | P10 | features/countries | ✅ done | cd2b3b5 (monitor ✓: 184 tests, main 1,046.07 kB, diff import-only; useCountryIntelligence still unguarded (public); guards 32/32; browser: /weekly/countries grid, /weekly/country/Ukraine scorecard + What-changed band + Causal Web tab render; console clean) |
-| P11 | features/threads + delete empty old dirs + eslint dependency rule | ⬜ remaining | |
+| P11 | features/threads + delete empty old dirs + eslint dependency rule | ✅ done | see CHANGES |
 | P12 | docs only (ARCHITECTURE path table, INDEX, feature→Lambda index) | ⬜ remaining | |
 
 **End-of-phase ritual (executor, in the phase commit):** flip the row to ✅ with the commit sha
@@ -128,7 +128,7 @@ rewrite, phase by phase, one commit per phase, fully reversible with `git revert
 - [x] P8 — `economy` moved (N-file Node-tooling checks pass)
 - [x] P9 — `home` moved (N-file Node-tooling checks pass)
 - [x] P10 — `countries` moved
-- [ ] P11 — `threads` moved; old flat dirs deleted; eslint `no-restricted-imports` rule added
+- [x] P11 — `threads` moved; old flat dirs deleted; eslint `no-restricted-imports` rule added
 - [ ] P12 — README + INDEX + memory pass; task file and design doc flipped to `done`
 - [ ] Every phase: docs updated in the same commit, `CHANGES.md` entry present, `npm run verify`
       passes with the expected test count, build hash compared, `verify_pages.sh` green, browser

@@ -454,7 +454,7 @@ These were intentionally cleaned in P0.4 — any reappearance is a regression:
 Add grep guard:
 ```bash
 ! grep -E "useDisruptionsList|useEconomicImpact|useTopMovers|MechanismCard|DisruptionRow|DisruptionPreview" \
-    global-perspectives-starter/frontend/src/components/WeeklyPage.jsx
+    global-perspectives-starter/frontend/src/features/threads/WeeklyPage.jsx
 ```
 
 ---

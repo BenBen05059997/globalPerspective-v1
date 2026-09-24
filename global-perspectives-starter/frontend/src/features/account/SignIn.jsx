@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import '@/components/WeeklyPage.css';
+import '@/features/threads/WeeklyPage.css';
 
 export default function SignIn() {
   const { sendSignInLink, signInWithGoogle, signInAsGuest } = useAuth();

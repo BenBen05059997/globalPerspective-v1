@@ -4,11 +4,11 @@ import { threadPath } from '@/shared/lib/threadPath';
 import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
 import ShareButtons from '@/shared/ui/ShareButtons';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useWeeklyArchive } from '@/hooks/useWeeklyArchive';
-import { useNarrativeThread } from '@/hooks/useNarrativeThread';
-import { useThreadAnalyses } from '@/hooks/useThreadAnalyses';
+import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
+import { useNarrativeThread } from '@/features/threads/hooks/useNarrativeThread';
+import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
-import CompactTimeline from '@/components/CompactTimeline';
+import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar as RISK_COLOR } from '@/shared/styles/tokens';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
 import CopyBriefing, { formatThreadBriefing } from '@/shared/ui/CopyBriefing';
@@ -18,10 +18,10 @@ import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import SourceRobustness from '@/shared/ui/SourceRobustness';
 import MechanismCard from '@/features/economy/components/MechanismCard';
-import ThreadForecast from '@/components/ThreadForecast';
+import ThreadForecast from '@/features/threads/components/ThreadForecast';
 import { useEconomicImpact } from '@/features/economy/hooks/useEconomicImpact';
-import { useThreadForecast } from '@/hooks/useThreadForecast';
-import '@/components/ThreadPage.css';
+import { useThreadForecast } from '@/features/threads/hooks/useThreadForecast';
+import '@/features/threads/ThreadPage.css';
 
 function humanizeThreadId(id) {
   return (id || '')

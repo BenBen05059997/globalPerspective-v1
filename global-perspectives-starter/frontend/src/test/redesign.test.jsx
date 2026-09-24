@@ -28,11 +28,11 @@ const dayMap = {};
 }
 const sortedDates = Object.keys(dayMap).sort((a, b) => b.localeCompare(a));
 
-vi.mock('@/hooks/useWeeklyArchive', () => ({
+vi.mock('@/features/threads/hooks/useWeeklyArchive', () => ({
   useWeeklyArchive: () => ({ dayMap, sortedDates, loading: false, error: null, tier: 'enterprise', refetch: vi.fn() }),
 }));
 
-vi.mock('@/hooks/useThreadAnalyses', () => ({
+vi.mock('@/features/threads/hooks/useThreadAnalyses', () => ({
   useThreadAnalyses: () => ({ analyses: threadAnalysesFixture.data, loading: false, error: null }),
 }));
 
@@ -53,7 +53,7 @@ vi.mock('@/shared/ui/IntelligenceLoader', () => ({
 vi.mock('@/features/countries/components/CountryOverviewMap', () => ({
   default: () => <div data-testid="map" />,
 }));
-vi.mock('@/components/WeeklyMap', () => ({
+vi.mock('@/features/threads/components/WeeklyMap', () => ({
   default: () => <div data-testid="weekly-map" />,
 }));
 
@@ -67,7 +67,7 @@ function renderWithRouter(ui) {
 describe('Redesign v2 — WeeklyPage', () => {
   let WeeklyPage;
   beforeEach(async () => {
-    WeeklyPage = (await import('@/components/WeeklyPage')).default;
+    WeeklyPage = (await import('@/features/threads/WeeklyPage')).default;
   });
 
   it('renders the StatusStrip with arc/article/day stats', () => {

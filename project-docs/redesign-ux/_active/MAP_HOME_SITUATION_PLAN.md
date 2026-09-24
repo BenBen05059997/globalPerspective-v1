@@ -321,9 +321,9 @@ Headline: **the topic/thread world is untouched.** Every consumer of `getGeminiT
 |---|---|
 | `components/Layout.jsx:67` | nav entry `{ to: '/map', label: 'Map' }` removed (home *is* the map); nav groups re-checked vs `SITE_ORIENTATION_PLAN` |
 | `features/breaking/BreakingDetailPage.jsx:106` | "See on the map →" → `/?focus=<threadId>` (lands on *that* situation) |
-| `components/ThreadPage.jsx`, `CountryPage.jsx` | additive, optional (P5): "Being watched · Critical" chip when an open situation references the thread/country |
-| `services/restProxy.js` | +3 actions |
-| `utils/countryMapping.js` | canonical for the map (already canonical for Home's `categorizeTopicsByRegion`); new sibling `utils/countryCentroids.js` |
+| `features/threads/ThreadPage.jsx`, `features/countries/CountryPage.jsx` | additive, optional (P5): "Being watched · Critical" chip when an open situation references the thread/country |
+| `shared/api/restProxy.js` | +3 actions |
+| `shared/lib/countryMapping.js` | canonical for the map (already canonical for Home's `categorizeTopicsByRegion`); new sibling `shared/lib/countryCentroids.js` |
 | `utils/errorSink.js` | new kind `unmatched_region` |
 | `tokens.js` | drop `MiniMap` ref before deleting `MiniMap.jsx` |
 | `scripts/smoke-test.mjs:106, 423` | `/map` route entry + the map-specific check → retarget to `/`; add `/weekly/pair/<slug>` |

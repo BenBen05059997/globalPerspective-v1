@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Wrapper } from '@googlemaps/react-wrapper';
-import { useWeeklyArchive } from '@/hooks/useWeeklyArchive';
+import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { getTopicCountryCodes, getTopicRegion, getRegionFromCountryCode } from '@/shared/lib/countryMapping';
-import { COUNTRY_COORDINATES, CONTINENT_PATHS } from '@/utils/mapConstants';
+import { COUNTRY_COORDINATES, CONTINENT_PATHS } from '@/features/threads/lib/mapConstants';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import useIsMobile from '@/shared/hooks/useIsMobile';
-import { useThreadAnalyses } from '@/hooks/useThreadAnalyses';
-import StoryEntryCard from '@/components/StoryEntryCard';
-import ThreadIntelligence from '@/components/ThreadIntelligence';
+import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
+import StoryEntryCard from '@/features/threads/components/StoryEntryCard';
+import ThreadIntelligence from '@/features/threads/components/ThreadIntelligence';
 import { CATEGORY_BADGE_COLORS } from '@/shared/styles/tokens';
-import CompactTimeline from '@/components/CompactTimeline';
-import '@/components/WeeklyPage.css';
-import '@/components/WeeklyMap.css';
+import CompactTimeline from '@/features/threads/components/CompactTimeline';
+import '@/features/threads/WeeklyPage.css';
+import '@/features/threads/components/WeeklyMap.css';
 
 function threadHue(threadId) {
   let hash = 0;

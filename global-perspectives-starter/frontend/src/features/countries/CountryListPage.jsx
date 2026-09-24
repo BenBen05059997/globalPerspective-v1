@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useWeeklyArchive } from '@/hooks/useWeeklyArchive';
+import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
@@ -11,7 +11,7 @@ import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import RiskScoreBadge from '@/shared/ui/risk/RiskScoreBadge';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
-import '@/components/WeeklyPage.css';
+import '@/features/threads/WeeklyPage.css';
 import '@/features/countries/CountryListPage.css';
 
 // riskLevel string → sort rank (high first). Normalized via the shared tier util.

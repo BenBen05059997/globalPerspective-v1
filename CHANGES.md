@@ -1,5 +1,58 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P11: `features/threads/` + cleanup + dependency-direction eslint rule)
+
+Executed P11 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the last feature phase (threads has
+the most inbound edges, so it went last per the design's ordering rationale), plus the
+programme's cleanup work. Moved 15 files via `scripts/move-module.mjs`, no filename renames, no
+logic changes: `components/WeeklyPage.jsx`/`.css`, `components/ThreadPage.jsx`/`.css` →
+`features/threads/`; `components/WeeklyMap.jsx`/`.css`, `components/CompactTimeline.jsx`,
+`components/StoryEntryCard.jsx`, `components/ThreadIntelligence.jsx`,
+`components/ThreadForecast.jsx`, `components/TrendBadge.jsx` → `features/threads/components/`;
+`hooks/useWeeklyArchive.js`, `hooks/useThreadAnalyses.js`, `hooks/useNarrativeThread.js`,
+`hooks/useThreadForecast.js` → `features/threads/hooks/`; `utils/mapConstants.js` →
+`features/threads/lib/`. No N files in this phase. `move-module.mjs`'s repo-wide specifier
+rewrite automatically retargeted the cross-feature imports that had been left pointed at
+pre-move paths since earlier phases: `features/countries/CountryListPage.jsx` and
+`features/account/SignIn.jsx`/`AuthCallback.jsx` → `WeeklyPage.css`; `features/spider-demo/SpiderDemo.jsx`
+→ `CompactTimeline`, `useNarrativeThread`. All are documented edges from the design's §2.5, not
+regressions.
+
+**Cleanup:** confirmed `components/`, `hooks/`, `utils/`, `services/`, `contexts/`,
+`onboarding/`, `data/`, `assets/`, `styles/` were empty (`find <dir> -type f` returned nothing
+for each, including the leftover empty `components/atoms/`) and deleted them. `src/` top level
+is now just `app/`, `features/`, `shared/`, `test/`, `main.jsx`.
+
+**Dependency-direction eslint rule:** added a `no-restricted-imports` rule set to
+`eslint.config.js`, enforced at `npm run verify`: (1) repo-wide, bans `@/components/*`,
+`@/hooks/*`, `@/utils/*` (the old flat-dir aliases — gives a clear message instead of a bare
+module-not-found); (2) `src/shared/**` is banned from importing `@/features/**` or `@/app/**`;
+(3) `src/features/**` is banned from importing `@/app/**`. Feature → feature imports remain
+allowed — they're the intentional cross-feature edges catalogued in the design's §2.5 (e.g.
+countries → threads, spider-demo → threads/countries). `npx eslint src` and `npm run verify`
+are both clean under the new rule (0 errors; the same 3 pre-existing
+`react-hooks/exhaustive-deps` warnings as before, unrelated to this rule).
+
+Updated `quality/verify_pages.sh` (3 `ThreadPage.jsx` rows + the `WeeklyPage.jsx` negative
+economic-UI guard, re-pointed to `features/threads/`; re-verified the negative guard still
+fails loudly by temporarily reintroducing a forbidden import and reverting), and
+`project-docs/architecture/PAGES_GUIDE.md` (`/weekly`, `/weekly/thread/:threadId`,
+`/weekly-map` headings + the `services/llm.js`/`utils/*` citations in the Analysis Studio and
+Account sections, re-pointed to `features/analysis-studio/lib/`). Added the P11 "Frontend Path
+map" section + a "Dependency-direction eslint rule" note to
+`project-docs/architecture/ARCHITECTURE.md`, and added a Path column to the Key Components (57
+rows) and Key Hooks (28 rows) tables giving each file's new feature-folder location.
+`project-docs/redesign-ux/_active/PAIR_ARCS_RELOCATION_PLAN.md` grepped — no references to any
+of this phase's moved files, no edit needed.
+
+Verified: `npm run verify` 15 files / 184 tests (unchanged), 0 lint errors under the new
+dependency-direction rule (3 pre-existing unrelated warnings), `npm run build` main bundle
+1,046,069 bytes / CSS 295,600 bytes / `SituationMap3D` lazy chunk 942,987 bytes
+(byte-identical to P10), `quality/verify_pages.sh` 32/0, `scripts/auth-guard-check.mjs` PASS
+(7/7), `quality/verify_all.sh --fast` all 4 layers green, rule-5c relative-import sweep
+unchanged (only the 2 documented economy N-file edges), `find src -maxdepth 1` confirms the
+final top-level shape (`app/`, `features/`, `shared/`, `test/`, `main.jsx`).
+
 ## 2026-09-24 (Frontend feature-folder restructure P10: `features/countries/`)
 
 Executed P10 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the countries feature, which

@@ -66,11 +66,11 @@ must_have "$SRC/features/daily/DailyPage.jsx" "tab.{1,4}economy" "deep-links to 
 must_have "$SRC/features/daily/DailyPage.jsx" "SeverityBadge" "renders SeverityBadge"
 
 # ─── ThreadPage ───
-must_have "$SRC/components/ThreadPage.jsx" "useEconomicImpact" "uses useEconomicImpact"
-must_have "$SRC/components/ThreadPage.jsx" "MechanismCard" "renders MechanismCard"
+must_have "$SRC/features/threads/ThreadPage.jsx" "useEconomicImpact" "uses useEconomicImpact"
+must_have "$SRC/features/threads/ThreadPage.jsx" "MechanismCard" "renders MechanismCard"
 # DisruptionPreview removed 2026-06-29 — economy now lives in the center Economy
 # tab (MechanismCard) after the rail was de-duplicated; preview atom no longer used here.
-must_have "$SRC/components/ThreadPage.jsx" "hasEconomy" "computes hasEconomy gate"
+must_have "$SRC/features/threads/ThreadPage.jsx" "hasEconomy" "computes hasEconomy gate"
 
 # ─── CountryPage ───
 must_have "$SRC/features/countries/CountryPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
@@ -102,7 +102,7 @@ must_have "$SRC/features/economy/components/DisruptionRow.jsx"     "<QualityFlag
 must_have "$SRC/features/economy/components/DisruptionPreview.jsx" "<QualityFlag" "QualityFlag rendered in DisruptionPreview"
 
 # ─── §9.11 negative guards — pages that intentionally do NOT carry economic UI ───
-must_not_have "$SRC/components/WeeklyPage.jsx" "useDisruptionsList|useEconomicImpact|useTopMovers|MechanismCard|DisruptionRow|DisruptionPreview" "no economic hooks/atoms"
+must_not_have "$SRC/features/threads/WeeklyPage.jsx" "useDisruptionsList|useEconomicImpact|useTopMovers|MechanismCard|DisruptionRow|DisruptionPreview" "no economic hooks/atoms"
 
 # ─── Summary ───
 echo

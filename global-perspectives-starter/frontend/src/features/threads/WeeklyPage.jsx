@@ -3,19 +3,19 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
 import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useWeeklyArchive } from '@/hooks/useWeeklyArchive';
-import { useThreadAnalyses } from '@/hooks/useThreadAnalyses';
+import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
+import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
-import TrendBadge, { getTrend } from '@/components/TrendBadge';
+import TrendBadge, { getTrend } from '@/features/threads/components/TrendBadge';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '@/shared/styles/tokens';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
-import '@/components/WeeklyPage.css';
+import '@/features/threads/WeeklyPage.css';
 import '@/features/home/AIComponents.css';
 
-const WeeklyMap = lazy(() => import('@/components/WeeklyMap'));
+const WeeklyMap = lazy(() => import('@/features/threads/components/WeeklyMap'));
 
 const REGION_COLORS = {
   Asia:          { bg: '#fef3c7', border: '#fbbf24', text: '#92400e' },

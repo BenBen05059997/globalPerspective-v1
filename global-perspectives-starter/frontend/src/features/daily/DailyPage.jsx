@@ -202,12 +202,18 @@ export default function DailyPage() {
   const today = new Date().toISOString().slice(0, 10);
   const dateKey = paramDateKey || today;
   const isToday = dateKey === today;
-  const prev = prevDateKey(dateKey);
-  const next = nextDateKey(dateKey);
 
   const { brief, servedDateKey, loading } = useDailyBrief(dateKey);
-  // The served brief may be older than the requested date (today's isn't
-  // generated until end of day; the hook falls back up to 7 days).
+  // The served brief may be older than the requested date (today's isn't generated until end of
+  // day; the hook falls back up to MAX_LOOKBACK_DAYS to find the nearest real brief). Once a
+  // brief has loaded, step the arrows from the last known-good (served) date rather than the
+  // possibly-empty requested date — a naive `dateKey ± 1` can walk into a further run of empty
+  // days one click at a time during a multi-day/multi-week outage. Before any brief has loaded
+  // (first render), fall back to naive ±1 from the request — there's nothing else to anchor to
+  // yet. See STAGE0_FIXES_PLAN.md item (i).
+  const anchorDateKey = servedDateKey || dateKey;
+  const prev = prevDateKey(anchorDateKey);
+  const next = nextDateKey(anchorDateKey);
   const relLabel = relativeDayLabel(servedDateKey, today);
   const servedIsOlderThanRequest = servedDateKey && servedDateKey !== dateKey;
 
@@ -220,17 +226,21 @@ export default function DailyPage() {
   if (loading) return <IntelligenceLoader type="typewriter" />;
 
   if (!brief) {
+    // Nothing found anywhere in the hook's ~30-day lookback window in either direction from the
+    // request — genuinely stuck, not just "today's isn't out yet". Say so honestly instead of
+    // implying a same-day "check back soon" for what may be a multi-week-old dead zone.
     return (
       <div className="daily-page daily-empty">
         <h3>No brief available</h3>
         <p>
           {isToday
-            ? "Today's brief hasn't been generated yet. It publishes daily — check back soon."
-            : `No brief found for ${dateKey}.`}
+            ? "Today's brief hasn't been generated yet. It publishes at the end of the day — check back soon."
+            : `No brief was published within about a month of ${dateKey} — this looks like a real gap in the archive, not a delay.`}
         </p>
         <div className="daily-empty-links">
           <Link to={`/daily/${prev}`}>← Previous day</Link>
-          {!isToday && <Link to="/daily">Today's brief</Link>}
+          {!isToday && <Link to={`/daily/${next}`}>Next day →</Link>}
+          <Link to="/daily">Latest available brief</Link>
         </div>
       </div>
     );

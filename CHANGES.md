@@ -1,5 +1,43 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Stage-0 item (i): `/daily` — the fallback WINDOW was the real bug, not just arrows)
+
+`STAGE0_FIXES_PLAN.md` §(i) originally scoped this item narrowly (per §0's contradiction note:
+"`useDailyBrief.js` already falls back up to 7 days... what's not fixed is the arrows"). Mid-task,
+the coordinator flagged a live-verified correction: `DAILY_BRIEF#` records exist for
+2026-09-05 through 2026-09-12 and the API returns them correctly when called
+(`{action:'daily_brief', payload:{dateKey}}`) — but `useDailyBrief.js`'s fallback only looked back
+7 days, and with today at 2026-09-24 (the DeepSeek outage now 11+ days long), the 7-day window
+stopped at 2026-09-17 and **never reached the last real brief**. The "fallback exists" framing was
+right, but the window itself was the actual bug — this is the true root cause of the dead end, not
+just the naive `±1` arrows.
+
+Fixed in `useDailyBrief.js`: lookback extended to 30 days (bounded by `DAILY_BRIEF#`'s 90-day
+server-side TTL — nothing older can exist), issued in batches of 10 parallel requests rather than
+one long serial per-day loop, so a multi-week gap costs a handful of round-trips instead of up to
+30 sequential ones; within each batch the nearest (smallest days-back) hit wins, so the served date
+is always the closest real brief to the request. `DailyPage.jsx`'s prev/next arrows now derive from
+`servedDateKey` once a brief has loaded (falling back to naive `dateKey ± 1` only before any brief
+has loaded), so arrows always step from the last known-good date instead of a possibly-empty
+requested one — no extra network round-trip, reuses data already fetched. The empty state (nothing
+found anywhere in the 30-day window) now distinguishes "today's isn't out yet — check back soon"
+from "no brief was published within about a month of `<date>` — this looks like a real gap in the
+archive, not a delay", and offers both a forward and backward arrow plus a "Latest available
+brief" link instead of only a backward-only dead end. The existing `isToday` honest fallback note
+(`"Today's brief publishes at the end of the day — showing <real date>"`) is unchanged.
+
+Noted for a future touch, not fixed here (out of this item's scope, and the Worker change is
+prepared-only, not deployed — see item (a)): the Cloudflare Worker's `renderDailyPage()` in
+`WORKER_FULL_CODE.md` has the identical 7-day-cap pattern for bot pre-rendering and will have the
+same problem once/if the outage window grows past 7 days again after this fix restores frontend
+coverage. Flagging so it isn't rediscovered as a "new" bug later.
+
+Verify: `npm run verify` 184/184, 0 lint errors; build succeeds; `verify_pages.sh` 32/0;
+`auth-guard-check.mjs` PASS. Browser verification (navigate to `/daily`, then to a date in the
+known outage window, confirm the nearest real brief or an honest gap message rather than a dead
+end; click arrows near the gap; re-confirm the `isToday` fallback note) deferred to the monitor
+per this task's hard rules (executor does not browser-test).
+
 ## 2026-09-24 (Stage-0 item (h): `document.title` for the 8 pages missing one)
 
 `STAGE0_FIXES_PLAN.md` §(h): added a static `useEffect(() => { document.title = '<Page> | Global

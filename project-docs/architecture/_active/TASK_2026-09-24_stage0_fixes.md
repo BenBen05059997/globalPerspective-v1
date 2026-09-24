@@ -13,7 +13,9 @@ operator-requested pattern used in TASK_2026-09-24_frontend_feature_folders.md.
 per-item plan → `STAGE0_FIXES_PLAN.md` (this directory). No deploy until the batched end (frontend)
 plus a **separately gated** Worker deploy for item (a) — both need a fresh explicit "yes".
 
-**Now:** item (a) prepared, items (b)-(i) not started.
+**Now:** items (a)-(i) all done (item (a) prepared, not deployed — operator gate pending). Only
+the two operator-gated deploy steps remain (frontend batch `./deploy.sh` for (b)-(i), and the
+separate Worker deploy for (a)).
 
 | Item | What / files | Status | Commit |
 |---|---|---|---|
@@ -25,7 +27,7 @@ plus a **separately gated** Worker deploy for item (a) — both need a fresh exp
 | (f) | De-dupe in-flight proxy requests — `shared/api/restProxy.js` (`useGeminiTopics` called from Home, AnalysisStudio, IntelligenceLoader) | ✅ done | see CHANGES |
 | (g) | Route-level code splitting — `app/App.jsx` (`React.lazy` for 19 routes, Home kept eager), `features/countries/CountryPage.jsx` (fix static `WeeklyMap` import defeating `WeeklyPage`'s existing lazy split), `quality/verify_pages.sh` guard updated for the new import form | ✅ done | see CHANGES |
 | (h) | Missing `document.title` (8 pages) — `EconomyPage.jsx`, `TrackRecordPage.jsx`, `AnalysisStudio.jsx`, `MembershipPage.jsx`, `BreakingFeedPage.jsx`, `WeeklyBriefPage.jsx`, `Account.jsx`, `WhitepaperPage.jsx` | ✅ done | see CHANGES |
-| (i) | `/daily` dead end — arrows/empty-state only (fallback-to-latest-edition already exists in `useDailyBrief.js`/`DailyPage.jsx` — see plan §0 contradiction note) — `features/daily/DailyPage.jsx` | ⬜ not started | — |
+| (i) | `/daily` dead end — **scope expanded mid-task (coordinator, 2026-09-24):** the real root cause is `useDailyBrief.js`'s fallback window being too short (7 days), not just the arrows. Live-verified: `DAILY_BRIEF#` records exist through 2026-09-12 (DeepSeek outage 11+ days as of today 09-24), so the old `daysBack <= 7` cap (stopping at 09-17) never reached the last real brief. Fixed: `useDailyBrief.js` now looks back up to 30 days in batches of 10 parallel requests (not 30 serial calls) — bounded by the 90-day `DAILY_BRIEF#` TTL. `DailyPage.jsx` arrows now anchor from `servedDateKey` once loaded (not the raw request), and the empty state distinguishes "not published yet" (today) from "real gap in the archive" (older, nothing in the lookback window), with both a forward and backward arrow plus a "Latest available brief" link — `features/daily/hooks/useDailyBrief.js`, `features/daily/DailyPage.jsx` | ✅ done | see CHANGES |
 | Deploy | Frontend batch (`./deploy.sh`) for (b)-(i); Worker deploy for (a) is separate | ⬜ not started | — |
 
 **End-of-item ritual (executor, in the item's commit):** flip the row to ✅ with the commit sha,
@@ -126,8 +128,9 @@ migration, page rebuilds) begin.
 - [x] (g) Route-level code splitting — `App.jsx` lazy routes + `CountryPage.jsx` `WeeklyMap` fix,
       main-chunk size measured before/after: 1,046.05 kB → 425.25 kB (gzip 337.07 kB → 131.89 kB)
 - [x] (h) `document.title` added to all 8 named pages
-- [ ] (i) `/daily` date arrows + empty-state fixed (fallback-to-latest-edition already existed —
-      confirmed in plan §0, not rebuilt)
+- [x] (i) `/daily` date arrows + empty-state fixed, AND the actual root cause fixed: the
+      fallback-window itself was too short (7 days) to survive an 11+ day outage — now 30 days,
+      batched
 - [ ] Every item: `npm run verify` green, `quality/verify_pages.sh` 32/0, browser click-through
       done per the plan's per-item verification section, `CHANGES.md` entry present
 - [ ] Frontend batched deploy (`./deploy.sh`) — fresh explicit "yes", covers items (b)-(i)

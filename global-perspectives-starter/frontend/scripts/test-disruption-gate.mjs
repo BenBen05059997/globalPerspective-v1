@@ -1,9 +1,9 @@
-// Proves utils/disruptionGate.js against a real ECONOMIC_IMPACT scan.
+// Proves features/economy/lib/disruptionGate.js against a real ECONOMIC_IMPACT scan.
 // Run: node scripts/test-disruption-gate.mjs /tmp/econ_scan.json
 // Reports before/after: FX arrows relabelled vs suppressed, analogs backed vs gated.
 
 import fs from 'node:fs';
-import { gateInstrument, gateFxInstrument, gateAnalog, isFxPair } from '../src/utils/disruptionGate.js';
+import { gateInstrument, gateFxInstrument, gateAnalog, isFxPair } from '../src/features/economy/lib/disruptionGate.js';
 
 const path = process.argv[2] || '/tmp/econ_scan.json';
 const raw = JSON.parse(fs.readFileSync(path, 'utf8'));

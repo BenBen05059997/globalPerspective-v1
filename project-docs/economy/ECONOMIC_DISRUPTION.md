@@ -224,7 +224,7 @@ What gets verified:
 ```bash
 cd global-perspectives-starter/frontend
 npm test                                               # full suite (149 tests)
-npx vitest run src/test/useEconomicImpact.test.js      # just this file
+npx vitest run src/features/economy/__tests__/useEconomicImpact.test.js      # just this file
 ```
 
 ### Live end-to-end (manual)

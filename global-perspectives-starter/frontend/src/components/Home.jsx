@@ -18,7 +18,7 @@ import SourceRobustness from '@/shared/ui/SourceRobustness';
 import LedeBand from '@/components/atoms/LedeBand';
 import BreakingStrip from '@/features/breaking/components/BreakingStrip';
 import SubscribeCard from '@/features/account/components/SubscribeCard';
-import { useDisruptionsList } from '@/hooks/useDisruptionsList';
+import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
 import { composeTopicsLede } from '@/utils/composeTopicsLede';

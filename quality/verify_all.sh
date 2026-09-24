@@ -48,7 +48,7 @@ run_layer "L3  Judge unit tests" \
 
 # ─── L5/L6 — Frontend vitest (hooks + atoms) ───
 run_layer "L5/L6  Frontend vitest (hooks + atoms)" \
-  bash -c "cd global-perspectives-starter/frontend && npx vitest run src/test/useEconomicImpact.test.js src/test/atoms_economic.test.jsx"
+  bash -c "cd global-perspectives-starter/frontend && npx vitest run src/features/economy/__tests__/useEconomicImpact.test.js src/features/economy/__tests__/atoms_economic.test.jsx"
 
 # ─── L7 — Per-page grep guards ───
 run_layer "L7  Per-page grep guards" \

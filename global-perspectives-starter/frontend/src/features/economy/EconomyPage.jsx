@@ -11,16 +11,16 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import { useDisruptionsList } from '@/hooks/useDisruptionsList';
-import { useTopMovers } from '@/hooks/useTopMovers';
-import { useMarketsGlobal } from '@/hooks/useMarketsGlobal';
-import { useMarketsHistory } from '@/hooks/useMarketsHistory';
-import Sparkline from '@/components/atoms/Sparkline';
-import { composeBriefing, composeInstrumentWhy } from '@/utils/composeEconomyBriefing';
-import { gateInstrument, isFxPair } from '@/utils/disruptionGate.js';
-import QualityFlag from '@/components/atoms/QualityFlag';
-import WeeklyMarketsView from '@/components/WeeklyMarketsView';
-import '@/components/EconomyPage.css';
+import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
+import { useTopMovers } from '@/features/economy/hooks/useTopMovers';
+import { useMarketsGlobal } from '@/features/economy/hooks/useMarketsGlobal';
+import { useMarketsHistory } from '@/features/economy/hooks/useMarketsHistory';
+import Sparkline from '@/features/economy/components/Sparkline';
+import { composeBriefing, composeInstrumentWhy } from '@/features/economy/lib/composeEconomyBriefing';
+import { gateInstrument, isFxPair } from '@/features/economy/lib/disruptionGate.js';
+import QualityFlag from '@/features/economy/components/QualityFlag';
+import WeeklyMarketsView from '@/features/economy/components/WeeklyMarketsView';
+import '@/features/economy/EconomyPage.css';
 
 const SEVERITY_ORDER = ['severe', 'moderate', 'minor'];
 const SEVERITY_LABEL = { severe: 'Severe', moderate: 'Moderate', minor: 'Minor' };

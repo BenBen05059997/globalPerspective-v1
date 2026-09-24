@@ -18,8 +18,8 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import { useWeeklyMarkets } from '@/hooks/useWeeklyMarkets';
-import '@/components/WeeklyMarketsView.css';
+import { useWeeklyMarkets } from '@/features/economy/hooks/useWeeklyMarkets';
+import '@/features/economy/components/WeeklyMarketsView.css';
 
 function formatWeekOf(weekKey) {
   if (!weekKey) return '';

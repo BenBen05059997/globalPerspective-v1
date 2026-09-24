@@ -4,10 +4,10 @@
 //   impact: full economic_impact record from useEconomicImpact
 
 import { Link } from 'react-router-dom';
-import InstrumentChip from '@/components/atoms/InstrumentChip.jsx';
+import InstrumentChip from '@/features/economy/components/InstrumentChip.jsx';
 import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
-import QualityFlag from '@/components/atoms/QualityFlag.jsx';
-import { gateAnalog } from '@/utils/disruptionGate.js';
+import QualityFlag from '@/features/economy/components/QualityFlag.jsx';
+import { gateAnalog } from '@/features/economy/lib/disruptionGate.js';
 
 function EntityLine({ ent }) {
   if (!ent?.name) return null;

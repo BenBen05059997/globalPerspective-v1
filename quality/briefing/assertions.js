@@ -23,7 +23,7 @@ const TRACKED = [
 const TRACKED_SET = new Set(TRACKED);
 
 // Friendly names the briefing may use for an instrument — MIRRORS SHORT_NAME in
-// src/utils/composeEconomyBriefing.js. Lets check (d) locate an instrument in the
+// src/features/economy/lib/composeEconomyBriefing.js. Lets check (d) locate an instrument in the
 // prose whether it's referred to by ticker ("KS11") or name ("KOSPI"). Keep in
 // sync with compose when the instrument universe changes.
 const NAME_OF = {

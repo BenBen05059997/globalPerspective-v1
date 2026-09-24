@@ -8,10 +8,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
-import MechanismCard from '@/components/atoms/MechanismCard.jsx';
-import DisruptionRow from '@/components/atoms/DisruptionRow.jsx';
-import DisruptionPreview from '@/components/atoms/DisruptionPreview.jsx';
-import QualityFlag from '@/components/atoms/QualityFlag.jsx';
+import MechanismCard from '@/features/economy/components/MechanismCard.jsx';
+import DisruptionRow from '@/features/economy/components/DisruptionRow.jsx';
+import DisruptionPreview from '@/features/economy/components/DisruptionPreview.jsx';
+import QualityFlag from '@/features/economy/components/QualityFlag.jsx';
 
 const router = (ui) => <MemoryRouter>{ui}</MemoryRouter>;
 

@@ -8,7 +8,7 @@
 //   compact?: boolean              // strips the rationale line when true
 
 import DirectionArrow from '@/shared/ui/DirectionArrow.jsx';
-import { gateInstrument } from '@/utils/disruptionGate.js';
+import { gateInstrument } from '@/features/economy/lib/disruptionGate.js';
 
 const MAG_PIPS = { small: 1, moderate: 2, large: 3 };
 

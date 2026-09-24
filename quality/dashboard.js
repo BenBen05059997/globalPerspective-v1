@@ -152,8 +152,8 @@ function buildLambdaTimeline() {
     'quality/calibration_report.js',
     'quality/verify_pages.sh',
     'quality/verify_lambdas.sh',
-    'global-perspectives-starter/frontend/src/components/atoms/MechanismCard.jsx',
-    'global-perspectives-starter/frontend/src/components/atoms/QualityFlag.jsx',
+    'global-perspectives-starter/frontend/src/features/economy/components/MechanismCard.jsx',
+    'global-perspectives-starter/frontend/src/features/economy/components/QualityFlag.jsx',
   ];
   lines.push('| File | Last touched |');
   lines.push('|---|---|');

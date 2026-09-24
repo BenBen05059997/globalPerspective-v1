@@ -15,7 +15,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const { checkBriefing } = require('./assertions.js');
 const { composeBriefing } = await import(
-  path.join(__dirname, '../../global-perspectives-starter/frontend/src/utils/composeEconomyBriefing.js')
+  path.join(__dirname, '../../global-perspectives-starter/frontend/src/features/economy/lib/composeEconomyBriefing.js')
 );
 
 const fixturesDir = path.join(__dirname, 'fixtures');

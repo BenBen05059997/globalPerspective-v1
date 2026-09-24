@@ -41,16 +41,16 @@ const markets = {
   },
 };
 
-vi.mock('@/hooks/useDisruptionsList', () => ({
+vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({
   useDisruptionsList: () => ({ data: disruptions, loading: false, error: null }),
 }));
-vi.mock('@/hooks/useTopMovers', () => ({
+vi.mock('@/features/economy/hooks/useTopMovers', () => ({
   useTopMovers: () => ({ data: topMovers, loading: false }),
 }));
-vi.mock('@/hooks/useMarketsGlobal', () => ({
+vi.mock('@/features/economy/hooks/useMarketsGlobal', () => ({
   useMarketsGlobal: () => ({ data: markets, loading: false, error: null, asOf: markets.fx.asOf }),
 }));
-vi.mock('@/hooks/useMarketsHistory', () => ({
+vi.mock('@/features/economy/hooks/useMarketsHistory', () => ({
   useMarketsHistory: () => ({ data: [{ date: '2026-05-24', value: 80 }, { date: '2026-05-26', value: 96.4 }] }),
 }));
 
@@ -66,7 +66,7 @@ function brentRow() {
 
 describe('EconomyPage — instrument-first leaderboard', () => {
   beforeEach(async () => {
-    EconomyPage = (await import('@/components/EconomyPage')).default;
+    EconomyPage = (await import('@/features/economy/EconomyPage')).default;
   });
 
   it('renders the leaderboard row with consensus, live level, and story count', () => {

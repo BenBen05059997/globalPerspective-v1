@@ -17,9 +17,9 @@ import EditorialShell from '@/shared/ui/EditorialShell';
 import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import SourceRobustness from '@/shared/ui/SourceRobustness';
-import MechanismCard from '@/components/atoms/MechanismCard';
+import MechanismCard from '@/features/economy/components/MechanismCard';
 import ThreadForecast from '@/components/ThreadForecast';
-import { useEconomicImpact } from '@/hooks/useEconomicImpact';
+import { useEconomicImpact } from '@/features/economy/hooks/useEconomicImpact';
 import { useThreadForecast } from '@/hooks/useThreadForecast';
 import '@/components/ThreadPage.css';
 

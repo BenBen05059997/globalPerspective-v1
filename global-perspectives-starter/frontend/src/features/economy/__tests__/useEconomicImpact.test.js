@@ -38,8 +38,8 @@ vi.mock('@/shared/api/restProxy.js', () => ({
 }));
 
 import { fetchEconomicImpact, fetchDisruptionsList } from '@/shared/api/restProxy.js';
-import { useEconomicImpact } from '@/hooks/useEconomicImpact';
-import { useDisruptionsList } from '@/hooks/useDisruptionsList';
+import { useEconomicImpact } from '@/features/economy/hooks/useEconomicImpact';
+import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 
 const localStorageMock = (() => {
   let store = {};

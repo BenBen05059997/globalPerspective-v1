@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWeeklyArchive } from '@/hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '@/hooks/useCountryIntelligence';
-import { useDisruptionsList } from '@/hooks/useDisruptionsList';
+import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
 import { RISK_COLORS, CATEGORY_BADGE_COLORS, riskTierToVar } from '@/shared/styles/tokens';
 import { TIER_ORDER, tierFromLevel, tierFromScore } from '@/shared/lib/riskTiers';

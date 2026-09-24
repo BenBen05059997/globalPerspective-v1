@@ -1,5 +1,46 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P8: `features/economy/`)
+
+Executed P8 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the widget kit + 3 more N files
+(`composeEconomyBriefing.js`, `disruptionGate.js`, `economicAnalogs.js`) and the most
+`verify_pages.sh`-guarded feature. Moved 26 files via `scripts/move-module.mjs`, no filename
+renames, no logic changes: `components/EconomyPage.jsx`/`.css`, `components/WeeklyMarketsPage.jsx`
+→ `features/economy/`; `components/WeeklyMarketsView.jsx`/`.css`,
+`components/atoms/{MechanismCard,InstrumentChip,QualityFlag,DisruptionRow,DisruptionPreview,
+Sparkline}.jsx` → `features/economy/components/`; `hooks/{useDisruptionsList,useEconomicImpact,
+useTopMovers,useMarketsGlobal,useMarketsHistory,useMarketsCountry,useWeeklyMarkets}.js` →
+`features/economy/hooks/`; `utils/composeEconomyBriefing.js`, `utils/disruptionGate.js`,
+`data/economicAnalogs.js`/`.json` → `features/economy/lib/` and `features/economy/data/`;
+`test/economyPage.test.jsx`, `test/atoms_economic.test.jsx`, `test/useEconomicImpact.test.js` →
+`features/economy/__tests__/`. Per the operator's §0(c) decision, `DisruptionRow.jsx` and
+`DisruptionPreview.jsx` (test-only, no production importer) were kept and moved with the rest,
+not deleted. The three N files' own outgoing imports stayed relative and correct:
+`disruptionGate.js`'s `../data/economicAnalogs.js` import preserved the identical relative
+offset at the new location (`lib/disruptionGate.js` → `../data/economicAnalogs.js` →
+`data/economicAnalogs.js`); the post-move relative-import sweep still shows only this one
+documented N-file edge pair, unchanged from every prior phase. Updated the 4 Node-tooling
+consumers outside `src/` that import these files by relative path in this same commit:
+`quality/briefing/verify_compose.mjs`, `quality/briefing/verify_instrument_why.mjs` (both
+re-pointed to `features/economy/lib/composeEconomyBriefing.js`),
+`quality/briefing/assertions.js` (comment reference), and
+`global-perspectives-starter/frontend/scripts/test-disruption-gate.mjs` (re-pointed to
+`features/economy/lib/disruptionGate.js`) — confirmed its pre-existing Node-22
+`ERR_IMPORT_ATTRIBUTE_MISSING` JSON-import-attribute failure is unchanged (same error on the
+pre-P8 tree via `git stash`, not a regression from the move). Updated `quality/verify_pages.sh`
+(4 `EconomyPage.jsx` rows + 6 atom `QualityFlag`-wiring rows moved under `features/economy/`),
+`quality/dashboard.js` lines 155-156 (`MechanismCard.jsx`/`QualityFlag.jsx` path citations), and
+`quality/verify_all.sh` (L5/L6 test paths). Fixed path-qualified references in
+`project-docs/architecture/PAGES_GUIDE.md` (`/economy` heading + briefing composer citation) and
+`project-docs/economy/ECONOMIC_DISRUPTION.md` (vitest command example). Updated
+`ARCHITECTURE.md`'s Frontend Path map with the P8 rows and its N-file exception list. Verified:
+15 files / 184 tests (unchanged), main bundle 1,046.07 kB, CSS bundle 295.60 kB, and the
+`SituationMap3D` lazy chunk 942.99 kB all byte-identical to baseline; `verify_pages.sh` 32/0;
+`auth-guard-check.mjs` 7/7 PASS; `verify_compose.mjs` 5/5, `verify_instrument_why.mjs` 10/10,
+`verify_lede.mjs` 4/4 (unaffected — its target moves in P9); `verify_all.sh --fast` all 4 layers
+green (L2 61/61, L3 26/26, L5/L6 34/34, L7 32/32); relative-import sweep clean (only the 2
+documented N-file edges remain).
+
 ## 2026-09-24 (Frontend feature-folder restructure P7: `features/analysis-studio/`)
 
 Executed P7 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the N-file-heavy feature (four files

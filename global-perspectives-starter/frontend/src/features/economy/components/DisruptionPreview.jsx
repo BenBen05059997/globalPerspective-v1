@@ -6,7 +6,7 @@
 
 import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow.jsx';
-import QualityFlag from '@/components/atoms/QualityFlag.jsx';
+import QualityFlag from '@/features/economy/components/QualityFlag.jsx';
 
 export default function DisruptionPreview({ impact, onExpand }) {
   if (!impact || impact.hasImpact === false) return null;

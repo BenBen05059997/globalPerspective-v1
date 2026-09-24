@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { composeInstrumentWhy, nameFor } = await import(
-  path.join(__dirname, '../../global-perspectives-starter/frontend/src/utils/composeEconomyBriefing.js')
+  path.join(__dirname, '../../global-perspectives-starter/frontend/src/features/economy/lib/composeEconomyBriefing.js')
 );
 
 const realName = fs.readdirSync(path.join(__dirname, 'fixtures')).find((n) => /^real-\d{4}-\d{2}-\d{2}\.json$/.test(n));

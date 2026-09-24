@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (pre-push hook: stale WorldMapV2 trigger token removed)
+
+`.githooks/pre-push`'s economic-layer trigger regex still listed `WorldMapV2` (deleted today) — harmless (never matches) but stale; removed. Flagged by the doc-staleness sweep.
+
 ## 2026-09-24 (Doc-staleness sweep after cleanup: current-state docs corrected repo-wide, no code change)
 
 Following the same-day Tier A/B/D cleanup (`CLEANUP_AUDIT_2026-09-24.md` §4), swept every `.md`

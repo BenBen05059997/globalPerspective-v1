@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import '@/components/AIComponents.css';
+import '@/features/home/AIComponents.css';
 
 function tryParseJson(content) {
   if (!content) return null;

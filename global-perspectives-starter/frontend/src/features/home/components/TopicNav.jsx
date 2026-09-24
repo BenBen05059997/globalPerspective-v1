@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import '@/components/TopicNav.css';
+import '@/features/home/components/TopicNav.css';
 
 function TopicNav({ topics, categorizedTopics, mode = 'float' }) {
   const [activeTopicId, setActiveTopicId] = useState(null);

@@ -13,7 +13,7 @@ import StatusStrip from '@/shared/ui/StatusStrip';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '@/shared/styles/tokens';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
 import '@/components/WeeklyPage.css';
-import '@/components/AIComponents.css';
+import '@/features/home/AIComponents.css';
 
 const WeeklyMap = lazy(() => import('@/components/WeeklyMap'));
 

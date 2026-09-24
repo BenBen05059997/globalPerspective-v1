@@ -1216,9 +1216,9 @@ fixture imports use a separate `@fixtures` alias (→ `tests/fixtures/`). **Exce
 a handful of files are imported by Node tooling *outside* `src/` via relative path (`quality/briefing/*.mjs`,
 `quality/analysis/*.mjs`, `frontend/scripts/test-disruption-gate.mjs`), so their own outgoing
 imports must stay relative (marked with a `// imported by Node tooling outside src/ — keep
-relative imports` header comment): `utils/composeTopicsLede.js`, `features/economy/lib/composeEconomyBriefing.js`,
-`features/economy/lib/disruptionGate.js`, `features/economy/data/economicAnalogs.js`, `services/llm.js`, `utils/analysisPrompt.js`,
-`utils/analysisValidator.js`, `utils/analysisStruct.js`. Everything that imports *those* files
+relative imports` header comment): `features/home/lib/composeTopicsLede.js`, `features/economy/lib/composeEconomyBriefing.js`,
+`features/economy/lib/disruptionGate.js`, `features/economy/data/economicAnalogs.js`, `features/analysis-studio/lib/llm.js`, `features/analysis-studio/lib/analysisPrompt.js`,
+`features/analysis-studio/lib/analysisValidator.js`, `features/analysis-studio/lib/analysisStruct.js`. Everything that imports *those* files
 still uses `@/`; only the N files' own outbound imports (and Node tooling's imports of them) stay
 relative. `global-perspectives-starter/frontend/scripts/move-module.mjs` is the helper the
 restructure's later phases use to relocate a module and rewrite every `@/` reference to it in one
@@ -1388,6 +1388,30 @@ paths updated in this same commit. DisruptionRow.jsx/DisruptionPreview.jsx (test
 production importer) moved here per the operator's §0(c) decision to keep them as a parked
 widget kit, not delete them.
 
+**P9 — `features/home/`:**
+
+| Old | New |
+|---|---|
+| `components/Home.jsx`, `.css` | `features/home/Home.jsx`, `.css` |
+| `components/AIComponents.css` | `features/home/AIComponents.css` |
+| `components/TopicNav.jsx`, `.css` | `features/home/components/TopicNav.jsx`, `.css` |
+| `components/TodayArchiveSidebar.jsx`, `.css` | `features/home/components/TodayArchiveSidebar.jsx`, `.css` |
+| `components/ArchiveTopicModal.jsx` | `features/home/components/ArchiveTopicModal.jsx` |
+| `components/PredictionDisplay.jsx` | `features/home/components/PredictionDisplay.jsx` |
+| `components/SummaryDisplay.jsx` | `features/home/components/SummaryDisplay.jsx` |
+| `components/TraceCauseDisplay.jsx` | `features/home/components/TraceCauseDisplay.jsx` |
+| `components/atoms/LedeBand.jsx`, `.css` | `features/home/components/LedeBand.jsx`, `.css` |
+| `hooks/useTodayArchive.js` | `features/home/hooks/useTodayArchive.js` |
+| `utils/composeTopicsLede.js` | `features/home/lib/composeTopicsLede.js` |
+
+`utils/composeTopicsLede.js` is the N file here — its own imports stay relative (unchanged, it
+has no outgoing imports outside its own honesty-contract logic besides types). Node tooling
+importing it by relative path — `quality/briefing/verify_lede.mjs` — had its relative path
+updated in this same commit. `AIComponents.css` is imported cross-feature by
+`components/ThreadPage.jsx`/`WeeklyPage.jsx` (still at their pre-move path, moves in P11) —
+`move-module.mjs`'s repo-wide specifier rewrite retargeted those imports to
+`@/features/home/AIComponents.css` automatically; no import was stranded.
+
 ### Feature → Lambda index
 
 Lambdas are **not** grouped into feature subfolders (evaluated and rejected —
@@ -1460,7 +1484,7 @@ Wired in `<Routes>` in `App.jsx` — 27 `<Route>` elements incl. catch-all (`/me
 | `Home.jsx` | 3-col EditorialShell: a deterministic **"Today's lede" band** (`LedeBand`) directly under the StatusStrip, then a masthead whose sub-line states the **accountability value prop** (links `/track-record`; 2026-07-06), a **trust strip** (3 stat cards — dated forecast triggers via `useTrackRecord`, corrections logged via `useCorrectionsFeed`, sources/stories today; each card omitted when its number is absent — honest-empty) above `SubscribeCard`, then region-grouped daily topics with per-topic AI toolbar (Summarize/Predict/Trace Cause) + per-topic economic-disruption badge ("Economic impact →" when a thread has a disruption); `TodayArchiveSidebar` + `TopicNav` rails |
 | `SituationHome.jsx` | The live map at `/map` — orients on `useWorld`/`useSituationDetail` (situation-tracker data: state emerging/escalating/peak/cooling/closed, per-axis tier conflict/political/economic/humanitarian, "what changed" evidence), renders `SituationMap.jsx` (2D) and, when WebGL2/WebGL is available, lazily loads `SituationMap3D.jsx` (deck.gl GlobeView, code-split so the heavy dep only loads on this route) for the 2.5D globe. Detail panel shows tier/state labels, freshness ("N min ago"), and structured metrics (outlets/spread/coverage ratio) parsed from `what_changed`. Replaces the legacy `WorldMapV2.jsx` (d3 + topojson SVG map, `/map-legacy`), **removed 2026-09-24** — see the "Removed/never-wired" note above; a pair-arcs relocation onto this map was built then cancelled by the operator, so bilateral-arc/"Connections" display has no current surface (harvested ideas in `redesign-ux/_reference/LEGACY_MAP_IDEA_HARVEST_2026-09-24.md`). |
 | `SituationMap3D.jsx` | deck.gl GlobeView 3D globe backing `SituationHome` — country fills + signal layers, plus an unrelated `spread-arcs` `ArcLayer` (contagion/spread visualization fed by centroid resolution via `utils/countryGeo.js`, not the removed pair-arcs feature) |
-| `LedeBand.jsx` (atom) | Deterministic one-line "Today's lede" orientation strip on Home + Map. Fed by `utils/composeTopicsLede` (pure, no LLM — picks the day's story by disruption severity → urgency → trending → source count; counts trace to real inputs; headline is a verbatim topic title). Renders **nothing** when there is no real lede (honest empty state). Headline links to the story-arc thread page **only when the topic carries a real `threadId`** — no fallback link. Honesty eval: `quality/briefing/verify_lede.mjs`. SHIPPED 2026-06-10. |
+| `LedeBand.jsx` (atom) | Deterministic one-line "Today's lede" orientation strip on Home + Map. Fed by `features/home/lib/composeTopicsLede` (pure, no LLM — picks the day's story by disruption severity → urgency → trending → source count; counts trace to real inputs; headline is a verbatim topic title). Renders **nothing** when there is no real lede (honest empty state). Headline links to the story-arc thread page **only when the topic carries a real `threadId`** — no fallback link. Honesty eval: `quality/briefing/verify_lede.mjs`. SHIPPED 2026-06-10. |
 | `EconomyPage.jsx` | `/economy` — the markets home, with a **Today / This week** segmented toggle in the masthead (URL-synced `?view=week`, folded into `buildParams`/parse so it's shareable + refresh-safe + survives a filter/sort rewrite; default Today). **"This week"** renders `WeeklyMarketsView` (the consolidated weekly markets wrap, own centered editorial layout — see route table) and hides the live timestamp; **"Today"** renders the dashboard below. The Today mode: **Leads with a deterministic "Today in the economy" briefing band** (`.ep-briefing-band`, above the 3-col shell) — a one-paragraph synthesis composed by `features/economy/lib/composeEconomyBriefing.js` from the same data already loaded (story count + severity split + most-cited cluster + sharpest story link + sanitized realized moves with consensus-vs-realized divergence flagged); no LLM, honesty-checked by `quality/briefing/assertions.js` (run `node quality/briefing/verify_compose.mjs`). **Rebuilt 2026-05-27 to match the editorial mockup** (own masthead band + 3-col shell, no longer `EditorialShell`; full-bleed via a `:has(.ep-page)` container escape, sticky rails offset by `--nav-h + --strip-h`). **Two-layer model** (see `ECONOMIC_INSTRUMENT_UNIVERSE_PLAN.md`): the right-rail **Market Context** is a *standing dashboard* — live levels for the full universe (Equities / Sectors / Commodities / Ags&Materials / Risk / Rates / Crypto via `useMarketsGlobal`), shown always, AI-independent. The center **leaderboard** ("Repricing today") is the *news-cited subset* (`useTopMovers` — consensus + direction-split + live level per instrument; **expand** → price sparkline (`useMarketsHistory`) + Key-levels box + a **lean** driving-stories list [Severity · Story → thread Economy tab · Direction] + affected-country chips; mechanism + historical analog are demoted to each story's thread Economy tab), then a dormant-instruments drawer + a severity-grouped by-story "Active disruptions" bridge. Left rail facets (severity / horizon / country). All real data — **honest degradation** where data is absent (no fabricated % change, severity bars, ISO codes, or analog %). **Deterministic display gate** (`features/economy/lib/disruptionGate.js`): FX rows are relabelled to the foreign currency with direction derived from the rationale (the `USD/XXX` label + stored direction follow no consistent quoting convention), arrow suppressed when undetectable; historical-analog realized moves render only when the event resolves against the curated catalog (`findAnalogEvent`). Proven by `scripts/test-disruption-gate.mjs`. |
 | `WeeklyPage.jsx` | 3-col EditorialShell: **tier-based front-page hierarchy** (`RISK_TIERS_PLAN.md` P3, 2026-07-03) above the category river — **1 LEAD** (tier `high` AND events ≤24h; Techmeme-style text-forward card: rule label, serif headline, why-it-matters, evidence row, arc dots, `↳ What changed` drift-delta line from the living-analysis loop) + **≤3 DEVELOPING** (fresh drift note OR ≥elevated & ≤48h; half-width rows; near-duplicate stories de-duped via Jaccard title similarity). Below the hierarchy the river is **time-banded with density decay** (2026-07-03): **This week** (last activity ≤7d) = full story cards · **Earlier this month** (8–30d) = condensed rows · **Older** (>30d) = collapsed count (collapses only when a fresher band has content, so the topmost populated band is always open). Threads bucket by `dateRange.to`. **Category is a filter-chip row** (All + per-category counts), not the grouping axis. Hierarchy renders **only on the default unfiltered view** (search/region/country/**category** filter = work mode = flat bands, hierarchy hidden); promoted threads are removed from the river **and** the right rail "Rising This Week" (no double-show); honest-empty if nothing qualifies. StatusStrip, left rail (search/period/sort/region/view-toggle); lazy-loaded `WeeklyMap` view mode |
 | `WeeklyMap.jsx` | Thread-colored markers, date playback, thread sidebar |

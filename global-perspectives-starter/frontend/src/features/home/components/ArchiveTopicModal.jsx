@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import SummaryDisplay from '@/components/SummaryDisplay';
-import PredictionDisplay from '@/components/PredictionDisplay';
-import TraceCauseDisplay from '@/components/TraceCauseDisplay';
-import '@/components/TodayArchiveSidebar.css';
+import SummaryDisplay from '@/features/home/components/SummaryDisplay';
+import PredictionDisplay from '@/features/home/components/PredictionDisplay';
+import TraceCauseDisplay from '@/features/home/components/TraceCauseDisplay';
+import '@/features/home/components/TodayArchiveSidebar.css';
 
 function ArchiveTopicModal({ entry, onClose }) {
   const overlayRef = useRef(null);

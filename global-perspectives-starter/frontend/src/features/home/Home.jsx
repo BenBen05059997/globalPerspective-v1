@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
-import SummaryDisplay from '@/components/SummaryDisplay';
-import PredictionDisplay from '@/components/PredictionDisplay';
-import TraceCauseDisplay from '@/components/TraceCauseDisplay';
-import TopicNav from '@/components/TopicNav';
-import TodayArchiveSidebar from '@/components/TodayArchiveSidebar';
-import { useTodayArchive } from '@/hooks/useTodayArchive';
+import SummaryDisplay from '@/features/home/components/SummaryDisplay';
+import PredictionDisplay from '@/features/home/components/PredictionDisplay';
+import TraceCauseDisplay from '@/features/home/components/TraceCauseDisplay';
+import TopicNav from '@/features/home/components/TopicNav';
+import TodayArchiveSidebar from '@/features/home/components/TodayArchiveSidebar';
+import { useTodayArchive } from '@/features/home/hooks/useTodayArchive';
 import contentService from '@/shared/data/contentService';
 import { categorizeTopicsByRegion } from '@/shared/lib/countryMapping';
 import { useError } from '@/shared/contexts/ErrorContext';
@@ -15,15 +15,15 @@ import StatusStrip from '@/shared/ui/StatusStrip';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
 import SourceRobustness from '@/shared/ui/SourceRobustness';
-import LedeBand from '@/components/atoms/LedeBand';
+import LedeBand from '@/features/home/components/LedeBand';
 import BreakingStrip from '@/features/breaking/components/BreakingStrip';
 import SubscribeCard from '@/features/account/components/SubscribeCard';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
-import { composeTopicsLede } from '@/utils/composeTopicsLede';
-import '@/components/AIComponents.css';
-import '@/components/Home.css';
+import { composeTopicsLede } from '@/features/home/lib/composeTopicsLede';
+import '@/features/home/AIComponents.css';
+import '@/features/home/Home.css';
 
 // SVG icons
 const SumIcon = () => (

@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import '@/app/App.css';
 import '@/shared/ui/atoms.css';
 import Layout from '@/app/layout/Layout';
-import Home from '@/components/Home';
+import Home from '@/features/home/Home';
 import PrivacyTerms from '@/features/static/PrivacyTerms';
 import AboutContact from '@/features/static/AboutContact';
 import Disclosures from '@/features/static/Disclosures';

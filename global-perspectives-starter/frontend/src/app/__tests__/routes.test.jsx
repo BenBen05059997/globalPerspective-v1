@@ -26,7 +26,7 @@ vi.mock('firebase/auth', () => ({
 }));
 
 // Import page components
-import Home from '@/components/Home';
+import Home from '@/features/home/Home';
 import AboutContact from '@/features/static/AboutContact';
 import Contact from '@/features/static/Contact';
 import PrivacyTerms from '@/features/static/PrivacyTerms';

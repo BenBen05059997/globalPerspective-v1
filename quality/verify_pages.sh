@@ -55,10 +55,10 @@ must_have "$SRC/features/economy/EconomyPage.jsx" "useMarketsGlobal" "renders Ma
 must_have "$SRC/features/economy/EconomyPage.jsx" "tab.{1,4}economy" "deep-links stories to thread economy tab"
 
 # ─── Home ───
-must_have "$SRC/components/Home.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/components/Home.jsx" "disruptionByThread" "builds per-thread map"
-must_have "$SRC/components/Home.jsx" "tab.{1,4}economy" "deep-links to economy tab"
-must_have "$SRC/components/Home.jsx" "SeverityBadge" "renders SeverityBadge"
+must_have "$SRC/features/home/Home.jsx" "useDisruptionsList" "uses useDisruptionsList"
+must_have "$SRC/features/home/Home.jsx" "disruptionByThread" "builds per-thread map"
+must_have "$SRC/features/home/Home.jsx" "tab.{1,4}economy" "deep-links to economy tab"
+must_have "$SRC/features/home/Home.jsx" "SeverityBadge" "renders SeverityBadge"
 
 # ─── DailyPage ───
 must_have "$SRC/features/daily/DailyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"

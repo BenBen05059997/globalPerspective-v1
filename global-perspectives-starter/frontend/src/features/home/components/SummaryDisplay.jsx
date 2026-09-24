@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import '@/components/AIComponents.css';
+import '@/features/home/AIComponents.css';
 
 /**
  * SummaryDisplay Component

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Honesty check for the "Today's lede" band — runs the REAL compose function
-// (src/utils/composeTopicsLede.js) against inline cases and proves it never
+// (src/features/home/lib/composeTopicsLede.js) against inline cases and proves it never
 // fabricates: the headline is a verbatim input title, every count is a real
 // tally, and the reason traces to a real signal on the chosen topic.
 //
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { composeTopicsLede } = await import(
-  path.join(__dirname, '../../global-perspectives-starter/frontend/src/utils/composeTopicsLede.js')
+  path.join(__dirname, '../../global-perspectives-starter/frontend/src/features/home/lib/composeTopicsLede.js')
 );
 
 const CASES = {

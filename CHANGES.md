@@ -1,5 +1,37 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P9: `features/home/`)
+
+Executed P9 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the Topics page (Home) + the lede
+composer (N). Moved 15 files via `scripts/move-module.mjs`, no filename renames, no logic
+changes: `components/Home.jsx`/`.css`, `components/AIComponents.css` → `features/home/`;
+`components/TopicNav.jsx`/`.css`, `components/TodayArchiveSidebar.jsx`/`.css`,
+`components/ArchiveTopicModal.jsx`, `components/PredictionDisplay.jsx`,
+`components/SummaryDisplay.jsx`, `components/TraceCauseDisplay.jsx`,
+`components/atoms/LedeBand.jsx`/`.css` → `features/home/components/`;
+`hooks/useTodayArchive.js` → `features/home/hooks/`; `utils/composeTopicsLede.js` →
+`features/home/lib/`. `composeTopicsLede.js` is the N file here — its own outgoing imports
+stayed relative and unchanged; the only Node-tooling consumer outside `src/`,
+`quality/briefing/verify_lede.mjs`, had its relative import path re-pointed to
+`features/home/lib/composeTopicsLede.js` in this same commit (still 4/4 cases passing). The
+post-move relative-import sweep still shows only the two documented economy N-file edges — no
+new relative-import leaks. `AIComponents.css` is imported cross-feature by `ThreadPage.jsx` and
+`WeeklyPage.jsx` (both still at their pre-move `components/` path, moving in P11); those import
+lines were rewritten to `@/features/home/AIComponents.css` automatically by
+`move-module.mjs`'s repo-wide specifier rewrite — no import was stranded, this is a documented
+cross-feature edge (threads → home), same pattern as the P3 spider-demo and P6 SignIn/WeeklyPage.css
+notes. Updated `quality/verify_pages.sh` (4 `Home.jsx` rows, re-pointed to
+`features/home/Home.jsx`) and `project-docs/architecture/PAGES_GUIDE.md` (`/` page heading).
+Also corrected stale N-file path lists in `project-docs/architecture/ARCHITECTURE.md` (the
+"Frontend imports" note and the `LedeBand.jsx` Key Components row still cited pre-move
+`utils/composeTopicsLede.js` / `services/llm.js` / `utils/analysisPrompt.js` etc. from P1/P7 —
+brought current to `features/home/lib/...` and `features/analysis-studio/lib/...`), and added
+the P9 "Frontend Path map" section. Verified: `npm run verify` 15 files / 184 tests (unchanged),
+`npm run build` main bundle 1,046,069 bytes / CSS 295,600 bytes (byte-identical to P8),
+`quality/verify_pages.sh` 32/0, `scripts/auth-guard-check.mjs` PASS, `quality/verify_all.sh
+--fast` all 4 layers green (32/0 page guards, 34/34 hooks+atoms vitest, 26/0 judge unit tests),
+rule-5c relative-import sweep unchanged.
+
 ## 2026-09-24 (Frontend feature-folder restructure P8: `features/economy/`)
 
 Executed P8 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the widget kit + 3 more N files

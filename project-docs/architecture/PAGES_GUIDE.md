@@ -42,7 +42,7 @@ Use this when:
 >
 > **➕ Pages added since this doc was first generated (2026-06-22):** `/analyze` (AnalysisStudio), `/weekly-brief` (WeeklyBriefPage), `/track-record` (TrackRecordPage), and `/membership` (MembershipPage) are now live and documented in their own sections below. The current `App.jsx` registers **~25 content routes** (the 21 counted here plus `/breaking`, `/breaking/:id`, `/weekly-markets`, `/spider-demo`, added after this note; counting `/daily` + `/daily/:dateKey` separately) plus a dev-only `/__boom` error-boundary trigger (`Boom`, unlinked — see Orphan check) and the `*` catch-all (`NotFound`). The primary nav is now 9 links (see Site map), not the original 5.
 
-## `/` · `components/Home.jsx`
+## `/` · `features/home/Home.jsx`
 
 - **Purpose:** Today's global topics grouped by region with on-demand AI Summary / Predict / Trace Cause per topic.
 - **Primary user job:** Skim the day's stories, then deep-dive into one with AI analysis.

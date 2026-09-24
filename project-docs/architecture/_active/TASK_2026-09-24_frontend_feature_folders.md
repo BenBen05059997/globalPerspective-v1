@@ -13,7 +13,7 @@ and every "Docs to update" item below is staged in that phase's commit or the fi
 orphans; keep DisruptionRow/Preview → economy; design's ambiguous-home calls; Python prototype
 out of scope; no deploy until the end, and that one needs a fresh yes).
 
-**Now:** P9 — not started
+**Now:** P10 — not started
 
 | Phase | What moves / changes (file groups — exact lists in the plan's §2) | Status | Commit |
 |---|---|---|---|
@@ -26,7 +26,7 @@ out of scope; no deploy until the end, and that one needs a fresh yes).
 | P6 | features/breaking + account | ✅ done | d9e4db6 (monitor ✓: 184 tests, main 1,046.07 kB, 0 stray; diff = import lines only (38/38) — billing logic untouched; browser: /membership, /signin, /account 5 tabs, /breaking, country-page Save render; console clean on fresh load) |
 | P7 | features/analysis-studio | ✅ done | 7b3bff3 (monitor ✓: 184 tests, main 1,046.07 kB, 0 stray; N files + analysisPrompt.js moved at 100% similarity (prompt byte-unchanged → newsAnalyze sync intact); quality/analysis run.mjs 18/18; all other diffs import-only; browser: /analyze renders, provider modal opens, console clean) |
 | P8 | features/economy | ✅ done | 8c47394 (monitor ✓: 184 tests, main 1,046.07 kB, diff import-only; briefing tooling 5/5 + 10/10; verify_all --fast all green; guards 32/32; browser: /economy renders, sort-by-instrument works, This-week toggle loads weekly view + URL state, console clean) |
-| P9 | features/home | ⬜ remaining | |
+| P9 | features/home | ✅ done | see CHANGES |
 | P10 | features/countries | ⬜ remaining | |
 | P11 | features/threads + delete empty old dirs + eslint dependency rule | ⬜ remaining | |
 | P12 | docs only (ARCHITECTURE path table, INDEX, feature→Lambda index) | ⬜ remaining | |
@@ -126,7 +126,7 @@ rewrite, phase by phase, one commit per phase, fully reversible with `git revert
 - [x] P6 — `breaking` + `account` moved
 - [x] P7 — `analysis-studio` moved (N-file Node-tooling checks pass)
 - [x] P8 — `economy` moved (N-file Node-tooling checks pass)
-- [ ] P9 — `home` moved (N-file Node-tooling checks pass)
+- [x] P9 — `home` moved (N-file Node-tooling checks pass)
 - [ ] P10 — `countries` moved
 - [ ] P11 — `threads` moved; old flat dirs deleted; eslint `no-restricted-imports` rule added
 - [ ] P12 — README + INDEX + memory pass; task file and design doc flipped to `done`

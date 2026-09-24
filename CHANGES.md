@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Whole-site page review — findings only, nothing changed)
+
+`project-docs/architecture/PAGE_REVIEW_2026-09-24.md`: checklist → 5 parallel Sonnet reviewers against the live site (Playwright, axe-core, link-crawl, errors/contract checks, sourcemap byte attribution) → monitor browser pass + verification → consolidated, deduplicated, prioritized. Monitor-verified corrections: SEO 404 is site-wide (every route except `/`; curl, browser + Googlebot UA), not just /daily+/weekly; parked-credits finding downgraded to copy (prod config has no credit packs → honest 'coming soon'); 'Summary renders nothing' needs repro; two smoke-test findings were stale-selector false positives. Result: 10 P1 / ~14 P2 / ~14 P3. Feeds the page-structure discussion (proposal in progress).
+
 ## 2026-09-24 (Fix: test-disruption-gate.mjs crashed under Node 22)
 
 `global-perspectives-starter/frontend/scripts/test-disruption-gate.mjs` failed before it did anything: `disruptionGate.js` → `economicAnalogs.js` imports a bare `./economicAnalogs.json`, which Vite bundles natively but Node 22 rejects without a `with { type: 'json' }` import attribute (`ERR_IMPORT_ATTRIBUTE_MISSING`). The repo already shipped `scripts/json-as-module-loader.mjs` for exactly this, but nothing registered it. Fix: the script now calls `module.register('./json-as-module-loader.mjs', import.meta.url)` and loads `disruptionGate.js` via dynamic import after registration. App source untouched (bundle unchanged). Verified against a live read-only scan of all 139 `ECON#` records: 45 FX rows (41 relabelled, 4 suppressed, 19 direction fixes the gate prevents), 101 analogs (64 catalog-backed, 37 gated) — "All assertions passed.", exit 0; eslint clean; vitest 184.

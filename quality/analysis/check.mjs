@@ -14,10 +14,10 @@
 //   ANALYSIS_EVAL_KEY=sk-… RESEND_API_KEY=re_… node quality/analysis/check.mjs --email you@x.com
 
 import { writeFileSync } from 'node:fs';
-import { runChat } from '../../global-perspectives-starter/frontend/src/services/llm.js';
-import { SYSTEM_PROMPT, assembleContext, buildUserMessage, pickText, clip } from '../../global-perspectives-starter/frontend/src/utils/analysisPrompt.js';
-import { validateAnalysis } from '../../global-perspectives-starter/frontend/src/utils/analysisValidator.js';
-import { extractStruct } from '../../global-perspectives-starter/frontend/src/utils/analysisStruct.js';
+import { runChat } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/llm.js';
+import { SYSTEM_PROMPT, assembleContext, buildUserMessage, pickText, clip } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisPrompt.js';
+import { validateAnalysis } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisValidator.js';
+import { extractStruct } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisStruct.js';
 
 const PROXY = 'https://ba4q3fnwq6.execute-api.ap-northeast-1.amazonaws.com/default/proxy';
 const KEY = process.env.ANALYSIS_EVAL_KEY;

@@ -13,7 +13,7 @@
 //   ANALYSIS_EVAL_KEY=sk-… node quality/analysis/source_check.mjs [howMany]
 //   node quality/analysis/source_check.mjs --l1-only      # robustness only, no key
 
-import { runChat } from '../../global-perspectives-starter/frontend/src/services/llm.js';
+import { runChat } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/llm.js';
 
 const PROXY = 'https://ba4q3fnwq6.execute-api.ap-northeast-1.amazonaws.com/default/proxy';
 const KEY = process.env.ANALYSIS_EVAL_KEY;

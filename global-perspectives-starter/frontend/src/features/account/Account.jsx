@@ -5,9 +5,9 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSavedItems } from '@/features/account/hooks/useSavedItems';
 import { usePreferences } from '@/features/account/hooks/usePreferences';
 import { useMembership } from '@/features/account/hooks/useMembership';
-import { loadByok, clearByok } from '@/utils/byok';
-import { getProvider } from '@/services/llm';
-import ProviderModal from '@/components/ProviderModal';
+import { loadByok, clearByok } from '@/features/analysis-studio/lib/byok';
+import { getProvider } from '@/features/analysis-studio/lib/llm';
+import ProviderModal from '@/features/analysis-studio/components/ProviderModal';
 import '@/features/account/Account.css';
 
 // Mask a key for display: keep a few head/tail chars, hide the middle.

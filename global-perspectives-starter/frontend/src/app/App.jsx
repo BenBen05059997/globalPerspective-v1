@@ -22,7 +22,7 @@ import Account from '@/features/account/Account';
 import WhitepaperPage from '@/features/static/WhitepaperPage';
 import SituationHome from '@/features/map/SituationHome';
 import EconomyPage from '@/components/EconomyPage';
-import AnalysisStudio from '@/components/AnalysisStudio';
+import AnalysisStudio from '@/features/analysis-studio/AnalysisStudio';
 import MembershipPage from '@/features/account/MembershipPage';
 import TrackRecordPage from '@/features/track-record/TrackRecordPage';
 import WeeklyBriefPage from '@/features/weekly-brief/WeeklyBriefPage';

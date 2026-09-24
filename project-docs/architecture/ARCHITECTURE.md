@@ -1326,6 +1326,31 @@ case-insensitive macOS).
 | `hooks/usePreferences.js` | `features/account/hooks/usePreferences.js` |
 | `hooks/useSavedItems.js` | `features/account/hooks/useSavedItems.js` |
 
+**P7 — `features/analysis-studio/`:**
+
+| Old | New |
+|---|---|
+| `components/AnalysisStudio.jsx`, `.css` | `features/analysis-studio/AnalysisStudio.jsx`, `.css` |
+| `components/ProviderModal.jsx`, `.css` | `features/analysis-studio/components/ProviderModal.jsx`, `.css` |
+| `components/atoms/AnalysisVisuals.jsx`, `.css` | `features/analysis-studio/components/AnalysisVisuals.jsx`, `.css` |
+| `services/llm.js` | `features/analysis-studio/lib/llm.js` |
+| `utils/analysis.js` | `features/analysis-studio/lib/analysis.js` |
+| `utils/analysisPrompt.js` | `features/analysis-studio/lib/analysisPrompt.js` |
+| `utils/analysisValidator.js` | `features/analysis-studio/lib/analysisValidator.js` |
+| `utils/analysisStruct.js` | `features/analysis-studio/lib/analysisStruct.js` |
+| `utils/byok.js` | `features/analysis-studio/lib/byok.js` |
+| `utils/sourceRobustness.js` | `features/analysis-studio/lib/sourceRobustness.js` |
+| `test/analysisStruct.test.js` | `features/analysis-studio/__tests__/analysisStruct.test.js` |
+| `test/analysisVisuals.test.jsx` | `features/analysis-studio/__tests__/analysisVisuals.test.jsx` |
+
+`services/llm.js`, `utils/analysisPrompt.js`, `utils/analysisValidator.js`, `utils/analysisStruct.js`
+are the N files here — their own outgoing imports (none, in this case) stay relative by
+convention, and the Node tooling that imports them by relative path (`quality/analysis/{check,
+compare,judge,run,source_check}.mjs`, 13 import lines) had its relative paths updated in this
+same commit to point at `features/analysis-studio/lib/`. `utils/sourceRobustness.js` (the
+BYOK source-basis scorer, lowercase) moved here too, completing the case-collision split with
+`shared/ui/SourceRobustness.jsx` (moved in P2) — the two never shared a directory at any point.
+
 ### Feature → Lambda index
 
 Lambdas are **not** grouped into feature subfolders (evaluated and rejected —

@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 
-import { ScenarioBars, IndicatorMatrix, RippleTable } from '@/components/atoms/AnalysisVisuals.jsx';
+import { ScenarioBars, IndicatorMatrix, RippleTable } from '@/features/analysis-studio/components/AnalysisVisuals.jsx';
 
 describe('ScenarioBars', () => {
   it('renders one row per scenario with name and range', () => {

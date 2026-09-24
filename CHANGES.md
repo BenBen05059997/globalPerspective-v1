@@ -1,5 +1,35 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P7: `features/analysis-studio/`)
+
+Executed P7 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the N-file-heavy feature (four files
+imported by Node tooling outside `src/`). Moved 15 files via `scripts/move-module.mjs`, no
+filename renames, no logic/prompt-text changes: `components/AnalysisStudio.jsx`/`.css` →
+`features/analysis-studio/`; `components/ProviderModal.jsx`/`.css`,
+`components/atoms/AnalysisVisuals.jsx`/`.css` → `features/analysis-studio/components/`;
+`services/llm.js`, `utils/analysis.js`, `utils/analysisPrompt.js`, `utils/analysisValidator.js`,
+`utils/analysisStruct.js`, `utils/byok.js`, `utils/sourceRobustness.js` →
+`features/analysis-studio/lib/`; `test/analysisStruct.test.js`, `test/analysisVisuals.test.jsx` →
+`features/analysis-studio/__tests__/`. The four N files (`llm.js`, `analysisPrompt.js`,
+`analysisValidator.js`, `analysisStruct.js`) have zero outgoing imports of their own, so no
+internal relative-import rewrite was needed on them; the relative-import sweep after this phase
+still shows only the 2 pre-existing N-file edges (`disruptionGate.js`/`economicAnalogs.js`,
+untouched this phase). Updated the 13 relative import lines across the 5 Node-tooling consumers
+in `quality/analysis/{check,compare,judge,run,source_check}.mjs` (they import these files by
+relative path from outside `src/`) and one path reference in `quality/analysis/README.md`;
+proved resolution with `node quality/analysis/run.mjs` (18/18 golden-fixture cases pass, no key
+needed) and an import-smoke of the other four (each reached its "set ANALYSIS_EVAL_KEY" message,
+confirming imports resolved). Completed the case-collision split noted in P2: lowercase
+`utils/sourceRobustness.js` (BYOK source-basis scorer) now lives at
+`features/analysis-studio/lib/sourceRobustness.js`, never sharing a directory with the
+already-moved `shared/ui/SourceRobustness.jsx`. No prompt text was edited — the newsAnalyze
+Lambda's server-pinned `SYSTEM_PROMPT` byte-copy is unaffected by this pure file move. Fixed
+path-qualified references in `PAGES_GUIDE.md` (`/analyze` heading) and
+`QWEN_AND_VISUAL_BLOCK_PLAN.md` (5 `src/...` file-list citations). Updated `ARCHITECTURE.md`'s
+Frontend Path map with the P7 rows. Verified: 15 files / 184 tests (unchanged), main bundle
+1,046.07 kB and CSS bundle 295.60 kB byte-identical to baseline, guards 32/32, auth-guard-check
+7/7 PASS, relative-import sweep clean (only the 2 documented N-file edges remain).
+
 ## 2026-09-24 (Frontend feature-folder restructure P6: `features/breaking/`, `features/account/`)
 
 Executed P6 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the two features with the most inbound

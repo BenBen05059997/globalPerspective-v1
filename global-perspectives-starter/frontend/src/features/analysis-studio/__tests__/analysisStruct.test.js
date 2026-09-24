@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { extractStruct, validateStruct } from '@/utils/analysisStruct';
+import { extractStruct, validateStruct } from '@/features/analysis-studio/lib/analysisStruct';
 
 const GOOD_PROSE = [
   'Bottom line: the ceasefire is fragile.',

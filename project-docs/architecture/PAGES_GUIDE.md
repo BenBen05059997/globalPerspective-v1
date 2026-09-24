@@ -164,7 +164,7 @@ Use this when:
 - **Usage (CloudWatch proxy, 2026-05-27):** the **#2 content page** after Home — well ahead of Threads/Daily/Map/Countries (≈28 `economic_top_movers` loads/wk + 31 expands vs. ≤9 for other sections). Discovery is **not** a gap; site-wide traffic is low overall.
 - **Known issues:** a heavily-cited instrument lists all its stories on expand (no "top N" cap yet); `markets_global` is over-counted in logs because the hook background-refreshes every 5 min.
 
-## `/analyze` · `components/AnalysisStudio.jsx`
+## `/analyze` · `features/analysis-studio/AnalysisStudio.jsx`
 
 - **Purpose:** BYOK ("bring your own key") self-serve analysis — pick ≤4 of today's stories, choose a lens or ask your own question, get a **cited deep-dive built from our own intelligence** (cached `SUMMARY`/`PREDICTION`/`TRACE_CAUSE`). A member "run it on our compute" path exists alongside BYOK.
 - **Primary user job:** Go beyond reading — interrogate the day's stories with an LLM and get a sourced, honesty-checked write-up.

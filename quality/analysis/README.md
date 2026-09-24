@@ -9,8 +9,8 @@ nothing verifying the model obeyed them. These tests close that gap.
 
 | File | What it is |
 |------|------------|
-| `../../global-perspectives-starter/frontend/src/utils/analysisValidator.js` | The shared guardrail checker. Pure/dependency-free. Used by **both** the live Studio (warning banner) and this eval. |
-| `../../global-perspectives-starter/frontend/src/utils/analysisPrompt.js` | The pure prompt layer (system prompt, lenses, context assembler, user-message builder) the Studio ships — imported here so the eval tests exactly what runs in production. |
+| `../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisValidator.js` | The shared guardrail checker. Pure/dependency-free. Used by **both** the live Studio (warning banner) and this eval. |
+| `../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisPrompt.js` | The pure prompt layer (system prompt, lenses, context assembler, user-message builder) the Studio ships — imported here so the eval tests exactly what runs in production. |
 | `fixtures.mjs` | `GOLDEN` (frozen validator cases) + `RICHNESS_CASES` (thin-input detector) + `LIVE_FIXTURES` (story-sets for live generation). |
 | `run.mjs` | The runner. Layer A (validator) + A2 (`assessRichness`) always; Layer B (live) with a key. |
 | `compare.mjs` | A/B free-form vs grounded-lens on one story-set, full text + verdict. |

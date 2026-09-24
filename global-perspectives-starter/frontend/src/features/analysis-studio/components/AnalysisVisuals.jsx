@@ -5,7 +5,7 @@
 // Pure CSS (no d3, no new deps) — see AnalysisVisuals.css, built from the existing design
 // tokens (var(--accent), var(--ink*), var(--risk-*), var(--line)).
 
-import '@/components/atoms/AnalysisVisuals.css';
+import '@/features/analysis-studio/components/AnalysisVisuals.css';
 
 // ScenarioBars — one horizontal range-bar per scenario: filled segment from pLow→pHigh
 // on a 0–100 track, name on the left, "pLow–pHigh%" on the right.

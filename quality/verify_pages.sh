@@ -87,8 +87,8 @@ must_have "$SRC/components/CountryListPage.jsx" "Disruption" "exposes Disruption
 # CountryPage, CountryListPage, EconomyPage, DailyPage — guarded above/below.
 
 # ─── Disclosures ───
-must_have "$SRC/components/Disclosures.jsx" "Economic Disruption" "has Economic Disruption section"
-must_have "$SRC/components/Disclosures.jsx" "[Aa]uto" "mentions automated quality judge"
+must_have "$SRC/features/static/Disclosures.jsx" "Economic Disruption" "has Economic Disruption section"
+must_have "$SRC/features/static/Disclosures.jsx" "[Aa]uto" "mentions automated quality judge"
 
 # ─── QualityFlag propagation contract (ECONOMIC_DISRUPTION.md §"Quality flag propagation") ───
 # Phase B's verdict flag must surface in all 3 atoms that render economic content.

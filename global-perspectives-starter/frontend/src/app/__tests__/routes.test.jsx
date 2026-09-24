@@ -27,10 +27,10 @@ vi.mock('firebase/auth', () => ({
 
 // Import page components
 import Home from '@/components/Home';
-import AboutContact from '@/components/AboutContact';
-import Contact from '@/components/Contact';
-import PrivacyTerms from '@/components/PrivacyTerms';
-import Disclosures from '@/components/Disclosures';
+import AboutContact from '@/features/static/AboutContact';
+import Contact from '@/features/static/Contact';
+import PrivacyTerms from '@/features/static/PrivacyTerms';
+import Disclosures from '@/features/static/Disclosures';
 import SignIn from '@/components/SignIn';
 import WeeklyPage from '@/components/WeeklyPage';
 import CountryListPage from '@/components/CountryListPage';

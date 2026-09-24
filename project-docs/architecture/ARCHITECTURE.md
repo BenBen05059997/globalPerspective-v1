@@ -1267,6 +1267,18 @@ P2 — it stays at its flat path until P7 (`features/analysis-studio/lib/sourceR
 deliberately never sharing a directory with `SourceRobustness.jsx` (case-only collision on
 case-insensitive macOS).
 
+**P3 — `features/static/` + `features/spider-demo/`:**
+
+| Old | New |
+|---|---|
+| `components/AboutContact.jsx` | `features/static/AboutContact.jsx` |
+| `components/Contact.jsx` | `features/static/Contact.jsx` |
+| `components/PrivacyTerms.jsx` | `features/static/PrivacyTerms.jsx` |
+| `components/Disclosures.jsx` | `features/static/Disclosures.jsx` |
+| `components/WhitepaperPage.jsx` | `features/static/WhitepaperPage.jsx` |
+| `components/SpiderDemo.jsx`, `.css` | `features/spider-demo/SpiderDemo.jsx`, `.css` |
+| `components/SpiderWorld.jsx` | `features/spider-demo/SpiderWorld.jsx` |
+
 ### Feature → Lambda index
 
 Lambdas are **not** grouped into feature subfolders (evaluated and rejected —

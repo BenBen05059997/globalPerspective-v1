@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-09-24 (Frontend feature-folder restructure P3: `features/static/` + `features/spider-demo/`)
+
+Executed P3 of `FRONTEND_RESTRUCTURE_EXECUTION_PLAN.md` — the shakedown run for
+`scripts/move-module.mjs` on leaf features (no inbound edges from other features). Moved 8 files
+via the helper: `components/{AboutContact,Contact,PrivacyTerms,Disclosures,WhitepaperPage}.jsx` →
+`features/static/`, and `components/{SpiderDemo.jsx,SpiderDemo.css,SpiderWorld.jsx}` →
+`features/spider-demo/`. SpiderDemo/SpiderWorld's cross-imports of `threads` (CompactTimeline,
+useNarrativeThread) and `countries` (useSystemsAnalysis) stay pointed at their pre-move `@/`
+paths until P10/P11 move those targets, per the plan's note. Updated `quality/verify_pages.sh`'s
+2 `Disclosures.jsx` guard rows to the new path; `.githooks/pre-push`'s basename-only regex
+(`Disclosures`) already matched without edit. Verified: 15 files / 184 tests (unchanged), main
+bundle 1,046,069 bytes and CSS bundle 295,600 bytes byte-identical, guards 32/32, auth-guard
+7/7 PASS, relative-import sweep clean (only the 2 documented N-file edges remain).
+
 ## 2026-09-24 (pre-commit hook: treat "done (cancelled)" task files as closed)
 
 The Rule-2 reminder matched only a header ending in `done`, so the cancelled pair-arcs task (`— done (cancelled)`) kept triggering false "unstaged docs" reminders on restructure commits. Now matches `— done` or `— cancelled` anywhere after the date. Self-test 5/5.

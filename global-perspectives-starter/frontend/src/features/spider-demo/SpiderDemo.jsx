@@ -13,8 +13,8 @@ import { useNarrativeThread } from '@/hooks/useNarrativeThread';
 import { fetchPredictionCache, fetchDossierAnalysis } from '@/shared/api/restProxy';
 import { threadPath } from '@/shared/lib/threadPath';
 import CompactTimeline from '@/components/CompactTimeline';
-import WorldOverview from '@/components/SpiderWorld';
-import '@/components/SpiderDemo.css';
+import WorldOverview from '@/features/spider-demo/SpiderWorld';
+import '@/features/spider-demo/SpiderDemo.css';
 
 // Countries with a live systems_analysis graph (SYSTEMS_TEST_COUNTRIES gate).
 const COUNTRIES = [

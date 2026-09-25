@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Country card</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}a{color:#5fd4ff;text-decoration:none}button{font-family:inherit}</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: radial-gradient(ellipse at 40% 45%, #0b1a2a 0%, #060c14 60%, #03060a 100%); color: #c9d6df;">
+<svg width="1440" height="900" viewBox="0 0 1440 900" style="position: absolute; inset: 0;" aria-hidden="true">
+<path d="{{grid}}" fill="none" stroke="rgba(95,212,255,0.05)"></path>
+<path d="{{land}}" fill="none" stroke="rgba(150,225,255,0.24)" stroke-width="2.4" stroke-linecap="round"></path>
+<sc-for list="{{linkLines}}" as="l" hint-placeholder-count="2"><path d="{{l}}" fill="none" stroke="#7d8b96" stroke-width="1.4" stroke-dasharray="0.1 6" stroke-linecap="round"></path></sc-for>
+</svg>
+<sc-for list="{{marks}}" as="m" hint-placeholder-count="19">
+<button type="button" onClick="{{m.pick}}" aria-label="{{m.aria}}" style="{{m.style}}"></button>
+<div style="{{m.lab}}">{{m.name}}</div>
+</sc-for>
+<div style="{{brackets}}"><svg width="100%" height="100%" viewBox="0 0 60 60" preserveAspectRatio="none"><path d="M2 14 V2 H14 M46 2 H58 V14 M2 46 V58 H14 M46 58 H58 V46" stroke="#eef5f9" stroke-width="2.5" fill="none"></path></svg></div>
+
+<header style="position: absolute; left: 0; right: 0; top: 0; height: 52px; box-sizing: border-box; padding: 0 24px; display: flex; align-items: center; gap: 14px; background: rgba(4,8,14,0.85); border-bottom: 1px solid rgba(95,212,255,0.14);">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8a99a5;">CONSOLE</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: #5fd4ff;">LAYER · COUNTRIES</span>
+<span style="flex-grow: 1;"></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ffb347;">V2 AFTER DEBATE · CLICK A COUNTRY, OR:</span>
+<sc-for list="{{jumps}}" as="j" hint-placeholder-count="5"><button type="button" onClick="{{j.pick}}" style="{{j.style}}">{{j.label}}</button></sc-for>
+</header>
+
+<div style="position: absolute; left: 24px; bottom: 22px; padding: 10px 12px; background: rgba(6,12,20,0.9); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #c9d6df; display: grid; grid-template-columns: 22px auto; row-gap: 6px; align-items: center;">
+<span style="width: 14px; height: 14px; border-radius: 50%; background: #ee7754; box-shadow: 0 0 10px #ee7754;"></span><span>BRIEFED ≤7 DAYS (NONE TODAY — AI PAUSED)</span>
+<span style="width: 14px; height: 14px; border-radius: 50%; background: #9c7a70; opacity: 0.85;"></span><span>BRIEFED 7–30 DAYS · AMBER DATES</span>
+<span style="width: 14px; height: 14px; border-radius: 50%; border: 1.5px dashed #8a99a5;"></span><span>STORIES · BRIEFING TOO OLD OR NONE</span>
+<span style="width: 14px; height: 14px; border-radius: 50%; border: 1px dotted #56626b;"></span><span>NO COVERAGE (NOT "SAFE")</span>
+<svg width="18" height="8" viewBox="0 0 18 8"><path d="M1 4 H17" stroke="#7d8b96" stroke-width="1.4" stroke-dasharray="0.1 4" stroke-linecap="round"></path></svg><span>CONNECTED IN THIS COUNTRY'S STORIES</span>
+</div>
+
+<sc-if value="{{isQuiet}}" hint-placeholder-val="{{ false }}">
+<div style="{{popStyle}}">
+<div style="font-family: Fraunces, serif; font-size: 18px; color: #eef5f9;">Uruguay</div>
+<div style="font-size: 12.5px; line-height: 1.45; color: #b9c7d1; margin-top: 4px;">No coverage in the last 30 days. That means we have no stories, not that nothing is happening.</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96; margin-top: 6px;">NOT IN OUR MARKETS FEED · NO FX FOR UYU</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasCard}}" hint-placeholder-val="{{ true }}">
+<section aria-live="polite" style="position: absolute; right: 20px; top: 66px; width: 460px; max-height: 814px; box-sizing: border-box; padding: 14px 16px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.3); border-radius: 4px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.1em; color: {{c.stateC}};">{{c.state}}</div>
+<div style="font-family: Fraunces, serif; font-size: 26px; font-weight: 600; color: #eef5f9; margin-top: 2px;">{{c.name}}</div>
+<sc-if value="{{c.hasFacts}}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; color: #c9d6df; margin-top: 2px;">{{c.facts}}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #56626b; margin-top: 2px;">{{c.factsSrc}}</div></sc-if>
+
+<sc-if value="{{c.briefed}}" hint-placeholder-val="{{ true }}">
+<p style="margin: 10px 0 0; font-size: 13.5px; line-height: 1.5; color: #eef5f9;">{{c.bluf}}</p>
+<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 6px; margin-top: 10px;">
+<div style="padding: 7px 9px; border: 1px solid rgba(255,95,70,0.4); border-radius: 3px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.1em; color: #7d8b96;">RISK · 0–100 · TIERS 25/50/75</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #ff6a4d;">{{c.tier}} {{c.risk}}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #8a99a5;">{{c.lead}}</div></div>
+<div style="padding: 7px 9px; border: 1px solid rgba(95,212,255,0.2); border-radius: 3px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.1em; color: #7d8b96;">DIRECTION · LAST 14 DAYS</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: {{c.dirC}};">{{c.dir}}</div><div style="font-size: 11px; line-height: 1.35; color: #8a99a5;">{{c.dirSub}}</div></div>
+</div>
+<div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+<sc-for list="{{c.dims}}" as="d" hint-placeholder-count="4">
+<button type="button" onClick="{{d.pick}}" aria-expanded="{{d.open}}" style="display: block; width: 100%; text-align: left; background: none; border: none; padding: 0; cursor: pointer; color: inherit;">
+<div style="display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px;"><span style="width: 100px; color: {{d.c}};">{{d.k}}</span><span style="flex-grow: 1; height: 5px; background: rgba(95,212,255,0.1);"><span style="{{d.bar}}"></span></span><span style="width: 24px; text-align: right;">{{d.s}}</span><span style="color: #5fd4ff; width: 34px;">{{d.caret}}</span></div>
+<sc-if value="{{d.open}}" hint-placeholder-val="{{ false }}"><div style="font-size: 11.5px; line-height: 1.4; color: #b9c7d1; margin: 4px 0 2px 108px;">{{d.why}}</div></sc-if>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{c.hasChange}}" hint-placeholder-val="{{ true }}"><div style="margin-top: 8px; font-size: 11.5px; line-height: 1.4; color: #c9d6df;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #ffb347;">LATEST CHANGE · {{c.chD}} · </span>{{c.chT}}</div></sc-if>
+</sc-if>
+
+<sc-if value="{{c.notBriefed}}" hint-placeholder-val="{{ false }}">
+<div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #d6e2ea;">{{c.signal}}</div>
+<sc-if value="{{c.hasMentioned}}" hint-placeholder-val="{{ false }}"><div style="margin-top: 6px; font-size: 12px; line-height: 1.45; color: #b9c7d1;">{{c.mentioned}}</div></sc-if>
+</sc-if>
+
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff; margin-top: 10px;">STORIES HERE</div>
+<sc-for list="{{c.stories}}" as="s" hint-placeholder-count="3"><a href="#" style="display: block; margin-top: 4px; padding: 5px 8px; border-left: 3px solid {{s.c}}; background: rgba(12,22,34,0.9); color: #eef5f9; font-size: 12px; line-height: 1.35;">{{s.t}}</a></sc-for>
+
+<sc-if value="{{c.hasAhead}}" hint-placeholder-val="{{ true }}">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff; margin-top: 10px;">AHEAD · DATED FORECAST TRIGGERS</div>
+<sc-for list="{{c.ahead}}" as="a" hint-placeholder-count="2"><div style="display: flex; gap: 8px; margin-top: 4px; font-size: 12px; line-height: 1.35;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #ffb347; width: 34px; flex-shrink: 0;">{{a.d}}</span><span style="color: #d6e2ea;">{{a.t}}<br><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96;">{{a.m}}</span></span></div></sc-for>
+</sc-if>
+
+<div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid rgba(95,212,255,0.14); display: flex; align-items: center; gap: 10px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #8a99a5; flex-grow: 1;">{{c.fx}}</span>
+<a href="#" style="height: 34px; padding: 0 10px; display: inline-flex; align-items: center; border-radius: 4px; border: 1px solid #5fd4ff; color: #5fd4ff; font-family: 'JetBrains Mono', monospace; font-size: 10px;">{{c.cta}}</a>
+</div>
+</section>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sel: 'Iran', open: null }; }
+  renderVals() {
+    var self = this, D = {"C": {"Iran": {"kind": "briefed", "lon": 53, "lat": 32, "links": ["Yemen", "Oman"], "state": "BRIEFED · ANALYSIS AS OF 11 SEP · 14 DAYS OLD · AI PAUSED", "facts": "Head of state Mojtaba Khamenei · Head of government Masoud Pezeshkian · GDP $363 bn (2025)", "factsSrc": "LEADERS: WIKIDATA (UPDATED 23 SEP) · GDP: WORLD BANK", "bluf": "Iran is locked in a multi-front confrontation with the US and Israel while internal factions openly fight over war strategy under new Supreme Leader Mojtaba Khamenei.", "tier": "HIGH", "risk": 95, "lead": "CONFLICT LEADS", "dir": "AT TOP OF SCALE", "dirSub": "no arrow at 95 · latest axis move: economic 80 → 90 (18 Aug, UAE trade embargo)", "dirC": "#ffb347", "dims": [["CONFLICT", 95, "Active US-Iran military engagement with oil tanker strikes, Houthi proxy attacks on Saudi Arabia, and direct threats to the Strait of Hormuz."], ["POLITICAL", 85, "Internal factions openly fighting over war direction under new Supreme Leader Mojtaba Khamenei, with IAEA noncompliance finding removing diplomatic options."], ["ECONOMIC", 90, "UAE trade embargo, US sanctions designed to 'collapse' the regime, and destruction of oil export infrastructure are strangling Iran's economy."], ["HUMANITARIAN", 75, "Trade disruption from UAE embargo and US naval blockade is worsening civilian conditions, with oil facility attacks causing regional casualties."]], "stories": [["CONFLICT", "US-Iran Tensions Escalate Over Hormuz, Peace Talks Stall"], ["CONFLICT", "Houthi attacks on Saudi Arabia wound 73 and set oil facilities ablaze"], ["ECONOMY", "US diesel prices hit an all-time high (linked story)"]], "change": ["18 AUG", "The UAE’s indefinite trade embargo directly escalates economic isolation, driving the economic score up from 80 to 90."], "ahead": [["36d", "Iran suspends uranium enrichment above 60% (optimistic, 20%)", "US–Iran story forecast · due 31 Oct"], ["66d", "Direct Iran–US talks confirmed (most likely, 60%)", "US–Iran story forecast · due 30 Nov"]], "fx": ""}, "Germany": {"kind": "briefed", "lon": 10, "lat": 51, "links": [], "state": "BRIEFED · ANALYSIS AS OF 12 SEP · 13 DAYS OLD · AI PAUSED", "facts": "GDP $5.05 tn (2025) · inflation 2.2% (2025)", "factsSrc": "WORLD BANK · LEADERS NOT YET IN OUR VERIFIED FACTS (ROW OMITTED)", "bluf": "Germany faces a convergence of political instability from AfD electoral gains, a Russian-linked sabotage campaign targeting infrastructure, and deepening economic restructuring as Volkswagen announces its largest-ever job cuts.", "tier": "ELEVATED", "risk": 70, "lead": "POLITICAL LEADS", "dir": "NOT ENOUGH READINGS", "dirSub": "no readings 22 Aug – 4 Sep, so no trend is shown", "dirC": "#8a99a5", "dims": [["CONFLICT", 55, "Russian-linked sabotage campaign targeting German infrastructure, including the Leipzig airport attack, represents active hybrid warfare on German soil."], ["POLITICAL", 70, "AfD's historic state election win in Saxony-Anhalt and Merz's attacks on the far-right signal deep institutional strain and coalition fragility."], ["ECONOMIC", 60, "Volkswagen's 50,000 job cuts in its largest restructuring ever signal structural industrial decline, partially offset by UAE's €40 billion investment pledge."], ["HUMANITARIAN", 45, "Record 14,000 heat-related deaths this year indicate a growing climate-driven public health crisis, though no acute displacement or aid emergency is reported."]], "stories": [["POLITICAL", "Tens of Thousands March Across Germany to Protest Far-Right AfD"], ["CONFLICT", "Germany Probes Foiled Drone Attack on Leipzig Airport with Leads to Russian GRU"]], "change": null, "ahead": [], "fx": "EUR 0.880 per USD (ECB, 24 Sep)"}, "Yemen": {"kind": "stale", "lon": 48, "lat": 15.5, "links": ["Iran"], "state": "LAST BRIEFED 18 AUG · TOO OLD TO SHOW (38 DAYS)", "facts": "", "factsSrc": "", "signal": "4 stories in the last 30 days · conflict-led · latest 10 Sep", "mentioned": "Mentioned in the Iran briefing (11 Sep): “Houthis seize Yemen’s Red Sea port city of Mokha, threatening the Bab al-Mandeb shipping lane.”", "stories": [["CONFLICT", "Houthis Seize Yemen’s Red Sea Port City of Mokha, Closing In on Bab el-Mandeb Strait"], ["CONFLICT", "Houthi attacks on Saudi Arabia wound 73 and set oil facilities ablaze; Saudi strikes back"]], "fx": ""}, "Brazil": {"kind": "never", "lon": -52, "lat": -10, "links": [], "state": "NO AI BRIEFING YET", "facts": "GDP $2.28 tn (2025) · inflation 5.0% (2025)", "factsSrc": "WORLD BANK", "signal": "4 stories in the last 30 days · politics-led · latest 13 Sep", "mentioned": "", "stories": [["POLITICAL", "Brazil’s Flavio Bolsonaro Under Investigation for Corruption Weeks Before Election"], ["ECONOMY", "J.D. Vance Network Courted Brazil’s Flavio Bolsonaro Over Anti-China Rare Earth Deal"], ["POLITICAL", "BRICS Summit in New Delhi Adopts Joint Declaration Urging Maximum Restraint in Middle East War"]], "fx": "BRL 5.18 per USD (ECB, 24 Sep)"}, "Uruguay": {"kind": "quiet", "lon": -56, "lat": -33, "links": []}}, "ctx": [["South Korea", 128, 36, "briefed"], ["United States", -98, 39, "briefed"], ["Israel", 35, 31.5, "briefed"], ["Russia", 60, 58, "briefed"], ["Ukraine", 31, 49, "briefed"], ["China", 104, 35, "briefed"], ["France", 2, 46.5, "briefed"], ["India", 78, 22, "stale"], ["Oman", 57, 21, "stale"], ["Nigeria", 8, 9.5, "stale"], ["Sudan", 30, 15.5, "stale"], ["Nepal", 84, 28, "never"], ["Egypt", 30, 26.5, "never"], ["Argentina", -64, -34, "never"]]}, sel = this.state.sel;
+    var AX = { CONFLICT: '#ee7754', POLITICAL: '#9b8cf8', ECONOMIC: '#38b6de', HUMANITARIAN: '#d89e28', ECONOMY: '#38b6de' };
+    function X(lon) { return (lon + 150) / 330 * 930 + 10; }
+    function Y(lat) { return 60 + (72 - lat) / 130 * 820; }
+    function land(lo, la) { return (Math.sin(lo * 0.07) + Math.cos(la * 0.11 + lo * 0.03) + Math.sin(la * 0.05 - lo * 0.02)) > 0.35; }
+    var landP = '', grid = '';
+    for (var la = -55; la <= 72; la += 3.5) for (var lo = -150; lo <= 180; lo += 3.5) if (land(lo, la)) landP += 'M' + X(lo).toFixed(1) + ' ' + Y(la).toFixed(1) + 'h0.1';
+    for (var g = -150; g <= 180; g += 30) grid += 'M' + X(g).toFixed(0) + ' 52V900';
+    for (var h = -40; h <= 60; h += 20) grid += 'M0 ' + Y(h).toFixed(0) + 'H960';
+    var pos = {}, all = [];
+    Object.keys(D.C).forEach(function (n) { var c = D.C[n]; all.push([n, c.lon, c.lat, c.kind]); });
+    D.ctx.forEach(function (c) { all.push(c); });
+    all.forEach(function (a) { pos[a[0]] = [X(a[1]), Y(a[2])]; });
+    var marks = all.map(function (a) {
+      var n = a[0], x = pos[n][0], y = pos[n][1], k = a[3], on = n === sel, clickable = !!D.C[n];
+      var r = k === 'briefed' ? 11 : 9;
+      var look = k === 'briefed' ? 'background: #9c7a70; opacity: 0.85; border: none;' : (k === 'stale' || k === 'never') ? 'background: transparent; border: 1.5px dashed #8a99a5;' : 'background: transparent; border: 1px dotted #56626b;';
+      return { name: n.toUpperCase(), aria: n, pick: function () { if (clickable) self.setState({ sel: n, open: null }); },
+        style: 'position: absolute; left: ' + (x - r) + 'px; top: ' + (y - r) + 'px; width: ' + (2 * r) + 'px; height: ' + (2 * r) + 'px; border-radius: 50%; padding: 0; cursor: ' + (clickable ? 'pointer' : 'default') + '; ' + look,
+        lab: 'position: absolute; left: ' + (x + r + 4) + 'px; top: ' + (y - 7) + 'px; font-family: JetBrains Mono, monospace; font-size: 9.5px; letter-spacing: 0.06em; color: ' + (on ? '#eef5f9' : '#6f7c86') + '; pointer-events: none;' };
+    });
+    var C = D.C[sel], sx = pos[sel][0], sy = pos[sel][1];
+    var linkLines = (C.links || []).filter(function (n) { return pos[n]; }).map(function (n) { var p = pos[n], mx = (sx + p[0]) / 2, my = Math.min(sy, p[1]) - 40; return 'M' + sx + ' ' + sy + ' Q' + mx + ' ' + my + ' ' + p[0] + ' ' + p[1]; });
+    var briefed = C.kind === 'briefed', quiet = C.kind === 'quiet';
+    var c = {};
+    if (!quiet) {
+      c = { name: sel, state: C.state, stateC: briefed ? '#ffb347' : '#8a99a5', briefed: briefed, notBriefed: !briefed,
+        hasFacts: !!C.facts, facts: C.facts || '', factsSrc: C.factsSrc || '',
+        bluf: C.bluf || '', tier: C.tier || '', risk: C.risk || '', lead: C.lead || '', dir: C.dir || '', dirSub: C.dirSub || '', dirC: C.dirC || '#8a99a5',
+        dims: (C.dims || []).map(function (d, i) { var open = self.state.open === i;
+          return { k: d[0], s: d[1] == null ? '—' : d[1], why: d[2], c: AX[d[0]], open: open, caret: open ? 'WHY ▴' : 'WHY ▾',
+            bar: 'display: block; height: 5px; width: ' + (d[1] || 0) + '%; background: ' + AX[d[0]] + ';',
+            pick: function () { self.setState({ open: open ? null : i }); } }; }),
+        hasChange: !!C.change, chD: C.change ? C.change[0] : '', chT: C.change ? C.change[1] : '',
+        signal: C.signal || '', hasMentioned: !!C.mentioned, mentioned: C.mentioned || '',
+        stories: (C.stories || []).map(function (s) { return { c: AX[s[0]] || '#9b8cf8', t: s[1] }; }),
+        hasAhead: !!(C.ahead && C.ahead.length), ahead: (C.ahead || []).map(function (a) { return { d: a[0], t: a[1], m: a[2] }; }),
+        fx: C.fx || '', cta: briefed ? 'ANALYZE IN STUDIO →' : 'GENERATE A BRIEFING IN STUDIO →' };
+    }
+    var jumps = ['Iran', 'Germany', 'Yemen', 'Brazil', 'Uruguay'].map(function (n) { var on = n === sel;
+      return { label: n.toUpperCase(), pick: function () { self.setState({ sel: n, open: null }); },
+        style: 'height: 28px; padding: 0 9px; border-radius: 14px; cursor: pointer; font-family: JetBrains Mono, monospace; font-size: 10px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + ';' }; });
+    return { grid: grid, land: landP, marks: marks, linkLines: linkLines, jumps: jumps, c: c, hasCard: !quiet, isQuiet: quiet,
+      popStyle: 'position: absolute; left: ' + (sx + 20) + 'px; top: ' + (sy - 30) + 'px; width: 260px; padding: 10px 12px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.3); border-radius: 4px;',
+      brackets: 'position: absolute; left: ' + (sx - 24) + 'px; top: ' + (sy - 24) + 'px; width: 48px; height: 48px; pointer-events: none;' };
+  }
+}
+</script>
+</body>
+</html>

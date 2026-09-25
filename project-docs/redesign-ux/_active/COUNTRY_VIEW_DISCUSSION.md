@@ -78,3 +78,45 @@ GDACS disasters still show on the map regardless.
 
 Open: C9. Should selection also include event-driven countries (e.g. top 20 by volume **plus** any country with a GDACS red alert or an
 escalating high-severity story), so big events aren't missed? This is a backend change, after the DeepSeek top-up. Recommended yes.
+
+## Debate outcome: country card v2 (2026-09-25)
+Wireframe `CountryCard.dc.html` on the canvas (Iran · Germany · Yemen · Brazil · Uruguay, real data), built, critiqued by two agents, then revised.
+
+**Corrections to my earlier message** (caught by critic 2 and verified):
+- The `country_intelligence` action reads **at most 15 countries per call** (newsSensitiveData index.js:517). I sent 60, so "Yemen has no briefing" was wrong.
+- Yemen **was briefed on 18 Aug** (now 38 days old), as were France (12 Sep) and India (21 Aug).
+- Re-checked in batches: 33 countries have a briefing, and some are months old (Nigeria and Sudan from 28 Apr). Never briefed: Brazil (10 entries), Nepal (9), Egypt, Argentina…
+- "17 stories, below the cut" can't be claimed. The count is archive **entries**, not stories, and the ranking is never saved.
+
+**Rules adopted in v2:**
+- **One screen, no scroll.** Order: state line with date and age → name + verified facts → one-sentence summary → RISK + DIRECTION → 4 risk bars (WHY opens on click) → latest change (only if it cites an event) → ≤3 stories → ≤2 **future** dated forecast triggers → FX + Studio button.
+- **Direction rule** (critic 2): v2 snapshots only.
+  - Compare the median of the last 3 readings against the median of the 3 nearest to 14 days earlier (±3 days); each bucket needs ≥3 readings within ≤5 days.
+  - An arrow needs |Δ| ≥ 10 on the worst-axis score. Name an axis only if its own Δ ≥ 15.
+  - If both medians are ≥95, show **"at top of scale"** with no arrow, plus the latest cited axis move.
+  - Compute only if the latest reading is ≤7 days old; 7–30 days amber "as of"; over 30 days hidden.
+  - Otherwise **"not enough readings (gap …)"**.
+  - Today: Iran = top of scale; Germany = not enough readings, so no "easing" claim.
+- **Watch flag:**
+  - GDACS situations whose `iso3_affected` includes the country and whose tier is elevated or higher.
+  - News situations only when the country is `iso3_origin[0]`, `escalating` is true and it's less than 24 h old.
+  - Omitted when off. Needs a name↔ISO3 table.
+- **Passed watch items are never shown on the card.** Signals are parsed for dates. After the day passes they say "passed · outcome not checked" (only in deeper views); otherwise "Nd left".
+- **Facts:**
+  - Leaders only from Wikidata `FACTS#`, with its update date; otherwise the **row is omitted** (no placeholders).
+  - Macro figures only if the year is ≥ current year − 3, always with the year.
+  - No FX row when the currency isn't in the ECB feed (e.g. IRR, YER, UYU).
+- **States:**
+  - **Briefed** (≤7 d full colour; 7–30 d amber).
+  - **Too old** (>30 d): scores and text hidden, "last briefed <date>". Shows story count + trend + "mentioned in <other country's> briefing".
+  - **Never briefed:** stories + figures + "Generate a briefing in Studio".
+  - **Quiet:** a small popover, not the panel.
+  - The same freshness rule applies to every row of the country list.
+- **Map:** the selected country gets brackets; countries its stories connect to get dotted lines (fact-style, not judged links).
+
+**Build needs (for later, not approved):**
+- New read actions `country_facts`, `country_rank` and a slim `country_history` (scores only, ~3 KB).
+- Widen the Wikidata job (+capital/population/currency).
+- `newsCountryIntelligence` to persist `COUNTRY_RANK#<date>`, plus optional **event-driven picks** (C9: top 20 by volume + ≤5 countries that are the origin of a red GDACS alert or a critical/escalating news situation within 48 h).
+- Fix the World Bank fetch (`mrv=5` returns the last 5 *reported* values, e.g. Iran reserves 1982).
+- A timeline risk to decide: with the AI paused, Iran and Germany cross 30 days around **11–12 Oct** and the whole map falls into "too old".

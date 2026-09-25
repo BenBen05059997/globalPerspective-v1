@@ -2,7 +2,7 @@
 
 **Goal:** decide what "the web" on a story means when the unit is *the news* (stories and their events), not a country,
 and how the frontend shows it. Operator delegated the whole rethink (2026-09-25): plan it, debate it with agents, rule on it.
-**Status:** in progress. Design only; no code or backend changes in this task.
+**Status:** ✅ done (2026-09-25). Ruled in §5; wireframe row v4. Design only. Build = checklist C11, stage 1.
 
 ## ▶ LIVE TRACKER
 | Step | What | State |
@@ -12,7 +12,7 @@ and how the frontend shows it. Operator delegated the whole rethink (2026-09-25)
 | 2 | Debate: 3 advocates (one per model of the web) | ✅ done (all 3 mis-stated data; ground truth added for critics) |
 | 3 | Critique: reader/analyst + engineering/data-honesty | ✅ done |
 | 4 | Ruling + design spec (§5) | ✅ done |
-| 5 | Wireframe on the canvas + update briefs/INDEX/checklist | ⏳ |
+| 5 | Wireframe on the canvas + update briefs/INDEX/checklist | ✅ done: canvas row v4 `StoryWeb.dc.html` (real US–Iran data, 7 links merged from 3 analyses, 13 linked headlines) |
 
 ## 1. Where we are (stage)
 - **Design stage, nothing built.** Decided so far:

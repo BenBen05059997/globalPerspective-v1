@@ -147,3 +147,21 @@ Two critics (forecasting methodology; product + engineering) **both reject P2**:
 - M3: weekly resolution script with the pre-committed seed, deterministic resolvers and voids; retire the legacy resolver (~1 d).
 - M4: UI — the market panel, own-% on WATCH, the stage wording (~1 d).
 - Plus the approved dead-man's alarm.
+
+## Track record page design: APPROVED (operator, 2026-09-25: "that is better")
+**Main page = canvas board E2 "Service record"**, a one-screen, game-style view consistent with story mode, briefing mode and the country card.
+Canvas board **E1** (the scroll page) is kept as the plain-text version, for search, print and screen readers, like "Read in full".
+
+| Part | Borrowed from | What it shows |
+|---|---|---|
+| Status line | — | The stage wording (Stage 0 now: "We don't have a scored track record yet") |
+| Accuracy | chess.com game review | Always beside "a plain guess would score…"; **locked with a progress bar until 150 resolved** |
+| This week's draw | roguelike seed | The weekly seed's hash, published before the week starts |
+| **Forecast board: MAP (default) \| BOARD** | map-first site; Obra Dinn's book of fates | **Map:** every question placed at the country it is about, with **counts per place** (✓ happened · ✗ didn't · ▢ awaiting · ◌ void); click a place to list its questions. **Never a per-country accuracy score** (too few per place; revisit only at ≥30 per country). **Board:** one tile per locked question, filling in as settled |
+| Right panel | — | Details of whatever is clicked: question, frozen %, named source, verdict (confirmed by a person who didn't see the %) |
+| Settling log | GitHub contribution graph | One square per week. Missed weeks are shown in red (today: one settling on 24 Jul, then two months missed) |
+| Ledger | Paradox ledger screen | "When we changed our read", clickable (real notes: France after the Normandy derailment, China after the Hong Kong vigil sentences, Germany "no single news event") |
+
+The July pilot is shown greyed and unscored. The map makes its skew visible: mostly the NATO summit in Ankara (Turkey: 3 happened / 11 didn't among the 30 plotted).
+
+**Weekly settling (T3):** an agent drafts each verdict with the quoted source; the operator confirms. About 1 hour a week once questions come due.

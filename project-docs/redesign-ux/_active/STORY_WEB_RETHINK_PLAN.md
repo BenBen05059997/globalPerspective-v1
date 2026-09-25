@@ -187,7 +187,7 @@ Obsoleted by story mode: the old §6 questions 2 ("Show linked news" default) an
 | S10 | Reading mode (light) on the long page | Keep for the long page only; story mode stays dark |
 | S11 | Studio country lens entry: pick a country directly | Yes |
 
-## 8. Map legend / symbol system (proposal, 2026-09-25, design only)
+## 8. Map legend / symbol system: APPROVED as the DEFAULT map token set (operator 2026-09-25; L1–L4 accepted as recommended). Design only
 Wireframe: `Legend.dc.html` (canvas, right of story mode), animated, with a reduced-motion preview.
 
 **Rule: each visual channel means one thing.** Sources:
@@ -219,3 +219,24 @@ Wireframe: `Legend.dc.html` (canvas, right of story mode), animated, with a redu
 - L2. Where the legend lives: a compact collapsed "?" legend on the map, plus this full sheet on a help page. Recommended.
 - L3. Pulse cap of 8. Recommended.
 - L4. HUD brackets for selected everywhere, replacing today's glow ring. Recommended.
+
+## 9. Default design tokens: what else becomes "the default" (proposal, 2026-09-25)
+Today `src/shared/styles/tokens.css` (286 lines) holds only the **light editorial** palette: ink, rust accent, risk colours, radii, z-index.
+It has **no** console/dark theme, no map-symbol tokens and almost no motion tokens. The approved console, story mode and legend
+therefore need one token set, defined once and used everywhere:
+
+| # | Token family | What it fixes as default |
+|---|---|---|
+| T1 | **Colour, console theme** | Surfaces (bg #070d15 → panel → HUD strip), line/border, text levels, accent cyan #5fd4ff, warning amber #ffb347. The light Reading-mode mapping is the same names with different values |
+| T2 | **Semantic colours** | Crisis hues (4) · confidence strong/medium/weak · freshness ramp (live/plain/older/stale) · status ▲●◆▼ colours. Severity is never red/amber/green (L1) |
+| T3 | **Map symbols** (this legend) | Shapes, 4 sizes + double ring, halo, brackets, line dash patterns per confidence, dotted = shared actors |
+| T4 | **Motion** | Durations (pulse 2.4 s, dash 1.4/2.6 s, sweep ~10 s, slide change), easing, the 3-mover budget, cap 8, reduced-motion equivalents |
+| T5 | **Type** | Fraunces headlines · Inter body · JetBrains Mono HUD labels; one size scale; label letter-spacing |
+| T6 | **Shape & space** | Radius (2–4 px), HUD panel (translucent navy, cyan hairline, corner brackets), spacing scale, 40 px tap targets |
+| T7 | **Words** (microcopy tokens) | "model judgment", "judged to feed into", never "caused"; confidence words; "older analysis · 12 Sep"; the empty-state lines; "approx." |
+| T8 | **States** | Loading skeleton, empty (honest line), stale (amber label), error (render nothing + error sink), hover (dim the rest), selected (brackets) |
+| T9 | **Page defaults** | Home = console, globe on desktop / radar on phone · story page = story mode · board = BOARD view · StoryPeek on every story mention |
+
+Open: **theme scope** beyond these pages (economy, countries, track record, briefings). Earlier recommendation: console accents site-wide,
+long reads keep a light Reading mode. Also recommended: publish T1–T9 as a living design-system page (the canvas's Design System type)
+before any build.

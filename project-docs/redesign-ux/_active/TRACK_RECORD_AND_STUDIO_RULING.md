@@ -102,7 +102,33 @@ Two critics (product; engineering/data honesty) judged them. The ruling is **S-A
   - `newsCountryIntelligence` failed 20/20 again today on "Insufficient Balance".
   - So the new country/web/bilateral lenses can't honestly launch until the DeepSeek balance returns.
 
-**One screen, `/analyze` (console style). Wireframe: canvas board F1 (`Studio.dc.html`).**
+**Layout v2, which replaces the 3-column v1 below (operator, 2026-09-25: v1 was "just a regular analysis"; "you can do it").**
+- **The Studio is story mode for your own question:** map + slide card (with a SOURCES tab) + time bar. It reuses story mode's pieces, so the build depends on C11.
+- **Wireframe:** canvas board F1 (`Studio.dc.html`), revised after a design critic and a data-accuracy critic.
+- **Two layers, both toggleable:**
+  - **Our data** follows the legend tokens (solid = reported, dashed = judged link) and needs no new AI:
+    - source places;
+    - numbered source dots at their dates over the story's entries per day;
+    - the stored cause chain;
+    - dated forecast triggers ◆;
+    - linked stories as dashed arcs, with confidence named per web.
+  - **This run** is **amber hatching only**, never a line style, so it can't be read as a judged link.
+- **Scenario slides:** BOTTOM LINE → HOW WE GOT HERE (ours) → SCENARIOS (a band from today to each scenario's last trigger date, plus its places) → WATCH (dated triggers, days left) → CONNECTIONS (ours).
+- **Compare:** two time-bar lanes, double rings on shared places, the judged link between the stories, and a cited agree/disagree grid.
+- **Economic ripple and free-form:** schematic until built.
+- **Place rule:** a place is drawn only if the run's text names it **and** one of the sources lists it. Broad region tags ("Middle East") are never drawn as points.
+- **Schema adds (build time):**
+  - gp-struct scenarios gain `places[]` + a `by` date, both checked against prose and sources like probabilities are today;
+  - `buildAnalysisContext` also reads `thread_analysis` (cause chain) and `prediction_snapshot` (dated triggers);
+  - a share freezes the map and time-bar data with the sources.
+- **Critic corrections applied to the wireframe:**
+  - the scenario stand-in now names its source (the forecast log for source [4], 21 Aug, point probabilities 60/20/20, including Pessimistic);
+  - the trigger keeps "above 60% purity";
+  - snippets are verbatim;
+  - link confidence is named per web;
+  - the compare grid no longer claims story A never mentions prices.
+
+v1 zones (kept for reference; still apply as parts of v2: the sources tab = INTEL, the bottom strip = status):
 | Zone | Shows |
 |---|---|
 | **Left: OPERATIONS rail** | Only lenses that are shipped and have a fixed output shape: Scenario · Compare · Free-form · Economic ripple (labelled "market-mechanism read"). No locked tiles, no "coming soon". |

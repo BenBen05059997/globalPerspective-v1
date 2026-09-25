@@ -10,262 +10,297 @@
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}a{color:#5fd4ff;text-decoration:none}button{font-family:inherit}</style>
+<style>
+body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}
+a{color:#5fd4ff;text-decoration:none}
+button{font-family:inherit}
+@keyframes st-pulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.4);opacity:0}}
+.st-pulse{animation:st-pulse 2.2s ease-out infinite}
+@media (prefers-reduced-motion: reduce){.st-pulse{animation:none}}
+</style>
 </helmet>
-<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #0b1a2a 0%, #060c14 60%, #03060a 100%); color: #c9d6df;">
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: radial-gradient(ellipse at 45% 40%, #0b1a2a 0%, #060c14 60%, #03060a 100%); color: #c9d6df;">
+
+<svg width="1440" height="900" viewBox="0 0 1440 900" style="position: absolute; inset: 0;" aria-hidden="true">
+<path d="{{grid}}" fill="none" stroke="rgba(95,212,255,0.05)"></path>
+<path d="{{land}}" fill="none" stroke="rgba(150,225,255,0.26)" stroke-width="2.4" stroke-linecap="round"></path>
+<sc-for list="{{arcs}}" as="a" hint-placeholder-count="5"><path d="{{a.d}}" fill="none" stroke="{{a.c}}" stroke-width="{{a.w}}" stroke-dasharray="7 6" opacity="{{a.op}}"></path></sc-for>
+</svg>
+
+<sc-for list="{{rings}}" as="r" hint-placeholder-count="6"><div style="{{r.style}}"></div><div style="{{r.lab}}">{{r.text}}</div></sc-for>
+<div style="{{focal}}"><span class="st-pulse" style="position: absolute; inset: 0; border-radius: 50%; border: 2px solid #ee7754;"></span></div>
+<sc-if value="{{hasMapNote}}" hint-placeholder-val="{{ false }}"><div style="position: absolute; left: 214px; top: 640px; max-width: 560px; padding: 6px 10px; background: rgba(6,12,20,0.92); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; line-height: 1.5; color: #8a99a5;">{{mapNote}}</div></sc-if>
 
 <header style="position: absolute; left: 0; right: 0; top: 0; height: 52px; box-sizing: border-box; padding: 0 20px; display: flex; align-items: center; gap: 14px; background: rgba(4,8,14,0.9); border-bottom: 1px solid rgba(95,212,255,0.14); font-family: 'JetBrains Mono', monospace; font-size: 11px;">
 <span style="color: #8a99a5;">CONSOLE</span><span style="color: #8a99a5;">STORIES</span><span style="color: #8a99a5;">BRIEFINGS</span><span style="color: #8a99a5;">TRACK RECORD</span><span style="color: #5fd4ff; letter-spacing: 0.1em;">STUDIO</span>
-<span style="color: #56626b; margin-left: 8px;">{{route}}</span>
+<span style="color: #56626b; margin-left: 6px;">{{route}}</span>
 <span style="flex-grow: 1;"></span>
-<span style="font-size: 10px; color: #ffb347;">PREVIEW STATE:</span>
-<sc-for list="{{states}}" as="s" hint-placeholder-count="6"><button type="button" onClick="{{s.pick}}" style="{{s.style}}">{{s.label}}</button></sc-for>
+<span style="font-size: 10px; color: #ffb347;">PREVIEW:</span>
+<sc-for list="{{states}}" as="s" hint-placeholder-count="5"><button type="button" onClick="{{s.pick}}" style="{{s.style}}">{{s.label}}</button></sc-for>
 </header>
 
-<!-- LEFT: OPERATIONS rail -->
-<nav aria-label="Analysis types" style="position: absolute; left: 16px; top: 68px; width: 220px; bottom: 72px; box-sizing: border-box; padding: 12px; background: rgba(6,12,20,0.92); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px; display: flex; flex-direction: column; gap: 8px;">
+<sc-if value="{{banner}}" hint-placeholder-val="{{ false }}"><div style="position: absolute; left: 214px; top: 62px; padding: 6px 10px; background: rgba(6,12,20,0.95); border: 1px solid rgba(255,179,71,0.5); border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ffb347;">{{bannerText}}</div></sc-if>
+
+<!-- left: analysis types + layers -->
+<nav aria-label="Analysis types" style="position: absolute; left: 16px; top: 66px; width: 178px; display: flex; flex-direction: column; gap: 6px;">
 <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff;">OPERATIONS</div>
-<sc-for list="{{lenses}}" as="l" hint-placeholder-count="4">
-<button type="button" onClick="{{l.pick}}" aria-pressed="{{l.on}}" style="{{l.style}}">
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: {{l.c}};">{{l.name}}</div>
-<div style="font-size: 11px; line-height: 1.35; color: #8a99a5; margin-top: 3px;">{{l.out}}</div>
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #56626b; margin-top: 3px;">{{l.min}}</div>
-</button>
-</sc-for>
-<div style="flex-grow: 1;"></div>
-<div style="border-top: 1px solid rgba(95,212,255,0.14); padding-top: 8px;">
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7d8b96;">YOUR SHARED DEBRIEFS · THIS BROWSER ONLY</div>
-<sc-if value="{{hasMine}}" hint-placeholder-val="{{ true }}"><a href="#" style="display: block; margin-top: 5px; font-size: 11.5px; line-height: 1.35; color: #d6e2ea;">Scenario · US–Iran over Hormuz<br><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96;">SHARED 25 SEP · 4 SOURCES</span></a></sc-if>
-<sc-if value="{{noMine}}" hint-placeholder-val="{{ false }}"><div style="margin-top: 5px; font-size: 11px; color: #56626b;">None yet. Links you share appear here, on this browser only.</div></sc-if>
-</div>
+<sc-for list="{{lenses}}" as="l" hint-placeholder-count="4"><button type="button" onClick="{{l.pick}}" aria-pressed="{{l.on}}" style="{{l.style}}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{l.c}};">{{l.name}}</div><div style="font-size: 10.5px; line-height: 1.3; color: #7d8b96; margin-top: 2px;">{{l.pic}}</div></button></sc-for>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff; margin-top: 10px;">MAP LAYERS</div>
+<sc-for list="{{layers}}" as="y" hint-placeholder-count="2"><button type="button" onClick="{{y.pick}}" aria-pressed="{{y.on}}" style="{{y.style}}"><span style="{{y.swatch}}"></span>{{y.label}}</button></sc-for>
+<div style="font-size: 10.5px; line-height: 1.45; color: #7d8b96;"><b style="color: #8fdcff;">Our data</b> follows the legend: solid = reported, dashed = judged link. <b style="color: #ffb347;">This run</b> is amber hatching: model judgment from the reader's run, never a line style.</div>
 </nav>
 
-<!-- CENTRE: BRIEFING -> DEBRIEF -->
-<main style="position: absolute; left: 252px; top: 68px; width: 740px; bottom: 72px; box-sizing: border-box; padding: 14px 18px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.3); border-radius: 4px; overflow: hidden;">
-<div style="display: flex; align-items: baseline; gap: 10px;">
-<span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: {{phaseC}};">{{phase}}</span>
-<span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;">{{phaseSub}}</span>
-</div>
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7d8b96; margin-top: 8px;">OBJECTIVE · {{lensName}}</div>
-<div style="font-family: Fraunces, serif; font-size: 20px; line-height: 1.3; color: #eef5f9; margin-top: 2px;">{{question}}</div>
+<!-- right: slide card / sources tab -->
+<section aria-live="polite" aria-label="Current slide" style="position: absolute; right: 20px; top: 66px; width: 440px; max-height: 620px; overflow-y: auto; box-sizing: border-box; padding: 12px 16px 14px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.28); border-radius: 4px;">
+<div style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid #5fd4ff; border-top: 2px solid #5fd4ff;"></div>
+<div role="tablist" style="display: flex; gap: 4px; margin-bottom: 8px;"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="2"><button type="button" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button></sc-for></div>
 
-<sc-if value="{{showSetup}}" hint-placeholder-val="{{ false }}">
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7d8b96; margin-top: 14px;">ASSETS · STORIES (4 OF 4) · PREFILLED FROM STORY MODE "ANALYZE THIS ARC →"</div>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
-<sc-for list="{{chips}}" as="c" hint-placeholder-count="4">
-<div style="{{c.style}}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {{c.ageC}};">[{{c.n}}] {{c.date}} · {{c.age}} · {{c.outlets}}</div><div style="font-size: 12px; line-height: 1.35; color: #eef5f9; margin-top: 2px;">{{c.t}}</div><span style="position: absolute; right: 6px; top: 4px; font-size: 11px; color: #56626b;" aria-label="remove">×</span></div>
-</sc-for>
-</div>
-<div style="font-size: 11px; color: #7d8b96; margin-top: 6px;">Stories older than 7 days are dimmed (legend brightness rule). Up to 4. ADD STORY is disabled at 4.</div>
-<div style="display: flex; gap: 8px; margin-top: 14px; align-items: center;">
-<button type="button" onClick="{{toggleKey}}" style="{{keyStyle}}">{{keyLabel}}</button>
-<sc-if value="{{keySet}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{toggleDeep}}" aria-pressed="{{deep}}" style="{{deepStyle}}">{{deepLabel}}</button></sc-if>
-<span style="flex-grow: 1;"></span>
-<button type="button" onClick="{{run}}" style="{{runStyle}}">{{runLabel}}</button>
-</div>
-<div style="font-size: 11px; line-height: 1.45; color: #7d8b96; margin-top: 8px;">{{keyNote}}</div>
-</sc-if>
-
-<sc-if value="{{showRun}}" hint-placeholder-val="{{ false }}">
-<div style="margin-top: 18px; display: flex; flex-direction: column; gap: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px;">
-<sc-for list="{{steps}}" as="p" hint-placeholder-count="4"><div style="display: flex; gap: 10px; align-items: center;"><span style="width: 18px; color: {{p.c}};">{{p.icon}}</span><span style="color: {{p.c}};">{{p.t}}</span><span style="color: #56626b; font-size: 10px;">{{p.sub}}</span></div></sc-for>
-</div>
-<div style="margin-top: 18px; display: flex; flex-direction: column; gap: 8px;">
-<div style="height: 12px; width: 70%; background: rgba(95,212,255,0.08); border-radius: 2px;"></div>
-<div style="height: 12px; width: 92%; background: rgba(95,212,255,0.08); border-radius: 2px;"></div>
-<div style="height: 12px; width: 84%; background: rgba(95,212,255,0.08); border-radius: 2px;"></div>
-<div style="height: 12px; width: 60%; background: rgba(95,212,255,0.08); border-radius: 2px;"></div>
-</div>
-<div style="font-size: 11px; color: #7d8b96; margin-top: 12px;">No streaming in v1: a skeleton, and only real steps. Nothing is shown until the checks pass.</div>
-</sc-if>
-
-<sc-if value="{{showFail}}" hint-placeholder-val="{{ false }}">
-<div style="margin-top: 14px; padding: 12px 14px; border: 1px solid rgba(255,95,70,0.5); border-radius: 4px; background: rgba(60,14,10,0.35);">
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #ff6a4d;">FAILED CHECKS · THIS RUN CAN'T BE SHARED</div>
-<div style="font-size: 12.5px; line-height: 1.5; color: #eef5f9; margin-top: 6px;">The answer cited things we could not match to your sources, so we hid it. Run again, or change the stories.</div>
-<ul style="margin: 8px 0 0; padding-left: 18px; font-size: 12px; line-height: 1.55; color: #d6e2ea;">
-<li>Cites <b>[5]</b>, but only [1]–[4] were sent (phantom citation).</li>
-<li>Gives the date <b>3 Oct</b>, which appears in none of the sources.</li>
-</ul>
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96; margin-top: 6px;">EXAMPLE FAILURES FOR THE WIREFRAME · THE VALIDATOR ALREADY DETECTS BOTH</div>
-<button type="button" onClick="{{toggleAnyway}}" style="margin-top: 10px; height: 30px; padding: 0 10px; border-radius: 4px; border: 1px solid rgba(255,95,70,0.5); background: transparent; color: #ff9a85; font-family: 'JetBrains Mono', monospace; font-size: 10px; cursor: pointer;">{{anywayLabel}}</button>
-</div>
-</sc-if>
-
-<sc-if value="{{showReport}}" hint-placeholder-val="{{ true }}">
-<div style="{{reportWrap}}">
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #ffb347; margin-top: 10px;">WIREFRAME TEXT: TAKEN FROM THIS STORY'S STORED ANALYSIS (12 SEP). A REAL RUN'S WORDING WILL DIFFER.</div>
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5fd4ff; margin-top: 8px;">BOTTOM LINE</div>
-<p style="margin: 3px 0 0; font-size: 14px; line-height: 1.5; color: #eef5f9;">A continued, high-stakes standoff centred on the Strait of Hormuz and economic pressure; with peace talks stalled and both sides hardening, a short-term diplomatic breakthrough looks unlikely <a href="#">[1]</a><a href="#">[2]</a>.</p>
-
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5fd4ff; margin-top: 12px;">KEY JUDGMENTS · SCENARIOS · MODEL JUDGMENT</div>
-<svg width="700" height="46" viewBox="0 0 700 46" style="display: block; margin-top: 4px;" aria-hidden="true">
-<path d="M10 23 H690" stroke="rgba(95,212,255,0.25)"></path>
-<path d="M10 17 V29 M130 19 V27 M300 19 V27 M470 19 V27 M690 19 V27" stroke="#7d8b96"></path>
-<rect x="30" y="8" width="130" height="7" fill="#ee7754"></rect><rect x="130" y="31" width="220" height="5" fill="#9c7a70"></rect><rect x="300" y="38" width="390" height="4" fill="#56626b"></rect>
-<text x="10" y="44" fill="#7d8b96" font-family="JetBrains Mono" font-size="8">NOW</text><text x="120" y="12" fill="#7d8b96" font-family="JetBrains Mono" font-size="8" text-anchor="end">2–4 WK</text><text x="355" y="12" fill="#7d8b96" font-family="JetBrains Mono" font-size="8">1–3 MO</text><text x="600" y="12" fill="#7d8b96" font-family="JetBrains Mono" font-size="8">3–6 MO</text>
-</svg>
-<sc-for list="{{judg}}" as="j" hint-placeholder-count="3">
-<div style="display: grid; grid-template-columns: 150px 1fr; gap: 10px; margin-top: 6px; padding: 6px 8px; border-left: 3px solid {{j.c}}; background: rgba(12,22,34,0.9);">
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{j.c}};">{{j.w}}<br><span style="color: #7d8b96;">{{j.h}}</span></div>
-<div style="font-size: 12.5px; line-height: 1.4; color: #d6e2ea;">{{j.t}} <a href="#">{{j.cite}}</a></div>
-</div>
-</sc-for>
-
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5fd4ff; margin-top: 12px;">ANALYSIS</div>
-<p style="margin: 3px 0 0; font-size: 12.5px; line-height: 1.55; color: #c9d6df;">Washington moved from strikes to "suffocating economic pressure" after bombing failed to force Tehran to capitulate <a href="#">[1]</a>, then said it could hold the naval blockade indefinitely as two more ships were hit and Hormuz transit neared a standstill <a href="#">[2]</a>. The vow to declare the strait US territory <a href="#">[3]</a> and the threat to bomb Oman, which was running its own talks to reopen it <a href="#">[4]</a>, narrowed the one mediation channel in view.</p>
-
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5fd4ff; margin-top: 12px;">INDICATORS TO WATCH</div>
-<sc-for list="{{watch}}" as="w" hint-placeholder-count="3"><div style="font-size: 12px; line-height: 1.4; color: #d6e2ea; margin-top: 3px;">◇ {{w}}</div></sc-for>
-</div>
-</sc-if>
-</main>
-
-<!-- RIGHT: INTEL dossier -->
-<aside aria-label="Sources and checks" style="position: absolute; left: 1008px; top: 68px; right: 16px; bottom: 72px; box-sizing: border-box; padding: 12px 14px; background: rgba(6,12,20,0.92); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px; overflow: hidden;">
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff;">INTEL · {{intelHead}}</div>
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96; margin-top: 3px;">{{intelSub}}</div>
-<sc-for list="{{srcs}}" as="s" hint-placeholder-count="4">
-<button type="button" onClick="{{s.pick}}" style="{{s.style}}">
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #5fd4ff;">[{{s.n}}] <span style="color: #8a99a5;">{{s.outlet}} · {{s.date}}</span></div>
-<div style="font-size: 12px; line-height: 1.35; color: #eef5f9; margin-top: 2px;">{{s.t}}</div>
-<sc-if value="{{s.open}}" hint-placeholder-val="{{ false }}"><div style="font-size: 11.5px; line-height: 1.4; color: #b9c7d1; margin-top: 4px; font-style: italic;">“{{s.snip}}”</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #56626b; margin-top: 3px;">VERBATIM SNIPPET · {{s.more}}</div></sc-if>
+<sc-if value="{{showSlide}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; gap: 8px; align-items: baseline;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: {{card.kc}};">{{card.kicker}}</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {{card.layerC}};">{{card.layer}}</span></div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96; margin-top: 4px;">Q · {{question}}</div>
+<div style="font-family: Fraunces, serif; font-size: 19px; line-height: 1.3; color: #eef5f9; margin-top: 6px;">{{card.title}}</div>
+<sc-if value="{{card.hasSub}}" hint-placeholder-val="{{ true }}"><p style="margin: 6px 0 0; font-size: 12.5px; line-height: 1.5; color: #c9d6df;">{{card.sub}}</p></sc-if>
+<sc-for list="{{card.rows}}" as="r" hint-placeholder-count="3">
+<button type="button" onClick="{{r.pick}}" style="{{r.style}}">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.05em; color: {{r.kc}};">{{r.k}}</div>
+<div style="font-size: 12.5px; line-height: 1.42; color: #eef5f9; margin-top: 2px;">{{r.v}}</div>
+<sc-if value="{{r.hasNote}}" hint-placeholder-val="{{ false }}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; line-height: 1.5; color: #7d8b96; margin-top: 3px;">{{r.note}}</div></sc-if>
 </button>
 </sc-for>
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96; margin-top: 8px;">[W#] WEB SOURCES · {{webNote}}</div>
+<sc-if value="{{card.hasSetup}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap;"><button type="button" onClick="{{toggleKey}}" style="{{keyStyle}}">{{keyLabel}}</button><button type="button" onClick="{{runNow}}" style="{{runStyle}}">{{runLabel}}</button></div>
+</sc-if>
+<sc-if value="{{card.hasFoot}}" hint-placeholder-val="{{ false }}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; line-height: 1.55; color: {{card.footC}}; margin-top: 10px;">{{card.foot}}</div></sc-if>
+</sc-if>
 
-<div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(95,212,255,0.14);">
-<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff;">CHECKS</div>
-<sc-for list="{{checks}}" as="k" hint-placeholder-count="4"><div style="display: flex; gap: 8px; margin-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px;"><span style="width: 14px; color: {{k.c}};">{{k.i}}</span><span style="color: #d6e2ea; flex-grow: 1;">{{k.t}}</span><span style="color: {{k.c}};">{{k.v}}</span></div></sc-for>
+<sc-if value="{{srcOpen}}" hint-placeholder-val="{{ false }}">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff;">SOURCES · {{srcHead}}</div>
+<sc-for list="{{srcs}}" as="s" hint-placeholder-count="4"><div style="margin-top: 8px; padding: 6px 8px; background: rgba(12,22,34,0.9); border-left: 3px solid #5fd4ff;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #5fd4ff;">[{{s.n}}] <span style="color: #8a99a5;">{{s.date}} · {{s.outlets}}</span></div><div style="font-size: 12px; line-height: 1.35; color: #eef5f9; margin-top: 2px;">{{s.t}}</div><div style="font-size: 11px; line-height: 1.4; color: #b9c7d1; margin-top: 3px; font-style: italic;">“{{s.snip}}”</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #56626b; margin-top: 3px;">VERBATIM SNIPPET · PLACES: {{s.places}}</div></div></sc-for>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96; margin-top: 8px;">[W#] WEB SOURCES · NONE (DEEP RESEARCH OFF) · WOULD BE NUMBERED APART FROM OURS</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff; margin-top: 10px;">CHECKS</div>
+<sc-for list="{{checks}}" as="k" hint-placeholder-count="4"><div style="display: flex; gap: 8px; margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px;"><span style="width: 12px; color: {{k.c}};">{{k.i}}</span><span style="flex-grow: 1; color: #d6e2ea;">{{k.t}}</span><span style="color: {{k.c}};">{{k.v}}</span></div></sc-for>
+</sc-if>
+</section>
+
+<!-- bottom: time bar -->
+<section aria-label="Time bar" style="position: absolute; left: 0; right: 0; bottom: 0; height: 196px; box-sizing: border-box; padding: 10px 24px 12px; background: rgba(4,8,14,0.93); border-top: 1px solid rgba(95,212,255,0.16);">
+<div style="position: relative; height: 112px;">
+<sc-for list="{{laneLabs}}" as="z" hint-placeholder-count="2"><div style="{{z.style}}">{{z.text}}</div></sc-for>
+<sc-for list="{{bars}}" as="b" hint-placeholder-count="27"><div style="{{b}}"></div></sc-for>
+<sc-for list="{{srcDots}}" as="d" hint-placeholder-count="4"><div style="{{d.style}}">{{d.n}}</div></sc-for>
+<sc-for list="{{bands}}" as="b" hint-placeholder-count="3"><div style="{{b.style}}">{{b.label}}</div></sc-for>
+<sc-for list="{{diamonds}}" as="d" hint-placeholder-count="6"><div style="{{d.style}}">◆</div></sc-for>
+<div style="{{nowLine}}"></div><div style="{{nowLab}}">TODAY 25 SEP</div>
+<sc-for list="{{axis}}" as="x" hint-placeholder-count="7"><div style="{{x.style}}">{{x.label}}</div></sc-for>
 </div>
-</aside>
-
-<!-- BOTTOM: status strip -->
-<footer style="position: absolute; left: 16px; right: 16px; bottom: 14px; height: 46px; box-sizing: border-box; padding: 0 14px; display: flex; align-items: center; gap: 14px; background: rgba(4,8,14,0.95); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8a99a5;">
-<span>{{status}}</span>
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 12px;">
+<button type="button" onClick="{{prev}}" aria-label="Previous slide" style="width: 38px; height: 38px; background: transparent; border: 1px solid rgba(95,212,255,0.3); border-radius: 4px; color: #5fd4ff; cursor: pointer;">◀</button>
+<button type="button" onClick="{{next}}" aria-label="Next slide" style="width: 38px; height: 38px; background: transparent; border: 1px solid rgba(95,212,255,0.3); border-radius: 4px; color: #5fd4ff; cursor: pointer;">▶</button>
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="5"><button type="button" onClick="{{c.pick}}" aria-current="{{c.on}}" style="{{c.style}}">{{c.label}}</button></sc-for>
 <span style="flex-grow: 1;"></span>
-<sc-for list="{{actions}}" as="a" hint-placeholder-count="3"><button type="button" onClick="{{a.pick}}" style="{{a.style}}">{{a.label}}</button></sc-for>
-</footer>
-<sc-if value="{{toast}}" hint-placeholder-val="{{ false }}"><div style="position: absolute; right: 24px; bottom: 70px; padding: 8px 12px; background: rgba(6,12,20,0.97); border: 1px solid #5fd4ff; border-radius: 4px; font-size: 12px; color: #eef5f9;">{{toastText}}</div></sc-if>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96; max-width: 360px; text-align: right;">{{status}}</span>
+<sc-for list="{{actions}}" as="a" hint-placeholder-count="2"><button type="button" onClick="{{a.pick}}" style="{{a.style}}">{{a.label}}</button></sc-for>
+</div>
+</section>
+<sc-if value="{{toast}}" hint-placeholder-val="{{ false }}"><div style="position: absolute; right: 24px; bottom: 206px; max-width: 420px; padding: 8px 12px; background: rgba(6,12,20,0.97); border: 1px solid #5fd4ff; border-radius: 4px; font-size: 12px; color: #eef5f9;">{{toastText}}</div></sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  constructor(props) { super(props); this.state = { st: 'debrief', lens: 'scenario', key: true, deep: false, open: 0, anyway: false, toast: '' }; }
+  constructor(props) { super(props); this.state = { st: 'debrief', lens: 'scenario', slide: 0, pick: null, src: false, ours: true, run: true, key: true, toast: '' }; }
   renderVals() {
-    var self = this, S = this.state, st = S.st;
-    var MONO = 'JetBrains Mono, monospace';
-    function btn(on, col) { col = col || '#5fd4ff'; return 'height: 30px; padding: 0 10px; border-radius: 4px; cursor: pointer; font-family: ' + MONO + '; font-size: 10px; border: 1px solid ' + (on ? col : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.14)' : 'transparent') + '; color: ' + (on ? col : '#8a99a5') + ';'; }
-    function go(s) { return function () { self.setState({ st: s, anyway: false, toast: '' }); }; }
-    var LENS = [
-      ['scenario', 'SCENARIO', 'Bottom line → scenarios with horizons → indicators to watch', '1–4 STORIES'],
-      ['compare', 'COMPARE', 'Side by side: actors, claims, where the stories disagree', '2–4 STORIES'],
-      ['free', 'FREE-FORM', 'Your own question → a cited answer', '1–4 STORIES'],
-      ['ripple', 'ECONOMIC RIPPLE', 'Market-mechanism read: channel → instruments → who gains or loses (model judgment)', '1–4 STORIES']
-    ];
-    var Q = { scenario: 'How could the US–Iran standoff over the Strait of Hormuz develop over the next six months?',
-      compare: 'Where do these four reports agree and disagree about US strategy toward Iran?',
-      free: 'Why did Oman become a target of US threats?',
-      ripple: 'Through which market channels does the Hormuz blockade reach other economies?' };
-    var lens = LENS.filter(function (l) { return l[0] === S.lens; })[0];
-    var lenses = LENS.map(function (l) { var on = l[0] === S.lens;
-      return { name: l[1], out: l[2], min: l[3], on: on, c: on ? '#5fd4ff' : '#d6e2ea',
-        pick: function () { self.setState({ lens: l[0], st: st === 'out' || st === 'share' ? st : 'brief' }); },
-        style: 'display: block; width: 100%; text-align: left; padding: 8px 9px; border-radius: 3px; cursor: pointer; background: ' + (on ? 'rgba(95,212,255,0.1)' : 'transparent') + '; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.14)') + ';' }; });
+    var self = this, S = this.state, st = S.st, MONO = 'JetBrains Mono, monospace';
+    var AMB = '#ffb347', HATCH = 'repeating-linear-gradient(45deg, rgba(255,179,71,0.38) 0 3px, rgba(255,179,71,0.06) 3px 7px)';
+    function X(lon) { return 200 + (lon + 130) / 290 * 760; }
+    function Y(lat) { return 90 + (62 - lat) / 75 * 560; }
+    function land(lo, la) { return (Math.sin(lo * 0.07) + Math.cos(la * 0.11 + lo * 0.03) + Math.sin(la * 0.05 - lo * 0.02)) > 0.35; }
+    var landP = '', grid = '';
+    for (var la = -12; la <= 62; la += 3) for (var lo = -128; lo <= 158; lo += 3) if (land(lo, la)) landP += 'M' + X(lo).toFixed(1) + ' ' + Y(la).toFixed(1) + 'h0.1';
+    for (var g = -120; g <= 150; g += 30) grid += 'M' + X(g).toFixed(0) + ' 52V704';
+    for (var h = 0; h <= 60; h += 20) grid += 'M0 ' + Y(h).toFixed(0) + 'H1440';
+    // approximate centroids; "Middle East" is a region tag, never drawn as a point
+    var P = { 'United States': [-98, 39], 'Iran': [53, 33], 'Oman': [58, 21], 'Hormuz': [56.3, 26.6], 'South Korea': [128, 36], 'India': [78, 22], 'Yemen': [47, 15], 'Saudi Arabia': [44, 24], 'China': [104, 35] };
+    function px(n) { return [X(P[n][0]), Y(P[n][1])]; }
+
+    // ---- real data (verified against the archive + forecast log, 25 Sep) ----
     var SRC = [
-      ['13 AUG', 43, 'scmp.com', 'Trump turns to economic pain as US bombings fail to sway Iran', 'The US military campaign against Iran has so far failed to force Tehran to capitulate. The Trump administration is betting once again that suffocating economic pressure will do the job.'],
-      ['14 AUG', 42, 'aljazeera.com', 'US threatens ‘indefinite’ naval blockade of Iran as two more ships attacked in Hormuz', 'US Secretary of Defense Pete Hegseth claims US Navy can sustain blockade despite reports of poor conditions.'],
-      ['15 AUG', 41, 'asiatimes.com', 'Trump vows to declare Strait of Hormuz a US territory; Iran says it ‘will remain Iranian’', 'President Donald Trump said Friday that he planned to declare the Strait of Hormuz – which Iran has blockaded for much of the past five months – …'],
-      ['17 AUG', 39, 'BBC', 'Trump threatens to bomb Oman if it ‘gets in the way’ over Iran deal', 'Trump\'s threat on Oman, which has been holding its own talks with Iran to reopen the Strait of Hormuz, comes as a 60-day window for peace negotiations expires.']
+      ['14 AUG', '2026-08-14', 'aljazeera.com +5', 'US threatens ‘indefinite’ naval blockade of Iran as two more ships attacked in Hormuz', 'US Secretary of Defense Pete Hegseth claims US Navy can sustain blockade despite reports of poor conditions.', ['United States', 'Iran'], 42],
+      ['15 AUG', '2026-08-15', 'euronews.com +5', 'Trump vows to declare Strait of Hormuz a US territory; Iran says it ‘will remain Iranian’', 'Speaking in New York on Friday, Trump, with a chuckle, said: "Pretty soon I\'ll be declaring the Hormuz Strait a territory of the United States."', ['United States', 'Iran', 'Middle East'], 41],
+      ['17 AUG', '2026-08-17', 'BBC +3', 'Trump threatens to bomb Oman if it ‘gets in the way’ over Iran deal', 'Trump\'s threat on Oman, which has been holding its own talks with Iran to reopen the Strait of Hormuz, comes as a 60-day window for peace negotiations expires.', ['United States', 'Oman', 'Iran'], 39],
+      ['21 AUG', '2026-08-21', 'scmp.com +2', 'Iranian president says time to end war while in ‘position of strength’', 'Iranian President Masoud Pezeshkian said on Friday it was time to end the months-long Middle East war with the US because Tehran appeared to be in a stronger position than Washington.', ['Iran', 'United States'], 35]
     ];
-    var chips = SRC.map(function (s, i) { return { n: i + 1, date: s[0], age: s[1] + ' D OLD', outlets: 'UP TO 6 LINKS', t: s[3], ageC: '#9c7a70',
-      style: 'position: relative; padding: 6px 20px 6px 8px; border-left: 3px solid #9c7a70; background: rgba(12,22,34,0.9); opacity: 0.85;' }; });
-    var srcs = SRC.map(function (s, i) { var open = S.open === i;
-      return { n: i + 1, outlet: s[2], date: s[0], t: s[3], snip: s[4], open: open, more: 'OPEN ARTICLE ↗ · OPEN STORY →',
-        pick: function () { self.setState({ open: open ? null : i }); },
-        style: 'display: block; width: 100%; text-align: left; margin-top: 7px; padding: 6px 8px; border-radius: 3px; cursor: pointer; color: inherit; background: ' + (open ? 'rgba(95,212,255,0.08)' : 'rgba(12,22,34,0.9)') + '; border: 1px solid ' + (open ? 'rgba(95,212,255,0.4)' : 'transparent') + ';' }; });
-
-    var P = {
-      out: ['EXAMPLE DEBRIEF · READ-ONLY', 'a real shared run, dated · sign in to run your own', '#ffb347'],
-      brief: ['BRIEFING', 'set the objective and assets, then run', '#5fd4ff'],
-      run: ['RUNNING', 'your key · browser → provider directly', '#5fd4ff'],
-      debrief: ['DEBRIEF', 'run 25 Sep 14:02 · 4 sources', '#5fd4ff'],
-      fail: ['DEBRIEF · FAILED CHECKS', 'run 25 Sep 14:02', '#ff6a4d'],
-      share: ['SHARED DEBRIEF · READ-ONLY', 'run 25 Sep · sources frozen 25 Sep', '#5fd4ff']
-    }[st];
-    var isReport = st === 'debrief' || st === 'out' || st === 'share';
-    var showReport = isReport || (st === 'fail' && S.anyway);
-    var question = st === 'out' || st === 'share' ? Q.scenario : Q[S.lens];
-    var lensName = st === 'out' || st === 'share' ? 'SCENARIO' : lens[1];
-
-    var JUDG = [
-      ['MOST LIKELY', '2–4 WEEKS', '#ee7754', 'The blockade persists with intermittent, low-level attacks on shipping; the territorial claim stays rhetorical but keeps up pressure.', '[2][3]'],
-      ['LESS LIKELY, PLAUSIBLE', '1–3 MONTHS', '#9c7a70', 'A limited military confrontation in the strait if either side miscalculates, triggered by Iran’s offensive posture or a US move to enforce the claim.', '[3]'],
-      ['LESS LIKELY', '3–6 MONTHS', '#7d8b96', 'Discreet diplomacy, possibly through Oman, toward a de-escalation framework if domestic or economic strain becomes unsustainable.', '[4]']
+    var CHAIN = [['TRIGGER', 'The Trump administration shifted to “suffocating economic pressure” and a naval blockade after bombing failed to force Iran’s capitulation (13 Aug); ship attacks and the vow to declare Hormuz US territory followed.'],
+      ['ENABLING CONDITION', 'A “months-long Middle East war”: a US maximum-pressure campaign against Iran’s responses, with Iran blockading Hormuz for “much of the past five months”.'],
+      ['STRUCTURAL FACTOR', 'The decades-long US–Iran rivalry rooted in 1979, complicated by Iran’s nuclear programme and its regional proxies.']];
+    // forecast log snapshot for source [4], generated 21 Aug (point probabilities + dated triggers)
+    var SCEN = [
+      ['MOST LIKELY', 60, '#ee7754', [['2026-11-30', 'Direct talks between Iranian and US officials are confirmed to have taken place'], ['2026-12-31', 'Iran and the US announce a mutual ceasefire or pause in hostilities in the Middle East']], ['Iran', 'United States'], []],
+      ['OPTIMISTIC', 20, '#d8b25a', [['2026-10-31', 'Iran announces a temporary suspension of uranium enrichment above 60% purity'], ['2026-11-30', 'The US and Iran sign a preliminary agreement on prisoner exchange and sanctions relief']], ['Iran', 'United States'], []],
+      ['PESSIMISTIC', 20, '#c0564a', [['2026-11-30', 'Iran resumes large-scale missile attacks on US bases or allies in the region'], ['2026-12-31', 'Israel conducts a military strike on Iranian nuclear facilities']], ['Iran'], ['Israel']]
     ];
-    var judg = JUDG.map(function (j) { return { w: j[0], h: j[1], c: j[2], t: j[3], cite: j[4] }; });
-    var watch = ['Will Iran follow through on its threat to adopt a “fully offensive” posture in the Strait of Hormuz?',
-      'Will Oman or other regional actors mediate a new round of US–Iran talks, or will Trump’s threats against Oman deter them?',
-      'Will the US impose further sanctions on Iran or its proxies such as Hezbollah?'];
+    function daysLeft(d) { return Math.round((Date.parse(d) - Date.parse('2026-09-25')) / 864e5); }
+    function dm(d) { var m = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']; return +d.slice(8, 10) + ' ' + m[+d.slice(5, 7) - 1]; }
+    var LINKS = [['ECONOMY', 'US diesel prices hit an all-time high as the conflict threatens oil supply', 'United States', 'STRONG', 'IN THE US, IRAN AND MIDDLE EAST WEBS', '11 SEP'],
+      ['CONFLICT', 'Trump vows tougher economic measures on Iran and supporting countries', 'United States', 'MEDIUM', 'IN THE US WEB', '22 AUG'],
+      ['MILITARY', 'South Korea considers a military deployment to the Strait of Hormuz', 'South Korea', 'MEDIUM', 'IN THE IRAN WEB', '8 SEP'],
+      ['POLITICS', 'India hosts BRICS summit with China, Russia and Iran leaders', 'India', 'WEAK', 'IN THE IRAN WEB', '10 SEP']];
+    var PER_A = [["2026-07-24", 1], ["2026-07-26", 8], ["2026-07-27", 9], ["2026-07-28", 3], ["2026-07-29", 1], ["2026-07-30", 2], ["2026-08-01", 1], ["2026-08-02", 2], ["2026-08-03", 5], ["2026-08-04", 2], ["2026-08-05", 2], ["2026-08-06", 1], ["2026-08-07", 4], ["2026-08-08", 3], ["2026-08-09", 6], ["2026-08-10", 5], ["2026-08-11", 2], ["2026-08-12", 5], ["2026-08-13", 2], ["2026-08-14", 3], ["2026-08-15", 4], ["2026-08-16", 5], ["2026-08-17", 2], ["2026-08-18", 3], ["2026-08-19", 1], ["2026-08-20", 1], ["2026-08-21", 2]];
+    var PER_B = [["2026-09-04", 2], ["2026-09-05", 2], ["2026-09-06", 4], ["2026-09-07", 1], ["2026-09-08", 1], ["2026-09-09", 3], ["2026-09-10", 6], ["2026-09-11", 4], ["2026-09-12", 1]];
+    var CATC = { ECONOMY: '#38b6de', CONFLICT: '#ee7754', MILITARY: '#ee7754', POLITICS: '#9b8cf8' };
+    var CONFW = { STRONG: 3, MEDIUM: 2, WEAK: 1 };
 
-    var steps = [['✓', 'SOURCES LOADED', '4 stories · text clipped to 1,200 chars each', '#6fd29a'],
-      ['◌', 'RUNNING', 'waiting for the provider', '#5fd4ff'],
-      ['·', 'CITATIONS CHECKED', '', '#56626b'],
-      ['·', 'VISUALS VALID', '', '#56626b']].map(function (p) { return { icon: p[0], t: p[1], sub: p[2], c: p[3] }; });
+    // ---- lens + slides ----
+    var LENS = [['scenario', 'SCENARIO', 'branches off today, ending at their dated triggers'],
+      ['compare', 'COMPARE', 'one time-bar lane per story; shared places double-ringed'],
+      ['ripple', 'ECONOMIC RIPPLE', 'story → channel → instrument → countries ▲▼ (schematic)'],
+      ['free', 'FREE-FORM', 'answer + a map of the evidence (schematic)']];
+    var QS = { scenario: 'How could the US–Iran standoff over Hormuz develop from here?', compare: 'How do the Hormuz standoff and the US diesel-price story connect?', ripple: 'Through which market channels does the Hormuz blockade reach other economies?', free: 'Why did Oman become a target of US threats?' };
+    var reportMode = st === 'debrief' || st === 'share';
+    var lensId = reportMode ? S.lens : 'scenario';
+    var SL = lensId === 'scenario' ? ['BOTTOM LINE', 'HOW WE GOT HERE', 'SCENARIOS', 'WATCH', 'CONNECTIONS'] : lensId === 'compare' ? ['TWO STORIES', 'WHERE THEY MEET'] : ['SCHEMATIC'];
+    var slide = Math.min(S.slide, SL.length - 1), sname = SL[slide];
+    function row(k, v, note, kc, pick, on) { return { k: k, v: v, note: note || '', hasNote: !!note, kc: kc || '#8a99a5', pick: pick || function () {},
+      style: 'display: block; width: 100%; text-align: left; margin-top: 8px; padding: 7px 9px; border-radius: 3px; cursor: pointer; color: inherit; background: ' + (on ? 'rgba(95,212,255,0.1)' : 'rgba(12,22,34,0.9)') + '; border: 1px solid ' + (on ? 'rgba(95,212,255,0.5)' : 'transparent') + ';' }; }
+    function pickRow(i) { return function () { self.setState({ pick: S.pick === i ? null : i }); }; }
+    var OURS = ['OUR DATA · STORED, DRAWN AS-IS', '#6fd29a'], RUN = ['THIS RUN · MODEL JUDGMENT', AMB], STAND = ['STAND-IN · OUR STORED FORECAST FOR [4]', AMB];
+    var card = { kicker: '', title: '', sub: '', hasSub: false, rows: [], hasFoot: false, foot: '', footC: '#7d8b96', hasSetup: false, layer: '', layerC: '#7d8b96', kc: '#5fd4ff' };
+    var hi = { srcPlaces: false, scen: null, trig: false, links: false, compare: false };
+    var mapNote = '';
 
-    var OK = '#6fd29a', BAD = '#ff6a4d', DIM = '#56626b';
-    var checks;
-    if (st === 'fail') checks = [['✗', 'Citations match sources', '[5] NOT SENT', BAD], ['✗', 'Dates found in sources', '3 OCT', BAD], ['✓', 'Visual blocks valid', 'OK', OK], ['·', 'Shareable', 'NO', BAD]];
-    else if (isReport) checks = [['✓', 'Citations match sources', '4 / 4', OK], ['✓', 'Dates found in sources', 'OK', OK], ['✓', 'Visual blocks valid', 'OK', OK], ['✓', 'Source span', '13–17 AUG', OK]];
-    else checks = [['·', 'Citations match sources', 'AFTER RUN', DIM], ['·', 'Dates found in sources', 'AFTER RUN', DIM], ['·', 'Visual blocks valid', 'AFTER RUN', DIM], ['·', 'Shareable', 'AFTER RUN', DIM]];
-    checks = checks.map(function (k) { return { i: k[0], t: k[1], v: k[2], c: k[3] }; });
+    if (st === 'brief') {
+      card.kicker = 'BRIEFING · SCENARIO'; card.title = QS.scenario; card.hasSetup = true; card.layer = 'NOTHING RUN YET'; hi.srcPlaces = true;
+      card.rows = SRC.map(function (s, i) { return row('[' + (i + 1) + '] ' + s[0] + ' · ' + s[6] + ' D OLD · DIMMED', s[3], 'PLACES ' + s[5].join(' · ').toUpperCase(), '#9c7a70'); });
+      card.hasFoot = true; card.foot = 'OUR DATA IS ALREADY ON THE MAP AND TIME BAR BEFORE ANYTHING RUNS. PREFILLED FROM STORY MODE “ANALYZE THIS ARC →”.';
+    } else if (st === 'run') {
+      card.kicker = 'RUNNING'; card.title = 'Sending 4 stories to your provider'; card.layer = 'YOUR KEY · BROWSER → PROVIDER'; hi.srcPlaces = true;
+      card.rows = [row('✓ SOURCES LOADED', '4 stories, text clipped to 1,200 characters each', '', '#6fd29a'), row('◌ RUNNING', 'Waiting for the provider · no streaming in v1', '', '#5fd4ff'), row('· CITATIONS CHECKED', 'after the run', '', '#56626b'), row('· PLACES CHECKED', 'a place is drawn only if the answer names it AND one of the sources lists it', '', '#56626b')];
+    } else if (st === 'fail') {
+      card.kicker = 'DEBRIEF · FAILED CHECKS'; card.kc = '#ff6a4d'; card.title = 'This answer was hidden and can’t be shared'; card.layer = 'THIS-RUN LAYER REMOVED'; card.layerC = '#ff6a4d'; hi.srcPlaces = true;
+      card.rows = [row('✗ CITATION', 'Cites [5], but only [1]–[4] were sent', '', '#ff6a4d'), row('✗ DATE', 'Gives “3 Oct”, which appears in none of the sources', '', '#ff6a4d'), row('✓ OUR DATA', 'The map and time bar still show the stored layer; it does not depend on the run', '', '#6fd29a')];
+      card.hasFoot = true; card.foot = 'EXAMPLE FAILURES FOR THE WIREFRAME (THE VALIDATOR ALREADY DETECTS BOTH). RUN AGAIN OR CHANGE THE STORIES.';
+    } else if (lensId === 'compare') {
+      hi.compare = true;
+      if (sname === 'TWO STORIES') { card.kicker = '1 · TWO STORIES'; card.layer = OURS[0]; card.layerC = OURS[1]; card.title = 'Hormuz first, then the price shock';
+        card.rows = [row('A · CONFLICT · 24 JUL – 21 AUG · 85 ENTRIES', 'US–Iran tensions escalate over Hormuz, peace talks stall', 'PLACES: UNITED STATES · IRAN · OMAN · MIDDLE EAST (REGION)', '#5fd4ff'),
+          row('B · ECONOMY · 4 – 12 SEP · 24 ENTRIES', 'US diesel prices hit an all-time high as the conflict threatens oil supply', 'PLACES: UNITED STATES · IRAN · OMAN · YEMEN · SAUDI ARABIA · CHINA · MIDDLE EAST (REGION)', '#38b6de'),
+          row('JUDGED LINK · OUR NEWS WEB', 'A → B, STRONG in the US, Iran and Middle East webs: “Escalating US-Iran conflict over the Strait of Hormuz threatens global oil supply, driving US diesel prices to record highs.”', 'DASHED ARC ON THE MAP · MODEL-LINKED, NEVER “CAUSED”', '#6fd29a')];
+        mapNote = 'DOUBLE RINGS = PLACES IN BOTH STORIES (US · IRAN · OMAN). SINGLE = ONLY IN B (YEMEN · SAUDI ARABIA · CHINA). “MIDDLE EAST” IS A REGION TAG IN BOTH, NOT DRAWN AS A POINT.'; }
+      if (sname === 'WHERE THEY MEET') { card.kicker = '2 · WHERE THEY MEET'; card.layer = 'STAND-IN FOR THE RUN’S GRID · ROWS FROM REAL HEADLINES'; card.layerC = AMB; card.title = 'Same waterway, different lens';
+        card.rows = [row('BOTH REPORT · SHIPPING ATTACKS', 'A: two more ships attacked in Hormuz (14 Aug). B: US and Iran trade attacks on ships (6 Sep).', 'AGREE ON THE EVENT TYPE, A MONTH APART', AMB),
+          row('BOTH · OIL PRICES, DIFFERENT FOCUS', 'A: oil surges to $100 per barrel after Houthi attacks on Saudi tankers (26 Jul); oil falls on hopes Hormuz could reopen (4 Aug). B: diesel at a record high (4 Sep, 11 Sep); US producer inflation tops expectations on energy costs (10 Sep).', 'A: CRUDE HEADLINES · B: DIESEL AND INFLATION HEADLINES', AMB),
+          row('BOTH · DIPLOMACY, OPPOSITE DIRECTION', 'A: Trump threatens to bomb Oman over its talks (17 Aug). B: Iran to discuss Hormuz with Gulf states (11 Sep).', 'THE RUN WOULD CITE EACH CELL', AMB)];
+        mapNote = 'A REAL RUN FILLS THIS GRID; EVERY CELL CITES ONE STORY OR BOTH. PLACES FOLLOW THE SAME RULE AS SCENARIOS.'; }
+    } else if (lensId !== 'scenario') {
+      card.kicker = LENS.filter(function (l) { return l[0] === lensId; })[0][1] + ' · SCHEMATIC'; card.layer = 'NOT DRAWN WITH REAL DATA YET'; card.layerC = AMB;
+      if (lensId === 'ripple') { card.title = 'Story → channel → instrument → countries'; card.rows = [row('CHAIN · THIS RUN', 'Hormuz blockade → oil supply → Brent → importers', 'A MARKET-MECHANISM READ, NOT A PRICE FORECAST', AMB), row('INSTRUMENT TILE · OUR DATA', 'Live price + day move from the hourly feed (no AI)', '', '#6fd29a'), row('MAP · THIS RUN', 'Countries named as gaining ▲ or losing ▼, in words (small / moderate / large), never %', '', AMB)]; card.hasFoot = true; card.foot = 'ECONOMY IS PARKED: THE LENS STAYS, LABELLED, BUT MAKES NO “TODAY’S DRIVER” CLAIMS.'; }
+      if (lensId === 'free') { card.title = 'Your question, answered on the map'; card.rows = [row('ANSWER · THIS RUN', 'Bottom line + cited prose', '', AMB), row('EVIDENCE MAP · OUR DATA', 'The places of every cited source; click a place to see which sentences cite it', '', '#6fd29a'), row('TIME BAR · OUR DATA', 'The cited sources at their dates', '', '#6fd29a')]; }
+    } else {
+      if (sname === 'BOTTOM LINE') { card.kicker = '1 · BOTTOM LINE'; card.layer = RUN[0]; card.layerC = RUN[1]; hi.srcPlaces = true;
+        card.title = 'A high-stakes standoff over Hormuz continues; talks look likelier within months than a quick deal.';
+        card.sub = 'Washington says it can hold the blockade indefinitely [1]; the territorial claim [2] and the threat to Oman [3] narrowed mediation, while Tehran says it is time to end the war from a “position of strength” [4].'; card.hasSub = true;
+        card.rows = [row('WHERE THE EVIDENCE IS · OUR DATA', 'United States · Iran · Oman (+ “Middle East”, a region tag)', 'FROM THE SOURCES’ PLACE TAGS · SOLID RINGS ON THE MAP', '#6fd29a')];
+        card.hasFoot = true; card.foot = 'WIREFRAME TEXT, WRITTEN FROM SOURCES [1]–[4]. A REAL RUN’S WORDING WILL DIFFER.'; }
+      if (sname === 'HOW WE GOT HERE') { card.kicker = '2 · HOW WE GOT HERE'; card.layer = OURS[0]; card.layerC = OURS[1]; card.title = 'The cause chain behind this story'; hi.srcPlaces = true;
+        card.rows = CHAIN.map(function (c, i) { return row(c[0], c[1], i === 0 ? 'SOURCES [1]–[4] ARE THE NUMBERED DOTS ON THE TIME BAR (14–21 AUG)' : '', '#6fd29a'); });
+        card.hasFoot = true; card.foot = 'FROM THE STORY’S STORED ANALYSIS (12 SEP), NOT FROM THIS RUN, AND SHOWN AS OURS, NOT AS THE READER’S.'; }
+      if (sname === 'SCENARIOS') { var sp = S.pick == null ? 0 : S.pick; hi.scen = sp; card.kicker = '3 · SCENARIOS'; card.layer = STAND[0]; card.layerC = STAND[1]; card.title = 'Three branches off today';
+        card.rows = SCEN.map(function (s, i) { var last = s[3].map(function (t) { return t[0]; }).sort().pop();
+          return row(s[0] + ' · ' + s[1] + '% · TRIGGERS DUE BY ' + dm(last), s[3].map(function (t) { return t[1]; }).join('; or ') + '.', 'PLACES DRAWN: ' + s[4].join(' · ').toUpperCase() + (s[5].length ? ' · NOT DRAWN: ' + s[5].join(', ').toUpperCase() + ' (NO SOURCE LISTS IT)' : ''), s[2], pickRow(i), sp === i); });
+        card.hasFoot = true; card.foot = 'STAND-IN: THE FORECAST LOG FOR SOURCE [4] (21 AUG), POINT PROBABILITIES. A RUN WOULD DRAW ITS OWN RANGES, AND ONLY PLACES AND DATES ITS TEXT STATES. A BAND RUNS FROM TODAY TO THE SCENARIO’S LAST TRIGGER DATE.'; }
+      if (sname === 'WATCH') { card.kicker = '4 · WATCH'; card.layer = 'DATED TRIGGERS · OUR FORECAST LOG'; card.layerC = OURS[1]; card.title = 'What would show which branch we are on'; hi.trig = true;
+        var all = []; SCEN.forEach(function (s) { s[3].forEach(function (t) { all.push([t[0], t[1], s[0], s[2]]); }); });
+        all.sort(function (a, b) { return a[0] < b[0] ? -1 : 1; });
+        card.rows = all.map(function (t) { return row(dm(t[0]) + ' · ' + daysLeft(t[0]) + ' DAYS LEFT · ' + t[2], t[1], '', t[3]); });
+        card.hasFoot = true; card.foot = 'DIAMONDS ON THE TIME BAR. SCORED ON THE TRACK RECORD ONLY IF DRAWN INTO A WEEKLY SAMPLE. PASSED TRIGGERS ARE NEVER SHOWN AS “AHEAD”.'; }
+      if (sname === 'CONNECTIONS') { card.kicker = '5 · CONNECTIONS'; card.layer = OURS[0]; card.layerC = OURS[1]; card.title = 'Other stories this one feeds'; hi.links = true;
+        card.rows = LINKS.map(function (l, i) { return row(l[0] + ' · ' + l[5] + ' · ' + l[3] + ' ' + l[4], l[1], '', CATC[l[0]], pickRow(i), S.pick === i); });
+        card.hasFoot = true; card.foot = 'DASHED ARCS = JUDGED LINKS FROM OUR NEWS WEB (LEGEND TOKEN); THICKNESS = CONFIDENCE IN THE NAMED WEB. NEVER “CAUSED”.'; }
+    }
 
-    var ROUTE = { out: '/analyze', brief: '/analyze?lens=' + S.lens + '&topics=…', run: '/analyze', debrief: '/analyze', fail: '/analyze', share: '/analyze/s/{unguessable id}' };
-    var status = {
-      out: 'EXAMPLE · MADE BY A READER WITH THEIR OWN KEY · SOURCES FROZEN AT RUN TIME',
-      brief: S.key ? 'MODEL · GEMINI (YOUR KEY) · NOTHING IS SENT TO US' : 'NO KEY SET · RUNS NEED YOUR OWN API KEY',
-      run: 'MODEL · GEMINI (YOUR KEY) · STARTED 14:02',
-      debrief: 'MODEL · GEMINI (YOUR KEY) · RUN 25 SEP 14:02 · 38 S · MADE BY A READER WITH THEIR OWN KEY',
-      fail: 'MODEL · GEMINI (YOUR KEY) · RUN 25 SEP 14:02 · FAILED CHECKS · NOT SHAREABLE',
-      share: 'SHARED · RUN 25 SEP · SOURCES FROZEN 25 SEP · MADE BY A READER WITH THEIR OWN KEY · NOT INDEXED'
-    }[st];
+    // ---- map ----
+    var ringsOut = [], arcs = [];
+    function mark(n, o) { var p = px(n), r = o.r;
+      var look = o.run ? 'background: ' + HATCH + '; border: 1px solid rgba(255,179,71,0.7);' : 'border: ' + (o.double ? '4px double ' : '2px solid ') + o.col + '; box-shadow: 0 0 10px ' + o.col + '55;';
+      ringsOut.push({ style: 'position: absolute; left: ' + (p[0] - r) + 'px; top: ' + (p[1] - r) + 'px; width: ' + (2 * r) + 'px; height: ' + (2 * r) + 'px; border-radius: 50%; box-sizing: border-box; ' + look,
+        lab: 'position: absolute; left: ' + (p[0] + r + 5) + 'px; top: ' + (p[1] - 7 + (o.dy || 0)) + 'px; font-family: ' + MONO + '; font-size: 9.5px; letter-spacing: 0.05em; color: ' + (o.labCol || o.col || AMB) + '; pointer-events: none; white-space: nowrap;', text: o.label || '' }); }
+    var ours = S.ours, runL = S.run && reportMode;
+    var SRCPL = ['United States', 'Iran', 'Oman'];
+    if (ours && hi.srcPlaces) SRCPL.forEach(function (n) { mark(n, { r: 11, col: '#5fd4ff', label: n.toUpperCase(), labCol: '#8fdcff', dy: n === 'Oman' ? 6 : n === 'Iran' ? -8 : 0 }); });
+    if (runL && hi.scen != null) { var sc = SCEN[hi.scen]; sc[4].forEach(function (n, j) { mark(n, { r: 22, run: true, label: j === 0 ? sc[0] + ' · ' + sc[1] + '%' : sc[0], labCol: AMB, dy: n === 'Iran' ? -8 : 0 }); }); }
+    if (hi.compare && ours) {
+      ['United States', 'Iran', 'Oman'].forEach(function (n) { mark(n, { r: 13, col: '#5fd4ff', double: true, label: n.toUpperCase() + ' · A+B', labCol: '#8fdcff', dy: n === 'Oman' ? 6 : n === 'Iran' ? -8 : 0 }); });
+      ['Yemen', 'Saudi Arabia', 'China'].forEach(function (n) { mark(n, { r: 9, col: '#38b6de', label: n.toUpperCase() + ' · B', labCol: '#7fc6e0', dy: n === 'Yemen' ? 6 : 0 }); });
+      var h0 = px('Hormuz'), u = px('United States');
+      arcs.push({ d: 'M' + h0[0] + ' ' + h0[1] + ' Q' + ((h0[0] + u[0]) / 2) + ' ' + (Math.min(h0[1], u[1]) - 90) + ' ' + u[0] + ' ' + u[1], c: '#38b6de', w: 3, op: 0.9 }); }
+    if (ours && hi.links && reportMode) {
+      var hz = px('Hormuz');
+      LINKS.forEach(function (l, i) { var p = px(l[2]), on = S.pick == null || S.pick === i; var mx = (hz[0] + p[0]) / 2, my = Math.min(hz[1], p[1]) - 70;
+        arcs.push({ d: 'M' + hz[0] + ' ' + hz[1] + ' Q' + mx + ' ' + my + ' ' + p[0] + ' ' + p[1], c: CATC[l[0]], w: CONFW[l[3]] + (S.pick === i ? 1 : 0), op: on ? 0.9 : 0.15 });
+        if (on && (l[2] !== 'United States' || i === 0 || S.pick === i)) mark(l[2], { r: 7, col: CATC[l[0]], label: l[2].toUpperCase(), labCol: '#8a99a5' }); }); }
+    var fp = px('Hormuz');
+    var focal = 'position: absolute; left: ' + (fp[0] - 7) + 'px; top: ' + (fp[1] - 7) + 'px; width: 14px; height: 14px; border-radius: 50%; background: #ee7754; box-shadow: 0 0 14px #ee7754;';
+
+    // ---- time bar ----
+    var W = 1392, T0 = Date.parse('2026-07-24'), T1 = Date.parse('2027-01-10');
+    function T(d) { return (Date.parse(d) - T0) / (T1 - T0) * W; }
+    function barsOf(list, col, lit) { return list.map(function (p) { return 'position: absolute; left: ' + T(p[0]).toFixed(1) + 'px; bottom: 16px; width: 5px; height: ' + (p[1] * 3) + 'px; background: ' + col + (lit && lit(p[0]) ? '0.75)' : '0.28)') + ';'; }); }
+    var bars = [], laneLabs = [];
+    if (ours) {
+      bars = barsOf(PER_A, 'rgba(95,212,255,', function (d) { return d >= '2026-08-14' && d <= '2026-08-21' && !hi.compare; });
+      laneLabs.push({ text: hi.compare ? 'A · HORMUZ · ENTRIES PER DAY' : 'STORY ENTRIES PER DAY · OUR DATA', style: 'position: absolute; left: 0; top: 44px; font-family: ' + MONO + '; font-size: 8.5px; color: #56626b;' });
+      if (hi.compare) { bars = bars.concat(barsOf(PER_B, 'rgba(56,182,222,', function () { return true; }).map(function (s) { return s.replace('width: 5px', 'width: 5px; outline: 1px solid rgba(56,182,222,0.6)'); }));
+        laneLabs.push({ text: 'B · DIESEL', style: 'position: absolute; left: ' + T('2026-09-04') + 'px; top: 44px; font-family: ' + MONO + '; font-size: 8.5px; color: #38b6de;' }); }
+    }
+    var srcDots = [], lastX = -99;
+    if (ours && !hi.compare) SRC.forEach(function (s, i) { var x = Math.max(T(s[1]) - 8, lastX + 18); lastX = x;
+      srcDots.push({ n: i + 1, style: 'position: absolute; left: ' + x + 'px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #5fd4ff; color: #04070c; font-family: ' + MONO + '; font-size: 9px; font-weight: 600; display: flex; align-items: center; justify-content: center;' }); });
+    var bands = [], diamonds = [], nowD = '2026-09-25';
+    if (runL && lensId === 'scenario') SCEN.forEach(function (s, i) { var last = s[3].map(function (t) { return t[0]; }).sort().pop(), a = T(nowD), b = T(last), sel = hi.scen == null || hi.scen === i, y = 2 + i * 13;
+      bands.push({ label: s[0] + ' ' + s[1] + '%', style: 'position: absolute; left: ' + a + 'px; width: ' + (b - a) + 'px; top: ' + y + 'px; height: 11px; box-sizing: border-box; background: ' + HATCH + '; border: 1px solid rgba(255,179,71,0.6); font-family: ' + MONO + '; font-size: 8px; color: #fff3dc; padding-left: 4px; line-height: 9px; white-space: nowrap; overflow: hidden; opacity: ' + (sel ? 1 : 0.3) + ';' });
+      if (ours) s[3].forEach(function (t) { diamonds.push({ style: 'position: absolute; left: ' + (T(t[0]) - 5) + 'px; top: ' + (y - 2) + 'px; font-size: 11px; line-height: 14px; color: ' + (hi.trig || hi.scen === i ? s[2] : '#8a6a3a') + ';' }); }); });
+    var nx = T(nowD);
+    var nowLine = 'position: absolute; left: ' + nx + 'px; top: 0; bottom: 16px; width: 1px; background: #eef5f9; opacity: 0.6;';
+    var nowLab = 'position: absolute; left: ' + (nx - 70) + 'px; top: 44px; font-family: ' + MONO + '; font-size: 8.5px; color: #eef5f9;';
+    var axis = [['2026-08-01', 'AUG'], ['2026-09-01', 'SEP'], ['2026-10-01', 'OCT'], ['2026-11-01', 'NOV'], ['2026-12-01', 'DEC'], ['2027-01-01', 'JAN']].map(function (a) { return { label: a[1], style: 'position: absolute; left: ' + T(a[0]) + 'px; bottom: 0; font-family: ' + MONO + '; font-size: 9px; color: #56626b; border-left: 1px solid rgba(95,212,255,0.2); padding-left: 3px; height: 14px;' }; });
+
+    // ---- chrome ----
+    function go(s) { return function () { self.setState({ st: s, slide: 0, pick: null, toast: '' }); }; }
+    function chipStyle(on) { return 'height: 30px; padding: 0 9px; border-radius: 15px; cursor: pointer; font-family: ' + MONO + '; font-size: 9.5px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + ';'; }
+    var STL = [['brief', 'BRIEFING'], ['run', 'RUNNING'], ['debrief', 'DEBRIEF'], ['fail', 'FAILED CHECKS'], ['share', 'SHARED / SIGNED-OUT EXAMPLE']];
+    var states = STL.map(function (s) { return { label: s[1], pick: go(s[0]), style: chipStyle(s[0] === st).replace('height: 30px', 'height: 26px') }; });
+    var lenses = LENS.map(function (l) { var on = l[0] === lensId; return { name: l[1], pic: l[2], on: on, c: on ? '#5fd4ff' : '#d6e2ea',
+      pick: function () { self.setState({ lens: l[0], slide: 0, pick: null, src: false, st: reportMode ? st : 'debrief' }); },
+      style: 'display: block; width: 100%; text-align: left; padding: 7px 8px; border-radius: 3px; cursor: pointer; background: ' + (on ? 'rgba(95,212,255,0.12)' : 'rgba(6,12,20,0.9)') + '; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.14)') + ';' }; });
+    var layers = [['ours', 'OUR DATA', 'border-top: 2px solid #5fd4ff;'], ['run', 'THIS RUN', 'height: 8px; background: ' + HATCH + ';']].map(function (y) { var on = S[y[0]];
+      return { label: y[1], on: on, pick: function () { var o = {}; o[y[0]] = !on; self.setState(o); },
+        swatch: 'display: inline-block; width: 18px; ' + y[2] + ' margin-right: 8px; vertical-align: middle;',
+        style: 'display: block; width: 100%; text-align: left; height: 28px; padding: 0 8px; border-radius: 3px; cursor: pointer; font-family: ' + MONO + '; font-size: 10px; background: transparent; border: 1px solid ' + (on ? 'rgba(95,212,255,0.4)' : 'rgba(95,212,255,0.12)') + '; color: ' + (on ? '#d6e2ea' : '#56626b') + ';' }; });
+    var tabs = [['SLIDE', false], ['SOURCES [1]–[4] · CHECKS', true]].map(function (t) { var on = S.src === t[1]; return { label: t[0], on: on, pick: function () { self.setState({ src: t[1] }); }, style: chipStyle(on).replace('height: 30px', 'height: 24px') }; });
+    var chips = SL.map(function (n, i) { return { label: n, on: i === slide, pick: function () { self.setState({ slide: i, pick: null, src: false }); }, style: chipStyle(i === slide) }; });
     function toast(t) { return function () { self.setState({ toast: t }); }; }
-    var A = {
-      out: [['SIGN IN TO RUN WITH YOUR OWN KEY', toast('Opens sign-in; you come back to this screen with RUN enabled.'), true], ['OPEN THESE STORIES LIVE →', toast('Opens the stories as they are now (they may have moved on).'), false]],
-      brief: [],
-      run: [['CANCEL', go('brief'), false]],
-      debrief: [['COPY AS MARKDOWN', toast('Copied with numbered sources and links.'), false], ['SHARE', function () { self.setState({ st: 'share', toast: 'Link created. The server re-fetched and froze the 4 sources and re-ran the checks.' }); }, true]],
-      fail: [['RUN AGAIN', go('run'), false], ['SHARE · UNAVAILABLE', toast('Runs that fail the checks cannot be shared.'), false]],
-      share: [['DELETE (OWNER ONLY)', toast('Deletes the link for everyone. Asks for confirmation first.'), false], ['OPEN THESE STORIES LIVE →', toast('Opens the stories as they are now.'), false], ['RUN YOUR OWN →', go('brief'), true]]
-    }[st];
+    var btn = function (on) { return 'height: 32px; padding: 0 10px; border-radius: 4px; cursor: pointer; font-family: ' + MONO + '; font-size: 10px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.3)') + '; background: ' + (on ? 'rgba(95,212,255,0.16)' : 'transparent') + '; color: ' + (on ? '#eef5f9' : '#8a99a5') + ';'; };
+    var A = { brief: [], run: [['CANCEL', go('brief'), false]], fail: [['RUN AGAIN', go('run'), true]],
+      debrief: [['COPY AS MARKDOWN', toast('Copied: the report with numbered sources and links. The map is a picture of this data, not extra claims.'), false], ['SHARE', function () { self.setState({ st: 'share', toast: 'Link created. The server re-fetched and froze the 4 sources, re-ran the checks, and saved the map and time-bar data with them.' }); }, true]],
+      share: [['OPEN THESE STORIES LIVE →', toast('Opens the stories as they are now; they may have moved on since the run.'), false], ['RUN YOUR OWN →', go('brief'), true]] }[st];
     var actions = A.map(function (a) { return { label: a[0], pick: a[1], style: btn(a[2]) }; });
+    var status = { brief: S.key ? 'KEY · GEMINI · STAYS IN THIS BROWSER' : 'NO KEY · RUNS NEED YOUR OWN KEY', run: 'GEMINI (YOUR KEY) · STARTED 14:02', fail: 'FAILED CHECKS · NOT SHAREABLE', debrief: 'GEMINI (YOUR KEY) · RUN 25 SEP 14:02 · MADE BY A READER WITH THEIR OWN KEY', share: 'RUN 25 SEP · SOURCES FROZEN 25 SEP · MADE BY A READER WITH THEIR OWN KEY · NOT INDEXED' }[st];
+    var OK = '#6fd29a', BAD = '#ff6a4d', DIM = '#56626b';
+    var CK = st === 'fail' ? [['✗', 'Citations match sources', '[5] NOT SENT', BAD], ['✗', 'Dates found in sources', '3 OCT', BAD], ['✓', 'Places named AND in a source', 'OK', OK], ['·', 'Shareable', 'NO', BAD]]
+      : reportMode ? [['✓', 'Citations match sources', '4 / 4', OK], ['✓', 'Dates found in sources', 'OK', OK], ['✓', 'Places named AND in a source', '2 DRAWN · 1 NOT', OK], ['✓', 'Visual blocks valid', 'OK', OK]]
+      : [['·', 'Citations match sources', 'AFTER RUN', DIM], ['·', 'Dates found in sources', 'AFTER RUN', DIM], ['·', 'Places named AND in a source', 'AFTER RUN', DIM]];
+    var checks = CK.map(function (k) { return { i: k[0], t: k[1], v: k[2], c: k[3] }; });
+    var srcs = SRC.map(function (s, i) { return { n: i + 1, date: s[0], outlets: s[2], t: s[3], snip: s[4], places: s[5].join(' · ').toUpperCase() }; });
 
-    var SL = [['out', 'SIGNED OUT'], ['brief', 'BRIEFING'], ['run', 'RUNNING'], ['debrief', 'DEBRIEF'], ['fail', 'FAILED CHECKS'], ['share', 'SHARED LINK']];
-    var states = SL.map(function (s) { var on = s[0] === st; return { label: s[1], pick: go(s[0]), style: 'height: 26px; padding: 0 8px; border-radius: 13px; cursor: pointer; font-family: ' + MONO + '; font-size: 9.5px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + ';' }; });
-
-    var intelHead = { brief: 'WILL BE SENT', run: 'SENT', out: 'FROZEN SOURCES', share: 'FROZEN SOURCES', debrief: 'SOURCES CITED', fail: 'SOURCES SENT' }[st];
-    var intelSub = st === 'out' || st === 'share' ? 'AS THEY WERE AT RUN TIME · CLICK FOR THE VERBATIM SNIPPET' : 'OUR STORIES, NUMBERED [1]–[4] · CLICK FOR THE VERBATIM SNIPPET';
-    var webNote = S.deep && st !== 'out' && st !== 'share' ? 'NUMBERED SEPARATELY [W1]… · NEVER MIXED WITH [1]–[4]' : 'NONE · DEEP RESEARCH WAS OFF';
-
-    return {
-      route: ROUTE[st], states: states, lenses: lenses, hasMine: st === 'share', noMine: st !== 'share',
-      phase: P[0], phaseSub: P[1], phaseC: P[2], lensName: lensName, question: question,
-      showSetup: st === 'brief', showRun: st === 'run', showFail: st === 'fail', showReport: showReport,
-      reportWrap: st === 'fail' ? 'opacity: 0.55; border-top: 1px dashed rgba(255,95,70,0.5); margin-top: 10px;' : '',
-      chips: chips, srcs: srcs, judg: judg, watch: watch, steps: steps, checks: checks,
-      keySet: S.key, deep: S.deep,
-      keyLabel: S.key ? 'KEY · GEMINI · STAYS IN THIS BROWSER ✓' : '+ ADD YOUR API KEY',
-      keyStyle: btn(true, S.key ? '#6fd29a' : '#ffb347'),
-      toggleKey: function () { self.setState({ key: !S.key, deep: false }); },
-      deepLabel: S.deep ? 'DEEP RESEARCH · ON (WEB SEARCH)' : 'DEEP RESEARCH · OFF',
-      deepStyle: btn(S.deep), toggleDeep: function () { self.setState({ deep: !S.deep }); },
-      keyNote: S.key ? 'Providers: DeepSeek · Perplexity · OpenAI · Gemini · Qwen · Anthropic. Deep research appears only for a key that can search the web; its sources are numbered [W1]… apart from ours.' : 'RUN is disabled until you add a key. The key is stored in this browser only and requests go straight to the provider.',
-      run: S.key ? go('run') : function () {}, runLabel: S.key ? 'RUN ▶' : 'RUN · NEEDS A KEY',
-      runStyle: 'height: 36px; padding: 0 18px; border-radius: 4px; cursor: ' + (S.key ? 'pointer' : 'not-allowed') + '; font-family: ' + MONO + '; font-size: 11px; letter-spacing: 0.08em; border: 1px solid ' + (S.key ? '#5fd4ff' : '#56626b') + '; background: ' + (S.key ? 'rgba(95,212,255,0.2)' : 'transparent') + '; color: ' + (S.key ? '#eef5f9' : '#56626b') + ';',
-      toggleAnyway: function () { self.setState({ anyway: !S.anyway }); }, anywayLabel: S.anyway ? 'HIDE THE ANSWER' : 'SHOW ANYWAY (NOT SHAREABLE)',
-      intelHead: intelHead, intelSub: intelSub, webNote: webNote,
-      status: status, actions: actions, toast: !!S.toast, toastText: S.toast
-    };
+    return { grid: grid, land: landP, arcs: arcs, rings: ringsOut, focal: focal, hasMapNote: !!mapNote, mapNote: mapNote,
+      route: st === 'share' ? '/analyze/s/{unguessable id}' : st === 'brief' ? '/analyze?lens=scenario&topics=…' : '/analyze',
+      states: states, lenses: lenses, layers: layers, tabs: tabs, question: reportMode ? QS[lensId] : QS.scenario,
+      banner: st === 'share', bannerText: 'SHARED DEBRIEF · READ-ONLY · SIGNED-OUT VISITORS SEE THIS SAME SCREEN AS THE EXAMPLE',
+      showSlide: !S.src, srcOpen: S.src, srcHead: st === 'share' ? 'FROZEN AT RUN TIME' : reportMode ? 'CITED IN THIS RUN' : 'WILL BE SENT', srcs: srcs, checks: checks,
+      card: card, toggleKey: function () { self.setState({ key: !S.key }); }, keyLabel: S.key ? 'KEY · GEMINI · STAYS IN THIS BROWSER ✓' : '+ ADD YOUR API KEY', keyStyle: btn(S.key),
+      runNow: S.key ? go('run') : function () {}, runLabel: S.key ? 'RUN ▶' : 'RUN · NEEDS A KEY', runStyle: btn(S.key) + (S.key ? '' : ' cursor: not-allowed;'),
+      laneLabs: laneLabs, bars: bars, srcDots: srcDots, bands: bands, diamonds: diamonds, nowLine: nowLine, nowLab: nowLab, axis: axis,
+      chips: chips, prev: function () { self.setState({ slide: Math.max(0, slide - 1), pick: null }); }, next: function () { self.setState({ slide: Math.min(SL.length - 1, slide + 1), pick: null }); },
+      status: status, actions: actions, toast: !!S.toast, toastText: S.toast };
   }
 }
 </script>

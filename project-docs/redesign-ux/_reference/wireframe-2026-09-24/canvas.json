@@ -110,7 +110,7 @@
       "y": 11600,
       "w": 1440,
       "h": 900,
-      "title": "F1 · Analysis Studio — RESEARCH BAY one screen: operations · briefing→debrief · intel · status (proposed)",
+      "title": "F1 · Analysis Studio v2 — STORY MODE FOR YOUR QUESTION: map + slides + time bar; OUR DATA (legend tokens) vs THIS RUN (amber hatching)",
       "is_interactive": true
     }
   },
@@ -273,7 +273,7 @@
       "w": 390,
       "x": 1480,
       "y": 11600,
-      "text": "Research Bay (debate ruling, proposed). LEFT: only the 4 analysis types that work today, each with the shape of its output — no locked or \"coming soon\" tiles. CENTRE: BRIEFING (question + up to 4 story chips, dimmed when older than 7 days + your key, which stays in this browser + RUN) becomes the DEBRIEF: bottom line → scenarios on a time bar → cited analysis → indicators. RIGHT: INTEL — our stories numbered [1]–[4] with outlet, date and the verbatim snippet (click one); web sources would be [W1]… and never mixed in; CHECKS. BOTTOM: model, run time, \"made by a reader with their own key\", SHARE / COPY. Try the PREVIEW STATE buttons: SIGNED OUT (the same screen with one real shared example), RUNNING (only real steps, no streaming), FAILED CHECKS (answer hidden, cannot be shared), SHARED LINK (read-only, sources frozen, not indexed, owner-only delete). Stories and snippets are real (13–17 Aug); the report wording is taken from the story's stored 12 Sep analysis as a stand-in."
+      "text": "Studio v2 (operator: v1 was \"just a regular analysis\"), revised after a design critic and a data-accuracy critic. Story mode's language: MAP + SLIDE card (with a SOURCES tab) + TIME BAR. Two layers you can toggle: OUR DATA uses the normal legend (solid = reported, dashed = judged link) — source places, numbered source dots at their dates over the story's entries per day, the stored cause chain, dated forecast triggers ◆, linked stories as dashed arcs (confidence named per web). THIS RUN is amber HATCHING only — never a line style, so it can't be mistaken for a judged link. SCENARIO: BOTTOM LINE → HOW WE GOT HERE → SCENARIOS (click one: its places + a band from today to its last trigger date; the pessimistic one names Israel, which no source lists, so it is NOT drawn) → WATCH (6 dated triggers) → CONNECTIONS. COMPARE is drawn for real: Hormuz (A, 24 Jul–21 Aug, 85 entries) vs US diesel (B, 4–12 Sep, 24 entries) — two lanes, double rings on shared places, the judged A→B link, and a grid stand-in built from real headlines. RIPPLE / FREE-FORM stay schematic. Stand-ins are labelled: scenario numbers are the forecast log for source [4] (21 Aug, point probabilities); the bottom line is written from sources [1]–[4]."
     }
   },
   "order": [

@@ -149,7 +149,7 @@ Canvas https://claude.ai/artifact/6AxoScn1r6AFfx1Ngz8AgW:
 7. **Reading mode** (light) on the story page: keep it? Recommended, for long reads.
 8. **Studio country lens:** pick a country directly (recommended), or start from selected stories?
 
-## 7. "Too long" → Story mode proposal (2026-09-25, design only, for discussion)
+## 7. Story mode: APPROVED direction (operator 2026-09-25: "that is much better"). Design only, not built
 Operator: the story page is too long, so show it game-like, with a map, wires/arcs and a horizontal slide of what happened.
 References (research pass):
 - Flightradar24 / kepler.gl playback: a bottom time scrubber that drives the map.
@@ -169,3 +169,20 @@ Wireframe `StoryMode.dc.html` (canvas row v5): one screen, no scroll.
 - **Bottom scrubber:** news per day, chapter segments, ⚑ Aug 15, linked-news ticks, TODAY, and ◆ deadlines out to Dec 31, with play/◀/▶.
 - **Drawers** (left): WHY / WHO / VIEW FROM / SOURCES.
 - **READ IN FULL** switches to the long page, which stays as the accessible, printable version.
+
+### Decisions still open (register, 2026-09-25)
+Obsoleted by story mode: the old §6 questions 2 ("Show linked news" default) and 3 (duplication). In story mode, linked news lives on the FED INTO slide and the scrubber ticks.
+
+| # | Decision | Recommendation |
+|---|---|---|
+| S1 | Story mode as the **default** story page, with "Read in full" as the alternate | Yes. The long page stays for accessibility, print and search engines |
+| S2 | **Phone** layout for story mode | Map on top (~40%), slide card as a swipeable bottom sheet, scrubber collapses to the chapter chips |
+| S3 | Add a **Web view** toggle (Outer Wilds "rumor mode": stories as nodes, no geography) | Not in v1. Arcs on the map are enough; revisit after usage |
+| S4 | **Chapter titles**: first headline (now) vs AI chapter titles written once at analysis time | AI titles in stage 2, first headline as the fallback |
+| S5 | **Freshness**: amber after 7 days, hide links after 30 days | Yes |
+| S6 | **Stories with no links / no web**: FED INTO slide shows an honest empty line, or the slide is skipped | Skip the slide; say "not linked in current analyses" on BRIEF |
+| S7 | **Map places**: a linked story sits at its most-mentioned non-focal country; "Global/Middle East" stories sit at a region label | Yes, deterministic, shown with "approx." in the legend |
+| S8 | Home map: faint dashed lines to linked stories when a story is selected | Yes, strong/medium only (same arcs as FED INTO) |
+| S9 | Board: keep MAP view and WEB story graph | Yes, both |
+| S10 | Reading mode (light) on the long page | Keep for the long page only; story mode stays dark |
+| S11 | Studio country lens entry: pick a country directly | Yes |

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Story peek</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;font-family:Inter,system-ui,sans-serif}</style>
+</helmet>
+<div role="tooltip" style="width: 300px; box-sizing: border-box; padding: 12px 14px; background: rgba(6,12,20,0.97); border: 1px solid rgba(95,212,255,0.4); border-left: 3px solid {{p.color}}; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.55); pointer-events: none;">
+<div style="display: flex; gap: 8px; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em;">
+<span style="width: 6px; height: 6px; border-radius: 50%; background: {{p.color}};"></span>
+<span style="color: {{p.color}}; flex-grow: 1;">{{p.kicker}}</span>
+<span style="color: {{p.statusColor}};">{{p.status}}</span>
+</div>
+<div style="font-family: Fraunces, serif; font-size: 15px; line-height: 1.3; color: #eef5f9; margin-top: 6px;">{{p.title}}</div>
+<div style="font-size: 12.5px; line-height: 1.5; color: #b9c7d1; margin-top: 6px;">{{p.brief}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96; margin-top: 8px;">{{p.meta}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; color: #5fd4ff; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(95,212,255,0.14);">{{p.hint}}</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"item":{"editor":null},"$preview":{"width":300,"height":170}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var d = {
+      kicker: 'POLITICAL · GERMANY', color: '#9b8cf8', status: 'HIGH · 85', statusColor: '#ff6a4d',
+      title: 'Tens of Thousands March Across Germany to Protest Far-Right AfD',
+      brief: 'The narrative began on September 4, 2026, with reports that Germany’s far-right AfD was poised for a historic state election win in Saxony-Anhalt.',
+      meta: '10 EVENTS · 11 SOURCES · UPDATED 11d AGO', hint: 'CLICK · OPEN THIS STORY'
+    };
+    var it = this.props.item || {};
+    var p = {};
+    Object.keys(d).forEach(function (k) { p[k] = it[k] != null ? it[k] : d[k]; });
+    return { p: p };
+  }
+}
+</script>
+</body>
+</html>

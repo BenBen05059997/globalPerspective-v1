@@ -90,6 +90,42 @@ straight to the full story. Wireframe: board "Home — click an event: the story
 - **Honesty:** the card is a strict subset of the dossier. A block with no data (no cause chain yet, no forecast) is
   omitted, never filled with placeholder text.
 
+### Shared: story links + the StoryPeek hover preview: DECIDED (operator, 2026-09-25)
+Anywhere a story is mentioned (a link in a summary, a map pin, a board card or bubble, a briefing item, a related-story
+row), hovering it or focusing it with the keyboard shows the same small **StoryPeek**. This is one shared logic + design,
+built once and used everywhere. Wireframe: board "Shared: StoryPeek" (row 3, far right), used live by the home card, the
+globe/radar pins and the board MAP/WEB views.
+
+**What the peek shows** (read-only, nothing clickable inside it):
+type · place — status/tier → headline → a one-line brief (the story's latest summary line) → counts + honest
+"updated X ago" → a hint saying what a click will do ("open its card here" on the home page, "open the full story"
+elsewhere). If a field is missing it is left out; the peek is never padded with placeholder text.
+
+**Behaviour:**
+- Opens after ~300 ms hover (no flicker while the mouse passes over), instantly on keyboard focus; closes on leave, blur
+  or Esc. It must never cover the link it belongs to, and it flips to the side or above near an edge.
+- Accessibility: `role="tooltip"` + `aria-describedby` on the link; the link itself stays a normal link/button.
+- Phones have no hover: a tap acts directly (on the home page it opens the story card, which is the preview there).
+- Reduced motion: no fade or slide animation.
+
+**Code shape (proposed, in `src/shared/ui/story/`):**
+| Piece | Job |
+|---|---|
+| `StoryLink` | Renders a mention (event / other story / actor styles from the card decision above), wires hover/focus → peek, and click → the right action for the surface (passed in as a prop). |
+| `StoryPeek` | The preview's look, pure presentational, props only. |
+| `usePeek()` | Shared open/close timing, Esc, edge-aware positioning (small in-house helper; no new dependency without a yes). |
+| `peekData(story)` | One pure function that turns a story record into the peek's fields, same wording everywhere. |
+| `linkMentions(text, known)` | Deterministic: turns a summary string into text + link segments, only for exact matches to real `threadId`s, timeline events or known actors. |
+
+**Data:** the lightweight story records the pages already load (archive_range entries, which already drop AI fields
+to stay under the 6 MB limit, plus `world/latest.json` situations). No new endpoint; if a peek needs a field not in
+the lightweight record, it's left out rather than fetched per hover.
+
+**Replaces** five separate hand-made hover tooltips found in the code today: `SituationMap.jsx`, `SituationMap3D.jsx`,
+`CountryOverviewMap.jsx`, `SpiderWorld.jsx`, and (a different kind, a quality flag) `economy/QualityFlag.jsx`.
+The first four move to StoryPeek (or a country-flavoured variant of it). QualityFlag keeps its own content but should
+use the same `usePeek()` behaviour.
+
 ### Shared across all three (build once in `src/shared/ui` or a `stories` feature)
 - **One status vocabulary:** ▲ escalating / ● new / ◆ steady / ▼ cooling, from one deterministic function. It is used
   by board columns, console feed rows and pins (pulse **only** for ▲ and ● under 24h, per the home brief), and the

@@ -107,9 +107,10 @@ button{font-family:inherit}
 <sc-if value="{{isMap}}" hint-placeholder-val="{{ false }}">
 <div style="position: relative; height: 100%; background: #06101c; border: 1px solid rgba(95,212,255,0.25); border-radius: 4px; overflow: hidden; background-image: linear-gradient(rgba(95,212,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(95,212,255,0.06) 1px, transparent 1px); background-size: 68px 68px;">
 <sc-for list="{{pins}}" as="p" hint-placeholder-count="8">
-<a href="{{p.href}}" style="{{p.style}}"><span style="{{p.dot}}"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{p.color}}; white-space: nowrap;">{{p.status}} {{p.short}}</span></a>
+<a href="{{p.href}}" onMouseEnter="{{p.peekOn}}" onMouseLeave="{{peekOff}}" onFocus="{{p.peekOn}}" onBlur="{{peekOff}}" style="{{p.style}}"><span style="{{p.dot}}"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{p.color}}; white-space: nowrap;">{{p.status}} {{p.short}}</span></a>
 </sc-for>
 <div style="position: absolute; left: 14px; bottom: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96;">SAME FLAT MAP AS THE CONSOLE'S RADAR MODE · PINS SIT ON THE STORY'S COUNTRY</div>
+<sc-if value="{{hasPeek}}" hint-placeholder-val="{{ false }}"><div style="{{peekStyle}}"><dc-import name="StoryPeek" item="{{peek}}" hint-size="300px,170px"></dc-import></div></sc-if>
 </div>
 </sc-if>
 
@@ -122,9 +123,10 @@ button{font-family:inherit}
 </sc-for>
 </svg>
 <sc-for list="{{bubbles}}" as="b" hint-placeholder-count="8">
-<a href="{{b.href}}" style="{{b.style}}"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{b.color}};">{{b.status}}</span><span style="font-family: Fraunces, serif; font-size: 13px; line-height: 1.25; color: #eef5f9;">{{b.short}}</span></a>
+<a href="{{b.href}}" onMouseEnter="{{b.peekOn}}" onMouseLeave="{{peekOff}}" onFocus="{{b.peekOn}}" onBlur="{{peekOff}}" style="{{b.style}}"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{b.color}};">{{b.status}}</span><span style="font-family: Fraunces, serif; font-size: 13px; line-height: 1.25; color: #eef5f9;">{{b.short}}</span></a>
 </sc-for>
 <div style="position: absolute; left: 14px; bottom: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96;">FROM /SPIDER-DEMO'S WORLD TIER · BUBBLE SIZE = RISK · DASHED = "POSSIBLY RELATED" (SHARED COUNTRY, ACTOR OR MARKET) — NEVER "CAUSED"</div>
+<sc-if value="{{hasPeek}}" hint-placeholder-val="{{ false }}"><div style="{{peekStyle}}"><dc-import name="StoryPeek" item="{{peek}}" hint-size="300px,170px"></dc-import></div></sc-if>
 </div>
 </sc-if>
 </div>
@@ -132,7 +134,7 @@ button{font-family:inherit}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
 class Component extends DCLogic {
-  constructor(props) { super(props); this.state = { view: 'board', axis: 'all' }; }
+  constructor(props) { super(props); this.state = { view: 'board', axis: 'all', peek: null }; }
   renderVals() {
     var self = this, V = this.state.view, A = this.state.axis;
     var AX = { conflict: '#ee7754', political: '#9b8cf8', economic: '#38b6de', humanitarian: '#d89e28' };
@@ -161,9 +163,16 @@ class Component extends DCLogic {
     var count = {};
     ['up', 'new', 'flat', 'down'].forEach(function (k) { count[k] = S.filter(function (s) { return s.st === k; }).length; });
     var rows = shown.slice().sort(function (a, b) { return ['up', 'new', 'flat', 'down'].indexOf(a.st) - ['up', 'new', 'flat', 'down'].indexOf(b.st); }).map(card);
+    var BRIEF = {
+      afd: 'The narrative began on September 4, 2026, with reports that Germany’s far-right AfD was poised for a historic state election win in Saxony-Anhalt.',
+      drone: 'Germany is investigating a foiled drone attack on Leipzig airport, with leads pointing to Russia’s GRU.',
+      saudi: 'Saudi Arabia shut its East-West pipeline after a drone attack launched from Iraq; the Houthis claimed the strike.',
+      brics: 'The BRICS summit in New Delhi adopted a joint declaration urging maximum restraint in the Middle East.'
+    };
+    var peekAt = function (s, x, y) { return function () { self.setState({ peek: { id: s.id, x: x, y: y } }); }; };
     var pins = shown.map(function (s) {
       var x = (s.lon + 180) / 360 * 100, y = (90 - s.lat) / 180 * 100, c = ST[s.st][1];
-      return { href: s.href, short: s.short.toUpperCase(), status: ST[s.st][0].charAt(0), color: c,
+      return { href: s.href, peekOn: peekAt(s, x, y), short: s.short.toUpperCase(), status: ST[s.st][0].charAt(0), color: c,
         style: 'position: absolute; left: ' + x + '%; top: ' + y + '%; display: flex; align-items: center; gap: 6px; transform: translate(-6px, -6px);',
         dot: 'width: 12px; height: 12px; border-radius: 50%; background: ' + AX[s.axis] + '; box-shadow: 0 0 ' + (s.st === 'up' ? 14 : 6) + 'px ' + AX[s.axis] + '; flex-shrink: 0;' };
     });
@@ -176,7 +185,7 @@ class Component extends DCLogic {
     });
     var bubbles = shown.map(function (s) {
       var c = AX[s.axis];
-      return { href: s.href, short: s.short, status: ST[s.st][0], color: ST[s.st][1],
+      return { href: s.href, short: s.short, status: ST[s.st][0], color: ST[s.st][1], peekOn: peekAt(s, s.wx / 1376 * 100, s.wy / 640 * 100),
         style: 'position: absolute; left: ' + (s.wx / 1376 * 100) + '%; top: ' + (s.wy / 640 * 100) + '%; width: ' + (s.r * 2) + 'px; height: ' + (s.r * 2) + 'px; margin: -' + s.r + 'px 0 0 -' + s.r + 'px; border-radius: 50%; border: 1.5px solid ' + c + '; background: radial-gradient(circle, ' + c + '33, #06101c 75%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; padding: 8px; box-sizing: border-box;' };
     });
     var btn = function (on) { return 'height: 32px; padding: 0 12px; border: none; border-radius: 4px; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + '; font-family: JetBrains Mono, monospace; font-size: 11px; letter-spacing: 0.06em; cursor: pointer;'; };
@@ -188,7 +197,12 @@ class Component extends DCLogic {
       return { label: c[1], on: on, pick: function () { self.setState({ axis: c[0] }); },
         style: 'height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid ' + c[2] + (on ? '' : '55') + '; background: ' + (on ? c[2] + '26' : 'transparent') + '; color: ' + c[2] + '; font-family: JetBrains Mono, monospace; font-size: 10px; letter-spacing: 0.08em; cursor: pointer;' };
     });
+    var pk = this.state.peek, ps = pk && byId[pk.id];
+    var peek = ps ? { kicker: ps.kicker, color: AX[ps.axis], title: ps.title, status: ST[ps.st][0], statusColor: ST[ps.st][1],
+      brief: BRIEF[ps.id] || '[One-line brief — the story’s latest summary]', meta: ps.risk + ' · ' + ps.src + ' SOURCES · UPDATED ' + ps.upd.toUpperCase(), hint: 'CLICK · OPEN THE FULL STORY' } : {};
+    var peekStyle = ps ? 'position: absolute; z-index: 6; left: ' + pk.x + '%; top: ' + pk.y + '%; transform: translate(' + (pk.x > 70 ? 'calc(-100% - 24px)' : '24px') + ', ' + (pk.y > 55 ? 'calc(-100% + 10px)' : '-10px') + ');' : 'display: none;';
     return {
+      hasPeek: !!ps, peek: peek, peekStyle: peekStyle, peekOff: function () { self.setState({ peek: null }); },
       views: views, chips: chips, columns: columns, rows: rows, pins: pins, links: links, bubbles: bubbles, count: count,
       isBoard: V === 'board', isTable: V === 'table', isMap: V === 'map', isWeb: V === 'web'
     };

@@ -66,7 +66,7 @@ button{font-family:inherit}
 <sc-if value="{{p.pulse}}" hint-placeholder-val="{{ false }}">
 <span class="gp-pulse" style="{{p.pulseStyle}}"></span>
 </sc-if>
-<button type="button" onClick="{{p.pick}}" aria-label="{{p.label}}" style="{{p.style}}"></button>
+<button type="button" onClick="{{p.pick}}" onMouseEnter="{{p.peekOn}}" onMouseLeave="{{peekOff}}" onFocus="{{p.peekOn}}" onBlur="{{peekOff}}" aria-label="{{p.label}}" style="{{p.style}}"></button>
 </sc-for>
 <sc-if value="{{hasCallout}}" hint-placeholder-val="{{ true }}">
 <div style="{{calloutStyle}}">
@@ -75,6 +75,7 @@ button{font-family:inherit}
 <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96; margin-top: 6px;">{{sel.note}}</div>
 </div>
 </sc-if>
+<sc-if value="{{peekOnMap}}" hint-placeholder-val="{{ false }}"><div style="{{peekMapStyle}}"><dc-import name="StoryPeek" item="{{peek}}" hint-size="300px,170px"></dc-import></div></sc-if>
 </div>
 </sc-if>
 
@@ -89,12 +90,13 @@ button{font-family:inherit}
 </svg>
 <div style="{{sweepStyle}}"></div>
 <sc-for list="{{flatPins}}" as="p" hint-placeholder-count="4">
-<button type="button" onClick="{{p.pick}}" aria-label="{{p.label}}" style="{{p.style}}"></button>
+<button type="button" onClick="{{p.pick}}" onMouseEnter="{{p.peekOn}}" onMouseLeave="{{peekOff}}" onFocus="{{p.peekOn}}" onBlur="{{peekOff}}" aria-label="{{p.label}}" style="{{p.style}}"></button>
 <sc-if value="{{p.lit}}" hint-placeholder-val="{{ false }}">
 <div style="{{p.labelStyle}}">{{p.short}}</div>
 </sc-if>
 </sc-for>
 <div style="position: absolute; left: 12px; top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #5fd4ff;">RADAR · SCANNING · {{sweepDeg}}°</div>
+<sc-if value="{{peekOnMap}}" hint-placeholder-val="{{ false }}"><div style="{{peekMapStyle}}"><dc-import name="StoryPeek" item="{{peek}}" hint-size="300px,170px"></dc-import></div></sc-if>
 </div>
 </sc-if>
 
@@ -149,7 +151,9 @@ button{font-family:inherit}
 <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96; margin-top: 6px;">{{card.axes}} · UPDATED {{card.updated}}</div>
 
 <div style="display: flex; align-items: baseline; margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em;"><span style="color: #5fd4ff; flex-grow: 1;">WHAT'S HAPPENING</span><a href="{{card.hrefTimeline}}" style="font-size: 10px;">TIMELINE →</a></div>
-<p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.65; color: #d6e2ea;"><sc-for list="{{card.segs}}" as="g" hint-placeholder-count="5"><sc-if value="{{g.isText}}" hint-placeholder-val="{{ true }}"><span>{{g.text}}</span></sc-if><sc-if value="{{g.isEvent}}" hint-placeholder-val="{{ false }}"><a href="{{g.href}}" title="Event in this story — opens its place in the timeline" style="color: #eef5f9; font-size: 13.5px; border-bottom: 1px dotted #5fd4ff;">{{g.text}}</a></sc-if><sc-if value="{{g.isStory}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{g.pick}}" title="Another story we track — opens it here" style="font: inherit; background: {{g.bg}}; border: none; border-bottom: 1.5px solid {{g.color}}; padding: 0 3px; color: #eef5f9; cursor: pointer;"><span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: {{g.color}}; margin-right: 4px; vertical-align: middle;"></span>{{g.text}}</button></sc-if><sc-if value="{{g.isActor}}" hint-placeholder-val="{{ false }}"><a href="#" title="Actor profile" style="color: #eef5f9; font-size: 13.5px; border-bottom: 1px solid rgba(214,226,234,0.35);">{{g.text}}</a></sc-if></sc-for></p>
+<div style="position: relative;"><p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.65; color: #d6e2ea;"><sc-for list="{{card.segs}}" as="g" hint-placeholder-count="5"><sc-if value="{{g.isText}}" hint-placeholder-val="{{ true }}"><span>{{g.text}}</span></sc-if><sc-if value="{{g.isEvent}}" hint-placeholder-val="{{ false }}"><a href="{{g.href}}" title="Event in this story — opens its place in the timeline" style="color: #eef5f9; font-size: 13.5px; border-bottom: 1px dotted #5fd4ff;">{{g.text}}</a></sc-if><sc-if value="{{g.isStory}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{g.pick}}" onMouseEnter="{{g.peekOn}}" onMouseLeave="{{peekOff}}" onFocus="{{g.peekOn}}" onBlur="{{peekOff}}" aria-describedby="story-peek" style="font: inherit; background: {{g.bg}}; border: none; border-bottom: 1.5px solid {{g.color}}; padding: 0 3px; color: #eef5f9; cursor: pointer;"><span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: {{g.color}}; margin-right: 4px; vertical-align: middle;"></span>{{g.text}}</button></sc-if><sc-if value="{{g.isActor}}" hint-placeholder-val="{{ false }}"><a href="#" title="Actor profile" style="color: #eef5f9; font-size: 13.5px; border-bottom: 1px solid rgba(214,226,234,0.35);">{{g.text}}</a></sc-if></sc-for></p>
+<sc-if value="{{peekInText}}" hint-placeholder-val="{{ false }}"><div id="story-peek" style="position: absolute; left: 0; top: 100%; margin-top: 6px; z-index: 5;"><dc-import name="StoryPeek" item="{{peek}}" hint-size="300px,170px"></dc-import></div></sc-if>
+</div>
 
 <div style="display: flex; align-items: baseline; margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em;"><span style="color: #5fd4ff; flex-grow: 1;">WHAT IT MEANS</span><a href="{{card.hrefPaths}}" style="font-size: 10px;">OUTLOOK →</a></div>
 <p style="margin: 6px 0 0; font-size: 13.5px; line-height: 1.6; color: #d6e2ea;">{{card.meaning}}</p>
@@ -228,7 +232,7 @@ class Component extends DCLogic {
     super(props);
     var reduce = false;
     try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
-    this.state = { mode: 'globe', lon0: 10, sweep: 0, moving: !reduce, selected: 'afd', from: null, alert: false };
+    this.state = { mode: 'globe', lon0: 10, sweep: 0, moving: !reduce, selected: 'afd', from: null, alert: false, peek: { id: 'drone', where: 'text' } };
   }
   componentDidMount() {
     var self = this;
@@ -261,6 +265,19 @@ class Component extends DCLogic {
       { id: 'drone', title: 'Germany Probes Foiled Drone Attack on Leipzig Airport with Leads to Russian GRU', short: 'LEIPZIG DRONE PROBE', kicker: 'CONFLICT · GERMANY', axis: 'conflict', situation: false, lon: 12.4, lat: 51.3, meta: 'STORY · 1 SOURCE', note: 'COUNTRY SHOWN · NO LIVE SITUATION' },
       { id: 'brics', title: 'BRICS Summit in New Delhi Adopts Joint Declaration Urging Maximum Restraint in Middle East', short: 'BRICS DECLARATION', kicker: 'POLITICAL · MULTILATERAL', axis: 'political', situation: false, lon: 77, lat: 28.6, meta: 'STORY', note: 'SUMMIT HOST SHOWN' }
     ];
+    var PEEK = {
+      afd: { brief: 'The narrative began on September 4, 2026, with reports that Germany’s far-right AfD was poised for a historic state election win in Saxony-Anhalt.', meta: '10 EVENTS · 11 SOURCES · UPDATED 11d AGO', status: 'HIGH · 85' },
+      saudi: { brief: 'Saudi Arabia shut its East-West pipeline after a drone attack launched from Iraq; the Houthis claimed the strike.', meta: '[N] EVENTS · [N] SOURCES · UPDATED [X] AGO' },
+      drone: { brief: 'Germany is investigating a foiled drone attack on Leipzig airport, with leads pointing to Russia’s GRU.', meta: '1 SOURCE · SINGLE-SOURCE · UPDATED [X] AGO' },
+      brics: { brief: 'The BRICS summit in New Delhi adopted a joint declaration urging maximum restraint in the Middle East.', meta: '[N] EVENTS · [N] SOURCES · UPDATED [X] AGO' },
+      cyclone: { brief: 'GDACS Orange alert: tropical storm with maximum wind speed of 83 km/h; 1 country affected.', meta: 'LIVE SITUATION · GDACS · UPDATED 56m', status: 'ELEVATED' }
+    };
+    function peekFor(it, hint) {
+      var pk = PEEK[it.id] || {};
+      var status = pk.status || (it.tier || '[TIER]');
+      return { kicker: it.kicker, color: AX[it.axis], title: it.title, status: status, statusColor: status.indexOf('HIGH') === 0 ? '#ff6a4d' : '#ffb347',
+        brief: pk.brief || '[One-line brief — the story’s latest summary]', meta: pk.meta || '[N] EVENTS · UPDATED [X] AGO', hint: hint };
+    }
     var CARDS = {
       afd: { tier: 'HIGH · 85', axes: 'POL 85 · ECO 60 · CON — · HUM —', updated: '11d AGO', href: 'Dossier.dc.html',
         segs: [['The story began on Sep 4, when reports said Germany’s far-right AfD was '], ['poised for a historic win in Saxony-Anhalt', 'event'], ['. After the result, '], ['tens of thousands marched across Germany in protest', 'event'], ['. Also in Germany: '], ['a foiled drone attack on Leipzig airport is under investigation', 'story', 'drone'], ['.']],
@@ -301,7 +318,8 @@ class Component extends DCLogic {
               ? 'position: absolute; left: ' + (pp.x - size / 2) + 'px; top: ' + (pp.y - size / 2) + 'px; width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; border: 2px solid #04070c; background: ' + c + '; box-shadow: 0 0 14px ' + c + ', 0 0 0 ' + (sel ? 5 : 3) + 'px ' + c + '55; padding: 0; cursor: pointer;'
               : 'position: absolute; left: ' + (pp.x - size / 2) + 'px; top: ' + (pp.y - size / 2) + 'px; width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; border: 1.5px ' + (sel ? 'solid' : 'dashed') + ' ' + c + '; background: ' + c + (sel ? '33' : '14') + '; padding: 0; cursor: pointer;',
             pulseStyle: 'position: absolute; left: ' + (pp.x - 12) + 'px; top: ' + (pp.y - 12) + 'px; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid ' + c + '; pointer-events: none;',
-            pick: function () { self.setState({ selected: it.id, from: null, lon0: it.lon }); }
+            pick: function () { self.setState({ selected: it.id, from: null, lon0: it.lon, peek: null }); },
+            peekOn: function () { if (!sel) self.setState({ peek: { id: it.id, where: 'map', x: pp.x, y: pp.y, w: 620, h: 620 } }); }
           });
         }
       } else {
@@ -316,7 +334,8 @@ class Component extends DCLogic {
           label: it.title, short: it.short, lit: lit,
           style: 'position: absolute; left: ' + (fx - fs / 2) + 'px; top: ' + (fy - fs / 2) + 'px; width: ' + fs + 'px; height: ' + fs + 'px; border-radius: 50%; padding: 0; cursor: pointer; ' + (it.situation ? 'border: 2px solid #04070c; background: ' + c + ';' : 'border: 1.5px dashed ' + c + '; background: ' + c + '22;') + ' opacity: ' + (lit ? 1 : 0.35) + '; box-shadow: 0 0 ' + boost + 'px ' + c + ';',
           labelStyle: 'position: absolute; left: ' + (fx + 12) + 'px; top: ' + (fy - 9) + 'px; font-family: JetBrains Mono, monospace; font-size: 10px; letter-spacing: 0.08em; color: ' + c + '; background: rgba(4,8,14,0.85); padding: 2px 6px; border: 1px solid ' + c + '66; border-radius: 2px; opacity: ' + (sel ? 1 : (0.4 + glow * 0.6)).toFixed(2) + ';',
-          pick: function () { self.setState({ selected: it.id, from: null }); }
+          pick: function () { self.setState({ selected: it.id, from: null, peek: null }); },
+          peekOn: function () { if (!sel) self.setState({ peek: { id: it.id, where: 'map', x: fx, y: fy, w: 840, h: 420 } }); }
         });
       }
       feed.push({
@@ -330,6 +349,7 @@ class Component extends DCLogic {
     var s = items.filter(function (i) { return i.id === st.selected; })[0];
     var byId = {};
     items.forEach(function (i) { byId[i.id] = i; });
+    var pk = st.peek && byId[st.peek.id] ? st.peek : null;
     var card = null;
     if (s) {
       var cd = CARDS[s.id] || DEFAULT_CARD, base = cd.href;
@@ -346,7 +366,8 @@ class Component extends DCLogic {
           return {
             text: g[0], isText: kind === 'text', isEvent: kind === 'event', isStory: kind === 'story', isActor: kind === 'actor',
             href: base + '#timeline', color: target ? AX[target.axis] : '#5fd4ff', bg: target ? AX[target.axis] + '1f' : 'transparent',
-            pick: function () { if (target) self.setState({ selected: target.id, from: s.id, lon0: target.lon }); }
+            pick: function () { if (target) self.setState({ selected: target.id, from: s.id, lon0: target.lon, peek: null }); },
+            peekOn: function () { if (target) self.setState({ peek: { id: target.id, where: 'text' } }); }
           };
         }),
         causes: cd.causes.map(function (c) {
@@ -368,6 +389,10 @@ class Component extends DCLogic {
       feed: feed,
       hasCard: !!card, noCard: !card,
       card: card || { title: '', kicker: '', color: '#fff', tier: '', tierColor: '#fff', axes: '', updated: '', href: '#', hrefTimeline: '#', hrefPaths: '#', hrefWeb: '#', meaning: '', likely: '', hasFrom: false, fromShort: '', backFrom: function () {}, segs: [], causes: [] },
+      peek: pk ? peekFor(byId[pk.id], pk.where === 'text' ? 'CLICK · OPEN ITS CARD HERE (← BACK RETURNS)' : 'CLICK · OPEN ITS CARD') : {},
+      peekInText: !!(pk && pk.where === 'text'), peekOnMap: !!(pk && pk.where === 'map'),
+      peekMapStyle: pk && pk.where === 'map' ? 'position: absolute; z-index: 6; left: ' + (pk.x > pk.w - 330 ? pk.x - 318 : pk.x + 18) + 'px; top: ' + Math.max(4, Math.min(pk.y - 20, pk.h - 176)) + 'px;' : 'display: none;',
+      peekOff: function () { self.setState({ peek: null }); },
       closeCard: function () { self.setState({ selected: null, from: null }); },
       hasCallout: !!(sp && sp.front),
       sel: s ? { title: s.title, kicker: s.kicker, note: s.note, color: AX[s.axis] } : { title: '', kicker: '', note: '', color: '#fff' },

@@ -60,11 +60,16 @@ button{font-family:inherit}
 <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96; margin-top: 4px;">Q · {{question}}</div>
 <div style="font-family: Fraunces, serif; font-size: 19px; line-height: 1.3; color: #eef5f9; margin-top: 6px;">{{card.title}}</div>
 <sc-if value="{{card.hasSub}}" hint-placeholder-val="{{ true }}"><p style="margin: 6px 0 0; font-size: 12.5px; line-height: 1.5; color: #c9d6df;">{{card.sub}}</p></sc-if>
+<sc-if value="{{card.hasWins}}" hint-placeholder-val="{{ false }}"><div style="display: flex; gap: 4px; margin-top: 8px;"><sc-for list="{{card.wins}}" as="w" hint-placeholder-count="2"><button type="button" onClick="{{w.pick}}" style="{{w.style}}">{{w.label}}</button></sc-for></div></sc-if>
+<sc-if value="{{card.hasRun}}" hint-placeholder-val="{{ false }}"><div style="margin-top: 8px; padding: 8px 10px; border: 1px solid rgba(255,179,71,0.6); background: repeating-linear-gradient(45deg, rgba(255,179,71,0.14) 0 3px, rgba(255,179,71,0.03) 3px 7px);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #ffb347;">{{card.runK}}</div><div style="font-size: 12.5px; line-height: 1.45; color: #fff3dc; margin-top: 3px;">{{card.runText}}</div></div></sc-if>
+<sc-if value="{{card.hasBA}}" hint-placeholder-val="{{ false }}"><div style="margin-top: 8px; padding: 8px 10px; background: rgba(12,22,34,0.9);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6fd29a;">{{card.baHead}}</div><div style="font-size: 11.5px; line-height: 1.4; color: #8a99a5; margin-top: 3px;">{{card.baFrom}}</div><div style="font-size: 11.5px; line-height: 1.4; color: #eef5f9;">{{card.baTo}}</div><sc-for list="{{card.ba}}" as="b" hint-placeholder-count="5"><div style="display: flex; align-items: center; gap: 8px; margin-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px;"><span style="width: 96px; color: {{b.c}};">{{b.k}}</span><span style="position: relative; flex-grow: 1; height: 8px; background: rgba(95,212,255,0.08);"><span style="{{b.was}}"></span><span style="{{b.now}}"></span></span><span style="width: 74px; text-align: right; color: #d6e2ea;">{{b.txt}}</span></div></sc-for></div></sc-if>
 <sc-for list="{{card.rows}}" as="r" hint-placeholder-count="3">
 <button type="button" onClick="{{r.pick}}" style="{{r.style}}">
 <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.05em; color: {{r.kc}};">{{r.k}}</div>
 <div style="font-size: 12.5px; line-height: 1.42; color: #eef5f9; margin-top: 2px;">{{r.v}}</div>
 <sc-if value="{{r.hasNote}}" hint-placeholder-val="{{ false }}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; line-height: 1.5; color: #7d8b96; margin-top: 3px;">{{r.note}}</div></sc-if>
+<sc-if value="{{r.hasWhy}}" hint-placeholder-val="{{ false }}"><div style="font-size: 11.5px; line-height: 1.42; color: #b9c7d1; margin-top: 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #7d8b96;">MODEL EXPLANATION (STORED) · </span>{{r.why}}</div></sc-if>
+<sc-if value="{{r.hasFlag}}" hint-placeholder-val="{{ false }}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; line-height: 1.45; color: #ff9a85; margin-top: 4px;">⚠ {{r.flag}}</div></sc-if>
 </button>
 </sc-for>
 <sc-if value="{{card.hasSetup}}" hint-placeholder-val="{{ false }}">
@@ -91,6 +96,10 @@ button{font-family:inherit}
 <sc-for list="{{bands}}" as="b" hint-placeholder-count="3"><div style="{{b.style}}">{{b.label}}</div></sc-for>
 <sc-for list="{{diamonds}}" as="d" hint-placeholder-count="6"><div style="{{d.style}}">◆</div></sc-for>
 <div style="{{nowLine}}"></div><div style="{{nowLab}}">TODAY 25 SEP</div>
+<sc-for list="{{tbRects}}" as="q" hint-placeholder-count="2"><div style="{{q.style}}">{{q.label}}</div></sc-for>
+<svg width="1392" height="100" viewBox="0 0 1392 100" style="position: absolute; left: 0; top: 0; overflow: visible;" aria-hidden="true"><sc-for list="{{tbPaths}}" as="p" hint-placeholder-count="5"><path d="{{p.d}}" fill="none" stroke="{{p.c}}" stroke-width="{{p.w}}" opacity="{{p.op}}" stroke-linejoin="round"></path></sc-for></svg>
+<sc-for list="{{tbMarks}}" as="m" hint-placeholder-count="8"><button type="button" onClick="{{m.pick}}" aria-label="{{m.aria}}" style="{{m.style}}"></button></sc-for>
+<sc-for list="{{tbLabs}}" as="t" hint-placeholder-count="6"><div style="{{t.style}}">{{t.text}}</div></sc-for>
 <sc-for list="{{axis}}" as="x" hint-placeholder-count="7"><div style="{{x.style}}">{{x.label}}</div></sc-for>
 </div>
 <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px;">
@@ -119,7 +128,7 @@ class Component extends DCLogic {
     for (var g = -120; g <= 150; g += 30) grid += 'M' + X(g).toFixed(0) + ' 52V704';
     for (var h = 0; h <= 60; h += 20) grid += 'M0 ' + Y(h).toFixed(0) + 'H1440';
     // approximate centroids; "Middle East" is a region tag, never drawn as a point
-    var P = { 'United States': [-98, 39], 'Iran': [53, 33], 'Oman': [58, 21], 'Hormuz': [56.3, 26.6], 'South Korea': [128, 36], 'India': [78, 22], 'Yemen': [47, 15], 'Saudi Arabia': [44, 24], 'China': [104, 35] };
+    var P = { 'United States': [-98, 39], 'Iran': [53, 33], 'Oman': [58, 21], 'Hormuz': [56.3, 26.6], 'South Korea': [128, 36], 'India': [78, 22], 'Yemen': [47, 15], 'Saudi Arabia': [44, 24], 'China': [104, 35], 'United Arab Emirates': [54, 24], 'France': [2, 46.5], 'Japan': [138, 36], 'Russia': [60, 58], 'Germany': [10, 51], 'Ukraine': [31, 49], 'Israel': [35, 31.5], 'DR Congo': [23, -3] };
     function px(n) { return [X(P[n][0]), Y(P[n][1])]; }
 
     // ---- real data (verified against the archive + forecast log, 25 Sep) ----
@@ -149,21 +158,54 @@ class Component extends DCLogic {
     var CATC = { ECONOMY: '#38b6de', CONFLICT: '#ee7754', MILITARY: '#ee7754', POLITICS: '#9b8cf8' };
     var CONFW = { STRONG: 3, MEDIUM: 2, WEAK: 1 };
 
+    // What changed: Iran risk readings (v2 snapshots, overall + conflict/political/economic/humanitarian) and the stored change log
+    var HIST = [["2026-07-07",85,75,60,85,50],["2026-07-08",85,85,60,80,50],["2026-07-09",85,85,70,80,60],["2026-07-10",90,90,75,85,70],["2026-07-11",95,95,85,80,85],["2026-07-26",98,98,85,92,90],["2026-07-27",95,95,85,90,80],["2026-07-28",90,85,75,90,80],["2026-07-29",90,90,85,80,80],["2026-07-30",95,95,85,90,70],["2026-07-31",95,95,85,90,75],["2026-08-01",95,95,90,95,85],["2026-08-02",95,95,80,90,85],["2026-08-03",95,90,85,95,80],["2026-08-04",90,85,80,90,70],["2026-08-06",95,95,80,90,85],["2026-08-07",95,95,85,90,80],["2026-08-08",98,98,85,90,80],["2026-08-09",95,95,85,80,90],["2026-08-10",95,95,85,80,90],["2026-08-11",95,95,85,80,90],["2026-08-12",95,95,85,80,90],["2026-08-13",95,95,85,80,90],["2026-08-15",95,95,85,80,90],["2026-08-16",95,95,85,80,90],["2026-08-17",95,95,75,80,90],["2026-08-18",95,95,85,80,90],["2026-08-19",95,95,85,90,70],["2026-08-20",95,95,85,90,75],["2026-08-21",95,95,85,90,75],["2026-08-22",95,95,85,90,75],["2026-09-04",95,95,85,90,75],["2026-09-05",95,95,85,90,75],["2026-09-06",95,95,85,90,70],["2026-09-07",95,95,85,90,75],["2026-09-08",95,95,85,90,70],["2026-09-09",95,95,85,90,75],["2026-09-10",95,95,85,90,75],["2026-09-11",95,95,85,90,75]];
+    var HEAD = { '2026-07-07': 'Iran navigates fragile peace talks amid leadership transition and oil crisis', '2026-08-12': 'Iran digs in on Hormuz terms as proxy attacks escalate regionally', '2026-09-11': 'Iran Faces Escalating US-Israel Conflict and Internal Power Struggles' };
+    // [date, trigger date, trigger headline, stored explanation (first sentence), direction-check flag]
+    var CLOG = [
+      ['2026-07-08', '8 JUL', 'US launches strikes on Iran after tankers hit in Strait of Hormuz, revokes oil waiver', 'The US launching strikes on Iran directly escalated the conflict from maritime tensions to direct military confrontation, raising the conflict score from 75 to 85.', ''],
+      ['2026-07-09', '9 JUL', 'US expands military strikes on Iran after Trump says ceasefire is ‘over’', 'The US expanded military strikes on Iran, escalating the conflict and directly causing the political and humanitarian risk scores to rise by 10 points each.', ''],
+      ['2026-07-11', '11 JUL', 'Trump says missiles ‘locked, loaded and aimed at Iran’ amid renewed US-Iran tensions over Hormuz', 'Trump’s threat … directly escalated the political and humanitarian risk by signaling imminent large-scale US strikes …', ''],
+      ['2026-07-27', '26 JUL', 'Iran says it halts retaliatory attacks after US pauses strikes, raising hopes for de-escalation', 'Iran’s announcement that it halts retaliatory attacks after the US pause raised hopes for de-escalation, directly reducing the humanitarian risk score from 90 to 80.', ''],
+      ['2026-07-28', '28 JUL', 'US and Iran engage in talks during pause in strikes; Trump says ‘good chance’ for deal', 'The US and Iran engaging in talks … directly reduces conflict and political risk, explaining the drop in both axes.', ''],
+      ['2026-07-29', '29 JUL', 'US and Saudi Arabia launch strikes on Iran-backed groups in Iraq; Iran retaliates with ballistic missiles at US forces in Jordan', '… the renewed fighting disrupted economic stability, lowering the economic score due to heightened uncertainty and potential shipping disruptions.', 'EXPLAINS A LOWER ECONOMIC RISK WITH MORE DISRUPTION'],
+      ['2026-07-30', '30 JUL', 'US launches two-hour wave of strikes on Iran, hitting dozens of targets, after Iranian missile attack on US forces in Jordan', '… driving the economic score up due to war risk and the humanitarian score down due to increased casualties and instability.', 'EXPLAINS A LOWER HUMANITARIAN RISK WITH MORE CASUALTIES'],
+      ['2026-08-02', '2 AUG', 'Trump cancels Iran strikes, says Middle East allies outline deal to end war', 'Trump cancels Iran strikes and allies outline a deal to end the war, reducing immediate political escalation risk and lowering the political score from 90 to 80.', ''],
+      ['2026-08-04', '3 AUG', 'Iran denies Trump’s claim that new talks will begin on Monday', 'Iran’s denial … undermines the ceasefire hopes, reducing the humanitarian risk score by 10 points as the prospect of de-escalation becomes less certain.', 'EXPLAINS A LOWER RISK WITH WORSE PROSPECTS'],
+      ['2026-08-06', '5 AUG', 'UN rights chief alarmed by rise in Iran executions since March, 56 executed on national security charges', 'The UN rights chief’s alarm over 56 executions … directly escalates the humanitarian axis (+15) …, raising conflict risk (+10) …', ''],
+      ['2026-08-09', '8 AUG', 'UAE says Iran attacked ADNOC tanker in Strait of Hormuz; Iran says deal with Oman close but not enough to reopen waterway', '… raising the humanitarian score from 80 to 90, while the ongoing dispute over the waterway’s reopening … likely reduces the economic score from 90 to 80 as trade disruption becomes more concrete.', 'EXPLAINS A LOWER ECONOMIC RISK WITH MORE DISRUPTION'],
+      ['2026-08-17', '17 AUG', 'Israel strikes Lebanon as US prepares fresh Iran sanctions, killing 11 in deadliest escalation since ceasefire', 'The Israeli strike on Lebanon … strains Iran’s fragile ceasefires, reducing the political stability score as proxy conflict intensifies.', 'SCORE IS RISK, NOT STABILITY: RISK FELL WHILE THE TEXT DESCRIBES ESCALATION'],
+      ['2026-08-18', '18 AUG', 'Trump lets 60-day Iran peace deal deadline expire, threatens to bomb Oman over Strait of Hormuz', 'The expiration of the 60-day peace deal deadline … directly escalates the political risk …, shifting the political axis upward.', ''],
+      ['2026-08-19', '19 AUG', 'UAE imposes indefinite trade embargo on Iran over alleged missile attacks', 'The UAE’s indefinite trade embargo on Iran directly escalates economic isolation, driving the economic score up from 80 to 90. This action also shifts the humanitarian score down as trade disruption worsens civilian conditions …', 'EXPLAINS A LOWER HUMANITARIAN RISK WITH WORSE CONDITIONS']
+    ];
+    var AXN = ['OVERALL', 'CONFLICT', 'POLITICAL', 'ECONOMIC', 'HUMANITARIAN'], AXC = ['#eef5f9', '#ee7754', '#9b8cf8', '#38b6de', '#d89e28'];
+    // Free-form: real sources on Oman
+    var FSRC = [
+      ['2 AUG', '2026-08-02', 'al-monitor.com', 'Trump cancels Iran strikes, says deal perimeters agreed; Iran says Hormuz talks with Oman in final stages', 'Iran on Sunday said it was nearing a deal with Oman over a new route through the Strait of Hormuz, hours after the US called off major strikes to allow for diplomacy.', ['United States', 'Iran', 'Oman']],
+      ['6 AUG', '2026-08-06', 'aljazeera.com', 'Iran says deal with Oman on Strait of Hormuz is in final stages as Trump signals breakthrough', 'US officials say they would not accept any arrangement on the waterway that would leave Iran in control.', ['Iran', 'Oman', 'United States']],
+      ['8 AUG', '2026-08-08', 'al-monitor.com', 'UAE says Iran attacked ADNOC tanker in Strait of Hormuz; Iran says deal with Oman close but not enough to reopen waterway', 'Iran said on Saturday that a deal with Oman on control of the Strait of Hormuz was close but would not be enough to free up the waterway, and the United Arab Emirates said Iran had attacked an ADNOC tanker.', ['United Arab Emirates', 'Iran', 'Oman']],
+      ['18 AUG', '2026-08-18', 'cbc.ca', 'US President Trump threatens to bomb Oman if it ‘gets in the way’ of Iran deal', 'U.S. President Donald Trump has again threatened Oman as Iran says it is working with the Gulf Arab country on a plan to manage shipping through the Strait of Hormuz. Fully reopening the waterway has been a key U.S. demand.', ['United States', 'Oman', 'Iran']]
+    ];
+    var FANS = [['Oman became Iran’s partner on a new shipping route through Hormuz; by early August Tehran said a deal was near.', [0, 2]],
+      ['Washington said it would not accept any arrangement that left Iran in control of the waterway.', [1]],
+      ['When Trump threatened Oman again, Iran said it was working with Oman on a plan to manage shipping, while fully reopening the strait was a key US demand.', [3]]];
+
     // ---- lens + slides ----
-    var LENS = [['scenario', 'SCENARIO', 'branches off today, ending at their dated triggers'],
-      ['compare', 'COMPARE', 'one time-bar lane per story; shared places double-ringed'],
-      ['ripple', 'ECONOMIC RIPPLE', 'story → channel → instrument → countries ▲▼ (schematic)'],
-      ['free', 'FREE-FORM', 'answer + a map of the evidence (schematic)']];
-    var QS = { scenario: 'How could the US–Iran standoff over Hormuz develop from here?', compare: 'How do the Hormuz standoff and the US diesel-price story connect?', ripple: 'Through which market channels does the Hormuz blockade reach other economies?', free: 'Why did Oman become a target of US threats?' };
+    var LENS = [['scenario', 'SCENARIO', 'looks FORWARD: branches off today to their dated triggers'],
+      ['compare', 'COMPARE', 'looks SIDEWAYS: one lane per story, shared places'],
+      ['changed', 'WHAT CHANGED', 'looks BACK: score lines, before → after, change log'],
+      ['free', 'FREE-FORM', 'looks AT EVIDENCE: each sentence lights its sources']];
+    var QS = { scenario: 'How could the US–Iran standoff over Hormuz develop from here?', compare: 'How do the Hormuz standoff and the US diesel-price story connect?', changed: 'What changed in our read of Iran, and why?', free: 'Why did Oman become a target of US threats?' };
     var reportMode = st === 'debrief' || st === 'share';
     var lensId = reportMode ? S.lens : 'scenario';
-    var SL = lensId === 'scenario' ? ['BOTTOM LINE', 'HOW WE GOT HERE', 'SCENARIOS', 'WATCH', 'CONNECTIONS'] : lensId === 'compare' ? ['TWO STORIES', 'WHERE THEY MEET'] : ['SCHEMATIC'];
+    var SL = lensId === 'scenario' ? ['BOTTOM LINE', 'HOW WE GOT HERE', 'SCENARIOS', 'WATCH', 'CONNECTIONS'] : lensId === 'compare' ? ['TWO STORIES', 'WHERE THEY MEET'] : lensId === 'changed' ? ['BEFORE → AFTER', 'CHANGE LOG'] : ['ANSWER + EVIDENCE'];
     var slide = Math.min(S.slide, SL.length - 1), sname = SL[slide];
-    function row(k, v, note, kc, pick, on) { return { k: k, v: v, note: note || '', hasNote: !!note, kc: kc || '#8a99a5', pick: pick || function () {},
+    function row(k, v, note, kc, pick, on) { return { k: k, v: v, note: note || '', hasNote: !!note, kc: kc || '#8a99a5', pick: pick || function () {}, why: '', hasWhy: false, flag: '', hasFlag: false,
       style: 'display: block; width: 100%; text-align: left; margin-top: 8px; padding: 7px 9px; border-radius: 3px; cursor: pointer; color: inherit; background: ' + (on ? 'rgba(95,212,255,0.1)' : 'rgba(12,22,34,0.9)') + '; border: 1px solid ' + (on ? 'rgba(95,212,255,0.5)' : 'transparent') + ';' }; }
     function pickRow(i) { return function () { self.setState({ pick: S.pick === i ? null : i }); }; }
     var OURS = ['OUR DATA · STORED, DRAWN AS-IS', '#6fd29a'], RUN = ['THIS RUN · MODEL JUDGMENT', AMB], STAND = ['STAND-IN · OUR STORED FORECAST FOR [4]', AMB];
-    var card = { kicker: '', title: '', sub: '', hasSub: false, rows: [], hasFoot: false, foot: '', footC: '#7d8b96', hasSetup: false, layer: '', layerC: '#7d8b96', kc: '#5fd4ff' };
+    var card = { kicker: '', title: '', sub: '', hasSub: false, rows: [], hasFoot: false, foot: '', footC: '#7d8b96', hasSetup: false, layer: '', layerC: '#7d8b96', kc: '#5fd4ff', hasWins: false, wins: [], hasRun: false, runK: '', runText: '', hasBA: false, ba: [], baHead: '', baFrom: '', baTo: '' };
+    var win = S.win || '30', WSTART = win === '30' ? '2026-08-12' : '2026-07-07';
     var hi = { srcPlaces: false, scen: null, trig: false, links: false, compare: false };
     var mapNote = '';
 
@@ -190,10 +232,32 @@ class Component extends DCLogic {
           row('BOTH · OIL PRICES, DIFFERENT FOCUS', 'A: oil surges to $100 per barrel after Houthi attacks on Saudi tankers (26 Jul); oil falls on hopes Hormuz could reopen (4 Aug). B: diesel at a record high (4 Sep, 11 Sep); US producer inflation tops expectations on energy costs (10 Sep).', 'A: CRUDE HEADLINES · B: DIESEL AND INFLATION HEADLINES', AMB),
           row('BOTH · DIPLOMACY, OPPOSITE DIRECTION', 'A: Trump threatens to bomb Oman over its talks (17 Aug). B: Iran to discuss Hormuz with Gulf states (11 Sep).', 'THE RUN WOULD CITE EACH CELL', AMB)];
         mapNote = 'A REAL RUN FILLS THIS GRID; EVERY CELL CITES ONE STORY OR BOTH. PLACES FOLLOW THE SAME RULE AS SCENARIOS.'; }
-    } else if (lensId !== 'scenario') {
-      card.kicker = LENS.filter(function (l) { return l[0] === lensId; })[0][1] + ' · SCHEMATIC'; card.layer = 'NOT DRAWN WITH REAL DATA YET'; card.layerC = AMB;
-      if (lensId === 'ripple') { card.title = 'Story → channel → instrument → countries'; card.rows = [row('CHAIN · THIS RUN', 'Hormuz blockade → oil supply → Brent → importers', 'A MARKET-MECHANISM READ, NOT A PRICE FORECAST', AMB), row('INSTRUMENT TILE · OUR DATA', 'Live price + day move from the hourly feed (no AI)', '', '#6fd29a'), row('MAP · THIS RUN', 'Countries named as gaining ▲ or losing ▼, in words (small / moderate / large), never %', '', AMB)]; card.hasFoot = true; card.foot = 'ECONOMY IS PARKED: THE LENS STAYS, LABELLED, BUT MAKES NO “TODAY’S DRIVER” CLAIMS.'; }
-      if (lensId === 'free') { card.title = 'Your question, answered on the map'; card.rows = [row('ANSWER · THIS RUN', 'Bottom line + cited prose', '', AMB), row('EVIDENCE MAP · OUR DATA', 'The places of every cited source; click a place to see which sentences cite it', '', '#6fd29a'), row('TIME BAR · OUR DATA', 'The cited sources at their dates', '', '#6fd29a')]; }
+    } else if (lensId === 'changed') {
+      var inWin = HIST.filter(function (h) { return h[0] >= WSTART; }), h0 = inWin[0], h1 = inWin[inWin.length - 1];
+      card.hasWins = true;
+      card.wins = [['30', 'LAST 30 DAYS OF READINGS'], ['all', 'SINCE 7 JUL (ALL V2 READINGS)']].map(function (w) { var on = win === w[0]; return { label: w[1], pick: function () { self.setState({ win: w[0], pick: null }); }, style: 'height: 24px; padding: 0 8px; border-radius: 12px; cursor: pointer; font-family: ' + MONO + '; font-size: 9px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + ';' }; });
+      var entries = CLOG.filter(function (c) { return c[0] >= WSTART; });
+      if (sname === 'BEFORE → AFTER') { card.kicker = '1 · BEFORE → AFTER'; card.layer = OURS[0]; card.layerC = OURS[1]; card.title = 'Iran: ' + dm(h0[0]) + ' → ' + dm(h1[0]);
+        card.hasBA = true; card.baHead = 'OUR READINGS · COMPUTED, NO AI · LATEST READING 11 SEP (14 DAYS OLD)';
+        card.baFrom = 'THEN · ' + (HEAD[h0[0]] || ''); card.baTo = 'NOW · ' + HEAD['2026-09-11'];
+        card.ba = AXN.map(function (n, i) { var was = h0[i + 1], now = h1[i + 1], d = now - was;
+          return { k: n, c: AXC[i], txt: was + ' → ' + now + (d ? (d > 0 ? ' ▲' : ' ▼') : ' ='),
+            was: 'position: absolute; left: 0; top: 0; height: 8px; width: ' + was + '%; border: 1px solid ' + AXC[i] + '; box-sizing: border-box; opacity: 0.55;',
+            now: 'position: absolute; left: 0; top: 2px; height: 4px; width: ' + now + '%; background: ' + AXC[i] + ';' }; });
+        card.hasRun = true; card.runK = 'THIS RUN · MODEL JUDGMENT · STAND-IN WRITTEN FROM THE LOG';
+        card.runText = win === '30' ? 'The overall score sat at 95, the top of the scale, the whole time, so the movement was inside the axes: political dipped and recovered around the 60-day deadline [C1][C2]; the UAE embargo pushed economic up while humanitarian fell [C3].' : 'From 7 Jul the overall score rose from 85 to the top of the scale within days, as US strikes and the Supreme Leader’s burial moved every axis up; since then it has swung between 90 and 98 on talks, pauses and strikes, but not left the top band.';
+        card.hasFoot = true; card.foot = 'NO READINGS 23 AUG – 3 SEP, AND NONE SINCE 11 SEP (AI PAUSED). BOTH ARE SHOWN AS GAPS ON THE CHART, NEVER BRIDGED.'; }
+      if (sname === 'CHANGE LOG') { card.kicker = '2 · CHANGE LOG · ' + entries.length + ' ENTRIES'; card.layer = 'OUR DATA · READINGS + STORED NOTES'; card.layerC = OURS[1]; card.title = 'What moved, on which day, after which event';
+        card.rows = entries.slice().reverse().map(function (c, j) { var i = HIST.map(function (h) { return h[0]; }).indexOf(c[0]), cur = HIST[i], prev = HIST[i - 1], mv = [];
+          for (var k = 1; k < 5; k++) { var dd = cur[k + 1] - prev[k + 1]; if (Math.abs(dd) >= 10) mv.push(AXN[k] + ' ' + prev[k + 1] + '→' + cur[k + 1]); }
+          var idx = CLOG.indexOf(c), r = row('C' + (entries.length - j) + ' · ' + dm(c[0]) + ' · ' + (mv.join(' · ') || 'OVERALL ' + prev[1] + '→' + cur[1]), 'After: ' + c[2] + ' (' + c[1] + ')', 'MOVES COMPUTED FROM OUR READINGS', '#6fd29a', pickRow(idx), S.pick === idx);
+          r.why = c[3]; r.hasWhy = true; if (c[4]) { r.flag = 'DIRECTION CHECK: ' + c[4]; r.hasFlag = true; } return r; });
+        var nflag = entries.filter(function (c) { return c[4]; }).length;
+        card.hasFoot = true; card.foot = nflag + ' OF ' + entries.length + ' STORED EXPLANATIONS FAIL A SIMPLE DIRECTION CHECK. THE MOVES ARE OURS AND EXACT; THE EXPLANATIONS ARE MODEL TEXT AND SHOWN AS SUCH.'; card.footC = nflag ? '#ff9a85' : '#7d8b96'; }
+    } else if (lensId === 'free') {
+      card.kicker = 'ANSWER + EVIDENCE'; card.layer = 'THIS RUN · STAND-IN SENTENCES FROM REAL SOURCES'; card.layerC = AMB; card.title = 'Oman was mediating the Hormuz route the US would not accept';
+      card.rows = FANS.map(function (f, i) { return row('SENTENCE ' + (i + 1) + ' · CITES ' + f[1].map(function (n) { return '[' + (n + 1) + ']'; }).join(''), f[0], 'CLICK: ITS SOURCES LIGHT UP ON THE MAP AND TIME BAR', AMB, pickRow(i), S.pick === i); });
+      card.hasFoot = true; card.foot = 'SOURCES TAB SHOWS THE 4 VERBATIM SNIPPETS. A SENTENCE WITH NO SOURCE WOULD FAIL THE CHECKS.';
     } else {
       if (sname === 'BOTTOM LINE') { card.kicker = '1 · BOTTOM LINE'; card.layer = RUN[0]; card.layerC = RUN[1]; hi.srcPlaces = true;
         card.title = 'A high-stakes standoff over Hormuz continues; talks look likelier within months than a quick deal.';
@@ -237,6 +301,13 @@ class Component extends DCLogic {
       LINKS.forEach(function (l, i) { var p = px(l[2]), on = S.pick == null || S.pick === i; var mx = (hz[0] + p[0]) / 2, my = Math.min(hz[1], p[1]) - 70;
         arcs.push({ d: 'M' + hz[0] + ' ' + hz[1] + ' Q' + mx + ' ' + my + ' ' + p[0] + ' ' + p[1], c: CATC[l[0]], w: CONFW[l[3]] + (S.pick === i ? 1 : 0), op: on ? 0.9 : 0.15 });
         if (on && (l[2] !== 'United States' || i === 0 || S.pick === i)) mark(l[2], { r: 7, col: CATC[l[0]], label: l[2].toUpperCase(), labCol: '#8a99a5' }); }); }
+    if (lensId === 'changed' && ours && reportMode) {
+      mark('Iran', { r: 16, col: '#ee7754', label: 'IRAN · 95 · TOP OF SCALE', labCol: '#eef5f9', dy: -10 });
+      ['France', 'Japan', 'Russia', 'China', 'United States', 'Germany', 'Ukraine', 'Israel', 'DR Congo'].forEach(function (n) { mark(n, { r: 5, col: '#56626b', label: n.toUpperCase(), labCol: '#56626b' }); });
+      mapNote = 'CHANGE LOGS EXIST FOR 10 COUNTRIES (IRAN + THE 9 GREY DOTS) AND FOR STORY THREADS. ALL END 11–12 SEP WHILE THE AI IS PAUSED.'; }
+    if (lensId === 'free' && ours && reportMode) {
+      var lit = {}; (S.pick == null ? [0, 1, 2, 3] : FANS[S.pick][1]).forEach(function (n) { FSRC[n][5].forEach(function (pl) { lit[pl] = true; }); });
+      Object.keys(lit).forEach(function (n) { mark(n, { r: n === 'Oman' ? 14 : 10, col: '#5fd4ff', label: n.toUpperCase(), labCol: '#8fdcff', dy: n === 'Iran' ? -8 : n === 'Oman' ? 8 : n === 'United Arab Emirates' ? -12 : 0 }); }); }
     var fp = px('Hormuz');
     var focal = 'position: absolute; left: ' + (fp[0] - 7) + 'px; top: ' + (fp[1] - 7) + 'px; width: 14px; height: 14px; border-radius: 50%; background: #ee7754; box-shadow: 0 0 14px #ee7754;';
 
@@ -245,23 +316,47 @@ class Component extends DCLogic {
     function T(d) { return (Date.parse(d) - T0) / (T1 - T0) * W; }
     function barsOf(list, col, lit) { return list.map(function (p) { return 'position: absolute; left: ' + T(p[0]).toFixed(1) + 'px; bottom: 16px; width: 5px; height: ' + (p[1] * 3) + 'px; background: ' + col + (lit && lit(p[0]) ? '0.75)' : '0.28)') + ';'; }); }
     var bars = [], laneLabs = [];
-    if (ours) {
+    if (ours && !(reportMode && (lensId === 'changed' || lensId === 'free'))) {
       bars = barsOf(PER_A, 'rgba(95,212,255,', function (d) { return d >= '2026-08-14' && d <= '2026-08-21' && !hi.compare; });
       laneLabs.push({ text: hi.compare ? 'A · HORMUZ · ENTRIES PER DAY' : 'STORY ENTRIES PER DAY · OUR DATA', style: 'position: absolute; left: 0; top: 44px; font-family: ' + MONO + '; font-size: 8.5px; color: #56626b;' });
       if (hi.compare) { bars = bars.concat(barsOf(PER_B, 'rgba(56,182,222,', function () { return true; }).map(function (s) { return s.replace('width: 5px', 'width: 5px; outline: 1px solid rgba(56,182,222,0.6)'); }));
         laneLabs.push({ text: 'B · DIESEL', style: 'position: absolute; left: ' + T('2026-09-04') + 'px; top: 44px; font-family: ' + MONO + '; font-size: 8.5px; color: #38b6de;' }); }
     }
     var srcDots = [], lastX = -99;
-    if (ours && !hi.compare) SRC.forEach(function (s, i) { var x = Math.max(T(s[1]) - 8, lastX + 18); lastX = x;
+    if (ours && !hi.compare && !(reportMode && (lensId === 'changed' || lensId === 'free'))) SRC.forEach(function (s, i) { var x = Math.max(T(s[1]) - 8, lastX + 18); lastX = x;
       srcDots.push({ n: i + 1, style: 'position: absolute; left: ' + x + 'px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #5fd4ff; color: #04070c; font-family: ' + MONO + '; font-size: 9px; font-weight: 600; display: flex; align-items: center; justify-content: center;' }); });
     var bands = [], diamonds = [], nowD = '2026-09-25';
     if (runL && lensId === 'scenario') SCEN.forEach(function (s, i) { var last = s[3].map(function (t) { return t[0]; }).sort().pop(), a = T(nowD), b = T(last), sel = hi.scen == null || hi.scen === i, y = 2 + i * 13;
       bands.push({ label: s[0] + ' ' + s[1] + '%', style: 'position: absolute; left: ' + a + 'px; width: ' + (b - a) + 'px; top: ' + y + 'px; height: 11px; box-sizing: border-box; background: ' + HATCH + '; border: 1px solid rgba(255,179,71,0.6); font-family: ' + MONO + '; font-size: 8px; color: #fff3dc; padding-left: 4px; line-height: 9px; white-space: nowrap; overflow: hidden; opacity: ' + (sel ? 1 : 0.3) + ';' });
       if (ours) s[3].forEach(function (t) { diamonds.push({ style: 'position: absolute; left: ' + (T(t[0]) - 5) + 'px; top: ' + (y - 2) + 'px; font-size: 11px; line-height: 14px; color: ' + (hi.trig || hi.scen === i ? s[2] : '#8a6a3a') + ';' }); }); });
-    var nx = T(nowD);
+    var tbRects = [], tbPaths = [], tbMarks = [], tbLabs = [];
+    var CT0 = Date.parse('2026-07-01'), CT1 = Date.parse('2026-09-28');
+    function CT(d) { return (Date.parse(d) - CT0) / (CT1 - CT0) * W; }
+    function CY(v) { return 4 + (100 - v) / 50 * 88; }
+    if (reportMode && lensId === 'changed' && ours) {
+      [['2026-08-23', '2026-09-04', 'NO READINGS'], ['2026-09-12', '2026-09-26', 'AI PAUSED · NO READINGS']].forEach(function (g) { var a = CT(g[0]), b = CT(g[1]);
+        tbRects.push({ label: g[2], style: 'position: absolute; left: ' + a + 'px; width: ' + (b - a) + 'px; top: 0; height: 92px; background: repeating-linear-gradient(135deg, rgba(120,130,140,0.18) 0 4px, transparent 4px 9px); font-family: ' + MONO + '; font-size: 8px; color: #7d8b96; padding: 2px 4px; box-sizing: border-box;' }); });
+      var ws = CT(WSTART); tbRects.push({ label: '', style: 'position: absolute; left: ' + ws + 'px; width: ' + (CT('2026-09-12') - ws) + 'px; top: 0; height: 92px; border-left: 1px solid #5fd4ff; background: rgba(95,212,255,0.05);' });
+      for (var ax = 4; ax >= 0; ax--) { var d = '', prevT = null;
+        HIST.forEach(function (hh) { var x = CT(hh[0]), y = CY(hh[ax + 1]), t = Date.parse(hh[0]); d += (prevT && t - prevT <= 4 * 864e5 ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); prevT = t; });
+        tbPaths.push({ d: d, c: AXC[ax], w: ax === 0 ? 2.2 : 1.2, op: ax === 0 ? 1 : 0.75 }); }
+      [100, 75, 50].forEach(function (v) { tbLabs.push({ text: String(v), style: 'position: absolute; left: -20px; top: ' + (CY(v) - 6) + 'px; font-family: ' + MONO + '; font-size: 8px; color: #56626b;' }); });
+      CLOG.forEach(function (c, i) { var on = S.pick === i, inw = c[0] >= WSTART, hh = HIST.filter(function (h) { return h[0] === c[0]; })[0];
+        tbMarks.push({ aria: 'Change on ' + c[0], pick: function () { self.setState({ pick: on ? null : i, slide: 1 }); },
+          style: 'position: absolute; left: ' + (CT(c[0]) - (on ? 6 : 4)) + 'px; top: ' + (CY(hh[1]) - (on ? 6 : 4)) + 'px; width: ' + (on ? 12 : 8) + 'px; height: ' + (on ? 12 : 8) + 'px; padding: 0; border-radius: 50%; cursor: pointer; background: ' + (c[4] ? '#ff9a85' : '#6fd29a') + '; border: 1px solid #04070c; opacity: ' + (inw ? 1 : 0.35) + ';' }); });
+      laneLabs.push({ text: 'RISK READINGS · OVERALL (WHITE) + 4 AXES · ● = CHANGE-LOG ENTRY (RED = FAILS DIRECTION CHECK)', style: 'position: absolute; left: 0; top: 96px; font-family: ' + MONO + '; font-size: 8.5px; color: #56626b;' });
+    }
+    if (reportMode && lensId === 'free' && ours) {
+      var litS = S.pick == null ? [0, 1, 2, 3] : FANS[S.pick][1];
+      FSRC.forEach(function (f, i) { var on = litS.indexOf(i) >= 0; tbMarks.push({ aria: 'Source ' + (i + 1), pick: function () {}, style: 'position: absolute; left: ' + (CT(f[1]) - 9) + 'px; top: 30px; width: 18px; height: 18px; padding: 0; border-radius: 50%; border: none; background: ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.2)') + ';' });
+        tbLabs.push({ text: '[' + (i + 1) + '] ' + f[0], style: 'position: absolute; left: ' + (CT(f[1]) - 14) + 'px; top: 52px; font-family: ' + MONO + '; font-size: 8.5px; color: ' + (on ? '#8fdcff' : '#56626b') + ';' }); });
+      laneLabs.push({ text: 'CITED SOURCES AT THEIR DATES · OUR DATA', style: 'position: absolute; left: 0; top: 8px; font-family: ' + MONO + '; font-size: 8.5px; color: #56626b;' });
+    }
+    var altAxis = reportMode && (lensId === 'changed' || lensId === 'free');
+    var nx = altAxis ? CT(nowD) : T(nowD);
     var nowLine = 'position: absolute; left: ' + nx + 'px; top: 0; bottom: 16px; width: 1px; background: #eef5f9; opacity: 0.6;';
     var nowLab = 'position: absolute; left: ' + (nx - 70) + 'px; top: 44px; font-family: ' + MONO + '; font-size: 8.5px; color: #eef5f9;';
-    var axis = [['2026-08-01', 'AUG'], ['2026-09-01', 'SEP'], ['2026-10-01', 'OCT'], ['2026-11-01', 'NOV'], ['2026-12-01', 'DEC'], ['2027-01-01', 'JAN']].map(function (a) { return { label: a[1], style: 'position: absolute; left: ' + T(a[0]) + 'px; bottom: 0; font-family: ' + MONO + '; font-size: 9px; color: #56626b; border-left: 1px solid rgba(95,212,255,0.2); padding-left: 3px; height: 14px;' }; });
+    var axis = (altAxis ? [['2026-07-01', 'JUL']] : []).concat([['2026-08-01', 'AUG'], ['2026-09-01', 'SEP'], ['2026-10-01', 'OCT'], ['2026-11-01', 'NOV'], ['2026-12-01', 'DEC'], ['2027-01-01', 'JAN']]).filter(function (a) { return !altAxis || a[0] < '2026-10-01'; }).map(function (a) { return { label: a[1], style: 'position: absolute; left: ' + (altAxis ? CT(a[0]) : T(a[0])) + 'px; bottom: 0; font-family: ' + MONO + '; font-size: 9px; color: #56626b; border-left: 1px solid rgba(95,212,255,0.2); padding-left: 3px; height: 14px;' }; });
 
     // ---- chrome ----
     function go(s) { return function () { self.setState({ st: s, slide: 0, pick: null, toast: '' }); }; }
@@ -275,7 +370,7 @@ class Component extends DCLogic {
       return { label: y[1], on: on, pick: function () { var o = {}; o[y[0]] = !on; self.setState(o); },
         swatch: 'display: inline-block; width: 18px; ' + y[2] + ' margin-right: 8px; vertical-align: middle;',
         style: 'display: block; width: 100%; text-align: left; height: 28px; padding: 0 8px; border-radius: 3px; cursor: pointer; font-family: ' + MONO + '; font-size: 10px; background: transparent; border: 1px solid ' + (on ? 'rgba(95,212,255,0.4)' : 'rgba(95,212,255,0.12)') + '; color: ' + (on ? '#d6e2ea' : '#56626b') + ';' }; });
-    var tabs = [['SLIDE', false], ['SOURCES [1]–[4] · CHECKS', true]].map(function (t) { var on = S.src === t[1]; return { label: t[0], on: on, pick: function () { self.setState({ src: t[1] }); }, style: chipStyle(on).replace('height: 30px', 'height: 24px') }; });
+    var tabs = [['SLIDE', false], [lensId === 'changed' ? 'READINGS + NOTES · CHECKS' : 'SOURCES [1]–[4] · CHECKS', true]].map(function (t) { var on = S.src === t[1]; return { label: t[0], on: on, pick: function () { self.setState({ src: t[1] }); }, style: chipStyle(on).replace('height: 30px', 'height: 24px') }; });
     var chips = SL.map(function (n, i) { return { label: n, on: i === slide, pick: function () { self.setState({ slide: i, pick: null, src: false }); }, style: chipStyle(i === slide) }; });
     function toast(t) { return function () { self.setState({ toast: t }); }; }
     var btn = function (on) { return 'height: 32px; padding: 0 10px; border-radius: 4px; cursor: pointer; font-family: ' + MONO + '; font-size: 10px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.3)') + '; background: ' + (on ? 'rgba(95,212,255,0.16)' : 'transparent') + '; color: ' + (on ? '#eef5f9' : '#8a99a5') + ';'; };
@@ -289,16 +384,16 @@ class Component extends DCLogic {
       : reportMode ? [['✓', 'Citations match sources', '4 / 4', OK], ['✓', 'Dates found in sources', 'OK', OK], ['✓', 'Places named AND in a source', '2 DRAWN · 1 NOT', OK], ['✓', 'Visual blocks valid', 'OK', OK]]
       : [['·', 'Citations match sources', 'AFTER RUN', DIM], ['·', 'Dates found in sources', 'AFTER RUN', DIM], ['·', 'Places named AND in a source', 'AFTER RUN', DIM]];
     var checks = CK.map(function (k) { return { i: k[0], t: k[1], v: k[2], c: k[3] }; });
-    var srcs = SRC.map(function (s, i) { return { n: i + 1, date: s[0], outlets: s[2], t: s[3], snip: s[4], places: s[5].join(' · ').toUpperCase() }; });
+    var srcs = (lensId === 'free' ? FSRC : SRC).map(function (s, i) { return { n: i + 1, date: s[0], outlets: s[2], t: s[3], snip: s[4], places: s[5].join(' · ').toUpperCase() }; });
 
-    return { grid: grid, land: landP, arcs: arcs, rings: ringsOut, focal: focal, hasMapNote: !!mapNote, mapNote: mapNote,
+    return { grid: grid, land: landP, arcs: arcs, rings: ringsOut, focal: (reportMode && lensId === 'changed') ? 'display: none;' : focal, hasMapNote: !!mapNote, mapNote: mapNote,
       route: st === 'share' ? '/analyze/s/{unguessable id}' : st === 'brief' ? '/analyze?lens=scenario&topics=…' : '/analyze',
       states: states, lenses: lenses, layers: layers, tabs: tabs, question: reportMode ? QS[lensId] : QS.scenario,
       banner: st === 'share', bannerText: 'SHARED DEBRIEF · READ-ONLY · SIGNED-OUT VISITORS SEE THIS SAME SCREEN AS THE EXAMPLE',
       showSlide: !S.src, srcOpen: S.src, srcHead: st === 'share' ? 'FROZEN AT RUN TIME' : reportMode ? 'CITED IN THIS RUN' : 'WILL BE SENT', srcs: srcs, checks: checks,
       card: card, toggleKey: function () { self.setState({ key: !S.key }); }, keyLabel: S.key ? 'KEY · GEMINI · STAYS IN THIS BROWSER ✓' : '+ ADD YOUR API KEY', keyStyle: btn(S.key),
       runNow: S.key ? go('run') : function () {}, runLabel: S.key ? 'RUN ▶' : 'RUN · NEEDS A KEY', runStyle: btn(S.key) + (S.key ? '' : ' cursor: not-allowed;'),
-      laneLabs: laneLabs, bars: bars, srcDots: srcDots, bands: bands, diamonds: diamonds, nowLine: nowLine, nowLab: nowLab, axis: axis,
+      laneLabs: laneLabs, tbRects: tbRects, tbPaths: tbPaths, tbMarks: tbMarks, tbLabs: tbLabs, bars: bars, srcDots: srcDots, bands: bands, diamonds: diamonds, nowLine: nowLine, nowLab: nowLab, axis: axis,
       chips: chips, prev: function () { self.setState({ slide: Math.max(0, slide - 1), pick: null }); }, next: function () { self.setState({ slide: Math.min(SL.length - 1, slide + 1), pick: null }); },
       status: status, actions: actions, toast: !!S.toast, toastText: S.toast };
   }

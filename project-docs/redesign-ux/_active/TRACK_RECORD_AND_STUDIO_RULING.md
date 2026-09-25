@@ -144,6 +144,23 @@ Two critics (product; engineering/data honesty) judged them. The ruling is **S-A
   - **Economic ripple ⏸**: park it with economy; its impact records have been frozen since 12 Sep.
   - Candidate replacement: **"What changed"**, built from thread history + drift notes. It is unique to us.
 
+**Lens set + one picture per lens: APPROVED (operator, 2026-09-26: "yes that is good… for different one, we need to have different frontend").**
+- **Decisions:**
+  - Economic ripple is **parked** with economy.
+  - **What changed** is added.
+  - **Feeding stored data into the Studio** (snippets, thread analyses, change logs, forecast log) is the **first Studio build step**.
+- **Launch set and pictures.** Same shell (map + slide card + time bar; our data vs this run); each lens has its own picture because each looks in a different direction:
+  - **Scenario, forward:** bands branch off today to their dated triggers ◆, with the places per branch.
+  - **Compare, sideways:** one time-bar lane per story, double rings on shared places, and the judged link. The grid must work without a link.
+  - **What changed, back:**
+    - the time bar becomes a chart of risk readings (overall + 4 axes), with gaps where there are no readings;
+    - ● marks each change-log entry;
+    - BEFORE → AFTER bars for a window (last 30 days of readings / all v2);
+    - a change log listing the event, the **computed move** (exact, ours) and the **stored explanation** (model text).
+  - **Free-form, evidence:** click a sentence and only its cited sources light up on the map and time bar.
+- **Finding (Iran, 7 Jul – 11 Sep): 6 of the 14 stored change explanations fail a simple direction check.** They explain a *lower* risk score with something that got *worse*, e.g. "humanitarian score down as trade disruption worsens". The What-changed lens flags these. The drift-note prompt/check needs fixing before the lens is trusted.
+- **Change logs exist for 10 countries** + some story threads. All end 11–12 Sep (AI paused).
+
 v1 zones (kept for reference; still apply as parts of v2: the sources tab = INTEL, the bottom strip = status):
 | Zone | Shows |
 |---|---|

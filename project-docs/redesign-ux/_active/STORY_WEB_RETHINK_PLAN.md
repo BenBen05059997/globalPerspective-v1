@@ -109,7 +109,13 @@ and how the frontend shows it. Operator delegated the whole rethink (2026-09-25)
 5. **Other surfaces:**
    - Home card and StoryPeek: unchanged. Add a "judged to feed into N stories" line only when the data is already in hand.
    - **Board WEB view:** becomes a **story graph**, the union of all webs as story nodes with causal and shared-actor links, list-first. This is where "news, not country" is most visible.
-   - **Country page:** keeps the single-country web, the one place a country unit is right.
+   - **Country page:** **no web at all** (operator, 2026-09-25: "the country related one should be removed or merged to the analysis studio").
+     Its Causal Web tab was removed the same day. A country-scoped systems view moves to the **Analysis Studio** as an on-demand lens
+     ("Country systems web"), reading the existing `SYSTEMS#<place>` record; the rule is that on-demand analysis lives in the Studio. Not built.
+   - **The country webs' data stays.** `newsSystemsAnalysis` and `SYSTEMS#<place>` are the source of the story links, merged per story.
+     They are an internal data layer now, never shown to readers as "a country's web".
+   - **`/spider-demo`**: both its country tier and its World tier (country bubbles) are country-shaped. They retire into the Studio lens,
+     and the board's WEB view (a story graph) replaces the World tier.
 
 **Staging:**
 - **Stage 1, frontend only:** a `useStoryLinks(threadId, regions)` hook fetches all webs (101 KB total, ~0.12 s each), unions them, filters ambient actors and keeps per-web

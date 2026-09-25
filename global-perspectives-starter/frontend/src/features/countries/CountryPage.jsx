@@ -8,9 +8,7 @@ import { useCountryIntelligence } from '@/features/countries/hooks/useCountryInt
 import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import { useMarketsCountry } from '@/features/economy/hooks/useMarketsCountry';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory';
-import { useSystemsAnalysis } from '@/features/countries/hooks/useSystemsAnalysis';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
-import SystemsGraph from '@/features/countries/components/SystemsGraph';
 import CountryWhatChanged from '@/features/countries/components/CountryWhatChanged';
 import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
@@ -363,7 +361,6 @@ export default function CountryPage() {
   const intel = intelligence?.[decodedName];
   const { data: markets } = useMarketsCountry(decodedName);
   const { snapshots: riskHistory, driftNotes, driftNotesTotal, driftNotesGated } = useCountryHistory(decodedName);
-  const { data: systemsData } = useSystemsAnalysis(decodedName);
   const { data: countryDisruptions } = useDisruptionsList(decodedName ? { country: decodedName, limit: 5 } : {});
 
   useEffect(() => {
@@ -483,8 +480,6 @@ export default function CountryPage() {
           ))}
         </div>
       )}
-
-      {/* Causal graph promoted to a center tab — see "Causal Web" below */}
 
       {/* Economic Disruption — event-driven, dated to the hour */}
       {countryDisruptions?.length > 0 && (
@@ -702,11 +697,6 @@ export default function CountryPage() {
             <button role="tab" aria-selected={mainTab === 'arcs'} className={`cpg-tab${mainTab === 'arcs' ? ' on' : ''}`} onClick={() => setMainTab('arcs')}>
               Story Arcs <span className="c">{filteredArcs.length}</span>
             </button>
-            {systemsData?.nodes?.length > 0 && (
-              <button role="tab" aria-selected={mainTab === 'causal'} className={`cpg-tab${mainTab === 'causal' ? ' on' : ''}`} onClick={() => setMainTab('causal')}>
-                Causal Web <span className="c">{systemsData.nodes.length}</span>
-              </button>
-            )}
             <button role="tab" aria-selected={mainTab === 'coverage'} className={`cpg-tab${mainTab === 'coverage' ? ' on' : ''}`} onClick={() => setMainTab('coverage')}>
               Coverage <span className="c">{countryData.totalArticles}</span>
             </button>
@@ -889,25 +879,6 @@ export default function CountryPage() {
               ) : (
                 <div className="cpg-empty">No story arcs match this filter</div>
               )}
-            </div>
-          )}
-
-          {/* Causal Web tab — promoted from the right rail so the graph gets full center width */}
-          {mainTab === 'causal' && systemsData?.nodes?.length > 0 && (
-            <div className="cpg-tab-content">
-              <div className="cpg-section-lbl">
-                Causal Web
-                <span style={{ color: 'var(--ink-faint)', fontWeight: 400, marginLeft: 6 }}>
-                  {systemsData.nodes.length} arcs · {systemsData.edges?.length || 0} links
-                </span>
-              </div>
-              <div className="cpg-causal-center">
-                <SystemsGraph data={systemsData} countryName={decodedName} />
-              </div>
-              <p className="cpg-causal-note">
-                Cause → effect links inferred across this country's story threads — each node is a real arc,
-                every link cites the entries supporting it. Click a node to open its arc.
-              </p>
             </div>
           )}
 

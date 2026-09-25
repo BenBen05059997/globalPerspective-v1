@@ -180,3 +180,9 @@ existing record — never as a replacement generator.
 4. `newsPostDevTo` reads `COUNTRY_INTELLIGENCE` — its cron/purpose wasn't independently re-verified
    this pass (only the code path). If DevTo syndication is dead too, it's a separate small cleanup
    item, not part of this decision.
+
+## 7. Update 2026-09-25: the country web goes to the Studio too
+The operator decided that country-scoped webs don't belong on the public pages. The country page's **Causal Web** tab was removed.
+The Studio's planned "Country deep-dive" lens (Option B) should also offer the country's systems web (`SYSTEMS#<place>`: stories,
+causal and shared-actor links, cited headlines) as on-demand context. It reads the existing records and adds no new generator.
+`newsCountryIntelligence` and the public country page's Situation / Story Arcs / Coverage stay as they are.

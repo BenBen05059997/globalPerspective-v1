@@ -148,3 +148,24 @@ Canvas https://claude.ai/artifact/6AxoScn1r6AFfx1Ngz8AgW:
 6. **Freshness rule:** amber label after 7 days, hidden after 30 days. Today every analysis is 13 days old, so all links show amber until DeepSeek is topped up. OK?
 7. **Reading mode** (light) on the story page: keep it? Recommended, for long reads.
 8. **Studio country lens:** pick a country directly (recommended), or start from selected stories?
+
+## 7. "Too long" → Story mode proposal (2026-09-25, design only, for discussion)
+Operator: the story page is too long, so show it game-like, with a map, wires/arcs and a horizontal slide of what happened.
+References (research pass):
+- Flightradar24 / kepler.gl playback: a bottom time scrubber that drives the map.
+- Knight Lab StoryMapJS: slides that fly the map.
+- XCOM 2 Geoscape: the map as home frame, with dark-event countdowns.
+- Outer Wilds ship log: one dataset, two projections, Map vs Rumor.
+- Esri StoryMaps sidecar: mobile stacks.
+- Segel & Heer: the martini-glass structure.
+- NN/g: 65% of viewing time lands in the top 40% of a page.
+
+Wireframe `StoryMode.dc.html` (canvas row v5): one screen, no scroll.
+- **Map** (full-bleed).
+- **Slide card** (right): BRIEF → CH1–CH4 → FED INTO → WATCH.
+  - Chapters light up their countries, sized by real mention counts.
+  - FED INTO draws dashed confidence-coded arcs from Hormuz to the 7 linked stories; click a pin for its evidence.
+  - WATCH is a countdown to forecast deadlines.
+- **Bottom scrubber:** news per day, chapter segments, ⚑ Aug 15, linked-news ticks, TODAY, and ◆ deadlines out to Dec 31, with play/◀/▶.
+- **Drawers** (left): WHY / WHO / VIEW FROM / SOURCES.
+- **READ IN FULL** switches to the long page, which stays as the accessible, printable version.

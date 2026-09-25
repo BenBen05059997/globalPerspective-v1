@@ -48,7 +48,7 @@ echo
 # both the old static form and the new `const EconomyPage = lazy(() => import(...))` form.
 must_have "$SRC/app/App.jsx" "import EconomyPage|EconomyPage = lazy" "imports EconomyPage"
 must_have "$SRC/app/App.jsx" "/economy" "wires /economy route"
-must_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/economy" "nav link to /economy"
+must_not_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/economy" "economy soft-hidden from nav (2026-09-25; route stays live)"
 
 # ─── EconomyPage ───
 must_have "$SRC/features/economy/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"

@@ -65,7 +65,6 @@ function Layout({ children }) {
     { to: '/weekly', label: 'Threads', group: 'intel', title: 'Ongoing story arcs ranked by risk — what leads, what develops, how each has evolved.' },
     { to: '/weekly/countries', label: 'Countries', group: 'intel', title: 'Every covered country ranked by risk tier, with a standing intelligence briefing.' },
     { to: '/map', label: 'Map', group: 'intel', title: "Today's coverage on a world map — the spatial view of the same live topics." },
-    { to: '/economy', label: 'Economy', group: 'markets', title: 'Live markets dashboard + which stories are repricing markets today; toggle for the weekly wrap.' },
     { to: '/analyze', label: 'Analyze', group: 'markets', title: 'Analysis Studio — run a cited AI deep-dive across up to 4 stories (your key, or ours as a member).' },
     { to: '/track-record', label: 'Track Record', group: 'acct', title: 'Accountability hub — every forecast publicly scored, every revised conclusion logged.' },
   ];
@@ -206,7 +205,6 @@ function Layout({ children }) {
       <footer className="gp-footer">
         <span>Global Perspectives™ — AI news intelligence</span>
         <div className="gp-footer-links">
-          <Link to="/economy">Economy</Link>
           <Link to="/track-record">Track Record</Link>
           <Link to="/membership">Membership</Link>
           <Link to="/about">About</Link>

@@ -21,7 +21,7 @@ export const SITE_WELCOME = {
       popover: {
         title: 'Welcome to Global Perspectives',
         description:
-          'AI-curated intelligence on world news. <b>Topics</b> is the live feed; <b>Threads</b> follows stories over time; <b>Economy</b> shows what the news is repricing; <b>Track Record</b> scores our predictions. Click the <b>?</b> in the top bar any time for a guided walkthrough of the page you’re on.',
+          'AI-curated intelligence on world news. <b>Topics</b> is the live feed; <b>Threads</b> follows stories over time; <b>Track Record</b> scores our predictions. Click the <b>?</b> in the top bar any time for a guided walkthrough of the page you’re on.',
       },
     },
   ],
@@ -45,10 +45,6 @@ export const SITE_INTRO = {
     {
       element: '[data-tour="nav-/weekly"]',
       popover: { title: 'Threads', description: 'Stories followed over time as narratives, so you can see how a situation is developing rather than one-off headlines.', side: 'bottom', align: 'start' },
-    },
-    {
-      element: '[data-tour="nav-/economy"]',
-      popover: { title: 'Economy', description: 'What today’s news is repricing — an instrument-first view of the markets the headlines are moving.', side: 'bottom', align: 'start' },
     },
     {
       element: '[data-tour="nav-/track-record"]',

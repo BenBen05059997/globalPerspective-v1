@@ -188,8 +188,6 @@ function EconomicFootprint() {
               {leadHeadline}
             </Link>
           ) : leadHeadline}
-          {' '}
-          <Link to="/economy" className="daily-footprint-all">View all →</Link>
         </p>
       )}
     </section>

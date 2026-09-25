@@ -1,6 +1,17 @@
 # Economy in the console style: discussion (2026-09-25)
 
-**Status:** options for operator discussion. Design only, nothing built. It builds on the approved console, story mode, legend and
+**Status: PARKED (operator, 2026-09-25).** "We can hide it right now, since it is not that important at the moment."
+- **Soft hide, shipped in code (not deployed):** Economy was removed from the top nav, the footer, the onboarding tour, the map-home teaser and the Daily "View all →" link.
+  `/economy` stays live (old links and search still work). Per-story market info (the story Economy tab; disruption badges on home/daily/country) is unchanged.
+  The pre-push page guard now asserts that the nav link is **absent**.
+- **Weekly markets job paused:** EventBridge `TriggerWeeklyMarkets` DISABLED on 2026-09-25. The last published wrap is the week of 2026-09-20.
+  Nothing else reads it: the newsletter does not use it; only `/economy?view=week` does.
+  Re-enable with `aws events enable-rule --name TriggerWeeklyMarkets`.
+- The hourly price feed (`newsMarketsData`) keeps running: no LLM, and it also feeds country pages.
+- E1–E8 below are **parked** until economy returns (after the DeepSeek top-up).
+- Why now: the live page presents 12-Sep analysis as "Today's driver… 102 stories repricing today", which is misleading while the analysis is frozen.
+
+Original status: options for operator discussion. Design only, nothing built. It builds on the approved console, story mode, legend and
 default tokens (`STORY_WEB_RETHINK_PLAN.md` §7–9).
 
 ## Where /economy is today (verified 2026-09-25)

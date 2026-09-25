@@ -346,7 +346,6 @@ export default function SituationHome() {
           <h4 className="sh-lbl">Elsewhere on Global Perspectives</h4>
           <div className="sh-teasers">
             <Link to="/daily"><b>Daily Brief</b><span>The day’s developments, gathered and summarised each morning.</span></Link>
-            <Link to="/economy"><b>Economy</b><span>Rates, currencies, energy and trade, tied to the politics that move them.</span></Link>
             <Link to="/weekly-brief"><b>Weekly</b><span>One long synthesis each week, with the reasoning shown.</span></Link>
             <Link to="/track-record"><b>Track Record</b><span>Every forecast scored against what happened, including the misses.</span></Link>
             <Link to="/analyze"><b>Analysis Studio</b><span>Bring a question and get a cited, structured analysis.</span></Link>

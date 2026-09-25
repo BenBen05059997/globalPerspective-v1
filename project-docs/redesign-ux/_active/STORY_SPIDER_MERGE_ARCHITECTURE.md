@@ -1,6 +1,6 @@
 # Story page × spider page — architecture and merge plan
 
-**Status:** proposal, 2026-09-25, for operator discussion (nothing built). Companion to
+**Status:** APPROVED direction (operator, 2026-09-25: "the recommendations are solid, align with that"); nothing built yet. Companion to
 `STORY_DOSSIER_BOARD_DESIGN_BRIEF.md`. The facts come from a read-only code map of both pages (file:line references below).
 
 ## 1. What each page is today
@@ -63,7 +63,16 @@ the board's WEB view, and its node panel is the dossier. It retires (redirect to
 3. Board WEB view on `world_overview`; country page web section; retire `/spider-demo`.
 4. Move the per-click `dossier_analysis` prose into the Studio as an on-demand lens.
 
-## Open questions for the operator
-- OK to drop the LLM from page views, so the web is stored data only and the prose explanation lives in the Studio?
-- Start with the no-backend version (`event_dossier` + the story's country), and add the per-story `WEB` record later only if the lookup proves flaky?
-- Keep web coverage at top-10 countries for now, and revisit after DeepSeek is back?
+## Decisions (operator, 2026-09-25)
+- No AI on page views: pages read the stored web via `event_dossier`; the written explanation moves to the Studio.
+- Start frontend-only: no edits or deploys to any Lambda for step 1. Both pages already share `newsSensitiveData`,
+  and `event_dossier` already exists there. The optional per-story `WEB` record is the only step that touches backend code.
+- Web coverage stays at the top 10 countries until DeepSeek is funded.
+
+## Live check (2026-09-25, public proxy, read-only)
+- `event_dossier` works live for the AfD story and returns the focal node with **no LLM call**.
+- **Link density varies a lot:** Germany's web has 3 stories and 0 links, so the AfD story has no neighbours and its
+  "around" layer would be omitted. The United States web has 15 stories, 6 causal + 17 shared-actor links, and 11 connected stories.
+  `world_overview` covers 16 places (including regions like Europe / Middle East) with 41 cross-country links.
+- **Webs are frozen by the DeepSeek outage:** the newest were built 2026-09-12 (Germany 2026-09-10). The page must show the
+  web's own "built X ago" date, as the rest of the site does.

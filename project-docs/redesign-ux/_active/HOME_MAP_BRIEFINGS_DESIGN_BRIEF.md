@@ -79,3 +79,20 @@ Supersedes the light-editorial home layout above where they conflict (the linked
 3. **HUD panels:** situation brief (top-left), threat board by severity tier (top-centre), **Sensor status** (top-right: data freshness per source, e.g. GDACS LIVE / news desk PAUSED; honesty as part of the console), Intel feed (the linked story list), incoming-alert card, view + layer switches.
 4. **Open:** theme scope beyond the home. Recommended: console accents site-wide (dark header, monospace HUD labels, accent colours), with long-read pages (stories, countries, the briefings) kept light for readability.
 5. **Real Earth in the build (operator, 2026-09-24):** the wireframe's continent dots are placeholders. The real globe must show the real Earth. Candidate treatments to choose at build time: (a) GitHub-style dotted real landmass with a halo (lightest, most "console"); (b) NASA **Black Marble** night-lights imagery (public domain; city lights on a dark Earth, very sci-fi and real); (c) Blue Marble daytime imagery (most realistic, heaviest). Recommended: (a) or (b), with the texture loaded after the page shell (performance rule). Also noted as a possible extra: a small real-Earth orientation globe in a corner (e.g. top-right) while in RADAR 2D mode. Confirm whether that is what "real earth on top right" meant.
+
+## Briefings: round 3, BRIEFING MODE (proposed 2026-09-25; operator: "the briefing should follow the other pages")
+The light "editions" page above is superseded in *look and navigation*; its content rules stand (dated finite editions, never a dead end,
+real publication date, "latest edition" label). Wireframe: canvas board **D1** `BriefingMode.dc.html`, with real data.
+
+**Pattern:** the same as story mode. Map + a slide card + a bottom strip.
+- **Daily** (12 Sep edition), in order:
+  - THE DAY: headline, summary and stats (50 articles · 19 outlets · 38 countries);
+  - the 8 TOP STORIES: the map flies to each story's countries, and each AI forecast is labelled *model judgment* (scored later on Track record);
+  - COUNTRY TO WATCH (Saudi Arabia, high, escalating), which opens the country card, plus the rising thread.
+- **Weekly** (week of 6 Sep), in order:
+  - THE WEEK;
+  - 6 SIGNALS, each a fact and then our "so what" (fact kept separate from judgment);
+  - the NEXT WEEK watch list.
+- **Editions strip:** solid = published (daily 5–12 Sep); dashed = no edition (13–25 Sep, AI paused); weekly 13 and 20 Sep missing. Click an edition to open it.
+- **READ AS TEXT** keeps a plain version for email, print and search engines.
+- Markets line: omitted while economy is parked.

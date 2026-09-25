@@ -28,8 +28,8 @@ Each phase runs: research + debate (agents) → canvas board with real data → 
 
 | Phase | What gets decided | Status | Commit | Monitor ✓ |
 |---|---|---|---|---|
-| N · Site navigation | Top menu; how countries, sign-in/account and the retired pages (`/breaking`, `/spider-demo`, `/economy`, `/weekly-markets`) are reached; "AI paused" status line; footer | **Now** · proposed, awaiting operator (canvas N1) | see git log | 3 advocates + 2 critics; pause date verified 12 Sep |
-| P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | queued | — | — |
+| N · Site navigation | Top menu; how countries, sign-in/account and the retired pages (`/breaking`, `/spider-demo`, `/economy`, `/weekly-markets`) are reached; "AI paused" status line; footer | ✅ **APPROVED 26 Sep** ("ok that is good"), canvas N1 | see git log | 3 advocates + 2 critics; pause date verified 12 Sep |
+| P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | **Now** | — | — |
 | DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | queued | — | — |
 | H · Home leftovers | Banner vs tour; country shading vs pins; build behind `/map` first; "real Earth on top right" | queued | — | — |
 | SP · Small pages | About, whitepaper, privacy, disclosures, contact; membership / account / sign-in, including the signed-out `/account` | queued | — | — |
@@ -44,7 +44,7 @@ Also open, outside these phases: Studio decisions S5–S10 (`TRACK_RECORD_AND_ST
 - [ ] status header flipped to `done`
 - No code, so no CHANGES.md entry and no verify step.
 
-## Phase N: navigation proposal (2026-09-26)
+## Phase N: navigation, APPROVED (operator, 2026-09-26: "ok that is good")
 Debate: A five doors / B game HUD / C by job, then a reader critic and an engineering critic. Canvas board **N1** (`Navigation.dc.html`).
 
 - **Menu:** Map · Stories · Briefings · Studio · Track record. Plain nouns, flat, no dropdowns. The old names "Console", "Topics" and "Threads" were jargon. Account at right; the parked credits badge stays hidden (existing gate, `Layout.jsx:127`).

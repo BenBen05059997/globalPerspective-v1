@@ -1,0 +1,297 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Console.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "A1 · Home console — GLOBE mode (desktop default)",
+      "w": 1440,
+      "x": 0,
+      "y": 300
+    },
+    "ConsoleRadar.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "A2 · Home console — RADAR 2D mode (phone default)",
+      "w": 1440,
+      "x": 1520,
+      "y": 300
+    },
+    "ConsoleCard.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "A3 · Home — click an event: story card with links into the story",
+      "w": 1440,
+      "x": 0,
+      "y": 1400
+    },
+    "StoryPeek.dc.html": {
+      "h": 170,
+      "title": "A4 · Shared StoryPeek — hover preview used everywhere",
+      "w": 300,
+      "x": 1520,
+      "y": 1400
+    },
+    "Legend.dc.html": {
+      "x": 3560,
+      "y": 300,
+      "w": 1440,
+      "h": 1500,
+      "title": "A5 · Map legend = default map tokens (animated; REDUCED MOTION preview)",
+      "is_interactive": true
+    },
+    "StoryMode.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "B1 · Story page — STORY MODE (default): map + slides + time scrubber",
+      "w": 1440,
+      "x": 0,
+      "y": 3300
+    },
+    "StoryWeb.dc.html": {
+      "h": 4300,
+      "is_interactive": true,
+      "title": "B2 · Story page — READ IN FULL (long page, news-based web)",
+      "w": 1440,
+      "x": 1920,
+      "y": 3300
+    },
+    "StoryMobile.dc.html": {
+      "h": 2400,
+      "is_interactive": true,
+      "title": "B3 · Read in full — phone",
+      "w": 390,
+      "x": 3440,
+      "y": 3300
+    },
+    "Board.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "B4 · Threads board — BOARD / TABLE / MAP / WEB (story graph)",
+      "w": 1440,
+      "x": 0,
+      "y": 4400
+    },
+    "CountryCard.dc.html": {
+      "x": 0,
+      "y": 7900,
+      "w": 1440,
+      "h": 900,
+      "title": "C1 · Country card on the map — five real states (approved)",
+      "is_interactive": true
+    },
+    "BriefingMode.dc.html": {
+      "x": 0,
+      "y": 9100,
+      "w": 1440,
+      "h": 900,
+      "title": "D1 · Briefings — BRIEFING MODE: Daily | Weekly, map + slides + editions strip (console style)",
+      "is_interactive": true
+    },
+    "TrackRecord.dc.html": {
+      "x": 0,
+      "y": 10300,
+      "w": 1440,
+      "h": 1500,
+      "title": "E1 · Track record — honest, ledger first; preview NOW / FIRST MONTHS / AFTER ~4 MONTHS",
+      "is_interactive": true
+    },
+    "ServiceRecord.dc.html": {
+      "x": 1920,
+      "y": 10300,
+      "w": 1440,
+      "h": 900,
+      "title": "E2 · Track record — GAME-STYLE one screen: BOARD | MAP of locked questions + weekly log + ledger",
+      "is_interactive": true
+    },
+    "Studio.dc.html": {
+      "x": 0,
+      "y": 11600,
+      "w": 1440,
+      "h": 900,
+      "title": "F1 · Analysis Studio — RESEARCH BAY one screen: operations · briefing→debrief · intel · status (proposed)",
+      "is_interactive": true
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-24T19:30:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "title": {
+      "kind": "title1",
+      "maxW": 5000,
+      "text": "Global Perspectives — console redesign · approved designs (25 Sep 2026)",
+      "w": 240,
+      "x": 0,
+      "y": 0
+    },
+    "aTitle": {
+      "kind": "title1",
+      "maxW": 5000,
+      "text": "A · Home console + shared pieces",
+      "w": 240,
+      "x": 0,
+      "y": 180
+    },
+    "v2why": {
+      "fill": "teal",
+      "maxH": 560,
+      "text": "Two map modes (operator idea): GLOBE — spins on its own; touching or selecting stops it and turns the globe to face the story. RADAR 2D — a flat big board with a rotating radar beam; whatever the beam crosses lights up (pin flares, label appears) and its story is gently marked ◉ SCANNED in the feed — no auto-scroll, no focus theft. Stop/▶ control holds either motion; reduced-motion users get a still globe / beamless radar. Defaults: desktop opens on the spinning globe; phones and slow devices open on radar (cheap to draw). Also: XCOM-style HUD (brief · threat board · sensor status), honest Sensor status, Intel feed linked to pins, incoming-alert card. Continent dots here are placeholders — the real build uses GitHub-style dotted continents on the existing deck.gl globe.",
+      "w": 390,
+      "x": 3040,
+      "y": 300
+    },
+    "cardhow": {
+      "fill": "blue",
+      "maxH": 560,
+      "text": "Clicking an event on the home page opens its story card in the right-hand column. The map stays and turns to the story. Order: WHAT IS HAPPENING (summary) → WHAT IT MEANS (bottom line + most likely path) → WHY (a 2–3 step cause chain, fact ✅ / inference 💭). Links inside the summary: a dotted underline = an event in this story (opens the full story at the timeline); a coloured-dot link = another story we track (opens that story card here, with ← BACK TO …). Every block has its own link into the matching section of the full story; OPEN FULL STORY sits at the bottom. Try: click the Leipzig drone link in the AfD card, then BACK. Hover the Leipzig link first to see its StoryPeek.",
+      "w": 390,
+      "x": 1940,
+      "y": 1400
+    },
+    "peekhow": {
+      "fill": "teal",
+      "maxH": 560,
+      "text": "ONE shared piece, reused everywhere a story is mentioned: hover (or keyboard-focus) any story link, map pin or web bubble and this StoryPeek appears — type, status, headline, one-line brief, counts + honest updated-time, and what a click will do. Try it: the Leipzig link in the home card (row 3, below), the globe/radar pins (row 2), and the board MAP and WEB views. All of those screens import this one file; change it here and they all change. Phones have no hover: a tap goes straight to the card, which is the preview.",
+      "w": 390,
+      "x": 1520,
+      "y": 1640
+    },
+    "decide": {
+      "fill": "orange",
+      "maxH": 330,
+      "text": "Still open from the home meeting: (a) replace the old guided tour + ambient map callout with the orientation banner; (b) OK for most stories (~65% today) to highlight their country instead of a map pin; (c) build these behind the unlisted /map route while content is stale, swap / after DeepSeek is back. Plus: what \"real Earth on top right\" means (main globe vs small corner globe).",
+      "w": 390,
+      "x": 3040,
+      "y": 960
+    },
+    "bTitle": {
+      "kind": "title1",
+      "maxW": 5000,
+      "text": "B · Story page + threads board",
+      "w": 240,
+      "x": 0,
+      "y": 3180
+    },
+    "v5how": {
+      "fill": "teal",
+      "maxH": 560,
+      "text": "Story mode (operator: page too long → game-like). One screen, no scrolling. MAP (XCOM Geoscape frame) · SLIDES (Knight Lab StoryMap: each slide flies the map) · BOTTOM SCRUBBER (Flightradar24 / kepler.gl playback): news per day, 4 chapters, ⚑ Aug 15, linked-news ticks after Aug 21, TODAY, and forecast deadlines ◆ out to Dec 31 (XCOM dark-event countdown). Slides: BRIEF → CH1–CH4 (countries sized by real mention counts) → FED INTO (dashed arcs from Hormuz to the 7 linked stories; click a pin) → WATCH (triggers with days left). Left drawers WHY / WHO / VIEW FROM / SOURCES open over the map. READ IN FULL switches to the long page. Land dots are placeholders; places are approximate centroids.",
+      "w": 390,
+      "x": 1480,
+      "y": 3300
+    },
+    "v4how": {
+      "fill": "teal",
+      "maxH": 620,
+      "text": "Try: (1) SHOW LINKED NEWS in the Timeline — 13 real headlines from 7 other stories appear at their own dates (4 inside this story’s span, 9 after it), tagged model-linked + confidence; never drawn as arrows from an event here. (2) Open other chapters; the ⚑ turning point (Aug 15) carries the “last 30 days analysed” caveat. (3) READ FULL on each cause step. (4) In Why it’s happening, each row leads with the cited dated headline, then the linked story, confidence per analysis (the diesel link: STRONG in US, Iran and Middle East analyses — never merged into one), the mechanism verbatim, and headlines cited from THIS story. (5) PREVIEW STATE shows the honest empty states. All content is live data from 25 Sep.",
+      "w": 390,
+      "x": 3860,
+      "y": 3300
+    },
+    "v4board": {
+      "fill": "blue",
+      "maxH": 420,
+      "text": "Board WEB view redrawn (v4): the 14 most-linked stories from all 16 analyses merged — stories, not countries. X = peak date, rows = category, dot size = number of links, dashed line thickness = confidence (model judgment). Right: the same links as a list (the accessible version). Hover a dot for its StoryPeek. Clusters you can see: US–Iran → oil/diesel; Ukraine–Russia strikes → peace envoys; Israel–Palestine West Bank → settlement bans.",
+      "w": 390,
+      "x": 1480,
+      "y": 4400
+    },
+    "cTitle": {
+      "kind": "title1",
+      "maxW": 5000,
+      "text": "C · Country (card on the map; deep-dive in the Studio)",
+      "w": 240,
+      "x": 0,
+      "y": 7780
+    },
+    "countryhow": {
+      "fill": "teal",
+      "maxH": 620,
+      "w": 390,
+      "x": 1480,
+      "y": 7900,
+      "text": "Country card — v2 after a two-critic debate. Five real states: IRAN briefed but 14 days old (amber) — score at the TOP OF THE SCALE so no arrow; latest axis move shown instead. GERMANY — NOT ENOUGH READINGS (no data 22 Aug–4 Sep), so no trend claimed. YEMEN — last briefed 18 Aug, too old to show; shows story count + where it is mentioned in the Iran briefing. BRAZIL — never briefed; stories + figures + Generate in Studio. URUGUAY — no coverage: a small popover, never implying \"safe\". One screen, no scroll: risk bars open their WHY on click; facts only when verified; dated forecast triggers only, never passed ones."
+    },
+    "dTitle": {
+      "kind": "title1",
+      "maxW": 5000,
+      "text": "D · Briefings (same console language as story mode)",
+      "w": 240,
+      "x": 0,
+      "y": 8980
+    },
+    "briefhow": {
+      "fill": "teal",
+      "maxH": 560,
+      "w": 390,
+      "x": 1480,
+      "y": 9100,
+      "text": "Briefing mode follows the story-mode pattern: map + slide card + a bottom strip. DAILY (real 12 Sep edition): THE DAY (headline + summary + stats) → 8 TOP STORIES (map flies to their countries; each AI forecast labelled model judgment, later scored on Track record) → COUNTRY TO WATCH (opens the country card) + rising thread. EDITIONS strip: solid = published (5–12 Sep), dashed = no edition (13–25 Sep, AI paused) — never a dead end. WEEKLY (week of 6 Sep): THE WEEK → 6 SIGNALS (fact, then our \"so what\") → NEXT WEEK watch list. READ AS TEXT keeps a plain version for email/print/search."
+    },
+    "eTitle": {
+      "kind": "title1",
+      "maxW": 5000,
+      "text": "E · Trust (track record): E1 scroll page vs E2 game-style one screen",
+      "w": 240,
+      "x": 0,
+      "y": 10180
+    },
+    "trhow": {
+      "fill": "teal",
+      "maxH": 620,
+      "w": 390,
+      "x": 1480,
+      "y": 10300,
+      "text": "Track record (approved method). Stage buttons show how the top line changes: NOW = \"We don’t have a scored track record yet\"; FIRST MONTHS = the weekly locked sample, too few to judge; AFTER ~4 MONTHS = our score next to a base-rate guess, with the uncertainty. 1 · When we changed our read (real notes: France after the Normandy derailment, China after the Hong Kong vigil sentences; Germany honestly says no single event). 2 · This week’s settling — checking the pre-selected questions whose deadline passed, from the source named at publication, by a person who can’t see our probability. 3 · How a question looks on a story ([p] = its own probability, generated once the AI provider is back). 4 · July pilot archive, unscored. 5 · Counts that add up."
+    },
+    "srhow": {
+      "fill": "blue",
+      "maxH": 620,
+      "w": 390,
+      "x": 3400,
+      "y": 10300,
+      "text": "E2 is the one-screen, game-style alternative to E1 (the scroll page). References: Return of the Obra Dinn’s book of fates (a grid where every case stays visible and fills in only when confirmed) = the FORECAST BOARD; a roguelike seed = THIS WEEK’S DRAW, published in advance; GitHub’s contribution graph / a training log = the SETTLING LOG (one square per week — the empty weeks after the July pilot are shown in red, not hidden); chess.com Game Review = ACCURACY, always beside a plain guess and locked until enough questions resolve; the Paradox “ledger” = WHEN WE CHANGED OUR READ. Click tiles, weeks and ledger entries; switch stages at the top. E1 can remain as the plain-text version. NEW: BOARD | MAP switch — the map places every question at the country it is about, with counts per place (✓ happened · ✗ didn’t · ▢ awaiting · ◌ void); click a place to list its questions. Counts only — never a per-country accuracy score (far too few per place). Today it shows the July pilot’s skew: mostly the NATO summit in Ankara."
+    },
+    "fTitle": {
+      "kind": "title1",
+      "maxW": 5000,
+      "text": "F · Analysis Studio (proposed — awaiting operator)",
+      "w": 240,
+      "x": 0,
+      "y": 11480
+    },
+    "studiohow": {
+      "fill": "teal",
+      "maxH": 620,
+      "w": 390,
+      "x": 1480,
+      "y": 11600,
+      "text": "Research Bay (debate ruling, proposed). LEFT: only the 4 analysis types that work today, each with the shape of its output — no locked or \"coming soon\" tiles. CENTRE: BRIEFING (question + up to 4 story chips, dimmed when older than 7 days + your key, which stays in this browser + RUN) becomes the DEBRIEF: bottom line → scenarios on a time bar → cited analysis → indicators. RIGHT: INTEL — our stories numbered [1]–[4] with outlet, date and the verbatim snippet (click one); web sources would be [W1]… and never mixed in; CHECKS. BOTTOM: model, run time, \"made by a reader with their own key\", SHARE / COPY. Try the PREVIEW STATE buttons: SIGNED OUT (the same screen with one real shared example), RUNNING (only real steps, no streaming), FAILED CHECKS (answer hidden, cannot be shared), SHARED LINK (read-only, sources frozen, not indexed, owner-only delete). Stories and snippets are real (13–17 Aug); the report wording is taken from the story's stored 12 Sep analysis as a stand-in."
+    }
+  },
+  "order": [
+    "Console.dc.html",
+    "ConsoleRadar.dc.html",
+    "ConsoleCard.dc.html",
+    "StoryPeek.dc.html",
+    "Legend.dc.html",
+    "StoryMode.dc.html",
+    "StoryWeb.dc.html",
+    "StoryMobile.dc.html",
+    "Board.dc.html",
+    "CountryCard.dc.html",
+    "BriefingMode.dc.html",
+    "TrackRecord.dc.html",
+    "ServiceRecord.dc.html",
+    "Studio.dc.html"
+  ],
+  "pages": [],
+  "title": "Global Perspectives — Console Redesign"
+}

@@ -102,7 +102,7 @@ Two critics (product; engineering/data honesty) judged them. The ruling is **S-A
   - `newsCountryIntelligence` failed 20/20 again today on "Insufficient Balance".
   - So the new country/web/bilateral lenses can't honestly launch until the DeepSeek balance returns.
 
-**One screen, `/analyze` (console style):**
+**One screen, `/analyze` (console style). Wireframe: canvas board F1 (`Studio.dc.html`).**
 | Zone | Shows |
 |---|---|
 | **Left: OPERATIONS rail** | Only lenses that are shipped and have a fixed output shape: Scenario · Compare · Free-form · Economic ripple (labelled "market-mechanism read"). No locked tiles, no "coming soon". |

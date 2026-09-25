@@ -98,4 +98,5 @@ Only approved designs remain. Sources are in `project-docs/redesign-ux/_referenc
 | D1 BriefingMode | Briefings in console style: Daily / Weekly, map + slides + editions strip (approved) |
 | E1 TrackRecord | Track record, plain-text version (approved as the text companion) |
 | E2 ServiceRecord | Track record, game-style one screen: BOARD \| MAP of locked questions (map = counts per place, never a per-country score), weekly seed, settling log, accuracy vs a plain guess, ledger (**approved as the main track record page**, map by default) |
+| F1 Studio | Analysis Studio "Research Bay", one screen: operations rail (4 working lenses) · briefing → debrief · intel (numbered frozen sources + checks) · status strip; preview states signed out / briefing / running / failed checks / shared link (**proposed**, see TRACK_RECORD_AND_STUDIO_RULING.md "Studio page design") |
 Removed as superseded: Main (v1 light home), Mobile (v1 phone home), Dossier (v3 story dossier with the lane web), Briefings (v1 light editions → replaced by BriefingMode).

@@ -136,6 +136,14 @@
       "h": 900,
       "is_interactive": true,
       "title": "F4 · Direction D — CONVERSATION + LIVE CANVAS: follow-ups, canvas follows the active turn"
+    },
+    "Navigation.dc.html": {
+      "x": 0,
+      "y": 17000,
+      "w": 1440,
+      "h": 900,
+      "is_interactive": true,
+      "title": "N1 · Site navigation — 5 plain items, same URLs, a live 'paused' line, phone tab bar"
     }
   },
   "createdOnFiles": {
@@ -222,7 +230,7 @@
     "fTitle": {
       "kind": "title1",
       "maxW": 5000,
-      "text": "F · Analysis Studio — four design directions to compare (A deck · B notebook · C case board · D conversation), same real US–Iran data",
+      "text": "F · Analysis Studio — APPROVED 26 Sep: A deck base + B 'add analysis' stacking + C board as a view toggle (D not used)",
       "w": 240,
       "x": 0,
       "y": 11480
@@ -330,6 +338,22 @@
       "x": 3040,
       "y": 11600,
       "text": "Whichever direction wins, add the reader-pays pieces (runs use the reader's own key): BEFORE the run — what is sent (stories, ~tokens), provider + model + output cap, deep research on/off, per-story material RICH / THIN (only 17 stories are rich today — warn before they spend). AFTER — a receipt from the provider's usage field (tokens in/out, model, time), checks, shareable or not; if checks fail: 'your provider still charged for this run'. Money shown only from a verified dated price table (operator decision), else link to the provider's pricing."
+    },
+    "gTitle": {
+      "kind": "title1",
+      "maxW": 5000,
+      "text": "G · Site navigation (proposed)",
+      "w": 240,
+      "x": 0,
+      "y": 16880
+    },
+    "navhow": {
+      "fill": "teal",
+      "maxH": 620,
+      "w": 390,
+      "x": 1480,
+      "y": 17000,
+      "text": "Navigation after a 3-way debate (five doors / game HUD / by job) + 2 critics. MENU: Map · Stories · Briefings · Studio · Track record — plain words, no dropdowns ('Console', 'Topics', 'Threads' were jargon). Countries = a map layer + a tab in Stories, not a menu item (~90 requests in 30 days). Account at right; the parked credits badge stays hidden. STATUS LINE under the menu: 'New stories and analysis paused since 12 Sep' — 12 Sep verified (last daily brief 12 Sep 14:01 UTC); computed from the newest data, not typed, so it clears itself. PHONE: bottom tab bar with the same 5 items. URLS: new labels, same URLs — our hosting can't send real 301s and story links are built in 8 places outside the site (emails, RSS, LinkedIn, alerts). Only one new route: /briefings. Maps live inside each page (no always-on map under every page: battery/memory cost on reading pages). SEARCH: later — no search index exists yet."
     }
   },
   "order": [
@@ -349,7 +373,8 @@
     "Studio.dc.html",
     "StudioNotebook.dc.html",
     "StudioBoard.dc.html",
-    "StudioChat.dc.html"
+    "StudioChat.dc.html",
+    "Navigation.dc.html"
   ],
   "pages": [],
   "title": "Global Perspectives — Console Redesign"

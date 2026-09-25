@@ -28,7 +28,7 @@ Each phase runs: research + debate (agents) → canvas board with real data → 
 
 | Phase | What gets decided | Status | Commit | Monitor ✓ |
 |---|---|---|---|---|
-| N · Site navigation | Top menu; how countries, sign-in/account and the retired pages (`/breaking`, `/spider-demo`, `/economy`, `/weekly-markets`) are reached; "AI paused" status line; footer | **Now** | — | — |
+| N · Site navigation | Top menu; how countries, sign-in/account and the retired pages (`/breaking`, `/spider-demo`, `/economy`, `/weekly-markets`) are reached; "AI paused" status line; footer | **Now** · proposed, awaiting operator (canvas N1) | see git log | 3 advocates + 2 critics; pause date verified 12 Sep |
 | P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | queued | — | — |
 | DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | queued | — | — |
 | H · Home leftovers | Banner vs tour; country shading vs pins; build behind `/map` first; "real Earth on top right" | queued | — | — |
@@ -43,3 +43,28 @@ Also open, outside these phases: Studio decisions S5–S10 (`TRACK_RECORD_AND_ST
 - [ ] INDEX row
 - [ ] status header flipped to `done`
 - No code, so no CHANGES.md entry and no verify step.
+
+## Phase N: navigation proposal (2026-09-26)
+Debate: A five doors / B game HUD / C by job, then a reader critic and an engineering critic. Canvas board **N1** (`Navigation.dc.html`).
+
+- **Menu:** Map · Stories · Briefings · Studio · Track record. Plain nouns, flat, no dropdowns. The old names "Console", "Topics" and "Threads" were jargon. Account at right; the parked credits badge stays hidden (existing gate, `Layout.jsx:127`).
+- **Countries:** a map layer + a tab in Stories (`/weekly/countries` kept); not a menu item.
+- **Briefings:** one new route, `/briefings` (Daily | Weekly). `/daily`, `/daily/:date` and `/weekly-brief` keep working as they are (the Worker pre-renders `/daily` for bots).
+- **URLs:** new labels, same URLs. Reasons:
+  - GitHub Pages + the Worker send no real 301s today;
+  - story and country URLs are built in **8 places outside the frontend**: `newsPostLinkedIn:460`, `newsBreakingAlert:189`, `newsRecommend:317`, `newsSensitiveData:2114` (RSS), `newsSituationTracker:111`, `renderDriftEmail.js:91`, and the Worker root page + pre-render regexes.
+  - The frontend has one helper, `src/shared/lib/threadPath.js` (14 call sites).
+- **Retired routes:**
+  - `/breaking(/:id)` → client redirect to the story if the id resolves, else `/`.
+  - `/weekly-markets` → `/briefings` with a paused note (not `/economy`, which is itself parked).
+  - `/spider-demo` stays unlisted, later → story WEB view.
+  - `/economy` is direct URL only.
+- **Status line:**
+  - "New stories and analysis paused since 12 Sep". **12 Sep is verified** (last daily brief 2026-09-12T14:01Z; 13–26 Sep return nothing).
+  - It must be **computed** from the newest `generatedAt`, never typed. That needs a new small read, since `gp-strip` today shows only a topic count and tagline (`Layout.jsx:181–197`).
+  - GDACS alerts are still live.
+- **Maps** live inside each page. No always-on map under every page: a live WebGL map under reading pages costs battery and memory.
+- **Phone:** bottom tab bar with the same 5 items; the footer stays at the end of each page.
+- **Search:** later. No search index exists yet (the ⌘K comment is at `Layout.jsx:38–46`).
+- **Footer:** About, White paper, Membership, Privacy, Disclosures, Contact.
+- **Build notes:** the onboarding tour targets use `data-tour="nav-${to}"` (`Layout.jsx:101`), so they must follow the new labels. The only nav guard is `verify_pages.sh:51` (economy absent).

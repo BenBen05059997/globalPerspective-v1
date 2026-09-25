@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Site navigation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}a{color:#5fd4ff;text-decoration:none}button{font-family:inherit}</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #060c14; color: #c9d6df;">
+
+<div style="position: absolute; left: 24px; top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #ffb347;">N1 · SITE NAVIGATION · PROPOSED · CLICK THE MENU ITEMS (DESKTOP OR PHONE)</div>
+
+<!-- desktop frame -->
+<div style="position: absolute; left: 24px; top: 40px; width: 960px; height: 560px; border: 1px solid rgba(95,212,255,0.25); border-radius: 6px; overflow: hidden; background: radial-gradient(ellipse at 50% 45%, #0b1a2a 0%, #060c14 70%);">
+<div style="height: 44px; display: flex; align-items: center; gap: 18px; padding: 0 16px; background: rgba(4,8,14,0.95); border-bottom: 1px solid rgba(95,212,255,0.14);">
+<span style="font-family: Fraunces, serif; font-size: 15px; font-weight: 600; color: #eef5f9;">Global Perspectives</span>
+<sc-for list="{{items}}" as="i" hint-placeholder-count="5"><button type="button" onClick="{{i.pick}}" aria-current="{{i.on}}" title="{{i.tip}}" style="{{i.dstyle}}">{{i.label}}</button></sc-for>
+<span style="flex-grow: 1;"></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #56626b; border: 1px dashed #56626b; padding: 3px 7px; border-radius: 3px;">SEARCH · LATER</span>
+<button type="button" onClick="{{toggleSigned}}" style="height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid rgba(95,212,255,0.35); background: transparent; color: #d6e2ea; font-size: 12px; cursor: pointer;">{{acct}}</button>
+</div>
+<div style="height: 26px; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: rgba(40,28,8,0.55); border-bottom: 1px solid rgba(255,179,71,0.3); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #ffb347;">
+<span>● NEW STORIES AND ANALYSIS PAUSED SINCE 12 SEP</span><span style="color: #8a99a5;">· DISASTER ALERTS (GDACS) STILL LIVE · EVERY SECTION SHOWS ITS OWN DATE · COMPUTED FROM THE NEWEST DATA, NOT TYPED IN</span>
+</div>
+<div style="position: absolute; left: 24px; right: 24px; top: 96px; bottom: 20px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.1em; color: #7d8b96;">{{page.url}}</div>
+<div style="font-family: Fraunces, serif; font-size: 28px; color: #eef5f9; margin-top: 6px;">{{page.title}}</div>
+<div style="font-size: 14px; line-height: 1.55; color: #c9d6df; margin-top: 8px; max-width: 720px;">{{page.what}}</div>
+<div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;"><sc-for list="{{page.subs}}" as="s" hint-placeholder-count="3"><span style="padding: 5px 9px; border: 1px solid rgba(95,212,255,0.25); border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8fdcff;">{{s}}</span></sc-for></div>
+<div style="margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 10px; line-height: 1.6; color: #7d8b96;">{{page.board}}</div>
+<div style="margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; line-height: 1.6; color: {{page.mapC}};">{{page.map}}</div>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 22px; display: flex; gap: 16px; align-items: center; padding: 0 16px; background: rgba(4,8,14,0.95); border-top: 1px solid rgba(95,212,255,0.1); font-size: 10.5px; color: #7d8b96;">
+<span>FOOTER:</span><span>About</span><span>White paper</span><span>Membership</span><span>Privacy</span><span>Disclosures</span><span>Contact</span>
+</div>
+</div>
+
+<!-- phone frame -->
+<div style="position: absolute; left: 1010px; top: 40px; width: 300px; height: 560px; border: 1px solid rgba(95,212,255,0.25); border-radius: 22px; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #0b1a2a 0%, #060c14 70%);">
+<div style="height: 40px; display: flex; align-items: center; padding: 0 14px; gap: 8px; background: rgba(4,8,14,0.95);"><span style="font-family: Fraunces, serif; font-size: 14px; font-weight: 600; color: #eef5f9; flex-grow: 1;">GP</span><span style="font-size: 11px; color: #d6e2ea;">{{acctShort}}</span></div>
+<div style="padding: 4px 14px; background: rgba(40,28,8,0.55); font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #ffb347;">● NEW STORIES + ANALYSIS PAUSED SINCE 12 SEP</div>
+<div style="padding: 14px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96;">{{page.url}}</div><div style="font-family: Fraunces, serif; font-size: 20px; color: #eef5f9; margin-top: 4px;">{{page.title}}</div><div style="font-size: 12px; line-height: 1.5; color: #c9d6df; margin-top: 6px;">{{page.phone}}</div></div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 58px; display: grid; grid-template-columns: repeat(5, 1fr); background: rgba(4,8,14,0.97); border-top: 1px solid rgba(95,212,255,0.18);">
+<sc-for list="{{items}}" as="i" hint-placeholder-count="5"><button type="button" onClick="{{i.pick}}" aria-current="{{i.on}}" style="{{i.pstyle}}"><span style="font-size: 16px;">{{i.icon}}</span><span style="font-size: 9.5px; margin-top: 2px;">{{i.short}}</span></button></sc-for>
+</div>
+</div>
+
+<div style="position: absolute; left: 1330px; top: 40px; width: 90px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; line-height: 1.5; color: #7d8b96;">PHONE: A BOTTOM TAB BAR WITH THE SAME 5 ITEMS. NO HAMBURGER. THE FOOTER SITS AT THE END OF EACH PAGE.</div>
+
+<!-- URL plan -->
+<div style="position: absolute; left: 24px; top: 616px; right: 24px; bottom: 16px; border: 1px solid rgba(95,212,255,0.18); border-radius: 4px; background: rgba(6,12,20,0.9); padding: 10px 14px; overflow: hidden;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #5fd4ff;">URL PLAN · RULE: NEW LABELS, SAME URLS. OUR HOSTING CAN'T DO REAL 301 REDIRECTS, AND STORY LINKS ARE BUILT IN 8 PLACES OUTSIDE THE SITE (EMAILS, RSS, LINKEDIN, ALERTS)</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 24px; row-gap: 3px; margin-top: 8px;">
+<sc-for list="{{urls}}" as="u" hint-placeholder-count="15"><div style="display: grid; grid-template-columns: 150px 1fr; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; line-height: 1.45;"><span style="color: #d6e2ea;">{{u.a}}</span><span style="color: {{u.c}};">{{u.b}}</span></div></sc-for>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sel: 0, signed: false }; }
+  renderVals() {
+    var self = this, S = this.state, MONO = 'JetBrains Mono, monospace';
+    var P = [
+      { label: 'Map', short: 'Map', icon: '◎', tip: 'The live world map: events, alerts and stories where they happen.', url: '/  (built behind /map first)', title: 'Map', what: 'The operations console: globe on desktop, radar on phone. Click an event for its story card; a countries layer opens the country card.', subs: ['EVENTS', 'ALERTS (replaces /breaking)', 'COUNTRIES LAYER'], board: 'CANVAS A1–A5 · C1 (COUNTRY CARD)', map: 'MAP: YES (THIS IS THE MAP)', mapC: '#6fd29a', phone: 'Radar map with the event list below it. Tap an event for its card.' },
+      { label: 'Stories', short: 'Stories', icon: '▤', tip: 'Every story we follow, as a board, table, map or web, with a countries list.', url: '/weekly · /weekly/thread/:id · /weekly/countries', title: 'Stories', what: 'The threads board (board / table / map / web) and each story in story mode. The ranked countries list lives here as a tab.', subs: ['BOARD', 'TABLE', 'MAP', 'WEB', 'COUNTRIES'], board: 'CANVAS B1–B4', map: 'MAP: INSIDE STORY MODE ONLY (NOT UNDER THE BOARD)', mapC: '#8a99a5', phone: 'Board as a list; each story opens in story mode.' },
+      { label: 'Briefings', short: 'Briefs', icon: '◧', tip: 'The daily and weekly briefings, with every past edition.', url: '/briefings (new entry) · /daily/:date and /weekly-brief kept', title: 'Briefings', what: 'Briefing mode with a DAILY | WEEKLY switch and the editions strip. Old daily and weekly links keep working as they are.', subs: ['DAILY', 'WEEKLY', 'EDITIONS'], board: 'CANVAS D1', map: 'MAP: A PANE INSIDE BRIEFING MODE', mapC: '#8a99a5', phone: 'Slides, with the map shown on the current slide.' },
+      { label: 'Studio', short: 'Studio', icon: '◇', tip: 'Analyse our stories with your own AI key: scenario, compare, what changed, free-form.', url: '/analyze (kept)', title: 'Studio', what: 'Deck with + add analysis and a board view. Signed-out visitors see one real shared example; running needs sign-in and your own key.', subs: ['SCENARIO', 'COMPARE', 'WHAT CHANGED', 'FREE-FORM'], board: 'CANVAS F1 (+ F2 STACKING, F3 BOARD VIEW)', map: 'MAP: A PANE INSIDE THE DECK', mapC: '#8a99a5', phone: 'Deck slides; the board view is desktop-first.' },
+      { label: 'Track record', short: 'Record', icon: '✓', tip: 'How our forecasts are checked, and when we changed our read.', url: '/track-record (kept)', title: 'Track record', what: 'The service record: locked questions by place, the weekly settling log, accuracy locked until enough resolve, and the ledger of changed reads.', subs: ['BOARD | MAP', 'SETTLING LOG', 'LEDGER'], board: 'CANVAS E2 (E1 = TEXT VERSION)', map: 'MAP: ITS OWN QUESTION MAP (COUNTS ONLY)', mapC: '#8a99a5', phone: 'Board first; map and ledger as tabs.' }
+    ];
+    var items = P.map(function (p, i) { var on = i === S.sel;
+      return { label: p.label, short: p.short, icon: p.icon, tip: p.tip, on: on, pick: function () { self.setState({ sel: i }); },
+        dstyle: 'height: 44px; padding: 0 2px; background: none; border: none; border-bottom: 2px solid ' + (on ? '#5fd4ff' : 'transparent') + '; color: ' + (on ? '#eef5f9' : '#8a99a5') + '; font-size: 13px; cursor: pointer;',
+        pstyle: 'display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; border: none; border-top: 2px solid ' + (on ? '#5fd4ff' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + '; cursor: pointer;' }; });
+    var U = [
+      ['/', 'Map home (swap after the /map build)', '#6fd29a'], ['/map', 'kept (build target, then alias)', '#6fd29a'],
+      ['/weekly', 'Stories board · kept', '#6fd29a'], ['/weekly/thread/:id', 'story mode · kept', '#6fd29a'],
+      ['/weekly/countries', 'countries tab · kept', '#6fd29a'], ['/weekly/country/:name', 'public country card · kept', '#6fd29a'],
+      ['/briefings', 'NEW entry (daily | weekly)', '#5fd4ff'], ['/daily · /daily/:date', 'kept (bot pre-render)', '#6fd29a'],
+      ['/weekly-brief', 'kept, opens the weekly edition', '#6fd29a'], ['/analyze', 'Studio · kept', '#6fd29a'],
+      ['/track-record', 'kept', '#6fd29a'], ['/breaking(/:id)', 'client redirect: story if the id resolves, else /', '#ffb347'],
+      ['/spider-demo', 'unlisted; later → story WEB view', '#ffb347'], ['/weekly-markets', 'client redirect → /briefings (paused note)', '#ffb347'],
+      ['/economy', 'parked: direct URL only, not in nav', '#8a99a5']
+    ].map(function (u) { return { a: u[0], b: u[1], c: u[2] }; });
+    return { items: items, page: P[S.sel], urls: U, acct: S.signed ? 'Account' : 'Sign in', acctShort: S.signed ? 'Account' : 'Sign in',
+      toggleSigned: function () { self.setState({ signed: !S.signed }); } };
+  }
+}
+</script>
+</body>
+</html>

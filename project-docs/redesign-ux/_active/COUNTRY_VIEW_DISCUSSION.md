@@ -58,3 +58,23 @@ Goes to the **Studio instead**: the causal/systems web, bilateral relations, sce
 | C6 | Countries list becomes a "country risk" map layer + ranked list, with freshness on every row | Yes (fixes the 121-day-old country styled as fresh) |
 | C7 | Travel advisories as a new source | Later, after checking the source's terms |
 | C8 | ACLED conflict counts (already fetched internally) | Don't publish until ACLED's redistribution terms are checked |
+
+## Who gets an AI briefing (verified in code, 2026-09-25)
+`newsCountryIntelligence`:
+- groups 30 days of news by country and keeps countries with **≥ 2 articles**;
+- sorts them by **total article volume**;
+- briefs the **top 20** (`MAX_COUNTRIES = 20`, index.js:75, 191, 225).
+
+So selection is by **how much news**, not by how big the event is. A severe event in a thinly covered country can miss the cut;
+GDACS disasters still show on the map regardless.
+
+## Frontend: four country states (proposal)
+| State | When | Card shows | Map shows |
+|---|---|---|---|
+| **Briefed** | AI briefing ≤ 7 days old | Full card (triad, 4 chips, what happened, stories, watch, money) | Country tinted by risk (legend brightness rules) |
+| **Briefed, older** | Briefing 7–30 days old | Full card; sections amber "older analysis · date" | Tint desaturated |
+| **Tracked, no briefing** | Has stories or live alerts, but outside the top 20 | Facts + stories + alerts + money, plus "No AI briefing this cycle (we brief the 20 most-covered countries)" and **"Generate a briefing in Studio →"** (on demand) | Thin outline, no tint |
+| **Quiet** | No stories in 30 days | Facts + money only: "No coverage in the last 30 days" (**never implies safe**) | Nothing |
+
+Open: C9. Should selection also include event-driven countries (e.g. top 20 by volume **plus** any country with a GDACS red alert or an
+escalating high-severity story), so big events aren't missed? This is a backend change, after the DeepSeek top-up. Recommended yes.

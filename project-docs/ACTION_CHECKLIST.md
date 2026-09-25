@@ -77,8 +77,8 @@ something · ▶ in progress · ✅ done
 | Economy `/economy` | ⏸ parked, soft-hidden | after the DeepSeek top-up |
 | Country page `/weekly/country/:name` | ✅ designed (25 Sep): **country card on the map** (5 states, honesty rules) + deep-dive in the Studio; the URL stays public with the card content | build later (needs `country_facts`, slim history, rank) |
 | Countries list `/weekly/countries` | ✅ direction: map "countries" layer + ranked list with freshness on every row | with the country card |
-| Track record `/track-record` | ☐ to redo: B (worst contrast on the site, mobile overflow, counters don't sum); key trust page | after country |
-| Analysis Studio `/analyze` | ☐ extend: new lenses (country deep-dive with web, bilateral, explain-the-web); credits copy | after track record |
+| Track record `/track-record` | ◐ ruled 25 Sep: lean honest page (ledger first, no "strong"), sampled scoring + alarm (`TRACK_RECORD_AND_STUDIO_RULING.md`) | operator decisions T1–T3 |
+| Analysis Studio `/analyze` | ◐ ruled 25 Sep: page (A-lite), public example, share permalinks, member path parked | operator decisions S1–S3 |
 | `/breaking` | retire into the home alert stack | with the home build |
 | `/spider-demo` | retire into story mode, the board WEB view and the Studio lens | with C11 |
 | Membership / account / sign-in | light touch: nav presence; signed-out `/account` framing | small fixes |

@@ -1,6 +1,6 @@
 # Track record & Analysis Studio: do we need them, what for, how shown? (debate ruling, 2026-09-25)
 
-**Status:** ruling for operator discussion. Design only; nothing built. Process:
+**Status: APPROVED (operator, 2026-09-25: "i like your recommendation"). T1–T3 and S1–S3 accepted as recommended; S3 (DeepSeek vs another provider) remains the operator's business call.** Design only; nothing built. Process:
 - a fact pass (code, live proxy, CloudWatch, read-only DynamoDB scan) and a research pass
   (Metaculus, Good Judgment, Nate Silver, Polymarket; Perplexity Pages/Spaces, NotebookLM, Elicit, AlphaSense, Deep Research);
 - three advocates: A destinations, B embedded everywhere, C lean/park;

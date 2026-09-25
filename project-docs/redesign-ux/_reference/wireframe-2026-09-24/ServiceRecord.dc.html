@@ -39,7 +39,20 @@
 </div>
 
 <section aria-label="Forecast board" style="position: absolute; left: 24px; top: 178px; width: 880px; height: 470px; padding: 14px 16px; box-sizing: border-box; background: rgba(8,16,26,0.85); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px;">
-<div style="display: flex; align-items: baseline; gap: 10px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #5fd4ff;">FORECAST BOARD</span><span style="font-size: 11.5px; color: #8a99a5;">every tile = one locked question · click a tile</span><span style="flex-grow: 1;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;">■ HAPPENED &nbsp;■ DIDN'T &nbsp;▢ AWAITING &nbsp;◌ VOID</span></div>
+<div style="display: flex; align-items: center; gap: 10px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.14em; color: #5fd4ff;">FORECAST BOARD</span>
+<div role="group" aria-label="View" style="display: flex; gap: 3px; padding: 2px; border: 1px solid rgba(95,212,255,0.25); border-radius: 4px;"><button type="button" onClick="{{toBoard}}" aria-pressed="{{isBoard}}" style="{{boardBtn}}">BOARD</button><button type="button" onClick="{{toMap}}" aria-pressed="{{isMap}}" style="{{mapBtn}}">MAP</button></div>
+<span style="font-size: 11.5px; color: #8a99a5;">{{viewHint}}</span><span style="flex-grow: 1;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;"><span style="color: #6fd49a;">■</span> HAPPENED &nbsp;<span style="color: #b8594a;">■</span> DIDN'T &nbsp;▢ AWAITING &nbsp;<span style="color: #ffb347;">◌</span> VOID</span></div>
+<sc-if value="{{isMap}}" hint-placeholder-val="{{ false }}">
+<div style="position: relative; margin-top: 10px; height: 402px; background: #06101c; border: 1px solid rgba(95,212,255,0.18); border-radius: 3px; overflow: hidden;">
+<svg width="848" height="402" viewBox="0 0 848 402" style="position: absolute; inset: 0;" aria-hidden="true"><path d="{{mapLand}}" fill="none" stroke="rgba(150,225,255,0.22)" stroke-width="2.2" stroke-linecap="round"></path></svg>
+<sc-for list="{{places}}" as="pl" hint-placeholder-count="10">
+<button type="button" onClick="{{pl.pick}}" aria-label="{{pl.aria}}" style="{{pl.ring}}"></button>
+<div style="{{pl.lab}}"><span style="color: #eef5f9;">{{pl.name}}</span> <sc-for list="{{pl.seg}}" as="g" hint-placeholder-count="3"><span style="color: {{g.c}};">{{g.t}}</span> </sc-for></div>
+</sc-for>
+<div style="position: absolute; left: 10px; bottom: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;">{{mapNote}}</div>
+</div>
+</sc-if>
+<sc-if value="{{isBoard}}" hint-placeholder-val="{{ true }}">
 <sc-for list="{{cohorts}}" as="co" hint-placeholder-count="2">
 <div style="margin-top: 12px;">
 <div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; color: {{co.c}};">{{co.label}}</div>
@@ -48,6 +61,7 @@
 </div>
 </div>
 </sc-for>
+</sc-if>
 </section>
 
 <section aria-live="polite" style="position: absolute; right: 24px; top: 178px; width: 488px; height: 470px; padding: 14px 16px; box-sizing: border-box; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.3); border-radius: 4px; overflow-y: auto;">
@@ -67,7 +81,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  constructor(props) { super(props); this.state = { stage: 0, sel: { kind: 'intro' } }; }
+  constructor(props) { super(props); this.state = { stage: 0, sel: { kind: 'intro' }, view: 'board' }; }
   renderVals() {
     var self = this, D = {"led": [{"name": "Germany", "date": "2026-09-12", "from": 75, "to": 70, "trig": "", "why": "No single news event explains this change."}, {"name": "Russia", "date": "2026-09-12", "from": 88, "to": 88, "trig": "France Joins Slovakia in Seeking to Delist Russian Oligarch Usmanov from EU Sanctions", "why": "France joined Slovakia in seeking to delist Russian oligarch Usmanov from EU sanctions, signaling easing sanctions pressure on Russia. This reduced the economic risk axis from 65 to 55."}, {"name": "France", "date": "2026-09-12", "from": 45, "to": 55, "trig": "Passenger Train Derails in Normandy Leaving at Least 44 Injured on Rouen-Caen Route", "why": "The Normandy train derailment on the Rouen-Caen route injuring at least 44 people is a sudden transport disaster that would raise humanitarian concern and conflict/disruption risk. This single event best matches the same-day jump in humanitarian (+15) and the overall elevated risk reading."}, {"name": "Germany", "date": "2026-09-11", "from": 75, "to": 75, "trig": "", "why": "No single news event explains this change."}, {"name": "China", "date": "2026-09-11", "from": 65, "to": 70, "trig": "Hong Kong Jails Three Tiananmen Vigil Leaders for Up to 7 Years Under National Security Law", "why": "Hong Kong jailing three Tiananmen vigil leaders for up to 7 years under the National Security Law is a direct political crackdown that escalates confrontation with the West, matching the political axis jump from 55 to 70."}], "pilot": [{"v": "fired", "p": 0.65, "dl": "2026-07-10", "q": "India and Indonesia issue a joint statement confirming a defense cooperation framework including long-range missile supply", "story": "India to supply Indonesia with long-range missiles as Modi visits Jakarta", "sc": "Most Likely"}, {"v": "fired", "p": 0.2, "dl": "2026-07-09", "q": "India and Indonesia sign a binding contract for long-range missile supply during Modi's state visit", "story": "India to supply Indonesia with long-range missiles as Modi visits Jakarta", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.65, "dl": "2026-07-10", "q": "Australia, Japan, and New Zealand issue a joint statement condemning the test at the ASEAN Foreign Ministers' Meeting", "story": "China test-launches long-range ballistic missile in the South Pacific, angering neighbours", "sc": "Most Likely"}, {"v": "fired", "p": 0.2, "dl": "2026-07-10", "q": "Pakistan Navy confirms location of wreckage within 48 hours of search initiation", "story": "Pakistan searches for missing Boeing cargo plane with five crew off Karachi coast", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.175, "dl": "2026-07-09", "q": "NATO offers Ukraine a formal membership roadmap with a timeline at the summit", "story": "Russian missile and drone attack on Kyiv kills at least 11 on eve of NATO summit", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.175, "dl": "2026-07-09", "q": "A Russian missile strikes within 10 km of the NATO summit venue in Turkey", "story": "Russian missile and drone attack on Kyiv kills at least 11 on eve of NATO summit", "sc": "Pessimistic"}, {"v": "fired", "p": 0.65, "dl": "2026-07-10", "q": "NWS issues a heat advisory for a major July 4th event location within the continental US", "story": "US marks 250th birthday with Trump center stage; fireworks, flyovers and extreme weather", "sc": "Most Likely"}, {"v": "not_fired", "p": 0.6, "dl": "2026-07-10", "q": "NATO final communiqué includes a new Defense Investment Pledge with a target above 2% GDP but no binding deadline", "story": "NATO summit in Ankara: Trump looms large as alliance grapples with rearming Europe and Iran tensions", "sc": "Most Likely"}, {"v": "not_fired", "p": 0.175, "dl": "2026-07-10", "q": "Germany announces it will reach 2.5% GDP defense spending by 2028, exceeding the Vilnius pledge", "story": "NATO summit in Ankara: Trump looms large as alliance grapples with rearming Europe and Iran tensions", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.225, "dl": "2026-07-10", "q": "France and Germany block a NATO statement on Iran, citing disagreement with US policy, causing the summit to end without a final communiqué", "story": "NATO summit in Ankara: Trump looms large as alliance grapples with rearming Europe and Iran tensions", "sc": "Pessimistic"}, {"v": "not_fired", "p": 0.6, "dl": "2026-07-10", "q": "NATO communiqué reaffirms 2% GDP floor but does not set binding 5% target", "story": "NATO summit begins in Ankara with Trump pushing for defense spending and Ukraine seeking air defense", "sc": "Most Likely"}, {"v": "fired", "p": 0.225, "dl": "2026-07-10", "q": "Trump threatens to reduce US troop presence in Europe during or immediately after the summit", "story": "NATO summit begins in Ankara with Trump pushing for defense spending and Ukraine seeking air defense", "sc": "Pessimistic"}, {"v": "fired", "p": 0.65, "dl": "2026-07-10", "q": "French Interior Ministry formally requests EU Civil Protection Mechanism activation for aerial firefighting support", "story": "Wildfire in southern France forces evacuation of 10,000 people, Tour de France stage affected", "sc": "Most Likely"}, {"v": "not_fired", "p": 0.175, "dl": "2026-07-09", "q": "EU Civil Protection Mechanism deploys at least 4 Canadair CL-415s from Italy and Spain to Pyrénées-Orientales", "story": "Wildfire in southern France forces evacuation of 10,000 people, Tour de France stage affected", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.175, "dl": "2026-07-10", "q": "rescEU fleet deployed to all three countries simultaneously before July 10", "story": "Wildfires rage in Portugal and Spain as authorities in Greece warn of toxic smoke", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.2, "dl": "2026-07-09", "q": "Germany pledges an additional €10bn to the missile project at the NATO summit", "story": "NATO allies announce £37bn for new missile project at Ankara summit", "sc": "Optimistic"}, {"v": "fired", "p": 0.65, "dl": "2026-07-10", "q": "Canada formally announces selection of TKMS for submarine contract at NATO Summit", "story": "Canada to buy 12 hi-tech German submarines in multibillion-dollar deal to deepen NATO ties", "sc": "Most Likely"}, {"v": "not_fired", "p": 0.2, "dl": "2026-07-10", "q": "At least one survivor is pulled from rubble after 14 days post-quake (July 8)", "story": "Venezuela earthquake death toll rises to nearly 3,000 as international rescue teams wind down", "sc": "Optimistic"}, {"v": "fired", "p": 0.65, "dl": "2026-07-10", "q": "NATO announces a new multi-billion-dollar air defense package for Ukraine at the summit", "story": "Russian missile and drone attack on Kyiv kills at least 24 on eve of NATO summit", "sc": "Most Likely"}, {"v": "not_fired", "p": 0.2, "dl": "2026-07-10", "q": "NATO summit final communiqué includes a specific timeline for Ukraine's membership invitation", "story": "Russian missile and drone attack on Kyiv kills at least 24 on eve of NATO summit", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.15, "dl": "2026-07-10", "q": "NATO summit ends without a commitment to provide additional Patriot systems to Ukraine", "story": "Russian missile and drone attack on Kyiv kills at least 24 on eve of NATO summit", "sc": "Pessimistic"}, {"v": "not_fired", "p": 0.6, "dl": "2026-07-10", "q": "NATO issues a final communiqué restating the 2% defense spending target without enforcement mechanisms", "story": "NATO summit in Ankara: Trump to push for defense spending, meets Zelensky and Syria's Sharaa", "sc": "Most Likely"}, {"v": "not_fired", "p": 0.175, "dl": "2026-07-10", "q": "At least five NATO members publicly commit to reaching 2% GDP defense spending by 2028 in a signed agreement at the summit", "story": "NATO summit in Ankara: Trump to push for defense spending, meets Zelensky and Syria's Sharaa", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.175, "dl": "2026-07-10", "q": "U.S. and Ukraine sign a bilateral security pact including a NATO membership roadmap with specific milestones", "story": "NATO summit in Ankara: Trump to push for defense spending, meets Zelensky and Syria's Sharaa", "sc": "Optimistic"}, {"v": "fired", "p": 0.225, "dl": "2026-07-10", "q": "Trump threatens to reduce U.S. troop presence in Europe during a public address at the summit", "story": "NATO summit in Ankara: Trump to push for defense spending, meets Zelensky and Syria's Sharaa", "sc": "Pessimistic"}, {"v": "not_fired", "p": 0.225, "dl": "2026-07-10", "q": "Zelenskyy leaves the summit early without signing a joint statement", "story": "NATO summit in Ankara: Trump to push for defense spending, meets Zelensky and Syria's Sharaa", "sc": "Pessimistic"}, {"v": "not_fired", "p": 0.225, "dl": "2026-07-10", "q": "Turkey vetoes any NATO statement referencing Syria cooperation due to Kurdish militia disagreements", "story": "NATO summit in Ankara: Trump to push for defense spending, meets Zelensky and Syria's Sharaa", "sc": "Pessimistic"}, {"v": "not_fired", "p": 0.65, "dl": "2026-07-10", "q": "Tour de France officially reroutes Stage 4 away from Pyrénées-Orientales", "story": "Wildfire in southern France forces evacuation of 10,000 people, Tour de France stage affected", "sc": "Most Likely"}, {"v": "not_fired", "p": 0.6, "dl": "2026-07-10", "q": "NATO communiqué reaffirms 2% target without enforcement mechanism", "story": "NATO summit in Ankara: Trump to push for defense spending, meets Zelensky and Sharaa", "sc": "Most Likely"}, {"v": "fired", "p": 0.6, "dl": "2026-07-09", "q": "Trump announces bilateral security assistance package for Ukraine", "story": "NATO summit in Ankara: Trump to push for defense spending, meets Zelensky and Sharaa", "sc": "Most Likely"}], "resolved": 122, "fired": 30}, sg = this.state.stage, S = this.state.sel;
     var ST = [
@@ -107,6 +121,37 @@ class Component extends DCLogic {
         cohorts.push({ label: 'WEEK ' + (w + 1) + ' DRAW · 25 LOCKED QUESTIONS · SEED PUBLISHED IN ADVANCE (ILLUSTRATIVE)', c: '#5fd4ff', tiles: tiles });
       }
     }
+
+    var PLACE = { 'Canada': [-106, 56], 'China': [104, 35], 'Indonesia': [117, -2], 'Turkey': [35, 39], 'Pakistan': [69, 30], 'Ukraine': [31, 49], 'United States': [-98, 39], 'Venezuela': [-66, 7], 'France': [2, 46.5], 'Spain': [-4, 40], 'Iran': [53, 32], 'Germany': [10, 51], 'Yemen': [48, 15.5], 'Sudan': [30, 15.5], 'Russia': [60, 58], 'Brazil': [-52, -10], 'India': [78, 22], 'Israel': [35, 31.5] };
+    function placeOf(title) {
+      var T = [['Canada', 'Canada'], ['China test', 'China'], ['Indonesia', 'Indonesia'], ['Ankara', 'Turkey'], ['Pakistan', 'Pakistan'], ['Kyiv', 'Ukraine'], ['250th', 'United States'], ['Venezuela', 'Venezuela'], ['southern France', 'France'], ['Portugal and Spain', 'Spain']];
+      for (var i = 0; i < T.length; i++) if (title.indexOf(T[i][0]) >= 0) return T[i][1];
+      return null;
+    }
+    function MX(lon) { return (lon + 140) / 300 * 820 + 14; }
+    function MY(lat) { return 20 + (68 - lat) / 95 * 370; }
+    function mland(lo, la) { return (Math.sin(lo * 0.07) + Math.cos(la * 0.11 + lo * 0.03) + Math.sin(la * 0.05 - lo * 0.02)) > 0.35; }
+    var mapLand = '';
+    for (var la2 = -25; la2 <= 68; la2 += 4) for (var lo2 = -140; lo2 <= 160; lo2 += 4) if (mland(lo2, la2)) mapLand += 'M' + MX(lo2).toFixed(1) + ' ' + MY(la2).toFixed(1) + 'h0.1';
+    var agg = {};
+    function add(pl, kind, item) { if (!agg[pl]) agg[pl] = { fired: 0, not: 0, await: 0, void: 0, items: [], pilot: 0 }; agg[pl][kind]++; agg[pl].items.push(item); }
+    D.pilot.forEach(function (r) { var pl = placeOf(r.story); if (pl) { add(pl, r.v === 'fired' ? 'fired' : 'not', { pilot: true, q: r.q, v: r.v, story: r.story }); agg[pl].pilot++; } });
+    if (sg > 0) {
+      var NEW = ['Iran', 'Germany', 'Yemen', 'Sudan', 'Russia', 'Ukraine', 'Brazil', 'India', 'Israel', 'United States', 'China'];
+      var n2 = sg === 1 ? 57 : 150;
+      for (var q = 0; q < n2; q++) { var pl = NEW[(q * 7) % NEW.length], m = (q * 5) % 17; var kind = sg === 1 && q > 40 ? 'await' : m < 2 ? 'void' : m < 7 ? 'fired' : 'not'; add(pl, kind, { pilot: false, kind: kind }); }
+    }
+    var places = Object.keys(agg).map(function (pl) {
+      var a = agg[pl], x = MX(PLACE[pl][0]), y = MY(PLACE[pl][1]), total = a.fired + a.not + a.await + a.void, r = 7 + Math.min(14, Math.sqrt(total) * 2.4), on = S.kind === 'place' && S.name === pl;
+      var onlyPilot = a.pilot === total;
+      var seg = [];
+      if (a.fired) seg.push({ t: a.fired + '✓', c: '#6fd49a' }); if (a.not) seg.push({ t: a.not + '✗', c: '#e27a66' }); if (a.await) seg.push({ t: a.await + '▢', c: '#5fd4ff' }); if (a.void) seg.push({ t: a.void + '◌', c: '#ffb347' });
+      return { name: pl.toUpperCase(), aria: pl + ': ' + total + ' questions', seg: seg,
+        pick: function () { self.setState({ sel: { kind: 'place', name: pl } }); },
+        ring: 'position: absolute; left: ' + (x - r) + 'px; top: ' + (y - r) + 'px; width: ' + (2 * r) + 'px; height: ' + (2 * r) + 'px; padding: 0; border-radius: 50%; cursor: pointer; background: ' + (onlyPilot ? 'rgba(125,139,150,0.25)' : 'rgba(95,212,255,0.22)') + '; border: 1.5px solid ' + (on ? '#eef5f9' : onlyPilot ? '#7d8b96' : '#5fd4ff') + ';',
+        lab: 'position: absolute; left: ' + (x + r + 4) + 'px; top: ' + (y - 7) + 'px; font-family: JetBrains Mono, monospace; font-size: 9.5px; background: rgba(4,8,14,0.8); padding: 1px 4px; white-space: nowrap; pointer-events: none;' };
+    });
+    var isMap = this.state.view === 'map';
     var sel;
     if (S.kind === 'pilot') {
       var r = D.pilot[S.i % D.pilot.length], f = S.i < D.fired;
@@ -122,6 +167,14 @@ class Component extends DCLogic {
       var l = D.led[S.i];
       sel = { kicker: 'LEDGER · ' + l.date + ' · ' + l.name.toUpperCase(), c: '#ffb347', title: 'Risk ' + l.from + ' → ' + l.to,
         rows: (l.trig ? [{ k: 'TRIGGER', v: l.trig }] : []).concat([{ k: 'WHY IT CHANGED', v: l.why }]) };
+    } else if (S.kind === 'place') {
+      var a = agg[S.name];
+      var rows = a.items.slice(0, 7).map(function (it) {
+        if (it.pilot) return { k: (it.v === 'fired' ? '✓ HAPPENED' : '✗ DIDN’T HAPPEN') + ' · JULY PILOT (UNSCORED)', v: it.q };
+        return { k: ({ fired: '✓ HAPPENED', not: '✗ DIDN’T HAPPEN', await: '▢ AWAITING', void: '◌ VOID' })[it.kind] + ' · NEW METHOD (ILLUSTRATIVE)', v: '[Question about ' + S.name + ']' };
+      });
+      if (a.items.length > 7) rows.push({ k: 'MORE', v: '+' + (a.items.length - 7) + ' more questions here' });
+      sel = { kicker: S.name.toUpperCase() + ' · ' + a.items.length + ' QUESTIONS · COUNTS ONLY — TOO FEW FOR A PER-COUNTRY SCORE', c: '#5fd4ff', title: a.fired + ' happened · ' + a.not + ' didn’t' + (a.await ? ' · ' + a.await + ' awaiting' : '') + (a.void ? ' · ' + a.void + ' void' : ''), rows: rows };
     } else {
       sel = { kicker: 'HOW TO READ THIS SCREEN', c: '#5fd4ff', title: 'Every forecast question we score is a tile. Nothing is hidden, including the misses and the unclear ones.',
         rows: [{ k: 'THE BOARD (OBRA DINN “BOOK OF FATES”)', v: 'Each week a draw of 25 questions is locked when they’re published. Tiles fill in as they are settled: happened, didn’t, or void. Empty tiles stay empty until then.' },
@@ -143,7 +196,12 @@ class Component extends DCLogic {
       return { name: l.name.toUpperCase(), move: same ? l.to + ' =' : l.from + '→' + l.to, c: same ? '#8a99a5' : up ? '#ff6a4d' : '#6fd49a', short: (l.trig || l.why).slice(0, 58) + '…',
         pick: function () { self.setState({ sel: { kind: 'led', i: i } }); },
         style: 'flex: 1; min-width: 0; padding: 8px 10px; cursor: pointer; background: ' + (on ? 'rgba(95,212,255,0.12)' : 'rgba(12,22,34,0.9)') + '; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.14)') + '; border-radius: 3px; color: inherit;' }; });
-    return { stages: stages, st: st, cohorts: cohorts, sel: sel, weeks: weeks, ledger: ledger,
+    var vbtn = function (on) { return 'height: 24px; padding: 0 9px; border: none; border-radius: 3px; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + '; font-family: JetBrains Mono, monospace; font-size: 10px; cursor: pointer;'; };
+    return { isMap: isMap, isBoard: !isMap, boardBtn: vbtn(!isMap), mapBtn: vbtn(isMap), mapLand: mapLand, places: places,
+      toBoard: function () { self.setState({ view: 'board' }); }, toMap: function () { self.setState({ view: 'map', sel: { kind: 'intro' } }); },
+      viewHint: isMap ? 'questions by the place they are about · click a place' : 'every tile = one locked question · click a tile',
+      mapNote: sg === 0 ? 'GREY = JULY PILOT (UNSCORED) · WIREFRAME PLOTS THE 30 MOST RECENT OF 122 · ONE WEEK, MOSTLY THE NATO SUMMIT IN ANKARA — THE SKEW IS VISIBLE' : 'CYAN = NEW-METHOD QUESTIONS (ILLUSTRATIVE) · COUNTS PER PLACE, NEVER A PER-COUNTRY SCORE',
+      stages: stages, st: st, cohorts: cohorts, sel: sel, weeks: weeks, ledger: ledger,
       weekNote: sg === 0 ? 'JUL → SEP: ONE SETTLING (24 JUL), THEN NONE — SHOWN, NOT HIDDEN · RED OUTLINE = A WEEK WE MISSED' : 'AFTER LAUNCH (ILLUSTRATIVE): EVERY WEEK FILLED · THE OLD GAP STAYS ON THE RECORD' };
   }
 }

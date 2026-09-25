@@ -34,6 +34,8 @@ Modelled on Recorded Future's Intelligence Card.
   (see below). Type chips filter all four.
 
 ## Spider page merged in (operator idea, 2026-09-25)
+> Architecture + merge plan: `STORY_SPIDER_MERGE_ARCHITECTURE.md`. **Correction:** spider nodes are *stories*, not a story's own events,
+> so the dossier's "Why" section has two layers: the story's own root-cause chain + its neighbour stories on the lanes.
 `/spider-demo` becomes part of these two pages and retires once both ship:
 - **Dossier section 2** is the spider lane web for one story.
   - Lanes: conflict / diplomacy / energy / economy / politics / other.

@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Story dossier (console style)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}
+a{color:#5fd4ff;text-decoration:none}a:hover{color:#a8e8ff}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 2240px; box-sizing: border-box; background: {{t.bg}}; color: {{t.text}}; display: flex; flex-direction: column; position: relative;">
+
+<header style="height: 52px; box-sizing: border-box; padding: 0 28px; display: flex; align-items: center; gap: 26px; border-bottom: 1px solid rgba(95,212,255,0.14); background: #060b12;">
+<a href="Console.dc.html" style="display: flex; align-items: center; gap: 10px; color: #eaf3f8;">
+<span style="width: 24px; height: 24px; border-radius: 5px; border: 1px solid #5fd4ff; color: #5fd4ff; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 13px;">G</span>
+<span style="font-family: Fraunces, serif; font-size: 16px; font-weight: 600;">Global Perspectives</span>
+</a>
+<nav aria-label="Main" style="display: flex; gap: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.06em; flex-grow: 1;">
+<a href="Console.dc.html" style="color: #8a99a5;">CONSOLE</a>
+<a href="Board.dc.html" style="color: #5fd4ff;">STORIES</a>
+<a href="#" style="color: #8a99a5;">COUNTRIES</a>
+<a href="#" style="color: #8a99a5;">ECONOMY</a>
+<a href="Briefings.dc.html" style="color: #8a99a5;">BRIEFINGS</a>
+<a href="#" style="color: #8a99a5;">TRACK RECORD</a>
+</nav>
+<div role="group" aria-label="Reading mode" style="display: flex; gap: 4px; padding: 3px; border: 1px solid rgba(95,212,255,0.25); border-radius: 6px;">
+<button type="button" onClick="{{setDark}}" aria-pressed="{{isDark}}" style="{{darkBtn}}">DARK</button>
+<button type="button" onClick="{{setLight}}" aria-pressed="{{isLight}}" style="{{lightBtn}}">READING MODE</button>
+</div>
+</header>
+
+<div style="padding: 12px 40px; background: {{t.hud}}; border-bottom: 1px solid {{t.line}}; display: flex; align-items: center; gap: 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: {{t.dim}};">
+<span style="color: {{t.accent}};">STORY FILE</span>
+<span style="color: #9b8cf8;">● POLITICAL</span>
+<span style="padding: 3px 8px; border: 1px solid #ff6a4d; color: #ff6a4d; border-radius: 2px;">▲ ESCALATING</span>
+<span style="padding: 3px 8px; background: rgba(255,95,70,0.15); color: #ff6a4d; border-radius: 2px;">HIGH · 85</span>
+<span style="display: flex; align-items: center; gap: 6px;">POL <span style="width: 42px; height: 5px; background: {{t.line}};"><span style="display: block; width: 85%; height: 5px; background: #9b8cf8;"></span></span> ECO <span style="width: 42px; height: 5px; background: {{t.line}};"><span style="display: block; width: 60%; height: 5px; background: #38b6de;"></span></span> CON — HUM —</span>
+<span style="flex-grow: 1;"></span>
+<span>10 EVENTS · 11 SOURCES · 3 COUNTRIES</span>
+<span style="color: #ffb347;">UPDATED 11d AGO</span>
+</div>
+
+<div style="padding: 28px 40px 0; display: flex; gap: 32px; align-items: flex-end;">
+<div style="flex-grow: 1;">
+<h1 style="margin: 0; font-family: Fraunces, serif; font-size: 42px; line-height: 1.12; font-weight: 600; color: {{t.head}};">Germany's Far-Right AfD Victory Sparks Widespread Protests</h1>
+<p style="margin: 12px 0 0; font-size: 17px; line-height: 1.55; color: {{t.text}}; max-width: 760px;"><strong style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: {{t.accent}};">THE NEWS&#160;&#160;</strong>The narrative began on September 4, 2026, with reports that Germany's far-right AfD was poised for a historic state election win in Saxony-Anhalt.</p>
+</div>
+<div style="display: flex; gap: 8px; flex-shrink: 0;">
+<a href="#" style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 4px; background: #ffb347; color: #1a1206; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;">FOLLOW</a>
+<a href="#" style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 4px; border: 1px solid {{t.accent}}; color: {{t.accent}}; font-family: 'JetBrains Mono', monospace; font-size: 12px;">ANALYZE IN STUDIO</a>
+<a href="#" style="height: 40px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 4px; border: 1px solid {{t.line}}; color: {{t.dim}}; font-family: 'JetBrains Mono', monospace; font-size: 12px;">COPY BRIEFING</a>
+</div>
+</div>
+
+<div style="padding: 22px 40px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+<section style="padding: 16px; background: {{t.panel}}; border: 1px solid {{t.line}}; border-radius: 4px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: {{t.accent}};">BOTTOM LINE</div>
+<p style="margin: 8px 0 0; font-size: 14px; line-height: 1.6; color: {{t.text}};">[Three-sentence condensation of the story arc.]</p>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: {{t.accent}}; margin-top: 14px;">WHERE IT'S HEADING</div>
+<p style="margin: 8px 0 0; font-size: 14px; line-height: 1.6; color: {{t.text}};">Most likely: [scenario] ([p]%). See <a href="#paths" style="font-size: 14px;">other paths ↓</a></p>
+</section>
+<a href="Console.dc.html" aria-label="Show this story on the console map" style="position: relative; display: block; min-height: 190px; background: #06101c; border: 1px solid rgba(95,212,255,0.25); border-radius: 4px; overflow: hidden;">
+<span style="position: absolute; left: 12px; top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #5fd4ff;">LOCATOR · RADAR</span>
+<span style="position: absolute; left: 50%; top: 55%; width: 300px; height: 300px; margin: -150px 0 0 -150px; border-radius: 50%; background: conic-gradient(from 20deg, rgba(95,212,255,0) 0deg, rgba(95,212,255,0.22) 50deg, rgba(160,235,255,0.7) 51deg, rgba(95,212,255,0) 52deg);"></span>
+<span style="position: absolute; left: 50%; top: 55%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 1px solid rgba(95,212,255,0.15);"></span>
+<span style="position: absolute; left: 47%; top: 40%; width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #9b8cf8; background: rgba(155,140,248,0.2); box-shadow: 0 0 16px #9b8cf8;"></span>
+<span style="position: absolute; left: 53%; top: 36%; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #9b8cf8;">GERMANY</span>
+<span style="position: absolute; left: 12px; bottom: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96;">OPEN ON CONSOLE →</span>
+</a>
+<section style="padding: 16px; background: {{t.panel}}; border: 1px solid {{t.line}}; border-radius: 4px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: {{t.accent}};">ACTIVITY · EVENTS PER DAY</div>
+<div style="display: flex; align-items: flex-end; gap: 6px; height: 110px; margin-top: 12px;">
+<sc-for list="{{bars}}" as="b" hint-placeholder-count="12">
+<span style="{{b.style}}"></span>
+</sc-for>
+</div>
+<div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{t.dim}}; margin-top: 6px;"><span>SEP 4</span><span style="color: #ffb347;">▲ TURNING POINT</span><span>SEP 13</span></div>
+</section>
+</div>
+
+<nav aria-label="Dossier sections" style="margin: 24px 40px 0; padding: 10px 14px; background: {{t.hud}}; border: 1px solid {{t.line}}; border-radius: 4px; display: flex; gap: 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em;">
+<span style="color: {{t.dim}};">{{navLabel}}</span>
+<sc-for list="{{navItems}}" as="n" hint-placeholder-count="9">
+<a href="{{n.href}}" onClick="{{n.pick}}" style="{{n.style}}">{{n.label}}</a>
+</sc-for>
+<span style="flex-grow: 1;"></span>
+<span role="group" aria-label="Layout" style="display: flex; gap: 4px;">
+<button type="button" onClick="{{setScroll}}" aria-pressed="{{isScroll}}" style="{{scrollBtn}}">ONE SCROLL</button>
+<button type="button" onClick="{{setTabs}}" aria-pressed="{{isTabs}}" style="{{tabsBtn}}">TABS</button>
+</span>
+</nav>
+
+<div style="padding: 24px 40px 40px; display: flex; gap: 28px; flex-grow: 1;">
+<main style="flex-grow: 1; display: flex; flex-direction: column; gap: 28px; max-width: 920px;">
+
+<section id="timeline" style="{{vis.timeline}}">
+<h2 style="{{t.h2}}">TIMELINE</h2>
+<ol style="margin: 12px 0 0; padding: 0; list-style: none; border-left: 1px solid {{t.line}}; display: flex; flex-direction: column; gap: 14px;">
+<li style="padding-left: 18px; position: relative;"><span style="position: absolute; left: -5px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: #9b8cf8;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{t.dim}};">SEP 4</span><div style="font-size: 15px; color: {{t.head}}; margin-top: 2px;">AfD poised for historic win in Saxony-Anhalt</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{t.dim}}; margin-top: 3px;">[n] SOURCES · FRANCE24 (FR) · …</div></li>
+<li style="padding-left: 18px; position: relative;"><span style="position: absolute; left: -7px; top: 3px; width: 13px; height: 13px; border-radius: 50%; background: #ffb347; box-shadow: 0 0 10px #ffb347;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #ffb347;">[DATE] · TURNING POINT</span><div style="font-size: 15px; color: {{t.head}}; margin-top: 2px;">[The inflection event — flagged by the analysis]</div></li>
+<li style="padding-left: 18px; position: relative;"><span style="position: absolute; left: -5px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: #9b8cf8;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{t.dim}};">SEP 13</span><div style="font-size: 15px; color: {{t.head}}; margin-top: 2px;">Tens of thousands march across Germany in protest</div></li>
+</ol>
+</section>
+
+<section id="web" style="{{vis.web}}">
+<h2 style="{{t.h2}}">WHY IT'S HAPPENING · CAUSAL WEB</h2>
+<div style="margin-top: 12px; padding: 14px; background: #06101c; border: 1px solid rgba(95,212,255,0.25); border-radius: 4px;">
+<div style="position: relative;">
+<svg viewBox="0 0 100 264" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 90px; top: 0; width: calc(100% - 90px); height: 264px; pointer-events: none;">
+<sc-for list="{{edges}}" as="e" hint-placeholder-count="5">
+<path d="{{e.d}}" fill="none" stroke="{{e.color}}" stroke-width="1.5" stroke-dasharray="{{e.dash}}" vector-effect="non-scaling-stroke" opacity="0.8"></path>
+</sc-for>
+</svg>
+<sc-for list="{{lanes}}" as="l" hint-placeholder-count="6">
+<div style="display: flex; height: 44px; border-bottom: 1px solid rgba(95,212,255,0.08);">
+<div style="width: 90px; flex-shrink: 0; display: flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: {{l.color}};">{{l.name}}</div>
+<div style="flex-grow: 1; position: relative;">
+<sc-for list="{{l.nodes}}" as="n" hint-placeholder-count="2">
+<button type="button" onClick="{{n.pick}}" aria-label="{{n.label}}" style="{{n.style}}"></button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top: 10px; min-height: 44px; padding: 10px 12px; border: 1px solid rgba(95,212,255,0.2); border-radius: 3px; font-size: 13px; line-height: 1.5; color: #c9d6df;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: {{node.kindColor}};">{{node.kind}}</span>&#160;&#160;{{node.text}}<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96; margin-top: 4px;">{{node.meta}}</div>
+</div>
+<div style="display: flex; gap: 18px; margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8a99a5;">
+<span>✅ FACT — FROM OUR SOURCES</span><span>💭 INFERENCE — MODEL JUDGMENT</span><span>— — POSSIBLY RELATED (NEVER "CAUSED")</span><span style="flex-grow: 1;"></span><a href="#" style="font-size: 10px;">OPEN FULL WEB →</a>
+</div>
+</div>
+<p style="margin: 12px 0 0; font-size: 15px; line-height: 1.7; color: {{t.text}};">[The root-cause chain as 3–5 linked steps, each pointing at the events above.]</p>
+</section>
+
+<section id="who" style="{{vis.who}}">
+<h2 style="{{t.h2}}">WHO'S INVOLVED</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px;">
+<a href="#" style="padding: 12px; background: {{t.panel}}; border: 1px solid {{t.line}}; border-radius: 4px; color: {{t.text}};"><div style="font-family: Fraunces, serif; font-size: 16px; color: {{t.head}};">AfD</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{t.dim}}; margin-top: 3px;">GERMANY · POLITICAL PARTY · 8 MENTIONS</div></a>
+<a href="#" style="padding: 12px; background: {{t.panel}}; border: 1px solid {{t.line}}; border-radius: 4px; color: {{t.text}};"><div style="font-family: Fraunces, serif; font-size: 16px; color: {{t.head}};">[Actor]</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{t.dim}}; margin-top: 3px;">[ROLE] · [n] MENTIONS</div></a>
+<a href="#" style="padding: 12px; background: {{t.panel}}; border: 1px solid {{t.line}}; border-radius: 4px; color: {{t.text}};"><div style="font-family: Fraunces, serif; font-size: 16px; color: {{t.head}};">[Actor]</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{t.dim}}; margin-top: 3px;">[ROLE] · [n] MENTIONS</div></a>
+</div>
+</section>
+
+<section id="view" style="{{vis.view}}">
+<h2 style="{{t.h2}}">THE VIEW FROM · WHO IS COVERING IT</h2>
+<div style="display: flex; height: 22px; margin-top: 12px; border-radius: 2px; overflow: hidden; font-family: 'JetBrains Mono', monospace; font-size: 10px;">
+<span style="flex-grow: 3; background: #3b6ea8; color: #fff; display: flex; align-items: center; padding-left: 8px;">FR</span>
+<span style="flex-grow: 2; background: #5a8fc9; color: #fff; display: flex; align-items: center; padding-left: 8px;">US</span>
+<span style="flex-grow: 1; background: #86b3e0; color: #0a1b2c; display: flex; align-items: center; padding-left: 8px;">CA</span>
+</div>
+<p style="margin: 8px 0 0; font-size: 13px; color: {{t.dim}};">Outlets by country and type (national / international), from each source's outlet data — [n] per country. No German outlet in the sample: coverage of this German story is foreign-led. <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px;">[proportions illustrative]</span></p>
+</section>
+
+<section id="watch" style="{{vis.watch}}">
+<h2 style="{{t.h2}}">WHAT TO WATCH · LIVE FORECAST</h2>
+<ul style="margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: {{t.text}};">
+<li>☐ [Trigger] — by [date]</li>
+<li>☐ [Trigger] — by [date]</li>
+<li style="color: {{t.dim}};">✓ [Resolved trigger] — happened</li>
+</ul>
+<div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{t.dim}};">OUR FORECASTS SO FAR: BRIER 0.154 ACROSS 122 RESOLVED — <a href="#" style="font-size: 11px;">TRACK RECORD</a></div>
+</section>
+
+<section id="paths" style="{{vis.paths}}">
+<h2 style="{{t.h2}}">OTHER WAYS THIS COULD GO</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px;">
+<div style="padding: 12px; border: 1px solid {{t.line}}; border-radius: 4px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: {{t.head}};">[p]%</div><div style="font-size: 13px; color: {{t.text}}; margin-top: 4px;">[Base case]</div></div>
+<div style="padding: 12px; border: 1px solid {{t.line}}; border-radius: 4px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: {{t.head}};">[p]%</div><div style="font-size: 13px; color: {{t.text}}; margin-top: 4px;">[Alternative]</div></div>
+<div style="padding: 12px; border: 1px solid {{t.line}}; border-radius: 4px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: {{t.head}};">[p]%</div><div style="font-size: 13px; color: {{t.text}}; margin-top: 4px;">[Tail risk]</div></div>
+</div>
+</section>
+
+<section id="markets" style="{{vis.markets}}">
+<h2 style="{{t.h2}}">MARKET IMPACT</h2>
+<p style="margin: 12px 0 0; font-size: 14px; color: {{t.text}};">[Instruments affected · direction · mechanism · winners and losers — from the economy analysis]</p>
+</section>
+
+<section id="changes" style="{{vis.changes}}">
+<h2 style="{{t.h2}}">WHAT CHANGED</h2>
+<p style="margin: 12px 0 0; font-size: 14px; color: {{t.text}};">[Correction history — each change in our read, with the event that caused it]</p>
+</section>
+
+<section id="sources" style="{{vis.sources}}">
+<h2 style="{{t.h2}}">SOURCES · RELATED STORIES</h2>
+<p style="margin: 12px 0 0; font-size: 14px; color: {{t.text}};">[Source list with tier and outlet country] · [Related stories]</p>
+</section>
+</main>
+
+<aside aria-label="At a glance" style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px;">
+<div style="padding: 14px; background: {{t.panel}}; border: 1px solid {{t.line}}; border-radius: 4px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: {{t.accent}};">RISK SCORECARD</div>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+<div style="display: flex; gap: 8px; align-items: center;"><span style="width: 90px; color: #9b8cf8;">POLITICAL</span><span style="flex-grow: 1; height: 6px; background: {{t.line}};"><span style="display: block; width: 85%; height: 6px; background: #9b8cf8;"></span></span><span>85</span></div>
+<div style="display: flex; gap: 8px; align-items: center;"><span style="width: 90px; color: #38b6de;">ECONOMIC</span><span style="flex-grow: 1; height: 6px; background: {{t.line}};"><span style="display: block; width: 60%; height: 6px; background: #38b6de;"></span></span><span>60</span></div>
+<div style="display: flex; gap: 8px; align-items: center;"><span style="width: 90px; color: #ee7754;">CONFLICT</span><span style="flex-grow: 1; color: {{t.dim}};">no signal</span></div>
+<div style="display: flex; gap: 8px; align-items: center;"><span style="width: 90px; color: #d89e28;">HUMANITARIAN</span><span style="flex-grow: 1; color: {{t.dim}};">no signal</span></div>
+</div>
+</div>
+<div style="padding: 14px; background: {{t.panel}}; border: 1px solid {{t.line}}; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.8; color: {{t.text}};">
+<div style="font-size: 10px; letter-spacing: 0.14em; color: {{t.accent}};">AT A GLANCE</div>
+STATUS <span style="color: #ff6a4d;">▲ ESCALATING</span><br>SENTIMENT −0.7<br>FORECAST [n] OPEN · [n] RESOLVED<br>FIRST SEEN SEP 4 · 10 DAYS
+</div>
+</aside>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2240}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { light: false, tabs: false, tab: 'timeline', node: 'p2' }; }
+  renderVals() {
+    var self = this, L = this.state.light, TABS = this.state.tabs, TAB = this.state.tab;
+    var t = L
+      ? { bg: '#fbfbf9', text: '#3a3a3c', head: '#0a0a0a', dim: '#6a6a6e', panel: '#ffffff', hud: '#f4f4f2', line: '#e5e5e3', accent: '#1f7fa0' }
+      : { bg: '#070d15', text: '#c9d6df', head: '#eef5f9', dim: '#7d8b96', panel: 'rgba(12,22,34,0.9)', hud: '#0a1420', line: 'rgba(95,212,255,0.16)', accent: '#5fd4ff' };
+    t.h2 = 'margin: 0; font-family: JetBrains Mono, monospace; font-size: 12px; letter-spacing: 0.14em; font-weight: 500; color: ' + t.accent + '; padding-bottom: 8px; border-bottom: 1px solid ' + t.line + ';';
+    var heights = [1, 1, 2, 1, 1, 1, 4, 1, 1, 1];
+    var bars = heights.map(function (h, i) {
+      var turn = i === 6;
+      return { style: 'flex-grow: 1; height: ' + (h * 24) + 'px; background: ' + (turn ? '#ffb347' : '#9b8cf8') + '; opacity: ' + (turn ? 1 : 0.7) + '; border-radius: 1px;' };
+    });
+    var LANES = [
+      { name: 'CONFLICT', color: '#ee7754' },
+      { name: 'DIPLOMACY', color: '#5fd4ff' },
+      { name: 'ENERGY', color: '#e8c547' },
+      { name: 'ECONOMY', color: '#38b6de' },
+      { name: 'POLITICS', color: '#9b8cf8' },
+      { name: 'OTHER', color: '#d89e28' }
+    ];
+    var NODES = {
+      p1: { lane: 4, x: 8, fact: true, text: 'AfD poised for a historic state election win in Saxony-Anhalt.', meta: 'SEP 4 · FRANCE24 (FR) · BACKBONE FACT' },
+      p2: { lane: 4, x: 50, fact: true, text: '[The turning-point event]', meta: '[DATE] · [SOURCE] · TURNING POINT' },
+      p3: { lane: 4, x: 92, fact: true, text: 'Tens of thousands march across Germany in protest.', meta: 'SEP 13 · [SOURCE] · BACKBONE FACT' },
+      d1: { lane: 1, x: 64, fact: false, text: '[Model judgment: e.g. EU partners signal concern] — an inference, not in our sources.', meta: 'INFERENCE · CONFIDENCE [LOW/MED/HIGH]' },
+      e1: { lane: 3, x: 76, fact: true, text: '[Market reaction reported by a source]', meta: '[DATE] · [SOURCE]' },
+      o1: { lane: 5, x: 86, fact: true, text: '[Civil-society response]', meta: '[DATE] · [SOURCE]' }
+    };
+    var EDGES = [['p1', 'p2', 'causal'], ['p2', 'p3', 'causal'], ['p2', 'd1', 'inferred'], ['p2', 'e1', 'related'], ['p3', 'o1', 'causal']];
+    var laneY = function (i) { return 22 + 44 * i; };
+    var edges = EDGES.map(function (e) {
+      var a = NODES[e[0]], b = NODES[e[1]], ya = laneY(a.lane), yb = laneY(b.lane), mx = (a.x + b.x) / 2;
+      return {
+        d: 'M' + a.x + ' ' + ya + ' C' + mx + ' ' + ya + ' ' + mx + ' ' + yb + ' ' + b.x + ' ' + yb,
+        color: e[2] === 'causal' ? '#5fd4ff' : e[2] === 'inferred' ? '#9b8cf8' : '#7d8b96',
+        dash: e[2] === 'causal' ? 'none' : '4 4'
+      };
+    });
+    var sel = this.state.node;
+    var lanes = LANES.map(function (l, li) {
+      var nodes = Object.keys(NODES).filter(function (k) { return NODES[k].lane === li; }).map(function (k) {
+        var n = NODES[k], on = k === sel;
+        return {
+          label: (n.fact ? 'Fact: ' : 'Inference: ') + n.text,
+          pick: function () { self.setState({ node: k }); },
+          style: 'position: absolute; left: ' + n.x + '%; top: 50%; width: ' + (on ? 18 : 14) + 'px; height: ' + (on ? 18 : 14) + 'px; margin: ' + (on ? -9 : -7) + 'px 0 0 ' + (on ? -9 : -7) + 'px; padding: 0; border-radius: 50%; cursor: pointer; ' +
+            (n.fact ? 'border: none; background: ' + l.color + '; box-shadow: 0 0 ' + (on ? 18 : 8) + 'px ' + l.color + ';' : 'border: 1.5px dashed ' + l.color + '; background: #06101c;') +
+            (on ? ' outline: 2px solid #eef5f9; outline-offset: 3px;' : '')
+        };
+      });
+      return { name: l.name, color: l.color, nodes: nodes };
+    });
+    var N = NODES[sel];
+    var node = { kind: N.fact ? '✅ FACT' : '💭 INFERENCE', kindColor: N.fact ? '#6fd49a' : '#9b8cf8', text: N.text, meta: N.meta };
+    var SECS = [['timeline', 'TIMELINE'], ['web', 'WHY · CAUSAL WEB'], ['who', 'WHO'], ['view', 'THE VIEW FROM'], ['watch', 'WHAT TO WATCH'], ['paths', 'OTHER PATHS'], ['markets', 'MARKETS'], ['changes', 'WHAT CHANGED'], ['sources', 'SOURCES']];
+    var vis = {};
+    SECS.forEach(function (s) { vis[s[0]] = TABS && s[0] !== TAB ? 'display: none;' : ''; });
+    var navItems = SECS.map(function (s) {
+      var active = TABS && s[0] === TAB;
+      return {
+        href: '#' + s[0], label: s[1],
+        pick: function (ev) { if (self.state.tabs) { if (ev && ev.preventDefault) ev.preventDefault(); self.setState({ tab: s[0] }); } },
+        style: 'font-size: 11px; color: ' + (active ? '#070d15' : t.accent) + '; background: ' + (active ? t.accent : 'transparent') + '; padding: 3px 6px; border-radius: 3px;'
+      };
+    });
+    var on = 'height: 30px; padding: 0 10px; border: none; border-radius: 4px; background: rgba(95,212,255,0.18); color: #5fd4ff; font-family: JetBrains Mono, monospace; font-size: 11px; cursor: pointer;';
+    var off = 'height: 30px; padding: 0 10px; border: none; border-radius: 4px; background: transparent; color: #8a99a5; font-family: JetBrains Mono, monospace; font-size: 11px; cursor: pointer;';
+    return {
+      t: t, bars: bars, lanes: lanes, edges: edges, node: node, vis: vis, navItems: navItems,
+      navLabel: TABS ? 'SECTIONS' : 'JUMP TO',
+      isScroll: !TABS, isTabs: TABS, scrollBtn: TABS ? off : on, tabsBtn: TABS ? on : off,
+      setScroll: function () { self.setState({ tabs: false }); },
+      setTabs: function () { self.setState({ tabs: true }); },
+      isDark: !L, isLight: L, darkBtn: L ? off : on, lightBtn: L ? on : off,
+      setDark: function () { self.setState({ light: false }); },
+      setLight: function () { self.setState({ light: true }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

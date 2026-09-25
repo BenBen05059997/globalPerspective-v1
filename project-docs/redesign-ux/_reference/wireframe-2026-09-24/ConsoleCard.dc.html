@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Home — operations console (radar 2D)</title>
+<title>Home — story card open</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -228,7 +228,7 @@ class Component extends DCLogic {
     super(props);
     var reduce = false;
     try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
-    this.state = { mode: 'radar', lon0: 20, sweep: 355, moving: !reduce, selected: null, alert: false };
+    this.state = { mode: 'globe', lon0: 10, sweep: 0, moving: !reduce, selected: 'afd', from: null, alert: false };
   }
   componentDidMount() {
     var self = this;

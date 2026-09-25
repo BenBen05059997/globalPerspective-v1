@@ -59,7 +59,8 @@ status vocabulary and one set of building blocks, so moving between them never l
 ### Journeys
 | From | Action | Goes to |
 |---|---|---|
-| Console: Intel feed row or map pin | click | Selects it; the **story card** opens in place (the preview), and the globe turns to it or the radar holds it lit |
+| Console: Intel feed row, map pin or alert | click | Selects it; the **story card** opens in the feed column, and the globe turns to it or the radar holds it lit |
+| Console: story card, a linked mention of another story | click | That story's card opens in place, map follows, "← BACK TO …" |
 | Console: story card | "Open dossier →" | `/story/:id` |
 | Dossier: radar locator / "Show on console" | click | `/?story=:id&view=radar` (the console, story selected) |
 | Dossier: back | browser back | The console or board exactly as left (selection and view live in the URL) |
@@ -68,10 +69,26 @@ status vocabulary and one set of building blocks, so moving between them never l
 | Console header: STORIES | click | `/stories?view=board` |
 | Briefings item | "Read story" / "Show on map" | `/story/:id` / `/?story=:id` |
 
-### What the console's story card shows (a strict subset of the dossier, same components)
-The HUD strip (type · status · tier + 4 axis bars · updated X ago) → headline → bottom line → a mini timeline with the
-turning point → a live-forecast line → [Open dossier →] [Analyze in Studio →]. No sections beyond that. Depth lives
-in the dossier, and the card is its preview, never a second copy.
+### The home story card: DECIDED (operator, 2026-09-25)
+Clicking an event on the home page (a feed row, map pin or alert) opens its **story card first**. It never jumps
+straight to the full story. Wireframe: board "Home — click an event: the story card" (row 3, right).
+- **Where:** desktop, in the Intel feed column (the list is replaced by the card, with "← INTEL FEED" to go back). The map
+  stays visible and turns to the story. Phone: a bottom sheet (half height, swipe up for full).
+- **Order:** header (type · tier · 4 axis scores · updated X ago) → headline → **WHAT'S HAPPENING** (2–3 line summary)
+  → **WHAT IT MEANS** (bottom line + the most likely path with its %) → **WHY** (a 2–3 step cause chain from the
+  causal web, each step ✅ fact or 💭 inference) → [OPEN FULL STORY →] [ANALYZE].
+- **Links into the story:** every block has its own link to the matching dossier section (headline or "Open full story"
+  → top; summary → timeline; cause steps → causal web; outlook → other paths; axis header → risk scorecard).
+- **Links inside the summary text** (so a reader can click whatever the summary mentions):
+  | Mention | Looks like | Click does |
+  |---|---|---|
+  | An event in this story | dotted underline | Opens the full story at the timeline, that event highlighted |
+  | Another story we track | underline in that story's type colour + a dot | Opens **that story's card here**, the map flies to it, "← BACK TO …" returns |
+  | An actor or country | faint solid underline | Opens the actor / country page |
+  Links are made deterministically: a mention becomes a link only when it matches a real `threadId`, timeline entry or
+  known actor. Nothing is linked by guesswork, and an unmatched mention stays plain text.
+- **Honesty:** the card is a strict subset of the dossier. A block with no data (no cause chain yet, no forecast) is
+  omitted, never filled with placeholder text.
 
 ### Shared across all three (build once in `src/shared/ui` or a `stories` feature)
 - **One status vocabulary:** ▲ escalating / ● new / ◆ steady / ▼ cooling, from one deterministic function. It is used
@@ -89,8 +106,7 @@ already exists off by default on `/map`). Labels say why (shared country / actor
 nothing is selected, to keep the console calm.
 
 ### Open questions for the operator
-1. Console pin click: open the story card first (**recommended**, keeps the reader on the console) or jump straight to
-   the dossier?
+1. ~~Console pin click~~: DECIDED: story card first (above).
 2. Show related-story arcs on the console when a story is selected (**recommended**), or keep the web only on the board
    and dossier?
 3. Keep the board's MAP view (**recommended**: it's the 90-day inventory, while the console is only "now") or drop it and

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Map legend</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}
+button{font-family:inherit}
+@keyframes lg-breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(1.18)}}
+@keyframes lg-ring{0%{transform:scale(1);opacity:.85}100%{transform:scale(2.6);opacity:0}}
+@keyframes lg-march{to{stroke-dashoffset:-26}}
+@keyframes lg-flare{0%,70%,100%{opacity:0;transform:scale(.6)}78%{opacity:1;transform:scale(1)}92%{opacity:0;transform:scale(2.2)}}
+@keyframes lg-sweep{to{transform:rotate(360deg)}}
+.lg-breathe{animation:lg-breathe 2.4s ease-in-out infinite;transform-origin:center}
+.lg-ring{animation:lg-ring 2.4s ease-out infinite;transform-origin:center}
+.lg-march{animation:lg-march 1.4s linear infinite}
+.lg-march-slow{animation:lg-march 2.6s linear infinite}
+.lg-flare{animation:lg-flare 4s ease-out infinite;transform-origin:center}
+.lg-sweep{animation:lg-sweep 4s linear infinite;transform-origin:50% 50%}
+.lg-rm .lg-breathe,.lg-rm .lg-ring,.lg-rm .lg-march,.lg-rm .lg-march-slow,.lg-rm .lg-flare,.lg-rm .lg-sweep{animation:none}
+.lg-rm .lg-ring,.lg-rm .lg-flare{opacity:.5}
+@media (prefers-reduced-motion: reduce){.lg-breathe,.lg-ring,.lg-march,.lg-march-slow,.lg-flare,.lg-sweep{animation:none}}
+</style>
+</helmet>
+<div class="{{rootClass}}" style="width: 1440px; min-height: 1500px; box-sizing: border-box; padding: 28px 36px 40px; background: #070d15; color: #c9d6df;">
+
+<div style="display: flex; align-items: flex-end; gap: 20px;">
+<div style="flex-grow: 1;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #5fd4ff;">MAP LEGEND · ONE VISUAL LANGUAGE FOR HOME MAP, STORY MODE AND BOARD</div>
+<h1 style="margin: 6px 0 0; font-family: Fraunces, serif; font-size: 30px; font-weight: 600; color: #eef5f9;">Each channel means one thing</h1>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8a99a5; margin-top: 8px;">SHAPE = WHAT IT IS · HUE = CRISIS TYPE · SIZE (+DOUBLE RING) = SEVERITY · BRIGHTNESS = FRESHNESS · SOLID vs DASHED = FACT vs NOT-YET / JUDGMENT · MOTION = ONLY WHAT IS NEW</div>
+</div>
+<button type="button" onClick="{{toggleRm}}" aria-pressed="{{rm}}" style="{{rmBtn}}">{{rmLabel}}</button>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 24px;">
+
+<section style="padding: 16px 18px; background: rgba(12,22,34,0.9); border: 1px solid rgba(95,212,255,0.16); border-radius: 4px;">
+<h2 style="margin: 0 0 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; font-weight: 500; color: #5fd4ff;">1 · WHAT IT IS — SHAPE</h2>
+<div style="display: grid; grid-template-columns: 70px 1fr; row-gap: 14px; align-items: center;">
+<svg width="56" height="44" viewBox="0 0 56 44"><rect x="18" y="12" width="20" height="20" transform="rotate(45 28 22)" fill="#d89e28" stroke="#04070c" stroke-width="2"></rect></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">Live situation · official feed</div><div style="font-size: 12.5px; color: #8a99a5;">Diamond = an alert frame (MIL-STD / GDACS). Exact place from the feed.</div></div>
+<svg width="56" height="44" viewBox="0 0 56 44"><defs><radialGradient id="soft"><stop offset="55%" stop-color="#9b8cf8" stop-opacity="0.55"></stop><stop offset="100%" stop-color="#9b8cf8" stop-opacity="0"></stop></radialGradient></defs><circle cx="28" cy="22" r="17" fill="url(#soft)"></circle><circle cx="28" cy="22" r="5" fill="#9b8cf8"></circle></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">News story · placed at its main country</div><div style="font-size: 12.5px; color: #8a99a5;">Soft, feathered halo = approximate location (MacEachren: fuzzy reads as uncertain). Never a sharp pin.</div></div>
+<svg width="56" height="44" viewBox="0 0 56 44"><path d="M6 6 h8 M6 6 v8 M50 6 h-8 M50 6 v8 M6 38 h8 M6 38 v-8 M50 38 h-8 M50 38 v-8" stroke="#eef5f9" stroke-width="2" fill="none"></path><circle cx="28" cy="22" r="7" fill="#ee7754"></circle></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">The story you're looking at (selected / focal)</div><div style="font-size: 12.5px; color: #8a99a5;">HUD target brackets (XCOM lock-on). Same mark for "selected" on the home map and the focal story in story mode.</div></div>
+<svg width="56" height="44" viewBox="0 0 56 44"><circle cx="28" cy="22" r="6" fill="none" stroke="#38b6de" stroke-width="2"></circle><circle cx="28" cy="22" r="2.5" fill="#38b6de"></circle></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">Linked story (in story mode)</div><div style="font-size: 12.5px; color: #8a99a5;">Small ringed dot at the end of an arc. Smaller than the focal story.</div></div>
+<svg width="56" height="44" viewBox="0 0 56 44"><path d="M8 14 L22 8 L40 10 L50 22 L42 36 L20 38 L10 28 Z" fill="#9b8cf8" fill-opacity="0.18" stroke="#9b8cf8" stroke-opacity="0.35" stroke-width="1"></path></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">Country highlight · story with no exact place</div><div style="font-size: 12.5px; color: #8a99a5;">Country wash only, no point at all. We don't fake a pin.</div></div>
+<svg width="56" height="44" viewBox="0 0 56 44"><rect x="19" y="13" width="18" height="18" transform="rotate(45 28 22)" fill="none" stroke="#ffb347" stroke-width="2" stroke-dasharray="4 3"></rect></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">Forecast deadline · hasn't happened</div><div style="font-size: 12.5px; color: #8a99a5;">Hollow + dashed = "anticipated" (MIL-STD status rule). On the time scrubber, not the map.</div></div>
+</div>
+</section>
+
+<section style="padding: 16px 18px; background: rgba(12,22,34,0.9); border: 1px solid rgba(95,212,255,0.16); border-radius: 4px;">
+<h2 style="margin: 0 0 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; font-weight: 500; color: #5fd4ff;">2 · WHAT KIND · HUE &nbsp;·&nbsp; HOW BAD · SIZE</h2>
+<div style="display: flex; gap: 22px; align-items: center;">
+<sc-for list="{{hues}}" as="h" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><span style="width: 18px; height: 18px; border-radius: 50%; background: {{h.c}}; box-shadow: 0 0 10px {{h.c}};"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{h.c}};">{{h.n}}</span></div>
+</sc-for>
+</div>
+<div style="font-size: 12.5px; color: #8a99a5; margin-top: 8px;">Hue is only ever crisis type. Severity never uses red/orange/green (that is GDACS's traffic light; reusing it would collide).</div>
+<div style="display: flex; gap: 26px; align-items: flex-end; margin-top: 18px;">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="4" fill="#ee7754"></circle></svg><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8a99a5;">LOW</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="6.5" fill="#ee7754"></circle></svg><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8a99a5;">MODERATE</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="9" fill="#ee7754"></circle></svg><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8a99a5;">ELEVATED</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="9" fill="#ee7754"></circle><circle cx="20" cy="20" r="14" fill="none" stroke="#ee7754" stroke-width="1.5"></circle></svg><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8a99a5;">HIGH · DOUBLE RING</span></div>
+</div>
+<div style="font-size: 12.5px; color: #8a99a5; margin-top: 8px;">4 fixed sizes (USGS-style steps, not a smooth scale). Double ring is reserved for HIGH only, so it never means anything else.</div>
+</section>
+
+<section style="padding: 16px 18px; background: rgba(12,22,34,0.9); border: 1px solid rgba(95,212,255,0.16); border-radius: 4px;">
+<h2 style="margin: 0 0 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; font-weight: 500; color: #5fd4ff;">3 · HOW IT'S MOVING — BADGE, AND MOTION ONLY FOR NEW</h2>
+<div style="display: grid; grid-template-columns: 70px 1fr; row-gap: 14px; align-items: center;">
+<div style="position: relative; width: 44px; height: 44px;"><span class="lg-ring" style="position: absolute; left: 13px; top: 13px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #ee7754;"></span><span class="lg-breathe" style="position: absolute; left: 13px; top: 13px; width: 18px; height: 18px; border-radius: 50%; background: #ee7754; box-shadow: 0 0 12px #ee7754;"></span><span style="position: absolute; right: 0; top: 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ff6a4d;">▲</span></div>
+<div><div style="font-size: 14px; color: #eef5f9;">▲ Escalating, or ● New — in the last 24 hours</div><div style="font-size: 12.5px; color: #8a99a5;">The ONLY looping motion on a marker: slow breathe + one outgoing ring, 2.4 s cycle (far under WCAG's 3 flashes/s). Max 8 on screen; the rest stay still.</div></div>
+<div style="position: relative; width: 44px; height: 44px;"><span style="position: absolute; left: 13px; top: 13px; width: 18px; height: 18px; border-radius: 50%; background: #ee7754; box-shadow: 0 0 6px #ee7754;"></span><span style="position: absolute; right: 0; top: 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #c9d6df;">◆</span></div>
+<div><div style="font-size: 14px; color: #eef5f9;">◆ Steady</div><div style="font-size: 12.5px; color: #8a99a5;">Still. Corner badge only.</div></div>
+<div style="position: relative; width: 44px; height: 44px;"><span style="position: absolute; left: 13px; top: 13px; width: 18px; height: 18px; border-radius: 50%; background: #ee7754; opacity: 0.8;"></span><span style="position: absolute; right: 0; top: 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6fd49a;">▼</span></div>
+<div><div style="font-size: 14px; color: #eef5f9;">▼ Cooling</div><div style="font-size: 12.5px; color: #8a99a5;">Still, glow off. Badges are text glyphs, so they work without colour.</div></div>
+</div>
+</section>
+
+<section style="padding: 16px 18px; background: rgba(12,22,34,0.9); border: 1px solid rgba(95,212,255,0.16); border-radius: 4px;">
+<h2 style="margin: 0 0 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; font-weight: 500; color: #5fd4ff;">4 · HOW FRESH — BRIGHTNESS (USGS AGE RULE)</h2>
+<div style="display: flex; gap: 34px; align-items: center;">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: #9b8cf8; box-shadow: 0 0 14px #9b8cf8;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #c9d6df;">LIVE · &lt;24h</span><span style="font-size: 11.5px; color: #8a99a5;">full colour + glow</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: #9b8cf8;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #c9d6df;">1–7 DAYS</span><span style="font-size: 11.5px; color: #8a99a5;">full colour, no glow</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; background: #8a84b8; opacity: 0.8;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ffb347;">OLDER · 7–30d</span><span style="font-size: 11.5px; color: #8a99a5;">desaturated + "older" label</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><span style="width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #7d8b96; opacity: 0.5;"></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96;">STALE · 30d+</span><span style="font-size: 11.5px; color: #8a99a5;">hidden from the map, counted</span></div>
+</div>
+<div style="font-size: 12.5px; color: #8a99a5; margin-top: 12px;">Old things never animate. Today every story analysis is 13 days old, so links would show in the OLDER style until DeepSeek is funded.</div>
+</section>
+
+<section style="padding: 16px 18px; background: rgba(12,22,34,0.9); border: 1px solid rgba(95,212,255,0.16); border-radius: 4px;">
+<h2 style="margin: 0 0 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; font-weight: 500; color: #5fd4ff;">5 · LINKS BETWEEN STORIES — LINE STYLE</h2>
+<div style="display: grid; grid-template-columns: 200px 1fr; row-gap: 12px; align-items: center;">
+<svg width="190" height="28" viewBox="0 0 190 28"><path class="lg-march" d="M6 22 Q95 -8 184 22" fill="none" stroke="#ff6a4d" stroke-width="2.6" stroke-dasharray="14 12"></path><circle cx="184" cy="22" r="3.5" fill="#ff6a4d"></circle></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">Judged to feed into · STRONG</div><div style="font-size: 12.5px; color: #8a99a5;">Long dashes, thick, bright. Dashes travel from → to (deck.gl arc convention), so direction needs no arrowhead.</div></div>
+<svg width="190" height="28" viewBox="0 0 190 28"><path class="lg-march-slow" d="M6 22 Q95 -8 184 22" fill="none" stroke="#ffb347" stroke-width="1.8" stroke-dasharray="8 9" opacity="0.75"></path><circle cx="184" cy="22" r="3" fill="#ffb347"></circle></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">MEDIUM</div><div style="font-size: 12.5px; color: #8a99a5;">Medium dashes, thinner, 75% opacity, slower.</div></div>
+<svg width="190" height="28" viewBox="0 0 190 28"><path d="M6 22 Q95 -8 184 22" fill="none" stroke="#8a99a5" stroke-width="1.2" stroke-dasharray="3 7" opacity="0.5"></path><circle cx="184" cy="22" r="2.5" fill="#8a99a5" opacity="0.6"></circle></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">WEAK</div><div style="font-size: 12.5px; color: #8a99a5;">Sparse dashes, thin, 50%, no motion. Two uncertainty cues stacked (MacEachren).</div></div>
+<svg width="190" height="28" viewBox="0 0 190 28"><path d="M6 22 Q95 4 184 22" fill="none" stroke="#7d8b96" stroke-width="1.6" stroke-dasharray="0.1 6" stroke-linecap="round"></path></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">Shares actors · a fact, not a cause</div><div style="font-size: 12.5px; color: #8a99a5;">DOTTED grey, flatter, never moves. Different in kind from the dashed judgment links, not just fainter.</div></div>
+</div>
+<div style="font-size: 12.5px; color: #8a99a5; margin-top: 10px;">Only the selected story's arcs move. Words always sit next to the line in the card: "STRONG · model judgment".</div>
+</section>
+
+<section style="padding: 16px 18px; background: rgba(12,22,34,0.9); border: 1px solid rgba(95,212,255,0.16); border-radius: 4px;">
+<h2 style="margin: 0 0 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; font-weight: 500; color: #5fd4ff;">6 · STATES — HOVER, SELECTED, SCANNED</h2>
+<div style="display: grid; grid-template-columns: 110px 1fr; row-gap: 16px; align-items: center;">
+<div style="display: flex; gap: 8px; align-items: center;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #9b8cf8; opacity: 0.35;"></span><span style="width: 16px; height: 16px; border-radius: 50%; background: #ee7754; box-shadow: 0 0 0 2px #eef5f9;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #38b6de; opacity: 0.35;"></span></div>
+<div><div style="font-size: 14px; color: #eef5f9;">Hover · dim the rest</div><div style="font-size: 12.5px; color: #8a99a5;">Everything else drops to ~35% (Flightradar24 / MarineTraffic). The hovered marker gets a thin outline and its StoryPeek.</div></div>
+<svg width="56" height="44" viewBox="0 0 56 44"><path d="M6 6 h8 M6 6 v8 M50 6 h-8 M50 6 v8 M6 38 h8 M6 38 v-8 M50 38 h-8 M50 38 v-8" stroke="#eef5f9" stroke-width="2" fill="none"></path><circle cx="28" cy="22" r="7" fill="#ee7754"></circle></svg>
+<div><div style="font-size: 14px; color: #eef5f9;">Selected · brackets stay</div><div style="font-size: 12.5px; color: #8a99a5;">Persistence, not brightness, tells selected from hover.</div></div>
+<div style="position: relative; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; background: #06101c; border: 1px solid rgba(95,212,255,0.2);">
+<span class="lg-sweep" style="position: absolute; inset: 0; background: conic-gradient(from 0deg, rgba(95,212,255,0) 0deg, rgba(95,212,255,0.25) 40deg, rgba(160,235,255,0.8) 41deg, rgba(95,212,255,0) 42deg);"></span>
+<span class="lg-flare" style="position: absolute; left: 36px; top: 20px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #5fd4ff;"></span>
+<span style="position: absolute; left: 39px; top: 23px; width: 6px; height: 6px; border-radius: 50%; background: #5fd4ff;"></span>
+</div>
+<div><div style="font-size: 14px; color: #eef5f9;">Scanned by the radar</div><div style="font-size: 12.5px; color: #8a99a5;">One ring flares once as the beam passes. The sweep is the one global motion; markers don't loop because of it.</div></div>
+</div>
+</section>
+</div>
+
+<section style="margin-top: 18px; padding: 16px 18px; background: rgba(12,22,34,0.9); border: 1px solid rgba(255,179,71,0.3); border-radius: 4px;">
+<h2 style="margin: 0 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; font-weight: 500; color: #ffb347;">MOTION BUDGET · RULES</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; font-size: 13px; line-height: 1.55; color: #c9d6df;">
+<div><strong style="color: #eef5f9;">Only three things may move:</strong> the radar sweep (one, global) · the breathing pulse on NEW/▲ markers from the last 24 h · the travelling dashes on the selected story's arcs. Nothing else.</div>
+<div><strong style="color: #eef5f9;">Limits:</strong> at most 8 pulsing markers (the highest-severity ones win; the rest stay still). All cycles 1.4–4 s. Nothing flashes. Stale or older items never move.</div>
+<div><strong style="color: #eef5f9;">Reduced motion</strong> (press the button above): pulses become a still glow ring, the sweep stops, and arcs keep their dash pattern without travelling. Meaning never depends on motion alone.</div>
+</div>
+</section>
+
+<section style="margin-top: 18px; display: flex; gap: 18px; align-items: flex-start;">
+<div style="width: 330px; flex-shrink: 0; padding: 14px 16px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.3); border-radius: 4px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #5fd4ff;">ON THE MAP · COMPACT LEGEND (COLLAPSED BY DEFAULT)</div>
+<div style="display: grid; grid-template-columns: 26px 1fr; row-gap: 7px; margin-top: 10px; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #c9d6df;">
+<svg width="20" height="20" viewBox="0 0 20 20"><rect x="6" y="6" width="8" height="8" transform="rotate(45 10 10)" fill="#d89e28"></rect></svg><span>LIVE ALERT (OFFICIAL FEED)</span>
+<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#9b8cf8" fill-opacity="0.3"></circle><circle cx="10" cy="10" r="3" fill="#9b8cf8"></circle></svg><span>STORY · APPROX. PLACE</span>
+<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5" fill="#ee7754"></circle><circle cx="10" cy="10" r="8.5" fill="none" stroke="#ee7754"></circle></svg><span>HIGH SEVERITY</span>
+<span style="color: #ff6a4d;">▲</span><span>ESCALATING · PULSES IF &lt;24h</span>
+<svg width="20" height="12" viewBox="0 0 20 12"><path d="M1 10 Q10 0 19 10" fill="none" stroke="#ff6a4d" stroke-width="2" stroke-dasharray="5 4"></path></svg><span>JUDGED LINK · MODEL</span>
+<svg width="20" height="12" viewBox="0 0 20 12"><path d="M1 8 Q10 4 19 8" fill="none" stroke="#7d8b96" stroke-width="1.6" stroke-dasharray="0.1 4" stroke-linecap="round"></path></svg><span>SHARES ACTORS · FACT</span>
+<span style="width: 12px; height: 12px; border-radius: 50%; background: #8a84b8; opacity: 0.8;"></span><span>OLDER THAN 7 DAYS</span>
+</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96; margin-top: 10px;">HUE: CONFLICT · POLITICAL · ECONOMIC · HUMANITARIAN</div>
+</div>
+<div style="flex-grow: 1; font-size: 13px; line-height: 1.6; color: #b9c7d1; padding: 6px 4px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a99a5;">SOURCES OF EACH RULE</div>
+Shape by kind, solid vs dashed for "not yet" — NATO APP-6 / MIL-STD-2525. Severity steps — GDACS alert levels (but not their colours). Size steps + age-as-brightness — USGS earthquake map. Travelling dashes for direction — deck.gl arc layer / GitHub globe. Dim-the-rest on hover — Flightradar24, MarineTraffic. One global sweep + one-shot flare — XCOM 2 Geoscape. Fuzzy = approximate, stacked uncertainty cues — MacEachren. Few animated items — Harrower, "The Cognitive Limits of Animated Maps". No flashing — WCAG 2.3.
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { rm: false }; }
+  renderVals() {
+    var self = this, rm = this.state.rm;
+    return {
+      rootClass: rm ? 'lg-rm' : '',
+      rm: rm,
+      rmLabel: rm ? '✓ REDUCED MOTION ON' : 'PREVIEW REDUCED MOTION',
+      rmBtn: 'height: 36px; padding: 0 14px; border-radius: 4px; border: 1px solid #5fd4ff; background: ' + (rm ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: #5fd4ff; font-family: JetBrains Mono, monospace; font-size: 11px; cursor: pointer;',
+      toggleRm: function () { self.setState({ rm: !self.state.rm }); },
+      hues: [{ n: 'CONFLICT', c: '#ee7754' }, { n: 'POLITICAL', c: '#9b8cf8' }, { n: 'ECONOMIC', c: '#38b6de' }, { n: 'HUMANITARIAN', c: '#d89e28' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

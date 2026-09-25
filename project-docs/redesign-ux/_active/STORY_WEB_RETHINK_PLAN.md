@@ -186,3 +186,36 @@ Obsoleted by story mode: the old §6 questions 2 ("Show linked news" default) an
 | S9 | Board: keep MAP view and WEB story graph | Yes, both |
 | S10 | Reading mode (light) on the long page | Keep for the long page only; story mode stays dark |
 | S11 | Studio country lens entry: pick a country directly | Yes |
+
+## 8. Map legend / symbol system (proposal, 2026-09-25, design only)
+Wireframe: `Legend.dc.html` (canvas, right of story mode), animated, with a reduced-motion preview.
+
+**Rule: each visual channel means one thing.** Sources:
+- NATO APP-6 / MIL-STD-2525: shape by kind; solid vs dashed = present vs anticipated.
+- GDACS: severity levels, but not its colours.
+- USGS earthquake map: size steps, and age as brightness.
+- deck.gl arc layer / GitHub globe: travelling dashes show direction.
+- Flightradar24 / MarineTraffic: dim the rest on hover.
+- XCOM 2: one global sweep with a one-shot flare.
+- MacEachren: fuzzy = approximate.
+- Harrower: few animated items.
+- WCAG 2.3: no flashing.
+
+| Channel | Meaning |
+|---|---|
+| Shape | ◆ live official alert · soft haloed dot = story at an approximate place · HUD brackets = selected/focal story · small ringed dot = linked story · country wash (no pin) = no exact place · hollow dashed ◆ = forecast deadline (on the scrubber) |
+| Hue | crisis type only |
+| Size | 4 severity steps; double ring = HIGH only |
+| Badge | ▲ escalating · ● new · ◆ steady · ▼ cooling (text glyphs, so they work without colour) |
+| Brightness | live <24h glow → 1–7d plain → 7–30d desaturated + "older" label → 30d+ hidden (counted) |
+| Line | judged link = dashes (strong: long, thick, travelling; medium: shorter, 75%; weak: sparse, 50%, still) · shares actors = grey DOTS, never moves |
+| States | hover = dim the rest to ~35% + StoryPeek · selected = brackets persist · radar = one flare per pass |
+
+**Motion budget:** only 3 things move (the radar sweep; a 2.4 s breathing pulse on NEW/▲ items from the last 24 h, max 8; travelling dashes on the selected story's arcs). Nothing flashes, and old items never move. Under reduced motion, pulses become still rings, the sweep stops, and dashes stay still.
+
+**Legend decisions still open:**
+- L1. The hue palette clashes with GDACS's traffic light: conflict #ee7754 is red-orange and humanitarian #d89e28 is amber.
+  GDACS alerts should show their level as a TEXT badge (GREEN/ORANGE/RED ALERT), not as marker colour. Recommended.
+- L2. Where the legend lives: a compact collapsed "?" legend on the map, plus this full sheet on a help page. Recommended.
+- L3. Pulse cap of 8. Recommended.
+- L4. HUD brackets for selected everywhere, replacing today's glow ring. Recommended.

@@ -581,6 +581,17 @@
 .tp-ov-chev { font-size: 11px; color: var(--ink-faint); transition: transform .15s ease; }
 .tp-ov-chev:not(.open) { transform: rotate(-90deg); }
 .tp-ov-body { padding: 0 0 18px; }
+.tp-ov-step + .tp-ov-step {
+  margin-top: 14px;
+}
+.tp-ov-step-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 4px;
+}
 .tp-ov-text {
   font-family: var(--serif);
   font-size: 15.5px;

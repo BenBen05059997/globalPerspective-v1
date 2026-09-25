@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { threadPath } from '@/shared/lib/threadPath';
+import { rootCauseText } from '@/shared/lib/rootCause';
 
 export default function CopyBriefing({ getText }) {
   const [copied, setCopied] = useState(false);
@@ -42,9 +43,10 @@ export function formatThreadBriefing(thread, analysis) {
     lines.push('');
   }
 
-  if (analysis?.rootCauseChain) {
+  const rootCause = rootCauseText(analysis?.rootCauseChain);
+  if (rootCause) {
     lines.push('WHY IT HAPPENED');
-    lines.push(analysis.rootCauseChain);
+    lines.push(rootCause);
     lines.push('');
   }
 

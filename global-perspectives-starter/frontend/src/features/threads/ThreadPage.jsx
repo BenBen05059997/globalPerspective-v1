@@ -11,6 +11,7 @@ import { formatDateLabel } from '@/shared/lib/dateUtils';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar as RISK_COLOR } from '@/shared/styles/tokens';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
+import { rootCauseSteps } from '@/shared/lib/rootCause';
 import CopyBriefing, { formatThreadBriefing } from '@/shared/ui/CopyBriefing';
 import { SaveButton } from '@/features/account/components/SaveButton';
 import EditorialShell from '@/shared/ui/EditorialShell';
@@ -406,7 +407,7 @@ export default function ThreadPage() {
   // The Overview tab holds the synthesis (moved out of the rail). It exists only
   // once we actually have narrative analysis to show.
   const hasOverview = !!(analysis && (
-    analysis.storyArc || analysis.trajectory || analysis.rootCauseChain || analysis.watchQuestions?.length
+    analysis.storyArc || analysis.trajectory || rootCauseSteps(analysis.rootCauseChain).length || analysis.watchQuestions?.length
   ));
 
   // Content tabs: Overview | Timeline | Actors | Sources | Economy
@@ -554,9 +555,14 @@ export default function ThreadPage() {
                 <ClampText text={analysis.trajectory} />
               </OverviewSection>
             )}
-            {analysis.rootCauseChain && (
+            {rootCauseSteps(analysis.rootCauseChain).length > 0 && (
               <OverviewSection label="Root cause">
-                <ClampText text={analysis.rootCauseChain} />
+                {rootCauseSteps(analysis.rootCauseChain).map(step => (
+                  <div key={step.key} className="tp-ov-step">
+                    {step.label && <div className="tp-ov-step-label">{step.label}</div>}
+                    <ClampText text={step.text} />
+                  </div>
+                ))}
               </OverviewSection>
             )}
             {analysis.watchQuestions?.length > 0 && (

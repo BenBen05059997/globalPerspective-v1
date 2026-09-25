@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { rootCauseText } from '@/shared/lib/rootCause';
 
 const TABS = [
   { key: 'storyArc', label: 'How It Evolved', cssClass: 'summary' },
@@ -11,7 +12,8 @@ export default function ThreadIntelligence({ analysis }) {
 
   if (!analysis) return null;
 
-  const available = TABS.filter(t => analysis[t.key]);
+  const textFor = key => (key === 'rootCauseChain' ? rootCauseText(analysis[key]) : analysis[key]);
+  const available = TABS.filter(t => textFor(t.key));
   if (available.length === 0) return null;
 
   const activeCss = TABS.find(t => t.key === activeTab)?.cssClass || '';
@@ -42,9 +44,9 @@ export default function ThreadIntelligence({ analysis }) {
           ))}
         </div>
       </div>
-      {activeTab && analysis[activeTab] && (
+      {activeTab && textFor(activeTab) && (
         <div className={`story-entry-ai-content ${activeCss}`}>
-          <div className="story-entry-section-text">{analysis[activeTab]}</div>
+          <div className="story-entry-section-text" style={{ whiteSpace: 'pre-line' }}>{textFor(activeTab)}</div>
         </div>
       )}
     </div>

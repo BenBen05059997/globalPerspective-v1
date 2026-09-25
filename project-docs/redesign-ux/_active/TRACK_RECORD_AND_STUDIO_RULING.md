@@ -161,6 +161,22 @@ Two critics (product; engineering/data honesty) judged them. The ruling is **S-A
 - **Finding (Iran, 7 Jul – 11 Sep): 6 of the 14 stored change explanations fail a simple direction check.** They explain a *lower* risk score with something that got *worse*, e.g. "humanitarian score down as trade disruption worsens". The What-changed lens flags these. The drift-note prompt/check needs fixing before the lens is trusted.
 - **Change logs exist for 10 countries** + some story threads. All end 11–12 Sep (AI paused).
 
+**Four design directions to compare (2026-09-26; operator: "we should show more different design").** Canvas F1–F4, all with the same real data:
+- **A · Deck** (F1): story-mode map + slides + time bar.
+- **B · Notebook** (F2): stacked cells; + ADD CELL runs another lens on the same sources; printable.
+- **C · Case board** (F3): evidence → reasoning → outcomes, joined by strings; it lays out one run (saved cases stay parked).
+- **D · Conversation + live canvas** (F4): multi-turn; the canvas follows the active turn; each follow-up is a new run on the reader's key.
+
+**Reader-pays information, required in whichever direction wins** (runs use the reader's own key):
+- **Before a run:**
+  - what is sent (stories, ~tokens), provider/model/output cap, deep research on/off;
+  - per-story material RICH / THIN, as a warning before they spend.
+- **After a run:**
+  - a receipt from the provider's `usage` field (tokens in/out, model, time), the checks, and whether it can be shared;
+  - on failed checks: "your provider still charged for this run".
+- **Money:** shown only from a verified, dated price table (operator decision); otherwise link to the provider's pricing.
+- **Today:** `llm.js` ignores `usage` and caps output at 1,600 tokens.
+
 v1 zones (kept for reference; still apply as parts of v2: the sources tab = INTEL, the bottom strip = status):
 | Zone | Shows |
 |---|---|

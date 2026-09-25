@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Studio Case Board</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}
+button{font-family:inherit}
+.cb-clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cb-clamp3{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+@media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: radial-gradient(ellipse at 40% 45%, #0b1826 0%, #060c14 60%, #03060a 100%); color: #c9d6df;">
+
+<!-- board grid + strings (under the cards) -->
+<svg width="1440" height="900" viewBox="0 0 1440 900" style="position: absolute; inset: 0; pointer-events: none;" aria-hidden="true">
+<path d="{{grid}}" fill="none" stroke="rgba(95,212,255,0.045)"></path>
+<sc-for list="{{strs}}" as="p" hint-placeholder-count="20"><path d="{{p.d}}" fill="none" stroke="{{p.c}}" stroke-width="{{p.w}}" stroke-dasharray="{{p.da}}" stroke-linecap="round" stroke-linejoin="round" opacity="{{p.op}}"></path></sc-for>
+</svg>
+
+<header style="position: absolute; left: 0; right: 0; top: 0; height: 52px; box-sizing: border-box; padding: 0 20px; display: flex; align-items: center; gap: 14px; background: rgba(4,8,14,0.92); border-bottom: 1px solid rgba(95,212,255,0.14); font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+<span style="color: #8a99a5;">CONSOLE</span><span style="color: #8a99a5;">STORIES</span><span style="color: #8a99a5;">BRIEFINGS</span><span style="color: #8a99a5;">TRACK RECORD</span><span style="color: #5fd4ff; letter-spacing: 0.1em;">STUDIO</span>
+<span style="color: #56626b; margin-left: 6px;">{{route}}</span>
+<span style="margin-left: 8px; padding: 3px 7px; border: 1px solid rgba(255,179,71,0.5); border-radius: 3px; font-size: 9px; letter-spacing: 0.1em; color: #ffb347;">DIRECTION C · CASE BOARD</span>
+<span style="flex-grow: 1;"></span>
+<span style="font-size: 10px; color: #ffb347;">PREVIEW:</span>
+<sc-for list="{{states}}" as="s" hint-placeholder-count="3"><button type="button" onClick="{{s.pick}}" aria-pressed="{{s.on}}" style="{{s.style}}">{{s.label}}</button></sc-for>
+</header>
+
+<!-- top bar: question, lens, key, run -->
+<section aria-label="Run setup" style="position: absolute; left: 0; right: 0; top: 52px; height: 48px; box-sizing: border-box; padding: 0 20px; display: flex; align-items: center; gap: 10px; background: rgba(6,11,18,0.9); border-bottom: 1px solid rgba(95,212,255,0.1);">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5fd4ff;">Q</span>
+<span style="font-family: Fraunces, serif; font-size: 16px; color: #eef5f9;">{{question}}</span>
+<span style="flex-grow: 1;"></span>
+<span style="height: 26px; line-height: 24px; box-sizing: border-box; padding: 0 9px; border: 1px solid #5fd4ff; border-radius: 13px; background: rgba(95,212,255,0.14); font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #5fd4ff;">LENS · SCENARIO</span>
+<span style="height: 26px; line-height: 24px; box-sizing: border-box; padding: 0 9px; border: 1px solid rgba(95,212,255,0.3); border-radius: 13px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #8a99a5;">4 STORIES · [1]–[4]</span>
+<span style="{{keyStyle}}">{{keyLabel}}</span>
+<button type="button" onClick="{{runPick}}" style="{{runStyle}}">{{runLabel}}</button>
+</section>
+
+<sc-if value="{{banner}}" hint-placeholder-val="{{ false }}"><div style="{{bannerStyle}}">{{bannerText}}</div></sc-if>
+
+<!-- zone headers -->
+<sc-for list="{{zones}}" as="z" hint-placeholder-count="5"><div style="{{z.style}}">{{z.text}}</div></sc-for>
+
+<!-- EVIDENCE: pinned source cards (our data) -->
+<sc-for list="{{srcCards}}" as="c" hint-placeholder-count="4">
+<button type="button" onClick="{{c.pick}}" aria-pressed="{{c.on}}" aria-label="{{c.aria}}" style="{{c.style}}">
+<span style="position: absolute; left: 50%; top: -5px; width: 11px; height: 11px; margin-left: -5px; border-radius: 50%; background: #ee7754; box-shadow: 0 1px 4px rgba(0,0,0,0.7), inset -2px -2px 0 rgba(0,0,0,0.25);"></span>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #5fd4ff;">[{{c.n}}] <span style="color: #8a99a5;">{{c.meta}}</span></div>
+<sc-if value="{{c.hasTag}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: 8px; top: 7px; padding: 1px 5px; border: 1px solid #ff5d73; border-radius: 2px; font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #ff8a9a;">{{c.tag}}</span></sc-if>
+<div class="cb-clamp2" style="font-family: Fraunces, serif; font-size: 13px; line-height: 1.3; color: #eef5f9; margin-top: 5px;">{{c.t}}</div>
+<div class="cb-clamp3" style="font-size: 11px; line-height: 1.38; color: #b9c7d1; margin-top: 5px; font-style: italic;">“{{c.snip}}”</div>
+<div style="position: absolute; left: 11px; bottom: 7px; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #6fd29a;">OUR DATA · VERBATIM SNIPPET</div>
+</button>
+</sc-for>
+
+<!-- REASONING: claim cards (this run, stand-ins) -->
+<sc-for list="{{claimCards}}" as="c" hint-placeholder-count="4">
+<button type="button" onClick="{{c.pick}}" aria-pressed="{{c.on}}" aria-label="{{c.aria}}" style="{{c.style}}">
+<div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.06em;"><span style="color: #ffb347;">{{c.k}}</span><span style="color: {{c.flagC}};">{{c.flag}}</span></div>
+<div class="{{c.clamp}}" style="{{c.ts}}">{{c.t}}</div>
+<div style="display: flex; align-items: center; gap: 4px; margin-top: 5px; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #7d8b96;">CITES <sc-for list="{{c.cites}}" as="t" hint-placeholder-count="2"><span style="{{t.style}}">{{t.label}}</span></sc-for></div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #c9a263; margin-top: 3px;">{{c.note}}</div>
+</button>
+</sc-for>
+
+<!-- REASONING: stored cause chain (our data) -->
+<sc-for list="{{chainCards}}" as="c" hint-placeholder-count="3">
+<button type="button" onClick="{{c.pick}}" aria-pressed="{{c.on}}" aria-label="{{c.aria}}" style="{{c.style}}">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.08em; color: #6fd29a;">{{c.k}}</div>
+<div class="cb-clamp2" style="font-size: 10.5px; line-height: 1.3; color: #d6e2ea; margin-top: 2px;">{{c.t}}</div>
+</button>
+</sc-for>
+
+<!-- OUTCOMES: scenario cards -->
+<sc-for list="{{scenCards}}" as="c" hint-placeholder-count="3">
+<button type="button" onClick="{{c.pick}}" aria-pressed="{{c.on}}" aria-label="{{c.aria}}" style="{{c.style}}">
+<div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em;"><span style="color: {{c.kc}};">{{c.k}}</span><span style="color: #ffb347; font-size: 8.5px;">THIS RUN · STAND-IN</span></div>
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 2px;"><span style="font-family: Fraunces, serif; font-size: 28px; color: #fff3dc;">{{c.pct}}</span><span style="position: relative; flex-grow: 1; height: 8px; background: rgba(255,179,71,0.08);"><span style="{{c.bar}}"></span></span></div>
+<sc-for list="{{c.trig}}" as="g" hint-placeholder-count="2"><div style="margin-top: 6px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {{g.c}};">◆ {{g.d}}</div><div class="cb-clamp2" style="font-size: 11px; line-height: 1.35; color: #d6e2ea; margin-top: 1px;">{{g.t}}</div></div></sc-for>
+<div style="position: absolute; left: 12px; bottom: 8px; font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #c9a263;">STAND-IN: FORECAST LOG FOR SOURCE [4], 21 AUG</div>
+</button>
+</sc-for>
+
+<!-- tension tag (sits on the red string) -->
+<button type="button" onClick="{{tension.pick}}" aria-pressed="{{tension.on}}" aria-label="Tension between sources 1 and 4" style="{{tension.style}}">✕ TENSION · [1] ↔ [4]</button>
+
+<!-- string labels -->
+<sc-for list="{{strLabs}}" as="l" hint-placeholder-count="6"><div style="{{l.style}}">{{l.text}}</div></sc-for>
+
+<!-- detail drawer -->
+<aside aria-live="polite" aria-label="Card detail" style="position: absolute; left: 1106px; top: 110px; width: 318px; height: 680px; box-sizing: border-box; padding: 12px 14px; overflow-y: auto; background: rgba(6,12,20,0.96); border: 1px solid rgba(95,212,255,0.28); border-radius: 4px;">
+<div style="position: absolute; left: -1px; top: -1px; width: 12px; height: 12px; border-left: 2px solid #5fd4ff; border-top: 2px solid #5fd4ff;"></div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff;">DETAIL</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: {{dr.kc}}; margin-top: 8px;">{{dr.kicker}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: {{dr.layerC}}; margin-top: 3px;">{{dr.layer}}</div>
+<div style="font-family: Fraunces, serif; font-size: 17px; line-height: 1.3; color: #eef5f9; margin-top: 8px;">{{dr.title}}</div>
+<sc-for list="{{dr.parts}}" as="p" hint-placeholder-count="3"><div style="margin-top: 9px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.06em; color: {{p.kc}};">{{p.k}}</div><div style="{{p.ts}}">{{p.t}}</div></div></sc-for>
+<sc-if value="{{dr.hasLinks}}" hint-placeholder-val="{{ true }}">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #5fd4ff; margin-top: 14px;">CONNECTS TO · CLICK TO FOLLOW THE STRING</div>
+<sc-for list="{{dr.links}}" as="k" hint-placeholder-count="4"><button type="button" onClick="{{k.pick}}" style="{{k.style}}"><span style="color: {{k.c}};">{{k.rel}}</span> <span style="color: #d6e2ea;">{{k.label}}</span></button></sc-for>
+</sc-if>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; line-height: 1.55; color: #7d8b96; margin-top: 12px;">{{dr.foot}}</div>
+</aside>
+
+<!-- bottom strip: checks, actions, legend -->
+<section aria-label="Checks and sharing" style="position: absolute; left: 0; right: 0; bottom: 0; height: 100px; box-sizing: border-box; padding: 10px 20px; background: rgba(4,8,14,0.95); border-top: 1px solid rgba(95,212,255,0.16);">
+<div style="display: flex; align-items: center; gap: 14px; height: 34px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.12em; color: #5fd4ff;">CHECKS</span>
+<sc-for list="{{checks}}" as="k" hint-placeholder-count="3"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #d6e2ea;"><span style="color: {{k.c}};">{{k.i}}</span> {{k.t}} · <span style="color: {{k.c}};">{{k.v}}</span></span></sc-for>
+<span style="flex-grow: 1;"></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96; max-width: 330px; text-align: right;">{{status}}</span>
+<sc-for list="{{actions}}" as="a" hint-placeholder-count="2"><button type="button" onClick="{{a.pick}}" aria-disabled="{{a.off}}" style="{{a.style}}">{{a.label}}</button></sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 16px; margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #8a99a5;">
+<span><span style="display: inline-block; width: 18px; height: 11px; vertical-align: middle; margin-right: 5px; box-sizing: border-box; border: 1px solid rgba(95,212,255,0.7);"></span>SOLID BORDER = OUR DATA</span>
+<span><span style="{{hatchSwatch}}"></span>HATCHED = THIS RUN</span>
+<span><span style="display: inline-block; width: 20px; border-top: 2px solid #5fd4ff; vertical-align: middle; margin-right: 5px;"></span>SUPPORTS (SOURCE → CLAIM)</span>
+<span><span style="display: inline-block; width: 20px; border-top: 3px dotted #ffb347; vertical-align: middle; margin-right: 5px;"></span>MODEL JUDGMENT</span>
+<span><span style="display: inline-block; width: 20px; border-top: 2px solid #6fd29a; vertical-align: middle; margin-right: 5px;"></span>STORED CHAIN</span>
+<span style="color: #ff8a9a;">✕ TENSION</span>
+<span style="flex-grow: 1;"></span>
+<span style="max-width: 430px; text-align: right; line-height: 1.45; color: #7d8b96;">ONE RUN’S OUTPUT LAID OUT AS A BOARD · NOT A SAVED CASE LIBRARY (MULTI-RUN “CASES” PARKED FOR BUILD COST)</span>
+</div>
+</section>
+
+<sc-if value="{{toast}}" hint-placeholder-val="{{ false }}"><div style="position: absolute; right: 24px; bottom: 110px; max-width: 440px; padding: 8px 12px; background: rgba(6,12,20,0.97); border: 1px solid #5fd4ff; border-radius: 4px; font-size: 12px; color: #eef5f9;">{{toastText}}</div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { st: 'debrief', sel: 'B', toast: '' }; }
+  renderVals() {
+    var self = this, S = this.state, st = S.st, sel = S.sel, MONO = 'JetBrains Mono, monospace';
+    var fail = st === 'fail', share = st === 'share';
+    var AMB = '#ffb347', CY = '#5fd4ff', GRN = '#6fd29a', RED = '#ff6a4d', TEN = '#ff5d73';
+    var HATCH = 'repeating-linear-gradient(45deg, rgba(255,179,71,0.55) 0 3px, rgba(255,179,71,0.08) 3px 7px)';
+
+    // ---- real data, copied from Studio.dc.html (verified against the archive + forecast log, 25 Sep) ----
+    var SRC = [
+      ['14 AUG', '2026-08-14', 'aljazeera.com +5', 'US threatens ‘indefinite’ naval blockade of Iran as two more ships attacked in Hormuz', 'US Secretary of Defense Pete Hegseth claims US Navy can sustain blockade despite reports of poor conditions.', ['United States', 'Iran'], 42],
+      ['15 AUG', '2026-08-15', 'euronews.com +5', 'Trump vows to declare Strait of Hormuz a US territory; Iran says it ‘will remain Iranian’', 'Speaking in New York on Friday, Trump, with a chuckle, said: "Pretty soon I\'ll be declaring the Hormuz Strait a territory of the United States."', ['United States', 'Iran', 'Middle East'], 41],
+      ['17 AUG', '2026-08-17', 'BBC +3', 'Trump threatens to bomb Oman if it ‘gets in the way’ over Iran deal', 'Trump\'s threat on Oman, which has been holding its own talks with Iran to reopen the Strait of Hormuz, comes as a 60-day window for peace negotiations expires.', ['United States', 'Oman', 'Iran'], 39],
+      ['21 AUG', '2026-08-21', 'scmp.com +2', 'Iranian president says time to end war while in ‘position of strength’', 'Iranian President Masoud Pezeshkian said on Friday it was time to end the months-long Middle East war with the US because Tehran appeared to be in a stronger position than Washington.', ['Iran', 'United States'], 35]
+    ];
+    var CHAIN = [['TRIGGER', 'The Trump administration shifted to “suffocating economic pressure” and a naval blockade after bombing failed to force Iran’s capitulation (13 Aug); ship attacks and the vow to declare Hormuz US territory followed.'],
+      ['ENABLING CONDITION', 'A “months-long Middle East war”: a US maximum-pressure campaign against Iran’s responses, with Iran blockading Hormuz for “much of the past five months”.'],
+      ['STRUCTURAL FACTOR', 'The decades-long US–Iran rivalry rooted in 1979, complicated by Iran’s nuclear programme and its regional proxies.']];
+    var SCEN = [
+      ['MOST LIKELY', 60, '#ee7754', [['2026-11-30', 'Direct talks between Iranian and US officials are confirmed to have taken place'], ['2026-12-31', 'Iran and the US announce a mutual ceasefire or pause in hostilities in the Middle East']], ['Iran', 'United States'], []],
+      ['OPTIMISTIC', 20, '#d8b25a', [['2026-10-31', 'Iran announces a temporary suspension of uranium enrichment above 60% purity'], ['2026-11-30', 'The US and Iran sign a preliminary agreement on prisoner exchange and sanctions relief']], ['Iran', 'United States'], []],
+      ['PESSIMISTIC', 20, '#c0564a', [['2026-11-30', 'Iran resumes large-scale missile attacks on US bases or allies in the region'], ['2026-12-31', 'Israel conducts a military strike on Iranian nuclear facilities']], ['Iran'], ['Israel']]
+    ];
+    function daysLeft(d) { return Math.round((Date.parse(d) - Date.parse('2026-09-25')) / 864e5); }
+    function dm(d) { var m = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']; return +d.slice(8, 10) + ' ' + m[+d.slice(5, 7) - 1]; }
+    var QUESTION = 'How could the US–Iran standoff over Hormuz develop from here?';
+
+    // ---- claims: wireframe stand-ins written from the sources (a real run's wording will differ) ----
+    var CL = [
+      ['B', 'BOTTOM LINE', 'A high-stakes standoff over Hormuz continues; talks look likelier within months than a quick deal.', [1, 2, 3, 4]],
+      ['C1', 'CLAIM 1', 'Washington says the US Navy can sustain the blockade despite reports of poor conditions.', [1]],
+      ['C2', 'CLAIM 2', 'The vow to declare Hormuz US territory and the threat to bomb Oman came as Oman held its own talks with Iran.', [2, 3]],
+      ['C3', 'CLAIM 3', 'Tehran says it is time to end the war, arguing it appears stronger than Washington.', [4]]
+    ];
+    var B_SUB = 'Washington says it can hold the blockade indefinitely [1]; the territorial claim [2] and the threat to Oman [3] narrowed mediation, while Tehran says it is time to end the war from a “position of strength” [4].';
+    var FAILS = { C1: ['✗ DATE NOT IN SOURCES', 'DATE CHECK FAILED: the run gives “3 Oct”, which appears in none of the sources.'], C2: ['✗ PHANTOM CITATION', 'CITATION CHECK FAILED: cites [5], but only [1]–[4] were sent.'] };
+
+    // ---- board geometry: [x, y, w, h] ----
+    var G = {
+      S1: [44, 132, 272, 150], S2: [44, 292, 272, 150], S3: [44, 452, 272, 150], S4: [44, 612, 272, 150],
+      B: [400, 132, 292, 118], C1: [400, 258, 292, 100], C2: [400, 366, 292, 100], C3: [400, 474, 292, 100],
+      K1: [400, 596, 292, 54], K2: [400, 656, 292, 54], K3: [400, 716, 292, 54],
+      M: [780, 132, 300, 200], O: [780, 344, 300, 200], P: [780, 556, 300, 200]
+    };
+    var NAME = { S1: '[1] SOURCE · 14 AUG', S2: '[2] SOURCE · 15 AUG', S3: '[3] SOURCE · 17 AUG', S4: '[4] SOURCE · 21 AUG', B: 'BOTTOM LINE', C1: 'CLAIM 1', C2: 'CLAIM 2', C3: 'CLAIM 3',
+      K1: 'CHAIN · TRIGGER', K2: 'CHAIN · ENABLING CONDITION', K3: 'CHAIN · STRUCTURAL FACTOR', M: 'MOST LIKELY · 60%', O: 'OPTIMISTIC · 20%', P: 'PESSIMISTIC · 20%', T: 'TENSION [1] ↔ [4]', X5: '[5] · NOT SENT' };
+
+    // ---- strings: [from, to, type] ----
+    var E = [['S1', 'B', 'sup'], ['S2', 'B', 'sup'], ['S3', 'B', 'sup'], ['S4', 'B', 'sup'],
+      ['S1', 'C1', 'sup'], ['S2', 'C2', 'sup'], ['S3', 'C2', 'sup'], ['S4', 'C3', 'sup'],
+      ['K1', 'B', 'ctx'], ['K2', 'B', 'ctx'], ['K3', 'B', 'ctx'],
+      ['B', 'M', 'judg'], ['C3', 'M', 'judg'], ['C3', 'O', 'judg'], ['C1', 'P', 'judg'], ['C2', 'P', 'judg'],
+      ['S1', 'S4', 'tens']];
+    if (fail) E.push(['C2', 'X5', 'phantom']);
+    var SIDE = { sup: ['R', 'L'], judg: ['R', 'L'], ctx: ['R', 'R'], tens: ['L', 'L'], phantom: ['L', null] };
+    function cy(id) { return id === 'X5' ? 9999 : G[id][1] + G[id][3] / 2; }
+    var ports = {};
+    E.forEach(function (e, i) { [0, 1].forEach(function (end) { var id = e[end], sd = SIDE[e[2]][end]; if (!sd) return; var key = id + sd; (ports[key] = ports[key] || []).push({ i: i, end: end, oy: cy(e[1 - end]) }); }); });
+    var PY = {};
+    Object.keys(ports).forEach(function (key) { var L = ports[key], id = key.slice(0, -1), g = G[id]; L.sort(function (a, b) { return a.oy - b.oy; });
+      L.forEach(function (p, k) { PY[p.i + ':' + p.end] = g[1] + g[3] * (k + 1) / (L.length + 1); }); });
+    function px(id, sd) { var g = G[id]; return sd === 'R' ? g[0] + g[2] : g[0]; }
+
+    // ---- selection ----
+    var lit = {}, conn = {};
+    if (sel) { lit[sel] = true; E.forEach(function (e, i) { if (e[0] === sel || e[1] === sel || (sel === 'T' && e[2] === 'tens')) { conn[i] = true; lit[e[0]] = true; lit[e[1]] = true; } }); }
+    function pick(id) { return function () { self.setState({ sel: S.sel === id ? null : id, toast: '' }); }; }
+
+    // ---- string paths ----
+    var strs = [], strLabs = [];
+    var REL = { sup: 'supports', judg: 'model judgment', ctx: 'stored context', phantom: '[5] not sent' };
+    function f(n) { return n.toFixed(1); }
+    E.forEach(function (e, i) {
+      var t = e[2], s0 = SIDE[t][0], s1 = SIDE[t][1];
+      var x1 = px(e[0], s0), y1 = PY[i + ':0'], x2, y2, d, mx, my;
+      if (t === 'tens') { y2 = PY[i + ':1']; var zx = 30; d = 'M44 ' + f(y1) + 'L' + zx + ' ' + f(y1); var k = 0; for (var yy = y1 + 8; yy < y2; yy += 8) { d += 'L' + (zx + (k % 2 ? 4 : -4)) + ' ' + f(yy); k++; } d += 'L' + zx + ' ' + f(y2) + 'L44 ' + f(y2); mx = 18; my = (y1 + y2) / 2; }
+      else if (t === 'phantom') { x2 = 336; y2 = y1 + 58; d = 'M' + x1 + ' ' + f(y1) + 'C' + (x1 - 30) + ' ' + f(y1) + ' ' + (x2 + 30) + ' ' + f(y2) + ' ' + x2 + ' ' + f(y2) + 'M' + (x2 - 5) + ' ' + f(y2 - 5) + 'L' + (x2 + 5) + ' ' + f(y2 + 5) + 'M' + (x2 + 5) + ' ' + f(y2 - 5) + 'L' + (x2 - 5) + ' ' + f(y2 + 5); mx = 358; my = y2 + 16; }
+      else {
+        x2 = px(e[1], s1); y2 = PY[i + ':1'];
+        var c1x, c2x;
+        if (t === 'ctx') { c1x = x1 + 48; c2x = x2 + 48; } else { var dx = (x2 - x1) * 0.5; c1x = x1 + dx; c2x = x2 - dx; }
+        d = 'M' + x1 + ' ' + f(y1) + 'C' + f(c1x) + ' ' + f(y1) + ' ' + f(c2x) + ' ' + f(y2) + ' ' + x2 + ' ' + f(y2);
+        mx = (x1 + 3 * c1x + 3 * c2x + x2) / 8; my = (y1 + 3 * y1 + 3 * y2 + y2) / 8;
+      }
+      var on = !sel || conn[i], op = sel ? (conn[i] ? 1 : 0.09) : 0.7;
+      var failed = fail && t === 'judg' && FAILS[e[0]];
+      if (t === 'sup') strs.push({ d: d, c: CY, w: sel && conn[i] ? 2.2 : 1.5, da: 'none', op: op });
+      if (t === 'ctx') strs.push({ d: d, c: GRN, w: sel && conn[i] ? 1.8 : 1.2, da: 'none', op: op });
+      if (t === 'tens') strs.push({ d: d, c: TEN, w: 1.6, da: 'none', op: sel ? (conn[i] ? 1 : 0.15) : 0.85 });
+      if (t === 'phantom') strs.push({ d: d, c: RED, w: 1.8, da: '0.1 4', op: 1 });
+      if (t === 'judg') { var jc = failed ? RED : AMB; strs.push({ d: d, c: jc, w: 6, da: 'none', op: op * 0.16 }); strs.push({ d: d, c: jc, w: 2.4, da: '0.1 5', op: op }); }
+      if ((sel && conn[i] && t !== 'tens') || t === 'phantom') {
+        var lc = t === 'sup' ? CY : t === 'ctx' ? GRN : t === 'phantom' ? RED : failed ? RED : AMB;
+        strLabs.push({ text: failed ? '✗ failed claim' : REL[t], style: 'position: absolute; left: ' + f(mx) + 'px; top: ' + f(my) + 'px; transform: translate(-50%, -50%); padding: 1px 5px; background: rgba(4,8,14,0.92); border: 1px solid ' + lc + '66; border-radius: 2px; font-family: ' + MONO + '; font-size: 8.5px; color: ' + lc + '; white-space: nowrap; pointer-events: none;' });
+      }
+    });
+
+    // ---- cards ----
+    function base(id, look, rot) {
+      var g = G[id], on = sel === id, dim = sel && !lit[id];
+      var skin = look === 'ours' ? 'border: 1px solid rgba(95,212,255,0.6); background: rgba(9,17,27,0.97);'
+        : look === 'chain' ? 'border: 1px solid rgba(111,210,154,0.65); background: rgba(8,20,18,0.97);'
+        : look === 'fail' ? 'border: 2px solid ' + RED + '; background: rgba(38,12,10,0.96);'
+        : 'border: 3px solid transparent; background: linear-gradient(#0b121b, #0b121b) padding-box, ' + HATCH + ' border-box;';
+      return 'position: absolute; left: ' + g[0] + 'px; top: ' + g[1] + 'px; width: ' + g[2] + 'px; height: ' + g[3] + 'px; box-sizing: border-box; padding: ' + (look === 'chain' ? '7px 10px' : '8px 11px') + '; text-align: left; cursor: pointer; color: inherit; overflow: hidden; border-radius: 3px; ' + skin +
+        ' opacity: ' + (dim ? 0.26 : 1) + '; box-shadow: ' + (on ? '0 0 0 2px #eef5f9, 0 0 20px rgba(95,212,255,0.4)' : '0 5px 14px rgba(0,0,0,0.55)') + '; transform: rotate(' + (rot || 0) + 'deg); transition: opacity .15s;';
+    }
+    var ROT = [-0.6, 0.5, -0.35, 0.55];
+    var srcCards = SRC.map(function (s, i) { var id = 'S' + (i + 1), tg = i === 0 ? '✕ TENSION WITH [4]' : i === 3 ? '✕ TENSION WITH [1]' : '';
+      var st2 = base(id, 'ours', ROT[i]);
+      return { n: i + 1, meta: s[0] + ' · ' + s[2], t: s[3], snip: s[4], hasTag: !!tg, tag: tg, pick: pick(id), on: sel === id, aria: 'Source ' + (i + 1) + ': ' + s[3], style: st2 }; });
+    var claimCards = CL.map(function (c) { var id = c[0], fl = fail && FAILS[id], cites = c[3].slice(); if (fail && id === 'C2') cites.push(5);
+      var big = id === 'B';
+      return { k: c[1] + ' · THIS RUN', flag: fl ? fl[0] : 'MODEL JUDGMENT', flagC: fl ? RED : '#8a7a5a', t: c[2], clamp: big ? 'cb-clamp3' : 'cb-clamp2',
+        ts: big ? 'font-family: Fraunces, serif; font-size: 14.5px; line-height: 1.32; color: #fff3dc; margin-top: 4px;' : 'font-size: 12px; line-height: 1.36; color: #eef5f9; margin-top: 4px;',
+        cites: cites.map(function (n) { var ph = n === 5; return { label: '[' + n + ']' + (ph ? ' NOT SENT' : ''), style: 'padding: 0 4px; border-radius: 2px; background: ' + (ph ? 'rgba(255,106,77,0.25)' : 'rgba(95,212,255,0.14)') + '; color: ' + (ph ? RED : CY) + '; font-weight: 600;' }; }),
+        note: 'WIREFRAME STAND-IN WRITTEN FROM SOURCES ' + (c[3].length > 1 ? '[' + c[3][0] + ']–[' + c[3][c[3].length - 1] + ']' : '[' + c[3][0] + ']'),
+        pick: pick(id), on: sel === id, aria: c[1] + ': ' + c[2], style: base(id, fl ? 'fail' : 'run') }; });
+    var chainCards = CHAIN.map(function (c, i) { var id = 'K' + (i + 1); return { k: c[0] + ' · OUR DATA', t: c[1], pick: pick(id), on: sel === id, aria: 'Cause chain ' + c[0], style: base(id, 'chain') }; });
+    var SID = ['M', 'O', 'P'];
+    var scenCards = SCEN.map(function (s, i) { var id = SID[i];
+      return { k: s[0], kc: s[2], pct: s[1] + '%', bar: 'position: absolute; left: 0; top: 0; height: 8px; width: ' + s[1] + '%; background: ' + HATCH + '; border: 1px solid rgba(255,179,71,0.7); box-sizing: border-box;',
+        trig: s[3].map(function (t) { return { d: dm(t[0]) + ' ' + t[0].slice(0, 4) + ' · ' + daysLeft(t[0]) + ' DAYS LEFT', t: t[1], c: s[2] }; }),
+        pick: pick(id), on: sel === id, aria: s[0] + ' ' + s[1] + ' percent', style: base(id, 'run') }; });
+    var tOn = sel === 'T', tDim = sel && !lit.T && sel !== 'S1' && sel !== 'S4';
+    var tension = { pick: pick('T'), on: tOn, style: 'position: absolute; left: 6px; top: 372px; width: 24px; height: 150px; padding: 0; box-sizing: border-box; writing-mode: vertical-rl; transform: rotate(180deg); cursor: pointer; border-radius: 3px; font-family: ' + MONO + '; font-size: 8.5px; letter-spacing: 0.08em; color: #ffd0d6; background: ' + (tOn ? 'rgba(255,93,115,0.45)' : 'rgba(60,14,22,0.95)') + '; border: 1px solid ' + TEN + '; opacity: ' + (tDim ? 0.3 : 1) + ';' };
+
+    // ---- zone headers ----
+    function zh(x, w, text, c) { return { text: text, style: 'position: absolute; left: ' + x + 'px; top: 110px; width: ' + w + 'px; height: 14px; font-family: ' + MONO + '; font-size: 9px; letter-spacing: 0.1em; color: ' + c + '; white-space: nowrap; overflow: hidden;' }; }
+    var zones = [zh(44, 272, 'EVIDENCE · OUR DATA · 4 SOURCES', CY), zh(322, 74, 'SUPPORTS →', CY), zh(400, 292, 'REASONING · THIS RUN + OUR CHAIN', AMB), zh(698, 80, 'JUDGMENT ⋯→', AMB), zh(780, 300, 'OUTCOMES · THIS RUN (STAND-IN)', AMB),
+      { text: 'STORED CAUSE CHAIN · OUR DATA · ANALYSIS OF 12 SEP', style: 'position: absolute; left: 400px; top: 580px; width: 292px; height: 12px; font-family: ' + MONO + '; font-size: 8.5px; letter-spacing: 0.08em; color: ' + GRN + '; white-space: nowrap;' }];
+
+    // ---- drawer ----
+    var BODY = 'font-size: 12.5px; line-height: 1.5; color: #d6e2ea; margin-top: 2px;', QUOTE = 'font-size: 12px; line-height: 1.5; color: #b9c7d1; font-style: italic; margin-top: 2px;';
+    var dr = { kicker: '', kc: CY, layer: '', layerC: '#7d8b96', title: '', parts: [], links: [], hasLinks: false, foot: '' };
+    function part(k, t, kc, ts) { return { k: k, t: t, kc: kc || '#7d8b96', ts: ts || BODY }; }
+    if (!sel) { dr.kicker = 'NOTHING SELECTED'; dr.title = 'Click any card or the red tension tag'; dr.parts = [part('HOW TO READ THE BOARD', 'Left: what our sources say. Middle: what this run concluded, plus our stored cause chain. Right: where it could go. Strings show which card rests on which.')]; dr.foot = 'THE SELECTED CARD’S STRINGS LIGHT UP; EVERYTHING ELSE DIMS.'; }
+    else if (sel[0] === 'S') { var si = +sel[1] - 1, s = SRC[si]; dr.kicker = '[' + (si + 1) + '] SOURCE · ' + s[0]; dr.layer = 'OUR DATA · STORED, SHOWN AS-IS'; dr.layerC = GRN; dr.title = s[3];
+      dr.parts = [part('VERBATIM SNIPPET', '“' + s[4] + '”', GRN, QUOTE), part('OUTLETS · PLACES', s[2] + ' · ' + s[5].join(' · '), '#7d8b96', 'font-family: ' + MONO + '; font-size: 10px; line-height: 1.5; color: #b9c7d1; margin-top: 2px;')]; dr.foot = share ? 'FROZEN AT RUN TIME (25 SEP) FOR THIS SHARED LINK.' : 'SENT TO YOUR PROVIDER, CLIPPED TO 1,200 CHARACTERS.'; }
+    else if (sel[0] === 'C' || sel === 'B') { var c = CL.filter(function (x) { return x[0] === sel; })[0], fl2 = fail && FAILS[sel];
+      dr.kicker = c[1]; dr.kc = fl2 ? RED : AMB; dr.layer = 'THIS RUN · MODEL JUDGMENT'; dr.layerC = AMB; dr.title = c[2];
+      dr.parts = (sel === 'B' ? [part('SUPPORTING SENTENCE', B_SUB, AMB)] : []).concat([part('LABEL', 'Wireframe stand-in written from sources ' + c[3].map(function (n) { return '[' + n + ']'; }).join('') + '. A real run’s wording will differ.', '#c9a263')]);
+      if (fl2) dr.parts.push(part('✗ FAILED CHECK · EXAMPLE FOR THE WIREFRAME', fl2[1], RED, BODY.replace('#d6e2ea', '#ffb4a6')));
+      dr.foot = fl2 ? 'A CLAIM THAT FAILS A CHECK TURNS RED AND THE WHOLE BOARD CANNOT BE SHARED.' : 'CLAIM TEXT IS THE READER’S RUN, NEVER STORED AS OUR ANALYSIS.'; }
+    else if (sel[0] === 'K') { var ki = +sel[1] - 1; dr.kicker = 'CAUSE CHAIN · ' + CHAIN[ki][0]; dr.kc = GRN; dr.layer = 'OUR DATA · STORED ANALYSIS (12 SEP)'; dr.layerC = GRN; dr.title = CHAIN[ki][0].charAt(0) + CHAIN[ki][0].slice(1).toLowerCase();
+      dr.parts = [part('STORED TEXT', CHAIN[ki][1], GRN)]; dr.foot = 'FROM THE STORY’S STORED ANALYSIS, NOT FROM THIS RUN, AND SHOWN AS OURS, NOT AS THE READER’S.'; }
+    else if (sel === 'T') { dr.kicker = 'TENSION (WIREFRAME STAND-IN)'; dr.kc = TEN; dr.layer = 'BETWEEN TWO OF OUR SOURCES'; dr.title = 'Both sides say time is on their side';
+      dr.parts = [part('[1] 14 AUG · ' + SRC[0][2], '“' + SRC[0][4] + '”', CY, QUOTE), part('[4] 21 AUG · ' + SRC[3][2], '“' + SRC[3][4] + '”', CY, QUOTE),
+        part('WHY IT IS SHOWN', 'Washington says it can keep the blockade going; a week later Tehran says it is the stronger side. Both are claims reported by the sources, not facts the board settles.', TEN)];
+      dr.foot = 'STAND-IN: A REAL RUN WOULD FLAG A TENSION ONLY BETWEEN SOURCES IT CITES, QUOTING BOTH.'; }
+    else { var sci = SID.indexOf(sel), sc = SCEN[sci]; dr.kicker = sc[0] + ' · ' + sc[1] + '%'; dr.kc = sc[2]; dr.layer = 'STAND-IN: FORECAST LOG FOR SOURCE [4], 21 AUG'; dr.layerC = AMB; dr.title = sc[1] + '% · dated triggers';
+      dr.parts = sc[3].map(function (t) { return part('◆ ' + dm(t[0]) + ' ' + t[0].slice(0, 4) + ' · ' + daysLeft(t[0]) + ' DAYS LEFT FROM 25 SEP', t[1], sc[2]); });
+      if (sc[5].length) dr.parts.push(part('NOT PLACED', sc[5].join(', ') + ' is named in a trigger but in none of the sources.', '#7d8b96'));
+      dr.foot = 'POINT PROBABILITIES FROM OUR STORED FORECAST, USED AS A STAND-IN. A RUN WOULD STATE ITS OWN, AND ONLY DATES ITS TEXT STATES.'; }
+    if (sel) {
+      E.forEach(function (e, i) { if (!conn[i]) return; var other = e[0] === sel ? e[1] : e[0], t = e[2];
+        if (sel === 'T') return;
+        var rel = t === 'sup' ? (e[0] === sel ? 'supports →' : '← supported by') : t === 'judg' ? (e[0] === sel ? 'judged to point to →' : '← judged from') : t === 'ctx' ? (e[0] === sel ? 'stored context for →' : '← context from') : t === 'tens' ? '✕ in tension with' : '✗ cites';
+        var col = t === 'sup' ? CY : t === 'judg' ? AMB : t === 'ctx' ? GRN : t === 'tens' ? TEN : RED;
+        dr.links.push({ rel: rel, label: NAME[other], c: col, pick: other === 'X5' ? function () {} : pick(other),
+          style: 'display: block; width: 100%; text-align: left; margin-top: 5px; padding: 5px 8px; border-radius: 3px; cursor: ' + (other === 'X5' ? 'default' : 'pointer') + '; background: rgba(12,22,34,0.9); border: 1px solid ' + col + '44; font-family: ' + MONO + '; font-size: 9.5px;' }); });
+      if (sel === 'T') ['S1', 'S4'].forEach(function (o) { dr.links.push({ rel: '✕ between', label: NAME[o], c: TEN, pick: pick(o), style: 'display: block; width: 100%; text-align: left; margin-top: 5px; padding: 5px 8px; border-radius: 3px; cursor: pointer; background: rgba(12,22,34,0.9); border: 1px solid ' + TEN + '44; font-family: ' + MONO + '; font-size: 9.5px;' }); });
+    }
+    dr.hasLinks = dr.links.length > 0;
+
+    // ---- chrome ----
+    var grid = ''; for (var gx = 0; gx <= 1440; gx += 24) grid += 'M' + gx + ' 100V800'; for (var gy = 100; gy <= 800; gy += 24) grid += 'M0 ' + gy + 'H1100';
+    function chip(on) { return 'height: 26px; padding: 0 9px; border-radius: 13px; cursor: pointer; font-family: ' + MONO + '; font-size: 9.5px; border: 1px solid ' + (on ? CY : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? CY : '#8a99a5') + ';'; }
+    function go(s2) { return function () { self.setState({ st: s2, sel: s2 === 'fail' ? 'C2' : 'B', toast: '' }); }; }
+    var states = [['debrief', 'DEBRIEF'], ['fail', 'FAILED CHECKS'], ['share', 'SHARED']].map(function (s2) { return { label: s2[1], on: st === s2[0], pick: go(s2[0]), style: chip(st === s2[0]) }; });
+    function toast(t) { return function () { self.setState({ toast: t }); }; }
+    function btn(on, off) { return 'height: 32px; padding: 0 11px; border-radius: 4px; cursor: ' + (off ? 'not-allowed' : 'pointer') + '; font-family: ' + MONO + '; font-size: 10px; border: 1px solid ' + (off ? 'rgba(120,130,140,0.3)' : on ? CY : 'rgba(95,212,255,0.3)') + '; background: ' + (on && !off ? 'rgba(95,212,255,0.16)' : 'transparent') + '; color: ' + (off ? '#56626b' : on ? '#eef5f9' : '#8a99a5') + ';'; }
+    var A = {
+      debrief: [['COPY AS MARKDOWN', toast('Copied: the claims with numbered sources [1]–[4] and links. The board is a picture of this run, not extra claims.'), false, false], ['SHARE', function () { self.setState({ st: 'share', toast: 'Link created. The server re-fetched and froze the 4 sources, re-ran the checks, and saved the board with them.' }); }, true, false]],
+      fail: [['COPY AS MARKDOWN', function () {}, false, true], ['SHARE · NOT SHAREABLE', function () {}, true, true]],
+      share: [['COPY AS MARKDOWN', toast('Copied: the frozen claims with numbered sources.'), false, false], ['OPEN THESE STORIES LIVE →', toast('Opens the stories as they are now; they may have moved on since the run.'), true, false]]
+    }[st];
+    var actions = A.map(function (a) { return { label: a[0], pick: a[1], off: a[3], style: btn(a[2], a[3]) }; });
+    var OK = GRN, CK = fail ? [['✗', 'Citations match sources', '[5] NOT SENT', RED], ['✗', 'Dates found in sources', '3 OCT', RED], ['·', 'Shareable', 'NO', RED]]
+      : [['✓', 'Citations match sources', '4 / 4', OK], ['✓', 'Dates found in sources', 'OK', OK], ['✓', 'Visual blocks valid', 'OK', OK]];
+    var checks = CK.map(function (k) { return { i: k[0], t: k[1], v: k[2], c: k[3] }; });
+    var status = { debrief: 'GEMINI (YOUR KEY) · RUN 25 SEP 14:02', fail: 'FAILED CHECKS · NOT SHAREABLE', share: 'RUN 25 SEP · SOURCES FROZEN 25 SEP · NOT INDEXED' }[st];
+    var keyStyle = 'height: 26px; line-height: 24px; box-sizing: border-box; padding: 0 9px; border-radius: 13px; font-family: ' + MONO + '; font-size: 9.5px; border: 1px solid ' + (share ? 'rgba(120,130,140,0.35)' : 'rgba(111,210,154,0.55)') + '; color: ' + (share ? '#8a99a5' : GRN) + ';';
+    var bannerText = fail ? 'FAILED CHECKS · 2 CLAIMS RED · THIS BOARD CAN’T BE SHARED · EXAMPLE FAILURES FOR THE WIREFRAME · RUN AGAIN OR CHANGE THE STORIES' : 'SHARED · READ-ONLY · FROZEN 25 SEP · SIGNED-OUT VISITORS SEE THIS SAME BOARD';
+    var bannerStyle = 'position: absolute; left: 44px; top: 776px; width: 1036px; height: 18px; line-height: 18px; box-sizing: border-box; padding: 0 10px; background: rgba(6,12,20,0.95); border: 1px solid ' + (fail ? RED : 'rgba(255,179,71,0.5)') + '; border-radius: 3px; font-family: ' + MONO + '; font-size: 9px; color: ' + (fail ? RED : AMB) + '; white-space: nowrap; overflow: hidden;';
+
+    return { grid: grid, strs: strs, strLabs: strLabs, route: share ? '/analyze/s/{unguessable id}' : '/analyze', states: states, question: QUESTION,
+      keyStyle: keyStyle, keyLabel: share ? 'MADE BY A READER WITH THEIR OWN KEY' : 'KEY · GEMINI · YOUR KEY · STAYS IN THIS BROWSER',
+      runPick: share ? go('debrief') : fail ? toast('Would run again with your key; the board is rebuilt from the new answer.') : toast('Would re-run with your key; the board is rebuilt from the new answer.'),
+      runLabel: share ? 'RUN YOUR OWN →' : fail ? 'RUN AGAIN ▶' : 'RE-RUN ▶', runStyle: btn(true, false),
+      banner: fail || share, bannerText: bannerText, bannerStyle: bannerStyle,
+      zones: zones, srcCards: srcCards, claimCards: claimCards, chainCards: chainCards, scenCards: scenCards, tension: tension, dr: dr,
+      checks: checks, status: status, actions: actions, hatchSwatch: 'display: inline-block; width: 18px; height: 11px; vertical-align: middle; margin-right: 5px; background: ' + HATCH + ';',
+      toast: !!S.toast, toastText: S.toast };
+  }
+}
+</script>
+</body>
+</html>

@@ -100,7 +100,7 @@
     "Studio.dc.html": {
       "h": 900,
       "is_interactive": true,
-      "title": "F1 · Analysis Studio v3 — four types, four pictures: forward · sideways · back · evidence",
+      "title": "F1 · Direction A — STORY-MODE DECK: map + slides + time bar; four lenses, four pictures",
       "w": 1440,
       "x": 0,
       "y": 11600
@@ -112,6 +112,30 @@
       "w": 1440,
       "x": 0,
       "y": 10300
+    },
+    "StudioNotebook.dc.html": {
+      "x": 0,
+      "y": 12900,
+      "w": 1440,
+      "h": 900,
+      "is_interactive": true,
+      "title": "F2 · Direction B — ANALYST NOTEBOOK: stacked cells, + ADD CELL runs another lens on the same sources"
+    },
+    "StudioBoard.dc.html": {
+      "x": 0,
+      "y": 14200,
+      "w": 1440,
+      "h": 900,
+      "is_interactive": true,
+      "title": "F3 · Direction C — CASE BOARD: evidence → reasoning → outcomes, joined by strings"
+    },
+    "StudioChat.dc.html": {
+      "x": 0,
+      "y": 15500,
+      "w": 1440,
+      "h": 900,
+      "is_interactive": true,
+      "title": "F4 · Direction D — CONVERSATION + LIVE CANVAS: follow-ups, canvas follows the active turn"
     }
   },
   "createdOnFiles": {
@@ -198,7 +222,7 @@
     "fTitle": {
       "kind": "title1",
       "maxW": 5000,
-      "text": "F · Analysis Studio (proposed — awaiting operator)",
+      "text": "F · Analysis Studio — four design directions to compare (A deck · B notebook · C case board · D conversation), same real US–Iran data",
       "w": 240,
       "x": 0,
       "y": 11480
@@ -274,6 +298,38 @@
       "w": 390,
       "x": 1480,
       "y": 3300
+    },
+    "nbhow": {
+      "fill": "blue",
+      "maxH": 560,
+      "w": 390,
+      "x": 1480,
+      "y": 12900,
+      "text": "B · NOTEBOOK (Observable / Jupyter / NotebookLM). Reading-first and printable. Left: sources [1]–[4] (click for the verbatim snippet). Middle: cells — ASK → BOTTOM LINE → SCENARIO fork chart → WHERE (map; Israel not drawn) → WATCH table → CAUSE CHAIN (ours). + ADD CELL between cells runs another lens on the SAME sources (What changed chart, Compare grid, Free-form) — several analyses stacked in one document. Hover a citation → its source lights in the rail. Right: CHECKS + SHARE / COPY / PRINT. Strength: depth + multiple lenses. Weakness: least visual, scrolls."
+    },
+    "boardhow": {
+      "fill": "blue",
+      "maxH": 560,
+      "w": 390,
+      "x": 1480,
+      "y": 14200,
+      "text": "C · CASE BOARD (Obra Dinn / detective corkboard / Disco Elysium). One run laid out spatially: EVIDENCE cards [1]–[4] → REASONING (bottom line + claims, hatched = this run; the stored cause chain in green = ours) → OUTCOMES (60/20/20 scenario cards with dated ◆ triggers). Strings: 'supports' solid cyan; claim→scenario amber dotted (model judgment); a red TENSION between [1] (US: blockade indefinitely) and [4] (Iran: end the war from strength). Click a card: its strings light, the rest dims; drawer shows connections. FAILED CHECKS turns bad claims red. Strength: shows the reasoning, most game-like. Weakness: dense; one run only (saved cases stay parked)."
+    },
+    "chathow": {
+      "fill": "blue",
+      "maxH": 560,
+      "w": 390,
+      "x": 1480,
+      "y": 15500,
+      "text": "D · CONVERSATION + LIVE CANVAS (Claude artifacts / Perplexity / ChatGPT canvas). Left: a thread of 3 turns on the same stories — Scenario → Free-form (Oman, adds sources [5]–[8]) → What changed (Iran log). Each answer: type tag, amber THIS RUN label, SHOW ON CANVAS. Right: the canvas switches to the active turn's picture (fork bands / evidence map + source timeline / risk chart with flagged ● marks). Composer with lens chips + suggested follow-ups; each follow-up is a new run on the reader's key. SHARE THREAD freezes all turns. Strength: most familiar, natural follow-ups. Weakness: closest to a generic chatbot; cost grows per turn."
+    },
+    "studiopay": {
+      "fill": "orange",
+      "maxH": 420,
+      "w": 390,
+      "x": 3040,
+      "y": 11600,
+      "text": "Whichever direction wins, add the reader-pays pieces (runs use the reader's own key): BEFORE the run — what is sent (stories, ~tokens), provider + model + output cap, deep research on/off, per-story material RICH / THIN (only 17 stories are rich today — warn before they spend). AFTER — a receipt from the provider's usage field (tokens in/out, model, time), checks, shareable or not; if checks fail: 'your provider still charged for this run'. Money shown only from a verified dated price table (operator decision), else link to the provider's pricing."
     }
   },
   "order": [
@@ -290,7 +346,10 @@
     "BriefingMode.dc.html",
     "TrackRecord.dc.html",
     "ServiceRecord.dc.html",
-    "Studio.dc.html"
+    "Studio.dc.html",
+    "StudioNotebook.dc.html",
+    "StudioBoard.dc.html",
+    "StudioChat.dc.html"
   ],
   "pages": [],
   "title": "Global Perspectives — Console Redesign"

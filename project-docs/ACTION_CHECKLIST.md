@@ -39,6 +39,7 @@ something · ▶ in progress · ✅ done
 | C6 | **`/story/:id` rename** with 301 redirects, bundled with the Worker change | Y4 path proven | `PAGE_STRUCTURE_PROPOSAL_2026-09-24.md` §8 |
 | C7 | **Phase 4 severity-score fix** (country half first, then thread): offline eval against the gold set → deploy the prompt → re-run the live flag audit as proof | Y1 (country half), Y2 (thread half) | `ONE_TRUTH_EXECUTION_PLAN.md` Phase 4 |
 | C8 | **Story + country pages, incremental fixes** from the review: mobile overflow, layout shift, old colour palette → tokens, an "archived story" state (fixes economy's broken story links) | C1 deployed | `PAGE_REVIEW_2026-09-24.md` §4 |
+| C11 | **Story dossier `/story/:id` + Intel board `/stories`** in console style, with the spider causal web merged in (dossier section 2, board WEB view); `/spider-demo` retires after | C6 route rename; design approved 2026-09-25; connection-to-console questions open | `redesign-ux/_active/STORY_DOSSIER_BOARD_DESIGN_BRIEF.md` + wireframe row 3 |
 | C9 | **Site-wide accessibility pass**: contrast tokens, focus outlines, tap targets, icon-button labels, reduced motion | C1 deployed | `PAGE_REVIEW_2026-09-24.md` X-8 |
 | C10 | After content flows again: regenerate `quality/dashboard.md` + `calibration/latest.md`; delete the ~263 zero-byte corpus files; re-measure the R3 matcher after ~1 week | Y1 | `CLEANUP_AUDIT_2026-09-24.md` Tier C |
 

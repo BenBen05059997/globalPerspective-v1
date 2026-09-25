@@ -128,6 +128,22 @@ Two critics (product; engineering/data honesty) judged them. The ruling is **S-A
   - link confidence is named per web;
   - the compare grid no longer claims story A never mentions prices.
 
+**Data check (2026-09-25; read-only, DynamoDB + public proxy): the Studio is starved today.**
+- Per-story AI (`SUMMARY` / `PREDICTION` / `TRACE_CAUSE`) exists only for the **17 current stories** (13 Sep). Each generation replaces them.
+- So any older story sent to the Studio arrives as **headline + regions + URLs only**, and the thin-input guard fires. The US–Iran stories in the F1 wireframe would be thin in the live product.
+- Material we already store but **don't feed** the Studio:
+  - **verbatim source snippets** on every archive entry (507 entries, 3–13 Sep; `assembleContext` sends only URLs);
+  - **210 `THREAD_ANALYSIS`** records (trajectory, cause chain, story arc, dimensions, watch questions);
+  - **96 `THREAD_HISTORY`** + **227 `DRIFT` / 201 `DRIFTLOG`** (how a read changed, and why);
+  - the **forecast log** (`prediction_snapshot`: scenarios, probabilities, dated triggers).
+- Feeding these needs no new AI and makes every story in the archive analysable. **This comes before any layout work.**
+- **Lens verdict:**
+  - Scenario ✅ (thread analysis + forecast log);
+  - Compare ✅ (snippets; a judged link exists for only ~24% of stories, so the grid must work without one);
+  - Free-form ✅ (the escape hatch);
+  - **Economic ripple ⏸**: park it with economy; its impact records have been frozen since 12 Sep.
+  - Candidate replacement: **"What changed"**, built from thread history + drift notes. It is unique to us.
+
 v1 zones (kept for reference; still apply as parts of v2: the sources tab = INTEL, the bottom strip = status):
 | Zone | Shows |
 |---|---|

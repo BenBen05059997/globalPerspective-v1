@@ -66,3 +66,20 @@ something · ▶ in progress · ✅ done
 - ✅ Frontend feature-folder restructure P0–P12 (byte-identical bundles throughout)
 - ✅ `test-disruption-gate.mjs` fixed (Node 22 JSON import)
 - ✅ Whole-site page review (10 P1 / ~14 P2 / ~14 P3) + page-structure proposal and challenge, adjudicated
+
+## Page redesign roadmap (status 2026-09-25; design stage, nothing built unless noted)
+| Page | Status | Next |
+|---|---|---|
+| Home `/` + `/map` | ✅ designed: operations console (globe/radar), story card, StoryPeek, legend | build after the S6 gate |
+| Story page `/weekly/thread/:id` | ✅ designed: STORY MODE + "Read in full" | build = C11 |
+| Threads board `/weekly` | ✅ designed: Intel board (columns / table / map / WEB story graph) | build with C11 |
+| Briefings (`/daily` + `/weekly-brief` → `/briefings`) | ◐ designed as editions, but in the old light style | console restyle pass |
+| Economy `/economy` | ⏸ parked, soft-hidden | after the DeepSeek top-up |
+| **Country page `/weekly/country/:name`** | ☐ **to redo**: C− (mobile overflow, CLS 0.87, 121-day-old default shown as fresh); web tab removed | **next** |
+| Countries list `/weekly/countries` | ☐ to redo: C+ | with the country page (map "country risk" layer + ranked list) |
+| Track record `/track-record` | ☐ to redo: B (worst contrast on the site, mobile overflow, counters don't sum); key trust page | after country |
+| Analysis Studio `/analyze` | ☐ extend: new lenses (country deep-dive with web, bilateral, explain-the-web); credits copy | after track record |
+| `/breaking` | retire into the home alert stack | with the home build |
+| `/spider-demo` | retire into story mode, the board WEB view and the Studio lens | with C11 |
+| Membership / account / sign-in | light touch: nav presence; signed-out `/account` framing | small fixes |
+| About / whitepaper / privacy / disclosures / contact | light touch: stale "hourly" claims | small fixes |

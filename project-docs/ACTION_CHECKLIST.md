@@ -96,5 +96,6 @@ Only approved designs remain. Sources are in `project-docs/redesign-ux/_referenc
 | B4 Board | Threads board: board / table / map / web (story graph) |
 | C1 CountryCard | Country card on the map, 5 real states |
 | D1 BriefingMode | Briefings in console style: Daily / Weekly, map + slides + editions strip (approved) |
-| E1 TrackRecord | Track record: stage preview, ledger, weekly settling, how a question looks on a story, pilot archive, counts |
+| E1 TrackRecord | Track record as a scroll page (plain-text version candidate) |
+| E2 ServiceRecord | Track record, game-style one screen: board of locked questions (Obra Dinn), weekly seed, settling log (contribution graph), accuracy vs a plain guess (chess review), ledger — proposed |
 Removed as superseded: Main (v1 light home), Mobile (v1 phone home), Dossier (v3 story dossier with the lane web), Briefings (v1 light editions → replaced by BriefingMode).

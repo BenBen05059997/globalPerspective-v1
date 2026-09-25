@@ -77,7 +77,7 @@ something · ▶ in progress · ✅ done
 | Economy `/economy` | ⏸ parked, soft-hidden | after the DeepSeek top-up |
 | Country page `/weekly/country/:name` | ✅ designed (25 Sep): **country card on the map** (5 states, honesty rules) + deep-dive in the Studio; the URL stays public with the card content | build later (needs `country_facts`, slim history, rank) |
 | Countries list `/weekly/countries` | ✅ direction: map "countries" layer + ranked list with freshness on every row | with the country card |
-| Track record `/track-record` | ◐ ruled 25 Sep: lean honest page (ledger first, no "strong"), sampled scoring + alarm (`TRACK_RECORD_AND_STUDIO_RULING.md`) | operator decisions T1–T3 |
+| Track record `/track-record` | ✅ designed 25 Sep: honest stages, ledger first, weekly settling, pilot archive (canvas E1); scoring method approved | build later (~3.5 d) |
 | Analysis Studio `/analyze` | ◐ ruled 25 Sep: page (A-lite), public example, share permalinks, member path parked | operator decisions S1–S3 |
 | `/breaking` | retire into the home alert stack | with the home build |
 | `/spider-demo` | retire into story mode, the board WEB view and the Studio lens | with C11 |
@@ -96,4 +96,5 @@ Only approved designs remain. Sources are in `project-docs/redesign-ux/_referenc
 | B4 Board | Threads board: board / table / map / web (story graph) |
 | C1 CountryCard | Country card on the map, 5 real states |
 | D1 BriefingMode | Briefings in console style: Daily / Weekly, map + slides + editions strip (approved) |
+| E1 TrackRecord | Track record: stage preview, ledger, weekly settling, how a question looks on a story, pilot archive, counts |
 Removed as superseded: Main (v1 light home), Mobile (v1 phone home), Dossier (v3 story dossier with the lane web), Briefings (v1 light editions → replaced by BriefingMode).

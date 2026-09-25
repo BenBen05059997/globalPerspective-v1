@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Track record</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}a{color:#5fd4ff;text-decoration:none}button{font-family:inherit}</style>
+</helmet>
+<div style="width: 1440px; min-height: 1500px; box-sizing: border-box; background: #070d15; color: #c9d6df; padding-bottom: 40px; background-image: linear-gradient(rgba(95,212,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(95,212,255,0.03) 1px, transparent 1px); background-size: 48px 48px;">
+<header style="height: 52px; box-sizing: border-box; padding: 0 28px; display: flex; align-items: center; gap: 20px; background: #060b12; border-bottom: 1px solid rgba(95,212,255,0.14);">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8a99a5;">CONSOLE</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: #5fd4ff;">TRACK RECORD</span>
+<span style="flex-grow: 1;"></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ffb347;">WIREFRAME · PREVIEW THE PAGE AT EACH STAGE:</span>
+<sc-for list="{{stages}}" as="s" hint-placeholder-count="3"><button type="button" onClick="{{s.pick}}" style="{{s.style}}">{{s.label}}</button></sc-for>
+</header>
+
+<div style="padding: 26px 40px 0;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; color: #5fd4ff;">CAN YOU TRUST OUR CALLS?</div>
+<h1 style="margin: 6px 0 0; font-family: Fraunces, serif; font-size: 32px; font-weight: 600; color: #eef5f9;">Track record</h1>
+<div style="margin-top: 14px; padding: 16px 18px; background: rgba(12,22,34,0.9); border: 1px solid {{st.border}}; border-left: 4px solid {{st.c}}; border-radius: 4px; max-width: 1000px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: {{st.c}};">{{st.kicker}}</div>
+<div style="font-family: Fraunces, serif; font-size: 20px; line-height: 1.35; color: #eef5f9; margin-top: 6px;">{{st.line}}</div>
+<div style="font-size: 13px; color: #8a99a5; margin-top: 6px;">{{st.sub}}</div>
+<sc-if value="{{st.hasScore}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; gap: 12px; margin-top: 12px;">
+<div style="padding: 10px 12px; border: 1px solid rgba(95,212,255,0.25); border-radius: 3px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;">OUR SCORE (BRIER · LOWER IS BETTER)</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; color: #eef5f9;">[x] <span style="font-size: 11px; color: #8a99a5;">95% CI [a–b]</span></div></div>
+<div style="padding: 10px 12px; border: 1px solid rgba(95,212,255,0.15); border-radius: 3px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;">A BASE-RATE GUESS WOULD SCORE</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; color: #c9d6df;">[y]</div></div>
+<div style="padding: 10px 12px; border: 1px solid rgba(95,212,255,0.15); border-radius: 3px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;">RESOLVED · VOIDED (UNCLEAR)</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; color: #c9d6df;">[N] · [V]%</div></div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<div style="padding: 26px 40px 0; display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px;">
+<section>
+<h2 style="margin: 0; padding-bottom: 8px; border-bottom: 1px solid rgba(95,212,255,0.16); font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; font-weight: 500; color: #5fd4ff;">1 · WHEN WE CHANGED OUR READ — AND WHY</h2>
+<div style="font-size: 12.5px; color: #8a99a5; margin-top: 8px;">Every time a country's or story's risk read moves, we log what changed and the news event that drove it — or say plainly that no single event explains it.</div>
+<sc-for list="{{led}}" as="l" hint-placeholder-count="5">
+<div style="margin-top: 10px; padding: 11px 13px; background: rgba(12,22,34,0.9); border: 1px solid rgba(95,212,255,0.12); border-left: 3px solid {{l.c}}; border-radius: 3px;">
+<div style="display: flex; gap: 10px; align-items: baseline; font-family: 'JetBrains Mono', monospace; font-size: 10.5px;"><span style="color: #eef5f9; font-size: 12px;">{{l.name}}</span><span style="color: #7d8b96;">{{l.date}}</span><span style="flex-grow: 1;"></span><span style="color: {{l.c}};">{{l.move}}</span></div>
+<sc-if value="{{l.single}}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; color: #d6e2ea; margin-top: 5px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #5fd4ff;">TRIGGER · {{l.trigDate}} · </span>{{l.trig}}</div></sc-if>
+<div style="font-size: 12.5px; line-height: 1.5; color: #b9c7d1; margin-top: 4px;">{{l.why}}</div>
+</div>
+</sc-for>
+</section>
+
+<section>
+<h2 style="margin: 0; padding-bottom: 8px; border-bottom: 1px solid rgba(95,212,255,0.16); font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; font-weight: 500; color: #5fd4ff;">2 · THIS WEEK'S SETTLING</h2>
+<div style="font-size: 12.5px; line-height: 1.55; color: #8a99a5; margin-top: 8px;">Each week we check the pre-selected forecast questions whose deadline has passed: did it happen, according to the source we named when we made the call? {{settleNote}}</div>
+<sc-for list="{{settle}}" as="s" hint-placeholder-count="4">
+<div style="margin-top: 10px; padding: 10px 12px; border: 1px solid rgba(95,212,255,0.14); border-radius: 3px;">
+<div style="display: flex; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px;"><span style="color: {{s.c}};">{{s.status}}</span><span style="flex-grow: 1;"></span><span style="color: #7d8b96;">{{s.meta}}</span></div>
+<div style="font-size: 13px; color: #eef5f9; margin-top: 4px;">{{s.q}}</div>
+<div style="font-size: 11.5px; color: #8a99a5; margin-top: 3px;">{{s.src}}</div>
+</div>
+</sc-for>
+
+<h2 style="margin: 22px 0 0; padding-bottom: 8px; border-bottom: 1px solid rgba(95,212,255,0.16); font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; font-weight: 500; color: #5fd4ff;">3 · HOW A FORECAST LOOKS ON A STORY</h2>
+<div style="margin-top: 10px; padding: 12px; background: rgba(12,22,34,0.9); border: 1px solid rgba(95,212,255,0.2); border-radius: 3px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;">STORY MODE · WATCH SLIDE · US–IRAN</div>
+<div style="display: flex; gap: 10px; align-items: baseline; margin-top: 6px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #ffb347;">[p]%</span><span style="font-size: 13px; color: #eef5f9;">Will Iran and the US publicly announce a ceasefire or pause by 31 Dec?</span></div>
+<div style="font-size: 11.5px; color: #8a99a5; margin-top: 3px;">Settled by: an official government statement or a Reuters/AP report · <span style="color: #c9d6df;">AWAITING</span> · 97 days left · <span style="color: #5fd4ff;">IN THIS WEEK'S SCORED SAMPLE</span></div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #56626b; margin-top: 6px;">[p] = THE QUESTION'S OWN PROBABILITY — NOT YET GENERATED (NEEDS THE AI PROVIDER)</div>
+</div>
+</section>
+</div>
+
+<div style="padding: 26px 40px 0; display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px;">
+<section>
+<h2 style="margin: 0; padding-bottom: 8px; border-bottom: 1px solid rgba(95,212,255,0.16); font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; font-weight: 500; color: #8a99a5;">4 · ARCHIVE · JULY PILOT (EARLIER METHOD, NOT SCORED)</h2>
+<div style="font-size: 12.5px; color: #8a99a5; margin-top: 8px;">122 conditions from one week in July were checked under an earlier method that scored each one at its scenario's probability. We keep them for transparency but publish no score from them.</div>
+<sc-for list="{{pilot}}" as="r" hint-placeholder-count="6">
+<div style="display: flex; gap: 10px; margin-top: 8px; font-size: 12.5px; line-height: 1.4;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; width: 110px; flex-shrink: 0; color: {{r.c}};">{{r.v}}</span><span style="color: #d6e2ea;">{{r.q}}<br><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;">{{r.meta}}</span></span></div>
+</sc-for>
+</section>
+<section>
+<h2 style="margin: 0; padding-bottom: 8px; border-bottom: 1px solid rgba(95,212,255,0.16); font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.14em; font-weight: 500; color: #8a99a5;">5 · METHOD · COUNTS THAT ADD UP</h2>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.9; color: #c9d6df; margin-top: 8px;">
+EARLIER-METHOD CONDITIONS LOGGED · 20,744<br>
+&nbsp;· CHECKED IN THE JULY PILOT · 122<br>
+&nbsp;· MARKED UNCLEAR · 15<br>
+&nbsp;· PAST DEADLINE, NEVER CHECKED · 6,454<br>
+&nbsp;· NOT YET DUE · 14,153<br>
+<span style="color: #7d8b96;">ALL ARCHIVED · NONE SCORED RETROACTIVELY</span>
+</div>
+<div style="font-size: 12.5px; line-height: 1.55; color: #8a99a5; margin-top: 10px;">From [start date]: each question carries its own probability, a named source and a deadline, all frozen when published. A random sample is locked in advance each week (max one per story). A person settles each one from the named source without seeing our probability; unclear ones are voided and counted.</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { stage: 0 }; }
+  renderVals() {
+    var self = this, D = {"led": [{"name": "Germany", "date": "2026-09-12", "from": 75, "to": 70, "trig": "", "trigDate": "", "why": "No single news event explains this change.", "single": false}, {"name": "Russia", "date": "2026-09-12", "from": 88, "to": 88, "trig": "France Joins Slovakia in Seeking to Delist Russian Oligarch Usmanov from EU Sanctions", "trigDate": "2026-09-11", "why": "France joined Slovakia in seeking to delist Russian oligarch Usmanov from EU sanctions, signaling easing sanctions pressure on Russia. This reduced the economic risk axis from 65 to 55.", "single": true}, {"name": "France", "date": "2026-09-12", "from": 45, "to": 55, "trig": "Passenger Train Derails in Normandy Leaving at Least 44 Injured on Rouen-Caen Route", "trigDate": "2026-09-12", "why": "The Normandy train derailment on the Rouen-Caen route injuring at least 44 people is a sudden transport disaster that would raise humanitarian concern and conflict/disruption risk. This single event best matches the same-day jump in humanitarian (+15) and the overall elevated risk reading.", "single": true}, {"name": "Germany", "date": "2026-09-11", "from": 75, "to": 75, "trig": "", "trigDate": "", "why": "No single news event explains this change.", "single": false}, {"name": "China", "date": "2026-09-11", "from": 65, "to": 70, "trig": "Hong Kong Jails Three Tiananmen Vigil Leaders for Up to 7 Years Under National Security Law", "trigDate": "2026-09-11", "why": "Hong Kong jailing three Tiananmen vigil leaders for up to 7 years under the National Security Law is a direct political crackdown that escalates confrontation with the West, matching the political axis jump from 55 to 70.", "single": true}], "pilot": [{"v": "fired", "p": 0.65, "dl": "2026-07-10", "q": "India and Indonesia issue a joint statement confirming a defense cooperation framework including long-range missile supply", "story": "India to supply Indonesia with long-range missiles as Modi visits Jakarta", "sc": "Most Likely"}, {"v": "fired", "p": 0.2, "dl": "2026-07-09", "q": "India and Indonesia sign a binding contract for long-range missile supply during Modi's state visit", "story": "India to supply Indonesia with long-range missiles as Modi visits Jakarta", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.65, "dl": "2026-07-10", "q": "Australia, Japan, and New Zealand issue a joint statement condemning the test at the ASEAN Foreign Ministers' Meeting", "story": "China test-launches long-range ballistic missile in the South Pacific, angering neighbours", "sc": "Most Likely"}, {"v": "fired", "p": 0.2, "dl": "2026-07-10", "q": "Pakistan Navy confirms location of wreckage within 48 hours of search initiation", "story": "Pakistan searches for missing Boeing cargo plane with five crew off Karachi coast", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.175, "dl": "2026-07-09", "q": "NATO offers Ukraine a formal membership roadmap with a timeline at the summit", "story": "Russian missile and drone attack on Kyiv kills at least 11 on eve of NATO summit", "sc": "Optimistic"}, {"v": "not_fired", "p": 0.175, "dl": "2026-07-09", "q": "A Russian missile strikes within 10 km of the NATO summit venue in Turkey", "story": "Russian missile and drone attack on Kyiv kills at least 11 on eve of NATO summit", "sc": "Pessimistic"}]}, sg = this.state.stage;
+    var ST = [
+      { label: 'NOW', kicker: 'STAGE 0 · TODAY', c: '#ffb347', line: 'We don’t have a scored track record yet.', sub: 'Forecasts published before [start date] used an earlier method and are archived below, unscored. What you can check today: every time we changed our read, and why.', hasScore: false },
+      { label: 'FIRST MONTHS', kicker: 'STAGE 1 · UNDER 150 RESOLVED · ILLUSTRATIVE', c: '#5fd4ff', line: 'Since [start date] we lock a pre-selected sample of forecast questions each week. [N] have resolved and [V] were voided as unclear — too few to judge our accuracy yet.', sub: 'Next settling: [date]. Last settled: [date].', hasScore: false },
+      { label: 'AFTER ~4 MONTHS', kicker: 'STAGE 2 · 150+ RESOLVED · ILLUSTRATIVE', c: '#6fd49a', line: 'Our score compared with simply guessing the average — with the uncertainty shown.', sub: 'We only say “better than a guess” if the whole uncertainty range beats the guess.', hasScore: true }
+    ];
+    var st = ST[sg];
+    st.border = 'rgba(95,212,255,0.2)';
+    var stages = ST.map(function (s, i) { var on = i === sg;
+      return { label: s.label, pick: function () { self.setState({ stage: i }); },
+        style: 'height: 28px; padding: 0 10px; border-radius: 14px; cursor: pointer; font-family: JetBrains Mono, monospace; font-size: 10px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + ';' }; });
+    var led = D.led.map(function (l) { var up = l.to > l.from, same = l.to === l.from;
+      return { name: l.name.toUpperCase(), date: l.date, single: l.single, trig: l.trig, trigDate: l.trigDate, why: l.why,
+        move: same ? 'RISK ' + l.to + ' (UNCHANGED OVERALL)' : 'RISK ' + l.from + ' → ' + l.to, c: same ? '#8a99a5' : up ? '#ff6a4d' : '#6fd49a' }; });
+    var settle = sg === 0 ? [{ status: 'NOTHING TO SETTLE YET', c: '#7d8b96', meta: '', q: 'The new method hasn’t started. The first sampled questions come due a few weeks after launch.', src: '' }] : [
+      { status: '✓ HAPPENED · CONFIRMED', c: '#6fd49a', meta: 'SAMPLED [date] · DUE [date]', q: '[Question example — e.g. a scheduled vote passes by its date]', src: 'Source: [official record] · settled automatically' },
+      { status: '✗ DIDN’T HAPPEN · CONFIRMED', c: '#ff6a4d', meta: 'SAMPLED [date] · DUE [date]', q: '[Question example]', src: 'Source: [Reuters/AP] · confirmed by a person, with the quoted passage' },
+      { status: '◌ VOID · UNCLEAR', c: '#ffb347', meta: 'SAMPLED [date] · DUE [date]', q: '[Question example where the outcome was ambiguous]', src: 'Reason logged · excluded from the score' },
+      { status: '… DRAFTED · AWAITING CONFIRMATION', c: '#5fd4ff', meta: 'DUE [date]', q: '[Question example]', src: 'Draft verdict with cited passage, waiting for a person to confirm' }
+    ];
+    var pilot = D.pilot.map(function (r) { var f = r.v === 'fired';
+      return { v: f ? '✓ HAPPENED' : '✗ DIDN’T HAPPEN', c: f ? '#6fd49a' : '#ff6a4d', q: r.q,
+        meta: 'DEADLINE ' + r.dl + ' · ' + r.sc.toUpperCase() + ' SCENARIO (' + Math.round(r.p * 100) + '% — the scenario’s probability, not this condition’s) · ' + r.story.toUpperCase().slice(0, 50) }; });
+    return { stages: stages, st: st, led: led, settle: settle, pilot: pilot,
+      settleNote: sg === 0 ? '' : 'Code settles what it can; a person confirms the rest from the named source, without seeing our probability.' };
+  }
+}
+</script>
+</body>
+</html>

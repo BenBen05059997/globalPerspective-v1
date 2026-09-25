@@ -75,11 +75,25 @@ something · ▶ in progress · ✅ done
 | Threads board `/weekly` | ✅ designed: Intel board (columns / table / map / WEB story graph) | build with C11 |
 | Briefings (`/daily` + `/weekly-brief` → `/briefings`) | ◐ designed as editions, but in the old light style | console restyle pass |
 | Economy `/economy` | ⏸ parked, soft-hidden | after the DeepSeek top-up |
-| **Country page `/weekly/country/:name`** | ☐ **to redo**: C− (mobile overflow, CLS 0.87, 121-day-old default shown as fresh); web tab removed | **next** |
-| Countries list `/weekly/countries` | ☐ to redo: C+ | with the country page (map "country risk" layer + ranked list) |
+| Country page `/weekly/country/:name` | ✅ designed (25 Sep): **country card on the map** (5 states, honesty rules) + deep-dive in the Studio; the URL stays public with the card content | build later (needs `country_facts`, slim history, rank) |
+| Countries list `/weekly/countries` | ✅ direction: map "countries" layer + ranked list with freshness on every row | with the country card |
 | Track record `/track-record` | ☐ to redo: B (worst contrast on the site, mobile overflow, counters don't sum); key trust page | after country |
 | Analysis Studio `/analyze` | ☐ extend: new lenses (country deep-dive with web, bilateral, explain-the-web); credits copy | after track record |
 | `/breaking` | retire into the home alert stack | with the home build |
 | `/spider-demo` | retire into story mode, the board WEB view and the Studio lens | with C11 |
 | Membership / account / sign-in | light touch: nav presence; signed-out `/account` framing | small fixes |
 | About / whitepaper / privacy / disclosures / contact | light touch: stale "hourly" claims | small fixes |
+
+## Design canvas map (https://claude.ai/artifact/6AxoScn1r6AFfx1Ngz8AgW, cleaned 2026-09-25)
+Only approved designs remain. Sources are in `project-docs/redesign-ux/_reference/wireframe-2026-09-24/`; the removed boards' sources are kept there as history.
+| Board | What it is |
+|---|---|
+| A1 Console · A2 ConsoleRadar | Home console: globe (desktop) / radar (phone) |
+| A3 ConsoleCard · A4 StoryPeek | Story card on the home map · shared hover preview |
+| A5 Legend | Map symbols = default map tokens |
+| B1 StoryMode | Story page default: map + slides + time scrubber |
+| B2 StoryWeb · B3 StoryMobile | "Read in full" long page (desktop / phone) |
+| B4 Board | Threads board: board / table / map / web (story graph) |
+| C1 CountryCard | Country card on the map, 5 real states |
+| D1 Briefings | Briefings editions, old light style (needs the console restyle) |
+Removed as superseded: Main (v1 light home), Mobile (v1 phone home), Dossier (v3 story dossier with the lane web).

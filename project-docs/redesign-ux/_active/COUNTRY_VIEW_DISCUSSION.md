@@ -1,4 +1,9 @@
-# Country view: what readers want × what we can provide (discussion, 2026-09-25)
+# Country view: what readers want × what we can provide
+
+**Status: APPROVED (operator, 2026-09-25: "that looks really good").**
+- Country card v2 (canvas board **C1**) and its rules (§ Debate outcome) are the design.
+- C1–C6 accepted as recommended; C7/C8 later; C9 (event-driven picks) recommended for the backend build.
+- Design only; nothing built.
 
 **Direction (operator, 2026-09-25):** split the country page by job:
 - a **country card on the map**: quick, public, stored data, no AI run on view;

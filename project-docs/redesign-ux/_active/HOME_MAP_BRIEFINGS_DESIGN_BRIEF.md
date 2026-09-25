@@ -80,7 +80,7 @@ Supersedes the light-editorial home layout above where they conflict (the linked
 4. **Open:** theme scope beyond the home. Recommended: console accents site-wide (dark header, monospace HUD labels, accent colours), with long-read pages (stories, countries, the briefings) kept light for readability.
 5. **Real Earth in the build (operator, 2026-09-24):** the wireframe's continent dots are placeholders. The real globe must show the real Earth. Candidate treatments to choose at build time: (a) GitHub-style dotted real landmass with a halo (lightest, most "console"); (b) NASA **Black Marble** night-lights imagery (public domain; city lights on a dark Earth, very sci-fi and real); (c) Blue Marble daytime imagery (most realistic, heaviest). Recommended: (a) or (b), with the texture loaded after the page shell (performance rule). Also noted as a possible extra: a small real-Earth orientation globe in a corner (e.g. top-right) while in RADAR 2D mode. Confirm whether that is what "real earth on top right" meant.
 
-## Briefings: round 3, BRIEFING MODE (proposed 2026-09-25; operator: "the briefing should follow the other pages")
+## Briefings: round 3, BRIEFING MODE (APPROVED 2026-09-25: daily opens on "The day"; no markets line while economy is parked; operator: "the briefing should follow the other pages")
 The light "editions" page above is superseded in *look and navigation*; its content rules stand (dated finite editions, never a dead end,
 real publication date, "latest edition" label). Wireframe: canvas board **D1** `BriefingMode.dc.html`, with real data.
 

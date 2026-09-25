@@ -73,7 +73,7 @@ something · ▶ in progress · ✅ done
 | Home `/` + `/map` | ✅ designed: operations console (globe/radar), story card, StoryPeek, legend | build after the S6 gate |
 | Story page `/weekly/thread/:id` | ✅ designed: STORY MODE + "Read in full" | build = C11 |
 | Threads board `/weekly` | ✅ designed: Intel board (columns / table / map / WEB story graph) | build with C11 |
-| Briefings (`/daily` + `/weekly-brief` → `/briefings`) | ◐ **proposed 25 Sep: BRIEFING MODE** (console style, same pattern as story mode; canvas D1) | operator approval |
+| Briefings (`/daily` + `/weekly-brief` → `/briefings`) | ✅ **designed 25 Sep: BRIEFING MODE** (approved; console style, same pattern as story mode; canvas D1; daily opens on "The day"; no markets line while economy is parked) | build later |
 | Economy `/economy` | ⏸ parked, soft-hidden | after the DeepSeek top-up |
 | Country page `/weekly/country/:name` | ✅ designed (25 Sep): **country card on the map** (5 states, honesty rules) + deep-dive in the Studio; the URL stays public with the card content | build later (needs `country_facts`, slim history, rank) |
 | Countries list `/weekly/countries` | ✅ direction: map "countries" layer + ranked list with freshness on every row | with the country card |
@@ -95,5 +95,5 @@ Only approved designs remain. Sources are in `project-docs/redesign-ux/_referenc
 | B2 StoryWeb · B3 StoryMobile | "Read in full" long page (desktop / phone) |
 | B4 Board | Threads board: board / table / map / web (story graph) |
 | C1 CountryCard | Country card on the map, 5 real states |
-| D1 BriefingMode | Briefings in console style: Daily / Weekly, map + slides + editions strip (proposed) |
+| D1 BriefingMode | Briefings in console style: Daily / Weekly, map + slides + editions strip (approved) |
 Removed as superseded: Main (v1 light home), Mobile (v1 phone home), Dossier (v3 story dossier with the lane web), Briefings (v1 light editions → replaced by BriefingMode).

@@ -119,7 +119,10 @@ Two critics (forecasting methodology; product + engineering) **both reject P2**:
    - **~20–25 questions a week, max 1 per story cluster**, deadlines mostly 2–12 weeks out. Deterministic questions are all scored, as a separate stratum.
    - ~250 resolved needed for a ±0.03 CI, so a **first meaningful read about 4 months after launch** and a calibration curve at about 6 months.
    - Operator time about 1 h a week.
-5. **Market calls (P3 pilot, can run NOW, no LLM):**
+5. **Market calls (P3): PARKED with economy (operator, 2026-09-25: "we are not using the economy and market at the moment").** Nothing is lost while parked:
+   - the 139 econ records live in `SummarizeAndPredict` (TTL disabled, kept);
+   - past closes are public and can be re-fetched with `newsMarketsData`'s Yahoo backfill whenever economy returns.
+   The design below stands for that day:
    - `scoreMarketCalls` compares the close on or before `generatedAt` with the horizon close.
    - Bands **scaled to volatility** (move ÷ trailing 60-day realised vol over the horizon: < 0.5σ small, 0.5–1.5σ moderate, > 1.5σ large), frozen in the methodology doc before the first run. "Mixed" is not scored.
    - Writes immutable `VERDICT#` rows that **store both closes**, because `GlobalPerspectiveMarkets` has TTL ENABLED: history rolls off at ~90 days.
@@ -137,7 +140,7 @@ Two critics (forecasting methodology; product + engineering) **both reject P2**:
    - **Stage 3 (≥ 400, 6 months+):** "well-calibrated" only if every bin with n ≥ 20 sits within its CI.
 9. **Reader UI:** story mode's WATCH slide, the country card's "ahead" and briefings show each question with **its own %**, its source and Awaiting / Happened / Didn't happen (Void). The three futures stay as the narrative.
 
-**Staged build (~5 dev-days; not approved to build):**
+**Staged build (not approved to build). Market-call steps M0/M1 are PARKED with economy; the active path is ~3.5 dev-days:**
 - M0: market-call scorer + `VERDICT#` rows (~1–1.5 d, runs now).
 - M1: immutable econ records + probability per call (~0.5 d).
 - M2: P1 one-pass schema + gates (~1 d, dormant until the AI provider is funded).

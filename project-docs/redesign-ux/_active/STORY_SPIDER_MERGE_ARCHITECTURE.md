@@ -76,3 +76,58 @@ the board's WEB view, and its node panel is the dossier. It retires (redirect to
   `world_overview` covers 16 places (including regions like Europe / Middle East) with 41 cross-country links.
 - **Webs are frozen by the DeepSeek outage:** the newest were built 2026-09-12 (Germany 2026-09-10). The page must show the
   web's own "built X ago" date, as the rest of the site does.
+
+## 6. Frontend design: debate outcome (2026-09-25)
+**Process:** a reference research pass, then three advocates, then two critics (reader/analyst and engineering/data-honesty), then the monitor's ruling.
+- **Research:** Recorded Future Intelligence Card, Connected Papers, Obsidian local graph + linked references, Kumu,
+  GDELT, explainer journalism, and ego-network / edge-uncertainty / graph-literacy / accessibility papers. The research favours a list first and an optional graph.
+- **Positions:** A, a lane web (the spider SVG at ego scale). B, a before/after flow (Connected Papers style). C, an orbit (a radial radar disc).
+  All three advocates misdrew edge direction or invented chain text. Both critics concluded that direction must be *written*, not left to arrowheads.
+
+**What the real data forced:**
+- The best-connected US story has 3 outgoing and 0 incoming causal links. "Before" is almost always the story's own root-cause chain.
+- Backbone links are often trivial (a single shared actor such as "Donald Trump").
+- `rootCauseChain` is a string on most stories and an object `{proximate, medium_term, deeper_structural}` on 11 of them,
+  as long paragraphs with no short labels. This crashed the live story page; it was fixed in `e7f5842` and is not yet deployed.
+- `event_dossier` takes **~9 s**: per-node genesis reads over 90 archive days, and it holds one of the 4 proxy slots.
+  `systems_analysis` returns a whole country web in **0.12 s**. **Ruling: the page reads `systems_analysis` and extracts the ego view client-side**
+  (a port of the pure `subgraphIds`/`assembleDossier` from `dossier.js`, hops = 1, without genesis). This supersedes §3.1's "use `event_dossier`".
+- Citations are headline strings, not entry ids, so they can be listed but not linked.
+- Categories are free text (technology, climate, society, military…), so map them the way `categoryToLane` does.
+
+**RULING: "Chain, then consequences"** (a synthesis of both critics; list first; nothing drawn that the data doesn't say)
+1. **Header:** `WHY IT'S HAPPENING` · chip `Web as of 12 Sep · this story has N updates since` (N counts entries after
+   `generatedAt`; the chip turns amber after 7 days) · `Analysis 12 Sep`.
+2. **How we got here** (label: *AI analysis*). The object shape shows three fixed labels taken from the data keys: **Trigger / Enabling
+   condition / Structural factor**. Each step shows its first sentence (abbreviation-safe, ≤160 chars at a word boundary) and a per-step
+   "Read full" expander. The string shape shows one clamped paragraph. No generated summaries.
+3. **Earlier stories judged to feed in** (*model inference*): shown **only if ≥1 incoming edge**. Otherwise one muted line:
+   "No earlier story in this web is linked into this one."
+4. **Judged to feed into** (*model inference*; never "led to" or "caused"). A strip first: `Spilled into: ■ ECONOMY ■ CONFLICT ■ POLITICS`.
+   - Rows are sorted by confidence, then lag. Each row: category chip · headline as a StoryLink with StoryPeek · `+26d · 11 Sep` · `●●● strong` (word always
+     shown) · the mechanism sentence verbatim · a "3 cited headlines" disclosure · a muted fact line `Shared actors: Iran, Strait of Hormuz`.
+   - Weak rows are dimmed with a dashed left rule.
+5. **Shares actors with** (*fact, not a causal claim*): chips, excluding stories already listed above. Weight ≥ 2 shows by default;
+   weight-1 links collapse to "+1 story shares only 'Donald Trump'" (expandable).
+6. **Optional time strip:** only when there are ≥3 causal neighbours and the viewport is ≥600 px. One row, x = date, dots coloured by category,
+   `aria-hidden` (the list is the accessible version). "Open the full web →" goes to the country web (today `/spider-demo`; later the country page).
+7. **Provenance footer** (the existing DossierProvenance idea): `3 model links · 2 shared-actor links · 1 hidden (date inconsistency)`.
+8. **States:**
+   - Loading: skeleton rows.
+   - Story in a web but with 0 links: one line.
+   - **No web for this story's country this cycle:** "Webs cover the 10 busiest countries, rotating daily." This must read differently from 0 links.
+   - Story in several webs: one line "Also in the Iran / Middle East webs →".
+   - Fetch error: render nothing and report to the error sink.
+   - Mobile: one column; ≥40 px targets; no time strip.
+   - Reduced motion: no transitions.
+9. **Home story card:** WHY shows the same three labels with the first sentence only, 2 lines, no expander. No web line in v1, so no extra fetch per card.
+   Revisit once per-story `WEB` records exist.
+
+**Build size (engineering critic's estimate):** the hook plus ego port ~120 lines, the section ~200, the chain helper ~40 (done as
+`shared/lib/rootCause.js`), the time strip ~120, CSS ~80. Frontend only.
+
+**Blocking data issue (operator decision):** every `SYSTEMS#` web has a 14-day TTL (`newsSystemsAnalysis` index.js:25), and the cron
+stopped producing on 09-12 (DeepSeek outage). The US web expires **2026-09-26 07:15 UTC** (verified via `ttl`); Germany, France and Japan
+have already passed theirs. Once DynamoDB deletes them, every story shows "no web" until DeepSeek is funded and the 07:15 UTC cron
+rebuilds them from the archive. So this is a temporary gap, not permanent loss, since the webs are regenerated from source. Options: extend the TTL on the
+existing items (a non-destructive write) to keep the Sep-12 webs visible with honest "as of" labels, or accept the gap.

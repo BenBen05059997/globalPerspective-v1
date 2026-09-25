@@ -77,7 +77,7 @@ the board's WEB view, and its node panel is the dossier. It retires (redirect to
 - **Webs are frozen by the DeepSeek outage:** the newest were built 2026-09-12 (Germany 2026-09-10). The page must show the
   web's own "built X ago" date, as the rest of the site does.
 
-## 6. Frontend design: debate outcome (2026-09-25)
+## 6. Frontend design: debate outcome (2026-09-25). SUPERSEDED in part by `STORY_WEB_RETHINK_PLAN.md` §5 (news-based, not country)
 **Process:** a reference research pass, then three advocates, then two critics (reader/analyst and engineering/data-honesty), then the monitor's ruling.
 - **Research:** Recorded Future Intelligence Card, Connected Papers, Obsidian local graph + linked references, Kumu,
   GDELT, explainer journalism, and ego-network / edge-uncertainty / graph-literacy / accessibility papers. The research favours a list first and an optional graph.
@@ -126,7 +126,7 @@ the board's WEB view, and its node panel is the dossier. It retires (redirect to
 **Build size (engineering critic's estimate):** the hook plus ego port ~120 lines, the section ~200, the chain helper ~40 (done as
 `shared/lib/rootCause.js`), the time strip ~120, CSS ~80. Frontend only.
 
-**Blocking data issue (operator decision):** every `SYSTEMS#` web has a 14-day TTL (`newsSystemsAnalysis` index.js:25), and the cron
+**~~Blocking data issue~~ CORRECTED 2026-09-25: the table's TTL is DISABLED, so nothing expires (see `STORY_WEB_RETHINK_PLAN.md`). The note below was wrong:** every `SYSTEMS#` web has a 14-day TTL (`newsSystemsAnalysis` index.js:25), and the cron
 stopped producing on 09-12 (DeepSeek outage). The US web expires **2026-09-26 07:15 UTC** (verified via `ttl`); Germany, France and Japan
 have already passed theirs. Once DynamoDB deletes them, every story shows "no web" until DeepSeek is funded and the 07:15 UTC cron
 rebuilds them from the archive. So this is a temporary gap, not permanent loss, since the webs are regenerated from source. Options: extend the TTL on the

@@ -9,10 +9,10 @@ and how the frontend shows it. Operator delegated the whole rethink (2026-09-25)
 |---|---|---|
 | 0 | Where we are + data facts (this doc, §1–2) | ✅ done |
 | 1 | Questions to decide (§3) | ✅ done |
-| 2 | Debate: 3 advocates (one per model of the web) | ⏳ running |
-| 3 | Critique: reader/analyst + engineering/data-honesty | ☐ |
-| 4 | Ruling + design spec (§5) | ☐ |
-| 5 | Wireframe on the canvas + update briefs/INDEX/checklist | ☐ |
+| 2 | Debate: 3 advocates (one per model of the web) | ✅ done (all 3 mis-stated data; ground truth added for critics) |
+| 3 | Critique: reader/analyst + engineering/data-honesty | ✅ done |
+| 4 | Ruling + design spec (§5) | ✅ done |
+| 5 | Wireframe on the canvas + update briefs/INDEX/checklist | ⏳ |
 
 ## 1. Where we are (stage)
 - **Design stage, nothing built.** Decided so far:
@@ -34,10 +34,15 @@ and how the frontend shows it. Operator delegated the whole rethink (2026-09-25)
   - 64 causal links (model judgment) and 101 shared-actor links (fact).
   - 63 stories have ≥1 causal link; the maximum is 9.
 - **Coverage is low:** of the 45 stories an anonymous reader sees in the last 14 days, **only 11 (24%) are in any web**.
-  All webs are frozen since 09-10/12 (DeepSeek outage), and they expire from 2026-09-26 07:15 UTC (14-day TTL).
+  All webs are frozen since 09-10/12: the generator logs `Insufficient Balance` on every run, so it's the DeepSeek account balance.
+  **Correction (critic 2, verified):** the table's DynamoDB TTL is **DISABLED**, so the items' `ttl` values never delete anything.
+  The webs do **not** expire on 09-26. Instead, old webs keep being served (Venezuela 07-28, South Africa 08-12, DRC 08-22).
 - **Links are already grounded in news:** every causal link cites the news items that evidence it (169 cited items in total).
   In the US web, **9 of 11 cited items match real entries** of the linked stories, with dates.
-  - Nearly all sit on the *effect* side, e.g. link "US–Iran tensions → Trump's legal troubles" cites the Aug 18 item
+  - **Correction (critic 2, all 16 webs):** 160 of 169 cites (95%) match exactly one entry, always on the link's own two stories.
+    The split is **81 on the effect side and 79 on the cause side**, and 53 of 64 links cite both sides. The "effect side" pattern was true only for the US focal story. Caveats:
+    the generator sees only each story's **5 newest** entries, so 83% of cites are "newest at generation", not "the moment that mattered".
+    In 21% of two-sided links, every cause-side cite is dated after every effect-side cite. Example of a US link: "US–Iran tensions → Trump's legal troubles" cites the Aug 18 item
     "Trump's approval rating falls to lowest of his presidency amid Iran war concerns".
   - So a link can be drawn from a story to a **specific dated news event** in another story.
 - **No event-to-event links exist.** Nothing says which event inside the focal story drove the effect. Drawing that
@@ -65,5 +70,55 @@ and how the frontend shows it. Operator delegated the whole rethink (2026-09-25)
   cross-country), with the frontend designed for it and an interim fallback.
 - **Critic 1:** reader/analyst. **Critic 2:** engineering, data honesty and cost. Monitor rules (§5).
 
-## 5. Ruling
-_(filled in after the debate)_
+## 5. Ruling (monitor, 2026-09-25): "The story's news, with its links as evidence"
+
+**What the debate settled:**
+- **A (merge of country webs)** is right as a *data layer*, but wrong as the concept. It's still a country artifact, with a 24% ceiling.
+- **B (event spine)** is right that the unit is the story's own dated news. But the page already has that as the Timeline, so it must not
+  become a second, duplicate "web" graphic. Branches must never be pinned to cite dates, because of the recency artefact and the 21% of links that run backwards in time.
+- **C (new generator)** is premature. Its actor index would sit on `keyActors`, which exist for about 4–10% of stories. Its identity layer
+  should be the approved **Event Registry** (`EVENT_REGISTRY_PLAN.md`), not a new one. The T3c ban on fuzzy matching applies.
+- Every advocate mis-stated the data (swapped confidences, an invented turning point, invented quotes, "caused"). So **direction and
+  confidence are always written as words, and mechanisms are always verbatim.**
+
+**The design (news-based, no new graphic in v1):**
+1. **Timeline = the story's own news (the spine).** Entries are grouped into chapters by `entryShortTitles`. The turning point is flagged with the caveat
+   "turning point in the last 30 days analysed" (US–Iran: **Aug 15**, "Trump vows to declare Strait of Hormuz a US territory"). There is one new toggle:
+   **"Show linked news (N)"** (off by default). It interleaves the cited headlines from linked stories *at their own dates* as indented ghost rows, tagged
+   `other story · model-linked · MEDIUM`. Rows after this story's last entry are grouped under "After this story's latest update". These rows are placed by their own date,
+   never drawn as arrows from a spine event.
+2. **Why it's happening = chain, then the news it connects to.**
+   - (a) **How we got here:** Trigger / Enabling condition / Structural factor (AI analysis).
+   - (b) **News this story is judged to feed into:** rows lead with the cited dated headline, then `in ■ ECONOMY <linked story>` (StoryLink + StoryPeek),
+     `●●● STRONG · model judgment`, `lag 26d (model)`, the verbatim mechanism in quotes, "+2 more cited headlines", and a fact line of shared actors.
+     A fixed caption: "Links are between stories; we don't know which event in this story drove each one."
+   - (c) **Earlier news judged to feed in:** only when present.
+   - (d) **Shares actors with** (fact): cross-country, computed from all webs, with ambient actors (in ≥15% of stories) removed.
+     Weight ≥2 is shown; weight 1 is collapsed.
+   - (e) **Provenance line:** `From analyses of US · Iran · Middle East, as of 12 Sep`. When webs disagree, **show each web's confidence**; never take the max.
+3. **Freshness:** every link row carries its web's date.
+   - Webs over 7 days old: amber "older analysis" label.
+   - Webs over 30 days old: hidden, with a count line.
+   - This is client-side, because the server TTL is off.
+4. **States:**
+   - **Has links:** as above.
+   - **In an analysis, 0 links:** "Analysed on 12 Sep with N other stories in Germany; no links found".
+   - **No analysis:** "This story hasn't been part of a cross-story analysis yet", and nothing else.
+   - **Fetch error:** render nothing and report to the error sink.
+   - **Mobile:** one column, date and headline on the first line, no diagram.
+5. **Other surfaces:**
+   - Home card and StoryPeek: unchanged. Add a "judged to feed into N stories" line only when the data is already in hand.
+   - **Board WEB view:** becomes a **story graph**, the union of all webs as story nodes with causal and shared-actor links, list-first. This is where "news, not country" is most visible.
+   - **Country page:** keeps the single-country web, the one place a country unit is right.
+
+**Staging:**
+- **Stage 1, frontend only:** a `useStoryLinks(threadId, regions)` hook fetches all webs (101 KB total, ~0.12 s each), unions them, filters ambient actors and keeps per-web
+  confidence. Plus the Timeline chapters and linked-news toggle, section 2 re-grained, the board story graph, and the states above. Rough size ~600–800 lines.
+- **Stage 2, cheap backend, after the operator tops up DeepSeek (checklist Y1):**
+  - a `web_index` proxy action (one read instead of 16 fetches);
+  - a systems prompt that shows ~10 dated entries spread across each story's span instead of only the 5 newest, which fixes the recency bias at no extra calls;
+  - consider raising `SYSTEMS_TOP_N`, whose cost scales with the balance;
+  - a per-story `THREAD#id / WEB` record;
+  - measure the coverage gain.
+- **Stage 3, only if coverage stays under ~50% after stage 2 and readers use the links:** an event→event pilot on **Event Registry identity**,
+  allowlisted, with citations required on both sides. Only then may an arrow start from a specific event in this story.

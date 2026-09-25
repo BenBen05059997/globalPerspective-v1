@@ -128,3 +128,23 @@ and how the frontend shows it. Operator delegated the whole rethink (2026-09-25)
   - measure the coverage gain.
 - **Stage 3, only if coverage stays under ~50% after stage 2 and readers use the links:** an event→event pilot on **Event Registry identity**,
   allowlisted, with citations required on both sides. Only then may an arrow start from a specific event in this story.
+
+## 6. Wireframes completed (2026-09-25, design only) + open questions for discussion
+Canvas https://claude.ai/artifact/6AxoScn1r6AFfx1Ngz8AgW:
+- **Row v4, full story page (desktop):** header, where it's heading + map locator, jump menu, Timeline (chapters + linked news),
+  Why it's happening, Who's involved, The view from, What to watch, Sources, risk scorecard.
+  Markets and What changed are omitted because this story has no data for them.
+- **Row v4, phone story page.**
+- **Board WEB view:** the real story graph, 14 most-linked stories from 16 analyses, plus a list twin.
+  The old full-page story board (dossier) is marked superseded.
+
+**Open questions (operator to decide):**
+1. **Chapter titles.** Today: each chapter's first headline, which is deterministic but sometimes off-topic.
+   Or: short AI chapter titles written once when the analysis runs (never on page view). Recommendation: AI titles in stage 2, first headline as the fallback.
+2. **"Show linked news" in the Timeline:** off by default (recommended; the Timeline stays this story's own facts) or on?
+3. **Duplication:** the same linked headlines appear in the Timeline toggle (*when*) and in Why (*why*). Keep both (recommended), or drop the toggle?
+4. **Home map:** when a story is selected, draw faint dashed lines to its linked stories (strong/medium only)? Recommended yes.
+5. **Board:** keep both the MAP view and the WEB story graph (recommended), or merge them?
+6. **Freshness rule:** amber label after 7 days, hidden after 30 days. Today every analysis is 13 days old, so all links show amber until DeepSeek is topped up. OK?
+7. **Reading mode** (light) on the story page: keep it? Recommended, for long reads.
+8. **Studio country lens:** pick a country directly (recommended), or start from selected stories?

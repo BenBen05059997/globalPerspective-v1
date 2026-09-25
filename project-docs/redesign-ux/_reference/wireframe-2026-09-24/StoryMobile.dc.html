@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Story page phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}a{color:#5fd4ff;text-decoration:none}button{font-family:inherit}</style>
+</helmet>
+<div style="width: 390px; min-height: 2400px; box-sizing: border-box; background: #070d15; color: #c9d6df;">
+<header style="height: 48px; padding: 0 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(95,212,255,0.14); background: #060b12;">
+<span style="width: 22px; height: 22px; border-radius: 5px; border: 1px solid #5fd4ff; color: #5fd4ff; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 12px;">G</span>
+<span style="font-family: Fraunces, serif; font-size: 15px; font-weight: 600; color: #eaf3f8; flex-grow: 1;">Global Perspectives</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8a99a5;">☰</span>
+</header>
+<div style="padding: 10px 16px; background: #0a1420; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: #7d8b96; display: flex; flex-wrap: wrap; gap: 8px;">
+<span style="color: #ee7754;">● CONFLICT</span><span style="color: #ff6a4d;">HIGH · 85</span><span>85 EVENTS · 31 SOURCES</span><span style="color: #ffb347;">ANALYSIS 12 SEP</span>
+</div>
+<div style="padding: 16px;">
+<h1 style="margin: 0; font-family: Fraunces, serif; font-size: 26px; line-height: 1.2; font-weight: 600; color: #eef5f9;">US-Iran Tensions Escalate Over Hormuz, Peace Talks Stall</h1>
+<p style="margin: 10px 0 0; font-size: 14.5px; line-height: 1.55; color: #c9d6df;">The narrative began on August 13, 2026, with a brief mention of Israeli strikes in south Lebanon, but quickly pivoted to the escalating US-Iran conflict.</p>
+<div style="display: flex; gap: 8px; margin-top: 12px;">
+<a href="#" style="flex-grow: 1; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: #ffb347; color: #1a1206; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;">FOLLOW</a>
+<a href="#" style="flex-grow: 1; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 1px solid #5fd4ff; color: #5fd4ff; font-family: 'JetBrains Mono', monospace; font-size: 11px;">STUDIO</a>
+</div>
+</div>
+<nav aria-label="Story sections" style="position: sticky; top: 0; padding: 8px 16px; background: #0a1420; border-top: 1px solid rgba(95,212,255,0.14); border-bottom: 1px solid rgba(95,212,255,0.14); display: flex; gap: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; white-space: nowrap;">
+<a href="#m-timeline" style="font-size: 10.5px;">TIMELINE</a><a href="#m-why" style="font-size: 10.5px;">WHY</a><a href="#" style="font-size: 10.5px;">WHO</a><a href="#" style="font-size: 10.5px;">VIEW FROM</a><a href="#" style="font-size: 10.5px;">WATCH</a>
+</nav>
+
+<section id="m-timeline" style="padding: 18px 16px 0;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: #5fd4ff;">1 · TIMELINE</div>
+<button type="button" onClick="{{toggleLinked}}" aria-pressed="{{showLinked}}" style="{{linkedBtn}}">{{linkedLabel}}</button>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+<sc-for list="{{chapters}}" as="c" hint-placeholder-count="4">
+<div style="border: 1px solid {{c.border}}; border-radius: 4px; background: rgba(12,22,34,0.9);">
+<button type="button" onClick="{{c.toggle}}" aria-expanded="{{c.open}}" style="width: 100%; min-height: 48px; padding: 10px 12px; background: none; border: none; text-align: left; color: #c9d6df; cursor: pointer;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96;">{{c.range}} · {{c.n}} EVENTS {{c.caret}} <sc-if value="{{c.hasTurn}}" hint-placeholder-val="{{ false }}"><span style="color: #ffb347;">· ⚑</span></sc-if></div>
+<div style="font-family: Fraunces, serif; font-size: 15px; line-height: 1.3; color: #eef5f9; margin-top: 3px;">{{c.label}}</div>
+</button>
+<sc-if value="{{c.open}}" hint-placeholder-val="{{ false }}">
+<ol style="list-style: none; margin: 0; padding: 0 12px 10px;">
+<sc-for list="{{c.rows}}" as="r" hint-placeholder-count="4">
+<li style="{{r.style}}">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{r.dateColor}};">{{r.date}}<sc-if value="{{r.isTurn}}" hint-placeholder-val="{{ false }}"> · ⚑ TURNING POINT (LAST 30 DAYS ANALYSED)</sc-if><sc-if value="{{r.isLinked}}" hint-placeholder-val="{{ false }}"> · OTHER STORY · {{r.cat}} · MODEL-LINKED · {{r.conf}}</sc-if></div>
+<div style="{{r.headStyle}}">{{r.head}}</div>
+</li>
+</sc-for>
+</ol>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{showAfter}}" hint-placeholder-val="{{ false }}">
+<div style="border: 1px dashed rgba(95,212,255,0.3); border-radius: 4px; padding: 10px 12px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #5fd4ff;">AFTER THIS STORY'S LATEST UPDATE (AUG 21)</div>
+<ol style="list-style: none; margin: 6px 0 0; padding: 0;">
+<sc-for list="{{after}}" as="r" hint-placeholder-count="4">
+<li style="{{r.style}}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96;">{{r.date}} · {{r.cat}} · MODEL-LINKED · {{r.conf}}</div><div style="{{r.headStyle}}">{{r.head}}</div></li>
+</sc-for>
+</ol>
+</div>
+</sc-if>
+</div>
+</section>
+
+<section id="m-why" style="padding: 24px 16px 0;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: #5fd4ff;">2 · WHY IT'S HAPPENING</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ffb347; margin-top: 4px;">OLDER ANALYSIS · 12 SEP (13d)</div>
+<ol style="list-style: none; margin: 12px 0 0; padding: 0 0 0 12px; border-left: 1px solid rgba(95,212,255,0.25); display: flex; flex-direction: column; gap: 10px;">
+<sc-for list="{{chain}}" as="k" hint-placeholder-count="3">
+<li><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5fd4ff;">{{k.label}}</div><p style="margin: 3px 0 0; font-size: 14px; line-height: 1.55; color: #d6e2ea;">{{k.text}}</p><button type="button" onClick="{{k.toggle}}" style="min-height: 40px; background: none; border: none; padding: 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5fd4ff;">{{k.btn}}</button></li>
+</sc-for>
+</ol>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #8a99a5; margin-top: 16px;">NEWS THIS STORY IS JUDGED TO FEED INTO · MODEL JUDGMENT · 7</div>
+<div style="font-size: 12px; color: #8a99a5; margin-top: 4px;">Links are between stories; we don't know which event here drove each one.</div>
+<ol style="list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+<sc-for list="{{links}}" as="l" hint-placeholder-count="7">
+<li style="{{l.style}}">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7d8b96;">{{l.leadDate}}</div>
+<div style="font-family: Fraunces, serif; font-size: 15px; line-height: 1.3; color: #eef5f9; margin-top: 2px;">{{l.leadHead}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{l.catColor}}; margin-top: 6px;">IN ■ {{l.cat}}</div>
+<a href="#" style="display: block; font-size: 13px; color: #c9d6df; margin-top: 2px;">{{l.title}} →</a>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{l.confColor}}; margin-top: 6px;">{{l.confShort}}</div>
+<p style="margin: 6px 0 0; font-size: 12.5px; line-height: 1.5; color: #b9c7d1; font-style: italic;">“{{l.mech}}”</p>
+</li>
+</sc-for>
+</ol>
+<div style="font-size: 12.5px; color: #7d8b96; margin: 14px 0 30px;">Shares actors with: +2 stories share only one actor ▸</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2400}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { linked: false, open: { 3: true }, full: {} }; }
+  renderVals() {
+    var self = this, S = this.state, D = {"chain": [{"label": "TRIGGER", "short": "The immediate trigger for the escalating US-Iran tensions in this thread was the Trump administration's shift to a strategy of \"suffocating economic pressure\"…", "full": "The immediate trigger for the escalating US-Iran tensions in this thread was the Trump administration's shift to a strategy of \"suffocating economic pressure\" and a naval blockade after US military bombings failed to force Iran's capitulation, as reported on August 13. This was quickly exacerbated by attacks on ships in the Strait of Hormuz and President Trump's subsequent vow to declare the Strait a US territory, directly challenging Iranian sovereignty and control over a vital waterway."}, {"label": "ENABLING CONDITION", "short": "This immediate escalation is enabled by a medium-term condition of a \"months-long Middle East war\" between the US and Iran, characterized by a US \"maximum…", "full": "This immediate escalation is enabled by a medium-term condition of a \"months-long Middle East war\" between the US and Iran, characterized by a US \"maximum pressure\" campaign and Iran's strategic responses. The failure of previous military actions to achieve US objectives, coupled with Iran's perceived resilience and regional influence, created a deadlock where both sides sought to gain advantage through economic coercion, naval posturing, and rhetorical escalation, as evidenced by Iran's blockade of Hormuz for \"much of the past five months.\""}, {"label": "STRUCTURAL FACTOR", "short": "The deeper structural factor underpinning this conflict is the decades-long geopolitical rivalry between the United States and Iran, rooted in the 1979 Iranian…", "full": "The deeper structural factor underpinning this conflict is the decades-long geopolitical rivalry between the United States and Iran, rooted in the 1979 Iranian Revolution and subsequent US efforts to contain Iran's regional ambitions. This rivalry is further complicated by Iran's nuclear program, its support for regional proxies like Hezbollah, and the broader competition for influence in the Middle East, leading to a cycle of sanctions, military threats, and proxy conflicts that consistently destabilize the region and impede diplomatic resolution."}], "chapters": [{"from": "2026-07-24", "to": "2026-07-30", "label": "US and Iran Trade Strikes in Gulf as Oil Surges Past $100 Amid Houthi Red Sea Blockade", "n": 24, "rows": [{"date": "2026-07-24", "head": "US and Iran Trade Strikes in Gulf as Oil Surges Past $100 Amid Houthi Red Sea Blockade", "more": 0, "turn": false}, {"date": "2026-07-26", "head": "US pauses airstrikes on Iran amid reports of dwindling Patriot interceptor stockpiles", "more": 7, "turn": false}, {"date": "2026-07-27", "head": "Houthi attack on Saudi oil facilities slows Red Sea shipping as conflict spreads", "more": 8, "turn": false}, {"date": "2026-07-28", "head": "Trump says US and Iran having 'good talks' during lull in strikes, warns of resumption if no deal", "more": 2, "turn": false}, {"date": "2026-07-29", "head": "US and UK look to build naval coalition to secure shipping in Strait of Hormuz", "more": 0, "turn": false}, {"date": "2026-07-30", "head": "Saudi Arabia seeks international coalition to protect Red Sea shipping from Houthis", "more": 1, "turn": false}]}, {"from": "2026-08-01", "to": "2026-08-09", "label": "Iran warns against 'flames of war' amid US strike threats on energy sites", "n": 26, "rows": [{"date": "2026-08-01", "head": "Iran warns against 'flames of war' amid US strike threats on energy sites", "more": 0, "turn": false}, {"date": "2026-08-02", "head": "Trump cancels Iran strikes, says 'deal perimeters' reached as Iran media denies claim", "more": 1, "turn": false}, {"date": "2026-08-03", "head": "Trump says new talks with Iran to begin Monday after calling off strikes", "more": 4, "turn": false}, {"date": "2026-08-04", "head": "Oil prices fall on hopes Strait of Hormuz could reopen as talks progress", "more": 1, "turn": false}, {"date": "2026-08-05", "head": "Trump says Iran will be 'hit very hard' if Hormuz Strait not open soon as oil prices fall", "more": 1, "turn": false}, {"date": "2026-08-06", "head": "Iran says deal with Oman on Strait of Hormuz is in final stages as Trump signals breakthrough", "more": 0, "turn": false}, {"date": "2026-08-07", "head": "Iran parliament reviews plan to ban US and Israeli ships from Strait of Hormuz", "more": 3, "turn": false}, {"date": "2026-08-08", "head": "Iran aims to ban US and Israeli ships from Strait of Hormuz and charge others a toll", "more": 2, "turn": false}, {"date": "2026-08-09", "head": "Iran says Hormuz deal with Oman close but not enough to reopen waterway", "more": 5, "turn": false}]}, {"from": "2026-08-10", "to": "2026-08-14", "label": "Trump signals shift to economic pressure on Iran over new military strikes", "n": 17, "rows": [{"date": "2026-08-10", "head": "Trump signals shift to economic pressure on Iran over new military strikes", "more": 4, "turn": false}, {"date": "2026-08-11", "head": "US weapons stockpiles running low amid war on Iran, raising questions about defence spending", "more": 1, "turn": false}, {"date": "2026-08-12", "head": "Trump secretly switched planes due to Iranian threat, decoy plane faced greater risk", "more": 4, "turn": false}, {"date": "2026-08-13", "head": "Israeli strikes in south Lebanon a 'violation of international law': PM", "more": 1, "turn": false}, {"date": "2026-08-14", "head": "US says it can maintain naval blockade of Iran indefinitely, vows more economic pressure", "more": 2, "turn": false}]}, {"from": "2026-08-15", "to": "2026-08-21", "label": "Trump vows Hormuz US territory; Iran rejects", "n": 18, "rows": [{"date": "2026-08-15", "head": "Trump vows to declare Strait of Hormuz a US territory; Iran says it 'will remain Iranian'", "more": 3, "turn": true}, {"date": "2026-08-16", "head": "Trump vows to declare Strait of Hormuz a US territory; Iran says it 'will remain Iranian'", "more": 4, "turn": false}, {"date": "2026-08-17", "head": "Iran threatens to go on offensive in Strait of Hormuz if diplomacy with US fails", "more": 1, "turn": false}, {"date": "2026-08-18", "head": "Trump threatens to bomb Oman over Iran deal as Hormuz crossings remain in single digits", "more": 2, "turn": false}, {"date": "2026-08-19", "head": "Iran warns Gulf countries against assisting US military amid Hormuz tensions", "more": 0, "turn": false}, {"date": "2026-08-20", "head": "US Treasury issues fresh sanctions on Hezbollah, labeling group Iran-linked", "more": 0, "turn": false}, {"date": "2026-08-21", "head": "Iran's president says time to end war while in 'position of strength'", "more": 1, "turn": false}]}], "links": [{"id": "thread-us-diesel-prices-hit-all-time--0fefc7", "cat": "ECONOMY", "title": "US diesel prices hit an all-time high as the conflict threatens oil supply", "rank": 0, "confs": [{"web": "United States", "conf": "STRONG", "lag": 26}, {"web": "Iran", "conf": "STRONG", "lag": 25}, {"web": "Middle East", "conf": "STRONG", "lag": 27}], "mech": "Escalating US-Iran conflict over the Strait of Hormuz threatens global oil supply, driving US diesel prices to record highs.", "lead": {"h": "US Consumer Prices Accelerate in August, Bolstering Chances of Fed Rate Increase", "date": "2026-09-11", "side": "linked"}, "more": 2, "this": [], "linked": [{"h": "Iran to Discuss Strait of Hormuz with Gulf States as US Sanctions Target Proxies", "date": "2026-09-11", "side": "linked"}, {"h": "Oil on Track for 8% Weekly Gain on Supply Concerns as US Diesel Hits Record High", "date": "2026-09-11", "side": "linked"}, {"h": "US Consumer Prices Accelerate in August, Bolstering Chances of Fed Rate Increase", "date": "2026-09-11", "side": "linked"}]}, {"id": "thread-oil-prices-surge-to-97-a-barre-087d3c", "cat": "ENERGY", "title": "Oil prices surge to $97–$100 a barrel on the Middle East conflict", "rank": 0, "confs": [{"web": "Middle East", "conf": "STRONG", "lag": 27}], "mech": "US-Iran conflict and threats to Strait of Hormuz increased geopolitical risk, driving oil prices up to $97-$100 a barrel.", "lead": {"h": "Oil prices hit $100 a barrel for first time since July after US and Houthi strikes", "date": "2026-09-09", "side": "linked"}, "more": 1, "this": [{"h": "US says it can maintain naval blockade of Iran indefinitely, vows more economic pressure", "date": "2026-08-14", "side": "this"}, {"h": "Trump vows to declare Strait of Hormuz a US territory; Iran says it 'will remain Iranian'", "date": "2026-08-15", "side": "this"}], "linked": [{"h": "Oil prices surge to $97 a barrel amid Middle East conflict", "date": "2026-09-07", "side": "linked"}, {"h": "Oil prices hit $100 a barrel for first time since July after US and Houthi strikes", "date": "2026-09-09", "side": "linked"}]}, {"id": "thread-south-korea-considers-military-04e04a", "cat": "MILITARY", "title": "South Korea considers a military deployment to the Strait of Hormuz", "rank": 1, "confs": [{"web": "Iran", "conf": "MEDIUM", "lag": 23}], "mech": "US-Iran tensions over the Strait of Hormuz prompt South Korea to consider military deployment to ensure freedom of navigation.", "lead": {"h": "South Korea sends fact-finding team to assess Strait of Hormuz conditions", "date": "2026-09-08", "side": "linked"}, "more": 1, "this": [{"h": "Trump threatens to bomb Oman over Iran deal as Hormuz crossings remain in single digits", "date": "2026-08-18", "side": "this"}, {"h": "Iran warns Gulf countries against assisting US military amid Hormuz tensions", "date": "2026-08-19", "side": "this"}], "linked": [{"h": "South Korea considers military deployment to Strait of Hormuz to support freedom of navigation", "date": "2026-09-04", "side": "linked"}, {"h": "South Korea sends fact-finding team to assess Strait of Hormuz conditions", "date": "2026-09-08", "side": "linked"}]}, {"id": "thread-trump-vows-tougher-economic-me-835ab7", "cat": "CONFLICT", "title": "Trump vows tougher economic measures on Iran and supporting countries", "rank": 1, "confs": [{"web": "United States", "conf": "MEDIUM", "lag": 5}], "mech": "Ongoing US-Iran tensions lead Trump to vow tougher economic measures, intensifying sanctions and blockade.", "lead": {"h": "US and Iran exchange hostile rhetoric ahead of new sanctions as war enters sixth month", "date": "2026-08-22", "side": "linked"}, "more": 1, "this": [], "linked": [{"h": "US vows 'toughest sanctions in history' on Iran as Hormuz shipping collapses", "date": "2026-08-21", "side": "linked"}, {"h": "US and Iran exchange hostile rhetoric ahead of new sanctions as war enters sixth month", "date": "2026-08-22", "side": "linked"}]}, {"id": "thread-do-main-battle-tanks-have-a-wa-0f37aa", "cat": "MILITARY", "title": "US sailors report dire conditions on USS Abraham Lincoln; USS George Washington deployed", "rank": 1, "confs": [{"web": "Middle East", "conf": "MEDIUM", "lag": 2}], "mech": "Escalating US-Iran tensions led to extended deployment of US naval assets, including USS Abraham Lincoln, causing dire conditions for sailors and prompting deployment of USS George Washington.", "lead": {"h": "US aircraft carrier USS George Washington deployed to Middle East amid reports of dire conditions on USS Abraham Lincoln", "date": "2026-08-15", "side": "linked"}, "more": 1, "this": [{"h": "US says it can maintain naval blockade of Iran indefinitely, vows more economic pressure", "date": "2026-08-14", "side": "this"}, {"h": "Trump vows to declare Strait of Hormuz a US territory; Iran says it 'will remain Iranian'", "date": "2026-08-15", "side": "this"}], "linked": [{"h": "US sailors report dire conditions on USS Abraham Lincoln after 250+ days at sea", "date": "2026-08-14", "side": "linked"}, {"h": "US aircraft carrier USS George Washington deployed to Middle East amid reports of dire conditions on USS Abraham Lincoln", "date": "2026-08-15", "side": "linked"}]}, {"id": "thread-india-hosts-brics-summit-with--c168d0", "cat": "POLITICS", "title": "India hosts BRICS summit with China, Russia and Iran leaders", "rank": 2, "confs": [{"web": "Iran", "conf": "WEAK", "lag": 27}], "mech": "US-Iran conflict and US dominance push Iran to align with BRICS nations, leading to a summit hosted by India with China and Russia.", "lead": {"h": "India Hosts BRICS Summit with China, Russia and Iran Leaders as Wars Test Bloc", "date": "2026-09-10", "side": "linked"}, "more": 0, "this": [{"h": "Iran's president says time to end war while in 'position of strength'", "date": "2026-08-21", "side": "this"}], "linked": [{"h": "India Hosts BRICS Summit with China, Russia and Iran Leaders as Wars Test Bloc", "date": "2026-09-10", "side": "linked"}]}, {"id": "thread-us-senate-confirms-jay-clayton-ee8346", "cat": "POLITICS", "title": "Trump battles legal challenges as his approval rating falls", "rank": 2, "confs": [{"web": "United States", "conf": "WEAK", "lag": 6}], "mech": "Iran war concerns contribute to Trump's plummeting approval rating, which is a key focus of the legal challenges thread.", "lead": {"h": "Trump's approval rating falls to lowest of his presidency amid Iran war concerns", "date": "2026-08-18", "side": "linked"}, "more": 0, "this": [], "linked": [{"h": "Trump's approval rating falls to lowest of his presidency amid Iran war concerns", "date": "2026-08-18", "side": "linked"}]}]};
+    var CAT = { ECONOMY: '#38b6de', ENERGY: '#e8c547', CONFLICT: '#ee7754', MILITARY: '#ee7754', POLITICS: '#9b8cf8' };
+    var CONF = { STRONG: '#ff6a4d', MEDIUM: '#ffb347', WEAK: '#8a99a5' };
+    var DOTS = { STRONG: '●●●', MEDIUM: '●●○', WEAK: '●○○' };
+    var mon = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    function fmt(d) { return d ? (d.slice(8, 10) + ' ' + mon[parseInt(d.slice(5, 7), 10) - 1]) : ''; }
+    var showLinked = S.linked, linkedRows = [];
+    D.links.forEach(function (l) { l.linked.forEach(function (c) { linkedRows.push({ date: c.date, head: c.h, cat: l.cat, conf: l.confs[0].conf }); }); });
+    function ghost(r) { return { date: fmt(r.date), head: r.head, cat: r.cat, conf: r.conf, isLinked: true, isTurn: false, dateColor: '#7d8b96',
+      style: 'padding: 8px 0 8px 12px; border-top: 1px solid rgba(95,212,255,0.06); border-left: 2px solid ' + CAT[r.cat] + '66;',
+      headStyle: 'font-size: 13px; line-height: 1.45; color: #b9c7d1; font-style: italic; margin-top: 2px;' }; }
+    var chapters = D.chapters.map(function (c, i) {
+      var open = !!S.open[i];
+      var rows = c.rows.map(function (r) { return { date: fmt(r.date), k: r.date, head: r.head, isTurn: r.turn, isLinked: false, cat: '', conf: '', dateColor: r.turn ? '#ffb347' : '#7d8b96',
+        style: 'padding: 8px 0; border-top: 1px solid rgba(95,212,255,0.06);', headStyle: 'font-size: 13.5px; line-height: 1.45; color: #d6e2ea; margin-top: 2px; font-weight: ' + (r.turn ? 600 : 400) + ';' }; });
+      if (showLinked) { linkedRows.filter(function (r) { return r.date >= c.from && r.date <= c.to; }).forEach(function (r) { var g = ghost(r); g.k = r.date + 'z'; rows.push(g); }); rows.sort(function (a, b) { return a.k < b.k ? -1 : 1; }); }
+      return { range: fmt(c.from) + ' – ' + fmt(c.to), label: c.label, n: c.n, open: open, rows: rows, hasTurn: c.rows.some(function (r) { return r.turn; }),
+        caret: open ? '▴' : '▾', border: c.rows.some(function (r) { return r.turn; }) ? 'rgba(255,179,71,0.35)' : 'rgba(95,212,255,0.14)',
+        toggle: function () { var o = Object.assign({}, S.open); o[i] = !o[i]; self.setState({ open: o }); } };
+    });
+    var after = showLinked ? linkedRows.filter(function (r) { return r.date > '2026-08-21'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).map(ghost) : [];
+    var chain = D.chain.map(function (k, i) { var full = !!S.full[i];
+      return { label: k.label, text: full ? k.full : k.short, btn: full ? 'SHOW LESS ▴' : 'READ FULL ▾', toggle: function () { var f = Object.assign({}, S.full); f[i] = !f[i]; self.setState({ full: f }); } }; });
+    var links = D.links.map(function (l) {
+      var weak = l.confs.every(function (c) { return c.conf === 'WEAK'; });
+      return { leadDate: l.lead ? fmt(l.lead.date) : '', leadHead: l.lead ? l.lead.h : l.title, cat: l.cat, catColor: CAT[l.cat], title: l.title, mech: l.mech,
+        confShort: l.confs.map(function (c) { return DOTS[c.conf] + ' ' + c.conf + ' (' + c.web.toUpperCase() + ')'; }).join(' · ') + ' · MODEL JUDGMENT',
+        confColor: CONF[l.confs[0].conf],
+        style: 'padding: 12px; background: rgba(12,22,34,0.9); border: 1px solid rgba(95,212,255,0.14); border-left: 3px ' + (weak ? 'dashed' : 'solid') + ' ' + CAT[l.cat] + '; border-radius: 3px; opacity: ' + (weak ? 0.72 : 1) + ';' };
+    });
+    return {
+      chapters: chapters, after: after, showAfter: showLinked && after.length > 0, chain: chain, links: links, showLinked: showLinked,
+      linkedLabel: showLinked ? '✓ SHOWING LINKED NEWS (' + linkedRows.length + ')' : 'SHOW LINKED NEWS (' + linkedRows.length + ')',
+      linkedBtn: 'margin-top: 10px; width: 100%; height: 42px; border-radius: 4px; border: 1px solid #5fd4ff; background: ' + (showLinked ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: #5fd4ff; font-family: JetBrains Mono, monospace; font-size: 11px; cursor: pointer;',
+      toggleLinked: function () { self.setState({ linked: !self.state.linked }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

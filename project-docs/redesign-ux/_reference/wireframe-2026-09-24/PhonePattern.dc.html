@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phone pattern</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}button{font-family:inherit}</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #060c14; color: #c9d6df;">
+<div style="position: absolute; left: 24px; top: 14px; right: 24px; display: flex; align-items: center; gap: 8px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #ffb347; margin-right: 8px;">P1 · ONE PHONE PATTERN · PICK A PAGE:</span>
+<sc-for list="{{pages}}" as="p" hint-placeholder-count="6"><button type="button" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button></sc-for>
+</div>
+
+<sc-for list="{{phones}}" as="f" hint-placeholder-count="3">
+<div style="{{f.frame}}">
+<div style="position: absolute; left: 0; right: 0; top: -22px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8a99a5;">{{f.cap}}</div>
+<div style="height: 30px; display: flex; align-items: center; padding: 0 12px; background: rgba(4,8,14,0.97);"><span style="font-family: Fraunces, serif; font-size: 13px; font-weight: 600; color: #eef5f9; flex-grow: 1;">GP</span><span style="font-size: 10px; color: #d6e2ea;">Sign in</span></div>
+<div style="padding: 3px 12px; background: rgba(40,28,8,0.6); font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #ffb347;">● NEW STORIES + ANALYSIS PAUSED SINCE 12 SEP</div>
+<div style="height: 34px; display: flex; border-bottom: 1px solid rgba(95,212,255,0.15); background: rgba(6,12,20,0.95);"><sc-for list="{{f.tabs}}" as="t" hint-placeholder-count="3"><button type="button" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button></sc-for></div>
+<div style="position: absolute; left: 0; right: 0; top: 83px; bottom: 46px; overflow: hidden;">
+<sc-if value="{{f.isMap}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, #0b1a2a 0%, #060c14 75%);"><svg width="100%" height="100%" viewBox="0 0 300 520" preserveAspectRatio="none" aria-hidden="true"><path d="{{land}}" fill="none" stroke="rgba(150,225,255,0.22)" stroke-width="2.2" stroke-linecap="round"></path></svg></div>
+<sc-for list="{{f.marks}}" as="m" hint-placeholder-count="3"><div style="{{m.dot}}"></div><div style="{{m.lab}}">{{m.t}}</div></sc-for>
+<div style="position: absolute; left: 8px; top: 8px; padding: 3px 6px; background: rgba(4,8,14,0.85); font-family: 'JetBrains Mono', monospace; font-size: 7.5px; color: #6fd29a;">MAP LOADS ONLY ON THIS TAB</div>
+<div style="{{f.sheet}}">
+<div style="width: 40px; height: 4px; border-radius: 2px; background: #56626b; margin: 6px auto 6px;"></div>
+<div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 6px;"><sc-for list="{{stops}}" as="s" hint-placeholder-count="3"><button type="button" onClick="{{s.pick}}" style="{{s.style}}">{{s.label}}</button></sc-for></div>
+<div style="padding: 0 10px;"><sc-for list="{{f.sheetRows}}" as="r" hint-placeholder-count="3"><div style="{{r.s}}">{{r.t}}</div></sc-for></div>
+</div>
+</sc-if>
+<sc-if value="{{f.isText}}" hint-placeholder-val="{{ true }}">
+<div style="padding: 8px 10px;"><sc-for list="{{f.rows}}" as="r" hint-placeholder-count="8"><div style="{{r.s}}">{{r.t}}</div></sc-for></div>
+</sc-if>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 46px; display: grid; grid-template-columns: repeat(5, 1fr); background: rgba(4,8,14,0.98); border-top: 1px solid rgba(95,212,255,0.18);"><sc-for list="{{nav}}" as="n" hint-placeholder-count="5"><div style="{{n.s}}"><span style="font-size: 13px;">{{n.i}}</span><span style="font-size: 8px;">{{n.l}}</span></div></sc-for></div>
+</div>
+</sc-for>
+
+<div style="position: absolute; left: 1080px; top: 56px; right: 24px; bottom: 20px; padding: 12px 14px; border: 1px solid rgba(95,212,255,0.2); border-radius: 4px; background: rgba(6,12,20,0.9); overflow: hidden;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #5fd4ff;">THE RULES (ALL 5 PAGES)</div>
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="9"><div style="font-size: 11.5px; line-height: 1.45; color: #d6e2ea; margin-top: 7px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #8fdcff;">{{r.k}} · </span>{{r.v}}</div></sc-for>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.1em; color: #5fd4ff; margin-top: 12px;">ON THIS PAGE</div>
+<div style="font-size: 11.5px; line-height: 1.45; color: #b9c7d1; margin-top: 5px;">{{pageNote}}</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { page: 'story', stop: 'peek' }; }
+  renderVals() {
+    var self = this, S = this.state, MONO = 'JetBrains Mono, monospace';
+    function X(lon) { return (lon + 170) / 340 * 300; }
+    function Y(lat) { return 30 + (75 - lat) / 135 * 460; }
+    function land(lo, la) { return (Math.sin(lo * 0.07) + Math.cos(la * 0.11 + lo * 0.03) + Math.sin(la * 0.05 - lo * 0.02)) > 0.35; }
+    var landP = ''; for (var la = -50; la <= 72; la += 5) for (var lo = -165; lo <= 170; lo += 5) if (land(lo, la)) landP += 'M' + X(lo).toFixed(1) + ' ' + Y(la).toFixed(1) + 'h0.1';
+    function K(t, c) { return { t: t, s: 'font-family: ' + MONO + '; font-size: 8px; letter-spacing: 0.08em; color: ' + (c || '#5fd4ff') + '; margin-top: 8px;' }; }
+    function H(t) { return { t: t, s: 'font-family: Fraunces, serif; font-size: 14px; line-height: 1.25; color: #eef5f9; margin-top: 3px;' }; }
+    function T(t, c) { return { t: t, s: 'font-size: 10px; line-height: 1.4; color: ' + (c || '#c9d6df') + '; margin-top: 3px;' }; }
+    function R(t, c) { return { t: t, s: 'font-size: 10px; line-height: 1.35; color: #eef5f9; margin-top: 4px; padding: 5px 7px; border-left: 3px solid ' + (c || '#5fd4ff') + '; background: rgba(12,22,34,0.9);' }; }
+    function Bar(t, c) { return { t: t, s: 'font-family: ' + MONO + '; font-size: 9px; color: ' + (c || '#8fdcff') + '; margin-top: 5px; padding: 6px 7px; background: rgba(95,212,255,0.06); letter-spacing: 0.04em;' }; }
+    function M(lon, lat, t, c, r) { var x = X(lon), y = Y(lat); r = r || 6; return { t: t, dot: 'position: absolute; left: ' + (x - r) + 'px; top: ' + (y - r) + 'px; width: ' + (2 * r) + 'px; height: ' + (2 * r) + 'px; border-radius: 50%; border: 2px solid ' + (c || '#ee7754') + '; box-shadow: 0 0 8px ' + (c || '#ee7754') + ';', lab: 'position: absolute; left: ' + (x + r + 3) + 'px; top: ' + (y - 6) + 'px; font-family: ' + MONO + '; font-size: 7.5px; color: #d6e2ea; white-space: nowrap;' }; }
+    var P = {
+      home: { label: 'MAP (HOME)', nav: 0, note: 'The exception: the Map page opens on the MAP tab (radar on phones, as approved in A2). LIST is the text version of the same events.',
+        tabs: [
+          ['MAP', true, [M(45, 24, 'SAUDI PIPELINE'), M(77, 28, 'BRICS · NEW DELHI', '#9b8cf8'), M(30.5, 50.5, 'KYIV', '#ee7754')], [K('EVENT · 13 SEP · ENERGY'), H('Saudi Arabia Shuts East-West Pipeline After Drone Attack Launched from Iraq')]],
+          ['LIST', false, [K('STORIES · LAST UPDATED 13 SEP (PAUSED)', '#ffb347'), R('Saudi Arabia Shuts East-West Pipeline After Drone Attack Launched from Iraq; Houthis Claim Strike on Sharurah Base', '#d89e28'), R('BRICS Summit in New Delhi Adopts Joint Declaration Urging Maximum Restraint in Middle East War', '#9b8cf8'), R('Trump Envoys Arrive in Kyiv in New Push to End Russia’s War After Moscow Talks', '#ee7754'), K('DISASTER ALERTS (GDACS) · LIVE', '#6fd29a'), T('Shown on the map as they arrive.', '#8a99a5')]],
+          ['ALERTS', false, [K('ALERT STACK (REPLACES /BREAKING)'), T('Live GDACS alerts first; news alerts return when the pipeline restarts.', '#8a99a5')]]] },
+      story: { label: 'STORY', nav: 1, note: 'READ is the story-mode slides as one scroll. MAP puts the same slides in a bottom sheet over the map (the drawers become tabs in the full sheet). TIMELINE is the scrubber; tapping a day jumps back to READ at that chapter.',
+        tabs: [
+          ['READ', false, [K('● CONFLICT · HIGH 85 · ANALYSIS 12 SEP (OLDER)', '#ffb347'), H('US-Iran Tensions Escalate Over Hormuz, Peace Talks Stall'), T('The immediate trajectory points towards a continued, high-stakes standoff between the United States and Iran, primarily centered on the Strait of Hormuz and economic pressure.'), K('CH1 · 24–30 JUL · 24 ENTRIES'), R('US and Iran Trade Strikes in Gulf as Oil Surges Past $100 Amid Houthi Red Sea Blockade'), K('CH4 · 15–21 AUG · 18 ENTRIES · ⚑ TURNING POINT'), R('Trump vows Hormuz US territory; Iran rejects'), K('WATCH · DATED TRIGGERS'), Bar('31 OCT · 30 NOV · 31 DEC')]],
+          ['MAP', true, [M(56, 26.5, 'HORMUZ'), M(-98, 39, 'UNITED STATES', '#5fd4ff', 5), M(58, 21, 'OMAN', '#5fd4ff', 5)], [K('CH4 · 15–21 AUG · ⚑'), H('Trump vows Hormuz US territory; Iran rejects'), Bar('◀  4 / 7  ▶   ·   WHY · WHO · VIEW FROM · SOURCES')]],
+          ['TIMELINE', false, [K('NEWS PER DAY · 24 JUL – 21 AUG'), Bar('▂▇█▃▂▃▂▃▅▃▃▂▄▃▆▅▃▅▃▃▄▅▃▃▂▂▃'), K('⚑ 15 AUG · TURNING POINT'), K('TODAY · 25 SEP'), K('◆ 31 OCT · ◆ 30 NOV · ◆ 31 DEC', '#ffb347'), T('Tap a day or a chapter to jump to it in READ. Every tick has a 44px tap area.', '#8a99a5')]]] },
+      country: { label: 'COUNTRY', nav: 0, note: 'The country card is READ, one state per country. Iran here: briefed, older analysis, at the top of the scale (so no direction arrow). No popovers on phone: the quiet state is an inline block. The WebGL map is on the MAP tab only.',
+        tabs: [
+          ['READ', false, [K('BRIEFED · ANALYSIS AS OF 11 SEP · AI PAUSED', '#ffb347'), H('Iran'), T('Head of state Mojtaba Khamenei · Head of government Masoud Pezeshkian · GDP $363 bn (2025)', '#8a99a5'), T('Iran is locked in a multi-front confrontation with the US and Israel while internal factions openly fight over war strategy under new Supreme Leader Mojtaba Khamenei.'), Bar('RISK HIGH 95 · CONFLICT LEADS · AT TOP OF SCALE', '#ff6a4d'), Bar('CONFLICT 95 · POLITICAL 85 · ECONOMIC 90 · HUMANITARIAN 75'), K('STORIES HERE'), R('US-Iran Tensions Escalate Over Hormuz, Peace Talks Stall', '#ee7754'), Bar('ANALYZE IN STUDIO →')]],
+          ['MAP', true, [M(53, 32, 'IRAN', '#eef5f9', 9), M(48, 15.5, 'YEMEN', '#7d8b96', 5), M(58, 21, 'OMAN', '#7d8b96', 5)], [K('IRAN · HIGH 95'), T('Dotted lines: places connected in Iran’s stories.', '#8a99a5')]],
+          ['TIMELINE', false, [K('RISK READINGS · 7 JUL – 11 SEP'), Bar('85 → 95 · NO READINGS 23 AUG – 3 SEP · NONE SINCE 11 SEP'), K('LATEST CHANGE · 19 AUG'), T('The UAE’s indefinite trade embargo directly escalates economic isolation, driving the economic score up from 80 to 90.')]]] },
+      brief: { label: 'BRIEFINGS', nav: 2, note: 'One switch per screen: DAILY | WEEKLY sits inside READ, not as a second bar. The editions strip shows 13–25 Sep as dashed (no edition, AI paused), never a dead end.',
+        tabs: [
+          ['READ', false, [Bar('[ DAILY ]  WEEKLY'), K('DAILY · 12 SEP EDITION · THE DAY'), H('Houthis Complete Bab el-Mandeb Takeover as Saudi Oil Pipeline Shuts After Drone Attack'), T('The strategic chokepoint at the southern entrance to the Red Sea has effectively fallen under Houthi control …'), K('8 TOP STORIES → · COUNTRY TO WATCH →'), K('EDITIONS'), Bar('5–12 SEP PUBLISHED · 13–25 SEP NO EDITION (AI PAUSED)', '#ffb347')]],
+          ['MAP', true, [M(43, 13, 'BAB EL-MANDEB'), M(45, 24, 'SAUDI ARABIA', '#d89e28')], [K('TOP STORY 1 / 8'), H('Houthis Complete Bab el-Mandeb Takeover')]],
+          ['EDITIONS', false, [K('EVERY EDITION, NEWEST FIRST'), R('12 SEP · Daily', '#5fd4ff'), R('13–25 SEP · no edition (AI paused)', '#56626b'), T('Old /daily/:date links open here.', '#8a99a5')]]] },
+      record: { label: 'TRACK RECORD', nav: 4, note: 'This page swaps READ for BOARD, and the ledger folds into it. LOG keeps the settling squares as a horizontal strip (44px taps), so the gaps stay visible.',
+        tabs: [
+          ['BOARD', false, [K('NOW'), H('We don’t have a scored track record yet.'), T('The weekly locked sample starts once the AI provider is back.', '#8a99a5'), K('JULY PILOT · EARLIER METHOD · NOT SCORED', '#7d8b96'), R('122 conditions · one week, mostly the NATO summit in Ankara', '#56626b'), K('WHEN WE CHANGED OUR READ →')]],
+          ['MAP', true, [M(32.8, 39.9, 'ANKARA · PILOT', '#7d8b96', 7)], [K('QUESTIONS BY PLACE · COUNTS ONLY'), T('Never a per-country accuracy score.', '#8a99a5')]],
+          ['LOG', false, [K('SETTLING LOG · ONE SQUARE PER WEEK'), Bar('■ JULY PILOT · □ □ □ … EMPTY WEEKS SINCE ▸', '#ff6a4d'), T('Empty weeks after the July pilot are shown in red, not hidden. Swipe the strip or use ◀ ▶.', '#8a99a5')]]] },
+      studio: { label: 'STUDIO', nav: 3, note: 'READ is the deck as one scroll: the QUOTE first (before you spend), then the analysis, then the RECEIPT. The board view is off on phones. MAP shows the active lens picture with lens dots in the sheet. No paywall language: runs use your own key.',
+        tabs: [
+          ['READ', false, [K('QUOTE · BEFORE YOU RUN', '#6fd29a'), Bar('4 STORIES · ALL THIN (HEADLINE + LINKS ONLY) ⚠', '#ffb347'), T('Provider + model you chose · output cap 1,600 tokens · deep research off · your key, straight to the provider.', '#8a99a5'), K('SCENARIO · STAND-IN: FORECAST LOG, 21 AUG', '#ffb347'), R('MOST LIKELY · 60% · triggers due by 31 Dec', '#ee7754'), R('OPTIMISTIC · 20% · triggers due by 30 Nov', '#d8b25a'), R('PESSIMISTIC · 20% · triggers due by 31 Dec', '#c0564a'), K('+ ADD ANALYSIS'), K('RECEIPT · AFTER THE RUN', '#6fd29a'), T('Tokens in/out from your provider, model, time, checks. If checks fail: your provider still charged for this run.', '#8a99a5')]],
+          ['MAP', true, [M(53, 32, 'IRAN · MOST LIKELY', '#ffb347', 9), M(-98, 39, 'UNITED STATES', '#ffb347', 7)], [K('SCENARIO · ● ○ ○ ○'), T('Places drawn only if named AND in a source.', '#8a99a5')]],
+          ['TIMELINE', false, [K('BRANCHES FROM TODAY'), Bar('TODAY ───▤▤▤ MOST LIKELY → 31 DEC', '#ffb347'), Bar('TODAY ───▤▤ OPTIMISTIC → 30 NOV', '#ffb347'), Bar('TODAY ───▤▤▤ PESSIMISTIC → 31 DEC', '#ffb347')]]] }
+    };
+    var order = ['home', 'story', 'country', 'brief', 'record', 'studio'];
+    var pg = P[S.page];
+    var pages = order.map(function (k) { var on = k === S.page; return { label: P[k].label, pick: function () { self.setState({ page: k }); },
+      style: 'height: 28px; padding: 0 10px; border-radius: 14px; cursor: pointer; font-family: ' + MONO + '; font-size: 10px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + ';' }; });
+    var SH = { peek: 96, half: 250, full: 400 };
+    var stops = ['peek', 'half', 'full'].map(function (k) { var on = k === S.stop; return { label: k.toUpperCase(), pick: function () { self.setState({ stop: k }); }, style: 'min-width: 44px; height: 22px; font-family: ' + MONO + '; font-size: 7.5px; border-radius: 11px; cursor: pointer; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + ';' }; });
+    var phones = pg.tabs.map(function (t, i) {
+      var tabs = pg.tabs.map(function (u, j) { var on = j === i; return { label: u[0], pick: function () {}, style: 'flex: 1; background: none; border: none; border-bottom: 2px solid ' + (on ? '#5fd4ff' : 'transparent') + '; color: ' + (on ? '#eef5f9' : '#7d8b96') + '; font-family: ' + MONO + '; font-size: 9px; letter-spacing: 0.06em;' }; });
+      return { cap: i === 0 ? 'DEFAULT TAB: ' + t[0] : 'TAB: ' + t[0], tabs: tabs, isMap: t[1], isText: !t[1], rows: t[1] ? [] : t[2], marks: t[1] ? t[2] : [], sheetRows: t[1] ? t[3] : [],
+        sheet: 'position: absolute; left: 0; right: 0; bottom: 0; height: ' + SH[S.stop] + 'px; background: rgba(6,12,20,0.97); border-top: 1px solid rgba(95,212,255,0.3); border-radius: 12px 12px 0 0; overflow: hidden;',
+        frame: 'position: absolute; left: ' + (24 + i * 344) + 'px; top: 78px; width: 300px; height: 640px; border: 1px solid rgba(95,212,255,0.28); border-radius: 22px; overflow: visible; background: #060c14; box-shadow: 0 0 0 4px #0b1420;' };
+    });
+    var NAV = [['◎', 'Map'], ['▤', 'Stories'], ['◧', 'Briefs'], ['◇', 'Studio'], ['✓', 'Record']];
+    var nav = NAV.map(function (n, i) { var on = i === pg.nav; return { i: n[0], l: n[1], s: 'display: flex; flex-direction: column; align-items: center; justify-content: center; border-top: 2px solid ' + (on ? '#5fd4ff' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#7d8b96') + ';' }; });
+    var rules = [['FRAME', 'Header + paused line (~60px), one tab switch (44px), content, 5-item tab bar (58px).'], ['DEFAULT', 'READ first on every page, except the Map page, which opens on the map (radar).'], ['MAP', 'A tab, never the only way in. The WebGL map loads only when the tab opens (the map is already lazy-loaded today, per route).'], ['SHEET', 'On MAP tabs the slide card is a bottom sheet: peek / half / full, with a drag handle AND buttons (try PEEK / HALF / FULL).'], ['ONE SWITCH', 'Never two tab bars stacked: Daily | Weekly lives inside READ.'], ['NO POPOVERS', 'Inline blocks instead; the quiet country state is inline too.'], ['NO STALE PICTURES', 'No static map thumbnails: a real map or none.'], ['TARGETS', 'Every tap area is at least 44px, including time-bar ticks.'], ['MOTION', 'Reduced motion = instant cuts; swipes always have ◀ ▶ buttons.']].map(function (r) { return { k: r[0], v: r[1] }; });
+    return { pages: pages, phones: phones, stops: stops, nav: nav, rules: rules, land: landP, pageNote: pg.note };
+  }
+}
+</script>
+</body>
+</html>

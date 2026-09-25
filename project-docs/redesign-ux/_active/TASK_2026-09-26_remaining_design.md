@@ -29,7 +29,7 @@ Each phase runs: research + debate (agents) → canvas board with real data → 
 | Phase | What gets decided | Status | Commit | Monitor ✓ |
 |---|---|---|---|---|
 | N · Site navigation | Top menu; how countries, sign-in/account and the retired pages (`/breaking`, `/spider-demo`, `/economy`, `/weekly-markets`) are reached; "AI paused" status line; footer | ✅ **APPROVED 26 Sep** ("ok that is good"), canvas N1 | see git log | 3 advocates + 2 critics; pause date verified 12 Sep |
-| P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | **Now** | — | — |
+| P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | **Now** · proposed, awaiting operator (canvas P1) | see git log | 3 advocates + 1 critic; lazy map load verified in code |
 | DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | queued | — | — |
 | H · Home leftovers | Banner vs tour; country shading vs pins; build behind `/map` first; "real Earth on top right" | queued | — | — |
 | SP · Small pages | About, whitepaper, privacy, disclosures, contact; membership / account / sign-in, including the signed-out `/account` | queued | — | — |
@@ -68,3 +68,27 @@ Debate: A five doors / B game HUD / C by job, then a reader critic and an engine
 - **Search:** later. No search index exists yet (the ⌘K comment is at `Layout.jsx:38–46`).
 - **Footer:** About, White paper, Membership, Privacy, Disclosures, Contact.
 - **Build notes:** the onboarding tour targets use `data-tour="nav-${to}"` (`Layout.jsx:101`), so they must follow the new labels. The only nav guard is `verify_pages.sh:51` (economy absent).
+
+## Phase P: phone pattern proposal (2026-09-26)
+Debate: A map + bottom sheet / B swipe cards / C read first, map on demand, then a critic (reader + engineering). Canvas board **P1** (`PhonePattern.dc.html`).
+
+- **Frame:** header + the computed "paused since" line (~60px), **one** tab switch (44px), content, the 5-item tab bar (58px).
+- **Default tab = READ** (the slides as one scroll) on every page, except the **Map page, which opens on the radar map** (approved A2).
+- **MAP is a tab.**
+  - The WebGL map loads only when that tab opens. Today it is already lazy-loaded per route: `SituationHome.jsx` `lazy(() => import(SituationMap3D))`.
+  - On the MAP tab the slide card becomes a **bottom sheet** (peek / half / full) with a drag handle **and** buttons. It is `role=dialog` only at full.
+- **Third tab:** TIMELINE (story, country, Studio), EDITIONS (briefings), LOG (track record). Track record swaps READ for BOARD, and the ledger folds into it.
+- **Rules:**
+  - one switch per screen (Daily | Weekly lives inside READ);
+  - no popovers (the quiet country state is inline);
+  - no static map thumbnails (they go stale);
+  - every tap area ≥ 44px, time-bar ticks included;
+  - reduced motion = instant cuts;
+  - every swipe has ◀ ▶ buttons.
+- **Studio on phone:**
+  - READ puts the **quote first**, then the analysis, then the **receipt**. The example shows all 4 sources as THIN, which is true for August stories.
+  - The board view is off under 768px.
+  - No paywall language: two advocates invented an "unlock" / "£" bar, and it is rejected.
+- **Rejected:**
+  - swipe cards: a 290px map per card can't show compare lanes or fork bands, and re-rendering the map per card is wasted work;
+  - C's fixed 212px block with a static thumbnail.

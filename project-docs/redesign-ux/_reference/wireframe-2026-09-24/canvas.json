@@ -143,7 +143,15 @@
       "w": 1440,
       "h": 900,
       "is_interactive": true,
-      "title": "N1 · Site navigation — 5 plain items, same URLs, a live 'paused' line, phone tab bar"
+      "title": "N1 · Site navigation — APPROVED 26 Sep: 5 plain items, same URLs, computed 'paused' line, phone tab bar"
+    },
+    "PhonePattern.dc.html": {
+      "x": 0,
+      "y": 18100,
+      "w": 1440,
+      "h": 900,
+      "is_interactive": true,
+      "title": "P1 · One phone pattern — READ first, MAP tab with a bottom sheet, TIMELINE tab (all 5 pages + Map home)"
     }
   },
   "createdOnFiles": {
@@ -342,7 +350,7 @@
     "gTitle": {
       "kind": "title1",
       "maxW": 5000,
-      "text": "G · Site navigation (proposed)",
+      "text": "G · Site navigation (N1 approved) + phone pattern (P1 proposed)",
       "w": 240,
       "x": 0,
       "y": 16880
@@ -354,6 +362,14 @@
       "x": 1480,
       "y": 17000,
       "text": "Navigation after a 3-way debate (five doors / game HUD / by job) + 2 critics. MENU: Map · Stories · Briefings · Studio · Track record — plain words, no dropdowns ('Console', 'Topics', 'Threads' were jargon). Countries = a map layer + a tab in Stories, not a menu item (~90 requests in 30 days). Account at right; the parked credits badge stays hidden. STATUS LINE under the menu: 'New stories and analysis paused since 12 Sep' — 12 Sep verified (last daily brief 12 Sep 14:01 UTC); computed from the newest data, not typed, so it clears itself. PHONE: bottom tab bar with the same 5 items. URLS: new labels, same URLs — our hosting can't send real 301s and story links are built in 8 places outside the site (emails, RSS, LinkedIn, alerts). Only one new route: /briefings. Maps live inside each page (no always-on map under every page: battery/memory cost on reading pages). SEARCH: later — no search index exists yet."
+    },
+    "phonehow": {
+      "fill": "teal",
+      "maxH": 620,
+      "w": 390,
+      "x": 1480,
+      "y": 18100,
+      "text": "Phone pattern after a 3-way debate (map + bottom sheet / swipe cards / read first) + a critic: a hybrid of READ-FIRST + the BOTTOM SHEET. Every page: header + 'paused since 12 Sep' line, ONE tab switch, content, 5-item tab bar. Default tab is READ (the slides as one scroll) — except the Map page, which opens on the radar map. MAP is a tab: the WebGL map loads only then (the map is already lazy-loaded per route today), and the slide card becomes a bottom sheet (peek / half / full, handle + buttons). TIMELINE (or EDITIONS / LOG) is the third tab. Track record swaps READ for BOARD. Studio's READ puts the QUOTE first (here: all 4 stories are THIN — a real warning) and the RECEIPT last; the board view is off on phones. Rejected: swipe cards (a small map per card can't show compare lanes / fork bands; re-rendering the map per card), static map thumbnails (go stale). Pick a page at the top; try PEEK / HALF / FULL on the MAP phone."
     }
   },
   "order": [
@@ -374,7 +390,8 @@
     "StudioNotebook.dc.html",
     "StudioBoard.dc.html",
     "StudioChat.dc.html",
-    "Navigation.dc.html"
+    "Navigation.dc.html",
+    "PhonePattern.dc.html"
   ],
   "pages": [],
   "title": "Global Perspectives — Console Redesign"

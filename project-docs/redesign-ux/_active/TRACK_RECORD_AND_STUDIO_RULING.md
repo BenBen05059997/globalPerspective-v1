@@ -161,6 +161,14 @@ Two critics (product; engineering/data honesty) judged them. The ruling is **S-A
 - **Finding (Iran, 7 Jul – 11 Sep): 6 of the 14 stored change explanations fail a simple direction check.** They explain a *lower* risk score with something that got *worse*, e.g. "humanitarian score down as trade disruption worsens". The What-changed lens flags these. The drift-note prompt/check needs fixing before the lens is trusted.
 - **Change logs exist for 10 countries** + some story threads. All end 11–12 Sep (AI paused).
 
+**Studio design direction: APPROVED (operator, 2026-09-26: "yes this is what i want").** A combination:
+- **Base = A · Deck** (F1): map + slide card + time bar, one picture per lens. It shares the build with story mode (C11).
+- **+ B's stacking** (F2): "+ Add analysis" runs another lens on the same frozen sources. Each finished analysis becomes a section/deck you can switch between and print as one document.
+- **+ C's board as a view toggle** (F3): DECK | BOARD shows the same run as evidence → reasoning → outcomes with strings, and FAILED CHECKS turns bad claims red. It stays one run's output; saved cases stay parked.
+- **D · Conversation is not the page model.** Suggested follow-ups can feed "+ Add analysis" instead.
+- **Reader-pays quote + receipt** (below) is required.
+- **Still open:** S5–S10.
+
 **Four design directions to compare (2026-09-26; operator: "we should show more different design").** Canvas F1–F4, all with the same real data:
 - **A · Deck** (F1): story-mode map + slides + time bar.
 - **B · Notebook** (F2): stacked cells; + ADD CELL runs another lens on the same sources; printable.

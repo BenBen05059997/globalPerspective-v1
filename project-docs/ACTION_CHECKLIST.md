@@ -78,7 +78,7 @@ something · ▶ in progress · ✅ done
 | Country page `/weekly/country/:name` | ✅ designed (25 Sep): **country card on the map** (5 states, honesty rules) + deep-dive in the Studio; the URL stays public with the card content | build later (needs `country_facts`, slim history, rank) |
 | Countries list `/weekly/countries` | ✅ direction: map "countries" layer + ranked list with freshness on every row | with the country card |
 | Track record `/track-record` | ✅ designed 25 Sep: honest stages, ledger first, weekly settling, pilot archive (canvas E1); scoring method approved | build later (~3.5 d) |
-| Analysis Studio `/analyze` | ◐ ruled 25 Sep: page (A-lite), public example, share permalinks, member path parked | operator decisions S1–S3 |
+| Analysis Studio `/analyze` | ✅ **designed 26 Sep**: deck base (canvas F1) + "add analysis" stacking (F2) + board view toggle (F3); lenses Scenario · Compare · What changed · Free-form; reader-pays quote/receipt | first build step: feed stored data (snippets, thread analyses, change logs, forecast log); decisions S5–S10 |
 | `/breaking` | retire into the home alert stack | with the home build |
 | `/spider-demo` | retire into story mode, the board WEB view and the Studio lens | with C11 |
 | Membership / account / sign-in | light touch: nav presence; signed-out `/account` framing | small fixes |
@@ -99,5 +99,5 @@ Only approved designs remain. Sources are in `project-docs/redesign-ux/_referenc
 | E1 TrackRecord | Track record, plain-text version (approved as the text companion) |
 | E2 ServiceRecord | Track record, game-style one screen: BOARD \| MAP of locked questions (map = counts per place, never a per-country score), weekly seed, settling log, accuracy vs a plain guess, ledger (**approved as the main track record page**, map by default) |
 | F1 Studio | Analysis Studio v3: shared shell (map + slides + time bar; our data vs this run), one picture per lens: Scenario (forward) · Compare (sideways) · What changed (back, risk chart + change log) · Free-form (evidence); preview states briefing / running / debrief / failed checks / shared (**proposed**, see TRACK_RECORD_AND_STUDIO_RULING.md "Studio page design") |
-| F2 StudioNotebook · F3 StudioBoard · F4 StudioChat | Studio design directions to compare with F1 (deck): B notebook (stacked cells, add a lens on the same sources) · C case board (evidence → reasoning → outcomes with strings) · D conversation + live canvas (follow-ups; canvas follows the active turn). Same real data; **operator to pick** |
+| F2 StudioNotebook · F3 StudioBoard · F4 StudioChat | Studio design directions to compare with F1 (deck): B notebook (stacked cells, add a lens on the same sources) · C case board (evidence → reasoning → outcomes with strings) · D conversation + live canvas (follow-ups; canvas follows the active turn). Same real data; **picked 26 Sep: A base + B stacking + C board toggle; D not used** |
 Removed as superseded: Main (v1 light home), Mobile (v1 phone home), Dossier (v3 story dossier with the lane web), Briefings (v1 light editions → replaced by BriefingMode).

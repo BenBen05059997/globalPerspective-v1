@@ -63,7 +63,7 @@
 - The member path is either hidden or honestly labelled "temporarily unavailable".
 - BYOK is the working path. Reword the promise to "your key and content never leave your browser" if an anonymous usage count is added (opt-in).
 
-**Next build: a shareable permalink.** It saves the output **plus a frozen snapshot of the cited sources** (JSON on S3, unguessable id), only when the user clicks Share, with a noindex option, size cap, rate limit and delete link.
+**Next build: a shareable permalink.** It saves the output **plus a frozen snapshot of the cited sources** (unguessable id; **storage corrected to a DynamoDB row with a server-frozen snapshot, see "Studio page design" below**), only when the user clicks Share, with a noindex option, size cap, rate limit and delete link.
 
 **Entry from other pages:**
 - Story mode, the country card and briefings keep "Analyze in Studio →" (prefilled).
@@ -73,6 +73,91 @@
 - Member path promotion and credits. Un-park at ≥10 runs a month for a quarter, measured *after* the example + permalinks ship.
 - New lenses beyond the decided ones.
 - A saved-analysis library.
+
+### Studio page design: debate ruling (2026-09-25). PROPOSED, awaiting the operator
+Three advocates argued:
+- **S-A "Report desk":** a gallery of lenses feeding one fixed report page.
+- **S-B "Case board":** map + string board + findings notebook.
+- **S-C "Ask anywhere":** drawers on every page; the Studio becomes only a library.
+
+Two critics (product; engineering/data honesty) judged them. The ruling is **S-A's report core in a one-screen "Research Bay" frame**.
+- S-B is parked: it is about 3× the permalink work, with no demand signal.
+- S-C is rejected: it contradicts the approved ruling and would duplicate BYOK and auth state inside drawers.
+
+**Corrections to the ruling above** (verified in code and AWS by critic 2):
+- **The validator never fails a run today.**
+  - `hasError` only turns the banner red, and the report still renders (`AnalysisStudio.jsx:387`).
+  - "Fails empty" is new behaviour.
+- **Latent citation bug.**
+  - Perplexity writes its own `[1]`, `[2]` markers against *its* search results.
+  - Our validator reads them as *our* story numbers.
+  - Result: a deep run can falsely flag a citation, or silently point a web claim at one of our stories. Fix it first.
+- **No streaming** (both paths call `res.json()`).
+- **The permalink is a new Lambda, not "JSON on S3".**
+  - A reader's shared report disappears if they delete their account. The DATA_STRATEGY sorting test therefore makes it a **DynamoDB row**, owned by the reader.
+  - The server must be authoritative. If the browser posted prose and sources directly, anyone could publish arbitrary text and `javascript:` links under our domain.
+- **Credits/member copy is still live** (`AnalysisStudio.jsx:185, 202`), even though the ruling says it is gone.
+- **Data freshness.**
+  - Country intelligence is newest 12 Sep; systems webs 10 Sep (14-day TTL, due to expire); the pairs list 7 Sep (cron off).
+  - `newsCountryIntelligence` failed 20/20 again today on "Insufficient Balance".
+  - So the new country/web/bilateral lenses can't honestly launch until the DeepSeek balance returns.
+
+**One screen, `/analyze` (console style):**
+| Zone | Shows |
+|---|---|
+| **Left: OPERATIONS rail** | Only lenses that are shipped and have a fixed output shape: Scenario · Compare · Free-form · Economic ripple (labelled "market-mechanism read"). No locked tiles, no "coming soon". |
+| **Centre: BRIEFING → DEBRIEF** | Objective (lens + question), then assets: up to 4 story chips, each with its date and freshness brightness. Key chip "your key · stays in this browser"; deep-research toggle only when a key supports search; **RUN**. After the run, the same zone becomes the report: Bottom line → Key judgments (probability + confidence) → cited prose → gp-struct visuals. |
+| **Right: INTEL dossier** | Numbered sources: `[1]..[n]` our stories (outlet, date, verbatim snippet); `[W1]..` web sources, kept separate. Oldest/newest source date. Validator panel: citations checked n/n, struct valid. |
+| **Bottom: status strip** | Model · run time · "made by a reader with their own key" · **SHARE** · COPY AS MARKDOWN |
+| **Progress** | Only real steps: sources loaded → running (skeleton + spinner, no streaming in v1) → citations checked → struct valid. No XP, unlocks or gamification. |
+
+- **Validator error:**
+  - the run is **not shareable**;
+  - the prose is hidden behind "failed checks: show anyway (not shareable)";
+  - the reasons are listed.
+- **Signed out:** the same screen, loaded with **one real shared example** (read-only), with RUN replaced by "Sign in to run with your own key".
+- **Share permalink** `/analyze/s/:id`:
+  - read-only DEBRIEF, "run {date} · sources frozen {date}";
+  - "Open these stories live →" and "Run your own →";
+  - noindex (meta + `X-Robots-Tag`, Worker pre-render skips it);
+  - owner-only delete.
+- **"Your shared debriefs on this browser":** a browser-only list (storage wrapped in try/catch). Not a library.
+- **Entry points:**
+  - the existing 5 prefilled links + "Studio" in the nav;
+  - 2 hand-off drawers (scenario from story mode; country deep-dive from the country card). They only prefill and open the page; they never render output.
+
+**Lens roadmap (one at a time):**
+1. Launch: scenario, compare, free-form, economic ripple.
+2. **Country deep-dive**, only when that country's intel is ≤ 48 h old (otherwise "data from {date}" or the lens is withheld). Needs typed sources in `assembleContext`, e.g. `[3] Country intelligence: Japan, generated 12 Sep`.
+3. Explain-this-web.
+4. Bilateral: from fresh PAIR# data, or built from two intel records + shared actors; otherwise a Compare preset.
+5. Generate-a-briefing. It is always labelled "Reader-generated with your own key, from N stories, not a Global Perspectives briefing", is never written to `COUNTRY#`, and is never shown on the card as ours.
+- Streaming last.
+
+**Not built:** case board / Cases table, output inside drawers, an 8-tile gallery, more than 1 example at launch, member path/credits, document upload, PDF export.
+
+**Staged build** (replaces the Studio lines in the staged plan below):
+- **Stage 0 (~1 day):** fix the Perplexity `[n]` collision, number web sources `[W#]`, add the "not shareable on error" state, remove the credits/member copy.
+- **Stage 1 (~3–4 days):** the `newsSharedAnalysis` Lambda.
+  - The client sends `{lens, topicIds, prose, struct, webSources}`.
+  - The server verifies the Firebase JWT, re-fetches and freezes our sources itself, and re-runs the validator and struct checks; it refuses on error.
+  - It allows only http(s) URLs, caps prose at 32 KB and allows 20 shares per user per day.
+  - It stores `SHARE#<128-bit id>` in DynamoDB and serves a public GET plus owner delete.
+  - CORS is emitted in code (the `newsAnalyze` pattern), so its Function-URL CORS config stays empty.
+  - Then the share page and the signed-out example.
+- **Stage 2 (~3 days):** the one-screen Research Bay layout + typed sources + the country deep-dive lens (freshness-gated).
+- **Stage 3+:** explain-web and bilateral after the DeepSeek balance returns; generate-briefing; streaming.
+
+**Decisions for the operator:**
+| # | Decision | Recommendation |
+|---|---|---|
+| S4 | One-screen "Research Bay" layout (rail · briefing/debrief · intel · status) | Yes |
+| S5 | A run that fails the validator is hidden and not shareable | Yes (a change: today it renders with a red banner) |
+| S6 | Shares stored as DynamoDB rows owned by the reader (replaces "JSON on S3") | Yes, per the DATA_STRATEGY sorting test |
+| S7 | New Lambda `newsSharedAnalysis` + its IAM | Needs your yes when we build (IAM is gated) |
+| S8 | Launch with 4 lenses; country deep-dive next, gated to intel ≤ 48 h | Yes |
+| S9 | Signed-out: the same screen with one real shared example | Yes |
+| S10 | Case board, doc upload, PDF, member path | Parked |
 
 ## Staged plan (sizes are the critics' estimates)
 - **Track record:**

@@ -48,15 +48,7 @@
   font-size: 13px; cursor: pointer;
 }
 
-/* ---- HUD: honesty status line (M2) ---- */
-.hud-status-line {
-  display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 7px 12px;
-  min-height: 32px; background: rgba(255, 179, 71, 0.08); border: 1px solid rgba(255, 179, 71, 0.35);
-  border-radius: var(--c-radius-md, 4px); color: var(--c-warn, #ffb347);
-  font-family: var(--c-mono, monospace); font-size: 11px; letter-spacing: var(--c-hud-label-tracking, 0.08em);
-  text-transform: uppercase;
-}
-.hud-status-dot { color: var(--c-warn, #ffb347); font-size: 10px; line-height: 1; }
+/* ---- HUD: honesty status line — styles live in components/HudStatusLine.css (shared by every page) ---- */
 
 /* ---- HUD panels: shared frame (M2; M6 moved brief/sensor out of the map into a row above it) ---- */
 .hud-panel {

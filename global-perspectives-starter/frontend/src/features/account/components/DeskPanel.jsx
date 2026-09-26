@@ -1,6 +1,8 @@
 import { usePreferences } from '@/features/account/hooks/usePreferences';
 import { useMembership } from '@/features/account/hooks/useMembership';
 import { useDeskChanges } from '@/features/account/hooks/useDeskChanges';
+import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
+import { pausedSince } from '@/shared/lib/freshness';
 import DeskSinceLastVisit from '@/features/account/components/DeskSinceLastVisit';
 import DeskFollowing from '@/features/account/components/DeskFollowing';
 import { SavedPanel } from '@/features/account/components/SavedPanel';
@@ -19,6 +21,15 @@ export default function DeskPanel({ savedItems, savedLoading, onUnsave }) {
   const fetchCountries = isMember ? followedCountries : [];
   const { results, loading: changesLoading } = useDeskChanges(fetchCountries);
 
+  // F2.18: "analysis paused" (shown next to stale drift notes below) must reflect the site's own
+  // real paused-since check, not just this panel's own staleness.
+  const { brief: latestBrief, loading: briefLoading, error: briefError } = useDailyBrief();
+  const paused = pausedSince({
+    newestAnalysisAt: latestBrief?.generatedAt,
+    searched: !briefLoading && !briefError,
+    lookbackDays: MAX_LOOKBACK_DAYS,
+  });
+
   return (
     <div className="desk-grid">
       <DeskSinceLastVisit
@@ -26,6 +37,7 @@ export default function DeskPanel({ savedItems, savedLoading, onUnsave }) {
         followedCountries={followedCountries}
         countryResults={results}
         loading={prefsLoading || changesLoading}
+        paused={paused}
       />
       <div className="desk-right">
         <DeskFollowing

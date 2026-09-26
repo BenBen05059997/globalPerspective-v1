@@ -26,7 +26,7 @@ function storiesDateLabel(asOf) {
 export default function HudIntelFeed({
   ranked, focusId, newIds, scannedIds, loading, error, world, onSelect,
   topics = [], topicsAsOf = null, storyFocusId = null, onSelectStory = null, peek = null,
-  label = 'Intel feed',
+  label = 'Intel feed', emptyMessage = null,
 }) {
   const dateLabel = storiesDateLabel(topicsAsOf);
   const now = Date.now();
@@ -45,7 +45,7 @@ export default function HudIntelFeed({
       </div>
       {loading && !world ? <p className="sh-muted">Loading…</p> : null}
       {error && !world ? <p className="sh-muted">Couldn’t load the feed. Retrying automatically.</p> : null}
-      {world && !ranked.length ? <p className="sh-muted">No situations open right now — the map is quiet.</p> : null}
+      {world && !ranked.length ? <p className="sh-muted">{emptyMessage || 'No situations open right now.'}</p> : null}
       <ul className="hud-feed-list">
         {ranked.map((s) => {
           const place = placeOf(s);

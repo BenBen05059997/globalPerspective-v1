@@ -65,8 +65,12 @@ export { TIER_LABEL };
 /**
  * buildLede — deterministic one-sentence summary from counts + the top situation.
  * Counts only, no prose synthesis. Mirrors the design target's lede examples.
+ * `emptyMessage` (F4, review R2): the caller's own computed, honest empty-state line (e.g. "no
+ * disaster alerts open · news situations paused since <date>") — used instead of the generic
+ * "quiet" claim whenever the caller knows something more precise (e.g. that news is paused while
+ * GDACS is still live). Falls back to the generic line only when the caller has nothing better.
  */
-export function buildLede(open = [], hero = null) {
+export function buildLede(open = [], hero = null, emptyMessage = null) {
   const highs = open.filter((s) => s.tier === 'high');
   const elevated = open.filter((s) => s.tier === 'elevated');
   const escalating = open.filter((s) => s.escalating);
@@ -74,7 +78,7 @@ export function buildLede(open = [], hero = null) {
   if (highs.length) head = `${highs.length} high-tier situation${highs.length === 1 ? '' : 's'} active`;
   else if (elevated.length) head = `No high-tier situations · ${elevated.length} elevated worth watching`;
   else if (open.length) head = `${open.length} situation${open.length === 1 ? '' : 's'} tracked · none high`;
-  else return 'The map is quiet — no situations open right now.';
+  else return emptyMessage || 'The map is quiet — no situations open right now.';
 
   // Region clause anchored to the top-ranked situation (the hero) so the sentence and the map
   // callout agree; fall back to the first high/elevated only if the hero has no known region.

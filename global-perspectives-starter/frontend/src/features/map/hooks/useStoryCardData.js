@@ -17,7 +17,11 @@ import { reportFetchError } from '@/shared/api/errorSink.js';
 // rejection contentService throws (see getTopicSummary's own "Summary cache unavailable" reason).
 const REAL_FAILURE_RE = /Proxy HTTP 5\d\d|network ?error|failed to fetch|ECONNRESET|ETIMEDOUT|NetworkError/i;
 
-const EMPTY = { loading: false, summary: null, analysis: null, fetchError: false };
+// F2.18 (review R2): the two fetches (summary, thread analysis) are independent — a real failure
+// on one used to blank the whole card. `summaryError` / `analysisError` are now tracked
+// separately so the caller can keep whichever section actually loaded; `fetchError` stays as the
+// OR of the two for callers that only need to know "was anything wrong".
+const EMPTY = { loading: false, summary: null, analysis: null, summaryError: false, analysisError: false, fetchError: false };
 
 export function useStoryCardData(topic) {
   const topicId = topic?.topicId || null;
@@ -36,7 +40,8 @@ export function useStoryCardData(topic) {
     (async () => {
       let summary = null;
       let analysis = null;
-      let fetchError = false;
+      let summaryError = false;
+      let analysisError = false;
 
       if (topicId) {
         try {
@@ -44,7 +49,7 @@ export function useStoryCardData(topic) {
           if (data?.content) summary = { content: data.content, generatedAt: data.generatedAt || null };
         } catch (err) {
           if (REAL_FAILURE_RE.test(err?.message || '')) {
-            fetchError = true;
+            summaryError = true;
             reportFetchError('story-card-summary', err);
           }
           // else: an honest cache-miss for a story with no summary yet — leave it null.
@@ -57,12 +62,14 @@ export function useStoryCardData(topic) {
           analysis = result?.data?.[threadId] || null;
         } catch (err) {
           // The whole lookup failed (not just a missing key) — that's a real failure.
-          fetchError = true;
+          analysisError = true;
           reportFetchError('story-card-analysis', err);
         }
       }
 
-      if (!cancelled) setState({ loading: false, summary, analysis, fetchError });
+      if (!cancelled) {
+        setState({ loading: false, summary, analysis, summaryError, analysisError, fetchError: summaryError || analysisError });
+      }
     })();
 
     return () => { cancelled = true; };

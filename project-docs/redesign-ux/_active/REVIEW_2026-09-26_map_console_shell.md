@@ -92,6 +92,6 @@ Raw notes: scratchpad `review/`, `hr/`, `rv3_*`, `rv4_*`.
 | Round | Contents | Status |
 |---|---|---|
 | R1 · Speed + bugs | F1.1, F1.2, F1.3, F1.9, F1.10, F2.1–F2.8, F2.20, F2.21 | ✅ 2026-09-27 · verify 45 files / 399 tests (3 clean runs); monitor: warm /map made 1 proxy call, globe renders, stale lint directive removed |
-| R2 · Honesty wording | F1.4–F1.7, F2.18, F2.19, F4 wording | **Now** |
-| R3 · Accessibility + phone | F1.8, F2.9–F2.17 | queued |
+| R2 · Honesty wording | F1.4–F1.7, F2.18, F2.19, F4 wording | ✅ 2026-09-27 · verify 50 files / 425 tests, page guards 38/0; monitor: /daily strings checked live; fixed the status line unstyled off-/map + low contrast on light pages. Left: /track-record "Not yet checked" is a relabel only (the backend counts passed deadlines as unresolved) |
+| R3 · Accessibility + phone | F1.8, F2.9–F2.17 | **Now** |
 | R4 · Design | full-bleed console, approved legend, alert stack, layer switch, nav / tour restyle | queued |

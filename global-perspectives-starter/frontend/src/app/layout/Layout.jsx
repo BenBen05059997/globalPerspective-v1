@@ -96,12 +96,15 @@ function Layout({ children }) {
   // the menu. "Briefings" points at `/daily` until a real `/briefings` route exists.
   // `short` + `icon` feed the phone tab bar (P1/A2) — same five items, short labels, a small
   // inline-SVG icon per item (no icon library).
+  // F1.6 (review R2): plain, true tooltips — no claim of "today"/"live" the data can't back up
+  // while analysis is paused, no member-analysis claim (Studio's member path is broken/parked),
+  // no "every forecast publicly scored" (only 122 resolved, one week, unscored track record).
   const navLinks = [
-    { to: '/map', label: 'Map', short: 'Map', icon: IconMap, title: "Today's coverage on a world map — the spatial view of the same live topics." },
-    { to: '/weekly', label: 'Stories', short: 'Stories', icon: IconStories, title: 'Ongoing story arcs ranked by risk — what leads, what develops, how each has evolved.' },
-    { to: '/daily', label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The end-of-day intelligence brief: one synthesised read of what mattered today.' },
-    { to: '/analyze', label: 'Studio', short: 'Studio', icon: IconStudio, title: 'Analysis Studio — run a cited AI deep-dive across up to 4 stories (your key, or ours as a member).' },
-    { to: '/track-record', label: 'Track record', short: 'Record', icon: IconRecord, title: 'Accountability hub — every forecast publicly scored, every revised conclusion logged.' },
+    { to: '/map', label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
+    { to: '/weekly', label: 'Stories', short: 'Stories', icon: IconStories, title: 'Every story we follow, as board, table, map or web.' },
+    { to: '/daily', label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The daily and weekly briefings, with every past edition.' },
+    { to: '/analyze', label: 'Studio', short: 'Studio', icon: IconStudio, title: 'Analyse our stories with your own AI key.' },
+    { to: '/track-record', label: 'Track record', short: 'Record', icon: IconRecord, title: 'How our forecasts are logged and checked as they come due.' },
   ];
 
   const isActive = (to, exact) => {

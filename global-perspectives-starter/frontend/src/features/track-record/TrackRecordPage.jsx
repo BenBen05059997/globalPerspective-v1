@@ -6,8 +6,21 @@ import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
 import { FollowButton } from '@/features/account/components/FollowButton';
 import '@/features/track-record/TrackRecordPage.css';
 
-function brierVerdict(b) {
+// F4 (review R2): the pilot run has resolved ~122 triggers, all from one July week (project
+// state, verified 2026-09-27) — nowhere near enough of a sample, or enough calendar spread, to
+// earn a confidence verdict like "strong". Below this floor, say so plainly instead.
+const MIN_RESOLVED_FOR_VERDICT = 500;
+const VERDICT_LABEL = {
+  early: 'early read — too few to judge',
+  excellent: 'excellent',
+  strong: 'strong',
+  fair: 'fair',
+  weak: 'weak',
+};
+
+function brierVerdict(b, resolvedTriggers) {
   if (b == null) return null;
+  if (resolvedTriggers != null && resolvedTriggers < MIN_RESOLVED_FOR_VERDICT) return 'early';
   if (b <= 0.1) return 'excellent';
   if (b <= 0.2) return 'strong';
   if (b <= 0.25) return 'fair';
@@ -113,7 +126,7 @@ export default function TrackRecordPage() {
   } = data;
 
   const hasResolved = resolvedTriggers > 0;
-  const verdict = brierVerdict(brierScore);
+  const verdict = brierVerdict(brierScore, resolvedTriggers);
 
   return (
     <div className="tr-page">
@@ -150,7 +163,10 @@ export default function TrackRecordPage() {
           </div>
           <div className="tr-stat">
             <span className="tr-stat-num">{pendingTriggers}</span>
-            <span className="tr-stat-label">Awaiting their deadline</span>
+            {/* F4 (review R2): the backend counts every trigger with no verdict yet, including
+                ones whose deadline has already passed — "awaiting their deadline" implied all of
+                them were still in their future window, which many aren't. */}
+            <span className="tr-stat-label">Not yet checked</span>
           </div>
         </section>
 
@@ -159,7 +175,7 @@ export default function TrackRecordPage() {
             <div className="tr-brier">
               <div className="tr-brier-score">
                 <span className="tr-brier-num">{brierScore}</span>
-                {verdict && <span className={`tr-brier-verdict ${verdict}`}>{verdict}</span>}
+                {verdict && <span className={`tr-brier-verdict ${verdict}`}>{VERDICT_LABEL[verdict]}</span>}
               </div>
               <p className="tr-brier-explain">
                 Brier score across {resolvedTriggers} resolved triggers ({firedTriggers} fired).

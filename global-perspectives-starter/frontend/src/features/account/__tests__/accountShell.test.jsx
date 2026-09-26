@@ -34,6 +34,11 @@ vi.mock('@/shared/api/restProxy', () => ({
   billingConfigured: () => false,
   creditPacks: () => [],
   fetchCountryHistory: vi.fn(() => Promise.resolve({ success: true, snapshots: [], driftNotes: [], driftNotesTotal: 0, driftNotesGated: false })),
+  // F1.4 (review R2): the Alerts panel now computes the weekly-brief note from real data —
+  // both a fresh brief and no analysis pause by default, so other sections' assertions are
+  // unaffected.
+  fetchDailyBrief: vi.fn(() => Promise.resolve({ data: { generatedAt: new Date().toISOString() } })),
+  fetchWeeklyBrief: vi.fn(() => Promise.resolve({ data: null })),
 }));
 
 import Account from '@/features/account/Account';
@@ -50,6 +55,13 @@ function renderAccount(path = '/account') {
 
 beforeEach(() => {
   authUser = { uid: 'u1', email: 'reader@example.com', isAnonymous: false, metadata: {} };
+  // useDailyBrief keeps a module-level (localStorage-backed) cache keyed by date — clear it so
+  // each test's fetchDailyBrief mock is actually consulted instead of a previous test's cache hit.
+  try { localStorage.clear(); } catch { /* ignore */ }
+  // usePreferences short-circuits to its "email delivery isn't live yet" state unless this is set
+  // (mirrors docs/config.js in prod) — needed so the Alerts panel tests below exercise the real,
+  // per-channel wording rather than the endpoint-missing placeholder.
+  window.USER_PREFS_ENDPOINT = true;
 });
 
 describe('Account — signed out', () => {
@@ -109,5 +121,38 @@ describe('Account — signed in shell', () => {
   it('no ?tab= at all also resolves to desk', async () => {
     renderAccount('/account');
     expect(await screen.findByRole('heading', { name: 'Your desk' })).toBeInTheDocument();
+  });
+
+  it('Studio only promises "your key" — no shared-analyses/receipts claim (F1.5)', async () => {
+    renderAccount('/account?tab=studio');
+    await screen.findByRole('heading', { name: 'Studio' });
+    const body = document.body.textContent.toLowerCase();
+    expect(body).not.toMatch(/shared analyses/);
+    expect(body).not.toMatch(/receipts/);
+    expect(body).toMatch(/your key/);
+  });
+});
+
+describe('Account — Alerts & email real per-channel state (F1.4)', () => {
+  it('shows breaking news and country change-alerts as paused/not sending, with disabled toggles', async () => {
+    renderAccount('/account?tab=alerts');
+    await screen.findByRole('heading', { name: 'What you will be told' });
+    expect(await screen.findByText(/Breaking news alerts — paused, not sending/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Country change-alerts — paused, not sending/i)).toBeInTheDocument();
+    const breakingSwitch = screen.getByRole('switch', { name: /Breaking news alerts/i });
+    expect(breakingSwitch).toBeDisabled();
+    expect(breakingSwitch).toHaveAttribute('aria-checked', 'false');
+    // No leftover contradicting "email delivery is live" header.
+    const body = document.body.textContent;
+    expect(body).not.toMatch(/Email delivery is live/i);
+  });
+
+  it('adds a "no edition since <date> while analysis is paused" note to the weekly brief when analysis is paused', async () => {
+    const restProxy = await import('@/shared/api/restProxy');
+    const oldGeneratedAt = new Date(Date.now() - 40 * 60 * 60 * 1000).toISOString(); // 40h — past the 36h pause threshold
+    restProxy.fetchDailyBrief.mockResolvedValue({ data: { generatedAt: oldGeneratedAt } });
+    restProxy.fetchWeeklyBrief.mockResolvedValue({ data: { weekOf: '2026-09-06' } });
+    renderAccount('/account?tab=alerts');
+    expect(await screen.findByText(/No edition since Sep 6 while analysis is paused/i)).toBeInTheDocument();
   });
 });

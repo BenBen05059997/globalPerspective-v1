@@ -44,7 +44,7 @@ export const SITE_INTRO = {
     },
     {
       element: '[data-tour="nav-/map"]',
-      popover: { title: 'Map', description: 'Today’s coverage on a world map — the spatial view of the same live topics.', side: 'bottom', align: 'start' },
+      popover: { title: 'Map', description: 'Where events happen, from the latest stories and live disaster alerts.', side: 'bottom', align: 'start' },
     },
     {
       element: '[data-tour="nav-/weekly"]',

@@ -2,6 +2,7 @@ import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } fro
 import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
+import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief.js';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics.js';
 import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
@@ -43,6 +44,7 @@ const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };
 const TIER_HINT = { high: 'read this first', elevated: 'worth watching today', moderate: 'developing', low: 'on the record' };
 const TOUR_MAX = 6;
+const GDACS_FRESH_MS = 2 * 60 * 60 * 1000;
 
 function fmtAgo(iso) {
   if (!iso) return '—';
@@ -63,6 +65,12 @@ function fmtSince(iso) {
   const d = new Date(iso); const days = (Date.now() - d.getTime()) / 86400000;
   if (days < 1) return 'earlier today';
   if (days < 7) return d.toLocaleDateString(undefined, { weekday: 'long' });
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+function fmtShortDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
@@ -255,8 +263,6 @@ export default function SituationHome() {
     return c;
   }, [open]);
   const newsAxesEmpty = counts.conflict + counts.political + counts.economic === 0;
-  const ledeBase = useMemo(() => buildLede(open, hero), [open, hero]);
-  const lede = newCount && lastSeen ? `${ledeBase} · ${newCount} new since ${fmtSince(lastSeen)}` : ledeBase;
 
   // Honesty status line + sensor panel (M2). newestAnalysisAt is reused from the /daily page's
   // own "find the latest published edition" lookup — useDailyBrief() with no dateKey defaults to
@@ -270,6 +276,26 @@ export default function SituationHome() {
     searched: !briefLoading && !briefError,
     lookbackDays: MAX_LOOKBACK_DAYS,
   }), [latestBrief, briefLoading, briefError]);
+
+  // F4 (review R2): the "Elsewhere" teasers below used to claim a fixed cadence ("summarised each
+  // morning", "each week") regardless of whether the pipeline is actually running. Show the real
+  // latest-edition date (computed, never typed) and a paused note when applicable instead.
+  const { brief: latestWeeklyBrief } = useWeeklyBrief();
+  const latestDailyEditionLabel = fmtShortDate(latestBrief?.generatedAt);
+  const latestWeeklyEditionLabel = latestWeeklyBrief?.weekOf ? fmtShortDate(latestWeeklyBrief.weekOf + 'T00:00:00Z') : null;
+
+  // F4 (review R2): "the map is quiet" used to show even while GDACS is live and only the news
+  // layer is paused — say precisely what's true instead (no disaster alerts open, news paused
+  // since a computed date) rather than the blanket "quiet" claim.
+  const emptyLede = useMemo(() => {
+    if (!paused) return null;
+    return paused.beyondLookback
+      ? `No disaster alerts open · news situations paused — ${paused.text}`
+      : `No disaster alerts open · news situations paused since ${paused.label}`;
+  }, [paused]);
+  const ledeBase = useMemo(() => buildLede(open, hero, emptyLede), [open, hero, emptyLede]);
+  const lede = newCount && lastSeen ? `${ledeBase} · ${newCount} new since ${fmtSince(lastSeen)}` : ledeBase;
+
   const tierCounts = useMemo(() => {
     const c = { high: 0, elevated: 0, moderate: 0, low: 0 };
     for (const s of open) if (c[s.tier] != null) c[s.tier]++;
@@ -296,6 +322,15 @@ export default function SituationHome() {
     }
     return rows;
   }, [world, newsSituationCount, paused]);
+
+  // F2.19: "DISASTER ALERTS LIVE" only when the world file's GDACS source was actually checked
+  // recently (< 2h) — never a standing claim independent of the data.
+  const gdacsFresh = useMemo(() => {
+    const ts = world?.sources?.gdacs;
+    if (!ts) return false;
+    const age = Date.now() - new Date(ts).getTime();
+    return Number.isFinite(age) && age >= 0 && age < GDACS_FRESH_MS;
+  }, [world]);
 
   const selected = useMemo(() => situations.find((s) => s.id === focus) || null, [situations, focus]);
   const focusMissing = focus && !selected;              // deep link to an expired/archived situation
@@ -445,7 +480,7 @@ export default function SituationHome() {
         </div>
 
         {open.length === 0 && world ? (
-          <div className="sh-quiet">Quiet day — no situations open right now.</div>
+          <div className="sh-quiet">{emptyLede || 'No situations open right now.'}</div>
         ) : null}
 
         {legendOpen ? (
@@ -522,7 +557,7 @@ export default function SituationHome() {
       ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
       onSelect={userSelect}
       topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
-      onSelectStory={userSelectStory} peek={mapPeek}
+      onSelectStory={userSelectStory} peek={mapPeek} emptyMessage={emptyLede}
     />
   );
 
@@ -550,7 +585,7 @@ export default function SituationHome() {
 
       <OrientationBanner />
 
-      <HudStatusLine paused={paused} />
+      <HudStatusLine paused={paused} storiesAsOf={topicsAsOf} gdacsFresh={gdacsFresh} />
 
       {stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null}
 
@@ -602,14 +637,14 @@ export default function SituationHome() {
                 ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
                 onSelect={userSelect}
                 topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
-                onSelectStory={userSelectStory} peek={mapPeek}
+                onSelectStory={userSelectStory} peek={mapPeek} emptyMessage={emptyLede}
               />
             </div>
           ) : (
             <div id="sh-panel-alerts" role="tabpanel" aria-labelledby="sh-tab-alerts" className="sh-phone-panel">
               <HudIntelFeed
                 ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
-                onSelect={userSelect} label="Alerts"
+                onSelect={userSelect} label="Alerts" emptyMessage={emptyLede}
               />
             </div>
           )}
@@ -639,15 +674,25 @@ export default function SituationHome() {
           <div className="sh-fold-cols">
             <div><h4>What we track</h4><p>Every situation belongs to one of four axes — conflict, political, economic, humanitarian. A situation opens when independent outlets converge on the same event in the same place, and it stays open while coverage continues. Severe natural disasters come straight from the UN/EU GDACS feed.</p></div>
             <div><h4>How severity is scored</h4><p>The tier — low, moderate, elevated, high — is derived from how many outlets are covering a situation, how far it has spread, and how fast that is changing since the last run. Disaster tiers come from the reported hazard values. The inputs are shown on every situation.</p></div>
-            <div><h4>How often it updates</h4><p>The feed is re-scored on a fixed cycle. The stamp in the header shows the age of the data you are looking at, not the age of the page. A situation marked escalating has moved up since the last run.</p></div>
+            <div><h4>How often it updates</h4><p>
+              {paused
+                ? `The GDACS disaster feed is checked on a fixed cycle. News situations are re-scored when the classification pipeline runs — that has been paused since ${paused.beyondLookback ? paused.text : paused.label}.`
+                : 'The GDACS disaster feed is checked on a fixed cycle, and news situations are re-scored each time the classification pipeline runs.'}
+              {' '}The stamp in the header shows the age of the data you are looking at, not the age of the page. A situation marked escalating has moved up since the last run.
+            </p></div>
           </div>
         </div>
 
         <div className="sh-fold-teasers">
           <h4 className="sh-lbl">Elsewhere on Global Perspectives</h4>
           <div className="sh-teasers">
-            <Link to="/daily"><b>Daily Brief</b><span>The day’s developments, gathered and summarised each morning.</span></Link>
-            <Link to="/weekly-brief"><b>Weekly</b><span>One long synthesis each week, with the reasoning shown.</span></Link>
+            <Link to="/daily"><b>Daily Brief</b><span>
+              {latestDailyEditionLabel ? `Latest edition ${latestDailyEditionLabel}` : 'The day’s developments, gathered and synthesised'}
+              {paused ? ' — analysis paused.' : '.'}
+            </span></Link>
+            <Link to="/weekly-brief"><b>Weekly</b><span>
+              {latestWeeklyEditionLabel ? `Latest edition ${latestWeeklyEditionLabel}, with the reasoning shown.` : 'A long synthesis, with the reasoning shown.'}
+            </span></Link>
             <Link to="/track-record"><b>Track Record</b><span>Every forecast scored against what happened, including the misses.</span></Link>
             <Link to="/analyze"><b>Analysis Studio</b><span>Bring a question and get a cited, structured analysis.</span></Link>
           </div>

@@ -232,7 +232,7 @@ export default function DailyPage() {
         <h3>No brief available</h3>
         <p>
           {isToday
-            ? "Today's brief hasn't been generated yet. It publishes at the end of the day — check back soon."
+            ? "No brief has been generated in the last month. This looks like a real gap, not a same-day delay."
             : `No brief was published within about a month of ${dateKey} — this looks like a real gap in the archive, not a delay.`}
         </p>
         <div className="daily-empty-links">
@@ -287,12 +287,13 @@ export default function DailyPage() {
         </div>
       </div>
 
-      {/* Honest fallback notice — requested "today" but today's brief isn't out yet */}
+      {/* Honest fallback notice — requested "today" but today's brief isn't out yet. F4 (review
+          R2): "publishes at the end of the day" implies a same-day delay; during a multi-day
+          outage that's false — say plainly there's been no new edition since the served date. */}
       {isToday && servedIsOlderThanRequest && (
         <div className="daily-fallback-note">
-          Today&rsquo;s brief publishes at the end of the day — showing{' '}
-          <strong>{brief.displayDate || servedDateKey}</strong>
-          {relLabel ? ` (${relLabel.toLowerCase()})` : ''}.
+          No new brief since <strong>{brief.displayDate || servedDateKey}</strong>
+          {relLabel ? ` (${relLabel.toLowerCase()})` : ''} while analysis is paused.
         </div>
       )}
 
@@ -303,7 +304,13 @@ export default function DailyPage() {
           <span className="daily-masthead-center">Global Perspectives™</span>
           <span>{brief.displayDate || dateKey}</span>
         </div>
-        <h1 className="daily-masthead-h1">Today's <em>Brief</em></h1>
+        {/* F4 (review R2): "Today's Brief" implied the shown edition IS today's — false during a
+            multi-day outage. Say "Latest brief" plus the real served date whenever it isn't. */}
+        <h1 className="daily-masthead-h1">
+          {isToday && !servedIsOlderThanRequest
+            ? <>Today's <em>Brief</em></>
+            : <>Latest <em>Brief</em> · {brief.displayDate || servedDateKey || dateKey}</>}
+        </h1>
         <div className="daily-masthead-sub">
           A single read on what the world's newsroom cycle was actually about.
         </div>
@@ -313,7 +320,8 @@ export default function DailyPage() {
               ? <>Generated <strong>{formatTimeAgo(brief.generatedAt)}</strong></>
               : 'AI-generated'}
           </span>
-          <span>AI-generated · analyst-reviewed</span>
+          {/* F4: no human review step is evidenced anywhere in the repo — say only what's true. */}
+          <span>AI-generated</span>
         </div>
       </header>
 

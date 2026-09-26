@@ -11,7 +11,7 @@ import { Link } from 'react-router-dom';
 import { useStoryCardData } from '@/features/map/hooks/useStoryCardData.js';
 import { summaryFacts, firstSentences } from '@/features/map/lib/cardText.js';
 import { rootCauseSteps } from '@/shared/lib/rootCause.js';
-import { crisisHueForCategory, crisisTypeForCategory, CRISIS_LABEL } from '@/features/map/lib/crisisHue.js';
+import { crisisHueForCategory } from '@/features/map/lib/crisisHue.js';
 import { freshnessState } from '@/shared/lib/freshness.js';
 import { threadPath } from '@/shared/lib/threadPath';
 
@@ -25,27 +25,40 @@ function fmtDate(iso) {
 }
 
 export default function StoryCard({ topic, asOf, onBack, activeCount = 0 }) {
-  const { loading, summary, analysis, fetchError } = useStoryCardData(topic);
+  const { loading, summary, analysis, summaryError, analysisError, fetchError } = useStoryCardData(topic);
   if (!topic) return null;
 
   const id = topic.threadId || topic.topicId || null;
+  // F1.7 (review R2): show the topic's real category word (e.g. "climate", "energy") — the
+  // crisis-type mapping stays for the hue dot only, never as the visible label (StoryPeek already
+  // did this via peekData.js; this brings the card into agreement with it).
   const category = topic.category || null;
   const hue = category ? crisisHueForCategory(category) : null;
-  const categoryLabel = category ? (CRISIS_LABEL[crisisTypeForCategory(category)] || category) : null;
+  const categoryLabel = category ? String(category) : null;
   const primaryCountry = topic.primaryCountry || (Array.isArray(topic.regions) ? topic.regions[0] : null);
-  const updatedLabel = fmtDate(asOf);
-  const ageDays = asOf ? (Date.now() - new Date(asOf).getTime()) / 86400000 : null;
+  // F2.18: `asOf` is the whole feed batch's date, shared by every topic — showing it as "updated"
+  // on one story implies a per-story check that never happened. Prefer a real per-topic date when
+  // the record actually carries one; otherwise say plainly that it's the feed's date, not this
+  // story's.
+  const topicOwnDate = topic.date || topic.publishedAt || topic.firstSeenAt || topic.updatedAt || null;
+  const ownDateLabel = topicOwnDate ? fmtDate(topicOwnDate) : null;
+  const feedDateLabel = !ownDateLabel ? fmtDate(asOf) : null;
+  const effectiveAsOf = topicOwnDate || asOf;
+  const ageDays = effectiveAsOf ? (Date.now() - new Date(effectiveAsOf).getTime()) / 86400000 : null;
   const isOlder = freshnessState(ageDays) === 'older';
 
-  const summaryItems = !fetchError && summary?.content ? summaryFacts(summary.content, 3) : [];
+  // F2.18: the two fetches are independent — a real failure on one keeps the section that loaded
+  // instead of blanking the whole card.
+  const summaryItems = !summaryError && summary?.content ? summaryFacts(summary.content, 3) : [];
   const summaryText = summaryItems.length ? summaryItems : null;
-  const trajectoryText = !fetchError && analysis?.trajectory ? firstSentences(analysis.trajectory, 2) : null;
-  const causeSteps = !fetchError && analysis?.rootCauseChain ? rootCauseSteps(analysis.rootCauseChain).slice(0, 3) : [];
+  const summaryDateLabel = fmtDate(summary?.generatedAt);
+  const trajectoryText = !analysisError && analysis?.trajectory ? firstSentences(analysis.trajectory, 2) : null;
+  const causeSteps = !analysisError && analysis?.rootCauseChain ? rootCauseSteps(analysis.rootCauseChain).slice(0, 3) : [];
   const analysisDateLabel = fmtDate(analysis?.generatedAt);
 
   const openFullStoryHref = threadPath(id);
   const studioId = topic.topicId || topic.threadId || null;
-  const studioHref = studioId ? `/analyze?stories=${encodeURIComponent(studioId)}` : null;
+  const studioHref = !fetchError && studioId ? `/analyze?stories=${encodeURIComponent(studioId)}` : null;
 
   const hasBody = summaryText || trajectoryText || causeSteps.length > 0;
 
@@ -62,13 +75,13 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0 }) {
             </span>
           ) : null}
           {primaryCountry ? <span className="sc-country">{primaryCountry}</span> : null}
-          {updatedLabel ? <span className="sc-updated">updated {updatedLabel}</span> : null}
+          {ownDateLabel ? <span className="sc-updated">updated {ownDateLabel}</span> : feedDateLabel ? <span className="sc-updated">stories from {feedDateLabel}</span> : null}
           {isOlder ? <span className="sc-older">older</span> : null}
         </div>
         <h2 className="sc-title">{topic.title}</h2>
       </div>
 
-      {fetchError ? null : loading ? (
+      {loading ? (
         <div className="sc-skeleton" aria-hidden="true">
           <div className="sc-skel-line" />
           <div className="sc-skel-line" />
@@ -80,7 +93,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0 }) {
             <section className="sc-section">
               <h3 className="sc-section-lbl">What is happening</h3>
               <ul className="sc-facts">{summaryText.map((f, i) => <li key={i} className="sc-text">{f}</li>)}</ul>
-              <p className="sc-model-tag">AI SUMMARY OF THE SOURCES</p>
+              <p className="sc-model-tag">AI SUMMARY OF THE SOURCES{summaryDateLabel ? ` · ${summaryDateLabel}` : ''}</p>
             </section>
           ) : null}
 
@@ -109,7 +122,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0 }) {
 
       <div className="sh-detail-foot sc-foot">
         <Link to={openFullStoryHref}>Open full story →</Link>
-        {!fetchError && studioHref ? <Link to={studioHref}>Analyze in Studio →</Link> : null}
+        {studioHref ? <Link to={studioHref}>Analyze in Studio →</Link> : null}
       </div>
     </div>
   );

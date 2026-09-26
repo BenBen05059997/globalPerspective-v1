@@ -10,6 +10,9 @@ import { getProvider } from '@/features/analysis-studio/lib/llm';
 import ProviderModal from '@/features/analysis-studio/components/ProviderModal';
 import DeskPanel from '@/features/account/components/DeskPanel';
 import { ACCOUNT_CLAIMS, ACCOUNT_NOTE } from '@/features/account/lib/accountClaims';
+import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
+import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
+import { pausedSince } from '@/shared/lib/freshness';
 import '@/features/account/Account.css';
 
 // Mask a key for display: keep a few head/tail chars, hide the middle.
@@ -307,9 +310,38 @@ function ToggleRow({ label, desc, checked, disabled, onChange }) {
   );
 }
 
+// Real per-channel state, computed rather than typed (CLAUDE.md: never invent dates). The
+// breaking-news and country change-alert crons are DISABLED site-wide today (project state,
+// verified 2026-09-27) — that's an operational fact, not a per-user preference, so both channels
+// show "paused — not sending" and their toggles are disabled regardless of the stored opt-in,
+// rather than implying a subscribe click would do anything. Flip these back to opt-in-driven
+// once either cron is turned back on.
+const BREAKING_CRON_LIVE = false;
+const DRIFT_CRON_LIVE = false;
+
+function fmtShortDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 function NotificationsPanel() {
   const { prefs, loading, saving, error, save, follow, endpointMissing } = usePreferences();
   const [notice, setNotice] = useState(null); // transient subscribe/unsubscribe confirmation
+
+  // F1.4 (review R2): the weekly-brief note ("no edition since <date> while analysis is paused")
+  // is computed from the two real sources — the latest published edition (useWeeklyBrief) and
+  // whether analysis is currently paused (useDailyBrief + pausedSince, the same helper the map
+  // console and site-wide status line use).
+  const { brief: weeklyBrief } = useWeeklyBrief();
+  const { brief: latestDailyBrief, loading: dailyLoading, error: dailyError } = useDailyBrief();
+  const analysisPaused = pausedSince({
+    newestAnalysisAt: latestDailyBrief?.generatedAt,
+    searched: !dailyLoading && !dailyError,
+    lookbackDays: MAX_LOOKBACK_DAYS,
+  });
+  const lastWeeklyEditionLabel = weeklyBrief?.weekOf ? fmtShortDate(weeklyBrief.weekOf + 'T00:00:00Z') : null;
 
   // Save a change, then show a confirmation only if it actually persisted.
   async function change(patch, msg) {
@@ -332,22 +364,26 @@ function NotificationsPanel() {
         ) : (
           <>
             <div style={{ fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
-              Email delivery is live. Turn a channel on to subscribe, off to unsubscribe — changes take effect immediately.
+              Each channel below shows its real state — nothing here claims to be sending when it isn’t.
             </div>
 
             <ToggleRow
-              label="Breaking news alerts"
-              desc="An email the moment a major story breaks, with our analysis."
-              checked={prefs.breakingOptIn}
-              disabled={saving}
+              label="Breaking news alerts — paused, not sending"
+              desc="The breaking-news email is currently off site-wide. Turning this on saves your preference but won’t send anything until it’s re-enabled."
+              checked={BREAKING_CRON_LIVE && prefs.breakingOptIn}
+              disabled={saving || !BREAKING_CRON_LIVE}
               onChange={(v) => change({ breakingOptIn: v }, v ? 'Subscribed to breaking alerts.' : 'Unsubscribed from breaking alerts.')}
             />
             <ToggleRow
-              label="Weekly digest"
-              desc="A roundup of the most significant stories."
+              label="Weekly brief"
+              desc={
+                analysisPaused && lastWeeklyEditionLabel
+                  ? `A roundup of the most significant stories. No edition since ${lastWeeklyEditionLabel} while analysis is paused.`
+                  : 'A roundup of the most significant stories.'
+              }
               checked={prefs.digestOptIn}
               disabled={saving}
-              onChange={(v) => change({ digestOptIn: v }, v ? 'Subscribed to the weekly digest.' : 'Unsubscribed from the weekly digest.')}
+              onChange={(v) => change({ digestOptIn: v }, v ? 'Subscribed to the weekly brief.' : 'Unsubscribed from the weekly brief.')}
             />
 
             {prefs.digestOptIn && (
@@ -391,10 +427,10 @@ function NotificationsPanel() {
       {/* Country change-alerts — the member "follow a country's read" list (drift alerts, P5). */}
       {!endpointMissing && !loading && (
         <div style={SECTION}>
-          <div style={{ ...LABEL, marginBottom: '0.35rem' }}>Country change-alerts</div>
+          <div style={{ ...LABEL, marginBottom: '0.35rem' }}>Country change-alerts — paused, not sending</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
-            We email you when our read on a country you follow materially changes — grounded in the cited event that moved it.
-            Follow a country from its page (tap <span style={{ whiteSpace: 'nowrap' }}>🔔 Follow</span>).
+            When live, we email you when our read on a country you follow materially changes — grounded in the cited event that moved it.
+            This is currently off site-wide, so your follow list is kept but nothing sends. Follow a country from its page (tap <span style={{ whiteSpace: 'nowrap' }}>🔔 Follow</span>).
           </div>
 
           {(prefs.followedCountries || []).length === 0 ? (
@@ -420,9 +456,9 @@ function NotificationsPanel() {
               ))}
               <ToggleRow
                 label="Pause all change-alerts"
-                desc="Keep your follow list but stop the emails. Turn off to resume."
-                checked={!prefs.driftOptIn}
-                disabled={saving}
+                desc="These emails are already off site-wide, so this has no further effect right now — it will apply once change-alerts are back on."
+                checked={!DRIFT_CRON_LIVE || !prefs.driftOptIn}
+                disabled={saving || !DRIFT_CRON_LIVE}
                 onChange={(paused) => change({ driftOptIn: !paused }, paused ? 'Change-alerts paused.' : 'Change-alerts resumed.')}
               />
             </>
@@ -440,8 +476,8 @@ const SECTIONS = [
     title: 'Your desk', sub: 'What changed since your last visit, what you follow, and what you saved.' },
   { id: 'alerts',  label: 'Alerts & email',    subtitle: 'what you will be told',              kicker: 'ALERTS & EMAIL',
     title: 'What you will be told', sub: 'Every email with its real state — nothing claims to be on when the thing behind it is paused.' },
-  { id: 'studio',  label: 'Studio',            subtitle: 'your key · shared analyses · receipts', kicker: 'STUDIO',
-    title: 'Studio', sub: 'Your AI key, stored only in this browser, and what you made with it.' },
+  { id: 'studio',  label: 'Studio',            subtitle: 'your key', kicker: 'STUDIO',
+    title: 'Studio', sub: 'Your AI key, stored only in this browser — analysis runs on your key.' },
   { id: 'plan',    label: 'Plan',              subtitle: 'membership · billing',                kicker: 'PLAN',
     title: 'Plan', sub: 'What you pay and what it includes today. Billing is handled by Polar.' },
   { id: 'profile', label: 'Profile & sign-in', subtitle: 'email · sign out',                    kicker: 'PROFILE & SIGN-IN',

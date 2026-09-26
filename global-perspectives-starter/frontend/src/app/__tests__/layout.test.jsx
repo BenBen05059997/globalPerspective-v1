@@ -128,8 +128,11 @@ describe('Layout — site-wide status line', () => {
     const old = new Date(Date.now() - 40 * 60 * 60 * 1000).toISOString(); // 40h old
     fetchDailyBrief.mockResolvedValue({ data: { generatedAt: old } });
     renderLayout('/weekly');
-    const text = await screen.findByText(/NEW STORIES AND ANALYSIS PAUSED SINCE/i);
+    const text = await screen.findByText(/ANALYSIS PAUSED SINCE/i);
     expect(text).toBeTruthy();
+    // Layout has no topics/world data loaded — it must not claim "last stories" or "disaster
+    // alerts live" it hasn't checked (F2.19).
+    expect(text.textContent).not.toMatch(/LAST STORIES|DISASTER ALERTS/i);
   });
 
   it('shows nothing when the newest brief is fresh', async () => {

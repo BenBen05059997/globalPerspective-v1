@@ -87,6 +87,7 @@
   padding: 4px 10px;
   border-radius: var(--r-pill);
 }
+.tr-brier-verdict.early     { background: var(--surface-2, #eef1f4); color: var(--text-muted); text-transform: none; letter-spacing: normal; }
 .tr-brier-verdict.excellent { background: var(--risk-l-soft); color: var(--risk-l); }
 .tr-brier-verdict.strong    { background: var(--risk-l-soft); color: var(--risk-l); }
 .tr-brier-verdict.fair      { background: var(--risk-e-soft); color: var(--risk-e); }

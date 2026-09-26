@@ -1,5 +1,26 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Review fix round R2: honest wording everywhere; branch `map-console`, local only)
+
+- **Account → Alerts:** one true state per channel. Weekly brief (on/off; "no edition since <date> while analysis is paused", computed); breaking-news alerts and country change-alerts "paused, not sending" (toggles disabled; flags `BREAKING_CRON_LIVE` / `DRIFT_CRON_LIVE` = false).
+- **Studio section:** "your key" only.
+- **Nav tooltips + tour:** plain true wording (e.g. Studio "Analyse our stories with your own AI key"; Track record "How our forecasts are logged and checked as they come due").
+- **Story card:**
+  - shows the real category word (hue still from the crisis mapping);
+  - the AI summary is dated;
+  - "updated" uses the story's own date, else "stories from <feed date>";
+  - one failed fetch no longer hides the part that loaded.
+- **Desk:** "MODEL JUDGMENT · stored explanation"; "paused" only when `pausedSince()` says so.
+- **Status line:** "ANALYSIS PAUSED SINCE <date> · LAST STORIES <date> · DISASTER ALERTS LIVE" on /map. Site-wide it shows only the parts it can compute.
+  - Its styles moved into `HudStatusLine.css`, so it renders the same everywhere.
+  - Monitor fix: a dark-amber variant on the light pages (6.7:1 contrast).
+- **Existing pages:**
+  - /map "The map is quiet" → "No disaster alerts open · news situations paused since <date>"; teasers + "How often it updates" made true;
+  - /daily "Today's Brief" on an old edition → "Latest Brief · <date>", with "No new brief since … while analysis is paused"; the "analyst-reviewed" badge removed (no review step evidenced in the repo);
+  - /about hourly/daily claims → "When the pipeline runs…" + computed pause;
+  - /track-record "Awaiting their deadline" → "Not yet checked"; the "STRONG" verdict → "early read — too few to judge" below 500 resolved.
+- Tests: 425.
+
 ## 2026-09-27 (Review fix round R1: speed + bugs; branch `map-console`, local only)
 
 Fixes from `REVIEW_2026-09-26_map_console_shell.md`:

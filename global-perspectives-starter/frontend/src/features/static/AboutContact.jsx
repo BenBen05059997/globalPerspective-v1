@@ -1,8 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
+import { pausedSince } from '@/shared/lib/freshness';
 
 export default function AboutContact() {
   useEffect(() => { document.title = 'About — Global Perspectives'; }, []);
+
+  // F4 (review R2): "hundreds of articles daily" / "every hour" / "every 4 hours" were fixed-rate
+  // claims the current (paused) pipeline can't back up — replaced with "when the pipeline runs"
+  // wording, plus a real computed paused-since date rather than an invented number.
+  const { brief: latestBrief, loading: briefLoading, error: briefError } = useDailyBrief();
+  const paused = useMemo(() => pausedSince({
+    newestAnalysisAt: latestBrief?.generatedAt,
+    searched: !briefLoading && !briefError,
+    lookbackDays: MAX_LOOKBACK_DAYS,
+  }), [latestBrief, briefLoading, briefError]);
+
   return (
     <div className="card" style={{ maxWidth: '880px', margin: '0 auto' }}>
       <h1 style={{ marginBottom: '0.5rem' }}>About Global Perspectives</h1>
@@ -14,8 +27,13 @@ export default function AboutContact() {
         <h2 style={{ fontSize: '1.25rem' }}>What We Do</h2>
         <p>
           Global Perspectives tracks how the world's biggest stories evolve across days, countries, and sources.
-          Our AI pipeline processes hundreds of articles daily, identifies narrative threads, and generates
+          When the pipeline runs, it processes new articles, identifies narrative threads, and generates
           structured intelligence briefings — so you can understand what's happening, why it matters, and what's next.
+          {paused && (
+            paused.beyondLookback
+              ? ` Analysis is currently paused — ${paused.text}.`
+              : ` Analysis has been paused since ${paused.label}.`
+          )}
         </p>
       </section>
 
@@ -23,7 +41,7 @@ export default function AboutContact() {
         <h2 style={{ fontSize: '1.25rem' }}>How It Works</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '12px' }}>
           {[
-            { step: '1', title: 'Collect', desc: 'RSS feeds + Brave Search surface global news from hundreds of sources every hour.' },
+            { step: '1', title: 'Collect', desc: 'RSS feeds + Brave Search surface global news from many sources when the collection pipeline runs.' },
             { step: '2', title: 'Analyze', desc: 'DeepSeek V4 identifies topics, assigns categories, and links articles into narrative threads.' },
             { step: '3', title: 'Synthesize', desc: 'AI generates summaries, predictions, root cause analysis, and country-level intelligence briefings.' },
             { step: '4', title: 'Visualize', desc: 'Interactive maps, timelines, and structured briefings make the intelligence accessible at a glance.' },
@@ -40,7 +58,7 @@ export default function AboutContact() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Key Features</h2>
         <ul style={{ paddingLeft: '1.25rem', lineHeight: 1.8 }}>
-          <li><strong>Daily Topics</strong> — ~13 global topics refreshed every 4 hours with AI analysis</li>
+          <li><strong>Daily Topics</strong> — ~13 global topics, refreshed with AI analysis when the pipeline runs</li>
           <li><strong>Story Arc Intelligence</strong> — track how stories evolve across days with narrative threading</li>
           <li><strong>Country Intelligence</strong> — AI-powered country briefings with risk levels, timelines, and watch triggers</li>
           <li><strong>Interactive World Map</strong> — geographic visualization of news connections and country replay</li>

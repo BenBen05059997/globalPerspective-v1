@@ -21,6 +21,10 @@ const fetchCountryHistory = vi.fn();
 const reportFetchError = vi.fn();
 vi.mock('@/shared/api/restProxy', () => ({
   fetchCountryHistory: (...args) => fetchCountryHistory(...args),
+  // DeskPanel now also computes the site's real "analysis paused" state (F2.18) via
+  // useDailyBrief — default to a fresh brief so existing assertions aren't affected; the
+  // dedicated "analysis paused" test below overrides this.
+  fetchDailyBrief: vi.fn(() => Promise.resolve({ data: { generatedAt: new Date().toISOString() } })),
 }));
 vi.mock('@/shared/api/errorSink', () => ({
   reportFetchError: (...args) => reportFetchError(...args),
@@ -62,7 +66,7 @@ describe('Desk — member with follows and notes', () => {
     // snapshots (humanitarian 90->70 is the larger move, economic 80->90 the other >=10 move).
     expect(await screen.findByText(/Aug 19 · IRAN · HUMANITARIAN 90→70, ECONOMIC 80→90/)).toBeInTheDocument();
     expect(screen.getByText(/UAE imposes indefinite trade embargo on Iran over alleged missile attacks/)).toBeInTheDocument();
-    expect(screen.getByText(/MODEL EXPLANATION \(STORED\)/)).toBeInTheDocument();
+    expect(screen.getByText(/MODEL JUDGMENT · stored explanation/)).toBeInTheDocument();
     expect(screen.getByText(/The UAE's indefinite trade embargo on Iran directly escalates economic isolation/)).toBeInTheDocument();
 
     // Server-gated (this fixture's driftNotesGated: true) -> the honest gate line, no blur.
@@ -93,6 +97,33 @@ describe('Desk — first visit vs returning visit', () => {
     expect(await screen.findByText('No changes since your last visit.')).toBeInTheDocument();
     expect(screen.queryByText(/first visit/i)).not.toBeInTheDocument();
     window.localStorage.clear();
+  });
+});
+
+describe('Desk — "analysis paused" note (F2.18)', () => {
+  it('says "analysis paused" only when the site-wide daily-brief check says analysis is paused', async () => {
+    const restProxy = await import('@/shared/api/restProxy');
+    restProxy.fetchDailyBrief.mockResolvedValue({ data: { generatedAt: new Date(Date.now() - 40 * 60 * 60 * 1000).toISOString() } });
+    mockUseMembership.mockReturnValue({ isMember: true, available: true, loading: false });
+    mockUsePreferences.mockReturnValue({ prefs: { followedCountries: ['Iran'] }, loading: false });
+    fetchCountryHistory.mockResolvedValue(IRAN_COUNTRY_HISTORY);
+
+    renderDesk();
+    // The fixture's note is well over 30 days old relative to "today" — isStaleSince fires —
+    // and the daily brief mock above is stale, so the "— analysis paused." suffix should show.
+    expect(await screen.findByText(/No new changes since .* — analysis paused\./)).toBeInTheDocument();
+  });
+
+  it('omits "analysis paused" when the note is stale but the site\'s own analysis is fresh', async () => {
+    const restProxy = await import('@/shared/api/restProxy');
+    restProxy.fetchDailyBrief.mockResolvedValue({ data: { generatedAt: new Date().toISOString() } });
+    mockUseMembership.mockReturnValue({ isMember: true, available: true, loading: false });
+    mockUsePreferences.mockReturnValue({ prefs: { followedCountries: ['Iran'] }, loading: false });
+    fetchCountryHistory.mockResolvedValue(IRAN_COUNTRY_HISTORY);
+
+    renderDesk();
+    expect(await screen.findByText(/No new changes since [^—]+\.$/)).toBeInTheDocument();
+    expect(screen.queryByText(/analysis paused/)).not.toBeInTheDocument();
   });
 });
 

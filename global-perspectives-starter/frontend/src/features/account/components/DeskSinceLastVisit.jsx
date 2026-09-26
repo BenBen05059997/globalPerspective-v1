@@ -4,7 +4,7 @@ import { buildDeskRows, isStaleSince, readLastVisit, writeLastVisit } from '@/fe
 
 // "Since your last visit" (K1 board, left column) — followed countries' real driftNotes newer
 // than a per-browser last-visit timestamp. Never invents a row: an empty result says so.
-export default function DeskSinceLastVisit({ isMember, followedCountries, countryResults, loading }) {
+export default function DeskSinceLastVisit({ isMember, followedCountries, countryResults, loading, paused }) {
   // Read once per mount so the list doesn't shift under the reader while they're looking at it;
   // the timestamp itself is only written on the way out (see the effect below).
   const lastVisitRef = useRef(undefined);
@@ -88,7 +88,7 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
           )}
           {r.why && (
             <div className="desk-row-why">
-              <span className="desk-row-why-label">MODEL EXPLANATION (STORED) · </span>
+              <span className="desk-row-why-label">MODEL JUDGMENT · stored explanation · </span>
               {r.why}
             </div>
           )}
@@ -101,7 +101,10 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
 
       {anyGated && <p className="desk-note">Earlier changes are part of membership.</p>}
       {staleLabel && (
-        <p className="desk-note">No new changes since {staleLabel} — analysis paused.</p>
+        // F2.18: only say "analysis paused" when the site's own paused-since check (the daily
+        // brief's real generatedAt, via freshness.js pausedSince) says so — not just because this
+        // country's own drift notes happen to be stale.
+        <p className="desk-note">No new changes since {staleLabel}{paused ? ' — analysis paused.' : '.'}</p>
       )}
     </section>
   );

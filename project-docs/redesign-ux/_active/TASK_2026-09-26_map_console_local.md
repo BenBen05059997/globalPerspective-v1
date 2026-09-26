@@ -58,9 +58,9 @@ Build the approved **map home (operations console)** at `/map`, on a local branc
 
 | Phase | Goal | Status | Commit | Monitor ✓ |
 |---|---|---|---|---|
-| M0 · Branch + plan | Branch created; this file | **Now** | — | — |
-| M1 · Console tokens | DS1 as a scoped theme: surfaces, text, accent, crisis hues, freshness ramp, motion durations, 44px | queued | — | — |
-| M2 · Console frame | HUD panels + intel feed (the map's accessible twin) + the computed "paused since" line + sensor status per source | queued | — | — |
+| M0 · Branch + plan | Branch created; this file | ✅ | plan on main | branch `map-console` created |
+| M1 · Console tokens | DS1 as a scoped theme: surfaces, text, accent, crisis hues, freshness ramp, motion durations, 44px | ✅ | see git log (branch) | verify 21 files / 200 tests green (3 pre-existing lint warnings); browser: `/map` dark console palette with live world data (1 GDACS situation, 13 Sep content pause shown by the page's own lines); fixed an early-closed CSS comment (palette dropped) + an invisible fold heading; phone-width check not possible (window wouldn't shrink below desktop), and M1 has no layout change |
+| M2 · Console frame | HUD panels + intel feed (the map's accessible twin) + the computed "paused since" line + sensor status per source | **Now** | — | — |
 | M3 · Night-lights globe | Real Earth (B) on `GlobeView`; spin, stop on touch, turn to the selected story; reduced motion = still | queued | — | — |
 | M4 · Radar mode | Flat radar, sweep, flare per pass, "scanned" mark in the feed (no focus theft); GLOBE / RADAR switch; auto radar without 3D | queued | — | — |
 | M5 · Card, peek, shading, banner | Story card, linked selection in the URL, StoryPeek everywhere, country shading for place-less stories, orientation banner | queued | — | — |
@@ -75,3 +75,5 @@ Build the approved **map home (operations console)** at `/map`, on a local branc
 - [ ] all docs above updated in the same commits
 - [ ] no deploy and no merge: both need a fresh operator "yes"
 - [ ] status header flipped to `done`
+
+**Local review setup:** run `VITE_WORLD_URL=https://globalperspective.net/data npm run dev` in `global-perspectives-starter/frontend`, then open `http://localhost:5173/map`. This reads the live world file (the Worker allows any origin, and the call is read-only). Don't commit an `.env` for this.

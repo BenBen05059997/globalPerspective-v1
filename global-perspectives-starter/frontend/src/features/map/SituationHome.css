@@ -1,16 +1,19 @@
 .sh-root {
-  --sh-bg: #0d1017;
-  --sh-panel: #141a24;
-  --sh-panel2: #10151f;
-  --sh-border: #232c3a;
-  --sh-text: #dfe6f2;
-  --sh-muted: #8b96a8;
-  --sh-dim: #7c879a; /* raised from #6b7688 → ~4.6:1 on --sh-bg (WCAG AA) */
-  /* oklch(0.70 0.155 h) normalised axis hues — equal luminance, no false ranking */
-  --hue-conflict: #ee7754;
-  --hue-political: #9b8cf8;
-  --hue-economic: #38b6e0;
-  --hue-humanitarian: #d89e28;
+  /* Console theme (DS1, 2026-09-26): the --sh- and --hue- vars below now alias the scoped
+     --c- tokens from shared/styles/tokens.css (.gp-console) instead of their own
+     literals, so the map page adopts the console palette through tokens. */
+  --sh-bg: var(--c-bg);
+  --sh-panel: var(--c-panel);
+  --sh-panel2: var(--c-panel-2);
+  --sh-border: var(--c-hairline);
+  --sh-text: var(--c-text-head);
+  --sh-muted: var(--c-text-muted);
+  --sh-dim: var(--c-text-dim); /* ~5.6:1 on --c-bg (WCAG AA) */
+  /* crisis hues — identical values to tokens.css's --c-hue-* (hue = crisis type only) */
+  --hue-conflict: var(--c-hue-conflict);
+  --hue-political: var(--c-hue-political);
+  --hue-economic: var(--c-hue-economic);
+  --hue-humanitarian: var(--c-hue-humanitarian);
   background: var(--sh-bg);
   color: var(--sh-text);
   min-height: 100%;
@@ -173,7 +176,7 @@
 
 /* ---- below the fold ---- */
 .sh-fold { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--sh-border); display: flex; flex-direction: column; gap: 30px; }
-.sh-fold h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 4px; }
+.sh-fold h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 4px; color: var(--sh-text); }
 .sh-fold-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 14px; }
 @media (max-width: 720px) { .sh-fold-cols { grid-template-columns: 1fr; } }
 .sh-fold-cols h4, .sh-fold-teasers h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sh-dim); margin: 0 0 6px; }

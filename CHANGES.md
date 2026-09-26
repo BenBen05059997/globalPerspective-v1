@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Map console, M1: scoped console tokens; branch `map-console`, local only)
+
+First phase of the local map-console build (`project-docs/redesign-ux/_active/TASK_2026-09-26_map_console_local.md`); not deployed, not merged.
+- `shared/styles/tokens.css` gains a `.gp-console` section with the DS1 tokens (`--c-*`): surfaces, text, accent/warn/ok/error, run hatch, the 4 crisis hues, freshness, motion (collapsing to 0s under reduced motion), radius, 44px tap minimum, and HUD type. It is scoped, so other pages look the same.
+- `/map` (`SituationHome`) now carries `gp-console`, and its `--sh-*` / `--hue-*` variables alias the console tokens.
+- Monitor review found and fixed two issues:
+  - a CSS comment containing `*/` closed early and dropped the palette (the page rendered on a transparent background). A new guard test (`cssCommentBalance.test.js`) checks comment balance;
+  - the "How we read the world" heading had no colour and inherited near-black on the dark page (a pre-existing bug); it now uses `--sh-text`.
+- Tests: `consoleTokens.test.js`, `situationHomeConsoleTheme.test.jsx`, `cssCommentBalance.test.js`.
+
 ## 2026-09-25 (Economy soft-hidden; weekly markets job paused)
 
 Operator decision: hide `/economy` for now ("not that important at the moment"). It was removed from the top nav (`app/layout/Layout.jsx`), the footer, the onboarding tour (`app/onboarding/tours.js`: intro sentence + nav step), the map-home "Elsewhere" teaser (`features/map/SituationHome.jsx`) and the Daily footprint "View all →" link (`features/daily/DailyPage.jsx` + its now-unused CSS). The `/economy` route and page are unchanged, so existing links, search results and bookmarks still work. Per-story market info (story Economy tab, disruption badges) is untouched. `quality/verify_pages.sh` now asserts the Economy nav link is **absent** (it used to require it). EventBridge `TriggerWeeklyMarkets` was **DISABLED** (the newsletter doesn't use it; only `/economy?view=week` reads it). `newsMarketsData`'s hourly price feed keeps running. Browser-checked on the dev server: no Economy link in the nav or footer on `/daily`; `/economy` still opens (its data panels can't fetch from localhost, and the live site loads them fine). 193/193, page guards 32/32. Docs: ARCHITECTURE.md (#25 trigger, `weekly_markets` action), `ECONOMY_CONSOLE_DISCUSSION.md` (PARKED), ACTION_CHECKLIST. **Not deployed.** The frontend part ships with the next `./deploy.sh`; the job pause is already live.

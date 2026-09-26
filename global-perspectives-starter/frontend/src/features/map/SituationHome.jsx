@@ -135,7 +135,7 @@ export default function SituationHome() {
   }, []);
 
   return (
-    <div className={`sh-root${stale ? ' sh-stale' : ''}`}>
+    <div className={`sh-root gp-console${stale ? ' sh-stale' : ''}`}>
       <header className="sh-bar">
         <div>
           <div className="sh-lede">{error && !world ? 'The situation feed is unavailable right now.' : (world ? lede : 'Loading the world…')}</div>

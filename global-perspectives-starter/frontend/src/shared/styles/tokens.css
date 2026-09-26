@@ -284,3 +284,87 @@ body {
   background: var(--risk-l);
   box-shadow: 0 0 0 3px rgba(79,160,123,0.2);
 }
+
+/* ── Console theme (DS1, 2026-09-26) — scoped to .gp-console ── */
+/* Approved "operations console" look for the /map page only. Every page not carrying the
+   `.gp-console` class keeps the light tokens above untouched — this block only ever applies
+   under that class, so it is safe to extend without touching any other page's look. */
+.gp-console {
+  /* ── Surfaces ─────────────────────────────────── */
+  --c-bg:              #070d15;              /* page background */
+  --c-panel:           rgba(6, 12, 20, 0.95); /* HUD panel / card surface */
+  --c-panel-2:         #0b1622;              /* secondary panel wash (headers, sticky bars) */
+  --c-hud-strip:       rgba(4, 8, 14, 0.92);  /* top/bottom HUD strips, overlays */
+  --c-hairline:        rgba(95, 212, 255, 0.18); /* default panel border */
+  --c-hairline-strong: rgba(95, 212, 255, 0.30); /* emphasised border (focus, active panel) */
+
+  /* ── Text ─────────────────────────────────────── */
+  --c-text-head: #eef5f9; /* headings — contrast on --c-bg: ~17.7:1 */
+  --c-text-body: #c9d6df; /* body copy — ~13.1:1 */
+  --c-text-muted:#b9c7d1; /* secondary labels — ~11.3:1 */
+  --c-text-dim:  #7d8b96; /* tertiary / timestamps — ~5.6:1 on --c-bg (checked, passes AA 4.5:1 as-is; no adjustment needed) */
+
+  /* ── Accent / status ──────────────────────────── */
+  --c-accent: #5fd4ff; /* clickable, selected, "ours" */
+  --c-warn:   #ffb347; /* older / paused / needs attention */
+  --c-ok:     #6fd29a; /* checks passed */
+  --c-error:  #ff6a4d; /* failed check */
+  --c-run-hatch: #e8d5a8; /* reserved: a reader's own AI run marker — not wired up yet */
+
+  /* ── Crisis hues (hue = crisis TYPE only, never severity) ──
+     Identical to the values already live in SituationHome.css's --hue-* vars — do not drift. */
+  --c-hue-conflict:      #ee7754;
+  --c-hue-political:     #9b8cf8;
+  --c-hue-economic:      #38b6e0;
+  --c-hue-humanitarian:  #d89e28;
+
+  /* ── Freshness ramp ───────────────────────────── */
+  /* live: full-saturation hue + a soft glow (build the glow as `0 0 8px 1px <hue>` at use site) */
+  --c-fresh-live-glow: 0 0 8px 1px currentColor;
+  --c-fresh-plain-filter: none;         /* normal / mid-age item: hue at full strength, no filter */
+  --c-fresh-older-filter: saturate(0.35); /* older item: desaturate toward --c-text-dim's neighbourhood */
+  --c-fresh-older-label: var(--c-warn);  /* "older" freshness labels/badges use warn, not the hue */
+  /* Items older than 30 days are not shown at all (hidden upstream in data selection) — there is
+     no token for that state because nothing renders it. */
+
+  /* ── Motion ───────────────────────────────────── */
+  --c-motion-pulse:      2.4s; /* selection / severity pulse ring */
+  --c-motion-dash-strong:1.4s; /* dashed "judged link" — faster/brighter dash */
+  --c-motion-dash-weak:  2.6s; /* dashed "judged link" — slower/dimmer dash */
+  --c-motion-sweep:      10s;  /* radar sweep rotation */
+  --c-motion-slide:      240ms;/* panel/sheet slide transitions */
+  --c-motion-ease:       cubic-bezier(0.4, 0, 0.2, 1);
+  /* Motion budget (CSS can't enforce a count — document only): at most 3 concurrently "moving"
+     elements (movers) and at most 8 active pulse animations on screen at once. */
+
+  /* ── Shape / space ────────────────────────────── */
+  --c-radius-sm:  2px;
+  --c-radius-md:  4px;
+  --c-tap-min:    44px; /* minimum touch target, phone HUD controls */
+  --c-space-1:    4px;
+  --c-space-2:    8px;
+  --c-space-3:    12px;
+  --c-space-4:    16px;
+  --c-space-6:    24px;
+
+  /* ── Type ─────────────────────────────────────── */
+  /* Reuse the existing type families from :root — the console doesn't introduce new fonts. */
+  --c-serif: var(--serif); /* Fraunces */
+  --c-sans:  var(--sans);  /* Inter */
+  --c-mono:  var(--mono);  /* JetBrains Mono */
+  --c-hud-label-size: 10px;      /* HUD strip labels (10–11px range) */
+  --c-hud-label-size-lg: 11px;
+  --c-hud-label-tracking: 0.1em; /* HUD label letter-spacing */
+}
+
+/* Reduced motion: stop the console's animations rather than hide them — durations collapse to
+   0s so any keyframe/transition using these tokens becomes an instant, static state. */
+@media (prefers-reduced-motion: reduce) {
+  .gp-console {
+    --c-motion-pulse: 0s;
+    --c-motion-dash-strong: 0s;
+    --c-motion-dash-weak: 0s;
+    --c-motion-sweep: 0s;
+    --c-motion-slide: 0s;
+  }
+}

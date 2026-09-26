@@ -277,6 +277,11 @@ Constraints: `situations-core.js` byte-identical in BOTH dirs (gdacs + tracker);
 
 ---
 
+## Stage S5.6 — Console build, local review (added 2026-09-26)
+Tracked in `TASK_2026-09-26_map_console_local.md` (phases M1–M7, branch `map-console`, no deploy).
+
+### S5.6 · M1 — Scoped console tokens — ✅ done on branch (not merged, not deployed)
+
 ## Stage S6 — Home swap, routes, cleanup
 
 > **Status 2026-09-09 — the map is now PROD-DEPLOYED as an unlisted route.** `./deploy.sh` + `git push` (commit `8872cb7`) shipped the built frontend: `https://globalperspective.net/map` is live (SPA deep-link returns 404 status but renders — same as `/economy`; verified). `/` still renders the **old Home** — the actual home-swap below (S6·T1) is still pending. So "source only / NOT deployed" notes on earlier rows (S4·T1, S5·T1, S5·T2) are superseded: those components are now live at `/map`. What remains for S6 is the swap itself + cleanup.

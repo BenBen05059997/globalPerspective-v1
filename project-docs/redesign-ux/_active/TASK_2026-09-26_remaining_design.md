@@ -30,7 +30,7 @@ Each phase runs: research + debate (agents) → canvas board with real data → 
 |---|---|---|---|---|
 | N · Site navigation | Top menu; how countries, sign-in/account and the retired pages (`/breaking`, `/spider-demo`, `/economy`, `/weekly-markets`) are reached; "AI paused" status line; footer | ✅ **APPROVED 26 Sep** ("ok that is good"), canvas N1 | see git log | 3 advocates + 2 critics; pause date verified 12 Sep |
 | P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | ✅ **APPROVED 26 Sep** ("Okay, that is good"), canvas P1 | see git log | 3 advocates + 1 critic; lazy map load verified in code |
-| DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | **Now** · proposed (canvas DS1), 6 open questions | see git log | tokens checked against `tokens.css` (light palette only; traffic-light risk scale) |
+| DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | ✅ **APPROVED 26 Sep**: where old and new designs conflict, the new design wins (canvas DS1) | see git log | tokens checked against `tokens.css` (light palette only; traffic-light risk scale) |
 | H · Home leftovers | Banner vs tour; country shading vs pins; build behind `/map` first; "real Earth on top right" | **Now** · questions put to operator | — | — |
 | SP · Small pages | About, whitepaper, privacy, disclosures, contact; membership / account / sign-in, including the signed-out `/account` | queued | — | — |
 | B · Build order | The sequence from design to build, with dependencies (C11 story mode first) and operator gates | queued | — | — |
@@ -93,7 +93,7 @@ Debate: A map + bottom sheet / B swipe cards / C read first, map on demand, then
   - swipe cards: a 290px map per card can't show compare lanes or fork bands, and re-rendering the map per card is wasted work;
   - C's fixed 212px block with a static thumbnail.
 
-## Phase DS: design-system board (2026-09-26, proposed)
+## Phase DS: design-system board, APPROVED (operator, 2026-09-26: "use the new design")
 Canvas **DS1** (`DesignSystem.dc.html`, 1440×1600). It gathers the approved decisions into one look per idea: **where · how sure · how fresh · whose claim**.
 
 **Panels:**
@@ -120,3 +120,16 @@ Each panel states WHY it exists.
 4. A light Reading mode for long reads? Recommend yes (same names, light values).
 5. Tokens go into `tokens.css` at build time; this board is the reference until then.
 6. Parked pages (economy) are restyled only when they return.
+
+**Operator decisions on the open questions (2026-09-26):**
+- **Where the old design competes with the new one, use the new design.** So:
+  - the traffic-light risk scale is replaced by number + tier word + ring weight (Q2);
+  - tap targets are 44px (Q3);
+  - THIS RUN gets its own sand hatching, and amber stays for warnings (Q1, the recommendation, following "use the new design");
+  - tokens go into `tokens.css` at build time (Q5);
+  - parked pages are restyled only when they return (Q6).
+- **No light Reading mode for now.** Long story pages ("Read in full") keep the console style (Q4).
+- **White paper: hide it for now** ("we don't need it right now"). It is linked only from the footer (`Layout.jsx:211`); the route is `/whitepaper` (`App.jsx:134`).
+  - The proposal is a soft hide like economy: drop the footer link, keep the URL live.
+  - The code change waits for an explicit go.
+- **Story mode is confirmed** as horizontal slides on desktop (map + slides + time scrubber, approved 25 Sep); "Read in full" is the secondary long page. The phone question is raised with the operator.

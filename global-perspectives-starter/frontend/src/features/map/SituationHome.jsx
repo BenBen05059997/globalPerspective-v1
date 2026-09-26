@@ -2,6 +2,7 @@ import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } fro
 import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
+import { useGeminiTopics } from '@/shared/data/useGeminiTopics.js';
 import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
 import HudBriefPanel from '@/features/map/components/HudBriefPanel.jsx';
@@ -9,8 +10,12 @@ import HudSensorPanel from '@/features/map/components/HudSensorPanel.jsx';
 import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
-import { pausedSince } from '@/shared/lib/freshness.js';
+import { pausedSince, freshnessState, olderLabel } from '@/shared/lib/freshness.js';
+import { storiesForShading } from '@/features/map/lib/storyShading.js';
 import { defaultMapView, normalizeStoredView } from '@/features/map/lib/globeSpin.js';
+import { usePeek } from '@/shared/hooks/usePeek.js';
+import { peekData } from '@/shared/lib/peekData.js';
+import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import '@/features/map/SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
@@ -69,10 +74,25 @@ export default function SituationHome() {
   const { world, situations, loading, error, asOf, stale } = useWorld();
   const [params, setParams] = useSearchParams();
   const focus = params.get('focus');
+  const storyParam = params.get('story');
   const { detail } = useSituationDetail(focus);
 
+  // ?focus= (a situation) and ?story= (a topic) are mutually exclusive selections (M5a spec).
   const select = useCallback((id) => {
-    setParams((p) => { const n = new URLSearchParams(p); if (id) n.set('focus', id); else n.delete('focus'); return n; }, { replace: true });
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      if (id) { n.set('focus', id); n.delete('story'); } else { n.delete('focus'); }
+      return n;
+    }, { replace: true });
+  }, [setParams]);
+
+  const selectStory = useCallback((topic) => {
+    const id = topic?.threadId || topic?.topicId || null;
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      if (id) { n.set('story', id); n.delete('focus'); } else { n.delete('story'); }
+      return n;
+    }, { replace: true });
   }, [setParams]);
 
   const open = useMemo(() => situations.filter((s) => s.state !== 'closed' && s.centroid), [situations]);
@@ -110,7 +130,35 @@ export default function SituationHome() {
   const tourNext = () => setTourIdx((i) => (i + 1) % tourN);
   const tourPrev = () => setTourIdx((i) => (i - 1 + tourN) % tourN);
   const userSelect = useCallback((id) => { setTourOn(false); select(id); }, [select]);
+  const userSelectStory = useCallback((topic) => { setTourOn(false); selectStory(topic); }, [selectStory]);
   useEffect(() => { const onKey = (e) => { if (e.key === 'Escape' && tourOn) setTourOn(false); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [tourOn]);
+
+  // M5a — stories (current topics feed) reused as-is from the existing public hook; no re-fetch.
+  const { topics, updatedAt: topicsUpdatedAt, generatedDate: topicsGeneratedDate } = useGeminiTopics();
+  const topicsAsOf = topicsUpdatedAt || topicsGeneratedDate || null;
+  const topicsAgeDays = topicsAsOf ? (Date.now() - new Date(topicsAsOf).getTime()) / 86400000 : null;
+  const topicsFreshness = topicsAgeDays != null ? freshnessState(topicsAgeDays) : null;
+  const shading = useMemo(() => storiesForShading(topics, situations), [topics, situations]);
+  const visibleShading = useMemo(
+    () => (topicsFreshness === 'hidden' ? [] : shading.map((e) => ({ ...e, dim: topicsFreshness === 'older' }))),
+    [shading, topicsFreshness]
+  );
+  const selectedStory = useMemo(() => {
+    if (!storyParam) return null;
+    return topics.find((t) => (t.threadId || t.topicId) === storyParam) || null;
+  }, [topics, storyParam]);
+  const storyFocusId = selectedStory ? (selectedStory.threadId || selectedStory.topicId) : null;
+  const storyFocusIso3 = selectedStory && Array.isArray(selectedStory.iso3) ? selectedStory.iso3[0] : null;
+
+  // One shared hover/focus preview instance for the map's shaded countries (feed rows carry their
+  // own — see HudIntelFeed). Story selection from a shaded country reuses userSelectStory above.
+  const mapPeek = usePeek();
+  const shadingByIso3 = useMemo(() => new Map(visibleShading.map((e) => [e.iso3, e])), [visibleShading]);
+  const hoveredCountry = mapPeek.openId ? shadingByIso3.get(mapPeek.openId) : null;
+  const selectStoryByCountry = useCallback((iso3) => {
+    const entry = shadingByIso3.get(iso3);
+    if (entry?.top) userSelectStory(entry.top);
+  }, [shadingByIso3, userSelectStory]);
 
   const counts = useMemo(() => {
     const c = { conflict: 0, political: 0, economic: 0, humanitarian: 0 };
@@ -237,14 +285,31 @@ export default function SituationHome() {
                 <SituationMap3D
                   situations={situations} focusId={focusId} callout={callout} tour={tourProps} newIds={newIds} view="globe"
                   onSelect={userSelect} onOpenCallout={userSelect} height={mapH}
+                  shading={visibleShading} storyFocusIso3={storyFocusIso3}
+                  onSelectCountry={selectStoryByCountry}
+                  onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
+                  onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
+                  onLeaveCountry={() => mapPeek.close()}
                 />
               </Suspense>
             ) : (
               <RadarMap
                 situations={situations} focusId={focusId} callout={callout} newIds={newIds}
                 onSelect={userSelect} onOpenCallout={userSelect} onScan={markScanned} height={mapH}
+                shading={visibleShading} storyFocusIso3={storyFocusIso3}
+                onSelectCountry={selectStoryByCountry}
+                onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
+                onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
+                onLeaveCountry={() => mapPeek.close()}
               />
             )}
+            {hoveredCountry ? (
+              <StoryPeek
+                id={`peek-country-${hoveredCountry.iso3}`}
+                data={peekData(hoveredCountry.top, { asOf: topicsAsOf })}
+                style={mapPeek.style}
+              />
+            ) : null}
 
             <div className="sh-controls">
               {ranked.length >= 2 && !tourOn ? (
@@ -288,6 +353,15 @@ export default function SituationHome() {
                 })}
                 <span className="sh-leg"><span className="sh-leg-esc">▲</span>escalating<i>worse in the last few hours</i></span>
               </div>
+              {visibleShading.length ? (
+                <div className="sh-legrow">
+                  <b>Country wash = a story with no exact place</b>
+                  <span className="sh-leg"><i>count badge = more than one story</i></span>
+                  {topicsFreshness === 'older' && topicsAsOf ? (
+                    <span className="sh-leg"><i>{olderLabel(topicsAsOf) || 'older'}</i></span>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
           {world && newsAxesEmpty ? (
@@ -377,6 +451,8 @@ export default function SituationHome() {
             <HudIntelFeed
               ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
               onSelect={userSelect}
+              topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
+              onSelectStory={userSelectStory} peek={mapPeek}
             />
           )}
         </aside>

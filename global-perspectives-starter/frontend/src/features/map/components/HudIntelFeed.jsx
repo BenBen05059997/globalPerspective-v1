@@ -1,8 +1,13 @@
 // HudIntelFeed — the console's intel feed: the map's accessible twin. Every situation the map
 // plots is also a keyboard-reachable row here (tier chip, escalating marker, place, one line),
-// so nothing on the map is only reachable by pointing at a pin.
+// so nothing on the map is only reachable by pointing at a pin. M5a adds a STORIES group below
+// the situations: the current topics feed, honestly dated, with StoryPeek on every row.
 import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
+import { crisisHueForCategory } from '@/features/map/lib/crisisHue.js';
+import { freshnessState } from '@/shared/lib/freshness.js';
+import { peekData } from '@/shared/lib/peekData.js';
+import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 
 function placeOf(s) {
   if (s.affected_names?.length) return s.affected_names[0];
@@ -10,7 +15,24 @@ function placeOf(s) {
   return null;
 }
 
-export default function HudIntelFeed({ ranked, focusId, newIds, scannedIds, loading, error, world, onSelect }) {
+function storiesDateLabel(asOf) {
+  if (!asOf) return null;
+  const d = new Date(asOf);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }).toUpperCase();
+}
+
+export default function HudIntelFeed({
+  ranked, focusId, newIds, scannedIds, loading, error, world, onSelect,
+  topics = [], topicsAsOf = null, storyFocusId = null, onSelectStory = null, peek = null,
+}) {
+  const dateLabel = storiesDateLabel(topicsAsOf);
+  const now = Date.now();
+  const ageDays = topicsAsOf ? (now - new Date(topicsAsOf).getTime()) / 86400000 : null;
+  const state = ageDays != null ? freshnessState(ageDays) : null;
+  const visibleTopics = state === 'hidden' ? [] : topics.filter((t) => t && t.title);
+  const hiddenCount = state === 'hidden' ? topics.filter((t) => t && t.title).length : 0;
+
   return (
     <div className="hud-panel hud-feed" aria-label="Intel feed">
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
@@ -47,6 +69,49 @@ export default function HudIntelFeed({ ranked, focusId, newIds, scannedIds, load
           );
         })}
       </ul>
+
+      {visibleTopics.length ? (
+        <>
+          <div className="hud-label hud-feed-label hud-stories-label">
+            Stories
+            {dateLabel ? <span className="hud-feed-count"> · from {dateLabel}</span> : null}
+            {state === 'older' ? <span className="hud-feed-count hud-feed-paused"> · paused</span> : null}
+          </div>
+          <ul className="hud-feed-list hud-stories-list">
+            {visibleTopics.map((t, i) => {
+              const rowId = t.topicId || t.threadId || `story-${i}`;
+              const data = peekData(t, { asOf: topicsAsOf });
+              const hue = crisisHueForCategory(t.category);
+              return (
+                <li key={rowId} className={rowId === storyFocusId ? 'sh-active' : ''}>
+                  <button
+                    className={state === 'older' ? 'hud-story-older' : ''}
+                    onClick={() => onSelectStory && onSelectStory(t)}
+                    onMouseEnter={(e) => peek?.openOnHover(rowId, e.currentTarget)}
+                    onMouseLeave={() => peek?.close()}
+                    onFocus={(e) => peek?.openOnFocus(rowId, e.currentTarget)}
+                    onBlur={() => peek?.close()}
+                    aria-describedby={peek?.openId === rowId ? `peek-${rowId}` : undefined}
+                  >
+                    <span className="hud-tier-chip hud-story-chip" style={{ '--pin': hue }}>
+                      {t.category || '—'}
+                    </span>
+                    <span className="sh-row-main">
+                      <span className="sh-row-tags">
+                        {t.primaryCountry ? <span className="hud-feed-place">{t.primaryCountry}</span> : null}
+                      </span>
+                      <span className="sh-row-title">{t.title}</span>
+                    </span>
+                  </button>
+                  {peek?.openId === rowId ? <StoryPeek id={`peek-${rowId}`} data={data} style={peek.style} /> : null}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : hiddenCount ? (
+        <p className="sh-muted hud-stories-hidden">{hiddenCount} older stor{hiddenCount === 1 ? 'y' : 'ies'} past 30 days, hidden from the map.</p>
+      ) : null}
     </div>
   );
 }

@@ -32,3 +32,29 @@ export function pausedSince({ newestAnalysisAt, now = Date.now(), searched = fal
   const label = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   return { date, label, beyondLookback: false, text: `analysis paused since ${label}` };
 }
+
+// freshnessState — the console's shared freshness ramp (REDESIGN_MASTER_PLAN.md §3.1):
+//   live   <24h    — glows, counts as "now"
+//   plain  1–7d    — shown at normal weight, no glow
+//   older  7–30d   — desaturated + an honest "older · <date>" label
+//   hidden 30d+    — dropped from the map/feed, only counted (never silently rendered as current)
+// Pure function of an age in days so callers (map shading, feed rows, StoryPeek) never each
+// invent their own thresholds. `ageDays` should already be `(now - timestamp) / 86400000`.
+export function freshnessState(ageDays) {
+  if (!Number.isFinite(ageDays) || ageDays < 0) return 'hidden';
+  if (ageDays < 1) return 'live';
+  if (ageDays < 7) return 'plain';
+  if (ageDays < 30) return 'older';
+  return 'hidden';
+}
+
+/**
+ * olderLabel — the honest "older · <date>" note the map/feed show for stories in the `older`
+ * (7–30d) freshness band. `date` accepts anything `new Date()` accepts; returns null when it
+ * can't be parsed, rather than inventing a placeholder date.
+ */
+export function olderLabel(date) {
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return null;
+  return `older · ${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+}

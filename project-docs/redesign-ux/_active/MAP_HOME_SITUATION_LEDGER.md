@@ -284,6 +284,7 @@ Tracked in `TASK_2026-09-26_map_console_local.md` (phases M1–M7, branch `map-c
 ### S5.6 · M2 — HUD frame + computed freshness (status line, sensor status, brief, feed) — ✅ done on branch
 ### S5.6 · M3 — NASA night-lights globe (default on desktop, idle spin, reduced motion) — ✅ done on branch
 ### S5.6 · M4 — Radar mode (sweep, one flare per pass, feed "scanned" mark; GLOBE | RADAR; old flat mode removed) — ✅ done on branch
+### S5.6 · M5a — Stories in the feed, country shading (H2), shared StoryPeek, `?story=` selection — ✅ done on branch
 
 ## Stage S6 — Home swap, routes, cleanup
 

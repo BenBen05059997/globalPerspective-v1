@@ -701,3 +701,35 @@
   border: 1px solid rgba(79, 160, 123, 0.38);
 }
 .srb-ok:hover { background: rgba(79, 160, 123, 0.2); }
+
+/* StoryPeek — shared hover/focus preview for a story mention (M5a). Fixed dark chrome
+   (independent of the page's own light/dark tokens) so it reads the same on light pages and the
+   dark console. Positioned by usePeek() via inline `style` (position: fixed). */
+.gp-story-peek {
+  z-index: 60;
+  background: #0d1017;
+  color: #dfe6f2;
+  border: 1px solid #2b3547;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.gp-story-peek-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9aa4b2;
+  margin-bottom: 4px;
+}
+.gp-story-peek-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.gp-story-peek-title { font-weight: 600; color: #f4f7fb; margin-bottom: 4px; }
+.gp-story-peek-meta { display: flex; gap: 10px; color: #b7c0cd; margin-bottom: 2px; }
+.gp-story-peek-updated { color: #7c8798; font-size: 11px; }
+.gp-story-peek-hint { margin-top: 6px; color: #6b7686; font-style: italic; font-size: 11px; }

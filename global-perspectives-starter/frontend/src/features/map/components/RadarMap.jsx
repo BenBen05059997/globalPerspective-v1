@@ -3,6 +3,13 @@ import * as d3 from 'd3';
 import { AXIS_HUE, TIER_R, land, FRAME } from '@/features/map/components/SituationMap.jsx';
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
 import { bearingDeg, beamCrossed, scanGlow, sweepControlState } from '@/features/map/lib/radar.js';
+import { ISO3_TO_NUM } from '@/features/map/lib/countryGeo.js';
+
+// iso3 -> country polygon, for H2 country shading (M5a). Built once from the same bundled
+// topojson RadarMap already draws coastlines from.
+const NUM_TO_FEATURE = {};
+for (const f of land.features) NUM_TO_FEATURE[f.id] = f;
+function shadeFeature(iso3) { const num = ISO3_TO_NUM[iso3]; return num ? NUM_TO_FEATURE[num] : null; }
 
 const SWEEP_MS = 10000; // one lap ≈ 10s (CONSOLE_WIREFRAME_TECHNIQUE.md §3 / --c-motion-sweep)
 const TRAIL_DEG = 40;   // how far behind the leading edge the afterglow/label stays lit
@@ -61,6 +68,7 @@ function agoShort(iso) {
  */
 export default function RadarMap({
   situations = [], focusId, callout = null, newIds = null, onSelect, onOpenCallout, onScan, height = 560,
+  shading = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
 }) {
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
@@ -72,8 +80,16 @@ export default function RadarMap({
   const sweepRef = useRef(355);             // starts just past a "recent pass" look, per the mock
   const onSelectRef = useRef(onSelect);
   const onScanRef = useRef(onScan);
+  const onSelectCountryRef = useRef(onSelectCountry);
+  const onHoverCountryRef = useRef(onHoverCountry);
+  const onFocusCountryRef = useRef(onFocusCountry);
+  const onLeaveCountryRef = useRef(onLeaveCountry);
   onSelectRef.current = onSelect;
   onScanRef.current = onScan;
+  onSelectCountryRef.current = onSelectCountry;
+  onHoverCountryRef.current = onHoverCountry;
+  onFocusCountryRef.current = onFocusCountry;
+  onLeaveCountryRef.current = onLeaveCountry;
 
   const reduceMotion = useMemo(() => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
@@ -103,6 +119,41 @@ export default function RadarMap({
 
       root.append('g').selectAll('path').data(land.features).join('path')
         .attr('d', path).attr('fill', 'none').attr('stroke', 'rgba(95, 212, 255, 0.3)').attr('stroke-width', 0.6);
+
+      // Country shading (H2, M5a): a story with no exact place shades its whole country instead
+      // of getting a made-up pin — low-alpha wash in the crisis hue, a count badge when >1, a
+      // brighter outline for the currently-selected story's country. Freshness (`dim`) is
+      // computed once upstream (SituationHome) from the shared topics timestamp.
+      const shadeData = (shading || [])
+        .map((e) => ({ ...e, feature: shadeFeature(e.iso3) }))
+        .filter((e) => e.feature);
+      root.append('g').selectAll('path.rd-shade').data(shadeData, (d) => d.iso3).join('path')
+        .attr('class', 'rd-shade')
+        .attr('d', (d) => path(d.feature))
+        .attr('fill', (d) => d.hue)
+        .attr('fill-opacity', (d) => (d.dim ? 0.10 : 0.20))
+        .attr('stroke', (d) => (d.iso3 === storyFocusIso3 ? '#fff' : d.hue))
+        .attr('stroke-opacity', (d) => (d.iso3 === storyFocusIso3 ? 0.9 : 0.5))
+        .attr('stroke-width', (d) => (d.iso3 === storyFocusIso3 ? 2 : 0.8))
+        .attr('tabindex', 0)
+        .attr('role', 'button')
+        .attr('aria-label', (d) => `${d.top?.title || d.iso3}${d.count > 1 ? `, ${d.count} stories` : ''}`)
+        .style('cursor', 'pointer')
+        .on('click', (_e, d) => onSelectCountryRef.current && onSelectCountryRef.current(d.iso3))
+        .on('keydown', (e, d) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCountryRef.current && onSelectCountryRef.current(d.iso3); } })
+        .on('mouseenter', function onEnter(_e, d) { onHoverCountryRef.current && onHoverCountryRef.current(d.iso3, this); })
+        .on('mouseleave', () => onLeaveCountryRef.current && onLeaveCountryRef.current())
+        .on('focus', function onFocusIn(_e, d) { onFocusCountryRef.current && onFocusCountryRef.current(d.iso3, this); })
+        .on('blur', () => onLeaveCountryRef.current && onLeaveCountryRef.current());
+
+      root.append('g').selectAll('text.rd-shade-count').data(shadeData.filter((d) => d.count > 1), (d) => d.iso3).join('text')
+        .attr('class', 'rd-shade-count')
+        .attr('x', (d) => path.centroid(d.feature)[0])
+        .attr('y', (d) => path.centroid(d.feature)[1])
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .attr('fill', '#fff').attr('font-size', 10).attr('font-weight', 700)
+        .attr('pointer-events', 'none')
+        .text((d) => d.count);
 
       const proj = (s) => projection([s.centroid.lon, s.centroid.lat]) || [-9, -9];
       bearingsRef.current = new Map(active.map((s) => {
@@ -190,7 +241,7 @@ export default function RadarMap({
     const ro = new ResizeObserver(() => draw());
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [active, focusId, newIds, height]);
+  }, [active, focusId, newIds, height, shading, storyFocusIso3]);
 
   // The sweep: one rAF loop, paused under reduced motion, while the sweep control is off, or
   // while the tab is hidden. Reads/writes only refs + DOM attributes — no setState per frame.

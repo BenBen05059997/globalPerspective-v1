@@ -1289,6 +1289,9 @@ means the basename is unchanged, only the directory moved).
 - `shared/styles/tokens.css` has a scoped `.gp-console` section (console DS1 tokens `--c-*`); `/map` uses it.
 - `shared/lib/freshness.js` (`pausedSince`): computes the "paused since" line from real timestamps.
 - `features/map/components/Hud*.jsx`: the console HUD panels.
+- `shared/ui/StoryPeek.jsx` + `shared/hooks/usePeek.js` + `shared/lib/peekData.js`: the one story hover/focus preview.
+- `shared/lib/crisisHue.js`: category → crisis hue.
+- `shared/lib/freshness.js` `freshnessState()`: live / plain / older / hidden.
 
 Note: `utils/sourceRobustness.js` (lowercase, the BYOK source-basis scorer) did **not** move in
 P2 — it stays at its flat path until P7 (`features/analysis-studio/lib/sourceRobustness.js`),

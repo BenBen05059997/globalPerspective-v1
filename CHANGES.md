@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Map console, M5a: stories, country shading, StoryPeek; branch `map-console`, local only)
+
+- **Stories on the console:** the feed shows the current stories ("STORIES · FROM 13 SEP · PAUSED", from the existing `useGeminiTopics` hook, which caps at 13).
+- **Country shading (H2):** a story with no exact place shades its primary country in its crisis hue on both GLOBE and RADAR, with a count badge when there are several.
+  - Stories that match a situation keep their pin; broad regions are not drawn.
+  - The 7–30-day freshness state applies: a desaturated wash plus "older · Sep 13" in the key.
+- **StoryPeek**, built once: `shared/ui/StoryPeek.jsx`, `shared/hooks/usePeek.js`, `shared/lib/peekData.js`. It shows category, headline, country, sources count and the updated date; it opens on hover or focus and closes with Esc; it never fetches.
+- **Category → crisis hue** mapping in `shared/lib/crisisHue.js`: society and technology stay neutral, with no crisis claim.
+- `freshnessState()` added to `shared/lib/freshness.js`.
+- **Selection:** a story sets `?story=<threadId>`, clears `?focus=`, and outlines the country.
+- Tests: 278 total.
+
 ## 2026-09-26 (Map console, M4: radar mode; branch `map-console`, local only)
 
 - New **RADAR** console mode (`features/map/components/RadarMap.jsx`): a flat world from the bundled coastlines (reusing `SituationMap`'s land, frame and marker scale) with a 10 s conic sweep.

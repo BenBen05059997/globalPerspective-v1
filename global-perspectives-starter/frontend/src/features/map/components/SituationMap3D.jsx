@@ -7,6 +7,7 @@ import { geoCentroid } from 'd3-geo';
 import topoData from '@/features/map/assets/countries-110m.json';
 import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
 import { textureUrl, spinStep, spinControlState } from '@/features/map/lib/globeSpin.js';
+import { CRISIS_RGB } from '@/features/map/lib/crisisHue.js';
 
 // M3 · night-lights globe (operator's option B) — NASA Black Marble, taken from the MIT-licensed
 // three-globe package's examples. Loaded well after first paint (idle callback) so it never
@@ -94,6 +95,7 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
  */
 export default function SituationMap3D({
   situations = [], focusId, callout = null, tour = null, newIds = null, view = 'flat', onSelect, onOpenCallout, height = 560,
+  shading = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
 }) {
   const globe = view === 'globe';
   const [viewState, setViewState] = useState(globe ? GLOBE_VIEW : INITIAL_VIEW);
@@ -157,6 +159,40 @@ export default function SituationMap3D({
     }
     return { rgb, fills, arcs, dests };
   }, [focusId, situations]);
+
+  // Country shading (H2, M5a): a story with no exact place shades its country instead of getting
+  // a made-up pin. `shading` entries are pre-computed upstream (storyShading.js) and already
+  // exclude stories that have a real situation pin or no resolvable ISO3.
+  const countryAnchor = useCallback((x, y) => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    return { getBoundingClientRect: () => ({ top: rect.top + y - 2, bottom: rect.top + y + 2, left: rect.left + x - 2, right: rect.left + x + 2 }) };
+  }, []);
+  const storyShadeFeatures = useMemo(() => (shading || []).map((e) => {
+    const feat = iso3Feature(e.iso3);
+    if (!feat) return null;
+    return { ...feat, properties: { ...feat.properties, __iso3: e.iso3, __count: e.count, __dim: e.dim, __rgb: CRISIS_RGB[e.crisisType] || CRISIS_RGB.neutral } };
+  }).filter(Boolean), [shading]);
+  const storyShadeLayer = useMemo(() => (
+    storyShadeFeatures.length
+      ? new GeoJsonLayer({
+        id: 'story-shade', data: storyShadeFeatures, stroked: true, filled: true, pickable: true,
+        getFillColor: (f) => [...f.properties.__rgb, f.properties.__dim ? 26 : 46],
+        getLineColor: (f) => (f.properties.__iso3 === storyFocusIso3 ? [255, 255, 255, 230] : [...f.properties.__rgb, 130]),
+        getLineWidth: (f) => (f.properties.__iso3 === storyFocusIso3 ? 2.5 : 1),
+        lineWidthUnits: 'pixels', lineWidthMinPixels: 1,
+        onClick: (info) => info.object && onSelectCountry && onSelectCountry(info.object.properties.__iso3),
+        onHover: (info) => {
+          if (info.object) { const a = countryAnchor(info.x, info.y); if (a) onHoverCountry && onHoverCountry(info.object.properties.__iso3, a); }
+          else onLeaveCountry && onLeaveCountry();
+        },
+        updateTriggers: { getLineColor: [storyFocusIso3], getLineWidth: [storyFocusIso3] },
+      })
+      : null
+  ), [storyShadeFeatures, storyFocusIso3, onSelectCountry, onHoverCountry, onLeaveCountry, countryAnchor]);
+  // onFocusCountry (keyboard) has no deck.gl equivalent for individual GeoJSON features — same
+  // limitation the existing situation pins have (pickable ScatterplotLayer, pointer-only).
+  void onFocusCountry;
 
   useEffect(() => {
     if (!wrapRef.current) return undefined;
@@ -296,6 +332,7 @@ export default function SituationMap3D({
   const layers = [
     ...(earthLayer ? [earthLayer] : []),
     baseLayers[0],
+    ...(storyShadeLayer ? [storyShadeLayer] : []),
     ...selectionLayers.filter((l) => l.id !== 'dest-rings'),
     baseLayers[1], baseLayers[2], baseLayers[4], baseLayers[3],
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),

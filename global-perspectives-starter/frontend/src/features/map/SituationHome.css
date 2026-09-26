@@ -101,6 +101,14 @@
 .hud-scanned { font-size: 11px; color: var(--c-accent, #5fd4ff); opacity: 0.9; transition: opacity 0.3s ease; }
 @media (prefers-reduced-motion: reduce) { .hud-scanned { transition: none; } }
 
+/* Stories group (M5a) — the topics feed under the situations. Honest date + paused note in the
+   group header; rows share the situation-row layout so keyboard/44px behaviour matches exactly. */
+.hud-stories-label { margin-top: 10px; }
+.hud-feed-paused { color: #d89e28; }
+.hud-story-chip { text-transform: none; font-weight: 600; }
+.hud-story-older { opacity: 0.72; } /* freshness 7-30d: desaturated, still fully legible */
+.hud-stories-hidden { padding: 8px 6px; }
+
 /* ---- stage: map (left) + rail (right) ---- */
 .sh-stage { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(300px, 1fr); gap: 16px; margin-top: 14px; align-items: start; }
 @media (max-width: 900px) { .sh-stage { grid-template-columns: 1fr; } }

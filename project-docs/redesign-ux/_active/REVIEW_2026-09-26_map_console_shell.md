@@ -76,3 +76,22 @@ Raw notes: scratchpad `review/`, `hr/`, `rv3_*`, `rv4_*`.
 - `/daily` "Today's Brief" heading on a 14-day-old brief; "publishes at the end of the day"; the "analyst-reviewed" badge (confirm a human review exists).
 - `/about` "hundreds of articles daily / every hour / every 4 hours".
 - `/track-record` "20,607 awaiting their deadline" (many deadlines passed) + "STRONG" Brier on the one-week pilot; 549px phone overflow.
+
+## Decisions (monitor, delegated by the operator 2026-09-26: "just decide what we should show")
+1. Fix all of F1 + F2 on the branch.
+2. F3:
+   - make the console **full-bleed** (the map is the page; thin top bar + status line over it; floating panels);
+   - make the **legend follow the approved tokens** (brightness = freshness, size + double ring = HIGH, shape = kind);
+   - build the **desktop alert stack + SITUATIONS / COUNTRY RISK layer switch** now;
+   - the story-card extras (in-text links, timeline jumps, most likely, fact / inference) come with story mode (C11);
+   - the nav + tour restyle comes with the full-bleed pass.
+3. F4: fix the **frontend-only wording** on `/map`, `/daily`, `/about`, `/track-record` on this branch. The `/weekly` "new events today" bug is a backend archive fix; it stays logged and needs an operator yes.
+4. **No backend changes in this round.** The daily-brief fan-out is fixed client-side (one shared request, cache the empty result, start from the last known date). The `latest_daily_brief` backend field stays a later option.
+
+## Fix rounds (sequential; each: Sonnet agent → monitor verify → commit on the branch)
+| Round | Contents | Status |
+|---|---|---|
+| R1 · Speed + bugs | F1.1, F1.2, F1.3, F1.9, F1.10, F2.1–F2.8, F2.20, F2.21 | **Now** |
+| R2 · Honesty wording | F1.4–F1.7, F2.18, F2.19, F4 wording | queued |
+| R3 · Accessibility + phone | F1.8, F2.9–F2.17 | queued |
+| R4 · Design | full-bleed console, approved legend, alert stack, layer switch, nav / tour restyle | queued |

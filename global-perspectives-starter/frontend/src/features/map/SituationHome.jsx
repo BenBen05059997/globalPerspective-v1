@@ -1,8 +1,14 @@
 import { useMemo, useCallback, useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
+import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
 import SituationMap, { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
+import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
+import HudBriefPanel from '@/features/map/components/HudBriefPanel.jsx';
+import HudSensorPanel from '@/features/map/components/HudSensorPanel.jsx';
+import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
+import { pausedSince } from '@/shared/lib/freshness.js';
 import '@/features/map/SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
@@ -113,6 +119,45 @@ export default function SituationHome() {
   const ledeBase = useMemo(() => buildLede(open, hero), [open, hero]);
   const lede = newCount && lastSeen ? `${ledeBase} · ${newCount} new since ${fmtSince(lastSeen)}` : ledeBase;
 
+  // Honesty status line + sensor panel (M2). newestAnalysisAt is reused from the /daily page's
+  // own "find the latest published edition" lookup — useDailyBrief() with no dateKey defaults to
+  // today and searches backward through real DAILY_BRIEF# records (hooks/useDailyBrief.js); its
+  // `generatedAt` is the same field DailyPage.jsx shows as "Generated Xh ago". No new endpoint.
+  const { brief: latestBrief, loading: briefLoading, error: briefError } = useDailyBrief();
+  // searched = the lookup finished without an error; then "nothing found" is itself a fact
+  // (no brief in the lookback window) and must be shown, not hidden.
+  const paused = useMemo(() => pausedSince({
+    newestAnalysisAt: latestBrief?.generatedAt,
+    searched: !briefLoading && !briefError,
+    lookbackDays: MAX_LOOKBACK_DAYS,
+  }), [latestBrief, briefLoading, briefError]);
+  const tierCounts = useMemo(() => {
+    const c = { high: 0, elevated: 0, moderate: 0, low: 0 };
+    for (const s of open) if (c[s.tier] != null) c[s.tier]++;
+    return c;
+  }, [open]);
+  // "News situations" = anything not sourced straight from GDACS (today that's everything with
+  // an axis of conflict/political/economic, plus any non-GDACS humanitarian situation).
+  const newsSituationCount = useMemo(() => open.filter((s) => s.source !== 'gdacs').length, [open]);
+  const sensorRows = useMemo(() => {
+    if (!world) return [];
+    const rows = [];
+    if (world.sources?.gdacs) {
+      rows.push({ key: 'gdacs', name: 'Disaster alerts (GDACS)', ok: true, text: `live · checked ${fmtAgo(world.sources.gdacs)}` });
+    }
+    if (world.sources?.news) {
+      const checked = fmtAgo(world.sources.news);
+      const text = newsSituationCount > 0
+        ? `checked ${checked}`
+        : (paused ? `checked ${checked} · 0 new stories · ${paused.text}` : `checked ${checked} · 0 new stories`);
+      rows.push({ key: 'news', name: 'News desk', ok: newsSituationCount > 0, text });
+    }
+    if (world.generated_at) {
+      rows.push({ key: 'map', name: 'Map file', ok: true, text: `updated ${fmtAgo(world.generated_at)} · next ${fmtIn(world.next_expected_at)}` });
+    }
+    return rows;
+  }, [world, newsSituationCount, paused]);
+
   const selected = useMemo(() => situations.find((s) => s.id === focus) || null, [situations, focus]);
   const focusMissing = focus && !selected;              // deep link to an expired/archived situation
   const ev = detail?.evidence || {};
@@ -148,11 +193,15 @@ export default function SituationHome() {
         </div>
       </header>
 
+      <HudStatusLine paused={paused} />
+
       {stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null}
 
       <div className="sh-stage">
         <div className="sh-mapwrap">
           <div className="sh-mapinner">
+            {world ? <HudBriefPanel lede={lede} counts={tierCounts} /> : null}
+            {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
             {USE_3D ? (
               <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
                 <SituationMap3D
@@ -291,30 +340,10 @@ export default function SituationHome() {
               )}
             </div>
           ) : (
-            <div className="sh-list">
-              <h2>{ranked.length ? `${ranked.length} active situation${ranked.length === 1 ? '' : 's'}` : 'Situations'}<i> ranked by severity</i></h2>
-              {loading && !world ? <p className="sh-muted">Loading…</p> : null}
-              {error && !world ? <p className="sh-muted">Couldn’t load the feed. Retrying automatically.</p> : null}
-              {world && !ranked.length ? <p className="sh-muted">No situations open right now — the map is quiet.</p> : null}
-              <ul>
-                {ranked.map((s) => (
-                  <li key={s.id} className={s.id === focusId ? 'sh-active' : ''}>
-                    <button onClick={() => userSelect(s.id)}>
-                      <span className={`sh-leg-pin sh-pin-${s.tier}`} style={{ '--pin': AXIS_HUE[s.axis] || '#9aa4b2' }} />
-                      <span className="sh-row-main">
-                        <span className="sh-row-tags">
-                          <span className={`sh-tierlbl sh-tierlbl-${s.tier}`}>{TIER_LABEL[s.tier]}</span>
-                          {newIds?.has(s.id) ? <span className="sh-new">◇ new</span> : null}
-                          {s.escalating ? <span className="sh-esc-sm">▲ escalating</span> : null}
-                        </span>
-                        <span className="sh-row-title">{s.verb_label}</span>
-                        {s.what_changed ? <span className="sh-row-what">{s.what_changed}</span> : null}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <HudIntelFeed
+              ranked={ranked} focusId={focusId} newIds={newIds} loading={loading} error={error} world={world}
+              onSelect={userSelect}
+            />
           )}
         </aside>
       </div>

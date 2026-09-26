@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Map console, M2: HUD frame with honest freshness; branch `map-console`, local only)
+
+- `/map` gains the console HUD:
+  - a **status line** "NEW STORIES AND ANALYSIS PAUSED SINCE <date>", computed from the newest daily brief's `generatedAt` via the existing `useDailyBrief` lookup (shown only when older than 36 h);
+  - a **sensor status** panel: GDACS "live · checked …"; the news desk "checked … · 0 new stories · analysis paused since …", never "live" while no news situations are produced; the map file "updated … · next …";
+  - a **situation brief** with tier counts (zeros shown dimmed);
+  - the **intel feed** (the map's accessible twin).
+- New `shared/lib/freshness.js` (`pausedSince`) and `features/map/components/Hud*.jsx`.
+- Monitor fix: when no brief exists within the 30-day lookback (about 12 Oct at the current pause), the line now says "no analysis in the last 30 days" instead of disappearing. `useDailyBrief` exports `MAX_LOOKBACK_DAYS`.
+- Tests: `freshness.test.js`, `hudHonesty.test.jsx`.
+
 ## 2026-09-26 (Map console, M1: scoped console tokens; branch `map-console`, local only)
 
 First phase of the local map-console build (`project-docs/redesign-ux/_active/TASK_2026-09-26_map_console_local.md`); not deployed, not merged.

@@ -1285,6 +1285,11 @@ means the basename is unchanged, only the directory moved).
 | `components/atoms/RiskScorecard.jsx`/`.css`, `RiskScoreBadge.jsx`, `RiskDeltaPill.jsx` | `shared/ui/risk/` |
 | `test/riskScorecard.test.jsx` | `shared/ui/risk/__tests__/riskScorecard.test.jsx` |
 
+**Added on branch `map-console` (2026-09-26, local review, not merged):**
+- `shared/styles/tokens.css` has a scoped `.gp-console` section (console DS1 tokens `--c-*`); `/map` uses it.
+- `shared/lib/freshness.js` (`pausedSince`): computes the "paused since" line from real timestamps.
+- `features/map/components/Hud*.jsx`: the console HUD panels.
+
 Note: `utils/sourceRobustness.js` (lowercase, the BYOK source-basis scorer) did **not** move in
 P2 — it stays at its flat path until P7 (`features/analysis-studio/lib/sourceRobustness.js`),
 deliberately never sharing a directory with `SourceRobustness.jsx` (case-only collision on

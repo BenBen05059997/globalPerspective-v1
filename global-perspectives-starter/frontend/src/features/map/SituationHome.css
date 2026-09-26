@@ -32,6 +32,71 @@
 .sh-next { color: var(--sh-dim); }
 .sh-banner { background: #2a2410; border: 1px solid #4a3f16; color: #f2d492; padding: 8px 12px; border-radius: 8px; margin: 12px 0 0; font-size: 13px; }
 
+/* ---- HUD: honesty status line (M2) ---- */
+.hud-status-line {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 7px 12px;
+  min-height: 32px; background: rgba(255, 179, 71, 0.08); border: 1px solid rgba(255, 179, 71, 0.35);
+  border-radius: var(--c-radius-md, 4px); color: var(--c-warn, #ffb347);
+  font-family: var(--c-mono, monospace); font-size: 11px; letter-spacing: var(--c-hud-label-tracking, 0.08em);
+  text-transform: uppercase;
+}
+.hud-status-dot { color: var(--c-warn, #ffb347); font-size: 10px; line-height: 1; }
+
+/* ---- HUD panels: shared frame (M2) ---- */
+.hud-panel {
+  position: absolute; z-index: 4; background: var(--c-panel, rgba(6,12,20,0.95));
+  border: 1px solid var(--c-hairline, rgba(95,212,255,0.18)); border-radius: var(--c-radius-md, 4px);
+  padding: 10px 12px 11px; backdrop-filter: blur(4px); max-width: min(46%, 320px);
+}
+.hud-panel-corner { position: absolute; width: 10px; height: 10px; pointer-events: none; }
+.hud-panel-corner-tl { top: -1px; left: -1px; border-top: 1.5px solid var(--c-hairline-strong, rgba(95,212,255,0.3)); border-left: 1.5px solid var(--c-hairline-strong, rgba(95,212,255,0.3)); }
+.hud-panel-corner-br { bottom: -1px; right: -1px; border-bottom: 1.5px solid var(--c-hairline-strong, rgba(95,212,255,0.3)); border-right: 1.5px solid var(--c-hairline-strong, rgba(95,212,255,0.3)); }
+.hud-label {
+  font-family: var(--c-mono, monospace); font-size: var(--c-hud-label-size, 10px); text-transform: uppercase;
+  letter-spacing: var(--c-hud-label-tracking, 0.1em); color: var(--c-accent, #5fd4ff); margin-bottom: 7px;
+}
+
+/* situation brief (top-left) */
+.hud-brief { top: 12px; left: 12px; }
+.hud-brief-lede { margin: 0 0 8px; font-size: 13px; line-height: 1.4; color: var(--sh-text); font-family: var(--c-sans, inherit); text-transform: none; letter-spacing: normal; }
+.hud-brief-counts { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.hud-brief-count { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sh-muted); }
+.hud-brief-count-zero { opacity: 0.4; }
+.hud-brief-count-n { font-weight: 700; color: var(--sh-text); }
+.hud-brief-count-zero .hud-brief-count-n { color: var(--sh-muted); }
+.hud-brief-count-label { text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
+
+/* sensor status (top-right) — sits below the map control row (Walk me through / Globe / Key) so
+   the two clusters never overlap. */
+.hud-sensor { top: 54px; right: 12px; }
+.hud-sensor-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.hud-sensor-row { display: flex; align-items: baseline; gap: 7px; font-size: 12px; }
+.hud-sensor-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c-ok, #6fd29a); box-shadow: 0 0 6px var(--c-ok, #6fd29a); align-self: center; }
+.hud-sensor-dot-warn { background: var(--c-warn, #ffb347); box-shadow: 0 0 6px var(--c-warn, #ffb347); }
+.hud-sensor-name { color: var(--sh-muted); white-space: nowrap; }
+.hud-sensor-text { color: var(--sh-text); }
+
+/* intel feed (rail) */
+.hud-feed { position: static; max-width: none; padding: 0; background: none; border: 0; }
+.hud-feed .hud-panel-corner { display: none; }
+.hud-feed-label { display: flex; align-items: baseline; margin: 0 0 4px; padding: 2px 0 6px; position: sticky; top: 0; z-index: 1; background: var(--sh-bg); }
+.hud-feed-count { color: var(--sh-dim); text-transform: none; letter-spacing: normal; }
+.hud-feed-list { max-height: 588px; overflow-y: auto; list-style: none; margin: 0; padding: 0 2px 0 0; scrollbar-width: thin; scrollbar-color: #2a3446 transparent; }
+.hud-feed-list::-webkit-scrollbar { width: 8px; }
+.hud-feed-list::-webkit-scrollbar-thumb { background: #2a3446; border-radius: 4px; }
+.hud-feed-list li button {
+  width: 100%; min-height: 44px; display: flex; align-items: flex-start; gap: 10px; background: none; border: 0;
+  border-bottom: 1px solid var(--sh-border); padding: 11px 6px; color: var(--sh-text); text-align: left; cursor: pointer;
+}
+.hud-feed-list li button:hover, .hud-feed-list li.sh-active button { background: var(--sh-panel); }
+.hud-tier-chip {
+  flex: none; margin-top: 1px; font-family: var(--c-mono, monospace); font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--pin, var(--sh-border)); color: var(--pin, var(--sh-muted));
+}
+.hud-tier-chip-high { box-shadow: 0 0 6px -1px var(--pin); }
+.hud-esc { color: #ffb27a; font-size: 11px; }
+.hud-feed-place { font-size: 11px; color: var(--sh-dim); }
+
 /* ---- stage: map (left) + rail (right) ---- */
 .sh-stage { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(300px, 1fr); gap: 16px; margin-top: 14px; align-items: start; }
 @media (max-width: 900px) { .sh-stage { grid-template-columns: 1fr; } }
@@ -194,6 +259,8 @@
 
 /* ---- mobile ---- */
 @media (max-width: 900px) {
+  .hud-brief, .hud-sensor { max-width: 62%; padding: 8px 9px 9px; font-size: 11px; }
+  .hud-brief-lede { font-size: 12px; }
   .sh-legend { display: none; }
   .sh-legend.sh-legend-open {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 40;

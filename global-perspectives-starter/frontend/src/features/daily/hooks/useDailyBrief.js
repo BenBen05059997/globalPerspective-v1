@@ -17,7 +17,7 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 // per-day loop) so a multi-week gap costs a handful of round-trips, not dozens fired one after
 // another: each batch of BATCH_SIZE candidate dates is fetched with Promise.all, and only if
 // nothing in that batch has data does the hook move to the next (older) batch.
-const MAX_LOOKBACK_DAYS = 30;
+export const MAX_LOOKBACK_DAYS = 30;
 const BATCH_SIZE = 10;
 
 export function useDailyBrief(dateKey) {

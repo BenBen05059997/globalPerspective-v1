@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/features/account/hooks/useMembership';
@@ -8,8 +8,52 @@ import NotificationBell from '@/features/breaking/components/NotificationBell';
 import { useAutoTour, startTourForPath } from '@/app/onboarding/useOnboarding';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
 import { pausedSince } from '@/shared/lib/freshness';
+import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import HudStatusLine from '@/features/map/components/HudStatusLine';
 import '@/app/layout/Layout.css';
+
+// P1 phone tab bar (A2): simple inline-SVG line icons, no icon library. 20x20 viewBox, stroke
+// only (matches the existing `.gp-help` icon's style), so they read at 20px in the bar.
+function IconMap() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+      <path d="M2 5.5l5-2 6 2 5-2v11l-5 2-6-2-5 2z" />
+      <path d="M7 3.5v11M13 5.5v11" />
+    </svg>
+  );
+}
+function IconStories() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <path d="M3 5.5h14M3 10h14M3 14.5h9" />
+    </svg>
+  );
+}
+function IconBriefs() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+      <path d="M5.5 2.5h6l3 3v11.5h-9z" />
+      <path d="M11.5 2.5v3h3" />
+      <path d="M7.5 10.5h5M7.5 13h5" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconStudio() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <circle cx="8.5" cy="8.5" r="5.3" />
+      <path d="M16 16l-3.3-3.3" />
+    </svg>
+  );
+}
+function IconRecord() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="7" />
+      <path d="M6.6 10.2l2.3 2.3 4.6-5" />
+    </svg>
+  );
+}
 
 // Build stamp injected by Vite `define` (git SHA + date). `typeof` guard keeps it
 // safe under vitest/dev where the globals may be absent (returns 'dev').
@@ -19,9 +63,10 @@ const BUILD_LABEL = `v${_ver}${_date ? ` · ${_date}` : ''}`;
 
 function Layout({ children }) {
   const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { isMember, creditBalance, available: billingAvailable } = useMembership();
+  // P1 phone tab bar (A2): shared 900px breakpoint — same one /map's own MAP·LIST·ALERTS tabs use.
+  const isPhone = useIsPhone();
 
   // Site-wide honesty line (N1/DS1): the same computed "paused since" text the map page shows
   // itself (hidden here for /map to avoid a duplicate claim — see the render guard below).
@@ -35,8 +80,6 @@ function Layout({ children }) {
 
   useAutoTour(location.pathname);
 
-  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
-
   // Sign-in link that returns you to the page you came from. Guard against auth
   // routes (signin/callback/account) so post-login doesn't loop back here; those
   // fall through to SignIn's own /weekly default.
@@ -47,26 +90,18 @@ function Layout({ children }) {
     return `/signin?returnTo=${encodeURIComponent(origin)}`;
   })();
 
-  useEffect(() => {
-    const handleKey = (e) => {
-      // (⌘K is intentionally not bound — a global command palette is a future
-      // enhancement. Don't swallow the keystroke until there's something to open.)
-      if (e.key === 'Escape') setMenuOpen(false);
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, []);
-
   // N1 (approved 2026-09-26): five plain, flat menu items — no groups, no dropdowns. "Topics"
   // (`/`) stays reachable via the logo; "Countries" (`/weekly/countries`) and "Weekly Brief"
   // (`/weekly-brief`) stay reachable via interim links on the Stories/Briefings pages instead of
   // the menu. "Briefings" points at `/daily` until a real `/briefings` route exists.
+  // `short` + `icon` feed the phone tab bar (P1/A2) — same five items, short labels, a small
+  // inline-SVG icon per item (no icon library).
   const navLinks = [
-    { to: '/map', label: 'Map', title: "Today's coverage on a world map — the spatial view of the same live topics." },
-    { to: '/weekly', label: 'Stories', title: 'Ongoing story arcs ranked by risk — what leads, what develops, how each has evolved.' },
-    { to: '/daily', label: 'Briefings', title: 'The end-of-day intelligence brief: one synthesised read of what mattered today.' },
-    { to: '/analyze', label: 'Studio', title: 'Analysis Studio — run a cited AI deep-dive across up to 4 stories (your key, or ours as a member).' },
-    { to: '/track-record', label: 'Track record', title: 'Accountability hub — every forecast publicly scored, every revised conclusion logged.' },
+    { to: '/map', label: 'Map', short: 'Map', icon: IconMap, title: "Today's coverage on a world map — the spatial view of the same live topics." },
+    { to: '/weekly', label: 'Stories', short: 'Stories', icon: IconStories, title: 'Ongoing story arcs ranked by risk — what leads, what develops, how each has evolved.' },
+    { to: '/daily', label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The end-of-day intelligence brief: one synthesised read of what mattered today.' },
+    { to: '/analyze', label: 'Studio', short: 'Studio', icon: IconStudio, title: 'Analysis Studio — run a cited AI deep-dive across up to 4 stories (your key, or ours as a member).' },
+    { to: '/track-record', label: 'Track record', short: 'Record', icon: IconRecord, title: 'Accountability hub — every forecast publicly scored, every revised conclusion logged.' },
   ];
 
   const isActive = (to, exact) => {
@@ -141,38 +176,8 @@ function Layout({ children }) {
               <Link to={signInHref} className="gp-btn gp-btn-primary">Sign in</Link>
             )
           )}
-
-          <button
-            type="button"
-            className={`gp-hamburger${menuOpen ? ' open' : ''}`}
-            aria-label="Toggle menu"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(v => !v)}
-          >
-            <span /><span /><span />
-          </button>
         </div>
       </nav>
-
-      <div className={`gp-mobile-menu${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)}>
-        {navLinks.map(({ to, label, exact, title }) => (
-          <Link
-            key={to}
-            to={to}
-            title={title}
-            className={`gp-mobile-link${isActive(to, exact) ? ' active' : ''}`}
-          >
-            {label}
-          </Link>
-        ))}
-        {!authLoading && (
-          user && !user.isAnonymous ? (
-            <Link to="/account" className="gp-mobile-link">{user.email}</Link>
-          ) : (
-            <Link to={signInHref} className="gp-mobile-link">Sign in →</Link>
-          )
-        )}
-      </div>
 
       {/* The situation map carries its own live, per-source freshness line — hide the strip there
           so the page never shows two conflicting freshness claims. Everywhere else the strip
@@ -185,7 +190,7 @@ function Layout({ children }) {
         </div>
       )}
 
-      <main className="gp-main">
+      <main className={`gp-main${isPhone ? ' gp-main-tabbar' : ''}`}>
         <div className="container">
           {children}
         </div>
@@ -203,6 +208,31 @@ function Layout({ children }) {
         </div>
         <span className="gp-footer-ver" title="Deployed build">{BUILD_LABEL}</span>
       </footer>
+
+      {/* P1 phone tab bar (A2): the five main-nav items as a fixed bottom bar under 900px,
+          replacing the old hamburger dropdown (removed above). Console-dark on every page — the
+          `.gp-console` class just scopes those CSS tokens to this one element, it doesn't touch
+          the rest of the (light) page. /map's own MAP·LIST·ALERTS in-page tabs and bottom sheet
+          are unaffected — they sit above this bar (SituationHome.css). */}
+      {isPhone && (
+        <nav className="gp-tabbar gp-console" aria-label="Primary, phone">
+          {navLinks.map((item) => {
+            const { to, short, icon: TabIcon } = item;
+            const active = isActive(to);
+            return (
+              <Link
+                key={to}
+                to={to}
+                className={`gp-tabbar-link${active ? ' active' : ''}`}
+                aria-current={active ? 'page' : undefined}
+              >
+                <TabIcon />
+                <span className="gp-tabbar-label">{short}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
     </div>
   );
 }

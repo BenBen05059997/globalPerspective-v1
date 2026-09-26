@@ -11,7 +11,7 @@ import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
 import HudCompactLine from '@/features/map/components/HudCompactLine.jsx';
 import MapPhoneTabs from '@/features/map/components/MapPhoneTabs.jsx';
 import BottomSheet from '@/features/map/components/BottomSheet.jsx';
-import { useIsPhone } from '@/features/map/hooks/useIsPhone.js';
+import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import { hudCompactSummary } from '@/features/map/lib/hudCompact.js';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';

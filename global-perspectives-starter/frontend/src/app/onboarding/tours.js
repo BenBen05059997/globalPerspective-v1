@@ -25,7 +25,7 @@ export const SITE_WELCOME = {
       popover: {
         title: 'Welcome to Global Perspectives',
         description:
-          'AI-curated intelligence on world news. <b>Map</b> shows today’s coverage spatially; <b>Stories</b> follows narratives over time; <b>Track record</b> scores our predictions. Click the <b>?</b> in the top bar any time for a guided walkthrough of the page you’re on.',
+          'AI-curated intelligence on world news. <b>Map</b> shows where events happen; <b>Stories</b> follows narratives over time; <b>Track record</b> shows how our forecasts are checked. Click the <b>?</b> in the top bar any time for a guided walkthrough of the page you’re on.',
       },
     },
   ],

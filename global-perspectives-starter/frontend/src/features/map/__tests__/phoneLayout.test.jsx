@@ -38,7 +38,7 @@ vi.mock('@/shared/data/useGeminiTopics.js', () => ({
 
 // Deterministic "phone" — the harness can't shrink jsdom's window, so SituationHome reads its
 // own breakpoint hook, which tests mock directly (per the M7 task brief).
-vi.mock('@/features/map/hooks/useIsPhone.js', () => ({
+vi.mock('@/shared/hooks/useIsPhone.js', () => ({
   useIsPhone: () => true,
   default: () => true,
 }));

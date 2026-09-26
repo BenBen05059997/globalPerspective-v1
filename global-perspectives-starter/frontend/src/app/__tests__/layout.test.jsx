@@ -31,6 +31,14 @@ vi.mock('@/shared/api/restProxy', () => ({
   fetchMembership: vi.fn(),
 }));
 
+// useIsPhone (shared/hooks, moved from features/map in A2) drives the P1 phone tab bar — mocked
+// directly per the M7 convention (jsdom's window can't be resized) rather than mocking innerWidth.
+const isPhoneMock = vi.fn(() => false);
+vi.mock('@/shared/hooks/useIsPhone.js', () => ({
+  useIsPhone: (...args) => isPhoneMock(...args),
+  PHONE_BREAKPOINT: 900,
+}));
+
 import Layout from '@/app/layout/Layout';
 
 function renderLayout(path = '/weekly') {
@@ -49,6 +57,8 @@ function renderLayout(path = '/weekly') {
 
 beforeEach(() => {
   fetchDailyBrief.mockReset();
+  isPhoneMock.mockReset();
+  isPhoneMock.mockReturnValue(false);
   try { localStorage.clear(); } catch { /* ignore */ }
 });
 
@@ -75,6 +85,41 @@ describe('Layout — N1 menu', () => {
     renderLayout('/weekly');
     const footer = document.querySelector('.gp-footer');
     expect(footer.innerHTML).not.toMatch(/whitepaper|white paper/i);
+  });
+});
+
+describe('Layout — P1 phone tab bar (A2)', () => {
+  it('shows five links with the right hrefs and aria-current on the active route when isPhone', async () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    isPhoneMock.mockReturnValue(true);
+    renderLayout('/daily');
+    const bar = document.querySelector('.gp-tabbar');
+    expect(bar).toBeTruthy();
+    expect(bar.getAttribute('aria-label')).toBeTruthy();
+    const links = bar.querySelectorAll('a');
+    expect(links.length).toBe(5);
+    const byHref = Array.from(links).map((a) => [a.getAttribute('href'), a.getAttribute('aria-current')]);
+    expect(byHref).toEqual([
+      ['/map', null],
+      ['/weekly', null],
+      ['/daily', 'page'],
+      ['/analyze', null],
+      ['/track-record', null],
+    ]);
+  });
+
+  it('has no bar at desktop widths (useIsPhone false)', async () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    renderLayout('/weekly');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.querySelector('.gp-tabbar')).toBeNull();
+  });
+
+  it('top bar has no main-item hamburger list', async () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    renderLayout('/weekly');
+    expect(document.querySelector('.gp-hamburger')).toBeNull();
+    expect(document.querySelector('.gp-mobile-menu')).toBeNull();
   });
 });
 

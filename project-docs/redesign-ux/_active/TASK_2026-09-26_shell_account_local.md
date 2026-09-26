@@ -60,8 +60,8 @@ Build the approved **site shell** (navigation N1 + the phone tab bar P1) and the
 | Phase | Goal | Needs | Status | Commit | Monitor ✓ |
 |---|---|---|---|---|---|
 | A1 · Site shell | N1 menu, footer, site-wide computed "paused" line, tour targets, page guard | K-d (default: hide the white paper) | ✅ | see git log (branch) | verify 39 files / 338 tests; verify_pages 38/0; browser: 5-item menu, "paused since Sep 12" line on /weekly (agent: also /daily /analyze /track-record /about; not duplicated on /map), Countries → / Weekly brief → work, /whitepaper still loads. Not checked: the phone hamburger (A2 replaces it). **Found (pre-existing, backend):** Stories shows "NEW EVENTS TODAY · updated today" because the archive re-writes 13-Sep stories under today's date. Needs a backend fix + an operator yes |
-| A2 · Phone tab bar | P1 bottom tab bar under 900px | A1 | **Next** | — | — |
-| A3 · Account shell | K1 sections in console style, old `?tab=` links still work | A1 | queued | — | — |
+| A2 · Phone tab bar | P1 bottom tab bar under 900px | A1 | ✅ | see git log (branch) | verify 341 tests; Playwright 390×844: no overflow on 5 pages, content clears the bar (~103px), map sheet ends at the bar top; desktop unchanged. Monitor fixed the tour wording ("today's coverage", "scores our predictions"). Pre-existing: /track-record overflows to 549px (tr-item-cite), logged. Notification bell + credits pill kept in the phone top bar (not in the old hamburger) |
+| A3 · Account shell | K1 sections in console style, old `?tab=` links still work | A1 | **Next** | — | — |
 | A4 · Desk | Since your last visit · Following · Saved, with honest empty states | A3, K-b, K-c | queued | — | — |
 | A5 · Membership | K2 with only true benefits; credits UI removed | **K-a + billing "yes"** | blocked | — | — |
 | A6 · Sign-in | Calm console sign-in screen | A1 | queued | — | — |

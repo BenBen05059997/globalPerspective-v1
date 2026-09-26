@@ -210,57 +210,6 @@
 .gp-credits-label { color: var(--ink-dim); }
 @media (max-width: 760px) { .gp-credits-label { display: none; } }
 
-/* Mobile hamburger */
-.gp-hamburger {
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--card);
-  cursor: pointer;
-  padding: 8px;
-  flex-shrink: 0;
-}
-.gp-hamburger span {
-  display: block;
-  width: 100%;
-  height: 1.5px;
-  background: var(--ink);
-  transition: transform var(--fast), opacity var(--fast);
-}
-.gp-hamburger.open span:nth-child(1) { transform: translateY(5.5px) rotate(45deg); }
-.gp-hamburger.open span:nth-child(2) { opacity: 0; }
-.gp-hamburger.open span:nth-child(3) { transform: translateY(-5.5px) rotate(-45deg); }
-
-/* Mobile dropdown menu */
-.gp-mobile-menu {
-  display: none;
-  flex-direction: column;
-  background: var(--card);
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-  position: relative;
-  z-index: 99;
-}
-.gp-mobile-menu.open { display: flex; }
-.gp-mobile-link {
-  padding: 14px 24px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--ink-mid);
-  text-decoration: none;
-  border-bottom: 1px solid var(--line);
-  transition: background var(--fast);
-  display: block;
-}
-.gp-mobile-link:last-child { border-bottom: none; }
-.gp-mobile-link:hover { background: var(--paper-2); }
-.gp-mobile-link.active { background: var(--paper-2); color: var(--ink); }
-
 /* ── Status strip ────────────────────────────────────────── */
 /* Site-wide computed "paused since" line (N1/DS1) — renders the HudStatusLine console component
    (shared with /map) so the wording and look match everywhere it appears. Height is no longer
@@ -307,13 +256,56 @@
 .gp-footer-links a:hover { color: var(--ink-mid); }
 .gp-footer-ver { flex-shrink: 0; color: var(--ink-faint); opacity: 0.7; }
 
+/* ── Phone tab bar (P1/A2) ───────────────────────────────────
+   Fixed 5-item bottom bar under 900px, replacing the old hamburger dropdown for the main nav
+   items. `.gp-console` (applied on the element itself, see Layout.jsx) scopes the console-dark
+   tokens (`--c-*`, tokens.css) to just this bar — every other page stays on its own light theme.
+   58px matches the phone-pattern frame (TASK_2026-09-26_remaining_design.md Phase P). */
+.gp-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  display: flex;
+  align-items: stretch;
+  height: 58px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--c-bg, #070d15);
+  border-top: 1px solid var(--c-hairline, rgba(95, 212, 255, 0.18));
+}
+.gp-tabbar-link {
+  flex: 1;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--c-text-dim, #7d8b96);
+  text-decoration: none;
+  font-family: var(--c-sans, var(--sans));
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.gp-tabbar-link svg { flex-shrink: 0; }
+.gp-tabbar-link.active { color: var(--c-accent, #5fd4ff); }
+@media (min-width: 900px) {
+  /* Defense in depth: Layout.jsx already gates rendering on the same 900px breakpoint (useIsPhone),
+     so this bar is never in the DOM at desktop widths — this rule just guards a resize race. */
+  .gp-tabbar { display: none; }
+}
+
+/* Keeps page content (and /map's own bottom sheet — see SituationHome.css) clear of the fixed
+   bar; only added to `.gp-main` when the bar is actually rendered (isPhone). */
+.gp-main-tabbar { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+
 /* ── Mobile responsive ───────────────────────────────────── */
 @media (max-width: 900px) {
   .gp-nav { grid-template-columns: 1fr auto; padding: 0 16px; }
   .gp-nav-links { display: none; }
   .gp-search { display: none; }
-  .gp-btn { display: none; }
-  .gp-hamburger { display: inline-flex; }
   .gp-strip { padding: 6px 16px; }
   .gp-footer { padding: 0 16px; }
 }

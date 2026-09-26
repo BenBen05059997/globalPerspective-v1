@@ -1,5 +1,17 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Site shell A2: phone bottom tab bar; branch `map-console`, local only)
+
+- **Under 900px:** a fixed 5-item bottom tab bar (Map · Stories · Briefs · Studio · Record) in console colours: inline SVG icons, `aria-current`, 44px, safe-area padding.
+  - The hamburger is removed. Its items are now in the bar, and the account / sign-in button stays visible in the top bar.
+  - Page content gets bottom padding so nothing hides under the bar.
+  - `/map`'s sheet and legend sit above the bar.
+- `useIsPhone` moved to `shared/hooks` so the shell and `/map` share the 900px breakpoint.
+- **Monitor fix:** the welcome tour said "Map shows today's coverage" and "Track record scores our predictions"; it now says "shows where events happen" and "shows how our forecasts are checked".
+- **Playwright 390×844:** no overflow on /weekly, /daily, /analyze, /map (+ sheet full).
+  - `/track-record` overflows to 549px. This is pre-existing and inside the track-record page's own content; logged.
+- Tests: 341 total.
+
 ## 2026-09-26 (Site shell A1: five-item menu, site-wide paused line, white paper hidden; branch `map-console`, local only)
 
 - **Menu (N1):** Map (`/map`) · Stories (`/weekly`) · Briefings (`/daily`) · Studio (`/analyze`) · Track record (`/track-record`). Flat, with the same URLs; the logo still goes to `/`.

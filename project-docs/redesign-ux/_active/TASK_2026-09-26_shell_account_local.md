@@ -64,8 +64,8 @@ Build the approved **site shell** (navigation N1 + the phone tab bar P1) and the
 | A3 · Account shell | K1 sections in console style, old `?tab=` links still work | A1 | ✅ | see git log (branch) | verify 40 files / 354 tests; browser (signed in): all 5 rail items, `?tab=membership` → Plan; Playwright 390×844 signed out: no overflow, clears the tab bar. Monitor fixed: "following" listed as a free benefit (it's member-only); restored a badge style the clean-up removed. **For A5:** the moved Plan panel still says membership includes "a monthly allowance of custom analyses" (untrue; shown only when billing is configured) |
 | A4 · Desk | Since your last visit · Following · Saved, with honest empty states | A3, K-b, K-c | ✅ (v1 defaults: countries only, Saved kept) | see git log (branch) | verify 42 files / 384 tests; browser (operator's account: signed in, non-member, no follows) shows the honest empty states, no request loop (0 new requests / 6 s); the populated desk is covered by render tests on a real Iran `country_history` fixture (row: "Aug 19 · IRAN · HUMANITARIAN 90→70, ECONOMIC 80→90"). Monitor fixed: topicId linked as a thread id (a broken page) |
 | A5 · Membership | K2 with only true benefits; credits UI removed | **K-a + billing "yes"** | blocked | — | — |
-| A6 · Sign-in | Calm console sign-in screen | A1 | **Next** | — | — |
-| Review | Operator reviews the shell + account + map on localhost | A1–A4, A6 | queued | — | — |
+| A6 · Sign-in | Calm console sign-in screen | A1 | ✅ | see git log (branch) | verify 43 files / 391 tests; the SignIn.jsx diff has no auth-logic lines; Playwright 390 / 1440 no overflow; screenshot reviewed. Not clicked: real sign-in providers (by design) |
+| Review | Operator reviews the shell + account + map on localhost | A1–A4, A6 | **Now** · ready | — | — |
 
 ### Completion checklist
 - [ ] A1–A4, A6 ✅ on branch `map-console` with monitor evidence

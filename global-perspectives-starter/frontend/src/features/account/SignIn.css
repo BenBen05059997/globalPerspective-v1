@@ -1,0 +1,209 @@
+/* Sign-in — calm console screen (A6). One centred `.gp-console` panel, dark tokens from
+   tokens.css. Visual + copy only: every button/handler/redirect in SignIn.jsx is unchanged. */
+.acct-signin-shell {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: var(--c-bg, #070d15);
+  color: var(--c-text-body, #c9d6df);
+}
+
+.acct-signin-panel {
+  width: 100%;
+  max-width: 400px;
+  background: var(--c-panel, rgba(6,12,20,0.95));
+  border: 1px solid var(--c-hairline, rgba(95,212,255,0.18));
+  border-radius: 6px;
+  padding: 32px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.acct-signin-logo {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+}
+
+.acct-signin-kicker {
+  font-family: var(--c-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--c-accent, #5fd4ff);
+  text-transform: uppercase;
+}
+
+.acct-signin-title {
+  font-family: var(--c-serif, serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--c-text-head, #eef5f9);
+  margin: 6px 0 4px;
+}
+
+.acct-signin-tagline {
+  font-size: 12.5px;
+  color: var(--c-text-dim, #7d8b96);
+  margin: 0 0 18px;
+  max-width: 32ch;
+}
+
+.acct-signin-claims {
+  width: 100%;
+  text-align: left;
+  margin: 0 0 4px;
+  padding-left: 18px;
+  color: var(--c-text-body, #c9d6df);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+.acct-signin-note {
+  width: 100%;
+  text-align: left;
+  font-size: 12px;
+  color: var(--c-text-dim, #7d8b96);
+  margin: 0 0 22px;
+}
+
+.acct-signin-google-btn {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--c-panel-2, #0b1622);
+  border: 1px solid var(--c-hairline-strong, rgba(95,212,255,0.3));
+  border-radius: 4px;
+  color: var(--c-text-head, #eef5f9);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.acct-signin-google-btn:hover:not(:disabled) { border-color: var(--c-accent, #5fd4ff); }
+.acct-signin-google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.acct-signin-divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+  color: var(--c-text-dim, #7d8b96);
+  font-family: var(--c-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.acct-signin-divider::before,
+.acct-signin-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--c-hairline, rgba(95,212,255,0.18));
+}
+
+.acct-signin-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acct-signin-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 4px;
+  border: 1px solid var(--c-hairline-strong, rgba(95,212,255,0.3));
+  background: var(--c-panel-2, #0b1622);
+  color: var(--c-text-head, #eef5f9);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.acct-signin-input::placeholder { color: var(--c-text-dim, #7d8b96); }
+
+.acct-signin-submit {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 4px;
+  border: 1px solid var(--c-accent, #5fd4ff);
+  background: var(--c-accent, #5fd4ff);
+  color: #04070c;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.acct-signin-submit:hover:not(:disabled) { background: #8fe0ff; border-color: #8fe0ff; }
+.acct-signin-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.acct-signin-error {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: rgba(255,106,77,0.1);
+  border: 1px solid rgba(255,106,77,0.4);
+  color: var(--c-error, #ff6a4d);
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.acct-signin-guest {
+  min-height: 44px;
+  background: none;
+  border: none;
+  color: var(--c-text-dim, #7d8b96);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 0;
+}
+.acct-signin-guest:hover:not(:disabled) { color: var(--c-text-head, #eef5f9); }
+.acct-signin-guest:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.acct-signin-legal {
+  font-size: 11.5px;
+  color: var(--c-text-dim, #7d8b96);
+  line-height: 1.6;
+  margin: 18px 0 0;
+}
+.acct-signin-legal a { color: var(--c-accent, #5fd4ff); }
+
+.acct-signin-spam-note {
+  width: 100%;
+  font-size: 12px;
+  color: var(--c-warn, #ffb347);
+  background: rgba(255,179,71,0.1);
+  border: 1px solid rgba(255,179,71,0.35);
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-top: 12px;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.acct-signin-retry {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--c-accent, #5fd4ff);
+  font-size: 12.5px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Visible focus state on every interactive control in this screen. */
+.acct-signin-panel a:focus-visible,
+.acct-signin-panel button:focus-visible,
+.acct-signin-panel input:focus-visible {
+  outline: 2px solid var(--c-accent, #5fd4ff);
+  outline-offset: 2px;
+}

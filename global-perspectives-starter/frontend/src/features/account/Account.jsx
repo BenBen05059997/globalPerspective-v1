@@ -9,6 +9,7 @@ import { creditPacks } from '@/shared/api/restProxy';
 import { getProvider } from '@/features/analysis-studio/lib/llm';
 import ProviderModal from '@/features/analysis-studio/components/ProviderModal';
 import DeskPanel from '@/features/account/components/DeskPanel';
+import { ACCOUNT_CLAIMS, ACCOUNT_NOTE } from '@/features/account/lib/accountClaims';
 import '@/features/account/Account.css';
 
 // Mask a key for display: keep a few head/tail chars, hide the middle.
@@ -478,11 +479,11 @@ function SignedOutDesk() {
         <div className="acct-section-kicker">ACCOUNT</div>
         <h1 className="acct-section-title">What an account gives you here</h1>
         <ul className="acct-signedout-list">
-          <li>Saved stories, countries, and daily briefs, kept in one list</li>
-          <li>An Analysis Studio key, stored only in this browser</li>
-          <li>Alert settings for the emails that are live today</li>
+          {ACCOUNT_CLAIMS.map((claim) => (
+            <li key={claim}>{claim}</li>
+          ))}
         </ul>
-        <p className="acct-signedout-note">Following countries is part of membership.</p>
+        <p className="acct-signedout-note">{ACCOUNT_NOTE}</p>
         <Link to="/signin" className="btn-gp accent acct-signin-btn">Sign in</Link>
       </div>
     </div>

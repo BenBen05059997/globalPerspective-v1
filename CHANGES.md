@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Account A6: console sign-in screen; branch `map-console`, local only)
+
+- `/signin` restyled as one calm console panel: "Sign in to Global Perspectives", the three things an account gives today, and "Following countries is part of membership."
+- The claims now come from one shared module (`features/account/lib/accountClaims.js`) used by both sign-in and the signed-out account screen, so they can't drift.
+- **Auth logic untouched:** Google, magic link, guest, return-to and error branches are unchanged; restyle only; 44px controls; visible focus.
+- Playwright: no overflow at 390 or 1440.
+- Tests: `signIn.test.jsx` (7); 391 total.
+
 ## 2026-09-26 (Account A4: the Desk; branch `map-console`, local only)
 
 - **Desk = Since your last visit · Following · Saved** (`features/account/components/Desk*.jsx`, `lib/desk.js`, `lib/deskMap.js`, `hooks/useDeskChanges.js`).

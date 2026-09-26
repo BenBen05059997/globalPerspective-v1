@@ -30,8 +30,8 @@ Each phase runs: research + debate (agents) → canvas board with real data → 
 |---|---|---|---|---|
 | N · Site navigation | Top menu; how countries, sign-in/account and the retired pages (`/breaking`, `/spider-demo`, `/economy`, `/weekly-markets`) are reached; "AI paused" status line; footer | ✅ **APPROVED 26 Sep** ("ok that is good"), canvas N1 | see git log | 3 advocates + 2 critics; pause date verified 12 Sep |
 | P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | ✅ **APPROVED 26 Sep** ("Okay, that is good"), canvas P1 | see git log | 3 advocates + 1 critic; lazy map load verified in code |
-| DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | **Now** | — | — |
-| H · Home leftovers | Banner vs tour; country shading vs pins; build behind `/map` first; "real Earth on top right" | queued | — | — |
+| DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | **Now** · proposed (canvas DS1), 6 open questions | see git log | tokens checked against `tokens.css` (light palette only; traffic-light risk scale) |
+| H · Home leftovers | Banner vs tour; country shading vs pins; build behind `/map` first; "real Earth on top right" | **Now** · questions put to operator | — | — |
 | SP · Small pages | About, whitepaper, privacy, disclosures, contact; membership / account / sign-in, including the signed-out `/account` | queued | — | — |
 | B · Build order | The sequence from design to build, with dependencies (C11 story mode first) and operator gates | queued | — | — |
 
@@ -92,3 +92,31 @@ Debate: A map + bottom sheet / B swipe cards / C read first, map on demand, then
 - **Rejected:**
   - swipe cards: a 290px map per card can't show compare lanes or fork bands, and re-rendering the map per card is wasted work;
   - C's fixed 212px block with a static thumbnail.
+
+## Phase DS: design-system board (2026-09-26, proposed)
+Canvas **DS1** (`DesignSystem.dc.html`, 1440×1600). It gathers the approved decisions into one look per idea: **where · how sure · how fresh · whose claim**.
+
+**Panels:**
+- T1 console colours
+- T2 meaning colours (crisis type only)
+- T3 map symbols
+- T4 lines = how sure
+- T5 freshness = brightness
+- T6 ours vs this run
+- T7 motion budget
+- T8 type
+- T9 fixed words
+- T10 states
+- T11 shared parts
+- T12 space + 44px targets
+- T13 page defaults
+
+Each panel states WHY it exists.
+
+**Open questions for the operator:**
+1. Amber means both "older / paused" and "this run" (Studio hatching). Recommend a separate sand hatching for this run.
+2. The live risk scale is a traffic light (`tokens.css --risk-*`), and the country card shows HIGH in red. That conflicts with the legend rule "severity is never colour". Recommend number + tier word + ring weight.
+3. Tap size: 40px (25 Sep proposal) vs 44px (phone). Recommend 44.
+4. A light Reading mode for long reads? Recommend yes (same names, light values).
+5. Tokens go into `tokens.css` at build time; this board is the reference until then.
+6. Parked pages (economy) are restyled only when they return.

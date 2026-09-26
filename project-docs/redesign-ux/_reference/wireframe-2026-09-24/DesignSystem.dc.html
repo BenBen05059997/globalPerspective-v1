@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Design system</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}button{font-family:inherit}
+@keyframes ds-pulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.4);opacity:0}}
+@keyframes ds-dash{to{stroke-dashoffset:-26}}
+.ds-pulse{animation:ds-pulse 2.4s ease-out infinite}
+.ds-dash{animation:ds-dash 1.4s linear infinite}
+@media (prefers-reduced-motion: reduce){.ds-pulse,.ds-dash{animation:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1600px; position: relative; overflow: hidden; background: #070d15; color: #c9d6df;">
+<div style="position: absolute; left: 24px; top: 16px; right: 24px; display: flex; align-items: baseline; gap: 14px;">
+<span style="font-family: Fraunces, serif; font-size: 26px; font-weight: 600; color: #eef5f9;">Design system · one set of parts for every page</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ffb347;">DS1 · PROPOSED · GATHERS WHAT WAS APPROVED 24–26 SEP</span>
+<span style="flex-grow: 1;"></span>
+<button type="button" onClick="{{toggleMotion}}" style="{{motionBtn}}">{{motionLabel}}</button>
+</div>
+<div style="position: absolute; left: 24px; top: 52px; width: 900px; font-size: 12.5px; line-height: 1.5; color: #b9c7d1;">Why this exists: every approved page (console, story mode, country card, briefings, track record, Studio) repeats the same few ideas: <b style="color: #eef5f9;">where</b>, <b style="color: #eef5f9;">how sure</b>, <b style="color: #eef5f9;">how fresh</b>, and <b style="color: #eef5f9;">whose claim</b>. If each page draws them its own way, a reader has to relearn the site on every page, and an honesty rule fixed on one page stays broken on another. So each idea gets one look, defined once. Today's <code>tokens.css</code> has only the light editorial palette, with no console theme, map symbols or motion rules.</div>
+
+<sc-for list="{{panels}}" as="p" hint-placeholder-count="12">
+<section style="{{p.box}}">
+<div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #5fd4ff;">{{p.id}}</span><span style="font-family: Fraunces, serif; font-size: 16px; color: #eef5f9;">{{p.title}}</span></div>
+<div style="font-size: 11px; line-height: 1.45; color: #8a99a5; font-style: italic; margin-top: 3px;">Why: {{p.why}}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+<sc-for list="{{p.items}}" as="i" hint-placeholder-count="6">
+<div style="{{i.wrap}}"><span style="{{i.sw}}">{{i.glyph}}</span><div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #d6e2ea;">{{i.k}}</div><div style="font-size: 10px; line-height: 1.3; color: #8a99a5;">{{i.v}}</div></div></div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+
+<section style="position: absolute; left: 24px; top: 1180px; width: 900px; height: 400px; box-sizing: border-box; padding: 12px 14px; border: 1px solid rgba(95,212,255,0.2); border-radius: 4px; background: rgba(6,12,20,0.9);">
+<div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #5fd4ff;">T11</span><span style="font-family: Fraunces, serif; font-size: 16px; color: #eef5f9;">Shared parts (built once, used on every page)</span></div>
+<div style="font-size: 11px; color: #8a99a5; font-style: italic; margin-top: 3px;">Why: the same behaviour in the same place means a reader learns it once. Fix a part here and every page gets the fix.</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
+<div style="padding: 8px 10px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.3); border-radius: 4px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #ee7754;">● CONFLICT · ▲ ESCALATING · UPDATED 12 SEP</div><div style="font-size: 12px; color: #eef5f9; margin-top: 3px;">US-Iran Tensions Escalate Over Hormuz, Peace Talks Stall</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #7d8b96; margin-top: 3px;">85 ENTRIES · CLICK → STORY MODE</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #5fd4ff; margin-top: 6px;">STORYPEEK: HOVER / FOCUS PREVIEW, EVERYWHERE A STORY IS NAMED</div></div>
+<div style="padding: 8px 10px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.28); border-radius: 4px; position: relative;"><div style="position: absolute; left: -1px; top: -1px; width: 10px; height: 10px; border-left: 2px solid #5fd4ff; border-top: 2px solid #5fd4ff;"></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #5fd4ff;">CH4 · 15–21 AUG · ⚑</div><div style="font-family: Fraunces, serif; font-size: 13px; color: #eef5f9; margin-top: 2px;">Trump vows Hormuz US territory; Iran rejects</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #5fd4ff; margin-top: 6px;">SLIDE CARD: STORY MODE, BRIEFINGS, STUDIO. ON PHONE IT BECOMES THE BOTTOM SHEET</div></div>
+<div style="padding: 8px 10px; background: rgba(4,8,14,0.95); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px;"><div style="display: flex; align-items: flex-end; gap: 2px; height: 26px;"><sc-for list="{{spark}}" as="b" hint-placeholder-count="27"><span style="{{b}}"></span></sc-for></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #8a99a5; margin-top: 3px;">⚑ 15 AUG · TODAY · ◆ 31 OCT · ◆ 30 NOV · ◆ 31 DEC</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #5fd4ff; margin-top: 6px;">TIME BAR: STORY MODE, COUNTRY, STUDIO (EDITIONS / LOG ARE ITS SIBLINGS)</div></div>
+<div style="padding: 8px 10px; background: rgba(40,28,8,0.55); border: 1px solid rgba(255,179,71,0.35); border-radius: 4px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #ffb347;">● NEW STORIES + ANALYSIS PAUSED SINCE 12 SEP</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #5fd4ff; margin-top: 6px;">STATUS LINE: UNDER THE MENU; COMPUTED FROM THE NEWEST DATA, NEVER TYPED</div></div>
+<div style="padding: 8px 10px; background: rgba(6,12,20,0.95); border: 1px solid rgba(111,210,154,0.35); border-radius: 4px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #6fd29a;">QUOTE · BEFORE YOU RUN</div><div style="font-size: 10.5px; color: #d6e2ea; margin-top: 2px;">4 stories · ALL THIN ⚠ · output cap 1,600 tokens · your key → provider</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #6fd29a; margin-top: 4px;">RECEIPT · AFTER · tokens in/out · checks · shareable?</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #5fd4ff; margin-top: 6px;">QUOTE / RECEIPT: ANY PLACE THE READER'S KEY IS USED</div></div>
+<div style="padding: 8px 10px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px;"><div style="display: flex; gap: 4px;"><span style="flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #eef5f9; border-bottom: 2px solid #5fd4ff; padding: 4px 0;">READ</span><span style="flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96; padding: 4px 0;">MAP</span><span style="flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96; padding: 4px 0;">TIMELINE</span></div><div style="width: 34px; height: 4px; border-radius: 2px; background: #56626b; margin: 8px auto 0;"></div><div style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #5fd4ff; margin-top: 6px;">PHONE: ONE TAB SWITCH + BOTTOM SHEET (PEEK / HALF / FULL)</div></div>
+</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96; margin-top: 10px;">ALSO SHARED: THE MAP (ONE COMPONENT, LAZY-LOADED) · SOURCE CHIP [n] / [W#] · "MODEL JUDGMENT" LABEL · CHECKS PANEL · EMPTY / STALE / ERROR STATES</div>
+</section>
+
+<section style="position: absolute; left: 944px; top: 820px; width: 472px; height: 760px; box-sizing: border-box; padding: 12px 14px; border: 1px solid rgba(255,179,71,0.45); border-radius: 4px; background: rgba(40,28,8,0.25); overflow: hidden;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #ffb347;">UNCERTAIN · NEEDS YOUR DECISION</div>
+<sc-for list="{{unsure}}" as="u" hint-placeholder-count="6"><div style="margin-top: 10px;"><div style="font-size: 12px; font-weight: 600; color: #eef5f9;">{{u.k}}</div><div style="font-size: 11px; line-height: 1.45; color: #c9d6df; margin-top: 2px;">{{u.v}}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #6fd29a; margin-top: 3px;">MY RECOMMENDATION: {{u.r}}</div></div></sc-for>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1600}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { still: false }; }
+  renderVals() {
+    var self = this, S = this.state, MONO = 'JetBrains Mono, monospace';
+    function sw(bg, extra) { return 'display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; flex-shrink: 0; border-radius: 3px; background: ' + bg + '; ' + (extra || ''); }
+    function it(k, v, swStyle, glyph) { return { k: k, v: v, sw: swStyle, glyph: glyph || '', wrap: 'display: flex; gap: 7px; align-items: center; width: 200px;' }; }
+    var pulse = S.still ? '' : ' animation: ds-pulse 2.4s ease-out infinite;';
+    var PANELS = [
+      ['T1', 'Console colours', 'one dark surface family so panels read as layers over the map, and one accent so "you can click this" is always the same colour.', [
+        it('BG #070D15', 'page / map base', sw('#070d15', 'border: 1px solid #1c2a38;')), it('PANEL', 'rgba(6,12,20,.95)', sw('rgba(6,12,20,.95)', 'border: 1px solid rgba(95,212,255,.3);')), it('ACCENT #5FD4FF', 'clickable, selected, ours', sw('#5fd4ff')), it('TEXT #EEF5F9', 'titles / body #C9D6DF', sw('#eef5f9')), it('DIM #7D8B96', 'labels, meta', sw('#7d8b96')), it('WARN #FFB347', 'older, paused, attention', sw('#ffb347')) ]],
+      ['T2', 'Meaning colours', 'colour answers ONE question: what kind of crisis. Severity uses size, text and rings, never red/amber/green (legend L1), so colour-blind readers lose nothing.', [
+        it('CONFLICT', '#EE7754', sw('#ee7754')), it('POLITICAL', '#9B8CF8', sw('#9b8cf8')), it('ECONOMIC', '#38B6DE', sw('#38b6de')), it('HUMANITARIAN', '#D89E28', sw('#d89e28')), it('OURS / OK', '#6FD29A checks passed', sw('#6fd29a')), it('ERROR', '#FF6A4D failed check', sw('#ff6a4d')) ]],
+      ['T3', 'Map symbols', 'shape says WHAT it is, so a reader can tell an official alert from a news story without a legend (NATO APP-6 idea).', [
+        it('◆ OFFICIAL ALERT', 'GDACS; level as a text badge', sw('transparent', 'color: #eef5f9; font-size: 16px;'), '◆'), it('HALO DOT', 'story at an approximate place', sw('radial-gradient(circle, #ee7754 30%, rgba(238,119,84,.2) 60%, transparent 70%)')), it('BRACKETS', 'selected story', sw('transparent', 'border: 2px solid #eef5f9; border-radius: 0;')), it('DOUBLE RING', 'HIGH severity only', sw('transparent', 'border: 4px double #ee7754; border-radius: 50%;')), it('COUNTRY WASH', 'no exact place: shade, no pin', sw('rgba(238,119,84,.25)')), it('▲ ● ◆ ▼', 'escalating · new · steady · cooling', sw('transparent', 'color: #eef5f9; font-size: 11px;'), '▲●◆▼') ]],
+      ['T4', 'Lines = how sure', 'the eye reads a solid line as fact and a dashed line as a guess. We keep that promise: dashes are ALWAYS model-judged links, never facts.', [
+        it('SOLID', 'reported fact / our stored data', sw('linear-gradient(#5fd4ff,#5fd4ff) center/100% 2px no-repeat')), it('DASH STRONG', 'judged link, long + thick', sw('repeating-linear-gradient(90deg,#5fd4ff 0 8px,transparent 8px 12px) center/100% 3px no-repeat')), it('DASH WEAK', 'sparse, 50%, still', sw('repeating-linear-gradient(90deg,rgba(95,212,255,.5) 0 3px,transparent 3px 9px) center/100% 1px no-repeat')), it('GREY DOTS', 'shares actors (not a judgment)', sw('repeating-linear-gradient(90deg,#7d8b96 0 2px,transparent 2px 6px) center/100% 2px no-repeat')) ]],
+      ['T5', 'Freshness = brightness', 'old news must LOOK old. Brightness fades with age, and past 30 days items are hidden (and counted), so stale analysis never passes as today\'s.', [
+        it('LIVE < 24 H', 'glow (+ pulse, max 8)', sw('#ee7754', 'box-shadow: 0 0 10px #ee7754;' + pulse)), it('1–7 DAYS', 'plain', sw('#ee7754')), it('7–30 DAYS', 'desaturated + "older · date"', sw('#9c7a70')), it('30 D +', 'hidden, counted', sw('transparent', 'border: 1px dotted #56626b;')) ]],
+      ['T6', 'Whose claim: ours vs this run', 'the Studio mixes our stored data with a reader\'s AI run. A reader must always see which is which, so the run gets its own look and never borrows a line style.', [
+        it('OUR DATA', 'legend tokens (solid / dashed)', sw('transparent', 'border: 2px solid #5fd4ff;')), it('THIS RUN', 'amber hatching only', sw('repeating-linear-gradient(45deg, rgba(255,179,71,.45) 0 3px, rgba(255,179,71,.08) 3px 7px)', 'border: 1px solid rgba(255,179,71,.7);')), it('STAND-IN', 'labelled in wireframes', sw('transparent', 'border: 1px dashed #ffb347; border-radius: 50%;')) ]],
+      ['T7', 'Motion budget', 'movement grabs attention, so only three things may move (radar sweep, pulses on new/escalating items, dashes on the selected story\'s links). Nothing flashes (WCAG 2.3).', [
+        it('PULSE 2.4 S', 'new / ▲ in 24 h · max 8', sw('transparent', 'border: 2px solid #ee7754; border-radius: 50%;' + pulse)), it('DASH 1.4 S', 'selected links only', sw('repeating-linear-gradient(90deg,#5fd4ff 0 6px,transparent 6px 10px) center/100% 2px no-repeat')), it('SWEEP ~10 S', 'radar, one flare per pass', sw('conic-gradient(from 0deg, rgba(95,212,255,.5), transparent 25%)', 'border-radius: 50%;')), it('REDUCED MOTION', 'still rings, no sweep', sw('transparent', 'border: 2px solid #7d8b96; border-radius: 50%;')) ]],
+      ['T8', 'Type', 'three voices: Fraunces = the story (headlines), Inter = reading, JetBrains Mono = instruments (labels, dates, counts), so data never reads as prose.', [
+        it('FRAUNCES', 'headlines · 16–28 px', sw('transparent', 'font-family: Fraunces, serif; color: #eef5f9; font-size: 16px;'), 'Aa'), it('INTER', 'body · 12.5–14 px', sw('transparent', 'font-family: Inter; color: #eef5f9; font-size: 14px;'), 'Aa'), it('MONO', 'HUD labels · 9–11 px caps', sw('transparent', 'font-family: ' + MONO + '; color: #5fd4ff; font-size: 11px;'), 'Aa') ]],
+      ['T9', 'Words', 'wording carries honesty as much as colour does. The same fixed phrases everywhere stop us drifting into claims we can\'t back.', [
+        it('"MODEL JUDGMENT"', 'on every AI claim', sw('transparent')), it('"JUDGED TO FEED INTO"', 'never "caused"', sw('transparent')), it('"OLDER ANALYSIS · 12 SEP"', 'dated, never "live"', sw('transparent')), it('"NO COVERAGE"', 'never implies "safe"', sw('transparent')), it('"APPROX."', 'places at a centroid', sw('transparent')), it('"PAUSED SINCE <DATE>"', 'computed, not typed', sw('transparent')) ]],
+      ['T10', 'States', 'every panel can be loading, empty, older or broken. Deciding once means no page invents a placeholder or a "something went wrong" box.', [
+        it('LOADING', 'skeleton bars, real steps only', sw('rgba(95,212,255,.1)')), it('EMPTY', 'one honest line', sw('transparent', 'border: 1px dashed #56626b;')), it('OLDER', 'amber date label', sw('transparent', 'border: 1px solid #ffb347;')), it('ERROR', 'render nothing + report to the error sink', sw('transparent', 'border: 1px solid #ff6a4d;')), it('HOVER', 'dim the rest to ~35%', sw('rgba(95,212,255,.35)')), it('SELECTED', 'HUD brackets', sw('transparent', 'border: 2px solid #eef5f9; border-radius: 0;')) ]],
+      ['T12', 'Space & targets', 'thumbs are not mouse pointers: every tap area is at least 44 px, even when the drawn tick is smaller.', [
+        it('RADIUS 2–4 PX', 'HUD panels', sw('transparent', 'border: 1px solid #5fd4ff; border-radius: 3px;')), it('TAP ≥ 44 PX', 'phone + desktop', sw('transparent', 'border: 1px dashed #6fd29a;')), it('SPACING 4 · 8 · 12 · 16 · 24', 'one scale', sw('transparent')) ]],
+      ['T13', 'Page defaults', 'a returning reader should land in the same place every time.', [
+        it('HOME', 'console: globe (desktop) / radar (phone)', sw('transparent')), it('STORY', 'story mode', sw('transparent')), it('BOARD', 'BOARD view', sw('transparent')), it('PHONE', 'READ tab (Map page: map)', sw('transparent')), it('STUDIO', 'deck; quote before run', sw('transparent')) ]]
+    ];
+    var pos = [[24, 110, 440, 190], [484, 110, 440, 190], [944, 110, 472, 250], [24, 316, 440, 170], [484, 316, 440, 170], [944, 376, 472, 200], [24, 502, 440, 170], [484, 502, 440, 150], [944, 592, 472, 210], [24, 688, 440, 230], [484, 668, 440, 140], [484, 824, 440, 170]];
+    var panels = PANELS.map(function (p, i) { var q = pos[i]; return { id: p[0], title: p[1], why: p[2], items: p[3],
+      box: 'position: absolute; left: ' + q[0] + 'px; top: ' + q[1] + 'px; width: ' + q[2] + 'px; height: ' + q[3] + 'px; box-sizing: border-box; padding: 10px 12px; border: 1px solid rgba(95,212,255,0.18); border-radius: 4px; background: rgba(6,12,20,0.9); overflow: hidden;' }; });
+    var counts = [1, 8, 9, 3, 1, 2, 1, 2, 5, 2, 2, 1, 4, 3, 6, 5, 2, 5, 2, 3, 4, 5, 2, 3, 1, 1, 2];
+    var spark = counts.map(function (c) { return 'display: inline-block; width: 6px; height: ' + (c * 2.8) + 'px; background: rgba(95,212,255,0.5);'; });
+    var unsure = [
+      ['1 · Amber means two things', 'Amber (#FFB347) is both "older / paused / attention" and the colour of THIS RUN\'s hatching in the Studio. On one screen a reader may read an AI run as "old" or an old date as "AI".', 'keep amber for warnings; give THIS RUN its own sand/white hatching (e.g. #E8D5A8). Your call, because it changes the Studio boards.'],
+      ['2 · Risk tiers are red/amber/green today', 'The live site\'s risk scale (tokens.css --risk-h/-e/-m/-l) is a traffic light, and the country card shows HIGH in red. The legend rule says severity is never colour. The two disagree.', 'show risk as a number + tier word + ring weight; colour only for crisis type. The card\'s red HIGH chip would become neutral.'],
+      ['3 · Tap size 40 or 44 px', 'The token proposal (25 Sep) said 40 px; the phone pattern (26 Sep) said 44 px.', '44 px everywhere (Apple/WCAG 2.5.5 guidance).'],
+      ['4 · A light Reading mode?', 'Earlier recommendation: console accents site-wide, but long reads (briefings "read as text", white paper, about) keep a light Reading mode. Never decided.', 'yes: same token names, light values; default dark, with a toggle on long reads.'],
+      ['5 · Where this lives', 'This board is a wireframe. The build needs the tokens in code (a console section in tokens.css) and one living reference page.', 'add the tokens to tokens.css at build time; keep this board as the reference until then.'],
+      ['6 · Economy and other parked pages', 'Economy is parked and still in the old light style. Should parked pages get the console look now or when they return?', 'when they return; no restyle of parked pages.']
+    ].map(function (u) { return { k: u[0], v: u[1], r: u[2] }; });
+    return { panels: panels, spark: spark, unsure: unsure,
+      motionLabel: S.still ? 'MOTION: REDUCED (STILL)' : 'MOTION: ON · TRY REDUCED',
+      motionBtn: 'height: 28px; padding: 0 10px; border-radius: 14px; cursor: pointer; font-family: ' + MONO + '; font-size: 10px; border: 1px solid #5fd4ff; background: rgba(95,212,255,0.12); color: #5fd4ff;',
+      toggleMotion: function () { self.setState({ still: !S.still }); } };
+  }
+}
+</script>
+</body>
+</html>

@@ -151,7 +151,15 @@
       "w": 1440,
       "h": 900,
       "is_interactive": true,
-      "title": "P1 · One phone pattern — READ first, MAP tab with a bottom sheet, TIMELINE tab (all 5 pages + Map home)"
+      "title": "P1 · One phone pattern — APPROVED 26 Sep: READ first, MAP tab with a bottom sheet, third tab TIMELINE / EDITIONS / LOG"
+    },
+    "DesignSystem.dc.html": {
+      "x": 0,
+      "y": 19200,
+      "w": 1440,
+      "h": 1600,
+      "is_interactive": true,
+      "title": "DS1 · Design system — one look per idea (where · how sure · how fresh · whose claim), with WHY and open questions"
     }
   },
   "createdOnFiles": {
@@ -350,7 +358,7 @@
     "gTitle": {
       "kind": "title1",
       "maxW": 5000,
-      "text": "G · Site navigation (N1 approved) + phone pattern (P1 proposed)",
+      "text": "G · Site navigation (N1 approved) + phone pattern (P1 approved) + design system (DS1 proposed)",
       "w": 240,
       "x": 0,
       "y": 16880
@@ -370,6 +378,14 @@
       "x": 1480,
       "y": 18100,
       "text": "Phone pattern after a 3-way debate (map + bottom sheet / swipe cards / read first) + a critic: a hybrid of READ-FIRST + the BOTTOM SHEET. Every page: header + 'paused since 12 Sep' line, ONE tab switch, content, 5-item tab bar. Default tab is READ (the slides as one scroll) — except the Map page, which opens on the radar map. MAP is a tab: the WebGL map loads only then (the map is already lazy-loaded per route today), and the slide card becomes a bottom sheet (peek / half / full, handle + buttons). TIMELINE (or EDITIONS / LOG) is the third tab. Track record swaps READ for BOARD. Studio's READ puts the QUOTE first (here: all 4 stories are THIN — a real warning) and the RECEIPT last; the board view is off on phones. Rejected: swipe cards (a small map per card can't show compare lanes / fork bands; re-rendering the map per card), static map thumbnails (go stale). Pick a page at the top; try PEEK / HALF / FULL on the MAP phone."
+    },
+    "dshow": {
+      "fill": "teal",
+      "maxH": 620,
+      "w": 390,
+      "x": 1480,
+      "y": 19200,
+      "text": "The design system gathers everything approved 24–26 Sep into one reference: T1 console colours, T2 meaning colours (crisis type only), T3 map symbols, T4 lines = how sure, T5 freshness = brightness, T6 ours vs this run, T7 motion budget, T8 type, T9 fixed words, T10 states, T11 shared parts (StoryPeek, slide card / bottom sheet, time bar, status line, quote / receipt, phone tab switch), T12 space & 44 px targets, T13 page defaults. Each panel says WHY it exists. The orange box lists 6 open questions (amber meaning two things; risk tiers in traffic-light colours; 40 vs 44 px; light Reading mode; where tokens live; parked pages). Toggle MOTION at the top right to see the reduced-motion version."
     }
   },
   "order": [
@@ -391,7 +407,8 @@
     "StudioBoard.dc.html",
     "StudioChat.dc.html",
     "Navigation.dc.html",
-    "PhonePattern.dc.html"
+    "PhonePattern.dc.html",
+    "DesignSystem.dc.html"
   ],
   "pages": [],
   "title": "Global Perspectives — Console Redesign"

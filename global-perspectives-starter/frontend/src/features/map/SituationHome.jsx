@@ -11,6 +11,7 @@ import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
 import { pausedSince, freshnessState, olderLabel } from '@/shared/lib/freshness.js';
+import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import { storiesForShading } from '@/features/map/lib/storyShading.js';
 import { defaultMapView, normalizeStoredView } from '@/features/map/lib/globeSpin.js';
 import { usePeek } from '@/shared/hooks/usePeek.js';
@@ -252,7 +253,15 @@ export default function SituationHome() {
   }, []);
   useEffect(() => { const timers = scanTimers.current; return () => { for (const t of timers.values()) clearTimeout(t); }; }, []);
 
-  const [legendOpen, setLegendOpen] = useState(false);
+  // L2: the "Key" legend is collapsed by default and remembered per viewer (this browser only) —
+  // it used to render as an always-visible block over the map's bottom-left corner.
+  const [legendOpen, setLegendOpen] = useState(() => {
+    try { return localStorage.getItem('gp_map_legend_open') === '1'; } catch { return false; }
+  });
+  const setLegendPersist = useCallback((next) => {
+    setLegendOpen(next);
+    try { localStorage.setItem('gp_map_legend_open', next ? '1' : '0'); } catch { /* storage blocked */ }
+  }, []);
   const [mapH, setMapH] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620));
   useEffect(() => {
     const onResize = () => setMapH(window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620);
@@ -279,11 +288,18 @@ export default function SituationHome() {
 
       {stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null}
 
+      {/* M6: brief + sensor status moved out of the map's top corners into a slim row above it —
+          they used to overlay the globe/callout and crowd its left edge. */}
+      {world || sensorRows.length ? (
+        <div className="sh-hud-row">
+          {world ? <HudBriefPanel counts={tierCounts} /> : null}
+          {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
+        </div>
+      ) : null}
+
       <div className="sh-stage">
         <div className="sh-mapwrap">
           <div className="sh-mapinner">
-            {world ? <HudBriefPanel lede={lede} counts={tierCounts} /> : null}
-            {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
             {showGlobe ? (
               <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
                 <SituationMap3D
@@ -325,7 +341,7 @@ export default function SituationHome() {
                   <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
                 </div>
               ) : null}
-              <button className="sh-ctl sh-key" onClick={() => setLegendOpen((v) => !v)} aria-expanded={legendOpen}>
+              <button className="sh-ctl sh-key" onClick={() => setLegendPersist(!legendOpen)} aria-expanded={legendOpen}>
                 {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
               </button>
             </div>
@@ -334,39 +350,57 @@ export default function SituationHome() {
               <div className="sh-quiet">Quiet day — no situations open right now.</div>
             ) : null}
 
-            <div className={`sh-legend${legendOpen ? ' sh-legend-open' : ''}`} aria-label="How to read the map">
-              <button className="sh-legend-close" onClick={() => setLegendOpen(false)} aria-label="Close">×</button>
-              <div className="sh-legrow">
-                <b>Colour = type</b>
-                {AXES.map((a) => (
-                  <span key={a} className={`sh-leg${counts[a] ? '' : ' sh-leg-off'}`}>
-                    <span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />{AXIS_LABEL[a]}
-                  </span>
-                ))}
-              </div>
-              <div className="sh-legrow">
-                <b>Glow = how serious</b>
-                {['low', 'moderate', 'elevated', 'high'].map((t) => {
-                  const has = ranked.some((s) => s.tier === t);
-                  return (
-                    <span key={t} className={`sh-leg${has ? '' : ' sh-leg-off'}`}>
-                      <span className={`sh-leg-pin sh-pin-${t}`} />{TIER_LABEL[t]}
-                      <i>{t === 'high' && !has ? 'none today' : TIER_HINT[t]}</i>
-                    </span>
-                  );
-                })}
-                <span className="sh-leg"><span className="sh-leg-esc">▲</span>escalating<i>worse in the last few hours</i></span>
-              </div>
-              {visibleShading.length ? (
+            {legendOpen ? (
+              <div className="sh-legend sh-legend-open" aria-label="How to read the map">
+                <button className="sh-legend-close" onClick={() => setLegendPersist(false)} aria-label="Close">×</button>
                 <div className="sh-legrow">
-                  <b>Country wash = a story with no exact place</b>
-                  <span className="sh-leg"><i>count badge = more than one story</i></span>
-                  {topicsFreshness === 'older' && topicsAsOf ? (
-                    <span className="sh-leg"><i>{olderLabel(topicsAsOf) || 'older'}</i></span>
+                  <b>Colour = crisis type</b>
+                  {AXES.map((a) => (
+                    <span key={a} className={`sh-leg${counts[a] ? '' : ' sh-leg-off'}`}>
+                      <span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />{AXIS_LABEL[a]}
+                    </span>
+                  ))}
+                  {visibleShading.length ? (
+                    <span className="sh-leg"><span className="sh-leg-dot" style={{ background: '#9aa4b2' }} />No crisis claim</span>
                   ) : null}
                 </div>
-              ) : null}
-            </div>
+                <div className="sh-legrow">
+                  <b>Brightness + size = how serious</b>
+                  {['low', 'moderate', 'elevated', 'high'].map((t) => {
+                    const has = ranked.some((s) => s.tier === t);
+                    return (
+                      <span key={t} className={`sh-leg${has ? '' : ' sh-leg-off'}`}>
+                        <span className={`sh-leg-pin sh-pin-${t}`} />{TIER_LABEL[t]}
+                        <i>{t === 'high' && !has ? 'none today' : TIER_HINT[t]}</i>
+                      </span>
+                    );
+                  })}
+                  <span className="sh-leg"><i>white ring = high · brighter outline = selected</i></span>
+                  <span className="sh-leg"><span className="sh-leg-esc">▲</span>escalating<i>worse in the last few hours</i></span>
+                </div>
+                <div className="sh-legrow">
+                  <b>Motion</b>
+                  <span className="sh-leg"><i>soft pulse = new or escalating in the last 24h (up to 8 shown)</i></span>
+                </div>
+                {visibleShading.length ? (
+                  <div className="sh-legrow">
+                    <b>Country wash = a story with no exact place</b>
+                    <span className="sh-leg"><i>count badge = more than one story</i></span>
+                    {topicsFreshness === 'older' && topicsAsOf ? (
+                      <span className="sh-leg"><i>{olderLabel(topicsAsOf) || 'older'}</i></span>
+                    ) : null}
+                  </div>
+                ) : null}
+                <div className="sh-legrow">
+                  <b>Freshness (stories)</b>
+                  <span className="sh-leg"><i>live &lt;24h glows · 1–7d plain · 7–30d faded + “older · date” · 30d+ hidden</i></span>
+                </div>
+                <div className="sh-legrow">
+                  <b>Disaster alerts</b>
+                  <span className="sh-leg"><i>GDACS shows its own alert level as text (e.g. “ORANGE ALERT”) — colour still means crisis type, not the alert colour</i></span>
+                </div>
+              </div>
+            ) : null}
           </div>
           {world && newsAxesEmpty ? (
             <p className="sh-coverage">Tracking severe natural disasters (UN/EU GDACS). Conflict, political and economic situations arrive with the news layer.</p>
@@ -408,7 +442,7 @@ export default function SituationHome() {
               {isGdacs ? (
                 <>
                   <dl className="sh-metrics">
-                    <div><dt>Alert level</dt><dd className="sh-alert">{ev.gdacs_level || '—'}</dd></div>
+                    <div><dt>Alert level</dt><dd className="sh-alert">{gdacsLevelBadge(selected, ev) || ev.gdacs_level || '—'}</dd></div>
                     <div><dt>Severity</dt><dd>{ev.gdacs_severity_text ? ev.gdacs_severity_text.replace(/\s*\(.*\)$/, '') : '—'}</dd></div>
                     <div><dt>Type</dt><dd>{ev.category || selected.axis}</dd></div>
                   </dl>

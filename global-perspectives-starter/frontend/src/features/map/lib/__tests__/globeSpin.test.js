@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { textureUrl, wrapLongitude, spinStep, defaultMapView, normalizeStoredView, spinControlState } from '@/features/map/lib/globeSpin.js';
+import { textureUrl, wrapLongitude, spinStep, defaultMapView, normalizeStoredView, spinControlState, globeZoomForHeight } from '@/features/map/lib/globeSpin.js';
 
 describe('globeSpin — textureUrl', () => {
   it('builds the path under a root base', () => {
@@ -81,5 +81,31 @@ describe('globeSpin — spinControlState', () => {
   it('reflects spinning/paused state when motion is allowed', () => {
     expect(spinControlState(false, true)).toEqual({ disabled: false, pressed: true, label: 'Pause spin' });
     expect(spinControlState(false, false)).toEqual({ disabled: false, pressed: false, label: 'Resume spin' });
+  });
+});
+
+describe('globeSpin — globeZoomForHeight (M6: size the globe from the panel height)', () => {
+  it('makes the globe diameter ~80% of the panel height by default', () => {
+    const height = 620;
+    const zoom = globeZoomForHeight(height);
+    const diameter = (512 * 2 ** zoom) / Math.PI;
+    expect(diameter / height).toBeCloseTo(0.8, 5);
+  });
+  it('grows with a taller panel', () => {
+    expect(globeZoomForHeight(900)).toBeGreaterThan(globeZoomForHeight(500));
+  });
+  it('respects a custom fraction within the 75–85% band', () => {
+    const height = 700;
+    for (const fraction of [0.75, 0.8, 0.85]) {
+      const zoom = globeZoomForHeight(height, fraction);
+      const diameter = (512 * 2 ** zoom) / Math.PI;
+      expect(diameter / height).toBeCloseTo(fraction, 5);
+    }
+  });
+  it('falls back to the pre-M6 default zoom for a missing/invalid height', () => {
+    expect(globeZoomForHeight(0)).toBe(0.55);
+    expect(globeZoomForHeight(-10)).toBe(0.55);
+    expect(globeZoomForHeight(NaN)).toBe(0.55);
+    expect(globeZoomForHeight(undefined)).toBe(0.55);
   });
 });

@@ -49,3 +49,22 @@ export function spinControlState(reduceMotion, spinOn) {
   if (reduceMotion) return { disabled: true, pressed: false, label: 'Spin off (reduced motion)' };
   return { disabled: false, pressed: !!spinOn, label: spinOn ? 'Pause spin' : 'Resume spin' };
 }
+
+// deck.gl's GlobeView draws the sphere at `TILE_SIZE * 2^zoom / (2π)` pixels of radius (the same
+// Web-Mercator "world size" math as its flat views, just wrapped onto a sphere). M6: the globe
+// rendered small (~⅓ of the panel height) at the old fixed zoom (0.55); size it from the panel's
+// own height instead, so the Earth fills a fixed, legible fraction of it regardless of viewport.
+const GLOBE_TILE_SIZE = 512;
+const GLOBE_DEFAULT_ZOOM = 0.55; // pre-M6 fallback, kept for a missing/invalid height
+
+/**
+ * globeZoomForHeight(height, fraction) — the zoom that makes the globe's diameter equal to
+ * `fraction` of `height` pixels (default 0.8, the middle of the approved 75–85% band).
+ */
+export function globeZoomForHeight(height, fraction = 0.8) {
+  if (!Number.isFinite(height) || height <= 0) return GLOBE_DEFAULT_ZOOM;
+  if (!Number.isFinite(fraction) || fraction <= 0) fraction = 0.8;
+  const diameter = fraction * height;
+  const zoom = Math.log2((diameter * Math.PI) / GLOBE_TILE_SIZE);
+  return Number.isFinite(zoom) ? zoom : GLOBE_DEFAULT_ZOOM;
+}

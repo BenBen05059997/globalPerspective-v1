@@ -4,6 +4,8 @@ import { AXIS_HUE, TIER_R, land, FRAME } from '@/features/map/components/Situati
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
 import { bearingDeg, beamCrossed, scanGlow, sweepControlState } from '@/features/map/lib/radar.js';
 import { ISO3_TO_NUM } from '@/features/map/lib/countryGeo.js';
+import { pulseSet } from '@/features/map/lib/pulse.js';
+import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 
 // iso3 -> country polygon, for H2 country shading (M5a). Built once from the same bundled
 // topojson RadarMap already draws coastlines from.
@@ -28,7 +30,10 @@ function placeOf(s) {
 
 // Same anchored-callout placement logic as SituationMap3D's placeCallout (kept local rather than
 // touching that M3 file for an M4 task; if a third caller ever needs it, promote to a shared lib).
-function placeCallout(px, py, W, H) {
+// topMargin keeps the card clear of the top-right control cluster (Walk-through / Globe·Radar /
+// Key) — same convention as SituationMap3D's placeCallout (M6).
+const CALLOUT_TOP_MARGIN = 58;
+function placeCallout(px, py, W, H, topMargin = 8) {
   const M = 8;
   const cand = [
     { left: px + GAP, top: py - CARD_MINH - GAP },
@@ -37,12 +42,12 @@ function placeCallout(px, py, W, H) {
     { left: px - CARD_W - GAP, top: py + GAP },
   ];
   for (const c of cand) {
-    if (c.left >= M && c.top >= M && c.left + CARD_W <= W - M && c.top + CARD_MINH <= H - M) {
+    if (c.left >= M && c.top >= topMargin && c.left + CARD_W <= W - M && c.top + CARD_MINH <= H - M) {
       return { left: c.left, top: c.top };
     }
   }
   const left = Math.min(Math.max(px - CARD_W / 2, M), W - CARD_W - M);
-  const top = Math.min(Math.max(py - CARD_MINH / 2, M), H - CARD_MINH - M);
+  const top = Math.min(Math.max(py - CARD_MINH / 2, topMargin), H - CARD_MINH - M);
   return { left, top };
 }
 
@@ -166,7 +171,10 @@ export default function RadarMap({
       f.append('feGaussianBlur').attr('stdDeviation', 3.2).attr('result', 'b');
       const mg = f.append('feMerge'); mg.append('feMergeNode').attr('in', 'b'); mg.append('feMergeNode').attr('in', 'SourceGraphic');
 
-      root.append('g').selectAll('circle').data(active.filter((s) => s.escalating)).join('circle')
+      // Motion budget (M6): only NEW/▲ situations from the last 24h pulse, capped at 8, highest
+      // tier first (lib/pulse.js) — not every escalating situation regardless of age.
+      const pulseIds = pulseSet(active, Date.now(), 8);
+      root.append('g').selectAll('circle').data(active.filter((s) => pulseIds.has(s.id))).join('circle')
         .attr('class', 'sm-ring')
         .attr('cx', (s) => proj(s)[0]).attr('cy', (s) => proj(s)[1])
         .attr('r', (s) => (TIER_R[s.tier] || 5) + 4)
@@ -291,7 +299,7 @@ export default function RadarMap({
     const p = projectionRef.current([callout.centroid.lon, callout.centroid.lat]);
     if (!p) return null;
     const [x, y] = p;
-    return { ...placeCallout(x, y, dims.width, dims.height) };
+    return { ...placeCallout(x, y, dims.width, dims.height, CALLOUT_TOP_MARGIN) };
   }, [callout, dims]);
 
   const sc = sweepControlState(reduceMotion, sweepOn);
@@ -320,6 +328,7 @@ export default function RadarMap({
               <span className="sm-callout-axis" style={{ color: hue(callout) }}>{callout.axis}</span>
               {callout.escalating ? <span className="sm-callout-esc">▲ escalating</span> : null}
             </span>
+            {gdacsLevelBadge(callout) ? <span className="sh-gdacs-badge">{gdacsLevelBadge(callout)}</span> : null}
             <span className="sm-callout-title">{callout.verb_label}</span>
             {callout.what_changed ? <span className="sm-callout-what">{callout.what_changed}</span> : null}
             <span className="sm-callout-open">Open →</span>

@@ -6,8 +6,10 @@ import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
 import topoData from '@/features/map/assets/countries-110m.json';
 import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
-import { textureUrl, spinStep, spinControlState } from '@/features/map/lib/globeSpin.js';
+import { textureUrl, spinStep, spinControlState, globeZoomForHeight } from '@/features/map/lib/globeSpin.js';
 import { CRISIS_RGB } from '@/features/map/lib/crisisHue.js';
+import { pulseSet } from '@/features/map/lib/pulse.js';
+import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 
 // M3 · night-lights globe (operator's option B) — NASA Black Marble, taken from the MIT-licensed
 // three-globe package's examples. Loaded well after first paint (idle callback) so it never
@@ -47,7 +49,13 @@ function iso3Feature(iso3) { const num = ISO3_TO_NUM[iso3]; return num ? NUM_TO_
 // A user toggle swaps to the globe (deck.gl can't morph between the two, so it's a deliberate
 // switch, never an auto-transition). Slice 3 / patch design variant C-as-toggle.
 const INITIAL_VIEW = { longitude: 12, latitude: 20, zoom: 1.15, pitch: 0, bearing: 0, minZoom: 0.6, maxZoom: 8 };
-const GLOBE_VIEW = { longitude: 12, latitude: 18, zoom: 0.55, pitch: 0, bearing: 0, minZoom: -0.5, maxZoom: 6 };
+const GLOBE_VIEW_BASE = { longitude: 12, latitude: 18, pitch: 0, bearing: 0, minZoom: -0.5, maxZoom: 6 };
+// M6: the globe fills ~75–85% of the map panel's own height, computed from `height` — not a
+// fixed zoom that reads small on a tall panel and cramped on a short one.
+const globeViewFor = (height) => ({ ...GLOBE_VIEW_BASE, zoom: globeZoomForHeight(height) });
+// A callout must never render under the top-right control cluster (Walk-through / Globe·Radar /
+// Key), which sits at top:12 and runs to roughly y=54 — keep callouts clear of that band (M6).
+const CALLOUT_TOP_MARGIN = 58;
 
 // Is a lon/lat on the near-facing hemisphere of a globe centred at (cLon,cLat)? (cull far-side callouts)
 function onNearSide(lon, lat, cLon, cLat) {
@@ -63,7 +71,7 @@ const GAP = 14;
 
 // Place the anchored callout in the first of NE/NW/SE/SW that fully fits (8px margin);
 // only a literal-corner pin clamps and grows a short leader (design 3c).
-function placeCallout(px, py, W, H) {
+function placeCallout(px, py, W, H, topMargin = 8) {
   const M = 8;
   const cand = [
     { left: px + GAP, top: py - CARD_MINH - GAP },        // NE
@@ -72,13 +80,14 @@ function placeCallout(px, py, W, H) {
     { left: px - CARD_W - GAP, top: py + GAP },            // SW
   ];
   for (const c of cand) {
-    if (c.left >= M && c.top >= M && c.left + CARD_W <= W - M && c.top + CARD_MINH <= H - M) {
+    if (c.left >= M && c.top >= topMargin && c.left + CARD_W <= W - M && c.top + CARD_MINH <= H - M) {
       return { left: c.left, top: c.top, leader: null };
     }
   }
-  // No quadrant fits — clamp into view and draw a leader from the card's nearest corner.
+  // No quadrant fits — clamp into view (never above topMargin) and draw a leader from the card's
+  // nearest corner.
   const left = Math.min(Math.max(px - CARD_W / 2, M), W - CARD_W - M);
-  const top = Math.min(Math.max(py - CARD_MINH / 2, M), H - CARD_MINH - M);
+  const top = Math.min(Math.max(py - CARD_MINH / 2, topMargin), H - CARD_MINH - M);
   const cornerX = Math.min(Math.max(px, left), left + CARD_W);
   const cornerY = Math.min(Math.max(py, top), top + CARD_MINH);
   const dist = Math.hypot(px - cornerX, py - cornerY);
@@ -98,7 +107,12 @@ export default function SituationMap3D({
   shading = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
 }) {
   const globe = view === 'globe';
-  const [viewState, setViewState] = useState(globe ? GLOBE_VIEW : INITIAL_VIEW);
+  // M6: the globe's default zoom is computed from the panel height (~75–85% fill), read through a
+  // ref so a later window resize alone never resets a zoom the visitor already chose by
+  // interacting — only an explicit GLOBE/RADAR toggle (or clearing a selection) re-applies it.
+  const heightRef = useRef(height);
+  heightRef.current = height;
+  const [viewState, setViewState] = useState(globe ? globeViewFor(height) : INITIAL_VIEW);
   const userMoved = useRef(false);
   const reduceMotion = useMemo(() => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
@@ -113,7 +127,7 @@ export default function SituationMap3D({
     userMoved.current = false;
     setSpinOn(globe && !reduceMotion);
     setViewState((v) => ({
-      ...(globe ? GLOBE_VIEW : INITIAL_VIEW), longitude: v.longitude, latitude: globe ? 15 : v.latitude,
+      ...(globe ? globeViewFor(heightRef.current) : INITIAL_VIEW), longitude: v.longitude, latitude: globe ? 15 : v.latitude,
       ...(reduceMotion ? {} : { transitionDuration: 600, transitionInterpolator: new FlyToInterpolator() }),
     }));
   }, [globe, reduceMotion]);
@@ -226,7 +240,7 @@ export default function SituationMap3D({
       }));
     } else if (userMoved.current) {
       setViewState((v) => ({
-        ...v, ...(globe ? GLOBE_VIEW : INITIAL_VIEW),
+        ...v, ...(globe ? globeViewFor(heightRef.current) : INITIAL_VIEW),
         ...(reduceMotion ? {} : { transitionDuration: 1100, transitionInterpolator: new FlyToInterpolator() }),
       }));
     }
@@ -312,6 +326,44 @@ export default function SituationMap3D({
     }),
   ], [active, focusId, newIds, landDimmed]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Motion budget (M6, STORY_WEB_RETHINK_PLAN.md §8): only 3 things on the whole page may move —
+  // the radar sweep, this 2.4s breathing pulse (NEW/▲ situations from the last 24h, capped at 8,
+  // highest tier first — see lib/pulse.js), and the selected story's travelling arc dashes.
+  // Everything else stays static. Recomputed only when `active` changes (the 5-min poll), not
+  // per animation frame.
+  const pulseIds = useMemo(() => pulseSet(active, Date.now(), 8), [active]);
+  const pulseData = useMemo(() => active.filter((s) => pulseIds.has(s.id)), [active, pulseIds]);
+  // Kept as a SEPARATE, non-memoised layer (unlike baseLayers above) precisely so its per-frame
+  // radius/alpha changes never touch the pickable `core` layer's stable instance.
+  const [pulseT, setPulseT] = useState(0); // 0..1 phase within the 2.4s cycle
+  useEffect(() => {
+    if (reduceMotion || pulseData.length === 0) return undefined;
+    let raf; let start = null;
+    const PULSE_MS = 2400;
+    const tick = (t) => {
+      if (start == null) start = t;
+      setPulseT(((t - start) % PULSE_MS) / PULSE_MS);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [reduceMotion, pulseData.length]);
+  const pulseLayer = (!reduceMotion && pulseData.length)
+    ? new ScatterplotLayer({
+      id: 'pulse', data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
+      getRadius: (s) => (TIER_HALO[s.tier] || 14) + pulseT * 20,
+      getFillColor: (s) => [...hue(s), Math.round(150 * (1 - pulseT))],
+    })
+    : null;
+  // Reduced motion → a still ring instead of a pulse (never nothing, never moving).
+  const pulseStillLayer = (reduceMotion && pulseData.length)
+    ? new ScatterplotLayer({
+      id: 'pulse-still', data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
+      getRadius: (s) => (TIER_HALO[s.tier] || 14) + 9, filled: false, stroked: true,
+      getLineColor: (s) => [...hue(s), 190], getLineWidth: 1.5, lineWidthUnits: 'pixels',
+    })
+    : null;
+
   // Selection-state layers (only when a situation is focused): affected-country tint, spread arcs,
   // hollow destination rings. Drawn under the pins (fill/arcs) and beside them (dest rings).
   const selectionLayers = useMemo(() => {
@@ -335,13 +387,16 @@ export default function SituationMap3D({
   }, [selectionGeo]);
 
   // Order: earth-night (globe only, bottom-most), land, affected-fill, arcs, halo, escalating,
-  // new-marker, core (top=picking), dest-rings.
+  // pulse (NEW/▲ within 24h, capped — the only animated marker layer), new-marker,
+  // core (top=picking), dest-rings.
   const layers = [
     ...(earthLayer ? [earthLayer] : []),
     baseLayers[0],
     ...(storyShadeLayer ? [storyShadeLayer] : []),
     ...selectionLayers.filter((l) => l.id !== 'dest-rings'),
-    baseLayers[1], baseLayers[2], baseLayers[4], baseLayers[3],
+    baseLayers[1], baseLayers[2],
+    ...(pulseLayer ? [pulseLayer] : []), ...(pulseStillLayer ? [pulseStillLayer] : []),
+    baseLayers[4], baseLayers[3],
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),
   ];
 
@@ -362,7 +417,7 @@ export default function SituationMap3D({
       const vp = new VP({ ...viewState, width: dims.width, height: dims.height });
       const [x, y] = vp.project([callout.centroid.lon, callout.centroid.lat]);
       if (x < -40 || y < -40 || x > dims.width + 40 || y > dims.height + 40) return null;
-      return { px: x, py: y, ...placeCallout(x, y, dims.width, dims.height) };
+      return { px: x, py: y, ...placeCallout(x, y, dims.width, dims.height, CALLOUT_TOP_MARGIN) };
     } catch { return null; }
   }, [callout, viewState, dims, globe]);
 
@@ -405,6 +460,7 @@ export default function SituationMap3D({
               <span className="sm-callout-axis" style={{ color: `rgb(${hue(callout).join(',')})` }}>{callout.axis}</span>
               {callout.escalating ? <span className="sm-callout-esc">▲ escalating</span> : null}
             </span>
+            {gdacsLevelBadge(callout) ? <span className="sh-gdacs-badge">{gdacsLevelBadge(callout)}</span> : null}
             <span className="sm-callout-title">{callout.verb_label}</span>
             {callout.what_changed ? <span className="sm-callout-what">{callout.what_changed}</span> : null}
             <span className="sm-callout-open">Open →</span>

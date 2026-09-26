@@ -8,6 +8,7 @@ import { crisisHueForCategory } from '@/features/map/lib/crisisHue.js';
 import { freshnessState } from '@/shared/lib/freshness.js';
 import { peekData } from '@/shared/lib/peekData.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
+import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 
 function placeOf(s) {
   if (s.affected_names?.length) return s.affected_names[0];
@@ -57,6 +58,7 @@ export default function HudIntelFeed({
                   <span className="sh-row-tags">
                     {s.escalating ? <span className="hud-esc" aria-label="escalating">▲</span> : null}
                     {newIds?.has(s.id) ? <span className="sh-new">◇ new</span> : null}
+                    {gdacsLevelBadge(s) ? <span className="sh-gdacs-badge sh-gdacs-badge-sm">{gdacsLevelBadge(s)}</span> : null}
                     {place ? <span className="hud-feed-place">{place}</span> : null}
                     {/* Radar mode (M4): a brief, non-scrolling, non-focus-stealing mark that the
                         sweep just passed this situation. Never used outside radar mode. */}

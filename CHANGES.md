@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Map console, M6: legend, motion budget, layout; branch `map-console`, local only)
+
+- **Layout:** SITUATION BRIEF (tier counts only; the duplicated lede was dropped) and SENSOR STATUS moved into a HUD row above the map, so the map area is free.
+  - The default globe zoom is computed so the Earth fills ~80% of the panel height (`globeZoomForHeight`).
+  - Callouts keep clear of the top-right controls.
+- **Legend (L2):** a "Key" toggle, collapsed by default and remembered per viewer. It lists only what is actually drawn today: crisis hues + neutral, tier size/ring, selected outline, ▲, the pulse rule, country wash + count, and the freshness ramp.
+- **GDACS level as text (L1):** "ORANGE ALERT" etc. from `evidence.gdacs_level`, or parsed from the stored `what_changed` template; nothing is inferred (`lib/gdacsLevel.js`). Marker hue stays = crisis type.
+- **Motion budget (L3):** `lib/pulse.js` `pulseSet()` pulses only situations that are new or ▲ within 24 h, max 8, highest tier first. Reduced motion = still rings. Today: 1.
+- Tests: 317 total (27 new).
+
 ## 2026-09-26 (Map console, M5b: story card + orientation banner; branch `map-console`, local only)
 
 - **Story card** (`features/map/components/StoryCard.jsx` + `hooks/useStoryCardData.js`): clicking a story opens it in the rail. The sections:

@@ -133,3 +133,9 @@ Each panel states WHY it exists.
   - The proposal is a soft hide like economy: drop the footer link, keep the URL live.
   - The code change waits for an explicit go.
 - **Story mode is confirmed** as horizontal slides on desktop (map + slides + time scrubber, approved 25 Sep); "Read in full" is the secondary long page. The phone question is raised with the operator.
+
+## Phase H: home leftovers (2026-09-26)
+- **H1 APPROVED** (operator: "we can replace the guided tour with your recommendation"). The old guided tour + ambient hero callout are replaced by a one-line orientation banner.
+- H2 (country shading for stories with no exact place): explained to the operator, awaiting a decision.
+- H3 (build behind `/map` first) and H4 ("real Earth on top right": main globe vs a corner globe) are still open.
+- Also open: phone story READ as vertical scroll (P1 as approved) vs one slide at a time horizontally, like desktop story mode.

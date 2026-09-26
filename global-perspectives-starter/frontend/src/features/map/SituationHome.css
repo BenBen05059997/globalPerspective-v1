@@ -96,6 +96,10 @@
 .hud-tier-chip-high { box-shadow: 0 0 6px -1px var(--pin); }
 .hud-esc { color: #ffb27a; font-size: 11px; }
 .hud-feed-place { font-size: 11px; color: var(--sh-dim); }
+/* Radar mode (M4): a subtle, non-flashing mark that the sweep just passed this row. Fades in/out
+   only via opacity — never scrolls the list or moves focus (CLAUDE.md / WCAG 2.3). */
+.hud-scanned { font-size: 11px; color: var(--c-accent, #5fd4ff); opacity: 0.9; transition: opacity 0.3s ease; }
+@media (prefers-reduced-motion: reduce) { .hud-scanned { transition: none; } }
 
 /* ---- stage: map (left) + rail (right) ---- */
 .sh-stage { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(300px, 1fr); gap: 16px; margin-top: 14px; align-items: start; }
@@ -111,7 +115,11 @@
 .sm-wrap svg.sm-leader { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
 .sm-leader line { stroke: rgba(150, 160, 178, 0.5); stroke-width: 1; }
 .sh-maploading { display: flex; align-items: center; justify-content: center; color: var(--sh-muted); font-size: 13px; }
-.sm-ring { animation: sm-ripple 2.4s ease-out infinite; transform-origin: center; }
+/* transform-box: fill-box — without it, an SVG element's `transform-origin: center` resolves
+   against the whole <svg> viewport, not the shape's own bounds, so the pulse scales off-centre
+   (found live testing RadarMap's escalating ring in M4; the same class/bug was latent in the old
+   flat SituationMap.jsx, unexercised until now). */
+.sm-ring { animation: sm-ripple 2.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes sm-ripple { 0% { opacity: 0.9; } 70% { opacity: 0.15; transform: scale(1.8); } 100% { opacity: 0; transform: scale(2.2); } }
 @media (prefers-reduced-motion: reduce) { .sm-ring { animation: none; opacity: 0.5; } }
 .sm-tip { position: absolute; pointer-events: none; opacity: 0; transition: opacity 0.12s; background: #0d1017; border: 1px solid var(--sh-border); color: var(--sh-text); font-size: 12px; padding: 6px 9px; border-radius: 7px; z-index: 5; max-width: 240px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
@@ -122,6 +130,21 @@
 .sh-ctl:hover { background: #1c2431; }
 .sh-key { display: inline-flex; align-items: center; gap: 5px; }
 .sh-key-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* GLOBE | RADAR segmented switch (M4 — replaces the old single "Flat map"/"Globe" toggle) */
+.sh-viewswitch { display: inline-flex; border: 1px solid var(--sh-border); border-radius: 8px; overflow: hidden; }
+.sh-viewswitch .sh-seg { border: 0; border-radius: 0; }
+.sh-viewswitch .sh-seg + .sh-seg { border-left: 1px solid var(--sh-border); }
+.sh-viewswitch .sh-seg-on { background: var(--c-accent, #5fd4ff); color: #06131c; font-weight: 600; }
+.sh-viewswitch .sh-seg-on:hover { background: var(--c-accent, #5fd4ff); }
+
+/* Radar sweep (M4): a rotating conic-gradient beam, positioned/rotated imperatively from a
+   requestAnimationFrame loop in RadarMap.jsx (its `background` is rewritten per frame — no CSS
+   @keyframes needed, and none run under reduced motion, when the element isn't rendered). */
+.rd-beam {
+  position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;
+  transform: translate(-50%, -50%); mix-blend-mode: screen;
+}
 .sh-quiet { position: absolute; top: 12px; left: 12px; z-index: 6; background: rgba(20, 26, 36, 0.86); border: 1px solid var(--sh-border); border-radius: 8px; padding: 6px 12px; font-size: 12px; color: var(--sh-muted); }
 
 /* hero / tour callout (anchored, rendered inside the map) */

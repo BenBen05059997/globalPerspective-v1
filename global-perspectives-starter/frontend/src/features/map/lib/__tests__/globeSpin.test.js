@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { textureUrl, wrapLongitude, spinStep, defaultMapView, spinControlState } from '@/features/map/lib/globeSpin.js';
+import { textureUrl, wrapLongitude, spinStep, defaultMapView, normalizeStoredView, spinControlState } from '@/features/map/lib/globeSpin.js';
 
 describe('globeSpin — textureUrl', () => {
   it('builds the path under a root base', () => {
@@ -42,16 +42,34 @@ describe('globeSpin — spinStep', () => {
   });
 });
 
-describe('globeSpin — defaultMapView', () => {
+describe('globeSpin — defaultMapView (M4: radar replaces the old flat default)', () => {
   it('opens on the globe for a desktop-width viewport with WebGL', () => {
     expect(defaultMapView(1280, true)).toBe('globe');
     expect(defaultMapView(900, true)).toBe('globe');
   });
-  it('keeps the flat default under 900px even with WebGL', () => {
-    expect(defaultMapView(599, true)).toBe('flat');
+  it('opens on radar under 900px even with WebGL', () => {
+    expect(defaultMapView(599, true)).toBe('radar');
   });
-  it('always falls back to flat without WebGL', () => {
-    expect(defaultMapView(1920, false)).toBe('flat');
+  it('always falls back to radar without WebGL, any width', () => {
+    expect(defaultMapView(1920, false)).toBe('radar');
+    expect(defaultMapView(320, false)).toBe('radar');
+  });
+});
+
+describe('globeSpin — normalizeStoredView', () => {
+  it('keeps a stored globe choice', () => {
+    expect(normalizeStoredView('globe')).toBe('globe');
+  });
+  it('keeps a stored radar choice', () => {
+    expect(normalizeStoredView('radar')).toBe('radar');
+  });
+  it('migrates a pre-M4 stored "flat" choice to radar', () => {
+    expect(normalizeStoredView('flat')).toBe('radar');
+  });
+  it('returns null for missing/unrecognised values, so the caller computes a default', () => {
+    expect(normalizeStoredView(null)).toBeNull();
+    expect(normalizeStoredView(undefined)).toBeNull();
+    expect(normalizeStoredView('bogus')).toBeNull();
   });
 });
 

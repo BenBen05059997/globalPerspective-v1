@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Map console, M4: radar mode; branch `map-console`, local only)
+
+- New **RADAR** console mode (`features/map/components/RadarMap.jsx`): a flat world from the bundled coastlines (reusing `SituationMap`'s land, frame and marker scale) with a 10 s conic sweep.
+  - When the beam crosses a marker, that marker flares once per pass, and its feed row shows "◉ scanned" for 3 s. There is no auto-scroll and no focus change.
+  - Markers are focusable, and clicking one selects it (`?focus=`).
+- The view control is now **GLOBE | RADAR**. The old deck.gl "Flat map" mode is removed from the console: the approved design has two modes, and radar replaces it as the phone default and the no-WebGL fallback. A stored `flat` choice migrates to `radar`.
+- **Defaults:** globe on desktop with WebGL; radar under 900px or without WebGL.
+- **Motion and performance:** reduced motion = no beam, no flares, a disabled sweep control. The sweep pauses when the tab is hidden. It animates via one rAF loop with no React re-render per frame.
+- **Also fixed:** the escalating ring scaled off-centre (`transform-box: fill-box`).
+- New `lib/radar.js` with 16 tests.
+
 ## 2026-09-26 (Map console, M3: NASA night-lights globe; branch `map-console`, local only)
 
 - **Globe mode** shows the real Earth at night: a deck.gl `BitmapLayer` of `public/textures/earth-night.jpg`, 4096×2048, ~715 KB. The texture is NASA Black Marble, taken from the MIT-licensed three-globe examples.

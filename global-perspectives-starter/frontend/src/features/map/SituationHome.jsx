@@ -1,15 +1,16 @@
-import { useMemo, useCallback, useState, useEffect, lazy, Suspense } from 'react';
+import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
-import SituationMap, { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
+import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
 import HudBriefPanel from '@/features/map/components/HudBriefPanel.jsx';
 import HudSensorPanel from '@/features/map/components/HudSensorPanel.jsx';
 import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
+import RadarMap from '@/features/map/components/RadarMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
 import { pausedSince } from '@/shared/lib/freshness.js';
-import { defaultMapView } from '@/features/map/lib/globeSpin.js';
+import { defaultMapView, normalizeStoredView } from '@/features/map/lib/globeSpin.js';
 import '@/features/map/SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
@@ -171,16 +172,36 @@ export default function SituationHome() {
   const callout = focus ? null : (tourStop || hero);
   const tourProps = tourOn ? { index: Math.min(tourIdx, tourN - 1), total: tourN, onPrev: tourPrev, onNext: tourNext, onStop: stopTour } : null;
 
-  // M3: desktop opens on the spinning globe when WebGL works; phones keep today's flat default.
-  // An explicit prior choice (this browser only) always wins over the computed default.
+  // M4: the console has two modes, GLOBE and RADAR — the old deck.gl "flat" mode is gone (radar,
+  // drawn with SVG/canvas, replaces it as both the phone default and the no-WebGL fallback: see
+  // RadarMap.jsx and globeSpin.defaultMapView). Desktop opens on the spinning globe when WebGL
+  // works; phones and no-WebGL devices open on radar. A stored prior choice (this browser only)
+  // always wins over the computed default; a pre-M4 stored 'flat' migrates to 'radar'.
   const [view, setViewMode] = useState(() => {
     try {
-      const saved = localStorage.getItem('gp_map_view');
-      if (saved === 'globe' || saved === 'flat') return saved;
+      const norm = normalizeStoredView(localStorage.getItem('gp_map_view'));
+      if (norm) return norm;
     } catch { /* storage blocked */ }
     return defaultMapView(typeof window !== 'undefined' ? window.innerWidth : 0, USE_3D);
   });
-  const toggleView = () => setViewMode((v) => { const n = v === 'globe' ? 'flat' : 'globe'; try { localStorage.setItem('gp_map_view', n); } catch { /* storage blocked */ } return n; });
+  const setView = (v) => { setViewMode(v); try { localStorage.setItem('gp_map_view', v); } catch { /* storage blocked */ } };
+  const showGlobe = USE_3D && view === 'globe';
+
+  // Radar's "◉ scanned" mark on the feed (M4): fired by RadarMap's sweep, cleared a few seconds
+  // later. Never scrolls the feed or moves focus — it only toggles a class on an existing row.
+  const [scannedIds, setScannedIds] = useState(() => new Set());
+  const scanTimers = useRef(new Map());
+  const markScanned = useCallback((id) => {
+    setScannedIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+    const timers = scanTimers.current;
+    if (timers.has(id)) clearTimeout(timers.get(id));
+    timers.set(id, setTimeout(() => {
+      setScannedIds((prev) => { if (!prev.has(id)) return prev; const n = new Set(prev); n.delete(id); return n; });
+      timers.delete(id);
+    }, 3000));
+  }, []);
+  useEffect(() => { const timers = scanTimers.current; return () => { for (const t of timers.values()) clearTimeout(t); }; }, []);
+
   const [legendOpen, setLegendOpen] = useState(false);
   const [mapH, setMapH] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620));
   useEffect(() => {
@@ -211,15 +232,18 @@ export default function SituationHome() {
           <div className="sh-mapinner">
             {world ? <HudBriefPanel lede={lede} counts={tierCounts} /> : null}
             {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
-            {USE_3D ? (
+            {showGlobe ? (
               <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
                 <SituationMap3D
-                  situations={situations} focusId={focusId} callout={callout} tour={tourProps} newIds={newIds} view={view}
+                  situations={situations} focusId={focusId} callout={callout} tour={tourProps} newIds={newIds} view="globe"
                   onSelect={userSelect} onOpenCallout={userSelect} height={mapH}
                 />
               </Suspense>
             ) : (
-              <SituationMap situations={situations} selectedId={focusId} onSelect={userSelect} />
+              <RadarMap
+                situations={situations} focusId={focusId} callout={callout} newIds={newIds}
+                onSelect={userSelect} onOpenCallout={userSelect} onScan={markScanned} height={mapH}
+              />
             )}
 
             <div className="sh-controls">
@@ -227,9 +251,10 @@ export default function SituationHome() {
                 <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
               ) : null}
               {USE_3D ? (
-                <button className="sh-ctl" onClick={toggleView} title={view === 'globe' ? 'Switch to the flat map' : 'Switch to the globe'} aria-pressed={view === 'globe'}>
-                  {view === 'globe' ? 'Flat map' : 'Globe'}
-                </button>
+                <div className="sh-viewswitch" role="group" aria-label="Map mode">
+                  <button className={`sh-ctl sh-seg${view === 'globe' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'globe'} onClick={() => setView('globe')}>Globe</button>
+                  <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
+                </div>
               ) : null}
               <button className="sh-ctl sh-key" onClick={() => setLegendOpen((v) => !v)} aria-expanded={legendOpen}>
                 {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
@@ -350,7 +375,7 @@ export default function SituationHome() {
             </div>
           ) : (
             <HudIntelFeed
-              ranked={ranked} focusId={focusId} newIds={newIds} loading={loading} error={error} world={world}
+              ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
               onSelect={userSelect}
             />
           )}

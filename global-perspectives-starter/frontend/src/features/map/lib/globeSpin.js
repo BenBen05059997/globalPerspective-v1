@@ -22,10 +22,26 @@ export function spinStep(longitude, dtMs, degPerSec = 3) {
   return wrapLongitude(longitude + (degPerSec * dtMs) / 1000);
 }
 
-/** Desktop opens on the spinning globe when WebGL works; phones (<900px) keep today's default. */
+/**
+ * M4: the console has two modes now, GLOBE and RADAR (the old deck.gl "flat" map is gone —
+ * radar replaces it as both the phone default and the no-WebGL fallback, since it's drawn with
+ * SVG/canvas and never touches WebGL). Desktop opens on the spinning globe when WebGL works;
+ * phones and any device without WebGL open on radar (cheap to draw, per the design brief).
+ */
 export function defaultMapView(width, webglOk) {
-  if (!webglOk) return 'flat';
-  return width >= 900 ? 'globe' : 'flat';
+  if (!webglOk) return 'radar';
+  return width >= 900 ? 'globe' : 'radar';
+}
+
+/**
+ * Normalise a `gp_map_view` value read back from localStorage: an old 'flat' choice (from
+ * before M4 removed the deck.gl flat mode) migrates to 'radar'; an unrecognised/missing value
+ * returns null so the caller falls back to `defaultMapView`.
+ */
+export function normalizeStoredView(saved) {
+  if (saved === 'globe') return 'globe';
+  if (saved === 'radar' || saved === 'flat') return 'radar';
+  return null;
 }
 
 /** Props for the small spin toggle control: reduced motion disables it outright. */

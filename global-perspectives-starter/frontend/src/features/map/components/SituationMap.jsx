@@ -13,13 +13,16 @@ export const AXIS_HUE = {
 };
 const AXIS_FALLBACK = '#9aa4b2';
 // Marker radius by tier (severity) — widened so severity reads (interim until S5's 2.5D columns).
-const TIER_R = { low: 4, moderate: 6.5, elevated: 9, high: 13 };
+// Exported so RadarMap (M4) draws the same-size markers instead of forking its own scale.
+export const TIER_R = { low: 4, moderate: 6.5, elevated: 9, high: 13 };
 const STATE_WORD = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoing', cooling: 'Easing', closed: 'Ended' };
 const TIER_WORD = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 
-const land = topojson.feature(topoData, topoData.objects.countries);
+// Exported so RadarMap (M4) draws the same real coastlines with the same crop, instead of
+// re-deriving its own land/frame from the topojson bundle.
+export const land = topojson.feature(topoData, topoData.objects.countries);
 // Frame roughly ±60° latitude — drop Antarctica, which is ~15% of canvas for zero information.
-const FRAME = { type: 'Polygon', coordinates: [[[-180, -58], [180, -58], [180, 72], [-180, 72], [-180, -58]]] };
+export const FRAME = { type: 'Polygon', coordinates: [[[-180, -58], [180, -58], [180, 72], [-180, 72], [-180, -58]]] };
 
 function agoShort(iso) {
   if (!iso) return '';

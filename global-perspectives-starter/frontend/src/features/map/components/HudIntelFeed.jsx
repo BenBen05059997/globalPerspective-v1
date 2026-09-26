@@ -10,7 +10,7 @@ function placeOf(s) {
   return null;
 }
 
-export default function HudIntelFeed({ ranked, focusId, newIds, loading, error, world, onSelect }) {
+export default function HudIntelFeed({ ranked, focusId, newIds, scannedIds, loading, error, world, onSelect }) {
   return (
     <div className="hud-panel hud-feed" aria-label="Intel feed">
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
@@ -36,6 +36,9 @@ export default function HudIntelFeed({ ranked, focusId, newIds, loading, error, 
                     {s.escalating ? <span className="hud-esc" aria-label="escalating">▲</span> : null}
                     {newIds?.has(s.id) ? <span className="sh-new">◇ new</span> : null}
                     {place ? <span className="hud-feed-place">{place}</span> : null}
+                    {/* Radar mode (M4): a brief, non-scrolling, non-focus-stealing mark that the
+                        sweep just passed this situation. Never used outside radar mode. */}
+                    {scannedIds?.has(s.id) ? <span className="hud-scanned" aria-label="just scanned by the radar sweep">◉ scanned</span> : null}
                   </span>
                   <span className="sh-row-title">{s.verb_label}</span>
                 </span>

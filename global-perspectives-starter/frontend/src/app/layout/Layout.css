@@ -302,7 +302,7 @@
 .gp-main-tabbar { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
 
 /* ── Mobile responsive ───────────────────────────────────── */
-@media (max-width: 900px) {
+@media (max-width: 899.98px) {
   .gp-nav { grid-template-columns: 1fr auto; padding: 0 16px; }
   .gp-nav-links { display: none; }
   .gp-search { display: none; }

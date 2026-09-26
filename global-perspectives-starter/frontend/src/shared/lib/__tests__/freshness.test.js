@@ -86,8 +86,11 @@ describe('freshnessState', () => {
   });
   it('is hidden for invalid input rather than guessing', () => {
     expect(freshnessState(NaN)).toBe('hidden');
-    expect(freshnessState(-1)).toBe('hidden');
     expect(freshnessState(undefined)).toBe('hidden');
+  });
+  it('clamps a slightly-future timestamp (negative age from clock skew) to live, not hidden (F2.4)', () => {
+    expect(freshnessState(-1)).toBe('live');
+    expect(freshnessState(-0.01)).toBe('live');
   });
 });
 

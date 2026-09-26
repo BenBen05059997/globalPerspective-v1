@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { AXIS_HUE, TIER_R, land, FRAME } from '@/features/map/components/SituationMap.jsx';
+import { AXIS_HUE, TIER_R } from '@/features/map/components/SituationMap.jsx';
+import { land, FRAME } from '@/features/map/lib/landGeometry.js';
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
 import { bearingDeg, beamCrossed, scanGlow, sweepControlState } from '@/features/map/lib/radar.js';
 import { ISO3_TO_NUM } from '@/features/map/lib/countryGeo.js';
@@ -51,6 +52,13 @@ function placeCallout(px, py, W, H, topMargin = 8) {
   return { left, top };
 }
 
+// F2.21: `verb_label` is server data rendered via `.innerHTML` below (copied from the removed
+// SituationMap.jsx flat component) — escape it so a label containing `<`/`&`/etc. can never be
+// interpreted as markup in the tooltip.
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function agoShort(iso) {
   if (!iso) return '';
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -82,6 +90,8 @@ export default function RadarMap({
   const markerElsRef = useRef(new Map());   // situation id -> { halo, core }
   const bearingsRef = useRef(new Map());    // situation id -> bearing deg from map centre
   const projectionRef = useRef(null);
+  const zoomRef = useRef(null);             // the d3-zoom behavior, rebound on every redraw
+  const zoomTransformRef = useRef(null);    // F2.2: last user zoom/pan, reapplied after each redraw
   const sweepRef = useRef(355);             // starts just past a "recent pass" look, per the mock
   const onSelectRef = useRef(onSelect);
   const onScanRef = useRef(onScan);
@@ -183,7 +193,7 @@ export default function RadarMap({
       const showTip = (e, s) => {
         const [x, y] = d3.pointer(e, wrap);
         tip.style.opacity = 1; tip.style.left = `${x + 12}px`; tip.style.top = `${y + 12}px`;
-        tip.innerHTML = `<b>${s.verb_label}</b><br>${TIER_W[s.tier] || s.tier} · ${agoShort(s.last_change_at)}`;
+        tip.innerHTML = `<b>${escapeHtml(s.verb_label)}</b><br>${escapeHtml(TIER_W[s.tier] || s.tier)} · ${escapeHtml(agoShort(s.last_change_at))}`;
       };
       const hideTip = () => { tip.style.opacity = 0; };
 
@@ -239,8 +249,16 @@ export default function RadarMap({
         .text((s) => s.verb_label).attr('fill', '#dfe6f2').attr('font-size', 11)
         .attr('paint-order', 'stroke').attr('stroke', '#0d1017').attr('stroke-width', 3);
 
-      const zoom = d3.zoom().scaleExtent([1, 8]).on('zoom', (e) => root.attr('transform', e.transform));
+      // F2.2: the SVG is fully cleared and rebuilt every redraw (5-min poll, selection, resize),
+      // which used to reset the zoom/pan to identity each time — reapply the visitor's last
+      // transform (if any) instead of snapping back to the default view.
+      const zoom = d3.zoom().scaleExtent([1, 8]).on('zoom', (e) => {
+        zoomTransformRef.current = e.transform;
+        root.attr('transform', e.transform);
+      });
+      zoomRef.current = zoom;
       svg.call(zoom).on('dblclick.zoom', null);
+      if (zoomTransformRef.current) svg.call(zoom.transform, zoomTransformRef.current);
 
       setDims({ width, height });
     }

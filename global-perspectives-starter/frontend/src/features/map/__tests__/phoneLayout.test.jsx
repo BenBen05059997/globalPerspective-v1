@@ -41,6 +41,7 @@ vi.mock('@/shared/data/useGeminiTopics.js', () => ({
 vi.mock('@/shared/hooks/useIsPhone.js', () => ({
   useIsPhone: () => true,
   default: () => true,
+  PHONE_BREAKPOINT: 900,
 }));
 
 async function renderHome() {

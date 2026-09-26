@@ -11,7 +11,7 @@ import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
 import HudCompactLine from '@/features/map/components/HudCompactLine.jsx';
 import MapPhoneTabs from '@/features/map/components/MapPhoneTabs.jsx';
 import BottomSheet from '@/features/map/components/BottomSheet.jsx';
-import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
+import { useIsPhone, PHONE_BREAKPOINT } from '@/shared/hooks/useIsPhone.js';
 import { hudCompactSummary } from '@/features/map/lib/hudCompact.js';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
@@ -348,9 +348,13 @@ export default function SituationHome() {
     setLegendOpen(next);
     try { localStorage.setItem('gp_map_legend_open', next ? '1' : '0'); } catch { /* storage blocked */ }
   }, []);
-  const [mapH, setMapH] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620));
+  // F2.5: one breakpoint rule everywhere (useIsPhone's PHONE_BREAKPOINT, `< 900`) — this used to
+  // switch at `<= 900` while useIsPhone and the CSS switched at `< 900` (i.e. `max-width: 900px`),
+  // so at exactly 900px this panel sized itself for phone while the phone tab bar/CSS still
+  // thought it was desktop, and neither nav rendered.
+  const [mapH, setMapH] = useState(() => (typeof window !== 'undefined' && window.innerWidth < PHONE_BREAKPOINT ? Math.round(window.innerHeight * 0.6) : 620));
   useEffect(() => {
-    const onResize = () => setMapH(window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620);
+    const onResize = () => setMapH(window.innerWidth < PHONE_BREAKPOINT ? Math.round(window.innerHeight * 0.6) : 620);
     window.addEventListener('resize', onResize); return () => window.removeEventListener('resize', onResize);
   }, []);
 
@@ -379,7 +383,11 @@ export default function SituationHome() {
   const sheetSubtitle = selected
     ? (AXIS_LABEL[selected.axis] || selected.axis)
     : (selectedStory ? (selectedStory.category || null) : null);
-  const phoneSheetOpen = isPhone && phoneTab === 'map' && !!selectionId;
+  // F2.3: a stale `?story=` link resolves to no topic (selectedStory stays null) but `selectionId`
+  // was still truthy, so the sheet used to open empty. Only open once the selection actually
+  // resolves to something the sheet has content for — a live situation, a live story, or the
+  // honest "no longer tracked" message for an expired `?focus=`.
+  const phoneSheetOpen = isPhone && phoneTab === 'map' && !!(selected || selectedStory || focusMissing);
   const hudSummary = useMemo(() => hudCompactSummary(tierCounts, sensorRows, paused), [tierCounts, sensorRows, paused]);
 
   // The map itself (globe/radar + controls + legend) is identical on desktop and the phone MAP
@@ -419,7 +427,10 @@ export default function SituationHome() {
         ) : null}
 
         <div className="sh-controls">
-          {ranked.length >= 2 && !tourOn ? (
+          {/* F1.9: hide the tour entry point while a selection is active — a situation or story
+              already showing its own detail isn't the moment to invite a tour that would fly the
+              map away from it. */}
+          {ranked.length >= 2 && !tourOn && !focus && !selectedStory ? (
             <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
           ) : null}
           {USE_3D ? (
@@ -505,7 +516,7 @@ export default function SituationHome() {
   ) : selected ? (
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={() => userSelect(null)} />
   ) : selectedStory ? (
-    <StoryCard topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={() => userSelectStory(null)} />
+    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={() => userSelectStory(null)} />
   ) : (
     <HudIntelFeed
       ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
@@ -520,7 +531,7 @@ export default function SituationHome() {
   ) : selected ? (
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={closeSelection} showBack={false} />
   ) : selectedStory ? (
-    <StoryCard topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={closeSelection} />
+    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={closeSelection} />
   ) : null;
 
   return (
@@ -542,6 +553,20 @@ export default function SituationHome() {
       <HudStatusLine paused={paused} />
 
       {stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null}
+
+      {/* F1.9: a tour bar at the page level (not nested inside the globe's callout, which never
+          renders on the phone MAP tab and doesn't exist at all in radar) — this works the same
+          way in globe, radar and on the phone. Esc still stops the tour (handled above). */}
+      {tourOn && tourStop ? (
+        <div className="sh-tourbar-global" role="group" aria-label="Guided tour">
+          <span className="sh-tourbar-status">Tour <b>{Math.min(tourIdx, tourN - 1) + 1}</b> of {tourN} · {tourStop.verb_label}</span>
+          <span className="sh-tourbar-btns">
+            <button onClick={tourPrev} aria-label="Previous situation">← Prev</button>
+            <button onClick={tourNext} aria-label="Next situation">Next →</button>
+            <button onClick={stopTour}>Stop</button>
+          </span>
+        </div>
+      ) : null}
 
       {isPhone ? (
         <>

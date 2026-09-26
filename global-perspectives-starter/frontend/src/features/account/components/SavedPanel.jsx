@@ -137,7 +137,12 @@ export function SavedPanel({ savedItems, savedLoading, onUnsave }) {
 
   return (
     <div>
-      {savedItems.length > 1 && (
+      {/* F2.21: the filter chips (including "All") used to disappear once savedItems.length hit
+          1 or 0 — including while a non-"all" filter was still active, e.g. after unsaving items
+          down to a count where the filtered view shows nothing and there is no visible way back
+          to "All". Keep the row (at least the "All" chip) whenever a filter is active, regardless
+          of how many items are left. */}
+      {(savedItems.length > 1 || filter !== 'all') && (
         <div className="saved-filters">
           <button
             className={`saved-filter-chip${filter === 'all' ? ' saved-filter-chip--active' : ''}`}

@@ -41,7 +41,13 @@ export function pausedSince({ newestAnalysisAt, now = Date.now(), searched = fal
 // Pure function of an age in days so callers (map shading, feed rows, StoryPeek) never each
 // invent their own thresholds. `ageDays` should already be `(now - timestamp) / 86400000`.
 export function freshnessState(ageDays) {
-  if (!Number.isFinite(ageDays) || ageDays < 0) return 'hidden';
+  if (!Number.isFinite(ageDays)) return 'hidden';
+  // F2.4 (map-console review R1): a slightly-future timestamp (clock skew between the browser and
+  // whatever generated the record) used to compute a negative age and fall straight to 'hidden' —
+  // every story on the page could read "hidden, older than 30 days" from a few seconds of skew.
+  // Clamp to 0 (i.e. "just now") instead of guessing a real age for a timestamp that hasn't
+  // happened yet.
+  if (ageDays < 0) ageDays = 0;
   if (ageDays < 1) return 'live';
   if (ageDays < 7) return 'plain';
   if (ageDays < 30) return 'older';

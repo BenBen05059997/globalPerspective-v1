@@ -32,6 +32,22 @@
 .sh-next { color: var(--sh-dim); }
 .sh-banner { background: #2a2410; border: 1px solid #4a3f16; color: #f2d492; padding: 8px 12px; border-radius: 8px; margin: 12px 0 0; font-size: 13px; }
 
+/* F1.9: the page-level guided-tour bar — works identically in globe, radar and on the phone
+   (unlike the old callout-only bar, which never rendered outside the globe's callout). */
+.sh-tourbar-global {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  min-height: var(--c-tap-min, 44px); margin: 10px 0 0; padding: 6px 12px;
+  background: var(--sh-panel, #171c26); border: 1px solid var(--sh-border, #232c3a); border-radius: 10px;
+  color: var(--sh-text, #dfe6f2); font-size: 13px;
+}
+.sh-tourbar-status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-tourbar-btns { display: flex; gap: 6px; flex: none; }
+.sh-tourbar-btns button {
+  min-height: var(--c-tap-min, 44px); padding: 0 12px; background: var(--sh-panel2, #1d2330);
+  color: var(--sh-text, #dfe6f2); border: 1px solid var(--sh-border, #232c3a); border-radius: 7px;
+  font-size: 13px; cursor: pointer;
+}
+
 /* ---- HUD: honesty status line (M2) ---- */
 .hud-status-line {
   display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 7px 12px;
@@ -114,7 +130,7 @@
 
 /* ---- stage: map (left) + rail (right) ---- */
 .sh-stage { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(300px, 1fr); gap: 16px; margin-top: 14px; align-items: start; }
-@media (max-width: 900px) { .sh-stage { grid-template-columns: 1fr; } }
+@media (max-width: 899.98px) { .sh-stage { grid-template-columns: 1fr; } }
 
 .sh-mapwrap { position: relative; }
 .sh-mapinner { position: relative; }
@@ -314,7 +330,7 @@
 .sh-idx-link:hover { color: #fff; text-decoration: underline; }
 
 /* ---- mobile ---- */
-@media (max-width: 900px) {
+@media (max-width: 899.98px) {
   .sh-hud-row .hud-panel { flex: 1 1 100%; padding: 8px 9px 9px; font-size: 11px; }
   /* on a phone the open legend becomes a bottom sheet instead of an anchored panel */
   .sh-legend {

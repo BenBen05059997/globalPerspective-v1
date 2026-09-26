@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
-import { MapView, WebMercatorViewport, FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController, _GlobeViewport as GlobeViewport } from '@deck.gl/core';
+import { FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController, _GlobeViewport as GlobeViewport } from '@deck.gl/core';
 import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
@@ -45,10 +45,11 @@ function iso3Centroid(iso3) {
 }
 function iso3Feature(iso3) { const num = ISO3_TO_NUM[iso3]; return num ? NUM_TO_FEATURE[num] : null; }
 
-// Flat overview (pitch 0) is the default — every situation legible, nothing behind a horizon.
-// A user toggle swaps to the globe (deck.gl can't morph between the two, so it's a deliberate
-// switch, never an auto-transition). Slice 3 / patch design variant C-as-toggle.
-const INITIAL_VIEW = { longitude: 12, latitude: 20, zoom: 1.15, pitch: 0, bearing: 0, minZoom: 0.6, maxZoom: 8 };
+// This component is globe-only: the flat "MapView" overview mode was replaced by RadarMap (M4),
+// which is now both the phone default and the no-WebGL fallback. The single call site
+// (SituationHome.jsx) always passes view="globe"; the flat-mode branches this file used to carry
+// (INITIAL_VIEW, MapView, WebMercatorViewport, the dragRotate:false controller) were unreachable
+// dead code and were removed (F2.21, map-console review R1).
 const GLOBE_VIEW_BASE = { longitude: 12, latitude: 18, pitch: 0, bearing: 0, minZoom: -0.5, maxZoom: 6 };
 // M6: the globe fills ~75–85% of the map panel's own height, computed from `height` — not a
 // fixed zoom that reads small on a tall panel and cramped on a short one.
@@ -103,39 +104,61 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
  * current tour stop; hover → tooltip; click → onSelect(id).
  */
 export default function SituationMap3D({
-  situations = [], focusId, callout = null, tour = null, newIds = null, view = 'flat', onSelect, onOpenCallout, height = 560,
+  situations = [], focusId, callout = null, tour = null, newIds = null, view = 'globe', onSelect, onOpenCallout, height = 560,
   shading = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
 }) {
-  const globe = view === 'globe';
+  // `view` is accepted for API back-compat with the single call site (SituationHome.jsx always
+  // passes "globe" — see the comment above GLOBE_VIEW_BASE); it no longer changes any behaviour.
+  void view;
   // M6: the globe's default zoom is computed from the panel height (~75–85% fill), read through a
   // ref so a later window resize alone never resets a zoom the visitor already chose by
-  // interacting — only an explicit GLOBE/RADAR toggle (or clearing a selection) re-applies it.
+  // interacting — only clearing a selection re-applies it.
   const heightRef = useRef(height);
   heightRef.current = height;
-  const [viewState, setViewState] = useState(globe ? globeViewFor(height) : INITIAL_VIEW);
+  const [viewState, setViewState] = useState(() => globeViewFor(height));
+  // F1.2 (map-console review R1): the spin/pulse loops used to call setState every animation
+  // frame, which made deck.gl rebuild its layers 60x/sec (76 long tasks / 20s on weak GPUs). Both
+  // loops now read/write this ref every frame and push the new view straight to the deck.gl
+  // instance via `deckRef.current.setProps(...)` — no React re-render per frame. `viewState`
+  // (the React state above) is still the source of truth for the initial paint, user drags/zooms
+  // (deck.gl's own onViewStateChange, which fires at input rate, not 60fps) and fly-tos, and is
+  // synced from it below so the ref never goes stale between renders.
+  const viewStateRef = useRef(viewState);
+  viewStateRef.current = viewState;
+  const deckRef = useRef(null);
   const userMoved = useRef(false);
   const reduceMotion = useMemo(() => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
   }, []);
-  // Idle spin (globe only): stops for the session on any drag/zoom/click or a selection; the
-  // small control below can restart it. Reduced motion never spins.
-  const [spinOn, setSpinOn] = useState(globe && !reduceMotion);
+  // Idle spin: stops for the session on any drag/zoom/click or a selection; the small control
+  // below can restart it. Reduced motion never spins.
+  const [spinOn, setSpinOn] = useState(!reduceMotion);
   const stopSpin = useCallback(() => setSpinOn(false), []);
-  // On toggle, reset to that view's default (a gentle transition; not a morph between view types).
-  // Reduced motion: instant, no fly duration.
-  useEffect(() => {
-    userMoved.current = false;
-    setSpinOn(globe && !reduceMotion);
-    setViewState((v) => ({
-      ...(globe ? globeViewFor(heightRef.current) : INITIAL_VIEW), longitude: v.longitude, latitude: globe ? 15 : v.latitude,
-      ...(reduceMotion ? {} : { transitionDuration: 600, transitionInterpolator: new FlyToInterpolator() }),
-    }));
-  }, [globe, reduceMotion]);
+  // F2.1: resuming spin after a drag did nothing — the spin tick's `!userMoved.current` guard
+  // stayed tripped forever because only stopSpin (never a resume) ever touched it. Resuming must
+  // clear it so the drift actually restarts.
+  const resumeSpin = useCallback(() => { userMoved.current = false; setSpinOn(true); }, []);
   const wrapRef = useRef(null);
   const [dims, setDims] = useState({ width: 1, height });
 
+  // F1.2: pause both animation loops (spin, pulse) when the tab is hidden or the map panel has
+  // scrolled off-screen — a plain visibility/IntersectionObserver check read inside the rAF loops
+  // below, not a dependency that would tear the loop down and rebuild it.
+  const [onScreen, setOnScreen] = useState(true);
+  useEffect(() => {
+    if (!wrapRef.current || typeof IntersectionObserver !== 'function') return undefined;
+    const io = new IntersectionObserver((entries) => setOnScreen(entries[0]?.isIntersecting ?? true), { threshold: 0.01 });
+    io.observe(wrapRef.current);
+    return () => io.disconnect();
+  }, []);
+  const onScreenRef = useRef(onScreen);
+  onScreenRef.current = onScreen;
+  const animationPaused = useCallback(() => (typeof document !== 'undefined' && document.hidden) || !onScreenRef.current, []);
+
   // Night-lights texture: probed with a plain Image() after an idle tick so a slow/failed load
-  // never touches deck.gl or throws — it only ever flips `textureReady` on success.
+  // never touches deck.gl or throws — it only ever flips `textureReady` on success. F1.2: the
+  // idle callback now carries a 2s timeout so a continuously-busy main thread can't starve it
+  // forever (the fallback setTimeout path is unchanged — it has no such starvation risk).
   const [textureReady, setTextureReady] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -147,7 +170,7 @@ export default function SituationMap3D({
     };
     const ric = typeof requestIdleCallback === 'function' ? requestIdleCallback : (cb) => setTimeout(cb, 200);
     const cic = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
-    const handle = ric(load);
+    const handle = ric(load, { timeout: 2000 });
     return () => { cancelled = true; cic(handle); };
   }, []);
 
@@ -235,52 +258,58 @@ export default function SituationMap3D({
       stopSpin(); // a selection turns the globe to face the story and stays stopped (task M3)
       const [lon, lat] = focusCentroid.split(',').map(Number);
       setViewState((v) => ({
-        ...v, longitude: lon, latitude: globe ? lat - 4 : lat, zoom: globe ? 2.1 : 3.4,
+        ...v, longitude: lon, latitude: lat - 4, zoom: 2.1,
         ...(reduceMotion ? {} : { transitionDuration: 1300, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }) }),
       }));
     } else if (userMoved.current) {
       setViewState((v) => ({
-        ...v, ...(globe ? globeViewFor(heightRef.current) : INITIAL_VIEW),
+        ...v, ...globeViewFor(heightRef.current),
         ...(reduceMotion ? {} : { transitionDuration: 1100, transitionInterpolator: new FlyToInterpolator() }),
       }));
     }
-  }, [focusCentroid, globe, reduceMotion, stopSpin]);
+  }, [focusCentroid, reduceMotion, stopSpin]);
 
-  // Idle spin: only while in globe mode, on, and not mid-drag. Strips any leftover
-  // transitionDuration/interpolator each frame so the drift itself is never animated/eased.
+  // Idle spin: only while on, and not mid-drag. Strips any leftover transitionDuration/
+  // interpolator each frame so the drift itself is never animated/eased.
+  // F1.2: writes go straight to the ref + the deck.gl instance (deckRef.current.setProps) every
+  // frame; the React `viewState` used for the callout's screen-space placement (place, below) is
+  // only re-synced at ~24fps via setViewState, so drag/selection code paths (which still read/set
+  // the React state directly) never see it lag by more than a couple of frames.
   useEffect(() => {
-    if (!globe || !spinOn || reduceMotion) return undefined;
-    let raf; let last = null;
+    if (!spinOn || reduceMotion) return undefined;
+    let raf; let last = null; let lastSync = 0;
+    const SYNC_INTERVAL_MS = 1000 / 24;
     const tick = (t) => {
-      if (last != null && !userMoved.current) {
+      if (last != null && !userMoved.current && !animationPaused()) {
         const dt = t - last;
-        setViewState((v) => {
-          const { transitionDuration, transitionInterpolator, ...rest } = v; // eslint-disable-line no-unused-vars
-          return { ...rest, longitude: spinStep(rest.longitude, dt, SPIN_DEG_PER_SEC) };
-        });
+        const { transitionDuration, transitionInterpolator, ...rest } = viewStateRef.current; // eslint-disable-line no-unused-vars
+        const next = { ...rest, longitude: spinStep(rest.longitude, dt, SPIN_DEG_PER_SEC) };
+        viewStateRef.current = next;
+        deckRef.current?.setProps({ viewState: next });
+        if (t - lastSync >= SYNC_INTERVAL_MS) { lastSync = t; setViewState(next); }
       }
       last = t;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [globe, spinOn, reduceMotion]);
+  }, [spinOn, reduceMotion, animationPaused]);
 
   // Static (non-animated) layers — memoised so the pickable `core` layer keeps a stable instance
   // across breathing-halo frames (a fresh instance each frame was eating clicks).
   // In globe mode, once the night-lights texture is showing, the opaque land fill would muddy
   // it — fall back to a faint fill + dimmer border so the texture (and the crisis markers) read.
-  const landDimmed = globe && textureReady;
+  const landDimmed = textureReady;
   // Bottom-most layer, globe only, added only once the texture has actually loaded (kept a
   // separate memo from baseLayers so its presence never shifts the indices used below).
   const earthLayer = useMemo(() => (
-    globe && textureReady
+    textureReady
       ? new BitmapLayer({
         id: 'earth-night', image: EARTH_TEXTURE_URL, bounds: EARTH_BOUNDS,
         opacity: 0.8, pickable: false, // dimmed so crisis markers stay the brightest thing on the globe
       })
       : null
-  ), [globe, textureReady]);
+  ), [textureReady]);
   const baseLayers = useMemo(() => [
     new GeoJsonLayer({
       id: 'land', data: landFeatures, stroked: true, filled: true, extruded: false,
@@ -333,36 +362,26 @@ export default function SituationMap3D({
   // per animation frame.
   const pulseIds = useMemo(() => pulseSet(active, Date.now(), 8), [active]);
   const pulseData = useMemo(() => active.filter((s) => pulseIds.has(s.id)), [active, pulseIds]);
-  // Kept as a SEPARATE, non-memoised layer (unlike baseLayers above) precisely so its per-frame
-  // radius/alpha changes never touch the pickable `core` layer's stable instance.
-  const [pulseT, setPulseT] = useState(0); // 0..1 phase within the 2.4s cycle
-  useEffect(() => {
-    if (reduceMotion || pulseData.length === 0) return undefined;
-    let raf; let start = null;
-    const PULSE_MS = 2400;
-    const tick = (t) => {
-      if (start == null) start = t;
-      setPulseT(((t - start) % PULSE_MS) / PULSE_MS);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [reduceMotion, pulseData.length]);
-  const pulseLayer = (!reduceMotion && pulseData.length)
+  const buildPulseLayer = useCallback((t) => (!reduceMotion && pulseData.length)
     ? new ScatterplotLayer({
       id: 'pulse', data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
-      getRadius: (s) => (TIER_HALO[s.tier] || 14) + pulseT * 20,
-      getFillColor: (s) => [...hue(s), Math.round(150 * (1 - pulseT))],
+      getRadius: (s) => (TIER_HALO[s.tier] || 14) + t * 20,
+      getFillColor: (s) => [...hue(s), Math.round(150 * (1 - t))],
     })
-    : null;
-  // Reduced motion → a still ring instead of a pulse (never nothing, never moving).
-  const pulseStillLayer = (reduceMotion && pulseData.length)
+    : null, [reduceMotion, pulseData]);
+  // Reduced motion → a still ring instead of a pulse (never nothing, never moving). Memoised (like
+  // the layers below it) so composeLayers gets a stable reference instead of a new instance every
+  // render.
+  const pulseStillLayer = useMemo(() => (reduceMotion && pulseData.length)
     ? new ScatterplotLayer({
       id: 'pulse-still', data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
       getRadius: (s) => (TIER_HALO[s.tier] || 14) + 9, filled: false, stroked: true,
       getLineColor: (s) => [...hue(s), 190], getLineWidth: 1.5, lineWidthUnits: 'pixels',
     })
-    : null;
+    : null, [reduceMotion, pulseData]);
+  // Static (t=0) frame for the initial/non-animated JSX render below — the rAF loop (further
+  // down) takes over via deckRef.current.setProps on the very next frame.
+  const pulseLayer = buildPulseLayer(0);
 
   // Selection-state layers (only when a situation is focused): affected-country tint, spread arcs,
   // hollow destination rings. Drawn under the pins (fill/arcs) and beside them (dest rings).
@@ -389,16 +408,37 @@ export default function SituationMap3D({
   // Order: earth-night (globe only, bottom-most), land, affected-fill, arcs, halo, escalating,
   // pulse (NEW/▲ within 24h, capped — the only animated marker layer), new-marker,
   // core (top=picking), dest-rings.
-  const layers = [
+  const composeLayers = useCallback((pulseAlpha) => [
     ...(earthLayer ? [earthLayer] : []),
     baseLayers[0],
     ...(storyShadeLayer ? [storyShadeLayer] : []),
     ...selectionLayers.filter((l) => l.id !== 'dest-rings'),
     baseLayers[1], baseLayers[2],
-    ...(pulseLayer ? [pulseLayer] : []), ...(pulseStillLayer ? [pulseStillLayer] : []),
+    ...(pulseAlpha ? [pulseAlpha] : []), ...(pulseStillLayer ? [pulseStillLayer] : []),
     baseLayers[4], baseLayers[3],
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),
-  ];
+  ], [earthLayer, baseLayers, storyShadeLayer, selectionLayers, pulseStillLayer]);
+  const layers = composeLayers(pulseLayer);
+
+  // F1.2: the 2.4s breathing pulse used to be driven by a `pulseT` React state updated every
+  // frame — deck.gl rebuilt every layer on every tick as a result. It now keeps its phase in a
+  // plain closure variable and pushes a freshly-built pulse layer straight to the deck.gl
+  // instance (deckRef.current.setProps), so only the `pulse` layer itself is ever replaced.
+  useEffect(() => {
+    if (reduceMotion || pulseData.length === 0) return undefined;
+    let raf; let start = null;
+    const PULSE_MS = 2400;
+    const tick = (t) => {
+      if (start == null) start = t;
+      if (!animationPaused()) {
+        const phase = ((t - start) % PULSE_MS) / PULSE_MS;
+        deckRef.current?.setProps({ layers: composeLayers(buildPulseLayer(phase)) });
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [reduceMotion, pulseData.length, composeLayers, buildPulseLayer, animationPaused]);
 
   const getTooltip = useCallback(({ object }) => {
     if (!object || !object.verb_label) return null;
@@ -412,25 +452,26 @@ export default function SituationMap3D({
   const place = useMemo(() => {
     if (!callout?.centroid || !dims.width) return null;
     try {
-      if (globe && !onNearSide(callout.centroid.lon, callout.centroid.lat, viewState.longitude, viewState.latitude)) return null;
-      const VP = globe ? GlobeViewport : WebMercatorViewport;
-      const vp = new VP({ ...viewState, width: dims.width, height: dims.height });
+      if (!onNearSide(callout.centroid.lon, callout.centroid.lat, viewState.longitude, viewState.latitude)) return null;
+      const vp = new GlobeViewport({ ...viewState, width: dims.width, height: dims.height });
       const [x, y] = vp.project([callout.centroid.lon, callout.centroid.lat]);
       if (x < -40 || y < -40 || x > dims.width + 40 || y > dims.height + 40) return null;
       return { px: x, py: y, ...placeCallout(x, y, dims.width, dims.height, CALLOUT_TOP_MARGIN) };
     } catch { return null; }
-  }, [callout, viewState, dims, globe]);
+  }, [callout, viewState, dims]);
 
   return (
     <div className="sm-wrap" style={{ height }} ref={wrapRef}>
       <DeckGL
-        views={globe ? new GlobeView() : new MapView({ repeat: false })}
+        ref={deckRef}
+        views={new GlobeView()}
         viewState={viewState}
         onViewStateChange={(e) => {
           if (e.interactionState?.isDragging || e.interactionState?.isZooming) { userMoved.current = true; stopSpin(); }
+          viewStateRef.current = e.viewState;
           setViewState(e.viewState);
         }}
-        controller={globe ? { type: GlobeController } : { dragRotate: false }}
+        controller={{ type: GlobeController }}
         layers={layers}
         getTooltip={getTooltip}
         pickingRadius={16}
@@ -468,22 +509,20 @@ export default function SituationMap3D({
           {tour ? <div className="sm-tourticks">{Array.from({ length: tour.total }).map((_, i) => <i key={i} className={i === tour.index ? 'on' : ''} />)}</div> : null}
         </div>
       ) : null}
-      {globe ? (
-        <div className="sm-globe-foot">
-          <span className="sm-attrib">Earth at night: NASA Black Marble</span>
-          {(() => {
-            const sc = spinControlState(reduceMotion, spinOn);
-            return (
-              <button
-                className="sm-spin-ctl" aria-pressed={sc.pressed} aria-label={sc.label} title={sc.label}
-                disabled={sc.disabled} onClick={() => setSpinOn((v) => !v)}
-              >
-                {sc.disabled ? '⏸' : (sc.pressed ? '⏸' : '▶')}
-              </button>
-            );
-          })()}
-        </div>
-      ) : null}
+      <div className="sm-globe-foot">
+        <span className="sm-attrib">Earth at night: NASA Black Marble</span>
+        {(() => {
+          const sc = spinControlState(reduceMotion, spinOn);
+          return (
+            <button
+              className="sm-spin-ctl" aria-pressed={sc.pressed} aria-label={sc.label} title={sc.label}
+              disabled={sc.disabled} onClick={() => (spinOn ? setSpinOn(false) : resumeSpin())}
+            >
+              {sc.disabled ? '⏸' : (sc.pressed ? '⏸' : '▶')}
+            </button>
+          );
+        })()}
+      </div>
     </div>
   );
 }

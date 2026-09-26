@@ -82,7 +82,10 @@ export default function HudIntelFeed({
           </div>
           <ul className="hud-feed-list hud-stories-list">
             {visibleTopics.map((t, i) => {
-              const rowId = t.topicId || t.threadId || `story-${i}`;
+              // F2.7: one id rule for a story everywhere (threadId || topicId) — this used to read
+              // topicId first, so a selected story never matched `storyFocusId` (computed the
+              // other way round in SituationHome) and never highlighted here.
+              const rowId = t.threadId || t.topicId || `story-${i}`;
               const data = peekData(t, { asOf: topicsAsOf });
               const hue = crisisHueForCategory(t.category);
               return (

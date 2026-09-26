@@ -1,5 +1,26 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Review fix round R1: speed + bugs; branch `map-console`, local only)
+
+Fixes from `REVIEW_2026-09-26_map_console_shell.md`:
+- **F1.1:** the latest-brief lookup is one shared request per page load; "nothing found" is cached; later lookups start from the last date that had a brief. Warm loads: /map 63→1, /weekly →1, /account →0 proxy calls.
+- **F1.2:** the globe spin and pulse no longer set React state every frame (refs + `deck.setProps`, state synced ≤24 fps; paused when the tab is hidden / the map is off-screen). The texture idle callback has a 2 s timeout. Long tasks on /map: 6 / 20 s, 0 in steady state.
+- **F1.3:** the Desk compares calendar days, so a same-day change is no longer hidden.
+- **F1.9:** a page-level tour bar that works in globe, radar and phone.
+- **F1.10:** `land` / `FRAME` moved to `features/map/lib/landGeometry.js` (d3-geo only); /account no longer loads the map chunk.
+- **F2.1–F2.8:**
+  - spin resumes after a drag;
+  - radar zoom survives redraws;
+  - the phone sheet opens only on a resolved selection;
+  - negative ages are clamped;
+  - one 899.98px breakpoint everywhere;
+  - desk last-visit is written only after load;
+  - one story-id rule;
+  - the story card is keyed by id.
+- **F2.20:** the flaky SituationHome tests now use static imports + mocks (3 clean runs).
+- **F2.21:** dead flat-map code removed; radar tooltip text escaped; SavedPanel keeps an "All" chip.
+- Tests: 399.
+
 ## 2026-09-26 (Account A6: console sign-in screen; branch `map-console`, local only)
 
 - `/signin` restyled as one calm console panel: "Sign in to Global Perspectives", the three things an account gives today, and "Following countries is part of membership."

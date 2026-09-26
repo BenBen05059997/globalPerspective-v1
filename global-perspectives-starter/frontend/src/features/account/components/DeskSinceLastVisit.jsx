@@ -11,15 +11,19 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
   if (lastVisitRef.current === undefined) lastVisitRef.current = readLastVisit();
   const lastVisitIso = lastVisitRef.current;
 
+  // F2.6: only stamp "last visit" once the rows have actually rendered — while `loading` is still
+  // true there is nothing on screen yet to have "seen", so writing here (or on an unmount that
+  // interrupts the load) would mark changes seen that were never shown.
   useEffect(() => {
-    // Update "last visit" after 10s on the Desk, or when the reader navigates away — not on
-    // load, so a refresh doesn't immediately erase the list it just showed.
+    if (loading) return undefined;
+    // Update "last visit" after 10s on the Desk, or when the reader navigates away — not
+    // immediately, so a refresh doesn't erase the list it just showed.
     const timer = setTimeout(() => writeLastVisit(), 10000);
     return () => {
       clearTimeout(timer);
       writeLastVisit();
     };
-  }, []);
+  }, [loading]);
 
   if (!isMember) {
     return (

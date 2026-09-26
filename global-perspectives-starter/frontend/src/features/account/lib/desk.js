@@ -67,17 +67,32 @@ export function axisMoves(prevSnap, snap, min = 10) {
   return out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
 }
 
-// notesSince(notes, lastVisitIso) — driftNotes with `asOf` strictly after lastVisitIso, newest
-// first. A missing/unparseable lastVisitIso or asOf drops the note (never guessed in).
+// dateKeyOf — the calendar-day (YYYY-MM-DD) part of an ISO date-or-datetime string.
+// F1.3 (map-console review R1): a driftNote's `asOf` is a date key at 00:00 UTC, but the last-visit
+// stamp (writeLastVisit) is a full timestamp with a real time-of-day. Comparing them with full
+// millisecond precision meant a note dated the SAME calendar day as the last visit — but written
+// later that day — always looked "before" the visit (00:00 < e.g. 15:30) and was hidden forever,
+// even after the reader came back the next day. Comparing calendar days instead treats "written
+// today" as "since your last visit" whenever today is the visit's day or later.
+function dateKeyOf(s) {
+  const str = String(s || '');
+  const m = str.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) return m[1];
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+}
+
+// notesSince(notes, lastVisitIso) — driftNotes dated on or after lastVisitIso's calendar day,
+// newest first. A missing/unparseable lastVisitIso or asOf drops the note (never guessed in).
 export function notesSince(notes, lastVisitIso) {
   const list = Array.isArray(notes) ? notes : [];
   if (lastVisitIso == null) return [];
-  const cutoff = new Date(lastVisitIso).getTime();
-  if (!Number.isFinite(cutoff)) return [];
+  const cutoffKey = dateKeyOf(lastVisitIso);
+  if (!cutoffKey) return [];
   return list
     .filter((n) => {
-      const t = new Date(n?.asOf).getTime();
-      return Number.isFinite(t) && t > cutoff;
+      const k = dateKeyOf(n?.asOf);
+      return k != null && k >= cutoffKey;
     })
     .sort((a, b) => String(b.asOf || '').localeCompare(String(a.asOf || '')));
 }
@@ -160,12 +175,14 @@ export function buildDeskRows(countryResults, lastVisitIso) {
       .sort((a, b) => String(b.note?.asOf || '').localeCompare(String(a.note?.asOf || '')))
       .slice(0, 5);
   } else {
+    // F1.3: same calendar-day comparison as notesSince above — a note dated the last visit's own
+    // day is "since", not hidden.
+    const cutoffKey = dateKeyOf(lastVisitIso);
     selected = flat
       .filter(({ note }) => {
-        if (lastVisitIso == null) return false;
-        const t = new Date(note?.asOf).getTime();
-        const cutoff = new Date(lastVisitIso).getTime();
-        return Number.isFinite(t) && Number.isFinite(cutoff) && t > cutoff;
+        if (cutoffKey == null) return false;
+        const k = dateKeyOf(note?.asOf);
+        return k != null && k >= cutoffKey;
       })
       .sort((a, b) => String(b.note?.asOf || '').localeCompare(String(a.note?.asOf || '')));
   }

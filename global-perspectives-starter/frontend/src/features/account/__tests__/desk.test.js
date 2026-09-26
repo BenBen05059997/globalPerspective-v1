@@ -47,9 +47,18 @@ describe('notesSince', () => {
     { asOf: '2026-08-19' },
   ];
 
-  it('returns notes strictly after lastVisit, newest first', () => {
+  it('returns notes on or after lastVisit\'s calendar day, newest first', () => {
     const result = notesSince(notes, '2026-08-17T12:00:00.000Z');
-    expect(result.map((n) => n.asOf)).toEqual(['2026-08-19', '2026-08-18']);
+    expect(result.map((n) => n.asOf)).toEqual(['2026-08-19', '2026-08-18', '2026-08-17']);
+  });
+
+  it('F1.3: a note dated the same calendar day as the last visit is shown, not hidden', () => {
+    // The last visit was at 08:00 on 2026-08-19; a note dated 2026-08-19 (asOf is a date key, no
+    // time-of-day) could have been written any time that day, including after the visit — it must
+    // not be hidden just because 00:00 < 08:00.
+    const sameDayNotes = [{ asOf: '2026-08-18' }, { asOf: '2026-08-19' }];
+    const result = notesSince(sameDayNotes, '2026-08-19T08:00:00.000Z');
+    expect(result.map((n) => n.asOf)).toEqual(['2026-08-19']);
   });
 
   it('returns nothing without a last-visit timestamp', () => {

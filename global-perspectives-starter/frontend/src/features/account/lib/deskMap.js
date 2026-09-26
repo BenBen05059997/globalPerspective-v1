@@ -5,14 +5,19 @@
 // Hue is fixed (cyan, see Account desk styling) — a followed country's outline never encodes
 // its risk score; risk shows as a number in the chip text instead (per CLAUDE.md: hue = crisis
 // type only).
-import * as d3 from 'd3';
-import { land, FRAME } from '@/features/map/components/SituationMap';
+// F1.10 (map-console review R1): this file used to pull `land`/`FRAME` from SituationMap.jsx and
+// the whole `d3` namespace just for two functions (geoEqualEarth, geoPath). Both dragged the
+// ~60KB-gz map chunk into /account, which never uses the globe/radar console. d3-geo is already a
+// transitive dependency of `d3` (SituationMap3D.jsx imports from it directly too), so importing
+// only the two pieces this file actually needs keeps /account's bundle out of the map chunk.
+import { geoEqualEarth, geoPath } from 'd3-geo';
+import { land, FRAME } from '@/features/map/lib/landGeometry.js';
 
 export const WIDTH = 360;
 export const HEIGHT = 130;
 
-const projection = d3.geoEqualEarth().fitSize([WIDTH, HEIGHT], FRAME);
-const path = d3.geoPath(projection);
+const projection = geoEqualEarth().fitSize([WIDTH, HEIGHT], FRAME);
+const path = geoPath(projection);
 
 // One combined path for every land feature — cheap to render, no per-country styling needed
 // since the world outline is just context for the followed-country dots.

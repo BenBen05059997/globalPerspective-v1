@@ -127,8 +127,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  /* F2.16: was a fixed 32x32 — the phone-visible header help control needs a ≥44px tap target. */
+  width: var(--c-tap-min, 44px);
+  height: var(--c-tap-min, 44px);
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--card);
@@ -182,6 +183,9 @@
   transition: background var(--fast), border-color var(--fast);
   display: inline-flex;
   align-items: center;
+  /* F2.16: the sign-in / account link needs a ≥44px tap target on phone. */
+  min-height: var(--c-tap-min, 44px);
+  box-sizing: border-box;
 }
 .gp-btn:hover { background: var(--paper-2); }
 .gp-btn-primary { background: var(--ink); color: #fff; border-color: var(--ink); }
@@ -252,6 +256,12 @@
   color: var(--ink-faint);
   text-decoration: none;
   transition: color var(--fast);
+  /* F2.16: the footer's font stays small (26px status-bar look), but each link's tap target
+     grows to ≥44px via padding, not by inflating the visible text. */
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--c-tap-min, 44px);
+  padding: 4px 0;
 }
 .gp-footer-links a:hover { color: var(--ink-mid); }
 .gp-footer-ver { flex-shrink: 0; color: var(--ink-faint); opacity: 0.7; }
@@ -297,9 +307,11 @@
   .gp-tabbar { display: none; }
 }
 
-/* Keeps page content (and /map's own bottom sheet — see SituationHome.css) clear of the fixed
-   bar; only added to `.gp-main` when the bar is actually rendered (isPhone). */
-.gp-main-tabbar { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+/* Keeps the footer (and /map's own bottom sheet — see SituationHome.css) clear of the fixed
+   bar; applied to the whole app shell (not just `.gp-main`) so the footer, which renders after
+   main, is pushed down below the bar too (F1.8: footer was hidden under the tab bar). Only
+   added when the bar is actually rendered (isPhone). */
+.gp-app-tabbar { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
 
 /* ── Mobile responsive ───────────────────────────────────── */
 @media (max-width: 899.98px) {

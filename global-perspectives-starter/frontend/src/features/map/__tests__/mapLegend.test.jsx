@@ -89,4 +89,23 @@ describe('map console — Key legend (M6, L2)', () => {
     getSpy.mockRestore();
     setSpy.mockRestore();
   });
+
+  it('F2.14: the toggle has aria-controls pointing at the legend region', async () => {
+    await renderHome();
+    const btn = screen.getByRole('button', { name: /key/i });
+    fireEvent.click(btn);
+    const legend = screen.getByLabelText(/how to read the map/i);
+    expect(legend).toHaveAttribute('role', 'region');
+    expect(btn).toHaveAttribute('aria-controls', legend.id);
+  });
+
+  it('F2.14: Escape closes the legend and returns focus to the Key button', async () => {
+    await renderHome();
+    const btn = screen.getByRole('button', { name: /key/i });
+    fireEvent.click(btn);
+    expect(screen.getByLabelText(/how to read the map/i)).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByLabelText(/how to read the map/i)).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(btn);
+  });
 });

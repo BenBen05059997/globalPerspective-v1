@@ -95,4 +95,54 @@ describe('BottomSheet (M7)', () => {
     expect(document.activeElement).toBe(trigger);
     trigger.remove();
   });
+
+  it('F2.11: falls back to the active phone tab if the trigger unmounted while open', () => {
+    const trigger = document.createElement('button');
+    trigger.textContent = 'open sheet';
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    const tab = document.createElement('button');
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-selected', 'true');
+    document.body.appendChild(tab);
+
+    const { unmount } = renderSheet({ stop: 'half' });
+    trigger.remove(); // the row/pin that opened the sheet is gone by the time it closes
+
+    unmount();
+    expect(document.activeElement).toBe(tab);
+    tab.remove();
+  });
+
+  it('F2.11: at the full stop, Tab from the last focusable wraps to the first (focus trap)', () => {
+    renderSheet({ stop: 'full' });
+    const sheet = screen.getByRole('dialog');
+    const focusable = Array.from(
+      sheet.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])')
+    );
+    expect(focusable.length).toBeGreaterThan(1);
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    last.focus();
+    expect(document.activeElement).toBe(last);
+    fireEvent.keyDown(sheet, { key: 'Tab' });
+    expect(document.activeElement).toBe(first);
+
+    first.focus();
+    fireEvent.keyDown(sheet, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
+
+  it('F2.11: the trap is not installed at half/peek (not a modal there)', () => {
+    renderSheet({ stop: 'half' });
+    const sheet = document.querySelector('.sheet');
+    const closeBtn = screen.getByRole('button', { name: 'Close' });
+    closeBtn.focus();
+    // No dialog role at half, so nothing should intercept Tab here — the handler is only
+    // attached while `isFull`.
+    fireEvent.keyDown(sheet, { key: 'Tab' });
+    expect(document.activeElement).toBe(closeBtn);
+  });
 });

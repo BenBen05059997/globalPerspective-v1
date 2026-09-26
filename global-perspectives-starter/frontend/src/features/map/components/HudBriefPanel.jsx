@@ -9,7 +9,7 @@ const TIERS = ['high', 'elevated', 'moderate', 'low'];
 
 export default function HudBriefPanel({ counts }) {
   return (
-    <div className="hud-panel hud-brief" aria-label="Situation brief">
+    <div className="hud-panel hud-brief" role="region" aria-label="Situation brief">
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
       <div className="hud-label">Situation brief</div>

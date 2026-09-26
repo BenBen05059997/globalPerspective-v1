@@ -36,7 +36,7 @@ export default function HudIntelFeed({
   const hiddenCount = state === 'hidden' ? topics.filter((t) => t && t.title).length : 0;
 
   return (
-    <div className="hud-panel hud-feed" aria-label={label}>
+    <div className="hud-panel hud-feed" role="region" aria-label={label}>
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
       <div className="hud-label hud-feed-label">

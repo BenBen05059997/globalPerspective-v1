@@ -1,5 +1,21 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Review fix round R3: accessibility + phone; branch `map-console`, local only)
+
+- **Phone footer:** clears the bottom tab bar on every page (the padding moved to the app shell).
+- **Keyboard + screen readers:**
+  - MAP / LIST / ALERTS tabs take ArrowLeft/Right/Home/End;
+  - the radar `svg` is `role="group"`, so its 12 country buttons are exposed;
+  - the full-height sheet traps Tab (0 / 40 escapes, was 36 / 40) and restores focus;
+  - one hidden live region announces "Selected: …" instead of the whole rail;
+  - the Key legend closes on Esc and has `aria-controls`; the HUD panels are named regions;
+  - `:focus-visible` rings on the globe and radar items;
+  - a hidden h1; the DOM order matches the visual order.
+- **Contrast:** the opacity-dimmed text now uses tokens (5.4–5.6:1); chips are 11px.
+- **Tap targets ≥44px:** Globe / Radar / Key (a later 40px rule was overriding), sheet handle + back, help, sign-in, footer links. Monitor scoped the `.btn-gp` 44px rule to phones only, so older pages' desktop layout is unchanged.
+- **Sheet background:** opaque.
+- Tests: 437.
+
 ## 2026-09-27 (Review fix round R2: honest wording everywhere; branch `map-console`, local only)
 
 - **Account → Alerts:** one true state per channel. Weekly brief (on/off; "no edition since <date> while analysis is paused", computed); breaking-news alerts and country change-alerts "paused, not sending" (toggles disabled; flags `BREAKING_CRON_LIVE` / `DRIFT_CRON_LIVE` = false).

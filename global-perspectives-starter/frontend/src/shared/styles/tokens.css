@@ -218,6 +218,11 @@ body {
   text-decoration: none;
   transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
+/* F2.16 (review R3, scoped by the monitor): ≥44px tap targets on phones only, so desktop
+   layouts of the older pages don't change. */
+@media (max-width: 899.98px) {
+  .btn-gp { min-height: 44px; box-sizing: border-box; }
+}
 .btn-gp:hover {
   border-color: var(--line-2);
   color: var(--ink);

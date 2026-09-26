@@ -25,7 +25,9 @@ export default function BottomSheet({ stop, onStopChange, onClose, title, subtit
   const dragRef = useRef(null);
 
   // Focus in on open, restore on close/unmount (the element that opened the sheet, e.g. a feed
-  // row or a map pin) — never assumed, always whatever was actually focused.
+  // row or a map pin) — never assumed, always whatever was actually focused. F2.11: if that
+  // element unmounted while the sheet was open, fall back to the currently-active phone tab
+  // rather than leaving focus on `<body>`.
   useEffect(() => {
     restoreFocusEl.current = document.activeElement;
     closeBtnRef.current?.focus?.();
@@ -33,6 +35,8 @@ export default function BottomSheet({ stop, onStopChange, onClose, title, subtit
       const prior = restoreFocusEl.current;
       if (prior && typeof prior.focus === 'function' && document.body.contains(prior)) {
         prior.focus();
+      } else {
+        document.querySelector('[role="tab"][aria-selected="true"]')?.focus();
       }
     };
   }, []);
@@ -42,6 +46,40 @@ export default function BottomSheet({ stop, onStopChange, onClose, title, subtit
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // F2.11: at the full stop the sheet is a true modal (role=dialog, aria-modal) — trap Tab /
+  // Shift+Tab inside it so focus can't escape to the page behind the scrim. Released automatically
+  // when the sheet leaves the full stop (collapse) since the effect re-runs on `isFull`.
+  const isFull = stop === 'full';
+  useEffect(() => {
+    if (!isFull) return undefined;
+    const node = sheetRef.current;
+    if (!node) return undefined;
+    // Not filtered by layout visibility (e.g. `offsetParent`) — jsdom (tests) never computes
+    // layout, and the sheet doesn't render display:none focusable content at the full stop anyway.
+    const getFocusable = () => Array.from(
+      node.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])')
+    );
+    const onKeyDown = (e) => {
+      if (e.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!node.contains(document.activeElement)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    node.addEventListener('keydown', onKeyDown);
+    return () => node.removeEventListener('keydown', onKeyDown);
+  }, [isFull]);
 
   const startDrag = (clientY) => { dragRef.current = { startY: clientY, stop }; };
   const endDrag = (clientY) => {
@@ -63,7 +101,6 @@ export default function BottomSheet({ stop, onStopChange, onClose, title, subtit
     else if (e.key === 'ArrowDown') { e.preventDefault(); onStopChange(NEXT_DOWN[stop]); }
   };
 
-  const isFull = stop === 'full';
   const reduced = prefersReducedMotion();
 
   return (

@@ -22,6 +22,13 @@
 }
 .sh-root.sh-stale { filter: saturate(0.3) brightness(0.85); }
 
+/* F2.12: visually-hidden polite live region — the single "Selected: …" / "Selection cleared"
+   announcement, replacing aria-live on the whole rail. */
+.sh-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
 /* ---- header: lede + freshness ---- */
 .sh-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--sh-border); }
 .sh-lede { font-size: clamp(17px, 2.4vw, 22px); font-weight: 600; letter-spacing: -0.015em; color: var(--sh-text); }
@@ -74,9 +81,11 @@
    above already says it). */
 .hud-brief-counts { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .hud-brief-count { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sh-muted); }
-.hud-brief-count-zero { opacity: 0.4; }
+/* F2.13: was `opacity: 0.4` on the whole row (measured 2.66:1 on --c-bg) — a color token instead
+   of opacity keeps the "zero" row legible at ≥4.5:1 while still reading as de-emphasized. */
+.hud-brief-count-zero { color: var(--sh-dim); }
 .hud-brief-count-n { font-weight: 700; color: var(--sh-text); }
-.hud-brief-count-zero .hud-brief-count-n { color: var(--sh-muted); }
+.hud-brief-count-zero .hud-brief-count-n { color: var(--sh-dim); }
 .hud-brief-count-label { text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
 
 /* sensor status */
@@ -101,7 +110,9 @@
 }
 .hud-feed-list li button:hover, .hud-feed-list li.sh-active button { background: var(--sh-panel); }
 .hud-tier-chip {
-  flex: none; margin-top: 1px; font-family: var(--c-mono, monospace); font-size: 9px; font-weight: 700; text-transform: uppercase;
+  /* F2.13: 9px measured ~4:1 against its background — 11px is the smallest size the checked
+     hue/border colors (--pin) reach ≥4.5:1 at comfortably. */
+  flex: none; margin-top: 1px; font-family: var(--c-mono, monospace); font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.05em; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--pin, var(--sh-border)); color: var(--pin, var(--sh-muted));
 }
 .hud-tier-chip-high { box-shadow: 0 0 6px -1px var(--pin); }
@@ -117,7 +128,13 @@
 .hud-stories-label { margin-top: 10px; }
 .hud-feed-paused { color: #d89e28; }
 .hud-story-chip { text-transform: none; font-weight: 600; }
-.hud-story-older { opacity: 0.72; } /* freshness 7-30d: desaturated, still fully legible */
+/* F2.13: was `opacity: 0.72` (measured well under 4.5:1 combined with the row's other dimmed
+   text) — a color token keeps the "older" row at ≥4.5:1 on --c-bg while still reading dimmer
+   than a live row. `.hud-feed-list li button` (higher specificity, above) sets the base color,
+   so this needs the same compound selector to actually win. */
+.hud-feed-list li button.hud-story-older,
+.hud-feed-list li button.hud-story-older .sh-row-title { color: var(--sh-dim); }
+.hud-story-older .hud-feed-place { color: var(--sh-dim); }
 .hud-stories-hidden { padding: 8px 6px; }
 
 /* ---- stage: map (left) + rail (right) ---- */
@@ -132,6 +149,18 @@
   box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.55);
 }
 .sm-wrap svg.sm-leader { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 6; }
+
+/* F2.15: a visible focus ring (accent colour) on the globe canvas and on radar's focusable
+   country/marker elements — RadarMap.jsx no longer force-suppresses the marker outline.
+   deck.gl wraps its <canvas> in a focusable `.deck-events-root` div (the div, not the canvas
+   itself, is what actually receives keyboard focus) — target both to be safe. */
+/* !important: deck.gl sets `outline: none` as an inline style on `.deck-events-root` on every
+   render (not something this repo's code controls), which otherwise always beats a stylesheet
+   rule regardless of selector specificity. */
+.sm-wrap canvas:focus-visible,
+.sm-wrap .deck-events-root:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff) !important; outline-offset: -2px; }
+.rd-shade:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); outline-offset: 2px; }
+.rd-marker:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); outline-offset: 4px; }
 .sm-leader line { stroke: rgba(150, 160, 178, 0.5); stroke-width: 1; }
 .sh-maploading { display: flex; align-items: center; justify-content: center; color: var(--sh-muted); font-size: 13px; }
 /* transform-box: fill-box — without it, an SVG element's `transform-origin: center` resolves
@@ -157,7 +186,7 @@
   letter-spacing: 0.04em; color: var(--hue-humanitarian); border: 1px solid currentColor;
   border-radius: 3px; padding: 1px 6px; white-space: nowrap;
 }
-.sh-gdacs-badge-sm { font-size: 9px; padding: 1px 5px; }
+.sh-gdacs-badge-sm { font-size: 11px; padding: 1px 5px; } /* F2.13: was 9px */
 
 /* GLOBE | RADAR segmented switch (M4 — replaces the old single "Flat map"/"Globe" toggle) */
 .sh-viewswitch { display: inline-flex; border: 1px solid var(--sh-border); border-radius: 8px; overflow: hidden; }
@@ -217,7 +246,10 @@
 .sh-legrow > b { color: var(--sh-dim); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
 .sh-leg { display: inline-flex; align-items: center; gap: 6px; color: var(--sh-text); }
 .sh-leg i { color: var(--sh-dim); font-style: normal; }
-.sh-leg-off { opacity: 0.4; }
+/* F2.13: was `opacity: 0.4` on the whole row (text + dot) — keep the dimming on the
+   non-text pin only; the label text gets a token color that reaches ≥4.5:1. */
+.sh-leg-off { color: var(--sh-dim); }
+.sh-leg-off .sh-leg-pin { opacity: 0.4; }
 .sh-leg-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .sh-leg-esc { color: #ffb27a; font-size: 10px; }
 .sh-coverage { margin: 10px 2px 0; font-size: 13px; color: var(--sh-muted); }
@@ -256,7 +288,7 @@
 
 /* ---- rail: detail (replaces list) ---- */
 .sh-detail { background: var(--sh-panel); border: 1px solid var(--sh-border); border-radius: 12px; }
-.sh-back { width: 100%; min-height: 40px; text-align: left; background: var(--sh-panel2); border: 0; border-bottom: 1px solid var(--sh-border); color: var(--sh-muted); padding: 9px 14px; font-size: 12px; cursor: pointer; position: sticky; top: 0; z-index: 2; }
+.sh-back { width: 100%; min-height: var(--c-tap-min, 44px); text-align: left; background: var(--sh-panel2); border: 0; border-bottom: 1px solid var(--sh-border); color: var(--sh-muted); padding: 9px 14px; font-size: 12px; cursor: pointer; position: sticky; top: 0; z-index: 2; } /* F2.16: was 40px */
 .sh-back:hover { color: var(--sh-text); }
 .sh-detail-head { padding: 13px 15px; }
 .sh-meta-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; flex-wrap: wrap; }
@@ -335,7 +367,10 @@
   .sh-legrow { gap: 8px 14px; }
   .sh-list { max-height: none; }
   .sm-callout { width: 240px !important; }
-  .sh-ctl { min-height: 40px; }
+  /* F2.16: was 40px, which (later in the cascade than .sh-key/.sh-seg's own 44px rule, same
+     specificity) silently shrank the Globe/Radar segmented buttons and the Key button back
+     under the 44px tap-target minimum on phone. */
+  .sh-ctl { min-height: var(--c-tap-min, 44px); }
 }
 @media (prefers-reduced-motion: reduce) { .sm-callout-body { transition: none; } }
 
@@ -382,14 +417,18 @@
      safe area) so the sheet sits ABOVE that persistent bar rather than under/behind it at every
      stop, including `full` (still comfortably < 100vh once the offset is subtracted). */
   position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 45; display: flex; flex-direction: column;
-  background: var(--sh-panel); border: 1px solid var(--sh-border); border-top-left-radius: 14px; border-top-right-radius: 14px;
+  /* F2.17: was --sh-panel (rgba(...,0.95)) — a fully-opaque token so content scrolling underneath
+     never shows through the sheet or its header. */
+  background: var(--c-panel-2); border: 1px solid var(--sh-border); border-top-left-radius: 14px; border-top-right-radius: 14px;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5); overflow: hidden; transition: height 0.22s ease;
 }
 .sheet-instant { transition: none; }
 .sheet-peek { height: 120px; }
 .sheet-half { height: 45vh; }
 .sheet-full { height: 85vh; }
-.sheet-handle-row { flex: none; display: flex; justify-content: center; align-items: center; min-height: 22px; padding-top: 4px; cursor: grab; touch-action: none; }
+/* F2.16: was 22px — the drag handle is itself a keyboard-operable `role="slider"`, so its tap
+   target needs to reach the 44px minimum too. */
+.sheet-handle-row { flex: none; display: flex; justify-content: center; align-items: center; min-height: var(--c-tap-min, 44px); cursor: grab; touch-action: none; }
 .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--sh-border); }
 .sheet-topbar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 12px 10px; border-bottom: 1px solid var(--sh-border); }
 .sheet-titlewrap { min-width: 0; display: flex; flex-direction: column; gap: 1px; }

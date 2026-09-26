@@ -113,7 +113,7 @@ function Layout({ children }) {
   };
 
   return (
-    <div className="gp-app">
+    <div className={`gp-app${isPhone ? ' gp-app-tabbar' : ''}`}>
       <LoadingBar />
       <AIToast />
 
@@ -193,7 +193,7 @@ function Layout({ children }) {
         </div>
       )}
 
-      <main className={`gp-main${isPhone ? ' gp-main-tabbar' : ''}`}>
+      <main className="gp-main">
         <div className="container">
           {children}
         </div>

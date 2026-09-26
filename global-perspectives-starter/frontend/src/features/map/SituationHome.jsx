@@ -339,6 +339,22 @@ export default function SituationHome() {
   const m = selected ? metricsFor(selected, ev) : null;
   const affected = selected?.iso3_affected?.length ? selected.iso3_affected : [];
 
+  // F2.12: a single, one-line polite live region for selection changes — replaces the old
+  // aria-live="polite" on the whole rail, which used to read out the entire ~1,400-char detail
+  // panel on every selection.
+  const [announcement, setAnnouncement] = useState('');
+  const hadSelectionRef = useRef(false);
+  useEffect(() => {
+    const title = selected ? selected.verb_label : (selectedStory ? selectedStory.title : null);
+    if (title) {
+      setAnnouncement(`Selected: ${title}`);
+      hadSelectionRef.current = true;
+    } else if (hadSelectionRef.current) {
+      setAnnouncement('Selection cleared');
+      hadSelectionRef.current = false;
+    }
+  }, [selected, selectedStory]);
+
   // What the map focuses (fly + highlight) and what card it shows.
   const focusId = focus || tourStop?.id || null;
   const callout = focus ? null : (tourStop || hero);
@@ -383,6 +399,19 @@ export default function SituationHome() {
     setLegendOpen(next);
     try { localStorage.setItem('gp_map_legend_open', next ? '1' : '0'); } catch { /* storage blocked */ }
   }, []);
+  // F2.14: Esc closes the Key legend and returns focus to the button that opened it.
+  const legendBtnRef = useRef(null);
+  useEffect(() => {
+    if (!legendOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setLegendPersist(false);
+        legendBtnRef.current?.focus?.();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [legendOpen, setLegendPersist]);
   // F2.5: one breakpoint rule everywhere (useIsPhone's PHONE_BREAKPOINT, `< 900`) — this used to
   // switch at `<= 900` while useIsPhone and the CSS switched at `< 900` (i.e. `max-width: 900px`),
   // so at exactly 900px this panel sized itself for phone while the phone tab bar/CSS still
@@ -430,6 +459,34 @@ export default function SituationHome() {
   const mapPane = (
     <>
       <div className="sh-mapinner">
+        {/* Focus order (low, review): rendered before the map itself so Tab reaches the
+            walk-through/Globe·Radar/Key controls (visually top-right) before the map's own
+            focusable content (spin control, markers) — matching the visual order. These are
+            `position: absolute` so this DOM order has no effect on their on-screen placement. */}
+        <div className="sh-controls">
+          {/* F1.9: hide the tour entry point while a selection is active — a situation or story
+              already showing its own detail isn't the moment to invite a tour that would fly the
+              map away from it. */}
+          {ranked.length >= 2 && !tourOn && !focus && !selectedStory ? (
+            <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
+          ) : null}
+          {USE_3D ? (
+            <div className="sh-viewswitch" role="group" aria-label="Map mode">
+              <button className={`sh-ctl sh-seg${view === 'globe' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'globe'} onClick={() => setView('globe')}>Globe</button>
+              <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
+            </div>
+          ) : null}
+          <button
+            ref={legendBtnRef}
+            className="sh-ctl sh-key"
+            onClick={() => setLegendPersist(!legendOpen)}
+            aria-expanded={legendOpen}
+            aria-controls="sh-legend-panel"
+          >
+            {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
+          </button>
+        </div>
+
         {showGlobe ? (
           <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
             <SituationMap3D
@@ -461,30 +518,12 @@ export default function SituationHome() {
           />
         ) : null}
 
-        <div className="sh-controls">
-          {/* F1.9: hide the tour entry point while a selection is active — a situation or story
-              already showing its own detail isn't the moment to invite a tour that would fly the
-              map away from it. */}
-          {ranked.length >= 2 && !tourOn && !focus && !selectedStory ? (
-            <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
-          ) : null}
-          {USE_3D ? (
-            <div className="sh-viewswitch" role="group" aria-label="Map mode">
-              <button className={`sh-ctl sh-seg${view === 'globe' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'globe'} onClick={() => setView('globe')}>Globe</button>
-              <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
-            </div>
-          ) : null}
-          <button className="sh-ctl sh-key" onClick={() => setLegendPersist(!legendOpen)} aria-expanded={legendOpen}>
-            {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
-          </button>
-        </div>
-
         {open.length === 0 && world ? (
           <div className="sh-quiet">{emptyLede || 'No situations open right now.'}</div>
         ) : null}
 
         {legendOpen ? (
-          <div className="sh-legend sh-legend-open" aria-label="How to read the map">
+          <div id="sh-legend-panel" className="sh-legend sh-legend-open" role="region" aria-label="How to read the map">
             <button className="sh-legend-close" onClick={() => setLegendPersist(false)} aria-label="Close">×</button>
             <div className="sh-legrow">
               <b>Colour = crisis type</b>
@@ -571,6 +610,10 @@ export default function SituationHome() {
 
   return (
     <div className={`sh-root gp-console${stale ? ' sh-stale' : ''}`}>
+      {/* Review (low): /map had no <h1> — visually-hidden, the visible lede above already carries
+          the page's heading look. */}
+      <h1 className="sh-sr-only">Situation map — Global Perspectives</h1>
+      <div className="sh-sr-only" role="status" aria-live="polite">{announcement}</div>
       <header className="sh-bar">
         <div>
           <div className="sh-lede">{error && !world ? 'The situation feed is unavailable right now.' : (world ? lede : 'Loading the world…')}</div>
@@ -662,7 +705,7 @@ export default function SituationHome() {
 
           <div className="sh-stage">
             <div className="sh-mapwrap">{mapPane}</div>
-            <aside className="sh-rail" aria-live="polite">{railContent}</aside>
+            <aside className="sh-rail">{railContent}</aside>
           </div>
         </>
       )}

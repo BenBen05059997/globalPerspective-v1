@@ -8,9 +8,36 @@ const TABS = [
   { key: 'alerts', label: 'Alerts' },
 ];
 
+// F2.9: WAI-ARIA tabs pattern, automatic activation — ArrowLeft/ArrowRight move focus and select
+// the adjacent tab (wrapping), Home/End jump to the first/last tab.
+function handleKeyDown(e, onChange) {
+  const { key } = e;
+  if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') return;
+  e.preventDefault();
+  const count = TABS.length;
+  const currentIndex = TABS.findIndex((t) => `sh-tab-${t.key}` === e.currentTarget.dataset.activeId);
+  let nextIndex;
+  if (key === 'Home') nextIndex = 0;
+  else if (key === 'End') nextIndex = count - 1;
+  else if (key === 'ArrowLeft') nextIndex = (currentIndex - 1 + count) % count;
+  else nextIndex = (currentIndex + 1) % count;
+  const nextKey = TABS[nextIndex].key;
+  onChange(nextKey);
+  // Move DOM focus to the newly-selected tab after the re-render sets its tabIndex to 0.
+  requestAnimationFrame(() => {
+    document.getElementById(`sh-tab-${nextKey}`)?.focus();
+  });
+}
+
 export default function MapPhoneTabs({ active, onChange, alertCount = 0 }) {
   return (
-    <div className="sh-phonetabs" role="tablist" aria-label="Map view">
+    <div
+      className="sh-phonetabs"
+      role="tablist"
+      aria-label="Map view"
+      data-active-id={`sh-tab-${active}`}
+      onKeyDown={(e) => handleKeyDown(e, onChange)}
+    >
       {TABS.map((t) => (
         <button
           key={t.key}

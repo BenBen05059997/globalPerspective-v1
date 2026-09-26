@@ -208,7 +208,6 @@ export default function RadarMap({
           return `${s.verb_label}${place ? `, ${place}` : ''}, ${TIER_LABEL[s.tier] || s.tier} severity, ${s.axis}`;
         })
         .style('cursor', 'pointer')
-        .style('outline', 'none')
         .on('click', (_e, s) => onSelectRef.current && onSelectRef.current(s.id))
         .on('keydown', (e, s) => {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectRef.current && onSelectRef.current(s.id); }
@@ -325,7 +324,10 @@ export default function RadarMap({
 
   return (
     <div className="sm-wrap" style={{ height }} ref={wrapRef}>
-      <svg ref={svgRef} role="img" aria-label="Radar view of current situations, real coastlines with a rotating scan" />
+      {/* F2.10: role="group" (not "img") — the svg contains focusable role=button countries and
+          situation markers, which an img role would hide from assistive tech as decorative
+          content. The label still describes the whole view. */}
+      <svg ref={svgRef} role="group" aria-label="Radar view of current situations, real coastlines with a rotating scan" />
       {!reduceMotion ? (
         <div
           ref={beamRef} className="rd-beam"

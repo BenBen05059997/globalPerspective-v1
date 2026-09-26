@@ -8,7 +8,7 @@
 export default function HudSensorPanel({ rows }) {
   if (!rows?.length) return null;
   return (
-    <div className="hud-panel hud-sensor" aria-label="Sensor status">
+    <div className="hud-panel hud-sensor" role="region" aria-label="Sensor status">
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
       <div className="hud-label">Sensor status</div>

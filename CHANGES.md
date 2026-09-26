@@ -1,5 +1,20 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Account A4: the Desk; branch `map-console`, local only)
+
+- **Desk = Since your last visit · Following · Saved** (`features/account/components/Desk*.jsx`, `lib/desk.js`, `lib/deskMap.js`, `hooks/useDeskChanges.js`).
+  - **Since your last visit:** followed countries' `country_history` drift notes newer than a per-browser last-visit time (`gp_desk_last_visit_v1`).
+    - Each row carries axis moves computed from the snapshot pair (|Δ|≥10), the trigger event, and the stored explanation labelled "MODEL EXPLANATION (STORED)".
+    - A first visit on a browser shows the latest 5 changes.
+    - "No new changes since <date> — analysis paused" is computed.
+    - Fetches are capped at 3 concurrent, and a per-country error is reported quietly.
+  - **Following:** a small real-coastline map + chips (risk score + tier word; hue stays crisis-type only).
+- Honest empty states for non-members ("Following countries is part of membership") and members with no follows.
+- Real Iran fixture for tests.
+- **No direction-check flag in v1** (needs a backend rule, D9).
+- **Monitor fix:** trigger events linked their `topicId` as if it were a thread id (`/weekly/thread/<topicId>` = a missing page). They now link only with a real `threadId`; otherwise plain text.
+- Tests: 384 total.
+
 ## 2026-09-26 (Account A3: account page in console style with the K1 rail; branch `map-console`, local only)
 
 - `/account` now has a left rail: **Desk · Alerts & email · Studio · Plan · Profile & sign-in** (each with a subtitle, 44px, `aria-current`). Under 900px it becomes a chip row at the top.

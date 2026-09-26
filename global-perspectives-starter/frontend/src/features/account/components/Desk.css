@@ -1,0 +1,137 @@
+/* Desk (A4, K1 board): since-your-last-visit (left) + following/saved (right). Scoped under
+   .gp-console — same tokens as Account.css / SituationMap. Stacks to one column on phone. */
+.desk-grid {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.desk-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.desk-panel {
+  background: var(--c-panel, rgba(6,12,20,0.95));
+  border: 1px solid var(--c-hairline, rgba(95,212,255,0.2));
+  border-radius: 4px;
+  padding: 12px 14px;
+}
+
+.desk-changes { border-color: var(--c-hairline-strong, rgba(95,212,255,0.25)); }
+
+.desk-kicker {
+  font-family: var(--c-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--c-accent, #5fd4ff);
+}
+
+.desk-empty,
+.desk-note {
+  font-size: 12px;
+  color: var(--c-text-dim, #7d8b96);
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+.desk-empty a,
+.desk-note a { color: var(--c-accent, #5fd4ff); }
+
+.desk-error-line {
+  font-size: 11.5px;
+  color: var(--c-warn, #ffb347);
+  margin: 8px 0 0;
+}
+
+.desk-row {
+  margin-top: 10px;
+  padding: 9px 11px;
+  background: var(--c-panel-2, rgba(12,22,34,0.9));
+  border-left: 3px solid var(--c-ok, #6fd29a);
+}
+
+.desk-row-head {
+  font-family: var(--c-mono, monospace);
+  font-size: 9.5px;
+  color: var(--c-ok, #6fd29a);
+}
+
+.desk-row-after {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--c-text-head, #eef5f9);
+  margin-top: 3px;
+}
+.desk-row-after a { color: var(--c-accent, #5fd4ff); }
+
+.desk-row-why {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--c-text-muted, #b9c7d1);
+  margin-top: 4px;
+}
+
+.desk-row-why-label {
+  font-family: var(--c-mono, monospace);
+  font-size: 8.5px;
+  color: var(--c-text-dim, #7d8b96);
+}
+
+.desk-skeleton-row {
+  height: 52px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, rgba(95,212,255,0.06), rgba(95,212,255,0.14), rgba(95,212,255,0.06));
+  background-size: 200% 100%;
+  animation: desk-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes desk-skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Following */
+.desk-following-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 6px;
+}
+.desk-following-land {
+  fill: none;
+  stroke: rgba(150,225,255,0.25);
+  stroke-width: 1;
+}
+.desk-following-dot {
+  fill: none;
+  stroke: var(--c-accent, #5fd4ff);
+  stroke-width: 2;
+}
+
+.desk-following-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.desk-following-chip {
+  padding: 4px 8px;
+  border: 1px solid var(--c-hairline-strong, rgba(95,212,255,0.4));
+  border-radius: 12px;
+  font-size: 11.5px;
+  color: var(--c-text-head, #eef5f9);
+  text-decoration: none;
+}
+.desk-following-chip:hover { border-color: var(--c-accent, #5fd4ff); }
+
+/* Saved panel nested here keeps the same .saved-* styling from Account.css */
+.desk-saved .saved-grid { margin-top: 6px; }
+
+@media (max-width: 900px) {
+  .desk-grid { grid-template-columns: 1fr; }
+}

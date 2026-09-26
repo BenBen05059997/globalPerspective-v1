@@ -33,6 +33,7 @@ vi.mock('@/shared/api/restProxy', () => ({
   fetchMembership: vi.fn(() => Promise.resolve(null)),
   billingConfigured: () => false,
   creditPacks: () => [],
+  fetchCountryHistory: vi.fn(() => Promise.resolve({ success: true, snapshots: [], driftNotes: [], driftNotesTotal: 0, driftNotesGated: false })),
 }));
 
 import Account from '@/features/account/Account';

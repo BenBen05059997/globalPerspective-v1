@@ -6,6 +6,7 @@
 import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import { TIER_LABEL } from '@/features/map/lib/situationLabels.js';
 import { tierSize, TIERS, STATUS_GLYPHS, markerHex } from '@/features/map/lib/legend.js';
+import { outlineForTier } from '@/features/map/lib/countryRiskLayer.js';
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
@@ -70,12 +71,64 @@ function Item({ on = true, mark, children, note }) {
   );
 }
 
+function OutlineMark({ width, double }) {
+  return (
+    <Swatch>
+      <circle cx={C} cy={C} r="7" fill="none" stroke={GREY} strokeWidth={width} />
+      {double ? <circle cx={C} cy={C} r="10" fill="none" stroke={GREY} strokeWidth={1} /> : null}
+    </Swatch>
+  );
+}
+
 /**
  * present: { kinds:Set('alert'|'situation'|'story'), tiers:Set, glyphs:Set(key), fresh:Set(state),
  *            axes:Set, neutral:boolean }
+ * layer: 'situations' (default) | 'risk' — in COUNTRY RISK mode the Key describes exactly that
+ * layer's channels (hue = worst axis, weight = tier, brightness = briefing age) and nothing else;
+ * it never mixes in the situations-layer tokens the map isn't drawing right now.
  */
-export default function MapLegend({ id = 'sh-legend-panel', present, hiddenCount = 0, storiesOlderLabel = null, onClose }) {
+export default function MapLegend({
+  id = 'sh-legend-panel', present, hiddenCount = 0, storiesOlderLabel = null, onClose,
+  layer = 'situations', riskHiddenOld = 0,
+}) {
   const has = (set, k) => !!set && set.has(k);
+
+  if (layer === 'risk') {
+    return (
+      <div id={id} className="sh-legend sh-legend-open" role="region" aria-label="How to read the country risk map">
+        <button className="sh-legend-close" onClick={onClose} aria-label="Close">×</button>
+        <div className="sh-legrow">
+          <b>Colour = worst-axis crisis type</b>
+          {AXES.map((a) => (
+            <Item key={a} mark={<span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />}>{AXIS_LABEL[a]}</Item>
+          ))}
+          <span className="sh-leg"><i>never a red/amber/green severity scale — the tier is the number and the word</i></span>
+        </div>
+        <div className="sh-legrow">
+          <b>Outline weight = tier</b>
+          {['low', 'moderate', 'elevated', 'high'].map((t) => {
+            const o = outlineForTier(t);
+            return (
+              <Item key={t} mark={<OutlineMark width={o.width} double={o.double} />} note={o.double ? 'double outline' : undefined}>
+                {TIER_LABEL[t]}
+              </Item>
+            );
+          })}
+        </div>
+        <div className="sh-legrow">
+          <b>Brightness = briefing age</b>
+          <Item mark={<FreshMark state="plain" />}>Briefed ≤7 days · full</Item>
+          <Item mark={<FreshMark state="older" />}>7–30 days · faded, “older”</Item>
+          <Item on={riskHiddenOld > 0} mark={<FreshMark state="hidden" />} note={riskHiddenOld ? `${riskHiddenOld} hidden` : undefined}>30+ days · not shown</Item>
+        </div>
+        <div className="sh-legrow">
+          <b>Not tinted</b>
+          <span className="sh-leg"><i>a country with no briefing at all is left blank — never guessed</i></span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div id={id} className="sh-legend sh-legend-open" role="region" aria-label="How to read the map">
       <button className="sh-legend-close" onClick={onClose} aria-label="Close">×</button>

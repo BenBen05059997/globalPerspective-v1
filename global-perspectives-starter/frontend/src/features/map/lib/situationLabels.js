@@ -59,6 +59,20 @@ export function regionOf(iso3List = []) {
   return null;
 }
 
+// name -> ISO3, built once from the same table iso3Name reads (R4b, country risk layer): the
+// weekly archive / country-intelligence flow keys everything by display name, but the map draws
+// polygons keyed by ISO3 — this is the one join point. A name absent from the table (a country
+// this map has no crisis-context entry for) resolves to null, never a guess.
+let NAME_TO_ISO3 = null;
+export function iso3ForName(name) {
+  if (!name) return null;
+  if (!NAME_TO_ISO3) {
+    NAME_TO_ISO3 = {};
+    for (const [code, label] of Object.entries(ISO3_NAME)) NAME_TO_ISO3[label] = code;
+  }
+  return NAME_TO_ISO3[name] || null;
+}
+
 const TIER_LABEL = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 export { TIER_LABEL };
 

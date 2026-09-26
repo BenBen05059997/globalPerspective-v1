@@ -110,6 +110,7 @@ function agoShort(iso) {
 export default function RadarMap({
   situations = [], focusId, callout = null, newIds = null, onSelect, onOpenCallout, onScan, height = 560,
   shading = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
+  countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk,
 }) {
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
@@ -127,12 +128,20 @@ export default function RadarMap({
   const onHoverCountryRef = useRef(onHoverCountry);
   const onFocusCountryRef = useRef(onFocusCountry);
   const onLeaveCountryRef = useRef(onLeaveCountry);
+  const onSelectCountryRiskRef = useRef(onSelectCountryRisk);
+  const onHoverCountryRiskRef = useRef(onHoverCountryRisk);
+  const onFocusCountryRiskRef = useRef(onFocusCountryRisk);
+  const onLeaveCountryRiskRef = useRef(onLeaveCountryRisk);
   onSelectRef.current = onSelect;
   onScanRef.current = onScan;
   onSelectCountryRef.current = onSelectCountry;
   onHoverCountryRef.current = onHoverCountry;
   onFocusCountryRef.current = onFocusCountry;
   onLeaveCountryRef.current = onLeaveCountry;
+  onSelectCountryRiskRef.current = onSelectCountryRisk;
+  onHoverCountryRiskRef.current = onHoverCountryRisk;
+  onFocusCountryRiskRef.current = onFocusCountryRisk;
+  onLeaveCountryRiskRef.current = onLeaveCountryRisk;
 
   const reduceMotion = useMemo(() => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
@@ -204,6 +213,40 @@ export default function RadarMap({
         .attr('fill', '#fff').attr('font-size', 10).attr('font-weight', 700)
         .attr('pointer-events', 'none')
         .text((d) => d.count);
+
+      // R4b COUNTRY RISK layer (lib/countryRiskLayer.js): every briefed country, hue = worst axis,
+      // outline weight + a second wider/fainter stroke for HIGH ("double outline"), faded for a
+      // 7-30d "older" briefing. Drawn instead of the situations pins (SituationHome passes an
+      // empty `situations`/`shading` while this layer is active), never for an un-briefed country.
+      const riskData = (countryRisk || [])
+        .map((c) => ({ ...c, feature: shadeFeature(c.iso3) }))
+        .filter((c) => c.feature);
+      root.append('g').selectAll('path.rd-risk-double').data(riskData.filter((d) => d.doubleOutline), (d) => d.iso3).join('path')
+        .attr('class', 'rd-risk-double')
+        .attr('d', (d) => path(d.feature))
+        .attr('fill', 'none')
+        .attr('stroke', (d) => d.hue)
+        .attr('stroke-opacity', (d) => (d.older ? 0.24 : 0.47))
+        .attr('stroke-width', (d) => d.outlineWidth + 2.5)
+        .attr('pointer-events', 'none');
+      root.append('g').selectAll('path.rd-risk').data(riskData, (d) => d.iso3).join('path')
+        .attr('class', 'rd-risk')
+        .attr('d', (d) => path(d.feature))
+        .attr('fill', (d) => d.hue)
+        .attr('fill-opacity', (d) => (d.older ? 0.08 : 0.16))
+        .attr('stroke', (d) => d.hue)
+        .attr('stroke-opacity', (d) => (d.older ? 0.43 : 0.82))
+        .attr('stroke-width', (d) => d.outlineWidth)
+        .attr('tabindex', 0)
+        .attr('role', 'button')
+        .attr('aria-label', (d) => `${d.name}, RISK ${d.score} ${d.tierLabel}, ${d.leadLabel || ''}${d.older ? ', older briefing' : ''}`)
+        .style('cursor', 'pointer')
+        .on('click', (_e, d) => onSelectCountryRiskRef.current && onSelectCountryRiskRef.current(d))
+        .on('keydown', (e, d) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCountryRiskRef.current && onSelectCountryRiskRef.current(d); } })
+        .on('mouseenter', function onEnter(_e, d) { onHoverCountryRiskRef.current && onHoverCountryRiskRef.current(d, this); })
+        .on('mouseleave', () => onLeaveCountryRiskRef.current && onLeaveCountryRiskRef.current())
+        .on('focus', function onFocusIn(_e, d) { onFocusCountryRiskRef.current && onFocusCountryRiskRef.current(d, this); })
+        .on('blur', () => onLeaveCountryRiskRef.current && onLeaveCountryRiskRef.current());
 
       // A selected story (country wash) gets the HUD brackets too, at its country's centre.
       const focusShade = shadeData.find((d) => d.iso3 === storyFocusIso3);
@@ -348,7 +391,7 @@ export default function RadarMap({
     const ro = new ResizeObserver(() => draw());
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [active, focusId, height, shading, storyFocusIso3]);
+  }, [active, focusId, height, shading, storyFocusIso3, countryRisk]);
 
   // The sweep: one rAF loop, paused under reduced motion, while the sweep control is off, or
   // while the tab is hidden. Reads/writes only refs + DOM attributes — no setState per frame.

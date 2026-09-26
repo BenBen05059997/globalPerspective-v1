@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Review round R4b: SITUATIONS / COUNTRY RISK layer switch; branch `map-console`, local only)
+
+- **Layer switch** on /map (`?layer=risk`, `lib/layerMode.js`): SITUATIONS | COUNTRY RISK next to GLOBE | RADAR.
+- **Country risk layer:**
+  - `lib/countryRiskLayer.js` + `hooks/useCountryRiskLayer.js`: candidates are countries with ≥2 archive articles in 30 days (cap 60, known ISO3), fetched ≤15 per `country_intelligence` call and cached for the session;
+  - fill hue = worst axis; outline weight = tier (25/50/75); freshness uses the same tokens as the situations layer;
+  - briefings older than 30 days are hidden and counted ("N countries' briefings older than 30 days, not shown").
+- **List twin** `HudCountryRiskFeed.jsx` in the right column; the peek and the click through to the country page are shared with the map.
+- Drawn on both the globe and the radar. The Key has a risk-mode variant.
+- Tests: `countryRiskLayer.test.js`.
+
 ## 2026-09-27 (Review round R4a: full-bleed console, approved legend, desktop alert stack; branch `map-console`, local only)
 
 - **Full-bleed /map on desktop:**

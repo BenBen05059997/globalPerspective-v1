@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief.js';
@@ -32,6 +32,10 @@ import MapAbout from '@/features/map/components/MapAbout.jsx';
 import { alertStackItems, alertEmptyText, alertStackNote } from '@/features/map/lib/alertStack.js';
 import { markerKind, statusGlyph, situationFreshness } from '@/features/map/lib/legend.js';
 import { threadPath } from '@/shared/lib/threadPath';
+import { useCountryRiskLayer } from '@/features/map/hooks/useCountryRiskLayer.js';
+import { riskPeekData } from '@/features/map/lib/countryRiskLayer.js';
+import HudCountryRiskFeed from '@/features/map/components/HudCountryRiskFeed.jsx';
+import { normalizeLayer, DEFAULT_LAYER } from '@/features/map/lib/layerMode.js';
 import '@/features/map/SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
@@ -175,6 +179,7 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
 
 export default function SituationHome() {
   const { world, situations, loading, error, asOf, stale } = useWorld();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const focus = params.get('focus');
   const storyParam = params.get('story');
@@ -261,9 +266,37 @@ export default function SituationHome() {
 
   // One shared hover/focus preview instance for the map's shaded countries (feed rows carry their
   // own — see HudIntelFeed). Story selection from a shaded country reuses userSelectStory above.
+  // R4b: the SITUATIONS / COUNTRY RISK layer switch. `?layer=` in the URL wins (a shareable deep
+  // link), else the remembered choice (this browser only), else SITUATIONS.
+  const [layer, setLayerState] = useState(() => {
+    const fromUrl = normalizeLayer(params.get('layer'));
+    if (fromUrl) return fromUrl;
+    try {
+      const stored = normalizeLayer(localStorage.getItem('gp_map_layer'));
+      if (stored) return stored;
+    } catch { /* storage blocked */ }
+    return DEFAULT_LAYER;
+  });
+  const setLayer = useCallback((next) => {
+    setLayerState(next);
+    try { localStorage.setItem('gp_map_layer', next); } catch { /* storage blocked */ }
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      if (next === DEFAULT_LAYER) n.delete('layer'); else n.set('layer', next);
+      return n;
+    }, { replace: true });
+  }, [setParams]);
+  const riskMode = layer === 'risk';
+  const countryRiskLayer = useCountryRiskLayer(riskMode);
+  const riskByIso3 = useMemo(() => new Map(countryRiskLayer.drawn.map((c) => [c.iso3, c])), [countryRiskLayer.drawn]);
+  const openCountryPage = useCallback((entry) => {
+    if (entry?.name) navigate(`/weekly/country/${encodeURIComponent(entry.name)}`);
+  }, [navigate]);
+
   const mapPeek = usePeek();
   const shadingByIso3 = useMemo(() => new Map(visibleShading.map((e) => [e.iso3, e])), [visibleShading]);
-  const hoveredCountry = mapPeek.openId ? shadingByIso3.get(mapPeek.openId) : null;
+  const hoveredCountry = !riskMode && mapPeek.openId ? shadingByIso3.get(mapPeek.openId) : null;
+  const hoveredRiskCountry = riskMode && mapPeek.openId ? riskByIso3.get(mapPeek.openId) : null;
   const selectStoryByCountry = useCallback((iso3) => {
     const entry = shadingByIso3.get(iso3);
     if (entry?.top) userSelectStory(entry.top);
@@ -383,6 +416,9 @@ export default function SituationHome() {
   const setView = (v) => { setViewMode(v); try { localStorage.setItem('gp_map_view', v); } catch { /* storage blocked */ } };
   const showGlobe = USE_3D && view === 'globe';
 
+  // R4b: the SITUATIONS / COUNTRY RISK layer switch. `?layer=` in the URL wins (a shareable deep
+  // link), else the remembered choice (this browser only), else SITUATIONS. Same precedence order
+  // as the Globe/Radar switch above.
   // Radar's "◉ scanned" mark on the feed (M4): fired by RadarMap's sweep, cleared a few seconds
   // later. Never scrolls the feed or moves focus — it only toggles a class on an existing row.
   const [scannedIds, setScannedIds] = useState(() => new Set());
@@ -567,6 +603,10 @@ export default function SituationHome() {
           <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
         </div>
       ) : null}
+      <div className="sh-viewswitch sh-layerswitch" role="group" aria-label="Map layer">
+        <button className={`sh-ctl sh-seg${!riskMode ? ' sh-seg-on' : ''}`} aria-pressed={!riskMode} onClick={() => setLayer('situations')}>Situations</button>
+        <button className={`sh-ctl sh-seg${riskMode ? ' sh-seg-on' : ''}`} aria-pressed={riskMode} onClick={() => setLayer('risk')}>Country risk</button>
+      </div>
       <button
         ref={legendBtnRef}
         className="sh-ctl sh-key"
@@ -592,30 +632,47 @@ export default function SituationHome() {
         {showGlobe ? (
           <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
             <SituationMap3D
-              situations={situations} focusId={focusId} callout={consoleCallout} tour={tourProps} newIds={newIds} view="globe"
+              situations={riskMode ? [] : situations} focusId={focusId} callout={consoleCallout} tour={tourProps} newIds={newIds} view="globe"
               onSelect={userSelect} onOpenCallout={userSelect} height={mapH} width={isPhone ? (typeof window !== 'undefined' ? window.innerWidth - 24 : null) : band.w}
-              shading={visibleShading} storyFocusIso3={storyFocusIso3}
+              shading={riskMode ? [] : visibleShading} storyFocusIso3={storyFocusIso3}
               onSelectCountry={selectStoryByCountry}
               onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
               onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
               onLeaveCountry={() => mapPeek.close()}
+              countryRisk={riskMode ? countryRiskLayer.drawn : []}
+              onSelectCountryRisk={openCountryPage}
+              onHoverCountryRisk={(entry, anchor) => mapPeek.openOnHover(entry.iso3, anchor)}
+              onFocusCountryRisk={(entry, anchor) => mapPeek.openOnFocus(entry.iso3, anchor)}
+              onLeaveCountryRisk={() => mapPeek.close()}
             />
           </Suspense>
         ) : (
           <RadarMap
-            situations={situations} focusId={focusId} callout={consoleCallout} newIds={newIds}
+            situations={riskMode ? [] : situations} focusId={focusId} callout={consoleCallout} newIds={newIds}
             onSelect={userSelect} onOpenCallout={userSelect} onScan={markScanned} height={mapH}
-            shading={visibleShading} storyFocusIso3={storyFocusIso3}
+            shading={riskMode ? [] : visibleShading} storyFocusIso3={storyFocusIso3}
             onSelectCountry={selectStoryByCountry}
             onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
             onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
             onLeaveCountry={() => mapPeek.close()}
+            countryRisk={riskMode ? countryRiskLayer.drawn : []}
+            onSelectCountryRisk={openCountryPage}
+            onHoverCountryRisk={(entry, anchor) => mapPeek.openOnHover(entry.iso3, anchor)}
+            onFocusCountryRisk={(entry, anchor) => mapPeek.openOnFocus(entry.iso3, anchor)}
+            onLeaveCountryRisk={() => mapPeek.close()}
           />
         )}
         {hoveredCountry ? (
           <StoryPeek
             id={`peek-country-${hoveredCountry.iso3}`}
             data={peekData(hoveredCountry.top, { asOf: topicsAsOf })}
+            style={mapPeek.style}
+          />
+        ) : null}
+        {hoveredRiskCountry ? (
+          <StoryPeek
+            id={`peek-risk-${hoveredRiskCountry.iso3}`}
+            data={riskPeekData(hoveredRiskCountry)}
             style={mapPeek.style}
           />
         ) : null}
@@ -630,6 +687,8 @@ export default function SituationHome() {
             hiddenCount={alertStack.hiddenCount}
             storiesOlderLabel={topicsFreshness === 'older' && topicsAsOf ? olderLabel(topicsAsOf) : null}
             onClose={() => setLegendPersist(false)}
+            layer={layer}
+            riskHiddenOld={countryRiskLayer.hiddenOld}
           />
         ) : null}
       </div>
@@ -648,6 +707,11 @@ export default function SituationHome() {
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={() => userSelect(null)} />
   ) : selectedStory ? (
     <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={() => userSelectStory(null)} />
+  ) : riskMode ? (
+    <HudCountryRiskFeed
+      drawn={countryRiskLayer.drawn} hiddenOld={countryRiskLayer.hiddenOld} loading={countryRiskLayer.loading}
+      focusIso3={mapPeek.openId} onSelect={openCountryPage} peek={mapPeek}
+    />
   ) : (
     <HudIntelFeed
       ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
@@ -810,12 +874,19 @@ export default function SituationHome() {
         </div>
       ) : phoneTab === 'list' ? (
         <div id="sh-panel-list" role="tabpanel" aria-labelledby="sh-tab-list" className="sh-phone-panel">
-          <HudIntelFeed
-            ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
-            onSelect={userSelect}
-            topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
-            onSelectStory={userSelectStory} peek={mapPeek} emptyMessage={emptyLede}
-          />
+          {riskMode ? (
+            <HudCountryRiskFeed
+              drawn={countryRiskLayer.drawn} hiddenOld={countryRiskLayer.hiddenOld} loading={countryRiskLayer.loading}
+              focusIso3={mapPeek.openId} onSelect={openCountryPage} peek={mapPeek}
+            />
+          ) : (
+            <HudIntelFeed
+              ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
+              onSelect={userSelect}
+              topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
+              onSelectStory={userSelectStory} peek={mapPeek} emptyMessage={emptyLede}
+            />
+          )}
         </div>
       ) : (
         <div id="sh-panel-alerts" role="tabpanel" aria-labelledby="sh-tab-alerts" className="sh-phone-panel">

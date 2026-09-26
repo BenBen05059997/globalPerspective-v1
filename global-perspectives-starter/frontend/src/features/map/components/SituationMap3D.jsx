@@ -11,7 +11,7 @@ import { CRISIS_RGB } from '@/features/map/lib/crisisHue.js';
 import { pulseSet } from '@/features/map/lib/pulse.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import {
-  tierSize, markerKind, situationFreshness, freshnessLook, statusGlyph, desaturateRgb,
+  tierSize, markerKind, situationFreshness, freshnessLook, statusGlyph, desaturateRgb, hexToRgb,
 } from '@/features/map/lib/legend.js';
 
 // M3 · night-lights globe (operator's option B) — NASA Black Marble, taken from the MIT-licensed
@@ -151,6 +151,7 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
 export default function SituationMap3D({
   situations = [], focusId, callout = null, tour = null, newIds = null, view = 'globe', onSelect, onOpenCallout, height = 560, width = null,
   shading = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
+  countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk,
 }) {
   // `view` is accepted for API back-compat with the single call site (SituationHome.jsx always
   // passes "globe" — see the comment above GLOBE_VIEW_BASE); it no longer changes any behaviour.
@@ -305,6 +306,46 @@ export default function SituationMap3D({
   // onFocusCountry (keyboard) has no deck.gl equivalent for individual GeoJSON features — same
   // limitation the existing situation pins have (pickable ScatterplotLayer, pointer-only).
   void onFocusCountry;
+
+  // R4b COUNTRY RISK layer: every briefed country (lib/countryRiskLayer.js), fill/outline hue =
+  // the worst axis, outline weight + a double outline for HIGH, alpha faded for a 7-30d "older"
+  // briefing. Never a red/amber/green scale, never drawn for a country with no briefing.
+  const riskFeatures = useMemo(() => (countryRisk || []).map((c) => {
+    const feat = iso3Feature(c.iso3);
+    if (!feat) return null;
+    return { ...feat, properties: { ...feat.properties, __risk: c } };
+  }).filter(Boolean), [countryRisk]);
+  const riskLayer = useMemo(() => (
+    riskFeatures.length
+      ? new GeoJsonLayer({
+        id: 'country-risk', data: riskFeatures, stroked: true, filled: true, pickable: true,
+        getFillColor: (f) => { const rgb = hexToRgb(f.properties.__risk.hue) || AXIS_RGB_FALLBACK; return [...rgb, f.properties.__risk.older ? 20 : 40]; },
+        getLineColor: (f) => { const rgb = hexToRgb(f.properties.__risk.hue) || AXIS_RGB_FALLBACK; return [...rgb, f.properties.__risk.older ? 110 : 210]; },
+        getLineWidth: (f) => f.properties.__risk.outlineWidth,
+        lineWidthUnits: 'pixels', lineWidthMinPixels: 1,
+        onClick: (info) => info.object && onSelectCountryRisk && onSelectCountryRisk(info.object.properties.__risk),
+        onHover: (info) => {
+          if (info.object) { const a = countryAnchor(info.x, info.y); if (a) onHoverCountryRisk && onHoverCountryRisk(info.object.properties.__risk, a); }
+          else onLeaveCountryRisk && onLeaveCountryRisk();
+        },
+      })
+      : null
+  ), [riskFeatures, onSelectCountryRisk, onHoverCountryRisk, onLeaveCountryRisk, countryAnchor]);
+  // HIGH tier's double outline: a second, wider, fainter stroke-only pass under the main one
+  // (no per-feature offset border in deck.gl's GeoJsonLayer, so this reads as a double line —
+  // same trick the situations layer uses for its HIGH double ring, just on polygons).
+  const riskDoubleLayer = useMemo(() => {
+    const highs = riskFeatures.filter((f) => f.properties.__risk.doubleOutline);
+    return highs.length
+      ? new GeoJsonLayer({
+        id: 'country-risk-double', data: highs, stroked: true, filled: false, pickable: false,
+        getLineColor: (f) => { const rgb = hexToRgb(f.properties.__risk.hue) || AXIS_RGB_FALLBACK; return [...rgb, f.properties.__risk.older ? 60 : 120]; },
+        getLineWidth: (f) => f.properties.__risk.outlineWidth + 2.5,
+        lineWidthUnits: 'pixels', lineWidthMinPixels: 1,
+      })
+      : null;
+  }, [riskFeatures]);
+  void onFocusCountryRisk; // same pointer-only limitation as onFocusCountry above
 
   useEffect(() => {
     if (!wrapRef.current) return undefined;
@@ -534,13 +575,14 @@ export default function SituationMap3D({
     ...(earthLayer ? [earthLayer] : []),
     landLayer,
     ...(storyShadeLayer ? [storyShadeLayer] : []),
+    ...(riskLayer ? [riskLayer] : []), ...(riskDoubleLayer ? [riskDoubleLayer] : []),
     ...selectionLayers.filter((l) => l.id !== 'dest-rings'),
     markerLayers.glow, markerLayers.softOuter, markerLayers.softInner, markerLayers.highRing,
     ...(pulseAlpha ? [pulseAlpha] : []), ...(pulseStillLayer ? [pulseStillLayer] : []),
     markerLayers.dots, markerLayers.alertEdge, markerLayers.alertCore, markerLayers.badgeEdge, markerLayers.badges, markerLayers.brackets,
     ...(storyBrackets ? [storyBrackets] : []),
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),
-  ], [earthLayer, landLayer, storyShadeLayer, selectionLayers, markerLayers, storyBrackets, pulseStillLayer]);
+  ], [earthLayer, landLayer, storyShadeLayer, riskLayer, riskDoubleLayer, selectionLayers, markerLayers, storyBrackets, pulseStillLayer]);
   const layers = composeLayers(pulseLayer);
 
   // F1.2: the 2.4s breathing pulse used to be driven by a `pulseT` React state updated every

@@ -2,6 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const HOVER_DELAY_MS = 150;
 
+// M7 (phone): a touch tap has no real "hover" — some touch browsers still fire a synthetic
+// mouseenter right before the click that already selects, which would flash the popover open
+// for an instant. `(hover: none)` is the standard signal for "primary input has no hover"
+// (phones/tablets); mouse and keyboard users are unaffected, so openOnFocus below still works.
+function hasNoHoverCapability() {
+  try {
+    return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      && window.matchMedia('(hover: none)').matches;
+  } catch { return false; }
+}
+
 /**
  * usePeek — shared open/close timing + edge-aware placement for StoryPeek (M5a). One hook, used
  * by every surface that names a story (feed rows, shaded countries, later: story mentions in
@@ -53,6 +64,7 @@ export function usePeek({ delayMs = HOVER_DELAY_MS, peekWidth = 280, peekHeight 
   }, [placeFor]);
 
   const openOnHover = useCallback((id, anchorEl) => {
+    if (hasNoHoverCapability()) return; // M7: touch taps go straight to selection, no popover
     clearTimer();
     timerRef.current = setTimeout(() => openNow(id, anchorEl), delayMs);
   }, [delayMs, openNow]);

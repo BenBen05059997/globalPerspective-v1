@@ -26,6 +26,7 @@ function storiesDateLabel(asOf) {
 export default function HudIntelFeed({
   ranked, focusId, newIds, scannedIds, loading, error, world, onSelect,
   topics = [], topicsAsOf = null, storyFocusId = null, onSelectStory = null, peek = null,
+  label = 'Intel feed',
 }) {
   const dateLabel = storiesDateLabel(topicsAsOf);
   const now = Date.now();
@@ -35,11 +36,11 @@ export default function HudIntelFeed({
   const hiddenCount = state === 'hidden' ? topics.filter((t) => t && t.title).length : 0;
 
   return (
-    <div className="hud-panel hud-feed" aria-label="Intel feed">
+    <div className="hud-panel hud-feed" aria-label={label}>
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
       <div className="hud-label hud-feed-label">
-        Intel feed
+        {label}
         {ranked.length ? <span className="hud-feed-count"> · {ranked.length} active</span> : null}
       </div>
       {loading && !world ? <p className="sh-muted">Loading…</p> : null}

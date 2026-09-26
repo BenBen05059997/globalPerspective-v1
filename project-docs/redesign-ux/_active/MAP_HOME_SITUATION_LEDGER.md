@@ -287,6 +287,7 @@ Tracked in `TASK_2026-09-26_map_console_local.md` (phases M1–M7, branch `map-c
 ### S5.6 · M5a — Stories in the feed, country shading (H2), shared StoryPeek, `?story=` selection — ✅ done on branch
 ### S5.6 · M5b — Story card (sourced facts / model judgment / why) + orientation banner (H1) — ✅ done on branch
 ### S5.6 · M6 — HUD row above the map, larger globe, collapsible Key legend, GDACS text badge, 24 h / max-8 pulse budget — ✅ done on branch
+### S5.6 · M7 — Phone: MAP / LIST / ALERTS tabs, bottom sheet, touch without hover — ✅ done on branch (awaiting operator review)
 
 ## Stage S6 — Home swap, routes, cleanup
 

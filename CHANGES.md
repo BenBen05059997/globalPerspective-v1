@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Map console, M7: phone layout; branch `map-console`, local only)
+
+- **Under 900px, `/map` has one tab switch:** MAP (radar, default) · LIST (the feed) · ALERTS (situations only, with a count badge).
+  - The HUD row collapses to one expandable line ("1 elevated · sensors: GDACS live · news paused since Sep 12").
+  - A selection opens a **bottom sheet** with three stops (peek / half / full), a drag handle **and** Expand / Collapse / Close buttons (44px). It is `role=dialog` only at full; Esc closes it; focus returns to the opener; reduced motion = instant.
+  - Selecting from LIST / ALERTS switches to MAP with the sheet at half.
+- **Touch:** no StoryPeek on touch (`usePeek` checks `(hover: none)`); taps select directly.
+- **Monitor fixes:**
+  - the banner said "Hover anything" on phones (now "Tap anything to open it");
+  - the default callout covered the small phone map (now hidden on phones; the sheet does that job);
+  - the detail panel showed "—" placeholders for missing Severity / Alert level / Outlets / Spread (now omitted).
+- **Playwright phone check** (390×844, touch): no horizontal overflow in 6 states; desktop 1440 unchanged.
+- Tests: 333 total.
+
 ## 2026-09-26 (Map console, M6: legend, motion budget, layout; branch `map-console`, local only)
 
 - **Layout:** SITUATION BRIEF (tier counts only; the duplicated lede was dropped) and SENSOR STATUS moved into a HUD row above the map, so the map area is free.

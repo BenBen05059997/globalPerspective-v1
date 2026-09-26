@@ -66,15 +66,23 @@ Build the approved **map home (operations console)** at `/map`, on a local branc
 | M5a · Stories, shading, peek | Stories in the feed, country shading (H2) on both maps with the freshness rule, shared StoryPeek, `?story=` selection | ✅ | see git log (branch) | verify 29 files / 278 tests; browser: feed "STORIES · from Sep 13 · paused", shaded countries on the globe; agent verified the peek on a row + a country, Esc, `?story=` + outline on GLOBE and RADAR. Notes: the topics hook caps at 13 of the 17 stories (same as the old home); the globe's shaded countries aren't keyboard-focusable (deck.gl picking; radar is); mixed-category countries take the non-neutral hue |
 | M5b · Story card + banner | Click → story card (what is happening / what it means / why) with honest states; orientation banner (H1) | ✅ | see git log (branch) | verify 32 files / 290 tests; browser: BRICS card shows 3 sourced bullet facts ("per al-monitor.com", "per npr.org"), MODEL JUDGMENT · analysis Sep 23; Saudi card omits the missing sections. Monitor fixed: the sentence splitter produced "com. com. org."; the AI-summary label was missing |
 | M6 · Legend + layout | Compact "?" legend; max 3 movers / 8 pulses; GDACS text badge; **fix the crowding noted in M2–M4** (panels vs callout; the brief repeats the lede; the globe is small at default zoom) | ✅ | see git log (branch) | verify 317 tests: 3 clean full runs. One loaded run showed 3 transient failures; the full-page render tests are **flaky under load**, logged. Browser: HUD row above the map, clear map, "ORANGE ALERT" text badge in feed + callout, Key collapsed by default |
-| M7 · Phone | MAP (radar) default + LIST + ALERTS; card as a bottom sheet; 44px; phone story mode = horizontal slides (decided 26 Sep, applies to story pages later) | **Now** | — | — |
-| Review | Operator reviews on localhost; list of changes | queued | — | — |
+| M7 · Phone | MAP (radar) default + LIST + ALERTS; card as a bottom sheet; 44px; phone story mode = horizontal slides (decided 26 Sep, applies to story pages later) | ✅ | see git log (branch) | verify 38 files / 333 tests; Playwright 390×844 touch: scrollWidth 390 in all 6 states, desktop 1440 unchanged. Monitor fixed: hover wording on phones, callout covering the phone map, "—" placeholders in the detail metrics. Not exercised: sheet touch-drag (buttons tested) |
+| Review | Operator reviews on localhost; list of changes | **Now** · ready for the operator | — | — |
 
 ### Completion checklist
-- [ ] M1–M7 ✅ on branch `map-console`, each with monitor evidence
-- [ ] `npm run verify` green on the branch
+- [x] M1–M7 ✅ on branch `map-console`, each with monitor evidence
+- [x] `npm run verify` green on the branch (the two full-page render tests are flaky under heavy load; logged)
 - [ ] operator reviewed at `localhost:5173/map`
 - [ ] all docs above updated in the same commits
 - [ ] no deploy and no merge: both need a fresh operator "yes"
 - [ ] status header flipped to `done`
 
 **Local review setup:** run `VITE_WORLD_URL=https://globalperspective.net/data npm run dev` in `global-perspectives-starter/frontend`, then open `http://localhost:5173/map`. This reads the live world file (the Worker allows any origin, and the call is read-only). Don't commit an `.env` for this.
+
+### Review notes for the operator (2026-09-26)
+- **Not done, by design:** the site-wide menu (N1) and the phone bottom tab bar are not built; the phone still shows today's hamburger menu (M7 was scoped to `/map` only).
+- **Known limits:**
+  - globe shaded countries are mouse-only (deck.gl picking; radar and the feed are keyboard-reachable);
+  - the topics hook shows 13 of the 17 current stories;
+  - on phones the map starts below the header, banner and status line; after the banner is dismissed it moves up.
+- **Next, once the operator has reviewed:** a list of changes, then merge / deploy only on a fresh "yes".

@@ -8,6 +8,11 @@ import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
 import HudBriefPanel from '@/features/map/components/HudBriefPanel.jsx';
 import HudSensorPanel from '@/features/map/components/HudSensorPanel.jsx';
 import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
+import HudCompactLine from '@/features/map/components/HudCompactLine.jsx';
+import MapPhoneTabs from '@/features/map/components/MapPhoneTabs.jsx';
+import BottomSheet from '@/features/map/components/BottomSheet.jsx';
+import { useIsPhone } from '@/features/map/hooks/useIsPhone.js';
+import { hudCompactSummary } from '@/features/map/lib/hudCompact.js';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
 import { pausedSince, freshnessState, olderLabel } from '@/shared/lib/freshness.js';
@@ -71,6 +76,87 @@ function metricsFor(selected, ev) {
   let ratio = ev.coverage_ratio ?? null;
   if (ratio == null) { const m = wc.match(/coverage\s+([\d.]+)\s*[×x]/i); if (m) ratio = Number(m[1]); }
   return { outlets, spread, ratio };
+}
+
+// SituationDetail — the situation half of the rail (M2–M6), factored out in M7 so the exact same
+// markup can render inside the phone bottom sheet (showBack=false there — the sheet's own
+// Collapse/Close buttons replace the "back" affordance) without duplicating it.
+function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, onBack, showBack = true }) {
+  return (
+    <div className="sh-detail">
+      {showBack ? (
+        <button className="sh-back" onClick={onBack}>← All situations{activeCount ? ` (${activeCount})` : ''}</button>
+      ) : null}
+      <div className="sh-detail-head">
+        <span className="sh-meta-row">
+          <span className={`sh-badge sh-badge-${selected.tier}`}>{TIER_LABEL[selected.tier] || selected.tier}</span>
+          <span className="sh-axis" style={{ color: AXIS_HUE[selected.axis] }}>{AXIS_LABEL[selected.axis] || selected.axis}</span>
+          <span className="sh-statelbl">{STATE_LABEL[selected.state] || selected.state}</span>
+          {isGdacs ? <span className="sh-prov">UN/EU GDACS</span>
+            : (selected.escalating ? <span className="sh-esc">▲ escalating</span> : null)}
+        </span>
+        <h2 className="sh-detail-title">{selected.verb_label}</h2>
+        <div className="sh-substamp">
+          {isGdacs && ev.gdacs_severity_text ? <span>{ev.gdacs_severity_text}</span> : (selected.what_changed ? <span>{selected.what_changed}</span> : null)}
+          <span className="sh-dim"> · first seen {fmtAgo(selected.opened_at)} · updated {fmtAgo(selected.last_change_at)}</span>
+        </div>
+      </div>
+
+      {affected.length ? (
+        <div className="sh-affected">
+          <span className="sh-lbl">Affected</span>
+          <span className="sh-chips">{affected.slice(0, 5).map((c) => <span key={c} className="sh-country">{iso3Name(c)}</span>)}
+            {affected.length > 5 ? <span className="sh-country sh-more">+{affected.length - 5}</span> : null}</span>
+        </div>
+      ) : null}
+
+      {isGdacs ? (
+        <>
+          <dl className="sh-metrics">
+            {(gdacsLevelBadge(selected, ev) || ev.gdacs_level) ? <div><dt>Alert level</dt><dd className="sh-alert">{gdacsLevelBadge(selected, ev) || ev.gdacs_level}</dd></div> : null}
+            {ev.gdacs_severity_text ? <div><dt>Severity</dt><dd>{ev.gdacs_severity_text.replace(/\s*\(.*\)$/, '')}</dd></div> : null}
+            <div><dt>Type</dt><dd>{ev.category || selected.axis}</dd></div>
+          </dl>
+          <div className="sh-official">
+            <span className="sh-lbl">Official source</span>
+            {ev.gdacs_report_url
+              ? <a className="sh-report" href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>
+              : <span className="sh-report">UN/EU GDACS</span>}
+            <span className="sh-dim">Global Disaster Alert and Coordination System</span>
+          </div>
+          <p className="sh-note">This alert is passed through from the GDACS feed unchanged. The tier comes from the reported hazard values, not from coverage — no AI analysis is generated at this level.</p>
+        </>
+      ) : (
+        <>
+          <dl className="sh-metrics">
+            {m.outlets != null ? <div><dt>Outlets</dt><dd>{m.outlets}</dd></div> : null}
+            {m.spread != null ? <div><dt>Spread</dt><dd>{`${m.spread} ${m.spread === 1 ? 'country' : 'countries'}`}</dd></div> : null}
+            <div><dt>vs prior</dt><dd className={m.ratio && m.ratio >= 1.5 ? 'sh-hot' : ''}>{m.ratio ? `${m.ratio}×` : 'new'}</dd></div>
+          </dl>
+          {ev.headlines?.length ? (
+            <div className="sh-evidence">
+              <span className="sh-lbl">Evidence <i>{ev.headlines.length} shown</i></span>
+              <ul className="sh-heads">
+                {ev.headlines.slice(0, 6).map((h) => (
+                  <li key={h.url}><a href={h.url} target="_blank" rel="noreferrer">{h.title}</a><span className="sh-src">{h.domain}</span></li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="sh-consolidating">Coverage is still consolidating; {m.outlets ?? 'few'} source{m.outlets === 1 ? '' : 's'} so far. Rechecked on the next cycle. The tier will move on its own if the count or the spread changes.</p>
+          )}
+        </>
+      )}
+
+      {(selected.threadId || (isGdacs && ev.gdacs_report_url)) && (
+        <div className="sh-detail-foot">
+          {selected.threadId
+            ? <Link to={`/weekly/thread/${encodeURIComponent(selected.threadId)}`}>Full analysis →</Link>
+            : <a href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function SituationHome() {
@@ -268,6 +354,175 @@ export default function SituationHome() {
     window.addEventListener('resize', onResize); return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // M7: phone layout (< 900px) — MAP (default) · LIST · ALERTS tabs, one screen at a time (P1).
+  // On MAP, a selection opens as a bottom sheet instead of the desktop rail.
+  const isPhone = useIsPhone();
+  const [phoneTab, setPhoneTab] = useState('map');
+  const [sheetStop, setSheetStop] = useState('half');
+  const [hudExpanded, setHudExpanded] = useState(false);
+  const selectionId = focus || storyParam || null;
+  const prevSelectionRef = useRef(null);
+  useEffect(() => {
+    // Selecting anything (from LIST, ALERTS, or the map itself) always lands on the MAP tab with
+    // the sheet at half — "list-select → map + half" from the M7 spec.
+    if (isPhone && selectionId && selectionId !== prevSelectionRef.current) {
+      setPhoneTab('map');
+      setSheetStop('half');
+    }
+    prevSelectionRef.current = selectionId;
+  }, [isPhone, selectionId]);
+  const closeSelection = useCallback(() => {
+    if (focus) userSelect(null);
+    else if (storyParam) userSelectStory(null);
+  }, [focus, storyParam, userSelect, userSelectStory]);
+  const sheetTitle = selected ? selected.verb_label : (selectedStory ? selectedStory.title : null);
+  const sheetSubtitle = selected
+    ? (AXIS_LABEL[selected.axis] || selected.axis)
+    : (selectedStory ? (selectedStory.category || null) : null);
+  const phoneSheetOpen = isPhone && phoneTab === 'map' && !!selectionId;
+  const hudSummary = useMemo(() => hudCompactSummary(tierCounts, sensorRows, paused), [tierCounts, sensorRows, paused]);
+
+  // The map itself (globe/radar + controls + legend) is identical on desktop and the phone MAP
+  // tab — built once here so neither copy can drift from the other.
+  const mapPane = (
+    <>
+      <div className="sh-mapinner">
+        {showGlobe ? (
+          <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
+            <SituationMap3D
+              situations={situations} focusId={focusId} callout={isPhone ? null : callout} tour={tourProps} newIds={newIds} view="globe"
+              onSelect={userSelect} onOpenCallout={userSelect} height={mapH}
+              shading={visibleShading} storyFocusIso3={storyFocusIso3}
+              onSelectCountry={selectStoryByCountry}
+              onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
+              onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
+              onLeaveCountry={() => mapPeek.close()}
+            />
+          </Suspense>
+        ) : (
+          <RadarMap
+            situations={situations} focusId={focusId} callout={isPhone ? null : callout} newIds={newIds}
+            onSelect={userSelect} onOpenCallout={userSelect} onScan={markScanned} height={mapH}
+            shading={visibleShading} storyFocusIso3={storyFocusIso3}
+            onSelectCountry={selectStoryByCountry}
+            onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
+            onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
+            onLeaveCountry={() => mapPeek.close()}
+          />
+        )}
+        {hoveredCountry ? (
+          <StoryPeek
+            id={`peek-country-${hoveredCountry.iso3}`}
+            data={peekData(hoveredCountry.top, { asOf: topicsAsOf })}
+            style={mapPeek.style}
+          />
+        ) : null}
+
+        <div className="sh-controls">
+          {ranked.length >= 2 && !tourOn ? (
+            <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
+          ) : null}
+          {USE_3D ? (
+            <div className="sh-viewswitch" role="group" aria-label="Map mode">
+              <button className={`sh-ctl sh-seg${view === 'globe' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'globe'} onClick={() => setView('globe')}>Globe</button>
+              <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
+            </div>
+          ) : null}
+          <button className="sh-ctl sh-key" onClick={() => setLegendPersist(!legendOpen)} aria-expanded={legendOpen}>
+            {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
+          </button>
+        </div>
+
+        {open.length === 0 && world ? (
+          <div className="sh-quiet">Quiet day — no situations open right now.</div>
+        ) : null}
+
+        {legendOpen ? (
+          <div className="sh-legend sh-legend-open" aria-label="How to read the map">
+            <button className="sh-legend-close" onClick={() => setLegendPersist(false)} aria-label="Close">×</button>
+            <div className="sh-legrow">
+              <b>Colour = crisis type</b>
+              {AXES.map((a) => (
+                <span key={a} className={`sh-leg${counts[a] ? '' : ' sh-leg-off'}`}>
+                  <span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />{AXIS_LABEL[a]}
+                </span>
+              ))}
+              {visibleShading.length ? (
+                <span className="sh-leg"><span className="sh-leg-dot" style={{ background: '#9aa4b2' }} />No crisis claim</span>
+              ) : null}
+            </div>
+            <div className="sh-legrow">
+              <b>Brightness + size = how serious</b>
+              {['low', 'moderate', 'elevated', 'high'].map((t) => {
+                const has = ranked.some((s) => s.tier === t);
+                return (
+                  <span key={t} className={`sh-leg${has ? '' : ' sh-leg-off'}`}>
+                    <span className={`sh-leg-pin sh-pin-${t}`} />{TIER_LABEL[t]}
+                    <i>{t === 'high' && !has ? 'none today' : TIER_HINT[t]}</i>
+                  </span>
+                );
+              })}
+              <span className="sh-leg"><i>white ring = high · brighter outline = selected</i></span>
+              <span className="sh-leg"><span className="sh-leg-esc">▲</span>escalating<i>worse in the last few hours</i></span>
+            </div>
+            <div className="sh-legrow">
+              <b>Motion</b>
+              <span className="sh-leg"><i>soft pulse = new or escalating in the last 24h (up to 8 shown)</i></span>
+            </div>
+            {visibleShading.length ? (
+              <div className="sh-legrow">
+                <b>Country wash = a story with no exact place</b>
+                <span className="sh-leg"><i>count badge = more than one story</i></span>
+                {topicsFreshness === 'older' && topicsAsOf ? (
+                  <span className="sh-leg"><i>{olderLabel(topicsAsOf) || 'older'}</i></span>
+                ) : null}
+              </div>
+            ) : null}
+            <div className="sh-legrow">
+              <b>Freshness (stories)</b>
+              <span className="sh-leg"><i>live &lt;24h glows · 1–7d plain · 7–30d faded + “older · date” · 30d+ hidden</i></span>
+            </div>
+            <div className="sh-legrow">
+              <b>Disaster alerts</b>
+              <span className="sh-leg"><i>GDACS shows its own alert level as text (e.g. “ORANGE ALERT”) — colour still means crisis type, not the alert colour</i></span>
+            </div>
+          </div>
+        ) : null}
+      </div>
+      {world && newsAxesEmpty ? (
+        <p className="sh-coverage">Tracking severe natural disasters (UN/EU GDACS). Conflict, political and economic situations arrive with the news layer.</p>
+      ) : null}
+    </>
+  );
+
+  // The rail's content (desktop) and the sheet's body (phone) share the exact same branches —
+  // only the situation/story detail's "back" affordance differs (the sheet has Collapse/Close).
+  const railContent = focusMissing ? (
+    <div className="sh-detail sh-gone">
+      <button className="sh-back" onClick={() => userSelect(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
+      <p className="sh-muted" style={{ padding: '16px 15px' }}>That situation is no longer being tracked — it may have closed since the link was shared. Browse the active situations instead.</p>
+    </div>
+  ) : selected ? (
+    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={() => userSelect(null)} />
+  ) : selectedStory ? (
+    <StoryCard topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={() => userSelectStory(null)} />
+  ) : (
+    <HudIntelFeed
+      ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
+      onSelect={userSelect}
+      topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
+      onSelectStory={userSelectStory} peek={mapPeek}
+    />
+  );
+
+  const sheetBody = focusMissing ? (
+    <p className="sh-muted" style={{ padding: '16px 15px' }}>That situation is no longer being tracked — it may have closed since the link was shared.</p>
+  ) : selected ? (
+    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={closeSelection} showBack={false} />
+  ) : selectedStory ? (
+    <StoryCard topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={closeSelection} />
+  ) : null;
+
   return (
     <div className={`sh-root gp-console${stale ? ' sh-stale' : ''}`}>
       <header className="sh-bar">
@@ -288,230 +543,69 @@ export default function SituationHome() {
 
       {stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null}
 
-      {/* M6: brief + sensor status moved out of the map's top corners into a slim row above it —
-          they used to overlay the globe/callout and crowd its left edge. */}
-      {world || sensorRows.length ? (
-        <div className="sh-hud-row">
-          {world ? <HudBriefPanel counts={tierCounts} /> : null}
-          {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
-        </div>
-      ) : null}
+      {isPhone ? (
+        <>
+          {/* M7 phone pattern (P1): one tab switch — MAP (default, radar) · LIST · ALERTS. */}
+          <MapPhoneTabs active={phoneTab} onChange={setPhoneTab} alertCount={tierCounts.high + tierCounts.elevated} />
 
-      <div className="sh-stage">
-        <div className="sh-mapwrap">
-          <div className="sh-mapinner">
-            {showGlobe ? (
-              <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
-                <SituationMap3D
-                  situations={situations} focusId={focusId} callout={callout} tour={tourProps} newIds={newIds} view="globe"
-                  onSelect={userSelect} onOpenCallout={userSelect} height={mapH}
-                  shading={visibleShading} storyFocusIso3={storyFocusIso3}
-                  onSelectCountry={selectStoryByCountry}
-                  onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
-                  onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
-                  onLeaveCountry={() => mapPeek.close()}
-                />
-              </Suspense>
-            ) : (
-              <RadarMap
-                situations={situations} focusId={focusId} callout={callout} newIds={newIds}
-                onSelect={userSelect} onOpenCallout={userSelect} onScan={markScanned} height={mapH}
-                shading={visibleShading} storyFocusIso3={storyFocusIso3}
-                onSelectCountry={selectStoryByCountry}
-                onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
-                onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
-                onLeaveCountry={() => mapPeek.close()}
-              />
-            )}
-            {hoveredCountry ? (
-              <StoryPeek
-                id={`peek-country-${hoveredCountry.iso3}`}
-                data={peekData(hoveredCountry.top, { asOf: topicsAsOf })}
-                style={mapPeek.style}
-              />
-            ) : null}
-
-            <div className="sh-controls">
-              {ranked.length >= 2 && !tourOn ? (
-                <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
-              ) : null}
-              {USE_3D ? (
-                <div className="sh-viewswitch" role="group" aria-label="Map mode">
-                  <button className={`sh-ctl sh-seg${view === 'globe' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'globe'} onClick={() => setView('globe')}>Globe</button>
-                  <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
-                </div>
-              ) : null}
-              <button className="sh-ctl sh-key" onClick={() => setLegendPersist(!legendOpen)} aria-expanded={legendOpen}>
-                {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
-              </button>
-            </div>
-
-            {open.length === 0 && world ? (
-              <div className="sh-quiet">Quiet day — no situations open right now.</div>
-            ) : null}
-
-            {legendOpen ? (
-              <div className="sh-legend sh-legend-open" aria-label="How to read the map">
-                <button className="sh-legend-close" onClick={() => setLegendPersist(false)} aria-label="Close">×</button>
-                <div className="sh-legrow">
-                  <b>Colour = crisis type</b>
-                  {AXES.map((a) => (
-                    <span key={a} className={`sh-leg${counts[a] ? '' : ' sh-leg-off'}`}>
-                      <span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />{AXIS_LABEL[a]}
-                    </span>
-                  ))}
-                  {visibleShading.length ? (
-                    <span className="sh-leg"><span className="sh-leg-dot" style={{ background: '#9aa4b2' }} />No crisis claim</span>
-                  ) : null}
-                </div>
-                <div className="sh-legrow">
-                  <b>Brightness + size = how serious</b>
-                  {['low', 'moderate', 'elevated', 'high'].map((t) => {
-                    const has = ranked.some((s) => s.tier === t);
-                    return (
-                      <span key={t} className={`sh-leg${has ? '' : ' sh-leg-off'}`}>
-                        <span className={`sh-leg-pin sh-pin-${t}`} />{TIER_LABEL[t]}
-                        <i>{t === 'high' && !has ? 'none today' : TIER_HINT[t]}</i>
-                      </span>
-                    );
-                  })}
-                  <span className="sh-leg"><i>white ring = high · brighter outline = selected</i></span>
-                  <span className="sh-leg"><span className="sh-leg-esc">▲</span>escalating<i>worse in the last few hours</i></span>
-                </div>
-                <div className="sh-legrow">
-                  <b>Motion</b>
-                  <span className="sh-leg"><i>soft pulse = new or escalating in the last 24h (up to 8 shown)</i></span>
-                </div>
-                {visibleShading.length ? (
-                  <div className="sh-legrow">
-                    <b>Country wash = a story with no exact place</b>
-                    <span className="sh-leg"><i>count badge = more than one story</i></span>
-                    {topicsFreshness === 'older' && topicsAsOf ? (
-                      <span className="sh-leg"><i>{olderLabel(topicsAsOf) || 'older'}</i></span>
-                    ) : null}
+          {phoneTab === 'map' ? (
+            <div id="sh-panel-map" role="tabpanel" aria-labelledby="sh-tab-map" className="sh-phone-panel">
+              {world || sensorRows.length ? (
+                <HudCompactLine summary={hudSummary} expanded={hudExpanded} onToggle={() => setHudExpanded((v) => !v)}>
+                  <div className="sh-hud-row">
+                    {world ? <HudBriefPanel counts={tierCounts} /> : null}
+                    {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
                   </div>
-                ) : null}
-                <div className="sh-legrow">
-                  <b>Freshness (stories)</b>
-                  <span className="sh-leg"><i>live &lt;24h glows · 1–7d plain · 7–30d faded + “older · date” · 30d+ hidden</i></span>
-                </div>
-                <div className="sh-legrow">
-                  <b>Disaster alerts</b>
-                  <span className="sh-leg"><i>GDACS shows its own alert level as text (e.g. “ORANGE ALERT”) — colour still means crisis type, not the alert colour</i></span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-          {world && newsAxesEmpty ? (
-            <p className="sh-coverage">Tracking severe natural disasters (UN/EU GDACS). Conflict, political and economic situations arrive with the news layer.</p>
-          ) : null}
-        </div>
-
-        <aside className="sh-rail" aria-live="polite">
-          {focusMissing ? (
-            <div className="sh-detail sh-gone">
-              <button className="sh-back" onClick={() => userSelect(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
-              <p className="sh-muted" style={{ padding: '16px 15px' }}>That situation is no longer being tracked — it may have closed since the link was shared. Browse the active situations instead.</p>
-            </div>
-          ) : selected ? (
-            <div className="sh-detail">
-              <button className="sh-back" onClick={() => userSelect(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
-              <div className="sh-detail-head">
-                <span className="sh-meta-row">
-                  <span className={`sh-badge sh-badge-${selected.tier}`}>{TIER_LABEL[selected.tier] || selected.tier}</span>
-                  <span className="sh-axis" style={{ color: AXIS_HUE[selected.axis] }}>{AXIS_LABEL[selected.axis] || selected.axis}</span>
-                  <span className="sh-statelbl">{STATE_LABEL[selected.state] || selected.state}</span>
-                  {isGdacs ? <span className="sh-prov">UN/EU GDACS</span>
-                    : (selected.escalating ? <span className="sh-esc">▲ escalating</span> : null)}
-                </span>
-                <h2 className="sh-detail-title">{selected.verb_label}</h2>
-                <div className="sh-substamp">
-                  {isGdacs && ev.gdacs_severity_text ? <span>{ev.gdacs_severity_text}</span> : (selected.what_changed ? <span>{selected.what_changed}</span> : null)}
-                  <span className="sh-dim"> · first seen {fmtAgo(selected.opened_at)} · updated {fmtAgo(selected.last_change_at)}</span>
-                </div>
-              </div>
-
-              {affected.length ? (
-                <div className="sh-affected">
-                  <span className="sh-lbl">Affected</span>
-                  <span className="sh-chips">{affected.slice(0, 5).map((c) => <span key={c} className="sh-country">{iso3Name(c)}</span>)}
-                    {affected.length > 5 ? <span className="sh-country sh-more">+{affected.length - 5}</span> : null}</span>
-                </div>
+                </HudCompactLine>
               ) : null}
-
-              {isGdacs ? (
-                <>
-                  <dl className="sh-metrics">
-                    <div><dt>Alert level</dt><dd className="sh-alert">{gdacsLevelBadge(selected, ev) || ev.gdacs_level || '—'}</dd></div>
-                    <div><dt>Severity</dt><dd>{ev.gdacs_severity_text ? ev.gdacs_severity_text.replace(/\s*\(.*\)$/, '') : '—'}</dd></div>
-                    <div><dt>Type</dt><dd>{ev.category || selected.axis}</dd></div>
-                  </dl>
-                  <div className="sh-official">
-                    <span className="sh-lbl">Official source</span>
-                    {ev.gdacs_report_url
-                      ? <a className="sh-report" href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>
-                      : <span className="sh-report">UN/EU GDACS</span>}
-                    <span className="sh-dim">Global Disaster Alert and Coordination System</span>
-                  </div>
-                  <p className="sh-note">This alert is passed through from the GDACS feed unchanged. The tier comes from the reported hazard values, not from coverage — no AI analysis is generated at this level.</p>
-                </>
-              ) : (
-                <>
-                  <dl className="sh-metrics">
-                    <div><dt>Outlets</dt><dd>{m.outlets ?? '—'}</dd></div>
-                    <div><dt>Spread</dt><dd>{m.spread != null ? `${m.spread} ${m.spread === 1 ? 'country' : 'countries'}` : '—'}</dd></div>
-                    <div><dt>vs prior</dt><dd className={m.ratio && m.ratio >= 1.5 ? 'sh-hot' : ''}>{m.ratio ? `${m.ratio}×` : 'new'}</dd></div>
-                  </dl>
-                  {ev.headlines?.length ? (
-                    <div className="sh-evidence">
-                      <span className="sh-lbl">Evidence <i>{ev.headlines.length} shown</i></span>
-                      <ul className="sh-heads">
-                        {ev.headlines.slice(0, 6).map((h) => (
-                          <li key={h.url}><a href={h.url} target="_blank" rel="noreferrer">{h.title}</a><span className="sh-src">{h.domain}</span></li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : (
-                    <p className="sh-consolidating">Coverage is still consolidating; {m.outlets ?? 'few'} source{m.outlets === 1 ? '' : 's'} so far. Rechecked on the next cycle. The tier will move on its own if the count or the spread changes.</p>
-                  )}
-                </>
-              )}
-
-              {(selected.threadId || (isGdacs && ev.gdacs_report_url)) && (
-                <div className="sh-detail-foot">
-                  {selected.threadId
-                    ? <Link to={`/weekly/thread/${encodeURIComponent(selected.threadId)}`}>Full analysis →</Link>
-                    : <a href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>}
-                </div>
-              )}
+              <div className="sh-mapwrap">{mapPane}</div>
+              {phoneSheetOpen ? (
+                <BottomSheet
+                  stop={sheetStop}
+                  onStopChange={setSheetStop}
+                  onClose={closeSelection}
+                  title={sheetTitle}
+                  subtitle={sheetSubtitle}
+                >
+                  {sheetBody}
+                </BottomSheet>
+              ) : null}
             </div>
-          ) : selectedStory ? (
-            <StoryCard
-              topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length}
-              onBack={() => userSelectStory(null)}
-            />
+          ) : phoneTab === 'list' ? (
+            <div id="sh-panel-list" role="tabpanel" aria-labelledby="sh-tab-list" className="sh-phone-panel">
+              <HudIntelFeed
+                ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
+                onSelect={userSelect}
+                topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
+                onSelectStory={userSelectStory} peek={mapPeek}
+              />
+            </div>
           ) : (
-            <HudIntelFeed
-              ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
-              onSelect={userSelect}
-              topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
-              onSelectStory={userSelectStory} peek={mapPeek}
-            />
+            <div id="sh-panel-alerts" role="tabpanel" aria-labelledby="sh-tab-alerts" className="sh-phone-panel">
+              <HudIntelFeed
+                ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
+                onSelect={userSelect} label="Alerts"
+              />
+            </div>
           )}
-        </aside>
-      </div>
+        </>
+      ) : (
+        <>
+          {/* M6: brief + sensor status moved out of the map's top corners into a slim row above it —
+              they used to overlay the globe/callout and crowd its left edge. */}
+          {world || sensorRows.length ? (
+            <div className="sh-hud-row">
+              {world ? <HudBriefPanel counts={tierCounts} /> : null}
+              {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
+            </div>
+          ) : null}
 
-      {/* Mobile peek row — the top situation as the mobile lede+hero; tap opens detail. */}
-      {hero && !focus ? (
-        <button className="sh-peek" onClick={() => userSelect(hero.id)}>
-          <span className={`sh-leg-pin sh-pin-${hero.tier}`} style={{ '--pin': AXIS_HUE[hero.axis] || '#9aa4b2' }} />
-          <span className="sh-peek-main">
-            <span className="sh-peek-tags"><span className={`sh-tierlbl sh-tierlbl-${hero.tier}`}>{TIER_LABEL[hero.tier]}</span>{hero.escalating ? <span className="sh-esc-sm">▲</span> : null}</span>
-            <span className="sh-peek-title">{hero.verb_label}</span>
-          </span>
-          <span className="sh-peek-open">Open →</span>
-        </button>
-      ) : null}
+          <div className="sh-stage">
+            <div className="sh-mapwrap">{mapPane}</div>
+            <aside className="sh-rail" aria-live="polite">{railContent}</aside>
+          </div>
+        </>
+      )}
 
       <section className="sh-fold">
         <div className="sh-fold-method">

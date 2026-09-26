@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { AXIS_HUE, TIER_R } from '@/features/map/components/SituationMap.jsx';
+import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import { land, FRAME } from '@/features/map/lib/landGeometry.js';
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
 import { bearingDeg, beamCrossed, scanGlow, sweepControlState } from '@/features/map/lib/radar.js';
 import { ISO3_TO_NUM } from '@/features/map/lib/countryGeo.js';
 import { pulseSet } from '@/features/map/lib/pulse.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
+import {
+  tierSize, markerKind, kindLabel, situationFreshness, freshnessLook, freshnessClass, statusGlyph, markerHex,
+} from '@/features/map/lib/legend.js';
 
 // iso3 -> country polygon, for H2 country shading (M5a). Built once from the same bundled
 // topojson RadarMap already draws coastlines from.
@@ -57,6 +60,31 @@ function placeCallout(px, py, W, H, topMargin = 8) {
 // interpreted as markup in the tooltip.
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+const hue = (s) => AXIS_HUE[s.axis] || '#9aa4b2';
+const freshOf = (s) => situationFreshness(s, Date.now());
+
+// ◆ — a square rotated 45°, `k` = half its diagonal.
+function diamondPath(k) {
+  return `M0,${-k}L${k},0L0,${k}L${-k},0Z`;
+}
+// HUD target brackets (legend §1 "selected"): four 6px L-corners around a `b`-radius box.
+function bracketsPath(b) {
+  const l = 6;
+  return `M${-b},${-b + l}V${-b}H${-b + l}M${b - l},${-b}H${b}V${-b + l}`
+    + `M${b},${b - l}V${b}H${b - l}M${-b + l},${b}H${-b}V${b - l}`;
+}
+
+function markerAriaLabel(s, fresh) {
+  const place = placeOf(s);
+  const level = gdacsLevelBadge(s);
+  const glyph = statusGlyph(s);
+  return [
+    s.verb_label, place, kindLabel(markerKind(s)), level,
+    `${TIER_LABEL[s.tier] || s.tier} severity`, s.axis,
+    glyph ? glyph.label : null, fresh === 'older' ? 'older' : null,
+  ].filter(Boolean).join(', ');
 }
 
 function agoShort(iso) {
@@ -112,7 +140,14 @@ export default function RadarMap({
   const [sweepOn, setSweepOn] = useState(!reduceMotion);
   const [dims, setDims] = useState({ width: 1, height });
 
-  const active = useMemo(() => situations.filter((s) => s.state !== 'closed' && s.centroid), [situations]);
+  // Brightness = freshness: 30d+ situations are hidden from the map (SituationHome counts them).
+  const active = useMemo(
+    () => situations.filter((s) => s.state !== 'closed' && s.centroid && situationFreshness(s) !== 'hidden'),
+    [situations],
+  );
+  // `newIds` (since-your-last-visit) is shown in the feed only — the map's badges are the
+  // approved ▲●◆▼ set, so no extra undocumented ring is drawn here any more.
+  void newIds;
 
   // Draw land + markers once per data/selection change — never per animation frame.
   useEffect(() => {
@@ -170,6 +205,17 @@ export default function RadarMap({
         .attr('pointer-events', 'none')
         .text((d) => d.count);
 
+      // A selected story (country wash) gets the HUD brackets too, at its country's centre.
+      const focusShade = shadeData.find((d) => d.iso3 === storyFocusIso3);
+      if (focusShade) {
+        const [bx, by] = path.centroid(focusShade.feature);
+        if (Number.isFinite(bx) && Number.isFinite(by)) {
+          root.append('path').attr('class', 'rd-brackets').attr('transform', `translate(${bx},${by})`)
+            .attr('d', bracketsPath(14)).attr('fill', 'none').attr('stroke', '#eef5f9').attr('stroke-width', 2)
+            .attr('pointer-events', 'none');
+        }
+      }
+
       const proj = (s) => projection([s.centroid.lon, s.centroid.lat]) || [-9, -9];
       bearingsRef.current = new Map(active.map((s) => {
         const [x, y] = proj(s);
@@ -177,9 +223,20 @@ export default function RadarMap({
       }));
 
       const defs = svg.append('defs');
+      // Brightness = freshness (legend §4): only LIVE (<24h) markers get this glow.
       const f = defs.append('filter').attr('id', 'rd-glow').attr('x', '-80%').attr('y', '-80%').attr('width', '260%').attr('height', '260%');
       f.append('feGaussianBlur').attr('stdDeviation', 3.2).attr('result', 'b');
       const mg = f.append('feMerge'); mg.append('feMergeNode').attr('in', 'b'); mg.append('feMergeNode').attr('in', 'SourceGraphic');
+      // Shape = kind (legend §1): a news situation sits at an APPROXIMATE place, drawn as a soft,
+      // feathered halo around a small dot (MacEachren: fuzzy reads as uncertain) — one radial
+      // gradient per crisis hue (+ its faded "older" twin).
+      const softId = (hex) => `rd-soft-${hex.replace('#', '')}`;
+      const softHexes = new Set(active.map((s) => markerHex(hue(s), freshOf(s))));
+      for (const hx of softHexes) {
+        const g = defs.append('radialGradient').attr('id', softId(hx));
+        g.append('stop').attr('offset', '45%').attr('stop-color', hx).attr('stop-opacity', 0.5);
+        g.append('stop').attr('offset', '100%').attr('stop-color', hx).attr('stop-opacity', 0);
+      }
 
       // Motion budget (M6): only NEW/▲ situations from the last 24h pulse, capped at 8, highest
       // tier first (lib/pulse.js) — not every escalating situation regardless of age.
@@ -187,26 +244,27 @@ export default function RadarMap({
       root.append('g').selectAll('circle').data(active.filter((s) => pulseIds.has(s.id))).join('circle')
         .attr('class', 'sm-ring')
         .attr('cx', (s) => proj(s)[0]).attr('cy', (s) => proj(s)[1])
-        .attr('r', (s) => (TIER_R[s.tier] || 5) + 4)
-        .attr('fill', 'none').attr('stroke', (s) => AXIS_HUE[s.axis] || '#9aa4b2').attr('stroke-width', 1.5);
+        .attr('r', (s) => tierSize(s.tier).r + 6)
+        .attr('fill', 'none').attr('stroke', (s) => hue(s)).attr('stroke-width', 1.5);
 
       const showTip = (e, s) => {
         const [x, y] = d3.pointer(e, wrap);
         tip.style.opacity = 1; tip.style.left = `${x + 12}px`; tip.style.top = `${y + 12}px`;
-        tip.innerHTML = `<b>${escapeHtml(s.verb_label)}</b><br>${escapeHtml(TIER_W[s.tier] || s.tier)} · ${escapeHtml(agoShort(s.last_change_at))}`;
+        const level = gdacsLevelBadge(s);
+        const glyph = statusGlyph(s);
+        tip.innerHTML = `<b>${escapeHtml(s.verb_label)}</b><br>${escapeHtml(TIER_W[s.tier] || s.tier)}`
+          + `${level ? ` · ${escapeHtml(level)}` : ''}${glyph ? ` · ${escapeHtml(`${glyph.glyph} ${glyph.label}`)}` : ''}`
+          + ` · ${escapeHtml(agoShort(s.last_change_at))}`;
       };
       const hideTip = () => { tip.style.opacity = 0; };
 
       markerElsRef.current = new Map();
       const nodes = root.append('g').selectAll('g.rd-marker').data(active, (s) => s.id).join('g')
-        .attr('class', 'rd-marker')
+        .attr('class', (s) => `rd-marker ${freshnessClass(freshOf(s))}${s.id === focusId ? ' rd-selected' : ''}`)
         .attr('transform', (s) => { const p = proj(s); return `translate(${p[0]},${p[1]})`; })
         .attr('tabindex', 0)
         .attr('role', 'button')
-        .attr('aria-label', (s) => {
-          const place = placeOf(s);
-          return `${s.verb_label}${place ? `, ${place}` : ''}, ${TIER_LABEL[s.tier] || s.tier} severity, ${s.axis}`;
-        })
+        .attr('aria-label', (s) => markerAriaLabel(s, freshOf(s)))
         .style('cursor', 'pointer')
         .on('click', (_e, s) => onSelectRef.current && onSelectRef.current(s.id))
         .on('keydown', (e, s) => {
@@ -215,36 +273,60 @@ export default function RadarMap({
         .on('mouseenter', showTip).on('mousemove', showTip).on('mouseleave', hideTip)
         .on('focus', showTip).on('blur', hideTip);
 
-      nodes.append('circle').attr('class', 'rd-halo')
-        .attr('r', (s) => (TIER_R[s.tier] || 5) + 10)
-        .attr('fill', (s) => AXIS_HUE[s.axis] || '#9aa4b2')
+      // The radar's one-shot scan flare (legend §6): opacity is driven per frame by the sweep loop.
+      nodes.append('circle').attr('class', 'rd-scan')
+        .attr('r', (s) => (tierSize(s.tier).ringR || tierSize(s.tier).r) + 8)
+        .attr('fill', (s) => hue(s))
         .attr('opacity', 0);
 
-      nodes.append('circle').attr('class', 'rd-core')
-        .attr('r', (s) => TIER_R[s.tier] || 5)
-        .attr('fill', (s) => AXIS_HUE[s.axis] || '#9aa4b2')
-        .attr('stroke', (s) => (s.id === focusId ? '#fff' : 'rgba(255,255,255,0.4)'))
-        .attr('stroke-width', (s) => (s.id === focusId ? 2 : 0.75))
-        .attr('filter', (s) => (s.tier === 'high' || s.tier === 'elevated' ? 'url(#rd-glow)' : null));
-
-      nodes.each(function assignRefs(s) {
-        markerElsRef.current.set(s.id, { halo: this.querySelector('.rd-halo'), core: this.querySelector('.rd-core') });
-      });
-
-      // "New since your last visit" — same hollow-ring convention as the globe (design 3f).
-      root.append('g').selectAll('circle.new-marker').data(newIds ? active.filter((s) => newIds.has(s.id)) : []).join('circle')
-        .attr('class', 'new-marker')
-        .attr('cx', (s) => proj(s)[0]).attr('cy', (s) => proj(s)[1])
-        .attr('r', (s) => (TIER_R[s.tier] || 5) + 4)
-        .attr('fill', 'none').attr('stroke', '#fff').attr('stroke-width', 1).attr('stroke-opacity', 0.8)
+      nodes.filter((s) => markerKind(s) === 'situation').append('circle').attr('class', 'rd-soft')
+        .attr('r', (s) => tierSize(s.tier).r + 11)
+        .attr('fill', (s) => `url(#${softId(markerHex(hue(s), freshOf(s)))})`)
         .attr('pointer-events', 'none');
 
+      // Size + double ring = HIGH only (legend §2).
+      nodes.filter((s) => tierSize(s.tier).doubleRing).append('circle').attr('class', 'rd-ring')
+        .attr('r', (s) => tierSize(s.tier).ringR)
+        .attr('fill', 'none').attr('stroke', (s) => markerHex(hue(s), freshOf(s))).attr('stroke-width', 1.5);
+
+      nodes.each(function drawCore(s) {
+        const g = d3.select(this);
+        const { r } = tierSize(s.tier);
+        const fill = markerHex(hue(s), freshOf(s));
+        const look = freshnessLook(freshOf(s));
+        const core = markerKind(s) === 'alert'
+          // ◆ official alert: a diamond (MIL-STD alert frame), exact place from the feed.
+          ? g.append('path').attr('d', diamondPath(r * 1.2)).attr('stroke', '#04070c').attr('stroke-width', 1.5)
+          : g.append('circle').attr('r', Math.max(3, r * 0.6)).attr('stroke', '#04070c').attr('stroke-width', 1);
+        core.attr('class', 'rd-core').attr('fill', fill)
+          .attr('opacity', look.desaturate ? 0.85 : 1)
+          .attr('filter', look.glow ? 'url(#rd-glow)' : null);
+        const glyph = statusGlyph(s);
+        if (glyph) {
+          const off = (tierSize(s.tier).ringR || r) + 3;
+          g.append('text').attr('class', 'rd-badge').attr('x', off).attr('y', -off + 3)
+            .attr('font-size', 10).attr('fill', '#eef5f9').attr('pointer-events', 'none')
+            .attr('paint-order', 'stroke').attr('stroke', '#04070c').attr('stroke-width', 2.5)
+            .text(glyph.glyph);
+        }
+        if (s.id === focusId) {
+          // HUD brackets = selected (legend §1 / L4), replacing the old white glow ring.
+          const b = (tierSize(s.tier).ringR || r) + 7;
+          g.append('path').attr('class', 'rd-brackets').attr('d', bracketsPath(b))
+            .attr('fill', 'none').attr('stroke', '#eef5f9').attr('stroke-width', 2).attr('pointer-events', 'none');
+        }
+      });
+
+      nodes.each(function assignRefs(s) {
+        markerElsRef.current.set(s.id, { scan: this.querySelector('.rd-scan') });
+      });
+
       const labelable = active.filter((s) => s.tier === 'high' || s.tier === 'elevated')
-        .sort((a, b) => (TIER_R[b.tier] || 0) - (TIER_R[a.tier] || 0)).slice(0, 6);
+        .sort((a, b) => (tierSize(b.tier).ringR || tierSize(b.tier).r) - (tierSize(a.tier).ringR || tierSize(a.tier).r)).slice(0, 6);
       root.append('g').selectAll('text.sm-label').data(labelable).join('text')
         .attr('class', 'sm-label')
-        .attr('x', (s) => proj(s)[0] + (TIER_R[s.tier] || 5) + 4)
-        .attr('y', (s) => proj(s)[1] + 3)
+        .attr('x', (s) => proj(s)[0] + (tierSize(s.tier).ringR || tierSize(s.tier).r) + 14)
+        .attr('y', (s) => proj(s)[1] + 4)
         .text((s) => s.verb_label).attr('fill', '#dfe6f2').attr('font-size', 11)
         .attr('paint-order', 'stroke').attr('stroke', '#0d1017').attr('stroke-width', 3);
 
@@ -266,7 +348,7 @@ export default function RadarMap({
     const ro = new ResizeObserver(() => draw());
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [active, focusId, newIds, height, shading, storyFocusIso3]);
+  }, [active, focusId, height, shading, storyFocusIso3]);
 
   // The sweep: one rAF loop, paused under reduced motion, while the sweep control is off, or
   // while the tab is hidden. Reads/writes only refs + DOM attributes — no setState per frame.
@@ -293,8 +375,7 @@ export default function RadarMap({
           const els = markerElsRef.current.get(id);
           if (!els) continue;
           const glow = scanGlow(next, angle, TRAIL_DEG);
-          if (els.halo) els.halo.setAttribute('opacity', String(glow * 0.55));
-          if (els.core) els.core.setAttribute('stroke-width', glow > 0.5 ? '1.5' : (id === focusId ? '2' : '0.75'));
+          if (els.scan) els.scan.setAttribute('opacity', String(glow * 0.5));
           if (beamCrossed(prev, next, angle) && onScanRef.current) onScanRef.current(id);
         }
       }
@@ -303,7 +384,7 @@ export default function RadarMap({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [reduceMotion, sweepOn, focusId]);
+  }, [reduceMotion, sweepOn]);
 
   const beamBackground = useMemo(() => {
     const from = sweepRef.current + 90 - TRAIL_DEG;
@@ -320,7 +401,6 @@ export default function RadarMap({
   }, [callout, dims]);
 
   const sc = sweepControlState(reduceMotion, sweepOn);
-  const hue = (s) => AXIS_HUE[s.axis] || '#9aa4b2';
 
   return (
     <div className="sm-wrap" style={{ height }} ref={wrapRef}>

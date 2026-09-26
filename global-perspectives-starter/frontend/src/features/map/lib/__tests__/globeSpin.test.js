@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { textureUrl, wrapLongitude, spinStep, defaultMapView, normalizeStoredView, spinControlState, globeZoomForHeight } from '@/features/map/lib/globeSpin.js';
+import { textureUrl, wrapLongitude, spinStep, defaultMapView, normalizeStoredView, spinControlState, globeZoomForHeight, globeFitFraction, GLOBE_LIMB_FACTOR } from '@/features/map/lib/globeSpin.js';
 
 describe('globeSpin — textureUrl', () => {
   it('builds the path under a root base', () => {
@@ -107,5 +107,23 @@ describe('globeSpin — globeZoomForHeight (M6: size the globe from the panel he
     expect(globeZoomForHeight(-10)).toBe(0.55);
     expect(globeZoomForHeight(NaN)).toBe(0.55);
     expect(globeZoomForHeight(undefined)).toBe(0.55);
+  });
+});
+
+describe('globeSpin — globeFitFraction (R4a: full-bleed console band)', () => {
+  const visibleShare = (w, h) => (globeFitFraction(w, h) * GLOBE_LIMB_FACTOR);
+  it('asks for a visible disc of 78% of the map height when the band is wide enough', () => {
+    expect(visibleShare(900, 848)).toBeCloseTo(0.78, 5);
+  });
+  it('shrinks the globe to 92% of a narrow band so the HUD columns never crop it', () => {
+    expect(visibleShare(500, 848)).toBeCloseTo((0.92 * 500) / 848, 5);
+  });
+  it('keeps at least 70% of the height at the 1440×900 and 1280×720 console bands', () => {
+    expect(visibleShare(712, 848)).toBeGreaterThanOrEqual(0.7);
+    expect(visibleShare(622, 668)).toBeGreaterThanOrEqual(0.7);
+  });
+  it('falls back to the default for missing sizes', () => {
+    expect(visibleShare(null, 700)).toBeCloseTo(0.78, 5);
+    expect(visibleShare(700, 0)).toBeCloseTo(0.78, 5);
   });
 });

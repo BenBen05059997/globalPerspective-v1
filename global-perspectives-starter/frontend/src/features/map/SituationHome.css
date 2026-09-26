@@ -137,10 +137,6 @@
 .hud-story-older .hud-feed-place { color: var(--sh-dim); }
 .hud-stories-hidden { padding: 8px 6px; }
 
-/* ---- stage: map (left) + rail (right) ---- */
-.sh-stage { display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(300px, 1fr); gap: 16px; margin-top: 14px; align-items: start; }
-@media (max-width: 899.98px) { .sh-stage { grid-template-columns: 1fr; } }
-
 .sh-mapwrap { position: relative; }
 .sh-mapinner { position: relative; }
 .sm-wrap {
@@ -254,13 +250,15 @@
 .sh-leg-esc { color: #ffb27a; font-size: 10px; }
 .sh-coverage { margin: 10px 2px 0; font-size: 13px; color: var(--sh-muted); }
 
-/* tier pin glyphs (shared: legend, list rows, index) — glow = severity */
+/* tier pin glyphs (brief counts) — R4a legend tokens: SIZE steps = severity, a double ring for
+   HIGH only. No glow here: glow now means freshness (live <24h), never severity. */
 .sh-leg-pin { --pin: var(--sh-muted); width: 12px; height: 12px; border-radius: 50%; flex: none; background: var(--pin); position: relative; }
-.sh-pin-low { width: 8px; height: 8px; opacity: 0.85; }
-.sh-pin-moderate { width: 10px; height: 10px; }
-.sh-pin-elevated { width: 11px; height: 11px; box-shadow: 0 0 8px 1px var(--pin); }
-.sh-pin-high { width: 12px; height: 12px; box-shadow: 0 0 10px 2px var(--pin); border: 1.5px solid #fff; }
-.sh-legend .sh-pin-low, .sh-legend .sh-pin-moderate, .sh-legend .sh-pin-elevated, .sh-legend .sh-pin-high { --pin: #9aa4b2; }
+.sh-pin-low { width: 5px; height: 5px; }
+.sh-pin-moderate { width: 8px; height: 8px; }
+.sh-pin-elevated { width: 11px; height: 11px; }
+.sh-pin-high { width: 11px; height: 11px; margin: 0 3px; box-shadow: 0 0 0 2px var(--c-bg, #070d15), 0 0 0 3.3px var(--pin); }
+.lg-sw { flex: none; }
+.lg-glyph { flex: none; width: 14px; text-align: center; font-family: var(--c-mono, monospace); color: var(--sh-text); }
 
 /* ---- rail: list ---- */
 .sh-rail { min-width: 0; }
@@ -362,6 +360,7 @@
        never renders underneath/behind it. */
     position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); top: auto; z-index: 40;
     max-width: none; border-radius: 14px 14px 0 0; padding: 18px 40px 22px 16px; gap: 10px; background: rgba(13,16,23,0.98);
+    max-height: 72vh; overflow-y: auto;
   }
   .sh-legend .sh-legend-close { top: 10px; right: 12px; font-size: 22px; }
   .sh-legrow { gap: 8px 14px; }
@@ -371,6 +370,9 @@
      specificity) silently shrank the Globe/Radar segmented buttons and the Key button back
      under the 44px tap-target minimum on phone. */
   .sh-ctl { min-height: var(--c-tap-min, 44px); }
+  /* R4a: the wider control cluster fills the top edge on a phone — the empty-state note moves to
+     the bottom-left, clear of the spin/sweep control at bottom-right. */
+  .sh-quiet { top: auto; bottom: 12px; right: 68px; }
 }
 @media (prefers-reduced-motion: reduce) { .sm-callout-body { transition: none; } }
 
@@ -483,3 +485,129 @@
 @keyframes sc-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .sc-skel-line { animation: none; } }
 .sc-facts { margin: 4px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
+
+/* ---- HUD brief (R4a): lede, lead line + "open story →", tier counts ---- */
+.hud-brief-lede { margin: 0 0 8px; font-size: 13px; line-height: 1.4; color: var(--sh-text); }
+.hud-brief-lead { margin: 0 0 8px; padding-top: 8px; border-top: 1px solid var(--sh-border); }
+.hud-brief-kicker { font-family: var(--c-mono, monospace); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sh-muted); }
+.hud-brief-older { color: var(--c-warn, #ffb347); }
+.hud-brief-title { font-family: var(--c-serif, serif); font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--c-text-head, #eef5f9); margin-top: 4px; }
+.hud-brief-open {
+  display: inline-flex; align-items: center; min-height: var(--c-tap-min, 44px); padding: 0; background: none; border: 0;
+  color: var(--c-accent, #5fd4ff); font: inherit; font-size: 12px; text-decoration: none; cursor: pointer;
+}
+.hud-brief-open:hover { text-decoration: underline; }
+
+/* ---- alert stack (R4a, Console.dc.html): open situations as cards, most severe/newest first.
+   Same component on the desktop console (left edge) and the phone ALERTS tab. ---- */
+.al-stack { display: flex; flex-direction: column; min-height: 0; }
+.al-head { flex: none; }
+.al-list { list-style: none; margin: 0; padding: 0 2px 0 0; display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #2a3446 transparent; }
+.al-card {
+  width: 100%; min-height: var(--c-tap-min, 44px); display: flex; align-items: flex-start; gap: 10px; text-align: left;
+  padding: 8px 10px; background: rgba(8, 16, 26, 0.7); border: 1px solid var(--sh-border); border-left: 3px solid var(--pin);
+  border-radius: var(--c-radius-md, 4px); color: var(--sh-text); font: inherit; cursor: pointer;
+}
+.al-card:hover { background: rgba(95, 212, 255, 0.06); }
+.al-card:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); outline-offset: 1px; }
+.al-item-on .al-card { border-color: var(--c-accent, #5fd4ff); border-left-color: var(--pin); background: rgba(95, 212, 255, 0.1); }
+/* The card's mark repeats the map's shape token: ◆ alert / soft dot = approximate place. */
+.al-mark { flex: none; width: 9px; height: 9px; margin: 4px 2px 0; background: var(--pin); }
+.al-mark-alert { transform: rotate(45deg); }
+.al-mark-situation { border-radius: 50%; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06), 0 0 0 5px rgba(255, 255, 255, 0.03); }
+.al-fresh-live .al-mark { box-shadow: 0 0 8px 1px var(--pin); }
+.al-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.al-top { display: flex; align-items: baseline; gap: 8px; font-family: var(--c-mono, monospace); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--sh-muted); }
+.al-kind { color: var(--pin); flex: none; }
+.al-place { color: var(--sh-text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.al-age { margin-left: auto; flex: none; color: var(--sh-muted); text-transform: none; letter-spacing: 0; }
+.al-title { font-size: 13px; line-height: 1.3; color: var(--sh-text); }
+.al-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.al-tier { font-family: var(--c-mono, monospace); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; border: 1px solid var(--sh-border); color: var(--sh-muted); }
+.al-tier-high { color: #ffb4a2; border-color: #6b2f22; }
+.al-tier-elevated { color: #f2d492; border-color: #4a3f16; }
+.al-glyph { font-family: var(--c-mono, monospace); font-size: 11px; color: var(--sh-text); }
+.al-older { font-family: var(--c-mono, monospace); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-warn, #ffb347); }
+.al-empty, .al-note { margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: var(--sh-muted); }
+.al-note { flex: none; padding-top: 6px; border-top: 1px solid var(--sh-border); margin-top: 8px; }
+.sh-phone-panel .al-stack { padding: 10px 12px 11px; }
+
+/* ---- R4a · desktop full-bleed console (≥900px): the map is the page. The globe/radar fills the
+   band between two HUD columns; panels float over it with the translucent navy + corner-bracket
+   frame of Console.dc.html. No page scroll (the shell is one viewport tall, Layout.css). ---- */
+.sh-console {
+  --sh-col-l: 300px; --sh-col-r: 372px; --sh-gut: 16px; --sh-gap: 12px;
+  --sh-band-l: calc(var(--sh-gut) + var(--sh-col-l) + var(--sh-gap));
+  --sh-band-r: calc(var(--sh-gut) + var(--sh-col-r) + var(--sh-gap));
+  position: relative; height: 100%; min-height: 0; padding: 0; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 55%, #0b1a2a 0%, #060c14 55%, #03060a 100%);
+}
+@media (max-width: 1360px) { .sh-console { --sh-col-l: 272px; --sh-col-r: 330px; } }
+/* the faint 48px console grid behind everything */
+.sh-console::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(95, 212, 255, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(95, 212, 255, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.sh-console .sh-band { position: absolute; top: 0; bottom: 0; left: var(--sh-band-l); right: var(--sh-band-r); }
+.sh-console .sh-mapwrap, .sh-console .sh-mapinner { height: 100%; }
+.sh-console .sm-wrap { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.sh-console .hud-panel { background: rgba(8, 16, 26, 0.86); }
+
+.sh-console .sh-col { position: absolute; top: 14px; bottom: 14px; z-index: 5; display: flex; flex-direction: column; gap: var(--sh-gap); min-height: 0; }
+.sh-console .sh-col-left { left: var(--sh-gut); width: var(--sh-col-l); }
+.sh-console .sh-col-right { right: var(--sh-gut); width: var(--sh-col-r); }
+.sh-console .sh-col > .hud-brief, .sh-console .sh-col > .hud-sensor { flex: none; }
+.sh-console .sh-alertstack { flex: 0 1 auto; min-height: 0; }
+.sh-console .sh-rail {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #2a3446 transparent;
+  background: rgba(8, 16, 26, 0.9); border: 1px solid var(--sh-border); border-radius: var(--c-radius-md, 4px);
+}
+.sh-console .sh-rail .hud-feed { padding: 10px 12px; background: none; }
+.sh-console .sh-rail .hud-feed-label { background: #08111b; }
+.sh-console .sh-rail .hud-feed-list { max-height: none; overflow: visible; }
+.sh-console .sh-rail .sh-detail { max-height: none; border: 0; border-radius: 0; background: none; overflow: visible; }
+
+/* orientation line / tour bar: a slim strip at the top of the map band, never pushing it down */
+.sh-console .sh-topline { position: absolute; top: 12px; left: var(--sh-band-l); right: var(--sh-band-r); z-index: 6; display: flex; flex-direction: column; gap: 6px; }
+.sh-console .sh-orient { margin: 0; padding: 0 2px 0 12px; min-height: var(--c-tap-min, 44px); background: rgba(8, 16, 26, 0.86); border-color: var(--sh-border); }
+.sh-console .sh-orient-close { margin: 0; }
+.sh-console .sh-banner, .sh-console .sh-tourbar-global { margin: 0; }
+
+/* view bar: GLOBE | RADAR · Key · tour · About — bottom-left of the map band */
+.sh-console .sh-viewbar { position: absolute; bottom: 14px; left: var(--sh-band-l); z-index: 7; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.sh-console .sh-ctl {
+  min-height: var(--c-tap-min, 44px); background: rgba(8, 16, 26, 0.86); border-color: rgba(95, 212, 255, 0.25); border-radius: var(--c-radius-md, 4px);
+  font-family: var(--c-mono, monospace); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.sh-console .sh-ctl:focus-visible, .sh-console .sm-spin-ctl:focus-visible, .hud-brief-open:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); outline-offset: 2px; }
+.sh-console .sh-viewswitch { border-color: rgba(95, 212, 255, 0.25); border-radius: var(--c-radius-md, 4px); }
+.sh-console .sm-globe-foot { right: 14px; bottom: 14px; flex-direction: column; align-items: flex-end; gap: 6px; }
+.sh-console .sm-spin-ctl { background: rgba(8, 16, 26, 0.86); border-color: rgba(95, 212, 255, 0.25); border-radius: var(--c-radius-md, 4px); }
+.sh-console .sh-legend { left: 0; bottom: 72px; max-height: calc(100% - 150px); overflow-y: auto; background: rgba(6, 12, 20, 0.95); border-color: var(--c-hairline-strong, rgba(95, 212, 255, 0.3)); border-radius: var(--c-radius-md, 4px); }
+.sh-console .sh-legend-close { width: 44px; height: 44px; top: 2px; right: 2px; }
+.sh-console .sh-status-inline { position: absolute; top: 0; left: var(--sh-band-l); right: var(--sh-band-r); z-index: 6; }
+
+/* "About this map" drawer — the old below-the-fold content, over the right column */
+.sh-about {
+  position: absolute; top: 14px; bottom: 14px; right: var(--sh-gut, 16px); width: min(560px, calc(100% - 32px)); z-index: 20;
+  overflow-y: auto; padding: 14px 18px 18px; background: var(--c-panel-2, #0b1622);
+  border: 1px solid var(--c-hairline-strong, rgba(95, 212, 255, 0.3)); border-radius: var(--c-radius-md, 4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+.sh-about:focus { outline: none; }
+.sh-about:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); }
+.sh-about-close {
+  position: sticky; top: 0; float: right; width: 44px; height: 44px; margin: -6px -8px 0 0; z-index: 1;
+  background: var(--c-panel-2, #0b1622); border: 0; color: var(--sh-muted); font-size: 22px; line-height: 1; cursor: pointer;
+}
+.sh-about-close:hover { color: var(--sh-text); }
+.sh-fold.sh-fold-drawer { margin-top: 0; padding-top: 0; border-top: 0; gap: 22px; }
+.sh-fold-drawer .sh-fold-cols { grid-template-columns: 1fr; gap: 14px; }
+.sh-about-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 18px; padding-top: 8px; border-top: 1px solid var(--sh-border); }
+.sh-about-links a { display: inline-flex; align-items: center; min-height: var(--c-tap-min, 44px); color: var(--sh-muted); font-size: 12px; text-decoration: none; }
+.sh-about-links a:hover { color: var(--sh-text); text-decoration: underline; }
+.sh-idx-link { min-height: var(--c-tap-min, 44px); }
+.sh-console .sh-viewswitch .sh-seg-on, .sh-console .sh-viewswitch .sh-seg-on:hover { background: var(--c-accent, #5fd4ff); color: #06131c; font-weight: 600; }
+.sh-console .sc-foot a, .sh-console .sh-detail-foot a { display: inline-flex; align-items: center; min-height: var(--c-tap-min, 44px); }
+.sh-about-links a { min-width: var(--c-tap-min, 44px); justify-content: center; }

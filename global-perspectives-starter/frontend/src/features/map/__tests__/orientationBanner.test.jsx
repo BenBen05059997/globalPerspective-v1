@@ -11,29 +11,29 @@ describe('OrientationBanner', () => {
 
   it('shows the orientation line on first visit', () => {
     render(<OrientationBanner />);
-    expect(screen.getByText(/pins are exact places/i)).toBeInTheDocument();
+    expect(screen.getByText(/shaded countries for stories without an exact place/i)).toBeInTheDocument();
   });
 
   it('dismisses on click and remembers it in localStorage', () => {
     render(<OrientationBanner />);
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
-    expect(screen.queryByText(/pins are exact places/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/shaded countries for stories without an exact place/i)).not.toBeInTheDocument();
     expect(localStorage.getItem(KEY)).toBe('1');
   });
 
   it('does not render again once already dismissed', () => {
     localStorage.setItem(KEY, '1');
     render(<OrientationBanner />);
-    expect(screen.queryByText(/pins are exact places/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/shaded countries for stories without an exact place/i)).not.toBeInTheDocument();
   });
 
   it('still renders and dismisses correctly when localStorage throws', () => {
     const getSpy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
     const setSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
     render(<OrientationBanner />);
-    expect(screen.getByText(/pins are exact places/i)).toBeInTheDocument();
+    expect(screen.getByText(/shaded countries for stories without an exact place/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
-    expect(screen.queryByText(/pins are exact places/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/shaded countries for stories without an exact place/i)).not.toBeInTheDocument();
     getSpy.mockRestore();
     setSpy.mockRestore();
   });

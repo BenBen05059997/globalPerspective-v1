@@ -333,3 +333,84 @@
   }
   .gp-footer-links { flex-wrap: wrap; justify-content: center; gap: 10px; }
 }
+
+/* ── R4a · desktop /map full-bleed console shell ─────────────
+   Only when Layout.jsx sets `.gp-app-console` (path /map, ≥900px). The map is the page: the
+   shell is exactly one viewport tall and never scrolls; the nav becomes a thin dark/mono console
+   bar (Console.dc.html header) with the same five items + account, and hosts the map's one-line
+   status (#gp-console-status). `.gp-console` on the nav scopes the console tokens to it. */
+.gp-app-console {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #04070c;
+}
+.gp-app-console .gp-main { flex: 1 1 auto; min-height: 0; padding: 0; position: relative; }
+.gp-app-console .gp-main > .container { max-width: none; margin: 0; padding: 0; height: 100%; }
+
+.gp-nav-console {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 52px;
+  flex: none;
+  padding: 0 14px 0 20px;
+  background: rgba(4, 8, 14, 0.97);
+  border-bottom: 1px solid var(--c-hairline);
+  backdrop-filter: none;
+  color: var(--c-text-body);
+}
+.gp-nav-console .gp-brand { flex: none; }
+.gp-nav-console .gp-brand-link { color: var(--c-text-head); min-height: var(--c-tap-min); min-width: var(--c-tap-min); }
+.gp-nav-console .gp-logo {
+  width: 24px; height: 24px; border-radius: 5px; background: transparent;
+  border: 1px solid var(--c-accent); color: var(--c-accent);
+}
+.gp-nav-console .gp-name { font-size: 15px; }
+.gp-nav-console .gp-tm { color: var(--c-text-dim); }
+.gp-nav-console .gp-nav-links { flex: none; justify-content: flex-start; gap: 2px; }
+.gp-nav-console .gp-nav-link {
+  display: inline-flex; align-items: center; justify-content: center; min-height: var(--c-tap-min); min-width: var(--c-tap-min); padding: 0 10px;
+  font-family: var(--c-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  color: #8a99a5; /* ~6.8:1 on the bar */
+  border-radius: var(--c-radius-md);
+}
+.gp-nav-console .gp-nav-link:hover { background: rgba(95, 212, 255, 0.08); color: var(--c-text-head); }
+.gp-nav-console .gp-nav-link.active { color: var(--c-accent); background: rgba(95, 212, 255, 0.1); }
+.gp-nav-console .gp-nav-link:focus-visible,
+.gp-nav-console .gp-help:focus-visible,
+.gp-nav-console .gp-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 1px; }
+
+/* The status slot: one line, never wraps; truncates with an ellipsis (full text in its title and
+   still read in full by screen readers via role=status). */
+.gp-nav-status { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; }
+.gp-nav-status .hud-status-line {
+  margin: 0; min-height: 30px; padding: 4px 10px; min-width: 0; max-width: 100%;
+  box-sizing: border-box; font-size: 10.5px; letter-spacing: 0.05em;
+}
+.gp-nav-status .hud-status-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.gp-nav-console .gp-nav-right { flex: none; gap: 8px; }
+.gp-nav-console .gp-help {
+  background: transparent; border-color: var(--c-hairline); color: var(--c-text-muted);
+}
+.gp-nav-console .gp-help:hover { border-color: var(--c-hairline-strong); color: var(--c-text-head); }
+.gp-nav-console .gp-bell {
+  width: var(--c-tap-min); height: var(--c-tap-min); background: transparent;
+  border-color: var(--c-hairline); color: var(--c-text-muted);
+}
+.gp-nav-console .gp-bell:hover { background: rgba(95, 212, 255, 0.08); }
+.gp-nav-console .gp-btn {
+  background: transparent; color: var(--c-accent); border: 1px solid rgba(95, 212, 255, 0.4);
+  font-family: var(--c-mono); font-size: 12px; letter-spacing: 0.04em; border-radius: var(--c-radius-md);
+}
+.gp-nav-console .gp-btn:hover { background: rgba(95, 212, 255, 0.1); }
+.gp-nav-console .gp-btn-primary { background: var(--c-accent); color: #06131c; border-color: var(--c-accent); font-weight: 600; }
+.gp-nav-console .gp-btn-primary:hover { background: #8fe1ff; border-color: #8fe1ff; }
+.gp-nav-console .gp-credits-pill { background: transparent; border-color: var(--c-hairline); color: var(--c-text-body); }
+@media (max-width: 1380px) {
+  /* Room for the status line: the logo alone carries the brand on narrower desktops. */
+  .gp-nav-console .gp-name { display: none; }
+}

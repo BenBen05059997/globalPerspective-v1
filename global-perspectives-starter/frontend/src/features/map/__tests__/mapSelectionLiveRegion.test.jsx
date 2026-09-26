@@ -1,7 +1,7 @@
 // F2.12: the whole rail used to be aria-live="polite", so selecting a situation read out its
 // entire detail panel (~1,400 chars). Replaced with one hidden, one-line "Selected: <title>" /
 // "Selection cleared" live region, and the rail itself no longer carries aria-live.
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -42,7 +42,13 @@ async function renderHome() {
 }
 
 describe('map console — selection live region (F2.12)', () => {
-  beforeEach(() => { localStorage.clear(); vi.resetModules(); });
+  // R4a: fixture timestamps are fixed; pin "now" so the 30-day freshness rule never hides them.
+  beforeEach(() => {
+    localStorage.clear(); vi.resetModules();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-26T06:00:00Z'));
+  });
+  afterEach(() => { vi.useRealTimers(); });
 
   it('the rail no longer carries aria-live itself', async () => {
     await renderHome();

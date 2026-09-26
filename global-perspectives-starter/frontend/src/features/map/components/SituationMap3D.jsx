@@ -1,15 +1,18 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
 import { FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController, _GlobeViewport as GlobeViewport } from '@deck.gl/core';
-import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer, SolidPolygonLayer, PathLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
 import topoData from '@/features/map/assets/countries-110m.json';
 import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
-import { textureUrl, spinStep, spinControlState, globeZoomForHeight } from '@/features/map/lib/globeSpin.js';
+import { textureUrl, spinStep, spinControlState, globeZoomForHeight, globeFitFraction, GLOBE_LIMB_FACTOR } from '@/features/map/lib/globeSpin.js';
 import { CRISIS_RGB } from '@/features/map/lib/crisisHue.js';
 import { pulseSet } from '@/features/map/lib/pulse.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
+import {
+  tierSize, markerKind, situationFreshness, freshnessLook, statusGlyph, desaturateRgb,
+} from '@/features/map/lib/legend.js';
 
 // M3 · night-lights globe (operator's option B) — NASA Black Marble, taken from the MIT-licensed
 // three-globe package's examples. Loaded well after first paint (idle callback) so it never
@@ -28,10 +31,50 @@ export const AXIS_RGB = {
   humanitarian: [216, 158, 40],
 };
 const AXIS_RGB_FALLBACK = [154, 164, 178];
-// Severity = luminance + halo radius (NOT size alone): size spans ~1.55× so low pins stay clickable.
-const TIER_R = { low: 3.4, moderate: 4.2, elevated: 4.8, high: 5.3 };      // core dot radius (px)
-const TIER_HALO = { elevated: 15, high: 24 };                              // soft outer glow radius (px); low/moderate none
-const TIER_CORE_ALPHA = { low: 205, moderate: 235, elevated: 255, high: 255 };
+
+// R4a · the approved map tokens (lib/legend.js, Legend.dc.html) drawn with deck.gl:
+//   shape = kind (◆ GDACS alert = a diamond · news situation = a small dot in a soft, feathered
+//   halo · selected = HUD brackets), hue = crisis type, size steps + a double ring for HIGH only,
+//   brightness = freshness (live glows · plain · older desaturated · 30d+ not drawn), and the
+//   ▲●◆▼ badges as small glyph shapes. The ◆, badges and brackets are drawn as geometry on the
+//   sphere (sized in pixels from the current zoom), like the land and the country wash — deck.gl's
+//   IconLayer drew nothing on this GlobeView (checked in R4a: attributes and atlas were fine).
+const DEG = Math.PI / 180;
+// Every marker layer sits a little above the sphere: drawn exactly on it, flat marks z-fight with
+// the night texture / land mesh once the globe is zoomed in (half a ring or badge vanished). 30 km
+// is invisible at globe scale; the sphere still hides the far side.
+const MARK_LIFT_M = 30000;
+// Translucent halos/rings are flat discs on the tangent plane, which sits slightly OUTSIDE the
+// sphere at their edges — if they wrote depth they would hide the ◆ / badges drawn after them.
+const NO_DEPTH_WRITE = { depthWriteEnabled: false };
+/** Degrees of arc per screen pixel at the centre of the visible disc, for a globe zoom. */
+function degPerPx(zoom) {
+  return 360 / (GLOBE_LIMB_FACTOR * 512 * 2 ** zoom);
+}
+const lonScale = (lat) => Math.max(0.2, Math.cos(lat * DEG));
+/** A pixel-space polygon (points in px around 0,0; +y = north) placed at [lon, lat]. */
+function pxPolygon([lon, lat], pts, d, [dx, dy] = [0, 0]) {
+  const c = lonScale(lat);
+  return pts.map(([x, y]) => [lon + ((x + dx) * d) / c, lat + ((y + dy) * d), MARK_LIFT_M]);
+}
+const diamondPts = (k) => [[0, k], [k, 0], [0, -k], [-k, 0]];
+const GLYPH_PTS = {
+  escalating: [[0, 4.5], [4.5, -3.5], [-4.5, -3.5]],
+  cooling: [[-4.5, 3.5], [4.5, 3.5], [0, -4.5]],
+  steady: diamondPts(4.5),
+  new: Array.from({ length: 10 }, (_, i) => [3.8 * Math.cos((i / 10) * 2 * Math.PI), 3.8 * Math.sin((i / 10) * 2 * Math.PI)]),
+};
+/** Four L-shaped HUD bracket paths around a `b`-pixel box, placed at [lon, lat]. */
+function bracketPaths(pos, b, d) {
+  const l = Math.min(7, b * 0.6);
+  return [
+    [[-b, b - l], [-b, b], [-b + l, b]], [[b - l, b], [b, b], [b, b - l]],
+    [[b, -b + l], [b, -b], [b - l, -b]], [[-b + l, -b], [-b, -b], [-b, -b + l]],
+  ].map((pts) => pxPolygon(pos, pts, d));
+}
+const BADGE_RGB = [238, 245, 249];
+const EDGE_RGB = [4, 7, 12];
+const outerR = (m) => m.size.ringR || m.size.r;
 
 const landFeatures = topojson.feature(topoData, topoData.objects.countries).features;
 // ISO-3 → country geometry / centroid, for spread arcs + affected-country fill (slice 2b).
@@ -53,7 +96,9 @@ function iso3Feature(iso3) { const num = ISO3_TO_NUM[iso3]; return num ? NUM_TO_
 const GLOBE_VIEW_BASE = { longitude: 12, latitude: 18, pitch: 0, bearing: 0, minZoom: -0.5, maxZoom: 6 };
 // M6: the globe fills ~75–85% of the map panel's own height, computed from `height` — not a
 // fixed zoom that reads small on a tall panel and cramped on a short one.
-const globeViewFor = (height) => ({ ...GLOBE_VIEW_BASE, zoom: globeZoomForHeight(height) });
+// R4a: in the full-bleed console the globe sits in the band between the HUD columns, so a narrow
+// band shrinks it (globeFitFraction) rather than letting the columns crop it.
+const globeViewFor = (height, width) => ({ ...GLOBE_VIEW_BASE, zoom: globeZoomForHeight(height, globeFitFraction(width, height)) });
 // A callout must never render under the top-right control cluster (Walk-through / Globe·Radar /
 // Key), which sits at top:12 and runs to roughly y=54 — keep callouts clear of that band (M6).
 const CALLOUT_TOP_MARGIN = 58;
@@ -98,13 +143,13 @@ function placeCallout(px, py, W, H, topMargin = 8) {
 const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 
 /**
- * SituationMap3D — deck.gl dark world. Situations are glow DOTS: hue = axis,
- * luminance + halo = tier, white keyline exclusive to high, a slow breathing halo
- * exclusive to escalating (the only motion). An anchored callout shows the hero or the
- * current tour stop; hover → tooltip; click → onSelect(id).
+ * SituationMap3D — deck.gl night globe drawn with the approved map tokens (lib/legend.js): shape =
+ * kind, hue = crisis type, size + double ring = HIGH, brightness = freshness, ▲●◆▼ badges, HUD
+ * brackets for the selection. The only marker motion is the capped 24h pulse (lib/pulse.js). An
+ * anchored callout shows the current tour stop; hover → tooltip; click → onSelect(id).
  */
 export default function SituationMap3D({
-  situations = [], focusId, callout = null, tour = null, newIds = null, view = 'globe', onSelect, onOpenCallout, height = 560,
+  situations = [], focusId, callout = null, tour = null, newIds = null, view = 'globe', onSelect, onOpenCallout, height = 560, width = null,
   shading = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
 }) {
   // `view` is accepted for API back-compat with the single call site (SituationHome.jsx always
@@ -115,7 +160,9 @@ export default function SituationMap3D({
   // interacting — only clearing a selection re-applies it.
   const heightRef = useRef(height);
   heightRef.current = height;
-  const [viewState, setViewState] = useState(() => globeViewFor(height));
+  const widthRef = useRef(width);
+  widthRef.current = width;
+  const [viewState, setViewStateReact] = useState(() => globeViewFor(height, width));
   // F1.2 (map-console review R1): the spin/pulse loops used to call setState every animation
   // frame, which made deck.gl rebuild its layers 60x/sec (76 long tasks / 20s on weak GPUs). Both
   // loops now read/write this ref every frame and push the new view straight to the deck.gl
@@ -123,8 +170,19 @@ export default function SituationMap3D({
   // (the React state above) is still the source of truth for the initial paint, user drags/zooms
   // (deck.gl's own onViewStateChange, which fires at input rate, not 60fps) and fly-tos, and is
   // synced from it below so the ref never goes stale between renders.
+  // R4a: the ref is the single source of truth for the camera; `setViewState` keeps ref + React
+  // state together, and the DeckGL element always renders from the ref, so an unrelated
+  // re-render can never snap the globe back to a stale copy. deck.gl v9's React ref exposes the
+  // instance as `.deck` (the R1 loops called `.setProps` on the ref handle itself, which threw
+  // on the first frame and silently stopped both the spin and the pulse).
   const viewStateRef = useRef(viewState);
-  viewStateRef.current = viewState;
+  const setViewState = useCallback((updater) => {
+    const next = typeof updater === 'function' ? updater(viewStateRef.current) : updater;
+    if (next === viewStateRef.current) return;
+    viewStateRef.current = next;
+    setViewStateReact(next);
+  }, []);
+  const deckInstance = () => deckRef.current?.deck || null;
   const deckRef = useRef(null);
   const userMoved = useRef(false);
   const reduceMotion = useMemo(() => {
@@ -174,9 +232,26 @@ export default function SituationMap3D({
     return () => { cancelled = true; cic(handle); };
   }, []);
 
-  const active = useMemo(() => situations.filter((s) => s.state !== 'closed' && s.centroid), [situations]);
+  // Brightness = freshness: 30d+ situations are not drawn (SituationHome counts them instead).
+  const active = useMemo(
+    () => situations.filter((s) => s.state !== 'closed' && s.centroid && situationFreshness(s) !== 'hidden'),
+    [situations],
+  );
   const hue = (s) => AXIS_RGB[s.axis] || AXIS_RGB_FALLBACK;
-  const pos = (s) => [s.centroid.lon, s.centroid.lat];
+  const pos = (s) => [s.centroid.lon, s.centroid.lat, MARK_LIFT_M];
+  // One derived record per drawn situation, so every layer reads the same token decisions.
+  const marks = useMemo(() => active.map((s) => {
+    const fresh = situationFreshness(s);
+    const look = freshnessLook(fresh);
+    const base = AXIS_RGB[s.axis] || AXIS_RGB_FALLBACK;
+    return {
+      s, fresh, look, kind: markerKind(s), size: tierSize(s.tier), glyph: statusGlyph(s),
+      rgb: look.desaturate ? desaturateRgb(base) : base, position: [s.centroid.lon, s.centroid.lat, MARK_LIFT_M],
+    };
+  }), [active]);
+  // `newIds` (since-your-last-visit) stays a feed-only marker: the map draws only the approved
+  // ▲●◆▼ badges, never an extra undocumented ring.
+  void newIds;
   // reduceMotion kept for future globe-view motion; the map itself is now static (see below).
   void reduceMotion;
 
@@ -263,37 +338,44 @@ export default function SituationMap3D({
       }));
     } else if (userMoved.current) {
       setViewState((v) => ({
-        ...v, ...globeViewFor(heightRef.current),
+        ...v, ...globeViewFor(heightRef.current, widthRef.current),
         ...(reduceMotion ? {} : { transitionDuration: 1100, transitionInterpolator: new FlyToInterpolator() }),
       }));
     }
-  }, [focusCentroid, reduceMotion, stopSpin]);
+  }, [focusCentroid, reduceMotion, stopSpin, setViewState]);
+
+  // R4a: re-fit the globe when the console band is measured or resized — only while the visitor
+  // hasn't dragged/zoomed it and nothing is focused, so it never overrides a zoom they chose.
+  useEffect(() => {
+    if (userMoved.current || focusCentroid) return;
+    const zoom = globeZoomForHeight(height, globeFitFraction(width, height));
+    setViewState((v) => (Math.abs((v.zoom ?? 0) - zoom) < 0.01 ? v : { ...v, zoom }));
+  }, [height, width]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Idle spin: only while on, and not mid-drag. Strips any leftover transitionDuration/
   // interpolator each frame so the drift itself is never animated/eased.
-  // F1.2: writes go straight to the ref + the deck.gl instance (deckRef.current.setProps) every
-  // frame; the React `viewState` used for the callout's screen-space placement (place, below) is
-  // only re-synced at ~24fps via setViewState, so drag/selection code paths (which still read/set
-  // the React state directly) never see it lag by more than a couple of frames.
+  // R4a: the camera advances in the ref every frame and is committed through React at ~30fps.
+  // (R1 pushed it straight into the deck instance instead, but deck.gl 9.4's React wrapper
+  // re-applies its last React props on its own re-renders, so a direct viewState write is
+  // reverted within a frame.) All layers are memoised, so a commit only re-sends the camera —
+  // no layer is rebuilt per frame.
   useEffect(() => {
     if (!spinOn || reduceMotion) return undefined;
     let raf; let last = null; let lastSync = 0;
-    const SYNC_INTERVAL_MS = 1000 / 24;
+    const SYNC_INTERVAL_MS = 1000 / 30;
     const tick = (t) => {
       if (last != null && !userMoved.current && !animationPaused()) {
         const dt = t - last;
         const { transitionDuration, transitionInterpolator, ...rest } = viewStateRef.current; // eslint-disable-line no-unused-vars
-        const next = { ...rest, longitude: spinStep(rest.longitude, dt, SPIN_DEG_PER_SEC) };
-        viewStateRef.current = next;
-        deckRef.current?.setProps({ viewState: next });
-        if (t - lastSync >= SYNC_INTERVAL_MS) { lastSync = t; setViewState(next); }
+        viewStateRef.current = { ...rest, longitude: spinStep(rest.longitude, dt, SPIN_DEG_PER_SEC) };
+        if (t - lastSync >= SYNC_INTERVAL_MS) { lastSync = t; setViewStateReact(viewStateRef.current); }
       }
       last = t;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [spinOn, reduceMotion, animationPaused]);
+  }, [spinOn, reduceMotion, animationPaused]);  
 
   // Static (non-animated) layers — memoised so the pickable `core` layer keeps a stable instance
   // across breathing-halo frames (a fresh instance each frame was eating clicks).
@@ -301,7 +383,7 @@ export default function SituationMap3D({
   // it — fall back to a faint fill + dimmer border so the texture (and the crisis markers) read.
   const landDimmed = textureReady;
   // Bottom-most layer, globe only, added only once the texture has actually loaded (kept a
-  // separate memo from baseLayers so its presence never shifts the indices used below).
+  // separate memo so its presence never changes the other layers' instances).
   const earthLayer = useMemo(() => (
     textureReady
       ? new BitmapLayer({
@@ -310,50 +392,89 @@ export default function SituationMap3D({
       })
       : null
   ), [textureReady]);
-  const baseLayers = useMemo(() => [
-    new GeoJsonLayer({
-      id: 'land', data: landFeatures, stroked: true, filled: true, extruded: false,
-      getFillColor: landDimmed ? [24, 31, 44, 30] : [24, 31, 44, 255],
-      getLineColor: landDimmed ? [90, 105, 130, 130] : [40, 50, 68, 255],
-      lineWidthMinPixels: 0.5,
-    }),
-    new ScatterplotLayer({
-      id: 'halo', data: active.filter((s) => TIER_HALO[s.tier]),
-      getPosition: pos, radiusUnits: 'pixels', stroked: false, pickable: false,
-      getRadius: (s) => TIER_HALO[s.tier], getFillColor: (s) => [...hue(s), 34],
-    }),
-    // Escalating — a distinct STATIC double-ring (bigger, brighter, plus a hollow outer ring).
-    // Static (not breathing) so the animation loop can never re-render mid-click and eat a tap.
-    new ScatterplotLayer({
-      id: 'escalating', data: active.filter((s) => s.escalating),
-      getPosition: pos, radiusUnits: 'pixels', pickable: false,
-      getRadius: (s) => (TIER_HALO[s.tier] || 14) * 1.15, getFillColor: (s) => [...hue(s), 60],
-      stroked: true, lineWidthUnits: 'pixels', getLineWidth: 1.2, getLineColor: (s) => [...hue(s), 150],
-    }),
-    new ScatterplotLayer({
-      id: 'core', data: active, pickable: true, radiusUnits: 'pixels',
-      getPosition: pos,
-      getRadius: (s) => (TIER_R[s.tier] || 3.4) * (s.id === focusId ? 1.25 : 1),
-      // When a situation is focused, dim every other pin ~40% so the selection reads.
-      getFillColor: (s) => {
-        const a = TIER_CORE_ALPHA[s.tier] || 205;
-        return [...hue(s), focusId && s.id !== focusId ? Math.round(a * 0.4) : a];
-      },
-      stroked: true, lineWidthUnits: 'pixels',
-      getLineColor: (s) => (s.tier === 'high' || s.id === focusId ? [255, 255, 255, focusId && s.id !== focusId ? 90 : 235] : [...hue(s), 0]),
-      getLineWidth: (s) => (s.id === focusId ? 2 : (s.tier === 'high' ? 1.25 : 0)),
-      onClick: (info) => info.object && onSelect && onSelect(info.object.id),
-      updateTriggers: { getRadius: [focusId], getFillColor: [focusId], getLineColor: [focusId], getLineWidth: [focusId] },
-    }),
-    // "New since your last visit" — a hollow white ring around new pins (design 3f).
-    new ScatterplotLayer({
-      id: 'new-marker', data: newIds ? active.filter((s) => newIds.has(s.id)) : [],
-      getPosition: pos, radiusUnits: 'pixels', pickable: false,
-      getRadius: (s) => (TIER_R[s.tier] || 3.4) + 4, getFillColor: [0, 0, 0, 0],
-      stroked: true, getLineColor: [255, 255, 255, 200], getLineWidth: 1, lineWidthUnits: 'pixels',
-      updateTriggers: { getRadius: [newIds] },
-    }),
-  ], [active, focusId, newIds, landDimmed]); // eslint-disable-line react-hooks/exhaustive-deps
+  const landLayer = useMemo(() => new GeoJsonLayer({
+    id: 'land', data: landFeatures, stroked: true, filled: true, extruded: false,
+    getFillColor: landDimmed ? [24, 31, 44, 30] : [24, 31, 44, 255],
+    getLineColor: landDimmed ? [90, 105, 130, 130] : [40, 50, 68, 255],
+    lineWidthMinPixels: 0.5,
+  }), [landDimmed]);
+
+  // Marker layers (R4a tokens), all static — memoised so the pickable layers keep stable
+  // instances across pulse frames (a fresh instance each frame used to eat clicks).
+  // Geometry for the ◆ / badges / brackets is sized from the zoom, quantised so a drag or the
+  // spin (which never changes zoom) never rebuilds it; only zooming / a fly-to does.
+  const zoomQ = Math.round((viewState.zoom ?? 0) * 20) / 20;
+  const markerLayers = useMemo(() => {
+    const d = degPerPx(zoomQ);
+    const dimA = (m, a) => (focusId && m.s.id !== focusId ? Math.round(a * 0.4) : a);
+    const situationsOnly = marks.filter((m) => m.kind === 'situation');
+    const alerts = marks.filter((m) => m.kind === 'alert');
+    const trig = { getFillColor: [focusId], getColor: [focusId] };
+    const onClick = (info) => info.object && onSelect && onSelect(info.object.s.id);
+    const surface = (id, data, getPolygon, getFillColor, extra = {}) => new SolidPolygonLayer({
+      id, data, getPolygon, getFillColor, filled: true, extruded: false, updateTriggers: { getFillColor: [focusId] }, ...extra,
+    });
+    const glyphed = marks.filter((m) => m.glyph);
+    const selected = marks.filter((m) => m.s.id === focusId);
+    return {
+      // Brightness = freshness: only LIVE (<24h) items glow.
+      glow: new ScatterplotLayer({
+        id: 'fresh-glow', parameters: NO_DEPTH_WRITE, data: marks.filter((m) => m.look.glow), getPosition: (m) => m.position,
+        radiusUnits: 'pixels', stroked: false, pickable: false,
+        getRadius: (m) => outerR(m) + 9, getFillColor: (m) => [...m.rgb, dimA(m, 70)], updateTriggers: trig,
+      }),
+      // Shape: a news situation's soft, feathered halo = an approximate place (two falloff rings).
+      softOuter: new ScatterplotLayer({
+        id: 'soft-outer', parameters: NO_DEPTH_WRITE, data: situationsOnly, getPosition: (m) => m.position,
+        radiusUnits: 'pixels', stroked: false, pickable: false,
+        getRadius: (m) => m.size.r + 12, getFillColor: (m) => [...m.rgb, dimA(m, m.look.desaturate ? 16 : 28)], updateTriggers: trig,
+      }),
+      softInner: new ScatterplotLayer({
+        id: 'soft-inner', parameters: NO_DEPTH_WRITE, data: situationsOnly, getPosition: (m) => m.position,
+        radiusUnits: 'pixels', stroked: false, pickable: false,
+        getRadius: (m) => m.size.r + 5, getFillColor: (m) => [...m.rgb, dimA(m, m.look.desaturate ? 34 : 64)], updateTriggers: trig,
+      }),
+      // Size: the double ring is reserved for HIGH.
+      highRing: new ScatterplotLayer({
+        id: 'high-ring', parameters: NO_DEPTH_WRITE, data: marks.filter((m) => m.size.doubleRing), getPosition: (m) => m.position,
+        radiusUnits: 'pixels', filled: false, stroked: true, pickable: false, lineWidthUnits: 'pixels',
+        getRadius: (m) => m.size.ringR, getLineWidth: 1.5, getLineColor: (m) => [...m.rgb, dimA(m, 230)],
+        updateTriggers: { getLineColor: [focusId] },
+      }),
+      dots: new ScatterplotLayer({
+        id: 'core', data: situationsOnly, pickable: true, radiusUnits: 'pixels', getPosition: (m) => m.position,
+        getRadius: (m) => Math.max(3, m.size.r * 0.6),
+        getFillColor: (m) => [...m.rgb, dimA(m, m.look.desaturate ? 215 : 255)],
+        stroked: true, lineWidthUnits: 'pixels', getLineWidth: 1, getLineColor: [...EDGE_RGB, 255],
+        onClick, updateTriggers: trig,
+      }),
+      // ◆ official alert: a dark edge diamond under the hue diamond (MIL-STD alert frame).
+      alertEdge: surface('alert-edge', alerts, (m) => pxPolygon(m.position, diamondPts(m.size.r * 1.2 + 1.5), d),
+        (m) => [...EDGE_RGB, dimA(m, 255)], { parameters: NO_DEPTH_WRITE }),
+      alertCore: surface('alert-core', alerts, (m) => pxPolygon(m.position, diamondPts(m.size.r * 1.2), d),
+        (m) => [...m.rgb, dimA(m, m.look.desaturate ? 215 : 255)], { pickable: true, onClick }),
+      // Badges: ▲ escalating · ● new · ◆ steady · ▼ cooling — glyph shapes up-right of the mark,
+      // one neutral colour (hue stays crisis type only), with a dark edge so they read on land.
+      badgeEdge: surface('badge-edge', glyphed, (m) => pxPolygon(m.position, GLYPH_PTS[m.glyph.key].map(([x, y]) => [x * 1.45, y * 1.45]), d, [outerR(m) + 6, outerR(m) + 6]),
+        (m) => [...EDGE_RGB, dimA(m, 230)], { parameters: NO_DEPTH_WRITE }),
+      badges: surface('badges', glyphed, (m) => pxPolygon(m.position, GLYPH_PTS[m.glyph.key], d, [outerR(m) + 6, outerR(m) + 6]),
+        (m) => [...BADGE_RGB, dimA(m, 255)]),
+      // Selected = HUD brackets (L4), replacing the old white keyline.
+      brackets: new PathLayer({
+        id: 'brackets', data: selected.flatMap((m) => bracketPaths(m.position, outerR(m) + 9, d)), getPath: (p) => p,
+        getColor: [...BADGE_RGB, 255], getWidth: 2, widthUnits: 'pixels', pickable: false,
+      }),
+    };
+  }, [marks, focusId, zoomQ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A selected STORY (no exact place) gets the same HUD brackets, at its shaded country's centre.
+  const storyBrackets = useMemo(() => {
+    const c = storyFocusIso3 ? iso3Centroid(storyFocusIso3) : null;
+    return c ? new PathLayer({
+      id: 'story-brackets', data: bracketPaths(c, 16, degPerPx(zoomQ)), getPath: (p) => p,
+      getColor: [...BADGE_RGB, 255], getWidth: 2, widthUnits: 'pixels', pickable: false,
+    }) : null;
+  }, [storyFocusIso3, zoomQ]);
 
   // Motion budget (M6, STORY_WEB_RETHINK_PLAN.md §8): only 3 things on the whole page may move —
   // the radar sweep, this 2.4s breathing pulse (NEW/▲ situations from the last 24h, capped at 8,
@@ -364,8 +485,8 @@ export default function SituationMap3D({
   const pulseData = useMemo(() => active.filter((s) => pulseIds.has(s.id)), [active, pulseIds]);
   const buildPulseLayer = useCallback((t) => (!reduceMotion && pulseData.length)
     ? new ScatterplotLayer({
-      id: 'pulse', data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
-      getRadius: (s) => (TIER_HALO[s.tier] || 14) + t * 20,
+      id: 'pulse', parameters: NO_DEPTH_WRITE, data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
+      getRadius: (s) => (tierSize(s.tier).ringR || tierSize(s.tier).r) + 6 + t * 18,
       getFillColor: (s) => [...hue(s), Math.round(150 * (1 - t))],
     })
     : null, [reduceMotion, pulseData]);
@@ -374,14 +495,15 @@ export default function SituationMap3D({
   // render.
   const pulseStillLayer = useMemo(() => (reduceMotion && pulseData.length)
     ? new ScatterplotLayer({
-      id: 'pulse-still', data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
-      getRadius: (s) => (TIER_HALO[s.tier] || 14) + 9, filled: false, stroked: true,
+      id: 'pulse-still', parameters: NO_DEPTH_WRITE, data: pulseData, getPosition: pos, radiusUnits: 'pixels', pickable: false,
+      getRadius: (s) => (tierSize(s.tier).ringR || tierSize(s.tier).r) + 7, filled: false, stroked: true,
       getLineColor: (s) => [...hue(s), 190], getLineWidth: 1.5, lineWidthUnits: 'pixels',
     })
     : null, [reduceMotion, pulseData]);
   // Static (t=0) frame for the initial/non-animated JSX render below — the rAF loop (further
   // down) takes over via deckRef.current.setProps on the very next frame.
-  const pulseLayer = buildPulseLayer(0);
+  const pulsePhaseRef = useRef(0);
+  const pulseLayer = buildPulseLayer(pulsePhaseRef.current);
 
   // Selection-state layers (only when a situation is focused): affected-country tint, spread arcs,
   // hollow destination rings. Drawn under the pins (fill/arcs) and beside them (dest rings).
@@ -405,19 +527,20 @@ export default function SituationMap3D({
     return out;
   }, [selectionGeo]);
 
-  // Order: earth-night (globe only, bottom-most), land, affected-fill, arcs, halo, escalating,
-  // pulse (NEW/▲ within 24h, capped — the only animated marker layer), new-marker,
-  // core (top=picking), dest-rings.
+  // Order (bottom → top): earth-night, land, story country wash, selection fill/arcs, freshness
+  // glow, soft halos, HIGH ring, pulse (the only animated marker layer, capped), news dots,
+  // alert diamonds, badges, selected brackets, destination rings.
   const composeLayers = useCallback((pulseAlpha) => [
     ...(earthLayer ? [earthLayer] : []),
-    baseLayers[0],
+    landLayer,
     ...(storyShadeLayer ? [storyShadeLayer] : []),
     ...selectionLayers.filter((l) => l.id !== 'dest-rings'),
-    baseLayers[1], baseLayers[2],
+    markerLayers.glow, markerLayers.softOuter, markerLayers.softInner, markerLayers.highRing,
     ...(pulseAlpha ? [pulseAlpha] : []), ...(pulseStillLayer ? [pulseStillLayer] : []),
-    baseLayers[4], baseLayers[3],
+    markerLayers.dots, markerLayers.alertEdge, markerLayers.alertCore, markerLayers.badgeEdge, markerLayers.badges, markerLayers.brackets,
+    ...(storyBrackets ? [storyBrackets] : []),
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),
-  ], [earthLayer, baseLayers, storyShadeLayer, selectionLayers, pulseStillLayer]);
+  ], [earthLayer, landLayer, storyShadeLayer, selectionLayers, markerLayers, storyBrackets, pulseStillLayer]);
   const layers = composeLayers(pulseLayer);
 
   // F1.2: the 2.4s breathing pulse used to be driven by a `pulseT` React state updated every
@@ -432,19 +555,24 @@ export default function SituationMap3D({
       if (start == null) start = t;
       if (!animationPaused()) {
         const phase = ((t - start) % PULSE_MS) / PULSE_MS;
-        deckRef.current?.setProps({ layers: composeLayers(buildPulseLayer(phase)) });
+        pulsePhaseRef.current = phase; // a React render in between keeps the same phase
+        deckInstance()?.setProps({ layers: composeLayers(buildPulseLayer(phase)) });
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [reduceMotion, pulseData.length, composeLayers, buildPulseLayer, animationPaused]);
+  }, [reduceMotion, pulseData.length, composeLayers, buildPulseLayer, animationPaused]);  
 
   const getTooltip = useCallback(({ object }) => {
-    if (!object || !object.verb_label) return null;
-    const tierW = TIER_W[object.tier] || object.tier;
-    const stW = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoing', cooling: 'Easing' }[object.state] || object.state;
-    return { html: `<b>${object.verb_label}</b><br/>${tierW} · ${stW}`, style: { background: '#0d1017', color: '#dfe6f2', fontSize: '12px', borderRadius: '7px', padding: '6px 9px', border: '1px solid #232c3a' } };
+    const sit = object?.s;
+    if (!sit || !sit.verb_label) return null;
+    const tierW = TIER_W[sit.tier] || sit.tier;
+    const level = gdacsLevelBadge(sit);
+    const glyph = statusGlyph(sit);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const bits = [tierW, level, glyph ? `${glyph.glyph} ${glyph.label}` : null].filter(Boolean).map(esc).join(' · ');
+    return { html: `<b>${esc(sit.verb_label)}</b><br/>${bits}`, style: { background: '#0d1017', color: '#dfe6f2', fontSize: '12px', borderRadius: '7px', padding: '6px 9px', border: '1px solid #232c3a' } };
   }, []);
 
   // Project the callout situation's centroid to screen space and place the card. On the globe,
@@ -452,23 +580,23 @@ export default function SituationMap3D({
   const place = useMemo(() => {
     if (!callout?.centroid || !dims.width) return null;
     try {
-      if (!onNearSide(callout.centroid.lon, callout.centroid.lat, viewState.longitude, viewState.latitude)) return null;
-      const vp = new GlobeViewport({ ...viewState, width: dims.width, height: dims.height });
+      const vs = viewStateRef.current;
+      if (!onNearSide(callout.centroid.lon, callout.centroid.lat, vs.longitude, vs.latitude)) return null;
+      const vp = new GlobeViewport({ ...vs, width: dims.width, height: dims.height });
       const [x, y] = vp.project([callout.centroid.lon, callout.centroid.lat]);
       if (x < -40 || y < -40 || x > dims.width + 40 || y > dims.height + 40) return null;
       return { px: x, py: y, ...placeCallout(x, y, dims.width, dims.height, CALLOUT_TOP_MARGIN) };
     } catch { return null; }
-  }, [callout, viewState, dims]);
+  }, [callout, viewState, dims]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="sm-wrap" style={{ height }} ref={wrapRef}>
       <DeckGL
         ref={deckRef}
         views={new GlobeView()}
-        viewState={viewState}
+        viewState={viewStateRef.current}
         onViewStateChange={(e) => {
           if (e.interactionState?.isDragging || e.interactionState?.isZooming) { userMoved.current = true; stopSpin(); }
-          viewStateRef.current = e.viewState;
           setViewState(e.viewState);
         }}
         controller={{ type: GlobeController }}

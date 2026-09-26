@@ -33,7 +33,7 @@ export default function HudStatusLine({ paused, storiesAsOf, gdacsFresh }) {
   return (
     <div className="hud-status-line" role="status">
       <span className="hud-status-dot" aria-hidden="true">●</span>
-      <span className="hud-status-text">{parts.join(' · ')}</span>
+      <span className="hud-status-text" title={parts.join(' · ')}>{parts.join(' · ')}</span>
     </div>
   );
 }

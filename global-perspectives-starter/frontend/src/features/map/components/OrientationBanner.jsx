@@ -28,8 +28,9 @@ export default function OrientationBanner() {
   return (
     <div className="sh-orient" role="note">
       <span className="sh-orient-text">
-        The map shows world events where they happen: pins are exact places, shaded countries are
-        stories without an exact place. {canHover() ? 'Hover anything for a preview.' : 'Tap anything to open it.'}
+        The map shows world events where they happen: ◆ official disaster alerts, soft dots for
+        situations at an approximate place, shaded countries for stories without an exact place.
+        {' '}{canHover() ? 'Hover anything for a preview; Key explains the rest.' : 'Tap anything to open it; Key explains the rest.'}
       </span>
       <button className="sh-orient-close" onClick={dismiss} aria-label="Dismiss this note">×</button>
     </div>

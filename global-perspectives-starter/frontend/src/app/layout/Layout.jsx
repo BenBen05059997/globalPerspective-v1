@@ -107,17 +107,24 @@ function Layout({ children }) {
     { to: '/track-record', label: 'Track record', short: 'Record', icon: IconRecord, title: 'How our forecasts are logged and checked as they come due.' },
   ];
 
+  // R4a: desktop /map is a full-bleed console — the same five menu items + account, restyled as a
+  // thin dark/mono console bar (`.gp-console` scopes the console tokens to it), with an empty
+  // slot (#gp-console-status) the map fills with its one-line honesty status. No footer there:
+  // the map is the whole page (its "About this map" drawer carries the footer links instead).
+  // Every other page keeps the current light shell.
+  const consoleShell = location.pathname === '/map' && !isPhone;
+
   const isActive = (to, exact) => {
     if (exact) return location.pathname === to;
     return location.pathname === to || location.pathname.startsWith(to + '/');
   };
 
   return (
-    <div className={`gp-app${isPhone ? ' gp-app-tabbar' : ''}`}>
+    <div className={`gp-app${isPhone ? ' gp-app-tabbar' : ''}${consoleShell ? ' gp-app-console' : ''}`}>
       <LoadingBar />
       <AIToast />
 
-      <nav className="gp-nav">
+      <nav className={`gp-nav${consoleShell ? ' gp-nav-console gp-console' : ''}`}>
         <div className="gp-brand" data-tour="nav-brand">
           <Link to="/" className="gp-brand-link">
             <span className="gp-logo">G</span>
@@ -140,6 +147,8 @@ function Layout({ children }) {
             </Link>
           ))}
         </div>
+
+        {consoleShell ? <div id="gp-console-status" className="gp-nav-status" /> : null}
 
         <div className="gp-nav-right">
           <button
@@ -199,6 +208,7 @@ function Layout({ children }) {
         </div>
       </main>
 
+      {consoleShell ? null : (
       <footer className="gp-footer">
         <span>Global Perspectives™ — AI news intelligence</span>
         <div className="gp-footer-links">
@@ -211,6 +221,7 @@ function Layout({ children }) {
         </div>
         <span className="gp-footer-ver" title="Deployed build">{BUILD_LABEL}</span>
       </footer>
+      )}
 
       {/* P1 phone tab bar (A2): the five main-nav items as a fixed bottom bar under 900px,
           replacing the old hamburger dropdown (removed above). Console-dark on every page — the

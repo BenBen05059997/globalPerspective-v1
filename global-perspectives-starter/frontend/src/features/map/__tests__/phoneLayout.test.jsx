@@ -1,7 +1,7 @@
 // M7 phone pattern (P1): under 900px, /map shows one tab switch — MAP (radar, default) · LIST ·
 // ALERTS — instead of the desktop map+rail grid. Selecting a situation from LIST switches to MAP
 // and opens the detail as a bottom sheet at the half stop.
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -50,7 +50,13 @@ async function renderHome() {
 }
 
 describe('map console — phone layout (M7)', () => {
-  beforeEach(() => { localStorage.clear(); vi.resetModules(); });
+  // R4a: fixture timestamps are fixed; pin "now" so the 30-day freshness rule never hides them.
+  beforeEach(() => {
+    localStorage.clear(); vi.resetModules();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-26T06:00:00Z'));
+  });
+  afterEach(() => { vi.useRealTimers(); });
 
   it('opens on the MAP tab by default, with a 3-item tablist', async () => {
     await renderHome();

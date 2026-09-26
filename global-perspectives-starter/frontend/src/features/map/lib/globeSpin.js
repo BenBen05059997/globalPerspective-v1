@@ -68,3 +68,22 @@ export function globeZoomForHeight(height, fraction = 0.8) {
   const zoom = Math.log2((diameter * Math.PI) / GLOBE_TILE_SIZE);
   return Number.isFinite(zoom) ? zoom : GLOBE_DEFAULT_ZOOM;
 }
+
+// deck.gl's GlobeView looks at the sphere in perspective, so its visible disc (the limb) is
+// smaller than the nominal `TILE_SIZE * 2^zoom / π` diameter above. Measured on the console
+// (R4a, Playwright pixel scan at 1440×900 and 1280×720): visible ≈ 0.85 × nominal.
+export const GLOBE_LIMB_FACTOR = 0.85;
+
+/**
+ * globeFitFraction(width, height, visible) — R4a full-bleed console: the NOMINAL fraction to pass
+ * to globeZoomForHeight so the globe's VISIBLE disc is `visible` of the map height (default 0.78),
+ * shrunk only when the band between the HUD columns is narrower than that (visible disc ≤ 92% of
+ * the band's width, so the columns never crop it). Missing/invalid sizes keep the default.
+ */
+export function globeFitFraction(width, height, visible = 0.78) {
+  let v = visible;
+  if (Number.isFinite(height) && height > 0 && Number.isFinite(width) && width > 0) {
+    v = Math.min(visible, (0.92 * width) / height);
+  }
+  return v / GLOBE_LIMB_FACTOR;
+}

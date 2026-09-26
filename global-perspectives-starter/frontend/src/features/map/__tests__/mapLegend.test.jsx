@@ -1,7 +1,7 @@
 // M6 · L2: the "Key" legend is a compact, collapsed-by-default toggle (aria-expanded), remembered
 // per viewer in localStorage — it used to be an always-open block covering the map's bottom-left
 // corner. Must also survive a throwing localStorage (private window / blocked storage).
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -42,7 +42,13 @@ async function renderHome() {
 }
 
 describe('map console — Key legend (M6, L2)', () => {
-  beforeEach(() => { localStorage.clear(); vi.resetModules(); });
+  // R4a: fixture timestamps are fixed; pin "now" so the 30-day freshness rule never hides them.
+  beforeEach(() => {
+    localStorage.clear(); vi.resetModules();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-26T06:00:00Z'));
+  });
+  afterEach(() => { vi.useRealTimers(); });
 
   it('is collapsed by default, with aria-expanded=false on the toggle', async () => {
     await renderHome();

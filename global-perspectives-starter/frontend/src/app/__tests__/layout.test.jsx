@@ -152,3 +152,32 @@ describe('Layout — site-wide status line', () => {
     expect(document.querySelector('.gp-strip')).toBeNull();
   });
 });
+
+describe('Layout — R4a desktop /map console shell', () => {
+  it('on desktop /map: dark console bar with the same five items, a status slot, no footer', async () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    isPhoneMock.mockReturnValue(false);
+    renderLayout('/map');
+    const nav = document.querySelector('.gp-nav');
+    expect(nav.classList.contains('gp-nav-console')).toBe(true);
+    expect(nav.classList.contains('gp-console')).toBe(true);
+    expect(document.querySelector('.gp-app').classList.contains('gp-app-console')).toBe(true);
+    const hrefs = [...document.querySelectorAll('.gp-nav-links a')].map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(['/map', '/weekly', '/daily', '/analyze', '/track-record']);
+    expect(document.querySelector('#gp-console-status')).toBeTruthy();
+    expect(document.querySelector('.gp-footer')).toBeNull();
+  });
+
+  it('keeps the current shell on every other page and on the phone /map', () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    isPhoneMock.mockReturnValue(false);
+    const { unmount } = renderLayout('/weekly');
+    expect(document.querySelector('.gp-nav-console')).toBeNull();
+    expect(document.querySelector('.gp-footer')).toBeTruthy();
+    unmount();
+    isPhoneMock.mockReturnValue(true);
+    renderLayout('/map');
+    expect(document.querySelector('.gp-nav-console')).toBeNull();
+    expect(document.querySelector('#gp-console-status')).toBeNull();
+  });
+});

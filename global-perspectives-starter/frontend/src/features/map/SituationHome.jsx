@@ -1,4 +1,5 @@
 import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
@@ -25,6 +26,12 @@ import { peekData } from '@/shared/lib/peekData.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import StoryCard from '@/features/map/components/StoryCard.jsx';
 import OrientationBanner from '@/features/map/components/OrientationBanner.jsx';
+import AlertStack from '@/features/map/components/AlertStack.jsx';
+import MapLegend from '@/features/map/components/MapLegend.jsx';
+import MapAbout from '@/features/map/components/MapAbout.jsx';
+import { alertStackItems, alertEmptyText, alertStackNote } from '@/features/map/lib/alertStack.js';
+import { markerKind, statusGlyph, situationFreshness } from '@/features/map/lib/legend.js';
+import { threadPath } from '@/shared/lib/threadPath';
 import '@/features/map/SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
@@ -42,7 +49,6 @@ const STATE_LABEL = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoi
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };
-const TIER_HINT = { high: 'read this first', elevated: 'worth watching today', moderate: 'developing', low: 'on the record' };
 const TOUR_MAX = 6;
 const GDACS_FRESH_MS = 2 * 60 * 60 * 1000;
 
@@ -192,7 +198,13 @@ export default function SituationHome() {
     }, { replace: true });
   }, [setParams]);
 
-  const open = useMemo(() => situations.filter((s) => s.state !== 'closed' && s.centroid), [situations]);
+  // R4a: brightness = freshness — a situation not updated in 30+ days is hidden from the map and
+  // every list that mirrors it, and counted instead (alertStack.hiddenCount), never dropped silently.
+  const open = useMemo(
+    () => situations.filter((s) => s.state !== 'closed' && s.centroid && situationFreshness(s) !== 'hidden'),
+    [situations],
+  );
+  const alertStack = useMemo(() => alertStackItems(situations), [situations]);
   const ranked = useMemo(() => {
     return [...open].sort((a, b) => {
       const t = (TIER_WEIGHT[b.tier] || 0) - (TIER_WEIGHT[a.tier] || 0);
@@ -287,12 +299,7 @@ export default function SituationHome() {
   // F4 (review R2): "the map is quiet" used to show even while GDACS is live and only the news
   // layer is paused — say precisely what's true instead (no disaster alerts open, news paused
   // since a computed date) rather than the blanket "quiet" claim.
-  const emptyLede = useMemo(() => {
-    if (!paused) return null;
-    return paused.beyondLookback
-      ? `No disaster alerts open · news situations paused — ${paused.text}`
-      : `No disaster alerts open · news situations paused since ${paused.label}`;
-  }, [paused]);
+  const emptyLede = useMemo(() => (paused ? alertEmptyText(paused) : null), [paused]);
   const ledeBase = useMemo(() => buildLede(open, hero, emptyLede), [open, hero, emptyLede]);
   const lede = newCount && lastSeen ? `${ledeBase} · ${newCount} new since ${fmtSince(lastSeen)}` : ledeBase;
 
@@ -357,7 +364,8 @@ export default function SituationHome() {
 
   // What the map focuses (fly + highlight) and what card it shows.
   const focusId = focus || tourStop?.id || null;
-  const callout = focus ? null : (tourStop || hero);
+  // R4a: the lead situation now lives in the brief panel, so the map's anchored callout only
+  // shows the current guided-tour stop (see consoleCallout below).
   const tourProps = tourOn ? { index: Math.min(tourIdx, tourN - 1), total: tourN, onPrev: tourPrev, onNext: tourNext, onStop: stopTour } : null;
 
   // M4: the console has two modes, GLOBE and RADAR — the old deck.gl "flat" mode is gone (radar,
@@ -416,15 +424,52 @@ export default function SituationHome() {
   // switch at `<= 900` while useIsPhone and the CSS switched at `< 900` (i.e. `max-width: 900px`),
   // so at exactly 900px this panel sized itself for phone while the phone tab bar/CSS still
   // thought it was desktop, and neither nav rendered.
-  const [mapH, setMapH] = useState(() => (typeof window !== 'undefined' && window.innerWidth < PHONE_BREAKPOINT ? Math.round(window.innerHeight * 0.6) : 620));
+  const [phoneMapH, setPhoneMapH] = useState(() => (typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.6) : 500));
   useEffect(() => {
-    const onResize = () => setMapH(window.innerWidth < PHONE_BREAKPOINT ? Math.round(window.innerHeight * 0.6) : 620);
+    const onResize = () => { if (window.innerWidth < PHONE_BREAKPOINT) setPhoneMapH(Math.round(window.innerHeight * 0.6)); };
     window.addEventListener('resize', onResize); return () => window.removeEventListener('resize', onResize);
   }, []);
+  // R4a desktop console: the map fills the band between the HUD columns, so its size is measured
+  // from that band (ResizeObserver) instead of a fixed 620px.
+  const bandRef = useRef(null);
+  const [band, setBand] = useState(() => ({
+    w: typeof window !== 'undefined' ? Math.max(320, window.innerWidth - 740) : 700,
+    h: typeof window !== 'undefined' ? Math.max(360, window.innerHeight - 52) : 620,
+  }));
 
   // M7: phone layout (< 900px) — MAP (default) · LIST · ALERTS tabs, one screen at a time (P1).
   // On MAP, a selection opens as a bottom sheet instead of the desktop rail.
   const isPhone = useIsPhone();
+  useEffect(() => {
+    if (isPhone || !bandRef.current || typeof ResizeObserver !== 'function') return undefined;
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect;
+      if (r && r.width > 0 && r.height > 0) setBand((b) => (b.w === Math.round(r.width) && b.h === Math.round(r.height) ? b : { w: Math.round(r.width), h: Math.round(r.height) }));
+    });
+    ro.observe(bandRef.current);
+    return () => ro.disconnect();
+  }, [isPhone]);
+  const mapH = isPhone ? phoneMapH : band.h;
+
+  // The honesty status line sits in the console top bar on desktop /map (Layout renders an empty
+  // slot there, #gp-console-status); rendered inline when no slot exists (phone, tests).
+  const [statusSlot, setStatusSlot] = useState(null);
+  useEffect(() => {
+    setStatusSlot(isPhone ? null : (typeof document !== 'undefined' ? document.getElementById('gp-console-status') : null));
+  }, [isPhone]);
+
+  // "About this map" drawer (desktop): the old below-the-fold content, reachable without a page
+  // scroll. Esc closes it and focus returns to the button that opened it.
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const aboutBtnRef = useRef(null);
+  const aboutPanelRef = useRef(null);
+  useEffect(() => {
+    if (!aboutOpen) return undefined;
+    aboutPanelRef.current?.focus?.();
+    const onKey = (e) => { if (e.key === 'Escape') { setAboutOpen(false); aboutBtnRef.current?.focus?.(); } };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [aboutOpen]);
   const [phoneTab, setPhoneTab] = useState('map');
   const [sheetStop, setSheetStop] = useState('half');
   const [hudExpanded, setHudExpanded] = useState(false);
@@ -454,44 +499,101 @@ export default function SituationHome() {
   const phoneSheetOpen = isPhone && phoneTab === 'map' && !!(selected || selectedStory || focusMissing);
   const hudSummary = useMemo(() => hudCompactSummary(tierCounts, sensorRows, paused), [tierCounts, sensorRows, paused]);
 
-  // The map itself (globe/radar + controls + legend) is identical on desktop and the phone MAP
-  // tab — built once here so neither copy can drift from the other.
+  // Legend "present" flags: which token items are actually on the map right now (the Key dims the
+  // rest with "none now" instead of describing things that aren't drawn).
+  const legendPresent = useMemo(() => {
+    const kinds = new Set(); const tiers = new Set(); const glyphs = new Set(); const fresh = new Set(); const axes = new Set();
+    for (const s of open) {
+      kinds.add(markerKind(s)); tiers.add(s.tier); axes.add(s.axis); fresh.add(situationFreshness(s));
+      const g = statusGlyph(s); if (g) glyphs.add(g.key);
+    }
+    let neutral = false;
+    if (visibleShading.length) {
+      kinds.add('story');
+      if (topicsFreshness) fresh.add(topicsFreshness);
+      for (const e of visibleShading) { if (e.crisisType === 'neutral') neutral = true; else axes.add(e.crisisType); }
+    }
+    return { kinds, tiers, glyphs, fresh, axes, neutral };
+  }, [open, visibleShading, topicsFreshness]);
+
+  // Situation brief's LEAD line (Console.dc.html): the top-ranked open situation; else the first
+  // story in the latest stories feed, labelled as exactly that and dated (never "lead by severity"
+  // — the stories feed carries no rank). A story page link when one exists, else select it here.
+  const storiesDateLabel = fmtShortDate(topicsAsOf);
+  const lead = useMemo(() => {
+    if (hero) {
+      const place = hero.affected_names?.[0] || (hero.iso3_affected?.[0] ? iso3Name(hero.iso3_affected[0]) : null);
+      return {
+        kicker: `Lead situation · ${TIER_LABEL[hero.tier] || hero.tier}${place ? ` · ${place}` : ''}`,
+        title: hero.verb_label,
+        href: hero.threadId ? threadPath(hero.threadId) : null,
+        onOpen: hero.threadId ? null : () => userSelect(hero.id),
+        openLabel: hero.threadId ? 'open story →' : 'show on map →',
+      };
+    }
+    if (topicsFreshness === 'hidden') return null;
+    const t = topics.find((x) => x && x.title);
+    if (!t) return null;
+    return {
+      kicker: `First in the latest stories${storiesDateLabel ? ` · ${storiesDateLabel}` : ''}`,
+      title: t.title,
+      older: topicsFreshness === 'older',
+      href: t.threadId ? threadPath(t.threadId) : null,
+      onOpen: t.threadId ? null : () => userSelectStory(t),
+      openLabel: 'open story →',
+    };
+  }, [hero, topics, topicsFreshness, storiesDateLabel, userSelect, userSelectStory]);
+
+  const alertNote = alertStackNote(alertStack.items, paused);
+  const alertEmpty = alertEmptyText(paused);
+  const coverageNote = world && newsAxesEmpty
+    ? 'Tracking severe natural disasters (UN/EU GDACS). Conflict, political and economic situations arrive with the news layer.'
+    : null;
+  const worldDateLabel = fmtShortDate(world?.generated_at);
+
+  // Map controls: GLOBE | RADAR, Key, and the tour entry. On the phone they float over the map's
+  // top-right corner; on the desktop console they sit in the bottom view bar with "About".
+  const controls = (
+    <>
+      {/* F1.9: hide the tour entry point while a selection is active — a situation or story
+          already showing its own detail isn't the moment to invite a tour that would fly the
+          map away from it. */}
+      {ranked.length >= 2 && !tourOn && !focus && !selectedStory ? (
+        <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
+      ) : null}
+      {USE_3D ? (
+        <div className="sh-viewswitch" role="group" aria-label="Map mode">
+          <button className={`sh-ctl sh-seg${view === 'globe' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'globe'} onClick={() => setView('globe')}>Globe</button>
+          <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
+        </div>
+      ) : null}
+      <button
+        ref={legendBtnRef}
+        className="sh-ctl sh-key"
+        onClick={() => setLegendPersist(!legendOpen)}
+        aria-expanded={legendOpen}
+        aria-controls="sh-legend-panel"
+      >
+        {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
+      </button>
+    </>
+  );
+
+  // The map itself (globe/radar + legend) is identical on desktop and the phone MAP tab — built
+  // once here so neither copy can drift from the other.
+  const consoleCallout = isPhone || focus ? null : (tourStop || null);
   const mapPane = (
     <>
       <div className="sh-mapinner">
-        {/* Focus order (low, review): rendered before the map itself so Tab reaches the
-            walk-through/Globe·Radar/Key controls (visually top-right) before the map's own
-            focusable content (spin control, markers) — matching the visual order. These are
-            `position: absolute` so this DOM order has no effect on their on-screen placement. */}
-        <div className="sh-controls">
-          {/* F1.9: hide the tour entry point while a selection is active — a situation or story
-              already showing its own detail isn't the moment to invite a tour that would fly the
-              map away from it. */}
-          {ranked.length >= 2 && !tourOn && !focus && !selectedStory ? (
-            <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
-          ) : null}
-          {USE_3D ? (
-            <div className="sh-viewswitch" role="group" aria-label="Map mode">
-              <button className={`sh-ctl sh-seg${view === 'globe' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'globe'} onClick={() => setView('globe')}>Globe</button>
-              <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
-            </div>
-          ) : null}
-          <button
-            ref={legendBtnRef}
-            className="sh-ctl sh-key"
-            onClick={() => setLegendPersist(!legendOpen)}
-            aria-expanded={legendOpen}
-            aria-controls="sh-legend-panel"
-          >
-            {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
-          </button>
-        </div>
+        {/* Focus order (low, review): on the phone the controls render before the map itself so
+            Tab reaches them before the map's own focusable content. */}
+        {isPhone ? <div className="sh-controls">{controls}</div> : null}
 
         {showGlobe ? (
           <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
             <SituationMap3D
-              situations={situations} focusId={focusId} callout={isPhone ? null : callout} tour={tourProps} newIds={newIds} view="globe"
-              onSelect={userSelect} onOpenCallout={userSelect} height={mapH}
+              situations={situations} focusId={focusId} callout={consoleCallout} tour={tourProps} newIds={newIds} view="globe"
+              onSelect={userSelect} onOpenCallout={userSelect} height={mapH} width={isPhone ? (typeof window !== 'undefined' ? window.innerWidth - 24 : null) : band.w}
               shading={visibleShading} storyFocusIso3={storyFocusIso3}
               onSelectCountry={selectStoryByCountry}
               onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
@@ -501,7 +603,7 @@ export default function SituationHome() {
           </Suspense>
         ) : (
           <RadarMap
-            situations={situations} focusId={focusId} callout={isPhone ? null : callout} newIds={newIds}
+            situations={situations} focusId={focusId} callout={consoleCallout} newIds={newIds}
             onSelect={userSelect} onOpenCallout={userSelect} onScan={markScanned} height={mapH}
             shading={visibleShading} storyFocusIso3={storyFocusIso3}
             onSelectCountry={selectStoryByCountry}
@@ -518,65 +620,20 @@ export default function SituationHome() {
           />
         ) : null}
 
-        {open.length === 0 && world ? (
+        {isPhone && open.length === 0 && world ? (
           <div className="sh-quiet">{emptyLede || 'No situations open right now.'}</div>
         ) : null}
 
         {legendOpen ? (
-          <div id="sh-legend-panel" className="sh-legend sh-legend-open" role="region" aria-label="How to read the map">
-            <button className="sh-legend-close" onClick={() => setLegendPersist(false)} aria-label="Close">×</button>
-            <div className="sh-legrow">
-              <b>Colour = crisis type</b>
-              {AXES.map((a) => (
-                <span key={a} className={`sh-leg${counts[a] ? '' : ' sh-leg-off'}`}>
-                  <span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />{AXIS_LABEL[a]}
-                </span>
-              ))}
-              {visibleShading.length ? (
-                <span className="sh-leg"><span className="sh-leg-dot" style={{ background: '#9aa4b2' }} />No crisis claim</span>
-              ) : null}
-            </div>
-            <div className="sh-legrow">
-              <b>Brightness + size = how serious</b>
-              {['low', 'moderate', 'elevated', 'high'].map((t) => {
-                const has = ranked.some((s) => s.tier === t);
-                return (
-                  <span key={t} className={`sh-leg${has ? '' : ' sh-leg-off'}`}>
-                    <span className={`sh-leg-pin sh-pin-${t}`} />{TIER_LABEL[t]}
-                    <i>{t === 'high' && !has ? 'none today' : TIER_HINT[t]}</i>
-                  </span>
-                );
-              })}
-              <span className="sh-leg"><i>white ring = high · brighter outline = selected</i></span>
-              <span className="sh-leg"><span className="sh-leg-esc">▲</span>escalating<i>worse in the last few hours</i></span>
-            </div>
-            <div className="sh-legrow">
-              <b>Motion</b>
-              <span className="sh-leg"><i>soft pulse = new or escalating in the last 24h (up to 8 shown)</i></span>
-            </div>
-            {visibleShading.length ? (
-              <div className="sh-legrow">
-                <b>Country wash = a story with no exact place</b>
-                <span className="sh-leg"><i>count badge = more than one story</i></span>
-                {topicsFreshness === 'older' && topicsAsOf ? (
-                  <span className="sh-leg"><i>{olderLabel(topicsAsOf) || 'older'}</i></span>
-                ) : null}
-              </div>
-            ) : null}
-            <div className="sh-legrow">
-              <b>Freshness (stories)</b>
-              <span className="sh-leg"><i>live &lt;24h glows · 1–7d plain · 7–30d faded + “older · date” · 30d+ hidden</i></span>
-            </div>
-            <div className="sh-legrow">
-              <b>Disaster alerts</b>
-              <span className="sh-leg"><i>GDACS shows its own alert level as text (e.g. “ORANGE ALERT”) — colour still means crisis type, not the alert colour</i></span>
-            </div>
-          </div>
+          <MapLegend
+            present={legendPresent}
+            hiddenCount={alertStack.hiddenCount}
+            storiesOlderLabel={topicsFreshness === 'older' && topicsAsOf ? olderLabel(topicsAsOf) : null}
+            onClose={() => setLegendPersist(false)}
+          />
         ) : null}
       </div>
-      {world && newsAxesEmpty ? (
-        <p className="sh-coverage">Tracking severe natural disasters (UN/EU GDACS). Conflict, political and economic situations arrive with the news layer.</p>
-      ) : null}
+      {isPhone && coverageNote ? <p className="sh-coverage">{coverageNote}</p> : null}
     </>
   );
 
@@ -608,6 +665,97 @@ export default function SituationHome() {
     <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={closeSelection} />
   ) : null;
 
+  const statusLine = <HudStatusLine paused={paused} storiesAsOf={topicsAsOf} gdacsFresh={gdacsFresh} />;
+  const aboutContent = (
+    <MapAbout
+      paused={paused} latestDailyEditionLabel={latestDailyEditionLabel} latestWeeklyEditionLabel={latestWeeklyEditionLabel}
+      ranked={ranked} onSelect={userSelect} coverageNote={isPhone ? null : coverageNote}
+    />
+  );
+  // F1.9: a tour bar at the page level (not nested inside the globe's callout, which never
+  // renders on the phone MAP tab and doesn't exist at all in radar) — this works the same way in
+  // globe, radar and on the phone. Esc still stops the tour (handled above).
+  const tourBar = tourOn && tourStop ? (
+    <div className="sh-tourbar-global" role="group" aria-label="Guided tour">
+      <span className="sh-tourbar-status">Tour <b>{Math.min(tourIdx, tourN - 1) + 1}</b> of {tourN} · {tourStop.verb_label}</span>
+      <span className="sh-tourbar-btns">
+        <button onClick={tourPrev} aria-label="Previous situation">← Prev</button>
+        <button onClick={tourNext} aria-label="Next situation">Next →</button>
+        <button onClick={stopTour}>Stop</button>
+      </span>
+    </div>
+  ) : null;
+  const staleBanner = stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null;
+
+  if (!isPhone) {
+    // R4a · desktop full-bleed console (Console.dc.html): the map is the page. HUD panels float
+    // over it — brief + alert stack on the left, sensor status + intel feed (or the selected
+    // card) on the right, the orientation/tour line at the top of the free band, view controls
+    // at its bottom. Nothing below the fold: "About this map" opens the old fold as a drawer.
+    return (
+      <div className={`sh-root gp-console sh-console${stale ? ' sh-stale' : ''}`}>
+        <h1 className="sh-sr-only">Situation map — Global Perspectives</h1>
+        <div className="sh-sr-only" role="status" aria-live="polite">{announcement}</div>
+        {statusSlot ? createPortal(statusLine, statusSlot) : <div className="sh-status-inline">{statusLine}</div>}
+
+        <div className="sh-band" ref={bandRef}>
+          <div className="sh-mapwrap">{mapPane}</div>
+        </div>
+
+        <div className="sh-topline">
+          <OrientationBanner />
+          {staleBanner}
+          {tourBar}
+        </div>
+
+        <div className="sh-col sh-col-left">
+          <HudBriefPanel
+            heading={worldDateLabel ? `Situation brief · ${worldDateLabel}` : 'Situation brief'}
+            counts={world ? tierCounts : null}
+            lede={error && !world ? 'The situation feed is unavailable right now.' : (world ? lede : 'Loading the world…')}
+            lead={world ? lead : null}
+          />
+          {world ? (
+            <AlertStack
+              className="sh-alertstack"
+              items={alertStack.items} hiddenCount={alertStack.hiddenCount} focusId={focus}
+              onSelect={userSelect} emptyText={alertEmpty} note={alertNote}
+            />
+          ) : null}
+        </div>
+
+        <div className="sh-col sh-col-right">
+          {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
+          <aside className="sh-rail">{railContent}</aside>
+        </div>
+
+        <div className="sh-viewbar" role="toolbar" aria-label="Map controls">
+          {controls}
+          <button
+            ref={aboutBtnRef} className="sh-ctl" onClick={() => setAboutOpen((v) => !v)}
+            aria-expanded={aboutOpen} aria-controls="sh-about-panel"
+          >
+            About this map
+          </button>
+        </div>
+
+        {aboutOpen ? (
+          <section id="sh-about-panel" className="sh-about" role="region" aria-label="About this map" tabIndex={-1} ref={aboutPanelRef}>
+            <button className="sh-about-close" onClick={() => { setAboutOpen(false); aboutBtnRef.current?.focus?.(); }} aria-label="Close about this map">×</button>
+            <div className="sh-fold sh-fold-drawer">{aboutContent}</div>
+            <nav className="sh-about-links" aria-label="Site">
+              <Link to="/about">About</Link>
+              <Link to="/membership">Membership</Link>
+              <Link to="/privacy">Privacy</Link>
+              <Link to="/disclosures">Disclosures</Link>
+              <Link to="/contact">Contact</Link>
+            </nav>
+          </section>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className={`sh-root gp-console${stale ? ' sh-stale' : ''}`}>
       {/* Review (low): /map had no <h1> — visually-hidden, the visible lede above already carries
@@ -628,147 +776,62 @@ export default function SituationHome() {
 
       <OrientationBanner />
 
-      <HudStatusLine paused={paused} storiesAsOf={topicsAsOf} gdacsFresh={gdacsFresh} />
+      {statusLine}
 
-      {stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null}
+      {staleBanner}
 
-      {/* F1.9: a tour bar at the page level (not nested inside the globe's callout, which never
-          renders on the phone MAP tab and doesn't exist at all in radar) — this works the same
-          way in globe, radar and on the phone. Esc still stops the tour (handled above). */}
-      {tourOn && tourStop ? (
-        <div className="sh-tourbar-global" role="group" aria-label="Guided tour">
-          <span className="sh-tourbar-status">Tour <b>{Math.min(tourIdx, tourN - 1) + 1}</b> of {tourN} · {tourStop.verb_label}</span>
-          <span className="sh-tourbar-btns">
-            <button onClick={tourPrev} aria-label="Previous situation">← Prev</button>
-            <button onClick={tourNext} aria-label="Next situation">Next →</button>
-            <button onClick={stopTour}>Stop</button>
-          </span>
-        </div>
-      ) : null}
+      {tourBar}
 
-      {isPhone ? (
-        <>
-          {/* M7 phone pattern (P1): one tab switch — MAP (default, radar) · LIST · ALERTS. */}
-          <MapPhoneTabs active={phoneTab} onChange={setPhoneTab} alertCount={tierCounts.high + tierCounts.elevated} />
+      {/* M7 phone pattern (P1): one tab switch — MAP (default, radar) · LIST · ALERTS. */}
+      <MapPhoneTabs active={phoneTab} onChange={setPhoneTab} alertCount={tierCounts.high + tierCounts.elevated} />
 
-          {phoneTab === 'map' ? (
-            <div id="sh-panel-map" role="tabpanel" aria-labelledby="sh-tab-map" className="sh-phone-panel">
-              {world || sensorRows.length ? (
-                <HudCompactLine summary={hudSummary} expanded={hudExpanded} onToggle={() => setHudExpanded((v) => !v)}>
-                  <div className="sh-hud-row">
-                    {world ? <HudBriefPanel counts={tierCounts} /> : null}
-                    {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
-                  </div>
-                </HudCompactLine>
-              ) : null}
-              <div className="sh-mapwrap">{mapPane}</div>
-              {phoneSheetOpen ? (
-                <BottomSheet
-                  stop={sheetStop}
-                  onStopChange={setSheetStop}
-                  onClose={closeSelection}
-                  title={sheetTitle}
-                  subtitle={sheetSubtitle}
-                >
-                  {sheetBody}
-                </BottomSheet>
-              ) : null}
-            </div>
-          ) : phoneTab === 'list' ? (
-            <div id="sh-panel-list" role="tabpanel" aria-labelledby="sh-tab-list" className="sh-phone-panel">
-              <HudIntelFeed
-                ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
-                onSelect={userSelect}
-                topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
-                onSelectStory={userSelectStory} peek={mapPeek} emptyMessage={emptyLede}
-              />
-            </div>
-          ) : (
-            <div id="sh-panel-alerts" role="tabpanel" aria-labelledby="sh-tab-alerts" className="sh-phone-panel">
-              <HudIntelFeed
-                ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
-                onSelect={userSelect} label="Alerts" emptyMessage={emptyLede}
-              />
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          {/* M6: brief + sensor status moved out of the map's top corners into a slim row above it —
-              they used to overlay the globe/callout and crowd its left edge. */}
+      {phoneTab === 'map' ? (
+        <div id="sh-panel-map" role="tabpanel" aria-labelledby="sh-tab-map" className="sh-phone-panel">
           {world || sensorRows.length ? (
-            <div className="sh-hud-row">
-              {world ? <HudBriefPanel counts={tierCounts} /> : null}
-              {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
-            </div>
+            <HudCompactLine summary={hudSummary} expanded={hudExpanded} onToggle={() => setHudExpanded((v) => !v)}>
+              <div className="sh-hud-row">
+                {world ? <HudBriefPanel counts={tierCounts} lead={lead} /> : null}
+                {sensorRows.length ? <HudSensorPanel rows={sensorRows} /> : null}
+              </div>
+            </HudCompactLine>
           ) : null}
-
-          <div className="sh-stage">
-            <div className="sh-mapwrap">{mapPane}</div>
-            <aside className="sh-rail">{railContent}</aside>
-          </div>
-        </>
+          <div className="sh-mapwrap">{mapPane}</div>
+          {phoneSheetOpen ? (
+            <BottomSheet
+              stop={sheetStop}
+              onStopChange={setSheetStop}
+              onClose={closeSelection}
+              title={sheetTitle}
+              subtitle={sheetSubtitle}
+            >
+              {sheetBody}
+            </BottomSheet>
+          ) : null}
+        </div>
+      ) : phoneTab === 'list' ? (
+        <div id="sh-panel-list" role="tabpanel" aria-labelledby="sh-tab-list" className="sh-phone-panel">
+          <HudIntelFeed
+            ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
+            onSelect={userSelect}
+            topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
+            onSelectStory={userSelectStory} peek={mapPeek} emptyMessage={emptyLede}
+          />
+        </div>
+      ) : (
+        <div id="sh-panel-alerts" role="tabpanel" aria-labelledby="sh-tab-alerts" className="sh-phone-panel">
+          {/* R4a: the ALERTS tab reuses the desktop alert stack's cards. */}
+          {world ? (
+            <AlertStack
+              items={alertStack.items} hiddenCount={alertStack.hiddenCount} focusId={focus}
+              onSelect={userSelect} emptyText={alertEmpty} note={alertNote}
+            />
+          ) : (
+            <p className="sh-muted">{error ? 'Couldn’t load the feed. Retrying automatically.' : 'Loading…'}</p>
+          )}
+        </div>
       )}
 
-      <section className="sh-fold">
-        <div className="sh-fold-method">
-          <h2>How we read the world</h2>
-          <p className="sh-dim">The map is the output of a fixed pipeline, not an editor’s judgement call.</p>
-          <div className="sh-fold-cols">
-            <div><h4>What we track</h4><p>Every situation belongs to one of four axes — conflict, political, economic, humanitarian. A situation opens when independent outlets converge on the same event in the same place, and it stays open while coverage continues. Severe natural disasters come straight from the UN/EU GDACS feed.</p></div>
-            <div><h4>How severity is scored</h4><p>The tier — low, moderate, elevated, high — is derived from how many outlets are covering a situation, how far it has spread, and how fast that is changing since the last run. Disaster tiers come from the reported hazard values. The inputs are shown on every situation.</p></div>
-            <div><h4>How often it updates</h4><p>
-              {paused
-                ? `The GDACS disaster feed is checked on a fixed cycle. News situations are re-scored when the classification pipeline runs — that has been paused since ${paused.beyondLookback ? paused.text : paused.label}.`
-                : 'The GDACS disaster feed is checked on a fixed cycle, and news situations are re-scored each time the classification pipeline runs.'}
-              {' '}The stamp in the header shows the age of the data you are looking at, not the age of the page. A situation marked escalating has moved up since the last run.
-            </p></div>
-          </div>
-        </div>
-
-        <div className="sh-fold-teasers">
-          <h4 className="sh-lbl">Elsewhere on Global Perspectives</h4>
-          <div className="sh-teasers">
-            <Link to="/daily"><b>Daily Brief</b><span>
-              {latestDailyEditionLabel ? `Latest edition ${latestDailyEditionLabel}` : 'The day’s developments, gathered and synthesised'}
-              {paused ? ' — analysis paused.' : '.'}
-            </span></Link>
-            <Link to="/weekly-brief"><b>Weekly</b><span>
-              {latestWeeklyEditionLabel ? `Latest edition ${latestWeeklyEditionLabel}, with the reasoning shown.` : 'A long synthesis, with the reasoning shown.'}
-            </span></Link>
-            <Link to="/track-record"><b>Track Record</b><span>Every forecast scored against what happened, including the misses.</span></Link>
-            <Link to="/analyze"><b>Analysis Studio</b><span>Bring a question and get a cited, structured analysis.</span></Link>
-          </div>
-        </div>
-
-        {ranked.length ? (
-          <div className="sh-fold-index">
-            <h4 className="sh-lbl">Active situations · {ranked.length} open</h4>
-            {AXES.map((a) => {
-              const items = ranked.filter((s) => s.axis === a);
-              if (!items.length) return null;
-              return (
-                <div key={a} className="sh-idx-group">
-                  <h5><span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />{AXIS_LABEL[a]} · {items.length}</h5>
-                  <ul>
-                    {items.map((s) => (
-                      <li key={s.id}>
-                        <button className="sh-idx-link" onClick={() => userSelect(s.id)}>{s.verb_label}</button>
-                        <span className="sh-dim"> — {TIER_LABEL[s.tier]}{s.escalating ? ' · escalating' : ''}{affectedNames(s)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
-      </section>
+      <section className="sh-fold">{aboutContent}</section>
     </div>
   );
-}
-
-function affectedNames(s) {
-  const codes = (s.iso3_affected || []).slice(0, 3);
-  return codes.length ? ` · ${codes.map(iso3Name).join(', ')}` : '';
 }

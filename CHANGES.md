@@ -1,5 +1,27 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Review round R4a: full-bleed console, approved legend, desktop alert stack; branch `map-console`, local only)
+
+- **Full-bleed /map on desktop:**
+  - a 52px dark mono top bar (same five routes + account) with the status line inside it;
+  - the globe / radar fills the band between two floating HUD columns:
+    - left: the situation brief with the lead line + "open story →" and tier counts, then the alert stack;
+    - right: sensor status, then the intel feed or the selected card;
+  - the orientation line + tour bar at the top of the band; GLOBE | RADAR · KEY · ABOUT THIS MAP bottom-left; spin bottom-right;
+  - the "How we read the world" content moved into an About drawer; no page scroll;
+  - other pages and the phone P1 pattern are unchanged.
+- **Legend = the approved tokens** (`lib/legend.js`, both maps):
+  - shape = kind (◆ GDACS, halo dot = situation, country wash = story, brackets = selected);
+  - hue = crisis type;
+  - 4 size steps + double ring = HIGH;
+  - brightness = freshness (glow <24h · plain · desaturated "older" 7–30 d · hidden + counted >30 d);
+  - ▲ ● ◆ ▼ from `escalating` / `state`; GDACS level as text.
+  - The Key describes only what's drawn.
+- **Alert stack** (`AlertStack.jsx`, `lib/alertStack.js`): sorted by tier / escalating / newest; click selects + flies. Honest computed empty state. Reused in the phone ALERTS tab.
+- **Fixed a regression from R1:** the globe spin and pulse had stopped (`setProps` called on the React wrapper instead of `.deck`). The camera is now a ref synced at ~30 fps with memoised layers. Long tasks: 5 / 20 s, 0 in steady state.
+- **Measured:** no desktop page scroll at 1440×900 / 1280×720; globe 0.74–0.75 of the map height; no overflow; reduced motion is still.
+- Tests: 470.
+
 ## 2026-09-27 (Review fix round R3: accessibility + phone; branch `map-console`, local only)
 
 - **Phone footer:** clears the bottom tab bar on every page (the padding moved to the app shell).

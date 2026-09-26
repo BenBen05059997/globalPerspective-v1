@@ -1,6 +1,6 @@
 // M2: the console must never claim the news desk is "live"/"updated" when it has produced 0
 // news situations while analysis is paused — it must say so plainly, with a computed date.
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -34,6 +34,10 @@ vi.mock('@/features/daily/hooks/useDailyBrief.js', () => ({
 }));
 
 describe('map console — honesty (M2)', () => {
+  // R4a: fixture timestamps are fixed; pin "now" so the 30-day freshness rule never hides them.
+  beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-09-26T06:00:00Z')); });
+  afterEach(() => { vi.useRealTimers(); });
+
   it('renders the paused status line with a computed date, and never claims the news desk is live/updated', async () => {
     const SituationHome = (await import('@/features/map/SituationHome.jsx')).default;
     render(<MemoryRouter><SituationHome /></MemoryRouter>);

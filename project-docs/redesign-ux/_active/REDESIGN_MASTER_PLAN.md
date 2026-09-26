@@ -178,9 +178,9 @@ Doc: `TRACK_RECORD_AND_STUDIO_RULING.md` (Studio sections).
 ## 6. Still open (operator)
 | # | Question | Recommendation |
 |---|---|---|
-| H3 | Build the new home at `/map` first; swap `/` after DeepSeek is back (S6 gate) | Yes |
-| H4 | "Real Earth on top right": (a) the main globe shows the real Earth, or (b) a small real-Earth globe in the corner in radar mode? Plus the texture: dotted land / NASA night lights / daytime | Need your answer; dots or night lights |
-| PH | Phone story mode: vertical READ scroll (P1 as approved) or one slide at a time, horizontal, like desktop | Horizontal (b), so phone matches desktop |
+| H3 | ✅ **DECIDED 26 Sep:** build the map console at `/map` first, **locally for review, no deploy** (operator: "first build it in local and let me see") | — |
+| H4 | ✅ **DECIDED 26 Sep:** the main globe uses **B, NASA night lights (Black Marble)** (operator: "B is better"; options page https://claude.ai/artifact/QpC85emw93DTtzoPxGabGp). **Radar mode stays** (phone default + desktop mode switch). Corner globe on the radar (option E): not chosen yet | — |
+| PH | ✅ **DECIDED 26 Sep: horizontal slides on phone**, like desktop (READ shows one slide at a time; swipe or ◀ ▶) | — |
 | S5–S10 | Studio: failed runs hidden + not shareable; shares per reader in DynamoDB; share Lambda (IAM); signed-out example; parked list | Yes to all |
 | WP | Go-ahead to soft-hide the white paper in code now | Your call |
 | Y1 | DeepSeek top-up (country briefings all pass 30 days around **11–12 Oct**) | Blocks D6, D7-C9, D8, D9, D11 |

@@ -36,7 +36,7 @@ something · ▶ in progress · ✅ done
 |---|---|---|---|
 | C4 | **Home = map + story list** (side by side, expand-to-full, linked selection, game-style map, story cards, first-visit banner) | Y5 (design approved). The *switch* to map-first waits on the S6 gate: Y1 done → ~7 days at ≥5 open situations across ≥2 types | Design brief + spec |
 | C5 | **`/briefings`** (Daily + Weekly editions, "show on map", corrections + scorecard in weekly) | Y5 | Design brief + spec |
-| C6 | **`/story/:id` rename** with 301 redirects, bundled with the Worker change | Y4 path proven | `PAGE_STRUCTURE_PROPOSAL_2026-09-24.md` §8 |
+| C6 | ~~**`/story/:id` rename** with 301 redirects~~ **SUPERSEDED 2026-09-26 by navigation N1 (same URLs; see `redesign-ux/_active/REDESIGN_MASTER_PLAN.md` §5)** | Y4 path proven | `PAGE_STRUCTURE_PROPOSAL_2026-09-24.md` §8 |
 | C7 | **Phase 4 severity-score fix** (country half first, then thread): offline eval against the gold set → deploy the prompt → re-run the live flag audit as proof | Y1 (country half), Y2 (thread half) | `ONE_TRUTH_EXECUTION_PLAN.md` Phase 4 |
 | C8 | **Story + country pages, incremental fixes** from the review: mobile overflow, layout shift, old colour palette → tokens, an "archived story" state (fixes economy's broken story links) | C1 deployed | `PAGE_REVIEW_2026-09-24.md` §4 |
 | C11 | **Story page = STORY MODE (one screen: map + slides + time scrubber; approved 2026-09-25) + "Read in full" long page with the news-based story web** (`STORY_WEB_RETHINK_PLAN.md` §5): Timeline chapters + "Show linked news" toggle; Why section = cause chain + news it feeds into (cited dated headlines, per-analysis confidence, verbatim mechanisms) + shared actors; board WEB = story graph; `/spider-demo` retires after. Stage 1 frontend-only (~600–800 lines) | C6 route rename; stage 2 (web_index action, prompt spread fix, per-story WEB record) needs Y1 DeepSeek top-up | `STORY_WEB_RETHINK_PLAN.md` + wireframe row v4 |
@@ -67,7 +67,9 @@ something · ▶ in progress · ✅ done
 - ✅ `test-disruption-gate.mjs` fixed (Node 22 JSON import)
 - ✅ Whole-site page review (10 P1 / ~14 P2 / ~14 P3) + page-structure proposal and challenge, adjudicated
 
-## Page redesign roadmap (status 2026-09-25; design stage, nothing built unless noted)
+## Page redesign roadmap (status 2026-09-26; design stage, nothing built unless noted)
+**Build plan for all of this:** `redesign-ux/_active/REDESIGN_MASTER_PLAN.md` (stages 0–9, draft for operator review).
+
 | Page | Status | Next |
 |---|---|---|
 | Home `/` + `/map` | ✅ designed: operations console (globe/radar), story card, StoryPeek, legend | build after the S6 gate |

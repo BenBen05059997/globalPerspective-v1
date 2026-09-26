@@ -33,7 +33,7 @@ Each phase runs: research + debate (agents) → canvas board with real data → 
 | DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | ✅ **APPROVED 26 Sep**: where old and new designs conflict, the new design wins (canvas DS1) | see git log | tokens checked against `tokens.css` (light palette only; traffic-light risk scale) |
 | H · Home leftovers | Banner vs tour; country shading vs pins; build behind `/map` first; "real Earth on top right" | **Now** · questions put to operator | — | — |
 | SP · Small pages | About, whitepaper, privacy, disclosures, contact; membership / account / sign-in, including the signed-out `/account` | queued | — | — |
-| B · Build order | The sequence from design to build, with dependencies (C11 story mode first) and operator gates | queued | — | — |
+| B · Build order | The sequence from design to build, with dependencies (C11 story mode first) and operator gates | **Drafted:** `REDESIGN_MASTER_PLAN.md` §7, awaiting operator review | — | — |
 
 Also open, outside these phases: Studio decisions S5–S10 (`TRACK_RECORD_AND_STUDIO_RULING.md`).
 
@@ -136,6 +136,6 @@ Each panel states WHY it exists.
 
 ## Phase H: home leftovers (2026-09-26)
 - **H1 APPROVED** (operator: "we can replace the guided tour with your recommendation"). The old guided tour + ambient hero callout are replaced by a one-line orientation banner.
-- H2 (country shading for stories with no exact place): explained to the operator, awaiting a decision.
+- **H2 APPROVED** (operator: "Yes, that is good"): a story with no exact place shades its country (crisis hue + count + StoryPeek) instead of a made-up pin.
 - H3 (build behind `/map` first) and H4 ("real Earth on top right": main globe vs a corner globe) are still open.
 - Also open: phone story READ as vertical scroll (P1 as approved) vs one slide at a time horizontally, like desktop story mode.

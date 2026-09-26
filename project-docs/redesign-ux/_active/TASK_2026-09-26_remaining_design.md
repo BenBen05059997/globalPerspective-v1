@@ -29,8 +29,8 @@ Each phase runs: research + debate (agents) → canvas board with real data → 
 | Phase | What gets decided | Status | Commit | Monitor ✓ |
 |---|---|---|---|---|
 | N · Site navigation | Top menu; how countries, sign-in/account and the retired pages (`/breaking`, `/spider-demo`, `/economy`, `/weekly-markets`) are reached; "AI paused" status line; footer | ✅ **APPROVED 26 Sep** ("ok that is good"), canvas N1 | see git log | 3 advocates + 2 critics; pause date verified 12 Sep |
-| P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | **Now** · proposed, awaiting operator (canvas P1) | see git log | 3 advocates + 1 critic; lazy map load verified in code |
-| DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | queued | — | — |
+| P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | ✅ **APPROVED 26 Sep** ("Okay, that is good"), canvas P1 | see git log | 3 advocates + 1 critic; lazy map load verified in code |
+| DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | **Now** | — | — |
 | H · Home leftovers | Banner vs tour; country shading vs pins; build behind `/map` first; "real Earth on top right" | queued | — | — |
 | SP · Small pages | About, whitepaper, privacy, disclosures, contact; membership / account / sign-in, including the signed-out `/account` | queued | — | — |
 | B · Build order | The sequence from design to build, with dependencies (C11 story mode first) and operator gates | queued | — | — |
@@ -69,7 +69,7 @@ Debate: A five doors / B game HUD / C by job, then a reader critic and an engine
 - **Footer:** About, White paper, Membership, Privacy, Disclosures, Contact.
 - **Build notes:** the onboarding tour targets use `data-tour="nav-${to}"` (`Layout.jsx:101`), so they must follow the new labels. The only nav guard is `verify_pages.sh:51` (economy absent).
 
-## Phase P: phone pattern proposal (2026-09-26)
+## Phase P: phone pattern, APPROVED (operator, 2026-09-26: "Okay, that is good")
 Debate: A map + bottom sheet / B swipe cards / C read first, map on demand, then a critic (reader + engineering). Canvas board **P1** (`PhonePattern.dc.html`).
 
 - **Frame:** header + the computed "paused since" line (~60px), **one** tab switch (44px), content, the 5-item tab bar (58px).

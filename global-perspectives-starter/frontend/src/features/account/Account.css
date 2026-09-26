@@ -1,50 +1,178 @@
-/* Account page — tabs + saved items */
+/* Account page — console shell (A3, K1) + saved items */
 
-.account-tabs {
+/* ── Account shell (K1: left rail + content) ─────────────────────────────
+   `.gp-console` (tokens.css) supplies the `--c-*` dark theme; this page is the second
+   consumer of it after /map. Desktop: fixed rail + content, side by side. Under 900px
+   (matches useIsPhone / the site's other breakpoints) the rail becomes a single-row,
+   horizontally scrollable chip strip pinned above the content — no second tab bar, since
+   the phone bottom tab bar (A2) already occupies that space. */
+.acct-shell {
   display: flex;
-  gap: 0;
-  border-bottom: 2px solid var(--border-color, #e5e7eb);
-  margin-bottom: 1.5rem;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+  background: var(--c-bg, #070d15);
+  color: var(--c-text-body, #c9d6df);
+  min-height: 60vh;
 }
 
-.account-tab {
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  padding: 0.6rem 1.1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-muted, #6b7280);
+.acct-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.acct-rail-btn {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 3px;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  background: transparent;
+  border: 1px solid var(--c-hairline, rgba(95,212,255,0.18));
+  font: inherit;
 }
 
-.account-tab:hover {
-  color: var(--text-primary, #111827);
+.acct-rail-btn--active {
+  background: rgba(95,212,255,0.1);
+  border-color: var(--c-accent, #5fd4ff);
 }
 
-.account-tab--active {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
+.acct-rail-label {
+  display: block;
+  font-size: 13px;
+  color: var(--c-text-head, #eef5f9);
 }
 
-.account-tab-badge {
-  display: inline-block;
-  margin-left: 6px;
-  background: #e5e7eb;
-  color: #6b7280;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 1px 7px;
-  vertical-align: middle;
+.acct-rail-btn--active .acct-rail-label { color: var(--c-accent, #5fd4ff); }
+
+.acct-rail-sub {
+  display: block;
+  font-size: 10.5px;
+  color: var(--c-text-dim, #7d8b96);
+  margin-top: 2px;
 }
 
-.account-tab--active .account-tab-badge {
-  background: #dbeafe;
-  color: #1e40af;
+.acct-content { flex: 1; min-width: 0; }
+
+.acct-section-kicker {
+  font-family: var(--c-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--c-accent, #5fd4ff);
 }
+
+.acct-section-title {
+  font-family: var(--c-serif, serif);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--c-text-head, #eef5f9);
+  margin: 4px 0 0;
+}
+
+.acct-section-sub {
+  font-size: 12.5px;
+  color: var(--c-text-dim, #7d8b96);
+  margin: 4px 0 14px;
+  max-width: 900px;
+}
+
+/* Phone (<900px): rail collapses to one horizontal scrollable row at the top; subtitles
+   hide to keep the chip row a single line. Content stacks below, full width. */
+@media (max-width: 900px) {
+  .acct-shell { flex-direction: column; padding: 16px 16px 32px; gap: 12px; }
+  .acct-rail {
+    flex-direction: row;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+  }
+  .acct-rail-btn { flex: 0 0 auto; white-space: nowrap; }
+  .acct-rail-sub { display: none; }
+}
+
+/* ── Signed-out desk (A3; A6 replaces with the full sign-in board) ── */
+.acct-signedout {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 8px 4px;
+}
+.acct-signedout-list {
+  margin: 14px 0 18px;
+  padding-left: 20px;
+  color: var(--c-text-body, #c9d6df);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.acct-signin-btn { margin-top: 4px; }
+
+/* Console overrides for the moved panels (Desk/Alerts/Studio use `.account-panel` /
+   `.account-key-*`; SavedPanel uses `.saved-*`) — visual only, no behavior change. */
+.gp-console .account-panel-title { color: var(--c-text-head, #eef5f9); }
+.gp-console .account-panel-desc { color: var(--c-text-dim, #7d8b96); }
+.gp-console .account-panel-desc a { color: var(--c-accent, #5fd4ff); }
+.gp-console .account-key-card {
+  border-color: var(--c-hairline, rgba(95,212,255,0.18));
+  background: var(--c-panel, rgba(6,12,20,0.95));
+}
+.gp-console .account-key-label { color: var(--c-text-dim, #7d8b96); }
+.gp-console .account-key-val { color: var(--c-text-head, #eef5f9); }
+.gp-console .account-key-btn {
+  border-color: var(--c-hairline-strong, rgba(95,212,255,0.3));
+  background: var(--c-panel-2, #0b1622);
+  color: var(--c-text-head, #eef5f9);
+}
+.gp-console .account-key-btn:hover { border-color: var(--c-accent, #5fd4ff); }
+.gp-console .account-key-btn--danger { color: var(--c-error, #ff6a4d); border-color: rgba(255,106,77,0.4); }
+.gp-console .account-key-btn--danger:hover { background: rgba(255,106,77,0.1); border-color: var(--c-error, #ff6a4d); }
+
+.gp-console .saved-card {
+  background: var(--c-panel, rgba(6,12,20,0.95));
+  border-color: var(--c-hairline, rgba(95,212,255,0.18));
+}
+.gp-console .saved-card-title { color: var(--c-text-head, #eef5f9); }
+.gp-console .saved-card-meta,
+.gp-console .saved-card-time { color: var(--c-text-dim, #7d8b96); }
+.gp-console .saved-filter-chip {
+  border-color: var(--c-hairline, rgba(95,212,255,0.18));
+  color: var(--c-text-dim, #7d8b96);
+}
+.gp-console .saved-filter-chip--active {
+  background: var(--c-accent, #5fd4ff);
+  border-color: var(--c-accent, #5fd4ff);
+  color: #04070c;
+}
+.gp-console .saved-empty { color: var(--c-text-dim, #7d8b96); }
+.gp-console .saved-empty-title { color: var(--c-text-head, #eef5f9); }
+
+.gp-console .btn-gp {
+  border-color: var(--c-hairline-strong, rgba(95,212,255,0.3));
+  background: var(--c-panel-2, #0b1622);
+  color: var(--c-text-head, #eef5f9);
+}
+.gp-console .btn-gp:hover { border-color: var(--c-accent, #5fd4ff); color: var(--c-accent, #5fd4ff); }
+.gp-console .btn-gp.accent {
+  background: var(--c-accent, #5fd4ff);
+  border-color: var(--c-accent, #5fd4ff);
+  color: #04070c;
+}
+.gp-console .btn-gp.accent:hover { background: #8fe0ff; border-color: #8fe0ff; }
+
+
+
+
+
+
+
 
 /* Filter chips */
 .saved-filters {
@@ -243,3 +371,15 @@
 .account-key-btn:hover { border-color: var(--line-2, #9ca3af); }
 .account-key-btn--danger { color: #c0392b; border-color: #e7b9b1; }
 .account-key-btn--danger:hover { background: #fbe9e3; border-color: #c0392b; }
+.acct-signedout-note { font-size: 12.5px; color: var(--c-text-dim); margin: 10px 0 0; }
+/* Saved-count badge on the Desk rail item (kept after the old tab strip was removed). */
+.account-tab-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--c-mono);
+  font-size: 10px;
+  background: rgba(95, 212, 255, 0.14);
+  color: var(--c-accent);
+}

@@ -1,5 +1,20 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Account A3: account page in console style with the K1 rail; branch `map-console`, local only)
+
+- `/account` now has a left rail: **Desk · Alerts & email · Studio · Plan · Profile & sign-in** (each with a subtitle, 44px, `aria-current`). Under 900px it becomes a chip row at the top.
+- **Old links keep working:** `saved`→desk, `notifications`→alerts, `analysis`→studio, `membership`→plan (used by `Layout.jsx:160` and `SubscribeCard.jsx:82`); unknown → desk.
+- **Existing panels moved unchanged** (logic and billing copy untouched until A5):
+  - Desk = the Saved list;
+  - Alerts = NotificationsPanel;
+  - Studio = the key panel ("stored only in this browser");
+  - Plan = MembershipPanel;
+  - Profile = profile + sign out + delete (confirmation kept).
+- **Signed out:** a calm screen listing only what an account gives today, instead of a silent redirect.
+  - Monitor fix: "Following countries" was listed as a free-account benefit, but following is member-only (`FollowButton` gates on `isMember`). It is now a note: "Following countries is part of membership".
+- The unused old tab CSS was removed and the saved-count badge restyled.
+- Tests: `accountShell.test.jsx` (13); 354 total.
+
 ## 2026-09-26 (Site shell A2: phone bottom tab bar; branch `map-console`, local only)
 
 - **Under 900px:** a fixed 5-item bottom tab bar (Map · Stories · Briefs · Studio · Record) in console colours: inline SVG icons, `aria-current`, 44px, safe-area padding.

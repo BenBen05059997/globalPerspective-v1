@@ -138,11 +138,15 @@ function getInitials(email) {
   return email[0].toUpperCase();
 }
 
+// Console theme (DS1): shared card/label styling for the panels moved into the account
+// shell (A3). These reference the `.gp-console` tokens (tokens.css) set on the shell wrapper
+// below — only the look changes here, no panel's data or behavior.
 const SECTION = {
-  border: '1.5px solid var(--border-color, #e5e7eb)',
-  borderRadius: 12,
+  border: '1px solid var(--c-hairline, rgba(95,212,255,0.18))',
+  borderRadius: 4,
   padding: '1.25rem 1.5rem',
   marginBottom: '1rem',
+  background: 'var(--c-panel, rgba(6,12,20,0.95))',
 };
 
 const LABEL = {
@@ -150,7 +154,8 @@ const LABEL = {
   fontWeight: 600,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
-  color: 'var(--text-muted)',
+  fontFamily: 'var(--c-mono, monospace)',
+  color: 'var(--c-accent, #5fd4ff)',
   marginBottom: 4,
 };
 
@@ -261,7 +266,7 @@ function SavedPanel({ savedItems, savedLoading, onUnsave }) {
 
       <div className="saved-grid">
         {savedLoading ? (
-          <div style={{ gridColumn: '1/-1', padding: '2rem 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          <div style={{ gridColumn: '1/-1', padding: '2rem 0', color: 'var(--c-text-dim, #7d8b96)', fontSize: '0.875rem' }}>
             Loading saved items…
           </div>
         ) : filtered.length === 0 ? (
@@ -300,11 +305,11 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
           {getInitials(user.email)}
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--c-text-head, #eef5f9)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user.email}
           </div>
           {memberSince && (
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 4 }}>
               Since {memberSince}
             </div>
           )}
@@ -318,11 +323,11 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
           <button
             onClick={handleSignOut}
             style={{
-              background: 'var(--bg-secondary, #f3f4f6)',
-              border: '1.5px solid var(--border-color, #e5e7eb)',
+              background: 'var(--c-panel-2, #0b1622)',
+              border: '1.5px solid var(--c-hairline, rgba(95,212,255,0.18))',
               borderRadius: 8, padding: '0.6rem 1rem',
               fontSize: '0.875rem', fontWeight: 600,
-              cursor: 'pointer', color: 'var(--text-primary)',
+              cursor: 'pointer', color: 'var(--c-text-head, #eef5f9)',
               textAlign: 'left', width: '100%',
             }}
           >
@@ -334,7 +339,7 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
               onClick={() => setShowDeleteConfirm(true)}
               style={{
                 background: 'none', border: 'none', padding: 0,
-                fontSize: '0.8rem', color: '#ef4444',
+                fontSize: '0.8rem', color: 'var(--c-error, #ff6a4d)',
                 cursor: 'pointer', textAlign: 'left',
               }}
             >
@@ -342,21 +347,21 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
             </button>
           ) : (
             <div style={{
-              background: '#fff5f5', border: '1.5px solid #fecaca',
+              background: 'rgba(255,106,77,0.08)', border: '1.5px solid rgba(255,106,77,0.4)',
               borderRadius: 8, padding: '0.75rem 1rem',
               fontSize: '0.85rem',
             }}>
-              <div style={{ fontWeight: 600, color: '#b91c1c', marginBottom: 6 }}>Are you sure?</div>
-              <div style={{ color: '#6b7280', marginBottom: 10, lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 600, color: 'var(--c-error, #ff6a4d)', marginBottom: 6 }}>Are you sure?</div>
+              <div style={{ color: 'var(--c-text-body, #c9d6df)', marginBottom: 10, lineHeight: 1.5 }}>
                 To delete your account, email us at{' '}
-                <a href="mailto:globalperspectives.app@gmail.com?subject=Delete%20my%20account" style={{ color: '#3b82f6' }}>
+                <a href="mailto:globalperspectives.app@gmail.com?subject=Delete%20my%20account" style={{ color: 'var(--c-accent, #5fd4ff)' }}>
                   globalperspectives.app@gmail.com
                 </a>
                 {' '}and we'll process it within 24 hours.
               </div>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', cursor: 'pointer' }}
               >
                 Cancel
               </button>
@@ -378,7 +383,7 @@ function MembershipPanel() {
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <div style={SECTION}>
           <div style={LABEL}>Membership</div>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '0.9rem', color: 'var(--c-text-dim, #7d8b96)' }}>
             Membership &amp; credits aren't available yet.
           </div>
         </div>
@@ -396,21 +401,21 @@ function MembershipPanel() {
       <div style={SECTION}>
         <div style={LABEL}>Plan</div>
         {loading ? (
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading…</div>
+          <div style={{ color: 'var(--c-text-dim, #7d8b96)', fontSize: '0.9rem' }}>Loading…</div>
         ) : isMember ? (
           <>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              <span style={{ color: 'var(--risk-l, #2e7d32)' }}>✓</span> Member
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--c-text-head, #eef5f9)' }}>
+              <span style={{ color: 'var(--c-ok, #6fd29a)' }}>✓</span> Member
             </div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 4 }}>
               {membership?.status === 'active' ? 'Active' : (membership?.status || 'Active')}
               {renews ? ` · renews ${renews}` : ''}
             </div>
           </>
         ) : (
           <>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>Free</div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.45 }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--c-text-head, #eef5f9)' }}>Free</div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 4, lineHeight: 1.45 }}>
               Reading stays free. Membership adds the full correction history, country change-alerts, and a monthly allowance of custom analyses.
             </div>
           </>
@@ -424,10 +429,10 @@ function MembershipPanel() {
       <div style={SECTION}>
         <div style={LABEL}>Analysis credits</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>{loading ? '—' : creditBalance}</span>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>credit{creditBalance === 1 ? '' : 's'}</span>
+          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--c-text-head, #eef5f9)' }}>{loading ? '—' : creditBalance}</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--c-text-dim, #7d8b96)' }}>credit{creditBalance === 1 ? '' : 's'}</span>
         </div>
-        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.45 }}>
+        <div style={{ fontSize: '0.82rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 4, lineHeight: 1.45 }}>
           Each custom analysis in the Analysis Studio uses one credit{isMember ? ', after your included monthly allowance' : ''}.
         </div>
         {creditPacks().length > 0 && (
@@ -451,7 +456,7 @@ function Toggle({ checked, disabled, onChange, label }) {
       style={{
         flexShrink: 0, width: 44, height: 26, borderRadius: 13, border: 'none',
         cursor: disabled ? 'not-allowed' : 'pointer', padding: 0,
-        background: checked ? '#a2442e' : '#cfcfca', opacity: disabled ? 0.55 : 1,
+        background: checked ? 'var(--c-accent, #5fd4ff)' : 'var(--c-hairline-strong, rgba(95,212,255,0.3))', opacity: disabled ? 0.55 : 1,
         position: 'relative', transition: 'background .15s',
       }}
     >
@@ -468,11 +473,11 @@ function ToggleRow({ label, desc, checked, disabled, onChange }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-      gap: '1rem', padding: '0.85rem 0', borderBottom: '1px solid var(--border-color, #eee)',
+      gap: '1rem', padding: '0.85rem 0', borderBottom: '1px solid var(--c-hairline, rgba(95,212,255,0.18))',
     }}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)' }}>{label}</div>
-        {desc && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.45 }}>{desc}</div>}
+        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--c-text-head, #eef5f9)' }}>{label}</div>
+        {desc && <div style={{ fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 3, lineHeight: 1.45 }}>{desc}</div>}
       </div>
       <Toggle checked={checked} disabled={disabled} onChange={onChange} label={label} />
     </div>
@@ -496,14 +501,14 @@ function NotificationsPanel() {
         <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Email notifications</div>
 
         {endpointMissing ? (
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--c-text-dim, #7d8b96)', lineHeight: 1.5 }}>
             Email delivery isn’t live yet. Notification settings will appear here once it’s enabled.
           </div>
         ) : loading ? (
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Loading preferences…</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--c-text-dim, #7d8b96)' }}>Loading preferences…</div>
         ) : (
           <>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
               Email delivery is live. Turn a channel on to subscribe, off to unsubscribe — changes take effect immediately.
             </div>
 
@@ -523,13 +528,13 @@ function NotificationsPanel() {
             />
 
             {prefs.digestOptIn && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 0', borderBottom: '1px solid var(--border-color, #eee)' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>Frequency</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 0', borderBottom: '1px solid var(--c-hairline, rgba(95,212,255,0.18))' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--c-text-head, #eef5f9)' }}>Frequency</span>
                 <select
                   value={prefs.digestCadence}
                   disabled={saving}
                   onChange={(e) => save({ digestCadence: e.target.value })}
-                  style={{ padding: '0.35rem 0.5rem', borderRadius: 6, border: '1.5px solid var(--border-color, #e5e7eb)', fontSize: '0.85rem' }}
+                  style={{ padding: '0.35rem 0.5rem', borderRadius: 6, border: '1.5px solid var(--c-hairline, rgba(95,212,255,0.18))', fontSize: '0.85rem' }}
                 >
                   <option value="weekly">Weekly</option>
                   <option value="daily">Daily</option>
@@ -541,20 +546,20 @@ function NotificationsPanel() {
               <button
                 onClick={() => change({ breakingOptIn: false, digestOptIn: false }, 'You’ve unsubscribed from all emails.')}
                 disabled={saving}
-                style={{ marginTop: '0.95rem', background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: '#ef4444', cursor: saving ? 'not-allowed' : 'pointer' }}
+                style={{ marginTop: '0.95rem', background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--c-error, #ff6a4d)', cursor: saving ? 'not-allowed' : 'pointer' }}
               >
                 Unsubscribe from all
               </button>
             )}
 
             {notice && (
-              <div style={{ marginTop: '0.85rem', fontSize: '0.82rem', color: '#3f8f6b', lineHeight: 1.5 }}>
+              <div style={{ marginTop: '0.85rem', fontSize: '0.82rem', color: 'var(--c-ok, #6fd29a)', lineHeight: 1.5 }}>
                 ✓ {notice}
               </div>
             )}
 
             {error && (
-              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#b91c1c' }}>{error}</div>
+              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--c-error, #ff6a4d)' }}>{error}</div>
             )}
           </>
         )}
@@ -564,13 +569,13 @@ function NotificationsPanel() {
       {!endpointMissing && !loading && (
         <div style={SECTION}>
           <div style={{ ...LABEL, marginBottom: '0.35rem' }}>Country change-alerts</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
             We email you when our read on a country you follow materially changes — grounded in the cited event that moved it.
             Follow a country from its page (tap <span style={{ whiteSpace: 'nowrap' }}>🔔 Follow</span>).
           </div>
 
           {(prefs.followedCountries || []).length === 0 ? (
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--c-text-dim, #7d8b96)', lineHeight: 1.5 }}>
               You’re not following any countries yet.
             </div>
           ) : (
@@ -578,13 +583,13 @@ function NotificationsPanel() {
               {(prefs.followedCountries || []).map((c) => (
                 <div key={c} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '1rem', padding: '0.7rem 0', borderBottom: '1px solid var(--border-color, #eee)',
+                  gap: '1rem', padding: '0.7rem 0', borderBottom: '1px solid var(--c-hairline, rgba(95,212,255,0.18))',
                 }}>
-                  <Link to={`/weekly/country/${encodeURIComponent(c)}`} style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>{c}</Link>
+                  <Link to={`/weekly/country/${encodeURIComponent(c)}`} style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--c-text-head, #eef5f9)', textDecoration: 'none' }}>{c}</Link>
                   <button
                     onClick={async () => { const ok = await follow(c, false); if (ok) setNotice(`Stopped following ${c}.`); }}
                     disabled={saving}
-                    style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: '#ef4444', cursor: saving ? 'not-allowed' : 'pointer' }}
+                    style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--c-error, #ff6a4d)', cursor: saving ? 'not-allowed' : 'pointer' }}
                   >
                     Unfollow
                   </button>
@@ -605,6 +610,63 @@ function NotificationsPanel() {
   );
 }
 
+// K1 (AccountDesk.dc.html, approved 2026-09-26): five left-rail sections replacing the old
+// 5-tab strip. Order and copy (label + one-line subtitle) match the design board exactly.
+const SECTIONS = [
+  { id: 'desk',    label: 'Desk',              subtitle: 'what changed · following · saved', kicker: 'DESK',
+    title: 'Your desk', sub: 'What you saved. (Since-your-last-visit and Following arrive in the next phase.)' },
+  { id: 'alerts',  label: 'Alerts & email',    subtitle: 'what you will be told',              kicker: 'ALERTS & EMAIL',
+    title: 'What you will be told', sub: 'Every email with its real state — nothing claims to be on when the thing behind it is paused.' },
+  { id: 'studio',  label: 'Studio',            subtitle: 'your key · shared analyses · receipts', kicker: 'STUDIO',
+    title: 'Studio', sub: 'Your AI key, stored only in this browser, and what you made with it.' },
+  { id: 'plan',    label: 'Plan',              subtitle: 'membership · billing',                kicker: 'PLAN',
+    title: 'Plan', sub: 'What you pay and what it includes today. Billing is handled by Polar.' },
+  { id: 'profile', label: 'Profile & sign-in', subtitle: 'email · sign out',                    kicker: 'PROFILE & SIGN-IN',
+    title: 'Profile', sub: 'The rare things.' },
+];
+
+// URL compatibility (A3): the old 5-tab `?tab=` values keep working — they just resolve to the
+// new section ids. Existing in-app links (Layout.jsx "Manage membership" → ?tab=membership,
+// SubscribeCard "Manage" → ?tab=notifications) still land on the right section. Any unknown or
+// absent value falls back to `desk`, never a blank page.
+const TAB_TO_SECTION = {
+  saved: 'desk',
+  notifications: 'alerts',
+  analysis: 'studio',
+  membership: 'plan',
+  profile: 'profile',
+  // new values also accepted as-is
+  desk: 'desk',
+  alerts: 'alerts',
+  studio: 'studio',
+  plan: 'plan',
+};
+
+function resolveSection(tabParam) {
+  return TAB_TO_SECTION[tabParam] || 'desk';
+}
+
+// Signed-out console screen (A6 will replace this with the full calm sign-in board; for now A3
+// gives /account a non-blank, honest state instead of redirecting immediately). Lists only
+// things that are true today — no membership-only claims, no invented features.
+function SignedOutDesk() {
+  return (
+    <div className="gp-console acct-shell acct-shell--signedout">
+      <div className="acct-signedout">
+        <div className="acct-section-kicker">ACCOUNT</div>
+        <h1 className="acct-section-title">What an account gives you here</h1>
+        <ul className="acct-signedout-list">
+          <li>Saved stories, countries, and daily briefs, kept in one list</li>
+          <li>An Analysis Studio key, stored only in this browser</li>
+          <li>Alert settings for the emails that are live today</li>
+        </ul>
+        <p className="acct-signedout-note">Following countries is part of membership.</p>
+        <Link to="/signin" className="btn-gp accent acct-signin-btn">Sign in</Link>
+      </div>
+    </div>
+  );
+}
+
 export default function Account() {
   useEffect(() => { document.title = 'Account | Global Perspectives'; }, []);
   const { user, loading: authLoading, signOut } = useAuth();
@@ -612,16 +674,11 @@ export default function Account() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { savedItems, loading: savedLoading, unsave } = useSavedItems();
 
-  const tab = searchParams.get('tab') || 'saved';
+  const sectionId = resolveSection(searchParams.get('tab'));
 
-  function setTab(t) {
-    setSearchParams({ tab: t }, { replace: true });
+  function setSection(id) {
+    setSearchParams({ tab: id }, { replace: true });
   }
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user || user.isAnonymous) { navigate('/signin'); return; }
-  }, [user, authLoading, navigate]);
 
   async function handleSignOut() {
     await signOut();
@@ -629,74 +686,70 @@ export default function Account() {
   }
 
   if (authLoading) {
-    return <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>Loading account…</div>;
+    return <div style={{ padding: '2rem', color: 'var(--c-text-dim, #7d8b96)' }}>Loading account…</div>;
   }
 
-  if (!user) return null;
+  // Public data (saved/follow/Studio) never gates on sign-in elsewhere in the app; the account
+  // desk itself is inherently sign-in-scoped (it's "your" saved list / plan / profile), so an
+  // honest signed-out screen replaces the old silent redirect to /signin.
+  if (!user || user.isAnonymous) {
+    return <SignedOutDesk />;
+  }
 
   const memberSince = formatMemberSince(user.metadata?.creationTime);
+  const section = SECTIONS.find((s) => s.id === sectionId) || SECTIONS[0];
 
   return (
-    <div style={{ maxWidth: 900, margin: '2rem auto', padding: '0 1rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.25rem' }}>Account</h1>
+    <div className="gp-console acct-shell">
+      <nav className="acct-rail" aria-label="Account sections">
+        {SECTIONS.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            className={`acct-rail-btn${s.id === sectionId ? ' acct-rail-btn--active' : ''}`}
+            aria-current={s.id === sectionId ? 'page' : undefined}
+            onClick={() => setSection(s.id)}
+          >
+            <span className="acct-rail-label">
+              {s.label}
+              {s.id === 'desk' && savedItems.length > 0 && (
+                <span className="account-tab-badge">{savedItems.length}</span>
+              )}
+            </span>
+            <span className="acct-rail-sub">{s.subtitle}</span>
+          </button>
+        ))}
+      </nav>
 
-      <div className="account-tabs">
-        <button
-          className={`account-tab${tab === 'profile' ? ' account-tab--active' : ''}`}
-          onClick={() => setTab('profile')}
-        >
-          Profile
-        </button>
-        <button
-          className={`account-tab${tab === 'membership' ? ' account-tab--active' : ''}`}
-          onClick={() => setTab('membership')}
-        >
-          Membership
-        </button>
-        <button
-          className={`account-tab${tab === 'saved' ? ' account-tab--active' : ''}`}
-          onClick={() => setTab('saved')}
-        >
-          Saved
-          {savedItems.length > 0 && (
-            <span className="account-tab-badge">{savedItems.length}</span>
+      <div className="acct-content">
+        <section aria-labelledby="acct-section-heading">
+          <div className="acct-section-kicker">{section.kicker}</div>
+          <h1 id="acct-section-heading" className="acct-section-title">{section.title}</h1>
+          <p className="acct-section-sub">{section.sub}</p>
+
+          {section.id === 'desk' && (
+            <SavedPanel
+              savedItems={savedItems}
+              savedLoading={savedLoading}
+              onUnsave={unsave}
+            />
           )}
-        </button>
-        <button
-          className={`account-tab${tab === 'notifications' ? ' account-tab--active' : ''}`}
-          onClick={() => setTab('notifications')}
-        >
-          Notifications
-        </button>
-        <button
-          className={`account-tab${tab === 'analysis' ? ' account-tab--active' : ''}`}
-          onClick={() => setTab('analysis')}
-        >
-          Analysis key
-        </button>
+
+          {section.id === 'alerts' && <NotificationsPanel />}
+
+          {section.id === 'studio' && <AnalysisKeyPanel />}
+
+          {section.id === 'plan' && <MembershipPanel />}
+
+          {section.id === 'profile' && (
+            <ProfilePanel
+              user={user}
+              memberSince={memberSince}
+              handleSignOut={handleSignOut}
+            />
+          )}
+        </section>
       </div>
-
-      {tab === 'profile' && (
-        <ProfilePanel
-          user={user}
-          memberSince={memberSince}
-          handleSignOut={handleSignOut}
-        />
-      )}
-
-      {tab === 'membership' && <MembershipPanel />}
-
-      {tab === 'saved' && (
-        <SavedPanel
-          savedItems={savedItems}
-          savedLoading={savedLoading}
-          onUnsave={unsave}
-        />
-      )}
-
-      {tab === 'notifications' && <NotificationsPanel />}
-
-      {tab === 'analysis' && <AnalysisKeyPanel />}
     </div>
   );
 }

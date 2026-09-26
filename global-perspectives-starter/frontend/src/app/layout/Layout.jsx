@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/features/account/hooks/useMembership';
@@ -6,6 +6,9 @@ import LoadingBar from '@/app/layout/LoadingBar';
 import AIToast from '@/app/layout/AIToast';
 import NotificationBell from '@/features/breaking/components/NotificationBell';
 import { useAutoTour, startTourForPath } from '@/app/onboarding/useOnboarding';
+import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
+import { pausedSince } from '@/shared/lib/freshness';
+import HudStatusLine from '@/features/map/components/HudStatusLine';
 import '@/app/layout/Layout.css';
 
 // Build stamp injected by Vite `define` (git SHA + date). `typeof` guard keeps it
@@ -17,9 +20,18 @@ const BUILD_LABEL = `v${_ver}${_date ? ` · ${_date}` : ''}`;
 function Layout({ children }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [topicCount, setTopicCount] = useState(null);
   const { user, loading: authLoading } = useAuth();
   const { isMember, creditBalance, available: billingAvailable } = useMembership();
+
+  // Site-wide honesty line (N1/DS1): the same computed "paused since" text the map page shows
+  // itself (hidden here for /map to avoid a duplicate claim — see the render guard below).
+  // Reuses the map's own hook/helpers so this layer invents no new freshness logic.
+  const { brief: latestBrief, loading: briefLoading, error: briefError } = useDailyBrief();
+  const paused = useMemo(() => pausedSince({
+    newestAnalysisAt: latestBrief?.generatedAt,
+    searched: !briefLoading && !briefError,
+    lookbackDays: MAX_LOOKBACK_DAYS,
+  }), [latestBrief, briefLoading, briefError]);
 
   useAutoTour(location.pathname);
 
@@ -45,28 +57,16 @@ function Layout({ children }) {
     return () => document.removeEventListener('keydown', handleKey);
   }, []);
 
-  useEffect(() => {
-    try {
-      const cached = localStorage.getItem('gp_topics_cache');
-      if (cached) {
-        const { data } = JSON.parse(cached);
-        setTopicCount(data?.topics?.length ?? null);
-      }
-    } catch { /* ignore malformed cache */ }
-  }, []);
-
-  // Grouped so the temporal briefings sit together, the entity intelligence views
-  // together, then markets/analysis, then accountability — with a description on each
-  // (title tooltip) so the difference between Daily / Weekly Brief / Threads is legible.
+  // N1 (approved 2026-09-26): five plain, flat menu items — no groups, no dropdowns. "Topics"
+  // (`/`) stays reachable via the logo; "Countries" (`/weekly/countries`) and "Weekly Brief"
+  // (`/weekly-brief`) stay reachable via interim links on the Stories/Briefings pages instead of
+  // the menu. "Briefings" points at `/daily` until a real `/briefings` route exists.
   const navLinks = [
-    { to: '/', label: 'Topics', exact: true, group: 'brief', title: "Today's global stories by region — summarise, forecast, or trace the cause of any one." },
-    { to: '/daily', label: 'Daily', group: 'brief', title: 'The end-of-day intelligence brief: one synthesised read of what mattered today.' },
-    { to: '/weekly-brief', label: 'Weekly Brief', group: 'brief', title: "Sunday signals digest — the week's discrete signals, fact kept separate from judgment. Also emailed." },
-    { to: '/weekly', label: 'Threads', group: 'intel', title: 'Ongoing story arcs ranked by risk — what leads, what develops, how each has evolved.' },
-    { to: '/weekly/countries', label: 'Countries', group: 'intel', title: 'Every covered country ranked by risk tier, with a standing intelligence briefing.' },
-    { to: '/map', label: 'Map', group: 'intel', title: "Today's coverage on a world map — the spatial view of the same live topics." },
-    { to: '/analyze', label: 'Analyze', group: 'markets', title: 'Analysis Studio — run a cited AI deep-dive across up to 4 stories (your key, or ours as a member).' },
-    { to: '/track-record', label: 'Track Record', group: 'acct', title: 'Accountability hub — every forecast publicly scored, every revised conclusion logged.' },
+    { to: '/map', label: 'Map', title: "Today's coverage on a world map — the spatial view of the same live topics." },
+    { to: '/weekly', label: 'Stories', title: 'Ongoing story arcs ranked by risk — what leads, what develops, how each has evolved.' },
+    { to: '/daily', label: 'Briefings', title: 'The end-of-day intelligence brief: one synthesised read of what mattered today.' },
+    { to: '/analyze', label: 'Studio', title: 'Analysis Studio — run a cited AI deep-dive across up to 4 stories (your key, or ours as a member).' },
+    { to: '/track-record', label: 'Track record', title: 'Accountability hub — every forecast publicly scored, every revised conclusion logged.' },
   ];
 
   const isActive = (to, exact) => {
@@ -90,20 +90,16 @@ function Layout({ children }) {
         </div>
 
         <div className="gp-nav-links">
-          {navLinks.map(({ to, label, exact, group, title }, i) => (
-            <Fragment key={to}>
-              {i > 0 && navLinks[i - 1].group !== group && (
-                <span className="gp-nav-div" aria-hidden="true" />
-              )}
-              <Link
-                to={to}
-                title={title}
-                data-tour={`nav-${to}`}
-                className={`gp-nav-link${isActive(to, exact) ? ' active' : ''}`}
-              >
-                {label}
-              </Link>
-            </Fragment>
+          {navLinks.map(({ to, label, exact, title }) => (
+            <Link
+              key={to}
+              to={to}
+              title={title}
+              data-tour={`nav-${to}`}
+              className={`gp-nav-link${isActive(to, exact) ? ' active' : ''}`}
+            >
+              {label}
+            </Link>
           ))}
         </div>
 
@@ -178,22 +174,15 @@ function Layout({ children }) {
         )}
       </div>
 
-      {/* The situation map carries its own live, per-source freshness line — hide the static
-          strip there so the page never shows two conflicting freshness claims.
-          No global "when was this last updated" signal exists at this layout level (this strip
-          renders on every page, many of which fetch independently), so this strip makes no
-          freshness claim ("LIVE"/"Updated hourly") — those were fabricated (STAGE0_FIXES_PLAN.md
-          item (b)). Per-page StatusStrip instances make the real, data-derived freshness claim. */}
-      {location.pathname !== '/map' && (
-      <div className="gp-strip">
-        {topicCount != null && (
-          <>
-            <span><b>{topicCount}</b> topics</span>
-            <span className="gp-strip-sep">·</span>
-          </>
-        )}
-        <span>AI-powered global news intelligence</span>
-      </div>
+      {/* The situation map carries its own live, per-source freshness line — hide the strip there
+          so the page never shows two conflicting freshness claims. Everywhere else the strip
+          shows the same computed "paused since" honesty line the map uses (N1/DS1): nothing when
+          analysis is fresh, never a typed/guessed claim. The old topic-count + tagline content
+          was dropped (an unbacked freshness claim — CLAUDE.md: no placeholder/fabricated UI). */}
+      {location.pathname !== '/map' && paused && (
+        <div className="gp-strip gp-console">
+          <HudStatusLine paused={paused} />
+        </div>
       )}
 
       <main className="gp-main">
@@ -205,13 +194,12 @@ function Layout({ children }) {
       <footer className="gp-footer">
         <span>Global Perspectives™ — AI news intelligence</span>
         <div className="gp-footer-links">
-          <Link to="/track-record">Track Record</Link>
-          <Link to="/membership">Membership</Link>
           <Link to="/about">About</Link>
-          <Link to="/whitepaper">White Paper</Link>
+          <Link to="/membership">Membership</Link>
           <Link to="/privacy">Privacy</Link>
           <Link to="/disclosures">Disclosures</Link>
           <Link to="/contact">Contact</Link>
+          <Link to="/track-record">Track Record</Link>
         </div>
         <span className="gp-footer-ver" title="Deployed build">{BUILD_LABEL}</span>
       </footer>

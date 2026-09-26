@@ -263,6 +263,13 @@ export default function DailyPage() {
   return (
     <div className="daily-page">
 
+      {/* Interim link (A1): Weekly Brief dropped out of the top nav (N1's five-item menu) — this
+          keeps it reachable from Briefings until Briefings grows a Daily | Weekly tab. Remove
+          once that tab exists. */}
+      <div className="daily-weekly-brief-link">
+        <Link to="/weekly-brief">Weekly brief →</Link>
+      </div>
+
       {/* Date nav topbar */}
       <div className="daily-topbar">
         <Link to="/">← Home</Link>

@@ -50,6 +50,14 @@ must_have "$SRC/app/App.jsx" "import EconomyPage|EconomyPage = lazy" "imports Ec
 must_have "$SRC/app/App.jsx" "/economy" "wires /economy route"
 must_not_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/economy" "economy soft-hidden from nav (2026-09-25; route stays live)"
 
+# ─── N1 site shell (2026-09-26): five plain, flat menu items ───
+must_have "$SRC/app/layout/Layout.jsx" "label: 'Map'" "menu has Map"
+must_have "$SRC/app/layout/Layout.jsx" "label: 'Stories'" "menu has Stories"
+must_have "$SRC/app/layout/Layout.jsx" "label: 'Briefings'" "menu has Briefings"
+must_have "$SRC/app/layout/Layout.jsx" "label: 'Studio'" "menu has Studio"
+must_have "$SRC/app/layout/Layout.jsx" "label: 'Track record'" "menu has Track record"
+must_not_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/whitepaper" "white paper soft-hidden from nav (A1, 2026-09-26; route stays live)"
+
 # ─── EconomyPage ───
 must_have "$SRC/features/economy/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
 must_have "$SRC/features/economy/EconomyPage.jsx" "useTopMovers" "uses useTopMovers"

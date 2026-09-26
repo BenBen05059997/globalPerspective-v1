@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Site shell A1: five-item menu, site-wide paused line, white paper hidden; branch `map-console`, local only)
+
+- **Menu (N1):** Map (`/map`) · Stories (`/weekly`) · Briefings (`/daily`) · Studio (`/analyze`) · Track record (`/track-record`). Flat, with the same URLs; the logo still goes to `/`.
+- **Interim links** so nothing is orphaned: "Countries →" on Stories and "Weekly brief →" on Briefings.
+- **Status line:** every page (except `/map`, which has its own) shows the computed "NEW STORIES AND ANALYSIS PAUSED SINCE <date>" (`pausedSince` + `useDailyBrief`). The old topic-count tagline is removed.
+- **White paper soft-hidden:** footer + About links removed; `/whitepaper` still works.
+- The site tour is updated for the new labels.
+- `quality/verify_pages.sh` gains N1 guards (38 pass).
+- New `app/__tests__/layout.test.jsx`.
+- **Found, not fixed (pre-existing, backend):** the Stories page claims "NEW EVENTS TODAY · updated today" because the archive re-writes the 13-Sep stories under the current date. Logged in the task file.
+
 ## 2026-09-26 (Map console, M7: phone layout; branch `map-console`, local only)
 
 - **Under 900px, `/map` has one tab switch:** MAP (radar, default) · LIST (the feed) · ALERTS (situations only, with a count badge).

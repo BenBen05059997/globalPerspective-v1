@@ -3071,3 +3071,18 @@
   .wp-band-meta { grid-column: 2; }
   .wp-band-title { white-space: normal; }
 }
+
+/* Interim Countries link (A1) — see WeeklyPage.jsx for why this exists. */
+.wp-countries-link {
+  margin-bottom: 12px;
+}
+.wp-countries-link a {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-mid);
+  text-decoration: none;
+}
+.wp-countries-link a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}

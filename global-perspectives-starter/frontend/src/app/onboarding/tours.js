@@ -14,6 +14,10 @@
 
 // A step with no `element` renders as a screen-centered modal in driver.js. Single step,
 // so the runner shows no progress chrome — just a title, blurb, and Done.
+// N1 (2026-09-26): the top menu is now five flat items — Map, Stories, Briefings, Studio, Track
+// record. "Topics" (`/`, reachable from the logo) and "Weekly Brief" (`/weekly-brief`, reachable
+// from Briefings) no longer have their own nav anchor, so tour copy no longer names them as menu
+// items.
 export const SITE_WELCOME = {
   id: 'welcome',
   steps: [
@@ -21,7 +25,7 @@ export const SITE_WELCOME = {
       popover: {
         title: 'Welcome to Global Perspectives',
         description:
-          'AI-curated intelligence on world news. <b>Topics</b> is the live feed; <b>Threads</b> follows stories over time; <b>Track Record</b> scores our predictions. Click the <b>?</b> in the top bar any time for a guided walkthrough of the page you’re on.',
+          'AI-curated intelligence on world news. <b>Map</b> shows today’s coverage spatially; <b>Stories</b> follows narratives over time; <b>Track record</b> scores our predictions. Click the <b>?</b> in the top bar any time for a guided walkthrough of the page you’re on.',
       },
     },
   ],
@@ -39,16 +43,16 @@ export const SITE_INTRO = {
       },
     },
     {
-      element: '[data-tour="nav-/"]',
-      popover: { title: 'Topics', description: 'The live feed — what’s happening right now, grouped into topics and summarized from many sources.', side: 'bottom', align: 'start' },
+      element: '[data-tour="nav-/map"]',
+      popover: { title: 'Map', description: 'Today’s coverage on a world map — the spatial view of the same live topics.', side: 'bottom', align: 'start' },
     },
     {
       element: '[data-tour="nav-/weekly"]',
-      popover: { title: 'Threads', description: 'Stories followed over time as narratives, so you can see how a situation is developing rather than one-off headlines.', side: 'bottom', align: 'start' },
+      popover: { title: 'Stories', description: 'Story arcs followed over time as narratives, so you can see how a situation is developing rather than one-off headlines.', side: 'bottom', align: 'start' },
     },
     {
       element: '[data-tour="nav-/track-record"]',
-      popover: { title: 'Track Record', description: 'Every prediction we publish is logged with a deadline and scored as it comes due — our forecasting accountability.', side: 'bottom', align: 'start' },
+      popover: { title: 'Track record', description: 'Every prediction we publish is logged with a deadline and scored as it comes due — our forecasting accountability.', side: 'bottom', align: 'start' },
     },
     {
       element: '[data-tour="nav-help"]',

@@ -646,3 +646,18 @@
   .daily-masthead-bar { flex-direction: column; align-items: flex-start; gap: 6px; }
   .daily-verdict, .daily-callout { padding: 16px 18px; }
 }
+
+/* Interim Weekly Brief link (A1) — see DailyPage.jsx for why this exists. */
+.daily-weekly-brief-link {
+  margin-bottom: 10px;
+}
+.daily-weekly-brief-link a {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  text-decoration: none;
+}
+.daily-weekly-brief-link a:hover {
+  color: var(--text-primary, #111827);
+  text-decoration: underline;
+}

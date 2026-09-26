@@ -261,45 +261,17 @@
 .gp-mobile-link:hover { background: var(--paper-2); }
 .gp-mobile-link.active { background: var(--paper-2); color: var(--ink); }
 
-/* ── Status strip (34px) ─────────────────────────────────── */
+/* ── Status strip ────────────────────────────────────────── */
+/* Site-wide computed "paused since" line (N1/DS1) — renders the HudStatusLine console component
+   (shared with /map) so the wording and look match everywhere it appears. Height is no longer
+   fixed at --strip-h: HudStatusLine's own padding decides it, and the strip renders nothing (no
+   empty bar) when analysis is fresh. */
 .gp-strip {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  height: var(--strip-h);
-  padding: 0 24px;
+  padding: 6px 24px;
   background: var(--paper-2);
   border-bottom: 1px solid var(--line);
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--ink-dim);
-  letter-spacing: 0.05em;
   overflow: hidden;
-  white-space: nowrap;
 }
-.gp-strip-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--risk-l);
-  font-weight: 600;
-}
-.gp-dot-live {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--risk-l);
-  box-shadow: 0 0 0 3px rgba(79,160,123,0.2);
-  flex-shrink: 0;
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-@keyframes pulse-dot {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(79,160,123,0.2); }
-  50% { box-shadow: 0 0 0 5px rgba(79,160,123,0.1); }
-}
-.gp-strip-sep { color: var(--ink-faint); }
-.gp-strip b { color: var(--ink); font-weight: 500; }
-
 /* ── Main content ────────────────────────────────────────── */
 .gp-main {
   min-height: calc(100vh - var(--nav-h) - var(--strip-h) - var(--footer-h));
@@ -342,7 +314,7 @@
   .gp-search { display: none; }
   .gp-btn { display: none; }
   .gp-hamburger { display: inline-flex; }
-  .gp-strip { padding: 0 16px; gap: 10px; }
+  .gp-strip { padding: 6px 16px; }
   .gp-footer { padding: 0 16px; }
 }
 
@@ -356,5 +328,4 @@
     font-size: 10px;
   }
   .gp-footer-links { flex-wrap: wrap; justify-content: center; gap: 10px; }
-  .gp-strip { font-size: 10px; gap: 8px; }
 }

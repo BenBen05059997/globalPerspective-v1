@@ -1014,6 +1014,13 @@ export default function WeeklyPage() {
   return (
     <EditorialShell strip={strip} left={leftRail} right={rightRail} className="wp-shell">
 
+      {/* Interim link (A1): Countries dropped out of the top nav (N1's five-item menu) and has
+          no menu entry of its own yet — this keeps it reachable until Stories grows a Countries
+          tab. Remove once that tab exists. */}
+      <div className="wp-countries-link">
+        <Link to="/weekly/countries">Countries →</Link>
+      </div>
+
       {welcome && (
         <div className="welcome-banner">
           <span>Welcome to Story Intelligence! You have full access. Explore story arcs, country briefings, and AI analysis below.</span>

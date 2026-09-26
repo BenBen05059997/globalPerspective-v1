@@ -160,6 +160,22 @@
       "h": 1600,
       "is_interactive": true,
       "title": "DS1 · Design system — one look per idea (where · how sure · how fresh · whose claim), with WHY and open questions"
+    },
+    "AccountDesk.dc.html": {
+      "x": 0,
+      "y": 21120,
+      "w": 1440,
+      "h": 900,
+      "is_interactive": true,
+      "title": "K1 · Account = your desk — since your last visit · following · saved; then alerts, Studio, plan, profile"
+    },
+    "Membership.dc.html": {
+      "x": 1520,
+      "y": 21120,
+      "w": 1440,
+      "h": 900,
+      "is_interactive": true,
+      "title": "K2 · Membership — LIVE TODAY vs options (a) honest now · (b) pause sign-ups · (c) new design goal"
     }
   },
   "createdOnFiles": {
@@ -386,6 +402,22 @@
       "x": 1480,
       "y": 19200,
       "text": "The design system gathers everything approved 24–26 Sep into one reference: T1 console colours, T2 meaning colours (crisis type only), T3 map symbols, T4 lines = how sure, T5 freshness = brightness, T6 ours vs this run, T7 motion budget, T8 type, T9 fixed words, T10 states, T11 shared parts (StoryPeek, slide card / bottom sheet, time bar, status line, quote / receipt, phone tab switch), T12 space & 44 px targets, T13 page defaults. Each panel says WHY it exists. The orange box lists 6 open questions (amber meaning two things; risk tiers in traffic-light colours; 40 vs 44 px; light Reading mode; where tokens live; parked pages). Toggle MOTION at the top right to see the reduced-motion version."
+    },
+    "hTitle": {
+      "kind": "title1",
+      "maxW": 5000,
+      "text": "H · Account & membership (proposed, for discussion)",
+      "w": 240,
+      "x": 0,
+      "y": 21000
+    },
+    "accthow": {
+      "fill": "teal",
+      "maxH": 620,
+      "w": 390,
+      "x": 3040,
+      "y": 21120,
+      "text": "K1: the account as an analyst's DESK, not a settings form (refs: Bloomberg Launchpad monitors, Feedly/Inoreader follows, GitHub notifications, Linear/Stripe settings, Apple Subscriptions). Default tab DESK: 'Since your last visit' = our real Iran change log (17–19 Aug) applied to an EXAMPLE reader who follows Iran — computed moves + stored model explanations, 2 of 3 flagged by the direction check; Following (countries, live member feature); Saved (example — real today: 0 of 13 accounts saved anything). Other tabs: Alerts & email (weekly brief ON; follow alerts PAUSED; story alerts not offered), Studio (key in this browser, shared links, run receipts), Plan (Polar), Profile. K2: the membership page. LIVE TODAY shows the problem (the Studio-on-our-compute benefit is sold but broken/parked); (a) true benefits only — recommended now (1 member exists); (b) pause sign-ups; (c) the goal after the AI top-up. Prices $15/$150 are the live ones."
     }
   },
   "order": [
@@ -408,7 +440,9 @@
     "StudioChat.dc.html",
     "Navigation.dc.html",
     "PhonePattern.dc.html",
-    "DesignSystem.dc.html"
+    "DesignSystem.dc.html",
+    "AccountDesk.dc.html",
+    "Membership.dc.html"
   ],
   "pages": [],
   "title": "Global Perspectives — Console Redesign"

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Account desk</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}button{font-family:inherit}</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #070d15; color: #c9d6df;">
+<header style="height: 52px; box-sizing: border-box; padding: 0 20px; display: flex; align-items: center; gap: 18px; background: rgba(4,8,14,0.95); border-bottom: 1px solid rgba(95,212,255,0.14);">
+<span style="font-family: Fraunces, serif; font-size: 15px; font-weight: 600; color: #eef5f9;">Global Perspectives</span>
+<span style="font-size: 13px; color: #8a99a5;">Map</span><span style="font-size: 13px; color: #8a99a5;">Stories</span><span style="font-size: 13px; color: #8a99a5;">Briefings</span><span style="font-size: 13px; color: #8a99a5;">Studio</span><span style="font-size: 13px; color: #8a99a5;">Track record</span>
+<span style="flex-grow: 1;"></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ffb347;">K1 · ACCOUNT = YOUR DESK · PROPOSED · EXAMPLE READER (follows Iran)</span>
+<span style="height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid #5fd4ff; color: #5fd4ff; font-size: 12px; display: inline-flex; align-items: center;">Account</span>
+</header>
+<div style="height: 26px; display: flex; align-items: center; padding: 0 20px; background: rgba(40,28,8,0.55); border-bottom: 1px solid rgba(255,179,71,0.3); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #ffb347;">● NEW STORIES AND ANALYSIS PAUSED SINCE SEP 12</div>
+
+<nav aria-label="Account sections" style="position: absolute; left: 20px; top: 96px; width: 200px; display: flex; flex-direction: column; gap: 6px;">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="5"><button type="button" onClick="{{t.pick}}" aria-current="{{t.on}}" style="{{t.style}}"><div style="font-size: 13px; color: {{t.c}};">{{t.label}}</div><div style="font-size: 10.5px; color: #7d8b96; margin-top: 2px;">{{t.sub}}</div></button></sc-for>
+<div style="margin-top: 14px; font-size: 11px; line-height: 1.45; color: #7d8b96;">Why a desk: an analyst's account should answer "what am I following, what changed since I last looked, what did I save, what will I be told". Settings come last.</div>
+</nav>
+
+<main style="position: absolute; left: 240px; top: 96px; right: 20px; bottom: 20px; overflow: hidden;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #5fd4ff;">{{sec.kicker}}</div>
+<div style="font-family: Fraunces, serif; font-size: 24px; color: #eef5f9; margin-top: 4px;">{{sec.title}}</div>
+<div style="font-size: 12.5px; color: #8a99a5; margin-top: 4px; max-width: 900px;">{{sec.sub}}</div>
+
+<sc-if value="{{isDesk}}" hint-placeholder-val="{{ true }}">
+<div style="display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px; margin-top: 14px;">
+<section style="background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.25); border-radius: 4px; padding: 12px 14px;">
+<div style="display: flex; align-items: baseline; gap: 10px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #5fd4ff;">SINCE YOUR LAST VISIT</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96;">EXAMPLE: LAST VISIT 16 AUG · 3 CHANGES IN WHAT YOU FOLLOW</span></div>
+<sc-for list="{{changes}}" as="c" hint-placeholder-count="3">
+<div style="margin-top: 10px; padding: 9px 11px; background: rgba(12,22,34,0.9); border-left: 3px solid {{c.col}};">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #6fd29a;">{{c.head}}</div>
+<div style="font-size: 12.5px; line-height: 1.4; color: #eef5f9; margin-top: 3px;">After: {{c.event}}</div>
+<div style="font-size: 11.5px; line-height: 1.4; color: #b9c7d1; margin-top: 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 8.5px; color: #7d8b96;">MODEL EXPLANATION (STORED) · </span>{{c.why}}</div>
+<sc-if value="{{c.flag}}" hint-placeholder-val="{{ false }}"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #ff9a85; margin-top: 3px;">⚠ DIRECTION CHECK: EXPLAINS A LOWER RISK WITH SOMETHING THAT GOT WORSE</div></sc-if>
+</div>
+</sc-for>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96; margin-top: 10px;">MOVES ARE COMPUTED FROM OUR READINGS · EXPLANATIONS ARE MODEL TEXT · NOTHING NEW SINCE 11 SEP (ANALYSIS PAUSED)</div>
+</section>
+<div style="display: flex; flex-direction: column; gap: 14px;">
+<section style="background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px; padding: 12px 14px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #5fd4ff;">FOLLOWING</div>
+<svg width="100%" height="120" viewBox="0 0 360 120" style="display: block; margin-top: 6px;" aria-hidden="true"><path d="{{land}}" fill="none" stroke="rgba(150,225,255,0.25)" stroke-width="2" stroke-linecap="round"></path><circle cx="{{iranX}}" cy="{{iranY}}" r="7" fill="none" stroke="#ee7754" stroke-width="2"></circle><text x="{{iranLX}}" y="{{iranY}}" fill="#eef5f9" font-family="JetBrains Mono" font-size="9">IRAN · 95</text></svg>
+<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;"><span style="padding: 4px 8px; border: 1px solid rgba(238,119,84,0.6); border-radius: 12px; font-size: 11.5px; color: #eef5f9;">🔔 Iran · risk 95 · top of scale</span><span style="padding: 4px 8px; border: 1px dashed #56626b; border-radius: 12px; font-size: 11.5px; color: #7d8b96;">+ Follow a country</span></div>
+<div style="font-size: 11px; color: #7d8b96; margin-top: 6px;">Following today works for countries (member feature, live). Following stories is a question for you.</div>
+</section>
+<section style="background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.2); border-radius: 4px; padding: 12px 14px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #5fd4ff;">SAVED · EXAMPLE</div>
+<sc-for list="{{saved}}" as="s" hint-placeholder-count="3"><div style="margin-top: 6px; padding: 6px 8px; border-left: 3px solid {{s.c}}; background: rgba(12,22,34,0.9); font-size: 12px; color: #eef5f9;">{{s.t}}<div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #7d8b96; margin-top: 2px;">{{s.m}}</div></div></sc-for>
+<div style="font-size: 11px; color: #7d8b96; margin-top: 6px;">Real today: nobody has saved anything yet (0 of 13 accounts).</div>
+</section>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isList}}" hint-placeholder-val="{{ false }}">
+<div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px; max-width: 900px;">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<div style="display: grid; grid-template-columns: 260px 1fr auto; gap: 14px; align-items: center; padding: 12px 14px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.18); border-radius: 4px;">
+<div><div style="font-size: 13.5px; color: #eef5f9;">{{r.k}}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: {{r.stateC}}; margin-top: 3px;">{{r.state}}</div></div>
+<div style="font-size: 12px; line-height: 1.45; color: #b9c7d1;">{{r.v}}</div>
+<span style="{{r.btnStyle}}">{{r.btn}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 0 }; }
+  renderVals() {
+    var self = this, S = this.state, MONO = 'JetBrains Mono, monospace';
+    function X(lon) { return (lon + 170) / 340 * 360; }
+    function Y(lat) { return 8 + (75 - lat) / 135 * 110; }
+    function land(lo, la) { return (Math.sin(lo * 0.07) + Math.cos(la * 0.11 + lo * 0.03) + Math.sin(la * 0.05 - lo * 0.02)) > 0.35; }
+    var lp = ''; for (var la = -50; la <= 72; la += 6) for (var lo = -165; lo <= 170; lo += 6) if (land(lo, la)) lp += 'M' + X(lo).toFixed(1) + ' ' + Y(la).toFixed(1) + 'h0.1';
+    var TABS = [
+      ['Desk', 'what changed · following · saved'],
+      ['Alerts & email', 'what you will be told'],
+      ['Studio', 'your key · shared analyses · receipts'],
+      ['Plan', 'membership · billing'],
+      ['Profile & sign-in', 'email · sign out']
+    ];
+    var tabs = TABS.map(function (t, i) { var on = i === S.tab; return { label: t[0], sub: t[1], on: on, c: on ? '#5fd4ff' : '#eef5f9', pick: function () { self.setState({ tab: i }); },
+      style: 'display: block; width: 100%; text-align: left; min-height: 44px; padding: 8px 10px; border-radius: 3px; cursor: pointer; background: ' + (on ? 'rgba(95,212,255,0.1)' : 'transparent') + '; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.14)') + ';' }; });
+    // real Iran change-log entries after 16 Aug (DRIFTLOG, computed moves from HISTORY readings)
+    var changes = [
+      ['19 AUG · IRAN · ECONOMIC 80→90 · HUMANITARIAN 90→70', 'UAE imposes indefinite trade embargo on Iran over alleged missile attacks (19 Aug)', 'The UAE’s indefinite trade embargo on Iran directly escalates economic isolation, driving the economic score up from 80 to 90. This action also shifts the humanitarian score down as trade disruption worsens civilian conditions …', true],
+      ['18 AUG · IRAN · POLITICAL 75→85', 'Trump lets 60-day Iran peace deal deadline expire, threatens to bomb Oman over Strait of Hormuz (18 Aug)', 'The expiration of the 60-day peace deal deadline … directly escalates the political risk …, shifting the political axis upward.', false],
+      ['17 AUG · IRAN · POLITICAL 85→75', 'Israel strikes Lebanon as US prepares fresh Iran sanctions, killing 11 in deadliest escalation since ceasefire (17 Aug)', 'The Israeli strike on Lebanon … strains Iran’s fragile ceasefires, reducing the political stability score as proxy conflict intensifies.', true]
+    ].map(function (c) { return { head: c[0], event: c[1], why: c[2], flag: c[3], col: c[3] ? '#ff9a85' : '#6fd29a' }; });
+    var saved = [
+      ['BRICS Summit in New Delhi Adopts Joint Declaration Urging Maximum Restraint in Middle East War', 'STORY · INDIA · 13 SEP', '#9b8cf8'],
+      ['Scenario · US–Iran over Hormuz', 'SHARED STUDIO ANALYSIS · SOURCES FROZEN', '#ffb347']
+    ].map(function (s) { return { t: s[0], m: s[1], c: s[2] }; });
+    function btn(txt, on) { return 'min-height: 36px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 4px; font-family: ' + MONO + '; font-size: 10px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.3)') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + ';'; }
+    var SEC = [
+      { kicker: 'DESK', title: 'Your desk', sub: 'The default view. Changes in what you follow since your last visit (our change log, applied to your follows), the countries you follow, and what you saved.' },
+      { kicker: 'ALERTS & EMAIL', title: 'What you will be told', sub: 'Every email with its real state. Nothing claims to be on when the thing behind it is paused.',
+        rows: [['Weekly brief email', 'ON · FREE FOR EVERYONE', '#6fd29a', 'Sundays. No edition since the week of 6 Sep while analysis is paused; you get nothing rather than an empty email.', 'TURN OFF', false],
+               ['Follow alerts (countries you follow)', 'PAUSED', '#ffb347', 'An email when a followed country\'s read changes, with the cited event. The alert job is off: no changes are produced since 12 Sep. It turns on when analysis resumes.', 'ON WHEN RESUMED', false],
+               ['Story alerts', 'NOT OFFERED YET', '#7d8b96', 'Only if we decide readers can follow stories (question for you).', '—', false]] },
+      { kicker: 'STUDIO', title: 'Studio', sub: 'Your AI key and what you made with it.',
+        rows: [['Your API key', 'STORED IN THIS BROWSER ONLY', '#6fd29a', 'Example: Gemini key set on this browser. We never see it; runs go straight to the provider.', 'CHANGE KEY', true],
+               ['Shared analyses', '1 LINK · EXAMPLE', '#5fd4ff', '"Scenario · US–Iran over Hormuz" · sources frozen · not indexed · you can delete it.', 'MANAGE', false],
+               ['Run receipts', 'FROM YOUR PROVIDER', '#5fd4ff', 'Tokens in/out, model and time for each run you made on this browser, so you can match your provider bill.', 'VIEW', false]] },
+      { kicker: 'PLAN', title: 'Plan', sub: 'What you pay, what it includes today, and how to leave. Billing is handled by Polar.',
+        rows: [['Free', 'CURRENT PLAN · EXAMPLE', '#6fd29a', 'All reading, the map, briefings, track record, the Studio with your own key, the latest correction on each country.', '', false],
+               ['Member · $15 / month or $150 / year', 'SEE MEMBERSHIP', '#5fd4ff', 'What it includes today depends on your membership decision (board K2).', 'COMPARE', true],
+               ['Manage billing', 'AT POLAR', '#7d8b96', 'Invoices, card, cancel. A member sees the renewal date here.', 'OPEN POLAR', false]] },
+      { kicker: 'PROFILE & SIGN-IN', title: 'Profile', sub: 'The rare things.',
+        rows: [['Email', 'SIGNED IN', '#6fd29a', 'Example: r***@example.com (Firebase sign-in).', 'SIGN OUT', false],
+               ['Delete account', 'PERMANENT', '#ff6a4d', 'Deletes follows, saved items and shared links. Asks you to confirm on the page.', 'DELETE…', false]] }
+    ];
+    var sec = SEC[S.tab];
+    var rows = (sec.rows || []).map(function (r) { return { k: r[0], state: r[1], stateC: r[2], v: r[3], btn: r[4], btnStyle: r[4] ? btn(r[4], r[5]) : 'display: none;' }; });
+    return { tabs: tabs, sec: sec, isDesk: S.tab === 0, isList: S.tab !== 0, rows: rows, changes: changes, saved: saved, land: lp,
+      iranX: X(53).toFixed(1), iranY: Y(32).toFixed(1), iranLX: (X(53) + 10).toFixed(1) };
+  }
+}
+</script>
+</body>
+</html>

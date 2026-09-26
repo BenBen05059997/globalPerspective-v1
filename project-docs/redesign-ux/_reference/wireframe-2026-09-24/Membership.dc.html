@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Membership</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#04070c;font-family:Inter,system-ui,sans-serif}button{font-family:inherit}</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; overflow: hidden; background: #070d15; color: #c9d6df;">
+<header style="height: 52px; box-sizing: border-box; padding: 0 20px; display: flex; align-items: center; gap: 12px; background: rgba(4,8,14,0.95); border-bottom: 1px solid rgba(95,212,255,0.14);">
+<span style="font-family: Fraunces, serif; font-size: 15px; font-weight: 600; color: #eef5f9;">Global Perspectives</span>
+<span style="flex-grow: 1;"></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ffb347; margin-right: 6px;">K2 · MEMBERSHIP · COMPARE:</span>
+<sc-for list="{{opts}}" as="o" hint-placeholder-count="4"><button type="button" onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+</header>
+
+<div style="position: absolute; left: 40px; top: 76px; right: 40px;">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: {{opt.kc}};">{{opt.kicker}}</div>
+<div style="font-family: Fraunces, serif; font-size: 30px; color: #eef5f9; margin-top: 6px; max-width: 900px;">{{opt.head}}</div>
+<div style="font-size: 13.5px; line-height: 1.5; color: #b9c7d1; margin-top: 6px; max-width: 860px;">{{opt.lede}}</div>
+</div>
+
+<div style="position: absolute; left: 40px; top: 230px; width: 420px; display: flex; flex-direction: column; gap: 12px;">
+<sc-for list="{{plans}}" as="p" hint-placeholder-count="2">
+<div style="{{p.box}}">
+<div style="display: flex; align-items: baseline; gap: 10px;"><span style="font-size: 15px; color: #eef5f9; font-weight: 600;">{{p.name}}</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #6fd29a;">{{p.tag}}</span></div>
+<div style="font-family: Fraunces, serif; font-size: 30px; color: #eef5f9; margin-top: 4px;">{{p.price}}<span style="font-family: Inter; font-size: 13px; color: #8a99a5;">{{p.cad}}</span></div>
+<div style="font-size: 12px; color: #8a99a5; margin-top: 2px;">{{p.note}}</div>
+<div style="{{p.btn}}">{{p.cta}}</div>
+</div>
+</sc-for>
+<div style="font-size: 11px; line-height: 1.45; color: #7d8b96;">Payments by Polar (merchant of record). Cancel anytime at Polar. Reading stays free for everyone.</div>
+</div>
+
+<section style="position: absolute; left: 490px; top: 230px; right: 40px; background: rgba(6,12,20,0.95); border: 1px solid rgba(95,212,255,0.22); border-radius: 4px; padding: 14px 16px;">
+<div style="display: grid; grid-template-columns: 1fr 120px 150px; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #7d8b96; padding-bottom: 8px; border-bottom: 1px solid rgba(95,212,255,0.14);"><span>WHAT YOU GET</span><span>FREE</span><span>MEMBER</span></div>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: 1fr 120px 150px; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(95,212,255,0.08);">
+<div><div style="font-size: 13px; color: {{r.c}};">{{r.k}}</div><sc-if value="{{r.hasNote}}" hint-placeholder-val="{{ false }}"><div style="font-size: 11px; color: #7d8b96; margin-top: 2px;">{{r.note}}</div></sc-if></div>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{r.fc}};">{{r.free}}</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{r.mc}};">{{r.mem}}</span>
+</div>
+</sc-for>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #7d8b96; margin-top: 10px;">✓ AVAILABLE NOW · ⏸ PAUSED (SAYS WHEN IT RETURNS) · ✗ NOT OFFERED · ◇ PROPOSED FOR THE NEW DESIGN (NOT BUILT)</div>
+</section>
+
+<div style="position: absolute; left: 40px; bottom: 22px; right: 40px; padding: 10px 14px; border: 1px solid rgba(255,179,71,0.45); border-radius: 4px; background: rgba(40,28,8,0.3); font-size: 12px; line-height: 1.5; color: #d6e2ea;"><b style="color: #ffb347;">Your decision.</b> {{opt.decide}}</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { o: 0 }; }
+  renderVals() {
+    var self = this, S = this.state, MONO = 'JetBrains Mono, monospace';
+    var OK = '#6fd29a', PAUSE = '#ffb347', NO = '#7d8b96', PROP = '#5fd4ff', BAD = '#ff6a4d';
+    function row(k, free, fc, mem, mc, note, c) { return { k: k, free: free, fc: fc, mem: mem, mc: mc, note: note || '', hasNote: !!note, c: c || '#eef5f9' }; }
+    var O = [
+      { label: 'LIVE TODAY', kicker: 'WHAT THE LIVE PAGE SAYS NOW', kc: BAD, head: 'Membership (as live on globalperspective.net)',
+        lede: 'The live page lists four benefits. One of them, the Studio on our compute, does not work: the member path has had no use since July and is broken while the AI account is out of balance; credits are parked.',
+        cta: 'Subscribe', rows: [
+          row('Full self-correction history on every country and thread', '✓ newest only', OK, '✓ full chain', OK),
+          row('Change alerts by email for countries you follow', '✗', NO, 'SOLD AS ✓', BAD, 'The alert job is off and no changes are produced since 12 Sep.'),
+          row('Run the Analysis Studio on our compute, with a monthly allowance + credits', '✗', NO, 'SOLD AS ✓', BAD, 'Broken and parked. This is the problem.', '#ff9a85'),
+          row('You fund independent intelligence', '', NO, '✓', OK)],
+        decide: 'The live page sells a feature that does not work. Pick (a), (b) or (c) above; all three fix this.' },
+      { label: '(a) HONEST NOW', kicker: 'OPTION A · KEEP SELLING, ONLY TRUE BENEFITS', kc: OK, head: 'Support the desk. Get the full record.',
+        lede: 'Reading stays free for everyone. Membership gives you the full history of how our reads changed, follows, and funds the analysis while it is paused and when it returns.',
+        cta: 'Become a member', rows: [
+          row('All stories, the map, briefings, track record', '✓', OK, '✓', OK),
+          row('Studio with your own AI key', '✓', OK, '✓', OK),
+          row('Full correction history (every change, not just the latest)', 'newest only', NO, '✓', OK),
+          row('Follow countries', '✗', NO, '✓', OK),
+          row('Email when a followed country changes', '✗', NO, '⏸ returns when analysis resumes', PAUSE, 'Analysis paused since 12 Sep.'),
+          row('Studio on our AI account (no key needed)', '✗', NO, '✗ not offered', NO)],
+        decide: 'Recommended for now: only 1 member exists, so rewriting the benefits disrupts no one, and the page stops promising what we cannot deliver.' },
+      { label: '(b) PAUSE SIGN-UPS', kicker: 'OPTION B · PAUSE NEW MEMBERSHIPS', kc: PAUSE, head: 'Membership is paused while the analysis desk is paused.',
+        lede: 'We are not taking new members until our analysis runs again and member features work as described. Existing members keep what they have. Reading stays free.',
+        cta: 'Tell me when it reopens', rows: [
+          row('All stories, the map, briefings, track record', '✓', OK, '✓', OK),
+          row('Studio with your own AI key', '✓', OK, '✓', OK),
+          row('Full correction history', 'newest only', NO, '✓ existing members', OK),
+          row('New memberships', '—', NO, '⏸ reopening later', PAUSE)],
+        decide: 'Safest, but it removes the only revenue path; "tell me when it reopens" needs an email list (the weekly-brief list could serve).' },
+      { label: '(c) NEW DESIGN GOAL', kicker: 'OPTION C · MEMBERSHIP FOR THE NEW DESIGN (AFTER THE AI TOP-UP)', kc: PROP, head: 'Your desk, on our analysts’ time.',
+        lede: 'What a member gets once the redesign and the AI account are back: the Studio on our key with a monthly limit, "since your last visit" alerts on what you follow, and your saved and shared analyses. Prices stay as live today.',
+        cta: 'Become a member', rows: [
+          row('All stories, the map, briefings, track record', '✓', OK, '✓', OK),
+          row('Studio with your own AI key', '✓', OK, '✓', OK),
+          row('Studio on our key, monthly limit (no key needed)', '✗', NO, '◇ proposed', PROP, 'Needs the member path fixed + funded AI account; the limit is a business decision.'),
+          row('"Since your last visit" on followed countries (and stories?)', '✗', NO, '◇ proposed', PROP),
+          row('Email alerts on what you follow', '✗', NO, '◇ proposed', PROP),
+          row('Full correction history', 'newest only', NO, '✓', OK),
+          row('Saved stories + shared analyses on your desk', '✓ saved', OK, '✓ + more', OK)],
+        decide: 'The long-term goal. Needs the DeepSeek top-up, the Studio member path rebuilt (not the parked credits code), and your call on the monthly limit.' }
+    ];
+    var opt = O[S.o];
+    var opts = O.map(function (o, i) { var on = i === S.o; return { label: o.label, pick: function () { self.setState({ o: i }); },
+      style: 'height: 30px; padding: 0 10px; border-radius: 15px; cursor: pointer; font-family: ' + MONO + '; font-size: 10px; border: 1px solid ' + (on ? '#5fd4ff' : 'rgba(95,212,255,0.25)') + '; background: ' + (on ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (on ? '#5fd4ff' : '#8a99a5') + ';' }; });
+    var paused = S.o === 2;
+    function btnStyle(primary, off) { return 'margin-top: 10px; min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-family: ' + MONO + '; font-size: 11px; letter-spacing: 0.06em; border: 1px solid ' + (off ? '#56626b' : '#5fd4ff') + '; background: ' + (primary && !off ? 'rgba(95,212,255,0.18)' : 'transparent') + '; color: ' + (off ? '#7d8b96' : '#eef5f9') + ';'; }
+    var plans = [
+      { name: 'Annual', tag: '2 MONTHS FREE VS MONTHLY', price: '$150', cad: ' / year', note: 'Billed yearly.' },
+      { name: 'Monthly', tag: '', price: '$15', cad: ' / month', note: 'Billed monthly. Cancel anytime.' }
+    ].map(function (p, i) { return { name: p.name, tag: p.tag, price: p.price, cad: p.cad, note: p.note, cta: paused ? opt.cta : opt.cta + ' · ' + p.price + p.cad.replace(/\s/g, ''),
+      btn: btnStyle(i === 0, false), box: 'padding: 14px 16px; background: rgba(6,12,20,0.95); border: 1px solid ' + (i === 0 ? 'rgba(111,210,154,0.5)' : 'rgba(95,212,255,0.22)') + '; border-radius: 4px;' + (paused ? ' opacity: 0.55;' : '') }; });
+    return { opts: opts, opt: opt, rows: opt.rows, plans: plans };
+  }
+}
+</script>
+</body>
+</html>

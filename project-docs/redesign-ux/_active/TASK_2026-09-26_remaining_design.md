@@ -32,7 +32,7 @@ Each phase runs: research + debate (agents) → canvas board with real data → 
 | P · Phone layouts | One shared phone pattern for map + slides + time bar (story mode, country card, briefings, track record, Studio) | ✅ **APPROVED 26 Sep** ("Okay, that is good"), canvas P1 | see git log | 3 advocates + 1 critic; lazy map load verified in code |
 | DS · Design-system board | T1–T9 tokens + shared pieces (StoryPeek, slide card, time bar, solid/dashed/hatched layers, freshness, "model judgment" label, quote/receipt) | ✅ **APPROVED 26 Sep**: where old and new designs conflict, the new design wins (canvas DS1) | see git log | tokens checked against `tokens.css` (light palette only; traffic-light risk scale) |
 | H · Home leftovers | Banner vs tour; country shading vs pins; build behind `/map` first; "real Earth on top right" | **Now** · questions put to operator | — | — |
-| SP · Small pages | About, whitepaper, privacy, disclosures, contact; membership / account / sign-in, including the signed-out `/account` | queued | — | — |
+| SP · Small pages | About, whitepaper, privacy, disclosures, contact; membership / account / sign-in, including the signed-out `/account` | ◐ **account desk (K1) + membership (K2) design APPROVED 26 Sep** ("ok that looks good"); build plan `TASK_2026-09-26_shell_account_local.md`; open: K-a membership option, K-b story follows, K-c saved; About/Privacy/Disclosures/Contact still to design | — | — |
 | B · Build order | The sequence from design to build, with dependencies (C11 story mode first) and operator gates | **Drafted:** `REDESIGN_MASTER_PLAN.md` §7, awaiting operator review | — | — |
 
 Also open, outside these phases: Studio decisions S5–S10 (`TRACK_RECORD_AND_STUDIO_RULING.md`).

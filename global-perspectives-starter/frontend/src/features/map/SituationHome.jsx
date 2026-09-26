@@ -16,6 +16,8 @@ import { defaultMapView, normalizeStoredView } from '@/features/map/lib/globeSpi
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import { peekData } from '@/shared/lib/peekData.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
+import StoryCard from '@/features/map/components/StoryCard.jsx';
+import OrientationBanner from '@/features/map/components/OrientationBanner.jsx';
 import '@/features/map/SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
@@ -271,6 +273,8 @@ export default function SituationHome() {
         </div>
       </header>
 
+      <OrientationBanner />
+
       <HudStatusLine paused={paused} />
 
       {stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null}
@@ -447,6 +451,11 @@ export default function SituationHome() {
                 </div>
               )}
             </div>
+          ) : selectedStory ? (
+            <StoryCard
+              topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length}
+              onBack={() => userSelectStory(null)}
+            />
           ) : (
             <HudIntelFeed
               ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}

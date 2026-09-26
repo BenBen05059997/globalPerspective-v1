@@ -1,5 +1,19 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Map console, M5b: story card + orientation banner; branch `map-console`, local only)
+
+- **Story card** (`features/map/components/StoryCard.jsx` + `hooks/useStoryCardData.js`): clicking a story opens it in the rail. The sections:
+  - the header (category · country · updated date · OLDER);
+  - WHAT IS HAPPENING: the stored summary's first 3 bullet facts with their outlet attribution, labelled "AI SUMMARY OF THE SOURCES";
+  - WHAT IT MEANS: the thread analysis trajectory, labelled "MODEL JUDGMENT · analysis <date>";
+  - WHY: up to 3 cause steps, labelled "MODEL JUDGMENT";
+  - "Open full story →" and "Analyze in Studio →".
+  - A section with no data is omitted. A real fetch failure shows only the header + "Open full story", reported via the new `errorSink.reportFetchError`.
+- The globe flies to the selected story's country (reduced motion: instant).
+- **Orientation banner** (H1): one dismissible line explaining pins vs shaded countries, remembered in localStorage (safe if storage throws). The guided tour no longer auto-starts on `/map`; the "?" button still starts it.
+- **Monitor fix:** the first version split sentences on every "." and rendered "com. com. org."; `lib/cardText.js` now takes whole summary bullets and splits prose only at real sentence ends (with tests). The AI-summary label was also added.
+- Tests: 290 total.
+
 ## 2026-09-26 (Map console, M5a: stories, country shading, StoryPeek; branch `map-console`, local only)
 
 - **Stories on the console:** the feed shows the current stories ("STORIES · FROM 13 SEP · PAUSED", from the existing `useGeminiTopics` hook, which caps at 13).

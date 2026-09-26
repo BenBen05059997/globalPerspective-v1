@@ -203,12 +203,19 @@ export default function SituationMap3D({
     return () => ro.disconnect();
   }, []);
 
-  // Fly to the focused situation; fly back on clear. Keyed on focusId + the resolved centroid
-  // string only, so the 5-min poll (new `situations` array) never re-fires the same fly-to.
+  // Fly to the focused situation, or (M5b) to a selected story's country centroid when no
+  // situation is focused — `focusId` and a story selection are mutually exclusive (SituationHome).
+  // Fly back on clear. Keyed on focusId/storyFocusIso3 + the resolved centroid string only, so
+  // the 5-min poll (new `situations` array) never re-fires the same fly-to.
   const focusCentroid = useMemo(() => {
     const s = situations.find((x) => x.id === focusId && x.centroid);
-    return s ? `${s.centroid.lon},${s.centroid.lat}` : null;
-  }, [situations, focusId]);
+    if (s) return `${s.centroid.lon},${s.centroid.lat}`;
+    if (storyFocusIso3) {
+      const c = iso3Centroid(storyFocusIso3);
+      if (c) return `${c[0]},${c[1]}`;
+    }
+    return null;
+  }, [situations, focusId, storyFocusIso3]);
   useEffect(() => {
     if (focusCentroid) {
       stopSpin(); // a selection turns the globe to face the story and stays stopped (task M3)

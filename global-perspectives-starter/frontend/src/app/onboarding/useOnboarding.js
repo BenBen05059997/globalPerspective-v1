@@ -99,6 +99,10 @@ export function startTourForPath(pathname) {
 export function useAutoTour(pathname) {
   useEffect(() => {
     let cancelled = false;
+    // The map console (M5b) has its own orientation banner (H1) instead of a guided tour —
+    // never auto-start any tour there. The "?" button's startTourForPath() is untouched, so a
+    // reader can still ask for a tour on /map on demand; this only stops it firing unasked.
+    if (pathname === '/map') return undefined;
     (async () => {
       if (!hasSeen(SITE_WELCOME.id)) {
         const ok = await waitFor('[data-tour="nav-brand"]', 1500);

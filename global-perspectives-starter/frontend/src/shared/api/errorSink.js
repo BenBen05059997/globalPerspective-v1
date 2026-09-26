@@ -64,6 +64,13 @@ export function reportBoundaryError(error, componentStack) {
   report('react', error?.message || String(error), stack);
 }
 
+// Called by any feature that catches its own fetch failure and wants it reported without
+// re-throwing (e.g. a card that renders an honest fallback instead of crashing). `context` is a
+// short label ("story-card-summary") so the backend log can tell sources apart.
+export function reportFetchError(context, error) {
+  report('fetch', `${context}: ${error?.message || String(error)}`, error?.stack);
+}
+
 export function installErrorSink() {
   if (installed || typeof window === 'undefined') return;
   installed = true;

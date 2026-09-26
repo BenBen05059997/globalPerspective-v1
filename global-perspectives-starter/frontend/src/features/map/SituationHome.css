@@ -322,3 +322,44 @@
   .sh-peek-open { font-size: 12px; color: #6cb6ff; white-space: nowrap; }
 }
 @media (prefers-reduced-motion: reduce) { .sm-callout-body { transition: none; } }
+
+/* ---- orientation banner (H1, M5b) — replaces the guided tour on /map ---- */
+.sh-orient {
+  display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 8px 12px;
+  min-height: 40px; background: var(--sh-panel2); border: 1px solid var(--sh-border);
+  border-radius: var(--c-radius-md, 4px); color: var(--sh-muted); font-size: 12px; line-height: 1.4;
+}
+.sh-orient-text { flex: 1; }
+.sh-orient-close {
+  flex: none; width: 28px; height: 28px; min-width: 44px; min-height: 44px; margin: -8px -6px;
+  display: inline-flex; align-items: center; justify-content: center; background: none; border: 0;
+  color: var(--sh-muted); font-size: 20px; line-height: 1; cursor: pointer;
+}
+.sh-orient-close:hover { color: var(--sh-text); }
+
+/* ---- story card (M5b): header -> WHAT IS HAPPENING -> WHAT IT MEANS -> WHY -> footer links.
+   Reuses .sh-detail / .sh-back / .sh-detail-foot from the situation detail panel above. ---- */
+.sc-head { padding: 13px 15px; border-bottom: 1px solid var(--sh-border); }
+.sc-head-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 7px; font-size: 11px; color: var(--sh-muted); }
+.sc-cat { display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.sc-cat-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.sc-country { color: var(--sh-text); }
+.sc-updated, .sc-older { color: var(--sh-dim); }
+.sc-older { color: var(--c-warn, #ffb347); text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
+.sc-title { font-size: 17px; font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; margin: 0; color: var(--sh-text); }
+
+.sc-section { padding: 13px 15px; border-bottom: 1px solid var(--sh-border); }
+.sc-section-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sh-dim); margin: 0 0 7px; font-weight: 600; }
+.sc-text { font-size: 13px; line-height: 1.55; color: var(--sh-text); margin: 0 0 4px; }
+.sc-model-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sh-dim); margin: 4px 0 0; }
+.sc-cause-step { margin-bottom: 10px; }
+.sc-cause-step:last-of-type { margin-bottom: 0; }
+.sc-cause-label { display: block; font-size: 11px; font-weight: 600; color: var(--sh-muted); margin-bottom: 2px; }
+.sc-foot { display: flex; flex-direction: column; gap: 6px; }
+
+.sc-skeleton { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+.sc-skel-line { height: 11px; border-radius: 4px; background: linear-gradient(90deg, var(--sh-panel2) 25%, var(--sh-border) 50%, var(--sh-panel2) 75%); background-size: 200% 100%; animation: sc-shimmer 1.4s ease-in-out infinite; }
+.sc-skel-short { width: 60%; }
+@keyframes sc-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .sc-skel-line { animation: none; } }
+.sc-facts { margin: 4px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }

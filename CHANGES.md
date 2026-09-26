@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-09-26 (Map console, M3: NASA night-lights globe; branch `map-console`, local only)
+
+- **Globe mode** shows the real Earth at night: a deck.gl `BitmapLayer` of `public/textures/earth-night.jpg`, 4096×2048, ~715 KB. The texture is NASA Black Marble, taken from the MIT-licensed three-globe examples.
+  - It loads after first paint (idle callback + image probe); if it fails, the dark globe stays.
+  - Opacity is 0.8, and the land layer dims in globe mode, so crisis markers stay the brightest thing.
+  - Attribution on the map: "Earth at night: NASA Black Marble".
+- **Default view:** globe on desktop (≥900px with WebGL). An explicit saved choice still wins.
+- **Spin:** idle spin at ~3°/s. It stops on drag, zoom or selection; a 44px ⏸/▶ control restarts it. Reduced motion: no spin and instant view changes.
+- New pure helpers in `features/map/lib/globeSpin.js`, with 16 tests.
+- Operator choice: option B (26 Sep).
+
 ## 2026-09-26 (Map console, M2: HUD frame with honest freshness; branch `map-console`, local only)
 
 - `/map` gains the console HUD:

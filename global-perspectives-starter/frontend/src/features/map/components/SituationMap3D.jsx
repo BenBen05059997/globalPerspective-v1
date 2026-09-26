@@ -1,11 +1,20 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
 import { MapView, WebMercatorViewport, FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController, _GlobeViewport as GlobeViewport } from '@deck.gl/core';
-import { GeoJsonLayer, ScatterplotLayer, ArcLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
 import topoData from '@/features/map/assets/countries-110m.json';
 import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
+import { textureUrl, spinStep, spinControlState } from '@/features/map/lib/globeSpin.js';
+
+// M3 · night-lights globe (operator's option B) — NASA Black Marble, taken from the MIT-licensed
+// three-globe package's examples. Loaded well after first paint (idle callback) so it never
+// blocks the page shell; until it resolves the existing dark globe shows, and a failed load just
+// keeps that look (no error UI — see CLAUDE.md "no placeholder/fallback UI").
+const EARTH_TEXTURE_URL = textureUrl(import.meta.env.BASE_URL);
+const EARTH_BOUNDS = [-180, -90, 180, 90];
+const SPIN_DEG_PER_SEC = 3; // "a few degrees a second at most" (task M3 spec)
 
 // Hue = kind of crisis, as RGB. oklch(0.70 0.155 h) normalised so no axis reads
 // as "worse" than another at equal tier (DATA_STRATEGY §5 / map design target).
@@ -89,15 +98,41 @@ export default function SituationMap3D({
   const globe = view === 'globe';
   const [viewState, setViewState] = useState(globe ? GLOBE_VIEW : INITIAL_VIEW);
   const userMoved = useRef(false);
-  // On toggle, reset to that view's default (a gentle transition; not a morph between view types).
-  useEffect(() => {
-    userMoved.current = false;
-    setViewState((v) => ({ ...(globe ? GLOBE_VIEW : INITIAL_VIEW), longitude: v.longitude, latitude: globe ? 15 : v.latitude, transitionDuration: 600, transitionInterpolator: new FlyToInterpolator() }));
-  }, [globe]);
-  const wrapRef = useRef(null);
-  const [dims, setDims] = useState({ width: 1, height });
   const reduceMotion = useMemo(() => {
     try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
+  }, []);
+  // Idle spin (globe only): stops for the session on any drag/zoom/click or a selection; the
+  // small control below can restart it. Reduced motion never spins.
+  const [spinOn, setSpinOn] = useState(globe && !reduceMotion);
+  const stopSpin = useCallback(() => setSpinOn(false), []);
+  // On toggle, reset to that view's default (a gentle transition; not a morph between view types).
+  // Reduced motion: instant, no fly duration.
+  useEffect(() => {
+    userMoved.current = false;
+    setSpinOn(globe && !reduceMotion);
+    setViewState((v) => ({
+      ...(globe ? GLOBE_VIEW : INITIAL_VIEW), longitude: v.longitude, latitude: globe ? 15 : v.latitude,
+      ...(reduceMotion ? {} : { transitionDuration: 600, transitionInterpolator: new FlyToInterpolator() }),
+    }));
+  }, [globe, reduceMotion]);
+  const wrapRef = useRef(null);
+  const [dims, setDims] = useState({ width: 1, height });
+
+  // Night-lights texture: probed with a plain Image() after an idle tick so a slow/failed load
+  // never touches deck.gl or throws — it only ever flips `textureReady` on success.
+  const [textureReady, setTextureReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      const img = new Image();
+      img.onload = () => { if (!cancelled) setTextureReady(true); };
+      img.onerror = () => { /* keep the existing dark globe; no error UI (CLAUDE.md) */ };
+      img.src = EARTH_TEXTURE_URL;
+    };
+    const ric = typeof requestIdleCallback === 'function' ? requestIdleCallback : (cb) => setTimeout(cb, 200);
+    const cic = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
+    const handle = ric(load);
+    return () => { cancelled = true; cic(handle); };
   }, []);
 
   const active = useMemo(() => situations.filter((s) => s.state !== 'closed' && s.centroid), [situations]);
@@ -140,19 +175,61 @@ export default function SituationMap3D({
   }, [situations, focusId]);
   useEffect(() => {
     if (focusCentroid) {
+      stopSpin(); // a selection turns the globe to face the story and stays stopped (task M3)
       const [lon, lat] = focusCentroid.split(',').map(Number);
-      setViewState((v) => ({ ...v, longitude: lon, latitude: globe ? lat - 4 : lat, zoom: globe ? 2.1 : 3.4, transitionDuration: 1300, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }) }));
+      setViewState((v) => ({
+        ...v, longitude: lon, latitude: globe ? lat - 4 : lat, zoom: globe ? 2.1 : 3.4,
+        ...(reduceMotion ? {} : { transitionDuration: 1300, transitionInterpolator: new FlyToInterpolator({ speed: 1.4 }) }),
+      }));
     } else if (userMoved.current) {
-      setViewState((v) => ({ ...v, ...(globe ? GLOBE_VIEW : INITIAL_VIEW), transitionDuration: 1100, transitionInterpolator: new FlyToInterpolator() }));
+      setViewState((v) => ({
+        ...v, ...(globe ? GLOBE_VIEW : INITIAL_VIEW),
+        ...(reduceMotion ? {} : { transitionDuration: 1100, transitionInterpolator: new FlyToInterpolator() }),
+      }));
     }
-  }, [focusCentroid, globe]);
+  }, [focusCentroid, globe, reduceMotion, stopSpin]);
+
+  // Idle spin: only while in globe mode, on, and not mid-drag. Strips any leftover
+  // transitionDuration/interpolator each frame so the drift itself is never animated/eased.
+  useEffect(() => {
+    if (!globe || !spinOn || reduceMotion) return undefined;
+    let raf; let last = null;
+    const tick = (t) => {
+      if (last != null && !userMoved.current) {
+        const dt = t - last;
+        setViewState((v) => {
+          const { transitionDuration, transitionInterpolator, ...rest } = v; // eslint-disable-line no-unused-vars
+          return { ...rest, longitude: spinStep(rest.longitude, dt, SPIN_DEG_PER_SEC) };
+        });
+      }
+      last = t;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [globe, spinOn, reduceMotion]);
 
   // Static (non-animated) layers — memoised so the pickable `core` layer keeps a stable instance
   // across breathing-halo frames (a fresh instance each frame was eating clicks).
+  // In globe mode, once the night-lights texture is showing, the opaque land fill would muddy
+  // it — fall back to a faint fill + dimmer border so the texture (and the crisis markers) read.
+  const landDimmed = globe && textureReady;
+  // Bottom-most layer, globe only, added only once the texture has actually loaded (kept a
+  // separate memo from baseLayers so its presence never shifts the indices used below).
+  const earthLayer = useMemo(() => (
+    globe && textureReady
+      ? new BitmapLayer({
+        id: 'earth-night', image: EARTH_TEXTURE_URL, bounds: EARTH_BOUNDS,
+        opacity: 0.8, pickable: false, // dimmed so crisis markers stay the brightest thing on the globe
+      })
+      : null
+  ), [globe, textureReady]);
   const baseLayers = useMemo(() => [
     new GeoJsonLayer({
       id: 'land', data: landFeatures, stroked: true, filled: true, extruded: false,
-      getFillColor: [24, 31, 44], getLineColor: [40, 50, 68], lineWidthMinPixels: 0.5,
+      getFillColor: landDimmed ? [24, 31, 44, 30] : [24, 31, 44, 255],
+      getLineColor: landDimmed ? [90, 105, 130, 130] : [40, 50, 68, 255],
+      lineWidthMinPixels: 0.5,
     }),
     new ScatterplotLayer({
       id: 'halo', data: active.filter((s) => TIER_HALO[s.tier]),
@@ -190,7 +267,7 @@ export default function SituationMap3D({
       stroked: true, getLineColor: [255, 255, 255, 200], getLineWidth: 1, lineWidthUnits: 'pixels',
       updateTriggers: { getRadius: [newIds] },
     }),
-  ], [active, focusId, newIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  ], [active, focusId, newIds, landDimmed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Selection-state layers (only when a situation is focused): affected-country tint, spread arcs,
   // hollow destination rings. Drawn under the pins (fill/arcs) and beside them (dest rings).
@@ -214,8 +291,10 @@ export default function SituationMap3D({
     return out;
   }, [selectionGeo]);
 
-  // Order: land, affected-fill, arcs, halo, escalating, new-marker, core (top=picking), dest-rings.
+  // Order: earth-night (globe only, bottom-most), land, affected-fill, arcs, halo, escalating,
+  // new-marker, core (top=picking), dest-rings.
   const layers = [
+    ...(earthLayer ? [earthLayer] : []),
     baseLayers[0],
     ...selectionLayers.filter((l) => l.id !== 'dest-rings'),
     baseLayers[1], baseLayers[2], baseLayers[4], baseLayers[3],
@@ -248,7 +327,10 @@ export default function SituationMap3D({
       <DeckGL
         views={globe ? new GlobeView() : new MapView({ repeat: false })}
         viewState={viewState}
-        onViewStateChange={(e) => { if (e.interactionState?.isDragging || e.interactionState?.isZooming) userMoved.current = true; setViewState(e.viewState); }}
+        onViewStateChange={(e) => {
+          if (e.interactionState?.isDragging || e.interactionState?.isZooming) { userMoved.current = true; stopSpin(); }
+          setViewState(e.viewState);
+        }}
         controller={globe ? { type: GlobeController } : { dragRotate: false }}
         layers={layers}
         getTooltip={getTooltip}
@@ -284,6 +366,22 @@ export default function SituationMap3D({
             <span className="sm-callout-open">Open →</span>
           </button>
           {tour ? <div className="sm-tourticks">{Array.from({ length: tour.total }).map((_, i) => <i key={i} className={i === tour.index ? 'on' : ''} />)}</div> : null}
+        </div>
+      ) : null}
+      {globe ? (
+        <div className="sm-globe-foot">
+          <span className="sm-attrib">Earth at night: NASA Black Marble</span>
+          {(() => {
+            const sc = spinControlState(reduceMotion, spinOn);
+            return (
+              <button
+                className="sm-spin-ctl" aria-pressed={sc.pressed} aria-label={sc.label} title={sc.label}
+                disabled={sc.disabled} onClick={() => setSpinOn((v) => !v)}
+              >
+                {sc.disabled ? '⏸' : (sc.pressed ? '⏸' : '▶')}
+              </button>
+            );
+          })()}
         </div>
       ) : null}
     </div>

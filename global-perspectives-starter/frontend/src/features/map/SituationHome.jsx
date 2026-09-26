@@ -9,6 +9,7 @@ import HudSensorPanel from '@/features/map/components/HudSensorPanel.jsx';
 import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
 import { pausedSince } from '@/shared/lib/freshness.js';
+import { defaultMapView } from '@/features/map/lib/globeSpin.js';
 import '@/features/map/SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
@@ -170,7 +171,15 @@ export default function SituationHome() {
   const callout = focus ? null : (tourStop || hero);
   const tourProps = tourOn ? { index: Math.min(tourIdx, tourN - 1), total: tourN, onPrev: tourPrev, onNext: tourNext, onStop: stopTour } : null;
 
-  const [view, setViewMode] = useState(() => { try { return localStorage.getItem('gp_map_view') === 'globe' ? 'globe' : 'flat'; } catch { return 'flat'; } });
+  // M3: desktop opens on the spinning globe when WebGL works; phones keep today's flat default.
+  // An explicit prior choice (this browser only) always wins over the computed default.
+  const [view, setViewMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gp_map_view');
+      if (saved === 'globe' || saved === 'flat') return saved;
+    } catch { /* storage blocked */ }
+    return defaultMapView(typeof window !== 'undefined' ? window.innerWidth : 0, USE_3D);
+  });
   const toggleView = () => setViewMode((v) => { const n = v === 'globe' ? 'flat' : 'globe'; try { localStorage.setItem('gp_map_view', n); } catch { /* storage blocked */ } return n; });
   const [legendOpen, setLegendOpen] = useState(false);
   const [mapH, setMapH] = useState(() => (typeof window !== 'undefined' && window.innerWidth <= 900 ? Math.round(window.innerHeight * 0.6) : 620));

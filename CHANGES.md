@@ -4,6 +4,7 @@
 
 - **Web sources get their own markers `[W1]`, `[W2]`…**, rendered as links with a "web" chip, so they can't collide with our stored `[n]` sources. Perplexity's native `[n]` is renumbered at parse time; non-http(s) links are dropped (`lib/webCitations.js`; the shared `Markdown` has an optional `links` map).
 - **The checks gate the run.** Before, a failed check only coloured the banner. Now an uncited substantive claim, a citation to a missing source (`[n]` or `[W#]`) or a missing / invalid gp-struct block is an error. The run is hidden behind "Show anyway (not shareable)", which also says the provider still charged.
+- The screen-capture test writes HTML only when `GP_CAPTURE_DIR` is set (it had a machine-specific path).
 - **Receipt data:** the provider's own token `usage` and model id are kept on each run: "Provider usage: N in / M out tokens · model X", or "Provider did not report usage". No prices.
 - **Copy:**
   - the live-credits wording is removed (credits are parked; no credit logic changed);

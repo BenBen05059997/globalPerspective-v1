@@ -20,7 +20,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const AS_CSS = readFileSync(resolve(HERE, '../AnalysisStudio.css'), 'utf8');
 const TOKENS_CSS = readFileSync(resolve(HERE, '../../../shared/styles/tokens.css'), 'utf8');
 
-const OUT_DIR = '/private/tmp/claude-501/-Users-benlai-Downloads-globalPerspective-v1/923a878d-8755-4b54-8ac8-114b13c73db2/scratchpad';
+// Opt-in: set GP_CAPTURE_DIR to write the rendered screens as HTML for a screenshot pass. Without it
+// the assertions still run but nothing is written to disk.
+const OUT_DIR = process.env.GP_CAPTURE_DIR || null;
 
 vi.mock('@/shared/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { uid: 'test-user', isAnonymous: false }, loading: false }),
@@ -55,6 +57,7 @@ import AnalysisStudio from '@/features/analysis-studio/AnalysisStudio.jsx';
 import { saveByok } from '@/features/analysis-studio/lib/byok';
 
 function writeSnapshot(name, container) {
+  if (!OUT_DIR) return;
   try { mkdirSync(OUT_DIR, { recursive: true }); } catch { /* exists */ }
   const html = `<!doctype html>
 <html><head><meta charset="utf-8">

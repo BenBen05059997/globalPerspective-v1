@@ -286,6 +286,9 @@
 }
 .gp-tabbar-link {
   flex: 1;
+  min-width: 0; /* S2.2 phone-overflow fix: without this, 5 unbreakable flex items (min-width:
+                   auto by default) sized past the bar's own fixed 390px width and spilled 145px
+                   of visible overflow into the document's scrollable area on every phone page. */
   min-height: 44px;
   display: flex;
   flex-direction: column;
@@ -301,6 +304,11 @@
 }
 .gp-tabbar-link svg { flex-shrink: 0; }
 .gp-tabbar-link.active { color: var(--c-accent, #5fd4ff); }
+.gp-tabbar-label {
+  max-width: 100%;
+  text-align: center;
+  overflow-wrap: break-word;
+}
 @media (min-width: 900px) {
   /* Defense in depth: Layout.jsx already gates rendering on the same 900px breakpoint (useIsPhone),
      so this bar is never in the DOM at desktop widths — this rule just guards a resize race. */

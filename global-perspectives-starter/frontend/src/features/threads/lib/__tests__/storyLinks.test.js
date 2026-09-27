@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deriveFedInto } from '@/features/threads/lib/storyLinks.js';
+import { deriveFedInto, deriveFedFrom } from '@/features/threads/lib/storyLinks.js';
 
 const NOW = Date.now();
 const daysAgo = (n) => new Date(NOW - n * 86400000).toISOString();
@@ -52,5 +52,27 @@ describe('deriveFedInto', () => {
     expect(deriveFedInto('this', [])).toEqual([]);
     const records = [{ country: 'Iran', generatedAt: daysAgo(1), nodes: [], edges: [{ from: 'this', to: 'this', confidence: 'strong' }] }];
     expect(deriveFedInto('this', records)).toEqual([]);
+  });
+});
+
+describe('deriveFedFrom', () => {
+  it('keeps only incoming edges to this thread', () => {
+    const records = [{
+      country: 'Iran',
+      generatedAt: daysAgo(1),
+      nodes: [{ threadId: 'this', summary: 'This story' }, { threadId: 'other', summary: 'Other story' }],
+      edges: [
+        { from: 'other', to: 'this', confidence: 'medium', lagDays: 5 },
+        { from: 'this', to: 'other', confidence: 'weak' }, // outgoing — not fed-from
+      ],
+    }];
+    const out = deriveFedFrom('this', records);
+    expect(out).toHaveLength(1);
+    expect(out[0].sourceThreadId).toBe('other');
+    expect(out[0].confidence).toBe('medium');
+  });
+
+  it('ignores self-loops and returns [] with no records', () => {
+    expect(deriveFedFrom('this', [])).toEqual([]);
   });
 });

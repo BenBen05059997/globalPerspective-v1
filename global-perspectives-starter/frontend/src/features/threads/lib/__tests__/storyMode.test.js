@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   analysisTextState, buildChapters, buildScrubberDays, buildDeadlines, buildSlides, viewFrom,
-  scrubberRange, pctForDate, rawDateLabel, spanDays, buildScrubberTicks,
+  scrubberRange, pctForDate, rawDateLabel, spanDays, buildScrubberTicks, mostLikelyScenario,
 } from '@/features/threads/lib/storyMode.js';
 
 const ENTRIES = [
@@ -183,5 +183,16 @@ describe('viewFrom', () => {
   });
   it('returns null for no entries', () => {
     expect(viewFrom([])).toBeNull();
+  });
+});
+
+describe('mostLikelyScenario', () => {
+  it('picks the scenario with the highest real probability', () => {
+    const forecast = { scenarios: [{ label: 'Escalation', probability: 0.3 }, { label: 'De-escalation', probability: 0.55 }] };
+    expect(mostLikelyScenario(forecast)).toEqual({ label: 'De-escalation', probability: 0.55 });
+  });
+  it('is null with no forecast or no probability field', () => {
+    expect(mostLikelyScenario(null)).toBeNull();
+    expect(mostLikelyScenario({ scenarios: [{ label: 'A' }] })).toBeNull();
   });
 });

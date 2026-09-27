@@ -247,16 +247,47 @@
 .sm-chapter-hl { color: var(--c-text-body); }
 
 .sm-caption { font-size: 11px; color: var(--c-text-dim); font-style: italic; margin: 0 0 10px; }
-.sm-fedinto-list { list-style: none; margin: 0; padding: 0; }
-.sm-fedinto-row { padding: 10px 0; border-bottom: 1px solid var(--c-hairline); }
-.sm-fedinto-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.sm-fedinto-head a { color: var(--c-accent); font-size: 13px; text-decoration: none; }
-.sm-conf-badge { font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.04em; color: var(--c-text-dim); }
-.sm-conf-strong { color: var(--c-ok); }
-.sm-conf-medium { color: var(--c-warn); }
-.sm-fedinto-meta { font-size: 11px; color: var(--c-text-dim); display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
-.sm-fedinto-mechanism { font-size: 12.5px; font-style: italic; color: var(--c-text-body); margin: 6px 0 0; }
-.sm-fedinto-cited { font-size: 11px; color: var(--c-text-dim); margin-top: 2px; }
+
+/* fi-* — FedIntoList (shared by StoryMode's FED INTO slide, Read-in-full's "Show linked news"
+   toggle and its Why section: one rendering, styled per host page). */
+.fi-list { list-style: none; margin: 0; padding: 0; }
+.fi-row { padding: 10px 0; border-bottom: 1px solid var(--c-hairline); position: relative; }
+.fi-row.fi-older { filter: var(--c-fresh-older-filter); }
+.fi-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.fi-head a { color: var(--c-accent); font-size: 13px; text-decoration: none; }
+.fi-conf-badge { font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.04em; color: var(--c-text-dim); }
+.fi-conf-strong { color: var(--c-ok); }
+.fi-conf-medium { color: var(--c-warn); }
+.fi-meta { font-size: 11px; color: var(--c-text-dim); display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
+.fi-older-tag { color: var(--c-warn); font-family: var(--c-mono); font-size: 10px; }
+.fi-mechanism { font-size: 12.5px; font-style: italic; color: var(--c-text-body); margin: 6px 0 0; }
+.fi-cited { font-size: 11px; color: var(--c-text-dim); margin-top: 2px; }
+.fi-toggle-wrap { margin-top: 10px; }
+.fi-toggle-btn {
+  font-family: var(--c-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--c-accent);
+  background: none; border: 1px solid var(--c-hairline-strong); border-radius: var(--c-radius-sm);
+  padding: 6px 10px; cursor: pointer; min-height: 44px;
+}
+
+/* Fact / inference marks (review F3.5) — a persistent, honest legend rather than per-item noise. */
+.sm-fact-badge, .sm-inference-badge {
+  font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.05em; font-weight: 700;
+  border-radius: var(--c-radius-sm); padding: 1px 5px; margin-right: 4px;
+}
+.sm-fact-badge { color: var(--c-ok); border: 1px solid var(--c-ok); }
+.sm-inference-badge { color: var(--c-accent); border: 1px solid var(--c-accent); }
+.sm-legend { font-size: 10.5px; color: var(--c-text-dim); margin: 10px 0 0; }
+.sm-likely-badge {
+  font-size: 12px; color: var(--c-text-body); margin: 6px 0 0; padding: 4px 8px;
+  border: 1px dashed var(--c-hairline-strong); border-radius: var(--c-radius-sm); display: inline-block;
+}
+.sm-jump-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.sm-jump-btn {
+  font-family: var(--c-mono); font-size: 11px; color: var(--c-accent); background: none;
+  border: 1px solid var(--c-hairline-strong); border-radius: var(--c-radius-sm); padding: 6px 10px;
+  cursor: pointer; min-height: 44px;
+}
+.sm-jump-btn:hover { background: var(--c-hairline); }
 
 .sm-watch-list { list-style: none; margin: 0; padding: 0; }
 .sm-watch-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--c-hairline); }

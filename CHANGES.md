@@ -1,5 +1,22 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Stage S2.2: story mode on phone + "Read in full"; branch `map-console`, local only)
+
+- **Phone story mode** (`threads/components/PhoneStoryMode.jsx`), per P1 + PH:
+  - READ (default): the same slides as desktop, one at a time, swipe or ◀ ▶;
+  - MAP: loads only when opened, centred on the story's country; the current slide sits in a bottom sheet that opens at peek;
+  - TIMELINE: chapters (⚑) and ◆ deadlines as a dated list; tap → that slide;
+  - drawers open as a full sheet. Dark console surface, 44px targets.
+- **Read in full:**
+  - Overview gains "News this story is judged to feed into" / "Earlier news judged to feed in" (`FedIntoList`, StoryPeek on each row, hidden when empty);
+  - Timeline gains chapters + "Show linked news", which says links can't be pinned to a chapter;
+  - every old tab, rail and `?tab=` link kept.
+- **Story-card extras:** TIMELINE / OUTLOOK jumps, "Most likely (n%)" from the forecast's own probability, FACT / INFERENCE marks.
+- **Fixes:**
+  - story page no longer overflows on phones (390 wide; the live site is 607);
+  - the site-wide phone tab bar could widen the page (`min-width: 0`);
+  - ThreadPage now imports the stylesheet its timeline and share buttons rely on.
+
 ## 2026-09-27 (Stage S2.1: story mode on the story page, desktop; branch `map-console`, local only)
 
 - **Story mode is the default desktop view** at the same URL `/weekly/thread/:threadId` (`threads/components/StoryMode.jsx`):

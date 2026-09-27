@@ -5,13 +5,13 @@ import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisis
 import { CATEGORY_BADGE_COLORS, riskScoreToVar as RISK_COLOR } from '@/shared/styles/tokens';
 import { tierFromScore, tierLabel } from '@/shared/lib/riskTiers';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
-import { threadPath } from '@/shared/lib/threadPath';
 import { firstSentences } from '@/features/map/lib/cardText.js';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
 import {
   analysisTextState, buildChapters, buildScrubberDays, buildDeadlines, buildSlides, viewFrom,
-  scrubberRange, pctForDate, shortDate, rawDateLabel, spanDays, buildScrubberTicks,
+  scrubberRange, pctForDate, shortDate, rawDateLabel, spanDays, buildScrubberTicks, mostLikelyScenario,
 } from '@/features/threads/lib/storyMode.js';
+import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import '@/features/threads/components/StoryMode.css';
 
@@ -74,10 +74,11 @@ function ExpandableText({ text, tagLabel }) {
 
 // ── Slide bodies ──────────────────────────────────────────────────────────────
 
-function BriefSlide({ thread, analysis, displayTitle, category, catColors }) {
+export function BriefSlide({ thread, analysis, displayTitle, category, catColors, forecast, hasChapters, hasWatch, onJumpTimeline, onJumpOutlook }) {
   const first = thread.entries[thread.entries.length - 1]; // oldest
   const from = thread.dateRange.from;
   const to = thread.dateRange.to;
+  const likely = mostLikelyScenario(forecast);
   return (
     <div className="sm-slide sm-slide-brief">
       <div className="sm-slide-kicker">
@@ -90,7 +91,12 @@ function BriefSlide({ thread, analysis, displayTitle, category, catColors }) {
           <ExpandableText text={analysis.storyArc} tagLabel="model judgment" />
         </AnalysisNote>
       ) : (
-        <p className="sm-slide-text">{first?.title}</p>
+        <p className="sm-slide-text"><span className="sm-fact-badge">FACT</span> {first?.title}</p>
+      )}
+      {likely && (
+        <div className="sm-likely-badge" title="The forecast's own highest-probability scenario">
+          Most likely: <b>{likely.label}</b> ({Math.round(likely.probability * 100)}%)
+        </div>
       )}
       <div className="sm-slide-stats">
         <span><b>{thread.entries.length}</b> events</span>
@@ -99,11 +105,20 @@ function BriefSlide({ thread, analysis, displayTitle, category, catColors }) {
           <span style={{ color: RISK_COLOR(analysis.riskScore) }}><b>{tierLabel(tierFromScore(analysis.riskScore))}</b> risk</span>
         )}
       </div>
+      {(hasChapters || hasWatch) && (
+        <div className="sm-jump-row">
+          {hasChapters && <button type="button" className="sm-jump-btn" onClick={onJumpTimeline}>→ Timeline</button>}
+          {hasWatch && <button type="button" className="sm-jump-btn" onClick={onJumpOutlook}>→ Outlook</button>}
+        </div>
+      )}
+      <p className="sm-legend">
+        <span className="sm-fact-badge">FACT</span> cited dated news · <span className="sm-inference-badge">INFERENCE</span> model judgment
+      </p>
     </div>
   );
 }
 
-function ChapterSlide({ chapter, index }) {
+export function ChapterSlide({ chapter, index }) {
   return (
     <div className="sm-slide sm-slide-chapter">
       <div className="sm-slide-kicker">
@@ -112,6 +127,7 @@ function ChapterSlide({ chapter, index }) {
         {chapter.country && <span> · {chapter.country}</span>}
       </div>
       <h2 className="sm-slide-title">{chapter.label}</h2>
+      <p className="sm-legend"><span className="sm-fact-badge">FACT</span> cited dated news, this story&apos;s own timeline</p>
       <ul className="sm-chapter-entries">
         {chapter.entries.map((e, i) => (
           <li key={`${e.topicId || e.date}-${i}`}>
@@ -124,40 +140,21 @@ function ChapterSlide({ chapter, index }) {
   );
 }
 
-function FedIntoSlide({ fedInto }) {
+export function FedIntoSlide({ fedInto }) {
   return (
     <div className="sm-slide sm-slide-fedinto">
       <div className="sm-slide-kicker">FED INTO · {fedInto.length} linked {fedInto.length === 1 ? 'story' : 'stories'}</div>
       <h2 className="sm-slide-title">News this story is judged to feed into</h2>
-      <p className="sm-caption">Links are between stories; we don&apos;t know which event in this story drove each one.</p>
-      <ul className="sm-fedinto-list">
-        {fedInto.map((link) => (
-          <li key={link.targetThreadId} className={`sm-fedinto-row${link.freshness === 'older' ? ' sm-older' : ''}`}>
-            <div className="sm-fedinto-head">
-              <a href={threadPath(link.targetThreadId)} target="_blank" rel="noreferrer">
-                {link.targetTitle || link.targetThreadId}
-              </a>
-              <span className={`sm-conf-badge sm-conf-${link.confidence || 'weak'}`}>
-                {link.confidence ? `${'●'.repeat({ strong: 3, medium: 2, weak: 1 }[link.confidence] || 1)} ${link.confidence}` : 'unrated'} · model judgment
-              </span>
-            </div>
-            <div className="sm-fedinto-meta">
-              {link.lagDays != null && <span>lag {link.lagDays}d (model)</span>}
-              {link.country && <span>from {link.country}&apos;s analysis{link.generatedAt ? `, as of ${shortDate(link.generatedAt)}` : ''}</span>}
-              {link.freshness === 'older' && <span className="sm-older-tag">older analysis</span>}
-            </div>
-            {link.mechanism && <p className="sm-fedinto-mechanism">&ldquo;{link.mechanism}&rdquo;</p>}
-            {link.citedEntries?.length > 0 && (
-              <div className="sm-fedinto-cited">+{link.citedEntries.length} cited headline{link.citedEntries.length !== 1 ? 's' : ''}</div>
-            )}
-          </li>
-        ))}
-      </ul>
+      <p className="sm-caption">
+        <span className="sm-inference-badge">INFERENCE</span> Links are between stories; we don&apos;t know which event in
+        this story drove each one.
+      </p>
+      <FedIntoList links={fedInto} direction="into" />
     </div>
   );
 }
 
-function WatchSlide({ deadlines }) {
+export function WatchSlide({ deadlines }) {
   const now = Date.now();
   return (
     <div className="sm-slide sm-slide-watch">
@@ -281,7 +278,7 @@ function Drawer({ label, open, onToggle, children }) {
 
 // ── Map pane ──────────────────────────────────────────────────────────────────
 
-function StoryMap({ shading, storyFocusIso3, height }) {
+export function StoryMap({ shading, storyFocusIso3, height }) {
   const [use3D] = useState(() => canUse3D());
   const h = height || FALLBACK_STAGE_HEIGHT;
   return (
@@ -494,7 +491,12 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
             <div className="sm-slidescroll">
               <div className={`sm-slideview${reduced ? ' sm-instant' : ''}`}>
                 {activeSlide?.key === 'brief' && (
-                  <BriefSlide thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors} />
+                  <BriefSlide
+                    thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors}
+                    forecast={forecast} hasChapters={chapters.length > 0} hasWatch={deadlines.length > 0}
+                    onJumpTimeline={() => chapters[0] && jumpToChapterKey(chapters[0].key)}
+                    onJumpOutlook={() => jumpToChapterKey('watch')}
+                  />
                 )}
                 {activeChapter && <ChapterSlide chapter={activeChapter} index={chapters.indexOf(activeChapter)} />}
                 {activeSlide?.key === 'fedinto' && <FedIntoSlide fedInto={fedInto} />}

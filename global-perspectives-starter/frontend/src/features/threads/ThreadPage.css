@@ -815,11 +815,76 @@
   .tp-ai-rail { max-height: none; }
 }
 @media (max-width: 600px) {
-  .tp-page { padding: 0 16px 60px; }
+  .tp-page { padding: 0 16px 60px; max-width: 100vw; box-sizing: border-box; }
   .tp-hd-h1 { font-size: 24px; }
   .tp-tl-row { grid-template-columns: 64px 14px 1fr; gap: 10px; }
   .tp-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+  /* S2.2 phone-overflow fix: at 390px this row (breadcrumbs + Analyze/Share/Copy/Save/toggle)
+     used to force ~165px of horizontal scroll (measured 555px vs 390px viewport). Wrap the
+     right-hand controls onto their own row instead of forcing one long line, and let the
+     breadcrumb text itself wrap rather than pushing width. */
+  .tp-topbar {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .tp-topbar-current {
+    overflow-wrap: anywhere;
+  }
+  .tp-topbar-right {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .share-buttons { flex-wrap: wrap; }
+  .copy-briefing-btn { white-space: normal; }
+
+  /* StatusStrip (.ss-strip / .ss-stat / .ss-unit — shared/ui/atoms.css) also forced overflow at
+     390px with 4+ stat segments in one unwrapped flex row. A contained horizontal scroll keeps
+     the strip's one-line look without widening the document itself. */
+  .ss-strip {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ss-stat { flex: 0 0 auto; }
+
+  /* .tp-content-tabs (Overview/Timeline/Actors/Sources/Economy) unwrapped past ~510px at 390px
+     wide — the widest single contributor to the whole-page overflow (a wide unclipped element
+     was expanding the mobile layout viewport itself, which is why the site's fixed bottom tab
+     bar also measured wider than the screen until this was contained). Contained scroll, same
+     technique as .ss-strip above. */
+  .tp-content-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+  .tp-content-tab { flex: 0 0 auto; }
 }
+
+/* fi-* — FedIntoList/FedIntoToggle (shared/features/threads/components/FedIntoList.jsx), reused
+   here (Overview "Why" + Timeline "Show linked news") outside the .gp-console theme scope, so it
+   needs the long page's own tokens rather than the console's --c-* set. */
+.fi-list { list-style: none; margin: 0; padding: 0; }
+.fi-row { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.fi-row.fi-older { opacity: 0.7; }
+.fi-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.fi-head a { color: var(--accent); font-size: 13px; text-decoration: none; }
+.fi-head a:hover { text-decoration: underline; }
+.fi-conf-badge { font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em; color: var(--ink-dim); }
+.fi-conf-strong { color: var(--risk-l); }
+.fi-meta { font-size: 11px; color: var(--ink-dim); display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
+.fi-older-tag { color: #b8860b; font-family: var(--mono); font-size: 10px; }
+.fi-mechanism { font-size: 12.5px; font-style: italic; color: var(--ink-mid); margin: 6px 0 0; }
+.fi-cited { font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
+.fi-toggle-wrap { margin: 6px 0 14px; }
+.fi-toggle-btn {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--accent);
+  background: none; border: 1px solid var(--line); border-radius: 6px;
+  padding: 8px 12px; cursor: pointer; min-height: 44px;
+}
+.fi-toggle-btn:hover { background: #f7f7f6; }
+.tp-chapters-web { margin-top: 8px; }
 
 /* Living-analysis "What changed" block in the Arc Intelligence rail (Phase 3). */
 .tp-ai-drift { border-left: 3px solid var(--accent); padding-left: 10px; }

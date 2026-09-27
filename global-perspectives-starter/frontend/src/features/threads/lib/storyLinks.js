@@ -49,3 +49,41 @@ export function deriveFedInto(threadId, systemsRecords = []) {
 
   return [...byTarget.values()].sort((a, b) => (CONF_RANK[b.confidence] || 0) - (CONF_RANK[a.confidence] || 0));
 }
+
+/**
+ * deriveFedFrom(threadId, systemsRecords) -> same shape as deriveFedInto, but for INCOMING
+ * edges (edge.to === threadId) — STORY_WEB_RETHINK_PLAN §5(c) "Earlier news judged to feed in".
+ * Only rendered by callers when non-empty (S6-style: no empty-shell sections).
+ */
+export function deriveFedFrom(threadId, systemsRecords = []) {
+  if (!threadId || !Array.isArray(systemsRecords)) return [];
+  const bySource = new Map();
+
+  for (const record of systemsRecords) {
+    if (!record) continue;
+    const freshness = analysisTextState(record.generatedAt);
+    if (freshness === 'hidden') continue;
+    const nodeById = new Map((record.nodes || []).map((n) => [n.threadId, n]));
+    for (const edge of record.edges || []) {
+      if (edge.to !== threadId || !edge.from || edge.from === threadId) continue;
+      const sourceNode = nodeById.get(edge.from);
+      const candidate = {
+        sourceThreadId: edge.from,
+        sourceTitle: sourceNode?.summary || sourceNode?.title || null,
+        confidence: edge.confidence || null,
+        lagDays: edge.lagDays ?? null,
+        mechanism: edge.mechanism || null,
+        citedEntries: Array.isArray(edge.citedEntries) ? edge.citedEntries : [],
+        country: record.country || null,
+        generatedAt: record.generatedAt || null,
+        freshness,
+      };
+      const existing = bySource.get(edge.from);
+      if (!existing || (CONF_RANK[candidate.confidence] || 0) > (CONF_RANK[existing.confidence] || 0)) {
+        bySource.set(edge.from, candidate);
+      }
+    }
+  }
+
+  return [...bySource.values()].sort((a, b) => (CONF_RANK[b.confidence] || 0) - (CONF_RANK[a.confidence] || 0));
+}

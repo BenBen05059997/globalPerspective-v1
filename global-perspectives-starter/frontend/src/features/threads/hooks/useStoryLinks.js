@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchSystemsAnalysis } from '@/shared/api/restProxy';
 import { reportFetchError } from '@/shared/api/errorSink';
-import { deriveFedInto } from '@/features/threads/lib/storyLinks.js';
+import { deriveFedInto, deriveFedFrom } from '@/features/threads/lib/storyLinks.js';
 
 const MAX_REGIONS = 3; // cap the fan-out — each region is one systems-analysis fetch
 
@@ -13,12 +13,13 @@ const MAX_REGIONS = 3; // cap the fan-out — each region is one systems-analysi
  */
 export function useStoryLinks(threadId, regions) {
   const [fedInto, setFedInto] = useState([]);
+  const [fedFrom, setFedFrom] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const regionKey = Array.isArray(regions) ? regions.slice(0, MAX_REGIONS).join('|') : '';
 
   useEffect(() => {
-    if (!threadId || !regionKey) { setFedInto([]); return; }
+    if (!threadId || !regionKey) { setFedInto([]); setFedFrom([]); return; }
     let cancelled = false;
     const countries = regionKey.split('|').filter(Boolean);
     setLoading(true);
@@ -33,10 +34,11 @@ export function useStoryLinks(threadId, regions) {
           else if (r.status === 'rejected') reportFetchError('story-mode-fed-into', r.reason);
         }
         setFedInto(deriveFedInto(threadId, records));
+        setFedFrom(deriveFedFrom(threadId, records));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [threadId, regionKey]);
 
-  return { fedInto, loading };
+  return { fedInto, fedFrom, loading };
 }

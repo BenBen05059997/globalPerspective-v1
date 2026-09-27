@@ -23,7 +23,21 @@ import ThreadForecast from '@/features/threads/components/ThreadForecast';
 import { useEconomicImpact } from '@/features/economy/hooks/useEconomicImpact';
 import { useThreadForecast } from '@/features/threads/hooks/useThreadForecast';
 import StoryMode from '@/features/threads/components/StoryMode';
+import PhoneStoryMode from '@/features/threads/components/PhoneStoryMode';
 import { useIsPhone } from '@/shared/hooks/useIsPhone';
+import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks';
+import FedIntoList, { FedIntoToggle } from '@/features/threads/components/FedIntoList';
+import { buildChapters } from '@/features/threads/lib/storyMode';
+// Monitor fix (S2.2 review): CompactTimeline / ShareButtons / CopyBriefing's classes
+// (.compact-timeline*, .story-card-chevron, .share-buttons*, .copy-briefing-btn) live in
+// WeeklyPage.css, not their own component files — the same reason CountryPage.jsx,
+// CountryListPage.jsx, AuthCallback.jsx and WeeklyMap.jsx already import it directly rather than
+// relying on another route's chunk having loaded it first. ThreadPage never had this import, so a
+// cold/direct load of a thread URL (no prior /weekly visit in the session) rendered the Timeline
+// tab's daily-coverage rows, source counts and chevrons as unstyled plain text — reproduced on the
+// dev server via a direct navigation, and it would surface in production too under stricter CSS
+// code-splitting even though this app's current build happens to bundle all CSS into one file.
+import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/ThreadPage.css';
 
 function humanizeThreadId(id) {
@@ -129,14 +143,14 @@ export default function ThreadPage() {
   const requestedTab = searchParams.get('tab');
   const [contentTab, setContentTab] = useState(() =>
     ['overview', 'timeline', 'actors', 'sources', 'economy'].includes(requestedTab) ? requestedTab : 'overview');
-  // S1 (STORY_WEB_RETHINK_PLAN.md §7): story mode is the default story page on desktop; "Read in
-  // full" is the alternate, long accessible page (unchanged below). A deep-linked tab (e.g.
-  // ?tab=economy from a disruption link) lands straight on the full page so that contract keeps
-  // working — story mode has no tabs to honor it. Phone keeps the pre-existing page (S2.2 not yet
-  // built) rather than showing an unfinished desktop layout at phone width.
+  // S1 (STORY_WEB_RETHINK_PLAN.md §7): story mode is the default story page, on desktop and phone
+  // alike (S2.2 — PhoneStoryMode replaces the phone's former long-page default). "Read in full" is
+  // the alternate, long accessible page (unchanged below, same component on both breakpoints). A
+  // deep-linked tab (e.g. ?tab=economy from a disruption link) lands straight on the full page so
+  // that contract keeps working — story mode has no tabs to honor it.
   const isPhone = useIsPhone();
   const [readFull, setReadFull] = useState(() => !!requestedTab);
-  const showStoryMode = !isPhone && !readFull;
+  const showStoryMode = !readFull;
 
   const thread = useMemo(() => {
     if (!narrativeEntries || !narrativeEntries.length) return null;
@@ -232,6 +246,22 @@ export default function ThreadPage() {
   );
   const { snapshot: forecast } = useThreadForecast(forecastTopicIds);
   const hasForecast = !!(forecast && forecast.scenarios?.length);
+
+  // S2.2 (STORY_WEB_RETHINK_PLAN.md §5): the same news-based links story mode's FED INTO slide
+  // uses, read here too so the Read-in-full page can show "Show linked news" on the Timeline and
+  // the "news this story is judged to feed into" / "earlier news judged to feed in" rows under
+  // Why. Hook is unconditional and tolerates thread/regions being undefined pre-load.
+  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedLoading } = useStoryLinks(threadId, thread?.regions);
+  const fedInto = fedLoading ? [] : fedIntoRaw;
+  const fedFrom = fedLoading ? [] : fedFromRaw;
+  const chaptersOldestFirst = useMemo(() => {
+    if (!thread) return [];
+    return [...thread.entries].reverse();
+  }, [thread]);
+  const chapters = useMemo(
+    () => buildChapters(chaptersOldestFirst, analysis?.entryShortTitles, analysis?.inflectionTopicId),
+    [chaptersOldestFirst, analysis],
+  );
 
   const displayTitle = analysis?.threadTitle || thread?.latestTitle || humanizeThreadId(threadId);
   useEffect(() => {
@@ -467,21 +497,32 @@ export default function ThreadPage() {
           {/* Review fix #7: story mode has its own "Read in full" entry in its header — this is
               only the way BACK, shown once we're actually on the full page, so there is never
               more than one "Read in full"-ish control on screen at once. */}
-          {!isPhone && readFull && (
+          {readFull && (
             <button type="button" className="tp-analyze-link" onClick={() => setReadFull(false)}>← Story mode</button>
           )}
         </div>
       </div>
 
       {showStoryMode ? (
-        <StoryMode
-          thread={thread}
-          analysis={analysis}
-          forecast={forecast}
-          displayTitle={displayTitle}
-          category={category}
-          onReadFull={() => setReadFull(true)}
-        />
+        isPhone ? (
+          <PhoneStoryMode
+            thread={thread}
+            analysis={analysis}
+            forecast={forecast}
+            displayTitle={displayTitle}
+            category={category}
+            onReadFull={() => setReadFull(true)}
+          />
+        ) : (
+          <StoryMode
+            thread={thread}
+            analysis={analysis}
+            forecast={forecast}
+            displayTitle={displayTitle}
+            category={category}
+            onReadFull={() => setReadFull(true)}
+          />
+        )
       ) : (
       <EditorialShell
         strip={
@@ -591,6 +632,22 @@ export default function ThreadPage() {
                 ))}
               </OverviewSection>
             )}
+            {/* STORY_WEB_RETHINK_PLAN.md §5.2: "Why" = the cause chain above, then the news this
+                story is judged to feed into / feed in from (S6-style honest-empty when the story
+                hasn't been part of a cross-story analysis, or the analysis found no links). */}
+            {fedInto.length > 0 && (
+              <OverviewSection label="News this story is judged to feed into" count={fedInto.length}>
+                <p className="tp-ov-text" style={{ fontStyle: 'italic', fontSize: 12.5 }}>
+                  Links are between stories; we don&apos;t know which event in this story drove each one.
+                </p>
+                <FedIntoList links={fedInto} direction="into" />
+              </OverviewSection>
+            )}
+            {fedFrom.length > 0 && (
+              <OverviewSection label="Earlier news judged to feed in" count={fedFrom.length}>
+                <FedIntoList links={fedFrom} direction="from" />
+              </OverviewSection>
+            )}
             {analysis.watchQuestions?.length > 0 && (
               <OverviewSection label="Watch" count={analysis.watchQuestions.length}>
                 <ul className="tp-watch-list">
@@ -635,6 +692,21 @@ export default function ThreadPage() {
               ))}
             </div>
           ) : null
+        )}
+        {/* "Show linked news" (STORY_WEB_RETHINK_PLAN.md §5.1): the story's own chapters (same
+            buildChapters grouping story mode's CH1-CH4 slides use), each with a toggle for the
+            links this story feeds into / from — S6-style, hidden entirely when there are none. */}
+        {activeTab === 'timeline' && chapters.length > 0 && (fedInto.length > 0 || fedFrom.length > 0) && (
+          <div className="tp-chapters-web">
+            <div className="tp-section-lbl" style={{ margin: '18px 0 4px' }}>Chapters</div>
+            <p style={{ fontSize: 11.5, fontStyle: 'italic', color: 'var(--ink-dim)', margin: '0 0 10px' }}>
+              CH1–CH{chapters.length} above group this story&apos;s own timeline. Links are between whole stories — we
+              don&apos;t know which event in this story drove each one, so they&apos;re listed once below, not
+              pinned to a chapter.
+            </p>
+            {fedInto.length > 0 && <FedIntoToggle label="Show linked news — feeds into" links={fedInto} direction="into" />}
+            {fedFrom.length > 0 && <FedIntoToggle label="Show linked news — fed in from earlier" links={fedFrom} direction="from" />}
+          </div>
         )}
 
         {/* Actors tab */}

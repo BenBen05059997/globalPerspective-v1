@@ -222,6 +222,22 @@ export function buildScrubberTicks(startMs, endMs, targetCount = 5) {
   return ticks.sort((a, b) => a.ms - b.ms);
 }
 
+/**
+ * mostLikelyScenario(forecast) -> { label, probability } | null — the forecast's own highest-
+ * probability scenario (real `probability` field from the v1 prediction snapshot, never a
+ * guess). Null when there's no forecast or no scenario carries a probability (S6-style: never
+ * invent a "most likely" label the data doesn't support).
+ */
+export function mostLikelyScenario(forecast) {
+  if (!forecast?.scenarios?.length) return null;
+  let best = null;
+  for (const s of forecast.scenarios) {
+    if (s.probability == null) continue;
+    if (!best || s.probability > best.probability) best = { label: s.label, probability: s.probability };
+  }
+  return best;
+}
+
 export function viewFrom(entries) {
   if (!Array.isArray(entries)) return null;
   const byCountry = new Map();

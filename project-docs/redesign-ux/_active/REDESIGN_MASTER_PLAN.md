@@ -153,6 +153,8 @@ Doc: `TRACK_RECORD_AND_STUDIO_RULING.md` (Studio sections).
 - **Hide:** white paper.
 
 ## 4. Backend / data work the designs need
+> **2026-09-27:** the backend operations plan (AI model map, the balance lapses, refresh rates, parking, monitoring, and which of D1–D11 are needed now vs later) is `project-docs/architecture/_active/BACKEND_PLAN_2026-09-27.md`. Operator approved: D6 scoring, D9, D10, read fixes a / b / c / f. D5, D8, D11 are later.
+
 | # | Work | For | Needs |
 |---|---|---|---|
 | D1 | **Freshness read:** newest `generatedAt` across daily brief / topics / country intel, cached at the edge | Status line, sensor status | small proxy action or Worker read |

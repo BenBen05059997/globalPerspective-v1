@@ -74,7 +74,7 @@ describe('Layout — N1 menu', () => {
     expect(byLabel).toEqual([
       ['Map', '/map'],
       ['Stories', '/weekly'],
-      ['Briefings', '/daily'],
+      ['Briefings', '/briefings'],
       ['Studio', '/analyze'],
       ['Track record', '/track-record'],
     ]);
@@ -92,7 +92,7 @@ describe('Layout — P1 phone tab bar (A2)', () => {
   it('shows five links with the right hrefs and aria-current on the active route when isPhone', async () => {
     fetchDailyBrief.mockResolvedValue({ data: null });
     isPhoneMock.mockReturnValue(true);
-    renderLayout('/daily');
+    renderLayout('/briefings');
     const bar = document.querySelector('.gp-tabbar');
     expect(bar).toBeTruthy();
     expect(bar.getAttribute('aria-label')).toBeTruthy();
@@ -102,7 +102,7 @@ describe('Layout — P1 phone tab bar (A2)', () => {
     expect(byHref).toEqual([
       ['/map', null],
       ['/weekly', null],
-      ['/daily', 'page'],
+      ['/briefings', 'page'],
       ['/analyze', null],
       ['/track-record', null],
     ]);
@@ -163,7 +163,7 @@ describe('Layout — R4a desktop /map console shell', () => {
     expect(nav.classList.contains('gp-console')).toBe(true);
     expect(document.querySelector('.gp-app').classList.contains('gp-app-console')).toBe(true);
     const hrefs = [...document.querySelectorAll('.gp-nav-links a')].map((a) => a.getAttribute('href'));
-    expect(hrefs).toEqual(['/map', '/weekly', '/daily', '/analyze', '/track-record']);
+    expect(hrefs).toEqual(['/map', '/weekly', '/briefings', '/analyze', '/track-record']);
     expect(document.querySelector('#gp-console-status')).toBeTruthy();
     expect(document.querySelector('.gp-footer')).toBeNull();
   });

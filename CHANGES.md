@@ -1,5 +1,20 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Stage S3: briefings mode at `/briefings`; branch `map-console`, local only)
+
+- **New `/briefings`** (`features/briefings/`), the story-mode pattern for editions:
+  - DAILY: the day → up to 8 top stories → country to watch;
+  - WEEKLY: the week → 6 signals (fact, then "so what") → next week;
+  - the map shades each slide's countries; "AI-generated" label and the edition date on every slide.
+- **Editions strip:**
+  - probes the 14 days up to the latest edition (capped, cached);
+  - a missing day says only "No edition was published";
+  - one dashed "Paused · Sep 13 → today" segment, computed from the latest edition, explains the pause and links back;
+  - weekly shows the one confirmed week plus a note (older weeks can't be looked up yet).
+- **READ AS TEXT**, a plain printable version. Phone: READ / MAP / EDITIONS tabs.
+- **Routes:** the menu and the phone tab bar point to `/briefings`; `/weekly-markets` → `/briefings?from=markets` with a paused note; `/daily`, `/daily/:dateKey`, `/weekly-brief` unchanged.
+- Page guards for `/briefings`; ARCHITECTURE.md Frontend Path map + routes.
+
 ## 2026-09-27 (Stage S2.2: story mode on phone + "Read in full"; branch `map-console`, local only)
 
 - **Phone story mode** (`threads/components/PhoneStoryMode.jsx`), per P1 + PH:

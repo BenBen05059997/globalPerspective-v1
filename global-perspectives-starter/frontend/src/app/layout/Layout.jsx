@@ -93,7 +93,8 @@ function Layout({ children }) {
   // N1 (approved 2026-09-26): five plain, flat menu items — no groups, no dropdowns. "Topics"
   // (`/`) stays reachable via the logo; "Countries" (`/weekly/countries`) and "Weekly Brief"
   // (`/weekly-brief`) stay reachable via interim links on the Stories/Briefings pages instead of
-  // the menu. "Briefings" points at `/daily` until a real `/briefings` route exists.
+  // the menu. "Briefings" points at `/briefings` (S3, briefing mode); `/daily` and `/weekly-brief`
+  // stay live for existing links.
   // `short` + `icon` feed the phone tab bar (P1/A2) — same five items, short labels, a small
   // inline-SVG icon per item (no icon library).
   // F1.6 (review R2): plain, true tooltips — no claim of "today"/"live" the data can't back up
@@ -102,7 +103,7 @@ function Layout({ children }) {
   const navLinks = [
     { to: '/map', label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
     { to: '/weekly', label: 'Stories', short: 'Stories', icon: IconStories, title: 'Every story we follow, as board, table, map or web.' },
-    { to: '/daily', label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The daily and weekly briefings, with every past edition.' },
+    { to: '/briefings', label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The daily and weekly briefings, with every past edition.' },
     { to: '/analyze', label: 'Studio', short: 'Studio', icon: IconStudio, title: 'Analyse our stories with your own AI key.' },
     { to: '/track-record', label: 'Track record', short: 'Record', icon: IconRecord, title: 'How our forecasts are logged and checked as they come due.' },
   ];

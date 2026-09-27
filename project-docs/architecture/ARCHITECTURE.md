@@ -1237,9 +1237,9 @@ src/
                 countryMapping, dateUtils) · styles/ (tokens) · ui/ (atoms, IntelligenceLoader,
                 Markdown, risk/ badges, SourceRobustness — cross-feature only, never imports
                 features/ or app/)
-  features/     13 feature dirs, each <name>/<Page>.jsx + components/ + hooks/ + lib/ + __tests__/:
+  features/     14 feature dirs, each <name>/<Page>.jsx + components/ + hooks/ + lib/ + __tests__/:
                 home, map, threads, countries, economy, analysis-studio, breaking, account,
-                daily, weekly-brief, track-record, static, spider-demo
+                daily, weekly-brief, track-record, static, spider-demo, briefings
   test/         cross-cutting/integration tests not owned by one feature
 ```
 
@@ -1551,8 +1551,9 @@ Wired in `<Routes>` in `App.jsx` — 27 `<Route>` elements incl. catch-all (`/me
 | `/whitepaper` | `WhitepaperPage.jsx` | Public |
 | `/daily` | `DailyPage.jsx` | Public |
 | `/daily/:dateKey` | `DailyPage.jsx` | Public |
-| `/weekly-brief` | `WeeklyBriefPage.jsx` | Public (serif long-read of the latest published weekly brief) |
-| `/weekly-markets` | `WeeklyMarketsPage.jsx` | Public **redirect permalink** → `/economy?view=week` (preserves the `#instrument` hash). The weekly markets wrap was consolidated into `/economy`'s "This week" mode 2026-06-30; this URL is kept for inbound links / sharing / SEO. |
+| `/weekly-brief` | `WeeklyBriefPage.jsx` | Public (serif long-read of the latest published weekly brief; kept as-is, S3) |
+| `/briefings` | `BriefingsPage.jsx` (`features/briefings/`) | Public — **BRIEFING MODE** (S3, REDESIGN_MASTER_PLAN.md §3.6): the same map + horizontal slides + strip pattern as story mode. `?mode=daily\|weekly` (default daily), `?date=YYYY-MM-DD` (a specific daily edition), `?from=markets` (the retired `/weekly-markets` note). DAILY: THE DAY → one slide per top story (≤8) → COUNTRY TO WATCH. WEEKLY: THE WEEK → one slide per signal (≤6) → NEXT WEEK. Editions strip: solid = a real edition (probed up to 14 days back for daily, capped + sessionStorage-cached — `useDailyEditionsIndex`; only the single latest weekly edition is confirmed, since `weekly_brief` has no per-week lookup — a real backend gap, not fabricated). READ AS TEXT renders a plain semantic article. Desktop = `BriefingMode.jsx`; phone (P1+PH) = `PhoneBriefingMode.jsx` (READ/MAP/EDITIONS tabs). |
+| `/weekly-markets` | `WeeklyMarketsPage.jsx` | Public **redirect permalink** → `/briefings?from=markets` (S3, 2026-09-27: economy is parked, briefings never carries a markets line). Previously redirected to `/economy?view=week`; that mode is still reachable directly at `/economy`. |
 | `/economy?view=week` | `EconomyPage.jsx` → `WeeklyMarketsView.jsx` | Public — the price-first weekly markets wrap ("what moved this week & why"; honest empty state until published), the "This week" mode of the Today/This-week toggle |
 | `/breaking` | `BreakingFeedPage.jsx` | Public (the breaking-alert feed — confirmed alerts grouped by day; honest empty state) |
 | `/breaking/:id` | `BreakingDetailPage.jsx` | Public (single breaking alert: What happened / How we got here / Our read / Market impact / Sources) |

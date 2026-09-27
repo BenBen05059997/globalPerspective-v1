@@ -1,0 +1,18 @@
+/* PhoneBriefingMode — S3 phone (P1 + PH). Reuses PhoneStoryMode.css's .psm-* tab/slide chrome and
+   BriefingMode.css's .bm-* slide bodies + editions strip; only phone-specific tweaks here. */
+
+.bm-root.psm-root { width: 100%; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }
+
+.bm-readtext-btn {
+  display: block; width: 100%; margin: 8px 0;
+  font-family: var(--c-mono); font-size: 12px; letter-spacing: 0.04em;
+  color: var(--c-text-head); background: transparent; border: 1px solid var(--c-hairline-strong);
+  border-radius: var(--c-radius-sm); padding: 10px 12px; min-height: var(--c-tap-min); cursor: pointer;
+}
+
+/* The editions strip's marks are already ≥44px tap targets (.bm-edition-mark min-width/min-height
+   set in BriefingMode.css); on phone let the track wrap freely instead of scrolling sideways, so
+   scrollWidth never exceeds the viewport (S2.2 lesson). */
+.psm-panel .bm-editions { border-top: none; padding: 4px 0 12px; }
+.psm-panel .bm-editions-track { justify-content: flex-start; }
+.psm-panel .bm-edition-explain { flex-direction: column; align-items: flex-start; }

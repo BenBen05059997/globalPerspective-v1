@@ -58,6 +58,15 @@ must_have "$SRC/app/layout/Layout.jsx" "label: 'Studio'" "menu has Studio"
 must_have "$SRC/app/layout/Layout.jsx" "label: 'Track record'" "menu has Track record"
 must_not_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/whitepaper" "white paper soft-hidden from nav (A1, 2026-09-26; route stays live)"
 
+# ─── BriefingsPage (S3, /briefings) ───
+must_have "$SRC/app/App.jsx" "import BriefingsPage|BriefingsPage = lazy" "imports BriefingsPage"
+must_have "$SRC/app/App.jsx" "/briefings" "wires /briefings route"
+must_have "$SRC/app/layout/Layout.jsx" "to: '/briefings'" "menu Briefings item points at /briefings"
+must_have "$SRC/features/briefings/BriefingsPage.jsx" "useDailyBrief" "uses useDailyBrief"
+must_have "$SRC/features/briefings/BriefingsPage.jsx" "useWeeklyBrief" "uses useWeeklyBrief"
+must_have "$SRC/features/briefings/BriefingsPage.jsx" "useDailyEditionsIndex" "wires the editions strip index"
+must_have "$SRC/features/economy/WeeklyMarketsPage.jsx" "/briefings" "weekly-markets retires to /briefings"
+
 # ─── EconomyPage ───
 must_have "$SRC/features/economy/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
 must_have "$SRC/features/economy/EconomyPage.jsx" "useTopMovers" "uses useTopMovers"

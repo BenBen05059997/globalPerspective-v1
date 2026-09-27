@@ -22,6 +22,8 @@ import MechanismCard from '@/features/economy/components/MechanismCard';
 import ThreadForecast from '@/features/threads/components/ThreadForecast';
 import { useEconomicImpact } from '@/features/economy/hooks/useEconomicImpact';
 import { useThreadForecast } from '@/features/threads/hooks/useThreadForecast';
+import StoryMode from '@/features/threads/components/StoryMode';
+import { useIsPhone } from '@/shared/hooks/useIsPhone';
 import '@/features/threads/ThreadPage.css';
 
 function humanizeThreadId(id) {
@@ -127,6 +129,14 @@ export default function ThreadPage() {
   const requestedTab = searchParams.get('tab');
   const [contentTab, setContentTab] = useState(() =>
     ['overview', 'timeline', 'actors', 'sources', 'economy'].includes(requestedTab) ? requestedTab : 'overview');
+  // S1 (STORY_WEB_RETHINK_PLAN.md §7): story mode is the default story page on desktop; "Read in
+  // full" is the alternate, long accessible page (unchanged below). A deep-linked tab (e.g.
+  // ?tab=economy from a disruption link) lands straight on the full page so that contract keeps
+  // working — story mode has no tabs to honor it. Phone keeps the pre-existing page (S2.2 not yet
+  // built) rather than showing an unfinished desktop layout at phone width.
+  const isPhone = useIsPhone();
+  const [readFull, setReadFull] = useState(() => !!requestedTab);
+  const showStoryMode = !isPhone && !readFull;
 
   const thread = useMemo(() => {
     if (!narrativeEntries || !narrativeEntries.length) return null;
@@ -425,7 +435,7 @@ export default function ThreadPage() {
   const activeTab = contentTabs.some(t => t.key === contentTab) ? contentTab : (contentTabs[0]?.key || 'timeline');
 
   return (
-    <div className="tp-page">
+    <div className={`tp-page${showStoryMode ? ' tp-page-story' : ''}`}>
 
       {/* Topbar */}
       <div className="tp-topbar">
@@ -454,9 +464,25 @@ export default function ThreadPage() {
           <ShareButtons threadId={thread.threadId} title={displayTitle} preview={{ t: displayTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: category }} />
           <CopyBriefing getText={() => formatThreadBriefing(thread, analysis)} />
           <SaveButton itemType="thread" itemId={threadId} metadata={{ title: displayTitle, category }} />
+          {/* Review fix #7: story mode has its own "Read in full" entry in its header — this is
+              only the way BACK, shown once we're actually on the full page, so there is never
+              more than one "Read in full"-ish control on screen at once. */}
+          {!isPhone && readFull && (
+            <button type="button" className="tp-analyze-link" onClick={() => setReadFull(false)}>← Story mode</button>
+          )}
         </div>
       </div>
 
+      {showStoryMode ? (
+        <StoryMode
+          thread={thread}
+          analysis={analysis}
+          forecast={forecast}
+          displayTitle={displayTitle}
+          category={category}
+          onReadFull={() => setReadFull(true)}
+        />
+      ) : (
       <EditorialShell
         strip={
           <StatusStrip
@@ -669,6 +695,7 @@ export default function ThreadPage() {
         )}
 
       </EditorialShell>
+      )}
     </div>
   );
 }

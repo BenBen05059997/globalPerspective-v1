@@ -2,6 +2,24 @@ import { useState, useEffect } from 'react';
 import { fetchNarrativeThread } from '@/shared/api/restProxy';
 
 const CACHE_KEY = (id) => `gp_narrative_thread_${id}`;
+
+// The archive re-writes an old story under the current date (REVIEW F4, /weekly "new events
+// today"), so the same headline can come back with a later date. Keep only its earliest
+// appearance so a story's span and scrubber never claim news that didn't happen.
+export function dropRedatedRepeats(entries) {
+  if (!Array.isArray(entries)) return entries;
+  const earliest = new Map();
+  for (const e of entries) {
+    const key = String(e?.title || '').trim().toLowerCase();
+    if (!key) continue;
+    const prev = earliest.get(key);
+    if (!prev || String(e.date || '') < String(prev.date || '')) earliest.set(key, e);
+  }
+  return entries.filter((e) => {
+    const key = String(e?.title || '').trim().toLowerCase();
+    return !key || earliest.get(key) === e;
+  });
+}
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 // Durable, by-ID timeline reconstruction (server scans the 90-day archive).
@@ -22,7 +40,7 @@ export function useNarrativeThread(threadId) {
       if (raw) {
         const cached = JSON.parse(raw);
         if (cached?.timestamp && (Date.now() - cached.timestamp) < CACHE_TTL_MS && Array.isArray(cached.entries)) {
-          setEntries(cached.entries);
+          setEntries(dropRedatedRepeats(cached.entries));
           setLoading(false);
           return;
         }
@@ -34,7 +52,7 @@ export function useNarrativeThread(threadId) {
     fetchNarrativeThread(threadId)
       .then(result => {
         if (cancelled) return;
-        const data = Array.isArray(result?.data) ? result.data : [];
+        const data = dropRedatedRepeats(Array.isArray(result?.data) ? result.data : []);
         setEntries(data);
         try {
           sessionStorage.setItem(CACHE_KEY(threadId), JSON.stringify({ entries: data, timestamp: Date.now() }));

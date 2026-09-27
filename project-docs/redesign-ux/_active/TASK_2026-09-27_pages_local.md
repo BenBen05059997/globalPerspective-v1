@@ -17,8 +17,8 @@
 ### ▶ LIVE TRACKER
 | Phase | What | Status | Commit / evidence |
 |---|---|---|---|
-| S2.1 | **Story mode, desktop:** map + horizontal slides (BRIEF → CH1–CH4 → FED INTO → WATCH), bottom time scrubber (news per day, chapters, ⚑ turning point, TODAY, ◆ deadlines), drawers WHY / WHO / VIEW FROM / SOURCES; S5 amber after 7 d / hide after 30; S6 skip FED INTO without links; S7 approximate places | **Now** | |
-| S2.2 | **Story mode, phone + "Read in full":** P1 tabs READ / MAP / TIMELINE; the long, accessible page (timeline chapters + "Show linked news"; Why = cause chain + the news it's judged to feed into, with shared actors); story-card extras deferred from R4 (in-text links, TIMELINE / OUTLOOK jumps, most likely, fact / inference marks) | Queued | |
+| S2.1 | **Story mode, desktop:** map + horizontal slides (BRIEF → CH1–CH4 → FED INTO → WATCH), bottom time scrubber, drawers WHY / WHO / VIEW FROM / SOURCES; S5 / S6 / S7 | ✅ 2026-09-27 | verify 59 files / 522 tests, guards 38/0. Files: `threads/components/StoryMode.jsx/.css`, `threads/lib/storyMode.js`, `threads/lib/storyLinks.js`, `threads/hooks/useStoryLinks.js`, tests; `ThreadPage.jsx/.css` (story mode default on desktop, one "Read in full" / "← Story mode" toggle; `?tab=` opens the full page), `useNarrativeThread.js` (`dropRedatedRepeats`). Monitor on live data: round 1 sent back 10 issues (FED INTO/drawer gating, date span, scrubber labels, map framing, clipping, height); round 2 found the archive re-dating bug inflating the span to "Sep 4 — Sep 27" (13-Sep headline re-dated 27 Sep) → monitor fix drops re-dated repeats, span now "Sep 4 — Sep 13 · 10 days". Clicked ◀ ▶, arrows, all dots, 4 drawers, Read in full ↔ Story mode; 0 page errors; /map globe still moves. **Not built:** FED INTO arcs on the map (list only); links searched in ≤3 regions (fuller = D8) |
+| S2.2 | **Story mode, phone + "Read in full":** P1 tabs READ / MAP / TIMELINE; the long, accessible page (timeline chapters + "Show linked news"; Why = cause chain + the news it's judged to feed into, with shared actors); story-card extras deferred from R4 (in-text links, TIMELINE / OUTLOOK jumps, most likely, fact / inference marks); fix the pre-existing phone overflow on the story page (live 607px, branch 555px at 390 wide: share / copy-briefing topbar + stats) | **Now** | |
 | S3 | **Briefings mode at `/briefings`:** DAILY (the day → 8 top stories → country to watch) and WEEKLY (the week → 6 signals → next week); editions strip (solid = published, dashed = no edition); READ AS TEXT; the menu's Briefings item points here; `/daily`, `/daily/:dateKey`, `/weekly-brief` kept; `/weekly-markets` → `/briefings` with a paused note | Queued | |
 | S4 | **Country card v2 + countries layer:** one-screen card on the map (state line → facts only if verified → summary → RISK + DIRECTION → 4 risk bars → latest change with a cited event → ≤3 stories → ≤2 dated triggers → Studio button); the 5 states; the direction rule; the watch flag; Countries tab in Stories; `/weekly/country/:name` shows the card content | Queued | |
 | S5a | **Studio fixes (D3):** web sources `[W#]` (no Perplexity `[n]` collision); failed checks → hidden + not shareable; remove the live credits copy; read the provider `usage` for the receipt | Queued | |
@@ -47,7 +47,7 @@
 **Docs to update on completion:** this tracker (every phase); `CHANGES.md` (every phase); `REDESIGN_MASTER_PLAN.md` §7 stage status; `project-docs/INDEX.md` row; `ACTION_CHECKLIST.md` rows; `ARCHITECTURE.md` Frontend Path map (new `features/briefings/`) at S3.
 
 **Completion checklist:**
-- [ ] S2.1 · [ ] S2.2 · [ ] S3 · [ ] S4 · [ ] S5a · [ ] S5b · [ ] S5c · [ ] S6
+- [x] S2.1 · [ ] S2.2 · [ ] S3 · [ ] S4 · [ ] S5a · [ ] S5b · [ ] S5c · [ ] S6
 - [ ] docs updated in the same commit as each phase
 - [ ] CHANGES.md entry per phase
 - [ ] verify + page guards pass every phase

@@ -43,6 +43,9 @@ async function renderPage() {
       <Routes><Route path="/weekly/thread/:threadId" element={<ThreadPage />} /></Routes>
     </MemoryRouter>,
   );
+  // S2.1: story mode is now the default story page — "Read in full" reaches the long page this
+  // test exercises (root-cause rendering lives there, unchanged).
+  fireEvent.click(screen.getAllByRole('button', { name: /read in full/i })[0]);
   fireEvent.click(screen.getByRole('button', { name: /root cause/i }));
 }
 

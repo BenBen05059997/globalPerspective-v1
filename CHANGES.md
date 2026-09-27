@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Stage S2.1: story mode on the story page, desktop; branch `map-console`, local only)
+
+- **Story mode is the default desktop view** at the same URL `/weekly/thread/:threadId` (`threads/components/StoryMode.jsx`):
+  - the night globe, still, centred on the story's country (country wash, never a made-up pin);
+  - horizontal slides BRIEF → CH1–CH4 → FED INTO → WATCH (◀ ▶, arrow keys, dots; reduced motion = instant);
+  - a bottom time scrubber: news per day, labelled chapter spans, ⚑ turning point, TODAY, ◆ real forecast deadlines, date ticks;
+  - drawers WHY / WHO / VIEW FROM / SOURCES, each shown only when it has data.
+- **Register rules:** AI text dated and labelled "model judgment"; amber after 7 days, hidden after 30 (S5); FED INTO skipped without links (S6).
+- **FED INTO** (`lib/storyLinks.js`, `hooks/useStoryLinks.js`): this story's own outgoing links from the stored systems-analysis webs of up to 3 of its regions. Listed on the slide; not yet drawn on the map.
+- **"Read in full"** switches to the existing long page, unchanged; `?tab=` links open it directly. Phone keeps the long page until S2.2.
+- **Honesty fix:** `useNarrativeThread` drops headlines the archive re-wrote under a later date (`dropRedatedRepeats`). The AfD story showed news "on 27 Sep" that was its 13-Sep item.
+- Tests: `storyMode.test.js`, `storyLinks.test.js`, `dropRedatedRepeats.test.js`.
+
 ## 2026-09-27 (Review round R4b: SITUATIONS / COUNTRY RISK layer switch; branch `map-console`, local only)
 
 - **Layer switch** on /map (`?layer=risk`, `lib/layerMode.js`): SITUATIONS | COUNTRY RISK next to GLOBE | RADAR.

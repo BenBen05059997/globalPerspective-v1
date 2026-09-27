@@ -5,6 +5,10 @@
   margin: 0 auto;
   padding: 0 24px 80px;
 }
+/* Story mode (S2.1) fills the viewport itself (StoryMode.jsx measures the space under this
+   page's own header/breadcrumbs) — the long-page's 80px bottom breathing room would otherwise
+   push the page past 100vh and force a page scroll under a console that already fits. */
+.tp-page-story { padding-bottom: 16px; }
 
 /* ── Topbar breadcrumbs ───────────────────────────────────── */
 .tp-topbar {

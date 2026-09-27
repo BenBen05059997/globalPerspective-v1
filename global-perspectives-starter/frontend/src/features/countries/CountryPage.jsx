@@ -10,6 +10,7 @@ import { useMarketsCountry } from '@/features/economy/hooks/useMarketsCountry';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import CountryWhatChanged from '@/features/countries/components/CountryWhatChanged';
+import CountryCardV2 from '@/features/countries/components/CountryCardV2';
 import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
@@ -606,6 +607,15 @@ export default function CountryPage() {
         <Suspense fallback={<div className="weekly-loading">Loading map…</div>}>
           <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} />
         </Suspense>
+      </div>
+
+      {/* S4: the same one-screen card the /map console shows (no watch flag here — this page
+          doesn't fetch the world's live situations, to avoid a second world.json load on a
+          page that already loads the weekly archive + map). Everything below (coverage,
+          background timeline, systems web, disruptions, share) stays reachable underneath —
+          see TASK_2026-09-27_pages_local.md S4 for the old->new section mapping. */}
+      <div className="cpg-card-v2-wrap">
+        <CountryCardV2 name={decodedName} />
       </div>
 
       {!countryData ? (

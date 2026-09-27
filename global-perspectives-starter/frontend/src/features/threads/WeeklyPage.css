@@ -3072,17 +3072,35 @@
   .wp-band-title { white-space: normal; }
 }
 
-/* Interim Countries link (A1) — see WeeklyPage.jsx for why this exists. */
-.wp-countries-link {
-  margin-bottom: 12px;
+/* S4: Stories | Countries page-level tab (replaces the old interim link above). */
+.wp-section-wrap { display: flex; flex-direction: column; }
+.wp-section-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 3px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  width: fit-content;
 }
-.wp-countries-link a {
-  font-size: 13px;
-  font-weight: 600;
+.wp-section-tab {
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  min-height: 44px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: var(--ink-mid);
-  text-decoration: none;
+  cursor: pointer;
 }
-.wp-countries-link a:hover {
+.wp-section-tab:hover { color: var(--ink); }
+.wp-section-tab.active {
+  background: var(--paper);
   color: var(--ink);
-  text-decoration: underline;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }

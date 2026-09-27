@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief.js';
@@ -35,6 +35,7 @@ import { threadPath } from '@/shared/lib/threadPath';
 import { useCountryRiskLayer } from '@/features/map/hooks/useCountryRiskLayer.js';
 import { riskPeekData } from '@/features/map/lib/countryRiskLayer.js';
 import HudCountryRiskFeed from '@/features/map/components/HudCountryRiskFeed.jsx';
+import CountryCardV2 from '@/features/countries/components/CountryCardV2.jsx';
 import { normalizeLayer, DEFAULT_LAYER } from '@/features/map/lib/layerMode.js';
 import '@/features/map/SituationHome.css';
 
@@ -179,17 +180,18 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
 
 export default function SituationHome() {
   const { world, situations, loading, error, asOf, stale } = useWorld();
-  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const focus = params.get('focus');
   const storyParam = params.get('story');
+  const countryParam = params.get('country');
   const { detail } = useSituationDetail(focus);
 
-  // ?focus= (a situation) and ?story= (a topic) are mutually exclusive selections (M5a spec).
+  // ?focus= (a situation), ?story= (a topic) and ?country= (S4 country card) are mutually
+  // exclusive selections (M5a spec, extended for the country card).
   const select = useCallback((id) => {
     setParams((p) => {
       const n = new URLSearchParams(p);
-      if (id) { n.set('focus', id); n.delete('story'); } else { n.delete('focus'); }
+      if (id) { n.set('focus', id); n.delete('story'); n.delete('country'); } else { n.delete('focus'); }
       return n;
     }, { replace: true });
   }, [setParams]);
@@ -198,7 +200,18 @@ export default function SituationHome() {
     const id = topic?.threadId || topic?.topicId || null;
     setParams((p) => {
       const n = new URLSearchParams(p);
-      if (id) { n.set('story', id); n.delete('focus'); } else { n.delete('story'); }
+      if (id) { n.set('story', id); n.delete('focus'); n.delete('country'); } else { n.delete('story'); }
+      return n;
+    }, { replace: true });
+  }, [setParams]);
+
+  // S4: selecting a country in the COUNTRY RISK layer (or its feed) opens the card in place —
+  // it used to navigate straight to /weekly/country/:name, leaving the map. Same URL shape as
+  // ?focus=/?story= so it shares the phone sheet + Esc/back plumbing below.
+  const selectCountryName = useCallback((name) => {
+    setParams((p) => {
+      const n = new URLSearchParams(p);
+      if (name) { n.set('country', name); n.delete('focus'); n.delete('story'); } else { n.delete('country'); }
       return n;
     }, { replace: true });
   }, [setParams]);
@@ -289,11 +302,17 @@ export default function SituationHome() {
   const riskMode = layer === 'risk';
   const countryRiskLayer = useCountryRiskLayer(riskMode);
   const riskByIso3 = useMemo(() => new Map(countryRiskLayer.drawn.map((c) => [c.iso3, c])), [countryRiskLayer.drawn]);
-  const openCountryPage = useCallback((entry) => {
-    if (entry?.name) navigate(`/weekly/country/${encodeURIComponent(entry.name)}`);
-  }, [navigate]);
 
   const mapPeek = usePeek();
+  // Selecting a country opens the card in the rail/sheet where the hovered row used to be — close
+  // any lingering hover/focus preview so it doesn't float over the card (it has nothing left to
+  // anchor to once the rail's content changes).
+  const openCountryPage = useCallback((entry) => {
+    setTourOn(false);
+    mapPeek.close();
+    if (entry?.name) selectCountryName(entry.name);
+  }, [selectCountryName, mapPeek]);
+
   const shadingByIso3 = useMemo(() => new Map(visibleShading.map((e) => [e.iso3, e])), [visibleShading]);
   const hoveredCountry = !riskMode && mapPeek.openId ? shadingByIso3.get(mapPeek.openId) : null;
   const hoveredRiskCountry = riskMode && mapPeek.openId ? riskByIso3.get(mapPeek.openId) : null;
@@ -509,7 +528,7 @@ export default function SituationHome() {
   const [phoneTab, setPhoneTab] = useState('map');
   const [sheetStop, setSheetStop] = useState('half');
   const [hudExpanded, setHudExpanded] = useState(false);
-  const selectionId = focus || storyParam || null;
+  const selectionId = focus || storyParam || countryParam || null;
   const prevSelectionRef = useRef(null);
   useEffect(() => {
     // Selecting anything (from LIST, ALERTS, or the map itself) always lands on the MAP tab with
@@ -523,16 +542,17 @@ export default function SituationHome() {
   const closeSelection = useCallback(() => {
     if (focus) userSelect(null);
     else if (storyParam) userSelectStory(null);
-  }, [focus, storyParam, userSelect, userSelectStory]);
-  const sheetTitle = selected ? selected.verb_label : (selectedStory ? selectedStory.title : null);
+    else if (countryParam) selectCountryName(null);
+  }, [focus, storyParam, countryParam, userSelect, userSelectStory, selectCountryName]);
+  const sheetTitle = selected ? selected.verb_label : (selectedStory ? selectedStory.title : (countryParam || null));
   const sheetSubtitle = selected
     ? (AXIS_LABEL[selected.axis] || selected.axis)
     : (selectedStory ? (selectedStory.category || null) : null);
   // F2.3: a stale `?story=` link resolves to no topic (selectedStory stays null) but `selectionId`
   // was still truthy, so the sheet used to open empty. Only open once the selection actually
-  // resolves to something the sheet has content for — a live situation, a live story, or the
-  // honest "no longer tracked" message for an expired `?focus=`.
-  const phoneSheetOpen = isPhone && phoneTab === 'map' && !!(selected || selectedStory || focusMissing);
+  // resolves to something the sheet has content for — a live situation, a live story, the country
+  // card, or the honest "no longer tracked" message for an expired `?focus=`.
+  const phoneSheetOpen = isPhone && phoneTab === 'map' && !!(selected || selectedStory || countryParam || focusMissing);
   const hudSummary = useMemo(() => hudCompactSummary(tierCounts, sensorRows, paused), [tierCounts, sensorRows, paused]);
 
   // Legend "present" flags: which token items are actually on the map right now (the Key dims the
@@ -707,6 +727,8 @@ export default function SituationHome() {
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={() => userSelect(null)} />
   ) : selectedStory ? (
     <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={() => userSelectStory(null)} />
+  ) : countryParam ? (
+    <CountryCardV2 key={countryParam} name={countryParam} situations={open} onBack={() => selectCountryName(null)} />
   ) : riskMode ? (
     <HudCountryRiskFeed
       drawn={countryRiskLayer.drawn} hiddenOld={countryRiskLayer.hiddenOld} loading={countryRiskLayer.loading}
@@ -727,6 +749,8 @@ export default function SituationHome() {
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={closeSelection} showBack={false} />
   ) : selectedStory ? (
     <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={closeSelection} />
+  ) : countryParam ? (
+    <CountryCardV2 key={countryParam} name={countryParam} situations={open} variant="sheet" />
   ) : null;
 
   const statusLine = <HudStatusLine paused={paused} storiesAsOf={topicsAsOf} gdacsFresh={gdacsFresh} />;

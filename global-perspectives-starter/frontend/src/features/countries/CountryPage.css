@@ -784,6 +784,16 @@
 .cpg-fchip.on { border-color: currentColor; color: var(--ink); font-weight: 600; background: var(--paper-2); }
 .cpg-fchip .c { color: var(--ink-faint); font-weight: 400; margin-left: 3px; font-size: 11px; }
 
+/* S4: the CountryCardV2 wrap on the public country page — a max-width band under the map hero,
+   above the deep-dive tabs/rails. */
+.cpg-card-v2-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-2, rgba(0,0,0,0.015));
+}
+
 /* Keyboard focus rings (Phase 4 a11y — none existed before) */
 .cpg-fchip:focus-visible,
 .cpg-tab:focus-visible,

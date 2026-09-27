@@ -1538,7 +1538,7 @@ answers "which Lambdas serve feature X" without moving backend code.
 
 Construction gate removed — all routes render real components in production. Auth routes show a preview/locked state for non-signed-in users with real public data visible for SEO.
 
-Wired in `<Routes>` in `App.jsx` — 27 `<Route>` elements incl. catch-all (`/membership` added 2026-06-22; `/breaking` + `/breaking/:id` added 2026-06-26; `/spider-demo` **unlisted throwaway prototype** added 2026-06-27). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
+Wired in `<Routes>` in `App.jsx` — 28 `<Route>` elements incl. catch-all (`/membership` added 2026-06-22; `/breaking` + `/breaking/:id` added 2026-06-26; `/spider-demo` **unlisted throwaway prototype** added 2026-06-27). Content is fully public; the only auth route is `/account`. `SignIn`/`AuthCallback` honor a `?returnTo=` param (added 2026-06-22) so post-auth lands back at checkout/origin instead of hard-coding `/weekly`.
 
 | Path | Component | Access |
 |------|-----------|--------|

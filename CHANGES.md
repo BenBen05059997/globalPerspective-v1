@@ -1,5 +1,46 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Stage S4: country card v2 + countries layer; branch `map-console`, local only)
+
+- **`CountryCardV2`** (`features/countries/components/`), the one-screen card: state line →
+  verified facts only (macro ≤3y old; FX only when the currency is in the ECB-sourced feed) →
+  one-sentence summary → RISK + DIRECTION → 4 risk bars (WHY opens on click) → latest change
+  (only with a cited event, linked when a real threadId resolves) → ≤3 stories → ≤2 future
+  dated triggers → Studio button. Themed via local `--ccv2-*` custom properties so it reads
+  correctly in both the light `/weekly/country` page and the dark `.gp-console` map theme (a
+  first pass used `--ink`/`--line` directly and measured 1.68:1 contrast inside the console —
+  fixed before shipping).
+- **Direction rule** (`lib/countryDirection.js`, pure + tested): medians of the last 3 readings
+  vs. the 3 nearest 14 days earlier (±3d, each bucket ≤5-day span); arrow at |Δ|≥10, axis named
+  only at its own |Δ|≥15; "at top of scale" at both medians ≥95; "not enough readings (gap …)"
+  otherwise; hidden past 30 days.
+- **Watch flag** (`lib/countryWatch.js`): an elevated/high GDACS alert on the country, or an
+  escalating origin situation in the last 24h (the situations payload has no separate
+  `iso3_origin` field yet, so `iso3_affected[0]` is used as the closest honest proxy).
+- **5 states** verified live: Iran (briefed, older), Yemen (too old — scores hidden), Brazil /
+  Nepal (never briefed — stories + facts + "Generate in Studio"), Bhutan (quiet — "No coverage
+  in the last 30 days").
+- **Map wiring:** selecting a country in the COUNTRY RISK layer or its feed now opens the card
+  in place (`?country=` param, same pattern as `?focus=`/`?story=`) instead of navigating away;
+  phone opens it as a BottomSheet at half stop without hiding the map.
+- **`useCountryIntelligence` batching fix:** CountryListPage was asking for 24 country names in
+  one call; the backend silently caps at 15 (`country_intelligence`, newsSensitiveData
+  index.js:517), so 9 of the 24 were silently dropped. Now chunks through the same
+  `chunkNames`/`MAX_NAMES_PER_CALL` helper the map's COUNTRY RISK layer already used.
+- **Countries tab in Stories** (`/weekly?section=countries`): a Stories | Countries tab reusing
+  `CountryListPage` wholesale, replacing the interim "Countries →" link.
+- **`/weekly/country/:name`** now shows `CountryCardV2` at the top; the existing deep-dive
+  content (coverage list, background timeline, systems web, disruptions, share buttons) stays
+  reachable underneath, unchanged.
+- Tests: `countryDirection`, `countryCurrency`, `countryWatch`, `countryTriggers` (24 new,
+  pure/vitest). verify 66 files / 572 tests, guards 45/0 (no new static heading needed a guard).
+- **Not built (needs D7, backend):** Wikidata leader/capital/population/government facts — never
+  served to the frontend today, so the "verified facts" row omits them entirely rather than
+  guessing; the country page's fixed currency map is static ISO 4217 reference data, not an
+  invented fact.
+- **Monitor fixes:** macro figures are gated and labelled by their own data year (`lib/countryMacro.js`; the first pass showed the fetch year "2026" on 2025 data); risk-bar numbers use body ink (red-on-dark measured 4.10:1); the drift "latest change" carries a "model judgment" label.
+
+
 ## 2026-09-27 (Stage S3: briefings mode at `/briefings`; branch `map-console`, local only)
 
 - **New `/briefings`** (`features/briefings/`), the story-mode pattern for editions:

@@ -8,6 +8,7 @@ import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import TrendBadge, { getTrend } from '@/features/threads/components/TrendBadge';
+import CountryListPage from '@/features/countries/CountryListPage';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '@/shared/styles/tokens';
@@ -700,8 +701,16 @@ export default function WeeklyPage() {
   const [searchQuery, setSearchQuery] = useState('');
   // Seed the category filter from ?category= (ThreadPage's breadcrumb links here,
   // e.g. /weekly?category=politics). Only accept a known category.
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const categoryParam = searchParams.get('category');
+  // S4: Stories | Countries tab (?section=countries). Countries reuses CountryListPage
+  // wholesale rather than forking its content — replaces the interim "Countries →" link.
+  const pageTab = searchParams.get('section') === 'countries' ? 'countries' : 'stories';
+  const setPageTab = (tab) => setSearchParams((prev) => {
+    const next = new URLSearchParams(prev);
+    if (tab === 'countries') next.set('section', 'countries'); else next.delete('section');
+    return next;
+  });
   const [activeCategory, setActiveCategory] = useState(() =>
     categoryParam && CATEGORY_ORDER.includes(categoryParam) ? categoryParam : null);
   // Re-sync when the URL param itself changes (back/forward, or a fresh
@@ -892,13 +901,46 @@ export default function WeeklyPage() {
 
   if (authLoading) return <div className="weekly-loading">Loading…</div>;
 
+  const sectionTabs = (
+    <div className="wp-section-tabs" role="tablist" aria-label="Stories or countries">
+      <button
+        role="tab"
+        aria-selected={pageTab === 'stories'}
+        className={`wp-section-tab ${pageTab === 'stories' ? 'active' : ''}`}
+        onClick={() => setPageTab('stories')}
+      >
+        Stories
+      </button>
+      <button
+        role="tab"
+        aria-selected={pageTab === 'countries'}
+        className={`wp-section-tab ${pageTab === 'countries' ? 'active' : ''}`}
+        onClick={() => setPageTab('countries')}
+      >
+        Countries
+      </button>
+    </div>
+  );
+
+  if (pageTab === 'countries') {
+    return (
+      <div className="wp-section-wrap">
+        {sectionTabs}
+        <CountryListPage />
+      </div>
+    );
+  }
+
   const totalArticles = threads.reduce((sum, t) => sum + t.articleCount, 0) + standalone.length;
 
   if (viewMode === 'map') {
     return (
-      <Suspense fallback={<div className="weekly-loading">Loading map…</div>}>
-        <WeeklyMap embedded />
-      </Suspense>
+      <div className="wp-section-wrap">
+        {sectionTabs}
+        <Suspense fallback={<div className="weekly-loading">Loading map…</div>}>
+          <WeeklyMap embedded />
+        </Suspense>
+      </div>
     );
   }
 
@@ -1014,12 +1056,8 @@ export default function WeeklyPage() {
   return (
     <EditorialShell strip={strip} left={leftRail} right={rightRail} className="wp-shell">
 
-      {/* Interim link (A1): Countries dropped out of the top nav (N1's five-item menu) and has
-          no menu entry of its own yet — this keeps it reachable until Stories grows a Countries
-          tab. Remove once that tab exists. */}
-      <div className="wp-countries-link">
-        <Link to="/weekly/countries">Countries →</Link>
-      </div>
+      {/* S4: Stories | Countries tab replaces the interim "Countries →" link (A1). */}
+      {sectionTabs}
 
       {welcome && (
         <div className="welcome-banner">

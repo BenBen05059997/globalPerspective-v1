@@ -92,7 +92,8 @@ function stripCode(text) {
  * validateAnalysis(text, { citations, context, webSources, requiresStruct, structOk })
  *   → { ok, hasError, warnings, shareable }
  *
- *  - citations:     [{ n, title, ... }] the numbered stories that were provided.
+ *  - citations:     [{ n, kind, ... }] the numbered, typed sources that were provided
+ *                   (D2: possibly several per story — NEWS/ANALYSIS/DRIFT/FORECAST).
  *  - context:       the assembled STORIES block (for the invented-figure check). Optional.
  *  - thinInput:     true when the source material was thin (assessRichness) — surfaces a
  *                   coverage caveat so the reader weights scenario specifics accordingly.
@@ -126,9 +127,9 @@ export function validateAnalysis(text, {
   const maxN = citations.length;
   const cited = extractCitedNumbers(body);
 
-  // 1) Phantom citation — cites [n] that maps to no provided story. This is the
+  // 1) Phantom citation — cites [n] that maps to no provided source. This is the
   //    cardinal failure: a fabricated source reference. (Only checkable when we know
-  //    how many stories were provided.)
+  //    how many sources were provided.)
   if (maxN > 0) {
     const phantom = cited.filter((n) => n < 1 || n > maxN);
     if (phantom.length) {
@@ -137,7 +138,7 @@ export function validateAnalysis(text, {
         severity: 'error',
         message:
           `Cites ${phantom.map((n) => `[${n}]`).join(', ')} but only ` +
-          `${maxN} stor${maxN === 1 ? 'y was' : 'ies were'} provided — that source does not exist.`,
+          `${maxN} source${maxN === 1 ? ' was' : 's were'} provided — that source does not exist.`,
       });
     }
   }
@@ -239,7 +240,7 @@ export function validateAnalysis(text, {
         code: 'unused_source',
         severity: 'info',
         message:
-          `Provided stor${unused.length === 1 ? 'y' : 'ies'} ` +
+          `Provided source${unused.length === 1 ? '' : 's'} ` +
           `${unused.map((n) => `[${n}]`).join(', ')} not referenced in the analysis.`,
       });
     }

@@ -1,17 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics';
 import { useAuth } from '@/shared/contexts/AuthContext';
+import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { getProvider } from '@/features/analysis-studio/lib/llm';
 import { runChat } from '@/features/analysis-studio/lib/llm';
 import { loadByok } from '@/features/analysis-studio/lib/byok';
 import { useMembership } from '@/features/account/hooks/useMembership';
-import { runMemberAnalysis, analyzeConfigured } from '@/shared/api/restProxy';
+import { runMemberAnalysis, analyzeConfigured, fetchThreadAnalyses } from '@/shared/api/restProxy';
+import { reportFetchError } from '@/shared/api/errorSink';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '@/features/analysis-studio/lib/analysis';
+import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';
+import { buildEarlierStoryList } from '@/features/analysis-studio/lib/earlierStories';
 import { validateAnalysis } from '@/features/analysis-studio/lib/analysisValidator';
 import { extractStruct, validateStruct } from '@/features/analysis-studio/lib/analysisStruct';
 import { assessSelection } from '@/features/analysis-studio/lib/sourceRobustness';
 import { renumberWebCitations, webLinkMap } from '@/features/analysis-studio/lib/webCitations';
+import { buildQuote } from '@/features/analysis-studio/lib/quote';
+import { buildReceipt } from '@/features/analysis-studio/lib/receipt';
 import ProviderModal from '@/features/analysis-studio/components/ProviderModal';
 import Markdown from '@/shared/ui/Markdown';
 import { ScenarioBars, IndicatorMatrix, RippleTable } from '@/features/analysis-studio/components/AnalysisVisuals.jsx';
@@ -22,6 +28,11 @@ const MAX_STORIES = 4;
 export default function AnalysisStudio() {
   useEffect(() => { document.title = 'Analysis Studio | Global Perspectives'; }, []);
   const { topics, loading: topicsLoading } = useGeminiTopics();
+  // D2's whole point is "every story analysable, not only today's ~17" — the picker must
+  // actually offer stories beyond today, or D2's feed never gets exercised by a real
+  // selection. `useWeeklyArchive` is the same 30-day, 30-min-cached hook /weekly already
+  // uses (fetchArchiveRange, lightweight entries — no heavy AI fields, 6MB-safe).
+  const { dayMap: archiveDayMap, loading: archiveLoading, error: archiveError } = useWeeklyArchive();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -47,6 +58,12 @@ export default function AnalysisStudio() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const [selected, setSelected] = useState([]); // topicIds
+  // Earlier stories the reader picked (last 30 days) — kept independent of the current
+  // search filter so a selected row is never dropped from `selectedTopics` just because
+  // it scrolled out of view or no longer matches the search box.
+  const [pickedEarlier, setPickedEarlier] = useState({}); // { [topicId]: rowObject }
+  const [earlierQuery, setEarlierQuery] = useState('');
+  const [earlierPreview, setEarlierPreview] = useState({}); // { [threadId]: 'RICH'|'THIN' }
   const didSeedFromParams = useRef(false);
   const [mode, setMode] = useState('guided'); // 'guided' | 'freeform'
   const [lensId, setLensId] = useState(LENSES[0].id);
@@ -70,6 +87,15 @@ export default function AnalysisStudio() {
   const [sourceInfo, setSourceInfo] = useState(null);
   const [ranOnServer, setRanOnServer] = useState(false); // did the last result use our compute?
   const [usage, setUsage] = useState(null); // { inputTokens, outputTokens, model } | null
+  const [elapsedMs, setElapsedMs] = useState(null);
+  // The reader-pays "quote before the run" (D2 stored-data feed + typed sources —
+  // TRACK_RECORD_AND_STUDIO_RULING.md, S5b). Recomputed whenever the selection or the
+  // model/path that would run changes. `contextCache` remembers the last computed
+  // context (keyed by selection) so onRun reuses it instead of re-fetching everything
+  // a second time when the reader hits Run right after the quote settled.
+  const [quote, setQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const contextCache = useRef({ key: null, promise: null, data: null });
   // A failed-checks run is hidden behind this explicit "show anyway" expand
   // (S5: TRACK_RECORD_AND_STUDIO_RULING.md) — reset on every new run so a fresh
   // result never inherits the previous run's expanded state.
@@ -90,10 +116,113 @@ export default function AnalysisStudio() {
   // Block the whole feature for non-registered users (anonymous guests included).
   const blocked = !authLoading && !isRegistered;
 
+  // Today's topics ∪ any earlier (last-30-days) story ever picked — so a selection built
+  // from EITHER picker section resolves correctly, regardless of the earlier list's
+  // current search filter (see `pickedEarlier` above).
+  const allKnownStories = useMemo(() => {
+    const map = new Map();
+    topics.forEach((t) => map.set(t.topicId || t.id, t));
+    Object.values(pickedEarlier).forEach((r) => map.set(r.topicId, r));
+    return map;
+  }, [topics, pickedEarlier]);
   const selectedTopics = useMemo(
-    () => topics.filter((t) => selected.includes(t.topicId || t.id)),
-    [topics, selected]
+    () => selected.map((id) => allKnownStories.get(id)).filter(Boolean),
+    [selected, allKnownStories]
   );
+  const selectionKey = selected.slice().sort().join(',');
+
+  // The earlier-stories list itself (today's topicIds excluded so nothing is offered
+  // twice), filtered live by the search box.
+  const todayTopicIds = useMemo(() => new Set(topics.map((t) => t.topicId || t.id)), [topics]);
+  const earlierRows = useMemo(
+    () => buildEarlierStoryList(archiveDayMap, { excludeTopicIds: todayTopicIds, query: earlierQuery }),
+    [archiveDayMap, todayTopicIds, earlierQuery]
+  );
+  const EARLIER_DISPLAY_CAP = 40;
+  const earlierDisplayed = earlierRows.slice(0, EARLIER_DISPLAY_CAP);
+
+  // RICH/THIN PREVIEW for the earlier list — a lightweight, honestly-partial check (one
+  // batched `thread_analysis` call, capped like the action itself at 20 ids) so scrolling
+  // hundreds of archive days never fires hundreds of requests. This only reflects stored
+  // ANALYSIS/DRIFT — the FORECAST snapshot (also RICH-qualifying) is checked only once a
+  // story is actually selected and the real quote runs, so a "THIN" preview can still turn
+  // RICH on selection. That gap is intentional and cheap; label it honestly, never silently.
+  const previewKey = earlierDisplayed.slice(0, 20).map((r) => r.threadId).join(',');
+  useEffect(() => {
+    const ids = previewKey ? previewKey.split(',') : [];
+    const unknown = ids.filter((id) => !(id in earlierPreview));
+    if (unknown.length === 0) return undefined;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetchThreadAnalyses(unknown);
+        if (cancelled) return;
+        setEarlierPreview((prev) => {
+          const next = { ...prev };
+          for (const id of unknown) {
+            const rec = res?.data?.[id];
+            next[id] = rec && (rec.trajectory || rec.driftNote) ? 'RICH' : 'THIN';
+          }
+          return next;
+        });
+      } catch (err) {
+        reportFetchError('analysis-studio-earlier-preview', err);
+      }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [previewKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggleEarlier(row) {
+    setPickedEarlier((p) => ({ ...p, [row.topicId]: row }));
+    toggle(row.topicId);
+  }
+
+  // Which path a run right now would actually take (mirrors onRun's own logic) — the
+  // quote must describe THIS run, not a generic one. Deep research always stays BYOK
+  // (needs a web-search-capable key).
+  const wouldUseServer = serverCapable && mode !== 'deep' && (isMember || !byok);
+  const quoteModel = wouldUseServer ? null : (byok ? byok.model : null);
+  const quoteMaxOutputTokens = wouldUseServer ? null : (mode === 'deep' ? 3000 : 2400);
+
+  // Fetch + build the numbered typed-source context for the CURRENT selection, reusing
+  // the in-flight/last result when the selection hasn't changed since (onRun calls this
+  // too, so a reader who hits Run right after the quote settles never double-fetches).
+  const getContext = useCallback((key, topicsForKey) => {
+    const cache = contextCache.current;
+    if (cache.key === key && (cache.promise || cache.data)) {
+      return cache.promise || Promise.resolve(cache.data);
+    }
+    const promise = buildAnalysisContext(topicsForKey).then((data) => {
+      contextCache.current = { key, promise: null, data };
+      return data;
+    });
+    contextCache.current = { key, promise, data: null };
+    return promise;
+  }, []);
+
+  // Quote before the run — recomputed live as the selection (or the path/model that
+  // would run) changes. A failed fetch here fails empty (quote clears) rather than
+  // showing a stale or invented figure.
+  useEffect(() => {
+    let cancelled = false;
+    if (selectedTopics.length === 0) { setQuote(null); setQuoteLoading(false); return undefined; }
+    setQuoteLoading(true);
+    getContext(selectionKey, selectedTopics)
+      .then((ctx) => {
+        if (cancelled) return;
+        setQuote(buildQuote({
+          perStory: ctx.perStory,
+          totalChars: ctx.totalChars,
+          model: quoteModel,
+          maxOutputTokens: quoteMaxOutputTokens,
+          memberPath: wouldUseServer,
+        }));
+      })
+      .catch(() => { if (!cancelled) setQuote(null); })
+      .finally(() => { if (!cancelled) setQuoteLoading(false); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionKey, wouldUseServer, quoteModel, quoteMaxOutputTokens]);
 
   useEffect(() => {
     if (didSeedFromParams.current) return;
@@ -135,12 +264,17 @@ export default function AnalysisStudio() {
     setChecks(null);
     setStruct(null);
     setUsage(null);
+    setElapsedMs(null);
     setShowFailedAnyway(false);
     // Source robustness (L1): is this built on corroborated reporting or a single
     // unverified outlet? Computed client-side from the selected stories' sources.
     setSourceInfo(assessSelection(selectedTopics));
+    const startedAt = Date.now();
     try {
-      const { context, citations: cites, thin } = await buildAnalysisContext(selectedTopics);
+      // Reuse the context the quote already fetched for this exact selection — the
+      // quote effect above keys the same cache, so a reader who hits Run right after
+      // the quote settles never triggers a second round of fetches.
+      const { context, citations: cites, thin } = await getContext(selectionKey, selectedTopics);
       // Thin material only over-reaches in the closed-book modes; deep mode pulls
       // fresh material from the web, so the guard doesn't apply there.
       const thinGuard = thin && !deep;
@@ -209,6 +343,7 @@ export default function AnalysisStudio() {
       if (err?.code === 'out_of_credits') setError("You're out of analysis credits, and any monthly allowance is used up. Add credits or subscribe to keep analyzing.");
       else setError(err?.message || 'Analysis failed.');
     } finally {
+      setElapsedMs(Date.now() - startedAt);
       setRunning(false);
     }
   }
@@ -273,6 +408,58 @@ export default function AnalysisStudio() {
               })}
             </ul>
           )}
+
+          <div className="as-earlier">
+            <div className="as-earlier-head">Earlier stories (last 30 days)</div>
+            <input
+              className="as-input as-earlier-search"
+              placeholder="Search earlier stories…"
+              value={earlierQuery}
+              onChange={(e) => setEarlierQuery(e.target.value)}
+            />
+            {archiveLoading && earlierRows.length === 0 ? (
+              <div className="as-muted">Loading the last 30 days…</div>
+            ) : archiveError ? (
+              <div className="as-muted">Couldn't load earlier stories.</div>
+            ) : earlierRows.length === 0 ? (
+              <div className="as-muted">{earlierQuery ? 'No matches.' : 'Nothing else stored in the last 30 days.'}</div>
+            ) : (
+              <>
+                <ul className="as-stories as-earlier-list">
+                  {earlierDisplayed.map((row) => {
+                    const id = row.topicId;
+                    const on = selected.includes(id);
+                    const full = !on && selected.length >= MAX_STORIES;
+                    const badge = earlierPreview[row.threadId];
+                    return (
+                      <li key={id}>
+                        <button
+                          className={`as-story${on ? ' on' : ''}`}
+                          onClick={() => toggleEarlier(row)}
+                          disabled={full}
+                          title={full ? `Max ${MAX_STORIES} stories` : undefined}
+                        >
+                          <span className="as-check" aria-hidden>{on ? '✓' : ''}</span>
+                          <span className="as-story-body">
+                            <span className="as-story-title">{row.title}</span>
+                            <span className="as-story-meta">
+                              {row.date}
+                              {row.category && ` · ${row.category}`}
+                              {Array.isArray(row.regions) && row.regions.length > 0 && ` · ${row.regions.slice(0, 3).join(', ')}`}
+                            </span>
+                          </span>
+                          {badge && <span className={`as-richness ${badge === 'RICH' ? 'rich' : 'thin'}`}>{badge}</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {earlierRows.length > earlierDisplayed.length && (
+                  <div className="as-muted as-earlier-more">{earlierRows.length - earlierDisplayed.length} more — refine your search.</div>
+                )}
+              </>
+            )}
+          </div>
         </section>
 
         {/* Step 2 — choose mode */}
@@ -351,6 +538,32 @@ export default function AnalysisStudio() {
               onChange={(e) => setFreeform(e.target.value)}
               rows={5}
             />
+          )}
+
+          {selectedTopics.length > 0 && (
+            <div className="as-quote" aria-live="polite">
+              <div className="as-quote-head">What this run sends</div>
+              {quoteLoading && !quote ? (
+                <div className="as-muted">Checking what's stored for these stories…</div>
+              ) : quote ? (
+                <>
+                  <ul className="as-quote-stories">
+                    {quote.perStory.map((p, i) => (
+                      <li key={i}>
+                        <span className={`as-richness ${p.richness === 'RICH' ? 'rich' : 'thin'}`}>{p.richness}</span>
+                        <span className="as-quote-story-title">{p.title}</span>
+                        <span className="as-quote-story-counts">
+                          {Object.entries(p.counts).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${SOURCE_KIND_LABELS[k] || k}`).join(' · ') || 'no stored material'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <ul className="as-quote-lines">
+                    {quote.lines.map((l, i) => <li key={i}>{l}</li>)}
+                  </ul>
+                </>
+              ) : null}
+            </div>
           )}
 
           <button className="as-run" onClick={onRun} disabled={running}>
@@ -476,13 +689,13 @@ export default function AnalysisStudio() {
                       <ol>
                         {citations.map((c) => (
                           <li key={c.n}>
-                            <span className="as-cite-title">{c.title}</span>
-                            {c.regions && <span className="as-cite-meta"> — {c.regions}</span>}
-                            {c.sources?.length > 0 && (
+                            <span className={`as-kind-chip as-kind-${(c.kind || '').toLowerCase()}`}>{SOURCE_KIND_LABELS[c.kind] || c.kind}</span>
+                            <span className="as-cite-date">{c.date || 'date unknown'}</span>
+                            {c.storyTitle && <span className="as-cite-title"> — {c.storyTitle}</span>}
+                            {c.label && c.label !== c.storyTitle && <span className="as-cite-meta"> ({c.label})</span>}
+                            {c.url && (
                               <span className="as-cite-links">
-                                {c.sources.slice(0, 4).map((u, i) => (
-                                  <a key={i} href={u} target="_blank" rel="noopener noreferrer">link{c.sources.length > 1 ? ` ${i + 1}` : ''}</a>
-                                ))}
+                                <a href={c.url} target="_blank" rel="noopener noreferrer">link</a>
                               </span>
                             )}
                           </li>
@@ -498,13 +711,24 @@ export default function AnalysisStudio() {
                 </>
               )}
 
-              {!ranOnServer && (
-                <p className="as-receipt">
-                  {usage
-                    ? `Provider usage: ${usage.inputTokens ?? '—'} in / ${usage.outputTokens ?? '—'} out tokens${usage.model ? ` · model ${usage.model}` : ''}.`
-                    : 'Provider did not report usage.'}
-                </p>
-              )}
+              {(() => {
+                const receipt = buildReceipt({
+                  usage,
+                  model: ranOnServer ? null : (byok?.model || usage?.model || null),
+                  checks,
+                  sourcesUsed: citations.length,
+                  elapsedMs,
+                  memberPath: ranOnServer,
+                });
+                return (
+                  <div className="as-receipt-block">
+                    <div className="as-receipt-head">Receipt</div>
+                    <ul>
+                      {receipt.lines.map((l, i) => <li key={i}>{l}</li>)}
+                    </ul>
+                  </div>
+                );
+              })()}
             </>
           )}
         </section>

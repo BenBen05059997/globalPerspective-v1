@@ -1,5 +1,70 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Stage S5b: Studio stored-data feed D2 + quote/receipt; branch `map-console`, local only)
+
+- **D2 feed — every selected story is analysable, not just today's ~17.** When a selected
+  story carries a `threadId`, `buildAnalysisContext` (`analysis-studio/lib/analysis.js`) now
+  pulls the archive's stored history for that thread instead of only today's per-topic AI
+  cache: `narrative_thread` (NEWS — headline/outlet/date snippets, deduped with
+  `dropRedatedRepeats` from `threads/hooks/useNarrativeThread.js`), `thread_analysis`
+  (ANALYSIS — trajectory/cause chain/arc, plus its latest DRIFT note), and `prediction_snapshot`
+  (FORECAST — scenarios + dated triggers). No threadId → unchanged legacy SUMMARY/PREDICTION/
+  TRACE_CAUSE fallback. **Gap, logged:** no public proxy action serves a thread-scoped
+  THREAD_HISTORY/DRIFTLOG time series (only the single latest DRIFT note via `thread_analysis`);
+  a fuller "what changed over time" feed needs a new backend action (D2 said "where they exist" —
+  frontend-only build touches no Lambda, per the phase rule).
+- **Typed, dated, flat-numbered sources.** `assembleContext` (`lib/analysisPrompt.js`) now
+  numbers `[n]` sequentially ACROSS the whole selection (not one per story) — every archive
+  snippet, stored analysis, drift note and forecast gets its own citable, typed (`NEWS` /
+  `ANALYSIS` / `DRIFT` / `FORECAST`), dated number. `buildStorySources` classifies each story
+  RICH (has stored analysis/drift/forecast) or THIN (headlines only) and enforces a per-story
+  character budget (1800 chars; ANALYSIS > FORECAST > DRIFT > NEWS priority when trimming).
+  The Sources list now shows a kind chip + real date per `[n]`; the validator's phantom/unused
+  checks work unchanged against the new flat numbering (its messages now say "source(s)" not
+  "stor(y/ies)").
+- **Quote before the run** (`lib/quote.js`, recomputed live as the selection changes): per-story
+  RICH/THIN + kind counts, approx. characters + an explicitly labelled token *estimate*, the
+  model + output cap, and "Your provider bills you directly; see their pricing" (members: "Included
+  with your membership") — never a made-up price.
+- **Receipt after the run** (`lib/receipt.js`): model, input/output tokens as reported (or an
+  honest "provider did not report usage"), checks passed/failed with codes, sources used, and
+  run time; on failed checks, "Your provider still charged for this run." (member path: "Included
+  with your membership — no per-run provider usage to report").
+- **Earlier-stories picker (monitor round 1 correction — see below).** The picker's "Earlier
+  stories (last 30 days)" section (`lib/earlierStories.js`, new) sources from `fetchArchiveRange`
+  (the same lightweight, 6MB-safe archive `/weekly` already uses), excludes today's own topics,
+  drops re-dated repeats (`dropRedatedRepeats`) before collapsing to one row per `threadId` at
+  its last real date, and supports a live text search. Each row shows a RICH/THIN preview badge
+  from one batched `thread_analysis` call (capped at 20 visible rows) — a preview only: it checks
+  stored ANALYSIS/DRIFT, not the FORECAST snapshot, so a "THIN" row can still turn RICH once
+  selected and the real quote runs. Selecting an earlier row feeds the exact same
+  `buildAnalysisContext` path as today's topics, under the same 4-story cap.
+- **Correction (monitor round 1):** this entry previously claimed live topics don't carry
+  `threadId` and that the picker couldn't reach D2's feed at all. That was wrong — a verification
+  bug (I read `topics` at the response's top level; the live shape nests it at `data.topics`).
+  Confirmed against the live proxy: all 17 of today's topics carry a real `threadId` (e.g.
+  `'Saudi Arabia Shuts East-West Pipeline…'` → `thread-houthi-attacks-on-saudi-arabia-ee3354`),
+  and `useGeminiTopics`/`contentService.getGeminiTopics` pass it through unchanged
+  (`{...topic, id, topicId}`), so `buildAnalysisContext` already received it from today's picker
+  before this round's change. **What was genuinely missing** — and is now built — was that the
+  picker offered ONLY today's ~17 topics, so a story from the other 29 days of the 30-day archive
+  had no way to be selected at all, regardless of its `threadId`. The "Earlier stories" section
+  above is the actual fix for that gap.
+- Files: `analysis-studio/lib/analysis.js`, `lib/analysisPrompt.js`, `lib/analysisValidator.js`
+  (wording only), `lib/quote.js` (new), `lib/receipt.js` (new), `lib/earlierStories.js` (new),
+  `AnalysisStudio.jsx/.css`; tests `lib/__tests__/typedSources.test.js`, `quote.test.js`,
+  `receipt.test.js`, `earlierStories.test.js`, `analysisValidator.test.js` (typed-source cases
+  added); `quality/analysis/fixtures.mjs` + `run.mjs` updated to the typed-source shape (richness
+  cases split into 5; numbering changed).
+  Real-data check (live proxy, not mocked): `thread-germany-s-far-right-afd-poised-054baa` and
+  `thread-philippines-ferry-fire-off-pal-b98569` both came back RICH under the new feed (the
+  Philippines thread has a stored forecast log even though it never got a THREAD_ANALYSIS —
+  exactly the D2 gain); a live end-to-end run against the real `topics` action (17 topics, all
+  with `threadId`) through `buildAnalysisContext` also confirmed RICH results with real typed
+  sources. Screenshots (mocked provider, `s5b_*.png`) show a genuinely THIN headlines-only demo
+  selection for contrast, plus the earlier-stories picker (unfiltered + search). Member server
+  path (`runMemberAnalysis`) untouched; credits logic untouched.
+
 ## 2026-09-27 (Stage S5a: Analysis Studio fixes, D3; branch `map-console`, local only)
 
 - **Web sources get their own markers `[W1]`, `[W2]`…**, rendered as links with a "web" chip, so they can't collide with our stored `[n]` sources. Perplexity's native `[n]` is renumbered at parse time; non-http(s) links are dropped (`lib/webCitations.js`; the shared `Markdown` has an optional `links` map).

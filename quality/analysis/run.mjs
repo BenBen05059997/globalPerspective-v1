@@ -20,7 +20,7 @@ import { validateAnalysis } from '../../global-perspectives-starter/frontend/src
 import {
   SYSTEM_PROMPT,
   assembleContext,
-  assessRichness,
+  buildStorySources,
   buildUserMessage,
 } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisPrompt.js';
 import { runChat, getProvider } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/llm.js';
@@ -67,18 +67,18 @@ function layerA() {
   }
 }
 
-// ── Layer A2 — assessRichness (thin-input detector) regression ───────────────
+// ── Layer A2 — buildStorySources RICH/THIN classification regression (D2) ────
 function layerRichness() {
-  console.log('\n── Layer A2 · assessRichness (thin-input guard) ─────────────');
+  console.log('\n── Layer A2 · buildStorySources RICH/THIN classification ────');
   for (const r of RICHNESS_CASES) {
-    const got = assessRichness(r.enriched).thin;
-    if (got === r.expectThin) {
+    const got = buildStorySources(r.material).richness;
+    if (got === r.expectRichness) {
       passed++;
-      console.log(`  ${ok('✓')} ${r.name} → thin=${got}`);
+      console.log(`  ${ok('✓')} ${r.name} → ${got}`);
     } else {
       failed++;
       failures.push(r.name);
-      console.log(`  ${bad('✗')} ${r.name} → thin=${got}, expected ${r.expectThin}`);
+      console.log(`  ${bad('✗')} ${r.name} → ${got}, expected ${r.expectRichness}`);
     }
   }
 }
@@ -87,7 +87,8 @@ function layerRichness() {
 async function layerB(provider, model, apiKey) {
   console.log(`\n── Layer B · live generation (${getProvider(provider)?.label || provider} · ${model}) ──`);
   for (const fx of LIVE_FIXTURES) {
-    const { context, citations, thin } = assembleContext(fx.enriched);
+    const stories = fx.stories.map((s) => ({ topic: s.topic, ...buildStorySources(s) }));
+    const { context, citations, thin } = assembleContext(stories);
     for (const c of fx.cases) {
       const label =
         (c.mode === 'freeform' ? `freeform: "${c.freeform}"` : `lens: ${c.lensId}`) +

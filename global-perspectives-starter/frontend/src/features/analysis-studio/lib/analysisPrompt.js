@@ -27,8 +27,8 @@ export const SYSTEM_PROMPT = [
   'Probability and confidence are DIFFERENT axes — never conflate them. Probability = how likely the event is. Confidence = how solid the underlying material is (single-source/thin → low; multi-source/corroborated → high), independent of how likely the event seems. State both for every Key judgment (e.g. "likely (55–80%), moderate confidence"). A thin, single-source story caps confidence at low no matter how probable the event looks.',
   'Favor structural drivers (geography, institutions, incentives, economics) over personalities and day-to-day events where both fit.',
   'Analyze ONLY the stories provided below. Ground every claim in them and cite sources with bracket numbers.',
-  'Cite ONLY source numbers that exist: if N stories are provided they are numbered [1] through [N] — with a single story the ONLY valid citation is [1]. Never cite a higher number than the stories given.',
-  'Citation integrity: a citation [n] means that specific claim is stated in story n. Each story may include a "Prediction" and "Background" field — those are OUR OWN forecasts/context, NOT reported facts. Do NOT attach [n] to a date, figure, or trigger that comes only from a Prediction/Background field or that you derived yourself; mark such items "(our forecast)" or leave them uncited. Stapling [n] to a specific the story never reported is fabrication even if the number is plausible.',
+  'Each story below is backed by one or more numbered, TYPED sources — e.g. [1] (NEWS, dated), [2] (ANALYSIS, dated), [3] (FORECAST, dated). Cite ONLY source numbers that exist in the material: never invent a number, and never cite higher than the highest [n] shown.',
+  'Citation integrity: a citation [n] means that specific claim is stated in source n, and a FORECAST-kind source is OUR OWN forecast, not a reported fact. Do NOT attach [n] to a date, figure, or trigger that comes only from a FORECAST source or that you derived yourself; mark such items "(our forecast)" or leave them uncited. Stapling [n] to a source that never reported it is fabrication even if the number is plausible.',
   'You MAY use general background knowledge for framing and mechanisms — but NEVER cite [n] for it, and never present outside knowledge as something the story reported. Reserve [n] strictly for claims actually in that story; if a useful fact is your own knowledge (e.g. a gang\'s known activities, a chokepoint\'s share of trade), say so as analyst context, uncited — do not launder it through a source number.',
   'CRITICAL — sharpness must never become fabrication: do NOT invent specific names, organizations, dates, or figures to sound authoritative or precise. If you lack a specific, stay general; a true general statement beats a fabricated specific.',
   'If the provided material is insufficient to answer well, say so plainly under a "Limits of this analysis" heading — never invent facts, dates, figures, or sources.',
@@ -104,57 +104,132 @@ export function clip(text, max = 1200) {
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
-// How much real material backs a single enriched story. A story with only a bare
-// headline (no summary/prediction/background) can't support a confident forecast —
-// forcing the Scenario lens onto it produces false precision (the overreach the
-// audit caught). We measure the cached prose; sources alone don't carry an analysis.
-const THIN_CHARS = 240;
+// D2 (TASK_2026-09-27_pages_local.md S5b): every selected story becomes a set of
+// TYPED, DATED, numbered sources instead of one opaque per-story block — archive
+// snippets (NEWS), the stored thread analysis (ANALYSIS), the latest drift note
+// (DRIFT), and the forecast log (FORECAST). This lets a story with no current-day
+// AI cache (i.e. every story except today's ~17) still be genuinely analysable from
+// what we already store, and lets the reader (and the validator) see exactly which
+// kind of material backs each citation and how old it is.
+//
+// A per-story character budget keeps a rich thread (many archive entries + a full
+// stored analysis) from crowding out every other selected story — see
+// buildStorySources(). Priority when trimming: ANALYSIS > FORECAST > DRIFT > NEWS
+// (the analyst's own synthesis is worth more per-character than a raw headline).
+export const SOURCE_KINDS = ['NEWS', 'ANALYSIS', 'DRIFT', 'FORECAST'];
+export const SOURCE_KIND_LABELS = {
+  NEWS: 'News',
+  ANALYSIS: 'Analysis',
+  DRIFT: 'What changed',
+  FORECAST: 'Forecast',
+};
+export const PER_STORY_BUDGET_CHARS = 1800;
+export const MAX_NEWS_PER_STORY = 4;
 
-function storyMaterialLength(e) {
-  return [e.summary, e.prediction, e.trace].filter(Boolean).join(' ').trim().length;
+function clipTo(text, max) {
+  if (!text) return '';
+  const t = String(text).trim();
+  if (t.length <= max) return t;
+  return max > 1 ? `${t.slice(0, max - 1)}…` : '';
 }
 
-// Assess whether the selected set is too thin to support a confident deep forecast.
-// `thin` is true when even the RICHEST selected story is below the bar — i.e. there
-// is nowhere near enough material anywhere in the set. Returns the thin story titles.
-export function assessRichness(enriched) {
-  if (!enriched || !enriched.length) return { thin: true, thinTitles: [] };
-  const lengths = enriched.map(storyMaterialLength);
-  const thinTitles = enriched
-    .filter((e, i) => lengths[i] < THIN_CHARS)
-    .map((e) => e.topic?.title)
-    .filter(Boolean);
-  const thin = Math.max(...lengths) < THIN_CHARS;
-  return { thin, thinTitles };
+// Build the typed, budgeted source list for ONE story from already-fetched raw
+// material (analysis.js does the fetching; this is pure). Each of `analysis`,
+// `forecast`, `drift` is `{ text, generatedAt } | null`; `news` is
+// `[{ title, outlet, date, snippet, url }]` (already deduped — see
+// dropRedatedRepeats, threads/hooks/useNarrativeThread.js — and ideally newest
+// first). Returns `{ sources, richness, counts, truncated }`.
+//
+// `richness` is RICH iff the story carries any STORED material beyond raw
+// headlines (ANALYSIS / DRIFT / FORECAST) — matching TRACK_RECORD_AND_STUDIO_RULING.md's
+// "per-story material RICH / THIN" definition. Headlines-only (NEWS only, or
+// nothing at all) is THIN: real, but too thin to support a confident forecast.
+export function buildStorySources({ analysis, forecast, drift, news } = {}, opts = {}) {
+  const budget = opts.budget || PER_STORY_BUDGET_CHARS;
+  const maxNews = opts.maxNews || MAX_NEWS_PER_STORY;
+
+  const candidates = [];
+  if (analysis?.text) {
+    candidates.push({ kind: 'ANALYSIS', date: analysis.generatedAt || null, label: 'Stored thread analysis', text: analysis.text });
+  }
+  if (forecast?.text) {
+    candidates.push({ kind: 'FORECAST', date: forecast.generatedAt || null, label: 'Forecast log', text: forecast.text });
+  }
+  if (drift?.text) {
+    candidates.push({ kind: 'DRIFT', date: drift.generatedAt || null, label: 'What changed', text: drift.text });
+  }
+  (Array.isArray(news) ? news.slice(0, maxNews) : []).forEach((a) => {
+    if (!a || !(a.snippet || a.title)) return;
+    candidates.push({
+      kind: 'NEWS',
+      date: a.date || null,
+      label: a.outlet || 'News source',
+      text: a.snippet || a.title,
+      url: a.url || null,
+    });
+  });
+
+  const sources = [];
+  let used = 0;
+  let truncated = false;
+  for (const c of candidates) {
+    const remaining = budget - used;
+    if (remaining <= 20) { truncated = true; continue; }
+    const cap = Math.min(remaining, c.kind === 'NEWS' ? 320 : 900);
+    const text = clipTo(c.text, cap);
+    if (!text) { truncated = true; continue; }
+    if (text.length < String(c.text).trim().length) truncated = true;
+    used += text.length;
+    sources.push({ ...c, text });
+  }
+
+  const counts = { NEWS: 0, ANALYSIS: 0, DRIFT: 0, FORECAST: 0 };
+  sources.forEach((s) => { counts[s.kind] = (counts[s.kind] || 0) + 1; });
+  const richness = (counts.ANALYSIS > 0 || counts.DRIFT > 0 || counts.FORECAST > 0) ? 'RICH' : 'THIN';
+  return { sources, richness, counts, truncated };
 }
 
-// Pure context assembler. Takes already-fetched, enriched topics:
-//   [{ topic:{ title, category, regions, sources:[{url}] }, summary, prediction, trace }]
-// and returns { context, citations:[{ n, title, regions, sources }], thin, thinTitles }.
-// No network — buildAnalysisContext() (in analysis.js) does the fetching and calls this.
-export function assembleContext(enriched) {
+// Pure context assembler. Takes stories that already carry a typed `sources` array
+// (buildStorySources output): `[{ topic:{ title, category, regions }, sources, richness,
+// counts, truncated }]`. Numbers sources [n] SEQUENTIALLY ACROSS ALL STORIES (not one
+// number per story) so every archive snippet, stored analysis, drift note and forecast
+// gets its own citable, typed, dated number. No network — buildAnalysisContext() (in
+// analysis.js) does the fetching + buildStorySources() and calls this.
+//
+// Returns { context, citations:[{ n, kind, date, label, storyTitle, url }],
+//   perStory:[{ title, richness, counts, truncated }], thin, thinTitles, totalChars }.
+export function assembleContext(stories) {
+  const list = Array.isArray(stories) ? stories : [];
   const citations = [];
-  const blocks = enriched.map((e, i) => {
-    const n = i + 1;
-    const t = e.topic;
-    const regions = Array.isArray(t.regions) ? t.regions.join(', ') : '';
-    const sources = Array.isArray(t.sources)
-      ? t.sources.map((s) => s.url).filter(Boolean)
-      : [];
-    citations.push({ n, title: t.title, regions, sources });
+  const perStory = [];
+  let n = 0;
 
-    const lines = [`[${n}] ${t.title}`];
-    if (t.category || regions) lines.push(`Category: ${t.category || '—'} | Regions: ${regions || '—'}`);
-    if (e.summary) lines.push(`Summary: ${e.summary}`);
-    if (e.prediction) lines.push(`Prediction: ${e.prediction}`);
-    if (e.trace) lines.push(`Background: ${e.trace}`);
-    if (sources.length) lines.push(`Sources: ${sources.slice(0, 6).join(' ; ')}`);
+  const blocks = list.map((story) => {
+    const t = story.topic || {};
+    const regions = Array.isArray(t.regions) ? t.regions.join(', ') : '';
+    const storySources = Array.isArray(story.sources) ? story.sources : [];
+    const lines = [`STORY: ${t.title || 'Untitled'}${regions ? ` (${regions})` : ''}`];
+    storySources.forEach((s) => {
+      n += 1;
+      citations.push({ n, kind: s.kind, date: s.date || null, label: s.label || null, storyTitle: t.title, url: s.url || null });
+      const dateStr = s.date ? s.date : 'date unknown';
+      const label = s.label ? ` — ${s.label}` : '';
+      lines.push(`[${n}] (${s.kind} · ${dateStr}${label}) ${s.text}`);
+    });
+    if (storySources.length === 0) lines.push('(no material available for this story)');
+    perStory.push({
+      title: t.title,
+      richness: story.richness || 'THIN',
+      counts: story.counts || { NEWS: 0, ANALYSIS: 0, DRIFT: 0, FORECAST: 0 },
+      truncated: !!story.truncated,
+    });
     return lines.join('\n');
   });
 
-  const context = `STORIES (cite by bracket number):\n\n${blocks.join('\n\n')}`;
-  const { thin, thinTitles } = assessRichness(enriched);
-  return { context, citations, thin, thinTitles };
+  const context = `STORIES (typed, dated sources — cite by bracket number):\n\n${blocks.join('\n\n')}`;
+  const thin = perStory.length > 0 && perStory.every((p) => p.richness === 'THIN');
+  const thinTitles = perStory.filter((p) => p.richness === 'THIN').map((p) => p.title).filter(Boolean);
+  return { context, citations, perStory, thin, thinTitles, totalChars: context.length };
 }
 
 // Anti-overreach instruction appended when the selected material is thin (see

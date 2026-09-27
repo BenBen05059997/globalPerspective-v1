@@ -170,71 +170,68 @@ export const GOLDEN = [
   },
 ];
 
-// ── assessRichness (thin-input detector) cases ───────────────────────────────
+// ── buildStorySources richness cases (RICH iff stored ANALYSIS/DRIFT/FORECAST
+//    material exists beyond raw headlines — D2, S5b) ─────────────────────────
 export const RICHNESS_CASES = [
   {
-    name: 'rich set — substantive summaries',
-    enriched: [
-      { topic: { title: 'A' }, summary: 'x'.repeat(300), prediction: '', trace: '' },
-      { topic: { title: 'B' }, summary: 'y'.repeat(50), prediction: '', trace: '' },
-    ],
-    expectThin: false, // the richest story clears the bar
+    name: 'rich — a stored thread analysis exists',
+    material: { analysis: { text: 'x'.repeat(300), generatedAt: '2026-09-22' }, news: [] },
+    expectRichness: 'RICH',
   },
   {
-    name: 'thin set — single bare-headline rumor',
-    enriched: [
-      { topic: { title: 'Unconfirmed reshuffle' }, summary: 'Unverified posts claim a removal.', prediction: '', trace: '' },
-    ],
-    expectThin: true,
+    name: 'rich — a forecast snapshot exists with no analysis',
+    material: { forecast: { text: 'Most Likely (60%) — talks fail by Oct', generatedAt: '2026-09-04' }, news: [] },
+    expectRichness: 'RICH',
   },
   {
-    name: 'thin set — every story below the bar',
-    enriched: [
-      { topic: { title: 'A' }, summary: 'short', prediction: '', trace: '' },
-      { topic: { title: 'B' }, summary: '', prediction: 'tiny', trace: '' },
-    ],
-    expectThin: true,
+    name: 'rich — a drift note exists with no analysis or forecast',
+    material: { drift: { text: 'Risk level moderate → elevated', generatedAt: '2026-09-12' }, news: [] },
+    expectRichness: 'RICH',
   },
   {
-    name: 'rich via combined fields — summary+prediction+trace clear the bar',
-    enriched: [
-      { topic: { title: 'A' }, summary: 'a'.repeat(100), prediction: 'b'.repeat(80), trace: 'c'.repeat(80) },
-    ],
-    expectThin: false,
+    name: 'thin — headlines/news only, no stored analysis',
+    material: { news: [{ title: 'Unconfirmed reshuffle', outlet: 'wire.com', date: '2026-09-01', snippet: 'Unverified posts claim a removal.', url: 'https://wire.com/x' }] },
+    expectRichness: 'THIN',
+  },
+  {
+    name: 'thin — nothing at all',
+    material: {},
+    expectRichness: 'THIN',
   },
 ];
 
 // ── LIVE story-sets ──────────────────────────────────────────────────────────
-// `enriched` matches what buildAnalysisContext() would return after fetching: an
-// array of { topic:{title,category,regions,sources:[{url}]}, summary, prediction, trace }.
-// These are realistic but fixed, so the eval is reproducible.
+// D2 (S5b): each story now supplies typed raw material — analysis/forecast/drift
+// (each `{ text, generatedAt } | null`) plus `news` (archive snippets) — matching
+// buildStorySources()'s input shape exactly what analysis.js hands it after
+// fetching. run.mjs runs each through buildStorySources() + assembleContext(),
+// so the eval exercises the SAME typed-numbering pipeline the live Studio ships.
 export const LIVE_FIXTURES = [
   {
-    name: 'strait-tension + diplomacy (2 stories)',
-    enriched: [
+    name: 'strait-tension + diplomacy (2 stories, both RICH)',
+    stories: [
       {
-        topic: {
-          title: 'Naval standoff escalates in a contested strait',
-          category: 'Conflict',
-          regions: ['East Asia'],
-          sources: [{ url: 'https://example.com/strait-1' }, { url: 'https://example.com/strait-2' }],
+        topic: { title: 'Naval standoff escalates in a contested strait', category: 'Conflict', regions: ['East Asia'] },
+        analysis: {
+          text:
+            'Two navies traded warnings after a near-collision; one side announced expanded patrols. ' +
+            'Shipping insurers flagged higher premiums on the route. No shots fired. ' +
+            'Most likely a tense standoff persists; a limited incident is plausible but full conflict unlikely near-term. ' +
+            'Long-running sovereignty dispute over the waterway; periodic flare-ups for years.',
+          generatedAt: '2026-09-20',
         },
-        summary:
-          'Two navies traded warnings after a near-collision; one side announced expanded patrols. ' +
-          'Shipping insurers flagged higher premiums on the route. No shots fired.',
-        prediction: 'Most likely a tense standoff persists; a limited incident is plausible but full conflict unlikely near-term.',
-        trace: 'Long-running sovereignty dispute over the waterway; periodic flare-ups for years.',
+        news: [{ title: 'Naval standoff escalates', outlet: 'wire.com', date: '2026-09-19', snippet: 'Two navies traded warnings after a near-collision.', url: 'https://example.com/strait-1' }],
       },
       {
-        topic: {
-          title: 'Back-channel talks reopen between the two governments',
-          category: 'Politics',
-          regions: ['East Asia'],
-          sources: [{ url: 'https://example.com/talks-1' }],
+        topic: { title: 'Back-channel talks reopen between the two governments', category: 'Politics', regions: ['East Asia'] },
+        analysis: {
+          text:
+            'Officials confirmed quiet talks aimed at a de-escalation framework; no agreement yet. ' +
+            'Talks likely continue intermittently; a formal framework is possible within months. ' +
+            'Both sides have used back channels before to cap escalation.',
+          generatedAt: '2026-09-21',
         },
-        summary: 'Officials confirmed quiet talks aimed at a de-escalation framework; no agreement yet.',
-        prediction: 'Talks likely continue intermittently; a formal framework is possible within months.',
-        trace: 'Both sides have used back channels before to cap escalation.',
+        news: [{ title: 'Back-channel talks reopen', outlet: 'wire.com', date: '2026-09-20', snippet: 'Officials confirmed quiet talks.', url: 'https://example.com/talks-1' }],
       },
     ],
     cases: [
@@ -245,17 +242,10 @@ export const LIVE_FIXTURES = [
   },
   {
     name: 'single thin story (refusal expected on a forecast)',
-    enriched: [
+    stories: [
       {
-        topic: {
-          title: 'Unconfirmed reports of a leadership reshuffle',
-          category: 'Politics',
-          regions: ['Eurasia'],
-          sources: [{ url: 'https://example.com/reshuffle' }],
-        },
-        summary: 'Unverified social posts claim a senior official was removed; no official confirmation.',
-        prediction: '',
-        trace: '',
+        topic: { title: 'Unconfirmed reports of a leadership reshuffle', category: 'Politics', regions: ['Eurasia'] },
+        news: [{ title: 'Unconfirmed reports of a leadership reshuffle', outlet: 'wire.com', date: '2026-09-01', snippet: 'Unverified social posts claim a senior official was removed; no official confirmation.', url: 'https://example.com/reshuffle' }],
       },
     ],
     cases: [

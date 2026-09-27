@@ -89,3 +89,42 @@ describe('validateAnalysis — a structural / schema failure', () => {
     expect(res.warnings.some((w) => w.code === 'schema_invalid')).toBe(false);
   });
 });
+
+// D2 (S5b): citations are no longer one-per-story — they're flat, typed, dated
+// sources ({ n, kind, date, label, storyTitle, url }) numbered across the WHOLE
+// selection. The validator only ever cares about `.length` (maxN) and doesn't
+// interpret the shape further, so this must keep working unchanged.
+describe('validateAnalysis — with typed, multi-source-per-story citations (D2)', () => {
+  const TYPED_CITATIONS = [
+    { n: 1, kind: 'ANALYSIS', date: '2026-09-22', label: 'Stored thread analysis', storyTitle: 'Germany AfD thread', url: null },
+    { n: 2, kind: 'FORECAST', date: '2026-09-04', label: 'Forecast log', storyTitle: 'Germany AfD thread', url: null },
+    { n: 3, kind: 'NEWS', date: '2026-09-10', label: 'cbc.ca', storyTitle: 'Philippines ferry fire', url: 'https://cbc.ca/x' },
+  ];
+  const TYPED_CONTEXT =
+    'STORIES (typed, dated sources — cite by bracket number):\n\n' +
+    'STORY: Germany AfD thread (Germany)\n[1] (ANALYSIS · 2026-09-22 — Stored thread analysis) Trajectory: coalition standoff likely.\n' +
+    '[2] (FORECAST · 2026-09-04 — Forecast log) Most Likely (60%) — coalition talks fail by Oct 2026\n\n' +
+    'STORY: Philippines ferry fire (Philippines)\n[3] (NEWS · 2026-09-10 — cbc.ca) Five dead, 86 missing.';
+
+  it('passes when every typed source cited actually exists', () => {
+    const text = '## Read\nThe AfD standoff [1] is likely to persist, with a coalition failure plausible by October [2]. Separately, the Palawan fire [3] remains under investigation.';
+    const res = validateAnalysis(text, { citations: TYPED_CITATIONS, context: TYPED_CONTEXT });
+    expect(res.hasError).toBe(false);
+    expect(res.ok).toBe(true);
+  });
+
+  it('flags a phantom citation beyond the total typed-source count (not per-story)', () => {
+    const text = '## Read\nThe standoff in [1] compounds with [4], which does not exist anywhere in the selection.';
+    const res = validateAnalysis(text, { citations: TYPED_CITATIONS, context: TYPED_CONTEXT });
+    expect(res.hasError).toBe(true);
+    expect(res.warnings.some((w) => w.code === 'phantom_citation')).toBe(true);
+  });
+
+  it('flags unused sources across the whole numbering, not just within one story', () => {
+    const text = '## Read\nOnly the forecast [2] is discussed here at any real length.';
+    const res = validateAnalysis(text, { citations: TYPED_CITATIONS, context: TYPED_CONTEXT });
+    const unused = res.warnings.find((w) => w.code === 'unused_source');
+    expect(unused).toBeTruthy();
+    expect(unused.message).toMatch(/\[1\].*\[3\]|\[3\].*\[1\]/);
+  });
+});

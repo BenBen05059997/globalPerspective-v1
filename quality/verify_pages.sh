@@ -123,6 +123,17 @@ must_have "$SRC/features/economy/components/DisruptionPreview.jsx" "<QualityFlag
 # ─── §9.11 negative guards — pages that intentionally do NOT carry economic UI ───
 must_not_have "$SRC/features/threads/WeeklyPage.jsx" "useDisruptionsList|useEconomicImpact|useTopMovers|MechanismCard|DisruptionRow|DisruptionPreview" "no economic hooks/atoms"
 
+# ─── S6: track record E2 (service record) + E1 text version ───
+# The July pilot (122 triggers, all confirmed 2026-07-24) is archived and must never be blended
+# into the headline accuracy figure or shown as "awaiting" once a deadline has passed.
+must_have "$SRC/app/App.jsx" "TrackRecordText" "wires the E1 text version"
+must_have "$SRC/app/App.jsx" "/track-record/text" "wires the /track-record/text route"
+must_have "$SRC/features/track-record/TrackRecordPage.jsx" "splitPilot" "excludes the July pilot from headline numbers"
+must_have "$SRC/features/track-record/TrackRecordPage.jsx" "isAccuracyLocked|accuracyProgress" "locks accuracy until 150 resolved"
+must_have "$SRC/features/track-record/components/ForecastBoard.jsx" "forecastPlaceCounts" "forecast board plots real places, not per-country accuracy"
+must_not_have "$SRC/features/track-record/TrackRecordPage.jsx" "[Aa]waiting their deadline" "never claims a passed deadline is still awaiting"
+must_have "$SRC/features/track-record/components/SettlingLog.jsx" "buildSettlingLog" "settling log computed from real confirmedAt dates"
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

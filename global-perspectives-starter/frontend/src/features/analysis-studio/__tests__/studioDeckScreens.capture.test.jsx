@@ -5,7 +5,11 @@
 // screenshot pass is a separate Playwright script against the written HTML.
 /* global process */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, configure } from '@testing-library/react';
+
+// These render the whole Studio page and wait on mocked async fetches + a mocked run; under a
+// parallel suite the 1 s default for findBy*/waitFor raced intermittently.
+configure({ asyncUtilTimeout: 5000 });
 import { MemoryRouter } from 'react-router-dom';
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -166,8 +170,30 @@ async function runLens(lensLabelRe) {
 // The deck opens on the "Bottom line" slide — the slide-nav dots carry the full slide name
 // as their `title` (and aria-label), so this reaches the PICTURE slide for whichever lens
 // just ran without depending on the dot's short visible code.
-function gotoSlide(titleText) {
-  fireEvent.click(screen.getByTitle(titleText));
+// The deck settles its focused section in an effect right after the first render (resetting the
+// slide to 0), so a click that lands before that is undone; retry until the dot is the selected one.
+async function gotoSlide(titleText) {
+  await waitFor(() => {
+    const dot = screen.getByTitle(titleText);
+    if (dot.getAttribute('aria-selected') !== 'true') fireEvent.click(dot);
+    expect(screen.getByTitle(titleText).getAttribute('aria-selected')).toBe('true');
+  });
+}
+
+
+// Same settle race for the section switcher: the deck focuses the newest section in an effect,
+// which can land after a click on an older section's tab. Retry until that tab is selected.
+// Scoped to the switcher chips: a slide dot can carry the same name (the lens picture slide).
+function sectionChip(name) {
+  return [...document.querySelectorAll('.sd-switcher-chip')].find((el) => el.textContent.trim() === name);
+}
+async function selectSection(name) {
+  await waitFor(() => {
+    const chip = sectionChip(name);
+    expect(chip).toBeTruthy();
+    if (chip.getAttribute('aria-selected') !== 'true') fireEvent.click(chip);
+    expect(sectionChip(name).getAttribute('aria-selected')).toBe('true');
+  });
 }
 
 describe('Studio deck — S5c mocked-provider screen capture', () => {
@@ -183,10 +209,10 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     fireEvent.click(await screen.findByText('Naval standoff escalates in the Taiwan Strait'));
     await runLens(/^scenario forecast/i);
-    await screen.findByTitle('Scenario forecast'); // the deck has rendered
+    await screen.findByTitle('Scenario forecast', {}, { timeout: 5000 }); // the deck has rendered
     expect(container.querySelector('.sm-mapwrap')).toBeTruthy(); // the map
     expect(container.querySelector('.sp-timebar')).toBeTruthy(); // the time bar
-    gotoSlide('Scenario forecast'); // the PICTURE slide
+    await gotoSlide('Scenario forecast'); // the PICTURE slide
     await waitFor(() => expect(screen.getByText(/Scenario timeline/i)).toBeInTheDocument());
     writeSnapshot('s5c2_deck_scenario', container);
   });
@@ -196,8 +222,8 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     await selectBothStories();
     await runLens(/^compare stories/i);
-    await screen.findByTitle('Compare stories');
-    gotoSlide('Compare stories');
+    await screen.findByTitle('Compare stories', {}, { timeout: 5000 });
+    await gotoSlide('Compare stories');
     await waitFor(() => expect(screen.getByText(/Compare — lanes/i)).toBeInTheDocument());
     writeSnapshot('s5c2_deck_compare', container);
   });
@@ -207,8 +233,8 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     fireEvent.click(await screen.findByText('Naval standoff escalates in the Taiwan Strait'));
     await runLens(/^what changed/i);
-    await screen.findByTitle('What changed', {}, { timeout: 3000 });
-    gotoSlide('What changed');
+    await screen.findByTitle('What changed', {}, { timeout: 5000 });
+    await gotoSlide('What changed');
     await waitFor(() => expect(screen.getByText(/risk trend/i)).toBeInTheDocument(), { timeout: 3000 });
     expect(screen.getByText('Taiwan')).toBeInTheDocument();
     // The real Taiwan-shaped drift note ("score down" + "worsen") trips the direction flag.
@@ -222,8 +248,8 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     fireEvent.click(await screen.findByText('Naval standoff escalates in the Taiwan Strait'));
     fireEvent.click(screen.getByRole('button', { name: /^free-form/i }));
     fireEvent.click(screen.getByRole('button', { name: /run analysis|add analysis/i }));
-    await screen.findByTitle('Free-form');
-    gotoSlide('Free-form');
+    await screen.findByTitle('Free-form', {}, { timeout: 5000 });
+    await gotoSlide('Free-form');
     await waitFor(() => expect(screen.getByText(/Click a sentence/i)).toBeInTheDocument());
     writeSnapshot('s5c2_deck_freeform', container);
   });
@@ -233,7 +259,7 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     fireEvent.click(await screen.findByText('Naval standoff escalates in the Taiwan Strait'));
     await runLens(/^scenario forecast/i);
-    await screen.findByTitle('Scenario forecast');
+    await screen.findByTitle('Scenario forecast', {}, { timeout: 5000 });
 
     mockRunChatImpl = async () => ({ text: WHATCHANGED_TEXT, webSources: [], usage: { inputTokens: 700, outputTokens: 150, model: 'gpt-5.6' } });
     await runLens(/^what changed/i);
@@ -242,8 +268,8 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     writeSnapshot('s5c2_deck_stacked_case', container);
 
     // Switching sections swaps the whole deck (map + slides + time bar) to that run.
-    fireEvent.click(screen.getByRole('tab', { name: 'Scenario forecast' }));
-    gotoSlide('Scenario forecast');
+    await selectSection('Scenario forecast');
+    await gotoSlide('Scenario forecast');
     await waitFor(() => expect(screen.getByText(/Scenario timeline/i)).toBeInTheDocument());
 
     // F3 — DECK | READ AS TEXT | BOARD toggle
@@ -258,7 +284,7 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     fireEvent.click(await screen.findByText('Naval standoff escalates in the Taiwan Strait'));
     await runLens(/^scenario forecast/i);
-    await screen.findByTitle('Scenario forecast');
+    await screen.findByTitle('Scenario forecast', {}, { timeout: 5000 });
 
     mockRunChatImpl = async () => ({ text: '## Bottom line\nEscalation is likely [1], and a phantom fifth source [5] confirms it.', webSources: [] });
     await runLens(/^what changed/i);
@@ -267,8 +293,8 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     writeSnapshot('s5c2_deck_failed_in_case', container);
 
     // Switching back to the FIRST (passing) section proves the failure never touched it.
-    fireEvent.click(screen.getByRole('tab', { name: 'Scenario forecast' }));
-    gotoSlide('Scenario forecast');
+    await selectSection('Scenario forecast');
+    await gotoSlide('Scenario forecast');
     await waitFor(() => expect(screen.getByText(/Scenario timeline/i)).toBeInTheDocument());
   });
 

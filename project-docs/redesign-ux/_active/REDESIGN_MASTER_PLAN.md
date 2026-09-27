@@ -226,7 +226,7 @@ Sizes are shown only where an earlier estimate exists; the rest are sized in eac
 | 1 · Foundations | ✅ built 26 Sep (DS1 tokens, N1 shell + phone tab bar, status line computed client-side instead of D1, StoryPeek) — `TASK_2026-09-26_shell_account_local.md` |
 | 7 · Home console | ✅ built at `/map` only (M1–M7); the S6 home swap still waits on D11 — `TASK_2026-09-26_map_console_local.md` |
 | Review | ✅ rounds R1–R4 done 27 Sep — `REVIEW_2026-09-26_map_console_shell.md` |
-| 2, 3, 4, 5a–c, 6 | ▶ frontend build started 27 Sep — `TASK_2026-09-27_pages_local.md` (backend D5–D10 not included; each needs a yes) |
+| 2, 3, 4, 5a–c, 6 | ✅ frontend built 27 Sep — `TASK_2026-09-27_pages_local.md` (story mode, `/briefings`, country card, Studio deck + feed + quote / receipt, track record). Backend D5–D10 not included; each needs a yes |
 | 0 · Ship | waits on the operator's review + deploy yes |
 | Account membership (K2 / A5) | ⏸ deferred: no members yet |
 

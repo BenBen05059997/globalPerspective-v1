@@ -1,5 +1,55 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Stage S6: Track record E2 service record + E1 text version; branch `map-console`, local only)
+
+- **The pilot is excluded from every headline number.** All 122 currently-resolved triggers share
+  one `confirmedAt` (2026-07-24T22:22:14.709Z, verified live) — the single flawed July scoring run.
+  `lib/pilotExclusion.js` (`splitPilot`) draws that line from the real timestamp, never a hand-picked
+  ID list; today, post-pilot resolved = 0.
+- **Status line, staged 0-3** (`lib/stageWording.js`): today shows Stage 0 — "We don't have a scored
+  track record yet under the current method", naming the real last-resolved date (Jul 24 2026) and
+  the real pilot count (122), never "awaiting".
+- **Accuracy locked until 150 post-pilot resolved** (`lib/accuracyLock.js`): below the threshold, no
+  Brier score, no skill number, no "strong"/"weak" — only "n resolved of 150 needed" with a progress
+  bar. Once unlocked, the Brier score is recomputed client-side from post-pilot items only
+  (`lib/postPilotBrier.js`) rather than trusting the backend's all-time-blended `brierScore`, which
+  will keep including the archived pilot forever (a real backend gap, logged).
+- **Weekly seed hash: omitted.** No such field is served by `prediction_track_record` today — no
+  placeholder shown.
+- **Forecast board: MAP (default) \| BOARD** (`components/ForecastBoard.jsx`): reuses the console's
+  `RadarMap` with the same `shading`/count-badge contract StoryMode uses. Places are derived by
+  matching a real country name against each resolved trigger's own title/trigger text
+  (`lib/forecastPlaces.js`, reusing the map's own `ISO3_NAME` table — now exported from
+  `features/map/lib/situationLabels.js` — never a second hand-typed list). Clicking a shaded place
+  opens a panel listing its real resolved questions with sources. Never a per-country accuracy
+  score. BOARD is a tile list of the same 30 items.
+- **Settling log** (`components/SettlingLog.jsx` / `lib/settlingLog.js`): one square per ISO week
+  from the era cut (Jul 4 2026) through today, built from real `confirmedAt` dates — today shows 1
+  settled week (24 Jul) and 12 missed, all in red.
+- **Ledger of changed reads:** kept the existing `corrections_feed`-backed ledger (renamed from
+  "Corrections ledger"), reordered to sit after the settling log per the E2 layout.
+- **Past-deadline count: honestly not computable today.** `lib/pastDeadline.js` documents that
+  `prediction_track_record` serves no per-pending-trigger deadline, so the frontend cannot split
+  "past deadline, not checked" from "not yet due" without a backend change (logged as a D6 gap,
+  footnoted on the page with a dagger) — the existing single "Not yet checked" count is kept
+  (already not "awaiting", from the prior review round).
+- **E1 text version** at `/track-record/text` (`TrackRecordText.jsx`): the same numbers/sources as
+  plain semantic HTML (h1/h2/h3, lists), printable, linked from the main page and back.
+- **Phone overflow fixed:** the 549px overflow reproduced from unconstrained grid tracks
+  (`grid-template-columns: repeat(4, 1fr)` without `minmax(0, ...)`) and un-wrapped long text;
+  fixed with `minmax(0, 1fr)` tracks, `min-width: 0` on grid children, and `overflow-wrap: anywhere`
+  on every free-text block. Measured: 390 scrollWidth on `/track-record`, its BOARD view, and
+  `/track-record/text` at 390×844 (Playwright, Chrome for Testing).
+- Tests: `lib/__tests__/{pilotExclusion,accuracyLock,stageWording,settlingLog,pastDeadline,
+  forecastPlaces,postPilotBrier}.test.js` (all pure logic) + a rewritten `trackRecordPage.test.jsx`.
+  `quality/verify_pages.sh` gained 7 S6 guards (52/0 total).
+- **Not built:** the ledger/settling-log distinguishing pilot-era vs post-pilot settling weeks
+  beyond the one real data point available; a backend split of past-deadline vs not-yet-due pending
+  triggers (D6).
+- **Monitor fixes:** the pilot size comes from `resolvedTriggers` (122), not the 30-item `recent` sample; the forecast map uses one neutral hue (red / green by pilot outcome read as per-country accuracy); the membership line no longer promises change-alerts (that email is off).
+- **Test stability:** `testTimeout` 15 s; the Studio capture tests wait up to 5 s and retry clicks that the deck's focus effect can undo.
+
+
 ## 2026-09-27 (Stage S5c: Studio deck, 4 lenses, stacking, board; branch `map-console`, local only)
 
 - **Deck** (`analysis-studio/components/StudioDeck.jsx`): a finished run opens as a dark console deck, reusing story mode's `StoryMap` and slide styles:

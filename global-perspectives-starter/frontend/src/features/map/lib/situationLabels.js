@@ -76,6 +76,12 @@ export function iso3ForName(name) {
 const TIER_LABEL = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 export { TIER_LABEL };
 
+// S6 (track record forecast map): the raw iso3 -> display-name table, exported so a caller can
+// scan free text for a country name (e.g. matching a forecast's stored title/trigger sentence to
+// a place) instead of only resolving a name it already has in hand. Same single source of truth
+// iso3Name/iso3ForName read from — never a second, hand-typed country list.
+export { ISO3_NAME };
+
 /**
  * buildLede — deterministic one-sentence summary from counts + the top situation.
  * Counts only, no prose synthesis. Mirrors the design target's lede examples.

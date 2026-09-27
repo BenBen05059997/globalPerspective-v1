@@ -26,12 +26,72 @@
   color: var(--ink-mid);
   max-width: 64ch;
   margin: 0;
+  overflow-wrap: anywhere;
+}
+.tr-textlink { margin: var(--space-3) 0 0; }
+.tr-textlink a { font-size: var(--text-sm); color: var(--accent, #b4502f); font-weight: 600; text-decoration: none; }
+.tr-textlink a:hover { text-decoration: underline; }
+
+/* ── Status line (stage 0-3) ─────────────────────────── */
+.tr-status {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--space-6) var(--space-8);
+  margin-bottom: var(--space-10);
+}
+.tr-status-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-bottom: var(--space-3);
+}
+.tr-status-headline {
+  font-family: var(--serif);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 var(--space-2);
+}
+.tr-status-detail {
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--ink-mid);
+  max-width: 68ch;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ── Accuracy lock ────────────────────────────────────── */
+.tr-lock {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--space-6) var(--space-8);
+}
+.tr-lock-bar { width: 100%; max-width: 320px; height: 8px; border-radius: var(--r-pill); background: var(--line-2, var(--line)); overflow: hidden; }
+.tr-lock-fill { height: 100%; background: var(--accent); border-radius: var(--r-pill); transition: width 0.3s ease; }
+.tr-lock-label { font-family: var(--mono); font-size: var(--text-md); color: var(--ink); margin: var(--space-3) 0 var(--space-2); }
+.tr-lock-note { font-size: var(--text-sm); line-height: 1.55; color: var(--ink-mid); max-width: 64ch; margin: 0; overflow-wrap: anywhere; }
+
+.tr-gap-note {
+  font-size: var(--text-xs);
+  color: var(--ink-dim);
+  max-width: 68ch;
+  margin: var(--space-3) 0 0;
+  overflow-wrap: anywhere;
 }
 
 /* ── Stat cards ───────────────────────────────────── */
 .tr-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-12);
 }
@@ -43,7 +103,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  min-width: 0;
 }
+.tr-stat-label { overflow-wrap: anywhere; }
 .tr-stat-num {
   font-family: var(--mono);
   font-size: var(--text-3xl);
@@ -98,6 +160,7 @@
   color: var(--ink-mid);
   max-width: 64ch;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 /* ── Calibration table ────────────────────────────── */
@@ -270,13 +333,17 @@
 
 /* ── Mobile ───────────────────────────────────────── */
 @media (max-width: 640px) {
-  .tr-page { padding: var(--space-6) var(--space-4) var(--space-12); }
+  .tr-page { padding: var(--space-6) var(--space-4) var(--space-12); max-width: 100%; box-sizing: border-box; }
   .tr-head h1 { font-size: var(--text-3xl); }
-  .tr-stats { grid-template-columns: repeat(2, 1fr); }
+  .tr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tr-brier-num { font-size: var(--text-5xl); }
   .tr-cal-table { font-size: var(--text-sm); }
   .tr-cal-table th, .tr-cal-table td { padding: var(--space-2); }
   .tr-item-date { margin-left: 0; }
+  .tr-status, .tr-lock, .tr-brier { padding: var(--space-5) var(--space-4); }
+  .tr-status-headline { font-size: var(--text-lg); }
+  .tr-cl-top { gap: var(--space-2); }
+  .tr-cl-date { margin-left: 0; }
 }
 
 /* Funding CTA — reading is free; membership funds the accountability work (not a paywall). */
@@ -320,7 +387,7 @@
 }
 .tr-section-sub {
   font-size: var(--text-base); line-height: 1.6; color: var(--ink-mid);
-  max-width: 68ch; margin: 0 0 var(--space-6);
+  max-width: 68ch; margin: 0 0 var(--space-6); overflow-wrap: anywhere;
 }
 
 /* Corrections ledger */
@@ -340,7 +407,7 @@
 .tr-cl-delta { font-family: var(--mono); font-size: var(--text-sm); color: var(--ink-mid); }
 .tr-cl-date { font-family: var(--mono); font-size: var(--text-xs); color: var(--ink-dim); margin-left: auto; }
 .tr-cl-follow { display: inline-flex; align-items: center; line-height: 1; }
-.tr-cl-why { font-size: var(--text-sm); line-height: 1.55; color: var(--ink-mid); margin: var(--space-2) 0 0; }
+.tr-cl-why { font-size: var(--text-sm); line-height: 1.55; color: var(--ink-mid); margin: var(--space-2) 0 0; overflow-wrap: anywhere; }
 .tr-cl-why.nsd { font-style: italic; color: var(--ink-dim); }
 .tr-cl-why strong { color: var(--ink); font-weight: 600; }
 .tr-cl-evdate { color: var(--ink-dim); }
@@ -348,7 +415,7 @@
 
 /* Methodology */
 .tr-method-list { margin: 0; padding-left: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
-.tr-method-list li { font-size: var(--text-base); line-height: 1.6; color: var(--ink-mid); }
+.tr-method-list li { font-size: var(--text-base); line-height: 1.6; color: var(--ink-mid); overflow-wrap: anywhere; }
 .tr-method-list strong { color: var(--ink); }
 
 /* Depth gate — corrections ledger "members see full history" affordance (P2). */

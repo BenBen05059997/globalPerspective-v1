@@ -44,6 +44,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.js',
+    // The jsdom page tests (map console, story page, Studio deck) run ~5 s each when the suite runs
+    // in parallel on a busy machine; the 5 s default made them time out intermittently.
+    testTimeout: 15000,
     // e2e/ holds Playwright specs — they run under Playwright, not vitest.
     // Without this, vitest's default glob picks them up and they error on
     // Playwright-only globals.

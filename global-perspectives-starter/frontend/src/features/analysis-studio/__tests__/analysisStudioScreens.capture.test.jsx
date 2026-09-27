@@ -11,7 +11,11 @@
 // only needs `npm run verify` (vitest) to pass — the screenshot step is separate.
 /* global process */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, configure } from '@testing-library/react';
+
+// These render the whole Studio page and wait on mocked async fetches + a mocked run; under a
+// parallel suite the 1 s default for findBy*/waitFor raced intermittently.
+configure({ asyncUtilTimeout: 5000 });
 import { MemoryRouter } from 'react-router-dom';
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

@@ -39,6 +39,7 @@ const EconomyPage = lazy(() => import('@/features/economy/EconomyPage'));
 const AnalysisStudio = lazy(() => import('@/features/analysis-studio/AnalysisStudio'));
 const MembershipPage = lazy(() => import('@/features/account/MembershipPage'));
 const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPage'));
+const TrackRecordText = lazy(() => import('@/features/track-record/TrackRecordText'));
 const WeeklyBriefPage = lazy(() => import('@/features/weekly-brief/WeeklyBriefPage'));
 const BriefingsPage = lazy(() => import('@/features/briefings/BriefingsPage'));
 const WeeklyMarketsPage = lazy(() => import('@/features/economy/WeeklyMarketsPage'));
@@ -121,6 +122,7 @@ export default function App() {
               <Route path="/analyze" element={<AnalysisStudio />} />
               <Route path="/membership" element={<MembershipPage />} />
               <Route path="/track-record" element={<TrackRecordPage />} />
+              <Route path="/track-record/text" element={<TrackRecordText />} />
               <Route path="/weekly-brief" element={<WeeklyBriefPage />} />
               <Route path="/briefings" element={<BriefingsPage />} />
               <Route path="/weekly-markets" element={<WeeklyMarketsPage />} />

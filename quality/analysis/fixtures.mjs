@@ -71,7 +71,9 @@ export const GOLDEN = [
       'into the affected corridor until the political picture clarifies and confidence returns.',
     citations: [{ n: 1, title: 'A' }],
     context: 'STORIES\n[1] A',
-    expect: { codes: ['no_citations'], hasError: false },
+    // S5a (D3): promoted to a hard error — a substantive answer citing nothing
+    // cannot be checked against the material at all (analysisValidator.js §2).
+    expect: { codes: ['no_citations'], hasError: true },
   },
   {
     name: 'limits_ok — honest refusal is not penalised for missing citations',
@@ -139,6 +141,32 @@ export const GOLDEN = [
     citations: [{ n: 1, title: 'A' }],
     context: 'STORIES\n[1] A\nSummary: tensions persist.',
     expect: { codes: [], hasError: false },
+  },
+  {
+    name: 'schema_invalid — scenario lens requires gp-struct, none returned',
+    text: '## Read\nEscalation risk is elevated per [1]; a ceasefire is roughly even odds.',
+    citations: [{ n: 1, title: 'A' }],
+    context: 'STORIES\n[1] A\nSummary: strikes resumed.',
+    requiresStruct: true,
+    structOk: false,
+    expect: { codes: ['schema_invalid'], hasError: true },
+  },
+  {
+    name: 'schema_ok — scenario lens with a valid gp-struct is not flagged',
+    text: '## Read\nEscalation risk is elevated per [1]; a ceasefire is roughly even odds.',
+    citations: [{ n: 1, title: 'A' }],
+    context: 'STORIES\n[1] A\nSummary: strikes resumed.',
+    requiresStruct: true,
+    structOk: true,
+    expect: { codes: [], hasError: false },
+  },
+  {
+    name: 'phantom_web_citation — cites [W2] when only 1 web source was returned',
+    text: '## Read\nDrivers in [1] compound with new reporting [W1] and a follow-up wire [W2].',
+    citations: [{ n: 1, title: 'A' }],
+    context: 'STORIES\n[1] A',
+    webSources: [{ n: 1, title: 'Wire', url: 'https://example.com/wire' }],
+    expect: { codes: ['phantom_web_citation'], hasError: true },
   },
 ];
 

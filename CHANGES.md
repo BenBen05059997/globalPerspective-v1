@@ -1,5 +1,15 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Stage S5a: Analysis Studio fixes, D3; branch `map-console`, local only)
+
+- **Web sources get their own markers `[W1]`, `[W2]`…**, rendered as links with a "web" chip, so they can't collide with our stored `[n]` sources. Perplexity's native `[n]` is renumbered at parse time; non-http(s) links are dropped (`lib/webCitations.js`; the shared `Markdown` has an optional `links` map).
+- **The checks gate the run.** Before, a failed check only coloured the banner. Now an uncited substantive claim, a citation to a missing source (`[n]` or `[W#]`) or a missing / invalid gp-struct block is an error. The run is hidden behind "Show anyway (not shareable)", which also says the provider still charged.
+- **Receipt data:** the provider's own token `usage` and model id are kept on each run: "Provider usage: N in / M out tokens · model X", or "Provider did not report usage". No prices.
+- **Copy:**
+  - the live-credits wording is removed (credits are parked; no credit logic changed);
+  - members still see "Included with your membership — no API key needed";
+  - non-members see the membership pointer without the credits clause and without "country change-alerts" (that email is off).
+
 ## 2026-09-27 (Stage S4: country card v2 + countries layer; branch `map-console`, local only)
 
 - **`CountryCardV2`** (`features/countries/components/`), the one-screen card: state line →

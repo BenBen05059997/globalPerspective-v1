@@ -43,7 +43,14 @@ function eq(a, b) {
 function layerA() {
   console.log('\n── Layer A · validator golden fixtures ──────────────────────');
   for (const g of GOLDEN) {
-    const res = validateAnalysis(g.text, { citations: g.citations, context: g.context, thinInput: g.thinInput });
+    const res = validateAnalysis(g.text, {
+      citations: g.citations,
+      context: g.context,
+      thinInput: g.thinInput,
+      webSources: g.webSources,
+      requiresStruct: g.requiresStruct,
+      structOk: g.structOk,
+    });
     const gotCodes = res.warnings.map((w) => w.code);
     const codesOk = eq(gotCodes, g.expect.codes);
     const errorOk = res.hasError === g.expect.hasError;

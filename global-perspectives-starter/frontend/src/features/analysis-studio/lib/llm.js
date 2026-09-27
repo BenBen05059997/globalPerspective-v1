@@ -117,6 +117,31 @@ export function getProvider(id) {
   return PROVIDERS.find((p) => p.id === id) || null;
 }
 
+// Receipt data (D3): the provider's own `usage` object, plus the model id the
+// response actually reports (may differ from the model id we requested — e.g. an
+// alias resolving to a dated snapshot). Returns null when the provider's response
+// carried no usage at all, so the UI can say so honestly instead of guessing.
+//
+// OpenAI-compatible chat/completions (OpenAI, DeepSeek, Perplexity, Gemini-compat,
+// Qwen) documents a non-streaming `usage: { prompt_tokens, completion_tokens, … }`.
+export function openAIUsage(body, fallbackModel) {
+  const u = body?.usage;
+  const inputTokens = u?.prompt_tokens ?? null;
+  const outputTokens = u?.completion_tokens ?? null;
+  if (inputTokens == null && outputTokens == null) return null;
+  return { inputTokens, outputTokens, model: body?.model || fallbackModel || null };
+}
+
+// Anthropic's Messages API documents `usage: { input_tokens, output_tokens }` on
+// every non-streaming response.
+export function anthropicUsage(body, fallbackModel) {
+  const u = body?.usage;
+  const inputTokens = u?.input_tokens ?? null;
+  const outputTokens = u?.output_tokens ?? null;
+  if (inputTokens == null && outputTokens == null) return null;
+  return { inputTokens, outputTokens, model: body?.model || fallbackModel || null };
+}
+
 // Normalize the provider's web-source metadata to [{ title, url }].
 function openAIWebSources(body) {
   // Perplexity: `search_results` [{title,url,date}] (richer) and/or `citations` [url,…].
@@ -162,7 +187,7 @@ async function runOpenAICompat(provider, { model, apiKey, system, user, maxToken
   }
   const text = body?.choices?.[0]?.message?.content;
   if (!text) throw new Error(`${provider.label}: empty response`);
-  return { text, webSources: openAIWebSources(body) };
+  return { text, webSources: openAIWebSources(body), usage: openAIUsage(body, model) };
 }
 
 async function runAnthropic(provider, { model, apiKey, system, user, maxTokens, temperature, webResearch }) {
@@ -208,12 +233,14 @@ async function runAnthropic(provider, { model, apiKey, system, user, maxTokens, 
       }
     }
   }
-  return { text, webSources };
+  return { text, webSources, usage: anthropicUsage(body, model) };
 }
 
 // Run one analysis. `system` + `user` are plain strings.
-// Returns { text, webSources:[{title,url}] } — webSources is [] unless the provider
-// searched the web (Perplexity always; Anthropic when `webResearch` is set).
+// Returns { text, webSources:[{title,url}], usage } — webSources is [] unless the
+// provider searched the web (Perplexity always; Anthropic when `webResearch` is
+// set). `usage` is { inputTokens, outputTokens, model } from the provider's own
+// response, or null when it reported none (D3 receipt data).
 export async function runChat({ provider, model, apiKey, system, user, maxTokens = 1600, temperature = 0.3, webResearch = false, baseUrl }) {
   const p = getProvider(provider);
   if (!p) throw new Error(`Unknown provider: ${provider}`);

@@ -6,11 +6,12 @@ import { getProvider } from '@/features/analysis-studio/lib/llm';
 import { runChat } from '@/features/analysis-studio/lib/llm';
 import { loadByok } from '@/features/analysis-studio/lib/byok';
 import { useMembership } from '@/features/account/hooks/useMembership';
-import { runMemberAnalysis, analyzeConfigured, creditPacks } from '@/shared/api/restProxy';
+import { runMemberAnalysis, analyzeConfigured } from '@/shared/api/restProxy';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '@/features/analysis-studio/lib/analysis';
 import { validateAnalysis } from '@/features/analysis-studio/lib/analysisValidator';
 import { extractStruct, validateStruct } from '@/features/analysis-studio/lib/analysisStruct';
 import { assessSelection } from '@/features/analysis-studio/lib/sourceRobustness';
+import { renumberWebCitations, webLinkMap } from '@/features/analysis-studio/lib/webCitations';
 import ProviderModal from '@/features/analysis-studio/components/ProviderModal';
 import Markdown from '@/shared/ui/Markdown';
 import { ScenarioBars, IndicatorMatrix, RippleTable } from '@/features/analysis-studio/components/AnalysisVisuals.jsx';
@@ -33,7 +34,7 @@ export default function AnalysisStudio() {
   // purchased credits — so any signed-in user with an allowance or a credit balance can use
   // it. Free users with their own key keep BYOK (free). All gated behind the analyze endpoint
   // being wired, so this is a no-op until go-live.
-  const { isMember, creditBalance, available: billingAvailable, refresh: refreshMembership } = useMembership();
+  const { isMember, creditBalance, refresh: refreshMembership } = useMembership();
   const serverCapable = analyzeConfigured() && (isMember || creditBalance > 0);
 
   // A previously-saved byok record whose provider id no longer exists (e.g. a
@@ -68,6 +69,11 @@ export default function AnalysisStudio() {
   const [struct, setStruct] = useState(null); // sanitized ```gp-struct``` block, or null
   const [sourceInfo, setSourceInfo] = useState(null);
   const [ranOnServer, setRanOnServer] = useState(false); // did the last result use our compute?
+  const [usage, setUsage] = useState(null); // { inputTokens, outputTokens, model } | null
+  // A failed-checks run is hidden behind this explicit "show anyway" expand
+  // (S5: TRACK_RECORD_AND_STUDIO_RULING.md) — reset on every new run so a fresh
+  // result never inherits the previous run's expanded state.
+  const [showFailedAnyway, setShowFailedAnyway] = useState(false);
   const [error, setError] = useState(null);
 
   const provider = byok ? getProvider(byok.provider) : null;
@@ -128,6 +134,8 @@ export default function AnalysisStudio() {
     setWebSources([]);
     setChecks(null);
     setStruct(null);
+    setUsage(null);
+    setShowFailedAnyway(false);
     // Source robustness (L1): is this built on corroborated reporting or a single
     // unverified outlet? Computed client-side from the selected stories' sources.
     setSourceInfo(assessSelection(selectedTopics));
@@ -137,9 +145,15 @@ export default function AnalysisStudio() {
       // fresh material from the web, so the guard doesn't apply there.
       const thinGuard = thin && !deep;
       const userMsg = buildUserMessage({ context, mode, lensId: activeLensId, focus, freeform, thin: thinGuard });
+      // The Scenario / Economic-ripple guided lenses hard-require a closing
+      // ```gp-struct``` block (analysisPrompt.js) — the validator's structural/
+      // schema-failure check only applies there (deep and free-form never promise one).
+      const lensRequiresStruct = mode === 'guided' && !deep
+        && Boolean(LENSES.find((l) => l.id === activeLensId)?.requiresStruct);
 
       let text = '';
       let web = [];
+      let runUsage = null;
       if (useServer) {
         // Our-compute path (DeepSeek), server-pinned system prompt; paid by allowance/credit.
         const r = await runMemberAnalysis(userMsg);
@@ -161,7 +175,16 @@ export default function AnalysisStudio() {
           maxTokens: deep ? 3000 : 2400,
         });
         text = r.text;
-        web = r.webSources || [];
+        // Perplexity's `sonar` models write their OWN [n] markers against THEIR
+        // search results, natively, regardless of what our prompt asks for — those
+        // numbers must never be read as our story numbers (D3 fix; webCitations.js).
+        // Other web-search providers (Anthropic's tool) are prompted to use [Wn]
+        // directly, so nothing needs rewriting for them.
+        const nativeNumbering = deep && byok.provider === 'perplexity';
+        const renumbered = renumberWebCitations(text, r.webSources || [], { nativeNumbering });
+        text = renumbered.text;
+        web = renumbered.webSources;
+        runUsage = r.usage || null;
       }
       // Pull out the optional ```gp-struct``` block (guided scenario/economic lenses
       // only) BEFORE anything else touches the text: the validator and <Markdown>
@@ -174,13 +197,14 @@ export default function AnalysisStudio() {
       setRanOnServer(useServer);
       setCitations(cites);
       setWebSources(web);
+      setUsage(runUsage);
       // Enforce the honesty guardrails on what actually came back (the prompt only
       // asks; this verifies). In deep mode the web legitimately introduces figures
       // beyond our material, so the invented-figure check (context) is skipped —
-      // phantom [n] citations are still checked.
+      // phantom [n]/[Wn] citations and the structural check still run.
       setChecks(validateAnalysis(prose, deep
-        ? { citations: cites }
-        : { citations: cites, context, thinInput: thinGuard }));
+        ? { citations: cites, webSources: web }
+        : { citations: cites, context, thinInput: thinGuard, webSources: web, requiresStruct: lensRequiresStruct, structOk: Boolean(sanitizedStruct) }));
     } catch (err) {
       if (err?.code === 'out_of_credits') setError("You're out of analysis credits, and any monthly allowance is used up. Add credits or subscribe to keep analyzing.");
       else setError(err?.message || 'Analysis failed.');
@@ -198,9 +222,9 @@ export default function AnalysisStudio() {
           <p className="as-sub">
             Pick the stories you care about, choose a lens or ask your own question, and get a
             cited deep-dive built from our intelligence.{' '}
-            {serverCapable
-              ? (isMember ? 'Included with your membership — no API key needed.' : `Runs on our compute — 1 credit per analysis (${creditBalance} left).`)
-              : 'Runs on your own API key.'}
+            {isMember && serverCapable
+              ? 'Included with your membership — no API key needed.'
+              : 'Studio runs on your own API key.'}
           </p>
         </div>
         <button className="as-model-chip" onClick={() => setModalOpen(true)} title="Choose provider / model / key">
@@ -332,21 +356,17 @@ export default function AnalysisStudio() {
           <button className="as-run" onClick={onRun} disabled={running}>
             {running ? 'Analyzing…' : 'Run analysis'}
           </button>
-          {serverCapable ? (
-            <div className="as-hint">
-              {isMember
-                ? 'Included with your membership — no API key needed.'
-                : `Runs on our compute — uses 1 credit per analysis (${creditBalance} left).`}
-            </div>
+          {isMember && serverCapable ? (
+            <div className="as-hint">Included with your membership — no API key needed.</div>
           ) : !byok ? (
-            <div className="as-hint">You'll be asked to choose a model + paste your API key first.</div>
+            <div className="as-hint">Studio runs on your own API key — you'll be asked to choose a model + paste it first.</div>
           ) : null}
-          {!serverCapable && billingAvailable && (
+          {/* Credits are parked (S5a removed the credit copy only); the membership pointer stays.
+              "Country change-alerts" was dropped from it: the drift-email cron is off (R2). */}
+          {!isMember && (
             <div className="as-hint">
-              {creditPacks().length > 0
-                ? <>Don't want to manage an API key? Buy credits to run it on our compute — or a{' '}</>
-                : <>Don't want to manage an API key? A{' '}</>}
-              <strong>membership</strong> adds a monthly allowance plus the full self-correction history and country change-alerts.{' '}
+              Don't want to manage an API key? A <strong>membership</strong> includes Studio runs plus the
+              full self-correction history.{' '}
               <button className="as-link-btn" onClick={() => navigate('/membership')}>See membership →</button>
             </div>
           )}
@@ -383,13 +403,34 @@ export default function AnalysisStudio() {
                   <span><strong>Source basis:</strong> {sourceInfo.message}</span>
                 </div>
               )}
-              {checks && checks.warnings.length > 0 && (
-                <div className={`as-checks${checks.hasError ? ' err' : ''}`}>
-                  <div className="as-checks-head">
-                    {checks.hasError
-                      ? 'Guardrail check flagged a problem in this output'
-                      : 'Guardrail check — please verify the flagged items'}
-                  </div>
+
+              {checks && checks.hasError ? (
+                // Checks actually gate: a run with a guardrail breach is hidden behind
+                // an explicit expand, and never shareable, however the reader gets
+                // there (TRACK_RECORD_AND_STUDIO_RULING.md S5). Previously `hasError`
+                // only colored this banner red — the report still rendered in full
+                // regardless (critic 2, AnalysisStudio.jsx:387).
+                <div className="as-checks err" role="alert">
+                  <div className="as-checks-head">Checks failed — this run is not shareable</div>
+                  <ul>
+                    {checks.warnings.filter((w) => w.severity === 'error').map((w, i) => (
+                      <li key={i} className={`sev-${w.severity}`}>
+                        <span className="as-check-dot" aria-hidden />
+                        {w.message}
+                      </li>
+                    ))}
+                  </ul>
+                  {!showFailedAnyway ? (
+                    <button className="as-link-btn as-show-failed" onClick={() => setShowFailedAnyway(true)}>
+                      Show anyway (not shareable) →
+                    </button>
+                  ) : (
+                    <div className="as-not-shareable">Shown despite failed checks — not shareable. Your provider still charged for this run.</div>
+                  )}
+                </div>
+              ) : checks && checks.warnings.length > 0 ? (
+                <div className="as-checks">
+                  <div className="as-checks-head">Guardrail check — please verify the flagged items</div>
                   <ul>
                     {checks.warnings.map((w, i) => (
                       <li key={i} className={`sev-${w.severity}`}>
@@ -399,58 +440,71 @@ export default function AnalysisStudio() {
                     ))}
                   </ul>
                 </div>
-              )}
-              {checks && checks.ok && (
+              ) : checks && checks.ok ? (
                 <div className="as-checks ok">
                   <span className="as-check-dot" aria-hidden />
                   Guardrail check passed — every source cited exists and no unsupported figures were detected.
                 </div>
-              )}
-              <Markdown text={report} className="as-md" />
-              {struct && (
+              ) : null}
+
+              {(!checks?.hasError || showFailedAnyway) && (
                 <>
-                  <ScenarioBars scenarios={struct.scenarios} />
-                  <IndicatorMatrix indicators={struct.indicators} />
-                  <RippleTable ripples={struct.ripples} />
+                  <Markdown text={report} className="as-md" links={webLinkMap(webSources)} />
+                  {struct && (
+                    <>
+                      <ScenarioBars scenarios={struct.scenarios} />
+                      <IndicatorMatrix indicators={struct.indicators} />
+                      <RippleTable ripples={struct.ripples} />
+                    </>
+                  )}
+                  {webSources.length > 0 && (
+                    <div className="as-cites as-cites-web">
+                      <div className="label">Web sources (model-retrieved) <span className="as-web-chip">web</span></div>
+                      <ol>
+                        {webSources.map((w) => (
+                          <li key={w.url}>
+                            <span className="as-cite-num">[W{w.n}]</span>{' '}
+                            <a href={w.url} target="_blank" rel="noopener noreferrer">{w.title}</a>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                  {citations.length > 0 && (
+                    <div className="as-cites">
+                      <div className="label">Sources</div>
+                      <ol>
+                        {citations.map((c) => (
+                          <li key={c.n}>
+                            <span className="as-cite-title">{c.title}</span>
+                            {c.regions && <span className="as-cite-meta"> — {c.regions}</span>}
+                            {c.sources?.length > 0 && (
+                              <span className="as-cite-links">
+                                {c.sources.slice(0, 4).map((u, i) => (
+                                  <a key={i} href={u} target="_blank" rel="noopener noreferrer">link{c.sources.length > 1 ? ` ${i + 1}` : ''}</a>
+                                ))}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                  <p className="as-disclaimer">
+                    Generated by {ranOnServer && webSources.length === 0 ? 'Global Perspectives AI' : 'your chosen model'} from our story data
+                    {webSources.length > 0 && ' plus model-retrieved web sources (not verified by our pipeline)'}.
+                    Treat as analyst input, not fact — verify load-bearing claims against the linked sources.
+                  </p>
                 </>
               )}
-              {webSources.length > 0 && (
-                <div className="as-cites">
-                  <div className="label">Web sources (model-retrieved)</div>
-                  <ol>
-                    {webSources.map((w) => (
-                      <li key={w.url}>
-                        <a href={w.url} target="_blank" rel="noopener noreferrer">{w.title}</a>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
+
+              {!ranOnServer && (
+                <p className="as-receipt">
+                  {usage
+                    ? `Provider usage: ${usage.inputTokens ?? '—'} in / ${usage.outputTokens ?? '—'} out tokens${usage.model ? ` · model ${usage.model}` : ''}.`
+                    : 'Provider did not report usage.'}
+                </p>
               )}
-              {citations.length > 0 && (
-                <div className="as-cites">
-                  <div className="label">Sources</div>
-                  <ol>
-                    {citations.map((c) => (
-                      <li key={c.n}>
-                        <span className="as-cite-title">{c.title}</span>
-                        {c.regions && <span className="as-cite-meta"> — {c.regions}</span>}
-                        {c.sources?.length > 0 && (
-                          <span className="as-cite-links">
-                            {c.sources.slice(0, 4).map((u, i) => (
-                              <a key={i} href={u} target="_blank" rel="noopener noreferrer">link{c.sources.length > 1 ? ` ${i + 1}` : ''}</a>
-                            ))}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-              <p className="as-disclaimer">
-                Generated by {ranOnServer && webSources.length === 0 ? 'Global Perspectives AI' : 'your chosen model'} from our story data
-                {webSources.length > 0 && ' plus model-retrieved web sources (not verified by our pipeline)'}.
-                Treat as analyst input, not fact — verify load-bearing claims against the linked sources.
-              </p>
             </>
           )}
         </section>

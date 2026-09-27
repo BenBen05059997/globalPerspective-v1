@@ -52,10 +52,27 @@ function extractDates(text) {
 const ESTIMATIVE_RE = /(probab|likelihood|likely|chance|odds|estimat|scenario|roughly|around|about|approx|~|≈)/i;
 
 // Citation markers like [1], [2]. Returns the unique numbers cited, in order seen.
+// Deliberately does NOT match [Wn] (web-source markers, webCitations.js) — those
+// are a separate numbering space and must never be read as one of our story
+// numbers (the exact collision this module used to get wrong; see extractCitedWebNumbers).
 export function extractCitedNumbers(text) {
   const out = [];
   const seen = new Set();
   const re = /\[(\d{1,2})\]/g;
+  let m;
+  while ((m = re.exec(text || ''))) {
+    const n = Number(m[1]);
+    if (!seen.has(n)) { seen.add(n); out.push(n); }
+  }
+  return out;
+}
+
+// Web-source citation markers like [W1], [W2] (webCitations.js renumbers/produces
+// these). Returns the unique numbers cited, in order seen.
+export function extractCitedWebNumbers(text) {
+  const out = [];
+  const seen = new Set();
+  const re = /\[W(\d{1,3})\]/g;
   let m;
   while ((m = re.exec(text || ''))) {
     const n = Number(m[1]);
@@ -72,19 +89,37 @@ function stripCode(text) {
 }
 
 /**
- * validateAnalysis(text, { citations, context }) → { ok, hasError, warnings }
+ * validateAnalysis(text, { citations, context, webSources, requiresStruct, structOk })
+ *   → { ok, hasError, warnings, shareable }
  *
- *  - citations: [{ n, title, ... }] the numbered stories that were provided.
- *  - context:   the assembled STORIES block (for the invented-figure check). Optional.
- *  - thinInput: true when the source material was thin (assessRichness) — surfaces a
- *               coverage caveat so the reader weights scenario specifics accordingly.
+ *  - citations:     [{ n, title, ... }] the numbered stories that were provided.
+ *  - context:       the assembled STORIES block (for the invented-figure check). Optional.
+ *  - thinInput:     true when the source material was thin (assessRichness) — surfaces a
+ *                   coverage caveat so the reader weights scenario specifics accordingly.
+ *  - webSources:    [{ n, title, url }] renumbered web sources (webCitations.js),
+ *                   for the web-citation phantom check. Optional.
+ *  - requiresStruct: true when the active lens hard-requires a ```gp-struct``` block
+ *                   (Scenario, Economic ripple — analysisPrompt.js LENSES).
+ *  - structOk:      whether a valid, non-empty struct was actually extracted
+ *                   (analysisStruct.js validateStruct(...) !== null).
  *
  * Each warning: { code, severity: 'error'|'warn'|'info', message }.
- *   error → a hard guardrail breach (phantom source). hasError=true.
- *   warn  → likely problem a reader should verify.
+ *   error → a hard guardrail breach. hasError=true, the run is gated (hidden behind
+ *           an explicit "checks failed" expand, marked not shareable — AnalysisStudio.jsx).
+ *   warn  → likely problem a reader should verify; the run still renders normally.
  *   info  → coverage note, not a defect.
+ *
+ * `shareable` is `!hasError` — a run with a real guardrail breach is never shareable
+ * (S5: TRACK_RECORD_AND_STUDIO_RULING.md).
  */
-export function validateAnalysis(text, { citations = [], context = '', thinInput = false } = {}) {
+export function validateAnalysis(text, {
+  citations = [],
+  context = '',
+  thinInput = false,
+  webSources = [],
+  requiresStruct = false,
+  structOk = true,
+} = {}) {
   const warnings = [];
   const raw = (text || '').trim();
   const body = stripCode(raw);
@@ -107,15 +142,36 @@ export function validateAnalysis(text, { citations = [], context = '', thinInput
     }
   }
 
+  // 1b) Phantom WEB citation — cites [Wn] beyond the web sources actually returned
+  //     (same failure mode as (1), for the separate web-marker numbering space).
+  if (Array.isArray(webSources) && webSources.length > 0) {
+    const maxW = webSources.length;
+    const citedW = extractCitedWebNumbers(body);
+    const phantomW = citedW.filter((n) => n < 1 || n > maxW);
+    if (phantomW.length) {
+      warnings.push({
+        code: 'phantom_web_citation',
+        severity: 'error',
+        message:
+          `Cites ${phantomW.map((n) => `[W${n}]`).join(', ')} but only ` +
+          `${maxW} web source${maxW === 1 ? ' was' : 's were'} returned — that source does not exist.`,
+      });
+    }
+  }
+
   // 2) Uncited substantive answer — makes claims at length but anchors none of them.
   //    (Skipped for short outputs, which are usually a clean "Limits of this analysis".)
+  // This is a hard failure, not a soft nudge: an analysis long enough to carry real
+  // claims that cites nothing at all cannot be checked against anything — the reader
+  // has no way to verify a single sentence of it (critic 2: the validator must
+  // actually gate, not just decorate a banner).
   const looksSubstantive = body.length > 400;
   const isLimits = /limits of this analysis/i.test(raw);
   if (looksSubstantive && cited.length === 0 && !isLimits) {
     warnings.push({
       code: 'no_citations',
-      severity: 'warn',
-      message: 'The analysis makes claims but cites no sources with [n].',
+      severity: 'error',
+      message: 'The analysis makes claims at length but cites no sources with [n] — none of it can be checked against the material.',
     });
   }
 
@@ -199,6 +255,20 @@ export function validateAnalysis(text, { citations = [], context = '', thinInput
     });
   }
 
+  // 6) Structural / schema failure — the active lens hard-requires a machine-readable
+  //    ```gp-struct``` block (Scenario, Economic ripple), but none survived extraction
+  //    + validation (analysisStruct.js): the fence was missing, truncated, malformed
+  //    JSON, or every entry in it failed the anti-invention cross-check against the
+  //    prose. A lens promising structured output that doesn't deliver it is a real
+  //    output-contract failure, not a style nitpick.
+  if (requiresStruct && !structOk) {
+    warnings.push({
+      code: 'schema_invalid',
+      severity: 'error',
+      message: 'This lens requires a structured summary block, but none was returned (missing, truncated, or invalid) — the output does not match the required schema.',
+    });
+  }
+
   const hasError = warnings.some((w) => w.severity === 'error');
-  return { ok: warnings.length === 0, hasError, warnings };
+  return { ok: warnings.length === 0, hasError, shareable: !hasError, warnings };
 }

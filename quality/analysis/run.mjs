@@ -24,7 +24,8 @@ import {
   buildUserMessage,
 } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisPrompt.js';
 import { runChat, getProvider } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/llm.js';
-import { GOLDEN, LIVE_FIXTURES, RICHNESS_CASES } from './fixtures.mjs';
+import { validateStruct } from '../../global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisStruct.js';
+import { GOLDEN, LIVE_FIXTURES, RICHNESS_CASES, STRUCT_CASES } from './fixtures.mjs';
 
 const C = { red: '\x1b[31m', grn: '\x1b[32m', yel: '\x1b[33m', dim: '\x1b[2m', rst: '\x1b[0m' };
 const ok = (s) => `${C.grn}${s}${C.rst}`;
@@ -83,6 +84,27 @@ function layerRichness() {
   }
 }
 
+// ── Layer A3 — gp-struct scenario places/by regression (D4, S5c) ─────────────
+function layerStruct() {
+  console.log('\n── Layer A3 · gp-struct scenario places/by (D4) ──────────────');
+  for (const c of STRUCT_CASES) {
+    const out = validateStruct(c.struct, c.prose);
+    const s0 = out && out.scenarios && out.scenarios[0] ? out.scenarios[0] : {};
+    const byOk = s0.by === c.expect.by;
+    const placesOk = JSON.stringify(s0.places) === JSON.stringify(c.expect.places);
+    if (byOk && placesOk) {
+      passed++;
+      console.log(`  ${ok('✓')} ${c.name}`);
+    } else {
+      failed++;
+      failures.push(c.name);
+      console.log(`  ${bad('✗')} ${c.name}`);
+      if (!byOk) console.log(`      by: expected ${JSON.stringify(c.expect.by)} got ${JSON.stringify(s0.by)}`);
+      if (!placesOk) console.log(`      places: expected ${JSON.stringify(c.expect.places)} got ${JSON.stringify(s0.places)}`);
+    }
+  }
+}
+
 // ── Layer B — live generation + validation ───────────────────────────────────
 async function layerB(provider, model, apiKey) {
   console.log(`\n── Layer B · live generation (${getProvider(provider)?.label || provider} · ${model}) ──`);
@@ -128,6 +150,7 @@ async function layerB(provider, model, apiKey) {
 async function main() {
   layerA();
   layerRichness();
+  layerStruct();
 
   const apiKey = process.env.ANALYSIS_EVAL_KEY;
   const provider = process.env.ANALYSIS_EVAL_PROVIDER || 'deepseek';

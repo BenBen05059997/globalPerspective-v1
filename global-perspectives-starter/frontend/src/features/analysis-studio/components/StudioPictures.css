@@ -1,0 +1,218 @@
+/* StudioPictures — the ONE picture per lens (S5c F1 §2) + the "our data vs this run"
+   place strip (D4/TRACK_RECORD_AND_STUDIO_RULING.md). These components render in TWO
+   contexts — the light "Read as text" long view (default tokens.css :root vars) AND the
+   new dark deck (S5c round 2, wrapped in `.gp-console`) — so every color here goes through
+   a local `--sp-*` alias that resolves to the light token by default and the matching
+   `.gp-console` dark token when nested there, instead of forking the components. */
+
+:root {
+  --sp-ink-head: var(--ink);
+  --sp-ink-body: var(--ink-mid);
+  --sp-ink-muted: var(--ink-dim);
+  --sp-ink-dim: var(--ink-faint);
+  --sp-surface: var(--card);
+  --sp-surface-2: var(--paper-3);
+  --sp-line: var(--line);
+  --sp-line-2: var(--line-2);
+  --sp-accent: var(--accent);
+  --sp-accent-deep: var(--accent-deep);
+  --sp-accent-soft: var(--accent-soft);
+  --sp-risk-h: var(--risk-h);
+  --sp-risk-h-soft: var(--risk-h-soft);
+  --sp-run-border: #c9ac6a;
+  --sp-run-ink: #7a5f22;
+  --sp-run-hatch-1: rgba(232, 213, 168, 0.55);
+  --sp-run-hatch-2: rgba(232, 213, 168, 0.15);
+}
+.gp-console {
+  --sp-ink-head: var(--c-text-head);
+  --sp-ink-body: var(--c-text-body);
+  --sp-ink-muted: var(--c-text-muted);
+  --sp-ink-dim: var(--c-text-dim);
+  --sp-surface: var(--c-panel);
+  --sp-surface-2: var(--c-panel-2);
+  --sp-line: var(--c-hairline);
+  --sp-line-2: var(--c-hairline-strong);
+  --sp-accent: var(--c-accent);
+  --sp-accent-deep: var(--c-accent);
+  --sp-accent-soft: rgba(95, 212, 255, 0.14);
+  --sp-risk-h: var(--c-error);
+  --sp-risk-h-soft: rgba(255, 106, 77, 0.16);
+  --sp-run-border: var(--c-warn);
+  --sp-run-ink: var(--c-warn);
+  --sp-run-hatch-1: rgba(255, 179, 71, 0.35);
+  --sp-run-hatch-2: rgba(255, 179, 71, 0.08);
+}
+
+.sp-block {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sp-line);
+}
+
+.sp-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sp-ink-dim);
+  margin-bottom: 10px;
+}
+
+/* ── Our data vs this run (D4) ────────────────────────────────────────────── */
+.sp-places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.sp-place-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-family: var(--mono);
+}
+
+.sp-place-ours {
+  border: 2px solid var(--sp-accent);
+  color: var(--sp-accent-deep);
+  background: var(--sp-accent-soft);
+}
+
+.sp-place-run {
+  border: 1px solid var(--sp-run-border);
+  color: var(--sp-run-ink);
+  background: repeating-linear-gradient(45deg, var(--sp-run-hatch-1) 0 4px, var(--sp-run-hatch-2) 4px 9px);
+}
+
+.sp-legend {
+  display: flex;
+  gap: 14px;
+  font-size: 10px;
+  color: var(--sp-ink-dim);
+  margin-bottom: 10px;
+}
+.sp-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.sp-legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.sp-legend-dot.ours { border: 2px solid var(--sp-accent); background: var(--sp-accent-soft); }
+.sp-legend-dot.run { border: 1px solid var(--sp-run-border); background: repeating-linear-gradient(45deg, var(--sp-run-hatch-1) 0 3px, var(--sp-run-hatch-2) 3px 6px); }
+
+.sp-dropped-note {
+  font-size: 11px;
+  color: var(--sp-ink-dim);
+  margin: -6px 0 12px;
+}
+
+/* ── Time bar (real dates only) ───────────────────────────────────────────── */
+.sp-timebar {
+  position: relative;
+  height: 34px;
+  margin: 4px 0 18px;
+}
+.sp-timebar-track {
+  position: absolute;
+  left: 0; right: 0; top: 16px;
+  height: 2px;
+  background: var(--sp-line-2);
+}
+.sp-timebar-tick {
+  position: absolute;
+  top: 10px;
+  width: 2px;
+  height: 14px;
+  background: var(--sp-ink-dim);
+}
+.sp-timebar-tick.today { background: var(--sp-accent); width: 2px; }
+.sp-timebar-label {
+  position: absolute;
+  top: 26px;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--sp-ink-dim);
+  white-space: nowrap;
+}
+
+/* ── Scenario bands ───────────────────────────────────────────────────────── */
+.sp-band-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 24%) 1fr 90px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.sp-band-name { font-size: 13px; color: var(--sp-ink-body); }
+.sp-band-track { position: relative; height: 10px; border-radius: 5px; background: var(--sp-surface-2); }
+.sp-band-fill { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: var(--sp-accent); opacity: 0.85; }
+.sp-band-by { font-family: var(--mono); font-size: 11px; color: var(--sp-ink-muted); text-align: right; }
+.sp-band-undated { font-size: 11px; color: var(--sp-ink-dim); margin-top: 6px; }
+
+/* ── Compare lanes ────────────────────────────────────────────────────────── */
+.sp-lanes { display: flex; flex-direction: column; gap: 10px; }
+.sp-lane {
+  border: 1px solid var(--sp-line);
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  background: var(--sp-surface);
+}
+.sp-lane-title { font-size: 13px; font-weight: 600; color: var(--sp-ink-head); }
+.sp-lane-regions { font-size: 11px; color: var(--sp-ink-muted); margin-top: 2px; }
+.sp-judged-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--sp-ink-muted);
+  margin: 6px 0 12px;
+  padding-left: 4px;
+}
+.sp-judged-link-dash {
+  flex: 0 0 40px;
+  height: 0;
+  border-top: 2px dashed var(--sp-accent);
+}
+.sp-grid { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+.sp-grid th, .sp-grid td { padding: 4px 8px 4px 0; text-align: left; color: var(--sp-ink-body); border-bottom: 1px dotted var(--sp-line); }
+.sp-grid th { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--sp-ink-dim); font-size: 9px; }
+
+/* ── What changed chart ───────────────────────────────────────────────────── */
+.sp-country-block { margin-bottom: 16px; }
+.sp-country-block:last-child { margin-bottom: 0; }
+.sp-country-name { font-size: 12px; font-weight: 600; color: var(--sp-ink-head); margin-bottom: 8px; }
+.sp-series { display: flex; align-items: flex-end; gap: 6px; height: 60px; margin-bottom: 10px; }
+/* `height:100%` here is load-bearing: a percentage `height` on .sp-series-bar only resolves
+   against an ancestor with a non-auto height, and `align-items: flex-end` on .sp-series
+   otherwise leaves this flex child at its (auto/zero) content height — the bars silently
+   never appeared without it (caught in the S5c round-2 screenshot review). */
+.sp-series-point { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; flex: 1 1 0; min-width: 0; height: 100%; }
+.sp-series-bar { width: 100%; max-width: 22px; border-radius: 3px 3px 0 0; background: var(--sp-accent); }
+.sp-series-date { font-family: var(--mono); font-size: 8px; color: var(--sp-ink-dim); white-space: nowrap; }
+.sp-series-gap { font-size: 10px; color: var(--sp-ink-dim); font-style: italic; }
+.sp-changelog { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.sp-changelog-row { font-size: 12px; color: var(--sp-ink-body); }
+.sp-changelog-date { font-family: var(--mono); font-size: 10px; color: var(--sp-ink-dim); margin-right: 8px; }
+.sp-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--sp-risk-h);
+  background: var(--sp-risk-h-soft);
+}
+
+/* ── Free-form sentence lighting ──────────────────────────────────────────── */
+.sp-freeform { line-height: 1.6; }
+.sp-sentence { cursor: pointer; padding: 1px 2px; border-radius: 3px; }
+.sp-sentence:hover { background: var(--sp-accent-soft); }
+.sp-sentence.lit { background: var(--sp-accent-soft); box-shadow: 0 0 0 1px var(--sp-accent); }
+.sp-sentence.dim { opacity: 0.4; }
+.sp-cite-marker { color: var(--sp-accent); font-weight: 600; }

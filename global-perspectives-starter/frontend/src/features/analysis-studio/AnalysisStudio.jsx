@@ -7,23 +7,83 @@ import { getProvider } from '@/features/analysis-studio/lib/llm';
 import { runChat } from '@/features/analysis-studio/lib/llm';
 import { loadByok } from '@/features/analysis-studio/lib/byok';
 import { useMembership } from '@/features/account/hooks/useMembership';
-import { runMemberAnalysis, analyzeConfigured, fetchThreadAnalyses } from '@/shared/api/restProxy';
+import { runMemberAnalysis, analyzeConfigured, fetchThreadAnalyses, fetchCountryHistory } from '@/shared/api/restProxy';
 import { reportFetchError } from '@/shared/api/errorSink';
+import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { buildCountryRiskSeries, buildCountryChangeLog } from '@/features/analysis-studio/lib/countryDriftPicture';
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '@/features/analysis-studio/lib/analysis';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';
 import { buildEarlierStoryList } from '@/features/analysis-studio/lib/earlierStories';
 import { validateAnalysis } from '@/features/analysis-studio/lib/analysisValidator';
 import { extractStruct, validateStruct } from '@/features/analysis-studio/lib/analysisStruct';
 import { assessSelection } from '@/features/analysis-studio/lib/sourceRobustness';
-import { renumberWebCitations, webLinkMap } from '@/features/analysis-studio/lib/webCitations';
+import { renumberWebCitations } from '@/features/analysis-studio/lib/webCitations';
 import { buildQuote } from '@/features/analysis-studio/lib/quote';
-import { buildReceipt } from '@/features/analysis-studio/lib/receipt';
+import { dropUnbackedPlaces, classifyPlaces } from '@/features/analysis-studio/lib/oursVsRun';
+import { buildScenarioBands } from '@/features/analysis-studio/lib/scenarioBands';
+import { buildComparePicture } from '@/features/analysis-studio/lib/comparePicture';
+import { sentenceCitations } from '@/features/analysis-studio/lib/freeformPicture';
+import { addSection } from '@/features/analysis-studio/lib/deckStack';
 import ProviderModal from '@/features/analysis-studio/components/ProviderModal';
-import Markdown from '@/shared/ui/Markdown';
-import { ScenarioBars, IndicatorMatrix, RippleTable } from '@/features/analysis-studio/components/AnalysisVisuals.jsx';
+import StudioDeck from '@/features/analysis-studio/components/StudioDeck';
+import { useIsPhone } from '@/shared/hooks/useIsPhone';
 import '@/features/analysis-studio/AnalysisStudio.css';
 
 const MAX_STORIES = 4;
+
+// S5c F1 §2 "one picture per lens" — builds the picture data for the just-finished run
+// from already-sanitized inputs only (never raw model text). `whatchanged` calls the REAL
+// `country_history` proxy action for whichever of the selected stories' regions resolve to
+// an actual country (iso3ForName — a macro-region like "East Asia" has no history to fetch
+// and is silently skipped, never faked); async because of that fetch.
+async function buildLensPicture(lensId, { struct, selectedTopics, citations, prose, today }) {
+  if (!lensId) return null;
+  const sourceRegions = [...new Set(
+    (selectedTopics || []).flatMap((t) => (Array.isArray(t.regions) ? t.regions : []))
+  )];
+
+  if (lensId === 'scenario') {
+    const scenarios = struct?.scenarios || [];
+    if (scenarios.length === 0) return null;
+    const { scenarios: kept, dropped } = dropUnbackedPlaces(scenarios, sourceRegions);
+    const { bands, undated } = buildScenarioBands(kept, today);
+    const allPlaces = kept.flatMap((s) => s.places || []);
+    const { ours } = classifyPlaces(allPlaces, sourceRegions);
+    return { kind: 'scenario', data: { bands, undated }, oursVsRun: (ours.length || dropped.length) ? { ours, runOnly: [], dropped } : null };
+  }
+  if (lensId === 'compare') {
+    const picture = buildComparePicture(selectedTopics, citations);
+    return {
+      kind: 'compare',
+      data: picture,
+      oursVsRun: picture.sharedPlaces.length ? { ours: picture.sharedPlaces, runOnly: [], dropped: [] } : null,
+    };
+  }
+  if (lensId === 'whatchanged') {
+    // Only names that resolve to a real country (iso3ForName) are fetchable — a macro-region
+    // ("East Asia") or a body of water names no country_history record and is skipped, not faked.
+    const countryNames = [...new Set(sourceRegions.filter((r) => iso3ForName(r)))];
+    const countries = await Promise.all(countryNames.map(async (name) => {
+      try {
+        const res = await fetchCountryHistory(name);
+        if (!res?.success) return { name, series: { points: [], gaps: [] }, changeLog: [] };
+        return {
+          name,
+          series: buildCountryRiskSeries(res.snapshots),
+          changeLog: buildCountryChangeLog(res.driftNotes),
+        };
+      } catch (err) {
+        reportFetchError('analysis-studio-whatchanged-country-history', err);
+        return { name, series: { points: [], gaps: [] }, changeLog: [] };
+      }
+    }));
+    return { kind: 'whatchanged', data: { countries }, oursVsRun: null };
+  }
+  if (lensId === 'freeform') {
+    return { kind: 'freeform', data: { sentences: sentenceCitations(prose) }, oursVsRun: null };
+  }
+  return null;
+}
 
 export default function AnalysisStudio() {
   useEffect(() => { document.title = 'Analysis Studio | Global Perspectives'; }, []);
@@ -79,15 +139,14 @@ export default function AnalysisStudio() {
   const [freeform, setFreeform] = useState('');
 
   const [running, setRunning] = useState(false);
-  const [report, setReport] = useState(null);
-  const [citations, setCitations] = useState([]);
-  const [webSources, setWebSources] = useState([]);
-  const [checks, setChecks] = useState(null);
-  const [struct, setStruct] = useState(null); // sanitized ```gp-struct``` block, or null
-  const [sourceInfo, setSourceInfo] = useState(null);
-  const [ranOnServer, setRanOnServer] = useState(false); // did the last result use our compute?
-  const [usage, setUsage] = useState(null); // { inputTokens, outputTokens, model } | null
-  const [elapsedMs, setElapsedMs] = useState(null);
+  const isPhone = useIsPhone();
+  // S5c F2 "+ Add analysis": a case is one frozen selection; each successful run on that
+  // SAME selection stacks a new SECTION here (deckStack.js) — never replaces the last one.
+  // `expandedFailed` is per-section ("show anyway" — S5's gate must not leak across runs).
+  const [sections, setSections] = useState([]);
+  const [expandedFailed, setExpandedFailed] = useState({});
+  const [deckView, setDeckView] = useState('deck'); // 'deck' | 'text' | 'board' — F3, desktop only
+  const nextSectionId = useRef(0);
   // The reader-pays "quote before the run" (D2 stored-data feed + typed sources —
   // TRACK_RECORD_AND_STUDIO_RULING.md, S5b). Recomputed whenever the selection or the
   // model/path that would run changes. `contextCache` remembers the last computed
@@ -96,10 +155,6 @@ export default function AnalysisStudio() {
   const [quote, setQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const contextCache = useRef({ key: null, promise: null, data: null });
-  // A failed-checks run is hidden behind this explicit "show anyway" expand
-  // (S5: TRACK_RECORD_AND_STUDIO_RULING.md) — reset on every new run so a fresh
-  // result never inherits the previous run's expanded state.
-  const [showFailedAnyway, setShowFailedAnyway] = useState(false);
   const [error, setError] = useState(null);
 
   const provider = byok ? getProvider(byok.provider) : null;
@@ -246,6 +301,12 @@ export default function AnalysisStudio() {
     });
   }
 
+  // Per-section "show anyway" (never global — a fresh section never inherits a
+  // previous run's expanded state; S5's shareability gate is per-run).
+  function handleShowAnyway(sectionId) {
+    setExpandedFailed((prev) => ({ ...prev, [sectionId]: true }));
+  }
+
   async function onRun() {
     setError(null);
     if (!isRegistered) return; // the sign-in gate overlay handles this
@@ -258,17 +319,9 @@ export default function AnalysisStudio() {
     if (selectedTopics.length === 0) { setError('Pick at least one story to analyze.'); return; }
 
     setRunning(true);
-    setReport(null);
-    setCitations([]);
-    setWebSources([]);
-    setChecks(null);
-    setStruct(null);
-    setUsage(null);
-    setElapsedMs(null);
-    setShowFailedAnyway(false);
     // Source robustness (L1): is this built on corroborated reporting or a single
     // unverified outlet? Computed client-side from the selected stories' sources.
-    setSourceInfo(assessSelection(selectedTopics));
+    const sourceInfo = assessSelection(selectedTopics);
     const startedAt = Date.now();
     try {
       // Reuse the context the quote already fetched for this exact selection — the
@@ -326,24 +379,52 @@ export default function AnalysisStudio() {
       // false-trigger the invented_figure check, and it isn't meant to render as prose.
       const { struct: rawStruct, prose } = extractStruct(text);
       const sanitizedStruct = validateStruct(rawStruct, prose);
-      setStruct(sanitizedStruct);
-      setReport(prose);
-      setRanOnServer(useServer);
-      setCitations(cites);
-      setWebSources(web);
-      setUsage(runUsage);
       // Enforce the honesty guardrails on what actually came back (the prompt only
       // asks; this verifies). In deep mode the web legitimately introduces figures
       // beyond our material, so the invented-figure check (context) is skipped —
       // phantom [n]/[Wn] citations and the structural check still run.
-      setChecks(validateAnalysis(prose, deep
+      const runChecks = validateAnalysis(prose, deep
         ? { citations: cites, webSources: web }
-        : { citations: cites, context, thinInput: thinGuard, webSources: web, requiresStruct: lensRequiresStruct, structOk: Boolean(sanitizedStruct) }));
+        : { citations: cites, context, thinInput: thinGuard, webSources: web, requiresStruct: lensRequiresStruct, structOk: Boolean(sanitizedStruct) });
+
+      // S5c F2: stack this run as a new section of the same case — never replace the
+      // last one. `effectiveLensId` maps mode+lens onto the 4 launch lenses (deep
+      // research is a separate toggle, not one of them, so it gets no picture).
+      const effectiveLensId = deep ? null : mode === 'freeform' ? 'freeform' : activeLensId;
+      const lensLabel = deep ? 'Deep research' : mode === 'freeform' ? 'Free-form' : (LENSES.find((l) => l.id === activeLensId)?.label || activeLensId);
+      const today = new Date().toISOString().slice(0, 10);
+      const picture = await buildLensPicture(effectiveLensId, { struct: sanitizedStruct, selectedTopics, citations: cites, prose, today });
+      const timeDates = [
+        ...cites.map((c) => c.date).filter(Boolean),
+        ...(sanitizedStruct?.scenarios || []).map((s) => s.by).filter(Boolean),
+      ];
+
+      nextSectionId.current += 1;
+      const section = {
+        id: nextSectionId.current,
+        lensId: effectiveLensId,
+        lensLabel,
+        mode,
+        report: prose,
+        citations: cites,
+        webSources: web,
+        checks: runChecks,
+        struct: sanitizedStruct,
+        sourceInfo,
+        ranOnServer: useServer,
+        usage: runUsage,
+        elapsedMs: Date.now() - startedAt,
+        byokModel: byok?.model || null,
+        picture,
+        timeDates,
+        today,
+        createdAt: new Date().toISOString(),
+      };
+      setSections((prev) => addSection(prev, section));
     } catch (err) {
       if (err?.code === 'out_of_credits') setError("You're out of analysis credits, and any monthly allowance is used up. Add credits or subscribe to keep analyzing.");
       else setError(err?.message || 'Analysis failed.');
     } finally {
-      setElapsedMs(Date.now() - startedAt);
       setRunning(false);
     }
   }
@@ -506,7 +587,7 @@ export default function AnalysisStudio() {
           ) : mode === 'guided' ? (
             <>
               <div className="as-lenses">
-                {LENSES.map((l) => {
+                {LENSES.filter((l) => !l.hidden).map((l) => {
                   // Compare is meaningless with a single story — gate it on 2+ selected.
                   const compareDisabled = l.id === 'compare' && selected.length < 2;
                   return (
@@ -567,8 +648,11 @@ export default function AnalysisStudio() {
           )}
 
           <button className="as-run" onClick={onRun} disabled={running}>
-            {running ? 'Analyzing…' : 'Run analysis'}
+            {running ? 'Analyzing…' : sections.length > 0 ? '+ Add analysis' : 'Run analysis'}
           </button>
+          {sections.length > 0 && !running && (
+            <div className="as-hint">Runs another lens on the same frozen sources — no new fetch.</div>
+          )}
           {isMember && serverCapable ? (
             <div className="as-hint">Included with your membership — no API key needed.</div>
           ) : !byok ? (
@@ -597,139 +681,27 @@ export default function AnalysisStudio() {
         </section>
       </div>
 
-      {/* Result */}
-      {(running || report) && (
+      {/* Result — S5c: a case's runs stack here (F2), with a DECK|BOARD toggle (F3,
+          desktop) / READ·MAP·LOG tabs (phone, P1). StudioRunResult renders each section
+          with the exact markup/classes a single run has always used (S5a/S5b). */}
+      {(running || sections.length > 0) && (
         <section className="as-result">
           <div className="as-panel-head">
             <h2>Analysis</h2>
-            {report && !running && (
-              <button className="as-rerun" onClick={onRun}>Run again</button>
-            )}
           </div>
-          {running ? (
+          {running && (
             <div className="as-muted">Running on {serverCapable && mode !== 'deep' && (isMember || !byok) ? 'Global Perspectives AI' : modelChip}…</div>
-          ) : (
-            <>
-              {sourceInfo && sourceInfo.total > 0 && (
-                <div className={`as-srcbasis${sourceInfo.severity === 'warn' ? ' warn' : ''}`}>
-                  <span className="as-check-dot" aria-hidden />
-                  <span><strong>Source basis:</strong> {sourceInfo.message}</span>
-                </div>
-              )}
-
-              {checks && checks.hasError ? (
-                // Checks actually gate: a run with a guardrail breach is hidden behind
-                // an explicit expand, and never shareable, however the reader gets
-                // there (TRACK_RECORD_AND_STUDIO_RULING.md S5). Previously `hasError`
-                // only colored this banner red — the report still rendered in full
-                // regardless (critic 2, AnalysisStudio.jsx:387).
-                <div className="as-checks err" role="alert">
-                  <div className="as-checks-head">Checks failed — this run is not shareable</div>
-                  <ul>
-                    {checks.warnings.filter((w) => w.severity === 'error').map((w, i) => (
-                      <li key={i} className={`sev-${w.severity}`}>
-                        <span className="as-check-dot" aria-hidden />
-                        {w.message}
-                      </li>
-                    ))}
-                  </ul>
-                  {!showFailedAnyway ? (
-                    <button className="as-link-btn as-show-failed" onClick={() => setShowFailedAnyway(true)}>
-                      Show anyway (not shareable) →
-                    </button>
-                  ) : (
-                    <div className="as-not-shareable">Shown despite failed checks — not shareable. Your provider still charged for this run.</div>
-                  )}
-                </div>
-              ) : checks && checks.warnings.length > 0 ? (
-                <div className="as-checks">
-                  <div className="as-checks-head">Guardrail check — please verify the flagged items</div>
-                  <ul>
-                    {checks.warnings.map((w, i) => (
-                      <li key={i} className={`sev-${w.severity}`}>
-                        <span className="as-check-dot" aria-hidden />
-                        {w.message}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : checks && checks.ok ? (
-                <div className="as-checks ok">
-                  <span className="as-check-dot" aria-hidden />
-                  Guardrail check passed — every source cited exists and no unsupported figures were detected.
-                </div>
-              ) : null}
-
-              {(!checks?.hasError || showFailedAnyway) && (
-                <>
-                  <Markdown text={report} className="as-md" links={webLinkMap(webSources)} />
-                  {struct && (
-                    <>
-                      <ScenarioBars scenarios={struct.scenarios} />
-                      <IndicatorMatrix indicators={struct.indicators} />
-                      <RippleTable ripples={struct.ripples} />
-                    </>
-                  )}
-                  {webSources.length > 0 && (
-                    <div className="as-cites as-cites-web">
-                      <div className="label">Web sources (model-retrieved) <span className="as-web-chip">web</span></div>
-                      <ol>
-                        {webSources.map((w) => (
-                          <li key={w.url}>
-                            <span className="as-cite-num">[W{w.n}]</span>{' '}
-                            <a href={w.url} target="_blank" rel="noopener noreferrer">{w.title}</a>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-                  {citations.length > 0 && (
-                    <div className="as-cites">
-                      <div className="label">Sources</div>
-                      <ol>
-                        {citations.map((c) => (
-                          <li key={c.n}>
-                            <span className={`as-kind-chip as-kind-${(c.kind || '').toLowerCase()}`}>{SOURCE_KIND_LABELS[c.kind] || c.kind}</span>
-                            <span className="as-cite-date">{c.date || 'date unknown'}</span>
-                            {c.storyTitle && <span className="as-cite-title"> — {c.storyTitle}</span>}
-                            {c.label && c.label !== c.storyTitle && <span className="as-cite-meta"> ({c.label})</span>}
-                            {c.url && (
-                              <span className="as-cite-links">
-                                <a href={c.url} target="_blank" rel="noopener noreferrer">link</a>
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-                  <p className="as-disclaimer">
-                    Generated by {ranOnServer && webSources.length === 0 ? 'Global Perspectives AI' : 'your chosen model'} from our story data
-                    {webSources.length > 0 && ' plus model-retrieved web sources (not verified by our pipeline)'}.
-                    Treat as analyst input, not fact — verify load-bearing claims against the linked sources.
-                  </p>
-                </>
-              )}
-
-              {(() => {
-                const receipt = buildReceipt({
-                  usage,
-                  model: ranOnServer ? null : (byok?.model || usage?.model || null),
-                  checks,
-                  sourcesUsed: citations.length,
-                  elapsedMs,
-                  memberPath: ranOnServer,
-                });
-                return (
-                  <div className="as-receipt-block">
-                    <div className="as-receipt-head">Receipt</div>
-                    <ul>
-                      {receipt.lines.map((l, i) => <li key={i}>{l}</li>)}
-                    </ul>
-                  </div>
-                );
-              })()}
-            </>
+          )}
+          {!running && sections.length > 0 && (
+            <StudioDeck
+              sections={sections}
+              view={deckView}
+              onToggleView={setDeckView}
+              expandedFailed={expandedFailed}
+              onShowAnyway={handleShowAnyway}
+              phone={isPhone}
+              category={selectedTopics[0]?.category}
+            />
           )}
         </section>
       )}

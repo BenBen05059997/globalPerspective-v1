@@ -157,6 +157,13 @@ async function selectFirstStoryAndRun() {
   fireEvent.click(runBtn);
 }
 
+// S5c (monitor round 2): the result now defaults to the dark DECK view (one slide at a
+// time) — these S5a/S5b tests are checking the validator/receipt LOGIC via the original,
+// unchanged full markup, which lives behind "Read as text" now (StudioRunResult, untouched).
+function switchToReadAsText() {
+  fireEvent.click(screen.getByRole('button', { name: /read as text/i }));
+}
+
 describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
   beforeEach(() => {
     // useWeeklyArchive (the earlier-stories picker, D2) caches to localStorage — clear it
@@ -179,6 +186,8 @@ describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
 
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     await selectFirstStoryAndRun();
+    await screen.findByRole('button', { name: /read as text/i });
+    switchToReadAsText();
     await waitFor(() => expect(screen.getByText(/Guardrail check passed/i)).toBeInTheDocument());
 
     expect(screen.getByText(/Tokens: 1450 in \/ 380 out/i)).toBeInTheDocument();
@@ -201,10 +210,12 @@ describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
 
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     await selectFirstStoryAndRun();
+    await screen.findByRole('button', { name: /read as text/i });
+    switchToReadAsText();
     await waitFor(() => expect(screen.getByText(/Checks failed — this run is not shareable/i)).toBeInTheDocument());
 
     // Hidden by default — the prose/report is not in the DOM at all.
-    expect(screen.queryByText(/Bottom line/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Bottom line$/i)).not.toBeInTheDocument();
     writeSnapshot('s5a_studio_fail_hidden', container);
 
     fireEvent.click(screen.getByText(/Show anyway/i));
@@ -268,6 +279,8 @@ describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
     });
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     await selectFirstStoryAndRun();
+    await screen.findByRole('button', { name: /read as text/i });
+    switchToReadAsText();
     await waitFor(() => expect(screen.getByText(/Guardrail check passed/i)).toBeInTheDocument());
     expect(screen.getByText(/Receipt/)).toBeInTheDocument();
     expect(screen.getByText(/Checks: passed/)).toBeInTheDocument();
@@ -283,6 +296,8 @@ describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
     });
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     await selectFirstStoryAndRun();
+    await screen.findByRole('button', { name: /read as text/i });
+    switchToReadAsText();
     await waitFor(() => expect(screen.getByText(/Checks failed — this run is not shareable/i)).toBeInTheDocument());
     const receiptBlock = container.querySelector('.as-receipt-block');
     expect(receiptBlock.textContent).toMatch(/Checks: failed/);

@@ -54,6 +54,18 @@ export function extractStruct(text) {
 
 const DIRECTIONS = new Set(['up', 'down', 'mixed']);
 const MAGNITUDES = new Set(['small', 'moderate', 'large']);
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// D4 (S5c, TASK_2026-09-27_pages_local.md): scenarios may optionally carry `places` (place
+// names) and `by` (a dated trigger) so the Scenario lens picture can draw real bands from
+// today to a dated trigger and an "our data vs this run" map. Both are index-only, same as
+// pLow/pHigh — never new content: `by`'s day-of-month digits must already appear in the
+// prose (the same anti-invention cross-check numsInProse applies elsewhere), and `places`
+// are cross-checked against the run's SOURCE regions downstream (lib/oursVsRun.js
+// dropUnbackedPlaces) — this module only enforces the shape + the prose cross-check.
+function isValidByDate(by) {
+  return typeof by === 'string' && ISO_DATE_RE.test(by);
+}
 
 // True only when EVERY number in `nums` literally appears (as a plain digit string)
 // somewhere in `prose`. This is the anti-invention cross-check from the plan: the
@@ -84,7 +96,21 @@ export function validateStruct(struct, prose) {
     .filter((s) => s && typeof s.name === 'string' && s.name.trim())
     .filter((s) => isPct(s.pLow) && isPct(s.pHigh) && s.pLow <= s.pHigh)
     .filter((s) => numsInProse([s.pLow, s.pHigh], p))
-    .map((s) => ({ name: s.name.trim(), pLow: s.pLow, pHigh: s.pHigh }));
+    .map((s) => {
+      const out = { name: s.name.trim(), pLow: s.pLow, pHigh: s.pHigh };
+      // `by`: only kept when it's a real ISO date AND its day-of-month digits are
+      // literally in the prose — a fabricated calendar date never survives.
+      if (isValidByDate(s.by) && numsInProse([Number(s.by.slice(8, 10))], p)) {
+        out.by = s.by;
+      }
+      // `places`: non-empty strings only, deduped, capped small (a picture, not a gazetteer).
+      if (Array.isArray(s.places)) {
+        const cleaned = s.places.filter((pl) => typeof pl === 'string' && pl.trim()).map((pl) => pl.trim());
+        const uniq = [...new Set(cleaned)].slice(0, 6);
+        if (uniq.length) out.places = uniq;
+      }
+      return out;
+    });
 
   const indicators = (Array.isArray(struct.indicators) ? struct.indicators : [])
     .filter((i) => i && typeof i.signal === 'string' && i.signal.trim())

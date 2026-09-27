@@ -164,4 +164,44 @@ describe('validateStruct', () => {
     expect(out.indicators).toHaveLength(1);
     expect(out.ripples).toHaveLength(1);
   });
+
+  // D4 (S5c): scenarios may optionally carry `places[]` + `by` (a dated trigger).
+  describe('D4 — scenario places + by', () => {
+    const PROSE_WITH_DATE = `${GOOD_PROSE}\nA further escalation near Taiwan is possible if talks fail by October 31.`;
+
+    it('keeps a valid `by` date whose day-of-month digits appear in the prose', () => {
+      const struct = { scenarios: [{ name: 'Holds', pLow: 55, pHigh: 65, by: '2026-10-31', places: ['Taiwan'] }] };
+      const out = validateStruct(struct, PROSE_WITH_DATE);
+      expect(out.scenarios[0].by).toBe('2026-10-31');
+      expect(out.scenarios[0].places).toEqual(['Taiwan']);
+    });
+
+    it('drops `by` when it is not a real ISO date, but keeps the scenario', () => {
+      const struct = { scenarios: [{ name: 'Holds', pLow: 55, pHigh: 65, by: 'October 31' }] };
+      const out = validateStruct(struct, PROSE_WITH_DATE);
+      expect(out.scenarios[0].by).toBeUndefined();
+      expect(out.scenarios[0].name).toBe('Holds');
+    });
+
+    it('drops `by` when its digits never appear in the prose (anti-invention)', () => {
+      const struct = { scenarios: [{ name: 'Holds', pLow: 55, pHigh: 65, by: '2026-12-25' }] };
+      const out = validateStruct(struct, GOOD_PROSE);
+      expect(out.scenarios[0].by).toBeUndefined();
+    });
+
+    it('dedupes and caps `places`, dropping non-string/empty entries', () => {
+      const struct = {
+        scenarios: [{ name: 'Holds', pLow: 55, pHigh: 65, places: ['Taiwan', 'Taiwan', '', null, 1, 'A', 'B', 'C', 'D', 'E', 'F'] }],
+      };
+      const out = validateStruct(struct, GOOD_PROSE);
+      expect(out.scenarios[0].places).toEqual(['Taiwan', 'A', 'B', 'C', 'D', 'E']);
+    });
+
+    it('omits `places`/`by` entirely when absent — never invents them', () => {
+      const struct = { scenarios: [{ name: 'Holds', pLow: 55, pHigh: 65 }] };
+      const out = validateStruct(struct, GOOD_PROSE);
+      expect(out.scenarios[0]).not.toHaveProperty('places');
+      expect(out.scenarios[0]).not.toHaveProperty('by');
+    });
+  });
 });

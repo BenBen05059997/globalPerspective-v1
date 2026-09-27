@@ -253,3 +253,28 @@ export const LIVE_FIXTURES = [
     ],
   },
 ];
+
+// ── D4 gp-struct scenario places/by regression (S5c) — extractStruct/validateStruct
+//    is the anti-invention gate for the Studio deck's Scenario picture (scenarioBands.js)
+//    and its "our data vs this run" map (oursVsRun.js); this net catches a regression in
+//    that gate directly, the same way RICHNESS_CASES nets buildStorySources above. ──────
+export const STRUCT_CASES = [
+  {
+    name: 'places_by_kept — dated trigger + place both named in the prose',
+    prose: 'A further escalation near Taiwan sits at 20–30% and is possible if talks fail by October 31.',
+    struct: { scenarios: [{ name: 'Collapse', pLow: 20, pHigh: 30, by: '2026-10-31', places: ['Taiwan'] }] },
+    expect: { by: '2026-10-31', places: ['Taiwan'] },
+  },
+  {
+    name: 'by_dropped — a date whose digits never appear in the prose is dropped, not invented',
+    prose: 'A further escalation sits at 20–30% if talks fail.',
+    struct: { scenarios: [{ name: 'Collapse', pLow: 20, pHigh: 30, by: '2026-12-25' }] },
+    expect: { by: undefined, places: undefined },
+  },
+  {
+    name: 'places_dropped_downstream_is_a_separate_check — validateStruct keeps a place the prose names even if no source backs it (that gate is oursVsRun.js, not this one)',
+    prose: 'A further escalation near Atlantis sits at 20–30%.',
+    struct: { scenarios: [{ name: 'Collapse', pLow: 20, pHigh: 30, places: ['Atlantis'] }] },
+    expect: { by: undefined, places: ['Atlantis'] },
+  },
+];

@@ -1,5 +1,23 @@
 # Global Perspectives — Change Log
 
+## 2026-09-27 (Stage S5c: Studio deck, 4 lenses, stacking, board; branch `map-console`, local only)
+
+- **Deck** (`analysis-studio/components/StudioDeck.jsx`): a finished run opens as a dark console deck, reusing story mode's `StoryMap` and slide styles:
+  - the map shades only the places a source backs;
+  - slides: Bottom line → the lens picture → Our data vs this run → Sources → Receipt;
+  - a time bar of real dates;
+  - DECK \| READ AS TEXT (the previous long view, unchanged) \| BOARD (desktop case board);
+  - phone: READ / MAP (lazy) / LOG.
+- **Four lenses at launch, one picture each:**
+  - Scenario: bands from today to each `by` date;
+  - Compare: lanes, shared regions, one judged link, a cited grid;
+  - What changed: a risk series from `country_history` with gaps (never interpolated), plus the drift change log with a wording / direction mismatch flag. The live Iran 19 Aug note is a fixture;
+  - Free-form: a sentence lights the sources it cites.
+  Economic ripple is hidden from the picker (parked).
+- **"+ Add analysis"** runs another lens on the same frozen sources (no re-fetch); sections stack, each with its own checks and receipt.
+- **D4:** gp-struct scenarios carry `places[]` and a `by` date; a place no selected story lists is dropped from the picture and noted. The analysis eval gains Layer A3.
+- Source dates are formatted ("Sep 22, 2026") inside `<time dateTime>`.
+
 ## 2026-09-27 (Stage S5b: Studio stored-data feed D2 + quote/receipt; branch `map-console`, local only)
 
 - **D2 feed — every selected story is analysable, not just today's ~17.** When a selected

@@ -60,6 +60,8 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 ## Decisions
 **Decided (operator, 2026-09-27):**
 - **Gemini is replaced by DeepSeek** ("gemini is not that good and we should use flash deepseek instead of gemini"). Story analysis moves to DeepSeek; the Gemini judges are parked with economy; source audit goes to flash.
+- **No fallback provider (D2c)** ("no need the fall back providr"). Protection = prepaid buffer (B1) + the balance alarm (D6m).
+- **Parking goes first:** plan and checklist in `TASK_2026-09-27_parking.md`.
 - **Scope approved:** the "needed now" (green) and "cheap, worth it" (yellow) lists below, **including the scoring pipeline (D6)** and the operator's ~1 h/week confirmation.
 
 **Open:**
@@ -68,7 +70,6 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 | **D1** | Top up DeepSeek + rename `deepseek-v4-flash` → `deepseek-flash` on the 13 flagged Lambdas | **Yes, before 11 Oct** |
 | **B1** | Monthly AI budget + prepaid buffer (no auto-recharge on DeepSeek's official pages) | Operator's call; a buffer that covers several weeks |
 | **D2b** | Story analysis: flash or v4-pro | Compare on ~10 real stories (`quality/analysis`), leaning v4-pro |
-| **D2c** | Fallback provider: none (buffer + alarm) or OpenAI gpt-5-mini ($0.25 / $2.00) | Operator's call; "none + alarm + buffer" is acceptable at this size |
 | **D3** | v4-pro for the four high-leverage calls | Yes |
 | **D5** | Move the DeepSeek jobs out of the peak window (to ≥ 10:00 UTC) | Yes |
 | **D6m** | Monitoring: an "Insufficient Balance" log-metric alarm → SNS naming the cause; the freshness alert as one alert + a daily reminder | Yes, first |

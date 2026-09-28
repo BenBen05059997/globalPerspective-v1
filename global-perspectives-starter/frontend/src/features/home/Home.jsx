@@ -19,6 +19,7 @@ import LedeBand from '@/features/home/components/LedeBand';
 import BreakingStrip from '@/features/breaking/components/BreakingStrip';
 import SubscribeCard from '@/features/account/components/SubscribeCard';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
+import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
 import { composeTopicsLede } from '@/features/home/lib/composeTopicsLede';
@@ -71,7 +72,7 @@ function getTopicId(t, idx) {
 
 function Home() {
   const { topics, loading, error, refetch, isStale, updatedAt, hasNewData } = useGeminiTopics();
-  const { data: allDisruptions = [] } = useDisruptionsList({ limit: 100 });
+  const { data: allDisruptions = [] } = useDisruptionsList({ limit: 100 }, { enabled: !ECONOMY_PARKED });
   const disruptionByThread = React.useMemo(() => {
     const m = {};
     for (const d of allDisruptions) { if (d.scopeId) m[d.scopeId] = d; }
@@ -456,7 +457,7 @@ function Home() {
                   {t.category && <span className="home-topic-cat">{t.category}</span>}
                   {t.x_trending && <span className="home-trend-pill">TRENDING</span>}
                   {t.urgency === 'high' && <span className="home-urgency-pill">URGENT</span>}
-                  {t.threadId && disruptionByThread[t.threadId]?.severity && (
+                  {!ECONOMY_PARKED && t.threadId && disruptionByThread[t.threadId]?.severity && (
                     <Link
                       to={threadPath(t.threadId, { tab: 'economy' })}
                       style={{ textDecoration: 'none' }}
@@ -480,12 +481,12 @@ function Home() {
                   }
                   {t.threadId && (
                     <Link
-                      to={disruptionByThread[t.threadId]
+                      to={!ECONOMY_PARKED && disruptionByThread[t.threadId]
                         ? threadPath(t.threadId, { tab: 'economy' })
                         : '/weekly'}
                       className="home-thread-badge"
                     >
-                      {disruptionByThread[t.threadId] ? 'Economic impact →' : 'Story arc →'}
+                      {!ECONOMY_PARKED && disruptionByThread[t.threadId] ? 'Economic impact →' : 'Story arc →'}
                     </Link>
                   )}
                 </h3>

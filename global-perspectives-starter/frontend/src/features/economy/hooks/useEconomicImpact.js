@@ -4,13 +4,13 @@ import { fetchEconomicImpact } from '@/shared/api/restProxy.js';
 const CACHE_KEY = (id) => `gp_econ_${id}`;
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
-export function useEconomicImpact(threadId) {
+export function useEconomicImpact(threadId, { enabled = true } = {}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!threadId) return;
+    if (!threadId || !enabled) return;
 
     const key = CACHE_KEY(threadId);
     try {
@@ -38,7 +38,7 @@ export function useEconomicImpact(threadId) {
         setData(null);
       })
       .finally(() => setLoading(false));
-  }, [threadId]);
+  }, [threadId, enabled]);
 
   return { data, loading, error };
 }

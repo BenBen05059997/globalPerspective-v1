@@ -14,7 +14,7 @@ const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
  *
  * Returns: { data: Array<impact>, loading, error }
  */
-export function useDisruptionsList(filters = {}) {
+export function useDisruptionsList(filters = {}, { enabled = true } = {}) {
   const stable = useMemo(() => ({
     minSeverity: filters.minSeverity || null,
     country: filters.country || null,
@@ -26,6 +26,7 @@ export function useDisruptionsList(filters = {}) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) return;
     const key = CACHE_KEY(stable);
     try {
       const cached = localStorage.getItem(key);
@@ -50,7 +51,7 @@ export function useDisruptionsList(filters = {}) {
         setData([]);
       })
       .finally(() => setLoading(false));
-  }, [stable]);
+  }, [stable, enabled]);
 
   return { data, loading, error };
 }

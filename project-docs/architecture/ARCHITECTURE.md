@@ -531,7 +531,7 @@ Free economic-data ingest — **no LLM**, all free feeds.
 
 ### 14. `newsEconomicImpact`
 **Path:** `amplify/backend/function/newsEconomicImpact/src/index.js`
-**Trigger:** EventBridge Rule — `TriggerNewsEconomicImpact` — `cron(30 7 * * ? *)` (daily 07:30 UTC, after thread analysis)
+**Trigger:** EventBridge Rule — `TriggerNewsEconomicImpact` — **DISABLED 2026-09-28 (parked; `TASK_2026-09-27_parking.md`)** — `cron(30 7 * * ? *)` (daily 07:30 UTC, after thread analysis)
 
 Per-thread economic disruption analysis — the "Economic Disruption Layer." Uses **DeepSeek V4**.
 
@@ -549,7 +549,7 @@ Per-thread economic disruption analysis — the "Economic Disruption Layer." Use
 
 ### 15. `newsEconomicQuality`
 **Path:** `amplify/backend/function/newsEconomicQuality/src/index.js`
-**Trigger:** EventBridge Rule — `TriggerNewsEconomicQuality` — `cron(0 8 * * ? *)` (daily 08:00 UTC, after economic impact; aligned with Gemini quota reset)
+**Trigger:** EventBridge Rule — `TriggerNewsEconomicQuality` — **DISABLED 2026-09-28 (parked; `TASK_2026-09-27_parking.md`)** — `cron(0 8 * * ? *)` (daily 08:00 UTC, after economic impact; aligned with Gemini quota reset)
 
 LLM-as-judge quality gate for economic-impact records. Deliberately a **different model family** from the producer (DeepSeek produces, **Gemini 2.5 Flash** judges) so judge errors are less correlated with producer errors.
 
@@ -632,7 +632,7 @@ Turns the sink's passive capture into a push alert without a paid Sentry.
 
 ### 20. `newsPredictionResolver`
 **Path:** `amplify/backend/function/newsPredictionResolver/src/index.js`
-**Trigger:** EventBridge Rule — `TriggerPredictionResolver` — `cron(0 9 * * ? *)` (daily 09:00 UTC).
+**Trigger:** EventBridge Rule — `TriggerPredictionResolver` — **DISABLED 2026-09-28 (parked; `TASK_2026-09-27_parking.md`)** — `cron(0 9 * * ? *)` (daily 09:00 UTC).
 **Built:** 2026-06-02. Phase 2 of the prediction-calibration pipeline — see [Prediction calibration](#prediction-calibration-track-record).
 
 The **proposal** half of hybrid resolution. Reads `GlobalPerspectivePredictionLog` (status=`open`), finds dated triggers whose `deadline` ≤ today with no `proposal`/`finalVerdict`, grounds each against **Brave Search**, and asks the LLM (DeepSeek, `response_format: json_object`) for a fired/not_fired/unclear verdict + citation. Attaches `trigger.proposal = { verdict, confidence, citation, reasoning, sources, proposedAt }` + `needsConfirm=true` and writes the snapshot back. **Never finalizes** — a human confirms via `predictions/review.js` (no public auth surface). `MAX_RESOLVE_PER_RUN=40`, `LLM_CONCURRENCY=3`. Honest "unclear" when the news record is ambiguous rather than guessing.
@@ -875,7 +875,7 @@ Pulls GDELT conflict events and writes per-day country aggregates to S3 `corpus/
 
 ### 35. `newsImpactAudit` — coverage dead-man's-switch
 **Path:** `amplify/backend/function/newsImpactAudit/src/index.js`
-**Trigger:** EventBridge Rule — `TriggerImpactAudit` — **ENABLED** — `cron(0 9 * * ? *)` (daily 09:00 UTC). 256MB/120s. Uses **DeepSeek**.
+**Trigger:** EventBridge Rule — `TriggerImpactAudit` — **DISABLED 2026-09-28 (parked; `TASK_2026-09-27_parking.md`)** — `cron(0 9 * * ? *)` (daily 09:00 UTC). 256MB/120s. Uses **DeepSeek**.
 
 Audits whether high-impact events (per GDACS/GDELT) were MISSED by the main ingest selector; SNS-alerts to `GlobalPerspectiveAlerts` when misses ≥ `MISS_ALERT_THRESHOLD` (=2). **S8·T2 (2026-09-09): fully S3, zero DynamoDB** — reads the selector's saw-vs-chose capture from `audit/ingest-capture/latest.json` and GDACS/GDELT context from `corpus/gdacs/latest.json` + `corpus/gdelt/<day>.json`; writes its verdict to `audit/impact/<date>.json` + `latest.json`.
 
@@ -1136,9 +1136,9 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 |-----------|----------|--------|
 | `TriggerDailyAnalysis` | `cron(30 6 * * ? *)` | newsThreadAnalysis (06:30 UTC daily) |
 | `TriggerNewsSystemsAnalysis` | `cron(15 7 * * ? *)` | newsSystemsAnalysis (07:15 UTC daily) |
-| `TriggerNewsEconomicImpact` | `cron(30 7 * * ? *)` | newsEconomicImpact (07:30 UTC daily) |
-| `TriggerNewsEconomicQuality` | `cron(0 8 * * ? *)` | newsEconomicQuality (08:00 UTC daily) |
-| `TriggerPredictionResolver` | `cron(0 9 * * ? *)` | newsPredictionResolver (09:00 UTC daily) |
+| `TriggerNewsEconomicImpact` | `cron(30 7 * * ? *)` | **DISABLED 2026-09-28 (parked)** — newsEconomicImpact (07:30 UTC daily) |
+| `TriggerNewsEconomicQuality` | `cron(0 8 * * ? *)` | **DISABLED 2026-09-28 (parked)** — newsEconomicQuality (08:00 UTC daily) |
+| `TriggerPredictionResolver` | `cron(0 9 * * ? *)` | **DISABLED 2026-09-28 (parked)** — newsPredictionResolver (09:00 UTC daily) |
 | `TriggerWeeklyBrief` | `cron(0 6 ? * SUN *)` | newsWeeklyBrief (Sundays 06:00 UTC — generates the weekly signals draft) |
 | `TriggerWeeklyMarkets` | `cron(30 8 ? * SUN *)` | newsWeeklyMarkets (Sundays 08:30 UTC — generates the weekly markets-report draft) |
 | `newsSourceAuditDaily` | `cron(30 8 ? * * *)` | newsSourceAudit (#24 — daily source-truth audit; SNS-alerts on summary drift) |
@@ -1155,7 +1155,7 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 | `TriggerFreshnessMonitor` | `cron(30 0/2 * * ? *)` | newsFreshnessMonitor (#18) |
 | `TriggerErrorDigest` | `cron(15 0/6 * * ? *)` | newsErrorDigest (#19) |
 | `TriggerSignalsBuild` | `cron(0 10 * * ? *)` | newsSignals (Signal-API — deployed to prod; source merged to `main` 2026-08-01) |
-| `TriggerImpactAudit` | `cron(0 9 * * ? *)` | newsImpactAudit (impact-first — source merged to `main` 2026-08-01) |
+| `TriggerImpactAudit` | `cron(0 9 * * ? *)` | **DISABLED 2026-09-28 (parked)** — newsImpactAudit (impact-first — source merged to `main` 2026-08-01) |
 | `TriggerPredictionsSnapshot` | `rate(30 minutes)` | newsPredictionsSnapshot (S8·T3 — precomputes `predictions/track_record.json`) |
 | `TriggerGdacsIngest` | `rate(20 minutes)` (was `cron(0 */6 * * ? *)`, 2026-09-08) | newsGdacsIngest (GDACS ingest + situation opener) |
 | `TriggerSituationTracker` | `rate(30 minutes)` (2026-09-08) | newsSituationTracker (situation folder; **LIVE** since S2·T2) |

@@ -9,6 +9,7 @@ import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import { useMarketsCountry } from '@/features/economy/hooks/useMarketsCountry';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
+import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import CountryWhatChanged from '@/features/countries/components/CountryWhatChanged';
 import CountryCardV2 from '@/features/countries/components/CountryCardV2';
 import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
@@ -362,7 +363,10 @@ export default function CountryPage() {
   const intel = intelligence?.[decodedName];
   const { data: markets } = useMarketsCountry(decodedName);
   const { snapshots: riskHistory, driftNotes, driftNotesTotal, driftNotesGated } = useCountryHistory(decodedName);
-  const { data: countryDisruptions } = useDisruptionsList(decodedName ? { country: decodedName, limit: 5 } : {});
+  const { data: countryDisruptions } = useDisruptionsList(
+    decodedName ? { country: decodedName, limit: 5 } : {},
+    { enabled: !ECONOMY_PARKED },
+  );
 
   useEffect(() => {
     document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
@@ -482,8 +486,10 @@ export default function CountryPage() {
         </div>
       )}
 
-      {/* Economic Disruption — event-driven, dated to the hour */}
-      {countryDisruptions?.length > 0 && (
+      {/* Economic Disruption — event-driven, dated to the hour. Soft-hidden while
+          ECONOMY_PARKED: the underlying job is off, so countryDisruptions is always
+          [] (fetch skipped above), but the flag also guards the render directly. */}
+      {!ECONOMY_PARKED && countryDisruptions?.length > 0 && (
         <div className="cpg-rail-section">
           <div className="cpg-rail-hd">
             Economic Disruption

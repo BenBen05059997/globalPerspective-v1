@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-09-28 (Parking P1–P3 + economy surfaces hidden; branch `map-console` + live AWS)
+
+- **Live AWS:** EventBridge rules `TriggerNewsEconomicImpact`, `TriggerNewsEconomicQuality`, `TriggerPredictionResolver` and `TriggerImpactAudit` are **disabled** (14:40 UTC). The code is kept; undo with `aws events enable-rule`. Plan and evidence: `project-docs/architecture/_active/TASK_2026-09-27_parking.md`.
+- **Site:** economy is parked, so its surfaces are soft-hidden behind one flag (`shared/lib/economyFlag.js`):
+  - the story page Economy tab (`?tab=economy` opens Overview);
+  - the country "Economic Disruption" rail and the countries-list "Disruption" sort;
+  - `/daily` "Economic Footprint" and the old home's disruption links.
+  The hooks skip their fetches while parked; `/economy` itself is unchanged (direct URL). Tests: `economyParked.test.jsx` + extended page tests.
+
 ## 2026-09-27 (Stage S6: Track record E2 service record + E1 text version; branch `map-console`, local only)
 
 - **The pilot is excluded from every headline number.** All 122 currently-resolved triggers share

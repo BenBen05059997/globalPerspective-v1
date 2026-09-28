@@ -73,7 +73,9 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 | **D3** | v4-pro for the four high-leverage calls | Yes |
 | **D5** | Move the DeepSeek jobs out of the peak window (to ≥ 10:00 UTC) | Yes |
 | **D6m** | Monitoring: an "Insufficient Balance" log-metric alarm → SNS naming the cause; the freshness alert as one alert + a daily reminder | Yes, first |
-| **P1–P4** | Park economy (+ hide / label its Economy tab and country rail), the resolver and the impact audit; source audit on flash at 2–3 / week | Yes |
+| **P1–P3** | ✅ **Done 2026-09-28:** economy impact + quality judge, forecast resolver, impact audit parked; economy surfaces hidden on the site | — |
+| **P4** | Source audit on flash at 2–3 / week | Yes (next task) |
+| **Q1** | Signal API (`newsSignals`, 0 keys): park now + "signals v2" rebuilt on situations / GDACS / country risk / scored forecasts later? | Under discussion |
 | **R1** | Country briefings weekly + early refresh on a HIGH situation / GDACS / coverage jump, max 1 a day; card "older" at 14 d | Yes |
 | **R2** | Story jobs only for new / changed stories; forecast ≤ 1 / story / day | Yes |
 | **R3** | Topic selection every 8 h | Yes |

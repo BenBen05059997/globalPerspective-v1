@@ -21,6 +21,7 @@ import SourceRobustness from '@/shared/ui/SourceRobustness';
 import MechanismCard from '@/features/economy/components/MechanismCard';
 import ThreadForecast from '@/features/threads/components/ThreadForecast';
 import { useEconomicImpact } from '@/features/economy/hooks/useEconomicImpact';
+import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { useThreadForecast } from '@/features/threads/hooks/useThreadForecast';
 import StoryMode from '@/features/threads/components/StoryMode';
 import PhoneStoryMode from '@/features/threads/components/PhoneStoryMode';
@@ -141,8 +142,14 @@ export default function ThreadPage() {
   // disruption links on Economy/Daily/Country/Map). Unknown values → Overview
   // (the synthesis-first landing tab; falls back to Timeline when no analysis yet).
   const requestedTab = searchParams.get('tab');
+  // Economy parked (2026-09-28): 'economy' is no longer a selectable tab, so a
+  // ?tab=economy deep link (old disruption links) falls through to Overview,
+  // same as any other unknown tab value.
+  const allowedTabs = ECONOMY_PARKED
+    ? ['overview', 'timeline', 'actors', 'sources']
+    : ['overview', 'timeline', 'actors', 'sources', 'economy'];
   const [contentTab, setContentTab] = useState(() =>
-    ['overview', 'timeline', 'actors', 'sources', 'economy'].includes(requestedTab) ? requestedTab : 'overview');
+    allowedTabs.includes(requestedTab) ? requestedTab : 'overview');
   // S1 (STORY_WEB_RETHINK_PLAN.md §7): story mode is the default story page, on desktop and phone
   // alike (S2.2 — PhoneStoryMode replaces the phone's former long-page default). "Read in full" is
   // the alternate, long accessible page (unchanged below, same component on both breakpoints). A
@@ -185,8 +192,8 @@ export default function ThreadPage() {
 
   const { analyses, loading: analysisLoading } = useThreadAnalyses([threadId]);
   const analysis = analyses?.[threadId];
-  const { data: economicImpact, loading: economicLoading } = useEconomicImpact(threadId);
-  const hasEconomy = economicImpact && economicImpact.hasImpact !== false;
+  const { data: economicImpact, loading: economicLoading } = useEconomicImpact(threadId, { enabled: !ECONOMY_PARKED });
+  const hasEconomy = !ECONOMY_PARKED && economicImpact && economicImpact.hasImpact !== false;
   const category = thread?.entries[0]?.category?.toLowerCase();
   const catColors = CATEGORY_BADGE_COLORS[category];
 
@@ -278,7 +285,7 @@ export default function ThreadPage() {
     if (analysisLoading || economicLoading) return <IntelligenceLoader type="typewriter" />;
     // We may still hold the analysis and/or economic-impact record (keyed by the
     // same threadId). Show a focused fallback instead of a dead end.
-    const fallbackEconomy = economicImpact && economicImpact.hasImpact !== false;
+    const fallbackEconomy = !ECONOMY_PARKED && economicImpact && economicImpact.hasImpact !== false;
     if (analysis || fallbackEconomy) {
       const fallbackTitle = analysis?.threadTitle || economicImpact?.headline || humanizeThreadId(threadId);
       return (
@@ -457,7 +464,7 @@ export default function ThreadPage() {
     analysis?.keyActors?.length > 0 && { key: 'actors', label: 'Actors', count: analysis.keyActors.length },
     sourceRollup.length > 0 && { key: 'sources', label: 'Sources', count: sourceRollup.length },
     hasEconomy && { key: 'economy', label: 'Economy', count: economicImpact.instruments?.length || 0, severity: economicImpact.severity },
-  ].filter(Boolean);
+  ].filter(Boolean); // hasEconomy is always false while ECONOMY_PARKED — see above
 
   // Effective tab, derived (not reset via effects — no race with async fetches).
   // A deep-linked tab (?tab=economy) shows the first available tab until its data

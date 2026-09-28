@@ -1,4 +1,4 @@
-## Park the jobs that feed nothing we show (P1–P4) — 2026-09-27 — active (plan, awaiting operator "go")
+## Park the jobs that feed nothing we show (P1–P4) — 2026-09-27 — active (P1–P3 done 2026-09-28; signals under discussion)
 
 **Goal:** stop the scheduled AI jobs whose output no current page needs, **before** the DeepSeek top-up is spent, so each top-up lasts longer and parked features stop producing stale or unconfirmed data. Parking means disabling the schedule and keeping the code; every step is reversible with one command.
 
@@ -50,16 +50,16 @@ Bare single commands; each one verified before the next.
 ### ▶ LIVE TRACKER
 | Step | What | Status | Evidence |
 |---|---|---|---|
-| 0 | Operator "go" + Q1 (signals) + Q2 (hide vs label) | **Now** | |
-| 1 | Record the current rule states | Queued | |
-| 2–3 | Disable the 4 rules, verify each | Queued | |
-| 4 | Signals rule (if Q1 = park) | Queued | |
-| 5 | Frontend economy surfaces (Q2), verify + browser click-through | Queued | |
-| 6 | Next-day check: 0 invocations | Queued | |
+| 0 | Operator "go" + Q1 + Q2 | ✅ 2026-09-28 | "yes you can part the four daily job … you can hide q2". Q1 (signals): operator wants to rethink the algorithm, so it is not parked yet (see below) |
+| 1 | Record the current rule states | ✅ | all 4 `ENABLED`: EconomicImpact `cron(30 7 * * ? *)`, EconomicQuality `cron(0 8 * * ? *)`, PredictionResolver `cron(0 9 * * ? *)`, ImpactAudit `cron(0 9 * * ? *)` |
+| 2–3 | Disable the 4 rules, verify each | ✅ 2026-09-28 14:40 UTC | `aws events disable-rule` ×4 (single commands); `describe-rule` → all `DISABLED` |
+| 4 | Signals rule | ⏸ discussion | `newsSignals`: 0 API keys issued, 38 invocations / 30 d (its own daily build). Recommended: park + record "signals v2" (rebuilt on situations / GDACS / country risk / scored forecasts); operator deciding |
+| 5 | Frontend economy surfaces hidden | ✅ 2026-09-28 | Shared flag `shared/lib/economyFlag.js` (`ECONOMY_PARKED`). Hidden: story Economy tab (`?tab=economy` → Overview), country "Economic Disruption" rail, list "Disruption" sort, `/daily` "Economic Footprint", old home disruption links; no `economic_impact*` request fires (Playwright, 7 pages × 2 widths, 0 errors). Verify 742 tests, guards 52/0. `/economy` direct URL unchanged. The country card's GDP / FX row is from the live markets feed, so it's kept |
+| 6 | Next-day check: 0 invocations | **Next (2026-09-29)** | |
 
 **Completion checklist:**
-- [ ] 4 rules DISABLED and verified (+ signals if chosen)
-- [ ] economy surfaces hidden / labelled, verified in the browser
+- [x] 4 rules DISABLED and verified (signals: under discussion)
+- [x] economy surfaces hidden, verified in the browser
 - [ ] next-day invocation check
-- [ ] docs updated (ARCHITECTURE, BACKEND_PLAN, CHANGES, INDEX, memory)
+- [x] docs updated (ARCHITECTURE, BACKEND_PLAN, CHANGES, INDEX, memory)
 - [ ] status → done

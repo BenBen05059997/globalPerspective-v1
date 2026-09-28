@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
+import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
 import { RISK_COLORS, CATEGORY_BADGE_COLORS, riskTierToVar } from '@/shared/styles/tokens';
 import { TIER_ORDER, tierFromLevel, tierFromScore } from '@/shared/lib/riskTiers';
@@ -143,7 +144,7 @@ function LeftRail({ sortBy, onSort, searchQuery, onSearch, activeRegion, onRegio
       <div className="clp-rail-section">
         <div className="clp-rail-label">Sort</div>
         <div className="clp-sort-group">
-          {[['risk', 'Risk level'], ['articles', 'Coverage'], ['economy', 'Disruption'], ['alpha', 'A → Z']].map(([v, label]) => (
+          {[['risk', 'Risk level'], ['articles', 'Coverage'], !ECONOMY_PARKED && ['economy', 'Disruption'], ['alpha', 'A → Z']].filter(Boolean).map(([v, label]) => (
             <button
               key={v}
               className={`clp-sort-btn ${sortBy === v ? 'active' : ''}`}
@@ -273,7 +274,7 @@ export default function CountryListPage() {
   // "not enough coverage" bucket. Single batched call — no request-burst cost.
   const countryNames = useMemo(() => countries.slice(0, 24).map(c => c.name), [countries]);
   const { intelligence } = useCountryIntelligence(countryNames);
-  const { data: allDisruptions = [] } = useDisruptionsList({ limit: 200 });
+  const { data: allDisruptions = [] } = useDisruptionsList({ limit: 200 }, { enabled: !ECONOMY_PARKED });
 
   // Map: countryName → max severity from any thread disruption involving that country
   const maxSeverityByCountry = useMemo(() => {
@@ -344,7 +345,7 @@ export default function CountryListPage() {
     filteredFeatured = [...filteredFeatured].sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortBy === 'articles') {
     filteredFeatured = [...filteredFeatured].sort((a, b) => b.articles - a.articles);
-  } else if (sortBy === 'economy') {
+  } else if (!ECONOMY_PARKED && sortBy === 'economy') {
     filteredFeatured = [...filteredFeatured].sort((a, b) => {
       const sa = SEVERITY_RANK[maxSeverityByCountry[a.name]] || 0;
       const sb = SEVERITY_RANK[maxSeverityByCountry[b.name]] || 0;

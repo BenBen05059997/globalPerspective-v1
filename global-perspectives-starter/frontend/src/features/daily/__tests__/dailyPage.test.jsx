@@ -21,8 +21,9 @@ vi.mock('firebase/auth', () => ({
   signOut: vi.fn(),
 }));
 
+const useDisruptionsListMock = vi.fn(() => ({ data: [], loading: false, error: null }));
 vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({
-  useDisruptionsList: () => ({ data: [], loading: false, error: null }),
+  useDisruptionsList: (...args) => useDisruptionsListMock(...args),
 }));
 
 let briefValue;
@@ -110,5 +111,24 @@ describe('DailyPage — no brief found', () => {
     renderDaily('/daily');
     expect(screen.getByText(/No brief has been generated in the last month/i)).toBeInTheDocument();
     expect(screen.queryByText(/publishes at the end of the day/i)).not.toBeInTheDocument();
+  });
+});
+
+describe('DailyPage — economy parked (2026-09-28)', () => {
+  it('never renders "Economic Footprint", even if the disruptions hook returns data', () => {
+    // Even a hook that misbehaves and returns data anyway must not surface it —
+    // the outer <EconomicFootprint /> mount is gated on ECONOMY_PARKED directly.
+    useDisruptionsListMock.mockReturnValue({
+      data: [{ scopeId: 'thread-a', severity: 'severe', headline: 'x', instruments: [] }],
+      loading: false, error: null,
+    });
+    briefValue = {
+      brief: { displayDate: today, generatedAt: new Date().toISOString(), summary: '' },
+      servedDateKey: today,
+      loading: false,
+    };
+    renderDaily('/daily');
+    expect(screen.queryByText('Economic Footprint')).not.toBeInTheDocument();
+    useDisruptionsListMock.mockReturnValue({ data: [], loading: false, error: null });
   });
 });

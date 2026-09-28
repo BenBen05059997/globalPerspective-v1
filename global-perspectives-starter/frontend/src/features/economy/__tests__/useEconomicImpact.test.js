@@ -78,6 +78,15 @@ describe('useEconomicImpact — fetch lifecycle', () => {
     expect(result.current.data).toBeNull();
   });
 
+  // Economy parked (2026-09-28): every surface outside features/economy passes
+  // { enabled: !ECONOMY_PARKED } so the fetch is skipped entirely.
+  it('does not fetch when enabled: false, even with a threadId', async () => {
+    const { result } = renderHook(() => useEconomicImpact('thread-iran-x1', { enabled: false }));
+    await waitFor(() => true);
+    expect(fetchEconomicImpact).not.toHaveBeenCalled();
+    expect(result.current.data).toBeNull();
+  });
+
   it('returns null data on 404 (no record)', async () => {
     fetchEconomicImpact.mockResolvedValue({ success: false, error: 'Not found' });
     const { result } = renderHook(() => useEconomicImpact('thread-no-impact'));
@@ -148,6 +157,13 @@ describe('useDisruptionsList — filters + cache', () => {
     fetchDisruptionsList.mockRejectedValue(new Error('boom'));
     const { result } = renderHook(() => useDisruptionsList());
     await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.data).toEqual([]);
+  });
+
+  it('does not fetch when enabled: false', async () => {
+    const { result } = renderHook(() => useDisruptionsList({}, { enabled: false }));
+    await waitFor(() => true);
+    expect(fetchDisruptionsList).not.toHaveBeenCalled();
     expect(result.current.data).toEqual([]);
   });
 

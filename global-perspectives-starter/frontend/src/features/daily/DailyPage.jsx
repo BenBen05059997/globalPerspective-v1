@@ -5,6 +5,7 @@ import { useAuth } from '@/shared/contexts/AuthContext';
 import { useDailyBrief } from '@/features/daily/hooks/useDailyBrief';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import InstrumentChip from '@/features/economy/components/InstrumentChip';
+import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
 import { CATEGORY_BADGE_COLORS, RISK_COLORS } from '@/shared/styles/tokens';
 import ShareButtons from '@/shared/ui/ShareButtons';
@@ -115,7 +116,7 @@ function SectionHeader({ num, title, meta }) {
 }
 
 function EconomicFootprint() {
-  const { data: disruptions = [] } = useDisruptionsList({ limit: 50 });
+  const { data: disruptions = [] } = useDisruptionsList({ limit: 50 }, { enabled: !ECONOMY_PARKED });
 
   // Aggregate: pick top 5 instruments by citation count across active disruptions,
   // average direction (consensus) for each.
@@ -498,8 +499,8 @@ export default function DailyPage() {
         </section>
       )}
 
-      {/* ⑤ ECONOMIC FOOTPRINT */}
-      <EconomicFootprint />
+      {/* ⑤ ECONOMIC FOOTPRINT — soft-hidden while ECONOMY_PARKED (component kept, not mounted) */}
+      {!ECONOMY_PARKED && <EconomicFootprint />}
 
       {/* ⑥ SHAPE OF THE DAY — category breakdown */}
       {catEntries.length > 0 && (

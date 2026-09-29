@@ -72,7 +72,7 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 | **D2b** | Story analysis: flash or v4-pro | Compare on ~10 real stories (`quality/analysis`), leaning v4-pro |
 | **D3** | v4-pro for the four high-leverage calls | Yes |
 | **D5** | Move the DeepSeek jobs out of the peak window (to ≥ 10:00 UTC) | Yes |
-| **D6m** | Monitoring: an "Insufficient Balance" log-metric alarm → SNS naming the cause; the freshness alert as one alert + a daily reminder | Yes, first |
+| **D6m** | Monitoring: balance alarm + calmer freshness alert | **Declined 2026-09-29** (operator: "no need i know the reason so you can bypass the alarm one"). The existing `newsFreshnessMonitor` STALE alert stays as-is |
 | **P1–P3** | ✅ **Done 2026-09-28:** economy impact + quality judge, forecast resolver, impact audit parked; economy surfaces hidden on the site | — |
 | **P4** | Source audit on flash at 2–3 / week | Yes (next task) |
 | **Q1** | Signal API (`newsSignals`, 0 keys): park now + "signals v2" rebuilt on situations / GDACS / country risk / scored forecasts later? | Under discussion |

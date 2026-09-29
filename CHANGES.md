@@ -3,6 +3,14 @@
 ## 2026-09-29 (Backend Batch 1, live AWS: source audit on flash; story job skips repeats)
 
 - **P4:** `newsSourceAudit` `AUDIT_MODEL` `deepseek-v4-pro` → `deepseek-flash`; rule `newsSourceAuditDaily` → `cron(30 11 ? * MON,WED,FRI *)`.
+- **R3 / D5 / R4 / Q3 / Q9, schedules (UTC) moved out of DeepSeek's peak window and thinned:**
+  - topic selection `InvokeGoogleGemini` 4-hourly → 04:15 / 12:15 / 20:15;
+  - the story job `InvokeNewsAgent` → 10 minutes after;
+  - story analysis 04:40, story web 05:00, country briefings 05:15, drift 05:30 (after briefings);
+  - breaking-alert check → 35 minutes past each topic run;
+  - country facts → weekly (Mon 05:00 JST);
+  - drift lookback 10 → 16 days, max events 25 → 40;
+  - proxy `TOPICS_CACHE_MAX_AGE_SECONDS=32400`, matching the 8-hour topic cadence.
 - **R2 `NewsProjectInvokeAgentLambda-dev`** (deployed; repo = deployed, byte-identical):
   - skips a topic batch it has already fully processed (`agentProcessedAt` on staging);
   - reuses a story's summary / cause / forecast when its sources are unchanged (source fingerprint), re-stamped so the prune step keeps it;

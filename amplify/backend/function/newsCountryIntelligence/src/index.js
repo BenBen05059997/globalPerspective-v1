@@ -93,8 +93,11 @@ exports.handler = async (event = {}) => {
   const threadAnalyses = await loadThreadAnalyses(entries);
   console.log(`Loaded ${Object.keys(threadAnalyses).length} thread analyses`);
 
-  const countries = groupByCountry(entries, threadAnalyses);
-  console.log(`Found ${countries.length} countries with 2+ articles`);
+  const grouped = groupByCountry(entries, threadAnalyses);
+  // R1b: region / aggregate keys are not briefed (existing records stay untouched)
+  const countries = grouped.filter((c) => refreshPolicy.isCountryName(c.countryName));
+  const excluded = grouped.filter((c) => !refreshPolicy.isCountryName(c.countryName));
+  console.log(`Found ${grouped.length} keys with 2+ articles: ${countries.length} countries, ${excluded.length} excluded as regions / aggregates (${excluded.map((c) => c.countryName).join(', ') || 'none'})`);
 
   const now = new Date();
   const worldRes = await loadWorld();
@@ -116,6 +119,7 @@ exports.handler = async (event = {}) => {
       alerts: Object.fromEntries([...hot.entries()].map(([k, v]) => [k, v.map((a) => `${a.kind}:${a.id}`)])),
       alertsWithoutRecord: refreshPolicy.unmatchedAlerts(hot, countries),
       aliasedRecordKeys: keys.filter((k) => refreshPolicy.canonicalName(k) !== k.trim().toLowerCase()).map((k) => `${k} -> ${refreshPolicy.canonicalName(k)}`),
+      excludedKeys: excluded.map((c) => ({ key: c.countryName, articles: c.totalArticles })),
       plan,
       counts: plan.reduce((a, p) => { const k = p.refresh ? `refresh:${p.reason}` : `skip:${p.reason}`; a[k] = (a[k] || 0) + 1; return a; }, {}),
     };

@@ -108,3 +108,32 @@ test('unmatchedAlerts lists alert countries with no record', () => {
   const hot = new Map([['japan', []], ['fiji', []]]);
   assert.deepEqual(P.unmatchedAlerts(hot, [country('Japan', 5)]), ['fiji']);
 });
+
+// ---------- R1b: only real countries / territories are briefed ----------
+test('isCountryName keeps real places, including those without an ISO3 table entry', () => {
+  for (const n of ['United States', 'USA', 'Iran', 'Palestine', 'Palestinian Territories', 'Gaza', 'Kosovo', 'Taiwan', 'Hong Kong', 'Greenland',
+    'Iceland', 'Jamaica', 'Costa Rica', 'Burundi', 'Gambia', 'DR Congo', 'Democratic Republic of Congo', 'Democratic Republic of the Congo',
+    'Republic of the Congo', 'Czech Republic', 'Czechia', 'Ivory Coast', "Côte d'Ivoire", 'Türkiye', 'Turkey', 'South Korea', 'North Korea',
+    'United Arab Emirates', 'UAE', 'Bosnia and Herzegovina', 'Myanmar', 'Eswatini', 'Vatican City', 'Antigua and Barbuda']) {
+    assert.equal(P.isCountryName(n), true, n);
+  }
+});
+
+test('isCountryName drops regions and aggregates', () => {
+  for (const n of ['Europe', 'Asia', 'Africa', 'Americas', 'Middle East', 'Global', 'European Union', 'NATO', 'United Nations', 'Oceania',
+    'North America', 'Southeast Asia', 'Latin America', 'Gulf', 'Western Balkans', 'Caribbean', 'Eastern Europe', 'Sub-Saharan Africa', 'World', 'Scotland', '']) {
+    assert.equal(P.isCountryName(n), false, n || '(empty)');
+  }
+});
+
+test('after excluding aggregates the top 20 are all real countries', () => {
+  const names = ['United States', 'Europe', 'Russia', 'China', 'Iran', 'Asia', 'Middle East', 'Ukraine', 'Germany', 'United Kingdom', 'Americas', 'Israel',
+    'Yemen', 'Saudi Arabia', 'Global', 'Africa', 'France', 'India', 'Philippines', 'Canada', 'Brazil', 'United Arab Emirates', 'South Africa', 'Nepal', 'Palestine', 'Nigeria'];
+  const countries = names.map((n, i) => country(n, 200 - i)).filter((c) => P.isCountryName(c.countryName));
+  const plan = P.planRun({ countries, existingByName: {}, hot: new Map(), now: NOW });
+  const top = plan.filter((p) => p.tier === 'top20').map((p) => p.country);
+  assert.equal(top.length, 20);
+  assert.ok(top.every((n) => P.isCountryName(n)));
+  assert.ok(top.includes('Brazil') && top.includes('Palestine'));   // slots freed by the 6 aggregates
+  assert.equal(plan.some((p) => ['Europe', 'Asia', 'Global'].includes(p.country)), false);
+});

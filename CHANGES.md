@@ -2,6 +2,11 @@
 
 ## 2026-09-29 (Backend Batch 2, live AWS: models)
 
+- **R1b `newsCountryIntelligence`** (operator: "yes for both batch 1 question"):
+  - only real countries / territories are briefed (`placeNames.json`, 271 CLDR names + variants), so the top 20 are real countries;
+  - aggregates are excluded: Europe, Asia, Africa, Americas, Middle East, Global, EU, NATO, UN, Oceania, North America, Southeast Asia, and Scotland (subnational). Their existing records are untouched;
+  - the alert refinement is kept: refresh only on an alert that opened or changed after the last briefing.
+  - Tests 15.
 - **D:** `newsModelGuard` `MODEL_VARS` now includes `PREDICTION_MODEL`.
 - **Legal copy (operator-approved, branch `map-console`):** Disclosures and Privacy no longer list Google Gemini for topic detection / analysis (no live job uses it after Batch 2). The Disclosures quality-check paragraph is marked "currently paused" (the economy judge is parked).
 - **C: `deepseek-v4-pro`** for topic selection (`newsInvokeGemini-dev`, timeout 355 → 600 s), the daily brief (`newsPostDevTo`, 120 → 240 s) and the weekly brief (`newsWeeklyBrief`, 180 → 300 s). Env-only; all three already send thinking disabled.

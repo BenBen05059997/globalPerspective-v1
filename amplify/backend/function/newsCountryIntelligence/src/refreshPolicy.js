@@ -13,6 +13,9 @@
 // The top `topN` countries by coverage are always candidates; up to `maxExtras` further countries are
 // candidates ONLY while they have an active alert.
 
+const ISO3_NAMES = require('./iso3Names.json');
+const PLACE_NAMES = require('./placeNames.json');
+
 const ACTIVE_STATES = new Set(['emerging', 'escalating']);
 
 const DEFAULT_CFG = {
@@ -49,6 +52,19 @@ const ALIASES = {
 function canonicalName(name) {
   const k = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
   return ALIASES[k] || k;
+}
+
+// R1b: only real countries / territories are briefed, so the top-20 slots do not go to region or
+// aggregate keys the LLM puts in `regions` (Europe, Asia, Middle East, Americas, Africa, Global,
+// European Union, NATO, ...). Allowed = a name in the ISO3 table OR in placeNames.json (the CLDR list
+// of every country / territory + the variants briefings use: Kosovo, Hong Kong, Taiwan, Palestine, ...).
+// Everything else is EXCLUDED and reported by the dry run. Existing region records stay in DynamoDB.
+const normKey = (n) => String(n || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+const PLACE_KEYS = new Set([...Object.values(ISO3_NAMES), ...PLACE_NAMES].map(normKey));
+
+function isCountryName(name) {
+  return PLACE_KEYS.has(normKey(name)) || PLACE_KEYS.has(normKey(canonicalName(name)));
 }
 
 const ymd = (iso) => String(iso || '').slice(0, 10);
@@ -137,4 +153,4 @@ function unmatchedAlerts(hot, countries) {
   return [...hot.keys()].filter((n) => !have.has(n));
 }
 
-module.exports = { DEFAULT_CFG, canonicalName, hotCountriesFromWorld, decideRefresh, planRun, unmatchedAlerts };
+module.exports = { isCountryName, normKey, DEFAULT_CFG, canonicalName, hotCountriesFromWorld, decideRefresh, planRun, unmatchedAlerts };

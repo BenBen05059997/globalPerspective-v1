@@ -3,6 +3,7 @@
 ## 2026-09-29 (Backend Batch 2, live AWS: models)
 
 - **D:** `newsModelGuard` `MODEL_VARS` now includes `PREDICTION_MODEL`.
+- **B: story forecast on `deepseek-v4-pro`** (`NewsProjectInvokeAgentLambda-dev`): new env `PREDICTION_MODEL` for the research + forecast calls; summary / cause stay `deepseek-flash`. Every body is built by `buildChatBody`, which always disables thinking. Concurrency 4 → 8, timeout 600 → 900 s. Tests 31.
 - **A: `newsThreadAnalysis` moves from Gemini 2.5 Flash (free tier) to DeepSeek `deepseek-flash`** (deployed; repo = deployed).
   - The request sends `thinking:{type:'disabled'}` + JSON mode; the 13 s free-tier pacing is removed.
   - Change-driven (`src/threadPolicy.js`): a thread is analysed only when it is new or has a new topicId since its last analysis (ageing-out entries don't count). Newest first, cap 10; `dryRun`.

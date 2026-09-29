@@ -13,6 +13,7 @@ const {
 } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
+const PREDICTION_MODEL = process.env.PREDICTION_MODEL || ''; // forecast (research + forecast calls); '' = same as GROK_MODEL
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model (v4-flash name retired 2026-08-18)
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
@@ -182,8 +183,10 @@ exports.handler = async (event) => {
     if (dryRun) {
       const tally = {};
       for (const p of genCtx.plan) tally[`${p.decision}:${p.reason}`] = (tally[`${p.decision}:${p.reason}`] || 0) + 1;
+      const models = {};
+      for (const p of genCtx.plan) { const k = `${p.kind}=${p.model}`; models[k] = (models[k] || 0) + 1; }
       console.log(`DRY RUN (no LLM, no writes): ${filteredTopics.length} topics`, JSON.stringify(tally));
-      return http(200, { dryRun: true, generationId, topics: filteredTopics.length, tally, plan: genCtx.plan });
+      return http(200, { dryRun: true, generationId, topics: filteredTopics.length, tally, models, predictionModel: modelFor('prediction'), plan: genCtx.plan });
     }
 
     const { usable, swap } = lib.runOutcome({ generated: outputs.length, reused: reused.length });
@@ -571,7 +574,7 @@ async function ensureStored(topic, kind, generationId, generatedDate, generatedY
     }
   }
   const decision = lib.decideReuse({ kind, existing, fingerprint, predictionLoggedToday, force: ctx.force });
-  if (ctx.plan) ctx.plan.push({ topicId: topic.id, kind, decision: decision.reuse ? 'reuse' : 'generate', reason: decision.reason });
+  if (ctx.plan) ctx.plan.push({ topicId: topic.id, kind, decision: decision.reuse ? 'reuse' : 'generate', reason: decision.reason, model: modelFor(kind), ...(kind === 'prediction' ? { researchModel: modelFor('research_briefing') } : {}) });
   if (ctx.dryRun) return null;
   if (!decision.reuse) {
     const item = await generateAndStore(topic, kind, generationId, generatedDate, generatedYear, { ...ctx, fingerprint });
@@ -613,7 +616,7 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
     const arcDigest = buildArcDigest(topic, ctx.pastEntries);
     const webContext = await braveGroundResearch(topic);
     const researchPrompt = buildResearchPrompt(topic, generatedDate, generatedYear, { premiseBlock, arcDigest, webContext });
-    const researchResponse = await invokeGrok(researchPrompt, RESEARCH_MAX_TOKENS);
+    const researchResponse = await invokeGrok(researchPrompt, RESEARCH_MAX_TOKENS, modelFor('research_briefing'));
     console.log(`Research pass complete for "${topic.title?.substring(0, 40)}" (${researchResponse.latencyMs}ms)`);
     await writeCache(topic, 'research_briefing', researchResponse, PREDICTION_TTL_SECONDS, generationId, ctx.fingerprint);
 
@@ -621,7 +624,7 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
     maxTokens = PREDICTION_MAX_TOKENS;
   }
 
-  const response = await invokeGrok(prompt, maxTokens);
+  const response = await invokeGrok(prompt, maxTokens, modelFor(kind));
 
   if (kind === 'prediction' || kind === 'trace_cause') {
     response.content = normalizeJsonResponse(response.content, kind);
@@ -650,7 +653,9 @@ function normalizeJsonResponse(raw, kind) {
   }
 }
 
-async function invokeGrok(prompt, maxTokens) {
+const modelFor = (kind) => lib.modelForKind(kind, { GROK_MODEL, PREDICTION_MODEL });
+
+async function invokeGrok(prompt, maxTokens, model = GROK_MODEL) {
   if (!GROK_KEY) {
     throw new Error('XAI_API_KEY is not configured');
   }
@@ -662,16 +667,13 @@ async function invokeGrok(prompt, maxTokens) {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${GROK_KEY}`,
     },
-    body: JSON.stringify({
-      model: GROK_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: maxTokens || DEFAULT_MAX_TOKENS,
+    body: JSON.stringify(lib.buildChatBody({
+      model,
+      prompt,
+      maxTokens: maxTokens || DEFAULT_MAX_TOKENS,
       temperature: DEFAULT_TEMPERATURE,
-      top_p: DEFAULT_TOP_P,
-      // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
-      // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
-      thinking: { type: 'disabled' },
-    }),
+      topP: DEFAULT_TOP_P,
+    })),
   });
 
   const rawText = await response.text();
@@ -690,7 +692,7 @@ async function invokeGrok(prompt, maxTokens) {
   }
 
   const content = extractContent(parsed);
-  return { modelId: parsed?.model || GROK_MODEL, content, latencyMs };
+  return { modelId: parsed?.model || model, content, latencyMs };
 }
 
 function stripCodeFence(value) {

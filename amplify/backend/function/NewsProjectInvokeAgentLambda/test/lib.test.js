@@ -304,3 +304,30 @@ test('R2 prune after an all-skipped run keeps reused items and still drops obsol
   assert.equal(selectPruneKeys(stored, 'TOPIC#', cur).filter((k) => k.PK === 'TOPIC#a').length, 3);
   assert.deepEqual(selectPruneKeys(after, 'TOPIC#', null), []);
 });
+
+// ---------- Batch 2 / D3: forecast on PREDICTION_MODEL, thinking always disabled ----------
+const { modelForKind, buildChatBody } = require('../src/lib');
+
+test('D3 modelForKind: forecast (research + prediction) uses PREDICTION_MODEL; summary / cause stay on GROK_MODEL', () => {
+  const env = { GROK_MODEL: 'deepseek-flash', PREDICTION_MODEL: 'deepseek-v4-pro' };
+  assert.equal(modelForKind('prediction', env), 'deepseek-v4-pro');
+  assert.equal(modelForKind('research_briefing', env), 'deepseek-v4-pro');
+  assert.equal(modelForKind('summary', env), 'deepseek-flash');
+  assert.equal(modelForKind('trace_cause', env), 'deepseek-flash');
+});
+
+test('D3 modelForKind: PREDICTION_MODEL unset or empty falls back to GROK_MODEL (no behaviour change until the env is set)', () => {
+  assert.equal(modelForKind('prediction', { GROK_MODEL: 'deepseek-flash' }), 'deepseek-flash');
+  assert.equal(modelForKind('prediction', { GROK_MODEL: 'deepseek-flash', PREDICTION_MODEL: '' }), 'deepseek-flash');
+  assert.equal(modelForKind('prediction', {}), 'deepseek-flash');
+});
+
+test('D3 buildChatBody: every call disables thinking, for flash and for v4-pro', () => {
+  for (const model of ['deepseek-flash', 'deepseek-v4-pro']) {
+    const b = buildChatBody({ model, prompt: 'x', maxTokens: 800, temperature: 0.2, topP: 0.9 });
+    assert.deepEqual(b.thinking, { type: 'disabled' });
+    assert.equal(b.model, model);
+    assert.equal(b.max_tokens, 800);
+    assert.deepEqual(b.messages, [{ role: 'user', content: 'x' }]);
+  }
+});

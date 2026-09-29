@@ -261,7 +261,30 @@ function restampFields(existing, generationId, ttlSeconds, nowMs = Date.now()) {
   };
 }
 
+// ── Batch 2 / D3: the forecast (research briefing + forecast call) runs on PREDICTION_MODEL
+// (deepseek-v4-pro); summary and cause chain stay on GROK_MODEL (flash). PREDICTION_MODEL falls back
+// to GROK_MODEL when unset, so behaviour is unchanged until the env is set.
+function modelForKind(kind, env = {}) {
+  const base = env.GROK_MODEL || 'deepseek-flash';
+  return (kind === 'prediction' || kind === 'research_briefing') ? (env.PREDICTION_MODEL || base) : base;
+}
+
+// One request body for EVERY LLM call. thinking must stay disabled: DeepSeek V4 (flash and pro)
+// defaults to thinking-on, which burns max_tokens on hidden reasoning and empties `content`.
+function buildChatBody({ model, prompt, maxTokens, temperature, topP }) {
+  return {
+    model,
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: maxTokens,
+    temperature,
+    top_p: topP,
+    thinking: { type: 'disabled' },
+  };
+}
+
 module.exports = {
+  modelForKind,
+  buildChatBody,
   sourceFingerprint,
   decideReuse,
   runOutcome,

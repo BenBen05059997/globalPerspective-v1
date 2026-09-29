@@ -314,7 +314,7 @@ LIVE TRACKER
 | Phase | What | Status | Evidence |
 |---|---|---|---|
 | 0 | Operator "go" for the plan, Q1–Q11 answered | Queued | |
-| P4 | source audit env → `deepseek-flash`; rule → Mon/Wed/Fri 11:30 | Queued | |
+| P4 | source audit env → `deepseek-flash`; rule → Mon/Wed/Fri 11:30 | Done 2026-09-29 (✅ monitor verified 2026-09-29 (read-back: AUDIT_MODEL=deepseek-flash, 7 vars, Successful; rule ENABLED cron(30 11 ? * MON,WED,FRI *), target newsSourceAudit)) | env: `update-function-configuration` (full map via chmod-600 temp file, deleted): `AUDIT_MODEL` `deepseek-v4-pro` → `deepseek-flash`; SHA-256 compare of all 7 vars: only `AUDIT_MODEL` changed; `LastUpdateStatus=Successful`, `CodeSha256` unchanged `YGkB1Id…4zMQ=`. rule: `put-rule` `cron(30 8 ? * * *)` → `cron(30 11 ? * MON,WED,FRI *)`, ENABLED, target still `newsSourceAudit`, description updated. Rollback per §P4 |
 | R2 | agent: run guard + fingerprint reuse + forecast ≤ 1/day; tests; deploy; `dryRun` | Queued | plan §R2; deployed sha `aXtqVyLe…/uo=` recorded |
 | R3 | `InvokeNewsAgent` → 04:25/12:25/20:25, `InvokeGoogleGemini` → 04:15/12:15/20:15 | Queued | |
 | D5 | thread 04:40, systems 05:00, country 05:15 (drift 05:30 under R4), audit (P4), Gemini (R3) | Queued | |

@@ -138,6 +138,16 @@ None. The agent and thread-analysis roles already have DynamoDB access; nothing 
 - `CHANGES.md` per phase; `INDEX.md` row for this task file.
 - Memory: `project_ai_providers.md` (Gemini removed from story analysis; what still uses Gemini), `feedback_misleading_grok_naming.md` note that `newsThreadAnalysis`'s `XAI_API_KEY` now holds DeepSeek.
 
+
+### Operator answers (2026-09-29)
+"ok and you can update the plan and then execute the rest": all as the monitor recommended.
+1. **Yes:** the forecast's research pre-call also on `deepseek-v4-pro`.
+2. **Public copy (Privacy L45 / L71, Disclosures L48 / L95):** update so it stays accurate. **Draft only**: legal copy is shown to the operator verbatim before it is committed (CLAUDE.md: legal copy is a stop-and-ask).
+3. **No** Brave / web grounding for story analysis for now.
+4. **Yes:** timeouts 355→600 s (topic selection), 120→240 s (daily brief), 180→300 s (weekly brief), 600→900 s + concurrency 8 (agent).
+5. **Yes:** story analysis on changed threads only, newest first, cap 10.
+6. **Yes:** after the top-up, one manual topic-selection invoke on v4-pro (+ the agent's forecast calls) to check output size / latency.
+
 ## ▶ LIVE TRACKER
 | Phase | What | Status | Evidence |
 |---|---|---|---|

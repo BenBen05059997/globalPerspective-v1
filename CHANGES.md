@@ -1,5 +1,16 @@
 # Global Perspectives — Change Log
 
+## 2026-09-29 (Backend Batch 1, live AWS: source audit on flash; story job skips repeats)
+
+- **P4:** `newsSourceAudit` `AUDIT_MODEL` `deepseek-v4-pro` → `deepseek-flash`; rule `newsSourceAuditDaily` → `cron(30 11 ? * MON,WED,FRI *)`.
+- **R2 `NewsProjectInvokeAgentLambda-dev`** (deployed; repo = deployed, byte-identical):
+  - skips a topic batch it has already fully processed (`agentProcessedAt` on staging);
+  - reuses a story's summary / cause / forecast when its sources are unchanged (source fingerprint), re-stamped so the prune step keeps it;
+  - the forecast is logged at most once per story per UTC day (first stands);
+  - the swap / archive run when anything was generated or reused;
+  - new `dryRun` / `force` flags; TTL default 3 days.
+  - Tests 21 → 28. The rollback zip is kept outside the repo. Plan: `project-docs/architecture/_active/TASK_2026-09-28_batch1_efficiency.md`.
+
 ## 2026-09-28 (Parking P1–P3 + economy surfaces hidden; branch `map-console` + live AWS)
 
 - **Live AWS:** EventBridge rules `TriggerNewsEconomicImpact`, `TriggerNewsEconomicQuality`, `TriggerPredictionResolver` and `TriggerImpactAudit` are **disabled** (14:40 UTC). The code is kept; undo with `aws events enable-rule`. Plan and evidence: `project-docs/architecture/_active/TASK_2026-09-27_parking.md`.

@@ -9,10 +9,11 @@ const {
   GetCommand,
   ScanCommand,
   BatchWriteCommand,
+  UpdateCommand,
 } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
+const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model (v4-flash name retired 2026-08-18)
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const DEFAULT_MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '600', 10);
@@ -29,8 +30,8 @@ const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
 const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
 const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
 const RESEARCH_BRIEFING_SK = 'RESEARCH_BRIEFING';
-const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '3600', 10);
-const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '3600', 10);
+const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '259200', 10);
+const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '259200', 10);
 const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
 // v1 (methodology-v1) generation inputs — see PREDICTION_METHODOLOGY_V1_PLAN.md §3.
 const BRAVE_SEARCH_API_KEY = process.env.BRAVE_SEARCH_API_KEY || '';
@@ -115,6 +116,8 @@ exports.handler = async (event) => {
   try {
     const payload = parseEvent(event);
     const { action, topicId, readOnly } = normalizeAction(payload);
+    const force = Boolean(payload.force);
+    const dryRun = Boolean(payload.dryRun);
 
     const { topics, generationId, generatedDate, generatedYear, item: stagingItem } = await loadTopics();
 
@@ -125,6 +128,13 @@ exports.handler = async (event) => {
     const filteredTopics = topicId ? topics.filter(t => topicMatches(t, topicId)) : topics;
     if (!filteredTopics.length) {
       return http(404, { error: `No topic found for "${topicId}"` });
+    }
+
+    // R2 run guard: this staging was already fully processed (agentProcessedAt is set only when every
+    // story succeeded; Gemini rewrites `staging` with a full Put, so a new staging clears it).
+    if (!force && !topicId && !readOnly && !dryRun && stagingItem?.agentProcessedAt) {
+      console.log(`Skipping run: staging ${generationId} already processed at ${stagingItem.agentProcessedAt}`);
+      return http(200, { success: true, skipped: 'staging-already-processed', generationId });
     }
 
     if (readOnly) {
@@ -144,23 +154,24 @@ exports.handler = async (event) => {
       : {};
     // generatedDate here is a HUMAN string ("July 4, 2026") — never slice it for a date.
     // The gates need a real ISO day; use UTC today (matches the log snapshot's `day`).
-    const genCtx = { pastEntries, factsByCountry, generatedAtDay: new Date().toISOString().slice(0, 10) };
+    const genCtx = { pastEntries, factsByCountry, generatedAtDay: new Date().toISOString().slice(0, 10), force, dryRun, plan: [] };
 
     const outputs = [];
+    const reused = [];
     let failed = 0;
     await mapWithConcurrency(filteredTopics, LLM_CONCURRENCY, async (topic) => {
       try {
         if (action === 'summary' || action === 'both') {
-          const summary = await generateAndStore(topic, 'summary', generationId, generatedDate, generatedYear, genCtx);
-          outputs.push(summary);
+          const summary = await ensureStored(topic, 'summary', generationId, generatedDate, generatedYear, genCtx);
+          if (summary) (summary.reused ? reused : outputs).push(summary.item);
         }
         if (action === 'trace_cause' || action === 'both') {
-          const traceCause = await generateAndStore(topic, 'trace_cause', generationId, generatedDate, generatedYear, genCtx);
-          outputs.push(traceCause);
+          const traceCause = await ensureStored(topic, 'trace_cause', generationId, generatedDate, generatedYear, genCtx);
+          if (traceCause) (traceCause.reused ? reused : outputs).push(traceCause.item);
         }
         if (action === 'prediction' || action === 'both') {
-          const prediction = await generateAndStore(topic, 'prediction', generationId, generatedDate, generatedYear, genCtx);
-          outputs.push(prediction);
+          const prediction = await ensureStored(topic, 'prediction', generationId, generatedDate, generatedYear, genCtx);
+          if (prediction) (prediction.reused ? reused : outputs).push(prediction.item);
         }
       } catch (topicErr) {
         failed++;
@@ -168,7 +179,15 @@ exports.handler = async (event) => {
       }
     });
 
-    console.log(`Generation complete: ${outputs.length} items, ${failed} failed (generationId: ${generationId})`);
+    if (dryRun) {
+      const tally = {};
+      for (const p of genCtx.plan) tally[`${p.decision}:${p.reason}`] = (tally[`${p.decision}:${p.reason}`] || 0) + 1;
+      console.log(`DRY RUN (no LLM, no writes): ${filteredTopics.length} topics`, JSON.stringify(tally));
+      return http(200, { dryRun: true, generationId, topics: filteredTopics.length, tally, plan: genCtx.plan });
+    }
+
+    const { usable, swap } = lib.runOutcome({ generated: outputs.length, reused: reused.length });
+    console.log(`Generation complete: ${outputs.length} generated, ${reused.length} reused, ${failed} failed (generationId: ${generationId})`);
 
     // Assign threadIds from the RAW staging topics (which retain continues_topic,
     // category, and search_keywords — fields buildTopic() drops) and stamp them
@@ -176,7 +195,7 @@ exports.handler = async (event) => {
     // for narrative links (the lede band + Home story-arc/economic badges). The
     // same map is reused by the archive write so latest and archive stay in sync.
     let threadIdById = {};
-    if (outputs.length > 0 && stagingItem && Array.isArray(stagingItem.topics)) {
+    if (usable > 0 && stagingItem && Array.isArray(stagingItem.topics)) {
       try {
         stagingItem.topics.forEach((raw, idx) => {
           const id = buildStableTopicId(raw, idx);
@@ -200,7 +219,7 @@ exports.handler = async (event) => {
       }
     }
 
-    const swapped = outputs.length > 0
+    const swapped = swap
       ? await swapStagingToActive(stagingItem, generationId)
       : false;
 
@@ -220,9 +239,24 @@ exports.handler = async (event) => {
       }
     }
 
+    if (failed === 0 && !topicId && !readOnly && swapped && stagingItem?.id) {
+      try {
+        await ddb.send(new UpdateCommand({
+          TableName: TOPICS_TABLE,
+          Key: { id: stagingItem.id },
+          UpdateExpression: 'SET agentProcessedAt = :n',
+          ExpressionAttributeValues: { ':n': new Date().toISOString() },
+          ConditionExpression: 'attribute_exists(id)',
+        }));
+      } catch (markErr) {
+        console.warn('Could not mark staging processed:', markErr.message);
+      }
+    }
+
     return http(200, {
       success: true,
       generated: outputs.length,
+      reused: reused.length,
       generationId,
       swapped,
       items: outputs,
@@ -517,6 +551,53 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
   ].join('\n');
 }
 
+const KIND_SK = (kind) => (kind === 'prediction' ? PREDICTION_SK : kind === 'trace_cause' ? 'TRACE_CAUSE' : SUMMARY_SK);
+
+// R2: reuse a stored item when the story's article set is unchanged (see lib.decideReuse), else generate.
+async function ensureStored(topic, kind, generationId, generatedDate, generatedYear, ctx = {}) {
+  const pk = `${PK_PREFIX}${topic.id}`;
+  const fingerprint = lib.sourceFingerprint(topic);
+  let existing = null;
+  let predictionLoggedToday = false;
+  if (!ctx.force) {
+    const got = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: KIND_SK(kind) } }));
+    existing = got.Item || null;
+    if (kind === 'prediction' && existing) {
+      const logged = await ddb.send(new GetCommand({
+        TableName: PREDICTION_LOG_TABLE,
+        Key: { PK: `PRED#${topic.id}`, SK: new Date().toISOString().slice(0, 10) },
+      }));
+      predictionLoggedToday = Boolean(logged.Item);
+    }
+  }
+  const decision = lib.decideReuse({ kind, existing, fingerprint, predictionLoggedToday, force: ctx.force });
+  if (ctx.plan) ctx.plan.push({ topicId: topic.id, kind, decision: decision.reuse ? 'reuse' : 'generate', reason: decision.reason });
+  if (ctx.dryRun) return null;
+  if (!decision.reuse) {
+    const item = await generateAndStore(topic, kind, generationId, generatedDate, generatedYear, { ...ctx, fingerprint });
+    return { item, reused: false };
+  }
+  const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
+  const sks = kind === 'prediction' ? [PREDICTION_SK, RESEARCH_BRIEFING_SK] : [KIND_SK(kind)];
+  for (const sk of sks) await touchItem(pk, sk, generationId, ttlSeconds);
+  return { item: lib.restampFields(existing, generationId, ttlSeconds), reused: true };
+}
+
+// Re-stamp a reused item so the generation prune keeps it; never creates an item (attribute_exists).
+async function touchItem(pk, sk, generationId, ttlSeconds) {
+  try {
+    await ddb.send(new UpdateCommand({
+      TableName: SUMMARY_TABLE,
+      Key: { PK: pk, SK: sk },
+      UpdateExpression: 'SET generationId = :g, ttl = :t, lastVerifiedAt = :n',
+      ConditionExpression: 'attribute_exists(PK)',
+      ExpressionAttributeValues: { ':g': generationId, ':t': Math.floor(Date.now() / 1000) + ttlSeconds, ':n': new Date().toISOString() },
+    }));
+  } catch (err) {
+    if (err.name !== 'ConditionalCheckFailedException') throw err;
+  }
+}
+
 async function generateAndStore(topic, kind, generationId, generatedDate, generatedYear, ctx = {}) {
   let prompt;
   let maxTokens = DEFAULT_MAX_TOKENS;
@@ -534,7 +615,7 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
     const researchPrompt = buildResearchPrompt(topic, generatedDate, generatedYear, { premiseBlock, arcDigest, webContext });
     const researchResponse = await invokeGrok(researchPrompt, RESEARCH_MAX_TOKENS);
     console.log(`Research pass complete for "${topic.title?.substring(0, 40)}" (${researchResponse.latencyMs}ms)`);
-    await writeCache(topic, 'research_briefing', researchResponse, PREDICTION_TTL_SECONDS, generationId);
+    await writeCache(topic, 'research_briefing', researchResponse, PREDICTION_TTL_SECONDS, generationId, ctx.fingerprint);
 
     prompt = buildPredictionPrompt(topic, generatedDate, generatedYear, researchResponse.content, { premiseBlock });
     maxTokens = PREDICTION_MAX_TOKENS;
@@ -547,7 +628,7 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
   }
 
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
-  const item = await writeCache(topic, kind, response, ttlSeconds, generationId);
+  const item = await writeCache(topic, kind, response, ttlSeconds, generationId, ctx.fingerprint);
 
   if (kind === 'prediction') {
     await logPredictionSnapshot(topic, response.content, response, generationId, generatedYear, ctx);
@@ -678,7 +759,7 @@ async function readCache(topic, action) {
   return { topicId: topic.id, items: results };
 }
 
-async function writeCache(topic, kind, response, ttlSeconds, generationId) {
+async function writeCache(topic, kind, response, ttlSeconds, generationId, fingerprint) {
   if (!SUMMARY_TABLE) {
     throw new Error('SUMMARIZE_PREDICT_TABLE env var not set');
   }
@@ -708,6 +789,8 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId) {
     generationId,
     ttl,
     latencyMs: response.latencyMs,
+    ...(fingerprint ? { sourceFingerprint: fingerprint } : {}),
+    lastVerifiedAt: new Date().toISOString(),
   };
 
   await ddb.send(
@@ -861,9 +944,10 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
       status: 'open',
     };
 
-    await ddb.send(new PutCommand({ TableName: PREDICTION_LOG_TABLE, Item: item }));
+    await ddb.send(new PutCommand({ TableName: PREDICTION_LOG_TABLE, Item: item, ConditionExpression: 'attribute_not_exists(PK)' }));
     console.log(`Logged prediction snapshot ${item.PK}/${day} v${lib.METHODOLOGY_VERSION} (${capture.kept} triggers kept, ${capture.dropped.length} gated out)`);
   } catch (err) {
+    if (err.name === 'ConditionalCheckFailedException') { console.log(`Prediction snapshot for ${topic.id} already logged today; first of the day stands`); return; }
     console.warn(`logPredictionSnapshot failed for ${topic.id}: ${err.message}`);
   }
 }
@@ -914,20 +998,7 @@ async function pruneObsoleteEntries(currentGenerationId) {
       }),
     );
 
-    if (Array.isArray(Items)) {
-      for (const item of Items) {
-        const pk = item?.PK;
-        const itemGenId = item?.generationId;
-
-        if (
-          typeof pk === 'string' &&
-          pk.startsWith(PK_PREFIX) &&
-          (!itemGenId || itemGenId !== currentGenerationId)
-        ) {
-          keysToDelete.push({ PK: pk, SK: item.SK });
-        }
-      }
-    }
+    keysToDelete.push(...lib.selectPruneKeys(Items, PK_PREFIX, currentGenerationId));
 
     lastEvaluatedKey = LastEvaluatedKey;
   } while (lastEvaluatedKey);

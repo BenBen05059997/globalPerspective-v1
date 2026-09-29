@@ -234,3 +234,73 @@ test('buildGatedScenarios tolerates missing/empty scenarios without throwing', (
   assert.deepEqual(buildGatedScenarios(undefined, { generatedAtDay: '2026-07-04', fallbackYear: 2026 }).scenarios, []);
   assert.equal(buildGatedScenarios([], { generatedAtDay: '2026-07-04', fallbackYear: 2026 }).capture.kept, 0);
 });
+
+// ---------- R2 (Batch 1): regenerate only new / changed stories ----------
+const { sourceFingerprint, decideReuse, runOutcome, selectPruneKeys, restampFields } = require('../src/lib');
+
+const topicWith = (urls) => ({ sources: urls.map((url) => ({ url, snippet: 's' })) });
+
+test('R2 fingerprint: order-, www-, tracking-param- and duplicate-insensitive', () => {
+  const a = sourceFingerprint(topicWith(['https://www.bbc.com/n/1?utm_source=x', 'https://cnn.com/a']));
+  const b = sourceFingerprint(topicWith(['https://cnn.com/a', 'https://bbc.com/n/1', 'https://bbc.com/n/1/']));
+  assert.equal(a, b);
+});
+
+test('R2 fingerprint: changes when a URL is added or removed; null without sources', () => {
+  const base = sourceFingerprint(topicWith(['https://a.com/1', 'https://b.com/2']));
+  assert.notEqual(base, sourceFingerprint(topicWith(['https://a.com/1', 'https://b.com/2', 'https://c.com/3'])));
+  assert.notEqual(base, sourceFingerprint(topicWith(['https://a.com/1'])));
+  assert.equal(sourceFingerprint({ sources: [] }), null);
+  assert.equal(sourceFingerprint({}), null);
+});
+
+test('R2 fingerprint: falls back to snippets when no URLs', () => {
+  const fp = sourceFingerprint({ sources: [{ snippet: 'Hello ' }, { snippet: 'world' }] });
+  assert.equal(fp, sourceFingerprint({ sources: [{ snippet: 'world' }, { snippet: 'hello' }] }));
+});
+
+test('R2 decideReuse table', () => {
+  const ex = { contentFormat: 'json', sourceFingerprint: 'abc' };
+  assert.deepEqual(decideReuse({ kind: 'summary', existing: null, fingerprint: 'abc' }), { reuse: false, reason: 'new' });
+  assert.equal(decideReuse({ kind: 'summary', existing: { sourceFingerprint: 'abc' }, fingerprint: 'abc' }).reuse, true);
+  assert.equal(decideReuse({ kind: 'summary', existing: { sourceFingerprint: 'abc' }, fingerprint: 'zzz' }).reason, 'changed');
+  assert.equal(decideReuse({ kind: 'summary', existing: {}, fingerprint: 'abc' }).reason, 'legacy-item');
+  assert.equal(decideReuse({ kind: 'summary', existing: ex, fingerprint: null }).reason, 'no-fingerprint');
+  assert.equal(decideReuse({ kind: 'trace_cause', existing: { contentFormat: 'markdown', sourceFingerprint: 'abc' }, fingerprint: 'abc' }).reason, 'bad-content');
+  assert.equal(decideReuse({ kind: 'prediction', existing: ex, fingerprint: 'abc' }).reuse, true);
+  assert.equal(decideReuse({ kind: 'summary', existing: ex, fingerprint: 'abc', force: true }).reason, 'force');
+});
+
+test('R2 forecast: once per UTC day even if the sources changed', () => {
+  const ex = { contentFormat: 'json', sourceFingerprint: 'old' };
+  assert.deepEqual(decideReuse({ kind: 'prediction', existing: ex, fingerprint: 'new', predictionLoggedToday: true }), { reuse: true, reason: 'once-per-day' });
+  assert.equal(decideReuse({ kind: 'prediction', existing: ex, fingerprint: 'new', predictionLoggedToday: false }).reason, 'changed');
+  // no stored forecast at all -> generate even if logged today (nothing to reuse)
+  assert.equal(decideReuse({ kind: 'prediction', existing: null, fingerprint: 'new', predictionLoggedToday: true }).reason, 'new');
+});
+
+test('R2 all topics skipped: the run is still usable, so the swap + archive + threadIds happen', () => {
+  assert.deepEqual(runOutcome({ generated: 0, reused: 17 }), { usable: 17, swap: true });
+  assert.deepEqual(runOutcome({ generated: 3, reused: 14 }), { usable: 17, swap: true });
+  assert.deepEqual(runOutcome({ generated: 0, reused: 0 }), { usable: 0, swap: false }); // nothing usable: no swap (as before)
+});
+
+test('R2 prune after an all-skipped run keeps reused items and still drops obsolete generations', () => {
+  const cur = 'gen-2';
+  const stored = [
+    { PK: 'TOPIC#a', SK: 'SUMMARY', generationId: 'gen-1' },
+    { PK: 'TOPIC#a', SK: 'PREDICTION', generationId: 'gen-1' },
+    { PK: 'TOPIC#a', SK: 'RESEARCH_BRIEFING', generationId: 'gen-1' },
+    { PK: 'TOPIC#gone', SK: 'SUMMARY', generationId: 'gen-1' },   // story no longer in staging
+    { PK: 'TOPIC#nogen', SK: 'SUMMARY' },                         // legacy, no generationId
+    { PK: 'FACTS#Iran', SK: 'COUNTRY_FACTS', generationId: 'x' },  // other prefix: never touched
+  ];
+  // the reuse path re-stamps every SK of story `a` (summary, forecast, research briefing)
+  const after = stored.map((it) => (it.PK === 'TOPIC#a' ? restampFields(it, cur, 259200, 1_000_000) : it));
+  assert.ok(after.filter((i) => i.PK === 'TOPIC#a').every((i) => i.generationId === cur && i.lastVerifiedAt && i.ttl === 1000 + 259200));
+  const keys = selectPruneKeys(after, 'TOPIC#', cur);
+  assert.deepEqual(keys.map((k) => k.PK).sort(), ['TOPIC#gone', 'TOPIC#nogen']);
+  // without re-stamping, the reused story would have been pruned (the trap this design avoids)
+  assert.equal(selectPruneKeys(stored, 'TOPIC#', cur).filter((k) => k.PK === 'TOPIC#a').length, 3);
+  assert.deepEqual(selectPruneKeys(after, 'TOPIC#', null), []);
+});

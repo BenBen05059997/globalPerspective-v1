@@ -1,5 +1,8 @@
 'use strict';
 
+const crypto = require('crypto');
+const { normalizeUrl } = require('./url-normalize');
+
 // Pure prediction-capture helpers for methodology v1, split out of index.js so they can be
 // unit-tested without DynamoDB or an LLM. index.js requires this; ../test/lib.test.js imports
 // the SAME functions (no copy → no drift).
@@ -200,7 +203,70 @@ function buildGatedScenarios(rawScenarios, ctx) {
   return { scenarios, capture: { methodologyVersion: METHODOLOGY_VERSION, kept, dropped } };
 }
 
+// ── R2 (Batch 1): regenerate only new / changed stories ──────────────────────────────────────
+// Fingerprint of a story's article set: sha1 of the sorted, de-duplicated normalized source URLs
+// (snippet text when no URLs). null = cannot fingerprint => always regenerate.
+function sourceFingerprint(topic) {
+  const sources = (topic && topic.sources) || [];
+  const urls = sources.map((s) => normalizeUrl(s && s.url)).filter(Boolean);
+  const basis = urls.length
+    ? urls
+    : sources.map((s) => String((s && s.snippet) || '').trim().toLowerCase()).filter(Boolean);
+  if (!basis.length) return null;
+  return crypto.createHash('sha1').update([...new Set(basis)].sort().join('\n')).digest('hex').slice(0, 16);
+}
+
+// Decide whether a stored item can be reused instead of calling the LLM.
+function decideReuse({ kind, existing, fingerprint, predictionLoggedToday, force }) {
+  if (force) return { reuse: false, reason: 'force' };
+  if (!existing) return { reuse: false, reason: 'new' };
+  if ((kind === 'prediction' || kind === 'trace_cause') && existing.contentFormat !== 'json') {
+    return { reuse: false, reason: 'bad-content' };
+  }
+  if (kind === 'prediction' && predictionLoggedToday) return { reuse: true, reason: 'once-per-day' };
+  if (!fingerprint) return { reuse: false, reason: 'no-fingerprint' };
+  if (existing.sourceFingerprint !== fingerprint) {
+    return { reuse: false, reason: existing.sourceFingerprint ? 'changed' : 'legacy-item' };
+  }
+  return { reuse: true, reason: 'unchanged' };
+}
+
+// A run is "usable" when at least one story has a current item, generated OR reused. Gates the
+// threadId assignment, the staging->latest swap and the archive (was: outputs.length > 0).
+function runOutcome({ generated = 0, reused = 0 }) {
+  const usable = generated + reused;
+  return { usable, swap: usable > 0 };
+}
+
+// Which TOPIC# items the prune step deletes: anything of an older generation. Reused items are
+// re-stamped with the current generationId (restampFields) so they are never selected.
+function selectPruneKeys(items, pkPrefix, currentGenerationId) {
+  if (!currentGenerationId) return [];
+  const out = [];
+  for (const it of items || []) {
+    const pk = it && it.PK;
+    if (typeof pk === 'string' && pk.startsWith(pkPrefix) && (!it.generationId || it.generationId !== currentGenerationId)) {
+      out.push({ PK: pk, SK: it.SK });
+    }
+  }
+  return out;
+}
+
+function restampFields(existing, generationId, ttlSeconds, nowMs = Date.now()) {
+  return {
+    ...existing,
+    generationId,
+    ttl: Math.floor(nowMs / 1000) + ttlSeconds,
+    lastVerifiedAt: new Date(nowMs).toISOString(),
+  };
+}
+
 module.exports = {
+  sourceFingerprint,
+  decideReuse,
+  runOutcome,
+  selectPruneKeys,
+  restampFields,
   METHODOLOGY_VERSION,
   HORIZON_DAYS,
   MONTHS,

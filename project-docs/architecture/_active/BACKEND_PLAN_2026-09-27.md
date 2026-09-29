@@ -69,8 +69,8 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 |---|---|---|
 | **D1** | Top up DeepSeek + rename `deepseek-v4-flash` → `deepseek-flash` | **Rename ✅ done 2026-09-29** on the 11 news Lambdas (`GROK_MODEL`; one bare `update-function-configuration` each; all `Successful`, every other env var byte-identical; no code branches on the model name). The 2 PPA Lambdas (other project, separate key) are not changed; operator's call. **Top-up: operator, before 11 Oct** |
 | **B1** | Monthly AI budget + prepaid buffer (no auto-recharge on DeepSeek's official pages) | Operator's call; a buffer that covers several weeks |
-| **D2b** | Story analysis: flash or v4-pro | Compare on ~10 real stories (`quality/analysis`), leaning v4-pro |
-| **D3** | v4-pro for the four high-leverage calls | Yes |
+| **D2b** | Story analysis: flash or v4-pro | Compare on ~10 real stories (`quality/analysis`), leaning v4-pro — **✅ done 2026-09-29 (Batch 2, `TASK_2026-09-29_batch2_models.md`)** |
+| **D3** | v4-pro for the four high-leverage calls | Yes — **✅ done 2026-09-29 (Batch 2, `TASK_2026-09-29_batch2_models.md`)** |
 | **D5** | Move the DeepSeek jobs out of the peak window (to ≥ 10:00 UTC) | Yes — **✅ done 2026-09-29 (Batch 1, `TASK_2026-09-28_batch1_efficiency.md`)** |
 | **D6m** | Monitoring: balance alarm + calmer freshness alert | **Declined 2026-09-29** (operator: "no need i know the reason so you can bypass the alarm one"). The existing `newsFreshnessMonitor` STALE alert stays as-is |
 | **P1–P3** | ✅ **Done 2026-09-28:** economy impact + quality judge, forecast resolver, impact audit parked; economy surfaces hidden on the site | — |

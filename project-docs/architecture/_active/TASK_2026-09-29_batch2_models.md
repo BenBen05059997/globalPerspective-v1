@@ -152,7 +152,7 @@ None. The agent and thread-analysis roles already have DynamoDB access; nothing 
 | Phase | What | Status | Evidence |
 |---|---|---|---|
 | 0 | Operator "execute" + Q1–Q6 answered | Queued | |
-| D | guard `MODEL_VARS` += `PREDICTION_MODEL` | Queued | |
+| D | guard `MODEL_VARS` += `PREDICTION_MODEL` | Done 2026-09-29 (✅ monitor verified 2026-09-29 (read-back MODEL_VARS incl. PREDICTION_MODEL, 4 vars, Successful)) | `newsModelGuard` env `MODEL_VARS` unset -> `GROK_MODEL,LLM_MODEL,MODEL,AUDIT_MODEL,JUDGE_MODEL,PPLX_MODEL,AI_MODEL,PREDICTION_MODEL` (default list + `PREDICTION_MODEL`). Full map via chmod-600 temp file (deleted); hash compare: 3 -> 4 vars, only `MODEL_VARS` added, none changed/removed; `LastUpdateStatus=Successful`; `CodeSha256` unchanged `zdYWbPry…prZ0=` (env-only). Next verification: the 12:00 UTC guard run log |
 | A | thread analysis: DeepSeek flash + `thinking` disabled + change-driven + tests + deploy + env + `dryRun` | Queued | sha `tlVlGb9+…BoXvY=` recorded |
 | B | agent `PREDICTION_MODEL` (research + forecast on v4-pro), concurrency 8, timeout 900 | Queued | sha `ZC/gW3u…WhM=` recorded |
 | C | topic selection / daily brief / weekly brief `GROK_MODEL` → v4-pro + timeouts | Queued | shas recorded in §0 |

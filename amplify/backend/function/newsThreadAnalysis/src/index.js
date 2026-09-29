@@ -3,9 +3,10 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const { normalizeDimensions, deriveRisk, clampScore } = require('./riskDimensions');
+const policy = require('./threadPolicy');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const GROK_MODEL = process.env.GROK_MODEL || 'gemini-2.5-flash'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
+const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3500', 10);
@@ -23,17 +24,18 @@ const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const THREAD_PK_PREFIX = 'THREAD#';
 const THREAD_SK = 'THREAD_ANALYSIS';
 const THREAD_TTL_DAYS = 90;
-const MAX_THREADS = 10;
+const MAX_THREADS = parseInt(process.env.MAX_THREADS || '10', 10);
 const ARCHIVE_DAYS = 30;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUndefinedValues: true } });
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const INTER_CALL_DELAY_MS = parseInt(process.env.INTER_CALL_DELAY_MS || '13000', 10);
+const INTER_CALL_DELAY_MS = parseInt(process.env.INTER_CALL_DELAY_MS || '0', 10);
 
-exports.handler = async () => {
-  console.log('Thread analysis started');
+exports.handler = async (event = {}) => {
+  const dryRun = Boolean(event && event.dryRun);
+  console.log(`Thread analysis started${dryRun ? ' (DRY RUN: no LLM, no Brave, no writes)' : ''}`);
 
   if (!TOPICS_TABLE || !SUMMARY_TABLE) {
     console.error('Missing table configuration: TOPICS_DDB_TABLE or SUMMARIZE_PREDICT_TABLE');
@@ -51,31 +53,36 @@ exports.handler = async () => {
   const threads = groupByThread(entries);
   console.log(`Found ${threads.length} threads with 2+ entries`);
 
-  const top = threads.slice(0, MAX_THREADS);
+  const existingByThread = {};
+  for (const t of threads) existingByThread[t.threadId] = await readExistingAnalysis(t.threadId);
+  const plan = policy.selectThreads({ threads, existingByThread, maxThreads: MAX_THREADS });
+  for (const p of plan) console.log(`[thread] ${p.threadId} | ${p.entries} entries | newest ${p.newest} | ${p.run ? 'ANALYSE' : 'skip'} | ${p.reason}${p.detail ? ` (${p.detail})` : ''}`);
+
+  if (dryRun) {
+    const counts = plan.reduce((a, p) => { const k = `${p.run ? 'analyse' : 'skip'}:${p.reason}`; a[k] = (a[k] || 0) + 1; return a; }, {});
+    return { statusCode: 200, dryRun: true, threads: threads.length, counts, plan };
+  }
+
+  const byId = Object.fromEntries(threads.map((t) => [t.threadId, t]));
   let generated = 0;
-  let skipped = 0;
+  let skipped = plan.filter((p) => !p.run).length;
   let failed = 0;
 
-  for (const thread of top) {
+  for (const p of plan.filter((x) => x.run)) {
+    const thread = byId[p.threadId];
     try {
-      const existing = await readExistingAnalysis(thread.threadId);
-      if (existing && existing.entryCount === thread.entries.length) {
-        skipped++;
-        continue;
-      }
-
-      if (generated + failed > 0) await sleep(INTER_CALL_DELAY_MS);
+      if (INTER_CALL_DELAY_MS > 0 && generated + failed > 0) await sleep(INTER_CALL_DELAY_MS);
       const analysis = await generateThreadAnalysis(thread);
-      await writeAnalysis(thread.threadId, analysis, thread.entries.length);
+      await writeAnalysis(thread.threadId, analysis, thread.entries.length, policy.entryIds(thread).slice(-policy.MAX_STORED_IDS));
       generated++;
-      console.log(`Generated analysis for ${thread.threadId} (${thread.entries.length} entries, ${analysis.searchResultsCount} web refs)`);
+      console.log(`Generated analysis for ${thread.threadId} [${p.reason}] (${thread.entries.length} entries, ${analysis.searchResultsCount} web refs, ${analysis.modelId})`);
     } catch (err) {
       failed++;
       console.error(`Failed to analyze ${thread.threadId}:`, err.message);
     }
   }
 
-  const summary = `Thread analysis complete: ${generated} generated, ${skipped} skipped (unchanged), ${failed} failed`;
+  const summary = `Thread analysis complete: ${generated} generated, ${skipped} skipped (no new events / over cap), ${failed} failed`;
   console.log(summary);
   return { statusCode: 200, body: summary };
 };
@@ -294,7 +301,7 @@ Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
   return { ...parsed, modelId, latencyMs, searchResultsCount: searchResults.length, groundingSources };
 }
 
-async function writeAnalysis(threadId, analysis, entryCount) {
+async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = []) {
   const ttl = Math.floor(Date.now() / 1000) + THREAD_TTL_DAYS * 86400;
 
   // Scoring v2: derive riskScore from the dimensions vector (worst axis); fall
@@ -325,6 +332,7 @@ async function writeAnalysis(threadId, analysis, entryCount) {
       sentiment: typeof analysis.sentiment === 'number' ? Math.max(-1, Math.min(1, analysis.sentiment)) : null,
       keyActors: Array.isArray(analysis.keyActors) ? analysis.keyActors.slice(0, 5) : [],
       entryCount,
+      entryTopicIds,
       generatedAt: new Date().toISOString(),
       model: analysis.modelId || GROK_MODEL,
       latencyMs: analysis.latencyMs || 0,
@@ -363,13 +371,7 @@ async function invokeGrok(prompt) {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${GROK_KEY}`,
     },
-    body: JSON.stringify({
-      model: GROK_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: MAX_TOKENS,
-      temperature: TEMPERATURE,
-      top_p: TOP_P,
-    }),
+    body: JSON.stringify(policy.buildRequestBody({ model: GROK_MODEL, prompt, maxTokens: MAX_TOKENS, temperature: TEMPERATURE, topP: TOP_P })),
   });
 
   const rawText = await response.text();

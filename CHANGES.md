@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-09-29 (Backend Batch 2, live AWS: models)
+
+- **D:** `newsModelGuard` `MODEL_VARS` now includes `PREDICTION_MODEL`.
+- **A: `newsThreadAnalysis` moves from Gemini 2.5 Flash (free tier) to DeepSeek `deepseek-flash`** (deployed; repo = deployed).
+  - The request sends `thinking:{type:'disabled'}` + JSON mode; the 13 s free-tier pacing is removed.
+  - Change-driven (`src/threadPolicy.js`): a thread is analysed only when it is new or has a new topicId since its last analysis (ageing-out entries don't count). Newest first, cap 10; `dryRun`.
+  - Env: DeepSeek URL / model / news key (hash-verified; the Gemini key is removed from this Lambda). Tests 8.
+
 ## 2026-09-29 (Backend Batch 1, live AWS: source audit on flash; story job skips repeats)
 
 - **P4:** `newsSourceAudit` `AUDIT_MODEL` `deepseek-v4-pro` → `deepseek-flash`; rule `newsSourceAuditDaily` → `cron(30 11 ? * MON,WED,FRI *)`.

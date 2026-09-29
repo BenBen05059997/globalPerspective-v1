@@ -8,7 +8,7 @@
  * silently diverge (e.g. one classifies a risk axis differently from the other)
  * with no build step or import graph to catch it. This script is the catch.
  *
- * Guards exactly 4 known pairs:
+ * Guards exactly 5 known pairs:
  *   (a) riskDimensions.js               — byte-identical, zero tolerance
  *   (b) situations-core.js              — byte-identical after stripping the
  *                                          Tracker copy's known 2-line header
@@ -21,6 +21,10 @@
  *                                          compared via marker-based text
  *                                          extraction from source instead — see
  *                                          extractUnexported() below)
+ *
+ *   (e) iso3Names.json                  — newsCountryIntelligence's ISO3->name table must equal the
+ *                                          frontend's ISO3_NAME (features/map/lib/situationLabels.js),
+ *                                          extracted from source with extractUnexported()
  *
  * It only reads files (plus writes to a throwaway os.tmpdir() dir in --self-test
  * mode). It never touches the checked files themselves.
@@ -120,7 +124,7 @@ function extractUnexported(source, name) {
 }
 
 // ---------------------------------------------------------------------------
-// the 4 pair checks — each takes explicit paths so --self-test can point them
+// the 5 pair checks — each takes explicit paths so --self-test can point them
 // at perturbed temp copies instead of the live repo files.
 // ---------------------------------------------------------------------------
 
@@ -148,6 +152,15 @@ function checkCountryFacts(pathA, pathB) {
   const a = JSON.parse(fs.readFileSync(pathA, 'utf8'));
   const b = JSON.parse(fs.readFileSync(pathB, 'utf8'));
   const diffs = jsonStructuralDiff(a, b);
+  if (!diffs.length) return { pass: true };
+  return { pass: false, diff: diffs.join('\n') };
+}
+
+function checkIso3Names(jsonPath, frontendPath) {
+  const json = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+  const ex = extractUnexported(fs.readFileSync(frontendPath, 'utf8'), 'ISO3_NAME');
+  if (!ex.found) return { pass: false, diff: 'ISO3_NAME not found in the frontend source (marker changed?)' };
+  const diffs = jsonStructuralDiff(json, ex.value);
   if (!diffs.length) return { pass: true };
   return { pass: false, diff: diffs.join('\n') };
 }
@@ -230,6 +243,13 @@ function livePairs() {
       run: () => checkCountryFacts(
         abs('amplify/backend/function/newsCountryIntelligence/src/country_facts.json'),
         abs('amplify/backend/function/newsPairIntelligence/src/country_facts.json'),
+      ),
+    },
+    {
+      name: 'iso3Names.json',
+      run: () => checkIso3Names(
+        abs('amplify/backend/function/newsCountryIntelligence/src/iso3Names.json'),
+        abs('global-perspectives-starter/frontend/src/features/map/lib/situationLabels.js'),
       ),
     },
     {
@@ -325,6 +345,17 @@ async function selfTestCountryFacts() {
   return result;
 }
 
+async function selfTestIso3Names() {
+  const dir = mkTmp();
+  const b = path.join(dir, 'iso3Names.json');
+  const parsed = JSON.parse(fs.readFileSync(abs('amplify/backend/function/newsCountryIntelligence/src/iso3Names.json'), 'utf8'));
+  parsed.USA = `${parsed.USA}x`;
+  fs.writeFileSync(b, JSON.stringify(parsed));
+  const result = checkIso3Names(b, abs('global-perspectives-starter/frontend/src/features/map/lib/situationLabels.js'));
+  fs.rmSync(dir, { recursive: true, force: true });
+  return result;
+}
+
 async function selfTestEntityNormalization() {
   const dir = mkTmp();
   const srcA = abs('amplify/backend/function/newsSituationIngest/src/classifier-core.js');
@@ -348,6 +379,7 @@ async function selfTest() {
     ['riskDimensions.js', selfTestRiskDimensions],
     ['situations-core.js', selfTestSituationsCore],
     ['country_facts.json', selfTestCountryFacts],
+    ['iso3Names.json', selfTestIso3Names],
     ['entity-normalization', selfTestEntityNormalization],
   ];
   let allCaught = true;

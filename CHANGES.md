@@ -11,6 +11,11 @@
   - country facts → weekly (Mon 05:00 JST);
   - drift lookback 10 → 16 days, max events 25 → 40;
   - proxy `TOPICS_CACHE_MAX_AGE_SECONDS=32400`, matching the 8-hour topic cadence.
+- **R1 `newsCountryIntelligence`** (deployed; repo = deployed): per-country refresh policy (`src/refreshPolicy.js`):
+  - weekly baseline (156 h);
+  - early refresh on a new / changed HIGH or GDACS alert (from the public world file), or a coverage jump (≥ 8 new stories and ≥ 2× the 30-day pace);
+  - never twice a UTC day; the top 20 plus ≤ 5 alert-only extras;
+  - `dryRun` prints each decision and its reason; `iso3Names.json` is guarded by `check-shared-sync`. Tests 12.
 - **R2 `NewsProjectInvokeAgentLambda-dev`** (deployed; repo = deployed, byte-identical):
   - skips a topic batch it has already fully processed (`agentProcessedAt` on staging);
   - reuses a story's summary / cause / forecast when its sources are unchanged (source fingerprint), re-stamped so the prune step keeps it;

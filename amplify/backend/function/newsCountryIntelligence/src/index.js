@@ -2,6 +2,8 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const refreshPolicy = require('./refreshPolicy');
+const ISO3_NAMES = require('./iso3Names.json');
 const { normalizeDimensions, deriveRisk, clampScore, tierFromScore } = require('./riskDimensions');
 
 let EDITORIAL_FACTS = {};
@@ -12,7 +14,7 @@ try {
 }
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
+const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; the env sets the live model
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '5000', 10);
@@ -43,7 +45,28 @@ async function mapWithConcurrency(items, limit, worker) {
   await Promise.all(runners);
 }
 const COUNTRY_TTL_DAYS = 90;
-const MAX_COUNTRIES = 20;
+const MAX_COUNTRIES = 20; // kept for reference; the policy's topN / maxExtras (below) now set the cap
+const WORLD_LATEST_URL = process.env.WORLD_LATEST_URL || 'https://globalperspective.net/data/world/latest.json';
+const POLICY_CFG = {
+  baselineHours: Number(process.env.COUNTRY_BASELINE_HOURS || refreshPolicy.DEFAULT_CFG.baselineHours),
+  jumpMin: Number(process.env.COVERAGE_JUMP_MIN || refreshPolicy.DEFAULT_CFG.jumpMin),
+  jumpFactor: Number(process.env.COVERAGE_JUMP_FACTOR || refreshPolicy.DEFAULT_CFG.jumpFactor),
+  archiveDays: 30,
+  topN: Number(process.env.COUNTRY_TOP_N || MAX_COUNTRIES),
+  maxExtras: Number(process.env.COUNTRY_MAX_ALERT_EXTRAS || refreshPolicy.DEFAULT_CFG.maxExtras),
+};
+
+// Public world file (the same object the site reads). Any failure => no alerts: the weekly baseline
+// still works, an outage of the file can never stop briefings.
+async function loadWorld() {
+  try {
+    const res = await fetch(WORLD_LATEST_URL, { signal: AbortSignal.timeout(10000), headers: { 'User-Agent': 'gp-country-intel/1.0' } });
+    if (!res.ok) return { ok: false, status: res.status, world: null };
+    return { ok: true, status: res.status, world: await res.json() };
+  } catch (err) {
+    return { ok: false, status: `error: ${err.message}`, world: null };
+  }
+}
 const ARCHIVE_DAYS = 30;
 
 const ddbClient = new DynamoDBClient({ region: REGION });
@@ -51,8 +74,9 @@ const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUn
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
-exports.handler = async () => {
-  console.log('Country intelligence started');
+exports.handler = async (event = {}) => {
+  const dryRun = Boolean(event && event.dryRun);
+  console.log(`Country intelligence started${dryRun ? ' (DRY RUN: no LLM, no writes)' : ''}`);
 
   if (!TOPICS_TABLE || !SUMMARY_TABLE) {
     console.error('Missing table configuration: TOPICS_DDB_TABLE or SUMMARIZE_PREDICT_TABLE');
@@ -72,30 +96,53 @@ exports.handler = async () => {
   const countries = groupByCountry(entries, threadAnalyses);
   console.log(`Found ${countries.length} countries with 2+ articles`);
 
-  const top = countries.slice(0, MAX_COUNTRIES);
+  const now = new Date();
+  const worldRes = await loadWorld();
+  const hot = refreshPolicy.hotCountriesFromWorld(worldRes.world, ISO3_NAMES);
+  console.log(`[world] ${WORLD_LATEST_URL} -> ${worldRes.ok ? 'ok' : 'FAILED'} (${worldRes.status}); alert countries: ${[...hot.keys()].join(', ') || 'none'}`);
+
+  const candidates = countries.filter((c, i) => i < POLICY_CFG.topN || hot.has(refreshPolicy.canonicalName(c.countryName)));
+  const existingByName = {};
+  await mapWithConcurrency(candidates, 8, async (c) => { existingByName[c.countryName] = await readExisting(c.countryName); });
+  const plan = refreshPolicy.planRun({ countries: candidates, existingByName, hot, now, cfg: POLICY_CFG });
+  for (const p of plan) console.log(`[country] ${p.country} | ${p.tier} | ${p.refresh ? 'REFRESH' : 'skip'} | ${p.reason}${p.detail ? ` (${p.detail})` : ''}`);
+
+  if (dryRun) {
+    const keys = countries.map((c) => c.countryName);
+    return {
+      statusCode: 200,
+      dryRun: true,
+      world: { url: WORLD_LATEST_URL, ok: worldRes.ok, status: worldRes.status, situations: (worldRes.world?.situations || []).length },
+      alerts: Object.fromEntries([...hot.entries()].map(([k, v]) => [k, v.map((a) => `${a.kind}:${a.id}`)])),
+      alertsWithoutRecord: refreshPolicy.unmatchedAlerts(hot, countries),
+      aliasedRecordKeys: keys.filter((k) => refreshPolicy.canonicalName(k) !== k.trim().toLowerCase()).map((k) => `${k} -> ${refreshPolicy.canonicalName(k)}`),
+      plan,
+      counts: plan.reduce((a, p) => { const k = p.refresh ? `refresh:${p.reason}` : `skip:${p.reason}`; a[k] = (a[k] || 0) + 1; return a; }, {}),
+    };
+  }
+
+  const byName = Object.fromEntries(candidates.map((c) => [c.countryName, c]));
+  const todo = plan.filter((p) => p.refresh);
   let generated = 0;
-  let skipped = 0;
+  let skipped = plan.length - todo.length;
   let failed = 0;
+  const reasons = {};
 
-  await mapWithConcurrency(top, LLM_CONCURRENCY, async (country) => {
+  await mapWithConcurrency(todo, LLM_CONCURRENCY, async (p) => {
+    const country = byName[p.country];
     try {
-      const existing = await readExisting(country.countryName);
-      if (existing && existing.totalArticles === country.totalArticles) {
-        skipped++;
-        return;
-      }
-
       const analysis = await generateCountryIntelligence(country);
       await writeAnalysis(country.countryName, analysis, country);
       generated++;
-      console.log(`Generated intelligence for ${country.countryName} (${country.totalArticles} articles, ${country.threads.length} threads)`);
+      reasons[p.reason] = (reasons[p.reason] || 0) + 1;
+      console.log(`Generated intelligence for ${country.countryName} [${p.reason}] (${country.totalArticles} articles, ${country.threads.length} threads)`);
     } catch (err) {
       failed++;
       console.error(`Failed to analyze ${country.countryName}:`, err.message);
     }
   });
 
-  const summary = `Country intelligence complete: ${generated} generated, ${skipped} skipped (unchanged), ${failed} failed`;
+  const summary = `Country intelligence complete: ${generated} generated (${Object.entries(reasons).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}), ${skipped} skipped, ${failed} failed`;
   console.log(summary);
   return { statusCode: 200, body: summary };
 };
@@ -214,6 +261,7 @@ function groupByCountry(entries, threadAnalyses) {
       return {
         countryName: c.countryName,
         totalArticles: c.entries.length,
+        entryDates: c.entries.map((e) => e.date),
         threads: threads.filter(t => t.articleCount >= 2).sort((a, b) => b.articleCount - a.articleCount),
         singleEntries: singleEntries.slice(0, 10),
         dominantCategory,

@@ -296,7 +296,21 @@ Commit rules: repo changes staged by explicit path, one coherent commit per Lamb
 
 ---
 
-## ▶ LIVE TRACKER
+## ▶ 
+### Operator answers (2026-09-29)
+"yes those are for q5 … and the rest are good":
+- **Q1** yes: 3-day TTL default; the first forecast of the UTC day is the logged one.
+- **Q2** yes: topic selection 04:15 / 12:15 / 20:15 UTC.
+- **Q3** yes: `TOPICS_CACHE_MAX_AGE_SECONDS=32400` on `newsSensitiveData-dev` (fetch → merge → write the full env).
+- **Q4** yes: direction = the latest reading vs the one ~7 days earlier, arrow at |Δ| ≥ 15; "older" at 14 days for country cards / map shading only (stories stay at 7).
+- **Q5** yes: the top 20 plus up to 5 extra countries **only while they have an alert**. A country with no alert outside the top 20 is not briefed. The top 20 keep the weekly baseline even without alerts; early refreshes only on an alert or a coverage jump.
+- **Q6** yes: copy the ISO3→name table into the Lambda and extend `check-shared-sync`.
+- **Q7** yes: a coverage jump = ≥ 8 new stories and ≥ 2× the country's 30-day pace.
+- **Q8:** the monitor drafts the legend wording and checks it in the browser.
+- **Q9** yes: `TriggerBreakingAlert` → `cron(35 4/8 * * ? *)`. **Q10:** situation ingest stays hourly.
+- **Q11** yes: `aws lambda invoke` dry-runs (no LLM, no writes) are allowed for verification; the one-off P4 flash-vs-pro A/B runs after the top-up.
+
+LIVE TRACKER
 | Phase | What | Status | Evidence |
 |---|---|---|---|
 | 0 | Operator "go" for the plan, Q1–Q11 answered | Queued | |

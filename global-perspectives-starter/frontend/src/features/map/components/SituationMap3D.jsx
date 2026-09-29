@@ -308,7 +308,7 @@ export default function SituationMap3D({
   void onFocusCountry;
 
   // R4b COUNTRY RISK layer: every briefed country (lib/countryRiskLayer.js), fill/outline hue =
-  // the worst axis, outline weight + a double outline for HIGH, alpha faded for a 7-30d "older"
+  // the worst axis, outline weight + a double outline for HIGH, alpha faded for a 14-30d "older"
   // briefing. Never a red/amber/green scale, never drawn for a country with no briefing.
   const riskFeatures = useMemo(() => (countryRisk || []).map((c) => {
     const feat = iso3Feature(c.iso3);

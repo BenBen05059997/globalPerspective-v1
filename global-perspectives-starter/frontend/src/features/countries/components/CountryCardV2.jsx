@@ -20,7 +20,7 @@ import { futureDatedTriggers } from '@/features/countries/lib/countryTriggers.js
 import { fxRowForCountry } from '@/features/countries/lib/countryCurrency.js';
 import { deriveHeadline, AXES, tierLabel } from '@/shared/lib/riskTiers.js';
 import { riskScoreToVar } from '@/shared/styles/tokens';
-import { freshnessState } from '@/shared/lib/freshness.js';
+import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 import { threadPath } from '@/shared/lib/threadPath.js';
 import { macroRows } from '@/features/countries/lib/countryMacro.js';
@@ -46,10 +46,10 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
 
   const now = Date.now();
   const ageDays = intel?.generatedAt ? (now - new Date(intel.generatedAt).getTime()) / 86400000 : null;
-  const fresh = intel && ageDays != null ? freshnessState(ageDays) : null;
+  const fresh = intel && ageDays != null ? freshnessState(ageDays, COUNTRY_OLDER_AFTER_DAYS) : null;
 
   // State (COUNTRY_VIEW_DISCUSSION.md "Frontend: four country states" + the v2 five-state note):
-  // briefed (<=7d) / briefed-older (7-30d) / too-old (>30d, scores hidden) / never-briefed / quiet.
+  // briefed (<14d, weekly cadence) / briefed-older (14-30d) / too-old (>30d, scores hidden) / never-briefed / quiet.
   let state;
   if (intel && fresh !== 'hidden') state = fresh === 'older' ? 'older' : 'briefed';
   else if (intel && fresh === 'hidden') state = 'too_old';
@@ -124,6 +124,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
             {direction.state === 'arrow' ? (direction.arrow === 'up' ? '▲' : '▼') : direction.state === 'top' ? '◆' : ''}
             {' '}{directionLabel(direction)}
             {direction.axis ? ` (${direction.axis.label})` : ''}
+            {direction.priorAsOf && (direction.state === 'arrow' || direction.state === 'unchanged') ? ` · vs ${fmtShort(direction.priorAsOf)}` : ''}
           </span>
         </div>
       ) : null}

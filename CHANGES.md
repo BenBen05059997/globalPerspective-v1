@@ -16,6 +16,10 @@
   - early refresh on a new / changed HIGH or GDACS alert (from the public world file), or a coverage jump (≥ 8 new stories and ≥ 2× the 30-day pace);
   - never twice a UTC day; the top 20 plus ≤ 5 alert-only extras;
   - `dryRun` prints each decision and its reason; `iso3Names.json` is guarded by `check-shared-sync`. Tests 12.
+- **R1 frontend** (branch `map-console`):
+  - country cards and the map's country shading count as "older" after **14 days** (stories stay at 7), via `freshnessState(age, olderAfterDays)`;
+  - the new direction rule compares the latest reading with the one ~7 days earlier (accepted 4–10 days), with an arrow at |Δ| ≥ 15, and shows "vs <date>";
+  - the risk-mode Key reads "Briefed within 14 days · full / 14–30 days · faded".
 - **R2 `NewsProjectInvokeAgentLambda-dev`** (deployed; repo = deployed, byte-identical):
   - skips a topic batch it has already fully processed (`agentProcessedAt` on staging);
   - reuses a story's summary / cause / forecast when its sources are unchanged (source fingerprint), re-stamped so the prune step keeps it;

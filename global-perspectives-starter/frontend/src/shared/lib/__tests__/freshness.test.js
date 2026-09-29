@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pausedSince, freshnessState, olderLabel } from '@/shared/lib/freshness.js';
+import { pausedSince, freshnessState, olderLabel, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 
 const NOW = new Date('2026-09-26T12:00:00.000Z');
 
@@ -91,6 +91,21 @@ describe('freshnessState', () => {
   it('clamps a slightly-future timestamp (negative age from clock skew) to live, not hidden (F2.4)', () => {
     expect(freshnessState(-1)).toBe('live');
     expect(freshnessState(-0.01)).toBe('live');
+  });
+});
+
+describe('freshnessState olderAfterDays (country briefings are weekly)', () => {
+  it('COUNTRY_OLDER_AFTER_DAYS is 14', () => expect(COUNTRY_OLDER_AFTER_DAYS).toBe(14));
+  it('10 days is plain for a country, older for the default (7)', () => {
+    expect(freshnessState(10, COUNTRY_OLDER_AFTER_DAYS)).toBe('plain');
+    expect(freshnessState(10)).toBe('older');
+  });
+  it('14 days is older for a country; 30 still hides; live band unchanged', () => {
+    expect(freshnessState(13.9, COUNTRY_OLDER_AFTER_DAYS)).toBe('plain');
+    expect(freshnessState(14, COUNTRY_OLDER_AFTER_DAYS)).toBe('older');
+    expect(freshnessState(29.9, COUNTRY_OLDER_AFTER_DAYS)).toBe('older');
+    expect(freshnessState(30, COUNTRY_OLDER_AFTER_DAYS)).toBe('hidden');
+    expect(freshnessState(0.5, COUNTRY_OLDER_AFTER_DAYS)).toBe('live');
   });
 });
 

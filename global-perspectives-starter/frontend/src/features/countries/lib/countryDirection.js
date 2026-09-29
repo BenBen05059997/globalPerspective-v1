@@ -2,21 +2,25 @@
 // rule" / REDESIGN_MASTER_PLAN.md §3.5 C1). Pure, deterministic, no LLM: computed from the
 // country's own HISTORY# snapshots (see useCountryHistory.js), never from a prompt.
 //
-// Rule (design doc, verbatim):
-//   - Compare the median of the last 3 readings against the median of the 3 nearest to 14 days
-//     earlier (±3 days); each bucket needs >=3 readings within <=5 days of each other.
-//   - An arrow needs |delta| >= 10 on the worst-axis score. Name an axis only if its own
-//     delta >= 15.
-//   - If both medians are >=95, show "at top of scale" with no arrow.
-//   - Compute only if the latest reading is <=7 days old; 7-30 days amber "as of";
-//     over 30 days hidden.
-//   - Otherwise "not enough readings (gap ...)".
+// Rule (revised 2026-09-29, Batch 1 / R1: country briefings are now WEEKLY + early refreshes, so
+// the old "3 readings within 5 days" buckets can never fill):
+//   - "Now" = the latest reading (the median of the readings within 3 days of it when there are
+//     two or more). "Before" = the reading nearest 7 days earlier (accepted 4-10 days earlier).
+//   - An arrow needs |delta| >= 15 on the worst-axis score. One reading is noisier than a median of
+//     three: in the live history a 10-point day-to-day jump happens in 13% of pairs, 15 in 6%.
+//     Name an axis only if its own delta >= 15.
+//   - If both are >=95, show "at top of scale" with no arrow.
+//   - Compute only if the latest reading is <14 days old (COUNTRY_OLDER_AFTER_DAYS); 14-30 days
+//     amber "as of"; over 30 days hidden.
+//   - Otherwise "not enough readings (...)".
 import { deriveHeadline, AXES, AXIS_LABELS } from '@/shared/lib/riskTiers.js';
+import { COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 
-const BUCKET_SPAN_MAX_DAYS = 5;
-const PRIOR_TARGET_DAYS = 14;
-const PRIOR_WINDOW_DAYS = 3;
-const ARROW_THRESHOLD = 10;
+const NOW_WINDOW_DAYS = 3;
+const PRIOR_TARGET_DAYS = 7;
+const PRIOR_MIN_DAYS = 4;
+const PRIOR_MAX_DAYS = 10;
+const ARROW_THRESHOLD = 15;
 const AXIS_NAME_THRESHOLD = 15;
 const TOP_OF_SCALE = 95;
 
@@ -45,13 +49,6 @@ function axisScoreOf(snap, axis) {
   return Number.isFinite(n) ? n : null;
 }
 
-// The bucket's own date span in days (max - min), or null if it can't be measured.
-function spanDays(bucket) {
-  const days = bucket.map((s) => parseDay(s.dateKey)).filter((d) => d != null);
-  if (days.length < 2) return 0;
-  return (Math.max(...days) - Math.min(...days)) / 86400000;
-}
-
 function notEnough(extra = {}) {
   return { state: 'not_enough', arrow: null, ...extra };
 }
@@ -59,13 +56,14 @@ function notEnough(extra = {}) {
 /**
  * computeCountryDirection(snapshots, now) -> {
  *   state: 'hidden' | 'not_enough' | 'top' | 'arrow' | 'unchanged',
- *   freshness: 'full' | 'amber' | null,   // full <=7d, amber 7-30d
+ *   freshness: 'full' | 'amber' | null,   // full <14d, amber 14-30d
  *   asOf: dateKey | null,
  *   ageDays: number | null,
  *   arrow: 'up' | 'down' | null,
  *   delta: number | null,                  // scoreA - scoreB (positive = worsening)
- *   scoreA: number | null,                 // median of the latest 3 readings
- *   scoreB: number | null,                 // median of the 3 nearest 14 days earlier
+ *   scoreA: number | null,                 // the latest reading (median of readings within 3 days of it)
+ *   scoreB: number | null,                 // the reading nearest 7 days earlier
+ *   priorAsOf: dateKey | null,             // the date of that earlier reading
  *   axis: { key, label, delta } | null,    // only when its own |delta| >= 15
  *   reason: string | null,                 // for not_enough: what's missing
  * }
@@ -85,46 +83,45 @@ export function computeCountryDirection(snapshots, now = Date.now()) {
   const ageDays = (now - latestDay) / 86400000;
 
   if (ageDays > 30) {
-    return { state: 'hidden', freshness: null, asOf: latest.dateKey, ageDays, arrow: null, delta: null, scoreA: null, scoreB: null, axis: null, reason: null };
+    return { state: 'hidden', freshness: null, asOf: latest.dateKey, ageDays, arrow: null, delta: null, scoreA: null, scoreB: null, priorAsOf: null, axis: null, reason: null };
   }
-  const freshness = ageDays > 7 ? 'amber' : 'full';
+  const freshness = ageDays > COUNTRY_OLDER_AFTER_DAYS ? 'amber' : 'full';
 
-  const bucketA = sorted.slice(-3);
-  if (bucketA.length < 3 || spanDays(bucketA) > BUCKET_SPAN_MAX_DAYS) {
-    return notEnough({ freshness, asOf: latest.dateKey, ageDays, reason: 'gap in recent readings' });
-  }
+  const DAY = 86400000;
+  // "Now": the latest reading, or the median of the readings within 3 days of it.
+  const nowGroup = sorted.filter((s) => latestDay - parseDay(s.dateKey) <= NOW_WINDOW_DAYS * DAY);
+  const nowKeys = new Set(nowGroup.map((s) => s.dateKey));
+  const oldestNow = Math.min(...nowGroup.map((s) => parseDay(s.dateKey)));
 
-  const targetDay = latestDay - PRIOR_TARGET_DAYS * 86400000;
-  const windowMs = PRIOR_WINDOW_DAYS * 86400000;
-  // Candidates strictly before the recent bucket, within +/-3 days of the 14-day-ago target —
-  // never reuse a reading already in bucketA.
-  const bucketAKeys = new Set(bucketA.map((s) => s.dateKey));
+  // "Before": the reading nearest 7 days earlier (4-10 days before the latest), never one already in "now".
+  const target = latestDay - PRIOR_TARGET_DAYS * DAY;
   const candidates = sorted
-    .filter((s) => !bucketAKeys.has(s.dateKey) && Math.abs(parseDay(s.dateKey) - targetDay) <= windowMs)
-    .sort((a, b) => Math.abs(parseDay(a.dateKey) - targetDay) - Math.abs(parseDay(b.dateKey) - targetDay));
-  if (candidates.length < 3) {
-    return notEnough({ freshness, asOf: latest.dateKey, ageDays, reason: 'gap around 14 days earlier' });
+    .filter((s) => {
+      if (nowKeys.has(s.dateKey)) return false;
+      const back = (latestDay - parseDay(s.dateKey)) / DAY;
+      return back >= PRIOR_MIN_DAYS && back <= PRIOR_MAX_DAYS && parseDay(s.dateKey) < oldestNow;
+    })
+    .sort((a, b) => Math.abs(parseDay(a.dateKey) - target) - Math.abs(parseDay(b.dateKey) - target));
+  if (!candidates.length) {
+    return notEnough({ freshness, asOf: latest.dateKey, ageDays, reason: 'no reading about 7 days earlier' });
   }
-  const bucketB = candidates.slice(0, 3);
-  if (spanDays(bucketB) > BUCKET_SPAN_MAX_DAYS) {
-    return notEnough({ freshness, asOf: latest.dateKey, ageDays, reason: 'gap around 14 days earlier' });
-  }
+  const prior = candidates[0];
 
-  const scoreA = median(bucketA.map(scoreOf));
-  const scoreB = median(bucketB.map(scoreOf));
+  const scoreA = median(nowGroup.map(scoreOf));
+  const scoreB = scoreOf(prior);
   const delta = scoreA - scoreB;
 
-  const base = { freshness, asOf: latest.dateKey, ageDays, scoreA, scoreB, delta };
+  const base = { freshness, asOf: latest.dateKey, ageDays, scoreA, scoreB, delta, priorAsOf: prior.dateKey };
 
   if (scoreA >= TOP_OF_SCALE && scoreB >= TOP_OF_SCALE) {
-    return { state: 'top', arrow: null, axis: namedAxis(bucketA, bucketB), reason: null, ...base };
+    return { state: 'top', arrow: null, axis: namedAxis(nowGroup, [prior]), reason: null, ...base };
   }
 
   if (Math.abs(delta) < ARROW_THRESHOLD) {
     return { state: 'unchanged', arrow: null, axis: null, reason: null, ...base };
   }
 
-  return { state: 'arrow', arrow: delta > 0 ? 'up' : 'down', axis: namedAxis(bucketA, bucketB), reason: null, ...base };
+  return { state: 'arrow', arrow: delta > 0 ? 'up' : 'down', axis: namedAxis(nowGroup, [prior]), reason: null, ...base };
 }
 
 // The single named axis (only when its own |delta| >= 15), worst-mover-first.

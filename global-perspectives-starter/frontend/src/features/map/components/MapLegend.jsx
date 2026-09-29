@@ -117,8 +117,8 @@ export default function MapLegend({
         </div>
         <div className="sh-legrow">
           <b>Brightness = briefing age</b>
-          <Item mark={<FreshMark state="plain" />}>Briefed ≤7 days · full</Item>
-          <Item mark={<FreshMark state="older" />}>7–30 days · faded, “older”</Item>
+          <Item mark={<FreshMark state="plain" />}>Briefed within 14 days · full</Item>
+          <Item mark={<FreshMark state="older" />}>14–30 days · faded, “older”</Item>
           <Item on={riskHiddenOld > 0} mark={<FreshMark state="hidden" />} note={riskHiddenOld ? `${riskHiddenOld} hidden` : undefined}>30+ days · not shown</Item>
         </div>
         <div className="sh-legrow">

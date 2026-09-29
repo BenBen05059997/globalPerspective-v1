@@ -216,7 +216,7 @@ export default function RadarMap({
 
       // R4b COUNTRY RISK layer (lib/countryRiskLayer.js): every briefed country, hue = worst axis,
       // outline weight + a second wider/fainter stroke for HIGH ("double outline"), faded for a
-      // 7-30d "older" briefing. Drawn instead of the situations pins (SituationHome passes an
+      // 14-30d "older" briefing. Drawn instead of the situations pins (SituationHome passes an
       // empty `situations`/`shading` while this layer is active), never for an un-briefed country.
       const riskData = (countryRisk || [])
         .map((c) => ({ ...c, feature: shadeFeature(c.iso3) }))

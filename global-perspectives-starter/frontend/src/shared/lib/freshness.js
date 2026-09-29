@@ -40,7 +40,11 @@ export function pausedSince({ newestAnalysisAt, now = Date.now(), searched = fal
 //   hidden 30d+    — dropped from the map/feed, only counted (never silently rendered as current)
 // Pure function of an age in days so callers (map shading, feed rows, StoryPeek) never each
 // invent their own thresholds. `ageDays` should already be `(now - timestamp) / 86400000`.
-export function freshnessState(ageDays) {
+// Country briefings are refreshed weekly (Batch 1 / R1), so their "older" band starts later: pass
+// COUNTRY_OLDER_AFTER_DAYS. Stories, situations and feed rows keep the default 7.
+export const COUNTRY_OLDER_AFTER_DAYS = 14;
+
+export function freshnessState(ageDays, olderAfterDays = 7) {
   if (!Number.isFinite(ageDays)) return 'hidden';
   // F2.4 (map-console review R1): a slightly-future timestamp (clock skew between the browser and
   // whatever generated the record) used to compute a negative age and fall straight to 'hidden' —
@@ -49,7 +53,7 @@ export function freshnessState(ageDays) {
   // happened yet.
   if (ageDays < 0) ageDays = 0;
   if (ageDays < 1) return 'live';
-  if (ageDays < 7) return 'plain';
+  if (ageDays < olderAfterDays) return 'plain';
   if (ageDays < 30) return 'older';
   return 'hidden';
 }

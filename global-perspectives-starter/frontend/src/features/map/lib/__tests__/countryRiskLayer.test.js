@@ -55,12 +55,14 @@ describe('countryRiskLayer — worst axis -> hue', () => {
 });
 
 describe('countryRiskLayer — briefing age -> brightness / hidden', () => {
-  it('<=7 days draws at full weight', () => {
+  it('under 14 days (weekly cadence) draws at full weight, including 10 days', () => {
+    expect(countryRiskEntry('France', { riskScore: 60, generatedAt: daysAgo(10) }, NOW).older).toBe(false);
     const e = countryRiskEntry('France', { riskScore: 60, generatedAt: daysAgo(3) }, NOW);
     expect(e.hidden).toBe(false);
     expect(e.older).toBe(false);
   });
-  it('7-30 days draws desaturated and flagged "older"', () => {
+  it('14-30 days draws desaturated and flagged "older"', () => {
+    expect(countryRiskEntry('France', { riskScore: 60, generatedAt: daysAgo(14.5) }, NOW).older).toBe(true);
     const e = countryRiskEntry('France', { riskScore: 60, generatedAt: daysAgo(15) }, NOW);
     expect(e.hidden).toBe(false);
     expect(e.older).toBe(true);

@@ -7,11 +7,11 @@
 //                scale — AXIS_HUE, the same hue family the situations layer already uses)
 //   weight     = outline weight by tier, HIGH strongest (never colour-coded severity)
 //   brightness = freshness of the *briefing* (generatedAt), not of any event:
-//                <=7d full weight · 7-30d desaturated + "older" · >30d not drawn (counted instead)
+//                <14d full weight · 14-30d desaturated + "older" · >30d not drawn (counted instead)
 //   never briefed = no entry at all here — the caller never tints an un-briefed country.
 import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import { deriveHeadline, tierLabel as tierWord } from '@/shared/lib/riskTiers.js';
-import { freshnessState } from '@/shared/lib/freshness.js';
+import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 import { iso3ForName, iso3Name, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
 
 // Backend cap (newsSensitiveData's country_intelligence action silently slices to 15 — see
@@ -55,7 +55,7 @@ export function countryRiskEntry(name, intel, now = Date.now()) {
 
   const generatedAt = intel.generatedAt || null;
   const ageDays = generatedAt ? (now - new Date(generatedAt).getTime()) / 86400000 : null;
-  const fresh = ageDays != null && Number.isFinite(ageDays) ? freshnessState(ageDays) : 'plain';
+  const fresh = ageDays != null && Number.isFinite(ageDays) ? freshnessState(ageDays, COUNTRY_OLDER_AFTER_DAYS) : 'plain';
   // The briefing rule (§3.5) collapses live/plain into one "full" band; only 'older' and 'hidden'
   // change how it's drawn.
   if (fresh === 'hidden') return { iso3, name, hidden: true, generatedAt, ageDays };
@@ -112,7 +112,7 @@ export function buildCountryRiskLayer(intelByName = {}, now = Date.now()) {
 
 /**
  * riskPeekData(entry) -> the StoryPeek-shaped fields for a hovered/focused country in COUNTRY RISK
- * mode: name · RISK <score> <tier> · leading axis · "briefed <date>" (+ "older" when 7-30d).
+ * mode: name · RISK <score> <tier> · leading axis · "briefed <date>" (+ "older" when 14-30d).
  * Mirrors shared/lib/peekData.js's contract (headline/hint required, everything else optional) so
  * the same <StoryPeek> component renders both without knowing which mode it's in.
  */

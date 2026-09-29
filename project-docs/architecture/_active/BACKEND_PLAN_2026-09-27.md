@@ -71,15 +71,15 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 | **B1** | Monthly AI budget + prepaid buffer (no auto-recharge on DeepSeek's official pages) | Operator's call; a buffer that covers several weeks |
 | **D2b** | Story analysis: flash or v4-pro | Compare on ~10 real stories (`quality/analysis`), leaning v4-pro |
 | **D3** | v4-pro for the four high-leverage calls | Yes |
-| **D5** | Move the DeepSeek jobs out of the peak window (to ≥ 10:00 UTC) | Yes |
+| **D5** | Move the DeepSeek jobs out of the peak window (to ≥ 10:00 UTC) | Yes — **✅ done 2026-09-29 (Batch 1, `TASK_2026-09-28_batch1_efficiency.md`)** |
 | **D6m** | Monitoring: balance alarm + calmer freshness alert | **Declined 2026-09-29** (operator: "no need i know the reason so you can bypass the alarm one"). The existing `newsFreshnessMonitor` STALE alert stays as-is |
 | **P1–P3** | ✅ **Done 2026-09-28:** economy impact + quality judge, forecast resolver, impact audit parked; economy surfaces hidden on the site | — |
-| **P4** | Source audit on flash at 2–3 / week | Yes (next task) |
+| **P4** | Source audit on flash at 2–3 / week | Yes (next task) — **✅ done 2026-09-29 (Batch 1, `TASK_2026-09-28_batch1_efficiency.md`)** |
 | **Q1** | Signal API (`newsSignals`, 0 keys): park now + "signals v2" rebuilt on situations / GDACS / country risk / scored forecasts later? | Under discussion |
-| **R1** | Country briefings weekly + early refresh on a HIGH situation / GDACS / coverage jump, max 1 a day; card "older" at 14 d | Yes |
-| **R2** | Story jobs only for new / changed stories; forecast ≤ 1 / story / day | Yes |
-| **R3** | Topic selection every 8 h | Yes |
-| **R4** | Drift chained after country briefings; source audit 2–3 / week; country facts weekly | Yes |
+| **R1** | Country briefings weekly + early refresh on a HIGH situation / GDACS / coverage jump, max 1 a day; card "older" at 14 d | Yes — **✅ done 2026-09-29 (Batch 1, `TASK_2026-09-28_batch1_efficiency.md`)** |
+| **R2** | Story jobs only for new / changed stories; forecast ≤ 1 / story / day | Yes — **✅ done 2026-09-29 (Batch 1, `TASK_2026-09-28_batch1_efficiency.md`)** |
+| **R3** | Topic selection every 8 h | Yes — **✅ done 2026-09-29 (Batch 1, `TASK_2026-09-28_batch1_efficiency.md`)** |
+| **R4** | Drift chained after country briefings; source audit 2–3 / week; country facts weekly | Yes — **✅ done 2026-09-29 (Batch 1, `TASK_2026-09-28_batch1_efficiency.md`)** |
 | **R5** | Check what `newsPostLinkedin` (every 3 h) posted during the pause | Yes, read-only |
 | **B2** | Check the Brave Search plan / limits (used by 4 jobs) | Check before relying on it more |
 

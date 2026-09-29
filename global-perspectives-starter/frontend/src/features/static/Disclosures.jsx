@@ -45,7 +45,7 @@ function Disclosures() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Data Sources</h2>
         <ul style={{ paddingLeft: '1.25rem' }}>
-          <li>Topic detection and AI analysis: DeepSeek V4 and Google Gemini, using globally syndicated publishers and Brave Search.</li>
+          <li>Topic detection and AI analysis: DeepSeek V4, using globally syndicated publishers and Brave Search.</li>
           <li>Geocoding and map layers: Google Maps Platform.</li>
         </ul>
         <p style={{ marginTop: '0.75rem' }}>
@@ -91,9 +91,9 @@ function Disclosures() {
           Geopolitical Risk Dashboard.
         </p>
         <p style={{ marginBottom: '0.75rem' }}>
-          <strong>Automated quality check (LLM-as-judge).</strong> After every Economic Disruption record is
-          generated, a separate model (Gemini 2.5 Flash, different family from the author model) re-reads the
-          record and scores it 1–5 on five axes: <em>coherence</em>, <em>citation fidelity</em>,
+          <strong>Automated quality check (LLM-as-judge) — currently paused.</strong> Economic Disruption records are
+          not being generated at the moment, so this check is paused. When they run, a separate model (Gemini 2.5 Flash,
+          different family from the author model) re-reads each record after it is generated and scores it 1–5 on five axes: <em>coherence</em>, <em>citation fidelity</em>,
           <em> analog match</em>, <em>severity calibration</em>, and <em>no-BS</em> (no unsupported point
           estimates, no fabricated tickers, no hallucinated mechanisms). If any axis scores ≤ 2 the record is
           tagged <code>auto-judged: review</code> and surfaces with a warning chip across the site. This is a

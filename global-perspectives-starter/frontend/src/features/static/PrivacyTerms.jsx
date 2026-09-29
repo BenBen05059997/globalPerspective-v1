@@ -42,7 +42,7 @@ function PrivacyTerms() {
             IP anonymization is enabled. Data is used only to understand overall adoption and improve the product.
           </li>
           <li>
-            Third-party AI APIs (DeepSeek, Google Gemini, Brave Search) receive only the minimum request data needed to generate
+            Third-party AI and search APIs (DeepSeek, Brave Search) receive only the minimum request data needed to generate
             topic analysis, summaries, and predictions. No user-identifiable data is sent to these services.
           </li>
         </ul>
@@ -68,7 +68,7 @@ function PrivacyTerms() {
       <section style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.25rem' }}>Third-Party Services</h2>
         <ul style={{ paddingLeft: '1.25rem' }}>
-          <li>DeepSeek &amp; Google Gemini &mdash; topic detection, AI summaries, predictions, and narrative analysis</li>
+          <li>DeepSeek &mdash; topic detection, AI summaries, predictions, and narrative analysis</li>
           <li>Brave Search &mdash; supplementary news source discovery</li>
           <li>Google Maps Platform &mdash; geocoding and visual map tiles</li>
           <li>Firebase Authentication &mdash; passwordless email sign-in</li>

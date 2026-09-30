@@ -1,0 +1,1 @@
+const r=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];function e(n){if(!n)return"";const t=String(n).match(/^(\d{4})-(\d{2})-(\d{2})/);return t?`${r[+t[2]-1]} ${+t[3]} ${t[1]}`:String(n)}export{e as f};

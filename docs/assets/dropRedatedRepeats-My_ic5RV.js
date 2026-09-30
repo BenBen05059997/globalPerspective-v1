@@ -1,0 +1,1 @@
+function i(r){if(!Array.isArray(r))return r;const o=new Map;for(const t of r){const e=String(t?.title||"").trim().toLowerCase();if(!e)continue;const n=o.get(e);(!n||String(t.date||"")<String(n.date||""))&&o.set(e,t)}return r.filter(t=>{const e=String(t?.title||"").trim().toLowerCase();return!e||o.get(e)===t})}export{i as d};

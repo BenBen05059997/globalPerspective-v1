@@ -110,8 +110,11 @@ function agoShort(iso) {
 export default function RadarMap({
   situations = [], focusId, callout = null, newIds = null, onSelect, onOpenCallout, onScan, height = 560,
   shading = [], linkArcs = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
-  countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk,
+  countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw,
 }) {
+  const onFirstDrawRef = useRef(onFirstDraw);
+  onFirstDrawRef.current = onFirstDraw;
+  const drewOnce = useRef(false);
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
   const beamRef = useRef(null);
@@ -406,6 +409,8 @@ export default function RadarMap({
       if (zoomTransformRef.current) svg.call(zoom.transform, zoomTransformRef.current);
 
       setDims({ width, height });
+      // Boot screen's Map sensor: the coastlines really are on screen now (fires once).
+      if (!drewOnce.current) { drewOnce.current = true; onFirstDrawRef.current?.(); }
     }
 
     draw();

@@ -153,6 +153,29 @@ must_have "$SRC/features/analysis-studio/SharedAnalysisPage.jsx" "useNoIndex" "t
 must_have "$SRC/features/analysis-studio/components/SignedOutExample.jsx" "not ready yet" "the signed-out example says so until a real share exists"
 must_have "$SRC/features/track-record/components/SettlingLog.jsx" "buildWeeklySquares" "settling log computed from the server's real weekly records"
 
+# ─── Boot loader (2026-10-01): shared BootLoader, honest ticks, pre-JS boot, token-only colours ───
+BOOT="$SRC/shared/ui/boot"
+must_have "$SRC/app/App.jsx" "Suspense fallback=\{<RouteFallback />\}" "Suspense fallback is the shared boot loader"
+must_not_have "$SRC/app/App.jsx" "Loading…|Loading\.\.\." "no bare 'Loading…' Suspense fallback"
+must_have "$SRC/app/App.jsx" "removeStaticBoot" "App hands off from the pre-JS boot on the first commit"
+must_not_have "$SRC/features/map/SituationHome.jsx" "Loading map…" "the globe chunk fallback is the boot loader, not bare text"
+must_have "$SRC/features/map/SituationHome.jsx" "deriveBootSensors" "map home sensors come from the real load signals"
+must_have "$BOOT/BootLoader.jsx" "s\.state" "sensor state is read from props"
+must_not_have "$BOOT/BootLoader.jsx" "setInterval|requestAnimationFrame" "no timer-driven ticks in the BootLoader"
+must_not_have "$BOOT/BootLoader.jsx" "useState\(\(?\)? ?=?>? ?['\"](ok|fail|wait)['\"]" "BootLoader never owns a sensor state"
+must_have "$BOOT/BootLoader.jsx" "removeStaticBoot" "BootLoader removes the pre-JS boot node on mount"
+must_have "$BOOT/BootLoader.css" "prefers-reduced-motion: reduce" "reduced-motion rule present"
+must_have "$BOOT/BootLoader.css" "animation: none" "reduced motion stops the sweep and blink"
+must_not_have "$BOOT/BootLoader.css" "prefers-color-scheme" "no new dark/light mode handling"
+must_have "global-perspectives-starter/frontend/index.html" "id=\"gp-boot\"" "index.html builds the pre-JS boot node"
+must_have "global-perspectives-starter/frontend/index.html" "gp-boot-css" "index.html carries the inline boot CSS"
+must_have "global-perspectives-starter/frontend/index.html" "gpBootFail" "index.html has an honest failure path if the app script cannot load"
+if node quality/boot_tokens_guard.mjs . >/tmp/boot_tokens_guard.out 2>&1; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) boot colours match tokens.css ($(cat /tmp/boot_tokens_guard.out))"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("boot colours drifted from tokens.css"); echo "  $(red FAIL) boot tokens: $(cat /tmp/boot_tokens_guard.out)"
+fi
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

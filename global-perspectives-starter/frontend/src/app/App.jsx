@@ -1,5 +1,5 @@
 // global-perspectives-starter/frontend/src/App.jsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import '@/app/App.css';
 import '@/shared/ui/atoms.css';
 import Layout from '@/app/layout/Layout';
@@ -12,9 +12,12 @@ import { ErrorBoundary } from '@/app/errors/ErrorHandling';
 import ErrorModal from '@/app/errors/ErrorModal';
 import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
 import { setAuthProvider } from '@/shared/api/restProxy';
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import MapRedirect from '@/app/MapRedirect';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
+import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
+import { WAITING_SENSORS } from '@/features/map/lib/bootSensors.js';
 
 // Route-level code splitting (STAGE0_FIXES_PLAN.md item (g)): every other page is its own chunk,
 // fetched on first navigation instead of bundled into the main chunk every visitor downloads.
@@ -96,8 +99,21 @@ function AuthBridge() {
   return null;
 }
 
+// Suspense fallback while a lazy page chunk loads: the shared boot loader, never bare loading text.
+// The `/` console is dark and opens with the sensor list (all waiting: nothing has arrived yet, and
+// SituationHome's own loader then takes over with the real states); every other page gets the
+// compact light mark + sweep, in flow where the page will appear.
+function RouteFallback() {
+  const { pathname } = useLocation();
+  return pathname === '/'
+    ? <BootLoader variant="full" tone="dark" sensors={WAITING_SENSORS} ready={false} />
+    : <BootLoader variant="inline" tone="light" />;
+}
+
 export default function App() {
   const basename = resolveBasename();
+  // Hand off from the pre-JS boot screen in index.html on the very first React commit, before paint.
+  useLayoutEffect(() => { removeStaticBoot(); }, []);
 
   return (
     <ErrorProvider>
@@ -106,7 +122,7 @@ export default function App() {
           <AuthBridge />
           <Layout>
             <ErrorBoundary>
-            <Suspense fallback={<div style={{ padding: '4rem 1rem', textAlign: 'center', minHeight: '40vh' }}>Loading…</div>}>
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<SituationHome />} />
               <Route path="/today" element={<Home />} />

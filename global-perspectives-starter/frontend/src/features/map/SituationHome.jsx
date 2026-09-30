@@ -25,6 +25,10 @@ import { defaultMapView, normalizeStoredView } from '@/features/map/lib/globeSpi
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import { peekData } from '@/shared/lib/peekData.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
+import { endFullBoot } from '@/shared/ui/boot/staticBoot.js';
+import { reportFetchError } from '@/shared/api/errorSink.js';
+import { deriveBootSensors } from '@/features/map/lib/bootSensors.js';
 import StoryCard from '@/features/map/components/StoryCard.jsx';
 import OrientationBanner from '@/features/map/components/OrientationBanner.jsx';
 import AlertStack from '@/features/map/components/AlertStack.jsx';
@@ -53,6 +57,10 @@ function canUse3D() {
   } catch { return false; }
 }
 const USE_3D = typeof window !== 'undefined' && canUse3D();
+
+// The boot screen is a once-per-page-load thing: after it has opened the console, coming back to `/`
+// from another page in the same session re-mounts the console without showing it again.
+let bootShown = false;
 
 const STATE_LABEL = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoing', cooling: 'Easing', closed: 'Ended' };
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
@@ -183,7 +191,7 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
 }
 
 export default function SituationHome() {
-  const { world, situations, loading, error, asOf, stale } = useWorld();
+  const { world, situations, loading, error, asOf, stale, retry: retryWorld } = useWorld();
   const [params, setParams] = useSearchParams();
   useEffect(() => { document.title = 'Global Perspectives™ — AI-Powered News Intelligence'; }, []);
   const focus = params.get('focus');
@@ -266,7 +274,55 @@ export default function SituationHome() {
   useEffect(() => { const onKey = (e) => { if (e.key === 'Escape' && tourOn) setTourOn(false); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [tourOn]);
 
   // M5a — stories (current topics feed) reused as-is from the existing public hook; no re-fetch.
-  const { topics, updatedAt: topicsUpdatedAt, generatedDate: topicsGeneratedDate } = useGeminiTopics();
+  const {
+    topics, updatedAt: topicsUpdatedAt, generatedDate: topicsGeneratedDate,
+    settled: topicsSettled, error: topicsError, refetch: refetchTopics,
+  } = useGeminiTopics();
+
+  // Boot screen (shared BootLoader): three sensors, each ticked ONLY by real data — News desk =
+  // the stories feed settled, Disaster alerts = world/latest.json arrived with a checked GDACS
+  // source, Map = the globe/radar drew its first frame. See features/map/lib/bootSensors.js.
+  const [bootOpen, setBootOpen] = useState(() => !bootShown);
+  const [bootForced, setBootForced] = useState(false);
+  const [mapDrawn, setMapDrawn] = useState(false);
+  const [mapError, setMapError] = useState(null);
+  const [mapAttempt, setMapAttempt] = useState(0);
+  const bootSensors = useMemo(() => deriveBootSensors({
+    topics, topicsSettled, topicsError, world, worldLoading: loading, worldError: error,
+    mapDrawn, mapFailed: !!mapError,
+  }), [topics, topicsSettled, topicsError, world, loading, error, mapDrawn, mapError]);
+  const onMapFirstDraw = useCallback(() => setMapDrawn(true), []);
+  const onMapDrawError = useCallback((e) => setMapError(e || new Error('map failed to draw')), []);
+  // A failed sensor is reported once to the client error sink (and again only after it recovers).
+  const reportedSensors = useRef(new Set());
+  useEffect(() => {
+    for (const sn of bootSensors) {
+      if (sn.state !== 'fail') { reportedSensors.current.delete(sn.id); continue; }
+      if (reportedSensors.current.has(sn.id)) continue;
+      reportedSensors.current.add(sn.id);
+      const cause = sn.id === 'news' ? new Error(String(topicsError || 'stories feed failed'))
+        : sn.id === 'disaster' ? (error || new Error('world bundle missing or without a checked GDACS source'))
+          : mapError;
+      reportFetchError(`boot-sensor-${sn.id}`, cause);
+    }
+  }, [bootSensors, topicsError, error, mapError]);
+  // RETRY re-runs only what failed; anything that already arrived is left alone.
+  const retryBoot = useCallback(() => {
+    for (const sn of bootSensors) {
+      if (sn.state !== 'fail') continue;
+      if (sn.id === 'news') refetchTopics();
+      else if (sn.id === 'disaster') retryWorld();
+      else { setMapError(null); setMapDrawn(false); setMapAttempt((n) => n + 1); }
+    }
+  }, [bootSensors, refetchTopics, retryWorld]);
+  const bootDone = useCallback(() => { bootShown = true; endFullBoot(); setBootOpen(false); }, []);
+  const bootOverlay = bootOpen && typeof document !== 'undefined' ? createPortal(
+    <BootLoader
+      sensors={bootSensors} tone="dark" variant="full" ready={bootForced || bootSensors.every((sn) => sn.state === 'ok')}
+      onRetry={retryBoot} onContinue={() => setBootForced(true)} onDone={bootDone}
+    />,
+    document.body,
+  ) : null;
   const topicsAsOf = topicsUpdatedAt || topicsGeneratedDate || null;
   const topicsAgeDays = topicsAsOf ? (Date.now() - new Date(topicsAsOf).getTime()) / 86400000 : null;
   const topicsFreshness = topicsAgeDays != null ? freshnessState(topicsAgeDays) : null;
@@ -676,8 +732,9 @@ export default function SituationHome() {
         {isPhone ? <div className="sh-controls">{controls}</div> : null}
 
         {showGlobe ? (
-          <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}>Loading map…</div>}>
+          <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}><BootLoader variant="inline" tone="dark" /></div>}>
             <SituationMap3D
+              key={mapAttempt} onFirstDraw={onMapFirstDraw} onDrawError={onMapDrawError}
               situations={riskMode ? [] : situations} focusId={focusId} callout={consoleCallout} tour={tourProps} newIds={newIds} view="globe"
               onSelect={userSelect} onOpenCallout={userSelect} height={mapH} width={isPhone ? (typeof window !== 'undefined' ? window.innerWidth - 24 : null) : band.w}
               shading={riskMode ? [] : visibleShading} linkArcs={riskMode ? [] : linkArcs} storyFocusIso3={storyFocusIso3}
@@ -694,6 +751,7 @@ export default function SituationHome() {
           </Suspense>
         ) : (
           <RadarMap
+            key={mapAttempt} onFirstDraw={onMapFirstDraw}
             situations={riskMode ? [] : situations} focusId={focusId} callout={consoleCallout} newIds={newIds}
             onSelect={userSelect} onOpenCallout={userSelect} onScan={markScanned} height={mapH}
             shading={riskMode ? [] : visibleShading} linkArcs={riskMode ? [] : linkArcs} storyFocusIso3={storyFocusIso3}
@@ -811,6 +869,7 @@ export default function SituationHome() {
       <div className={`sh-root gp-console sh-console${stale ? ' sh-stale' : ''}`}>
         <h1 className="sh-sr-only">Situation map — Global Perspectives</h1>
         <div className="sh-sr-only" role="status" aria-live="polite">{announcement}</div>
+        {bootOverlay}
         {statusSlot ? createPortal(statusLine, statusSlot) : <div className="sh-status-inline">{statusLine}</div>}
 
         <div className="sh-band" ref={bandRef}>
@@ -877,6 +936,7 @@ export default function SituationHome() {
           the page's heading look. */}
       <h1 className="sh-sr-only">Situation map — Global Perspectives</h1>
       <div className="sh-sr-only" role="status" aria-live="polite">{announcement}</div>
+      {bootOverlay}
       <header className="sh-bar">
         <div>
           <div className="sh-lede">{error && !world ? 'The situation feed is unavailable right now.' : (world ? lede : 'Loading the world…')}</div>

@@ -12,9 +12,13 @@ export function useGeminiTopics() {
   const [updatedAt, setUpdatedAt] = useState(null);
   const [generatedDate, setGeneratedDate] = useState(null);
   const [hasNewData, setHasNewData] = useState(false);
+  // true once a load attempt has finished (success or failure) — lets a caller tell "still
+  // fetching" from "fetched, nothing came back" (the map's boot sensors need that).
+  const [settled, setSettled] = useState(false);
 
   const loadTopics = useCallback(async () => {
     setError(null);
+    setSettled(false);
     let hadCachedTopics = false;
 
     // Try cache first
@@ -67,6 +71,7 @@ export function useGeminiTopics() {
       }
     } finally {
       setLoading(false);
+      setSettled(true);
       window.dispatchEvent(new CustomEvent('gp-loading-end'));
     }
   }, []);
@@ -94,5 +99,5 @@ export function useGeminiTopics() {
     return () => clearInterval(intervalId);
   }, [updatedAt]);
 
-  return { topics, loading, error, refetch: loadTopics, isStale, updatedAt, generatedDate, hasNewData };
+  return { topics, loading, error, settled, refetch: loadTopics, isStale, updatedAt, generatedDate, hasNewData };
 }

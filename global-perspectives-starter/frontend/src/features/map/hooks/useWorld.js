@@ -5,7 +5,7 @@ const POLL_MS = 5 * 60 * 1000; // the bundle refreshes ~30 min; poll gently so a
 
 /**
  * useWorld — the map-as-home data bundle (situations + freshness + lede + ranked), auto-refreshing
- * while the tab is visible. Returns { world, situations, loading, error, asOf, stale, refresh }.
+ * while the tab is visible. Returns { world, situations, loading, error, asOf, stale, refresh, retry }.
  *
  * `world` is null until the first successful load (or if the tracker hasn't produced a bundle yet).
  * `stale` combines the bundle's own `stale` flag with a client-side guard (bundle older than 90 min).
@@ -19,17 +19,22 @@ export function useWorld() {
 
   const load = useCallback(async () => {
     abort.current?.abort();
-    abort.current = new AbortController();
+    const ctrl = new AbortController();
+    abort.current = ctrl;
     try {
-      const w = await fetchWorld(abort.current.signal);
+      const w = await fetchWorld(ctrl.signal);
       setWorld(w); // may be null (not generated yet) — the UI shows the empty state
       setError(null);
     } catch (e) {
       if (e.name !== 'AbortError') setError(e);
     } finally {
-      setLoading(false);
+      // A superseded (aborted) load must not flip `loading` off while its replacement is in flight.
+      if (abort.current === ctrl) setLoading(false);
     }
   }, []);
+
+  // Boot-screen RETRY: clear the error, show loading again, re-run the same fetch.
+  const retry = useCallback(() => { setError(null); setLoading(true); load(); }, [load]);
 
   useEffect(() => {
     load();
@@ -44,7 +49,7 @@ export function useWorld() {
   const clientStale = asOf ? (Date.now() - new Date(asOf).getTime() > 90 * 60 * 1000) : false;
   const stale = Boolean(world?.stale) || clientStale;
 
-  return { world, situations: world?.situations || [], loading, error, asOf, stale, refresh: load };
+  return { world, situations: world?.situations || [], loading, error, asOf, stale, refresh: load, retry };
 }
 
 /** useSituationDetail — lazily fetch one situation's full detail (history/evidence) when selected. */

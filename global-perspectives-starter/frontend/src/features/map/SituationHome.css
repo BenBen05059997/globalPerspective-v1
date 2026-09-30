@@ -370,6 +370,12 @@
      specificity) silently shrank the Globe/Radar segmented buttons and the Key button back
      under the 44px tap-target minimum on phone. */
   .sh-ctl { min-height: var(--c-tap-min, 44px); }
+  /* Phone control row: the five chips (Walk me through / Globe·Radar / Situations·Country risk /
+     Key) are wider than a 360-390px screen, so the old right-anchored single row ran off the left
+     edge ("gh", "Rad", "Country risk" wrapping). Anchor both edges and wrap to a second row; every
+     chip keeps its label on one line and its 44px tap height. Desktop (>=900px) is untouched. */
+  .sh-controls { left: 12px; right: 12px; flex-wrap: wrap; justify-content: flex-start; }
+  .sh-controls .sh-ctl { white-space: nowrap; }
   /* R4a: the wider control cluster fills the top edge on a phone — the empty-state note moves to
      the bottom-left, clear of the spin/sweep control at bottom-right. */
   .sh-quiet { top: auto; bottom: 12px; right: 68px; }

@@ -152,8 +152,14 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
 export default function SituationMap3D({
   situations = [], focusId, callout = null, tour = null, newIds = null, view = 'globe', onSelect, onOpenCallout, height = 560, width = null,
   shading = [], linkArcs = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
-  countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk,
+  countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw, onDrawError,
 }) {
+  // Boot screen's Map sensor: deck.gl's first real frame (once), or its failure to start.
+  const firstDrawRef = useRef(onFirstDraw);
+  firstDrawRef.current = onFirstDraw;
+  const drewOnce = useRef(false);
+  const drawErrorRef = useRef(onDrawError);
+  drawErrorRef.current = onDrawError;
   // `view` is accepted for API back-compat with the single call site (SituationHome.jsx always
   // passes "globe" — see the comment above GLOBE_VIEW_BASE); it no longer changes any behaviour.
   void view;
@@ -659,6 +665,8 @@ export default function SituationMap3D({
         }}
         controller={{ type: GlobeController }}
         layers={layers}
+        onAfterRender={() => { if (!drewOnce.current) { drewOnce.current = true; firstDrawRef.current?.(); } }}
+        onError={(err) => drawErrorRef.current?.(err)}
         getTooltip={getTooltip}
         pickingRadius={16}
         getCursor={({ isDragging, isHovering }) => (isDragging ? 'grabbing' : (isHovering ? 'pointer' : 'grab'))}

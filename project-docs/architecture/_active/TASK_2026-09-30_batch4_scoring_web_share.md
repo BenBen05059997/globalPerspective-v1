@@ -542,3 +542,5 @@ questions: {
 (Filled in during execution: one block per phase with command outputs, hashes and the browser checks.)
 
 **Monitor check, phase A (2026-09-30 07:27 UTC):** deployed = repo byte-identical (7 files), `npm test` 42/42. The Q18a forced-invoke check was denied by the permission classifier (the agent ran 3 invokes in a loop); it was not retried. Pending: the operator chooses between the forced check and verifying on the scheduled 12:25 UTC run (new topics from 12:15 get the M2 prompt). Rollback zip `8dZ6qH…` ready.
+
+**Q18a live check done by the monitor (operator: "ok you can do it yourself"), 2026-09-30 ~07:30 UTC:** two single bare forced invokes (Somali pirates; Delhi campaign), both 200, generated 1 each. The stored `PREDICTION` JSON parses: 9 / 9 and 8 / 8 triggers carry an integer `p` and a named `resolution_source` (e.g. "ICC International Maritime Bureau piracy report", p 70, by 2026-10-31); `p` spread 15–70. The third story was skipped (17 / 17 ≥ the 90% bar). Cost is a few cents (2 v4-pro forecasts).

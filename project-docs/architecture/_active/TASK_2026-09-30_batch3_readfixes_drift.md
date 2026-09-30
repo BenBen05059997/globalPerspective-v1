@@ -1,4 +1,4 @@
-## Batch 3: read fixes, drift-note direction check, region leftovers, code-drift audit, deploy readiness — 2026-09-30 — active (PLAN ONLY; nothing executed, nothing changed)
+## Batch 3: read fixes, drift-note direction check, region leftovers, code-drift audit, deploy readiness — 2026-09-30 — done (A–H + deploys; the Worker paste is with the operator)
 
 **Goal:**
 - **A (read fix a):** stop old stories being stamped with today's date, so `/weekly` "NEW EVENTS TODAY", the story-page timeline and "newest first" story analysis are truthful.
@@ -618,3 +618,8 @@ Every step needs its own fresh operator "yes" (`./deploy.sh`, and the Worker dep
 - **Drift flags written (Tier A + B only, 10 notes):** Japan 08-12; Iran 07-29, 07-30, 08-09, 08-17, 08-19; Russia 08-21; China 07-11, 08-12; DR Congo 07-09. `scripts/audit-drift-direction.mjs --write-flags` → `SET directionFlag {backfilled, at, source: batch3-audit}` on the 10 `DRIFTLOG#` + 10 matching `DRIFT#` rows (20 flagged, text untouched; undo = `REMOVE directionFlag`). Verified: Iran `DRIFTLOG#2026-08-19` carries the flag and its 333-char text is unchanged. The 23 Tier C (LLM-only) notes are not flagged.
 - **Multi-capital:** the country card omits the capital row when Wikidata lists more than one capital (`features/countries/lib/countryFacts.js`, + test).
 - **Deploy:** approved (frontend via `./deploy.sh` from `main` after a fast-forward; the Worker is pasted by the operator).
+
+### Deploys (2026-09-30)
+- **Frontend deploy 1** (operator "yes, yes deploy"): `main` fast-forwarded to `map-console`; `./deploy.sh --commit … --push` → `main` 7c65393, bundle `index-DQ1mns62.js` live, home 200. Live click-through (11 pages × 1440 / 390): 0 page errors. Found post-deploy: story-not-found for earlier same-day stories (a pre-existing proxy reader bug, fixed live in the proxy, see "Post-deploy fix") and home overflow at 390 (fixed in `Home.css`).
+- **Frontend deploy 2** (operator "deploy"): `main` 0a8920d, bundle `index-C8dv496O.js` live. Live click-through repeated: 0 page errors on all 11 pages at 1440 and 390; home scrollWidth 390; the story page renders.
+- **Worker:** code prepared in `project-docs/distribution/WORKER_FULL_CODE.md` + paste checklist in `project-docs/ops/DEPLOYMENT_NOTES.md`; **awaiting the operator's dashboard paste**. Until then deep links return HTTP 404 with the SPA shell (the page renders via `404.html`).

@@ -1,4 +1,4 @@
-## Batch 4: scoring pipeline (D6 M2–M4), story web stage 2 (D8), Studio share links (D5) — 2026-09-30 — active (PLAN ONLY; nothing executed, nothing changed except this file)
+## Batch 4: scoring pipeline (D6 M2–M4), story web stage 2 (D8), Studio share links (D5) — 2026-09-30 — done (Y8 with the operator) (PLAN ONLY; nothing executed, nothing changed except this file)
 
 **Goal:**
 - **Scoring (D6 M2–M4):** every forecast question carries its **own probability `p` and a named `resolution_source`, frozen at issue** (M2). A **pre-registered weekly sample** (about 22 questions, at most one per story) is drawn with a **published seed commitment**, drafted by an agent, **confirmed by the operator in about 1 h a week**, and scored by Brier and skill against a base rate, with VOIDs published and a **dead-man's alarm** if a weekly settle is missed (M3). The site then shows each question's own `%` on WATCH, the country card, briefings and the story page, and `/track-record` gets the seed row, the settling log built from real weeks, and per-question deadlines (M4, read fix g).
@@ -529,7 +529,7 @@ questions: {
 | G | D5: Lambda source + copies + tests (**STOP before Y1–Y4**) | **Done 2026-09-30** (repo only, nothing in AWS) | see Phase G evidence below |
 | G-gate | Y1 table · Y2 IAM role · Y3 Lambda · Y4 Function URL · Y5 `docs/config.js` | ✅ **Done 2026-09-30** (operator: "yes you can do it all here"; run by the monitor, one bare command each) | see "Y1–Y5 evidence" |
 | H | D5: share button, `/analyze/s/:id`, signed-out example state | **Done 2026-09-30** (frontend on `main`, hidden until Y5; not deployed) | see Phase H evidence below |
-| I | Deploy (Y6) + optional Worker header (Y7) + smoke | **Waiting for the operator's yes** | |
+| I | Deploy (Y6) + optional Worker header (Y7) + smoke | ✅ **Y6 done 2026-09-30** (`main` 6afc448, bundle `index-DtP6HJeP.js`); Y7 not needed (the page sets noindex meta; the share Lambda sends `X-Robots-Tag`) | see "Deploy evidence" |
 
 ### Phase evidence
 
@@ -710,3 +710,5 @@ Then the frontend deploy (Y6) makes the share button and `/analyze/s/:id` live. 
 - **Y3:** Lambda `newsSharedAnalysis` Active, nodejs22.x, 30 s, 256 MB, 3 env vars (public values, the temp env file deleted), CodeSha256 `FjvYzL30sVzqePmk651U3jkitB9Z4zSQAQ3/N0XjNWg=`; 15 deployed files byte-identical to the repo.
 - **Y4:** URL `https://oufakens7e5es4odls7ayf52l40nmqut.lambda-url.ap-northeast-1.on.aws/` (NONE, BUFFERED), permission `fnurl-public`. Checks: unknown id 404; OPTIONS 204 with ACAO + X-Robots-Tag once; POST without token 401; URL CORS None. The fallback `lambda:InvokeFunction` statement was not needed.
 - **Y5:** `docs/config.js` gains `window.NEWS_SHARE_ENDPOINT`.
+
+**Deploy evidence (2026-09-30):** `./deploy.sh --commit … --push` from `main` → 6afc448; bundle `index-DtP6HJeP.js` live; live `config.js` carries `NEWS_SHARE_ENDPOINT`. Live click-through at 1440 / 390 (8 pages): all HTTP 200 (the Worker SPA fallback is live), 0 page errors, no overflow at 390. The story without links shows "one update so far…". The signed-out Studio shows "Example analysis: not ready yet". An unknown share shows "deleted or never existed". The track record shows Stage 0 until the first tick at 10:30 UTC commits W41 / W42. **Remaining operator step Y8:** create one real share in Studio and set `EXAMPLE_SHARE_ID`.

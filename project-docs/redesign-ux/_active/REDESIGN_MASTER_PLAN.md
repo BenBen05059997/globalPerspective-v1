@@ -237,3 +237,5 @@ Sizes are shown only where an earlier estimate exists; the rest are sized in eac
 2. Answer §6 (H3, H4, PH, S5–S10, WP).
 3. Approve the stage order in §7 (or reorder it).
 4. Then say "build stage N". Each stage starts with its task file for you to see.
+
+**2026-09-30, Batch 4 live** (`architecture/_active/TASK_2026-09-30_batch4_scoring_web_share.md`): D6 scoring (per-question p + source, weekly committed-seed sample, blind drafter, operator settle CLI, scoring null below 150, alarm; the schedule is on), D8 story web stage 2 (dated cites, per-story WEB, `web_index`, map lines), D5 Studio share links (new table + Lambda + URL). D11 home swap: the gate is being met (31 open situations across 4 types on 2026-09-30); earliest ~2026-10-07 with an operator yes.

@@ -37,14 +37,18 @@
 .tr-fb-tag { font-size: var(--text-xs); padding: 2px 8px; border-radius: 999px; }
 .tr-fb-tag.fired { background: var(--risk-h-soft); color: var(--risk-h); }
 .tr-fb-tag.notfired { background: var(--risk-l-soft); color: var(--risk-l); }
+.tr-fb-tag.open, .tr-fb-tag.void { background: var(--paper-2, rgba(0,0,0,0.05)); color: var(--ink-mid); }
 .tr-fb-panel-hint { color: var(--ink-dim); font-size: var(--text-sm); margin: 0; }
 .tr-fb-panel-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .tr-fb-panel-item { font-size: var(--text-sm); line-height: 1.4; }
 .tr-fb-panel-trigger { color: var(--ink-mid); }
 
 .tr-fb-verdict { font-weight: 700; margin-right: 4px; }
-.tr-fb-verdict.fired { color: var(--risk-h); }
-.tr-fb-verdict.not_fired { color: var(--risk-l); }
+.tr-fb-verdict.yes { color: var(--risk-h); }
+.tr-fb-verdict.no { color: var(--risk-l); }
+.tr-fb-verdict.awaiting, .tr-fb-verdict.past, .tr-fb-verdict.void { color: var(--ink-mid); }
+.tr-fb-meta { display: block; font-size: var(--text-xs); color: var(--ink-dim); margin-top: 2px; }
+.tr-fb-quote { display: block; font-size: var(--text-xs); color: var(--ink-mid); font-style: italic; margin-top: 2px; }
 .tr-fb-cite { margin-left: 6px; font-size: var(--text-xs); white-space: nowrap; }
 
 .tr-fb-boardlist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }

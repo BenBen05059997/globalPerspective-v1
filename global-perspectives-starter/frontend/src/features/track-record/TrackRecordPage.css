@@ -432,3 +432,8 @@
 .tr-cl-locked:hover { border-color: var(--accent, #b4502f); }
 .tr-cl-locked strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 .tr-cl-locked-cta { color: var(--accent, #b4502f); font-weight: 600; }
+
+.tr-status-note { margin: 8px 0 0; font-size: var(--text-sm); color: var(--ink-mid); line-height: 1.5; }
+.tr-pilot-details { margin-top: 10px; font-size: var(--text-sm); color: var(--ink-mid); }
+.tr-pilot-details summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.tr-pilot-list { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }

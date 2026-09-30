@@ -161,7 +161,8 @@ Phase ids: **A** M2 questions at issue · **B** M3 sampler, drafter, confirm CLI
 | I | `docs/` (build output via `deploy.sh`, not hand-edited); `docs/sitemap.xml` untouched (`/analyze/s/*` is never listed) | deploy |
 
 ### Repo files: delete
-None. (The legacy resolver logic is replaced inside `newsPredictionResolver/src/index.js`; the deployed zip is kept as the rollback. `predictions/review.js` stays as a legacy tool.)
+Phase D removed (superseded by the server's `questions` block): `features/track-record/lib/{pastDeadline,postPilotBrier}.js` and their tests, the old `stageWording.test.js` and `settlingLog.test.js` (replaced by `stageWordingV2.test.js`, `settlingLogV2.test.js`).
+Otherwise none. (The legacy resolver logic is replaced inside `newsPredictionResolver/src/index.js`; the deployed zip is kept as the rollback. `predictions/review.js` stays as a legacy tool.)
 
 ### Live resources touched (by phase)
 | Resource | Phases | Kind of change |
@@ -522,7 +523,7 @@ questions: {
 | A | M2: `p` + named source per question, gates G7–G12, prompt, 2500 tokens, deploy, live check | **Code deployed 2026-09-30; live 3-story check BLOCKED** (the harness denied the forced prod invokes; needs the operator's go, see Phase A evidence) | see Phase A evidence below |
 | B | M3: sampler + drafter in `newsPredictionResolver`, settle-review CLI, verify-draw, rule re-point | **Code deployed 2026-09-30; rule still DISABLED (operator enables after monitor verify)** | see Phase B evidence below |
 | C | M3: aggregate `questions` block, scoring, `prediction_snapshot` fields, dead-man's alarm | **Done 2026-09-30** (3 Lambdas deployed; rule still DISABLED) | see Phase C evidence below |
-| D | M4: `/track-record`, WATCH, card, briefings, story page; "not ready yet" states | Queued (frontend, not deployed until I) | |
+| D | M4: `/track-record`, WATCH, card, briefings, story page; "not ready yet" states | **Done 2026-09-30** (frontend on `main`, not deployed) | see Phase D evidence below |
 | E | D8: 10 dated entries, grounded cites, `THREAD#id/WEB`, `WEB#INDEX`, coverage, `web_index` | Queued | |
 | F | D8: FED INTO from the index, empty states, map lines | Queued (frontend) | |
 | G | D5: Lambda source + copies + tests (**STOP before Y1–Y4**) | Queued | |
@@ -590,3 +591,12 @@ Checked: 2026-10-27T12:30:00Z
 **Monitor check, phase C (2026-09-30):** 3 Lambdas deployed = repo (snapshot 6 files identical; proxy + monitor identical except the `package.json` test script); tests: snapshot suites pass (custom runner), proxy 35, monitor 5; live `prediction_track_record` legacy numbers unchanged (122 resolved, Brier 0.154, 20,788 pending); new `questions` block served with `scoring: null`. Rule still DISABLED before the monitor enables it.
 
 **Schedule enabled by the monitor (2026-09-30):** `TriggerPredictionResolver` → `cron(30 10 * * ? *)`, one target `newsPredictionResolver` with input `{"action":"tick"}`, state ENABLED (3 bare commands: put-rule DISABLED, put-targets, enable-rule; read back). The first tick at 10:30 UTC commits 2026-W41 and 2026-W42; the current week is warm-up.
+
+#### Phase D evidence (2026-09-30)
+- **Built (frontend, branch `main`, not deployed):** `track-record/lib/{trackRecordView,accuracyEstimate,notReadyCopy,questionStates,sampleRule}.js`, rewritten `stageWording.js`, `settlingLog.js`, extended `forecastPlaces.js`; `components/DrawRow.jsx/.css`, rewritten `SettlingLog.jsx`, `ForecastBoard.jsx`; `TrackRecordPage.jsx` and `TrackRecordText.jsx` on the shared view-model; `threads/lib/questionChips.js`, `threads/components/QuestionChip.jsx/.css`, `buildDeadlines` passes the per-question fields, `WatchSlide`, `ThreadForecast`, `CountryCardV2` show the chip and one honest note; `briefings/hooks/useStoryQuestion.js` + `StorySlide`; `restProxy.js` `fetchPredictionSnapshotByThread`. `scripts/check-shared-sync.mjs` new pair (golden fixture, with a self-test); `quality/verify_pages.sh` guards moved to the view-model.
+- **Plan deviations:** the tile "Awaiting their deadline" is "Open, deadline still ahead" (the page guard forbids the old wording for a passed deadline); the old `recent`-based post-pilot Brier path is deleted (the server owns the score); the phone TIMELINE list of dated triggers was not given chips (WATCH carries them); `sampleRuleGolden.json` is a new guarded pair.
+- **Checks:** `npm run verify` 108 files / 824 tests, 0 errors (3 pre-existing hook warnings); `quality/verify_pages.sh` 53 pass / 0 fail; `check-shared-sync.mjs` ALL PASS and `--self-test` PASS; new tests: accuracyEstimate 6, questionStates 2, stageWordingV2 6, settlingLogV2 7, sampleRule 4, notReadyCopy 14, trackRecordPage 8, questionChips 8, questionSurfaces 6, useStoryQuestion 3, storyQuestion 3, card 1, forecastPlaces +1.
+- **Browser (Playwright chromium, local Vite on :5173 against the live proxy; states live data does not reach yet use intercepted `prediction_track_record` / `prediction_snapshot` responses; the tour overlay suppressed):** 82/82 checks at 1440 and 390: live `/track-record` (Stage 0, "have not started yet", accuracy "not ready yet" with no date, no invented squares, pilot archived, MAP/BOARD tabs, pilot details, Read as text); fixture Stage 1 (first week starts Oct 5 2026, estimate range, calibration not ready, nothing to verify, one non-red square); fixture drawn week (counts, 2 of 150, **Verify this draw verified in the browser** with the golden data, BOARD tiles with %, source, states and void reason, no "awaiting" for a passed deadline, map renders, squares amber/red/open, text page); story WATCH (2 chips + the legacy note, phone via the slide dots) and Read in full forecast board; country card (question chip + note; phone sheet expanded); briefing story slide "Next dated question". 0 page or console errors; no horizontal overflow. Dev server stopped afterwards. Screenshots: `…/scratchpad/pw/*.png`.
+- **Live today:** `/track-record` shows Stage 0 because `questions.issued` is 0 (the first M2 rows come with the next forecast run; the first commitments with the first enabled tick).
+
+**Monitor check, phase D (2026-09-30):** verify 824 / 824; page guards 53 / 0; check-shared-sync ALL PASS; Stage 1 screenshot reviewed: the estimate is labelled, "nothing to verify yet", the pilot is archived, and no invented squares. Not deployed (Y6 pending).

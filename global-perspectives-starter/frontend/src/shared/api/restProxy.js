@@ -268,6 +268,11 @@ export async function fetchPredictionSnapshot(topicIds) {
   return proxyAction('prediction_snapshot', { topicIds: list.filter(Boolean) });
 }
 
+// Same action, asked by story: the proxy resolves the thread's topic ids itself (briefings only know the threadId).
+export async function fetchPredictionSnapshotByThread(threadId) {
+  return proxyAction('prediction_snapshot', { threadId });
+}
+
 export async function fetchDisruptionsList({ minSeverity, country, limit } = {}) {
   const payload = {};
   if (minSeverity) payload.minSeverity = minSeverity;

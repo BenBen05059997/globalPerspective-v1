@@ -295,6 +295,15 @@ function livePairs() {
     },
     { name: 'real-country rule (placeFilter x6, name tables x8, frontend)', run: () => checkPlaceRule() },
     {
+      // Batch 4 / D: the weekly draw rule exists twice (settle Lambda: Node crypto; frontend "Verify this draw":
+      // WebCrypto). Both sides test against this one golden fixture, so the two must stay byte-identical.
+      name: 'sampleRuleGolden.json (settle Lambda + frontend)',
+      run: () => checkAllIdentical([
+        abs('amplify/backend/function/newsPredictionResolver/test/fixtures/sampleRuleGolden.json'),
+        abs('global-perspectives-starter/frontend/src/features/track-record/__tests__/fixtures/sampleRuleGolden.json'),
+      ]),
+    },
+    {
       name: 'entity-normalization',
       run: async () => checkEntityNormalization(
         abs('amplify/backend/function/newsSituationIngest/src/classifier-core.js'),
@@ -438,6 +447,16 @@ async function selfTestPlaceRule() {
   return result;
 }
 
+async function selfTestSampleGolden() {
+  const dir = mkTmp();
+  const a = path.join(dir, 'a.json'); const b = path.join(dir, 'b.json');
+  const ref = fs.readFileSync(abs('amplify/backend/function/newsPredictionResolver/test/fixtures/sampleRuleGolden.json'), 'utf8');
+  fs.writeFileSync(a, ref); fs.writeFileSync(b, ref.replace('"K": 22', '"K": 23'));
+  const result = checkAllIdentical([a, b]);
+  fs.rmSync(dir, { recursive: true, force: true });
+  return result;
+}
+
 async function selfTest() {
   console.log('Self-test — perturbing one byte per pair and confirming DRIFT is caught\n');
   const cases = [
@@ -448,6 +467,7 @@ async function selfTest() {
     ['entity-normalization', selfTestEntityNormalization],
     ['dayZero.js (x6)', selfTestDayZero],
     ['real-country rule', selfTestPlaceRule],
+    ['sampleRuleGolden.json', selfTestSampleGolden],
   ];
   let allCaught = true;
   for (const [name, fn] of cases) {

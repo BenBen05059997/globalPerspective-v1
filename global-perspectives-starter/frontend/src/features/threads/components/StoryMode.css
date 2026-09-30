@@ -294,6 +294,7 @@
 .sm-watch-diamond { color: var(--c-accent); }
 .sm-watch-text { font-size: 13px; color: var(--c-text-head); }
 .sm-watch-meta { font-size: 11px; color: var(--c-text-dim); }
+.sm-watch-note { margin: 10px 0 0; font-size: 11px; line-height: 1.45; color: var(--c-text-dim); }
 
 /* ── Scrubber ─────────────────────────────────── */
 .sm-scrubber {

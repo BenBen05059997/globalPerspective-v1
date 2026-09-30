@@ -1,44 +1,35 @@
-// settlingLog — "one square per week... missed weeks shown in red" (TRACK_RECORD_AND_STUDIO_
-// RULING.md, Track record page design). Buckets real `confirmedAt` timestamps into ISO weeks
-// (Mon-Sun) from `eraCutFrom` through `now`, and marks any week with zero settlements as missed.
-// Pure and real-date-driven: no week is invented and no count is guessed — a week with no
-// confirmedAt in range is simply zero.
-import { weekStart, isoWeekKey } from '@/features/track-record/lib/trFormatDate.js';
+// settlingLog — one square per real week, from `questions.weeks[]` (the server builds them from
+// the weekly draw / verdict / review records). Colours mean:
+//   grey   nothing was due that week (a fact, not a miss)
+//   open   the week has not ended yet
+//   green  everything that fell due was confirmed
+//   amber  some of what fell due was confirmed
+//   red    something fell due, the week is over, and nothing was confirmed
+// "Due" = a sampled question whose deadline + 3 days falls in the week.
+import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
 
-const WEEK_MS = 7 * 24 * 3600 * 1000;
-
-/**
- * @param {string[]} confirmedAtDates - ISO timestamps of every resolution (pilot + post-pilot;
- *   the log is about settling activity, not accuracy, so the pilot's one run still counts as a week
- *   that *did* settle something — it's the calibration/headline numbers that exclude it, not this).
- * @param {string} eraCutFrom - 'YYYY-MM-DD', the first week to show
- * @param {Date|string|number} now - the current time (injected for pure/testable output)
- * @returns {{weekStart: Date, weekKey: string, settled: number, missed: boolean}[]}
- */
-export function buildSettlingLog(confirmedAtDates, eraCutFrom, now = new Date()) {
-  const start = weekStart(eraCutFrom);
-  const end = weekStart(now);
-  if (!start || !end) return [];
-
-  const counts = new Map();
-  for (const at of confirmedAtDates || []) {
-    const key = isoWeekKey(at);
-    if (!key) continue;
-    counts.set(key, (counts.get(key) || 0) + 1);
+export function weekSquare(w, now = new Date()) {
+  const start = Date.parse(`${w.weekStart}T00:00:00Z`);
+  const ended = new Date(now).getTime() >= start + 7 * 86400000;
+  const due = w.due || 0;
+  const settled = w.settled || 0;
+  const of = fmtDay(w.weekStart);
+  if (due === 0) {
+    return settled > 0
+      ? { kind: 'green', label: `Week of ${of}: nothing new fell due; ${settled} earlier question${settled === 1 ? '' : 's'} confirmed` }
+      : { kind: ended ? 'grey' : 'open', label: ended ? `Week of ${of}: nothing due` : `Week of ${of}: in progress, nothing due yet` };
   }
-
-  const weeks = [];
-  for (let t = start.getTime(); t <= end.getTime(); t += WEEK_MS) {
-    const d = new Date(t);
-    const key = isoWeekKey(d);
-    const settled = counts.get(key) || 0;
-    weeks.push({ weekStart: d, weekKey: key, settled, missed: settled === 0 });
-  }
-  return weeks;
+  if (settled >= due) return { kind: 'green', label: `Week of ${of}: ${due} due, ${settled} confirmed` };
+  if (settled > 0) return { kind: 'amber', label: `Week of ${of}: ${due} due, ${settled} confirmed so far` };
+  if (!ended) return { kind: 'open', label: `Week of ${of}: ${due} due, review still to come` };
+  return { kind: 'red', label: `Week of ${of}: ${due} due, none confirmed` };
 }
 
-export function settlingSummary(weeks) {
-  const total = weeks.length;
-  const missed = weeks.filter((w) => w.missed).length;
-  return { total, missed, settled: total - missed };
+export function buildWeeklySquares(weeks = [], now = new Date()) {
+  return (weeks || []).map((w) => ({ weekId: w.weekId, weekStart: w.weekStart, ...weekSquare(w, now) }));
+}
+
+export function settlingSummary(squares = []) {
+  const count = (k) => squares.filter((s) => s.kind === k).length;
+  return { total: squares.length, red: count('red'), green: count('green'), amber: count('amber'), grey: count('grey'), open: count('open') };
 }

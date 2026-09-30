@@ -1,0 +1,601 @@
+{
+ "seedHex": "9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f",
+ "K": 22,
+ "pool": [
+  {
+   "q": "qid0",
+   "c": "story0"
+  },
+  {
+   "q": "qid919",
+   "c": "story1"
+  },
+  {
+   "q": "qid838",
+   "c": "story2"
+  },
+  {
+   "q": "qid757",
+   "c": "story3"
+  },
+  {
+   "q": "qid676",
+   "c": "story4"
+  },
+  {
+   "q": "qid595",
+   "c": "story5"
+  },
+  {
+   "q": "qid514",
+   "c": "story6"
+  },
+  {
+   "q": "qid433",
+   "c": "story7"
+  },
+  {
+   "q": "qid352",
+   "c": "story8"
+  },
+  {
+   "q": "qid271",
+   "c": "story9"
+  },
+  {
+   "q": "qid190",
+   "c": "story10"
+  },
+  {
+   "q": "qid109",
+   "c": "story11"
+  },
+  {
+   "q": "qid28",
+   "c": "story12"
+  },
+  {
+   "q": "qid947",
+   "c": "story13"
+  },
+  {
+   "q": "qid866",
+   "c": "story14"
+  },
+  {
+   "q": "qid785",
+   "c": "story15"
+  },
+  {
+   "q": "qid704",
+   "c": "story16"
+  },
+  {
+   "q": "qid623",
+   "c": "story17"
+  },
+  {
+   "q": "qid542",
+   "c": "story18"
+  },
+  {
+   "q": "qid461",
+   "c": "story19"
+  },
+  {
+   "q": "qid380",
+   "c": "story20"
+  },
+  {
+   "q": "qid299",
+   "c": "story21"
+  },
+  {
+   "q": "qid218",
+   "c": "story22"
+  },
+  {
+   "q": "qid137",
+   "c": "story23"
+  },
+  {
+   "q": "qid56",
+   "c": "story24"
+  },
+  {
+   "q": "qid975",
+   "c": "story25"
+  },
+  {
+   "q": "qid894",
+   "c": "story26"
+  },
+  {
+   "q": "qid813",
+   "c": "story27"
+  },
+  {
+   "q": "qid732",
+   "c": "story28"
+  },
+  {
+   "q": "qid651",
+   "c": "story29"
+  },
+  {
+   "q": "qid570",
+   "c": "story30"
+  },
+  {
+   "q": "qid489",
+   "c": "story31"
+  },
+  {
+   "q": "qid408",
+   "c": "story32"
+  },
+  {
+   "q": "qid327",
+   "c": "story33"
+  },
+  {
+   "q": "qid246",
+   "c": "story34"
+  },
+  {
+   "q": "qid165",
+   "c": "story35"
+  },
+  {
+   "q": "qid84",
+   "c": "story36"
+  },
+  {
+   "q": "qid3",
+   "c": "story0"
+  },
+  {
+   "q": "qid922",
+   "c": "story1"
+  },
+  {
+   "q": "qid841",
+   "c": "story2"
+  },
+  {
+   "q": "qid760",
+   "c": "story3"
+  },
+  {
+   "q": "qid679",
+   "c": "story4"
+  },
+  {
+   "q": "qid598",
+   "c": "story5"
+  },
+  {
+   "q": "qid517",
+   "c": "story6"
+  },
+  {
+   "q": "qid436",
+   "c": "story7"
+  },
+  {
+   "q": "qid355",
+   "c": "story8"
+  },
+  {
+   "q": "qid274",
+   "c": "story9"
+  },
+  {
+   "q": "qid193",
+   "c": "story10"
+  },
+  {
+   "q": "qid112",
+   "c": "story11"
+  },
+  {
+   "q": "qid31",
+   "c": "story12"
+  },
+  {
+   "q": "qid950",
+   "c": "story13"
+  },
+  {
+   "q": "qid869",
+   "c": "story14"
+  },
+  {
+   "q": "qid788",
+   "c": "story15"
+  },
+  {
+   "q": "qid707",
+   "c": "story16"
+  },
+  {
+   "q": "qid626",
+   "c": "story17"
+  },
+  {
+   "q": "qid545",
+   "c": "story18"
+  },
+  {
+   "q": "qid464",
+   "c": "story19"
+  },
+  {
+   "q": "qid383",
+   "c": "story20"
+  },
+  {
+   "q": "qid302",
+   "c": "story21"
+  },
+  {
+   "q": "qid221",
+   "c": "story22"
+  },
+  {
+   "q": "qid140",
+   "c": "story23"
+  },
+  {
+   "q": "qid59",
+   "c": "story24"
+  },
+  {
+   "q": "qid978",
+   "c": "story25"
+  },
+  {
+   "q": "qid897",
+   "c": "story26"
+  },
+  {
+   "q": "qid816",
+   "c": "story27"
+  },
+  {
+   "q": "qid735",
+   "c": "story28"
+  },
+  {
+   "q": "qid654",
+   "c": "story29"
+  },
+  {
+   "q": "qid573",
+   "c": "story30"
+  },
+  {
+   "q": "qid492",
+   "c": "story31"
+  },
+  {
+   "q": "qid411",
+   "c": "story32"
+  },
+  {
+   "q": "qid330",
+   "c": "story33"
+  },
+  {
+   "q": "qid249",
+   "c": "story34"
+  },
+  {
+   "q": "qid168",
+   "c": "story35"
+  },
+  {
+   "q": "qid87",
+   "c": "story36"
+  },
+  {
+   "q": "qid6",
+   "c": "story0"
+  },
+  {
+   "q": "qid925",
+   "c": "story1"
+  },
+  {
+   "q": "qid844",
+   "c": "story2"
+  },
+  {
+   "q": "qid763",
+   "c": "story3"
+  },
+  {
+   "q": "qid682",
+   "c": "story4"
+  },
+  {
+   "q": "qid601",
+   "c": "story5"
+  },
+  {
+   "q": "qid520",
+   "c": "story6"
+  },
+  {
+   "q": "qid439",
+   "c": "story7"
+  },
+  {
+   "q": "qid358",
+   "c": "story8"
+  },
+  {
+   "q": "qid277",
+   "c": "story9"
+  },
+  {
+   "q": "qid196",
+   "c": "story10"
+  },
+  {
+   "q": "qid115",
+   "c": "story11"
+  },
+  {
+   "q": "qid34",
+   "c": "story12"
+  },
+  {
+   "q": "qid953",
+   "c": "story13"
+  },
+  {
+   "q": "qid872",
+   "c": "story14"
+  },
+  {
+   "q": "qid791",
+   "c": "story15"
+  },
+  {
+   "q": "qid710",
+   "c": "story16"
+  },
+  {
+   "q": "qid629",
+   "c": "story17"
+  },
+  {
+   "q": "qid548",
+   "c": "story18"
+  },
+  {
+   "q": "qid467",
+   "c": "story19"
+  },
+  {
+   "q": "qid386",
+   "c": "story20"
+  },
+  {
+   "q": "qid305",
+   "c": "story21"
+  },
+  {
+   "q": "qid224",
+   "c": "story22"
+  },
+  {
+   "q": "qid143",
+   "c": "story23"
+  },
+  {
+   "q": "qid62",
+   "c": "story24"
+  },
+  {
+   "q": "qid981",
+   "c": "story25"
+  },
+  {
+   "q": "qid900",
+   "c": "story26"
+  },
+  {
+   "q": "qid819",
+   "c": "story27"
+  },
+  {
+   "q": "qid738",
+   "c": "story28"
+  },
+  {
+   "q": "qid657",
+   "c": "story29"
+  },
+  {
+   "q": "qid576",
+   "c": "story30"
+  },
+  {
+   "q": "qid495",
+   "c": "story31"
+  },
+  {
+   "q": "qid414",
+   "c": "story32"
+  },
+  {
+   "q": "qid333",
+   "c": "story33"
+  },
+  {
+   "q": "qid252",
+   "c": "story34"
+  },
+  {
+   "q": "qid171",
+   "c": "story35"
+  },
+  {
+   "q": "qid90",
+   "c": "story36"
+  },
+  {
+   "q": "qid9",
+   "c": "story0"
+  },
+  {
+   "q": "qid928",
+   "c": "story1"
+  },
+  {
+   "q": "qid847",
+   "c": "story2"
+  },
+  {
+   "q": "qid766",
+   "c": "story3"
+  },
+  {
+   "q": "qid685",
+   "c": "story4"
+  },
+  {
+   "q": "qid604",
+   "c": "story5"
+  },
+  {
+   "q": "qid523",
+   "c": "story6"
+  },
+  {
+   "q": "qid442",
+   "c": "story7"
+  },
+  {
+   "q": "qid361",
+   "c": "story8"
+  }
+ ],
+ "commitHash": "182854d3f745f5d7d30f64ef6a903514c59dd270b7ac6d25e3f7990ef899d27d",
+ "picked": [
+  {
+   "qid": "qid246",
+   "h": "02191587892ea2395b94930b30efb3c0700672556454290f1c4652aadc9c5a8b",
+   "clusterKey": "story34"
+  },
+  {
+   "qid": "qid34",
+   "h": "053a1b98fcebf4c6371f8c18fa29e73b7b64fa32cc344b862c8153fb6a9dbca7",
+   "clusterKey": "story12"
+  },
+  {
+   "qid": "qid919",
+   "h": "0556681ef80c73105cd7b14caacb4fdea5f495b77dda9f1871f360583abeb872",
+   "clusterKey": "story1"
+  },
+  {
+   "qid": "qid87",
+   "h": "06bd4f17477b331c775e18b047b9f5ec6c78e5f7845582c6ddb459ed37261850",
+   "clusterKey": "story36"
+  },
+  {
+   "qid": "qid517",
+   "h": "077dac0850090add3c3a436cc3f6060219a20822e41f97dcdd04c98dcc45ba6d",
+   "clusterKey": "story6"
+  },
+  {
+   "qid": "qid766",
+   "h": "089e97203b5cce4ef5f8193f2b405ff2e261d69187da957f7f6afd159fcc3717",
+   "clusterKey": "story3"
+  },
+  {
+   "qid": "qid978",
+   "h": "091206b8c43078365a373fa0007c81ab45bfa3e1119b16f54023f0e09a50ad3f",
+   "clusterKey": "story25"
+  },
+  {
+   "qid": "qid866",
+   "h": "0cbe0f3e8af13da68e1821362ac2b4f60ca0a53f7c675fb6255cb7a01cfea4f3",
+   "clusterKey": "story14"
+  },
+  {
+   "qid": "qid598",
+   "h": "0e45203ed4c7422b56e482ed2e71a834b49691a1346b641fde99ef34fe439c8f",
+   "clusterKey": "story5"
+  },
+  {
+   "qid": "qid492",
+   "h": "1087bcfbf630ff6efc915b22e21c3e66d6ac86f086df0f83bfc8050e97bcaffa",
+   "clusterKey": "story31"
+  },
+  {
+   "qid": "qid576",
+   "h": "1150100e59ae51e239609a51bb9c6fb2f263d7b506288f398f5d1c12426b8a09",
+   "clusterKey": "story30"
+  },
+  {
+   "qid": "qid676",
+   "h": "136f58daabff1c9461fe7ec2fde3d8b18610d4a26761bb3052170bfdd5fbe53b",
+   "clusterKey": "story4"
+  },
+  {
+   "qid": "qid844",
+   "h": "17c4fc0aebd7f53bfc323a9a4f805a3cc68cf8ef8d3963e9cac9e66db3c91b54",
+   "clusterKey": "story2"
+  },
+  {
+   "qid": "qid3",
+   "h": "1fc3228ea9c3a19cbd025174923cc60f5ea4b3deed14b50e4b31c4f3bd2836b9",
+   "clusterKey": "story0"
+  },
+  {
+   "qid": "qid433",
+   "h": "24a92c193fc3004dbc6f53e99aebe1092ee4ff2b70a5c17e5261c5a2c1b57986",
+   "clusterKey": "story7"
+  },
+  {
+   "qid": "qid651",
+   "h": "268ad32daeba42cabded839d5c6edb0064c513036a7de12a769347cde5875118",
+   "clusterKey": "story29"
+  },
+  {
+   "qid": "qid277",
+   "h": "275188afb85073360a645bf35ee4f65c96d221e3dc9b7cfaf8d6d62202cd428a",
+   "clusterKey": "story9"
+  },
+  {
+   "qid": "qid380",
+   "h": "2b6a365a186cf45723e9e5b750e753ff54718e22646f92abcaced9222cb19ac0",
+   "clusterKey": "story20"
+  },
+  {
+   "qid": "qid626",
+   "h": "2ce9f30f1de07b412e826b3a5e38ad57208ffbe195b60b0b88ba777354aececb",
+   "clusterKey": "story17"
+  },
+  {
+   "qid": "qid408",
+   "h": "33f961be7c6556b643dd0cf749cd89529f1cf6b22984f878029f6a71be92daf3",
+   "clusterKey": "story32"
+  },
+  {
+   "qid": "qid791",
+   "h": "3991cc8b621892bdbb68233afab8f9275a3a558bce931abfdc41ac2866f11654",
+   "clusterKey": "story15"
+  },
+  {
+   "qid": "qid361",
+   "h": "3ad551d169106ded3e5843f99311b501d94ed143a9ad7de1ffb769eab6330204",
+   "clusterKey": "story8"
+  }
+ ],
+ "eligible": 120,
+ "clusters": 37
+}

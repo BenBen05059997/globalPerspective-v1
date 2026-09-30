@@ -1,5 +1,18 @@
 # Global Perspectives — Change Log
 
+## 2026-09-30 (Batch 4 D: /track-record and own-% chips, frontend on `main`, NOT deployed)
+
+- **`/track-record` and `/track-record/text` now read the server's `questions` block** (one view-model, `lib/trackRecordView.js`, for both pages):
+  - staged status wording 0 to 3 (`stageWording.js`: Stage 1 starts at the first seed commitment; Stage 3 needs 400 resolved and 6 months);
+  - "not ready yet" lines from `lib/notReadyCopy.js`, every date computed from real data and every projection labelled "estimate" (accuracy window from `lib/accuracyEstimate.js`: with the first week 2026-10-05, K 22, published lead window it reproduces 2027-01-11 to 2027-01-25);
+  - accuracy locked until 150 resolved (the score, its base-rate comparison and the story-resampled interval appear only when the server sends `scoring`; "better than a base-rate guess" only if the interval excludes 0);
+  - the seed row (`DrawRow`): commitments, and **Verify this draw**, which recomputes the ranking in the browser (`lib/sampleRule.js`; one golden fixture is byte-identical with the settle Lambda's tests and guarded by `check-shared-sync.mjs`);
+  - settling squares from the server's real weeks (grey = nothing due, red only when something was due and nothing was confirmed);
+  - "past deadline, not checked" as its own state (served deadlines), counts that add up, board and map from the sampled questions (counts per place, never an accuracy score);
+  - the July pilot stays labelled archived; the old post-pilot Brier / pastDeadline / confirmedAt-based settling code is removed.
+- **Own-% chip** (`QuestionChip`, `lib/questionChips.js`) on the WATCH slide, the story page's forecast board, the country card's two future triggers and a "Next dated question" line on a briefing's top story (`useStoryQuestion`, `fetchPredictionSnapshotByThread`). A trigger without a probability of its own gets no chip and one honest note.
+- `quality/verify_pages.sh` guards updated to the new structure (53 pass). `npm run verify`: 108 files / 824 tests, 0 lint errors. Playwright at 1440 and 390 against local dev with live data (+ intercepted fixtures for the states live data does not reach yet): 82/82 checks, 0 page errors, no horizontal overflow.
+
 ## 2026-09-30 (Backend Batch 4, live AWS: scoring M2)
 
 - **A: M2 per-question probability + named source** (`NewsProjectInvokeAgentLambda-dev`, deployed; repo = deployed, all 7 files byte-compared; rollback zip `…/scratchpad/b4/rollback/NewsProjectInvokeAgentLambda-dev.zip`, `CodeSha256` before `8dZ6qH…`, after `UPcr5S…`):

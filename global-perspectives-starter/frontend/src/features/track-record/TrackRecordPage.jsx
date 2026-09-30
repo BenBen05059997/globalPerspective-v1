@@ -4,14 +4,11 @@ import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
 import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
 import { FollowButton } from '@/features/account/components/FollowButton';
-import { splitPilot } from '@/features/track-record/lib/pilotExclusion.js';
-import { stageWording } from '@/features/track-record/lib/stageWording.js';
-import { accuracyProgress } from '@/features/track-record/lib/accuracyLock.js';
-import { pastDeadlineSummary } from '@/features/track-record/lib/pastDeadline.js';
-import { computeBrier } from '@/features/track-record/lib/postPilotBrier.js';
+import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
 import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
 import ForecastBoard from '@/features/track-record/components/ForecastBoard.jsx';
 import SettlingLog from '@/features/track-record/components/SettlingLog.jsx';
+import DrawRow from '@/features/track-record/components/DrawRow.jsx';
 import '@/features/track-record/TrackRecordPage.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
@@ -19,30 +16,10 @@ import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 // "Track record page design"). E1 (a plain, printable text version for search/screen readers)
 // lives at TrackRecordText.jsx, reachable via the link below.
 //
-// The one fact this whole build turns on: ALL 122 currently-resolved triggers share a single
-// confirmedAt (2026-07-24T22:22:14.709Z — verified against the live prediction_track_record
-// response) — one scoring run, under a method the ruling calls flawed (scored against the parent
-// SCENARIO's probability, not the trigger's own). That run is archived as the "July pilot" and
-// excluded from every headline number here; splitPilot() draws that line from the real timestamp,
-// never a hand-picked ID list. Nothing has been scored since.
-
-function brierVerdict(b) {
-  if (b == null) return null;
-  if (b <= 0.1) return 'excellent';
-  if (b <= 0.2) return 'strong';
-  if (b <= 0.25) return 'fair';
-  return 'weak';
-}
-const VERDICT_LABEL = { excellent: 'excellent', strong: 'strong', fair: 'fair', weak: 'weak' };
-
-function VerdictPill({ verdict }) {
-  const fired = verdict === 'fired';
-  return (
-    <span className={`tr-verdict ${fired ? 'fired' : 'notfired'}`}>
-      {fired ? '✓ Fired' : '✗ Did not fire'}
-    </span>
-  );
-}
+// The 122 triggers of the July pilot share one confirmedAt (2026-07-24) and were scored against the
+// parent SCENARIO's probability, a method the ruling calls flawed: archived, excluded from every
+// headline number. Since Batch 4 the numbers come from the server's `questions` block (a weekly
+// pre-registered sample of questions with their own probability); see lib/trackRecordView.js.
 
 function changeLabel(n) {
   if (n.changeLevel && n.changeLevel.from && n.changeLevel.to && n.changeLevel.from !== n.changeLevel.to) {
@@ -109,36 +86,7 @@ function CorrectionsLedger() {
 export default function TrackRecordPage() {
   useEffect(() => { document.title = 'Track Record | Global Perspectives'; }, []);
   const { data, loading, error } = useTrackRecord();
-
-  const recent = useMemo(() => data?.recent || [], [data?.recent]);
-  const { pilot, postPilot } = useMemo(() => splitPilot(recent), [recent]);
-  // `recent` is a 30-item sample; the pilot's real size is the API's own `resolvedTriggers` minus
-  // what the sample shows was resolved after the pilot (monitor, S6: the page said "30" for 122).
-  // Once post-pilot resolutions outgrow the sample this needs a server count (D6).
-  const pilotCount = Math.max(pilot.length, (data?.resolvedTriggers ?? 0) - postPilot.length);
-  const lastResolvedAt = useMemo(
-    () => recent.reduce((max, r) => (r.confirmedAt && (!max || r.confirmedAt > max) ? r.confirmedAt : max), null),
-    [recent],
-  );
-  const stage = useMemo(
-    () => stageWording({
-      postPilotResolved: postPilot.length,
-      lastResolvedAt,
-      eraCutFrom: data?.eraCutFrom,
-      pilotCount: pilotCount,
-    }),
-    [postPilot.length, lastResolvedAt, data?.eraCutFrom, pilotCount],
-  );
-  const lock = accuracyProgress(postPilot.length);
-  const pastDeadline = useMemo(
-    () => pastDeadlineSummary({ pendingTriggers: data?.pendingTriggers }),
-    [data?.pendingTriggers],
-  );
-
-  // Accuracy figures, once unlocked, are computed ONLY from postPilot — never blended with the
-  // archived pilot's 122, and never trusting the backend's all-time-blended brierScore (see
-  // lib/postPilotBrier.js).
-  const postPilotBrier = useMemo(() => computeBrier(postPilot), [postPilot]);
+  const view = useMemo(() => (data ? buildTrackRecordView(data, new Date()) : null), [data]);
 
   if (loading) return <IntelligenceLoader />;
 
@@ -151,12 +99,8 @@ export default function TrackRecordPage() {
     );
   }
 
-  const {
-    totalPredictionsLogged, totalDatedTriggers, pendingTriggers,
-    eraCutFrom, legacyPredictionsExcluded,
-  } = data;
-
-  const verdict = !lock.locked ? brierVerdict(postPilotBrier) : null;
+  const { eraCutFrom, legacyPredictionsExcluded, totalDatedTriggers } = data;
+  const { q, stage, lock, counts } = view;
 
   return (
     <div className="tr-page">
@@ -175,67 +119,68 @@ export default function TrackRecordPage() {
         <span className="tr-status-tag">{stage.label}</span>
         <h2 className="tr-status-headline">{stage.headline}</h2>
         <p className="tr-status-detail">{stage.detail}</p>
+        {view.notes.map((n) => <p key={n.key} className="tr-status-note" data-notready={n.key}>{n.text}</p>)}
       </section>
 
-      {/* ---- Accuracy: locked until 150 post-pilot resolved ---- */}
+      {/* ---- Accuracy: locked until 150 resolved questions ---- */}
       <section className="tr-section">
         <div className="tr-section-head"><h2>Accuracy</h2></div>
         {lock.locked ? (
           <div className="tr-lock">
             <div className="tr-lock-bar"><div className="tr-lock-fill" style={{ width: `${lock.pct}%` }} /></div>
             <p className="tr-lock-label">{lock.n} resolved of {lock.target} needed</p>
+            <p className="tr-lock-note" data-notready="accuracy">{view.accuracyText}</p>
             <p className="tr-lock-note">
               No Brier score, skill number, or a word like &ldquo;strong&rdquo;/&ldquo;weak&rdquo; until then.
-              The July pilot&apos;s {pilotCount} triggers don&apos;t count toward this — they were scored
+              The July pilot&apos;s {view.pilotCount} triggers don&apos;t count toward this — they were scored
               against the parent scenario&apos;s probability, a method we&apos;ve since retired.
             </p>
           </div>
-        ) : (
+        ) : view.scoring ? (
           <div className="tr-brier">
             <div className="tr-brier-score">
-              <span className="tr-brier-num">{postPilotBrier}</span>
-              {verdict && <span className={`tr-brier-verdict ${verdict}`}>{VERDICT_LABEL[verdict]}</span>}
+              <span className="tr-brier-num">{view.scoring.brier}</span>
+              <span className="tr-brier-verdict fair">{view.skillWords}</span>
             </div>
             <p className="tr-brier-explain">
-              Brier score across {postPilot.length} resolved questions (post-pilot).
-              A plain guess (50% every time) always scores 0.25 — lower is better, 0 is perfect.
+              Brier score across {view.scoring.n} resolved questions; a guess of the overall base rate ({Math.round(view.scoring.baseRate * 100)}% yes)
+              every time scores {view.scoring.brierRef}. Skill {view.scoring.skill}
+              {view.scoring.ci ? ` (95% interval ${view.scoring.ci.lo} to ${view.scoring.ci.hi}, resampled by story)` : ''}.
+              {' '}Voided: {Math.round(view.scoring.voidRate * 1000) / 10}%. Lower Brier is better, 0 is perfect.
             </p>
           </div>
-        )}
+        ) : null}
+        {view.calibrationText && <p className="tr-lock-note" data-notready="calibration">{view.calibrationText}</p>}
       </section>
 
-      {/* ---- Forecast record — the raw counts, with the pilot labelled, never blended in ---- */}
+      {/* ---- This week's draw + commitments ---- */}
+      {q?.weeks?.length > 0 && (
+        <section className="tr-section">
+          <div className="tr-section-head"><h2>This week&apos;s draw</h2><span className="tr-section-tag">pre-registered</span></div>
+          <DrawRow weeks={q.weeks} />
+          {view.drawNotes.map((t) => <p key={t} className="tr-gap-note">{t}</p>)}
+        </section>
+      )}
+
+      {/* ---- Forecast record — counts that add up, the pilot labelled, never blended in ---- */}
       <section className="tr-section">
         <div className="tr-section-head">
           <h2>Forecast record</h2>
-          {eraCutFrom && <span className="tr-eracut">scored from {fmtDay(eraCutFrom)}</span>}
+          {q?.firstCommit && <span className="tr-eracut">sampled from {fmtDay(q.firstCommit.committedAt)}</span>}
         </div>
         <section className="tr-stats">
-          <div className="tr-stat">
-            <span className="tr-stat-num">{totalPredictionsLogged}</span>
-            <span className="tr-stat-label">Predictions logged</span>
-          </div>
-          <div className="tr-stat">
-            <span className="tr-stat-num">{totalDatedTriggers}</span>
-            <span className="tr-stat-label">Dated trigger signals</span>
-          </div>
-          <div className="tr-stat">
-            <span className="tr-stat-num">{pilotCount}</span>
-            <span className="tr-stat-label">July pilot (archived; method flawed)</span>
-          </div>
-          <div className="tr-stat">
-            <span className="tr-stat-num">{pendingTriggers}</span>
-            <span className="tr-stat-label">
-              Not yet checked
-              {!pastDeadline.computable && <sup title={pastDeadline.reason}> †</sup>}
-            </span>
-          </div>
+          <div className="tr-stat"><span className="tr-stat-num">{counts.locked}</span><span className="tr-stat-label">Questions locked in samples</span></div>
+          <div className="tr-stat"><span className="tr-stat-num">{counts.resolved}</span><span className="tr-stat-label">Resolved ({counts.yes} happened, {counts.no} didn&apos;t)</span></div>
+          <div className="tr-stat"><span className="tr-stat-num">{counts.void}</span><span className="tr-stat-label">Void</span></div>
+          <div className="tr-stat"><span className="tr-stat-num">{counts.awaiting}</span><span className="tr-stat-label">Open, deadline still ahead</span></div>
+          <div className="tr-stat"><span className="tr-stat-num">{counts.pastDeadlineUnchecked}</span><span className="tr-stat-label">Past deadline, not checked</span></div>
+          <div className="tr-stat"><span className="tr-stat-num">{view.pilotCount}</span><span className="tr-stat-label">July pilot (archived; method flawed)</span></div>
         </section>
-        {!pastDeadline.computable && (
+        {q && (
           <p className="tr-gap-note">
-            † includes deadlines already past and deadlines still ahead — the public data doesn&apos;t
-            yet serve a deadline per pending trigger to split &ldquo;past deadline, not checked&rdquo;
-            from &ldquo;not yet due&rdquo;. Never shown as &ldquo;awaiting&rdquo;.
+            {q.issued} question{q.issued === 1 ? '' : 's'} issued with their own probability{q.warmUp ? ` (${q.warmUp} before the first sample week: warm-up, never scored)` : ''};
+            {' '}{q.sampledTotal} in weekly samples; the rest are published but not scored.
+            {totalDatedTriggers ? ` ${totalDatedTriggers} earlier dated triggers (issued without a probability of their own) were never scored.` : ''}
           </p>
         )}
       </section>
@@ -244,18 +189,30 @@ export default function TrackRecordPage() {
       <section className="tr-section">
         <div className="tr-section-head"><h2>Forecast board</h2></div>
         <p className="tr-section-sub">
-          The {recent.length} most recently resolved forecasts the public record serves — all from the
-          July pilot (archived; method flawed), shown here for transparency and excluded from the
-          accuracy figure above. Never a per-country accuracy score: too few resolved per place to mean
-          anything yet.
+          Every question in a weekly sample, placed at the country it names: counts per place, never an accuracy
+          score for a country (too few per place to mean anything).
         </p>
-        <ForecastBoard items={recent} />
+        {view.boardText && <p className="tr-gap-note" data-notready="board">{view.boardText}</p>}
+        <ForecastBoard items={view.boardItems} />
+        {view.pilot.length > 0 && (
+          <details className="tr-pilot-details">
+            <summary>July pilot examples ({view.pilot.length} most recent; archived, not scored)</summary>
+            <ul className="tr-pilot-list">
+              {view.pilot.map((r, i) => (
+                <li key={i}>
+                  <b>{r.verdict === 'fired' ? '✓ happened' : '✗ didn’t happen'}:</b> {r.trigger}
+                  {r.citation && /^https?:\/\//.test(r.citation) && <> (<a href={r.citation} target="_blank" rel="noreferrer">source</a>)</>}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
 
       {/* ---- Settling log ---- */}
       <section className="tr-section">
         <div className="tr-section-head"><h2>Settling log</h2></div>
-        <SettlingLog confirmedAtDates={recent.map((r) => r.confirmedAt).filter(Boolean)} eraCutFrom={eraCutFrom} />
+        <SettlingLog weeks={q?.weeks || []} firstCommit={q?.firstCommit} pilotNote={view.pilotLine} />
       </section>
 
       {/* ---- Ledger of changed reads (the living-analysis loop) ---- */}
@@ -277,25 +234,34 @@ export default function TrackRecordPage() {
         <h2>How this works</h2>
         <ol className="tr-method-list">
           <li>
-            <strong>Logged at the moment it&apos;s made.</strong> Every prediction is written to an immutable,
-            point-in-time record with dated, falsifiable triggers. It can&apos;t be edited or quietly deleted later.
+            <strong>Each question carries its own probability and a named source, fixed when it is published.</strong>{' '}
+            A forecast trigger becomes a yes/no question with the probability we gave that event alone and the
+            public record that will settle it. The record is written once and can&apos;t be edited or quietly deleted; a
+            correction is a new question.
           </li>
           <li>
-            <strong>Triggers are gate-validated at capture.</strong> Each trigger must be a single, forward-dated,
-            checkable event (absolute deadline, within ~180 days) that carries a real geopolitical, economic, or
-            institutional signal. Malformed or out-of-scope triggers are dropped at capture and recorded — they
-            never enter the score.
+            <strong>A random sample is locked each week, in advance.</strong> Before a week starts we publish a
+            commitment (a hash of a secret seed). After the week closes we reveal the seed; up to {q?.method?.K ?? 22} questions
+            are ranked by a hash of the seed and the question, at most one per story. Anyone can re-run the
+            draw (&ldquo;Verify this draw&rdquo;). Only questions with a lead time of 7 to 84 days are eligible; the rest are
+            published but not scored.
           </li>
           <li>
-            <strong>Verified independently as deadlines pass.</strong> Each due trigger is checked against the news
-            record with real sources. Anything genuinely ambiguous is marked <em>unclear</em> and <strong>excluded
-            from the score</strong> — we&apos;d rather report nothing than guess.
+            <strong>Resolved with sources by an agent and a person.</strong> An agent that is not shown the
+            probability drafts a verdict with a quoted passage and a link; a person confirms it. A YES needs a source,
+            a NO is only allowed after the deadline plus 3 days, and anything that cannot be judged is marked{' '}
+            <em>void</em> with a reason, published, and excluded from the score.
           </li>
           <li>
-            <strong>The July pilot is archived, not scored.</strong> Its {pilotCount} resolved triggers were
-            checked once, on {fmtDay(lastResolvedAt)}, against a method — scoring a trigger at its parent
-            scenario&apos;s probability — the ruling calls not defensible as calibration. They stay on file as
-            examples but never feed the headline accuracy figure.
+            <strong>Scored against a plain guess.</strong> Brier score next to the score of guessing the overall
+            base rate every time, with an interval resampled by story. No accuracy is shown before 150 questions are
+            resolved, and calibration by probability band only after 400 over six months.
+          </li>
+          <li>
+            <strong>The July pilot is archived, not scored.</strong> Its {view.pilotCount} resolved triggers were
+            checked once, on {fmtDay(view.lastResolvedAt)}, against a method — scoring a trigger at its parent
+            scenario&apos;s probability — that is not defensible as calibration. They stay on file as
+            examples but never feed the accuracy figure.
             {eraCutFrom && legacyPredictionsExcluded ? (
               <> Separately, <strong>{legacyPredictionsExcluded}</strong> even earlier predictions predate the
               current capture methodology entirely and are excluded from scoring on file for the same reason:

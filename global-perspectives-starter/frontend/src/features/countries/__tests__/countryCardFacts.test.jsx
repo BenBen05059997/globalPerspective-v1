@@ -9,7 +9,8 @@ vi.mock('@/features/countries/hooks/useCountryFacts.js', () => ({ useCountryFact
 vi.mock('@/features/countries/hooks/useCountryIntelligence.js', () => ({ useCountryIntelligence: () => ({ intelligence: {}, loading: false }) }));
 vi.mock('@/features/countries/hooks/useCountryHistory.js', () => ({ useCountryHistory: () => ({ snapshots: [], driftNotes: [], loading: false }) }));
 vi.mock('@/features/economy/hooks/useMarketsCountry.js', () => ({ useMarketsCountry: () => ({ data: null }) }));
-vi.mock('@/features/countries/hooks/useCountryStories.js', () => ({ useCountryStories: () => ({ stories: [], deadlines: [], topicIdToThreadId: new Map(), loading: false }) }));
+const deadlinesHolder = vi.hoisted(() => ({ value: [] }));
+vi.mock('@/features/countries/hooks/useCountryStories.js', () => ({ useCountryStories: () => ({ stories: [], deadlines: deadlinesHolder.value, topicIdToThreadId: new Map(), loading: false }) }));
 
 import CountryCardV2 from '@/features/countries/components/CountryCardV2.jsx';
 
@@ -36,5 +37,23 @@ describe('CountryCardV2 stored facts row', () => {
     factsHolder.value = null;
     const r2 = render(<MemoryRouter><CountryCardV2 name="Japan" /></MemoryRouter>);
     expect(r2.container.querySelector('.ccv2-fact-stored')).toBeNull();
+  });
+});
+
+describe('CountryCardV2 future dated questions (Batch 4)', () => {
+  it('shows a question with its own %, and the honest note when another has none', () => {
+    const day = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
+    deadlinesHolder.value = [
+      { id: 'a', label: 'Country A signs the pact', deadline: day, question: true, qid: 'q', p: 41, source: 'Reuters or AP wire report', scoring: 'sampled', state: 'awaiting' },
+      { id: 'b', label: 'An old trigger', deadline: day },
+    ];
+    factsHolder.value = null;
+    const { container } = render(<MemoryRouter><CountryCardV2 name="Japan" /></MemoryRouter>);
+    const items = [...container.querySelectorAll('.ccv2-triggers li')].map((e) => e.textContent);
+    expect(items[0]).toMatch(/Country A signs the pact/);
+    expect(items[0]).toMatch(/41% · source: Reuters or AP wire report · awaiting/);
+    expect(items[1]).not.toMatch(/%/);
+    expect(items[2]).toMatch(/have no probability of their own/);
+    deadlinesHolder.value = [];
   });
 });

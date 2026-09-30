@@ -4,6 +4,8 @@ import { CATEGORY_BADGE_COLORS, RISK_SOLID } from '@/shared/styles/tokens';
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
+import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
+import { useStoryQuestion } from '@/features/briefings/hooks/useStoryQuestion.js';
 import { countryLinkPath, storyLinkPath, peekInputForStory, peekInputForSignal } from '@/features/briefings/lib/briefingSlides.js';
 
 const TRAJECTORY = {
@@ -53,6 +55,20 @@ export function DaySlide({ brief }) {
   );
 }
 
+// One line under a top story: its next dated question with its own probability (only when the
+// story has a threadId and a question exists; otherwise nothing).
+function StoryNextQuestion({ threadId }) {
+  const q = useStoryQuestion(threadId);
+  if (!q) return null;
+  return (
+    <div className="bm-next-question">
+      <span className="bm-next-question-kicker">Next dated question</span>
+      <p className="bm-slide-text">{q.text} <span className="bm-next-question-by">by {q.deadline}</span></p>
+      <QuestionChip trigger={q} />
+    </div>
+  );
+}
+
 export function StorySlide({ story, index }) {
   const catColors = CATEGORY_BADGE_COLORS[story.category];
   const region = (story.regions || [])[0];
@@ -79,6 +95,7 @@ export function StorySlide({ story, index }) {
           <p>{story.prediction}</p>
         </div>
       )}
+      {story.threadId ? <StoryNextQuestion threadId={story.threadId} /> : null}
       {storyLinkPath(story) && (
         <Link to={storyLinkPath(story)} className="bm-slide-link bm-story-link">Read the full story →</Link>
       )}

@@ -1,0 +1,5 @@
+.qchip { display: inline-block; font-size: 11px; line-height: 1.4; color: var(--c-text-dim, var(--ink-dim)); overflow-wrap: anywhere; }
+.qchip .qchip-pct { color: var(--c-text-head, var(--ink)); font-family: var(--mono); font-size: 12px; }
+.qchip.yes .qchip-state { color: #6fd08c; }
+.qchip.no .qchip-state { color: #ee7754; }
+.qchip.past .qchip-state { color: #ffb347; }

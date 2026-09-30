@@ -174,3 +174,8 @@
 .bm-readtext-item { margin-bottom: 16px; }
 .bm-readtext ul { padding-left: 18px; }
 .bm-readtext a { color: var(--c-accent); }
+
+.bm-next-question { margin-top: 10px; }
+.bm-next-question-kicker { font-family: var(--c-mono, var(--mono)); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-text-dim); }
+.bm-next-question .bm-slide-text { margin: 4px 0 2px; }
+.bm-next-question-by { color: var(--c-text-dim); font-size: 12px; white-space: nowrap; }

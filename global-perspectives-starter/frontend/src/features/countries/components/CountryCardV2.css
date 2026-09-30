@@ -200,3 +200,5 @@
   padding: 0 4px;
   border-radius: 2px;
 }
+
+.ccv2-trigger-note { font-size: 11px; color: var(--ccv2-ink-dim, var(--ccv2-ink-mid)); }

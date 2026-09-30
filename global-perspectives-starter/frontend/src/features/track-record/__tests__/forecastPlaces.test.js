@@ -47,8 +47,20 @@ describe('forecastPlaceCounts', () => {
     expect(counts).toEqual([]);
   });
 
-  it('sorts by total descending', () => {
+  it('sorts by everything placed there, descending', () => {
     const counts = forecastPlaceCounts(items);
-    for (let i = 1; i < counts.length; i++) expect(counts[i - 1].total).toBeGreaterThanOrEqual(counts[i].total);
+    for (let i = 1; i < counts.length; i++) expect(counts[i - 1].all).toBeGreaterThanOrEqual(counts[i].all);
+  });
+
+  it('counts sampled questions by state, awaiting and past-deadline included, and never scores a place', () => {
+    const q = [
+      { question: 'Turkey hosts the summit', state: 'yes' },
+      { question: 'Turkey signs the accord', state: 'awaiting' },
+      { question: 'Turkey expels an envoy', state: 'past_deadline_unchecked' },
+      { question: 'Turkey holds the vote', state: 'void' },
+    ];
+    const tur = forecastPlaceCounts(q).find((c) => c.iso3 === 'TUR');
+    expect(tur).toMatchObject({ fired: 1, notFired: 0, awaiting: 1, pastUnchecked: 1, void: 1, all: 4, total: 1 });
+    expect(Object.keys(tur)).not.toContain('accuracy');
   });
 });

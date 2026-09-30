@@ -144,6 +144,8 @@ export function buildDeadlines(forecast) {
         deadline: trig.deadline,
         verdict: trig.verdict || null,
         scenarioLabel: scenario.label,
+        // per-question facts (Batch 4): present only for questions with their own probability
+        ...(trig.question === true ? { question: true, qid: trig.qid, p: trig.p, source: trig.source, scoring: trig.scoring, state: trig.state } : {}),
       });
     }
   }

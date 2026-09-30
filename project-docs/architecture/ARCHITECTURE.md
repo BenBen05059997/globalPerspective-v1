@@ -1673,6 +1673,7 @@ Wired in `<Routes>` in `App.jsx` — 29 `<Route>` elements incl. catch-all (`/me
 | `useTrackRecord()` | Fetch forecast calibration scoreboard (`prediction_track_record`, v1 era-cut); 30min cache; powers `/track-record` | `features/track-record/hooks/useTrackRecord.js` |
 | `useCorrectionsFeed(limit)` | Fetch the site-wide corrections ledger (`corrections_feed` — recent `DRIFT#` notes across all countries+threads); 30min localStorage cache (`gp_corrections_feed`); powers the `/track-record` Accountability hub | `features/track-record/hooks/useCorrectionsFeed.js` |
 | `useThreadForecast(topicIds)` | Fetch a thread's newest v1 prediction snapshot (`prediction_snapshot`) for the "Living forecast" board; honest-empty (`null`) when none; powers `ThreadForecast` on ThreadPage | `features/threads/hooks/useThreadForecast.js` |
+| `useStoryQuestion(threadId)` | Briefings (Batch 4 D): the earliest open question with its own probability for a top story, via `prediction_snapshot({threadId})`; module-cached, fails empty. |
 | `useMarketsGlobal()` | Fetch global FX/rates/commodities/equities/crypto snapshot | `features/economy/hooks/useMarketsGlobal.js` |
 | `useMarketsCountry(countryName)` | Fetch country macro snapshot | `features/economy/hooks/useMarketsCountry.js` |
 | `useSavedItems(itemType)` | Manage user bookmarks via newsSavedItems Lambda (JWT required) | `features/account/hooks/useSavedItems.js` |

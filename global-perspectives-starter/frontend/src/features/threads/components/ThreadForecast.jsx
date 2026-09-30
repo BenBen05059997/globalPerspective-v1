@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
+import { legacyNote } from '@/features/threads/lib/questionChips.js';
 
 const FC_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function fcDay(s) {
@@ -8,6 +10,11 @@ function fcDay(s) {
 const TODAY = new Date().toISOString().slice(0, 10);
 
 function triggerState(t) {
+  // per-question verdicts (Batch 4) come from `state`; legacy triggers from `verdict`
+  if (t.state === 'yes') return 'fired';
+  if (t.state === 'no') return 'notfired';
+  if (t.state === 'void') return 'unclear';
+  if (t.state === 'past_deadline_unchecked') return 'awaiting';
   if (t.verdict === 'fired') return 'fired';
   if (t.verdict === 'not_fired') return 'notfired';
   if (t.verdict === 'unclear') return 'unclear';
@@ -20,7 +27,7 @@ const TAG = {
   fired: 'happened',
   notfired: "didn't happen",
   unclear: 'unclear',
-  awaiting: 'awaiting check',
+  awaiting: 'past deadline, not checked',
   pending: null,
 };
 
@@ -35,8 +42,9 @@ export default function ThreadForecast({ snapshot }) {
 
   const resolved = snapshot.scenarios
     .flatMap(s => s.triggers)
-    .filter(t => t.verdict === 'fired' || t.verdict === 'not_fired').length;
+    .filter(t => t.verdict === 'fired' || t.verdict === 'not_fired' || t.state === 'yes' || t.state === 'no').length;
   const total = snapshot.scenarios.flatMap(s => s.triggers).length;
+  const note = legacyNote(snapshot.scenarios.flatMap(s => s.triggers));
 
   return (
     <div className="tp-ai-block tp-fc">
@@ -66,6 +74,7 @@ export default function ThreadForecast({ snapshot }) {
                 <li key={t.id || ti} className={`tp-fc-item ${st}`}>
                   <span className="tp-fc-mark" aria-hidden="true">{MARK[st]}</span>
                   <span className="tp-fc-text">{t.text}</span>
+                  <QuestionChip trigger={t} />
                   <span className="tp-fc-meta">
                     {st === 'fired' || st === 'notfired' || st === 'unclear'
                       ? <>{fcDay(t.deadline)} · {TAG[st]}</>
@@ -83,6 +92,7 @@ export default function ThreadForecast({ snapshot }) {
         </div>
       ))}
 
+      {note && <p className="tp-fc-intro">{note}</p>}
       <div className="tp-fc-foot">
         <Link to="/track-record">How these forecasts are scored →</Link>
       </div>

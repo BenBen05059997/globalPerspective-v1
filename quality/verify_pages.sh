@@ -128,11 +128,12 @@ must_not_have "$SRC/features/threads/WeeklyPage.jsx" "useDisruptionsList|useEcon
 # into the headline accuracy figure or shown as "awaiting" once a deadline has passed.
 must_have "$SRC/app/App.jsx" "TrackRecordText" "wires the E1 text version"
 must_have "$SRC/app/App.jsx" "/track-record/text" "wires the /track-record/text route"
-must_have "$SRC/features/track-record/TrackRecordPage.jsx" "splitPilot" "excludes the July pilot from headline numbers"
-must_have "$SRC/features/track-record/TrackRecordPage.jsx" "isAccuracyLocked|accuracyProgress" "locks accuracy until 150 resolved"
+must_have "$SRC/features/track-record/TrackRecordPage.jsx" "buildTrackRecordView" "headline numbers come from the questions view-model (pilot archived)"
+must_have "$SRC/features/track-record/lib/trackRecordView.js" "splitPilot" "excludes the July pilot from headline numbers"
+must_have "$SRC/features/track-record/lib/trackRecordView.js" "isAccuracyLocked|accuracyProgress" "locks accuracy until 150 resolved"
 must_have "$SRC/features/track-record/components/ForecastBoard.jsx" "forecastPlaceCounts" "forecast board plots real places, not per-country accuracy"
 must_not_have "$SRC/features/track-record/TrackRecordPage.jsx" "[Aa]waiting their deadline" "never claims a passed deadline is still awaiting"
-must_have "$SRC/features/track-record/components/SettlingLog.jsx" "buildSettlingLog" "settling log computed from real confirmedAt dates"
+must_have "$SRC/features/track-record/components/SettlingLog.jsx" "buildWeeklySquares" "settling log computed from the server's real weekly records"
 
 # ─── Summary ───
 echo

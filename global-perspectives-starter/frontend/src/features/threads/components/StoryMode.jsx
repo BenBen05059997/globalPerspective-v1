@@ -12,6 +12,8 @@ import {
   scrubberRange, pctForDate, shortDate, rawDateLabel, spanDays, buildScrubberTicks, mostLikelyScenario,
 } from '@/features/threads/lib/storyMode.js';
 import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
+import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
+import { legacyNote } from '@/features/threads/lib/questionChips.js';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import '@/features/threads/components/StoryMode.css';
 
@@ -156,6 +158,7 @@ export function FedIntoSlide({ fedInto }) {
 
 export function WatchSlide({ deadlines }) {
   const now = Date.now();
+  const note = legacyNote(deadlines);
   return (
     <div className="sm-slide sm-slide-watch">
       <div className="sm-slide-kicker">WATCH · {deadlines.length} dated {deadlines.length === 1 ? 'trigger' : 'triggers'}</div>
@@ -169,6 +172,7 @@ export function WatchSlide({ deadlines }) {
               <span className="sm-watch-diamond" aria-hidden="true">◆</span>
               <div>
                 <div className="sm-watch-text">{d.label}</div>
+                <QuestionChip trigger={d} />
                 <div className="sm-watch-meta">
                   {formatDateLabel(d.deadline)}
                   {daysLeft != null && (daysLeft >= 0 ? ` · in ${daysLeft}d` : ` · ${-daysLeft}d ago`)}
@@ -180,6 +184,7 @@ export function WatchSlide({ deadlines }) {
           );
         })}
       </ul>
+      {note && <p className="sm-watch-note">{note}</p>}
     </div>
   );
 }

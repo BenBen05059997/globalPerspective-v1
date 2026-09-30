@@ -94,3 +94,12 @@ test('a missing seed secret is reported, and a new seed is never invented for a 
   assert.match(out.errors[0], /secret missing/);
   assert.equal(await store.get('SAMPLE#2026-W41', 'DRAW'), null);
 });
+
+test('golden fixture shared with the frontend "Verify this draw" (byte-identical copy, guarded)', () => {
+  const g = require('./fixtures/sampleRuleGolden.json');
+  const r = lib.draw(g.seedHex, g.pool.map((x) => ({ qid: x.q, clusterKey: x.c })), g.K);
+  assert.deepEqual(r.picked, g.picked);
+  assert.equal(lib.commitOf(g.seedHex), g.commitHash);
+  assert.equal(r.eligible, g.eligible);
+  assert.equal(r.clusters, g.clusters);
+});

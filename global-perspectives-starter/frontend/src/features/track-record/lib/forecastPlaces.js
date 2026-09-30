@@ -6,6 +6,7 @@
 // hand-typed list, and never a guess from a city or an implied region. A trigger that names no
 // known country is simply not plotted (never a made-up pin — see StoryMode.jsx's shading rule).
 import { ISO3_NAME } from '@/features/map/lib/situationLabels.js';
+import { itemState } from '@/features/track-record/lib/questionStates.js';
 
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
@@ -31,24 +32,31 @@ export function placesInText(text) {
 }
 
 /**
- * forecastPlaceCounts — per-place { iso3, name, fired, notFired, total, items[] } from a list of
- * resolved trigger records ({ title, trigger, verdict, ... }). A record naming more than one
- * country counts once toward each of them (it really is about all of them).
+ * forecastPlaceCounts — per-place counts from a list of board items. An item is either a sampled
+ * question ({ title, question|trigger, state }) or an archived pilot item ({ title, trigger,
+ * verdict }). Per place: fired / notFired (resolved yes / no), awaiting, pastUnchecked, void, all.
+ * `total` stays fired + notFired (resolved only). An item naming more than one country counts once
+ * toward each of them (it really is about all of them). NEVER a per-country accuracy score.
  */
-export function forecastPlaceCounts(recentItems) {
+export function forecastPlaceCounts(items) {
   const byIso3 = new Map();
-  for (const item of recentItems || []) {
-    const text = `${item.title || ''} ${item.trigger || ''}`;
+  for (const item of items || []) {
+    const text = `${item.title || ''} ${item.trigger || item.question || ''}`;
     const places = new Set(placesInText(text));
+    const st = itemState(item);
     for (const iso3 of places) {
-      const entry = byIso3.get(iso3) || { iso3, name: ISO3_NAME[iso3] || iso3, fired: 0, notFired: 0, items: [] };
-      if (item.verdict === 'fired') entry.fired += 1;
-      else if (item.verdict === 'not_fired') entry.notFired += 1;
+      const entry = byIso3.get(iso3) || { iso3, name: ISO3_NAME[iso3] || iso3, fired: 0, notFired: 0, awaiting: 0, pastUnchecked: 0, void: 0, all: 0, items: [] };
+      if (st === 'yes') entry.fired += 1;
+      else if (st === 'no') entry.notFired += 1;
+      else if (st === 'awaiting') entry.awaiting += 1;
+      else if (st === 'past_deadline_unchecked') entry.pastUnchecked += 1;
+      else if (st === 'void') entry.void += 1;
+      entry.all += 1;
       entry.items.push(item);
       byIso3.set(iso3, entry);
     }
   }
   return [...byIso3.values()]
     .map((e) => ({ ...e, total: e.fired + e.notFired }))
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => b.all - a.all);
 }

@@ -26,6 +26,8 @@ import { threadPath } from '@/shared/lib/threadPath.js';
 import { macroRows } from '@/features/countries/lib/countryMacro.js';
 import { factRows } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
+import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
+import { legacyNote } from '@/features/threads/lib/questionChips.js';
 import '@/features/countries/components/CountryCardV2.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
@@ -205,8 +207,9 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
       {triggers.length > 0 ? (
         <ul className="ccv2-triggers">
           {triggers.map((t) => (
-            <li key={t.id}>{t.label} · <b>{t.daysLeft}d left</b></li>
+            <li key={t.id}>{t.label} · <b>{t.daysLeft}d left</b> <QuestionChip trigger={t} /></li>
           ))}
+          {legacyNote(triggers) && <li className="ccv2-trigger-note">{legacyNote(triggers)}</li>}
         </ul>
       ) : null}
 

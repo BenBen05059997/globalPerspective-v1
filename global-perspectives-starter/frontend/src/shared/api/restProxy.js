@@ -10,6 +10,12 @@ export function setAuthProvider(getTokenFn) {
   getAuthToken = getTokenFn;
 }
 
+// The signed-in user's current ID token (or null). Used by the Studio share endpoint, which lives on its own
+// Lambda but authenticates with the same Firebase token.
+export async function currentAuthToken() {
+  try { return getAuthToken ? await getAuthToken() : null; } catch { return null; }
+}
+
 export function configureProxy({ endpoint }) {
   PROXY_ENDPOINT = endpoint;
 }

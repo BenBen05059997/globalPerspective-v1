@@ -14,6 +14,8 @@ import { buildCountryRiskSeries, buildCountryChangeLog } from '@/features/analys
 import { LENSES, SYSTEM_PROMPT, DEEP_SYSTEM_PROMPT, buildAnalysisContext, buildUserMessage } from '@/features/analysis-studio/lib/analysis';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';
 import { buildEarlierStoryList } from '@/features/analysis-studio/lib/earlierStories';
+import ShareControl from '@/features/analysis-studio/components/ShareControl.jsx';
+import SignedOutExample from '@/features/analysis-studio/components/SignedOutExample.jsx';
 import { validateAnalysis } from '@/features/analysis-studio/lib/analysisValidator';
 import { extractStruct, validateStruct } from '@/features/analysis-studio/lib/analysisStruct';
 import { assessSelection } from '@/features/analysis-studio/lib/sourceRobustness';
@@ -689,6 +691,7 @@ export default function AnalysisStudio() {
           <div className="as-panel-head">
             <h2>Analysis</h2>
           </div>
+          {!running && sections.length > 0 && <ShareControl sections={sections} selectedTopics={selectedTopics} byok={byok} />}
           {running && (
             <div className="as-muted">Running on {serverCapable && mode !== 'deep' && (isMember || !byok) ? 'Global Perspectives AI' : modelChip}…</div>
           )}
@@ -727,6 +730,7 @@ export default function AnalysisStudio() {
               Analysis Studio is available to registered accounts. Sign in (free) to pick
               stories and run your own cited analysis.
             </p>
+            <SignedOutExample />
             <div className="as-gate-actions">
               <button className="as-run" onClick={() => navigate('/signin')}>Sign in</button>
               <button className="as-gate-back" onClick={() => navigate('/')}>Back to home</button>

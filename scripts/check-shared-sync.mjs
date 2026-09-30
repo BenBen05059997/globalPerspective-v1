@@ -147,6 +147,11 @@ function checkAllIdentical(paths) {
   return { pass: true };
 }
 
+const SHARE_COPIES = [
+  ['analysisValidator.js', 'features/analysis-studio/lib/'], ['analysisStruct.js', 'features/analysis-studio/lib/'], ['webCitations.js', 'features/analysis-studio/lib/'],
+  ['analysisContext.js', 'features/analysis-studio/lib/'], ['analysisPrompt.js', 'features/analysis-studio/lib/'],
+  ['driftNote.js', 'shared/lib/'], ['dropRedatedRepeats.js', 'shared/lib/'],
+];
 const PLACE_LAMBDAS = ['newsSystemsAnalysis', 'newsPostDevTo', 'newsBreakingAlert', 'newsWeeklyBrief', 'newsSignals', 'newsSensitiveData'];
 const FE_DATA = 'global-perspectives-starter/frontend/src/shared/data';
 const placeCore = (src) => { const a = src.indexOf("// Names in briefings come from the LLM's `regions`"); const b = src.indexOf('\nconst ymd = '); const e = src.indexOf('\n/** isRealCountryName'); const t = src.indexOf('\n// A COUNTRY# record a reader may use'); return src.slice(a, b > 0 ? b : (t > 0 ? t : e)).trim(); };
@@ -294,6 +299,21 @@ function livePairs() {
       run: () => checkAllIdentical(DAYZERO_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/dayZero.js`))),
     },
     { name: 'real-country rule (placeFilter x6, name tables x8, frontend)', run: () => checkPlaceRule() },
+    {
+      // Batch 4 / G: the Studio share Lambda re-derives sources and re-runs the checks with the frontend's own
+      // pure modules, so its copies must stay byte-identical (and so must the golden context fixture both test against).
+      name: 'Studio share modules (frontend + newsSharedAnalysis, 7 files + golden fixture)',
+      run: () => {
+        for (const [f, dir] of SHARE_COPIES) {
+          const r = checkAllIdentical([abs(`global-perspectives-starter/frontend/src/${dir}${f}`), abs(`amplify/backend/function/newsSharedAnalysis/src/${f}`)]);
+          if (!r.pass) return r;
+        }
+        return checkAllIdentical([
+          abs('global-perspectives-starter/frontend/src/features/analysis-studio/__tests__/fixtures/contextGolden.json'),
+          abs('amplify/backend/function/newsSharedAnalysis/test/fixtures/contextGolden.json'),
+        ]);
+      },
+    },
     {
       // Batch 4 / D: the weekly draw rule exists twice (settle Lambda: Node crypto; frontend "Verify this draw":
       // WebCrypto). Both sides test against this one golden fixture, so the two must stay byte-identical.
@@ -457,6 +477,16 @@ async function selfTestSampleGolden() {
   return result;
 }
 
+async function selfTestShareModules() {
+  const dir = mkTmp();
+  const a = path.join(dir, 'a.js'); const b = path.join(dir, 'b.js');
+  const ref = fs.readFileSync(abs('global-perspectives-starter/frontend/src/features/analysis-studio/lib/analysisValidator.js'), 'utf8');
+  fs.writeFileSync(a, ref); fs.writeFileSync(b, ref.replace("'phantom_citation'", "'phantom_citationx'"));
+  const result = checkAllIdentical([a, b]);
+  fs.rmSync(dir, { recursive: true, force: true });
+  return result;
+}
+
 async function selfTest() {
   console.log('Self-test — perturbing one byte per pair and confirming DRIFT is caught\n');
   const cases = [
@@ -468,6 +498,7 @@ async function selfTest() {
     ['dayZero.js (x6)', selfTestDayZero],
     ['real-country rule', selfTestPlaceRule],
     ['sampleRuleGolden.json', selfTestSampleGolden],
+    ['Studio share modules', selfTestShareModules],
   ];
   let allCaught = true;
   for (const [name, fn] of cases) {

@@ -136,6 +136,10 @@ must_not_have "$SRC/features/track-record/TrackRecordPage.jsx" "[Aa]waiting thei
 must_have "$SRC/features/threads/hooks/useStoryLinks.js" "useWebIndex" "story links read the story-web index (one shared call)"
 must_have "$SRC/features/threads/lib/linkStates.js" "No linked stories found yet for this story" "an empty story web says why, honestly"
 must_have "$SRC/features/map/lib/storyLinkArcs.js" "strong.*medium|DRAWN" "map lines are strong + medium only"
+must_have "$SRC/features/analysis-studio/components/ShareControl.jsx" "shareableSections" "the share button exists only for runs that passed their checks"
+must_have "$SRC/features/analysis-studio/components/ShareControl.jsx" "shareConfigured" "sharing is hidden while the share endpoint is unset"
+must_have "$SRC/features/analysis-studio/SharedAnalysisPage.jsx" "useNoIndex" "the shared page is noindex"
+must_have "$SRC/features/analysis-studio/components/SignedOutExample.jsx" "not ready yet" "the signed-out example says so until a real share exists"
 must_have "$SRC/features/track-record/components/SettlingLog.jsx" "buildWeeklySquares" "settling log computed from the server's real weekly records"
 
 # ─── Summary ───

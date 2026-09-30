@@ -949,6 +949,17 @@ Builds the Signal-API v1 feed from `PredictionLog`/`SummarizeAndPredict`/`Breaki
 
 ---
 
+### 38. `newsSharedAnalysis` — Analysis Studio share links (**source in the repo, NOT DEPLOYED**; Batch 4 G, 2026-09-30)
+**Path:** `amplify/backend/function/newsSharedAnalysis/src/` (ESM, `"type":"module"`, nodejs22.x, no dependencies beyond the runtime's AWS SDK). **Status:** written and tested (38 tests) but nothing exists in AWS until gates Y1–Y5 are approved (table, IAM role, Lambda, Function URL, `docs/config.js` `NEWS_SHARE_ENDPOINT`); the exact commands are in `_active/TASK_2026-09-30_batch4_scoring_web_share.md` ("Exact Y1–Y5 steps"). The frontend share UI is hidden while `window.NEWS_SHARE_ENDPOINT` is unset.
+One Function URL (auth NONE; **CORS emitted in code, the URL's own CORS config stays EMPTY**, like `newsAnalyze`). Every response carries `X-Robots-Tag: noindex, nofollow`.
+- `POST /` (Firebase JWT; any signed-in user): body `{stories:[{topicId,threadId}], citations, sections:[{lensId,mode,prose,struct,webSources,focus}], run}`. The server re-fetches and **freezes the sources itself** from the public proxy with the reader's own bearer token (`freeze.js` + `analysisContext.js`, the same pure builder the browser uses; titles and snippets are never taken from the client), requires its numbering to equal the one the reader's run cited (409 `sources_changed`), **re-runs the checks** (`analysisValidator.js`, `analysisStruct.js`) and **refuses on any error** (422 `checks_failed`), allows only http(s) URLs (`urls.js`), caps prose at 32 KB in bytes, 4 sections, 8 stories, and **20 shares per user per UTC day** (429). Stores one unlisted row (128-bit id) and returns `{id}`.
+- `GET /?id=` public read (no owner id; `owner:true` only for the owner's own token; `Vary: Origin, Authorization`). `DELETE /?id=` owner only, hard delete.
+- **Storage:** DynamoDB table `GlobalPerspectiveShares` (PK `id`; GSI `uid-createdAt-index`, KEYS_ONLY, for the daily count and account-deletion cleanup) — a user-owned row per DATA_STRATEGY's sorting test; **a new-table exception to record in `DATA_STRATEGY.md` §2 when Y1 is approved.** Operator tool: `scripts/share-admin.mjs` (list / delete by uid or id, dry run by default).
+- **Shared copies (byte-identical, guarded by `scripts/check-shared-sync.mjs`):** `analysisValidator.js`, `analysisStruct.js`, `webCitations.js`, `analysisContext.js`, `analysisPrompt.js`, `driftNote.js`, `dropRedatedRepeats.js` + the golden context fixture.
+**Env (planned):** `SHARES_TABLE`, `FIREBASE_PROJECT_ID`, `PROXY_URL` (public), optional `CORS_ORIGINS`, `DAILY_SHARE_CAP`. No secret, no LLM.
+
+---
+
 ## Observability & Monitoring
 
 Two layers, both roll-your-own (the user rejects paid Sentry on cost):
@@ -1603,6 +1614,7 @@ Wired in `<Routes>` in `App.jsx` — 29 `<Route>` elements incl. catch-all (`/me
 | `/breaking/:id` | `BreakingDetailPage.jsx` | Public (single breaking alert: What happened / How we got here / Our read / Market impact / Sources) |
 | `/economy` | `EconomyPage.jsx` | Public |
 | `/analyze` | `AnalysisStudio.jsx` | Public (BYOK self-serve analysis — see [Analysis Studio](#analysis-studio-byok-self-serve-analysis)) |
+| `/analyze/s/:id` | `SharedAnalysisPage.jsx` | Public, **noindex** read-only debrief of one shared Studio run (Batch 4 H; says "not available yet" while `NEWS_SHARE_ENDPOINT` is unset; the Worker never pre-renders it) |
 | `/track-record` | `TrackRecordPage.jsx` | Public — E2 service record (S6, 2026-09-27): stage status line, accuracy locked until 150 post-pilot resolved, forecast board MAP \| BOARD (counts per place, never per-country accuracy), settling log, corrections ledger. The July pilot is excluded from every headline number |
 | `/track-record/text` | `TrackRecordText.jsx` | Public — E1 plain text version of the same record |
 | `/weekly` | `WeeklyPage.jsx` | Public |

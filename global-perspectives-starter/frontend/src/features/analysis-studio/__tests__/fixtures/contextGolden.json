@@ -1,0 +1,324 @@
+{
+ "stories": [
+  {
+   "topicId": "Iran tanker strike-1",
+   "threadId": "thread-iran-tanker-aaa111",
+   "title": "US strikes Iranian oil tankers",
+   "regions": [
+    "Iran",
+    "United States"
+   ],
+   "category": "conflict",
+   "sources": [
+    {
+     "url": "https://example.com/a"
+    }
+   ]
+  },
+  {
+   "topicId": "Japan stimulus-3",
+   "threadId": null,
+   "title": "Japan announces stimulus package",
+   "regions": [
+    "Japan"
+   ],
+   "category": "economy",
+   "sources": [
+    {
+     "url": "https://example.com/jp1"
+    },
+    {
+     "url": "javascript:alert(1)"
+    }
+   ]
+  }
+ ],
+ "proxy": {
+  "narrative_thread": {
+   "thread-iran-tanker-aaa111": {
+    "success": true,
+    "data": [
+     {
+      "topicId": "e1",
+      "title": "US strikes three Iranian oil tankers",
+      "date": "2026-09-05",
+      "archivedAt": "2026-09-05T05:00:00Z",
+      "sources": [
+       {
+        "title": "US strikes three Iranian oil tankers",
+        "source": "Reuters",
+        "snippet": "The US military struck three tankers in the Gulf of Oman.",
+        "url": "https://example.com/reuters1"
+       }
+      ]
+     },
+     {
+      "topicId": "e2",
+      "title": "US strikes three Iranian oil tankers",
+      "date": "2026-09-20",
+      "archivedAt": "2026-09-20T05:00:00Z",
+      "sources": [
+       {
+        "title": "US strikes three Iranian oil tankers",
+        "source": "Reuters",
+        "snippet": "A re-dated repeat that must be dropped.",
+        "url": "https://example.com/reuters-repeat"
+       }
+      ]
+     },
+     {
+      "topicId": "e3",
+      "title": "Iran vows tougher reprisals",
+      "date": "2026-09-06",
+      "archivedAt": "2026-09-06T05:00:00Z",
+      "sources": [
+       {
+        "title": "Iran vows reprisals",
+        "source": "AP",
+        "snippet": "Tehran promised a tougher response.",
+        "url": "https://example.com/ap1"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "thread_analysis": {
+   "thread-iran-tanker-aaa111": {
+    "success": true,
+    "data": {
+     "thread-iran-tanker-aaa111": {
+      "generatedAt": "2026-09-30T05:00:00Z",
+      "trajectory": "escalating",
+      "rootCauseChain": [
+       "sanctions",
+       "tanker seizures",
+       "strikes"
+      ],
+      "storyArc": "A slide from sanctions to strikes.",
+      "watchQuestions": [
+       "Will Iran retaliate?",
+       "Will talks resume?"
+      ],
+      "entryShortTitles": [
+       {
+        "topicId": "e1"
+       },
+       {
+        "topicId": "e3"
+       }
+      ],
+      "driftNote": {
+       "asOf": "2026-09-29",
+       "changeLevel": {
+        "from": "elevated",
+        "to": "high"
+       },
+       "triggerEvent": {
+        "title": "US strikes three tankers",
+        "date": "2026-09-05"
+       },
+       "whyChanged": "Escalation after the strikes."
+      }
+     }
+    }
+   }
+  },
+  "prediction_snapshot": {
+   "any": {
+    "success": true,
+    "snapshot": {
+     "generatedAt": "2026-09-30T04:00:00Z",
+     "scenarios": [
+      {
+       "label": "Most Likely",
+       "probability": 0.6,
+       "triggers": [
+        {
+         "text": "UN Security Council condemns the strikes",
+         "deadline": "2026-11-15",
+         "verdict": null
+        }
+       ]
+      },
+      {
+       "label": "Pessimistic",
+       "probability": 0.25,
+       "triggers": [
+        {
+         "text": "Iran attacks a US warship",
+         "deadline": "2026-12-01"
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "summary": {
+   "Japan stimulus-3": {
+    "data": {
+     "content": "Japan unveiled a new stimulus package worth trillions of yen."
+    }
+   }
+  },
+  "prediction": {
+   "Japan stimulus-3": {
+    "data": {
+     "content": "Markets are likely to react positively in the short term."
+    }
+   }
+  },
+  "trace_cause": {
+   "Japan stimulus-3": {
+    "data": {
+     "content": "Weak consumption and a falling yen preceded the package."
+    }
+   }
+  }
+ },
+ "expected": {
+  "context": "STORIES (typed, dated sources — cite by bracket number):\n\nSTORY: US strikes Iranian oil tankers (Iran, United States)\n[1] (ANALYSIS · 2026-09-30T05:00:00Z — Stored thread analysis) Trajectory: escalating\nCause chain: sanctions → tanker seizures → strikes\nStory arc: A slide from sanctions to strikes.\nWatch: Will Iran retaliate? | Will talks resume?\n[2] (FORECAST · 2026-09-30T04:00:00Z — Forecast log) Most Likely (60%) — UN Security Council condemns the strikes by 2026-11-15\nPessimistic (25%) — Iran attacks a US warship by 2026-12-01\n[3] (DRIFT · 2026-09-29 — What changed) Risk level elevated → high — Trigger: US strikes three tankers (2026-09-05) — Escalation after the strikes.\n[4] (NEWS · 2026-09-06 — AP) Tehran promised a tougher response.\n[5] (NEWS · 2026-09-05 — Reuters) The US military struck three tankers in the Gulf of Oman.\n\nSTORY: Japan announces stimulus package (Japan)\n[6] (ANALYSIS · date unknown — Stored thread analysis) Summary: Japan unveiled a new stimulus package worth trillions of yen.\nPrediction: Markets are likely to react positively in the short term.\nBackground: Weak consumption and a falling yen preceded the package.\n[7] (NEWS · date unknown — News source) Japan announces stimulus package\n[8] (NEWS · date unknown — News source) Japan announces stimulus package",
+  "citations": [
+   {
+    "n": 1,
+    "kind": "ANALYSIS",
+    "date": "2026-09-30T05:00:00Z",
+    "label": "Stored thread analysis",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": null
+   },
+   {
+    "n": 2,
+    "kind": "FORECAST",
+    "date": "2026-09-30T04:00:00Z",
+    "label": "Forecast log",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": null
+   },
+   {
+    "n": 3,
+    "kind": "DRIFT",
+    "date": "2026-09-29",
+    "label": "What changed",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": null
+   },
+   {
+    "n": 4,
+    "kind": "NEWS",
+    "date": "2026-09-06",
+    "label": "AP",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": "https://example.com/ap1"
+   },
+   {
+    "n": 5,
+    "kind": "NEWS",
+    "date": "2026-09-05",
+    "label": "Reuters",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": "https://example.com/reuters1"
+   },
+   {
+    "n": 6,
+    "kind": "ANALYSIS",
+    "date": null,
+    "label": "Stored thread analysis",
+    "storyTitle": "Japan announces stimulus package",
+    "url": null
+   },
+   {
+    "n": 7,
+    "kind": "NEWS",
+    "date": null,
+    "label": "News source",
+    "storyTitle": "Japan announces stimulus package",
+    "url": "https://example.com/jp1"
+   },
+   {
+    "n": 8,
+    "kind": "NEWS",
+    "date": null,
+    "label": "News source",
+    "storyTitle": "Japan announces stimulus package",
+    "url": "javascript:alert(1)"
+   }
+  ],
+  "sources": [
+   {
+    "n": 1,
+    "kind": "ANALYSIS",
+    "date": "2026-09-30T05:00:00Z",
+    "label": "Stored thread analysis",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": null,
+    "text": "Trajectory: escalating\nCause chain: sanctions → tanker seizures → strikes\nStory arc: A slide from sanctions to strikes.\nWatch: Will Iran retaliate? | Will talks resume?"
+   },
+   {
+    "n": 2,
+    "kind": "FORECAST",
+    "date": "2026-09-30T04:00:00Z",
+    "label": "Forecast log",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": null,
+    "text": "Most Likely (60%) — UN Security Council condemns the strikes by 2026-11-15\nPessimistic (25%) — Iran attacks a US warship by 2026-12-01"
+   },
+   {
+    "n": 3,
+    "kind": "DRIFT",
+    "date": "2026-09-29",
+    "label": "What changed",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": null,
+    "text": "Risk level elevated → high — Trigger: US strikes three tankers (2026-09-05) — Escalation after the strikes."
+   },
+   {
+    "n": 4,
+    "kind": "NEWS",
+    "date": "2026-09-06",
+    "label": "AP",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": "https://example.com/ap1",
+    "text": "Tehran promised a tougher response."
+   },
+   {
+    "n": 5,
+    "kind": "NEWS",
+    "date": "2026-09-05",
+    "label": "Reuters",
+    "storyTitle": "US strikes Iranian oil tankers",
+    "url": "https://example.com/reuters1",
+    "text": "The US military struck three tankers in the Gulf of Oman."
+   },
+   {
+    "n": 6,
+    "kind": "ANALYSIS",
+    "date": null,
+    "label": "Stored thread analysis",
+    "storyTitle": "Japan announces stimulus package",
+    "url": null,
+    "text": "Summary: Japan unveiled a new stimulus package worth trillions of yen.\nPrediction: Markets are likely to react positively in the short term.\nBackground: Weak consumption and a falling yen preceded the package."
+   },
+   {
+    "n": 7,
+    "kind": "NEWS",
+    "date": null,
+    "label": "News source",
+    "storyTitle": "Japan announces stimulus package",
+    "url": "https://example.com/jp1",
+    "text": "Japan announces stimulus package"
+   },
+   {
+    "n": 8,
+    "kind": "NEWS",
+    "date": null,
+    "label": "News source",
+    "storyTitle": "Japan announces stimulus package",
+    "url": "javascript:alert(1)",
+    "text": "Japan announces stimulus package"
+   }
+  ],
+  "thin": false
+ }
+}

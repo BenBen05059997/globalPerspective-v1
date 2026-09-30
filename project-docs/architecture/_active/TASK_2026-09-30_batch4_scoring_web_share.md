@@ -526,9 +526,9 @@ questions: {
 | D | M4: `/track-record`, WATCH, card, briefings, story page; "not ready yet" states | **Done 2026-09-30** (frontend on `main`, not deployed) | see Phase D evidence below |
 | E | D8: 10 dated entries, grounded cites, `THREAD#id/WEB`, `WEB#INDEX`, coverage, `web_index` | **Done 2026-09-30** (2 Lambdas deployed, live runs done) | see Phase E evidence below |
 | F | D8: FED INTO from the index, empty states, map lines | **Done 2026-09-30** (frontend on `main`, not deployed) | see Phase F evidence below |
-| G | D5: Lambda source + copies + tests (**STOP before Y1–Y4**) | Queued | |
-| G-gate | Y1 table · Y2 IAM role · Y3 Lambda · Y4 Function URL · Y5 `docs/config.js` | **Waiting for the operator's yes (each)** | |
-| H | D5: share button, `/analyze/s/:id`, signed-out example state | Queued (frontend) | |
+| G | D5: Lambda source + copies + tests (**STOP before Y1–Y4**) | **Done 2026-09-30** (repo only, nothing in AWS) | see Phase G evidence below |
+| G-gate | Y1 table · Y2 IAM role · Y3 Lambda · Y4 Function URL · Y5 `docs/config.js` | **Waiting for the operator's yes (each); exact commands in "Exact Y1–Y5 steps" below** | |
+| H | D5: share button, `/analyze/s/:id`, signed-out example state | **Done 2026-09-30** (frontend on `main`, hidden until Y5; not deployed) | see Phase H evidence below |
 | I | Deploy (Y6) + optional Worker header (Y7) + smoke | **Waiting for the operator's yes** | |
 
 ### Phase evidence
@@ -630,3 +630,76 @@ Checked: 2026-10-27T12:30:00Z
 - **Live today:** every story from the last 14 days is `single_update` (28 of 28), so the live home map shows no lines yet; they appear as stories get a second update and the daily job links them.
 
 **Monitor check, phase F (2026-09-30):** verify 857 / 857; guards 56 / 0; sync ALL PASS; screenshot reviewed (a linked story: FED INTO with 6 linked stories, strength / lag / source web / dated cited headlines, dashed lines on the globe). Not deployed.
+
+#### Phase G evidence (2026-09-30; repo only)
+- **Lambda source** `amplify/backend/function/newsSharedAnalysis/src/`: `index.js` (handler + `handleRequest`), `auth.js`, `cors.js`, `urls.js`, `limits.js`, `freeze.js`, `store.js`, `package.json` (`"type":"module"`, no dependencies: the nodejs22.x runtime provides the AWS SDK v3), and seven byte-identical copies: `analysisValidator.js`, `analysisStruct.js`, `webCitations.js`, `analysisContext.js`, `analysisPrompt.js`, `driftNote.js`, `dropRedatedRepeats.js`. Tests `test/{auth,cors,urls,limits,freeze,handler,admin}.test.js` + `helpers.js` + `fixtures/contextGolden.json`: **38 pass**.
+- **Frontend refactor with no behaviour change:** `features/analysis-studio/lib/analysisContext.js` (pure, import-free, dependencies injected; the browser wires `restProxy` in `analysis.js`, the Lambda wires plain HTTP), `shared/lib/dropRedatedRepeats.js` (the hook re-exports it). Parity: `__tests__/analysisContextGolden.test.js` (browser) and `freeze.test.js` (Lambda) assert the SAME golden context, citations and numbered sources; the fixture and the seven modules are guarded by a new `check-shared-sync.mjs` entry (+ self-test).
+- **Design points beyond the plan text:** the client sends only `{topicId, threadId}` per story, so titles, regions, snippets and URLs of the frozen sources come from the server (a client-supplied title never reaches a share); web sources are the one reader-supplied part (http(s) only, labelled "not checked by us"); `directionCheck.js` was NOT copied (it is not part of the run's checks, only of the `whatchanged` picture, which shares omit); the owner flag needs `Vary: Origin, Authorization` (found by the browser run: an anonymous copy cached for 60 s was served to the owner).
+- **No AWS resource was created or changed.** One read-only AWS call was made while smoke-testing `scripts/share-admin.mjs` (its `--uid` listing, before the table exists): it returned `ResourceNotFoundException` (no effect).
+
+#### Phase H evidence (2026-09-30; frontend on `main`, not deployed)
+- **Built:** `lib/{shareApi,sharePayload,sharedExample}.js`, `components/{ShareControl,SharedAnalysisView,SignedOutExample}.jsx`, `SharedAnalysisPage.jsx`, `shared/hooks/useNoIndex.js`, `restProxy.currentAuthToken`, route `/analyze/s/:id` (lazy), `AnalysisStudio.jsx` (ShareControl in the result panel, SignedOutExample in the sign-in gate), CSS. `docs/config.js` untouched (Y5). `EXAMPLE_SHARE_ID = null`.
+- **Checks:** `npm run verify` 116 files / 878 tests, 0 errors (3 pre-existing warnings); `quality/verify_pages.sh` 60 pass (4 new guards); `check-shared-sync.mjs` ALL PASS + self-test. New frontend tests: shareUi 20 (payload gate, worded refusals, control hidden without endpoint / without a passing run, share + link + remember, broken storage, page states, noindex removed on unmount, owner delete, http(s)-only links, signed-out example both ways), golden context 3.
+- **Browser** (Playwright chromium, local Vite :5173, 1440 and 390): **60/60**, 0 page errors, no horizontal overflow. (a) Endpoint UNSET (today's production state): `/analyze/s/<id>` says "Shared analyses are not available yet" and is noindex; the signed-out Studio gate shows "Example analysis: not ready yet. The first shared analysis will appear here as a read-only example…"; no share control anywhere; the noindex tag is gone after leaving. (b) Endpoint SET to a local server that runs the REAL Lambda handler with a fake table, fake Firebase certs and the golden proxy data: the control shows for a passing run; Share returns a 22-character link; Copy puts it on the clipboard; the browser-only list shows it; Open loads the read-only debrief in a new tab (frozen date, "written by a reader with their own…", checks passed line, 8 numbered sources with verbatim text from the server, every link http(s), noindex meta, no Delete for a signed-out reader, Run-your-own and live-story links); the owner's page offers Delete and a different signed-in user's does not; Delete makes the old link the honest "deleted or never existed" page, as does an unknown id; a mixed run offers only the passing analysis and says the failed one is not included; a signed-out click says "Sign in to share an analysis". A real Studio run cannot be driven in a browser session here (no Firebase sign-in, no LLM), so the Share button was exercised through a temporary harness page mounting the real components (deleted afterwards). Screenshots: `…/scratchpad/pw/h-*.png`.
+
+## Exact Y1–Y5 steps (nothing below has been run; each needs its own "yes"; one bare command each)
+
+**Pre-checks done (read-only):** `newsAnalyze` has Function URL `AuthType NONE`, `InvokeMode BUFFERED`, **no** Function-URL CORS, and this resource policy: `Sid fnurl-public`, `Effect Allow`, `Principal *`, `Action lambda:InvokeFunctionUrl`, `Condition StringEquals lambda:FunctionUrlAuthType = NONE`. Its role `newsAnalyze-role` trusts `lambda.amazonaws.com` and has the managed `AWSLambdaBasicExecutionRole` plus one inline DynamoDB policy. Runtime nodejs20.x, x86_64, 512 MB ephemeral storage. `newsAnalyze` is not touched.
+
+**Y1 — table `GlobalPerspectiveShares`** (PAY_PER_REQUEST, deletion protection on; then record the DATA_STRATEGY §2 exception: "GlobalPerspectiveShares: user-owned, public-id lookup, KEYS_ONLY owner GSI; passes the sorting test (deleted with the account); a new table because no existing table can be read by a public id"):
+```
+aws dynamodb create-table --region ap-northeast-1 --table-name GlobalPerspectiveShares --billing-mode PAY_PER_REQUEST --deletion-protection-enabled \
+  --attribute-definitions AttributeName=id,AttributeType=S AttributeName=uid,AttributeType=S AttributeName=createdAt,AttributeType=S \
+  --key-schema AttributeName=id,KeyType=HASH \
+  --global-secondary-indexes '[{"IndexName":"uid-createdAt-index","KeySchema":[{"AttributeName":"uid","KeyType":"HASH"},{"AttributeName":"createdAt","KeyType":"RANGE"}],"Projection":{"ProjectionType":"KEYS_ONLY"}}]'
+aws dynamodb wait table-exists --region ap-northeast-1 --table-name GlobalPerspectiveShares
+```
+Check: `aws dynamodb describe-table … --query 'Table.[TableStatus,KeySchema,GlobalSecondaryIndexes[].IndexName]'`. No TTL (a share lives until its owner deletes it, Q16).
+
+**Y2 — IAM role `newsSharedAnalysis-role`** (same trust as `newsAnalyze-role`; least privilege: three item actions on the table, `Query` on the one index, logs via the same managed policy; nothing on any other table, no S3, no Users table, no secrets):
+```
+# trust.json
+{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}
+# shares-policy.json
+{"Version":"2012-10-17","Statement":[
+ {"Sid":"SharesTableItems","Effect":"Allow","Action":["dynamodb:GetItem","dynamodb:PutItem","dynamodb:DeleteItem"],"Resource":"arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveShares"},
+ {"Sid":"SharesOwnerIndex","Effect":"Allow","Action":"dynamodb:Query","Resource":"arn:aws:dynamodb:ap-northeast-1:280362093938:table/GlobalPerspectiveShares/index/uid-createdAt-index"}]}
+
+aws iam create-role --role-name newsSharedAnalysis-role --assume-role-policy-document file://trust.json
+aws iam put-role-policy --role-name newsSharedAnalysis-role --policy-name SharesTableRW --policy-document file://shares-policy.json
+aws iam attach-role-policy --role-name newsSharedAnalysis-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+```
+(IAM propagation takes about 10 s before the role can be used by `create-function`.)
+
+**Y3 — Lambda `newsSharedAnalysis`** (nodejs22.x, 256 MB, 30 s: a share makes up to 3 proxy calls per story in parallel, each capped at 8 s; env holds no secret: `PROXY_URL` is the public proxy endpoint already published in `docs/config.js`, `FIREBASE_PROJECT_ID` is the public Firebase project id, the same value `newsAnalyze` has):
+```
+cd amplify/backend/function/newsSharedAnalysis/src && zip -q -r /tmp/newsSharedAnalysis.zip index.js auth.js cors.js urls.js limits.js freeze.js store.js analysisValidator.js analysisStruct.js webCitations.js analysisContext.js analysisPrompt.js driftNote.js dropRedatedRepeats.js package.json
+# env.json  (write from the values above via a chmod-600 temp file; compare by hash; delete after; never printed)
+{"Variables":{"SHARES_TABLE":"GlobalPerspectiveShares","FIREBASE_PROJECT_ID":"<same as newsAnalyze>","PROXY_URL":"<SENSITIVE_PROXY_ENDPOINT from docs/config.js>"}}
+
+aws lambda create-function --region ap-northeast-1 --function-name newsSharedAnalysis --runtime nodejs22.x --handler index.handler \
+  --role arn:aws:iam::280362093938:role/newsSharedAnalysis-role --timeout 30 --memory-size 256 \
+  --zip-file fileb:///tmp/newsSharedAnalysis.zip --environment file://env.json
+```
+After: `unzip -l` shows exactly those 15 files; byte-compare the deployed files with the repo (same method as every other deploy); `aws lambda get-function-configuration --query '[CodeSha256,State,Runtime]'`.
+
+**Y4 — Function URL, public, CORS config EMPTY (CORS is emitted in code)** with the same public-invoke permission `newsAnalyze` has:
+```
+aws lambda create-function-url-config --region ap-northeast-1 --function-name newsSharedAnalysis --auth-type NONE --invoke-mode BUFFERED
+aws lambda add-permission --region ap-northeast-1 --function-name newsSharedAnalysis --statement-id fnurl-public \
+  --action lambda:InvokeFunctionUrl --principal '*' --function-url-auth-type NONE
+```
+(no `--cors` flag). Verify with the returned URL `$U`: `curl -s -o /dev/null -w "%{http_code}" "$U?id=$(printf 'A%.0s' {1..22})"` → 404; `curl -si -X OPTIONS -H "Origin: https://globalperspective.net" -H "Access-Control-Request-Method: POST" "$U"` → 204 with `Access-Control-Allow-Origin: https://globalperspective.net` and `X-Robots-Tag: noindex, nofollow` **exactly once** (a doubled header would mean the URL's CORS config is not empty); `curl -s -X POST "$U" -d '{}'` → 401 `sign_in_required`; `aws lambda get-function-url-config … --query Cors` → null. If the URL answers 403 (AWS's newer rule may also require `lambda:InvokeFunction` for a new Function URL; `newsAnalyze`, created 2026-06-16, works with the single statement above, so this is only a fallback), add one more statement: `aws lambda add-permission … --statement-id fnurl-invoke --action lambda:InvokeFunction --principal '*' --invoked-via-function-url`.
+
+**Y5 — `docs/config.js`** (operator-owned; add one line next to `NEWS_ANALYZE_ENDPOINT`, with the URL from Y4):
+```
+window.NEWS_SHARE_ENDPOINT = 'https://<url-id>.lambda-url.ap-northeast-1.on.aws/';
+```
+Then the frontend deploy (Y6) makes the share button and `/analyze/s/:id` live. Until Y5 the site behaves exactly as today.
+
+**Rollback:** delete the Function URL config, the function, the role's inline + attached policies and the role; the table only on a separate destructive "yes" (deletion protection must be switched off first). Nothing else depends on any of it (the frontend hides the share UI when the endpoint is unset).
+**Then (Y8):** the operator makes one real run with their own key, shares it, and sets `EXAMPLE_SHARE_ID` in `features/analysis-studio/lib/sharedExample.js` (the signed-out Studio then shows it instead of "not ready yet").
+
+**Estimated monthly cost at current traffic** (about 430 home visits and 13 users a month; a handful of shares; ap-northeast-1 list prices, no invented traffic beyond a generous ceiling): table on demand, each share about 20–80 KB, one write (plus a tiny GSI write) and a few reads: **under $0.01** a month, storage well inside the free 25 GB. Lambda: a share is about 3 s at 256 MB (about 0.8 GB-s), a read about 50 ms; even 100 shares and 5,000 reads a month is about 150 GB-s and 5,100 requests, inside the free tier (400,000 GB-s, 1 M requests): **$0**. Function URL: no charge. CloudWatch Logs: a few KB a month: **under $0.01**. Data out: a read is about 30–100 KB; 5,000 reads is under 0.5 GB, inside the free egress allowance: **$0**. **Total at today's traffic: under $0.05 a month.** Ceiling for 1,000 shares and 50,000 reads a month: about $0.30 (writes $0.001, reads $0.013, Lambda about $0.10 beyond the free tier if it were used up, egress about $0.25).
+
+**Monitor check, phases G + H (2026-09-30):** share Lambda tests 38 / 38; frontend verify 878 / 878; guards 60 / 0; sync ALL PASS; no secret-like strings in the Lambda source; `newsSharedAnalysis` does not exist in AWS (ResourceNotFound). Y1–Y5 await the operator.

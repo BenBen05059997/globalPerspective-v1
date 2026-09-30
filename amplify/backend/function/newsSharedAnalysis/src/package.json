@@ -1,0 +1,11 @@
+{
+  "name": "newssharedanalysis",
+  "version": "1.0.0",
+  "description": "Analysis Studio share links: verifies the Firebase JWT, re-fetches and freezes the sources, re-runs the checks, stores an unlisted read-only share (noindex). See TASK_2026-09-30_batch4_scoring_web_share.md phase G.",
+  "type": "module",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node --test ../test/*.test.js"
+  }
+}

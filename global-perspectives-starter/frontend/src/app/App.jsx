@@ -25,6 +25,7 @@ const PrivacyTerms = lazy(() => import('@/features/static/PrivacyTerms'));
 const AboutContact = lazy(() => import('@/features/static/AboutContact'));
 const Disclosures = lazy(() => import('@/features/static/Disclosures'));
 const Contact = lazy(() => import('@/features/static/Contact'));
+const SharedAnalysisPage = lazy(() => import('@/features/analysis-studio/SharedAnalysisPage'));
 const WeeklyPage = lazy(() => import('@/features/threads/WeeklyPage'));
 const ThreadPage = lazy(() => import('@/features/threads/ThreadPage'));
 const CountryPage = lazy(() => import('@/features/countries/CountryPage'));
@@ -120,6 +121,7 @@ export default function App() {
               <Route path="/daily/:dateKey" element={<DailyPage />} />
               <Route path="/economy" element={<EconomyPage />} />
               <Route path="/analyze" element={<AnalysisStudio />} />
+              <Route path="/analyze/s/:id" element={<SharedAnalysisPage />} />
               <Route path="/membership" element={<MembershipPage />} />
               <Route path="/track-record" element={<TrackRecordPage />} />
               <Route path="/track-record/text" element={<TrackRecordText />} />

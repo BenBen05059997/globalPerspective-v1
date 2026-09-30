@@ -531,3 +531,27 @@
 .as-srcbasis.warn { border-color: var(--risk-e); background: var(--risk-e-soft); }
 .as-srcbasis.warn .as-check-dot { background: var(--risk-e); }
 .as-srcbasis strong { color: var(--ink); }
+
+/* ---- Batch 4 H: share control, shared page, signed-out example ---- */
+.as-share { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 14px; }
+.as-share-btn { align-self: flex-start; }
+.as-share-note { font-size: 12px; line-height: 1.5; color: var(--ink-mid, #555); }
+.as-share-made { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.as-share-url { width: 100%; font-family: var(--mono, monospace); font-size: 12px; }
+.as-share-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+.as-share-mine { font-size: 12px; }
+.as-share-mine ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.as-share-mine li { display: flex; gap: 12px; justify-content: space-between; align-items: center; }
+.as-share-error { margin: 0; }
+.as-shared-page { max-width: 860px; margin: 0 auto; padding: 16px; }
+.as-shared-state { padding: 24px 0; }
+.as-shared-meta, .as-shared-stories { font-size: 13px; color: var(--ink-mid, #555); margin: 4px 0; line-height: 1.5; }
+.as-shared-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 16px 0; font-size: 13px; }
+.as-shared-snippet { margin: 4px 0 0 0; padding-left: 10px; border-left: 2px solid var(--line, #ddd); font-size: 12px; color: var(--ink-mid, #555); overflow-wrap: anywhere; }
+.as-shared-warns { margin: 6px 0; padding-left: 18px; font-size: 12px; }
+.as-shared-back { margin-top: 12px; }
+.as-example { margin: 12px 0; text-align: left; font-size: 13px; line-height: 1.5; }
+.as-example-scroll { max-height: 46vh; overflow-y: auto; border: 1px solid var(--line, #ddd); border-radius: 8px; padding: 10px; margin: 6px 0; }
+.as-example-off { border: 1px dashed var(--line, #ccc); border-radius: 8px; padding: 10px 12px; }
+@media (max-width: 640px) { .as-shared-page { padding: 12px; } .as-share-btn { align-self: stretch; } }
+.as-shared-snippet { white-space: pre-line; }

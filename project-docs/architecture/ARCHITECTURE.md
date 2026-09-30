@@ -416,7 +416,7 @@ Despite the name and the code below, **Dev.to publishing is dead code as of 2026
 
 **What it does (live behavior):**
 1. Reads `latest` topics from Topics Table
-2. **Builds + stores the Daily Brief** (`DeepSeek`, 50 archive entries + thread/country enrichment) → `DAILY_BRIEF#{dateKey}` / `DAILY_BRIEF`, 90-day TTL. Served by the `daily_brief` action → `/daily`
+2. **Builds + stores the Daily Brief** (`DeepSeek`, 50 archive entries + thread/country enrichment) → `DAILY_BRIEF#{dateKey}` / `DAILY_BRIEF`, 90-day TTL. Served by the `daily_brief` action → `/daily`; `topStories[].threadId` added 2026-09-30 (Batch 3 C)
 3. ~~Calls OpenRouter AI to generate a long-form Dev.to article~~ — dead since 2026-05-18
 4. ~~Checks `SOCIAL_POSTS_TABLE` to skip if already posted today~~ — dead since 2026-05-18
 5. ~~Posts to Dev.to via API~~ — dead since 2026-05-18
@@ -1004,7 +1004,7 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 | `COUNTRY#{countryName}` | `COUNTRY_INTELLIGENCE` | newsCountryIntelligence | headline, situationSummary, crossThreadInsight, trajectory, riskSignals, riskLevel |
 | `PAIR#{pairSlug}` | `PAIR_ANALYSIS` | newsPairIntelligence | pairTitle, currentState, timeline, trajectory, rootDriver, predictions, watchItems |
 | `SYSTEMS#{countryName}` | `SYSTEMS_ANALYSIS` | newsSystemsAnalysis | nodes[] (+actors[]), causal edges[] (confidence, citations), shared-actor backbone[] (14-day TTL) |
-| `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL) |
+| `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL, table TTL disabled). Since 2026-09-30 each `topStories[]` entry carries `threadId` (string or null): resolved in code from the archive entry the story was written from (`src/threadLinks.js`: exact title, containment, token Jaccard >= 0.6; ambiguous = null), never by the model. Older rows have none |
 | `WEEKLY_BRIEF#{weekKey}` | `WEEKLY_BRIEF` | newsWeeklyBrief (#23) | Weekly **signals** digest (`format:'signals'`): `signals[{kind('threat'|'development'),lede,fact,soWhat,riskLevel,riskScore,region,asOf,sources,related}]` + `watch[{event,date,stake}]`. LLM writes kind/lede/fact/soWhat only; risk/region/asOf/sources are deterministic. `kind` drives the chip — threats get a color-coded RISK chip, developments a neutral chip (so cooperative stories aren't shown as red risks). `status` draft→published via weekly/review.js (180-day TTL) |
 | `WEEKLY_MARKETS#{weekKey}` | `WEEKLY_MARKETS` | newsWeeklyMarkets (#25) | Weekly **markets** report (price-first): `movers[{instrumentId,name,changePct,direction,weekStart,weekEnd,grounding('coverage'|'web'|'none'),note,coverage[{threadId,headline,severity}],sources[{title,url}]}]` + `excluded[]` (thin/gappy history). The %/direction/anchors are **deterministic** (from MARKETS history, never LLM); the LLM writes only the per-mover `note`. `status` draft→published via weekly-markets/review.js (180-day TTL) |
 | `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata), active conflicts (ACLED), leadership change detection (90-day TTL) |

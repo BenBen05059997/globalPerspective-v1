@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
+import { storyLinkPath } from '@/features/briefings/lib/briefingSlides.js';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useDailyBrief } from '@/features/daily/hooks/useDailyBrief';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
@@ -418,7 +419,9 @@ export default function DailyPage() {
                         <span className="daily-tag-src">{story.sourceCount} source{story.sourceCount !== 1 ? 's' : ''}</span>
                       )}
                     </div>
-                    <h4 className="daily-story-h4">{story.title}</h4>
+                    <h4 className="daily-story-h4">
+                      {storyLinkPath(story) ? <Link to={storyLinkPath(story)}>{story.title}</Link> : story.title}
+                    </h4>
                   </div>
 
                   {hasPred && (

@@ -4,7 +4,7 @@ import { CATEGORY_BADGE_COLORS, RISK_SOLID } from '@/shared/styles/tokens';
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
-import { countryLinkPath, peekInputForStory, peekInputForSignal } from '@/features/briefings/lib/briefingSlides.js';
+import { countryLinkPath, storyLinkPath, peekInputForStory, peekInputForSignal } from '@/features/briefings/lib/briefingSlides.js';
 
 const TRAJECTORY = {
   escalating: { arrow: '↗', label: 'Escalating' },
@@ -78,6 +78,9 @@ export function StorySlide({ story, index }) {
           <span className="bm-inference-badge">model judgment</span>
           <p>{story.prediction}</p>
         </div>
+      )}
+      {storyLinkPath(story) && (
+        <Link to={storyLinkPath(story)} className="bm-slide-link bm-story-link">Read the full story →</Link>
       )}
       {region && (
         <Link to={countryLinkPath(region)} className="bm-slide-link">Show on map / country card →</Link>

@@ -8,6 +8,7 @@ const {
   ScanCommand,
 } = require('@aws-sdk/lib-dynamodb');
 const { keepDayZero } = require('./dayZero');
+const { resolveStoryThreadIds } = require('./threadLinks');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
 const REGION        = process.env.AWS_REGION || 'ap-northeast-1';
@@ -209,6 +210,13 @@ async function generateAndStoreDailyBrief(entries, dateKey) {
 
   if (brief.risingThread) {
     brief.risingThread.threadId = resolveRealThreadId(brief.risingThread.title, threadAnalyses);
+  }
+
+  // Batch 3 / C: each top story gets the real threadId of the archive entry it was written from
+  // (or null), so /briefings and /daily can link to the story page. Never model-supplied.
+  if (Array.isArray(brief.topStories)) {
+    brief.topStories = resolveStoryThreadIds(brief.topStories, entries, threadAnalyses);
+    console.log(`[DAILY_BRIEF] topStories with threadId: ${brief.topStories.filter(s => s && s.threadId).length}/${brief.topStories.length}`);
   }
 
   const uniqueCountries = new Set();

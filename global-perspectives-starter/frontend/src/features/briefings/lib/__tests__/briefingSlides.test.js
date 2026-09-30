@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  buildDailySlides, buildWeeklySlides, countryLinkPath,
+  buildDailySlides, buildWeeklySlides, countryLinkPath, storyLinkPath,
   mapFocusForDailySlide, mapFocusForWeeklySlide,
 } from '@/features/briefings/lib/briefingSlides.js';
 
@@ -66,5 +66,17 @@ describe('briefingSlides.js', () => {
   it('mapFocusForWeeklySlide reads the first region out of the "A · B · C" string', () => {
     const slides = buildWeeklySlides(weeklyBrief);
     expect(mapFocusForWeeklySlide(slides[1])).toBe('ISR');
+  });
+});
+
+describe('storyLinkPath (Batch 3 / C)', () => {
+  it('links to the story page only for a real thread- id', () => {
+    expect(storyLinkPath({ threadId: 'thread-us-supreme-court-c1602d' })).toBe('/weekly/thread/thread-us-supreme-court-c1602d');
+  });
+  it('no link for null / missing / non-thread ids (old briefs, no confident match)', () => {
+    expect(storyLinkPath({ threadId: null })).toBeNull();
+    expect(storyLinkPath({ title: 'x' })).toBeNull();
+    expect(storyLinkPath({ threadId: 'Some Title' })).toBeNull();
+    expect(storyLinkPath(null)).toBeNull();
   });
 });

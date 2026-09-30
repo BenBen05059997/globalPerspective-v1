@@ -5,9 +5,19 @@
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 
-// Daily topStories/countryToWatch carry no threadId (verified against the live daily_brief
-// payload 2026-09-27) — only a country name. A link is only ever built to a route that really
-// exists: /weekly/country/:countryName (CountryPage).
+// Daily topStories carry a real `threadId` since 2026-09-30 (newsPostDevTo resolves it from the
+// archive entry the story was written from; null when there is no confident match, and older
+// briefs have none). countryToWatch still carries only a country name. A link is only ever built
+// to a route that really exists: /weekly/thread/:id (ThreadPage) when a threadId is present, and
+// /weekly/country/:countryName (CountryPage) for countries.
+import { threadPath } from '@/shared/lib/threadPath.js';
+
+/** storyLinkPath — the story page for a top story, or null when it has no real threadId. */
+export function storyLinkPath(story) {
+  const id = story && typeof story.threadId === 'string' ? story.threadId : '';
+  return /^thread-/.test(id) ? threadPath(id) : null;
+}
+
 export function countryLinkPath(countryName) {
   if (!countryName) return null;
   return `/weekly/country/${encodeURIComponent(countryName)}`;

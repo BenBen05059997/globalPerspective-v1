@@ -1,4 +1,4 @@
-import { countryLinkPath } from '@/features/briefings/lib/briefingSlides.js';
+import { countryLinkPath, storyLinkPath } from '@/features/briefings/lib/briefingSlides.js';
 import { Link } from 'react-router-dom';
 
 // ReadAsText — a plain, printable, accessible text version of the current edition (semantic
@@ -38,7 +38,7 @@ function DailyText({ brief }) {
           <h2>Top stories</h2>
           {brief.topStories.map((s, i) => (
             <div key={i} className="bm-readtext-item">
-              <h3>{i + 1}. {s.title}</h3>
+              <h3>{i + 1}. {storyLinkPath(s) ? <Link to={storyLinkPath(s)}>{s.title}</Link> : s.title}</h3>
               {s.regions?.length > 0 && (
                 <p className="bm-readtext-meta">
                   {s.regions.map((r, j) => (

@@ -3,7 +3,7 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { capForTier, dedupeByAsOf } = require('./lib');
+const { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate } = require('./lib');
 const { assembleDossier } = require('./dossier');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -1679,13 +1679,14 @@ async function readArchiveRange(days) {
     const now = new Date();
     const result = {};
 
-    // Day 0 = today: serve from "latest"
-    const todayLabel = formatDateLabel(now);
+    // Day 0: serve from "latest", labelled with the date `latest` really belongs to (its own
+    // updatedAt), NOT today — a stalled pipeline used to re-date an old generation as today.
     const { Item: latestItem } = await client.send(new GetCommand({
       TableName: TOPICS_TABLE,
       Key: { id: TOPICS_ITEM_ID },
     }));
-    if (latestItem && Array.isArray(latestItem.topics)) {
+    const todayLabel = latestDayLabel(latestItem);
+    if (todayLabel && latestItem && Array.isArray(latestItem.topics)) {
       result[todayLabel] = {
         entries: latestItem.topics.map(t => ({
           topicId: t.topicId || t.id,
@@ -1841,8 +1842,11 @@ async function readNarrativeThread(threadId, days) {
           TableName: TOPICS_TABLE,
           Key: { id: TOPICS_ITEM_ID },
         }));
-        const matched = (Item?.topics || []).filter(t => t.threadId === threadId);
-        entries.push(...matched.map(t => ({ ...t, date: dateLabel, source: 'latest' })));
+        // Label with the date `latest` really belongs to (not today); the archive row of that date
+        // holds the same entries, so de-duplicate by topicId + date after the loop.
+        const latestLabel = latestDayLabel(Item);
+        const matched = latestLabel ? (Item?.topics || []).filter(t => t.threadId === threadId) : [];
+        entries.push(...matched.map(t => ({ ...t, date: latestLabel, source: 'latest' })));
       } else {
         // Past days: read from archive#YYYY-MM-DD
         const archiveKey = formatArchiveDateKey(date);
@@ -1856,11 +1860,12 @@ async function readNarrativeThread(threadId, days) {
     }
 
     // Sort chronologically (oldest first — narrative flows forward in time)
-    entries.sort((a, b) => a.date.localeCompare(b.date));
+    const unique = dedupeTopicDate(entries);
+    unique.sort((a, b) => a.date.localeCompare(b.date));
 
     return {
       statusCode: 200,
-      body: { success: true, threadId, data: entries },
+      body: { success: true, threadId, data: unique },
     };
   } catch (err) {
     console.error('Narrative thread read error:', err);

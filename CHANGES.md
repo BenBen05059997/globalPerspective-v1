@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-09-30 (Backend Batch 3, live AWS: read fixes)
+
+- **A: archive re-dating (read side; the stored archive was already correct, 0 of 51 rows mis-dated).** Readers stamped `today-archive` (and, in the proxy, `latest`) entries with today's date whatever their age; `NewsCache` TTL is disabled, so a stalled pipeline (13-29 Sep) re-dated old stories.
+  - `src/dayZero.js` (`keepDayZero`: an entry is "today" only if its own `archivedAt` is today, UTC) in `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsWeeklyBrief`, `newsDriftCorrector`, `newsPostDevTo`; byte-identical copies guarded by `scripts/check-shared-sync.mjs` (new pair, self-test).
+  - `newsSensitiveData` `archive_range` / `narrative_thread`: day 0 is `latest`, labelled with its own `updatedAt` date (`lib.latestDayLabel`), duplicates by `topicId + date` removed.
+  - Seven Lambdas deployed (bare `update-function-code`; deployed files byte-identical to repo). New `scripts/check-archive-dates.mjs` (read-only audit). Tests: dayZero 5, latestDayLabel 3; existing suites pass. Dormant `newsPairIntelligence` and parked `newsEconomicImpact` are not edited.
+
 ## 2026-09-29 (Backend Batch 2, live AWS: models)
 
 - **R1b `newsCountryIntelligence`** (operator: "yes for both batch 1 question"):

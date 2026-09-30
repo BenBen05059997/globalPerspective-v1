@@ -269,6 +269,8 @@ Despite the name, now uses **DeepSeek v4-flash** (migrated 2026-07-26 from the r
 ---
 
 ### 3. `newsThreadAnalysis`
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
 **Path:** `amplify/backend/function/newsThreadAnalysis/src/index.js`
 **Trigger:** EventBridge — `cron(30 6 * * ? *)` (6:30 UTC daily)
 
@@ -293,6 +295,8 @@ Despite the name, now uses **DeepSeek v4-flash** (migrated 2026-07-26 from the r
 ---
 
 ### 4. `newsCountryIntelligence`
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
 **Path:** `amplify/backend/function/newsCountryIntelligence/src/index.js`
 **Trigger:** EventBridge Scheduler — `countryIntelliegence` — `cron(0 7 * * ? *)` (daily 07:00 UTC; reduced from 3×/day on 2026-05-16 to cut cost after the DeepSeek migration)
 
@@ -334,8 +338,8 @@ Read-only REST proxy. All supported actions:
 | `rss` | None (GET) | — | RSS 2.0 XML feed of latest topics |
 | `country_preview` | None | `{ countryName }` | Public SEO preview: headline, bluf, keyDevelopments, riskLevel, trajectory |
 | `thread_preview` | None | `{ threadId }` | Public SEO preview: threadTitle, entryShortTitles |
-| `archive_range` | None (early access) | `{ days }` | N days of archive (member=7, enterprise=90) |
-| `narrative_thread` | None (early access) | `{ threadId }` | All entries for a thread across days |
+| `archive_range` | None (early access) | `{ days }` | N days of archive (member=7, enterprise=90). Day 0 is `latest`, labelled with its own `updatedAt` date (not today; skipped if unparsable) since 2026-09-30 |
+| `narrative_thread` | None (early access) | `{ threadId }` | All entries for a thread across days. Day-0 `latest` entries carry `latest`'s own date; duplicates by `topicId + date` removed |
 | `thread_analysis` | None (early access) | `{ threadIds }` | Thread-level AI analyses |
 | `country_intelligence` | None (early access) | `{ countryNames }` | Country-level AI intelligence |
 | `country_history` | Optional (tier cap) | `{ countryName }` | Historical archive entries for a country: `snapshots[]` (always full/public) + `driftNotes[]` (the correction chain). **Member-gated depth (2026-07-07):** unions live `DRIFT#` + permanent `DRIFTLOG#` via `dedupeByAsOf`, then non-members get the newest **1** + `driftNotesTotal`/`driftNotesGated:true`; members get the full chain (`resolveTier`+`capForTier`) |
@@ -397,6 +401,8 @@ Read-only REST proxy. All supported actions:
 ---
 
 ### 7. `newsPostDevTo`
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
 **Path:** `amplify/backend/function/newsPostDevTo/src/index.js`
 **Trigger:** EventBridge Scheduler — `InvokeDev` — `cron(0 23 * * ? *)`, **timezone `Asia/Tokyo`** → 23:00 JST = **14:00 UTC daily** (the scheduler is NOT in UTC; live briefs show `generatedAt ≈ 14:01 UTC`, confirming this)
 
@@ -444,6 +450,8 @@ Bilateral relationship analysis between country pairs.
 ---
 
 ### 9. `newsSystemsAnalysis`
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
 **Path:** `amplify/backend/function/newsSystemsAnalysis/src/index.js`
 **Trigger:** EventBridge Rule — `TriggerNewsSystemsAnalysis` — `cron(15 7 * * ? *)` (daily 07:15 UTC)
 **Deployed:** 2026-04-25. IAM logging fixed 2026-04-27 (log group now exists). Coverage gate `SYSTEMS_TEST_COUNTRIES` widened 2026-07-01 → **12 countries** (`Iran,Israel,United States,Venezuela,China,Japan,Ukraine,Russia,France,Germany,Democratic Republic of the Congo,South Africa`; 56 eligible; daily cron keeps them fresh)
@@ -691,6 +699,8 @@ Single owner of `GlobalPerspectiveUserPrefs`. Two responsibilities:
 ---
 
 ### 23. `newsWeeklyBrief`
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
 **Path:** `amplify/backend/function/newsWeeklyBrief/src/index.js`
 **Trigger:** EventBridge `TriggerWeeklyBrief` — `cron(0 6 ? * SUN *)` (Sundays 06:00 UTC). Built 2026-06-10. Uses **DeepSeek V4**.
 
@@ -739,6 +749,8 @@ The **price-first** weekly markets wrap — "what moved this week and why" — t
 ---
 
 ### 26. `newsDriftCorrector` — living-analysis drift corrector (LIVE 2026-07-02)
+**Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
+
 **Path:** `amplify/backend/function/newsDriftCorrector/src/index.js`
 **Trigger:** EventBridge — `TriggerDriftCorrector` — daily ~07:20 UTC. Uses **DeepSeek V4** (reuses `newsCountryIntelligence-role`). Plan: `LIVING_ANALYSIS_PLAN.md`; memory [[project_living_analysis]].
 

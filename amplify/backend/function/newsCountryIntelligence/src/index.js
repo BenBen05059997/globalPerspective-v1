@@ -1,5 +1,6 @@
 'use strict';
 
+const { keepDayZero } = require('./dayZero');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const refreshPolicy = require('./refreshPolicy');
@@ -174,7 +175,7 @@ async function readArchiveEntries(days) {
     try {
       const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } }));
       if (Item && Array.isArray(Item.entries)) {
-        for (const e of Item.entries) {
+        for (const e of (i === 0 ? keepDayZero(Item.entries) : Item.entries)) {
           entries.push({
             topicId: e.topicId,
             threadId: e.threadId || null,

@@ -28,4 +28,26 @@ function dedupeByAsOf(items) {
   return [...byAsOf.values()].sort((a, b) => String(b.asOf).localeCompare(String(a.asOf)));
 }
 
-module.exports = { capForTier, dedupeByAsOf };
+// Batch 3 / A: the date a `latest` topics item really belongs to. Readers used to label it with
+// today's date whatever its age, which re-dated a stalled generation (13 Sep shown as 27 Sep).
+// Returns YYYY-MM-DD (UTC) of updatedAt || activatedAt, or null when neither parses (caller skips day 0).
+function latestDayLabel(item) {
+  const raw = item && (item.updatedAt || item.activatedAt);
+  const t = Date.parse(raw);
+  return Number.isFinite(t) ? new Date(t).toISOString().slice(0, 10) : null;
+}
+
+// De-duplicate narrative-thread entries that appear both in `latest` (day 0) and in the archive row
+// of the same date: same topicId + same date = one entry (first occurrence wins).
+function dedupeTopicDate(entries) {
+  const seen = new Set();
+  return (Array.isArray(entries) ? entries : []).filter((e) => {
+    const k = e && e.topicId ? `${e.topicId}|${e.date}` : null;
+    if (!k) return true;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+module.exports = { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate };

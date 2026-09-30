@@ -86,7 +86,7 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 ## Work list
 **Needed now (approved):**
 1. The ops fixes: D1, D6m, P1–P4, R1–R4, D5, D3 as decided.
-2. **Read fix a:** stop the archive re-dating old stories under today's date (/weekly "new events today").
+2. **Read fix a:** stop the archive re-dating old stories under today's date (/weekly "new events today"). **Done 2026-09-30 (Batch 3 A):** read-side day-0 rule in 6 Lambdas + the proxy; stored archive was already correct.
 3. **Read fix b:** a `latest_daily_brief` field / action (replaces the client's day-by-day lookback, 21 calls on a cold /map).
 4. **D9:** a drift-note direction check in the drift writer. For example, Iran 19 Aug: "shifts the humanitarian score down as … conditions worsen".
 5. **D10:** Worker deploy (SPA fallback + sitemap + `/briefings` pre-render), together with the frontend deploy.

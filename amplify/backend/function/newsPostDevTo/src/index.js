@@ -7,6 +7,7 @@ const {
   PutCommand,
   ScanCommand,
 } = require('@aws-sdk/lib-dynamodb');
+const { keepDayZero } = require('./dayZero');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
 const REGION        = process.env.AWS_REGION || 'ap-northeast-1';
@@ -294,7 +295,8 @@ async function loadTodayArchive() {
     Key: { id: 'today-archive' },
   }));
   if (!Item || !Array.isArray(Item.entries)) return null;
-  return Item;
+  // Only entries archived today count (a stalled pipeline leaves old ones in today-archive).
+  return { ...Item, entries: keepDayZero(Item.entries) };
 }
 
 async function checkAlreadyPosted(dedupPK) {

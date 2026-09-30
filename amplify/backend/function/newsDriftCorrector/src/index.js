@@ -14,6 +14,7 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { keepDayZero } = require('./dayZero');
 const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse, changeDimensionsFrom } = require('./lib');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
@@ -62,7 +63,7 @@ async function readCountryEvents(country, fromDate, toDate) {
     const id = dateKey === todayKey ? 'today-archive' : `archive#${dateKey}`;
     let Item;
     try { ({ Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id } }))); } catch { Item = null; }
-    for (const e of (Item?.entries || [])) {
+    for (const e of (dateKey === todayKey ? keepDayZero(Item?.entries) : (Item?.entries || []))) {
       if (!Array.isArray(e.regions) || !e.regions.includes(country)) continue;
       const key = e.topicId || e.id;
       if (!key || seen.has(key)) continue;
@@ -170,7 +171,7 @@ async function readThreadEvents(threadId, fromDate, toDate) {
     const id = dateKey === todayKey ? 'today-archive' : `archive#${dateKey}`;
     let Item;
     try { ({ Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id } }))); } catch { Item = null; }
-    for (const e of (Item?.entries || [])) {
+    for (const e of (dateKey === todayKey ? keepDayZero(Item?.entries) : (Item?.entries || []))) {
       if (e.threadId !== threadId) continue;
       const key = e.topicId || e.id;
       if (!key || seen.has(key)) continue;

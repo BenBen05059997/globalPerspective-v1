@@ -28,9 +28,9 @@ Phase ids: A re-dating · B latest brief · C topStories threadId · D country f
 ### Repo files: create
 | Phase | File | Purpose |
 |---|---|---|
-| A | `amplify/backend/function/{newsThreadAnalysis,newsSystemsAnalysis,newsCountryIntelligence,newsWeeklyBrief,newsDriftCorrector,newsPostDevTo}/src/dayZero.js` | `keepDayZero(entries, nowMs)`: byte-identical copy in each (guarded, see `scripts/check-shared-sync.mjs`) |
-| A | `amplify/backend/function/newsThreadAnalysis/test/dayZero.test.js` (+ a copy-of-fixture in `newsDriftCorrector/test/`) | unit tests for the helper, using the real 2026-09-13 row shape |
-| A | `scripts/check-archive-dates.mjs` | read-only audit: every `archive#D` entry's `archivedAt` date == D, and cross-day `topicId` repeats (the check I ran by hand) |
+| A ✅ | `amplify/backend/function/{newsThreadAnalysis,newsSystemsAnalysis,newsCountryIntelligence,newsWeeklyBrief,newsDriftCorrector,newsPostDevTo}/src/dayZero.js` | `keepDayZero(entries, nowMs)`: byte-identical copy in each (guarded, see `scripts/check-shared-sync.mjs`) |
+| A ✅ | `amplify/backend/function/newsThreadAnalysis/test/dayZero.test.js`, `newsSensitiveData/test/latestDayLabel.test.js` (added; the DriftCorrector copy was not needed) | unit tests for the helper, using the real 2026-09-13 row shape |
+| A ✅ | `scripts/check-archive-dates.mjs` | read-only audit: every `archive#D` entry's `archivedAt` date == D, and cross-day `topicId` repeats (the check I ran by hand) |
 | B | `amplify/backend/function/newsSensitiveData/test/latestBrief.test.js` | tests for the new pure picker in `lib.js` |
 | C | `amplify/backend/function/newsPostDevTo/src/threadLinks.js` + `test/threadLinks.test.js` | pure `resolveStoryThreadIds(topStories, entries, threadAnalyses)` |
 | C | `global-perspectives-starter/frontend/src/features/briefings/__tests__/storyLinks.test.jsx` | render test: a story with `threadId` links to `/weekly/thread/<id>`, without one it does not |
@@ -49,7 +49,8 @@ Phase ids: A re-dating · B latest brief · C topStories threadId · D country f
 ### Repo files: edit
 | Phase | File | Change |
 |---|---|---|
-| A | `newsSensitiveData/src/index.js` L1682–1699 (`readArchiveRange` day 0), L1838–1845 (`readNarrativeThread` day 0) + `src/lib.js` (`latestDayLabel`) | day 0 is labelled with the date of `latest.updatedAt`, not today; skipped when that date is unparsable |
+| A ✅ | `scripts/check-shared-sync.mjs` | pair `dayZero.js (x6)` (+ self-test) added |
+| A ✅ | `newsSensitiveData/src/index.js` L1682–1699 (`readArchiveRange` day 0), L1838–1845 (`readNarrativeThread` day 0) + `src/lib.js` (`latestDayLabel`) | day 0 is labelled with the date of `latest.updatedAt`, not today; skipped when that date is unparsable |
 | A | `newsThreadAnalysis/src/index.js` L97–125; `newsSystemsAnalysis/src/index.js` L98–125; `newsCountryIntelligence/src/index.js` L167–195; `newsWeeklyBrief/src/index.js` L157–185; `newsDriftCorrector/src/index.js` L60–74, L168–182; `newsPostDevTo/src/index.js` L292–300 | `today-archive` entries pass through `keepDayZero` |
 | A | `newsPairIntelligence/src/index.js` L284; `newsEconomicImpact/src/index.js` L222 | **not edited** (dormant / parked); recorded in ARCHITECTURE so an unpark applies the same rule |
 | B | `newsSensitiveData/src/index.js` (new `latest_daily_brief` branch after `daily_brief` L356–376) + `src/lib.js` (`pickLatestBrief`) | `BatchGetItem` of the last N `DAILY_BRIEF#` keys, newest wins |
@@ -154,7 +155,7 @@ None. (Region records already in DynamoDB are **not deleted**; see F.)
 | Phase | What | Status | Evidence |
 |---|---|---|---|
 | 0 | Operator "execute" + Q1–Q13 answered | Queued | |
-| A | Read fix a: day-0 readers + `dayZero.js` ×6 + `newsSensitiveData` label + audit script + tests + 7 deploys | Queued | |
+| A | Read fix a: day-0 readers + `dayZero.js` ×6 + `newsSensitiveData` label + audit script + tests + 7 deploys | **Done 2026-09-30** (awaiting monitor verify) | see Phase A evidence below |
 | B | Read fix b: `latest_daily_brief` + hook + tests | Queued | |
 | C | Read fix c: `topStories[].threadId` + `/briefings` and `/daily` links | Queued | |
 | D | Read fix f: `country_facts` + card row (D2 widen updater: only if approved) | Queued | |
@@ -163,6 +164,13 @@ None. (Region records already in DynamoDB are **not deleted**; see F.)
 | G | Drift audit: table, snapshot decision, `scripts/audit-lambda-drift.sh` | Queued | |
 | H | Phone fixes: country page overlay, country sheet | Queued | |
 | I | Deploy readiness (plan only) | Queued | |
+
+### Phase A evidence (2026-09-30)
+- **Code:** `dayZero.js` ×6, six reader edits, `newsSensitiveData` `lib.js` (`latestDayLabel`, `dedupeTopicDate`) + `index.js` (`readArchiveRange`, `readNarrativeThread`), `scripts/check-shared-sync.mjs` (pair `dayZero.js (x6)` + self-test), `scripts/check-archive-dates.mjs`, tests `newsThreadAnalysis/test/dayZero.test.js` (5) and `newsSensitiveData/test/latestDayLabel.test.js` (3; planned name was `latestBrief`-style, this one is A's). Suites: ThreadAnalysis 13, SensitiveData 12, CountryIntelligence 15, DriftCorrector 14 all pass. `node scripts/check-shared-sync.mjs` ALL PASS; `--self-test` PASS. (The planned fixture copy of the test in `newsDriftCorrector/test/` was not added: the helper is byte-identical, one test covers it.)
+- **Stale-fixture harness (offline, stubbed DynamoDB, `latest` = the REAL 2026-09-13 generation, clock = 2026-09-27):** deployed (old) code returned `archive_range` keys `[2026-09-27, 2026-09-13]` and a narrative thread with `2026-09-27:latest` (the operator's "13 Sep shown as 27 Sep" bug reproduced). New code: `[2026-09-13]` and the thread shows only `2026-09-13`.
+- **Deploys** (each: `CodeSha256` re-checked against the recorded zip first; then a bare `update-function-code`; `LastUpdateStatus` Successful; downloaded zip compared with the repo byte for byte, 0 mismatches): `newsSensitiveData-dev` `UKSnvWs3…` -> `QoSZoCGb…`; `newsThreadAnalysis` `pV15UQo5…` -> `YXnu9PGW…`; `newsSystemsAnalysis` `2Bu4np7a…` -> `YOMJmc3e…`; `newsCountryIntelligence` `1KvJt7be…` -> `ze82OhAp…`; `newsWeeklyBrief` `89/Llp0Y…` -> `gEjnsNLx…`; `newsDriftCorrector` `iBAAoJiz…` -> `otWER+j6…`; `newsPostDevTo` `tga1S60w…` -> `LKVxbSkp…`. Rollback zips: `…/scratchpad/b3/z/<name>.zip` (the pre-deploy zips). Node_modules of Systems / PostDevTo untouched (overlay on the deployed zip).
+- **Live checks (no LLM, no writes):** proxy `archive_range {days:7}` -> `{2026-09-30: latest, 15 entries}` (day 0 labelled with `latest.updatedAt`); `newsThreadAnalysis {dryRun}` -> 89 threads, plan `newest` dates real (09-08..09-13), 10 new-thread; `newsCountryIntelligence {dryRun}` -> 200, 56 situations. `node scripts/check-archive-dates.mjs --from 2026-09-25`: 0 mis-dated. Not observable on live data until the next pipeline stall (pipeline healthy).
+- **Watch:** first scheduled runs after deploy: 04:40 story analysis, 05:00 systems, 05:15 countries, 05:30 drift (all read `today-archive`; the 04:25 agent run writes fresh entries first).
 
 **Phase order (the site keeps working after each step; every step is additive or a stricter filter, and each deploy has a saved prior zip):**
 1. **A** (Lambda-side only; no frontend). 2. **B** (Lambda first, verify, then the frontend code; not deployed until I). 3. **C** (Lambda; the frontend links appear only where a `threadId` exists, so old briefs render as today). 4. **D**. 5. **E** (validator first; flags and frontend hide last, after the operator reviews the audit). 6. **F**. 7. **G** (no deploys). 8. **H** (frontend only). 9. **I** (plan). Frontend edits from B–F, H are committed on `map-console` and go out with the gated deploy; each Lambda phase is safe for the currently deployed frontend because the frontend ignores unknown fields and unknown actions are only called by the new code.

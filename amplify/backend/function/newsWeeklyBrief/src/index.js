@@ -9,6 +9,7 @@
 // Manual-invoke first (no EventBridge schedule) until output quality is trusted —
 // mirrors the breaking-detector dry-run approach.
 
+const { keepDayZero } = require('./dayZero');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
@@ -162,7 +163,7 @@ async function readArchiveEntries(days) {
     try {
       const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } }));
       if (Item && Array.isArray(Item.entries)) {
-        for (const e of Item.entries) {
+        for (const e of (i === 0 ? keepDayZero(Item.entries) : Item.entries)) {
           if (e.threadId) {
             entries.push({
               topicId: e.topicId, threadId: e.threadId, title: e.title, date: dateStr,

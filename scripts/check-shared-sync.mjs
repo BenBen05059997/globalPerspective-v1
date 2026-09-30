@@ -135,6 +135,18 @@ function checkRiskDimensions(pathA, pathB) {
   return { pass: false, diff: unifiedDiff(pathA, pathB) };
 }
 
+const DAYZERO_LAMBDAS = ['newsThreadAnalysis', 'newsSystemsAnalysis', 'newsCountryIntelligence', 'newsWeeklyBrief', 'newsDriftCorrector', 'newsPostDevTo'];
+
+/** N files must all be byte-identical to the first one (zero tolerance). */
+function checkAllIdentical(paths) {
+  const base = fs.readFileSync(paths[0]);
+  for (const p of paths.slice(1)) {
+    const b = fs.readFileSync(p);
+    if (!base.equals(b)) return { pass: false, diff: unifiedDiff(paths[0], p) };
+  }
+  return { pass: true };
+}
+
 function checkSituationsCore(trackerPath, ingestPath) {
   const trackerRaw = fs.readFileSync(trackerPath, 'utf8');
   const ingestRaw = fs.readFileSync(ingestPath, 'utf8');
@@ -251,6 +263,11 @@ function livePairs() {
         abs('amplify/backend/function/newsCountryIntelligence/src/iso3Names.json'),
         abs('global-perspectives-starter/frontend/src/features/map/lib/situationLabels.js'),
       ),
+    },
+    {
+      // Batch 3 / A: the day-zero rule for today-archive readers — six byte-identical copies.
+      name: 'dayZero.js (x6)',
+      run: () => checkAllIdentical(DAYZERO_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/dayZero.js`))),
     },
     {
       name: 'entity-normalization',
@@ -373,6 +390,19 @@ async function selfTestEntityNormalization() {
   return result;
 }
 
+async function selfTestDayZero() {
+  const dir = mkTmp();
+  const paths = DAYZERO_LAMBDAS.map((n, i) => {
+    const t = path.join(dir, `dayZero${i}.js`);
+    fs.copyFileSync(abs(`amplify/backend/function/${n}/src/dayZero.js`), t);
+    return t;
+  });
+  fs.writeFileSync(paths[3], fs.readFileSync(paths[3], 'utf8').replace('utcDay(t) === today', 'utcDay(t) !== today'));
+  const result = checkAllIdentical(paths);
+  fs.rmSync(dir, { recursive: true, force: true });
+  return result;
+}
+
 async function selfTest() {
   console.log('Self-test — perturbing one byte per pair and confirming DRIFT is caught\n');
   const cases = [
@@ -381,6 +411,7 @@ async function selfTest() {
     ['country_facts.json', selfTestCountryFacts],
     ['iso3Names.json', selfTestIso3Names],
     ['entity-normalization', selfTestEntityNormalization],
+    ['dayZero.js (x6)', selfTestDayZero],
   ];
   let allCaught = true;
   for (const [name, fn] of cases) {

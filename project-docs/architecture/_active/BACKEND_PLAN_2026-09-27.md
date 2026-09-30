@@ -137,3 +137,18 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 - A follow-up `dryRun`: `reuse:unchanged` 30, `reuse:once-per-day` 15 (the R2 reuse works).
 - 0 error / "Insufficient" lines in either Lambda. The live proxy serves the 15 new topics (updatedAt 2026-09-30T02:15:36Z).
 - Next to watch: the scheduled 04:15 / 04:25 runs; story analysis on flash at 04:40 (first real run); story web 05:00; the 20 country briefings 05:15; drift 05:30 (the chain must finish before 06:00); daily brief on v4-pro ~14:00.
+
+**Full chain run manually 2026-09-30 ~02:20–02:35 UTC (operator: "trigger them all once"; peak-rate hour; the weekly brief was left for Sunday since it auto-publishes):**
+
+| Job | Result | Time |
+|---|---|---|
+| Story analysis (`newsThreadAnalysis`, deepseek-flash) | 10 generated, 0 failed | 90 s |
+| Story web (`newsSystemsAnalysis`) | 10 generated, 0 failed | 123 s |
+| Country briefings (`newsCountryIntelligence`, v4-pro) | 21 generated (18 weekly baseline, 2 new: Nepal, Brazil; 1 alert: **Mexico**, Hurricane Polo GDACS), 0 failed | 121 s |
+| Drift (`newsDriftCorrector`) | ran clean; no notes (the previous readings, ~11 Sep, are outside the 16-day lookback) | 4 s |
+| Daily brief (`newsPostDevTo`, v4-pro) | 2026-09-30 edition stored (8 top stories, country to watch Iran) | 23 s |
+| Situation classification (`newsSituationIngest`) | 420 classified → 80 stories, 0 × 402 | 37 s |
+
+**Follow-ups found:**
+- Story analysis picks backlog threads over today's new ones because of the archive re-dating bug (read fix a).
+- `newsSystemsAnalysis` still treats regions (Europe, Asia) as countries; extend the R1b exclusion.

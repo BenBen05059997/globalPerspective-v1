@@ -13,6 +13,7 @@ import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
 import HudCompactLine from '@/features/map/components/HudCompactLine.jsx';
 import MapPhoneTabs from '@/features/map/components/MapPhoneTabs.jsx';
 import BottomSheet from '@/features/map/components/BottomSheet.jsx';
+import { phoneSheetStopFor, mapScrollTop } from '@/features/map/lib/phoneSheet.js';
 import { useIsPhone, PHONE_BREAKPOINT } from '@/shared/hooks/useIsPhone.js';
 import { hudCompactSummary } from '@/features/map/lib/hudCompact.js';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
@@ -535,10 +536,23 @@ export default function SituationHome() {
     // the sheet at half — "list-select → map + half" from the M7 spec.
     if (isPhone && selectionId && selectionId !== prevSelectionRef.current) {
       setPhoneTab('map');
-      setSheetStop('half');
+      // Batch 3 / H2: a country opens at `peek` (its card is long and `half` hid the whole visible map);
+      // situations and stories keep `half`. Then scroll the map pane into view so the selection is visible.
+      setSheetStop(phoneSheetStopFor({ focus, storyParam, countryParam }));
+      setTimeout(() => { // not cleared on purpose: StrictMode re-runs this effect and the 2nd run is a no-op
+        const map = document.querySelector('.sh-mapwrap');
+        if (!map) return;
+        const nav = document.querySelector('.gp-nav');
+        const pos = nav ? window.getComputedStyle(nav).position : '';
+        const headerHeight = nav && (pos === 'sticky' || pos === 'fixed') ? nav.getBoundingClientRect().height : 0;
+        const top = mapScrollTop({ mapTop: map.getBoundingClientRect().top, scrollY: window.scrollY, headerHeight });
+        if (top != null) window.scrollTo({ top, behavior: 'auto' });
+      }, 60);
+      prevSelectionRef.current = selectionId;
+      return;
     }
     prevSelectionRef.current = selectionId;
-  }, [isPhone, selectionId]);
+  }, [isPhone, selectionId, focus, storyParam, countryParam]);
   const closeSelection = useCallback(() => {
     if (focus) userSelect(null);
     else if (storyParam) userSelectStory(null);

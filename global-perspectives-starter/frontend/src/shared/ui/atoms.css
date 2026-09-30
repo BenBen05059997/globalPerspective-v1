@@ -733,3 +733,11 @@
 .gp-story-peek-meta { display: flex; gap: 10px; color: #b7c0cd; margin-bottom: 2px; }
 .gp-story-peek-updated { color: #7c8798; font-size: 11px; }
 .gp-story-peek-hint { margin-top: 6px; color: #6b7686; font-style: italic; font-size: 11px; }
+
+/* H1 (Batch 3): StatusStrip with 3+ stats plus "updated Xh ago" forced the whole page wider than a 390px
+   phone (e.g. /weekly/country/United States at 509px). A contained horizontal scroll keeps the one-line
+   look without widening the document (same technique ThreadPage.css already applied for its own page). */
+@media (max-width: 600px) {
+  .ss-strip { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .ss-strip > * { flex: 0 0 auto; }
+}

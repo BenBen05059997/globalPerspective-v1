@@ -749,7 +749,14 @@
 @media (max-width: 600px) {
   .cpg-body { padding: 0 16px 60px; }
   .cpg-hd-h1 { font-size: 32px; }
-  .cpg-map-hero { height: 150px; min-height: 130px; }
+  /* H1 (Batch 3): the overlay (back link + country select + risk pill + trajectory pill) was one
+     non-wrapping flex row, 533px wide at 390px, and the hero clips its overflow, so the pills were
+     invisible. Wrap it: select row first, pills on their own row; the hero grows to keep the map visible. */
+  .cpg-map-hero { height: 190px; min-height: 170px; }
+  .cpg-map-overlay { flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; padding: 8px 16px; }
+  .cpg-map-overlay-left { flex: 1 1 100%; min-width: 0; gap: 8px; }
+  .cpg-country-select { flex: 1 1 auto; min-width: 0; max-width: 100%; text-overflow: ellipsis; }
+  .cpg-map-overlay-right { flex: 1 1 100%; flex-wrap: wrap; min-width: 0; }
   .cpg-stats { grid-template-columns: repeat(2, 1fr); }
   .cpg-tab { padding: 10px 12px 8px; font-size: 12.5px; }
 }

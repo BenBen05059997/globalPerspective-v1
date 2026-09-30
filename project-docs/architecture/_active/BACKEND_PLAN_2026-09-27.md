@@ -130,3 +130,10 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 - Each phase gets its own task file with a live tracker; verify after each change.
 
 **Check 2026-09-30:** `newsModelGuard` (2026-09-29 12:00 run) lists live `deepseek-flash`, `deepseek-v4-pro`; findings = 2, both PPA (`PPAfetchMarketNews-dev`, `PPAcomputeWardProfiles-dev` still `deepseek-v4-flash`). All news Lambdas, including `PREDICTION_MODEL`, are clean.
+
+**Top-up verified 2026-09-30 ~02:15 UTC (operator topped up):**
+- Manual `newsInvokeGemini-dev` on `deepseek-v4-pro`: 200, 15 topics in 48 s, `finish_reason: stop`, 5,751 completion tokens (cap 12,000).
+- Manual `NewsProjectInvokeAgentLambda-dev`: 200 in 71 s, generated 45 (15 × summary / cause / forecast), swapped live; forecast research ~12–14 s per call on v4-pro.
+- A follow-up `dryRun`: `reuse:unchanged` 30, `reuse:once-per-day` 15 (the R2 reuse works).
+- 0 error / "Insufficient" lines in either Lambda. The live proxy serves the 15 new topics (updatedAt 2026-09-30T02:15:36Z).
+- Next to watch: the scheduled 04:15 / 04:25 runs; story analysis on flash at 04:40 (first real run); story web 05:00; the 20 country briefings 05:15; drift 05:30 (the chain must finish before 06:00); daily brief on v4-pro ~14:00.

@@ -1,5 +1,14 @@
 # Global Perspectives — Change Log
 
+## 2026-09-30 (Backend Batch 4 E: story web stage 2, live AWS)
+
+- **`newsSystemsAnalysis`** (`AgzPGv…` to `w4x4C8q1efet8XdPgGjbOi4hZuQ6neDC+b8Os557SUU=`, 3 new files byte-compared, `node_modules` identical, rollback zip saved) and **`newsSensitiveData-dev`** (`OQ1qtp…` to `PhYLq0wtxYVa73ijGRyR0xrhYrdXC8TTqYl3Eyxacsw=`, `index.js` + `lib.js` identical):
+  - the systems prompt lists up to 10 DATED entries per story (spread over its span, with short codes `E1`..) instead of 5 opaque ids; only shown entries can be cited; edges carry `cited:[{topicId,date,title}]`. First live Iran run: the model cited the whole `date | id | title` line and every cite was dropped (0 causal edges); fixed with codes and a tolerant parse (a line starting with a code reads as that code), then 4 raw edges / 4 valid / 0 dropped.
+  - `THREAD#<id>/WEB` per story in a web and `WEB#INDEX/LATEST` (all links, per-story state, coverage) written after each run from all current webs (real countries, 30 days); proxy `web_index` (`{}` or `{threadId}`, a record from an older run is never served).
+  - full manual run (10 countries): 10 generated, 0 failed, 95 s of 300 s; 0 dropped cites; 32 causal edges written; index 65 KB: 36 links (4 strong, 15 medium, 17 weak; the 8 without dated cites come from older webs), 30 shared-actor links, 74 stories, 46 story records. Estimated model cost of the three runs about $0.15.
+  - coverage (stories with an entry in the last 30 days present in the archive: 120): in any web 29 (24.2%) before and after; linked 17 (14.2%) before, **21 (17.5%) after**; of the 31 with 2+ distinct entries, 23 (74.2%) are in a web. In the 14-day scope the 28 stories are all single-update (0% by construction).
+  - tests: `newsSystemsAnalysis` 22 (spreadEntries, prompt / cites, webRecords + coverage), `newsSensitiveData` 41 (+ `web_index`).
+
 ## 2026-09-30 (Batch 4 D: /track-record and own-% chips, frontend on `main`, NOT deployed)
 
 - **`/track-record` and `/track-record/text` now read the server's `questions` block** (one view-model, `lib/trackRecordView.js`, for both pages):

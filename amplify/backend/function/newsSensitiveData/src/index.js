@@ -817,6 +817,33 @@ exports.handler = async (event) => {
       }
     }
 
+    // Batch 4 / E: the story web in one read. {} -> the whole index (links, shared-actor links, per-story state,
+    // coverage, which countries were analysed). {threadId} -> that story's record (only if it belongs to the
+    // CURRENT run, so a story that dropped out of the webs never shows old links) plus its state; the page
+    // words the empty state from `state` + `targets`. Public, no auth guard. TTL is disabled on the table,
+    // so freshness is judged by the client from each link's `generatedAt`.
+    if (action === 'web_index') {
+      const client = getDynamoClient();
+      try {
+        const { Item: idx } = await client.send(new GetCommand({ TableName: SUMMARIZE_PREDICT_TABLE, Key: { PK: 'WEB#INDEX', SK: 'LATEST' } }));
+        if (!idx) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
+        const { PK, SK, ...index } = idx; // eslint-disable-line no-unused-vars
+        const threadId = payload?.threadId || qs?.threadId;
+        if (!threadId) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: index }) };
+        const meta = (index.threads && index.threads[threadId]) || null;
+        const { Item: rec } = await client.send(new GetCommand({ TableName: SUMMARIZE_PREDICT_TABLE, Key: { PK: `THREAD#${threadId}`, SK: 'WEB' } }));
+        let record = null;
+        if (rec && rec.runId === index.runId) { const { PK: _p, SK: _s, ...rest } = rec; record = rest; } // eslint-disable-line no-unused-vars
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: {
+          threadId, runId: index.runId, generatedAt: index.generatedAt, targets: index.targets, maxAgeDays: index.maxAgeDays,
+          state: record ? record.state : (meta ? meta.state : null), meta, record,
+        } }) };
+      } catch (err) {
+        console.error('web_index error', err);
+        return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Lookup failed' }) };
+      }
+    }
+
     if (action === 'world_overview') {
       const client = getDynamoClient();
       try {

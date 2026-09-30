@@ -153,7 +153,7 @@ Phase ids: **A** M2 questions at issue · **B** M3 sampler, drafter, confirm CLI
 | C | `newsFreshnessMonitor/src/index.js` | run the settle check first, in its own try/catch, once a day |
 | D | `frontend/src/features/track-record/{TrackRecordPage.jsx,TrackRecordText.jsx,TrackRecordPage.css}`, `lib/{stageWording,accuracyLock,pastDeadline,settlingLog}.js`, `components/{ForecastBoard,SettlingLog}.jsx`, `hooks/useTrackRecord.js` | stages from the `questions` block; seed row; estimate; real settling weeks; board from sampled questions |
 | D | `frontend/src/features/threads/{lib/storyMode.js (buildDeadlines),components/StoryMode.jsx (WatchSlide),components/ThreadForecast.jsx,hooks/useThreadForecast.js}`, `features/countries/{lib/countryTriggers.js,components/CountryCardV2.jsx}`, `features/briefings/components/BriefingSlides.jsx` (+ `lib/briefingSlides.js`) | own-% chip, source, state; note for pre-M2 forecasts |
-| E | `newsSystemsAnalysis/src/index.js` (`buildSystemsPrompt` L214, `groupByCountry` L154 to carry entries, `validateGraph` L303 cites only shown entries, `writeAnalysis` L445, handler: WEB records + index + coverage, `dryRun` returns them, `{countries:[…]}` event override) | the stage-2 changes |
+| E | `newsSystemsAnalysis/src/index.js` (entry codes `E1`.. + `aliasToId`, tolerant cite parse, `module.exports` for tests; `buildSystemsPrompt` L214, `groupByCountry` L154 to carry entries, `validateGraph` L303 cites only shown entries, `writeAnalysis` L445, handler: WEB records + index + coverage, `dryRun` returns them, `{countries:[…]}` event override) | the stage-2 changes |
 | E | `newsSensitiveData/src/index.js` (new `web_index` branch after `systems_analysis` L749) | one read; per-thread shape with `threadId` |
 | F | `frontend/src/shared/api/restProxy.js` (+ `fetchWebIndex`); `features/threads/hooks/useStoryLinks.js`; `features/threads/components/StoryMode.jsx` (FED INTO slide + BRIEF line + empty state), `ThreadPage.jsx` (read-in-full "Why" links); `features/map/components/{SituationMap3D,RadarMap}.jsx` + `features/map/SituationHome.jsx`; legend text | consume the index; draw arcs |
 | G | `frontend/src/features/analysis-studio/lib/analysis.js` (becomes a thin wrapper over `analysisContext.js`); `scripts/check-shared-sync.mjs` (+ pair: the five copies) | refactor without behaviour change |
@@ -524,7 +524,7 @@ questions: {
 | B | M3: sampler + drafter in `newsPredictionResolver`, settle-review CLI, verify-draw, rule re-point | **Code deployed 2026-09-30; rule still DISABLED (operator enables after monitor verify)** | see Phase B evidence below |
 | C | M3: aggregate `questions` block, scoring, `prediction_snapshot` fields, dead-man's alarm | **Done 2026-09-30** (3 Lambdas deployed; rule still DISABLED) | see Phase C evidence below |
 | D | M4: `/track-record`, WATCH, card, briefings, story page; "not ready yet" states | **Done 2026-09-30** (frontend on `main`, not deployed) | see Phase D evidence below |
-| E | D8: 10 dated entries, grounded cites, `THREAD#id/WEB`, `WEB#INDEX`, coverage, `web_index` | Queued | |
+| E | D8: 10 dated entries, grounded cites, `THREAD#id/WEB`, `WEB#INDEX`, coverage, `web_index` | **Done 2026-09-30** (2 Lambdas deployed, live runs done) | see Phase E evidence below |
 | F | D8: FED INTO from the index, empty states, map lines | Queued (frontend) | |
 | G | D5: Lambda source + copies + tests (**STOP before Y1–Y4**) | Queued | |
 | G-gate | Y1 table · Y2 IAM role · Y3 Lambda · Y4 Function URL · Y5 `docs/config.js` | **Waiting for the operator's yes (each)** | |
@@ -600,3 +600,24 @@ Checked: 2026-10-27T12:30:00Z
 - **Live today:** `/track-record` shows Stage 0 because `questions.issued` is 0 (the first M2 rows come with the next forecast run; the first commitments with the first enabled tick).
 
 **Monitor check, phase D (2026-09-30):** verify 824 / 824; page guards 53 / 0; check-shared-sync ALL PASS; Stage 1 screenshot reviewed: the estimate is labelled, "nothing to verify yet", the pilot is archived, and no invented squares. Not deployed (Y6 pending).
+
+#### Phase E evidence (2026-09-30)
+- **Deploys** (hash re-read each time, one bare `update-function-code`, deployed files byte-compared): `newsSystemsAnalysis` `AgzPGv…` to `ymD320Dd…` (first version) then `w4x4C8q1efet8XdPgGjbOi4hZuQ6neDC+b8Os557SUU=` (after the cite-code fix); `index.js`, `spreadEntries.js`, `webRecords.js` identical, `node_modules` identical, the other files unchanged. `newsSensitiveData-dev` `OQ1qtp…` to `PhYLq0wtxYVa73ijGRyR0xrhYrdXC8TTqYl3Eyxacsw=`(`index.js`, `lib.js` identical). Rollback zips: `…/scratchpad/b4/rollback/{newsSystemsAnalysis,newsSensitiveData-dev,newsSensitiveData-dev.phaseC}.zip`. No env, IAM, schedule or timeout change (timeout stays 300 s; the full run took 95 s).
+- **Dry run** (`{"dryRun":true}`, no LLM, no writes): 10 targets (US, Russia, China, Iran, Israel, Ukraine, Germany, UK, France, Saudi Arabia), 22,465 approximate input tokens in total (about $0.03), 230 shown entries; coverage of the webs that existed then: 14-day scope 28 stories, all `single_update`.
+- **Finding, live Iran run 1 (about $0.01):** the model copied the whole `date | topicId | title` line as its cite, so `validateGraph` dropped every cite and the country got 0 causal edges. Cause: my line format put the long topic id (a headline plus a suffix) in a column the model reproduced. Fix: short codes (`E1`..), the rule says "write the code alone", and a line that starts with a code is read as that code (unit test with the exact failure). Iran run 2 (about $0.02): 4 raw / 4 valid causal edges, 0 dropped, cites carry date + title.
+- **Full manual run** (Q18c, `{}`, one bare invoke; nothing else was running): `Systems analysis complete: 10 generated, 0 failed`, 95 s; per country raw / valid causal edges: US 6/6, Russia 7/6, China 4/4, Iran 4/4, Israel 2/2, Ukraine 4/4, Germany 1/1, UK 0/0, France 0/0, Saudi Arabia 1/1; 0 dropped cites. Estimated cost of the three runs about $0.15 (the Lambda does not log tokens; input about 22k tokens a run, output about 1–3k per country).
+- **Index** (`WEB#INDEX/LATEST`, read back through the public `web_index` action): 65 KB; 36 causal links (strong 4, medium 15, weak 17; 28 of 36 carry dated, titled cites, the other 8 come from the older Japan / Palestine / DR Congo / South Africa / Venezuela webs); 30 shared-actor links; 74 stories (36 linked, 10 analysed with no links, 28 single-update); 46 `THREAD#…/WEB` records. `web_index({threadId})` for a linked story returns its record: 6 outgoing, 2 incoming, 6 shared-actor links, analysed in the United States / Saudi Arabia / Iran webs, places US 16, Iran 12, Saudi Arabia 2.
+- **Coverage, before and after** (measured with the same pure function on the live rows plus the 6 archive days that exist, 2026-09-10..13, 09-30 and today; the AI was paused 09-14..09-29):
+  | window | measure | before | after |
+  |---|---|---|---|
+  | 30 days | stories in the archive | 120 | 120 |
+  | | in any fresh real-country web | 29 (24.2%) | 29 (24.2%) |
+  | | with a causal or shared-actor link | 17 (14.2%) | **21 (17.5%)** |
+  | | with 2+ distinct entries (eligible) | 31 | 31 |
+  | | eligible and in a web | 23 (74.2%) | 23 (74.2%) |
+  | 14 days (the live index) | stories in scope | 28 | 28 |
+  | | single update (cannot be linked yet) | 28 (100%) | 28 (100%) |
+  Reading it honestly: the dated entries and the grounded cites raised the linked count (+4) but do not change WHICH stories enter a web (that is decided by "2+ entries in a country with at least 4 entries, top 15 stories, top 10 countries"), and today's 28 stories are all new. The 49% quoted in §0.2 counted repeated archive rows of one story as separate entries; by distinct entries it is 74%. Coverage will read higher as stories get their second update.
+- **Plan deviations:** short entry codes and the tolerant cite parse (found live); the index carries all in-scope stories (state per story) but a `THREAD#…/WEB` record is written only for stories that are in a web; a record from an older run is never served by `web_index` (`runId` must match).
+
+**Monitor check, phase E (2026-09-30):** `newsSystemsAnalysis` + proxy deployed = repo (code identical; `package.json` test scripts only); tests 22 + 41; live `web_index` returns links / shared / threads / coverage. 14-day scope: 28 in scope, all `single_update` (honest; nothing linkable yet). The 30-day measurement is linked 14.2% → 17.5% after the new prompt.

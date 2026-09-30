@@ -120,7 +120,7 @@ and how the frontend shows it. Operator delegated the whole rethink (2026-09-25)
 **Staging:**
 - **Stage 1, frontend only:** a `useStoryLinks(threadId, regions)` hook fetches all webs (101 KB total, ~0.12 s each), unions them, filters ambient actors and keeps per-web
   confidence. Plus the Timeline chapters and linked-news toggle, section 2 re-grained, the board story graph, and the states above. Rough size ~600–800 lines.
-- **Stage 2, cheap backend, after the operator tops up DeepSeek (checklist Y1):**
+- **Stage 2, cheap backend, after the operator tops up DeepSeek (checklist Y1). BACKEND DONE 2026-09-30 (Batch 4 E: dated entries + codes, grounded cites, `THREAD#id/WEB`, `WEB#INDEX/LATEST`, coverage, `web_index`); the frontend consumption is Batch 4 F:**
   - a `web_index` proxy action (one read instead of 16 fetches);
   - a systems prompt that shows ~10 dated entries spread across each story's span instead of only the 5 newest, which fixes the recency bias at no extra calls;
   - consider raising `SYSTEMS_TOP_N`, whose cost scales with the balance;

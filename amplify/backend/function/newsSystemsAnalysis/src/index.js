@@ -2,8 +2,10 @@
 
 const { keepDayZero } = require('./dayZero');
 const { isCountryName } = require('./placeFilter');
+const { pickSpreadEntries } = require('./spreadEntries');
+const { buildWebIndex } = require('./webRecords');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
@@ -56,9 +58,10 @@ exports.handler = async (event = {}) => {
   const countries = groupByCountry(entries, threadAnalyses);
   console.log(`Found ${countries.length} eligible countries`);
 
-  // Filter to test countries if set, otherwise take top N by article count
-  const targets = TEST_COUNTRIES
-    ? countries.filter(c => TEST_COUNTRIES.includes(c.countryName))
+  // Filter to test countries if set (env, or the `countries` event override), otherwise take top N by article count
+  const only = Array.isArray(event && event.countries) && event.countries.length ? event.countries : TEST_COUNTRIES;
+  const targets = only
+    ? countries.filter(c => only.includes(c.countryName))
     : countries.slice(0, MAX_COUNTRIES);
 
   console.log(`Analyzing: ${targets.map(c => c.countryName).join(', ')}`);
@@ -68,7 +71,11 @@ exports.handler = async (event = {}) => {
   if (excluded.length) console.log(`Excluded (not real countries): ${excluded.join(', ')}`);
   if (event && event.dryRun) {
     console.log('DRY RUN (no LLM, no writes)');
-    return { statusCode: 200, dryRun: true, eligible: countries.length, targets: targets.map(c => c.countryName), excluded };
+    // Batch 4 / E: what the new prompt would carry, and the coverage of the webs that exist right now
+    const prompts = targets.map(c => { const p = buildSystemsPrompt(c); return { country: c.countryName, threads: c.threads.length, chars: p.length, approxTokens: Math.round(p.length / 4), shownEntries: c.threads.reduce((n, t) => n + t.shown.length, 0) }; });
+    const rows = await readAllSystemsRows();
+    const { index } = buildWebIndex({ rows, entries, now: new Date(), targets: targets.map(c => c.countryName), runId: 'dry-run', isCountry: isCountryName });
+    return { statusCode: 200, dryRun: true, eligible: countries.length, targets: targets.map(c => c.countryName), excluded, prompts, coverage: index.coverage, websUsed: index.websUsed };
   }
 
   let generated = 0;
@@ -86,9 +93,23 @@ exports.handler = async (event = {}) => {
     }
   }
 
+  // Batch 4 / E: per-story web records, the one-read index and the measured coverage, built from ALL current webs
+  let coverage = null;
+  try {
+    const rows = await readAllSystemsRows();
+    const now = new Date();
+    const runId = `web-${now.toISOString()}`;
+    const { index, records } = buildWebIndex({ rows, entries, now, targets: targets.map(c => c.countryName), runId, isCountry: isCountryName });
+    await writeWebRecords(index, records);
+    coverage = index.coverage;
+    console.log(`WEB coverage ${JSON.stringify(coverage)}; ${records.length} story records, ${index.links.length} causal links, ${index.shared.length} shared-actor links`);
+  } catch (err) {
+    console.error('Web index build failed (the country webs themselves were written):', err.message);
+  }
+
   const summary = `Systems analysis complete: ${generated} generated, ${failed} failed`;
   console.log(summary);
-  return { statusCode: 200, body: summary };
+  return { statusCode: 200, body: summary, coverage };
 };
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
@@ -189,6 +210,8 @@ function groupByCountry(entries, threadAnalyses) {
             entryCount: threadEntries.length,
             title: analysis?.threadTitle || threadEntries[threadEntries.length - 1]?.title || 'Unknown',
             topicIds: threadEntries.map(e => e.topicId).filter(Boolean),
+            // Batch 4 / E: up to 10 DATED entries spread over the story's whole span; only these may be cited
+            shown: pickSpreadEntries(threadEntries),
           };
         })
         .filter(Boolean)
@@ -198,11 +221,26 @@ function groupByCountry(entries, threadAnalyses) {
       // Collect all valid topicIds in scope for this country
       const allTopicIds = new Set(c.entries.map(e => e.topicId).filter(Boolean));
 
+      // Short codes (E1, E2, ...) for the shown entries: the real topic ids are long headlines, and in the first live
+      // run the model copied the whole "date | id | title" line as its cite (every cite was dropped). It cites the code.
+      const shownById = {};
+      const aliasToId = {};
+      let n = 0;
+      for (const t of threads) {
+        for (const e of t.shown) {
+          n++;
+          e.code = `E${n}`;
+          shownById[e.topicId] = e;
+          aliasToId[e.code] = e.topicId;
+        }
+      }
       return {
         countryName: c.countryName,
         totalArticles: c.entries.length,
         threads,
         allTopicIds: [...allTopicIds],
+        shownById,
+        aliasToId,
       };
     })
     .filter(c => c.threads.length >= 2) // need at least 2 threads for edges
@@ -213,15 +251,14 @@ function groupByCountry(entries, threadAnalyses) {
 
 function buildSystemsPrompt(country) {
   const validThreadIds = country.threads.map(t => t.threadId);
-  const validTopicIds = new Set(country.allTopicIds);
-
   const threadList = country.threads.map((t, i) =>
     `[${i + 1}] threadId: "${t.threadId}"
      category: ${t.category}
      peakDate: ${t.peakDate}
      entryCount: ${t.entryCount}
      title: "${t.title}"
-     topicIds: [${t.topicIds.slice(0, 5).map(id => `"${id}"`).join(', ')}]`
+     dated entries (${t.shown.length} of ${t.entryCount}, spread over the story, oldest to newest; cite ONLY these codes):
+${t.shown.map(e => `       ${e.code} | ${e.date} | ${e.title}`).join('\n')}`
   ).join('\n\n');
 
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -241,7 +278,7 @@ ${threadList}
 HARD RULES — VIOLATIONS WILL BE REJECTED:
 1. "nodes" must include ONLY threadIds listed above. Do not add, rename, or invent threadIds.
 2. "edges.from" and "edges.to" must BOTH be threadIds from your nodes list.
-3. "edges.citedEntries" must contain ONLY topicIds from the lists above. No invented IDs.
+3. "edges.citedEntries" must contain ONLY the entry codes (like "E12", the first column) shown in the dated entries lists above; write the code alone, nothing else. Use the dates to judge order and lag. No invented codes.
 4. Every edge MUST have at least 1 cited entry. Edges without citations will be deleted.
 5. Do NOT cite external knowledge. Every claim must trace back to the threads provided.
 6. If you see no genuine causal relationship, return an empty edges array. That is better than inventing links.
@@ -274,7 +311,7 @@ Return ONLY this JSON structure — no commentary, no markdown:
       "lagDays": <integer -90 to 90>,
       "mechanism": "<1-2 sentences describing the transmission channel — be specific about actors, prices, or events>",
       "confidence": "weak|medium|strong",
-      "citedEntries": ["<topicId>", ...]
+      "citedEntries": ["<entry code such as E12>", ...]
     }
   ]
 }`;
@@ -302,7 +339,10 @@ function normalizeActors(raw) {
 
 function validateGraph(parsed, country) {
   const validThreadIds = new Set(country.threads.map(t => t.threadId));
-  const validTopicIds = new Set(country.allTopicIds);
+  // Batch 4 / E: a cite is valid only if the model was SHOWN that entry (falls back to every id for callers that predate `shownById`)
+  const shownById = country.shownById || null;
+  const aliasToId = country.aliasToId || null;
+  const validTopicIds = new Set(shownById ? Object.keys(shownById) : country.allTopicIds);
 
   // Validate + filter nodes
   const nodes = (parsed.nodes || []).filter(n => {
@@ -323,13 +363,21 @@ function validateGraph(parsed, country) {
     if (!validNodeIds.has(e.to))   { console.warn(`Edge dropped: unknown to=${e.to}`); return false; }
     if (e.from === e.to)           { console.warn(`Edge dropped: self-loop on ${e.from}`); return false; }
 
-    // Filter citedEntries to only valid topicIds
-    const validCited = (e.citedEntries || []).filter(id => {
+    // Filter citedEntries to only shown entries. The model cites a short code ("E12"); map it back to the real topicId.
+    // A full topicId that was shown is accepted too, and a code followed by extra text ("E12 | 2026-09-04 | ...") is read as the code.
+    const toId = (raw) => {
+      const str = String(raw == null ? '' : raw).trim();
+      const m = /^E\d+/.exec(str);
+      if (aliasToId && m && aliasToId[m[0]]) return aliasToId[m[0]];
+      return str;
+    };
+    const validCited = [...new Set((e.citedEntries || []).map(toId))].filter(id => {
       if (!validTopicIds.has(id)) { console.warn(`Dropping unknown citedEntry: ${id}`); return false; }
       return true;
     });
     if (validCited.length === 0) { console.warn(`Edge dropped: no valid citations for ${e.from}→${e.to}`); return false; }
     e.citedEntries = validCited;
+    if (shownById) e.cited = validCited.map(id => ({ topicId: id, date: shownById[id].date, title: shownById[id].title }));
 
     // Clamp lagDays
     e.lagDays = Math.max(-90, Math.min(90, parseInt(e.lagDays) || 0));
@@ -440,6 +488,33 @@ async function generateSystemsAnalysis(country) {
   return graph;
 }
 
+// ─── Batch 4 / E: read all webs, write the story records + index ─────────────────
+
+async function readAllSystemsRows() {
+  const rows = [];
+  let ExclusiveStartKey;
+  do {
+    const r = await ddb.send(new ScanCommand({
+      TableName: SUMMARY_TABLE,
+      FilterExpression: 'begins_with(PK, :p) AND SK = :s',
+      ExpressionAttributeValues: { ':p': SYSTEMS_PK_PREFIX, ':s': SYSTEMS_SK },
+      ProjectionExpression: 'countryName, nodes, edges, backbone, generatedAt',
+      ExclusiveStartKey,
+    }));
+    rows.push(...(r.Items || []));
+    ExclusiveStartKey = r.LastEvaluatedKey;
+  } while (ExclusiveStartKey);
+  return rows;
+}
+
+// No `ttl` attribute: the table's TTL is disabled, freshness is judged by readers from `generatedAt`.
+async function writeWebRecords(index, records) {
+  await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: { PK: 'WEB#INDEX', SK: 'LATEST', ...index } }));
+  for (const r of records) {
+    await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: { PK: `${THREAD_PK_PREFIX}${r.threadId}`, SK: 'WEB', ...r } }));
+  }
+}
+
 // ─── Write to DynamoDB ────────────────────────────────────────────────────────
 
 async function writeAnalysis(countryName, graph, country) {
@@ -509,3 +584,5 @@ function stripCodeFence(value) {
 module.exports.groupByCountry = groupByCountry; // for tests
 module.exports.buildBackboneEdges = buildBackboneEdges;
 module.exports.normalizeActors = normalizeActors;
+module.exports.buildSystemsPrompt = buildSystemsPrompt; // for tests
+module.exports.validateGraph = validateGraph;

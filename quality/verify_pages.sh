@@ -176,6 +176,18 @@ else
   FAIL=$((FAIL + 1)); FAILED+=("boot colours drifted from tokens.css"); echo "  $(red FAIL) boot tokens: $(cat /tmp/boot_tokens_guard.out)"
 fi
 
+# ─── Globe badges / alert diamonds / selection brackets: pixel-space icons (2026-10-01) ───
+GLOBE3D="$SRC/features/map/components/SituationMap3D.jsx"
+must_not_have "$GLOBE3D" "degPerPx|pxPolygon|bracketPaths|lonScale" "no lon/lat polygon geometry for badges / diamonds / brackets (grew, skewed, detached when zoomed)"
+must_not_have "$GLOBE3D" "SolidPolygonLayer" "badges and diamonds are not SolidPolygonLayer patches of the sphere"
+must_have "$GLOBE3D" "IconLayer" "badges, diamonds and brackets are IconLayer billboards"
+must_have "$GLOBE3D" "sizeUnits: 'pixels'" "icon layers are sized in screen pixels"
+must_have "$GLOBE3D" "cullMode: 'none'" "IconLayer sprites are not back-face culled on GlobeView (y-flip reverses winding)"
+must_have "$GLOBE3D" "getPixelOffset: \(m\) => badgeOffset" "badge sits at a fixed pixel offset from its mark"
+must_have "$GLOBE3D" "extensions: GLOBE_HORIZON" "sprites hide with their anchor on the far side (no limb leak)"
+must_have "$SRC/features/map/lib/globeHorizon.js" "project\.cameraPosition" "horizon rule is a shader test on the camera, not a per-frame rebuild"
+must_not_have "$SRC/features/map/lib/globeIcons.js" "degPerPx|2 \*\* |Math\.pow\(2" "sprite sizes are fixed pixels, never scaled by the zoom"
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

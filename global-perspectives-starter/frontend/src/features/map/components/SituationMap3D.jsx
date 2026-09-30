@@ -1,13 +1,17 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import DeckGL from '@deck.gl/react';
 import { FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeController, _GlobeViewport as GlobeViewport } from '@deck.gl/core';
-import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer, SolidPolygonLayer, PathLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer, PathLayer, IconLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
 import topoData from '@/features/map/assets/countries-110m.json';
 import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
 import { dashedArcPaths, DASH } from '@/features/map/lib/storyLinkArcs.js';
-import { textureUrl, spinStep, spinControlState, globeZoomForHeight, globeFitFraction, GLOBE_LIMB_FACTOR } from '@/features/map/lib/globeSpin.js';
+import { textureUrl, spinStep, spinControlState, globeZoomForHeight, globeFitFraction } from '@/features/map/lib/globeSpin.js';
+import {
+  ICON_MAPPING, GLYPH_SIZE, EDGE_SCALE, CORNER_SIZE, BRACKET_GAP, diamondSize, badgeOffset, bracketCorners, getIconAtlas,
+} from '@/features/map/lib/globeIcons.js';
+import { GLOBE_HORIZON } from '@/features/map/lib/globeHorizon.js';
 import { CRISIS_RGB } from '@/features/map/lib/crisisHue.js';
 import { pulseSet } from '@/features/map/lib/pulse.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
@@ -37,42 +41,22 @@ const AXIS_RGB_FALLBACK = [154, 164, 178];
 //   shape = kind (◆ GDACS alert = a diamond · news situation = a small dot in a soft, feathered
 //   halo · selected = HUD brackets), hue = crisis type, size steps + a double ring for HIGH only,
 //   brightness = freshness (live glows · plain · older desaturated · 30d+ not drawn), and the
-//   ▲●◆▼ badges as small glyph shapes. The ◆, badges and brackets are drawn as geometry on the
-//   sphere (sized in pixels from the current zoom), like the land and the country wash — deck.gl's
-//   IconLayer drew nothing on this GlobeView (checked in R4a: attributes and atlas were fine).
-const DEG = Math.PI / 180;
-// Every marker layer sits a little above the sphere: drawn exactly on it, flat marks z-fight with
-// the night texture / land mesh once the globe is zoomed in (half a ring or badge vanished). 30 km
-// is invisible at globe scale; the sphere still hides the far side.
+//   ▲●◆▼ badges as small glyph shapes. The ◆, badges and brackets are PIXEL-SPACE icons (IconLayer
+//   billboards, lib/globeIcons.js): a constant screen size at every zoom, at a fixed pixel offset from
+//   their own mark. They were lon/lat polygons sized by a degrees-per-pixel guess, which grew with
+//   latitude, skewed near the limb and could detach from the mark (2026-10-01 fix).
+// Every marker layer sits a little above the sphere so flat marks never z-fight with the night
+// texture / land mesh once the globe is zoomed in. 30 km is invisible at globe scale; the sphere
+// still hides the far side.
 const MARK_LIFT_M = 30000;
 // Translucent halos/rings are flat discs on the tangent plane, which sits slightly OUTSIDE the
 // sphere at their edges — if they wrote depth they would hide the ◆ / badges drawn after them.
 const NO_DEPTH_WRITE = { depthWriteEnabled: false };
-/** Degrees of arc per screen pixel at the centre of the visible disc, for a globe zoom. */
-function degPerPx(zoom) {
-  return 360 / (GLOBE_LIMB_FACTOR * 512 * 2 ** zoom);
-}
-const lonScale = (lat) => Math.max(0.2, Math.cos(lat * DEG));
-/** A pixel-space polygon (points in px around 0,0; +y = north) placed at [lon, lat]. */
-function pxPolygon([lon, lat], pts, d, [dx, dy] = [0, 0]) {
-  const c = lonScale(lat);
-  return pts.map(([x, y]) => [lon + ((x + dx) * d) / c, lat + ((y + dy) * d), MARK_LIFT_M]);
-}
-const diamondPts = (k) => [[0, k], [k, 0], [0, -k], [-k, 0]];
-const GLYPH_PTS = {
-  escalating: [[0, 4.5], [4.5, -3.5], [-4.5, -3.5]],
-  cooling: [[-4.5, 3.5], [4.5, 3.5], [0, -4.5]],
-  steady: diamondPts(4.5),
-  new: Array.from({ length: 10 }, (_, i) => [3.8 * Math.cos((i / 10) * 2 * Math.PI), 3.8 * Math.sin((i / 10) * 2 * Math.PI)]),
-};
-/** Four L-shaped HUD bracket paths around a `b`-pixel box, placed at [lon, lat]. */
-function bracketPaths(pos, b, d) {
-  const l = Math.min(7, b * 0.6);
-  return [
-    [[-b, b - l], [-b, b], [-b + l, b]], [[b - l, b], [b, b], [b, b - l]],
-    [[b, -b + l], [b, -b], [b - l, -b]], [[-b + l, -b], [-b, -b], [-b, -b + l]],
-  ].map((pts) => pxPolygon(pos, pts, d));
-}
+// Why IconLayer "drew nothing" here (R4a): GlobeView sets cullMode 'back' on every layer to drop the
+// sphere's far side, and IconLayer's vertex shader flips y (pixelOffset.y *= -1), which reverses
+// the quad's winding, so every sprite was back-face culled. Culling nothing for sprites is safe:
+// the depth test against the sphere still hides them on the far side.
+const ICON_PARAMS = { cullMode: 'none' };
 const BADGE_RGB = [238, 245, 249];
 const EDGE_RGB = [4, 7, 12];
 const outerR = (m) => m.size.ringR || m.size.r;
@@ -449,19 +433,22 @@ export default function SituationMap3D({
 
   // Marker layers (R4a tokens), all static — memoised so the pickable layers keep stable
   // instances across pulse frames (a fresh instance each frame used to eat clicks).
-  // Geometry for the ◆ / badges / brackets is sized from the zoom, quantised so a drag or the
-  // spin (which never changes zoom) never rebuilds it; only zooming / a fly-to does.
-  const zoomQ = Math.round((viewState.zoom ?? 0) * 20) / 20;
+  // The ◆ / badges / brackets are pixel-space icons, so nothing here depends on the zoom: a drag,
+  // spin or zoom only moves the camera, never rebuilds them.
   const markerLayers = useMemo(() => {
-    const d = degPerPx(zoomQ);
+    const atlas = getIconAtlas();
     const dimA = (m, a) => (focusId && m.s.id !== focusId ? Math.round(a * 0.4) : a);
     const situationsOnly = marks.filter((m) => m.kind === 'situation');
     const alerts = marks.filter((m) => m.kind === 'alert');
     const trig = { getFillColor: [focusId], getColor: [focusId] };
     const onClick = (info) => info.object && onSelect && onSelect(info.object.s.id);
-    const surface = (id, data, getPolygon, getFillColor, extra = {}) => new SolidPolygonLayer({
-      id, data, getPolygon, getFillColor, filled: true, extruded: false, updateTriggers: { getFillColor: [focusId] }, ...extra,
-    });
+    // One icon layer per look: `mask` tints the shared white atlas per mark, so hue and dimming stay
+    // data-driven. Null atlas (no 2D canvas, e.g. jsdom) draws no icons rather than a wrong stand-in.
+    const icons = (id, data, props) => (atlas ? new IconLayer({
+      id, data, iconAtlas: atlas, iconMapping: ICON_MAPPING, billboard: true, sizeUnits: 'pixels', extensions: GLOBE_HORIZON,
+      getPosition: (m) => m.position, updateTriggers: { getColor: [focusId] }, ...props,
+      parameters: { ...ICON_PARAMS, ...props.parameters },
+    }) : null);
     const glyphed = marks.filter((m) => m.glyph);
     const selected = marks.filter((m) => m.s.id === focusId);
     return {
@@ -497,32 +484,43 @@ export default function SituationMap3D({
         onClick, updateTriggers: trig,
       }),
       // ◆ official alert: a dark edge diamond under the hue diamond (MIL-STD alert frame).
-      alertEdge: surface('alert-edge', alerts, (m) => pxPolygon(m.position, diamondPts(m.size.r * 1.2 + 1.5), d),
-        (m) => [...EDGE_RGB, dimA(m, 255)], { parameters: NO_DEPTH_WRITE }),
-      alertCore: surface('alert-core', alerts, (m) => pxPolygon(m.position, diamondPts(m.size.r * 1.2), d),
-        (m) => [...m.rgb, dimA(m, m.look.desaturate ? 215 : 255)], { pickable: true, onClick }),
+      alertEdge: icons('alert-edge', alerts, {
+        parameters: NO_DEPTH_WRITE, getIcon: () => 'diamond', getSize: (m) => diamondSize(m.size.r * 1.2 + 1.5),
+        getColor: (m) => [...EDGE_RGB, dimA(m, 255)],
+      }),
+      alertCore: icons('alert-core', alerts, {
+        getIcon: () => 'diamond', getSize: (m) => diamondSize(m.size.r * 1.2),
+        getColor: (m) => [...m.rgb, dimA(m, m.look.desaturate ? 215 : 255)], pickable: true, onClick,
+      }),
       // Badges: ▲ escalating · ● new · ◆ steady · ▼ cooling — glyph shapes up-right of the mark,
       // one neutral colour (hue stays crisis type only), with a dark edge so they read on land.
-      badgeEdge: surface('badge-edge', glyphed, (m) => pxPolygon(m.position, GLYPH_PTS[m.glyph.key].map(([x, y]) => [x * 1.45, y * 1.45]), d, [outerR(m) + 6, outerR(m) + 6]),
-        (m) => [...EDGE_RGB, dimA(m, 230)], { parameters: NO_DEPTH_WRITE }),
-      badges: surface('badges', glyphed, (m) => pxPolygon(m.position, GLYPH_PTS[m.glyph.key], d, [outerR(m) + 6, outerR(m) + 6]),
-        (m) => [...BADGE_RGB, dimA(m, 255)]),
-      // Selected = HUD brackets (L4), replacing the old white keyline.
-      brackets: new PathLayer({
-        id: 'brackets', data: selected.flatMap((m) => bracketPaths(m.position, outerR(m) + 9, d)), getPath: (p) => p,
-        getColor: [...BADGE_RGB, 255], getWidth: 2, widthUnits: 'pixels', pickable: false,
+      badgeEdge: icons('badge-edge', glyphed, {
+        parameters: NO_DEPTH_WRITE, getIcon: (m) => m.glyph.key, getSize: GLYPH_SIZE * EDGE_SCALE,
+        getPixelOffset: (m) => badgeOffset(outerR(m)), getColor: (m) => [...EDGE_RGB, dimA(m, 230)],
+      }),
+      badges: icons('badges', glyphed, {
+        getIcon: (m) => m.glyph.key, getSize: GLYPH_SIZE,
+        getPixelOffset: (m) => badgeOffset(outerR(m)), getColor: (m) => [...BADGE_RGB, dimA(m, 255)],
+      }),
+      // Selected = HUD brackets (L4), replacing the old white keyline: four corner icons.
+      brackets: icons('brackets', selected.flatMap((m) => bracketCorners(outerR(m) + BRACKET_GAP).map((c) => ({ ...c, position: m.position }))), {
+        getIcon: () => 'corner', getSize: CORNER_SIZE, getPixelOffset: (c) => c.offset, getAngle: (c) => c.angle,
+        getColor: [...BADGE_RGB, 255], updateTriggers: {},
       }),
     };
-  }, [marks, focusId, zoomQ]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [marks, focusId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // A selected STORY (no exact place) gets the same HUD brackets, at its shaded country's centre.
   const storyBrackets = useMemo(() => {
     const c = storyFocusIso3 ? iso3Centroid(storyFocusIso3) : null;
-    return c ? new PathLayer({
-      id: 'story-brackets', data: bracketPaths(c, 16, degPerPx(zoomQ)), getPath: (p) => p,
-      getColor: [...BADGE_RGB, 255], getWidth: 2, widthUnits: 'pixels', pickable: false,
+    const atlas = c ? getIconAtlas() : null;
+    return atlas ? new IconLayer({
+      id: 'story-brackets', iconAtlas: atlas, iconMapping: ICON_MAPPING, billboard: true, sizeUnits: 'pixels', parameters: ICON_PARAMS, extensions: GLOBE_HORIZON,
+      data: bracketCorners(16).map((k) => ({ ...k, position: [c[0], c[1], MARK_LIFT_M] })), getPosition: (k) => k.position,
+      getIcon: () => 'corner', getSize: CORNER_SIZE, getPixelOffset: (k) => k.offset, getAngle: (k) => k.angle,
+      getColor: [...BADGE_RGB, 255], pickable: false,
     }) : null;
-  }, [storyFocusIso3, zoomQ]);
+  }, [storyFocusIso3]);
 
   // Motion budget (M6, STORY_WEB_RETHINK_PLAN.md §8): only 3 things on the whole page may move —
   // the radar sweep, this 2.4s breathing pulse (NEW/▲ situations from the last 24h, capped at 8,

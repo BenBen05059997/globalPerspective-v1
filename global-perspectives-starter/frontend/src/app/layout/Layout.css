@@ -342,8 +342,8 @@
   .gp-footer-links { flex-wrap: wrap; justify-content: center; gap: 10px; }
 }
 
-/* ── R4a · desktop /map full-bleed console shell ─────────────
-   Only when Layout.jsx sets `.gp-app-console` (path /map, ≥900px). The map is the page: the
+/* ── R4a · desktop `/` full-bleed console shell ─────────────
+   Only when Layout.jsx sets `.gp-app-console` (path `/`, ≥900px). The map is the page: the
    shell is exactly one viewport tall and never scrolls; the nav becomes a thin dark/mono console
    bar (Console.dc.html header) with the same five items + account, and hosts the map's one-line
    status (#gp-console-status). `.gp-console` on the nav scopes the console tokens to it. */

@@ -47,6 +47,7 @@ export default function MapAbout({
           </span></Link>
           <Link to="/track-record"><b>Track Record</b><span>Every forecast scored against what happened, including the misses.</span></Link>
           <Link to="/analyze"><b>Analysis Studio</b><span>Bring a question and get a cited, structured analysis.</span></Link>
+          <Link to="/today"><b>Today's topics</b><span>The day's stories by region, with an on-demand summary, forecast and root cause.</span></Link>
         </div>
       </div>
 

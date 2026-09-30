@@ -1,6 +1,6 @@
 // Layout smoke tests (A1 · site shell): the N1 five-item menu renders with the right hrefs, the
 // site-wide "paused since" status line renders only when the newest daily brief is stale (and
-// never on /map, which has its own), and the footer has no white paper link.
+// never on the map home (/), which has its own), and the footer has no white paper link.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -74,7 +74,7 @@ describe('Layout — N1 menu', () => {
     expect(links.length).toBe(5);
     const byLabel = Array.from(links).map((a) => [a.textContent, a.getAttribute('href')]);
     expect(byLabel).toEqual([
-      ['Map', '/map'],
+      ['Map', '/'],
       ['Stories', '/weekly'],
       ['Briefings', '/briefings'],
       ['Studio', '/analyze'],
@@ -102,7 +102,7 @@ describe('Layout — P1 phone tab bar (A2)', () => {
     expect(links.length).toBe(5);
     const byHref = Array.from(links).map((a) => [a.getAttribute('href'), a.getAttribute('aria-current')]);
     expect(byHref).toEqual([
-      ['/map', null],
+      ['/', null],
       ['/weekly', null],
       ['/briefings', 'page'],
       ['/analyze', null],
@@ -146,39 +146,45 @@ describe('Layout — site-wide status line', () => {
     expect(document.querySelector('.gp-strip')).toBeNull();
   });
 
-  it('never duplicates the status line on /map', async () => {
+  it('never duplicates the status line on the map home (/)', async () => {
     const old = new Date(Date.now() - 40 * 60 * 60 * 1000).toISOString();
     fetchDailyBrief.mockResolvedValue({ data: { generatedAt: old } });
-    renderLayout('/map');
+    renderLayout('/');
     await new Promise((r) => setTimeout(r, 0));
     expect(document.querySelector('.gp-strip')).toBeNull();
   });
 });
 
-describe('Layout — R4a desktop /map console shell', () => {
-  it('on desktop /map: dark console bar with the same five items, a status slot, no footer', async () => {
+describe('Layout — R4a desktop / (map home) console shell', () => {
+  it('on desktop / (map home): dark console bar with the same five items, a status slot, no footer', async () => {
     fetchDailyBrief.mockResolvedValue({ data: null });
     isPhoneMock.mockReturnValue(false);
-    renderLayout('/map');
+    renderLayout('/');
     const nav = document.querySelector('.gp-nav');
     expect(nav.classList.contains('gp-nav-console')).toBe(true);
     expect(nav.classList.contains('gp-console')).toBe(true);
     expect(document.querySelector('.gp-app').classList.contains('gp-app-console')).toBe(true);
     const hrefs = [...document.querySelectorAll('.gp-nav-links a')].map((a) => a.getAttribute('href'));
-    expect(hrefs).toEqual(['/map', '/weekly', '/briefings', '/analyze', '/track-record']);
+    expect(hrefs).toEqual(['/', '/weekly', '/briefings', '/analyze', '/track-record']);
     expect(document.querySelector('#gp-console-status')).toBeTruthy();
     expect(document.querySelector('.gp-footer')).toBeNull();
   });
 
-  it('keeps the current shell on every other page and on the phone /map', () => {
+  it('keeps the current shell on every other page and on the phone map home', () => {
     fetchDailyBrief.mockResolvedValue({ data: null });
     isPhoneMock.mockReturnValue(false);
     const { unmount } = renderLayout('/weekly');
     expect(document.querySelector('.gp-nav-console')).toBeNull();
     expect(document.querySelector('.gp-footer')).toBeTruthy();
     unmount();
+    const today = renderLayout('/today');
+    expect(document.querySelector('.gp-nav-console')).toBeNull();
+    expect(document.querySelector('.gp-footer')).toBeTruthy();
+    expect(document.querySelector('.gp-footer a[href="/today"]')).toBeTruthy();
+    expect(document.querySelector('.gp-nav-link.active')).toBeNull();
+    today.unmount();
     isPhoneMock.mockReturnValue(true);
-    renderLayout('/map');
+    renderLayout('/');
     expect(document.querySelector('.gp-nav-console')).toBeNull();
     expect(document.querySelector('#gp-console-status')).toBeNull();
   });

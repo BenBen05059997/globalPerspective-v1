@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-10-01 (S6 home swap: the map console is `/`, code and tests only, frontend NOT deployed)
+
+- **`/` renders `SituationHome`** (the map console), operator go-ahead 2026-10-01 ahead of the ~7-Oct D11 date. Layout's full-bleed dark console, status slot and footer-less shell, the phone tab bar's active state, and the no-auto-tour rule now key on `/`; nav "Map" points to `/` (exact); the tour's site-intro step targets `nav-/`; `SituationHome` sets the indexed home page title.
+- **`/map` redirects to `/`** (`app/MapRedirect.jsx`, client `<Navigate replace>`; `?layer= ?country= ?story= ?focus=` and the hash kept). One canonical URL, no duplicate content. BreakingDetailPage "See on the map" now links `/`.
+- **Old home kept, unchanged, at `/today`** (topics by region, on-demand summary / forecast / cause, archive, lede, trust cards, subscribe card). Linked from the footer, the map's About drawer and the breaking feed's back link; NotFound copy points at the map.
+- **Worker repo copy** (`WORKER_FULL_CODE.md` `renderRootPage`): "Today's Topics" → `/today`; "World Map" entry now describes the home. The Worker is NOT redeployed (monitor). **`docs/sitemap.xml`**: `/map` replaced by `/today` (`/` listed once).
+- Tests: `layout.test.jsx` moved to `/` plus a `/today` light-shell case; new `mapRedirect.test.jsx`. `verify_pages.sh`: 9 new S6 guards (69 pass). `npm run verify`: 117 files / 879 tests. Playwright 1440 + 390 on `/`, `/map`, `/map?layer=risk&country=Iran`, `/today`, `/briefings`, a story page: globe moves between shots 3 s apart, no auto-tour on `/`, nav Map active, no overflow, 0 page errors.
+
 ## 2026-09-30 (Batch 4 G + H: Studio share, code and tests only, NOTHING created in AWS, frontend NOT deployed)
 
 - **G, Lambda source `newsSharedAnalysis`** (repo only; gates Y1–Y5 not yet asked): `POST` (Firebase JWT) re-fetches and freezes the sources itself with the same pure builder the browser uses, requires the reader's numbering to match, re-runs the validator and struct checks and refuses on any error, allows http(s) links only, caps prose at 32 KB in bytes / 4 sections / 8 stories / 20 shares per user per UTC day, stores an unlisted row; public `GET` (no owner id), owner-only `DELETE`; CORS in code; `noindex` on every response. 38 tests (auth with real RS256 tokens, CORS, URL schemes, limits in bytes, golden-context parity with the browser, the full handler incl. 401 / 403 / 404 / 409 / 413 / 422 / 429). Found and fixed by the browser run: the owner flag was served from a cached anonymous copy (`Vary: Authorization` added).

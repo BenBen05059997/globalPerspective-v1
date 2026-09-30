@@ -105,7 +105,7 @@ export default function BreakingFeedPage() {
               ? 'Breaking alerts aren’t configured on this site yet.'
               : 'Nothing has crossed the significance bar in the past 7 days. Quiet is the normal state.'}
           </p>
-          <Link to="/" className="bk-maplink">Back to today’s briefing →</Link>
+          <Link to="/today" className="bk-maplink">Back to today’s briefing →</Link>
         </div>
       ) : (
         groups.map(([day, items]) => (

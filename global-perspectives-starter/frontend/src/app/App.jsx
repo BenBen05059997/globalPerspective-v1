@@ -3,13 +3,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import '@/app/App.css';
 import '@/shared/ui/atoms.css';
 import Layout from '@/app/layout/Layout';
-// Home is kept eager (not React.lazy'd like the other 19 routes below), deliberately, per
-// STAGE0_FIXES_PLAN.md item (g)'s "decide with evidence" instruction: Home is the most-linked
-// URL (the Worker's renderRootPage() page directory) and the most common first paint. Measured
-// both ways during this change — lazy-loading Home saved ~14 kB (gzipped) off the main chunk but
-// added a waterfall (shell paint -> fetch chunk -> render) to the highest-traffic route for a
-// bundle that's already dominated by SituationMap3D (943 kB, already its own lazy chunk) and
-// shared libs (d3/deck.gl/firebase), not Home's own code. Not worth the extra round-trip there.
+// Home (the old topics page, now at /today since the 2026-10-01 S6 swap) stays an eager import
+// from STAGE0_FIXES_PLAN.md item (g), when it was the most common first paint. `/` is now the
+// lazy SituationHome console; revisit whether /today should be lazy too.
 import Home from '@/features/home/Home';
 import { ErrorProvider } from '@/shared/contexts/ErrorContext';
 import { ErrorBoundary } from '@/app/errors/ErrorHandling';
@@ -18,6 +14,7 @@ import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
 import { setAuthProvider } from '@/shared/api/restProxy';
 import { useEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
+import MapRedirect from '@/app/MapRedirect';
 
 // Route-level code splitting (STAGE0_FIXES_PLAN.md item (g)): every other page is its own chunk,
 // fetched on first navigation instead of bundled into the main chunk every visitor downloads.
@@ -61,10 +58,10 @@ function NotFound() {
       <div style={{ fontSize: '3rem', marginBottom: 16 }}>—</div>
       <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 12px' }}>Page not found</h2>
       <p style={{ color: '#6b7280', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 24px' }}>
-        That URL doesn't lead anywhere. Head back to today's topics or browse the weekly story arcs.
+        That URL doesn't lead anywhere. Head back to the map or browse the weekly story arcs.
       </p>
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-        <Link to="/" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>← Home</Link>
+        <Link to="/" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>← Map</Link>
         <Link to="/weekly" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Weekly →</Link>
       </div>
     </div>
@@ -111,8 +108,9 @@ export default function App() {
             <ErrorBoundary>
             <Suspense fallback={<div style={{ padding: '4rem 1rem', textAlign: 'center', minHeight: '40vh' }}>Loading…</div>}>
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/map" element={<SituationHome />} />
+              <Route path="/" element={<SituationHome />} />
+              <Route path="/today" element={<Home />} />
+              <Route path="/map" element={<MapRedirect />} />
               <Route path="/privacy" element={<PrivacyTerms />} />
               <Route path="/about" element={<AboutContact />} />
               <Route path="/disclosures" element={<Disclosures />} />

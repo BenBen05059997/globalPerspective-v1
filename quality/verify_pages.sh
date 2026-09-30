@@ -58,6 +58,17 @@ must_have "$SRC/app/layout/Layout.jsx" "label: 'Studio'" "menu has Studio"
 must_have "$SRC/app/layout/Layout.jsx" "label: 'Track record'" "menu has Track record"
 must_not_have "$SRC/app/layout/Layout.jsx" "to=.{1,3}/whitepaper" "white paper soft-hidden from nav (A1, 2026-09-26; route stays live)"
 
+# ─── S6 home swap (2026-10-01): `/` is the map console, the old home lives at /today ───
+must_have "$SRC/app/App.jsx" 'path="/" element=\{<SituationHome' "/ renders the map console"
+must_have "$SRC/app/App.jsx" 'path="/today" element=\{<Home' "old home kept reachable at /today"
+must_have "$SRC/app/App.jsx" 'path="/map" element=\{<MapRedirect' "/map redirects to /"
+must_have "$SRC/app/MapRedirect.jsx" "search, hash" "the /map redirect keeps the query params"
+must_have "$SRC/app/layout/Layout.jsx" "to: '/', exact: true, label: 'Map'" "menu Map item points at / (exact)"
+must_have "$SRC/app/layout/Layout.jsx" "location.pathname === '/' && !isPhone" "desktop console shell keyed on /"
+must_have "$SRC/app/layout/Layout.jsx" "to=\"/today\"" "footer links the old home (/today)"
+must_have "$SRC/app/onboarding/useOnboarding.js" "pathname === '/'" "no auto-tour on the map home"
+must_not_have "$SRC/app/layout/Layout.jsx" "pathname (===|!==) '/map'" "no stale /map pathname checks"
+
 # ─── BriefingsPage (S3, /briefings) ───
 must_have "$SRC/app/App.jsx" "import BriefingsPage|BriefingsPage = lazy" "imports BriefingsPage"
 must_have "$SRC/app/App.jsx" "/briefings" "wires /briefings route"

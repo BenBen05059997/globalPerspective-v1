@@ -43,7 +43,7 @@ export const SITE_INTRO = {
       },
     },
     {
-      element: '[data-tour="nav-/map"]',
+      element: '[data-tour="nav-/"]',
       popover: { title: 'Map', description: 'Where events happen, from the latest stories and live disaster alerts.', side: 'bottom', align: 'start' },
     },
     {

@@ -185,6 +185,7 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
 export default function SituationHome() {
   const { world, situations, loading, error, asOf, stale } = useWorld();
   const [params, setParams] = useSearchParams();
+  useEffect(() => { document.title = 'Global Perspectives™ — AI-Powered News Intelligence'; }, []);
   const focus = params.get('focus');
   const storyParam = params.get('story');
   const countryParam = params.get('country');

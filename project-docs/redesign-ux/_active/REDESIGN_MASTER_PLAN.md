@@ -226,7 +226,7 @@ Sizes are shown only where an earlier estimate exists; the rest are sized in eac
 | Stage | Status |
 |---|---|
 | 1 · Foundations | ✅ built 26 Sep (DS1 tokens, N1 shell + phone tab bar, status line computed client-side instead of D1, StoryPeek) — `TASK_2026-09-26_shell_account_local.md` |
-| 7 · Home console | ✅ built at `/map` only (M1–M7); the S6 home swap still waits on D11 — `TASK_2026-09-26_map_console_local.md` |
+| 7 · Home console | ✅ built at `/map` (M1–M7); ✅ **S6 home swap done in code 2026-10-01** (operator: "yes we can do the map to home page right now", ahead of the D11 date): `/` = console, `/map` redirects to `/`, old home kept at `/today` — `TASK_2026-10-01_home_swap.md` (not yet deployed) |
 | Review | ✅ rounds R1–R4 done 27 Sep — `REVIEW_2026-09-26_map_console_shell.md` |
 | 2, 3, 4, 5a–c, 6 | ✅ frontend built 27 Sep — `TASK_2026-09-27_pages_local.md` (story mode, `/briefings`, country card, Studio deck + feed + quote / receipt, track record). Backend D5–D10 not included; each needs a yes |
 | 0 · Ship | ✅ **frontend deployed 2026-09-30** (bundle `index-C8dv496O.js`); **Worker deployed 2026-09-30** (SPA fallback: deep links 200; `/briefings` bot pre-render; `/analyze/s/*` never pre-rendered) |

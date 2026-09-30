@@ -103,7 +103,7 @@ export default function BreakingDetailPage() {
         <div className="bk-trust">
           <SourceRobustness outlets={alert.outletCount} sources={alert.sourceCount} regions={(alert.regions || []).length} size="md" />
           {(alert.regions || []).length > 0 && (
-            <Link to="/map" className="bk-maplink">See on the map →</Link>
+            <Link to="/" className="bk-maplink">See on the map →</Link>
           )}
         </div>
 

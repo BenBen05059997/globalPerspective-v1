@@ -65,11 +65,11 @@ function Layout({ children }) {
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { isMember, creditBalance, available: billingAvailable } = useMembership();
-  // P1 phone tab bar (A2): shared 900px breakpoint — same one /map's own MAP·LIST·ALERTS tabs use.
+  // P1 phone tab bar (A2): shared 900px breakpoint — same one the map's own MAP·LIST·ALERTS tabs use.
   const isPhone = useIsPhone();
 
   // Site-wide honesty line (N1/DS1): the same computed "paused since" text the map page shows
-  // itself (hidden here for /map to avoid a duplicate claim — see the render guard below).
+  // itself (hidden here on the map home to avoid a duplicate claim — see the render guard below).
   // Reuses the map's own hook/helpers so this layer invents no new freshness logic.
   const { brief: latestBrief, loading: briefLoading, error: briefError } = useDailyBrief();
   const paused = useMemo(() => pausedSince({
@@ -90,8 +90,8 @@ function Layout({ children }) {
     return `/signin?returnTo=${encodeURIComponent(origin)}`;
   })();
 
-  // N1 (approved 2026-09-26): five plain, flat menu items — no groups, no dropdowns. "Topics"
-  // (`/`) stays reachable via the logo; "Countries" (`/weekly/countries`) and "Weekly Brief"
+  // N1 (approved 2026-09-26): five plain, flat menu items — no groups, no dropdowns. "Map" is `/`
+  // (the logo goes there too); the old "Topics" page is `/today`, linked from the footer; "Countries" (`/weekly/countries`) and "Weekly Brief"
   // (`/weekly-brief`) stay reachable via interim links on the Stories/Briefings pages instead of
   // the menu. "Briefings" points at `/briefings` (S3, briefing mode); `/daily` and `/weekly-brief`
   // stay live for existing links.
@@ -101,19 +101,19 @@ function Layout({ children }) {
   // while analysis is paused, no member-analysis claim (Studio's member path is broken/parked),
   // no "every forecast publicly scored" (only 122 resolved, one week, unscored track record).
   const navLinks = [
-    { to: '/map', label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
+    { to: '/', exact: true, label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
     { to: '/weekly', label: 'Stories', short: 'Stories', icon: IconStories, title: 'Every story we follow, as board, table, map or web.' },
     { to: '/briefings', label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The daily and weekly briefings, with every past edition.' },
     { to: '/analyze', label: 'Studio', short: 'Studio', icon: IconStudio, title: 'Analyse our stories with your own AI key.' },
     { to: '/track-record', label: 'Track record', short: 'Record', icon: IconRecord, title: 'How our forecasts are logged and checked as they come due.' },
   ];
 
-  // R4a: desktop /map is a full-bleed console — the same five menu items + account, restyled as a
+  // R4a: desktop `/` (the map, since the 2026-10-01 S6 swap) is a full-bleed console — the same five menu items + account, restyled as a
   // thin dark/mono console bar (`.gp-console` scopes the console tokens to it), with an empty
   // slot (#gp-console-status) the map fills with its one-line honesty status. No footer there:
   // the map is the whole page (its "About this map" drawer carries the footer links instead).
   // Every other page keeps the current light shell.
-  const consoleShell = location.pathname === '/map' && !isPhone;
+  const consoleShell = location.pathname === '/' && !isPhone;
 
   const isActive = (to, exact) => {
     if (exact) return location.pathname === to;
@@ -197,7 +197,7 @@ function Layout({ children }) {
           shows the same computed "paused since" honesty line the map uses (N1/DS1): nothing when
           analysis is fresh, never a typed/guessed claim. The old topic-count + tagline content
           was dropped (an unbacked freshness claim — CLAUDE.md: no placeholder/fabricated UI). */}
-      {location.pathname !== '/map' && paused && (
+      {location.pathname !== '/' && paused && (
         <div className="gp-strip gp-console">
           <HudStatusLine paused={paused} />
         </div>
@@ -219,6 +219,7 @@ function Layout({ children }) {
           <Link to="/disclosures">Disclosures</Link>
           <Link to="/contact">Contact</Link>
           <Link to="/track-record">Track Record</Link>
+          <Link to="/today">Today's topics</Link>
         </div>
         <span className="gp-footer-ver" title="Deployed build">{BUILD_LABEL}</span>
       </footer>
@@ -227,13 +228,13 @@ function Layout({ children }) {
       {/* P1 phone tab bar (A2): the five main-nav items as a fixed bottom bar under 900px,
           replacing the old hamburger dropdown (removed above). Console-dark on every page — the
           `.gp-console` class just scopes those CSS tokens to this one element, it doesn't touch
-          the rest of the (light) page. /map's own MAP·LIST·ALERTS in-page tabs and bottom sheet
+          the rest of the (light) page. the map's own MAP·LIST·ALERTS in-page tabs and bottom sheet
           are unaffected — they sit above this bar (SituationHome.css). */}
       {isPhone && (
         <nav className="gp-tabbar gp-console" aria-label="Primary, phone">
           {navLinks.map((item) => {
-            const { to, short, icon: TabIcon } = item;
-            const active = isActive(to);
+            const { to, exact, short, icon: TabIcon } = item;
+            const active = isActive(to, exact);
             return (
               <Link
                 key={to}

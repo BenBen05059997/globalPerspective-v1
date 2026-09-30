@@ -126,7 +126,7 @@ changed the read — never silently overwritten. The running record, including t
 is published at <a href="${SITE_URL}/track-record">${SITE_URL}/track-record</a>.</p>
 <h2>Briefings</h2>
 <ul>
-<li><a href="${SITE_URL}/">Today's Topics</a> — today's global stories by region, with on-demand AI summary, forecast, and root-cause for any story</li>
+<li><a href="${SITE_URL}/today">Today's Topics</a> — today's global stories by region, with on-demand AI summary, forecast, and root-cause for any story</li>
 <li><a href="${SITE_URL}/daily">Daily Brief</a> — the end-of-day intelligence brief: one synthesised read of what mattered today</li>
 <li><a href="${SITE_URL}/weekly-brief">Weekly Brief</a> — Sunday signals digest: the week's discrete signals with fact kept separate from judgment; also delivered by email</li>
 <li><a href="${SITE_URL}/breaking">Breaking</a> — rare, human-confirmed alerts for genuinely significant events; quiet is the normal state</li>
@@ -135,7 +135,7 @@ is published at <a href="${SITE_URL}/track-record">${SITE_URL}/track-record</a>.
 <ul>
 <li><a href="${SITE_URL}/weekly">Story Threads</a> — ongoing story arcs ranked by risk, each with a living forecast board that resolves in public</li>
 <li><a href="${SITE_URL}/weekly/countries">Countries</a> — every covered country ranked by risk tier, with a standing intelligence briefing; each read self-corrects as news arrives</li>
-<li><a href="${SITE_URL}/map">World Map</a> — today's coverage as a spatial view</li>
+<li><a href="${SITE_URL}/">World Map (this home page)</a> — the live situation map: open situations, disaster alerts and the stories behind them on a globe, with a click-through story card</li>
 </ul>
 <h2>Markets &amp; analysis</h2>
 <ul>

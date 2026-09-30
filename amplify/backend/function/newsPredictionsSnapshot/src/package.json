@@ -5,7 +5,7 @@
   "main": "index.js",
   "license": "Apache-2.0",
   "scripts": {
-    "test": "node trackRecord.test.mjs"
+    "test": "node trackRecord.test.mjs && node scoring.test.mjs && node questionBoard.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",

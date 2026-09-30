@@ -114,4 +114,37 @@ function unionByTopicId(...lists) {
   return out;
 }
 
-module.exports = { lightEntry, unionByTopicId, shapeCountryFacts, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys };
+
+// ── Batch 4 / C: per-question state for prediction_snapshot ─────────────────────────────────
+const _ms = (d) => Date.parse(`${String(d).slice(0, 10)}T00:00:00Z`);
+const _days = (a, b) => Math.round((_ms(b) - _ms(a)) / 86400000);
+
+// ISO week id of a YYYY-MM-DD day (same rule as the settle Lambda; parity-tested there).
+function isoWeekOfDay(d) {
+  const t = new Date(_ms(d));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  const y0 = Date.UTC(t.getUTCFullYear(), 0, 1);
+  return `${t.getUTCFullYear()}-W${String(Math.ceil(((t.getTime() - y0) / 86400000 + 1) / 7)).padStart(2, '0')}`;
+}
+
+// Where a question stands in the weekly sample: sampled | not_eligible | warm_up | awaiting_draw | not_sampled.
+function questionSampleState({ issueDay, deadline, sampled, commitExists, drawExists }) {
+  if (sampled) return 'sampled';
+  const lead = _days(issueDay, deadline);
+  if (lead < 7 || lead > 84) return 'not_eligible';
+  if (!commitExists) return 'warm_up';
+  if (!drawExists) return 'awaiting_draw';
+  return 'not_sampled';
+}
+
+// yes | no | void once confirmed; otherwise awaiting / past_deadline_unchecked. Only for sampled questions.
+function questionOutcomeState({ sampled, verdictRows, deadline, today }) {
+  if (!sampled) return null;
+  const v = (verdictRows || []).slice().sort((a, b) => verdictNo(b.SK) - verdictNo(a.SK))[0];
+  if (v) return v.verdict === 'yes' ? 'yes' : v.verdict === 'no' ? 'no' : 'void';
+  return String(deadline).slice(0, 10) < String(today).slice(0, 10) ? 'past_deadline_unchecked' : 'awaiting';
+}
+function verdictNo(sk) { const m = /^VERDICT#(\d+)$/.exec(String(sk)); return sk === 'VERDICT' ? 1 : m ? Number(m[1]) : 0; }
+function latestVerdictRow(rows) { return (rows || []).slice().sort((a, b) => verdictNo(b.SK) - verdictNo(a.SK))[0] || null; }
+
+module.exports = { isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, lightEntry, unionByTopicId, shapeCountryFacts, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys };

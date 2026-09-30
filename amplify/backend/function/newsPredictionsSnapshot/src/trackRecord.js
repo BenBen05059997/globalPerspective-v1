@@ -30,6 +30,9 @@ function computeTrackRecord(items) {
     for (const s of it.scenarios || []) {
       const p = typeof s.probability === 'number' ? s.probability : null;
       for (const t of s.triggers || []) {
+        // Batch 4: per-question triggers (own p) are scored by questionBoard.js, never here at the
+        // scenario probability. Skipping them keeps every legacy field describing the archived pilot.
+        if (t.question === true) continue;
         if (!t.deadline) continue;
         totalTriggers++;
         const v = t.finalVerdict;

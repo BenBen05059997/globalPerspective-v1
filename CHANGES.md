@@ -12,6 +12,12 @@
   - new `predictions/settle-review.js` (operator confirm CLI, cannot show `p`) and `predictions/verify-draw.mjs`. **The rule `TriggerPredictionResolver` stays DISABLED** (nothing scheduled, nothing committed yet).
   - tests 30 pass (1 skipped: needs the AWS SDK locally). Q18b replay on 10 archived pilot triggers (no writes): first run 5/5 agreement on the 5 it decided but 4 had 0 search results (Brave rate limit); after serializing Brave and retrying 429: **10/10 agree** (5 yes, 5 no), 30 searches, 15 LLM calls, about $0.033 (whole session about $0.05 with the first run).
 
+- **C: M3 aggregate, scoring, `prediction_snapshot`, dead-man's alarm** (3 Lambdas deployed, each byte-compared with the repo; rollback zips in `…/scratchpad/b4/rollback/`):
+  - `newsPredictionsSnapshot` (`cNikHn…` to `AWg44W/o8hNlwZ1zmRqcYdMqOspevcUw3HZmc5YZfJA=`): the public aggregate gains `data.questions` (`questionBoard.js`: weeks with commit / reveal / draw, sampled questions with frozen `p`, counts, `settleHealth`; `scoring.js`: Brier, base-rate skill, cluster-bootstrap CI, reliability bins, **`scoring: null` below 150 resolved**). One scan; seed `SECRET` and `DRAFT#` rows are filtered out. Legacy pilot fields are byte-identical to the old code on the live 5,896 rows (122 resolved, Brier 0.154, 20,925 triggers); question triggers are skipped by the legacy block. Live now: empty board, all zeros.
+  - `newsSensitiveData-dev` (`z0bVMR…` to `OQ1qtp/pO6gtFfVt1bj+3YDe3Q0f7lNV6vxb9Xca3zg=`): `prediction_snapshot` returns per trigger `question`, `qid`, `p`, `source`, `scoring` (sampled / not_eligible / warm_up / awaiting_draw / not_sampled) and `state` (yes / no / void / awaiting / past_deadline_unchecked); accepts `threadId`. Legacy triggers unchanged (verified live on a pre-M2 story). Reads only `SAMPLED` / `VERDICT` rows, never `DRAFT#`.
+  - `newsFreshnessMonitor` (`esLTQ79…` to `7Kg62cmRIfA2Ke2uI3nXFIRw+uZGxuQSKAbGm2oc+BU=`): settle dead-man's alarm (`settleCheck.js`), once a day, silent until something is committed. Previewed with a fixture: nothing sent; live board: no alert.
+  - tests: snapshot 37 (scoring 10, board 16, legacy 11), proxy 35 (+ question state), monitor 5, resolver 32 (+ week parity over 800 days across the three copies of the ISO-week helpers).
+
 
 ## 2026-09-30 (Backend Batch 3, live AWS: read fixes)
 

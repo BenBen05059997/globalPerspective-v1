@@ -55,3 +55,14 @@ test('verify-draw: a good draw verifies; a tampered pick, seed or late commitmen
   assert.equal(verify({ ...input, commit: { ...input.commit, committedAt: '2026-10-05T01:00:00Z' } }).ok, false);
   assert.equal(verify({ commit: input.commit }).ok, false);
 });
+
+test('verify-draw reads the public aggregate week shape', async () => {
+  const { verify, fromPublicWeek } = await import(path.join(root, 'verify-draw.mjs'));
+  const seed = '12'.repeat(32);
+  const pool = Array.from({ length: 60 }, (_, i) => ({ q: `q${i}`, c: `c${i % 30}` }));
+  const d = lib.draw(seed, pool.map((x) => ({ qid: x.q, clusterKey: x.c })), 22);
+  const week = { weekId: '2026-W41', weekStart: '2026-10-05', commit: { hash: lib.commitOf(seed), committedAt: '2026-10-01T10:30:00Z' }, reveal: { seedHex: seed }, draw: { K: 22, pool, picked: d.picked } };
+  assert.equal(verify(fromPublicWeek(week)).ok, true);
+  assert.equal(verify(fromPublicWeek({ ...week, draw: null })).ok, false);
+  assert.equal(verify(fromPublicWeek(undefined)).ok, false);
+});

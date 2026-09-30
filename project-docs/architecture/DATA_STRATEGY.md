@@ -54,7 +54,7 @@ Nothing else goes in DynamoDB. A new table needs an explicit exception recorded 
 | `corpus/gdelt/<day>.json` (S8·T2, DONE 2026-09-09) | `newsGdeltConflict` | each run (overwrite per day) | `newsImpactAudit` |
 | `audit/impact/<date>.json`, `audit/impact/latest.json` (S8·T2, DONE 2026-09-09) | `newsImpactAudit` | daily | audit trail / operator |
 | `audit/ingest-capture/latest.json` (S8·T2b, DONE 2026-09-09) | `newsInvokeGemini` | each generation (every 4h) | `newsImpactAudit` |
-| `predictions/track_record.json` (S8·T3, DONE 2026-09-09) | `newsPredictionsSnapshot` | `rate(30 min)` | `newsSensitiveData` proxy (`prediction_track_record`) — precomputed aggregate; PredictionLog DDB stays as the mutable store |
+| `predictions/track_record.json` (S8·T3, DONE 2026-09-09; `questions` block added 2026-09-30) | `newsPredictionsSnapshot` | `rate(30 min)` | `newsSensitiveData` proxy (`prediction_track_record`) — precomputed aggregate; PredictionLog DDB stays as the mutable store |
 
 IAM: one inline policy per Lambda, `s3:PutObject` scoped to its own prefix(es) only; readers get `s3:GetObject` on what they read (+ a `ListBucket` scoped to their read prefixes so a missing object returns 404, not 403). The Worker's credentials are read-only on `world/*`, `situations/state/*`, `stories/state/*`.
 

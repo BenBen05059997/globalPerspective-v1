@@ -15,6 +15,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { computeTrackRecord } = require('./trackRecord');
+const { buildQuestionBoard } = require('./questionBoard');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
@@ -26,13 +27,24 @@ const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), 
 });
 const s3 = new S3Client({ region: REGION });
 
+// One scan of the whole log. The projection covers every record family the question board needs;
+// the filter drops the seed SECRET rows (never read, not even in memory) and the operator-only DRAFT# rows.
+const ATTRS = ['PK', 'SK', 'title', 'category', 'generatedAt', 'scenarios', 'methodologyVersion', 'questionSchema',
+  'weekId', 'weekStart', 'weekEnd', 'commitHash', 'committedAt', 'seedHex', 'revealedAt', 'K', 'eligible', 'clusters', 'pool',
+  'picked', 'drawnAt', 'qid', 'clusterKey', 'question', 'deadline', 'resolutionSource', 'storyTitle', 'issuedAt', 'verdict',
+  'voidReason', 'decidedAt', 'decidedBy', 'evidence', 'at', 'minutes', 'confirmed', 'voided'];
+const NAMES = Object.fromEntries(ATTRS.map((a, n) => [`#a${n}`, a]));
+
 async function scanAll() {
   const items = [];
   let ExclusiveStartKey;
   do {
     const res = await ddb.send(new ScanCommand({
       TableName: PREDICTION_LOG_TABLE,
-      ProjectionExpression: 'title, category, generatedAt, scenarios, methodologyVersion',
+      ProjectionExpression: Object.keys(NAMES).join(', '),
+      ExpressionAttributeNames: { ...NAMES, '#sk': 'SK' },
+      FilterExpression: '#sk <> :secret AND NOT begins_with(#sk, :draft)',
+      ExpressionAttributeValues: { ':secret': 'SECRET', ':draft': 'DRAFT#' },
       ExclusiveStartKey,
     }));
     items.push(...(res.Items || []));
@@ -44,10 +56,14 @@ async function scanAll() {
 exports.handler = async () => {
   const items = await scanAll();
   const data = computeTrackRecord(items);
+  let boardError = null;
+  try { data.questions = buildQuestionBoard(items, new Date().toISOString()); } catch (e) { boardError = e; data.questions = null; console.error('[predictions-snapshot] question board failed:', e.message); }
   const body = JSON.stringify({ builtAt: new Date().toISOString(), data });
   await s3.send(new PutObjectCommand({
     Bucket: WORLD_BUCKET, Key: TRACK_RECORD_KEY, Body: body, ContentType: 'application/json',
   }));
   console.log(`[predictions-snapshot] scanned ${items.length} → v1=${data.totalPredictionsLogged} resolved=${data.resolvedTriggers} brier=${data.brierScore}`);
-  return { ok: true, scanned: items.length, ...data };
+  // the legacy aggregate is written either way; a failing board must still show up as a Lambda error
+  if (boardError) throw boardError;
+  return { ok: true, scanned: items.length, questionsIssued: data.questions.issued, sampled: data.questions.sampledTotal, ...data, questions: undefined };
 };

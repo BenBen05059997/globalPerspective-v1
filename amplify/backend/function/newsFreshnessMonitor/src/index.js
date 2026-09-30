@@ -18,6 +18,7 @@
 // fake-fresh signal. Matches the site-wide no-misinformation rule.
 
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const { evaluateSettle, shouldSendNow, buildMessage } = require('./settleCheck');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const PROXY_URL = process.env.PROXY_URL;            // proxy base, e.g. https://…/default/proxy
@@ -46,7 +47,40 @@ async function alert(subject, lines) {
   }));
 }
 
-exports.handler = async () => {
+// Batch 4 / C: the settle dead-man's alarm. Runs first, in its own try/catch, and never blocks the
+// freshness check below. Sends at most once a day (only the 12:30 UTC run). `event.dryRun` never
+// sends; `event.fixture` previews the exact message for a made-up board; `event.settleCheckOnly`
+// returns right after this step.
+async function runSettleCheck(event = {}) {
+  try {
+    const nowIso = event.now || new Date().toISOString();
+    let questions = event.fixture || null;
+    if (!questions) {
+      if (!PROXY_URL) return { skipped: 'PROXY_URL missing' };
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000); // the function's own timeout is 30 s: keep this step short
+      const resp = await fetch(`${PROXY_URL}${PROXY_URL.includes('?') ? '&' : '?'}action=prediction_track_record`, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!resp.ok) return { skipped: `proxy HTTP ${resp.status}` };
+      const j = await resp.json();
+      questions = (j.data || j).questions || null;
+    }
+    const evaluation = evaluateSettle(questions, nowIso);
+    const message = evaluation.alert ? buildMessage(evaluation, questions, { siteUrl: SITE_URL, nowIso }) : null;
+    const willSend = Boolean(message) && !event.dryRun && (event.forceSend || shouldSendNow(nowIso));
+    if (willSend) await alert(message.subject, message.body.split('\n'));
+    return { alert: evaluation.alert, reasons: evaluation.reasons.map((r) => r.code), sent: willSend, message: event.dryRun ? message : undefined, note: evaluation.note };
+  } catch (err) {
+    console.warn('settle check failed (non-fatal):', String(err && err.message || err));
+    return { error: String(err && err.message || err) };
+  }
+}
+
+exports.handler = async (event = {}) => {
+  const settle = await runSettleCheck(event);
+  if (event.settleCheckOnly) return { settleCheck: settle };
+  if (settle && (settle.alert || settle.error)) console.info('settle check', JSON.stringify({ alert: settle.alert, reasons: settle.reasons, sent: settle.sent, error: settle.error }));
+
   if (!PROXY_URL) {
     console.error('newsFreshnessMonitor misconfigured: PROXY_URL missing');
     return { ok: false, error: 'PROXY_URL missing' };

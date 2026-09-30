@@ -12,7 +12,8 @@
  *   --file draw.json      { "commit": {weekId, weekStart, commitHash, committedAt},
  *                           "reveal": {seedHex, revealedAt}, "draw": {K, pool:[{q,c}], picked:[{qid,h,clusterKey}]} }
  *   --week 2026-W41       reads the three rows from DynamoDB with the AWS CLI (operator credentials)
- * (Once the public aggregate carries the draw, --week will read it from there.)
+ *   --public <proxy-url> --week 2026-W41   reads them from the PUBLIC aggregate (prediction_track_record, `questions.weeks[]`;
+ *                         the pool is published for the latest 4 drawn weeks) — needs no credentials
  *
  * The ranking rule is the Lambda's own module (amplify/backend/function/newsPredictionResolver/src/lib.js).
  */
@@ -42,6 +43,16 @@ function getRow(pk, sk) {
   return out.Item ? unmarshal({ M: out.Item }) : null;
 }
 
+// Shape the public aggregate's week entry like the three DynamoDB rows.
+export function fromPublicWeek(week) {
+  if (!week) return { commit: null, reveal: null, draw: null };
+  return {
+    commit: week.commit ? { weekId: week.weekId, weekStart: week.weekStart, commitHash: week.commit.hash, committedAt: week.commit.committedAt } : null,
+    reveal: week.reveal || null,
+    draw: week.draw || null,
+  };
+}
+
 export function verify({ commit, reveal, draw }) {
   const problems = [];
   if (!commit) problems.push('no commitment published');
@@ -60,7 +71,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const arg = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : null; };
   let input;
   if (arg('--file')) input = JSON.parse(fs.readFileSync(arg('--file'), 'utf8'));
-  else if (arg('--week')) {
+  else if (arg('--public') && arg('--week')) {
+    const res = await (await fetch(`${arg('--public')}${arg('--public').includes('?') ? '&' : '?'}action=prediction_track_record`)).json();
+    const data = (res.body ? JSON.parse(res.body) : res).data;
+    input = fromPublicWeek(((data.questions || {}).weeks || []).find((w) => w.weekId === arg('--week')));
+  } else if (arg('--week')) {
     const wk = arg('--week');
     input = { commit: getRow(`SEED#${wk}`, 'COMMIT'), reveal: getRow(`SEED#${wk}`, 'REVEAL'), draw: getRow(`SAMPLE#${wk}`, 'DRAW') };
   } else { console.error('usage: verify-draw.mjs --file draw.json | --week 2026-W41'); process.exit(2); }

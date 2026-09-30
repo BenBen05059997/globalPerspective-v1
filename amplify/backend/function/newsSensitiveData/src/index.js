@@ -3,7 +3,7 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
+const { isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
 const { assembleDossier } = require('./dossier');
 const { isCountryName } = require('./placeFilter');
 
@@ -700,6 +700,13 @@ exports.handler = async (event) => {
         let topicIds = payload?.topicIds ?? qs?.topicIds ?? payload?.topicId ?? qs?.topicId;
         if (typeof topicIds === 'string') topicIds = topicIds.split(',').map(s => s.trim()).filter(Boolean);
         if (!Array.isArray(topicIds)) topicIds = topicIds ? [topicIds] : [];
+        // Batch 4 / C: a story can be asked for by threadId (briefings only know the thread); its
+        // topic ids come from the same narrative_thread read the story page uses (14 days).
+        const askedThreadId = payload?.threadId ?? qs?.threadId;
+        if (!topicIds.length && typeof askedThreadId === 'string' && askedThreadId) {
+          const tr = await readNarrativeThread(askedThreadId, 14);
+          topicIds = tr?.body?.success ? (tr.body.data || []).map(e => e.topicId).filter(Boolean) : [];
+        }
         topicIds = [...new Set(topicIds.filter(Boolean))].slice(0, 25);
         if (!topicIds.length) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'topicIds required' }) };
 
@@ -719,6 +726,42 @@ exports.handler = async (event) => {
         v1.sort((a, b) => String(b.generatedAt || b.SK || '').localeCompare(String(a.generatedAt || a.SK || '')));
         const it = v1[0];
 
+        // Batch 4 / C: per-question facts. Legacy triggers (no `question` field) are returned exactly as before.
+        const issueDay = String(it.SK || it.generatedAt || '').slice(0, 10);
+        const today = new Date().toISOString().slice(0, 10);
+        const qTriggers = (it.scenarios || []).flatMap(s => (s.triggers || []).filter(t => t && t.question === true && t.qid));
+        const qInfo = new Map();
+        if (qTriggers.length) {
+          let commitExists = false;
+          let drawExists = false;
+          try {
+            const wk = isoWeekOfDay(issueDay);
+            const [c, d] = await Promise.all([
+              client.send(new GetCommand({ TableName: PREDICTION_LOG_TABLE, Key: { PK: `SEED#${wk}`, SK: 'COMMIT' } })),
+              client.send(new GetCommand({ TableName: PREDICTION_LOG_TABLE, Key: { PK: `SAMPLE#${wk}`, SK: 'DRAW' } })),
+            ]);
+            commitExists = Boolean(c.Item); drawExists = Boolean(d.Item);
+          } catch (e) { console.warn('prediction_snapshot week lookup failed', e.message); }
+          await Promise.all(qTriggers.map(async (t) => {
+            try {
+              // SAMPLED and VERDICT rows only: 'SAMPLED' <= SK sorts after every DRAFT# row (operator-only, never read here)
+              const r = await client.send(new QueryCommand({
+                TableName: PREDICTION_LOG_TABLE, KeyConditionExpression: 'PK = :pk AND SK >= :s',
+                ExpressionAttributeValues: { ':pk': `Q#${t.qid}`, ':s': 'SAMPLED' },
+              }));
+              const rows = r.Items || [];
+              const sampled = rows.some(x => x.SK === 'SAMPLED');
+              const verdictRows = rows.filter(x => String(x.SK).startsWith('VERDICT'));
+              const v = latestVerdictRow(verdictRows);
+              qInfo.set(t.qid, {
+                scoring: questionSampleState({ issueDay, deadline: t.deadline, sampled, commitExists, drawExists }),
+                state: questionOutcomeState({ sampled, verdictRows, deadline: t.deadline, today }),
+                verdictUrl: v?.evidence?.url || null, verdictQuote: v?.evidence?.quote || null, voidReason: v?.voidReason || null,
+              });
+            } catch (e) { console.warn('prediction_snapshot question lookup failed', e.message); }
+          }));
+        }
+
         const scenarios = (it.scenarios || []).map(s => ({
           label: s.label,
           probability: typeof s.probability === 'number' ? s.probability : null,
@@ -729,6 +772,11 @@ exports.handler = async (event) => {
             verdict: t.finalVerdict || null,
             confirmedBy: t.confirmedBy || null,
             citation: t.agentVerdict?.evidence?.[0]?.url || t.agentVerdict?.evidence?.[0]?.title || null,
+            ...(t.question === false ? { question: false } : {}),
+            ...(t.question === true && t.qid ? {
+              question: true, qid: t.qid, p: typeof t.p === 'number' ? t.p : null, source: t.resolutionSource || null,
+              ...(qInfo.get(t.qid) || { scoring: null, state: null }),
+            } : {}),
           })),
         })).filter(s => s.triggers.length);
 
@@ -737,6 +785,7 @@ exports.handler = async (event) => {
           title: it.title || null,
           generatedAt: it.generatedAt || it.SK || null,
           status: it.status || 'open',
+          questionSchema: it.questionSchema || null,
           scenarios,
         } : null;
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, snapshot }) };

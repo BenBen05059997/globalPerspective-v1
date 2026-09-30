@@ -124,7 +124,7 @@ Phase ids: **A** M2 questions at issue · **B** M3 sampler, drafter, confirm CLI
 | B | `…/newsPredictionResolver/test/{weeks,sample,draft,store,search,cli}.test.js`, `test/helpers.js` (in-memory store with the real conditional-put semantics) | tests (§2 B); `cli.test.js` also covers `settle-review.js` and `verify-draw.mjs` |
 | B | `predictions/settle-review.js` | operator confirm CLI (no `p`, ever); exports its pure functions for tests |
 | B | `predictions/verify-draw.mjs` | anyone can recompute a published draw from the public aggregate |
-| C | `amplify/backend/function/newsPredictionsSnapshot/src/{questionBoard.js,scoring.js}` + `questionBoard.test.mjs`, `scoring.test.mjs` | the new `questions` block; Brier, skill, base rate, cluster bootstrap, reliability bins, `settleHealth` |
+| C | `amplify/backend/function/newsPredictionsSnapshot/src/{questionBoard.js,scoring.js,weeks.js}` + `questionBoard.test.mjs`, `scoring.test.mjs` (`weeks.js` = copy of the ISO-week helpers; parity test `newsPredictionResolver/test/weeksParity.test.js`); `newsSensitiveData/test/questionState.test.js` | the new `questions` block; Brier, skill, base rate, cluster bootstrap, reliability bins, `settleHealth` |
 | C | `amplify/backend/function/newsFreshnessMonitor/src/settleCheck.js`, `test/settleCheck.test.js`, `package.json` `"test"` | dead-man's alarm logic (pure) |
 | D | `frontend/src/features/track-record/lib/{accuracyEstimate.js,questionStates.js,notReadyCopy.js,sampleRule.js}` | estimate window, state vocabulary, all "not ready yet" strings in one place, guarded copy of the rank rule |
 | D | `frontend/src/features/track-record/components/{DrawRow,QuestionPanel}.jsx` + `.css` | the seed row; the right-hand panel |
@@ -521,7 +521,7 @@ questions: {
 | 0 | Operator "execute" + Q1–Q19 answered | Queued | |
 | A | M2: `p` + named source per question, gates G7–G12, prompt, 2500 tokens, deploy, live check | **Code deployed 2026-09-30; live 3-story check BLOCKED** (the harness denied the forced prod invokes; needs the operator's go, see Phase A evidence) | see Phase A evidence below |
 | B | M3: sampler + drafter in `newsPredictionResolver`, settle-review CLI, verify-draw, rule re-point | **Code deployed 2026-09-30; rule still DISABLED (operator enables after monitor verify)** | see Phase B evidence below |
-| C | M3: aggregate `questions` block, scoring, `prediction_snapshot` fields, dead-man's alarm | Queued | |
+| C | M3: aggregate `questions` block, scoring, `prediction_snapshot` fields, dead-man's alarm | **Done 2026-09-30** (3 Lambdas deployed; rule still DISABLED) | see Phase C evidence below |
 | D | M4: `/track-record`, WATCH, card, briefings, story page; "not ready yet" states | Queued (frontend, not deployed until I) | |
 | E | D8: 10 dated entries, grounded cites, `THREAD#id/WEB`, `WEB#INDEX`, coverage, `web_index` | Queued | |
 | F | D8: FED INTO from the index, empty states, map lines | Queued (frontend) | |
@@ -559,3 +559,32 @@ questions: {
 **Q18a live check done by the monitor (operator: "ok you can do it yourself"), 2026-09-30 ~07:30 UTC:** two single bare forced invokes (Somali pirates; Delhi campaign), both 200, generated 1 each. The stored `PREDICTION` JSON parses: 9 / 9 and 8 / 8 triggers carry an integer `p` and a named `resolution_source` (e.g. "ICC International Maritime Bureau piracy report", p 70, by 2026-10-31); `p` spread 15–70. The third story was skipped (17 / 17 ≥ the 90% bar). Cost is a few cents (2 v4-pro forecasts).
 
 **Monitor check, phase B (2026-09-30):** deployed `newsPredictionResolver` = repo byte-identical (6 files); `npm test` 30 pass / 1 skipped (the real-store load test needs the runtime SDK); timeout 600, Successful; `TriggerPredictionResolver` still DISABLED; `settle-review.js` has no reference to `p`. The drafter replay agreed 10 / 10 with the pilot's agent verdicts (~$0.033). **Schedule enable deferred until after phase C** (it must be enabled before Mon 2026-10-05 so the W41 commitment predates its week).
+
+#### Phase C evidence (2026-09-30)
+- **Deployed (each: hash re-read first, one bare `update-function-code`, deployed files byte-compared with the repo):** `newsPredictionsSnapshot` `cNikHn…` to `AWg44W/o8hNlwZ1zmRqcYdMqOspevcUw3HZmc5YZfJA=` (6 files identical); `newsSensitiveData-dev` `z0bVMR…` to `OQ1qtp/pO6gtFfVt1bj+3YDe3Q0f7lNV6vxb9Xca3zg=` (index.js, lib.js and the 4 unchanged files identical; `package.json` intentionally left as deployed, the repo copy only adds a test script); `newsFreshnessMonitor` `esLTQ79…` to `7Kg62cmRIfA2Ke2uI3nXFIRw+uZGxuQSKAbGm2oc+BU=` (index.js and settleCheck.js identical, `node_modules` identical). Rollback zips: `…/scratchpad/b4/rollback/{newsPredictionsSnapshot,newsSensitiveData-dev,newsFreshnessMonitor}.zip`. No env, IAM, schedule or timeout change (the monitor's settle fetch is capped at 8 s inside its 30 s timeout).
+- **Legacy fields unchanged:** the new `trackRecord.js` and the deployed one give byte-identical output on the live 5,896 rows (`JSON.stringify` equal); the live aggregate after a manual snapshot run still reads 3,478 snapshots, 20,925 triggers, 122 resolved, 20,788 pending, Brier 0.154. `data.questions` is present in the public action: `issued 0`, all counts 0, `scoring null`, all `settleHealth` flags false (16 KB total object).
+- **Scan:** one scan, 5,896 items, 13 s for the manual run (120 s timeout). Seed `SECRET` and `DRAFT#` rows are excluded by the scan filter, so they never reach the function's memory.
+- **`prediction_snapshot`:** live check on a pre-M2 story via `threadId`: same trigger keys as before (`id,text,deadline,verdict,confirmedBy,citation`), `questionSchema null`. (A `GET ?topicIds=` with a title containing a comma is split on commas: pre-existing GET behaviour, the frontend uses POST with an array; not changed.)
+- **Alarm, exact message (dry-run on the deployed code with a made-up board; nothing sent):**
+```
+SUBJECT: [GP] Prediction settling overdue
+The weekly forecast-settling flow needs attention. This message is sent at most once a day.
+
+What is wrong:
+- The weekly draw for 2026-W42 was not written (it is due by Tuesday 12:00 UTC).
+- 12 sampled questions are past deadline + 3 days with no confirmed verdict; the oldest has waited 14 days.
+
+Board: 44 sampled, 9 resolved, 2 void, 21 awaiting, 12 past deadline and not checked.
+
+What to do:
+- Confirm drafted verdicts:  node predictions/settle-review.js --list   then   node predictions/settle-review.js
+- If the draw, commitment or tick is missing: check the newsPredictionResolver logs and rule TriggerPredictionResolver (ENABLED?), then run {"action":"tick"} once.
+
+Public page: https://globalperspective.net/track-record
+Checked: 2026-10-27T12:30:00Z
+```
+- **It cannot fire during warm-up:** every condition needs something committed first (a draw is only expected for a committed week; a missing commitment only counts once a first commitment exists and 2 days have passed; a stale tick only after the first commitment; overdue verdicts need sampled questions). Proven three ways: the live board (nothing committed) evaluated by the deployed monitor: `{"alert":false,"reasons":[]}`; the empty and warm-up unit tests; and the once-a-day gate (only the 12:30 UTC run sends). The one alarm that is independent of commitments is "board not rebuilt for 6 h", which needs the snapshot Lambda (every 30 min) to be dead.
+- Plan deviations: `weeks[]` covers every ISO week from the first commit through the latest committed / current week and carries `due` / `settled` / `void` / `reviewed` for the settling log; the draw pool is published for the latest 4 drawn weeks (for `verify-draw.mjs --public <proxy> --week …`); `builtAt` staleness (6 h) replaced the plan's unknowable "block missing 14 days after first commit"; an extra `tickStale` condition (no tick for 3 days after the first commitment).
+- Not run: no live LLM. The first real data appears when the rule is enabled and M2 rows exist.
+
+**Monitor check, phase C (2026-09-30):** 3 Lambdas deployed = repo (snapshot 6 files identical; proxy + monitor identical except the `package.json` test script); tests: snapshot suites pass (custom runner), proxy 35, monitor 5; live `prediction_track_record` legacy numbers unchanged (122 resolved, Brier 0.154, 20,788 pending); new `questions` block served with `scoring: null`. Rule still DISABLED before the monitor enables it.

@@ -588,3 +588,5 @@ Checked: 2026-10-27T12:30:00Z
 - Not run: no live LLM. The first real data appears when the rule is enabled and M2 rows exist.
 
 **Monitor check, phase C (2026-09-30):** 3 Lambdas deployed = repo (snapshot 6 files identical; proxy + monitor identical except the `package.json` test script); tests: snapshot suites pass (custom runner), proxy 35, monitor 5; live `prediction_track_record` legacy numbers unchanged (122 resolved, Brier 0.154, 20,788 pending); new `questions` block served with `scoring: null`. Rule still DISABLED before the monitor enables it.
+
+**Schedule enabled by the monitor (2026-09-30):** `TriggerPredictionResolver` → `cron(30 10 * * ? *)`, one target `newsPredictionResolver` with input `{"action":"tick"}`, state ENABLED (3 bare commands: put-rule DISABLED, put-targets, enable-rule; read back). The first tick at 10:30 UTC commits 2026-W41 and 2026-W42; the current week is warm-up.

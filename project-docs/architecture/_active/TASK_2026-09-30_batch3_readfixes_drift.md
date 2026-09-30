@@ -142,6 +142,14 @@ None. (Region records already in DynamoDB are **not deleted**; see F.)
 
 ---
 
+
+### Operator answers (2026-09-30): "yes you can do all here with sonnet" (all as the monitor recommended)
+- Q1: fix A on the read side only, no stored repair; the dormant / parked Lambdas are not edited. Q2: keep the frontend `dropRedatedRepeats`. Q3: `latest_daily_brief` also returns `editions[]`, and `/briefings` drops its 14 probes. Q4: explicit-date briefs keep the walk.
+- Q5: one manual `newsPostDevTo` run to verify C. Q6: **D1 + D2** (leader for the 12; capital + population via Wikidata, ~40 countries, free).
+- Q7: a one-off LLM audit of the ~190 stored drift notes (~$0.05); for flagged notes hide the text and show the numbers. Q8: on a second failed check, store the numbers-only sentence + `directionFlag`. Q9: `newsDriftCorrector` timeout 120 → 180 s.
+- Q10: commit a snapshot of the deployed `newsAnalyze` source (after a secrets check). Q11: leave the `newsEmailSender` repo copy undeployed. Q12: the phone country sheet opens at `peek`.
+- Q13: deploy order Lambdas → frontend on `main` (fast-forward) → Worker (operator pastes in the Cloudflare dashboard), **each deploy with its own fresh yes**. Q14: execute A–H.
+
 ## ▶ LIVE TRACKER
 | Phase | What | Status | Evidence |
 |---|---|---|---|

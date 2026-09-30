@@ -3,7 +3,7 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
+const { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
 const { assembleDossier } = require('./dossier');
 const { isCountryName } = require('./placeFilter');
 
@@ -1734,20 +1734,20 @@ async function readArchiveRange(days) {
       TableName: TOPICS_TABLE,
       Key: { id: TOPICS_ITEM_ID },
     }));
-    const todayLabel = latestDayLabel(latestItem);
-    if (todayLabel && latestItem && Array.isArray(latestItem.topics)) {
-      result[todayLabel] = {
-        entries: latestItem.topics.map(t => ({
-          topicId: t.topicId || t.id,
-          title: t.title,
-          category: Array.isArray(t.categories) ? t.categories[0] || '' : (t.category || ''),
-          regions: t.regions || [],
-          sources: t.sources || [],
-          threadId: t.threadId || null,
-        })),
-        source: 'latest',
-        updatedAt: latestItem.updatedAt || latestItem.activatedAt || null,
-      };
+    const latestLabel = latestDayLabel(latestItem);
+    const latestEntries = latestLabel && latestItem && Array.isArray(latestItem.topics) ? latestItem.topics.map(lightEntry) : [];
+    // `latest` is only the NEWEST generation; today's archive row holds every run of the day, so a story from an
+    // earlier run today is served too (union by topicId, `latest` first).
+    const todayDate = formatDateLabel(now);
+    const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: formatArchiveDateKey(now) } }));
+    const todayEntries = Array.isArray(todayRow?.entries) ? todayRow.entries.map(lightEntry) : [];
+    if (latestEntries.length) {
+      const merged = latestLabel === todayDate ? unionByTopicId(latestEntries, todayEntries) : latestEntries;
+      result[latestLabel] = { entries: merged, source: 'latest', updatedAt: latestItem.updatedAt || latestItem.activatedAt || null };
+    }
+    if (todayEntries.length && !result[todayDate]) {
+      // `latest` is stale (or absent): today's entries still come from today's own row, under today's date
+      result[todayDate] = { entries: todayEntries, source: 'archive', updatedAt: todayRow.updatedAt || null };
     }
 
     // Days 1..N: serve from archive#YYYY-MM-DD
@@ -1896,6 +1896,11 @@ async function readNarrativeThread(threadId, days) {
         const latestLabel = latestDayLabel(Item);
         const matched = latestLabel ? (Item?.topics || []).filter(t => t.threadId === threadId) : [];
         entries.push(...matched.map(t => ({ ...t, date: latestLabel, source: 'latest' })));
+        // Today's archive row holds EVERY run of today (`latest` only the newest generation), so a story
+        // from an earlier run today stays reachable until midnight (post-deploy fix, 2026-09-30).
+        const { Item: todayRow } = await client.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: formatArchiveDateKey(date) } }));
+        const fromToday = (todayRow?.entries || []).filter(e => e.threadId === threadId);
+        entries.push(...fromToday.map(e => ({ ...e, date: dateLabel, source: 'archive' })));
       } else {
         // Past days: read from archive#YYYY-MM-DD
         const archiveKey = formatArchiveDateKey(date);

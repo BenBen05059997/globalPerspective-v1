@@ -340,8 +340,8 @@ Read-only REST proxy. All supported actions:
 | `rss` | None (GET) | — | RSS 2.0 XML feed of latest topics |
 | `country_preview` | None | `{ countryName }` | Public SEO preview: headline, bluf, keyDevelopments, riskLevel, trajectory |
 | `thread_preview` | None | `{ threadId }` | Public SEO preview: threadTitle, entryShortTitles |
-| `archive_range` | None (early access) | `{ days }` | N days of archive (member=7, enterprise=90). Day 0 is `latest`, labelled with its own `updatedAt` date (not today; skipped if unparsable) since 2026-09-30 |
-| `narrative_thread` | None (early access) | `{ threadId }` | All entries for a thread across days. Day-0 `latest` entries carry `latest`'s own date; duplicates by `topicId + date` removed |
+| `archive_range` | None (early access) | `{ days }` | N days of archive (member=7, enterprise=90). Day 0 = `latest` (labelled with its own `updatedAt` date, not today; skipped if unparsable) UNION today's `archive#<today>` row (every run of the day; `latest` holds only the newest generation), de-duplicated by `topicId`; `source` stays `latest` when `latest` contributes. Fixed 2026-09-30 (an earlier run's stories vanished until midnight) |
+| `narrative_thread` | None (early access) | `{ threadId }` | All entries for a thread across days. Day 0 = `latest` (its own date) plus today's `archive#<today>` entries for the thread (so a story from an earlier run today stays reachable); duplicates by `topicId + date` removed |
 | `thread_analysis` | None (early access) | `{ threadIds }` | Thread-level AI analyses |
 | `country_intelligence` | None (early access) | `{ countryNames }` | Country-level AI intelligence |
 | `country_facts` | None | `{ countryNames[<=15] }` | Stored Wikidata facts per country: `{ leadership?, capital?, population? }`, each part only with `source` + own as-of (`checkedAt`; population also `year`). Leadership only for the original 12. Added 2026-09-30 (Batch 3 D) |

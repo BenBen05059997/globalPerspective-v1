@@ -90,4 +90,28 @@ function shapeCountryFacts(item) {
   return Object.keys(out).length ? out : null;
 }
 
-module.exports = { shapeCountryFacts, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys };
+// Batch 3 post-deploy fix: `latest` holds only the NEWEST generation, so a story from an earlier run today
+// disappeared from archive_range / narrative_thread until midnight. Day 0 now also reads today's
+// `archive#<today>` row (it holds every run of the day). Light entry = the shape archive_range serves.
+function lightEntry(e) {
+  return {
+    topicId: e.topicId || e.id,
+    title: e.title,
+    category: Array.isArray(e.categories) ? e.categories[0] || '' : (e.category || ''),
+    regions: e.regions || [],
+    sources: e.sources || [],
+    threadId: e.threadId || null,
+  };
+}
+// First occurrence of a topicId wins (pass `latest` first); entries without an id are kept.
+function unionByTopicId(...lists) {
+  const seen = new Set(); const out = [];
+  for (const list of lists) for (const e of Array.isArray(list) ? list : []) {
+    if (!e) continue;
+    if (e.topicId) { if (seen.has(e.topicId)) continue; seen.add(e.topicId); }
+    out.push(e);
+  }
+  return out;
+}
+
+module.exports = { lightEntry, unionByTopicId, shapeCountryFacts, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys };

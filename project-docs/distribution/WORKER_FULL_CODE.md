@@ -76,6 +76,9 @@ function isBotRequest(userAgent) {
   return BOT_PATTERNS.some(pattern => ua.includes(pattern));
 }
 
+// Never pre-rendered for bots (SPA shell only): /analyze/s/<id> share links.
+const NO_PRERENDER = [/^\/analyze\/s(\/|$)/];
+
 function escapeHtml(str) {
   return String(str || '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -260,6 +263,81 @@ async function renderDailyPage(dateKey) {
   }
 }
 
+// /briefings (briefing mode: latest daily edition by default, ?date=YYYY-MM-DD for a specific day, ?mode=weekly for the
+// weekly signals brief). Uses the public proxy actions latest_daily_brief / daily_brief / weekly_brief. Returns null when
+// there is nothing real to show, so the caller falls through to the SPA shell (never an empty or invented page).
+async function proxyData(action, payload) {
+  const res = await fetch(API_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, payload }),
+    cf: { cacheTtl: 1800, cacheEverything: true },
+  });
+  const json = await res.json();
+  return json?.data || null;
+}
+
+async function renderBriefingsPage(searchParams) {
+  try {
+    const weekly = searchParams.get('mode') === 'weekly';
+    const dateParam = searchParams.get('date');
+    const validDate = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : null;
+
+    if (weekly) {
+      const data = await proxyData('weekly_brief', {});
+      const signals = Array.isArray(data?.signals) ? data.signals.filter(s => s && (s.lede || s.fact)) : [];
+      if (!data || !data.weekOf || !signals.length) return null;
+      const title = `Weekly Signals Brief — week of ${data.weekOf}`;
+      const description = signals.slice(0, 3).map(s => s.lede || '').filter(Boolean).join(' • ')
+        || `Weekly signals brief for the week of ${data.weekOf}`;
+      const signalsHtml = `<h2>Signals</h2><ul>${signals.map(s => {
+        const link = typeof s.threadId === 'string' && /^thread-/.test(s.threadId)
+          ? ` <a href="${SITE_URL}/weekly/thread/${encodeURIComponent(s.threadId)}">Story arc</a>` : '';
+        return `<li><strong>${escapeHtml(s.lede || '')}</strong>${s.fact ? ` — ${escapeHtml(s.fact)}` : ''}${s.soWhat ? ` <em>${escapeHtml(s.soWhat)}</em>` : ''}${link}</li>`;
+      }).join('')}</ul>`;
+      const watch = Array.isArray(data.watch) ? data.watch.filter(w => w && w.event) : [];
+      const watchHtml = watch.length
+        ? `<h2>Next week</h2><ul>${watch.map(w => `<li><strong>${escapeHtml(w.event)}</strong>${w.stake ? ` — ${escapeHtml(w.stake)}` : ''}</li>`).join('')}</ul>`
+        : '';
+      return buildBotHtml({
+        title, description, url: `${SITE_URL}/briefings?mode=weekly`, heading: title,
+        bodyHtml: `<p>${escapeHtml(description)}</p>${signalsHtml}${watchHtml}`,
+      });
+    }
+
+    const data = validDate
+      ? await proxyData('daily_brief', { dateKey: validDate })
+      : await proxyData('latest_daily_brief', {});
+    if (!data || !data.headline) return null;
+
+    const title = `${data.headline} — Daily Briefing`;
+    const description = data.summary
+      ? String(data.summary).replace(/\*\*/g, '').substring(0, 200).trim() + '…'
+      : `Global intelligence briefing for ${data.displayDate || data.dateKey || ''}`.trim();
+    const url = validDate ? `${SITE_URL}/briefings?date=${validDate}` : `${SITE_URL}/briefings`;
+
+    const stories = Array.isArray(data.topStories) ? data.topStories.filter(s => s && s.title) : [];
+    const storiesHtml = stories.length
+      ? `<h2>Top Stories</h2><ul>${stories.map(s => {
+          // a story links to its story page only when the brief carries a real thread id (older briefs have none)
+          const t = typeof s.threadId === 'string' && /^thread-/.test(s.threadId)
+            ? `<a href="${SITE_URL}/weekly/thread/${encodeURIComponent(s.threadId)}">${escapeHtml(s.title)}</a>`
+            : escapeHtml(s.title);
+          return `<li><strong>${t}</strong>${s.prediction ? ` — ${escapeHtml(s.prediction)}` : ''}</li>`;
+        }).join('')}</ul>`
+      : '';
+    const watch = data.countryToWatch && data.countryToWatch.countryName
+      ? `<h2>Country to watch</h2><p><a href="${SITE_URL}/weekly/country/${encodeURIComponent(data.countryToWatch.countryName)}">${escapeHtml(data.countryToWatch.countryName)}</a>${data.countryToWatch.headline ? ` — ${escapeHtml(data.countryToWatch.headline)}` : ''}</p>`
+      : '';
+    return buildBotHtml({
+      title, description, url, heading: data.headline,
+      bodyHtml: `<p>${escapeHtml(description)}</p>${storiesHtml}${watch}`,
+    });
+  } catch (err) {
+    return null;
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -323,8 +401,10 @@ export default {
       });
     }
 
-    // Bot pre-rendering
-    if (isBotRequest(userAgent)) {
+    // Bot pre-rendering. Paths in NO_PRERENDER are never pre-rendered (Studio share links: per-reader,
+    // private-by-default content; they get the plain SPA shell through the fallback below, like a human).
+    const skipPrerender = NO_PRERENDER.some((re) => re.test(url.pathname));
+    if (isBotRequest(userAgent) && !skipPrerender) {
       // Root URL: static positioning + page directory (no Lambda call)
       if (url.pathname === '/') {
         return new Response(renderRootPage(), {
@@ -373,6 +453,20 @@ export default {
         const todayKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
         const dateKey = dailyMatch[1] ? decodeURIComponent(dailyMatch[1]) : todayKey;
         const html = await renderDailyPage(dateKey);
+        if (html) {
+          return new Response(html, {
+            headers: {
+              'Content-Type': 'text/html; charset=utf-8',
+              'Cache-Control': 'public, max-age=1800',
+              'X-Rendered-By': 'cf-worker-bot',
+            },
+          });
+        }
+      }
+      // Briefings: /briefings, /briefings?date=YYYY-MM-DD, /briefings?mode=weekly (query strings are read from
+      // url.searchParams; url.pathname never contains them, so the same match serves every variant)
+      if (/^\/briefings\/?$/.test(url.pathname)) {
+        const html = await renderBriefingsPage(url.searchParams);
         if (html) {
           return new Response(html, {
             headers: {
@@ -433,6 +527,10 @@ export default {
 | `/weekly/thread/:id` | `thread_preview` | Thread title, story timeline |
 | `/daily` | `daily_brief` (today) | Headline, summary, top stories with predictions, stats |
 | `/daily/:dateKey` | `daily_brief` (specific date) | Same for that date |
+| `/briefings` | `latest_daily_brief` | Newest daily edition: headline, summary, top stories (each links to `/weekly/thread/<id>` only when the brief carries a real `threadId`), country to watch. **Prepared 2026-09-30, not deployed** |
+| `/briefings?date=YYYY-MM-DD` | `daily_brief` (that date) | Same for that date (a malformed `date` is ignored: the latest edition is shown) |
+| `/briefings?mode=weekly` | `weekly_brief` | The weekly signals brief: signals (lede, fact, so-what, story-arc link) + next-week watch list |
+| `/analyze/s/*` | — | **Never pre-rendered** (`NO_PRERENDER`): bots get the plain SPA shell, like humans |
 | `/data/*` | **S3 world bucket** (SigV4) | JSON data for the map-as-home: `world/latest.json`, `situations/state/<id>.json`, `stories/state/<id>.json`. Not bot-gated — this is the app's data API, edge-cached `s-maxage=300`. `*.member.json` requires a Firebase token (currently fail-closed stub). |
 
 ## Notes
@@ -496,5 +594,11 @@ preview/staging attempt, or immediately after deploy with a fast manual rollback
 6. **`xmllint --noout docs/sitemap.xml`** — confirm the regenerated sitemap (see below) is
    well-formed, and spot-check a sample of its `<loc>` values 200 per the sweep above.
 
-Status: **prepared — awaiting operator deploy yes.** Not pasted into the Cloudflare dashboard, not
-deployed. No `wrangler deploy` run.
+Status: **prepared — awaiting the operator's paste into the Cloudflare dashboard.** Not deployed. No `wrangler deploy` run.
+
+### 2026-09-30 update (Batch 3 / phase I, Worker part) — what changed vs the previous version of this file
+Everything else (S3 `/data/*`, `/rss`, bot patterns, root / thread / country / daily pre-render, the SPA fallback) is unchanged. Added:
+1. `renderBriefingsPage(searchParams)` + helper `proxyData(action, payload)` and a `/briefings` branch inside the bot block (after `/daily`). `/briefings?date=…` and `?mode=weekly` are the same pathname, so one match serves every variant. Nothing real to show (no data, failed call) returns `null` and falls through to the SPA shell; never an empty or invented page.
+2. `NO_PRERENDER = [/^\/analyze\/s(\/|$)/]` gating the bot block, so Studio share links are never pre-rendered.
+3. No change was needed for the SPA fallback: it already answers 200 + the shell for every non-asset path (`/map`, `/briefings`, `/weekly/thread/*`, `/weekly/country/*`, `/track-record/text`, `/analyze/s/*`, any future route). `/sitemap.xml`, `/robots.txt` and other paths with a "." pass through to GitHub Pages unchanged.
+Verified locally (no Cloudflare): the code block extracted to a `.mjs` passes `node --check`, and a stubbed-`fetch` smoke run of 22 request shapes (human and Googlebot UA) gave the expected result for each: `/` bot = pre-render; `/map`, `/briefings`, `/weekly/thread/*`, `/weekly/country/*`, `/track-record/text`, `/economy`, a bogus path = 200 shell (`cf-worker-spa-fallback`); `/briefings`, `?date=`, `?mode=weekly` for a bot = pre-rendered (`cf-worker-bot`), a bad `?date=` falls back to the latest edition; `/analyze/s/abc123` for a bot = shell, no pre-render; `/sitemap.xml`, `/robots.txt`, `/assets/*.js` = pass-through.

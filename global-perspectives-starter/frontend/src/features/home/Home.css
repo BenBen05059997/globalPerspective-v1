@@ -5,6 +5,12 @@
   padding: 0 32px 80px;
   max-width: 780px;
   margin: 0 auto;
+  /* Batch 3 (post-deploy): a grid item with auto margins is sized to its content (fit-content), and the trust
+     strip's auto-fit grid has a min-content of ALL columns at their minimum (3 x 180 + 2 x 12 = 564px), so this
+     column became 596px wide on a 390px phone (and 628px at 601px). A definite width lets it shrink to its
+     grid area; max-width + margin: auto still cap and centre it exactly as before on desktop. */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Left rail must be flex column so Buy Me a Coffee sticks to bottom */
@@ -109,7 +115,7 @@
 /* ── Trust strip (accountability proof, real data only) ──── */
 .home-trust-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); /* min(): never wider than its container */
   gap: 12px;
   max-width: 720px;
   margin: -32px auto 40px;
@@ -499,6 +505,7 @@
 /* ── Mobile ──────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .home-shell .es-center { padding: 0 16px 60px; }
+
   .home-masthead h1 { font-size: 36px; }
   .home-masthead-sub { font-size: 16px; }
   .home-region-hd h2 { font-size: 24px; }

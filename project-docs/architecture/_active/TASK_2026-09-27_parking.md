@@ -55,11 +55,11 @@ Bare single commands; each one verified before the next.
 | 2–3 | Disable the 4 rules, verify each | ✅ 2026-09-28 14:40 UTC | `aws events disable-rule` ×4 (single commands); `describe-rule` → all `DISABLED` |
 | 4 | Signals rule | ⏸ discussion | `newsSignals`: 0 API keys issued, 38 invocations / 30 d (its own daily build). Recommended: park + record "signals v2" (rebuilt on situations / GDACS / country risk / scored forecasts); operator deciding |
 | 5 | Frontend economy surfaces hidden | ✅ 2026-09-28 | Shared flag `shared/lib/economyFlag.js` (`ECONOMY_PARKED`). Hidden: story Economy tab (`?tab=economy` → Overview), country "Economic Disruption" rail, list "Disruption" sort, `/daily` "Economic Footprint", old home disruption links; no `economic_impact*` request fires (Playwright, 7 pages × 2 widths, 0 errors). Verify 742 tests, guards 52/0. `/economy` direct URL unchanged. The country card's GDP / FX row is from the live markets feed, so it's kept |
-| 6 | Next-day check: 0 invocations | **Next (2026-09-29)** | |
+| 6 | Next-day check: 0 invocations | ✅ 2026-09-30 | CloudWatch Invocations since the 2026-09-28 14:41 disable: 0 for all 4 |
 
 **Completion checklist:**
 - [x] 4 rules DISABLED and verified (signals: under discussion)
 - [x] economy surfaces hidden, verified in the browser
-- [ ] next-day invocation check
+- [x] next-day invocation check
 - [x] docs updated (ARCHITECTURE, BACKEND_PLAN, CHANGES, INDEX, memory)
 - [ ] status → done

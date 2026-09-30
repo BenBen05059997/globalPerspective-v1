@@ -128,3 +128,5 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 - Env changes: fetch → merge → write the full map.
 - Never deploy the repo `newsAnalyze` over the patched zip.
 - Each phase gets its own task file with a live tracker; verify after each change.
+
+**Check 2026-09-30:** `newsModelGuard` (2026-09-29 12:00 run) lists live `deepseek-flash`, `deepseek-v4-pro`; findings = 2, both PPA (`PPAfetchMarketNews-dev`, `PPAcomputeWardProfiles-dev` still `deepseek-v4-flash`). All news Lambdas, including `PREDICTION_MODEL`, are clean.

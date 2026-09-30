@@ -6,6 +6,12 @@
   - the forecast prompt asks for `p` and `resolution_source` per trigger; new pure `src/questions.js` gates G7–G12 (`qid` = sha256(pk|sk|id)); `buildGatedScenarios` runs them only when the caller passes the row key, so old callers are unchanged. `PREDICTION_MAX_TOKENS` default 1500 to 2500 (no env change).
   - the log row gains `questionSchema:1`, `regions`, `threadId`, `capture.questions`; nothing is edited after write.
   - tests: 42 pass (`questions.test.js` + existing). Offline replay of all 3,478 stored rows: 20,925 triggers, 20,923 demoted `no_p`, 2 already dropped by G6 (same as before), 0 dropped or kept differently, 20,925 unique `qid`s.
+- **B: M3 weekly settle Lambda** (`newsPredictionResolver`, deployed; repo = deployed, 6 files byte-compared; rollback zip `…/scratchpad/b4/rollback/newsPredictionResolver.zip` = `ezB+B2…`; now `Jkfal5hRwJIKjIF+xG+dcbanOAFqbOtUDV47eRtMdcY=`; timeout 300 to 600 s, env untouched). The legacy proposer is replaced by `tick` / `draw` / `draft` / `status` / `replay`:
+  - weekly seed commitment (sha256 published before the week), reveal at the draw, one question per story ranked by `sha256(seed|qid)`, K = 22, lead 7 to 84 days; immutable `SEED#`, `SAMPLE#`, `Q#`, `SETTLE#` rows in the prediction log (no `p` in any of them).
+  - drafter: Brave (serialized, 429 retry) + `deepseek-v4-pro`, never sees `p`; `yes` needs a verbatim quote found in a result + a second agreeing pass; `no` only after deadline + 3 days.
+  - new `predictions/settle-review.js` (operator confirm CLI, cannot show `p`) and `predictions/verify-draw.mjs`. **The rule `TriggerPredictionResolver` stays DISABLED** (nothing scheduled, nothing committed yet).
+  - tests 30 pass (1 skipped: needs the AWS SDK locally). Q18b replay on 10 archived pilot triggers (no writes): first run 5/5 agreement on the 5 it decided but 4 had 0 search results (Brave rate limit); after serializing Brave and retrying 429: **10/10 agree** (5 yes, 5 no), 30 searches, 15 LLM calls, about $0.033 (whole session about $0.05 with the first run).
+
 
 ## 2026-09-30 (Backend Batch 3, live AWS: read fixes)
 

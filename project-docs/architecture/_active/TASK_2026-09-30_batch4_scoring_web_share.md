@@ -121,8 +121,8 @@ Phase ids: **A** M2 questions at issue · **B** M3 sampler, drafter, confirm CLI
 | A | `…/NewsProjectInvokeAgentLambda/test/questions.test.js`, `test/fixtures/pre-m2-output.json`, `test/fixtures/m2-output.json` | gates; regression on the real pre-M2 output shape (all triggers demoted, none dropped by the new gates) |
 | B | `amplify/backend/function/newsPredictionResolver/src/{lib.js,store.js,search.js,draft.js}` | pure week / seed / rank / eligibility / verdict-window rules; DynamoDB record IO; Brave; drafter prompt + validators |
 | B | `…/newsPredictionResolver/src/package.json` (`"test": "node --test ../test/*.test.js"`) | the resolver has no package.json today |
-| B | `…/newsPredictionResolver/test/{weeks,sample,draft,store}.test.js`, `test/fixtures/*.json` | tests (§1 B) |
-| B | `predictions/settle-review.js` | operator confirm CLI (no `p`, ever) |
+| B | `…/newsPredictionResolver/test/{weeks,sample,draft,store,search,cli}.test.js`, `test/helpers.js` (in-memory store with the real conditional-put semantics) | tests (§2 B); `cli.test.js` also covers `settle-review.js` and `verify-draw.mjs` |
+| B | `predictions/settle-review.js` | operator confirm CLI (no `p`, ever); exports its pure functions for tests |
 | B | `predictions/verify-draw.mjs` | anyone can recompute a published draw from the public aggregate |
 | C | `amplify/backend/function/newsPredictionsSnapshot/src/{questionBoard.js,scoring.js}` + `questionBoard.test.mjs`, `scoring.test.mjs` | the new `questions` block; Brier, skill, base rate, cluster bootstrap, reliability bins, `settleHealth` |
 | C | `amplify/backend/function/newsFreshnessMonitor/src/settleCheck.js`, `test/settleCheck.test.js`, `package.json` `"test"` | dead-man's alarm logic (pure) |
@@ -147,7 +147,7 @@ Phase ids: **A** M2 questions at issue · **B** M3 sampler, drafter, confirm CLI
 | A | `NewsProjectInvokeAgentLambda/src/lib.js` L85 `normalizeTrigger`, L173 `buildGatedScenarios` | carry `p` / `resolution_source`; call `questions.js`; emit `question`, `qid`, `p`, `resolutionSource`, `resolver`; capture counts |
 | A | `NewsProjectInvokeAgentLambda/src/package.json` test script | run both test files |
 | B | `newsPredictionResolver/src/index.js` | **replaced** (legacy proposer removed): actions `tick`, `draw`, `draft`, `status`; every action supports `dryRun` |
-| B | `predictions/V1_RESOLUTION_RUNBOOK.md`, `predictions/review.js` header | runbook now points at the weekly flow; `review.js` marked legacy |
+| B | `predictions/V1_RESOLUTION_RUNBOOK.md`, `predictions/review.js` header | runbook now points at the weekly flow; `review.js` marked legacy (done) |
 | C | `newsPredictionsSnapshot/src/index.js` (projection + `questionBoard`), `src/trackRecord.js` (skip `question:true` triggers in the legacy block) | additive |
 | C | `newsSensitiveData/src/index.js` L697–745 `prediction_snapshot` | triggers gain `qid`, `p`, `source`, `sampled`, `state`; accepts `threadId` (resolved through `readNarrativeThread`) as well as `topicIds` |
 | C | `newsFreshnessMonitor/src/index.js` | run the settle check first, in its own try/catch, once a day |
@@ -520,7 +520,7 @@ questions: {
 |---|---|---|---|
 | 0 | Operator "execute" + Q1–Q19 answered | Queued | |
 | A | M2: `p` + named source per question, gates G7–G12, prompt, 2500 tokens, deploy, live check | **Code deployed 2026-09-30; live 3-story check BLOCKED** (the harness denied the forced prod invokes; needs the operator's go, see Phase A evidence) | see Phase A evidence below |
-| B | M3: sampler + drafter in `newsPredictionResolver`, settle-review CLI, verify-draw, rule re-point | Queued | |
+| B | M3: sampler + drafter in `newsPredictionResolver`, settle-review CLI, verify-draw, rule re-point | **Code deployed 2026-09-30; rule still DISABLED (operator enables after monitor verify)** | see Phase B evidence below |
 | C | M3: aggregate `questions` block, scoring, `prediction_snapshot` fields, dead-man's alarm | Queued | |
 | D | M4: `/track-record`, WATCH, card, briefings, story page; "not ready yet" states | Queued (frontend, not deployed until I) | |
 | E | D8: 10 dated entries, grounded cites, `THREAD#id/WEB`, `WEB#INDEX`, coverage, `web_index` | Queued | |
@@ -539,8 +539,23 @@ questions: {
 - Deploy: one bare `update-function-code` → `CodeSha256` `UPcr5SUSHAld6aHS8Jap3kvPm8YGFFso73aY0mDOfYo=`, `Successful`, 900 s / 512 MB unchanged. Deployed files (7) byte-compared with the repo: identical. `{"dryRun":true}` before and after: 13 topics, `reuse:unchanged 26`, `reuse:once-per-day 13`, model `deepseek-v4-pro` (unchanged).
 - **Not done (blocked):** the 3 forced single-story runs (Q18a, about $0.03). The command was denied by the permission classifier (production invoke that writes; it was also written as a loop, which CLAUDE.md forbids). Not retried in smaller pieces. Needs the operator's explicit go; then three bare `aws lambda invoke … {"topicId":"<id>","action":"prediction","force":true}` calls, followed by a read of each `TOPIC#…/PREDICTION` item (JSON valid, `p` + `resolution_source` on at least 90% of triggers). Candidate stories from the dry-run plan: "Somali Pirates Kill Five Crew Members…-0", "String of Rapes in Delhi…-7", "Israeli Settlers Attack West Bank Village…-6". Otherwise the first scheduled run's rows are the check (next `InvokeNewsAgent` at :05 of a 4-hour slot; but a story already forecast today keeps its old-shape row, so the first new-shape rows appear tomorrow).
 - Docs updated: ARCHITECTURE §2 note + Prediction calibration line; CHANGES.md entry.
+
+#### Phase B evidence (2026-09-30)
+- Base: deployed `newsPredictionResolver` `ezB+B2tnqbXQliK8xpzbOYFQBySbFrx5P4F690EyUDI=` re-read before deploy; rollback zip `…/scratchpad/b4/rollback/newsPredictionResolver.zip` (+ the legacy repo file `newsPredictionResolver.index.repo-legacy.js`).
+- Code (repo): `src/{lib,store,search,draft,index}.js` (index replaced), `src/package.json`; `test/{helpers,weeks,sample,draft,store,search,cli}.test.js`; `predictions/{settle-review.js,verify-draw.mjs}`; runbook + `review.js` header. `npm test`: 30 pass, 1 skipped (`store` real-module load needs the AWS SDK, which only the Lambda runtime has).
+- Plan deviations: (1) the `DRAW` row also stores `pool:[{q,c}]` (eligible qids and story keys, no text, no `p`) so a draw can be re-verified from published data; (2) the tick commits the next two ISO weeks relative to today (bootstrap on Wed 2026-09-30 would commit `2026-W41` and `2026-W42`; the current week is warm-up); (3) `DRAFT_MODEL` is a code default (`deepseek-v4-pro`), not an env var; (4) Brave calls are serialized with 429 retry (found by the replay, below); (5) `verify-draw.mjs` reads the three rows with the AWS CLI or a `--file` until phase C publishes the draw in the aggregate.
+- Deploys (each one bare command; re-checked `CodeSha256` before each): first `JusS9lVo…` (`Successful`, 6 files byte-identical to repo), then after the Brave fix `Jkfal5hRwJIKjIF+xG+dcbanOAFqbOtUDV47eRtMdcY=` (`Successful`, 6 files byte-identical). `update-function-configuration --timeout 600` (300 to 600), env untouched.
+- Dry-runs (one per call, no LLM, no writes): `{"action":"status"}` → 0 commits / sampled / due / verdicts; `{"action":"tick","dryRun":true}` → `wouldCommit ["2026-W41","2026-W42"]`, nothing else; `{"action":"draft","dryRun":true}` → 0 due; `node predictions/settle-review.js --list` → 0 due.
+- **Q18b drafter replay** (`{"action":"replay"}`, no writes; 10 archived pilot triggers, 5 fired + 5 not_fired, benchmark = the pilot's agent-verified verdicts, issue day set to the era-cut date, source "public news reporting"): run 1: 5 decided / 5 agree, 4 `not_yet` because Brave returned 0 results (rate limit under 3 parallel workers), 1 `needs_human` (second pass did not confirm yes); 12 LLM calls, 24 searches, 8,238 + 1,170 tokens, about $0.016. After the fix run 2: **10 decided / 10 agree** (5 yes with a verified quote, 5 no), 15 LLM calls, 30 searches, 19,269 + 2,019 tokens, about $0.033 (40 s). Session total about $0.049 and 54 Brave searches. Caveat: the benchmark is itself an agent verdict, not human ground truth; no question showed `p` (none exists in these items).
+- **Schedule NOT enabled.** `TriggerPredictionResolver` is `DISABLED`, `cron(0 9 * * ? *)`, target input unchanged. Exact commands for the operator (three bare calls, in this order):
+  1. `aws events put-rule --name TriggerPredictionResolver --schedule-expression "cron(30 10 * * ? *)" --state DISABLED --region ap-northeast-1`
+  2. `aws events put-targets --rule TriggerPredictionResolver --targets '[{"Id":"resolver","Arn":"arn:aws:lambda:ap-northeast-1:280362093938:function:newsPredictionResolver","Input":"{\"action\":\"tick\"}"}]' --region ap-northeast-1` (the current target is Id `resolver`, no input today)
+  3. `aws events enable-rule --name TriggerPredictionResolver --region ap-northeast-1`
+  The first enabled tick (10:30 UTC) publishes the first commitments (`2026-W41`, `2026-W42`), which cannot be un-published.
 (Filled in during execution: one block per phase with command outputs, hashes and the browser checks.)
 
 **Monitor check, phase A (2026-09-30 07:27 UTC):** deployed = repo byte-identical (7 files), `npm test` 42/42. The Q18a forced-invoke check was denied by the permission classifier (the agent ran 3 invokes in a loop); it was not retried. Pending: the operator chooses between the forced check and verifying on the scheduled 12:25 UTC run (new topics from 12:15 get the M2 prompt). Rollback zip `8dZ6qH…` ready.
 
 **Q18a live check done by the monitor (operator: "ok you can do it yourself"), 2026-09-30 ~07:30 UTC:** two single bare forced invokes (Somali pirates; Delhi campaign), both 200, generated 1 each. The stored `PREDICTION` JSON parses: 9 / 9 and 8 / 8 triggers carry an integer `p` and a named `resolution_source` (e.g. "ICC International Maritime Bureau piracy report", p 70, by 2026-10-31); `p` spread 15–70. The third story was skipped (17 / 17 ≥ the 90% bar). Cost is a few cents (2 v4-pro forecasts).
+
+**Monitor check, phase B (2026-09-30):** deployed `newsPredictionResolver` = repo byte-identical (6 files); `npm test` 30 pass / 1 skipped (the real-store load test needs the runtime SDK); timeout 600, Successful; `TriggerPredictionResolver` still DISABLED; `settle-review.js` has no reference to `p`. The drafter replay agreed 10 / 10 with the pilot's agent verdicts (~$0.033). **Schedule enable deferred until after phase C** (it must be enabled before Mon 2026-10-05 so the W41 commitment predates its week).

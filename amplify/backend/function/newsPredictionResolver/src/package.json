@@ -1,0 +1,9 @@
+{
+  "name": "newspredictionresolver",
+  "version": "2.0.0",
+  "description": "Weekly prediction settle Lambda: seed commitments, pre-registered draw, agent-drafted verdicts (drafts only; the operator confirms)",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test ../test/*.test.js"
+  }
+}

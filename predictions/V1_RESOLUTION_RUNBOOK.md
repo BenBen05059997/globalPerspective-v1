@@ -1,5 +1,8 @@
 # v1 Prediction Resolution — runbook (Phase 2)
 
+> **Superseded 2026-09-30 (Batch 4 B) for new questions:** resolution is now the weekly sampled flow: the `newsPredictionResolver` Lambda commits a seed, draws ~22 questions a week, and drafts verdicts; you confirm them with `node predictions/settle-review.js` (about an hour a week; `--list` first). Verify a draw with `node predictions/verify-draw.mjs --week <YYYY-Www>`. The text below describes the July pilot's manual loop and stays for reference; `resolve-v1-*.js` only touch `PRED#` rows.
+
+
 The agent-run loop that turns due `methodologyVersion:1` triggers into scored `finalVerdict`s.
 Phase 2 of `PREDICTION_METHODOLOGY_V1_PLAN.md`. Validated by the 2026-07-04 pilot; only the
 capture side (Phase 1) is automated — **resolution is deliberately agent-run**, because reliable

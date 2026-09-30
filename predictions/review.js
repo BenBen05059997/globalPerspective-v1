@@ -2,7 +2,10 @@
 'use strict';
 
 /**
- * predictions/review.js — human confirmation queue for prediction triggers.
+ * predictions/review.js — LEGACY human confirmation queue (scenario-probability era). For the weekly
+ * sampled questions use predictions/settle-review.js.
+ *
+ * Original description:
  *
  * Phase 2 of the prediction-calibration pipeline (hybrid resolution):
  * newsPredictionResolver proposes fired/not_fired/unclear verdicts for triggers

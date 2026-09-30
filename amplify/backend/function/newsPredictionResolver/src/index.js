@@ -1,212 +1,204 @@
 'use strict';
 
-// newsPredictionResolver — daily pass over logged prediction snapshots.
-// For every dated trigger that has come due (deadline <= today) and has no
-// verdict yet, it grounds the question in fresh Brave Search results and asks
-// the LLM to PROPOSE fired/not_fired/unclear + a citation. It never finalizes:
-// the proposal awaits human confirmation via scripts/predictions/review.js
-// (hybrid resolution). Scoring is computed on-read by the proxy track-record
-// action, so this Lambda only writes proposals.
+// newsPredictionResolver — the weekly prediction SETTLE Lambda (Batch 4 phase B).
+// It replaced the legacy proposer (which scored at scenario probability). Actions:
+//   tick    daily 10:30 UTC, idempotent: commit next weeks' seeds, draw every ended week, on Mondays
+//           run the draft pass, write a heartbeat. No LLM except in the Monday draft pass.
+//   draw    {weekId, dryRun}   reveal + draw one ended week (normally done by tick)
+//   draft   {limit, dryRun}    agent drafts for sampled questions past their deadline
+//   status  read-only counts
+//   replay  {items:[…]}        run the drafter on supplied questions, NO writes (validation only)
+// dryRun = no LLM, no writes. Records: SEED#<week>/{COMMIT,SECRET,REVEAL}, SAMPLE#<week>/DRAW,
+// Q#<qid>/{SAMPLED,DRAFT#<iso>,VERDICT}, SETTLE#<week>/TICK#<iso>; all immutable.
+// The drafter never sees a question's probability (see draft.js).
 
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, ScanCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const lib = require('./lib');
+const { draftQuestion } = require('./draft');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
-const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY || '';
-const BRAVE_NEWS_ENDPOINT = 'https://api.search.brave.com/res/v1/news/search';
-const BRAVE_WEB_ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
-
-// LLM config reuses the GROK_*/XAI_API_KEY env-var names the rest of the repo
-// uses; in production they hold DeepSeek values (see ARCHITECTURE.md note).
 const LLM_KEY = process.env.XAI_API_KEY || '';
-const LLM_ENDPOINT = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
-const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-flash';
+const LLM_URL_RAW = process.env.GROK_API_URL || 'https://api.deepseek.com';
+const DRAFT_MODEL = process.env.DRAFT_MODEL || 'deepseek-v4-pro'; // Q6: judgment on evidence; not the GROK_MODEL (flash)
+const DRAFT_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '3', 10);
+const DEFAULT_DRAFT_LIMIT = parseInt(process.env.MAX_RESOLVE_PER_RUN || '40', 10);
+const REDRAFT_AFTER_DAYS = 5;
 
-const MAX_RESOLVE_PER_RUN = parseInt(process.env.MAX_RESOLVE_PER_RUN || '40', 10);
-const LLM_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '3', 10);
-
-const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }), {
-  marshallOptions: { removeUndefinedValues: true },
-});
-
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
+const LLM_URL = LLM_URL_RAW.endsWith('/chat/completions') ? LLM_URL_RAW : `${LLM_URL_RAW.replace(/\/$/, '')}/chat/completions`;
 
 async function mapWithConcurrency(items, limit, worker) {
   const out = new Array(items.length);
-  let idx = 0;
-  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (idx < items.length) {
-      const i = idx++;
-      out[i] = await worker(items[i], i);
-    }
-  });
-  await Promise.all(runners);
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) { const k = i++; out[k] = await worker(items[k], k); }
+  }));
   return out;
 }
 
-async function scanOpenSnapshots() {
-  const items = [];
-  let ExclusiveStartKey;
-  do {
-    const res = await ddb.send(new ScanCommand({
-      TableName: LOG_TABLE,
-      FilterExpression: '#s = :open',
-      ExpressionAttributeNames: { '#s': 'status' },
-      ExpressionAttributeValues: { ':open': 'open' },
-      ExclusiveStartKey,
-    }));
-    items.push(...(res.Items || []));
-    ExclusiveStartKey = res.LastEvaluatedKey;
-  } while (ExclusiveStartKey);
-  return items;
+// Group the Q# rows by qid.
+function groupQuestions(rows) {
+  const by = new Map();
+  for (const r of rows || []) {
+    const qid = String(r.PK).slice(2);
+    const g = by.get(qid) || { qid, sampled: null, drafts: [], verdicts: [] };
+    if (r.SK === 'SAMPLED') g.sampled = r;
+    else if (String(r.SK).startsWith('DRAFT#')) g.drafts.push(r);
+    else if (String(r.SK).startsWith('VERDICT')) g.verdicts.push(r);
+    by.set(qid, g);
+  }
+  return [...by.values()];
 }
 
-async function searchForContext(query) {
-  if (!BRAVE_API_KEY) return [];
-  const results = [];
-  try {
-    const url = `${BRAVE_NEWS_ENDPOINT}?q=${encodeURIComponent(query)}&count=5&search_lang=en&freshness=pm`;
-    const resp = await fetch(url, { headers: { Accept: 'application/json', 'X-Subscription-Token': BRAVE_API_KEY } });
-    if (resp.ok) {
+async function ensureCommits(deps, today, dryRun, out) {
+  const cur = lib.weekOf(today);
+  for (const n of [1, 2]) {
+    const wk = lib.addWeeks(cur, n);
+    if (await deps.store.get(`SEED#${wk}`, 'COMMIT')) continue;
+    if (dryRun) { out.wouldCommit.push(wk); continue; }
+    let secret = await deps.store.get(`SEED#${wk}`, 'SECRET');
+    if (!secret) {
+      const seedHex = lib.newSeed();
+      await deps.store.putOnce({ PK: `SEED#${wk}`, SK: 'SECRET', seedHex, createdAt: deps.now() });
+      secret = await deps.store.get(`SEED#${wk}`, 'SECRET');
+    }
+    const ok = await deps.store.putOnce({
+      PK: `SEED#${wk}`, SK: 'COMMIT', weekId: wk, weekStart: lib.weekStart(wk), weekEnd: lib.weekEnd(wk),
+      commitHash: lib.commitOf(secret.seedHex), rule: lib.RULE, committedAt: deps.now(),
+    });
+    if (ok) out.committed.push(wk);
+  }
+}
+
+async function drawWeek(deps, commit, dryRun, out) {
+  const wk = commit.weekId;
+  if (await deps.store.get(`SAMPLE#${wk}`, 'DRAW')) return;
+  const secret = await deps.store.get(`SEED#${wk}`, 'SECRET');
+  if (!secret) { out.errors.push(`${wk}: seed secret missing, cannot draw (a new seed is never invented)`); return; }
+  if (lib.commitOf(secret.seedHex) !== commit.commitHash) { out.errors.push(`${wk}: seed does not match the published commitment`); return; }
+  const rows = await deps.store.predRows(commit.weekStart, commit.weekEnd);
+  const eligible = lib.eligibleQuestions(rows, wk);
+  const res = lib.draw(secret.seedHex, eligible.map((q) => ({ qid: q.qid, clusterKey: q.clusterKey })), lib.SAMPLE_K);
+  const summary = { weekId: wk, eligible: res.eligible, clusters: res.clusters, picked: res.picked.length };
+  if (dryRun) { out.wouldDraw.push(summary); return; }
+  const now = deps.now();
+  await deps.store.putOnce({ PK: `SEED#${wk}`, SK: 'REVEAL', weekId: wk, seedHex: secret.seedHex, revealedAt: now });
+  await deps.store.putOnce({
+    PK: `SAMPLE#${wk}`, SK: 'DRAW', weekId: wk, rule: lib.RULE, K: lib.SAMPLE_K,
+    eligible: res.eligible, clusters: res.clusters,
+    pool: eligible.map((q) => ({ q: q.qid, c: q.clusterKey })),
+    picked: res.picked, drawnAt: now,
+  });
+  const byQ = new Map(eligible.map((q) => [q.qid, q]));
+  for (const p of res.picked) {
+    const q = byQ.get(p.qid);
+    await deps.store.putOnce({
+      PK: `Q#${p.qid}`, SK: 'SAMPLED', qid: p.qid, weekId: wk, hash: p.h, clusterKey: p.clusterKey,
+      pk: q.pk, sk: q.sk, triggerId: q.triggerId, question: q.question, deadline: q.deadline,
+      resolutionSource: q.resolutionSource, storyTitle: q.storyTitle, issuedAt: q.issuedAt, drawnAt: now, // no probability, by design
+    });
+  }
+  out.drawn.push(summary);
+}
+
+async function draftPass(deps, today, limit, dryRun, out) {
+  const groups = groupQuestions(await deps.store.listQuestionRows());
+  const cutoff = lib.addDays(today, -REDRAFT_AFTER_DAYS);
+  const due = groups
+    .filter((g) => g.sampled && g.verdicts.length === 0 && lib.isDue(g.sampled.deadline, today))
+    .filter((g) => !g.drafts.some((d) => String(d.SK).slice(6, 16) > cutoff))
+    .sort((a, b) => String(a.sampled.deadline).localeCompare(String(b.sampled.deadline)))
+    .slice(0, limit);
+  out.dueForDraft = due.length;
+  if (dryRun) { out.wouldDraft = due.map((g) => ({ qid: g.qid, deadline: g.sampled.deadline })); return; }
+  await mapWithConcurrency(due, DRAFT_CONCURRENCY, async (g) => {
+    const d = await draftQuestion(g.sampled, deps);
+    const at = deps.now();
+    await deps.store.putOnce({ PK: `Q#${g.qid}`, SK: `DRAFT#${at}`, qid: g.qid, ...d, model: deps.draftModel, at });
+    out.drafted.push({ qid: g.qid, verdict: d.verdict });
+  });
+}
+
+async function run(event, deps) {
+  const action = (event && event.action) || 'tick';
+  const dryRun = Boolean(event && event.dryRun);
+  const now = deps.now();
+  const today = String(now).slice(0, 10);
+  const out = { action, dryRun, today, committed: [], wouldCommit: [], drawn: [], wouldDraw: [], drafted: [], errors: [] };
+
+  if (action === 'status') {
+    const commits = await deps.store.listCommits();
+    const groups = groupQuestions(await deps.store.listQuestionRows());
+    return {
+      ...out, commits: commits.map((c) => c.weekId).sort(),
+      sampled: groups.filter((g) => g.sampled).length,
+      due: groups.filter((g) => g.sampled && g.verdicts.length === 0 && lib.isDue(g.sampled.deadline, today)).length,
+      drafted: groups.filter((g) => g.drafts.length).length,
+      verdicts: groups.filter((g) => g.verdicts.length).length,
+    };
+  }
+
+  if (action === 'replay') {
+    const items = Array.isArray(event.items) ? event.items.slice(0, 20) : [];
+    out.results = await mapWithConcurrency(items, DRAFT_CONCURRENCY, async (q) => ({ ...(await draftQuestion(q, deps)) }));
+    out.usage = deps.usage ? deps.usage() : null;
+    return out;
+  }
+
+  if (action === 'tick' || action === 'draw') {
+    if (action === 'tick') await ensureCommits(deps, today, dryRun, out);
+    const commits = await deps.store.listCommits();
+    for (const c of commits.sort((a, b) => a.weekId.localeCompare(b.weekId))) {
+      if (action === 'draw' && event.weekId && event.weekId !== c.weekId) continue;
+      if (lib.weekEnd(c.weekId) < today) await drawWeek(deps, c, dryRun, out);
+    }
+  }
+
+  if (action === 'draft' || (action === 'tick' && (lib.isMonday(today) || event.draft))) {
+    await draftPass(deps, today, Number(event.limit) || DEFAULT_DRAFT_LIMIT, dryRun, out);
+  }
+
+  if (action === 'tick' && !dryRun) {
+    await deps.store.putOnce({
+      PK: `SETTLE#${lib.weekOf(today)}`, SK: `TICK#${now}`, at: now,
+      committed: out.committed, drawn: out.drawn.map((d) => d.weekId), drafted: out.drafted.length, errors: out.errors,
+    });
+  }
+  if (out.errors.length) console.error('settle errors', JSON.stringify(out.errors));
+  console.log('settle', JSON.stringify({ action, dryRun, committed: out.committed, drawn: out.drawn.length, drafted: out.drafted.length, wouldCommit: out.wouldCommit, wouldDraw: out.wouldDraw.length }));
+  return out;
+}
+
+function defaultDeps() {
+  const { makeStore } = require('./store');
+  const { makeSearch } = require('./search');
+  const search0 = makeSearch(process.env.BRAVE_SEARCH_API_KEY || '');
+  const usage = { llmCalls: 0, searches: 0, promptTokens: 0, completionTokens: 0 };
+  return {
+    now: () => new Date().toISOString(),
+    store: makeStore(LOG_TABLE, REGION),
+    draftModel: DRAFT_MODEL,
+    usage: () => ({ ...usage, model: DRAFT_MODEL }),
+    search: async (q) => { usage.searches++; return search0(q); },
+    async llm(prompt) {
+      if (!LLM_KEY) throw new Error('LLM key is not configured');
+      const resp = await fetch(LLM_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LLM_KEY}` },
+        body: JSON.stringify({
+          model: DRAFT_MODEL, messages: [{ role: 'user', content: prompt }], temperature: 0.1, max_tokens: 500,
+          response_format: { type: 'json_object' }, thinking: { type: 'disabled' },
+        }),
+      });
+      if (!resp.ok) throw new Error(`LLM ${resp.status}: ${(await resp.text()).slice(0, 160)}`);
       const data = await resp.json();
-      for (const r of (data?.results || []).slice(0, 5)) {
-        results.push({
-          title: r.title || '',
-          snippet: r.description || '',
-          source: r.meta_url?.hostname || (r.url || '').split('/')[2] || 'unknown',
-          url: r.url || '',
-          age: r.age || '',
-        });
-      }
-    }
-  } catch (err) {
-    console.warn('Brave news search failed:', err.message);
-  }
-  if (results.length < 2) {
-    try {
-      const url = `${BRAVE_WEB_ENDPOINT}?q=${encodeURIComponent(query)}&count=4&search_lang=en&text_decorations=false`;
-      const resp = await fetch(url, { headers: { Accept: 'application/json', 'X-Subscription-Token': BRAVE_API_KEY } });
-      if (resp.ok) {
-        const data = await resp.json();
-        for (const r of (data?.web?.results || []).slice(0, 4)) {
-          const source = r.meta_url?.hostname || (r.url || '').split('/')[2] || 'unknown';
-          if (results.some(x => x.source === source)) continue;
-          results.push({ title: r.title || '', snippet: r.description || (r.extra_snippets || [])[0] || '', source, url: r.url || '', age: '' });
-        }
-      }
-    } catch (err) {
-      console.warn('Brave web search failed:', err.message);
-    }
-  }
-  return results.slice(0, 6);
+      usage.llmCalls++;
+      usage.promptTokens += data?.usage?.prompt_tokens || 0;
+      usage.completionTokens += data?.usage?.completion_tokens || 0;
+      return JSON.parse(data?.choices?.[0]?.message?.content || '{}');
+    },
+  };
 }
 
-async function invokeLLM(prompt) {
-  if (!LLM_KEY) throw new Error('XAI_API_KEY (LLM key) is not configured');
-  const resp = await fetch(LLM_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LLM_KEY}` },
-    body: JSON.stringify({
-      model: LLM_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.1,
-      max_tokens: 400,
-      response_format: { type: 'json_object' },
-      // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
-      // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
-      thinking: { type: 'disabled' },
-    }),
-  });
-  if (!resp.ok) throw new Error(`LLM ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
-  const data = await resp.json();
-  const text = data?.choices?.[0]?.message?.content || '';
-  return JSON.parse(text);
-}
-
-function buildVerdictPrompt(topicTitle, trigger, context) {
-  const ctx = context.length
-    ? context.map((c, i) => `[${i + 1}] (${c.source}${c.age ? ', ' + c.age : ''}) ${c.title}: ${c.snippet}`).join('\n')
-    : '(no search results found)';
-  return [
-    'You verify whether a specific forecast trigger actually occurred. Respond with ONLY valid JSON, no markdown.',
-    '',
-    `Today's date: ${today()}.`,
-    `Story context: ${topicTitle}`,
-    `Trigger to verify: "${trigger.text}"`,
-    `It was forecast to occur by: ${trigger.deadline}.`,
-    '',
-    'Recent search results:',
-    ctx,
-    '',
-    'Based ONLY on the search results above, did this trigger occur on or before its deadline? Do not use prior knowledge or assumptions — if the results do not clearly establish it either way, answer "unclear".',
-    'Return exactly: {"verdict":"fired|not_fired|unclear","confidence":0.0-1.0,"citation":"source hostname or short quote backing the verdict","reasoning":"1-2 sentences"}',
-  ].join('\n');
-}
-
-// Gather triggers needing a proposal: due (deadline <= today), no existing
-// proposal, no human-confirmed final verdict.
-function dueTriggers(item) {
-  const t = today();
-  const due = [];
-  for (const s of item.scenarios || []) {
-    for (const trig of s.triggers || []) {
-      if (!trig.deadline) continue;
-      if (trig.finalVerdict) continue;
-      if (trig.proposal) continue;
-      if (trig.deadline <= t) due.push({ scenario: s, trigger: trig });
-    }
-  }
-  return due;
-}
-
-exports.handler = async () => {
-  const snapshots = await scanOpenSnapshots();
-  console.log(`Scanned ${snapshots.length} open snapshots`);
-
-  // Flatten all due triggers across snapshots, cap per run.
-  const work = [];
-  for (const item of snapshots) {
-    for (const d of dueTriggers(item)) {
-      work.push({ item, scenario: d.scenario, trigger: d.trigger });
-      if (work.length >= MAX_RESOLVE_PER_RUN) break;
-    }
-    if (work.length >= MAX_RESOLVE_PER_RUN) break;
-  }
-  console.log(`${work.length} due triggers to propose (cap ${MAX_RESOLVE_PER_RUN})`);
-
-  if (!work.length) return { proposed: 0, snapshots: snapshots.length };
-
-  let proposed = 0;
-  await mapWithConcurrency(work, LLM_CONCURRENCY, async (w) => {
-    try {
-      const ctx = await searchForContext(`${w.item.title} ${w.trigger.text}`);
-      const v = await invokeLLM(buildVerdictPrompt(w.item.title, w.trigger, ctx));
-      w.trigger.proposal = {
-        verdict: ['fired', 'not_fired', 'unclear'].includes(v.verdict) ? v.verdict : 'unclear',
-        confidence: typeof v.confidence === 'number' ? v.confidence : null,
-        citation: (v.citation || '').toString().slice(0, 400),
-        reasoning: (v.reasoning || '').toString().slice(0, 600),
-        sources: ctx.map(c => ({ source: c.source, url: c.url })).slice(0, 6),
-        proposedAt: new Date().toISOString(),
-      };
-      w.trigger.needsConfirm = true;
-      proposed++;
-    } catch (err) {
-      console.warn(`Verdict failed for trigger "${(w.trigger.text || '').slice(0, 50)}": ${err.message}`);
-    }
-  });
-
-  // Persist mutated snapshots (dedupe by PK+SK).
-  const touched = new Map();
-  for (const w of work) touched.set(`${w.item.PK}|${w.item.SK}`, w.item);
-  for (const item of touched.values()) {
-    item.lastResolvedAt = new Date().toISOString();
-    await ddb.send(new PutCommand({ TableName: LOG_TABLE, Item: item }));
-  }
-
-  console.log(`Proposed ${proposed} verdicts across ${touched.size} snapshots`);
-  return { proposed, snapshots: snapshots.length, touched: touched.size };
-};
+exports.run = run;
+exports.groupQuestions = groupQuestions;
+exports.handler = async (event = {}) => run(event, defaultDeps());

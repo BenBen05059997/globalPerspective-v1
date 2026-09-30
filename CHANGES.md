@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+## 2026-09-30 (Backend Batch 4, live AWS: scoring M2)
+
+- **A: M2 per-question probability + named source** (`NewsProjectInvokeAgentLambda-dev`, deployed; repo = deployed, all 7 files byte-compared; rollback zip `…/scratchpad/b4/rollback/NewsProjectInvokeAgentLambda-dev.zip`, `CodeSha256` before `8dZ6qH…`, after `UPcr5S…`):
+  - the forecast prompt asks for `p` and `resolution_source` per trigger; new pure `src/questions.js` gates G7–G12 (`qid` = sha256(pk|sk|id)); `buildGatedScenarios` runs them only when the caller passes the row key, so old callers are unchanged. `PREDICTION_MAX_TOKENS` default 1500 to 2500 (no env change).
+  - the log row gains `questionSchema:1`, `regions`, `threadId`, `capture.questions`; nothing is edited after write.
+  - tests: 42 pass (`questions.test.js` + existing). Offline replay of all 3,478 stored rows: 20,925 triggers, 20,923 demoted `no_p`, 2 already dropped by G6 (same as before), 0 dropped or kept differently, 20,925 unique `qid`s.
+
 ## 2026-09-30 (Backend Batch 3, live AWS: read fixes)
 
 - **Cloudflare Worker deployed** (code only; secrets / routes untouched):

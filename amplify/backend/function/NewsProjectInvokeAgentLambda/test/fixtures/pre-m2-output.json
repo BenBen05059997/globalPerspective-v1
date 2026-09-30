@@ -1,0 +1,168 @@
+[
+ {
+  "pk": "PRED#String of Rapes in Delhi Triggers Social Campaign for Women's Safety-7",
+  "sk": "2026-09-30",
+  "raw": {
+   "scenarios": [
+    {
+     "label": "Most Likely",
+     "probability_range": "55-65%",
+     "horizon": "2-6 weeks",
+     "rationale": "The Delhi Commission for Women will escalate pressure on Delhi Police through public summons and demand CCTV/street-lighting audits, while the Ministry of Home Affairs directs Delhi Police to announce a visible safety package and fast-track arrests. Protests will persist but remain largely peaceful, forcing incremental administrative action rather than immediate legislative change. This mirrors the post-Nirbhaya pattern where sustained public pressure produced a committee and policy announcements within weeks, though full legal reform took months.",
+     "triggers": [
+      {
+       "text": "Delhi Police announces a new women's safety action plan including increased night patrols and CCTV installation targets",
+       "deadline": "2026-11-15"
+      },
+      {
+       "text": "Delhi Commission for Women issues a formal summons to the Delhi Police Commissioner demanding a status report on the rape cases",
+       "deadline": "2026-10-31"
+      }
+     ]
+    },
+    {
+     "label": "Optimistic",
+     "probability_range": "15-20%",
+     "horizon": "4-12 weeks",
+     "rationale": "The Ministry of Home Affairs, facing sustained protests and DCW pressure, would need to act decisively by ordering a high-level inquiry and transferring oversight of the investigation to a special fast-track team. The Delhi Police would need to make swift arrests and secure convictions through expedited forensic processing, while the central government announces a new fast-track court for sexual assault cases in Delhi. This would require the Home Ministry to override Delhi Police's usual jurisdictional friction and allocate emergency resources.",
+     "triggers": [
+      {
+       "text": "Ministry of Home Affairs announces a special fast-track court dedicated to the Delhi rape cases",
+       "deadline": "2026-12-31"
+      },
+      {
+       "text": "Delhi Police arrests all identified suspects in the string of rape cases",
+       "deadline": "2026-11-30"
+      }
+     ]
+    },
+    {
+     "label": "Pessimistic",
+     "probability_range": "20-25%",
+     "horizon": "2-8 weeks",
+     "rationale": "Delhi Police's chronic understaffing and low conviction rates could lead to botched investigations or delayed arrests, triggering escalation of protests into violent clashes with police. If the DCW's summons are ignored or dismissed, public anger could intensify, and the Union Home Ministry's direct control of Delhi Police could become a political flashpoint. A repeat of the Hathras pattern—where evidence mishandling and witness hostility led to acquittals—would further erode trust and prolong unrest.",
+     "triggers": [
+      {
+       "text": "Protesters clash with Delhi Police at India Gate, resulting in use of water cannons or tear gas",
+       "deadline": "2026-11-15"
+      }
+     ]
+    }
+   ],
+   "winners": [],
+   "losers": []
+  }
+ },
+ {
+  "pk": "PRED#Evan Gershkovich Reveals Details of 16-Month Russian Imprisonment, Says He Was a 'Pawn in a Greater Game'-5",
+  "sk": "2026-09-30",
+  "raw": {
+   "scenarios": [
+    {
+     "label": "Most Likely",
+     "probability_range": "60-70%",
+     "horizon": "3-6 months",
+     "rationale": "Gershkovich's public account will reinforce U.S. diplomatic and media pressure on Russia, but no immediate policy shift is likely. The Trump administration will use the narrative to bolster its tough-on-Russia messaging ahead of the November 2026 midterms, while Russia will continue to deny wrongdoing and may issue counter-statements through state media. The G20 Summit in November 2026 is the most plausible venue for any behind-the-scenes U.S.-Russia discussion on detainee issues, but no formal breakthrough is expected before year-end.",
+     "triggers": [
+      {
+       "text": "The U.S. State Department issues a formal statement condemning Russia's detention of journalists and calling for the release of all remaining Western detainees.",
+       "deadline": "2026-10-31"
+      },
+      {
+       "text": "A U.S. and Russian official hold a bilateral meeting on the sidelines of the G20 Summit in the United States.",
+       "deadline": "2026-11-16"
+      }
+     ]
+    },
+    {
+     "label": "Optimistic",
+     "probability_range": "15-20%",
+     "horizon": "3-6 months",
+     "rationale": "Trump could leverage Gershkovich's high-profile account to push for a new prisoner swap or confidence-building measure with Russia, especially if he sees a foreign policy win as valuable before the midterms. Putin might agree to a symbolic gesture—such as allowing consular access to other detained Westerners or releasing a low-profile detainee—to test U.S. willingness to ease certain sanctions. This would require the FSB to accept a temporary reduction in its leverage pipeline, which is possible if the Kremlin prioritizes diplomatic signaling over hardline domestic optics.",
+     "triggers": [
+      {
+       "text": "The U.S. and Russia announce a new prisoner exchange involving at least one Western detainee held in Russia.",
+       "deadline": "2027-01-31"
+      },
+      {
+       "text": "The U.S. Treasury issues a license or waiver easing a specific sanctions provision related to Russian state media or a designated individual.",
+       "deadline": "2027-02-28"
+      }
+     ]
+    },
+    {
+     "label": "Pessimistic",
+     "probability_range": "15-20%",
+     "horizon": "3-6 months",
+     "rationale": "Russia could respond to Gershkovich's account by intensifying its crackdown on foreign journalists, possibly detaining another Western reporter or escalating legal pressure on remaining U.S. media personnel in Russia. The FSB may calculate that the U.S. midterm elections make the Trump administration less likely to retaliate forcefully, while domestic hardliners in Moscow would welcome a show of strength. This could trigger new U.S. sanctions or expulsions, further freezing any detainee negotiations.",
+     "triggers": [
+      {
+       "text": "Russian authorities detain or arrest another Western journalist or U.S. citizen on espionage or related charges.",
+       "deadline": "2027-01-31"
+      },
+      {
+       "text": "The U.S. imposes new sanctions on Russian individuals or entities specifically citing the detention of journalists as a reason.",
+       "deadline": "2027-03-29"
+      }
+     ]
+    }
+   ],
+   "winners": [],
+   "losers": []
+  }
+ },
+ {
+  "pk": "PRED#South Korea Demands Apology from North Korea for Landmine Blasts Injuring Three Soldiers in DMZ-1",
+  "sk": "2026-09-30",
+  "raw": {
+   "scenarios": [
+    {
+     "label": "Most Likely",
+     "probability_range": "55-65%",
+     "horizon": "2-4 weeks",
+     "rationale": "South Korea will publicly demand an apology and resume or threaten loudspeaker broadcasts, while North Korea will issue a limited statement of regret similar to 2015, stopping short of a full apology. President Lee Jae-myung will face domestic pressure to appear strong but will ultimately accept a face-saving compromise to avoid escalation. The US will encourage de-escalation behind the scenes.",
+     "triggers": [
+      {
+       "text": "North Korea issues an official statement expressing regret over the DMZ landmine injuries",
+       "deadline": "2026-10-28"
+      },
+      {
+       "text": "South Korea resumes loudspeaker propaganda broadcasts along the DMZ",
+       "deadline": "2026-10-21"
+      }
+     ]
+    },
+    {
+     "label": "Optimistic",
+     "probability_range": "15-20%",
+     "horizon": "1-2 weeks",
+     "rationale": "Kim Jong-un could issue a formal apology and agree to joint demining or military talks, seeking to reduce tensions and extract economic or humanitarian concessions. President Lee Jae-myung would need to accept the apology without additional demands, and the US would need to support a rapid diplomatic off-ramp.",
+     "triggers": [
+      {
+       "text": "North Korea issues a formal apology and proposes military-to-military talks on DMZ safety",
+       "deadline": "2026-10-14"
+      }
+     ]
+    },
+    {
+     "label": "Pessimistic",
+     "probability_range": "20-25%",
+     "horizon": "2-6 weeks",
+     "rationale": "North Korea denies involvement and South Korea escalates with sustained loudspeaker broadcasts and possible artillery drills, leading to a border clash similar to August 2015. A miscalculation by a frontline unit or North Korean artillery fire across the border could trigger a cycle of retaliation before high-level talks can occur.",
+     "triggers": [
+      {
+       "text": "North Korea fires artillery across the DMZ in response to South Korean broadcasts",
+       "deadline": "2026-11-13"
+      },
+      {
+       "text": "South Korea announces new unilateral sanctions on North Korean entities",
+       "deadline": "2026-10-28"
+      }
+     ]
+    }
+   ],
+   "winners": [],
+   "losers": []
+  }
+ }
+]

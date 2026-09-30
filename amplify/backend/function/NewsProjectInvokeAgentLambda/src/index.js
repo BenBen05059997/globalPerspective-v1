@@ -9,6 +9,7 @@ const {
   GetCommand,
   ScanCommand,
   BatchWriteCommand,
+  QueryCommand,
   UpdateCommand,
 } = require('@aws-sdk/lib-dynamodb');
 
@@ -18,7 +19,7 @@ const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only;
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const DEFAULT_MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '600', 10);
-const PREDICTION_MAX_TOKENS = parseInt(process.env.PREDICTION_MAX_TOKENS || '1500', 10);
+const PREDICTION_MAX_TOKENS = parseInt(process.env.PREDICTION_MAX_TOKENS || '2500', 10);
 const DEFAULT_TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
 const DEFAULT_TOP_P = Number(process.env.TOP_P || '0.9');
 
@@ -521,8 +522,8 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
       "horizon": "string — e.g. '2-4 weeks'",
       "rationale": "string — 2-4 sentences grounded in the research briefing, naming specific actors and mechanisms",
       "triggers": [
-        { "text": "specific falsifiable FUTURE event", "deadline": "YYYY-MM-DD" },
-        { "text": "...", "deadline": "YYYY-MM-DD" }
+        { "text": "specific falsifiable FUTURE event", "deadline": "YYYY-MM-DD", "p": 0, "resolution_source": "the specific public record that will settle it" },
+        { "text": "...", "deadline": "YYYY-MM-DD", "p": 0, "resolution_source": "..." }
       ]
     },
     {
@@ -530,14 +531,14 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
       "probability_range": "string",
       "horizon": "string",
       "rationale": "string — name which actors from the briefing would need to act differently",
-      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD" } ]
+      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD", "p": 0, "resolution_source": "..." } ]
     },
     {
       "label": "Pessimistic",
       "probability_range": "string",
       "horizon": "string",
       "rationale": "string — name the specific miscalculation or trigger from the briefing",
-      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD" } ]
+      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD", "p": 0, "resolution_source": "..." } ]
     }
   ],
   "winners": ["string — country, industry, or leader name"],
@@ -545,10 +546,13 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
 }`,
     '',
     'TRIGGER RULES (a trigger we cannot score is worthless — follow exactly):',
-    `- deadline MUST be an absolute date in YYYY-MM-DD form, strictly AFTER ${today} and on/before ${horizonEnd}.`,
+    `- deadline MUST be an absolute date in YYYY-MM-DD form, strictly AFTER ${today} and on/before ${horizonEnd}. Prefer deadlines 14 to 84 days after today; go longer only for a dated scheduled event.`,
     '- The trigger must describe a FUTURE event that has NOT happened yet — never restate something already reported in the briefing or snippets (that is not a prediction).',
     '- If a claim has a window ("within 2 weeks"), put the END of the window as the deadline — never a relative phrase, never a past "precedent" date.',
     '- text must be a single, concrete, checkable event (who does what) — not a vague mood ("tensions rise").',
+    '- Each trigger is a standalone yes/no question judged ALONE: "p" is YOUR probability (an integer from 2 to 98) that THIS exact event happens by its deadline. It is NOT the scenario probability: a trigger under "Optimistic" may have p 70, one under "Most Likely" may have p 25.',
+    '- At most 3 triggers per scenario.',
+    '- "resolution_source" must NAME the publisher or record that will exist after the deadline and settle the question (for example "Reuters or AP wire report", "Official Gazette of Japan", "UN Security Council press release", "IAEA Board report"). Never "news", "media", "reports" or "sources".',
     '- Only name a person in an office if the VERIFIED FACTS above (or the briefing) support it.',
     `probability_range: a range string like "55-65%"; all three must sum to ~100%. Output only the JSON object.`,
   ].join('\n');
@@ -923,11 +927,35 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
     // triggers (retrodictions, relative windows, false premises, unparseable dates) are dropped
     // and recorded in `capture.dropped` — they never enter the scoreable record. See lib.js.
     const facts = factsForTopic(topic, ctx.factsByCountry);
+    // M2: per-question gates need the row key, the story's own reported text (a "question" that
+    // restates it is already met) and this story's recent question texts (near-duplicates).
+    const pk = `PRED#${topic.id}`;
+    const snippets = [topic.title, topic.description, ...((topic.sources || []).map(s => s && s.snippet))].filter(Boolean).map(String);
+    let priorTexts = [];
+    try {
+      const prior = await ddb.send(new QueryCommand({
+        TableName: PREDICTION_LOG_TABLE,
+        KeyConditionExpression: 'PK = :pk',
+        ExpressionAttributeValues: { ':pk': pk },
+        ScanIndexForward: false,
+        Limit: 14,
+        ProjectionExpression: 'SK, scenarios',
+      }));
+      for (const it of prior.Items || []) {
+        for (const sc of it.scenarios || []) for (const tr of sc.triggers || []) if (tr && tr.question === true && tr.text) priorTexts.push(String(tr.text));
+      }
+    } catch (e) { console.warn(`prior questions read failed for ${topic.id}: ${e.message}`); }
     const { scenarios, capture } = lib.buildGatedScenarios(parsed.scenarios, {
       generatedAtDay: (ctx.generatedAtDay || day),
       fallbackYear: generatedYear,
       facts,
+      pk,
+      sk: day,
+      snippets,
+      priorTexts,
     });
+    let threadId = null;
+    try { threadId = assignThreadId(topic, ctx.pastEntries || []) || null; } catch { /* cluster hint only */ }
 
     const item = {
       PK: `PRED#${topic.id}`,
@@ -939,6 +967,9 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
       generationId,
       model: response.modelId,
       methodologyVersion: lib.METHODOLOGY_VERSION,
+      questionSchema: 1,
+      regions: Array.isArray(topic.regions) ? topic.regions : [],
+      threadId,
       scenarios,
       capture,
       winners: Array.isArray(parsed.winners) ? parsed.winners : [],

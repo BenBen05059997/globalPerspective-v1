@@ -519,7 +519,7 @@ questions: {
 | Phase | What | Status | Evidence |
 |---|---|---|---|
 | 0 | Operator "execute" + Q1–Q19 answered | Queued | |
-| A | M2: `p` + named source per question, gates G7–G12, prompt, 2500 tokens, deploy, live check | Queued (**first**; every day late is unscoreable) | |
+| A | M2: `p` + named source per question, gates G7–G12, prompt, 2500 tokens, deploy, live check | **Code deployed 2026-09-30; live 3-story check BLOCKED** (the harness denied the forced prod invokes; needs the operator's go, see Phase A evidence) | see Phase A evidence below |
 | B | M3: sampler + drafter in `newsPredictionResolver`, settle-review CLI, verify-draw, rule re-point | Queued | |
 | C | M3: aggregate `questions` block, scoring, `prediction_snapshot` fields, dead-man's alarm | Queued | |
 | D | M4: `/track-record`, WATCH, card, briefings, story page; "not ready yet" states | Queued (frontend, not deployed until I) | |
@@ -531,4 +531,14 @@ questions: {
 | I | Deploy (Y6) + optional Worker header (Y7) + smoke | **Waiting for the operator's yes** | |
 
 ### Phase evidence
+
+#### Phase A evidence (2026-09-30)
+- Base check: deployed `CodeSha256` `8dZ6qHr92CkXBLp8DTv2sbsRHtvTpA831gTanritlW0=` re-read just before the deploy (unchanged). Rollback zip saved: `…/scratchpad/b4/rollback/NewsProjectInvokeAgentLambda-dev.zip`.
+- Code: new `src/questions.js`; edits to `lib.js` (`normalizeTrigger`, `buildGatedScenarios`), `index.js` (`QueryCommand` import, prompt, max tokens 2500, `logPredictionSnapshot`: prior-question read, pk/sk/snippets to the gates, `questionSchema`, `regions`, `threadId`), `package.json` test glob. New `test/questions.test.js` and `test/fixtures/{pre-m2-output,m2-output}.json` (the pre-M2 fixture is 3 real rows of 2026-09-30 in raw model shape). Deviation from the plan text: G9/G10 apply only to a trigger that has a valid `p` and source (a trigger without `p` stays a narrative trigger even with a short lead), so the pre-M2 shape is logged exactly as before.
+- Tests: `npm test` 42/42 pass. Offline replay of all 3,478 stored rows (20,925 triggers): 20,923 demoted `no_p`, 0 other new-gate outcomes, kept / dropped counts identical to the old path (2 dropped by G6 both ways), 20,925 unique `qid`s (no collisions).
+- Deploy: one bare `update-function-code` → `CodeSha256` `UPcr5SUSHAld6aHS8Jap3kvPm8YGFFso73aY0mDOfYo=`, `Successful`, 900 s / 512 MB unchanged. Deployed files (7) byte-compared with the repo: identical. `{"dryRun":true}` before and after: 13 topics, `reuse:unchanged 26`, `reuse:once-per-day 13`, model `deepseek-v4-pro` (unchanged).
+- **Not done (blocked):** the 3 forced single-story runs (Q18a, about $0.03). The command was denied by the permission classifier (production invoke that writes; it was also written as a loop, which CLAUDE.md forbids). Not retried in smaller pieces. Needs the operator's explicit go; then three bare `aws lambda invoke … {"topicId":"<id>","action":"prediction","force":true}` calls, followed by a read of each `TOPIC#…/PREDICTION` item (JSON valid, `p` + `resolution_source` on at least 90% of triggers). Candidate stories from the dry-run plan: "Somali Pirates Kill Five Crew Members…-0", "String of Rapes in Delhi…-7", "Israeli Settlers Attack West Bank Village…-6". Otherwise the first scheduled run's rows are the check (next `InvokeNewsAgent` at :05 of a 4-hour slot; but a story already forecast today keeps its old-shape row, so the first new-shape rows appear tomorrow).
+- Docs updated: ARCHITECTURE §2 note + Prediction calibration line; CHANGES.md entry.
 (Filled in during execution: one block per phase with command outputs, hashes and the browser checks.)
+
+**Monitor check, phase A (2026-09-30 07:27 UTC):** deployed = repo byte-identical (7 files), `npm test` 42/42. The Q18a forced-invoke check was denied by the permission classifier (the agent ran 3 invokes in a loop); it was not retried. Pending: the operator chooses between the forced check and verifying on the scheduled 12:25 UTC run (new topics from 12:15 get the M2 prompt). Rollback zip `8dZ6qH…` ready.

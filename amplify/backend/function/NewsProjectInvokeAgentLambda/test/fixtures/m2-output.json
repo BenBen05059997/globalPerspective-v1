@@ -1,0 +1,28 @@
+{
+  "generatedAtDay": "2026-10-01",
+  "pk": "PRED#topic-x",
+  "sk": "2026-10-01",
+  "snippets": ["Delhi protests continue after rape cases", "Police deploy extra patrols in the capital"],
+  "raw": {
+    "scenarios": [
+      { "label": "Most Likely", "probability_range": "55-65%", "horizon": "2-6 weeks", "rationale": "r",
+        "triggers": [
+          { "text": "Delhi Commission for Women summons the Delhi Police Commissioner over the cases", "deadline": "2026-10-31", "p": 62, "resolution_source": "Reuters or AP wire report" },
+          { "text": "Ministry of Home Affairs announces fast-track courts for the cases", "deadline": "2026-11-20", "p": "35%", "resolution_source": "PIB press release" },
+          { "text": "A vague thing happens", "deadline": "2026-11-20", "p": 40, "resolution_source": "news" },
+          { "text": "Something else occurs", "deadline": "2026-11-20", "resolution_source": "PIB press release" }
+        ] },
+      { "label": "Optimistic", "probability_range": "15-20%", "horizon": "4-12 weeks", "rationale": "r",
+        "triggers": [
+          { "text": "Parliament passes a new women's safety law", "deadline": "2026-10-04", "p": 10, "resolution_source": "Lok Sabha records" },
+          { "text": "Police deploy extra patrols in the capital", "deadline": "2026-10-20", "p": 90, "resolution_source": "Delhi Police press release" },
+          { "text": "The Supreme Court schedules a hearing on the cases", "deadline": "2026-11-05", "p": 99, "resolution_source": "Supreme Court cause list" }
+        ] },
+      { "label": "Pessimistic", "probability_range": "20-25%", "horizon": "4-12 weeks", "rationale": "r",
+        "triggers": [
+          { "text": "Delhi Police issue a status report to the Delhi Commission for Women", "deadline": "2026-11-01", "p": 60, "resolution_source": "Delhi Police press release" },
+          { "text": "The Delhi Commission for Women summons the Delhi Police Commissioner over the cases again", "deadline": "2026-11-02", "p": 20, "resolution_source": "Reuters or AP wire report" }
+        ] }
+    ]
+  }
+}

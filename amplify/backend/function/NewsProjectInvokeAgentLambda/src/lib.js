@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const { normalizeUrl } = require('./url-normalize');
+const questions = require('./questions');
 
 // Pure prediction-capture helpers for methodology v1, split out of index.js so they can be
 // unit-tested without DynamoDB or an LLM. index.js requires this; ../test/lib.test.js imports
@@ -87,7 +88,7 @@ function normalizeTrigger(raw, fallbackYear) {
     const text = String(raw.text || '').trim();
     let deadline = raw.deadline != null ? String(raw.deadline).trim() : '';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) deadline = parseTriggerDeadline(text, fallbackYear);
-    return { text, deadline: deadline || null };
+    return { text, deadline: deadline || null, p: raw.p, resolutionSource: raw.resolution_source };
   }
   const text = String(raw == null ? '' : raw).trim();
   return { text, deadline: parseTriggerDeadline(text, fallbackYear) };
@@ -172,26 +173,54 @@ function escapeRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
  */
 function buildGatedScenarios(rawScenarios, ctx) {
   const { generatedAtDay, fallbackYear, facts = [] } = ctx;
+  // M2 question mode: only when the caller supplies the row key (pk/sk), so old callers/tests behave as before.
+  const qMode = Boolean(ctx.pk && ctx.sk);
   const dropped = [];
+  const demoted = [];
+  const priorTexts = [...(ctx.priorTexts || [])];
   let kept = 0;
+  let questionCount = 0;
+  let echo = 0;
 
   const scenarios = (Array.isArray(rawScenarios) ? rawScenarios : []).map((s, si) => {
     const rawTriggers = Array.isArray(s.triggers) ? s.triggers : [];
     const triggers = [];
+    const scenarioProb = probabilityMidpoint(s.probability_range);
     rawTriggers.forEach((rt, ti) => {
       const norm = normalizeTrigger(rt, fallbackYear);
       const verdict = validateTrigger(norm, generatedAtDay, facts);
-      if (verdict.ok) {
-        triggers.push({ id: `${si}-${ti}`, text: norm.text, deadline: norm.deadline, status: 'pending' });
-        kept++;
-      } else {
+      if (!verdict.ok) {
         dropped.push({ scenario: si, text: norm.text, deadline: norm.deadline, gate: verdict.gate, why: verdict.why });
+        return;
       }
+      const trig = { id: `${si}-${ti}`, text: norm.text, deadline: norm.deadline, status: 'pending' };
+      if (qMode) {
+        const g = questions.questionGate(norm, { generatedAtDay, snippets: ctx.snippets || [], priorTexts });
+        if (g.action === 'drop') {
+          dropped.push({ scenario: si, text: norm.text, deadline: norm.deadline, gate: g.gate, why: g.reason });
+          return;
+        }
+        if (g.action === 'demote') {
+          trig.question = false;
+          demoted.push({ text: norm.text, reason: g.reason });
+        } else {
+          trig.qid = questions.qidFor(ctx.pk, ctx.sk, trig.id);
+          trig.question = true;
+          trig.p = g.p;
+          trig.resolutionSource = g.source;
+          trig.resolver = 'human';
+          priorTexts.push(norm.text);
+          questionCount++;
+          if (scenarioProb != null && Math.abs(g.p - scenarioProb * 100) <= 1) echo++;
+        }
+      }
+      triggers.push(trig);
+      kept++;
     });
     return {
       label: s.label || `Scenario ${si + 1}`,
       probabilityRange: s.probability_range || null,
-      probability: probabilityMidpoint(s.probability_range),
+      probability: scenarioProb,
       horizon: s.horizon || null,
       rationale: s.rationale || null,
       triggers,
@@ -200,7 +229,9 @@ function buildGatedScenarios(rawScenarios, ctx) {
     };
   });
 
-  return { scenarios, capture: { methodologyVersion: METHODOLOGY_VERSION, kept, dropped } };
+  const capture = { methodologyVersion: METHODOLOGY_VERSION, kept, dropped };
+  if (qMode) capture.questions = { kept: questionCount, demoted, pEcho: questionCount ? Math.round((echo / questionCount) * 1000) / 1000 : 0 };
+  return { scenarios, capture };
 }
 
 // ── R2 (Batch 1): regenerate only new / changed stories ──────────────────────────────────────

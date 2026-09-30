@@ -1,6 +1,6 @@
-import{c as k}from"./expression-Bl_GL2tO.js";import{G as z,b as T,B as $,a as D,f as V,A as G,T as E,M as X}from"./SituationMap3D-B6lNoOyg.js";import"./index-OjfpxU-5.js";function g(t,e,r=!1){if(r)return e===1?"float":`vec${e}`;switch(t){case"uint8":case"uint16":case"uint32":return e===1?"uint":`uvec${e}`;case"sint8":case"sint16":case"sint32":return e===1?"int":`ivec${e}`;default:return e===1?"float":`vec${e}`}}function I(t,e,r=!1){let n;if(r)switch(t){case"uint8":n="unorm8";break;case"sint8":n="snorm8";break;case"uint16":n="unorm16";break;case"sint16":n="snorm16";break;case"float32":n="float32";break;default:throw new Error(`Unsupported normalized vertex format for ${t}`)}else n=t;return e===1?n:e===3&&!n.startsWith("float32")&&!n.endsWith("32")?`${n}x3-webgl`:`${n}x${e}`}function b(t){switch(t[0]){case"u":return"0u";case"s":return"0";default:return"0."}}function j(t,e){switch(t){case"uint8":case"uint16":case"uint32":return`${Math.trunc(e)}u`;case"sint8":case"sint16":case"sint32":return`${Math.trunc(e)}`;default:return Number.isInteger(e)?`${e}.0`:`${e}`}}function q(t){switch(t){case"uint8":return"r8uint";case"sint8":return"r8sint";case"uint16":return"r16uint";case"sint16":return"r16sint";case"uint32":return"r32uint";case"sint32":return"r32sint";case"float32":return"r32float";default:throw new Error(`Unsupported WebGL gather texture format for ${t}`)}}function H(t){switch(t){case"uint32":return"usampler2D";case"sint32":return"isampler2D";case"float32":return"sampler2D";default:throw new Error(`Unsupported WebGL gather sampler type for ${t}`)}}const W="GPGPU Operation Counts",Z="Transform Runs",J=new D;function _({module:t,elementWise:e=!1,expression:r,inputs:n,output:i,operationType:o=i.type,outputBuffer:a}){const u=a.device,s=w("result",i.type,i.size,i.normalized),l=[t,s],m=[],c={},f=g(i.type,1,i.normalized),h=g(o,1,i.normalized);let x="",v=null;const P={TYPE:h,RESULT_LEN:i.size.toString()},S=K(n);for(const[d,p]of S)l.push(A(d,p.type,p.size,p.normalized,o)),m.push(F(d,p)),p instanceof z?c[d]=p.buffer:(v=v||T.createOrReuse(u,a.byteLength),c[d]=v),x+=`TYPE ${d}[${p.size}]; get_${d}(${d});
-`,P[`${d.toUpperCase()}_LEN`]=p.size.toString();let y="";if(r)for(let d=0;d<i.size;d++)y+=`result[${d}]=${r(d)};
-`;else if(e)for(let d=0;d<i.size;d++){const p=b(h),B=S.map(([O,U])=>d<U.size?`${O}[${d}]`:p);y+=`result[${d}]=${t.name}(${B.join(", ")});
+import{c as k}from"./expression-Bl_GL2tO.js";import{G as z,b as T,B as $,a as D,f as V,A as G,T as E,M as X}from"./SituationMap3D-B0svLJtW.js";import"./index-DQ1mns62.js";import"./landGeometry-CnC2mppU.js";import"./RadarMap-CE9szvoB.js";import"./SituationMap-CxNN0RBH.js";import"./situationLabels-C5eJ6Olk.js";import"./equalEarth-BU7OrtWy.js";import"./globeSpin-DPMe7U9J.js";import"./crisisHue-DEaGCysw.js";function g(t,e,r=!1){if(r)return e===1?"float":`vec${e}`;switch(t){case"uint8":case"uint16":case"uint32":return e===1?"uint":`uvec${e}`;case"sint8":case"sint16":case"sint32":return e===1?"int":`ivec${e}`;default:return e===1?"float":`vec${e}`}}function I(t,e,r=!1){let n;if(r)switch(t){case"uint8":n="unorm8";break;case"sint8":n="snorm8";break;case"uint16":n="unorm16";break;case"sint16":n="snorm16";break;case"float32":n="float32";break;default:throw new Error(`Unsupported normalized vertex format for ${t}`)}else n=t;return e===1?n:e===3&&!n.startsWith("float32")&&!n.endsWith("32")?`${n}x3-webgl`:`${n}x${e}`}function b(t){switch(t[0]){case"u":return"0u";case"s":return"0";default:return"0."}}function j(t,e){switch(t){case"uint8":case"uint16":case"uint32":return`${Math.trunc(e)}u`;case"sint8":case"sint16":case"sint32":return`${Math.trunc(e)}`;default:return Number.isInteger(e)?`${e}.0`:`${e}`}}function q(t){switch(t){case"uint8":return"r8uint";case"sint8":return"r8sint";case"uint16":return"r16uint";case"sint16":return"r16sint";case"uint32":return"r32uint";case"sint32":return"r32sint";case"float32":return"r32float";default:throw new Error(`Unsupported WebGL gather texture format for ${t}`)}}function H(t){switch(t){case"uint32":return"usampler2D";case"sint32":return"isampler2D";case"float32":return"sampler2D";default:throw new Error(`Unsupported WebGL gather sampler type for ${t}`)}}const W="GPGPU Operation Counts",Z="Transform Runs",J=new D;function _({module:t,elementWise:e=!1,expression:r,inputs:n,output:i,operationType:o=i.type,outputBuffer:a}){const u=a.device,s=w("result",i.type,i.size,i.normalized),l=[t,s],m=[],c={},f=g(i.type,1,i.normalized),p=g(o,1,i.normalized);let x="",v=null;const P={TYPE:p,RESULT_LEN:i.size.toString()},S=K(n);for(const[d,h]of S)l.push(A(d,h.type,h.size,h.normalized,o)),m.push(F(d,h)),h instanceof z?c[d]=h.buffer:(v=v||T.createOrReuse(u,a.byteLength),c[d]=v),x+=`TYPE ${d}[${h.size}]; get_${d}(${d});
+`,P[`${d.toUpperCase()}_LEN`]=h.size.toString();let y="";if(r)for(let d=0;d<i.size;d++)y+=`result[${d}]=${r(d)};
+`;else if(e)for(let d=0;d<i.size;d++){const h=b(p),B=S.map(([O,U])=>d<U.size?`${O}[${d}]`:h);y+=`result[${d}]=${t.name}(${B.join(", ")});
 `}else y=`${t.name}(${S.map(([d])=>d).join(", ")}, result);`;const Y=`#version 300 es
 
 void main() {
@@ -17,7 +17,7 @@ void get_${t}(out TYPE v[${r}]) {
   ${a}
 }
 `;return{name:t,vs:u}}function F(t,e){const r={name:t,stepMode:e.isConstant?"vertex":"instance",byteStride:e.stride,attributes:[]};for(let n=0;n<e.size;n+=4){const i=Math.min(e.size-n,4);r.attributes.push({attribute:`a${t}_${n}`,format:I(e.type,i,e.normalized),byteOffset:e.offset+e.ValueType.BYTES_PER_ELEMENT*n})}return r}function w(t,e,r,n=!1){const i=[],o=g(e,1,n);let a="",u="";for(let s=0;s<r;s+=4){const l=Math.min(r-s,4),m=g(e,l,n);i.push(`${t}_${s}`),a+=`flat out ${m} ${t}_${s};
-`;const c=Array.from({length:l},(f,h)=>s+h);u+=`${t}_${s} = ${m}(${c.map(f=>`v[${f}]`).join(",")});
+`;const c=Array.from({length:l},(f,p)=>s+p);u+=`${t}_${s} = ${m}(${c.map(f=>`v[${f}]`).join(",")});
 `}return{name:t,varyings:i,vs:`
 ${a}
 void set_${t}(in ${o} v[${r}]) {
@@ -42,7 +42,7 @@ TYPE arithmetic_divide(TYPE x, TYPE y) {
 float arithmetic_tan(float x) {
   return tan_fp32(x);
 }
-`,ee=({inputs:t,output:e,target:r})=>{const n=e.type,i=g(n,1,e.normalized),o=b(i),a=t.namedInputs;return _({module:{name:"arithmetic",dependencies:[V],vs:Q},inputs:a,output:e,operationType:n,outputBuffer:r,expression:u=>k(t.expression,{operations:G,inputs:a,laneIndex:u,formatInput:s=>`${s}[${u}]`,formatOutOfBoundsInput:s=>a[s].size===1?`${s}[0]`:o,formatLiteral:s=>{const l=Array.isArray(s)?s[u]??0:s;return`${i}(${j(n,l)})`},formatCall:(s,l)=>`${s}(${l.join(", ")})`})}),{success:!0}},te="GPGPU Operation Counts",ne="Transform Runs",xe=({inputs:t,output:e,target:r})=>{const{sourceValues:n}=t,i=r.device;if(n.length===0){const c=new e.ValueType(e.length*e.size);return r.write(c),{success:!0,value:c}}if(n.isConstant){const c=n.value,f=new e.ValueType(e.length*e.size);for(let h=0;h<e.length;h++){const x=c[h];f[h*2]=x,f[h*2+1]=x}return r.write(f),{success:!0,value:f}}const o=i.createTexture({width:1,height:e.length,format:"rg32float",usage:E.RENDER|E.COPY_SRC|E.COPY_DST}),a=i.createFramebuffer({colorAttachments:[o]}),u=`#version 300 es
+`,ee=({inputs:t,output:e,target:r})=>{const n=e.type,i=g(n,1,e.normalized),o=b(i),a=t.namedInputs;return _({module:{name:"arithmetic",dependencies:[V],vs:Q},inputs:a,output:e,operationType:n,outputBuffer:r,expression:u=>k(t.expression,{operations:G,inputs:a,laneIndex:u,formatInput:s=>`${s}[${u}]`,formatOutOfBoundsInput:s=>a[s].size===1?`${s}[0]`:o,formatLiteral:s=>{const l=Array.isArray(s)?s[u]??0:s;return`${i}(${j(n,l)})`},formatCall:(s,l)=>`${s}(${l.join(", ")})`})}),{success:!0}},te="GPGPU Operation Counts",ne="Transform Runs",we=({inputs:t,output:e,target:r})=>{const{sourceValues:n}=t,i=r.device;if(n.length===0){const c=new e.ValueType(e.length*e.size);return r.write(c),{success:!0,value:c}}if(n.isConstant){const c=n.value,f=new e.ValueType(e.length*e.size);for(let p=0;p<e.length;p++){const x=c[p];f[p*2]=x,f[p*2+1]=x}return r.write(f),{success:!0,value:f}}const o=i.createTexture({width:1,height:e.length,format:"rg32float",usage:E.RENDER|E.COPY_SRC|E.COPY_DST}),a=i.createFramebuffer({colorAttachments:[o]}),u=`#version 300 es
 
 flat out float extent_value;
 
@@ -65,7 +65,7 @@ out vec2 fragColor;
 void main() {
   fragColor = vec2(-extent_value, extent_value);
 }
-  `,l=new X(i,{vs:u,fs:s,topology:"point-list",parameters:{depthCompare:"always",blend:!0,blendColorSrcFactor:"one",blendColorDstFactor:"one",blendColorOperation:"max",blendAlphaSrcFactor:"one",blendAlphaDstFactor:"one",blendAlphaOperation:"max"},modules:[A("sourceValues",n.type,n.size,n.normalized)],defines:{TYPE:"float",SOURCE_VALUES_LEN:n.size.toString(),CHANNEL_COUNT:e.length.toString()},attributes:{sourceValues:n.buffer},bufferLayout:[F("sourceValues",n)],instanceCount:n.length,vertexCount:e.length,disableWarnings:!0}),m=T.createOrReuse(i,e.byteLength);try{const c=i.beginRenderPass({framebuffer:a,parameters:{viewport:[0,0,1,e.length]},clearColor:[-N,-N,0,0],clearDepth:!1,clearStencil:!1});i.statsManager.getStats(te).get(ne).incrementCount(),l.draw(c),c.end();const f=i.createCommandEncoder();return f.copyTextureToBuffer({sourceTexture:o,width:1,height:e.length,destinationBuffer:m,byteOffset:0,bytesPerRow:8}),i.submit(f.finish()),ee({device:i,inputs:{expression:{kind:"call",op:"multiply",args:[{kind:"input",name:"x"},{kind:"literal",value:[-1,1]}]},namedInputs:{x:new z({buffer:m,size:2,type:"float32",length:e.length})}},output:e,target:r})}finally{l.destroy(),T.recycle(m),a.destroy(),o.destroy()}},N=3e38,ve=({inputs:t,output:e,target:r})=>{const n=t.map((s,l)=>[`x${l}`,s]);re(r.device.limits.maxVertexAttributes,n),ie(r.device.limits.maxInterStageShaderVariables,e);const i=n.map(([s,l])=>`in TYPE ${s}[${l.size}]`).join(", ");let o=0;const a=n.map(([s,l])=>{const m=Array.from({length:l.size},(c,f)=>`  result[${o+f}] = ${s}[${f}];`).join(`
+  `,l=new X(i,{vs:u,fs:s,topology:"point-list",parameters:{depthCompare:"always",blend:!0,blendColorSrcFactor:"one",blendColorDstFactor:"one",blendColorOperation:"max",blendAlphaSrcFactor:"one",blendAlphaDstFactor:"one",blendAlphaOperation:"max"},modules:[A("sourceValues",n.type,n.size,n.normalized)],defines:{TYPE:"float",SOURCE_VALUES_LEN:n.size.toString(),CHANNEL_COUNT:e.length.toString()},attributes:{sourceValues:n.buffer},bufferLayout:[F("sourceValues",n)],instanceCount:n.length,vertexCount:e.length,disableWarnings:!0}),m=T.createOrReuse(i,e.byteLength);try{const c=i.beginRenderPass({framebuffer:a,parameters:{viewport:[0,0,1,e.length]},clearColor:[-N,-N,0,0],clearDepth:!1,clearStencil:!1});i.statsManager.getStats(te).get(ne).incrementCount(),l.draw(c),c.end();const f=i.createCommandEncoder();return f.copyTextureToBuffer({sourceTexture:o,width:1,height:e.length,destinationBuffer:m,byteOffset:0,bytesPerRow:8}),i.submit(f.finish()),ee({device:i,inputs:{expression:{kind:"call",op:"multiply",args:[{kind:"input",name:"x"},{kind:"literal",value:[-1,1]}]},namedInputs:{x:new z({buffer:m,size:2,type:"float32",length:e.length})}},output:e,target:r})}finally{l.destroy(),T.recycle(m),a.destroy(),o.destroy()}},N=3e38,Se=({inputs:t,output:e,target:r})=>{const n=t.map((s,l)=>[`x${l}`,s]);re(r.device.limits.maxVertexAttributes,n),ie(r.device.limits.maxInterStageShaderVariables,e);const i=n.map(([s,l])=>`in TYPE ${s}[${l.size}]`).join(", ");let o=0;const a=n.map(([s,l])=>{const m=Array.from({length:l.size},(c,f)=>`  result[${o+f}] = ${s}[${f}];`).join(`
 `);return o+=l.size,m}).join(`
 `),u=`void interleave(${i}, out TYPE result[RESULT_LEN]) {
 ${a}
@@ -244,13 +244,13 @@ void fround(in uint x[X_LEN], out float result[X_LEN]) {
     result[i + n] = uintBitsToFloat(f.y);
   }
 }
-`,Ee=({inputs:t,output:e,target:r})=>(_({module:{name:"fround",vs:oe},inputs:t,output:e,operationType:"uint32",outputBuffer:r}),{success:!0});function R(t,e,r){const n=H(r),i=g(e,1),o=Array.from({length:t.size},(a,u)=>`  v[${u}] = ${i}(texelFetch(source_values_texture, ivec2(${u}, rowIndex), 0).r);`).join(`
+`,Le=({inputs:t,output:e,target:r})=>(_({module:{name:"fround",vs:oe},inputs:t,output:e,operationType:"uint32",outputBuffer:r}),{success:!0});function R(t,e,r){const n=H(r),i=g(e,1),o=Array.from({length:t.size},(a,u)=>`  v[${u}] = ${i}(texelFetch(source_values_texture, ivec2(${u}, rowIndex), 0).r);`).join(`
 `);return{name:"source_values_texture",vs:`
 uniform highp ${n} source_values_texture;
 void read_source_values(int rowIndex, out TYPE v[${t.size}]) {
 ${o}
 }
-`}}function C(t,e,r){const n=r.createTexture({width:Math.max(t.size,1),height:t.length,format:q(e),usage:E.SAMPLE|E.COPY_DST});if(t.length===0)return n;const i=r.createCommandEncoder();return i.copyBufferToTexture({sourceBuffer:t.buffer,destinationTexture:n,byteOffset:t.offset,bytesPerRow:t.stride,rowsPerImage:t.length,size:[t.size,t.length,1]}),r.submit(i.finish()),n}const ye=async({inputs:t,output:e,target:r})=>{const{ids:n,sourceValues:i}=t,o=r.device,a=w("result",e.type,e.size),u=g(n.type,1),s=g(e.type,1),l=e.type,m=C(i,l,o),c=`#version 300 es
+`}}function C(t,e,r){const n=r.createTexture({width:Math.max(t.size,1),height:t.length,format:q(e),usage:E.SAMPLE|E.COPY_DST});if(t.length===0)return n;const i=r.createCommandEncoder();return i.copyBufferToTexture({sourceBuffer:t.buffer,destinationTexture:n,byteOffset:t.offset,bytesPerRow:t.stride,rowsPerImage:t.length,size:[t.size,t.length,1]}),r.submit(i.finish()),n}const Pe=async({inputs:t,output:e,target:r})=>{const{ids:n,sourceValues:i}=t,o=r.device,a=w("result",e.type,e.size),u=g(n.type,1),s=g(e.type,1),l=e.type,m=C(i,l,o),c=`#version 300 es
 
 void main() {
   INDEX_TYPE ids[1];
@@ -286,7 +286,7 @@ void gather(in INDEX_TYPE ids[1], out TYPE result[RESULT_LEN]) {
   }
   result[0] = sum;
 }
-`,Te=({inputs:t,output:e,target:r})=>(_({module:{name:"row_dot",vs:ce},inputs:t,output:e,operationType:"float32",outputBuffer:r}),{success:!0}),de=`void equalAll(in TYPE x[X_LEN], in TYPE y[Y_LEN], out uint result[1]) {
+`,Ne=({inputs:t,output:e,target:r})=>(_({module:{name:"row_dot",vs:ce},inputs:t,output:e,operationType:"float32",outputBuffer:r}),{success:!0}),de=`void equalAll(in TYPE x[X_LEN], in TYPE y[Y_LEN], out uint result[1]) {
   uint allEqual = uint(1);
   for (int i = 0; i < X_LEN; i++) {
     if (x[i] != y[i]) {
@@ -296,14 +296,14 @@ void gather(in INDEX_TYPE ids[1], out TYPE result[RESULT_LEN]) {
   }
   result[0] = allEqual;
 }
-`,$e=({inputs:t,output:e,target:r})=>(_({module:{name:"equalAll",vs:de},inputs:t,output:e,operationType:e.type==="uint32"?t.x.type:e.type,outputBuffer:r}),{success:!0}),me=`void row_length(in TYPE x[X_LEN], out float result[1]) {
+`,ze=({inputs:t,output:e,target:r})=>(_({module:{name:"equalAll",vs:de},inputs:t,output:e,operationType:e.type==="uint32"?t.x.type:e.type,outputBuffer:r}),{success:!0}),me=`void row_length(in TYPE x[X_LEN], out float result[1]) {
   float sum = 0.0;
   for (int i = 0; i < X_LEN; i++) {
     sum += float(x[i]) * float(x[i]);
   }
   result[0] = sqrt(sum);
 }
-`,be=({inputs:t,output:e,target:r})=>(_({module:{name:"row_length",vs:me},inputs:t,output:e,operationType:"float32",outputBuffer:r}),{success:!0}),we=async({inputs:t,output:e,target:r})=>{const{segments:n}=t,i=r.device,o=w("result",e.type,e.size),a=n.type,u=C(n,a,i),s=new $(i,{vs:`#version 300 es
+`,Ie=({inputs:t,output:e,target:r})=>(_({module:{name:"row_length",vs:me},inputs:t,output:e,operationType:"float32",outputBuffer:r}),{success:!0}),Ae=async({inputs:t,output:e,target:r})=>{const{segments:n}=t,i=r.device,o=w("result",e.type,e.size),a=n.type,u=C(n,a,i),s=new $(i,{vs:`#version 300 es
 
 void main() {
   TYPE result[RESULT_LEN];
@@ -337,11 +337,11 @@ void segmentedMap(out TYPE result[RESULT_LEN]) {
   result[0] = segmentIndex;
   result[1] = vertexIndex - segmentStart;
 }
-`}}const Se=async({inputs:t,output:e,target:r})=>{const n=g(e.type,1,e.normalized),i=b(n);return _({module:{name:"select",vs:""},inputs:t,output:e,operationType:e.type,outputBuffer:r,expression:o=>{const a=L("condition",t.condition,o,i),u=L("whenTrue",t.whenTrue,o,i),s=L("whenFalse",t.whenFalse,o,i);return`(${a} != ${i} ? ${u} : ${s})`}}),{success:!0}};function L(t,e,r,n){return r<e.size?`${t}[${r}]`:e.size===1?`${t}[0]`:n}const Le=({inputs:t,output:e,target:r})=>{const n=w("result",e.type,e.size),i=new $(r.device,{vs:`#version 300 es
+`}}const Fe=async({inputs:t,output:e,target:r})=>{const n=g(e.type,1,e.normalized),i=b(n);return _({module:{name:"select",vs:""},inputs:t,output:e,operationType:e.type,outputBuffer:r,expression:o=>{const a=L("condition",t.condition,o,i),u=L("whenTrue",t.whenTrue,o,i),s=L("whenFalse",t.whenFalse,o,i);return`(${a} != ${i} ? ${u} : ${s})`}}),{success:!0}};function L(t,e,r,n){return r<e.size?`${t}[${r}]`:e.size===1?`${t}[0]`:n}const Re=({inputs:t,output:e,target:r})=>{const n=w("result",e.type,e.size),i=new $(r.device,{vs:`#version 300 es
 
 void main() {
   int result[1];
   result[0] = START + gl_InstanceID * STEP;
   set_result(result);
 }
-`,defines:{START:t.start.toString(),STEP:t.step.toString()},modules:[n],vertexCount:1,instanceCount:e.length,feedbackBufferMode:"interleaved",outputs:n.varyings});try{return i.run({outputBuffers:{[n.varyings[0]]:r}}),{success:!0}}finally{i.destroy()}},Pe=({inputs:t,output:e,target:r})=>{const{columns:n}=t;return _({module:{name:"swizzle",vs:"// swizzle expression handled inline"},expression:i=>`x[${n[i]}]`,inputs:{x:t.x},output:e,outputBuffer:r}),{success:!0}};export{ee as arithmetic,Te as dot,$e as equalAll,xe as extent,Ee as fround,ye as gather,ve as interleave,be as length,we as segmentedMap,Se as select,Le as sequence,Pe as swizzle};
+`,defines:{START:t.start.toString(),STEP:t.step.toString()},modules:[n],vertexCount:1,instanceCount:e.length,feedbackBufferMode:"interleaved",outputs:n.varyings});try{return i.run({outputBuffers:{[n.varyings[0]]:r}}),{success:!0}}finally{i.destroy()}},Ce=({inputs:t,output:e,target:r})=>{const{columns:n}=t;return _({module:{name:"swizzle",vs:"// swizzle expression handled inline"},expression:i=>`x[${n[i]}]`,inputs:{x:t.x},output:e,outputBuffer:r}),{success:!0}};export{ee as arithmetic,Ne as dot,ze as equalAll,we as extent,Le as fround,Pe as gather,Se as interleave,Ie as length,Ae as segmentedMap,Fe as select,Re as sequence,Ce as swizzle};

@@ -1,0 +1,1 @@
+const s=["Saved stories, countries, and daily briefs, kept in one list","An Analysis Studio key, stored only in this browser","Alert settings for the emails that are live today"],e="Following countries is part of membership.";export{s as A,e as a};

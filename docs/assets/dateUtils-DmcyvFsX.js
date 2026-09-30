@@ -1,0 +1,1 @@
+function a(e){const t=new Date().toISOString().slice(0,10),n=new Date(Date.now()-864e5).toISOString().slice(0,10);return e===t?"Today":e===n?"Yesterday":new Date(e+"T00:00:00Z").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",timeZone:"UTC"})}export{a as f};

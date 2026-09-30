@@ -152,3 +152,14 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 **Follow-ups found:**
 - Story analysis picks backlog threads over today's new ones because of the archive re-dating bug (read fix a).
 - `newsSystemsAnalysis` still treats regions (Europe, Asia) as countries; extend the R1b exclusion. **Done 2026-09-30 (Batch 3 F):** real-country rule in Systems + 4 readers + `world_overview` + country list page.
+
+**Evals (discussed 2026-10-01).** The first eval is the scoring drafter (plan: `TASK_2026-10-01_drafter_eval.md`, not built). Candidates for later:
+- a forecast-question quality set (human-labelled "could two people agree?");
+- a drift-direction regression set (the 10 flagged Tier A/B notes + "falling"-style counter-examples);
+- story analysis flash vs v4-pro side-by-side (~25 stories);
+- a story-link plausibility sample;
+- a **prompt-caching audit**: DeepSeek cache-hit input is ~100× cheaper than a miss, so put the fixed instructions first and the variable content last.
+
+The grader principle: human labels + code checks first; a model grader only where needed and from a different family (a new paid API needs the operator's yes).
+
+**Balance check 2026-09-30 15:35 UTC:** $8.54 (from $9.11 at ~08:00 UTC, including ~$0.25 of one-off test runs). The clean daily figure comes from the next 24 h.

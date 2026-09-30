@@ -527,7 +527,7 @@ export default {
 | `/weekly/thread/:id` | `thread_preview` | Thread title, story timeline |
 | `/daily` | `daily_brief` (today) | Headline, summary, top stories with predictions, stats |
 | `/daily/:dateKey` | `daily_brief` (specific date) | Same for that date |
-| `/briefings` | `latest_daily_brief` | Newest daily edition: headline, summary, top stories (each links to `/weekly/thread/<id>` only when the brief carries a real `threadId`), country to watch. **Prepared 2026-09-30, not deployed** |
+| `/briefings` | `latest_daily_brief` | Newest daily edition: headline, summary, top stories (each links to `/weekly/thread/<id>` only when the brief carries a real `threadId`), country to watch. **Deployed 2026-09-30** |
 | `/briefings?date=YYYY-MM-DD` | `daily_brief` (that date) | Same for that date (a malformed `date` is ignored: the latest edition is shown) |
 | `/briefings?mode=weekly` | `weekly_brief` | The weekly signals brief: signals (lede, fact, so-what, story-arc link) + next-week watch list |
 | `/analyze/s/*` | — | **Never pre-rendered** (`NO_PRERENDER`): bots get the plain SPA shell, like humans |
@@ -594,7 +594,7 @@ preview/staging attempt, or immediately after deploy with a fast manual rollback
 6. **`xmllint --noout docs/sitemap.xml`** — confirm the regenerated sitemap (see below) is
    well-formed, and spot-check a sample of its `<loc>` values 200 per the sweep above.
 
-Status: **prepared — awaiting the operator's paste into the Cloudflare dashboard.** Not deployed. No `wrangler deploy` run.
+Status: **deployed 2026-09-30 06:24 UTC** as a code-only update (Cloudflare API `PUT …/workers/scripts/globalperspective-rss/content`, main module `worker2.js`; secrets and routes untouched). The previous live version was `d2b6e09a-fde3-46f1-a608-063d517e1cb3`; rollback with `wrangler rollback d2b6e09a-fde3-46f1-a608-063d517e1cb3 --name globalperspective-rss`. Never use a bare `wrangler deploy` without a full config: it would reset settings.
 
 ### 2026-09-30 update (Batch 3 / phase I, Worker part) — what changed vs the previous version of this file
 Everything else (S3 `/data/*`, `/rss`, bot patterns, root / thread / country / daily pre-render, the SPA fallback) is unchanged. Added:

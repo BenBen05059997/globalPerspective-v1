@@ -2,6 +2,12 @@
 
 ## 2026-09-30 (Backend Batch 3, live AWS: read fixes)
 
+- **Cloudflare Worker deployed** (code only; secrets / routes untouched):
+  - deep links (`/map`, `/briefings`, story / country pages, `/track-record/text`) now return 200 via the SPA fallback instead of 404;
+  - search engines get a pre-rendered `/briefings`;
+  - `/analyze/s/*` is never pre-rendered.
+  - Rollback: `wrangler rollback d2b6e09a-fde3-46f1-a608-063d517e1cb3 --name globalperspective-rss`.
+
 - **Before deploy (operator "yes, yes deploy"):** the 10 clearly contradictory drift notes (Tier A + B) are flagged, so the site shows their numbers only; the country card hides the capital row when Wikidata lists several capitals.
 
 - **A: archive re-dating (read side; the stored archive was already correct, 0 of 51 rows mis-dated).** Readers stamped `today-archive` (and, in the proxy, `latest`) entries with today's date whatever their age; `NewsCache` TTL is disabled, so a stalled pipeline (13-29 Sep) re-dated old stories.

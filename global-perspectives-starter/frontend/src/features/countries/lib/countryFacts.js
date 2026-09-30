@@ -48,8 +48,11 @@ export function factRows(facts, now = Date.now()) {
     }
   }
   const C = facts.capital;
-  if (C && C.source && Array.isArray(C.names) && C.names.length && isFresh(C.checkedAt, now)) {
-    rows.push({ key: 'capital', label: C.names.length > 1 ? 'Capitals' : 'Capital', value: C.names.join(', '), source: sourceLabel(C.source), checkedAt: C.checkedAt });
+  // Only a single, unambiguous capital is shown (operator 2026-09-30). Wikidata lists several for
+  // some countries (e.g. Israel, Pakistan, Indonesia, Yemen, South Africa), which is contested or
+  // misleading as a one-line fact, so the row is omitted rather than picking one.
+  if (C && C.source && Array.isArray(C.names) && C.names.length === 1 && isFresh(C.checkedAt, now)) {
+    rows.push({ key: 'capital', label: 'Capital', value: C.names[0], source: sourceLabel(C.source), checkedAt: C.checkedAt });
   }
   const P = facts.population;
   const pv = P ? compactPopulation(P.value) : null;

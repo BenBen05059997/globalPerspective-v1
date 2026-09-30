@@ -48,4 +48,9 @@ describe('factRows (Batch 3 / D)', () => {
     expect(compactPopulation(0)).toBeNull();
     expect(compactPopulation('x')).toBeNull();
   });
+
+  it('omits the capital row when Wikidata lists more than one capital (contested / ambiguous)', () => {
+    const rows = factRows({ capital: { names: ['Jerusalem', 'Tel Aviv'], source: 'wikidata', checkedAt: chk } }, NOW);
+    expect(rows.find((r) => r.key === 'capital')).toBeUndefined();
+  });
 });

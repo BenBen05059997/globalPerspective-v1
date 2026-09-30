@@ -599,3 +599,8 @@ Every step needs its own fresh operator "yes" (`./deploy.sh`, and the Worker dep
 12. **Q12 (H):** country sheet on phone opens at `peek` (recommended) or `half` with the map scrolled to the top?
 13. **Q13 (I):** order: Lambdas → frontend on `main` after fast-forward → Worker, each with its own yes; the Worker `/briefings` branch and sitemap additions prepared in the repo first. OK? (The Cloudflare paste has to be done by you or with your dashboard access; I cannot verify a `wrangler` login.)
 14. **Q14 (general):** each Lambda phase is a separate deploy of a bare single `update-function-code`; standing authorization covers it. Confirm "execute" for A–H.
+
+### Operator decisions before deploy (2026-09-30: "yes, yes deploy")
+- **Drift flags written (Tier A + B only, 10 notes):** Japan 08-12; Iran 07-29, 07-30, 08-09, 08-17, 08-19; Russia 08-21; China 07-11, 08-12; DR Congo 07-09. `scripts/audit-drift-direction.mjs --write-flags` → `SET directionFlag {backfilled, at, source: batch3-audit}` on the 10 `DRIFTLOG#` + 10 matching `DRIFT#` rows (20 flagged, text untouched; undo = `REMOVE directionFlag`). Verified: Iran `DRIFTLOG#2026-08-19` carries the flag and its 333-char text is unchanged. The 23 Tier C (LLM-only) notes are not flagged.
+- **Multi-capital:** the country card omits the capital row when Wikidata lists more than one capital (`features/countries/lib/countryFacts.js`, + test).
+- **Deploy:** approved (frontend via `./deploy.sh` from `main` after a fast-forward; the Worker is pasted by the operator).

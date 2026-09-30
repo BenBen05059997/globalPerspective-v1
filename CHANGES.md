@@ -2,6 +2,8 @@
 
 ## 2026-09-30 (Backend Batch 3, live AWS: read fixes)
 
+- **Before deploy (operator "yes, yes deploy"):** the 10 clearly contradictory drift notes (Tier A + B) are flagged, so the site shows their numbers only; the country card hides the capital row when Wikidata lists several capitals.
+
 - **A: archive re-dating (read side; the stored archive was already correct, 0 of 51 rows mis-dated).** Readers stamped `today-archive` (and, in the proxy, `latest`) entries with today's date whatever their age; `NewsCache` TTL is disabled, so a stalled pipeline (13-29 Sep) re-dated old stories.
   - `src/dayZero.js` (`keepDayZero`: an entry is "today" only if its own `archivedAt` is today, UTC) in `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsWeeklyBrief`, `newsDriftCorrector`, `newsPostDevTo`; byte-identical copies guarded by `scripts/check-shared-sync.mjs` (new pair, self-test).
   - `newsSensitiveData` `archive_range` / `narrative_thread`: day 0 is `latest`, labelled with its own `updatedAt` date (`lib.latestDayLabel`), duplicates by `topicId + date` removed.

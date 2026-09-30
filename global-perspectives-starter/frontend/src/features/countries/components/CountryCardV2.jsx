@@ -24,6 +24,8 @@ import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 import { threadPath } from '@/shared/lib/threadPath.js';
 import { macroRows } from '@/features/countries/lib/countryMacro.js';
+import { factRows } from '@/features/countries/lib/countryFacts.js';
+import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
 import '@/features/countries/components/CountryCardV2.css';
 
 function fmtShort(iso) {
@@ -40,6 +42,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
 
   const { snapshots, driftNotes, loading: historyLoading } = useCountryHistory(name);
   const { data: markets } = useMarketsCountry(name);
+  const { facts: storedFacts } = useCountryFacts(name);
   const { stories, deadlines, topicIdToThreadId, loading: storiesLoading } = useCountryStories(name);
 
   const [openAxis, setOpenAxis] = useState(null);
@@ -63,6 +66,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
   const triggers = futureDatedTriggers(deadlines, now, 2);
   const fx = fxRowForCountry(name, markets?.fx);
   const macro = macroRows(markets?.macro);
+  const facts = factRows(storedFacts, now);
 
   const latestChange = useMemo(() => {
     const note = (driftNotes || []).find((d) => d?.triggerEvent?.title && d?.whyChanged);
@@ -98,10 +102,20 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
         {loading && !intel ? ' · loading…' : null}
       </div>
 
-      {/* 2. Verified facts only — leader/capital/population/government need the Wikidata facts
-          job (D7, not built); omitted rather than guessed. Macro only if <=3 years old. */}
-      {(macro.length || fx) ? (
+      {/* 2. Verified facts only. Leader / capital / population come from the stored Wikidata facts
+          (country_facts) and are shown ONLY with their source and the date we last checked them
+          (factRows drops anything undated, unsourced or stale); nothing is guessed. Macro only if
+          <=3 years old. */}
+      {(facts.length || macro.length || fx) ? (
         <div className="ccv2-facts">
+          {facts.map((r) => (
+            <span key={r.key} className="ccv2-fact ccv2-fact-stored">
+              <b>{r.value}</b> {r.label}
+              {r.since ? ` (since ${r.since})` : ''}
+              {r.dataYear ? ` (${r.dataYear})` : ''}
+              <span className="ccv2-fact-date">{r.source} · checked {fmtShort(r.checkedAt)}</span>
+            </span>
+          ))}
           {macro.map((r) => (
             <span key={r.k} className="ccv2-fact"><b>{r.v}</b> {r.k} ({r.year})</span>
           ))}

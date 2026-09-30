@@ -102,6 +102,8 @@
 }
 .ccv2-fact b { color: var(--ccv2-ink); font-variant-numeric: tabular-nums; }
 .ccv2-fact-date { color: var(--ccv2-ink-faint); margin-left: 4px; }
+.ccv2-fact-stored { display: inline-flex; flex-direction: column; }
+.ccv2-fact-stored .ccv2-fact-date { margin-left: 0; font-size: 11px; }
 
 .ccv2-summary {
   font-family: var(--serif, serif);

@@ -67,4 +67,27 @@ function briefKeys(nowMs, lookbackDays) {
   return out;
 }
 
-module.exports = { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys };
+// Batch 3 / D: the public shape of a FACTS#<country>/COUNTRY_FACTS row. Every part is returned ONLY
+// with its source and its own as-of date (leadership: the row's lastUpdatedAt; capital / population:
+// their own checkedAt; population also carries the data year). A part missing either is omitted, so
+// the client can never show an undated or unsourced value. No ACLED data, keys, ttl.
+function shapeCountryFacts(item) {
+  if (!item || typeof item !== 'object') return null;
+  const out = {};
+  const hos = item.headOfState && item.headOfState.name ? { name: item.headOfState.name, since: item.headOfState.since || null } : null;
+  const hog = item.headOfGovernment && item.headOfGovernment.name ? { name: item.headOfGovernment.name, since: item.headOfGovernment.since || null } : null;
+  if (item.leadershipSource && item.lastUpdatedAt && (hos || hog)) {
+    out.leadership = { headOfState: hos, headOfGovernment: hog, source: item.leadershipSource, checkedAt: item.lastUpdatedAt };
+  }
+  const cap = item.capital;
+  if (cap && Array.isArray(cap.names) && cap.names.length && cap.source && cap.checkedAt) {
+    out.capital = { names: cap.names.map(String), source: cap.source, checkedAt: cap.checkedAt };
+  }
+  const pop = item.population;
+  if (pop && Number.isFinite(Number(pop.value)) && Number(pop.value) > 0 && Number.isFinite(Number(pop.year)) && pop.source && pop.checkedAt) {
+    out.population = { value: Number(pop.value), year: Number(pop.year), source: pop.source, checkedAt: pop.checkedAt };
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+module.exports = { shapeCountryFacts, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys };

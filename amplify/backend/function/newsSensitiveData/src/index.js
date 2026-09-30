@@ -3,7 +3,7 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys } = require('./lib');
+const { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
 const { assembleDossier } = require('./dossier');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -561,6 +561,26 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify({ success: true, data }),
       };
+    }
+
+    if (action === 'country_facts') {
+      // Public read of the stored country facts (leader / capital / population), each with its
+      // source and as-of date; rows or parts without both are omitted (never an undated value).
+      const countryNames = Array.isArray(payload?.countryNames) ? payload.countryNames.slice(0, 15).map(String) : [];
+      const data = {};
+      const client = getDynamoClient();
+      await Promise.all(countryNames.map(async (name) => {
+        try {
+          const { Item } = await client.send(new GetCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            Key: { PK: `FACTS#${name}`, SK: 'COUNTRY_FACTS' },
+          }));
+          const shaped = shapeCountryFacts(Item);
+          if (shaped) data[name] = shaped;
+        } catch {}
+      }));
+      console.info('newsSensitiveData country_facts response', { requested: countryNames.length, found: Object.keys(data).length });
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, data }) };
     }
 
     if (action === 'country_history') {

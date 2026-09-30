@@ -180,6 +180,13 @@ export async function fetchCountryIntelligence(countryNames) {
   return proxyActionWithAuth('country_intelligence', { countryNames });
 }
 
+// Batch 3 / D: stored country facts (leader / capital / population), each part with its source and
+// its own as-of date. Public. Resolves { data: { [country]: { leadership?, capital?, population? } } };
+// a country (or a part) without a sourced, dated value is simply absent.
+export async function fetchCountryFacts(countryNames) {
+  return proxyAction('country_facts', { countryNames });
+}
+
 export async function fetchCountryHistory(countryName) {
   return proxyAction('country_history', { countryName });
 }

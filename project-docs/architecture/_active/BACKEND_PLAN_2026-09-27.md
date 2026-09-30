@@ -93,7 +93,7 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 
 **Cheap, worth it (approved):**
 6. **Read fix c:** `threadId` on the daily brief's `topStories` (so `/briefings` links to the story page).
-7. **Read fix f:** a read action for country facts (the `Fact` schedule runs `newsCountryFactsUpdater` daily; check what's stored first).
+7. **Read fix f:** a read action for country facts (the `Fact` schedule runs `newsCountryFactsUpdater` daily; check what's stored first). **Done 2026-09-30 (Batch 3 D):** `country_facts` action + card row; updater widened to 40 countries (capital + population; leadership stays the original 12).
 8. **D6 scoring pipeline:**
    - one-pass schema (own `p` + source per trigger; needs DeepSeek back);
    - weekly hashed sample of ~20–25, ≤ 1 per story cluster;

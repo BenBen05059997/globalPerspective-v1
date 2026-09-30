@@ -342,6 +342,7 @@ Read-only REST proxy. All supported actions:
 | `narrative_thread` | None (early access) | `{ threadId }` | All entries for a thread across days. Day-0 `latest` entries carry `latest`'s own date; duplicates by `topicId + date` removed |
 | `thread_analysis` | None (early access) | `{ threadIds }` | Thread-level AI analyses |
 | `country_intelligence` | None (early access) | `{ countryNames }` | Country-level AI intelligence |
+| `country_facts` | None | `{ countryNames[<=15] }` | Stored Wikidata facts per country: `{ leadership?, capital?, population? }`, each part only with `source` + own as-of (`checkedAt`; population also `year`). Leadership only for the original 12. Added 2026-09-30 (Batch 3 D) |
 | `country_history` | Optional (tier cap) | `{ countryName }` | Historical archive entries for a country: `snapshots[]` (always full/public) + `driftNotes[]` (the correction chain). **Member-gated depth (2026-07-07):** unions live `DRIFT#` + permanent `DRIFTLOG#` via `dedupeByAsOf`, then non-members get the newest **1** + `driftNotesTotal`/`driftNotesGated:true`; members get the full chain (`resolveTier`+`capForTier`) |
 | `systems_analysis` | None (early access) | `{ countryName }` | Causal graph for a country: `nodes` (+`actors[]`), causal `edges`, shared-actor `backbone[]` |
 | `event_dossier` | None | `{ countryName, threadId, hops }` | AI-legible dossier: focal event's k-hop subgraph + provenance + genesis + reasoning_contract (see `EVENT_DOSSIER_SPEC.md`) |
@@ -495,7 +496,7 @@ Two layers: `edges` = sparse causal overlay (💭 model judgment); `backbone` = 
 
 ### 11. `newsCountryFactsUpdater`
 **Path:** `amplify/backend/function/newsCountryFactsUpdater/src/index.js`
-**Trigger:** EventBridge Scheduler — `Fact` — `cron(0 5 * * ? *)` (**TZ Asia/Tokyo** — 05:00 JST = **20:00 UTC** prior day)
+**Trigger:** EventBridge Scheduler — `Fact` — `cron(0 5 ? * MON *)` (**TZ Asia/Tokyo**, weekly since Batch 1 R4; Mon 05:00 JST = Sun 20:00 UTC)
 **Deployed:** 2026-04-18 (Phase 2 complete)
 
 Keeps country facts in DynamoDB current without manual editing.
@@ -509,6 +510,9 @@ Keeps country facts in DynamoDB current without manual editing.
 
 **DDB key:** `FACTS#{countryName}` / `COUNTRY_FACTS`
 **Key env vars:** `SUMMARIZE_PREDICT_TABLE`, `ACLED_USERNAME` + `ACLED_PASSWORD` (OAuth token flow against `acleddata.com/oauth/token` — there is **no** `ACLED_API_KEY`)
+
+**Batch 3 / D (2026-09-30):** 40 countries now (`TARGET_COUNTRIES`): the original 12 (hard-coded QIDs; **leadership + ACLED**, unchanged) plus 28 resolved by ISO3 (Wikidata `P298`, one query) that get **capital (`P36`, current statements only) + population (`P1082` with its own `P585` date; an undated statement is ignored) and nothing else**. Leadership is deliberately NOT stored for the 28: Wikidata head-of-state/government statements were stale or wrong for several (Australia, Sudan, DR Congo, Taiwan) and leadership feeds the country-briefing prompts. Capitals and populations are fetched in two batched SPARQL queries (`src/facts.js`, pure + tested); a failed sub-query keeps the previous value with its old `checkedAt`. A full run is ~65 s (183 s timeout; a 150 s time budget skips the tail rather than time out; `FACTS_TIME_BUDGET_MS`). Record fields added: `capital {names[], source, checkedAt}`, `population {value, year, time, source, checkedAt}`; `lastUpdatedAt` stays the leadership check date. **Known data caveats (shown as Wikidata says, labelled with source + date):** multi-capital lists (Israel "Jerusalem, Tel Aviv", Pakistan, Indonesia, Yemen, South Africa); Wikidata populations can be years old (the card hides a data year older than 8).
+**Read path:** proxy action `country_facts { countryNames[<=15] }` returns each part only with its `source` + as-of (`lib.shapeCountryFacts`); the country card (`CountryCardV2`, `features/countries/lib/countryFacts.js`) shows a part only if it was checked within 10 days (a dead weekly job must not show stale values; table TTL is disabled) and, for population, its data year is <= 8 years old. Precedence: operator JSON > Wikidata `FACTS#` > search; the card reads `FACTS#` only (the operator JSON feeds the briefing prompts; only Iran is `verified:true` and it agrees with Wikidata).
 
 ---
 
@@ -1007,7 +1011,7 @@ External monitors that need the operator's own account (UptimeRobot, Google Sear
 | `DAILY_BRIEF#{dateKey}` | `DAILY_BRIEF` | newsPostDevTo | Full daily intelligence brief text (90-day TTL, table TTL disabled). Since 2026-09-30 each `topStories[]` entry carries `threadId` (string or null): resolved in code from the archive entry the story was written from (`src/threadLinks.js`: exact title, containment, token Jaccard >= 0.6; ambiguous = null), never by the model. Older rows have none |
 | `WEEKLY_BRIEF#{weekKey}` | `WEEKLY_BRIEF` | newsWeeklyBrief (#23) | Weekly **signals** digest (`format:'signals'`): `signals[{kind('threat'|'development'),lede,fact,soWhat,riskLevel,riskScore,region,asOf,sources,related}]` + `watch[{event,date,stake}]`. LLM writes kind/lede/fact/soWhat only; risk/region/asOf/sources are deterministic. `kind` drives the chip — threats get a color-coded RISK chip, developments a neutral chip (so cooperative stories aren't shown as red risks). `status` draft→published via weekly/review.js (180-day TTL) |
 | `WEEKLY_MARKETS#{weekKey}` | `WEEKLY_MARKETS` | newsWeeklyMarkets (#25) | Weekly **markets** report (price-first): `movers[{instrumentId,name,changePct,direction,weekStart,weekEnd,grounding('coverage'|'web'|'none'),note,coverage[{threadId,headline,severity}],sources[{title,url}]}]` + `excluded[]` (thin/gappy history). The %/direction/anchors are **deterministic** (from MARKETS history, never LLM); the LLM writes only the per-mover `note`. `status` draft→published via weekly-markets/review.js (180-day TTL) |
-| `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata), active conflicts (ACLED), leadership change detection (90-day TTL) |
+| `FACTS#{countryName}` | `COUNTRY_FACTS` | newsCountryFactsUpdater | Head of state/govt (Wikidata, original 12 only), active conflicts (ACLED, original 12), leadership change detection; since 2026-09-30 also `capital` and `population` (40 countries, each with source + `checkedAt`) (90-day TTL attribute; table TTL disabled) |
 | `ECON#THREAD#{threadId}` | `ECONOMIC_IMPACT` | newsEconomicImpact | direction, magnitude, instruments, analog, marketSnapshot, citations; quality scores added by newsEconomicQuality (21-day TTL) |
 | `TOPIC#{topicId}` | `RESEARCH_BRIEFING` | NewsProjectInvokeAgentLambda | Research briefing (first pass of two-pass prediction) |
 

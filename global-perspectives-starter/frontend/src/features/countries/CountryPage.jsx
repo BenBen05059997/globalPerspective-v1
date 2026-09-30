@@ -32,6 +32,7 @@ import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/countries/CountryPage.css';
+import { isRealCountryName } from '@/shared/lib/placeNames.js';
 
 function formatTimeAgo(isoString) {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
@@ -290,6 +291,8 @@ export default function CountryPage() {
 
     const allCountries = Object.values(map)
       .filter(c => c.articles >= 2 || c.name === decodedName)
+      // Batch 3 / F: the country picker lists real countries only (regions stay in `map` for the broad-region coverage below)
+      .filter(c => isRealCountryName(c.name) || c.name === decodedName)
       .sort((a, b) => b.articles - a.articles);
 
     const broadRegions = getBroadRegionsForCountry(decodedName);

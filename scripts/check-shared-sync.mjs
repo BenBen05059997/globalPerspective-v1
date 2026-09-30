@@ -147,6 +147,30 @@ function checkAllIdentical(paths) {
   return { pass: true };
 }
 
+const PLACE_LAMBDAS = ['newsSystemsAnalysis', 'newsPostDevTo', 'newsBreakingAlert', 'newsWeeklyBrief', 'newsSignals', 'newsSensitiveData'];
+const FE_DATA = 'global-perspectives-starter/frontend/src/shared/data';
+const placeCore = (src) => { const a = src.indexOf("// Names in briefings come from the LLM's `regions`"); const b = src.indexOf('\nconst ymd = '); const e = src.indexOf('\n/** isRealCountryName'); const t = src.indexOf('\n// A COUNTRY# record a reader may use'); return src.slice(a, b > 0 ? b : (t > 0 ? t : e)).trim(); };
+
+/** Batch 3 / F: the real-country rule. (1) every Lambda copy of placeFilter.js, placeNames.json and
+ *  iso3Names.json is byte-identical to newsCountryIntelligence's tables; (2) the frontend data copies too;
+ *  (3) the rule text (alias table, normKey, isCountryName) in placeFilter.js and in the frontend
+ *  shared/lib/placeNames.js is the same text as in newsCountryIntelligence/src/refreshPolicy.js. */
+function checkPlaceRule() {
+  const base = 'amplify/backend/function/newsCountryIntelligence/src';
+  for (const f of ['placeNames.json', 'iso3Names.json']) {
+    const r = checkAllIdentical([abs(`${base}/${f}`), ...PLACE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/${f}`)), abs(`${FE_DATA}/${f}`)]);
+    if (!r.pass) return { pass: false, diff: `${f}: ${r.diff}` };
+  }
+  const pf = checkAllIdentical(PLACE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/placeFilter.js`)));
+  if (!pf.pass) return { pass: false, diff: `placeFilter.js: ${pf.diff}` };
+  const ref = placeCore(fs.readFileSync(abs(`${base}/refreshPolicy.js`), 'utf8'));
+  for (const f of [`amplify/backend/function/${PLACE_LAMBDAS[0]}/src/placeFilter.js`, 'global-perspectives-starter/frontend/src/shared/lib/placeNames.js']) {
+    const got = placeCore(fs.readFileSync(abs(f), 'utf8'));
+    if (got !== ref) return { pass: false, diff: `${f}: the real-country rule text differs from refreshPolicy.js\n${textDiff('refreshPolicy.js', ref, path.basename(f), got)}` };
+  }
+  return { pass: true };
+}
+
 function checkSituationsCore(trackerPath, ingestPath) {
   const trackerRaw = fs.readFileSync(trackerPath, 'utf8');
   const ingestRaw = fs.readFileSync(ingestPath, 'utf8');
@@ -269,6 +293,7 @@ function livePairs() {
       name: 'dayZero.js (x6)',
       run: () => checkAllIdentical(DAYZERO_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/dayZero.js`))),
     },
+    { name: 'real-country rule (placeFilter x6, name tables x8, frontend)', run: () => checkPlaceRule() },
     {
       name: 'entity-normalization',
       run: async () => checkEntityNormalization(
@@ -403,6 +428,16 @@ async function selfTestDayZero() {
   return result;
 }
 
+async function selfTestPlaceRule() {
+  const dir = mkTmp();
+  const ref = fs.readFileSync(abs('amplify/backend/function/newsSystemsAnalysis/src/placeFilter.js'), 'utf8');
+  const a = path.join(dir, 'a.js'); const b = path.join(dir, 'b.js');
+  fs.writeFileSync(a, ref); fs.writeFileSync(b, ref.replace("'uk': 'united kingdom'", "'uk': 'united kingdomx'"));
+  const result = checkAllIdentical([a, b]);
+  fs.rmSync(dir, { recursive: true, force: true });
+  return result;
+}
+
 async function selfTest() {
   console.log('Self-test — perturbing one byte per pair and confirming DRIFT is caught\n');
   const cases = [
@@ -412,6 +447,7 @@ async function selfTest() {
     ['iso3Names.json', selfTestIso3Names],
     ['entity-normalization', selfTestEntityNormalization],
     ['dayZero.js (x6)', selfTestDayZero],
+    ['real-country rule', selfTestPlaceRule],
   ];
   let allCaught = true;
   for (const [name, fn] of cases) {

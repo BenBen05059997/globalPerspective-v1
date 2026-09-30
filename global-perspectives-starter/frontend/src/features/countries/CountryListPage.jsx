@@ -11,6 +11,7 @@ import CountryOverviewMap from '@/features/countries/components/CountryOverviewM
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import RiskScoreBadge from '@/shared/ui/risk/RiskScoreBadge';
+import { isRealCountryName } from '@/shared/lib/placeNames.js';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/countries/CountryListPage.css';
@@ -245,6 +246,7 @@ export default function CountryListPage() {
     for (const date of sortedDates) {
       for (const entry of (dayMap[date]?.entries || [])) {
         for (const region of (entry.regions || [])) {
+          if (!isRealCountryName(region)) continue; // Batch 3 / F: skip aggregates (Europe, Middle East ...): they are not countries
           if (!map[region]) map[region] = { name: region, articles: 0, threads: new Set(), categories: {} };
           map[region].articles++;
           if (entry.threadId) map[region].threads.add(entry.threadId);

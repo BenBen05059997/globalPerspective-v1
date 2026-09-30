@@ -320,6 +320,8 @@ Despite the name, now uses **DeepSeek v4-flash** (migrated 2026-07-26 from the r
 ---
 
 ### 5. `newsSensitiveData`
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** `world_overview` no longer serves region `SYSTEMS#` rows as country situations; uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
 **Path:** `amplify/backend/function/newsSensitiveData/src/index.js`
 **Live deploy name:** `newsSensitiveData-dev` (the `-dev` suffix is prod — verified 2026-09-10)
 **Trigger:** API Gateway HTTP POST from frontend
@@ -403,6 +405,8 @@ Read-only REST proxy. All supported actions:
 ---
 
 ### 7. `newsPostDevTo`
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** the daily brief's country block skips region keys and `COUNTRY#` records older than 30 days (a region can no longer become `countryToWatch`); uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
 **Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
 
 **Path:** `amplify/backend/function/newsPostDevTo/src/index.js`
@@ -452,6 +456,8 @@ Bilateral relationship analysis between country pairs.
 ---
 
 ### 9. `newsSystemsAnalysis`
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** `groupByCountry` keeps real countries only (regions no longer take the top-N story-web slots); `event.dryRun` lists targets + excluded names with no LLM and no writes; uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
 **Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
 
 **Path:** `amplify/backend/function/newsSystemsAnalysis/src/index.js`
@@ -657,6 +663,8 @@ The **proposal** half of hybrid resolution. Reads `GlobalPerspectivePredictionLo
 ---
 
 ### 21. `newsBreakingAlert` — DEPLOYED + SCHEDULED (proposal mode; `DRY_RUN=false`)
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** `maxRegionRisk` ignores region keys and records older than 30 days; uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
 **Path:** `amplify/backend/function/newsBreakingAlert/src/index.js`
 **Trigger:** EventBridge Rule — `TriggerBreakingAlert` — **ENABLED** — `cron(15 */4 * * ? *)` (:15 each 4h cycle, after `NewsProjectInvokeAgentLambda` writes the analysis).
 
@@ -704,6 +712,8 @@ Single owner of `GlobalPerspectiveUserPrefs`. Two responsibilities:
 ---
 
 ### 23. `newsWeeklyBrief`
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** `topCountries` skips aggregates and the country block ignores records older than 30 days; uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
 **Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
 
 **Path:** `amplify/backend/function/newsWeeklyBrief/src/index.js`
@@ -915,6 +925,8 @@ Scans `GlobalPerspectivePredictionLog` once and writes the precomputed aggregate
 ---
 
 ### 37. `newsSignals` — Signal-API v1 builder + serve
+**Real-country rule (Batch 3 / F, deployed 2026-09-30):** the `COUNTRY#` scan skips region keys and records older than 30 days (a Signal API consumer never sees a region as a country); uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
+
 **Path:** `amplify/backend/function/newsSignals/src/index.js`
 **Trigger:** EventBridge Rule — `TriggerSignalsBuild` — **ENABLED** — `cron(0 10 * * ? *)` (daily 10:00 UTC, build) + a public **Function URL** (AuthType NONE, key-gated in code, serve). 512MB/300s.
 

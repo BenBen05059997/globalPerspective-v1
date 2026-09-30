@@ -1,6 +1,7 @@
 'use strict';
 
 const { keepDayZero } = require('./dayZero');
+const { isCountryName } = require('./placeFilter');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
@@ -34,7 +35,7 @@ const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUn
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
-exports.handler = async () => {
+exports.handler = async (event = {}) => {
   console.log('Systems analysis started');
 
   if (!TOPICS_TABLE || !SUMMARY_TABLE) {
@@ -61,6 +62,14 @@ exports.handler = async () => {
     : countries.slice(0, MAX_COUNTRIES);
 
   console.log(`Analyzing: ${targets.map(c => c.countryName).join(', ')}`);
+
+  // Batch 3 / F: regions and aggregates (Europe, Asia, Middle East ...) are not briefed; dryRun lists what would run.
+  const excluded = [...new Set(entries.flatMap(e => e.regions || []))].filter(n => !isCountryName(n));
+  if (excluded.length) console.log(`Excluded (not real countries): ${excluded.join(', ')}`);
+  if (event && event.dryRun) {
+    console.log('DRY RUN (no LLM, no writes)');
+    return { statusCode: 200, dryRun: true, eligible: countries.length, targets: targets.map(c => c.countryName), excluded };
+  }
 
   let generated = 0;
   let failed = 0;
@@ -156,6 +165,7 @@ function groupByCountry(entries, threadAnalyses) {
   }
 
   return Object.values(countryMap)
+    .filter(c => isCountryName(c.countryName)) // Batch 3 / F: real countries only (regions used to take the top-N slots)
     .filter(c => c.entries.length >= 4) // need enough for causal analysis
     .map(c => {
       const threadIds = [...c.threadIds];
@@ -496,5 +506,6 @@ function stripCodeFence(value) {
 }
 
 // Exported for unit testing the pure, deterministic helpers (no AWS/LLM needed).
+module.exports.groupByCountry = groupByCountry; // for tests
 module.exports.buildBackboneEdges = buildBackboneEdges;
 module.exports.normalizeActors = normalizeActors;

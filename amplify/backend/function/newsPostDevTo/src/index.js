@@ -9,6 +9,7 @@ const {
 } = require('@aws-sdk/lib-dynamodb');
 const { keepDayZero } = require('./dayZero');
 const { resolveStoryThreadIds } = require('./threadLinks');
+const { isCountryName, usableCountryRecord } = require('./placeFilter');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
 const REGION        = process.env.AWS_REGION || 'ap-northeast-1';
@@ -52,7 +53,8 @@ async function loadThreadAnalyses(entries) {
 
 async function loadCountryIntelligence(entries) {
   if (!SUMMARY_TABLE) return {};
-  const countries = [...new Set(entries.flatMap(e => e.regions || []))];
+  // Batch 3 / F: real countries only (not Europe / Middle East ...), and only records generated in the last 30 days
+  const countries = [...new Set(entries.flatMap(e => e.regions || []))].filter(isCountryName);
   const intel = {};
   await Promise.all(countries.slice(0, 15).map(async (name) => {
     try {
@@ -60,7 +62,7 @@ async function loadCountryIntelligence(entries) {
         TableName: SUMMARY_TABLE,
         Key: { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE' },
       }));
-      if (Item) intel[name] = Item;
+      if (Item && usableCountryRecord(name, Item)) intel[name] = Item;
     } catch {}
   }));
   return intel;
@@ -391,3 +393,4 @@ function resp(statusCode, body) {
     body: JSON.stringify(body),
   };
 }
+module.exports.loadCountryIntelligence = loadCountryIntelligence; // for tests

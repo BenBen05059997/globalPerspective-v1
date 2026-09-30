@@ -151,4 +151,4 @@ Prices per 1M tokens (in / out), peak, from official pages 2026-09-27:
 
 **Follow-ups found:**
 - Story analysis picks backlog threads over today's new ones because of the archive re-dating bug (read fix a).
-- `newsSystemsAnalysis` still treats regions (Europe, Asia) as countries; extend the R1b exclusion.
+- `newsSystemsAnalysis` still treats regions (Europe, Asia) as countries; extend the R1b exclusion. **Done 2026-09-30 (Batch 3 F):** real-country rule in Systems + 4 readers + `world_overview` + country list page.

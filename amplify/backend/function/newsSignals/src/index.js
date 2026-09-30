@@ -31,6 +31,7 @@ const {
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const adapter = require('./signalAdapter');
 const store = require('./signalStore');
+const { usableCountryRecord } = require('./placeFilter');
 const { extractKey, verifyKey } = require('./apiKeys');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -167,7 +168,15 @@ async function build() {
     FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk',
     ExpressionAttributeValues: { ':prefix': 'COUNTRY#', ':sk': 'COUNTRY_INTELLIGENCE' },
   });
-  for (const rec of countries) collect(adapter.fromCountryIntelligence(rec, { emittedAt }), 'geopolitical_risk');
+  // Batch 3 / F: a Signal API consumer must never get a region (Europe, Middle East ...) or a record older
+  // than 30 days as a current country risk read.
+  const countryNowMs = Date.parse(emittedAt) || Date.now();
+  let skippedCountries = 0;
+  for (const rec of countries) {
+    if (!usableCountryRecord(String(rec.PK || '').replace(/^COUNTRY#/, ''), rec, countryNowMs)) { skippedCountries++; continue; }
+    collect(adapter.fromCountryIntelligence(rec, { emittedAt }), 'geopolitical_risk');
+  }
+  if (skippedCountries) console.info(`signals: skipped ${skippedCountries} region / stale COUNTRY# record(s)`);
 
   // 4. Confirmed/sent breaking alerts
   let breaking = [];

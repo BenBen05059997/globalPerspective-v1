@@ -5,6 +5,7 @@ const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryComman
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
 const { assembleDossier } = require('./dossier');
+const { isCountryName } = require('./placeFilter');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -809,7 +810,9 @@ exports.handler = async (event) => {
             latest: dates[dates.length - 1] || null,
             generatedAt: it.generatedAt || null,
           };
-        }).filter(s => s.country && s.threadCount > 0);
+        }).filter(s => s.country && s.threadCount > 0)
+          // Batch 3 / F: regions (Europe, Asia, Middle East ...) are not country situations; their old SYSTEMS# rows stay in DynamoDB but are not served
+          .filter(s => isCountryName(s.country));
 
         // Enrichment (additive, best-effort): attach the country's current risk
         // read + its latest drift note so the world tier can color by risk tier

@@ -10,6 +10,7 @@
 // mirrors the breaking-detector dry-run approach.
 
 const { keepDayZero } = require('./dayZero');
+const { isCountryName, usableCountryRecord } = require('./placeFilter');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
@@ -61,7 +62,7 @@ exports.handler = async (event = {}) => {
   const countryCtx = [];
   for (const name of topCountries(entries, TOP_COUNTRIES)) {
     const ci = await getRecord(`COUNTRY#${name}`, 'COUNTRY_INTELLIGENCE');
-    if (ci) countryCtx.push({ name, ...ci });
+    if (ci && usableCountryRecord(name, ci)) countryCtx.push({ name, ...ci }); // Batch 3 / F: real + < 30 days old
   }
 
   // Deterministic risk per thread: thread analysis risk, else max risk of its regions.
@@ -218,7 +219,8 @@ function riskLevelFromScore(score) {
 function topCountries(entries, n) {
   const counts = {};
   for (const e of entries) for (const r of e.regions || []) counts[r] = (counts[r] || 0) + 1;
-  return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, n).map(([name]) => name);
+  // Batch 3 / F: aggregates (Europe, Middle East ...) must not take the top-N slots
+  return Object.entries(counts).filter(([name]) => isCountryName(name)).sort((a, b) => b[1] - a[1]).slice(0, n).map(([name]) => name);
 }
 
 async function getRecord(pk, sk) {
@@ -320,3 +322,4 @@ function stripCodeFence(v) {
   if (typeof v !== 'string') return v;
   return v.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').replace(/,(\s*[\]}])/g, '$1').trim();
 }
+module.exports.topCountries = topCountries; // for tests

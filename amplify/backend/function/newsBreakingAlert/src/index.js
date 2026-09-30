@@ -16,6 +16,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { scoreStory, effectiveThreshold, SIGNIFICANCE_THRESHOLD, regionRiskScore } = require('./significance');
 const { renderAlert } = require('./render');
+const { usableCountryRecord } = require('./placeFilter');
 const { sendEmail } = require('./sendEmail');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -109,6 +110,8 @@ async function maxRegionRisk(regions, category) {
   let max = 0;
   for (const r of regions) {
     const rec = await getRecord(`COUNTRY#${r}`, 'COUNTRY_INTELLIGENCE');
+    // Batch 3 / F: a region key (Europe ...) or a record older than 30 days is not a current country read
+    if (!usableCountryRecord(r, rec)) continue;
     const score = regionRiskScore(rec, category);
     if (Number.isFinite(score) && score > max) max = score;
   }
@@ -374,3 +377,4 @@ if (require.main === module) {
     process.exit(1);
   });
 }
+module.exports.maxRegionRisk = maxRegionRisk; // for tests

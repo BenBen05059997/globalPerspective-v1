@@ -510,6 +510,11 @@ questions: {
 - Q1–Q19: (pending)
 - Y1–Y8: each needs a "yes" in the message that asks for it.
 
+
+### Operator answers (2026-09-30): "ok you can execute them all with sonnet" (Q1–Q19 all as recommended)
+- Execute phases A–H. Q18 live runs approved: (a) 3 forced forecasts ~$0.03; (b) the drafter replay dry-run ~$0.06 + 20 Brave searches; (c) 1 country ~$0.02 then a full web run ~$0.25.
+- **Y1–Y5 (share table, IAM role / policies, Lambda, Function URL, the `docs/config.js` key) and Y6 (frontend deploy) / Y7 (Worker header):** at the moment of each, the monitor shows the operator the exact resources and gets a one-word yes (CLAUDE.md: IAM / config.js / deploy need a fresh yes at the step). Y8: the operator creates the example share with their own key.
+
 ## ▶ LIVE TRACKER
 | Phase | What | Status | Evidence |
 |---|---|---|---|

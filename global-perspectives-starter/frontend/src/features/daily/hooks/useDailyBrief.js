@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchDailyBrief } from '@/shared/api/restProxy';
+import { fetchDailyBrief, fetchLatestDailyBrief } from '@/shared/api/restProxy';
 
 const CACHE_KEY = 'gp_daily_brief_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;
@@ -27,6 +27,10 @@ const BATCH_SIZE = 10;
 // instance in the tab, caches a "nothing found" result for the same TTL as a real one, and
 // remembers the last date that actually returned a brief so a steady-state outage costs 2
 // requests per lookup (today + the remembered date) instead of a full batched scan.
+// Batch 3 / B: with no explicit date ("latest": Layout, map, About, Desk, Account, /daily,
+// /briefings) the server finds the newest brief in ONE `latest_daily_brief` call, so a cold page
+// costs 1 request instead of up to 21. An explicit date keeps the walk below (rare, user-initiated).
+const LATEST_KEY = '__latest__';
 const inFlight = new Map();    // effectiveDateKey -> Promise<{ data, served, timestamp }>, self-clearing
 
 function safeStorage() {
@@ -141,13 +145,24 @@ async function findBrief(effectiveDateKey) {
   return scanned;
 }
 
+async function findLatest() {
+  const res = await fetchLatestDailyBrief(MAX_LOOKBACK_DAYS);
+  const data = res?.data || null;
+  return {
+    data,
+    served: data ? (res.dateKey || data.dateKey || null) : null,
+    editions: Array.isArray(res?.editions) ? res.editions : null,
+  };
+}
+
 function getOrFetch(effectiveDateKey) {
   const cached = cachedEntry(effectiveDateKey);
   if (cached) return Promise.resolve(cached);
   if (inFlight.has(effectiveDateKey)) return inFlight.get(effectiveDateKey);
-  const p = findBrief(effectiveDateKey)
-    .then(({ data, served }) => {
-      const entry = { data, served, timestamp: Date.now() };
+  const finder = effectiveDateKey === LATEST_KEY ? findLatest() : findBrief(effectiveDateKey);
+  const p = finder
+    .then(({ data, served, editions }) => {
+      const entry = { data, served, timestamp: Date.now(), ...(editions ? { editions } : {}) };
       storeEntry(effectiveDateKey, entry);
       return entry;
     })
@@ -156,14 +171,19 @@ function getOrFetch(effectiveDateKey) {
   return p;
 }
 
+// Shared with the /briefings editions strip: the cached/in-flight "latest" result, including the
+// `editions` (dateKeys that have a brief in the lookback window, newest first).
+export function loadLatestDailyBrief() {
+  return getOrFetch(LATEST_KEY);
+}
+
 export function useDailyBrief(dateKey) {
   const [brief, setBrief] = useState(null);
   const [servedDateKey, setServedDateKey] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const effectiveDateKey = dateKey || today;
+  const effectiveDateKey = dateKey || LATEST_KEY;
 
   const load = useCallback(async () => {
     // Synchronous cache hit — no loading flash, and no fetch at all when another instance (or an

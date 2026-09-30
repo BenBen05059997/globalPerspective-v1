@@ -1,9 +1,9 @@
 'use strict';
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate } = require('./lib');
+const { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys } = require('./lib');
 const { assembleDossier } = require('./dossier');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -372,6 +372,30 @@ exports.handler = async (event) => {
       } catch (err) {
         console.error('daily_brief read error:', err);
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
+      }
+    }
+
+    if (action === 'latest_daily_brief') {
+      // Newest published daily brief in one round trip (replaces the client's day-by-day lookback).
+      // BatchGetItem over the last `lookbackDays` DAILY_BRIEF# keys; the newest existing one wins.
+      try {
+        const keys = briefKeys(Date.now(), payload?.lookbackDays).map((d) => ({ PK: `DAILY_BRIEF#${d}`, SK: 'DAILY_BRIEF' }));
+        const client = getDynamoClient();
+        let pending = { [SUMMARIZE_PREDICT_TABLE]: { Keys: keys } };
+        const found = [];
+        for (let attempt = 0; attempt < 2 && pending && Object.keys(pending).length; attempt++) {
+          const out = await client.send(new BatchGetCommand({ RequestItems: pending }));
+          found.push(...((out.Responses || {})[SUMMARIZE_PREDICT_TABLE] || []));
+          pending = out.UnprocessedKeys && Object.keys(out.UnprocessedKeys).length ? out.UnprocessedKeys : null;
+        }
+        const { item, editions } = pickLatestBrief(found);
+        console.info('newsSensitiveData latest_daily_brief response', { keys: keys.length, found: found.length, dateKey: item?.dateKey || null });
+        if (!item) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null, dateKey: null, editions: [] }) };
+        const { PK, SK, ttl, ...rest } = item;
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest, dateKey: rest.dateKey, editions }) };
+      } catch (err) {
+        console.error('latest_daily_brief read error:', err);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null, dateKey: null, editions: [] }) };
       }
     }
 

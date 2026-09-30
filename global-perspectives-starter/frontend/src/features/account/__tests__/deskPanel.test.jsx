@@ -19,12 +19,15 @@ vi.mock('@/features/account/hooks/useMembership', () => ({
 
 const fetchCountryHistory = vi.fn();
 const reportFetchError = vi.fn();
+const dailyBriefMock = vi.hoisted(() => vi.fn(() => Promise.resolve({ data: { generatedAt: new Date().toISOString() } })));
 vi.mock('@/shared/api/restProxy', () => ({
   fetchCountryHistory: (...args) => fetchCountryHistory(...args),
   // DeskPanel now also computes the site's real "analysis paused" state (F2.18) via
   // useDailyBrief — default to a fresh brief so existing assertions aren't affected; the
   // dedicated "analysis paused" test below overrides this.
-  fetchDailyBrief: vi.fn(() => Promise.resolve({ data: { generatedAt: new Date().toISOString() } })),
+  fetchDailyBrief: dailyBriefMock,
+  // Batch 3 / B: useDailyBrief() (no date) now calls fetchLatestDailyBrief; the same mock controls both.
+  fetchLatestDailyBrief: (...args) => dailyBriefMock(...args),
 }));
 vi.mock('@/shared/api/errorSink', () => ({
   reportFetchError: (...args) => reportFetchError(...args),

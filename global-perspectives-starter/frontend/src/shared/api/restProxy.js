@@ -192,6 +192,13 @@ export async function fetchDailyBrief(dateKey) {
   return proxyActionWithAuth('daily_brief', { dateKey });
 }
 
+// Batch 3 / B: the newest published daily brief in ONE call (server walks the last `lookbackDays`
+// DAILY_BRIEF# keys). Public (no auth). Resolves { data, dateKey, editions[] }; data is null when
+// nothing was published in the window. Replaces the client's day-by-day lookback for "latest".
+export async function fetchLatestDailyBrief(lookbackDays = 30) {
+  return proxyAction('latest_daily_brief', { lookbackDays });
+}
+
 export async function fetchPairAnalysis(slug) {
   return proxyAction('pair_analysis', { pair: slug });
 }

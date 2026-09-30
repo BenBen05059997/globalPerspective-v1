@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { fetchDailyBrief } from '@/shared/api/restProxy';
 import { reportFetchError } from '@/shared/api/errorSink';
-import { lastNDateKeys } from '@/features/briefings/lib/editions.js';
+import { lastNDateKeys, todayKey, addDaysKey } from '@/features/briefings/lib/editions.js';
+import { loadLatestDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
 
 // useDailyEditionsIndex — powers the daily editions strip without a request-per-day fan-out
 // (TASK_2026-09-27_pages_local.md S3: "watch the fan-out"). Probes at most LOOKBACK_DAYS dates
@@ -32,6 +33,18 @@ export function useDailyEditionsIndex(anchorDateKey) {
     (async () => {
       setLoading(true);
       const cache = readCache();
+      // Batch 3 / B: the `latest_daily_brief` response already lists every date that has a brief in
+      // the last MAX_LOOKBACK_DAYS days, so those dates need no probe. A date outside that window,
+      // or a failed lookup, falls back to the per-date probe below (never a guess).
+      try {
+        const latest = await loadLatestDailyBrief();
+        if (Array.isArray(latest?.editions)) {
+          const oldest = addDaysKey(todayKey(), -(MAX_LOOKBACK_DAYS - 1));
+          for (const dk of dateKeys) {
+            if (dk >= oldest && dk <= todayKey()) cache[dk] = latest.editions.includes(dk);
+          }
+        }
+      } catch { /* fall back to probing */ }
       const missing = dateKeys.filter((dk) => cache[dk] === undefined);
       for (let i = 0; i < missing.length && !cancelled; i += BATCH_SIZE) {
         const batch = missing.slice(i, i + BATCH_SIZE);

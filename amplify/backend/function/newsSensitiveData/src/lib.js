@@ -50,4 +50,21 @@ function dedupeTopicDate(entries) {
   });
 }
 
-module.exports = { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate };
+// Batch 3 / B: newest daily brief among the rows a BatchGetItem returned. `dateKey` is the row's own
+// YYYY-MM-DD. Returns { item, editions } (editions = every dateKey found, newest first) or
+// { item: null, editions: [] }.
+function pickLatestBrief(items) {
+  const rows = (Array.isArray(items) ? items : []).filter((it) => it && /^\d{4}-\d{2}-\d{2}$/.test(String(it.dateKey || '')));
+  rows.sort((a, b) => String(b.dateKey).localeCompare(String(a.dateKey)));
+  return { item: rows[0] || null, editions: rows.map((r) => r.dateKey) };
+}
+
+// The DAILY_BRIEF# keys to look up: today back `lookbackDays` days (default 30, clamped 1..60).
+function briefKeys(nowMs, lookbackDays) {
+  const n = Math.min(60, Math.max(1, Math.floor(Number(lookbackDays)) || 30));
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(new Date(nowMs - i * 86400000).toISOString().slice(0, 10));
+  return out;
+}
+
+module.exports = { capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, pickLatestBrief, briefKeys };

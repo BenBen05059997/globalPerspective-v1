@@ -27,6 +27,8 @@ vi.mock('firebase/auth', () => ({
 const fetchDailyBrief = vi.fn();
 vi.mock('@/shared/api/restProxy', () => ({
   fetchDailyBrief: (...args) => fetchDailyBrief(...args),
+  // Batch 3 / B: useDailyBrief() (no date) now calls fetchLatestDailyBrief; same mock controls both.
+  fetchLatestDailyBrief: (...args) => fetchDailyBrief(...args),
   billingConfigured: () => false,
   fetchMembership: vi.fn(),
 }));

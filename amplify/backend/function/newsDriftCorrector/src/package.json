@@ -4,7 +4,7 @@
   "description": "Living-analysis corrector: deterministically detects a recent country-read conclusion move, grounds the 'why' in a real archive event (DeepSeek), and writes a DRIFT# note (never overwrites the analysis).",
   "main": "index.js",
   "scripts": {
-    "test": "node --test ../test/lib.test.js"
+    "test": "node --test ../test/*.test.js"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.600.0",

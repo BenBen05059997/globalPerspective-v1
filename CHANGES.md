@@ -6,6 +6,9 @@
   - `src/dayZero.js` (`keepDayZero`: an entry is "today" only if its own `archivedAt` is today, UTC) in `newsThreadAnalysis`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsWeeklyBrief`, `newsDriftCorrector`, `newsPostDevTo`; byte-identical copies guarded by `scripts/check-shared-sync.mjs` (new pair, self-test).
   - `newsSensitiveData` `archive_range` / `narrative_thread`: day 0 is `latest`, labelled with its own `updatedAt` date (`lib.latestDayLabel`), duplicates by `topicId + date` removed.
   - Seven Lambdas deployed (bare `update-function-code`; deployed files byte-identical to repo). New `scripts/check-archive-dates.mjs` (read-only audit). Tests: dayZero 5, latestDayLabel 3; existing suites pass. Dormant `newsPairIntelligence` and parked `newsEconomicImpact` are not edited.
+- **B: `latest_daily_brief`** (proxy `newsSensitiveData-dev`, deployed; repo = deployed): one `BatchGetItem` over the last 30 (max 60) `DAILY_BRIEF#` keys returns `{ data, dateKey, editions[] }` (`lib.pickLatestBrief`, `briefKeys`; tests 3).
+  - Frontend (branch `map-console`, not deployed): `fetchLatestDailyBrief`; `useDailyBrief()` with no date is one shared call (cold `/map`: 1 `latest_daily_brief`, was up to 21 `daily_brief`); an explicit date keeps the walk; `/daily` without `/:dateKey` uses latest mode; the `/briefings` editions strip reads `editions[]` (zero per-date probes inside the 30-day window, probe fallback outside / on failure). Tests: hook + editions + 3 mocks updated; `npm run verify` 751 pass; `verify_pages.sh` 52/0.
+  - `npm test` scripts of `newsThreadAnalysis`, `newsCountryIntelligence`, `newsDriftCorrector`, `newsSensitiveData` now run all `../test/*.test.js` (they ran a single named file, so phase A's new tests were skipped).
 
 ## 2026-09-29 (Backend Batch 2, live AWS: models)
 

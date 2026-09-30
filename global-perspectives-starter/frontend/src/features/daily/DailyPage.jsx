@@ -202,7 +202,7 @@ export default function DailyPage() {
   const dateKey = paramDateKey || today;
   const isToday = dateKey === today;
 
-  const { brief, servedDateKey, loading } = useDailyBrief(dateKey);
+  const { brief, servedDateKey, loading } = useDailyBrief(paramDateKey) /* no /:dateKey = latest (1 shared call); an explicit date keeps the walk */;
   // The served brief may be older than the requested date (today's isn't generated until end of
   // day; the hook falls back up to MAX_LOOKBACK_DAYS to find the nearest real brief). Once a
   // brief has loaded, step the arrows from the last known-good (served) date rather than the

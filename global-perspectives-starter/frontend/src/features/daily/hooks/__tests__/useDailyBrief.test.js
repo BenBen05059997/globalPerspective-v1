@@ -8,17 +8,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
-vi.mock('@/shared/api/restProxy', () => ({ fetchDailyBrief: vi.fn() }));
+vi.mock('@/shared/api/restProxy', () => ({ fetchDailyBrief: vi.fn(), fetchLatestDailyBrief: vi.fn() }));
 
 async function freshModule() {
   vi.resetModules();
   const restProxy = await import('@/shared/api/restProxy');
   const hookModule = await import('@/features/daily/hooks/useDailyBrief.js');
-  return { ...hookModule, fetchDailyBrief: restProxy.fetchDailyBrief };
+  return { ...hookModule, fetchDailyBrief: restProxy.fetchDailyBrief, fetchLatestDailyBrief: restProxy.fetchLatestDailyBrief };
 }
 
 describe('useDailyBrief — shared request + cache (F1.1)', () => {
   beforeEach(() => {
+    vi.resetAllMocks();
     localStorage.clear();
     vi.useRealTimers();
   });
@@ -92,5 +93,40 @@ describe('useDailyBrief — shared request + cache (F1.1)', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.brief).toEqual({ generatedAt: '2026-08-01T09:00:00Z' });
     expect(result.current.servedDateKey).toBe('2026-08-01');
+  });
+
+  // Batch 3 / B: no explicit date = "latest" = ONE server call (was up to 21 per cold page).
+  it('latest mode: several mounts with no date make exactly one latest_daily_brief call and no daily_brief calls', async () => {
+    const { useDailyBrief, fetchDailyBrief, fetchLatestDailyBrief } = await freshModule();
+    fetchLatestDailyBrief.mockResolvedValue({ data: { generatedAt: '2026-09-30T02:26:00Z', dateKey: '2026-09-30' }, dateKey: '2026-09-30', editions: ['2026-09-30', '2026-09-12'] });
+    const a = renderHook(() => useDailyBrief());
+    const b = renderHook(() => useDailyBrief());
+    const c = renderHook(() => useDailyBrief());
+    for (const h of [a, b, c]) await waitFor(() => expect(h.result.current.loading).toBe(false));
+    expect(a.result.current.brief.dateKey).toBe('2026-09-30');
+    expect(c.result.current.servedDateKey).toBe('2026-09-30');
+    expect(fetchLatestDailyBrief).toHaveBeenCalledTimes(1);
+    expect(fetchDailyBrief).not.toHaveBeenCalled();
+  });
+
+  it('latest mode: a "nothing published" answer is cached (no new request within the TTL)', async () => {
+    const { useDailyBrief, fetchLatestDailyBrief } = await freshModule();
+    fetchLatestDailyBrief.mockResolvedValue({ data: null, dateKey: null, editions: [] });
+    const first = renderHook(() => useDailyBrief());
+    await waitFor(() => expect(first.result.current.loading).toBe(false));
+    expect(first.result.current.brief).toBeNull();
+    expect(first.result.current.servedDateKey).toBeNull();
+    const second = renderHook(() => useDailyBrief());
+    await waitFor(() => expect(second.result.current.loading).toBe(false));
+    expect(fetchLatestDailyBrief).toHaveBeenCalledTimes(1);
+  });
+
+  it('latest mode: a request failure is reported as an error with no brief (no fake fallback)', async () => {
+    const { useDailyBrief, fetchLatestDailyBrief } = await freshModule();
+    fetchLatestDailyBrief.mockRejectedValue(new Error('proxy down'));
+    const { result } = renderHook(() => useDailyBrief());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.brief).toBeNull();
+    expect(result.current.error).toMatch(/proxy down/);
   });
 });

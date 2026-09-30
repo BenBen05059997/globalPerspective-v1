@@ -9,6 +9,6 @@
     "@aws-sdk/lib-dynamodb": "^3.0.0"
   },
   "scripts": {
-    "test": "node --test ../test/threadPolicy.test.js"
+    "test": "node --test ../test/*.test.js"
   }
 }

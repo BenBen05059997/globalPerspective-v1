@@ -22,6 +22,7 @@ vi.mock('firebase/auth', () => ({
   signOut: vi.fn(),
 }));
 
+const dailyBriefMock = vi.hoisted(() => vi.fn(() => Promise.resolve({ data: { generatedAt: new Date().toISOString() } })));
 vi.mock('@/shared/api/restProxy', () => ({
   fetchSavedItems: vi.fn(() => Promise.resolve({ data: [] })),
   saveItem: vi.fn(),
@@ -37,7 +38,9 @@ vi.mock('@/shared/api/restProxy', () => ({
   // F1.4 (review R2): the Alerts panel now computes the weekly-brief note from real data —
   // both a fresh brief and no analysis pause by default, so other sections' assertions are
   // unaffected.
-  fetchDailyBrief: vi.fn(() => Promise.resolve({ data: { generatedAt: new Date().toISOString() } })),
+  fetchDailyBrief: dailyBriefMock,
+  // Batch 3 / B: useDailyBrief() (no date) now calls fetchLatestDailyBrief; the same mock controls both.
+  fetchLatestDailyBrief: (...args) => dailyBriefMock(...args),
   fetchWeeklyBrief: vi.fn(() => Promise.resolve({ data: null })),
 }));
 

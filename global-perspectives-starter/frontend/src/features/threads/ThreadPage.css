@@ -956,3 +956,12 @@
 .tp-fc-item.unclear .tp-fc-text { color: var(--ink-dim); }
 .tp-fc-item.awaiting .tp-fc-mark { color: var(--accent); }
 .tp-fc-item.pending .tp-fc-mark { color: var(--ink-dim); }
+
+.tp-ov-linknote { margin: 10px 0; }
+.tp-ov-linknote .sm-link-note { border: 1px dashed var(--line); border-radius: 6px; padding: 8px 10px; }
+.tp-ov-linknote .sm-link-note p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-mid); }
+.tp-ov-linknote .sm-link-note .sm-link-note-more { margin-top: 4px; font-size: 11.5px; color: var(--ink-dim); }
+.fi-cited-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.fi-cited-list li { font-size: 11px; line-height: 1.4; color: var(--ink-dim); }
+.fi-cited-date { font-family: var(--mono); color: var(--ink-mid); }
+.fi-cited-more { font-style: italic; }

@@ -4,7 +4,7 @@ import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import { land, FRAME } from '@/features/map/lib/landGeometry.js';
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
 import { bearingDeg, beamCrossed, scanGlow, sweepControlState } from '@/features/map/lib/radar.js';
-import { ISO3_TO_NUM } from '@/features/map/lib/countryGeo.js';
+import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
 import { pulseSet } from '@/features/map/lib/pulse.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import {
@@ -109,7 +109,7 @@ function agoShort(iso) {
  */
 export default function RadarMap({
   situations = [], focusId, callout = null, newIds = null, onSelect, onOpenCallout, onScan, height = 560,
-  shading = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
+  shading = [], linkArcs = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
   countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk,
 }) {
   const wrapRef = useRef(null);
@@ -259,6 +259,27 @@ export default function RadarMap({
         }
       }
 
+      // Batch 4 / F: judged links between stories (strong: long dashes, medium: short), between APPROX. places, for the
+      // selected story only (lib/storyLinkArcs.js). Drawn under the markers, never a base layer.
+      const placePoint = (iso3) => {
+        const f = shadeFeature(iso3);
+        if (f) { const c = path.centroid(f); if (Number.isFinite(c[0]) && Number.isFinite(c[1])) return c; }
+        const fb = ISO3_CENTROID_FALLBACK[iso3];
+        return fb ? projection(fb) : null;
+      };
+      const linkG = root.append('g').attr('class', 'rd-links').attr('pointer-events', 'none');
+      for (const a of linkArcs || []) {
+        const p1 = placePoint(a.fromIso3); const p2 = placePoint(a.toIso3);
+        if (!p1 || !p2) continue;
+        const mx = (p1[0] + p2[0]) / 2; const my = (p1[1] + p2[1]) / 2 - Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) * 0.22;
+        const strong = a.confidence === 'strong';
+        linkG.append('path').attr('class', `rd-link rd-link-${a.confidence}`)
+          .attr('d', `M${p1[0]},${p1[1]} Q${mx},${my} ${p2[0]},${p2[1]}`)
+          .attr('fill', 'none').attr('stroke', '#5fd4ff').attr('stroke-opacity', 0.75)
+          .attr('stroke-width', strong ? 2 : 1.4).attr('stroke-dasharray', strong ? '9 5' : '3 5').attr('stroke-linecap', 'round');
+        linkG.append('circle').attr('cx', p2[0]).attr('cy', p2[1]).attr('r', 4).attr('fill', 'none').attr('stroke', '#5fd4ff').attr('stroke-opacity', 0.8);
+      }
+
       const proj = (s) => projection([s.centroid.lon, s.centroid.lat]) || [-9, -9];
       bearingsRef.current = new Map(active.map((s) => {
         const [x, y] = proj(s);
@@ -391,7 +412,7 @@ export default function RadarMap({
     const ro = new ResizeObserver(() => draw());
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [active, focusId, height, shading, storyFocusIso3, countryRisk]);
+  }, [active, focusId, height, shading, linkArcs, storyFocusIso3, countryRisk]);
 
   // The sweep: one rAF loop, paused under reduced motion, while the sweep control is off, or
   // while the tab is hidden. Reads/writes only refs + DOM attributes — no setState per frame.

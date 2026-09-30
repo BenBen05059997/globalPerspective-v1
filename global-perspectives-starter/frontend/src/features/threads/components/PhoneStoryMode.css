@@ -110,12 +110,14 @@
   cursor: pointer;
 }
 .psm-slidedot.on { background: var(--c-accent); border-color: var(--c-accent); }
-/* Larger invisible hit area so the visual dot stays small but the tap target is still 44px. */
+/* Larger invisible hit area so the visual dot stays small: tall (44px) but only as wide as the gap allows.
+   It used to be inset: -16px on all sides, so neighbouring hit areas overlapped and a tap on the centre of
+   one dot landed on the NEXT dot (found by the Batch 4 F Playwright run on the FED INTO / WATCH dots). */
 .psm-slidedot { position: relative; }
 .psm-slidedot::after {
   content: '';
   position: absolute;
-  inset: -16px;
+  inset: -16px -4px;
 }
 
 .psm-drawer-row {

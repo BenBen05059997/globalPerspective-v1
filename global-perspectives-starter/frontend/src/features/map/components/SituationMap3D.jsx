@@ -6,6 +6,7 @@ import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
 import topoData from '@/features/map/assets/countries-110m.json';
 import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
+import { dashedArcPaths, DASH } from '@/features/map/lib/storyLinkArcs.js';
 import { textureUrl, spinStep, spinControlState, globeZoomForHeight, globeFitFraction, GLOBE_LIMB_FACTOR } from '@/features/map/lib/globeSpin.js';
 import { CRISIS_RGB } from '@/features/map/lib/crisisHue.js';
 import { pulseSet } from '@/features/map/lib/pulse.js';
@@ -150,7 +151,7 @@ const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 
  */
 export default function SituationMap3D({
   situations = [], focusId, callout = null, tour = null, newIds = null, view = 'globe', onSelect, onOpenCallout, height = 560, width = null,
-  shading = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
+  shading = [], linkArcs = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
   countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk,
 }) {
   // `view` is accepted for API back-compat with the single call site (SituationHome.jsx always
@@ -568,6 +569,20 @@ export default function SituationMap3D({
     return out;
   }, [selectionGeo]);
 
+  // Batch 4 / F: story-to-story links (strong long dashes, medium short dashes) between APPROX. places: only for the
+  // selected story, only strong + medium (lib/storyLinkArcs.js). Dashes are drawn as short paths (no new dependency).
+  const linkArcLayer = useMemo(() => {
+    const data = [];
+    for (const a of linkArcs || []) {
+      const f = iso3Centroid(a.fromIso3); const t = iso3Centroid(a.toIso3);
+      if (f && t) data.push(...dashedArcPaths(f, t, a.confidence));
+    }
+    return data.length ? new PathLayer({
+      id: 'story-link-arcs', data, getPath: (d) => d.path, getColor: [95, 212, 255, 200],
+      getWidth: (d) => (DASH[d.confidence] || DASH.medium).width, widthUnits: 'pixels', capRounded: true, pickable: false,
+    }) : null;
+  }, [linkArcs]);
+
   // Order (bottom → top): earth-night, land, story country wash, selection fill/arcs, freshness
   // glow, soft halos, HIGH ring, pulse (the only animated marker layer, capped), news dots,
   // alert diamonds, badges, selected brackets, destination rings.
@@ -577,12 +592,13 @@ export default function SituationMap3D({
     ...(storyShadeLayer ? [storyShadeLayer] : []),
     ...(riskLayer ? [riskLayer] : []), ...(riskDoubleLayer ? [riskDoubleLayer] : []),
     ...selectionLayers.filter((l) => l.id !== 'dest-rings'),
+    ...(linkArcLayer ? [linkArcLayer] : []),
     markerLayers.glow, markerLayers.softOuter, markerLayers.softInner, markerLayers.highRing,
     ...(pulseAlpha ? [pulseAlpha] : []), ...(pulseStillLayer ? [pulseStillLayer] : []),
     markerLayers.dots, markerLayers.alertEdge, markerLayers.alertCore, markerLayers.badgeEdge, markerLayers.badges, markerLayers.brackets,
     ...(storyBrackets ? [storyBrackets] : []),
     ...selectionLayers.filter((l) => l.id === 'dest-rings'),
-  ], [earthLayer, landLayer, storyShadeLayer, riskLayer, riskDoubleLayer, selectionLayers, markerLayers, storyBrackets, pulseStillLayer]);
+  ], [earthLayer, landLayer, storyShadeLayer, riskLayer, riskDoubleLayer, selectionLayers, linkArcLayer, markerLayers, storyBrackets, pulseStillLayer]);
   const layers = composeLayers(pulseLayer);
 
   // F1.2: the 2.4s breathing pulse used to be driven by a `pulseT` React state updated every

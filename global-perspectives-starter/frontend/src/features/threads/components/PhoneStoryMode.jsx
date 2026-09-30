@@ -5,6 +5,7 @@ import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisis
 import { rootCauseSteps } from '@/shared/lib/rootCause';
 import { CATEGORY_BADGE_COLORS } from '@/shared/styles/tokens';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
+import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
 import {
   buildChapters, buildDeadlines, buildSlides, viewFrom,
 } from '@/features/threads/lib/storyMode.js';
@@ -62,12 +63,12 @@ function PhoneTabs({ active, onChange }) {
   );
 }
 
-function SlideBody({ activeSlide, activeChapter, chapters, thread, analysis, displayTitle, category, catColors, forecast, deadlines, fedInto, onJumpTimeline, onJumpOutlook }) {
+function SlideBody({ activeSlide, activeChapter, chapters, thread, analysis, displayTitle, category, catColors, forecast, deadlines, fedInto, linkNote, onJumpTimeline, onJumpOutlook }) {
   if (activeSlide?.key === 'brief') {
     return (
       <BriefSlide
         thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors}
-        forecast={forecast} hasChapters={chapters.length > 0} hasWatch={deadlines.length > 0}
+        forecast={forecast} hasChapters={chapters.length > 0} hasWatch={deadlines.length > 0} linkNote={linkNote}
         onJumpTimeline={onJumpTimeline} onJumpOutlook={onJumpOutlook}
       />
     );
@@ -131,7 +132,7 @@ export default function PhoneStoryMode({ thread, analysis, forecast, displayTitl
   );
   const deadlines = useMemo(() => buildDeadlines(forecast), [forecast]);
 
-  const { fedInto: fedIntoRaw, loading: fedIntoLoading } = useStoryLinks(thread.threadId, thread.regions);
+  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedIntoLoading, note: linkNote, index: webIndex } = useStoryLinks(thread.threadId, thread.regions);
   const fedInto = useMemo(() => (fedIntoLoading ? [] : fedIntoRaw), [fedIntoLoading, fedIntoRaw]);
   const slides = useMemo(() => buildSlides({ chapters, fedInto, deadlines }), [chapters, fedInto, deadlines]);
 
@@ -188,6 +189,10 @@ export default function PhoneStoryMode({ thread, analysis, forecast, displayTitl
   }, [chapters, category]);
   const primaryIso3 = chapters.find((c) => c.iso3)?.iso3 || null;
   const mapFocusIso3 = activeChapter?.iso3 || primaryIso3;
+  const linkArcs = useMemo(
+    () => (webIndex ? buildLinkArcs({ threadId: thread.threadId, links: [...fedInto, ...(fedIntoLoading ? [] : fedFromRaw)], threads: webIndex.threads, focalIso3: primaryIso3 }) : []),
+    [webIndex, thread.threadId, fedInto, fedFromRaw, fedIntoLoading, primaryIso3],
+  );
 
   return (
     <div className="gp-console psm-root">
@@ -208,7 +213,7 @@ export default function PhoneStoryMode({ thread, analysis, forecast, displayTitl
             <SlideBody
               activeSlide={activeSlide} activeChapter={activeChapter} chapters={chapters}
               thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors}
-              forecast={forecast} deadlines={deadlines} fedInto={fedInto}
+              forecast={forecast} deadlines={deadlines} fedInto={fedInto} linkNote={linkNote}
               onJumpTimeline={() => { if (chapters[0]) jumpToChapterKey(chapters[0].key); }}
               onJumpOutlook={() => jumpToChapterKey('watch')}
             />
@@ -239,12 +244,12 @@ export default function PhoneStoryMode({ thread, analysis, forecast, displayTitl
 
       {tab === 'map' && (
         <div className="psm-panel psm-panel-map" role="tabpanel" id="psm-panel-map" aria-labelledby="psm-tab-map">
-          <StoryMap shading={shading} storyFocusIso3={mapFocusIso3} height={320} />
+          <StoryMap shading={shading} linkArcs={linkArcs} storyFocusIso3={mapFocusIso3} height={320} />
           <BottomSheet stop={mapSheetStop} onStopChange={setMapSheetStop} onClose={() => setMapSheetStop('peek')} title={activeSlide?.label}>
             <SlideBody
               activeSlide={activeSlide} activeChapter={activeChapter} chapters={chapters}
               thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors}
-              forecast={forecast} deadlines={deadlines} fedInto={fedInto}
+              forecast={forecast} deadlines={deadlines} fedInto={fedInto} linkNote={linkNote}
               onJumpTimeline={() => { if (chapters[0]) jumpToChapterKey(chapters[0].key); }}
               onJumpOutlook={() => jumpToChapterKey('watch')}
             />

@@ -22,7 +22,7 @@ export default function FedIntoList({ links, direction = 'into' }) {
         const targetTitle = direction === 'into' ? link.targetTitle : link.sourceTitle;
         const peekTopic = targetTitle ? { title: targetTitle } : null;
         return (
-          <li key={targetId} className={`fi-row${link.freshness === 'older' ? ' fi-older' : ''}`}>
+          <li key={`${targetId}-${link.country || ''}`} className={`fi-row${link.freshness === 'older' ? ' fi-older' : ''}`}>
             <div className="fi-head">
               <a
                 href={threadPath(targetId)}
@@ -49,7 +49,14 @@ export default function FedIntoList({ links, direction = 'into' }) {
               {link.freshness === 'older' && <span className="fi-older-tag">older analysis</span>}
             </div>
             {link.mechanism && <p className="fi-mechanism">&ldquo;{link.mechanism}&rdquo;</p>}
-            {link.citedEntries?.length > 0 && (
+            {link.cited?.length > 0 ? (
+              <ul className="fi-cited-list" aria-label="Cited headlines">
+                {link.cited.slice(0, 3).map((c) => (
+                  <li key={c.topicId}>{c.date ? <span className="fi-cited-date">{shortDate(c.date)} </span> : null}{c.title}</li>
+                ))}
+                {link.cited.length > 3 && <li className="fi-cited-more">+{link.cited.length - 3} more cited headline{link.cited.length - 3 !== 1 ? 's' : ''}</li>}
+              </ul>
+            ) : link.citedEntries?.length > 0 && (
               <div className="fi-cited">{link.citedEntries.length} cited headline{link.citedEntries.length !== 1 ? 's' : ''} in this story&apos;s own analysis</div>
             )}
           </li>

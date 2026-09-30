@@ -133,6 +133,9 @@ must_have "$SRC/features/track-record/lib/trackRecordView.js" "splitPilot" "excl
 must_have "$SRC/features/track-record/lib/trackRecordView.js" "isAccuracyLocked|accuracyProgress" "locks accuracy until 150 resolved"
 must_have "$SRC/features/track-record/components/ForecastBoard.jsx" "forecastPlaceCounts" "forecast board plots real places, not per-country accuracy"
 must_not_have "$SRC/features/track-record/TrackRecordPage.jsx" "[Aa]waiting their deadline" "never claims a passed deadline is still awaiting"
+must_have "$SRC/features/threads/hooks/useStoryLinks.js" "useWebIndex" "story links read the story-web index (one shared call)"
+must_have "$SRC/features/threads/lib/linkStates.js" "No linked stories found yet for this story" "an empty story web says why, honestly"
+must_have "$SRC/features/map/lib/storyLinkArcs.js" "strong.*medium|DRAWN" "map lines are strong + medium only"
 must_have "$SRC/features/track-record/components/SettlingLog.jsx" "buildWeeklySquares" "settling log computed from the server's real weekly records"
 
 # ─── Summary ───

@@ -27,6 +27,7 @@ import StoryMode from '@/features/threads/components/StoryMode';
 import PhoneStoryMode from '@/features/threads/components/PhoneStoryMode';
 import { useIsPhone } from '@/shared/hooks/useIsPhone';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks';
+import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import FedIntoList, { FedIntoToggle } from '@/features/threads/components/FedIntoList';
 import { buildChapters } from '@/features/threads/lib/storyMode';
 // Monitor fix (S2.2 review): CompactTimeline / ShareButtons / CopyBriefing's classes
@@ -259,7 +260,7 @@ export default function ThreadPage() {
   // uses, read here too so the Read-in-full page can show "Show linked news" on the Timeline and
   // the "news this story is judged to feed into" / "earlier news judged to feed in" rows under
   // Why. Hook is unconditional and tolerates thread/regions being undefined pre-load.
-  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedLoading } = useStoryLinks(threadId, thread?.regions);
+  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedLoading, note: linkNote } = useStoryLinks(threadId, thread?.regions);
   const fedInto = fedLoading ? [] : fedIntoRaw;
   const fedFrom = fedLoading ? [] : fedFromRaw;
   const chaptersOldestFirst = useMemo(() => {
@@ -655,6 +656,9 @@ export default function ThreadPage() {
               <OverviewSection label="Earlier news judged to feed in" count={fedFrom.length}>
                 <FedIntoList links={fedFrom} direction="from" />
               </OverviewSection>
+            )}
+            {fedInto.length === 0 && fedFrom.length === 0 && linkNote && (
+              <div className="tp-ov-linknote"><StoryLinkNote note={linkNote} /></div>
             )}
             {analysis.watchQuestions?.length > 0 && (
               <OverviewSection label="Watch" count={analysis.watchQuestions.length}>

@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-09-30 (Batch 4 F: story web frontend, on `main`, NOT deployed)
+
+- **FED INTO reads the story-web index in one call.** `useWebIndex` (one cached `web_index` read shared by story mode, the long story page and the home map) and `useStoryLinks` (derives the story's links, cited dated headlines and state; falls back to the old per-region reads only if the request itself fails). Two webs that link the same pair are two rows with their own confidence (never the max) but one linked story in the kicker. FED INTO rows show up to 3 dated cited headlines.
+- **Honest empty states with the real reason** (`lib/linkStates.js`, `StoryLinkNote` on the BRIEF slide and the long page's Overview): single update / country not among the N most-covered (N from the run) / checked on <date> with n other stories in <country> and no link met the bar / no recent updates / links not built yet, each with "Last refresh: <date>. A new link can only appear after the next one", plus "not refreshed since <date>" when the index is over 2 days old.
+- **Map lines** (`lib/storyLinkArcs.js`): strong (long dashes) and medium (short dashes) only, from the story's main country to the linked story's most-mentioned other country, approx. places, never to a broad region; on the story map (globe: dashed short paths, radar: SVG dashes) and on the home map when a story with a threadId is selected; the Key has a "Line = judged link" row.
+- Found by the browser run: on phones the story slide dots' invisible hit areas overlapped (`inset: -16px` on a 20 px pitch), so a tap on the centre of the FED INTO dot landed on the next dot; now `inset: -16px -4px`.
+- `quality/verify_pages.sh` 56 pass (3 new guards). `npm run verify`: 114 files / 857 tests, 0 lint errors. Playwright at 1440 and 390 against local dev with live data (a story with 5 strong/medium links, and today's single-update story; fixtures only for the home-map lines and for a failing `web_index`): 57/57, 0 page errors, no overflow.
+
 ## 2026-09-30 (Backend Batch 4 E: story web stage 2, live AWS)
 
 - **`newsSystemsAnalysis`** (`AgzPGv…` to `w4x4C8q1efet8XdPgGjbOi4hZuQ6neDC+b8Os557SUU=`, 3 new files byte-compared, `node_modules` identical, rollback zip saved) and **`newsSensitiveData-dev`** (`OQ1qtp…` to `PhYLq0wtxYVa73ijGRyR0xrhYrdXC8TTqYl3Eyxacsw=`, `index.js` + `lib.js` identical):

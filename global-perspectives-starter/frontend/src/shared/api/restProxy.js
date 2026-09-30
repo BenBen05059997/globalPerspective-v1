@@ -273,6 +273,12 @@ export async function fetchPredictionSnapshotByThread(threadId) {
   return proxyAction('prediction_snapshot', { threadId });
 }
 
+// Batch 4 / F: the story web in one read. No argument = the whole index (links, per-story state, coverage);
+// with a threadId = that story's record + state (the frontend uses the whole index, shared by every surface).
+export async function fetchWebIndex(threadId) {
+  return proxyAction('web_index', threadId ? { threadId } : {});
+}
+
 export async function fetchDisruptionsList({ minSeverity, country, limit } = {}) {
   const payload = {};
   if (minSeverity) payload.minSeverity = minSeverity;

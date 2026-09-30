@@ -29,6 +29,9 @@ import StoryCard from '@/features/map/components/StoryCard.jsx';
 import OrientationBanner from '@/features/map/components/OrientationBanner.jsx';
 import AlertStack from '@/features/map/components/AlertStack.jsx';
 import MapLegend from '@/features/map/components/MapLegend.jsx';
+import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
+import { deriveFromIndex } from '@/features/threads/lib/webIndexLinks.js';
+import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
 import MapAbout from '@/features/map/components/MapAbout.jsx';
 import { alertStackItems, alertEmptyText, alertStackNote } from '@/features/map/lib/alertStack.js';
 import { markerKind, statusGlyph, situationFreshness } from '@/features/map/lib/legend.js';
@@ -277,6 +280,14 @@ export default function SituationHome() {
   }, [topics, storyParam]);
   const storyFocusId = selectedStory ? (selectedStory.threadId || selectedStory.topicId) : null;
   const storyFocusIso3 = selectedStory && Array.isArray(selectedStory.iso3) ? selectedStory.iso3[0] : null;
+  // Batch 4 / F (S8): when a story is selected, faint dashed lines to the stories it is judged linked to (strong + medium
+  // only, approx. places). One cached `web_index` read, fetched only once a story with a threadId is selected.
+  const { index: webIndex } = useWebIndex(Boolean(selectedStory && selectedStory.threadId));
+  const linkArcs = useMemo(() => {
+    if (!webIndex || !selectedStory || !selectedStory.threadId) return [];
+    const d = deriveFromIndex(webIndex, selectedStory.threadId);
+    return buildLinkArcs({ threadId: selectedStory.threadId, links: [...d.fedInto, ...d.fedFrom], threads: webIndex.threads, focalIso3: storyFocusIso3 });
+  }, [webIndex, selectedStory, storyFocusIso3]);
 
   // One shared hover/focus preview instance for the map's shaded countries (feed rows carry their
   // own — see HudIntelFeed). Story selection from a shaded country reuses userSelectStory above.
@@ -668,7 +679,7 @@ export default function SituationHome() {
             <SituationMap3D
               situations={riskMode ? [] : situations} focusId={focusId} callout={consoleCallout} tour={tourProps} newIds={newIds} view="globe"
               onSelect={userSelect} onOpenCallout={userSelect} height={mapH} width={isPhone ? (typeof window !== 'undefined' ? window.innerWidth - 24 : null) : band.w}
-              shading={riskMode ? [] : visibleShading} storyFocusIso3={storyFocusIso3}
+              shading={riskMode ? [] : visibleShading} linkArcs={riskMode ? [] : linkArcs} storyFocusIso3={storyFocusIso3}
               onSelectCountry={selectStoryByCountry}
               onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
               onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
@@ -684,7 +695,7 @@ export default function SituationHome() {
           <RadarMap
             situations={riskMode ? [] : situations} focusId={focusId} callout={consoleCallout} newIds={newIds}
             onSelect={userSelect} onOpenCallout={userSelect} onScan={markScanned} height={mapH}
-            shading={riskMode ? [] : visibleShading} storyFocusIso3={storyFocusIso3}
+            shading={riskMode ? [] : visibleShading} linkArcs={riskMode ? [] : linkArcs} storyFocusIso3={storyFocusIso3}
             onSelectCountry={selectStoryByCountry}
             onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
             onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
@@ -723,6 +734,7 @@ export default function SituationHome() {
             onClose={() => setLegendPersist(false)}
             layer={layer}
             riskHiddenOld={countryRiskLayer.hiddenOld}
+            linksNow={linkArcs.length}
           />
         ) : null}
       </div>

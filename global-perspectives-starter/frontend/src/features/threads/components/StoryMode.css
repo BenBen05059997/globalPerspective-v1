@@ -374,3 +374,10 @@
   .sm-stage { flex-direction: column; }
   .sm-slidecard { flex: 1 1 auto; max-width: 100%; border-left: none; border-top: 1px solid var(--c-hairline-strong); }
 }
+.sm-link-note { margin: 10px 0 0; padding: 8px 10px; border: 1px dashed var(--c-hairline); border-radius: 6px; }
+.sm-link-note p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--c-text-body); }
+.sm-link-note .sm-link-note-more { margin-top: 4px; font-size: 11px; color: var(--c-text-dim); }
+.fi-cited-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.fi-cited-list li { font-size: 11px; line-height: 1.4; color: var(--c-text-dim); }
+.fi-cited-date { font-family: var(--c-mono, var(--mono)); color: var(--c-text-body); }
+.fi-cited-more { font-style: italic; }

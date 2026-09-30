@@ -14,6 +14,9 @@ import {
 import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
 import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
 import { legacyNote } from '@/features/threads/lib/questionChips.js';
+import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
+import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
+import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import '@/features/threads/components/StoryMode.css';
 
@@ -76,7 +79,7 @@ function ExpandableText({ text, tagLabel }) {
 
 // ── Slide bodies ──────────────────────────────────────────────────────────────
 
-export function BriefSlide({ thread, analysis, displayTitle, category, catColors, forecast, hasChapters, hasWatch, onJumpTimeline, onJumpOutlook }) {
+export function BriefSlide({ thread, analysis, displayTitle, category, catColors, forecast, hasChapters, hasWatch, linkNote = null, onJumpTimeline, onJumpOutlook }) {
   const first = thread.entries[thread.entries.length - 1]; // oldest
   const from = thread.dateRange.from;
   const to = thread.dateRange.to;
@@ -113,6 +116,7 @@ export function BriefSlide({ thread, analysis, displayTitle, category, catColors
           {hasWatch && <button type="button" className="sm-jump-btn" onClick={onJumpOutlook}>→ Outlook</button>}
         </div>
       )}
+      <StoryLinkNote note={linkNote} />
       <p className="sm-legend">
         <span className="sm-fact-badge">FACT</span> cited dated news · <span className="sm-inference-badge">INFERENCE</span> model judgment
       </p>
@@ -145,7 +149,7 @@ export function ChapterSlide({ chapter, index }) {
 export function FedIntoSlide({ fedInto }) {
   return (
     <div className="sm-slide sm-slide-fedinto">
-      <div className="sm-slide-kicker">FED INTO · {fedInto.length} linked {fedInto.length === 1 ? 'story' : 'stories'}</div>
+      <div className="sm-slide-kicker">FED INTO · {distinctTargets(fedInto)} linked {distinctTargets(fedInto) === 1 ? 'story' : 'stories'}</div>
       <h2 className="sm-slide-title">News this story is judged to feed into</h2>
       <p className="sm-caption">
         <span className="sm-inference-badge">INFERENCE</span> Links are between stories; we don&apos;t know which event in
@@ -283,7 +287,7 @@ function Drawer({ label, open, onToggle, children }) {
 
 // ── Map pane ──────────────────────────────────────────────────────────────────
 
-export function StoryMap({ shading, storyFocusIso3, height }) {
+export function StoryMap({ shading, storyFocusIso3, height, linkArcs = [] }) {
   const [use3D] = useState(() => canUse3D());
   const h = height || FALLBACK_STAGE_HEIGHT;
   return (
@@ -293,7 +297,7 @@ export function StoryMap({ shading, storyFocusIso3, height }) {
           <SituationMap3D
             situations={[]} focusId={null} callout={null} tour={null} newIds={null} view="globe"
             onSelect={() => {}} onOpenCallout={() => {}} height={h} width={null}
-            shading={shading} storyFocusIso3={storyFocusIso3}
+            shading={shading} linkArcs={linkArcs} storyFocusIso3={storyFocusIso3}
             onSelectCountry={() => {}} onHoverCountry={() => {}} onFocusCountry={() => {}} onLeaveCountry={() => {}}
             countryRisk={[]} onSelectCountryRisk={() => {}} onHoverCountryRisk={() => {}} onFocusCountryRisk={() => {}} onLeaveCountryRisk={() => {}}
           />
@@ -302,7 +306,7 @@ export function StoryMap({ shading, storyFocusIso3, height }) {
         <RadarMap
           situations={[]} focusId={null} callout={null} newIds={null}
           onSelect={() => {}} onOpenCallout={() => {}} onScan={() => {}} height={h}
-          shading={shading} storyFocusIso3={storyFocusIso3}
+          shading={shading} linkArcs={linkArcs} storyFocusIso3={storyFocusIso3}
           onSelectCountry={() => {}} onHoverCountry={() => {}} onFocusCountry={() => {}} onLeaveCountry={() => {}}
           countryRisk={[]} onSelectCountryRisk={() => {}} onHoverCountryRisk={() => {}} onFocusCountryRisk={() => {}} onLeaveCountryRisk={() => {}}
         />
@@ -328,7 +332,7 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
   // Review fix #1: while the fed-into fetch is in flight, treat it as empty so the FED INTO dot
   // never appears (and disappears again) mid-load — it only ever shows once we KNOW there's a
   // real link (S6).
-  const { fedInto: fedIntoRaw, loading: fedIntoLoading } = useStoryLinks(thread.threadId, thread.regions);
+  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedIntoLoading, note: linkNote, index: webIndex } = useStoryLinks(thread.threadId, thread.regions);
   const fedInto = useMemo(() => (fedIntoLoading ? [] : fedIntoRaw), [fedIntoLoading, fedIntoRaw]);
   const slides = useMemo(() => buildSlides({ chapters, fedInto, deadlines }), [chapters, fedInto, deadlines]);
 
@@ -394,6 +398,12 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
   // including BRIEF/FED INTO/WATCH, so it always opens centred on the story, never adrift.
   const primaryIso3 = chapters.find((c) => c.iso3)?.iso3 || null;
   const mapFocusIso3 = activeChapter?.iso3 || primaryIso3;
+  // Batch 4 / F: judged links (strong + medium) to other stories, drawn between approx. places; memoised so the map
+  // does not redraw on every render.
+  const linkArcs = useMemo(
+    () => (webIndex ? buildLinkArcs({ threadId: thread.threadId, links: [...fedInto, ...(fedIntoLoading ? [] : fedFromRaw)], threads: webIndex.threads, focalIso3: primaryIso3 }) : []),
+    [webIndex, thread.threadId, fedInto, fedFromRaw, fedIntoLoading, primaryIso3],
+  );
 
   // Review fix #9: size the console to the space actually available under the fixed nav/status
   // header, so nothing scrolls at 1440×900. Measured (not guessed) from this element's own
@@ -477,7 +487,7 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
         )}
 
         <div className="sm-stage" ref={stageRef}>
-          <StoryMap shading={shading} storyFocusIso3={mapFocusIso3} height={stageHeight} />
+          <StoryMap shading={shading} linkArcs={linkArcs} storyFocusIso3={mapFocusIso3} height={stageHeight} />
 
           <div className="sm-slidecard">
             <div className="sm-slidenav" role="tablist" aria-label="Story slides">
@@ -498,7 +508,7 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
                 {activeSlide?.key === 'brief' && (
                   <BriefSlide
                     thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors}
-                    forecast={forecast} hasChapters={chapters.length > 0} hasWatch={deadlines.length > 0}
+                    forecast={forecast} hasChapters={chapters.length > 0} hasWatch={deadlines.length > 0} linkNote={linkNote}
                     onJumpTimeline={() => chapters[0] && jumpToChapterKey(chapters[0].key)}
                     onJumpOutlook={() => jumpToChapterKey('watch')}
                   />

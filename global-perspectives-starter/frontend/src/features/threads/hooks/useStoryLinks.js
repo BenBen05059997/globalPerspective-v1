@@ -1,29 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fetchSystemsAnalysis } from '@/shared/api/restProxy';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { deriveFedInto, deriveFedFrom } from '@/features/threads/lib/storyLinks.js';
+import { deriveFromIndex } from '@/features/threads/lib/webIndexLinks.js';
+import { linkNote } from '@/features/threads/lib/linkStates.js';
+import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
 
-const MAX_REGIONS = 3; // cap the fan-out — each region is one systems-analysis fetch
+const MAX_REGIONS = 3; // legacy fallback only: each region is one systems-analysis fetch
 
-/**
- * useStoryLinks(threadId, regions) — the FED INTO slide's data (stage 1 of the story-web plan:
- * frontend-only, reads the existing SYSTEMS#<place> graphs rather than a new endpoint). Fetches
- * the story's own regions' systems graphs (capped at MAX_REGIONS to bound the fan-out) and
- * derives this story's outgoing links. Honest-empty when nothing resolves — never a placeholder.
- */
-export function useStoryLinks(threadId, regions) {
-  const [fedInto, setFedInto] = useState([]);
-  const [fedFrom, setFedFrom] = useState([]);
-  const [loading, setLoading] = useState(false);
-
+// Legacy path (before the index existed): the story's own regions' systems graphs, up to MAX_REGIONS
+// fetches. Used ONLY when the `web_index` request itself fails (an older proxy), never as a default.
+function useLegacyLinks(threadId, regions, enabled) {
+  const [out, setOut] = useState({ fedInto: [], fedFrom: [], loading: false });
   const regionKey = Array.isArray(regions) ? regions.slice(0, MAX_REGIONS).join('|') : '';
-
   useEffect(() => {
-    if (!threadId || !regionKey) { setFedInto([]); setFedFrom([]); return; }
+    if (!enabled || !threadId || !regionKey) { setOut({ fedInto: [], fedFrom: [], loading: false }); return undefined; }
     let cancelled = false;
-    const countries = regionKey.split('|').filter(Boolean);
-    setLoading(true);
-    Promise.allSettled(countries.map((country) => fetchSystemsAnalysis(country).then((res) => (
+    setOut((o) => ({ ...o, loading: true }));
+    Promise.allSettled(regionKey.split('|').filter(Boolean).map((country) => fetchSystemsAnalysis(country).then((res) => (
       res?.success && res.data ? { country, ...res.data } : null
     ))))
       .then((results) => {
@@ -33,12 +27,29 @@ export function useStoryLinks(threadId, regions) {
           if (r.status === 'fulfilled' && r.value) records.push(r.value);
           else if (r.status === 'rejected') reportFetchError('story-mode-fed-into', r.reason);
         }
-        setFedInto(deriveFedInto(threadId, records));
-        setFedFrom(deriveFedFrom(threadId, records));
+        setOut({ fedInto: deriveFedInto(threadId, records), fedFrom: deriveFedFrom(threadId, records), loading: false });
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .finally(() => { if (!cancelled) setOut((o) => ({ ...o, loading: false })); });
     return () => { cancelled = true; };
-  }, [threadId, regionKey]);
+  }, [threadId, regionKey, enabled]);
+  return out;
+}
 
-  return { fedInto, fedFrom, loading };
+/**
+ * useStoryLinks(threadId, regions) — the FED INTO slide's data: this story's links from the story-web
+ * index (ONE cached `web_index` read shared with every other surface), plus its state and the honest
+ * empty-state wording. Fails empty: nothing is invented when the index is missing.
+ * Returns { fedInto, fedFrom, loading, state, note, index, meta }.
+ */
+export function useStoryLinks(threadId, regions) {
+  const { index, loading: indexLoading, failed } = useWebIndex(Boolean(threadId));
+  const legacy = useLegacyLinks(threadId, regions, failed);
+  const derived = useMemo(() => (threadId && !failed && !indexLoading ? deriveFromIndex(index, threadId) : null), [index, threadId, failed, indexLoading]);
+
+  if (failed) return { fedInto: legacy.fedInto, fedFrom: legacy.fedFrom, loading: legacy.loading, state: null, note: null, index: null, meta: null };
+  if (!derived) return { fedInto: [], fedFrom: [], loading: Boolean(threadId), state: null, note: null, index: null, meta: null };
+  return {
+    fedInto: derived.fedInto, fedFrom: derived.fedFrom, loading: false, state: derived.state, index, meta: derived.meta,
+    note: linkNote({ index, state: derived.state, meta: derived.meta }),
+  };
 }

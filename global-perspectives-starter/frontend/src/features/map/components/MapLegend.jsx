@@ -89,7 +89,7 @@ function OutlineMark({ width, double }) {
  */
 export default function MapLegend({
   id = 'sh-legend-panel', present, hiddenCount = 0, storiesOlderLabel = null, onClose,
-  layer = 'situations', riskHiddenOld = 0,
+  layer = 'situations', riskHiddenOld = 0, linksNow = 0,
 }) {
   const has = (set, k) => !!set && set.has(k);
 
@@ -168,6 +168,12 @@ export default function MapLegend({
             {STATUS_GLYPHS[k].label}
           </Item>
         ))}
+      </div>
+      <div className="sh-legrow">
+        <b>Line = judged link</b>
+        <Item on={linksNow > 0} mark={<Swatch w={34}><path d="M2 11H32" stroke="#5fd4ff" strokeWidth="2.2" strokeDasharray="9 5" fill="none" /></Swatch>} note="approx. place">Strong · long dashes</Item>
+        <Item on={linksNow > 0} mark={<Swatch w={34}><path d="M2 11H32" stroke="#5fd4ff" strokeWidth="1.5" strokeDasharray="3 5" fill="none" /></Swatch>} note="approx. place">Medium · short dashes</Item>
+        <span className="sh-leg"><i>only for the selected story · model judgment, weak links are list-only</i></span>
       </div>
       <div className="sh-legrow">
         <b>Motion</b>

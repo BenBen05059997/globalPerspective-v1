@@ -16,6 +16,11 @@
   - Leadership is NOT stored for the 28 (Wikidata was stale / wrong for Australia, Sudan, DR Congo, Taiwan; leadership feeds briefing prompts): a first full run wrote it, a second run overwrote those rows without it.
   - Proxy `country_facts` (`newsSensitiveData-dev`, deployed): each part only with source + as-of (`lib.shapeCountryFacts`, tests 4).
   - Frontend (branch `map-console`, not deployed): `fetchCountryFacts`, `useCountryFacts`, `lib/countryFacts.js` (`factRows`: only sourced + dated + checked within 10 days; population data year <= 8 years), a facts row on `CountryCardV2` (leader for the 12, capital, population, each "Wikidata · checked <date>"). Tests +14 (`countryFacts`, `countryCardFacts`, `useCountryFacts`); verify 97 files / 767 tests; `verify_pages.sh` 52/0.
+- **E: D9 drift-note direction check** (`newsDriftCorrector`, deployed; timeout 120 to 180 s; repo = deployed).
+  - The prompt states each moved axis in words and asks for per-axis `axisEffects` ("worsens" / "improves" / "unclear"); `src/directionCheck.js` compares them with the stored delta sign + a per-clause prose check tuned to stay silent when unsure (the old frontend heuristic's false positives, e.g. "the Rhine falling", are gone). On a mismatch: retry once with the concrete mismatch; if still contradictory, store `noSingleDriver`, no cited event, a numbers-only `whyChanged` and `directionFlag`; the rejected text is only logged. `dryRun`. Tests +17 (fixtures from the real Iran 19 Aug note and 8 others); suite 31.
+  - Proxy `corrections_feed` now also returns `changeDimensions` and `directionFlag`.
+  - One-off LLM audit of 201 stored notes (`scripts/audit-drift-direction.mjs --llm`, `deepseek-flash`): measured 45,724 prompt + 6,278 completion tokens, about $0.0106; 33 flagged (8 by heuristic and LLM, 2 heuristic only, 23 LLM only). Nothing was written; flags need the operator's review and a fresh yes (`--write-flags`).
+  - Frontend (branch `map-console`, not deployed): `shared/lib/driftNote.js`; the band, card, ledger, desk, thread / weekly pages and Studio show a flagged note's numbers only. Tests +12; verify 99 files / 773 tests; `verify_pages.sh` 52/0.
 
 ## 2026-09-29 (Backend Batch 2, live AWS: models)
 

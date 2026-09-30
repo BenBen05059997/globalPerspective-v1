@@ -1,0 +1,222 @@
+[
+ {
+  "country": "Iran",
+  "asOf": "2026-07-28",
+  "changeScore": {
+   "delta": -5,
+   "from": 95,
+   "to": 90
+  },
+  "changeDimensions": {
+   "political": {
+    "delta": -10,
+    "from": 85,
+    "to": 75
+   },
+   "conflict": {
+    "delta": -10,
+    "from": 95,
+    "to": 85
+   }
+  },
+  "whyChanged": "The US and Iran engaging in talks with Trump saying 'good chance' for a deal directly reduces conflict and political risk, explaining the drop in both axes."
+ },
+ {
+  "country": "Iran",
+  "asOf": "2026-07-29",
+  "changeScore": {
+   "delta": 0,
+   "from": 90,
+   "to": 90
+  },
+  "changeDimensions": {
+   "political": {
+    "delta": 10,
+    "from": 75,
+    "to": 85
+   },
+   "economic": {
+    "delta": -10,
+    "from": 90,
+    "to": 80
+   }
+  },
+  "whyChanged": "The US and Saudi strikes on Iran-backed groups in Iraq and Iran's ballistic missile retaliation directly escalated military conflict, raising political risk, while the renewed fighting disrupted economic stability, lowering the economic score due to heightened uncertainty and potential shipping disruptions."
+ },
+ {
+  "country": "Iran",
+  "asOf": "2026-07-30",
+  "changeScore": {
+   "delta": 5,
+   "from": 90,
+   "to": 95
+  },
+  "changeDimensions": {
+   "economic": {
+    "delta": 10,
+    "from": 80,
+    "to": 90
+   },
+   "humanitarian": {
+    "delta": -10,
+    "from": 80,
+    "to": 70
+   }
+  },
+  "whyChanged": "The US launched a two-hour wave of strikes on Iran after an Iranian missile attack, sharply escalating direct military confrontation and driving the economic score up due to war risk and the humanitarian score down due to increased casualties and instability."
+ },
+ {
+  "country": "Iran",
+  "asOf": "2026-08-06",
+  "changeScore": {
+   "delta": 5,
+   "from": 90,
+   "to": 95
+  },
+  "changeDimensions": {
+   "conflict": {
+    "delta": 10,
+    "from": 85,
+    "to": 95
+   },
+   "humanitarian": {
+    "delta": 15,
+    "from": 70,
+    "to": 85
+   }
+  },
+  "whyChanged": "The UN rights chief's alarm over 56 executions since March on national security charges directly escalates the humanitarian axis (+15), while the executions undercut any ceasefire goodwill, raising conflict risk (+10) as Iran's domestic repression intensifies amid fragile talks."
+ },
+ {
+  "country": "Iran",
+  "asOf": "2026-08-19",
+  "changeScore": {
+   "delta": 0,
+   "from": 95,
+   "to": 95
+  },
+  "changeDimensions": {
+   "economic": {
+    "delta": 10,
+    "from": 80,
+    "to": 90
+   },
+   "humanitarian": {
+    "delta": -20,
+    "from": 90,
+    "to": 70
+   }
+  },
+  "whyChanged": "The UAE's indefinite trade embargo on Iran directly escalates economic isolation, driving the economic score up from 80 to 90. This action also shifts the humanitarian score down as trade disruption worsens civilian conditions, while the prior missile attack (event 6) is the immediate cause but the embargo is the structural change."
+ },
+ {
+  "country": "Iran",
+  "asOf": "2026-08-02",
+  "changeScore": {
+   "delta": 0,
+   "from": 95,
+   "to": 95
+  },
+  "changeDimensions": {
+   "political": {
+    "delta": -10,
+    "from": 90,
+    "to": 80
+   }
+  },
+  "whyChanged": "Trump cancels Iran strikes and allies outline a deal to end the war, reducing immediate political escalation risk and lowering the political score from 90 to 80."
+ },
+ {
+  "country": "Germany",
+  "asOf": "2026-08-04",
+  "changeScore": {
+   "delta": 0,
+   "from": 65,
+   "to": 65
+  },
+  "changeDimensions": {
+   "economic": {
+    "delta": 10,
+    "from": 55,
+    "to": 65
+   }
+  },
+  "whyChanged": "The Rhine River falling to a record low on 2026-08-03 directly disrupts transport and energy, which are key components of Germany's economic activity, driving the economic risk score up by 10 points."
+ },
+ {
+  "country": "China",
+  "asOf": "2026-08-13",
+  "changeScore": {
+   "delta": -10,
+   "from": 80,
+   "to": 70
+  },
+  "changeDimensions": {
+   "political": {
+    "delta": -15,
+    "from": 60,
+    "to": 45
+   },
+   "economic": {
+    "delta": 10,
+    "from": 55,
+    "to": 65
+   },
+   "conflict": {
+    "delta": -20,
+    "from": 75,
+    "to": 55
+   },
+   "humanitarian": {
+    "delta": -10,
+    "from": 80,
+    "to": 70
+   }
+  },
+  "whyChanged": "The US and allies demanding a 24-hour warning after China's missile test directly escalates conflict tensions, but the demand likely signals a diplomatic channel to manage the risk, reducing the immediate conflict score while raising political friction."
+ },
+ {
+  "country": "China",
+  "asOf": "2026-08-12",
+  "changeScore": {
+   "delta": 0,
+   "from": 80,
+   "to": 80
+  },
+  "changeDimensions": {
+   "economic": {
+    "delta": -10,
+    "from": 65,
+    "to": 55
+   },
+   "humanitarian": {
+    "delta": 35,
+    "from": 45,
+    "to": 80
+   }
+  },
+  "whyChanged": "Typhoon Dolphin flooding central China and putting Beijing on alert for heavy rain directly raises humanitarian risk, as it threatens widespread damage and displacement, while the economic impact of disrupted logistics and infrastructure likely lowers the economic score."
+ },
+ {
+  "country": "Russia",
+  "asOf": "2026-08-21",
+  "changeScore": {
+   "delta": 0,
+   "from": 92,
+   "to": 92
+  },
+  "changeDimensions": {
+   "political": {
+    "delta": 10,
+    "from": 68,
+    "to": 78
+   },
+   "humanitarian": {
+    "delta": -10,
+    "from": 78,
+    "to": 68
+   }
+  },
+  "whyChanged": "The missile barrage killing at least 15 in Kyiv directly escalates the humanitarian toll, reducing the humanitarian score, while the political score rises as Russia's aggressive strike on the capital heightens political confrontation."
+ }
+]

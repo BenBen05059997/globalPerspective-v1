@@ -6,6 +6,7 @@
 // had access to a single opaque DRIFT citation string and had to fail empty.
 import { buildRiskSeries } from './whatChangedPicture.js';
 import { checkDirectionInText } from './directionCheck.js';
+import { safeWhy, safeTriggerEvent } from '../../../shared/lib/driftNote.js';
 
 // buildCountryRiskSeries(snapshots) -> { points, gaps } — the risk chart, dated, WITH GAPS
 // (whatChangedPicture.buildRiskSeries already never interpolates across a gap).
@@ -24,13 +25,13 @@ export function buildCountryRiskSeries(snapshots) {
 // score down as trade disruption worsens civilian conditions").
 export function buildCountryChangeLog(driftNotes) {
   return (Array.isArray(driftNotes) ? driftNotes : [])
-    .filter((n) => n && typeof n.whyChanged === 'string' && n.whyChanged.trim())
+    .filter((n) => n && safeWhy(n))
     .map((n) => ({
       date: n.asOf || null,
-      text: n.whyChanged,
-      eventTitle: n.triggerEvent?.title || null,
-      eventDate: n.triggerEvent?.date || null,
-      flags: checkDirectionInText(n.whyChanged),
+      text: safeWhy(n),
+      eventTitle: safeTriggerEvent(n)?.title || null,
+      eventDate: safeTriggerEvent(n)?.date || null,
+      flags: checkDirectionInText(safeWhy(n)),
     }))
     .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 }

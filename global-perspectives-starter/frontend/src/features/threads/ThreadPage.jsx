@@ -40,6 +40,7 @@ import { buildChapters } from '@/features/threads/lib/storyMode';
 // code-splitting even though this app's current build happens to bundle all CSS into one file.
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/ThreadPage.css';
+import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
 function humanizeThreadId(id) {
   return (id || '')
@@ -406,7 +407,7 @@ export default function ThreadPage() {
   // dynamic bits (forecast, what-changed drift note, live web evidence). The static
   // synthesis (story arc / trajectory / root cause / watch) now lives in the center
   // "Overview" tab, so the page reads as one column instead of two competing walls.
-  const hasDrift = !!analysis?.driftNote?.whyChanged;
+  const hasDrift = !!safeWhy(analysis?.driftNote);
   const hasGrounding = analysis?.groundingSources?.length > 0;
   // Scoring-v2 per-axis risk breakdown (renders only for v2 records, else null) —
   // include it in the rail gate so it survives the thin-rail redesign.
@@ -426,10 +427,10 @@ export default function ThreadPage() {
             <div className="tp-ai-section-lbl">
               What changed{analysis.driftNote.since ? ` · since ${driftDay(analysis.driftNote.since)}` : ''}
             </div>
-            {analysis.driftNote.triggerEvent?.title && (
-              <div className="tp-ai-drift-because">↳ Because: <b>{analysis.driftNote.triggerEvent.title}</b></div>
+            {safeTriggerEvent(analysis.driftNote)?.title && (
+              <div className="tp-ai-drift-because">↳ Because: <b>{safeTriggerEvent(analysis.driftNote).title}</b></div>
             )}
-            <p className="tp-ai-text">{driftClean(analysis.driftNote.whyChanged)}</p>
+            <p className="tp-ai-text">{driftClean(safeWhy(analysis.driftNote))}</p>
           </div>
         )}
         {hasGrounding && (

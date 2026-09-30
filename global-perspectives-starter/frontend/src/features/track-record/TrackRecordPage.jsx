@@ -13,6 +13,7 @@ import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
 import ForecastBoard from '@/features/track-record/components/ForecastBoard.jsx';
 import SettlingLog from '@/features/track-record/components/SettlingLog.jsx';
 import '@/features/track-record/TrackRecordPage.css';
+import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
 // S6: this page is the E2 "Service record" one-screen view (TRACK_RECORD_AND_STUDIO_RULING.md,
 // "Track record page design"). E1 (a plain, printable text version for search/screen readers)
@@ -84,12 +85,12 @@ function CorrectionsLedger() {
               </div>
               {n.noSingleDriver ? (
                 <p className="tr-cl-why nsd">No single driver — a gradual shift across the coverage, not one event.</p>
-              ) : n.triggerEvent?.title ? (
-                <p className="tr-cl-why">↳ Because: <strong>{n.triggerEvent.title}</strong>
-                  {n.triggerEvent.date ? <span className="tr-cl-evdate"> · {fmtDay(n.triggerEvent.date)}</span> : null}
+              ) : safeTriggerEvent(n)?.title ? (
+                <p className="tr-cl-why">↳ Because: <strong>{safeTriggerEvent(n).title}</strong>
+                  {safeTriggerEvent(n).date ? <span className="tr-cl-evdate"> · {fmtDay(safeTriggerEvent(n).date)}</span> : null}
                 </p>
-              ) : n.whyChanged ? (
-                <p className="tr-cl-why">{n.whyChanged}</p>
+              ) : safeWhy(n) ? (
+                <p className="tr-cl-why">{safeWhy(n)}</p>
               ) : null}
             </li>
           );

@@ -8,6 +8,7 @@
 import { AXES, AXIS_LABELS } from '@/shared/lib/riskTiers';
 import { freshnessState } from '@/shared/lib/freshness';
 import { threadPath } from '@/shared/lib/threadPath';
+import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
 export const LAST_VISIT_KEY = 'gp_desk_last_visit_v1';
 
@@ -132,17 +133,18 @@ export function rowFromNote(note, country, snapshots) {
   }
   // Link only with a real threadId: a triggerEvent's topicId is NOT a thread id, and
   // /weekly/thread/<topicId> would open a missing page (monitor fix, A4 review).
-  const threadId = note?.triggerEvent?.threadId;
+  const trig = safeTriggerEvent(note); // a direction-flagged note's cited event is not trusted as the cause
+  const threadId = trig?.threadId;
   return {
     key: `${country}:${note?.asOf}`,
     asOf: note?.asOf || null,
     dateLabel: fmtDay(note?.asOf),
     country,
     axisLine,
-    triggerTitle: note?.triggerEvent?.title || null,
-    triggerDateLabel: note?.triggerEvent?.date ? fmtDay(note.triggerEvent.date) : null,
+    triggerTitle: trig?.title || null,
+    triggerDateLabel: trig?.date ? fmtDay(trig.date) : null,
     triggerHref: threadId ? threadPath(threadId) : null,
-    why: note?.whyChanged || null,
+    why: safeWhy(note),
   };
 }
 

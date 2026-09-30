@@ -15,7 +15,8 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const { keepDayZero } = require('./dayZero');
-const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse, changeDimensionsFrom } = require('./lib');
+const dir = require('./directionCheck');
+const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse, changeDimensionsFrom, axisMoves } = require('./lib');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
@@ -92,6 +93,31 @@ async function callLLM(prompt) {
   return text;
 }
 
+// D9 (Batch 3 / E): ask for the note, VALIDATE its direction against the stored numbers, retry once with
+// the concrete mismatch, and if it still contradicts the data store the numbers (never the contradictory
+// prose as fact) with a `directionFlag`. `askLLM` is injectable for tests.
+async function explainMove(subject, drift, events, askLLM = callLLM) {
+  const ctx = { axisMovesArr: axisMoves(drift.prior, drift.current), changeDimensions: changeDimensionsFrom(drift.moved) };
+  let note = parseDriftResponse(await askLLM(buildDriftPrompt(subject, drift.prior, drift.current, events)), events);
+  if (!note) return null;
+  let verdict = dir.checkDrift(note, ctx);
+  if (verdict.ok) return note;
+  console.warn(`[direction] ${subject} ${drift.current.dateKey}: rejected first answer: ${dir.describeProblems(verdict.problems)} | text: ${note.whyChanged}`);
+  const retry = parseDriftResponse(await askLLM(buildDriftPrompt(subject, drift.prior, drift.current, events, dir.describeProblems(verdict.problems))), events);
+  if (retry) {
+    const v2 = dir.checkDrift(retry, ctx);
+    if (v2.ok) return retry;
+    console.warn(`[direction] ${subject} ${drift.current.dateKey}: rejected retry: ${dir.describeProblems(v2.problems)} | text: ${retry.whyChanged}`);
+    verdict = v2;
+  }
+  return {
+    noSingleDriver: true,
+    triggerEvent: null,
+    whyChanged: dir.numbersOnlyText(drift),
+    directionFlag: { axes: [...new Set(verdict.problems.map((p) => p.axis).filter(Boolean))], kinds: [...new Set(verdict.problems.map((p) => p.kind))], attempts: 2, at: new Date().toISOString() },
+  };
+}
+
 // Write a drift note twice, idempotently (same SK per date):
 //  - DRIFT#<date>    — 60d TTL; powers the live "what changed" band + corrections ledger.
 //  - DRIFTLOG#<date> — NO TTL; the PERMANENT archive the member-only full correction history
@@ -117,12 +143,13 @@ async function writeNote(country, drift, note) {
     triggerEvent: note.triggerEvent || undefined,
     whyChanged: note.whyChanged,
     noSingleDriver: !!note.noSingleDriver,
+    directionFlag: note.directionFlag || undefined,
     generatedAt: new Date().toISOString(),
   };
   await putDriftNote(COUNTRY_PK(country), cur.dateKey, base, ttl);
 }
 
-async function processCountry(country) {
+async function processCountry(country, dryRun = false) {
   const history = await readHistory(country);
   if (history.length < 2) return { country, status: 'no-history' };
   // Only consider RECENT drift: restrict to snapshots within the lookback window.
@@ -130,6 +157,10 @@ async function processCountry(country) {
   const recent = history.filter((h) => { const d = parseDay(h.dateKey); return d != null && d >= latestMs - LOOKBACK_DAYS * DAY; });
   const drifts = findAllDrifts(recent);
   if (!drifts.length) return { country, status: 'no-recent-drift' };
+  if (dryRun) { // no LLM, no writes: how many detected moves still lack a note
+    let pending = 0; for (const d of drifts) if (!(await alreadyNoted(country, d.current.dateKey))) pending++;
+    return { country, status: 'dry-run', moves: drifts.length, pending };
+  }
   if (!LLM_KEY) return { country, status: 'no-llm-key' };
 
   // Ground EVERY move we haven't grounded yet (backfill) — keeps the read from drifting.
@@ -137,7 +168,7 @@ async function processCountry(country) {
   for (const drift of drifts) {
     if (await alreadyNoted(country, drift.current.dateKey)) { skipped++; continue; }
     const events = await readCountryEvents(country, drift.prior.dateKey, drift.current.dateKey);
-    const note = parseDriftResponse(await callLLM(buildDriftPrompt(country, drift.prior, drift.current, events)), events);
+    const note = await explainMove(country, drift, events);
     if (!note) continue;
     await writeNote(country, drift, note);
     noted++; if (note.triggerEvent?.title) triggers.push(note.triggerEvent.title);
@@ -198,18 +229,23 @@ async function writeThreadNote(threadId, drift, note) {
     triggerEvent: note.triggerEvent || undefined,
     whyChanged: note.whyChanged,
     noSingleDriver: !!note.noSingleDriver,
+    directionFlag: note.directionFlag || undefined,
     generatedAt: new Date().toISOString(),
   };
   await putDriftNote(THREAD_PK(threadId), cur.dateKey, base, ttl);
 }
 
-async function processThread(threadId) {
+async function processThread(threadId, dryRun = false) {
   const history = await readThreadHistory(threadId);
   if (history.length < 2) return { threadId, status: 'no-history' };
   const latestMs = Math.max(...history.map((h) => parseDay(h.dateKey) || 0));
   const recent = history.filter((h) => { const d = parseDay(h.dateKey); return d != null && d >= latestMs - LOOKBACK_DAYS * DAY; });
   const drifts = findAllDrifts(recent, threadConclusionMoved);
   if (!drifts.length) return { threadId, status: 'no-recent-drift' };
+  if (dryRun) {
+    let pending = 0; for (const d of drifts) if (!(await threadAlreadyNoted(threadId, d.current.dateKey))) pending++;
+    return { threadId, status: 'dry-run', moves: drifts.length, pending };
+  }
   if (!LLM_KEY) return { threadId, status: 'no-llm-key' };
 
   let noted = 0, skipped = 0; const triggers = [];
@@ -217,7 +253,7 @@ async function processThread(threadId) {
     if (await threadAlreadyNoted(threadId, drift.current.dateKey)) { skipped++; continue; }
     const events = await readThreadEvents(threadId, drift.prior.dateKey, drift.current.dateKey);
     const subject = `the story "${drift.current.threadTitle || threadId}"`;
-    const note = parseDriftResponse(await callLLM(buildDriftPrompt(subject, drift.prior, drift.current, events)), events);
+    const note = await explainMove(subject, drift, events);
     if (!note) continue;
     await writeThreadNote(threadId, drift, note);
     noted++; if (note.triggerEvent?.title) triggers.push(note.triggerEvent.title);
@@ -239,13 +275,13 @@ exports.handler = async (event = {}) => {
 
   const countries = event.country ? [event.country] : COUNTRIES;
   for (const country of countries) {
-    try { results.countries.push(await processCountry(country)); }
+    try { results.countries.push(await processCountry(country, !!event.dryRun)); }
     catch (err) { results.countries.push({ country, status: 'error', error: err.message }); }
   }
 
   const threadIds = event.threadId ? [event.threadId] : await discoverThreadIds();
   for (const threadId of threadIds) {
-    try { results.threads.push(await processThread(threadId)); }
+    try { results.threads.push(await processThread(threadId, !!event.dryRun)); }
     catch (err) { results.threads.push({ threadId, status: 'error', error: err.message }); }
   }
 
@@ -254,5 +290,6 @@ exports.handler = async (event = {}) => {
 };
 
 module.exports.processThread = processThread;
+module.exports.explainMove = explainMove; // for tests
 
 module.exports.processCountry = processCountry; // for local proving

@@ -652,7 +652,7 @@ exports.handler = async (event) => {
             TableName: SUMMARIZE_PREDICT_TABLE,
             FilterExpression: 'begins_with(SK, :d)',
             ExpressionAttributeValues: { ':d': 'DRIFT#' },
-            ProjectionExpression: 'PK, SK, asOf, changeLevel, changeScore, triggerEvent, whyChanged, noSingleDriver',
+            ProjectionExpression: 'PK, SK, asOf, changeLevel, changeScore, changeDimensions, triggerEvent, whyChanged, noSingleDriver, directionFlag',
             ExclusiveStartKey,
           }));
           items.push(...(res.Items || []));
@@ -668,9 +668,11 @@ exports.handler = async (event) => {
             asOf: it.asOf || String(it.SK || '').replace(/^DRIFT#/, ''),
             changeLevel: it.changeLevel || null,
             changeScore: it.changeScore || null,
+            changeDimensions: it.changeDimensions || null,
             triggerEvent: it.triggerEvent || null,
             whyChanged: it.whyChanged || null,
             noSingleDriver: !!it.noSingleDriver,
+            directionFlag: it.directionFlag || null, // D9: the client shows numbers only for a flagged note
           };
         }).filter(n => n.asOf && n.scope !== 'other');
         notes.sort((a, b) => String(b.asOf).localeCompare(String(a.asOf)));

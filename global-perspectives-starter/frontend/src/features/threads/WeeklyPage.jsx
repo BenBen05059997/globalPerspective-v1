@@ -15,6 +15,7 @@ import { CATEGORY_BADGE_COLORS, riskScoreToVar } from '@/shared/styles/tokens';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/home/AIComponents.css';
+import { safeWhy } from '@/shared/lib/driftNote.js';
 
 const WeeklyMap = lazy(() => import('@/features/threads/components/WeeklyMap'));
 
@@ -830,7 +831,7 @@ export default function WeeklyPage() {
         return {
           t, a, tier,
           leadLabel: deriveHeadline(a).leadLabel, // scoring-v2: which axis drives it (null pre-v2)
-          hasDrift: !!a?.driftNote?.whyChanged,
+          hasDrift: !!safeWhy(a?.driftNote),
           fresh,
         };
       });

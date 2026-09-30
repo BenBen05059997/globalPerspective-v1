@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import { computeCountryDrift } from '@/features/countries/lib/countryDrift';
 import RiskDeltaPill from '@/shared/ui/risk/RiskDeltaPill';
 import '@/features/countries/components/CountryWhatChanged.css';
+import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
 // The corrector sometimes references the event by its prompt number ("event [6] shows…").
 // Strip that artifact for display — the triggerEvent already names the event.
@@ -39,11 +40,11 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [], driftNo
   const notes = Array.isArray(driftNotes) ? driftNotes : [];
   // A grounded note applies only if the corrector explained THIS move (same as-of date).
   const note = notes.find((n) => n.asOf === drift.asOf);
-  const grounded = note && note.whyChanged;
+  const grounded = note && safeWhy(note);
 
   // The earlier corrections (everything except the one shown in the band), newest first.
   const chain = notes
-    .filter((n) => n.asOf !== drift.asOf && (n.whyChanged || n.triggerEvent?.title || n.noSingleDriver))
+    .filter((n) => n.asOf !== drift.asOf && (safeWhy(n) || safeTriggerEvent(n)?.title || n.noSingleDriver))
     .sort((a, b) => String(b.asOf).localeCompare(String(a.asOf)));
 
   return (
@@ -76,13 +77,13 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [], driftNo
 
       {grounded && (
         <div className="cwc-why">
-          {note.triggerEvent?.title && (
+          {safeTriggerEvent(note)?.title && (
             <div className="cwc-because">
-              ↳ Because: <b>{note.triggerEvent.title}</b>
-              {note.triggerEvent.date ? <span className="cwc-evdate"> · {fmtDay(note.triggerEvent.date)}</span> : null}
+              ↳ Because: <b>{safeTriggerEvent(note).title}</b>
+              {safeTriggerEvent(note).date ? <span className="cwc-evdate"> · {fmtDay(safeTriggerEvent(note).date)}</span> : null}
             </div>
           )}
-          <div className="cwc-whytext">{cleanWhy(note.whyChanged)}</div>
+          <div className="cwc-whytext">{cleanWhy(safeWhy(note))}</div>
         </div>
       )}
 
@@ -112,7 +113,7 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [], driftNo
                   <span className="cwc-chain-because">
                     {n.noSingleDriver
                       ? <em>no single driver</em>
-                      : (n.triggerEvent?.title || cleanWhy(n.whyChanged))}
+                      : (safeTriggerEvent(n)?.title || cleanWhy(safeWhy(n)))}
                   </span>
                 </li>
               ))}

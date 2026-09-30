@@ -31,6 +31,7 @@ import {
 import { dropRedatedRepeats } from '@/features/threads/hooks/useNarrativeThread';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { assembleContext, buildStorySources, pickText, clip } from '@/features/analysis-studio/lib/analysisPrompt';
+import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
 // Re-export the pure prompt pieces so existing importers (AnalysisStudio.jsx)
 // keep working unchanged.
@@ -81,8 +82,9 @@ function driftTextFromNote(note) {
   const level = note.changeLevel ? `${note.changeLevel.from} → ${note.changeLevel.to}` : null;
   const parts = [];
   if (level) parts.push(`Risk level ${level}`);
-  if (note.triggerEvent?.title) parts.push(`Trigger: ${note.triggerEvent.title} (${note.triggerEvent.date || 'undated'})`);
-  if (note.whyChanged) parts.push(note.whyChanged);
+  const trig = safeTriggerEvent(note); // direction-flagged notes: numbers only, no trusted cause
+  if (trig?.title) parts.push(`Trigger: ${trig.title} (${trig.date || 'undated'})`);
+  if (safeWhy(note)) parts.push(safeWhy(note));
   return parts.join(' — ');
 }
 

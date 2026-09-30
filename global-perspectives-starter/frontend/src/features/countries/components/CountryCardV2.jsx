@@ -27,6 +27,7 @@ import { macroRows } from '@/features/countries/lib/countryMacro.js';
 import { factRows } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
 import '@/features/countries/components/CountryCardV2.css';
+import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
 function fmtShort(iso) {
   if (!iso) return null;
@@ -69,10 +70,10 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
   const facts = factRows(storedFacts, now);
 
   const latestChange = useMemo(() => {
-    const note = (driftNotes || []).find((d) => d?.triggerEvent?.title && d?.whyChanged);
+    const note = (driftNotes || []).find((d) => safeTriggerEvent(d)?.title && safeWhy(d));
     if (!note) return null;
     const threadId = topicIdToThreadId.get(note.triggerEvent.topicId) || null;
-    return { asOf: note.asOf, why: note.whyChanged, eventTitle: note.triggerEvent.title, threadId };
+    return { asOf: note.asOf, why: safeWhy(note), eventTitle: safeTriggerEvent(note).title, threadId };
   }, [driftNotes, topicIdToThreadId]);
 
   if (!name) return null;

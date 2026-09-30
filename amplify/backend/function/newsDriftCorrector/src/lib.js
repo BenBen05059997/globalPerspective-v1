@@ -125,7 +125,7 @@ function findThreadDrift(snapshots) {
 
 // The grounding prompt. Events = [{topicId, title, date}] within the change window; the
 // model must pick ONE real event id (or declare no single driver) — never invent.
-function buildDriftPrompt(subject, prior, current, events) {
+function buildDriftPrompt(subject, prior, current, events, correction) {
   // Number the events — models cite a small [n] far more reliably than a long hash id.
   const evLines = events.map((e, i) => `  [${i + 1}] (${e.date || '?'}) ${e.title}`).join('\n');
   // Works for both countries (riskLevel/score + headline) and threads (score + threadTitle).
@@ -137,12 +137,21 @@ function buildDriftPrompt(subject, prior, current, events) {
   const axisLine = moves.length
     ? `Axes that moved (0-100): ${moves.map((m) => `${m.axis} ${m.from}→${m.to} (${m.delta >= 0 ? '+' : ''}${m.delta})`).join(', ')}`
     : '';
+  // D9 (Batch 3 / E): say the DIRECTION in words. A higher score = more risk = conditions worse; the
+  // explanation must be an event that pushes that axis the same way (the 2026-08-19 Iran note explained a
+  // lower humanitarian score with "trade disruption worsens civilian conditions").
+  const signLines = moves.length
+    ? ['Direction of each moved axis (a HIGHER score means MORE risk = conditions WORSE; a LOWER score means conditions BETTER):',
+      ...moves.map((m) => `  ${m.axis}: risk ${m.delta > 0 ? 'ROSE' : 'FELL'} ${m.from}→${m.to} (conditions on this axis got ${m.delta > 0 ? 'WORSE' : 'BETTER'})`)]
+    : [];
+  const effectsExample = moves.length ? `,"axisEffects":{${moves.map((m) => `"${m.axis}":"worsens|improves|unclear"`).join(',')}}` : '';
   return [
     `Our automated read on ${subject} moved between two dates. Explain WHY, grounded ONLY in the real news events listed.`,
     '',
     `PRIOR (${prior.dateKey}): risk ${riskStr(prior)} — "${label(prior)}"`,
     `NOW  (${current.dateKey}): risk ${riskStr(current)} — "${label(current)}"`,
     ...(axisLine ? [axisLine] : []),
+    ...signLines,
     '',
     'Real news events in the window (numbered):',
     evLines || '  (none provided)',
@@ -150,8 +159,13 @@ function buildDriftPrompt(subject, prior, current, events) {
     'Pick the SINGLE event above (by its number) that best explains the change. Rules:',
     '- Use ONLY a number from the list. Do NOT invent events, dates, or facts.',
     '- If no single listed event clearly explains the move, set noSingleDriver=true and triggerEventNumber=0.',
-    '- whyChanged: 1–2 sentences, grounded strictly in the cited event.',
-    'Return ONLY JSON: {"triggerEventNumber":<n or 0>,"whyChanged":"<text>","noSingleDriver":<true|false>}',
+    ...(moves.length ? [
+      '- The cited event must push each moved axis the SAME way the score moved: if risk ROSE the event must make that axis worse; if risk FELL it must make it better. If the only listed event does the opposite, set noSingleDriver=true.',
+      '- axisEffects: for EVERY moved axis, state what the CITED event does to that axis: "worsens", "improves" or "unclear".',
+    ] : []),
+    '- whyChanged: 1–2 sentences, grounded strictly in the cited event, describing why risk moved in the stated direction (never call a worsening the reason a score fell, or an improvement the reason it rose).',
+    ...(correction ? ['', `YOUR PREVIOUS ANSWER WAS REJECTED because ${correction}. Answer again and fix exactly that.`] : []),
+    `Return ONLY JSON: {"triggerEventNumber":<n or 0>,"whyChanged":"<text>","noSingleDriver":<true|false>${effectsExample}}`,
   ].join('\n');
 }
 
@@ -168,11 +182,21 @@ function parseDriftResponse(text, events) {
   if (!why) return null;
   const n = Number(obj.triggerEventNumber);
   const cited = (!obj.noSingleDriver && Number.isInteger(n) && n >= 1 && n <= events.length) ? events[n - 1] : null;
-  if (!cited) return { noSingleDriver: true, whyChanged: why, triggerEvent: null };
+  // axisEffects: only the three allowed words, only for the four axes (anything else is dropped)
+  const axisEffects = {};
+  if (obj.axisEffects && typeof obj.axisEffects === 'object') {
+    for (const a of AXES) {
+      const w = String(obj.axisEffects[a] || '').toLowerCase().trim();
+      if (w === 'worsens' || w === 'improves' || w === 'unclear') axisEffects[a] = w;
+    }
+  }
+  const eff = Object.keys(axisEffects).length ? { axisEffects } : {};
+  if (!cited) return { noSingleDriver: true, whyChanged: why, triggerEvent: null, ...eff };
   return {
     noSingleDriver: false,
     whyChanged: why,
     triggerEvent: { topicId: cited.topicId, title: cited.title, date: cited.date || null },
+    ...eff,
   };
 }
 

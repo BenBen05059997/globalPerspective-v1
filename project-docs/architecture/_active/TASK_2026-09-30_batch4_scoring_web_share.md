@@ -527,7 +527,7 @@ questions: {
 | E | D8: 10 dated entries, grounded cites, `THREAD#id/WEB`, `WEB#INDEX`, coverage, `web_index` | **Done 2026-09-30** (2 Lambdas deployed, live runs done) | see Phase E evidence below |
 | F | D8: FED INTO from the index, empty states, map lines | **Done 2026-09-30** (frontend on `main`, not deployed) | see Phase F evidence below |
 | G | D5: Lambda source + copies + tests (**STOP before Y1–Y4**) | **Done 2026-09-30** (repo only, nothing in AWS) | see Phase G evidence below |
-| G-gate | Y1 table · Y2 IAM role · Y3 Lambda · Y4 Function URL · Y5 `docs/config.js` | **Waiting for the operator's yes (each); exact commands in "Exact Y1–Y5 steps" below** | |
+| G-gate | Y1 table · Y2 IAM role · Y3 Lambda · Y4 Function URL · Y5 `docs/config.js` | ✅ **Done 2026-09-30** (operator: "yes you can do it all here"; run by the monitor, one bare command each) | see "Y1–Y5 evidence" |
 | H | D5: share button, `/analyze/s/:id`, signed-out example state | **Done 2026-09-30** (frontend on `main`, hidden until Y5; not deployed) | see Phase H evidence below |
 | I | Deploy (Y6) + optional Worker header (Y7) + smoke | **Waiting for the operator's yes** | |
 
@@ -703,3 +703,10 @@ Then the frontend deploy (Y6) makes the share button and `/analyze/s/:id` live. 
 **Estimated monthly cost at current traffic** (about 430 home visits and 13 users a month; a handful of shares; ap-northeast-1 list prices, no invented traffic beyond a generous ceiling): table on demand, each share about 20–80 KB, one write (plus a tiny GSI write) and a few reads: **under $0.01** a month, storage well inside the free 25 GB. Lambda: a share is about 3 s at 256 MB (about 0.8 GB-s), a read about 50 ms; even 100 shares and 5,000 reads a month is about 150 GB-s and 5,100 requests, inside the free tier (400,000 GB-s, 1 M requests): **$0**. Function URL: no charge. CloudWatch Logs: a few KB a month: **under $0.01**. Data out: a read is about 30–100 KB; 5,000 reads is under 0.5 GB, inside the free egress allowance: **$0**. **Total at today's traffic: under $0.05 a month.** Ceiling for 1,000 shares and 50,000 reads a month: about $0.30 (writes $0.001, reads $0.013, Lambda about $0.10 beyond the free tier if it were used up, egress about $0.25).
 
 **Monitor check, phases G + H (2026-09-30):** share Lambda tests 38 / 38; frontend verify 878 / 878; guards 60 / 0; sync ALL PASS; no secret-like strings in the Lambda source; `newsSharedAnalysis` does not exist in AWS (ResourceNotFound). Y1–Y5 await the operator.
+
+**Y1–Y5 evidence (2026-09-30, run by the monitor):**
+- **Y1:** table `GlobalPerspectiveShares` ACTIVE, deletion protection True, PAY_PER_REQUEST, PK `id`, GSI `uid-createdAt-index` ACTIVE. The DATA_STRATEGY §2 exception is recorded.
+- **Y2:** role `newsSharedAnalysis-role` with inline `SharesTableRW` (Get / Put / Delete on the table, Query on the GSI) + `AWSLambdaBasicExecutionRole`.
+- **Y3:** Lambda `newsSharedAnalysis` Active, nodejs22.x, 30 s, 256 MB, 3 env vars (public values, the temp env file deleted), CodeSha256 `FjvYzL30sVzqePmk651U3jkitB9Z4zSQAQ3/N0XjNWg=`; 15 deployed files byte-identical to the repo.
+- **Y4:** URL `https://oufakens7e5es4odls7ayf52l40nmqut.lambda-url.ap-northeast-1.on.aws/` (NONE, BUFFERED), permission `fnurl-public`. Checks: unknown id 404; OPTIONS 204 with ACAO + X-Robots-Tag once; POST without token 401; URL CORS None. The fallback `lambda:InvokeFunction` statement was not needed.
+- **Y5:** `docs/config.js` gains `window.NEWS_SHARE_ENDPOINT`.

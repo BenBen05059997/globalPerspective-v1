@@ -949,8 +949,14 @@ Builds the Signal-API v1 feed from `PredictionLog`/`SummarizeAndPredict`/`Breaki
 
 ---
 
-### 38. `newsSharedAnalysis` — Analysis Studio share links (**source in the repo, NOT DEPLOYED**; Batch 4 G, 2026-09-30)
-**Path:** `amplify/backend/function/newsSharedAnalysis/src/` (ESM, `"type":"module"`, nodejs22.x, no dependencies beyond the runtime's AWS SDK). **Status:** written and tested (38 tests) but nothing exists in AWS until gates Y1–Y5 are approved (table, IAM role, Lambda, Function URL, `docs/config.js` `NEWS_SHARE_ENDPOINT`); the exact commands are in `_active/TASK_2026-09-30_batch4_scoring_web_share.md` ("Exact Y1–Y5 steps"). The frontend share UI is hidden while `window.NEWS_SHARE_ENDPOINT` is unset.
+### 38. `newsSharedAnalysis` — Analysis Studio share links (**deployed 2026-09-30**; Batch 4 G + Y1–Y5)
+**Path:** `amplify/backend/function/newsSharedAnalysis/src/` (ESM, `"type":"module"`, nodejs22.x, no dependencies beyond the runtime's AWS SDK). **Status: live (2026-09-30).**
+- Table `GlobalPerspectiveShares` (on-demand, deletion protection, KEYS_ONLY GSI `uid-createdAt-index`).
+- Role `newsSharedAnalysis-role`: GetItem / PutItem / DeleteItem on the table, Query on the GSI, plus `AWSLambdaBasicExecutionRole`.
+- Lambda nodejs22.x, 256 MB, 30 s; env `SHARES_TABLE`, `FIREBASE_PROJECT_ID`, `PROXY_URL` (no secrets).
+- Function URL `https://oufakens7e5es4odls7ayf52l40nmqut.lambda-url.ap-northeast-1.on.aws/`: AuthType NONE, BUFFERED, **Function-URL CORS empty** (CORS in code), permission `fnurl-public` as `newsAnalyze`.
+- `docs/config.js` `NEWS_SHARE_ENDPOINT` is set.
+- Verified: unknown id → 404; OPTIONS → 204 with ACAO + `X-Robots-Tag` once; unauthenticated POST → 401 `sign_in_required`; the deployed 15 files are byte-identical to the repo.
 One Function URL (auth NONE; **CORS emitted in code, the URL's own CORS config stays EMPTY**, like `newsAnalyze`). Every response carries `X-Robots-Tag: noindex, nofollow`.
 - `POST /` (Firebase JWT; any signed-in user): body `{stories:[{topicId,threadId}], citations, sections:[{lensId,mode,prose,struct,webSources,focus}], run}`. The server re-fetches and **freezes the sources itself** from the public proxy with the reader's own bearer token (`freeze.js` + `analysisContext.js`, the same pure builder the browser uses; titles and snippets are never taken from the client), requires its numbering to equal the one the reader's run cited (409 `sources_changed`), **re-runs the checks** (`analysisValidator.js`, `analysisStruct.js`) and **refuses on any error** (422 `checks_failed`), allows only http(s) URLs (`urls.js`), caps prose at 32 KB in bytes, 4 sections, 8 stories, and **20 shares per user per UTC day** (429). Stores one unlisted row (128-bit id) and returns `{id}`.
 - `GET /?id=` public read (no owner id; `owner:true` only for the owner's own token; `Vary: Origin, Authorization`). `DELETE /?id=` owner only, hard delete.

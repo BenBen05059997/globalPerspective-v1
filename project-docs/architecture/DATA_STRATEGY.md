@@ -17,9 +17,16 @@ Why: ~33 Lambdas batch-produce **immutable snapshots** (hourly / 4h / daily) tha
 | Store | Holds | Examples |
 |---|---|---|
 | **S3** (`globalperspective-world-<account>`, private) | everything computed about the world; append-only corpora; versioned snapshots; audit/event logs | corpus, stories, situations, `world/latest.json`, prediction log, markets snapshots, GDACS/GDELT mirrors, impact audit, client-error logs, signals |
-| **DynamoDB** (4 tables) | per-user, mutable, concurrent, transactional | `Users` (tier, credits, Polar ids), `SavedItems`, `UserPrefs`, `ApiKeys` |
+| **DynamoDB** (5 tables) | per-user, mutable, concurrent, transactional | `Users` (tier, credits, Polar ids), `SavedItems`, `UserPrefs`, `ApiKeys`, `GlobalPerspectiveShares` |
 
 Nothing else goes in DynamoDB. A new table needs an explicit exception recorded here.
+
+**Exception (2026-09-30, operator-approved, Batch 4 Y1): `GlobalPerspectiveShares`.**
+- User-owned Studio share links: PK `id` (a 22-character public id), KEYS_ONLY GSI `uid-createdAt-index` for the owner's list and account deletion.
+- It passes the sorting test: it is deleted with the account (`scripts/share-admin.mjs`).
+- A new table because no existing table can be read by a public id while still being found by owner.
+- On-demand, deletion protection on, no TTL (a share lives until its owner deletes it).
+- Sole writer: `newsSharedAnalysis`.
 
 ## 3. Rules that keep S3-as-truth safe
 

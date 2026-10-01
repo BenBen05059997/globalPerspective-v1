@@ -297,6 +297,12 @@ must_not_have "$T/components/WeeklyMap.css" "#[0-9a-fA-F]{3,8}\\b|rgba?\\(" "Wee
 must_not_have "$T/Stories.css" "#[0-9a-fA-F]{3,8}\\b|rgba?\\(" "Stories.css is tokens only"
 must_not_have "$T/WeeklyPage.jsx" "return null" "WeeklyPage never null-gates"
 
+# ─── P5 (2026-10-01): sweep regressions ───
+must_not_have "$SRC/features/map/components/RadarMap.jsx" "(shading|linkArcs|countryRisk|situations) = \\[\\]" "RadarMap defaults are stable (a '= []' default re-ran the draw effect every render)"
+must_not_have "$SRC/features/track-record/components/ForecastBoard.jsx" "(situations|countryRisk)=\\{\\[\\]\\}" "ForecastBoard passes stable arrays to RadarMap (inline [] looped: Maximum update depth)"
+must_not_have "$SRC/features/spider-demo/SpiderDemo.css" "spider-mode-on[^}]*#fff" "spider mode button text is --on-accent, not white on the accent"
+must_not_have "$SRC/features/economy/EconomyPage.css" "ep-chg-(up|dn) *\\{ *color: *#" "economy change colours are tokens (the light-theme green/red were under 4.5:1 on dark)"
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

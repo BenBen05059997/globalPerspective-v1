@@ -11,9 +11,9 @@
 
 .ep-page {
   /* mockup palette: up=green, down=rust, mixed=amber. App tokens drive the rest. */
-  --up: #2a7a3a;
-  --dn: #b63020;
-  --mx: #a06010;
+  --up: var(--ok);
+  --dn: var(--error);
+  --mx: var(--warn);
   font-family: var(--sans);
   color: var(--ink);
   background: var(--paper);
@@ -1082,8 +1082,8 @@
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
-.ep-chg-up { color: #2a7a3a; }
-.ep-chg-dn { color: #b63020; }
+.ep-chg-up { color: var(--ok); }
+.ep-chg-dn { color: var(--error); }
 .ep-chg-flat { color: var(--ink-dim); }
 /* Leaderboard change pill — its own grid cell so it never overflows into Stories. */
 .ep-chg-cell { font-size: 11px; min-width: 0; }

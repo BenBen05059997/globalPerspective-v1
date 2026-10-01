@@ -107,10 +107,13 @@ function agoShort(iso) {
  * marker DOM nodes — no React re-render, no re-drawing land, per frame. The loop is skipped
  * entirely under reduced motion, and stops while the tab is hidden.
  */
+// Stable defaults: the draw effect lists `shading`, `linkArcs` and `countryRisk` as dependencies, and a
+// `= []` default parameter is a NEW array every render (a caller that omits one re-ran the draw on every render).
+const NONE = [];
 export default function RadarMap({
-  situations = [], focusId, callout = null, newIds = null, onSelect, onOpenCallout, onScan, height = 560,
-  shading = [], linkArcs = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
-  countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw,
+  situations = NONE, focusId, callout = null, newIds = null, onSelect, onOpenCallout, onScan, height = 560,
+  shading = NONE, linkArcs = NONE, storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
+  countryRisk = NONE, onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw,
 }) {
   const onFirstDrawRef = useRef(onFirstDraw);
   onFirstDrawRef.current = onFirstDraw;

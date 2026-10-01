@@ -310,6 +310,11 @@
    added when the bar is actually rendered (isPhone). */
 .gp-app-tabbar { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
 
+/* Keyboard focus and in-page anchors scroll clear of the sticky top bar and (phone) the fixed tab bar,
+   so a focused row is never parked underneath them (P5 sweep: Tab on the phone Stories list). */
+html { scroll-padding-top: calc(var(--nav-h) + 8px); }
+html:has(.gp-app-tabbar) { scroll-padding-bottom: calc(58px + 12px + env(safe-area-inset-bottom, 0px)); }
+
 /* ── Mobile responsive ───────────────────────────────────── */
 @media (max-width: 899.98px) {
   .gp-nav { padding: 0 16px; gap: 8px; }

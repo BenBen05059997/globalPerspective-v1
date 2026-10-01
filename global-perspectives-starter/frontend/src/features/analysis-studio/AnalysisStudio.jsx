@@ -97,6 +97,9 @@ export default function AnalysisStudio() {
   const { dayMap: archiveDayMap, loading: archiveLoading, error: archiveError } = useWeeklyArchive();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  // The sign-in gate is a modal dialog: focus moves into it and Tab cycles inside it, so the studio behind it
+  // (story picker, model chip) is not reachable from the keyboard while it is up (P5 sweep).
+  const gateRef = useRef(null);
   const [searchParams] = useSearchParams();
   // Analysis Studio is a registered-only feature (anonymous guests count as
   // not-registered). This gate is scoped to THIS feature only — it does not touch
@@ -172,6 +175,25 @@ export default function AnalysisStudio() {
 
   // Block the whole feature for non-registered users (anonymous guests included).
   const blocked = !authLoading && !isRegistered;
+  useEffect(() => {
+    if (!blocked) return undefined;
+    const gate = gateRef.current;
+    if (!gate) return undefined;
+    const focusables = () => [...gate.querySelectorAll('a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])')];
+    (focusables()[0] || gate).focus?.();
+    const onKey = (e) => {
+      if (e.key !== 'Tab') return;
+      const f = focusables();
+      if (!f.length) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (!gate.contains(document.activeElement)) { e.preventDefault(); first.focus(); return; }
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [blocked]);
 
   // Today's topics ∪ any earlier (last-30-days) story ever picked — so a selection built
   // from EITHER picker section resolves correctly, regardless of the earlier list's
@@ -722,7 +744,7 @@ export default function AnalysisStudio() {
       )}
 
       {blocked && (
-        <div className="as-gate" role="dialog" aria-modal="true" aria-label="Sign in required">
+        <div className="as-gate" role="dialog" aria-modal="true" aria-label="Sign in required" ref={gateRef}>
           <div className="as-gate-card">
             <div className="label">Analysis Studio</div>
             <h2>Sign in to analyze</h2>

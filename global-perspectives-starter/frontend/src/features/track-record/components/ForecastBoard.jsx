@@ -13,6 +13,11 @@ import '@/features/track-record/components/ForecastBoard.css';
 // panel listing its actual resolved questions with their source.
 // One neutral hue for every place (monitor, S6): colouring a country by "more happened than
 // didn't" reads as a per-country score, which the ruling rules out. The count badge carries it.
+// Stable empty arrays: RadarMap's draw effect depends on `countryRisk`, so an inline `[]` is a new
+// reference every render and the effect re-ran forever ("Maximum update depth exceeded").
+const NO_SITUATIONS = [];
+const NO_COUNTRY_RISK = [];
+
 function hueFor() {
   return 'var(--c-accent)';
 }
@@ -69,11 +74,11 @@ export default function ForecastBoard({ items = [], emptyText = null }) {
         <div className="tr-fb-mapgrid">
           <div className="tr-fb-map">
             <RadarMap
-              situations={[]} focusId={null} callout={null} newIds={null} height={340}
+              situations={NO_SITUATIONS} focusId={null} callout={null} newIds={null} height={340}
               onSelect={() => {}} onOpenCallout={() => {}} onScan={() => {}}
               shading={shading} storyFocusIso3={selectedIso3}
               onSelectCountry={(iso3) => setSelectedIso3((cur) => (cur === iso3 ? null : iso3))}
-              countryRisk={[]}
+              countryRisk={NO_COUNTRY_RISK}
             />
           </div>
           <div className="tr-fb-panel">

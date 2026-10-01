@@ -424,3 +424,6 @@ p {
    <a> reads the accent. Anything with a class sets its own colour (this is element-level, so it
    loses to every class rule). */
 a { color: var(--accent); }
+
+/* The deck.gl map surface (thread page) is focusable; it had no visible focus ring (P5 keyboard sweep). */
+.deck-events-root:focus-visible { outline: 2px solid var(--focus-ring) !important; outline-offset: -2px; } /* !important: deck.gl sets `outline: none` inline (see SituationHome.css) */

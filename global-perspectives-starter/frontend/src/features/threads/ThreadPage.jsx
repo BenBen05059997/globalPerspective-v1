@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import ShareButtons from '@/shared/ui/ShareButtons';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
@@ -278,13 +278,13 @@ export default function ThreadPage() {
   }, [displayTitle]);
 
   if (authLoading) return null;
-  if (threadLoading) return <IntelligenceLoader type="typewriter" />;
+  if (threadLoading) return <BootLoader variant="inline" label="Loading story" text="Loading story" />;
 
   if (!thread) {
     // Beyond the 90-day durable window the timeline can't be rebuilt. Wait for the
     // analysis + economic records before deciding, so we never flash a dead-end
     // while those by-ID fetches are still in flight.
-    if (analysisLoading || economicLoading) return <IntelligenceLoader type="typewriter" />;
+    if (analysisLoading || economicLoading) return <BootLoader variant="inline" label="Loading analysis" text="Loading analysis" />;
     // We may still hold the analysis and/or economic-impact record (keyed by the
     // same threadId). Show a focused fallback instead of a dead end.
     const fallbackEconomy = !ECONOMY_PARKED && economicImpact && economicImpact.hasImpact !== false;

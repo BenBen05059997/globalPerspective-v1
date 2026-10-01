@@ -199,6 +199,32 @@ else
   FAIL=$((FAIL + 1)); FAILED+=("colour literals rose above the baseline"); echo "  $(red FAIL) colour literals: $(cat /tmp/color_literals_guard.out)"
 fi
 
+# ─── P2 (2026-10-01): shared building blocks + one loader ───
+BLOCKS="$SRC/shared/ui"
+must_have "$BLOCKS/StoryRow.jsx" "StoryPeek" "StoryRow carries the StoryPeek hook"
+must_have "$BLOCKS/StoryRow.jsx" "createElement" "StoryRow renders one wrapper + one control"
+must_not_have "$BLOCKS/TierChip.css" "background" "TierChip has no fill colours per tier (ring weight + word only)"
+must_not_have "$BLOCKS/TierChip.css" "#[0-9a-fA-F]{3,8}|rgba?\\(" "TierChip.css uses tokens, no colour literals"
+must_not_have "$BLOCKS/blocks.css" "#[0-9a-fA-F]{3,8}|rgba?\\(" "shared blocks CSS uses tokens, no colour literals"
+must_have "$SRC/features/map/lib/legend.js" "from '@/shared/lib/statusGlyph.js'" "map legend re-exports the glyph vocabulary from shared"
+must_have "$SRC/features/map/components/HudIntelFeed.jsx" "StoryRow" "map intel feed rows are the shared StoryRow"
+must_have "$SRC/app/layout/Layout.jsx" "LoadTopBar" "request-activity bar comes from the shared loader module"
+if [ ! -e "$SRC/shared/ui/IntelligenceLoader.jsx" ] && [ ! -e "$SRC/app/layout/LoadingBar.jsx" ]; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) IntelligenceLoader / LoadingBar are deleted"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("IntelligenceLoader or LoadingBar came back"); echo "  $(red FAIL) IntelligenceLoader / LoadingBar exist again"
+fi
+if ! grep -rlE "from '[^']*(IntelligenceLoader|LoadingBar)'" "$SRC" >/tmp/old_loader_imports.out 2>/dev/null || [ ! -s /tmp/old_loader_imports.out ]; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) nothing imports IntelligenceLoader / LoadingBar"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("old loader imported: $(cat /tmp/old_loader_imports.out)"); echo "  $(red FAIL) old loader imported in: $(cat /tmp/old_loader_imports.out)"
+fi
+if ! grep -rnE ">[[:space:]]*Loading(\.\.\.|…)[^<]*<|'Loading(\.\.\.|…)'" "$SRC/features" --include='*.jsx' >/tmp/bare_loading.out 2>/dev/null || [ ! -s /tmp/bare_loading.out ]; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) no bare \"Loading…\" text fallbacks in features/"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("bare Loading text in features: $(head -3 /tmp/bare_loading.out)"); echo "  $(red FAIL) bare Loading text: $(head -3 /tmp/bare_loading.out)"
+fi
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

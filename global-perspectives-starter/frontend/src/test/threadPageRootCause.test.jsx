@@ -34,7 +34,7 @@ vi.mock('@/shared/contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => ({ user: null, loading: false }),
 }));
-vi.mock('@/shared/ui/IntelligenceLoader', () => ({ default: () => <div data-testid="loader" /> }));
+vi.mock('@/shared/ui/boot/BootLoader.jsx', () => ({ default: () => <div data-testid="loader" /> }));
 
 async function renderPage() {
   const ThreadPage = (await import('@/features/threads/ThreadPage')).default;

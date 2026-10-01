@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
-import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
 import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.js';
 import { buildWeeklySquares, settlingSummary } from '@/features/track-record/lib/settlingLog.js';
@@ -23,7 +23,7 @@ export default function TrackRecordText() {
   const squares = useMemo(() => buildWeeklySquares(view?.q?.weeks || []), [view]);
   const settling = settlingSummary(squares);
 
-  if (loading) return <IntelligenceLoader />;
+  if (loading) return <BootLoader variant="inline" label="Loading the track record" text="Loading the track record" />;
   if (error || !data) {
     return (
       <article className="tr-text">
@@ -156,7 +156,7 @@ export default function TrackRecordText() {
       <section>
         <h2>Ledger of changed reads</h2>
         {notesLoading ? (
-          <p>Loading recent corrections…</p>
+          <BootLoader variant="inline" className="gp-boot--tight" label="Loading recent corrections" text="Loading recent corrections" />
         ) : !notes || notes.length === 0 ? (
           <p>No conclusion changes recorded in the current window.</p>
         ) : (

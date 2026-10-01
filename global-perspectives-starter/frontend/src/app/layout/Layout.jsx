@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/features/account/hooks/useMembership';
-import LoadingBar from '@/app/layout/LoadingBar';
+import { LoadTopBar } from '@/shared/ui/boot';
 import AIToast from '@/app/layout/AIToast';
 import NotificationBell from '@/features/breaking/components/NotificationBell';
 import { useAutoTour, startTourForPath } from '@/app/onboarding/useOnboarding';
@@ -122,7 +122,7 @@ function Layout({ children }) {
 
   return (
     <div className={`gp-app${isPhone ? ' gp-app-tabbar' : ''}${consoleShell ? ' gp-app-console' : ''}`}>
-      <LoadingBar />
+      <LoadTopBar />
       <AIToast />
 
       <nav className="gp-nav gp-console">

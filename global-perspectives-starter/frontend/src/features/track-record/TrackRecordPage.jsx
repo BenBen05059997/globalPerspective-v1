@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
-import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { FollowButton } from '@/features/account/components/FollowButton';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
 import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
@@ -33,7 +33,7 @@ function changeLabel(n) {
 
 function CorrectionsLedger() {
   const { notes, total, gated, loading } = useCorrectionsFeed(40);
-  if (loading) return <p className="tr-cl-loading">Loading recent corrections…</p>;
+  if (loading) return <BootLoader variant="inline" className="gp-boot--tight" label="Loading recent corrections" text="Loading recent corrections" />;
   if (!notes || notes.length === 0) {
     return (
       <p className="tr-cl-empty">
@@ -88,7 +88,7 @@ export default function TrackRecordPage() {
   const { data, loading, error } = useTrackRecord();
   const view = useMemo(() => (data ? buildTrackRecordView(data, new Date()) : null), [data]);
 
-  if (loading) return <IntelligenceLoader />;
+  if (loading) return <BootLoader variant="inline" label="Loading the track record" text="Loading the track record" />;
 
   if (error || !data) {
     return (

@@ -12,7 +12,7 @@ import { CATEGORY_BADGE_COLORS, RISK_COLORS } from '@/shared/styles/tokens';
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatDailyBrief } from '@/shared/ui/CopyBriefing';
 import { SaveButton } from '@/features/account/components/SaveButton';
-import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import '@/features/daily/DailyPage.css';
 
 const TRAJECTORY_LABELS = {
@@ -223,7 +223,7 @@ export default function DailyPage() {
   }, [brief, dateKey]);
 
   if (authLoading) return null;
-  if (loading) return <IntelligenceLoader type="typewriter" />;
+  if (loading) return <BootLoader variant="inline" label="Loading the daily brief" text="Loading the daily brief" />;
 
   if (!brief) {
     // Nothing found anywhere in the hook's ~30-day lookback window in either direction from the

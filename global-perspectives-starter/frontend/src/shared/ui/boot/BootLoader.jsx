@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './BootLoader.css';
+import './BootLoaderInline.css';
 import { removeStaticBoot, bootWaitedMs } from './staticBoot.js';
 
 // BootLoader — the shared "Option B" loading screen: a wireframe globe with a rotating radar
@@ -21,6 +22,7 @@ import { removeStaticBoot, bootWaitedMs } from './staticBoot.js';
 //   onRetry     shows the RETRY button in the failure state.
 //   onContinue  shows a second button (OPEN ANYWAY) so data that did load is never hidden behind
 //               another sensor's failure.
+//   text        one honest line under the mark, e.g. "Loading stories" (page loaders). No progress claims.
 //   slowAfterMs delay before "Still connecting: slow network" (default 8000).
 
 export const SWEEP_MS = 2600;
@@ -66,7 +68,7 @@ function Globe() {
 
 export default function BootLoader({
   sensors = null, variant = 'full', ready, onDone, onRetry, onContinue,
-  slowAfterMs = 8000, label = 'Loading Global Perspectives',
+  slowAfterMs = 8000, label = 'Loading Global Perspectives', text = null, className = '',
 }) {
   const list = Array.isArray(sensors) ? sensors : [];
   const pending = list.length === 0 || list.some((s) => s.state === 'wait');
@@ -112,6 +114,7 @@ export default function BootLoader({
   const cls = [
     'gp-boot', `gp-boot--${variant}`, 'gp-boot--dark', 'gp-console',
     isReady ? 'gp-boot--ready gp-boot--done' : '',
+    className,
   ].filter(Boolean).join(' ');
 
   return (
@@ -123,6 +126,7 @@ export default function BootLoader({
         </div>
         <div className="gp-boot__panel">
           <div className="gp-boot__title">GLOBAL PERSPECTIVES</div>
+          {text ? <p className="gp-boot__text">{text}</p> : null}
           {list.length ? (
             <>
               <div className="gp-boot__label">SENSOR STATUS</div>

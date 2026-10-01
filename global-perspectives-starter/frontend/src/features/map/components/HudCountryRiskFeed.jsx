@@ -3,6 +3,7 @@
 // panel/list classes so the two layers' feeds read as one system, not two designs.
 import { riskPeekData } from '@/features/map/lib/countryRiskLayer.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 
 export default function HudCountryRiskFeed({
   drawn = [], hiddenOld = 0, loading = false, focusIso3 = null, onSelect, peek = null,
@@ -15,7 +16,7 @@ export default function HudCountryRiskFeed({
         Country risk
         {drawn.length ? <span className="hud-feed-count"> · {drawn.length} briefed</span> : null}
       </div>
-      {loading && !drawn.length ? <p className="sh-muted">Loading country briefings…</p> : null}
+      {loading && !drawn.length ? <BootLoader variant="inline" label="Loading country briefings" text="Loading country briefings" /> : null}
       {!loading && !drawn.length ? <p className="sh-muted">No country briefings available right now.</p> : null}
       <ul className="hud-feed-list">
         {drawn.map((c) => {

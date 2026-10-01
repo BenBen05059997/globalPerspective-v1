@@ -1,0 +1,5 @@
+/* LoadTopBar — thin indeterminate bar at the top edge; token colour only. */
+.gp-topbar { position: fixed; top: 0; left: 0; width: 100%; height: 3px; z-index: 9999; pointer-events: none; overflow: hidden; background: transparent; }
+.gp-topbar__fill { height: 100%; width: 30%; background: var(--accent); border-radius: 0 2px 2px 0; animation: gp-topbar-run 1.2s ease-in-out infinite; }
+@keyframes gp-topbar-run { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
+@media (prefers-reduced-motion: reduce) { .gp-topbar__fill { animation: none; width: 100%; opacity: 0.6; } }

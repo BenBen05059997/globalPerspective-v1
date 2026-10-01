@@ -92,31 +92,8 @@ export function freshnessLook(state) {
   }
 }
 
-const GLYPHS = {
-  escalating: { glyph: '▲', key: 'escalating', label: 'escalating' },
-  new: { glyph: '●', key: 'new', label: 'new' },
-  steady: { glyph: '◆', key: 'steady', label: 'steady' },
-  cooling: { glyph: '▼', key: 'cooling', label: 'cooling' },
-};
-export const STATUS_GLYPHS = GLYPHS;
-
-/**
- * statusGlyph(situation) -> { glyph, key, label } | null
- * Read straight from the tracker's fields — nothing inferred:
- *   ▲ escalating  `escalating === true` or state 'escalating'
- *   ● new         state 'emerging'
- *   ▼ cooling     state 'cooling'
- *   ◆ steady      state 'peak' (the tracker's "ongoing")
- * A closed or unknown state gets no badge.
- */
-export function statusGlyph(s) {
-  if (!s || s.state === 'closed') return null;
-  if (s.escalating === true || s.state === 'escalating') return GLYPHS.escalating;
-  if (s.state === 'emerging') return GLYPHS.new;
-  if (s.state === 'cooling') return GLYPHS.cooling;
-  if (s.state === 'peak') return GLYPHS.steady;
-  return null;
-}
+// The direction glyphs moved to shared/ (shared UI reads them); re-exported so map imports keep working.
+export { STATUS_GLYPHS, statusGlyph } from '@/shared/lib/statusGlyph.js';
 
 /** hexToRgb('#ee7754') -> [238, 119, 84]; null for anything unparseable. */
 export function hexToRgb(hex) {

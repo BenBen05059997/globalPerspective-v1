@@ -104,11 +104,11 @@
 .hud-feed-list { max-height: 588px; overflow-y: auto; list-style: none; margin: 0; padding: 0 2px 0 0; scrollbar-width: thin; scrollbar-color: #2a3446 transparent; }
 .hud-feed-list::-webkit-scrollbar { width: 8px; }
 .hud-feed-list::-webkit-scrollbar-thumb { background: #2a3446; border-radius: 4px; }
-.hud-feed-list li button {
+.hud-feed-list li:not(.gp-row) button {
   width: 100%; min-height: 44px; display: flex; align-items: flex-start; gap: 10px; background: none; border: 0;
   border-bottom: 1px solid var(--sh-border); padding: 11px 6px; color: var(--sh-text); text-align: left; cursor: pointer;
 }
-.hud-feed-list li button:hover, .hud-feed-list li.sh-active button { background: var(--sh-panel); }
+.hud-feed-list li:not(.gp-row) button:hover, .hud-feed-list li.sh-active button { background: var(--sh-panel); }
 .hud-tier-chip {
   /* F2.13: 9px measured ~4:1 against its background — 11px is the smallest size the checked
      hue/border colors (--pin) reach ≥4.5:1 at comfortably. */
@@ -116,7 +116,6 @@
   letter-spacing: 0.05em; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--pin, var(--sh-border)); color: var(--pin, var(--sh-muted));
 }
 .hud-tier-chip-high { box-shadow: 0 0 6px -1px var(--pin); }
-.hud-esc { color: #ffb27a; font-size: 11px; }
 .hud-feed-place { font-size: 11px; color: var(--sh-dim); }
 /* Radar mode (M4): a subtle, non-flashing mark that the sweep just passed this row. Fades in/out
    only via opacity — never scrolls the list or moves focus (CLAUDE.md / WCAG 2.3). */
@@ -128,13 +127,6 @@
 .hud-stories-label { margin-top: 10px; }
 .hud-feed-paused { color: #d89e28; }
 .hud-story-chip { text-transform: none; font-weight: 600; }
-/* F2.13: was `opacity: 0.72` (measured well under 4.5:1 combined with the row's other dimmed
-   text) — a color token keeps the "older" row at ≥4.5:1 on --c-bg while still reading dimmer
-   than a live row. `.hud-feed-list li button` (higher specificity, above) sets the base color,
-   so this needs the same compound selector to actually win. */
-.hud-feed-list li button.hud-story-older,
-.hud-feed-list li button.hud-story-older .sh-row-title { color: var(--sh-dim); }
-.hud-story-older .hud-feed-place { color: var(--sh-dim); }
 .hud-stories-hidden { padding: 8px 6px; }
 
 .sh-mapwrap { position: relative; }

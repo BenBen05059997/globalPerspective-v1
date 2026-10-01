@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import '@/features/threads/WeeklyPage.css';
-import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 
 export default function AuthCallback() {
   const { completeSignIn } = useAuth();
@@ -39,5 +39,5 @@ export default function AuthCallback() {
     );
   }
 
-  return <IntelligenceLoader type="typewriter" />;
+  return <BootLoader variant="inline" label="Signing you in" text="Signing you in" />;
 }

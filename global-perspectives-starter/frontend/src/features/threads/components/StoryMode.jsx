@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
@@ -293,7 +294,7 @@ export function StoryMap({ shading, storyFocusIso3, height, linkArcs = [] }) {
   return (
     <div className="sm-mapwrap" style={{ height: h }}>
       {use3D ? (
-        <Suspense fallback={<div className="sm-maploading" style={{ height: h }}>Loading map…</div>}>
+        <Suspense fallback={<div className="sm-maploading" style={{ height: h }}><BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" /></div>}>
           <SituationMap3D
             situations={[]} focusId={null} callout={null} tour={null} newIds={null} view="globe"
             onSelect={() => {}} onOpenCallout={() => {}} height={h} width={null}

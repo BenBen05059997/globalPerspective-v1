@@ -6,6 +6,7 @@
 // Reuses: useSystemsAnalysis, useNarrativeThread, fetchPredictionCache,
 //         threadPath, CompactTimeline — all read-only.
 
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSystemsAnalysis } from '@/features/countries/hooks/useSystemsAnalysis';
@@ -712,7 +713,7 @@ function NodePanel({ node, country, onClose }) {
         </Link>
 
         <div className="spider-panel-sec-label">Genesis timeline</div>
-        {tlLoading && <div className="spider-panel-loading">Loading…</div>}
+        {tlLoading && <BootLoader variant="inline" className="gp-boot--tight" label="Loading timeline" text="Loading timeline" />}
         {tlError && <div className="spider-panel-error">Could not load timeline: {tlError}</div>}
         {!tlLoading && !tlError && entries && entries.length > 0 && (
           <CompactTimeline entries={collapseTimeline(entries)} />
@@ -724,7 +725,7 @@ function NodePanel({ node, country, onClose }) {
         <div className="spider-panel-scenario">
           <div className="spider-panel-scenario-lbl">Scenario reasoning</div>
           <div className="spider-panel-jtag">model judgment — interpretation, not sourced fact</div>
-          {(predLoading || tlLoading) && <div className="spider-panel-loading">Loading…</div>}
+          {(predLoading || tlLoading) && <BootLoader variant="inline" className="gp-boot--tight" label="Loading scenarios" text="Loading scenarios" />}
           {!predLoading && !tlLoading && prediction?.scenarios && (
             <div className="spider-panel-scenarios">
               {prediction.scenarios.map((s, i) => (

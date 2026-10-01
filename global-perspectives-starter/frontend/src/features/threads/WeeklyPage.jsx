@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
@@ -900,7 +900,7 @@ export default function WeeklyPage() {
 
   useEffect(() => { document.title = 'Story Intelligence — Global Perspectives'; }, []);
 
-  if (authLoading) return <div className="weekly-loading">Loading…</div>;
+  if (authLoading) return <BootLoader variant="inline" label="Loading stories" text="Loading stories" />;
 
   const sectionTabs = (
     <div className="wp-section-tabs" role="tablist" aria-label="Stories or countries">
@@ -938,14 +938,14 @@ export default function WeeklyPage() {
     return (
       <div className="wp-section-wrap">
         {sectionTabs}
-        <Suspense fallback={<div className="weekly-loading">Loading map…</div>}>
+        <Suspense fallback={<BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" />}>
           <WeeklyMap embedded />
         </Suspense>
       </div>
     );
   }
 
-  if (loading) return <IntelligenceLoader type="typewriter" />;
+  if (loading) return <BootLoader variant="inline" label="Loading stories" text="Loading stories" />;
 
   if (threads.length === 0 && standalone.length === 0) {
     return (

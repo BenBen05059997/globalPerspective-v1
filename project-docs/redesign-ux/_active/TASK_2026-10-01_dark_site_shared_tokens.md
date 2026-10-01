@@ -52,8 +52,15 @@
   - Boot: `shared/ui/boot/BootLoader.css` (`--light` variant removed, role-token fallbacks, `html` background), `BootLoader.jsx` (always dark; `tone` ignored), `app/App.jsx` (RouteFallback inline = dark), `frontend/index.html` (inline CSS regenerated, compact cover is dark), tests `bootLoader.test.jsx`, `indexHtmlBoot.test.js`; `quality/boot_tokens_guard.mjs` (role names, no light variant, no `--c-*` in the boot CSS).
   - Ratchet: NEW `quality/check_color_literals.mjs` (`--write`, `--lower`), NEW `quality/color_literals_baseline.json` (1,832 literals in 84 files, measured after these edits), `quality/verify_pages.sh` (+4 checks: 97 pass).
   - Docs: `ARCHITECTURE.md` (Frontend tokens paragraph, BootLoader row), `CHANGES.md`.
-- **P2 files (to be filled before P2 starts):** `shared/ui/` StoryRow, TierChip, StatusGlyph, PageFrame/section header, FilterGroup (+ tests); `features/map/lib/legend.js` vocab moved to `shared/`; `features/map/components/HudIntelFeed*` onto StoryRow; `shared/ui/boot/` inline variant adopted by every `IntelligenceLoader` / "Loading..." / `LoadingBar` use (daily, ThreadPage, WeeklyPage, TrackRecordPage/Text, CountryPage, AuthCallback, Account); `app/layout/LoadingBar.jsx`, `AIToast.jsx`, `LoadingIndicators.css`; baseline lowered.
-- P3-P4: to be filled by each phase before it starts.
+- **P2 files (filled 2026-10-01 before coding; in progress):**
+  - NEW `shared/lib/statusGlyph.js` (GLYPHS / `statusGlyph()` moved out of `features/map/lib/legend.js`, which re-exports them); NEW `shared/ui/StatusGlyph.jsx`, `TierChip.jsx`, `StoryRow.jsx`, `SectionHeader.jsx`, `FilterGroup.jsx` + `shared/ui/blocks.css` (tokens only) + `shared/ui/__tests__/blocks.test.jsx`.
+  - `features/map/components/HudIntelFeed.jsx` rows -> `StoryRow` (button root, `onClick`); `SituationHome.css` feed row rules slimmed to the layout the row no longer owns.
+  - Loader: `shared/ui/boot/BootLoader.jsx` gains `variant="inline"` copy ("Loading stories" etc. via `label`/`text`) + a thin `LoadTopBar` export (`shared/ui/boot/LoadTopBar.jsx`, same module folder, token colours) replacing `app/layout/LoadingBar.jsx`. Users switched: daily `DailyPage`, threads `ThreadPage` x2 + `WeeklyPage` (x3 texts), track-record `TrackRecordPage`/`TrackRecordText`, countries `CountryPage` (+ map Suspense text), account `AuthCallback` + `Account` (2 texts), plus `StoryMode`/`WeeklyMap` map-loading texts, `HudIntelFeed`/`SituationHome` "Loading…".
+  - Deleted once unused: `shared/ui/IntelligenceLoader.jsx/.css`, `app/layout/LoadingBar.jsx`; `LoadingIndicators.css` keeps only the `AIToast` rules, on tokens. Tests that mocked IntelligenceLoader mock BootLoader instead.
+  - Guards: `quality/verify_pages.sh` (+ no IntelligenceLoader/LoadingBar imports, no bare "Loading…" in features, TierChip has no per-tier fills); baseline lowered via `check_color_literals.mjs --lower`.
+- **P2 result notes:** StoryRow's StoryPeek is portalled to `<body>` (inside the map feed's `backdrop-filter` panel the fixed peek landed ~4000px off-screen: an existing bug). `/today` (`features/home/Home.jsx`) is the ONLY opener of the generic ErrorModal (`showError` at lines 169 hook error, 213 summary, 269 prediction, 308 trace-cause): P3 fixes it per page.
+- **P3 files (to be filled before P3 starts):**
+- P4: to be filled before it starts.
 
 ### Docs to update on completion
 `ARCHITECTURE.md` (Frontend: tokens, shared UI, loaders, `/weekly`), `REDESIGN_MASTER_PLAN.md` (§3.4 + build status), `CHANGES.md` (one entry per phase), `INDEX.md` row, `DATA_STRATEGY.md` only if a data read changes (not expected).
@@ -69,7 +76,7 @@
 |---|---|---|
 | P0 | Plan + measurements | ✅ 2026-10-01 |
 | P1 | One token set, dark frame, dark boot everywhere, literal ratchet | ✅ 2026-10-01 (verify 125 files / 929 tests; verify_pages 97 pass; baseline 1,832 literals / 84 files; 17 routes x 1440+390 measured dark, 0 overflow, 0 page errors; uncommitted, monitor commits) |
-| P2 | Shared building blocks + one loader | — |
+| P2 | Shared building blocks + one loader | ✅ 2026-10-01 (verify 128 files / 950 tests; verify_pages 108 pass; baseline 1,832 -> 1,791 literals / 84 -> 80 files; 7 route loaders captured at 1440+390 with throttled data, 0 overflow, 0 page errors; map feed before/after + StoryRow hover/focus/click checked; uncommitted) |
 | P3 | Light pages converted | — |
 | P4 | Stories A + C | — |
 | P5 | Sweep + docs | — |

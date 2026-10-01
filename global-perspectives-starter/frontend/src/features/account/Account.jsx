@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useSavedItems } from '@/features/account/hooks/useSavedItems';
@@ -227,7 +228,7 @@ function MembershipPanel() {
       <div style={SECTION}>
         <div style={LABEL}>Plan</div>
         {loading ? (
-          <div style={{ color: 'var(--c-text-dim, #7d8b96)', fontSize: '0.9rem' }}>Loading…</div>
+          <BootLoader variant="inline" className="gp-boot--tight" label="Loading plan" text="Loading plan" />
         ) : isMember ? (
           <>
             <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--c-text-head, #eef5f9)' }}>
@@ -360,7 +361,7 @@ function NotificationsPanel() {
             Email delivery isn’t live yet. Notification settings will appear here once it’s enabled.
           </div>
         ) : loading ? (
-          <div style={{ fontSize: '0.85rem', color: 'var(--c-text-dim, #7d8b96)' }}>Loading preferences…</div>
+          <BootLoader variant="inline" className="gp-boot--tight" label="Loading preferences" text="Loading preferences" />
         ) : (
           <>
             <div style={{ fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
@@ -545,7 +546,7 @@ export default function Account() {
   }
 
   if (authLoading) {
-    return <div style={{ padding: '2rem', color: 'var(--c-text-dim, #7d8b96)' }}>Loading account…</div>;
+    return <BootLoader variant="inline" label="Loading account" text="Loading account" />;
   }
 
   // Public data (saved/follow/Studio) never gates on sign-in elsewhere in the app; the account

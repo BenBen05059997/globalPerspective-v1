@@ -1,13 +1,14 @@
 // HudIntelFeed — the console's intel feed: the map's accessible twin. Every situation the map
 // plots is also a keyboard-reachable row here (tier chip, escalating marker, place, one line),
-// so nothing on the map is only reachable by pointing at a pin. M5a adds a STORIES group below
+// so nothing on the map is only reachable by pointing at a pin. Rows are the shared StoryRow. M5a adds a STORIES group below
 // the situations: the current topics feed, honestly dated, with StoryPeek on every row.
 import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
-import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
+import { iso3Name } from '@/features/map/lib/situationLabels.js';
 import { crisisHueForCategory } from '@/features/map/lib/crisisHue.js';
 import { freshnessState } from '@/shared/lib/freshness.js';
 import { peekData } from '@/shared/lib/peekData.js';
-import StoryPeek from '@/shared/ui/StoryPeek.jsx';
+import StoryRow from '@/shared/ui/StoryRow.jsx';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 
 function placeOf(s) {
@@ -43,34 +44,34 @@ export default function HudIntelFeed({
         {label}
         {ranked.length ? <span className="hud-feed-count"> · {ranked.length} active</span> : null}
       </div>
-      {loading && !world ? <p className="sh-muted">Loading…</p> : null}
+      {loading && !world ? <BootLoader variant="inline" label="Loading situations" text="Loading situations" /> : null}
       {error && !world ? <p className="sh-muted">Couldn’t load the feed. Retrying automatically.</p> : null}
       {world && !ranked.length ? <p className="sh-muted">{emptyMessage || 'No situations open right now.'}</p> : null}
       <ul className="hud-feed-list">
-        {ranked.map((s) => {
-          const place = placeOf(s);
-          return (
-            <li key={s.id} className={s.id === focusId ? 'sh-active' : ''}>
-              <button onClick={() => onSelect(s.id)}>
-                <span className={`hud-tier-chip hud-tier-chip-${s.tier}`} style={{ '--pin': AXIS_HUE[s.axis] || '#9aa4b2' }}>
-                  {TIER_LABEL[s.tier]}
-                </span>
-                <span className="sh-row-main">
-                  <span className="sh-row-tags">
-                    {s.escalating ? <span className="hud-esc" aria-label="escalating">▲</span> : null}
-                    {newIds?.has(s.id) ? <span className="sh-new">◇ new</span> : null}
-                    {gdacsLevelBadge(s) ? <span className="sh-gdacs-badge sh-gdacs-badge-sm">{gdacsLevelBadge(s)}</span> : null}
-                    {place ? <span className="hud-feed-place">{place}</span> : null}
-                    {/* Radar mode (M4): a brief, non-scrolling, non-focus-stealing mark that the
-                        sweep just passed this situation. Never used outside radar mode. */}
-                    {scannedIds?.has(s.id) ? <span className="hud-scanned" aria-label="just scanned by the radar sweep">◉ scanned</span> : null}
-                  </span>
-                  <span className="sh-row-title">{s.verb_label}</span>
-                </span>
-              </button>
-            </li>
-          );
-        })}
+        {ranked.map((s) => (
+          <StoryRow
+            key={s.id}
+            active={s.id === focusId}
+            onClick={() => onSelect(s.id)}
+            title={s.verb_label}
+            place={placeOf(s)}
+            hue={AXIS_HUE[s.axis] || 'var(--text-dim)'}
+            tier={s.tier}
+            tierHue={AXIS_HUE[s.axis] || 'var(--text-dim)'}
+            situation={s}
+            changedAt={s.last_change_at || s.opened_at || null}
+            now={now}
+            meta={(
+              <>
+                {newIds?.has(s.id) ? <span className="sh-new">◇ new</span> : null}
+                {gdacsLevelBadge(s) ? <span className="sh-gdacs-badge sh-gdacs-badge-sm">{gdacsLevelBadge(s)}</span> : null}
+                {/* Radar mode (M4): a brief, non-scrolling, non-focus-stealing mark that the
+                    sweep just passed this situation. Never used outside radar mode. */}
+                {scannedIds?.has(s.id) ? <span className="hud-scanned" aria-label="just scanned by the radar sweep">◉ scanned</span> : null}
+              </>
+            )}
+          />
+        ))}
       </ul>
 
       {visibleTopics.length ? (
@@ -89,28 +90,19 @@ export default function HudIntelFeed({
               const data = peekData(t, { asOf: topicsAsOf });
               const hue = crisisHueForCategory(t.category);
               return (
-                <li key={rowId} className={rowId === storyFocusId ? 'sh-active' : ''}>
-                  <button
-                    className={state === 'older' ? 'hud-story-older' : ''}
-                    onClick={() => onSelectStory && onSelectStory(t)}
-                    onMouseEnter={(e) => peek?.openOnHover(rowId, e.currentTarget)}
-                    onMouseLeave={() => peek?.close()}
-                    onFocus={(e) => peek?.openOnFocus(rowId, e.currentTarget)}
-                    onBlur={() => peek?.close()}
-                    aria-describedby={peek?.openId === rowId ? `peek-${rowId}` : undefined}
-                  >
-                    <span className="hud-tier-chip hud-story-chip" style={{ '--pin': hue }}>
-                      {t.category || '—'}
-                    </span>
-                    <span className="sh-row-main">
-                      <span className="sh-row-tags">
-                        {t.primaryCountry ? <span className="hud-feed-place">{t.primaryCountry}</span> : null}
-                      </span>
-                      <span className="sh-row-title">{t.title}</span>
-                    </span>
-                  </button>
-                  {peek?.openId === rowId ? <StoryPeek id={`peek-${rowId}`} data={data} style={peek.style} /> : null}
-                </li>
+                <StoryRow
+                  key={rowId}
+                  id={rowId}
+                  active={rowId === storyFocusId}
+                  dim={state === 'older'}
+                  onClick={() => onSelectStory && onSelectStory(t)}
+                  title={t.title}
+                  place={t.primaryCountry || null}
+                  hue={hue}
+                  chip={<span className="hud-tier-chip hud-story-chip" style={{ '--pin': hue }}>{t.category || '—'}</span>}
+                  peek={peek}
+                  peekData={data}
+                />
               );
             })}
           </ul>

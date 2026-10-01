@@ -1,14 +1,13 @@
 {
   "note": "Per-file count of hard-coded colour literals in frontend src (see quality/check_color_literals.mjs). Counts may only fall; lower them with --lower after removing literals.",
-  "total": 1832,
+  "total": 1791,
   "files": {
     "app/App.jsx": 3,
     "app/errors/ErrorHandling.jsx": 12,
     "app/index.css": 2,
-    "app/layout/LoadingIndicators.css": 15,
     "app/onboarding/tour-theme.css": 1,
     "features/account/Account.css": 78,
-    "features/account/Account.jsx": 49,
+    "features/account/Account.jsx": 46,
     "features/account/components/Desk.css": 22,
     "features/account/components/FollowButton.jsx": 6,
     "features/account/components/SaveButton.jsx": 1,
@@ -45,7 +44,6 @@
     "features/home/components/TraceCauseDisplay.jsx": 32,
     "features/home/Home.css": 5,
     "features/map/components/AlertStack.jsx": 1,
-    "features/map/components/HudIntelFeed.jsx": 1,
     "features/map/components/HudStatusLine.css": 9,
     "features/map/components/MapLegend.jsx": 7,
     "features/map/components/RadarMap.jsx": 20,
@@ -55,7 +53,7 @@
     "features/map/lib/countryRiskLayer.js": 1,
     "features/map/lib/globeIcons.js": 2,
     "features/map/lib/legend.js": 3,
-    "features/map/SituationHome.css": 130,
+    "features/map/SituationHome.css": 129,
     "features/spider-demo/SpiderDemo.css": 16,
     "features/spider-demo/SpiderDemo.jsx": 16,
     "features/spider-demo/SpiderWorld.jsx": 1,
@@ -82,8 +80,6 @@
     "shared/lib/crisisHue.js": 5,
     "shared/ui/atoms.css": 25,
     "shared/ui/boot/BootLoader.css": 9,
-    "shared/ui/IntelligenceLoader.css": 16,
-    "shared/ui/IntelligenceLoader.jsx": 5,
     "shared/ui/risk/RiskScorecard.css": 1,
     "shared/ui/StoryPeek.jsx": 1
   }

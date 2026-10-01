@@ -46,7 +46,7 @@ vi.mock('@/shared/contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => ({ user: null, loading: false }),
 }));
-vi.mock('@/shared/ui/IntelligenceLoader', () => ({ default: () => <div data-testid="loader" /> }));
+vi.mock('@/shared/ui/boot/BootLoader.jsx', () => ({ default: () => <div data-testid="loader" /> }));
 vi.mock('@/features/threads/components/WeeklyMap', () => ({ default: () => <div data-testid="weekly-map" /> }));
 
 describe('CountryPage — views', () => {

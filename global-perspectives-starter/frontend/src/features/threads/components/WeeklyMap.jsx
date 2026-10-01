@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
@@ -1031,7 +1032,7 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
       return <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} countryPlay={countryPlay} countryThreadIds={countryThreadIds} />;
     }
     if (status === 'LOADING') {
-      return <div className="wmap-loading">Loading map...</div>;
+      return <div className="wmap-loading"><BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" /></div>;
     }
     return (
       <WeeklyGoogleMap
@@ -1070,7 +1071,7 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
       )}
 
       {loading ? (
-        <div className="wmap-loading-full">Loading archive data...</div>
+        <div className="wmap-loading-full"><BootLoader variant="inline" className="gp-boot--tight" label="Loading archive data" text="Loading archive data" /></div>
       ) : (
         <div className="wmap-container">
           {!hidePanelProp && (

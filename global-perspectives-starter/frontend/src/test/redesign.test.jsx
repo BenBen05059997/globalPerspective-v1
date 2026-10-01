@@ -48,7 +48,7 @@ vi.mock('@/shared/contexts/AuthContext', () => ({
 }));
 
 // Heavy/optional components stubbed to keep tests fast & deterministic
-vi.mock('@/shared/ui/IntelligenceLoader', () => ({
+vi.mock('@/shared/ui/boot/BootLoader.jsx', () => ({
   default: () => <div data-testid="loader" />,
 }));
 vi.mock('@/features/countries/components/CountryOverviewMap', () => ({

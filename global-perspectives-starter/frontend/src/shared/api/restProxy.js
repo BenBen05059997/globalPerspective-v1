@@ -54,7 +54,7 @@ function runLimited(task) {
 
 // In-flight request de-dupe: identical concurrent action+payload(+auth) calls collapse into one
 // network request instead of each caller firing its own (e.g. useGeminiTopics mounted
-// independently by Home, AnalysisStudio, and IntelligenceLoader — up to 9x duplicate requests
+// independently by several pages and widgets — up to 9x duplicate requests
 // per page load). Keyed on a stable serialization of [action, payload, Authorization] — payload
 // shapes here are plain objects/arrays of strings (no functions/circular refs), so
 // JSON.stringify is a safe key. Including the Authorization header value in the key scopes

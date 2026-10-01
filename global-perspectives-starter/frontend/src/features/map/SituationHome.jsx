@@ -1008,7 +1008,7 @@ export default function SituationHome() {
               onSelect={userSelect} emptyText={alertEmpty} note={alertNote}
             />
           ) : (
-            <p className="sh-muted">{error ? 'Couldn’t load the feed. Retrying automatically.' : 'Loading…'}</p>
+            error ? <p className="sh-muted">Couldn’t load the feed. Retrying automatically.</p> : <BootLoader variant="inline" className="gp-boot--tight" label="Loading alerts" text="Loading alerts" />
           )}
         </div>
       )}

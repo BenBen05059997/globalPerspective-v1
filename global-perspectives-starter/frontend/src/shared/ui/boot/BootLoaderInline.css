@@ -1,0 +1,5 @@
+/* Page-loader additions to BootLoader (not in the pre-JS copy in index.html): the honest text line
+   and the tight variant for a card / panel / map slot. Reads the boot tokens set on .gp-boot. */
+.gp-boot--tight { min-height: 0; padding: 1.25rem 0; --gp-boot-size: 56px; }
+.gp-boot--tight .gp-boot__title { display: none; }
+.gp-boot__text { margin: 10px 0 0; font-size: 12px; letter-spacing: 0.08em; color: var(--gp-boot-head); }

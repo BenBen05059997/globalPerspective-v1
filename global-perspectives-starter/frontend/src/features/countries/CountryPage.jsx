@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import IntelligenceLoader from '@/shared/ui/IntelligenceLoader';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
@@ -376,7 +376,7 @@ export default function CountryPage() {
   }, [decodedName]);
 
   if (authLoading) return null;
-  if (loading) return <IntelligenceLoader type="typewriter" />;
+  if (loading) return <BootLoader variant="inline" label="Loading country" text="Loading country" />;
 
   // Canonical tier for this country — score-first, level fallback — so the pill,
   // stat tile and sparkline all agree (and "moderate" no longer reads as elevated).
@@ -613,7 +613,7 @@ export default function CountryPage() {
             )}
           </div>
         </div>
-        <Suspense fallback={<div className="weekly-loading">Loading map…</div>}>
+        <Suspense fallback={<BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" />}>
           <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} />
         </Suspense>
       </div>

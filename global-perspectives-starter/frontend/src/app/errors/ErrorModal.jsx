@@ -51,7 +51,7 @@ export default function ErrorModal() {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'var(--strip)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -64,16 +64,18 @@ export default function ErrorModal() {
     >
       <div
         style={{
-          backgroundColor: 'white',
+          backgroundColor: 'var(--panel-2)',
+          border: '1px solid var(--hairline-strong)',
+          color: 'var(--text-body)',
           borderRadius: '8px',
           padding: '1.5rem',
           maxWidth: '500px',
           width: '100%',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+          boxShadow: 'var(--shadow-lg)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
+          <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-head)' }}>
             {title}
           </h3>
           <button
@@ -85,7 +87,7 @@ export default function ErrorModal() {
               cursor: 'pointer',
               padding: '0',
               lineHeight: '1',
-              color: '#666',
+              color: 'var(--text-muted)',
             }}
             aria-label="Close"
           >
@@ -93,7 +95,7 @@ export default function ErrorModal() {
           </button>
         </div>
 
-        <p style={{ margin: '0 0 1.5rem', color: '#333', lineHeight: '1.6' }}>
+        <p style={{ margin: '0 0 1.5rem', color: 'var(--text-body)', lineHeight: '1.6' }}>
           {message}
         </p>
 

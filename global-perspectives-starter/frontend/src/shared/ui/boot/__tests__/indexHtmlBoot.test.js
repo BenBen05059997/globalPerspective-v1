@@ -21,11 +21,12 @@ describe('index.html pre-JS boot', () => {
     expect(m[1]).toBe(min(css));
   });
 
-  it('builds a #gp-boot node from a tiny inline script, full on "/" and compact elsewhere', () => {
+  it('builds a #gp-boot node from a tiny inline script, full on "/" and compact elsewhere, both dark', () => {
     expect(html).toContain('id="gp-boot"');
     expect(html).toMatch(/location\.pathname === '\/'/);
     expect(html).toContain('gp-boot--full gp-boot--dark gp-console');
-    expect(html).toContain('gp-boot--cover gp-boot--inline gp-boot--light');
+    expect(html).toContain('gp-boot--cover gp-boot--inline gp-boot--dark gp-console');
+    expect(html).not.toContain('gp-boot--light'); // dark on every path
   });
 
   it('is not written into the body markup, so no-JS readers and crawlers only see <noscript>', () => {
@@ -38,8 +39,8 @@ describe('index.html pre-JS boot', () => {
     const used = new Set([...script.matchAll(/gp-boot(?:__|--)[a-z-]+/g)].map((x) => x[0]));
     expect(used.size).toBeGreaterThan(10);
     for (const c of used) {
-      const inJsx = jsx.includes(c) || jsx.includes(c.replace(/^gp-boot--(dark|full|inline|light)$/, 'gp-boot--'));
-      const isCoverOnly = c === 'gp-boot--cover'; // the light pre-JS cover; styled in BootLoader.css
+      const inJsx = jsx.includes(c) || jsx.includes(c.replace(/^gp-boot--(dark|full|inline)$/, 'gp-boot--'));
+      const isCoverOnly = c === 'gp-boot--cover'; // the compact pre-JS cover; styled in BootLoader.css
       expect(inJsx || isCoverOnly, c).toBe(true);
       expect(css.includes(c) || ['gp-boot--dark', 'gp-boot__name'].includes(c), c).toBe(true);
     }

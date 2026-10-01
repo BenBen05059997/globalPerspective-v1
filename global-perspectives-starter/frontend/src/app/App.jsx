@@ -102,12 +102,12 @@ function AuthBridge() {
 // Suspense fallback while a lazy page chunk loads: the shared boot loader, never bare loading text.
 // The `/` console is dark and opens with the sensor list (all waiting: nothing has arrived yet, and
 // SituationHome's own loader then takes over with the real states); every other page gets the
-// compact light mark + sweep, in flow where the page will appear.
+// compact dark mark + sweep, in flow where the page will appear.
 function RouteFallback() {
   const { pathname } = useLocation();
   return pathname === '/'
-    ? <BootLoader variant="full" tone="dark" sensors={WAITING_SENSORS} ready={false} />
-    : <BootLoader variant="inline" tone="light" />;
+    ? <BootLoader variant="full" sensors={WAITING_SENSORS} ready={false} />
+    : <BootLoader variant="inline" />;
 }
 
 export default function App() {

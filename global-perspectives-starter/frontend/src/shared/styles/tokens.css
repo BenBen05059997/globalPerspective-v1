@@ -7,48 +7,78 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* ── Surfaces ─────────────────────────────────── */
-  --paper:         #fbfbf9;   /* page background */
-  --paper-2:       #f4f4f2;   /* subtle wash, active nav, filters */
-  --paper-3:       #ececea;   /* stronger wash */
-  --card:          #ffffff;   /* card surface */
+  /* ═════════ ROLE TOKENS — the one palette (console look, 2026-10-01) ═════════
+     Every page, the shell and the boot screen read these. tokens.js mirrors the values it needs
+     (a test asserts equality). Contrast on the page background: head 17.7:1, body 13.2:1,
+     muted 11.3:1, dim 5.6:1 (all AA body text); on panel-2 the lowest is dim at 5.2:1. */
 
-  /* ── Ink ──────────────────────────────────────── */
-  --ink:           #0a0a0a;   /* primary text / headings */
-  --ink-mid:       #3a3a3c;   /* body text */
-  --ink-dim:       #6a6a6e;   /* secondary labels */
-  --ink-faint:     #9a9a9e;   /* placeholders, disabled */
+  /* Surfaces */
+  --bg:              #070d15;                 /* page background */
+  --panel:           rgba(6, 12, 20, 0.95);   /* HUD panel / card surface */
+  --panel-2:         #0b1622;                 /* secondary panel wash (cards, headers, sticky bars) */
+  --panel-3:         #101e2d;                 /* stronger wash (hover, active) */
+  --strip:           rgba(4, 8, 14, 0.92);    /* top/bottom HUD strips, overlays */
+  --hairline:        rgba(95, 212, 255, 0.18);/* default border */
+  --hairline-strong: rgba(95, 212, 255, 0.30);/* emphasised border (hover, active panel) */
+  --hairline-3:      rgba(95, 212, 255, 0.45);/* dividers that must read */
 
-  /* ── Rules ────────────────────────────────────── */
-  --line:          #e5e5e3;   /* default border */
-  --line-2:        #d2d2d0;   /* stronger border on hover */
-  --line-3:        #b8b8b6;   /* dividers */
+  /* Text */
+  --text-head:  #eef5f9;
+  --text-body:  #c9d6df;
+  --text-muted: #b9c7d1;
+  --text-dim:   #7d8b96;   /* tertiary / timestamps / placeholders — 5.6:1 on --bg */
 
-  /* ── Brand accent — one, and only one ────────── */
-  --accent:        #a2442e;   /* rust */
-  --accent-deep:   #7a2f1e;   /* darker rust for hover */
-  --accent-soft:   #f3e2da;   /* rust wash background */
+  /* Accent / status */
+  --accent:        #5fd4ff;                    /* clickable, selected, "ours" */
+  --accent-strong: #8fe1ff;                    /* hover */
+  --accent-wash:   rgba(95, 212, 255, 0.12);   /* tinted background */
+  --on-accent:     #06131c;                    /* text on an accent fill (11:1) */
+  --warn:          #ffb347;                    /* warning amber: older / paused / needs attention */
+  --ok:            #6fd29a;                    /* checks passed */
+  --error:         #ff6a4d;                    /* failed check */
+  --run-hatch:     #e8d5a8;                    /* reserved: a reader's own AI run marker */
+  --focus-ring:    #5fd4ff;
 
-  /* ── Risk scale — functional, not brand ──────── */
-  --risk-h:        #c94a33;
-  --risk-h-soft:   #fbe9e3;
-  --risk-e:        #d89540;
-  --risk-e-soft:   #fbf0dc;
-  --risk-m:        #caa23a;
-  --risk-m-soft:   #f8f1d6;
-  --risk-l:        #4fa07b;
-  --risk-l-soft:   #e4f1e9;
+  /* Crisis hues (hue = crisis TYPE only, never severity) */
+  --hue-conflict:     #ee7754;
+  --hue-political:    #9b8cf8;
+  --hue-economic:     #38b6e0;
+  --hue-humanitarian: #d89e28;
 
-  /* ── Instrumentation ─────────────────────────── */
-  --amber:         #c98510;   /* live ticker, warnings */
+  /* Tier outlines (risk tier colours, legible as text/dots on the dark surfaces) */
+  --tier-low:      #6fd29a;
+  --tier-moderate: #e8d56a;
+  --tier-elevated: #ffb347;
+  --tier-high:     #ff6a4d;
+  --tier-low-wash:      rgba(111, 210, 154, 0.14);
+  --tier-moderate-wash: rgba(232, 213, 106, 0.14);
+  --tier-elevated-wash: rgba(255, 179, 71, 0.14);
+  --tier-high-wash:     rgba(255, 106, 77, 0.14);
 
-  /* ── AI action colors ─────────────────────────── */
-  --ai-summary:      #2a5f8a;
-  --ai-summary-soft: #eaf1f8;
-  --ai-predict:      #7a3a8f;
-  --ai-predict-soft: #f2eaf5;
-  --ai-trace:        #3a7a5e;
-  --ai-trace-soft:   #e8f2ec;
+  /* Freshness ramp: live = full hue + glow (build as `0 0 8px 1px <hue>`); plain = no filter;
+     older = desaturated with a warn label. Items older than 30 days are hidden upstream. */
+  --fresh-live-glow:    0 0 8px 1px currentColor;
+  --fresh-plain-filter: none;
+  --fresh-older-filter: saturate(0.35);
+  --fresh-older-label:  var(--warn);
+
+  /* Motion */
+  --motion-pulse:       2.4s;
+  --motion-dash-strong: 1.4s;
+  --motion-dash-weak:   2.6s;
+  --motion-sweep:       10s;
+  --motion-slide:       240ms;
+  --motion-ease:        cubic-bezier(0.4, 0, 0.2, 1);
+  /* Budget (documented only): at most 3 concurrently moving elements, 8 active pulses. */
+
+  /* Shape / touch */
+  --tap-min: 44px;   /* minimum touch target */
+  --r-xs:    2px;
+
+  /* HUD labels */
+  --hud-label-size:     10px;
+  --hud-label-size-lg:  11px;
+  --hud-label-tracking: 0.1em;
 
   /* ── Typography ───────────────────────────────── */
   --serif: 'Fraunces', Georgia, serif;
@@ -75,13 +105,13 @@
   --r-xl:   14px;
   --r-pill: 999px;
 
-  /* ── Shadows ──────────────────────────────────── */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 2px 6px rgba(0,0,0,0.05);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  /* ── Shadows (dark surfaces need heavier shadows to read) ── */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+  --shadow-md: 0 2px 6px rgba(0,0,0,0.45);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
 
   /* ── Shell chrome dimensions ──────────────────── */
-  --nav-h:    56px;   /* top nav height */
+  --nav-h:    52px;   /* top nav height (console bar) */
   --strip-h:  34px;   /* status strip height */
   --footer-h: 26px;   /* status footer height */
 
@@ -110,7 +140,111 @@
   --space-12: 48px;
   --space-16: 64px;
   --space-20: 80px;
+
+  /* ═════════ ALIASES — kept so every current consumer keeps working ═════════
+     Remove an alias only when nothing reads it any more (the colour-literal ratchet is the
+     migration meter). Light names flipped to the dark values: a "paper" is now a dark surface
+     and an "ink" is now light text, so a page that hard-codes a white card but reads --ink for
+     text on it will look wrong until it is moved onto the role tokens. */
+
+  /* Light names → role tokens */
+  --paper:     var(--bg);
+  --paper-2:   var(--panel-2);
+  --paper-3:   var(--panel-3);
+  --card:      var(--panel-2);
+  --ink:       var(--text-head);
+  --ink-mid:   var(--text-body);
+  --ink-dim:   var(--text-muted);
+  --ink-faint: var(--text-dim);
+  --line:      var(--hairline);
+  --line-2:    var(--hairline-strong);
+  --line-3:    var(--hairline-3);
+  --accent-deep: var(--accent-strong);
+  --accent-soft: var(--accent-wash);
+  --risk-h:      var(--tier-high);
+  --risk-h-soft: var(--tier-high-wash);
+  --risk-e:      var(--tier-elevated);
+  --risk-e-soft: var(--tier-elevated-wash);
+  --risk-m:      var(--tier-moderate);
+  --risk-m-soft: var(--tier-moderate-wash);
+  --risk-l:      var(--tier-low);
+  --risk-l-soft: var(--tier-low-wash);
+  --amber:       var(--warn);
+
+  /* AI action colours (text colour + tinted wash, both legible on the dark surfaces) */
+  --ai-summary:      #7fb8e8;
+  --ai-summary-soft: rgba(127, 184, 232, 0.14);
+  --ai-predict:      #c79be0;
+  --ai-predict-soft: rgba(199, 155, 224, 0.14);
+  --ai-trace:        #6fd29a;
+  --ai-trace-soft:   rgba(111, 210, 154, 0.14);
+
+  /* Console (--c-*) names → role tokens */
+  --c-bg:              var(--bg);
+  --c-panel:           var(--panel);
+  --c-panel-2:         var(--panel-2);
+  --c-hud-strip:       var(--strip);
+  --c-hairline:        var(--hairline);
+  --c-hairline-strong: var(--hairline-strong);
+  --c-text-head:  var(--text-head);
+  --c-text-body:  var(--text-body);
+  --c-text-muted: var(--text-muted);
+  --c-text-dim:   var(--text-dim);
+  --c-accent:     var(--accent);
+  --c-on-accent:  var(--on-accent);
+  --c-warn:       var(--warn);
+  --c-ok:         var(--ok);
+  --c-error:      var(--error);
+  --c-run-hatch:  var(--run-hatch);
+  --c-hue-conflict:     var(--hue-conflict);
+  --c-hue-political:    var(--hue-political);
+  --c-hue-economic:     var(--hue-economic);
+  --c-hue-humanitarian: var(--hue-humanitarian);
+  --c-fresh-live-glow:    var(--fresh-live-glow);
+  --c-fresh-plain-filter: var(--fresh-plain-filter);
+  --c-fresh-older-filter: var(--fresh-older-filter);
+  --c-fresh-older-label:  var(--fresh-older-label);
+  --c-motion-pulse:       var(--motion-pulse);
+  --c-motion-dash-strong: var(--motion-dash-strong);
+  --c-motion-dash-weak:   var(--motion-dash-weak);
+  --c-motion-sweep:       var(--motion-sweep);
+  --c-motion-slide:       var(--motion-slide);
+  --c-motion-ease:        var(--motion-ease);
+  --c-radius-sm:  var(--r-xs);
+  --c-radius-md:  var(--r-sm);
+  --c-tap-min:    var(--tap-min);
+  --c-space-1:    var(--space-1);
+  --c-space-2:    var(--space-2);
+  --c-space-3:    var(--space-3);
+  --c-space-4:    var(--space-4);
+  --c-space-5:    var(--space-5);
+  --c-space-6:    var(--space-6);
+  --c-serif: var(--serif);
+  --c-sans:  var(--sans);
+  --c-mono:  var(--mono);
+  --c-hud-label-size:     var(--hud-label-size);
+  --c-hud-label-size-lg:  var(--hud-label-size-lg);
+  --c-hud-label-tracking: var(--hud-label-tracking);
+
+  scrollbar-color: var(--hairline-strong) var(--bg);
 }
+
+/* Reduced motion: stop the animations rather than hide them — durations collapse to 0s so any
+   keyframe/transition using these tokens becomes an instant, static state. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-pulse: 0s;
+    --motion-dash-strong: 0s;
+    --motion-dash-weak: 0s;
+    --motion-sweep: 0s;
+    --motion-slide: 0s;
+  }
+}
+
+/* `.gp-console` is a no-op since 2026-10-01: the console palette IS the default now. The class
+   stays on the elements that carry it (and a few CSS selectors still key on it) until each use
+   is retired; it defines nothing. */
+.gp-console { /* intentionally empty */ }
 
 /* ── Base reset on new tokens ───────────────────── */
 *, *::before, *::after {
@@ -125,8 +259,8 @@ html {
 
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text-body);
   font-family: var(--sans);
   line-height: 1.5;
 }
@@ -228,17 +362,17 @@ body {
   color: var(--ink);
 }
 .btn-gp.primary {
-  background: var(--ink);
-  color: #fff;
-  border-color: var(--ink);
+  background: var(--text-head);
+  color: var(--bg);
+  border-color: var(--text-head);
 }
 .btn-gp.primary:hover {
-  background: var(--ink-mid);
-  border-color: var(--ink-mid);
+  background: var(--text-body);
+  border-color: var(--text-body);
 }
 .btn-gp.accent {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-color: var(--accent);
 }
 .btn-gp.accent:hover {
@@ -287,89 +421,5 @@ body {
   height: 7px;
   border-radius: 50%;
   background: var(--risk-l);
-  box-shadow: 0 0 0 3px rgba(79,160,123,0.2);
-}
-
-/* ── Console theme (DS1, 2026-09-26) — scoped to .gp-console ── */
-/* Approved "operations console" look for the /map page only. Every page not carrying the
-   `.gp-console` class keeps the light tokens above untouched — this block only ever applies
-   under that class, so it is safe to extend without touching any other page's look. */
-.gp-console {
-  /* ── Surfaces ─────────────────────────────────── */
-  --c-bg:              #070d15;              /* page background */
-  --c-panel:           rgba(6, 12, 20, 0.95); /* HUD panel / card surface */
-  --c-panel-2:         #0b1622;              /* secondary panel wash (headers, sticky bars) */
-  --c-hud-strip:       rgba(4, 8, 14, 0.92);  /* top/bottom HUD strips, overlays */
-  --c-hairline:        rgba(95, 212, 255, 0.18); /* default panel border */
-  --c-hairline-strong: rgba(95, 212, 255, 0.30); /* emphasised border (focus, active panel) */
-
-  /* ── Text ─────────────────────────────────────── */
-  --c-text-head: #eef5f9; /* headings — contrast on --c-bg: ~17.7:1 */
-  --c-text-body: #c9d6df; /* body copy — ~13.1:1 */
-  --c-text-muted:#b9c7d1; /* secondary labels — ~11.3:1 */
-  --c-text-dim:  #7d8b96; /* tertiary / timestamps — ~5.6:1 on --c-bg (checked, passes AA 4.5:1 as-is; no adjustment needed) */
-
-  /* ── Accent / status ──────────────────────────── */
-  --c-accent: #5fd4ff; /* clickable, selected, "ours" */
-  --c-warn:   #ffb347; /* older / paused / needs attention */
-  --c-ok:     #6fd29a; /* checks passed */
-  --c-error:  #ff6a4d; /* failed check */
-  --c-run-hatch: #e8d5a8; /* reserved: a reader's own AI run marker — not wired up yet */
-
-  /* ── Crisis hues (hue = crisis TYPE only, never severity) ──
-     Identical to the values already live in SituationHome.css's --hue-* vars — do not drift. */
-  --c-hue-conflict:      #ee7754;
-  --c-hue-political:     #9b8cf8;
-  --c-hue-economic:      #38b6e0;
-  --c-hue-humanitarian:  #d89e28;
-
-  /* ── Freshness ramp ───────────────────────────── */
-  /* live: full-saturation hue + a soft glow (build the glow as `0 0 8px 1px <hue>` at use site) */
-  --c-fresh-live-glow: 0 0 8px 1px currentColor;
-  --c-fresh-plain-filter: none;         /* normal / mid-age item: hue at full strength, no filter */
-  --c-fresh-older-filter: saturate(0.35); /* older item: desaturate toward --c-text-dim's neighbourhood */
-  --c-fresh-older-label: var(--c-warn);  /* "older" freshness labels/badges use warn, not the hue */
-  /* Items older than 30 days are not shown at all (hidden upstream in data selection) — there is
-     no token for that state because nothing renders it. */
-
-  /* ── Motion ───────────────────────────────────── */
-  --c-motion-pulse:      2.4s; /* selection / severity pulse ring */
-  --c-motion-dash-strong:1.4s; /* dashed "judged link" — faster/brighter dash */
-  --c-motion-dash-weak:  2.6s; /* dashed "judged link" — slower/dimmer dash */
-  --c-motion-sweep:      10s;  /* radar sweep rotation */
-  --c-motion-slide:      240ms;/* panel/sheet slide transitions */
-  --c-motion-ease:       cubic-bezier(0.4, 0, 0.2, 1);
-  /* Motion budget (CSS can't enforce a count — document only): at most 3 concurrently "moving"
-     elements (movers) and at most 8 active pulse animations on screen at once. */
-
-  /* ── Shape / space ────────────────────────────── */
-  --c-radius-sm:  2px;
-  --c-radius-md:  4px;
-  --c-tap-min:    44px; /* minimum touch target, phone HUD controls */
-  --c-space-1:    4px;
-  --c-space-2:    8px;
-  --c-space-3:    12px;
-  --c-space-4:    16px;
-  --c-space-6:    24px;
-
-  /* ── Type ─────────────────────────────────────── */
-  /* Reuse the existing type families from :root — the console doesn't introduce new fonts. */
-  --c-serif: var(--serif); /* Fraunces */
-  --c-sans:  var(--sans);  /* Inter */
-  --c-mono:  var(--mono);  /* JetBrains Mono */
-  --c-hud-label-size: 10px;      /* HUD strip labels (10–11px range) */
-  --c-hud-label-size-lg: 11px;
-  --c-hud-label-tracking: 0.1em; /* HUD label letter-spacing */
-}
-
-/* Reduced motion: stop the console's animations rather than hide them — durations collapse to
-   0s so any keyframe/transition using these tokens becomes an instant, static state. */
-@media (prefers-reduced-motion: reduce) {
-  .gp-console {
-    --c-motion-pulse: 0s;
-    --c-motion-dash-strong: 0s;
-    --c-motion-dash-weak: 0s;
-    --c-motion-sweep: 0s;
-    --c-motion-slide: 0s;
-  }
+  box-shadow: 0 0 0 3px var(--tier-low-wash);
 }

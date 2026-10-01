@@ -45,8 +45,15 @@
 - Playwright sweep of every route at 1440 + 390: background, no light frame, no old loader, no overflow, no console errors, every touched control clicked. `ARCHITECTURE.md` (Frontend tokens + shared UI), `REDESIGN_MASTER_PLAN.md` build status, `CHANGES.md` per phase, `INDEX.md` row, status → done.
 
 ### Changes (code) — updated per phase
-- P1: `shared/styles/tokens.css`, `shared/styles/tokens.js` (+ test), `app/layout/Layout.jsx`, `app/layout/Layout.css`, `frontend/index.html`, `shared/ui/boot/*`, `app/App.jsx`, `quality/verify_pages.sh`, `quality/boot_tokens_guard.mjs`, NEW `quality/color_literals_baseline.json` (+ checker script), layout tests.
-- P2–P4: to be filled by each phase before it starts.
+- **P1 (done 2026-10-01, not committed/deployed):**
+  - `shared/styles/tokens.css`: one `:root` role palette (surfaces `--bg/--panel/--panel-2/--panel-3/--strip/--hairline(-strong,-3)`, text `--text-head/-body/-muted/-dim`, `--accent(-strong,-wash)`, `--on-accent`, `--warn/--ok/--error`, `--hue-*` x4, `--tier-*` x4 (+ `-wash`), `--fresh-*` x4, `--motion-*`, `--tap-min`, `--r-xs`, hud label vars); old light names and every `--c-*` name are aliases; `.gp-console` is an empty no-op rule; heavier shadows; `.btn-gp.primary/.accent` text colours fixed for dark. `app/index.css`: dropped the `--text-muted` alias (now a role token; it would have been circular).
+  - `shared/styles/tokens.js`: new `TOKENS` mirror (27 values), `RISK_SOLID` = tier tokens, `riskScoreToVar/riskTierToVar` read `--tier-*` / `--text-head`; exports unchanged. New tests `tokensParity.test.js` (JS == CSS, aliases are `var()`), `colorLiteralsGuard.test.js`; `consoleTokens.test.js` rewritten for the one palette.
+  - Shell: `app/layout/Layout.css` rewritten (the console bar is the base `.gp-nav` on every page; dark body, strip, footer, tab bar; `.gp-nav-console` and the dead `.gp-search/.gp-kbd/.gp-nav-div` rules removed; `--nav-h` 52px), `app/layout/Layout.jsx` (nav class `gp-nav gp-console` always; comments), `app/__tests__/layout.test.jsx` (every route shares the nav/footer; Layout.css reads role tokens). Shell pieces that were light: `features/breaking/components/NotificationBell.css` (bell + panel on tokens), `app/errors/ErrorModal.jsx` (white card -> panel tokens; its title was invisible).
+  - Boot: `shared/ui/boot/BootLoader.css` (`--light` variant removed, role-token fallbacks, `html` background), `BootLoader.jsx` (always dark; `tone` ignored), `app/App.jsx` (RouteFallback inline = dark), `frontend/index.html` (inline CSS regenerated, compact cover is dark), tests `bootLoader.test.jsx`, `indexHtmlBoot.test.js`; `quality/boot_tokens_guard.mjs` (role names, no light variant, no `--c-*` in the boot CSS).
+  - Ratchet: NEW `quality/check_color_literals.mjs` (`--write`, `--lower`), NEW `quality/color_literals_baseline.json` (1,832 literals in 84 files, measured after these edits), `quality/verify_pages.sh` (+4 checks: 97 pass).
+  - Docs: `ARCHITECTURE.md` (Frontend tokens paragraph, BootLoader row), `CHANGES.md`.
+- **P2 files (to be filled before P2 starts):** `shared/ui/` StoryRow, TierChip, StatusGlyph, PageFrame/section header, FilterGroup (+ tests); `features/map/lib/legend.js` vocab moved to `shared/`; `features/map/components/HudIntelFeed*` onto StoryRow; `shared/ui/boot/` inline variant adopted by every `IntelligenceLoader` / "Loading..." / `LoadingBar` use (daily, ThreadPage, WeeklyPage, TrackRecordPage/Text, CountryPage, AuthCallback, Account); `app/layout/LoadingBar.jsx`, `AIToast.jsx`, `LoadingIndicators.css`; baseline lowered.
+- P3-P4: to be filled by each phase before it starts.
 
 ### Docs to update on completion
 `ARCHITECTURE.md` (Frontend: tokens, shared UI, loaders, `/weekly`), `REDESIGN_MASTER_PLAN.md` (§3.4 + build status), `CHANGES.md` (one entry per phase), `INDEX.md` row, `DATA_STRATEGY.md` only if a data read changes (not expected).
@@ -61,7 +68,7 @@
 | Phase | What | Status |
 |---|---|---|
 | P0 | Plan + measurements | ✅ 2026-10-01 |
-| P1 | One token set, dark frame, dark boot everywhere, literal ratchet | ⏳ next |
+| P1 | One token set, dark frame, dark boot everywhere, literal ratchet | ✅ 2026-10-01 (verify 125 files / 929 tests; verify_pages 97 pass; baseline 1,832 literals / 84 files; 17 routes x 1440+390 measured dark, 0 overflow, 0 page errors; uncommitted, monitor commits) |
 | P2 | Shared building blocks + one loader | — |
 | P3 | Light pages converted | — |
 | P4 | Stories A + C | — |

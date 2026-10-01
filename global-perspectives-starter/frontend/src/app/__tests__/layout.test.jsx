@@ -1,6 +1,9 @@
 // Layout smoke tests (A1 · site shell): the N1 five-item menu renders with the right hrefs, the
 // site-wide "paused since" status line renders only when the newest daily brief is stale (and
 // never on the map home (/), which has its own), and the footer has no white paper link.
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -161,7 +164,6 @@ describe('Layout — R4a desktop / (map home) console shell', () => {
     isPhoneMock.mockReturnValue(false);
     renderLayout('/');
     const nav = document.querySelector('.gp-nav');
-    expect(nav.classList.contains('gp-nav-console')).toBe(true);
     expect(nav.classList.contains('gp-console')).toBe(true);
     expect(document.querySelector('.gp-app').classList.contains('gp-app-console')).toBe(true);
     const hrefs = [...document.querySelectorAll('.gp-nav-links a')].map((a) => a.getAttribute('href'));
@@ -170,22 +172,32 @@ describe('Layout — R4a desktop / (map home) console shell', () => {
     expect(document.querySelector('.gp-footer')).toBeNull();
   });
 
-  it('keeps the current shell on every other page and on the phone map home', () => {
+  it('every other page has the same nav + footer (no console-only bar, no status slot); phone map home has no slot', () => {
     fetchDailyBrief.mockResolvedValue({ data: null });
     isPhoneMock.mockReturnValue(false);
     const { unmount } = renderLayout('/weekly');
-    expect(document.querySelector('.gp-nav-console')).toBeNull();
+    expect(document.querySelector('.gp-nav')).toBeTruthy();
+    expect(document.querySelector('.gp-app').classList.contains('gp-app-console')).toBe(false);
+    expect(document.querySelector('#gp-console-status')).toBeNull();
     expect(document.querySelector('.gp-footer')).toBeTruthy();
     unmount();
     const today = renderLayout('/today');
-    expect(document.querySelector('.gp-nav-console')).toBeNull();
     expect(document.querySelector('.gp-footer')).toBeTruthy();
     expect(document.querySelector('.gp-footer a[href="/today"]')).toBeTruthy();
     expect(document.querySelector('.gp-nav-link.active')).toBeNull();
     today.unmount();
     isPhoneMock.mockReturnValue(true);
     renderLayout('/');
-    expect(document.querySelector('.gp-nav-console')).toBeNull();
+    expect(document.querySelector('.gp-app').classList.contains('gp-app-console')).toBe(false);
     expect(document.querySelector('#gp-console-status')).toBeNull();
+  });
+
+  it('the dark frame is one token set: Layout.css reads role tokens, with no light literals and no console-only nav class', () => {
+    const css = readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../layout/Layout.css'), 'utf8');
+    expect(css).not.toMatch(/gp-nav-console/);
+    expect(css).not.toMatch(/var\(--(paper|ink|line|card)[a-z0-9-]*\b/);
+    expect(css).toMatch(/\.gp-nav\s*{[^}]*background:\s*var\(--strip\)/);
+    expect(css).toMatch(/\.gp-footer\s*{[^}]*background:\s*var\(--strip\)/);
+    expect(css).toMatch(/\.gp-app\s*{[^}]*background:\s*var\(--bg\)/);
   });
 });

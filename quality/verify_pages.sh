@@ -188,6 +188,17 @@ must_have "$GLOBE3D" "extensions: GLOBE_HORIZON" "sprites hide with their anchor
 must_have "$SRC/features/map/lib/globeHorizon.js" "project\.cameraPosition" "horizon rule is a shader test on the camera, not a per-frame rebuild"
 must_not_have "$SRC/features/map/lib/globeIcons.js" "degPerPx|2 \*\* |Math\.pow\(2" "sprite sizes are fixed pixels, never scaled by the zoom"
 
+# ─── One token set (2026-10-01): hard-coded colour literals may only go DOWN ───
+# quality/color_literals_baseline.json holds today's per-file count; a rise (or a new file with
+# literals) fails. Use the role tokens in shared/styles/tokens.css instead of a hex/rgb literal.
+must_have "$SRC/shared/styles/tokens.css" "^ +--bg: +#070d15" "tokens.css carries the one palette (role tokens)"
+must_not_have "$SRC/app/layout/Layout.css" "gp-nav-console" "the console bar is the one nav on every page"
+if node quality/check_color_literals.mjs >/tmp/color_literals_guard.out 2>&1; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) $(head -1 /tmp/color_literals_guard.out)"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("colour literals rose above the baseline"); echo "  $(red FAIL) colour literals: $(cat /tmp/color_literals_guard.out)"
+fi
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

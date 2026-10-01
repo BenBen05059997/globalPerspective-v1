@@ -8,7 +8,7 @@
   --bg-tertiary:  var(--paper-3);
   --text-primary:   var(--ink);
   --text-secondary: var(--ink-mid);
-  --text-muted:     var(--ink-dim);
+  /* --text-muted is a role token now (tokens.css) — no alias needed */
   --border-color: var(--line);
   --border-dark:  var(--line-2);
   --shadow:       rgba(0,0,0,0.06);

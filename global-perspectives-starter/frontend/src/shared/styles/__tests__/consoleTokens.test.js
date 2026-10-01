@@ -1,52 +1,53 @@
-// Console theme tokens (DS1, 2026-09-26) — asserts the scoped `.gp-console` block in
-// tokens.css defines the required design tokens, without touching the rest of the file.
+// One token set (2026-10-01): the console palette is the `:root` default. This asserts the role
+// tokens exist with the approved values, that the old `--c-*` console names still resolve to them,
+// and that `.gp-console` is now a no-op class.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const tokensPath = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../tokens.css',
-);
-const css = readFileSync(tokensPath, 'utf8');
+const css = readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../tokens.css'), 'utf8');
+const rootStart = css.indexOf(':root {');
+const rootBlock = css.slice(rootStart, css.indexOf('\n}\n', rootStart));
 
-// Isolate the `.gp-console { ... }` rule body so assertions can't accidentally pass
-// against some other selector's token of the same name.
-function ruleBodyFor(selector) {
-  const start = css.indexOf(`${selector} {`);
-  expect(start, `expected to find "${selector} {" in tokens.css`).toBeGreaterThan(-1);
-  const end = css.indexOf('}', start);
-  return css.slice(start, end);
-}
-
-describe('tokens.css — .gp-console scoped theme', () => {
-  const consoleBlock = ruleBodyFor('.gp-console');
-
-  it('defines the required surface/accent/status tokens', () => {
-    expect(consoleBlock).toMatch(/--c-bg:\s*#070d15/);
-    expect(consoleBlock).toMatch(/--c-accent:\s*#5fd4ff/);
-    expect(consoleBlock).toMatch(/--c-warn:\s*#ffb347/);
+describe('tokens.css — one :root palette (console values are the defaults)', () => {
+  it('defines the surface/accent/status role tokens', () => {
+    expect(rootBlock).toMatch(/--bg:\s*#070d15/);
+    expect(rootBlock).toMatch(/--accent:\s*#5fd4ff/);
+    expect(rootBlock).toMatch(/--warn:\s*#ffb347/);
   });
 
   it('defines all four crisis hues, matching SituationHome.css exactly', () => {
-    expect(consoleBlock).toMatch(/--c-hue-conflict:\s*#ee7754/);
-    expect(consoleBlock).toMatch(/--c-hue-political:\s*#9b8cf8/);
-    expect(consoleBlock).toMatch(/--c-hue-economic:\s*#38b6e0/);
-    expect(consoleBlock).toMatch(/--c-hue-humanitarian:\s*#d89e28/);
+    expect(rootBlock).toMatch(/--hue-conflict:\s*#ee7754/);
+    expect(rootBlock).toMatch(/--hue-political:\s*#9b8cf8/);
+    expect(rootBlock).toMatch(/--hue-economic:\s*#38b6e0/);
+    expect(rootBlock).toMatch(/--hue-humanitarian:\s*#d89e28/);
   });
 
-  it('defines a 44px minimum tap target', () => {
-    expect(consoleBlock).toMatch(/--c-tap-min:\s*44px/);
+  it('defines the four tier outlines, four freshness tokens and a 44px tap target', () => {
+    for (const t of ['low', 'moderate', 'elevated', 'high']) expect(rootBlock).toMatch(new RegExp(`--tier-${t}:\\s*#`));
+    for (const f of ['fresh-live-glow', 'fresh-plain-filter', 'fresh-older-filter', 'fresh-older-label']) expect(rootBlock).toContain(`--${f}:`);
+    expect(rootBlock).toMatch(/--tap-min:\s*44px/);
   });
 
-  it('has a reduced-motion rule that collapses the console motion durations', () => {
-    const mqStart = css.indexOf('@media (prefers-reduced-motion: reduce)', css.indexOf('.gp-console {'));
+  it('keeps the old --c-* names as aliases of the role tokens', () => {
+    expect(rootBlock).toMatch(/--c-bg:\s*var\(--bg\)/);
+    expect(rootBlock).toMatch(/--c-accent:\s*var\(--accent\)/);
+    expect(rootBlock).toMatch(/--c-tap-min:\s*var\(--tap-min\)/);
+  });
+
+  it('has a reduced-motion rule on :root that collapses the motion durations', () => {
+    const mqStart = css.indexOf('@media (prefers-reduced-motion: reduce)');
     expect(mqStart).toBeGreaterThan(-1);
-    const mqEnd = css.indexOf('}\n}', mqStart); // inner rule close then outer media close
-    const mqBlock = css.slice(mqStart, mqEnd + 3);
-    expect(mqBlock).toMatch(/\.gp-console\s*{/);
-    expect(mqBlock).toMatch(/--c-motion-pulse:\s*0s/);
-    expect(mqBlock).toMatch(/--c-motion-sweep:\s*0s/);
+    const mqBlock = css.slice(mqStart, css.indexOf('}\n}', mqStart) + 3);
+    expect(mqBlock).toMatch(/:root\s*{/);
+    expect(mqBlock).toMatch(/--motion-pulse:\s*0s/);
+    expect(mqBlock).toMatch(/--motion-sweep:\s*0s/);
+  });
+
+  it('.gp-console defines no custom properties (no-op class)', () => {
+    const start = css.indexOf('.gp-console {');
+    expect(start).toBeGreaterThan(-1);
+    expect(css.slice(start, css.indexOf('}', start))).not.toMatch(/--[a-z]/);
   });
 });

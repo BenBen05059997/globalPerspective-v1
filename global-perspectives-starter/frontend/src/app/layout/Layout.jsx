@@ -108,11 +108,11 @@ function Layout({ children }) {
     { to: '/track-record', label: 'Track record', short: 'Record', icon: IconRecord, title: 'How our forecasts are logged and checked as they come due.' },
   ];
 
-  // R4a: desktop `/` (the map, since the 2026-10-01 S6 swap) is a full-bleed console — the same five menu items + account, restyled as a
-  // thin dark/mono console bar (`.gp-console` scopes the console tokens to it), with an empty
-  // slot (#gp-console-status) the map fills with its one-line honesty status. No footer there:
-  // the map is the whole page (its "About this map" drawer carries the footer links instead).
-  // Every other page keeps the current light shell.
+  // R4a: desktop `/` (the map, since the 2026-10-01 S6 swap) is a full-bleed console: the same
+  // console bar every page has, plus an empty slot (#gp-console-status) the map fills with its
+  // one-line honesty status. No footer there: the map is the whole page (its "About this map"
+  // drawer carries the footer links instead). Every other page has the same dark nav, body and
+  // footer (one token set, 2026-10-01).
   const consoleShell = location.pathname === '/' && !isPhone;
 
   const isActive = (to, exact) => {
@@ -125,7 +125,7 @@ function Layout({ children }) {
       <LoadingBar />
       <AIToast />
 
-      <nav className={`gp-nav${consoleShell ? ' gp-nav-console gp-console' : ''}`}>
+      <nav className="gp-nav gp-console">
         <div className="gp-brand" data-tour="nav-brand">
           <Link to="/" className="gp-brand-link">
             <span className="gp-logo">G</span>
@@ -226,9 +226,7 @@ function Layout({ children }) {
       )}
 
       {/* P1 phone tab bar (A2): the five main-nav items as a fixed bottom bar under 900px,
-          replacing the old hamburger dropdown (removed above). Console-dark on every page — the
-          `.gp-console` class just scopes those CSS tokens to this one element, it doesn't touch
-          the rest of the (light) page. the map's own MAP·LIST·ALERTS in-page tabs and bottom sheet
+          replacing the old hamburger dropdown (removed above). Dark like the rest of the shell. The map's own MAP·LIST·ALERTS in-page tabs and bottom sheet
           are unaffected — they sit above this bar (SituationHome.css). */}
       {isPhone && (
         <nav className="gp-tabbar gp-console" aria-label="Primary, phone">

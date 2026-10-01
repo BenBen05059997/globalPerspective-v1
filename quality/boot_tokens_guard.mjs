@@ -14,7 +14,7 @@ export function checkBootTokens(repoRoot) {
   const errors = [];
 
   const tok = {};
-  for (const m of tokens.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi)) if (!(m[1] in tok)) tok[m[1]] = m[2].replace(/\/\*.*$/, '').trim();
+  for (const m of tokens.matchAll(/^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);/gim)) if (!(m[1] in tok)) tok[m[1]] = m[2].replace(/\/\*.*$/, '').trim();
 
   let checked = 0;
   for (const m of css.matchAll(/var\((--[a-z0-9-]+)\s*,\s*((?:[^()]|\([^)]*\))+)\)/gi)) {
@@ -33,6 +33,12 @@ export function checkBootTokens(repoRoot) {
     if (norm(m[0]) === 'rgba(95,212,255,0.28)') continue; // --c-accent at 28%, the fallback for color-mix()
     errors.push(`literal colour ${m[0]} in BootLoader.css — use a token`);
   }
+  // One dark tone everywhere (2026-10-01): no light variant may come back, and the pre-JS copy must not build one.
+  if (/gp-boot--light/.test(css)) errors.push('BootLoader.css has a gp-boot--light variant — the boot screen is dark on every page');
+  const html = fs.readFileSync(path.join(fe, 'index.html'), 'utf8');
+  if (/gp-boot--light/.test(html)) errors.push('index.html builds a gp-boot--light boot node — the pre-JS boot is dark on every path');
+  // The fallbacks must name the role tokens (--bg, --accent, ...), not the retired --c-* console names.
+  if (/var\(--c-/.test(css)) errors.push('BootLoader.css reads a --c-* alias — use the role token names (--bg, --accent, --text-head, ...)');
   if (/prefers-color-scheme/.test(css)) errors.push('BootLoader.css must not add prefers-color-scheme handling (the site has no dark/light switch)');
   return { errors, checked };
 }

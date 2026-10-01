@@ -1,39 +1,31 @@
 /* BootLoader — shared boot screen. The class names and rules below are mirrored, minified, in
    frontend/index.html's inline <style> (the pre-JS copy); a test keeps the two class sets in step.
-   Dark tone sits under `.gp-console` so it reads the console tokens; the fallbacks are those same
-   values so the pre-JS copy (which has no tokens.css yet) paints identically. */
+   One tone (dark) on every page since 2026-10-01: it reads the role tokens (tokens.css); the
+   fallbacks are those same values so the pre-JS copy (which has no tokens.css yet) paints
+   identically (quality/boot_tokens_guard.mjs keeps them equal). */
+html { background: var(--bg, #070d15); } /* no light flash before tokens.css / the cover paints */
 .gp-boot {
-  --gp-boot-solid: var(--c-bg, #070d15);
-  --gp-boot-accent: var(--c-accent, #5fd4ff);
-  --gp-boot-warn: var(--c-warn, #ffb347);
-  --gp-boot-head: var(--c-text-head, #eef5f9);
-  --gp-boot-dim: var(--c-text-dim, #7d8b96);
-  --gp-boot-hair: var(--c-hairline, rgba(95, 212, 255, 0.18));
-  --gp-boot-fill: var(--c-panel-2, #0b1622);
+  --gp-boot-solid: var(--bg, #070d15);
+  --gp-boot-accent: var(--accent, #5fd4ff);
+  --gp-boot-warn: var(--warn, #ffb347);
+  --gp-boot-head: var(--text-head, #eef5f9);
+  --gp-boot-dim: var(--text-dim, #7d8b96);
+  --gp-boot-hair: var(--hairline, rgba(95, 212, 255, 0.18));
+  --gp-boot-fill: var(--panel-2, #0b1622);
   --gp-boot-size: 200px;
-  --gp-boot-mono: var(--c-mono, 'JetBrains Mono', ui-monospace, monospace);
+  --gp-boot-mono: var(--mono, 'JetBrains Mono', ui-monospace, monospace);
   box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
   opacity: 1; transition: opacity 0.45s ease 0.3s;
 }
 .gp-boot *, .gp-boot *::before, .gp-boot *::after { box-sizing: border-box; }
-.gp-boot--light {
-  --gp-boot-solid: var(--paper, #fbfbf9);
-  --gp-boot-accent: var(--accent, #a2442e);
-  --gp-boot-warn: var(--risk-e, #d89540);
-  --gp-boot-head: var(--ink, #0a0a0a);
-  --gp-boot-dim: var(--ink-dim, #6a6a6e);
-  --gp-boot-hair: var(--line, #e5e5e3);
-  --gp-boot-fill: var(--paper-2, #f4f4f2);
-  --gp-boot-mono: var(--mono, 'JetBrains Mono', ui-monospace, monospace);
-}
-/* full: a fixed full-screen cover; cover: same cover for the light pre-JS copy */
+/* full: a fixed full-screen cover; cover: the same cover for the compact pre-JS copy (off `/`) */
 .gp-boot--full, .gp-boot--cover {
   position: fixed; inset: 0; z-index: 9000; background: var(--gp-boot-solid);
 }
 .gp-boot--inline { min-height: 40vh; padding: 4rem 1rem; }
 .gp-boot--inline { --gp-boot-size: 96px; }
-.gp-boot--cover.gp-boot--inline { align-items: flex-start; padding-top: calc(var(--nav-h, 56px) + 6rem); min-height: 0; }
+.gp-boot--cover.gp-boot--inline { align-items: flex-start; padding-top: calc(var(--nav-h, 52px) + 6rem); min-height: 0; }
 
 .gp-boot__inner { display: flex; align-items: center; justify-content: center; gap: 36px; padding: 0 16px; max-width: 100%; }
 .gp-boot__globe { position: relative; flex: none; width: var(--gp-boot-size); height: var(--gp-boot-size); }

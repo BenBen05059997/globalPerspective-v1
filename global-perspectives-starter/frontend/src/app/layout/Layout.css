@@ -1,8 +1,8 @@
 /* ── Layout shell ────────────────────────────────────────── */
 .gp-app {
   min-height: 100vh;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text-body);
   font-family: var(--sans);
 }
 
@@ -11,7 +11,7 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #0a0f1e;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -21,50 +21,54 @@
 }
 .gp-maintenance-icon { font-size: 2.5rem; margin-bottom: 1rem; }
 .gp-maintenance h1 {
-  color: #f1f5f9;
+  color: var(--text-head);
   font-size: 1.75rem;
   font-weight: 700;
   font-family: var(--sans);
   margin: 0 0 0.75rem;
 }
 .gp-maintenance p {
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 1.05rem;
   max-width: 420px;
   line-height: 1.6;
   margin: 0 0 0.5rem;
 }
-.gp-maintenance-sub { color: #64748b !important; font-size: 0.9rem !important; }
+.gp-maintenance-sub { color: var(--text-dim) !important; font-size: 0.9rem !important; }
 
-/* ── Primary nav (56px sticky) ───────────────────────────── */
+/* ── Primary nav — the console bar, on every page (one token set, 2026-10-01) ───────── */
 .gp-nav {
-  display: grid;
-  grid-template-columns: 260px 1fr auto;
+  display: flex;
   align-items: center;
-  padding: 0 24px;
+  gap: 16px;
   height: var(--nav-h);
-  border-bottom: 1px solid var(--line);
-  background: rgba(251,251,249,0.92);
-  backdrop-filter: blur(8px);
+  padding: 0 14px 0 20px;
+  background: var(--strip);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text-body);
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
 /* Brand */
+.gp-brand { flex: none; }
 .gp-brand-link {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  color: var(--ink);
+  color: var(--text-head);
+  min-height: var(--tap-min);
+  min-width: var(--tap-min);
 }
 .gp-logo {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  background: var(--ink);
-  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,44 +86,52 @@
 }
 .gp-tm {
   font-size: 10px;
-  color: var(--ink-dim);
+  color: var(--text-dim);
   font-weight: 500;
   font-style: normal;
   vertical-align: super;
 }
 
-/* Centered nav links */
+/* Nav links */
 .gp-nav-links {
   display: flex;
-  justify-content: center;
+  flex: none;
+  justify-content: flex-start;
   align-items: center;
   gap: 2px;
 }
-.gp-nav-div {
-  width: 1px;
-  align-self: stretch;
-  margin: 6px 7px;
-  background: var(--line);
-}
 .gp-nav-link {
-  padding: 7px 14px;
-  font-size: 13.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  min-width: var(--tap-min);
+  padding: 0 10px;
+  font-family: var(--mono);
+  font-size: 12px;
   font-weight: 500;
-  color: var(--ink-mid);
-  border-radius: 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-radius: var(--r-sm);
   text-decoration: none;
   transition: background var(--fast), color var(--fast);
   white-space: nowrap;
 }
-.gp-nav-link:hover { background: var(--paper-3); color: var(--ink); }
-.gp-nav-link.active { color: var(--ink); background: var(--paper-2); }
+.gp-nav-link:hover { background: var(--accent-wash); color: var(--text-head); }
+.gp-nav-link.active { color: var(--accent); background: var(--accent-wash); }
+.gp-nav-link:focus-visible,
+.gp-help:focus-visible,
+.gp-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 
 /* Right section */
 .gp-nav-right {
   display: flex;
-  gap: 10px;
+  flex: none;
+  gap: 8px;
   align-items: center;
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 /* Help / guided-tour trigger */
@@ -127,69 +139,47 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* F2.16: was a fixed 32x32 — the phone-visible header help control needs a ≥44px tap target. */
-  width: var(--c-tap-min, 44px);
-  height: var(--c-tap-min, 44px);
-  border: 1px solid var(--line);
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
-  background: var(--card);
-  color: var(--ink-dim);
+  background: transparent;
+  color: var(--text-muted);
   cursor: pointer;
   transition: border-color var(--fast), color var(--fast);
 }
-.gp-help:hover { border-color: var(--line-2); color: var(--ink); }
+.gp-help:hover { border-color: var(--hairline-strong); color: var(--text-head); }
 
-/* Search bar */
-.gp-search {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px 7px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--card);
-  color: var(--ink-dim);
-  font-size: 13px;
-  font-family: var(--sans);
-  cursor: pointer;
-  min-width: 160px;
-  transition: border-color var(--fast), color var(--fast);
+/* The bell (NotificationBell, features/breaking) sits in the bar at the same 44px size. */
+.gp-nav .gp-bell {
+  width: var(--tap-min); height: var(--tap-min); background: transparent;
+  border-color: var(--hairline); color: var(--text-muted);
 }
-.gp-search:hover { border-color: var(--line-2); color: var(--ink); }
-.gp-kbd {
-  margin-left: auto;
-  padding: 1px 6px;
-  background: var(--paper-2);
-  border: 1px solid var(--line);
-  font-family: var(--mono);
-  font-size: 10px;
-  border-radius: 4px;
-  color: var(--ink-mid);
-}
+.gp-nav .gp-bell:hover { background: var(--accent-wash); }
 
 /* Nav buttons */
 .gp-btn {
   padding: 7px 14px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  border-radius: 8px;
-  font-size: 13px;
+  background: transparent;
+  border: 1px solid var(--hairline-3);
+  color: var(--accent);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  letter-spacing: 0.04em;
   font-weight: 500;
-  font-family: var(--sans);
+  font-family: var(--mono);
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
   transition: background var(--fast), border-color var(--fast);
   display: inline-flex;
   align-items: center;
-  /* F2.16: the sign-in / account link needs a ≥44px tap target on phone. */
-  min-height: var(--c-tap-min, 44px);
+  min-height: var(--tap-min);
   box-sizing: border-box;
 }
-.gp-btn:hover { background: var(--paper-2); }
-.gp-btn-primary { background: var(--ink); color: #fff; border-color: var(--ink); }
-.gp-btn-primary:hover { background: var(--ink-mid); border-color: var(--ink-mid); }
+.gp-btn:hover { background: var(--accent-wash); }
+.gp-btn-primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+.gp-btn-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
 
 /* Header credits pill — at-a-glance balance, links to Account → Membership. */
 .gp-credits-pill {
@@ -197,21 +187,21 @@
   align-items: center;
   gap: 5px;
   padding: 6px 11px;
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: transparent;
+  border: 1px solid var(--hairline);
   border-radius: 999px;
-  color: var(--ink);
+  color: var(--text-body);
   font-family: var(--sans);
   font-size: 13px;
   text-decoration: none;
   white-space: nowrap;
   transition: background var(--fast), border-color var(--fast);
 }
-.gp-credits-pill:hover { background: var(--paper-2); border-color: var(--line-2); }
+.gp-credits-pill:hover { background: var(--accent-wash); border-color: var(--hairline-strong); }
 .gp-credits-pill.is-member { border-color: var(--accent); }
 .gp-credits-dot { color: var(--accent); font-size: 9px; line-height: 1; }
 .gp-credits-n { font-weight: 700; }
-.gp-credits-label { color: var(--ink-dim); }
+.gp-credits-label { color: var(--text-dim); }
 @media (max-width: 760px) { .gp-credits-label { display: none; } }
 
 /* ── Status strip ────────────────────────────────────────── */
@@ -221,8 +211,8 @@
    empty bar) when analysis is fresh. */
 .gp-strip {
   padding: 6px 24px;
-  background: var(--paper-2);
-  border-bottom: 1px solid var(--line);
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--hairline);
   overflow: hidden;
 }
 /* ── Main content ────────────────────────────────────────── */
@@ -240,12 +230,12 @@
   flex-wrap: wrap;
   gap: 6px 16px;
   padding: 8px 24px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hairline);
   font-family: var(--mono);
   font-size: 10.5px;
-  color: var(--ink-faint);
+  color: var(--text-dim);
   letter-spacing: 0.04em;
-  background: var(--paper-2);
+  background: var(--strip);
 }
 .gp-footer-links {
   display: flex;
@@ -253,23 +243,22 @@
   flex-shrink: 0;
 }
 .gp-footer-links a {
-  color: var(--ink-faint);
+  color: var(--text-muted);
   text-decoration: none;
   transition: color var(--fast);
-  /* F2.16: the footer's font stays small (26px status-bar look), but each link's tap target
-     grows to ≥44px via padding, not by inflating the visible text. */
+  /* The footer's font stays small (26px status-bar look), but each link's tap target grows to
+     >=44px via padding, not by inflating the visible text. */
   display: inline-flex;
   align-items: center;
-  min-height: var(--c-tap-min, 44px);
+  min-height: var(--tap-min);
   padding: 4px 0;
 }
-.gp-footer-links a:hover { color: var(--ink-mid); }
-.gp-footer-ver { flex-shrink: 0; color: var(--ink-faint); opacity: 0.7; }
+.gp-footer-links a:hover { color: var(--accent); }
+.gp-footer-ver { flex-shrink: 0; color: var(--text-dim); }
 
 /* ── Phone tab bar (P1/A2) ───────────────────────────────────
    Fixed 5-item bottom bar under 900px, replacing the old hamburger dropdown for the main nav
-   items. `.gp-console` (applied on the element itself, see Layout.jsx) scopes the console-dark
-   tokens (`--c-*`, tokens.css) to just this bar — every other page stays on its own light theme.
+   items. Dark like the rest of the shell (one token set, tokens.css).
    58px matches the phone-pattern frame (TASK_2026-09-26_remaining_design.md Phase P). */
 .gp-tabbar {
   position: fixed;
@@ -281,8 +270,8 @@
   align-items: stretch;
   height: 58px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: var(--c-bg, #070d15);
-  border-top: 1px solid var(--c-hairline, rgba(95, 212, 255, 0.18));
+  background: var(--bg);
+  border-top: 1px solid var(--hairline);
 }
 .gp-tabbar-link {
   flex: 1;
@@ -295,15 +284,15 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  color: var(--c-text-dim, #7d8b96);
+  color: var(--text-dim);
   text-decoration: none;
-  font-family: var(--c-sans, var(--sans));
+  font-family: var(--sans);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 .gp-tabbar-link svg { flex-shrink: 0; }
-.gp-tabbar-link.active { color: var(--c-accent, #5fd4ff); }
+.gp-tabbar-link.active { color: var(--accent); }
 .gp-tabbar-label {
   max-width: 100%;
   text-align: center;
@@ -323,9 +312,8 @@
 
 /* ── Mobile responsive ───────────────────────────────────── */
 @media (max-width: 899.98px) {
-  .gp-nav { grid-template-columns: 1fr auto; padding: 0 16px; }
+  .gp-nav { padding: 0 16px; gap: 8px; }
   .gp-nav-links { display: none; }
-  .gp-search { display: none; }
   .gp-strip { padding: 6px 16px; }
   .gp-footer { padding: 0 16px; }
 }
@@ -343,53 +331,19 @@
 }
 
 /* ── R4a · desktop `/` full-bleed console shell ─────────────
-   Only when Layout.jsx sets `.gp-app-console` (path `/`, ≥900px). The map is the page: the
-   shell is exactly one viewport tall and never scrolls; the nav becomes a thin dark/mono console
-   bar (Console.dc.html header) with the same five items + account, and hosts the map's one-line
-   status (#gp-console-status). `.gp-console` on the nav scopes the console tokens to it. */
+   Only when Layout.jsx sets `.gp-app-console` (path `/`, >=900px). The map is the page: the
+   shell is exactly one viewport tall and never scrolls; the one nav bar (same everywhere) hosts
+   the map's one-line status (#gp-console-status). */
 .gp-app-console {
   height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #04070c;
 }
 .gp-app-console .gp-main { flex: 1 1 auto; min-height: 0; padding: 0; position: relative; }
 .gp-app-console .gp-main > .container { max-width: none; margin: 0; padding: 0; height: 100%; }
-
-.gp-nav-console {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  height: 52px;
-  flex: none;
-  padding: 0 14px 0 20px;
-  background: rgba(4, 8, 14, 0.97);
-  border-bottom: 1px solid var(--c-hairline);
-  backdrop-filter: none;
-  color: var(--c-text-body);
-}
-.gp-nav-console .gp-brand { flex: none; }
-.gp-nav-console .gp-brand-link { color: var(--c-text-head); min-height: var(--c-tap-min); min-width: var(--c-tap-min); }
-.gp-nav-console .gp-logo {
-  width: 24px; height: 24px; border-radius: 5px; background: transparent;
-  border: 1px solid var(--c-accent); color: var(--c-accent);
-}
-.gp-nav-console .gp-name { font-size: 15px; }
-.gp-nav-console .gp-tm { color: var(--c-text-dim); }
-.gp-nav-console .gp-nav-links { flex: none; justify-content: flex-start; gap: 2px; }
-.gp-nav-console .gp-nav-link {
-  display: inline-flex; align-items: center; justify-content: center; min-height: var(--c-tap-min); min-width: var(--c-tap-min); padding: 0 10px;
-  font-family: var(--c-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
-  color: #8a99a5; /* ~6.8:1 on the bar */
-  border-radius: var(--c-radius-md);
-}
-.gp-nav-console .gp-nav-link:hover { background: rgba(95, 212, 255, 0.08); color: var(--c-text-head); }
-.gp-nav-console .gp-nav-link.active { color: var(--c-accent); background: rgba(95, 212, 255, 0.1); }
-.gp-nav-console .gp-nav-link:focus-visible,
-.gp-nav-console .gp-help:focus-visible,
-.gp-nav-console .gp-btn:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 1px; }
+.gp-app-console .gp-nav { flex: none; }
 
 /* The status slot: one line, never wraps; truncates with an ellipsis (full text in its title and
    still read in full by screen readers via role=status). */
@@ -400,25 +354,7 @@
 }
 .gp-nav-status .hud-status-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.gp-nav-console .gp-nav-right { flex: none; gap: 8px; }
-.gp-nav-console .gp-help {
-  background: transparent; border-color: var(--c-hairline); color: var(--c-text-muted);
-}
-.gp-nav-console .gp-help:hover { border-color: var(--c-hairline-strong); color: var(--c-text-head); }
-.gp-nav-console .gp-bell {
-  width: var(--c-tap-min); height: var(--c-tap-min); background: transparent;
-  border-color: var(--c-hairline); color: var(--c-text-muted);
-}
-.gp-nav-console .gp-bell:hover { background: rgba(95, 212, 255, 0.08); }
-.gp-nav-console .gp-btn {
-  background: transparent; color: var(--c-accent); border: 1px solid rgba(95, 212, 255, 0.4);
-  font-family: var(--c-mono); font-size: 12px; letter-spacing: 0.04em; border-radius: var(--c-radius-md);
-}
-.gp-nav-console .gp-btn:hover { background: rgba(95, 212, 255, 0.1); }
-.gp-nav-console .gp-btn-primary { background: var(--c-accent); color: #06131c; border-color: var(--c-accent); font-weight: 600; }
-.gp-nav-console .gp-btn-primary:hover { background: #8fe1ff; border-color: #8fe1ff; }
-.gp-nav-console .gp-credits-pill { background: transparent; border-color: var(--c-hairline); color: var(--c-text-body); }
 @media (max-width: 1380px) {
-  /* Room for the status line: the logo alone carries the brand on narrower desktops. */
-  .gp-nav-console .gp-name { display: none; }
+  /* Room for the status line on the map home: the logo alone carries the brand on narrower desktops. */
+  .gp-app-console .gp-name { display: none; }
 }

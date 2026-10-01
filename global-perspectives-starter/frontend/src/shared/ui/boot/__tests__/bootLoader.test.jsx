@@ -28,17 +28,21 @@ describe('BootLoader states', () => {
   });
 
   it('compact variant (no sensors) is just the mark + sweep, no sensor list, no buttons', () => {
-    const { container } = render(<BootLoader variant="inline" tone="light" />);
+    const { container } = render(<BootLoader variant="inline" />);
     expect(container.querySelector('.gp-boot__globe')).toBeTruthy();
     expect(container.querySelector('.gp-boot__sensors')).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
     expect(container.firstChild.className).toMatch(/gp-boot--inline/);
-    expect(container.firstChild.className).not.toMatch(/gp-console/);
+    expect(container.firstChild.className).toMatch(/gp-boot--dark/);
   });
 
-  it('dark tone carries the console token scope', () => {
-    const { container } = render(<BootLoader sensors={S('wait', 'wait', 'wait')} tone="dark" />);
-    expect(container.firstChild.className).toMatch(/gp-console/);
+  it('is dark in every variant (one token set): no light class, whatever tone is passed', () => {
+    const a = render(<BootLoader sensors={S('wait', 'wait', 'wait')} />);
+    expect(a.container.firstChild.className).toMatch(/gp-boot--dark/);
+    a.unmount();
+    const b = render(<BootLoader variant="inline" tone="light" />);
+    expect(b.container.firstChild.className).toMatch(/gp-boot--dark/);
+    expect(b.container.firstChild.className).not.toMatch(/light/);
   });
 
   it('marks itself ready (fill + crossfade) only when every sensor is ok, and calls onDone at transition end', () => {
@@ -65,7 +69,7 @@ describe('BootLoader slow note', () => {
 
   it('defaults to 8 s and also shows on the compact variant', () => {
     vi.useFakeTimers();
-    render(<BootLoader variant="inline" tone="light" />);
+    render(<BootLoader variant="inline" />);
     act(() => { vi.advanceTimersByTime(7900); });
     expect(screen.queryByText(/slow network/)).toBeNull();
     act(() => { vi.advanceTimersByTime(200); });
@@ -119,7 +123,7 @@ describe('static boot handoff', () => {
   it('removes the pre-JS #gp-boot node on the first React commit, and leaves nothing behind', () => {
     document.body.insertAdjacentHTML('beforeend', '<div id="gp-boot" class="gp-boot"></div>');
     expect(document.getElementById('gp-boot')).toBeTruthy();
-    render(<BootLoader variant="inline" tone="light" />);
+    render(<BootLoader variant="inline" />);
     expect(document.getElementById('gp-boot')).toBeNull();
   });
 

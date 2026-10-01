@@ -14,6 +14,39 @@
 
 import { tierFromScore } from '@/shared/lib/riskTiers';
 
+// ── Role tokens (JS mirror of tokens.css :root) ─────────────────────────────
+// For canvas / deck.gl / inline-style code that cannot read CSS variables. Same values as the
+// `--<name>` custom properties in tokens.css; __tests__/tokensParity.test.js fails if they drift.
+export const TOKENS = {
+  'bg': '#070d15',
+  'panel': 'rgba(6, 12, 20, 0.95)',
+  'panel-2': '#0b1622',
+  'panel-3': '#101e2d',
+  'strip': 'rgba(4, 8, 14, 0.92)',
+  'hairline': 'rgba(95, 212, 255, 0.18)',
+  'hairline-strong': 'rgba(95, 212, 255, 0.30)',
+  'hairline-3': 'rgba(95, 212, 255, 0.45)',
+  'text-head': '#eef5f9',
+  'text-body': '#c9d6df',
+  'text-muted': '#b9c7d1',
+  'text-dim': '#7d8b96',
+  'accent': '#5fd4ff',
+  'accent-strong': '#8fe1ff',
+  'accent-wash': 'rgba(95, 212, 255, 0.12)',
+  'on-accent': '#06131c',
+  'warn': '#ffb347',
+  'ok': '#6fd29a',
+  'error': '#ff6a4d',
+  'hue-conflict': '#ee7754',
+  'hue-political': '#9b8cf8',
+  'hue-economic': '#38b6e0',
+  'hue-humanitarian': '#d89e28',
+  'tier-low': '#6fd29a',
+  'tier-moderate': '#e8d56a',
+  'tier-elevated': '#ffb347',
+  'tier-high': '#ff6a4d',
+};
+
 // ── Risk ──────────────────────────────────────────────────────────────────
 
 // Soft pastel badge palette ({ bg, text-color }) — used for risk pills/chips.
@@ -24,13 +57,13 @@ export const RISK_COLORS = {
   high:     { bg: '#fee2e2', color: '#991b1b' },
 };
 
-// Solid editorial palette (single hex per level) — matches the --risk-*
-// CSS vars used across risk displays (low/elevated/high), plus moderate.
+// Solid tier palette (single hex per level) — the --tier-* role tokens (the --risk-* aliases
+// point at the same values), legible on the dark surfaces.
 export const RISK_SOLID = {
-  low:      '#4fa07b',
-  moderate: '#caa23a',
-  elevated: '#d89540',
-  high:     '#c94a33',
+  low:      TOKENS['tier-low'],
+  moderate: TOKENS['tier-moderate'],
+  elevated: TOKENS['tier-elevated'],
+  high:     TOKENS['tier-high'],
 };
 
 // Canvas/gradient RGB-array palette. Note the 'critical' alias used by
@@ -45,18 +78,18 @@ export const RISK_RGB = {
 // riskScore (0–100) → editorial CSS var. Bands come from the shared tier util
 // (25/50/75, incl. "moderate"); this just maps tier → the --risk-* ramp.
 const TIER_VAR = {
-  high:     'var(--risk-h)',
-  elevated: 'var(--risk-e)',
-  moderate: 'var(--risk-m)',
-  low:      'var(--risk-l)',
+  high:     'var(--tier-high)',
+  elevated: 'var(--tier-elevated)',
+  moderate: 'var(--tier-moderate)',
+  low:      'var(--tier-low)',
 };
 export const riskScoreToVar = (score) => {
   const tier = tierFromScore(score);
-  return tier ? TIER_VAR[tier] : 'var(--ink)';
+  return tier ? TIER_VAR[tier] : 'var(--text-head)';
 };
 
 // tier string → editorial CSS var (for when you already have a tier, not a score).
-export const riskTierToVar = (tier) => (tier ? TIER_VAR[tier] : 'var(--ink)');
+export const riskTierToVar = (tier) => (tier ? TIER_VAR[tier] : 'var(--text-head)');
 
 // ── Category ────────────────────────────────────────────────────────────────
 

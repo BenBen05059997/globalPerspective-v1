@@ -14,7 +14,7 @@ import { removeStaticBoot, bootWaitedMs } from './staticBoot.js';
 //
 // Props:
 //   sensors     [{ id, label, state: 'wait' | 'ok' | 'fail' }] — omit for the compact mark + sweep.
-//   tone        'dark' (the /` console) | 'light' (every other page)
+//   tone        ignored: the boot screen is dark on every page (one token set, 2026-10-01)
 //   variant     'full' (fixed full-screen cover) | 'inline' (in flow, e.g. a Suspense fallback)
 //   ready       true => fill the globe and crossfade away. Default: every sensor is 'ok'.
 //   onDone      called once the crossfade finished (unmount the loader here).
@@ -65,7 +65,7 @@ function Globe() {
 }
 
 export default function BootLoader({
-  sensors = null, tone = 'dark', variant = 'full', ready, onDone, onRetry, onContinue,
+  sensors = null, variant = 'full', ready, onDone, onRetry, onContinue,
   slowAfterMs = 8000, label = 'Loading Global Perspectives',
 }) {
   const list = Array.isArray(sensors) ? sensors : [];
@@ -110,8 +110,7 @@ export default function BootLoader({
   };
 
   const cls = [
-    'gp-boot', `gp-boot--${variant}`, `gp-boot--${tone}`,
-    tone === 'dark' ? 'gp-console' : '',
+    'gp-boot', `gp-boot--${variant}`, 'gp-boot--dark', 'gp-console',
     isReady ? 'gp-boot--ready gp-boot--done' : '',
   ].filter(Boolean).join(' ');
 

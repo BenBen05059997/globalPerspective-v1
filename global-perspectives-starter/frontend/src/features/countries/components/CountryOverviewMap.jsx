@@ -103,8 +103,9 @@ function InnerMap({ countries, onCountryClick }) {
           scale,
           fillColor: color,
           fillOpacity: 0.85,
-          strokeColor: rootVar('bg'),
-          strokeWeight: 2,
+          // risk = brightness + ring weight, never a traffic-light colour: HIGH / ELEVATED get a bright ring
+          strokeColor: c.riskLevel === 'high' || c.riskLevel === 'elevated' ? rootVar('text-head') : rootVar('bg'),
+          strokeWeight: c.riskLevel === 'high' ? 3 : 2,
         },
         zIndex: c.riskLevel === 'high' ? 100 : c.riskLevel === 'elevated' ? 80 : 50,
       });

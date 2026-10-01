@@ -3,10 +3,9 @@ import { Link } from 'react-router-dom';
 import { useNotifications } from '@/features/breaking/hooks/useNotifications';
 import '@/features/breaking/components/NotificationBell.css';
 
-// A breaking alert is a point-in-time story snapshot, NOT a narrative thread — it
-// has its own page (/breaking/:id), keyed on the alert id. (Previously this linked
-// to /weekly/thread/:id, which rendered a thin/"not found" shell for the new,
-// single-entry stories breaking alerts are by definition.)
+// /breaking/:id is the alert's resolver URL (the same one emails carry): it goes to the alert's
+// story page when the single-alert read says it has one, else to the map. Feed rows carry only
+// the alert key (their `threadId` is a legacy alias of it), so the row cannot name the story itself.
 function alertPath(a) {
   return `/breaking/${encodeURIComponent(a.id || a.threadId)}`;
 }
@@ -93,12 +92,12 @@ export default function NotificationBell() {
                 ))}
               </ul>
               <Link
-                to="/breaking"
+                to="/"
                 className="gp-bell-all"
                 role="menuitem"
                 onClick={() => setOpen(false)}
               >
-                See all breaking alerts →
+                See the alerts on the map →
               </Link>
             </>
           )}

@@ -4,6 +4,6 @@
 .tr-draw-verify { min-height: 32px; padding: 0 12px; border-radius: var(--r-md, 8px); border: 1px solid var(--text-head); background: transparent; color: var(--text-head); font-size: var(--text-xs); font-weight: 600; cursor: pointer; }
 .tr-draw-verify:disabled { opacity: 0.6; cursor: default; }
 .tr-draw-result { margin: 0; font-size: var(--text-sm); line-height: 1.5; }
-.tr-draw-result.ok { color: var(--tier-low); }
-.tr-draw-result.bad { color: var(--tier-high); }
+.tr-draw-result.ok { color: var(--ok); }
+.tr-draw-result.bad { color: var(--error); }
 @media (max-width: 640px) { .tr-draw-verify { min-height: 44px; } }

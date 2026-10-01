@@ -1,9 +1,10 @@
-import { TIER_FILTERS } from '@/features/threads/lib/storyGroups';
 
 // StoriesHeader — the top of /weekly: Stories | Countries tabs, a one-line count of open stories by
-// tier (computed from the loaded archive, never typed), and the view switch. Phone (<900px) swaps
-// the view switch for READ / MAP / CHANGES tabs; Timeline stays reachable from READ.
-const TIER_WORD = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low', none: 'Not scored' };
+// tier (computed from the loaded archive, never typed: scored tiers first, then a dim "N not yet
+// scored"), and the view switch. Phone (<900px) swaps the view switch for READ / MAP / TIMELINE tabs
+// (READ default; the changed-since-last-visit section lives inside READ).
+const TIER_WORD = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
+const SCORED = ['high', 'elevated', 'moderate', 'low'];
 
 export const DESKTOP_VIEWS = [
   { value: 'list', label: 'List' },
@@ -13,11 +14,12 @@ export const DESKTOP_VIEWS = [
 export const PHONE_TABS = [
   { value: 'read', label: 'Read' },
   { value: 'map', label: 'Map' },
-  { value: 'changes', label: 'Changes' },
+  { value: 'timeline', label: 'Timeline' },
 ];
 
+// `?view=changes` is the old CHANGES tab: it now opens READ (scrolled to the changed section).
 export function viewToTab(view) {
-  return view === 'map' ? 'map' : view === 'changes' ? 'changes' : 'read';
+  return view === 'map' ? 'map' : view === 'timeline' ? 'timeline' : 'read';
 }
 
 export default function StoriesHeader({ pageTab, setPageTab, view, setView, isPhone, counts = null }) {
@@ -60,11 +62,12 @@ export default function StoriesHeader({ pageTab, setPageTab, view, setView, isPh
         <p className="sf-counts" aria-label="Open stories by tier">
           <strong>{counts.total}</strong> open {counts.total === 1 ? 'story' : 'stories'}
           <span className="sf-counts__win"> · last 30 days</span>
-          {TIER_FILTERS.filter((t) => counts[t] > 0).map((t) => (
+          {SCORED.filter((t) => counts[t] > 0).map((t) => (
             <span key={t} className={`sf-counts__t sf-counts__t--${t}`}>
               {TIER_WORD[t]} <b>{counts[t]}</b>
             </span>
           ))}
+          {counts.none > 0 ? <span className="sf-counts__unscored">{counts.none} not yet scored</span> : null}
         </p>
       ) : null}
 
@@ -77,7 +80,7 @@ export default function StoriesHeader({ pageTab, setPageTab, view, setView, isPh
               role="tab"
               aria-selected={viewToTab(view) === t.value}
               className="sf-tabs__btn"
-              onClick={() => setView(t.value === 'read' ? (view === 'timeline' ? 'timeline' : 'list') : t.value)}
+              onClick={() => setView(t.value === 'read' ? 'list' : t.value)}
             >
               {t.label}
             </button>

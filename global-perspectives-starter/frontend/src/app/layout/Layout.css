@@ -134,7 +134,7 @@
   margin-left: auto;
 }
 
-/* Help / guided-tour trigger */
+/* "?" link: opens the map About drawer (/?about=1) */
 .gp-help {
   display: inline-flex;
   align-items: center;
@@ -146,6 +146,7 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
+  text-decoration: none;
   transition: border-color var(--fast), color var(--fast);
 }
 .gp-help:hover { border-color: var(--hairline-strong); color: var(--text-head); }

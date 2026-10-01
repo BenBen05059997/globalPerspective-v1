@@ -174,7 +174,7 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
             </button>
           ) : (
             <div style={{
-              background: 'var(--tier-high-wash)', border: '1.5px solid var(--tier-high)',
+              background: 'var(--error-wash)', border: '1.5px solid var(--error)',
               borderRadius: 8, padding: '0.75rem 1rem',
               fontSize: '0.85rem',
             }}>

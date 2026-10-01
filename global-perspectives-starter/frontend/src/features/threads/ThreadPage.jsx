@@ -553,7 +553,7 @@ export default function ThreadPage() {
               </span>
             )}
             {thread?.entries[0]?.urgency === 'high' && (
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: '#fff', background: 'var(--risk-h)', padding: '1px 6px', borderRadius: 3 }}>URGENT</span>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-head)', border: '1px solid var(--text-head)', padding: '0 6px', borderRadius: 3 }}>URGENT</span>
             )}
             <SourceRobustness outlets={thread.allSources.length} regions={thread.regions?.length} size="md" />
             Story Arc · {thread.dayCount} days
@@ -762,19 +762,13 @@ export default function ThreadPage() {
         {activeTab === 'economy' && hasEconomy && (
           <>
             <MechanismCard impact={economicImpact} />
-            {/* Up-link to the weekly markets wrap — deep-link to this story's first instrument */}
-            {(() => {
-              const firstInstrument = economicImpact.instruments?.[0]?.instrumentId;
-              const to = firstInstrument ? `/weekly-markets#${firstInstrument}` : '/weekly-markets';
-              return (
-                <Link
-                  to={to}
-                  style={{ display: 'inline-block', marginTop: 16, fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textDecoration: 'none', color: 'var(--accent)' }}
-                >
-                  This story moved markets this week →
-                </Link>
-              );
-            })()}
+            {/* Up-link: /weekly-markets retired to /briefings (economy parked), which shows the paused note */}
+            <Link
+              to="/briefings?from=markets"
+              style={{ display: 'inline-block', marginTop: 16, fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textDecoration: 'none', color: 'var(--accent)' }}
+            >
+              This story moved markets this week →
+            </Link>
           </>
         )}
 

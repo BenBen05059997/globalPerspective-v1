@@ -6,7 +6,7 @@ const FRESH_MS = 24 * 60 * 60 * 1000; // only surface genuinely fresh alerts (la
 
 // Slim "BREAKING" entry point shown at the top of Home + Map — surfaces today's breaking
 // news: the latest fresh (<24h) confirmed alert, plus a "+N more" count when there are
-// others today (→ /breaking). Renders nothing when there is no fresh alert (honest: no
+// others today (→ the map's alert stack). Renders nothing when there is no fresh alert (honest: no
 // fresh alert → no strip, never a stale or fabricated banner).
 export default function BreakingStrip() {
   const { alerts } = useNotifications();
@@ -23,8 +23,9 @@ export default function BreakingStrip() {
   const latest = fresh[0]; // alerts arrive newest-first
   const more = fresh.length - 1;
   const id = encodeURIComponent(latest.id || latest.threadId);
-  // One fresh alert → deep-link to it; several → send to the full feed.
-  const to = more > 0 ? '/breaking' : `/breaking/${id}`;
+  // One fresh alert → its resolver URL (the story page when it has one, else the map); several →
+  // the map, where the alert stack lists them.
+  const to = more > 0 ? '/' : `/breaking/${id}`;
   const label = `Breaking: ${latest.title}${more > 0 ? ` — and ${more} more today` : ''}`;
 
   return (

@@ -62,11 +62,14 @@ const USE_3D = typeof window !== 'undefined' && canUse3D();
 // from another page in the same session re-mounts the console without showing it again.
 let bootShown = false;
 
+// One shared empty list for map props: an inline `[]` is a new array every render, which re-ran the
+// radar/globe draw effect on every render and dropped keyboard focus from the SVG nodes.
+const NO_ITEMS = [];
+
 const STATE_LABEL = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoing', cooling: 'Easing', closed: 'Ended' };
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };
-const TOUR_MAX = 6;
 const GDACS_FRESH_MS = 2 * 60 * 60 * 1000;
 
 function fmtAgo(iso) {
@@ -259,20 +262,6 @@ export default function SituationHome() {
   }, [open, lastSeen]);
   const newCount = newIds ? newIds.size : 0;
 
-  // Guided tour: manual stepper, NO autoplay (design 3b). Advancing flies the camera (never
-  // writes the URL); the rail highlights the current stop.
-  const tourN = Math.min(ranked.length, TOUR_MAX);
-  const [tourOn, setTourOn] = useState(false);
-  const [tourIdx, setTourIdx] = useState(0);
-  const tourStop = tourOn && ranked.length ? ranked[Math.min(tourIdx, tourN - 1)] : null;
-  const startTour = () => { setTourIdx(0); setTourOn(true); };
-  const stopTour = () => setTourOn(false);
-  const tourNext = () => setTourIdx((i) => (i + 1) % tourN);
-  const tourPrev = () => setTourIdx((i) => (i - 1 + tourN) % tourN);
-  const userSelect = useCallback((id) => { setTourOn(false); select(id); }, [select]);
-  const userSelectStory = useCallback((topic) => { setTourOn(false); selectStory(topic); }, [selectStory]);
-  useEffect(() => { const onKey = (e) => { if (e.key === 'Escape' && tourOn) setTourOn(false); }; window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [tourOn]);
-
   // M5a — stories (current topics feed) reused as-is from the existing public hook; no re-fetch.
   const {
     topics, updatedAt: topicsUpdatedAt, generatedDate: topicsGeneratedDate,
@@ -347,7 +336,7 @@ export default function SituationHome() {
   }, [webIndex, selectedStory, storyFocusIso3]);
 
   // One shared hover/focus preview instance for the map's shaded countries (feed rows carry their
-  // own — see HudIntelFeed). Story selection from a shaded country reuses userSelectStory above.
+  // own — see HudIntelFeed). Story selection from a shaded country reuses selectStory above.
   // R4b: the SITUATIONS / COUNTRY RISK layer switch. `?layer=` in the URL wins (a shareable deep
   // link), else the remembered choice (this browser only), else SITUATIONS.
   const [layer, setLayerState] = useState(() => {
@@ -377,7 +366,6 @@ export default function SituationHome() {
   // any lingering hover/focus preview so it doesn't float over the card (it has nothing left to
   // anchor to once the rail's content changes).
   const openCountryPage = useCallback((entry) => {
-    setTourOn(false);
     mapPeek.close();
     if (entry?.name) selectCountryName(entry.name);
   }, [selectCountryName, mapPeek]);
@@ -387,8 +375,8 @@ export default function SituationHome() {
   const hoveredRiskCountry = riskMode && mapPeek.openId ? riskByIso3.get(mapPeek.openId) : null;
   const selectStoryByCountry = useCallback((iso3) => {
     const entry = shadingByIso3.get(iso3);
-    if (entry?.top) userSelectStory(entry.top);
-  }, [shadingByIso3, userSelectStory]);
+    if (entry?.top) selectStory(entry.top);
+  }, [shadingByIso3, selectStory]);
 
   const counts = useMemo(() => {
     const c = { conflict: 0, political: 0, economic: 0, humanitarian: 0 };
@@ -484,10 +472,7 @@ export default function SituationHome() {
   }, [selected, selectedStory]);
 
   // What the map focuses (fly + highlight) and what card it shows.
-  const focusId = focus || tourStop?.id || null;
-  // R4a: the lead situation now lives in the brief panel, so the map's anchored callout only
-  // shows the current guided-tour stop (see consoleCallout below).
-  const tourProps = tourOn ? { index: Math.min(tourIdx, tourN - 1), total: tourN, onPrev: tourPrev, onNext: tourNext, onStop: stopTour } : null;
+  const focusId = focus || null;
 
   // M4: the console has two modes, GLOBE and RADAR — the old deck.gl "flat" mode is gone (radar,
   // drawn with SVG/canvas, replaces it as both the phone default and the no-WebGL fallback: see
@@ -594,6 +579,19 @@ export default function SituationHome() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [aboutOpen]);
+  // "?" in the site nav links to /?about=1: open the About drawer (desktop) or scroll to the About
+  // section under the tabs (phone), then drop the param so the next "?" works. The Key stays one click away.
+  const foldRef = useRef(null);
+  const aboutParam = params.get('about');
+  useEffect(() => {
+    if (!aboutParam) return;
+    if (isPhone) {
+      requestAnimationFrame(() => { foldRef.current?.scrollIntoView?.({ block: 'start' }); foldRef.current?.focus?.({ preventScroll: true }); });
+    } else {
+      setAboutOpen(true);
+    }
+    setParams((p) => { const n = new URLSearchParams(p); n.delete('about'); return n; }, { replace: true });
+  }, [aboutParam, isPhone, setParams]);
   const [phoneTab, setPhoneTab] = useState('map');
   const [sheetStop, setSheetStop] = useState('half');
   const [hudExpanded, setHudExpanded] = useState(false);
@@ -622,10 +620,10 @@ export default function SituationHome() {
     prevSelectionRef.current = selectionId;
   }, [isPhone, selectionId, focus, storyParam, countryParam]);
   const closeSelection = useCallback(() => {
-    if (focus) userSelect(null);
-    else if (storyParam) userSelectStory(null);
+    if (focus) select(null);
+    else if (storyParam) selectStory(null);
     else if (countryParam) selectCountryName(null);
-  }, [focus, storyParam, countryParam, userSelect, userSelectStory, selectCountryName]);
+  }, [focus, storyParam, countryParam, select, selectStory, selectCountryName]);
   const sheetTitle = selected ? selected.verb_label : (selectedStory ? selectedStory.title : (countryParam || null));
   const sheetSubtitle = selected
     ? (AXIS_LABEL[selected.axis] || selected.axis)
@@ -665,7 +663,7 @@ export default function SituationHome() {
         kicker: `Lead situation · ${TIER_LABEL[hero.tier] || hero.tier}${place ? ` · ${place}` : ''}`,
         title: hero.verb_label,
         href: hero.threadId ? threadPath(hero.threadId) : null,
-        onOpen: hero.threadId ? null : () => userSelect(hero.id),
+        onOpen: hero.threadId ? null : () => select(hero.id),
         openLabel: hero.threadId ? 'open story →' : 'show on map →',
       };
     }
@@ -677,10 +675,10 @@ export default function SituationHome() {
       title: t.title,
       older: topicsFreshness === 'older',
       href: t.threadId ? threadPath(t.threadId) : null,
-      onOpen: t.threadId ? null : () => userSelectStory(t),
+      onOpen: t.threadId ? null : () => selectStory(t),
       openLabel: 'open story →',
     };
-  }, [hero, topics, topicsFreshness, storiesDateLabel, userSelect, userSelectStory]);
+  }, [hero, topics, topicsFreshness, storiesDateLabel, select, selectStory]);
 
   const alertNote = alertStackNote(alertStack.items, paused);
   const alertEmpty = alertEmptyText(paused);
@@ -689,16 +687,10 @@ export default function SituationHome() {
     : null;
   const worldDateLabel = fmtShortDate(world?.generated_at);
 
-  // Map controls: GLOBE | RADAR, Key, and the tour entry. On the phone they float over the map's
+  // Map controls: GLOBE | RADAR, layer, Key. On the phone they float over the map's
   // top-right corner; on the desktop console they sit in the bottom view bar with "About".
   const controls = (
     <>
-      {/* F1.9: hide the tour entry point while a selection is active — a situation or story
-          already showing its own detail isn't the moment to invite a tour that would fly the
-          map away from it. */}
-      {ranked.length >= 2 && !tourOn && !focus && !selectedStory ? (
-        <button className="sh-ctl" onClick={startTour} title="Fly through today’s top situations">Walk me through today</button>
-      ) : null}
       {USE_3D ? (
         <div className="sh-viewswitch" role="group" aria-label="Map mode">
           <button className={`sh-ctl sh-seg${view === 'globe' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'globe'} onClick={() => setView('globe')}>Globe</button>
@@ -723,7 +715,6 @@ export default function SituationHome() {
 
   // The map itself (globe/radar + legend) is identical on desktop and the phone MAP tab — built
   // once here so neither copy can drift from the other.
-  const consoleCallout = isPhone || focus ? null : (tourStop || null);
   const mapPane = (
     <>
       <div className="sh-mapinner">
@@ -735,14 +726,14 @@ export default function SituationHome() {
           <Suspense fallback={<div className="sh-maploading" style={{ height: mapH }}><BootLoader variant="inline" tone="dark" /></div>}>
             <SituationMap3D
               key={mapAttempt} onFirstDraw={onMapFirstDraw} onDrawError={onMapDrawError}
-              situations={riskMode ? [] : situations} focusId={focusId} callout={consoleCallout} tour={tourProps} newIds={newIds} view="globe"
-              onSelect={userSelect} onOpenCallout={userSelect} height={mapH} width={isPhone ? (typeof window !== 'undefined' ? window.innerWidth - 24 : null) : band.w}
-              shading={riskMode ? [] : visibleShading} linkArcs={riskMode ? [] : linkArcs} storyFocusIso3={storyFocusIso3}
+              situations={riskMode ? NO_ITEMS : situations} focusId={focusId} newIds={newIds} view="globe"
+              onSelect={select} height={mapH} width={isPhone ? (typeof window !== 'undefined' ? window.innerWidth - 24 : null) : band.w}
+              shading={riskMode ? NO_ITEMS : visibleShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={storyFocusIso3}
               onSelectCountry={selectStoryByCountry}
               onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
               onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
               onLeaveCountry={() => mapPeek.close()}
-              countryRisk={riskMode ? countryRiskLayer.drawn : []}
+              countryRisk={riskMode ? countryRiskLayer.drawn : NO_ITEMS}
               onSelectCountryRisk={openCountryPage}
               onHoverCountryRisk={(entry, anchor) => mapPeek.openOnHover(entry.iso3, anchor)}
               onFocusCountryRisk={(entry, anchor) => mapPeek.openOnFocus(entry.iso3, anchor)}
@@ -752,14 +743,14 @@ export default function SituationHome() {
         ) : (
           <RadarMap
             key={mapAttempt} onFirstDraw={onMapFirstDraw}
-            situations={riskMode ? [] : situations} focusId={focusId} callout={consoleCallout} newIds={newIds}
-            onSelect={userSelect} onOpenCallout={userSelect} onScan={markScanned} height={mapH}
-            shading={riskMode ? [] : visibleShading} linkArcs={riskMode ? [] : linkArcs} storyFocusIso3={storyFocusIso3}
+            situations={riskMode ? NO_ITEMS : situations} focusId={focusId} newIds={newIds}
+            onSelect={select} onScan={markScanned} height={mapH}
+            shading={riskMode ? NO_ITEMS : visibleShading} linkArcs={riskMode ? NO_ITEMS : linkArcs} storyFocusIso3={storyFocusIso3}
             onSelectCountry={selectStoryByCountry}
             onHoverCountry={(iso3, anchor) => mapPeek.openOnHover(iso3, anchor)}
             onFocusCountry={(iso3, anchor) => mapPeek.openOnFocus(iso3, anchor)}
             onLeaveCountry={() => mapPeek.close()}
-            countryRisk={riskMode ? countryRiskLayer.drawn : []}
+            countryRisk={riskMode ? countryRiskLayer.drawn : NO_ITEMS}
             onSelectCountryRisk={openCountryPage}
             onHoverCountryRisk={(entry, anchor) => mapPeek.openOnHover(entry.iso3, anchor)}
             onFocusCountryRisk={(entry, anchor) => mapPeek.openOnFocus(entry.iso3, anchor)}
@@ -805,13 +796,13 @@ export default function SituationHome() {
   // only the situation/story detail's "back" affordance differs (the sheet has Collapse/Close).
   const railContent = focusMissing ? (
     <div className="sh-detail sh-gone">
-      <button className="sh-back" onClick={() => userSelect(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
+      <button className="sh-back" onClick={() => select(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
       <p className="sh-muted" style={{ padding: '16px 15px' }}>That situation is no longer being tracked — it may have closed since the link was shared. Browse the active situations instead.</p>
     </div>
   ) : selected ? (
-    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={() => userSelect(null)} />
+    <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={() => select(null)} />
   ) : selectedStory ? (
-    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={() => userSelectStory(null)} />
+    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={() => selectStory(null)} />
   ) : countryParam ? (
     <CountryCardV2 key={countryParam} name={countryParam} situations={open} onBack={() => selectCountryName(null)} />
   ) : riskMode ? (
@@ -822,9 +813,9 @@ export default function SituationHome() {
   ) : (
     <HudIntelFeed
       ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
-      onSelect={userSelect}
+      onSelect={select}
       topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
-      onSelectStory={userSelectStory} peek={mapPeek} emptyMessage={emptyLede}
+      onSelectStory={selectStory} peek={mapPeek} emptyMessage={emptyLede}
     />
   );
 
@@ -842,28 +833,15 @@ export default function SituationHome() {
   const aboutContent = (
     <MapAbout
       paused={paused} latestDailyEditionLabel={latestDailyEditionLabel} latestWeeklyEditionLabel={latestWeeklyEditionLabel}
-      ranked={ranked} onSelect={userSelect} coverageNote={isPhone ? null : coverageNote}
+      ranked={ranked} onSelect={select} coverageNote={isPhone ? null : coverageNote}
     />
   );
-  // F1.9: a tour bar at the page level (not nested inside the globe's callout, which never
-  // renders on the phone MAP tab and doesn't exist at all in radar) — this works the same way in
-  // globe, radar and on the phone. Esc still stops the tour (handled above).
-  const tourBar = tourOn && tourStop ? (
-    <div className="sh-tourbar-global" role="group" aria-label="Guided tour">
-      <span className="sh-tourbar-status">Tour <b>{Math.min(tourIdx, tourN - 1) + 1}</b> of {tourN} · {tourStop.verb_label}</span>
-      <span className="sh-tourbar-btns">
-        <button onClick={tourPrev} aria-label="Previous situation">← Prev</button>
-        <button onClick={tourNext} aria-label="Next situation">Next →</button>
-        <button onClick={stopTour}>Stop</button>
-      </span>
-    </div>
-  ) : null;
   const staleBanner = stale ? <div className="sh-banner">The situation feed hasn’t updated recently — showing the last known state.</div> : null;
 
   if (!isPhone) {
     // R4a · desktop full-bleed console (Console.dc.html): the map is the page. HUD panels float
     // over it — brief + alert stack on the left, sensor status + intel feed (or the selected
-    // card) on the right, the orientation/tour line at the top of the free band, view controls
+    // card) on the right, the orientation line at the top of the free band, view controls
     // at its bottom. Nothing below the fold: "About this map" opens the old fold as a drawer.
     return (
       <div className={`sh-root gp-console sh-console${stale ? ' sh-stale' : ''}`}>
@@ -879,7 +857,6 @@ export default function SituationHome() {
         <div className="sh-topline">
           <OrientationBanner />
           {staleBanner}
-          {tourBar}
         </div>
 
         <div className="sh-col sh-col-left">
@@ -893,7 +870,7 @@ export default function SituationHome() {
             <AlertStack
               className="sh-alertstack"
               items={alertStack.items} hiddenCount={alertStack.hiddenCount} focusId={focus}
-              onSelect={userSelect} emptyText={alertEmpty} note={alertNote}
+              onSelect={select} emptyText={alertEmpty} note={alertNote}
             />
           ) : null}
         </div>
@@ -955,8 +932,6 @@ export default function SituationHome() {
 
       {staleBanner}
 
-      {tourBar}
-
       {/* M7 phone pattern (P1): one tab switch — MAP (default, radar) · LIST · ALERTS. */}
       <MapPhoneTabs active={phoneTab} onChange={setPhoneTab} alertCount={tierCounts.high + tierCounts.elevated} />
 
@@ -993,9 +968,9 @@ export default function SituationHome() {
           ) : (
             <HudIntelFeed
               ranked={ranked} focusId={focusId} newIds={newIds} scannedIds={scannedIds} loading={loading} error={error} world={world}
-              onSelect={userSelect}
+              onSelect={select}
               topics={topics} topicsAsOf={topicsAsOf} storyFocusId={storyFocusId}
-              onSelectStory={userSelectStory} peek={mapPeek} emptyMessage={emptyLede}
+              onSelectStory={selectStory} peek={mapPeek} emptyMessage={emptyLede}
             />
           )}
         </div>
@@ -1005,7 +980,7 @@ export default function SituationHome() {
           {world ? (
             <AlertStack
               items={alertStack.items} hiddenCount={alertStack.hiddenCount} focusId={focus}
-              onSelect={userSelect} emptyText={alertEmpty} note={alertNote}
+              onSelect={select} emptyText={alertEmpty} note={alertNote}
             />
           ) : (
             error ? <p className="sh-muted">Couldn’t load the feed. Retrying automatically.</p> : <BootLoader variant="inline" className="gp-boot--tight" label="Loading alerts" text="Loading alerts" />
@@ -1013,7 +988,7 @@ export default function SituationHome() {
         </div>
       )}
 
-      <section className="sh-fold">{aboutContent}</section>
+      <section className="sh-fold" id="sh-fold" ref={foldRef} tabIndex={-1} aria-label="About this map">{aboutContent}</section>
     </div>
   );
 }

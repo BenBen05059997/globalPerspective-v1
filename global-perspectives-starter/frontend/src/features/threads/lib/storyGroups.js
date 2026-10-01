@@ -140,6 +140,33 @@ export function crisisOf(thread) {
   return crisisTypeForCategory(thread.category);
 }
 
+// ─── Row text (summary line, "Watching" line) ───────────────────────────────────────────────────
+
+function clip(text, max) {
+  return text.length > max ? `${text.slice(0, max - 3).trimEnd()}…` : text;
+}
+
+/**
+ * storySummary(thread, analysis) -> the one-line summary under a story's title, or null.
+ * Same source the old list drew as its "hook": the first sentence of the analysis `storyArc`, else of
+ * the newest entry's `ai.summary`. Nothing is written here: no source text, no line.
+ */
+export function storySummary(thread, analysis = null, max = 160) {
+  const raw = analysis?.storyArc || thread?.entries?.[0]?.ai?.summary;
+  if (typeof raw !== 'string' || !raw.trim()) return null;
+  const text = raw.trim();
+  return clip(text.split(/(?<=[.!?])\s/)[0] || text, max);
+}
+
+/**
+ * watchingOf(analysis) -> the first forecast / watch question the analysis carries, or null.
+ * Same source as the old "N questions to watch" hint (`analysis.watchQuestions`, strings).
+ */
+export function watchingOf(analysis = null, max = 140) {
+  const q = Array.isArray(analysis?.watchQuestions) ? analysis.watchQuestions.find((x) => typeof x === 'string' && x.trim()) : null;
+  return q ? clip(q.trim(), max) : null;
+}
+
 /** { tier, score } from the thread's analysis (v2 vector or legacy score); nulls when unscored. */
 export function tierOf(analysis) {
   const h = deriveHeadline(analysis);

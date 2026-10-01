@@ -65,8 +65,7 @@ must_have "$SRC/app/App.jsx" 'path="/map" element=\{<MapRedirect' "/map redirect
 must_have "$SRC/app/MapRedirect.jsx" "search, hash" "the /map redirect keeps the query params"
 must_have "$SRC/app/layout/Layout.jsx" "to: '/', exact: true, label: 'Map'" "menu Map item points at / (exact)"
 must_have "$SRC/app/layout/Layout.jsx" "location.pathname === '/' && !isPhone" "desktop console shell keyed on /"
-must_have "$SRC/app/layout/Layout.jsx" "to=\"/today\"" "footer links the old home (/today)"
-must_have "$SRC/app/onboarding/useOnboarding.js" "pathname === '/'" "no auto-tour on the map home"
+must_have "$SRC/features/map/components/MapAbout.jsx" "to=\"/today\"" "/today stays reachable from the map's About drawer (the footer no longer links it)"
 must_not_have "$SRC/app/layout/Layout.jsx" "pathname (===|!==) '/map'" "no stale /map pathname checks"
 
 # ─── BriefingsPage (S3, /briefings) ───
@@ -76,7 +75,6 @@ must_have "$SRC/app/layout/Layout.jsx" "to: '/briefings'" "menu Briefings item p
 must_have "$SRC/features/briefings/BriefingsPage.jsx" "useDailyBrief" "uses useDailyBrief"
 must_have "$SRC/features/briefings/BriefingsPage.jsx" "useWeeklyBrief" "uses useWeeklyBrief"
 must_have "$SRC/features/briefings/BriefingsPage.jsx" "useDailyEditionsIndex" "wires the editions strip index"
-must_have "$SRC/features/economy/WeeklyMarketsPage.jsx" "/briefings" "weekly-markets retires to /briefings"
 
 # ─── EconomyPage ───
 must_have "$SRC/features/economy/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
@@ -255,8 +253,8 @@ for css in features/analysis-studio/AnalysisStudio.css features/analysis-studio/
            features/home/components/TopicNav.css features/home/components/LedeBand.css \
            features/account/MembershipPage.css features/account/Account.css features/account/SignIn.css \
            features/account/components/SubscribeCard.css features/account/components/Desk.css \
-           features/breaking/BreakingPage.css features/breaking/components/BreakingStrip.css \
-           features/breaking/components/NotificationBell.css app/onboarding/tour-theme.css; do
+           features/breaking/components/BreakingStrip.css \
+           features/breaking/components/NotificationBell.css; do
   must_not_have "$SRC/$css" "$LIGHT_BG" "$css has no light background literals"
 done
 must_not_have "$SRC/features/home/Home.jsx" "showError\\(|useError\\(|ErrorContext" "Home.jsx no longer opens the generic error modal"
@@ -302,6 +300,69 @@ must_not_have "$SRC/features/map/components/RadarMap.jsx" "(shading|linkArcs|cou
 must_not_have "$SRC/features/track-record/components/ForecastBoard.jsx" "(situations|countryRisk)=\\{\\[\\]\\}" "ForecastBoard passes stable arrays to RadarMap (inline [] looped: Maximum update depth)"
 must_not_have "$SRC/features/spider-demo/SpiderDemo.css" "spider-mode-on[^}]*#fff" "spider mode button text is --on-accent, not white on the accent"
 must_not_have "$SRC/features/economy/EconomyPage.css" "ep-chg-(up|dn) *\\{ *color: *#" "economy change colours are tokens (the light-theme green/red were under 4.5:1 on dark)"
+
+# ─── P6 (2026-10-01): operator decisions 1-14 ───
+# 11 · risk colours are neutral: --tier-* (and washes) are low-saturation greys that get brighter with the tier
+if node -e '
+const fs=require("fs");const css=fs.readFileSync(process.argv[1],"utf8");let bad=[];
+for(const t of ["low","moderate","elevated","high"]) for(const n of ["tier-"+t,"tier-"+t+"-wash"]){
+  const m=css.match(new RegExp("^\\s*--"+n+":\\s*([^;]+);","m"));
+  if(!m){bad.push(n+" missing");continue}
+  const h=m[1].match(/#([0-9a-f]{6})/i);const r=m[1].match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  const c=h?[0,2,4].map(i=>parseInt(h[1].slice(i,i+2),16)):r?[1,2,3].map(i=>+r[i]):null;
+  if(!c||Math.max(...c)-Math.min(...c)>30)bad.push(n+": "+m[1]);
+}
+if(bad.length){console.error(bad.join("; "));process.exit(1)}' "$SRC/shared/styles/tokens.css"; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) tokens.css: --tier-* and washes are neutral greys (no traffic-light risk colours)"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("tokens.css: a --tier-* token is not neutral"); echo "  $(red FAIL) tokens.css: a --tier-* token has a hue"
+fi
+must_not_have "$SRC/features/map/SituationHome.css" "^\\.(sh-badge|sh-tierlbl|al-tier)-[a-z]+ *\\{[^}]*#[0-9a-fA-F]{3,8}" "map tier chips/badges carry no hex risk colours"
+must_have "$SRC/shared/ui/TierChip.css" "gp-tier--none[^}]*border-color: *transparent" "the 'Not scored' chip is quieter than the scored chips (no ring)"
+must_not_have "$SRC/shared/ui/TierChip.css" "background" "TierChip has no fills"
+# 13 · guided tours are gone
+if [ ! -e "$SRC/app/onboarding" ]; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) app/onboarding is gone"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("app/onboarding exists again"); echo "  $(red FAIL) app/onboarding exists again"
+fi
+if ! grep -rnE "app/onboarding|driver\.js|Walk me through|gp_tour_v1_|startTourForPath|useAutoTour" "$SRC" --include='*.jsx' --include='*.js' --include='*.css' >/tmp/tour.out 2>/dev/null || [ ! -s /tmp/tour.out ]; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) no onboarding import, no driver.js, no \"Walk me through\", no tour storage keys"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("tour code found: $(head -3 /tmp/tour.out)"); echo "  $(red FAIL) tour code: $(head -3 /tmp/tour.out)"
+fi
+must_have "$SRC/features/map/SituationHome.jsx" "<OrientationBanner />" "the one-line orientation banner stays on the map"
+must_have "$SRC/app/layout/Layout.jsx" "className=\"gp-help\"" "the ? help control is in the nav"
+must_have "$SRC/app/layout/Layout.jsx" "about" "the ? help opens the map About drawer (?about=1)"
+must_have "$SRC/features/map/SituationHome.jsx" "params.get\('about'\)" "the map reads ?about=1"
+# 14 · footer is exactly About, Membership, Privacy, Disclosures, Contact
+if [ "$(sed -n '/gp-footer-links/,/<\/div>/p' "$SRC/app/layout/Layout.jsx" | grep -o '<Link to="[^"]*">[^<]*' | tr '\n' ' ')" = '<Link to="/about">About <Link to="/membership">Membership <Link to="/privacy">Privacy <Link to="/disclosures">Disclosures <Link to="/contact">Contact ' ]; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) footer links are exactly About, Membership, Privacy, Disclosures, Contact"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("footer link set is not exactly the five"); echo "  $(red FAIL) footer links differ from About/Membership/Privacy/Disclosures/Contact"
+fi
+# 1 + 2 · retired routes are redirects, with no page behind them
+must_have "$SRC/app/App.jsx" 'path="/breaking" element=\{<BreakingFeedRedirect' "/breaking redirects"
+must_have "$SRC/app/App.jsx" 'path="/breaking/:id" element=\{<BreakingDetailRedirect' "/breaking/:id redirects"
+must_have "$SRC/app/App.jsx" 'path="/weekly-markets" element=\{<MarketsRedirect' "/weekly-markets redirects"
+must_not_have "$SRC/app/App.jsx" "BreakingFeedPage|BreakingDetailPage|WeeklyMarketsPage" "no page component behind the retired routes"
+must_have "$SRC/app/LegacyRedirects.jsx" "/briefings\?from=markets" "/weekly-markets keeps the markets paused note (?from=markets)"
+must_have "$SRC/app/LegacyRedirects.jsx" "alert.hasArc && alert.threadId" "/breaking/:id goes to the story only when the alert resolves to one"
+must_not_have "$SRC/features/breaking/components/NotificationBell.jsx" "to=\"/breaking\"" "the bell does not link a /breaking feed page"
+must_not_have "$SRC/features/breaking/components/BreakingStrip.jsx" "'/breaking'" "the strip does not link a /breaking feed page"
+# 7 · Stories summary / Watching lines render only with data
+must_have "$SRC/shared/ui/StoryRow.jsx" "\\{summary \\? " "StoryRow draws the summary line only when given"
+must_have "$SRC/shared/ui/StoryRow.jsx" "\\{watching \\? " "StoryRow draws the Watching line only when given"
+must_have "$T/lib/storyGroups.js" "export function storySummary" "summary comes from the story data (storySummary)"
+must_have "$T/lib/storyGroups.js" "export function watchingOf" "Watching comes from the analysis watch questions (watchingOf)"
+must_not_have "$T/lib/storyGroups.js" "Watching:" "no typed Watching text in the data layer"
+# 8 · first visit has no 'Changed since your last visit'
+must_have "$T/components/StoriesChanged.jsx" "if \\(!Number.isFinite\\(baseline\\)\\) return null" "the changed section needs a previous-visit baseline"
+# 12 · phone tabs READ / MAP / TIMELINE
+must_have "$T/components/StoriesHeader.jsx" "value: 'timeline', label: 'Timeline'" "phone tabs include TIMELINE"
+must_not_have "$T/components/StoriesHeader.jsx" "label: 'Changes'" "no phone CHANGES tab"
+# 10 · /today copy promises only what is live (change-alert emails are off)
+must_not_have "$SRC/features/home/Home.jsx" "change-alerts|change alerts" "/today does not promise change-alert emails (the drift cron is off)"
 
 # ─── Summary ───
 echo

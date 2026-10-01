@@ -132,8 +132,8 @@
   color: var(--text-head);
 }
 .gp-console .account-key-btn:hover { border-color: var(--accent); }
-.gp-console .account-key-btn--danger { color: var(--error); border-color: var(--tier-high); }
-.gp-console .account-key-btn--danger:hover { background: var(--tier-high-wash); border-color: var(--error); }
+.gp-console .account-key-btn--danger { color: var(--error); border-color: var(--error); }
+.gp-console .account-key-btn--danger:hover { background: var(--error-wash); border-color: var(--error); }
 
 .gp-console .saved-card {
   background: var(--panel);
@@ -296,7 +296,7 @@
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: var(--tier-high);
+  color: var(--error);
   opacity: 0.7;
   transition: opacity 0.15s, transform 0.15s;
   border-radius: 4px;
@@ -369,8 +369,8 @@
   cursor: pointer;
 }
 .account-key-btn:hover { border-color: var(--hairline-strong); }
-.account-key-btn--danger { color: var(--tier-high); border-color: var(--tier-high); }
-.account-key-btn--danger:hover { background: var(--tier-high-wash); border-color: var(--tier-high); }
+.account-key-btn--danger { color: var(--error); border-color: var(--error); }
+.account-key-btn--danger:hover { background: var(--error-wash); border-color: var(--error); }
 .acct-signedout-note { font-size: 12.5px; color: var(--text-dim); margin: 10px 0 0; }
 /* Saved-count badge on the Desk rail item (kept after the old tab strip was removed). */
 .account-tab-badge {

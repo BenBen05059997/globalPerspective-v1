@@ -18,7 +18,7 @@ import StoriesHeader from '@/features/threads/components/StoriesHeader.jsx';
 import StoriesFilters from '@/features/threads/components/StoriesFilters.jsx';
 import StoriesFeed from '@/features/threads/components/StoriesFeed.jsx';
 import StoriesTimeline from '@/features/threads/components/StoriesTimeline.jsx';
-import StoriesChanged from '@/features/threads/components/StoriesChanged.jsx';
+import StoriesChanged, { railRising } from '@/features/threads/components/StoriesChanged.jsx';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/Stories.css';
 
@@ -31,6 +31,9 @@ const VIEWS = ['list', 'timeline', 'map', 'changes'];
 
 // /weekly — Stories (A: intel-feed list, C: 30-day timeline, the existing Map view) | Countries.
 // URL: ?section=countries, ?view=list|timeline|map|changes, ?category=<topic> (ThreadPage breadcrumb).
+// Phone: READ / MAP / TIMELINE tabs, READ default. The changed-since-last-visit section lives inside
+// READ and only exists once a previous-visit baseline does; `?view=changes` (the old CHANGES tab)
+// opens READ scrolled to it, or plain READ without a baseline.
 export default function WeeklyPage() {
   const { loading: authLoading } = useAuth();
   const isPhone = useIsPhone();
@@ -90,6 +93,12 @@ export default function WeeklyPage() {
   }), [windowed, analyses]);
   const regions = useMemo(() => regionCounts(windowed), [windowed]);
   const headerCounts = useMemo(() => tierCounts(threads, analyses), [threads, analyses]);
+
+  // `?view=changes` on a phone: once the list has rendered, scroll to the changed section (it only exists with a baseline).
+  const scrollToChanged = isPhone && view === 'changes' && Number.isFinite(baseline) && ready && !loading;
+  useEffect(() => {
+    if (scrollToChanged) document.getElementById('sf-changed')?.scrollIntoView?.({ block: 'start' });
+  }, [scrollToChanged]);
 
   if (authLoading) return <BootLoader variant="inline" label="Loading stories" text="Loading stories" />;
 
@@ -160,8 +169,11 @@ export default function WeeklyPage() {
   const activeFilters = crisis.length + tiers.length + (region ? 1 : 0) + (windowValue !== DEFAULT_WINDOW ? 1 : 0)
     + (sort !== 'articles' ? 1 : 0) + (category ? 1 : 0);
 
+  const hasBaseline = Number.isFinite(baseline);
+  const showRising = !isPhone;
+  const railHasContent = hasBaseline || railRising(threads, now).length > 0;
   const changed = (
-    <StoriesChanged threads={threads} analyses={analyses} baseline={baseline} now={now} peek={peek} showRising={!isPhone || view === 'changes'} />
+    <StoriesChanged threads={threads} analyses={analyses} baseline={baseline} now={now} peek={peek} showRising={showRising} />
   );
 
   const banners = (
@@ -185,45 +197,38 @@ export default function WeeklyPage() {
       <EditorialShell strip={strip} className="wp-shell">
         {header}
         {banners}
-        {view === 'changes' ? changed : (
-          <>
-            <div className="sf-phonebar">
-              <input
-                type="search"
-                className="sf-search"
-                placeholder="Search stories…"
-                aria-label="Search stories"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-              />
-              <button
-                type="button"
-                className="sf-chipbtn"
-                aria-expanded={filtersOpen}
-                aria-controls="sf-phone-filters"
-                onClick={() => setFiltersOpen((o) => !o)}
-              >
-                Filters{activeFilters ? ` · ${activeFilters}` : ''}
-              </button>
-              <div className="sf-seg" role="group" aria-label="List or timeline">
-                <button type="button" className="sf-seg__btn" aria-pressed={view === 'list'} onClick={() => setView('list')}>List</button>
-                <button type="button" className="sf-seg__btn" aria-pressed={view === 'timeline'} onClick={() => setView('timeline')}>Timeline</button>
-              </div>
-            </div>
-            {filtersOpen ? (
-              <div id="sf-phone-filters" className="sf-panel">
-                <StoriesFilters {...filterProps} showSearch={false} />
-              </div>
-            ) : null}
-            {body}
-          </>
-        )}
+        {view === 'timeline' ? null : changed}
+        <div className="sf-phonebar">
+          <input
+            type="search"
+            className="sf-search"
+            placeholder="Search stories…"
+            aria-label="Search stories"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <button
+            type="button"
+            className="sf-chipbtn"
+            aria-expanded={filtersOpen}
+            aria-controls="sf-phone-filters"
+            onClick={() => setFiltersOpen((o) => !o)}
+          >
+            Filters{activeFilters ? ` · ${activeFilters}` : ''}
+          </button>
+        </div>
+        {filtersOpen ? (
+          <div id="sf-phone-filters" className="sf-panel">
+            <StoriesFilters {...filterProps} showSearch={false} />
+          </div>
+        ) : null}
+        {body}
       </EditorialShell>
     );
   }
 
   return (
-    <EditorialShell strip={strip} left={<StoriesFilters {...filterProps} />} right={changed} className="wp-shell">
+    <EditorialShell strip={strip} left={<StoriesFilters {...filterProps} />} right={railHasContent ? changed : null} className="wp-shell">
       {header}
       {banners}
       {body}

@@ -11,7 +11,7 @@ const CAT_COLORS = {
   diplomacy: 'var(--accent)',
   security:  'var(--warn)',
   society:   'var(--hue-humanitarian)',
-  military:  'var(--tier-high)',
+  military:  'var(--hue-conflict)',
   technology:'var(--text-muted)',
   health:    'var(--ok)',
 };

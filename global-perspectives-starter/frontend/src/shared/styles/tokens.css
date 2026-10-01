@@ -45,15 +45,24 @@
   --hue-economic:     #38b6e0;
   --hue-humanitarian: #d89e28;
 
-  /* Tier outlines (risk tier colours, legible as text/dots on the dark surfaces) */
-  --tier-low:      #6fd29a;
-  --tier-moderate: #e8d56a;
-  --tier-elevated: #ffb347;
-  --tier-high:     #ff6a4d;
-  --tier-low-wash:      rgba(111, 210, 154, 0.14);
-  --tier-moderate-wash: rgba(232, 213, 106, 0.14);
-  --tier-elevated-wash: rgba(255, 179, 71, 0.14);
-  --tier-high-wash:     rgba(255, 106, 77, 0.14);
+  /* Tier = risk. DS1 (REDESIGN_MASTER_PLAN §3.1): risk is a NUMBER + a tier WORD + RING WEIGHT, never
+     a traffic-light colour. These tokens are therefore neutral text/hairline greys that get brighter
+     (heavier) with the tier; the weight of the ring / the font carries the rest (see TierChip). Crisis
+     hues (--hue-*) mean crisis TYPE, amber (--warn) means a warning / staleness, --ok / --error mean a
+     passed / failed check: none of those is a risk colour, and no red/orange/yellow/green may be a tier. */
+  --tier-low:      #7d8b96;
+  --tier-moderate: #9fb0bc;
+  --tier-elevated: #c9d6df;
+  --tier-high:     #eef5f9;
+  --tier-low-wash:      rgba(201, 214, 223, 0.05);
+  --tier-moderate-wash: rgba(201, 214, 223, 0.08);
+  --tier-elevated-wash: rgba(201, 214, 223, 0.12);
+  --tier-high-wash:     rgba(201, 214, 223, 0.16);
+
+  /* Status washes (tinted backgrounds for the status colours above) */
+  --ok-wash:    rgba(111, 210, 154, 0.14);
+  --warn-wash:  rgba(255, 179, 71, 0.14);
+  --error-wash: rgba(255, 106, 77, 0.14);
 
   /* Freshness ramp: live = full hue + glow (build as `0 0 8px 1px <hue>`); plain = no filter;
      older = desaturated with a warn label. Items older than 30 days are hidden upstream. */
@@ -420,6 +429,6 @@ body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--risk-l);
-  box-shadow: 0 0 0 3px var(--tier-low-wash);
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-wash);
 }

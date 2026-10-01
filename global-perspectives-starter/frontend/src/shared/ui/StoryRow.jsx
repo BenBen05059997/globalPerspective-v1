@@ -22,6 +22,8 @@ import '@/shared/ui/blocks.css';
 //   status | situation      StatusGlyph input (key, or a tracker record)
 //   changedAt, now         ISO timestamp of the last change; `now` is for tests
 //   meta                    extra inline nodes in the meta line (e.g. a GDACS badge)
+//   summary                 one dim line under the title (only drawn when given)
+//   watching                the forecast question the story is watching ("Watching: ...", only when given)
 //   to | href | onClick     the one action (Link / <a> / <button>)
 //   active                  highlights the row (selected)
 //   dim                     de-emphasise (older stories)
@@ -29,7 +31,7 @@ import '@/shared/ui/blocks.css';
 //   as                      wrapper element, default 'li'
 export default function StoryRow({
   title, place = null, crisis = null, hue = null, tier = null, score = null, tierHue = null, chip = null,
-  status = null, situation = null, changedAt = null, now = Date.now(), meta = null,
+  status = null, situation = null, changedAt = null, now = Date.now(), meta = null, summary = null, watching = null,
   to = null, href = null, onClick = null, active = false, dim = false,
   id = null, peek = null, peekData = null, as: Wrapper = 'li', className = '',
 }) {
@@ -64,6 +66,8 @@ export default function StoryRow({
           ) : null}
         </span>
         <span className="gp-row__title">{title}</span>
+        {summary ? <span className="gp-row__sum">{summary}</span> : null}
+        {watching ? <span className="gp-row__watch"><span className="gp-row__watch-k">Watching:</span> {watching}</span> : null}
       </span>
     </>
   );

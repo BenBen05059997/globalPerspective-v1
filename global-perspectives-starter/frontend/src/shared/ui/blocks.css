@@ -28,6 +28,11 @@
 .gp-row__age { margin-left: auto; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .gp-row__age[data-fresh='older'] { color: var(--warn); }
 .gp-row__title { font-size: 14px; line-height: 1.3; }
+.gp-row__sum, .gp-row__watch { font-size: 12px; line-height: 1.4; color: var(--text-dim); }
+.gp-row__sum { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gp-row__watch { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.gp-row__watch-k { color: var(--text-muted); }
+@media (max-width: 900px) { .gp-row__sum { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; } }
 .gp-row--dim .gp-row__link, .gp-row--dim .gp-row__title { color: var(--text-dim); }
 
 /* ---- SectionHeader ---- */

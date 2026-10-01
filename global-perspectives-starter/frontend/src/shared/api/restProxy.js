@@ -387,7 +387,7 @@ export async function fetchAlerts() {
   return body;
 }
 
-// Single breaking alert for the /breaking/:id detail page — no auth.
+// Single breaking alert for the /breaking/:id redirect (resolves the alert to its story) — no auth.
 // Returns { ok, alert } where alert is null when the id isn't a confirmed alert.
 export async function fetchAlert(id) {
   const endpoint = typeof window !== 'undefined' && window.USER_PREFS_ENDPOINT;

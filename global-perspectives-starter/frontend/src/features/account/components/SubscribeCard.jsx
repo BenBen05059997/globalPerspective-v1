@@ -10,7 +10,7 @@ import '@/features/account/components/SubscribeCard.css';
 // which we set the opt-in immediately so the intent isn't lost.
 //
 //   kind="digest"   → Weekly Signals Brief (digestOptIn)   [Home, /weekly-brief]
-//   kind="breaking" → Breaking alerts (breakingOptIn)       [/breaking]
+//   kind="breaking" → Breaking alerts (breakingOptIn)       [no page now: /breaking redirects to the map]
 const COPY = {
   digest: {
     field: 'digestOptIn',

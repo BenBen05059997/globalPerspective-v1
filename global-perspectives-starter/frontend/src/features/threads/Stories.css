@@ -26,10 +26,11 @@
 .sf-counts__win { color: var(--text-dim); margin-left: -8px; }
 .sf-counts__t { font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-dim); }
 .sf-counts__t b { color: var(--text-head); font-weight: 600; margin-left: 2px; }
-.sf-counts__t--high { color: var(--tier-high); }
-.sf-counts__t--elevated { color: var(--tier-elevated); }
-.sf-counts__t--moderate { color: var(--tier-moderate); }
+.sf-counts__t--high { color: var(--tier-high); font-weight: 700; }
+.sf-counts__t--elevated { color: var(--tier-elevated); font-weight: 600; }
+.sf-counts__t--moderate { color: var(--tier-moderate); font-weight: 500; }
 .sf-counts__t--low { color: var(--tier-low); }
+.sf-counts__unscored { font-size: 12px; color: var(--text-dim); }
 
 /* segmented control (List | Timeline | Map) */
 .sf-seg { display: inline-flex; border: 1px solid var(--hairline); border-radius: var(--r-md); overflow: hidden; }
@@ -42,7 +43,7 @@
 .sf-seg__btn[aria-pressed='true'] { background: var(--accent-wash); color: var(--accent); }
 .sf-seg__btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 
-/* phone READ / MAP / CHANGES */
+/* phone READ / MAP / TIMELINE */
 .sf-tabs { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 12px; border-bottom: 1px solid var(--hairline); }
 .sf-tabs__btn {
   min-height: var(--tap-min); border: 0; border-bottom: 2px solid transparent; background: transparent;

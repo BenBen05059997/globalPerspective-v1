@@ -166,6 +166,11 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
+/* risk = brightness + ring weight, never a traffic-light colour (DS1) */
+.clp-leg-dot--low { background: var(--tier-low); }
+.clp-leg-dot--moderate { background: var(--tier-moderate); }
+.clp-leg-dot--elevated { background: var(--tier-elevated); box-shadow: 0 0 0 1.5px var(--panel-2), 0 0 0 2.5px var(--tier-elevated); }
+.clp-leg-dot--high { background: var(--tier-high); box-shadow: 0 0 0 1.5px var(--panel-2), 0 0 0 3.5px var(--tier-high); margin: 0 2px; }
 
 /* ── Center: Section Header ───────────────────────────────── */
 

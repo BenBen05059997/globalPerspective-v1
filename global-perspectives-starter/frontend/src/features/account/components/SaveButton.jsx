@@ -43,7 +43,7 @@ export function SaveButton({ itemType, itemId, metadata = {}, className = '' }) 
         padding: '4px',
         display: 'inline-flex',
         alignItems: 'center',
-        color: saved ? 'var(--tier-high)' : 'currentColor',
+        color: saved ? 'var(--accent)' : 'currentColor',
         opacity: busy ? 0.5 : 1,
         transition: 'color 0.15s, opacity 0.15s, transform 0.15s',
         transform: saved ? 'scale(1.05)' : 'scale(1)',

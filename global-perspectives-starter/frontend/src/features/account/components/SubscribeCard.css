@@ -46,7 +46,7 @@
 .subcard-err {
   margin: 0.4rem 0 0;
   font-size: 0.8rem;
-  color: var(--tier-high);
+  color: var(--error);
 }
 
 .subcard-action { flex: 0 0 auto; }

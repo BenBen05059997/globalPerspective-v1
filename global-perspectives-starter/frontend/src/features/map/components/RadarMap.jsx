@@ -32,29 +32,6 @@ function placeOf(s) {
   return null;
 }
 
-// Same anchored-callout placement logic as SituationMap3D's placeCallout (kept local rather than
-// touching that M3 file for an M4 task; if a third caller ever needs it, promote to a shared lib).
-// topMargin keeps the card clear of the top-right control cluster (Walk-through / Globe·Radar /
-// Key) — same convention as SituationMap3D's placeCallout (M6).
-const CALLOUT_TOP_MARGIN = 58;
-function placeCallout(px, py, W, H, topMargin = 8) {
-  const M = 8;
-  const cand = [
-    { left: px + GAP, top: py - CARD_MINH - GAP },
-    { left: px - CARD_W - GAP, top: py - CARD_MINH - GAP },
-    { left: px + GAP, top: py + GAP },
-    { left: px - CARD_W - GAP, top: py + GAP },
-  ];
-  for (const c of cand) {
-    if (c.left >= M && c.top >= topMargin && c.left + CARD_W <= W - M && c.top + CARD_MINH <= H - M) {
-      return { left: c.left, top: c.top };
-    }
-  }
-  const left = Math.min(Math.max(px - CARD_W / 2, M), W - CARD_W - M);
-  const top = Math.min(Math.max(py - CARD_MINH / 2, topMargin), H - CARD_MINH - M);
-  return { left, top };
-}
-
 // F2.21: `verb_label` is server data rendered via `.innerHTML` below (copied from the removed
 // SituationMap.jsx flat component) — escape it so a label containing `<`/`&`/etc. can never be
 // interpreted as markup in the tooltip.
@@ -111,7 +88,7 @@ function agoShort(iso) {
 // `= []` default parameter is a NEW array every render (a caller that omits one re-ran the draw on every render).
 const NONE = [];
 export default function RadarMap({
-  situations = NONE, focusId, callout = null, newIds = null, onSelect, onOpenCallout, onScan, height = 560,
+  situations = NONE, focusId, newIds = null, onSelect, onScan, height = 560,
   shading = NONE, linkArcs = NONE, storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
   countryRisk = NONE, onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw,
 }) {
@@ -173,6 +150,11 @@ export default function RadarMap({
 
     function draw() {
       const width = wrap.clientWidth || 900;
+      // The SVG is rebuilt below; remember which keyboard-focused node it held so focus can be put
+      // back on its replacement (a redraw would otherwise drop focus to the document body).
+      const focusedEl = svgRef.current && document.activeElement && svgRef.current.contains(document.activeElement) && document.activeElement !== svgRef.current
+        ? document.activeElement : null;
+      const refocus = focusedEl ? { cls: (focusedEl.getAttribute('class') || '').split(' ')[0], key: (() => { const d = d3.select(focusedEl).datum(); return d ? (d.iso3 ?? d.id ?? null) : null; })() } : null;
       svg.selectAll('*').remove();
       svg.attr('viewBox', `0 0 ${width} ${height}`).attr('width', width).attr('height', height);
 
@@ -411,6 +393,15 @@ export default function RadarMap({
       svg.call(zoom).on('dblclick.zoom', null);
       if (zoomTransformRef.current) svg.call(zoom.transform, zoomTransformRef.current);
 
+      if (refocus && refocus.cls && refocus.key != null) {
+        const again = Array.from(svgRef.current.querySelectorAll('[tabindex]')).find((n) => {
+          if (!n.classList.contains(refocus.cls)) return false;
+          const d = d3.select(n).datum();
+          return d && (d.iso3 ?? d.id ?? null) === refocus.key;
+        });
+        if (again) again.focus({ preventScroll: true });
+      }
+
       setDims({ width, height });
       // Boot screen's Map sensor: the coastlines really are on screen now (fires once).
       if (!drewOnce.current) { drewOnce.current = true; onFirstDrawRef.current?.(); }
@@ -464,14 +455,6 @@ export default function RadarMap({
       `var(--c-accent, #5fd4ff) ${TRAIL_DEG}deg, var(--c-accent, #5fd4ff) ${TRAIL_DEG + 0.6}deg, transparent ${TRAIL_DEG + 1.2}deg, transparent 360deg)`;
   }, []); // computed once from the initial sweep angle; the rAF loop takes over from the first frame
 
-  const calloutPlace = useMemo(() => {
-    if (!callout?.centroid || !projectionRef.current || !dims.width) return null;
-    const p = projectionRef.current([callout.centroid.lon, callout.centroid.lat]);
-    if (!p) return null;
-    const [x, y] = p;
-    return { ...placeCallout(x, y, dims.width, dims.height, CALLOUT_TOP_MARGIN) };
-  }, [callout, dims]);
-
   const sc = sweepControlState(reduceMotion, sweepOn);
 
   return (
@@ -491,22 +474,6 @@ export default function RadarMap({
         />
       ) : null}
       <div ref={tipRef} className="sm-tip" />
-
-      {callout && calloutPlace ? (
-        <div className="sm-callout" style={{ left: calloutPlace.left, top: calloutPlace.top, width: CARD_W }}>
-          <button className="sm-callout-body" onClick={() => onOpenCallout && onOpenCallout(callout.id)}>
-            <span className="sm-callout-top">
-              <span className={`sh-badge sh-badge-${callout.tier}`}>{TIER_W[callout.tier] || callout.tier}</span>
-              <span className="sm-callout-axis" style={{ color: hue(callout) }}>{callout.axis}</span>
-              {callout.escalating ? <span className="sm-callout-esc">▲ escalating</span> : null}
-            </span>
-            {gdacsLevelBadge(callout) ? <span className="sh-gdacs-badge">{gdacsLevelBadge(callout)}</span> : null}
-            <span className="sm-callout-title">{callout.verb_label}</span>
-            {callout.what_changed ? <span className="sm-callout-what">{callout.what_changed}</span> : null}
-            <span className="sm-callout-open">Open →</span>
-          </button>
-        </div>
-      ) : null}
 
       <div className="sm-globe-foot">
         <span className="sm-attrib">Radar · real coastlines</span>

@@ -129,7 +129,6 @@ is published at <a href="${SITE_URL}/track-record">${SITE_URL}/track-record</a>.
 <li><a href="${SITE_URL}/today">Today's Topics</a> — today's global stories by region, with on-demand AI summary, forecast, and root-cause for any story</li>
 <li><a href="${SITE_URL}/daily">Daily Brief</a> — the end-of-day intelligence brief: one synthesised read of what mattered today</li>
 <li><a href="${SITE_URL}/weekly-brief">Weekly Brief</a> — Sunday signals digest: the week's discrete signals with fact kept separate from judgment; also delivered by email</li>
-<li><a href="${SITE_URL}/breaking">Breaking</a> — rare, human-confirmed alerts for genuinely significant events; quiet is the normal state</li>
 </ul>
 <h2>Intelligence</h2>
 <ul>
@@ -484,7 +483,7 @@ export default {
     // gets the SPA shell (docs/index.html) with a real 200, not GitHub Pages'
     // 404 status for an unrecognised path. This covers every client route
     // (/economy, /analyze, /membership, /track-record, /weekly-brief,
-    // /weekly-markets, /breaking, /breaking/:id, /weekly, /weekly/countries,
+    // /weekly-markets and /breaking(/:id) (both client redirects since 2026-10-01), /weekly, /weekly/countries,
     // /signin, /account, /whitepaper, /spider-demo, etc.) without enumerating
     // them, and survives future route additions. A genuinely bogus path still
     // 200s the shell at the edge — the client router's own catch-all

@@ -180,13 +180,26 @@ describe('Layout — R4a desktop / (map home) console shell', () => {
     unmount();
     const today = renderLayout('/today');
     expect(document.querySelector('.gp-footer')).toBeTruthy();
-    expect(document.querySelector('.gp-footer a[href="/today"]')).toBeTruthy();
+    // P6 (decision 14): the footer is exactly About, Membership, Privacy, Disclosures, Contact.
+    const footerLinks = [...document.querySelectorAll('.gp-footer-links a')].map((a) => [a.textContent, a.getAttribute('href')]);
+    expect(footerLinks).toEqual([['About', '/about'], ['Membership', '/membership'], ['Privacy', '/privacy'], ['Disclosures', '/disclosures'], ['Contact', '/contact']]);
     expect(document.querySelector('.gp-nav-link.active')).toBeNull();
     today.unmount();
     isPhoneMock.mockReturnValue(true);
     renderLayout('/');
     expect(document.querySelector('.gp-app').classList.contains('gp-app-console')).toBe(false);
     expect(document.querySelector('#gp-console-status')).toBeNull();
+  });
+
+  it('the "?" help is a link to the map About drawer (/?about=1), not a tour; it keeps the map selection on /', () => {
+    fetchDailyBrief.mockResolvedValue({ data: null });
+    isPhoneMock.mockReturnValue(false);
+    const { unmount } = renderLayout('/weekly');
+    expect(document.querySelector('a.gp-help').getAttribute('href')).toBe('/?about=1');
+    expect(document.querySelector('button.gp-help')).toBeNull();
+    unmount();
+    renderLayout('/?focus=s9');
+    expect(document.querySelector('a.gp-help').getAttribute('href')).toBe('/?focus=s9&about=1');
   });
 
   it('the dark frame is one token set: Layout.css reads role tokens, with no light literals and no console-only nav class', () => {

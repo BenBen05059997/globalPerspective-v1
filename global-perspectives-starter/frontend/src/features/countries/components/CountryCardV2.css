@@ -10,7 +10,7 @@
   --ccv2-paper-2:   var(--panel-2);
   --ccv2-accent:    var(--accent);
   --ccv2-older:     var(--warn);
-  --ccv2-older-bg:  var(--tier-elevated-wash);
+  --ccv2-older-bg:  var(--warn-wash);
 
   display: flex;
   flex-direction: column;

@@ -84,57 +84,16 @@ const GLOBE_VIEW_BASE = { longitude: 12, latitude: 18, pitch: 0, bearing: 0, min
 // R4a: in the full-bleed console the globe sits in the band between the HUD columns, so a narrow
 // band shrinks it (globeFitFraction) rather than letting the columns crop it.
 const globeViewFor = (height, width) => ({ ...GLOBE_VIEW_BASE, zoom: globeZoomForHeight(height, globeFitFraction(width, height)) });
-// A callout must never render under the top-right control cluster (Walk-through / Globe·Radar /
-// Key), which sits at top:12 and runs to roughly y=54 — keep callouts clear of that band (M6).
-const CALLOUT_TOP_MARGIN = 58;
-
-// Is a lon/lat on the near-facing hemisphere of a globe centred at (cLon,cLat)? (cull far-side callouts)
-function onNearSide(lon, lat, cLon, cLat) {
-  const r = Math.PI / 180;
-  const v = [Math.cos(lat * r) * Math.cos(lon * r), Math.cos(lat * r) * Math.sin(lon * r), Math.sin(lat * r)];
-  const c = [Math.cos(cLat * r) * Math.cos(cLon * r), Math.cos(cLat * r) * Math.sin(cLon * r), Math.sin(cLat * r)];
-  return v[0] * c[0] + v[1] * c[1] + v[2] * c[2] > 0.05; // within ~87° of the sub-view point
-}
-
-const CARD_W = 288;
-const CARD_MINH = 128;
-const GAP = 14;
-
-// Place the anchored callout in the first of NE/NW/SE/SW that fully fits (8px margin);
-// only a literal-corner pin clamps and grows a short leader (design 3c).
-function placeCallout(px, py, W, H, topMargin = 8) {
-  const M = 8;
-  const cand = [
-    { left: px + GAP, top: py - CARD_MINH - GAP },        // NE
-    { left: px - CARD_W - GAP, top: py - CARD_MINH - GAP }, // NW
-    { left: px + GAP, top: py + GAP },                     // SE
-    { left: px - CARD_W - GAP, top: py + GAP },            // SW
-  ];
-  for (const c of cand) {
-    if (c.left >= M && c.top >= topMargin && c.left + CARD_W <= W - M && c.top + CARD_MINH <= H - M) {
-      return { left: c.left, top: c.top, leader: null };
-    }
-  }
-  // No quadrant fits — clamp into view (never above topMargin) and draw a leader from the card's
-  // nearest corner.
-  const left = Math.min(Math.max(px - CARD_W / 2, M), W - CARD_W - M);
-  const top = Math.min(Math.max(py - CARD_MINH / 2, topMargin), H - CARD_MINH - M);
-  const cornerX = Math.min(Math.max(px, left), left + CARD_W);
-  const cornerY = Math.min(Math.max(py, top), top + CARD_MINH);
-  const dist = Math.hypot(px - cornerX, py - cornerY);
-  return { left, top, leader: dist > 6 && dist < 180 ? { x1: cornerX, y1: cornerY, x2: px, y2: py } : null };
-}
-
 const TIER_W = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 
 /**
  * SituationMap3D — deck.gl night globe drawn with the approved map tokens (lib/legend.js): shape =
  * kind, hue = crisis type, size + double ring = HIGH, brightness = freshness, ▲●◆▼ badges, HUD
- * brackets for the selection. The only marker motion is the capped 24h pulse (lib/pulse.js). An
- * anchored callout shows the current tour stop; hover → tooltip; click → onSelect(id).
+ * brackets for the selection. The only marker motion is the capped 24h pulse (lib/pulse.js).
+ * hover → tooltip; click → onSelect(id).
  */
 export default function SituationMap3D({
-  situations = [], focusId, callout = null, tour = null, newIds = null, view = 'globe', onSelect, onOpenCallout, height = 560, width = null,
+  situations = [], focusId, newIds = null, view = 'globe', onSelect, height = 560, width = null,
   shading = [], linkArcs = [], storyFocusIso3 = null, onSelectCountry, onHoverCountry, onFocusCountry, onLeaveCountry,
   countryRisk = [], onSelectCountryRisk, onHoverCountryRisk, onFocusCountryRisk, onLeaveCountryRisk, onFirstDraw, onDrawError,
 }) {
@@ -189,7 +148,7 @@ export default function SituationMap3D({
   // clear it so the drift actually restarts.
   const resumeSpin = useCallback(() => { userMoved.current = false; setSpinOn(true); }, []);
   const wrapRef = useRef(null);
-  const [dims, setDims] = useState({ width: 1, height });
+  const [, setDims] = useState({ width: 1, height });
 
   // F1.2: pause both animation loops (spin, pulse) when the tab is hidden or the map panel has
   // scrolled off-screen — a plain visibility/IntersectionObserver check read inside the rAF loops
@@ -637,20 +596,6 @@ export default function SituationMap3D({
     return { html: `<b>${esc(sit.verb_label)}</b><br/>${bits}`, style: { background: '#0d1017', color: '#dfe6f2', fontSize: '12px', borderRadius: '7px', padding: '6px 9px', border: '1px solid #232c3a' } };
   }, []);
 
-  // Project the callout situation's centroid to screen space and place the card. On the globe,
-  // use the globe viewport and hide the card when the pin is on the far side of the sphere.
-  const place = useMemo(() => {
-    if (!callout?.centroid || !dims.width) return null;
-    try {
-      const vs = viewStateRef.current;
-      if (!onNearSide(callout.centroid.lon, callout.centroid.lat, vs.longitude, vs.latitude)) return null;
-      const vp = new GlobeViewport({ ...vs, width: dims.width, height: dims.height });
-      const [x, y] = vp.project([callout.centroid.lon, callout.centroid.lat]);
-      if (x < -40 || y < -40 || x > dims.width + 40 || y > dims.height + 40) return null;
-      return { px: x, py: y, ...placeCallout(x, y, dims.width, dims.height, CALLOUT_TOP_MARGIN) };
-    } catch { return null; }
-  }, [callout, viewState, dims]); // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
     <div className="sm-wrap" style={{ height }} ref={wrapRef}>
       <DeckGL
@@ -670,37 +615,6 @@ export default function SituationMap3D({
         getCursor={({ isDragging, isHovering }) => (isDragging ? 'grabbing' : (isHovering ? 'pointer' : 'grab'))}
         style={{ position: 'relative', width: '100%', height: '100%' }}
       />
-      {place?.leader ? (
-        <svg className="sm-leader" width={dims.width} height={dims.height} aria-hidden="true">
-          <line x1={place.leader.x1} y1={place.leader.y1} x2={place.leader.x2} y2={place.leader.y2} />
-        </svg>
-      ) : null}
-      {callout && place ? (
-        <div className="sm-callout" style={{ left: place.left, top: place.top, width: CARD_W }}>
-          {tour ? (
-            <div className="sm-tourbar">
-              <span>Tour <b>{tour.index + 1}</b> of {tour.total}</span>
-              <span className="sm-tourbtns">
-                <button onClick={tour.onPrev} aria-label="Previous">←</button>
-                <button onClick={tour.onNext} aria-label="Next">→</button>
-                <button onClick={tour.onStop}>Stop</button>
-              </span>
-            </div>
-          ) : null}
-          <button className="sm-callout-body" onClick={() => onOpenCallout && onOpenCallout(callout.id)}>
-            <span className="sm-callout-top">
-              <span className={`sh-badge sh-badge-${callout.tier}`}>{TIER_W[callout.tier] || callout.tier}</span>
-              <span className="sm-callout-axis" style={{ color: `rgb(${hue(callout).join(',')})` }}>{callout.axis}</span>
-              {callout.escalating ? <span className="sm-callout-esc">▲ escalating</span> : null}
-            </span>
-            {gdacsLevelBadge(callout) ? <span className="sh-gdacs-badge">{gdacsLevelBadge(callout)}</span> : null}
-            <span className="sm-callout-title">{callout.verb_label}</span>
-            {callout.what_changed ? <span className="sm-callout-what">{callout.what_changed}</span> : null}
-            <span className="sm-callout-open">Open →</span>
-          </button>
-          {tour ? <div className="sm-tourticks">{Array.from({ length: tour.total }).map((_, i) => <i key={i} className={i === tour.index ? 'on' : ''} />)}</div> : null}
-        </div>
-      ) : null}
       <div className="sm-globe-foot">
         <span className="sm-attrib">Earth at night: NASA Black Marble</span>
         {(() => {

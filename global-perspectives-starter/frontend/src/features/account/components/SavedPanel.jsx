@@ -6,9 +6,9 @@ import { threadPath } from '@/shared/lib/threadPath';
 // Desk panel (A4) can render it without a circular import between the two.
 const TYPE_COLORS = {
   thread:  { border: 'var(--accent)', badge: 'var(--accent-wash)', badgeText: 'var(--accent)' },
-  country: { border: 'var(--ok)', badge: 'var(--tier-low-wash)', badgeText: 'var(--ok)' },
+  country: { border: 'var(--ok)', badge: 'var(--ok-wash)', badgeText: 'var(--ok)' },
   daily:   { border: 'var(--ai-predict)', badge: 'var(--ai-predict-soft)', badgeText: 'var(--ai-predict)' },
-  pair:    { border: 'var(--warn)', badge: 'var(--tier-elevated-wash)', badgeText: 'var(--warn)' },
+  pair:    { border: 'var(--warn)', badge: 'var(--warn-wash)', badgeText: 'var(--warn)' },
 };
 
 const TYPE_LABELS = {

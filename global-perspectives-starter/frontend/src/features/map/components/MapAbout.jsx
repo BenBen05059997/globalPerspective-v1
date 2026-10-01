@@ -35,6 +35,8 @@ export default function MapAbout({
         </div>
       </div>
 
+      <p className="sh-dim sh-imagery">Globe imagery: Earth at night, NASA Black Marble.</p>
+
       <div className="sh-fold-teasers">
         <h4 className="sh-lbl">Elsewhere on Global Perspectives</h4>
         <div className="sh-teasers">

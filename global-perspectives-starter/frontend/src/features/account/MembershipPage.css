@@ -30,7 +30,7 @@
   gap: 10px;
 }
 .mp-benefits li { display: flex; gap: 10px; align-items: flex-start; color: var(--text-body); font-size: var(--text-base); }
-.mp-check { color: var(--tier-low); font-weight: 700; flex: none; }
+.mp-check { color: var(--ok); font-weight: 700; flex: none; }
 
 .mp-plans { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
 @media (max-width: 600px) { .mp-plans { grid-template-columns: 1fr; } }
@@ -62,7 +62,7 @@
 .mp-subscribe-link { background: var(--text-head); border-color: var(--text-head); }
 
 .mp-active { padding: var(--space-6); text-align: center; }
-.mp-active-badge { color: var(--tier-low); font-weight: 700; font-size: var(--text-lg); margin-bottom: 8px; }
+.mp-active-badge { color: var(--ok); font-weight: 700; font-size: var(--text-lg); margin-bottom: 8px; }
 .mp-active p { color: var(--text-body); margin: 0 0 var(--space-4); }
 
 .mp-notice, .mp-error {
@@ -72,7 +72,7 @@
   text-align: center;
 }
 .mp-notice { background: var(--panel-2); color: var(--text-muted); }
-.mp-error { background: var(--tier-high-wash); color: var(--tier-high); margin-top: var(--space-4); }
+.mp-error { background: var(--error-wash); color: var(--error); margin-top: var(--space-4); }
 
 .mp-fineprint {
   margin-top: var(--space-8);

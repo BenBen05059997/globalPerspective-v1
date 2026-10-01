@@ -13,6 +13,7 @@ import { setAuthProvider } from '@/shared/api/restProxy';
 import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import MapRedirect from '@/app/MapRedirect';
+import { MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect } from '@/app/LegacyRedirects';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
 import { WAITING_SENSORS } from '@/features/map/lib/bootSensors.js';
@@ -41,9 +42,6 @@ const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPa
 const TrackRecordText = lazy(() => import('@/features/track-record/TrackRecordText'));
 const WeeklyBriefPage = lazy(() => import('@/features/weekly-brief/WeeklyBriefPage'));
 const BriefingsPage = lazy(() => import('@/features/briefings/BriefingsPage'));
-const WeeklyMarketsPage = lazy(() => import('@/features/economy/WeeklyMarketsPage'));
-const BreakingFeedPage = lazy(() => import('@/features/breaking/BreakingFeedPage'));
-const BreakingDetailPage = lazy(() => import('@/features/breaking/BreakingDetailPage'));
 const SpiderDemo = lazy(() => import('@/features/spider-demo/SpiderDemo'));
 
 // Deliberate render crash — the deterministic trigger the smoke-test ERROR
@@ -138,9 +136,9 @@ export default function App() {
             <Route path="/track-record/text" element={<TrackRecordText />} />
             <Route path="/weekly-brief" element={<WeeklyBriefPage />} />
             <Route path="/briefings" element={<BriefingsPage />} />
-            <Route path="/weekly-markets" element={<WeeklyMarketsPage />} />
-            <Route path="/breaking" element={<BreakingFeedPage />} />
-            <Route path="/breaking/:id" element={<BreakingDetailPage />} />
+            <Route path="/weekly-markets" element={<MarketsRedirect />} />
+            <Route path="/breaking" element={<BreakingFeedRedirect />} />
+            <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
             <Route path="/weekly" element={<WeeklyPage />} />
             <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
             <Route path="/weekly/countries" element={<CountryListPage />} />

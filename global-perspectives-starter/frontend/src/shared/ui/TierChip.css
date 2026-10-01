@@ -14,5 +14,5 @@
 .gp-tier--elevated { font-weight: 600; box-shadow: inset 0 0 0 1px var(--tier-ring); }
 /* HIGH: heaviest — 2px border plus an outer ring, the legend's HIGH-only double ring */
 .gp-tier--high { font-weight: 700; border-width: 2px; padding: 1px 5px; box-shadow: 0 0 0 1px var(--bg), 0 0 0 2px var(--tier-ring); margin: 0 2px; }
-/* not scored: dashed + dim, honest about having no tier */
-.gp-tier--none { --tier-ring: var(--text-dim); border-style: dashed; font-weight: 400; }
+/* not scored: quieter than every scored chip (no ring, smaller, dim) and honest about having no tier */
+.gp-tier--none { --tier-ring: var(--text-dim); border-color: transparent; font-size: 10px; font-weight: 400; letter-spacing: 0.03em; padding: 2px 0; }

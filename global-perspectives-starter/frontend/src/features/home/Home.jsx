@@ -117,11 +117,13 @@ function Home() {
     if (correctionsN > 0) cards.push({
       to: '/track-record', n: correctionsN,
       label: 'revised conclusions logged, each with the event that changed our read',
-      // Contextual perk tease (P6a). The hint sentence is its own link to /membership
+      // Contextual perk tease (P6a). Copy promises only what is live: members read the full correction
+      // history; the country change-alert emails are OFF (drift cron disabled), so they are not named.
+      // The hint sentence is its own link to /membership
       // (Stage-0 item (e) — it previously inherited the card's /track-record destination
       // since it rendered inside the same <Link>, which was wrong: it's advertising the
       // membership perk, not the corrections ledger).
-      hint: 'Members follow countries for change-alerts + the full history',
+      hint: 'Members see the full history of every revised conclusion',
       hintTo: '/membership',
     });
     if (sourcesN > 0 && topics.length > 0) cards.push({

@@ -4,12 +4,14 @@ import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { threadPath } from '@/shared/lib/threadPath';
 import StoryLine from '@/features/threads/components/StoryLine.jsx';
-import { changedSince, groupKeyOf, risingThreads, ageDaysOf } from '@/features/threads/lib/storyGroups';
+import { changedSince, risingThreads, ageDaysOf } from '@/features/threads/lib/storyGroups';
 
-// StoriesChanged — the right rail (and the phone CHANGES tab). "Changed since your last visit" is
-// read client-side from a localStorage timestamp (see useLastVisit): stories whose REAL last-change
-// time is after it. A first-ever visit has no timestamp, so the list is "Moving now" instead (stories
-// that changed in the last 24 h) under that honest label. Below it, a compact "Rising this week".
+// StoriesChanged — the right rail (desktop) and the changed section at the top of phone READ.
+// "Changed since your last visit" is read client-side from a localStorage timestamp (see
+// useLastVisit): stories whose REAL last-change time is after it. With no previous-visit baseline
+// (a first-ever visit, or storage blocked) the section is NOT drawn at all: "Moving now" already
+// heads the main list, so a first-visit copy would only duplicate it. Below it, a compact
+// "Rising this week" (desktop rail only).
 const LIMIT = 8;
 
 function visitLabel(ms) {
@@ -18,24 +20,17 @@ function visitLabel(ms) {
 
 function ChangedList({ threads, analyses, baseline, now, peek }) {
   const [all, setAll] = useState(false);
-  const hasBaseline = Number.isFinite(baseline);
-  const items = hasBaseline
-    ? changedSince(threads, baseline)
-    : threads.filter((t) => groupKeyOf(t, now) === 'moving').sort((a, b) => Date.parse(b.changedAt || 0) - Date.parse(a.changedAt || 0));
+  if (!Number.isFinite(baseline)) return null;
+  const items = changedSince(threads, baseline);
   const shown = all ? items : items.slice(0, LIMIT);
   return (
-    <section className="sf-changed" aria-labelledby="sf-changed-h">
-      <SectionHeader
-        label={hasBaseline ? 'Changed since your last visit' : 'Moving now'}
-        count={items.length}
-        hint={hasBaseline ? `since ${visitLabel(baseline)}` : 'changed in the last 24 h'}
-        id="sf-changed-h"
-      />
+    <section className="sf-changed" id="sf-changed" aria-labelledby="sf-changed-h">
+      <SectionHeader label="Changed since your last visit" count={items.length} hint={`since ${visitLabel(baseline)}`} id="sf-changed-h" />
       {items.length === 0 ? (
-        <p className="sf-muted">{hasBaseline ? 'Nothing has changed since your last visit.' : 'No story changed in the last 24 hours.'}</p>
+        <p className="sf-muted">Nothing has changed since your last visit.</p>
       ) : (
         <ul className="sf-list">
-          {shown.map((t) => <StoryLine key={t.threadId} thread={t} analysis={analyses?.[t.threadId]} now={now} peek={peek} showCount={false} scope="rail" />)}
+          {shown.map((t) => <StoryLine key={t.threadId} thread={t} analysis={analyses?.[t.threadId]} now={now} peek={peek} showCount={false} showText={false} scope="rail" />)}
         </ul>
       )}
       {items.length > shown.length ? <button type="button" className="sf-more" onClick={() => setAll(true)}>Show {items.length - shown.length} more</button> : null}
@@ -43,9 +38,13 @@ function ChangedList({ threads, analyses, baseline, now, peek }) {
   );
 }
 
+/** railRising(threads, now) -> the compact "Rising this week" items (stories changed within 7 days). */
+export function railRising(threads, now) {
+  return risingThreads(threads.filter((t) => ageDaysOf(t, now) <= 7), 5);
+}
+
 function Rising({ threads, analyses, now }) {
-  const week = threads.filter((t) => ageDaysOf(t, now) <= 7);
-  const items = risingThreads(week, 5);
+  const items = railRising(threads, now);
   if (!items.length) return null;
   return (
     <section className="sf-rising-rail" aria-labelledby="sf-rising-h">
@@ -66,6 +65,7 @@ function Rising({ threads, analyses, now }) {
 }
 
 export default function StoriesChanged({ threads, analyses, baseline, now, peek, showRising = true }) {
+  if (!Number.isFinite(baseline) && !(showRising && railRising(threads, now).length)) return null;
   return (
     <div className="sf-rail">
       <ChangedList threads={threads} analyses={analyses} baseline={baseline} now={now} peek={peek} />

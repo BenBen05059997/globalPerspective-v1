@@ -393,9 +393,10 @@ export default function CountryListPage() {
           onCountryClick={handleCountryClick}
         />
         <div className="clp-map-legend">
-          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--tier-high)' }} /> High</span>
-          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--tier-elevated)' }} /> Elevated</span>
-          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--tier-low)' }} /> Low</span>
+          <span className="clp-leg"><span className="clp-leg-dot clp-leg-dot--high" /> High</span>
+          <span className="clp-leg"><span className="clp-leg-dot clp-leg-dot--elevated" /> Elevated</span>
+          <span className="clp-leg"><span className="clp-leg-dot clp-leg-dot--moderate" /> Moderate</span>
+          <span className="clp-leg"><span className="clp-leg-dot clp-leg-dot--low" /> Low</span>
         </div>
       </div>
 

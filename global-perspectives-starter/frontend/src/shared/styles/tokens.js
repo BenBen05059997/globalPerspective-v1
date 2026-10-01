@@ -41,23 +41,24 @@ export const TOKENS = {
   'hue-political': '#9b8cf8',
   'hue-economic': '#38b6e0',
   'hue-humanitarian': '#d89e28',
-  'tier-low': '#6fd29a',
-  'tier-moderate': '#e8d56a',
-  'tier-elevated': '#ffb347',
-  'tier-high': '#ff6a4d',
+  'tier-low': '#7d8b96',
+  'tier-moderate': '#9fb0bc',
+  'tier-elevated': '#c9d6df',
+  'tier-high': '#eef5f9',
 };
 
 // ── Risk ──────────────────────────────────────────────────────────────────
 
-// Soft pastel badge palette ({ bg, text-color }) — used for risk pills/chips.
+// Badge palette ({ bg, text-color }) for risk pills/chips: neutral, heavier with the tier (DS1: risk is
+// a number + a tier word + ring weight, never a traffic-light colour).
 export const RISK_COLORS = {
-  low:      { bg: '#d1fae5', color: '#065f46' },
-  moderate: { bg: '#fef9c3', color: '#854d0e' },
-  elevated: { bg: '#ffedd5', color: '#9a3412' },
-  high:     { bg: '#fee2e2', color: '#991b1b' },
+  low:      { bg: 'rgba(201, 214, 223, 0.05)', color: TOKENS['tier-low'] },
+  moderate: { bg: 'rgba(201, 214, 223, 0.08)', color: TOKENS['tier-moderate'] },
+  elevated: { bg: 'rgba(201, 214, 223, 0.12)', color: TOKENS['tier-elevated'] },
+  high:     { bg: 'rgba(201, 214, 223, 0.16)', color: TOKENS['tier-high'] },
 };
 
-// Solid tier palette (single hex per level) — the --tier-* role tokens (the --risk-* aliases
+// Solid tier palette (single hex per level) — the neutral --tier-* role tokens (the --risk-* aliases
 // point at the same values), legible on the dark surfaces.
 export const RISK_SOLID = {
   low:      TOKENS['tier-low'],
@@ -66,13 +67,13 @@ export const RISK_SOLID = {
   high:     TOKENS['tier-high'],
 };
 
-// Canvas/gradient RGB-array palette. Note the 'critical' alias used by
-// BriefingCard's gradient (no badge/solid equivalent).
+// Canvas/gradient RGB-array palette: the same neutral ramp as the tier tokens. The 'critical' alias is
+// BriefingCard's gradient (no badge/solid equivalent) and is the top of the ramp.
 export const RISK_RGB = {
-  critical: [239, 68, 68],
-  elevated: [249, 115, 22],
-  moderate: [234, 179, 8],
-  low:      [34, 197, 94],
+  critical: [238, 245, 249],
+  elevated: [201, 214, 223],
+  moderate: [159, 176, 188],
+  low:      [125, 139, 150],
 };
 
 // riskScore (0–100) → editorial CSS var. Bands come from the shared tier util

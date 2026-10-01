@@ -5,7 +5,6 @@ import { useMembership } from '@/features/account/hooks/useMembership';
 import { LoadTopBar } from '@/shared/ui/boot';
 import AIToast from '@/app/layout/AIToast';
 import NotificationBell from '@/features/breaking/components/NotificationBell';
-import { useAutoTour, startTourForPath } from '@/app/onboarding/useOnboarding';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
 import { pausedSince } from '@/shared/lib/freshness';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
@@ -78,8 +77,6 @@ function Layout({ children }) {
     lookbackDays: MAX_LOOKBACK_DAYS,
   }), [latestBrief, briefLoading, briefError]);
 
-  useAutoTour(location.pathname);
-
   // Sign-in link that returns you to the page you came from. Guard against auth
   // routes (signin/callback/account) so post-login doesn't loop back here; those
   // fall through to SignIn's own /weekly default.
@@ -115,6 +112,13 @@ function Layout({ children }) {
   // footer (one token set, 2026-10-01).
   const consoleShell = location.pathname === '/' && !isPhone;
 
+  // "?" target: /?about=1 (keeps the map's current selection when already on the map).
+  const helpTo = (() => {
+    const n = new URLSearchParams(location.pathname === '/' ? location.search : '');
+    n.set('about', '1');
+    return { pathname: '/', search: `?${n.toString()}` };
+  })();
+
   const isActive = (to, exact) => {
     if (exact) return location.pathname === to;
     return location.pathname === to || location.pathname.startsWith(to + '/');
@@ -126,7 +130,7 @@ function Layout({ children }) {
       <AIToast />
 
       <nav className="gp-nav gp-console">
-        <div className="gp-brand" data-tour="nav-brand">
+        <div className="gp-brand">
           <Link to="/" className="gp-brand-link">
             <span className="gp-logo">G</span>
             <span className="gp-name">
@@ -141,7 +145,6 @@ function Layout({ children }) {
               key={to}
               to={to}
               title={title}
-              data-tour={`nav-${to}`}
               className={`gp-nav-link${isActive(to, exact) ? ' active' : ''}`}
             >
               {label}
@@ -152,20 +155,21 @@ function Layout({ children }) {
         {consoleShell ? <div id="gp-console-status" className="gp-nav-status" /> : null}
 
         <div className="gp-nav-right">
-          <button
-            type="button"
+          {/* "?" opens the map's About content (How we read the world; a drawer on desktop, the section
+              under the tabs on a phone). It is a link to /?about=1, so it behaves the same on every
+              page: from another page it goes to the map first. */}
+          <Link
+            to={helpTo}
             className="gp-help"
-            data-tour="nav-help"
-            aria-label="How to read this page"
-            title="How to read this page"
-            onClick={() => startTourForPath(location.pathname)}
+            aria-label="About this map: how to read it"
+            title="About this map: how to read it"
           >
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="8" cy="8" r="6.5" />
               <path d="M6.2 6.1a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4" strokeLinecap="round" />
               <circle cx="8" cy="11.6" r="0.6" fill="currentColor" stroke="none" />
             </svg>
-          </button>
+          </Link>
           <NotificationBell />
 
           {!authLoading && user && !user.isAnonymous && billingAvailable && (creditBalance > 0 || isMember) && (
@@ -218,8 +222,6 @@ function Layout({ children }) {
           <Link to="/privacy">Privacy</Link>
           <Link to="/disclosures">Disclosures</Link>
           <Link to="/contact">Contact</Link>
-          <Link to="/track-record">Track Record</Link>
-          <Link to="/today">Today's topics</Link>
         </div>
         <span className="gp-footer-ver" title="Deployed build">{BUILD_LABEL}</span>
       </footer>

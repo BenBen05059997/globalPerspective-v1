@@ -1,6 +1,6 @@
 // alertStack — the desktop console's alert stack (Console.dc.html, "Civilization-style"): every
 // open situation (GDACS alerts + news situations) as a small card at the map's edge. It replaces
-// /breaking on desktop (the route stays). Pure so ordering + the honest empty line are testable.
+// the retired /breaking feed (that route now redirects). Pure so ordering + the honest empty line are testable.
 import { situationFreshness } from '@/features/map/lib/legend.js';
 
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };

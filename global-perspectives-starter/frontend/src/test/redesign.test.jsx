@@ -127,11 +127,14 @@ describe('Redesign v2 — WeeklyPage', () => {
     expect(r).toBeChecked();
   });
 
-  it('right rail shows the changed list and "Rising this week"', () => {
+  it('first visit: the right rail has no "Changed since your last visit" (no baseline) and no duplicate "Moving now"; "Rising this week" stays', () => {
+    localStorage.removeItem('gp_stories_visit_v1');
     renderWithRouter(<WeeklyPage />);
     const right = document.querySelector('.es-right');
-    expect(within(right).getByText(/Moving now|Changed since your last visit/i)).toBeInTheDocument();
-    expect(right.textContent).toMatch(/Rising this week|Moving now|Changed since/i);
+    expect(right).toBeInTheDocument();
+    expect(right.textContent).not.toMatch(/Changed since your last visit/i);
+    expect(right.textContent).not.toMatch(/Moving now/i);
+    expect(right.textContent).toMatch(/Rising this week/i);
   });
 
   it('the list is StoryRows linking to the story page, with none of the removed arc chrome', () => {

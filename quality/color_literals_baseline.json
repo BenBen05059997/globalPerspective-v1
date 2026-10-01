@@ -1,6 +1,6 @@
 {
   "note": "Per-file count of hard-coded colour literals in frontend src (see quality/check_color_literals.mjs). Counts may only fall; lower them with --lower after removing literals.",
-  "total": 875,
+  "total": 395,
   "files": {
     "app/index.css": 2,
     "features/account/components/Desk.css": 4,
@@ -28,12 +28,10 @@
     "features/threads/components/PhoneStoryMode.css": 2,
     "features/threads/components/QuestionChip.css": 3,
     "features/threads/components/StoryMode.css": 5,
-    "features/threads/components/WeeklyMap.css": 144,
     "features/threads/components/WeeklyMap.jsx": 21,
     "features/threads/ThreadPage.css": 1,
     "features/threads/ThreadPage.jsx": 2,
-    "features/threads/WeeklyPage.css": 364,
-    "features/threads/WeeklyPage.jsx": 25,
+    "features/threads/WeeklyPage.css": 53,
     "shared/lib/crisisHue.js": 5,
     "shared/ui/boot/BootLoader.css": 9
   }

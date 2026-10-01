@@ -10,7 +10,8 @@ import useIsMobile from '@/shared/hooks/useIsMobile';
 import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import StoryEntryCard from '@/features/threads/components/StoryEntryCard';
 import ThreadIntelligence from '@/features/threads/components/ThreadIntelligence';
-import { CATEGORY_BADGE_COLORS } from '@/shared/styles/tokens';
+import { CATEGORY_DOT } from '@/shared/styles/tokens';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/components/WeeklyMap.css';
@@ -370,11 +371,9 @@ function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis, onEntry
         <div className="wmap-detail-title">{displayTitle}</div>
       </div>
       <div className="wmap-detail-meta">
-        {thread.entries[0]?.category && (() => {
-          const cat = thread.entries[0].category.toLowerCase();
-          const c = CATEGORY_BADGE_COLORS[cat];
-          return <span className="story-category-badge" style={{ marginRight: 8, ...(c ? { background: c.bg, color: c.color } : {}) }}>{cat}</span>;
-        })()}
+        {thread.entries[0]?.category && (
+          <CategoryTag category={thread.entries[0].category.toLowerCase()} className="wmap-detail-cat" />
+        )}
         {thread.articleCount} article{thread.articleCount !== 1 ? 's' : ''} · {thread.dates.length} day{thread.dates.length !== 1 ? 's' : ''} · {thread.regions.slice(0, 3).join(', ')}
       </div>
       <ThreadIntelligence analysis={analysis} />
@@ -560,7 +559,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
               const groups = ORDER.filter(k => groupMap[k]).map(k => ({ category: k, threads: groupMap[k] }));
               return groups.map(({ category, threads }) => {
                 const isCollapsed = collapsedCategories.has(category);
-                const c = CATEGORY_BADGE_COLORS[category];
+                const dot = CATEGORY_DOT[category];
                 const toggleCollapse = () => setCollapsedCategories(prev => {
                   const next = new Set(prev);
                   next.has(category) ? next.delete(category) : next.add(category);
@@ -574,9 +573,9 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
                     <button
                       className="wmap-category-group-header"
                       onClick={toggleCollapse}
-                      style={c ? { borderLeftColor: c.bg } : {}}
+                      style={dot ? { borderLeftColor: dot } : {}}
                     >
-                      <span className="wmap-category-group-name" style={c ? { color: c.color } : {}}>{category}</span>
+                      <span className="wmap-category-group-name">{category}</span>
                       <span className="wmap-category-group-count">{threads.length}</span>
                       <span className={`wmap-category-group-chevron ${isCollapsed ? 'collapsed' : ''}`}>›</span>
                     </button>

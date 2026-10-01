@@ -282,6 +282,21 @@ done
 must_have "$SRC/app/index.css" "^a \\{ color: var\\(--accent\\)" "bare links read the accent, not the browser blue"
 must_not_have "$SRC/shared/ui/atoms.css" "\\.(sev|rsb)-(high|elevated|moderate|low) *\\{[^}]*background" "SeverityBadge / RiskScoreBadge are outlines, not fills"
 
+# ─── P4 (2026-10-01): Stories /weekly = A (list) + C (timeline) ───
+T="$SRC/features/threads"
+for f in WeeklyPage.jsx components/StoriesHeader.jsx components/StoriesFeed.jsx components/StoriesTimeline.jsx components/StoriesChanged.jsx components/StoriesFilters.jsx components/StoryLine.jsx; do
+  must_not_have "$T/$f" "What are Story Arcs|Read arc|STORY ARC|Story Arc" "$f has no arc explainer / 'Read arc' / STORY ARC label"
+done
+must_have "$T/components/StoryLine.jsx" "StoryRow" "the Stories list rows are the shared StoryRow"
+must_have "$T/components/StoriesFeed.jsx" "StoryLine" "the feed renders StoryLine (StoryRow) rows"
+must_have "$T/components/StoriesTimeline.jsx" "timelineLayout" "timeline dots come from timelineLayout (real day keys)"
+must_not_have "$T/components/StoriesTimeline.jsx" "Math\\.random" "timeline has no Math.random"
+must_not_have "$T/lib/storyGroups.js" "Math\\.random" "storyGroups has no Math.random"
+must_not_have "$T/lib/storyGroups.js" "Array\\.from\\(\\{ *length" "storyGroups does not synthesise date ranges"
+must_not_have "$T/components/WeeklyMap.css" "#[0-9a-fA-F]{3,8}\\b|rgba?\\(" "WeeklyMap.css has no colour literals (no light backgrounds)"
+must_not_have "$T/Stories.css" "#[0-9a-fA-F]{3,8}\\b|rgba?\\(" "Stories.css is tokens only"
+must_not_have "$T/WeeklyPage.jsx" "return null" "WeeklyPage never null-gates"
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

@@ -24,7 +24,9 @@ const dayMap = {};
   rawDates.forEach((d, i) => {
     const shifted = new Date(today);
     shifted.setDate(today.getDate() - (rawDates.length - 1 - i));
-    dayMap[shifted.toISOString().slice(0, 10)] = rawDayMap[d];
+    // updatedAt moves with the day key (the page reads real day timestamps for story age).
+    const stamp = new Date(shifted); stamp.setHours(shifted.getHours() - 1);
+    dayMap[shifted.toISOString().slice(0, 10)] = { ...rawDayMap[d], updatedAt: stamp.toISOString() };
   });
 }
 const sortedDates = Object.keys(dayMap).sort((a, b) => b.localeCompare(a));
@@ -95,47 +97,59 @@ describe('Redesign v2 — WeeklyPage', () => {
     expect(document.querySelector('.es-center')).toBeInTheDocument();
   });
 
-  it('renders left-rail filter buttons (Period, Sort, View)', () => {
+  it('left rail has the filter groups (search, crisis type, tier, window, region, sort)', () => {
     renderWithRouter(<WeeklyPage />);
     const left = document.querySelector('.es-left');
-    expect(within(left).getByText(/^Period$/i)).toBeInTheDocument();
-    expect(within(left).getByText(/^Sort$/i)).toBeInTheDocument();
-    expect(within(left).getByText(/^View$/i)).toBeInTheDocument();
-    expect(within(left).getByPlaceholderText(/search arcs/i)).toBeInTheDocument();
+    for (const l of ['Crisis type', 'Tier', 'Window', 'Region', 'Sort']) expect(within(left).getByText(l)).toBeInTheDocument();
+    expect(within(left).getByPlaceholderText(/search stories/i)).toBeInTheDocument();
+    expect(within(left).getByText('Rising first')).toBeInTheDocument();
   });
 
-  it('renders the search input and updates on typing', () => {
+  it('header has Stories | Countries tabs, a tier count line and the List | Timeline | Map switch', () => {
     renderWithRouter(<WeeklyPage />);
-    const input = screen.getByPlaceholderText(/search arcs/i);
+    expect(screen.getByRole('tab', { name: 'Stories' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Countries' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Open stories by tier').textContent).toMatch(/open stor/);
+    for (const v of ['List', 'Timeline', 'Map']) expect(screen.getByRole('button', { name: v })).toBeInTheDocument();
+  });
+
+  it('search input updates on typing', () => {
+    renderWithRouter(<WeeklyPage />);
+    const input = screen.getByPlaceholderText(/search stories/i);
     fireEvent.change(input, { target: { value: 'iran' } });
     expect(input.value).toBe('iran');
   });
 
-  it('clicks "7 days" period button and sets active', () => {
+  it('window radio switches', () => {
     renderWithRouter(<WeeklyPage />);
-    const btn = screen.getByRole('button', { name: /^7 days$/i });
-    fireEvent.click(btn);
-    expect(btn).toHaveClass('active');
+    const r = screen.getByRole('radio', { name: '7 d' });
+    fireEvent.click(r);
+    expect(r).toBeChecked();
   });
 
-  it('right rail shows "Rising This Week"', () => {
+  it('right rail shows the changed list and "Rising this week"', () => {
     renderWithRouter(<WeeklyPage />);
     const right = document.querySelector('.es-right');
-    expect(within(right).getByText(/Rising This Week/i)).toBeInTheDocument();
+    expect(within(right).getByText(/Moving now|Changed since your last visit/i)).toBeInTheDocument();
+    expect(right.textContent).toMatch(/Rising this week|Moving now|Changed since/i);
   });
 
-  it('story cards render at least one micro-headline from entryShortTitles', () => {
+  it('the list is StoryRows linking to the story page, with none of the removed arc chrome', () => {
     renderWithRouter(<WeeklyPage />);
-    // Real fixture: thread analyses contain entryShortTitles
-    // microHeadlines should appear as <ul class="story-card-micro">
-    const micros = document.querySelectorAll('.story-card-micro li');
-    expect(micros.length).toBeGreaterThan(0);
+    const rows = document.querySelectorAll('.es-center .gp-row a.gp-row__link');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows[0].getAttribute('href')).toMatch(/^\/weekly\/thread\//);
+    expect(document.body.textContent).not.toMatch(/What are Story Arcs|Read arc|Story Arc/i);
+    expect(document.querySelector('.wp-cat-chip, .arc-intro')).toBeNull();
   });
 
-  it('renders at least one StoryCard with a thread title', () => {
+  it('timeline view draws one row per story with dots only on real coverage days', () => {
     renderWithRouter(<WeeklyPage />);
-    const cards = document.querySelectorAll('.story-card');
-    expect(cards.length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Timeline' }));
+    const rows = document.querySelectorAll('.tl-row');
+    expect(rows.length).toBeGreaterThan(0);
+    const dates = new Set(Object.keys(dayMap));
+    for (const d of document.querySelectorAll('.tl-dot')) expect(dates.has(d.dataset.date)).toBe(true);
   });
 });
 

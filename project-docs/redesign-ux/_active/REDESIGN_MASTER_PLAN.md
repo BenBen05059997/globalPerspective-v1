@@ -101,10 +101,10 @@ Docs: `STORY_WEB_RETHINK_PLAN.md` §5, §7.
 Doc: `COUNTRY_VIEW_DISCUSSION.md`.
 - **Country card on the map:**
   - one screen: state line → verified facts → one-sentence summary → RISK + DIRECTION → 4 risk bars (WHY on click) → latest change (only with a cited event) → ≤3 stories → ≤2 future dated triggers → FX + Studio button.
-- **Direction rule:** medians of 3 readings, |Δ| ≥ 10, "at top of scale", "not enough readings".
+- **Direction rule (revised 2026-09-29, operator Q4 yes, Batch 1 R1 — briefings are weekly):** latest reading (median within 3 days) vs the reading nearest 7 days earlier (4–10 d), arrow at |Δ| ≥ 15; "at top of scale" when both ≥ 95; "not enough readings" otherwise. Country "older" cut-off is 14 days (stories stay 7). Was: medians of 3 readings, |Δ| ≥ 10.
 - **Watch flag:** GDACS / origin situations.
 - **Facts only if verified** (Wikidata leaders with a date; macro ≥ current year − 3; no FX row if the currency isn't in the ECB feed).
-- **States:** briefed (≤7d / 7–30d amber), too old (>30d: scores hidden), never briefed (stories + "Generate in Studio"), quiet (inline).
+- **States:** briefed (≤14d / 14–30d amber, per the 2026-09-29 revision), too old (>30d: scores hidden), never briefed (stories + "Generate in Studio"), quiet (inline).
 - **Countries list** = a map layer + a tab in Stories. `/weekly/country/:name` stays a public page with the card content.
 
 ### 3.6 Briefings: APPROVED (D1)

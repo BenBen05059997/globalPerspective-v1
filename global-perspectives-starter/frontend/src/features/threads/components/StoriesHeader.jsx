@@ -1,13 +1,15 @@
 
 // StoriesHeader — the top of /weekly: Stories | Countries tabs, a one-line count of open stories by
 // tier (computed from the loaded archive, never typed: scored tiers first, then a dim "N not yet
-// scored"), and the view switch. Phone (<900px) swaps the view switch for READ / MAP / TIMELINE tabs
-// (READ default; the changed-since-last-visit section lives inside READ).
+// scored"), and the view switch (List | Board | Timeline | Map). Phone (<900px) swaps it for READ / MAP /
+// TIMELINE tabs (READ default; the changed-since-last-visit section lives inside READ, and READ carries a
+// List | Board toggle).
 const TIER_WORD = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 const SCORED = ['high', 'elevated', 'moderate', 'low'];
 
 export const DESKTOP_VIEWS = [
   { value: 'list', label: 'List' },
+  { value: 'board', label: 'Board' },
   { value: 'timeline', label: 'Timeline' },
   { value: 'map', label: 'Map' },
 ];
@@ -17,7 +19,14 @@ export const PHONE_TABS = [
   { value: 'timeline', label: 'Timeline' },
 ];
 
+// READ's own List | Board toggle (phone): Board is reachable without a fourth tab (P1 keeps READ / MAP / TIMELINE).
+export const READ_VIEWS = [
+  { value: 'list', label: 'List' },
+  { value: 'board', label: 'Board' },
+];
+
 // `?view=changes` is the old CHANGES tab: it now opens READ (scrolled to the changed section).
+// `?view=board` is also READ (the board is a way of reading the list).
 export function viewToTab(view) {
   return view === 'map' ? 'map' : view === 'timeline' ? 'timeline' : 'read';
 }
@@ -83,6 +92,22 @@ export default function StoriesHeader({ pageTab, setPageTab, view, setView, isPh
               onClick={() => setView(t.value === 'read' ? 'list' : t.value)}
             >
               {t.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {pageTab === 'stories' && isPhone && viewToTab(view) === 'read' ? (
+        <div className="sf-subtoggle" role="group" aria-label="Read as">
+          {READ_VIEWS.map((v) => (
+            <button
+              key={v.value}
+              type="button"
+              className="sf-seg__btn"
+              aria-pressed={view === v.value || (v.value === 'list' && view === 'changes')}
+              onClick={() => setView(v.value)}
+            >
+              {v.label}
             </button>
           ))}
         </div>

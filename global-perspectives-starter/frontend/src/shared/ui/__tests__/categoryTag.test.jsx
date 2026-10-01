@@ -12,7 +12,17 @@ describe('CategoryTag', () => {
     render(<CategoryTag category="conflict" />);
     const el = screen.getByText('conflict');
     expect(el.className).toContain('gp-cat');
-    expect(el.style.getPropertyValue('--cat-dot')).toBeTruthy();
+    expect(el.style.getPropertyValue('--cat-dot')).toBe('var(--hue-conflict)');
+  });
+  it('dot = crisis hue of the topic mapping, never a topic palette', () => {
+    const { rerender } = render(<CategoryTag category="disaster" />);
+    expect(screen.getByText('disaster').style.getPropertyValue('--cat-dot')).toBe('var(--hue-humanitarian)');
+    rerender(<CategoryTag category="energy" />);
+    expect(screen.getByText('energy').style.getPropertyValue('--cat-dot')).toBe('var(--hue-economic)');
+    rerender(<CategoryTag category="technology" />);
+    const el = screen.getByText('technology');
+    expect(el.style.getPropertyValue('--cat-dot')).toBe('');
+    expect(el.getAttribute('data-dot')).toBe('off');
   });
   it('renders nothing without a category', () => {
     const { container } = render(<CategoryTag category="" />);

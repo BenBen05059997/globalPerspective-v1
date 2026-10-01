@@ -7,10 +7,6 @@
 // category maps, previously copy-pasted across ~10 components
 // (see PRODUCT_IMPROVEMENT_PLAN.md → P2 "shared tokens").
 //
-// Hex values are unchanged from the originals, so visuals stay identical. The
-// one intentional improvement: MapSidePanel now uses the full CATEGORY_DOT
-// palette, so climate/science/business/society/energy markers get their real
-// colors (matching WorldMap/WeeklyPage) instead of falling back to grey.
 
 import { tierFromScore } from '@/shared/lib/riskTiers';
 
@@ -110,19 +106,5 @@ export const CATEGORY_BADGE_COLORS = {
   energy:     { bg: '#fefce8', color: '#713f12' },
 };
 
-// Solid dot colors for map markers / legend swatches.
-export const CATEGORY_DOT = {
-  conflict:   '#ef4444',
-  military:   '#ef4444',
-  disaster:   '#f97316',
-  politics:   '#3b82f6',
-  economy:    '#22c55e',
-  technology: '#8b5cf6',
-  health:     '#14b8a6',
-  climate:    '#10b981',
-  science:    '#e879f9',
-  business:   '#0ea5e9',
-  society:    '#f59e0b',
-  energy:     '#ca8a04',
-  other:      '#6b7280',
-};
+// Topic dots use the crisis hue only (shared/lib/crisisHue.js crisisDotVar); the old 12-colour
+// CATEGORY_DOT palette was retired 2026-10-02 (P7a).

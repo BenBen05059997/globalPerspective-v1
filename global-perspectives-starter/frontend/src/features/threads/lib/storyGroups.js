@@ -354,3 +354,65 @@ export function timelineTicks(span, now = Date.now(), count = 6) {
   }
   return out;
 }
+
+// ─── Board (B4): status from coverage ───────────────────────────────────────────────────────────
+// The BOARD sorts stories into four columns by what the archive can actually measure: how many
+// articles a story had on each day. It is NOT a risk or situation status (the map's ▲ "escalating"
+// is a tracker's situation escalation; nothing here claims that), so the words are "rising" and
+// "quieter", and the page prints the rule (BOARD_RULE) next to the board. Counts are the story's own
+// archive entries per day key; "last 3 days" = today and the 2 days before, "previous 3" = the 3
+// before that.
+export const BOARD_NEW_DAYS = 3; // new: first covered this many days ago or fewer
+export const BOARD_WINDOW = 3; // days compared: last 3 vs the 3 before
+export const BOARD_MIN = 2; // a rise / fall needs at least this many articles on the larger side
+export const BOARD_SPARK_DAYS = 14;
+
+export const BOARD_COLUMNS = [
+  { key: 'rising', glyph: '▲', label: 'Rising coverage', short: 'Rising' },
+  { key: 'new', glyph: '●', label: 'New', short: 'New' },
+  { key: 'steady', glyph: '◆', label: 'Steady', short: 'Steady' },
+  { key: 'quieter', glyph: '▼', label: 'Quieter', short: 'Quieter' },
+];
+
+export const BOARD_RULE = `Status from coverage, not from risk. ● New: first covered ${BOARD_NEW_DAYS} days ago or less. ▲ Rising: at least ${BOARD_MIN} articles in the last ${BOARD_WINDOW} days and more than in the ${BOARD_WINDOW} days before. ▼ Quieter: no articles in the last ${BOARD_WINDOW} days, or at least ${BOARD_MIN} in the ${BOARD_WINDOW} days before and fewer now. ◆ Steady: everything else. Counted from each story's own articles per day, today included.`;
+
+/** dayCounts(thread, days, now) -> articles per day for the last `days` days, oldest first, today last. */
+export function dayCounts(thread, days = BOARD_SPARK_DAYS, now = Date.now()) {
+  const out = new Array(days).fill(0);
+  for (const e of thread.entries || []) {
+    const ago = daysSince(e.date, now);
+    if (ago >= 0 && ago < days) out[days - 1 - ago] += 1;
+  }
+  return out;
+}
+
+/**
+ * deriveBoardStatus(thread, now) -> { key, last3, prev3, firstAgo, lastAgo }
+ *   key: 'new' | 'rising' | 'quieter' | 'steady' (checked in that order; see BOARD_RULE)
+ * Pure: day counts and day keys only, no clock reads.
+ */
+export function deriveBoardStatus(thread, now = Date.now()) {
+  const dates = thread.dates || [];
+  const firstAgo = dates.length ? daysSince(dates[0], now) : null;
+  const lastAgo = dates.length ? daysSince(dates[dates.length - 1], now) : null;
+  const c = dayCounts(thread, BOARD_WINDOW * 2, now); // oldest first: [prev 3 | last 3]
+  const prev3 = c.slice(0, BOARD_WINDOW).reduce((a, b) => a + b, 0);
+  const last3 = c.slice(BOARD_WINDOW).reduce((a, b) => a + b, 0);
+  let key = 'steady';
+  if (firstAgo != null && firstAgo <= BOARD_NEW_DAYS) key = 'new';
+  else if (last3 === 0) key = 'quieter';
+  else if (last3 >= BOARD_MIN && last3 > prev3) key = 'rising';
+  else if (prev3 >= BOARD_MIN && last3 < prev3) key = 'quieter';
+  return { key, last3, prev3, firstAgo, lastAgo };
+}
+
+/** boardColumns(threads, now) -> BOARD_COLUMNS each with `items: [{ thread, status }]` (input order kept). */
+export function boardColumns(threads, now = Date.now()) {
+  const cols = BOARD_COLUMNS.map((c) => ({ ...c, items: [] }));
+  const byKey = Object.fromEntries(cols.map((c) => [c.key, c]));
+  for (const thread of threads) {
+    const status = deriveBoardStatus(thread, now);
+    byKey[status.key].items.push({ thread, status });
+  }
+  return cols;
+}

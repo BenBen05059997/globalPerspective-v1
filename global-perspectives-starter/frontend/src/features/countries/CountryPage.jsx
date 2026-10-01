@@ -22,7 +22,8 @@ import { getBroadRegionsForCountry } from '@/shared/lib/countryMapping';
 const WeeklyMap = lazy(() => import('@/features/threads/components/WeeklyMap'));
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from '@/shared/ui/CopyBriefing';
-import { CATEGORY_DOT, riskTierToVar } from '@/shared/styles/tokens';
+import { riskTierToVar } from '@/shared/styles/tokens';
+import { crisisDotVar } from '@/shared/lib/crisisHue';
 import { tierFromScore, tierFromLevel, tierLabel } from '@/shared/lib/riskTiers';
 import BackgroundTimeline from '@/features/countries/components/BackgroundTimeline';
 import { SaveButton } from '@/features/account/components/SaveButton';
@@ -254,6 +255,18 @@ export default function CountryPage() {
   // double-decodes and throws URIError on any name containing a literal '%'.
   const paramName = countryName;
   const navigate = useNavigate();
+  // The hero's header bar overlaps the top of the map strip; the map frames the country in what remains.
+  const [overlayEl, setOverlayEl] = useState(null);
+  const [overlayInset, setOverlayInset] = useState(null);
+  useEffect(() => {
+    if (!overlayEl) return undefined;
+    const read = () => setOverlayInset((prev) => (prev && prev.top === overlayEl.offsetHeight ? prev : { top: overlayEl.offsetHeight }));
+    read();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(read);
+    ro.observe(overlayEl);
+    return () => ro.disconnect();
+  }, [overlayEl]);
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
   const [mainTab, setMainTab] = useState('situation');
   const [activeDeepTab, setActiveDeepTab] = useState(null);
@@ -582,7 +595,7 @@ export default function CountryPage() {
 
       {/* Full-width map hero */}
       <div className="cpg-map-hero">
-        <div className="cpg-map-overlay">
+        <div className="cpg-map-overlay" ref={setOverlayEl}>
           <div className="cpg-map-overlay-left">
             <Link to="/weekly/countries" className="cpg-map-back">← Countries</Link>
             <select
@@ -606,7 +619,7 @@ export default function CountryPage() {
           </div>
         </div>
         <Suspense fallback={<BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" />}>
-          <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} />
+          <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} frameInsets={overlayInset} />
         </Suspense>
       </div>
 
@@ -849,7 +862,7 @@ export default function CountryPage() {
 
               {filteredArcs.length > 0 ? (
                 filteredArcs.map(arc => {
-                  const dotColor = CATEGORY_DOT[arc.category];
+                  const dotColor = crisisDotVar(arc.category);
                   const title = threadAnalyses?.[arc.threadId]?.threadTitle || arc.latestTitle;
                   const ta = threadAnalyses?.[arc.threadId];
                   return (
@@ -858,7 +871,7 @@ export default function CountryPage() {
                       to={threadPath(arc.threadId, { from: 'country', country: decodedName })}
                       className={`cpg-arc-card${arc.isAnchor ? ' anchor' : ' linked'}`}
                     >
-                      <div className="cpg-arc-card-dot" style={{ background: dotColor || 'var(--text-dim)' }} />
+                      <div className="cpg-arc-card-dot" style={dotColor ? { background: dotColor } : { visibility: 'hidden' }} />
                       <div className="cpg-arc-card-body">
                         <div className="cpg-arc-card-kicker">
                           <span className={`cpg-arc-type${arc.isAnchor ? '' : ' linked'}`}>{arc.isAnchor ? 'ANCHOR' : 'LINKED'}</span>

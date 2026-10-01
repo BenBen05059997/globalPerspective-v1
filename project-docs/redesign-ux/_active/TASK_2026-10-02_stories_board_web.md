@@ -19,8 +19,28 @@ Views become List | Board | Timeline | Map | Web (List = TABLE).
 
 **P7c · Master-plan gap audit (read-only, parallel)** — a separate agent compares REDESIGN_MASTER_PLAN §3 item by item with the code/live site and lists what is built, partially built, or missing; the monitor turns real gaps into P8.
 
+
+**P8 · Master-plan gaps from the P7c audit (2026-10-02; after P7b)** — real gaps, ranked by visibility:
+1. Map story card: WHY steps tagged **fact / inference** (as the story page does) and **in-text links** to mentioned stories/events using the web index already loaded on the map (§3.2 "in-text links to events and other stories").
+2. **StoryPeek everywhere a story is named** (§3.2): country card stories, Stories timeline rows, story page related stories, `/weekly-brief`, `/today` (lede + topics), Desk/Saved, shared analysis page, READ AS TEXT links — one shared `StoryLink` wrapper.
+3. **Status line** (§3.1): computed from the newest `generatedAt` across daily brief / topics / country intel (client-side stand-in for D1) and always says whether GDACS is live, on every page, with the approved wording "New stories and analysis paused since <date> · disaster alerts live" (only when actually paused).
+4. **Phone P1 tabs** on Track record (READ / MAP / LOG) and the country page (READ / MAP), one tab switch per page.
+5. **Read in full** (§3.3, STORY_WEB_RETHINK_PLAN §5): "Shares actors with (fact)" section, provenance line "From analyses of …, as of …", and a count line for links hidden after 30 days.
+6. Hard-coded "we brief the 20 most-covered countries" (`CountryCardV2.jsx:103`) → from data or reworded without a number.
+7. Legend: mention the motion budget fully ("at most 3 moving, 8 pulsing").
+- Done as docs (no code): master plan §3.5 direction rule + 14-day country cut-off updated to the operator-approved 2026-09-29 revision.
+- **Not in P8, needs the operator:** (a) Studio credit/member copy still present (`AnalysisStudio.jsx:449, 472`; billing is parked, a billing-adjacent change needs a fresh yes); (b) the signed-out Studio example needs a real share id from the operator (Y8); (c) weekly briefing edition history needs a backend per-week lookup.
+
 ### Changes (code) — filled by each phase before coding
-- P7a: …
+- P7a (filled before coding, 2026-10-02):
+  1. Dots: add `crisisDotVar(category)` to `shared/lib/crisisHue.js` (returns `var(--hue-<type>)` for the 4 crisis types, `undefined` for neutral/unmapped). `CategoryTag`, DailyPage (tag dot + "Shape of the day" bars), CountryPage arc-card dot, WeeklyMap category-group border use it; unmapped topics get no dot (bars fall back to `--text-dim`). `CATEGORY_DOT` (12-colour palette in `shared/styles/tokens.js`) deleted: its only users were those four files (economy, map panel (`features/map`), SituationMap never used it). Tests updated; guard added.
+  2. Country hero framing: country page passes `defaultCountry` to `WeeklyMap embedded hidePanel`; frame the country by its bounds in the VISIBLE band (the hero card overlaps the left/top): Google path `fitBounds(bounds, padding)` with left/top padding for the card; SVG fallback computes the same centre/zoom. Details + verification notes filled on completion.
+  3. BOARD: `deriveBoardStatus(thread, now)` + `boardColumns()` + `dayCounts()` pure functions in `lib/storyGroups.js` (tests in `lib/__tests__`); new `StoriesBoard.jsx` (4 columns, cards = whole-card link, crisis-hue edge, kicker, title, 14-day activity sparkline from real per-day entry counts, TierChip, sources, updated, StoryPeek, caption with the rule); `StoriesHeader` view switch List | Board | Timeline | Map (+ phone READ toggle reaches Board), `WeeklyPage` `?view=board`, same filters; phone <900px single column grouped by status. `Stories.css` additions on tokens only. verify_pages guards added. Task/CHANGES/ARCHITECTURE updated.
+- P7a result (2026-10-02): `npm run verify` 136 files / 1030 tests, exit 0; `verify_pages.sh` 232 pass / 0 fail; colour ratchet 351 (not raised).
+  - Dots: `crisisDotVar`; `CATEGORY_DOT` deleted (users were CategoryTag, Daily tag + bars, CountryPage arc dots, WeeklyMap panel edge; economy/map console never used it). Live check: conflict/military -> conflict hue, politics -> political, economy/energy/business -> economic, climate/disaster/health -> humanitarian, society/technology/science -> no dot (Stories list, Daily, country arcs, map panel).
+  - Country hero: ROOT CAUSE was CSS, not framing: the embedded map is `calc(100vh - 160px)` (738 px) inside a 200 px `overflow:hidden` band, so the band showed the top (far north) of a tall map; `.cpg-map-hero .wmap-page.embedded { height: 100% }` fixes it. Then `countryFrame.js` (bounds from 110m coastlines; small countries absent from the mesh, e.g. Singapore, Malta, get a centroid box) + SVG `frameViewBox` + Google `fitBounds` with the overlay's measured height as top padding. SVG fallback verified live at 1440 and 390 for Iran, Japan, Mexico, Singapore, Israel: country bounds centre within 1 px of the centre of the visible band (below the overlay: 56 px desktop, 94/67 px phone). Google path verified only against a STUB maps API (fitBounds called with Iran/Japan/Singapore bounds, padding top = overlay + 14); the real Google renderer was NOT run (no key in dev), so real-map zoom/clamp (2..6) is unverified.
+  - Board status cross-check, live data (archive 50 days, newest 2026-10-01, nothing between 09-13 and 09-29): module vs hand-applied rule 0 mismatches over all 885 threads; 6 board cards compared by hand with their per-day counts (3 New, 3 Quieter), all match. Live board has only New (60) and Quieter columns (Rising / Steady are 0: no story has coverage both before and in the last 3 days). To see all four columns with real counts the page date was fixed to 2026-09-12 (`page.clock.setFixedTime`): Rising 10 / New 140 / Steady 6 / Quieter 115; all 40 rendered cards match the hand rule, 6 spot-checked in detail (2 Rising, 2 Steady, Quieter, New).
+  - Browser (live data, 1440 + 390): board columns, filters (Conflict -> 24 cards all conflict hue; search "Iran" -> 7), peek, card click -> /weekly/thread/..., List/Board/Timeline/Map switching, phone READ List|Board toggle, tabs stay READ/MAP/TIMELINE; audit 0 light surfaces, 0 contrast < 4.5, 0 overflow, 0 page errors on board, list, timeline, map, daily. Country page audit: 0 low-contrast, 0 overflow, 0 errors; 2 "light" hits are risk bar fills (`.ccv2-bar-fill`, `.riskcard-bar-fill`, data fills from the P6 neutral tier colours), not surfaces. Screenshots: `scratchpad/p7a_shots/`.
 - P7b: …
 
 ### Docs to update on completion
@@ -30,12 +50,13 @@ Views become List | Board | Timeline | Map | Web (List = TABLE).
 | Phase | What | Status |
 |---|---|---|
 | P0 | Plan (this file) | ✅ 2026-10-02 |
-| P7a | Topic dots → crisis hue, country map framing, BOARD view | ⏳ |
+| P7a | Topic dots → crisis hue, country map framing, BOARD view | ✅ 2026-10-02 (not deployed) |
 | P7b | WEB view, /spider-demo → WEB | — |
-| P7c | Master-plan gap audit (read-only) | ⏳ |
+| P7c | Master-plan gap audit (read-only) | ✅ 2026-10-02 (11 gaps; 7 → P8, 3 need operator, 1 doc fix done) |
+| P8 | Master-plan gaps 1–7 | — after P7b |
 
 **Completion checklist:**
-- [ ] code
+- [x] code (P7a)
 - [ ] docs updated (same commits)
 - [ ] CHANGES.md entries
 - [ ] verify + verify_pages exit 0; live-data browser checks at 1440 + 390

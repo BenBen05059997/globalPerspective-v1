@@ -3,6 +3,7 @@ import {
   buildThreads, ageDaysOf, groupKeyOf, groupByAge, crisisOf, tierOf, inWindow, filterThreads, filterStandalone,
   sortThreads, tierCounts, crisisCounts, regionCounts, risingThreads, resolveVisit, changedSince,
   timelineLayout, timelineTicks, VISIT_GAP_MS, MS_DAY,
+  dayCounts, deriveBoardStatus, boardColumns, BOARD_RULE, BOARD_COLUMNS,
 } from '@/features/threads/lib/storyGroups';
 
 // "now" = 2026-10-01 12:00 local. Day keys are real YYYY-MM-DD strings.
@@ -219,5 +220,60 @@ describe('timeline layout', () => {
     expect(t[5].pct).toBe(100);
     expect(t[5].label).toBe('Oct 1');
     expect(t[0].label).toBe('Sep 2');
+  });
+});
+
+describe('board status (from coverage, never invented)', () => {
+  // spec: { daysAgo: n articles }
+  const thread = (spec, id = 't') => {
+    const days = {};
+    for (const [d, n] of Object.entries(spec)) days[d] = { entries: Array.from({ length: n }, (_, i) => entry(id, `a${d}-${i}`)) };
+    const { dayMap, sortedDates } = archive(days);
+    return buildThreads(dayMap, sortedDates, NOW).threads[0];
+  };
+  const key = (spec) => deriveBoardStatus(thread(spec), NOW).key;
+
+  it('dayCounts: articles per day, oldest first, today last; days outside the span are ignored', () => {
+    const t = thread({ 0: 2, 1: 1, 5: 3, 20: 4 });
+    const c = dayCounts(t, 7, NOW);
+    expect(c).toHaveLength(7);
+    expect(c[6]).toBe(2);
+    expect(c[5]).toBe(1);
+    expect(c[1]).toBe(3);
+    expect(c.reduce((a, b) => a + b, 0)).toBe(6);
+  });
+  it('new: first covered 3 days ago or less (even with a single article)', () => {
+    expect(key({ 0: 1 })).toBe('new');
+    expect(key({ 3: 1, 1: 4 })).toBe('new');
+    expect(key({ 4: 1, 0: 1 })).not.toBe('new');
+  });
+  it('rising: >= 2 articles in the last 3 days and more than the 3 before', () => {
+    expect(key({ 9: 1, 5: 1, 2: 2, 0: 2 })).toBe('rising');
+    expect(key({ 9: 1, 1: 1 })).toBe('steady'); // 1 article is not a rise
+    expect(key({ 9: 1, 4: 3, 1: 3 })).toBe('steady'); // equal
+  });
+  it('quieter: no article in the last 3 days, or >= 2 before and fewer now', () => {
+    expect(key({ 9: 2, 5: 1 })).toBe('quieter'); // nothing in the last 3 days
+    expect(key({ 9: 1, 5: 3, 1: 1 })).toBe('quieter'); // 3 before, 1 now
+    expect(key({ 9: 1, 5: 1, 1: 1 })).toBe('steady'); // 1 -> 1
+  });
+  it('a story first seen long ago with coverage now and before is steady', () => {
+    expect(key({ 20: 1, 5: 2, 1: 2 })).toBe('steady');
+  });
+  it('returns the counts the status was derived from', () => {
+    const s = deriveBoardStatus(thread({ 9: 1, 5: 1, 2: 2, 0: 2 }), NOW);
+    expect(s).toMatchObject({ key: 'rising', last3: 4, prev3: 1, firstAgo: 9, lastAgo: 0 });
+  });
+  it('boardColumns: four columns in fixed order, every story in exactly one', () => {
+    const a = thread({ 0: 1 }, 'a');
+    const b = thread({ 9: 2, 5: 1 }, 'b');
+    const cols = boardColumns([a, b], NOW);
+    expect(cols.map((c) => c.key)).toEqual(BOARD_COLUMNS.map((c) => c.key));
+    expect(cols.find((c) => c.key === 'new').items.map((i) => i.thread.threadId)).toEqual(['a']);
+    expect(cols.find((c) => c.key === 'quieter').items.map((i) => i.thread.threadId)).toEqual(['b']);
+    expect(cols.reduce((n, c) => n + c.items.length, 0)).toBe(2);
+  });
+  it('the printed rule names every column and says it is not a risk status', () => {
+    for (const w of ['New', 'Rising', 'Quieter', 'Steady', 'not from risk']) expect(BOARD_RULE).toContain(w);
   });
 });

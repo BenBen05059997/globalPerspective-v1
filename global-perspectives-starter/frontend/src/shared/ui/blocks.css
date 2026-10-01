@@ -69,3 +69,4 @@
   letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-body); white-space: nowrap;
 }
 .gp-cat::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--cat-dot, var(--text-dim)); flex: none; }
+.gp-cat[data-dot='off']::before { display: none; }  /* unmapped topic: no dot, never a guessed colour */

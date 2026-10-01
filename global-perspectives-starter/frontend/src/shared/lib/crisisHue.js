@@ -72,6 +72,15 @@ export function crisisHueForCategory(category) {
   return CRISIS_HUE[crisisTypeForCategory(category)];
 }
 
+/**
+ * crisisDotVar — the CSS colour for a topic's dot: `var(--hue-<crisis type>)` for the four crisis
+ * types, `undefined` (no dot) for unmapped topics. Dot colour = crisis type only, never a topic palette.
+ */
+export function crisisDotVar(category) {
+  const t = crisisTypeForCategory(category);
+  return t === 'neutral' ? undefined : `var(--hue-${t})`;
+}
+
 export function crisisRgbForCategory(category) {
   return CRISIS_RGB[crisisTypeForCategory(category)];
 }

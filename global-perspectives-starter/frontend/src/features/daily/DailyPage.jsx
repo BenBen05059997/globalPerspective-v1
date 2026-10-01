@@ -7,7 +7,8 @@ import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList'
 import InstrumentChip from '@/features/economy/components/InstrumentChip';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
-import { CATEGORY_DOT, riskTierToVar } from '@/shared/styles/tokens';
+import { riskTierToVar } from '@/shared/styles/tokens';
+import { crisisDotVar } from '@/shared/lib/crisisHue';
 import { tierFromLevel } from '@/shared/lib/riskTiers';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import SharedSectionHeader from '@/shared/ui/SectionHeader.jsx';
@@ -403,7 +404,7 @@ export default function DailyPage() {
 
                   <div className="daily-story-body">
                     <div className="daily-story-kicker">
-                      {story.category && <span className="daily-tag daily-tag-cat" style={{ '--cat-dot': CATEGORY_DOT[story.category] }}>{story.category}</span>}
+                      {story.category && <span className="daily-tag daily-tag-cat" data-dot={crisisDotVar(story.category) ? 'on' : 'off'} style={{ '--cat-dot': crisisDotVar(story.category) }}>{story.category}</span>}
                       {(story.regions || []).slice(0, 3).map((r, j) => (
                         <Link key={j} to={`/weekly/country/${encodeURIComponent(r)}`} className="daily-tag daily-tag-region">{r}</Link>
                       ))}
@@ -496,7 +497,7 @@ export default function DailyPage() {
           <SectionHeader num="6" title="Shape of the Day" meta="stories by category" />
           <div className="daily-bars">
             {catEntries.map(([cat, count]) => {
-              const dot = CATEGORY_DOT[cat];
+              const dot = crisisDotVar(cat);
               return (
                 <div key={cat} className="daily-bar-row">
                   <span className="daily-bar-label">{cat}</span>

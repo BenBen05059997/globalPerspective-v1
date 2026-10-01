@@ -16,6 +16,11 @@
   border-bottom: 1px solid var(--hairline);
 }
 
+/* The embedded map is sized for the Stories map view (100vh - 160px); inside this 200px band that left
+   the band showing the top (far north) of a 700px-tall map. It fills the band instead, so the country
+   framing (WeeklyMap frameBounds) is computed against what is actually visible. */
+.cpg-map-hero .wmap-page.embedded { height: 100%; border: 0; border-radius: 0; }
+
 .cpg-map-overlay {
   position: absolute;
   top: 0;

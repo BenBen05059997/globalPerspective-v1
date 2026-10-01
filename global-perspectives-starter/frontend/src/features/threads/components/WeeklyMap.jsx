@@ -1,16 +1,17 @@
-import { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Wrapper } from '@googlemaps/react-wrapper';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
-import { getTopicCountryCodes, getTopicRegion, getRegionFromCountryCode } from '@/shared/lib/countryMapping';
+import { getTopicCountryCodes, getTopicRegion, getRegionFromCountryCode, regionToCountryCode } from '@/shared/lib/countryMapping';
 import { COUNTRY_COORDINATES, CONTINENT_PATHS } from '@/features/threads/lib/mapConstants';
+import { countryFrameBounds, frameViewBox, WORLD_W, WORLD_H } from '@/features/threads/lib/countryFrame';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import useIsMobile from '@/shared/hooks/useIsMobile';
 import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import StoryEntryCard from '@/features/threads/components/StoryEntryCard';
 import ThreadIntelligence from '@/features/threads/components/ThreadIntelligence';
-import { CATEGORY_DOT } from '@/shared/styles/tokens';
+import { crisisDotVar } from '@/shared/lib/crisisHue';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import '@/features/threads/WeeklyPage.css';
@@ -166,6 +167,19 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
         if (map.getZoom() < 2) map.setZoom(2);
       });
     },
+    // Country page: fit the country's bounds inside the VISIBLE band (insets = px under overlays).
+    frameBounds(b, insets = {}) {
+      const map = mapInstanceRef.current;
+      if (!map || !b) return;
+      const bounds = new window.google.maps.LatLngBounds({ lat: b.south, lng: b.west }, { lat: b.north, lng: b.east });
+      const pad = { top: (insets.top || 0) + 14, right: (insets.right || 0) + 14, bottom: (insets.bottom || 0) + 14, left: (insets.left || 0) + 14 };
+      map.fitBounds(bounds, pad);
+      // Small countries: fitBounds can zoom to street level; keep some surroundings. Also never below minZoom.
+      window.google.maps.event.addListenerOnce(map, 'idle', () => {
+        if (map.getZoom() > 6) map.setZoom(6);
+        if (map.getZoom() < 2) map.setZoom(2);
+      });
+    },
     resetView() {
       const map = mapInstanceRef.current;
       if (map) { map.setCenter({ lat: 20, lng: 10 }); map.setZoom(2); }
@@ -305,16 +319,31 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
   return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />;
 });
 
-function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThreadIds }) {
+function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThreadIds, frameBounds = null, frameInsets = null }) {
   const currentDate = storyPlay?.currentDate || countryPlay?.currentDate;
   const grouped = groupMarkersByCountry(markers, currentDate);
+  // Country page: zoom the world drawing so the country sits in the visible band (below the overlay).
+  const boxRef = useRef(null);
+  const [size, setSize] = useState(null);
+  useLayoutEffect(() => {
+    const el = boxRef.current;
+    if (!el || !frameBounds) return undefined;
+    const read = () => setSize((prev) => (prev && prev.w === el.clientWidth && prev.h === el.clientHeight ? prev : { w: el.clientWidth, h: el.clientHeight }));
+    read();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [frameBounds]);
+  const vb = frameBounds && size && size.w > 0 && size.h > 0 ? frameViewBox(frameBounds, size, frameInsets || {}) : null;
+  const k = vb ? 1 / vb.scale : 1; // pixel-sized marks stay pixel-sized when zoomed
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: 'var(--bg)' }}>
-      <svg width="100%" height="100%" viewBox="0 0 1000 500" style={{ position: 'absolute', inset: 0 }}>
-        <rect width="1000" height="500" style={{ fill: 'var(--bg)' }} />
+    <div ref={boxRef} style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: 'var(--bg)' }} data-frame={vb ? 'country' : 'world'}>
+      <svg width="100%" height="100%" viewBox={vb ? `${vb.x} ${vb.y} ${vb.w} ${vb.h}` : `0 0 ${WORLD_W} ${WORLD_H}`} style={{ position: 'absolute', inset: 0 }}>
+        <rect x="-1000" y="-1000" width="3000" height="2500" style={{ fill: 'var(--bg)' }} />
         {CONTINENT_PATHS.map((cp, i) => (
-          <path key={i} d={cp.d} style={{ fill: 'var(--panel-3)', stroke: 'var(--hairline-strong)' }} strokeWidth="1" />
+          <path key={i} d={cp.d} style={{ fill: 'var(--panel-3)', stroke: 'var(--hairline-strong)' }} strokeWidth={k} />
         ))}
         {lines.map((item, i) => {
           const x1 = ((item.from.lng + 180) / 360) * 1000;
@@ -325,21 +354,21 @@ function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThre
           const isHighlighted = !countryThreadIds || countryThreadIds.has(item.threadId);
           return (
             <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke={item.color} strokeWidth={isCurrent ? 2 : 1} strokeOpacity={isCurrent && isHighlighted ? 0.6 : 0.15} />
+              stroke={item.color} strokeWidth={(isCurrent ? 2 : 1) * k} strokeOpacity={isCurrent && isHighlighted ? 0.6 : 0.15} />
           );
         })}
         {Object.values(grouped).map(country => {
           const x = ((country.lng + 180) / 360) * 1000;
           const y = ((90 - country.lat) / 180) * 500;
-          const r = Math.min(4 + country.count * 2, 12);
+          const r = Math.min(4 + country.count * 2, 12) * k;
           const isCurrent = !currentDate || country.hasCurrent;
           const isHighlighted = !countryThreadIds || country.topics.some(t => countryThreadIds.has(t.threadId));
           return (
             <g key={country.code}>
-              <circle cx={x} cy={y} r={isCurrent ? r + 2 : r} fill={country.color}
-                stroke={isCurrent ? country.color : '#fff'} strokeWidth={isCurrent ? 2 : 1.5} opacity={isCurrent && isHighlighted ? 1 : 0.25} />
+              <circle cx={x} cy={y} r={isCurrent ? r + 2 * k : r} fill={country.color}
+                stroke={isCurrent ? country.color : '#fff'} strokeWidth={(isCurrent ? 2 : 1.5) * k} opacity={isCurrent && isHighlighted ? 1 : 0.25} />
               {country.count > 1 && isCurrent && isHighlighted && (
-                <text x={x} y={y + 4} textAnchor="middle" fill="#fff" fontSize="9" fontWeight="bold">
+                <text x={x} y={y + 4 * k} textAnchor="middle" fill="#fff" fontSize={9 * k} fontWeight="bold">
                   {country.count}
                 </text>
               )}
@@ -559,7 +588,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
               const groups = ORDER.filter(k => groupMap[k]).map(k => ({ category: k, threads: groupMap[k] }));
               return groups.map(({ category, threads }) => {
                 const isCollapsed = collapsedCategories.has(category);
-                const dot = CATEGORY_DOT[category];
+                const dot = crisisDotVar(category);
                 const toggleCollapse = () => setCollapsedCategories(prev => {
                   const next = new Set(prev);
                   next.has(category) ? next.delete(category) : next.add(category);
@@ -748,7 +777,9 @@ function MapLegend() {
   );
 }
 
-export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp = false, defaultCountry = null, defaultThread = null, onCountryClick = null }) {
+// frameInsets = { top, right, bottom, left } px of the map covered by an overlay (the country page's
+// header bar): with `defaultCountry` the map frames that country in the remaining visible band.
+export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp = false, defaultCountry = null, defaultThread = null, onCountryClick = null, frameInsets = null }) {
   const isEmbedded = embedded;
   const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -894,8 +925,25 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
     if (defaultCountry) setActiveCountry(defaultCountry);
   }, [defaultCountry]);
 
-  // Auto-zoom when country is set and markers are ready
+  // Country page framing: the country's own bounds (not every linked story's markers), centred in the
+  // visible band. Google path uses fitBounds + padding; the SVG fallback draws the same frame.
+  const frameBounds = useMemo(() => (defaultCountry ? countryFrameBounds(regionToCountryCode(defaultCountry)) : null), [defaultCountry]);
+  const insetKey = frameInsets ? `${frameInsets.top || 0}|${frameInsets.right || 0}|${frameInsets.bottom || 0}|${frameInsets.left || 0}` : '';
   useEffect(() => {
+    if (!frameBounds) return undefined;
+    let timer = null;
+    let tries = 0;
+    const frame = () => {
+      if (googleMapRef.current) googleMapRef.current.frameBounds(frameBounds, frameInsets || {});
+      else if (tries++ < 40) timer = setTimeout(frame, 200);
+    };
+    frame();
+    return () => clearTimeout(timer);
+  }, [frameBounds, insetKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-zoom when country is set and markers are ready (no country bounds known: fall back to the story markers)
+  useEffect(() => {
+    if (frameBounds) return;
     if (!defaultCountry || !countryThreadIds || !allMarkers.length) return;
     const relevant = allMarkers.filter(m => countryThreadIds.has(m.threadId));
     if (relevant.length === 0) return;
@@ -908,7 +956,7 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
       }
     }
     tryZoom();
-  }, [defaultCountry, countryThreadIds, allMarkers]);
+  }, [defaultCountry, countryThreadIds, allMarkers, frameBounds]);
 
   const zoomToThread = useCallback((threadId) => {
     if (!googleMapRef.current || !threadId) {
@@ -1031,7 +1079,7 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
 
   const render = (status) => {
     if (status === 'FAILURE' || !googleApiKey) {
-      return <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} countryPlay={countryPlay} countryThreadIds={countryThreadIds} />;
+      return <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} countryPlay={countryPlay} countryThreadIds={countryThreadIds} frameBounds={frameBounds} frameInsets={frameInsets} />;
     }
     if (status === 'LOADING') {
       return <div className="wmap-loading"><BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" /></div>;
@@ -1117,7 +1165,7 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
             {googleApiKey ? (
               <Wrapper apiKey={googleApiKey} render={render} />
             ) : (
-              <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} countryPlay={countryPlay} countryThreadIds={countryThreadIds} />
+              <WeeklyFallbackMap markers={markers} lines={lines} storyPlay={storyPlay} countryPlay={countryPlay} countryThreadIds={countryThreadIds} frameBounds={frameBounds} frameInsets={frameInsets} />
             )}
 
             {!hidePanelProp && <MapLegend />}

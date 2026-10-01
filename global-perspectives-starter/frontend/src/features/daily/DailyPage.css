@@ -343,6 +343,7 @@
 }
 .daily-tag-cat { display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--hairline); color: var(--text-body); }
 .daily-tag-cat::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--cat-dot, var(--text-dim)); }
+.daily-tag-cat[data-dot='off']::before { display: none; }
 .daily-tag-region {
   background: var(--panel-2);
   border: 1px solid var(--hairline);

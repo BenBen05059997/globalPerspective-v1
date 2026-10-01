@@ -361,6 +361,22 @@ must_have "$T/components/StoriesChanged.jsx" "if \\(!Number.isFinite\\(baseline\
 # 12 · phone tabs READ / MAP / TIMELINE
 must_have "$T/components/StoriesHeader.jsx" "value: 'timeline', label: 'Timeline'" "phone tabs include TIMELINE"
 must_not_have "$T/components/StoriesHeader.jsx" "label: 'Changes'" "no phone CHANGES tab"
+# ─── P7a (2026-10-02): topic dots = crisis hue only; BOARD status is derived and its rule is printed ───
+must_have "$SRC/shared/ui/CategoryTag.jsx" "crisisDotVar" "CategoryTag dots use the crisis hue (crisisDotVar)"
+must_have "$SRC/shared/lib/crisisHue.js" "export function crisisDotVar" "crisisDotVar lives in shared/lib/crisisHue"
+must_not_have "$SRC/shared/styles/tokens.js" "CATEGORY_DOT *=" "the 12-colour CATEGORY_DOT palette is retired"
+for f in shared/ui/CategoryTag.jsx features/daily/DailyPage.jsx features/countries/CountryPage.jsx features/threads/components/WeeklyMap.jsx features/threads/components/StoriesBoard.jsx features/threads/components/StoryLine.jsx features/threads/components/StoriesTimeline.jsx; do
+  must_not_have "$SRC/$f" "CATEGORY_DOT" "$f has no CATEGORY_DOT palette (dots = crisis hue)"
+done
+must_have "$T/lib/storyGroups.js" "export function deriveBoardStatus" "the board status is one pure function (deriveBoardStatus)"
+must_have "$T/lib/storyGroups.js" "export const BOARD_RULE" "the board status rule is a constant (BOARD_RULE)"
+must_have "$T/components/StoriesBoard.jsx" "BOARD_RULE" "the board prints its status rule (caption)"
+must_have "$T/components/StoriesBoard.jsx" "dayCounts" "board sparkline bars come from real per-day counts (dayCounts)"
+must_not_have "$T/components/StoriesBoard.jsx" "Math\\.random|StatusGlyph" "board has no Math.random and does not reuse the situation StatusGlyph ('escalating')"
+must_not_have "$T/components/StoriesBoard.jsx" "scalating" "board never says 'escalating' (it measures coverage: 'rising')"
+must_have "$T/components/StoriesHeader.jsx" "value: 'board', label: 'Board'" "the view switch has Board"
+must_have "$T/lib/countryFrame.js" "export function frameViewBox" "country hero framing is a tested pure function (frameViewBox)"
+must_have "$T/components/WeeklyMap.jsx" "frameBounds" "the country map frames the country (Google fitBounds + SVG viewBox)"
 # 10 · /today copy promises only what is live (change-alert emails are off)
 must_not_have "$SRC/features/home/Home.jsx" "change-alerts|change alerts" "/today does not promise change-alert emails (the drift cron is off)"
 

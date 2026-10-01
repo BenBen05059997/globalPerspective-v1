@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/shared/contexts/AuthContext';
-import { ErrorProvider } from '@/shared/contexts/ErrorContext';
 
 // Mock Google Maps
 vi.mock('@googlemaps/react-wrapper', () => ({
@@ -39,15 +38,13 @@ import CountryPage from '@/features/countries/CountryPage';
 
 function renderPage(Component, path = '/') {
   return render(
-    <ErrorProvider>
-      <AuthProvider>
-        <MemoryRouter initialEntries={[path]}>
-          <Routes>
-            <Route path="*" element={<Component />} />
-          </Routes>
-        </MemoryRouter>
-      </AuthProvider>
-    </ErrorProvider>
+    <AuthProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="*" element={<Component />} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>
   );
 }
 

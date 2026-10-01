@@ -14,70 +14,70 @@
 }
 
 .desk-panel {
-  background: var(--c-panel, rgba(6,12,20,0.95));
-  border: 1px solid var(--c-hairline, rgba(95,212,255,0.2));
+  background: var(--panel);
+  border: 1px solid var(--hairline);
   border-radius: 4px;
   padding: 12px 14px;
 }
 
-.desk-changes { border-color: var(--c-hairline-strong, rgba(95,212,255,0.25)); }
+.desk-changes { border-color: var(--hairline-strong); }
 
 .desk-kicker {
   font-family: var(--c-mono, monospace);
   font-size: 10px;
   letter-spacing: 0.1em;
-  color: var(--c-accent, #5fd4ff);
+  color: var(--accent);
 }
 
 .desk-empty,
 .desk-note {
   font-size: 12px;
-  color: var(--c-text-dim, #7d8b96);
+  color: var(--text-dim);
   margin: 10px 0 0;
   line-height: 1.5;
 }
 
 .desk-empty a,
-.desk-note a { color: var(--c-accent, #5fd4ff); }
+.desk-note a { color: var(--accent); }
 
 .desk-error-line {
   font-size: 11.5px;
-  color: var(--c-warn, #ffb347);
+  color: var(--warn);
   margin: 8px 0 0;
 }
 
 .desk-row {
   margin-top: 10px;
   padding: 9px 11px;
-  background: var(--c-panel-2, rgba(12,22,34,0.9));
-  border-left: 3px solid var(--c-ok, #6fd29a);
+  background: var(--panel-2);
+  border-left: 3px solid var(--ok);
 }
 
 .desk-row-head {
   font-family: var(--c-mono, monospace);
   font-size: 9.5px;
-  color: var(--c-ok, #6fd29a);
+  color: var(--ok);
 }
 
 .desk-row-after {
   font-size: 12.5px;
   line-height: 1.4;
-  color: var(--c-text-head, #eef5f9);
+  color: var(--text-head);
   margin-top: 3px;
 }
-.desk-row-after a { color: var(--c-accent, #5fd4ff); }
+.desk-row-after a { color: var(--accent); }
 
 .desk-row-why {
   font-size: 11.5px;
   line-height: 1.4;
-  color: var(--c-text-muted, #b9c7d1);
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
 .desk-row-why-label {
   font-family: var(--c-mono, monospace);
   font-size: 8.5px;
-  color: var(--c-text-dim, #7d8b96);
+  color: var(--text-dim);
 }
 
 .desk-skeleton-row {
@@ -108,7 +108,7 @@
 }
 .desk-following-dot {
   fill: none;
-  stroke: var(--c-accent, #5fd4ff);
+  stroke: var(--accent);
   stroke-width: 2;
 }
 
@@ -121,13 +121,13 @@
 
 .desk-following-chip {
   padding: 4px 8px;
-  border: 1px solid var(--c-hairline-strong, rgba(95,212,255,0.4));
+  border: 1px solid var(--hairline-strong);
   border-radius: 12px;
   font-size: 11.5px;
-  color: var(--c-text-head, #eef5f9);
+  color: var(--text-head);
   text-decoration: none;
 }
-.desk-following-chip:hover { border-color: var(--c-accent, #5fd4ff); }
+.desk-following-chip:hover { border-color: var(--accent); }
 
 /* Saved panel nested here keeps the same .saved-* styling from Account.css */
 .desk-saved .saved-grid { margin-top: 6px; }

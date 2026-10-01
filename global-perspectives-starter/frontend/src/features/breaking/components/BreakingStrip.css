@@ -6,12 +6,14 @@
   width: 100%;
   box-sizing: border-box;
   padding: 9px 16px;
-  background: var(--accent, #a2442e);
-  color: #fff;
+  background: var(--panel-2);
+  color: var(--text-head);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--accent);
   text-decoration: none;
-  border-radius: var(--r-sm, 6px);
+  border-radius: var(--r-sm);
 }
-.bk-strip:hover { filter: brightness(1.06); }
+.bk-strip:hover { background: var(--panel-3); border-color: var(--hairline-strong); border-left-color: var(--accent); }
 
 .bk-strip-tag {
   display: inline-flex;
@@ -21,13 +23,14 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .1em;
+  color: var(--accent);
   flex-shrink: 0;
 }
 .bk-strip-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--accent);
   animation: bk-pulse 1.8s ease-in-out infinite;
 }
 @keyframes bk-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
@@ -50,7 +53,8 @@
   letter-spacing: .02em;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--panel-3);
+  color: var(--text-body);
   white-space: nowrap;
 }
 .bk-strip-go { flex-shrink: 0; font-size: 15px; }

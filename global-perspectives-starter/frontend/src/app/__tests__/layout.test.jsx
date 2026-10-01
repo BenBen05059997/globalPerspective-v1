@@ -8,7 +8,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '@/shared/contexts/AuthContext';
-import { ErrorProvider } from '@/shared/contexts/ErrorContext';
 
 vi.mock('firebase/app', () => ({
   initializeApp: vi.fn(() => ({})),
@@ -48,15 +47,13 @@ import Layout from '@/app/layout/Layout';
 
 function renderLayout(path = '/weekly') {
   return render(
-    <ErrorProvider>
-      <AuthProvider>
-        <MemoryRouter initialEntries={[path]}>
-          <Layout>
-            <div>page content</div>
-          </Layout>
-        </MemoryRouter>
-      </AuthProvider>
-    </ErrorProvider>
+    <AuthProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Layout>
+          <div>page content</div>
+        </Layout>
+      </MemoryRouter>
+    </AuthProvider>
   );
 }
 

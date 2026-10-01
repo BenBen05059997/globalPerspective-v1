@@ -25,7 +25,7 @@
 }
 .as-view-toggle button.on {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .as-section {

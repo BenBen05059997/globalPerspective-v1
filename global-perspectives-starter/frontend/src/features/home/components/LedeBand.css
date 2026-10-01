@@ -7,9 +7,9 @@
   gap: 6px 12px;
   padding: 10px 14px;
   margin: 0 0 16px;
-  border: 1px solid var(--rule, rgba(0, 0, 0, 0.1));
-  border-left: 3px solid var(--accent, #b4502e);
-  background: var(--card, #fbf9f4);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--accent);
+  background: var(--panel-2);
   border-radius: 2px;
   line-height: 1.4;
 }
@@ -19,7 +19,7 @@
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent, #b4502e);
+  color: var(--accent);
   font-weight: 600;
   flex: none;
 }
@@ -27,20 +27,20 @@
 .lede-headline {
   font-size: 15px;
   font-weight: 600;
-  color: var(--ink, #1b1714);
+  color: var(--text-head);
   flex: 1 1 240px;
   min-width: 0;
 }
 
 .lede-headline-link {
-  color: var(--ink, #1b1714);
+  color: var(--text-head);
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 .lede-headline-link:hover {
-  color: var(--accent, #b4502e);
-  border-bottom-color: var(--accent, #b4502e);
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .lede-reason {
@@ -48,8 +48,8 @@
   font-size: 10px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--ink-dim, #6b6258);
-  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-muted);
+  background: var(--panel-3);
   padding: 2px 7px;
   border-radius: 999px;
   flex: none;
@@ -59,7 +59,7 @@
 .lede-meta {
   font-family: var(--mono, monospace);
   font-size: 11px;
-  color: var(--ink-dim, #6b6258);
+  color: var(--text-muted);
   flex: none;
   margin-left: auto;
   white-space: nowrap;

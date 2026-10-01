@@ -419,3 +419,8 @@ p {
     padding: 0.75rem 1rem;
   }
 }
+
+/* Default link colour: the browser's own blue/purple is unreadable on the dark surfaces, so a bare
+   <a> reads the accent. Anything with a class sets its own colour (this is element-level, so it
+   loses to every class rule). */
+a { color: var(--accent); }

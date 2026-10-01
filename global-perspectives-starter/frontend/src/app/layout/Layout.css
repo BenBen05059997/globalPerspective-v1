@@ -319,6 +319,9 @@
 }
 
 @media (max-width: 600px) {
+  /* Bell + help + Sign in + the logo overflowed a 390px bar by 6px once the bell is configured (prod). */
+  .gp-nav { padding: 0 12px; }
+  .gp-nav-right { gap: 6px; }
   .gp-footer {
     height: auto;
     flex-direction: column;

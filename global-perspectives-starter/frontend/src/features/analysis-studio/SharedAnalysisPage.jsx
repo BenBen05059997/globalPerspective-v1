@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import SharedAnalysisView from '@/features/analysis-studio/components/SharedAnalysisView.jsx';
 import { shareConfigured, fetchShare, deleteShare, forgetShare } from '@/features/analysis-studio/lib/shareApi.js';
 import { useNoIndex } from '@/shared/hooks/useNoIndex.js';
@@ -35,7 +36,7 @@ export default function SharedAnalysisPage() {
 
   return (
     <div className="as-page as-shared-page">
-      {state.kind === 'loading' && <p className="as-muted">Loading the shared analysis…</p>}
+      {state.kind === 'loading' && <BootLoader variant="inline" label="Loading the shared analysis" text="Loading the shared analysis" />}
       {state.kind === 'off' && (
         <div className="as-shared-state">
           <h1>Shared analyses are not available yet</h1>

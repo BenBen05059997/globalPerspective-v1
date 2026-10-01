@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import SummaryDisplay from '@/features/home/components/SummaryDisplay';
 import PredictionDisplay from '@/features/home/components/PredictionDisplay';
 import TraceCauseDisplay from '@/features/home/components/TraceCauseDisplay';
@@ -37,7 +38,8 @@ function ArchiveTopicModal({ entry, onClose }) {
 
   if (!entry) return null;
 
-  return (
+  // Portalled to <body>: inside the sticky rail it sat in a lower stacking context than the topics rail.
+  return createPortal(
     <div className="archive-modal-overlay" ref={overlayRef} onClick={handleOverlayClick}>
       <div className="archive-modal">
         <div className="archive-modal-header">
@@ -132,7 +134,8 @@ function ArchiveTopicModal({ entry, onClose }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

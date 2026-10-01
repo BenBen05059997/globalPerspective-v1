@@ -247,6 +247,41 @@ must_have "$SRC/features/daily/DailyPage.jsx" "SectionHeader" "daily sections us
 must_have "$SRC/features/track-record/TrackRecordPage.jsx" "SectionHeader" "track record sections use the shared SectionHeader"
 must_not_have "$SRC/features/threads/WeeklyPage.css" "^\\.(bgt|cp)-|^\\.(share-btn|copy-briefing-btn)" "country/share rules live with their owners, not in WeeklyPage.css"
 
+# ─── P3b (2026-10-01): analyze, today, membership, static pages, breaking, account on the dark tokens ───
+for css in features/analysis-studio/AnalysisStudio.css features/analysis-studio/components/StudioDeck.css \
+           features/analysis-studio/components/StudioPictures.css features/analysis-studio/components/ProviderModal.css \
+           features/analysis-studio/components/AnalysisVisuals.css \
+           features/home/Home.css features/home/AIComponents.css features/home/components/TodayArchiveSidebar.css \
+           features/home/components/TopicNav.css features/home/components/LedeBand.css \
+           features/account/MembershipPage.css features/account/Account.css features/account/SignIn.css \
+           features/account/components/SubscribeCard.css features/account/components/Desk.css \
+           features/breaking/BreakingPage.css features/breaking/components/BreakingStrip.css \
+           features/breaking/components/NotificationBell.css app/onboarding/tour-theme.css; do
+  must_not_have "$SRC/$css" "$LIGHT_BG" "$css has no light background literals"
+done
+must_not_have "$SRC/features/home/Home.jsx" "showError\\(|useError\\(|ErrorContext" "Home.jsx no longer opens the generic error modal"
+must_have "$SRC/features/home/Home.jsx" "reportFetchError" "Home reports a failed topics load to the error sink"
+must_have "$SRC/features/home/Home.jsx" "today-unavailable" "Home shows an inline honest state when topics fail to load"
+for d in Summary Prediction TraceCause; do
+  must_have "$SRC/features/home/components/${d}Display.jsx" "AiUnavailable" "${d}Display fails inline (AiUnavailable), not in a modal"
+done
+if [ ! -e "$SRC/app/errors/ErrorModal.jsx" ] && [ ! -e "$SRC/shared/contexts/ErrorContext.jsx" ]; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) the generic ErrorModal / ErrorContext are gone"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("ErrorModal or ErrorContext came back"); echo "  $(red FAIL) ErrorModal / ErrorContext exist again"
+fi
+if ! grep -rn "Something went wrong" "$SRC" --include='*.jsx' --include='*.js' --exclude-dir=__tests__ --exclude-dir=test >/tmp/swr.out 2>/dev/null || [ ! -s /tmp/swr.out ]; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) no page renders the text \"Something went wrong\""
+else
+  FAIL=$((FAIL + 1)); FAILED+=("Something went wrong rendered: $(head -3 /tmp/swr.out)"); echo "  $(red FAIL) Something went wrong: $(head -3 /tmp/swr.out)"
+fi
+for jsx in features/static/Contact.jsx features/static/AboutContact.jsx features/static/WhitepaperPage.jsx features/static/PrivacyTerms.jsx features/static/Disclosures.jsx \
+           features/home/components/SummaryDisplay.jsx features/home/components/PredictionDisplay.jsx features/home/components/TraceCauseDisplay.jsx app/App.jsx; do
+  must_not_have "$SRC/$jsx" "#[0-9a-fA-F]{3,8}\\b|rgba?\\(" "$jsx has no colour literals (tokens only)"
+done
+must_have "$SRC/app/index.css" "^a \\{ color: var\\(--accent\\)" "bare links read the accent, not the browser blue"
+must_not_have "$SRC/shared/ui/atoms.css" "\\.(sev|rsb)-(high|elevated|moderate|low) *\\{[^}]*background" "SeverityBadge / RiskScoreBadge are outlines, not fills"
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

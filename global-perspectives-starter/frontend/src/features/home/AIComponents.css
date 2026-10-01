@@ -1,33 +1,33 @@
 /* AIComponents.css - Premium AI Toolbar & Insights */
 
 :root {
-  /* Glass effect */
-  --ai-glass-bg: rgba(255, 255, 255, 0.8);
-  --ai-glass-border: rgba(255, 255, 255, 0.5);
+  /* Glass effect: the dark panel, not a white film */
+  --ai-glass-bg: var(--panel-2);
+  --ai-glass-border: var(--hairline);
 
   /* Shadows (using global system) */
   --ai-shadow-sm: var(--shadow-sm);
   --ai-shadow-md: var(--shadow-md);
 
-  /* Accent colors + variants */
-  --ai-accent-summary: #10b981; /* Emerald */
-  --ai-accent-summary-bg: rgba(16, 185, 129, 0.08);
-  --ai-accent-summary-border: rgba(16, 185, 129, 0.2);
+  /* Accent colours + variants: the same three hues as the Summary / Predict / Trace buttons (tokens.css) */
+  --ai-accent-summary: var(--ai-summary);
+  --ai-accent-summary-bg: var(--ai-summary-soft);
+  --ai-accent-summary-border: var(--hairline-strong);
 
-  --ai-accent-predict: #8b5cf6; /* Violet */
-  --ai-accent-predict-bg: rgba(139, 92, 246, 0.08);
-  --ai-accent-predict-bg-light: rgba(139, 92, 246, 0.05);
-  --ai-accent-predict-border: rgba(139, 92, 246, 0.2);
+  --ai-accent-predict: var(--ai-predict);
+  --ai-accent-predict-bg: var(--ai-predict-soft);
+  --ai-accent-predict-bg-light: var(--ai-predict-soft);
+  --ai-accent-predict-border: var(--hairline-strong);
 
-  --ai-accent-trace: #3b82f6; /* Royal Blue */
-  --ai-accent-trace-bg: rgba(59, 130, 246, 0.08);
-  --ai-accent-trace-border: rgba(59, 130, 246, 0.2);
+  --ai-accent-trace: var(--ai-trace);
+  --ai-accent-trace-bg: var(--ai-trace-soft);
+  --ai-accent-trace-border: var(--hairline-strong);
 
   /* Chain reaction specific */
-  --chain-step-bg: #f8f9fa;
-  --chain-step-border: #e5e7eb;
+  --chain-step-bg: var(--panel-2);
+  --chain-step-border: var(--hairline);
   --chain-arrow-color: var(--ai-accent-predict);
-  --chain-step-hover-bg: #f3f4f6;
+  --chain-step-hover-bg: var(--panel-3);
 }
 
 /* --- Toolbar Container --- */
@@ -39,7 +39,7 @@
   background: var(--ai-glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--hairline);
   border-radius: 999px; /* Pill shape */
   box-shadow: var(--ai-shadow-sm);
   transition: all 0.3s ease;
@@ -58,7 +58,7 @@
 
 .ai-toolbar:hover {
   box-shadow: var(--ai-shadow-md);
-  border-color: rgba(0, 0, 0, 0.1);
+  border-color: var(--hairline);
 }
 
 /* --- AI Buttons --- */
@@ -72,7 +72,7 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 13px;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--text-body);
   background: transparent;
   border: 1px solid transparent;
   border-radius: 999px;
@@ -90,26 +90,26 @@
 /* Button Variants */
 .ai-btn-summary:hover, .ai-btn-summary.active {
   color: var(--ai-accent-summary);
-  background: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.2);
+  background: var(--ai-summary-soft);
+  border-color: var(--ai-summary);
 }
 
 .ai-btn-predict:hover, .ai-btn-predict.active {
   color: var(--ai-accent-predict);
-  background: rgba(139, 92, 246, 0.08);
-  border-color: rgba(139, 92, 246, 0.2);
+  background: var(--ai-predict-soft);
+  border-color: var(--ai-predict);
 }
 
 .ai-btn-trace:hover, .ai-btn-trace.active {
   color: var(--ai-accent-trace);
-  background: rgba(59, 130, 246, 0.08);
-  border-color: rgba(59, 130, 246, 0.2);
+  background: var(--ai-trace-soft);
+  border-color: var(--ai-trace);
 }
 
 /* Loading State */
 .ai-btn.loading {
   padding-left: 32px; /* Make room for spinner */
-  color: #9ca3af;
+  color: var(--text-dim);
 }
 
 .ai-spinner {
@@ -135,12 +135,12 @@
   padding: 12px 20px;
   background: var(--ai-glass-bg);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--hairline);
   border-radius: 999px;
   box-shadow: var(--ai-shadow-sm);
   font-size: 14px;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--text-body);
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 44px;
@@ -148,7 +148,7 @@
 
 .ai-dropdown-trigger:hover {
   box-shadow: var(--ai-shadow-md);
-  border-color: rgba(0, 0, 0, 0.1);
+  border-color: var(--hairline);
 }
 
 .ai-chevron {
@@ -166,8 +166,8 @@
   left: 0;
   right: 0;
   margin-top: 8px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
   border-radius: 12px;
   box-shadow: var(--ai-shadow-md);
   overflow: hidden;
@@ -180,11 +180,11 @@
   padding: 12px 16px;
   background: none;
   border: none;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--hairline);
   text-align: left;
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-body);
   cursor: pointer;
   transition: background 0.2s ease;
   display: flex;
@@ -198,7 +198,7 @@
 }
 
 .ai-dropdown-item:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--panel-3);
 }
 
 .ai-dropdown-item:disabled {
@@ -207,7 +207,7 @@
 }
 
 .ai-dropdown-item.loading {
-  color: #9ca3af;
+  color: var(--text-dim);
 }
 
 .ai-spinner-small {
@@ -221,7 +221,7 @@
 }
 
 .ai-checkmark {
-  color: #10b981;
+  color: var(--ai-summary);
   font-weight: bold;
   font-size: 12px;
 }
@@ -247,8 +247,8 @@
 /* --- Result Cards --- */
 .ai-result-card {
   margin-top: 16px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
   border-radius: 16px;
   box-shadow: var(--ai-shadow-md);
   overflow: hidden;
@@ -260,14 +260,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  background: rgba(250, 250, 250, 0.5);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--panel-2);
 }
 
 .ai-result-title {
   font-size: 14px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-head);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -277,7 +277,7 @@
   padding: 20px;
   font-size: 15px;
   line-height: 1.6;
-  color: #374151;
+  color: var(--text-body);
 }
 
 .ai-result-actions {
@@ -292,29 +292,29 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  color: #6b7280;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .ai-action-icon:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #111827;
+  background: var(--panel-3);
+  color: var(--text-head);
 }
 
 /* --- Tabs (for Trace Cause) --- */
 .ai-tabs {
   display: flex;
   padding: 0 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: #ffffff;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--panel-2);
 }
 
 .ai-tab {
   padding: 12px 16px;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-muted);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -323,7 +323,7 @@
 }
 
 .ai-tab:hover {
-  color: #111827;
+  color: var(--text-head);
 }
 
 .ai-tab.active {
@@ -397,7 +397,7 @@
 }
 
 .chain-step-content strong {
-  color: var(--text-primary);
+  color: var(--text-head);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -475,7 +475,7 @@
 .timeline-dot {
   width: 12px;
   height: 12px;
-  background: #000000;
+  background: var(--text-head);
   border-radius: 50%;
   flex-shrink: 0;
   z-index: 2;
@@ -485,7 +485,7 @@
 .timeline-connector {
   width: 2px;
   flex: 1;
-  background: #d1d5db;
+  background: var(--hairline-strong);
   min-height: 40px;
 }
 
@@ -511,8 +511,8 @@
 
 /* Event card */
 .timeline-event-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
   padding: var(--space-lg);
   transition: all var(--transition-base) var(--transition-ease);
@@ -533,15 +533,15 @@
 }
 
 .timeline-event-title.start {
-  color: #3b82f6; /* Blue */
+  color: var(--accent);
 }
 
 .timeline-event-title.evolve {
-  color: #f59e0b; /* Orange */
+  color: var(--warn);
 }
 
 .timeline-event-title.result {
-  color: #ef4444; /* Red */
+  color: var(--tier-high);
 }
 
 /* Event description */
@@ -580,8 +580,8 @@
    ======================================== */
 
 .impact-breakdown-container {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--panel-2);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
   padding: var(--space-lg);
   margin: var(--space-lg) 0;
@@ -590,7 +590,7 @@
 .impact-breakdown-title {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
+  color: var(--text-head);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: var(--space-lg);
@@ -619,7 +619,7 @@
 .impact-label {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
-  color: var(--text-primary);
+  color: var(--text-head);
   flex-shrink: 0;
   min-width: 80px;
 }
@@ -627,7 +627,7 @@
 .impact-bar-container {
   flex: 1;
   height: 20px;
-  background: #e5e7eb;
+  background: var(--panel-3);
   border-radius: var(--radius-sm);
   overflow: hidden;
   position: relative;
@@ -639,15 +639,15 @@
 }
 
 .impact-bar-fill.high {
-  background: #ef4444;
+  background: var(--tier-high);
 }
 
 .impact-bar-fill.moderate {
-  background: #f59e0b;
+  background: var(--tier-elevated);
 }
 
 .impact-bar-fill.low {
-  background: #3b82f6;
+  background: var(--accent);
 }
 
 .impact-level {
@@ -793,7 +793,7 @@
     min-height: 44px;
     padding: var(--space-md) var(--space-lg);
     text-align: left;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid var(--hairline);
     border-left: 3px solid transparent;
     border-radius: 0;
   }
@@ -810,7 +810,7 @@
   .ai-tab.active {
     border-left-color: var(--ai-accent-trace);
     border-bottom-color: transparent;
-    background: rgba(59, 130, 246, 0.05);
+    background: var(--ai-trace-soft);
   }
 
   /* Result cards */
@@ -846,3 +846,13 @@
     font-size: var(--font-size-base);
   }
 }
+
+/* --- Honest "unavailable" state (Summary / Prediction / Trace failed to load) --- */
+.ai-unavailable { border-style: dashed; border-color: var(--hairline-strong); }
+.ai-unavailable-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 12px 16px;
+}
+.ai-unavailable-text { font-size: 13px; color: var(--text-muted); }
+.ai-unavailable-btn { height: 32px; font-size: 12px; background: var(--panel-3); border-color: var(--hairline-strong); color: var(--text-head); }
+.ai-unavailable-btn:hover { border-color: var(--accent); color: var(--accent); }

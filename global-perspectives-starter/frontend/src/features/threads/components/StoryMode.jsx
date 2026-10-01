@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
@@ -88,7 +89,7 @@ export function BriefSlide({ thread, analysis, displayTitle, category, catColors
   return (
     <div className="sm-slide sm-slide-brief">
       <div className="sm-slide-kicker">
-        {catColors && <span className="sm-cat-badge" style={{ background: catColors.bg, color: catColors.color }}>{category}</span>}
+        {catColors && <CategoryTag category={category} />}
         <span>{rawDateLabel(from)} — {rawDateLabel(to)} · {spanDays(from, to)} day{spanDays(from, to) === 1 ? '' : 's'}</span>
       </div>
       <h2 className="sm-slide-title">{displayTitle}</h2>

@@ -44,8 +44,8 @@ function SubSection({ title, children }) {
 
 function Step({ number, title, children }) {
   return (
-    <div style={{ marginBottom: '1.5rem', paddingLeft: '1rem', borderLeft: '3px solid #3b82f6' }}>
-      <p style={{ fontWeight: 700, marginBottom: '0.5rem', color: '#3b82f6' }}>Step {number} — {title}</p>
+    <div style={{ marginBottom: '1.5rem', paddingLeft: '1rem', borderLeft: '3px solid var(--accent)' }}>
+      <p style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--accent)' }}>Step {number} — {title}</p>
       {children}
     </div>
   );
@@ -78,8 +78,8 @@ export default function WhitepaperPage() {
       </div>
 
       {/* Executive Summary */}
-      <div className="card" style={{ marginBottom: '2rem', borderLeft: '4px solid #3b82f6' }}>
-        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '1rem', color: '#3b82f6' }}>Executive Summary</h2>
+      <div className="card" style={{ marginBottom: '2rem', borderLeft: '4px solid var(--accent)' }}>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--accent)' }}>Executive Summary</h2>
         <p style={{ lineHeight: 1.7, marginBottom: '1rem' }}>
           The world produces more news than any analyst, executive, or researcher can meaningfully process. Yet the problem is not a shortage of information — it is a shortage of <em>synthesis</em>. Headlines tell you what happened yesterday. They do not tell you why it happened, how it connects to last week's events, or what comes next.
         </p>
@@ -90,7 +90,7 @@ export default function WhitepaperPage() {
           The result is not a faster news feed. It is a fundamentally different product: intelligence that shows how stories <em>move</em>, not just what happened today.
         </p>
         <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-          <p style={{ fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.9rem', color: '#3b82f6' }}>KEY CAPABILITIES</p>
+          <p style={{ fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--accent)' }}>KEY CAPABILITIES</p>
           <ul style={{ paddingLeft: '1.25rem', margin: 0, lineHeight: 1.8 }}>
             <li>AI analysis of 20+ international news sources across 6 continents, refreshed every 4 hours</li>
             <li>Narrative threading that links related events across days and geographies</li>
@@ -297,7 +297,7 @@ export default function WhitepaperPage() {
                 'Category-colored markers showing conflict, economy, politics, technology, health, and disaster stories',
                 '24-hour topic archive',
               ],
-              color: '#6b7280',
+              color: 'var(--text-muted)',
             },
             {
               tier: 'Level 2 — The Narrative Layer',
@@ -310,7 +310,7 @@ export default function WhitepaperPage() {
                 'Interactive weekly map with date playback',
                 'Thread and country deep-dive pages',
               ],
-              color: '#3b82f6',
+              color: 'var(--accent)',
             },
             {
               tier: 'Level 3 — The Full Intelligence Stack',
@@ -321,7 +321,7 @@ export default function WhitepaperPage() {
                 'Economic disruption analysis and cross-domain causal graphs',
                 'Pair and systems-level intelligence',
               ],
-              color: '#8b5cf6',
+              color: 'var(--ai-predict)',
             },
           ].map(({ tier, sub, items, color }) => (
             <div key={tier} style={{ marginBottom: '1.25rem', padding: '1.25rem', border: `1px solid ${color}`, borderRadius: 8, borderLeft: `4px solid ${color}` }}>
@@ -396,7 +396,7 @@ export default function WhitepaperPage() {
             body: 'The collapse of the aggregated mass-media news environment has produced a world of diverse, distributed, high-quality sources — but no reliable mechanism for connecting them. The value of synthesis has never been higher.',
           },
         ].map(({ heading, body }) => (
-          <div key={heading} style={{ marginBottom: '1.25rem', paddingLeft: '1rem', borderLeft: '3px solid #22c55e' }}>
+          <div key={heading} style={{ marginBottom: '1.25rem', paddingLeft: '1rem', borderLeft: '3px solid var(--ok)' }}>
             <p style={{ lineHeight: 1.7 }}>
               <strong>{heading}</strong> {body}
             </p>
@@ -428,7 +428,7 @@ export default function WhitepaperPage() {
           No account required. For partnerships, API access, or press inquiries, contact us below.
         </p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/" style={{ padding: '0.7rem 1.75rem', background: '#3b82f6', color: '#fff', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
+          <Link to="/" style={{ padding: '0.7rem 1.75rem', background: 'var(--accent)', color: 'var(--on-accent)', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
             Explore the Platform
           </Link>
         </div>

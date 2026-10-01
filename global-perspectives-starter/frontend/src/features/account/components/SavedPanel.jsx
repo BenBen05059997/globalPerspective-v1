@@ -5,10 +5,10 @@ import { threadPath } from '@/shared/lib/threadPath';
 // Saved list (A3 · K1 "SAVED"). Extracted from Account.jsx so both the account shell and the
 // Desk panel (A4) can render it without a circular import between the two.
 const TYPE_COLORS = {
-  thread:  { border: '#3b82f6', badge: '#dbeafe', badgeText: '#1e40af' },
-  country: { border: '#10b981', badge: '#d1fae5', badgeText: '#065f46' },
-  daily:   { border: '#8b5cf6', badge: '#ede9fe', badgeText: '#5b21b6' },
-  pair:    { border: '#f59e0b', badge: '#fef3c7', badgeText: '#92400e' },
+  thread:  { border: 'var(--accent)', badge: 'var(--accent-wash)', badgeText: 'var(--accent)' },
+  country: { border: 'var(--ok)', badge: 'var(--tier-low-wash)', badgeText: 'var(--ok)' },
+  daily:   { border: 'var(--ai-predict)', badge: 'var(--ai-predict-soft)', badgeText: 'var(--ai-predict)' },
+  pair:    { border: 'var(--warn)', badge: 'var(--tier-elevated-wash)', badgeText: 'var(--warn)' },
 };
 
 const TYPE_LABELS = {
@@ -164,7 +164,7 @@ export function SavedPanel({ savedItems, savedLoading, onUnsave }) {
 
       <div className="saved-grid">
         {savedLoading ? (
-          <div style={{ gridColumn: '1/-1', padding: '2rem 0', color: 'var(--c-text-dim, #7d8b96)', fontSize: '0.875rem' }}>
+          <div style={{ gridColumn: '1/-1', padding: '2rem 0', color: 'var(--text-dim)', fontSize: '0.875rem' }}>
             Loading saved items…
           </div>
         ) : filtered.length === 0 ? (

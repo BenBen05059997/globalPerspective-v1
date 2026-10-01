@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-overlay);
-  background: rgba(10, 10, 10, 0.45);
+  background: var(--strip);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,7 +101,7 @@
   padding: 8px 18px;
   font-size: var(--text-sm);
   font-weight: 600;
-  color: #fff;
+  color: var(--on-accent);
   cursor: pointer;
 }
 .pm-save:hover { background: var(--accent-deep); border-color: var(--accent-deep); }

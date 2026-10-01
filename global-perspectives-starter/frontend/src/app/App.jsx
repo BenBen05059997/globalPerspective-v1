@@ -7,9 +7,7 @@ import Layout from '@/app/layout/Layout';
 // from STAGE0_FIXES_PLAN.md item (g), when it was the most common first paint. `/` is now the
 // lazy SituationHome console; revisit whether /today should be lazy too.
 import Home from '@/features/home/Home';
-import { ErrorProvider } from '@/shared/contexts/ErrorContext';
 import { ErrorBoundary } from '@/app/errors/ErrorHandling';
-import ErrorModal from '@/app/errors/ErrorModal';
 import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
 import { setAuthProvider } from '@/shared/api/restProxy';
 import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
@@ -60,12 +58,12 @@ function NotFound() {
     <div style={{ textAlign: 'center', padding: '4rem 1rem', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ fontSize: '3rem', marginBottom: 16 }}>—</div>
       <h2 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 12px' }}>Page not found</h2>
-      <p style={{ color: '#6b7280', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 24px' }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 24px' }}>
         That URL doesn't lead anywhere. Head back to the map or browse the weekly story arcs.
       </p>
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-        <Link to="/" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>← Map</Link>
-        <Link to="/weekly" style={{ color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Weekly →</Link>
+        <Link to="/" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>← Map</Link>
+        <Link to="/weekly" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Weekly →</Link>
       </div>
     </div>
   );
@@ -116,52 +114,49 @@ export default function App() {
   useLayoutEffect(() => { removeStaticBoot(); }, []);
 
   return (
-    <ErrorProvider>
-      <AuthProvider>
-        <BrowserRouter basename={basename}>
-          <AuthBridge />
-          <Layout>
-            <ErrorBoundary>
-            <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<SituationHome />} />
-              <Route path="/today" element={<Home />} />
-              <Route path="/map" element={<MapRedirect />} />
-              <Route path="/privacy" element={<PrivacyTerms />} />
-              <Route path="/about" element={<AboutContact />} />
-              <Route path="/disclosures" element={<Disclosures />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/daily" element={<DailyPage />} />
-              <Route path="/daily/:dateKey" element={<DailyPage />} />
-              <Route path="/economy" element={<EconomyPage />} />
-              <Route path="/analyze" element={<AnalysisStudio />} />
-              <Route path="/analyze/s/:id" element={<SharedAnalysisPage />} />
-              <Route path="/membership" element={<MembershipPage />} />
-              <Route path="/track-record" element={<TrackRecordPage />} />
-              <Route path="/track-record/text" element={<TrackRecordText />} />
-              <Route path="/weekly-brief" element={<WeeklyBriefPage />} />
-              <Route path="/briefings" element={<BriefingsPage />} />
-              <Route path="/weekly-markets" element={<WeeklyMarketsPage />} />
-              <Route path="/breaking" element={<BreakingFeedPage />} />
-              <Route path="/breaking/:id" element={<BreakingDetailPage />} />
-              <Route path="/weekly" element={<WeeklyPage />} />
-              <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
-              <Route path="/weekly/countries" element={<CountryListPage />} />
-              <Route path="/weekly/country/:countryName" element={<CountryPage />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/whitepaper" element={<WhitepaperPage />} />
-              <Route path="/spider-demo" element={<SpiderDemo />} />
-              <Route path="/__boom" element={<Boom />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            </Suspense>
-            </ErrorBoundary>
-          </Layout>
-        </BrowserRouter>
-        <ErrorModal />
-      </AuthProvider>
-    </ErrorProvider>
+    <AuthProvider>
+      <BrowserRouter basename={basename}>
+        <AuthBridge />
+        <Layout>
+          <ErrorBoundary>
+          <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<SituationHome />} />
+            <Route path="/today" element={<Home />} />
+            <Route path="/map" element={<MapRedirect />} />
+            <Route path="/privacy" element={<PrivacyTerms />} />
+            <Route path="/about" element={<AboutContact />} />
+            <Route path="/disclosures" element={<Disclosures />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/daily" element={<DailyPage />} />
+            <Route path="/daily/:dateKey" element={<DailyPage />} />
+            <Route path="/economy" element={<EconomyPage />} />
+            <Route path="/analyze" element={<AnalysisStudio />} />
+            <Route path="/analyze/s/:id" element={<SharedAnalysisPage />} />
+            <Route path="/membership" element={<MembershipPage />} />
+            <Route path="/track-record" element={<TrackRecordPage />} />
+            <Route path="/track-record/text" element={<TrackRecordText />} />
+            <Route path="/weekly-brief" element={<WeeklyBriefPage />} />
+            <Route path="/briefings" element={<BriefingsPage />} />
+            <Route path="/weekly-markets" element={<WeeklyMarketsPage />} />
+            <Route path="/breaking" element={<BreakingFeedPage />} />
+            <Route path="/breaking/:id" element={<BreakingDetailPage />} />
+            <Route path="/weekly" element={<WeeklyPage />} />
+            <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
+            <Route path="/weekly/countries" element={<CountryListPage />} />
+            <Route path="/weekly/country/:countryName" element={<CountryPage />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/whitepaper" element={<WhitepaperPage />} />
+            <Route path="/spider-demo" element={<SpiderDemo />} />
+            <Route path="/__boom" element={<Boom />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          </Suspense>
+          </ErrorBoundary>
+        </Layout>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

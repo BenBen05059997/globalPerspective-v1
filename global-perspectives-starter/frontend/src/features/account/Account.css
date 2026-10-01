@@ -14,8 +14,8 @@
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px 20px 40px;
-  background: var(--c-bg, #070d15);
-  color: var(--c-text-body, #c9d6df);
+  background: var(--bg);
+  color: var(--text-body);
   min-height: 60vh;
 }
 
@@ -36,27 +36,27 @@
   border-radius: 3px;
   cursor: pointer;
   background: transparent;
-  border: 1px solid var(--c-hairline, rgba(95,212,255,0.18));
+  border: 1px solid var(--hairline);
   font: inherit;
 }
 
 .acct-rail-btn--active {
-  background: rgba(95,212,255,0.1);
-  border-color: var(--c-accent, #5fd4ff);
+  background: var(--accent-wash);
+  border-color: var(--accent);
 }
 
 .acct-rail-label {
   display: block;
   font-size: 13px;
-  color: var(--c-text-head, #eef5f9);
+  color: var(--text-head);
 }
 
-.acct-rail-btn--active .acct-rail-label { color: var(--c-accent, #5fd4ff); }
+.acct-rail-btn--active .acct-rail-label { color: var(--accent); }
 
 .acct-rail-sub {
   display: block;
   font-size: 10.5px;
-  color: var(--c-text-dim, #7d8b96);
+  color: var(--text-dim);
   margin-top: 2px;
 }
 
@@ -66,20 +66,20 @@
   font-family: var(--c-mono, monospace);
   font-size: 10px;
   letter-spacing: 0.12em;
-  color: var(--c-accent, #5fd4ff);
+  color: var(--accent);
 }
 
 .acct-section-title {
   font-family: var(--c-serif, serif);
   font-size: 24px;
   font-weight: 600;
-  color: var(--c-text-head, #eef5f9);
+  color: var(--text-head);
   margin: 4px 0 0;
 }
 
 .acct-section-sub {
   font-size: 12.5px;
-  color: var(--c-text-dim, #7d8b96);
+  color: var(--text-dim);
   margin: 4px 0 14px;
   max-width: 900px;
 }
@@ -109,7 +109,7 @@
 .acct-signedout-list {
   margin: 14px 0 18px;
   padding-left: 20px;
-  color: var(--c-text-body, #c9d6df);
+  color: var(--text-body);
   font-size: 13.5px;
   line-height: 1.7;
 }
@@ -117,55 +117,55 @@
 
 /* Console overrides for the moved panels (Desk/Alerts/Studio use `.account-panel` /
    `.account-key-*`; SavedPanel uses `.saved-*`) — visual only, no behavior change. */
-.gp-console .account-panel-title { color: var(--c-text-head, #eef5f9); }
-.gp-console .account-panel-desc { color: var(--c-text-dim, #7d8b96); }
-.gp-console .account-panel-desc a { color: var(--c-accent, #5fd4ff); }
+.gp-console .account-panel-title { color: var(--text-head); }
+.gp-console .account-panel-desc { color: var(--text-dim); }
+.gp-console .account-panel-desc a { color: var(--accent); }
 .gp-console .account-key-card {
-  border-color: var(--c-hairline, rgba(95,212,255,0.18));
-  background: var(--c-panel, rgba(6,12,20,0.95));
+  border-color: var(--hairline);
+  background: var(--panel);
 }
-.gp-console .account-key-label { color: var(--c-text-dim, #7d8b96); }
-.gp-console .account-key-val { color: var(--c-text-head, #eef5f9); }
+.gp-console .account-key-label { color: var(--text-dim); }
+.gp-console .account-key-val { color: var(--text-head); }
 .gp-console .account-key-btn {
-  border-color: var(--c-hairline-strong, rgba(95,212,255,0.3));
-  background: var(--c-panel-2, #0b1622);
-  color: var(--c-text-head, #eef5f9);
+  border-color: var(--hairline-strong);
+  background: var(--panel-2);
+  color: var(--text-head);
 }
-.gp-console .account-key-btn:hover { border-color: var(--c-accent, #5fd4ff); }
-.gp-console .account-key-btn--danger { color: var(--c-error, #ff6a4d); border-color: rgba(255,106,77,0.4); }
-.gp-console .account-key-btn--danger:hover { background: rgba(255,106,77,0.1); border-color: var(--c-error, #ff6a4d); }
+.gp-console .account-key-btn:hover { border-color: var(--accent); }
+.gp-console .account-key-btn--danger { color: var(--error); border-color: var(--tier-high); }
+.gp-console .account-key-btn--danger:hover { background: var(--tier-high-wash); border-color: var(--error); }
 
 .gp-console .saved-card {
-  background: var(--c-panel, rgba(6,12,20,0.95));
-  border-color: var(--c-hairline, rgba(95,212,255,0.18));
+  background: var(--panel);
+  border-color: var(--hairline);
 }
-.gp-console .saved-card-title { color: var(--c-text-head, #eef5f9); }
+.gp-console .saved-card-title { color: var(--text-head); }
 .gp-console .saved-card-meta,
-.gp-console .saved-card-time { color: var(--c-text-dim, #7d8b96); }
+.gp-console .saved-card-time { color: var(--text-dim); }
 .gp-console .saved-filter-chip {
-  border-color: var(--c-hairline, rgba(95,212,255,0.18));
-  color: var(--c-text-dim, #7d8b96);
+  border-color: var(--hairline);
+  color: var(--text-dim);
 }
 .gp-console .saved-filter-chip--active {
-  background: var(--c-accent, #5fd4ff);
-  border-color: var(--c-accent, #5fd4ff);
-  color: #04070c;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
-.gp-console .saved-empty { color: var(--c-text-dim, #7d8b96); }
-.gp-console .saved-empty-title { color: var(--c-text-head, #eef5f9); }
+.gp-console .saved-empty { color: var(--text-dim); }
+.gp-console .saved-empty-title { color: var(--text-head); }
 
 .gp-console .btn-gp {
-  border-color: var(--c-hairline-strong, rgba(95,212,255,0.3));
-  background: var(--c-panel-2, #0b1622);
-  color: var(--c-text-head, #eef5f9);
+  border-color: var(--hairline-strong);
+  background: var(--panel-2);
+  color: var(--text-head);
 }
-.gp-console .btn-gp:hover { border-color: var(--c-accent, #5fd4ff); color: var(--c-accent, #5fd4ff); }
+.gp-console .btn-gp:hover { border-color: var(--accent); color: var(--accent); }
 .gp-console .btn-gp.accent {
-  background: var(--c-accent, #5fd4ff);
-  border-color: var(--c-accent, #5fd4ff);
-  color: #04070c;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
-.gp-console .btn-gp.accent:hover { background: #8fe0ff; border-color: #8fe0ff; }
+.gp-console .btn-gp.accent:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
 
 
 
@@ -184,25 +184,25 @@
 
 .saved-filter-chip {
   background: none;
-  border: 1.5px solid var(--border-color, #e5e7eb);
+  border: 1.5px solid var(--hairline);
   border-radius: 999px;
   padding: 3px 12px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-muted, #6b7280);
+  color: var(--text-muted);
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
 .saved-filter-chip:hover {
-  border-color: #9ca3af;
-  color: var(--text-primary, #111827);
+  border-color: var(--hairline-strong);
+  color: var(--text-head);
 }
 
 .saved-filter-chip--active {
-  background: #1e40af;
-  border-color: #1e40af;
-  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
 
 /* Cards grid */
@@ -221,8 +221,8 @@
 /* Individual card */
 .saved-card {
   position: relative;
-  background: var(--bg-primary, #fff);
-  border: 1.5px solid var(--border-color, #e5e7eb);
+  background: var(--bg-primary);
+  border: 1.5px solid var(--hairline);
   border-radius: 10px;
   padding: 0.85rem 1rem;
   padding-left: 1.1rem;
@@ -236,7 +236,7 @@
 }
 
 .saved-card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.09);
+  box-shadow: 0 4px 16px var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -267,14 +267,14 @@
 
 .saved-card-time {
   font-size: 0.72rem;
-  color: var(--text-muted, #9ca3af);
+  color: var(--text-muted);
   margin-right: 28px; /* space for unsave btn */
 }
 
 .saved-card-title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-primary, #111827);
+  color: var(--text-head);
   line-height: 1.4;
   margin-bottom: 0.3rem;
   display: -webkit-box;
@@ -285,7 +285,7 @@
 
 .saved-card-meta {
   font-size: 0.75rem;
-  color: var(--text-muted, #9ca3af);
+  color: var(--text-muted);
 }
 
 .saved-card-unsave {
@@ -296,7 +296,7 @@
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: #ef4444;
+  color: var(--tier-high);
   opacity: 0.7;
   transition: opacity 0.15s, transform 0.15s;
   border-radius: 4px;
@@ -316,7 +316,7 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 3rem 1rem;
-  color: var(--text-muted, #9ca3af);
+  color: var(--text-muted);
 }
 
 .saved-empty-icon {
@@ -327,7 +327,7 @@
 .saved-empty-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-primary, #374151);
+  color: var(--text-head);
   margin-bottom: 0.4rem;
 }
 
@@ -339,12 +339,12 @@
 /* ── Analysis Studio key panel ──────────────────── */
 .account-panel { padding: 8px 2px; }
 .account-panel-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 6px; }
-.account-panel-desc { color: var(--text-muted, #6b7280); font-size: 0.875rem; line-height: 1.5; margin: 0 0 16px; max-width: 60ch; }
+.account-panel-desc { color: var(--text-muted); font-size: 0.875rem; line-height: 1.5; margin: 0 0 16px; max-width: 60ch; }
 .account-key-card {
-  border: 1px solid var(--line, #e5e7eb);
+  border: 1px solid var(--hairline);
   border-radius: 12px;
   padding: 16px;
-  background: var(--card, #fff);
+  background: var(--panel-2);
   max-width: 460px;
 }
 .account-key-row {
@@ -355,23 +355,23 @@
   padding: 6px 0;
   font-size: 0.9rem;
 }
-.account-key-label { color: var(--text-muted, #6b7280); }
-.account-key-val { color: var(--ink, #111827); font-weight: 500; }
+.account-key-label { color: var(--text-muted); }
+.account-key-val { color: var(--text-head); font-weight: 500; }
 .account-key-mono { font-family: var(--mono, monospace); font-weight: 400; }
 .account-key-actions { display: flex; gap: 10px; margin-top: 14px; }
 .account-key-btn {
   padding: 8px 14px;
-  border: 1px solid var(--line, #d1d5db);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
-  background: var(--paper, #fff);
+  background: var(--bg);
   font-size: 0.875rem;
-  color: var(--ink, #111827);
+  color: var(--text-head);
   cursor: pointer;
 }
-.account-key-btn:hover { border-color: var(--line-2, #9ca3af); }
-.account-key-btn--danger { color: #c0392b; border-color: #e7b9b1; }
-.account-key-btn--danger:hover { background: #fbe9e3; border-color: #c0392b; }
-.acct-signedout-note { font-size: 12.5px; color: var(--c-text-dim); margin: 10px 0 0; }
+.account-key-btn:hover { border-color: var(--hairline-strong); }
+.account-key-btn--danger { color: var(--tier-high); border-color: var(--tier-high); }
+.account-key-btn--danger:hover { background: var(--tier-high-wash); border-color: var(--tier-high); }
+.acct-signedout-note { font-size: 12.5px; color: var(--text-dim); margin: 10px 0 0; }
 /* Saved-count badge on the Desk rail item (kept after the old tab strip was removed). */
 .account-tab-badge {
   display: inline-block;
@@ -380,6 +380,6 @@
   border-radius: 999px;
   font-family: var(--c-mono);
   font-size: 10px;
-  background: rgba(95, 212, 255, 0.14);
-  color: var(--c-accent);
+  background: var(--accent-wash);
+  color: var(--accent);
 }

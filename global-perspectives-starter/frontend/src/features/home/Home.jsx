@@ -10,7 +10,8 @@ import TodayArchiveSidebar from '@/features/home/components/TodayArchiveSidebar'
 import { useTodayArchive } from '@/features/home/hooks/useTodayArchive';
 import contentService from '@/shared/data/contentService';
 import { categorizeTopicsByRegion } from '@/shared/lib/countryMapping';
-import { useError } from '@/shared/contexts/ErrorContext';
+import { reportFetchError } from '@/shared/api/errorSink';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
@@ -79,7 +80,6 @@ function Home() {
     return m;
   }, [allDisruptions]);
   const { entries: archiveEntries } = useTodayArchive();
-  const { showError } = useError();
 
   const filteredArchiveEntries = React.useMemo(() => {
     if (!archiveEntries.length || !topics.length) return archiveEntries;
@@ -165,9 +165,11 @@ function Home() {
   const MAX_RETRIES = 6;
   const RETRY_DELAY_MS = 10000;
 
+  // A failed topics load is shown in place (the "Couldn't load today's topics" panel below) and
+  // reported to the passive client-error sink; there is no modal and no reader-facing error text.
   useEffect(() => {
-    if (error) showError(error);
-  }, [error, showError]);
+    if (error) reportFetchError('today-topics', new Error(error));
+  }, [error]);
 
   useEffect(() => { document.title = 'Global Perspectives™ — AI-Powered News Intelligence'; }, []);
 
@@ -210,7 +212,6 @@ function Home() {
       } else {
         setSummaryErrors(prev => ({ ...prev, [id]: message }));
         setSummaryLoading(prev => ({ ...prev, [id]: false }));
-        showError(message);
       }
     }
   };
@@ -266,7 +267,6 @@ function Home() {
       } else {
         setPredictionErrors(prev => ({ ...prev, [id]: message }));
         setPredictionLoading(prev => ({ ...prev, [id]: false }));
-        showError(message);
       }
     }
   };
@@ -305,7 +305,6 @@ function Home() {
       const message = e?.message || String(e);
       setTraceCauseErrors(prev => ({ ...prev, [id]: message }));
       setTraceCauseLoading(prev => ({ ...prev, [id]: false }));
-      showError(message);
     }
   };
 
@@ -427,10 +426,13 @@ function Home() {
       <SubscribeCard variant="home" />
 
       {/* Loading */}
-      {loading && (
-        <div className="home-loading">
-          <span className="home-loading-spin" />
-          <span className="home-loading-label">Loading topics</span>
+      {loading && <BootLoader variant="inline" label="Loading topics" text="Loading topics" />}
+
+      {/* Honest empty state: the topics call failed and there is nothing cached to show */}
+      {!loading && error && totalTopics === 0 && (
+        <div className="home-unavailable" role="status" data-testid="today-unavailable">
+          <p>Couldn't load today's topics.</p>
+          <button type="button" className="home-unavailable-btn" onClick={refetch}>Retry</button>
         </div>
       )}
 

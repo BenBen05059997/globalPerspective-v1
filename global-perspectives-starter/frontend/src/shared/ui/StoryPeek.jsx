@@ -9,7 +9,7 @@ export default function StoryPeek({ id, data, style }) {
     <div id={id} role="tooltip" className="gp-story-peek" style={style}>
       {category ? (
         <div className="gp-story-peek-cat">
-          <span className="gp-story-peek-dot" style={{ background: hue || '#9aa4b2' }} aria-hidden="true" />
+          <span className="gp-story-peek-dot" style={{ background: hue || 'var(--text-dim)' }} aria-hidden="true" />
           {category}
         </div>
       ) : null}

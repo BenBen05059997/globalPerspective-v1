@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import AiUnavailable from '@/features/home/components/AiUnavailable';
 import '@/features/home/AIComponents.css';
 
 /**
@@ -43,7 +44,7 @@ const SummaryDisplay = ({
 
     if (parts.length <= 1) {
       return (
-        <p style={{ margin: '0 0 12px', lineHeight: '1.6', color: '#4b5563' }}>
+        <p style={{ margin: '0 0 12px', lineHeight: '1.6', color: 'var(--text-body)' }}>
           {normalized}
         </p>
       );
@@ -52,7 +53,7 @@ const SummaryDisplay = ({
     return parts.map((paragraph, idx) => (
       <div key={`summary-part-${idx}`} style={{ display: 'flex', gap: '10px', marginBottom: '8px', paddingLeft: '4px' }}>
         <span style={{ color: 'var(--ai-accent-summary)', fontSize: '1.2em', lineHeight: '1' }}>•</span>
-        <span style={{ lineHeight: '1.6', color: '#4b5563' }}>{paragraph}</span>
+        <span style={{ lineHeight: '1.6', color: 'var(--text-body)' }}>{paragraph}</span>
       </div>
     ));
   };
@@ -62,27 +63,14 @@ const SummaryDisplay = ({
       <div ref={containerRef} className="ai-result-card" style={{ padding: '24px', textAlign: 'center' }}>
         <div className="ai-spinner" style={{ position: 'relative', left: 'auto', margin: '0 auto 12px', width: '24px', height: '24px', color: 'var(--ai-accent-summary)' }}></div>
         <div className="loading-text">
-          <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>Generating concise summary...</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Generating concise summary...</p>
         </div>
       </div>
     );
   }
 
   if (error) {
-    return (
-      <div ref={containerRef} className="ai-result-card" style={{ borderColor: '#fca5a5' }}>
-        <div className="ai-result-header" style={{ background: '#fef2f2' }}>
-          <div className="ai-result-title" style={{ color: '#991b1b' }}>Summary Failed</div>
-          <div className="ai-result-actions">
-            <button className="ai-btn" onClick={onRetry} style={{ height: '28px', fontSize: '12px', background: '#fff' }}>Retry</button>
-            <button className="ai-btn" onClick={onClear} style={{ height: '28px', fontSize: '12px', background: '#fff' }}>Close</button>
-          </div>
-        </div>
-        <div className="ai-result-content">
-          <p style={{ color: '#b91c1c', margin: 0 }}>{error}</p>
-        </div>
-      </div>
-    );
+    return <AiUnavailable error={error} containerRef={containerRef} what="Summary" onRetry={onRetry} onClear={onClear} />;
   }
 
   if (!summary) return null;
@@ -93,7 +81,7 @@ const SummaryDisplay = ({
         <div className="ai-result-title" style={{ color: 'var(--ai-accent-summary)' }}>
           AI Key Takeaways
         </div>
-        <div style={{ color: '#9ca3af', fontSize: '12px' }}>
+        <div style={{ color: 'var(--text-dim)', fontSize: '12px' }}>
           {isCollapsed ? 'Show' : 'Hide'}
         </div>
       </div>
@@ -104,8 +92,8 @@ const SummaryDisplay = ({
             {renderContent(summary.content)}
           </div>
 
-          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: '#9ca3af' }}>Fast-Track Summary v1.0</span>
+          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--hairline)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>Fast-Track Summary v1.0</span>
             <div className="ai-result-actions">
               <div className="ai-action-icon" onClick={onClear} title="Close">✕</div>
             </div>

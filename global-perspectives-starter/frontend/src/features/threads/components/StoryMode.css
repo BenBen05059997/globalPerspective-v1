@@ -1,8 +1,8 @@
 /* StoryMode — S2.1 (desktop). DS1 console tokens (.gp-console, tokens.css) only; no new hues. */
 
 .sm-root {
-  background: var(--c-bg);
-  color: var(--c-text-body);
+  background: var(--bg);
+  color: var(--text-body);
   border-radius: var(--c-radius-md);
   overflow: hidden;
   font-family: var(--c-sans);
@@ -16,29 +16,29 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--c-space-3) var(--c-space-4);
-  background: var(--c-panel-2);
-  border-bottom: 1px solid var(--c-hairline);
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--hairline);
   flex: 0 0 auto;
 }
 .sm-topbar-label {
   font-family: var(--c-mono);
   font-size: var(--c-hud-label-size);
   letter-spacing: var(--c-hud-label-tracking);
-  color: var(--c-accent);
+  color: var(--accent);
 }
 .sm-readfull-btn {
   font-family: var(--c-mono);
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: var(--c-text-head);
+  color: var(--text-head);
   background: transparent;
-  border: 1px solid var(--c-hairline-strong);
+  border: 1px solid var(--hairline-strong);
   border-radius: var(--c-radius-sm);
   padding: 6px 12px;
   min-height: var(--c-tap-min);
   cursor: pointer;
 }
-.sm-readfull-btn:hover, .sm-readfull-btn:focus-visible { border-color: var(--c-accent); color: var(--c-accent); }
+.sm-readfull-btn:hover, .sm-readfull-btn:focus-visible { border-color: var(--accent); color: var(--accent); }
 
 .sm-body {
   display: flex;
@@ -49,12 +49,12 @@
 .sm-drawers-rail {
   width: 180px;
   flex: 0 0 180px;
-  border-right: 1px solid var(--c-hairline);
+  border-right: 1px solid var(--hairline);
   padding: var(--c-space-3);
   display: flex;
   flex-direction: column;
   gap: var(--c-space-2);
-  background: var(--c-panel);
+  background: var(--panel);
   overflow-y: auto;
 }
 .sm-drawer-btn {
@@ -62,22 +62,22 @@
   font-size: 11px;
   letter-spacing: 0.08em;
   text-align: left;
-  color: var(--c-text-muted);
+  color: var(--text-muted);
   background: transparent;
-  border: 1px solid var(--c-hairline);
+  border: 1px solid var(--hairline);
   border-radius: var(--c-radius-sm);
   padding: 10px 12px;
   min-height: var(--c-tap-min);
   cursor: pointer;
 }
 .sm-drawer-btn.on, .sm-drawer-btn:hover, .sm-drawer-btn:focus-visible {
-  color: var(--c-accent);
-  border-color: var(--c-hairline-strong);
+  color: var(--accent);
+  border-color: var(--hairline-strong);
 }
 .sm-drawer-body {
   font-size: 13px;
   line-height: 1.5;
-  color: var(--c-text-body);
+  color: var(--text-body);
   padding: var(--c-space-2) var(--c-space-1) var(--c-space-3);
 }
 .sm-drawer-step { margin-bottom: var(--c-space-3); }
@@ -85,13 +85,13 @@
   font-family: var(--c-mono);
   font-size: 10px;
   letter-spacing: 0.06em;
-  color: var(--c-text-dim);
+  color: var(--text-dim);
   text-transform: uppercase;
   margin-bottom: 2px;
 }
 .sm-who-list, .sm-sources-list { list-style: none; margin: 0; padding: 0; }
-.sm-who-list li, .sm-sources-list li { padding: 4px 0; border-bottom: 1px solid var(--c-hairline); font-size: 12.5px; }
-.sm-viewfrom-hd { font-size: 12px; color: var(--c-text-muted); margin-bottom: 8px; }
+.sm-who-list li, .sm-sources-list li { padding: 4px 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; }
+.sm-viewfrom-hd { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
 .sm-viewfrom-row { font-size: 12.5px; margin-bottom: 6px; }
 
 /* ── Stage: map + slide card side by side (review fix #5 — the card used to float on top of
@@ -107,14 +107,14 @@
 .sm-mapwrap { flex: 1 1 auto; min-width: 0; height: 100%; }
 .sm-maploading {
   display: flex; align-items: center; justify-content: center;
-  color: var(--c-text-dim); font-family: var(--c-mono); font-size: 12px;
+  color: var(--text-dim); font-family: var(--c-mono); font-size: 12px;
 }
 /* The map component (SituationMap3D/RadarMap) owns its `.sm-*` class names; their base styling
    lives in SituationHome.css, which story mode doesn't load. Scope the few needed here instead of
    pulling in the whole /map stylesheet (review fix #6). */
 .sm-mapwrap .sm-wrap { position: relative; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(130% 100% at 50% 0%, #131a26 0%, #0d1017 60%, #090c12 100%); }
 .sm-mapwrap .sm-globe-foot { position: absolute; right: 12px; bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 8px; }
-.sm-mapwrap .sm-attrib { font-family: var(--c-mono); font-size: 10px; letter-spacing: 0.03em; color: var(--c-text-dim); }
+.sm-mapwrap .sm-attrib { font-family: var(--c-mono); font-size: 10px; letter-spacing: 0.03em; color: var(--text-dim); }
 /* The story map is held still, centred on the story's country — no idle spin, so its play/pause
    control has nothing to control here (review fix #6). */
 .sm-mapwrap .sm-spin-ctl { display: none; }
@@ -126,8 +126,8 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  background: var(--c-panel);
-  border-left: 1px solid var(--c-hairline-strong);
+  background: var(--panel);
+  border-left: 1px solid var(--hairline-strong);
   box-shadow: -8px 0 24px rgba(0,0,0,0.35);
 }
 .sm-slidenav {
@@ -139,15 +139,15 @@
 }
 .sm-slidenav-btn {
   background: transparent;
-  border: 1px solid var(--c-hairline);
-  color: var(--c-text-head);
+  border: 1px solid var(--hairline);
+  color: var(--text-head);
   border-radius: var(--c-radius-sm);
   min-width: 36px;
   min-height: 36px;
   cursor: pointer;
 }
 .sm-slidenav-btn:disabled { opacity: 0.3; cursor: default; }
-.sm-slidenav-btn:not(:disabled):hover { border-color: var(--c-accent); color: var(--c-accent); }
+.sm-slidenav-btn:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
 .sm-slidedots {
   flex: 1;
   display: flex;
@@ -159,14 +159,14 @@
   font-family: var(--c-mono);
   font-size: 9px;
   letter-spacing: 0.05em;
-  color: var(--c-text-dim);
+  color: var(--text-dim);
   background: transparent;
-  border: 1px solid var(--c-hairline);
+  border: 1px solid var(--hairline);
   border-radius: var(--c-radius-sm);
   padding: 3px 6px;
   cursor: pointer;
 }
-.sm-slidedot.on { color: var(--c-bg); background: var(--c-accent); border-color: var(--c-accent); }
+.sm-slidedot.on { color: var(--bg); background: var(--accent); border-color: var(--accent); }
 
 /* Review fix #8/#9: the card's body scrolls WITHIN a fixed-height card (never grows past the
    viewport) and gets a bottom fade so a clipped slide is an obvious, not a silent, cut. */
@@ -180,7 +180,7 @@
   position: absolute;
   left: 0; right: 0; bottom: 0;
   height: 30px;
-  background: linear-gradient(to bottom, transparent, var(--c-panel));
+  background: linear-gradient(to bottom, transparent, var(--panel));
   pointer-events: none;
 }
 .sm-more-btn {
@@ -189,7 +189,7 @@
   font-family: var(--c-mono);
   font-size: 11px;
   letter-spacing: 0.03em;
-  color: var(--c-accent);
+  color: var(--accent);
   background: none;
   border: none;
   cursor: pointer;
@@ -201,7 +201,7 @@
   font-family: var(--c-mono);
   font-size: 10px;
   letter-spacing: 0.06em;
-  color: var(--c-text-dim);
+  color: var(--text-dim);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -212,60 +212,59 @@
   font-family: var(--c-serif);
   font-size: 20px;
   line-height: 1.25;
-  color: var(--c-text-head);
+  color: var(--text-head);
   margin: 0 0 10px;
 }
-.sm-slide-text { font-size: 13.5px; line-height: 1.6; color: var(--c-text-body); }
+.sm-slide-text { font-size: 13.5px; line-height: 1.6; color: var(--text-body); }
 .sm-slide-stats {
   display: flex;
   gap: var(--c-space-4);
   font-size: 12px;
-  color: var(--c-text-muted);
+  color: var(--text-muted);
   margin-top: var(--c-space-3);
-  border-top: 1px solid var(--c-hairline);
+  border-top: 1px solid var(--hairline);
   padding-top: var(--c-space-2);
 }
 .sm-ai-tag {
   font-family: var(--c-mono);
   font-size: 9px;
   letter-spacing: 0.05em;
-  color: var(--c-accent);
-  border: 1px solid var(--c-hairline-strong);
+  color: var(--accent);
+  border: 1px solid var(--hairline-strong);
   border-radius: var(--c-radius-sm);
   padding: 1px 5px;
   margin-right: 4px;
 }
-.sm-cat-badge { font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 3px; }
-.sm-flag { color: var(--c-warn); }
-.sm-older-tag { color: var(--c-warn); font-family: var(--c-mono); font-size: 10px; }
+.sm-flag { color: var(--warn); }
+.sm-older-tag { color: var(--warn); font-family: var(--c-mono); font-size: 10px; }
 .sm-older .sm-slide-text, .sm-older { filter: var(--c-fresh-older-filter); }
-.sm-analysis-hidden { color: var(--c-text-dim); font-size: 12.5px; font-style: italic; }
+.sm-analysis-hidden { color: var(--text-dim); font-size: 12.5px; font-style: italic; }
 
 .sm-chapter-entries { list-style: none; margin: 0; padding: 0; }
-.sm-chapter-entries li { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--c-hairline); font-size: 12.5px; }
-.sm-chapter-date { font-family: var(--c-mono); font-size: 10px; color: var(--c-text-dim); flex: 0 0 64px; }
-.sm-chapter-hl { color: var(--c-text-body); }
+.sm-chapter-entries li { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; }
+.sm-chapter-date { font-family: var(--c-mono); font-size: 10px; color: var(--text-dim); flex: 0 0 64px; }
+.sm-chapter-hl { color: var(--text-body); }
 
-.sm-caption { font-size: 11px; color: var(--c-text-dim); font-style: italic; margin: 0 0 10px; }
+.sm-caption { font-size: 11px; color: var(--text-dim); font-style: italic; margin: 0 0 10px; }
 
 /* fi-* — FedIntoList (shared by StoryMode's FED INTO slide, Read-in-full's "Show linked news"
    toggle and its Why section: one rendering, styled per host page). */
 .fi-list { list-style: none; margin: 0; padding: 0; }
-.fi-row { padding: 10px 0; border-bottom: 1px solid var(--c-hairline); position: relative; }
+.fi-row { padding: 10px 0; border-bottom: 1px solid var(--hairline); position: relative; }
 .fi-row.fi-older { filter: var(--c-fresh-older-filter); }
 .fi-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.fi-head a { color: var(--c-accent); font-size: 13px; text-decoration: none; }
-.fi-conf-badge { font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.04em; color: var(--c-text-dim); }
-.fi-conf-strong { color: var(--c-ok); }
-.fi-conf-medium { color: var(--c-warn); }
-.fi-meta { font-size: 11px; color: var(--c-text-dim); display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
-.fi-older-tag { color: var(--c-warn); font-family: var(--c-mono); font-size: 10px; }
-.fi-mechanism { font-size: 12.5px; font-style: italic; color: var(--c-text-body); margin: 6px 0 0; }
-.fi-cited { font-size: 11px; color: var(--c-text-dim); margin-top: 2px; }
+.fi-head a { color: var(--accent); font-size: 13px; text-decoration: none; }
+.fi-conf-badge { font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.04em; color: var(--text-dim); }
+.fi-conf-strong { color: var(--ok); }
+.fi-conf-medium { color: var(--warn); }
+.fi-meta { font-size: 11px; color: var(--text-dim); display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
+.fi-older-tag { color: var(--warn); font-family: var(--c-mono); font-size: 10px; }
+.fi-mechanism { font-size: 12.5px; font-style: italic; color: var(--text-body); margin: 6px 0 0; }
+.fi-cited { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 .fi-toggle-wrap { margin-top: 10px; }
 .fi-toggle-btn {
-  font-family: var(--c-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--c-accent);
-  background: none; border: 1px solid var(--c-hairline-strong); border-radius: var(--c-radius-sm);
+  font-family: var(--c-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--accent);
+  background: none; border: 1px solid var(--hairline-strong); border-radius: var(--c-radius-sm);
   padding: 6px 10px; cursor: pointer; min-height: 44px;
 }
 
@@ -274,32 +273,32 @@
   font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.05em; font-weight: 700;
   border-radius: var(--c-radius-sm); padding: 1px 5px; margin-right: 4px;
 }
-.sm-fact-badge { color: var(--c-ok); border: 1px solid var(--c-ok); }
-.sm-inference-badge { color: var(--c-accent); border: 1px solid var(--c-accent); }
-.sm-legend { font-size: 10.5px; color: var(--c-text-dim); margin: 10px 0 0; }
+.sm-fact-badge { color: var(--ok); border: 1px solid var(--ok); }
+.sm-inference-badge { color: var(--accent); border: 1px solid var(--accent); }
+.sm-legend { font-size: 10.5px; color: var(--text-dim); margin: 10px 0 0; }
 .sm-likely-badge {
-  font-size: 12px; color: var(--c-text-body); margin: 6px 0 0; padding: 4px 8px;
-  border: 1px dashed var(--c-hairline-strong); border-radius: var(--c-radius-sm); display: inline-block;
+  font-size: 12px; color: var(--text-body); margin: 6px 0 0; padding: 4px 8px;
+  border: 1px dashed var(--hairline-strong); border-radius: var(--c-radius-sm); display: inline-block;
 }
 .sm-jump-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .sm-jump-btn {
-  font-family: var(--c-mono); font-size: 11px; color: var(--c-accent); background: none;
-  border: 1px solid var(--c-hairline-strong); border-radius: var(--c-radius-sm); padding: 6px 10px;
+  font-family: var(--c-mono); font-size: 11px; color: var(--accent); background: none;
+  border: 1px solid var(--hairline-strong); border-radius: var(--c-radius-sm); padding: 6px 10px;
   cursor: pointer; min-height: 44px;
 }
-.sm-jump-btn:hover { background: var(--c-hairline); }
+.sm-jump-btn:hover { background: var(--hairline); }
 
 .sm-watch-list { list-style: none; margin: 0; padding: 0; }
-.sm-watch-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--c-hairline); }
-.sm-watch-diamond { color: var(--c-accent); }
-.sm-watch-text { font-size: 13px; color: var(--c-text-head); }
-.sm-watch-meta { font-size: 11px; color: var(--c-text-dim); }
-.sm-watch-note { margin: 10px 0 0; font-size: 11px; line-height: 1.45; color: var(--c-text-dim); }
+.sm-watch-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--hairline); }
+.sm-watch-diamond { color: var(--accent); }
+.sm-watch-text { font-size: 13px; color: var(--text-head); }
+.sm-watch-meta { font-size: 11px; color: var(--text-dim); }
+.sm-watch-note { margin: 10px 0 0; font-size: 11px; line-height: 1.45; color: var(--text-dim); }
 
 /* ── Scrubber ─────────────────────────────────── */
 .sm-scrubber {
-  border-top: 1px solid var(--c-hairline);
-  background: var(--c-panel-2);
+  border-top: 1px solid var(--hairline);
+  background: var(--panel-2);
   padding: var(--c-space-2) var(--c-space-4) var(--c-space-2);
   flex: 0 0 auto;
 }
@@ -309,7 +308,7 @@
   top: 0;
   height: 16px;
   background: rgba(95, 212, 255, 0.14);
-  border: 1px solid var(--c-hairline-strong);
+  border: 1px solid var(--hairline-strong);
   border-radius: 2px;
   cursor: pointer;
   padding: 0 4px;
@@ -317,35 +316,35 @@
   align-items: center;
   overflow: hidden;
 }
-.sm-scrubber-chapter.on { background: var(--c-accent); border-color: var(--c-accent); }
+.sm-scrubber-chapter.on { background: var(--accent); border-color: var(--accent); }
 .sm-scrubber-chapter-label {
   font-family: var(--c-mono);
   font-size: 8px;
   letter-spacing: 0.04em;
-  color: var(--c-text-muted);
+  color: var(--text-muted);
   white-space: nowrap;
 }
-.sm-scrubber-chapter.on .sm-scrubber-chapter-label { color: var(--c-bg); }
+.sm-scrubber-chapter.on .sm-scrubber-chapter-label { color: var(--bg); }
 .sm-scrubber-track {
   position: relative;
   height: 40px;
-  border-top: 1px solid var(--c-hairline);
+  border-top: 1px solid var(--hairline);
 }
 .sm-scrubber-day {
   position: absolute;
   bottom: 0;
   width: 3px;
   min-height: 3px;
-  background: var(--c-accent);
+  background: var(--accent);
   opacity: 0.75;
   border: none;
   padding: 0;
   cursor: pointer;
 }
 .sm-scrubber-day:hover { opacity: 1; }
-.sm-scrubber-flag { position: absolute; top: -2px; transform: translateX(-50%); color: var(--c-warn); font-size: 13px; }
-.sm-scrubber-deadline { position: absolute; top: -2px; transform: translateX(-50%); color: var(--c-accent); font-size: 12px; cursor: help; }
-.sm-scrubber-today { position: absolute; bottom: 0; top: 0; border-left: 1px dashed var(--c-warn); transform: translateX(-50%); z-index: 2; }
+.sm-scrubber-flag { position: absolute; top: -2px; transform: translateX(-50%); color: var(--warn); font-size: 13px; }
+.sm-scrubber-deadline { position: absolute; top: -2px; transform: translateX(-50%); color: var(--accent); font-size: 12px; cursor: help; }
+.sm-scrubber-today { position: absolute; bottom: 0; top: 0; border-left: 1px dashed var(--warn); transform: translateX(-50%); z-index: 2; }
 .sm-scrubber-today-label {
   position: absolute;
   top: -14px;
@@ -353,7 +352,7 @@
   font-family: var(--c-mono);
   font-size: 8px;
   letter-spacing: 0.05em;
-  color: var(--c-warn);
+  color: var(--warn);
   white-space: nowrap;
 }
 /* Review fix #4: date ticks along the axis so the scrubber's scale is legible, not just marks
@@ -364,7 +363,7 @@
   transform: translateX(-50%);
   font-family: var(--c-mono);
   font-size: 9px;
-  color: var(--c-text-dim);
+  color: var(--text-dim);
   white-space: nowrap;
 }
 
@@ -372,12 +371,12 @@
   .sm-body { flex-direction: column; }
   .sm-drawers-rail { width: 100%; flex-direction: row; flex-wrap: wrap; }
   .sm-stage { flex-direction: column; }
-  .sm-slidecard { flex: 1 1 auto; max-width: 100%; border-left: none; border-top: 1px solid var(--c-hairline-strong); }
+  .sm-slidecard { flex: 1 1 auto; max-width: 100%; border-left: none; border-top: 1px solid var(--hairline-strong); }
 }
-.sm-link-note { margin: 10px 0 0; padding: 8px 10px; border: 1px dashed var(--c-hairline); border-radius: 6px; }
-.sm-link-note p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--c-text-body); }
-.sm-link-note .sm-link-note-more { margin-top: 4px; font-size: 11px; color: var(--c-text-dim); }
+.sm-link-note { margin: 10px 0 0; padding: 8px 10px; border: 1px dashed var(--hairline); border-radius: 6px; }
+.sm-link-note p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-body); }
+.sm-link-note .sm-link-note-more { margin-top: 4px; font-size: 11px; color: var(--text-dim); }
 .fi-cited-list { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.fi-cited-list li { font-size: 11px; line-height: 1.4; color: var(--c-text-dim); }
-.fi-cited-date { font-family: var(--c-mono, var(--mono)); color: var(--c-text-body); }
+.fi-cited-list li { font-size: 11px; line-height: 1.4; color: var(--text-dim); }
+.fi-cited-date { font-family: var(--c-mono, var(--mono)); color: var(--text-body); }
 .fi-cited-more { font-style: italic; }

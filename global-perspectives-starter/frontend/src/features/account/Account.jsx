@@ -99,11 +99,11 @@ function getInitials(email) {
 // shell (A3). These reference the `.gp-console` tokens (tokens.css) set on the shell wrapper
 // below — only the look changes here, no panel's data or behavior.
 const SECTION = {
-  border: '1px solid var(--c-hairline, rgba(95,212,255,0.18))',
+  border: '1px solid var(--hairline)',
   borderRadius: 4,
   padding: '1.25rem 1.5rem',
   marginBottom: '1rem',
-  background: 'var(--c-panel, rgba(6,12,20,0.95))',
+  background: 'var(--panel)',
 };
 
 const LABEL = {
@@ -112,7 +112,7 @@ const LABEL = {
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
   fontFamily: 'var(--c-mono, monospace)',
-  color: 'var(--c-accent, #5fd4ff)',
+  color: 'var(--accent)',
   marginBottom: 4,
 };
 
@@ -125,18 +125,18 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
       <div style={{ ...SECTION, display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <div style={{
           width: 52, height: 52, borderRadius: '50%',
-          background: '#dbeafe', color: '#1e40af',
+          background: 'var(--accent-wash)', color: 'var(--accent)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '1.4rem', fontWeight: 700, flexShrink: 0,
         }}>
           {getInitials(user.email)}
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--c-text-head, #eef5f9)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-head)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user.email}
           </div>
           {memberSince && (
-            <div style={{ fontSize: '0.75rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 4 }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: 4 }}>
               Since {memberSince}
             </div>
           )}
@@ -150,11 +150,11 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
           <button
             onClick={handleSignOut}
             style={{
-              background: 'var(--c-panel-2, #0b1622)',
-              border: '1.5px solid var(--c-hairline, rgba(95,212,255,0.18))',
+              background: 'var(--panel-2)',
+              border: '1.5px solid var(--hairline)',
               borderRadius: 8, padding: '0.6rem 1rem',
               fontSize: '0.875rem', fontWeight: 600,
-              cursor: 'pointer', color: 'var(--c-text-head, #eef5f9)',
+              cursor: 'pointer', color: 'var(--text-head)',
               textAlign: 'left', width: '100%',
             }}
           >
@@ -166,7 +166,7 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
               onClick={() => setShowDeleteConfirm(true)}
               style={{
                 background: 'none', border: 'none', padding: 0,
-                fontSize: '0.8rem', color: 'var(--c-error, #ff6a4d)',
+                fontSize: '0.8rem', color: 'var(--error)',
                 cursor: 'pointer', textAlign: 'left',
               }}
             >
@@ -174,21 +174,21 @@ function ProfilePanel({ user, memberSince, handleSignOut }) {
             </button>
           ) : (
             <div style={{
-              background: 'rgba(255,106,77,0.08)', border: '1.5px solid rgba(255,106,77,0.4)',
+              background: 'var(--tier-high-wash)', border: '1.5px solid var(--tier-high)',
               borderRadius: 8, padding: '0.75rem 1rem',
               fontSize: '0.85rem',
             }}>
-              <div style={{ fontWeight: 600, color: 'var(--c-error, #ff6a4d)', marginBottom: 6 }}>Are you sure?</div>
-              <div style={{ color: 'var(--c-text-body, #c9d6df)', marginBottom: 10, lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 600, color: 'var(--error)', marginBottom: 6 }}>Are you sure?</div>
+              <div style={{ color: 'var(--text-body)', marginBottom: 10, lineHeight: 1.5 }}>
                 To delete your account, email us at{' '}
-                <a href="mailto:globalperspectives.app@gmail.com?subject=Delete%20my%20account" style={{ color: 'var(--c-accent, #5fd4ff)' }}>
+                <a href="mailto:globalperspectives.app@gmail.com?subject=Delete%20my%20account" style={{ color: 'var(--accent)' }}>
                   globalperspectives.app@gmail.com
                 </a>
                 {' '}and we'll process it within 24 hours.
               </div>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--text-dim)', cursor: 'pointer' }}
               >
                 Cancel
               </button>
@@ -210,7 +210,7 @@ function MembershipPanel() {
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <div style={SECTION}>
           <div style={LABEL}>Membership</div>
-          <div style={{ fontSize: '0.9rem', color: 'var(--c-text-dim, #7d8b96)' }}>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>
             Membership &amp; credits aren't available yet.
           </div>
         </div>
@@ -231,18 +231,18 @@ function MembershipPanel() {
           <BootLoader variant="inline" className="gp-boot--tight" label="Loading plan" text="Loading plan" />
         ) : isMember ? (
           <>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--c-text-head, #eef5f9)' }}>
-              <span style={{ color: 'var(--c-ok, #6fd29a)' }}>✓</span> Member
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-head)' }}>
+              <span style={{ color: 'var(--ok)' }}>✓</span> Member
             </div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 4 }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-dim)', marginTop: 4 }}>
               {membership?.status === 'active' ? 'Active' : (membership?.status || 'Active')}
               {renews ? ` · renews ${renews}` : ''}
             </div>
           </>
         ) : (
           <>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--c-text-head, #eef5f9)' }}>Free</div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 4, lineHeight: 1.45 }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-head)' }}>Free</div>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-dim)', marginTop: 4, lineHeight: 1.45 }}>
               Reading stays free. Membership adds the full correction history, country change-alerts, and a monthly allowance of custom analyses.
             </div>
           </>
@@ -256,10 +256,10 @@ function MembershipPanel() {
       <div style={SECTION}>
         <div style={LABEL}>Analysis credits</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--c-text-head, #eef5f9)' }}>{loading ? '—' : creditBalance}</span>
-          <span style={{ fontSize: '0.85rem', color: 'var(--c-text-dim, #7d8b96)' }}>credit{creditBalance === 1 ? '' : 's'}</span>
+          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-head)' }}>{loading ? '—' : creditBalance}</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>credit{creditBalance === 1 ? '' : 's'}</span>
         </div>
-        <div style={{ fontSize: '0.82rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 4, lineHeight: 1.45 }}>
+        <div style={{ fontSize: '0.82rem', color: 'var(--text-dim)', marginTop: 4, lineHeight: 1.45 }}>
           Each custom analysis in the Analysis Studio uses one credit{isMember ? ', after your included monthly allowance' : ''}.
         </div>
         {creditPacks().length > 0 && (
@@ -283,14 +283,14 @@ function Toggle({ checked, disabled, onChange, label }) {
       style={{
         flexShrink: 0, width: 44, height: 26, borderRadius: 13, border: 'none',
         cursor: disabled ? 'not-allowed' : 'pointer', padding: 0,
-        background: checked ? 'var(--c-accent, #5fd4ff)' : 'var(--c-hairline-strong, rgba(95,212,255,0.3))', opacity: disabled ? 0.55 : 1,
+        background: checked ? 'var(--accent)' : 'var(--hairline-strong)', opacity: disabled ? 0.55 : 1,
         position: 'relative', transition: 'background .15s',
       }}
     >
       <span style={{
         position: 'absolute', top: 3, left: checked ? 21 : 3, width: 20, height: 20,
-        borderRadius: '50%', background: '#fff', transition: 'left .15s',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+        borderRadius: '50%', background: 'var(--text-head)', transition: 'left .15s',
+        boxShadow: 'var(--shadow-sm)',
       }} />
     </button>
   );
@@ -300,11 +300,11 @@ function ToggleRow({ label, desc, checked, disabled, onChange }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-      gap: '1rem', padding: '0.85rem 0', borderBottom: '1px solid var(--c-hairline, rgba(95,212,255,0.18))',
+      gap: '1rem', padding: '0.85rem 0', borderBottom: '1px solid var(--hairline)',
     }}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--c-text-head, #eef5f9)' }}>{label}</div>
-        {desc && <div style={{ fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', marginTop: 3, lineHeight: 1.45 }}>{desc}</div>}
+        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-head)' }}>{label}</div>
+        {desc && <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: 3, lineHeight: 1.45 }}>{desc}</div>}
       </div>
       <Toggle checked={checked} disabled={disabled} onChange={onChange} label={label} />
     </div>
@@ -357,14 +357,14 @@ function NotificationsPanel() {
         <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Email notifications</div>
 
         {endpointMissing ? (
-          <div style={{ fontSize: '0.85rem', color: 'var(--c-text-dim, #7d8b96)', lineHeight: 1.5 }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>
             Email delivery isn’t live yet. Notification settings will appear here once it’s enabled.
           </div>
         ) : loading ? (
           <BootLoader variant="inline" className="gp-boot--tight" label="Loading preferences" text="Loading preferences" />
         ) : (
           <>
-            <div style={{ fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
               Each channel below shows its real state — nothing here claims to be sending when it isn’t.
             </div>
 
@@ -388,13 +388,13 @@ function NotificationsPanel() {
             />
 
             {prefs.digestOptIn && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 0', borderBottom: '1px solid var(--c-hairline, rgba(95,212,255,0.18))' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--c-text-head, #eef5f9)' }}>Frequency</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 0', borderBottom: '1px solid var(--hairline)' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-head)' }}>Frequency</span>
                 <select
                   value={prefs.digestCadence}
                   disabled={saving}
                   onChange={(e) => save({ digestCadence: e.target.value })}
-                  style={{ padding: '0.35rem 0.5rem', borderRadius: 6, border: '1.5px solid var(--c-hairline, rgba(95,212,255,0.18))', fontSize: '0.85rem' }}
+                  style={{ padding: '0.35rem 0.5rem', borderRadius: 6, border: '1.5px solid var(--hairline)', fontSize: '0.85rem' }}
                 >
                   <option value="weekly">Weekly</option>
                   <option value="daily">Daily</option>
@@ -406,20 +406,20 @@ function NotificationsPanel() {
               <button
                 onClick={() => change({ breakingOptIn: false, digestOptIn: false }, 'You’ve unsubscribed from all emails.')}
                 disabled={saving}
-                style={{ marginTop: '0.95rem', background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--c-error, #ff6a4d)', cursor: saving ? 'not-allowed' : 'pointer' }}
+                style={{ marginTop: '0.95rem', background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--error)', cursor: saving ? 'not-allowed' : 'pointer' }}
               >
                 Unsubscribe from all
               </button>
             )}
 
             {notice && (
-              <div style={{ marginTop: '0.85rem', fontSize: '0.82rem', color: 'var(--c-ok, #6fd29a)', lineHeight: 1.5 }}>
+              <div style={{ marginTop: '0.85rem', fontSize: '0.82rem', color: 'var(--ok)', lineHeight: 1.5 }}>
                 ✓ {notice}
               </div>
             )}
 
             {error && (
-              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--c-error, #ff6a4d)' }}>{error}</div>
+              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--error)' }}>{error}</div>
             )}
           </>
         )}
@@ -429,13 +429,13 @@ function NotificationsPanel() {
       {!endpointMissing && !loading && (
         <div style={SECTION}>
           <div style={{ ...LABEL, marginBottom: '0.35rem' }}>Country change-alerts — paused, not sending</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--c-text-dim, #7d8b96)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
             When live, we email you when our read on a country you follow materially changes — grounded in the cited event that moved it.
             This is currently off site-wide, so your follow list is kept but nothing sends. Follow a country from its page (tap <span style={{ whiteSpace: 'nowrap' }}>🔔 Follow</span>).
           </div>
 
           {(prefs.followedCountries || []).length === 0 ? (
-            <div style={{ fontSize: '0.85rem', color: 'var(--c-text-dim, #7d8b96)', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>
               You’re not following any countries yet.
             </div>
           ) : (
@@ -443,13 +443,13 @@ function NotificationsPanel() {
               {(prefs.followedCountries || []).map((c) => (
                 <div key={c} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '1rem', padding: '0.7rem 0', borderBottom: '1px solid var(--c-hairline, rgba(95,212,255,0.18))',
+                  gap: '1rem', padding: '0.7rem 0', borderBottom: '1px solid var(--hairline)',
                 }}>
-                  <Link to={`/weekly/country/${encodeURIComponent(c)}`} style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--c-text-head, #eef5f9)', textDecoration: 'none' }}>{c}</Link>
+                  <Link to={`/weekly/country/${encodeURIComponent(c)}`} style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-head)', textDecoration: 'none' }}>{c}</Link>
                   <button
                     onClick={async () => { const ok = await follow(c, false); if (ok) setNotice(`Stopped following ${c}.`); }}
                     disabled={saving}
-                    style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--c-error, #ff6a4d)', cursor: saving ? 'not-allowed' : 'pointer' }}
+                    style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--error)', cursor: saving ? 'not-allowed' : 'pointer' }}
                   >
                     Unfollow
                   </button>

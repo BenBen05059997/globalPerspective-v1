@@ -21,8 +21,8 @@ const BASE = {
   display: 'inline-flex', alignItems: 'center', gap: '6px',
   font: '600 12px/1 -apple-system,Helvetica,Arial,sans-serif',
   padding: '7px 11px', borderRadius: '999px', textDecoration: 'none',
-  border: '1px solid var(--border-color, #d9d6d0)',
-  background: 'none', color: 'var(--ink, #1a1a1a)',
+  border: '1px solid var(--hairline)',
+  background: 'none', color: 'var(--text-head)',
 };
 
 export function FollowButton({ country }) {
@@ -57,8 +57,8 @@ export function FollowButton({ country }) {
         ...BASE,
         cursor: saving ? 'default' : 'pointer',
         opacity: saving ? 0.6 : 1,
-        border: `1px solid ${following ? 'var(--accent, #3b82f6)' : 'var(--border-color, #d9d6d0)'}`,
-        color: following ? 'var(--accent, #3b82f6)' : 'var(--ink, #1a1a1a)',
+        border: `1px solid ${following ? 'var(--accent)' : 'var(--hairline)'}`,
+        color: following ? 'var(--accent)' : 'var(--text-head)',
       }}
     >
       <Bell filled={following} /> {following ? 'Following' : 'Follow'}

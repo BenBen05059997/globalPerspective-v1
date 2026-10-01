@@ -85,7 +85,7 @@ export default function SignIn() {
           <p className="acct-signin-spam-note">
             Can't find it? Check your <strong>spam or junk folder</strong> — the email comes from noreply@globalperspective.net
           </p>
-          <p style={{ fontSize: '12.5px', color: 'var(--c-text-dim, #7d8b96)', marginTop: '10px' }}>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-dim)', marginTop: '10px' }}>
             Wrong email?{' '}
             <button className="acct-signin-retry" onClick={() => { setSent(false); setEmail(''); }}>Try again</button>
           </p>

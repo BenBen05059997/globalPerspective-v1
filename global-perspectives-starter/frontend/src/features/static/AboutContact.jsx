@@ -46,8 +46,8 @@ export default function AboutContact() {
             { step: '3', title: 'Synthesize', desc: 'AI generates summaries, predictions, root cause analysis, and country-level intelligence briefings.' },
             { step: '4', title: 'Visualize', desc: 'Interactive maps, timelines, and structured briefings make the intelligence accessible at a glance.' },
           ].map(s => (
-            <div key={s.step} style={{ padding: '14px', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '10px' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#3b82f6', marginBottom: '4px' }}>{s.step}</div>
+            <div key={s.step} style={{ padding: '14px', border: '1px solid var(--hairline)', borderRadius: '10px' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)', marginBottom: '4px' }}>{s.step}</div>
               <div style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '4px' }}>{s.title}</div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{s.desc}</div>
             </div>
@@ -89,15 +89,15 @@ export default function AboutContact() {
                   fontSize: '0.8rem',
                   padding: '3px 10px',
                   borderRadius: '12px',
-                  border: '1px solid var(--border-color, #e5e7eb)',
+                  border: '1px solid var(--hairline)',
                   color: 'var(--text-secondary)',
-                  background: 'var(--bg-secondary, #f8f8f8)',
+                  background: 'var(--bg-secondary)',
                 }}>{name}</span>
               ))}
             </div>
           </div>
         ))}
-        <p style={{ fontSize: '0.78rem', color: '#9ca3af', marginTop: '8px' }}>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: '8px' }}>
           * Sourced via Brave Search API (no RSS available)
         </p>
       </section>
@@ -124,8 +124,8 @@ export default function AboutContact() {
       <section>
         <h2 style={{ fontSize: '1.25rem' }}>Learn More</h2>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
-          <Link to="/disclosures" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Disclosures →</Link>
-          <Link to="/privacy" style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 600, textDecoration: 'none' }}>Privacy & Terms →</Link>
+          <Link to="/disclosures" style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Disclosures →</Link>
+          <Link to="/privacy" style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Privacy & Terms →</Link>
         </div>
       </section>
     </div>

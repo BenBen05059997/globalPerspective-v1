@@ -1,9 +1,9 @@
 
 // StoriesHeader — the top of /weekly: Stories | Countries tabs, a one-line count of open stories by
 // tier (computed from the loaded archive, never typed: scored tiers first, then a dim "N not yet
-// scored"), and the view switch (List | Board | Timeline | Map). Phone (<900px) swaps it for READ / MAP /
+// scored"), and the view switch (List | Board | Timeline | Map | Web). Phone (<900px) swaps it for READ / MAP /
 // TIMELINE tabs (READ default; the changed-since-last-visit section lives inside READ, and READ carries a
-// List | Board toggle).
+// List | Board | Web toggle).
 const TIER_WORD = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 const SCORED = ['high', 'elevated', 'moderate', 'low'];
 
@@ -12,6 +12,7 @@ export const DESKTOP_VIEWS = [
   { value: 'board', label: 'Board' },
   { value: 'timeline', label: 'Timeline' },
   { value: 'map', label: 'Map' },
+  { value: 'web', label: 'Web' },
 ];
 export const PHONE_TABS = [
   { value: 'read', label: 'Read' },
@@ -19,14 +20,15 @@ export const PHONE_TABS = [
   { value: 'timeline', label: 'Timeline' },
 ];
 
-// READ's own List | Board toggle (phone): Board is reachable without a fourth tab (P1 keeps READ / MAP / TIMELINE).
+// READ's own List | Board | Web toggle (phone): Board and Web are reachable without a fourth tab (P1 keeps READ / MAP / TIMELINE).
 export const READ_VIEWS = [
   { value: 'list', label: 'List' },
   { value: 'board', label: 'Board' },
+  { value: 'web', label: 'Web' },
 ];
 
 // `?view=changes` is the old CHANGES tab: it now opens READ (scrolled to the changed section).
-// `?view=board` is also READ (the board is a way of reading the list).
+// `?view=board` and `?view=web` are also READ (the board and the story web are ways of reading the list).
 export function viewToTab(view) {
   return view === 'map' ? 'map' : view === 'timeline' ? 'timeline' : 'read';
 }

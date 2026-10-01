@@ -42,7 +42,7 @@ const renderAt = (path) => render(<MemoryRouter initialEntries={[path]}><WeeklyP
 beforeEach(() => { phone.on = false; localStorage.removeItem('gp_stories_visit_v1'); });
 
 describe('Stories BOARD (?view=board)', () => {
-  it('desktop: four status columns, the rule is printed, every card is a story link, view order List | Board | Timeline | Map', () => {
+  it('desktop: four status columns, the rule is printed, every card is a story link, view order List | Board | Timeline | Map | Web', () => {
     renderAt('/weekly?view=board');
     const cols = document.querySelectorAll('.sb-col');
     expect(cols).toHaveLength(4);
@@ -52,7 +52,7 @@ describe('Stories BOARD (?view=board)', () => {
     expect(cards.length).toBeGreaterThan(0);
     for (const c of cards) expect(c.querySelector('a.sb-card__link').getAttribute('href')).toMatch(/^\/weekly\/thread\//);
     const seg = [...document.querySelectorAll('.sf-seg__btn')].map((b) => b.textContent);
-    expect(seg).toEqual(['List', 'Board', 'Timeline', 'Map']);
+    expect(seg).toEqual(['List', 'Board', 'Timeline', 'Map', 'Web']);
     expect(document.querySelector('.sf-seg__btn[aria-pressed="true"]').textContent).toBe('Board');
   });
   it('the board never says "escalating" (it measures coverage)', () => {

@@ -18,6 +18,7 @@ import StoriesHeader from '@/features/threads/components/StoriesHeader.jsx';
 import StoriesFilters from '@/features/threads/components/StoriesFilters.jsx';
 import StoriesFeed from '@/features/threads/components/StoriesFeed.jsx';
 import StoriesBoard from '@/features/threads/components/StoriesBoard.jsx';
+import StoriesWeb from '@/features/threads/components/StoriesWeb.jsx';
 import StoriesTimeline from '@/features/threads/components/StoriesTimeline.jsx';
 import StoriesChanged, { railRising } from '@/features/threads/components/StoriesChanged.jsx';
 import '@/features/threads/WeeklyPage.css';
@@ -28,10 +29,10 @@ const WeeklyMap = lazy(() => import('@/features/threads/components/WeeklyMap'));
 // Re-exported for callers that used the old export.
 export { CATEGORY_ORDER };
 
-const VIEWS = ['list', 'board', 'timeline', 'map', 'changes'];
+const VIEWS = ['list', 'board', 'timeline', 'map', 'web', 'changes'];
 
-// /weekly — Stories (A: intel-feed list, B: status board, C: 30-day timeline, the existing Map view) | Countries.
-// URL: ?section=countries, ?view=list|board|timeline|map|changes, ?category=<topic> (ThreadPage breadcrumb).
+// /weekly — Stories (A: intel-feed list, B: status board, C: 30-day timeline, the Map view, the story Web) | Countries.
+// URL: ?section=countries, ?view=list|board|timeline|map|web|changes, ?category=<topic> (ThreadPage breadcrumb).
 // Phone: READ / MAP / TIMELINE tabs, READ default. The changed-since-last-visit section lives inside
 // READ and only exists once a previous-visit baseline does; `?view=changes` (the old CHANGES tab)
 // opens READ scrolled to it, or plain READ without a baseline.
@@ -193,6 +194,8 @@ export default function WeeklyPage() {
     ? <StoriesTimeline threads={listed} analyses={analyses} windowValue={windowValue} now={now} />
     : view === 'board'
     ? <StoriesBoard threads={listed} analyses={analyses} now={now} peek={peek} />
+    : view === 'web'
+    ? <StoriesWeb threads={listed} analyses={analyses} now={now} peek={peek} isPhone={isPhone} />
     : <StoriesFeed threads={listed} standalone={listedStandalone} analyses={analyses} now={now} peek={peek} />;
 
   if (isPhone) {
@@ -200,7 +203,7 @@ export default function WeeklyPage() {
       <EditorialShell strip={strip} className="wp-shell">
         {header}
         {banners}
-        {view === 'timeline' || view === 'board' ? null : changed}
+        {view === 'timeline' || view === 'board' || view === 'web' ? null : changed}
         <div className="sf-phonebar">
           <input
             type="search"
@@ -231,7 +234,7 @@ export default function WeeklyPage() {
   }
 
   return (
-    <EditorialShell strip={strip} left={<StoriesFilters {...filterProps} />} right={railHasContent ? changed : null} className="wp-shell">
+    <EditorialShell strip={strip} left={<StoriesFilters {...filterProps} />} right={railHasContent && view !== 'web' ? changed : null} className="wp-shell">
       {header}
       {banners}
       {body}

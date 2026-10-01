@@ -298,7 +298,7 @@ must_not_have "$T/WeeklyPage.jsx" "return null" "WeeklyPage never null-gates"
 # ─── P5 (2026-10-01): sweep regressions ───
 must_not_have "$SRC/features/map/components/RadarMap.jsx" "(shading|linkArcs|countryRisk|situations) = \\[\\]" "RadarMap defaults are stable (a '= []' default re-ran the draw effect every render)"
 must_not_have "$SRC/features/track-record/components/ForecastBoard.jsx" "(situations|countryRisk)=\\{\\[\\]\\}" "ForecastBoard passes stable arrays to RadarMap (inline [] looped: Maximum update depth)"
-must_not_have "$SRC/features/spider-demo/SpiderDemo.css" "spider-mode-on[^}]*#fff" "spider mode button text is --on-accent, not white on the accent"
+# (the /spider-demo prototype and its button guard were retired in P7b)
 must_not_have "$SRC/features/economy/EconomyPage.css" "ep-chg-(up|dn) *\\{ *color: *#" "economy change colours are tokens (the light-theme green/red were under 4.5:1 on dark)"
 
 # ─── P6 (2026-10-01): operator decisions 1-14 ───
@@ -379,6 +379,39 @@ must_have "$T/lib/countryFrame.js" "export function frameViewBox" "country hero 
 must_have "$T/components/WeeklyMap.jsx" "frameBounds" "the country map frames the country (Google fitBounds + SVG viewBox)"
 # 10 · /today copy promises only what is live (change-alert emails are off)
 must_not_have "$SRC/features/home/Home.jsx" "change-alerts|change alerts" "/today does not promise change-alert emails (the drift cron is off)"
+
+# ─── P7b (2026-10-02): Stories WEB view; /spider-demo retired into it ───
+must_not_have_unless() { # lines matching $2 that do not also match $3 (e.g. "caused" only inside 'never "caused"')
+  local file="$1"; local pat="$2"; local ok="$3"; local label="$4"
+  if [ ! -f "$file" ]; then FAIL=$((FAIL + 1)); FAILED+=("$file: target file does not exist"); echo "  $(red FAIL) $file: target file does not exist"; return; fi
+  if grep -iE "$pat" "$file" | grep -ivE "$ok" | grep -q .; then
+    FAIL=$((FAIL + 1)); FAILED+=("$file: forbidden $label found"); echo "  $(red FAIL) $file: $label"
+  else
+    PASS=$((PASS + 1)); echo "  $(green PASS) $file: $label (not present)"
+  fi
+}
+for f in components/StoriesWeb.jsx lib/storyWeb.js; do
+  must_not_have_unless "$T/$f" "caused" "never" "$f never says 'caused' (only the footnote's 'never caused')"
+  must_not_have "$T/$f" "Math\\.random" "$f has no Math.random"
+done
+must_have "$T/components/StoriesWeb.jsx" "judged to feed into" "the list twin says 'judged to feed into'"
+must_have "$T/components/StoriesWeb.jsx" "Strongest links" "the list twin 'Strongest links' is present"
+must_have "$T/components/StoriesWeb.jsx" "Model judgment" "link mechanisms are labelled 'Model judgment'"
+must_have "$T/components/StoriesWeb.jsx" "isPhone \\? <>\\{twin\\}\\{graph\\}" "phone shows the list twin first, the graph below"
+must_have "$T/components/StoriesWeb.jsx" "webFootnote\\(merged\\.analyses\\)" "the footnote is computed from the merge (webFootnote)"
+must_not_have "$T/components/StoriesWeb.jsx" "[0-9]+ (analys|older)" "no hard-coded counts in the web view strings"
+must_not_have "$T/lib/storyWeb.js" "[0-9]+ (analys|older)" "no hard-coded counts in the footnote"
+must_have "$T/lib/storyWeb.js" "older than \\$\\{WEB_HIDE_DAYS\\} days hidden" "the footnote counts analyses older than 30 days (hidden), from WEB_HIDE_DAYS"
+must_have "$T/components/StoriesHeader.jsx" "value: 'web', label: 'Web'" "the view switch has Web"
+must_have "$T/WeeklyPage.jsx" "view === 'web'" "WeeklyPage renders ?view=web"
+must_have "$SRC/app/layout/Layout.jsx" "board, table, map or web" "the Stories nav tooltip names the built views"
+must_have "$SRC/app/LegacyRedirects.jsx" "to=\"/weekly\\?view=web\"" "/spider-demo redirects to /weekly?view=web"
+must_have "$SRC/app/App.jsx" "path=\"/spider-demo\" element=\\{<SpiderDemoRedirect" "the /spider-demo route is the redirect"
+if [ ! -d "$SRC/features/spider-demo" ] && ! grep -rqE "spider-demo/|SpiderDemo\\.jsx|SpiderWorld" "$SRC" --include=*.js --include=*.jsx --include=*.css; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) features/spider-demo is gone and nothing imports it"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("features/spider-demo still present or imported"); echo "  $(red FAIL) features/spider-demo still present or imported"
+fi
 
 # ─── Summary ───
 echo

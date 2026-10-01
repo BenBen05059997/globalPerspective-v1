@@ -1,6 +1,6 @@
 {
   "note": "Per-file count of hard-coded colour literals in frontend src (see quality/check_color_literals.mjs). Counts may only fall; lower them with --lower after removing literals.",
-  "total": 351,
+  "total": 319,
   "files": {
     "app/index.css": 2,
     "features/account/components/Desk.css": 4,
@@ -21,9 +21,6 @@
     "features/map/lib/globeIcons.js": 2,
     "features/map/lib/legend.js": 3,
     "features/map/SituationHome.css": 96,
-    "features/spider-demo/SpiderDemo.css": 15,
-    "features/spider-demo/SpiderDemo.jsx": 16,
-    "features/spider-demo/SpiderWorld.jsx": 1,
     "features/threads/components/CompactTimeline.jsx": 1,
     "features/threads/components/PhoneStoryMode.css": 2,
     "features/threads/components/QuestionChip.css": 3,

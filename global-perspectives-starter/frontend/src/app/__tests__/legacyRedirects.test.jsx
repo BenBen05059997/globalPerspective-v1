@@ -4,7 +4,7 @@ import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 
 const fetchAlert = vi.fn();
 vi.mock('@/shared/api/restProxy', () => ({ fetchAlert: (...a) => fetchAlert(...a) }));
-import { MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect } from '@/app/LegacyRedirects';
+import { MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect } from '@/app/LegacyRedirects';
 
 function Where() {
   const { pathname, search } = useLocation();
@@ -19,6 +19,8 @@ function renderAt(path) {
         <Route path="/briefings" element={<Where />} />
         <Route path="/weekly/thread/:threadId" element={<Where />} />
         <Route path="/weekly-markets" element={<MarketsRedirect />} />
+        <Route path="/weekly" element={<Where />} />
+        <Route path="/spider-demo" element={<SpiderDemoRedirect />} />
         <Route path="/breaking" element={<BreakingFeedRedirect />} />
         <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
       </Routes>
@@ -35,6 +37,11 @@ describe('retired routes (P6, decisions 1 and 2)', () => {
   it('/weekly-markets -> /briefings?from=markets (the paused note mechanism)', () => {
     renderAt('/weekly-markets');
     expect(screen.getByTestId('where').textContent).toBe('/briefings?from=markets');
+  });
+
+  it('/spider-demo -> /weekly?view=web (P7b: the prototype retired into the Stories WEB view)', () => {
+    renderAt('/spider-demo');
+    expect(screen.getByTestId('where').textContent).toBe('/weekly?view=web');
   });
 
   it('/breaking -> /', () => {

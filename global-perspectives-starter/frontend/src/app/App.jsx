@@ -13,7 +13,7 @@ import { setAuthProvider } from '@/shared/api/restProxy';
 import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import MapRedirect from '@/app/MapRedirect';
-import { MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect } from '@/app/LegacyRedirects';
+import { MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect } from '@/app/LegacyRedirects';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
 import { WAITING_SENSORS } from '@/features/map/lib/bootSensors.js';
@@ -42,7 +42,6 @@ const TrackRecordPage = lazy(() => import('@/features/track-record/TrackRecordPa
 const TrackRecordText = lazy(() => import('@/features/track-record/TrackRecordText'));
 const WeeklyBriefPage = lazy(() => import('@/features/weekly-brief/WeeklyBriefPage'));
 const BriefingsPage = lazy(() => import('@/features/briefings/BriefingsPage'));
-const SpiderDemo = lazy(() => import('@/features/spider-demo/SpiderDemo'));
 
 // Deliberate render crash — the deterministic trigger the smoke-test ERROR
 // BOUNDARY leg drives (and a quick manual /__boom check). Not linked anywhere in
@@ -147,7 +146,7 @@ export default function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/account" element={<Account />} />
             <Route path="/whitepaper" element={<WhitepaperPage />} />
-            <Route path="/spider-demo" element={<SpiderDemo />} />
+            <Route path="/spider-demo" element={<SpiderDemoRedirect />} />
             <Route path="/__boom" element={<Boom />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

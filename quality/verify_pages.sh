@@ -225,6 +225,28 @@ else
   FAIL=$((FAIL + 1)); FAILED+=("bare Loading text in features: $(head -3 /tmp/bare_loading.out)"); echo "  $(red FAIL) bare Loading text: $(head -3 /tmp/bare_loading.out)"
 fi
 
+# ─── P3a (2026-10-01): countries list/page, daily, weekly brief, track record on the dark tokens ───
+LIGHT_BG="background(-color)?:[^;]*(#f[0-9a-fA-F]{2,7}\\b|#fff\\b|\\bwhite\\b|rgba?\\(\\s*2[0-9]{2})"
+for css in features/countries/CountryListPage.css features/countries/CountryPage.css features/countries/CountryCoverage.css \
+           features/countries/components/CountryCardV2.css features/countries/components/CountryWhatChanged.css \
+           features/daily/DailyPage.css features/weekly-brief/WeeklyBriefPage.css \
+           features/track-record/TrackRecordPage.css features/track-record/TrackRecordText.css \
+           features/track-record/components/ForecastBoard.css features/track-record/components/SettlingLog.css \
+           shared/ui/ShareButtons.css; do
+  must_not_have "$SRC/$css" "$LIGHT_BG" "$css has no light background literals"
+done
+must_not_have "$SRC/shared/ui/atoms.css" "\\.ss-strip \\{[^}]*background: var\\(--(ink|text-head)\\)" "StatusStrip is a dark strip, not an inverted light bar"
+must_not_have "$SRC/features/daily/DailyPage.jsx" "authLoading|useAuth" "DailyPage does not gate public data on auth"
+must_not_have "$SRC/features/countries/CountryPage.jsx" "authLoading" "CountryPage does not gate public data on auth"
+must_not_have "$SRC/features/daily/DailyPage.jsx" "RISK_COLORS|CATEGORY_BADGE_COLORS" "DailyPage has no pastel risk/category fills"
+must_not_have "$SRC/features/countries/CountryPage.jsx" "RISK_COLORS|CATEGORY_BADGE_COLORS" "CountryPage has no pastel risk/category fills"
+must_not_have "$SRC/features/countries/CountryListPage.jsx" "RiskScoreBadge|CATEGORY_BADGE_COLORS" "country list uses TierChip/CategoryTag, not the old badges"
+must_have "$SRC/features/countries/CountryListPage.jsx" "TierChip" "country list risk is a TierChip"
+must_have "$SRC/features/weekly-brief/WeeklyBriefPage.jsx" "TierChip" "weekly brief risk is a TierChip"
+must_have "$SRC/features/daily/DailyPage.jsx" "SectionHeader" "daily sections use the shared SectionHeader"
+must_have "$SRC/features/track-record/TrackRecordPage.jsx" "SectionHeader" "track record sections use the shared SectionHeader"
+must_not_have "$SRC/features/threads/WeeklyPage.css" "^\\.(bgt|cp)-|^\\.(share-btn|copy-briefing-btn)" "country/share rules live with their owners, not in WeeklyPage.css"
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

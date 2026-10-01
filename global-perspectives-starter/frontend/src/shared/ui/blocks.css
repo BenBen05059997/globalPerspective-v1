@@ -55,3 +55,12 @@
 .gp-filter__opt:focus-within { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 .gp-filter__text { flex: 1 1 auto; min-width: 0; }
 .gp-filter__count { font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+/* ---- CategoryTag ---- */
+.gp-cat {
+  display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 1px 7px;
+  border: 1px solid var(--hairline); border-radius: var(--r-xs);
+  font-family: var(--mono, ui-monospace, monospace); font-size: 10px; font-weight: 600; line-height: 1.4;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-body); white-space: nowrap;
+}
+.gp-cat::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--cat-dot, var(--text-dim)); flex: none; }

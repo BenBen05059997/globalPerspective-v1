@@ -1,17 +1,21 @@
 import { useState, useMemo } from 'react';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import '@/features/countries/CountryCoverage.css';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 
+// Dots read the role tokens (no second palette): the four crisis hues plus accent/warn/ok.
 const CAT_COLORS = {
-  conflict:  '#ef4444',
-  politics:  '#3b82f6',
-  economy:   '#10b981',
-  diplomacy: '#8b5cf6',
-  security:  '#f97316',
-  society:   '#ec4899',
-  military:  '#dc2626',
-  technology:'#6366f1',
-  health:    '#14b8a6',
+  conflict:  'var(--hue-conflict)',
+  politics:  'var(--hue-political)',
+  economy:   'var(--hue-economic)',
+  diplomacy: 'var(--accent)',
+  security:  'var(--warn)',
+  society:   'var(--hue-humanitarian)',
+  military:  'var(--tier-high)',
+  technology:'var(--text-muted)',
+  health:    'var(--ok)',
 };
+const FALLBACK_DOT = 'var(--text-dim)';
 
 function matchScore(eventText, articleTitle) {
   const eWords = new Set(eventText.toLowerCase().split(/\W+/).filter(w => w.length > 3));
@@ -87,14 +91,14 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
 
   return (
     <div className="bgt">
-      <div className="cp-section-label">DETAILED BACKGROUND</div>
+      <SectionHeader label="Detailed background" />
 
       <div className="bgt-days">
         {dayGroups.map(([date, dayEvents]) => {
           const isExpanded = expandedDates.has(date);
           const primary = dayEvents[0];
           const rest = dayEvents.slice(1);
-          const primaryColor = CAT_COLORS[primary.category] || '#6b7280';
+          const primaryColor = CAT_COLORS[primary.category] || FALLBACK_DOT;
           const linkedArticles = isExpanded ? findLinkedArticles(primary, date) : [];
 
           return (
@@ -114,7 +118,7 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
                 >
                   <div className="bgt-event-dot" style={{ background: primaryColor }} />
                   <div className="bgt-event-content">
-                    <span className="bgt-event-cat" style={{ color: primaryColor }}>
+                    <span className="bgt-event-cat">
                       {primary.category} #{primary.catIndex}
                     </span>
                     <div className="bgt-event-text">{primary.event}</div>
@@ -150,7 +154,7 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
 
                 {/* Expanded events */}
                 {isExpanded && rest.map((e, i) => {
-                  const color = CAT_COLORS[e.category] || '#6b7280';
+                  const color = CAT_COLORS[e.category] || FALLBACK_DOT;
                   return (
                     <div
                       key={i}
@@ -159,7 +163,7 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
                     >
                       <div className="bgt-event-dot" style={{ background: color }} />
                       <div className="bgt-event-content">
-                        <span className="bgt-event-cat" style={{ color }}>
+                        <span className="bgt-event-cat">
                           {e.category} #{e.catIndex}
                         </span>
                         <div className="bgt-event-text">{e.event}</div>
@@ -186,7 +190,7 @@ export default function BackgroundTimeline({ events, entries, onEventClick }) {
           .sort((a, b) => b[1] - a[1])
           .map(([cat, count]) => (
             <span key={cat} className="bgt-legend-item">
-              <span className="bgt-legend-dot" style={{ background: CAT_COLORS[cat] || '#6b7280' }} />
+              <span className="bgt-legend-dot" style={{ background: CAT_COLORS[cat] || FALLBACK_DOT }} />
               {cat} ({count})
             </span>
           ))}

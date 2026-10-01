@@ -14,7 +14,7 @@ import '@/features/track-record/components/ForecastBoard.css';
 // One neutral hue for every place (monitor, S6): colouring a country by "more happened than
 // didn't" reads as a per-country score, which the ruling rules out. The count badge carries it.
 function hueFor() {
-  return 'var(--c-accent, #5fd4ff)';
+  return 'var(--c-accent)';
 }
 
 // One question: text, frozen %, named source, state, verdict evidence. Used by the panel and the tiles.

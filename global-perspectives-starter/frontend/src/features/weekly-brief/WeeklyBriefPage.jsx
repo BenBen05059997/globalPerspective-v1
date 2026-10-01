@@ -4,7 +4,9 @@ import { threadPath } from '@/shared/lib/threadPath';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
 import Markdown from '@/shared/ui/Markdown';
 import SubscribeCard from '@/features/account/components/SubscribeCard';
-import { RISK_SOLID as RISK_COLOR } from '@/shared/styles/tokens';
+import TierChip from '@/shared/ui/TierChip.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import '@/features/weekly-brief/WeeklyBriefPage.css';
 
 function formatWeekOf(weekKey) {
@@ -15,24 +17,11 @@ function formatWeekOf(weekKey) {
 }
 
 function SignalChip({ kind, level }) {
-  // Honest semantics: a color-coded RISK chip only for genuine threats; a neutral
-  // "DEVELOPMENT" chip for cooperative/non-threat stories (so a climate framework isn't
-  // shown as a red "elevated risk").
-  if (kind === 'development') {
-    return (
-      <span className="wb-chip" style={{ color: '#6a6a6e', borderColor: '#6a6a6e33', background: '#6a6a6e12' }}>
-        <span className="wb-chip-dot" style={{ background: '#6a6a6e' }} />
-        DEVELOPMENT
-      </span>
-    );
-  }
-  const c = RISK_COLOR[level] || '#6a6a6e';
-  return (
-    <span className="wb-chip" style={{ color: c, borderColor: `${c}33`, background: `${c}14` }}>
-      <span className="wb-chip-dot" style={{ background: c }} />
-      {(level || 'n/a').toUpperCase()} RISK
-    </span>
-  );
+  // Honest semantics: a TierChip (tier word + ring weight) only for genuine threats; a neutral
+  // "Development" chip for cooperative/non-threat stories (so a climate framework isn't shown as
+  // an elevated risk). An unknown level reads "Not scored" rather than claiming a tier.
+  if (kind === 'development') return <span className="wb-chip">Development</span>;
+  return <TierChip className="wb-sig-chip" tier={level} />;
 }
 
 function sourceOutlets(sources) {
@@ -96,7 +85,7 @@ export default function WeeklyBriefPage() {
         <div className="wb-eyebrow">Weekly Signals Brief</div>
 
         {loading ? (
-          <p className="wb-status">Loading the latest brief…</p>
+          <BootLoader variant="inline" label="Loading the latest brief" text="Loading the latest brief" />
         ) : error ? (
           <p className="wb-status">Couldn’t load the brief right now. Please try again shortly.</p>
         ) : !brief ? (
@@ -121,12 +110,12 @@ export default function WeeklyBriefPage() {
 
             <SubscribeCard variant="weekly" />
 
-            <div className="wb-sec">Signals this week</div>
+            <SectionHeader label="Signals this week" count={signals.length} />
             {signals.map((s) => <SignalCard key={s.threadId} s={s} />)}
 
             {watch.length > 0 && (
               <>
-                <div className="wb-sec wb-sec-watch">What to watch</div>
+                <SectionHeader className="wb-sec-watch" label="What to watch" count={watch.length} />
                 <div className="wb-watch">
                   {watch.map((w, i) => (
                     <div className="wb-w-row" key={i}>

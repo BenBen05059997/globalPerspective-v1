@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { threadPath } from '@/shared/lib/threadPath';
+import '@/shared/ui/ShareButtons.css';
 
 const IconLink = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">

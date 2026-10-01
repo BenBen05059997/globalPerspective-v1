@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { useAuth } from '@/shared/contexts/AuthContext';
 import { useWeeklyArchive } from '@/features/threads/hooks/useWeeklyArchive';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
 import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
@@ -23,15 +22,19 @@ import { getBroadRegionsForCountry } from '@/shared/lib/countryMapping';
 const WeeklyMap = lazy(() => import('@/features/threads/components/WeeklyMap'));
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatCountryBriefing } from '@/shared/ui/CopyBriefing';
-import { CATEGORY_BADGE_COLORS, RISK_COLORS, riskScoreToVar, riskTierToVar } from '@/shared/styles/tokens';
+import { CATEGORY_DOT, riskTierToVar } from '@/shared/styles/tokens';
 import { tierFromScore, tierFromLevel, tierLabel } from '@/shared/lib/riskTiers';
 import BackgroundTimeline from '@/features/countries/components/BackgroundTimeline';
 import { SaveButton } from '@/features/account/components/SaveButton';
 import { FollowButton } from '@/features/account/components/FollowButton';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import TierChip from '@/shared/ui/TierChip.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/countries/CountryPage.css';
+import '@/features/countries/CountryCoverage.css';
 import { isRealCountryName } from '@/shared/lib/placeNames.js';
 
 function formatTimeAgo(isoString) {
@@ -51,9 +54,9 @@ function formatAsOf(iso) {
 }
 
 const TRAJECTORY_BADGES = {
-  escalating:      { arrow: '↗', label: 'Escalating',    color: 'var(--risk-h)' },
-  stable:          { arrow: '→', label: 'Stable',         color: 'var(--ink-dim)' },
-  'de-escalating': { arrow: '↘', label: 'De-escalating', color: 'var(--risk-l)' },
+  escalating:      { arrow: '↗', label: 'Escalating',    color: 'var(--tier-high)' },
+  stable:          { arrow: '→', label: 'Stable',         color: 'var(--text-muted)' },
+  'de-escalating': { arrow: '↘', label: 'De-escalating', color: 'var(--tier-low)' },
 };
 
 
@@ -109,7 +112,7 @@ function CoverageList({ entries, country }) {
     <div className="cp-coverage">
       <button className="cp-coverage-toggle" onClick={() => setOpen(!open)}>
         <span className="cp-coverage-label">Related coverage ({entries.length})</span>
-        <span className={`cp-day-chevron ${open ? 'open' : ''}`}>&#9662;</span>
+        <span className={`cp-day-chevron ${open ? 'open' : ''}`}>▾</span>
       </button>
       {open && <>
         <div className="cp-coverage-header">
@@ -118,13 +121,11 @@ function CoverageList({ entries, country }) {
             <div className="cp-coverage-filters">
               <button className={`cp-cov-filter ${!activeCat ? 'active' : ''}`} onClick={() => setActiveCat(null)}>All</button>
               {categories.map(([cat, count]) => {
-                const c = CATEGORY_BADGE_COLORS[cat];
                 const isActive = activeCat === cat;
                 return (
                   <button
                     key={cat}
                     className={`cp-cov-filter ${isActive ? 'active' : ''}`}
-                    style={isActive && c ? { background: c.bg, color: c.color, borderColor: c.bg } : {}}
                     onClick={() => setActiveCat(isActive ? null : cat)}
                   >
                     {cat} {count}
@@ -142,7 +143,7 @@ function CoverageList({ entries, country }) {
                 <button className="cp-day-header" onClick={() => toggleDate(date)}>
                   <span className="cp-day-date">{formatDateLabel(date)}</span>
                   <span className="cp-day-count">{dayEntries.length} article{dayEntries.length !== 1 ? 's' : ''}</span>
-                  <span className={`cp-day-chevron ${isCollapsed ? '' : 'open'}`}>&#9662;</span>
+                  <span className={`cp-day-chevron ${isCollapsed ? '' : 'open'}`}>▾</span>
                 </button>
                 {!isCollapsed && dayEntries.map((entry, i) => {
                   const id = entry.topicId || `${date}-${i}`;
@@ -150,14 +151,13 @@ function CoverageList({ entries, country }) {
                   const hasAi = entry.ai?.summary || entry.ai?.prediction || entry.ai?.trace_cause;
                   const aiKey = activeAi === 'trace' ? 'trace_cause' : activeAi;
                   const cat = (entry.category || 'other').toLowerCase();
-                  const catColor = CATEGORY_BADGE_COLORS[cat];
                   return (
                     <div key={id} id={`coverage-${entry.topicId || id}`} className={`cp-coverage-item ${isExpanded ? 'expanded' : ''}`}>
                       <div className="cp-coverage-row" onClick={() => { setExpandedId(isExpanded ? null : id); setActiveAi(null); }}>
-                        {catColor && <span className="story-category-badge" style={{ background: catColor.bg, color: catColor.color, fontSize: 9, padding: '1px 6px' }}>{cat}</span>}
+                        <CategoryTag category={cat} />
                         <span className="cp-coverage-title">{entry.title}</span>
                         {entry.threadId && <span className="cp-arc-hint">arc</span>}
-                        <span className={`cp-coverage-chevron ${isExpanded ? 'open' : ''}`}>&#9662;</span>
+                        <span className={`cp-coverage-chevron ${isExpanded ? 'open' : ''}`}>▾</span>
                       </div>
                       {isExpanded && (
                         <div className="cp-coverage-body">
@@ -215,7 +215,7 @@ function CoverageList({ entries, country }) {
             );
           })}
           {!showAllDays && dayGroups.length > 3 && (
-            <button className="weekly-category-show-more" onClick={() => setShowAllDays(true)} style={{ marginTop: 8 }}>
+            <button className="cp-show-more" onClick={() => setShowAllDays(true)}>
               Show {dayGroups.length - 3} more day{dayGroups.length - 3 !== 1 ? 's' : ''}
             </button>
           )}
@@ -228,7 +228,7 @@ function CoverageList({ entries, country }) {
   );
 }
 
-function RiskSparkline({ snapshots, color = '#a2442e' }) {
+function RiskSparkline({ snapshots, color = 'var(--accent)' }) {
   if (!snapshots || snapshots.length < 2) return null;
   const scores = snapshots.map(s => s.riskScore ?? null).filter(v => v != null);
   if (scores.length < 2) return null;
@@ -254,7 +254,6 @@ export default function CountryPage() {
   // double-decodes and throws URIError on any name containing a literal '%'.
   const paramName = countryName;
   const navigate = useNavigate();
-  const { loading: authLoading } = useAuth();
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
   const [mainTab, setMainTab] = useState('situation');
   const [activeDeepTab, setActiveDeepTab] = useState(null);
@@ -375,14 +374,12 @@ export default function CountryPage() {
     document.title = `${decodedName} Intelligence Briefing — Global Perspectives`;
   }, [decodedName]);
 
-  if (authLoading) return null;
   if (loading) return <BootLoader variant="inline" label="Loading country" text="Loading country" />;
 
   // Canonical tier for this country — score-first, level fallback — so the pill,
   // stat tile and sparkline all agree (and "moderate" no longer reads as elevated).
   const riskTier = intel ? (intel.riskScore != null ? tierFromScore(intel.riskScore) : tierFromLevel(intel.riskLevel)) : null;
   const riskVar = riskTier ? riskTierToVar(riskTier) : null;
-  const risk = riskTier ? (RISK_COLORS[riskTier] || RISK_COLORS.moderate) : null;
   const trajectory = intel?.trajectory ? (TRAJECTORY_BADGES[intel.trajectory] || TRAJECTORY_BADGES.stable) : null;
 
   // Facet counts
@@ -480,10 +477,10 @@ export default function CountryPage() {
         <div className="cpg-rail-section">
           <div className="cpg-rail-hd">Live Web Evidence</div>
           {intel.groundingSources.slice(0, 4).map((s, i) => (
-            <div key={i} style={{ fontSize: 12, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--line)' }}>
-              <div style={{ fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4 }}>{s.title}</div>
-              {s.snippet && <div style={{ color: 'var(--ink-dim)', marginTop: 2, lineHeight: 1.4 }}>{s.snippet.slice(0, 100)}{s.snippet.length > 100 ? '…' : ''}</div>}
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-faint)', marginTop: 3 }}>{s.source}{s.age ? ` · ${s.age}` : ''}</div>
+            <div key={i} style={{ fontSize: 12, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--hairline)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--text-head)', lineHeight: 1.4 }}>{s.title}</div>
+              {s.snippet && <div style={{ color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>{s.snippet.slice(0, 100)}{s.snippet.length > 100 ? '…' : ''}</div>}
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)', marginTop: 3 }}>{s.source}{s.age ? ` · ${s.age}` : ''}</div>
             </div>
           ))}
         </div>
@@ -503,20 +500,20 @@ export default function CountryPage() {
               key={d.scopeId || i}
               to={threadPath(d.scopeId, { tab: 'economy', from: 'country', country: decodedName })}
               className="cpg-disruption-row"
-              style={{ display: 'block', padding: '8px 0', borderBottom: i < 2 && i < countryDisruptions.length - 1 ? '1px dotted var(--line)' : 'none', textDecoration: 'none', color: 'inherit' }}
+              style={{ display: 'block', padding: '8px 0', borderBottom: i < 2 && i < countryDisruptions.length - 1 ? '1px dotted var(--hairline)' : 'none', textDecoration: 'none', color: 'inherit' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <SeverityBadge level={d.severity} size="sm" />
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-faint)' }}>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--text-dim)' }}>
                   {(d.instruments || []).slice(0, 3).map(inst => (
                     <span key={inst.instrumentId} style={{ marginRight: 6 }}>
-                      <b style={{ color: 'var(--ink)' }}>{inst.instrumentId}</b>
+                      <b style={{ color: 'var(--text-head)' }}>{inst.instrumentId}</b>
                       <DirectionArrow dir={inst.direction} />
                     </span>
                   ))}
                 </span>
               </div>
-              <div style={{ fontFamily: 'var(--serif)', fontSize: 13, lineHeight: 1.35, color: 'var(--ink)' }}>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 13, lineHeight: 1.35, color: 'var(--text-head)' }}>
                 {d.headline}
               </div>
             </Link>
@@ -600,12 +597,7 @@ export default function CountryPage() {
             </select>
           </div>
           <div className="cpg-map-overlay-right">
-            {risk && (
-              <span className="cpg-risk-pill" style={{ color: risk.color, borderColor: risk.color + '44' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: risk.color, display: 'inline-block' }} />
-                {tierLabel(riskTier)}
-              </span>
-            )}
+            {riskTier && <TierChip className="cpg-risk-pill" tier={riskTier} score={intel?.riskScore} />}
             {trajectory && (
               <span className="cpg-traj-pill" style={{ color: trajectory.color }}>
                 {trajectory.arrow} {trajectory.label}
@@ -630,7 +622,7 @@ export default function CountryPage() {
       {!countryData ? (
         <div className="cpg-empty" style={{ paddingTop: 80, textAlign: 'center' }}>
           <h3 style={{ fontFamily: 'var(--serif)', fontSize: 28, marginBottom: 12 }}>No coverage for {decodedName}</h3>
-          <p style={{ color: 'var(--ink-mid)' }}>This country has no recent news in the archive.</p>
+          <p style={{ color: 'var(--text-body)' }}>This country has no recent news in the archive.</p>
         </div>
       ) : (
         <EditorialShell
@@ -687,13 +679,13 @@ export default function CountryPage() {
             </div>
             <div className="cpg-stat">
               <div className="cpg-stat-k">Risk level</div>
-              <div className="cpg-stat-v tier" style={riskVar ? { color: riskVar } : {}}>
-                {riskTier ? tierLabel(riskTier) : '—'}
+              <div className="cpg-stat-v tier">
+                {riskTier ? <TierChip tier={riskTier} /> : '—'}
               </div>
               <div className="cpg-stat-d">
                 {intel?.riskScore != null && <span className="cpg-stat-num">{intel.riskScore} · </span>}
                 {riskHistory.length >= 2 ? (
-                  <RiskSparkline snapshots={riskHistory} color={risk?.color} />
+                  <RiskSparkline snapshots={riskHistory} color={riskVar || undefined} />
                 ) : (
                   trajectory ? `${trajectory.arrow} ${trajectory.label}` : 'AI-assessed'
                 )}
@@ -726,21 +718,21 @@ export default function CountryPage() {
             <div className="cpg-tab-content">
               {intel?.bluf && (
                 <>
-                  <div className="cpg-section-lbl">Bottom Line</div>
+                  <SectionHeader label="Bottom Line" />
                   <div className="cpg-bluf-text">{intel.bluf}</div>
                 </>
               )}
 
               {intel?.whyItMatters && (
                 <>
-                  <div className="cpg-section-lbl">Why It Matters</div>
+                  <SectionHeader label="Why It Matters" />
                   <div className="cpg-why-text"><BoldText text={intel.whyItMatters} /></div>
                 </>
               )}
 
               {intel?.riskSignals?.length > 0 && (
                 <>
-                  <div className="cpg-section-lbl">What to Watch</div>
+                  <SectionHeader label="What to Watch" />
                   <ul className="cpg-watch-list">
                     {intel.riskSignals.slice(0, 5).map((s, i) => (
                       <li key={i}>{s}</li>
@@ -776,7 +768,7 @@ export default function CountryPage() {
                         onClick={() => setActiveDeepTab(activeDeepTab === tab.key ? null : tab.key)}
                       >
                         <span>{tab.label}</span>
-                        <span className={`cp-deep-chevron ${activeDeepTab === tab.key ? 'open' : ''}`}>&#9662;</span>
+                        <span className={`cp-deep-chevron ${activeDeepTab === tab.key ? 'open' : ''}`}>▾</span>
                       </button>
                       {activeDeepTab === tab.key && (
                         <div className={`story-entry-ai-content ${tab.cssClass}`}>
@@ -797,18 +789,16 @@ export default function CountryPage() {
           {/* Story arcs tab */}
           {mainTab === 'arcs' && (
             <div className="cpg-tab-content">
-              <div className="cpg-section-lbl">
-                Story Arcs
-                <span style={{ color: 'var(--ink-faint)', fontWeight: 400, marginLeft: 6 }}>{filteredArcs.length}</span>
+              <SectionHeader label="Story Arcs" count={filteredArcs.length}>
                 {(arcTypeFilter !== 'all' || catFilter || urgFilter) && (
                   <button
-                    style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 8 }}
+                    className="cpg-clear-filters"
                     onClick={() => { setArcTypeFilter('all'); setCatFilter(null); setUrgFilter(null); }}
                   >
                     Clear filters ×
                   </button>
                 )}
-              </div>
+              </SectionHeader>
 
               {/* Filters live HERE now (contextual to arcs), not floating in the left rail — Phase 3 IA */}
               {allArcs.length > 0 && (
@@ -830,13 +820,11 @@ export default function CountryPage() {
                       <span className="cpg-fgroup-lbl">Category</span>
                       <button aria-pressed={!catFilter} className={`cpg-fchip${!catFilter ? ' on' : ''}`} onClick={() => setCatFilter(null)}>All</button>
                       {catCounts.map(([cat, count]) => {
-                        const c = CATEGORY_BADGE_COLORS[cat];
                         return (
                           <button
                             key={cat}
                             aria-pressed={catFilter === cat}
                             className={`cpg-fchip${catFilter === cat ? ' on' : ''}`}
-                            style={catFilter === cat && c ? { color: c.color, borderColor: c.color } : {}}
                             onClick={() => setCatFilter(catFilter === cat ? null : cat)}
                           >
                             {cat} <span className="c">{count}</span>
@@ -861,7 +849,7 @@ export default function CountryPage() {
 
               {filteredArcs.length > 0 ? (
                 filteredArcs.map(arc => {
-                  const c = CATEGORY_BADGE_COLORS[arc.category];
+                  const dotColor = CATEGORY_DOT[arc.category];
                   const title = threadAnalyses?.[arc.threadId]?.threadTitle || arc.latestTitle;
                   const ta = threadAnalyses?.[arc.threadId];
                   return (
@@ -870,7 +858,7 @@ export default function CountryPage() {
                       to={threadPath(arc.threadId, { from: 'country', country: decodedName })}
                       className={`cpg-arc-card${arc.isAnchor ? ' anchor' : ' linked'}`}
                     >
-                      <div className="cpg-arc-card-dot" style={{ background: c?.color || 'var(--ink-faint)' }} />
+                      <div className="cpg-arc-card-dot" style={{ background: dotColor || 'var(--text-dim)' }} />
                       <div className="cpg-arc-card-body">
                         <div className="cpg-arc-card-kicker">
                           <span className={`cpg-arc-type${arc.isAnchor ? '' : ' linked'}`}>{arc.isAnchor ? 'ANCHOR' : 'LINKED'}</span>
@@ -887,9 +875,7 @@ export default function CountryPage() {
                         <div><b>{arc.articleCount}</b> articles</div>
                         <div><b>{arc.dayCount}</b> days</div>
                         {ta?.riskScore != null && (
-                          <div style={{ color: riskScoreToVar(ta.riskScore) }}>
-                            <b>{tierLabel(tierFromScore(ta.riskScore))}</b> <span className="cpg-arc-card-num">{ta.riskScore}</span>
-                          </div>
+                          <div><TierChip tier={tierFromScore(ta.riskScore)} score={ta.riskScore} /></div>
                         )}
                       </div>
                     </Link>

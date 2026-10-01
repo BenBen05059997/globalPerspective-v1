@@ -1,5 +1,13 @@
 # Global Perspectives — Change Log
 
+## 2026-10-01 (dark site, phase P3a: countries list + country page, daily, weekly brief, track record on tokens + shared blocks; code and tests only, frontend NOT deployed)
+
+- **Pages converted (restyle only, every control kept):** `/weekly/countries` (+ the Countries tab), `/weekly/country/:name`, `/daily`, `/weekly-brief`, `/track-record` (+ `/text`). Risk is now `TierChip` (word + ring weight) instead of coloured pills; topics are a neutral outlined `CategoryTag` (new shared block) instead of pastel fills; section labels are `SectionHeader`; the old legacy-alias colours (`--ink`, `--paper`, `--risk-*` ...) in these files are the role tokens; every `var(--x, #fff)` fallback literal is gone.
+- **Real light blocks fixed:** the shared `StatusStrip` was a light bar (`background: var(--ink)`), share + copy-briefing buttons were white (their CSS lived in `WeeklyPage.css`, now `shared/ui/ShareButtons.css`), the country map hero (Google map + SVG fallback in `WeeklyMap.jsx`) and the countries-list map were light, the daily Rising-thread box / lead pill were inverted light fills with unreadable text, country timeline text was 1.9:1, "source" links on the track record were browser blue (2.1:1).
+- **Auth gate:** `DailyPage` and `CountryPage` no longer `return null` while auth loads (public data never gates on sign-in).
+- **Moved / deleted:** `.cp-*` and `.bgt-*` country rules moved from `threads/WeeklyPage.css` to `features/countries/CountryCoverage.css`; dead country-list / daily / legacy-country blocks deleted from `WeeklyPage.css` (372 lines). Text version of the track record prints in system colours.
+- **Verification (live data, Chrome for Testing, 1440 + 390):** light boxes and sub-4.5:1 text per page 0-16 / 0-12 before -> 0 / 0 after; 0 overflow; 0 page errors; every control on every page clicked. Ratchet 1,791 -> 1,457 literals (80 -> 65 files). `npm run verify` 129 files / 954 tests; `verify_pages.sh` 131 pass (+23).
+
 ## 2026-10-01 (dark site, phase P2: shared building blocks + one loader; code and tests only, frontend NOT deployed)
 
 - **Building blocks** in `shared/ui/`: `StatusGlyph` (the legend's ▲●◆▼; vocabulary moved to `shared/lib/statusGlyph.js`, re-exported by `features/map/lib/legend.js`), `TierChip` (tier word + ring weight, number only when known, dashed "Not scored"; no fills), `StoryRow` (crisis-hue bar, chip, glyph, title, place, last-change age amber past 7 days, whole row one link/button, StoryPeek via `usePeek`), `SectionHeader`, `FilterGroup`; role tokens only, 44px targets. Map `HudIntelFeed` rows are now `StoryRow` (adds the age per row and the full direction glyph set the alert cards already used; tier chip HIGH is a double ring instead of a glow).

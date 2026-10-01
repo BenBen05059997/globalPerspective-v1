@@ -28,13 +28,16 @@ function threadColor(threadId) {
   return `hsl(${threadHue(threadId)}, 65%, 45%)`;
 }
 
-const MAP_STYLES = [
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#dde8f0' }] },
-  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+// Dark base painted from the role tokens (read from :root when the map is created).
+const rootVar = (name) => getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+const mapStyles = () => [
+  { elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: rootVar('bg') }] },
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: rootVar('panel-3') }] },
   { featureType: 'road', stylers: [{ visibility: 'off' }] },
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#c0c0c0' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: rootVar('text-dim') }] },
 ];
 
 function escapeHtml(str) {
@@ -179,7 +182,7 @@ const WeeklyGoogleMap = forwardRef(function WeeklyGoogleMap({ markers, lines, hi
           latLngBounds: { north: 85, south: -85, west: -180, east: 180 },
           strictBounds: true,
         },
-        styles: MAP_STYLES,
+        styles: mapStyles(),
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
@@ -306,11 +309,11 @@ function WeeklyFallbackMap({ markers, lines, storyPlay, countryPlay, countryThre
   const grouped = groupMarkersByCountry(markers, currentDate);
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: '#dde8f0' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', backgroundColor: 'var(--bg)' }}>
       <svg width="100%" height="100%" viewBox="0 0 1000 500" style={{ position: 'absolute', inset: 0 }}>
-        <rect width="1000" height="500" fill="#dde8f0" />
+        <rect width="1000" height="500" style={{ fill: 'var(--bg)' }} />
         {CONTINENT_PATHS.map((cp, i) => (
-          <path key={i} d={cp.d} fill="#e8f0e8" stroke="#c0d0c0" strokeWidth="1" />
+          <path key={i} d={cp.d} style={{ fill: 'var(--panel-3)', stroke: 'var(--hairline-strong)' }} strokeWidth="1" />
         ))}
         {lines.map((item, i) => {
           const x1 = ((item.from.lng + 180) / 360) * 1000;

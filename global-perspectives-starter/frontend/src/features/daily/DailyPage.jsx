@@ -2,13 +2,15 @@ import { useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
 import { storyLinkPath } from '@/features/briefings/lib/briefingSlides.js';
-import { useAuth } from '@/shared/contexts/AuthContext';
 import { useDailyBrief } from '@/features/daily/hooks/useDailyBrief';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import InstrumentChip from '@/features/economy/components/InstrumentChip';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
-import { CATEGORY_BADGE_COLORS, RISK_COLORS } from '@/shared/styles/tokens';
+import { CATEGORY_DOT, riskTierToVar } from '@/shared/styles/tokens';
+import { tierFromLevel } from '@/shared/lib/riskTiers';
+import TierChip from '@/shared/ui/TierChip.jsx';
+import SharedSectionHeader from '@/shared/ui/SectionHeader.jsx';
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatDailyBrief } from '@/shared/ui/CopyBriefing';
 import { SaveButton } from '@/features/account/components/SaveButton';
@@ -107,13 +109,7 @@ function deriveTakeaways(brief) {
 }
 
 function SectionHeader({ num, title, meta }) {
-  return (
-    <div className="daily-sec-hd">
-      <span className="daily-sec-num">{num}</span>
-      <h2>{title}</h2>
-      {meta && <span className="daily-sec-meta">{meta}</span>}
-    </div>
-  );
+  return <SharedSectionHeader label={`${num} · ${title}`} hint={meta} />;
 }
 
 function EconomicFootprint() {
@@ -198,7 +194,6 @@ function EconomicFootprint() {
 
 export default function DailyPage() {
   const { dateKey: paramDateKey } = useParams();
-  const { loading: authLoading } = useAuth();
   const today = new Date().toISOString().slice(0, 10);
   const dateKey = paramDateKey || today;
   const isToday = dateKey === today;
@@ -222,7 +217,6 @@ export default function DailyPage() {
     document.title = `Daily Brief — ${title} | Global Perspectives`;
   }, [brief, dateKey]);
 
-  if (authLoading) return null;
   if (loading) return <BootLoader variant="inline" label="Loading the daily brief" text="Loading the daily brief" />;
 
   if (!brief) {
@@ -250,9 +244,7 @@ export default function DailyPage() {
   const risingTraj = brief.risingThread?.trajectory
     ? (TRAJECTORY_LABELS[brief.risingThread.trajectory] || TRAJECTORY_LABELS.stable)
     : null;
-  const countryRisk = brief.countryToWatch?.riskLevel
-    ? (RISK_COLORS[brief.countryToWatch.riskLevel] || RISK_COLORS.moderate)
-    : null;
+  const countryTier = brief.countryToWatch?.riskLevel ? (tierFromLevel(brief.countryToWatch.riskLevel) || 'moderate') : null;
   const catEntries = Object.entries(brief.categoryBreakdown || {})
     .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1]);
@@ -411,7 +403,7 @@ export default function DailyPage() {
 
                   <div className="daily-story-body">
                     <div className="daily-story-kicker">
-                      {story.category && <span className="daily-tag daily-tag-cat">{story.category}</span>}
+                      {story.category && <span className="daily-tag daily-tag-cat" style={{ '--cat-dot': CATEGORY_DOT[story.category] }}>{story.category}</span>}
                       {(story.regions || []).slice(0, 3).map((r, j) => (
                         <Link key={j} to={`/weekly/country/${encodeURIComponent(r)}`} className="daily-tag daily-tag-region">{r}</Link>
                       ))}
@@ -474,19 +466,12 @@ export default function DailyPage() {
           <Link
             to={`/weekly/country/${encodeURIComponent(brief.countryToWatch.countryName)}`}
             className="daily-riskcard"
-            style={countryRisk ? { borderLeftColor: countryRisk.color } : {}}
+            style={countryTier ? { borderLeftColor: riskTierToVar(countryTier) } : {}}
           >
             <div className="daily-riskcard-flag">{brief.countryToWatch.countryName}</div>
             <div className="daily-riskcard-body">
               <div className="daily-riskcard-top">
-                {countryRisk && (
-                  <span
-                    className="daily-badge-risk"
-                    style={{ background: countryRisk.bg, color: countryRisk.color }}
-                  >
-                    {brief.countryToWatch.riskLevel} risk
-                  </span>
-                )}
+                {countryTier && <TierChip tier={countryTier} />}
                 {brief.countryToWatch.trajectory && TRAJECTORY_LABELS[brief.countryToWatch.trajectory] && (
                   <span className={`daily-traj ${TRAJECTORY_LABELS[brief.countryToWatch.trajectory].cls}`}>
                     {TRAJECTORY_LABELS[brief.countryToWatch.trajectory].arrow} {TRAJECTORY_LABELS[brief.countryToWatch.trajectory].label}
@@ -511,14 +496,14 @@ export default function DailyPage() {
           <SectionHeader num="6" title="Shape of the Day" meta="stories by category" />
           <div className="daily-bars">
             {catEntries.map(([cat, count]) => {
-              const c = CATEGORY_BADGE_COLORS[cat];
+              const dot = CATEGORY_DOT[cat];
               return (
                 <div key={cat} className="daily-bar-row">
                   <span className="daily-bar-label">{cat}</span>
                   <div className="daily-bar-track">
                     <div
                       className="daily-bar-fill"
-                      style={{ width: `${Math.max(4, (count / catMax) * 100)}%`, background: c?.color || 'var(--ink)' }}
+                      style={{ width: `${Math.max(4, (count / catMax) * 100)}%`, background: dot || 'var(--text-dim)' }}
                     />
                   </div>
                   <span className="daily-bar-val">{count}</span>

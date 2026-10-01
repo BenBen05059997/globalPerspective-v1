@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { threadPath } from '@/shared/lib/threadPath';
+import '@/shared/ui/ShareButtons.css';
 import { rootCauseText } from '@/shared/lib/rootCause';
 
 export default function CopyBriefing({ getText }) {

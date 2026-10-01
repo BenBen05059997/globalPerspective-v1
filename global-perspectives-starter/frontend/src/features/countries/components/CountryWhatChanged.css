@@ -1,9 +1,9 @@
 /* "What changed" band — living-analysis Phase 1a (deterministic, from daily risk history). */
 .cwc {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-left: 3px solid var(--accent);
   border-radius: var(--r-md);
-  background: var(--paper-2);
+  background: var(--panel-2);
   padding: 12px 14px;
   margin: 14px 0;
 }
@@ -23,7 +23,7 @@
 }
 .cwc-since {
   font-size: 12px;
-  color: var(--ink-dim);
+  color: var(--text-muted);
 }
 .cwc-dims {
   display: flex;
@@ -31,18 +31,18 @@
   gap: 6px 16px;
   margin-top: 8px;
   font-size: 13px;
-  color: var(--ink-mid);
+  color: var(--text-body);
 }
-.cwc-dim b { color: var(--ink); }
+.cwc-dim b { color: var(--text-head); }
 /* Axis moves read as distinct pills — they name WHICH dimension drove the change. */
 .cwc-dim-axis {
   padding: 0 8px;
-  border: 1px solid var(--border, rgba(127, 127, 127, 0.28));
+  border: 1px solid var(--border);
   border-radius: 999px;
   line-height: 1.7;
 }
 .cwc-dim-delta {
-  color: var(--ink-dim);
+  color: var(--text-muted);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -51,12 +51,12 @@
   font-size: 12.5px;
   line-height: 1.45;
 }
-.cwc-prev { color: var(--ink-dim); text-decoration: line-through; text-decoration-color: var(--line); }
-.cwc-now { color: var(--ink); margin-top: 2px; }
+.cwc-prev { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--hairline); }
+.cwc-now { color: var(--text-head); margin-top: 2px; }
 .cwc-foot {
   margin-top: 8px;
   font-size: 11px;
-  color: var(--ink-dim);
+  color: var(--text-muted);
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -73,45 +73,45 @@
 
 /* Grounded "because <event>: <why>" (living-analysis 1b — from newsDriftCorrector). */
 .cwc-why { margin-top: 9px; }
-.cwc-because { font-size: 13px; color: var(--ink-mid); }
-.cwc-because b { color: var(--ink); }
-.cwc-evdate { color: var(--ink-dim); font-family: var(--mono); font-size: 11px; }
-.cwc-whytext { margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.cwc-because { font-size: 13px; color: var(--text-body); }
+.cwc-because b { color: var(--text-head); }
+.cwc-evdate { color: var(--text-muted); font-family: var(--mono); font-size: 11px; }
+.cwc-whytext { margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--text-head); }
 
 /* Correction chain (expandable full history of grounded moves) */
 .cwc-chain { margin-top: 10px; }
 .cwc-chain-toggle {
   background: none; border: none; padding: 0; cursor: pointer;
-  font: inherit; font-size: 12px; color: var(--accent, #b45309);
+  font: inherit; font-size: 12px; color: var(--accent);
   letter-spacing: .02em;
 }
 .cwc-chain-toggle:hover { text-decoration: underline; }
 .cwc-chain-list {
   list-style: none; margin: 8px 0 0; padding: 8px 0 0;
-  border-top: 1px dashed var(--line, #e5e0d8);
+  border-top: 1px dashed var(--hairline);
 }
 .cwc-chain-row {
   display: grid; grid-template-columns: 52px 92px 1fr; gap: 8px;
   align-items: baseline; padding: 4px 0; font-size: 12.5px;
-  border-bottom: 1px dotted var(--line, #eee);
+  border-bottom: 1px dotted var(--hairline);
 }
 .cwc-chain-row:last-child { border-bottom: none; }
-.cwc-chain-date { color: var(--ink-soft, #8a8577); font-variant-numeric: tabular-nums; }
-.cwc-chain-delta { color: var(--ink-mid, #6b6656); font-weight: 600; font-variant-numeric: tabular-nums; }
-.cwc-chain-because { color: var(--ink, #2b2924); }
-.cwc-chain-because em { color: var(--ink-soft, #8a8577); font-style: italic; }
+.cwc-chain-date { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.cwc-chain-delta { color: var(--text-body); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cwc-chain-because { color: var(--text-head); }
+.cwc-chain-because em { color: var(--ink-soft); font-style: italic; }
 
 /* Depth gate — honest "N earlier corrections behind membership" affordance (P2). */
 .cwc-locked {
   display: block;
   margin-top: 8px;
   padding: 7px 10px;
-  border: 1px dashed var(--line);
+  border: 1px dashed var(--hairline);
   border-radius: 6px;
   font-size: 12px;
-  color: var(--ink-dim);
+  color: var(--text-muted);
   text-decoration: none;
   background: var(--paper-2, transparent);
 }
 .cwc-locked:hover { border-color: var(--accent); }
-.cwc-locked-cta { color: var(--accent, #b45309); font-weight: 600; white-space: nowrap; }
+.cwc-locked-cta { color: var(--accent); font-weight: 600; white-space: nowrap; }

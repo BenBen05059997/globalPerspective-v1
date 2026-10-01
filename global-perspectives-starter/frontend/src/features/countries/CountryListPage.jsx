@@ -5,12 +5,14 @@ import { useCountryIntelligence } from '@/features/countries/hooks/useCountryInt
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
-import { RISK_COLORS, CATEGORY_BADGE_COLORS, riskTierToVar } from '@/shared/styles/tokens';
 import { TIER_ORDER, tierFromLevel, tierFromScore } from '@/shared/lib/riskTiers';
 import CountryOverviewMap from '@/features/countries/components/CountryOverviewMap';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
-import RiskScoreBadge from '@/shared/ui/risk/RiskScoreBadge';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
+import TierChip from '@/shared/ui/TierChip.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { isRealCountryName } from '@/shared/lib/placeNames.js';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
 import '@/features/threads/WeeklyPage.css';
@@ -31,13 +33,12 @@ function trajectoryArrow(text = '') {
 
 function CountryCard({ country, intel, disruptionSeverity }) {
   const traj = trajectoryArrow(intel?.trajectory);
-  const catColors = CATEGORY_BADGE_COLORS[country.topCategories?.[0]];
 
   return (
     <Link to={`/weekly/country/${encodeURIComponent(country.name)}`} className="clp-card">
       <div className="clp-card-head">
         <span className="clp-card-name">{country.name}</span>
-        <RiskScoreBadge level={intel?.riskLevel} size="sm" />
+        <TierChip tier={tierFromLevel(intel?.riskLevel)} score={intel?.riskScore} />
         {disruptionSeverity && <SeverityBadge level={disruptionSeverity} size="sm" />}
         <span className={`clp-card-traj ${traj.cls}`}>{traj.arrow}</span>
       </div>
@@ -47,11 +48,7 @@ function CountryCard({ country, intel, disruptionSeverity }) {
       )}
 
       <div className="clp-card-foot">
-        {catColors && (
-          <span className="clp-cat-badge" style={{ background: catColors.bg, color: catColors.color }}>
-            {country.topCategories[0]}
-          </span>
-        )}
+        <CategoryTag category={country.topCategories?.[0]} />
         <span className="clp-card-meta">
           {country.articles} art · {country.arcCount} {country.arcCount !== 1 ? 'arcs' : 'arc'}
         </span>
@@ -87,7 +84,7 @@ function CountryRow({ country, intel }) {
   const traj = trajectoryArrow(intel?.trajectory);
   return (
     <Link to={`/weekly/country/${encodeURIComponent(country.name)}`} className="clp-row">
-      <RiskScoreBadge level={intel?.riskLevel} size="sm" />
+      <TierChip tier={tierFromLevel(intel?.riskLevel)} score={intel?.riskScore} />
       <span className="clp-row-name">{country.name}</span>
       <span className={`clp-row-traj ${traj.cls}`}>{traj.arrow}</span>
       {intel?.headline && <span className="clp-row-headline">{intel.headline}</span>}
@@ -102,10 +99,7 @@ function RiskBand({ band, items, intelligence, maxSeverityByCountry }) {
   if (!items.length) return null;
   return (
     <section className="clp-band">
-      <div className="clp-band-header">
-        <span className="clp-band-label" style={{ color: riskTierToVar(band.tier) }}>{band.label}</span>
-        <span className="clp-band-count">{items.length}</span>
-      </div>
+      <SectionHeader label={band.label} count={items.length} className="clp-band-header" />
       {band.cards ? (
         <div className="clp-cards">
           {items.map(c => (
@@ -208,7 +202,7 @@ function RightRail({ featured, intelligence }) {
               <span className="clp-lb-rank">{i + 1}</span>
               <span className="clp-lb-name">{c.name}</span>
               <span className={`clp-lb-traj ${traj.cls}`}>{traj.arrow}</span>
-              <RiskScoreBadge level={intel?.riskLevel} size="sm" />
+              <TierChip tier={tierFromLevel(intel?.riskLevel)} score={intel?.riskScore} />
             </Link>
           );
         })}
@@ -330,7 +324,7 @@ export default function CountryListPage() {
 
   useEffect(() => { document.title = 'Country Intelligence — Global Perspectives'; }, []);
 
-  if (loading) return <div className="weekly-loading">Loading country data…</div>;
+  if (loading) return <BootLoader variant="inline" label="Loading countries" text="Loading countries" />;
 
   const q = searchQuery.trim().toLowerCase();
 
@@ -399,9 +393,9 @@ export default function CountryListPage() {
           onCountryClick={handleCountryClick}
         />
         <div className="clp-map-legend">
-          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--risk-h)' }} /> High</span>
-          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--risk-e)' }} /> Elevated</span>
-          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--risk-l)' }} /> Low</span>
+          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--tier-high)' }} /> High</span>
+          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--tier-elevated)' }} /> Elevated</span>
+          <span className="clp-leg"><span className="clp-leg-dot" style={{ background: 'var(--tier-low)' }} /> Low</span>
         </div>
       </div>
 
@@ -424,10 +418,7 @@ export default function CountryListPage() {
           })()
         ) : (
           <>
-            <div className="clp-section-header">
-              <span className="clp-section-title">AI Briefings</span>
-              <span className="clp-section-hint">{filteredFeatured.length} countries</span>
-            </div>
+            <SectionHeader label="AI Briefings" hint={`${filteredFeatured.length} countries`} />
             <div className="clp-cards">
               {filteredFeatured.map(c => (
                 <CountryCard

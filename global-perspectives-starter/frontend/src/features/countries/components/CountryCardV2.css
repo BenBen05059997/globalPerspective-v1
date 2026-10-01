@@ -1,25 +1,16 @@
-/* CountryCardV2 — S4 country card. Mounted in two different themes: the light /weekly/country
-   page (tokens.css :root — --ink/--paper/--line/--accent) and the dark .gp-console map theme
-   (tokens.css's --c-* console tokens, NOT --ink/--paper — the console block deliberately never
-   redefines the light tokens, see tokens.css's "Console theme" comment). A first pass here used
-   --ink/--line directly and read as near-invisible dark-on-dark inside the console (1.68:1
-   contrast, measured) — the same "light-on-light text" class of bug flagged in the S2/S3 review
-   notes. Fixed by aliasing to local --ccv2-* custom properties that default to the light tokens
-   and are overridden under .gp-console. */
+/* CountryCardV2 — S4 country card. One palette (role tokens, tokens.css): the same card renders on
+   the /weekly/country page and in the map console. The --ccv2-* names are kept as local aliases
+   so the rules below read the same everywhere. */
 .ccv2 {
-  --ccv2-ink:       var(--ink);
-  --ccv2-ink-mid:   var(--ink-mid);
-  --ccv2-ink-faint: var(--ink-faint, var(--ink-mid));
-  --ccv2-line:      var(--line);
-  --ccv2-paper:     var(--paper);
-  --ccv2-paper-2:   var(--paper-2, rgba(0, 0, 0, 0.02));
+  --ccv2-ink:       var(--text-head);
+  --ccv2-ink-mid:   var(--text-body);
+  --ccv2-ink-faint: var(--text-dim);
+  --ccv2-line:      var(--hairline);
+  --ccv2-paper:     var(--panel);
+  --ccv2-paper-2:   var(--panel-2);
   --ccv2-accent:    var(--accent);
-  /* --risk-e (#d89540) measured 2.04:1 as plain text on the light paper background — too light
-     for AA. A darker amber (matches the app's existing REGION_COLORS amber text, #92400e) reads
-     the same "older/caution" meaning at readable contrast; the console's darker background can
-     keep the brighter --risk-e (7.54:1 measured there). */
-  --ccv2-older:     #92400e;
-  --ccv2-older-bg:  var(--risk-e-soft, rgba(216, 149, 64, 0.16));
+  --ccv2-older:     var(--warn);
+  --ccv2-older-bg:  var(--tier-elevated-wash);
 
   display: flex;
   flex-direction: column;
@@ -27,18 +18,6 @@
   padding: 14px 16px 18px;
   color: var(--ccv2-ink);
   font-family: var(--sans, inherit);
-}
-
-.gp-console .ccv2 {
-  --ccv2-ink:       var(--c-text-head);
-  --ccv2-ink-mid:   var(--c-text-body);
-  --ccv2-ink-faint: var(--c-text-dim);
-  --ccv2-line:      var(--c-hairline);
-  --ccv2-paper:     var(--c-panel);
-  --ccv2-paper-2:   var(--c-panel-2);
-  --ccv2-accent:    var(--c-accent);
-  --ccv2-older:     var(--risk-e, #d89540);
-  --ccv2-older-bg:  rgba(216, 149, 64, 0.14);
 }
 
 .ccv2-head {
@@ -72,8 +51,8 @@
   letter-spacing: 0.06em;
   padding: 3px 8px;
   border-radius: 999px;
-  border: 1px solid var(--risk-h, #ef4444);
-  color: var(--risk-h, #ef4444);
+  border: 1px solid var(--tier-high);
+  color: var(--tier-high);
 }
 
 .ccv2-state {

@@ -4,7 +4,7 @@
   max-width: 68ch;
   margin: 0 auto;
   padding: var(--space-10) var(--space-5) var(--space-16);
-  color: var(--ink);
+  color: var(--text-head);
   font-size: var(--text-md);
   line-height: 1.6;
   overflow-wrap: anywhere;
@@ -12,13 +12,13 @@
 .tr-text h1 { font-family: var(--serif); font-size: var(--text-3xl); margin: 0 0 var(--space-3); }
 .tr-text h2 { font-family: var(--serif); font-size: var(--text-xl); margin: var(--space-10) 0 var(--space-3); }
 .tr-text h3 { font-size: var(--text-md); margin: var(--space-5) 0 var(--space-2); }
-.tr-text p { margin: 0 0 var(--space-3); color: var(--ink-mid); }
-.tr-text ul, .tr-text ol { padding-left: var(--space-6); margin: 0 0 var(--space-4); color: var(--ink-mid); }
+.tr-text p { margin: 0 0 var(--space-3); color: var(--text-body); }
+.tr-text ul, .tr-text ol { padding-left: var(--space-6); margin: 0 0 var(--space-4); color: var(--text-body); }
 .tr-text li { margin-bottom: var(--space-2); }
-.tr-text a { color: var(--accent, #b4502f); }
+.tr-text a { color: var(--accent); }
 .tr-text-kicker {
   font-family: var(--mono); font-size: var(--text-xs); letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--ink-dim); margin: 0 0 var(--space-2);
+  text-transform: uppercase; color: var(--text-muted); margin: 0 0 var(--space-2);
 }
 
 @media (max-width: 640px) {
@@ -26,6 +26,8 @@
 }
 
 @media print {
-  .tr-text { max-width: 100%; padding: 0; }
-  .tr-text a::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #555; }
+  /* print on paper: system colours, not the dark site tokens (light text would vanish) */
+  .tr-text, .tr-text p, .tr-text ul, .tr-text ol, .tr-text a, .tr-text h1, .tr-text h2, .tr-text h3, .tr-text-kicker { color: CanvasText; }
+  .tr-text { max-width: 100%; padding: 0; background: Canvas; }
+  .tr-text a::after { content: " (" attr(href) ")"; font-size: 0.85em; color: var(--text-dim); }
 }

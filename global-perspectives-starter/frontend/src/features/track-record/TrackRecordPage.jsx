@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { FollowButton } from '@/features/account/components/FollowButton';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
@@ -124,7 +125,7 @@ export default function TrackRecordPage() {
 
       {/* ---- Accuracy: locked until 150 resolved questions ---- */}
       <section className="tr-section">
-        <div className="tr-section-head"><h2>Accuracy</h2></div>
+        <SectionHeader label="Accuracy" />
         {lock.locked ? (
           <div className="tr-lock">
             <div className="tr-lock-bar"><div className="tr-lock-fill" style={{ width: `${lock.pct}%` }} /></div>
@@ -156,7 +157,7 @@ export default function TrackRecordPage() {
       {/* ---- This week's draw + commitments ---- */}
       {q?.weeks?.length > 0 && (
         <section className="tr-section">
-          <div className="tr-section-head"><h2>This week&apos;s draw</h2><span className="tr-section-tag">pre-registered</span></div>
+          <SectionHeader label="This week&apos;s draw"><span className="tr-section-tag">pre-registered</span></SectionHeader>
           <DrawRow weeks={q.weeks} />
           {view.drawNotes.map((t) => <p key={t} className="tr-gap-note">{t}</p>)}
         </section>
@@ -164,10 +165,9 @@ export default function TrackRecordPage() {
 
       {/* ---- Forecast record — counts that add up, the pilot labelled, never blended in ---- */}
       <section className="tr-section">
-        <div className="tr-section-head">
-          <h2>Forecast record</h2>
+        <SectionHeader label="Forecast record">
           {q?.firstCommit && <span className="tr-eracut">sampled from {fmtDay(q.firstCommit.committedAt)}</span>}
-        </div>
+        </SectionHeader>
         <section className="tr-stats">
           <div className="tr-stat"><span className="tr-stat-num">{counts.locked}</span><span className="tr-stat-label">Questions locked in samples</span></div>
           <div className="tr-stat"><span className="tr-stat-num">{counts.resolved}</span><span className="tr-stat-label">Resolved ({counts.yes} happened, {counts.no} didn&apos;t)</span></div>
@@ -187,7 +187,7 @@ export default function TrackRecordPage() {
 
       {/* ---- Forecast board: MAP (default) | BOARD ---- */}
       <section className="tr-section">
-        <div className="tr-section-head"><h2>Forecast board</h2></div>
+        <SectionHeader label="Forecast board" />
         <p className="tr-section-sub">
           Every question in a weekly sample, placed at the country it names: counts per place, never an accuracy
           score for a country (too few per place to mean anything).
@@ -211,16 +211,15 @@ export default function TrackRecordPage() {
 
       {/* ---- Settling log ---- */}
       <section className="tr-section">
-        <div className="tr-section-head"><h2>Settling log</h2></div>
+        <SectionHeader label="Settling log" />
         <SettlingLog weeks={q?.weeks || []} firstCommit={q?.firstCommit} pilotNote={view.pilotLine} />
       </section>
 
       {/* ---- Ledger of changed reads (the living-analysis loop) ---- */}
       <section className="tr-section">
-        <div className="tr-section-head">
-          <h2>Ledger of changed reads</h2>
+        <SectionHeader label="Ledger of changed reads">
           <span className="tr-section-tag">self-correcting analysis</span>
-        </div>
+        </SectionHeader>
         <p className="tr-section-sub">
           Our country and story reads update as news arrives. When a <em>conclusion</em> moves — a risk level,
           a trajectory — we record what changed and ground the <em>why</em> in a real, cited event. Never a silent

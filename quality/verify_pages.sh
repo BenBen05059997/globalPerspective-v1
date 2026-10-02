@@ -413,6 +413,51 @@ else
   FAIL=$((FAIL + 1)); FAILED+=("features/spider-demo still present or imported"); echo "  $(red FAIL) features/spider-demo still present or imported"
 fi
 
+# ─── P8 (2026-10-02): master-plan gaps 1-7 ───
+# 1 · map story card: WHY steps carry a basis tag; in-text links only for exact real story titles
+must_have "$SRC/features/map/components/StoryCard.jsx" "sc-basis--inference" "the card's WHY steps are tagged INFERENCE (model judgment)"
+must_not_have "$SRC/features/map/components/StoryCard.jsx" "sc-basis--fact" "the card never tags a stored cause step as FACT (no citation behind it)"
+must_have "$SRC/features/map/components/StoryCard.jsx" "linkMentions\\(" "the card links mentions through linkMentions (exact titles only)"
+must_have "$SRC/features/map/lib/cardMentions.js" "MIN_TITLE_CHARS" "mention matching has a minimum title length (no guesswork on short titles)"
+must_not_have "$SRC/features/map/lib/cardMentions.js" "levenshtein|fuzzy|similar|soundex" "mention matching has no fuzzy matching"
+must_have "$SRC/features/map/SituationHome.jsx" "webThreads=\\{webIndex" "the console passes the loaded web index titles to the story card"
+# 2 · StoryPeek wherever a story is named: one shared StoryLink
+must_have "$SRC/shared/ui/StoryLink.jsx" "usePeek" "StoryLink is built on usePeek"
+must_have "$SRC/shared/ui/StoryLink.jsx" "StoryPeek" "StoryLink renders the shared StoryPeek"
+if grep -A4 "const openOnFocus" "$SRC/shared/hooks/usePeek.js" | grep -q "hasNoHoverCapability"; then
+  PASS=$((PASS + 1)); echo "  $(green PASS) usePeek.openOnFocus opens nothing on touch devices (a tap navigates)"
+else
+  FAIL=$((FAIL + 1)); FAILED+=("usePeek.openOnFocus must skip touch devices"); echo "  $(red FAIL) usePeek.openOnFocus does not skip touch devices"
+fi
+for f in features/countries/components/CountryCardV2.jsx features/threads/components/StoriesTimeline.jsx features/threads/ThreadPage.jsx features/weekly-brief/WeeklyBriefPage.jsx features/home/Home.jsx features/home/components/LedeBand.jsx features/daily/DailyPage.jsx features/briefings/components/ReadAsText.jsx features/account/components/SavedPanel.jsx features/account/components/DeskSinceLastVisit.jsx features/analysis-studio/SharedAnalysisPage.jsx features/countries/CountryPage.jsx features/threads/components/FedIntoList.jsx features/threads/components/StoriesChanged.jsx features/threads/components/StoriesWeb.jsx; do
+  must_have "$SRC/$f" "StoryLink" "$f names stories through StoryLink (StoryPeek)"
+done
+# 3 · status line: computed from the newest generation time; approved wording
+must_have "$SRC/features/map/components/HudStatusLine.jsx" "New stories and analysis paused since" "status line wording is the approved one"
+must_have "$SRC/features/map/hooks/usePausedSince.js" "useNewestAnalysisAt" "status line uses the newest generation time across sources"
+must_have "$SRC/shared/data/useGeminiTopics.js" "reportAnalysisAt" "the stories feed reports its generation time"
+must_have "$SRC/features/countries/hooks/useCountryIntelligence.js" "reportAnalysisAt" "country briefings report their generation time"
+must_have "$SRC/app/layout/Layout.jsx" "usePausedSince" "Layout's status line uses usePausedSince"
+must_have "$SRC/app/layout/Layout.jsx" "useGdacsStatus\\(Boolean\\(paused\\)\\)" "GDACS is only looked up while paused"
+must_have "$SRC/features/map/components/HudStatusLine.jsx" "gdacs\\?\\.state === 'live'\\) parts.push\\('disaster alerts live'\\)" "the 'disaster alerts live' part is conditional on the GDACS state"
+# 4 · phone tabs: Track record READ/MAP/LOG, country READ/MAP, one switch, map only when opened
+must_have "$SRC/features/track-record/TrackRecordPage.jsx" "key: 'log', label: 'Log'" "Track record phone tabs: Read / Map / Log"
+must_have "$SRC/features/track-record/TrackRecordPage.jsx" "lazy\\(\\(\\) => import\\('@/features/track-record/components/ForecastBoard" "the forecast board map loads lazily"
+must_have "$SRC/features/countries/CountryPage.jsx" "key: 'map', label: 'Map'" "country page phone tabs: Read / Map"
+must_have "$SRC/features/countries/CountryPage.jsx" "phoneTab === 'map' \\?" "the country map is only mounted on the phone MAP tab"
+must_have "$SRC/shared/ui/PhoneTabs.jsx" "role=\"tablist\"" "PhoneTabs is a real tablist"
+# 5 · Read in full: shared actors from real data, provenance, hidden-older count
+must_have "$T/lib/webIndexLinks.js" "index.shared" "shared actors come from web_index.shared"
+must_have "$T/ThreadPage.jsx" "Shares actors with" "Read in full has 'Shares actors with'"
+must_have "$T/ThreadPage.jsx" "From analyses of" "Read in full has the provenance line"
+must_have "$T/ThreadPage.jsx" "older .* hidden" "Read in full has the hidden-older count line"
+# 6 · no hard-coded number of briefed countries
+must_not_have "$SRC/features/countries/components/CountryCardV2.jsx" "brief the [0-9]+" "the country card does not hard-code how many countries we brief"
+# 7 · legend motion budget from the real constants
+must_have "$SRC/features/map/components/MapLegend.jsx" "MOTION_BUDGET.movers" "legend motion budget uses MOTION_BUDGET.movers"
+must_have "$SRC/features/map/components/MapLegend.jsx" "MOTION_BUDGET.pulses" "legend motion budget uses MOTION_BUDGET.pulses"
+must_not_have "$SRC/features/map/components/SituationMap3D.jsx" "pulseSet\\(active, Date.now\\(\\), 8\\)" "the globe uses the budget constant, not a literal 8"
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

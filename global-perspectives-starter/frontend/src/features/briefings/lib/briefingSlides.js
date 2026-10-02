@@ -99,7 +99,9 @@ export function shadingForWeeklySlides(brief) {
     const iso3 = iso3ForName(name);
     if (!iso3 || seen.has(iso3)) continue;
     seen.add(iso3);
-    const category = s.kind === 'development' ? 'politics' : 'conflict';
+    // Weekly signals carry only kind threat|development, no crisis type: never invent one
+    // (a disaster "threat" is not a conflict). Neutral hue, no category.
+    const category = undefined;
     out.push({
       iso3, count: 1, top: { title: s.lede, category },
       crisisType: crisisTypeForCategory(category), hue: crisisHueForCategory(category),
@@ -118,7 +120,7 @@ export function peekInputForStory(story) {
 export function peekInputForSignal(signal) {
   if (!signal) return null;
   return {
-    title: signal.lede, category: signal.kind === 'development' ? undefined : 'conflict',
+    title: signal.lede, category: undefined,
     regions: firstRegion(signal) ? [firstRegion(signal)] : undefined, sources: signal.sources,
   };
 }

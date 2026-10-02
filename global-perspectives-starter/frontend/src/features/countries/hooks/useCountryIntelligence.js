@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchCountryIntelligence } from '@/shared/api/restProxy';
+import { reportAnalysisAt, newestOf } from '@/shared/lib/analysisFreshness';
 import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES } from '@/features/map/lib/countryRiskLayer.js';
 
 const CACHE_KEY = 'gp_country_intel_v1';
@@ -75,6 +76,12 @@ export function useCountryIntelligence(countryNames) {
   }, [namesKey]);
 
   useEffect(() => { load(); }, [load]);
+
+  // The newest real briefing time among the countries loaded feeds the site-wide status line.
+  useEffect(() => {
+    const newest = newestOf(Object.values(intelligence).map((v) => v?.generatedAt));
+    if (newest != null) reportAnalysisAt('country_intelligence', newest);
+  }, [intelligence]);
 
   return { intelligence, loading };
 }

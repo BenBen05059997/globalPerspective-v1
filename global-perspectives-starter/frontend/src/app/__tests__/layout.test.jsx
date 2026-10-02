@@ -44,6 +44,7 @@ vi.mock('@/shared/hooks/useIsPhone.js', () => ({
 }));
 
 import Layout from '@/app/layout/Layout';
+import { __resetAnalysisFreshness, reportAnalysisAt } from '@/shared/lib/analysisFreshness';
 
 function renderLayout(path = '/weekly') {
   return render(
@@ -58,6 +59,7 @@ function renderLayout(path = '/weekly') {
 }
 
 beforeEach(() => {
+  __resetAnalysisFreshness();
   fetchDailyBrief.mockReset();
   isPhoneMock.mockReset();
   isPhoneMock.mockReturnValue(false);
@@ -130,11 +132,20 @@ describe('Layout — site-wide status line', () => {
     const old = new Date(Date.now() - 40 * 60 * 60 * 1000).toISOString(); // 40h old
     fetchDailyBrief.mockResolvedValue({ data: { generatedAt: old } });
     renderLayout('/weekly');
-    const text = await screen.findByText(/ANALYSIS PAUSED SINCE/i);
+    const text = await screen.findByText(/New stories and analysis paused since/);
     expect(text).toBeTruthy();
-    // Layout has no topics/world data loaded — it must not claim "last stories" or "disaster
-    // alerts live" it hasn't checked (F2.19).
-    expect(text.textContent).not.toMatch(/LAST STORIES|DISASTER ALERTS/i);
+    // GDACS state is unknown here (no world file in the test): the line must not claim disaster
+    // alerts are live (F2.19).
+    expect(text.textContent).not.toMatch(/disaster alerts/i);
+  });
+
+  it('a newer generation time reported by the stories feed keeps the line away (newest across sources)', async () => {
+    const old = new Date(Date.now() - 40 * 60 * 60 * 1000).toISOString();
+    fetchDailyBrief.mockResolvedValue({ data: { generatedAt: old } });
+    reportAnalysisAt('topics', new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString());
+    renderLayout('/weekly');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.querySelector('.gp-strip')).toBeNull();
   });
 
   it('shows nothing when the newest brief is fresh', async () => {

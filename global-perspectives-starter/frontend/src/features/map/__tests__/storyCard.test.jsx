@@ -24,11 +24,11 @@ vi.mock('@/shared/api/errorSink.js', () => ({
   reportFetchError: (...args) => reportFetchError(...args),
 }));
 
-async function renderCard(topic = TOPIC, asOf = '2026-09-20T00:00:00.000Z') {
+async function renderCard(topic = TOPIC, asOf = '2026-09-20T00:00:00.000Z', extra = {}) {
   const StoryCard = (await import('@/features/map/components/StoryCard.jsx')).default;
   render(
     <MemoryRouter>
-      <StoryCard topic={topic} asOf={asOf} onBack={() => {}} activeCount={13} />
+      <StoryCard topic={topic} asOf={asOf} onBack={() => {}} activeCount={13} {...extra} />
     </MemoryRouter>
   );
 }
@@ -126,5 +126,49 @@ describe('StoryCard', () => {
     expect(screen.queryByText('What is happening')).not.toBeInTheDocument();
     expect(screen.queryByText('What it means')).not.toBeInTheDocument();
     expect(screen.queryByText(/Analyze in Studio/)).not.toBeInTheDocument();
+  });
+
+  // P8: WHY steps carry the story page's basis tag; in-text links only for exact real story titles.
+  it('tags every WHY step INFERENCE (a stored cause step has no citation, so never FACT) and links an exact story title', async () => {
+    summaryImpl = async () => ({ content: '- Talks resumed after Brent Crude Slumps To Five Month Low In Asia, per example.org.\n- Nothing else happened, per example.org.', generatedAt: '2026-09-19T00:00:00.000Z' });
+    analysisImpl = async () => ({
+      data: { [TOPIC.threadId]: { rootCauseChain: { proximate: 'A drone strike hit the export line.', medium_term: 'Ongoing regional conflict.' }, generatedAt: '2026-09-12T00:00:00.000Z' } },
+    });
+    await renderCard(TOPIC, '2026-09-20T00:00:00.000Z', {
+      webThreads: {
+        'thread-oil': { title: 'Brent Crude Slumps To Five Month Low In Asia' },
+        'thread-saudi-pipeline': { title: 'Saudi Arabia pipeline attack headline here' },
+        'thread-short': { title: 'Iran talks' },
+      },
+    });
+    await waitFor(() => expect(screen.getByText('Why')).toBeInTheDocument());
+    const tags = screen.getAllByText('INFERENCE');
+    expect(tags.length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText('FACT')).toBeNull();
+    const mention = screen.getByRole('link', { name: 'Brent Crude Slumps To Five Month Low In Asia' });
+    expect(mention).toHaveAttribute('href', '/weekly/thread/thread-oil');
+    // the open story's own title is never linked to itself, and a short title is never matched
+    expect(document.querySelectorAll('a[data-mention]')).toHaveLength(1);
+  });
+
+  it('shows "Linked stories" from the index rows, tagged model judgment, only when there are links', async () => {
+    summaryImpl = async () => ({ content: '- A fact, per example.org.', generatedAt: '2026-09-19T00:00:00.000Z' });
+    analysisImpl = async () => ({ data: {} });
+    await renderCard(TOPIC, '2026-09-20T00:00:00.000Z', {
+      linked: { into: [{ id: 'thread-b', title: 'Story B', confidence: 'strong' }], from: [{ id: 'thread-c', title: 'Story C', confidence: 'weak' }] },
+    });
+    await waitFor(() => expect(screen.getByTestId('card-linked')).toBeInTheDocument());
+    expect(screen.getByText(/Judged to feed into:/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Story B' })).toHaveAttribute('href', '/weekly/thread/thread-b');
+    expect(screen.getByText(/Earlier news judged to feed in:/)).toBeInTheDocument();
+    expect(screen.getByTestId('card-linked')).toHaveTextContent(/model judgment/i);
+  });
+
+  it('has no Linked stories block without links', async () => {
+    summaryImpl = async () => ({ content: '- A fact, per example.org.', generatedAt: '2026-09-19T00:00:00.000Z' });
+    analysisImpl = async () => ({ data: {} });
+    await renderCard();
+    await waitFor(() => expect(screen.getByText('What is happening')).toBeInTheDocument());
+    expect(screen.queryByTestId('card-linked')).toBeNull();
   });
 });

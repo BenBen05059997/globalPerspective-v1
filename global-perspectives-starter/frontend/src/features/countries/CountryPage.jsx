@@ -11,6 +11,8 @@ import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList'
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import CountryWhatChanged from '@/features/countries/components/CountryWhatChanged';
 import CountryCardV2 from '@/features/countries/components/CountryCardV2';
+import PhoneTabs, { phonePanelProps } from '@/shared/ui/PhoneTabs.jsx';
+import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import RiskScorecard from '@/shared/ui/risk/RiskScorecard';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
@@ -37,6 +39,7 @@ import '@/features/threads/WeeklyPage.css';
 import '@/features/countries/CountryPage.css';
 import '@/features/countries/CountryCoverage.css';
 import { isRealCountryName } from '@/shared/lib/placeNames.js';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 function formatTimeAgo(isoString) {
   const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
@@ -181,12 +184,15 @@ function CoverageList({ entries, country }) {
                               View Google News ↗
                             </a>
                             {entry.threadId && (
-                              <Link
-                                to={threadPath(entry.threadId, country ? { from: 'country', country } : {})}
+                              <StoryLink
+                                threadId={entry.threadId}
+                                pathOpts={country ? { from: 'country', country } : {}}
+                                topic={{ title: entry.title, category: entry.category, regions: entry.regions }}
+                                asOf={entry.date}
                                 className="cp-view-arc-btn"
                               >
                                 View full story →
-                              </Link>
+                              </StoryLink>
                             )}
                           </div>
                           {hasAi && (
@@ -249,8 +255,17 @@ function RiskSparkline({ snapshots, color = 'var(--accent)' }) {
   );
 }
 
+const PHONE_TABS = [
+  { key: 'read', label: 'Read' },
+  { key: 'map', label: 'Map' },
+];
+
 export default function CountryPage() {
   const { countryName } = useParams();
+  // Phone P1: READ (the card + everything below) / MAP (the country on the map). The map is only
+  // mounted while MAP is open; desktop keeps the map band above the card.
+  const isPhone = useIsPhone();
+  const [phoneTab, setPhoneTab] = useState('read');
   // React Router v6 useParams() already URL-decodes path params — decoding again
   // double-decodes and throws URIError on any name containing a literal '%'.
   const paramName = countryName;
@@ -590,12 +605,10 @@ export default function CountryPage() {
     </div>
   );
 
-  return (
-    <div className="cpg-page">
-
-      {/* Full-width map hero */}
-      <div className="cpg-map-hero">
-        <div className="cpg-map-overlay" ref={setOverlayEl}>
+  // The hero's header bar (back link, country picker, risk + direction pills). Desktop: over the map
+  // band. Phone READ: the same bar as a flat row (no map is loaded); phone MAP: over the map.
+  const heroBar = (
+        <div className={`cpg-map-overlay${isPhone && phoneTab === 'read' ? ' cpg-map-overlay--flat' : ''}`} ref={setOverlayEl}>
           <div className="cpg-map-overlay-left">
             <Link to="/weekly/countries" className="cpg-map-back">← Countries</Link>
             <select
@@ -618,11 +631,17 @@ export default function CountryPage() {
             )}
           </div>
         </div>
+  );
+  const mapHero = (
+    <div className={`cpg-map-hero${isPhone ? ' cpg-map-hero--tab' : ''}`}>
+      {heroBar}
         <Suspense fallback={<BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" />}>
           <WeeklyMap embedded defaultCountry={decodedName} hidePanel onCountryClick={selectCountry} frameInsets={overlayInset} />
         </Suspense>
-      </div>
-
+    </div>
+  );
+  const readBody = (
+    <>
       {/* S4: the same one-screen card the /map console shows (no watch flag here — this page
           doesn't fetch the world's live situations, to avoid a second world.json load on a
           page that already loads the weekly archive + map). Everything below (coverage,
@@ -866,9 +885,11 @@ export default function CountryPage() {
                   const title = threadAnalyses?.[arc.threadId]?.threadTitle || arc.latestTitle;
                   const ta = threadAnalyses?.[arc.threadId];
                   return (
-                    <Link
+                    <StoryLink
                       key={arc.threadId}
-                      to={threadPath(arc.threadId, { from: 'country', country: decodedName })}
+                      threadId={arc.threadId}
+                      pathOpts={{ from: 'country', country: decodedName }}
+                      topic={{ title, category: arc.category }}
                       className={`cpg-arc-card${arc.isAnchor ? ' anchor' : ' linked'}`}
                     >
                       <div className="cpg-arc-card-dot" style={dotColor ? { background: dotColor } : { visibility: 'hidden' }} />
@@ -891,7 +912,7 @@ export default function CountryPage() {
                           <div><TierChip tier={tierFromScore(ta.riskScore)} score={ta.riskScore} /></div>
                         )}
                       </div>
-                    </Link>
+                    </StoryLink>
                   );
                 })
               ) : (
@@ -907,6 +928,26 @@ export default function CountryPage() {
             </div>
           )}
         </EditorialShell>
+      )}
+    </>
+  );
+
+  return (
+    <div className="cpg-page">
+      {isPhone ? (
+        <>
+          <div className="cpg-phonehead">
+            <PhoneTabs tabs={PHONE_TABS} active={phoneTab} onChange={setPhoneTab} label="Country view" idBase="cp" />
+            {phoneTab === 'read' ? heroBar : null}
+          </div>
+          {phoneTab === 'map' ? <div {...phonePanelProps('cp', 'map')}>{mapHero}</div> : null}
+          {phoneTab === 'read' ? <div {...phonePanelProps('cp', 'read')}>{readBody}</div> : null}
+        </>
+      ) : (
+        <>
+          {mapHero}
+          {readBody}
+        </>
       )}
     </div>
   );

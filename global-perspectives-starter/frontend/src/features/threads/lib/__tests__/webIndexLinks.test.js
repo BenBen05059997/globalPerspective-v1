@@ -48,3 +48,41 @@ describe('deriveFromIndex', () => {
     expect(deriveFromIndex(idx, 'Q', NOW).state).toBe('analysed_no_links');
   });
 });
+
+describe('deriveFromIndex: shared actors, provenance, hidden older links (Read in full, P8)', () => {
+  const sh = (a, b, actors, extra = {}) => ({ a, b, actors, weight: actors.length, country: 'Iran', generatedAt: fresh, ...extra });
+  const idx = {
+    ...index,
+    shared: [
+      sh('A', 'B', ['Donald Trump', 'Iran'], { country: 'United States' }),
+      sh('B', 'A', ['iran', 'Strait of Hormuz'], { country: 'Israel', generatedAt: older }), // union, case-insensitive
+      sh('A', 'C', ['Kyiv']),                                         // weight 1
+      sh('A', 'Z', ['Donald Trump'], { generatedAt: stale }),         // hidden (42 days)
+      sh('A', 'A', ['self']),                                         // never a self overlap
+      sh('X', 'Y', ['Elsewhere']),                                    // not this story
+    ],
+  };
+  const d = deriveFromIndex(idx, 'A', NOW);
+  it('merges per other story: actors unioned (case-insensitive), weight = distinct actors, each analysis keeps its country and date', () => {
+    const b = d.shared.find((r) => r.otherThreadId === 'B');
+    expect(b.actors).toEqual(['Donald Trump', 'Iran', 'Strait of Hormuz']);
+    expect(b.weight).toBe(3);
+    expect(b.otherTitle).toBe('Story B');
+    expect(b.webs.map((w) => w.country)).toEqual(['United States', 'Israel']);
+    expect(d.shared.find((r) => r.otherThreadId === 'C').weight).toBe(1);
+    expect(d.shared.map((r) => r.otherThreadId)).toEqual(['B', 'C']); // heavier first; Z (old), self and X dropped
+  });
+  it('counts what the 30-day rule hid, once per other story and kind', () => {
+    // links A->Z (stale) + shared A,Z (stale) = two hidden links
+    expect(d.hiddenOlder).toBe(2);
+  });
+  it('provenance = countries of the analyses behind the rows shown (newest first) and the newest date', () => {
+    expect(d.provenance.asOf).toBe(new Date(fresh).toISOString());
+    expect(d.provenance.countries).toEqual(expect.arrayContaining(['Iran', 'Israel', 'United States', 'US']));
+    expect(d.provenance.countries).not.toContain('Elsewhere');
+  });
+  it('a story with nothing in the index has no shared rows, no hidden links and no provenance', () => {
+    expect(deriveFromIndex(idx, 'D', NOW)).toMatchObject({ shared: [], hiddenOlder: 0, provenance: null });
+    expect(deriveFromIndex(null, 'A', NOW)).toMatchObject({ shared: [], hiddenOlder: 0, provenance: null });
+  });
+});

@@ -810,3 +810,18 @@
 }
 .cpg-clear-filters:hover { color: var(--accent-strong); text-decoration: underline; }
 .cpg-clear-filters:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Phone P1 (READ / MAP): the header bar becomes a flat row on READ (no map is loaded there), and the
+   MAP tab gives the map a real height instead of the 190px locator band. */
+.cpg-map-overlay--flat {
+  position: static; background: none; pointer-events: auto; padding: 0 0 10px; z-index: auto;
+}
+.cpg-map-overlay--flat .cpg-map-back { min-height: var(--tap-min); display: inline-flex; align-items: center; }
+.cpg-map-overlay--flat .cpg-country-select { min-height: var(--tap-min); }
+.cpg-map-hero--tab, .cpg-map-hero.cpg-map-hero--tab { height: min(64vh, 520px); min-height: 320px; max-height: none; }
+
+/* The country page manages its own gutters (full-bleed map, card, shell): no extra container padding, so the
+   phone tab row + header bar get an explicit 16px gutter and the MAP tab is full width like the desktop hero. */
+.gp-main:has(.cpg-page) > .container { max-width: 100%; padding: 0; }
+.cpg-phonehead { padding: 0 16px; }
+.cpg-phonehead .cpg-map-overlay--flat { padding-bottom: 10px; }

@@ -5,6 +5,14 @@
 // items never move. Pure and DOM-free so both map modes (globe, radar) agree on exactly which
 // ids pulse, and it's testable without a browser.
 
+/**
+ * The motion budget (STORY_WEB_RETHINK_PLAN §8 / T4): at most `movers` kinds of thing may move at
+ * once and at most `pulses` items pulse. Today two kinds move (the globe spin / radar sweep and the
+ * breathing pulse; the selected story's link dashes are drawn static). The maps and the legend both
+ * read these numbers.
+ */
+export const MOTION_BUDGET = Object.freeze({ movers: 3, pulses: 8 });
+
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -24,7 +32,7 @@ function msAgo(iso, now) {
  *    `last_change_at`, else `opened_at` (some sources only ever set one of these).
  *  - ties broken by the most recent of `tier_changed_at`/`last_change_at`/`opened_at`.
  */
-export function pulseSet(situations = [], now = Date.now(), cap = 8) {
+export function pulseSet(situations = [], now = Date.now(), cap = MOTION_BUDGET.pulses) {
   const list = Array.isArray(situations) ? situations : [];
   const scored = [];
   for (const s of list) {

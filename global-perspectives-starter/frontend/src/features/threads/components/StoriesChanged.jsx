@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
-import { threadPath } from '@/shared/lib/threadPath';
 import StoryLine from '@/features/threads/components/StoryLine.jsx';
 import { changedSince, risingThreads, ageDaysOf } from '@/features/threads/lib/storyGroups';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 // StoriesChanged — the right rail (desktop) and the changed section at the top of phone READ.
 // "Changed since your last visit" is read client-side from a localStorage timestamp (see
@@ -52,11 +51,16 @@ function Rising({ threads, analyses, now }) {
       <ul className="sf-rise-list">
         {items.map((t) => (
           <li key={t.threadId}>
-            <Link to={threadPath(t.threadId)} className="sf-rise-row">
+            <StoryLink
+              threadId={t.threadId}
+              topic={{ title: analyses?.[t.threadId]?.threadTitle || t.latestTitle, category: t.category, regions: t.regions, sources: t.sourceCount }}
+              asOf={t.changedAt}
+              className="sf-rise-row"
+            >
               <CategoryTag category={t.category} />
               <span className="sf-rise-title">{analyses?.[t.threadId]?.threadTitle || t.latestTitle}</span>
               <span className="sf-count">{t.articleCount} articles · {t.dayCount} {t.dayCount === 1 ? 'day' : 'days'}</span>
-            </Link>
+            </StoryLink>
           </li>
         ))}
       </ul>

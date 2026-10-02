@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
@@ -7,11 +7,22 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { FollowButton } from '@/features/account/components/FollowButton';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
 import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
-import ForecastBoard from '@/features/track-record/components/ForecastBoard.jsx';
 import SettlingLog from '@/features/track-record/components/SettlingLog.jsx';
 import DrawRow from '@/features/track-record/components/DrawRow.jsx';
+import PhoneTabs, { phonePanelProps } from '@/shared/ui/PhoneTabs.jsx';
+import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import '@/features/track-record/TrackRecordPage.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
+
+// The forecast board draws the console's radar map: loaded only when it is rendered (desktop, or the
+// phone MAP tab), never up front on a phone.
+const ForecastBoard = lazy(() => import('@/features/track-record/components/ForecastBoard.jsx'));
+
+const PHONE_TABS = [
+  { key: 'read', label: 'Read' },
+  { key: 'map', label: 'Map' },
+  { key: 'log', label: 'Log' },
+];
 
 // S6: this page is the E2 "Service record" one-screen view (TRACK_RECORD_AND_STUDIO_RULING.md,
 // "Track record page design"). E1 (a plain, printable text version for search/screen readers)
@@ -88,6 +99,10 @@ export default function TrackRecordPage() {
   useEffect(() => { document.title = 'Track Record | Global Perspectives'; }, []);
   const { data, loading, error } = useTrackRecord();
   const view = useMemo(() => (data ? buildTrackRecordView(data, new Date()) : null), [data]);
+  // Phone P1: READ (the record + method) / MAP (the forecast board) / LOG (settling log + ledger). One
+  // switch; desktop shows every section in one scroll as before.
+  const isPhone = useIsPhone();
+  const [phoneTab, setPhoneTab] = useState('read');
 
   if (loading) return <BootLoader variant="inline" label="Loading the track record" text="Loading the track record" />;
 
@@ -103,18 +118,8 @@ export default function TrackRecordPage() {
   const { eraCutFrom, legacyPredictionsExcluded, totalDatedTriggers } = data;
   const { q, stage, lock, counts } = view;
 
-  return (
-    <div className="tr-page">
-      <header className="tr-head">
-        <h1>Accountability</h1>
-        <p className="tr-sub">
-          We keep score on ourselves. Every forecast is logged the moment it&apos;s made with dated,
-          falsifiable triggers; every read that changes is corrected in the open with the event that moved it.
-          This page is the running record — the forecasts scored, and the analysis corrected — not a marketing claim.
-        </p>
-        <p className="tr-textlink"><Link to="/track-record/text">Read as text →</Link></p>
-      </header>
-
+  const readBlocks = (
+    <>
       {/* ---- Status line (stage 0-3, TRACK_RECORD_AND_STUDIO_RULING.md) ---- */}
       <section className="tr-status">
         <span className="tr-status-tag">{stage.label}</span>
@@ -185,6 +190,11 @@ export default function TrackRecordPage() {
         )}
       </section>
 
+
+    </>
+  );
+  const mapBlocks = (
+    <>
       {/* ---- Forecast board: MAP (default) | BOARD ---- */}
       <section className="tr-section">
         <SectionHeader label="Forecast board" />
@@ -193,7 +203,9 @@ export default function TrackRecordPage() {
           score for a country (too few per place to mean anything).
         </p>
         {view.boardText && <p className="tr-gap-note" data-notready="board">{view.boardText}</p>}
-        <ForecastBoard items={view.boardItems} />
+        <Suspense fallback={<BootLoader variant="inline" className="gp-boot--tight" label="Loading the forecast board" text="Loading the forecast board" />}>
+          <ForecastBoard items={view.boardItems} />
+        </Suspense>
         {view.pilot.length > 0 && (
           <details className="tr-pilot-details">
             <summary>July pilot examples ({view.pilot.length} most recent; archived, not scored)</summary>
@@ -209,6 +221,11 @@ export default function TrackRecordPage() {
         )}
       </section>
 
+
+    </>
+  );
+  const logBlocks = (
+    <>
       {/* ---- Settling log ---- */}
       <section className="tr-section">
         <SectionHeader label="Settling log" />
@@ -228,6 +245,11 @@ export default function TrackRecordPage() {
         <CorrectionsLedger />
       </section>
 
+
+    </>
+  );
+  const endBlocks = (
+    <>
       {/* ---- Published methodology ---- */}
       <section className="tr-section tr-method">
         <h2>How this works</h2>
@@ -278,6 +300,38 @@ export default function TrackRecordPage() {
           work and adds the depth — the full correction history and running your own analysis on our compute.
         </p>
       </section>
+
+    </>
+  );
+
+  return (
+    <div className="tr-page">
+      <header className="tr-head">
+        <h1>Accountability</h1>
+        <p className="tr-sub">
+          We keep score on ourselves. Every forecast is logged the moment it&apos;s made with dated,
+          falsifiable triggers; every read that changes is corrected in the open with the event that moved it.
+          This page is the running record — the forecasts scored, and the analysis corrected — not a marketing claim.
+        </p>
+        <p className="tr-textlink"><Link to="/track-record/text">Read as text →</Link></p>
+      </header>
+
+
+      {isPhone ? (
+        <>
+          <PhoneTabs tabs={PHONE_TABS} active={phoneTab} onChange={setPhoneTab} label="Track record view" idBase="tr" />
+          {phoneTab === 'read' && <div {...phonePanelProps('tr', 'read')}>{readBlocks}{endBlocks}</div>}
+          {phoneTab === 'map' && <div {...phonePanelProps('tr', 'map')}>{mapBlocks}</div>}
+          {phoneTab === 'log' && <div {...phonePanelProps('tr', 'log')}>{logBlocks}</div>}
+        </>
+      ) : (
+        <>
+          {readBlocks}
+          {mapBlocks}
+          {logBlocks}
+          {endBlocks}
+        </>
+      )}
     </div>
   );
 }

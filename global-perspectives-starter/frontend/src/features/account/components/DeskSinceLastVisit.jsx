@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { buildDeskRows, isStaleSince, readLastVisit, writeLastVisit } from '@/features/account/lib/desk';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 // "Since your last visit" (K1 board, left column) — followed countries' real driftNotes newer
 // than a per-browser last-visit timestamp. Never invents a row: an empty result says so.
@@ -82,7 +83,7 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
           </div>
           {r.triggerTitle && (
             <div className="desk-row-after">
-              After: {r.triggerHref ? <Link to={r.triggerHref}>{r.triggerTitle}</Link> : r.triggerTitle}
+              After: {r.triggerHref ? <StoryLink to={r.triggerHref} topic={{ title: r.triggerTitle }}>{r.triggerTitle}</StoryLink> : r.triggerTitle}
               {r.triggerDateLabel ? ` (${r.triggerDateLabel})` : ''}
             </div>
           )}

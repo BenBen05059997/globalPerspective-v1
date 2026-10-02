@@ -1,6 +1,4 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { threadPath } from '@/shared/lib/threadPath';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
 import Markdown from '@/shared/ui/Markdown';
 import SubscribeCard from '@/features/account/components/SubscribeCard';
@@ -8,6 +6,7 @@ import TierChip from '@/shared/ui/TierChip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import '@/features/weekly-brief/WeeklyBriefPage.css';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 function formatWeekOf(weekKey) {
   if (!weekKey) return '';
@@ -40,7 +39,7 @@ function SignalCard({ s }) {
     <div className="wb-sig">
       <div className="wb-sig-top">
         {s.threadId ? (
-          <Link className="wb-sig-lede wb-sig-lede-link" to={threadPath(s.threadId)}>{s.lede}</Link>
+          <StoryLink className="wb-sig-lede wb-sig-lede-link" threadId={s.threadId} topic={{ title: s.lede, regions: s.region ? [s.region] : undefined }} asOf={s.asOf}>{s.lede}</StoryLink>
         ) : (
           <div className="wb-sig-lede">{s.lede}</div>
         )}
@@ -52,7 +51,7 @@ function SignalCard({ s }) {
       {(outlets.length > 0 || s.related || s.threadId) && (
         <div className="wb-sig-src">
           {s.threadId && (
-            <Link className="wb-sig-arc" to={threadPath(s.threadId)}>Full story arc →</Link>
+            <StoryLink className="wb-sig-arc" threadId={s.threadId} topic={{ title: s.lede, regions: s.region ? [s.region] : undefined }} asOf={s.asOf}>Full story arc →</StoryLink>
           )}
           {outlets.length > 0 && (
             <>{s.threadId && <span className="wb-dot">·</span>} <span className="wb-src-label">Sources:</span> {outlets.map((o, i) => (

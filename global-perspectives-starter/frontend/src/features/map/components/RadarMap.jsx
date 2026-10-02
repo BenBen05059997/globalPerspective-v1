@@ -5,7 +5,7 @@ import { land, FRAME } from '@/features/map/lib/landGeometry.js';
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
 import { bearingDeg, beamCrossed, scanGlow, sweepControlState } from '@/features/map/lib/radar.js';
 import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
-import { pulseSet } from '@/features/map/lib/pulse.js';
+import { pulseSet, MOTION_BUDGET } from '@/features/map/lib/pulse.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import {
   tierSize, markerKind, kindLabel, situationFreshness, freshnessLook, freshnessClass, statusGlyph, markerHex,
@@ -292,7 +292,7 @@ export default function RadarMap({
 
       // Motion budget (M6): only NEW/▲ situations from the last 24h pulse, capped at 8, highest
       // tier first (lib/pulse.js) — not every escalating situation regardless of age.
-      const pulseIds = pulseSet(active, Date.now(), 8);
+      const pulseIds = pulseSet(active, Date.now(), MOTION_BUDGET.pulses);
       root.append('g').selectAll('circle').data(active.filter((s) => pulseIds.has(s.id))).join('circle')
         .attr('class', 'sm-ring')
         .attr('cx', (s) => proj(s)[0]).attr('cy', (s) => proj(s)[1])

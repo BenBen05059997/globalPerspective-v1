@@ -6,6 +6,7 @@ import { shareConfigured, fetchShare, deleteShare, forgetShare } from '@/feature
 import { useNoIndex } from '@/shared/hooks/useNoIndex.js';
 import { reportFetchError } from '@/shared/api/errorSink';
 import '@/features/analysis-studio/AnalysisStudio.css';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 // /analyze/s/:id — a read-only, unlisted (noindex) debrief of one shared Studio run. States, all honest:
 // loading, endpoint not configured, deleted / never existed, could not be loaded, ready.
@@ -66,7 +67,7 @@ export default function SharedAnalysisPage() {
               <span>
                 Open these stories live:{' '}
                 {state.share.stories.filter((s) => s.threadId).map((s, i) => (
-                  <span key={s.threadId}>{i > 0 ? ' · ' : ''}<Link to={`/weekly/thread/${encodeURIComponent(s.threadId)}`}>{s.title}</Link></span>
+                  <span key={s.threadId}>{i > 0 ? ' · ' : ''}<StoryLink threadId={s.threadId} topic={{ title: s.title }}>{s.title}</StoryLink></span>
                 ))}
               </span>
             )}

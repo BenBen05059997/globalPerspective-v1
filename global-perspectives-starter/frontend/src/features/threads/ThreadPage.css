@@ -37,6 +37,7 @@
   text-decoration: none;
   white-space: nowrap;
 }
+.tp-topbar-right button.tp-analyze-link { background: none; border: 0; padding: 0; cursor: pointer; min-height: var(--tap-min); }
 .tp-topbar-right .tp-analyze-link:hover { color: var(--accent-strong); text-decoration: underline; }
 
 /* ── Thread header ────────────────────────────────────────── */
@@ -965,3 +966,23 @@
 .fi-cited-list li { font-size: 11px; line-height: 1.4; color: var(--text-muted); }
 .fi-cited-date { font-family: var(--mono); color: var(--text-body); }
 .fi-cited-more { font-style: italic; }
+
+/* sa-* — "Shares actors with" (SharedActorsList.jsx) and the Why provenance / hidden-links lines. */
+.sa-caption { margin: 0 0 8px; font-size: 12px; line-height: 1.5; color: var(--text-muted); }
+.sa-badge {
+  display: inline-block; margin-right: 6px; padding: 1px 5px; border: 1px solid var(--ok); border-radius: var(--r-xs);
+  font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.05em; color: var(--ok);
+}
+.sa-list { list-style: none; margin: 0; padding: 0; }
+.sa-row { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--hairline); }
+.sa-story { color: var(--accent); font-size: 13px; text-decoration: none; }
+.sa-story:hover { text-decoration: underline; }
+.sa-actors { font-size: 12.5px; color: var(--text-body); }
+.sa-meta { font-size: 11px; color: var(--text-muted); }
+.sa-more {
+  margin-top: 8px; min-height: var(--tap-min); padding: 0 12px; background: none; border: 1px solid var(--hairline);
+  border-radius: var(--r-sm); color: var(--text-body); font-size: 12px; cursor: pointer;
+}
+.sa-more:hover { background: var(--panel-3); }
+.tp-ov-prov { margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--text-muted); }
+.tp-ov-prov + .tp-ov-prov { margin-top: 2px; }

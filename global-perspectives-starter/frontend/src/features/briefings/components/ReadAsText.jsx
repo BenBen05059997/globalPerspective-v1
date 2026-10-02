@@ -1,5 +1,6 @@
-import { countryLinkPath, storyLinkPath } from '@/features/briefings/lib/briefingSlides.js';
+import { countryLinkPath, storyLinkPath, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
 import { Link } from 'react-router-dom';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 // ReadAsText — a plain, printable, accessible text version of the current edition (semantic
 // headings, no map/slide chrome), for email / print / search / screen readers. Built only from
@@ -38,7 +39,7 @@ function DailyText({ brief }) {
           <h2>Top stories</h2>
           {brief.topStories.map((s, i) => (
             <div key={i} className="bm-readtext-item">
-              <h3>{i + 1}. {storyLinkPath(s) ? <Link to={storyLinkPath(s)}>{s.title}</Link> : s.title}</h3>
+              <h3>{i + 1}. {storyLinkPath(s) ? <StoryLink to={storyLinkPath(s)} topic={peekInputForStory(s)}>{s.title}</StoryLink> : s.title}</h3>
               {s.regions?.length > 0 && (
                 <p className="bm-readtext-meta">
                   {s.regions.map((r, j) => (
@@ -89,7 +90,7 @@ function WeeklyText({ brief }) {
               {s.region && <p className="bm-readtext-meta">{s.region}</p>}
               {s.fact && <p><strong>Fact:</strong> {s.fact}</p>}
               {s.soWhat && <p><strong>So what:</strong> {s.soWhat}</p>}
-              {s.threadId && <p><Link to={`/weekly/thread/${encodeURIComponent(s.threadId)}`}>Read the full story arc →</Link></p>}
+              {s.threadId && <p><StoryLink threadId={s.threadId} topic={{ title: s.lede, regions: s.region ? [s.region] : undefined }}>Read the full story arc →</StoryLink></p>}
             </div>
           ))}
         </section>

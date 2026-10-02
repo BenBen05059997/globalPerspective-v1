@@ -39,17 +39,17 @@ function useLegacyLinks(threadId, regions, enabled) {
  * useStoryLinks(threadId, regions) — the FED INTO slide's data: this story's links from the story-web
  * index (ONE cached `web_index` read shared with every other surface), plus its state and the honest
  * empty-state wording. Fails empty: nothing is invented when the index is missing.
- * Returns { fedInto, fedFrom, loading, state, note, index, meta }.
+ * Returns { fedInto, fedFrom, shared, hiddenOlder, provenance, loading, state, note, index, meta }.
  */
 export function useStoryLinks(threadId, regions) {
   const { index, loading: indexLoading, failed } = useWebIndex(Boolean(threadId));
   const legacy = useLegacyLinks(threadId, regions, failed);
   const derived = useMemo(() => (threadId && !failed && !indexLoading ? deriveFromIndex(index, threadId) : null), [index, threadId, failed, indexLoading]);
 
-  if (failed) return { fedInto: legacy.fedInto, fedFrom: legacy.fedFrom, loading: legacy.loading, state: null, note: null, index: null, meta: null };
-  if (!derived) return { fedInto: [], fedFrom: [], loading: Boolean(threadId), state: null, note: null, index: null, meta: null };
+  if (failed) return { fedInto: legacy.fedInto, fedFrom: legacy.fedFrom, shared: [], hiddenOlder: 0, provenance: null, loading: legacy.loading, state: null, note: null, index: null, meta: null };
+  if (!derived) return { fedInto: [], fedFrom: [], shared: [], hiddenOlder: 0, provenance: null, loading: Boolean(threadId), state: null, note: null, index: null, meta: null };
   return {
-    fedInto: derived.fedInto, fedFrom: derived.fedFrom, loading: false, state: derived.state, index, meta: derived.meta,
+    fedInto: derived.fedInto, fedFrom: derived.fedFrom, shared: derived.shared, hiddenOlder: derived.hiddenOlder, provenance: derived.provenance, loading: false, state: derived.state, index, meta: derived.meta,
     note: linkNote({ index, state: derived.state, meta: derived.meta }),
   };
 }

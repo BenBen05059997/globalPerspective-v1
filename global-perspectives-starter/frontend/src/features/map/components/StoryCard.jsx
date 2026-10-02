@@ -6,8 +6,16 @@
 //   - header: the topic record already loaded by the feed (no fetch)
 //   - WHAT IS HAPPENING: SUMMARY cache (action `summary`, topicId) via useStoryCardData
 //   - WHAT IT MEANS: THREAD_ANALYSIS `trajectory` (action `thread_analysis`, threadId)
-//   - WHY: THREAD_ANALYSIS `rootCauseChain`, via the shared rootCauseSteps() parser
+//   - WHY: THREAD_ANALYSIS `rootCauseChain`, via the shared rootCauseSteps() parser. Each step is
+//     tagged with its basis using the story page's own rule (StoryMode legend): FACT = cited dated
+//     news, INFERENCE = model judgment. A stored cause step carries no citation, so every step is an
+//     INFERENCE; nothing here is ever tagged FACT without data that makes it one.
+//   - in-text links: an exact title of another story in the story-web index (`webThreads`, loaded by
+//     the console) inside the card's text becomes a StoryLink (cardMentions.js); no other matching.
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
+import { knownStoryTitles, linkMentions } from '@/features/map/lib/cardMentions.js';
 import { useStoryCardData } from '@/features/map/hooks/useStoryCardData.js';
 import { summaryFacts, firstSentences } from '@/features/map/lib/cardText.js';
 import { rootCauseSteps } from '@/shared/lib/rootCause.js';
@@ -24,8 +32,17 @@ function fmtDate(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export default function StoryCard({ topic, asOf, onBack, activeCount = 0 }) {
+// A card text with its exact story-title mentions turned into StoryLinks (StoryPeek on hover/focus).
+function Mentions({ text, known }) {
+  const segs = useMemo(() => linkMentions(text, known), [text, known]);
+  return segs.map((seg, i) => (seg.threadId
+    ? <StoryLink key={i} inline threadId={seg.threadId} topic={{ title: seg.text }} data-mention={seg.threadId}>{seg.text}</StoryLink>
+    : <span key={i}>{seg.text}</span>));
+}
+
+export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThreads = null, linked = null }) {
   const { loading, summary, analysis, summaryError, analysisError, fetchError } = useStoryCardData(topic);
+  const known = useMemo(() => knownStoryTitles(webThreads, topic?.threadId || null), [webThreads, topic?.threadId]);
   if (!topic) return null;
 
   const id = topic.threadId || topic.topicId || null;
@@ -60,7 +77,9 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0 }) {
   const studioId = topic.topicId || topic.threadId || null;
   const studioHref = !fetchError && studioId ? `/analyze?stories=${encodeURIComponent(studioId)}` : null;
 
-  const hasBody = summaryText || trajectoryText || causeSteps.length > 0;
+  const linkedInto = linked?.into || [];
+  const linkedFrom = linked?.from || [];
+  const hasBody = summaryText || trajectoryText || causeSteps.length > 0 || linkedInto.length > 0 || linkedFrom.length > 0;
 
   return (
     <div className="sh-detail sc-card">
@@ -92,7 +111,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0 }) {
           {summaryText ? (
             <section className="sc-section">
               <h3 className="sc-section-lbl">What is happening</h3>
-              <ul className="sc-facts">{summaryText.map((f, i) => <li key={i} className="sc-text">{f}</li>)}</ul>
+              <ul className="sc-facts">{summaryText.map((f, i) => <li key={i} className="sc-text"><Mentions text={f} known={known} /></li>)}</ul>
               <p className="sc-model-tag">AI SUMMARY OF THE SOURCES{summaryDateLabel ? ` · ${summaryDateLabel}` : ''}</p>
             </section>
           ) : null}
@@ -100,7 +119,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0 }) {
           {trajectoryText ? (
             <section className="sc-section">
               <h3 className="sc-section-lbl">What it means</h3>
-              <p className="sc-text">{trajectoryText}</p>
+              <p className="sc-text"><Mentions text={trajectoryText} known={known} /></p>
               <p className="sc-model-tag">MODEL JUDGMENT{analysisDateLabel ? ` · analysis ${analysisDateLabel}` : ''}</p>
             </section>
           ) : null}
@@ -111,10 +130,36 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0 }) {
               {causeSteps.map((step) => (
                 <div key={step.key} className="sc-cause-step">
                   {step.label ? <span className="sc-cause-label">{step.label}</span> : null}
-                  <p className="sc-text">{step.text}</p>
+                  <p className="sc-text">
+                    <span className="sc-basis sc-basis--inference" data-basis="inference">INFERENCE</span>
+                    <Mentions text={step.text} known={known} />
+                  </p>
                 </div>
               ))}
-              <p className="sc-model-tag">MODEL JUDGMENT</p>
+              <p className="sc-model-tag">MODEL JUDGMENT · <span className="sc-basis sc-basis--inference">INFERENCE</span> model judgment, not a reported fact</p>
+            </section>
+          ) : null}
+
+          {linkedInto.length || linkedFrom.length ? (
+            <section className="sc-section" data-testid="card-linked">
+              <h3 className="sc-section-lbl">Linked stories</h3>
+              {linkedInto.length ? (
+                <p className="sc-text">
+                  Judged to feed into:{' '}
+                  {linkedInto.map((l, i) => (
+                    <span key={l.id}>{i > 0 ? ' · ' : ''}<StoryLink inline threadId={l.id} topic={{ title: l.title }}>{l.title}</StoryLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
+                  ))}
+                </p>
+              ) : null}
+              {linkedFrom.length ? (
+                <p className="sc-text">
+                  Earlier news judged to feed in:{' '}
+                  {linkedFrom.map((l, i) => (
+                    <span key={l.id}>{i > 0 ? ' · ' : ''}<StoryLink inline threadId={l.id} topic={{ title: l.title }}>{l.title}</StoryLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
+                  ))}
+                </p>
+              ) : null}
+              <p className="sc-model-tag"><span className="sc-basis sc-basis--inference">INFERENCE</span> model judgment from the story-web index, not a reported fact</p>
             </section>
           ) : null}
         </>

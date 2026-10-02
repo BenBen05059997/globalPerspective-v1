@@ -1,12 +1,11 @@
-import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/features/account/hooks/useMembership';
 import { LoadTopBar } from '@/shared/ui/boot';
 import AIToast from '@/app/layout/AIToast';
 import NotificationBell from '@/features/breaking/components/NotificationBell';
-import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
-import { pausedSince } from '@/shared/lib/freshness';
+import { usePausedSince } from '@/features/map/hooks/usePausedSince';
+import { useGdacsStatus } from '@/features/map/hooks/useGdacsStatus';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import HudStatusLine from '@/features/map/components/HudStatusLine';
 import '@/app/layout/Layout.css';
@@ -70,12 +69,9 @@ function Layout({ children }) {
   // Site-wide honesty line (N1/DS1): the same computed "paused since" text the map page shows
   // itself (hidden here on the map home to avoid a duplicate claim — see the render guard below).
   // Reuses the map's own hook/helpers so this layer invents no new freshness logic.
-  const { brief: latestBrief, loading: briefLoading, error: briefError } = useDailyBrief();
-  const paused = useMemo(() => pausedSince({
-    newestAnalysisAt: latestBrief?.generatedAt,
-    searched: !briefLoading && !briefError,
-    lookbackDays: MAX_LOOKBACK_DAYS,
-  }), [latestBrief, briefLoading, briefError]);
+  const { paused } = usePausedSince();
+  // GDACS is only looked up while paused (one static read of the map's own world file).
+  const gdacs = useGdacsStatus(Boolean(paused));
 
   // Sign-in link that returns you to the page you came from. Guard against auth
   // routes (signin/callback/account) so post-login doesn't loop back here; those
@@ -203,7 +199,7 @@ function Layout({ children }) {
           was dropped (an unbacked freshness claim — CLAUDE.md: no placeholder/fabricated UI). */}
       {location.pathname !== '/' && paused && (
         <div className="gp-strip gp-console">
-          <HudStatusLine paused={paused} />
+          <HudStatusLine paused={paused} gdacs={gdacs} />
         </div>
       )}
 

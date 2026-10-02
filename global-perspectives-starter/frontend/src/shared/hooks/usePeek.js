@@ -70,6 +70,8 @@ export function usePeek({ delayMs = HOVER_DELAY_MS, peekWidth = 280, peekHeight 
   }, [delayMs, openNow]);
 
   const openOnFocus = useCallback((id, anchorEl) => {
+    // A touch tap focuses the link right before it navigates: no popover on touch devices (P1).
+    if (hasNoHoverCapability()) return;
     openNow(id, anchorEl);
   }, [openNow]);
 

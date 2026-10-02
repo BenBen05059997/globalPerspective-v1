@@ -26,6 +26,7 @@ import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrections
 import { composeTopicsLede } from '@/features/home/lib/composeTopicsLede';
 import '@/features/home/AIComponents.css';
 import '@/features/home/Home.css';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 // SVG icons
 const SumIcon = () => (
@@ -480,7 +481,7 @@ function Home() {
 
                 <h3>
                   {t.threadId
-                    ? <Link to={threadPath(t.threadId)}>{t.title}</Link>
+                    ? <StoryLink threadId={t.threadId} topic={t}>{t.title}</StoryLink>
                     : t.title
                   }
                   {t.threadId && (

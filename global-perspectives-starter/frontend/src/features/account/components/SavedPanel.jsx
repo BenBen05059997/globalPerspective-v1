@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 // Saved list (A3 · K1 "SAVED"). Extracted from Account.jsx so both the account shell and the
 // Desk panel (A4) can render it without a circular import between the two.
@@ -100,6 +101,18 @@ function SavedCard({ item, onUnsave }) {
     </>
   );
 
+  if (href && item.itemType === 'thread') {
+    return (
+      <StoryLink
+        to={href}
+        topic={title && title !== item.itemId ? { title, category: item.metadata?.category } : null}
+        className={cardClass}
+        style={{ borderLeftColor: colors.border }}
+      >
+        {inner}
+      </StoryLink>
+    );
+  }
   if (href) {
     return (
       <Link

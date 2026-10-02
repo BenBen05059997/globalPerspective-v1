@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
-import { threadPath } from '@/shared/lib/threadPath';
 import { crisisOf, tierOf, timelineLayout, timelineSpan, timelineTicks } from '@/features/threads/lib/storyGroups';
 import { placeOf } from '@/features/threads/components/StoryLine.jsx';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 // StoriesTimeline — the C view: one line per story across the window, a dot on every day the story
 // REALLY had coverage (the thread's own archive day keys, same source as the old dot trail), a line
@@ -59,8 +58,10 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
           const hue = crisis === 'neutral' ? 'var(--text-dim)' : `var(--hue-${crisis})`;
           return (
             <li key={t.threadId} className="tl-row" style={{ '--row-hue': hue }}>
-              <Link
-                to={threadPath(t.threadId)}
+              <StoryLink
+                threadId={t.threadId}
+                topic={{ title, category: t.category, regions: t.regions, sources: t.sourceCount }}
+                asOf={t.changedAt}
                 className="tl-link"
                 aria-label={`${title}. Coverage on ${t.dayCount} ${t.dayCount === 1 ? 'day' : 'days'}, ${fmt(t.dateRange.from)} to ${fmt(t.dateRange.to)}.`}
               >
@@ -82,7 +83,7 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
                     {lay.dots.map((d) => <span key={d.date} className="tl-dot" style={{ left: `${d.pct}%` }} title={d.date} data-date={d.date} />)}
                   </span>
                 </span>
-              </Link>
+              </StoryLink>
             </li>
           );
         })}

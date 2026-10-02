@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { contentService } from '@/shared/data/contentService';
+import { reportAnalysisAt } from '@/shared/lib/analysisFreshness';
 
 const CACHE_KEY = 'gemini_topics_cache_v2';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -32,6 +33,7 @@ export function useGeminiTopics() {
           setTopics(list);
           setUpdatedAt(cached?.updatedAt || null);
           setGeneratedDate(cached?.generatedDate || null);
+          reportAnalysisAt('topics', cached?.updatedAt);
           setIsStale(!isFresh);
           hadCachedTopics = true;
         }
@@ -51,6 +53,7 @@ export function useGeminiTopics() {
       setIsStale(Boolean(data?.stale));
       setUpdatedAt(data?.updatedAt || null);
       setGeneratedDate(data?.generatedDate || null);
+      reportAnalysisAt('topics', data?.updatedAt);
       setHasNewData(false);
       try {
         localStorage.setItem(

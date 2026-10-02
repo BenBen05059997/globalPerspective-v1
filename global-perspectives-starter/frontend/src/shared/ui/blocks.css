@@ -70,3 +70,21 @@
 }
 .gp-cat::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--cat-dot, var(--text-dim)); flex: none; }
 .gp-cat[data-dot='off']::before { display: none; }  /* unmapped topic: no dot, never a guessed colour */
+
+/* ---- StoryLink (in-text mention) ---- */
+.gp-storylink--text {
+  color: inherit; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px;
+  text-decoration-color: var(--story-hue, var(--accent));
+}
+.gp-storylink--text:hover { color: var(--text-head); }
+.gp-storylink--text:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-xs); }
+
+/* ---- PhoneTabs (phone P1: one tab switch per page) ---- */
+.gp-ptabs { display: grid; grid-template-columns: repeat(var(--ptabs-n, 3), 1fr); margin: 12px 0 10px; border-bottom: 1px solid var(--hairline); }
+.gp-ptabs__btn {
+  min-height: var(--tap-min); border: 0; border-bottom: 2px solid transparent; background: transparent;
+  font-family: var(--mono, ui-monospace, monospace); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-muted); cursor: pointer;
+}
+.gp-ptabs__btn[aria-selected='true'] { color: var(--accent); border-bottom-color: var(--accent); }
+.gp-ptabs__btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }

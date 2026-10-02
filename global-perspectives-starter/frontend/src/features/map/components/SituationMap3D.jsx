@@ -13,7 +13,7 @@ import {
 } from '@/features/map/lib/globeIcons.js';
 import { GLOBE_HORIZON } from '@/features/map/lib/globeHorizon.js';
 import { CRISIS_RGB } from '@/features/map/lib/crisisHue.js';
-import { pulseSet } from '@/features/map/lib/pulse.js';
+import { pulseSet, MOTION_BUDGET } from '@/features/map/lib/pulse.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import {
   tierSize, markerKind, situationFreshness, freshnessLook, statusGlyph, desaturateRgb, hexToRgb,
@@ -486,7 +486,7 @@ export default function SituationMap3D({
   // highest tier first — see lib/pulse.js), and the selected story's travelling arc dashes.
   // Everything else stays static. Recomputed only when `active` changes (the 5-min poll), not
   // per animation frame.
-  const pulseIds = useMemo(() => pulseSet(active, Date.now(), 8), [active]);
+  const pulseIds = useMemo(() => pulseSet(active, Date.now(), MOTION_BUDGET.pulses), [active]);
   const pulseData = useMemo(() => active.filter((s) => pulseIds.has(s.id)), [active, pulseIds]);
   const buildPulseLayer = useCallback((t) => (!reduceMotion && pulseData.length)
     ? new ScatterplotLayer({

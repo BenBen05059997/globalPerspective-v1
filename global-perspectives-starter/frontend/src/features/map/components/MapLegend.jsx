@@ -7,6 +7,7 @@ import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import { TIER_LABEL } from '@/features/map/lib/situationLabels.js';
 import { tierSize, TIERS, STATUS_GLYPHS, markerHex } from '@/features/map/lib/legend.js';
 import { outlineForTier } from '@/features/map/lib/countryRiskLayer.js';
+import { MOTION_BUDGET } from '@/features/map/lib/pulse.js';
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
@@ -177,7 +178,7 @@ export default function MapLegend({
       </div>
       <div className="sh-legrow">
         <b>Motion</b>
-        <span className="sh-leg"><i>a soft pulse marks items new or escalating in the last 24h (at most 8) · the radar sweep · reduced motion keeps everything still</i></span>
+        <span className="sh-leg"><i>budget: at most {MOTION_BUDGET.movers} moving, {MOTION_BUDGET.pulses} pulsing · today the globe spin or radar sweep, and a soft pulse on items new or escalating in the last 24h · reduced motion keeps everything still</i></span>
       </div>
       <div className="sh-legrow">
         <b>Alert level</b>

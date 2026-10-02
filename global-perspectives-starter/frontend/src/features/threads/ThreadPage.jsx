@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { threadPath } from '@/shared/lib/threadPath';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import ShareButtons from '@/shared/ui/ShareButtons';
 import { useAuth } from '@/shared/contexts/AuthContext';
@@ -29,7 +28,8 @@ import { useIsPhone } from '@/shared/hooks/useIsPhone';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks';
 import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import FedIntoList, { FedIntoToggle } from '@/features/threads/components/FedIntoList';
-import { buildChapters } from '@/features/threads/lib/storyMode';
+import SharedActorsList from '@/features/threads/components/SharedActorsList';
+import { buildChapters, shortDate } from '@/features/threads/lib/storyMode';
 // Monitor fix (S2.2 review): CompactTimeline / ShareButtons / CopyBriefing's classes
 // (.compact-timeline*, .story-card-chevron, .share-buttons*, .copy-briefing-btn) live in
 // WeeklyPage.css, not their own component files — the same reason CountryPage.jsx,
@@ -42,6 +42,8 @@ import { buildChapters } from '@/features/threads/lib/storyMode';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/ThreadPage.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 
 function humanizeThreadId(id) {
   return (id || '')
@@ -260,9 +262,10 @@ export default function ThreadPage() {
   // uses, read here too so the Read-in-full page can show "Show linked news" on the Timeline and
   // the "news this story is judged to feed into" / "earlier news judged to feed in" rows under
   // Why. Hook is unconditional and tolerates thread/regions being undefined pre-load.
-  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, loading: fedLoading, note: linkNote } = useStoryLinks(threadId, thread?.regions);
+  const { fedInto: fedIntoRaw, fedFrom: fedFromRaw, shared: sharedRaw = [], hiddenOlder = 0, provenance = null, loading: fedLoading, note: linkNote } = useStoryLinks(threadId, thread?.regions);
   const fedInto = fedLoading ? [] : fedIntoRaw;
   const fedFrom = fedLoading ? [] : fedFromRaw;
+  const sharedActors = fedLoading ? [] : sharedRaw;
   const chaptersOldestFirst = useMemo(() => {
     if (!thread) return [];
     return [...thread.entries].reverse();
@@ -373,15 +376,14 @@ export default function ThreadPage() {
         <>
           <div className="tp-left-hd">Related threads</div>
           {relatedThreads.sameCategory.map(t => {
-            const c = CATEGORY_BADGE_COLORS[t.category];
             return (
-              <Link key={t.threadId} to={threadPath(t.threadId)} className="tp-related">
-                <div className="tp-related-kicker" style={{ color: c?.color || 'var(--ink-dim)' }}>
+              <StoryLink key={t.threadId} threadId={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
+                <div className="tp-related-kicker">
                   {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
                 </div>
                 <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
                 <div className="tp-related-meta">{t.count} articles</div>
-              </Link>
+              </StoryLink>
             );
           })}
         </>
@@ -391,13 +393,13 @@ export default function ThreadPage() {
         <>
           <div className="tp-left-hd" style={{ marginTop: 20 }}>Watching · region</div>
           {relatedThreads.sameRegion.map(t => (
-            <Link key={t.threadId} to={threadPath(t.threadId)} className="tp-related">
+            <StoryLink key={t.threadId} threadId={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
               <div className="tp-related-kicker">
                 {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
               </div>
               <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
               <div className="tp-related-meta">{t.count} articles</div>
-            </Link>
+            </StoryLink>
           ))}
         </>
       )}
@@ -548,9 +550,7 @@ export default function ThreadPage() {
         <div className="tp-hd">
           <div className="tp-hd-kicker">
             {catColors && (
-              <span className="tp-cat-badge" style={{ background: catColors.bg, color: catColors.color }}>
-                {category}
-              </span>
+              <CategoryTag category={category} />
             )}
             {thread?.entries[0]?.urgency === 'high' && (
               <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-head)', border: '1px solid var(--text-head)', padding: '0 6px', borderRadius: 3 }}>URGENT</span>
@@ -656,6 +656,22 @@ export default function ThreadPage() {
               <OverviewSection label="Earlier news judged to feed in" count={fedFrom.length}>
                 <FedIntoList links={fedFrom} direction="from" />
               </OverviewSection>
+            )}
+            {sharedActors.length > 0 && (
+              <OverviewSection label="Shares actors with" count={sharedActors.length}>
+                <SharedActorsList rows={sharedActors} />
+              </OverviewSection>
+            )}
+            {/* Provenance + the 30-day rule's count: only when there is something real to say. */}
+            {!fedLoading && provenance && (fedInto.length > 0 || fedFrom.length > 0 || sharedActors.length > 0) && (
+              <p className="tp-ov-prov" data-testid="why-provenance">
+                From analyses of {provenance.countries.join(' · ')}, as of {shortDate(provenance.asOf)}.
+              </p>
+            )}
+            {!fedLoading && hiddenOlder > 0 && (
+              <p className="tp-ov-prov" data-testid="why-hidden-older">
+                {hiddenOlder} older {hiddenOlder === 1 ? 'link' : 'links'} hidden (their analyses are over 30 days old).
+              </p>
             )}
             {fedInto.length === 0 && fedFrom.length === 0 && linkNote && (
               <div className="tp-ov-linknote"><StoryLinkNote note={linkNote} /></div>

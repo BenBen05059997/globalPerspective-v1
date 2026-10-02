@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { threadPath } from '@/shared/lib/threadPath';
 import { shortDate } from '@/features/threads/lib/storyMode.js';
-import { usePeek } from '@/shared/hooks/usePeek';
-import StoryPeek from '@/shared/ui/StoryPeek';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 const CONF_DOTS = { strong: 3, medium: 2, weak: 1 };
 
@@ -13,35 +11,27 @@ const CONF_DOTS = { strong: 3, medium: 2, weak: 1 };
 // fed into this one — "earlier news judged to feed in"). Every field is read straight off the
 // derived link record (storyLinks.js); nothing here invents a date, a headline or a confidence.
 export default function FedIntoList({ links, direction = 'into' }) {
-  const peek = usePeek();
   if (!links?.length) return null;
   return (
     <ul className="fi-list">
       {links.map((link) => {
         const targetId = direction === 'into' ? link.targetThreadId : link.sourceThreadId;
         const targetTitle = direction === 'into' ? link.targetTitle : link.sourceTitle;
-        const peekTopic = targetTitle ? { title: targetTitle } : null;
         return (
           <li key={`${targetId}-${link.country || ''}`} className={`fi-row${link.freshness === 'older' ? ' fi-older' : ''}`}>
             <div className="fi-head">
-              <a
-                href={threadPath(targetId)}
+              <StoryLink
+                threadId={targetId}
                 target="_blank"
                 rel="noreferrer"
-                onMouseEnter={(e) => peekTopic && peek.openOnHover(targetId, e.currentTarget)}
-                onMouseLeave={peek.close}
-                onFocus={(e) => peekTopic && peek.openOnFocus(targetId, e.currentTarget)}
-                onBlur={peek.close}
-                aria-describedby={peek.openId === targetId ? `fi-peek-${targetId}` : undefined}
+                topic={targetTitle ? { title: targetTitle } : null}
+                hint="Open in a new tab"
               >
                 {targetTitle || targetId}
-              </a>
+              </StoryLink>
               <span className={`fi-conf-badge fi-conf-${link.confidence || 'weak'}`}>
                 {link.confidence ? `${'●'.repeat(CONF_DOTS[link.confidence] || 1)} ${link.confidence}` : 'unrated'} · model judgment
               </span>
-              {peek.openId === targetId && peekTopic && (
-                <StoryPeek id={`fi-peek-${targetId}`} data={{ headline: targetTitle, hint: 'Open in a new tab' }} style={peek.style} />
-              )}
             </div>
             <div className="fi-meta">
               {link.lagDays != null && <span>lag {link.lagDays}d (model)</span>}

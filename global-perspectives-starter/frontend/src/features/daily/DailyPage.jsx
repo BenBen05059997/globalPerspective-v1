@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import { storyLinkPath } from '@/features/briefings/lib/briefingSlides.js';
+import { storyLinkPath, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
 import { useDailyBrief } from '@/features/daily/hooks/useDailyBrief';
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import InstrumentChip from '@/features/economy/components/InstrumentChip';
@@ -17,6 +17,7 @@ import CopyBriefing, { formatDailyBrief } from '@/shared/ui/CopyBriefing';
 import { SaveButton } from '@/features/account/components/SaveButton';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import '@/features/daily/DailyPage.css';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 const TRAJECTORY_LABELS = {
   escalating:      { arrow: '↗', label: 'Escalating',      cls: 'up' },
@@ -242,6 +243,7 @@ export default function DailyPage() {
   }
 
   const stats = brief.stats || {};
+  const RisingCard = /^thread-/.test(brief.risingThread?.threadId || '') ? StoryLink : Link;
   const risingTraj = brief.risingThread?.trajectory
     ? (TRAJECTORY_LABELS[brief.risingThread.trajectory] || TRAJECTORY_LABELS.stable)
     : null;
@@ -413,7 +415,7 @@ export default function DailyPage() {
                       )}
                     </div>
                     <h4 className="daily-story-h4">
-                      {storyLinkPath(story) ? <Link to={storyLinkPath(story)}>{story.title}</Link> : story.title}
+                      {storyLinkPath(story) ? <StoryLink to={storyLinkPath(story)} topic={peekInputForStory(story)}>{story.title}</StoryLink> : story.title}
                     </h4>
                   </div>
 
@@ -434,8 +436,10 @@ export default function DailyPage() {
       {brief.risingThread?.title && (
         <section className="daily-sec">
           <SectionHeader num="3" title="The Story to Watch" />
-          <Link
-            to={/^thread-/.test(brief.risingThread.threadId || '') ? threadPath(brief.risingThread.threadId) : '/weekly'}
+          <RisingCard
+            {...(/^thread-/.test(brief.risingThread.threadId || '')
+              ? { threadId: brief.risingThread.threadId, topic: { title: brief.risingThread.title } }
+              : { to: '/weekly' })}
             className="daily-highlight"
           >
             <div className="daily-highlight-kicker">
@@ -456,7 +460,7 @@ export default function DailyPage() {
               <p className="daily-highlight-deck">{brief.risingThread.oneLiner}</p>
             )}
             <span className="daily-highlight-cta">Read full arc →</span>
-          </Link>
+          </RisingCard>
         </section>
       )}
 

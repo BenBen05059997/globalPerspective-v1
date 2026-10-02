@@ -10,6 +10,7 @@
 // with no separate dark-mode CSS.
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence.js';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory.js';
 import { useMarketsCountry } from '@/features/economy/hooks/useMarketsCountry.js';
@@ -22,7 +23,6 @@ import { deriveHeadline, AXES, tierLabel } from '@/shared/lib/riskTiers.js';
 import { riskScoreToVar } from '@/shared/styles/tokens';
 import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
-import { threadPath } from '@/shared/lib/threadPath.js';
 import { macroRows } from '@/features/countries/lib/countryMacro.js';
 import { factRows } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
@@ -100,7 +100,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
         {state === 'briefed' && intel?.generatedAt && `Briefed ${fmtShort(intel.generatedAt)}`}
         {state === 'older' && intel?.generatedAt && `Briefed ${fmtShort(intel.generatedAt)} · older`}
         {state === 'too_old' && intel?.generatedAt && `Last briefed ${fmtShort(intel.generatedAt)} — too old to score`}
-        {state === 'never_briefed' && 'No AI briefing this cycle (we brief the 20 most-covered countries)'}
+        {state === 'never_briefed' && 'No AI briefing this cycle (we brief the most-covered countries)'}
         {state === 'quiet' && 'No coverage in the last 30 days'}
         {loading && !intel ? ' · loading…' : null}
       </div>
@@ -180,7 +180,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
           <span className="ccv2-mj">model judgment</span>{' '}
           {latestChange.why}{' '}
           {latestChange.threadId ? (
-            <Link to={threadPath(latestChange.threadId, { from: 'country', country: name })}>{latestChange.eventTitle} →</Link>
+            <StoryLink threadId={latestChange.threadId} pathOpts={{ from: 'country', country: name }} topic={{ title: latestChange.eventTitle }}>{latestChange.eventTitle} →</StoryLink>
           ) : (
             <span className="ccv2-change-cite">({latestChange.eventTitle})</span>
           )}
@@ -193,7 +193,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
           {stories.map((s) => (
             <li key={s.threadId || s.topicId}>
               {s.threadId ? (
-                <Link to={threadPath(s.threadId, { from: 'country', country: name })}>{s.title}</Link>
+                <StoryLink threadId={s.threadId} pathOpts={{ from: 'country', country: name }} topic={{ title: s.title, category: s.category !== 'other' ? s.category : undefined }} asOf={s.date}>{s.title}</StoryLink>
               ) : (
                 <span>{s.title}</span>
               )}

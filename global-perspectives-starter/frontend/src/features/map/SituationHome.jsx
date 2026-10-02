@@ -2,11 +2,13 @@ import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } fro
 import { createPortal } from 'react-dom';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
-import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
+import { useDailyBrief } from '@/features/daily/hooks/useDailyBrief.js';
+import { usePausedSince } from '@/features/map/hooks/usePausedSince.js';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief.js';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics.js';
 import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
+import { gdacsStatus } from '@/features/map/lib/gdacsStatus.js';
 import HudBriefPanel from '@/features/map/components/HudBriefPanel.jsx';
 import HudSensorPanel from '@/features/map/components/HudSensorPanel.jsx';
 import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
@@ -18,7 +20,7 @@ import { useIsPhone, PHONE_BREAKPOINT } from '@/shared/hooks/useIsPhone.js';
 import { hudCompactSummary } from '@/features/map/lib/hudCompact.js';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
-import { pausedSince, freshnessState, olderLabel } from '@/shared/lib/freshness.js';
+import { freshnessState, olderLabel } from '@/shared/lib/freshness.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import { storiesForShading } from '@/features/map/lib/storyShading.js';
 import { defaultMapView, normalizeStoredView } from '@/features/map/lib/globeSpin.js';
@@ -35,6 +37,7 @@ import AlertStack from '@/features/map/components/AlertStack.jsx';
 import MapLegend from '@/features/map/components/MapLegend.jsx';
 import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
 import { deriveFromIndex } from '@/features/threads/lib/webIndexLinks.js';
+import { linkedStoryLines } from '@/features/map/lib/cardMentions.js';
 import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
 import MapAbout from '@/features/map/components/MapAbout.jsx';
 import { alertStackItems, alertEmptyText, alertStackNote } from '@/features/map/lib/alertStack.js';
@@ -70,7 +73,6 @@ const STATE_LABEL = { emerging: 'New', escalating: 'Getting worse', peak: 'Ongoi
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const TIER_WEIGHT = { high: 3, elevated: 2, moderate: 1, low: 0 };
-const GDACS_FRESH_MS = 2 * 60 * 60 * 1000;
 
 function fmtAgo(iso) {
   if (!iso) return '—';
@@ -329,6 +331,10 @@ export default function SituationHome() {
   // Batch 4 / F (S8): when a story is selected, faint dashed lines to the stories it is judged linked to (strong + medium
   // only, approx. places). One cached `web_index` read, fetched only once a story with a threadId is selected.
   const { index: webIndex } = useWebIndex(Boolean(selectedStory && selectedStory.threadId));
+  // The same index rows, as the story card's "Linked stories" lines (distinct stories, strongest first).
+  const cardLinks = useMemo(() => (webIndex && selectedStory?.threadId
+    ? linkedStoryLines(deriveFromIndex(webIndex, selectedStory.threadId))
+    : null), [webIndex, selectedStory]);
   const linkArcs = useMemo(() => {
     if (!webIndex || !selectedStory || !selectedStory.threadId) return [];
     const d = deriveFromIndex(webIndex, selectedStory.threadId);
@@ -389,14 +395,12 @@ export default function SituationHome() {
   // own "find the latest published edition" lookup — useDailyBrief() with no dateKey defaults to
   // today and searches backward through real DAILY_BRIEF# records (hooks/useDailyBrief.js); its
   // `generatedAt` is the same field DailyPage.jsx shows as "Generated Xh ago". No new endpoint.
-  const { brief: latestBrief, loading: briefLoading, error: briefError } = useDailyBrief();
+  const { brief: latestBrief } = useDailyBrief();
   // searched = the lookup finished without an error; then "nothing found" is itself a fact
   // (no brief in the lookback window) and must be shown, not hidden.
-  const paused = useMemo(() => pausedSince({
-    newestAnalysisAt: latestBrief?.generatedAt,
-    searched: !briefLoading && !briefError,
-    lookbackDays: MAX_LOOKBACK_DAYS,
-  }), [latestBrief, briefLoading, briefError]);
+  // Same computation as the site-wide line: the newest generation time across the brief, the stories feed
+  // (reported by useGeminiTopics above) and any country briefing already loaded.
+  const { paused } = usePausedSince();
 
   // F4 (review R2): the "Elsewhere" teasers below used to claim a fixed cadence ("summarised each
   // morning", "each week") regardless of whether the pipeline is actually running. Show the real
@@ -439,14 +443,9 @@ export default function SituationHome() {
     return rows;
   }, [world, newsSituationCount, paused]);
 
-  // F2.19: "DISASTER ALERTS LIVE" only when the world file's GDACS source was actually checked
-  // recently (< 2h) — never a standing claim independent of the data.
-  const gdacsFresh = useMemo(() => {
-    const ts = world?.sources?.gdacs;
-    if (!ts) return false;
-    const age = Date.now() - new Date(ts).getTime();
-    return Number.isFinite(age) && age >= 0 && age < GDACS_FRESH_MS;
-  }, [world]);
+  // The status line says "disaster alerts live" only when the world file's GDACS source was checked within 2h
+  // ("last checked <date>" when not; nothing when unknown) — never a standing claim.
+  const gdacs = useMemo(() => gdacsStatus(world), [world]);
 
   const selected = useMemo(() => situations.find((s) => s.id === focus) || null, [situations, focus]);
   const focusMissing = focus && !selected;              // deep link to an expired/archived situation
@@ -802,7 +801,7 @@ export default function SituationHome() {
   ) : selected ? (
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={() => select(null)} />
   ) : selectedStory ? (
-    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={() => selectStory(null)} />
+    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={() => selectStory(null)} />
   ) : countryParam ? (
     <CountryCardV2 key={countryParam} name={countryParam} situations={open} onBack={() => selectCountryName(null)} />
   ) : riskMode ? (
@@ -824,12 +823,12 @@ export default function SituationHome() {
   ) : selected ? (
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={closeSelection} showBack={false} />
   ) : selectedStory ? (
-    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} onBack={closeSelection} />
+    <StoryCard key={storyFocusId} topic={selectedStory} asOf={topicsAsOf} activeCount={ranked.length} webThreads={webIndex?.threads || null} linked={cardLinks} onBack={closeSelection} />
   ) : countryParam ? (
     <CountryCardV2 key={countryParam} name={countryParam} situations={open} variant="sheet" />
   ) : null;
 
-  const statusLine = <HudStatusLine paused={paused} storiesAsOf={topicsAsOf} gdacsFresh={gdacsFresh} />;
+  const statusLine = <HudStatusLine paused={paused} gdacs={gdacs} />;
   const aboutContent = (
     <MapAbout
       paused={paused} latestDailyEditionLabel={latestDailyEditionLabel} latestWeeklyEditionLabel={latestWeeklyEditionLabel}

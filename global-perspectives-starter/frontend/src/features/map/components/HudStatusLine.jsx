@@ -1,39 +1,39 @@
-// HudStatusLine — the console's single honesty line under the page header. Rendered only when
-// the newest analysis (the daily brief's own `generatedAt`, via useDailyBrief) is more than 36h
-// old (freshness.js `pausedSince`); every date shown is computed from a real timestamp, never
-// typed. CLAUDE.md: never invent facts/dates; no placeholder UI — this renders nothing rather
-// than guess.
-//
-// F2.19 (review R2): one consistent line everywhere it appears — site-wide (Layout.jsx) and on
-// /map (SituationHome.jsx) — "ANALYSIS PAUSED SINCE <date> · LAST STORIES <date> · DISASTER
-// ALERTS LIVE". `storiesAsOf` and `gdacsFresh` are optional: Layout.jsx (which has no topics/world
-// data loaded) omits them rather than claim a state it hasn't checked; /map, which has both,
-// supplies them.
+// HudStatusLine — the one honesty line, site-wide (Layout.jsx) and on the map (SituationHome.jsx):
+// "New stories and analysis paused since <date> · disaster alerts live". Rendered ONLY when the
+// newest AI-generated content anywhere on the site (daily brief / stories feed / country briefings,
+// see shared/lib/analysisFreshness.js) is older than the pause threshold (freshness.js
+// `pausedSince`); every date is computed from a real timestamp, never typed. The disaster-alert
+// part is also computed: "live" only when the GDACS source was checked within 2 hours, "last
+// checked <date>" when it was not, and left out when it is unknown. CLAUDE.md: never invent
+// facts/dates; no placeholder UI: it renders nothing rather than guess.
 import '@/features/map/components/HudStatusLine.css';
-function fmtDate(iso) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+function fmtDate(d) {
+  const x = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(x.getTime())) return null;
+  return x.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export default function HudStatusLine({ paused, storiesAsOf, gdacsFresh }) {
+/** statusLineText(paused, gdacs) -> the one line, or null when not paused. Pure (tested). */
+export function statusLineText(paused, gdacs) {
   if (!paused) return null;
-
   const parts = [
     paused.beyondLookback
-      ? `ANALYSIS PAUSED · ${paused.text.toUpperCase()}`
-      : `ANALYSIS PAUSED SINCE ${paused.label}`,
+      ? `New stories and analysis paused · ${paused.text}`
+      : `New stories and analysis paused since ${paused.label}`,
   ];
+  if (gdacs?.state === 'live') parts.push('disaster alerts live');
+  else if (gdacs?.state === 'stale' && gdacs.checkedAt && fmtDate(gdacs.checkedAt)) parts.push(`disaster alerts last checked ${fmtDate(gdacs.checkedAt)}`);
+  return parts.join(' · ');
+}
 
-  const storiesLabel = storiesAsOf ? fmtDate(storiesAsOf) : null;
-  if (storiesLabel) parts.push(`LAST STORIES ${storiesLabel}`);
-
-  if (gdacsFresh) parts.push('DISASTER ALERTS LIVE');
-
+export default function HudStatusLine({ paused, gdacs }) {
+  const text = statusLineText(paused, gdacs);
+  if (!text) return null;
   return (
     <div className="hud-status-line" role="status">
       <span className="hud-status-dot" aria-hidden="true">●</span>
-      <span className="hud-status-text" title={parts.join(' · ')}>{parts.join(' · ')}</span>
+      <span className="hud-status-text" title={text}>{text}</span>
     </div>
   );
 }

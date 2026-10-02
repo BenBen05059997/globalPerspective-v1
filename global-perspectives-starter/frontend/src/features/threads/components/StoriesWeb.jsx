@@ -7,6 +7,7 @@ import { CRISIS_LABEL } from '@/shared/lib/crisisHue.js';
 import { peekData } from '@/shared/lib/peekData.js';
 import { threadPath } from '@/shared/lib/threadPath';
 import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
+import StoryLink from '@/shared/ui/StoryLink.jsx';
 import {
   CONF_WIDTH, LAYOUT, WEB_DEFAULT_NODES, WEB_HIDE_DAYS, WEB_LIST_DEFAULT, WEB_LIST_MAX, WEB_MAX_NODES,
   layoutWeb, mergeWebLinks, nodeLinkWords, pickWebNodes, strongestLinks, webDateLabel, webFootnote,
@@ -138,12 +139,12 @@ function LinkItem({ edge, titleOf }) {
   const more = edge.cited.length - cites.length;
   return (
     <li className="sw-link" data-conf={edge.confidence} data-edge={edge.key}>
-      <Link className="sw-link__story" to={threadPath(edge.from)}>{titleOf(edge.from)}</Link>
+      <StoryLink className="sw-link__story" threadId={edge.from} topic={{ title: titleOf(edge.from) }}>{titleOf(edge.from)}</StoryLink>
       <p className="sw-link__rel">
         <span aria-hidden="true">{'↓'} </span>judged to feed into {'·'} <b className="sw-link__conf">{edge.confidence || 'unrated'}</b> {'·'} {n} {plural(n, 'analysis', 'analyses')}
         {edge.older ? <span className="sw-link__older"> {'·'} older analysis</span> : null}
       </p>
-      <Link className="sw-link__story" to={threadPath(edge.to)}>{titleOf(edge.to)}</Link>
+      <StoryLink className="sw-link__story" threadId={edge.to} topic={{ title: titleOf(edge.to) }}>{titleOf(edge.to)}</StoryLink>
       <p className="sw-link__webs">
         {edge.webs.map((w) => `${w.country || 'Unnamed analysis'}${w.confidence ? ` (${w.confidence}${w.generatedAt ? `, ${webDateLabel(w.generatedAt)}` : ''})` : ''}`).join(' · ')}
       </p>

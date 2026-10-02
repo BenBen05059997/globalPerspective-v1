@@ -458,6 +458,10 @@ must_have "$SRC/features/map/components/MapLegend.jsx" "MOTION_BUDGET.movers" "l
 must_have "$SRC/features/map/components/MapLegend.jsx" "MOTION_BUDGET.pulses" "legend motion budget uses MOTION_BUDGET.pulses"
 must_not_have "$SRC/features/map/components/SituationMap3D.jsx" "pulseSet\\(active, Date.now\\(\\), 8\\)" "the globe uses the budget constant, not a literal 8"
 
+# 2026-10-02 operator yes: Studio credits copy removed (credits parked); Stories rail renamed
+must_not_have "$SRC/features/analysis-studio/AnalysisStudio.jsx" "Credits · |out of analysis credits|Add credits" "Studio shows no credits copy while credits are parked"
+must_have "$SRC/features/threads/components/StoriesChanged.jsx" "Gaining coverage this week" "the Stories rail says 'Gaining coverage this week' (not 'Rising', which is a Board column)"
+
 # ─── Summary ───
 echo
 echo "==> Summary: $(green "$PASS pass") / $(red "$FAIL fail")"

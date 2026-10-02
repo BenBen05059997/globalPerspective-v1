@@ -10,7 +10,7 @@ import StoryLink from '@/shared/ui/StoryLink.jsx';
 // useLastVisit): stories whose REAL last-change time is after it. With no previous-visit baseline
 // (a first-ever visit, or storage blocked) the section is NOT drawn at all: "Moving now" already
 // heads the main list, so a first-visit copy would only duplicate it. Below it, a compact
-// "Rising this week" (desktop rail only).
+// "Gaining coverage this week" (desktop rail only; renamed 2026-10-02 so it does not clash with the Board's "Rising coverage" column).
 const LIMIT = 8;
 
 function visitLabel(ms) {
@@ -37,7 +37,7 @@ function ChangedList({ threads, analyses, baseline, now, peek }) {
   );
 }
 
-/** railRising(threads, now) -> the compact "Rising this week" items (stories changed within 7 days). */
+/** railRising(threads, now) -> the compact "Gaining coverage this week" items (stories changed within 7 days). */
 export function railRising(threads, now) {
   return risingThreads(threads.filter((t) => ageDaysOf(t, now) <= 7), 5);
 }
@@ -47,7 +47,7 @@ function Rising({ threads, analyses, now }) {
   if (!items.length) return null;
   return (
     <section className="sf-rising-rail" aria-labelledby="sf-rising-h">
-      <SectionHeader label="Rising this week" id="sf-rising-h" hint="coverage gaining momentum" />
+      <SectionHeader label="Gaining coverage this week" id="sf-rising-h" hint="new or rising coverage, 2+ articles" />
       <ul className="sf-rise-list">
         {items.map((t) => (
           <li key={t.threadId}>

@@ -1,5 +1,11 @@
 # Global Perspectives — Change Log
 
+## 2026-10-02 (operator yes: Studio credits copy removed; Stories rail renamed)
+
+- **Studio:** credits are parked, so the credits wording is gone. The model chip reads "Member · included" for members and "Included" otherwise (was "Credits · N"); the `out_of_credits` error now reads "The included analyses are used up for now. You can keep going with your own API key: choose a provider from the model menu." (was "...Add credits or subscribe..."). Billing logic unchanged (`AnalysisStudio.jsx`).
+- **Stories:** the desktop rail "Rising this week" is now "Gaining coverage this week" (hint "new or rising coverage, 2+ articles"), so it no longer reads as contradicting the Board's "Rising coverage" column, which uses a stricter 3-day rule (`StoriesChanged.jsx`).
+- Guards: `verify_pages.sh` +2 (no credits copy in Studio; rail label).
+
 ## 2026-10-02 (P8: master-plan gaps 1-7 from the P7c audit; code, tests and docs only, frontend NOT deployed)
 
 - **Map story card (gap 1):** each WHY step is tagged INFERENCE with the story page's own rule (StoryMode legend: FACT = cited dated news, INFERENCE = model judgment); a stored cause step carries no citation, so none is ever tagged FACT. In-text links: `lib/cardMentions.js` `linkMentions` links a mention only for an exact, whole-word, case-insensitive occurrence of a real story's full title from the `web_index` already loaded by the console (titles of 15+ characters, none shared by two stories; no fuzzy matching); each link is a `StoryLink`. The live summaries / trajectories / cause texts contain 0 such mentions today (81 texts checked), so the card also gets a "Linked stories" block ("Judged to feed into" / "Earlier news judged to feed in", up to 3 each, from the same index rows as the map arcs, tagged model judgment, only when the story has links). Event links into the timeline are not built (no timeline entries on the card).

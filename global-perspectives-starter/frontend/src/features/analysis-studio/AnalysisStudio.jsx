@@ -446,7 +446,7 @@ export default function AnalysisStudio() {
       };
       setSections((prev) => addSection(prev, section));
     } catch (err) {
-      if (err?.code === 'out_of_credits') setError("You're out of analysis credits, and any monthly allowance is used up. Add credits or subscribe to keep analyzing.");
+      if (err?.code === 'out_of_credits') setError("The included analyses are used up for now. You can keep going with your own API key: choose a provider from the model menu.");
       else setError(err?.message || 'Analysis failed.');
     } finally {
       setRunning(false);
@@ -469,7 +469,7 @@ export default function AnalysisStudio() {
         </div>
         <button className="as-model-chip" onClick={() => setModalOpen(true)} title="Choose provider / model / key">
           <span className="as-chip-dot" />
-          {serverCapable && !byok ? (isMember ? 'Member · included' : `Credits · ${creditBalance}`) : modelChip}
+          {serverCapable && !byok ? (isMember ? 'Member · included' : 'Included') : modelChip}
           <span className="as-chip-caret">▾</span>
         </button>
       </header>

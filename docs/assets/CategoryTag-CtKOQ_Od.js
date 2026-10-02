@@ -1,0 +1,1 @@
+import{z as r,j as a}from"./index-DNsWbbMj.js";/* empty css               */function e({category:t,className:o=""}){if(!t)return null;const s=r(t);return a.jsx("span",{className:`gp-cat ${o}`.trim(),"data-dot":s?"on":"off",style:{"--cat-dot":s},children:t})}export{e as C};

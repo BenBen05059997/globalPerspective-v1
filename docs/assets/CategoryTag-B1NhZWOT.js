@@ -1,1 +1,0 @@
-import{j as s}from"./index-D387_Ci4.js";import{b as i}from"./tokens-BZRr76Fa.js";/* empty css               */function m({category:t,className:r=""}){if(!t)return null;const o=String(t).toLowerCase();return s.jsx("span",{className:`gp-cat ${r}`.trim(),style:{"--cat-dot":i[o]||void 0},children:t})}export{m as C};

@@ -47,6 +47,7 @@ Nothing else goes in DynamoDB. A new table needs an explicit exception recorded 
 |---|---|---|---|
 | `corpus/YYYY/MM/DD/HH.jsonl` | `newsSituationIngest` | hourly | audit, replay, reclassify |
 | `stories/state/<storyId>.json`, `stories/index.json` | `newsSituationIngest` | hourly | tracker, map detail |
+| `stories/classify-cache.json` (classification memory, url+title → result, 48h; 2026-10-05) | `newsSituationIngest` | hourly (overwrite) | `newsSituationIngest` only |
 | `situations/inbox/gdacs-latest.json` (stable pointer, overwritten) | `newsGdacsIngest` — full-snapshot source | 20 min | tracker (read every sweep) |
 | `situations/inbox/<ts>-<source>-<id>.json` (append) | per-event openers (`newsBreakingAlert`, later GDELT) | 4h | tracker (read + move to `processed/`) |
 | `situations/state/<id>.json`, `situations/index.json` | `newsSituationTracker` | 10-min sweep | map, thread/country pages |

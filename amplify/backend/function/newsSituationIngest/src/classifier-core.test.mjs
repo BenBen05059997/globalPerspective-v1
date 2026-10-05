@@ -72,4 +72,30 @@ t('clusterStories drops severity<2 and no-location events', () => {
   assert.strictEqual(stories.length, 0);
 });
 
+t('splitByCache: cached url+title reused, new or re-headlined article goes to the model', () => {
+  const { splitByCache, nextCache } = core;
+  const a = { title: 'War begins', url: 'https://a.com/1' };
+  const b = { title: 'Market falls', url: 'https://b.com/2' };
+  const ca = normalizeClassified({ iso3: ['UKR'], axis: 'conflict', severity: 4 }, a);
+  const cache = nextCache(null, [ca], '2026-10-05T00:00:00Z', 48);
+  const r = splitByCache([a, b], cache);
+  assert.deepStrictEqual(r.hits, [ca]);
+  assert.deepStrictEqual(r.misses, [b]);
+  const r2 = splitByCache([{ ...a, title: 'War begins: 3 killed' }], cache);
+  assert.strictEqual(r2.misses.length, 1);
+  assert.strictEqual(splitByCache([a, b], null).misses.length, 2);
+});
+
+t('nextCache keeps first-classified time and prunes entries older than keepHours', () => {
+  const { nextCache, cacheKey } = core;
+  const a = { title: 'A', url: 'https://a.com/1' }; const b = { title: 'B', url: 'https://b.com/2' };
+  const ca = normalizeClassified({ axis: 'conflict' }, a); const cb = normalizeClassified({ axis: 'political' }, b);
+  const c1 = nextCache(null, [ca], '2026-10-05T00:00:00Z', 48);
+  const c2 = nextCache(c1, [cb], '2026-10-06T00:00:00Z', 48);
+  assert.strictEqual(c2.count, 2);
+  assert.strictEqual(c2.entries[cacheKey(a)].at, '2026-10-05T00:00:00Z');
+  const c3 = nextCache(c2, [], '2026-10-07T01:00:00Z', 48);
+  assert.deepStrictEqual(Object.keys(c3.entries), [cacheKey(b)]);
+});
+
 console.log(`\n${pass} tests passed`);

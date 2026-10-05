@@ -1,5 +1,10 @@
 # Global Perspectives — Change Log
 
+## 2026-10-05 (DeepSeek cost: story scan classifies only new articles)
+
+- **`newsSituationIngest` (deployed 2026-10-05 01:01 UTC, Lambda code only):** the hourly story scan re-sent every article from the last 36h to DeepSeek on every run (~430–450 articles, 12 calls, ~288 calls/day), so each article was classified ~24–36 times with the same prompt; about half the daily DeepSeek spend. It now keeps earlier results in `stories/classify-cache.json` (key = url + title; 48h) and sends only articles it has not seen. Expected: 1–2 calls/run instead of 12. Map output unchanged (same classifications reused). Cache read failure falls back to classifying everything. Removed the false "daily LLM cap enforced" comment. Tests: `classifier-core.test.mjs` +2 (9 pass); 3-run local simulation with mocked feeds/model/S3: run 1 sent 25 titles, runs 2–3 sent only the 5 new ones. No IAM change (the role already reads/writes `stories/*`).
+- Why the plan missed it: `MAP_HOME_SITUATION_PLAN.md` WS1 costed "~300–600 headlines per hour-window", i.e. assumed each run sees only that hour's news; the S3·T1 build used a 36h window with no memory, and the planned 600-calls/day cap was never coded.
+
 ## 2026-10-02 (operator yes: Studio credits copy removed; Stories rail renamed)
 
 - **Studio:** credits are parked, so the credits wording is gone. The model chip reads "Member · included" for members and "Included" otherwise (was "Credits · N"); the `out_of_credits` error now reads "The included analyses are used up for now. You can keep going with your own API key: choose a provider from the model menu." (was "...Add credits or subscribe..."). Billing logic unchanged (`AnalysisStudio.jsx`).

@@ -6,10 +6,11 @@
 //   3. deterministically cluster into STORIES (outlets, velocity, spread)
 //   4. write corpus/YYYY/MM/DD/HH.jsonl (classified articles) + stories/state/<id>.json + stories/index.json
 // The tracker (S3·T3) reads stories/index and opens situations for significant stories → the map's
-// conflict/political/economic hues. Decoupled from the 4h editorial run. Daily LLM cap enforced.
+// conflict/political/economic hues. Decoupled from the 4h editorial run. Articles classified in an
+// earlier run are reused from stories/classify-cache.json (2026-10-05), so only new ones cost a call.
 
 const core = require('./classifier-core');
-const { buildMessages, parseClassification, normalizeClassified, clusterStories, slug } = core;
+const { buildMessages, parseClassification, normalizeClassified, clusterStories, slug, splitByCache, nextCache } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
@@ -20,6 +21,8 @@ const BATCH = Number(process.env.CLASSIFY_BATCH) || 35;
 const MAX_BATCHES = Number(process.env.MAX_BATCHES_PER_RUN) || 12; // ≤ ~420 articles/run
 const CONCURRENCY = Number(process.env.CLASSIFY_CONCURRENCY) || 4; // parallel LLM calls (else 300s timeout)
 const MAX_AGE_H = Number(process.env.MAX_AGE_HOURS) || 36;
+const CACHE_KEY = 'stories/classify-cache.json'; // classification memory, see classifier-core nextCache
+const CACHE_KEEP_H = Number(process.env.CACHE_KEEP_HOURS) || 48; // > MAX_AGE_H and GDELT's 24h timespan
 const METRIC_NS = 'GlobalPerspective/Situations';
 
 const RSS_FEEDS = [
@@ -167,21 +170,29 @@ exports.handler = async () => {
   const seen = new Set();
   const articles = [...rss, ...gdelt].filter((a) => !seen.has(a.url) && seen.add(a.url));
   console.log(`[ingest] ${articles.length} fresh articles (${rss.length} RSS + ${gdelt.length} GDELT)`);
+  // Only articles not classified in an earlier run go to the model. A cache read failure falls
+  // back to classifying everything (the pre-2026-10-05 behaviour), never to an empty map.
+  let cache = null;
+  try { cache = await getJson(CACHE_KEY); } catch (e) { console.warn('[ingest] cache read failed, classifying all:', e.message); }
+  const { hits, misses } = splitByCache(articles, cache);
+  console.log(`[ingest] ${hits.length} already classified, ${misses.length} new`);
   const batches = [];
-  for (let i = 0; i < articles.length && batches.length < MAX_BATCHES; i += BATCH) batches.push(articles.slice(i, i + BATCH));
+  for (let i = 0; i < misses.length && batches.length < MAX_BATCHES; i += BATCH) batches.push(misses.slice(i, i + BATCH));
 
-  const classified = [];
+  const fresh = [];
   let llmCalls = 0;
   // Parallel LLM calls (bounded) — sequential blew the 300s timeout.
   for (let i = 0; i < batches.length; i += CONCURRENCY) {
     const wave = batches.slice(i, i + CONCURRENCY);
     const settled = await Promise.allSettled(wave.map((b) => classifyBatch(b)));
     for (const r of settled) {
-      if (r.status === 'fulfilled') { classified.push(...r.value); llmCalls++; }
+      if (r.status === 'fulfilled') { fresh.push(...r.value); llmCalls++; }
       else console.warn('[ingest] batch failed:', r.reason?.message);
     }
   }
-  console.log(`[ingest] classified ${classified.length} in ${llmCalls} LLM calls`);
+  console.log(`[ingest] classified ${fresh.length} new in ${llmCalls} LLM calls`);
+  const classified = [...hits, ...fresh];
+  try { await putObj(CACHE_KEY, nextCache(cache, fresh, now, CACHE_KEEP_H)); } catch (e) { console.warn('[ingest] cache write failed:', e.message); }
 
   const prevIndex = (await getJson('stories/index.json')) || {};
   const prevById = {};
@@ -197,9 +208,9 @@ exports.handler = async () => {
   await Promise.all(stories.map((s) => putObj(`stories/state/${storyKey(s.storyId)}.json`, s)));
   await putObj('stories/index.json', { updated_at: now, count: stories.length, stories: stories.map((s) => ({ storyId: s.storyId, axis: s.axis, category: s.category, title: s.title, iso3: s.iso3, centroid: s.centroid, max_severity: s.max_severity, outlets: s.outlets, velocity: s.velocity, spread_new_iso3: s.spread_new_iso3, first_seen: s.first_seen, last_seen: s.last_seen, entities: s.entities, headlines: (s.headlines || []).slice(0, 3) })) });
 
-  await Promise.all([putMetric('IngestArticles', classified.length), putMetric('IngestStories', stories.length), putMetric('ClassifierLLMCallsToday', llmCalls)]);
+  await Promise.all([putMetric('IngestArticles', classified.length), putMetric('IngestStories', stories.length), putMetric('ClassifierLLMCallsToday', llmCalls), putMetric('IngestCacheHits', hits.length)]);
   const top = stories.slice(0, 5).map((s) => `${s.title} [${s.axis} sev${s.max_severity} ${s.outlets}o]`);
-  const result = { ok: true, articles: articles.length, classified: classified.length, llmCalls, stories: stories.length, top };
+  const result = { ok: true, articles: articles.length, classified: classified.length, cached: hits.length, newlyClassified: fresh.length, llmCalls, stories: stories.length, top };
   console.log(`[ingest] ${JSON.stringify(result)}`);
   return result;
 };

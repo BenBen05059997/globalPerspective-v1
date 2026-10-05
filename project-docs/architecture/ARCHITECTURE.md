@@ -884,6 +884,8 @@ See `DATA_STRATEGY.md`, `MAP_HOME_SITUATION_PLAN.md`, and `../redesign-ux/_activ
 
 Fetches fresh articles (BATCH=35, up to MAX_BATCHES=12 → a 420-article/run cap), classifies each with an LLM (category, entities, severity, `kind`), and clusters them into `stories/` (`clusterStories`), persisting a story to `stories/index.json` when it clears `outlets≥2 ∥ severity≥3` (cap 80 stories/run). Writes raw classified articles to `corpus/YYYY/MM/DD/HH.jsonl`.
 
+**Classification memory (2026-10-05, cost fix):** each run now sends only articles it has not classified before. Earlier results live in `stories/classify-cache.json` (key = url + title, so a re-headlined article is classified again; entries kept `CACHE_KEEP_HOURS`=48 from first classification). Before this, every run re-sent the whole 36h window (~430–450 articles, 12 calls) and the same article was classified ~24–36 times: about half of the daily DeepSeek spend. A cache read failure falls back to classifying everything. Run result now carries `cached` / `newlyClassified`; metric `IngestCacheHits`. The old header comment's "daily LLM cap enforced" was never true (no cap in code) and is removed. `corpus/` still holds the full classified set per run.
+
 > ⚠️ **StoryId fragmentation is the #1 finding of the situation audit** (`SITUATION_BACKEND_AUDIT.md` F1, HIGH): `storyId` is derived per-article with no entity normalization, so one real event can fragment into up to 6 storyIds — diluting corroboration, resetting velocity, and driving most of the tracker's close/reopen churn. See the audit for the full ranked findings (F1–F14) and the proposed fix order.
 > ⚠️ Silently truncates at the 420-article/run cap with no log line (F9) — live volume already brushes the ceiling.
 

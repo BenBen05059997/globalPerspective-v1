@@ -165,4 +165,34 @@ function clusterStories(classified, nowIso, prevIndex = {}) {
   return stories;
 }
 
-module.exports = { AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, domainOf, slug, normalizeEntity };
+// Classification memory (cost fix 2026-10-05). Each hourly run sees every article from the last
+// 36h, so without memory the same article went to the model ~24–36 times with the same prompt.
+// Key = url + title, so a re-headlined article is classified again. Entries keep their first
+// classification time; one not seen in a run is kept for keepHours (a feed can drop an item for a run).
+const cacheKey = (a) => `${a.url}\u0000${a.title}`;
+
+function splitByCache(articles, cache) {
+  const entries = (cache && cache.entries) || {};
+  const hits = []; const misses = [];
+  for (const a of articles) {
+    const e = entries[cacheKey(a)];
+    if (e && e.c) hits.push(e.c); else misses.push(a);
+  }
+  return { hits, misses };
+}
+
+function nextCache(cache, classified, nowIso, keepHours) {
+  const prev = (cache && cache.entries) || {};
+  const nowMs = Date.parse(nowIso);
+  const entries = {};
+  for (const [k, e] of Object.entries(prev)) {
+    if (e && e.c && nowMs - Date.parse(e.at) <= keepHours * 3.6e6) entries[k] = e;
+  }
+  for (const c of classified) {
+    const k = cacheKey(c);
+    entries[k] = { at: (prev[k] && prev[k].at) || nowIso, c };
+  }
+  return { updated_at: nowIso, count: Object.keys(entries).length, entries };
+}
+
+module.exports = { AXES, buildMessages, parseClassification, normalizeClassified, clusterStories, domainOf, slug, normalizeEntity, cacheKey, splitByCache, nextCache };

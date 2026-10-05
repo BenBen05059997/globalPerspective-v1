@@ -262,6 +262,22 @@ function decideReuse({ kind, existing, fingerprint, predictionLoggedToday, force
   return { reuse: true, reason: 'unchanged' };
 }
 
+// Topic ids are "<title>-<position>" (newsInvokeGemini createStableTopicId), so the same story
+// at a different position in the next run gets a new id and found nothing to reuse: every run
+// re-researched every story (0 reused, 2026-09-30..10-04). These are the same-title ids at the
+// other positions; the caller reuses the newest stored item among them (2026-10-05).
+function siblingTopicIds(topicId, maxPosition = 30) {
+  const m = /^(.*)-(\d+)$/.exec(String(topicId || ''));
+  if (!m || !m[1]) return [];
+  const out = [];
+  for (let i = 0; i <= maxPosition; i++) if (String(i) !== m[2]) out.push(`${m[1]}-${i}`);
+  return out;
+}
+
+function newestItem(items) {
+  return (items || []).filter(Boolean).reduce((best, it) => (!best || String(it.generatedAt || '') > String(best.generatedAt || '') ? it : best), null);
+}
+
 // A run is "usable" when at least one story has a current item, generated OR reused. Gates the
 // threadId assignment, the staging->latest swap and the archive (was: outputs.length > 0).
 function runOutcome({ generated = 0, reused = 0 }) {
@@ -318,6 +334,8 @@ module.exports = {
   buildChatBody,
   sourceFingerprint,
   decideReuse,
+  siblingTopicIds,
+  newestItem,
   runOutcome,
   selectPruneKeys,
   restampFields,

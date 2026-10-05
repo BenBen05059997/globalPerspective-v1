@@ -9,6 +9,7 @@ const {
   GetCommand,
   ScanCommand,
   BatchWriteCommand,
+  BatchGetCommand,
   QueryCommand,
   UpdateCommand,
 } = require('@aws-sdk/lib-dynamodb');
@@ -565,14 +566,19 @@ async function ensureStored(topic, kind, generationId, generatedDate, generatedY
   const pk = `${PK_PREFIX}${topic.id}`;
   const fingerprint = lib.sourceFingerprint(topic);
   let existing = null;
+  let fromTopicId = null; // set when the stored item belongs to the same title at another position
   let predictionLoggedToday = false;
   if (!ctx.force) {
     const got = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: KIND_SK(kind) } }));
     existing = got.Item || null;
+    if (!existing) {
+      existing = await findSiblingItem(topic.id, KIND_SK(kind));
+      if (existing) fromTopicId = existing.topicId || existing.PK.slice(PK_PREFIX.length);
+    }
     if (kind === 'prediction' && existing) {
       const logged = await ddb.send(new GetCommand({
         TableName: PREDICTION_LOG_TABLE,
-        Key: { PK: `PRED#${topic.id}`, SK: new Date().toISOString().slice(0, 10) },
+        Key: { PK: `PRED#${fromTopicId || topic.id}`, SK: new Date().toISOString().slice(0, 10) },
       }));
       predictionLoggedToday = Boolean(logged.Item);
     }
@@ -586,8 +592,37 @@ async function ensureStored(topic, kind, generationId, generatedDate, generatedY
   }
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
   const sks = kind === 'prediction' ? [PREDICTION_SK, RESEARCH_BRIEFING_SK] : [KIND_SK(kind)];
+  if (fromTopicId) {
+    // Copy the sibling's items under this run's id (pages read TOPIC#<current id>). No new
+    // PRED# row: the forecast was logged once under the sibling id, which the story's thread
+    // lookup (prediction_snapshot by threadId/topicIds) still finds.
+    let copied = null;
+    for (const sk of sks) {
+      const src = sk === KIND_SK(kind) ? existing : (await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: `${PK_PREFIX}${fromTopicId}`, SK: sk } }))).Item;
+      if (!src) continue;
+      const item = { ...lib.restampFields(src, generationId, ttlSeconds), PK: pk, topicId: topic.id, title: topic.title, reusedFromTopicId: fromTopicId };
+      await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
+      if (sk === KIND_SK(kind)) copied = item;
+    }
+    console.log(`Reused ${kind} for ${topic.id} from same-title ${fromTopicId} (${decision.reason})`);
+    return { item: copied, reused: true };
+  }
   for (const sk of sks) await touchItem(pk, sk, generationId, ttlSeconds);
   return { item: lib.restampFields(existing, generationId, ttlSeconds), reused: true };
+}
+
+// Newest stored item of this kind for the same title at another list position (see
+// lib.siblingTopicIds). Best-effort: a read failure means "nothing to reuse", never a failed run.
+async function findSiblingItem(topicId, sk) {
+  const keys = lib.siblingTopicIds(topicId).map((id) => ({ PK: `${PK_PREFIX}${id}`, SK: sk }));
+  if (!keys.length) return null;
+  try {
+    const r = await ddb.send(new BatchGetCommand({ RequestItems: { [SUMMARY_TABLE]: { Keys: keys } } }));
+    return lib.newestItem((r.Responses && r.Responses[SUMMARY_TABLE]) || []);
+  } catch (e) {
+    console.warn(`sibling lookup failed for ${topicId}: ${e.message}`);
+    return null;
+  }
 }
 
 // Re-stamp a reused item so the generation prune keeps it; never creates an item (attribute_exists).

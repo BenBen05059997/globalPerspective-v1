@@ -331,3 +331,14 @@ test('D3 buildChatBody: every call disables thinking, for flash and for v4-pro',
     assert.deepEqual(b.messages, [{ role: 'user', content: 'x' }]);
   }
 });
+
+test('R2 sibling ids: same title at every other position; none for an id without a position', () => {
+  const { siblingTopicIds, newestItem } = require('../src/lib');
+  const ids = siblingTopicIds('G7 Agrees to Release 100 Million Barrels-2', 4);
+  assert.deepEqual(ids, ['G7 Agrees to Release 100 Million Barrels-0', 'G7 Agrees to Release 100 Million Barrels-1', 'G7 Agrees to Release 100 Million Barrels-3', 'G7 Agrees to Release 100 Million Barrels-4']);
+  assert.deepEqual(siblingTopicIds('Talks in Geneva-10', 2), ['Talks in Geneva-0', 'Talks in Geneva-1', 'Talks in Geneva-2']);
+  assert.deepEqual(siblingTopicIds('no-position-here'), []);
+  assert.deepEqual(siblingTopicIds(''), []);
+  assert.equal(newestItem([{ generatedAt: '2026-10-04T04:30Z', n: 1 }, null, { generatedAt: '2026-10-04T12:30Z', n: 2 }]).n, 2);
+  assert.equal(newestItem([]), null);
+});

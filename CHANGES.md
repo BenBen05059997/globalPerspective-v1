@@ -1,8 +1,9 @@
 # Global Perspectives — Change Log
 
-## 2026-10-05 (DeepSeek cost: story scan classifies only new articles)
+## 2026-10-05 (DeepSeek cost: story scan classifies only new articles; research job reuses same-title work)
 
 - **`newsSituationIngest` (deployed 2026-10-05 01:01 UTC, Lambda code only):** the hourly story scan re-sent every article from the last 36h to DeepSeek on every run (~430–450 articles, 12 calls, ~288 calls/day), so each article was classified ~24–36 times with the same prompt; about half the daily DeepSeek spend. It now keeps earlier results in `stories/classify-cache.json` (key = url + title; 48h) and sends only articles it has not seen. Expected: 1–2 calls/run instead of 12. Map output unchanged (same classifications reused). Cache read failure falls back to classifying everything. Removed the false "daily LLM cap enforced" comment. Tests: `classifier-core.test.mjs` +2 (9 pass); 3-run local simulation with mocked feeds/model/S3: run 1 sent 25 titles, runs 2–3 sent only the 5 new ones. No IAM change (the role already reads/writes `stories/*`).
+- **`NewsProjectInvokeAgentLambda-dev` (deployed 2026-10-05 01:09 UTC, operator yes):** reuse never fired ("0 reused" every run since 09-30) because topic ids are `<title>-<position>` and a story's position changes between runs. On a miss it now reuses the newest stored item of the same title at another position (forecast + research once per UTC day; summary/cause when sources match), copied under the current id with `reusedFromTopicId`; no duplicate `PRED#` row for the same story on the same day. Tests: `test/lib.test.js` +1 (43 pass); mocked-DynamoDB run of `ensureStored`: same-day sibling reused (no new PRED# row, research copied), next day regenerates. Expected saving ~$0.2–0.3/day.
 - Why the plan missed it: `MAP_HOME_SITUATION_PLAN.md` WS1 costed "~300–600 headlines per hour-window", i.e. assumed each run sees only that hour's news; the S3·T1 build used a 36h window with no memory, and the planned 600-calls/day cap was never coded.
 
 ## 2026-10-02 (operator yes: Studio credits copy removed; Stories rail renamed)

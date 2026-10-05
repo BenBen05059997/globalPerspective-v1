@@ -274,6 +274,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 
 - **[DEPLOYMENT_NOTES.md](ops/DEPLOYMENT_NOTES.md)** — Frontend deploy checklist.
 - **[DOMAIN_SETUP.md](ops/DOMAIN_SETUP.md)** — Custom-domain + Cloudflare DNS setup.
+- **[DEEPSEEK_COST_ESTIMATE.md](ops/DEEPSEEK_COST_ESTIMATE.md)** — Estimated DeepSeek $/day per job, before vs after the 2026-10-05 cost fixes; how to re-measure.
 - **[SECURITY_DEPLOYMENT_NOTES.md](ops/SECURITY_DEPLOYMENT_NOTES.md)** — CORS/security notes for Lambda.
 
 ## Legacy / obsolete

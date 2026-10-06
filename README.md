@@ -1,6 +1,6 @@
 # Global Perspectives
 
-AI-powered global-news intelligence platform — [globalperspective.net](https://globalperspective.net). React frontend on GitHub Pages + ~33 AWS Lambdas + DynamoDB + Firebase Auth. Content is public; Polar membership buys analysis compute + depth.
+AI-powered global-news intelligence platform — [globalperspective.net](https://globalperspective.net). The production frontend is currently GitHub Pages (`docs/`) behind Cloudflare's `globalperspective-rss` Worker; a Workers Static Assets migration is in progress but has not been deployed. Backend: ~33 AWS Lambdas + DynamoDB + Firebase Auth. Content is public; Polar membership buys analysis compute + depth.
 
 ## Where to look (start here)
 
@@ -17,7 +17,7 @@ AI-powered global-news intelligence platform — [globalperspective.net](https:/
 
 ## Traps — do NOT assume
 
-- **`docs/` is the GitHub Pages build OUTPUT** (served HTML + `config.js`), not source. Never hand-edit it except `config.js`; `deploy.sh` regenerates it.
+- **`docs/` is the legacy GitHub Pages build OUTPUT** (served HTML + operator-owned `config.js`), not source. The new `./deploy.sh` defaults to local verify/build/package only. Use `--target legacy-pages` to run the preserved Pages release flow; candidate and production Cloudflare uploads are explicit targets and require current authorization. See `project-docs/ops/DEPLOYMENT_NOTES.md`.
 - **Lambda env vars named `XAI_API_KEY` / `GROK_*` are legacy** — they hold DeepSeek/Gemini values. Confirm the provider with `aws lambda get-function-configuration`, never from the name.
 - **Deployed Lambda bytes can drift from `main`** (especially the signal-api-derived ones) — diff before changing.
 - Root scratch files (`simple-prompt.js`, `test-gemini.js`, root `index.html`, and the 101-byte empty-stub root `package-lock.json`) were removed 2026-09-24 as dead weight (see `project-docs/architecture/CLEANUP_AUDIT_2026-09-24.md`). Load-bearing root files: `CLAUDE.md`, `deploy.sh`, `.env.example`.

@@ -15,7 +15,8 @@
     "preview": "vite preview",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
-    "e2e:install": "playwright install chromium"
+    "e2e:install": "playwright install chromium",
+    "test:hosting": "node --test worker/*.test.mjs ../../scripts/prepare-site-assets.test.mjs ../../scripts/deploy-site.test.mjs ../../cloudflare/front-worker/candidate.test.mjs"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.3",
@@ -47,6 +48,7 @@
     "source-map": "^0.7.6",
     "vite": "^7.3.0",
     "vitest": "^4.1.0",
+    "wrangler": "4.147.0",
     "zod": "^4.4.3"
   }
 }

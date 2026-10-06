@@ -1,0 +1,43 @@
+{
+  "capturedAt": "2026-10-05T10:08:02.628211+00:00",
+  "accountId": "45efe64168fc55da3937e2c01b1ca43a",
+  "zoneId": "6d4c0f4dc951584468d1df02f4161d3b",
+  "worker": "globalperspective-rss",
+  "originalModuleName": "worker2.js",
+  "versionId": "91ba1e98-0959-4387-84f3-10a0d5790ad8",
+  "deployedAt": "2026-10-01T09:33:05.770237Z",
+  "sha256": "48f1b03ebfab8382652ef94cbc6e3d480182d7f61203dfd0a5048f0981812989",
+  "compatibilityDate": "2026-04-01",
+  "compatibilityFlags": [],
+  "bindings": [
+    {
+      "name": "S3_ACCESS_KEY_ID",
+      "type": "secret_text"
+    },
+    {
+      "name": "S3_SECRET_ACCESS_KEY",
+      "type": "secret_text"
+    }
+  ],
+  "routes": [
+    {
+      "id": "04eb4303cf474729a2057f59434f71e8",
+      "pattern": "globalperspective.net/rss*",
+      "script": "globalperspective-rss",
+      "request_limit_fail_open": false
+    },
+    {
+      "id": "0464f25297374245b9203061e7a198db",
+      "pattern": "globalperspective.net/*",
+      "script": "globalperspective-rss",
+      "request_limit_fail_open": false
+    }
+  ],
+  "runtimeConfigSha256": "84ce4470ad3b7de2b0cdf31053c92e7eeb1a80181597b609d9f193c218253c2a",
+  "captureGaps": [
+    "DNS records: API authentication error 10000",
+    "SSL settings: unauthorized 9109",
+    "Rulesets: authentication error 10000",
+    "Page rules: unauthorized 9109"
+  ]
+}

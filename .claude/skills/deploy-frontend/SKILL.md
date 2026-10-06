@@ -1,34 +1,47 @@
 ---
 name: deploy-frontend
-description: Build and deploy frontend changes to GitHub Pages production. Use when the user asks to deploy, publish, push to production, update the live site, or release frontend changes. Triggers on phrases like "deploy", "publish frontend", "push to prod", "update production", "go live".
+description: Verify/build/package frontend changes locally or release them to the explicit Cloudflare or legacy GitHub Pages target. Use when the user asks to build, deploy, publish, update the live site, or release frontend changes.
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # Deploy Frontend to Production
 
-Only run this after an explicit deploy "yes" in the current message — deploying prod needs a
-fresh confirmation every time, per repo `CLAUDE.md`.
+The default build-only command is local and needs no deploy authorization. Any Cloudflare upload
+or GitHub Pages legacy release needs explicit current-message authorization, per repo `CLAUDE.md`.
 
 ## Steps
 
-1. `./deploy.sh` (repo root) — builds, copies `dist/` → `docs/`, strips `docs/assets/*.map`,
-   resyncs `docs/404.html` byte-identical to `index.html`, and hash-guards `docs/config.js`
-   (aborts if it changed). Add `--commit "msg"` to commit; add `--push` only if the deploy "yes"
-   covers pushing too.
-   - If the build fails, stop and show the error — don't proceed to copy/commit.
-2. Update `CHANGES.md` with a dated entry (what changed, why, files touched) if `./deploy.sh
-   --commit` didn't already fold that in.
-3. Verify: `diff docs/index.html docs/404.html` is empty; then
-   `curl -s -o /dev/null -w "%{http_code}" https://globalperspective.net` → `200`.
-4. If not using `--push`, push once (`git push`) and let GitHub Pages settle (1-2 minutes) —
-   don't push repeatedly in quick succession.
+1. Run `./deploy.sh` (repo root) for verify/build/package only. It does not upload or publish.
+   - Candidate Worker: after explicit authorization for candidate upload, run
+     `./deploy.sh --target candidate` (Worker `globalperspective-site-candidate`).
+   - Production Worker: after explicit authorization for production upload, run
+     `./deploy.sh --target production` (Worker `globalperspective-site`).
+   - Legacy Pages: after explicit authorization for the Pages release, run
+     `./deploy.sh --target legacy-pages`; this invokes the preserved script with its existing
+     `--commit`, `--push`, and `--skip-build` options.
+   - Exact Pages staging for dual-publish or rollback: run
+     `./deploy.sh --target stage-pages --artifact HASH`. This copies the archived package into
+     `docs/` without commit/push. Publishing that staged output still needs explicit legacy-release
+     authorization.
+   - If verification/build/package fails, stop before any upload or publish.
+2. Update `CHANGES.md` with a dated entry (what changed, why, files touched).
+3. Follow `project-docs/ops/DEPLOYMENT_NOTES.md` for target-specific smoke checks and release
+   records. Do not infer candidate isolation from a `workers.dev` hostname: it shares the Worker
+   code and configured backend integrations for that Worker.
+4. After a production upload passes its smoke checks, record it with
+   `./deploy.sh --target mark-verified --artifact HASH --version-id UUID` using the matching
+   production upload record.
 
 ## Rollback
 
-If deployment breaks production: `git log --oneline -5`, then `git revert <sha>` and push again.
+For Pages rollback, stage the prior artifact with `stage-pages`, then review, commit and push
+the staged `docs/` under Pages-release authorization. Do not run `legacy-pages` afterward: it
+would replace the selected archive with current build output. For Cloudflare, roll back the recorded Worker version and artifact as described in the
+migration plan. A new code push alone is not a rollback.
 
 ## Notes
 
 - Backend Lambdas are not touched by this skill — they deploy separately via the AWS CLI.
-- Never overwrite `docs/config.js` — it's operator-owned runtime config; `deploy.sh`'s hash guard
-  will refuse to proceed if it changed unexpectedly.
+- Never overwrite `docs/config.js` — it's operator-owned runtime config. Cloudflare packaging
+  validates the approved production runtime config separately; the ignored local
+  `frontend/public/config.js` is incomplete.

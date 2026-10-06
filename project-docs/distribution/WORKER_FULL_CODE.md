@@ -1,10 +1,22 @@
 # Cloudflare Worker — Full Updated Code
 
-Replace ALL code in the Worker editor with the code below, then click **Deploy**.
+**Live baseline status (verified 2026-10-05):** the code block below matches the captured deployed
+`globalperspective-rss` source exactly. Live version `91ba1e98-0959-4387-84f3-10a0d5790ad8` was
+deployed 2026-10-01. The separate candidate-host wrapper in
+`cloudflare/front-worker/candidate.mjs` is prepared locally and has not been uploaded. Production
+continues to serve GitHub Pages behind this Worker; see the active Cloudflare frontend migration
+task before treating any older deploy recipe below as current authorization.
 
-**Secrets required (added 2026-09-08 for the `/data/*` route → S3 world bucket).** Before deploying, set two Worker secrets (Dashboard → Settings → Variables → Encrypt, or `wrangler secret put`):
+**Historical paste instruction — do not use as a migration release procedure.** This code block is
+the captured deployed source snapshot, not an instruction to replace all live Worker code or
+settings. Any future shared-Worker update requires its own explicit authorization and a code-only
+upload that preserves current routes, bindings, secrets, and compatibility settings.
 
-- `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` — an access key for the **`gp-worker-s3-reader`** IAM user (read-only on `world/*`, `situations/state/*`, `stories/state/*`; created 2026-09-08). Mint a fresh key with: `aws iam create-access-key --user-name gp-worker-s3-reader`. The SigV4 code below was proven against real S3 from Node before commit.
+**Existing live secret names** (added 2026-09-08 for `/data/*` → S3 world bucket). Keep these
+Worker-only credentials unchanged for this frontend migration; Cloudflare does not expose their
+values for automatic readback, and do not create or rotate keys as part of this work:
+
+- `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` — an access key for the **`gp-worker-s3-reader`** IAM user (read-only on `world/*`, `situations/state/*`, `stories/state/*`; created 2026-09-08). The SigV4 code below was proven against real S3 from Node before commit.
 
 ---
 
@@ -538,7 +550,7 @@ export default {
 - Lambda `payload` is only read from POST body, not query string
 - If Lambda returns no data, Worker falls through to GitHub Pages gracefully
 - `/data/*` reads the **private** S3 bucket via SigV4 (no public-read); allowed keys are whitelisted (`DATA_ALLOWED`) on top of the read-only IAM scope. Member bundles are **fail-closed** until the Firebase JWKS check is implemented (do not open that branch without it). See `DATA_STRATEGY.md` §3.6/§5.
-- **SPA fallback (added 2026-09-24, Stage-0 item (a), PREPARED — NOT YET DEPLOYED):** any GET
+- **SPA fallback (added 2026-09-24, Stage-0 item (a), deployed 2026-10-01):** any GET
   request whose path's last segment has no `.` (i.e. isn't a static asset request) and that wasn't
   already claimed by `/data/*`, `/rss`, or a bot-prerender branch above now gets `docs/index.html`
   fetched from GitHub Pages and returned with **status 200** (`X-Rendered-By:
@@ -553,11 +565,10 @@ export default {
   does today for humans; the only change is the **HTTP status code**, from 404 to 200, for the
   shell response itself.
 
-### Test plan for the SPA fallback (run before requesting the deploy "yes")
+### SPA fallback regression checks
 
-Run against prod (`https://globalperspective.net`) once pasted into the Cloudflare dashboard on a
-preview/staging attempt, or immediately after deploy with a fast manual rollback path ready
-(previous Worker version is in this file's git history):
+Run against an authorized candidate-host test or production only after the relevant release gate.
+Production still uses the deployed baseline until a separately authorized Worker release:
 
 1. **Every route in `App.jsx`'s `<Routes>`**, both a default browser UA and
    `-A "Mozilla/5.0 (compatible; Googlebot/2.1)"`:
@@ -593,7 +604,7 @@ preview/staging attempt, or immediately after deploy with a fast manual rollback
 6. **`xmllint --noout docs/sitemap.xml`** — confirm the regenerated sitemap (see below) is
    well-formed, and spot-check a sample of its `<loc>` values 200 per the sweep above.
 
-Status: **deployed 2026-09-30 06:24 UTC** as a code-only update (Cloudflare API `PUT …/workers/scripts/globalperspective-rss/content`, main module `worker2.js`; secrets and routes untouched). The previous live version was `d2b6e09a-fde3-46f1-a608-063d517e1cb3`; rollback with `wrangler rollback d2b6e09a-fde3-46f1-a608-063d517e1cb3 --name globalperspective-rss`. Never use a bare `wrangler deploy` without a full config: it would reset settings.
+Historical note: the 2026-09-30 code-only update added `/briefings` bot pre-render and the `/analyze/s/*` bot exclusion. The currently captured live version `91ba1e98-0959-4387-84f3-10a0d5790ad8` was deployed 2026-10-01 and includes the SPA fallback described above. Before any future code-only upload, capture the current live version and settings and preserve existing routes, bindings, secrets, and compatibility settings; do not use a bare Wrangler deploy with an incomplete config.
 
 ### 2026-09-30 update (Batch 3 / phase I, Worker part) — what changed vs the previous version of this file
 Everything else (S3 `/data/*`, `/rss`, bot patterns, root / thread / country / daily pre-render, the SPA fallback) is unchanged. Added:

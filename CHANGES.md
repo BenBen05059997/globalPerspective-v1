@@ -1,5 +1,12 @@
 # Global Perspectives — Change Log
 
+
+## 2026-10-05 (Cloudflare frontend migration: local implementation, not deployed)
+
+- Added a static-assets Worker with separate candidate/production identities, explicit blog directory routing, navigation-only SPA fallback, cache policy and candidate noindex. Captured the current live front Worker; prepared a next-host-only compatibility wrapper preserving production behavior.
+- Made `deploy.sh` build-only by default, with explicit upload targets and a preserved legacy Pages path. Added complete config/blog packaging, source-map exclusion, artifact manifests, release records and last-verified tracking. Pinned Wrangler 4.147.0.
+- Updated deployment guidance and migration status. Production still uses GitHub Pages behind `globalperspective-rss`; DNS/SSL/rule read access remains incomplete. Local validation and outstanding release gates are recorded in `project-docs/ops/_active/TASK_2026-10-05_cloudflare_frontend_migration.md`.
+
 ## 2026-10-05 (DeepSeek cost: story scan classifies only new articles; research job reuses same-title work)
 
 - **`newsSituationIngest` (deployed 2026-10-05 01:01 UTC, Lambda code only):** the hourly story scan re-sent every article from the last 36h to DeepSeek on every run (~430–450 articles, 12 calls, ~288 calls/day), so each article was classified ~24–36 times with the same prompt; about half the daily DeepSeek spend. It now keeps earlier results in `stories/classify-cache.json` (key = url + title; 48h) and sends only articles it has not seen. Expected: 1–2 calls/run instead of 12. Map output unchanged (same classifications reused). Cache read failure falls back to classifying everything. Removed the false "daily LLM cap enforced" comment. Tests: `classifier-core.test.mjs` +2 (9 pass); 3-run local simulation with mocked feeds/model/S3: run 1 sent 25 titles, runs 2–3 sent only the 5 new ones. No IAM change (the role already reads/writes `stories/*`).

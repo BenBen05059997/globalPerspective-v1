@@ -24,7 +24,7 @@ Global Perspectives is an AI-powered global news aggregation platform. It fetche
 
 - **Production URL:** https://globalperspective.net (custom domain)
 - **GitHub Pages URL:** https://benben05059997.github.io/globalPerspective-v1/
-- **Frontend hosting:** GitHub Pages (served from `docs/`)
+- **Frontend hosting:** GitHub Pages (served from `docs/`), behind Cloudflare and the `globalperspective-rss` Worker. A Workers Static Assets migration is underway locally; no site Worker upload or domain cutover has occurred (2026-10-05).
 - **Backend:** AWS Lambda + API Gateway + DynamoDB (managed via Amplify)
 
 ---
@@ -1158,9 +1158,11 @@ Forecast accountability pipeline (built 2026-06-02). Every published prediction 
 
 ## Cloudflare Workers
 
-Domain is registered and DNS-managed in Cloudflare. Orange cloud (proxy) is enabled — all traffic flows through Cloudflare before reaching GitHub Pages.
+Domain is registered and DNS-managed in Cloudflare. Orange cloud (proxy) is enabled — production traffic reaches the existing `globalperspective-rss` Worker before GitHub Pages. Zone, route, and Worker-source reads succeeded; DNS, SSL, and rules configuration reads remain unavailable for migration planning.
 
 ### Worker: `globalperspective-rss`
+
+**Live baseline verified 2026-10-05:** deployed version `91ba1e98-0959-4387-84f3-10a0d5790ad8` (deployed 2026-10-01) matches `WORKER_FULL_CODE.md` exactly. Its captured source is in `cloudflare/front-worker/baseline/worker2.mjs`. The extensionless GET SPA fallback described below is already deployed. A separate candidate wrapper is prepared locally only; it has not been uploaded and production settings/secrets remain unchanged.
 
 **Routes:** `globalperspective.net/*` and `globalperspective.net/rss*`
 
@@ -1175,7 +1177,7 @@ The Worker handles these cases:
 | `/weekly/country/:name` | Bot (24 patterns) | POSTs `country_preview` to Lambda, returns pre-rendered HTML with OG tags |
 | `/weekly/thread/:id` | Bot (24 patterns) | POSTs `thread_preview` to Lambda, returns pre-rendered HTML with OG tags |
 | `/daily` and `/daily/:dateKey` | Bot (24 patterns) | POSTs `daily_brief` to Lambda (with 7-day fallback lookback), returns pre-rendered HTML with OG tags |
-| Everything else (non-asset GET path) | Anyone | **PREPARED 2026-09-24, NOT YET DEPLOYED** (Stage-0 item (a), `STAGE0_FIXES_PLAN.md`): SPA shell (`docs/index.html`) fetched and returned with a real **200** (`x-rendered-by: cf-worker-spa-fallback`), fixing the prior behavior where GitHub Pages served `docs/404.html` with HTTP status 404 for every route except `/` and the bot-prerendered three — invisible to crawlers reading status codes before JS executes. Until deployed, this row is still literally "passed through to GitHub Pages unchanged" in prod. |
+| Everything else (non-asset GET path) | Anyone | **LIVE, confirmed 2026-10-05** (current deployed version `91ba1e98-0959-4387-84f3-10a0d5790ad8`, deployed 2026-10-01): SPA shell (`docs/index.html`) fetched and returned with a real **200** (`x-rendered-by: cf-worker-spa-fallback`). This fixes the prior behavior where GitHub Pages returned 404 for unrecognized deep links before client-side routing. The deployed source matches the current `WORKER_FULL_CODE.md` snapshot. |
 
 **Bot patterns detected:** Twitterbot, facebookexternalhit, LinkedInBot, Slackbot, Discordbot, GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Googlebot, Bingbot, and 13 others (24 total in `BOT_PATTERNS`).
 
@@ -1267,9 +1269,9 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 
 ## Frontend
 
-**Stack:** React 19 + Vite, React Router v6, GitHub Pages
+**Stack:** React 19 + Vite, React Router v6; production currently GitHub Pages, migration target Cloudflare Workers Static Assets (not yet deployed)
 **Source:** `global-perspectives-starter/frontend/src/`
-**Production:** `docs/` (served by GitHub Pages)
+**Current production:** `docs/` served by GitHub Pages behind `globalperspective-rss`. The updated `./deploy.sh` defaults to local verification/build/package; explicit candidate/production targets upload to `globalperspective-site-candidate` / `globalperspective-site`. Use `--target legacy-pages` only for an authorized Pages release. See `../ops/DEPLOYMENT_NOTES.md` and the active migration task.
 
 ### Frontend imports
 
@@ -1817,7 +1819,7 @@ Weekly pages group topics by `threadId` to show how a story evolves across dates
 
 ## Blog
 
-Static HTML pages served from `docs/blog/` on GitHub Pages — no CMS, no build step.
+Static HTML pages currently served from `docs/blog/` on GitHub Pages — no CMS, no app build step. The hosting migration package preserves all eight tracked blog HTML pages; the current front Worker can otherwise intercept extensionless `/blog/*` paths with the SPA shell, so candidate/production blog passthrough has a separate route and verification gate.
 
 **URL:** `globalperspective.net/blog/`
 
@@ -1846,9 +1848,12 @@ docs/
 
 ## Deployment Workflow
 
-Frontend: run `./deploy.sh` (repo root) — see `project-docs/ops/DEPLOYMENT_NOTES.md` and repo
-`CLAUDE.md` for the full procedure. Backend: Lambdas deploy manually via the AWS CLI (no build
-step); several deployed zips differ from the repo source — diff before editing.
+Frontend: `./deploy.sh` (repo root) verifies, builds, and packages locally by default; explicit
+targets release to the candidate Worker, production Worker, or preserved Pages flow. Cloudflare
+uploads and Pages releases require current-message authorization. See
+`project-docs/ops/DEPLOYMENT_NOTES.md`, the active migration task, and repo `CLAUDE.md`. Backend:
+Lambdas deploy manually via the AWS CLI (no build step); several deployed zips differ from the repo
+source — diff before editing.
 
 ---
 

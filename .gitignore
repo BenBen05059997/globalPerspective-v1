@@ -22,6 +22,9 @@ amplify/backend/amplify-meta.json
 # Vite/React build artifacts
 frontend/dist/
 frontend/dist-ssr/
+global-perspectives-starter/frontend/site-dist/
+global-perspectives-starter/frontend/.wrangler/
+.site-releases/
 
 # Lambda deploy artifacts
 amplify/**/*.zip

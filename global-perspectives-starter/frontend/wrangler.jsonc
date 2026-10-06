@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "globalperspective-site",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./site-dist",
+    "binding": "ASSETS",
+    // The existing front Worker fetches /index.html as its shell. Disable
+    // automatic HTML canonical redirects; worker/index.js maps blog directory
+    // URLs explicitly and returns the shell directly at /index.html.
+    "html_handling": "none",
+    // SPA fallback is manual so missing scripts, styles, images, and blog pages
+    // stay 404 while extensionless HTML navigations receive the app shell.
+    "not_found_handling": "none",
+    // Header and path handling must run for every request, including assets.
+    "run_worker_first": true
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "env": {
+    "candidate": {
+      "name": "globalperspective-site-candidate",
+      "workers_dev": true,
+      "preview_urls": false,
+      "routes": [],
+      "compatibility_date": "2026-10-01",
+      "assets": {
+        "directory": "./site-dist",
+        "binding": "ASSETS",
+        "html_handling": "none",
+        "not_found_handling": "none",
+        "run_worker_first": true
+      },
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1
+      }
+    }
+  }
+}

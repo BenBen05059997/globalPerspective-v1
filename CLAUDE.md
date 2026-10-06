@@ -1,8 +1,9 @@
 # Global Perspectives — working notes for Claude
 
-AI global-news intelligence site (globalperspective.net). React frontend served from `docs/` by
-GitHub Pages; ~33 AWS Lambdas (ap-northeast-1) + S3 world store + a few DynamoDB tables + Firebase
-Auth; Cloudflare Worker in front. Solo developer; no CI by design.
+AI global-news intelligence site (globalperspective.net). Production frontend is currently served
+from GitHub Pages `docs/` behind the Cloudflare `globalperspective-rss` Worker. A Workers Static
+Assets migration is in progress but has not been deployed. Backend: ~33 AWS Lambdas
+(ap-northeast-1) + S3 world store + DynamoDB + Firebase Auth. Solo developer; no CI by design.
 
 ## Where truth lives
 - Doc map: `project-docs/INDEX.md`. System reference: `project-docs/architecture/ARCHITECTURE.md`
@@ -54,18 +55,28 @@ belongs to account BenBen05059997; if a push 403s as another account, run
 `gh auth switch --user BenBen05059997`, push, then switch back.
 
 Needs a fresh "yes" in the current message every time:
-- `./deploy.sh` (frontend prod deploy)
+- Cloudflare candidate/production uploads and GitHub Pages legacy releases (`./deploy.sh --target candidate`, `--target production`, or `--target legacy-pages`, including a legacy push). The default `./deploy.sh` local verify/build/package operation does not deploy and does not need a fresh yes.
 - secret values (API keys/tokens), IAM changes, Firebase auth config, `.env*`, `docs/config.js`
 - Polar / billing code or config (credits are parked — not an active task)
 - enabling user-facing sends (email crons), destructive data ops (delete tables/items/S3 prefixes)
 - new paid APIs or dependencies
 
 ## Deploying the frontend
-Run `./deploy.sh` (add `--commit "msg"` freely; add `--push` only with a fresh deploy "yes" —
-`--push` rides along with the deploy gate, not the standing push allowance above). It builds,
-copies to `docs/`, strips source maps, keeps `docs/404.html` identical to `index.html`, and
-guards `docs/config.js`. Afterwards: `curl -s -o /dev/null -w "%{http_code}" https://globalperspective.net`
-→ 200, then push once and let Pages settle. Details: `project-docs/ops/DEPLOYMENT_NOTES.md`.
+`./deploy.sh` with no target runs frontend verification, builds Vite, and packages deterministic
+site assets locally; it does not upload or publish. For the candidate Worker use
+`./deploy.sh --target candidate`; for a production Worker release use
+`./deploy.sh --target production`. Both require explicit current-message authorization. The
+preserved GitHub Pages flow is `./deploy.sh --target legacy-pages` (old `--commit`, `--push`, and
+`--skip-build` flags are forwarded to it); it also requires explicit current-message
+authorization because pushing `docs/` publishes production. Production currently remains Pages
+behind `globalperspective-rss`; no Cloudflare site upload or domain cutover has occurred. Details:
+`project-docs/ops/DEPLOYMENT_NOTES.md` and
+`project-docs/ops/_active/TASK_2026-10-05_cloudflare_frontend_migration.md`.
+
+`./deploy.sh --target stage-pages --artifact HASH` only stages an exact archived artifact into
+`docs/`; it does not commit or publish. After a production upload passes smoke checks,
+`./deploy.sh --target mark-verified --artifact HASH --version-id UUID` records the verified
+Worker version and artifact locally. Do not use either as a substitute for release authorization.
 
 ## Product rules that affect code
 - Never invent facts (prices, dates, URLs, handles) — find them in the repo or ask.

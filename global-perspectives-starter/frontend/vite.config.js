@@ -50,6 +50,6 @@ export default defineConfig({
     // e2e/ holds Playwright specs — they run under Playwright, not vitest.
     // Without this, vitest's default glob picks them up and they error on
     // Playwright-only globals.
-    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/site-dist/**', 'worker/**', 'e2e/**'],
   },
 })

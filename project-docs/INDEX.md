@@ -273,9 +273,8 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 `project-docs/ops/`
 
 - **[DEPLOYMENT_NOTES.md](ops/DEPLOYMENT_NOTES.md)** — Frontend deploy checklist.
-- **[CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md](ops/_proposed/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)** — Review draft, 2026-10-05: manual deployment to a new Worker with Static Assets; complete config/blog packaging, candidate checks, domain cutover and rollback. Workers Builds deferred; not implemented.
+- **[Cloudflare migration plan](ops/_proposed/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)** + **[active task](ops/_active/TASK_2026-10-05_cloudflare_frontend_migration.md)** — Local implementation underway: separate candidate/production static Workers, preserved front Worker, complete release packaging. No deployment or DNS change; live baseline captured and remaining DNS/settings access gaps recorded.
 - **[DOMAIN_SETUP.md](ops/DOMAIN_SETUP.md)** — Custom-domain + Cloudflare DNS setup.
-- **[CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md](ops/_proposed/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)** — PROPOSED: move frontend hosting from GitHub Pages to a files-only Worker behind the existing `globalperspective-rss` route; phases A–D, approvals per action, optional Phase E merge.
 - **[DEEPSEEK_COST_ESTIMATE.md](ops/DEEPSEEK_COST_ESTIMATE.md)** — Estimated DeepSeek $/day per job, before vs after the 2026-10-05 cost fixes; how to re-measure.
 - **[SECURITY_DEPLOYMENT_NOTES.md](ops/SECURITY_DEPLOYMENT_NOTES.md)** — CORS/security notes for Lambda.
 

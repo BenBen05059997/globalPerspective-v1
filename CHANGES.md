@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-10-06 (front Worker /blog fix: prepared, NOT deployed)
+
+- Added `cloudflare/front-worker/production/worker.mjs` = live `globalperspective-rss` baseline plus one passthrough: GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin (fixes the 8 static blog pages being shadowed by the shell). Tests in `production/worker.test.mjs` (9 pass, baseline-vs-patched identical for 20 non-blog requests). Nothing uploaded; the live Worker is unchanged until a deploy is approved.
+
 
 ## 2026-10-05 (Cloudflare frontend migration: local implementation, not deployed)
 

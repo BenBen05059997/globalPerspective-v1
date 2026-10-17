@@ -5,349 +5,307 @@ For each pair, both stories were available in the same selection window. Pick th
 ## Pair 1
 
 ### Option 1
-**Ethiopia and Eritrea sever ties as northern fighting escalates**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: ETH, ERI
-- Ethiopia and Eritrea sever ties as northern fighting escalates (scmp.com)
-- Ethiopia and Eritrea break diplomatic ties over conflict (france24.com)
+**Trump Waives Russia Sanctions, Citing National Security**
+- Outlets: 8 source outlet(s); severity: 4 of 5; countries: USA, RUS, UKR
+- Trump waives several Russia sanctions as row with Zelensky intensifies (bbc.com)
+- Trump eases Russia oil sanctions, but is Europe still buying Moscow’s gas? (aljazeera.com)
+- Russia hails Trump waiving sanctions as 'historic' (france24.com)
 
 ### Option 2
-**UK-Iranian man arrested over Fairford airbase plot**
-- Outlets: 8 (8 articles); severity: 3 of 5; countries: GBR, IRN, USA
-- UK-Iranian man arrested over Fairford airbase plot (scmp.com)
-- UK-Iranian national arrested in RAF Fairford terror probe (middleeasteye.net)
-- UK-Iranian man arrested over incident at US base in England (timesofindia.indiatimes.com)
+**Iran denies backing Houthi attacks as Aden airport hit**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: IRN, SAU, YEM
+- Iran denies role in Houthi attacks, offers mediation (dailysabah.com)
 
 Your pick: ____
 
 ## Pair 2
 
 ### Option 1
-**Man dies after entering tiger enclosure at England wildlife park**
-- Outlets: 3 (3 articles); severity: 2 of 5; countries: GBR
-- Man dies after entering tiger enclosure at England wildlife park (aljazeera.com)
-- Tiger Kills Man Who Entered UK Wildlife Park Enclosure (scmp.com)
-- Man dies after tiger attack at UK zoo (channelnewsasia.com)
+**Former German Spy Chief August Hanning Arrested for Espionage and Treason**
+- Outlets: 3 source outlet(s); severity: 3 of 5; countries: DEU
+- Former German spy chief detained over suspected treasonous espionage (france24.com)
+- Ex-spy chief is arrested in Germany on suspicion of trading state secrets and treason (npr.org)
+- Former German spy chief arrested for espionage and treason (bbc.com)
 
 ### Option 2
-**Trump-Zelensky clash as Russian strikes kill 21**
-- Outlets: 12 (24 articles); severity: 5 of 5; countries: USA, UKR, RUS, NOR, NLD, IRN, SOM, SAU, YEM
-- Trump-Zelensky clash as Russian strikes kill 21 (france24.com)
-- Trump says Ukraine needs new president after Zelensky condemns diesel deal (bbc.co.uk)
-- US sanctions ICC after judge wins Nobel Peace Prize (en.mercopress.com)
+**Israel marks third anniversary of October 7 attack**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: ISR, PSE
+- Israel remembers October 7 dead amid election heat (timesofindia.indiatimes.com)
 
 Your pick: ____
 
 ## Pair 3
 
 ### Option 1
-**London rejects Argentina's arbitration over Sea Lion oil project**
-- Outlets: 5 (5 articles); severity: 3 of 5; countries: GBR, FRA, ARG
-- London rejects Argentina's arbitration over Sea Lion oil project (en.mercopress.com)
-- UK-France migrant deal targeting English Channel crossings scrapped (scmp.com)
-- UK-France Channel migrant exchange deal scrapped (channelnewsasia.com)
+**Ethiopia Launches Drone Attack on Eritrean Troops in Tigray**
+- Outlets: 1 source outlet(s); severity: 4 of 5; countries: ETH, ERI
+- Ethiopia launches drone attack against Eritrean troops who crossed into Tigray (theguardian.com)
 
 ### Option 2
-**UK PM says Iran likely involved in airbase bomb scare**
-- Outlets: 6 (10 articles); severity: 4 of 5; countries: GBR, IRN, USA, FRA, ESP
-- UK PM says Iran likely involved in airbase bomb scare (scmp.com)
-- UK PM says 'strong indications' Iran involved in airbase incident (channelnewsasia.com)
-- UK says Iran may be linked to alleged airbase plot (aljazeera.com)
+**Zelensky accuses US of inaction as Russian strikes kill dozens**
+- Outlets: 4 (4 articles); severity: 5 of 5; countries: UKR, RUS, USA
+- Zelenskyy accuses US of inaction as Russian strikes kill 70 (rappler.com)
+- Zelensky vows response to Russian bus strike (france24.com)
 
 Your pick: ____
 
 ## Pair 4
 
 ### Option 1
-**Ukraine to intensify strikes on Russian refineries over new doctrine**
-- Outlets: 3 (3 articles); severity: 5 of 5; countries: UKR, RUS
-- Ukraine to intensify strikes on Russian refineries over new doctrine (lemonde.fr)
-- Zelensky claims Ukraine de-occupied 140 km of territory (timesofindia.indiatimes.com)
-- Ukraine to hit Russian refineries over new airstrike doctrine (themoscowtimes.com)
+**G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch**
+- Outlets: 3 source outlet(s); severity: 4 of 5; countries: USA, CAN, FRA, DEU
+- G7 to release millions of barrels of oil and diesel after Trump threat (bbc.com)
+- The G7 will release 100 million reserve barrels of diesel fuel over the next 4 months (npr.org)
+- G7 nations agree to release 100 million barrels of oil, including diesel, amid energy crunch (cbc.ca)
 
 ### Option 2
-**US to deploy NMESIS anti-ship system near Taiwan**
-- Outlets: 1 (1 articles); severity: 4 of 5; countries: USA, JPN, TWN, CHN
-- US to deploy NMESIS anti-ship system near Taiwan (scmp.com)
+**Russia ramps up attacks on Kyiv, strikes school and hospital**
+- Outlets: 2 (2 articles); severity: 5 of 5; countries: UKR, RUS
+- Russia strikes another Kyiv bridge, deepening travel chaos (france24.com)
 
 Your pick: ____
 
 ## Pair 5
 
 ### Option 1
-**Cornell president responds to frat house rape allegations**
-- Outlets: 3 (3 articles); severity: 2 of 5; countries: USA
-- Cornell president responds to frat house rape allegations (bbc.co.uk)
-- Cornell president vows transparency amid rape case outrage (aljazeera.com)
-- Cornell president breaks silence over rape case uproar (scmp.com)
+**US Military to Cut 20% of Generals and Admirals, Hegseth Announces**
+- Outlets: 2 source outlet(s); severity: 5 of 5; countries: USA
+- Hegseth announces 20% cut to US military commanders (aljazeera.com)
+- Pentagon confirms U.S. military will cut 20% of generals and admirals (cbc.ca)
 
 ### Option 2
-**Yemeni forces strike Sanaa as Trump warns Iran**
-- Outlets: 8 (13 articles); severity: 4 of 5; countries: YEM, IRN, USA, SAU
-- Yemeni forces strike Sanaa as Trump warns Iran (aljazeera.com)
-- Houthis claim strike on oil facility near Riyadh, accuse Saudi strikes (france24.com)
-- Houthis claim strike on Aramco oil facility; Saudis hit Sanaa (scmp.com)
+**Tropical Cyclone POLO-26**
+- Outlets: n/a (GDACS alert feed); severity: GDACS Red alert; countries: MEX
+- Red Tropical Cyclone POLO-26 in Mexico from: 21 Sep 2026 to: 30 Sep 2026 .
 
 Your pick: ____
 
 ## Pair 6
 
 ### Option 1
-**Eritrean troops deploy in Ethiopia's Tigray region**
-- Outlets: 1 (1 articles); severity: 3 of 5; countries: ERI, ETH
-- Eritrean troops deploy in Ethiopia's Tigray region (africanews.com)
+**Hundreds of Israelis storm Al-Aqsa Mosque compound**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: ISR, PSE
+- Hundreds of Jewish settlers storm Al-Aqsa mosque (middleeasteye.net)
 
 ### Option 2
-**Anne Carson wins 2026 Nobel Prize in Literature**
-- Outlets: 3 (3 articles); severity: 2 of 5; countries: CAN, SWE
-- Anne Carson wins 2026 Nobel Prize in Literature (scmp.com)
-- Anne Carson wins 2026 Nobel Prize in Literature (theguardian.com)
-- Canadian poet Anne Carson wins 2026 Nobel Prize in Literature (al-monitor.com)
+**US Court Halts Execution of Christa Pike, First Woman in Tennessee in 200 Years**
+- Outlets: 4 source outlet(s); severity: 3 of 5; countries: USA
+- First execution of a woman in US state of Tennessee for 200 years halted (scmp.com)
+- Tennessee's planned execution of Christa Pike halted pending appeals court review (cbc.ca)
+- Court halts Tennessee's first execution of woman in 200 years (bangkokpost.com)
 
 Your pick: ____
 
 ## Pair 7
 
 ### Option 1
-**Yemen forces reclaim Mocha port from Houthis; Mecca defence pact**
-- Outlets: 7 (9 articles); severity: 5 of 5; countries: YEM, SAU, IRN, TUR
-- Yemen forces reclaim Mocha port from Houthis; Mecca defence pact (aljazeera.com)
-- Yemen's Houthis claim attack on Riyadh airport (france24.com)
-- Houthis say they targeted Saudi Arabia's Abha airport (middleeasteye.net)
+**Saudi-led coalition launches operation in Yemen against Houthis**
+- Outlets: 3 (4 articles); severity: 4 of 5; countries: SAU, YEM
+- Saudi-led coalition launches operation against Houthis (middleeasteye.net)
+- Saudi Arabia claims large-scale operation against Houthis (lemonde.fr)
 
 ### Option 2
-**Francis Halzen wins 2026 Nobel Prize in Physics**
-- Outlets: 5 (5 articles); severity: 2 of 5; countries: SWE, USA, BEL
-- Francis Halzen wins 2026 Nobel Prize in Physics (channelnewsasia.com)
-- Halzen wins Nobel Physics Prize for cosmic neutrino work (timesofindia.indiatimes.com)
-- Francis Halzen wins 2026 Nobel Prize in Physics (rappler.com)
+**US Imposes Sanctions on International Criminal Court, Drawing Global Condemnation**
+- Outlets: 2 source outlet(s); severity: 4 of 5; countries: USA, NLD, CAN
+- Trump wants to dismantle the ICC. These jurists want Canada to intervene (cbc.ca)
+- STRANGE TIMING: US imposes sanctions on ICC hours after South African judge wins Nobel Peace Prize (dailymaverick.co.za)
 
 Your pick: ____
 
 ## Pair 8
 
 ### Option 1
-**Paramount-Warner Bros merger closes, Skydance begins trading**
-- Outlets: 3 (3 articles); severity: 3 of 5; countries: USA
-- Paramount-Warner Bros merger closes, Skydance begins trading (aljazeera.com)
-- Paramount completes Warner Bros Discovery takeover, creating media giant (france24.com)
-- Paramount closes $110bn deal with Warner Bros Discovery (timesofindia.indiatimes.com)
+**US approves Iraq cabinet integrating Iran-backed factions**
+- Outlets: 3 (3 articles); severity: 3 of 5; countries: IRQ, USA, IRN
+- Iraq parliament approves remaining cabinet posts (al-monitor.com)
+- Iraq parliament approves al-Zaidi cabinet amid economic concerns (aljazeera.com)
 
 ### Option 2
-**Vance says Iran must cut enrichment to end war**
-- Outlets: 3 (5 articles); severity: 4 of 5; countries: USA, IRN
-- Vance says Iran must cut enrichment to end war (al-monitor.com)
-- Vance says Iran must cut enrichment to end war (channelnewsasia.com)
-- Vance says Iran must cut nuclear enrichment capacity for US deal (middleeasteye.net)
+**Yemen's Houthis Attack Presidential Palace in Aden, Key Saudi Infrastructure**
+- Outlets: 2 source outlet(s); severity: 4 of 5; countries: YEM, SAU
+- Yemen's Houthis attack presidential palace in Aden, key Saudi infrastructure (cbc.ca)
+- Houthis launch deadly attack on presidential palace in Yemen's Aden (al-monitor.com)
 
 Your pick: ____
 
 ## Pair 9
 
 ### Option 1
-**AU urges restraint as Ethiopia, Eritrea, Egypt tensions rise**
-- Outlets: 1 (1 articles); severity: 4 of 5; countries: ETH, ERI, EGY
-- AU urges restraint as Ethiopia, Eritrea, Egypt tensions rise (allafrica.com)
+**Russia strikes Ukraine as Zelenskyy visits frontline**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: UKR, RUS
+- Zelensky claims Ukrainian strikes on sites in Russia (lemonde.fr)
 
 ### Option 2
-**Taiwan Coast Guard confronts Chinese fishing boats in Dongsha waters**
-- Outlets: 2 (2 articles); severity: 3 of 5; countries: TWN, CHN
-- Taiwan Coast Guard confronts Chinese fishing boats in Dongsha waters (aljazeera.com)
-- Taiwan coastguard water-cannons Chinese fishing vessel near Dongsha (scmp.com)
+**Return of Somali Piracy Spooks Shippers**
+- Outlets: 1 source outlet(s); severity: n/a; countries: SOM
+- Return of Somali piracy spooks shippers (theeastafrican.co.ke)
 
 Your pick: ____
 
 ## Pair 10
 
 ### Option 1
-**Explosions in Ethiopia capital after drone ban**
-- Outlets: 1 (1 articles); severity: 4 of 5; countries: ETH
-- Explosions in Ethiopia capital after drone ban (bbc.co.uk)
+**Two killed in Kyiv as Russia launches massive attack**
+- Outlets: 7 (9 articles); severity: 4 of 5; countries: UKR, RUS
+- Two killed in Kyiv fire after massive strikes (france24.com)
+- Russian barrage hits Kyiv hours after Zelensky warning (scmp.com)
 
 ### Option 2
-**Afghanistan says nine killed in Pakistani air raids**
-- Outlets: 3 (3 articles); severity: 4 of 5; countries: AFG, PAK
-- Afghanistan says nine killed in Pakistani air raids (aljazeera.com)
-- Afghanistan says deadly Pakistani strikes hit Helmand (channelnewsasia.com)
-- Afghanistan says civilians killed in Pak airstrikes (timesofindia.indiatimes.com)
+**Trump to Speak with Putin About Possible Plague Death in Russia**
+- Outlets: 3 source outlet(s); severity: 3 of 5; countries: RUS, USA
+- Trump says call scheduled with Putin to discuss possible plague death in Russia (cbc.ca)
+- Trump to talk plague with Putin as Russia plays down fears of outbreak (euronews.com)
+- Trump to speak to Putin about plague lab worker's death in Russia (bbc.com)
 
 Your pick: ____
 
 ## Pair 11
 
 ### Option 1
-**Russia warns NATO of nuclear response over Kaliningrad**
-- Outlets: 3 (4 articles); severity: 4 of 5; countries: RUS, LTU, POL, EST, LVA
-- Russia warns NATO of nuclear response over Kaliningrad (aljazeera.com)
-- Russia warns NATO with nuclear threat over Kaliningrad (scmp.com)
-- Moscow sends nuclear warning to NATO over Baltic tensions (themoscowtimes.com)
+**Earthquake in Panama**
+- Outlets: n/a (GDACS alert feed); severity: GDACS Orange alert; countries: PAN
+- Orange M 7.7 Earthquake in Panama at: 09 Oct 2026 17:56:06.
 
 ### Option 2
-**UK PM says strong indications Iran linked to airbase plot**
-- Outlets: 9 (14 articles); severity: 4 of 5; countries: GBR, FRA, IRN, USA, ESP, EUU
-- UK PM says strong indications Iran linked to airbase plot (aljazeera.com)
-- UK PM alleges Iran involvement in Fairford airbase incident (france24.com)
-- UK PM says Iran likely involved in airbase bomb scare (scmp.com)
+**Nobel Peace Prize Awarded to Navi Pillay for International Law Work**
+- Outlets: 7 source outlet(s); severity: 4 of 5; countries: ZAF, NOR
+- Navi Pillay, former UN human rights chief, wins Nobel Peace Prize (bbc.com)
+- Nobel Peace Prize goes to international jurist Navi Pillay (japantimes.co.jp)
+- South African human rights lawyer Navi Pillay wins the Nobel Peace Prize (npr.org)
 
 Your pick: ____
 
 ## Pair 12
 
 ### Option 1
-**Yemen advances against Houthis around Bab al-Mandab strait**
-- Outlets: 5 (5 articles); severity: 4 of 5; countries: YEM, SAU
-- Yemen advances against Houthis around Bab al-Mandab strait (france24.com)
-- Houthis again target Riyadh airport, many wounded (lemonde.fr)
-- Saudi-backed Yemeni forces claim capture of Bab el Mandeb strait (al-monitor.com)
+**Russian attack on Ukrainian city kills 20 after Trump eases diesel sanctions**
+- Outlets: 6 (8 articles); severity: 5 of 5; countries: UKR, USA, RUS
+- Ukraine ready to halt refinery strikes if Russia stops energy attacks (france24.com)
+- Zelensky says Russia struck energy sites after ceasefire (lemonde.fr)
 
 ### Option 2
-**India detains Cockroach leaders amid voter list protests**
-- Outlets: 5 (15 articles); severity: 4 of 5; countries: IND
-- India detains Cockroach leaders amid voter list protests (dailysabah.com)
-- India protests: new 'cockroach' movement leader named (france24.com)
-- Indian police detain Cockroach Janta Party founder ahead of protest (channelnewsasia.com)
+**South Korea Completes Arctic Shipping Route Trial**
+- Outlets: 1 source outlet(s); severity: 2 of 5; countries: KOR
+- South Korea completes Arctic shipping route trial (bangkokpost.com)
 
 Your pick: ____
 
 ## Pair 13
 
 ### Option 1
-**US officials defend ICE agents who shot man with child in car**
-- Outlets: 4 (5 articles); severity: 3 of 5; countries: USA
-- US officials defend ICE agents who shot man with child in car (bbc.co.uk)
-- DHS defends ICE shooting in New York City (aljazeera.com)
-- ICE shoots at car in New York, child inside (lemonde.fr)
+**Big Oil Faces Supreme Court Case Over Alleged Climate Deception in Suncor v. Boulder**
+- Outlets: 3 source outlet(s); severity: n/a; countries: USA
+- Big Oil fears the evidence of its deliberate climate lies (asiatimes.com)
+- The surprising allies backing Boulder&#8217;s climate case before the Supreme Court (grist.org)
+- New Jersey’s Middlesex County Sues Big Oil Over Escalating Climate Impacts (insideclimatenews.org)
 
 ### Option 2
-**Kenya Red Cross responds to first Ebola case**
-- Outlets: 3 (3 articles); severity: 3 of 5; countries: KEN, COD
-- Kenya Red Cross responds to first Ebola case (france24.com)
-- Kenya Wajir patient tests negative for Ebola, has malaria (allafrica.com)
-- Kenya's suspected Ebola case tests negative (africanews.com)
+**Gaza death toll rises after seven Palestinians killed in 24 hours**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: PSE, ISR
+- Israeli strike kills five, including four women, in Gaza (al-monitor.com)
 
 Your pick: ____
 
 ## Pair 14
 
 ### Option 1
-**Putin warns West Russia ready to use every weapon for Kaliningrad**
-- Outlets: 5 (5 articles); severity: 4 of 5; countries: RUS, JPN, LTU, POL, IND
-- Putin warns West Russia ready to use every weapon for Kaliningrad (bbc.co.uk)
-- Putin warns West not to escalate over Kaliningrad (themoscowtimes.com)
-- Russian president warns Moscow will use ‘all weapons’ to defend Kaliningrad (africanews.com)
+**Terror in Kyiv as Russia ramps up attacks**
+- Outlets: 2 (2 articles); severity: 5 of 5; countries: UKR, RUS
+- Kyiv in dramatic situation as Russia steps up bombing (france24.com)
 
 ### Option 2
-**Congo Ebola death toll hits 4,000 as violence hampers response**
-- Outlets: 3 (3 articles); severity: 4 of 5; countries: COD
-- Congo Ebola death toll hits 4,000 as violence hampers response (dailysabah.com)
-- DR Congo's worst Ebola outbreak surpasses 4,000 deaths (lemonde.fr)
-- Ebola death toll surpasses 4,000 in DR Congo (aljazeera.com)
+**Ethiopia and Eritrea Cut Diplomatic Ties as Tensions Rise**
+- Outlets: 2 source outlet(s); severity: 4 of 5; countries: ETH, ERI, EGY
+- Eritrea cuts ties with Ethiopia over Asmara embassy closure (theeastafrican.co.ke)
+- Ethiopia closes embassy in Eritrea, expels 10 diplomats amid rising tensions (theeastafrican.co.ke)
+- Ethiopia: AU Urges Restraint As Ethiopia, Eritrea, Egypt Tensions Rise (allafrica.com)
 
 Your pick: ____
 
 ## Pair 15
 
 ### Option 1
-**North Korea tests new AI-guided torpedo**
-- Outlets: 3 (3 articles); severity: 3 of 5; countries: PRK
-- North Korea tests new AI-guided torpedo (scmp.com)
-- North Korea tests high-speed AI-guided torpedo (timesofindia.indiatimes.com)
-- North Korea says it tested AI-assisted torpedo system (channelnewsasia.com)
+**Eight Palestinians killed in Israeli attacks on Gaza**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: ISR, PSE
+- Israeli strikes kill five in Gaza, medics say (al-monitor.com)
 
 ### Option 2
-**US journalist injured in Israeli settler West Bank attack**
-- Outlets: 6 (8 articles); severity: 3 of 5; countries: ISR, PSE, USA
-- US journalist injured in Israeli settler West Bank attack (france24.com)
-- Israeli settlers beat Palestinians and US photojournalist (npr.org)
-- Photojournalist recounts settler attack in West Bank (middleeasteye.net)
+**Samsung Dangles $560,000 Bonuses to Keep Engineers from China**
+- Outlets: 1 source outlet(s); severity: n/a; countries: KOR, CHN
+- Samsung dangles $560,000 bonuses to keep engineers from China (asiatimes.com)
 
 Your pick: ____
 
 ## Pair 16
 
 ### Option 1
-**Trump says talking to Russia, China on denuclearisation**
-- Outlets: 7 (13 articles); severity: 4 of 5; countries: USA, RUS, CHN, UKR, IRN
-- Trump says talking to Russia, China on denuclearisation (channelnewsasia.com)
-- Trump calls Ukraine strikes on Russian refineries a disgrace (france24.com)
-- Trump weighs new Iran strikes while insisting talks continue (middleeasteye.net)
+**Tropical Cyclone ISAIAS-26**
+- Outlets: n/a (GDACS alert feed); severity: GDACS Orange alert; countries: USA
+- Orange Tropical Cyclone ISAIAS-26 in United States from: 06 Oct 2026 to: 11 Oct 2026 .
 
 ### Option 2
-**19 injured as bus collides with train in Channel Tunnel**
-- Outlets: 8 (9 articles); severity: 3 of 5; countries: FRA, GBR
-- 19 injured as bus collides with train in Channel Tunnel (timesofindia.indiatimes.com)
-- Bus hits train at Channel Tunnel, 19 injured (bbc.co.uk)
-- Minibus and train collide at Eurotunnel platform, 19 injured (theguardian.com)
+**Kenya Confirms First Ebola Case as Outbreak Spreads from DR Congo**
+- Outlets: 1 source outlet(s); severity: 3 of 5; countries: KEN, COD
+- Kenya Red Cross supports response to country’s first Ebola case (france24.com)
+- Ebola outbreak: Border surveillance gaps raise concerns in the Central African Republic (france24.com)
 
 Your pick: ____
 
 ## Pair 17
 
 ### Option 1
-**Navi Pillay wins Nobel Peace Prize amid US sanctions threat**
-- Outlets: 10 (14 articles); severity: 4 of 5; countries: ZAF, NOR, USA, PSE, ISR, NLD
-- Navi Pillay wins Nobel Peace Prize amid US sanctions threat (africanews.com)
-- Navi Pillay wins 2026 Nobel Peace Prize (aljazeera.com)
-- South African lawyer Navi Pillay wins Nobel Peace Prize (npr.org)
+**US and China discuss reciprocal nuclear site visits**
+- Outlets: 2 (2 articles); severity: 3 of 5; countries: USA, CHN
+- US, China discuss reciprocal visits to nuclear sites (timesofindia.indiatimes.com)
 
 ### Option 2
-**Zelenskyy blasts US as strikes kill 78 in Ukraine**
-- Outlets: 5 (5 articles); severity: 5 of 5; countries: UKR, RUS, USA
-- Zelenskyy blasts US as strikes kill 78 in Ukraine (dailysabah.com)
-- Russian strikes on Ukraine buses kill 30 as Kyiv blackouts worsen (npr.org)
-- Russian strikes force Kyiv residents to flee before winter (bbc.co.uk)
+**Tuareg Rebels Withdraw from Strategic Town of Kidal in Northern Mali**
+- Outlets: 1 source outlet(s); severity: 4 of 5; countries: MLI, RUS
+- Tuareg rebels withdraw from strategic town of Kidal in northern Mali (aljazeera.com)
 
 Your pick: ____
 
 ## Pair 18
 
 ### Option 1
-**Nobel Peace Prize awarded to Navanethem 'Navi' Pillay**
-- Outlets: 5 (5 articles); severity: 3 of 5; countries: NOR, ZAF
-- Nobel Peace Prize awarded to Navanethem 'Navi' Pillay (france24.com)
-- Navi Pillay wins Nobel Peace Prize for justice work (dailysabah.com)
-- 2026 Nobel Peace Prize winner to be announced (theguardian.com)
+**North Korea tests new AI-guided torpedo**
+- Outlets: 3 (3 articles); severity: 3 of 5; countries: PRK
+- North Korea tests high-speed AI-guided torpedo (timesofindia.indiatimes.com)
+- North Korea says it tested AI-assisted torpedo system (channelnewsasia.com)
 
 ### Option 2
-**US suspends Microsoft from green card program over fraud**
-- Outlets: 3 (4 articles); severity: 3 of 5; countries: USA, IND
-- US suspends Microsoft from green card program over fraud (dailysabah.com)
-- TCS, Infosys suspended from US green card programme (timesofindia.indiatimes.com)
-- Microsoft brings more AI to PCs as it challenges Apple (france24.com)
+**France Braces for Return of Yellow Vests as Cost-of-Living Protests Spread**
+- Outlets: 1 source outlet(s); severity: 3 of 5; countries: FRA
+- 'Finish what we started': After student protests, France braces for return of the Yellow Vests (france24.com)
 
 Your pick: ____
 
 ## Pair 19
 
 ### Option 1
-**Two killed in Kyiv as Russia launches massive attack**
-- Outlets: 7 (9 articles); severity: 4 of 5; countries: UKR, RUS
-- Two killed in Kyiv as Russia launches massive attack (aljazeera.com)
-- Two killed in Kyiv fire after massive strikes (france24.com)
-- Russian barrage hits Kyiv hours after Zelensky warning (scmp.com)
+**French Students Protest Nationwide, Fires Break Out at Schools**
+- Outlets: 1 source outlet(s); severity: 4 of 5; countries: FRA
+- Fires break out at French schools as students protest nationwide (bbc.com)
 
 ### Option 2
-**Houthis attack Aden airport; Saudi forces down missile near Riyadh**
-- Outlets: 7 (15 articles); severity: 4 of 5; countries: YEM, SAU, ISR, IRN
-- Houthis attack Aden airport; Saudi forces down missile near Riyadh (aljazeera.com)
-- Houthis attack Aden airport as Yemen fighting intensifies (france24.com)
-- Houthis strike Yemen government and Saudi targets (middleeasteye.net)
+**Eritrea severs diplomatic ties with Ethiopia in tit-for-tat move**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: ERI, ETH
+- Eritrea and Ethiopia shutter embassies as Red Sea conflict looms (middleeasteye.net)
 
 Your pick: ____
 
 ## Pair 20
 
 ### Option 1
-**Israel marks three years since October 7 attack**
-- Outlets: 6 (7 articles); severity: 4 of 5; countries: ISR, PSE
-- Israel marks three years since October 7 attack (france24.com)
-- Israelis mourn Oct 7 as Palestinians grapple with war (npr.org)
-- Israelis mourn 7 October attack victims three years on (bbc.co.uk)
+**Euro slides to 17-month low on French debt concerns**
+- Outlets: 2 (2 articles); severity: 3 of 5; countries: FRA, DEU, ESP, USA
+- Euro falls to 17-month low amid French debt fears (theguardian.com)
 
 ### Option 2
-**Texas carries out first US execution since Pike botched case**
-- Outlets: 5 (8 articles); severity: 3 of 5; countries: USA
-- Texas carries out first US execution since Pike botched case (timesofindia.indiatimes.com)
-- Texas carries out first US execution since botched lethal injection (bbc.co.uk)
-- Texas carries out first US execution since failed lethal injection (channelnewsasia.com)
+**Flydubai Co-Pilot Planned to Crash Plane into Tel Aviv, Reports Say**
+- Outlets: 4 source outlet(s); severity: 4 of 5; countries: ARE, ISR, OMN
+- FlyDubai co-pilot planned to crash aircraft into Tel Aviv airport (euronews.com)
+- FlyDubai attacker intended to crash plane into Tel Aviv airport, investigation finds (npr.org)
+- Israeli officials say FlyDubai co-pilot planned attack before joining airline (cbc.ca)
 
 Your pick: ____

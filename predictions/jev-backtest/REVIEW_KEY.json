@@ -1,182 +1,182 @@
 [
   {
     "pair": 1,
-    "run": "gen-1790914551993",
+    "run": "gen-1792239363975",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "Ethiopia and Eritrea Sever Diplomatic Ties as Fighting Escalates in Northern Ethiopia",
-    "combinedTitle": "UK-Iranian man arrested over Fairford airbase plot",
-    "combinedImpact": 3.43
+    "ourTitle": "Trump Waives Russia Sanctions, Citing National Security",
+    "combinedTitle": "Iran denies backing Houthi attacks as Aden airport hit",
+    "combinedImpact": 2.94
   },
   {
     "pair": 2,
-    "run": "gen-1791692170455",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Trump Calls for New President in Ukraine, Blames Zelenskyy for Diesel Prices",
-    "combinedTitle": "Man dies after entering tiger enclosure at England wildlife park",
-    "combinedImpact": 1.06
-  },
-  {
-    "pair": 3,
-    "run": "gen-1790828163862",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "UK PM Says 'Strong Indications' Iran Involved in Fairford Airbase Incident",
-    "combinedTitle": "London rejects Argentina's arbitration over Sea Lion oil project",
-    "combinedImpact": 2.92
-  },
-  {
-    "pair": 4,
-    "run": "gen-1791058556461",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "US Deploys NMESIS Anti-Ship System to Japanese Island Near Taiwan",
-    "combinedTitle": "Ukraine to intensify strikes on Russian refineries over new doctrine",
-    "combinedImpact": 4.18
-  },
-  {
-    "pair": 5,
-    "run": "gen-1791087355049",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Houthis Claim Strike on Aramco Oil Facility Near Riyadh as Saudi Arabia Strikes Sanaa",
-    "combinedTitle": "Cornell president responds to frat house rape allegations",
-    "combinedImpact": 1.16
-  },
-  {
-    "pair": 6,
-    "run": "gen-1791461761336",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Eritrean Troops Enter Ethiopia's Tigray Region",
-    "combinedTitle": "Anne Carson wins 2026 Nobel Prize in Literature",
-    "combinedImpact": 1.72
-  },
-  {
-    "pair": 7,
-    "run": "gen-1791288969760",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Yemeni military says it has secured Red Sea waterway",
-    "combinedTitle": "Francis Halzen wins 2026 Nobel Prize in Physics",
-    "combinedImpact": 2.55
-  },
-  {
-    "pair": 8,
     "run": "gen-1791346556599",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "Paramount Completes $111B Warner Merger, Creating 'Skydance' Behemoth",
-    "combinedTitle": "Vance says Iran must cut enrichment to end war",
-    "combinedImpact": 4.14
+    "ourTitle": "Former German Spy Chief August Hanning Arrested for Espionage and Treason",
+    "combinedTitle": "Israel marks third anniversary of October 7 attack",
+    "combinedImpact": 2.92
   },
   {
-    "pair": 9,
-    "run": "gen-1790972160992",
+    "pair": 3,
+    "run": "gen-1791519362070",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "Ethiopia and Eritrea Cut Diplomatic Ties as Tensions Rise",
-    "combinedTitle": "Taiwan Coast Guard confronts Chinese fishing boats in Dongsha waters",
-    "combinedImpact": 2.93
+    "ourTitle": "Ethiopia Launches Drone Attack on Eritrean Troops in Tigray",
+    "combinedTitle": "Zelensky accuses US of inaction as Russian strikes kill dozens",
+    "combinedImpact": 3.05
   },
   {
-    "pair": 10,
-    "run": "gen-1790856965624",
+    "pair": 4,
+    "run": "gen-1791087355049",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "Explosions Heard in Ethiopia's Capital After Drone Flights Banned",
-    "combinedTitle": "Afghanistan says nine killed in Pakistani air raids",
-    "combinedImpact": 2.98
+    "ourTitle": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch",
+    "combinedTitle": "Russia ramps up attacks on Kyiv, strikes school and hospital",
+    "combinedImpact": 3.04
   },
   {
-    "pair": 11,
+    "pair": 5,
+    "run": "gen-1790828163862",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "US Military to Cut 20% of Generals and Admirals, Hegseth Announces",
+    "combinedTitle": "Tropical Cyclone POLO-26",
+    "combinedImpact": 0.84
+  },
+  {
+    "pair": 6,
     "run": "gen-1790799357190",
     "option1": "combined",
     "option2": "ours",
-    "ourTitle": "UK-France 'One In, One Out' Migrant Exchange Deal Scrapped",
-    "combinedTitle": "Russia warns NATO of nuclear response over Kaliningrad",
-    "combinedImpact": 4.08
+    "ourTitle": "US Court Halts Execution of Christa Pike, First Woman in Tennessee in 200 Years",
+    "combinedTitle": "Hundreds of Israelis storm Al-Aqsa Mosque compound",
+    "combinedImpact": 2.88
   },
   {
-    "pair": 12,
-    "run": "gen-1791663381526",
+    "pair": 7,
+    "run": "gen-1791634568093",
     "option1": "combined",
     "option2": "ours",
-    "ourTitle": "India Cracks Down on Youth Protests Against Modi and Election Chief",
-    "combinedTitle": "Yemen advances against Houthis around Bab al-Mandab strait",
-    "combinedImpact": 3.96
+    "ourTitle": "US Imposes Sanctions on International Criminal Court, Drawing Global Condemnation",
+    "combinedTitle": "Saudi-led coalition launches operation in Yemen against Houthis",
+    "combinedImpact": 2.89
   },
   {
-    "pair": 13,
-    "run": "gen-1791576960061",
+    "pair": 8,
+    "run": "gen-1792152969929",
     "option1": "combined",
     "option2": "ours",
-    "ourTitle": "Kenya Confirms First Ebola Case as Outbreak Spreads from DR Congo",
-    "combinedTitle": "US officials defend ICE agents who shot man with child in car",
-    "combinedImpact": 1.36
+    "ourTitle": "Yemen's Houthis Attack Presidential Palace in Aden, Key Saudi Infrastructure",
+    "combinedTitle": "US approves Iraq cabinet integrating Iran-backed factions",
+    "combinedImpact": 2.79
   },
   {
-    "pair": 14,
-    "run": "gen-1791000961707",
+    "pair": 9,
+    "run": "gen-1790856965624",
     "option1": "combined",
     "option2": "ours",
-    "ourTitle": "DR Congo Ebola Outbreak Surpasses 4,000 Deaths Amid Violence and Mistrust",
-    "combinedTitle": "Putin warns West Russia ready to use every weapon for Kaliningrad",
-    "combinedImpact": 3.99
+    "ourTitle": "Return of Somali Piracy Spooks Shippers",
+    "combinedTitle": "Russia strikes Ukraine as Zelenskyy visits frontline",
+    "combinedImpact": 3.1
   },
   {
-    "pair": 15,
-    "run": "gen-1792210564180",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Israeli Settlers Attack Palestinians and US Journalist During West Bank Olive Harvest",
-    "combinedTitle": "North Korea tests new AI-guided torpedo",
-    "combinedImpact": 3.61
-  },
-  {
-    "pair": 16,
-    "run": "gen-1792124168577",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Trump Cancels Livestream of Fort Hood Shooter's Firing Squad Execution",
-    "combinedTitle": "19 injured as bus collides with train in Channel Tunnel",
-    "combinedImpact": 2.82
-  },
-  {
-    "pair": 17,
-    "run": "gen-1791605778055",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Navi Pillay Wins Nobel Peace Prize for International Justice Work",
-    "combinedTitle": "Zelenskyy blasts US as strikes kill 78 in Ukraine",
-    "combinedImpact": 4.12
-  },
-  {
-    "pair": 18,
-    "run": "gen-1791548159245",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "US Suspends Green Card Sponsorship for Top Tech Firms, Impacting Thousands of IT Workers",
-    "combinedTitle": "Nobel Peace Prize awarded to Navanethem 'Navi' Pillay",
-    "combinedImpact": 3.46
-  },
-  {
-    "pair": 19,
+    "pair": 10,
     "run": "gen-1791375379811",
     "option1": "combined",
     "option2": "ours",
-    "ourTitle": "Houthis Attack Aden Airport and Saudi Targets as Yemen Conflict Intensifies",
+    "ourTitle": "Trump to Speak with Putin About Possible Plague Death in Russia",
     "combinedTitle": "Two killed in Kyiv as Russia launches massive attack",
-    "combinedImpact": 3.99
+    "combinedImpact": 2.99
+  },
+  {
+    "pair": 11,
+    "run": "gen-1791576960061",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Nobel Peace Prize Awarded to Navi Pillay for International Law Work",
+    "combinedTitle": "Earthquake in Panama",
+    "combinedImpact": 1.25
+  },
+  {
+    "pair": 12,
+    "run": "gen-1791749757056",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "South Korea Completes Arctic Shipping Route Trial",
+    "combinedTitle": "Russian attack on Ukrainian city kills 20 after Trump eases diesel sanctions",
+    "combinedImpact": 2.96
+  },
+  {
+    "pair": 13,
+    "run": "gen-1791029760698",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "Big Oil Faces Supreme Court Case Over Alleged Climate Deception in Suncor v. Boulder",
+    "combinedTitle": "Gaza death toll rises after seven Palestinians killed in 24 hours",
+    "combinedImpact": 2.8
+  },
+  {
+    "pair": 14,
+    "run": "gen-1790972160992",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Ethiopia and Eritrea Cut Diplomatic Ties as Tensions Rise",
+    "combinedTitle": "Terror in Kyiv as Russia ramps up attacks",
+    "combinedImpact": 3.25
+  },
+  {
+    "pair": 15,
+    "run": "gen-1791663381526",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Samsung Dangles $560,000 Bonuses to Keep Engineers from China",
+    "combinedTitle": "Eight Palestinians killed in Israeli attacks on Gaza",
+    "combinedImpact": 2.67
+  },
+  {
+    "pair": 16,
+    "run": "gen-1791548159245",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Kenya Confirms First Ebola Case as Outbreak Spreads from DR Congo",
+    "combinedTitle": "Tropical Cyclone ISAIAS-26",
+    "combinedImpact": 0.92
+  },
+  {
+    "pair": 17,
+    "run": "gen-1791317781362",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Tuareg Rebels Withdraw from Strategic Town of Kidal in Northern Mali",
+    "combinedTitle": "US and China discuss reciprocal nuclear site visits",
+    "combinedImpact": 3.28
+  },
+  {
+    "pair": 18,
+    "run": "gen-1792210564180",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "France Braces for Return of Yellow Vests as Cost-of-Living Protests Spread",
+    "combinedTitle": "North Korea tests new AI-guided torpedo",
+    "combinedImpact": 2.61
+  },
+  {
+    "pair": 19,
+    "run": "gen-1790914551993",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "French Students Protest Nationwide, Fires Break Out at Schools",
+    "combinedTitle": "Eritrea severs diplomatic ties with Ethiopia in tit-for-tat move",
+    "combinedImpact": 2.71
   },
   {
     "pair": 20,
-    "run": "gen-1791432961926",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Israel Marks Three Years Since October 7 Attacks Amid Reports Netanyahu Was Warned",
-    "combinedTitle": "Texas carries out first US execution since Pike botched case",
-    "combinedImpact": 1.3
+    "run": "gen-1791231361508",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Flydubai Co-Pilot Planned to Crash Plane into Tel Aviv, Reports Say",
+    "combinedTitle": "Euro slides to 17-month low on French debt concerns",
+    "combinedImpact": 2.94
   }
 ]

@@ -275,6 +275,7 @@ _Not indexed here (separate trees, by purpose): `agent-kit/` = autonomy / verify
 - **[DEPLOYMENT_NOTES.md](ops/DEPLOYMENT_NOTES.md)** — Frontend deploy checklist.
 - **[Cloudflare migration plan](ops/_proposed/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md)** + **[active task](ops/_active/TASK_2026-10-05_cloudflare_frontend_migration.md)** — Local implementation underway: separate candidate/production static Workers, preserved front Worker, complete release packaging. No deployment or DNS change; live baseline captured and remaining DNS/settings access gaps recorded.
 - **[DOMAIN_SETUP.md](ops/DOMAIN_SETUP.md)** — Custom-domain + Cloudflare DNS setup.
+- **[TASK_2026-10-17_grounded_forecast_and_cost.md](prediction/_active/TASK_2026-10-17_grounded_forecast_and_cost.md)** — ACTIVE: stop invented dates/template odds in forecasts (single grounded call + G13 gate), threadId reuse, token logging, low-balance alert, Jev gate backtest.
 - **[DEEPSEEK_COST_ESTIMATE.md](ops/DEEPSEEK_COST_ESTIMATE.md)** — Estimated DeepSeek $/day per job, before vs after the 2026-10-05 cost fixes; how to re-measure.
 - **[SECURITY_DEPLOYMENT_NOTES.md](ops/SECURITY_DEPLOYMENT_NOTES.md)** — CORS/security notes for Lambda.
 

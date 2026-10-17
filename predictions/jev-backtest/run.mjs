@@ -217,11 +217,11 @@ async function pool(items, fn) { let i = 0, done = 0; await Promise.all(Array.fr
 // per run); rank by impact rounded to 0.5, then growth (outlets now minus outlets 8h earlier), then outlets. Both: one reserved slot for the best GDACS Red
 // event outside the quotas; selector rule 7: no category above 25% (rounded up), >= 1 each of MUST_HAVE when a candidate with impact >= 2 exists; our
 // interpretation of the prompt's "regional diversity": at most 2 picks per primary country (not a stated rule).
-// v5 gates also exclude the classifier's 'other' category; v6 drops that (an 'other' event keeps the category mapped from its axis) and lowers the impact bar.
-const GATES = { v5: { imp: 2.5, sev2: 3, noOther: true }, v6: { imp: 2, sev2: 2.5, noOther: false } };
+// v6 dropped the classifier-'other' exclusion (an 'other' event keeps the category mapped from its axis) and lowered the impact bar to 2; v7 lowers it to 1.5.
+const GATES = { v6: { imp: 2, sev2: 2.5 }, v7: { imp: 1.5, sev2: 2 } };
 function select(scored, n, seen, combined, g) {
   const cap = Math.ceil(0.25 * n), cat = {}, cty = {}, picks = [];
-  const good = (s) => s.c.gdacs || (s.done >= DONE_MIN && s.impact >= (s.c.severity === 2 ? g.sev2 : g.imp) && !(g.noOther && s.c.rawCategory === 'other'));
+  const good = (s) => s.c.gdacs || (s.done >= DONE_MIN && s.impact >= (s.c.severity === 2 ? g.sev2 : g.imp));
   const entry = (s) => s.c.gdacs || s.c.outlets >= 2 || (combined ? s.impact >= 3.5 : s.c.severity === 5);
   const half = (x) => Math.round(x * 2) / 2;
   const order = combined ? (a, b) => half(b.impact) - half(a.impact) || b.c.growth - a.c.growth || b.c.outlets - a.c.outlets : (a, b) => b.impact - a.impact || b.c.outlets - a.c.outlets;
@@ -275,7 +275,7 @@ if (process.argv.includes('--score')) {
 }
 
 // ---------- per-run selection ----------
-const SIDES = { ours: 'Ours (published)', oursm: 'Ours, matched topics only', jev5: 'Jev v2, v5 gates', comb5: 'Combined v5', jev: 'Jev v2, v6 gates', comb: 'Combined v6', base: 'Outlet-count baseline', growth: 'Growth baseline' };
+const SIDES = { ours: 'Ours (published)', oursm: 'Ours, matched topics only', jev6: 'Jev v2, v6 gates', comb6: 'Combined v6', jev: 'Jev v2, v7 gates', comb: 'Combined v7', base: 'Outlet-count baseline', growth: 'Growth baseline' };
 const got = (side, p, S, hours = 72, maxOutlets = Infinity) => prepared.some((q) => +p.run.time - +q.run.time >= 0 && +p.run.time - +q.run.time < hours * 36e5 && (q.picks[side] || []).some((P) => !P.gdacs && P.outlets < maxOutlets && (P === S || same(S, P, p.skip))));
 const topN = (side, p, f) => p.cands.filter((c) => !c.gdacs && !got(side, p, c, 24)).sort(f).slice(0, p.run.topics.length);
 const byOutlets = (a, b) => b.outlets - a.outlets || b.articles - a.articles;
@@ -287,7 +287,7 @@ for (const p of prepared) { // every side gets the same 24h self-dedup; an unmat
   p.scored = p.toScore.flatMap((c) => { const a = store.answers[hashOf(stateOf(c, p.covered))], done = c.gdacs ? 1 : doneOf(c.title); return a && done !== undefined ? [{ c, impact: a.impact - 1, nw: a.nw, done }] : []; }); // impact on the 0-4 scale; a missing answer skips the candidate
   p.missing = p.toScore.length - p.scored.length;
   const n = p.run.topics.length;
-  for (const [side, combined, g] of [['jev5', false, GATES.v5], ['comb5', true, GATES.v5], ['jev', false, GATES.v6], ['comb', true, GATES.v6]]) p.picks[side] = select(p.scored, n, (c) => got(side, p, c, 24), combined, g).map((s) => s.c);
+  for (const [side, combined, g] of [['jev6', false, GATES.v6], ['comb6', true, GATES.v6], ['jev', false, GATES.v7], ['comb', true, GATES.v7]]) p.picks[side] = select(p.scored, n, (c) => got(side, p, c, 24), combined, g).map((s) => s.c);
   p.picks.base = topN('base', p, byOutlets);
   p.picks.growth = topN('growth', p, (a, b) => b.growth - a.growth || byOutlets(a, b));
 }
@@ -335,7 +335,7 @@ fs.writeFileSync(path.join(HERE, 'REVIEW_KEY.json'), JSON.stringify(key_, null, 
 const days_ = [...new Set(runs.map((r) => r.time.toISOString().slice(0, 10)))];
 const avg = (f) => Math.round(sum(prepared.map(f)) / prepared.length);
 const gd = (lvl) => prepared.filter((p) => p.gdacs.some((c) => c.gdacs === lvl)).length;
-const failImpact = (s) => s.impact < (s.c.severity === 2 ? GATES.v5.sev2 : GATES.v5.imp);
+const failImpact = (s) => s.impact < (s.c.severity === 2 ? GATES.v7.sev2 : GATES.v7.imp);
 const gatePool = prepared.map((p) => p.scored.filter((s) => s.nw >= 0.4 && (s.c.gdacs || s.c.outlets >= 2)));
 const failCombos = {};
 for (const s of gatePool.flat()) { if (s.c.gdacs) continue; const k = [s.done < DONE_MIN && 'said', failImpact(s) && 'low impact', s.c.rawCategory === 'other' && 'other'].filter(Boolean).join(' + ') || 'passes all'; failCombos[k] = (failCombos[k] || 0) + 1; }
@@ -344,11 +344,11 @@ const fmtDist15 = (d) => d.slice(0, 15).map(([k, v]) => `${k} ${v}`).join(', ');
 const saidShare = (side) => { const d = (side.startsWith('ours') ? runs.flatMap((r) => r.topics.map((t) => t.title)) : prepared.flatMap((p) => real(p, side).map((c) => c.title))).map(doneOf).filter((x) => x !== undefined); return [d.length, pct(d.filter((x) => x < 0.5).length, d.length)]; };
 const saidExamples = [...new Map(prepared.flatMap((p) => p.scored).filter((s) => s.done < 0.5 && s.nw >= 0.4 && s.c.outlets >= 2).sort((a, b) => b.c.outlets - a.c.outlets).map((s) => [s.c.title, s])).values()].slice(0, 5);
 fs.writeFileSync(path.join(HERE, 'REPORT.md'), [
-  '# Jev story-selection backtest (P6), v6', '',
-  `Generated by predictions/jev-backtest/run.mjs from the Jev cache (model ${store.model}); v6 made no new Jev calls (new spend $${(spent() - spent0).toFixed(3)}). Selectors: ours, Jev v2 and Combined under the v5 and v6 gates, two baselines; N = the number of topics we published in each run. Every side has the same 24h self-dedup.`, '',
+  '# Jev story-selection backtest (P6), v7', '',
+  `Generated by predictions/jev-backtest/run.mjs from the Jev cache (model ${store.model}); v7 made no new Jev calls (new spend $${(spent() - spent0).toFixed(3)}). Selectors: ours, Jev v2 and Combined under the v6 and v7 gates, two baselines; N = the number of topics we published in each run. Every side has the same 24h self-dedup.`, '',
   `## Hindsight: did the story become big? (${hind.length} runs whose following 72h is in the corpus)`,
   'A story "became big" if distinct outlets publishing the same story (same primary country and a non-frequent shared lead entity or title-token Jaccard >= 0.3) in NEW articles over the 72h after the run reach the threshold. Recall = share of became-big stories the side picked in that run or the previous 72h. Early recall counts only picks made while the story had < 4 outlets. Dead picks = picks that never got more than 2 outlets in the next 72h. Units are (run, story) pairs; GDACS picks are excluded (no outlet count).', '',
-  tbl(['Selector', 'Picks scored', 'Dead picks', 'Recall (>=8)', 'Early recall (>=8)', 'Recall (>=5)', 'Early recall (>=5)'], sideRows((s) => [hs[s][8].picks, pct(hs[s][8].dead, hs[s][8].picks), pct(hs[s][8].recall, hs[s][8].big), pct(hs[s][8].early, hs[s][8].big), pct(hs[s][5].recall, hs[s][5].big), pct(hs[s][5].early, hs[s][5].big)])),
+  tbl(['Selector', 'Slots filled per run', 'Picks scored', 'Dead picks', 'Recall (>=8)', 'Early recall (>=8)', 'Recall (>=5)', 'Early recall (>=5)'], sideRows((s) => [(sum(prepared.map((p) => p.picks[s].length)) / prepared.length).toFixed(1), hs[s][8].picks, pct(hs[s][8].dead, hs[s][8].picks), pct(hs[s][8].recall, hs[s][8].big), pct(hs[s][8].early, hs[s][8].big), pct(hs[s][5].recall, hs[s][5].big), pct(hs[s][5].early, hs[s][5].big)])),
   `Became-big units: ${hs.ours[8].big} at >= 8 outlets, ${hs.ours[5].big} at >= 5.`, '',
   `Non-Western check: the same metrics for stories whose primary country is outside North America and Western Europe (${hs.ours.w8.big} became-big units at >= 8, ${hs.ours.w5.big} at >= 5).`, '',
   tbl(['Selector', 'Dead picks', 'Recall (>=8)', 'Early recall (>=8)', 'Recall (>=5)', 'Early recall (>=5)'], sideRows((s) => [pct(hs[s].w8.dead, hs[s].w8.picks), pct(hs[s].w8.recall, hs[s].w8.big), pct(hs[s].w8.early, hs[s].w8.big), pct(hs[s].w5.recall, hs[s].w5.big), pct(hs[s].w5.early, hs[s].w5.big)])), '',
@@ -357,8 +357,8 @@ fs.writeFileSync(path.join(HERE, 'REPORT.md'), [
   'Big-event miss = a candidate story with >= 8 outlets or severity 5 that the side did not pick in the run or the previous 24h, after merging. Category: ours is the LLM selector\'s category, the others use the classifier category mapped to the selector\'s list.', '',
   '## Slots filled (a thin window gives a smaller brief; slots are not force-filled)',
   tbl(['Selector', 'Slots filled', 'Per run (avg)'], sideRows((s) => [`${sum(prepared.map((p) => p.picks[s].length))}/${nTopics}`, (sum(prepared.map((p) => p.picks[s].length)) / prepared.length).toFixed(1)])),
-  `Fewest picks, Combined v6: ${prepared.slice().sort((a, b) => a.picks.comb.length - b.picks.comb.length).slice(0, 5).map((p) => `${runLabel(p)} ${p.picks.comb.length}/${p.run.topics.length}`).join('; ')}.`, '',
-  '## Gate breakdown (Combined eligible pool: scored, >= 2 outlets or GDACS, new_since_last_brief >= 0.4; v5 gates; averages per run)',
+  `Fewest picks, Combined v7: ${prepared.slice().sort((a, b) => a.picks.comb.length - b.picks.comb.length).slice(0, 5).map((p) => `${runLabel(p)} ${p.picks.comb.length}/${p.run.topics.length}`).join('; ')}.`, '',
+  '## Gate breakdown (Combined eligible pool: scored, >= 2 outlets or GDACS, new_since_last_brief >= 0.4; v7 gates; averages per run)',
   `Pool ${(sum(gatePool.map((x) => x.length)) / prepared.length).toFixed(1)} per run. Failing, by gate combination:`,
   tbl(['Fails', 'Per run (avg)'], Object.entries(failCombos).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, (v / prepared.length).toFixed(1)])),
   `Each gate alone (any combination): P(done) < ${DONE_MIN} ${(sum(gatePool.map((x) => x.filter((s) => s.done < DONE_MIN).length)) / prepared.length).toFixed(1)}, impact below bar ${(sum(gatePool.map((x) => x.filter(failImpact).length)) / prepared.length).toFixed(1)}, category 'other' ${(sum(gatePool.map((x) => x.filter((s) => s.c.rawCategory === 'other').length)) / prepared.length).toFixed(1)} per run.`,
@@ -369,14 +369,14 @@ fs.writeFileSync(path.join(HERE, 'REPORT.md'), [
   tbl(['Selector', 'Headlines answered', 'Share said'], sideRows((s) => saidShare(s))),
   'Examples of said-headlines now excluded from Jev v2 and Combined (most-covered):',
   ...saidExamples.map((s) => `- ${s.c.title} (${s.c.outlets} outlets, P(done) ${s.done.toFixed(2)})`), '',
-  '## What changed from v5',
-  `- v6 gates: P(done) >= ${DONE_MIN} (unchanged), Jev impact >= ${GATES.v6.imp} on the 0-4 scale (${GATES.v6.sev2} for severity 2), and the classifier-category 'other' exclusion is removed. v5 rows are kept for comparison. Rescue (1-outlet) needs impact >= 3.5 as before. No force-fill.`,
+  '## What changed from v6',
+  `- v7 gates: P(done) >= ${DONE_MIN} (unchanged), Jev impact >= ${GATES.v7.imp} on the 0-4 scale (${GATES.v7.sev2} for severity 2); v6 (impact >= ${GATES.v6.imp}, ${GATES.v6.sev2}) rows kept for comparison. Rescue (1-outlet) needs impact >= 3.5. Ranking impact (0.5 steps), growth, outlets. No force-fill.`,
   `- Review cards now show what each side actually picked: ours = the published title with its own source headlines from the archive entry; Combined = the story's lead headline plus two from the same merged story. Rescue (1-outlet) picks: ${rescues.length} over ${prepared.length} runs.`,
   `- Jev answers are reused from v2. Merging changes a story's state, so some answers are missing: ${sum(prepared.map((p) => p.missing))} of ${sum(prepared.map((p) => p.toScore.length))} candidates (${pct(sum(prepared.map((p) => p.missing)), sum(prepared.map((p) => p.toScore.length)))}) were skipped by Jev v2 and Combined. The baseline and ours do not depend on Jev. Cached v2 spend: $${spent().toFixed(3)}.`,
   `- Removed: Jev v1 column and v1_picks.json (still in git history).`,
   `- Per run: ${avg((p) => p.nArticles)} articles -> ${avg((p) => p.nEvents)} eligible events -> ${avg((p) => p.nClusters)} clusters -> ${avg((p) => p.cands.length - p.gdacs.length)} merged stories -> ${avg((p) => p.toScore.length)} Jev-scored. ${runs.length} runs over ${days_.length} days (${days_[0]} to ${days_[days_.length - 1]}; 10-12 to 10-15 skipped for the DeepSeek outage; ${droppedRuns} dropped for lack of corpus hours). Topics matched ${nMatched}/${nTopics} (${pct(nMatched, nTopics)}). GDACS: runs with a Red candidate ${gd('Red')}, Orange ${gd('Orange')}.`,
   capture ? `- Selector-input sanity check (${capture.gen}): the selector saw ${capture.inputCount} articles; ${capture.inCorpusWindow} (${pct(capture.inCorpusWindow, capture.inputCount)}) are in our ${capture.articles}-article corpus window.` : '', '',
-  '## Rescued stories (Combined v6, 1 outlet)',
+  '## Rescued stories (Combined v7, 1 outlet)',
   ...rescues.sort((a, b) => b.impact - a.impact).slice(0, 5).map((r) => `- ${runLabel(r.p)}: ${r.c.title} (${r.c.outlets} outlets, sev ${r.c.severity}, impact ${r.impact.toFixed(2)}, later outlets ${r.p.hasLater ? r.c.later : 'n/a'})`), '',
   '## Limitations',
   '- Hindsight rewards stories that get widely covered, not stories that matter; a quiet consequential story scores as a miss. The outlet-count baseline is favoured by construction because "big" is defined by outlet counts.',

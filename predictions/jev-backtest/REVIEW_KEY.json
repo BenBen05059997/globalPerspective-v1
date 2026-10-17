@@ -1,182 +1,182 @@
 [
   {
     "pair": 1,
-    "run": "gen-1791663381526",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Scientists Discover 180,000 Giant Tortoises on One Seychelles Island",
-    "combinedTitle": "Eight Palestinians killed in Israeli attacks on Gaza",
-    "combinedImpact": 2.67
-  },
-  {
-    "pair": 2,
-    "run": "gen-1791288969760",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Saudi Arabia urged to spare man sentenced to death over Facebook post",
-    "combinedTitle": "Israeli forces kill one in occupied West Bank",
-    "combinedImpact": 2
-  },
-  {
-    "pair": 3,
-    "run": "gen-1791000961707",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "DR Congo Ebola Outbreak Surpasses 4,000 Deaths Amid Violence and Mistrust",
-    "combinedTitle": "Drought in Austria, Bosnia  and  Herzegovina, Belgium, Belarus, Switzerland, Czech Republic, Germany, Denmark, Spain, France, Croatia, Hungary, Ireland, Italy, Liechtenstein, Luxembourg, Moldova, Montenegro, Netherlands, Norway, Poland, Romania, Serbia, Russia, Sweden, Slovenia, Slovakia, San Marino, Ukraine, ",
-    "combinedImpact": 3.1
-  },
-  {
-    "pair": 4,
-    "run": "gen-1791058556461",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "US Deploys NMESIS Anti-Ship System to Japanese Island Near Taiwan",
-    "combinedTitle": "Ebola drug trial launches in Congo amid deadly outbreak",
-    "combinedImpact": 2.43
-  },
-  {
-    "pair": 5,
-    "run": "gen-1791432961926",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "US Bars Fiji-Based Man Over Corruption Tied to China",
-    "combinedTitle": "US moves long-range bombers from UK; Israel allegedly warned before Oct. 7",
-    "combinedImpact": 2.89
-  },
-  {
-    "pair": 6,
     "run": "gen-1790914551993",
-    "option1": "combined",
-    "option2": "ours",
+    "option1": "ours",
+    "option2": "combined",
     "ourTitle": "More Than Half of Europe Faced Intense Summer Heat Stress, EU Monitor Says",
     "combinedTitle": "Eritrea severs diplomatic ties with Ethiopia in tit-for-tat move",
     "combinedImpact": 2.71
   },
   {
-    "pair": 7,
-    "run": "gen-1790856965624",
+    "pair": 2,
+    "run": "gen-1791692170455",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "US Military to Cut 20% of Generals and Admirals, Hegseth Announces",
-    "combinedTitle": "Russia strikes Ukraine as Zelenskyy visits frontline",
-    "combinedImpact": 3.1
+    "ourTitle": "US Imposes Sanctions on International Criminal Court, Drawing Global Condemnation",
+    "combinedTitle": "Tropical Cyclone SIMON-26",
+    "combinedImpact": 1.03
   },
   {
-    "pair": 8,
-    "run": "gen-1791749757056",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "UK PM Burnham Says Russia Interfered in Brexit Referendum",
-    "combinedTitle": "Russian attack on Ukrainian city kills 20 after Trump eases diesel sanctions",
-    "combinedImpact": 2.96
-  },
-  {
-    "pair": 9,
+    "pair": 3,
     "run": "gen-1790828163862",
-    "option1": "combined",
-    "option2": "ours",
+    "option1": "ours",
+    "option2": "combined",
     "ourTitle": "US Military to Cut 20% of Generals and Admirals, Hegseth Announces",
     "combinedTitle": "Tropical Cyclone POLO-26",
     "combinedImpact": 0.84
   },
   {
-    "pair": 10,
-    "run": "gen-1790799357190",
+    "pair": 4,
+    "run": "gen-1791058556461",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "France and Spain Welcome Idea of UK Rejoining EU After Burnham's Speech",
-    "combinedTitle": "Hundreds of Israelis storm Al-Aqsa Mosque compound",
-    "combinedImpact": 2.88
+    "ourTitle": "North Korea Test-Fires Intermediate-Range Missile Amid Mine Blast Tensions",
+    "combinedTitle": "Ebola drug trial launches in Congo amid deadly outbreak",
+    "combinedImpact": 2.43
   },
   {
-    "pair": 11,
-    "run": "gen-1791634568093",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Rogue Anthropic AI Agent Gave Police Fake Tip in Unsolved Murder Case",
-    "combinedTitle": "Saudi-led coalition launches operation in Yemen against Houthis",
-    "combinedImpact": 2.89
-  },
-  {
-    "pair": 12,
-    "run": "gen-1791375379811",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "European Parliament Hardens Line on China, Citing Dumping and Spying",
-    "combinedTitle": "Two killed in Kyiv as Russia launches massive attack",
-    "combinedImpact": 2.99
-  },
-  {
-    "pair": 13,
-    "run": "gen-1790972160992",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "New York Governor Appoints Special Prosecutor in Cornell Gang Rape Case",
-    "combinedTitle": "Terror in Kyiv as Russia ramps up attacks",
-    "combinedImpact": 3.25
-  },
-  {
-    "pair": 14,
-    "run": "gen-1792210564180",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Kenya Confirms Third Ebola Case Linked to First Patient",
-    "combinedTitle": "North Korea tests new AI-guided torpedo",
-    "combinedImpact": 2.61
-  },
-  {
-    "pair": 15,
-    "run": "gen-1791576960061",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Ethiopia Launches Drone Attack on Eritrean Troops in Tigray",
-    "combinedTitle": "Nearly 20 Israeli settler attacks target Palestinians in West Bank",
-    "combinedImpact": 2.35
-  },
-  {
-    "pair": 16,
+    "pair": 5,
     "run": "gen-1791087355049",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Brazil Presidential Election: Lula Faces Flávio Bolsonaro in Tight Race",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Houthis Claim Strike on Aramco Oil Facility Near Riyadh as Saudi Arabia Strikes Sanaa",
     "combinedTitle": "Russia ramps up attacks on Kyiv, strikes school and hospital",
     "combinedImpact": 3.04
   },
   {
-    "pair": 17,
-    "run": "gen-1791519362070",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Fort Hood Shooter Nidal Hasan's Firing Squad Execution to Be Livestreamed",
-    "combinedTitle": "Zelensky accuses US of inaction as Russian strikes kill dozens",
-    "combinedImpact": 3.05
+    "pair": 6,
+    "run": "gen-1791461761336",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "Iraq Devalues Currency, Sparking Opposition from MPs",
+    "combinedTitle": "China nominates health official Song Li as WHO head",
+    "combinedImpact": 3.8
   },
   {
-    "pair": 18,
+    "pair": 7,
+    "run": "gen-1791288969760",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "Fort Hood shooter Nidal Hasan to be executed by firing squad",
+    "combinedTitle": "Israeli forces kill one in occupied West Bank",
+    "combinedImpact": 2
+  },
+  {
+    "pair": 8,
     "run": "gen-1791346556599",
     "option1": "combined",
     "option2": "ours",
-    "ourTitle": "US Military in Okinawa Imposes Night Curfew After Marine's Arrest Over Murder",
+    "ourTitle": "Messi Plays Final Argentina Game to Roaring Buenos Aires Farewell",
     "combinedTitle": "Israel marks third anniversary of October 7 attack",
     "combinedImpact": 2.92
   },
   {
-    "pair": 19,
-    "run": "gen-1791548159245",
+    "pair": 9,
+    "run": "gen-1790972160992",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "Spanish PM Sánchez Loses Housing Crisis Vote After Eviction of 87-Year-Old Woman",
+    "combinedTitle": "Terror in Kyiv as Russia ramps up attacks",
+    "combinedImpact": 3.25
+  },
+  {
+    "pair": 10,
+    "run": "gen-1790856965624",
     "option1": "combined",
     "option2": "ours",
-    "ourTitle": "OpenAI Says Iran and Russia Used ChatGPT for Propaganda by Fake Journalists",
+    "ourTitle": "Explosions Heard in Ethiopia's Capital After Drone Flights Banned",
+    "combinedTitle": "Russia strikes Ukraine as Zelenskyy visits frontline",
+    "combinedImpact": 3.1
+  },
+  {
+    "pair": 11,
+    "run": "gen-1790799357190",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "UK-France 'One In, One Out' Migrant Exchange Deal Scrapped",
+    "combinedTitle": "Hundreds of Israelis storm Al-Aqsa Mosque compound",
+    "combinedImpact": 2.88
+  },
+  {
+    "pair": 12,
+    "run": "gen-1791663381526",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Netanyahu Faces Fresh Allegations He Ignored Warnings About Oct. 7 Before Election",
+    "combinedTitle": "Eight Palestinians killed in Israeli attacks on Gaza",
+    "combinedImpact": 2.67
+  },
+  {
+    "pair": 13,
+    "run": "gen-1791576960061",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "El Niño Reaches Record Strength, Japan Weather Agency Says",
+    "combinedTitle": "Nearly 20 Israeli settler attacks target Palestinians in West Bank",
+    "combinedImpact": 2.35
+  },
+  {
+    "pair": 14,
+    "run": "gen-1791000961707",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure",
+    "combinedTitle": "Drought in Austria, Bosnia  and  Herzegovina, Belgium, Belarus, Switzerland, Czech Republic, Germany, Denmark, Spain, France, Croatia, Hungary, Ireland, Italy, Liechtenstein, Luxembourg, Moldova, Montenegro, Netherlands, Norway, Poland, Romania, Serbia, Russia, Sweden, Slovenia, Slovakia, San Marino, Ukraine, ",
+    "combinedImpact": 3.1
+  },
+  {
+    "pair": 15,
+    "run": "gen-1792210564180",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "France Braces for Return of Yellow Vests as Cost-of-Living Protests Spread",
+    "combinedTitle": "North Korea tests new AI-guided torpedo",
+    "combinedImpact": 2.61
+  },
+  {
+    "pair": 16,
+    "run": "gen-1792124168577",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Agriculture Minister Sounds 'Super El Niño' Warning Bell and Calls for Water Restrictions",
+    "combinedTitle": "Ukraine struggles with Starlink and US data as missiles hit Kyiv",
+    "combinedImpact": 2.77
+  },
+  {
+    "pair": 17,
+    "run": "gen-1791605778055",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Kenya Confirms First Ebola Case as Outbreak Spreads from DR Congo",
+    "combinedTitle": "Zelenskyy blasts US as strikes kill 78 in Ukraine",
+    "combinedImpact": 3.12
+  },
+  {
+    "pair": 18,
+    "run": "gen-1791548159245",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "China and EU Reach Understanding on Hybrid Vehicles After Trade Talks",
     "combinedTitle": "EU removes Panama from tax haven blacklist",
     "combinedImpact": 2.53
   },
   {
-    "pair": 20,
-    "run": "gen-1791317781362",
+    "pair": 19,
+    "run": "gen-1791375379811",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "Former German Spy Chief August Hanning Arrested for Espionage and Treason",
-    "combinedTitle": "US and China discuss reciprocal nuclear site visits",
-    "combinedImpact": 3.28
+    "ourTitle": "Zimbabwe Declares State of Disaster After Hailstorm Damages 8,500 Homes",
+    "combinedTitle": "Two killed in Kyiv as Russia launches massive attack",
+    "combinedImpact": 2.99
+  },
+  {
+    "pair": 20,
+    "run": "gen-1791432961926",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "Populations of Wild Species Fell by 73% from 1970 to 2022, WWF Reports",
+    "combinedTitle": "US moves long-range bombers from UK; Israel allegedly warned before Oct. 7",
+    "combinedImpact": 2.89
   }
 ]

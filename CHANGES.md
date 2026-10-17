@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-10-17 (story scan keeps article snippets, B1 of the selection plan)
+
+- **`newsSituationIngest` (deployed 15:37 UTC):** each classified article keeps its RSS description as `snippet` (trimmed, ≤200 chars, omitted when empty) in `corpus/*.jsonl` and `stories/classify-cache.json`, and `stories/state/*.json` `headlines[]` carry it too. `stories/index.json` headlines stay `{title,url,domain}` (snippet stripped to keep the index small). Additive optional field; every reader checked (tracker reads the index only, research job matcher uses `headlines[].url`, Worker `/data` passes state JSON through, no frontend reader). Needed so a selected story carries source text for grounding. First live run 16:50 UTC ok (427 articles, 0 errors, snippets present on newly classified lines; cached lines gain one as the 48h cache turns over). Tests: 10 pass.
+
 ## 2026-10-17 (Jev story-selection backtest, P6 — no live change)
 
 - `predictions/jev-backtest/run.mjs` replays 40 past selection runs (2026-09-30 → 10-17, outage 10-12…10-15 skipped) against Jev (TypeSafe `jev-1.13.0`; operator-supplied key read from `~/.config/globalperspective/jev.key`, never logged). Candidates = story-scan corpus for the 8h before each run, grouped with the existing `clusterStories` (~400 per run); Jev answers publish (yes-probability) + importance (5 levels); code applies the selector's stated quotas. Results: overlap with what we published 14% (chance ~3%; a lower bound because the clusterer splits one story into several), big-event misses ours 111 vs Jev 80, cost $0.47 for 11,007 calls (~$0.017 per live run), median 162 ms per call. Blind review sheet (20 pairs) + key for the operator. No conclusion before that review.

@@ -64,10 +64,12 @@ function normalizeClassified(raw, article) {
   const severity = Math.min(5, Math.max(1, Math.round(toNum(raw.severity) || 1)));
   const entities = Array.isArray(raw.entities) ? raw.entities.map((e) => String(e).trim()).filter(Boolean).slice(0, 4) : [];
   const enTitle = String(raw.en_title || article.title || '').trim().slice(0, 140) || article.title;
+  const snippet = String(article.description || '').trim().slice(0, 200); // B1: grounding snippet (omitted when empty)
   return {
     title: article.title, en_title: enTitle, url: article.url, domain: domainOf(article.url), source: article.source || domainOf(article.url),
     iso3, latlon, axis, category: String(raw.category || 'other').toLowerCase(),
     severity, kind: ['event', 'analysis', 'commentary'].includes(raw.kind) ? raw.kind : 'event', entities,
+    ...(snippet ? { snippet } : {}),
   };
 }
 
@@ -157,7 +159,7 @@ function clusterStories(classified, nowIso, prevIndex = {}) {
       first_seen: prev ? (prev.first_seen || nowIso) : nowIso,
       last_seen: nowIso,
       entities: [...new Set(items.flatMap((i) => i.entities))].slice(0, 6),
-      headlines: items.slice(0, 5).map((i) => ({ title: i.title, url: i.url, domain: i.domain })),
+      headlines: items.slice(0, 5).map((i) => ({ title: i.title, url: i.url, domain: i.domain, ...(i.snippet ? { snippet: i.snippet } : {}) })),
     });
   }
   // Most significant first.

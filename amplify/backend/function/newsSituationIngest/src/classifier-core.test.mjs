@@ -98,4 +98,18 @@ t('nextCache keeps first-classified time and prunes entries older than keepHours
   assert.deepStrictEqual(Object.keys(c3.entries), [cacheKey(b)]);
 });
 
+t('B1 snippet: kept, truncated to 200, omitted when empty; headlines carry it', () => {
+  const long = 'x'.repeat(300);
+  const a = normalizeClassified({ axis: 'conflict', iso3: ['UKR'], severity: 4 }, { title: 'T', url: 'https://a.com/1', description: `  ${long}  ` });
+  assert.strictEqual(a.snippet.length, 200);
+  const b = normalizeClassified({ axis: 'conflict' }, { title: 'T', url: 'https://a.com/2', description: '' });
+  assert.strictEqual('snippet' in b, false);
+  const c = normalizeClassified({ axis: 'conflict' }, { title: 'T', url: 'https://a.com/3' });
+  assert.strictEqual('snippet' in c, false);
+  const mk = (u, d) => normalizeClassified({ axis: 'conflict', iso3: ['UKR'], latlon: [50, 30], severity: 4, entities: ['Zelensky'] }, { title: 'T' + u, url: `https://${u}.com/x`, description: d });
+  const [s] = clusterStories([mk('a', 'snip a'), mk('b', '')], '2026-10-18T00:00:00Z');
+  assert.strictEqual(s.headlines[0].snippet, 'snip a');
+  assert.strictEqual('snippet' in s.headlines[1], false);
+});
+
 console.log(`\n${pass} tests passed`);

@@ -1,0 +1,162 @@
+[
+  {
+    "pair": 1,
+    "run": "gen-1790914551993",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "Netanyahu Says Flydubai Attacker Had 'Islamist Radical Indoctrination'",
+    "jevScore": 3.87
+  },
+  {
+    "pair": 2,
+    "run": "gen-1791692170455",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "Palestinian President Abbas Postpones Elections to September 2027",
+    "jevScore": 3.36
+  },
+  {
+    "pair": 3,
+    "run": "gen-1790828163862",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "US Military to Cut 20% of Generals and Admirals, Hegseth Announces",
+    "jevScore": 4.37
+  },
+  {
+    "pair": 4,
+    "run": "gen-1791058556461",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "Medical Plane with 6 Onboard Missing Off Massachusetts Coast",
+    "jevScore": 3.6
+  },
+  {
+    "pair": 5,
+    "run": "gen-1791087355049",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "North Korea Test-Fires Intermediate-Range Missile Amid Mine Blast Tensions",
+    "jevScore": 4.05
+  },
+  {
+    "pair": 6,
+    "run": "gen-1791461761336",
+    "option1": "jev",
+    "option2": "ours",
+    "ourTitle": "UK Diplomats to Leave East Jerusalem Consulate After Israeli Order",
+    "jevScore": 4.34
+  },
+  {
+    "pair": 7,
+    "run": "gen-1791288969760",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "Russia plague quarantine following lab death raises concerns",
+    "jevScore": 3.57
+  },
+  {
+    "pair": 8,
+    "run": "gen-1791346556599",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "France School Protests: Police Use Tear Gas and Water Cannons as Demonstrations Spread",
+    "jevScore": 3.11
+  },
+  {
+    "pair": 9,
+    "run": "gen-1790972160992",
+    "option1": "jev",
+    "option2": "ours",
+    "ourTitle": "Brazil's Presidential Election: Lula vs. Bolsonaro Jr. Amid Scandals and AI Disinformation",
+    "jevScore": 4.22
+  },
+  {
+    "pair": 10,
+    "run": "gen-1790856965624",
+    "option1": "jev",
+    "option2": "ours",
+    "ourTitle": "Tennessee Death Row Inmate Christa Pike Survives Two Lethal Injections, Execution Fails",
+    "jevScore": 3.68
+  },
+  {
+    "pair": 11,
+    "run": "gen-1790799357190",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "Six Smugglers Jailed for Manslaughter Over Deadliest Channel Small Boats Disaster",
+    "jevScore": 3.72
+  },
+  {
+    "pair": 12,
+    "run": "gen-1791663381526",
+    "option1": "jev",
+    "option2": "ours",
+    "ourTitle": "US Treasury Chief Scott Bessent to Skip IMF-World Bank Meetings in Bangkok",
+    "jevScore": 3.71
+  },
+  {
+    "pair": 13,
+    "run": "gen-1791576960061",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "Ethiopia Launches Drone Attack on Eritrean Troops in Tigray",
+    "jevScore": 3.46
+  },
+  {
+    "pair": 14,
+    "run": "gen-1791000961707",
+    "option1": "jev",
+    "option2": "ours",
+    "ourTitle": "Ethiopia and Eritrea Sever Diplomatic Ties as Fighting Escalates in Northern Ethiopia",
+    "jevScore": 3.64
+  },
+  {
+    "pair": 15,
+    "run": "gen-1792210564180",
+    "option1": "jev",
+    "option2": "ours",
+    "ourTitle": "France Braces for Return of Yellow Vests as Cost-of-Living Protests Spread",
+    "jevScore": 3.67
+  },
+  {
+    "pair": 16,
+    "run": "gen-1792124168577",
+    "option1": "jev",
+    "option2": "ours",
+    "ourTitle": "Mauritius Imposes Curfew After Violent Protests Over Water Shortages and Cost of Living",
+    "jevScore": 3.58
+  },
+  {
+    "pair": 17,
+    "run": "gen-1791605778055",
+    "option1": "jev",
+    "option2": "ours",
+    "ourTitle": "Flydubai Co-Pilot Planned Suicide Attack on Tel Aviv Airport, UAE Says",
+    "jevScore": 3.44
+  },
+  {
+    "pair": 18,
+    "run": "gen-1791548159245",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "Navi Pillay Wins Nobel Peace Prize for International Justice Work",
+    "jevScore": 3.58
+  },
+  {
+    "pair": 19,
+    "run": "gen-1791375379811",
+    "option1": "jev",
+    "option2": "ours",
+    "ourTitle": "US Military Aid to Israel Continues Three Years into Gaza Conflict",
+    "jevScore": 3.97
+  },
+  {
+    "pair": 20,
+    "run": "gen-1791432961926",
+    "option1": "ours",
+    "option2": "jev",
+    "ourTitle": "US Bars Fiji-Based Man Over Corruption Tied to China",
+    "jevScore": 3.47
+  }
+]

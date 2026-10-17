@@ -488,20 +488,26 @@ async function captureIngestion(inputArticles, chosenTopics, generationId) {
     }));
     const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
     const s3 = new S3Client({ region: process.env.AWS_REGION || 'ap-northeast-1' });
+    const runId = new Date().toISOString();
     const body = JSON.stringify({
-      runId: new Date().toISOString(),
+      runId,
       generationId: generationId || null,
       inputCount: input.length,
       chosenCount: chosen.length,
       input,   // what the selector SAW (the audit basis for "missed high-impact?")
       chosen,  // what it CHOSE
     });
-    await s3.send(new PutObjectCommand({
-      Bucket: process.env.WORLD_BUCKET || 'globalperspective-world-280362093938',
-      Key: `${process.env.INGEST_CAPTURE_PREFIX || 'audit/ingest-capture'}/latest.json`,
-      Body: body,
-      ContentType: 'application/json',
-    }));
+    // latest.json (read by newsImpactAudit) + a dated copy per run, so past runs can be replayed
+    // (e.g. the Jev selection backtest). Path: <prefix>/YYYY-MM-DD/HHMM.json.
+    const prefix = process.env.INGEST_CAPTURE_PREFIX || 'audit/ingest-capture';
+    for (const Key of [`${prefix}/latest.json`, `${prefix}/${runId.slice(0, 10)}/${runId.slice(11, 16).replace(':', '')}.json`]) {
+      await s3.send(new PutObjectCommand({
+        Bucket: process.env.WORLD_BUCKET || 'globalperspective-world-280362093938',
+        Key,
+        Body: body,
+        ContentType: 'application/json',
+      }));
+    }
     console.log(`[capture] ${input.length} input articles -> ${chosen.length} chosen topics (S3)`);
   } catch (e) {
     console.warn('[capture] failed (non-fatal):', e.message);

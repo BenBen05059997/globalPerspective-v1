@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-10-17 (topic selection keeps a dated history of every run)
+
+- **`newsInvokeGemini-dev` (deployed 14:04 UTC):** `captureIngestion` now also writes `audit/ingest-capture/YYYY-MM-DD/HHMM.json` (what the selector saw + what it chose) next to the existing `latest.json` (still read by `newsImpactAudit`). Before, each run overwrote `latest.json`, so past selections could not be replayed. Needed for the Jev selection backtest/shadow week (plan P6). ~80 KB per run, 3 runs/day; no IAM change (the role already writes `audit/ingest-capture/*`).
+
 ## 2026-10-17 (DeepSeek token-usage logging, P4)
 
 - **Token-usage logging** on `newsSituationIngest`, `newsInvokeGemini-dev`, `newsSystemsAnalysis`, `newsCountryIntelligence`, `newsThreadAnalysis`, `newsWeeklyBrief`, `newsPostDevTo` (deployed 13:21 UTC; the research job got the same line in the grounded-forecast commit): one `[usage]` JSON line per DeepSeek/OpenRouter call with `fn`, `step`, `model` and the provider's usage fields (incl. `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens`). One-line helper per Lambda (separate deploys, no shared layer). No behaviour change; existing tests pass (73 across six functions). First live line: story scan 13:50 UTC, 761 in / 430 out / 256 cache hit. `newsInvokeGemini` repo file deployed as-is: its unused `MODEL_NAME` fallback in the deployed copy was `grok-4-1-fast-non-reasoning` (env `GROK_MODEL` is always set).

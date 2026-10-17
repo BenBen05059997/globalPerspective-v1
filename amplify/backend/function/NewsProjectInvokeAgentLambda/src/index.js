@@ -15,7 +15,7 @@ const {
 } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
-const PREDICTION_MODEL = process.env.PREDICTION_MODEL || ''; // forecast (research + forecast calls); '' = same as GROK_MODEL
+const PREDICTION_MODEL = process.env.PREDICTION_MODEL || ''; // forecast (single grounded call); '' = same as GROK_MODEL
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model (v4-flash name retired 2026-08-18)
 const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
@@ -32,7 +32,6 @@ const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const PK_PREFIX = process.env.SUMMARY_PREDICT_PK_PREFIX || 'TOPIC#';
 const SUMMARY_SK = process.env.SUMMARY_SORT_KEY || 'SUMMARY';
 const PREDICTION_SK = process.env.PREDICTION_SORT_KEY || 'PREDICTION';
-const RESEARCH_BRIEFING_SK = 'RESEARCH_BRIEFING';
 const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || '259200', 10);
 const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '259200', 10);
 const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
@@ -157,7 +156,16 @@ exports.handler = async (event) => {
       : {};
     // generatedDate here is a HUMAN string ("July 4, 2026") — never slice it for a date.
     // The gates need a real ISO day; use UTC today (matches the log snapshot's `day`).
-    const genCtx = { pastEntries, factsByCountry, generatedAtDay: new Date().toISOString().slice(0, 10), force, dryRun, plan: [] };
+    // P3: threadIds are computed BEFORE generation (the later swap/archive reuse this same map) so a
+    // forecast already made today for the same thread can be copied instead of regenerated.
+    const threadIdById = {};
+    if (needsPrediction && Array.isArray(stagingItem?.topics)) {
+      stagingItem.topics.forEach((raw, idx) => {
+        try { threadIdById[buildStableTopicId(raw, idx)] = assignThreadId(raw, pastEntries); } catch (e) { console.warn('early threadId failed:', e.message); }
+      });
+    }
+    const todayArchiveEntries = needsPrediction && !force ? await readTodayArchiveEntries() : [];
+    const genCtx = { pastEntries, factsByCountry, threadIdById, todayArchiveEntries, generatedAtDay: new Date().toISOString().slice(0, 10), force, dryRun, plan: [] };
 
     const outputs = [];
     const reused = [];
@@ -199,12 +207,11 @@ exports.handler = async (event) => {
     // onto the topics that become `latest`, so the served topics carry threadId
     // for narrative links (the lede band + Home story-arc/economic badges). The
     // same map is reused by the archive write so latest and archive stay in sync.
-    let threadIdById = {};
     if (usable > 0 && stagingItem && Array.isArray(stagingItem.topics)) {
       try {
         stagingItem.topics.forEach((raw, idx) => {
           const id = buildStableTopicId(raw, idx);
-          const tid = assignThreadId(raw, pastEntries);
+          const tid = threadIdById[id] || assignThreadId(raw, pastEntries);
           raw.threadId = tid;
           threadIdById[id] = tid;
         });
@@ -451,46 +458,16 @@ function buildTraceCausePrompt(topic, generatedDate) {
   ].join('\n');
 }
 
-// ── Two-Pass Prediction: Research Agent + Prediction Agent ──────────────────
+// ── Grounded single-call forecast (2026-10-17, replaces the research briefing + forecast pair) ──
 
-const RESEARCH_MAX_TOKENS = 800;
-
-function buildResearchPrompt(topic, generatedDate, generatedYear, v1 = {}) {
-  const snippets = topic.sources
-    ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
-    : '';
-
-  const snippetBlock = snippets
-    ? `\nArticle Snippets:\n${snippets}\n`
-    : '';
-
-  const { premiseBlock, arcDigest, webContext } = v1;
-
-  return [
-    `You are a geopolitical research analyst preparing a structured briefing. Today is ${generatedDate} (year ${generatedYear}).`,
-    '',
-    `Topic: ${topic.title}`,
-    `Description: ${topic.description}`,
-    `Regions: ${(topic.regions || []).join(', ') || 'Unknown'}`,
-    premiseBlock || '',
-    arcDigest ? `\nHow this story has evolved (our archive — use to ground trajectory, do not restate):\n${arcDigest}\n` : '',
-    snippetBlock,
-    webContext ? `\nLive web context (fresh search — treat as leads, cite the outlet, do not over-trust):\n${webContext}\n` : '',
-    'Produce a concise research briefing with these sections. Be specific — name real people, institutions, treaties, and dates.',
-    '',
-    '**HISTORICAL PRECEDENTS**: List 2-3 similar historical events. For each: what happened, what was the outcome, and how long it took to resolve. This establishes the base rate.',
-    '',
-    '**KEY ACTORS & MOTIVATIONS**: Who are the 3-5 most important decision-makers or institutions? What does each one want? What constraints do they face?',
-    '',
-    `**UPCOMING DEADLINES**: List any scheduled events in the next 1-3 months (elections, summits, central bank meetings, UN sessions, treaty expirations, earnings dates, sanctions reviews) relevant to the regions involved. Include specific dates where known. Current year is ${generatedYear}.`,
-    '',
-    '**BALANCE OF FORCES**: In 2-3 sentences, what is the current balance of power, leverage, or momentum between the key actors? Who has the initiative?',
-    '',
-    'Be factual and concise. No predictions — that comes next.',
-  ].join('\n');
+// The text the forecast model is shown. G13 (lib.buildGatedScenarios) checks every date / named
+// scheduled event in the model's output against exactly this, so build it in one place.
+function forecastInputText(topic, v1 = {}) {
+  const snippets = (topic.sources || []).map(s => `${s.source || ''} ${s.snippet || ''}`);
+  return [topic.title, topic.description, ...snippets, v1.arcDigest, v1.premiseBlock, v1.webContext].filter(Boolean).join('\n');
 }
 
-function buildPredictionPrompt(topic, generatedDate, generatedYear, researchContext, v1 = {}) {
+function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}) {
   const snippets = topic.sources
     ? topic.sources.map(s => `Source (${s.source}): ${s.snippet || 'No snippet'}`).join('\n')
     : '';
@@ -501,45 +478,45 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
 
   // generatedDate is a human string ("July 4, 2026"); use UTC today for date math.
   const today = new Date().toISOString().slice(0, 10);
-  const horizonEnd = lib.addDays(today, lib.HORIZON_DAYS);
+  const minDeadline = lib.addDays(today, 8);
 
   return [
     `You are a geopolitical forecasting analyst. Today is ${today} (year ${generatedYear}). Respond with ONLY valid JSON — no markdown, no code fences, no commentary before or after.`,
     '',
     `Topic: ${topic.title}`,
     `Description: ${topic.description}`,
+    `Regions: ${(topic.regions || []).join(', ') || 'Unknown'}`,
     v1.premiseBlock || '',
+    v1.arcDigest ? `\nHow this story has evolved (our archive, dated — use to ground trajectory, do not restate):\n${v1.arcDigest}\n` : '',
     snippetBlock,
-    '=== RESEARCH BRIEFING (prepared by research analyst) ===',
-    researchContext,
-    '=== END RESEARCH BRIEFING ===',
+    v1.webContext ? `\nLive web context (fresh search — treat as leads, cite the outlet, do not over-trust):\n${v1.webContext}\n` : '',
+    'CALENDAR RULE (strict): your training data ends before today, so you do NOT know the calendar ahead. Use a specific date, or the name of a scheduled event (summit, session, meeting, election, treaty expiry, review), ONLY if it appears in the Article Snippets, the dated archive digest or the verified facts above. If no scheduled date is known, say "no scheduled date known" — that is a correct, useful answer. Never fill a gap with a plausible date from memory. The "deadline" of a trigger is your own forecast window, not a claim, so you may choose it freely.',
     '',
-    'Using the research briefing above, return this exact JSON structure (all fields required):',
+    'Reason silently first: (1) 2-3 closest historical precedents and how long each took to resolve — this is your base rate; (2) the 3-5 actors who decide the outcome and what each wants; (3) who holds the initiative now. Then return this JSON structure (all fields required):',
     `{
   "scenarios": [
     {
       "label": "Most Likely",
-      "probability_range": "string — e.g. '55-65%'",
-      "horizon": "string — e.g. '2-4 weeks'",
-      "rationale": "string — 2-4 sentences grounded in the research briefing, naming specific actors and mechanisms",
+      "probability_range": "string — your own estimate as a range, justified by the base rate of the precedents (do not reuse a stock split)",
+      "horizon": "string — your own estimate in days, weeks or months",
+      "rationale": "string — 2-4 sentences naming specific actors, mechanisms and the precedent base rate; no date or scheduled event that is not in the input",
       "triggers": [
-        { "text": "specific falsifiable FUTURE event", "deadline": "YYYY-MM-DD", "p": 0, "resolution_source": "the specific public record that will settle it" },
-        { "text": "...", "deadline": "YYYY-MM-DD", "p": 0, "resolution_source": "..." }
+        { "text": "specific falsifiable FUTURE event", "deadline": "YYYY-MM-DD", "p": "integer 2-98", "resolution_source": "the specific public record that will settle it" }
       ]
     },
     {
       "label": "Optimistic",
       "probability_range": "string",
       "horizon": "string",
-      "rationale": "string — name which actors from the briefing would need to act differently",
-      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD", "p": 0, "resolution_source": "..." } ]
+      "rationale": "string — name which actors would need to act differently",
+      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD", "p": "integer 2-98", "resolution_source": "..." } ]
     },
     {
       "label": "Pessimistic",
       "probability_range": "string",
       "horizon": "string",
-      "rationale": "string — name the specific miscalculation or trigger from the briefing",
-      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD", "p": 0, "resolution_source": "..." } ]
+      "rationale": "string — name the specific miscalculation or trigger",
+      "triggers": [ { "text": "...", "deadline": "YYYY-MM-DD", "p": "integer 2-98", "resolution_source": "..." } ]
     }
   ],
   "winners": ["string — country, industry, or leader name"],
@@ -547,15 +524,15 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, researchCont
 }`,
     '',
     'TRIGGER RULES (a trigger we cannot score is worthless — follow exactly):',
-    `- deadline MUST be an absolute date in YYYY-MM-DD form, strictly AFTER ${today} and on/before ${horizonEnd}. Prefer deadlines 14 to 84 days after today; go longer only for a dated scheduled event.`,
-    '- The trigger must describe a FUTURE event that has NOT happened yet — never restate something already reported in the briefing or snippets (that is not a prediction).',
+    `- deadline MUST be an absolute date in YYYY-MM-DD form, on or after ${minDeadline} (events resolving sooner are not scored) and on/before ${lib.addDays(today, 90)} (we keep questions within 90 days; scenario horizons must fit inside that window too).`,
+    '- The trigger must describe a FUTURE event that has NOT happened yet — never restate something already reported in the snippets or digest (that is not a prediction).',
     '- If a claim has a window ("within 2 weeks"), put the END of the window as the deadline — never a relative phrase, never a past "precedent" date.',
-    '- text must be a single, concrete, checkable event (who does what) — not a vague mood ("tensions rise").',
+    '- text must be a single, concrete, checkable event (who does what) — not a vague mood ("tensions rise"). Do not put a date or named scheduled event in the text unless it is in the input.',
     '- Each trigger is a standalone yes/no question judged ALONE: "p" is YOUR probability (an integer from 2 to 98) that THIS exact event happens by its deadline. It is NOT the scenario probability: a trigger under "Optimistic" may have p 70, one under "Most Likely" may have p 25.',
-    '- At most 3 triggers per scenario.',
+    '- Give 3 distinct triggers per scenario when three different checkable events exist; at most 3.',
     '- "resolution_source" must NAME the publisher or record that will exist after the deadline and settle the question (for example "Reuters or AP wire report", "Official Gazette of Japan", "UN Security Council press release", "IAEA Board report"). Never "news", "media", "reports" or "sources".',
-    '- Only name a person in an office if the VERIFIED FACTS above (or the briefing) support it.',
-    `probability_range: a range string like "55-65%"; all three must sum to ~100%. Output only the JSON object.`,
+    '- Only name a person in an office if the VERIFIED FACTS above or the snippets support it.',
+    'probability_range: before writing it, count how many of your precedents ended the way that scenario does, then adjust for today\'s specifics. Different stories must NOT get look-alike ranges — if you catch yourself writing the same stock split for every story, recompute from the precedents. A range may be narrow when precedents agree and wide when they do not. The three ranges must sum to ~100%. Output only the JSON object.',
   ].join('\n');
 }
 
@@ -565,56 +542,73 @@ const KIND_SK = (kind) => (kind === 'prediction' ? PREDICTION_SK : kind === 'tra
 async function ensureStored(topic, kind, generationId, generatedDate, generatedYear, ctx = {}) {
   const pk = `${PK_PREFIX}${topic.id}`;
   const fingerprint = lib.sourceFingerprint(topic);
+  const today = new Date().toISOString().slice(0, 10);
   let existing = null;
-  let fromTopicId = null; // set when the stored item belongs to the same title at another position
+  let fromTopicId = null; // set when the stored item belongs to the same story under another topic id
   let predictionLoggedToday = false;
   if (!ctx.force) {
     const got = await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: pk, SK: KIND_SK(kind) } }));
     existing = got.Item || null;
-    if (!existing) {
-      existing = await findSiblingItem(topic.id, KIND_SK(kind));
-      if (existing) fromTopicId = existing.topicId || existing.PK.slice(PK_PREFIX.length);
+    // P3: for a forecast, same-title siblings AND today's items on the same story thread (archive
+    // threadIds, whatever the headline wording or position) are copy candidates; a forecast made
+    // today wins over an older own item, so there is one forecast per thread per UTC day.
+    const wantToday = kind === 'prediction' && !lib.forecastedOn(existing, today);
+    if (!existing || wantToday) {
+      const threadIds = kind === 'prediction' ? lib.threadSiblingsToday(ctx.todayArchiveEntries, (ctx.threadIdById || {})[topic.id]) : [];
+      const sib = await findSiblingItem(topic.id, KIND_SK(kind), threadIds);
+      if (sib && (!existing || lib.forecastedOn(sib, today))) {
+        existing = sib;
+        fromTopicId = sib.topicId || sib.PK.slice(PK_PREFIX.length);
+        if (fromTopicId === topic.id) fromTopicId = null;
+      }
     }
     if (kind === 'prediction' && existing) {
       const logged = await ddb.send(new GetCommand({
         TableName: PREDICTION_LOG_TABLE,
-        Key: { PK: `PRED#${fromTopicId || topic.id}`, SK: new Date().toISOString().slice(0, 10) },
+        Key: { PK: `PRED#${fromTopicId || topic.id}`, SK: today },
       }));
-      predictionLoggedToday = Boolean(logged.Item);
+      // PRED# gap fix: a copy / fingerprint-reuse writes no PRED# row, but the stored item keeps its
+      // original generatedAt, so "forecast made today" is also read off the item itself.
+      predictionLoggedToday = Boolean(logged.Item) || lib.forecastedOn(existing, today);
     }
   }
   const decision = lib.decideReuse({ kind, existing, fingerprint, predictionLoggedToday, force: ctx.force });
-  if (ctx.plan) ctx.plan.push({ topicId: topic.id, kind, decision: decision.reuse ? 'reuse' : 'generate', reason: decision.reason, model: modelFor(kind), ...(kind === 'prediction' ? { researchModel: modelFor('research_briefing') } : {}) });
+  if (ctx.plan) ctx.plan.push({ topicId: topic.id, kind, decision: decision.reuse ? 'reuse' : 'generate', reason: decision.reason, model: modelFor(kind), threadId: (ctx.threadIdById || {})[topic.id] || null });
   if (ctx.dryRun) return null;
   if (!decision.reuse) {
     const item = await generateAndStore(topic, kind, generationId, generatedDate, generatedYear, { ...ctx, fingerprint });
     return { item, reused: false };
   }
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
-  const sks = kind === 'prediction' ? [PREDICTION_SK, RESEARCH_BRIEFING_SK] : [KIND_SK(kind)];
   if (fromTopicId) {
-    // Copy the sibling's items under this run's id (pages read TOPIC#<current id>). No new
+    // Copy the sibling's item under this run's id (pages read TOPIC#<current id>). No new
     // PRED# row: the forecast was logged once under the sibling id, which the story's thread
     // lookup (prediction_snapshot by threadId/topicIds) still finds.
-    let copied = null;
-    for (const sk of sks) {
-      const src = sk === KIND_SK(kind) ? existing : (await ddb.send(new GetCommand({ TableName: SUMMARY_TABLE, Key: { PK: `${PK_PREFIX}${fromTopicId}`, SK: sk } }))).Item;
-      if (!src) continue;
-      const item = { ...lib.restampFields(src, generationId, ttlSeconds), PK: pk, topicId: topic.id, title: topic.title, reusedFromTopicId: fromTopicId };
-      await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
-      if (sk === KIND_SK(kind)) copied = item;
-    }
-    console.log(`Reused ${kind} for ${topic.id} from same-title ${fromTopicId} (${decision.reason})`);
-    return { item: copied, reused: true };
+    const item = { ...lib.restampFields(existing, generationId, ttlSeconds), PK: pk, topicId: topic.id, title: topic.title, reusedFromTopicId: fromTopicId };
+    await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
+    console.log(`Reused ${kind} for ${topic.id} from sibling ${fromTopicId} (${decision.reason})`);
+    return { item, reused: true };
   }
-  for (const sk of sks) await touchItem(pk, sk, generationId, ttlSeconds);
+  await touchItem(pk, KIND_SK(kind), generationId, ttlSeconds);
   return { item: lib.restampFields(existing, generationId, ttlSeconds), reused: true };
+}
+
+// Today's archive entries (written by earlier runs today). Best-effort: [] on any failure.
+async function readTodayArchiveEntries() {
+  if (!TOPICS_TABLE) return [];
+  try {
+    const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: formatDateKey(new Date()) } }));
+    return Array.isArray(Item?.entries) ? Item.entries.map(e => ({ topicId: e.topicId, threadId: e.threadId })) : [];
+  } catch (e) {
+    console.warn(`today archive read failed: ${e.message}`);
+    return [];
+  }
 }
 
 // Newest stored item of this kind for the same title at another list position (see
 // lib.siblingTopicIds). Best-effort: a read failure means "nothing to reuse", never a failed run.
-async function findSiblingItem(topicId, sk) {
-  const keys = lib.siblingTopicIds(topicId).map((id) => ({ PK: `${PK_PREFIX}${id}`, SK: sk }));
+async function findSiblingItem(topicId, sk, extraIds = []) {
+  const keys = [...new Set([...lib.siblingTopicIds(topicId), ...extraIds.filter((id) => id !== topicId)])].map((id) => ({ PK: `${PK_PREFIX}${id}`, SK: sk }));
   if (!keys.length) return null;
   try {
     const r = await ddb.send(new BatchGetCommand({ RequestItems: { [SUMMARY_TABLE]: { Keys: keys } } }));
@@ -645,37 +639,48 @@ async function touchItem(pk, sk, generationId, ttlSeconds) {
 async function generateAndStore(topic, kind, generationId, generatedDate, generatedYear, ctx = {}) {
   let prompt;
   let maxTokens = DEFAULT_MAX_TOKENS;
+  let inputText = null;
   if (kind === 'summary') {
     prompt = buildSummaryPrompt(topic, generatedDate);
   } else if (kind === 'trace_cause') {
     prompt = buildTraceCausePrompt(topic, generatedDate);
   } else {
-    // Two-pass prediction: Research Agent → Prediction Agent.
-    // v1: the research pass is grounded (verified FACTS# premises + the story's own arc digest
-    // + optional live Brave web context) instead of relying on the model's parametric memory.
-    const premiseBlock = buildPremiseBlock(topic, ctx.factsByCountry);
-    const arcDigest = buildArcDigest(topic, ctx.pastEntries);
-    const webContext = await braveGroundResearch(topic);
-    const researchPrompt = buildResearchPrompt(topic, generatedDate, generatedYear, { premiseBlock, arcDigest, webContext });
-    const researchResponse = await invokeGrok(researchPrompt, RESEARCH_MAX_TOKENS, modelFor('research_briefing'));
-    console.log(`Research pass complete for "${topic.title?.substring(0, 40)}" (${researchResponse.latencyMs}ms)`);
-    await writeCache(topic, 'research_briefing', researchResponse, PREDICTION_TTL_SECONDS, generationId, ctx.fingerprint);
-
-    prompt = buildPredictionPrompt(topic, generatedDate, generatedYear, researchResponse.content, { premiseBlock });
+    // Single grounded forecast call (2026-10-17; was research briefing + forecast). Inputs are the
+    // story's own snippets, verified FACTS# premises, the dated arc digest from our archive and
+    // optional live Brave context; the prompt forbids any date / scheduled event not in them and
+    // G13 (lib.buildGatedScenarios) enforces it on the output.
+    const v1 = {
+      premiseBlock: buildPremiseBlock(topic, ctx.factsByCountry),
+      arcDigest: buildArcDigest(topic, ctx.pastEntries),
+      webContext: await braveGroundResearch(topic),
+    };
+    inputText = forecastInputText(topic, v1);
+    prompt = buildPredictionPrompt(topic, generatedDate, generatedYear, v1);
     maxTokens = PREDICTION_MAX_TOKENS;
   }
 
-  const response = await invokeGrok(prompt, maxTokens, modelFor(kind));
+  const response = await invokeGrok(prompt, maxTokens, modelFor(kind), kind === 'prediction' ? 'forecast' : kind, kind === 'prediction' || kind === 'trace_cause');
 
   if (kind === 'prediction' || kind === 'trace_cause') {
     response.content = normalizeJsonResponse(response.content, kind);
+  }
+
+  // Ground once: rationale sentences carrying a date / scheduled event the model was never shown are
+  // removed, and the same grounded copy is stored for readers and logged (G13 drops go to capture).
+  let groundRemoved = [];
+  if (kind === 'prediction') {
+    try {
+      const g = lib.groundForecastContent(JSON.parse(response.content), inputText, ctx.generatedAtDay || new Date().toISOString().slice(0, 10));
+      response.content = JSON.stringify(g.parsed);
+      groundRemoved = g.removed;
+    } catch { /* non-JSON content is stored as-is (contentFormat markdown) */ }
   }
 
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
   const item = await writeCache(topic, kind, response, ttlSeconds, generationId, ctx.fingerprint);
 
   if (kind === 'prediction') {
-    await logPredictionSnapshot(topic, response.content, response, generationId, generatedYear, ctx);
+    await logPredictionSnapshot(topic, response.content, response, generationId, generatedYear, { ...ctx, inputText, groundRemoved });
   }
 
   return item;
@@ -696,7 +701,7 @@ function normalizeJsonResponse(raw, kind) {
 
 const modelFor = (kind) => lib.modelForKind(kind, { GROK_MODEL, PREDICTION_MODEL });
 
-async function invokeGrok(prompt, maxTokens, model = GROK_MODEL) {
+async function invokeGrok(prompt, maxTokens, model = GROK_MODEL, step = 'call', json = false) {
   if (!GROK_KEY) {
     throw new Error('XAI_API_KEY is not configured');
   }
@@ -714,6 +719,7 @@ async function invokeGrok(prompt, maxTokens, model = GROK_MODEL) {
       maxTokens: maxTokens || DEFAULT_MAX_TOKENS,
       temperature: DEFAULT_TEMPERATURE,
       topP: DEFAULT_TOP_P,
+      json,
     })),
   });
 
@@ -733,7 +739,8 @@ async function invokeGrok(prompt, maxTokens, model = GROK_MODEL) {
   }
 
   const content = extractContent(parsed);
-  return { modelId: parsed?.model || model, content, latencyMs };
+  console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model: parsed?.model || model, ...parsed?.usage }));
+  return { modelId: parsed?.model || model, content, latencyMs, usage: parsed?.usage };
 }
 
 function stripCodeFence(value) {
@@ -811,7 +818,6 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId, finge
   let sk = SUMMARY_SK;
   if (kind === 'prediction') sk = PREDICTION_SK;
   else if (kind === 'trace_cause') sk = 'TRACE_CAUSE';
-  else if (kind === 'research_briefing') sk = RESEARCH_BRIEFING_SK;
   const ttl = Math.floor(Date.now() / 1000) + ttlSeconds;
 
   const isJson = (kind === 'prediction' || kind === 'trace_cause') && (() => {
@@ -832,6 +838,7 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId, finge
     generationId,
     ttl,
     latencyMs: response.latencyMs,
+    ...(kind === 'prediction' ? { promptVersion: lib.PROMPT_VERSION } : {}),
     ...(fingerprint ? { sourceFingerprint: fingerprint } : {}),
     lastVerifiedAt: new Date().toISOString(),
   };
@@ -930,7 +937,7 @@ function buildArcDigest(topic, pastEntries = []) {
   return rows.slice(-ARC_DIGEST_MAX).map(r => `- ${r.date || '(undated)'}: ${r.title}`).join('\n');
 }
 
-// Optional live web grounding for the research pass (1a). No-ops without BRAVE_SEARCH_API_KEY,
+// Optional live web grounding for the forecast call (1a). No-ops without BRAVE_SEARCH_API_KEY,
 // and never throws into generation — a failed/absent search just yields no web context.
 async function braveGroundResearch(topic) {
   if (!BRAVE_SEARCH_API_KEY) return '';
@@ -990,9 +997,12 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
       sk: day,
       snippets,
       priorTexts,
+      inputText: ctx.inputText, // G13 grounded-date gate (undefined => gate off)
     });
-    let threadId = null;
-    try { threadId = assignThreadId(topic, ctx.pastEntries || []) || null; } catch { /* cluster hint only */ }
+    // Same id the thread-reuse lookup and the archive use (computed once per run, before generation).
+    capture.dropped.push(...(ctx.groundRemoved || []));
+    let threadId = (ctx.threadIdById || {})[topic.id] || null;
+    if (!threadId) { try { threadId = assignThreadId(topic, ctx.pastEntries || []) || null; } catch { /* cluster hint only */ } }
 
     const item = {
       PK: `PRED#${topic.id}`,
@@ -1003,7 +1013,9 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
       generatedAt: new Date().toISOString(),
       generationId,
       model: response.modelId,
+      ...(response.usage ? { usage: response.usage } : {}),
       methodologyVersion: lib.METHODOLOGY_VERSION,
+      promptVersion: lib.PROMPT_VERSION,
       questionSchema: 1,
       regions: Array.isArray(topic.regions) ? topic.regions : [],
       threadId,
@@ -1015,7 +1027,7 @@ async function logPredictionSnapshot(topic, contentStr, response, generationId, 
     };
 
     await ddb.send(new PutCommand({ TableName: PREDICTION_LOG_TABLE, Item: item, ConditionExpression: 'attribute_not_exists(PK)' }));
-    console.log(`Logged prediction snapshot ${item.PK}/${day} v${lib.METHODOLOGY_VERSION} (${capture.kept} triggers kept, ${capture.dropped.length} gated out)`);
+    console.log(`Logged prediction snapshot ${item.PK}/${day} v${lib.METHODOLOGY_VERSION}/p${lib.PROMPT_VERSION} (${capture.kept} triggers kept, ${capture.dropped.length} gated out)`);
   } catch (err) {
     if (err.name === 'ConditionalCheckFailedException') { console.log(`Prediction snapshot for ${topic.id} already logged today; first of the day stands`); return; }
     console.warn(`logPredictionSnapshot failed for ${topic.id}: ${err.message}`);

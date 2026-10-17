@@ -16,6 +16,11 @@ const questions = require('./questions');
 // See PREDICTION_METHODOLOGY_V1_PLAN.md §3 (gates G1–G6) and PREDICTION_V1_EXAMPLE.md.
 
 const METHODOLOGY_VERSION = 1;
+// Prompt identity, stamped on every new PRED# row and TOPIC# PREDICTION item as `promptVersion`
+// (methodologyVersion stays 1: the question schema / gates G1-G12 are unchanged, so scoring keeps
+// one methodology; promptVersion lets the study split pre/post the 2026-10-17 grounded-forecast change).
+//   1 = research briefing + forecast (two calls); 2 = single grounded call + G13.
+const PROMPT_VERSION = 2;
 const HORIZON_DAYS = 180;
 
 const MONTHS = {
@@ -162,6 +167,145 @@ function validateTrigger(trigger, generatedAtDay, facts = []) {
 
 function escapeRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
+
+// ── G13 — grounded-date gate (2026-10-17) ─────────────────────────────────────────────────────
+// The old research pass invented calendar facts ("G20 Summit Nov 15-16, New Delhi" — it is Miami,
+// 14-15 Dec) that leaked into reader-facing rationale. Prompt rule asks the model not to; this is
+// the code that enforces it: any explicit calendar date or NAMED scheduled event in a trigger or
+// scenario rationale must occur in the model's INPUT text (snippets + arc digest + facts block).
+// A trigger's own `deadline` is a forecast window, not a claim, and is exempt (so is the same date
+// restated in text). Pure and conservative: when unsure it flags, and a flagged trigger is only
+// demoted to narrative, never silently lost.
+const MONTH_KEYS = Object.keys(MONTHS).sort((x, y) => y.length - x.length);
+const MONTH_RE = `(?:${MONTH_KEYS.map((k) => k[0].toUpperCase() + k.slice(1)).join('|')})\\.?`;
+const monthIdx = (name) => MONTHS[String(name).toLowerCase().replace(/\.$/, '')];
+const DATE_SEP = '\\s*[\\u2013\\u2014-]\\s*';
+
+// Every calendar-date mention in `text`: { m, d|null, endD|null, y|null, raw }.
+function findDateMentions(text) {
+  const t = String(text || '');
+  const out = [];
+  let m;
+  const iso = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
+  while ((m = iso.exec(t))) out.push({ m: Number(m[2]) - 1, d: Number(m[3]), endD: null, y: Number(m[1]), raw: m[0] });
+  const md = new RegExp(`\\b(${MONTH_RE})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:${DATE_SEP}(\\d{1,2}))?(?:,?\\s+(\\d{4}))?\\b`, 'g');
+  while ((m = md.exec(t))) out.push({ m: monthIdx(m[1]), d: Number(m[2]), endD: m[3] ? Number(m[3]) : null, y: m[4] ? Number(m[4]) : null, raw: m[0] });
+  const dm = new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?(?:${DATE_SEP}(\\d{1,2}))?\\s+(${MONTH_RE})(?:,?\\s+(\\d{4}))?\\b`, 'g');
+  while ((m = dm.exec(t))) out.push({ m: monthIdx(m[3]), d: Number(m[1]), endD: m[2] ? Number(m[2]) : null, y: m[4] ? Number(m[4]) : null, raw: m[0] });
+  const my = new RegExp(`\\b(${MONTH_RE})\\s+(\\d{4})\\b`, 'g');
+  while ((m = my.exec(t))) out.push({ m: monthIdx(m[1]), d: null, endD: null, y: Number(m[2]), raw: m[0] });
+  const vague = new RegExp(`\\b(?:early|mid|late|end of|the end of)[-\\s]*(${MONTH_KEYS.join('|')})\\b`, 'gi');
+  while ((m = vague.exec(t))) out.push({ m: monthIdx(m[1]), d: null, endD: null, y: null, raw: m[0] });
+  return out.filter((x) => x.m != null && (x.d == null || (x.d >= 1 && x.d <= 31)));
+}
+
+// Named scheduled events: a capitalised qualifier + a generic event noun ("G20 Summit", "WHO Executive
+// Board", "FOMC meeting", "Cabinet Committee"), or a resolution number keyed on the number.
+const capFirst = (w) => `[${w[0].toUpperCase()}${w[0]}]${w.slice(1)}`;
+const EVENT_NOUNS = ['Summit', 'Executive Board', 'Special Session', 'Plenary', 'General Assembly', 'Conference', 'Committee', 'Meeting', 'Session'];
+const EVENT_NOUN_RE = new RegExp(`\\b((?:[A-Z][A-Za-z0-9.&'\\u2019]*\\s+){1,3})(${EVENT_NOUNS.map(capFirst).join('|')})\\b(?!\\s+of\\b)`, 'g');
+const EVENT_NUM_RE = /\b(?:UNSCR|UN Security Council Resolution|Security Council Resolution|Resolution)\s+(\d{3,4})\b/g;
+const EVENT_LEAD_STOP = new Set(['the', 'a', 'an', 'at', 'before', 'after', 'during', 'in', 'on', 'by', 'following', 'ahead', 'until', 'of', 'to', 'for', 'and', 'with', 'from', 'next', 'upcoming', 'this']);
+const normPhrase = (s) => ` ${String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()} `;
+
+function findEventMentions(text) {
+  const t = String(text || '');
+  const out = [];
+  let m;
+  EVENT_NOUN_RE.lastIndex = 0;
+  while ((m = EVENT_NOUN_RE.exec(t))) {
+    const quals = m[1].trim().split(/\s+/);
+    while (quals.length && EVENT_LEAD_STOP.has(quals[0].toLowerCase())) quals.shift();
+    if (!quals.length) continue;
+    const phrase = `${quals[quals.length - 1]} ${m[2]}`;
+    out.push({ kind: 'event', raw: `${quals.join(' ')} ${m[2]}`, phrase });
+  }
+  EVENT_NUM_RE.lastIndex = 0;
+  while ((m = EVENT_NUM_RE.exec(t))) out.push({ kind: 'event', raw: m[0], num: m[1] });
+  return out;
+}
+
+// Index of everything the model was shown: which (month,day) pairs and months are mentioned,
+// plus the normalised text for event-name lookups.
+function buildGroundIndex(inputText, generatedAtDay) {
+  const full = `${inputText || ''}\n${generatedAtDay || ''}`;
+  const days = new Set();
+  const months = new Set();
+  for (const d of findDateMentions(full)) {
+    months.add(d.m);
+    if (d.d != null) for (let x = d.d; x <= (d.endD && d.endD >= d.d ? d.endD : d.d); x++) days.add(`${d.m}-${x}`);
+  }
+  return { days, months, today: String(generatedAtDay || ''), norm: normPhrase(full), raw: full };
+}
+
+function dateIsExempt(mention, deadlines) {
+  for (const dl of deadlines || []) {
+    const mm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dl || ''));
+    if (!mm) continue;
+    const dm = Number(mm[2]) - 1;
+    const dd = Number(mm[3]);
+    if (mention.m !== dm) continue;
+    if (mention.y != null && mention.y !== Number(mm[1])) continue;
+    if (mention.d == null) return true;        // "December 2026" / "end of November" naming the window's month
+    if (mention.d === dd && mention.endD == null) return true;
+  }
+  return false;
+}
+
+/**
+ * Dated claims and named scheduled events in `text` that do not occur in the input.
+ * @returns {Array<{kind:'date'|'event', text:string}>}
+ */
+function ungroundedClaims(text, index, deadlines = []) {
+  const claims = [];
+  const seen = new Set();
+  const add = (kind, raw) => { const k = `${kind}|${raw}`; if (!seen.has(k)) { seen.add(k); claims.push({ kind, text: raw }); } };
+  for (const d of findDateMentions(text)) {
+    if (dateIsExempt(d, deadlines)) continue;
+    // A dated reference that is already in the past (a precedent: "December 2018") is history, not a
+    // claim about the calendar ahead, so it is not gated. Undated-year mentions are still checked.
+    if (d.y != null && index.today && isoDate(d.y, d.m, d.d || lastDayOfMonth(d.y, d.m)) < index.today) continue;
+    const grounded = d.d != null ? index.days.has(`${d.m}-${d.d}`) : index.months.has(d.m);
+    if (!grounded) add('date', d.raw);
+  }
+  for (const e of findEventMentions(text)) {
+    const grounded = e.num ? new RegExp(`\\b${e.num}\\b`).test(index.raw) : index.norm.includes(normPhrase(e.phrase));
+    if (!grounded) add('event', e.raw);
+  }
+  return claims;
+}
+
+const SENTENCE_SPLIT = /(?<=[a-z0-9)%]{2}[.!?])\s+(?=[A-Z"“(])/;
+
+// Remove sentences carrying an ungrounded date/event. Returns the kept text (null when nothing is left).
+function stripUngroundedSentences(text, index, deadlines = []) {
+  if (typeof text !== 'string' || !text.trim()) return { text, removed: [] };
+  const kept = [];
+  const removed = [];
+  for (const sentence of text.split(SENTENCE_SPLIT)) {
+    const claims = ungroundedClaims(sentence, index, deadlines);
+    if (claims.length) removed.push({ sentence, claims }); else kept.push(sentence);
+  }
+  return { text: kept.length ? kept.join(' ') : null, removed };
+}
+
+// Grounds a parsed forecast ONCE: rationale sentences carrying a date / named event the model was never
+// shown are removed. The grounded copy is what gets stored and logged; `removed` feeds capture.dropped.
+// (Triggers are untouched here; buildGatedScenarios demotes ungrounded ones to narrative.)
+function groundForecastContent(parsed, inputText, generatedAtDay) {
+  if (!parsed || !Array.isArray(parsed.scenarios)) return { parsed, removed: [] };
+  const index = buildGroundIndex(inputText, generatedAtDay);
+  const removed = [];
+  const scenarios = parsed.scenarios.map((s, si) => {
+    if (!s || typeof s.rationale !== 'string') return s;
+    const dls = (Array.isArray(s.triggers) ? s.triggers : []).map((t) => normalizeTrigger(t, 0).deadline);
+    const r = stripUngroundedSentences(s.rationale, index, dls);
+    for (const x of r.removed) removed.push({ scenario: si, field: 'rationale', text: x.sentence, gate: 'G13', why: `ungrounded in input: ${x.claims.map((c) => c.text).join('; ')}` });
+    return { ...s, rationale: r.text };
+  });
+  return { parsed: { ...parsed, scenarios }, removed };
+}
+
 /**
  * Turn parsed LLM scenarios[] into gated, structured scenarios ready for the prediction log.
  * Dropped triggers are removed from the log AND recorded in the capture report, so a resolved
@@ -178,6 +322,8 @@ function buildGatedScenarios(rawScenarios, ctx) {
   const dropped = [];
   const demoted = [];
   const priorTexts = [...(ctx.priorTexts || [])];
+  // G13 runs only when the caller supplies the model's input text (so old callers/tests are unchanged).
+  const groundIdx = typeof ctx.inputText === 'string' ? buildGroundIndex(ctx.inputText, generatedAtDay) : null;
   let kept = 0;
   let questionCount = 0;
   let echo = 0;
@@ -194,6 +340,17 @@ function buildGatedScenarios(rawScenarios, ctx) {
         return;
       }
       const trig = { id: `${si}-${ti}`, text: norm.text, deadline: norm.deadline, status: 'pending' };
+      if (groundIdx) {
+        const claims = ungroundedClaims(norm.text, groundIdx, [norm.deadline]);
+        if (claims.length) {
+          // Kept as narrative (like G7-G12 demotions), never a scored question.
+          dropped.push({ scenario: si, text: norm.text, deadline: norm.deadline, gate: 'G13', why: `ungrounded in input: ${claims.map((c) => c.text).join('; ')}` });
+          trig.question = false;
+          triggers.push(trig);
+          kept++;
+          return;
+        }
+      }
       if (qMode) {
         const g = questions.questionGate(norm, { generatedAtDay, snippets: ctx.snippets || [], priorTexts });
         if (g.action === 'drop') {
@@ -318,7 +475,9 @@ function modelForKind(kind, env = {}) {
 
 // One request body for EVERY LLM call. thinking must stay disabled: DeepSeek V4 (flash and pro)
 // defaults to thinking-on, which burns max_tokens on hidden reasoning and empties `content`.
-function buildChatBody({ model, prompt, maxTokens, temperature, topP }) {
+// json: DeepSeek JSON mode — guarantees a parseable object (without it the model sometimes wraps
+// the answer in ```json fences, which then failed JSON.parse and skipped the PRED# log).
+function buildChatBody({ model, prompt, maxTokens, temperature, topP, json = false }) {
   return {
     model,
     messages: [{ role: 'user', content: prompt }],
@@ -326,10 +485,33 @@ function buildChatBody({ model, prompt, maxTokens, temperature, topP }) {
     temperature,
     top_p: topP,
     thinking: { type: 'disabled' },
+    ...(json ? { response_format: { type: 'json_object' } } : {}),
   };
 }
 
+
+// "Was a forecast already generated today?" from the stored item itself: copies keep the original
+// generatedAt, so this survives sibling copies and reuse-by-fingerprint (which write no PRED# row).
+function forecastedOn(item, day) {
+  return Boolean(item && typeof item.generatedAt === 'string' && item.generatedAt.slice(0, 10) === day);
+}
+
+// Topic ids of today's archive entries that carry this threadId (candidates to copy a forecast from).
+function threadSiblingsToday(archiveEntries, threadId) {
+  if (!threadId) return [];
+  return [...new Set((archiveEntries || []).filter((e) => e && e.threadId === threadId && e.topicId).map((e) => e.topicId))];
+}
+
 module.exports = {
+  PROMPT_VERSION,
+  forecastedOn,
+  threadSiblingsToday,
+  findDateMentions,
+  findEventMentions,
+  buildGroundIndex,
+  ungroundedClaims,
+  stripUngroundedSentences,
+  groundForecastContent,
   modelForKind,
   buildChatBody,
   sourceFingerprint,

@@ -47,6 +47,65 @@ async function liveDeepSeekModels() {
   return (j?.data || []).map((m) => m.id);
 }
 
+// DeepSeek balance guard (P5). GET /user/balance; every amount is a STRING.
+// Docs: https://api-docs.deepseek.com/api/get-user-balance
+//   { is_available: bool, balance_infos: [{ currency: 'CNY'|'USD', total_balance, granted_balance, topped_up_balance }] }
+// Alerts when the account is unavailable or USD total_balance < DEEPSEEK_BALANCE_ALERT_USD (default 3).
+// Burn figure is the approximate current rate, used only for the "~N days" line in the alert.
+const BALANCE_URL = 'https://api.deepseek.com/user/balance';
+const BALANCE_ALERT_USD = Number(process.env.DEEPSEEK_BALANCE_ALERT_USD) || 3;
+const DAILY_BURN_USD = 0.75;
+
+async function checkDeepSeekBalance({ fetchImpl = fetch, publish = defaultPublish } = {}) {
+  if (!DEEPSEEK_KEY) { console.warn('newsModelGuard: no DEEPSEEK_API_KEY, balance check skipped'); return null; }
+  let body;
+  try {
+    const res = await fetchImpl(BALANCE_URL, { headers: { Authorization: `Bearer ${DEEPSEEK_KEY}` } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    body = await res.json();
+  } catch (e) {
+    console.warn(`newsModelGuard: DeepSeek balance fetch failed: ${e.message}`);
+    return null;
+  }
+  const infos = Array.isArray(body?.balance_infos) ? body.balance_infos : [];
+  const usd = infos.find((b) => b.currency === 'USD');
+  const usdTotal = usd ? Number(usd.total_balance) : NaN;
+  const unavailable = body?.is_available === false;
+  const low = Number.isFinite(usdTotal) && usdTotal < BALANCE_ALERT_USD;
+  if (!unavailable && !low) {
+    console.log(JSON.stringify({ deepseekBalanceUsd: usdTotal, threshold: BALANCE_ALERT_USD, alerted: false }));
+    return { alerted: false };
+  }
+  if (!unavailable && !Number.isFinite(usdTotal)) {
+    console.warn('newsModelGuard: DeepSeek balance response had no usable USD total_balance');
+    return null;
+  }
+  const amount = Number.isFinite(usdTotal) ? `$${usdTotal.toFixed(2)}` : 'unknown';
+  const days = Number.isFinite(usdTotal) ? Math.floor(usdTotal / DAILY_BURN_USD) : null;
+  const others = infos.filter((b) => b.currency !== 'USD')
+    .map((b) => `${b.currency} total ${b.total_balance}`).join(', ') || 'none';
+  const message =
+    `newsModelGuard ALERT — DeepSeek balance.\n\n` +
+    `USD total_balance: ${amount} (alert threshold $${BALANCE_ALERT_USD.toFixed(2)})\n` +
+    `is_available: ${body?.is_available}\n` +
+    `Other currencies: ${others}\n\n` +
+    (days !== null ? `At ~$${DAILY_BURN_USD.toFixed(2)}/day this is ~${days} days.\n\n` : '') +
+    `Checked at ${new Date().toISOString()}.`;
+  const subject = `DeepSeek balance low: ${amount}${unavailable ? ' (is_available=false)' : ''}`;
+  try {
+    await publish({ subject, message });
+  } catch (e) {
+    console.warn(`newsModelGuard: DeepSeek balance SNS publish failed: ${e.message}`);
+    return null;
+  }
+  return { alerted: true, usdTotal };
+}
+
+async function defaultPublish({ subject, message }) {
+  if (!SNS_TOPIC_ARN) { console.warn('newsModelGuard: no SNS_TOPIC_ARN, balance alert not sent'); return; }
+  await sns.send(new PublishCommand({ TopicArn: SNS_TOPIC_ARN, Subject: subject, Message: message }));
+}
+
 async function listAllFunctions() {
   const out = [];
   let marker;
@@ -58,7 +117,10 @@ async function listAllFunctions() {
   return out;
 }
 
+exports.checkDeepSeekBalance = checkDeepSeekBalance;
+
 exports.handler = async () => {
+  try { await checkDeepSeekBalance(); } catch (e) { console.warn(`newsModelGuard: balance check error: ${e.message}`); }
   let live = null;
   let liveErr = null;
   try { live = await liveDeepSeekModels(); } catch (e) { liveErr = e.message; }

@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-10-17 (DeepSeek low-balance alert, P5 of the grounded-forecast plan)
+
+- **`newsModelGuard` (deployed 2026-10-17 13:07 UTC):** the daily 12:00 UTC check now also calls `GET https://api.deepseek.com/user/balance` and publishes to SNS `GlobalPerspectiveAlerts` when `is_available` is false or the USD `total_balance` < `DEEPSEEK_BALANCE_ALERT_USD` (default $3), with a days-left estimate at ~$0.75/day. A failed balance fetch only logs a warning; the existing /models checks are unchanged. Tests `test/balance.test.js` 4/4. First real check 2026-10-18 12:00 UTC. Reason: 4th silent balance lapse (2026-10-12 → 10-15).
+
 ## 2026-10-17 (research job: reuse path fixed; DeepSeek balance lapse 10-12 → 10-15)
 
 - **`NewsProjectInvokeAgentLambda-dev` (deployed 2026-10-17 12:53 UTC):** `touchItem` updated the `ttl` attribute without a name placeholder; `ttl` is a DynamoDB reserved word, so every exact-id reuse threw "Invalid UpdateExpression ... reserved keyword: ttl" and that topic failed (1 per run on 10-16 and 10-17). The code predates the 10-05 reuse change but was never reached until reuse started firing. Now `#ttl` via `ExpressionAttributeNames`. Checked: 43 tests pass; the fixed expression run against the real table on a non-existent key returned the expected conditional failure (no write).

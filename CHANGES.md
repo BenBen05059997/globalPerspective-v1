@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-10-17 (Jev story-selection backtest, P6 — no live change)
+
+- `predictions/jev-backtest/run.mjs` replays 40 past selection runs (2026-09-30 → 10-17, outage 10-12…10-15 skipped) against Jev (TypeSafe `jev-1.13.0`; operator-supplied key read from `~/.config/globalperspective/jev.key`, never logged). Candidates = story-scan corpus for the 8h before each run, grouped with the existing `clusterStories` (~400 per run); Jev answers publish (yes-probability) + importance (5 levels); code applies the selector's stated quotas. Results: overlap with what we published 14% (chance ~3%; a lower bound because the clusterer splits one story into several), big-event misses ours 111 vs Jev 80, cost $0.47 for 11,007 calls (~$0.017 per live run), median 162 ms per call. Blind review sheet (20 pairs) + key for the operator. No conclusion before that review.
+
 ## 2026-10-17 (topic selection keeps a dated history of every run)
 
 - **`newsInvokeGemini-dev` (deployed 14:04 UTC):** `captureIngestion` now also writes `audit/ingest-capture/YYYY-MM-DD/HHMM.json` (what the selector saw + what it chose) next to the existing `latest.json` (still read by `newsImpactAudit`). Before, each run overwrote `latest.json`, so past selections could not be replayed. Needed for the Jev selection backtest/shadow week (plan P6). ~80 KB per run, 3 runs/day; no IAM change (the role already writes `audit/ingest-capture/*`).

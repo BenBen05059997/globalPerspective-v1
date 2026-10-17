@@ -34,7 +34,7 @@
 | P3 | One forecast per story per UTC day (threadId reuse) | ✓ deployed with P1; live check at 20:25 UTC pending | 2 live runs measured |
 | P4 | Token-usage logging (all DeepSeek callers) | ✓ 8 Lambdas (`3eb878a`, `fcd533e`); first live line 13:50 | real counts in logs for 24h |
 | P5 | Low-balance alert in `newsModelGuard` | ✓ deployed 13:07 (`a6d755a`); first check 10-18 12:00 UTC | test alert received |
-| P6 | Jev "post this story?" backtest | ☐ blocked on Jev key + new-paid-API yes | backtest report |
+| P6 | Jev "post this story?" backtest | ✓ backtest run (`67b2fbc`, `predictions/jev-backtest/REPORT.md`); operator blind review of 20 pairs pending; then shadow week (dated capture history live since 10-17 14:04, `a6b9bfc`) | backtest report |
 
 **P0 — before/after harness (no live change).** Script `predictions/forecast-ab/run.mjs` loads the live job's prompt builders (module loaded with stubbed AWS SDK, as in the 10-05 reuse simulation), rebuilds today's inputs for the stored topics (staging topics item, FACTS#, 7-day archive digest), and runs A = current two-call path and B = new single grounded call on the same 12 stories. DeepSeek key read from the job's Lambda env inside the process only, never printed or written (operator yes 2026-10-17). Cost ~$0.10. Output `predictions/forecast-ab/REPORT_2026-10-17.md` (side by side per story) with measured metrics:
 - dated claims in rationale/questions whose date or named scheduled event is NOT in the inputs (ungrounded-date count; hand-check a sample against a source);

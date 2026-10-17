@@ -35,6 +35,7 @@
 | P4 | Token-usage logging (all DeepSeek callers) | ✓ 8 Lambdas (`3eb878a`, `fcd533e`); first live line 13:50 | real counts in logs for 24h |
 | P5 | Low-balance alert in `newsModelGuard` | ✓ deployed 13:07 (`a6d755a`); first check 10-18 12:00 UTC | test alert received |
 | P6 | Jev "post this story?" backtest | ✓ backtest run (`67b2fbc`, `predictions/jev-backtest/REPORT.md`); operator blind review of 20 pairs pending; then shadow week (dated capture history live since 10-17 14:04, `a6b9bfc`) | backtest report |
+| P7 | Layered story selection (count + spread, Jev rescue/filter, GDACS slot, code quotas) | ☐ v3 backtest running; then blind review → shadow week → switch | operator go after shadow week |
 
 **P0 — before/after harness (no live change).** Script `predictions/forecast-ab/run.mjs` loads the live job's prompt builders (module loaded with stubbed AWS SDK, as in the 10-05 reuse simulation), rebuilds today's inputs for the stored topics (staging topics item, FACTS#, 7-day archive digest), and runs A = current two-call path and B = new single grounded call on the same 12 stories. DeepSeek key read from the job's Lambda env inside the process only, never printed or written (operator yes 2026-10-17). Cost ~$0.10. Output `predictions/forecast-ab/REPORT_2026-10-17.md` (side by side per story) with measured metrics:
 - dated claims in rationale/questions whose date or named scheduled event is NOT in the inputs (ungrounded-date count; hand-check a sample against a source);
@@ -60,6 +61,21 @@
 **P5 — low-balance alert.** `newsModelGuard` already holds the DeepSeek key and publishes to SNS: add `GET https://api.deepseek.com/user/balance` (check the current endpoint/response in DeepSeek docs at build time) and alert when total balance < $3 (~4 days at the current rate); include the measured daily burn from P4. Verify with a one-off test threshold.
 
 **P6 — Jev gate backtest (after the operator supplies the key; new paid API needs a fresh yes).** Jev (TypeSafe) is a decision model: Choice / Score / yes-probability over text, no writing ([Requesty](https://www.requesty.ai/blog/typesafe-jev-explained)); ~$0.042 per M input, output free; experimental, pin a versioned model id. Design: candidates (story-scan stories or topic selection's raw headline pool) → Jev answers "should Global Perspectives publish this today, given these editorial rules?" (rules copied from the topic-selection prompt: impact, region/category spread, not a repeat) → code applies quotas + dedup and picks top N → a small flash call writes titles/descriptions for the chosen only. Backtest on `GlobalPerspectiveIngestCapture` (SAW vs CHOSE per past run): agreement with past picks, recall of high-impact stories per `IMPACT_VALIDATION_METHODOLOGY.md`, cost. Only public headlines are sent. No live switch without operator review of the backtest.
+
+
+**P7 — layered story selection (operator go 2026-10-17: "plan it and then do it").** Design agreed in discussion 2026-10-17 (layers, each doing only what it is good at):
+1. Intake + filter = the story scan (`newsSituationIngest`): real events only (`kind=event`, axis, severity ≥ 2), soft news/opinion already dropped. One intake for the map and the site (= map plan S7 "selector reads stories/index.json").
+2. Rank = outlet count + spread across outlet regions (free, objective; best on the hindsight test).
+3. Jev (TypeSafe `jev-1.13.0`, pinned): only `impact` (beyond the country, 5 levels) and `new_since_last_brief`; drops not-new stories and rescues at most 3 high-impact low-coverage stories per run.
+4. GDACS Red = one reserved slot.
+5. Code = selector quotas, ≤ 2 per primary country (our reading of "regional diversity"), one pick per story; every pick carries its reason line.
+6. A small flash call writes titles/descriptions for the chosen stories only; the topic shape stays the same so the research job, pages, email and LinkedIn are unaffected.
+Steps and gates:
+- **P7a backtest v3** (`predictions/jev-backtest/`, no new Jev spend): fixed over-merge, combined ranker, non-Western hindsight row. Expected (estimates): became-big recall ~85–90% (ours 80%), early recall ~50–55% (ours 49%), big misses ~40–45 (ours 65), dead picks ~45–55% (ours 47%).
+- **P7b blind review**: operator delegated it to Claude (2026-10-17). To stay blind, a separate agent judges 20 combined-only vs ours-only pairs with a written rubric (decision-relevance for a thesis-producing analyst, novelty, scope beyond one country, source strength), never sees `REVIEW_KEY.json`, judges every pair twice with the order swapped and counts a win only when both orders agree (position-bias control, Zheng et al. 2023 MT-Bench); the main session unblinds and tallies. Limitation: a model's taste, not the operator's — the operator can spot-check 5 pairs.
+- **P7c shadow week** (needs the Jev key in the selector's Lambda env = secret handling → fresh operator yes at that step): after each live selection run, run the combined selector on the same inputs and write its picks + reasons to `audit/selection-shadow/YYYY-MM-DD/HHMM.json`; no site change. Daily comparison against the dated capture history (`audit/ingest-capture/`, live since 2026-10-17 14:04).
+- **P7d switch** (fresh operator go): combined selector becomes the live selector; today's DeepSeek selector stays as the automatic fallback (Jev error / empty result); reason line shown on pages = a separate frontend task.
+Success bar for P7d: hindsight recall ≥ ours, big misses < ours, non-Western recall not worse than ours, blind review not worse than ours, shadow week with 0 failed runs.
 
 **Changes (code):**
 - `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` (P1 prompt + single call; P3 threadId reuse + PRED gap; P4 usage logging)

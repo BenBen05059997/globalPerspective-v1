@@ -1,5 +1,10 @@
 # Global Perspectives — Change Log
 
+## 2026-10-17 (research job: reuse path fixed; DeepSeek balance lapse 10-12 → 10-15)
+
+- **`NewsProjectInvokeAgentLambda-dev` (deployed 2026-10-17 12:53 UTC):** `touchItem` updated the `ttl` attribute without a name placeholder; `ttl` is a DynamoDB reserved word, so every exact-id reuse threw "Invalid UpdateExpression ... reserved keyword: ttl" and that topic failed (1 per run on 10-16 and 10-17). The code predates the 10-05 reuse change but was never reached until reuse started firing. Now `#ttl` via `ExpressionAttributeNames`. Checked: 43 tests pass; the fixed expression run against the real table on a non-existent key returned the expected conditional failure (no write).
+- **DeepSeek balance ran out again** (4th lapse): `402 Insufficient Balance` from 2026-10-12 12:25 UTC (research job first) until a top-up around 2026-10-15 07:00 UTC; every DeepSeek caller failed for ~2.5 days (story scan, topic selection, research/forecasts, link webs, country briefings, thread analysis). All recovered by 10-15 12:26; no code change needed.
+
 ## 2026-10-06 (front Worker /blog fix: prepared, NOT deployed)
 
 - Added `cloudflare/front-worker/production/worker.mjs` = live `globalperspective-rss` baseline plus one passthrough: GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin (fixes the 8 static blog pages being shadowed by the shell). Tests in `production/worker.test.mjs` (9 pass, baseline-vs-patched identical for 20 non-blog requests). Nothing uploaded; the live Worker is unchanged until a deploy is approved.

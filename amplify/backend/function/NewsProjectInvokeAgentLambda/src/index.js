@@ -631,8 +631,10 @@ async function touchItem(pk, sk, generationId, ttlSeconds) {
     await ddb.send(new UpdateCommand({
       TableName: SUMMARY_TABLE,
       Key: { PK: pk, SK: sk },
-      UpdateExpression: 'SET generationId = :g, ttl = :t, lastVerifiedAt = :n',
+      // `ttl` is a DynamoDB reserved word, so it must go through an attribute-name placeholder.
+      UpdateExpression: 'SET generationId = :g, #ttl = :t, lastVerifiedAt = :n',
       ConditionExpression: 'attribute_exists(PK)',
+      ExpressionAttributeNames: { '#ttl': 'ttl' },
       ExpressionAttributeValues: { ':g': generationId, ':t': Math.floor(Date.now() / 1000) + ttlSeconds, ':n': new Date().toISOString() },
     }));
   } catch (err) {

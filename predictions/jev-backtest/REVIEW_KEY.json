@@ -14,8 +14,8 @@
     "option1": "combined",
     "option2": "ours",
     "ourTitle": "Trump Calls for New President in Ukraine, Blames Zelenskyy for Diesel Prices",
-    "combinedTitle": "Tropical Cyclone SIMON-26",
-    "combinedImpact": 2.03
+    "combinedTitle": "Man dies after entering tiger enclosure at England wildlife park",
+    "combinedImpact": 1.06
   },
   {
     "pair": 3,
@@ -38,27 +38,27 @@
   {
     "pair": 5,
     "run": "gen-1791087355049",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Medical Plane with 6 Onboard Missing Off Massachusetts Coast",
-    "combinedTitle": "Russia ramps up attacks on Kyiv, strikes school and hospital",
-    "combinedImpact": 4.04
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Houthis Claim Strike on Aramco Oil Facility Near Riyadh as Saudi Arabia Strikes Sanaa",
+    "combinedTitle": "Cornell president responds to frat house rape allegations",
+    "combinedImpact": 1.16
   },
   {
     "pair": 6,
     "run": "gen-1791461761336",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Tanker Hit by Multiple Projectiles Off Qatar, Casualties Reported",
-    "combinedTitle": "Trump pushed Xi to end Japan freeze, Xi unmoved",
-    "combinedImpact": 3.58
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "Eritrean Troops Enter Ethiopia's Tigray Region",
+    "combinedTitle": "Anne Carson wins 2026 Nobel Prize in Literature",
+    "combinedImpact": 1.72
   },
   {
     "pair": 7,
     "run": "gen-1791288969760",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Saudi Arabia urged to spare man sentenced to death over Facebook post",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "Yemeni military says it has secured Red Sea waterway",
     "combinedTitle": "Francis Halzen wins 2026 Nobel Prize in Physics",
     "combinedImpact": 2.55
   },
@@ -67,7 +67,7 @@
     "run": "gen-1791346556599",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "Houthi Missiles Target Aden International Airport in Yemen",
+    "ourTitle": "Paramount Completes $111B Warner Merger, Creating 'Skydance' Behemoth",
     "combinedTitle": "Vance says Iran must cut enrichment to end war",
     "combinedImpact": 4.14
   },
@@ -76,18 +76,18 @@
     "run": "gen-1790972160992",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "Israel's Supreme Court Overturns Election Panel Ban on Arab Parties",
-    "combinedTitle": "Man City could face fines, EPL expulsion over financial rules",
-    "combinedImpact": 2.15
+    "ourTitle": "Ethiopia and Eritrea Cut Diplomatic Ties as Tensions Rise",
+    "combinedTitle": "Taiwan Coast Guard confronts Chinese fishing boats in Dongsha waters",
+    "combinedImpact": 2.93
   },
   {
     "pair": 10,
     "run": "gen-1790856965624",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Pakistan Airstrikes Kill Nine in Afghanistan, Taliban Say",
-    "combinedTitle": "Russia strikes Ukraine as Zelenskyy visits frontline",
-    "combinedImpact": 4.1
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "Explosions Heard in Ethiopia's Capital After Drone Flights Banned",
+    "combinedTitle": "Afghanistan says nine killed in Pakistani air raids",
+    "combinedImpact": 2.98
   },
   {
     "pair": 11,
@@ -110,9 +110,9 @@
   {
     "pair": 13,
     "run": "gen-1791576960061",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Nobel Peace Prize Awarded to Navi Pillay for International Law Work",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Kenya Confirms First Ebola Case as Outbreak Spreads from DR Congo",
     "combinedTitle": "US officials defend ICE agents who shot man with child in car",
     "combinedImpact": 1.36
   },
@@ -121,25 +121,25 @@
     "run": "gen-1791000961707",
     "option1": "combined",
     "option2": "ours",
-    "ourTitle": "Ethiopia and Eritrea Sever Diplomatic Ties as Fighting Escalates in Northern Ethiopia",
+    "ourTitle": "DR Congo Ebola Outbreak Surpasses 4,000 Deaths Amid Violence and Mistrust",
     "combinedTitle": "Putin warns West Russia ready to use every weapon for Kaliningrad",
     "combinedImpact": 3.99
   },
   {
     "pair": 15,
     "run": "gen-1792210564180",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Ukraine's Operation Vivaldi Pushes Russia Back in Donbas with Starlink Support",
-    "combinedTitle": "Iran not seeking nuclear weapons, ready for dialogue: Pezeshkian",
-    "combinedImpact": 4
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Israeli Settlers Attack Palestinians and US Journalist During West Bank Olive Harvest",
+    "combinedTitle": "North Korea tests new AI-guided torpedo",
+    "combinedImpact": 3.61
   },
   {
     "pair": 16,
     "run": "gen-1792124168577",
-    "option1": "combined",
-    "option2": "ours",
-    "ourTitle": "Somalia Sets Parliamentary and Presidential Election Dates for 2027",
+    "option1": "ours",
+    "option2": "combined",
+    "ourTitle": "Trump Cancels Livestream of Fort Hood Shooter's Firing Squad Execution",
     "combinedTitle": "19 injured as bus collides with train in Channel Tunnel",
     "combinedImpact": 2.82
   },
@@ -148,7 +148,7 @@
     "run": "gen-1791605778055",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "Powerful 7.7 Magnitude Earthquake Hits Panama, Triggering Tsunami Warnings",
+    "ourTitle": "Navi Pillay Wins Nobel Peace Prize for International Justice Work",
     "combinedTitle": "Zelenskyy blasts US as strikes kill 78 in Ukraine",
     "combinedImpact": 4.12
   },
@@ -157,16 +157,16 @@
     "run": "gen-1791548159245",
     "option1": "combined",
     "option2": "ours",
-    "ourTitle": "ICE Agent Shoots Man in New York City, Sparking Protests",
-    "combinedTitle": "USS Abraham Lincoln crew returns after Middle East deployment",
-    "combinedImpact": 3.35
+    "ourTitle": "US Suspends Green Card Sponsorship for Top Tech Firms, Impacting Thousands of IT Workers",
+    "combinedTitle": "Nobel Peace Prize awarded to Navanethem 'Navi' Pillay",
+    "combinedImpact": 3.46
   },
   {
     "pair": 19,
     "run": "gen-1791375379811",
-    "option1": "ours",
-    "option2": "combined",
-    "ourTitle": "Paramount Completes $111 Billion Warner Bros. Merger, Creating Skydance",
+    "option1": "combined",
+    "option2": "ours",
+    "ourTitle": "Houthis Attack Aden Airport and Saudi Targets as Yemen Conflict Intensifies",
     "combinedTitle": "Two killed in Kyiv as Russia launches massive attack",
     "combinedImpact": 3.99
   },
@@ -175,7 +175,7 @@
     "run": "gen-1791432961926",
     "option1": "ours",
     "option2": "combined",
-    "ourTitle": "France Student Protests Continue as Government Suspends Stun Grenades",
+    "ourTitle": "Israel Marks Three Years Since October 7 Attacks Amid Reports Netanyahu Was Warned",
     "combinedTitle": "Texas carries out first US execution since Pike botched case",
     "combinedImpact": 1.3
   }

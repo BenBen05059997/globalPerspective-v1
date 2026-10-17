@@ -30,7 +30,7 @@ const RESULTS = path.join(HERE, 'results.json'); // per-candidate Jev answers, k
 const DRY = process.argv.includes('--dry');
 const FIRST_DAY = '2026-09-30', LAST_DAY = '2026-10-17';
 const SKIP_DAYS = new Set(['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15']); // DeepSeek outage: no selections
-const WINDOW_H = 8, LATER_H = 72, JACCARD = 0.3, MAX_PER_COUNTRY = 2, EARLY_OUTLETS = 4, FREQUENT = 0.05, RESCUE_MAX = 3, CONCURRENCY = 4, BUDGET_USD = 0.95, USD_PER_M = 0.042, SEED = 20261017;
+const WINDOW_H = 8, LATER_H = 72, JACCARD = 0.3, MAX_PER_COUNTRY = 2, EARLY_OUTLETS = 4, FREQUENT = 0.05, RESCUE_MAX = 2, CONCURRENCY = 4, BUDGET_USD = 0.95, USD_PER_M = 0.042, SEED = 20261017;
 const MUST_HAVE = ['climate', 'science', 'society', 'energy', 'business']; // selection prompt rule 7
 // North America + Western Europe, for the non-Western hindsight split
 const WEST = new Set(['USA', 'CAN', 'GBR', 'IRL', 'FRA', 'DEU', 'NLD', 'BEL', 'LUX', 'CHE', 'AUT', 'ESP', 'PRT', 'ITA', 'DNK', 'NOR', 'SWE', 'FIN', 'ISL']);
@@ -125,6 +125,8 @@ function mergeCands(cands, skip) { // union-find over `same`; returns merged can
   assert.equal(m.find((c) => c.ids.includes('1')).outlets, 2);
 }
 
+const laterOutlets = (c, later, skip) => new Set(later.filter((x) => same(c, x, skip)).map((x) => x.items[0].domain)).size;
+
 function buildCandidates(run) {
   const hourStart = new Date(Math.floor(run.time / 36e5) * 36e5);
   const hour = (h) => corpusFile(new Date(+hourStart + h * 36e5));
@@ -137,12 +139,13 @@ function buildCandidates(run) {
   const skip = frequent(events), cands = mergeCands(clusters, skip);
   const articleUrls = new Set(articles.map((a) => urlKey(a.url)));
   const hasLater = hour(LATER_H).length > 0; // hindsight needs the corpus 72h after the run
-  if (hasLater) { // later coverage: distinct outlets of NEW articles (not in the pre-run window) that are the same story
-    const later = new Map();
-    for (let h = 1; h <= LATER_H; h++) for (const a of hour(h)) if (!articleUrls.has(urlKey(a.url)) && !later.has(a.url) && eligible(a)) later.set(a.url, mkCand([a], []));
-    for (const c of cands) c.later = new Set([...later.values()].filter((x) => same(c, x, skip)).map((x) => x.items[0].domain)).size;
-  }
-  return { cands, skip, articleUrls, nArticles: articles.length, nEvents: events.length, nClusters: clusters.length, hasLater };
+  const earlier = new Set(hour(-WINDOW_H).map((a) => a.url)); // growth: outlets now minus outlets of the same story already in the corpus snapshot 8h before the run
+  for (const c of cands) c.growth = c.outlets - new Set(c.items.filter((i) => earlier.has(i.url)).map((i) => i.domain)).size;
+  const later = new Map(); // later coverage: NEW articles (not in the pre-run window) in the following 72h
+  if (hasLater) for (let h = 1; h <= LATER_H; h++) for (const a of hour(h)) if (!articleUrls.has(urlKey(a.url)) && !later.has(a.url) && eligible(a)) later.set(a.url, mkCand([a], []));
+  const laterList = [...later.values()];
+  for (const c of cands) c.later = laterOutlets(c, laterList, skip);
+  return { cands, skip, later: laterList, articleUrls, nArticles: articles.length, nEvents: events.length, nClusters: clusters.length, hasLater };
 }
 
 // ---------- GDACS: the situations tracker's history[] gives each event's alert level over time ----------
@@ -155,7 +158,7 @@ function gdacsCands(sits, t) { // events whose alert level at time t is Red or O
   return sits.flatMap((s) => {
     const level = s.history.filter((h) => Date.parse(h.at) <= t).pop()?.level;
     if (!['Red', 'Orange'].includes(level) || (s.closed_at && Date.parse(s.closed_at) <= t)) return [];
-    return [{ ids: [s.situationId], items: [], title: s.title, primary: s.iso3_origin[0] || s.iso3_affected[0], iso3: s.iso3_affected, domains: [], outlets: 0, articles: 0, severity: 0, category: 'disaster', gdacs: level,
+    return [{ ids: [s.situationId], items: [], title: s.title, primary: s.iso3_origin[0] || s.iso3_affected[0], iso3: s.iso3_affected, domains: [], growth: 0, outlets: 0, articles: 0, severity: 0, category: 'disaster', gdacs: level,
       headlines: [s.verb_label, s.evidence.gdacs_description], urls: new Set(), toks: [tokens(s.title)], ents: new Set() }];
   });
 }
@@ -206,19 +209,20 @@ async function pool(items, fn) { let i = 0, done = 0; await Promise.all(Array.fr
 
 // ---------- selection (one function) ----------
 // v2 selector (combined = false): drop new_since_last_brief < 0.4, drop stories picked in the previous 24h, require >= 2 outlets unless severity 5 or GDACS,
-// rank by impact (tie: outlets). Combined selector: outlet count plus distinct outlet countries is the score; a story with < 4 outlets enters only on
-// impact >= 4 (rescue, at most RESCUE_MAX per run). Both: one reserved slot for the best GDACS Red event outside the quotas; selector rule 7: no category
-// above 25% (rounded up), >= 1 each of MUST_HAVE when a candidate with impact >= 3 exists; our interpretation of the prompt's "regional diversity": at most
-// 2 picks per primary country (not a stated rule).
+// rank by impact (tie: outlets). Combined (v4): same drops; a 1-outlet story enters only on impact >= 4 (rescue, at most RESCUE_MAX per run); rank by growth
+// (outlets now minus outlets 8h earlier), then outlet-country spread, then outlets, then impact. Both: one reserved slot for the best GDACS Red event outside
+// the quotas; selector rule 7: no category above 25% (rounded up), >= 1 each of MUST_HAVE when a candidate with impact >= 3 exists; our interpretation of the
+// prompt's "regional diversity": at most 2 picks per primary country (not a stated rule).
 const spread = (c) => c.outlets + new Set(c.domains.map((d) => getOutletMeta(d)?.country).filter(Boolean)).size;
 function select(scored, n, seen, combined) {
   const cap = Math.ceil(0.25 * n), cat = {}, cty = {}, picks = [];
-  const entry = (s) => s.c.gdacs || (combined ? s.c.outlets >= 4 || s.impact >= 4 : s.c.outlets >= 2 || s.c.severity === 5);
-  const pool_ = scored.filter((s) => s.nw >= 0.4 && !seen(s.c) && entry(s)).sort((a, b) => (combined ? spread(b.c) - spread(a.c) : b.impact - a.impact) || b.c.outlets - a.c.outlets);
+  const entry = (s) => s.c.gdacs || s.c.outlets >= 2 || (combined ? s.impact >= 4 : s.c.severity === 5);
+  const order = combined ? (a, b) => b.c.growth - a.c.growth || spread(b.c) - spread(a.c) || b.c.outlets - a.c.outlets || b.impact - a.impact : (a, b) => b.impact - a.impact || b.c.outlets - a.c.outlets;
+  const pool_ = scored.filter((s) => s.nw >= 0.4 && !seen(s.c) && entry(s)).sort(order);
   const slot = pool_.find((s) => s.c.gdacs === 'Red');
   if (slot) picks.push(slot);
-  const rescued = () => picks.filter((s) => !s.c.gdacs && s.c.outlets < 4).length;
-  const ok = (s) => picks.length < n && !picks.includes(s) && (cat[s.c.category] || 0) < cap && (cty[s.c.primary] || 0) < MAX_PER_COUNTRY && (!combined || s.c.gdacs || s.c.outlets >= 4 || rescued() < RESCUE_MAX);
+  const rescued = () => picks.filter((s) => !s.c.gdacs && s.c.outlets < 2).length;
+  const ok = (s) => picks.length < n && !picks.includes(s) && (cat[s.c.category] || 0) < cap && (cty[s.c.primary] || 0) < MAX_PER_COUNTRY && (!combined || s.c.gdacs || s.c.outlets >= 2 || rescued() < RESCUE_MAX);
   const add = (s) => { picks.push(s); cat[s.c.category] = (cat[s.c.category] || 0) + 1; cty[s.c.primary] = (cty[s.c.primary] || 0) + 1; };
   for (const k of MUST_HAVE) { const s = pool_.find((x) => x.c.category === k && x.impact >= 3 && ok(x)); if (s) add(s); }
   for (const s of pool_) if (ok(s)) add(s);
@@ -237,7 +241,7 @@ for (const p of prepared) {
   p.gdacs = gdacsCands(sits, +p.run.time);
   p.cands.push(...p.gdacs);
   matchTopics(p.run.topics, p.cands);
-  p.picks = { ours: [...new Set(p.run.topics.map((t) => t.best).filter(Boolean))] };
+  p.picks = {};
   p.covered = runs.filter((r) => r.time < p.run.time && p.run.time - r.time < 864e5).flatMap((r) => r.topics.map((t) => t.title)); // what we published in the previous 24h
   p.toScore = p.cands.filter((c) => c.gdacs || c.outlets >= 2 || c.severity === 5); // the outlet rule is applied in code, so Jev is not asked about stories it would drop anyway
 }
@@ -262,15 +266,22 @@ if (process.argv.includes('--score')) {
 }
 
 // ---------- per-run selection ----------
-const SIDES = { ours: 'Ours (published)', jev: 'Jev v2', base: 'Outlet-count baseline', comb: 'Combined' };
+const SIDES = { ours: 'Ours (published)', oursm: 'Ours, matched topics only', jev: 'Jev v2', base: 'Outlet-count baseline', growth: 'Growth baseline', comb: 'Combined v4' };
 const got = (side, p, S, hours = 72, maxOutlets = Infinity) => prepared.some((q) => +p.run.time - +q.run.time >= 0 && +p.run.time - +q.run.time < hours * 36e5 && (q.picks[side] || []).some((P) => !P.gdacs && P.outlets < maxOutlets && (P === S || same(S, P, p.skip))));
-for (const p of prepared) {
+const topN = (side, p, f) => p.cands.filter((c) => !c.gdacs && !got(side, p, c, 24)).sort(f).slice(0, p.run.topics.length);
+const byOutlets = (a, b) => b.outlets - a.outlets || b.articles - a.articles;
+for (const p of prepared) { // every side gets the same 24h self-dedup; an unmatched published topic is its own pick, matched to later coverage by its title and source domains
+  const pseudo = (t) => { const domains = [...new Set(t.urls.map((u) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return u; } }))]; const c = { ids: [], items: [], title: t.title, primary: t.iso3[0], iso3: t.iso3, domains, outlets: domains.length, articles: t.urls.length, severity: 0, category: t.category, headlines: [], urls: new Set(), toks: [tokens(t.title)], ents: new Set(), growth: 0 }; if (p.hasLater) c.later = laterOutlets(c, p.later, p.skip); return c; };
+  const matched = [...new Set(p.run.topics.map((t) => t.best).filter(Boolean))], all = [...matched, ...p.run.topics.filter((t) => !t.best && t.iso3.length).map(pseudo)];
+  p.picks.oursm = matched.filter((c) => !got('oursm', p, c, 24));
+  p.picks.ours = all.filter((c) => !got('ours', p, c, 24));
   p.scored = p.toScore.flatMap((c) => { const a = store.answers[hashOf(stateOf(c, p.covered))]; return a ? [{ c, ...a }] : []; }); // a missing answer skips the candidate
   p.missing = p.toScore.length - p.scored.length;
   const n = p.run.topics.length;
   p.picks.jev = select(p.scored, n, (c) => got('jev', p, c, 24), false).map((s) => s.c);
   p.picks.comb = select(p.scored, n, (c) => got('comb', p, c, 24), true).map((s) => s.c);
-  p.picks.base = p.cands.filter((c) => !c.gdacs && !got('base', p, c, 24)).sort((a, b) => b.outlets - a.outlets || b.articles - a.articles).slice(0, n);
+  p.picks.base = topN('base', p, byOutlets);
+  p.picks.growth = topN('growth', p, (a, b) => b.growth - a.growth || byOutlets(a, b));
 }
 
 // ---------- metrics ----------
@@ -287,12 +298,12 @@ const bigMisses = (side) => sum(prepared.map((p) => p.cands.filter((c) => !c.gda
 const oursCovered = (side) => sum(prepared.map((p) => p.run.topics.filter((t) => t.overlap.some((c) => p.picks[side].includes(c))).length));
 const dist = (arr) => { const m = {}; for (const x of arr) m[x] = (m[x] || 0) + 1; return Object.entries(m).sort((a, b) => b[1] - a[1]); };
 const fmtDist = (d) => d.slice(0, 8).map(([k, v]) => `${k} ${v}`).join(', ');
-const cats = (side) => dist(prepared.flatMap((p) => (side === 'ours' ? p.run.topics.map((t) => t.category) : p.picks[side].map((c) => c.category))));
-const ctys = (side) => dist(prepared.flatMap((p) => (side === 'ours' ? p.run.topics.map((t) => t.iso3[0]) : p.picks[side].map((c) => c.primary))).filter(Boolean));
+const cats = (side) => dist(prepared.flatMap((p) => (side.startsWith('ours') ? p.run.topics.map((t) => t.category) : p.picks[side].map((c) => c.category))));
+const ctys = (side) => dist(prepared.flatMap((p) => (side.startsWith('ours') ? p.run.topics.map((t) => t.iso3[0]) : p.picks[side].map((c) => c.primary))).filter(Boolean));
 const tbl = (head, rows) => [`| ${head.join(' | ')} |`, `|${head.map(() => '---').join('|')}|`, ...rows.map((r) => `| ${r.join(' | ')} |`)].join('\n');
 const sideRows = (f) => Object.entries(SIDES).map(([s, name]) => [name, ...f(s)]);
 const runLabel = (p) => p.run.time.toISOString().slice(0, 16).replace('T', ' ');
-const rescues = prepared.flatMap((p) => p.scored.filter((s) => p.picks.comb.includes(s.c) && !s.c.gdacs && s.c.outlets < 4).map((s) => ({ p, ...s })));
+const rescues = prepared.flatMap((p) => p.scored.filter((s) => p.picks.comb.includes(s.c) && !s.c.gdacs && s.c.outlets < 2).map((s) => ({ p, ...s })));
 
 // review sheet: one combined-only pick vs one ours-only topic from the same run, 20 runs sampled, order randomized
 const combOnly = (p) => p.picks.comb.filter((c) => !p.run.topics.some((t) => t.overlap.includes(c)));
@@ -317,8 +328,8 @@ const gd = (lvl) => prepared.filter((p) => p.gdacs.some((c) => c.gdacs === lvl))
 const allDomains = new Set(prepared.flatMap((p) => p.cands.flatMap((c) => c.domains || [])));
 const known = [...allDomains].filter((d) => getOutletMeta(d)).length;
 fs.writeFileSync(path.join(HERE, 'REPORT.md'), [
-  '# Jev story-selection backtest (P6), v3', '',
-  `Generated by predictions/jev-backtest/run.mjs from the cached Jev answers (model ${store.model}); v3 made no Jev calls. Four selectors, N = the number of topics we published in each run.`, '',
+  '# Jev story-selection backtest (P6), v4', '',
+  `Generated by predictions/jev-backtest/run.mjs from the cached Jev answers (model ${store.model}); v4 made no Jev calls. Selectors: ours, Jev v2, two baselines and Combined v4; N = the number of topics we published in each run. Every side has the same 24h self-dedup (a story already picked by that side in the previous 24h does not count again).`, '',
   `## Hindsight: did the story become big? (${hind.length} runs whose following 72h is in the corpus)`,
   'A story "became big" if distinct outlets publishing the same story (same primary country and a non-frequent shared lead entity or title-token Jaccard >= 0.3) in NEW articles over the 72h after the run reach the threshold. Recall = share of became-big stories the side picked in that run or the previous 72h. Early recall counts only picks made while the story had < 4 outlets. Dead picks = picks that never got more than 2 outlets in the next 72h. Units are (run, story) pairs; GDACS picks are excluded (no outlet count).', '',
   tbl(['Selector', 'Picks scored', 'Dead picks', 'Recall (>=8)', 'Early recall (>=8)', 'Recall (>=5)', 'Early recall (>=5)'], sideRows((s) => [hs[s][8].picks, pct(hs[s][8].dead, hs[s][8].picks), pct(hs[s][8].recall, hs[s][8].big), pct(hs[s][8].early, hs[s][8].big), pct(hs[s][5].recall, hs[s][5].big), pct(hs[s][5].early, hs[s][5].big)])),
@@ -326,17 +337,17 @@ fs.writeFileSync(path.join(HERE, 'REPORT.md'), [
   `Non-Western check: the same metrics for stories whose primary country is outside North America and Western Europe (${hs.ours.w8.big} became-big units at >= 8, ${hs.ours.w5.big} at >= 5).`, '',
   tbl(['Selector', 'Dead picks', 'Recall (>=8)', 'Early recall (>=8)', 'Recall (>=5)', 'Early recall (>=5)'], sideRows((s) => [pct(hs[s].w8.dead, hs[s].w8.picks), pct(hs[s].w8.recall, hs[s].w8.big), pct(hs[s].w8.early, hs[s].w8.big), pct(hs[s].w5.recall, hs[s].w5.big), pct(hs[s].w5.early, hs[s].w5.big)])), '',
   '## Other metrics (all runs)',
-  tbl(['Selector', 'Overlap with ours (topics covered)', 'Big-event misses', 'Category spread', 'Primary country spread'], sideRows((s) => [s === 'ours' ? 'n/a' : `${oursCovered(s)}/${nMatched} (${pct(oursCovered(s), nMatched)})`, bigMisses(s), fmtDist(cats(s)), `${new Set(ctys(s).map((x) => x[0])).size} countries: ${fmtDist(ctys(s))}`])),
+  tbl(['Selector', 'Overlap with ours (topics covered)', 'Big-event misses', 'Category spread', 'Primary country spread'], sideRows((s) => [s.startsWith('ours') ? 'n/a' : `${oursCovered(s)}/${nMatched} (${pct(oursCovered(s), nMatched)})`, bigMisses(s), fmtDist(cats(s)), `${new Set(ctys(s).map((x) => x[0])).size} countries: ${fmtDist(ctys(s))}`])),
   'Big-event miss = a candidate story with >= 8 outlets or severity 5 that the side did not pick in the run or the previous 24h, after merging. Category: ours is the LLM selector\'s category, the others use the classifier category mapped to the selector\'s list.', '',
-  '## What changed from v2',
-  '- Merge fix: an entity that leads more than 5% of a run\'s event articles (Trump and the like) is no longer a merge key, in both the merge and the later-coverage matching. v2 averaged 239 merged stories per run (283 clusters) and its biggest merged story had 11 clusters.',
-  `- Effect: ${avg((p) => p.cands.length - p.gdacs.length)} merged stories per run (v2: 239; ${avg((p) => p.nClusters)} clusters) and a biggest merged story of ${biggest.ids.length} clusters (v2: 11, "${biggest.title}"), so the merge itself barely moves; the effect is in later-coverage matching: became-big units ${hs.ours[8].big} at >= 8 (v2: 199) and ${hs.ours[5].big} at >= 5 (v2: 465).`,
-  `- Combined selector: score = outlet count plus distinct outlet countries (src outlet_metadata.js; ${known} of ${allDomains.size} candidate outlets have a country, the rest add nothing to the spread bonus). Stories with < 4 outlets enter only with Jev impact >= 4 and new_since_last_brief >= 0.4 (rescue, at most ${RESCUE_MAX} per run); anything with new_since_last_brief < 0.4 is dropped; GDACS Red slot, 25% category cap, must-have categories and the 2-per-country cap as in v2. Rescue picks: ${rescues.length} over ${prepared.length} runs.`,
+  '## What changed from v3',
+  `- Combined v4: a story enters with >= 2 outlets (or GDACS); a 1-outlet story (only severity-5 ones were ever sent to Jev) enters on Jev impact >= 4, at most ${RESCUE_MAX} per run. Rank = growth (distinct outlets now minus outlets of the same story already in the corpus snapshot 8h before the run), then outlet-country spread (outlet_metadata.js lists ${known} of ${allDomains.size} candidate outlets; the rest add nothing), then outlets, then Jev impact. Drops new_since_last_brief < 0.4. GDACS Red slot, 25% category cap, must-have categories, 2-per-country cap and one pick per story as before. Rescue (1-outlet) picks: ${rescues.length} over ${prepared.length} runs.`,
+  '- Growth baseline: top N by growth only, same 24h self-dedup.',
+  `- Fairness: ours is also deduped over 24h, and published topics with no matched candidate (${nTopics - nMatched} of ${nTopics}) are scored as their own picks: outlets = distinct source domains, later coverage matched with the same matcher using title tokens only (no entities). Their later coverage is probably under-counted, because LLM-written titles share fewer tokens with corpus headlines. The row "Ours, matched topics only" is the old basis; the headline row includes the unmatched topics.`,
   `- Jev answers are reused from v2. Merging changes a story's state, so some answers are missing: ${sum(prepared.map((p) => p.missing))} of ${sum(prepared.map((p) => p.toScore.length))} candidates (${pct(sum(prepared.map((p) => p.missing)), sum(prepared.map((p) => p.toScore.length)))}) were skipped by Jev v2 and Combined. The baseline and ours do not depend on Jev. Cached v2 spend: $${spent().toFixed(3)}.`,
   `- Removed: Jev v1 column and v1_picks.json (still in git history).`,
   `- Per run: ${avg((p) => p.nArticles)} articles -> ${avg((p) => p.nEvents)} eligible events -> ${avg((p) => p.nClusters)} clusters -> ${avg((p) => p.cands.length - p.gdacs.length)} merged stories -> ${avg((p) => p.toScore.length)} Jev-scored. ${runs.length} runs over ${days_.length} days (${days_[0]} to ${days_[days_.length - 1]}; 10-12 to 10-15 skipped for the DeepSeek outage; ${droppedRuns} dropped for lack of corpus hours). Topics matched ${nMatched}/${nTopics} (${pct(nMatched, nTopics)}). GDACS: runs with a Red candidate ${gd('Red')}, Orange ${gd('Orange')}.`,
   capture ? `- Selector-input sanity check (${capture.gen}): the selector saw ${capture.inputCount} articles; ${capture.inCorpusWindow} (${pct(capture.inCorpusWindow, capture.inputCount)}) are in our ${capture.articles}-article corpus window.` : '', '',
-  '## Rescued stories (Combined, < 4 outlets)',
+  '## Rescued stories (Combined v4, 1 outlet)',
   ...rescues.sort((a, b) => b.impact - a.impact).slice(0, 5).map((r) => `- ${runLabel(r.p)}: ${r.c.title} (${r.c.outlets} outlets, sev ${r.c.severity}, impact ${r.impact.toFixed(2)}, later outlets ${r.p.hasLater ? r.c.later : 'n/a'})`), '',
   '## Limitations',
   '- Hindsight rewards stories that get widely covered, not stories that matter; a quiet consequential story scores as a miss. The outlet-count baseline is favoured by construction because "big" is defined by outlet counts.',

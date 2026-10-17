@@ -22,10 +22,11 @@ Your pick: ____
 ## Pair 2
 
 ### Option 1
-**Tropical Cyclone SIMON-26**
-- Outlets: n/a (GDACS alert feed); severity: GDACS Red alert; countries: MEX
-- México — tropical cyclone
-- Orange Tropical Cyclone SIMON-26 in México from: 07 Oct 2026 to: 16 Oct 2026 .
+**Man dies after entering tiger enclosure at England wildlife park**
+- Outlets: 3 (3 articles); severity: 2 of 5; countries: GBR
+- Man dies after entering tiger enclosure at England wildlife park (aljazeera.com)
+- Tiger Kills Man Who Entered UK Wildlife Park Enclosure (scmp.com)
+- Man dies after tiger attack at UK zoo (channelnewsasia.com)
 
 ### Option 2
 **Trump-Zelensky clash as Russian strikes kill 21**
@@ -73,61 +74,63 @@ Your pick: ____
 ## Pair 5
 
 ### Option 1
-**Medical plane with six aboard missing off Massachusetts**
-- Outlets: 2 (2 articles); severity: 3 of 5; countries: USA, BMU
-- Medical plane with six aboard missing off Massachusetts (bbc.co.uk)
-- Medical jet with 6 aboard vanishes over Atlantic (timesofindia.indiatimes.com)
+**Cornell president responds to frat house rape allegations**
+- Outlets: 3 (3 articles); severity: 2 of 5; countries: USA
+- Cornell president responds to frat house rape allegations (bbc.co.uk)
+- Cornell president vows transparency amid rape case outrage (aljazeera.com)
+- Cornell president breaks silence over rape case uproar (scmp.com)
 
 ### Option 2
-**Russia ramps up attacks on Kyiv, strikes school and hospital**
-- Outlets: 2 (2 articles); severity: 5 of 5; countries: UKR, RUS
-- Russia ramps up attacks on Kyiv, strikes school and hospital (theguardian.com)
-- Russia strikes another Kyiv bridge, deepening travel chaos (france24.com)
+**Yemeni forces strike Sanaa as Trump warns Iran**
+- Outlets: 8 (13 articles); severity: 4 of 5; countries: YEM, IRN, USA, SAU
+- Yemeni forces strike Sanaa as Trump warns Iran (aljazeera.com)
+- Houthis claim strike on oil facility near Riyadh, accuse Saudi strikes (france24.com)
+- Houthis claim strike on Aramco oil facility; Saudis hit Sanaa (scmp.com)
 
 Your pick: ____
 
 ## Pair 6
 
 ### Option 1
-**Trump pushed Xi to end Japan freeze, Xi unmoved**
-- Outlets: 9 (15 articles); severity: 3 of 5; countries: USA, CHN, JPN, IRN, BIH, RUS
-- Trump pushed Xi to end Japan freeze, Xi unmoved (scmp.com)
-- Trump says deal with Iran isn't something he wants (middleeasteye.net)
-- Trump promises payments to voters ahead of midterms (en.mercopress.com)
+**Eritrean troops deploy in Ethiopia's Tigray region**
+- Outlets: 1 (1 articles); severity: 3 of 5; countries: ERI, ETH
+- Eritrean troops deploy in Ethiopia's Tigray region (africanews.com)
 
 ### Option 2
-**Tanker hit by projectiles in Gulf off Qatar**
-- Outlets: 3 (3 articles); severity: 4 of 5; countries: QAT, IRN
-- Tanker hit by projectiles in Gulf off Qatar (bbc.co.uk)
-- Tanker hit by projectiles off Qatar coast, UKMTO says (aljazeera.com)
-- Casualties reported as projectiles hit tanker off Qatar (middleeasteye.net)
+**Anne Carson wins 2026 Nobel Prize in Literature**
+- Outlets: 3 (3 articles); severity: 2 of 5; countries: CAN, SWE
+- Anne Carson wins 2026 Nobel Prize in Literature (scmp.com)
+- Anne Carson wins 2026 Nobel Prize in Literature (theguardian.com)
+- Canadian poet Anne Carson wins 2026 Nobel Prize in Literature (al-monitor.com)
 
 Your pick: ____
 
 ## Pair 7
 
 ### Option 1
+**Yemen forces reclaim Mocha port from Houthis; Mecca defence pact**
+- Outlets: 7 (9 articles); severity: 5 of 5; countries: YEM, SAU, IRN, TUR
+- Yemen forces reclaim Mocha port from Houthis; Mecca defence pact (aljazeera.com)
+- Yemen's Houthis claim attack on Riyadh airport (france24.com)
+- Houthis say they targeted Saudi Arabia's Abha airport (middleeasteye.net)
+
+### Option 2
 **Francis Halzen wins 2026 Nobel Prize in Physics**
 - Outlets: 5 (5 articles); severity: 2 of 5; countries: SWE, USA, BEL
 - Francis Halzen wins 2026 Nobel Prize in Physics (channelnewsasia.com)
 - Halzen wins Nobel Physics Prize for cosmic neutrino work (timesofindia.indiatimes.com)
 - Francis Halzen wins 2026 Nobel Prize in Physics (rappler.com)
 
-### Option 2
-**Saudi Arabia urged to spare man sentenced to death over Facebook post**
-- Outlets: 1 (1 articles); severity: 3 of 5; countries: SAU
-- Saudi Arabia urged to spare man sentenced to death over Facebook post (bbc.co.uk)
-
 Your pick: ____
 
 ## Pair 8
 
 ### Option 1
-**Houthi missiles target Yemen's Aden airport**
-- Outlets: 4 (5 articles); severity: 4 of 5; countries: YEM, SAU
-- Houthi missiles target Yemen's Aden airport (aljazeera.com)
-- Houthi missiles targeted Yemen's Aden airport, official says (middleeasteye.net)
-- Houthis launch missiles at Yemen's Aden airport as fighting intensifies (al-monitor.com)
+**Paramount-Warner Bros merger closes, Skydance begins trading**
+- Outlets: 3 (3 articles); severity: 3 of 5; countries: USA
+- Paramount-Warner Bros merger closes, Skydance begins trading (aljazeera.com)
+- Paramount completes Warner Bros Discovery takeover, creating media giant (france24.com)
+- Paramount closes $110bn deal with Warner Bros Discovery (timesofindia.indiatimes.com)
 
 ### Option 2
 **Vance says Iran must cut enrichment to end war**
@@ -141,32 +144,31 @@ Your pick: ____
 ## Pair 9
 
 ### Option 1
-**Israel's Supreme Court overturns ban on Arab parties**
-- Outlets: 2 (2 articles); severity: 3 of 5; countries: ISR
-- Israel's Supreme Court overturns ban on Arab parties (aljazeera.com)
-- Israel top court restores Arab party to election ballot (dailysabah.com)
+**AU urges restraint as Ethiopia, Eritrea, Egypt tensions rise**
+- Outlets: 1 (1 articles); severity: 4 of 5; countries: ETH, ERI, EGY
+- AU urges restraint as Ethiopia, Eritrea, Egypt tensions rise (allafrica.com)
 
 ### Option 2
-**Man City could face fines, EPL expulsion over financial rules**
-- Outlets: 5 (7 articles); severity: 3 of 5; countries: GBR, ARE
-- Man City could face fines, EPL expulsion over financial rules (abc.net.au)
-- Man City appeal guilty finding in financial breach scandal (aljazeera.com)
-- Manchester City appeals Premier League financial rules breach ruling (france24.com)
+**Taiwan Coast Guard confronts Chinese fishing boats in Dongsha waters**
+- Outlets: 2 (2 articles); severity: 3 of 5; countries: TWN, CHN
+- Taiwan Coast Guard confronts Chinese fishing boats in Dongsha waters (aljazeera.com)
+- Taiwan coastguard water-cannons Chinese fishing vessel near Dongsha (scmp.com)
 
 Your pick: ____
 
 ## Pair 10
 
 ### Option 1
-**Russia strikes Ukraine as Zelenskyy visits frontline**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: UKR, RUS
-- Russia strikes Ukraine as Zelenskyy visits frontline (theguardian.com)
-- Zelensky claims Ukrainian strikes on sites in Russia (lemonde.fr)
+**Explosions in Ethiopia capital after drone ban**
+- Outlets: 1 (1 articles); severity: 4 of 5; countries: ETH
+- Explosions in Ethiopia capital after drone ban (bbc.co.uk)
 
 ### Option 2
-**Pakistani airstrikes kill nine in Afghanistan, Taliban say**
-- Outlets: 1 (2 articles); severity: 4 of 5; countries: PAK, AFG
-- Pakistani airstrikes kill nine in Afghanistan, Taliban say (al-monitor.com)
+**Afghanistan says nine killed in Pakistani air raids**
+- Outlets: 3 (3 articles); severity: 4 of 5; countries: AFG, PAK
+- Afghanistan says nine killed in Pakistani air raids (aljazeera.com)
+- Afghanistan says deadly Pakistani strikes hit Helmand (channelnewsasia.com)
+- Afghanistan says civilians killed in Pak airstrikes (timesofindia.indiatimes.com)
 
 Your pick: ____
 
@@ -209,18 +211,18 @@ Your pick: ____
 ## Pair 13
 
 ### Option 1
-**Navi Pillay wins Nobel Peace Prize amid US sanctions threat**
-- Outlets: 13 (22 articles); severity: 4 of 5; countries: ZAF, NOR, NLD, USA, PSE, ISR
-- Navi Pillay wins Nobel Peace Prize amid US sanctions threat (africanews.com)
-- Navi Pillay wins 2026 Nobel Peace Prize (scmp.com)
-- Former ICC judge Navi Pillay wins Nobel Peace Prize (rappler.com)
-
-### Option 2
 **US officials defend ICE agents who shot man with child in car**
 - Outlets: 4 (5 articles); severity: 3 of 5; countries: USA
 - US officials defend ICE agents who shot man with child in car (bbc.co.uk)
 - DHS defends ICE shooting in New York City (aljazeera.com)
 - ICE shoots at car in New York, child inside (lemonde.fr)
+
+### Option 2
+**Kenya Red Cross responds to first Ebola case**
+- Outlets: 3 (3 articles); severity: 3 of 5; countries: KEN, COD
+- Kenya Red Cross responds to first Ebola case (france24.com)
+- Kenya Wajir patient tests negative for Ebola, has malaria (allafrica.com)
+- Kenya's suspected Ebola case tests negative (africanews.com)
 
 Your pick: ____
 
@@ -234,54 +236,58 @@ Your pick: ____
 - Russian president warns Moscow will use ‘all weapons’ to defend Kaliningrad (africanews.com)
 
 ### Option 2
-**Ethiopian army pushes back Tigrayan rebels**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: ETH, ERI
-- Ethiopian army pushes back Tigrayan rebels (france24.com)
-- Explosions heard in Ethiopia's capital after drone ban (bbc.co.uk)
+**Congo Ebola death toll hits 4,000 as violence hampers response**
+- Outlets: 3 (3 articles); severity: 4 of 5; countries: COD
+- Congo Ebola death toll hits 4,000 as violence hampers response (dailysabah.com)
+- DR Congo's worst Ebola outbreak surpasses 4,000 deaths (lemonde.fr)
+- Ebola death toll surpasses 4,000 in DR Congo (aljazeera.com)
 
 Your pick: ____
 
 ## Pair 15
 
 ### Option 1
-**Inside Ukraine's Operation Vivaldi offensive pushing Russia back in Donbas**
-- Outlets: 1 (1 articles); severity: 4 of 5; countries: UKR, RUS
-- Inside Ukraine's Operation Vivaldi offensive pushing Russia back in Donbas (bbc.co.uk)
+**North Korea tests new AI-guided torpedo**
+- Outlets: 3 (3 articles); severity: 3 of 5; countries: PRK
+- North Korea tests new AI-guided torpedo (scmp.com)
+- North Korea tests high-speed AI-guided torpedo (timesofindia.indiatimes.com)
+- North Korea says it tested AI-assisted torpedo system (channelnewsasia.com)
 
 ### Option 2
-**Iran not seeking nuclear weapons, ready for dialogue: Pezeshkian**
-- Outlets: 2 (2 articles); severity: 3 of 5; countries: IRN
-- Iran not seeking nuclear weapons, ready for dialogue: Pezeshkian (middleeasteye.net)
-- Iran's president condemns environmental impact of Middle East war (aljazeera.com)
+**US journalist injured in Israeli settler West Bank attack**
+- Outlets: 6 (8 articles); severity: 3 of 5; countries: ISR, PSE, USA
+- US journalist injured in Israeli settler West Bank attack (france24.com)
+- Israeli settlers beat Palestinians and US photojournalist (npr.org)
+- Photojournalist recounts settler attack in West Bank (middleeasteye.net)
 
 Your pick: ____
 
 ## Pair 16
 
 ### Option 1
+**Trump says talking to Russia, China on denuclearisation**
+- Outlets: 7 (13 articles); severity: 4 of 5; countries: USA, RUS, CHN, UKR, IRN
+- Trump says talking to Russia, China on denuclearisation (channelnewsasia.com)
+- Trump calls Ukraine strikes on Russian refineries a disgrace (france24.com)
+- Trump weighs new Iran strikes while insisting talks continue (middleeasteye.net)
+
+### Option 2
 **19 injured as bus collides with train in Channel Tunnel**
 - Outlets: 8 (9 articles); severity: 3 of 5; countries: FRA, GBR
 - 19 injured as bus collides with train in Channel Tunnel (timesofindia.indiatimes.com)
 - Bus hits train at Channel Tunnel, 19 injured (bbc.co.uk)
 - Minibus and train collide at Eurotunnel platform, 19 injured (theguardian.com)
 
-### Option 2
-**Somalia says it will hold elections in 2027**
-- Outlets: 3 (3 articles); severity: 3 of 5; countries: SOM
-- Somalia says it will hold elections in 2027 (aljazeera.com)
-- Somalia announces parliamentary and presidential elections for 2027 (africanews.com)
-- Somalia sets 2027 parliamentary and presidential election dates (allafrica.com)
-
 Your pick: ____
 
 ## Pair 17
 
 ### Option 1
-**Magnitude 7.7 earthquake hits Panama, tsunami warnings issued**
-- Outlets: 9 (10 articles); severity: 4 of 5; countries: PAN, COL, ECU, NIC, CRI, PER
-- Magnitude 7.7 earthquake hits Panama, tsunami warnings issued (bbc.co.uk)
-- Tsunami warnings across Latin America after 7.7 quake (aljazeera.com)
-- Magnitude 7.6 quake shakes Panama, tsunami warning (france24.com)
+**Navi Pillay wins Nobel Peace Prize amid US sanctions threat**
+- Outlets: 10 (14 articles); severity: 4 of 5; countries: ZAF, NOR, USA, PSE, ISR, NLD
+- Navi Pillay wins Nobel Peace Prize amid US sanctions threat (africanews.com)
+- Navi Pillay wins 2026 Nobel Peace Prize (aljazeera.com)
+- South African lawyer Navi Pillay wins Nobel Peace Prize (npr.org)
 
 ### Option 2
 **Zelenskyy blasts US as strikes kill 78 in Ukraine**
@@ -295,47 +301,47 @@ Your pick: ____
 ## Pair 18
 
 ### Option 1
-**USS Abraham Lincoln crew returns after Middle East deployment**
-- Outlets: 6 (7 articles); severity: 3 of 5; countries: USA, IRN, FRA
-- USS Abraham Lincoln crew returns after Middle East deployment (lemonde.fr)
-- USS Abraham Lincoln returns after 265 days on Iran mission (scmp.com)
-- USS Abraham Lincoln returns home after Iran war deployment (npr.org)
+**Nobel Peace Prize awarded to Navanethem 'Navi' Pillay**
+- Outlets: 5 (5 articles); severity: 3 of 5; countries: NOR, ZAF
+- Nobel Peace Prize awarded to Navanethem 'Navi' Pillay (france24.com)
+- Navi Pillay wins Nobel Peace Prize for justice work (dailysabah.com)
+- 2026 Nobel Peace Prize winner to be announced (theguardian.com)
 
 ### Option 2
-**ICE agent shoots man in New York City**
-- Outlets: 7 (9 articles); severity: 3 of 5; countries: USA
-- ICE agent shoots man in New York City (bbc.co.uk)
-- ICE agents shoot man in car with child present (france24.com)
-- Protests in New York after ICE shoots man with child in car (aljazeera.com)
+**US suspends Microsoft from green card program over fraud**
+- Outlets: 3 (4 articles); severity: 3 of 5; countries: USA, IND
+- US suspends Microsoft from green card program over fraud (dailysabah.com)
+- TCS, Infosys suspended from US green card programme (timesofindia.indiatimes.com)
+- Microsoft brings more AI to PCs as it challenges Apple (france24.com)
 
 Your pick: ____
 
 ## Pair 19
 
 ### Option 1
-**Paramount completes $110bn Warner Bros Discovery merger**
-- Outlets: 3 (4 articles); severity: 3 of 5; countries: USA
-- Paramount completes $110bn Warner Bros Discovery merger (france24.com)
-- Paramount merges with Warner Bros, layoffs warned (timesofindia.indiatimes.com)
-- Paramount-Warner Bros merger closes, Skydance begins trading (aljazeera.com)
-
-### Option 2
 **Two killed in Kyiv as Russia launches massive attack**
 - Outlets: 7 (9 articles); severity: 4 of 5; countries: UKR, RUS
 - Two killed in Kyiv as Russia launches massive attack (aljazeera.com)
 - Two killed in Kyiv fire after massive strikes (france24.com)
 - Russian barrage hits Kyiv hours after Zelensky warning (scmp.com)
 
+### Option 2
+**Houthis attack Aden airport; Saudi forces down missile near Riyadh**
+- Outlets: 7 (15 articles); severity: 4 of 5; countries: YEM, SAU, ISR, IRN
+- Houthis attack Aden airport; Saudi forces down missile near Riyadh (aljazeera.com)
+- Houthis attack Aden airport as Yemen fighting intensifies (france24.com)
+- Houthis strike Yemen government and Saudi targets (middleeasteye.net)
+
 Your pick: ____
 
 ## Pair 20
 
 ### Option 1
-**France schools protests: over 6,100 arrested since start**
-- Outlets: 7 (11 articles); severity: 4 of 5; countries: FRA, USA
-- France schools protests: over 6,100 arrested since start (france24.com)
-- France halts stun grenade use after boy injured in protests (bbc.co.uk)
-- French police suspend stun grenades at school protests (theguardian.com)
+**Israel marks three years since October 7 attack**
+- Outlets: 6 (7 articles); severity: 4 of 5; countries: ISR, PSE
+- Israel marks three years since October 7 attack (france24.com)
+- Israelis mourn Oct 7 as Palestinians grapple with war (npr.org)
+- Israelis mourn 7 October attack victims three years on (bbc.co.uk)
 
 ### Option 2
 **Texas carries out first US execution since Pike botched case**

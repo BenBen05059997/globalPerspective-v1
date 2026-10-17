@@ -5,26 +5,27 @@ For each pair, both stories were available in the same selection window. Pick th
 ## Pair 1
 
 ### Option 1
-**Saudi-led coalition says it intercepted Houthi missile**
-- Outlets: 5 (7 articles); severity: 4 of 5; countries: SAU, YEM
-- Saudi-led coalition says it intercepted Houthi missile (middleeasteye.net)
-- Saudi coalition accuses Houthis of drone attack on Medina (al-monitor.com)
-- Saudi-led coalition says power station attacked in Medina, blames Houthis (aljazeera.com)
+**Ethiopia and Eritrea sever ties as northern fighting escalates**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: ETH, ERI
+- Ethiopia and Eritrea sever ties as northern fighting escalates (scmp.com)
+- Ethiopia and Eritrea break diplomatic ties over conflict (france24.com)
 
 ### Option 2
-**US moves 2,000 Marines to Middle East, tanker hit in Hormuz**
-- Outlets: 1 (1 articles); severity: 5 of 5; countries: IRN, USA
-- US moves 2,000 Marines to Middle East, tanker hit in Hormuz (aljazeera.com)
+**UK-Iranian man arrested over Fairford airbase plot**
+- Outlets: 8 (8 articles); severity: 3 of 5; countries: GBR, IRN, USA
+- UK-Iranian man arrested over Fairford airbase plot (scmp.com)
+- UK-Iranian national arrested in RAF Fairford terror probe (middleeasteye.net)
+- UK-Iranian man arrested over incident at US base in England (timesofindia.indiatimes.com)
 
 Your pick: ____
 
 ## Pair 2
 
 ### Option 1
-**Doctors demand World Medical Association suspend Israel**
-- Outlets: 2 (2 articles); severity: 3 of 5; countries: ISR, PSE
-- Doctors demand World Medical Association suspend Israel (aljazeera.com)
-- Doctors demand World Medical Association suspend Israel (news.google.com)
+**Tropical Cyclone SIMON-26**
+- Outlets: n/a (GDACS alert feed); severity: GDACS Red alert; countries: MEX
+- México — tropical cyclone
+- Orange Tropical Cyclone SIMON-26 in México from: 07 Oct 2026 to: 16 Oct 2026 .
 
 ### Option 2
 **Trump-Zelensky clash as Russian strikes kill 21**
@@ -38,40 +39,44 @@ Your pick: ____
 ## Pair 3
 
 ### Option 1
-**California bans child marriage, still legal in 32 states**
-- Outlets: 1 (1 articles); severity: 2 of 5; countries: USA
-- California bans child marriage, still legal in 32 states (bbc.co.uk)
+**London rejects Argentina's arbitration over Sea Lion oil project**
+- Outlets: 5 (5 articles); severity: 3 of 5; countries: GBR, FRA, ARG
+- London rejects Argentina's arbitration over Sea Lion oil project (en.mercopress.com)
+- UK-France migrant deal targeting English Channel crossings scrapped (scmp.com)
+- UK-France Channel migrant exchange deal scrapped (channelnewsasia.com)
 
 ### Option 2
-**Kremlin says Türkiye's S-400 transfer to third country on agenda**
-- Outlets: 2 (2 articles); severity: 3 of 5; countries: RUS, TUR, EST
-- Kremlin says Türkiye's S-400 transfer to third country on agenda (dailysabah.com)
-- Kremlin denies arson at Estonian robotics plant (themoscowtimes.com)
+**UK PM says Iran likely involved in airbase bomb scare**
+- Outlets: 6 (10 articles); severity: 4 of 5; countries: GBR, IRN, USA, FRA, ESP
+- UK PM says Iran likely involved in airbase bomb scare (scmp.com)
+- UK PM says 'strong indications' Iran involved in airbase incident (channelnewsasia.com)
+- UK says Iran may be linked to alleged airbase plot (aljazeera.com)
 
 Your pick: ____
 
 ## Pair 4
 
 ### Option 1
-**Algeria sent fighter jets to Niger to thwart coup attempt**
-- Outlets: 1 (1 articles); severity: 4 of 5; countries: DZA, NER
-- Algeria sent fighter jets to Niger to thwart coup attempt (aljazeera.com)
+**Ukraine to intensify strikes on Russian refineries over new doctrine**
+- Outlets: 3 (3 articles); severity: 5 of 5; countries: UKR, RUS
+- Ukraine to intensify strikes on Russian refineries over new doctrine (lemonde.fr)
+- Zelensky claims Ukraine de-occupied 140 km of territory (timesofindia.indiatimes.com)
+- Ukraine to hit Russian refineries over new airstrike doctrine (themoscowtimes.com)
 
 ### Option 2
-**Russia vows massive retaliation strikes on Kyiv, urges diplomats to leave**
-- Outlets: 1 (1 articles); severity: 5 of 5; countries: UKR, RUS
-- Russia vows massive retaliation strikes on Kyiv, urges diplomats to leave (lemonde.fr)
+**US to deploy NMESIS anti-ship system near Taiwan**
+- Outlets: 1 (1 articles); severity: 4 of 5; countries: USA, JPN, TWN, CHN
+- US to deploy NMESIS anti-ship system near Taiwan (scmp.com)
 
 Your pick: ____
 
 ## Pair 5
 
 ### Option 1
-**G7 to release oil and diesel after Trump threat**
-- Outlets: 8 (8 articles); severity: 4 of 5; countries: USA, IRN, TUR
-- G7 to release oil and diesel after Trump threat (bbc.co.uk)
-- Crypto mogul sues Trump family venture over alleged fraud (news.google.com)
-- Trump pressures Republicans to end US clock switching (aljazeera.com)
+**Medical plane with six aboard missing off Massachusetts**
+- Outlets: 2 (2 articles); severity: 3 of 5; countries: USA, BMU
+- Medical plane with six aboard missing off Massachusetts (bbc.co.uk)
+- Medical jet with 6 aboard vanishes over Atlantic (timesofindia.indiatimes.com)
 
 ### Option 2
 **Russia ramps up attacks on Kyiv, strikes school and hospital**
@@ -84,41 +89,45 @@ Your pick: ____
 ## Pair 6
 
 ### Option 1
+**Trump pushed Xi to end Japan freeze, Xi unmoved**
+- Outlets: 9 (15 articles); severity: 3 of 5; countries: USA, CHN, JPN, IRN, BIH, RUS
+- Trump pushed Xi to end Japan freeze, Xi unmoved (scmp.com)
+- Trump says deal with Iran isn't something he wants (middleeasteye.net)
+- Trump promises payments to voters ahead of midterms (en.mercopress.com)
+
+### Option 2
 **Tanker hit by projectiles in Gulf off Qatar**
 - Outlets: 3 (3 articles); severity: 4 of 5; countries: QAT, IRN
 - Tanker hit by projectiles in Gulf off Qatar (bbc.co.uk)
 - Tanker hit by projectiles off Qatar coast, UKMTO says (aljazeera.com)
 - Casualties reported as projectiles hit tanker off Qatar (middleeasteye.net)
 
-### Option 2
-**China nominates health official Song Li as WHO head**
-- Outlets: 2 (2 articles); severity: 3 of 5; countries: CHN
-- China nominates health official Song Li as WHO head (news.google.com)
-- China nominates Song Li for WHO chief (channelnewsasia.com)
-
 Your pick: ____
 
 ## Pair 7
 
 ### Option 1
-**Israel warns Gazans will pay heavy price for attacks**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: ISR, PSE
-- Israel warns Gazans will pay heavy price for attacks (france24.com)
-- Israel threatens Gaza with heavy price over Oct 7 attacks (lemonde.fr)
+**Francis Halzen wins 2026 Nobel Prize in Physics**
+- Outlets: 5 (5 articles); severity: 2 of 5; countries: SWE, USA, BEL
+- Francis Halzen wins 2026 Nobel Prize in Physics (channelnewsasia.com)
+- Halzen wins Nobel Physics Prize for cosmic neutrino work (timesofindia.indiatimes.com)
+- Francis Halzen wins 2026 Nobel Prize in Physics (rappler.com)
 
 ### Option 2
-**Sailors missing after Black Sea vessel attacks, Bulgaria says**
-- Outlets: 1 (1 articles); severity: 4 of 5; countries: BGR, RUS, UKR
-- Sailors missing after Black Sea vessel attacks, Bulgaria says (bbc.co.uk)
+**Saudi Arabia urged to spare man sentenced to death over Facebook post**
+- Outlets: 1 (1 articles); severity: 3 of 5; countries: SAU
+- Saudi Arabia urged to spare man sentenced to death over Facebook post (bbc.co.uk)
 
 Your pick: ____
 
 ## Pair 8
 
 ### Option 1
-**US military in Okinawa imposes curfew after marine's arrest**
-- Outlets: 1 (1 articles); severity: 3 of 5; countries: JPN, USA
-- US military in Okinawa imposes curfew after marine's arrest (scmp.com)
+**Houthi missiles target Yemen's Aden airport**
+- Outlets: 4 (5 articles); severity: 4 of 5; countries: YEM, SAU
+- Houthi missiles target Yemen's Aden airport (aljazeera.com)
+- Houthi missiles targeted Yemen's Aden airport, official says (middleeasteye.net)
+- Houthis launch missiles at Yemen's Aden airport as fighting intensifies (al-monitor.com)
 
 ### Option 2
 **Vance says Iran must cut enrichment to end war**
@@ -132,33 +141,32 @@ Your pick: ____
 ## Pair 9
 
 ### Option 1
-**Ebola death toll surpasses 4,000 in DR Congo**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: COD
-- Ebola death toll surpasses 4,000 in DR Congo (aljazeera.com)
-- Congo Ebola death toll hits 4,000 amid violence (dailysabah.com)
+**Israel's Supreme Court overturns ban on Arab parties**
+- Outlets: 2 (2 articles); severity: 3 of 5; countries: ISR
+- Israel's Supreme Court overturns ban on Arab parties (aljazeera.com)
+- Israel top court restores Arab party to election ballot (dailysabah.com)
 
 ### Option 2
-**Terror in Kyiv as Russia ramps up attacks**
-- Outlets: 2 (2 articles); severity: 5 of 5; countries: UKR, RUS
-- Terror in Kyiv as Russia ramps up attacks (theguardian.com)
-- Kyiv in dramatic situation as Russia steps up bombing (france24.com)
+**Man City could face fines, EPL expulsion over financial rules**
+- Outlets: 5 (7 articles); severity: 3 of 5; countries: GBR, ARE
+- Man City could face fines, EPL expulsion over financial rules (abc.net.au)
+- Man City appeal guilty finding in financial breach scandal (aljazeera.com)
+- Manchester City appeals Premier League financial rules breach ruling (france24.com)
 
 Your pick: ____
 
 ## Pair 10
 
 ### Option 1
-**Japan raises permanent residency fee 20-fold**
-- Outlets: 3 (3 articles); severity: 2 of 5; countries: JPN
-- Japan raises permanent residency fee 20-fold (bbc.co.uk)
-- Japan raises permanent residency fee 20-fold (timesofindia.indiatimes.com)
-- Japan tightens rules for foreigners seeking permanent residency (channelnewsasia.com)
-
-### Option 2
 **Russia strikes Ukraine as Zelenskyy visits frontline**
 - Outlets: 2 (2 articles); severity: 4 of 5; countries: UKR, RUS
 - Russia strikes Ukraine as Zelenskyy visits frontline (theguardian.com)
 - Zelensky claims Ukrainian strikes on sites in Russia (lemonde.fr)
+
+### Option 2
+**Pakistani airstrikes kill nine in Afghanistan, Taliban say**
+- Outlets: 1 (2 articles); severity: 4 of 5; countries: PAK, AFG
+- Pakistani airstrikes kill nine in Afghanistan, Taliban say (al-monitor.com)
 
 Your pick: ____
 
@@ -183,96 +191,97 @@ Your pick: ____
 ## Pair 12
 
 ### Option 1
-**Abbas postpones Palestinian legislative elections to September 2027**
-- Outlets: 6 (8 articles); severity: 3 of 5; countries: PSE
-- Abbas postpones Palestinian legislative elections to September 2027 (aljazeera.com)
-- Abbas postpones Palestinian elections, sets presidential poll for 2027 (france24.com)
-- Abbas postpones Palestinian elections to September 2027 (scmp.com)
-
-### Option 2
 **Yemen advances against Houthis around Bab al-Mandab strait**
 - Outlets: 5 (5 articles); severity: 4 of 5; countries: YEM, SAU
 - Yemen advances against Houthis around Bab al-Mandab strait (france24.com)
 - Houthis again target Riyadh airport, many wounded (lemonde.fr)
 - Saudi-backed Yemeni forces claim capture of Bab el Mandeb strait (al-monitor.com)
 
+### Option 2
+**India detains Cockroach leaders amid voter list protests**
+- Outlets: 5 (15 articles); severity: 4 of 5; countries: IND
+- India detains Cockroach leaders amid voter list protests (dailysabah.com)
+- India protests: new 'cockroach' movement leader named (france24.com)
+- Indian police detain Cockroach Janta Party founder ahead of protest (channelnewsasia.com)
+
 Your pick: ____
 
 ## Pair 13
 
 ### Option 1
-**US imposes sanctions on International Criminal Court**
-- Outlets: 13 (32 articles); severity: 4 of 5; countries: USA, NLD, IRN, SOM, ZAF, QAT, RUS, CAN, JPN
-- US imposes sanctions on International Criminal Court (bbc.co.uk)
-- US sanctions International Criminal Court (aljazeera.com)
-- US sanctions ICC hours after ex-judge wins Nobel (scmp.com)
+**Navi Pillay wins Nobel Peace Prize amid US sanctions threat**
+- Outlets: 13 (22 articles); severity: 4 of 5; countries: ZAF, NOR, NLD, USA, PSE, ISR
+- Navi Pillay wins Nobel Peace Prize amid US sanctions threat (africanews.com)
+- Navi Pillay wins 2026 Nobel Peace Prize (scmp.com)
+- Former ICC judge Navi Pillay wins Nobel Peace Prize (rappler.com)
 
 ### Option 2
-**Saudi-backed Yemeni forces claim capture of Bab el Mandeb strait**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: YEM, SAU
-- Saudi-backed Yemeni forces claim capture of Bab el Mandeb strait (al-monitor.com)
-- Yemen's Houthis claim responsibility for attacks on two Saudi airports (africanews.com)
+**US officials defend ICE agents who shot man with child in car**
+- Outlets: 4 (5 articles); severity: 3 of 5; countries: USA
+- US officials defend ICE agents who shot man with child in car (bbc.co.uk)
+- DHS defends ICE shooting in New York City (aljazeera.com)
+- ICE shoots at car in New York, child inside (lemonde.fr)
 
 Your pick: ____
 
 ## Pair 14
 
 ### Option 1
-**Fighting intensifies in Yemen, hundreds killed or injured**
-- Outlets: 1 (1 articles); severity: 5 of 5; countries: YEM, IRN
-- Fighting intensifies in Yemen, hundreds killed or injured (aljazeera.com)
+**Putin warns West Russia ready to use every weapon for Kaliningrad**
+- Outlets: 5 (5 articles); severity: 4 of 5; countries: RUS, JPN, LTU, POL, IND
+- Putin warns West Russia ready to use every weapon for Kaliningrad (bbc.co.uk)
+- Putin warns West not to escalate over Kaliningrad (themoscowtimes.com)
+- Russian president warns Moscow will use ‘all weapons’ to defend Kaliningrad (africanews.com)
 
 ### Option 2
-**Terror in Kyiv as Russia ramps up attacks**
-- Outlets: 3 (3 articles); severity: 5 of 5; countries: UKR, RUS
-- Terror in Kyiv as Russia ramps up attacks (theguardian.com)
-- Kyiv mayor warns intensified Russian strikes are tearing city apart (bbc.co.uk)
-- Russia tearing Kyiv apart, mayor says, as strikes paralyse traffic (channelnewsasia.com)
+**Ethiopian army pushes back Tigrayan rebels**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: ETH, ERI
+- Ethiopian army pushes back Tigrayan rebels (france24.com)
+- Explosions heard in Ethiopia's capital after drone ban (bbc.co.uk)
 
 Your pick: ____
 
 ## Pair 15
 
 ### Option 1
-**Iran denies Saudi accusation over Houthi attacks**
-- Outlets: 3 (3 articles); severity: 3 of 5; countries: IRN, SAU, YEM
-- Iran denies Saudi accusation over Houthi attacks (channelnewsasia.com)
-- Iran denies role in Houthi attacks, offers mediation (dailysabah.com)
-- Iran denies Saudi accusation of involvement in Houthi attacks (middleeasteye.net)
+**Inside Ukraine's Operation Vivaldi offensive pushing Russia back in Donbas**
+- Outlets: 1 (1 articles); severity: 4 of 5; countries: UKR, RUS
+- Inside Ukraine's Operation Vivaldi offensive pushing Russia back in Donbas (bbc.co.uk)
 
 ### Option 2
-**US journalist injured in Israeli settler West Bank attack**
-- Outlets: 6 (8 articles); severity: 3 of 5; countries: ISR, PSE, USA
-- US journalist injured in Israeli settler West Bank attack (france24.com)
-- Israeli settlers beat Palestinians and US photojournalist (npr.org)
-- Photojournalist recounts settler attack in West Bank (middleeasteye.net)
+**Iran not seeking nuclear weapons, ready for dialogue: Pezeshkian**
+- Outlets: 2 (2 articles); severity: 3 of 5; countries: IRN
+- Iran not seeking nuclear weapons, ready for dialogue: Pezeshkian (middleeasteye.net)
+- Iran's president condemns environmental impact of Middle East war (aljazeera.com)
 
 Your pick: ____
 
 ## Pair 16
 
 ### Option 1
-**Houthi missile attack on Yemen presidential palace kills two**
-- Outlets: 11 (14 articles); severity: 4 of 5; countries: YEM, SAU
-- Houthi missile attack on Yemen presidential palace kills two (bbc.co.uk)
-- Houthi attack on Aden palace kills five (france24.com)
-- Houthi missiles strike Saudi-led HQ in Aden (theguardian.com)
+**19 injured as bus collides with train in Channel Tunnel**
+- Outlets: 8 (9 articles); severity: 3 of 5; countries: FRA, GBR
+- 19 injured as bus collides with train in Channel Tunnel (timesofindia.indiatimes.com)
+- Bus hits train at Channel Tunnel, 19 injured (bbc.co.uk)
+- Minibus and train collide at Eurotunnel platform, 19 injured (theguardian.com)
 
 ### Option 2
-**White House prepares plans to use 'mother of all bombs' on Iran**
-- Outlets: 1 (1 articles); severity: 5 of 5; countries: USA, IRN
-- White House prepares plans to use 'mother of all bombs' on Iran (middleeasteye.net)
+**Somalia says it will hold elections in 2027**
+- Outlets: 3 (3 articles); severity: 3 of 5; countries: SOM
+- Somalia says it will hold elections in 2027 (aljazeera.com)
+- Somalia announces parliamentary and presidential elections for 2027 (africanews.com)
+- Somalia sets 2027 parliamentary and presidential election dates (allafrica.com)
 
 Your pick: ____
 
 ## Pair 17
 
 ### Option 1
-**Navi Pillay wins Nobel Peace Prize amid US sanctions threat**
-- Outlets: 10 (14 articles); severity: 4 of 5; countries: ZAF, NOR, USA, PSE, ISR, NLD
-- Navi Pillay wins Nobel Peace Prize amid US sanctions threat (africanews.com)
-- Navi Pillay wins 2026 Nobel Peace Prize (aljazeera.com)
-- South African lawyer Navi Pillay wins Nobel Peace Prize (npr.org)
+**Magnitude 7.7 earthquake hits Panama, tsunami warnings issued**
+- Outlets: 9 (10 articles); severity: 4 of 5; countries: PAN, COL, ECU, NIC, CRI, PER
+- Magnitude 7.7 earthquake hits Panama, tsunami warnings issued (bbc.co.uk)
+- Tsunami warnings across Latin America after 7.7 quake (aljazeera.com)
+- Magnitude 7.6 quake shakes Panama, tsunami warning (france24.com)
 
 ### Option 2
 **Zelenskyy blasts US as strikes kill 78 in Ukraine**
@@ -286,16 +295,18 @@ Your pick: ____
 ## Pair 18
 
 ### Option 1
-**Ethiopia launches drone attack on Eritrean troops**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: ETH, ERI
-- Ethiopia launches drone attack on Eritrean troops (theguardian.com)
-- Eritrean troops move deep into Ethiopia's Tigray (bbc.co.uk)
+**USS Abraham Lincoln crew returns after Middle East deployment**
+- Outlets: 6 (7 articles); severity: 3 of 5; countries: USA, IRN, FRA
+- USS Abraham Lincoln crew returns after Middle East deployment (lemonde.fr)
+- USS Abraham Lincoln returns after 265 days on Iran mission (scmp.com)
+- USS Abraham Lincoln returns home after Iran war deployment (npr.org)
 
 ### Option 2
-**IRGC Navy says violating vessels in Hormuz punished nightly**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: IRN
-- IRGC Navy says violating vessels in Hormuz punished nightly (middleeasteye.net)
-- IRGC says it targets violating ships nightly in Hormuz (aljazeera.com)
+**ICE agent shoots man in New York City**
+- Outlets: 7 (9 articles); severity: 3 of 5; countries: USA
+- ICE agent shoots man in New York City (bbc.co.uk)
+- ICE agents shoot man in car with child present (france24.com)
+- Protests in New York after ICE shoots man with child in car (aljazeera.com)
 
 Your pick: ____
 
@@ -320,16 +331,17 @@ Your pick: ____
 ## Pair 20
 
 ### Option 1
-**Ten quarantined over Kenya's first Ebola case**
-- Outlets: 4 (7 articles); severity: 4 of 5; countries: KEN, COD, UGA
-- Ten quarantined over Kenya's first Ebola case (bbc.co.uk)
-- Kenya confirms first Ebola case as virus surges in DR Congo (theguardian.com)
-- Kenya health minister denies Ebola outbreak after first death (africanews.com)
+**France schools protests: over 6,100 arrested since start**
+- Outlets: 7 (11 articles); severity: 4 of 5; countries: FRA, USA
+- France schools protests: over 6,100 arrested since start (france24.com)
+- France halts stun grenade use after boy injured in protests (bbc.co.uk)
+- French police suspend stun grenades at school protests (theguardian.com)
 
 ### Option 2
-**Vance says Iran needs meaningful enrichment reduction to end war**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: USA, IRN
-- Vance says Iran needs meaningful enrichment reduction to end war (middleeasteye.net)
-- Vance ties ending war to Iran cutting enrichment (dailysabah.com)
+**Texas carries out first US execution since Pike botched case**
+- Outlets: 5 (8 articles); severity: 3 of 5; countries: USA
+- Texas carries out first US execution since Pike botched case (timesofindia.indiatimes.com)
+- Texas carries out first US execution since botched lethal injection (bbc.co.uk)
+- Texas carries out first US execution since failed lethal injection (channelnewsasia.com)
 
 Your pick: ____

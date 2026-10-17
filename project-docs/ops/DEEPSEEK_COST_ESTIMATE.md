@@ -13,6 +13,12 @@ Prices used (api-docs.deepseek.com pricing page, fetched 2026-10-04), per 1M tok
 
 Peak = 01:00–04:00 and 06:00–10:00 UTC, Mon–Fri. Thinking mode is off on every news job.
 
+## Update 2026-10-17
+
+- Measured spend: the 2026-09-30 top-up lasted ~12 days → **~$0.75/day** for all callers. The balance ran out 2026-10-12 → 10-15 (all jobs failed); `newsModelGuard` now alerts below $3.
+- Research job (largest cost, ~50–65%) changed to one grounded v4-pro call per story (was two): measured 59–65% of the old per-story cost on 13 live + 40 held-out stories (`predictions/forecast-ab/`).
+- Every DeepSeek call now logs `[usage] {...}` with real token counts — replace the estimates below with a week of measured numbers (CloudWatch Logs Insights: filter `[usage]`, sum `prompt_tokens`/`completion_tokens` by `fn`).
+
 ## Before vs after the 2026-10-05 fixes ($/day, estimated)
 
 ```

@@ -28,12 +28,12 @@
 
 | # | Phase | Status | Gate to pass |
 |---|---|---|---|
-| P0 | Before/after harness on today's stories | ☐ | report shown to operator |
-| P1 | Grounded single-call forecast (prompt) | ☐ | P0 numbers meet the bar below + operator go |
-| P2 | Grounded-date gate in code (G13) | ☐ | tests + P0 rerun |
-| P3 | One forecast per story per UTC day (threadId reuse) | ☐ | 2 live runs measured |
-| P4 | Token-usage logging (all DeepSeek callers) | ☐ | real counts in logs for 24h |
-| P5 | Low-balance alert in `newsModelGuard` | ☐ | test alert received |
+| P0 | Before/after harness on today's stories | ✓ 13 live + 40 held-out (`predictions/forecast-ab/`) | report shown to operator |
+| P1 | Grounded single-call forecast (prompt) | ✓ deployed 10-17 13:25 (`fcd533e`); 5-precedent prompt v2b prepared, awaiting operator yes | P0 numbers meet the bar below + operator go |
+| P2 | Grounded-date gate in code (G13) | ✓ deployed with P1 | tests + P0 rerun |
+| P3 | One forecast per story per UTC day (threadId reuse) | ✓ deployed with P1; live check at 20:25 UTC pending | 2 live runs measured |
+| P4 | Token-usage logging (all DeepSeek callers) | ✓ 8 Lambdas (`3eb878a`, `fcd533e`); first live line 13:50 | real counts in logs for 24h |
+| P5 | Low-balance alert in `newsModelGuard` | ✓ deployed 13:07 (`a6d755a`); first check 10-18 12:00 UTC | test alert received |
 | P6 | Jev "post this story?" backtest | ☐ blocked on Jev key + new-paid-API yes | backtest report |
 
 **P0 — before/after harness (no live change).** Script `predictions/forecast-ab/run.mjs` loads the live job's prompt builders (module loaded with stubbed AWS SDK, as in the 10-05 reuse simulation), rebuilds today's inputs for the stored topics (staging topics item, FACTS#, 7-day archive digest), and runs A = current two-call path and B = new single grounded call on the same 12 stories. DeepSeek key read from the job's Lambda env inside the process only, never printed or written (operator yes 2026-10-17). Cost ~$0.10. Output `predictions/forecast-ab/REPORT_2026-10-17.md` (side by side per story) with measured metrics:

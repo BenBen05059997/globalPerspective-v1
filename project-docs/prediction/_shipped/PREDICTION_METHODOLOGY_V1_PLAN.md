@@ -104,3 +104,11 @@ The page (`components/TrackRecordPage.jsx` → "Accountability") ships three sec
 ## 8. Appendix — worked example (real data, 2026-07-04)
 
 See `PREDICTION_V1_EXAMPLE.md` — today's live topic ("Ukraine strikes oil and military facilities near Russia's St Petersburg", threadId `thread-ukrainian-drones-strike-st-pet-b69cc4`) assembled with all three v1 input upgrades (5 real snippets + 44-entry thread digest + verified `FACTS#Russia`), a hand-worked exemplar of the v1 prediction output, and the capture gates executed against both the exemplar triggers and four real defective pilot triggers (all four correctly rejected/flagged; exemplar passes).
+
+
+## 9. Addendum 2026-10-17 — promptVersion 2 (grounded single call, G13)
+
+- New `PRED#` rows carry `promptVersion: 2` (methodologyVersion stays 1; the question schema and gates G1–G12 are unchanged). Score pre/post separately: rows without `promptVersion` came from the two-call research + forecast prompt.
+- Why: on 40 held-out stories the old prompt gave all 40 forecasts a 55–65% / 60–70% "Most Likely", invented 30 dated claims (e.g. "G20 Summit Nov 15–16, New Delhi"; it is Miami, 14–15 Dec 2026) and ~15% of answers were fenced JSON that never reached the PRED# log. Root cause and references: `project-docs/prediction/_active/TASK_2026-10-17_grounded_forecast_and_cost.md`.
+- G13 (grounded-date gate): a trigger whose text names a date or scheduled event absent from the model's input is kept as narrative (`question:false`), never scored; recorded in `capture.dropped` with `gate: 'G13'`.
+- Deadlines are now asked for 8–90 days out (G3 still allows up to 180).

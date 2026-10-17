@@ -540,6 +540,7 @@ async function writeAnalysis(countryName, graph, country) {
 
 // ─── Grok API ─────────────────────────────────────────────────────────────────
 
+const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 async function invokeGrok(prompt) {
   const response = await fetch(GROK_ENDPOINT, {
     method: 'POST',
@@ -571,6 +572,7 @@ async function invokeGrok(prompt) {
     throw new Error(`Grok API error: ${message}`);
   }
 
+  logUsage('systems_web', GROK_MODEL, parsed?.usage);
   const content = parsed?.choices?.[0]?.message?.content || '';
   return { content: stripCodeFence(content) };
 }

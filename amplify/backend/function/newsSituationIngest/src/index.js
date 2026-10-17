@@ -133,6 +133,7 @@ async function fetchRss() {
   return all.filter((a) => a.ageH <= MAX_AGE_H && !seen.has(a.url) && seen.add(a.url));
 }
 
+const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 // ── classify one batch via the flash model (raw fetch, OpenAI-compatible) ─────
 async function classifyBatch(articles) {
   const res = await fetch(`${API_BASE}/chat/completions`, {
@@ -144,6 +145,7 @@ async function classifyBatch(articles) {
   });
   if (!res.ok) throw new Error(`LLM ${res.status}`);
   const j = await res.json();
+  logUsage('classify_batch', MODEL, j.usage);
   const raw = parseClassification(j.choices?.[0]?.message?.content);
   const byN = new Map(raw.map((r) => [Number(r.n), r]));
   return articles.map((a, i) => normalizeClassified(byN.get(i + 1) || raw[i] || {}, a)).filter(Boolean);

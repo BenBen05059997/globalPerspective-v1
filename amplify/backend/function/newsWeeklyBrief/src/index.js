@@ -288,6 +288,7 @@ function parseJson(content) {
 }
 
 // ── LLM call (OpenAI-compatible; mirrors newsThreadAnalysis) ────────────────────
+const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 async function invokeLLM(prompt) {
   const res = await fetch(LLM_ENDPOINT, {
     method: 'POST',
@@ -307,6 +308,7 @@ async function invokeLLM(prompt) {
   let parsed;
   try { parsed = JSON.parse(raw); } catch { parsed = raw; }
   if (!res.ok) throw new Error(`LLM error: ${parsed?.error?.message || raw || res.status}`);
+  logUsage('weekly_brief', LLM_MODEL, parsed?.usage);
   return { modelId: parsed?.model || LLM_MODEL, content: extractContent(parsed) };
 }
 

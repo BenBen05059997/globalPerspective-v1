@@ -508,6 +508,7 @@ async function captureIngestion(inputArticles, chosenTopics, generationId) {
   }
 }
 
+const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -691,6 +692,7 @@ exports.handler = async (event) => {
       thinking: { type: 'disabled' },
     });
     const text = result?.choices?.[0]?.message?.content || '';
+    logUsage('topic_selection', MODEL_NAME, result?.usage);
 
     console.log(
       'Grok finish_reason:', result?.choices?.[0]?.finish_reason,

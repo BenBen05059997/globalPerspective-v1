@@ -162,6 +162,7 @@ Generate a JSON object with exactly these fields:
 Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 }
 
+const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 async function callGrok(prompt) {
   if (!XAI_API_KEY) return null;
   const res = await fetch(GROK_ENDPOINT, {
@@ -183,6 +184,7 @@ async function callGrok(prompt) {
   const raw = await res.text();
   if (!res.ok) throw new Error(`Grok API error ${res.status}: ${raw.substring(0, 200)}`);
   const parsed = JSON.parse(raw);
+  logUsage('daily_brief', GROK_MODEL, parsed?.usage);
   const content = parsed?.choices?.[0]?.message?.content || '';
   return content.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').trim();
 }
@@ -355,6 +357,7 @@ async function callAi(prompt) {
   }
 
   const data = await res.json();
+  logUsage('devto_article_openrouter', AI_MODEL, data?.usage);
   return data.choices?.[0]?.message?.content?.trim() || '';
 }
 

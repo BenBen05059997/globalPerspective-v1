@@ -364,6 +364,7 @@ async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = [])
   }));
 }
 
+const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 async function invokeGrok(prompt) {
   const started = Date.now();
   const response = await fetch(GROK_ENDPOINT, {
@@ -390,6 +391,7 @@ async function invokeGrok(prompt) {
     throw new Error(`Grok API error: ${message}`);
   }
 
+  logUsage('thread_analysis', GROK_MODEL, parsed?.usage);
   const content = extractContent(parsed);
   return { modelId: parsed?.model || GROK_MODEL, content, latencyMs };
 }

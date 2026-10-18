@@ -974,6 +974,14 @@ One Function URL (auth NONE; **CORS emitted in code, the URL's own CORS config s
 
 ---
 
+### 39. `newsSelectionShadow` — layered story selector, shadow mode (code ready 2026-10-18; **NOT deployed**)
+**Path:** `amplify/backend/function/newsSelectionShadow/src/` (CommonJS, nodejs22.x, runtime AWS SDK only). `classifier-core.js` is a **symlink** to `newsSituationIngest/src/classifier-core.js` (zip stores the file), so clustering has one source. Plan: `prediction/_active/TASK_2026-10-17_grounded_forecast_and_cost.md` P7c.
+**Trigger (planned):** EventBridge `cron(20 4,12,20 * * ? *)`, 5 min after topic selection. 256 MB / 120 s. Env `WORLD_BUCKET`, `JEV_API_KEY` (secret), optional `MAX_JEV_CALLS` (default 300).
+Each run: reads `audit/ingest-capture/latest.json` (skips when older than 30 min = selection failed), the 8 hourly `corpus/` snapshots before the run, `situations/state/gdacs_*`, the previous 24h of `audit/ingest-capture/<day>/` (Jev's "already covered") and of its own output (24h self-dedup). Selects with `selection-core.js` (shared with `predictions/jev-backtest/run.mjs`): story-scan count/spread → Jev (TypeSafe `jev-latest`: impact, new-since-last-brief, done-or-said) → code gates and quotas (done-only, one story per war, decision lift, GDACS tag only on reported disasters, ≤25% per category, ≤2 per country, slot count = the live run's). Writes `audit/selection-shadow/YYYY-MM-DD/HHMM.json` + `latest.json`: picks with storyIds, category (the 12), iso3, actors, scores, a reason line, sources `{title,url,source,snippet}`, `alsoPublished`; plus what was published. Nothing on the site reads it. Logs a `[usage]` line (Jev calls, input tokens). Measured locally 2026-10-18: 66 Jev calls, ~$0.002 per run.
+Role (planned) `newsSelectionShadow-role`: `s3:GetObject` on `corpus/*`, `situations/state/*`, `audit/ingest-capture/*`, `audit/selection-shadow/*`; `s3:ListBucket` limited to those prefixes; `s3:PutObject` on `audit/selection-shadow/*`; `AWSLambdaBasicExecutionRole`.
+
+---
+
 ## Observability & Monitoring
 
 Two layers, both roll-your-own (the user rejects paid Sentry on cost):

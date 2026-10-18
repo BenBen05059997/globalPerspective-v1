@@ -5,45 +5,46 @@ For each pair, both stories were available in the same selection window. Pick th
 ## Pair 1
 
 ### Option 1
-**More Than Half of Europe Faced Intense Summer Heat Stress, EU Monitor Says**
-- Outlets: 2 source outlet(s); severity: n/a; countries: EUU
-- More than half of Europe faced intense summer heat stress, EU monitor says (france24.com)
-- Mass Heat Wave Deaths in Europe Show Climate Extremes Are Outpacing Adaptation Efforts (insideclimatenews.org)
+**Houthi Attack on Riyadh Airport Wounds Several, Suspends Operations**
+- Outlets: 7 source outlet(s); severity: 4 of 5; countries: SAU, YEM
+- Attack on airport in Saudi capital, Riyadh, leaves several injured (aljazeera.com)
+- Riyadh airport suspends operations after attack leaves multiple people wounded (france24.com)
+- Several wounded in Riyadh airport attack, operations suspended, Saudi aviation authority says (al-monitor.com)
 
 ### Option 2
-**Eritrea severs diplomatic ties with Ethiopia in tit-for-tat move**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: ERI, ETH
-- Eritrea and Ethiopia shutter embassies as Red Sea conflict looms (middleeasteye.net)
+**Eight Palestinians killed in Israeli attacks on Gaza**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: ISR, PSE
+- Israeli strikes kill five in Gaza, medics say (al-monitor.com)
 
 Your pick: ____
 
 ## Pair 2
 
 ### Option 1
-**US Imposes Sanctions on International Criminal Court, Drawing Global Condemnation**
-- Outlets: 2 source outlet(s); severity: 4 of 5; countries: USA, NLD, JPN
-- Rubio cites ‘necessity’ of U.S. sanctions on ICC in call with Japanese counterpart (japantimes.co.jp)
-- STRANGE TIMING: US imposes sanctions on ICC hours after South African judge wins Nobel Peace Prize (dailymaverick.co.za)
+**Israeli forces kill one in occupied West Bank**
+- Outlets: 2 (3 articles); severity: 4 of 5; countries: ISR, PSE
+- Israeli forces raid Qalqilyah in occupied West Bank (middleeasteye.net)
 
 ### Option 2
-**Tropical Cyclone SIMON-26**
-- Outlets: n/a (GDACS alert feed); severity: GDACS Red alert; countries: MEX
-- Orange Tropical Cyclone SIMON-26 in México from: 07 Oct 2026 to: 16 Oct 2026 .
+**Russia plague quarantine following lab death raises concerns**
+- Outlets: 6 source outlet(s); severity: 3 of 5; countries: RUS
+- Russia plague quarantine following lab death: Should we be worried? (aljazeera.com)
+- Should we be worried about a plague outbreak in Russia? (france24.com)
+- A plague research employee in Russia died from an unknown cause. Here's what we know (npr.org)
 
 Your pick: ____
 
 ## Pair 3
 
 ### Option 1
-**US Military to Cut 20% of Generals and Admirals, Hegseth Announces**
-- Outlets: 2 source outlet(s); severity: 5 of 5; countries: USA
-- Hegseth announces 20% cut to US military commanders (aljazeera.com)
-- Pentagon confirms U.S. military will cut 20% of generals and admirals (cbc.ca)
+**More Than Half of Europe Faced Intense Summer Heat Stress, EU Monitor Says**
+- Outlets: 1 source outlet(s); severity: n/a; countries: FRA, DEU, ITA, ESP
+- Europe’s Extreme Summer Triggered Cascading Climate Shocks (insideclimatenews.org)
 
 ### Option 2
-**Tropical Cyclone POLO-26**
-- Outlets: n/a (GDACS alert feed); severity: GDACS Red alert; countries: MEX
-- Red Tropical Cyclone POLO-26 in Mexico from: 21 Sep 2026 to: 30 Sep 2026 .
+**Yemen: Deadly battles between Ansar Allah, gov't forces**
+- Outlets: 2 (4 articles); severity: 4 of 5; countries: YEM, GBR, SAU
+- Houthis say Saudi forces launched 94 strikes in 24 hours (middleeasteye.net)
 
 Your pick: ____
 
@@ -55,139 +56,176 @@ Your pick: ____
 - North Korea test-fires intermediate-range missile amid mine blast tensions (scmp.com)
 
 ### Option 2
-**Ebola drug trial launches in Congo amid deadly outbreak**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: COD
-- DR Congo trial of post-Ebola exposure drug underway (africanews.com)
+**Israeli strike kills five in Gaza, including four women**
+- Outlets: 2 (3 articles); severity: 4 of 5; countries: ISR, PSE
+- Israeli air attack on Gaza apartment kills five Palestinians (aljazeera.com)
 
 Your pick: ____
 
 ## Pair 5
 
 ### Option 1
-**Russia ramps up attacks on Kyiv, strikes school and hospital**
-- Outlets: 2 (2 articles); severity: 5 of 5; countries: UKR, RUS
-- Russia strikes another Kyiv bridge, deepening travel chaos (france24.com)
+**Israel Marks Three Years Since October 7 Attacks Amid Reports Netanyahu Was Warned**
+- Outlets: 3 source outlet(s); severity: 4 of 5; countries: ISR, PSE
+- Israel marks three years since October 7 attack ahead of elections (france24.com)
+- 3 years on, Israelis grapple with reports Netanyahu was warned before Oct. 7 attacks (npr.org)
+- Israelis demand accountability over 7 October failures three years after attacks (bbc.com)
 
 ### Option 2
-**Houthis Claim Strike on Aramco Oil Facility Near Riyadh as Saudi Arabia Strikes Sanaa**
-- Outlets: 4 source outlet(s); severity: 4 of 5; countries: SAU, YEM, IRN
-- Houthis claim strike on Saudi energy facility as Yemen fighting intensifies (aljazeera.com)
-- Houthis claim attack on Aramco oil facility in Saudi Arabia (middleeasteye.net)
-- Houthis claim strike on oil facilty near Riyadh, accuse Saudi forces of pounding Yemen's capital (france24.com)
+**US moves long-range bombers from UK; Israel allegedly warned before Oct. 7**
+- Outlets: 4 (5 articles); severity: 3 of 5; countries: USA, GBR, ISR, IRN, EGY, KWT, ARE, KEN, GRC
+- US approves over $2bn weapons sales to Egypt, Kuwait, UAE (middleeasteye.net)
+- US backs stronger AU-UN role in Africa conflicts (allafrica.com)
 
 Your pick: ____
 
 ## Pair 6
 
 ### Option 1
-**Iraq Devalues Currency, Sparking Opposition from MPs**
-- Outlets: 1 source outlet(s); severity: n/a; countries: IRQ
-- Why has Iraq devalued its currency, and why are some MPs against it? (aljazeera.com)
+**US waives rights condition on Egypt military aid citing Iran**
+- Outlets: 2 (3 articles); severity: 3 of 5; countries: USA, EGY, IRN, CHN
+- US marks China National Day with pared-down note (scmp.com)
 
 ### Option 2
-**China nominates health official Song Li as WHO head**
-- Outlets: 2 (2 articles); severity: 3 of 5; countries: CHN
-- China nominates Song Li for WHO chief (channelnewsasia.com)
+**G20 Trade Ministers Deadlocked Over Industrial Overcapacity, Says US Trade Chief**
+- Outlets: 1 source outlet(s); severity: 3 of 5; countries: USA
+- G20 trade ministers deadlocked over industrial overcapacity, says US trade chief (france24.com)
 
 Your pick: ____
 
 ## Pair 7
 
 ### Option 1
-**Fort Hood shooter Nidal Hasan to be executed by firing squad**
-- Outlets: 2 source outlet(s); severity: 3 of 5; countries: USA
-- Fort Hood shooter to be executed by firing squad: All to know (aljazeera.com)
-- Fort Hood shooter to be executed by firing squad - a first for US military since World War Two (bbc.com)
+**Russia Deploys Jet-Powered Drones in Ukraine, Marking Deadly Evolution in War**
+- Outlets: 2 source outlet(s); severity: n/a; countries: UKR, RUS
+- Russia's jet-powered drones mark a deadly evolution in Ukraine war (asiatimes.com)
+- How Ukrainians are coping with new, more deadly Russian attacks (npr.org)
 
 ### Option 2
-**Israeli forces kill one in occupied West Bank**
-- Outlets: 2 (3 articles); severity: 4 of 5; countries: ISR, PSE
-- Israeli forces raid Qalqilyah in occupied West Bank (middleeasteye.net)
+**Russia strikes Ukraine as Zelenskyy visits frontline**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: UKR, RUS
+- Zelensky claims Ukrainian strikes on sites in Russia (lemonde.fr)
 
 Your pick: ____
 
 ## Pair 8
 
 ### Option 1
-**Israel marks third anniversary of October 7 attack**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: ISR, PSE
-- Israel remembers October 7 dead amid election heat (timesofindia.indiatimes.com)
+**Russian attack on Ukrainian city kills 20 after Trump eases diesel sanctions**
+- Outlets: 6 (8 articles); severity: 5 of 5; countries: UKR, USA, RUS
+- Ukraine ready to halt refinery strikes if Russia stops energy attacks (france24.com)
+- Zelensky says Russia struck energy sites after ceasefire (lemonde.fr)
 
 ### Option 2
-**Messi Plays Final Argentina Game to Roaring Buenos Aires Farewell**
-- Outlets: 6 source outlet(s); severity: n/a; countries: ARG
-- Lionel Messi plays final Argentina game to roaring Buenos Aires farewell (aljazeera.com)
-- Messi bids farewell to Argentina fans in emotional international finale (france24.com)
-- Emotion, tears as Messi retires from Argentina national team (japantimes.co.jp)
+**Sudan Airstrike Kills 72 Artisanal Miners Near Egypt Border**
+- Outlets: 2 source outlet(s); severity: 4 of 5; countries: SDN, EGY
+- At least 72 Sudanese artisanal miners killed in strike, rights monitor says (dailymaverick.co.za)
+- Seventy-two killed in air strike on gold mine near Sudan-Egypt border (middleeasteye.net)
 
 Your pick: ____
 
 ## Pair 9
 
 ### Option 1
-**Spanish PM Sánchez Loses Housing Crisis Vote After Eviction of 87-Year-Old Woman**
-- Outlets: 3 source outlet(s); severity: 3 of 5; countries: ESP
-- Spanish lawmakers vote down affordable housing bills in blow to Sanchez’s government (france24.com)
-- Sánchez begins reflection on early election as protesters call for general strike (euronews.com)
-- Spanish PM Sánchez loses key housing crisis vote after eviction of woman, 87 (bbc.com)
+**London rejects Argentina's arbitration over Sea Lion oil project**
+- Outlets: 5 (5 articles); severity: 3 of 5; countries: GBR, FRA, ARG
+- UK-France migrant deal targeting English Channel crossings scrapped (scmp.com)
+- UK-France Channel migrant exchange deal scrapped (channelnewsasia.com)
 
 ### Option 2
-**Terror in Kyiv as Russia ramps up attacks**
-- Outlets: 2 (2 articles); severity: 5 of 5; countries: UKR, RUS
-- Kyiv in dramatic situation as Russia steps up bombing (france24.com)
+**US Military to Cut 20% of Generals and Admirals, Hegseth Announces**
+- Outlets: 2 source outlet(s); severity: 5 of 5; countries: USA
+- Hegseth announces 20% cut to US military commanders (aljazeera.com)
+- Pentagon confirms U.S. military will cut 20% of generals and admirals (cbc.ca)
 
 Your pick: ____
 
 ## Pair 10
 
 ### Option 1
-**Russia strikes Ukraine as Zelenskyy visits frontline**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: UKR, RUS
-- Zelensky claims Ukrainian strikes on sites in Russia (lemonde.fr)
+**US Court Halts Execution of Christa Pike, First Woman in Tennessee in 200 Years**
+- Outlets: 4 source outlet(s); severity: 3 of 5; countries: USA
+- First execution of a woman in US state of Tennessee for 200 years halted (scmp.com)
+- Tennessee's planned execution of Christa Pike halted pending appeals court review (cbc.ca)
+- Court halts Tennessee's first execution of woman in 200 years (bangkokpost.com)
 
 ### Option 2
-**Explosions Heard in Ethiopia's Capital After Drone Flights Banned**
-- Outlets: 1 source outlet(s); severity: 4 of 5; countries: ETH
-- Explosions heard in Ethiopia's capital after drone flights banned (bbc.com)
+**Putin orders Russian army to increase troop size to 1.55M**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: RUS, UKR
+- Russia raises troop numbers to 1.55m as Zelensky accuses mass mobilisation (timesofindia.indiatimes.com)
 
 Your pick: ____
 
 ## Pair 11
 
 ### Option 1
-**Hundreds of Israelis storm Al-Aqsa Mosque compound**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: ISR, PSE
-- Hundreds of Jewish settlers storm Al-Aqsa mosque (middleeasteye.net)
+**Russian strikes kill 8 in Ukraine; Trump diesel deal backfires**
+- Outlets: 3 (4 articles); severity: 5 of 5; countries: UKR, RUS, USA
+- Ukraine strikes Russian fuel site after Trump-Putin diesel deal (aljazeera.com)
+- Zelenskyy slams Trump's Russian diesel deal (timesofindia.indiatimes.com)
 
 ### Option 2
-**UK-France 'One In, One Out' Migrant Exchange Deal Scrapped**
-- Outlets: 6 source outlet(s); severity: 4 of 5; countries: GBR, FRA
-- UK-France 'one in, one out' migrant exchange deal is scrapped (france24.com)
-- UK-France deal targeting migrants crossing English Channel is scrapped (scmp.com)
-- UK ends 'one in, one out' migrant returns deal with France (euronews.com)
+**Rogue Anthropic AI Agent Gave Police Fake Tip in Unsolved Murder Case**
+- Outlets: 2 source outlet(s); severity: 3 of 5; countries: USA
+- Rogue Anthropic AI agent gave police fake tip in unsolved murder case (bbc.com)
+- Anthropic cites new AI misbehavior, some on government sites (japantimes.co.jp)
 
 Your pick: ____
 
 ## Pair 12
 
 ### Option 1
-**Eight Palestinians killed in Israeli attacks on Gaza**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: ISR, PSE
-- Israeli strikes kill five in Gaza, medics say (al-monitor.com)
+**Two killed in Kyiv as Russia launches massive attack**
+- Outlets: 7 (9 articles); severity: 4 of 5; countries: UKR, RUS
+- Two killed in Kyiv fire after massive strikes (france24.com)
+- Russian barrage hits Kyiv hours after Zelensky warning (scmp.com)
 
 ### Option 2
-**Netanyahu Faces Fresh Allegations He Ignored Warnings About Oct. 7 Before Election**
-- Outlets: 1 source outlet(s); severity: n/a; countries: ISR
-- Netanyahu faces fresh allegations he ignored warnings about Oct. 7 — right before an election (cbc.ca)
+**Israel Marks Third Anniversary of October 7 Hamas Attacks Amid Reports Netanyahu Was Warned**
+- Outlets: 6 source outlet(s); severity: 4 of 5; countries: ISR, PSE
+- 3 years on, Israelis grapple with reports Netanyahu was warned before Oct. 7 attacks (npr.org)
+- October 7: Israelis mark three years since Hamas attacks (france24.com)
+- Israel marks three years since Hamas's October 7 attack (france24.com)
 
 Your pick: ____
 
 ## Pair 13
 
 ### Option 1
-**El Niño Reaches Record Strength, Japan Weather Agency Says**
-- Outlets: 1 source outlet(s); severity: n/a; countries: JPN
-- Weather-roiling El Nino hits record strength, Japan weather agency says (japantimes.co.jp)
+**Terror in Kyiv as Russia ramps up attacks**
+- Outlets: 2 (2 articles); severity: 5 of 5; countries: UKR, RUS
+- Kyiv in dramatic situation as Russia steps up bombing (france24.com)
+
+### Option 2
+**New York Governor Appoints Special Prosecutor in Cornell Gang Rape Case**
+- Outlets: 6 source outlet(s); severity: 3 of 5; countries: USA
+- ‘I want the truth’: NY governor appoints prosecutor in Cornell rape case (aljazeera.com)
+- New York governor attacks handling of Cornell gang rape case, appoints special prosecutor (scmp.com)
+- Cornell rape case gets special prosecutor. And, Renee Good's family sues the government (npr.org)
+
+Your pick: ____
+
+## Pair 14
+
+### Option 1
+**North Korea tests new AI-guided torpedo**
+- Outlets: 3 (3 articles); severity: 3 of 5; countries: PRK
+- North Korea tests high-speed AI-guided torpedo (timesofindia.indiatimes.com)
+- North Korea says it tested AI-assisted torpedo system (channelnewsasia.com)
+
+### Option 2
+**Kenya Confirms Third Ebola Case Linked to First Patient**
+- Outlets: 1 source outlet(s); severity: 3 of 5; countries: KEN, COD
+- KENYA CONFIRMS THIRD EBOLA CASE (france24.com)
+
+Your pick: ____
+
+## Pair 15
+
+### Option 1
+**Populations of Wild Species Fell by 73% from 1970 to 2022, WWF Reports**
+- Outlets: 1 source outlet(s); severity: n/a; countries: WLD
+- Wildlife Populations Have Plunged Globally, But Some Buck the Trend (insideclimatenews.org)
 
 ### Option 2
 **Nearly 20 Israeli settler attacks target Palestinians in West Bank**
@@ -196,107 +234,78 @@ Your pick: ____
 
 Your pick: ____
 
-## Pair 14
+## Pair 16
 
 ### Option 1
-**G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid US Pressure**
-- Outlets: 4 source outlet(s); severity: 4 of 5; countries: USA, CAN, FRA, DEU
-- G7 nations bow to US pressure and avoid crippling diesel ban (aljazeera.com)
+**G7 Agrees to Release 100 Million Barrels of Oil and Diesel Amid Energy Crunch**
+- Outlets: 3 source outlet(s); severity: 4 of 5; countries: USA, CAN, FRA, DEU
+- G7 to release millions of barrels of oil and diesel after Trump threat (bbc.com)
 - The G7 will release 100 million reserve barrels of diesel fuel over the next 4 months (npr.org)
 - G7 nations agree to release 100 million barrels of oil, including diesel, amid energy crunch (cbc.ca)
 
 ### Option 2
-**Drought in Austria, Bosnia  and  Herzegovina, Belgium, Belarus, Switzerland, Czech Republic, Germany, Denmark, Spain, France, Croatia, Hungary, Ireland, Italy, Liechtenstein, Luxembourg, Moldova, Montenegro, Netherlands, Norway, Poland, Romania, Serbia, Russia, Sweden, Slovenia, Slovakia, San Marino, Ukraine, **
-- Outlets: n/a (GDACS alert feed); severity: GDACS Orange alert; countries: AUT, BIH, BEL, BLR, CHE, CZE, DEU, DNK, ESP, FRA, HRV, HUN, IRL, ITA, LIE, LUX, MDA, MNE, NLD, NOR, POL, ROU, SRB, RUS, SWE, SVN, SVK, SMR, UKR
-- Orange Drought in Austria, Bosnia and Herzegovina, Belgium, Belarus, Switzerland, Czech Republic, Germany, Denmark, Spain, France, Croatia, Hungary, Ireland, Italy, Liechtenstein, Luxembourg, Moldova, Montenegro, Netherlands, Norway, Poland, Romania, Serbia, Russia, Sweden, Slovenia, Slovakia, San Marino, Ukraine, from: 21 Dec 2025 to: 02 Oct 2026 .
-
-Your pick: ____
-
-## Pair 15
-
-### Option 1
-**France Braces for Return of Yellow Vests as Cost-of-Living Protests Spread**
-- Outlets: 1 source outlet(s); severity: 3 of 5; countries: FRA
-- 'Finish what we started': After student protests, France braces for return of the Yellow Vests (france24.com)
-
-### Option 2
-**North Korea tests new AI-guided torpedo**
-- Outlets: 3 (3 articles); severity: 3 of 5; countries: PRK
-- North Korea tests high-speed AI-guided torpedo (timesofindia.indiatimes.com)
-- North Korea says it tested AI-assisted torpedo system (channelnewsasia.com)
-
-Your pick: ____
-
-## Pair 16
-
-### Option 1
-**Ukraine struggles with Starlink and US data as missiles hit Kyiv**
-- Outlets: 2 (2 articles); severity: 4 of 5; countries: UKR, USA, RUS
-- Starlink functionality fully restored for Ukrainian military (themoscowtimes.com)
-
-### Option 2
-**Agriculture Minister Sounds 'Super El Niño' Warning Bell and Calls for Water Restrictions**
-- Outlets: 1 source outlet(s); severity: n/a; countries: ZAF
-- EXTREME WEATHER : Agriculture Minister sounds ‘super El Niño’ warning bell and calls for water restrictions (dailymaverick.co.za)
+**Russia ramps up attacks on Kyiv, strikes school and hospital**
+- Outlets: 2 (2 articles); severity: 5 of 5; countries: UKR, RUS
+- Russia strikes another Kyiv bridge, deepening travel chaos (france24.com)
 
 Your pick: ____
 
 ## Pair 17
 
 ### Option 1
-**Zelenskyy blasts US as strikes kill 78 in Ukraine**
-- Outlets: 5 (5 articles); severity: 5 of 5; countries: UKR, RUS, USA
-- Russian strikes on Ukraine buses kill 30 as Kyiv blackouts worsen (npr.org)
-- Russian strikes force Kyiv residents to flee before winter (bbc.co.uk)
+**Israeli forces kill seven Palestinians across Gaza**
+- Outlets: 2 (2 articles); severity: 4 of 5; countries: PSE, ISR
+- New Israeli strikes in Gaza kill seven, civil defence says (lemonde.fr)
 
 ### Option 2
-**Kenya Confirms First Ebola Case as Outbreak Spreads from DR Congo**
-- Outlets: 1 source outlet(s); severity: 4 of 5; countries: KEN, COD
-- South African judge awarded Nobel Peace Prize (france24.com)
+**Christa Pike Now Walking After Failed Execution, Lawyer Says**
+- Outlets: 3 source outlet(s); severity: 3 of 5; countries: USA
+- Christa Pike case underscores prevalence of botched executions in US (aljazeera.com)
+- Christa Pike now walking after failed US execution, lawyer tells BBC (bbc.com)
+- Isaias intensifies to hurricane. And, judge orders Pike execution evidence preserved (npr.org)
 
 Your pick: ____
 
 ## Pair 18
 
 ### Option 1
-**China and EU Reach Understanding on Hybrid Vehicles After Trade Talks**
-- Outlets: 2 source outlet(s); severity: n/a; countries: CHN, EUU
-- China and EU reach ‘understanding’ on hybrid vehicles after crunch trade talks (scmp.com)
-- EU weighs safeguard tariffs as China refuses hybrid car limits (asiatimes.com)
+**Sweden to Send Patriot Missiles to Poland to Bolster NATO's Eastern Flank**
+- Outlets: 1 source outlet(s); severity: n/a; countries: SWE, POL
+- Swedish Patriot missiles to be sent to Poland to bolster NATO's eastern flank (euronews.com)
 
 ### Option 2
-**EU removes Panama from tax haven blacklist**
-- Outlets: 2 (2 articles); severity: 2 of 5; countries: PAN, EUU, VNM
-- EU removes Panama and Vietnam from tax haven blacklist (lemonde.fr)
+**Yemeni forces launch offensive to retake Houthi-held al-Waziiya**
+- Outlets: 2 (3 articles); severity: 4 of 5; countries: YEM, IRN
+- Strikes reported in Yemen's Ibb and Taiz (middleeasteye.net)
 
 Your pick: ____
 
 ## Pair 19
 
 ### Option 1
-**Zimbabwe Declares State of Disaster After Hailstorm Damages 8,500 Homes**
-- Outlets: 1 source outlet(s); severity: 3 of 5; countries: ZWE
-- Zimbabwe: Mnangagwa Declares State of Disaster As 8,500 Homes Lose Roofs in Masvingo Hailstorm (allafrica.com)
+**EU removes Panama from tax haven blacklist**
+- Outlets: 2 (2 articles); severity: 2 of 5; countries: PAN, EUU, VNM
+- EU removes Panama and Vietnam from tax haven blacklist (lemonde.fr)
 
 ### Option 2
-**Two killed in Kyiv as Russia launches massive attack**
-- Outlets: 7 (9 articles); severity: 4 of 5; countries: UKR, RUS
-- Two killed in Kyiv fire after massive strikes (france24.com)
-- Russian barrage hits Kyiv hours after Zelensky warning (scmp.com)
+**China and EU Reach Understanding on Hybrid Vehicles After Trade Talks**
+- Outlets: 2 source outlet(s); severity: n/a; countries: CHN, EUU
+- China and EU reach ‘understanding’ on hybrid vehicles after crunch trade talks (scmp.com)
+- EU weighs safeguard tariffs as China refuses hybrid car limits (asiatimes.com)
 
 Your pick: ____
 
 ## Pair 20
 
 ### Option 1
-**Populations of Wild Species Fell by 73% from 1970 to 2022, WWF Reports**
-- Outlets: 1 source outlet(s); severity: n/a; countries: WLD
-- Populations of wild species fell by an average of 73% from 1970 to 2022, WWF says (japantimes.co.jp)
+**Argentine Foreign Minister Says Argentina Will Stop Falklands Exploiting Offshore Oilfields**
+- Outlets: 1 source outlet(s); severity: 3 of 5; countries: ARG, GBR
+- Argentina will stop Falklands exploiting offshore oilfields, foreign minister says (theguardian.com)
 
 ### Option 2
-**US moves long-range bombers from UK; Israel allegedly warned before Oct. 7**
-- Outlets: 4 (5 articles); severity: 3 of 5; countries: USA, GBR, ISR, IRN, EGY, KWT, ARE, KEN, GRC
-- US approves over $2bn weapons sales to Egypt, Kuwait, UAE (middleeasteye.net)
-- US backs stronger AU-UN role in Africa conflicts (allafrica.com)
+**Ukraine fires nearly 900 drones at Russia, Moscow says**
+- Outlets: 3 (3 articles); severity: 4 of 5; countries: UKR, RUS, BGR
+- Ukraine launches major drone attack on Moscow region, killing two (aljazeera.com)
+- Ukraine launches drone barrage on Moscow, ships hit off Bulgaria (dailysabah.com)
 
 Your pick: ____

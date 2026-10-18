@@ -1,0 +1,1 @@
+../../newsSituationIngest/src/classifier-core.js

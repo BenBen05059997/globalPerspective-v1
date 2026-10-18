@@ -1,5 +1,10 @@
 # Global Perspectives — Change Log
 
+## 2026-10-18 (balance guard logs every check; ARCHITECTURE schedules re-verified)
+
+- **`newsModelGuard` (deployed 15:23 UTC):** the balance check now logs `{deepseekBalanceUsd, isAvailable, alerting}` on every run; before, an alert run logged nothing (10-18 12:00 alerted silently). Days-left estimate uses the measured ~$0.40/day (was $0.75). Tests: 4 pass. Manual run 15:23 UTC: **balance $0.49**, alert sent.
+- **ARCHITECTURE.md:** every schedule line re-checked against live EventBridge rules and Scheduler (selection 04:15/12:15/20:15, research 04:25/…, breaking alert 04:35/…, daily chain 04:40–05:30, resolver ENABLED 10:30, source audit Mon/Wed/Fri 11:30, breaking-email DISABLED); shadow selector row added.
+
 ## 2026-10-18 (shadow selector switched on)
 
 - **`newsSelectionShadow` deployed** (operator yes 2026-10-18): role `newsSelectionShadow-role` (S3 read on `corpus/*`, `situations/state/*`, `audit/ingest-capture/*`, `audit/selection-shadow/*`; write only `audit/selection-shadow/*`; basic logging), nodejs22.x 256 MB / 120 s, env `WORLD_BUCKET` + `JEV_API_KEY` (from the operator's key file via a temp file, deleted), EventBridge `TriggerSelectionShadow` `cron(20 4,12,20 * * ? *)`. Test invoke at 15:08 UTC skipped correctly (no selection run in the last 30 min). First real run 20:20 UTC. No site change.

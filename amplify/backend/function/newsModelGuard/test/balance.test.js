@@ -47,7 +47,7 @@ test('below threshold publishes exactly one alert with balance and days', async 
   const r = await checkDeepSeekBalance({ fetchImpl: f, publish: rec.publish });
   assert.equal(rec.published.length, 1);
   assert.equal(rec.published[0].subject, 'DeepSeek balance low: $2.50');
-  assert.match(rec.published[0].message, /~3 days/);
+  assert.match(rec.published[0].message, /~6 days/);
   assert.equal(r.alerted, true);
   assert.equal(f.calls[0].url, 'https://api.deepseek.com/user/balance');
   assert.equal(f.calls[0].opts.headers.Authorization, 'Bearer test-key-not-real');

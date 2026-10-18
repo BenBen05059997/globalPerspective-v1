@@ -54,7 +54,7 @@ async function liveDeepSeekModels() {
 // Burn figure is the approximate current rate, used only for the "~N days" line in the alert.
 const BALANCE_URL = 'https://api.deepseek.com/user/balance';
 const BALANCE_ALERT_USD = Number(process.env.DEEPSEEK_BALANCE_ALERT_USD) || 3;
-const DAILY_BURN_USD = 0.75;
+const DAILY_BURN_USD = 0.4; // measured from [usage] logs 2026-10-18 (~$0.33-0.38/day for the logged jobs)
 
 async function checkDeepSeekBalance({ fetchImpl = fetch, publish = defaultPublish } = {}) {
   if (!DEEPSEEK_KEY) { console.warn('newsModelGuard: no DEEPSEEK_API_KEY, balance check skipped'); return null; }
@@ -72,10 +72,8 @@ async function checkDeepSeekBalance({ fetchImpl = fetch, publish = defaultPublis
   const usdTotal = usd ? Number(usd.total_balance) : NaN;
   const unavailable = body?.is_available === false;
   const low = Number.isFinite(usdTotal) && usdTotal < BALANCE_ALERT_USD;
-  if (!unavailable && !low) {
-    console.log(JSON.stringify({ deepseekBalanceUsd: usdTotal, threshold: BALANCE_ALERT_USD, alerted: false }));
-    return { alerted: false };
-  }
+  console.log(JSON.stringify({ deepseekBalanceUsd: usdTotal, isAvailable: body?.is_available, threshold: BALANCE_ALERT_USD, alerting: unavailable || low }));
+  if (!unavailable && !low) return { alerted: false };
   if (!unavailable && !Number.isFinite(usdTotal)) {
     console.warn('newsModelGuard: DeepSeek balance response had no usable USD total_balance');
     return null;

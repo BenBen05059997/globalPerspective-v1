@@ -19,6 +19,21 @@ Peak = 01:00–04:00 and 06:00–10:00 UTC, Mon–Fri. Thinking mode is off on e
 - Research job (largest cost, ~50–65%) changed to one grounded v4-pro call per story (was two): measured 59–65% of the old per-story cost on 13 live + 40 held-out stories (`predictions/forecast-ab/`).
 - Every DeepSeek call now logs `[usage] {...}` with real token counts — replace the estimates below with a week of measured numbers (CloudWatch Logs Insights: filter `[usage]`, sum `prompt_tokens`/`completion_tokens` by `fn`).
 
+## Measured 2026-10-18 (from `[usage]` log lines; Saturday, off-peak prices only)
+
+| Job | $ on 10-18 (00:00–15:15 UTC) |
+|---|---|
+| Topic selection (`newsInvokeGemini-dev`) | 0.068 |
+| Research + forecasts (`NewsProjectInvokeAgentLambda-dev`, grounded single call) | 0.060 |
+| Story link webs (`newsSystemsAnalysis`) | 0.038 |
+| Story scan (`newsSituationIngest`) | 0.031 |
+| Country briefings (`newsCountryIntelligence`) | 0.023 |
+| Thread analysis (`newsThreadAnalysis`) | 0.018 |
+| Weekly brief / dev.to post | 0.011 |
+| **Logged total** | **~0.25** (full day ≈ $0.33–0.38) |
+
+Not logged yet (no `[usage]` line): `newsDriftCorrector`, `newsBreakingAlert`, `newsSourceAudit`, Studio. Weekday peak hours (01–04, 06–10 UTC) cost 2×. Balance 2026-10-18 15:23 UTC: $0.49.
+
 ## Before vs after the 2026-10-05 fixes ($/day, estimated)
 
 ```

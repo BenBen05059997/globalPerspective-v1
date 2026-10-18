@@ -1,5 +1,9 @@
 # Global Perspectives — Change Log
 
+## 2026-10-18 (shadow selector switched on)
+
+- **`newsSelectionShadow` deployed** (operator yes 2026-10-18): role `newsSelectionShadow-role` (S3 read on `corpus/*`, `situations/state/*`, `audit/ingest-capture/*`, `audit/selection-shadow/*`; write only `audit/selection-shadow/*`; basic logging), nodejs22.x 256 MB / 120 s, env `WORLD_BUCKET` + `JEV_API_KEY` (from the operator's key file via a temp file, deleted), EventBridge `TriggerSelectionShadow` `cron(20 4,12,20 * * ? *)`. Test invoke at 15:08 UTC skipped correctly (no selection run in the last 30 min). First real run 20:20 UTC. No site change.
+
 ## 2026-10-18 (layered story selector: shared core, backtest v8/v9, shadow job code — not deployed)
 
 - **`amplify/backend/function/newsSelectionShadow/` (new, NOT deployed):** `selection-core.js` holds the layered selector once (candidates from the story-scan corpus, GDACS tagging, Jev questions, gates, quotas, reason line); `predictions/jev-backtest/run.mjs` now imports it instead of its own copy (Jev-only and v6/v7 columns removed; git has them). `index.js` runs 5 min after each topic selection and writes `audit/selection-shadow/<day>/<HHMM>.json` (picks + reasons + sources with snippets, vs what was published). `classifier-core.js` is a symlink to the story scan's copy. Activation (role, Jev key in env, schedule) awaits operator yes. Tests: 6 pass. Local run on live S3 data (writes intercepted): 6 picks for 12 slots, 2 also published, 66 Jev calls, $0.002.

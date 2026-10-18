@@ -191,7 +191,7 @@ In practice **every visitor gets full access** — tier is display-only metadata
 ### 1. `newsInvokeGemini`
 **Path:** `amplify/backend/function/newsInvokeGemini/src/index.js`
 **Live deploy name:** `newsInvokeGemini-dev` (the `-dev` suffix is prod — verified 2026-09-10)
-**Trigger:** EventBridge Scheduler — `InvokeGoogleGemini` — `cron(0 */4 * * ? *)` (every 4 hours)
+**Trigger:** EventBridge Scheduler — `InvokeGoogleGemini` — `cron(15 4/8 * * ? *)` UTC (04:15 / 12:15 / 20:15; verified 2026-10-18)
 
 Despite the name, now uses **DeepSeek v4-flash** (migrated 2026-07-26 from the retired `deepseek-chat`; `thinking:disabled`) — no Gemini, no xAI.
 
@@ -225,7 +225,7 @@ Despite the name, now uses **DeepSeek v4-flash** (migrated 2026-07-26 from the r
 ### 2. `NewsProjectInvokeAgentLambda`
 **Path:** `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`
 **Live deploy name:** `NewsProjectInvokeAgentLambda-dev` (the `-dev` suffix is prod — verified 2026-09-10)
-**Trigger:** EventBridge Scheduler — `InvokeNewsAgent` — `cron(5 */4 * * ? *)` (every 4 hours at :05, runs after newsInvokeGemini)
+**Trigger:** EventBridge Scheduler — `InvokeNewsAgent` — `cron(25 4/8 * * ? *)` UTC (04:25 / 12:25 / 20:25, 10 min after newsInvokeGemini; verified 2026-10-18)
 
 > **M2 questions (deployed 2026-09-30, Batch 4 A).** Each forecast trigger now also carries its own `p` (integer 2–98) and a named `resolution_source`; `src/questions.js` gates G7–G12 (no `p` / generic source / near-duplicate / formality → kept as narrative `question:false`; lead time < 7 days or a restated headline → dropped) and stamps qualifying triggers `question:true`, `qid`, `p`, `resolutionSource`, `resolver:'human'`. The log row gains `questionSchema:1`, `regions`, `threadId`, `capture.questions`. `methodologyVersion` stays 1. `PREDICTION_MAX_TOKENS` default 2500.
 
@@ -304,7 +304,7 @@ Despite the name, now uses **DeepSeek v4-flash** (migrated 2026-07-26 from the r
 **Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
 
 **Path:** `amplify/backend/function/newsCountryIntelligence/src/index.js`
-**Trigger:** EventBridge Scheduler — `countryIntelliegence` — `cron(0 7 * * ? *)` (daily 07:00 UTC; reduced from 3×/day on 2026-05-16 to cut cost after the DeepSeek migration)
+**Trigger:** EventBridge Scheduler — `countryIntelliegence` — `cron(15 5 * * ? *)` (daily 05:15 UTC, verified 2026-10-18; reduced from 3×/day on 2026-05-16 to cut cost after the DeepSeek migration)
 
 **What it does:**
 1. Reads 30 days of archive entries; groups by country (`regions` field)
@@ -470,7 +470,7 @@ Bilateral relationship analysis between country pairs.
 **Story web, stage 2 (Batch 4 / E, deployed 2026-09-30):** each story is listed in the prompt with up to 10 DATED entries spread over its whole span (`src/spreadEntries.js`), each with a short code (`E1`..); the model cites the codes and `validateGraph` accepts only shown entries (a cite of an entry it was not shown is dropped; the first live run showed the model copying the whole line, so codes replaced the long topic ids). Edges keep `citedEntries` (real topic ids) and gain `cited:[{topicId,date,title}]`. After the country webs, `src/webRecords.js` builds from ALL current `SYSTEMS#` rows (real countries, ≤ 30 days old): one **`THREAD#<id>/WEB`** record per story in a web (`into`, `from`, `shared`, `analysedIn`, `places`, each web keeping its own confidence) and **`WEB#INDEX/LATEST`** (all links, per-story `state`: `linked` / `analysed_no_links` / `single_update` / `country_not_analysed`, which countries were analysed, and the measured **coverage**: stories in scope (last 14 d), those with 2+ updates, in any web, with a link). No `ttl` (table TTL is off; readers judge freshness from `generatedAt`). Event `{countries:[...]}` limits a run; `{dryRun:true}` returns prompt sizes and the coverage of the webs that exist (no LLM, no writes). Read through proxy `web_index`.
 
 **Path:** `amplify/backend/function/newsSystemsAnalysis/src/index.js`
-**Trigger:** EventBridge Rule — `TriggerNewsSystemsAnalysis` — `cron(15 7 * * ? *)` (daily 07:15 UTC)
+**Trigger:** EventBridge Rule — `TriggerNewsSystemsAnalysis` — `cron(0 5 * * ? *)` (daily 05:00 UTC; verified 2026-10-18)
 **Deployed:** 2026-04-25. IAM logging fixed 2026-04-27 (log group now exists). Coverage gate `SYSTEMS_TEST_COUNTRIES` widened 2026-07-01 → **12 countries** (`Iran,Israel,United States,Venezuela,China,Japan,Ukraine,Russia,France,Germany,Democratic Republic of the Congo,South Africa`; 56 eligible; daily cron keeps them fresh)
 
 Cross-domain causal relationship analysis. Maps how events across categories connect with time lags and confidence.
@@ -661,7 +661,7 @@ Turns the sink's passive capture into a push alert without a paid Sentry.
 
 ### 20. `newsPredictionResolver` — weekly prediction SETTLE Lambda (rewritten 2026-09-30, Batch 4 B; rule still DISABLED)
 **Path:** `amplify/backend/function/newsPredictionResolver/src/{index,lib,store,search,draft}.js` (the legacy proposer that scored at scenario probability is retired; the old file is kept only as a rollback zip)
-**Trigger:** EventBridge Rule `TriggerPredictionResolver` — **DISABLED until the operator enables it** (planned: `cron(30 10 * * ? *)`, input `{"action":"tick"}`, outside DeepSeek's peak window). 600 s / 256 MB. Role `newsPredictionResolver-role` (DynamoDB on the log only).
+**Trigger:** EventBridge Rule `TriggerPredictionResolver` — **ENABLED** `cron(30 10 * * ? *)` (verified 2026-10-18), input `{"action":"tick"}`, outside DeepSeek's peak window. 600 s / 256 MB. Role `newsPredictionResolver-role` (DynamoDB on the log only).
 
 Actions (every one supports `dryRun`; dryRun = no LLM, no writes): **`tick`** (daily, idempotent): commit the seeds of the next two ISO weeks, draw every ended week, on Mondays run the draft pass, write a heartbeat; **`draw {weekId}`**; **`draft {limit}`**; **`status`**; **`replay {items}`** (runs the drafter on supplied questions, never writes; used for validation).
 - **Pre-registered sample (K = 22):** a random 32-byte seed per week; `sha256(seed)` is committed before the week starts and the seed is revealed at the draw. Eligible = `question:true` (M2), issued in the week, lead 7–84 days. Rank by `sha256(seed|qid)`, keep only the lowest per story (`threadId`, else `topicId`), take the first 22 (never padded). `predictions/verify-draw.mjs` recomputes it.
@@ -675,7 +675,7 @@ Actions (every one supports `dryRun`; dryRun = no LLM, no writes): **`tick`** (d
 **Real-country rule (Batch 3 / F, deployed 2026-09-30):** `maxRegionRisk` ignores region keys and records older than 30 days; uses `src/placeFilter.js` (`isCountryName` + `usableCountryRecord`, byte-identical copy of the rule in `newsCountryIntelligence/src/refreshPolicy.js` with `placeNames.json` + `iso3Names.json`; guarded by `scripts/check-shared-sync.mjs`). Existing region `COUNTRY#` / `SYSTEMS#` rows stay in DynamoDB but are no longer read as countries.
 
 **Path:** `amplify/backend/function/newsBreakingAlert/src/index.js`
-**Trigger:** EventBridge Rule — `TriggerBreakingAlert` — **ENABLED** — `cron(15 */4 * * ? *)` (:15 each 4h cycle, after `NewsProjectInvokeAgentLambda` writes the analysis).
+**Trigger:** EventBridge Rule — `TriggerBreakingAlert` — **ENABLED** — `cron(35 4/8 * * ? *)` (04:35 / 12:35 / 20:35, after `NewsProjectInvokeAgentLambda` writes the analysis; verified 2026-10-18).
 
 > ⚠️ **Doc corrected 2026-07-25 (agent-review staleness audit):** this function was long documented as "BUILT — NOT DEPLOYED (dry-run)". Live AWS shows it is **deployed** (Timeout 120s / 256MB), driven by the **ENABLED** rule above, wired to the `GlobalPerspectiveBreakingAlerts` table, with **`DRY_RUN=false`**. What is still true is the **human-in-the-loop / never-auto-sends** design: even at `DRY_RUN=false` the code only writes a `status:'proposed'` row and logs "awaiting human confirmation before send" — the actual email send lives in `newsEmailSender` breaking mode (#29), gated on a human `status:'confirmed'`. So "proposes automatically, sends only after human confirm," **not** "dry-run/un-deployed."
 
@@ -744,7 +744,7 @@ Generates the **Weekly Signals Brief** — a *signals digest* (NOT a synthesized
 
 ### 24. `newsSourceAudit` — source-truth dead-man's-switch (SHIPPED 2026-06-15)
 **Path:** `amplify/backend/function/newsSourceAudit/src/index.js`
-**Trigger:** EventBridge `newsSourceAuditDaily` — `cron(30 8 ? * * *)` (daily 08:30 UTC).
+**Trigger:** EventBridge `newsSourceAuditDaily` — `cron(30 11 ? * MON,WED,FRI *)` (Mon/Wed/Fri 11:30 UTC despite the name; verified 2026-10-18).
 
 **What it does:** the automated half of the **source-truth layer** (`ANALYSIS_SOURCE_TRUTH_PLAN.md`) — faithfulness checks verify the *output*; this verifies the *input* is trustworthy and that OUR summary didn't drift from the source. Self-contained port of `quality/analysis/source_check.mjs`. Per run, for the top `AUDIT_N` (=6) live topics: **L1** deterministic source-robustness from `sources[]` (single-source / low-tier ⇒ "unverified"); **L1.5** fetches the full article(s) from up to 3 cited outlets and asks a DeepSeek auditor whether the cached `SUMMARY` drifted (hedge-strip / invented result / added framing). If confirmed-drift ≥ `DRIFT_ALERT_THRESHOLD` (=2) it **SNS-publishes an alert** to `GlobalPerspectiveAlerts`; always logs to CloudWatch.
 
@@ -776,7 +776,7 @@ The **price-first** weekly markets wrap — "what moved this week and why" — t
 **Day-0 rule (Batch 3 / A, deployed 2026-09-30):** entries read from `today-archive` count as "today" only if their own `archivedAt` is today (UTC) (`src/dayZero.js`, byte-identical copy in six Lambdas, guarded by `scripts/check-shared-sync.mjs`). `NewsCache` TTL is disabled, so during a pipeline stall `today-archive` keeps old entries; readers used to stamp them with today's date.
 
 **Path:** `amplify/backend/function/newsDriftCorrector/src/index.js`
-**Trigger:** EventBridge — `TriggerDriftCorrector` — daily ~07:20 UTC. Uses **DeepSeek V4** (reuses `newsCountryIntelligence-role`). Plan: `LIVING_ANALYSIS_PLAN.md`; memory [[project_living_analysis]].
+**Trigger:** EventBridge — `TriggerDriftCorrector` — `cron(30 5 * * ? *)` daily 05:30 UTC (verified 2026-10-18). Uses **DeepSeek V4** (reuses `newsCountryIntelligence-role`). Plan: `LIVING_ANALYSIS_PLAN.md`; memory [[project_living_analysis]].
 
 The "self-correcting analysis" engine — detects when a country/thread read's **conclusion** moved (risk level / |Δscore|≥8 / trajectory — gated on the conclusion, NOT the headline; ~37% of daily updates are cosmetic reword = noise) and grounds the "why" in a **real cited archive event**, never inventing one.
 
@@ -837,7 +837,7 @@ Writes the live Polar/credits fields to `USERS_DDB_TABLE` (`billingProvider:'pol
 
 **Drift (Batch 3 / G):** the repo copy is AHEAD of deployed: it adds the member-perk teaser (breaking-alert footer in `index.js` `appendUnsub`; text + HTML block in `renderWeeklyEmail.js`). NOT deployed on purpose: user-facing email copy is the operator's call.
 **Path:** `amplify/backend/function/newsEmailSender/src/index.js`
-**Trigger:** EventBridge `TriggerWeeklyEmailSend` — `cron(0 14 ? * SUN *)` (Sundays 14:00 UTC, ~8h after the brief is generated) **ENABLED**; `TriggerBreakingEmailSend` — `rate(15 minutes)` **ENABLED**; **`TriggerDriftEmailSend` — `cron(40 7 * * ? *)` (07:40 UTC, ~20m after the drift corrector) created DISABLED** (send-to-self smoke test before go-live). All invoke with `{mode}`. **No LLM.** Built 2026-07-03, **went live 2026-07-04** (domain verified); plan → `EMAIL_SENDER_PLAN.md`.
+**Trigger:** EventBridge `TriggerWeeklyEmailSend` — `cron(0 14 ? * SUN *)` (Sundays 14:00 UTC, ~8h after the brief is generated) **ENABLED**; `TriggerBreakingEmailSend` — `rate(15 minutes)` **DISABLED** (verified 2026-10-18); **`TriggerDriftEmailSend` — `cron(40 7 * * ? *)` (07:40 UTC, ~20m after the drift corrector) created DISABLED** (send-to-self smoke test before go-live). All invoke with `{mode}`. **No LLM.** Built 2026-07-03, **went live 2026-07-04** (domain verified); plan → `EMAIL_SENDER_PLAN.md`.
 
 The email **send** path both products were missing (content flowed, nothing sent — the Resend seam was orphaned). One Lambda, `event.mode` dispatch:
 1. `weekly` — paginated-scan the latest **published** `WEEKLY_BRIEF`, scan `GlobalPerspectiveUserPrefs` for `digestOptIn`, render (`renderWeeklyEmail.js`) + send one personalized email each, write idempotency marker `EMAILLOG#weekly#<weekOf>` in `SummarizeAndPredict` (re-invoke = no-op unless `{force:true}`).
@@ -1206,28 +1206,29 @@ The Worker handles these cases:
 
 Most schedules use **EventBridge Scheduler** (separate service from EventBridge Rules). Several use EventBridge Rules. **EventBridge Rules run in UTC; several EventBridge *Scheduler* entries run in `Asia/Tokyo` — do NOT assume UTC for the Scheduler table** (the "All times UTC" claim was wrong pre-2026-07-25: 4 of 7 schedulers are JST — see the timezone column below). The account genuinely uses **both** services side by side, not one exclusively — re-verified 2026-09-10.
 
-> **Verified daily cron chain (`BACKEND_AUDIT_2026-09-10.md` #11):** 06:30 `newsThreadAnalysis` → 07:00 `newsCountryIntelligence` (EventBridge Scheduler `countryIntelliegence`, typo real) → 07:15 `newsSystemsAnalysis` → 07:20 `newsDriftCorrector` → 07:30 `newsEconomicImpact` → 08:00 `newsEconomicQuality` → 09:00 `newsPredictionResolver` + `newsImpactAudit` → 10:00 `newsSignals`; `newsWeeklyMarkets`/`newsWeeklyBrief` weekly (Sundays), social posters every 3h/12h, `newsPostDevTo` (daily-brief only) 23:00 JST, `newsCountryFactsUpdater` 05:00 JST. **Each stage assumes the prior stage already finished — there is no completion-ordering check**, so a slow run can silently feed the next stage stale data (structural fragility, not an observed failure as of the audit date).
+> **Daily cron chain (re-verified 2026-10-18 against `aws events` / `aws scheduler`):** 04:15 `newsInvokeGemini` → 04:25 research job → 04:35 breaking alert → 04:40 `newsThreadAnalysis` → 05:00 `newsSystemsAnalysis` → 05:15 `newsCountryIntelligence` (Scheduler `countryIntelliegence`, typo real) → 05:30 `newsDriftCorrector` → 10:00 `newsSignals` → 10:30 `newsPredictionResolver`; economic impact/quality and impact audit are DISABLED (parked). Older chain from `BACKEND_AUDIT_2026-09-10.md` #11 (superseded): `newsWeeklyMarkets`/`newsWeeklyBrief` weekly (Sundays), social posters every 3h/12h, `newsPostDevTo` (daily-brief only) 23:00 JST, `newsCountryFactsUpdater` 05:00 JST. **Each stage assumes the prior stage already finished — there is no completion-ordering check**, so a slow run can silently feed the next stage stale data (structural fragility, not an observed failure as of the audit date).
 
 ### EventBridge Rules
 | Rule name | Schedule | Target |
 |-----------|----------|--------|
-| `TriggerDailyAnalysis` | `cron(30 6 * * ? *)` | newsThreadAnalysis (06:30 UTC daily) |
-| `TriggerNewsSystemsAnalysis` | `cron(15 7 * * ? *)` | newsSystemsAnalysis (07:15 UTC daily) |
+| `TriggerDailyAnalysis` | `cron(40 4 * * ? *)` | newsThreadAnalysis (04:40 UTC daily) |
+| `TriggerNewsSystemsAnalysis` | `cron(0 5 * * ? *)` | newsSystemsAnalysis (05:00 UTC daily) |
 | `TriggerNewsEconomicImpact` | `cron(30 7 * * ? *)` | **DISABLED 2026-09-28 (parked)** — newsEconomicImpact (07:30 UTC daily) |
 | `TriggerNewsEconomicQuality` | `cron(0 8 * * ? *)` | **DISABLED 2026-09-28 (parked)** — newsEconomicQuality (08:00 UTC daily) |
-| `TriggerPredictionResolver` | `cron(0 9 * * ? *)` (to become `cron(30 10 * * ? *)`) | **DISABLED** — newsPredictionResolver, now the weekly settle Lambda (§20); enable only on the operator's go |
+| `TriggerPredictionResolver` | `cron(30 10 * * ? *)` | **ENABLED** — newsPredictionResolver, the weekly settle Lambda (§20) |
 | `TriggerWeeklyBrief` | `cron(0 6 ? * SUN *)` | newsWeeklyBrief (Sundays 06:00 UTC — generates the weekly signals draft) |
 | `TriggerWeeklyMarkets` | `cron(30 8 ? * SUN *)` | newsWeeklyMarkets (Sundays 08:30 UTC — generates the weekly markets-report draft) |
-| `newsSourceAuditDaily` | `cron(30 8 ? * * *)` | newsSourceAudit (#24 — daily source-truth audit; SNS-alerts on summary drift) |
+| `newsSourceAuditDaily` | `cron(30 11 ? * MON,WED,FRI *)` | newsSourceAudit (#24 — daily source-truth audit; SNS-alerts on summary drift) |
 | `TriggerModelGuard` | `cron(0 12 * * ? *)` | newsModelGuard (#30 — daily model-retirement guard; SNS-alerts on deprecated/retired DeepSeek model) |
 | `MarketsDataHourly` | `rate(1 hour)` | newsMarketsData |
 | `MarketsYieldsDaily` | `cron(0 6 ? * MON-FRI *)` | newsMarketsData |
 | `MarketsMacrosWeekly` | `cron(0 2 ? * SUN *)` | newsMarketsData |
 | `TriggerPairIntelligenceWeekly` | `cron(0 8 ? * MON *)` — **DISABLED 2026-09-24** | newsPairIntelligence (#8 — no display surface after legacy-map removal; future home = Studio lens, recorded not built) |
-| `TriggerBreakingAlert` | `cron(15 */4 * * ? *)` | newsBreakingAlert (#21 — 4-hourly, ENABLED, `DRY_RUN=false`) |
-| `TriggerDriftCorrector` | `cron(20 7 * * ? *)` | newsDriftCorrector (#26 — 07:20 UTC daily) |
+| `TriggerBreakingAlert` | `cron(35 4/8 * * ? *)` | newsBreakingAlert (#21 — 3×/day after the research job, ENABLED, `DRY_RUN=false`) |
+| `TriggerDriftCorrector` | `cron(30 5 * * ? *)` | newsDriftCorrector (#26 — 05:30 UTC daily) |
 | `TriggerWeeklyEmailSend` | `cron(0 14 ? * SUN *)` | newsEmailSender (#29 — weekly digest, ENABLED) |
-| `TriggerBreakingEmailSend` | `rate(15 minutes)` | newsEmailSender (#29 — breaking sends, ENABLED) |
+| `TriggerBreakingEmailSend` | `rate(15 minutes)` | newsEmailSender (#29 — breaking sends, **DISABLED**) |
+| `TriggerSelectionShadow` | `cron(20 4,12,20 * * ? *)` | newsSelectionShadow (§39 — shadow week, from 2026-10-18) |
 | `TriggerDriftEmailSend` | `cron(40 7 * * ? *)` | newsEmailSender (#29 — drift alerts, **DISABLED** by design) |
 | `TriggerFreshnessMonitor` | `cron(30 0/2 * * ? *)` | newsFreshnessMonitor (#18) |
 | `TriggerErrorDigest` | `cron(15 0/6 * * ? *)` | newsErrorDigest (#19) |
@@ -1242,13 +1243,13 @@ Most schedules use **EventBridge Scheduler** (separate service from EventBridge 
 ### EventBridge Scheduler
 | Schedule name | Cron | Target |
 |---------------|------|--------|
-| `InvokeGoogleGemini` | `cron(0 */4 * * ? *)` | newsInvokeGemini-dev (every 4h) |
-| `InvokeNewsAgent` | `cron(5 */4 * * ? *)` | NewsProjectInvokeAgentLambda-dev (every 4h at :05) |
-| `countryIntelliegence` | `cron(0 7 * * ? *)` | newsCountryIntelligence (daily 07:00 UTC) |
+| `InvokeGoogleGemini` | `cron(15 4/8 * * ? *)` | newsInvokeGemini-dev (04:15 / 12:15 / 20:15 UTC) |
+| `InvokeNewsAgent` | `cron(25 4/8 * * ? *)` | NewsProjectInvokeAgentLambda-dev (04:25 / 12:25 / 20:25 UTC) |
+| `countryIntelliegence` | `cron(15 5 * * ? *)` | newsCountryIntelligence (daily 05:15 UTC) |
 | `InvokeLinkedIn` | `cron(20 */3 * * ? *)` **TZ Asia/Tokyo** | newsPostLinkedin (:20 past JST hours 0/3/6/… = **15/18/21/00/… UTC** — NOT UTC, corrected 2026-07-25) |
 | ~~`LinkedinThreadsDaily`~~ | ~~`cron(30 7/12 * * ? *)` TZ Asia/Tokyo~~ | **DELETED 2026-09-11** with the linkedInAutoPost retirement (#10) |
 | `InvokeDev` | `cron(0 23 * * ? *)` **TZ Asia/Tokyo** | newsPostDevTo (23:00 JST = **14:00 UTC** daily — scheduler is NOT in UTC) |
-| `Fact` | `cron(0 5 * * ? *)` **TZ Asia/Tokyo** | newsCountryFactsUpdater (05:00 **JST** = **20:00 UTC** prior day — corrected 2026-07-25) |
+| `Fact` | `cron(0 5 ? * MON *)` **TZ Asia/Tokyo** | newsCountryFactsUpdater (weekly, Mon 05:00 **JST** = Sun **20:00 UTC**) |
 
 > The every-2h pipeline cadence and 3×/day country-intelligence schedule were both reduced on 2026-05-16 alongside the DeepSeek migration to control cost.
 

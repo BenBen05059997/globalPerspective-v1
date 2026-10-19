@@ -14,7 +14,8 @@
 //      words removed (falling / fallen / rising / risen / cooling: "the Rhine falling to a record
 //      low ... economic score up" is NOT an improvement claim) and the verb forms it missed added
 //      ("lowering the economic score", "driving ... score up").
-// The regex source lines below are compared with the frontend copy by scripts/check-shared-sync.mjs.
+// The regex source lines below are a manual port of the frontend copy; nothing checks them
+// automatically, so edit both together.
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 

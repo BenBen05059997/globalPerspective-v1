@@ -193,7 +193,8 @@ function buildSituation(prev, obs, nowIso, ttl) {
 }
 
 // An open situation whose event is no longer Orange/Red (Green observation, or gone from the feed →
-// obs === null). Marks it cooling at tier 'low' once; the tracker closes it after 3 low checks.
+// obs === null). Marks it cooling once, keeping its tier (checked at the low cadence); the tracker
+// closes it after 3 checks.
 function coolSituation(prev, obs, nowIso, ttl) {
   const isNews = prev.source === 'news';
   // Keep the pre-cool tier through the grey-out window — `state: 'cooling'` already conveys

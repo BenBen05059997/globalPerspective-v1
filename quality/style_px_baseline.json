@@ -1,18 +1,13 @@
 {
   "note": "Per-file count of raw px in font-size / border-radius / spacing properties in frontend src (see quality/check_style_px.mjs). Counts may only fall; lower them with --lower after moving to tokens.",
   "totals": {
-    "spacing": 2315,
-    "fontSize": 1002,
-    "radius": 297
+    "spacing": 2311,
+    "fontSize": 996,
+    "radius": 291
   },
   "files": {
     "app/App.jsx": {
       "spacing": 4
-    },
-    "app/index.css": {
-      "fontSize": 1,
-      "radius": 5,
-      "spacing": 1
     },
     "app/layout/Layout.css": {
       "fontSize": 11,
@@ -142,6 +137,11 @@
       "radius": 4,
       "spacing": 96
     },
+    "features/economy/components/economyBlocks.css": {
+      "fontSize": 27,
+      "radius": 6,
+      "spacing": 58
+    },
     "features/economy/components/WeeklyMarketsView.css": {
       "fontSize": 26,
       "radius": 4,
@@ -198,6 +198,10 @@
       "fontSize": 2,
       "radius": 1,
       "spacing": 4
+    },
+    "features/map/components/RadarMap.css": {
+      "fontSize": 3,
+      "spacing": 5
     },
     "features/map/components/SituationMap3D.jsx": {
       "fontSize": 1,
@@ -291,18 +295,18 @@
       "spacing": 23
     },
     "shared/styles/tokens.css": {
-      "fontSize": 3,
-      "spacing": 9
+      "fontSize": 2,
+      "spacing": 6
     },
     "shared/ui/atoms.css": {
-      "fontSize": 45,
-      "radius": 11,
-      "spacing": 103
+      "fontSize": 14,
+      "radius": 4,
+      "spacing": 37
     },
     "shared/ui/blocks.css": {
-      "fontSize": 10,
+      "fontSize": 9,
       "radius": 1,
-      "spacing": 22
+      "spacing": 20
     },
     "shared/ui/boot/BootLoader.css": {
       "fontSize": 8,
@@ -316,6 +320,9 @@
     "shared/ui/boot/LoadTopBar.css": {
       "radius": 2
     },
+    "shared/ui/primitives.css": {
+      "spacing": 5
+    },
     "shared/ui/risk/RiskScorecard.css": {
       "fontSize": 8,
       "radius": 5,
@@ -326,7 +333,6 @@
       "spacing": 4
     },
     "shared/ui/TierChip.css": {
-      "fontSize": 2,
       "spacing": 7
     }
   }

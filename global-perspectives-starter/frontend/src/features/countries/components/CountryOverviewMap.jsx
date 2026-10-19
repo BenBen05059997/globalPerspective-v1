@@ -23,8 +23,17 @@ function mapStyles() {
   ];
 }
 
-const RISK_TOKEN = { high: 'tier-high', elevated: 'tier-elevated', moderate: 'tier-moderate', low: 'tier-low' };
-const riskMapColor = (level) => rootVar(RISK_TOKEN[level] || 'text-dim');
+// Risk = ring weight on one neutral marker (the list legend draws the same), never a colour or
+// brightness scale (DS1). Marker size = coverage. `tier` is the list's score-first countryTier.
+const RING = {
+  low: { color: 'bg', weight: 1, z: 40 },
+  moderate: { color: 'text-body', weight: 1, z: 50 },
+  elevated: { color: 'text-head', weight: 2, z: 80 },
+  high: { color: 'text-head', weight: 3.5, z: 100 },
+};
+const TIER_WORD = { low: 'Low', moderate: 'Moderate', elevated: 'Elevated', high: 'High' };
+
+const escapeHtml = (v) => String(v).replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
 
 function resolveCoords(name) {
   const code = regionToCountryCode(name);
@@ -81,33 +90,30 @@ function InnerMap({ countries, onCountryClick }) {
       const pos = resolveCoords(c.name);
       if (!pos) continue;
 
-      const color = riskMapColor(c.riskLevel);
-      const ink = rootVar('text-head'), sub = rootVar('text-muted'), faint = rootVar('text-dim');
+      const ring = RING[c.tier] || RING.low;
       const scale = Math.min(6 + Math.log2(c.articles || 1) * 1.5, 13);
-
-      const riskLabel = c.riskLevel ? `<span style="color:${color};font-weight:700;">● ${c.riskLevel}</span>` : '';
-      const headline = c.headline ? `<div style="font-size:11px;color:${ink};margin:0 0 8px;line-height:1.4;">${c.headline}</div>` : '';
-      const tooltipHtml = `<div style="font-family:system-ui,sans-serif;padding:0;min-width:200px;">
-        <div style="font-size:13px;font-weight:700;margin:0 0 6px;">${c.name}</div>
-        <div style="font-size:11px;color:${sub};margin:0 0 8px;">${c.articles} articles ${riskLabel}</div>
-        ${headline}
-        <div style="font-size:10px;color:${faint};margin:0 0 4px;">Click for full briefing</div>
+      const tierText = c.tier ? ` · ${TIER_WORD[c.tier]} risk` : '';
+      // Styled by .clp-tip* in CountryListPage.css (the InfoWindow renders in the page DOM).
+      const tooltipHtml = `<div class="clp-tip">
+        <div class="clp-tip-name">${escapeHtml(c.name)}</div>
+        <div class="clp-tip-meta">${c.articles} articles${tierText}</div>
+        ${c.headline ? `<div class="clp-tip-head">${escapeHtml(c.headline)}</div>` : ''}
+        <div class="clp-tip-hint">Click for full briefing</div>
       </div>`;
 
       const marker = new window.google.maps.Marker({
         position: pos,
         map,
-        title: `${c.name} — ${c.articles} articles${c.riskLevel ? `, ${c.riskLevel} risk` : ''}`,
+        title: `${c.name} — ${c.articles} articles${c.tier ? `, ${TIER_WORD[c.tier].toLowerCase()} risk` : ''}`,
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale,
-          fillColor: color,
+          fillColor: rootVar('text-muted'),
           fillOpacity: 0.85,
-          // risk = brightness + ring weight, never a traffic-light colour: HIGH / ELEVATED get a bright ring
-          strokeColor: c.riskLevel === 'high' || c.riskLevel === 'elevated' ? rootVar('text-head') : rootVar('bg'),
-          strokeWeight: c.riskLevel === 'high' ? 3 : 2,
+          strokeColor: rootVar(ring.color),
+          strokeWeight: ring.weight,
         },
-        zIndex: c.riskLevel === 'high' ? 100 : c.riskLevel === 'elevated' ? 80 : 50,
+        zIndex: ring.z,
       });
 
       marker.addListener('mouseover', () => {

@@ -5,7 +5,8 @@ import { useCountryIntelligence } from '@/features/countries/hooks/useCountryInt
 import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
-import { TIER_ORDER, tierFromLevel, tierFromScore } from '@/shared/lib/riskTiers';
+import { countryTier, compareByRisk } from '@/features/countries/lib/countryTier';
+import { trajectoryOf } from '@/features/countries/lib/trajectory';
 import CountryOverviewMap from '@/features/countries/components/CountryOverviewMap';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
@@ -13,34 +14,32 @@ import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import StoryRow from '@/shared/ui/StoryRow.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import Chip from '@/shared/ui/Chip.jsx';
+import DirectionArrow from '@/shared/ui/DirectionArrow';
 import { isRealCountryName } from '@/shared/lib/placeNames.js';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
-import '@/features/threads/WeeklyPage.css';
 import '@/features/countries/CountryListPage.css';
 
-// riskLevel string → sort rank (high first). Normalized via the shared tier util.
-const riskRank = (level) => TIER_ORDER[tierFromLevel(level)] ?? 3;
 const SEVERITY_RANK = { severe: 3, moderate: 2, minor: 1 };
+const countryPath = (name) => `/weekly/country/${encodeURIComponent(name)}`;
 
-function trajectoryArrow(text = '') {
-  const t = text.toLowerCase();
-  if (/escalat|intensif|worsen|heighten|spike|surge/.test(t)) return { arrow: '↗', cls: 'traj-up' };
-  if (/de-escalat|improv|eas|calm|stabili|wind down/.test(t)) return { arrow: '↘', cls: 'traj-dn' };
-  return { arrow: '→', cls: 'traj-flat' };
+function Trajectory({ value }) {
+  const t = trajectoryOf(value);
+  return t ? <DirectionArrow dir={t.dir} /> : null;
 }
 
 // ─── Country Card ─────────────────────────────────────────────────────────────
 
 function CountryCard({ country, intel, disruptionSeverity }) {
-  const traj = trajectoryArrow(intel?.trajectory);
-
   return (
-    <Link to={`/weekly/country/${encodeURIComponent(country.name)}`} className="clp-card">
+    <Card as={Link} to={countryPath(country.name)} className="clp-card">
       <div className="clp-card-head">
         <span className="clp-card-name">{country.name}</span>
-        <TierChip tier={tierFromLevel(intel?.riskLevel)} score={intel?.riskScore} />
+        <TierChip tier={countryTier(intel)} score={intel?.riskScore} />
         {disruptionSeverity && <SeverityBadge level={disruptionSeverity} size="sm" />}
-        <span className={`clp-card-traj ${traj.cls}`}>{traj.arrow}</span>
+        <Trajectory value={intel?.trajectory} />
       </div>
 
       {intel?.headline && (
@@ -58,38 +57,33 @@ function CountryCard({ country, intel, disruptionSeverity }) {
           </span>
         )}
       </div>
-    </Link>
+    </Card>
   );
-}
-
-// Country risk tier — score-first (agrees with the badge), level fallback.
-function countryTier(intel) {
-  if (!intel) return 'low';
-  return (intel.riskScore != null ? tierFromScore(intel.riskScore) : tierFromLevel(intel.riskLevel)) || 'low';
 }
 
 // Risk bands for the briefings grid — the country analog of /weekly's time bands,
 // but risk is the meaningful axis (countries are persistent). High = full cards,
 // calmer tiers = condensed rows (density decay).
 const RISK_BANDS = [
-  { tier: 'high', label: 'High risk', cards: true },
-  { tier: 'elevated', label: 'Elevated', cards: false },
-  { tier: 'moderate', label: 'Moderate', cards: false },
-  { tier: 'low', label: 'Low', cards: false },
+  { tier: 'high', label: 'High risk', word: 'High', cards: true },
+  { tier: 'elevated', label: 'Elevated', word: 'Elevated', cards: false },
+  { tier: 'moderate', label: 'Moderate', word: 'Moderate', cards: false },
+  { tier: 'low', label: 'Low', word: 'Low', cards: false },
 ];
 
 // ─── Condensed country row (calmer tiers) ─────────────────────────────────────
 
 function CountryRow({ country, intel }) {
-  const traj = trajectoryArrow(intel?.trajectory);
   return (
-    <Link to={`/weekly/country/${encodeURIComponent(country.name)}`} className="clp-row">
-      <TierChip tier={tierFromLevel(intel?.riskLevel)} score={intel?.riskScore} />
-      <span className="clp-row-name">{country.name}</span>
-      <span className={`clp-row-traj ${traj.cls}`}>{traj.arrow}</span>
-      {intel?.headline && <span className="clp-row-headline">{intel.headline}</span>}
-      <span className="clp-row-meta">{country.articles} art</span>
-    </Link>
+    <StoryRow
+      className="clp-row"
+      to={countryPath(country.name)}
+      title={country.name}
+      tier={countryTier(intel)}
+      score={intel?.riskScore}
+      summary={intel?.headline || null}
+      meta={<><Trajectory value={intel?.trajectory} /><span className="clp-row-meta">{country.articles} art</span></>}
+    />
   );
 }
 
@@ -112,9 +106,9 @@ function RiskBand({ band, items, intelligence, maxSeverityByCountry }) {
           ))}
         </div>
       ) : (
-        <div className="clp-rows">
+        <ul className="clp-rows">
           {items.map(c => <CountryRow key={c.name} country={c} intel={intelligence?.[c.name]} />)}
-        </div>
+        </ul>
       )}
     </section>
   );
@@ -126,49 +120,35 @@ function LeftRail({ sortBy, onSort, searchQuery, onSearch, activeRegion, onRegio
   return (
     <div className="clp-rail-left">
       <div className="clp-rail-section">
-        <div className="clp-rail-label">Search</div>
+        <SectionHeader label="Search" id="clp-search-label" />
         <input
           className="clp-search"
           type="text"
           placeholder="Filter countries…"
+          aria-labelledby="clp-search-label"
           value={searchQuery}
           onChange={e => onSearch(e.target.value)}
         />
       </div>
 
       <div className="clp-rail-section">
-        <div className="clp-rail-label">Sort</div>
-        <div className="clp-sort-group">
+        <SectionHeader label="Sort" />
+        <div className="clp-chips">
           {[['risk', 'Risk level'], ['articles', 'Coverage'], !ECONOMY_PARKED && ['economy', 'Disruption'], ['alpha', 'A → Z']].filter(Boolean).map(([v, label]) => (
-            <button
-              key={v}
-              className={`clp-sort-btn ${sortBy === v ? 'active' : ''}`}
-              onClick={() => onSort(v)}
-            >
-              {label}
-            </button>
+            <Chip key={v} selected={sortBy === v} onClick={() => onSort(v)}>{label}</Chip>
           ))}
         </div>
       </div>
 
       {regionCounts.length > 1 && (
         <div className="clp-rail-section">
-          <div className="clp-rail-label">Region</div>
-          <div className="clp-region-group">
-            <button
-              className={`clp-region-btn ${!activeRegion ? 'active' : ''}`}
-              onClick={() => onRegion(null)}
-            >
-              All
-            </button>
+          <SectionHeader label="Region" />
+          <div className="clp-chips">
+            <Chip selected={!activeRegion} onClick={() => onRegion(null)}>All</Chip>
             {regionCounts.map(([r, n]) => (
-              <button
-                key={r}
-                className={`clp-region-btn ${activeRegion === r ? 'active' : ''}`}
-                onClick={() => onRegion(activeRegion === r ? null : r)}
-              >
-                {r} <span className="clp-region-count">{n}</span>
-              </button>
+              <Chip key={r} selected={activeRegion === r} count={n} onClick={() => onRegion(activeRegion === r ? null : r)}>
+                {r}
+              </Chip>
             ))}
           </div>
         </div>
@@ -177,49 +157,49 @@ function LeftRail({ sortBy, onSort, searchQuery, onSearch, activeRegion, onRegio
   );
 }
 
-// ─── Right Rail: Top-risk leaderboard ─────────────────────────────────────────
+// ─── Right Rail: Top-risk + most-covered leaderboards ─────────────────────────
 
-function RightRail({ featured, intelligence }) {
-  const topRisk = useMemo(() =>
-    [...featured]
-      .sort((a, b) => {
-        const ra = riskRank(intelligence?.[a.name]?.riskLevel);
-        const rb = riskRank(intelligence?.[b.name]?.riskLevel);
-        return ra !== rb ? ra - rb : b.articles - a.articles;
-      })
-      .slice(0, 5),
-  [featured, intelligence]);
-
+function Leaderboard({ label, items, intelligence, meta }) {
   return (
-    <div className="clp-rail-right">
-      <div className="clp-rail-label clp-rail-label--top">Highest Risk</div>
-      <div className="clp-leaderboard">
-        {topRisk.map((c, i) => {
+    <section className="clp-rail-section">
+      <SectionHeader label={label} />
+      <ol className="clp-leaderboard">
+        {items.map((c, i) => {
           const intel = intelligence?.[c.name];
-          const traj = trajectoryArrow(intel?.trajectory);
           return (
-            <Link key={c.name} to={`/weekly/country/${encodeURIComponent(c.name)}`} className="clp-lb-row">
-              <span className="clp-lb-rank">{i + 1}</span>
-              <span className="clp-lb-name">{c.name}</span>
-              <span className={`clp-lb-traj ${traj.cls}`}>{traj.arrow}</span>
-              <TierChip tier={tierFromLevel(intel?.riskLevel)} score={intel?.riskScore} />
-            </Link>
+            <StoryRow
+              key={c.name}
+              className="clp-lb-row"
+              to={countryPath(c.name)}
+              title={c.name}
+              tier={countryTier(intel)}
+              score={intel?.riskScore}
+              meta={<><span className="clp-lb-rank">#{i + 1}</span>{meta(c, intel)}</>}
+            />
           );
         })}
-      </div>
+      </ol>
+    </section>
+  );
+}
 
-      <div className="clp-rail-divider" />
-
-      <div className="clp-rail-label">Most Covered</div>
-      <div className="clp-leaderboard">
-        {featured.slice(0, 5).map((c, i) => (
-          <Link key={c.name} to={`/weekly/country/${encodeURIComponent(c.name)}`} className="clp-lb-row">
-            <span className="clp-lb-rank">{i + 1}</span>
-            <span className="clp-lb-name">{c.name}</span>
-            <span className="clp-lb-count">{c.articles}</span>
-          </Link>
-        ))}
-      </div>
+function RightRail({ featured, intelligence }) {
+  // `featured` is already ranked riskiest first; Most Covered re-ranks the same briefed set by articles.
+  const mostCovered = useMemo(() => [...featured].sort((a, b) => b.articles - a.articles).slice(0, 5), [featured]);
+  return (
+    <div className="clp-rail-right">
+      <Leaderboard
+        label="Highest Risk"
+        items={featured.slice(0, 5)}
+        intelligence={intelligence}
+        meta={(c, intel) => <Trajectory value={intel?.trajectory} />}
+      />
+      <Leaderboard
+        label="Most Covered"
+        items={mostCovered}
+        intelligence={intelligence}
+        meta={(c) => <span className="clp-lb-count">{c.articles} art</span>}
+      />
     </div>
   );
 }
@@ -231,7 +211,7 @@ export default function CountryListPage() {
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
 
   const handleCountryClick = useCallback((name) => {
-    navigate(`/weekly/country/${encodeURIComponent(name)}`);
+    navigate(countryPath(name));
   }, [navigate]);
 
   const countries = useMemo(() => {
@@ -293,13 +273,10 @@ export default function CountryListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('risk');
 
+  // Briefed countries, riskiest first: by riskScore (the number every chip shows), coverage breaks ties.
   const featured = useMemo(() => countries
     .filter(c => intelligence?.[c.name])
-    .sort((a, b) => {
-      const ra = riskRank(intelligence[a.name]?.riskLevel);
-      const rb = riskRank(intelligence[b.name]?.riskLevel);
-      return ra !== rb ? ra - rb : b.articles - a.articles;
-    }),
+    .sort((a, b) => compareByRisk(intelligence[a.name], intelligence[b.name]) || b.articles - a.articles),
   [countries, intelligence]);
 
   const others = useMemo(() => countries.filter(c => !intelligence?.[c.name]), [countries, intelligence]);
@@ -381,22 +358,21 @@ export default function CountryListPage() {
 
   return (
     <EditorialShell strip={strip} left={left} right={right} className="clp-shell">
-      {/* Map */}
+      {/* Map: marker size = coverage, ring weight = risk tier (never a colour scale) */}
       <div className="clp-map-wrap">
         <CountryOverviewMap
           countries={countries.map(c => ({
             name: c.name,
             articles: c.articles,
-            riskLevel: intelligence?.[c.name]?.riskLevel || null,
+            tier: countryTier(intelligence?.[c.name]),
             headline: intelligence?.[c.name]?.headline || null,
           }))}
           onCountryClick={handleCountryClick}
         />
         <div className="clp-map-legend">
-          <span className="clp-leg"><span className="clp-leg-dot clp-leg-dot--high" /> High</span>
-          <span className="clp-leg"><span className="clp-leg-dot clp-leg-dot--elevated" /> Elevated</span>
-          <span className="clp-leg"><span className="clp-leg-dot clp-leg-dot--moderate" /> Moderate</span>
-          <span className="clp-leg"><span className="clp-leg-dot clp-leg-dot--low" /> Low</span>
+          {RISK_BANDS.map(b => (
+            <span key={b.tier} className="clp-leg"><span className={`clp-leg-dot clp-leg-dot--${b.tier}`} /> {b.word}</span>
+          ))}
         </div>
       </div>
 
@@ -406,7 +382,7 @@ export default function CountryListPage() {
         sortBy === 'risk' ? (
           (() => {
             const byTier = { high: [], elevated: [], moderate: [], low: [] };
-            for (const c of filteredFeatured) byTier[countryTier(intelligence?.[c.name])].push(c);
+            for (const c of filteredFeatured) byTier[countryTier(intelligence?.[c.name]) || 'low'].push(c);
             return RISK_BANDS.map(band => (
               <RiskBand
                 key={band.tier}
@@ -436,19 +412,21 @@ export default function CountryListPage() {
 
       {/* Others */}
       {filteredOthers.length > 0 && (
-        <div className="clp-others">
-          <div className="clp-others-label">
-            Other countries in the news ({filteredOthers.length}) — not enough coverage for AI briefing
-          </div>
+        <section className="clp-others">
+          <SectionHeader
+            label="Other countries in the news"
+            count={filteredOthers.length}
+            hint="not enough coverage for AI briefing"
+          />
           <div className="clp-others-grid">
             {filteredOthers.map(c => (
-              <Link key={c.name} to={`/weekly/country/${encodeURIComponent(c.name)}`} className="clp-others-item">
+              <Link key={c.name} to={countryPath(c.name)} className="clp-others-item">
                 <span className="clp-others-name">{c.name}</span>
                 <span className="clp-others-count">{c.articles}</span>
               </Link>
             ))}
           </div>
-        </div>
+        </section>
       )}
     </EditorialShell>
   );

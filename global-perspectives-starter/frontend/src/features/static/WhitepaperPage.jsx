@@ -64,7 +64,7 @@ export default function WhitepaperPage() {
           The world produces more news than any analyst, executive, or researcher can meaningfully process. Yet the problem is not a shortage of information — it is a shortage of <em>synthesis</em>. Headlines tell you what happened yesterday. They do not tell you why it happened, how it connects to last week's events, or what comes next.
         </p>
         <p>
-          Global Perspectives is an AI-powered geopolitical intelligence platform that transforms raw global news into structured, decision-ready insight — updated every few hours, available to anyone. Built on a proprietary <strong>Narrative Arc Intelligence</strong> pipeline, it reads the world's news continuously, clusters events into evolving story threads, traces their root causes, and forecasts their likely trajectories.
+          Global Perspectives is an AI-powered geopolitical intelligence platform that transforms raw global news into structured, decision-ready insight — updated each time the pipeline runs, available to anyone. Built on a proprietary <strong>Narrative Arc Intelligence</strong> pipeline, it reads the world's news on a schedule, clusters events into evolving story threads, traces their root causes, and forecasts their likely trajectories.
         </p>
         <p>
           The result is not a faster news feed. It is a fundamentally different product: intelligence that shows how stories <em>move</em>, not just what happened today.
@@ -72,12 +72,12 @@ export default function WhitepaperPage() {
         <div>
           <SectionHeader as="h3" label="Key capabilities" />
           <ul className="sp-list">
-            <li>AI analysis of 20+ international news sources across 6 continents, refreshed every 4 hours</li>
+            <li>AI analysis of more than 20 international news feeds across five continents, refreshed each time the pipeline runs</li>
             <li>Narrative threading that links related events across days and geographies</li>
             <li>AI-generated summaries, predictions, and root-cause analysis per topic</li>
             <li>Weekly narrative intelligence: story arcs, trajectory forecasts, watch questions</li>
-            <li>Country-level intelligence briefings updated daily</li>
-            <li>Interactive world map showing geopolitical connections in real time</li>
+            <li>Country briefings for the most-covered countries, refreshed when there is something new to say</li>
+            <li>A world map of tracked situations and official disaster alerts</li>
           </ul>
         </div>
       </Card>
@@ -145,9 +145,9 @@ export default function WhitepaperPage() {
         </SubSection>
 
         <SubSection title="The Pipeline: From Sources to Intelligence">
-          <Step number={1} title="Global Ingestion (Every 4 Hours)">
+          <Step number={1} title="Global Ingestion">
             <p>
-              Every 4 hours, Global Perspectives ingests articles from a deliberately diverse set of international sources:
+              Each time the pipeline runs, Global Perspectives reads the RSS feeds of a deliberately diverse set of international outlets:
             </p>
             <table className="sp-table">
               <thead>
@@ -157,11 +157,14 @@ export default function WhitepaperPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr><td>Western Europe &amp; Americas</td><td>BBC, The Guardian, France 24</td></tr>
-                <tr><td>East Asia</td><td>South China Morning Post, The Japan Times, Asia Times</td></tr>
+                <tr><td>Europe</td><td>BBC, The Guardian, France 24, Deutsche Welle, Euronews</td></tr>
+                <tr><td>Americas</td><td>NPR, CBC</td></tr>
+                <tr><td>East &amp; Southeast Asia</td><td>South China Morning Post, The Japan Times, Asia Times, Nikkei Asia, CNA, Bangkok Post</td></tr>
                 <tr><td>South Asia</td><td>Dawn (Pakistan), The Diplomat</td></tr>
-                <tr><td>Middle East &amp; Africa</td><td>Al Jazeera</td></tr>
-                <tr><td>Wire services</td><td>Reuters, Associated Press, Deutsche Welle, Euronews</td></tr>
+                <tr><td>Middle East</td><td>Al Jazeera, Middle East Eye, Al-Monitor</td></tr>
+                <tr><td>Africa</td><td>AllAfrica, Daily Maverick, The East African</td></tr>
+                <tr><td>Oceania</td><td>ABC Australia</td></tr>
+                <tr><td>Climate, technology &amp; science</td><td>Inside Climate News, Grist, Ars Technica, MIT Technology Review</td></tr>
               </tbody>
             </table>
             <p>
@@ -187,20 +190,16 @@ export default function WhitepaperPage() {
               This is the capability that distinguishes Global Perspectives from every other AI news platform.
             </p>
             <p>
-              Each topic is assigned a persistent thread identifier that links it to related topics from previous days, through two mechanisms:
+              Each topic carries a persistent thread identifier that links it to related topics from previous days. The clustering model is shown the topics of the previous seven days; when it identifies that a new topic is a clear continuation of one of them, it flags the connection explicitly and the new topic joins that thread.
             </p>
-            <ul className="sp-list">
-              <li><strong>Semantic continuity:</strong> When the AI clustering model identifies that today's topic is a continuation of a previous story, it flags this connection explicitly.</li>
-              <li><strong>Similarity matching:</strong> A deterministic algorithm compares keywords, geographic regions, and categories across up to seven days of archive, identifying threads the AI may have missed.</li>
-            </ul>
             <p className="sp-quiet">
-              The result: "Brazil Central Bank Rate Decision" today is automatically linked to last week's "Brazil Inflation Concerns" and the week before's "Brazil Currency Pressure Report" — and the reader can see the full arc of the story, not just today's chapter.
+              The result: "Brazil Central Bank Rate Decision" today can be linked to last week's "Brazil Inflation Concerns" and the week before's "Brazil Currency Pressure Report" — and the reader can see the full arc of the story, not just today's chapter.
             </p>
           </Step>
 
           <Step number={5} title="Daily Narrative Intelligence">
             <p>
-              Every day, the platform generates deeper intelligence for the top active narrative threads. Drawing on the full story arc across up to 30 days of archive, the Thread Intelligence module produces:
+              Each day the pipeline runs, the platform generates deeper intelligence for the top active narrative threads. Drawing on the full story arc across up to 30 days of archive, the Thread Intelligence module produces:
             </p>
             <ul className="sp-list">
               <li><strong>Story arc:</strong> 2–3 paragraphs narrating how the story evolved, entry by entry, turning point by turning point</li>
@@ -212,7 +211,7 @@ export default function WhitepaperPage() {
 
           <Step number={6} title="Country Intelligence Briefings">
             <p>
-              Every day, the platform generates geopolitical intelligence briefings for the most-covered countries. Each briefing synthesizes all active story arcs involving that country — showing not just what individual stories are happening, but how they interact and compound. Each briefing includes a situation summary, cross-thread insight, trajectory analysis, specific risk signals, and an overall risk level assessment.
+              The platform keeps a geopolitical intelligence briefing for each of the most-covered countries (and a few more while they have an active alert). A briefing is refreshed when there is something new to say: a new alert, a jump in coverage, or a week since the last one. Each briefing synthesizes all active story arcs involving that country — showing not just what individual stories are happening, but how they interact and compound. Each briefing includes a situation summary, cross-thread insight, trajectory analysis, specific risk signals, and an overall risk level assessment.
             </p>
           </Step>
         </SubSection>
@@ -229,12 +228,12 @@ export default function WhitepaperPage() {
           {
             title: 'The Executive and Board Advisor',
             body: 'C-suite executives and board members responsible for geopolitical risk management. They do not need the full detail of every story — they need a reliable picture of which stories matter, how they are moving, and where the risk inflection points are.',
-            useCase: 'A CFO at a multinational uses the weekly narrative analysis and risk signal alerts to brief the board on geopolitical exposures, without requiring a dedicated analyst or expensive subscription intelligence service.',
+            useCase: 'A CFO at a multinational uses the weekly narrative analysis and the country risk signals to brief the board on geopolitical exposures, without requiring a dedicated analyst or expensive subscription intelligence service.',
           },
           {
             title: 'The Researcher and Academic',
             body: 'International relations scholars, security studies researchers, and policy analysts who need to track the evolution of specific narratives over time — trade disputes, conflict escalations, diplomatic processes — across a broad range of sources.',
-            useCase: 'A researcher tracking the evolution of Indo-Pacific maritime tensions uses the narrative thread view to see exactly how coverage of specific incidents shifted across Al Jazeera, SCMP, and Western wire services over a two-week period.',
+            useCase: 'A researcher tracking the evolution of Indo-Pacific maritime tensions uses the narrative thread view to see exactly how coverage of specific incidents shifted across Al Jazeera, SCMP, and Western outlets over a two-week period.',
           },
           {
             title: 'The Journalist and Editor',
@@ -263,18 +262,17 @@ export default function WhitepaperPage() {
           <p>
             All three levels are <strong>free and public to read</strong> — the levels below describe increasing
             depth of analysis, not a paywall. An optional membership never paywalls reading; it adds depth for
-            members (the full self-correction history and change-alerts when a followed country&apos;s read moves)
-            and runs the Analysis Studio on our servers.
+            members (the full self-correction history) and runs the Analysis Studio on our servers.
           </p>
           {[
             {
               tier: 'Level 1 — The Daily Picture',
               sub: 'Everything needed to understand today\'s world. No account required.',
               items: [
-                'Today\'s AI-clustered global topics, refreshed every 4 hours',
+                'Today\'s AI-clustered global topics, refreshed each time the pipeline runs',
                 'AI Summary, Prediction, and Trace Cause analysis per topic',
-                'Interactive world map with geopolitical connection lines',
-                'Category-colored markers showing conflict, economy, politics, technology, health, and disaster stories',
+                'A world map of tracked situations and official disaster alerts',
+                'Marker colour shows the crisis type (conflict, political, economic, humanitarian); marker size shows severity',
                 '24-hour topic archive',
               ],
             },
@@ -282,22 +280,21 @@ export default function WhitepaperPage() {
               tier: 'Level 2 — The Narrative Layer',
               sub: 'For readers who need to understand how stories evolve, not just what happened today.',
               items: [
-                '7-day narrative archive',
-                'Full weekly narrative view: stories grouped by thread, trend indicators (Rising / Stable / Fading / New)',
+                'Stories from the last 30 days, grouped by thread, with a rising mark on stories gaining coverage',
                 'Thread Intelligence: story arc, trajectory, root cause chain, watch questions per thread',
-                'Country Intelligence briefings: daily AI situation assessments for the world\'s most active countries',
-                'Interactive weekly map with date playback',
+                'Country Intelligence briefings: AI situation assessments for the world\'s most-covered countries',
+                'A stories map with day-by-day replay of a story or a country',
                 'Thread and country deep-dive pages',
               ],
             },
             {
               tier: 'Level 3 — The Full Intelligence Stack',
-              sub: 'Comprehensive historical and cross-domain intelligence.',
+              sub: 'How stories connect, and how our forecasts hold up.',
               items: [
-                '30-day archive',
                 'All narrative-layer features',
-                'Economic disruption analysis and cross-domain causal graphs',
-                'Pair and systems-level intelligence',
+                'Story web: links between stories that the model judges to feed into one another (a judgment, never a claim of cause)',
+                'Analysis Studio: your own analysis across the stories, with your own AI key or, for members, on our servers',
+                'Track record: every forecast logged with dated triggers and checked as it comes due',
               ],
             },
           ].map(({ tier, sub, items }) => (
@@ -313,10 +310,10 @@ export default function WhitepaperPage() {
 
         <SubSection title="The Map Experience">
           <p>
-            The Global Perspectives world map is not a geographic novelty — it is an intelligence tool. Each country marker represents the number of distinct geopolitical topics affecting that country. Geodesic connection lines link countries that share a story, creating a visual representation of geopolitical relationships that is updated every few hours.
+            The Global Perspectives world map is not a geographic novelty — it is an intelligence tool. Each marker is either a tracked news situation, placed at its main country (an approximate place), or an official GDACS disaster alert at its exact place. Colour shows the crisis type, size shows severity, and brightness shows how recent it is. Select a story and lines run to the other stories it is judged to be linked to — strong and medium links only, from the last 30 days. A country-risk layer shades each country by its latest briefing.
           </p>
           <p>
-            Clicking any country opens a side panel with all active topics affecting it, complete with AI analysis and connections to related countries. The weekly map adds a temporal dimension: date playback allows analysts to watch narratives spread geographically over time, seeing exactly when and how a story moved from one region to another.
+            Clicking a country opens its card, with its stories and its latest briefing. The stories map adds a temporal dimension: day-by-day replay lets analysts watch a story or a country&apos;s coverage move over time, seeing when and how a story moved from one region to another.
           </p>
         </SubSection>
       </Section>

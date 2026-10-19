@@ -380,6 +380,12 @@ must_have "$T/components/WeeklyMap.jsx" "frameBounds" "the country map frames th
 # 10 · /today copy promises only what is live (change-alert emails are off)
 must_not_have "$SRC/features/home/Home.jsx" "change-alerts|change alerts" "/today does not promise change-alert emails (the drift cron is off)"
 must_not_have "$SRC/features/account/MembershipPage.jsx" "[Cc]hange-alerts|alerts when a country" "/membership does not promise change-alert emails (the drift cron is off)"
+# 2026-10-19 operator rule (promise only what runs): public copy matches the live pipeline — RSS-only
+# ingest (Brave removed, no Reuters/AP feed), no fixed ingest rate, no retired geodesic map lines, no
+# parked economy/pair layers, country briefings only for the most-covered countries.
+must_not_have "$SRC/features/static/WhitepaperPage.jsx" "[Gg]eodesic|connection lines|every 4 hours|every few hours|<td>Wire services|Economic disruption|Pair and systems|change-alerts" "the white paper makes no retired or parked claims"
+must_not_have "$SRC/features/static/AboutContact.jsx" "Brave Search|Reuters|AP News|29 outlets" "About lists only the RSS outlets the ingest reads"
+must_not_have "global-perspectives-starter/frontend/index.html" "190\\+ countries|thousands of sources|Brier score and calibration" "index.html makes no country-count, source-count or Brier claims"
 
 # ─── P7b (2026-10-02): Stories WEB view; /spider-demo retired into it ───
 must_not_have_unless() { # lines matching $2 that do not also match $3 (e.g. "caused" only inside 'never "caused"')

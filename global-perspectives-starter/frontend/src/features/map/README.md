@@ -1,45 +1,59 @@
 # map
 
-The home page console (`/` since the 2026-10-01 S6 swap): a globe (deck.gl) or radar (d3) world map
-of tracked situations, with a status line, alert stack, intel feed, story card, legend, a
-SITUATIONS / COUNTRY RISK layer switch and, on phones, tabs plus a bottom sheet.
+The home page console (`/` since the 2026-10-01 swap): a globe (deck.gl) or radar (d3) world map of
+tracked situations, with a status line, alert stack, intel feed, story card, legend, a SITUATIONS /
+COUNTRY RISK layer switch and, on phones, tabs plus a bottom sheet.
+
+## Status
+- Live, public; map data never gates on sign-in. No feature flag. Radar behaviour per decision 0023.
 
 ## Routes
 - `/` -> `SituationHome` (lazy; route fallback is `BootLoader` with `WAITING_SENSORS`)
-- Redirects: `/map` -> `/` keeping query + hash (src/app/MapRedirect.jsx); `/breaking` -> `/`
-- Query: `?focus=` (situation), `?story=` (topic), `?country=` (card), `?layer=`, `?about=1` (About drawer)
+- Redirects: `/map` -> `/` keeping query + hash (`src/app/MapRedirect.jsx`); `/breaking` -> `/`
+- Query: `?focus=` (situation), `?story=` (topic), `?country=` (card), `?layer=`, `?about=` (About drawer)
 
-## Entry files
-- `SituationHome.jsx` - the console; selection state, boot sensors, layer/view switches
-- Map kit in `@/shared/map/` (shared with threads, track-record, analysis-studio, briefings): `SituationMap3D.jsx` (globe, lazy,
-  WebGL only), `RadarMap.jsx` (radar), `StoryMap.jsx` (deck map pane), `mapKit.css`, libs (`legend`, `pulse`, `radar`, `globe*`,
-  `storyLinkArcs`, `landGeometry`, `countryGeo`, `countryRiskLayer`, `gdacsLevel`, `mapLabels`) + `countries-110m.json`
-- `components/Hud*`, `AlertStack`, `StoryCard`, `MapLegend`, `MapAbout`, `OrientationBanner`; phone: `MapPhoneTabs`, `@/shared/ui/BottomSheet`
-- `lib/*.js` - page helpers (alert stack, boot sensors, card mentions, HUD compact line, layer mode, phone sheet, story shading)
+## Frontend
+- `SituationHome.jsx` - the console; selection state, boot sensors, layer/view switches; the globe
+  `@/shared/map/SituationMap3D.jsx` is lazy (WebGL), `@/shared/map/RadarMap.jsx` is the radar
+- `components/Hud*` (status line, brief, sensor, intel feed, compact line, country-risk feed), `AlertStack`,
+  `StoryCard`, `MapLegend`, `MapAbout`, `OrientationBanner`; phone: `@/shared/ui/Tabs` + `@/shared/ui/BottomSheet`
+- `lib/*.js` - alert stack, boot sensors, card mentions, gdacs status, HUD compact line, layer mode, phone sheet, story shading
+- Map kit in `@/shared/map/` (shared with threads, track-record, analysis-studio, briefings): `legend`, `pulse`, `radar`,
+  `globeSpin`, `storyLinkArcs`, `countryRiskLayer`, `gdacsLevel`, `landGeometry` …
+- Public API (`index.js`): `HudStatusLine`, `useGdacsStatus`, `usePausedSince` (app layout), `WAITING_SENSORS` (route fallback)
+- Imports from other features: `@/features/weekly-brief` -> `useWeeklyBrief`; `@/features/countries` -> `CountryCardV2`;
+  `@/features/threads` -> `useWebIndex`, `deriveFromIndex`
+- Situations not updated in 30+ days are hidden and counted, never dropped silently (`situationFreshness`).
+  Boot sensors tick only on real data; the boot screen shows once per page load (`bootShown`).
+
+## Backend
+- Generated row: [reference/features.md#map](../../../../../project-docs/reference/features.md#map)
+- `newsSituationTracker` (every 30 min) writes `world/latest.json`, `situations/state/` and the rest of the bundle;
+  its inputs: `newsSituationIngest` (hourly; `stories/`, `corpus/`) and `newsGdacsIngest` (20 min; `situations/inbox/`);
+  `newsCountryIntelligence` (daily)
+  writes the country briefings behind the COUNTRY RISK layer.
 
 ## Data
-- `useWorld()` -> `api/worldData.js` -> `/data/world/latest.json` (Worker `/data/*`, S3), polled 5 min;
+- `useWorld()` -> `api/worldData.js` -> `/data/world/latest.json` (Worker `/data/*` -> S3), polled every 5 min;
   `useSituationDetail(id)` -> `/data/situations/state/<id>.json`. 404 = empty, not error. Dev: `VITE_WORLD_URL`.
 - `useGeminiTopics()` (restProxy `topics`); `useStoryCardData` -> `summary` + `thread_analysis`.
-- `useCountryRiskLayer` -> `country_intelligence` (15 names per call) over `useArchiveDayMap`.
+- `useCountryRiskLayer` -> `country_intelligence` (15 names per call) over `useArchiveDayMap` (`archive_range`),
+  only once the layer is selected; it avoids `useWeeklyArchive` (needs AuthProvider).
 - `useDailyBrief()`, `useWeeklyBrief()`, `useWebIndex()` (`web_index`, only once a story is selected).
 - localStorage: `gp_map_last_seen`, `gp_map_layer`, `gp_map_view`, `gp_map_legend_open`.
 
-## Shared blocks used
-- `StoryPeek`, `StoryLink`, `StoryRow`, `boot/BootLoader`, `boot/staticBoot` (`endFullBoot`); `usePeek`, `useIsPhone`
+## Docs
+- Decisions: [0016](../../../../../project-docs/decisions/0016-map-console-is-home.md), [0023](../../../../../project-docs/decisions/0023-radar-one-sweep-12h-window.md),
+  [0022](../../../../../project-docs/decisions/0022-crisis-hues-option-a.md), [0013](../../../../../project-docs/decisions/0013-ds1-design-system-tier-never-a-colour.md)
+- Plan: [colour consistency](../../../../../project-docs/plans/PLAN_2026-10-19_colour_consistency.md) (radar C6)
+- Rules: [DATA_STRATEGY.md](../../../../../project-docs/rules/DATA_STRATEGY.md), [WORLD_MODEL.md](../../../../../project-docs/rules/WORLD_MODEL.md)
+- Runbooks: [situation-tracker.md](../../../../../project-docs/runbooks/situation-tracker.md),
+  [situation-ingest.md](../../../../../project-docs/runbooks/situation-ingest.md), [gdacs-ingest.md](../../../../../project-docs/runbooks/gdacs-ingest.md)
 
-## Public API (`index.js`)
-- `HudStatusLine`, `useGdacsStatus`, `usePausedSince` (app layout), `WAITING_SENSORS` (app route fallback)
-
-## Imports from other features
-- `@/features/weekly-brief` -> `useWeeklyBrief`; `@/features/countries` -> `CountryCardV2`
-- `@/features/threads` -> `useWebIndex`, `deriveFromIndex`
-- From shared: `@/shared/hooks/useDailyBrief`, `@/shared/ui/BottomSheet.jsx`, the map kit in `@/shared/map/` (see Entry files)
-
-## Gotchas
-- Situations not updated in 30+ days are hidden and counted, never dropped silently.
-- `useCountryRiskLayer` avoids `useWeeklyArchive` (needs AuthProvider); map data never gates on auth.
-- Boot sensors tick only on real data; the boot screen shows once per page load (`bootShown`).
-- Only app/ imports this feature (through `index.js`); what other features reused moved to `@/shared/map` and `@/shared/lib`.
+## How to check it
+- Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/map src/shared/map`
+- Bundle fresh: `curl -s https://globalperspective.net/data/world/latest.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['generated_at'], d['stale'], len(d['situations']))"`
+- Tracker: `aws events describe-rule --name TriggerSituationTracker --region ap-northeast-1 --query State`;
+  `aws logs tail /aws/lambda/newsSituationTracker --since 1h --region ap-northeast-1`
 
 Last verified: 2026-10-19

@@ -1,7 +1,8 @@
 // check_docs — doc layout guard (project-docs/decisions/0025-docs-storage-layout.md).
 // Fails (exit 1) when: project-docs/INDEX.md is over 60 lines or links to a file that does not exist;
 // project-docs/plans/ holds more than 10 files; a plan has no `Status:` line, more than one, or one that
-// says done; CLAUDE.md is over 80 lines.
+// says done; CLAUDE.md is over 80 lines; a frontend feature folder has no README.md front door (over 60 lines,
+// missing one of README_SECTIONS, or no link to its row in project-docs/reference/features.md).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = path.join(ROOT, 'project-docs');
 const INDEX = path.join(DOCS, 'INDEX.md');
+const FEATURES = path.join(ROOT, 'global-perspectives-starter/frontend/src/features');
+export const README_SECTIONS = ['Status', 'Routes', 'Frontend', 'Backend', 'Data', 'Docs', 'How to check it'];
 const lineCount = (file) => fs.readFileSync(file, 'utf8').replace(/\n$/, '').split('\n').length;
 
 export function checkDocs() {
@@ -35,6 +38,16 @@ export function checkDocs() {
   }
   const claude = lineCount(path.join(ROOT, 'CLAUDE.md'));
   if (claude > 80) problems.push(`CLAUDE.md has ${claude} lines (max 80)`);
+  for (const name of fs.readdirSync(FEATURES).filter((d) => fs.statSync(path.join(FEATURES, d)).isDirectory())) {
+    const readme = path.join(FEATURES, name, 'README.md');
+    if (!fs.existsSync(readme)) { problems.push(`features/${name} has no README.md`); continue; }
+    const text = fs.readFileSync(readme, 'utf8');
+    const lines = lineCount(readme);
+    if (lines > 60) problems.push(`features/${name}/README.md has ${lines} lines (max 60)`);
+    const missing = README_SECTIONS.filter((h) => !text.includes(`\n## ${h}\n`));
+    if (missing.length) problems.push(`features/${name}/README.md lacks section(s): ${missing.join(', ')}`);
+    if (!text.includes(`reference/features.md#${name})`)) problems.push(`features/${name}/README.md does not link reference/features.md#${name}`);
+  }
   return problems;
 }
 

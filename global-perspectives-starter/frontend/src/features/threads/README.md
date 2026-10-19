@@ -1,45 +1,60 @@
 # threads
 
-Story arcs. `/weekly`: threads from the 30-day archive as list, board, timeline, map or story web,
-with filters, a "changed since your last visit" rail and a Countries tab. A thread page opens in
-story mode; "Read in full" is the long tabbed page (Overview, Timeline, Actors, Sources).
+Story arcs ("Stories"). `/weekly`: threads from the 30-day archive as list, board, timeline, map or
+story web, with filters, a "changed since your last visit" rail and a Countries tab. A thread page
+opens in story mode; "Read in full" is the long tabbed page (Overview, Timeline, Actors, Sources).
+
+## Status
+- Live, public (signed-out reads work; member depth caps are server-side).
+- `ECONOMY_PARKED` (`@/shared/lib/economyFlag.js`) drops the Economy tab; `?tab=economy` falls back to Overview.
 
 ## Routes
 - `/weekly` -> `WeeklyPage` (`?section=countries`, `?view=list|board|timeline|map|web|changes`, `?category=`)
-- `/weekly/thread/:threadId` -> `ThreadPage` (`?tab=`, `?from=country&country=`)
-- Redirect: `/spider-demo` -> `/weekly?view=web`; `/breaking/:id` -> its thread when it has an arc
+- `/weekly/thread/:threadId` -> `ThreadPage` (`?tab=` opens Read in full; `?from=country&country=`)
+- Redirects (src/app/LegacyRedirects.jsx): `/spider-demo` -> `/weekly?view=web`; `/breaking/:id` -> its thread when it has one
 
-## Entry files
+## Frontend
 - `WeeklyPage.jsx` - Stories page; `components/Stories*.jsx` are its header, filters and views
 - `ThreadPage.jsx` - arc page; `components/StoryMode.jsx` (desktop) / `PhoneStoryMode.jsx` (phone)
 - `components/WeeklyMap.jsx` - map view (lazy); Google Maps when `window.GOOGLE_MAPS_API_KEY`, else `WeeklyFallbackMap`
-- `lib/storyGroups.js` (threads, groups, filters, sorts); `storyWeb`, `webIndexLinks`, `storyLinks`, `linkStates` (links)
+- `lib/storyGroups.js` (threads, groups, filters, sorts, `VISIT_KEY`); `storyWeb`, `webIndexLinks`, `storyLinks`, `linkStates` (links)
+- Public API (`index.js`): `useWeeklyArchive` (analysis-studio, countries), `useThreadAnalyses`, `buildDeadlines`,
+  `COUNTRY_COORDINATES` (countries), `useWebIndex`, `deriveFromIndex` (map). `WeeklyMap` is not exported:
+  countries lazy-imports it by path so it keeps its own chunk.
+- Imports from other features: `@/features/economy` -> `MechanismCard`, `useEconomicImpact`. The Countries section
+  of `/weekly` arrives as the `countriesView` prop from `app/App.jsx`, so threads never imports countries.
+- CSS: `WeeklyPage.css`, `Stories.css`, `ThreadPage.css` and `components/*.css` are imported only inside threads
+  (ThreadPage and WeeklyMap import `WeeklyPage.css` on purpose for cold loads). The deck shell shared with
+  analysis-studio and briefings is `@/shared/ui/deck.css`.
+
+## Backend
+- Generated row: [reference/features.md#threads](../../../../../project-docs/reference/features.md#threads)
+- `NewsProjectInvokeAgentLambda-dev` (summaries, forecasts, archive), `newsThreadAnalysis` (thread analyses),
+  `newsSystemsAnalysis` (story web: `WEB#INDEX` / `THREAD#<id>` `WEB`), `newsSituationTracker`; all served by `newsSensitiveData-dev`.
 
 ## Data
-- `useWeeklyArchive()` -> restProxy `archive_range` (auth, 30 days); localStorage `gp_weekly_archive_v1`, 30 min.
-- `useNarrativeThread(id)` -> `narrative_thread` (90-day by-ID rebuild); sessionStorage, 30 min.
+- `useWeeklyArchive()` -> restProxy `archive_range` (30 days; auth header when signed in); localStorage `gp_weekly_archive_v1`,
+  30 min. It stores `uid` but does not check it on read.
+- `useNarrativeThread(id)` -> `narrative_thread`; sessionStorage `gp_narrative_thread_<id>`, 30 min.
 - `useThreadAnalyses(ids)` -> `thread_analysis`; localStorage `gp_thread_analyses_v2`, 30 min.
-- `useThreadForecast(topicIds)` -> `prediction_snapshot`; `useWebIndex()` -> `web_index` (memory, 30 min).
-- `useStoryLinks` uses `systems_analysis` (max 3 regions) only if `web_index` fails; `useLastVisit` is localStorage only.
+- `useThreadForecast(topicIds)` -> `prediction_snapshot`; `useWebIndex()` -> `web_index` (memory cache, 30 min).
+- `useStoryLinks` calls `systems_analysis` (max 3 regions) only if `web_index` fails; `useLastVisit` is localStorage only.
 
-## Shared blocks used
-- `EditorialShell`, `StatusStrip`, `StoryLink`, `StoryPeek`, `StoryRow`, `CategoryTag`, `TierChip`,
-  `FilterGroup`, `SectionHeader`, `ShareButtons`, `CopyBriefing`, `SourceRobustness`, `risk/RiskScorecard`, `boot/BootLoader`
+## Docs
+- Decisions: [0012](../../../../../project-docs/decisions/0012-story-web-is-news-based.md) (story web is news-based),
+  [0018](../../../../../project-docs/decisions/0018-spider-demo-retired-into-stories-web.md) (spider-demo -> WEB view),
+  [0004](../../../../../project-docs/decisions/0004-developments-kept-demoted.md), [0013](../../../../../project-docs/decisions/0013-ds1-design-system-tier-never-a-colour.md)
+- Plans: [consistency](../../../../../project-docs/plans/PLAN_2026-10-19_consistency_and_modernisation.md),
+  [colour](../../../../../project-docs/plans/PLAN_2026-10-19_colour_consistency.md)
+- Rules: [WORLD_MODEL.md](../../../../../project-docs/rules/WORLD_MODEL.md)
+- Runbooks: [news-agent.md](../../../../../project-docs/runbooks/news-agent.md), [thread-analysis.md](../../../../../project-docs/runbooks/thread-analysis.md),
+  [systems-analysis.md](../../../../../project-docs/runbooks/systems-analysis.md)
 
-## Public API (`index.js`)
-- `useWeeklyArchive` (analysis-studio, countries), `useThreadAnalyses`, `buildDeadlines`, `COUNTRY_COORDINATES` (countries),
-  `useWebIndex`, `deriveFromIndex` (map). Not exported: `WeeklyMap` (countries lazy-imports it by path).
-
-## Imports from other features
-- `@/features/economy` -> `MechanismCard`, `useEconomicImpact`
-- From shared: `@/shared/map/StoryMap.jsx`, `storyLinkArcs.js`, `landGeometry.js`; `@/shared/ui/BottomSheet.jsx`, `deck.css`, `SaveButton`,
-  `QuestionChip`; `@/shared/lib/situationLabels.js`, `cardText.js`, `questionChips.js`, `questionStates.js`, `trFormatDate.js`
-- The Countries section of `/weekly` arrives as the `countriesView` prop from `app/App.jsx`, so threads never imports countries.
-
-## Gotchas
-- ECONOMY_PARKED drops the Economy tab; `?tab=economy` falls back to Overview. Any `?tab=` opens Read in full.
-- ThreadPage imports `WeeklyPage.css` on purpose (shared timeline/share classes on cold loads).
-- `gp_weekly_archive_v1` stores `uid` but does not check it on read.
-- Reused through `index.js` by `countries`, `analysis-studio` and `map`; the deck shell CSS is `@/shared/ui/deck.css`.
+## How to check it
+- Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/threads`
+- Archive served (from the repo root):
+  `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"archive_range","payload":{"days":2}}' | head -c 300`
+- Story web index: same command with `-d '{"action":"web_index"}'`
+- Analysis job: `aws events describe-rule --name TriggerDailyAnalysis --region ap-northeast-1 --query State`
 
 Last verified: 2026-10-19

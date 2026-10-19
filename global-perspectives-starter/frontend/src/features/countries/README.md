@@ -1,44 +1,60 @@
 # countries
 
 Country views built from stored data only (no AI run on view): the country list with an overview
-map, the per-country page (Situation / Story arcs / Coverage tabs), and `CountryCardV2`, the
+map, the per-country page (Situation / Story Arcs / Coverage tabs), and `CountryCardV2`, the
 one-screen country card the map console also mounts.
 
-## Routes
-- `/weekly/countries` -> `CountryListPage` (also the Countries section of `/weekly?section=countries`: `app/App.jsx` passes it to `WeeklyPage` as `countriesView`)
-- `/weekly/country/:countryName` -> `CountryPage`
+## Status
+- Live, public (signed-out reads work).
+- `ECONOMY_PARKED` (`@/shared/lib/economyFlag.js`) hides the disruption sort and blocks and turns off
+  `useDisruptionsList` (`enabled: !ECONOMY_PARKED`); `useMarketsCountry` is not gated.
 
-## Entry files
-- `CountryListPage.jsx` - sortable country list (risk, coverage, A-Z; disruption sort only when economy is not parked)
-- `CountryPage.jsx` - hero + map band, `CountryCardV2`, tabs, rails; phone READ / MAP tabs
+## Routes
+- `/weekly/countries` -> `CountryListPage` (also the Countries section of `/weekly?section=countries`:
+  `app/App.jsx` passes it to `WeeklyPage` as `countriesView`)
+- `/weekly/country/:countryName` -> `CountryPage` (`useParams()` already decodes; decoding again throws on `%`)
+
+## Frontend
+- `CountryListPage.jsx` - sortable list (risk, coverage, A-Z; disruption only when economy is not parked)
+- `CountryPage.jsx` - hero + map band, `CountryCardV2`, tabs, rails; phone Read / Map tabs
 - `components/CountryCardV2.jsx` - facts, summary, risk + direction, latest change, stories, triggers, FX
-- `components/CountryWhatChanged.jsx`, `BackgroundTimeline.jsx`, `CountryOverviewMap.jsx` (Google Maps)
-- `lib/` - pure helpers: `countryDirection`, `countryDrift`, `countryFacts`, `countryMacro`, `countryCurrency`, `countryTriggers`, `countryWatch`
+- `components/CountryWhatChanged.jsx`, `BackgroundTimeline.jsx`, `CountryOverviewMap.jsx` (Google Maps;
+  "Map unavailable" without `window.GOOGLE_MAPS_API_KEY`)
+- `lib/` - pure helpers: `countryCurrency`, `countryDirection`, `countryDrift`, `countryFacts`, `countryMacro`,
+  `countryTier`, `countryTriggers`, `countryWatch`
+- CSS: `CountryListPage.css`, `CountryPage.css`, `CountryCoverage.css`, `components/*.css` (no threads CSS)
+- Public API (`index.js`): `CountryCardV2` — used by `map` (gets `situations` for the watch flag there; not on CountryPage)
+- Imports from other features: `@/features/threads` -> `useWeeklyArchive`, `useThreadAnalyses`, `buildDeadlines`,
+  `COUNTRY_COORDINATES`, plus a lazy `import()` of `threads/components/WeeklyMap` (a static import pulled it into
+  the main chunk); `@/features/economy` -> `useMarketsCountry`
+
+## Backend
+- Generated row: [reference/features.md#countries](../../../../../project-docs/reference/features.md#countries)
+- `newsCountryIntelligence` (daily `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE`), `newsCountryFactsUpdater` (weekly
+  `FACTS#<name>` / `COUNTRY_FACTS` from Wikidata), `newsDriftCorrector`, `newsSystemsAnalysis`; served by `newsSensitiveData-dev`.
 
 ## Data
-- `useCountryIntelligence` -> restProxy `country_intelligence` (auth header when signed in), chunked per the backend's 15-name cap; localStorage `gp_country_intel_v1`, 30 min
-- `useCountryHistory` -> `country_history`; `useCountryFacts` -> `country_facts`; `useCountryStories` -> `useArchiveDayMap` + `prediction_snapshot`
-- `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` -> `markets_country`; `useDisruptionsList` -> `economic_impact_list` (off while `ECONOMY_PARKED`)
-
-## Shared blocks used
-- `@/shared/ui/`: `EditorialShell`, `StatusStrip`, `SectionHeader`, `TierChip`, `CategoryTag`, `SeverityBadge`, `DirectionArrow`, `PhoneTabs`, `ShareButtons`, `CopyBriefing`, `StoryLink`, `risk/RiskScorecard`, `risk/RiskDeltaPill`, `boot/BootLoader`
-
-## Public API (`index.js`)
-- `CountryCardV2` — used by `map`. `CountryListPage` reaches `/weekly` as the `countriesView` prop from `app/App.jsx`.
-
-## Imports from other features
-- `@/features/threads` -> `useWeeklyArchive`, `useThreadAnalyses`, `buildDeadlines`, `COUNTRY_COORDINATES`;
-  `components/WeeklyMap` stays a lazy `import()` by path so it keeps its own chunk
-- `@/features/economy` -> `useMarketsCountry`
-- From shared: `@/shared/hooks/useDisruptionsList`, `@/shared/ui/SaveButton`, `FollowButton`, `QuestionChip`; `@/shared/lib/questionChips.js`,
-  `situationLabels.js` (`iso3ForName`), `trajectory.js`; `@/shared/map/countryRiskLayer.js` (chunking constants)
-
-## Gotchas
-- `useParams()` already decodes `:countryName`; decoding again throws on names with `%`.
-- `WeeklyMap` is lazy on purpose: a static import pulled it into the main chunk.
-- `CountryCardV2` gets `situations` (watch flag) only from SituationHome; on `CountryPage` the flag is omitted.
-- Economy disruption blocks and sort are hidden while `ECONOMY_PARKED`; `useMarketsCountry` is not gated.
-- `CountryOverviewMap` needs `window.GOOGLE_MAPS_API_KEY`; without it it shows "Map unavailable".
+- `useCountryIntelligence` -> restProxy `country_intelligence` (auth header when signed in), chunked to the backend's
+  15-name cap (`@/shared/map/countryRiskLayer.js`); localStorage `gp_country_intel_v1`, 30 min.
+- `useCountryHistory` -> `country_history` (localStorage `gp_country_history_<name>`, 1 h); `useCountryFacts` ->
+  `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` + `prediction_snapshot`.
+- `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` -> `markets_country`;
+  `useDisruptionsList` -> `economic_impact_list` (off while parked).
 - `hooks/useSystemsAnalysis.js` (`systems_analysis`) has no consumer outside its test.
+
+## Docs
+- Decisions: [0010](../../../../../project-docs/decisions/0010-country-view-split.md) (country view split by job),
+  [0005](../../../../../project-docs/decisions/0005-one-importance-scale.md), [0009](../../../../../project-docs/decisions/0009-economy-parked.md)
+- Plans: [colour](../../../../../project-docs/plans/PLAN_2026-10-19_colour_consistency.md)
+- Rules: [SEVERITY_CODEBOOK.md](../../../../../project-docs/rules/SEVERITY_CODEBOOK.md)
+- Runbooks: [country-intelligence.md](../../../../../project-docs/runbooks/country-intelligence.md), [country-facts.md](../../../../../project-docs/runbooks/country-facts.md),
+  [drift-corrector.md](../../../../../project-docs/runbooks/drift-corrector.md), [systems-analysis.md](../../../../../project-docs/runbooks/systems-analysis.md)
+
+## How to check it
+- Tests: `cd global-perspectives-starter/frontend && npx vitest run src/features/countries`
+- One country served (from the repo root):
+  `P=$(sed -n "s/^window.SENSITIVE_PROXY_ENDPOINT = '\(.*\)';/\1/p" docs/config.js); curl -s -X POST "$P" -H 'Content-Type: application/json' -d '{"action":"country_intelligence","payload":{"countryNames":["Japan"]}}' | head -c 300`
+- Facts: same command with `-d '{"action":"country_facts","payload":{"countryNames":["Japan"]}}'`
+- Daily job: `aws scheduler get-schedule --name countryIntelliegence --region ap-northeast-1 --query State`
 
 Last verified: 2026-10-19

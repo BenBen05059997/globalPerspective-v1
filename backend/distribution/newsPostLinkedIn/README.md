@@ -12,7 +12,7 @@ Posts new topics from the `latest` topics item to LinkedIn and Bluesky. Each pla
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `<SUMMARY_PREDICT_PK_PREFIX><topicId>` (default `TOPIC#`) with SK `SUMMARY` / `PREDICTION`
 - DynamoDB `SOCIAL_POSTS_TABLE` (or `LINKEDIN_POSTS_TABLE`): `POSTED#<PLATFORM>#<fingerprint>` (30-day `ttl`); legacy `POSTED#<fingerprint>` also checked for LinkedIn; daily count is a Scan
 - External APIs: `api.linkedin.com/rest/images` and `/rest/posts` (version `202601`); `bsky.social/xrpc` (createSession, uploadBlob, createRecord)
-- Env names: `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `MAX_POSTS_PER_RUN` (default 5), `MAX_POSTS_PER_DAY` (default 100), `SITE_URL`
+- Env names: `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `MAX_POSTS_PER_RUN` (default 5), `MAX_POSTS_PER_DAY` (default 100), `SITE_URL` (home link; a LinkedIn post links its story page via `src/_shared/links.js` `storyHref` when the topic has a `threadId`)
 
 ## Gotchas
 - Throws if any of the three table env names is missing; with no platform credentials it returns `skipped`.
@@ -21,6 +21,6 @@ Posts new topics from the `latest` topics item to LinkedIn and Bluesky. Each pla
 - `nostr-tools` and `ws` are dependencies but unused by the code.
 
 ## Tests
-- `cd backend/distribution/newsPostLinkedIn/src && npm test` (`node --test ../test/*.test.js`, offline; DynamoDB, map image and fetch stubbed): 5 pass.
+- `cd backend/distribution/newsPostLinkedIn/src && npm test` (`node --test ../test/*.test.js`, offline; DynamoDB, map image and fetch stubbed): 6 pass.
 
 Last verified: 2026-10-19

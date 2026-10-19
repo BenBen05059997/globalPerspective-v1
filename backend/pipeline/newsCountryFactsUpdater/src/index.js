@@ -18,7 +18,8 @@ const ddb = DynamoDBDocumentClient.from(ddbClient, { marshallOptions: { removeUn
 // matches DEFAULT_PAIRS) and are the ONLY ones with leadership (Wikidata head-of-state / government
 // statements are stale or wrong for several other countries and leadership feeds the country-briefing
 // prompts: Batch 3 / D2 found Australia, Sudan, DR Congo, Taiwan wrong); the rest (Batch 3 / D2) are resolved from their ISO 3166-1 alpha-3 code
-// (Wikidata P298) in one query. Names are the display names the site uses (FACTS#<name> key).
+// (Wikidata P298) in one query. Names are the canonical short display names the site uses (FACTS#<name> key;
+// decided 2026-10-19: "DR Congo", "UAE") and must equal the COUNTRY# keys newsCountryIntelligence writes.
 const TARGET_COUNTRIES = [
   { name: 'Iran',            wikiQid: 'Q794',  leadership: true, acled: true },
   { name: 'Israel',          wikiQid: 'Q801',  leadership: true, acled: true },
@@ -33,11 +34,11 @@ const TARGET_COUNTRIES = [
   { name: 'United Kingdom',  wikiQid: 'Q145',  leadership: true, acled: true },
   { name: 'Cuba',            wikiQid: 'Q241',  leadership: true, acled: true },
   { name: 'Brazil', iso3: 'BRA' }, { name: 'Canada', iso3: 'CAN' },
-  { name: 'Democratic Republic of the Congo', iso3: 'COD' }, { name: 'France', iso3: 'FRA' },
+  { name: 'DR Congo', iso3: 'COD' }, { name: 'France', iso3: 'FRA' },
   { name: 'Germany', iso3: 'DEU' }, { name: 'Indonesia', iso3: 'IDN' }, { name: 'Japan', iso3: 'JPN' },
   { name: 'Mexico', iso3: 'MEX' }, { name: 'Nepal', iso3: 'NPL' }, { name: 'North Korea', iso3: 'PRK' },
   { name: 'Philippines', iso3: 'PHL' }, { name: 'South Africa', iso3: 'ZAF' }, { name: 'South Korea', iso3: 'KOR' },
-  { name: 'Spain', iso3: 'ESP' }, { name: 'Turkey', iso3: 'TUR' }, { name: 'United Arab Emirates', iso3: 'ARE' },
+  { name: 'Spain', iso3: 'ESP' }, { name: 'Turkey', iso3: 'TUR' }, { name: 'UAE', iso3: 'ARE' },
   { name: 'Yemen', iso3: 'YEM' }, { name: 'Venezuela', iso3: 'VEN' }, { name: 'Italy', iso3: 'ITA' },
   { name: 'Egypt', iso3: 'EGY' }, { name: 'Syria', iso3: 'SYR' }, { name: 'Iraq', iso3: 'IRQ' },
   { name: 'Afghanistan', iso3: 'AFG' }, { name: 'Sudan', iso3: 'SDN' }, { name: 'Ethiopia', iso3: 'ETH' },

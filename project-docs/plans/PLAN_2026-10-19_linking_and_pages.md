@@ -60,9 +60,10 @@ Thread mis-joins (a Brazil debate inside the Amazon-deforestation thread), situa
 (afghan / afghan-taliban / afghanistan), 19 of 56 situations with a thread, one forecast whose title did not match its
 thread, topic-keyed forecasts spread over many keys.
 
-### Open choices
-- Display names: "UAE" / "DR Congo" (short, recommended) or the long forms.
-- Merging and retiring country records (DynamoDB writes/deletes).
+### Decided (operator, 2026-10-19)
+- Display names: short forms ("UAE", "DR Congo").
+- Merge duplicate country records under the canonical name and retire the region records (each DynamoDB write is
+  listed before it runs).
 
 ## Checklist
 Each step: one commit or merge, verify + checks green, browser-checked before any release. Releases need the

@@ -1,11 +1,23 @@
-# Front Worker candidate wrapper
+# Front Worker sources (`globalperspective-rss`)
 
-`candidate.mjs` wraps the captured production baseline without changing its default behavior on other hosts. On `next.globalperspective.net` it sends only `GET` and `HEAD` requests for `/blog` and `/blog/*` directly to the existing origin, and adds `X-Robots-Tag: noindex` to every response. The production host has no blog bypass or noindex header. There is no production blog allowlist enabled; any future production exception must be explicit and reviewed.
+Three versions of the live front Worker live here. None of them is uploaded by any script in this repo.
 
-Run the offline routing and response tests with:
+| Path | What it is | Uploaded? |
+|---|---|---|
+| `baseline/worker2.mjs` (+ sanitized `capture.json`) | Captured source of the live production Worker (version `91ba1e98…`, deployed 2026-10-01). | Is the live version. |
+| `production/worker.mjs` | Baseline plus one fix: GET/HEAD `/blog` and `/blog/*` skip the SPA-shell fallback and go to the origin, so the static blog pages in `docs/blog/` are served instead of the app shell. | **No** (prepared 2026-10-06 in 910ca0c; live `/blog/` still returns the app shell, checked 2026-10-19). |
+| `candidate.mjs` | Wrapper around the baseline for `next.globalperspective.net` only: sends GET/HEAD `/blog` and `/blog/*` straight to the origin and adds `X-Robots-Tag: noindex` to every response. Other hosts keep baseline behaviour. | **No**. |
+
+Offline tests (each compares against the baseline):
 
 ```sh
+node --test cloudflare/front-worker/production/worker.test.mjs
 node --test cloudflare/front-worker/candidate.test.mjs
 ```
 
-This is a two-module candidate source (`candidate.mjs` imports `baseline/worker2.mjs`). A future code-only upload must include both modules and preserve the existing Worker name, routes, bindings, secrets, compatibility settings, and other live settings. Do not use a bare Wrangler deploy that could replace those settings. Before upload, record the current deployed version and settings. Recovery is a version rollback to the recorded baseline, or a controlled upload of the captured baseline source if that version is unavailable.
+Uploading either file is a production change and needs the operator's explicit yes. `candidate.mjs`
+is a two-module upload (it imports `baseline/worker2.mjs`). Any upload must be code-only and keep the
+existing Worker name, routes, bindings, secrets, compatibility settings and other live settings —
+never a bare `wrangler deploy`. Before upload, record the current deployed version and settings.
+Recovery is a version rollback to the recorded baseline, or a controlled upload of the captured
+baseline source if that version is unavailable. Process: `project-docs/runbooks/DEPLOYMENT_NOTES.md`.

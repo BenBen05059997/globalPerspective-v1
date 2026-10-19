@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StoryMap } from '@/features/threads/components/StoryMode.jsx';
+import StoryMap from '@/shared/map/StoryMap.jsx';
 import {
   buildDailySlides, buildWeeklySlides, mapFocusForDailySlide, mapFocusForWeeklySlide,
   shadingForDailySlides, shadingForWeeklySlides,
@@ -11,7 +11,7 @@ import EditionsStrip, { WeeklyEditionNote } from '@/features/briefings/component
 import ReadAsText from '@/features/briefings/components/ReadAsText.jsx';
 import Tabs from '@/shared/ui/Tabs.jsx';
 import Button from '@/shared/ui/Button.jsx';
-import '@/features/threads/components/StoryMode.css';
+import '@/shared/ui/deck.css';
 import '@/features/briefings/components/BriefingMode.css';
 
 const FALLBACK_STAGE_HEIGHT = 460;

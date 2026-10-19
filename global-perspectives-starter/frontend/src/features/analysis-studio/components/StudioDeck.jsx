@@ -3,9 +3,9 @@
 // (one slide at a time: Bottom line → the lens picture → Our data vs this run → Sources →
 // Receipt, ◀ ▶ / dots / arrow keys), and a TIME BAR — the same pattern story mode uses
 // (Studio.dc.html v3). Built by REUSING story mode's own pieces, not forking them:
-//   - `StoryMap` (features/threads/components/StoryMode.jsx) for the map;
+//   - `StoryMap` (shared/map/StoryMap.jsx) for the map;
 //   - `iso3ForName` (shared/lib/situationLabels.js) to shade backed ("our data") places;
-//   - the `.sm-*` slide/scroll/fade classes + `.gp-console` tokens (StoryMode.css, imported).
+//   - the `.sm-*` / `.psm-*` deck shell (shared/ui/deck.css) + `.gp-console` tokens.
 //
 // DECK shows ONE section's deck at a time — F2's stacked sections become a switcher (chips)
 // across decks, defaulting to the newest. "READ AS TEXT" is the long light-themed view every
@@ -17,7 +17,7 @@ import StudioRunResult from '@/features/analysis-studio/components/StudioRunResu
 import {
   OursVsRunStrip, ScenarioBandPicture, ComparePicturePanel, WhatChangedChart, FreeformHighlighter, StudioTimeBar,
 } from '@/features/analysis-studio/components/StudioPictures.jsx';
-import { StoryMap } from '@/features/threads/components/StoryMode.jsx';
+import StoryMap from '@/shared/map/StoryMap.jsx';
 import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { buildReceipt } from '@/features/analysis-studio/lib/receipt';
@@ -28,8 +28,7 @@ import Card from '@/shared/ui/Card.jsx';
 import Chip from '@/shared/ui/Chip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
-import '@/features/threads/components/StoryMode.css';
-import '@/features/threads/components/PhoneStoryMode.css';
+import '@/shared/ui/deck.css';
 import '@/features/analysis-studio/components/StudioDeck.css';
 
 const MAP_HEIGHT = 460;

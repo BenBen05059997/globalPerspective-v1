@@ -1,4 +1,4 @@
-/* PhoneBriefingMode — S3 phone (P1 + PH). Reuses PhoneStoryMode.css's .psm-* panel/slide chrome (the tabs are the shared Tabs) and
+/* PhoneBriefingMode — S3 phone (P1 + PH). Reuses shared/ui/deck.css's .psm-* panel/slide chrome (the tabs are the shared Tabs) and
    BriefingMode.css's .bm-* slide bodies + editions strip; only phone-specific tweaks here. */
 
 .bm-root.psm-root { width: 100%; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }

@@ -25,8 +25,8 @@ const TOKENS_CSS = readFileSync(resolve(HERE, '../../../shared/styles/tokens.css
 // imports these same two files) — the snapshot must carry their CSS too, or the deck renders
 // unstyled (no dark surface, default browser buttons) even though the real app (which loads
 // every imported .css through Vite) looks correct.
-const SM_CSS = readFileSync(resolve(HERE, '../../threads/components/StoryMode.css'), 'utf8');
-const PSM_CSS = readFileSync(resolve(HERE, '../../threads/components/PhoneStoryMode.css'), 'utf8');
+const DECK_CSS = readFileSync(resolve(HERE, '../../../shared/ui/deck.css'), 'utf8');
+const MAPKIT_CSS = readFileSync(resolve(HERE, '../../../shared/map/mapKit.css'), 'utf8');
 
 const OUT_DIR = process.env.GP_CAPTURE_DIR || null;
 
@@ -127,8 +127,8 @@ function writeSnapshot(name, container) {
 <style>${AV_CSS}</style>
 <style>${SP_CSS}</style>
 <style>${SD_CSS}</style>
-<style>${SM_CSS}</style>
-<style>${PSM_CSS}</style>
+<style>${DECK_CSS}</style>
+<style>${MAPKIT_CSS}</style>
 <style>body{background:var(--paper,#fbfbf9);margin:0;}</style>
 </head><body>${container.innerHTML}</body></html>`;
   writeFileSync(`${OUT_DIR}/${name}.snapshot.html`, html, 'utf8');

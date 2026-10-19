@@ -43,7 +43,7 @@
       "spacing": 1
     },
     "features/threads/components/StoryMode.css": {
-      "spacing": 4
+      "spacing": 3
     },
     "features/threads/components/WeeklyMap.css": {
       "spacing": 7
@@ -91,6 +91,9 @@
       "radius": 2
     },
     "shared/ui/BottomSheet.css": {
+      "spacing": 1
+    },
+    "shared/ui/deck.css": {
       "spacing": 1
     },
     "shared/ui/primitives.css": {

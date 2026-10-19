@@ -10,8 +10,10 @@ import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import {
   buildChapters, buildDeadlines, buildSlides, viewFrom,
 } from '@/features/threads/lib/storyMode.js';
-import { BriefSlide, ChapterSlide, FedIntoSlide, WatchSlide, StoryMap } from '@/features/threads/components/StoryMode.jsx';
+import { BriefSlide, ChapterSlide, FedIntoSlide, WatchSlide } from '@/features/threads/components/StoryMode.jsx';
+import StoryMap from '@/shared/map/StoryMap.jsx';
 import BottomSheet from '@/shared/ui/BottomSheet.jsx';
+import '@/shared/ui/deck.css';
 import '@/features/threads/components/StoryMode.css';
 import '@/features/threads/components/PhoneStoryMode.css';
 

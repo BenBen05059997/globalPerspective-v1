@@ -11,7 +11,7 @@ One runbook per scheduled job or alert: Trigger / What it means / Check / Fix / 
 [thread-analysis](thread-analysis.md) 04:40 · [systems-analysis](systems-analysis.md) 05:00 · [country-intelligence](country-intelligence.md) 05:15 · [drift-corrector](drift-corrector.md) 05:30 · [prediction-resolver](prediction-resolver.md) 10:30 · [source-audit](source-audit.md) Mon/Wed/Fri 11:30 · [daily-brief](daily-brief.md) 23:00 JST · [weekly-brief](weekly-brief.md) Sun 06:00 → [weekly-email](weekly-email.md) Sun 14:00
 
 ## Feeds and builders (no LLM unless noted)
-[situation-ingest](situation-ingest.md) hourly (LLM) · [situation-tracker](situation-tracker.md) 30 min · [gdacs-ingest](gdacs-ingest.md) 20 min · [gdelt-conflict](gdelt-conflict.md) 6 h · [predictions-snapshot](predictions-snapshot.md) 30 min · [signals-build](signals-build.md) 10:00 · [markets-data](markets-data.md) hourly · [country-facts](country-facts.md) Mon 05:00 JST · [social-posts](social-posts.md) every 3 h JST
+[situation-ingest](situation-ingest.md) hourly (LLM) · [situation-tracker](situation-tracker.md) 30 min · [gdacs-ingest](gdacs-ingest.md) 20 min · [gdelt-conflict](gdelt-conflict.md) 6 h · [predictions-snapshot](predictions-snapshot.md) 30 min · [signals-build](signals-build.md) 10:00 (parked, rule to be disabled) · [markets-data](markets-data.md) hourly · [country-facts](country-facts.md) Mon 05:00 JST · [social-posts](social-posts.md) every 3 h JST
 
 ## Monitors and alerts
 [freshness-monitor](freshness-monitor.md) · [error-digest](error-digest.md) · [model-guard](model-guard.md) · [alarms](alarms.md) · [parked-jobs](parked-jobs.md) · [drift-email](drift-email.md) (activation, waits for the first follower)

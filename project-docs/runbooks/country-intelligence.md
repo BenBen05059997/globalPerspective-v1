@@ -7,7 +7,7 @@ EventBridge Scheduler `countryIntelliegence` (sic), `cron(15 5 * * ? *)` UTC, no
 Repo source: `backend/pipeline/newsCountryIntelligence/src/`.
 
 ## What it means
-Plans which countries to refresh (top `COUNTRY_TOP_N`, weekly baseline, alert or coverage-jump extras) and writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE` and `HISTORY#<date>` in `SUMMARIZE_PREDICT_TABLE`; LLM, no web search. Reads `WORLD_LATEST_URL` for alert countries.
+Plans which countries to refresh (top `COUNTRY_TOP_N`, weekly baseline, alert or coverage-jump extras) and writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE` and `HISTORY#<date>` in `SUMMARIZE_PREDICT_TABLE`, keyed by the canonical short country name (United States, DR Congo, UAE) and carrying the top `threadIds[]`; LLM, no web search. Reads `WORLD_LATEST_URL` for alert countries.
 
 ## Check
 - Schedule state: `aws scheduler get-schedule --name countryIntelliegence --region ap-northeast-1`

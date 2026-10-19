@@ -7,7 +7,7 @@ EventBridge Scheduler `InvokeDev`, `cron(0 23 * * ? *)` Asia/Tokyo, no input.
 Repo source: `backend/distribution/newsPostDevTo/src/`.
 
 ## What it means
-Despite the name, it no longer posts to dev.to (path removed 2026-05-18): it generates the day's brief from `today-archive`, thread analyses and country briefings with one LLM call and writes `DAILY_BRIEF#<date>` / `DAILY_BRIEF` in `SUMMARIZE_PREDICT_TABLE`.
+Despite the name, it no longer posts to dev.to (path removed 2026-05-18): it generates the day's brief from `today-archive`, thread analyses and country briefings with one LLM call (stories and `countryToWatch` carry `iso3[]` and `threadId`) and writes `DAILY_BRIEF#<date>` / `DAILY_BRIEF` in `SUMMARIZE_PREDICT_TABLE`.
 
 ## Check
 - Schedule state: `aws scheduler get-schedule --name InvokeDev --region ap-northeast-1`

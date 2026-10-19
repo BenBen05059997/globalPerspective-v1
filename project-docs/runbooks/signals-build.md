@@ -7,7 +7,7 @@ EventBridge rule `TriggerSignalsBuild`, `cron(0 10 * * ? *)` UTC, input `{"actio
 Repo source: `backend/read-api/newsSignals/src/`.
 
 ## What it means
-Builds S3 `signals/latest.json` and `signals/snapshots/<date>.json` from economic-impact records, the prediction log, country briefings and sent breaking alerts. No LLM. Whether to park it is undecided (decisions/0015).
+Builds S3 `signals/latest.json` and `signals/snapshots/<date>.json` from economic-impact records, the prediction log, country briefings and sent breaking alerts. No LLM. The Signals API is parked (decisions/0032): the build rule is to be disabled and the code stays; see [parked-jobs](parked-jobs.md). Until the rule is disabled it still runs daily (ENABLED on 2026-10-19).
 
 ## Check
 - Schedule state: `aws events describe-rule --name TriggerSignalsBuild --region ap-northeast-1`

@@ -7,7 +7,7 @@ EventBridge rule `TriggerSituationTracker`, `rate(30 minutes)`, no input. (The c
 Repo source: `backend/situations/newsSituationTracker/src/`.
 
 ## What it means
-Sole writer of situation state and the map bundle: folds the GDACS inbox, `stories/index.json` and `threads/story-map.json` into `situations/state/`, `situations/index.json`, `situations/archive/`, `world/latest.json`, `world/latest.member.json` and timestamped `world/…` / `situations/history/…` snapshots. Emits `ChecksRun` and other metrics (`GlobalPerspective/Situations`, dimension `Mode`). No LLM.
+Sole writer of situation state and the map bundle: folds the GDACS inbox, `stories/index.json` and `threads/story-map.json` into `situations/state/` (news situations keyed `news#<ISO3>#<threadId>`; the old per-story ids `news#<storyId>` are kept as `aliases` and their prior states are archived as absorbed, not cooled), `situations/index.json`, `situations/archive/`, `world/latest.json`, `world/latest.member.json` and timestamped `world/…` / `situations/history/…` snapshots. Emits `ChecksRun` and other metrics (`GlobalPerspective/Situations`, dimension `Mode`). No LLM.
 
 ## Check
 - Schedule state: `aws events describe-rule --name TriggerSituationTracker --region ap-northeast-1`

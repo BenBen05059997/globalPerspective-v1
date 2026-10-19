@@ -17,3 +17,17 @@ export function ageShortFrom(iso, now = Date.now()) {
   const h = Math.floor(m / 60);
   return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
 }
+
+/**
+ * asOfParts — the pieces of the one "as of" line (shared/ui/AsOf.jsx) from a REAL timestamp:
+ *   { iso, relative: '5h ago' | 'just now', absolute: '19 Oct 2026' (locale date), text: 'as of 5h ago (19 Oct 2026)' }
+ * null for a missing or unparseable timestamp (the caller renders nothing, never a guessed date).
+ */
+export function asOfParts(iso, now = Date.now()) {
+  const short = ageShortFrom(iso, now);
+  if (!short) return null;
+  const d = new Date(iso);
+  const relative = short === 'just now' ? short : `${short} ago`;
+  const absolute = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return { iso: d.toISOString(), relative, absolute, text: `as of ${relative} (${absolute})` };
+}

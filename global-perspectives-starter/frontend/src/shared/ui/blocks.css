@@ -72,6 +72,9 @@
 .gp-cat::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--cat-dot, var(--text-dim)); flex: none; }
 .gp-cat[data-dot='off']::before { display: none; }  /* unmapped topic: no dot, never a guessed colour */
 
+/* ---- AsOf (the one freshness line) ---- */
+.gp-asof { font-family: var(--mono); font-size: var(--text-2xs); line-height: 1.4; color: var(--text-dim); }
+
 /* ---- EntityLink / StoryLink (in-text mention) ---- */
 .gp-storylink--text, .gp-entitylink--text {
   color: inherit; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px;

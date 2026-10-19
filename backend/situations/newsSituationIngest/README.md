@@ -14,7 +14,7 @@ The hourly news producer for the situation map. Fetches 25 world RSS feeds (36h 
 - Tuning env names: `CLASSIFY_BATCH`, `MAX_BATCHES_PER_RUN`, `CLASSIFY_CONCURRENCY`, `MAX_AGE_HOURS`, `GDELT_PER_QUERY`
 
 ## Models
-- `GROK_MODEL` (code fallback `deepseek-flash`), `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names point at DeepSeek, not xAI. Thinking mode is disabled in the request.
+- `GROK_MODEL` (code fallback `deepseek-flash`) through the shared client `src/_shared/llm.js` (`backend/shared/src`): `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names point at DeepSeek, not xAI. Thinking mode is disabled in the request.
 
 ## Gotchas
 - Returns `{ ok: false }` without fetching anything when `XAI_API_KEY` is unset.

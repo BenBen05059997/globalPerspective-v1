@@ -9,7 +9,7 @@ Weekly prediction settle Lambda (methodology v1). `tick` (default action, idempo
 
 ## Reads / writes
 - DynamoDB `PREDICTION_LOG_TABLE` (default `GlobalPerspectivePredictionLog`): reads `PRED#` rows with `questionSchema`; writes `SEED#<week>`/`COMMIT|SECRET|REVEAL`, `SAMPLE#<week>`/`DRAW`, `Q#<qid>`/`SAMPLED|DRAFT#<iso>`, `SETTLE#<week>`/`TICK#<iso>`; reads `Q#<qid>`/`VERDICT`. All writes are conditional put-once (immutable).
-- External APIs: Brave Search news + web (`BRAVE_SEARCH_API_KEY`, serialized, ~1.1s gap, 429 retry); LLM chat completions at `GROK_API_URL` (default `api.deepseek.com`)
+- External APIs: Brave Search news + web (`BRAVE_SEARCH_API_KEY`, serialized, ~1.1s gap, 429 retry); LLM chat completions through the shared client `src/_shared/llm.js` at `GROK_API_URL` (fallback `https://api.deepseek.com`)
 
 ## Models
 - `DRAFT_MODEL` (default `deepseek-v4-pro`) with key `XAI_API_KEY` and URL `GROK_API_URL`; the GROK_*/XAI_* names hold the DeepSeek config. JSON mode, thinking disabled. Concurrency `LLM_CONCURRENCY` (3), cap `MAX_RESOLVE_PER_RUN` (40).

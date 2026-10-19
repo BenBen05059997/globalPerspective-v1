@@ -14,15 +14,15 @@ Generates the weekly intelligence brief as a "signals" digest. Reads 7 days of t
 - Other env names: `MAX_TOKENS` (3500), `TEMPERATURE` (0.3)
 
 ## Models
-- `GROK_MODEL` (code fallback `deepseek-v4-pro`) at `GROK_API_URL` (fallback `https://api.deepseek.com/chat/completions`), key `XAI_API_KEY`. The GROK_/XAI_ names hold DeepSeek values.
+- `GROK_MODEL` (code fallback `deepseek-v4-pro`) via the shared client `src/_shared/llm.js` (`GROK_API_URL`, fallback `https://api.deepseek.com`; key `XAI_API_KEY`). The GROK_/XAI_ names hold DeepSeek values.
 
 ## Gotchas
 - Writes `status: 'published'` directly (auto-publish). To hold a bad brief back, set its status to `draft`; the serving action only serves `published`.
 - The file header and package.json still describe a draft-for-approval, manual-invoke flow; the code auto-publishes and a schedule is ENABLED.
 - Country records that are regions or older than 30 days are skipped (`usableCountryRecord`).
-- `dayZero.js`, `placeFilter.js`, `placeNames.json`, `iso3Names.json` are byte-identical copies guarded by `scripts/check-shared-sync.mjs`.
+- `dayZero`, `placeFilter` and `llm` come from `backend/shared/src` through the `src/_shared` symlink; `scripts/lambda.sh` zips them as real files. Shared-module tests live in `backend/shared/test`.
 
 ## Tests
-- `cd backend/distribution/newsWeeklyBrief/src && npm test` (`node --test ../test/*.test.js`) - 7 passed 2026-10-19
+- `cd backend/distribution/newsWeeklyBrief/src && npm test` (`node --test ../test/*.test.js`) - 1 passed 2026-10-19
 
 Last verified: 2026-10-19

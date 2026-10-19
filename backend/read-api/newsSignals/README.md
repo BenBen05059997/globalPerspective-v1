@@ -19,10 +19,10 @@ The key-gated Signal API. BUILD (`{ action: 'build' }`) maps economic-impact rec
 ## Gotchas
 - Code emits no `Access-Control-Allow-Origin`; any browser CORS would come from the Function-URL config.
 - Rate limiter fails open if the DynamoDB update errors.
-- Country records that are regions or older than 30 days are skipped (`usableCountryRecord`, `src/placeFilter.js`).
-- `placeFilter.js`, `placeNames.json`, `iso3Names.json` are byte-identical copies guarded by `scripts/check-shared-sync.mjs`.
+- Country records that are regions or older than 30 days are skipped (`usableCountryRecord`, `src/_shared/placeFilter.js`).
+- `placeFilter` and its name tables come from `backend/shared/src` through the `src/_shared` symlink; `scripts/lambda.sh` zips them as real files. Shared-module tests live in `backend/shared/test`.
 
 ## Tests
-- `cd backend/read-api/newsSignals/src && npm test` (`node --test ../test/*.test.js && node test-adapter.mjs`) - 6 + 59 passed 2026-10-19
+- `cd backend/read-api/newsSignals/src && npm test` runs `node test-adapter.mjs` - 59 passed 2026-10-19 (the `node --test ../test/*.test.js` half finds no files since the placeFilter tests moved to `backend/shared/test`)
 
 Last verified: 2026-10-19

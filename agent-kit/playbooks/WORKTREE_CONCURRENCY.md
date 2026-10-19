@@ -53,7 +53,7 @@ Because the index is yours alone, **plain git is safe again** — no staging gym
 
 1. Work + save — only in your own folder.
 2. `<VERIFY_CMD>` — reflects only your edits.
-3. `git add -A && git commit -m "feat(scope): …"` — your index, your commit.
+3. `git add <explicit paths> && git commit -m "Plain descriptive summary"` — your index, your commit.
 4. `git fetch && git rebase origin/<DEFAULT_BRANCH>` before pushing.
 5. `git push -u origin <branch>` → PR (or land when ready).
 

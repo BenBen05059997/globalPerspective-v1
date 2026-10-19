@@ -75,7 +75,7 @@ post-hoc, never a merge blocker. (Only real serialization need: don't run two de
 
 ## Default decisions (apply without asking)
 
-- **Conventional commits** — `feat|fix|chore(scope): description`, body explains *why*.
+- **Plain descriptive commits** — a summary that matches `git log` (no `type(scope):` prefix), body explains *why*.
 - **i18n / config keys** — add to all locale/config files at once; pick reasonable wording, user fixes copy in review.
 - **Tests** — write one when you add a non-trivial helper; skip for pure rendering/copy changes.
 - **Commit cadence** — one commit per coherent unit of work; don't bundle unrelated changes.

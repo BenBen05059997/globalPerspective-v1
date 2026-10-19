@@ -5,12 +5,13 @@
 //
 // Mounted from two places: the /map console (SituationHome, passed `situations` for the watch
 // flag) and the public /weekly/country/:name page (CountryPage, no `situations` — watch flag
-// omitted there rather than duplicating the map's world fetch). Themed entirely off the shared
-// --ink/--paper/--line tokens so it follows both the light page and the .gp-console dark theme
-// with no separate dark-mode CSS.
+// omitted there rather than duplicating the map's world fetch). Role tokens only; risk is a
+// TierChip + neutral bars, direction a DirectionArrow (no tier colour on text, fills or arrows).
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import Button from '@/shared/ui/Button.jsx';
+import TierChip from '@/shared/ui/TierChip.jsx';
+import DirectionArrow from '@/shared/ui/DirectionArrow';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence.js';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory.js';
 import { useMarketsCountry } from '@/features/economy/hooks/useMarketsCountry.js';
@@ -19,8 +20,7 @@ import { computeCountryDirection, directionLabel } from '@/features/countries/li
 import { countryWatchFlag } from '@/features/countries/lib/countryWatch.js';
 import { futureDatedTriggers } from '@/features/countries/lib/countryTriggers.js';
 import { fxRowForCountry } from '@/features/countries/lib/countryCurrency.js';
-import { deriveHeadline, AXES, tierLabel } from '@/shared/lib/riskTiers.js';
-import { riskScoreToVar } from '@/shared/styles/tokens';
+import { deriveHeadline, AXES } from '@/shared/lib/riskTiers.js';
 import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 import { macroRows } from '@/features/countries/lib/countryMacro.js';
@@ -85,14 +85,14 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
   return (
     <div className={`ccv2 ccv2-${variant}`} role="region" aria-label={`${name} country card`}>
       <div className="ccv2-head">
-        {onBack ? <button className="ccv2-back" onClick={onBack}>← Back</button> : null}
+        {onBack ? <Button variant="icon" label="Back" className="ccv2-back" onClick={onBack}>← Back</Button> : null}
         <h2 className="ccv2-name">{name}</h2>
         {watch ? (
           <span className={`ccv2-watch ccv2-watch-${watch.kind}`} title={watch.label}>
             ⚑ WATCH
           </span>
         ) : null}
-        {onClose ? <button className="ccv2-close" onClick={onClose} aria-label="Close">✕</button> : null}
+        {onClose ? <Button variant="icon" label="Close" onClick={onClose}>✕</Button> : null}
       </div>
 
       {/* 1. State line — always a real date, never a placeholder. */}
@@ -134,11 +134,11 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
       {/* 4. RISK + DIRECTION */}
       {(state === 'briefed' || state === 'older') && headline.score != null ? (
         <div className="ccv2-triad">
-          <span className="ccv2-risk" style={{ color: riskScoreToVar(headline.score) }}>
-            RISK {headline.score} · {tierLabel(headline.tier)}
+          <span className="ccv2-risk">
+            Risk <TierChip tier={headline.tier} score={headline.score} />
           </span>
           <span className="ccv2-direction">
-            {direction.state === 'arrow' ? (direction.arrow === 'up' ? '▲' : '▼') : direction.state === 'top' ? '◆' : ''}
+            {direction.state === 'arrow' ? <DirectionArrow dir={direction.arrow} /> : direction.state === 'top' ? '◆' : ''}
             {' '}{directionLabel(direction)}
             {direction.axis ? ` (${direction.axis.label})` : ''}
             {direction.priorAsOf && (direction.state === 'arrow' || direction.state === 'unchanged') ? ` · vs ${fmtShort(direction.priorAsOf)}` : ''}
@@ -161,7 +161,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
                   aria-expanded={isOpen}
                 >
                   <span className="ccv2-bar-k">{a.label}</span>
-                  <span className="ccv2-bar-track"><span className="ccv2-bar-fill" style={{ width: `${a.score}%`, background: riskScoreToVar(a.score) }} /></span>
+                  <span className="ccv2-bar-track"><span className="ccv2-bar-fill" style={{ width: `${a.score}%` }} /></span>
                   <span className="ccv2-bar-n">{a.score}</span>
                 </button>
                 {isOpen && a.why ? <p className="ccv2-bar-why">{a.why}</p> : null}
@@ -213,11 +213,9 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
         </ul>
       ) : null}
 
-      {state === 'never_briefed' ? (
-        <Link className="ccv2-studio-btn ccv2-generate" to="/analyze">Generate a briefing in Studio →</Link>
-      ) : (
-        <Link className="ccv2-studio-btn" to="/analyze">Analyze in Studio →</Link>
-      )}
+      <Button to="/analyze" className={`ccv2-studio-btn${state === 'never_briefed' ? ' ccv2-generate' : ''}`}>
+        {state === 'never_briefed' ? 'Generate a briefing in Studio →' : 'Analyze in Studio →'}
+      </Button>
     </div>
   );
 }

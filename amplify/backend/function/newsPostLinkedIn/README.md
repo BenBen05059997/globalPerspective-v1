@@ -1,0 +1,26 @@
+# newsPostLinkedIn
+
+Posts new topics from the `latest` topics item to LinkedIn and Bluesky. Each platform is active only when its credentials are set. Per platform: dedup by title fingerprint, enforce per-run and rolling-24h caps, post highest-significance topics first. LinkedIn posts include the topic SUMMARY and PREDICTION (structured prediction JSON is rendered as prose); Bluesky gets a short 300-char post. Both attach a generated world-map PNG (`mapImageGenerator.js`, sharp + bundled Inter fonts and SVG template).
+
+## Deployment
+- Deployed name `newsPostLinkedin` (lower-case "in") · runtime `nodejs24.x` · group `distribution` (scripts/functions.json)
+- Trigger: Scheduler `InvokeLinkedIn` `cron(20 */3 * * ? *)` (Asia/Tokyo, ENABLED)
+- Deploy: `scripts/lambda.sh newsPostLinkedIn diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). The zip ships node_modules (sharp linux-x64 binaries).
+
+## Reads / writes
+- DynamoDB `TOPICS_DDB_TABLE`: reads `id = latest`
+- DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `<SUMMARY_PREDICT_PK_PREFIX><topicId>` (default `TOPIC#`) with SK `SUMMARY` / `PREDICTION`
+- DynamoDB `SOCIAL_POSTS_TABLE` (or `LINKEDIN_POSTS_TABLE`): `POSTED#<PLATFORM>#<fingerprint>` (30-day `ttl`); legacy `POSTED#<fingerprint>` also checked for LinkedIn; daily count is a Scan
+- External APIs: `api.linkedin.com/rest/images` and `/rest/posts` (version `202601`); `bsky.social/xrpc` (createSession, uploadBlob, createRecord)
+- Env names: `LINKEDIN_ACCESS_TOKEN`, `LINKEDIN_PERSON_ID`, `BLUESKY_IDENTIFIER`, `BLUESKY_APP_PASSWORD`, `MAX_POSTS_PER_RUN` (default 5), `MAX_POSTS_PER_DAY` (default 100), `SITE_URL`
+
+## Gotchas
+- Throws if any of the three table env names is missing; with no platform credentials it returns `skipped`.
+- A map-image failure does not block the post.
+- `src/` also holds non-runtime files that get packaged: `mock-map.js`, `scripts/generate-map-svg.js` (needs `topojson-client`, not a dependency), and a 2026-02-07 Claude session transcript `.txt`.
+- `nostr-tools` and `ws` are dependencies but unused by the code.
+
+## Tests
+- None.
+
+Last verified: 2026-10-19

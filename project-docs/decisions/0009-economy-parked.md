@@ -20,4 +20,4 @@ feed `newsMarketsData` keeps running (no LLM, also used by country pages).
 - Re-enabling is reversible: `aws events enable-rule --name <rule>` and flipping the flag.
 
 Source: `git show 120de90:project-docs/archive/redesign-ux/_active/ECONOMY_CONSOLE_DISCUSSION.md` (deleted 2026-10-19);
-`project-docs/plans/TASK_2026-09-27_parking.md`
+`git show a5c0de8:project-docs/plans/TASK_2026-09-27_parking.md` (deleted 2026-10-19)

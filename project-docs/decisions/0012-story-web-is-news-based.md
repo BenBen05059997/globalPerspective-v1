@@ -20,4 +20,4 @@ post-hoc fuzzy matching stays banned).
 - The Stories WEB view and the story page follow these wording rules.
 
 Source: `git show 120de90:project-docs/archive/redesign-ux/_active/STORY_WEB_RETHINK_PLAN.md` (deleted 2026-10-19) (§5 ruling);
-`project-docs/plans/REDESIGN_MASTER_PLAN.md` (§1 honesty rules)
+`git show a5c0de8:project-docs/plans/REDESIGN_MASTER_PLAN.md` (deleted 2026-10-19) (§1 honesty rules)

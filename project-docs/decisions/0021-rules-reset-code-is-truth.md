@@ -23,4 +23,4 @@ We will:
 - The Stop hook (`scripts/hooks/docs-reminder.sh`) reminds on architecture changes only.
 
 Source: `CLAUDE.md` ("Facts come from code and live AWS", "Docs"); `project-docs/rules/TASK_WORKFLOW.md`;
-`.githooks/pre-commit`; `project-docs/plans/PLAN_2026-10-19_docs_storage.md`
+`.githooks/pre-commit`; `git show a5c0de8:project-docs/plans/PLAN_2026-10-19_docs_storage.md` (deleted 2026-10-19)

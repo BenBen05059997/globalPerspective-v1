@@ -20,5 +20,5 @@ Wrangler. Merging the two Workers is a separate, later decision (Phase E).
   (`CLAUDE.md`, Authorization).
 
 Source: `project-docs/plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md` (§1 and the 2026-10-05
-revisions); `project-docs/plans/TASK_2026-10-05_cloudflare_frontend_migration.md`;
+revisions); `git show a5c0de8:project-docs/plans/TASK_2026-10-05_cloudflare_frontend_migration.md` (deleted 2026-10-19);
 `project-docs/runbooks/DEPLOYMENT_NOTES.md`; `CLAUDE.md`

@@ -15,6 +15,6 @@ We will record design decisions first (in the plan) and start code only on the o
 - Design-only tasks touch docs and canvases, not product code.
 - Plans carry their decisions; build tasks cite the approved design.
 
-Source: `project-docs/plans/REDESIGN_MASTER_PLAN.md` (§1 "Design is not build");
+Source: `git show a5c0de8:project-docs/plans/REDESIGN_MASTER_PLAN.md` (deleted 2026-10-19) (§1 "Design is not build");
 `git show 120de90:project-docs/archive/redesign-ux/_active/TASK_2026-09-26_remaining_design.md` (deleted 2026-10-19) (operator rule
 2026-09-25); `CLAUDE.md` (Working style)

@@ -17,4 +17,4 @@ and the impact audit (operator: "yes you can part the four daily job"). The sign
 - The economy surfaces were hidden at the same time (see 0009).
 - A parked job's rule state is the live truth: check `aws events describe-rule` before assuming.
 
-Source: `project-docs/plans/TASK_2026-09-27_parking.md`; `project-docs/plans/BACKEND_PLAN_2026-09-27.md`
+Source: `git show a5c0de8:project-docs/plans/TASK_2026-09-27_parking.md` (deleted 2026-10-19); `git show a5c0de8:project-docs/plans/BACKEND_PLAN_2026-09-27.md` (deleted 2026-10-19)

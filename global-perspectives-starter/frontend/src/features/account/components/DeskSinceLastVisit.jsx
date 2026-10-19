@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { buildDeskRows, isStaleSince, readLastVisit, writeLastVisit } from '@/features/account/lib/desk';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
 // "Since your last visit" (K1 board, left column) — followed countries' real driftNotes newer
 // than a per-browser last-visit timestamp. Never invents a row: an empty result says so.
@@ -28,34 +30,34 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
 
   if (!isMember) {
     return (
-      <section className="desk-panel desk-changes">
-        <div className="desk-kicker">SINCE YOUR LAST VISIT</div>
+      <Card as="section" pad="sm" className="desk-changes">
+        <SectionHeader label="SINCE YOUR LAST VISIT" />
         <p className="desk-empty">
           Following countries is part of membership. <Link to="/membership">See membership →</Link>
         </p>
-      </section>
+      </Card>
     );
   }
 
   if (!followedCountries || followedCountries.length === 0) {
     return (
-      <section className="desk-panel desk-changes">
-        <div className="desk-kicker">SINCE YOUR LAST VISIT</div>
+      <Card as="section" pad="sm" className="desk-changes">
+        <SectionHeader label="SINCE YOUR LAST VISIT" />
         <p className="desk-empty">
           You don't follow any country yet · <Link to="/weekly/countries">Follow from a country page.</Link>
         </p>
-      </section>
+      </Card>
     );
   }
 
   if (loading) {
     return (
-      <section className="desk-panel desk-changes">
-        <div className="desk-kicker">SINCE YOUR LAST VISIT</div>
+      <Card as="section" pad="sm" className="desk-changes">
+        <SectionHeader label="SINCE YOUR LAST VISIT" />
         <div className="desk-skeleton-row" />
         <div className="desk-skeleton-row" />
         <div className="desk-skeleton-row" />
-      </section>
+      </Card>
     );
   }
 
@@ -64,8 +66,8 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
   const staleLabel = isStaleSince(newestAsOf);
 
   return (
-    <section className="desk-panel desk-changes">
-      <div className="desk-kicker">SINCE YOUR LAST VISIT</div>
+    <Card as="section" pad="sm" className="desk-changes">
+      <SectionHeader label="SINCE YOUR LAST VISIT" />
 
       {firstVisit && (
         <p className="desk-note">First visit on this browser — showing the latest changes.</p>
@@ -107,6 +109,6 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
         // country's own drift notes happen to be stale.
         <p className="desk-note">No new changes since {staleLabel}{paused ? ' — analysis paused.' : '.'}</p>
       )}
-    </section>
+    </Card>
   );
 }

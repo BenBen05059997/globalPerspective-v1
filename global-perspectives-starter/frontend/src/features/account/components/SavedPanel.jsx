@@ -2,15 +2,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import Chip from '@/shared/ui/Chip.jsx';
+import '@/features/account/components/SavedPanel.css';
 
 // Saved list (A3 · K1 "SAVED"). Extracted from Account.jsx so both the account shell and the
-// Desk panel (A4) can render it without a circular import between the two.
-const TYPE_COLORS = {
-  thread:  { border: 'var(--accent)', badge: 'var(--accent-wash)', badgeText: 'var(--accent)' },
-  country: { border: 'var(--ok)', badge: 'var(--ok-wash)', badgeText: 'var(--ok)' },
-  daily:   { border: 'var(--ai-predict)', badge: 'var(--ai-predict-soft)', badgeText: 'var(--ai-predict)' },
-  pair:    { border: 'var(--warn)', badge: 'var(--warn-wash)', badgeText: 'var(--warn)' },
-};
+// Desk panel (A4) can render it without a circular import between the two. Every item type is
+// drawn the same neutral way; the type is the word on the tag, not a colour.
 
 const TYPE_LABELS = {
   thread: 'Thread',
@@ -63,7 +61,6 @@ function HeartFilledIcon() {
 
 function SavedCard({ item, onUnsave }) {
   const [collapsing, setCollapsing] = useState(false);
-  const colors = TYPE_COLORS[item.itemType] || TYPE_COLORS.thread;
   const href = getItemHref(item);
   const title = getItemTitle(item);
   const meta = getItemMeta(item);
@@ -80,17 +77,13 @@ function SavedCard({ item, onUnsave }) {
   const inner = (
     <>
       <div className="saved-card-top">
-        <span
-          className="saved-card-type"
-          style={{ background: colors.badge, color: colors.badgeText }}
-        >
-          {TYPE_LABELS[item.itemType] || item.itemType}
-        </span>
+        <span className="saved-card-type">{TYPE_LABELS[item.itemType] || item.itemType}</span>
         <span className="saved-card-time">{formatRelativeTime(item.savedAt)}</span>
       </div>
       <div className="saved-card-title">{title}</div>
       {meta && <div className="saved-card-meta">{meta}</div>}
       <button
+        type="button"
         className="saved-card-unsave"
         onClick={handleUnsave}
         title="Remove from saved"
@@ -103,31 +96,29 @@ function SavedCard({ item, onUnsave }) {
 
   if (href && item.itemType === 'thread') {
     return (
-      <StoryLink
+      <Card
+        as={StoryLink}
+        level={2}
+        pad="sm"
         to={href}
         topic={title && title !== item.itemId ? { title, category: item.metadata?.category } : null}
         className={cardClass}
-        style={{ borderLeftColor: colors.border }}
       >
         {inner}
-      </StoryLink>
+      </Card>
     );
   }
   if (href) {
     return (
-      <Link
-        to={href}
-        className={cardClass}
-        style={{ borderLeftColor: colors.border }}
-      >
+      <Card as={Link} level={2} pad="sm" to={href} className={cardClass}>
         {inner}
-      </Link>
+      </Card>
     );
   }
   return (
-    <div className={cardClass} style={{ borderLeftColor: colors.border }}>
+    <Card level={2} pad="sm" className={cardClass}>
       {inner}
-    </div>
+    </Card>
   );
 }
 
@@ -157,29 +148,18 @@ export function SavedPanel({ savedItems, savedLoading, onUnsave }) {
           of how many items are left. */}
       {(savedItems.length > 1 || filter !== 'all') && (
         <div className="saved-filters">
-          <button
-            className={`saved-filter-chip${filter === 'all' ? ' saved-filter-chip--active' : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            All {savedItems.length}
-          </button>
+          <Chip selected={filter === 'all'} onClick={() => setFilter('all')} count={savedItems.length}>All</Chip>
           {availableTypes.map(type => (
-            <button
-              key={type}
-              className={`saved-filter-chip${filter === type ? ' saved-filter-chip--active' : ''}`}
-              onClick={() => setFilter(type)}
-            >
-              {TYPE_LABELS[type] || type} {typeCounts[type]}
-            </button>
+            <Chip key={type} selected={filter === type} onClick={() => setFilter(type)} count={typeCounts[type]}>
+              {TYPE_LABELS[type] || type}
+            </Chip>
           ))}
         </div>
       )}
 
       <div className="saved-grid">
         {savedLoading ? (
-          <div style={{ gridColumn: '1/-1', padding: '2rem 0', color: 'var(--text-dim)', fontSize: '0.875rem' }}>
-            Loading saved items…
-          </div>
+          <div className="saved-loading">Loading saved items…</div>
         ) : filtered.length === 0 ? (
           <div className="saved-empty">
             <div className="saved-empty-icon">🤍</div>

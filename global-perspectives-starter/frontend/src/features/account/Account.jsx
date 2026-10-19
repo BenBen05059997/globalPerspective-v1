@@ -14,6 +14,9 @@ import { ACCOUNT_CLAIMS, ACCOUNT_NOTE } from '@/features/account/lib/accountClai
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
 import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
 import { pausedSince } from '@/shared/lib/freshness';
+import Button from '@/shared/ui/Button.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import '@/features/account/Account.css';
 
 // Mask a key for display: keep a few head/tail chars, hide the middle.
@@ -36,15 +39,15 @@ function AnalysisKeyPanel() {
   }
 
   return (
-    <div className="account-panel">
-      <h2 className="account-panel-title">Analysis Studio API key</h2>
-      <p className="account-panel-desc">
+    <Card className="acct-card">
+      <SectionHeader label="Analysis Studio API key" />
+      <p className="acct-desc">
         Your key is stored only in this browser and is sent straight to the provider you
         pick — never to our servers. Use this to update it if it’s wrong or expired.
       </p>
 
       {byok ? (
-        <div className="account-key-card">
+        <Card level={2} className="account-key-card">
           <div className="account-key-row">
             <span className="account-key-label">Provider</span>
             <span className="account-key-val">{provider?.label || byok.provider}</span>
@@ -58,20 +61,20 @@ function AnalysisKeyPanel() {
             <span className="account-key-val account-key-mono">{maskKey(byok.key)}</span>
           </div>
           <div className="account-key-actions">
-            <button className="account-key-btn" onClick={() => setModalOpen(true)}>Change key</button>
-            <button className="account-key-btn account-key-btn--danger" onClick={handleRemove}>Remove key</button>
+            <Button compact onClick={() => setModalOpen(true)}>Change key</Button>
+            <Button compact className="acct-danger" onClick={handleRemove}>Remove key</Button>
           </div>
-        </div>
+        </Card>
       ) : (
-        <div className="account-key-card">
-          <p className="account-panel-desc" style={{ margin: 0 }}>No API key set in this browser.</p>
+        <Card level={2} className="account-key-card">
+          <p className="acct-desc acct-desc--flush">No API key set in this browser.</p>
           <div className="account-key-actions">
-            <button className="account-key-btn" onClick={() => setModalOpen(true)}>Set up a key</button>
+            <Button compact onClick={() => setModalOpen(true)}>Set up a key</Button>
           </div>
-        </div>
+        </Card>
       )}
 
-      <p className="account-panel-desc" style={{ marginTop: 12 }}>
+      <p className="acct-desc acct-desc--after">
         <Link to="/analyze">Go to Analysis Studio →</Link>
       </p>
 
@@ -81,7 +84,7 @@ function AnalysisKeyPanel() {
           onSaved={() => setByok(loadByok())}
         />
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -95,107 +98,47 @@ function getInitials(email) {
   return email[0].toUpperCase();
 }
 
-// Console theme (DS1): shared card/label styling for the panels moved into the account
-// shell (A3). These reference the `.gp-console` tokens (tokens.css) set on the shell wrapper
-// below — only the look changes here, no panel's data or behavior.
-const SECTION = {
-  border: '1px solid var(--hairline)',
-  borderRadius: 4,
-  padding: '1.25rem 1.5rem',
-  marginBottom: '1rem',
-  background: 'var(--panel)',
-};
-
-const LABEL = {
-  fontSize: '0.72rem',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  fontFamily: 'var(--c-mono, monospace)',
-  color: 'var(--accent)',
-  marginBottom: 4,
-};
-
 function ProfilePanel({ user, memberSince, handleSignOut }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   return (
-    <div style={{ maxWidth: 520, margin: '0 auto' }}>
+    <div className="acct-col">
       {/* Avatar + identity */}
-      <div style={{ ...SECTION, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: '50%',
-          background: 'var(--accent-wash)', color: 'var(--accent)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '1.4rem', fontWeight: 700, flexShrink: 0,
-        }}>
-          {getInitials(user.email)}
+      <Card className="acct-card acct-identity">
+        <div className="acct-avatar" aria-hidden="true">{getInitials(user.email)}</div>
+        <div className="acct-identity__text">
+          <div className="acct-identity__email">{user.email}</div>
+          {memberSince && <div className="acct-fine">Since {memberSince}</div>}
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-head)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user.email}
-          </div>
-          {memberSince && (
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: 4 }}>
-              Since {memberSince}
-            </div>
-          )}
-        </div>
-      </div>
+      </Card>
 
       {/* Account actions */}
-      <div style={SECTION}>
-        <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Account</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <button
-            onClick={handleSignOut}
-            style={{
-              background: 'var(--panel-2)',
-              border: '1.5px solid var(--hairline)',
-              borderRadius: 8, padding: '0.6rem 1rem',
-              fontSize: '0.875rem', fontWeight: 600,
-              cursor: 'pointer', color: 'var(--text-head)',
-              textAlign: 'left', width: '100%',
-            }}
-          >
-            Sign out
-          </button>
+      <Card className="acct-card">
+        <SectionHeader label="Account" />
+        <div className="acct-stack">
+          <Button onClick={handleSignOut} className="acct-btn-block">Sign out</Button>
 
           {!showDeleteConfirm ? (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              style={{
-                background: 'none', border: 'none', padding: 0,
-                fontSize: '0.8rem', color: 'var(--error)',
-                cursor: 'pointer', textAlign: 'left',
-              }}
-            >
+            <button type="button" className="acct-textbtn acct-textbtn--danger" onClick={() => setShowDeleteConfirm(true)}>
               Delete account
             </button>
           ) : (
-            <div style={{
-              background: 'var(--error-wash)', border: '1.5px solid var(--error)',
-              borderRadius: 8, padding: '0.75rem 1rem',
-              fontSize: '0.85rem',
-            }}>
-              <div style={{ fontWeight: 600, color: 'var(--error)', marginBottom: 6 }}>Are you sure?</div>
-              <div style={{ color: 'var(--text-body)', marginBottom: 10, lineHeight: 1.5 }}>
+            <div className="acct-confirm">
+              <div className="acct-confirm__title">Are you sure?</div>
+              <div className="acct-confirm__body">
                 To delete your account, email us at{' '}
-                <a href="mailto:globalperspectives.app@gmail.com?subject=Delete%20my%20account" style={{ color: 'var(--accent)' }}>
+                <a href="mailto:globalperspectives.app@gmail.com?subject=Delete%20my%20account">
                   globalperspectives.app@gmail.com
                 </a>
                 {' '}and we'll process it within 24 hours.
               </div>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--text-dim)', cursor: 'pointer' }}
-              >
+              <button type="button" className="acct-textbtn" onClick={() => setShowDeleteConfirm(false)}>
                 Cancel
               </button>
             </div>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -207,13 +150,11 @@ function MembershipPanel() {
 
   if (!available) {
     return (
-      <div style={{ maxWidth: 520, margin: '0 auto' }}>
-        <div style={SECTION}>
-          <div style={LABEL}>Membership</div>
-          <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>
-            Membership &amp; credits aren't available yet.
-          </div>
-        </div>
+      <div className="acct-col">
+        <Card className="acct-card">
+          <SectionHeader label="Membership" />
+          <div className="acct-muted">Membership &amp; credits aren't available yet.</div>
+        </Card>
       </div>
     );
   }
@@ -223,51 +164,49 @@ function MembershipPanel() {
     : null;
 
   return (
-    <div style={{ maxWidth: 520, margin: '0 auto' }}>
+    <div className="acct-col">
       {/* Plan */}
-      <div style={SECTION}>
-        <div style={LABEL}>Plan</div>
+      <Card className="acct-card">
+        <SectionHeader label="Plan" />
         {loading ? (
           <BootLoader variant="inline" className="gp-boot--tight" label="Loading plan" text="Loading plan" />
         ) : isMember ? (
           <>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-head)' }}>
-              <span style={{ color: 'var(--ok)' }}>✓</span> Member
+            <div className="acct-plan-name">
+              <span className="acct-ok">✓</span> Member
             </div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-dim)', marginTop: 4 }}>
+            <div className="acct-fine">
               {membership?.status === 'active' ? 'Active' : (membership?.status || 'Active')}
               {renews ? ` · renews ${renews}` : ''}
             </div>
           </>
         ) : (
           <>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-head)' }}>Free</div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-dim)', marginTop: 4, lineHeight: 1.45 }}>
+            <div className="acct-plan-name">Free</div>
+            <div className="acct-fine">
               Reading stays free. Membership adds the full correction history, country change-alerts, and a monthly allowance of custom analyses.
             </div>
           </>
         )}
-        <Link to="/membership" className="btn-gp" style={{ display: 'inline-block', marginTop: '0.85rem' }}>
+        <Button to="/membership" className="acct-card__action">
           {isMember ? 'Manage membership' : 'See membership'}
-        </Link>
-      </div>
+        </Button>
+      </Card>
 
       {/* Credits */}
-      <div style={SECTION}>
-        <div style={LABEL}>Analysis credits</div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-head)' }}>{loading ? '—' : creditBalance}</span>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>credit{creditBalance === 1 ? '' : 's'}</span>
+      <Card className="acct-card">
+        <SectionHeader label="Analysis credits" />
+        <div className="acct-credits">
+          <span className="acct-credits__num">{loading ? '—' : creditBalance}</span>
+          <span className="acct-muted">credit{creditBalance === 1 ? '' : 's'}</span>
         </div>
-        <div style={{ fontSize: '0.82rem', color: 'var(--text-dim)', marginTop: 4, lineHeight: 1.45 }}>
+        <div className="acct-fine">
           Each custom analysis in the Analysis Studio uses one credit{isMember ? ', after your included monthly allowance' : ''}.
         </div>
         {creditPacks().length > 0 && (
-          <Link to="/membership" className="btn-gp" style={{ display: 'inline-block', marginTop: '0.85rem' }}>
-            Buy credits
-          </Link>
+          <Button to="/membership" className="acct-card__action">Buy credits</Button>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
@@ -275,36 +214,25 @@ function MembershipPanel() {
 function Toggle({ checked, disabled, onChange, label }) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={checked}
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      style={{
-        flexShrink: 0, width: 44, height: 26, borderRadius: 13, border: 'none',
-        cursor: disabled ? 'not-allowed' : 'pointer', padding: 0,
-        background: checked ? 'var(--accent)' : 'var(--hairline-strong)', opacity: disabled ? 0.55 : 1,
-        position: 'relative', transition: 'background .15s',
-      }}
+      className="acct-switch"
     >
-      <span style={{
-        position: 'absolute', top: 3, left: checked ? 21 : 3, width: 20, height: 20,
-        borderRadius: '50%', background: 'var(--text-head)', transition: 'left .15s',
-        boxShadow: 'var(--shadow-sm)',
-      }} />
+      <span className="acct-switch__knob" />
     </button>
   );
 }
 
 function ToggleRow({ label, desc, checked, disabled, onChange }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-      gap: '1rem', padding: '0.85rem 0', borderBottom: '1px solid var(--hairline)',
-    }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-head)' }}>{label}</div>
-        {desc && <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: 3, lineHeight: 1.45 }}>{desc}</div>}
+    <div className="acct-row">
+      <div className="acct-row__text">
+        <div className="acct-row__label">{label}</div>
+        {desc && <div className="acct-fine">{desc}</div>}
       </div>
       <Toggle checked={checked} disabled={disabled} onChange={onChange} label={label} />
     </div>
@@ -352,19 +280,19 @@ function NotificationsPanel() {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: '0 auto' }}>
-      <div style={SECTION}>
-        <div style={{ ...LABEL, marginBottom: '0.75rem' }}>Email notifications</div>
+    <div className="acct-col">
+      <Card className="acct-card">
+        <SectionHeader label="Email notifications" />
 
         {endpointMissing ? (
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>
+          <div className="acct-muted">
             Email delivery isn’t live yet. Notification settings will appear here once it’s enabled.
           </div>
         ) : loading ? (
           <BootLoader variant="inline" className="gp-boot--tight" label="Loading preferences" text="Loading preferences" />
         ) : (
           <>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+            <div className="acct-fine acct-fine--lead">
               Each channel below shows its real state — nothing here claims to be sending when it isn’t.
             </div>
 
@@ -388,13 +316,13 @@ function NotificationsPanel() {
             />
 
             {prefs.digestOptIn && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 0', borderBottom: '1px solid var(--hairline)' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-head)' }}>Frequency</span>
+              <div className="acct-row acct-row--inline">
+                <span className="acct-row__label">Frequency</span>
                 <select
+                  className="acct-select"
                   value={prefs.digestCadence}
                   disabled={saving}
                   onChange={(e) => save({ digestCadence: e.target.value })}
-                  style={{ padding: '0.35rem 0.5rem', borderRadius: 6, border: '1.5px solid var(--hairline)', fontSize: '0.85rem' }}
                 >
                   <option value="weekly">Weekly</option>
                   <option value="daily">Daily</option>
@@ -404,52 +332,49 @@ function NotificationsPanel() {
 
             {(prefs.breakingOptIn || prefs.digestOptIn) && (
               <button
+                type="button"
+                className="acct-textbtn acct-textbtn--danger acct-after"
                 onClick={() => change({ breakingOptIn: false, digestOptIn: false }, 'You’ve unsubscribed from all emails.')}
                 disabled={saving}
-                style={{ marginTop: '0.95rem', background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--error)', cursor: saving ? 'not-allowed' : 'pointer' }}
               >
                 Unsubscribe from all
               </button>
             )}
 
             {notice && (
-              <div style={{ marginTop: '0.85rem', fontSize: '0.82rem', color: 'var(--ok)', lineHeight: 1.5 }}>
-                ✓ {notice}
-              </div>
+              <div className="acct-notice" role="status">✓ {notice}</div>
             )}
 
             {error && (
-              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--error)' }}>{error}</div>
+              <div className="acct-error">{error}</div>
             )}
           </>
         )}
-      </div>
+      </Card>
 
       {/* Country change-alerts — the member "follow a country's read" list (drift alerts, P5). */}
       {!endpointMissing && !loading && (
-        <div style={SECTION}>
-          <div style={{ ...LABEL, marginBottom: '0.35rem' }}>Country change-alerts — paused, not sending</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+        <Card className="acct-card">
+          <SectionHeader label="Country change-alerts — paused, not sending" />
+          <div className="acct-fine acct-fine--lead">
             When live, we email you when our read on a country you follow materially changes — grounded in the cited event that moved it.
-            This is currently off site-wide, so your follow list is kept but nothing sends. Follow a country from its page (tap <span style={{ whiteSpace: 'nowrap' }}>🔔 Follow</span>).
+            This is currently off site-wide, so your follow list is kept but nothing sends. Follow a country from its page (tap <span className="acct-nowrap">🔔 Follow</span>).
           </div>
 
           {(prefs.followedCountries || []).length === 0 ? (
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>
+            <div className="acct-muted">
               You’re not following any countries yet.
             </div>
           ) : (
             <>
               {(prefs.followedCountries || []).map((c) => (
-                <div key={c} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: '1rem', padding: '0.7rem 0', borderBottom: '1px solid var(--hairline)',
-                }}>
-                  <Link to={`/weekly/country/${encodeURIComponent(c)}`} style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-head)', textDecoration: 'none' }}>{c}</Link>
+                <div key={c} className="acct-row acct-row--center">
+                  <Link to={`/weekly/country/${encodeURIComponent(c)}`} className="acct-row__label acct-row__link">{c}</Link>
                   <button
+                    type="button"
+                    className="acct-textbtn acct-textbtn--danger"
                     onClick={async () => { const ok = await follow(c, false); if (ok) setNotice(`Stopped following ${c}.`); }}
                     disabled={saving}
-                    style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.8rem', color: 'var(--error)', cursor: saving ? 'not-allowed' : 'pointer' }}
                   >
                     Unfollow
                   </button>
@@ -464,7 +389,7 @@ function NotificationsPanel() {
               />
             </>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );
@@ -511,9 +436,9 @@ function resolveSection(tabParam) {
 // things that are true today — no membership-only claims, no invented features.
 function SignedOutDesk() {
   return (
-    <div className="gp-console acct-shell acct-shell--signedout">
+    <div className="acct-shell acct-shell--signedout">
       <div className="acct-signedout">
-        <div className="acct-section-kicker">ACCOUNT</div>
+        <SectionHeader as="div" label="ACCOUNT" />
         <h1 className="acct-section-title">What an account gives you here</h1>
         <ul className="acct-signedout-list">
           {ACCOUNT_CLAIMS.map((claim) => (
@@ -521,7 +446,7 @@ function SignedOutDesk() {
           ))}
         </ul>
         <p className="acct-signedout-note">{ACCOUNT_NOTE}</p>
-        <Link to="/signin" className="btn-gp accent acct-signin-btn">Sign in</Link>
+        <Button variant="primary" to="/signin" className="acct-signin-btn">Sign in</Button>
       </div>
     </div>
   );
@@ -560,7 +485,7 @@ export default function Account() {
   const section = SECTIONS.find((s) => s.id === sectionId) || SECTIONS[0];
 
   return (
-    <div className="gp-console acct-shell">
+    <div className="acct-shell">
       <nav className="acct-rail" aria-label="Account sections">
         {SECTIONS.map((s) => (
           <button
@@ -573,7 +498,7 @@ export default function Account() {
             <span className="acct-rail-label">
               {s.label}
               {s.id === 'desk' && savedItems.length > 0 && (
-                <span className="account-tab-badge">{savedItems.length}</span>
+                <span className="acct-rail-count">{savedItems.length}</span>
               )}
             </span>
             <span className="acct-rail-sub">{s.subtitle}</span>
@@ -583,7 +508,7 @@ export default function Account() {
 
       <div className="acct-content">
         <section aria-labelledby="acct-section-heading">
-          <div className="acct-section-kicker">{section.kicker}</div>
+          <SectionHeader as="div" label={section.kicker} />
           <h1 id="acct-section-heading" className="acct-section-title">{section.title}</h1>
           <p className="acct-section-sub">{section.sub}</p>
 

@@ -77,7 +77,7 @@ export default function SignIn() {
 
   if (sent) {
     return (
-      <div className="gp-console acct-signin-shell">
+      <div className="acct-signin-shell">
         <Card className="acct-signin-panel">
           <div className="acct-signin-kicker">Check your inbox</div>
           <h1 className="acct-signin-title">Check your inbox</h1>
@@ -97,7 +97,7 @@ export default function SignIn() {
   }
 
   return (
-    <div className="gp-console acct-signin-shell">
+    <div className="acct-signin-shell">
       <Card className="acct-signin-panel">
         <img src="/logo_no_grey_bg.png" alt="Global Perspectives" className="acct-signin-logo" />
         <div className="acct-signin-kicker">Account</div>

@@ -19,7 +19,9 @@ import { knownStoryTitles, linkMentions } from '@/features/map/lib/cardMentions.
 import { useStoryCardData } from '@/features/map/hooks/useStoryCardData.js';
 import { summaryFacts, firstSentences } from '@/features/map/lib/cardText.js';
 import { rootCauseSteps } from '@/shared/lib/rootCause.js';
-import { crisisHueForCategory } from '@/features/map/lib/crisisHue.js';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { freshnessState } from '@/shared/lib/freshness.js';
 import { threadPath } from '@/shared/lib/threadPath';
 
@@ -47,11 +49,8 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
 
   const id = topic.threadId || topic.topicId || null;
   // F1.7 (review R2): show the topic's real category word (e.g. "climate", "energy") — the
-  // crisis-type mapping stays for the hue dot only, never as the visible label (StoryPeek already
-  // did this via peekData.js; this brings the card into agreement with it).
-  const category = topic.category || null;
-  const hue = category ? crisisHueForCategory(category) : null;
-  const categoryLabel = category ? String(category) : null;
+  // crisis-type mapping stays for the hue dot only (CategoryTag), never as the visible label.
+  const category = topic.category ? String(topic.category) : null;
   const primaryCountry = topic.primaryCountry || (Array.isArray(topic.regions) ? topic.regions[0] : null);
   // F2.18: `asOf` is the whole feed batch's date, shared by every topic — showing it as "updated"
   // on one story implies a per-story check that never happened. Prefer a real per-topic date when
@@ -87,30 +86,21 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
 
       <div className="sc-head">
         <div className="sc-head-row">
-          {categoryLabel ? (
-            <span className="sc-cat">
-              <span className="sc-cat-dot" style={{ background: hue || '#9aa4b2' }} aria-hidden="true" />
-              {categoryLabel}
-            </span>
-          ) : null}
+          <CategoryTag category={category} />
           {primaryCountry ? <span className="sc-country">{primaryCountry}</span> : null}
           {ownDateLabel ? <span className="sc-updated">updated {ownDateLabel}</span> : feedDateLabel ? <span className="sc-updated">stories from {feedDateLabel}</span> : null}
-          {isOlder ? <span className="sc-older">older</span> : null}
+          {isOlder ? <span className="sh-older">older</span> : null}
         </div>
         <h2 className="sc-title">{topic.title}</h2>
       </div>
 
       {loading ? (
-        <div className="sc-skeleton" aria-hidden="true">
-          <div className="sc-skel-line" />
-          <div className="sc-skel-line" />
-          <div className="sc-skel-line sc-skel-short" />
-        </div>
+        <BootLoader variant="inline" label="Loading the story card" text="Loading the story card" />
       ) : hasBody ? (
         <>
           {summaryText ? (
             <section className="sc-section">
-              <h3 className="sc-section-lbl">What is happening</h3>
+              <SectionHeader as="h3" label="What is happening" />
               <ul className="sc-facts">{summaryText.map((f, i) => <li key={i} className="sc-text"><Mentions text={f} known={known} /></li>)}</ul>
               <p className="sc-model-tag">AI SUMMARY OF THE SOURCES{summaryDateLabel ? ` · ${summaryDateLabel}` : ''}</p>
             </section>
@@ -118,7 +108,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
 
           {trajectoryText ? (
             <section className="sc-section">
-              <h3 className="sc-section-lbl">What it means</h3>
+              <SectionHeader as="h3" label="What it means" />
               <p className="sc-text"><Mentions text={trajectoryText} known={known} /></p>
               <p className="sc-model-tag">MODEL JUDGMENT{analysisDateLabel ? ` · analysis ${analysisDateLabel}` : ''}</p>
             </section>
@@ -126,7 +116,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
 
           {causeSteps.length ? (
             <section className="sc-section">
-              <h3 className="sc-section-lbl">Why</h3>
+              <SectionHeader as="h3" label="Why" />
               {causeSteps.map((step) => (
                 <div key={step.key} className="sc-cause-step">
                   {step.label ? <span className="sc-cause-label">{step.label}</span> : null}
@@ -142,7 +132,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
 
           {linkedInto.length || linkedFrom.length ? (
             <section className="sc-section" data-testid="card-linked">
-              <h3 className="sc-section-lbl">Linked stories</h3>
+              <SectionHeader as="h3" label="Linked stories" />
               {linkedInto.length ? (
                 <p className="sc-text">
                   Judged to feed into:{' '}

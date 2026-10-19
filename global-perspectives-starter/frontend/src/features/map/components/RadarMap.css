@@ -20,7 +20,7 @@
   position: absolute; z-index: 5; pointer-events: none;
   display: flex; flex-direction: column; gap: 3px;
   padding: 7px 10px; background: var(--panel); border: 1px solid var(--hairline-strong);
-  border-radius: var(--c-radius-md); color: var(--text-body); font-size: 12px; line-height: 1.35;
+  border-radius: var(--r-sm); color: var(--text-body); font-size: 12px; line-height: 1.35;
   animation: rd-card-in var(--motion-slide) var(--motion-ease);
 }
 .rd-card-head { color: var(--text-head); font-weight: 600; }

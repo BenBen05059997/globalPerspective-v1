@@ -3,8 +3,11 @@
 // (lib/alertStack.js). A card click selects the situation and the map flies to it. Replaces the
 // need for the retired /breaking feed (that route now redirects). The phone ALERTS tab reuses this same
 // component full width. Empty = one honest, computed line — never "the map is quiet".
-import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
-import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
+import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
+import { iso3Name } from '@/features/map/lib/situationLabels.js';
+import TierChip from '@/shared/ui/TierChip.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import { markerKind, kindLabel, statusGlyph, situationFreshness, markerHex } from '@/features/map/lib/legend.js';
 import { ageShort } from '@/features/map/lib/alertStack.js';
@@ -24,7 +27,7 @@ export function AlertCard({ s, selected = false, onSelect, now = Date.now() }) {
   const level = gdacsLevelBadge(s);
   const place = placeOf(s);
   const age = ageShort(s, now);
-  const pin = markerHex(AXIS_HUE[s.axis] || '#9aa4b2', fresh);
+  const pin = markerHex(CRISIS_HUE[s.axis] || CRISIS_HUE.neutral, fresh);
   return (
     <li className={`al-item${selected ? ' al-item-on' : ''}`}>
       <button
@@ -43,14 +46,14 @@ export function AlertCard({ s, selected = false, onSelect, now = Date.now() }) {
           </span>
           <span className="al-title">{s.verb_label}</span>
           <span className="al-tags">
-            <span className={`al-tier al-tier-${s.tier}`}>{TIER_LABEL[s.tier] || s.tier}</span>
-            {level ? <span className="sh-gdacs-badge sh-gdacs-badge-sm">{level}</span> : null}
+            <TierChip tier={s.tier} />
+            {level ? <span className="sh-gdacs-badge">{level}</span> : null}
             {glyph ? (
               <span className="al-glyph">
                 <span aria-hidden="true">{glyph.glyph}</span> {glyph.label}
               </span>
             ) : null}
-            {fresh === 'older' ? <span className="al-older">older</span> : null}
+            {fresh === 'older' ? <span className="sh-older">older</span> : null}
             <span className="sh-sr-only">{kindLabel(kind)}</span>
           </span>
         </span>
@@ -64,13 +67,10 @@ export default function AlertStack({
 }) {
   const now = Date.now();
   return (
-    <section className={`hud-panel al-stack ${className}`.trim()} role="region" aria-label={label}>
+    <Card as="section" level="hud" pad="sm" className={`hud-panel al-stack ${className}`.trim()} role="region" aria-label={label}>
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
-      <div className="hud-label al-head">
-        {label}
-        <span className="hud-feed-count"> · {items.length} open</span>
-      </div>
+      <SectionHeader className="al-head" label={label} count={`${items.length} open`} />
       {items.length ? (
         <ul className="al-list">
           {items.map((s) => (
@@ -86,6 +86,6 @@ export default function AlertStack({
           {hiddenCount} open situation{hiddenCount === 1 ? '' : 's'} not updated in 30+ days — hidden from the map.
         </p>
       ) : null}
-    </section>
+    </Card>
   );
 }

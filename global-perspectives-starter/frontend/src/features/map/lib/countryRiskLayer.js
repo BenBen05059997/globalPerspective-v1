@@ -4,12 +4,12 @@
 // because the two layers draw different things and must never blend their rules:
 //
 //   hue        = the crisis type of the country's WORST axis (never a red/amber/green severity
-//                scale — AXIS_HUE, the same hue family the situations layer already uses)
+//                scale — CRISIS_HUE, the same hue family the situations layer already uses)
 //   weight     = outline weight by tier, HIGH strongest (never colour-coded severity)
 //   brightness = freshness of the *briefing* (generatedAt), not of any event:
 //                <14d full weight · 14-30d desaturated + "older" · >30d not drawn (counted instead)
 //   never briefed = no entry at all here — the caller never tints an un-briefed country.
-import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
+import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { deriveHeadline, tierLabel as tierWord } from '@/shared/lib/riskTiers.js';
 import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
 import { iso3ForName, iso3Name, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
@@ -61,7 +61,7 @@ export function countryRiskEntry(name, intel, now = Date.now()) {
   if (fresh === 'hidden') return { iso3, name, hidden: true, generatedAt, ageDays };
 
   const leadAxis = headline.leadAxis;
-  const hue = AXIS_HUE[leadAxis] || '#9aa4b2';
+  const hue = CRISIS_HUE[leadAxis] || CRISIS_HUE.neutral;
   const outline = outlineForTier(headline.tier);
 
   return {

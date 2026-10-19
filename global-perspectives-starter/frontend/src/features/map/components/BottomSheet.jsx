@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import Button from '@/shared/ui/Button.jsx';
 
 // BottomSheet — M7 phone MAP tab: the selected situation/story's detail opens here instead of
 // the desktop rail. Three stops (P1): peek (~120px, title + category only), half (~45vh), full
@@ -136,12 +137,12 @@ export default function BottomSheet({ stop, onStopChange, onClose, title, subtit
         </div>
         <div className="sheet-btns">
           {stop !== 'peek' ? (
-            <button type="button" className="sheet-btn" onClick={() => onStopChange(NEXT_DOWN[stop])}>Collapse</button>
+            <Button compact onClick={() => onStopChange(NEXT_DOWN[stop])}>Collapse</Button>
           ) : null}
           {stop !== 'full' ? (
-            <button type="button" className="sheet-btn" onClick={() => onStopChange(NEXT_UP[stop])}>Expand</button>
+            <Button compact onClick={() => onStopChange(NEXT_UP[stop])}>Expand</Button>
           ) : null}
-          <button type="button" ref={closeBtnRef} className="sheet-btn sheet-close" onClick={onClose} aria-label="Close">Close</button>
+          <Button ref={closeBtnRef} compact className="sheet-close" onClick={onClose} label="Close">Close</Button>
         </div>
       </div>
 

@@ -4,6 +4,7 @@
 // localStorage — wrapped in try/catch so a blocked/throwing storage still renders correctly
 // (it just re-shows next visit instead of crashing).
 import { useState } from 'react';
+import Button from '@/shared/ui/Button.jsx';
 
 const DISMISSED_KEY = 'gp_map_orientation_dismissed_v1';
 
@@ -32,7 +33,7 @@ export default function OrientationBanner() {
         situations at an approximate place, shaded countries for stories without an exact place.
         {' '}{canHover() ? 'Hover anything for a preview; Key explains the rest.' : 'Tap anything to open it; Key explains the rest.'}
       </span>
-      <button className="sh-orient-close" onClick={dismiss} aria-label="Dismiss this note">×</button>
+      <Button variant="icon" className="sh-orient-close" onClick={dismiss} label="Dismiss this note">×</Button>
     </div>
   );
 }

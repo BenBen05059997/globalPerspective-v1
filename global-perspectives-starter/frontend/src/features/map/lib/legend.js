@@ -95,7 +95,7 @@ export function freshnessLook(state) {
 // The direction glyphs moved to shared/ (shared UI reads them); re-exported so map imports keep working.
 export { STATUS_GLYPHS, statusGlyph } from '@/shared/lib/statusGlyph.js';
 
-/** hexToRgb('#ee7754') -> [238, 119, 84]; null for anything unparseable. */
+/** hexToRgb('#rrggbb') -> [r, g, b]; null for anything unparseable. */
 export function hexToRgb(hex) {
   const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
   if (!m) return null;
@@ -106,7 +106,7 @@ export function hexToRgb(hex) {
 /**
  * desaturateRgb(rgb, amount) — the "older" look: pull each channel toward the colour's own
  * luminance grey by `amount` (0 = unchanged, 1 = fully grey). Keeps the hue family readable
- * (Legend.dc.html shows #9b8cf8 → a greyed #8a84b8) while clearly reading as faded.
+ * (Legend.dc.html shows the political violet turning a greyed violet) while clearly reading as faded.
  */
 export function desaturateRgb(rgb, amount = 0.6) {
   if (!Array.isArray(rgb) || rgb.length < 3) return rgb;

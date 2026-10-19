@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import { buildDeskRows, isStaleSince, readLastVisit, writeLastVisit } from '@/features/account/lib/desk';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { ROUTE } from '@/shared/lib/links.js';
 import Card from '@/shared/ui/Card.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
@@ -44,7 +46,7 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
       <Card as="section" pad="sm" className="desk-changes">
         <SectionHeader label="SINCE YOUR LAST VISIT" />
         <p className="desk-empty">
-          You don't follow any country yet · <Link to="/weekly/countries">Follow from a country page.</Link>
+          You don't follow any country yet · <Link to={ROUTE.countries}>Follow from a country page.</Link>
         </p>
       </Card>
     );
@@ -80,7 +82,7 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
       {rows.map((r) => (
         <div key={r.key} className="desk-row">
           <div className="desk-row-head">
-            {r.dateLabel} · {r.country.toUpperCase()}
+            {r.dateLabel} · <EntityLink kind="country" id={r.country}>{r.country.toUpperCase()}</EntityLink>
             {r.axisLine ? ` · ${r.axisLine}` : ''}
           </div>
           {r.triggerTitle && (

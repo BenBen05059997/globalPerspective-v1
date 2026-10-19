@@ -14,6 +14,8 @@ import { pausedSince } from '@/shared/lib/freshness';
 import Button from '@/shared/ui/Button.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { ROUTE } from '@/shared/lib/links.js';
 import '@/features/account/Account.css';
 
 // Mask a key for display: keep a few head/tail chars, hide the middle.
@@ -72,7 +74,7 @@ function AnalysisKeyPanel() {
       )}
 
       <p className="acct-desc acct-desc--after">
-        <Link to="/analyze">Go to Analysis Studio →</Link>
+        <Link to={ROUTE.studio}>Go to Analysis Studio →</Link>
       </p>
 
       {modalOpen && (
@@ -350,7 +352,7 @@ function NotificationsPanel() {
             <>
               {(prefs.followedCountries || []).map((c) => (
                 <div key={c} className="acct-row acct-row--center">
-                  <Link to={`/weekly/country/${encodeURIComponent(c)}`} className="acct-row__label acct-row__link">{c}</Link>
+                  <EntityLink kind="country" id={c} className="acct-row__label acct-row__link">{c}</EntityLink>
                   <button
                     type="button"
                     className="acct-textbtn acct-textbtn--danger"

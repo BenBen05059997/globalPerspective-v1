@@ -7,7 +7,7 @@
 // driftNote the server sent us. Nothing here guesses.
 import { AXES, AXIS_LABELS } from '@/shared/lib/riskTiers';
 import { freshnessState } from '@/shared/lib/freshness';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref } from '@/shared/lib/links.js';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
 export const LAST_VISIT_KEY = 'gp_desk_last_visit_v1';
@@ -143,7 +143,7 @@ export function rowFromNote(note, country, snapshots) {
     axisLine,
     triggerTitle: trig?.title || null,
     triggerDateLabel: trig?.date ? fmtDay(trig.date) : null,
-    triggerHref: threadId ? threadPath(threadId) : null,
+    triggerHref: threadId ? storyHref(threadId) : null,
     why: safeWhy(note),
   };
 }

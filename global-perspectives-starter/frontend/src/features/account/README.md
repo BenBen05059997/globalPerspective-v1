@@ -21,6 +21,9 @@ the Studio key panel. The Save / Follow / Subscribe controls other pages embed l
 - `MembershipPage.jsx` - plans, benefits, subscribe
 - `components/DeskPanel.jsx` (+ `DeskSinceLastVisit`, `DeskFollowing`, `SavedPanel`); `hooks/useDeskChanges.js`;
   `lib/desk.js`, `deskMap.js`, `accountClaims.js` (`ACCOUNT_CLAIMS`: list only features that work today)
+- Links: saved items, followed countries and desk rows build addresses with `@/shared/lib/links.js`
+  (`storyHref`, `countryHref`, `briefingHref`, `ROUTE`) or `<EntityLink>`; a saved or followed name that is not
+  a country renders as plain text.
 - CSS: `Account.css`, `MembershipPage.css`, `SignIn.css` (also AuthCallback), `components/Desk.css`, `SavedPanel.css`
 - Public API: none (no `index.js`; nothing outside imports this folder).
 - Imports from other features: `@/features/analysis-studio` -> `loadByok`, `clearByok`, `getProvider`, `ProviderModal`;

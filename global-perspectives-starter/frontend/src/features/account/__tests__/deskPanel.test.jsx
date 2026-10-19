@@ -67,7 +67,9 @@ describe('Desk — member with follows and notes', () => {
 
     // The one real driftNote: asOf 2026-08-19, axis moves computed from the Aug 18 -> Aug 19
     // snapshots (humanitarian 90->70 is the larger move, economic 80->90 the other >=10 move).
-    expect(await screen.findByText(/Aug 19 · IRAN · HUMANITARIAN 90→70, ECONOMIC 80→90/)).toBeInTheDocument();
+    const head = await screen.findByText((_, el) => el?.className === 'desk-row-head'
+      && el.textContent === 'Aug 19 · IRAN · HUMANITARIAN 90→70, ECONOMIC 80→90');
+    expect(head.querySelector('a').getAttribute('href')).toBe('/weekly/country/Iran');
     expect(screen.getByText(/UAE imposes indefinite trade embargo on Iran over alleged missile attacks/)).toBeInTheDocument();
     expect(screen.getByText(/MODEL JUDGMENT · stored explanation/)).toBeInTheDocument();
     expect(screen.getByText(/The UAE's indefinite trade embargo on Iran directly escalates economic isolation/)).toBeInTheDocument();

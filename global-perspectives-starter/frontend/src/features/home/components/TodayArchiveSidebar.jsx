@@ -1,15 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import ArchiveTopicModal from '@/features/home/components/ArchiveTopicModal';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import StoryRow from '@/shared/ui/StoryRow.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import Chip from '@/shared/ui/Chip.jsx';
+import { crisisDotVar } from '@/shared/lib/crisisHue';
 import '@/features/home/components/TodayArchiveSidebar.css';
 
 const CATEGORY_ORDER = ['conflict', 'politics', 'economy', 'military', 'disaster', 'technology', 'health'];
 
-function TodayArchiveSidebar({ entries, mode = 'float' }) {
+// TodayArchiveSidebar — the /today left rail (inside EditorialShell): topics that already left
+// today's list, filterable by category chip and title search; a row opens its saved AI analysis.
+function TodayArchiveSidebar({ entries }) {
   const [selectedEntry, setSelectedEntry] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState(null);
-  const isRail = mode === 'rail';
 
   const availableCategories = useMemo(() => {
     if (!entries || entries.length === 0) return [];
@@ -45,145 +50,62 @@ function TodayArchiveSidebar({ entries, mode = 'float' }) {
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
 
-  const getTimeAgo = (isoString) => {
-    if (!isoString) return '';
-    const minutes = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ago`;
-  };
-
   const handleCategoryClick = (cat) => {
     setActiveCategory(prev => prev === cat ? null : cat);
   };
 
-  // Rail mode — no floating chrome, no collapse toggle. Used inside EditorialShell left slot.
-  if (isRail) {
-    return (
-      <>
-        <div className="archive-rail">
-          <div className="archive-rail-head">
-            <span className="archive-rail-title">Today's Archive</span>
-            <span className="archive-rail-count">{entries.length}</span>
-          </div>
-
-          <div className="archive-rail-filters">
-            <input
-              className="archive-rail-search"
-              type="text"
-              placeholder="Search topics…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {availableCategories.length > 0 && (
-              <div className="archive-rail-chips">
-                {availableCategories.map(cat => (
-                  <button
-                    key={cat}
-                    className={`archive-rail-chip ${activeCategory === cat ? 'active' : ''}`}
-                    onClick={() => handleCategoryClick(cat)}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="archive-rail-list">
-            {filtered.length === 0 && (
-              <div className="archive-rail-empty">No matching topics</div>
-            )}
-            {sortedCategories.map(category => (
-              <div key={category} className="archive-rail-group">
-                {!activeCategory && (
-                  <div className="archive-rail-lbl">{category}</div>
-                )}
-                {grouped[category].map((entry) => (
-                  <div
-                    key={entry.topicId}
-                    className="archive-rail-item"
-                    onClick={() => setSelectedEntry(entry)}
-                  >
-                    <div className="archive-rail-item-t">{entry.title}</div>
-                    <div className="archive-rail-item-m">Showed {getTimeAgo(entry.archivedAt)}</div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {selectedEntry && (
-          <ArchiveTopicModal
-            entry={selectedEntry}
-            onClose={() => setSelectedEntry(null)}
-          />
-        )}
-      </>
-    );
-  }
-
   return (
     <>
-      <div className={`archive-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-        <div className="archive-sidebar-header" onClick={() => setIsCollapsed(!isCollapsed)}>
-          <span className="archive-sidebar-title">Today's Archive</span>
-          <span className="archive-sidebar-count">{entries.length}</span>
-          <span className="archive-sidebar-toggle">
-            {isCollapsed ? '\u25B6' : '\u25C0'}
-          </span>
-        </div>
+      <div className="archive-rail">
+        <SectionHeader label="Today's Archive" count={entries.length} />
 
-        {!isCollapsed && (
-          <>
-            <div className="archive-sidebar-filters">
-              <input
-                className="archive-search-input"
-                type="text"
-                placeholder="Search topics..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <div className="archive-category-chips">
-                {availableCategories.map(cat => (
-                  <button
-                    key={cat}
-                    className={`archive-chip ${activeCategory === cat ? 'active' : ''}`}
-                    onClick={() => handleCategoryClick(cat)}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="archive-sidebar-list">
-              {filtered.length === 0 && (
-                <div className="archive-no-results">No matching topics</div>
-              )}
-              {sortedCategories.map(category => (
-                <div key={category}>
-                  {!activeCategory && (
-                    <div className="archive-category-label">{category}</div>
-                  )}
-                  {grouped[category].map((entry) => (
-                    <div
-                      key={entry.topicId}
-                      className="archive-sidebar-item"
-                      onClick={() => setSelectedEntry(entry)}
-                    >
-                      <span className="archive-item-title">{entry.title}</span>
-                      <span className="archive-item-time">Showed {getTimeAgo(entry.archivedAt)}</span>
-                    </div>
-                  ))}
-                </div>
+        <div className="archive-rail-filters">
+          <input
+            className="archive-rail-search"
+            type="text"
+            placeholder="Search topics…"
+            aria-label="Search archived topics"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {availableCategories.length > 0 && (
+            <div className="archive-rail-chips">
+              {availableCategories.map(cat => (
+                <Chip
+                  key={cat}
+                  selected={activeCategory === cat}
+                  dot={crisisDotVar(cat)}
+                  onClick={() => handleCategoryClick(cat)}
+                >
+                  {cat}
+                </Chip>
               ))}
             </div>
-          </>
-        )}
+          )}
+        </div>
+
+        <div className="archive-rail-list">
+          {filtered.length === 0 && (
+            <div className="archive-rail-empty">No matching topics</div>
+          )}
+          {sortedCategories.map(category => (
+            <div key={category} className="archive-rail-group">
+              {!activeCategory && <SectionHeader as="h3" label={category} />}
+              <ul className="archive-rail-rows">
+                {grouped[category].map((entry) => (
+                  <StoryRow
+                    key={entry.topicId}
+                    title={entry.title}
+                    hue={crisisDotVar(category)}
+                    chip={<CategoryTag category={category} />}
+                    changedAt={entry.archivedAt}
+                    onClick={() => setSelectedEntry(entry)}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </div>
 
       {selectedEntry && (

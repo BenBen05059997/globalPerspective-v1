@@ -165,7 +165,7 @@ async function selectFirstStoryAndRun() {
 // time) — these S5a/S5b tests are checking the validator/receipt LOGIC via the original,
 // unchanged full markup, which lives behind "Read as text" now (StudioRunResult, untouched).
 function switchToReadAsText() {
-  fireEvent.click(screen.getByRole('button', { name: /read as text/i }));
+  fireEvent.click(screen.getByRole('radio', { name: /read as text/i }));
 }
 
 describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
@@ -190,7 +190,7 @@ describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
 
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     await selectFirstStoryAndRun();
-    await screen.findByRole('button', { name: /read as text/i });
+    await screen.findByRole('radio', { name: /read as text/i });
     switchToReadAsText();
     await waitFor(() => expect(screen.getByText(/Guardrail check passed/i)).toBeInTheDocument());
 
@@ -214,7 +214,7 @@ describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
 
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     await selectFirstStoryAndRun();
-    await screen.findByRole('button', { name: /read as text/i });
+    await screen.findByRole('radio', { name: /read as text/i });
     switchToReadAsText();
     await waitFor(() => expect(screen.getByText(/Checks failed — this run is not shareable/i)).toBeInTheDocument());
 
@@ -283,7 +283,7 @@ describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
     });
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     await selectFirstStoryAndRun();
-    await screen.findByRole('button', { name: /read as text/i });
+    await screen.findByRole('radio', { name: /read as text/i });
     switchToReadAsText();
     await waitFor(() => expect(screen.getByText(/Guardrail check passed/i)).toBeInTheDocument());
     expect(screen.getByText(/Receipt/)).toBeInTheDocument();
@@ -300,7 +300,7 @@ describe('AnalysisStudio — S5a mocked-provider screen capture', () => {
     });
     const { container } = render(<AnalysisStudio />, { wrapper: MemoryRouter });
     await selectFirstStoryAndRun();
-    await screen.findByRole('button', { name: /read as text/i });
+    await screen.findByRole('radio', { name: /read as text/i });
     switchToReadAsText();
     await waitFor(() => expect(screen.getByText(/Checks failed — this run is not shareable/i)).toBeInTheDocument());
     const receiptBlock = container.querySelector('.as-receipt-block');

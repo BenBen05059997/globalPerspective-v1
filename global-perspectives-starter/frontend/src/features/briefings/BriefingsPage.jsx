@@ -5,6 +5,7 @@ import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief';
 import { useDailyEditionsIndex } from '@/features/briefings/hooks/useDailyEditionsIndex.js';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
 import BriefingMode from '@/features/briefings/components/BriefingMode.jsx';
+import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import PhoneBriefingMode from '@/features/briefings/components/PhoneBriefingMode.jsx';
 import '@/features/briefings/BriefingsPage.css';
 
@@ -47,7 +48,7 @@ export default function BriefingsPage() {
   if (loading && !dailyBrief && !weeklyBrief) {
     return (
       <div className="bm-page">
-        <div className="gp-console bm-root bm-loading">Loading briefing…</div>
+        <BootLoader variant="inline" label="Loading briefing" text="Loading briefing" />
       </div>
     );
   }

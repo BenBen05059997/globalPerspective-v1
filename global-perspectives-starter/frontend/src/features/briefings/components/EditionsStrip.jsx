@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Button from '@/shared/ui/Button.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { labelledDateKeys } from '@/features/briefings/lib/editions.js';
 
@@ -80,11 +81,11 @@ export default function EditionsStrip({ marks, pausedSegment, currentDateKey, on
               : `No edition was published for ${formatDateLabel(explain)}.`}
           </span>
           {onGoLatest && (
-            <button type="button" className="bm-edition-nearest" onClick={() => { onGoLatest(); setExplain(null); }}>
+            <Button compact onClick={() => { onGoLatest(); setExplain(null); }}>
               Show the latest edition{latestLabel ? ` (${latestLabel})` : ''} →
-            </button>
+            </Button>
           )}
-          <button type="button" className="bm-edition-dismiss" onClick={() => setExplain(null)} aria-label="Dismiss">×</button>
+          <Button variant="icon" compact label="Dismiss" onClick={() => setExplain(null)}>×</Button>
         </div>
       )}
     </div>

@@ -12,6 +12,7 @@ import { buildReceipt } from '@/features/analysis-studio/lib/receipt';
 import { webLinkMap } from '@/features/analysis-studio/lib/webCitations';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';
 import { formatCiteDate } from '@/features/analysis-studio/lib/formatDate';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
 export default function StudioRunResult({ section, expanded, onShowAnyway }) {
   const {
@@ -21,7 +22,7 @@ export default function StudioRunResult({ section, expanded, onShowAnyway }) {
 
   return (
     <div className="as-section">
-      {lensLabel && <div className="as-section-lens">{lensLabel}</div>}
+      {lensLabel && <SectionHeader as="h3" label={lensLabel} />}
 
       {sourceInfo && sourceInfo.total > 0 && (
         <div className={`as-srcbasis${sourceInfo.severity === 'warn' ? ' warn' : ''}`}>

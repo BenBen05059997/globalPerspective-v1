@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { reportFetchError } from '@/shared/api/errorSink';
+import Button from '@/shared/ui/Button.jsx';
+import '@/features/home/AIComponents.css';
 
 // The honest "this AI result is not available" state for a story's Summary / Prediction / Trace.
 // It sits where the content would be, says plainly that nothing was generated, and offers Retry —
@@ -15,8 +17,8 @@ export default function AiUnavailable({ containerRef, what, onRetry, onClear, er
       <div className="ai-unavailable-row">
         <span className="ai-unavailable-text">{what} unavailable right now</span>
         <span className="ai-result-actions">
-          <button type="button" className="ai-btn ai-unavailable-btn" onClick={onRetry}>Retry</button>
-          <button type="button" className="ai-btn ai-unavailable-btn" onClick={onClear}>Close</button>
+          <Button compact onClick={onRetry}>Retry</Button>
+          <Button compact onClick={onClear}>Close</Button>
         </span>
       </div>
     </div>

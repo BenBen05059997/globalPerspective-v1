@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import AiUnavailable from '@/features/home/components/AiUnavailable';
-import '@/features/home/AIComponents.css';
+import { useId, useMemo, useState } from 'react';
+import AiResultCard from '@/features/home/components/AiResultCard';
+import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 
 function tryParseJson(content) {
   if (!content) return null;
@@ -9,86 +9,85 @@ function tryParseJson(content) {
 
 // ── JSON renderer ─────────────────────────────────────────────────────────────
 
+// An impact score out of 10: the number is the reading, the bar a neutral length (never a tier colour).
 function ImpactBar({ label, score }) {
   const pct = Math.round((score / 10) * 100);
-  const color = score >= 7 ? 'var(--tier-high)' : score >= 4 ? 'var(--tier-elevated)' : 'var(--tier-low)';
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>{label}</span>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, color }}>{score}/10</span>
+    <div className="ai-impact">
+      <div className="ai-impact-head">
+        <span className="ai-kicker">{label}</span>
+        <span className="ai-impact-score">{score}/10</span>
       </div>
-      <div style={{ height: 4, background: 'var(--panel-3)', borderRadius: 2 }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 2, transition: 'width 0.4s' }} />
+      <div className="ai-impact-track"><div className="ai-impact-fill" style={{ width: `${pct}%` }} /></div>
+    </div>
+  );
+}
+
+// One link in the cause chain. `depth` sets the node's weight on the text ladder (proximate is the
+// strongest mark, structural the faintest): position in the chain, not a severity colour.
+function CauseChainNode({ label, depth, children }) {
+  return (
+    <div className={`ai-chain ai-chain--${depth}`}>
+      <div className="ai-chain-rail" aria-hidden="true"><span className="ai-chain-dot" /><span className="ai-chain-line" /></div>
+      <div className="ai-chain-body">
+        <span className="ai-kicker ai-chain-label">{label}</span>
+        <div className="ai-chain-text">{children}</div>
       </div>
     </div>
   );
 }
 
-function CauseChainNode({ label, color, children }) {
-  return (
-    <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, marginTop: 4 }} />
-        <div style={{ width: 1, flex: 1, background: 'var(--hairline-strong)', marginTop: 4 }} />
-      </div>
-      <div style={{ flex: 1, paddingBottom: 4 }}>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color, fontWeight: 700 }}>{label}</span>
-        <div style={{ marginTop: 4 }}>{children}</div>
-      </div>
-    </div>
-  );
-}
+const TABS = [
+  { key: 'causes', label: 'Cause Chain' },
+  { key: 'impact', label: 'Impact' },
+  { key: 'counter', label: 'Counter Reading' },
+];
 
 function JsonTraceCauseView({ data }) {
   const [tab, setTab] = useState('causes');
-  const svLabel = data.signalVsNoise?.verdict || '';
-  const svColor = svLabel === 'True Signal' ? 'var(--tier-high)' : svLabel === 'Noise' ? 'var(--tier-low)' : 'var(--tier-elevated)';
+  const idBase = `trace${useId()}`;
+  const verdict = data.signalVsNoise?.verdict || '';
 
   return (
     <div>
-      {/* Signal/Noise verdict banner */}
-      {svLabel && (
-        <div style={{ padding: '10px 16px', background: `color-mix(in srgb, ${svColor} 12%, transparent)`, borderBottom: `2px solid ${svColor}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: svColor }}>{svLabel}</span>
+      {/* Signal / noise verdict: the word is the reading; no colour per verdict */}
+      {verdict && (
+        <div className="ai-verdict">
+          <span className="ai-verdict-word">{verdict}</span>
           {data.signalVsNoise?.confidence && (
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: svColor, opacity: 0.7 }}>{data.signalVsNoise.confidence} confidence</span>
+            <span className="ai-verdict-conf">{data.signalVsNoise.confidence} confidence</span>
           )}
         </div>
       )}
 
-      <div className="ai-tabs">
-        <button className={`ai-tab ${tab === 'causes' ? 'active' : ''}`} onClick={() => setTab('causes')}>Cause Chain</button>
-        <button className={`ai-tab ${tab === 'impact' ? 'active' : ''}`} onClick={() => setTab('impact')}>Impact</button>
-        <button className={`ai-tab ${tab === 'counter' ? 'active' : ''}`} onClick={() => setTab('counter')}>Counter Reading</button>
-      </div>
+      <Tabs idBase={idBase} label="Trace views" tabs={TABS} active={tab} onChange={setTab} />
 
-      <div className="ai-result-content">
+      <div className="ai-result-content" {...tabPanelProps(idBase, tab)}>
         {tab === 'causes' && (
-          <div style={{ paddingTop: 4 }}>
+          <div>
             {data.proximate && (
-              <CauseChainNode label="Proximate" color="var(--tier-high)">
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)' }}>{data.proximate.what}</p>
-                {data.proximate.when && <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--mono)' }}>{data.proximate.when}</p>}
+              <CauseChainNode label="Proximate" depth="proximate">
+                <p className="ai-body">{data.proximate.what}</p>
+                {data.proximate.when && <p className="ai-note ai-note--mono">{data.proximate.when}</p>}
               </CauseChainNode>
             )}
             {(data.contributing || []).map((c, i) => (
-              <CauseChainNode key={i} label="Contributing" color="var(--tier-elevated)">
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)', fontWeight: 500 }}>{c.factor}</p>
-                {c.evidence && <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>{c.evidence}</p>}
+              <CauseChainNode key={i} label="Contributing" depth="contributing">
+                <p className="ai-body ai-body--strong">{c.factor}</p>
+                {c.evidence && <p className="ai-note">{c.evidence}</p>}
               </CauseChainNode>
             ))}
             {data.structural && (
-              <CauseChainNode label="Structural" color="var(--text-dim)">
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)', fontWeight: 500 }}>{data.structural.factor}</p>
-                {data.structural.depth && <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--mono)' }}>Building for {data.structural.depth}</p>}
+              <CauseChainNode label="Structural" depth="structural">
+                <p className="ai-body ai-body--strong">{data.structural.factor}</p>
+                {data.structural.depth && <p className="ai-note ai-note--mono">Building for {data.structural.depth}</p>}
               </CauseChainNode>
             )}
           </div>
         )}
 
         {tab === 'impact' && data.impactScores && (
-          <div style={{ paddingTop: 8 }}>
+          <div>
             <ImpactBar label="Human Impact" score={data.impactScores.humanImpact} />
             <ImpactBar label="Economic Reach" score={data.impactScores.economicReach} />
             <ImpactBar label="Geopolitical" score={data.impactScores.geopolitical} />
@@ -96,21 +95,21 @@ function JsonTraceCauseView({ data }) {
         )}
 
         {tab === 'counter' && (
-          <div style={{ paddingTop: 4 }}>
+          <div>
             {data.biasNote && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6 }}>Source Bias</div>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)' }}>{data.biasNote}</p>
+              <div className="ai-counter">
+                <div className="ai-kicker">Source Bias</div>
+                <p className="ai-body">{data.biasNote}</p>
               </div>
             )}
             {data.alternativePerspective && (
-              <div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6 }}>Alternative Perspective</div>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)' }}>{data.alternativePerspective}</p>
+              <div className="ai-counter">
+                <div className="ai-kicker">Alternative Perspective</div>
+                <p className="ai-body">{data.alternativePerspective}</p>
               </div>
             )}
             {!data.biasNote && !data.alternativePerspective && (
-              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>No counter reading available.</p>
+              <p className="ai-empty">No counter reading available.</p>
             )}
           </div>
         )}
@@ -119,46 +118,19 @@ function JsonTraceCauseView({ data }) {
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
+/** TraceCauseDisplay — a story's cause chain, impact and counter reading (AiResultCard frame). */
 const TraceCauseDisplay = ({ traceCause, isLoading, error, onRetry, onClear, isCollapsed = false, onToggleCollapse, lastActive }) => {
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    if ((isLoading || ((traceCause || error) && !isCollapsed)) && containerRef.current) {
-      setTimeout(() => containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-    }
-  }, [isLoading, traceCause, error, isCollapsed, lastActive]);
-
   const jsonData = useMemo(() => tryParseJson(traceCause?.content), [traceCause]);
-
-  if (isLoading) {
-    return (
-      <div ref={containerRef} className="ai-result-card" style={{ padding: '24px', textAlign: 'center' }}>
-        <div className="ai-spinner" style={{ position: 'relative', left: 'auto', margin: '0 auto 12px', width: '24px', height: '24px', color: 'var(--ai-accent-trace)' }} />
-        <div className="loading-text"><p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Tracing origins & timeline...</p></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <AiUnavailable error={error} containerRef={containerRef} what="Trace cause" onRetry={onRetry} onClear={onClear} />;
-  }
-
-  if (!traceCause) return null;
-
   return (
-    <div ref={containerRef} className="ai-result-card">
-      <div className="ai-result-header" onClick={onToggleCollapse} style={{ cursor: 'pointer' }}>
-        <div className="ai-result-title" style={{ color: 'var(--ai-accent-trace)' }}>Trace Cause & Context</div>
-        <div style={{ color: 'var(--text-dim)', fontSize: '12px' }}>{isCollapsed ? 'Show' : 'Hide'}</div>
-      </div>
-      {!isCollapsed && (
-        jsonData
-          ? <JsonTraceCauseView data={jsonData} />
-          : <div className="ai-result-content"><p style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>Analysis generation failed — please retry.</p></div>
-      )}
-    </div>
+    <AiResultCard
+      title="Trace Cause & Context" loadingText="Tracing origins and timeline" what="Trace cause"
+      hasResult={!!traceCause} isLoading={isLoading} error={error} onRetry={onRetry} onClear={onClear}
+      isCollapsed={isCollapsed} onToggleCollapse={onToggleCollapse} lastActive={lastActive}
+    >
+      {jsonData
+        ? <JsonTraceCauseView data={jsonData} />
+        : <div className="ai-result-content"><p className="ai-empty">Analysis generation failed — please retry.</p></div>}
+    </AiResultCard>
   );
 };
 

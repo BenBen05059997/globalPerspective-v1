@@ -7,6 +7,7 @@ import { useNoIndex } from '@/shared/hooks/useNoIndex.js';
 import { reportFetchError } from '@/shared/api/errorSink';
 import '@/features/analysis-studio/AnalysisStudio.css';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import Button from '@/shared/ui/Button.jsx';
 
 // /analyze/s/:id — a read-only, unlisted (noindex) debrief of one shared Studio run. States, all honest:
 // loading, endpoint not configured, deleted / never existed, could not be loaded, ready.
@@ -62,7 +63,7 @@ export default function SharedAnalysisPage() {
         <>
           <SharedAnalysisView share={state.share} />
           <div className="as-shared-actions">
-            <Link className="as-run" to="/analyze">Run your own →</Link>
+            <Button variant="primary" to="/analyze">Run your own →</Button>
             {(state.share.stories || []).some((s) => s.threadId) && (
               <span>
                 Open these stories live:{' '}
@@ -80,7 +81,7 @@ export default function SharedAnalysisPage() {
           {error && <div className="as-error"><div>{error}</div></div>}
         </>
       )}
-      <button type="button" className="as-gate-back as-shared-back" onClick={() => navigate(-1)}>← Back</button>
+      <Button className="as-shared-back" onClick={() => navigate(-1)}>← Back</Button>
     </div>
   );
 }

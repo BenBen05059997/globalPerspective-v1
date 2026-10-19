@@ -3,6 +3,10 @@ import { createPortal } from 'react-dom';
 import SummaryDisplay from '@/features/home/components/SummaryDisplay';
 import PredictionDisplay from '@/features/home/components/PredictionDisplay';
 import TraceCauseDisplay from '@/features/home/components/TraceCauseDisplay';
+import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
+import Button from '@/shared/ui/Button.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import '@/features/home/components/TodayArchiveSidebar.css';
 
 function ArchiveTopicModal({ entry, onClose }) {
@@ -41,14 +45,12 @@ function ArchiveTopicModal({ entry, onClose }) {
   // Portalled to <body>: inside the sticky rail it sat in a lower stacking context than the topics rail.
   return createPortal(
     <div className="archive-modal-overlay" ref={overlayRef} onClick={handleOverlayClick}>
-      <div className="archive-modal">
+      <div className="archive-modal" role="dialog" aria-modal="true" aria-label={entry.title}>
         <div className="archive-modal-header">
           <div>
             <h3 className="archive-modal-title">{entry.title}</h3>
             <div className="archive-modal-meta">
-              {entry.category && (
-                <span className="archive-modal-badge">{entry.category}</span>
-              )}
+              <CategoryTag category={entry.category} />
               {entry.regions?.length > 0 && (
                 <span className="archive-modal-regions">
                   {entry.regions.join(', ')}
@@ -56,24 +58,17 @@ function ArchiveTopicModal({ entry, onClose }) {
               )}
             </div>
           </div>
-          <button className="archive-modal-close" onClick={onClose}>&times;</button>
+          <Button variant="icon" label="Close" onClick={onClose}>&times;</Button>
         </div>
 
         {sections.length > 0 && (
-          <div className="archive-modal-tabs">
-            {sections.map(section => (
-              <button
-                key={section.key}
-                className={`archive-modal-tab ${activeSection === section.key ? 'active' : ''}`}
-                onClick={() => setActiveSection(section.key)}
-              >
-                {section.label}
-              </button>
-            ))}
-          </div>
+          <Tabs
+            idBase="archive-modal" label="Saved analysis"
+            tabs={sections} active={activeSection} onChange={setActiveSection}
+          />
         )}
 
-        <div className="archive-modal-content">
+        <div className="archive-modal-content" {...(sections.length > 0 ? tabPanelProps('archive-modal', activeSection) : {})}>
           {activeSection === 'summary' && entry.ai?.summary && (
             <SummaryDisplay
               summary={{ content: entry.ai.summary }}
@@ -119,7 +114,7 @@ function ArchiveTopicModal({ entry, onClose }) {
 
         {Array.isArray(entry.sources) && entry.sources.length > 0 && (
           <div className="archive-modal-sources">
-            <div className="archive-sources-label">Sources</div>
+            <SectionHeader as="h4" label="Sources" count={entry.sources.length} />
             {entry.sources.map((source, idx) => (
               <a
                 key={idx}

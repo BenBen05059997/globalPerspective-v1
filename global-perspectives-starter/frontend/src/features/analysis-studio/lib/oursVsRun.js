@@ -4,8 +4,8 @@
 // The Studio deck's map draws a place only if the run names it AND a source lists it
 // (source regions). A place the run names that no selected story's regions back is
 // still real (it may genuinely be relevant) but is NOT drawn as verified — it gets the
-// sand "THIS RUN" hatching (DS1 legend: solid --c-accent border = OUR DATA, sand
-// --c-run-hatch hatching = THIS RUN) instead of being silently treated as ours.
+// sand "THIS RUN" hatching (DS1 legend: solid --accent border = OUR DATA, sand
+// --run-hatch hatching = THIS RUN) instead of being silently treated as ours.
 //
 // Pure, dependency-free — same reason as analysisStruct.js: testable without a browser
 // and safe to reuse from the offline eval.

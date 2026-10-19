@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import AiUnavailable from '@/features/home/components/AiUnavailable';
-import '@/features/home/AIComponents.css';
+import { useId, useMemo, useState } from 'react';
+import AiResultCard from '@/features/home/components/AiResultCard';
+import Card from '@/shared/ui/Card.jsx';
+import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 
 function tryParseJson(content) {
   if (!content) return null;
@@ -17,75 +18,65 @@ function normalizeTrigger(t) {
   return null;
 }
 
-function ScenarioCard({ scenario, index }) {
-  const colors = ['var(--ai-predict)', 'var(--tier-low)', 'var(--tier-high)'];
-  const color = colors[index % colors.length];
+// One scenario. Scenarios are peers, so they share one neutral look (no colour by position).
+function ScenarioCard({ scenario }) {
+  const triggers = (scenario.triggers || []).map(normalizeTrigger).filter(Boolean);
   return (
-    <div style={{ border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`, borderRadius: 8, padding: '16px', marginBottom: 12, background: `color-mix(in srgb, ${color} 8%, transparent)` }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color, background: `color-mix(in srgb, ${color} 14%, transparent)`, padding: '2px 8px', borderRadius: 4 }}>
-          {scenario.label}
-        </span>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color, fontWeight: 600 }}>{scenario.probability_range}</span>
-        {scenario.horizon && (
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-muted)', marginLeft: 'auto' }}>{scenario.horizon}</span>
-        )}
+    <Card level={2} pad="sm" className="ai-scenario">
+      <div className="ai-scenario-head">
+        <span className="ai-scenario-label">{scenario.label}</span>
+        <span className="ai-scenario-p">{scenario.probability_range}</span>
+        {scenario.horizon && <span className="ai-scenario-horizon">{scenario.horizon}</span>}
       </div>
-      <p style={{ margin: '0 0 10px', fontSize: 14, lineHeight: 1.6, color: 'var(--text-body)' }}>{scenario.rationale}</p>
-      {scenario.triggers?.length > 0 && (
+      <p className="ai-body">{scenario.rationale}</p>
+      {triggers.length > 0 && (
         <div>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6 }}>Watch for</div>
-          {scenario.triggers.map(normalizeTrigger).filter(Boolean).map((t, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
-              <span style={{ color, fontSize: 12, flexShrink: 0 }}>›</span>
-              <span style={{ fontSize: 13, color: 'var(--text-body)', lineHeight: 1.5 }}>
-                {t.text}
-                {t.deadline && (
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-muted)', marginLeft: 6, whiteSpace: 'nowrap' }}>by {t.deadline}</span>
-                )}
-              </span>
-            </div>
-          ))}
+          <div className="ai-kicker">Watch for</div>
+          <ul className="ai-glyph-list">
+            {triggers.map((t, i) => (
+              <li key={i}>
+                <span className="ai-glyph" aria-hidden="true">›</span>
+                <span>
+                  {t.text}
+                  {t.deadline && <span className="ai-deadline">by {t.deadline}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
+    </Card>
+  );
+}
+
+// Winners / losers: the arrow glyph carries the direction; the text stays on the text ladder.
+function OutcomeList({ label, glyph, items }) {
+  return (
+    <div>
+      <div className="ai-kicker">{label}</div>
+      <ul className="ai-glyph-list">
+        {items.map((item, i) => (
+          <li key={i}><span className="ai-glyph" aria-hidden="true">{glyph}</span><span>{item}</span></li>
+        ))}
+      </ul>
     </div>
   );
 }
+
+const TABS = [{ key: 'scenarios', label: 'Scenarios' }, { key: 'outcomes', label: 'Winners & Losers' }];
 
 function JsonPredictionView({ data }) {
   const [tab, setTab] = useState('scenarios');
+  const idBase = `pred${useId()}`;
   return (
     <div>
-      <div className="ai-tabs">
-        <button className={`ai-tab ${tab === 'scenarios' ? 'active' : ''}`} onClick={() => setTab('scenarios')}>Scenarios</button>
-        <button className={`ai-tab ${tab === 'outcomes' ? 'active' : ''}`} onClick={() => setTab('outcomes')}>Winners & Losers</button>
-      </div>
-      <div className="ai-result-content">
-        {tab === 'scenarios' && (
-          <div>
-            {(data.scenarios || []).map((s, i) => <ScenarioCard key={i} scenario={s} index={i} />)}
-          </div>
-        )}
+      <Tabs idBase={idBase} label="Forecast views" tabs={TABS} active={tab} onChange={setTab} />
+      <div className="ai-result-content" {...tabPanelProps(idBase, tab)}>
+        {tab === 'scenarios' && (data.scenarios || []).map((s, i) => <ScenarioCard key={i} scenario={s} />)}
         {tab === 'outcomes' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tier-low)', marginBottom: 8, fontWeight: 700 }}>Winners</div>
-              {(data.winners || []).map((w, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                  <span style={{ color: 'var(--tier-low)', fontSize: 14 }}>↑</span>
-                  <span style={{ fontSize: 14, color: 'var(--text-body)' }}>{w}</span>
-                </div>
-              ))}
-            </div>
-            <div>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tier-high)', marginBottom: 8, fontWeight: 700 }}>Losers</div>
-              {(data.losers || []).map((l, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                  <span style={{ color: 'var(--tier-high)', fontSize: 14 }}>↓</span>
-                  <span style={{ fontSize: 14, color: 'var(--text-body)' }}>{l}</span>
-                </div>
-              ))}
-            </div>
+          <div className="ai-outcomes">
+            <OutcomeList label="Winners" glyph="↑" items={data.winners || []} />
+            <OutcomeList label="Losers" glyph="↓" items={data.losers || []} />
           </div>
         )}
       </div>
@@ -93,46 +84,19 @@ function JsonPredictionView({ data }) {
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
+/** PredictionDisplay — a story's scenario forecast (AiResultCard frame). */
 const PredictionDisplay = ({ prediction, isLoading, error, onRetry, onClear, isCollapsed = false, onToggleCollapse, lastActive }) => {
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    if ((isLoading || ((prediction || error) && !isCollapsed)) && containerRef.current) {
-      setTimeout(() => containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-    }
-  }, [isLoading, prediction, error, isCollapsed, lastActive]);
-
   const jsonData = useMemo(() => tryParseJson(prediction?.content), [prediction]);
-
-  if (isLoading) {
-    return (
-      <div ref={containerRef} className="ai-result-card" style={{ padding: '24px', textAlign: 'center' }}>
-        <div className="ai-spinner" style={{ position: 'relative', left: 'auto', margin: '0 auto 12px', width: '24px', height: '24px', color: 'var(--ai-accent-predict)' }} />
-        <div className="loading-text"><p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>Mapping chain reactions...</p></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <AiUnavailable error={error} containerRef={containerRef} what="Prediction" onRetry={onRetry} onClear={onClear} />;
-  }
-
-  if (!prediction) return null;
-
   return (
-    <div ref={containerRef} className="ai-result-card">
-      <div className="ai-result-header" onClick={onToggleCollapse} style={{ cursor: 'pointer' }}>
-        <div className="ai-result-title" style={{ color: 'var(--ai-accent-predict)' }}>Scenario Forecast</div>
-        <div style={{ color: 'var(--text-dim)', fontSize: '12px' }}>{isCollapsed ? 'Show' : 'Hide'}</div>
-      </div>
-      {!isCollapsed && (
-        jsonData
-          ? <JsonPredictionView data={jsonData} />
-          : <div className="ai-result-content"><p style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>Forecast generation failed — please retry.</p></div>
-      )}
-    </div>
+    <AiResultCard
+      title="Scenario Forecast" loadingText="Mapping chain reactions" what="Prediction"
+      hasResult={!!prediction} isLoading={isLoading} error={error} onRetry={onRetry} onClear={onClear}
+      isCollapsed={isCollapsed} onToggleCollapse={onToggleCollapse} lastActive={lastActive}
+    >
+      {jsonData
+        ? <JsonPredictionView data={jsonData} />
+        : <div className="ai-result-content"><p className="ai-empty">Forecast generation failed — please retry.</p></div>}
+    </AiResultCard>
   );
 };
 

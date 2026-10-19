@@ -6,6 +6,7 @@ import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPromp
 import { formatCiteDate } from '@/features/analysis-studio/lib/formatDate';
 import { httpOnly } from '@/features/analysis-studio/lib/shareApi.js';
 import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
 // SharedAnalysisView — the read-only debrief of a stored share: exactly what the reader's run wrote, the sources
 // the SERVER froze (with their verbatim text), and the checks it passed. No live fetch, no AI, no map: pictures
@@ -32,7 +33,7 @@ export default function SharedAnalysisView({ share, compact = false }) {
 
       {(share.sections || []).map((sec, i) => (
         <section key={i} className="as-section as-shared-section">
-          <div className="as-section-lens">{sec.lensId ? (LENS_LABEL[sec.lensId] || sec.lensId) : 'Deep research'}{sec.focus ? ` — “${sec.focus}”` : ''}</div>
+          <SectionHeader as="h3" label={`${sec.lensId ? (LENS_LABEL[sec.lensId] || sec.lensId) : 'Deep research'}${sec.focus ? ` — “${sec.focus}”` : ''}`} />
           <div className="as-checks ok">
             <span className="as-check-dot" aria-hidden />
             Guardrail checks passed when this was shared — every cited source exists, no unsupported figures were detected.

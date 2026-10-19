@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { useNotifications } from '@/features/breaking/hooks/useNotifications';
 import '@/features/breaking/components/NotificationBell.css';
 
@@ -69,7 +70,7 @@ export default function NotificationBell() {
 
       {open && (
         <div className="gp-bell-panel" role="menu">
-          <div className="gp-bell-head">Breaking alerts</div>
+          <SectionHeader as="div" className="gp-bell-head" label="Breaking alerts" />
           {alerts.length === 0 ? (
             <div className="gp-bell-empty">
               You’re all caught up. Major breaking stories will show up here.

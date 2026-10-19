@@ -8,11 +8,11 @@
   width: var(--tap-min);
   height: var(--tap-min);
   border: 1px solid var(--hairline);
-  border-radius: 8px;
+  border-radius: var(--r-md);
   background: var(--panel-2);
   color: var(--text-head);
   cursor: pointer;
-  transition: background .12s, border-color .12s;
+  transition: background var(--fast), border-color var(--fast);
 }
 .gp-bell:hover { background: var(--panel-3); }
 
@@ -22,12 +22,12 @@
   right: -5px;
   min-width: 16px;
   height: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
-  background: var(--error);
+  padding: 0 var(--space-1);
+  border-radius: var(--r-pill);
+  background: var(--accent);
   color: var(--on-accent);
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
   line-height: 16px;
   text-align: center;
   box-shadow: 0 0 0 2px var(--bg);
@@ -41,57 +41,50 @@
   max-width: calc(100vw - 24px);
   background: var(--panel-2);
   border: 1px solid var(--hairline-strong);
-  border-radius: 10px;
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow-lg);
   z-index: 1000;
   overflow: hidden;
 }
 
-.gp-bell-head {
-  padding: 12px 14px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--hairline);
-}
+.gp-bell-panel .gp-bell-head { margin: 0; padding: var(--space-3) var(--space-4) var(--space-2); }
 
 .gp-bell-empty {
-  padding: 22px 16px;
-  font-size: 13px;
-  line-height: 1.5;
+  padding: var(--space-6) var(--space-4);
+  font-size: var(--text-ui);
+  line-height: var(--leading-normal);
   color: var(--text-muted);
   text-align: center;
 }
 
-.gp-bell-list { list-style: none; margin: 0; padding: 4px 0; max-height: 380px; overflow-y: auto; }
+.gp-bell-list { list-style: none; margin: 0; padding: var(--space-1) 0; max-height: 380px; overflow-y: auto; }
 
 .gp-bell-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 10px 14px;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
   text-decoration: none;
   color: var(--text-head);
-  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--hairline);
 }
-.gp-bell-item:hover { background: var(--accent-wash); border-left-color: var(--accent); }
+.gp-bell-item:hover { background: var(--panel-3); }
+.gp-bell-item:focus-visible, .gp-bell-all:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 
-.gp-bell-title { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
-.gp-bell-time { font-size: 11px; color: var(--text-muted); }
+.gp-bell-title { font-size: var(--text-base); font-weight: var(--weight-semibold); line-height: var(--leading-tight); }
+.gp-bell-time { font-size: var(--text-xs); color: var(--text-dim); font-variant-numeric: tabular-nums; }
 
 .gp-bell-all {
   display: block;
-  padding: 10px 14px;
+  padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--hairline);
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: var(--text-ui);
+  font-weight: var(--weight-semibold);
   color: var(--accent);
   text-decoration: none;
 }
-.gp-bell-all:hover { background: var(--accent-wash); }
+.gp-bell-all:hover { background: var(--panel-3); }
 
 @media (max-width: 600px) {
-  .gp-bell-panel { position: fixed; top: var(--nav-h); right: 12px; left: 12px; width: auto; }
+  .gp-bell-panel { position: fixed; top: var(--nav-h); right: var(--space-3); left: var(--space-3); width: auto; }
 }

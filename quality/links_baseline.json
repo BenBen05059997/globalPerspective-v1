@@ -1,11 +1,11 @@
 {
   "note": "Per-file count of hand-built route strings outside shared/lib/links.js and backend/shared/src/links.js (see quality/check_links.mjs). Counts may only fall; lower them with --lower after switching a caller to links.js.",
   "totals": {
-    "/track-record": 13,
+    "/track-record": 9,
     "/briefings": 1,
     "/weekly/thread": 6,
-    "/weekly/country": 13,
-    "/analyze": 14
+    "/weekly/country": 12,
+    "/analyze": 12
   },
   "files": {
     "app/layout/Layout.jsx": {
@@ -76,11 +76,6 @@
     "features/economy/EconomyPage.jsx": {
       "/weekly/country": 1,
       "/analyze": 1
-    },
-    "features/home/Home.jsx": {
-      "/weekly/country": 1,
-      "/track-record": 4,
-      "/analyze": 2
     },
     "features/static/Disclosures.jsx": {
       "/analyze": 1

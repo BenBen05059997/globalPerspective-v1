@@ -5,6 +5,7 @@ import AIToast from '@/app/layout/AIToast';
 import { NotificationBell } from '@/features/breaking';
 import { usePausedSince, useGdacsStatus, HudStatusLine } from '@/features/map';
 import { useIsPhone } from '@/shared/hooks/useIsPhone.js';
+import { ROUTE } from '@/shared/lib/links.js';
 import '@/app/layout/Layout.css';
 
 // P1 phone tab bar (A2): simple inline-SVG line icons, no icon library. 20x20 viewBox, stroke
@@ -82,10 +83,10 @@ function Layout({ children }) {
   // unscored track record). Studio left the menu 2026-10-19 (decision 0030): `/analyze` and shared
   // analyses stay routed; it returns when its redesign plan's criteria are met.
   const navLinks = [
-    { to: '/', exact: true, label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
-    { to: '/weekly', label: 'Stories', short: 'Stories', icon: IconStories, title: 'Every story we follow, as board, table, map or web.' },
-    { to: '/briefings', label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The daily and weekly briefings, with every past edition.' },
-    { to: '/track-record', label: 'Track record', short: 'Record', icon: IconRecord, title: 'How our forecasts are logged and checked as they come due.' },
+    { to: ROUTE.map, exact: true, label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
+    { to: ROUTE.stories, label: 'Stories', short: 'Stories', icon: IconStories, title: 'Every story we follow, as board, table, map or web.' },
+    { to: ROUTE.briefings, label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The daily and weekly briefings, with every past edition.' },
+    { to: ROUTE.trackRecord, label: 'Track record', short: 'Record', icon: IconRecord, title: 'How our forecasts are logged and checked as they come due.' },
   ];
 
   // R4a: desktop `/` (the map, since the 2026-10-01 S6 swap) is a full-bleed console: the same
@@ -93,13 +94,13 @@ function Layout({ children }) {
   // one-line honesty status. No footer there: the map is the whole page (its "About this map"
   // drawer carries the footer links instead). Every other page has the same dark nav, body and
   // footer (one token set, 2026-10-01).
-  const consoleShell = location.pathname === '/' && !isPhone;
+  const consoleShell = location.pathname === ROUTE.map && !isPhone;
 
   // "?" target: /?about=1 (keeps the map's current selection when already on the map).
   const helpTo = (() => {
-    const n = new URLSearchParams(location.pathname === '/' ? location.search : '');
+    const n = new URLSearchParams(location.pathname === ROUTE.map ? location.search : '');
     n.set('about', '1');
-    return { pathname: '/', search: `?${n.toString()}` };
+    return { pathname: ROUTE.map, search: `?${n.toString()}` };
   })();
 
   const isActive = (to, exact) => {
@@ -114,7 +115,7 @@ function Layout({ children }) {
 
       <nav className="gp-nav gp-console">
         <div className="gp-brand">
-          <Link to="/" className="gp-brand-link">
+          <Link to={ROUTE.map} className="gp-brand-link">
             <span className="gp-logo">G</span>
             <span className="gp-name">
               Global Perspectives<sup className="gp-tm">™</sup>
@@ -172,7 +173,7 @@ function Layout({ children }) {
           shows the same computed "paused since" honesty line the map uses (N1/DS1): nothing when
           analysis is fresh, never a typed/guessed claim. The old topic-count + tagline content
           was dropped (an unbacked freshness claim — CLAUDE.md: no placeholder/fabricated UI). */}
-      {location.pathname !== '/' && paused && (
+      {location.pathname !== ROUTE.map && paused && (
         <div className="gp-strip gp-console">
           <HudStatusLine paused={paused} gdacs={gdacs} />
         </div>

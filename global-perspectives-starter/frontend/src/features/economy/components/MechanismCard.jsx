@@ -4,6 +4,7 @@
 //   impact: full economic_impact record from useEconomicImpact
 
 import { Link } from 'react-router';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import InstrumentChip from '@/features/economy/components/InstrumentChip.jsx';
 import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
 import QualityFlag from '@/features/economy/components/QualityFlag.jsx';
@@ -12,10 +13,9 @@ import '@/features/economy/components/economyBlocks.css';
 
 function EntityLine({ ent }) {
   if (!ent?.name) return null;
-  // Only countries get linked (existing route); sectors/companies stay static
-  const isCountry = ent.type === 'country';
-  const nameNode = isCountry
-    ? <Link className="mc-ent-link" to={`/weekly/country/${encodeURIComponent(ent.name)}`}>{ent.name}</Link>
+  // Only countries get linked (EntityLink renders plain text when the name is not one); sectors/companies stay static
+  const nameNode = ent.type === 'country'
+    ? <EntityLink kind="country" id={ent.name} className="mc-ent-link">{ent.name}</EntityLink>
     : <span className="mc-ent-static">{ent.name}</span>;
   return (
     <li className="mc-ent">

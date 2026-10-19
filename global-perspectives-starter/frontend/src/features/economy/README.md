@@ -25,7 +25,7 @@ markets wrap. The feature also owns the economic hooks and atoms that threads, c
 - `lib/composeEconomyBriefing.js` (deterministic briefing text, loaded by `quality/briefing/verify_*.mjs`),
   `lib/disruptionGate.js` (hides unreliable FX arrows / analogs), `data/economicAnalogs.js(on)` — keep relative imports
 - Public API (`index.js`): `InstrumentChip` (daily), `MechanismCard`, `useEconomicImpact` (threads), `useMarketsCountry` (countries)
-- Imports from other features: none. Shared: `SeverityBadge`, `DirectionArrow`, `@/shared/lib/threadPath`
+- Imports from other features: none. Shared: `SeverityBadge`, `DirectionArrow`, `EntityLink`, `@/shared/lib/links.js` (`storyHref`, `ROUTE`)
 
 ## Backend
 - Generated row: [reference/features.md#economy](../../../../../project-docs/reference/features.md#economy)

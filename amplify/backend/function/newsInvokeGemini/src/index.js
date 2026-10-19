@@ -1,6 +1,6 @@
 'use strict';
 
-const OpenAI = require('openai');
+const { chat } = require('./_shared/llm');
 const { applyEnrichment, annotateSourcesWithMetadata } = require('./source_enrichment');
 
 // AWS SDK v3 is provided by the Lambda Node.js runtime.
@@ -479,7 +479,6 @@ async function captureIngestion(inputArticles, chosenTopics, generationId) {
   }
 }
 
-const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -511,13 +510,6 @@ exports.handler = async (event) => {
     ]);
     console.log(`Seen topics from last 24h: ${seenEntries.length}`);
     console.log(`Past archive titles for threading: ${pastArchiveTitles.length}`);
-
-    // Initialize LLM client (provider-agnostic, OpenAI-SDK compatible).
-    // GROK_API_URL may be a full /chat/completions URL (used by other Lambdas via raw fetch);
-    // the SDK wants only the base, so strip the trailing /chat/completions if present.
-    const rawBase = process.env.GROK_API_URL || 'https://api.x.ai/v1';
-    const baseURL = rawBase.replace(/\/chat\/completions\/?$/, '');
-    const openai = new OpenAI({ apiKey, baseURL });
 
     let prompt;
     if (allArticles && allArticles.length > 0) {
@@ -644,31 +636,26 @@ exports.handler = async (event) => {
 
     console.log('Sending to Grok, article count:', allArticles?.length || 0);
 
-    const result = await openai.chat.completions.create({
+    // Shared llm.js (thinking off). Timeout + 2 transport retries match the OpenAI SDK defaults this replaced.
+    const result = await chat({
+      step: 'topic_selection',
       model: MODEL_NAME,
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a news analyst that returns only valid JSON. No commentary or markdown.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      response_format: { type: 'json_object' },
+      system: 'You are a news analyst that returns only valid JSON. No commentary or markdown.',
+      user: prompt,
+      json: true,
       temperature: 0.5,
       // Raised 8192→12000 (Phase 1b): the added event-fingerprint fields (iso3/actors/event_type)
       // push the heaviest runs near the old ceiling, where truncation-salvage was already firing.
-      max_tokens: 12000,
-      // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
-      // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
-      thinking: { type: 'disabled' },
+      maxTokens: 12000,
+      timeoutMs: 600000,
+      retries: 2,
     });
-    const text = result?.choices?.[0]?.message?.content || '';
-    logUsage('topic_selection', MODEL_NAME, result?.usage);
+    const text = result.content;
 
     console.log(
-      'Grok finish_reason:', result?.choices?.[0]?.finish_reason,
+      'Grok finish_reason:', result.finishReason,
       'chars:', text.length,
-      'completion_tokens:', result?.usage?.completion_tokens,
+      'completion_tokens:', result.usage?.completion_tokens,
     );
     console.log('Grok response preview:', text?.substring(0, 500));
 

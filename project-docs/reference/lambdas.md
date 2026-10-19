@@ -23,7 +23,7 @@ Sources: `scripts/functions.json`, `aws lambda list-functions`, `list-function-u
 | `newsGdacsIngest` | `backend/situations/newsGdacsIngest/src` | nodejs22.x | situations | TriggerGdacsIngest rate(20 minutes) (ENABLED) |  |
 | `newsGdeltConflict` | `backend/situations/newsGdeltConflict/src` | nodejs22.x | situations | TriggerGdeltConflict cron(0 */6 * * ? *) (ENABLED) | deployed zip ships node_modules |
 | `newsImpactAudit` | `backend/monitoring/newsImpactAudit/src` | nodejs22.x | monitoring | TriggerImpactAudit cron(0 9 * * ? *) (DISABLED) |  |
-| `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini/src` | nodejs22.x | pipeline | InvokeGoogleGemini cron(15 4/8 * * ? *) (ENABLED) | deployed zip ships node_modules |
+| `newsInvokeGemini-dev` | `backend/pipeline/newsInvokeGemini/src` | nodejs22.x | pipeline | InvokeGoogleGemini cron(15 4/8 * * ? *) (ENABLED) |  |
 | `newsMarketsData` | `backend/economy-parked/newsMarketsData/src` | nodejs24.x | economy-parked | MarketsDataHourly rate(1 hour) (ENABLED); MarketsMacrosWeekly cron(0 2 ? * SUN *) (ENABLED); MarketsYieldsDaily cron(0 6 ? * MON-FRI *) (ENABLED) |  |
 | `newsModelGuard` | `backend/monitoring/newsModelGuard/src` | nodejs20.x | monitoring | TriggerModelGuard cron(0 12 * * ? *) (ENABLED) |  |
 | `newsPairIntelligence` | `backend/economy-parked/newsPairIntelligence/src` | nodejs24.x | economy-parked | TriggerPairIntelligenceWeekly cron(0 8 ? * MON *) (DISABLED) | deployed zip ships node_modules |

@@ -10,7 +10,7 @@ vi.mock('@/shared/api/errorSink.js', () => ({ reportFetchError: vi.fn() }));
 vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: vi.fn() }));
 
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
-import { __resetWebIndexCache } from '@/features/threads/hooks/useWebIndex.js';
+import { clearMemoryCache } from '@/shared/api/useCachedQuery.js';
 
 const fresh = new Date(Date.now() - 3600 * 1000).toISOString();
 const index = {
@@ -19,7 +19,7 @@ const index = {
   links: [{ from: 'A', to: 'B', confidence: 'strong', lagDays: 3, mechanism: 'm', cited: [{ topicId: 't', date: '2026-09-20', title: 'Cited' }], country: 'Iran', generatedAt: fresh }],
 };
 
-beforeEach(() => { __resetWebIndexCache(); api.fetchWebIndex.mockReset(); api.fetchSystemsAnalysis.mockReset(); });
+beforeEach(() => { clearMemoryCache(); api.fetchWebIndex.mockReset(); api.fetchSystemsAnalysis.mockReset(); });
 
 describe('useStoryLinks', () => {
   it('one web_index call gives the links, and a second story reuses the cache (no second call)', async () => {

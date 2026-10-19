@@ -1,55 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { fetchCountryHistory } from '@/shared/api/restProxy.js';
+import { useCachedQuery } from '@/shared/api/useCachedQuery.js';
 
-const CACHE_KEY = (name) => `gp_country_history_${name}`;
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
+// Correction-history depth gate: the server caps driftNotes for non-members and reports the
+// honest total + whether it withheld any, so the UI can show "+N earlier — join to see all".
 export function useCountryHistory(countryName) {
-  const [snapshots, setSnapshots] = useState([]);
-  const [driftNotes, setDriftNotes] = useState([]); // living-analysis 1b grounded "what changed" notes
-  // Correction-history depth gate: the server caps driftNotes for non-members and reports the
-  // honest total + whether it withheld any, so the UI can show "+N earlier — join to see all".
-  const [driftNotesTotal, setDriftNotesTotal] = useState(0);
-  const [driftNotesGated, setDriftNotesGated] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const key = countryName ? `gp_country_history_${countryName}` : null;
+  const { data, loading, error, refetch } = useCachedQuery(key, async () => {
+    const res = await fetchCountryHistory(countryName);
+    if (!res?.success || !Array.isArray(res.snapshots)) return undefined;
+    const notes = Array.isArray(res.driftNotes) ? res.driftNotes : []; // living-analysis grounded "what changed" notes
+    return {
+      snapshots: [...res.snapshots].sort((a, b) => a.dateKey?.localeCompare(b.dateKey)),
+      driftNotes: notes,
+      total: Number(res.driftNotesTotal) || notes.length,
+      gated: !!res.driftNotesGated,
+    };
+  }, { ttl: CACHE_TTL, storage: 'local' });
 
-  useEffect(() => {
-    if (!countryName) return;
+  // An entry written before useCachedQuery held the snapshots array as `data` (notes beside it):
+  // read it as a miss and fetch once.
+  const legacy = Array.isArray(data);
+  useEffect(() => { if (legacy) refetch(); }, [legacy, refetch]);
+  const d = legacy ? null : data;
 
-    const cacheKey = CACHE_KEY(countryName);
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        const { data, notes, total, gated, ts } = JSON.parse(cached);
-        if (Date.now() - ts < CACHE_TTL) {
-          setSnapshots(Array.isArray(data) ? data : []);
-          setDriftNotes(Array.isArray(notes) ? notes : []);
-          setDriftNotesTotal(Number(total) || (Array.isArray(notes) ? notes.length : 0));
-          setDriftNotesGated(!!gated);
-          return;
-        }
-      }
-    } catch { /* malformed cache */ }
-
-    setLoading(true);
-    fetchCountryHistory(countryName)
-      .then((res) => {
-        if (res?.success && Array.isArray(res.snapshots)) {
-          const sorted = [...res.snapshots].sort((a, b) => a.dateKey?.localeCompare(b.dateKey));
-          const notes = Array.isArray(res.driftNotes) ? res.driftNotes : [];
-          const total = Number(res.driftNotesTotal) || notes.length;
-          const gated = !!res.driftNotesGated;
-          setSnapshots(sorted);
-          setDriftNotes(notes);
-          setDriftNotesTotal(total);
-          setDriftNotesGated(gated);
-          try { localStorage.setItem(cacheKey, JSON.stringify({ data: sorted, notes, total, gated, ts: Date.now() })); } catch { /* storage full */ }
-        }
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [countryName]);
-
-  return { snapshots, driftNotes, driftNotesTotal, driftNotesGated, loading, error };
+  return {
+    snapshots: d?.snapshots ?? [],
+    driftNotes: d?.driftNotes ?? [],
+    driftNotesTotal: d?.total ?? 0,
+    driftNotesGated: d?.gated ?? false,
+    loading,
+    error: error?.message ?? null,
+  };
 }

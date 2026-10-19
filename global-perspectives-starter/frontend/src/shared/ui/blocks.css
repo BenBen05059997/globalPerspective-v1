@@ -72,10 +72,10 @@
 .gp-cat::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--cat-dot, var(--text-dim)); flex: none; }
 .gp-cat[data-dot='off']::before { display: none; }  /* unmapped topic: no dot, never a guessed colour */
 
-/* ---- StoryLink (in-text mention) ---- */
-.gp-storylink--text {
+/* ---- EntityLink / StoryLink (in-text mention) ---- */
+.gp-storylink--text, .gp-entitylink--text {
   color: inherit; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px;
   text-decoration-color: var(--story-hue, var(--accent));
 }
-.gp-storylink--text:hover { color: var(--text-head); }
-.gp-storylink--text:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-xs); }
+.gp-storylink--text:hover, .gp-entitylink--text:hover { color: var(--text-head); }
+.gp-storylink--text:focus-visible, .gp-entitylink--text:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--r-xs); }

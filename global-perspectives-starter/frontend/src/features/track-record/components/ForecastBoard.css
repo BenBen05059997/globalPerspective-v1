@@ -31,7 +31,7 @@
 .tr-fb-cite { color: var(--accent); margin-left: var(--space-2); font-size: var(--text-xs); white-space: nowrap; }
 
 .tr-fb-boardlist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-3); }
-.tr-fb-tile-meta { margin: 0; font-size: var(--text-xs); color: var(--text-muted); }
+.tr-fb-links { display: block; font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1); }
 
 @media (max-width: 640px) {
   .tr-fb-mapgrid { grid-template-columns: 1fr; }

@@ -8,6 +8,9 @@ import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.
 import { buildWeeklySquares, settlingSummary } from '@/features/track-record/lib/settlingLog.js';
 import { itemState, stateMeta } from '@/shared/lib/questionStates.js';
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { ROUTE, forecastAnchorId } from '@/shared/lib/links.js';
+import ForecastLinks from '@/features/track-record/components/ForecastLinks.jsx';
 import '@/features/track-record/TrackRecordText.css';
 
 // TrackRecordText — E1, the plain, printable, screen-reader-first text rendering of the same
@@ -39,7 +42,7 @@ export default function TrackRecordText() {
       <header>
         <p className="tr-text-kicker">TRACK RECORD · TEXT VERSION</p>
         <h1>Accountability</h1>
-        <p><Link to="/track-record">← Full view (map, board, settling log)</Link></p>
+        <p><Link to={ROUTE.trackRecord}>← Full view (map, board, settling log)</Link></p>
         <p>
           We keep score on ourselves. Every forecast is logged the moment it&apos;s made; every read that
           changes is corrected in the open with the event that moved it.
@@ -101,7 +104,7 @@ export default function TrackRecordText() {
             <h3>By place named in the question</h3>
             <ul>
               {places.map((p) => (
-                <li key={p.iso3}>{p.name}: {p.fired} happened, {p.notFired} didn&apos;t, {p.awaiting + p.pastUnchecked} open, {p.void} void</li>
+                <li key={p.iso3}><EntityLink kind="country" id={p.iso3}>{p.name}</EntityLink>: {p.fired} happened, {p.notFired} didn&apos;t, {p.awaiting + p.pastUnchecked} open, {p.void} void</li>
               ))}
             </ul>
           </>
@@ -113,12 +116,13 @@ export default function TrackRecordText() {
               {view.boardItems.map((r) => {
                 const meta = stateMeta(itemState(r));
                 return (
-                  <li key={r.qid}>
+                  <li key={r.qid} id={forecastAnchorId(r.qid)}>
                     <strong>{meta ? meta.label : ''}:</strong> {r.question}
                     {typeof r.p === 'number' ? ` — ${r.p}% when locked` : ''}
                     {r.resolutionSource ? `; source: ${r.resolutionSource}` : ''}
                     {r.deadline ? `; by ${fmtDay(r.deadline)}` : ''}
                     {r.verdict?.url && /^https?:\/\//.test(r.verdict.url) && <> (<a href={r.verdict.url} target="_blank" rel="noreferrer">source</a>)</>}
+                    {' — '}<ForecastLinks item={r} />
                   </li>
                 );
               })}

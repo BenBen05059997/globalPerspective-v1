@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import RadarMap from '@/shared/map/RadarMap.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import Tabs from '@/shared/ui/Tabs.jsx';
 import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.js';
+import ForecastLinks from '@/features/track-record/components/ForecastLinks.jsx';
+import { forecastAnchorId } from '@/shared/lib/links.js';
 import { itemState, stateMeta, VOID_REASON_LABEL } from '@/shared/lib/questionStates.js';
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import '@/features/track-record/components/ForecastBoard.css';
@@ -22,7 +24,8 @@ const NO_COUNTRY_RISK = [];
 const PLACE_HUE = 'var(--accent)';
 const VIEWS = [{ key: 'map', label: 'MAP' }, { key: 'board', label: 'BOARD' }];
 
-// One question: text, frozen %, named source, state, verdict evidence. Used by the panel and the tiles.
+// One question: text, frozen %, named source, state, verdict evidence, then its story and countries.
+// Used by the panel and the tiles.
 function QuestionDetail({ item }) {
   const st = itemState(item);
   const meta = stateMeta(st);
@@ -41,13 +44,22 @@ function QuestionDetail({ item }) {
       {st === 'void' && item.voidReason && <span className="tr-fb-meta">Void: {VOID_REASON_LABEL[item.voidReason] || item.voidReason}.</span>}
       {quote && <span className="tr-fb-quote">&ldquo;{quote}&rdquo;</span>}
       {url && /^https?:\/\//.test(url) && <a href={url} target="_blank" rel="noreferrer" className="tr-fb-cite">source →</a>}
+      <ForecastLinks item={item} className="tr-fb-links" />
     </>
   );
 }
 
-export default function ForecastBoard({ items = [], emptyText = null }) {
-  const [view, setView] = useState('map');
+// `focusQid` (from /track-record?q=<qid>, built by forecastHref): when that question is on the board, the
+// BOARD view opens, scrolls to its tile (DOM id forecastAnchorId(qid)) and highlights it.
+export default function ForecastBoard({ items = [], emptyText = null, focusQid = null }) {
+  const focusOnBoard = Boolean(focusQid) && items.some((it) => it.qid === focusQid);
+  const [view, setView] = useState(focusOnBoard ? 'board' : 'map');
   const [selectedIso3, setSelectedIso3] = useState(null);
+
+  useEffect(() => {
+    if (!focusOnBoard || view !== 'board') return;
+    document.getElementById(forecastAnchorId(focusQid))?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+  }, [focusOnBoard, focusQid, view]);
 
   const places = useMemo(() => forecastPlaceCounts(items), [items]);
   const shading = useMemo(
@@ -99,9 +111,12 @@ export default function ForecastBoard({ items = [], emptyText = null }) {
         <ul className="tr-fb-boardlist">
           {items.length === 0 && <li className="tr-fb-panel-hint">Nothing to show yet.</li>}
           {items.map((it, i) => (
-            <Card as="li" pad="sm" key={it.qid || i}>
+            <Card
+              as="li" pad="sm" key={it.qid || i}
+              id={it.qid ? forecastAnchorId(it.qid) : undefined}
+              selected={Boolean(it.qid) && it.qid === focusQid}
+            >
               <QuestionDetail item={it} />
-              {it.storyTitle || it.title ? <p className="tr-fb-tile-meta">{it.storyTitle || it.title}</p> : null}
             </Card>
           ))}
         </ul>

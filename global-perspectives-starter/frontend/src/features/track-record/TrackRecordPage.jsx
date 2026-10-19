@@ -1,11 +1,13 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useTrackRecord } from '@/features/track-record/hooks/useTrackRecord';
 import { useCorrectionsFeed } from '@/features/track-record/hooks/useCorrectionsFeed';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { FollowButton } from '@/shared/ui/FollowButton';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { ROUTE } from '@/shared/lib/links.js';
 import { buildTrackRecordView } from '@/features/track-record/lib/trackRecordView.js';
 import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import SettlingLog from '@/features/track-record/components/SettlingLog.jsx';
@@ -59,24 +61,24 @@ function CorrectionsLedger() {
     <>
       <ul className="tr-cl-list">
         {notes.map((n, i) => {
-          const to = n.scope === 'country'
-            ? `/weekly/country/${encodeURIComponent(n.name)}`
-            : `/weekly/thread/${encodeURIComponent(n.name)}`;
+          const country = n.scope === 'country';
           return (
             <Card as="li" key={i}>
               <div className="tr-cl-top">
-                <span className="tr-cl-scope">{n.scope === 'country' ? 'Country' : 'Story'}</span>
-                <Link className="tr-cl-name" to={to}>{n.scope === 'country' ? n.name : `thread ${String(n.name).slice(0, 24)}…`}</Link>
+                <span className="tr-cl-scope">{country ? 'Country' : 'Story'}</span>
+                <EntityLink className="tr-cl-name" kind={country ? 'country' : 'story'} id={n.name}>
+                  {country ? n.name : `thread ${String(n.name).slice(0, 24)}…`}
+                </EntityLink>
                 <span className="tr-cl-delta">{changeLabel(n)}</span>
                 <span className="tr-cl-date">{fmtDay(n.asOf)}</span>
-                {n.scope === 'country' && (
+                {country && (
                   <span className="tr-cl-follow"><FollowButton country={n.name} /></span>
                 )}
               </div>
               {n.noSingleDriver ? (
                 <p className="tr-cl-why nsd">No single driver — a gradual shift across the coverage, not one event.</p>
               ) : safeTriggerEvent(n)?.title ? (
-                <p className="tr-cl-why">↳ Because: <strong>{safeTriggerEvent(n).title}</strong>
+                <p className="tr-cl-why">↳ Because: <strong><EntityLink kind="story" id={safeTriggerEvent(n).threadId} topic={{ title: safeTriggerEvent(n).title }}>{safeTriggerEvent(n).title}</EntityLink></strong>
                   {safeTriggerEvent(n).date ? <span className="tr-cl-evdate"> · {fmtDay(safeTriggerEvent(n).date)}</span> : null}
                 </p>
               ) : safeWhy(n) ? (
@@ -103,7 +105,11 @@ export default function TrackRecordPage() {
   // Phone P1: READ (the record + method) / MAP (the forecast board) / LOG (settling log + ledger). One
   // switch; desktop shows every section in one scroll as before.
   const isPhone = useIsPhone();
-  const [phoneTab, setPhoneTab] = useState('read');
+  // ?q=<qid> (forecastHref): one forecast to show. The board opens on it, so on a phone the MAP tab
+  // (where the board lives) opens first.
+  const [searchParams] = useSearchParams();
+  const focusQid = searchParams.get('q');
+  const [phoneTab, setPhoneTab] = useState(focusQid ? 'map' : 'read');
 
   if (loading) return <BootLoader variant="inline" label="Loading the track record" text="Loading the track record" />;
 
@@ -209,8 +215,14 @@ export default function TrackRecordPage() {
         </p>
         {view.boardText && <p className="tr-gap-note" data-notready="board">{view.boardText}</p>}
         <Suspense fallback={<BootLoader variant="inline" className="gp-boot--tight" label="Loading the forecast board" text="Loading the forecast board" />}>
-          <ForecastBoard items={view.boardItems} />
+          <ForecastBoard items={view.boardItems} focusQid={focusQid} />
         </Suspense>
+        {focusQid && !view.boardItems.some((it) => it.qid === focusQid) && (
+          <p className="tr-gap-note">
+            The forecast this link points to is not on the board: only questions drawn into the most recent
+            weekly samples are listed here.
+          </p>
+        )}
         {view.pilot.length > 0 && (
           <details className="tr-pilot-details">
             <summary>July pilot examples ({view.pilot.length} most recent; archived, not scored)</summary>
@@ -318,7 +330,7 @@ export default function TrackRecordPage() {
           falsifiable triggers; every read that changes is corrected in the open with the event that moved it.
           This page is the running record — the forecasts scored, and the analysis corrected — not a marketing claim.
         </p>
-        <p className="tr-textlink"><Link to="/track-record/text">Read as text →</Link></p>
+        <p className="tr-textlink"><Link to={`${ROUTE.trackRecord}/text`}>Read as text →</Link></p>
       </header>
 
 

@@ -113,6 +113,36 @@ describe('150 resolved: the score, with wording gated by the interval', () => {
   });
 });
 
+describe('?q=<qid>: one forecast addressed (forecastHref)', () => {
+  const item = (o = {}) => ({
+    qid: 'q1', weekId: '2026-W41', storyTitle: 'Kenya Confirms First Ebola Case', question: 'Kenya begins ring vaccination',
+    p: 40, deadline: '2026-10-30', state: 'awaiting', clusterKey: 'thread-dr-congo-ebola-outbreak-surpas-d5acb9', ...o,
+  });
+  const at = (q, sampled) => {
+    trackRecordValue = { data: legacy({ questions: questions({ sampled }) }), loading: false, error: null };
+    return render(<MemoryRouter initialEntries={[`/track-record?q=${q}`]}><TrackRecordPage /></MemoryRouter>);
+  };
+
+  it('opens the board on that question, anchored and highlighted, linked to its story and country', async () => {
+    at('q1', [item(), item({ qid: 'q2', clusterKey: 'Some topic-3', storyTitle: 'Untitled topic', question: 'Nothing named' })]);
+    const tile = await screen.findByText('Kenya begins ring vaccination', {}, { timeout: 10000 });
+    const card = tile.closest('li');
+    expect(card.id).toBe('q-q1');
+    expect(card.className).toMatch(/gp-card--selected/);
+    expect(screen.getByRole('link', { name: 'Kenya Confirms First Ebola Case' }).getAttribute('href'))
+      .toBe('/weekly/thread/thread-dr-congo-ebola-outbreak-surpas-d5acb9');
+    expect(screen.getAllByRole('link', { name: 'Kenya' })[0].getAttribute('href')).toBe('/weekly/country/Kenya');
+    // a topic-id clusterKey is not an address: the title stays plain text
+    expect(screen.getByText('Untitled topic').tagName).toBe('SPAN');
+    expect(screen.queryByText(/not on the board/)).not.toBeInTheDocument();
+  });
+
+  it('says so honestly when the qid is not among the sampled questions', async () => {
+    at('gone', [item()]);
+    expect(await screen.findByText(/The forecast this link points to is not on the board/, {}, { timeout: 10000 })).toBeInTheDocument();
+  });
+});
+
 describe('an old cached or fallback response with no questions block', () => {
   it('renders Stage 0 and the pilot, never crashes', () => {
     trackRecordValue = { data: legacy(), loading: false, error: null };

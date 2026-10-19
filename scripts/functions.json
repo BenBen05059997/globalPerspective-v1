@@ -228,7 +228,7 @@
       "dir": "backend/pipeline/newsInvokeGemini",
       "runtime": "nodejs22.x",
       "group": "pipeline",
-      "features": ["today", "stories", "map"],
+      "features": ["home", "threads", "map"],
       "nodeModules": false,
       "schedules": [
         {
@@ -370,7 +370,7 @@
       "dir": "backend/predictions/newsPredictionsSnapshot",
       "runtime": "nodejs22.x",
       "group": "predictions",
-      "features": ["track-record", "today"],
+      "features": ["track-record", "home"],
       "nodeModules": false,
       "schedules": [
         {
@@ -385,7 +385,7 @@
       "dir": "amplify/backend/function/NewsProjectInvokeAgentLambda",
       "runtime": "nodejs22.x",
       "group": "pipeline",
-      "features": ["today", "stories", "map", "countries", "analysis-studio", "briefings", "track-record"],
+      "features": ["home", "threads", "map", "countries", "analysis-studio", "briefings", "track-record"],
       "nodeModules": false,
       "schedules": [
         {
@@ -432,7 +432,7 @@
       "dir": "backend/read-api/newsSensitiveData",
       "runtime": "nodejs22.x",
       "group": "read-api",
-      "features": ["today", "stories", "map", "countries", "daily", "weekly-brief", "briefings", "analysis-studio", "track-record", "account", "economy"],
+      "features": ["home", "threads", "map", "countries", "daily", "weekly-brief", "briefings", "analysis-studio", "track-record", "account", "economy"],
       "nodeModules": false,
       "schedules": []
     },
@@ -479,7 +479,7 @@
       "dir": "backend/situations/newsSituationTracker",
       "runtime": "nodejs22.x",
       "group": "situations",
-      "features": ["map", "stories"],
+      "features": ["map", "threads"],
       "nodeModules": false,
       "schedules": [
         {
@@ -509,7 +509,7 @@
       "dir": "backend/pipeline/newsSystemsAnalysis",
       "runtime": "nodejs22.x",
       "group": "pipeline",
-      "features": ["countries", "stories"],
+      "features": ["countries", "threads"],
       "nodeModules": true,
       "schedules": [
         {
@@ -524,7 +524,7 @@
       "dir": "backend/pipeline/newsThreadAnalysis",
       "runtime": "nodejs24.x",
       "group": "pipeline",
-      "features": ["stories", "map", "analysis-studio"],
+      "features": ["threads", "map", "analysis-studio"],
       "nodeModules": false,
       "schedules": [
         {

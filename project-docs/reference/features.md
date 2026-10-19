@@ -6,7 +6,7 @@ Sources: `src/features/*`, routes from `src/app/App.jsx`, `features` lists in `s
 
 13 feature folders under `global-perspectives-starter/frontend/src/features/`. Dependency direction (eslint `no-restricted-imports`): app → features → shared. Each folder's README.md is the front door and links to its section here.
 
-Lambdas: those whose `features` in functions.json name the folder (`today` = home, `stories` = threads); a row does not mean the page calls it directly — the read API Lambdas serve many features. Writes: S3 prefixes found in a source file that also puts objects; DynamoDB tables named in a Put/Update/Delete/BatchWrite command (`env KEY` when no name is known). Shared code in `backend/shared` and keys built only from variables are not attributed; deployed zips that differ from the repo are not scanned.
+Lambdas: those whose `features` in functions.json name the folder; a row does not mean the page calls it directly — the read API Lambdas serve many features. Writes: S3 prefixes found in a source file that also puts objects; DynamoDB tables named in a Put/Update/Delete/BatchWrite command (`env KEY` when no name is known). Shared code in `backend/shared` and keys built only from variables are not attributed; deployed zips that differ from the repo are not scanned.
 
 | Feature | Routes | Lambdas |
 |---|---|---|

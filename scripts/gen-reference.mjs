@@ -270,13 +270,12 @@ let routes;
   files['s3-prefixes.md'] = md;
 
   // features.md: one section per feature folder, so a feature check starts in one place (its README links here).
-  // Lambdas: functions.json `features` (product names; two differ from their folder). Storage: what those
+  // Lambdas: functions.json `features` (feature folder names). Storage: what those
   // Lambdas write — S3 prefixes found in a source file that also puts objects, DynamoDB tables named in a
   // write command (shared code in backend/shared is not attributed). Heuristic over repo source.
-  const FOLDER = { today: 'home', stories: 'threads' };
   const featDir = join(SRC, 'features');
   const feats = readdirSync(featDir).filter((d) => statSync(join(featDir, d)).isDirectory()).sort();
-  const featuresOf = (n) => (FUNCTIONS[n].features || []).map((f) => FOLDER[f] || f);
+  const featuresOf = (n) => (FUNCTIONS[n].features || []);
   const unknown = [...new Set(NAMES.flatMap(featuresOf))].filter((f) => f !== 'ops' && !feats.includes(f));
   const textOf = (() => { const cache = {}; return (f) => (cache[f] ??= readFileSync(f, 'utf8')); })();
   const S3_WRITE = /PutObjectCommand|CopyObjectCommand|\bputJson\b|\bputObj\b|\bs3PutJson\b/;
@@ -368,7 +367,7 @@ let routes;
   });
   let fmd = header('Frontend features', '`src/features/*`, routes from `src/app/App.jsx`, `features` lists in `scripts/functions.json`, Lambda source (S3/DynamoDB writes, heuristic), runbook titles, decision records' + (live ? ', schedules + `*TABLE` env values from live AWS' : ''));
   fmd += `\n${feats.length} feature folders under \`global-perspectives-starter/frontend/src/features/\`. Dependency direction (eslint \`no-restricted-imports\`): app → features → shared. Each folder's README.md is the front door and links to its section here.\n\n`;
-  fmd += 'Lambdas: those whose `features` in functions.json name the folder (`today` = home, `stories` = threads); a row does not mean the page calls it directly — the read API Lambdas serve many features. Writes: S3 prefixes found in a source file that also puts objects; DynamoDB tables named in a Put/Update/Delete/BatchWrite command (`env KEY` when no name is known). Shared code in `backend/shared` and keys built only from variables are not attributed; deployed zips that differ from the repo are not scanned.\n\n';
+  fmd += 'Lambdas: those whose `features` in functions.json name the folder; a row does not mean the page calls it directly — the read API Lambdas serve many features. Writes: S3 prefixes found in a source file that also puts objects; DynamoDB tables named in a Put/Update/Delete/BatchWrite command (`env KEY` when no name is known). Shared code in `backend/shared` and keys built only from variables are not attributed; deployed zips that differ from the repo are not scanned.\n\n';
   fmd += table(['Feature', 'Routes', 'Lambdas'], summary) + '\n\n';
   if (unknown.length) fmd += `functions.json names features with no folder: ${unknown.map(code).join(', ')}.\n\n`;
   fmd += sections.join('\n\n') + '\n';

@@ -1,43 +1,5 @@
-/* Story-entry blocks shared by the thread page (Timeline tab), the /weekly Map view's thread panel and
-   the country page. Role and scale tokens only (tokens.css).
-   Class names other features still read: .weekly-gate* (account/AuthCallback.jsx), .story-entry-source-tag,
-   .story-entry-ai-content, .story-entry-section-text (countries/CountryPage.jsx). */
-
-/* ===== SIGN-IN GATE (account/AuthCallback.jsx) ===== */
-.weekly-gate {
-  max-width: 480px;
-  margin: var(--space-12) auto;
-  text-align: center;
-}
-.weekly-gate-icon { font-size: var(--text-4xl); margin-bottom: var(--space-4); }
-.weekly-gate h2 {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-bold);
-  color: var(--text-head);
-}
-.weekly-gate p {
-  margin: 0 0 var(--space-6);
-  font-size: var(--text-base);
-  line-height: var(--leading-normal);
-  color: var(--text-muted);
-}
-/* Kept for AuthCallback's "Try again" link until it moves to <Button variant="primary">. */
-.weekly-gate-submit {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap-min);
-  padding: 0 var(--space-5);
-  border: 1px solid var(--accent);
-  border-radius: var(--r-sm);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-  cursor: pointer;
-  transition: background var(--fast) var(--ease);
-}
-.weekly-gate-submit:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+/* Story-entry blocks shared by the thread page (Timeline tab) and the /weekly Map view's thread panel.
+   Role and scale tokens only (tokens.css). Only threads reads these classes. */
 
 /* ===== CHEVRON (CompactTimeline rows) ===== */
 .story-card-chevron {

@@ -7,7 +7,7 @@ EventBridge rule `TriggerDailyAnalysis`, `cron(40 4 * * ? *)` UTC, no input.
 Repo source: `backend/pipeline/newsThreadAnalysis/src/`.
 
 ## What it means
-For multi-day story threads in the last 30 days of archive, writes `THREAD#<id>` / `THREAD_ANALYSIS` and `THREAD_HISTORY#<date>` in `SUMMARIZE_PREDICT_TABLE`; LLM (`GROK_MODEL`); Brave grounding only when `BRAVE_SEARCH_API_KEY` is set, and it is not set live (2026-10-19); at most `MAX_THREADS`.
+For multi-day story threads in the last 30 days of archive, writes `THREAD#<id>` / `THREAD_ANALYSIS` and `THREAD_HISTORY#<date>` in `SUMMARIZE_PREDICT_TABLE`; LLM (`GROK_MODEL`), no web search; at most `MAX_THREADS`.
 
 ## Check
 - Schedule state: `aws events describe-rule --name TriggerDailyAnalysis --region ap-northeast-1`

@@ -74,8 +74,7 @@ Paths are named, not linked; search for them.
 ### Backend — `backend/<group>/<dir>/src/`
 
 Lambdas are grouped by feature (decision 0024): `backend/<group>/<dir>/` with `src/`, `test/` and a
-README. Three still sit in the historical `amplify/backend/function/` folder: `newsAnalyze` and
-`newsPolarBilling` (billing; moving them needs an operator yes) and `NewsProjectInvokeAgentLambda`.
+README; the last three left the historical `amplify/` folder on 2026-10-19 (operator decision).
 Nothing is deployed with Amplify. Each Lambda is deployed by hand (see Deploy below).
 `scripts/functions.json` maps each deployed name to its repo dir (`dir`, relative to the repo root;
 every tool reads it from there), runtime, feature group and schedules. Names that surprise:
@@ -86,7 +85,7 @@ every tool reads it from there), runtime, feature group and schedules. Names tha
   suffix is production.
 - `newsPostLinkedIn` deploys as `newsPostLinkedin` (lower-case "in").
 - The Scheduler entry for country intelligence is named `countryIntelliegence` (typo is real).
-- `amplify/backend/function/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling`
+- `backend/membership-studio/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling`
   (no repo src of their own).
 - `newsAnalyze/deployed-snapshot/` is a copy of what actually runs; `newsAnalyze/src/` is not it.
 
@@ -231,9 +230,9 @@ the operator confirms each draft with `predictions/settle-review.js`. Records ar
 writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE` plus a dated `HISTORY#<date>` snapshot.
 `newsDriftCorrector` (daily) compares snapshots; when a risk level, score (|Δ| ≥ 8) or trajectory
 moves, it grounds the move in a real archived event and writes a note (`DRIFT#<date>` with a 60-day
-TTL, permanent `DRIFTLOG#<date>`). The original analysis is never overwritten. Brave news grounding
-is coded in `newsCountryIntelligence`, `newsThreadAnalysis` and the agent Lambda but off live: none has
-`BRAVE_SEARCH_API_KEY` set (checked 2026-10-19).
+TTL, permanent `DRIFTLOG#<date>`). The original analysis is never overwritten. None of these, nor the agent Lambda, runs a web
+search: their unkeyed Brave code was deleted 2026-10-19. Brave is used only by
+`newsPredictionResolver` (and the dormant `newsPairIntelligence`), which have the key.
 
 Risk tiers are 0–24 low, 25–49 moderate, 50–74 elevated, 75–100 high: `src/shared/lib/riskTiers.js`
 on the frontend, `tierFromScore` in `riskDimensions.js` on the backend.

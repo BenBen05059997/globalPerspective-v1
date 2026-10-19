@@ -14,14 +14,14 @@ Status: active.
 - Cost: the research job is ~50–65% of DeepSeek spend (~$0.35–0.50/day, est.); ~90% of it is the two v4-pro calls per story (research ~900 out, forecast ~1,200 out). Same-title reuse (2026-10-05) reuses 0–3 stories per run because topic selection rewords headlines. Balance ran out 2026-10-12 → 10-15 (4th silent lapse); the top-up of 09-30 lasted ~12 days (~$0.75/day all callers).
 
 **Root cause (code + references):**
-1. `buildResearchPrompt` (`amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js`) demands "Be specific — name real people, institutions, treaties, and dates" and an UPCOMING DEADLINES list "in the next 1–3 months … Include specific dates where known". Nothing in the inputs carries a calendar (headline, snippets, FACTS# leaders, arc digest; the Brave web step is off — no key since 2026-09-10). The only source is model memory, which ends before Oct 2026, so the model fills the list with plausible guesses. Models are trained/graded so a confident guess beats "I don't know" ([OpenAI, Why language models hallucinate](https://openai.com/index/why-language-models-hallucinate/)), and are weakest on events past their data, often hallucinating instead of declining ([LLMLagBench](https://arxiv.org/pdf/2511.12116)).
+1. `buildResearchPrompt` (`backend/pipeline/NewsProjectInvokeAgentLambda/src/index.js`) demands "Be specific — name real people, institutions, treaties, and dates" and an UPCOMING DEADLINES list "in the next 1–3 months … Include specific dates where known". Nothing in the inputs carries a calendar (headline, snippets, FACTS# leaders, arc digest; the Brave web step is off — no key since 2026-09-10). The only source is model memory, which ends before Oct 2026, so the model fills the list with plausible guesses. Models are trained/graded so a confident guess beats "I don't know" ([OpenAI, Why language models hallucinate](https://openai.com/index/why-language-models-hallucinate/)), and are weakest on events past their data, often hallucinating instead of declining ([LLMLagBench](https://arxiv.org/pdf/2511.12116)).
 2. `buildPredictionPrompt` says "Using the research briefing above…", so invented dates become stated reasons.
 3. The JSON schema shows `"probability_range": "e.g. '55-65%'"` and `"horizon": "e.g. '2-4 weeks'"`; models anchor on numbers placed in the prompt, and prompt-only mitigations barely help ([Anchors in the Machine](https://arxiv.org/pdf/2511.05766), [SynAnchors](https://arxiv.org/pdf/2505.15392)).
 
 **Reads / references:**
-- `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` (`buildResearchPrompt`, `buildPredictionPrompt`, `generateAndStore`, `ensureStored`, `findSiblingItem`, `touchItem`, `logPredictionSnapshot`, `assignThreadId`, `readPastArchiveEntries`), `lib.js` (`decideReuse`, `validateTrigger` G1–G6, `buildGatedScenarios`, `METHODOLOGY_VERSION`), `questions.js` (G7–G12)
+- `backend/pipeline/NewsProjectInvokeAgentLambda/src/index.js` (`buildResearchPrompt`, `buildPredictionPrompt`, `generateAndStore`, `ensureStored`, `findSiblingItem`, `touchItem`, `logPredictionSnapshot`, `assignThreadId`, `readPastArchiveEntries`), `lib.js` (`decideReuse`, `validateTrigger` G1–G6, `buildGatedScenarios`, `METHODOLOGY_VERSION`), `questions.js` (G7–G12)
 - `git show 120de90:project-docs/archive/prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md` (deleted 2026-10-19), `git show 120de90:project-docs/archive/prediction/PREDICTION_V1_EXAMPLE.md` (deleted 2026-10-19)
-- `amplify/backend/function/newsModelGuard/src/index.js` (daily 12:00 UTC, SNS `GlobalPerspectiveAlerts`)
+- `backend/monitoring/newsModelGuard/src/index.js` (daily 12:00 UTC, SNS `GlobalPerspectiveAlerts`)
 - `backend/pipeline/newsInvokeGemini/src/index.js` (`captureIngestion` → S3 `audit/ingest-capture/`: SAW vs CHOSE per run), `git show 120de90:project-docs/archive/pipeline-ingest/IMPACT_VALIDATION_METHODOLOGY.md` (deleted 2026-10-19)
 - `project-docs/runbooks/DEEPSEEK_COST_ESTIMATE.md`, memory `project_deepseek_cost`
 - Consumers: `RESEARCH_BRIEFING` is served by `newsSensitiveData` (`research_briefing` action) but no frontend page calls `fetchResearchBriefingCache` → safe to stop producing.
@@ -92,10 +92,10 @@ Dead/removable (simplicity rule, separate cleanup): `description` (never written
 Success bar for P7d: hindsight recall ≥ ours, big misses < ours, non-Western recall not worse than ours, blind review not worse than ours, shadow week with 0 failed runs.
 
 **Changes (code):**
-- `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` (P1 prompt + single call; P3 threadId reuse + PRED gap; P4 usage logging)
-- `amplify/backend/function/NewsProjectInvokeAgentLambda/src/lib.js` (P2 G13 in `buildGatedScenarios`; P3 reuse decision; version constant)
-- `amplify/backend/function/NewsProjectInvokeAgentLambda/test/lib.test.js` (+ new tests)
-- `amplify/backend/function/newsModelGuard/src/index.js` (P5)
+- `backend/pipeline/NewsProjectInvokeAgentLambda/src/index.js` (P1 prompt + single call; P3 threadId reuse + PRED gap; P4 usage logging)
+- `backend/pipeline/NewsProjectInvokeAgentLambda/src/lib.js` (P2 G13 in `buildGatedScenarios`; P3 reuse decision; version constant)
+- `backend/pipeline/NewsProjectInvokeAgentLambda/test/lib.test.js` (+ new tests)
+- `backend/monitoring/newsModelGuard/src/index.js` (P5)
 - P4 usage logging in: `newsSituationIngest/src/index.js`, `newsInvokeGemini/src/index.js`, `newsSystemsAnalysis/src/*`, `newsCountryIntelligence/src/*`, `newsThreadAnalysis/src/*`, `newsWeeklyBrief/src/*`, `newsPostDevTo/src/*` (diff each deployed zip against the repo first)
 - New: `predictions/forecast-ab/run.mjs`, `predictions/forecast-ab/REPORT_2026-10-17.md` (P0); `predictions/jev-backtest/*` (P6)
 

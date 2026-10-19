@@ -21,7 +21,7 @@ g init -q -b main
 g config user.email "test@example.com"
 g config user.name "Test"
 mkdir -p "$WORK/.githooks" "$WORK/quality" "$WORK/docs" "$WORK/scripts" \
-  "$WORK/amplify/backend/function/newsFoo/src" "$WORK/global-perspectives-starter/frontend/src/features/foo"
+  "$WORK/backend/pipeline/newsFoo/src" "$WORK/global-perspectives-starter/frontend/src/features/foo"
 cp "$HOOK_SRC" "$WORK/.githooks/pre-commit"
 chmod +x "$WORK/.githooks/pre-commit"
 g config core.hooksPath .githooks
@@ -43,8 +43,8 @@ fi
 g reset -q; rm -f "$WORK/docs/config.js"
 
 # (b) code change without a CHANGES.md entry passes (CHANGES.md is frozen; no changelog rule)
-echo "console.log(1)" > "$WORK/amplify/backend/function/newsFoo/src/index.js"
-g add amplify/backend/function/newsFoo/src/index.js
+echo "console.log(1)" > "$WORK/backend/pipeline/newsFoo/src/index.js"
+g add backend/pipeline/newsFoo/src/index.js
 commit_ok "lambda code only" && pass "(b) code change without CHANGES.md passes" || fail "(b) should pass: $(cat "$WORK/.log")"
 
 # (c) frontend source + a failing ratchet is blocked, and the check's output is shown

@@ -36,7 +36,6 @@ const SUMMARY_TTL_SECONDS = parseInt(process.env.SUMMARY_PREDICT_TTL_SECONDS || 
 const PREDICTION_TTL_SECONDS = parseInt(process.env.PREDICTION_TTL_SECONDS || '259200', 10);
 const PREDICTION_LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
 // v1 (methodology-v1) generation inputs — see PREDICTION_METHODOLOGY_V1_PLAN.md §3.
-const BRAVE_SEARCH_API_KEY = process.env.BRAVE_SEARCH_API_KEY || '';
 const FACTS_PK_PREFIX = 'FACTS#';
 const FACTS_SK = 'COUNTRY_FACTS';
 const ARC_DIGEST_DAYS = parseInt(process.env.ARC_DIGEST_DAYS || '7', 10);
@@ -464,7 +463,7 @@ function buildTraceCausePrompt(topic, generatedDate) {
 // scheduled event in the model's output against exactly this, so build it in one place.
 function forecastInputText(topic, v1 = {}) {
   const snippets = (topic.sources || []).map(s => `${s.source || ''} ${s.snippet || ''}`);
-  return [topic.title, topic.description, ...snippets, v1.arcDigest, v1.premiseBlock, v1.webContext].filter(Boolean).join('\n');
+  return [topic.title, topic.description, ...snippets, v1.arcDigest, v1.premiseBlock].filter(Boolean).join('\n');
 }
 
 function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}) {
@@ -489,7 +488,6 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}) {
     v1.premiseBlock || '',
     v1.arcDigest ? `\nHow this story has evolved (our archive, dated — use to ground trajectory, do not restate):\n${v1.arcDigest}\n` : '',
     snippetBlock,
-    v1.webContext ? `\nLive web context (fresh search — treat as leads, cite the outlet, do not over-trust):\n${v1.webContext}\n` : '',
     'CALENDAR RULE (strict): your training data ends before today, so you do NOT know the calendar ahead. Use a specific date, or the name of a scheduled event (summit, session, meeting, election, treaty expiry, review), ONLY if it appears in the Article Snippets, the dated archive digest or the verified facts above. If no scheduled date is known, say "no scheduled date known" — that is a correct, useful answer. Never fill a gap with a plausible date from memory. The "deadline" of a trigger is your own forecast window, not a claim, so you may choose it freely.',
     '',
     'Work in this order and WRITE each step into the JSON (nothing is done silently):',
@@ -652,13 +650,12 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
     prompt = buildTraceCausePrompt(topic, generatedDate);
   } else {
     // Single grounded forecast call (2026-10-17; was research briefing + forecast). Inputs are the
-    // story's own snippets, verified FACTS# premises, the dated arc digest from our archive and
-    // optional live Brave context; the prompt forbids any date / scheduled event not in them and
+    // story's own snippets, verified FACTS# premises and the dated arc digest from our archive;
+    // the prompt forbids any date / scheduled event not in them and
     // G13 (lib.buildGatedScenarios) enforces it on the output.
     const v1 = {
       premiseBlock: buildPremiseBlock(topic, ctx.factsByCountry),
       arcDigest: buildArcDigest(topic, ctx.pastEntries),
-      webContext: await braveGroundResearch(topic),
     };
     inputText = forecastInputText(topic, v1);
     prompt = buildPredictionPrompt(topic, generatedDate, generatedYear, v1);
@@ -941,26 +938,6 @@ function buildArcDigest(topic, pastEntries = []) {
   rows.sort((a, b) => String(a.date).localeCompare(String(b.date)));
   if (!rows.length) return '';
   return rows.slice(-ARC_DIGEST_MAX).map(r => `- ${r.date || '(undated)'}: ${r.title}`).join('\n');
-}
-
-// Optional live web grounding for the forecast call (1a). No-ops without BRAVE_SEARCH_API_KEY,
-// and never throws into generation — a failed/absent search just yields no web context.
-async function braveGroundResearch(topic) {
-  if (!BRAVE_SEARCH_API_KEY) return '';
-  const q = [topic.title, ...(topic.search_keywords || [])].filter(Boolean).join(' ').slice(0, 380);
-  if (!q) return '';
-  try {
-    const url = `https://api.search.brave.com/res/v1/news/search?q=${encodeURIComponent(q)}&count=5&freshness=pw`;
-    const res = await fetch(url, { headers: { Accept: 'application/json', 'X-Subscription-Token': BRAVE_SEARCH_API_KEY } });
-    if (!res.ok) return '';
-    const data = await res.json();
-    const items = (data?.results || []).slice(0, 5)
-      .map(r => `- (${r.meta_url?.hostname || r.source || 'web'}) ${r.title}${r.age ? ` [${r.age}]` : ''}`);
-    return items.join('\n');
-  } catch (err) {
-    console.warn(`Brave grounding failed for "${topic.title?.slice(0, 40)}": ${err.message}`);
-    return '';
-  }
 }
 
 // Immutable daily snapshot of a prediction so it survives its 1h cache TTL and

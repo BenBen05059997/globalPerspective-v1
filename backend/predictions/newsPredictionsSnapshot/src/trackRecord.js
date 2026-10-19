@@ -3,7 +3,7 @@
 // trackRecord — pure aggregation for the forecast track-record. NO AWS, NO network.
 //
 // KEEP IN SYNC with the fallback in newsSensitiveData `prediction_track_record`
-// (amplify/backend/function/newsSensitiveData/src/index.js). This builder precomputes the exact
+// (backend/read-api/newsSensitiveData/src/index.js). This builder precomputes the exact
 // same `data` object every 30 min → `predictions/track_record.json`, so the proxy serves a cached
 // object instead of Scanning ~5.5k PredictionLog items on every /track-record page load (S8·T3).
 // The proxy keeps the identical computation as a fallback for when the cache is absent.

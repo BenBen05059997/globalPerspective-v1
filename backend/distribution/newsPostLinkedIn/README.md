@@ -17,9 +17,10 @@ Posts new topics from the `latest` topics item to LinkedIn and Bluesky. Each pla
 ## Gotchas
 - Throws if any of the three table env names is missing; with no platform credentials it returns `skipped`.
 - A map-image failure does not block the post.
+- A platform that attempted posts and posted none makes the run throw after all platforms run (`Every attempted post failed on <PLATFORM>`), so the `lambda-errors-newsPostLinkedin` alarm fires; partial success returns normally.
 - `nostr-tools` and `ws` are dependencies but unused by the code.
 
 ## Tests
-- None.
+- `cd backend/distribution/newsPostLinkedIn/src && npm test` (`node --test ../test/*.test.js`, offline; DynamoDB, map image and fetch stubbed): 5 pass.
 
 Last verified: 2026-10-19

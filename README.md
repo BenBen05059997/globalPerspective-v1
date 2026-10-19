@@ -12,7 +12,7 @@ AI-powered global-news intelligence platform — [globalperspective.net](https:/
 | Rules and conventions | `project-docs/rules/` (e.g. `TASK_WORKFLOW.md`, `DATA_STRATEGY.md`) |
 | How to run / check a job | `project-docs/runbooks/` |
 | Frontend source | `global-perspectives-starter/frontend/src/` — `app/` (chrome/routing) + `shared/` (cross-feature) + `features/<name>/`; see ARCHITECTURE.md's Frontend Path map |
-| Lambda source | `backend/<group>/<name>/src/` (path per Lambda: `scripts/functions.json` `dir`; three still in `amplify/backend/function/`) |
+| Lambda source | `backend/<group>/<name>/src/` (path per Lambda: `scripts/functions.json` `dir`) |
 
 ## Traps — do NOT assume
 

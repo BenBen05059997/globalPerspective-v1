@@ -1,8 +1,8 @@
 {
-  "_about": "news* Lambda inventory for scripts/lambda.sh. Deployed name -> repo dir (<dir>/src, relative to the repo root: backend/<group>/<name>, or amplify/backend/function/<name> for the three not yet moved), runtime, feature group, product features served (`features`: site features that read what the Lambda writes or serves, `ops` for monitoring/test-only, empty when nothing on the site reads it), whether the deployed zip ships node_modules, and EventBridge rules / Scheduler schedules (UTC unless tz). Read from live AWS (ap-northeast-1) 2026-10-19; live AWS wins over this file.",
+  "_about": "news* Lambda inventory for scripts/lambda.sh. Deployed name -> repo dir (<dir>/src, relative to the repo root: backend/<group>/<name>), runtime, feature group, product features served (`features`: site features that read what the Lambda writes or serves, `ops` for monitoring/test-only, empty when nothing on the site reads it), whether the deployed zip ships node_modules, and EventBridge rules / Scheduler schedules (UTC unless tz). Read from live AWS (ap-northeast-1) 2026-10-19; live AWS wins over this file.",
   "functions": {
     "newsAnalyze": {
-      "dir": "amplify/backend/function/newsAnalyze",
+      "dir": "backend/membership-studio/newsAnalyze",
       "runtime": "nodejs20.x",
       "group": "membership-studio",
       "features": ["analysis-studio"],
@@ -17,7 +17,7 @@
       "features": ["ops"],
       "nodeModules": false,
       "schedules": [],
-      "deployBlocked": "Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh."
+      "deployBlocked": "Sandbox twin; deploy with backend/membership-studio/_sandbox/deploy-sandbox.sh."
     },
     "newsBreakingAlert": {
       "dir": "backend/distribution/newsBreakingAlert",
@@ -302,7 +302,7 @@
       ]
     },
     "newsPolarBilling": {
-      "dir": "amplify/backend/function/newsPolarBilling",
+      "dir": "backend/membership-studio/newsPolarBilling",
       "runtime": "nodejs20.x",
       "group": "membership-studio",
       "features": ["account"],
@@ -316,7 +316,7 @@
       "features": ["ops"],
       "nodeModules": false,
       "schedules": [],
-      "deployBlocked": "Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh."
+      "deployBlocked": "Sandbox twin; deploy with backend/membership-studio/_sandbox/deploy-sandbox.sh."
     },
     "newsPostDevTo": {
       "dir": "backend/distribution/newsPostDevTo",
@@ -382,7 +382,7 @@
       ]
     },
     "NewsProjectInvokeAgentLambda-dev": {
-      "dir": "amplify/backend/function/NewsProjectInvokeAgentLambda",
+      "dir": "backend/pipeline/NewsProjectInvokeAgentLambda",
       "runtime": "nodejs22.x",
       "group": "pipeline",
       "features": ["home", "threads", "map", "countries", "analysis-studio", "briefings", "track-record"],

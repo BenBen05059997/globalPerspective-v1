@@ -400,18 +400,6 @@ export async function createCheckout(plan) {
   return polarRequest('create_checkout', { plan });
 }
 
-// Create a one-time credit-pack checkout (pack = a key from window.POLAR_CREDIT_PACKS).
-export async function createCreditCheckout(pack) {
-  return polarRequest('create_checkout', { kind: 'credits', pack });
-}
-
-// Credit packs the operator has configured (set in docs/config.js). Each entry:
-// { key, label?, credits, price? }. Empty/unset ⇒ buy-credits UI shows an honest "coming soon".
-export function creditPacks() {
-  const packs = (typeof window !== 'undefined' && window.POLAR_CREDIT_PACKS) || [];
-  return Array.isArray(packs) ? packs : [];
-}
-
 // Current membership for the signed-in user: { tier, status, currentPeriodEnd, creditBalance }.
 export async function fetchMembership() {
   return polarRequest('get_membership');

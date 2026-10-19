@@ -25,6 +25,6 @@ prompt-patched and pre-credits (see `deployed-snapshot/README.md`); `src/` carri
 - Repo src does not send `thinking: { type: 'disabled' }`; the deployed code does.
 
 ## Tests
-- `cd amplify/backend/function/newsAnalyze/src && npm test` (`node --test ../test/lib.test.js`): 5 pass.
+- `cd backend/membership-studio/newsAnalyze/src && npm test` (`node --test ../test/lib.test.js`): 5 pass.
 
 Last verified: 2026-10-19

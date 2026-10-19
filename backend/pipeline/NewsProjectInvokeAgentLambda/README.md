@@ -4,8 +4,7 @@ Per-cycle story generator. Loads the `staging` topics, generates (or reuses) a s
 grounded forecast per topic (`action` summary|prediction|trace_cause|both, default both), assigns
 threadIds against 7 days of archive, builds the story-to-thread map, swaps `staging` to `latest`, writes
 the archive rows, prunes old-generation cache rows, and marks `staging` processed (`agentProcessedAt`).
-Forecasts get FACTS# leaders and an arc digest as grounding; Brave news (`api.search.brave.com`) is added only
-when `BRAVE_SEARCH_API_KEY` is set, and it is not set live (checked 2026-10-19). Payload options: `topicId`, `readOnly`, `force` (ignore run guard), `dryRun` (plan only).
+Forecasts get FACTS# leaders and an arc digest as grounding (no live web search). Payload options: `topicId`, `readOnly`, `force` (ignore run guard), `dryRun` (plan only).
 
 ## Deployment
 - Deployed name `NewsProjectInvokeAgentLambda-dev` · runtime `nodejs22.x` · group `pipeline` (scripts/functions.json)
@@ -25,6 +24,6 @@ when `BRAVE_SEARCH_API_KEY` is set, and it is not set live (checked 2026-10-19).
 - Run guard: a `staging` already marked `agentProcessedAt` is skipped unless `force`, `topicId`, `readOnly` or `dryRun`. `http()` emits `Access-Control-Allow-Origin: *` (scheduler-invoked). `package.json` lists Bedrock SDK deps the code does not use.
 
 ## Tests
-- `cd amplify/backend/function/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 56 pass.
+- `cd backend/pipeline/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 56 pass.
 
 Last verified: 2026-10-19

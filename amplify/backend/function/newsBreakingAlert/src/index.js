@@ -16,7 +16,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } = require('@aws-sdk/lib-dynamodb');
 const { scoreStory, effectiveThreshold, SIGNIFICANCE_THRESHOLD, regionRiskScore } = require('./significance');
 const { renderAlert } = require('./render');
-const { usableCountryRecord } = require('./placeFilter');
+const { usableCountryRecord } = require('./_shared/placeFilter');
 const { sendEmail } = require('./sendEmail');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';

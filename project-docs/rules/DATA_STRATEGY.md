@@ -62,7 +62,7 @@ Global Perspective tables: the 5 above plus 7 world tables not yet migrated (§6
 | `threads/story-map.json` (storyId ↔ threadId) | `NewsProjectInvokeAgentLambda` (matcher) | each story run (8h) | `newsSituationTracker` (stamps `threadId`) |
 | `tags/backfill/2026-09-11.json` | one-off matcher backfill; writer not in the repo | — | none |
 | `fixtures/` | humans | — | local dev, Worker smoke |
-| `signals/latest.json`, `signals/snapshots/YYYY-MM-DD.json` | `newsSignals` | daily build (cron-only) | `newsSignals` SERVE only — **never** the Worker (paid, key-gated product) |
+| `signals/latest.json`, `signals/snapshots/YYYY-MM-DD.json` | `newsSignals` | daily build (cron-only; parked, decisions/0032) | `newsSignals` SERVE only — **never** the Worker (paid, key-gated product) |
 | `corpus/gdacs/latest.json` | `newsGdacsIngest` | each 20-min run | `newsImpactAudit` |
 | `corpus/gdelt/<day>.json` | `newsGdeltConflict` | each run (overwrite per day) | `newsImpactAudit` |
 | `audit/impact/<date>.json`, `audit/impact/latest.json` | `newsImpactAudit` | daily — parked (schedule DISABLED, decisions/0015) | audit trail / operator |
@@ -98,7 +98,7 @@ Lifecycle additions: `signals/snapshots/` → Glacier IR 30d, expire 365d (`sign
 ```
 
 - The page shows the **oldest** `sources.*` stamp as its freshness line. `stale:true` → whole-map grey-out + banner.
-- Tiers are canonical `low | moderate | elevated | high` (`utils/riskTiers.js`). There is no `critical`; the map renders "critical" as `tier:high && escalating:true`.
+- Tiers are canonical `low | moderate | elevated | high` (`src/shared/lib/riskTiers.js`). There is no `critical`; the map renders "critical" as `tier:high && escalating:true`.
 - Per-situation detail (history, evidence, spillover) is in `situations/state/<key>.json`, fetched on click — where `<key>` is the situationId made URL/S3-safe (`gdacs#FL#1104081` → `gdacs_FL_1104081`; `#` is unsafe in keys/paths). Both the tracker (writer) and `worldData.js` (reader) apply the same sanitization.
 - The Worker returns `Access-Control-Allow-Origin` on **every** `/data/*` response including 404/401, so a missing object reads as a clean 404 client-side, not a CORS failure.
 - The scrubber fetches `world/YYYY/MM/DD/HHMM.json`.

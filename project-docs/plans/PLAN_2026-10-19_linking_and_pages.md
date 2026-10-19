@@ -176,16 +176,16 @@ operator's yes.
   never-shown fields (`situationSummary`, `dominantCategory`, `activeArcCount`, `latencyMs`, `model`, `usage`,
   the DRIFT `current*` fields); unused proxy actions `RESEARCH_BRIEFING`, `pair_analysis`.
 - Signals API: builds daily (`TriggerSignalsBuild` 10:00 UTC), 0 keys issued (`GlobalPerspectiveApiKeys`), no page
-  reads it. Operator decision: delete or keep.
+  reads it. Operator 2026-10-19: PARK — disable `TriggerSignalsBuild` (schedule change, needs a yes when run), keep
+  the code and the Function URL; add it to `runbooks/parked-jobs.md` and decision 0015's list.
 
 ## Usage evidence (read API logs, 7 days to 2026-10-19; `.board/linking/usage.md`)
 No page views exist in the repo; the read API logs only API calls with an Origin. Over 7 days of browser traffic:
 Stories pages are the most active (~10–30 loads/day); the map ~6–20 sessions/day; country pages ~4 loads/day;
 `/today` 6 direct hits in the week and its on-click Predict / Trace Cause calls: 0; `/daily` and `/weekly-brief`
 cannot be separated from the map and `/briefings` (they share the same calls); track record low; Studio 0 member
-runs and 0 shares. Open for the operator: the debate kept `/today` for its Predict and Trace Cause buttons, which
-nobody used in the window — keep `/today` (ruling) or fold it into the map after all. GA4 is the only source of
-true page views if a firmer answer is wanted.
+runs and 0 shares. Operator 2026-10-19: `/today` stays (the site has no users yet; usage numbers do not decide
+this; it can be promoted later). GA4 is the only source of true page views if a firmer answer is ever wanted.
 
 ## Briefings merge facts (`.board/linking/briefings_and_map.md`)
 What moves into Read / Weekly / Present is itemised with file:line. Still without a home: a weekly archive (the

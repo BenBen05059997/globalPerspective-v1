@@ -379,6 +379,7 @@ must_have "$T/lib/countryFrame.js" "export function frameViewBox" "country hero 
 must_have "$T/components/WeeklyMap.jsx" "frameBounds" "the country map frames the country (Google fitBounds + SVG viewBox)"
 # 10 · /today copy promises only what is live (change-alert emails are off)
 must_not_have "$SRC/features/home/Home.jsx" "change-alerts|change alerts" "/today does not promise change-alert emails (the drift cron is off)"
+must_not_have "$SRC/features/account/MembershipPage.jsx" "[Cc]hange-alerts|alerts when a country" "/membership does not promise change-alert emails (the drift cron is off)"
 
 # ─── P7b (2026-10-02): Stories WEB view; /spider-demo retired into it ───
 must_not_have_unless() { # lines matching $2 that do not also match $3 (e.g. "caused" only inside 'never "caused"')

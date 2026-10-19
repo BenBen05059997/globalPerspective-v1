@@ -11,9 +11,10 @@ const PLANS = [
   { id: 'yearly', name: 'Annual', price: '$150', cadence: '/year', note: '2 months free vs. monthly.', best: true },
 ];
 
+// Only what is live today: the country change-alert emails are off (drift-email cron disabled),
+// so they are not listed until they send.
 const BENEFITS = [
   'The full self-correction history on every country & thread — how each read changed over time, not just the latest note',
-  'Change-alerts: get emailed when a country you follow materially changes, grounded in the event that moved it',
   'Run the Analysis Studio on our compute — custom analyses without your own AI key, within a daily fair-use limit',
   'You fund independent, self-correcting intelligence — and keep the analysis free for everyone else',
 ];
@@ -47,8 +48,7 @@ export default function MembershipPage() {
         <h1>Global Perspectives Membership</h1>
         <p className="mp-sub">
           Every analysis and our public track record stay free to read. Membership adds the depth —
-          the full history of how each read changed, alerts when a country you follow moves, and
-          your own analyses on our compute.
+          the full history of how each read changed, and your own analyses on our compute.
         </p>
       </header>
 

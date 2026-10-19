@@ -443,8 +443,7 @@ must_have "$SRC/features/map/components/StoryCard.jsx" "linkMentions\\(" "the ca
 must_have "$SRC/features/map/lib/cardMentions.js" "MIN_TITLE_CHARS" "mention matching has a minimum title length (no guesswork on short titles)"
 must_not_have "$SRC/features/map/lib/cardMentions.js" "levenshtein|fuzzy|similar|soundex" "mention matching has no fuzzy matching"
 must_have "$SRC/features/map/SituationHome.jsx" "webThreads=\\{webIndex" "the console passes the loaded web index titles to the story card"
-# 2 · StoryPeek wherever a story is named: one shared EntityLink (StoryLink is its story case)
-must_have "$SRC/shared/ui/StoryLink.jsx" "EntityLink" "StoryLink is the story case of EntityLink"
+# 2 · StoryPeek wherever a story is named: one shared EntityLink
 must_have "$SRC/shared/ui/EntityLink.jsx" "usePeek" "EntityLink is built on usePeek"
 must_have "$SRC/shared/ui/EntityLink.jsx" "<StoryPeek" "EntityLink renders the shared StoryPeek for stories"
 if grep -A4 "const openOnFocus" "$SRC/shared/hooks/usePeek.js" | grep -q "hasNoHoverCapability"; then
@@ -453,7 +452,7 @@ else
   FAIL=$((FAIL + 1)); FAILED+=("usePeek.openOnFocus must skip touch devices"); echo "  $(red FAIL) usePeek.openOnFocus does not skip touch devices"
 fi
 for f in features/countries/components/CountryCardV2.jsx features/threads/components/StoriesTimeline.jsx features/threads/ThreadPage.jsx features/briefings/components/WeeklyMode.jsx features/home/Home.jsx features/home/components/LedeBand.jsx features/briefings/components/ReadMode.jsx features/briefings/components/BriefingSlides.jsx features/account/components/SavedPanel.jsx features/account/components/DeskSinceLastVisit.jsx features/analysis-studio/SharedAnalysisPage.jsx features/countries/CountryPage.jsx features/threads/components/FedIntoList.jsx features/threads/components/StoriesChanged.jsx features/threads/components/StoriesWeb.jsx; do
-  must_have "$SRC/$f" "StoryLink|EntityLink" "$f names stories through EntityLink / StoryLink (StoryPeek)"
+  must_have "$SRC/$f" "EntityLink" "$f names stories through EntityLink (StoryPeek)"
 done
 # 3 · status line: computed from the newest generation time; approved wording
 must_have "$SRC/features/map/components/HudStatusLine.jsx" "New stories and analysis paused since" "status line wording is the approved one"

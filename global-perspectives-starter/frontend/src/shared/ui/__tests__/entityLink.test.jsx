@@ -80,6 +80,87 @@ describe('EntityLink', () => {
   });
 });
 
+// The story case: a router link to the story that opens the shared StoryPeek on hover (after a short delay) /
+// keyboard focus, closes on leave / Esc, shows nothing without a title to preview, never opens on touch.
+describe('EntityLink kind="story"', () => {
+  const TOPIC = { title: 'Strait of Hormuz closure', category: 'conflict', regions: ['Iran'], sources: 3 };
+  const story = (props = {}) => mount(<EntityLink kind="story" id="thread-a-1" topic={TOPIC} {...props}>Open it</EntityLink>);
+  const setTouch = (hoverNone) => {
+    window.matchMedia = vi.fn().mockImplementation((q) => ({ matches: hoverNone && q === '(hover: none)', media: q, addEventListener() {}, removeEventListener() {} }));
+  };
+
+  it('is a normal link to the story path (storyHref, with options)', () => {
+    story({ pathOpts: { from: 'country', country: 'Iran' } });
+    expect(screen.getByRole('link', { name: 'Open it' })).toHaveAttribute('href', '/weekly/thread/thread-a-1?from=country&country=Iran');
+    expect(screen.getByRole('link')).toHaveClass('gp-storylink');
+  });
+
+  it('an explicit `to` wins over the thread id', () => {
+    story({ to: '/weekly/thread/x-1?tab=economy' });
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/weekly/thread/x-1?tab=economy');
+  });
+
+  it('no thread id and no `to`: plain text, never a guessed link', () => {
+    story({ id: null, className: 'x' });
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getByText('Open it')).toHaveClass('x');
+  });
+
+  it('hover opens the peek after the delay, with the headline, place, sources and the hint; leave closes it', () => {
+    vi.useFakeTimers();
+    setTouch(false);
+    story({ hint: 'Open in a new tab' });
+    const a = screen.getByRole('link');
+    fireEvent.mouseEnter(a);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    act(() => { vi.advanceTimersByTime(300); });
+    const tip = screen.getByRole('tooltip');
+    expect(tip).toHaveTextContent('Strait of Hormuz closure');
+    expect(tip).toHaveTextContent('Iran');
+    expect(tip).toHaveTextContent('3 sources');
+    expect(tip).toHaveTextContent('Open in a new tab');
+    expect(a).toHaveAttribute('aria-describedby', tip.id);
+    fireEvent.mouseLeave(a);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('keyboard focus opens it instantly and Esc closes it', () => {
+    setTouch(false);
+    story();
+    const a = screen.getByRole('link');
+    fireEvent.focus(a);
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('opens nothing on a touch device (hover: none), neither on hover nor on the focus a tap causes', () => {
+    vi.useFakeTimers();
+    setTouch(true);
+    story();
+    const a = screen.getByRole('link');
+    fireEvent.mouseEnter(a);
+    fireEvent.focus(a);
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(a).toHaveAttribute('href', '/weekly/thread/thread-a-1');
+  });
+
+  it('without a title there is nothing to preview: a plain link, never a placeholder peek', () => {
+    setTouch(false);
+    story({ topic: null });
+    fireEvent.focus(screen.getByRole('link'));
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('inline mentions carry the story hue as a CSS variable', () => {
+    story({ inline: true });
+    const a = screen.getByRole('link');
+    expect(a.className).toContain('gp-storylink--text');
+    expect(a.style.getPropertyValue('--story-hue')).not.toBe('');
+  });
+});
+
 describe('ClaimTag (shared)', () => {
   it('fact / inference / judgment wording; unknown kind renders nothing', () => {
     const { container } = render(<><ClaimTag kind="fact" /><ClaimTag kind="inference" /><ClaimTag kind="judgment" /><ClaimTag kind="opinion" /></>);

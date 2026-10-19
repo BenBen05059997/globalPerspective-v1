@@ -26,7 +26,6 @@ import { useTrackRecord, useCorrectionsFeed } from '@/features/track-record';
 import { composeTopicsLede } from '@/features/home/lib/composeTopicsLede';
 import '@/features/home/AIComponents.css';
 import '@/features/home/Home.css';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
@@ -481,7 +480,7 @@ function Home() {
 
                 <h3>
                   {t.threadId
-                    ? <StoryLink threadId={t.threadId} topic={t}>{t.title}</StoryLink>
+                    ? <EntityLink kind="story" id={t.threadId} topic={t}>{t.title}</EntityLink>
                     : t.title
                   }
                   {t.threadId && (

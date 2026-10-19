@@ -14,7 +14,6 @@ import SharedSectionHeader from '@/shared/ui/SectionHeader.jsx';
 import ShareButtons from '@/shared/ui/ShareButtons';
 import CopyBriefing, { formatDailyBrief } from '@/shared/ui/CopyBriefing';
 import { SaveButton } from '@/shared/ui/SaveButton';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import Trajectory from '@/features/briefings/components/Trajectory.jsx';
 import BriefingError from '@/features/briefings/components/BriefingError.jsx';
@@ -105,7 +104,7 @@ function RisingThreadCard({ thread }) {
     </>
   );
   return threadId
-    ? <StoryLink threadId={threadId} topic={{ title: thread.title }} className="daily-highlight">{body}</StoryLink>
+    ? <EntityLink kind="story" id={threadId} topic={{ title: thread.title }} className="daily-highlight">{body}</EntityLink>
     : <div className="daily-highlight">{body}</div>;
 }
 
@@ -301,7 +300,7 @@ export default function ReadMode({ dateParam }) {
                       )}
                     </div>
                     <h3 className="daily-story-h4">
-                      {threadId ? <StoryLink threadId={threadId} topic={peekInputForStory(story)}>{story.title}</StoryLink> : story.title}
+                      {threadId ? <EntityLink kind="story" id={threadId} topic={peekInputForStory(story)}>{story.title}</EntityLink> : story.title}
                     </h3>
                   </div>
                   {hasPred && (

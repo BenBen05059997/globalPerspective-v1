@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import { buildDeskRows, isStaleSince, readLastVisit, writeLastVisit } from '@/features/account/lib/desk';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { ROUTE } from '@/shared/lib/links.js';
 import Card from '@/shared/ui/Card.jsx';
@@ -87,7 +86,7 @@ export default function DeskSinceLastVisit({ isMember, followedCountries, countr
           </div>
           {r.triggerTitle && (
             <div className="desk-row-after">
-              After: {r.triggerHref ? <StoryLink to={r.triggerHref} topic={{ title: r.triggerTitle }}>{r.triggerTitle}</StoryLink> : r.triggerTitle}
+              After: {r.triggerHref ? <EntityLink kind="story" to={r.triggerHref} topic={{ title: r.triggerTitle }}>{r.triggerTitle}</EntityLink> : r.triggerTitle}
               {r.triggerDateLabel ? ` (${r.triggerDateLabel})` : ''}
             </div>
           )}

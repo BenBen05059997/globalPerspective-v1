@@ -4,9 +4,9 @@
 //
 // Props: the spread result of composeTopicsLede() — { empty, lede, topicCount,
 // countryCount, threadCount }. The headline links into the story-arc analysis
-// via the shared threadPath() helper.
+// via EntityLink (storyHref).
 import '@/features/home/components/LedeBand.css';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 
 export default function LedeBand({
   empty,
@@ -24,7 +24,7 @@ export default function LedeBand({
   // Link into the story-arc analysis ONLY when the topic carries a real threadId.
   // No fallback link — an unlinked headline is honest; a guessed destination is not.
   const headline = lede.threadId
-    ? <StoryLink threadId={lede.threadId} topic={lede} className="lede-headline-link">{lede.title} →</StoryLink>
+    ? <EntityLink kind="story" id={lede.threadId} topic={lede} className="lede-headline-link">{lede.title} →</EntityLink>
     : <span className="lede-headline-text">{lede.title}</span>;
 
   return (

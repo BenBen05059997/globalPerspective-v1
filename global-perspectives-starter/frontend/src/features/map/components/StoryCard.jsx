@@ -11,10 +11,9 @@
 //     news, INFERENCE = model judgment. A stored cause step carries no citation, so every step is an
 //     INFERENCE; nothing here is ever tagged FACT without data that makes it one.
 //   - in-text links: an exact title of another story in the story-web index (`webThreads`, loaded by
-//     the console) inside the card's text becomes a StoryLink (cardMentions.js); no other matching.
+//     the console) inside the card's text becomes an EntityLink (cardMentions.js); no other matching.
 import { useMemo } from 'react';
 import { Link } from 'react-router';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
 import { knownStoryTitles, linkMentions } from '@/features/map/lib/cardMentions.js';
 import { useStoryCardData } from '@/features/map/hooks/useStoryCardData.js';
 import { summaryFacts, firstSentences } from '@/shared/lib/cardText.js';
@@ -35,11 +34,11 @@ function fmtDate(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-// A card text with its exact story-title mentions turned into StoryLinks (StoryPeek on hover/focus).
+// A card text with its exact story-title mentions turned into EntityLinks (StoryPeek on hover/focus).
 function Mentions({ text, known }) {
   const segs = useMemo(() => linkMentions(text, known), [text, known]);
   return segs.map((seg, i) => (seg.threadId
-    ? <StoryLink key={i} inline threadId={seg.threadId} topic={{ title: seg.text }} data-mention={seg.threadId}>{seg.text}</StoryLink>
+    ? <EntityLink kind="story" key={i} inline id={seg.threadId} topic={{ title: seg.text }} data-mention={seg.threadId}>{seg.text}</EntityLink>
     : <span key={i}>{seg.text}</span>));
 }
 
@@ -138,7 +137,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
                 <p className="sc-text">
                   Judged to feed into:{' '}
                   {linkedInto.map((l, i) => (
-                    <span key={l.id}>{i > 0 ? ' · ' : ''}<StoryLink inline threadId={l.id} topic={{ title: l.title }}>{l.title}</StoryLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
+                    <span key={l.id}>{i > 0 ? ' · ' : ''}<EntityLink kind="story" inline id={l.id} topic={{ title: l.title }}>{l.title}</EntityLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
                   ))}
                 </p>
               ) : null}
@@ -146,7 +145,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
                 <p className="sc-text">
                   Earlier news judged to feed in:{' '}
                   {linkedFrom.map((l, i) => (
-                    <span key={l.id}>{i > 0 ? ' · ' : ''}<StoryLink inline threadId={l.id} topic={{ title: l.title }}>{l.title}</StoryLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
+                    <span key={l.id}>{i > 0 ? ' · ' : ''}<EntityLink kind="story" inline id={l.id} topic={{ title: l.title }}>{l.title}</EntityLink>{l.confidence ? ` (${l.confidence})` : ''}</span>
                   ))}
                 </p>
               ) : null}

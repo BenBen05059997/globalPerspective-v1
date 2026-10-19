@@ -1,10 +1,11 @@
 {
-  "_about": "news* Lambda inventory for scripts/lambda.sh. Deployed name -> repo dir (<dir>/src, relative to the repo root: backend/<group>/<name>, or amplify/backend/function/<name> for the three not yet moved), runtime, feature group, whether the deployed zip ships node_modules, and EventBridge rules / Scheduler schedules (UTC unless tz). Read from live AWS (ap-northeast-1) 2026-10-19; live AWS wins over this file.",
+  "_about": "news* Lambda inventory for scripts/lambda.sh. Deployed name -> repo dir (<dir>/src, relative to the repo root: backend/<group>/<name>, or amplify/backend/function/<name> for the three not yet moved), runtime, feature group, product features served (`features`: site features that read what the Lambda writes or serves, `ops` for monitoring/test-only, empty when nothing on the site reads it), whether the deployed zip ships node_modules, and EventBridge rules / Scheduler schedules (UTC unless tz). Read from live AWS (ap-northeast-1) 2026-10-19; live AWS wins over this file.",
   "functions": {
     "newsAnalyze": {
       "dir": "amplify/backend/function/newsAnalyze",
       "runtime": "nodejs20.x",
       "group": "membership-studio",
+      "features": ["analysis-studio"],
       "nodeModules": false,
       "schedules": [],
       "deployBlocked": "Deployed zip is prompt-patched; the repo carries parked credits code. Needs a fresh go-live decision (CLAUDE.md)."
@@ -13,6 +14,7 @@
       "dir": null,
       "runtime": "nodejs20.x",
       "group": "membership-studio",
+      "features": ["ops"],
       "nodeModules": false,
       "schedules": [],
       "deployBlocked": "Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh."
@@ -21,6 +23,7 @@
       "dir": "backend/distribution/newsBreakingAlert",
       "runtime": "nodejs22.x",
       "group": "distribution",
+      "features": ["breaking"],
       "nodeModules": false,
       "schedules": [
         {
@@ -35,6 +38,7 @@
       "dir": "backend/read-api/newsClientErrors",
       "runtime": "nodejs24.x",
       "group": "read-api",
+      "features": ["ops"],
       "nodeModules": false,
       "schedules": []
     },
@@ -42,6 +46,7 @@
       "dir": "backend/pipeline/newsCountryFactsUpdater",
       "runtime": "nodejs24.x",
       "group": "pipeline",
+      "features": ["countries"],
       "nodeModules": false,
       "schedules": [
         {
@@ -57,6 +62,7 @@
       "dir": "backend/pipeline/newsCountryIntelligence",
       "runtime": "nodejs24.x",
       "group": "pipeline",
+      "features": ["countries", "map"],
       "nodeModules": false,
       "schedules": [
         {
@@ -72,6 +78,7 @@
       "dir": "backend/pipeline/newsDriftCorrector",
       "runtime": "nodejs20.x",
       "group": "pipeline",
+      "features": ["countries", "account", "analysis-studio"],
       "nodeModules": false,
       "schedules": [
         {
@@ -86,6 +93,7 @@
       "dir": "backend/economy-parked/newsEconomicImpact",
       "runtime": "nodejs22.x",
       "group": "economy-parked",
+      "features": ["economy"],
       "nodeModules": true,
       "schedules": [
         {
@@ -100,6 +108,7 @@
       "dir": "backend/economy-parked/newsEconomicQuality",
       "runtime": "nodejs22.x",
       "group": "economy-parked",
+      "features": ["economy"],
       "nodeModules": true,
       "schedules": [
         {
@@ -114,6 +123,7 @@
       "dir": "backend/distribution/newsEmailSender",
       "runtime": "nodejs20.x",
       "group": "distribution",
+      "features": ["weekly-brief", "breaking", "account"],
       "nodeModules": false,
       "schedules": [
         {
@@ -143,6 +153,7 @@
       "dir": "backend/monitoring/newsErrorDigest",
       "runtime": "nodejs24.x",
       "group": "monitoring",
+      "features": ["ops"],
       "nodeModules": true,
       "schedules": [
         {
@@ -157,6 +168,7 @@
       "dir": "backend/monitoring/newsFreshnessMonitor",
       "runtime": "nodejs24.x",
       "group": "monitoring",
+      "features": ["ops"],
       "nodeModules": true,
       "schedules": [
         {
@@ -171,6 +183,7 @@
       "dir": "backend/situations/newsGdacsIngest",
       "runtime": "nodejs22.x",
       "group": "situations",
+      "features": ["map"],
       "nodeModules": false,
       "schedules": [
         {
@@ -185,6 +198,7 @@
       "dir": "backend/situations/newsGdeltConflict",
       "runtime": "nodejs22.x",
       "group": "situations",
+      "features": ["ops"],
       "nodeModules": true,
       "schedules": [
         {
@@ -199,6 +213,7 @@
       "dir": "backend/monitoring/newsImpactAudit",
       "runtime": "nodejs22.x",
       "group": "monitoring",
+      "features": ["ops"],
       "nodeModules": false,
       "schedules": [
         {
@@ -213,7 +228,8 @@
       "dir": "backend/pipeline/newsInvokeGemini",
       "runtime": "nodejs22.x",
       "group": "pipeline",
-      "nodeModules": true,
+      "features": ["today", "stories", "map"],
+      "nodeModules": false,
       "schedules": [
         {
           "via": "scheduler",
@@ -228,6 +244,7 @@
       "dir": "backend/economy-parked/newsMarketsData",
       "runtime": "nodejs24.x",
       "group": "economy-parked",
+      "features": ["economy"],
       "nodeModules": false,
       "schedules": [
         {
@@ -257,6 +274,7 @@
       "dir": "backend/monitoring/newsModelGuard",
       "runtime": "nodejs20.x",
       "group": "monitoring",
+      "features": ["ops"],
       "nodeModules": false,
       "schedules": [
         {
@@ -271,6 +289,7 @@
       "dir": "backend/economy-parked/newsPairIntelligence",
       "runtime": "nodejs24.x",
       "group": "economy-parked",
+      "features": [],
       "nodeModules": true,
       "schedules": [
         {
@@ -286,6 +305,7 @@
       "dir": "amplify/backend/function/newsPolarBilling",
       "runtime": "nodejs20.x",
       "group": "membership-studio",
+      "features": ["account"],
       "nodeModules": false,
       "schedules": []
     },
@@ -293,6 +313,7 @@
       "dir": null,
       "runtime": "nodejs20.x",
       "group": "membership-studio",
+      "features": ["ops"],
       "nodeModules": false,
       "schedules": [],
       "deployBlocked": "Sandbox twin; deploy with amplify/backend/function/_sandbox/deploy-sandbox.sh."
@@ -301,6 +322,7 @@
       "dir": "backend/distribution/newsPostDevTo",
       "runtime": "nodejs24.x",
       "group": "distribution",
+      "features": ["daily", "briefings"],
       "nodeModules": true,
       "schedules": [
         {
@@ -316,6 +338,7 @@
       "dir": "backend/distribution/newsPostLinkedIn",
       "runtime": "nodejs24.x",
       "group": "distribution",
+      "features": [],
       "nodeModules": true,
       "schedules": [
         {
@@ -331,6 +354,7 @@
       "dir": "backend/predictions/newsPredictionResolver",
       "runtime": "nodejs22.x",
       "group": "predictions",
+      "features": ["track-record"],
       "nodeModules": false,
       "schedules": [
         {
@@ -346,6 +370,7 @@
       "dir": "backend/predictions/newsPredictionsSnapshot",
       "runtime": "nodejs22.x",
       "group": "predictions",
+      "features": ["track-record", "today"],
       "nodeModules": false,
       "schedules": [
         {
@@ -360,6 +385,7 @@
       "dir": "amplify/backend/function/NewsProjectInvokeAgentLambda",
       "runtime": "nodejs22.x",
       "group": "pipeline",
+      "features": ["today", "stories", "map", "countries", "analysis-studio", "briefings", "track-record"],
       "nodeModules": false,
       "schedules": [
         {
@@ -375,6 +401,7 @@
       "dir": "backend/read-api/newsRecommend",
       "runtime": "nodejs20.x",
       "group": "read-api",
+      "features": ["account", "breaking"],
       "nodeModules": false,
       "schedules": []
     },
@@ -382,6 +409,7 @@
       "dir": "backend/read-api/newsSavedItems",
       "runtime": "nodejs24.x",
       "group": "read-api",
+      "features": ["account"],
       "nodeModules": true,
       "schedules": []
     },
@@ -389,6 +417,7 @@
       "dir": "backend/pipeline/newsSelectionShadow",
       "runtime": "nodejs22.x",
       "group": "pipeline",
+      "features": ["ops"],
       "nodeModules": false,
       "schedules": [
         {
@@ -403,6 +432,7 @@
       "dir": "backend/read-api/newsSensitiveData",
       "runtime": "nodejs22.x",
       "group": "read-api",
+      "features": ["today", "stories", "map", "countries", "daily", "weekly-brief", "briefings", "analysis-studio", "track-record", "account", "economy"],
       "nodeModules": false,
       "schedules": []
     },
@@ -410,6 +440,7 @@
       "dir": "backend/read-api/newsSharedAnalysis",
       "runtime": "nodejs22.x",
       "group": "read-api",
+      "features": ["analysis-studio"],
       "nodeModules": false,
       "schedules": []
     },
@@ -417,6 +448,7 @@
       "dir": "backend/read-api/newsSignals",
       "runtime": "nodejs22.x",
       "group": "read-api",
+      "features": [],
       "nodeModules": false,
       "schedules": [
         {
@@ -432,6 +464,7 @@
       "dir": "backend/situations/newsSituationIngest",
       "runtime": "nodejs22.x",
       "group": "situations",
+      "features": ["map"],
       "nodeModules": false,
       "schedules": [
         {
@@ -446,6 +479,7 @@
       "dir": "backend/situations/newsSituationTracker",
       "runtime": "nodejs22.x",
       "group": "situations",
+      "features": ["map", "stories"],
       "nodeModules": false,
       "schedules": [
         {
@@ -460,6 +494,7 @@
       "dir": "backend/monitoring/newsSourceAudit",
       "runtime": "nodejs22.x",
       "group": "monitoring",
+      "features": ["ops"],
       "nodeModules": false,
       "schedules": [
         {
@@ -474,6 +509,7 @@
       "dir": "backend/pipeline/newsSystemsAnalysis",
       "runtime": "nodejs22.x",
       "group": "pipeline",
+      "features": ["countries", "stories"],
       "nodeModules": true,
       "schedules": [
         {
@@ -488,6 +524,7 @@
       "dir": "backend/pipeline/newsThreadAnalysis",
       "runtime": "nodejs24.x",
       "group": "pipeline",
+      "features": ["stories", "map", "analysis-studio"],
       "nodeModules": false,
       "schedules": [
         {
@@ -502,6 +539,7 @@
       "dir": "backend/distribution/newsWeeklyBrief",
       "runtime": "nodejs20.x",
       "group": "distribution",
+      "features": ["weekly-brief", "briefings"],
       "nodeModules": false,
       "schedules": [
         {
@@ -516,6 +554,7 @@
       "dir": "backend/economy-parked/newsWeeklyMarkets",
       "runtime": "nodejs20.x",
       "group": "economy-parked",
+      "features": ["economy"],
       "nodeModules": false,
       "schedules": [
         {

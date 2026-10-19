@@ -16,6 +16,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 const { keepDayZero } = require('./_shared/dayZero');
 const { chat } = require('./_shared/llm');
+const { resolveIso3 } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
 const dir = require('./directionCheck');
 const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse, changeDimensionsFrom, axisMoves } = require('./lib');
 
@@ -29,7 +30,7 @@ const DRIFT_TTL_DAYS = parseInt(process.env.DRIFT_TTL_DAYS || '60', 10);
 const LOOKBACK_DAYS = parseInt(process.env.DRIFT_LOOKBACK_DAYS || '10', 10); // only note RECENT moves
 const MAX_EVENTS = parseInt(process.env.DRIFT_MAX_EVENTS || '25', 10);
 const COUNTRIES = (process.env.DRIFT_COUNTRIES
-  || 'Iran,Israel,United States,Venezuela,China,Japan,Ukraine,Russia,France,Germany,Democratic Republic of the Congo,South Africa')
+  || 'Iran,Israel,United States,Venezuela,China,Japan,Ukraine,Russia,France,Germany,DR Congo,South Africa')
   .split(',').map((s) => s.trim()).filter(Boolean);
 
 const COUNTRY_PK = (n) => `COUNTRY#${n}`;
@@ -65,11 +66,12 @@ async function readCountryEvents(country, fromDate, toDate) {
     let Item;
     try { ({ Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id } }))); } catch { Item = null; }
     for (const e of (dateKey === todayKey ? keepDayZero(Item?.entries) : (Item?.entries || []))) {
-      if (!Array.isArray(e.regions) || !e.regions.includes(country)) continue;
+      // records are keyed by the canonical name; archive regions carry the model's spelling (USA, West Bank)
+      if (!Array.isArray(e.regions) || !e.regions.some((r) => r === country || resolveIso3(r)?.name === country)) continue;
       const key = e.topicId || e.id;
       if (!key || seen.has(key)) continue;
       seen.add(key);
-      events.push({ topicId: key, title: e.title || '', date: dateKey });
+      events.push({ topicId: key, threadId: e.threadId || null, title: e.title || '', date: dateKey });
     }
   }
   return events.slice(-MAX_EVENTS);
@@ -200,7 +202,7 @@ async function readThreadEvents(threadId, fromDate, toDate) {
       const key = e.topicId || e.id;
       if (!key || seen.has(key)) continue;
       seen.add(key);
-      events.push({ topicId: key, title: e.title || '', date: dateKey });
+      events.push({ topicId: key, threadId, title: e.title || '', date: dateKey });
     }
   }
   return events.slice(-MAX_EVENTS);

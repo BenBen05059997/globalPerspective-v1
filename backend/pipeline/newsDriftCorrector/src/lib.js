@@ -123,7 +123,7 @@ function findThreadDrift(snapshots) {
   return null;
 }
 
-// The grounding prompt. Events = [{topicId, title, date}] within the change window; the
+// The grounding prompt. Events = [{topicId, threadId, title, date}] within the change window; the
 // model must pick ONE real event id (or declare no single driver) — never invent.
 function buildDriftPrompt(subject, prior, current, events, correction) {
   // Number the events — models cite a small [n] far more reliably than a long hash id.
@@ -195,7 +195,7 @@ function parseDriftResponse(text, events) {
   return {
     noSingleDriver: false,
     whyChanged: why,
-    triggerEvent: { topicId: cited.topicId, title: cited.title, date: cited.date || null },
+    triggerEvent: { topicId: cited.topicId, threadId: cited.threadId || null, title: cited.title, date: cited.date || null },
     ...eff,
   };
 }

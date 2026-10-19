@@ -57,6 +57,7 @@ const SIGNIFICANCE_ORDER = { high: 0, medium: 1, low: 2 };
 exports.handler = async (event) => {
   console.log('newsPostLinkedIn invoked', { event: JSON.stringify(event).substring(0, 200) });
 
+  const aggregateResults = {};
   try {
     if (!TOPICS_TABLE || !SUMMARY_TABLE || !POSTS_TABLE) {
       const missing = [];
@@ -81,8 +82,6 @@ exports.handler = async (event) => {
       return response(200, { status: 'skipped', reason: 'no topics' });
     }
 
-    const aggregateResults = {};
-
     for (const platform of platforms) {
       try {
         const result = await runPlatform(platform, topics);
@@ -93,12 +92,28 @@ exports.handler = async (event) => {
       }
     }
 
-    return response(200, { status: 'ok', platforms: aggregateResults });
   } catch (err) {
     console.error('newsPostLinkedIn error:', err);
     return response(500, { status: 'error', error: err.message });
   }
+
+  // A platform that attempted posts and landed none (expired token, API change) must not return
+  // normally: throwing counts as a Lambda error, so the lambda-errors-newsPostLinkedin alarm fires.
+  // Partial success on a platform is a normal return.
+  const allFailed = allPostsFailed(aggregateResults);
+  if (allFailed.length) {
+    console.error('Every attempted post failed on', allFailed.join(', '), JSON.stringify(aggregateResults));
+    throw new Error(`Every attempted post failed on ${allFailed.join(', ')}`);
+  }
+  return response(200, { status: 'ok', platforms: aggregateResults });
 };
+
+// Names of platforms that attempted at least one post and posted none.
+function allPostsFailed(aggregateResults) {
+  return Object.entries(aggregateResults)
+    .filter(([, r]) => r && r.attempted > 0 && r.posted === 0)
+    .map(([name]) => name);
+}
 
 // ---------------------------------------------------------------------------
 // Platform configuration

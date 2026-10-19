@@ -28,7 +28,7 @@ section is built only from fields the brief payload carries; links are built onl
 - Links: `@/shared/lib/links.js` (`briefingHref`, `storyHref`, `countryHref`) / `EntityLink`; a story only with a real
   `threadId`, a region or bloc is plain text
 - Public API (`index.js`): `useWeeklyBrief` (used by `account`, `map`; keep its return shape). Imports from other
-  features: none. Shared: `useDailyBrief`, `StoryMap`, `EntityLink`/`StoryLink`, `SubscribeCard`, `SaveButton`, `TierChip`
+  features: none. Shared: `useDailyBrief`, `StoryMap`, `EntityLink`, `SubscribeCard`, `SaveButton`, `TierChip`
 
 ## Backend
 - Generated row: [reference/features.md#briefings](../../../../../project-docs/reference/features.md#briefings)

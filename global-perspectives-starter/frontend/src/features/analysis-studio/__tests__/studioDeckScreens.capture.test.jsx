@@ -79,7 +79,7 @@ vi.mock('@/shared/api/restProxy', () => ({
     return { snapshot: null };
   }),
   // What changed's real `country_history` fetch (monitor round 2) — Taiwan is a real
-  // country name so iso3ForName resolves it as a backed place. The drift note wording
+  // country name so the country resolver treats it as a backed place. The drift note wording
   // mirrors the real Iran 2026-08-19 shape (a self-contradictory "score down"/"worsen"
   // clause) so the direction-check flag actually surfaces in the screenshot.
   fetchCountryHistory: vi.fn(async (countryName) => {

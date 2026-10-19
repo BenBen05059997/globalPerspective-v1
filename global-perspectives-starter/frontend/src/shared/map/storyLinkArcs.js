@@ -3,14 +3,14 @@
 // days. The line runs from the selected story's main country to the linked story's most-mentioned
 // country OTHER than the focal one; a linked story with no real country gets NO line (a broad
 // region is never a point). Both ends are "approx." places, said in the Key. Pure.
-import { iso3ForName } from '@/shared/lib/situationLabels.js';
+import { resolveCountry } from '@/shared/lib/countries.js';
 
 const DRAWN = new Set(['strong', 'medium']);
 const RANK = { strong: 2, medium: 1 };
 
 const iso3OfPlaces = (places, exclude) => {
   for (const p of places || []) {
-    const iso3 = iso3ForName(p.name);
+    const iso3 = resolveCountry(p.name)?.iso3;
     if (iso3 && iso3 !== exclude) return iso3;
   }
   return null;

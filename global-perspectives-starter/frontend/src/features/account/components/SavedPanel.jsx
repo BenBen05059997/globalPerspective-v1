@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { briefingHref, countryHref, storyHref } from '@/shared/lib/links.js';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import Chip from '@/shared/ui/Chip.jsx';
 import '@/features/account/components/SavedPanel.css';
@@ -99,7 +99,8 @@ function SavedCard({ item, onUnsave }) {
   if (href && item.itemType === 'thread') {
     return (
       <Card
-        as={StoryLink}
+        as={EntityLink}
+        kind="story"
         level={2}
         pad="sm"
         to={href}

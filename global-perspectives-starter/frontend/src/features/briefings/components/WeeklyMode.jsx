@@ -5,7 +5,7 @@ import SubscribeCard from '@/shared/ui/SubscribeCard';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import Card from '@/shared/ui/Card.jsx';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { SaveButton } from '@/shared/ui/SaveButton';
 import { tierFromLevel } from '@/shared/lib/riskTiers';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
@@ -52,7 +52,7 @@ function SignalCard({ s, signals }) {
     <Card as="article" className="wb-sig">
       <div className="wb-sig-top">
         {threadId ? (
-          <StoryLink className="wb-sig-lede wb-sig-lede-link" threadId={threadId} topic={topic} asOf={s.asOf}>{s.lede}</StoryLink>
+          <EntityLink kind="story" className="wb-sig-lede wb-sig-lede-link" id={threadId} topic={topic} asOf={s.asOf}>{s.lede}</EntityLink>
         ) : (
           <div className="wb-sig-lede">{s.lede}</div>
         )}
@@ -64,7 +64,7 @@ function SignalCard({ s, signals }) {
       {(outlets.length > 0 || s.related || threadId) && (
         <div className="wb-sig-src">
           {threadId && (
-            <StoryLink className="wb-sig-arc" threadId={threadId} topic={topic} asOf={s.asOf}>Full story arc →</StoryLink>
+            <EntityLink kind="story" className="wb-sig-arc" id={threadId} topic={topic} asOf={s.asOf}>Full story arc →</EntityLink>
           )}
           {outlets.length > 0 && (
             <>{threadId && <span className="wb-dot">·</span>} <span className="wb-src-label">Sources:</span> {outlets.map((o, i) => (
@@ -75,7 +75,7 @@ function SignalCard({ s, signals }) {
             ))}</>
           )}
           {s.related && <> <span className="wb-dot">·</span> <span className="wb-rel">Related: {relatedThreadId(s, signals)
-            ? <StoryLink threadId={relatedThreadId(s, signals)} topic={{ title: s.related }}>{s.related}</StoryLink>
+            ? <EntityLink kind="story" id={relatedThreadId(s, signals)} topic={{ title: s.related }}>{s.related}</EntityLink>
             : s.related}</span></>}
         </div>
       )}

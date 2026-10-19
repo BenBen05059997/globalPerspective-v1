@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { useNotifications } from '@/features/breaking/hooks/useNotifications';
-import { alertPath } from '@/features/breaking/lib/alertPath.js';
-import { mapHref } from '@/shared/lib/links.js';
+import { breakingHref, mapHref } from '@/shared/lib/links.js';
 import '@/features/breaking/components/NotificationBell.css';
 
 function relTime(iso) {
@@ -76,7 +75,7 @@ export default function NotificationBell() {
                 {alerts.map((a) => (
                   <li key={a.id || a.threadId}>
                     <Link
-                      to={alertPath(a)}
+                      to={breakingHref(a.id || a.threadId)}
                       className="gp-bell-item"
                       role="menuitem"
                       onClick={() => setOpen(false)}

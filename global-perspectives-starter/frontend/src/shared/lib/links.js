@@ -16,6 +16,7 @@ const ROUTE = {
   briefings: '/briefings',
   trackRecord: '/track-record',
   studio: '/analyze',
+  breaking: '/breaking/:id',
 };
 
 const BRIEFING_MODES = ['read', 'weekly', 'present'];
@@ -88,6 +89,12 @@ function todayHref() {
   return ROUTE.today;
 }
 
+/** breakingHref('alert-1') -> '/breaking/alert-1': a breaking alert's resolver address (the client redirect
+ *  sends it to the alert's story when it has one, else to the map). No id -> the map. */
+function breakingHref(alertId) {
+  return alertId ? ROUTE.breaking.replace(':id', encodeURIComponent(alertId)) : ROUTE.map;
+}
+
 /** entityHref(kind, id): the canonical address of one entity, or null when it cannot be addressed (no id,
  *  or a "country" that is not one). kind: 'story' | 'country' | 'situation' | 'forecast'. */
 function entityHref(kind, id) {
@@ -101,5 +108,6 @@ function entityHref(kind, id) {
 // --- end link rules core ---
 
 export {
-  ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, studioHref, todayHref, entityHref,
+  ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, studioHref, todayHref, breakingHref,
+  entityHref,
 };

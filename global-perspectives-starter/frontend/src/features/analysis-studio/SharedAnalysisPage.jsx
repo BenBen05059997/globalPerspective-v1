@@ -6,7 +6,7 @@ import { shareConfigured, fetchShare, deleteShare, forgetShare } from '@/feature
 import { useNoIndex } from '@/shared/hooks/useNoIndex.js';
 import { reportFetchError } from '@/shared/api/errorSink';
 import '@/features/analysis-studio/AnalysisStudio.css';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import { ROUTE, studioHref } from '@/shared/lib/links.js';
 
@@ -69,7 +69,7 @@ export default function SharedAnalysisPage() {
               <span>
                 Open these stories live:{' '}
                 {state.share.stories.filter((s) => s.threadId).map((s, i) => (
-                  <span key={s.threadId}>{i > 0 ? ' · ' : ''}<StoryLink threadId={s.threadId} topic={{ title: s.title }}>{s.title}</StoryLink></span>
+                  <span key={s.threadId}>{i > 0 ? ' · ' : ''}<EntityLink kind="story" id={s.threadId} topic={{ title: s.title }}>{s.title}</EntityLink></span>
                 ))}
               </span>
             )}

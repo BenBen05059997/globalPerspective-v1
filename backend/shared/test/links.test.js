@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const L = require('../src/links');
 
-test('story, country, map, briefing, forecast, studio and today addresses (same rules as the frontend)', () => {
+test('story, country, map, briefing, forecast, studio, today and breaking addresses (same rules as the frontend)', () => {
   assert.strictEqual(L.storyHref('thread-a-1'), '/weekly/thread/thread-a-1');
   assert.strictEqual(L.storyHref('t-1', { tab: 'timeline' }), '/weekly/thread/t-1?tab=timeline');
   assert.strictEqual(L.storyHref(null), '/weekly');
@@ -22,6 +22,8 @@ test('story, country, map, briefing, forecast, studio and today addresses (same 
   assert.strictEqual(L.forecastAnchorId('q1'), 'q-q1');
   assert.strictEqual(L.studioHref(['a', 'b']), '/analyze?stories=a%2Cb');
   assert.strictEqual(L.todayHref(), '/today');
+  assert.strictEqual(L.breakingHref('alert 1/x'), '/breaking/alert%201%2Fx');
+  assert.strictEqual(L.breakingHref(null), '/');
   assert.strictEqual(L.entityHref('country', 'Europe'), null);
   assert.strictEqual(L.entityHref('forecast', 'q2'), '/track-record?q=q2');
 });

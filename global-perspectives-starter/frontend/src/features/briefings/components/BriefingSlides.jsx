@@ -8,7 +8,6 @@ import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
 import { useStoryQuestion } from '@/features/briefings/hooks/useStoryQuestion.js';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
 import SubscribeCard from '@/shared/ui/SubscribeCard';
 import Trajectory from '@/features/briefings/components/Trajectory.jsx';
 import PlaceLinks from '@/features/briefings/components/PlaceLinks.jsx';
@@ -127,7 +126,7 @@ export function WatchSlide({ countryToWatch, risingThread }) {
           <span className="bm-inference-badge">rising thread</span>
           <p className="bm-rising-title">
             {risingId
-              ? <StoryLink threadId={risingId} topic={{ title: risingThread.title }}>{risingThread.title}</StoryLink>
+              ? <EntityLink kind="story" id={risingId} topic={{ title: risingThread.title }}>{risingThread.title}</EntityLink>
               : risingThread.title}
           </p>
           {risingThread.oneLiner && <p>{risingThread.oneLiner}</p>}

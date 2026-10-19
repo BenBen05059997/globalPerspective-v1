@@ -45,7 +45,7 @@ import { usePeek } from '@/shared/hooks/usePeek.js';
 import { peekData } from '@/shared/lib/peekData.js';
 import '@/features/countries/CountryPage.css';
 import '@/features/countries/CountryCoverage.css';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 
 function formatAsOf(iso) {
   if (!iso) return '';
@@ -180,15 +180,16 @@ function CoverageList({ entries, country }) {
                               View Google News ↗
                             </Button>
                             {entry.threadId && (
-                              <StoryLink
-                                threadId={entry.threadId}
+                              <EntityLink
+                                kind="story"
+                                id={entry.threadId}
                                 pathOpts={country ? { from: 'country', country } : {}}
                                 topic={{ title: entry.title, category: entry.category, regions: entry.regions }}
                                 asOf={entry.date}
                                 className="gp-btn gp-btn--quiet gp-btn--compact"
                               >
                                 View full story →
-                              </StoryLink>
+                              </EntityLink>
                             )}
                           </div>
                           {aiViews.length > 0 && (

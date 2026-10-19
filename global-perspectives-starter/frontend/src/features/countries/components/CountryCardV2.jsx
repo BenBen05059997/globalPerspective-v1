@@ -9,7 +9,6 @@
 // link to the page it is on). Role tokens only; risk is a
 // TierChip + neutral bars, direction a DirectionArrow (no tier colour on text, fills or arrows).
 import { useMemo, useState } from 'react';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
 import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { studioHref } from '@/shared/lib/links.js';
 import Button from '@/shared/ui/Button.jsx';
@@ -183,7 +182,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
           <span className="ccv2-mj">model judgment</span>{' '}
           {latestChange.why}{' '}
           {latestChange.threadId ? (
-            <StoryLink threadId={latestChange.threadId} pathOpts={{ from: 'country', country: name }} topic={{ title: latestChange.eventTitle }}>{latestChange.eventTitle} →</StoryLink>
+            <EntityLink kind="story" id={latestChange.threadId} pathOpts={{ from: 'country', country: name }} topic={{ title: latestChange.eventTitle }}>{latestChange.eventTitle} →</EntityLink>
           ) : (
             <span className="ccv2-change-cite">({latestChange.eventTitle})</span>
           )}
@@ -196,7 +195,7 @@ export default function CountryCardV2({ name, situations = null, onBack = null, 
           {stories.map((s) => (
             <li key={s.threadId || s.topicId}>
               {s.threadId ? (
-                <StoryLink threadId={s.threadId} pathOpts={{ from: 'country', country: name }} topic={{ title: s.title, category: s.category !== 'other' ? s.category : undefined }} asOf={s.date}>{s.title}</StoryLink>
+                <EntityLink kind="story" id={s.threadId} pathOpts={{ from: 'country', country: name }} topic={{ title: s.title, category: s.category !== 'other' ? s.category : undefined }} asOf={s.date}>{s.title}</EntityLink>
               ) : (
                 <span>{s.title}</span>
               )}

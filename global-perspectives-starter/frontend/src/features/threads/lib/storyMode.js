@@ -4,6 +4,7 @@
 // (live <24h · plain 1–7d · older 7–30d amber · hidden 30d+) so this file, the map and the feed
 // never disagree about what "older" or "too old to show" means (CLAUDE.md, S5).
 import { freshnessState } from '@/shared/lib/freshness.js';
+import { resolveCountry } from '@/shared/lib/countries.js';
 
 const MAX_CHAPTERS = 4;
 
@@ -67,13 +68,13 @@ function mostFrequent(list) {
 }
 
 /**
- * buildChapters(entries, entryShortTitles, inflectionTopicId, iso3ForName) ->
+ * buildChapters(entries, entryShortTitles, inflectionTopicId) ->
  *   [{ key, label, from, to, country, iso3, mentionCount, entries, isInflection, inflectionDate }]
  * `entries` must be sorted OLDEST-FIRST (chronological chapters). Splits into up to
  * MAX_CHAPTERS contiguous, roughly-even groups — a thin story (1–3 entries) gets 1–3 chapters,
  * never an empty one (S6-style "no empty slides" rule applied to chapters too).
  */
-export function buildChapters(entries, entryShortTitles, inflectionTopicId, iso3ForName = () => null) {
+export function buildChapters(entries, entryShortTitles, inflectionTopicId) {
   if (!Array.isArray(entries) || entries.length === 0) return [];
   const shortTitleMap = {};
   if (Array.isArray(entryShortTitles)) {
@@ -94,7 +95,7 @@ export function buildChapters(entries, entryShortTitles, inflectionTopicId, iso3
     const last = group[group.length - 1];
     const label = shortTitleMap[first.topicId] || first.title;
     const country = mostFrequent(group.flatMap((e) => e.regions || []));
-    const iso3 = country ? iso3ForName(country) : null;
+    const iso3 = resolveCountry(country)?.iso3 || null;
     const hasInflection = inflectionTopicId != null && group.some((e) => e.topicId === inflectionTopicId);
     const inflectionEntry = hasInflection ? group.find((e) => e.topicId === inflectionTopicId) : null;
     chapters.push({

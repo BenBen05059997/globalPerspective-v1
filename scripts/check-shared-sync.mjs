@@ -21,8 +21,8 @@
  *                                          extraction from source instead — see
  *                                          extractUnexported() below)
  *
- *   (c) country identity                — the one country table (iso3Names.json) and placeNames.json are
- *                                          byte-identical to the frontend data copies, and the resolver
+ *   (c) country identity                — the one country table (iso3Names.json) is byte-identical to
+ *                                          the frontend data copy, and the resolver
  *                                          core (between the markers) in backend/shared/src/countries.js ==
  *                                          frontend shared/lib/countries.js
  *   (d) link rules                      — the address-building core (between the markers) in
@@ -167,13 +167,11 @@ function checkMarkedCore(pathA, pathB, marker) {
   return { pass: false, diff: textDiff(path.basename(pathA), a, `frontend-${path.basename(pathB)}`, b) };
 }
 
-/** Country identity: the shared name tables are byte-identical to the frontend data copies, and the resolver
+/** Country identity: the country table is byte-identical to the frontend data copy, and the resolver
  *  core in backend/shared/src/countries.js is the same text as in the frontend shared/lib/countries.js. */
 function checkCountryIdentity(backendPath = abs(`${SHARED}/countries.js`), frontendPath = abs(`${FE_LIB}/countries.js`)) {
-  for (const f of ['placeNames.json', 'iso3Names.json']) {
-    const r = checkAllIdentical([abs(`${SHARED}/${f}`), abs(`${FE_DATA}/${f}`)]);
-    if (!r.pass) return { pass: false, diff: `${f}: ${r.diff}` };
-  }
+  const r = checkAllIdentical([abs(`${SHARED}/iso3Names.json`), abs(`${FE_DATA}/iso3Names.json`)]);
+  if (!r.pass) return { pass: false, diff: `iso3Names.json: ${r.diff}` };
   return checkMarkedCore(backendPath, frontendPath, 'country resolver core');
 }
 

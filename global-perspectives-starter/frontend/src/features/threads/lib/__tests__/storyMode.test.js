@@ -28,40 +28,38 @@ describe('analysisTextState', () => {
 });
 
 describe('buildChapters', () => {
-  const iso3ForName = (n) => ({ Iran: 'IRN', 'United States': 'USA', Oman: 'OMN' }[n] || null);
-
   it('splits a 5-entry story into 4 chapters, none empty', () => {
-    const chapters = buildChapters(ENTRIES, null, 't3', iso3ForName);
+    const chapters = buildChapters(ENTRIES, null, 't3');
     expect(chapters.length).toBe(4);
     expect(chapters.every((c) => c.entries.length > 0)).toBe(true);
   });
 
   it('flags the chapter containing the inflection topic', () => {
-    const chapters = buildChapters(ENTRIES, null, 't3', iso3ForName);
+    const chapters = buildChapters(ENTRIES, null, 't3');
     const flagged = chapters.find((c) => c.isInflection);
     expect(flagged).toBeTruthy();
     expect(flagged.entries.some((e) => e.topicId === 't3')).toBe(true);
   });
 
   it('a thin story (1 entry) gets exactly 1 chapter, not 4', () => {
-    const chapters = buildChapters([ENTRIES[0]], null, null, iso3ForName);
+    const chapters = buildChapters([ENTRIES[0]], null, null);
     expect(chapters.length).toBe(1);
     expect(chapters[0].entries.length).toBe(1);
   });
 
   it('uses the analysis short title when available', () => {
     const shortTitles = [{ topicId: 't1', shortTitle: 'Short A' }];
-    const chapters = buildChapters(ENTRIES.slice(0, 1), shortTitles, null, iso3ForName);
+    const chapters = buildChapters(ENTRIES.slice(0, 1), shortTitles, null);
     expect(chapters[0].label).toBe('Short A');
   });
 
-  it('resolves country to iso3 via the injected lookup (S7 approx-place rule)', () => {
-    const chapters = buildChapters(ENTRIES, null, null, iso3ForName);
-    expect(chapters.every((c) => !c.country || c.iso3)).toBe(true);
+  it('resolves each chapter country to its ISO3 through the country table (S7 approx-place rule)', () => {
+    const chapters = buildChapters(ENTRIES, null, null);
+    expect(chapters.map((c) => [c.country, c.iso3])).toEqual([['Iran', 'IRN'], ['United States', 'USA'], ['United States', 'USA'], ['Oman', 'OMN']]);
   });
 
   it('returns [] for no entries', () => {
-    expect(buildChapters([], null, null, iso3ForName)).toEqual([]);
+    expect(buildChapters([], null, null)).toEqual([]);
   });
 });
 

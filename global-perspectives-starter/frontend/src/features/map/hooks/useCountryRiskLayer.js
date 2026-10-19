@@ -14,7 +14,7 @@ import { fetchCountryIntelligence } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
 import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
 import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES, buildCountryRiskLayer } from '@/shared/map/countryRiskLayer.js';
-import { iso3ForName } from '@/shared/lib/situationLabels.js';
+import { isCountry } from '@/shared/lib/countries.js';
 
 // How many candidate countries to request briefings for. Bounded so a busy news day can't turn
 // one layer switch into dozens of Lambda calls; a country beyond this rank simply isn't drawn
@@ -41,7 +41,7 @@ function namesFromArchive(dayMap) {
     .filter(([, n]) => n >= 2)
     .sort((a, b) => b[1] - a[1])
     .map(([name]) => name)
-    .filter((name) => iso3ForName(name)) // never request a name this map can't draw
+    .filter(isCountry) // never request a name this map can't draw
     .slice(0, MAX_CANDIDATES);
 }
 

@@ -3,10 +3,7 @@
 // shared/lib/countries.js. This module adds the region grouping and builds the deterministic
 // (template, no LLM) lede sentence. Unknown codes fall back to the raw ISO-3, which an analyst
 // audience reads fine — never a fabricated name.
-import { COUNTRIES, resolveCountry } from '@/shared/lib/countries.js';
-
-// iso3 -> display name, derived from the one table (kept as an export for callers that scan text).
-const ISO3_NAME = Object.fromEntries(Object.entries(COUNTRIES).map(([iso3, c]) => [iso3, c.name]));
+import { COUNTRIES } from '@/shared/lib/countries.js';
 
 const REGION_BY_ISO3 = {};
 const _reg = (region, codes) => codes.forEach((c) => { REGION_BY_ISO3[c] = region; });
@@ -35,19 +32,8 @@ export function regionOf(iso3List = []) {
   return null;
 }
 
-// name -> ISO3 (R4b, country risk layer): the weekly archive / country-intelligence flow keys
-// everything by display name, but the map draws polygons keyed by ISO3 — this is the one join point.
-// Aliases resolve too ("United Arab Emirates" -> ARE); a non-country resolves to null, never a guess.
-export function iso3ForName(name) {
-  return resolveCountry(name)?.iso3 || null;
-}
-
 const TIER_LABEL = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 export { TIER_LABEL };
-
-// S6 (track record forecast map): the iso3 -> display-name table, exported so a caller can scan
-// free text for a country name. Derived from the one country table — never a hand-typed list.
-export { ISO3_NAME };
 
 /**
  * buildLede — deterministic one-sentence summary from counts + the top situation.

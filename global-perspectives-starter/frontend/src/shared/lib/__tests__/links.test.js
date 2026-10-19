@@ -1,19 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import {
-  ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, studioHref, todayHref, entityHref,
+  ROUTE, storyHref, countryHref, mapHref, briefingHref, forecastHref, forecastAnchorId, studioHref, todayHref, breakingHref,
+  entityHref,
 } from '@/shared/lib/links.js';
-import { threadPath } from '@/shared/lib/threadPath.js';
 
 describe('links — one address per destination', () => {
   it('ROUTE lists the reader routes', () => {
     expect(ROUTE).toMatchObject({ map: '/', today: '/today', story: '/weekly/thread/:threadId', country: '/weekly/country/:countryName', briefings: '/briefings', trackRecord: '/track-record', studio: '/analyze' });
   });
 
-  it('storyHref encodes the id and keeps the threadPath options; threadPath is the same function', () => {
+  it('storyHref encodes the id and keeps the story options (tab, from, country)', () => {
     expect(storyHref('thread a/1')).toBe('/weekly/thread/thread%20a%2F1');
     expect(storyHref('t-1', { tab: 'timeline', from: 'country', country: 'Iran' })).toBe('/weekly/thread/t-1?tab=timeline&from=country&country=Iran');
     expect(storyHref('')).toBe('/weekly');
-    expect(threadPath).toBe(storyHref);
+  });
+
+  it('breakingHref is the alert resolver address; no id -> the map', () => {
+    expect(breakingHref('alert 1/x')).toBe('/breaking/alert%201%2Fx');
+    expect(breakingHref(null)).toBe('/');
   });
 
   it('countryHref keeps the canonical display name; places go to their country; non-countries are null', () => {

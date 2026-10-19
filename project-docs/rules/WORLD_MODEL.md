@@ -1,54 +1,21 @@
-# World Model — the semantic ontology (DECISIONS RECORDED 2026-09-12)
+# World Model — the semantic ontology
 
-## OPERATOR DECISIONS — 2026-09-12 (binding; supersede the debate where they touch it)
+**Status:** binding rules (operator decisions 2026-09-12). Last verified: 2026-10-19 against the repo
+source and live AWS.
 
-Resolving the two operator-review items after the three-way debate (`WORLD_MODEL_DEBATE_2026-09-11.md`):
+This doc says what an event is, what identifies it, what type it is, how important it is, how we know,
+and when it starts and ends — across the map (situation) pipeline and the editorial (topic/thread)
+pipeline. It describes meaning, not implementation (`ARCHITECTURE.md`); code that disagrees with it on
+meaning is the thing that is wrong.
 
-**D1 — Non-event content: KEEP IT, DEMOTED (the "B / Pluralist-compromise" option).** The site covers
-both geo-anchored EVENTS (map pins) and placeless DEVELOPMENTS (science/generic-tech/climate-policy/
-society that materially change lives without a place+actor to pin). Rationale = the operator's own
-mission line: "what materially changes lives, even if underreported" — which includes a medical/AI/
-science shift with no map coordinates. Constraints (per the debate's convergence, so this stays a
-demotion not a revived quota): DEVELOPMENTS **never get a map pin**, **never a category quota** (they
-earn a spot only by clearing a raised material-change bar), lead position always goes to EVENTS, and
-this adds **no new ID space, no new importance scale, no new taxonomy** — it is a display/classification
-tag over fields that already exist (`iso3[]`/`actors[]` present ⇒ EVENT; absent ⇒ DEVELOPMENT). §3's
-override table is the membership test. How it shows: EVENTS lead the front page; a quieter, clearly-
-secondary "Developments" treatment (band or badge-tagged cards) sits below — NOT a nav page, NOT a
-front-page peer.
+Decisions recorded from it: placeless developments kept, demoted (decisions/0004); one importance scale,
+the canonical tier, with four labelled exceptions (decisions/0005). The §3 lossy-category mapping is a
+proposal the operator has not ruled on.
 
-**D2 — ONE importance scale (merge the eight → the canonical tier).** Everything a reader experiences
-as "how big a deal is this" resolves to the single canonical tier (low/moderate/elevated/high, the
-`riskTiers.js` bands — precedent confirmed canonical, VERIFY §F). classifier severity + GDACS level are
-already absorbed (done); editorial `significance` and any stray importance rating derive into
-the tier then get deprecated (gated on a one-time consumer-grep, VERIFY §B). `significance`'s sole
-known consumer is the LinkedIn post-order sort; the decision (2026-09-15 amendment, see Phase 2 of
-`ONE_TRUTH_EXECUTION_PLAN.md`) is to **leave it as-is (legacy)** for now rather than derive-then-deprecate
-it. **Honest exception — four scales are NOT importance and keep their own meaning, clearly labeled as
-what they are:** (a) prediction probabilities = *likelihood*, not importance; (b) the breaking-alert
-score = an internal *decision gate* (ring the bell?), never a displayed rating; (c) economic-impact
-severity = *market-movement magnitude*, its own measure — it may *report into* the tier for display
-but is not collapsed away; (d) editorial `urgency` = *tempo* (how fresh/breaking a story is right now),
-not importance — kept as a labeled freshness flag (per `IMPORTANCE_SCALE_MAPPING.md`, 2026-09-12). The
-guardrail (§7) stands: no NEW scale may be invented — a feature reuses the tier or it doesn't ship.
-
-**Status of the rest of the doc:** the §3 mapping table's `science→other` and the lossy-five overrides
-remain as drafted (D1 formalizes them as the EVENT/DEVELOPMENT test); §4 deprecation map, §8 convergence
-sequence, and the known-gaps (population/fatalities feeds unwired) are unchanged and still pending build,
-gated as written. Nothing here is built yet — these are recorded rulings that make the ontology binding.
-
----
-
-**Original draft status:** DRAFT — operator review pending. This is the binding semantic source of truth for
-"what is an event, what identifies it, what type is it, how important is it, how do we know, and
-when does it start/end" across the map (situation) pipeline and the editorial (topic/thread)
-pipeline. It does not describe implementation (that's `ARCHITECTURE.md`) — it describes meaning,
-and meaning is binding: code that disagrees with this doc is the thing that's wrong, not this doc.
-
-Grounded in: `../worldmodel-verify/VERIFY.md` (corrected identity/scale/taxonomy/lifecycle
-findings, cited throughout as **VERIFY §X**), `IMPACT_FIRST_REDESIGN_PLAN.md` (impact-driven
-decision, typed-impact model), `EVENT_REGISTRY_PLAN.md` (identity/registry direction, Phase 1b
-shipped), `DATA_STRATEGY.md` (S3-world / DDB-user split — not contradicted anywhere below).
+"VERIFY §X" cites the deleted verification report:
+`git show 120de90:project-docs/archive/architecture/WORLD_MODEL_VERIFY_2026-09-11.md`. Other deleted sources:
+`IMPACT_FIRST_REDESIGN_PLAN.md` (`git show 120de90:project-docs/archive/pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md`),
+`EVENT_REGISTRY_PLAN.md` (`git show 120de90:project-docs/archive/redesign-ux/_active/EVENT_REGISTRY_PLAN.md`).
 
 ---
 
@@ -71,7 +38,7 @@ new ID space of its own.
 **Per VERIFY §A, there are two real, internally-generated identity roots — not five, not one:**
 
 1. **`storyId`** (`${axis}#${iso3}#${slug(entity)}`) — the map/situation pipeline's own key
-   (`newsSituationIngest/classifier-core.js`). `situationId` for a news-sourced situation is a
+   (`backend/situations/newsSituationIngest/src/classifier-core.js`). `situationId` for a news-sourced situation is a
    literal wrapper (`news#${storyId}`) — not a separate space. `situationId` for a GDACS-sourced
    situation (`gdacs#${eventKey}`) is a pass-through of GDACS's own upstream ID — external, not
    invented here.
@@ -87,9 +54,9 @@ is being closed, not by inventing a third root, but by:
 
 - **The fingerprint** — `iso3[]` / `actors[]` / `event_type` emitted by both pipelines
   (Phase 1b, shipped 2026-09-11) — the cross-root **join evidence**, not an identity itself.
-- **The matcher** — URL-exact overlap (Tier 1, ~32%, 0 false positives) unioned with the R3
-  fingerprint rule (≥2 shared countries + ≥1 shared genuine actor, 0 FP on backfill; live only
-  behind `ENABLE_R3_TIER` pending real-tag re-confirmation) — the **bridge**, writing
+- **The matcher** — URL-exact overlap (Tier 1, ~32%, 0 false positives; live in
+  `NewsProjectInvokeAgentLambda`) unioned with the R3 fingerprint rule (≥2 shared countries + ≥1
+  shared genuine actor, 0 FP on backfill; off live — `ENABLE_R3_TIER` is not set) — the **bridge**, writing
   `threads/story-map.json` (storyId ↔ threadId pairs, one S3 object, one writer). This is the
   only thing allowed to assert "these two roots name the same event."
 - **Phase 2** (editorial selects from the registry instead of running its own RSS fetch) is the
@@ -146,9 +113,9 @@ human/LLM judges. Never invent a fourth tier ("vibes") — that's exactly the fa
 |---|---|---|
 | disaster | GDACS alert level (Red/Orange/Green) | live (`newsGdacsIngest`) |
 | disaster | GDACS affected population | **KNOWN GAP** — no population field anywhere in GDACS ingest (VERIFY §E); not fixable by re-parsing, the feed doesn't carry it |
-| conflict/humanitarian | fatalities | **KNOWN GAP** — zero hits in GDELT/GDACS ingest (VERIFY §E); ACLED evaluated and **dropped** (licensing, `IMPACT_FIRST` §3.5); **designated fill: ReliefWeb + INFORM Severity Index** per the June plan — open, no key, not yet wired |
-| economy | `newsEconomicImpact` severity (own state machine) | live |
-| everything else (politics/tech/science/other) | editorial rubric: reach / severity / irreversibility / novelty | **the vocabulary already exists** — `newsImpactAudit/src/index.js:74,77` uses these exact four labels as QA-judge dimension tags today (VERIFY §E "positive finding": real precedent, currently QA-only, not yet populating a registry record) |
+| conflict/humanitarian | fatalities | **per-event GAP** — zero hits in GDELT/GDACS ingest (VERIFY §E). Country-level only: `newsCountryFactsUpdater` collects ACLED `fatalities30d`/`eventCount30d` for its first 12 countries into `FACTS#<country>` (ACLED credentials set live). Per-event fill (ReliefWeb + INFORM Severity Index) not wired |
+| economy | `newsEconomicImpact` severity (own state machine) | parked (decisions/0009; schedule disabled) |
+| everything else (politics/tech/science/other) | editorial rubric: reach / severity / irreversibility / novelty | **the vocabulary already exists** — `backend/monitoring/newsImpactAudit/src/index.js:56,74` uses these exact four labels as QA-judge dimension tags (job parked: `TriggerImpactAudit` DISABLED, decisions/0015) (VERIFY §E "positive finding": real precedent, currently QA-only, not yet populating a registry record) |
 
 **Universal counts** (apply to every event regardless of domain, always countable, never judged):
 outlets = corroboration, countries = spread, velocity = rate of new coverage.
@@ -170,10 +137,10 @@ staying separate. There is no second display scale to invent.
 | Editorial significance (h/m/l) | **DERIVE-THEN-DEPRECATE** (unconfirmed) | server-side ranking/prompt logic only; no confirmed frontend consumer found (VERIFY §B) | on next touch of `newsInvokeGemini` selection: grep `Home.jsx`/topic-card components for a live consumer; if none, fold into tier and stop persisting a separate field |
 | Editorial urgency (h/m/l) | **KEEP-AS-IS (4th exception — tempo, not importance)** | editorial freshness display only; not an importance signal | none — this is a permanent exception, same pattern as the other three KEEP-AS-IS rows above |
 | Breaking-alert float score | **KEEP-AS-IS** | `newsBreakingAlert` threshold gate (`isBreaking`); `BreakingStrip` send-eligibility | none — this is a decision gate (should we alert), already a downstream *combiner* of canonical inputs (capped riskScore + velocity + outlets + econ magnitude), not a display scale competing with tier; collapsing it into 4 buckets breaks the gate's needed granularity |
-| Economic-impact severity (minor/mod/severe + score 0-100) | **KEEP-AS-IS**, revisit later | `EconomicImpact` UI (rendered band + magnitude) | on next touch of `newsEconomicImpact` severity logic: evaluate porting `SEVERITY_BAND` thresholds onto the riskTiers bands *while preserving* the downgrade state machine (thin winners/losers, low-confidence clamps) — never a bare relabel |
+| Economic-impact severity (minor/mod/severe + score 0-100) | **KEEP-AS-IS**, parked with the economy (decisions/0009) | `EconomicImpact` UI (rendered band + magnitude) | on next touch of `newsEconomicImpact` severity logic: evaluate porting `SEVERITY_BAND` thresholds onto the riskTiers bands *while preserving* the downgrade state machine (thin winners/losers, low-confidence clamps) — never a bare relabel |
 | Prediction probabilities (ICD-203 bands) | **KEEP-AS-IS** (different semantic) | `/track-record`, `ThreadForecast` | none — this is likelihood, not impact; not commensurable with tier, must stay a separate axis permanently |
 | Quality-judge 5-axis scores (1-5) | **KEEP-AS-IS** (different semantic) | `newsEconomicQuality` `is_low_quality` gate | none — this scores analysis quality, not event importance |
-| Impact-audit `reach/severity/irreversibility/novelty` tags | **SEED OF THE CANONICAL RUBRIC** | SNS miss-alert only today | not a legacy scale to deprecate — this is the vocabulary §4's editorial rubric should formally adopt registry-wide, promoting it out of QA-only use |
+| Impact-audit `reach/severity/irreversibility/novelty` tags | **SEED OF THE CANONICAL RUBRIC** | SNS miss-alert only (job parked) | not a legacy scale to deprecate — this is the vocabulary §4's editorial rubric should formally adopt registry-wide, promoting it out of QA-only use |
 | `velocity`, `escalating`, `x_trending` | **NOT SCALES** | breaking-alert composite input; situation FSM transition logic | raw signals, excluded from this table by design (VERIFY §B) — do not wrap these in a bounded scale later without a reason |
 
 ## §5 Quality/confidence marks
@@ -221,16 +188,16 @@ source of truth** — Lambda inventory, DDB schemas, S3 prefixes, IAM. When the 
 this doc wins on **meaning** (what a field means, what identity it belongs to, whether a scale
 should exist), `ARCHITECTURE.md` wins on **machinery** (how a field is stored, which Lambda writes
 it, what the IAM policy says). Neither overrides `DATA_STRATEGY.md`'s S3-world/DDB-user split,
-which this doc does not touch.
+which this doc does not touch (`rules/DATA_STRATEGY.md`).
 
 ## §8 Convergence sequence
 
-**Already started** (per `EVENT_REGISTRY_PLAN.md`, dated):
-1. Fingerprint (`iso3`/`actors`/`event_type`) emission — Phase 1b, **shipped 2026-09-11**.
+**Done:**
+1. Fingerprint (`iso3`/`actors`/`event_type`) emission — Phase 1b, shipped 2026-09-11.
 2. Coverage/false-positive measurement (URL tier ~32% at 0 FP; R3 fingerprint tier +3.7pts at 0 FP
-   on backfill, pending real-tag re-confirmation) — Phase 0/0b/0c/1c, **done**.
-3. Matcher spec (Tier 1 URL-exact ready to ship; Tier 2 R3 behind `ENABLE_R3_TIER`) — **drafted,
-   awaiting operator go**.
+   on backfill, pending real-tag re-confirmation).
+3. Matcher — Tier 1 URL-exact live (`NewsProjectInvokeAgentLambda` writes `threads/story-map.json`,
+   the tracker stamps `threadId`); Tier 2 R3 off (`ENABLE_R3_TIER` unset).
 
 **Next:**
 4. **Registry impact record** — attach the §4 typed-impact fields (measured-domain inputs +
@@ -238,42 +205,18 @@ which this doc does not touch.
    not just identity but importance.
 5. **Editorial-selects-from-registry** = `EVENT_REGISTRY_PLAN.md` Phase 2 ≡ `IMPACT_FIRST` P3 —
    the single point where the two pipelines' identity roots become one by construction. **Shadow-
-   gated** (a full shadow week, diff chosen topics vs live daily, flip only on quality parity).
-   **Requires `IMPACT_FIRST` P0 (the hand-labeled reference set) to exist first** — without it
-   there is no yardstick to gate the flip against.
+   gated**: `newsSelectionShadow` runs the layered selector 3×/day since 2026-10-18 and writes
+   `audit/selection-shadow/` (plans/TASK_2026-10-17_grounded_forecast_and_cost.md P7c); flip only
+   on quality parity after the shadow week.
 6. **Surfaces render canonical marks on next touch** — no big-bang UI migration; each surface
    adopts tier/evidence/fingerprint fields the next time it's touched for another reason.
-7. **Home swap last** — per operator sequencing (`MAP_HOME_SITUATION_PLAN.md`), independent of
-   this convergence and deliberately sequenced after it, not blocking it.
+7. Home swap — done 2026-10-01 (decisions/0016).
 
 **Known gaps (do not let convergence work hide these):**
 - **Population** (disaster reach): no field anywhere in the GDACS ingest; not a parsing bug, the
   feed doesn't carry it.
-- **Fatalities** (conflict/humanitarian severity): zero hits in current ingest; ACLED evaluated
-  and rejected (licensing). **Designated fill: ReliefWeb + INFORM Severity Index** (open, no key)
-  — not yet wired. Any impact-record work that ships before these are wired must render "no data"
+- **Fatalities** (conflict/humanitarian severity): no per-event field; only ACLED country-level
+  30-day counts (`newsCountryFactsUpdater`, 12 countries). ReliefWeb + INFORM Severity Index
+  (open, no key) not wired. Any impact-record work that ships before these are wired must render "no data"
   for these fields, never a judged substitute presented as measured.
 
----
-
-## Notes — deviations from the drafting brief
-
-- The brief's §3 instruction says the lossy items map "to event_type 'tech'/'other' + axis?" — I
-  did not collapse all five to just `tech`/`other`; VERIFY's own analysis gives `climate` a
-  cleaner match to `disaster` and `society` to `unrest` than to `other`, so I used those instead
-  and reserved `other` for `science` only (the one VERIFY says has "no event_type match at all").
-  This is a proposal, explicitly flagged NEEDS-OPERATOR-REVIEW in §3 — it is not itself a VERIFY
-  finding, since VERIFY documents the lossiness but doesn't prescribe a resolution.
-- The brief asked for editorial significance/urgency to be filed under "DERIVE-THEN-DEPRECATE...
-  per VERIFY's verdicts" — VERIFY's actual verdict is a **PARTIAL/unconfirmed**, not a clean
-  DERIVE-THEN-DEPRECATE. I've kept the DERIVE-THEN-DEPRECATE bucket but written the migration
-  trigger as "confirm no consumer, then deprecate" rather than asserting it's already safe, to
-  avoid overstating VERIFY's confidence. **2026-09-15 amendment:** that bucket has since split —
-  `significance` stays in the DERIVE-THEN-DEPRECATE-but-unconfirmed bucket described above, with
-  the Phase-2 build dropped and the decision recorded as "leave as-is (legacy) for now" rather
-  than actively deriving it (`ONE_TRUTH_EXECUTION_PLAN.md`); `urgency` has been moved out of this
-  bucket entirely into the 4th KEEP-AS-IS exception (tempo, not importance, §4). The paragraph
-  above is kept as a historical record of the original drafting deviation and no longer describes
-  `urgency`'s status.
-- No other contradictions found — VERIFY's identity, scale, taxonomy, lifecycle, and registry-gap
-  sections were used directly as ground truth throughout.

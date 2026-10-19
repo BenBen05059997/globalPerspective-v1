@@ -1,18 +1,18 @@
 # Severity codebook — anchored labeling rubric
 
-**Status:** new, Phase 3 of `ONE_TRUTH_EXECUTION_PLAN.md`.
+**Status:** in use — the labeling standard for `quality/severity_gold_set.json`; baseline `quality/calibration/severity-2026-09-14.md` exists. Last verified: 2026-10-19 (prompts below re-read from the repo source).
 **Purpose:** give a human labeler a concrete, repeatable standard for scoring the same four risk
 axes the generators score, so `quality/severity_agreement.js` can measure model/human agreement.
 **The prompt is not touched by this doc.** This is read-only source material quoted from the live
 generators, plus an anchored expansion for human labeling. No prompt or rubric change to
 `newsCountryIntelligence` or `newsThreadAnalysis` may happen before the Phase 3 baseline
-(`quality/calibration/severity-YYYY-MM-DD.md`) exists — see the plan's Step 3.5 hard rule.
+(`quality/calibration/severity-YYYY-MM-DD.md`) exists.
 
 ---
 
 ## 1. Current rubric (baseline) — quoted verbatim from the live prompts
 
-### `newsCountryIntelligence/src/index.js` (~line 487-492)
+### `backend/pipeline/newsCountryIntelligence/src/index.js` (~line 540-545)
 
 > 10. "dimensions": Object scoring this country's CURRENT risk across four INDEPENDENT axes. For
 > each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific arc/event
@@ -26,7 +26,7 @@ generators, plus an anchored expansion for human labeling. No prompt or rubric c
 > Per-axis calibration: 0-24 = low, 25-49 = moderate, 50-74 = elevated, 75-100 = severe.
 > (riskScore and riskLevel are derived from these — do NOT output them separately.)
 
-### `newsThreadAnalysis/src/index.js` (~line 263)
+### `backend/pipeline/newsThreadAnalysis/src/index.js` (~line 271)
 
 > 8. "dimensions": Object scoring THIS thread's current risk across four INDEPENDENT axes. For
 > each axis provide {"score": integer 0-100, "why": ONE sentence citing the specific development
@@ -92,7 +92,7 @@ These are rulings on what each axis *means*, not new bands or cutoffs — §3/§
 
 3. **Severity scores the PRESENT, not the future.** "This could someday become a war" is a
    likelihood question, which this system deliberately handles elsewhere (predictions =
-   probability, watch/risk signals = tripwires, trajectory = direction) per `WORLD_MODEL.md` D2's
+   probability, watch/risk signals = tripwires, trajectory = direction) per decision 0005's
    importance-vs-likelihood separation. Future fear enters severity only as the within-band nudge
    in ruling 2 above, never as a band jump.
 
@@ -214,5 +214,5 @@ not an abstract description. Use these as calibration points: if the record you'
    axes (no leftover `null` placeholders you simply skipped over without considering — a considered
    `null` and an unconsidered blank look identical in JSON, so work the whole file in one sitting if
    possible).
-5. Only after every record is labeled, run `node quality/severity_agreement.js` (Step 3.5). The
+5. Only after every record is labeled, run `node quality/severity_agreement.js`. The
    script refuses to run on an incomplete file.

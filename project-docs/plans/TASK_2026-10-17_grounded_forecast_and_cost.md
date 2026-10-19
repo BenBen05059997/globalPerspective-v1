@@ -22,7 +22,7 @@ Status: active.
 - `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` (`buildResearchPrompt`, `buildPredictionPrompt`, `generateAndStore`, `ensureStored`, `findSiblingItem`, `touchItem`, `logPredictionSnapshot`, `assignThreadId`, `readPastArchiveEntries`), `lib.js` (`decideReuse`, `validateTrigger` G1–G6, `buildGatedScenarios`, `METHODOLOGY_VERSION`), `questions.js` (G7–G12)
 - `git show 120de90:project-docs/archive/prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md` (deleted 2026-10-19), `git show 120de90:project-docs/archive/prediction/PREDICTION_V1_EXAMPLE.md` (deleted 2026-10-19)
 - `amplify/backend/function/newsModelGuard/src/index.js` (daily 12:00 UTC, SNS `GlobalPerspectiveAlerts`)
-- `backend/pipeline/newsInvokeGemini/src/index.js` (`captureIngestion` → `GlobalPerspectiveIngestCapture`: SAW vs CHOSE per run), `git show 120de90:project-docs/archive/pipeline-ingest/IMPACT_VALIDATION_METHODOLOGY.md` (deleted 2026-10-19)
+- `backend/pipeline/newsInvokeGemini/src/index.js` (`captureIngestion` → S3 `audit/ingest-capture/`: SAW vs CHOSE per run), `git show 120de90:project-docs/archive/pipeline-ingest/IMPACT_VALIDATION_METHODOLOGY.md` (deleted 2026-10-19)
 - `project-docs/runbooks/DEEPSEEK_COST_ESTIMATE.md`, memory `project_deepseek_cost`
 - Consumers: `RESEARCH_BRIEFING` is served by `newsSensitiveData` (`research_briefing` action) but no frontend page calls `fetchResearchBriefingCache` → safe to stop producing.
 
@@ -37,7 +37,7 @@ Status: active.
 | P4 | Token-usage logging (all DeepSeek callers) | ✓ 8 Lambdas (`3eb878a`, `fcd533e`); first live line 13:50 | real counts in logs for 24h |
 | P5 | Low-balance alert in `newsModelGuard` | ✓ deployed 13:07 (`a6d755a`); first check 10-18 12:00 UTC | test alert received |
 | P6 | Jev "post this story?" backtest | ✓ backtest run (`67b2fbc`, `predictions/jev-backtest/REPORT.md`); operator blind review of 20 pairs pending; then shadow week (dated capture history live since 10-17 14:04, `a6b9bfc`) | backtest report |
-| P7 | Layered story selection (count + spread, Jev rescue/filter, GDACS slot, code quotas) | ◐ backtest v9 + blind review (Combined 11, ours 7, 2 split); B1 snippets live 10-17 (`5e01cbf`); B2 `newsSelectionShadow` deployed 10-18 15:07 UTC (operator yes; role, Jev key in env, schedule 04:20/12:20/20:20); shadow week from the 10-18 20:20 run | operator go after shadow week |
+| P7 | Layered story selection (count + spread, Jev rescue/filter, GDACS slot, code quotas) | ◐ backtest v9 + blind review (Combined 11, ours 7, 2 split); B1 snippets live 10-17 (`5e01cbf`); B2 `newsSelectionShadow` deployed 10-18 15:07 UTC (operator yes; role, Jev key in env, schedule 04:20/12:20/20:20); shadow week from the 10-18 20:20 run, to about 10-25 | operator go after shadow week |
 
 **P0 — before/after harness (no live change).** Script `predictions/forecast-ab/run.mjs` loads the live job's prompt builders (module loaded with stubbed AWS SDK, as in the 10-05 reuse simulation), rebuilds today's inputs for the stored topics (staging topics item, FACTS#, 7-day archive digest), and runs A = current two-call path and B = new single grounded call on the same 12 stories. DeepSeek key read from the job's Lambda env inside the process only, never printed or written (operator yes 2026-10-17). Cost ~$0.10. Output `predictions/forecast-ab/REPORT_2026-10-17.md` (side by side per story) with measured metrics:
 - dated claims in rationale/questions whose date or named scheduled event is NOT in the inputs (ungrounded-date count; hand-check a sample against a source);

@@ -20,5 +20,5 @@ declined on 2026-09-29).
 - A DeepSeek balance lapse stops the AI pipeline; GDACS and other non-LLM feeds keep running.
 - Env names `GROK_*` / `XAI_*` hold DeepSeek settings; read the live env, not the name.
 
-Source: `project-docs/plans/BACKEND_PLAN_2026-09-27.md` (Decisions);
+Source: `git show a5c0de8:project-docs/plans/BACKEND_PLAN_2026-09-27.md` (deleted 2026-10-19) (Decisions);
 `git show 120de90:project-docs/archive/architecture/_active/TASK_2026-09-29_batch2_models.md` (deleted 2026-10-19); `CLAUDE.md`

@@ -1,6 +1,7 @@
 // check_docs — doc layout guard (project-docs/decisions/0025-docs-storage-layout.md).
-// Fails (exit 1) when: project-docs/INDEX.md is over 60 lines, links to a file that does not exist
-// a doc in project-docs/plans/ says `Status: done`; CLAUDE.md is over 80 lines.
+// Fails (exit 1) when: project-docs/INDEX.md is over 60 lines or links to a file that does not exist;
+// project-docs/plans/ holds more than 10 files; a plan has no `Status:` line, more than one, or one that
+// says done; CLAUDE.md is over 80 lines.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,10 +23,14 @@ export function checkDocs() {
     if (!fs.existsSync(abs)) problems.push(`INDEX.md links to a missing file: ${target}`);
   }
   const plans = path.join(DOCS, 'plans');
-  for (const f of fs.existsSync(plans) ? fs.readdirSync(plans) : []) {
+  const planFiles = fs.existsSync(plans) ? fs.readdirSync(plans) : [];
+  if (planFiles.length > 10) problems.push(`plans/ holds ${planFiles.length} files (max 10)`);
+  for (const f of planFiles) {
     if (!f.endsWith('.md')) continue;
-    const done = fs.readFileSync(path.join(plans, f), 'utf8').split('\n')
-      .find((l) => /^[\s>*_]*status[*_\s]*:[*_\s]*(done|shipped|cancelled)\b/i.test(l));
+    const statuses = fs.readFileSync(path.join(plans, f), 'utf8').split('\n')
+      .filter((l) => /^[\s>*_]*status[*_\s]*:/i.test(l));
+    if (statuses.length !== 1) problems.push(`plans/${f} has ${statuses.length} \`Status:\` lines (exactly 1)`);
+    const done = statuses.find((l) => /^[\s>*_]*status[*_\s]*:[*_\s]*(done|shipped|cancelled)\b/i.test(l));
     if (done) problems.push(`plans/${f} says "${done.trim()}" — record its decisions in decisions/ and delete it`);
   }
   const claude = lineCount(path.join(ROOT, 'CLAUDE.md'));

@@ -77,7 +77,9 @@ async function readPastArchiveTitles(days) {
   try {
     const titles = [];
     const now = new Date();
-    for (let i = 1; i <= days; i++) {
+    // i = 0 is today's earlier runs, so a same-day re-run of a story can name its title in
+    // continues_topic (the agent joins threads on it; it also reads today).
+    for (let i = 0; i <= days; i++) {
       const date = new Date(now);
       date.setUTCDate(date.getUTCDate() - i);
       const y = date.getUTCFullYear();
@@ -536,7 +538,7 @@ exports.handler = async (event) => {
       if (pastArchiveTitles.length > 0) {
         narrativeContinuityLines.push(
           'NARRATIVE CONTINUITY:',
-          'These topics appeared in the previous 7 days. If a new topic is a clear continuation',
+          'These topics appeared today or in the previous 7 days. If a new topic is a clear continuation',
           'or development of one of these stories, add "continues_topic" with the exact previous title.',
           'Only set continues_topic if it is clearly the same story evolving. Leave it out for new events.',
           'Previous topics:',

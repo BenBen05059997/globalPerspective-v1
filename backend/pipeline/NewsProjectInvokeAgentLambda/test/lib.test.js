@@ -342,3 +342,25 @@ test('R2 sibling ids: same title at every other position; none for an id without
   assert.equal(newestItem([{ generatedAt: '2026-10-04T04:30Z', n: 1 }, null, { generatedAt: '2026-10-04T12:30Z', n: 2 }]).n, 2);
   assert.equal(newestItem([]), null);
 });
+
+// ---------- stable keys: threadId on every per-story row + the THREAD#<id>/TOPICS pointer ----------
+
+test('threadAttr adds threadId only when known', () => {
+  const { threadAttr } = require('../src/lib');
+  assert.deepEqual(threadAttr('thread-a-123456'), { threadId: 'thread-a-123456' });
+  assert.deepEqual(threadAttr(null), {});
+  assert.deepEqual(threadAttr(undefined), {});
+});
+
+test('threadPointerUpdate keys the pointer by threadId and accumulates topicIds', () => {
+  const { threadPointerUpdate, selectPruneKeys } = require('../src/lib');
+  const u = threadPointerUpdate('thread-x-abcdef', [{ id: 'Title-3', title: 'Title' }, { id: 'title-9', title: 'title' }], 'gen-1', '2026-10-19T00:00:00.000Z');
+  assert.deepEqual(u.Key, { PK: 'THREAD#thread-x-abcdef', SK: 'TOPICS' });
+  assert.match(u.UpdateExpression, /SET .*topicId = :t.* ADD topicIds :ids$/);
+  assert.equal(u.ExpressionAttributeValues[':t'], 'Title-3'); // first in rank order is current
+  assert.ok(u.ExpressionAttributeValues[':ids'] instanceof Set);
+  assert.deepEqual([...u.ExpressionAttributeValues[':ids']], ['Title-3', 'title-9']);
+  assert.equal(u.ExpressionAttributeValues[':th'], 'thread-x-abcdef');
+  // the generation prune (TOPIC# rows only) never selects the pointer
+  assert.deepEqual(selectPruneKeys([{ PK: u.Key.PK, SK: u.Key.SK, generationId: 'gen-0' }], 'TOPIC#', 'gen-1'), []);
+});

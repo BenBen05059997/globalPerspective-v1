@@ -139,3 +139,44 @@ t('buildStorySituation: severity→tier, escalating on velocity/spread', () => {
   assert.strictEqual(next.change, 'raised'); // velocity 2.1 → escalating
   assert.strictEqual(next.item.state, 'escalating');
 });
+
+// Situation keyed by country + thread (L2 linking, 2026-10-19)
+const afg1 = { storyId: 'conflict#AFG#afghan-taliban', title: 'Taliban strike border post', axis: 'conflict', max_severity: 4, outlets: 5, velocity: 1, spread_new_iso3: [], centroid: { lat: 34, lon: 69 }, iso3: ['AFG', 'PAK'], category: 'war', headlines: [{ title: 'a', url: 'u1', domain: 'x.com' }] };
+const afg2 = { storyId: 'political#AFG#afghanistan', title: 'Kabul talks stall', axis: 'political', max_severity: 3, outlets: 3, velocity: 1.6, spread_new_iso3: ['IRN'], centroid: { lat: 35, lon: 70 }, iso3: ['AFG', 'IRN'], category: 'diplomacy', headlines: [{ title: 'a', url: 'u1', domain: 'x.com' }, { title: 'b', url: 'u2', domain: 'y.com' }] };
+
+t('newsSituationId: country + thread when threaded, storyId otherwise', () => {
+  assert.strictEqual(core.newsSituationId(afg1, 'thread-afghan-border-abc123'), 'news#AFG#thread-afghan-border-abc123');
+  assert.strictEqual(core.newsSituationId(afg2, 'thread-afghan-border-abc123'), 'news#AFG#thread-afghan-border-abc123');
+  assert.strictEqual(core.newsSituationId(afg1, null), 'news#conflict#AFG#afghan-taliban');
+  assert.strictEqual(core.storyCountry({ storyId: 'odd', iso3: ['UKR'] }), 'UKR');
+});
+
+t('mergeStories: lead by outlets x severity, max counts, union countries + deduped headlines', () => {
+  const m = core.mergeStories([afg2, afg1]);
+  assert.strictEqual(m.storyId, afg1.storyId);
+  assert.strictEqual(m.title, afg1.title);
+  assert.deepStrictEqual(m.storyIds, [afg2.storyId, afg1.storyId]);
+  assert.strictEqual(m.outlets, 5);
+  assert.strictEqual(m.max_severity, 4);
+  assert.strictEqual(m.velocity, 1.6);
+  assert.deepStrictEqual(m.iso3, ['AFG', 'PAK', 'IRN']);
+  assert.deepStrictEqual(m.spread_new_iso3, ['IRN']);
+  assert.deepStrictEqual(m.headlines.map((h) => h.url), ['u1', 'u2']);
+  assert.deepStrictEqual(core.mergeStories([afg1]).storyIds, [afg1.storyId]);
+});
+
+t('buildStorySituation: situationId, storyIds and aliases (never its own id, kept from prev)', () => {
+  const id = 'news#AFG#thread-afghan-border-abc123';
+  const merged = core.mergeStories([afg1, afg2]);
+  const prevOld = core.buildStorySituation(null, afg1, NOW, TTL).item; // pre-change key news#conflict#AFG#afghan-taliban
+  const { change, item } = core.buildStorySituation(prevOld, merged, '2026-09-08T01:00:00.000Z', TTL, { situationId: id, aliases: ['news#conflict#AFG#afghan-taliban', 'news#political#AFG#afghanistan', id] });
+  assert.notStrictEqual(change, 'opened'); // continues the old situation's life
+  assert.strictEqual(item.situationId, id);
+  assert.strictEqual(item.opened_at, prevOld.opened_at);
+  assert.deepStrictEqual(item.storyIds, [afg1.storyId, afg2.storyId]);
+  assert.deepStrictEqual(item.aliases, ['news#conflict#AFG#afghan-taliban', 'news#political#AFG#afghanistan']);
+  const later = core.buildStorySituation(item, merged, '2026-09-08T02:00:00.000Z', TTL, { situationId: id, aliases: [] });
+  assert.deepStrictEqual(later.item.aliases, item.aliases);
+});
+
+console.log(`${pass} tests passed (incl. situation keying)`);

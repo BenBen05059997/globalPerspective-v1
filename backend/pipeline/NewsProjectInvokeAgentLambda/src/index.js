@@ -2,6 +2,8 @@
 
 const crypto = require('crypto');
 const lib = require('./lib');
+const threading = require('./threading');
+const { slugify } = threading;
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
   DynamoDBDocumentClient,
@@ -156,15 +158,17 @@ exports.handler = async (event) => {
     // generatedDate here is a HUMAN string ("July 4, 2026") — never slice it for a date.
     // The gates need a real ISO day; use UTC today (matches the log snapshot's `day`).
     // P3: threadIds are computed BEFORE generation (the later swap/archive reuse this same map) so a
-    // forecast already made today for the same thread can be copied instead of regenerated.
+    // forecast already made today for the same thread can be copied instead of regenerated, and
+    // every per-story row (summary, cause chain, forecast, PRED#) carries its threadId.
     const threadIdById = {};
-    if (needsPrediction && Array.isArray(stagingItem?.topics)) {
+    if (Array.isArray(stagingItem?.topics)) {
       stagingItem.topics.forEach((raw, idx) => {
         try { threadIdById[buildStableTopicId(raw, idx)] = assignThreadId(raw, pastEntries); } catch (e) { console.warn('early threadId failed:', e.message); }
       });
     }
-    const todayArchiveEntries = needsPrediction && !force ? await readTodayArchiveEntries() : [];
-    const genCtx = { pastEntries, factsByCountry, threadIdById, todayArchiveEntries, generatedAtDay: new Date().toISOString().slice(0, 10), force, dryRun, plan: [] };
+    const generatedAtDay = new Date().toISOString().slice(0, 10);
+    const todayArchiveEntries = needsPrediction && !force ? pastEntries.filter(e => e.date === generatedAtDay) : [];
+    const genCtx = { pastEntries, factsByCountry, threadIdById, todayArchiveEntries, generatedAtDay, force, dryRun, plan: [] };
 
     const outputs = [];
     const reused = [];
@@ -240,6 +244,7 @@ exports.handler = async (event) => {
       } catch (archiveErr) {
         console.warn('Archive write encountered an issue:', archiveErr);
       }
+      await writeThreadPointers(filteredTopics, threadIdById, generationId);
     }
 
     if (!readOnly && CACHE_CLEANUP_ENABLED && swapped) {
@@ -577,7 +582,8 @@ async function ensureStored(topic, kind, generationId, generatedDate, generatedY
     }
   }
   const decision = lib.decideReuse({ kind, existing, fingerprint, predictionLoggedToday, force: ctx.force });
-  if (ctx.plan) ctx.plan.push({ topicId: topic.id, kind, decision: decision.reuse ? 'reuse' : 'generate', reason: decision.reason, model: modelFor(kind), threadId: (ctx.threadIdById || {})[topic.id] || null });
+  const threadAttr = lib.threadAttr((ctx.threadIdById || {})[topic.id]);
+  if (ctx.plan) ctx.plan.push({ topicId: topic.id, kind, decision: decision.reuse ? 'reuse' : 'generate', reason: decision.reason, model: modelFor(kind), threadId: threadAttr.threadId || null });
   if (ctx.dryRun) return null;
   if (!decision.reuse) {
     const item = await generateAndStore(topic, kind, generationId, generatedDate, generatedYear, { ...ctx, fingerprint });
@@ -588,25 +594,36 @@ async function ensureStored(topic, kind, generationId, generatedDate, generatedY
     // Copy the sibling's item under this run's id (pages read TOPIC#<current id>). No new
     // PRED# row: the forecast was logged once under the sibling id, which the story's thread
     // lookup (prediction_snapshot by threadId/topicIds) still finds.
-    const item = { ...lib.restampFields(existing, generationId, ttlSeconds), PK: pk, topicId: topic.id, title: topic.title, reusedFromTopicId: fromTopicId };
+    const item = { ...lib.restampFields(existing, generationId, ttlSeconds), PK: pk, topicId: topic.id, title: topic.title, reusedFromTopicId: fromTopicId, ...threadAttr };
     await ddb.send(new PutCommand({ TableName: SUMMARY_TABLE, Item: item }));
     console.log(`Reused ${kind} for ${topic.id} from sibling ${fromTopicId} (${decision.reason})`);
     return { item, reused: true };
   }
-  await touchItem(pk, KIND_SK(kind), generationId, ttlSeconds);
-  return { item: lib.restampFields(existing, generationId, ttlSeconds), reused: true };
+  await touchItem(pk, KIND_SK(kind), generationId, ttlSeconds, threadAttr.threadId);
+  return { item: { ...lib.restampFields(existing, generationId, ttlSeconds), ...threadAttr }, reused: true };
 }
 
-// Today's archive entries (written by earlier runs today). Best-effort: [] on any failure.
-async function readTodayArchiveEntries() {
-  if (!TOPICS_TABLE) return [];
-  try {
-    const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: formatDateKey(new Date()) } }));
-    return Array.isArray(Item?.entries) ? Item.entries.map(e => ({ topicId: e.topicId, threadId: e.threadId })) : [];
-  } catch (e) {
-    console.warn(`today archive read failed: ${e.message}`);
-    return [];
+// threadId -> topic lookup: one `THREAD#<threadId>` / `TOPICS` row per thread (lib.threadPointerUpdate)
+// holding the current topicId (its TOPIC# summary / cause chain / forecast rows) and every topicId
+// the thread has had (its PRED# rows). Best-effort: a failed pointer never fails the run.
+async function writeThreadPointers(topics, threadIdById, generationId) {
+  if (!SUMMARY_TABLE) return;
+  const nowIso = new Date().toISOString();
+  const byThread = new Map();
+  for (const topic of topics) {
+    const threadId = threadIdById[topic.id];
+    if (threadId) byThread.set(threadId, [...(byThread.get(threadId) || []), topic]);
   }
+  let written = 0;
+  await mapWithConcurrency([...byThread], 8, async ([threadId, threadTopics]) => {
+    try {
+      await ddb.send(new UpdateCommand({ TableName: SUMMARY_TABLE, ...lib.threadPointerUpdate(threadId, threadTopics, generationId, nowIso) }));
+      written++;
+    } catch (e) {
+      console.warn(`thread pointer failed for ${threadId}: ${e.message}`);
+    }
+  });
+  console.log(`Thread pointers written: ${written}/${byThread.size}`);
 }
 
 // Newest stored item of this kind for the same title at another list position (see
@@ -624,16 +641,16 @@ async function findSiblingItem(topicId, sk, extraIds = []) {
 }
 
 // Re-stamp a reused item so the generation prune keeps it; never creates an item (attribute_exists).
-async function touchItem(pk, sk, generationId, ttlSeconds) {
+async function touchItem(pk, sk, generationId, ttlSeconds, threadId) {
   try {
     await ddb.send(new UpdateCommand({
       TableName: SUMMARY_TABLE,
       Key: { PK: pk, SK: sk },
       // `ttl` is a DynamoDB reserved word, so it must go through an attribute-name placeholder.
-      UpdateExpression: 'SET generationId = :g, #ttl = :t, lastVerifiedAt = :n',
+      UpdateExpression: `SET generationId = :g, #ttl = :t, lastVerifiedAt = :n${threadId ? ', threadId = :th' : ''}`,
       ConditionExpression: 'attribute_exists(PK)',
       ExpressionAttributeNames: { '#ttl': 'ttl' },
-      ExpressionAttributeValues: { ':g': generationId, ':t': Math.floor(Date.now() / 1000) + ttlSeconds, ':n': new Date().toISOString() },
+      ExpressionAttributeValues: { ':g': generationId, ':t': Math.floor(Date.now() / 1000) + ttlSeconds, ':n': new Date().toISOString(), ...(threadId ? { ':th': threadId } : {}) },
     }));
   } catch (err) {
     if (err.name !== 'ConditionalCheckFailedException') throw err;
@@ -680,7 +697,7 @@ async function generateAndStore(topic, kind, generationId, generatedDate, genera
   }
 
   const ttlSeconds = kind === 'prediction' ? PREDICTION_TTL_SECONDS : SUMMARY_TTL_SECONDS;
-  const item = await writeCache(topic, kind, response, ttlSeconds, generationId, ctx.fingerprint);
+  const item = await writeCache(topic, kind, response, ttlSeconds, generationId, ctx.fingerprint, (ctx.threadIdById || {})[topic.id]);
 
   if (kind === 'prediction') {
     await logPredictionSnapshot(topic, response.content, response, generationId, generatedYear, { ...ctx, inputText, groundRemoved });
@@ -812,7 +829,7 @@ async function readCache(topic, action) {
   return { topicId: topic.id, items: results };
 }
 
-async function writeCache(topic, kind, response, ttlSeconds, generationId, fingerprint) {
+async function writeCache(topic, kind, response, ttlSeconds, generationId, fingerprint, threadId) {
   if (!SUMMARY_TABLE) {
     throw new Error('SUMMARIZE_PREDICT_TABLE env var not set');
   }
@@ -831,6 +848,7 @@ async function writeCache(topic, kind, response, ttlSeconds, generationId, finge
     PK: pk,
     SK: sk,
     topicId: topic.id,
+    ...lib.threadAttr(threadId),
     title: topic.title,
     action: kind,
     content: response.content,
@@ -920,13 +938,10 @@ function buildPremiseBlock(topic, factsByCountry = {}) {
 
 // A compact dated digest of how THIS story has evolved, from our own archive — so the forecast
 // builds on the arc, not just today's 48h snapshot. Matches past entries to the topic by the
-// same continues_topic + Jaccard logic used for threading (threadId isn't assigned until after
-// generation, so we can't key on it here). Returns "" when there's no real prior coverage.
+// same join rule as threading (threading.relatedEntries). Returns "" when there's no real prior coverage.
 function buildArcDigest(topic, pastEntries = []) {
   if (!pastEntries.length) return '';
-  const related = pastEntries.filter(e =>
-    (topic.continues_topic && e.title === topic.continues_topic) || computeJaccardScore(topic, e) >= 0.4,
-  );
+  const related = threading.relatedEntries(topic, pastEntries);
   const seen = new Set();
   const rows = [];
   for (const e of related) {
@@ -1110,7 +1125,7 @@ async function fetchAiContent(topicId) {
 function buildArchiveEntry(topic, ai, generationId, sourceCap, threadId) {
   return {
     topicId: topic.id,
-    threadId: threadId || generateThreadId(topic),
+    threadId: threadId || threading.generateThreadId(topic),
     title: topic.title,
     category: Array.isArray(topic.categories) ? topic.categories[0] || '' : '',
     regions: topic.regions || [],
@@ -1151,67 +1166,11 @@ function formatDateKey(date) {
 // NARRATIVE THREADING - threadId assignment
 // ============================================================
 
-const THREAD_STOP_WORDS = new Set([
-  'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or',
-  'is', 'are', 'was', 'were', 'as', 'by', 'its', 'be', 'with', 'from',
-]);
-
-function topicSignature(topic) {
-  const titleWords = String(topic.title || '')
-    .toLowerCase().split(/\W+/)
-    .filter(w => w.length > 2 && !THREAD_STOP_WORDS.has(w));
-  const keywords = (topic.search_keywords || []).map(k => String(k).toLowerCase());
-  return new Set([...titleWords, ...keywords]);
-}
-
-function jaccard(setA, setB) {
-  if (!setA.size || !setB.size) return 0;
-  let intersection = 0;
-  for (const item of setA) { if (setB.has(item)) intersection++; }
-  return intersection / (setA.size + setB.size - intersection);
-}
-
-function computeJaccardScore(topic, pastEntry) {
-  const keywordScore = jaccard(topicSignature(topic), topicSignature(pastEntry));
-  const regionsA = new Set((topic.regions || []).map(r => String(r).toLowerCase()));
-  const regionsB = new Set((pastEntry.regions || []).map(r => String(r).toLowerCase()));
-  const regionScore = jaccard(regionsA, regionsB);
-  const categoryScore = (topic.category || '') === (pastEntry.category || '') ? 1 : 0;
-  return (0.5 * keywordScore) + (0.3 * regionScore) + (0.2 * categoryScore);
-}
-
-function generateThreadId(topic) {
-  const slug = slugify(topic.title || 'topic', 'topic').slice(0, 30);
-  const hash = crypto.createHash('sha1').update(topic.title || '').digest('hex').slice(0, 6);
-  return `thread-${slug}-${hash}`;
-}
-
+// Every assignment logs one `[join] {topicId, threadId, via, score, kwScore}` line (threading.joinRecord).
 function assignThreadId(topic, pastEntries) {
-  // 1. Grok detected a continuation — look up that topic's threadId
-  if (topic.continues_topic) {
-    const match = pastEntries.find(e => e.title === topic.continues_topic && e.threadId);
-    if (match) {
-      console.log(`Thread inherited via continues_topic: "${topic.title}" -> ${match.threadId}`);
-      return match.threadId;
-    }
-  }
-
-  // 2. Jaccard keyword similarity fallback
-  let bestScore = 0;
-  let bestEntry = null;
-  for (const entry of pastEntries) {
-    const score = computeJaccardScore(topic, entry);
-    if (score > bestScore) { bestScore = score; bestEntry = entry; }
-  }
-  if (bestScore >= 0.4 && bestEntry?.threadId) {
-    console.log(`Thread inherited via Jaccard (${bestScore.toFixed(2)}): "${topic.title}" -> ${bestEntry.threadId}`);
-    return bestEntry.threadId;
-  }
-
-  // 3. New thread
-  const newId = generateThreadId(topic);
-  console.log(`New thread created: "${topic.title}" -> ${newId}`);
-  return newId;
+  const rec = threading.joinRecord(topic, pastEntries);
+  console.log(`[join] ${JSON.stringify(rec)}`);
+  return rec.threadId;
 }
 
 async function readPastArchiveEntries(days) {
@@ -1219,14 +1178,18 @@ async function readPastArchiveEntries(days) {
   try {
     const entries = [];
     const now = new Date();
-    for (let i = 1; i <= days; i++) {
+    // i = 0 is today: earlier generations of the same day, so a same-day re-run of a story joins its
+    // thread instead of forking. This run's own topics are archived only after assignment; a forced
+    // re-run of the same generation finds its own rows and keeps their threadIds.
+    for (let i = 0; i <= days; i++) {
       const date = new Date(now);
       date.setUTCDate(date.getUTCDate() - i);
       const key = formatDateKey(date);
       try {
         const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } }));
         if (Item && Array.isArray(Item.entries)) {
-          entries.push(...Item.entries.map(e => ({
+          // A day's rows are stored oldest generation first; reversed, the whole list is newest first.
+          entries.push(...Item.entries.slice().reverse().map(e => ({
             topicId: e.topicId,
             threadId: e.threadId,
             title: e.title,
@@ -1343,20 +1306,6 @@ async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {
     console.error('Failed to write archive:', err);
     return false;
   }
-}
-
-function slugify(value, fallback = '') {
-  if (typeof value !== 'string') {
-    return fallback;
-  }
-  return value
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-')
-    .slice(0, 80) || fallback;
 }
 
 function normalizeList(input) {

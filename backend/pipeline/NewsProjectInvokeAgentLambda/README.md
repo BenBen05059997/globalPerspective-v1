@@ -13,17 +13,21 @@ Forecasts get FACTS# leaders and an arc digest as grounding (no live web search)
 
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: `staging` (read, set `agentProcessedAt`), `latest` (write), `today-archive` + `archive#YYYY-MM-DD` (read/write).
-- DynamoDB `SUMMARIZE_PREDICT_TABLE`: `TOPIC#<id>` / `SUMMARY|PREDICTION|TRACE_CAUSE` (TTL 259200 s); reads `FACTS#<country>`/`COUNTRY_FACTS`; scans and batch-deletes old-generation rows when `CACHE_CLEANUP_ENABLED` (default true).
+- DynamoDB `SUMMARIZE_PREDICT_TABLE`: `TOPIC#<id>` / `SUMMARY|PREDICTION|TRACE_CAUSE` (TTL 259200 s; each row carries `threadId`); writes the thread → topic pointer `THREAD#<threadId>` / `TOPICS` (`topicId` = current, `topicIds` string set = every topicId the thread has had, so PRED# rows are reachable by thread); reads `FACTS#<country>`/`COUNTRY_FACTS`; scans and batch-deletes old-generation rows when `CACHE_CLEANUP_ENABLED` (default true).
 - DynamoDB `PREDICTION_LOG_TABLE` (default `GlobalPerspectivePredictionLog`): `PRED#<topicId>` / `<YYYY-MM-DD>`.
 - S3 `WORLD_BUCKET`: reads `stories/state/*`, writes `threads/story-map.json` (matcher; R3 tier off unless `ENABLE_R3_TIER=true`).
 
 ## Models
 - `XAI_API_KEY` / `GROK_API_URL` (code default `api.x.ai`; set in the live env) / `GROK_MODEL` (fallback `deepseek-flash`): legacy names, live provider is DeepSeek. `PREDICTION_MODEL` overrides the forecast model. All calls share `lib.buildChatBody` with thinking disabled.
 
+## Threading
+- `src/threading.js` (pure): a topic joins the thread of an archive entry from today's earlier runs or the past 7 days on its `continues_topic` title or its own title (both compared normalised: case, whitespace, punctuation), else when the composite score (0.5 keywords + 0.3 regions + 0.2 category) is >= 0.4 AND keyword-only Jaccard is >= 0.15; otherwise it founds `thread-<slug>-<sha1>`. Measured in `.board/linking/joins.md`. Each assignment logs `[join] {topicId, threadId, via, score, kwScore}` (via `continues_topic|title|score|new`).
+- Repair: `node backend/pipeline/cli/threads.mjs list-joins --since <date>` (read-only), `merge <from> <into>`, `split <threadId> <topicId...>` print every DynamoDB/S3 change and write only with `--apply` (operator yes). Tests: `node --test backend/pipeline/cli/threads.test.mjs`.
+
 ## Gotchas
 - Run guard: a `staging` already marked `agentProcessedAt` is skipped unless `force`, `topicId`, `readOnly` or `dryRun`. `http()` emits `Access-Control-Allow-Origin: *` (scheduler-invoked). `package.json` lists Bedrock SDK deps the code does not use.
 
 ## Tests
-- `cd backend/pipeline/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 56 pass.
+- `cd backend/pipeline/NewsProjectInvokeAgentLambda/src && npm test` (`node --test ../test/*.test.js`): 72 pass.
 
 Last verified: 2026-10-19

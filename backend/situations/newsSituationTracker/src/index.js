@@ -14,7 +14,7 @@
 // under world/shadow/ and shadow/situations/ and never consumes the inbox.
 
 const core = require('./_shared/situations-core');
-const { buildSituation, coolSituation, buildStorySituation, LEVEL_TIER } = core;
+const { buildSituation, coolSituation, buildStorySituation, newsSituationId, mergeStories, LEVEL_TIER } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
@@ -96,6 +96,37 @@ function foldSweep(priorStates, observations, nowIso, ttl, opts = {}) {
   return { states, changes, counts, dropped };
 }
 
+// News stories → situation groups. A story's thread is the current story map's, else the one a prior
+// situation latched for it (topics rotate every ~8h; a URL-proven link holds for the situation's life).
+// Threaded stories key by country + thread (core.newsSituationId) and fold together; the old
+// per-story ids become aliases, and prior states under those old ids are `absorbed` (their life story
+// carries into the group; the caller archives them instead of cooling them).
+// Merge rule (one event, one pin): a humanitarian story sharing a country with a GDACS situation this
+// sweep is skipped — the disaster pin owns it.
+function planNewsSituations(stories, priorStates, storyMap, gdacsIso) {
+  const latched = {};
+  for (const st of Object.values(priorStates)) {
+    if (st.source !== 'news' || !st.threadId) continue;
+    for (const sid of st.storyIds || [st.storyId]) latched[sid] = st.threadId;
+  }
+  const groups = new Map();
+  for (const st of stories) {
+    if (st.axis === 'humanitarian' && (st.iso3 || []).some((c) => gdacsIso.has(c))) continue;
+    const threadId = (storyMap[st.storyId] && storyMap[st.storyId].threadId) || latched[st.storyId] || null;
+    const id = newsSituationId(st, threadId);
+    if (!groups.has(id)) groups.set(id, { id, threadId, stories: [] });
+    groups.get(id).stories.push(st);
+  }
+  const absorbed = [];
+  for (const g of groups.values()) {
+    g.aliases = g.stories.map((st) => `news#${st.storyId}`).filter((a) => a !== g.id);
+    const oldPrev = g.aliases.filter((a) => priorStates[a]);
+    g.prev = priorStates[g.id] || (oldPrev.length ? priorStates[oldPrev[0]] : null);
+    absorbed.push(...oldPrev);
+  }
+  return { groups: [...groups.values()], absorbed };
+}
+
 function summarize(state) {
   return {
     id: state.situationId, source: state.source, verb_label: state.verb_label,
@@ -104,6 +135,7 @@ function summarize(state) {
     centroid: state.centroid, iso3_affected: state.iso3_affected, affected_names: state.affected_names || [], spread_arcs: state.spread_arcs || [],
     opened_at: state.opened_at, last_change_at: state.last_change_at, tier_changed_at: state.tier_changed_at || null,
     what_changed: state.what_changed, threadId: state.threadId || null,
+    ...(state.aliases && state.aliases.length ? { aliases: state.aliases } : {}),
   };
 }
 
@@ -256,21 +288,21 @@ exports.handler = async () => {
 
   const [{ observations, gdacsObservedAt, processedKeys }, { stories, storiesAt }, priorStates, storyMap] = await Promise.all([readObservations(), readStories(), loadPriorStates(), readStoryMap()]);
 
-  // Build news situations from stories. Merge rule (one event, one pin): skip a humanitarian story
-  // that shares a country with a GDACS situation present this sweep — the disaster pin already owns it.
+  // Build news situations from stories (planNewsSituations: country + thread keys, GDACS merge rule).
   const gdacsIso = new Set();
   for (const o of observations) for (const c of o.iso3_affected || []) gdacsIso.add(c);
   const storyOpts = { corroborationCap: CORROBORATION_CAP, raiseCooldownMin: RAISE_COOLDOWN_MIN };
+  const { groups, absorbed } = planNewsSituations(stories, priorStates, storyMap, gdacsIso);
   const extraBuilt = {};
-  for (const st of stories) {
-    if (st.axis === 'humanitarian' && (st.iso3 || []).some((c) => gdacsIso.has(c))) continue;
-    const id = `news#${st.storyId}`;
-    // Link map: stamp the matched thread when present (latched in buildStorySituation, see below).
-    const mapEntry = storyMap[st.storyId];
-    extraBuilt[id] = buildStorySituation(priorStates[id] || null, st, now, ttl, { ...storyOpts, threadId: mapEntry ? mapEntry.threadId : null });
+  for (const g of groups) {
+    extraBuilt[g.id] = buildStorySituation(g.prev, mergeStories(g.stories), now, ttl, { ...storyOpts, threadId: g.threadId, situationId: g.id, aliases: g.aliases });
   }
+  // Absorbed old-id states live on inside their group: archive them (below) rather than cool them.
+  const foldPrior = { ...priorStates };
+  for (const id of absorbed) delete foldPrior[id];
 
-  const { states, changes, counts, dropped } = foldSweep(priorStates, observations, now, ttl, { extraBuilt });
+  const { states, changes, counts, dropped } = foldSweep(foldPrior, observations, now, ttl, { extraBuilt });
+  dropped.push(...absorbed);
 
   // Persist changed state objects; write index; write history + world bundle.
   const openIds = Object.keys(states);
@@ -326,4 +358,4 @@ exports.handler = async () => {
   return result;
 };
 
-exports._internal = { foldSweep, assembleWorld, deriveRanked, deriveLede, computeStale, summarize, situationHref };
+exports._internal = { foldSweep, assembleWorld, deriveRanked, deriveLede, computeStale, summarize, situationHref, planNewsSituations };

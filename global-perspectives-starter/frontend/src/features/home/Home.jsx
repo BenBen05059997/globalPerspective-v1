@@ -384,8 +384,6 @@ function Home() {
           <Link to="/track-record">publicly scored</Link>, every revised conclusion{' '}
           <Link to="/track-record">logged</Link>. Summarise, predict, or trace the cause of any story below.
         </p>
-        <Link className="home-markets-link" to="/weekly-markets">Markets this week →</Link>
-        {' '}
         <Link className="home-markets-link" to="/analyze">Run a cited, fabrication-checked AI deep-dive →</Link>
 
         {isStale && (

@@ -3,7 +3,7 @@
 Last verified: 2026-10-19 (`aws events list-rules` / `list-targets-by-rule`, read-only).
 
 ## Trigger
-These EventBridge rules exist but are `DISABLED`:
+These EventBridge rules exist and are `DISABLED`, except the one marked "to be disabled":
 
 | Rule | Schedule (UTC) | Target and input | Why off |
 |---|---|---|---|
@@ -14,6 +14,7 @@ These EventBridge rules exist but are `DISABLED`:
 | `TriggerPairIntelligenceWeekly` | `cron(0 8 ? * MON *)` | `newsPairIntelligence`, input `{}` | pair intelligence has no consumer (decisions/0007) |
 | `TriggerBreakingEmailSend` | `rate(15 minutes)` | `newsEmailSender`, input `{"mode":"breaking"}` | subscriber breaking emails are off |
 | `TriggerDriftEmailSend` | `cron(40 7 * * ? *)` | `newsEmailSender`, input `{"mode":"drift_alert"}` | drift emails wait for the first follower ([drift-email](drift-email.md)) |
+| `TriggerSignalsBuild` | `cron(0 10 * * ? *)` | `newsSignals`, input `{"action":"build"}` | Signals API parked (decisions/0032). **To be disabled**: still ENABLED on 2026-10-19 until the coordinator runs `disable-rule` with an operator yes |
 
 ## What it means
 Nothing runs; the code stays in the repo. A disabled rule is the intended state, not a fault.

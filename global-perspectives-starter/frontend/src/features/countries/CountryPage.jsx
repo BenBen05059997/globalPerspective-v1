@@ -543,10 +543,6 @@ export default function CountryPage() {
             </Link>
           ))}
           </div>
-          {/* Zoom out to the weekly markets wrap (global v1; country deep-link is a v2 nicety) */}
-          <Link to="/briefings?from=markets" className="cpg-rail-link">
-            How markets moved this week →
-          </Link>
         </div>
       )}
 
@@ -570,10 +566,13 @@ export default function CountryPage() {
         </div>
       )}
 
-      {/* FX snapshot */}
+      {/* FX snapshot — raw quotes only, no story link (economy parked, decision 0031) */}
       {markets?.fx?.rates && Object.keys(markets.fx.rates).length > 0 && (
         <div className="cpg-rail-section">
-          <SectionHeader label={`FX Rates vs ${markets.fx.base || 'USD'}`} hint={markets.fx.asOf ? formatAsOf(markets.fx.asOf) : null} />
+          <SectionHeader
+            label={`Market prices · raw quotes${markets.fx.asOf ? ` · as of ${formatAsOf(markets.fx.asOf)}` : ''}`}
+            hint={`vs ${markets.fx.base || 'USD'}`}
+          />
           {Object.entries(markets.fx.rates)
             .slice(0, 5)
             .map(([pair, rate]) => (

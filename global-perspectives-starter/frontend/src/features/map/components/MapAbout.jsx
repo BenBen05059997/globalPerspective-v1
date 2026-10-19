@@ -2,6 +2,8 @@
 // phones this still sits below the map (the page scrolls there); on the desktop full-bleed console
 // (R4a) the map is the whole page, so the same content opens from a small "About this map" control
 // as a drawer instead — nothing was dropped, it moved. Every date is computed by the caller.
+// "Read today's topics →" heads it so /today is reachable from the map (decision 0029); Studio's
+// teaser left with its menu item (decision 0030 — `/analyze` stays routed).
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';
@@ -19,6 +21,7 @@ export default function MapAbout({
 }) {
   return (
     <>
+      <p><Link to="/today">Read today’s topics →</Link></p>
       <div className="sh-fold-method">
         <h2>How we read the world</h2>
         <p className="sh-dim">The map is the output of a fixed pipeline, not an editor’s judgement call.</p>
@@ -48,8 +51,6 @@ export default function MapAbout({
             {latestWeeklyEditionLabel ? `Latest edition ${latestWeeklyEditionLabel}, with the reasoning shown.` : 'A long synthesis, with the reasoning shown.'}
           </span></Link>
           <Link to="/track-record"><b>Track Record</b><span>Every forecast scored against what happened, including the misses.</span></Link>
-          <Link to="/analyze"><b>Analysis Studio</b><span>Bring a question and get a cited, structured analysis.</span></Link>
-          <Link to="/today"><b>Today's topics</b><span>The day's stories by region, with an on-demand summary, forecast and root cause.</span></Link>
         </div>
       </div>
 

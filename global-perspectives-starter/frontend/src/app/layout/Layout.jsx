@@ -33,14 +33,6 @@ function IconBriefs() {
     </svg>
   );
 }
-function IconStudio() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <circle cx="8.5" cy="8.5" r="5.3" />
-      <path d="M16 16l-3.3-3.3" />
-    </svg>
-  );
-}
 function IconRecord() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -79,21 +71,21 @@ function Layout({ children }) {
     return `/signin?returnTo=${encodeURIComponent(origin)}`;
   })();
 
-  // N1 (approved 2026-09-26): five plain, flat menu items — no groups, no dropdowns. "Map" is `/`
+  // N1 (approved 2026-09-26): plain, flat menu items — no groups, no dropdowns. "Map" is `/`
   // (the logo goes there too); the old "Topics" page stays live at `/today` for existing links; "Countries" (`/weekly/countries`) and "Weekly Brief"
   // (`/weekly-brief`) stay reachable via interim links on the Stories/Briefings pages instead of
   // the menu. "Briefings" points at `/briefings` (S3, briefing mode); `/daily` and `/weekly-brief`
   // stay live for existing links.
-  // `short` + `icon` feed the phone tab bar (P1/A2) — same five items, short labels, a small
+  // `short` + `icon` feed the phone tab bar (P1/A2) — same items, short labels, a small
   // inline-SVG icon per item (no icon library).
   // F1.6 (review R2): plain, true tooltips — no claim of "today"/"live" the data can't back up
-  // while analysis is paused, no member-analysis claim (Studio's member path is broken/parked),
-  // no "every forecast publicly scored" (only 122 resolved, one week, unscored track record).
+  // while analysis is paused, no "every forecast publicly scored" (only 122 resolved, one week,
+  // unscored track record). Studio left the menu 2026-10-19 (decision 0030): `/analyze` and shared
+  // analyses stay routed; it returns when its redesign plan's criteria are met.
   const navLinks = [
     { to: '/', exact: true, label: 'Map', short: 'Map', icon: IconMap, title: 'Where events happen, from the latest stories and live disaster alerts.' },
     { to: '/weekly', label: 'Stories', short: 'Stories', icon: IconStories, title: 'Every story we follow, as board, table, map or web.' },
     { to: '/briefings', label: 'Briefings', short: 'Briefs', icon: IconBriefs, title: 'The daily and weekly briefings, with every past edition.' },
-    { to: '/analyze', label: 'Studio', short: 'Studio', icon: IconStudio, title: 'Analyse our stories with your own AI key.' },
     { to: '/track-record', label: 'Track record', short: 'Record', icon: IconRecord, title: 'How our forecasts are logged and checked as they come due.' },
   ];
 
@@ -207,7 +199,7 @@ function Layout({ children }) {
       </footer>
       )}
 
-      {/* P1 phone tab bar (A2): the five main-nav items as a fixed bottom bar under 900px,
+      {/* P1 phone tab bar (A2): the main-nav items as a fixed bottom bar under 900px,
           replacing the old hamburger dropdown (removed above). Dark like the rest of the shell. The map's own MAP·LIST·ALERTS in-page tabs and bottom sheet
           are unaffected — they sit above this bar (SituationHome.css). */}
       {isPhone && (

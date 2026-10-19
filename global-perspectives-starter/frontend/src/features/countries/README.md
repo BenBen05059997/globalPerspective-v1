@@ -7,7 +7,7 @@ one-screen country card the map console also mounts.
 ## Status
 - Live, public (signed-out reads work).
 - `ECONOMY_PARKED` (`@/shared/lib/economyFlag.js`) hides the disruption sort and blocks and turns off
-  `useDisruptionsList` (`enabled: !ECONOMY_PARKED`); `useMarketsCountry` is not gated.
+  `useDisruptionsList` (`enabled: !ECONOMY_PARKED`); `useMarketsCountry` is not gated (FX box = raw quotes, no link).
 
 ## Routes
 - `/weekly/countries` -> `CountryListPage` (also the Countries section of `/weekly?section=countries`:
@@ -40,7 +40,6 @@ one-screen country card the map console also mounts.
   `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` + `prediction_snapshot`.
 - `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` -> `markets_country`;
   `useDisruptionsList` -> `economic_impact_list` (off while parked).
-- `hooks/useSystemsAnalysis.js` (`systems_analysis`) has no consumer outside its test.
 
 ## Docs
 - Decisions: [0010](../../../../../project-docs/decisions/0010-country-view-split.md) (country view split by job),

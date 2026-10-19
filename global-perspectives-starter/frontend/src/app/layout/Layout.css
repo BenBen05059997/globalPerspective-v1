@@ -236,7 +236,7 @@
 .gp-footer-ver { flex-shrink: 0; color: var(--text-dim); }
 
 /* ── Phone tab bar (P1/A2) ───────────────────────────────────
-   Fixed 5-item bottom bar under 900px, replacing the old hamburger dropdown for the main nav
+   Fixed bottom bar under 900px, replacing the old hamburger dropdown for the main nav
    items. Dark like the rest of the shell (one token set, tokens.css).
    58px matches the phone-pattern frame (TASK_2026-09-26_remaining_design.md Phase P). */
 .gp-tabbar {
@@ -254,7 +254,7 @@
 }
 .gp-tabbar-link {
   flex: 1;
-  min-width: 0; /* S2.2 phone-overflow fix: without this, 5 unbreakable flex items (min-width:
+  min-width: 0; /* S2.2 phone-overflow fix: without this, the unbreakable flex items (min-width:
                    auto by default) sized past the bar's own fixed 390px width and spilled 145px
                    of visible overflow into the document's scrollable area on every phone page. */
   min-height: 44px;

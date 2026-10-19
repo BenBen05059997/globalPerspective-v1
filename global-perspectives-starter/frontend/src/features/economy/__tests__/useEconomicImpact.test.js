@@ -1,6 +1,5 @@
 /**
  * Tests for useEconomicImpact + useDisruptionsList — cache + fetch lifecycle.
- * Mirrors useSystemsAnalysis.test.js pattern.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

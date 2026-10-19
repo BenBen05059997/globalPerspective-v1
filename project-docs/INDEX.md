@@ -6,7 +6,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 
 ## Start here
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
-- [Decision records](decisions/README.md) — 27 decisions, newest last.
+- [Decision records](decisions/README.md) — 32 decisions, newest last.
 - [reference/](reference/lambdas.md) — generated from code and live AWS by `scripts/gen-reference.mjs`
   (Lambdas, schedules, env key names, routes, features, S3 prefixes); never hand-edited.
 - Start a feature check at its `global-perspectives-starter/frontend/src/features/<name>/README.md`
@@ -24,6 +24,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 - [Grounded forecasts + cost](plans/TASK_2026-10-17_grounded_forecast_and_cost.md) — layered selector P7, shadow week.
 - [Cloudflare migration](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md) — local build done; candidate and cutover gated.
 - [One link system + leaner pages](plans/PLAN_2026-10-19_linking_and_pages.md) — global links, Briefings merge, Studio out of nav; checklist.
+- [Studio redesign](plans/PLAN_2026-10-19_studio_redesign.md) — bring-your-own-hypothesis tool; return-to-menu criteria (proposed).
 
 ## Runbooks
 - [Runbook index](runbooks/README.md) — one per scheduled job and alert, plus parked jobs;

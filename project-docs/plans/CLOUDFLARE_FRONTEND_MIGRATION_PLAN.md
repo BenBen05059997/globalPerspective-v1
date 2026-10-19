@@ -1,6 +1,6 @@
 # Cloudflare frontend hosting migration — review draft
 
-**Status:** IMPLEMENTING LOCALLY — baseline captured and code/tests prepared; no candidate upload or live changes. Progress: [active task](TASK_2026-10-05_cloudflare_frontend_migration.md).
+**Status:** active — implemented and packaged locally; no candidate upload, no live change. Production is still GitHub Pages behind `globalperspective-rss`. Progress and remaining gates: §11.
 **Date:** 2026-10-05
 **Prepared by:** Codex with a Luna investigation and draft, incorporating the operator's external-agent review.
 **Purpose:** A self-contained migration plan and review reference for the implementation now underway. This document does not authorize deployment, DNS changes, secret provisioning, or Firebase changes.
@@ -161,14 +161,14 @@ Local read-only inspection and reversible local preparation (code, scripts, pack
 
 ## 9. Documentation and implementation handoff
 
-Before implementation, create the task ledger required by [TASK_WORKFLOW.md](../rules/TASK_WORKFLOW.md), with this plan as its reference. Update these documents in the same change as the behavior they describe:
+Progress is tracked in §11 of this plan. Update these documents in the same change as the behavior they describe:
 
 - `README.md` and `CLAUDE.md`: hosting layout, manual release procedure, authorization boundaries.
 - `project-docs/runbooks/DEPLOYMENT_NOTES.md` and `DOMAIN_SETUP.md`: packaging, domain transition, validation, rollback.
 - `project-docs/architecture/ARCHITECTURE.md`: actual hosting and Worker source/config locations.
 - `git show 120de90:project-docs/archive/distribution/WORKER_FULL_CODE.md` (deleted 2026-10-19): retire dashboard-paste instructions; reference the real source and preserve useful history.
 - `.claude/skills/deploy-frontend/SKILL.md`: new explicit targets and release/rollback procedure.
-- `project-docs/INDEX.md`, `CHANGES.md`, and the implementation task ledger.
+- `project-docs/INDEX.md` and §11 of this plan.
 - Any discoverable persistent Worker/deployment memory note: update its owner/location if available; do not claim an inaccessible note was updated.
 
 Do not rewrite current-hosting documentation as though migration has shipped during the planning stage.
@@ -189,6 +189,45 @@ Do not rewrite current-hosting documentation as though migration has shipped dur
 - [ ] Is the production target unambiguous with separate candidate and production Worker identities?
 - [ ] Are DNS/route transition and rollback derived from actual account state, with no premature route deletion?
 - [ ] Are the release checks, documentation changes, and fallback-retirement gate sufficient?
+
+## 11. Progress (2026-10-05; folded in from the deleted task ledger `TASK_2026-10-05_cloudflare_frontend_migration.md`)
+
+Done locally: live baseline captured, site Worker/config implemented with routing tests, deterministic upload package (runtime config, blog content, no sourcemaps), explicit release targets with artifact records, frontend verify/build and local Worker smoke checks. Not done: candidate release (needs authorization), chained hostname and production cutover gates.
+
+### Captured production baseline
+
+- Worker `globalperspective-rss`: version `91ba1e98-0959-4387-84f3-10a0d5790ad8`, deployed 2026-10-01; compatibility date 2026-04-01. Source captured as `cloudflare/front-worker/baseline/worker2.mjs` with sanitized metadata in `capture.json`; source matches `WORKER_FULL_CODE.md` exactly. SHA-256 `48f1b03ebfab8382652ef94cbc6e3d480182d7f61203dfd0a5048f0981812989`.
+- Existing apex routes `globalperspective.net/*` and `globalperspective.net/rss*` both target this Worker. No www route was returned. Existing S3 secret binding names were captured; values were not retrieved or copied.
+- GitHub Pages reports built, main:/docs, custom domain globalperspective.net. Local tracked Pages output preserved in ignored `.site-releases/baseline-pages/` (121 files plus manifest); this is the checkout baseline, not a claim that every byte was downloaded from production.
+- Live homepage and `/blog/` return 200 SPA shell (`x-rendered-by: cf-worker-spa-fallback`). The blog interception therefore exists in production. Candidate wrapper fixes only `next.globalperspective.net`; production blog correction remains a distinct cutover change.
+- Refreshed existing OAuth access reads account/zone, Worker source/settings/versions, Custom Domains and routes. DNS and rulesets return authentication errors; SSL and page rules return unauthorized errors. Exact DNS/TLS/redirect reversal and www behavior still need capture before cutover.
+
+### Local validation
+
+- Frontend `npm run verify`: 144 files / 1,096 tests passed; three existing hook warnings, no lint errors. Test environment emits existing canvas-not-implemented notices.
+- `npm run build`: passed; existing CSS comment syntax and bundle-size warnings remain outside this migration.
+- Site Worker routing: 11 tests passed. Front candidate wrapper: 7 tests passed.
+- Wrangler 4.147.0 candidate `deploy --dry-run`: passed, no upload. Compatibility date 2026-10-01 matches installed workerd support.
+- Wrangler local runtime: 24 HTTP checks passed (direct index, navigation fallback, all eight blog files compared byte-for-byte, config compared to docs/config.js, sitemap/robots/whitepaper, missing assets and reserved paths, immutable cache, redirect query, noindex host distinction, HEAD).
+- Local runtime ran with `CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV=false` so unrelated frontend development variables were not loaded as Worker bindings. Server stopped after checks.
+
+### Remaining release gates
+
+1. Approve a concrete candidate artifact for upload to `globalperspective-site-candidate` workers.dev; no upload has occurred. Test only controlled public reads until candidate backend/analytics/error-write policy is approved.
+2. Capture missing DNS/TLS/rule settings; review exact next-host Custom Domain/route and the separate production-shared front-Worker patch before deploying either. Initial candidate upload guard deliberately refuses any attached domain/route; a retained next hostname needs an explicit reviewed exception before later candidate uploads.
+3. Run actual chained human/bot/RSS/data/blog/header/browser checks. No browser sign-in, API CORS or Maps-referrer validation is claimed by local HTTP tests. Firebase changes need their own authorization if required.
+4. Prepare and approve production-host blog patch, exact Custom Domain cutover and reversal, dual-host publication and post-deploy checks. Agree observation window before retiring Pages.
+
+The working online candidate milestone is not reached. No live Worker, DNS, Firebase, AWS, docs/config.js, or Pages publication changed.
+
+### Final local package / handoff
+
+- Full default `./deploy.sh` completed successfully: 1,096 frontend tests + 27 hosting/package/release tests, build and packaging. It reported build-only completion and performed no upload. Shell/Node syntax checks and `git diff --check` pass.
+- Ready artifact: `ac53cf1038d9ef13cc65425bf66479cc73a5e8b6431d4c982bae47924619384c` (120 files), archived under `.site-releases/packages/` with its manifest. This identity includes site file bytes, site Worker hash and Wrangler configuration hash. Source state was recorded as dirty (the implementation was uncommitted at packaging time).
+- Config SHA-256 `84ce4470ad3b7de2b0cdf31053c92e7eeb1a80181597b609d9f193c218253c2a`; staged browser config matches operator-owned docs/config.js. No tracked docs/ output changed.
+- Reviewed candidate upload command (only after authorization): `node scripts/release-site.mjs candidate ac53cf1038d9ef13cc65425bf66479cc73a5e8b6431d4c982bae47924619384c`. It validates the archive and current Worker/config, checks remote domain/route state, pins the account, then uploads to the separate candidate Worker and records Wrangler's exact Current Version ID.
+- Upload guard checks all account Custom Domains and routes on the configured globalperspective.net zone; it does not assert absence of routes on unrelated zones. It refuses unreadable state or any candidate attachment in that scope.
+- Restoring an old Pages artifact uses `stage-pages`, followed by an authorized review/commit/push of docs/. Do not run the legacy rebuild afterward, because that replaces the selected archive. Cloudflare application rollback uses its recorded Worker version. Old archive staging does not require current Worker source to match the old version.
 
 ## References
 

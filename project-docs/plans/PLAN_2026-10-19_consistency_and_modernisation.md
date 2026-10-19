@@ -1,4 +1,4 @@
-## Site consistency and modernisation — 2026-10-19 — proposed (operator review)
+## Site consistency and modernisation — 2026-10-19
 
 Status: active — phases running in waves since 2026-10-19; wave 3 go recorded in `decisions/`.
 
@@ -32,7 +32,7 @@ Every page builds the same thing the same way: the same tokens (colour, type siz
 
 **Back end and repo:**
 - No Lambda deploy script: hand-built zips, rollback zips in scratchpads that vanish. 18 copies of the DeepSeek client; `placeFilter.js`/`dayZero.js` x6.
-- 9 Lambdas on nodejs20.x (end of life); `newsInvokeGemini` ships aws-sdk v2 and an unused Gemini SDK (16.7 MB zip).
+- 10 Lambdas on nodejs20.x (end of life; 8 plus the 2 `-sandbox` billing twins, live 2026-10-19); `newsInvokeGemini` ships aws-sdk v2 and an unused Gemini SDK (16.7 MB zip).
 - Retired `deepseek-v4-flash` still the code default in ~12 Lambdas; `GROK_*`/`XAI_*` env names hold DeepSeek in 18 Lambdas; `newsInvokeGemini` runs DeepSeek.
 - Dead: Amplify scaffolding outside `backend/function`, the Python starter in `global-perspectives-starter/`, `cli/`, several disabled rules. Three doc trees; one feature's code spread over 5-6 top-level folders.
 
@@ -65,3 +65,7 @@ Map home (incl. the radar redesign C6/R1-R6) → Stories → Countries/Daily/Bri
 3. The 3 crisis hue swatches (Phase 1).
 4. Phase 4 renames/moves and env renames: go/no-go each.
 5. Parked jobs still running (markets data hourly, signals daily with no keys): keep or stop.
+
+### Backlog (carried from deleted plans, 2026-10-19; kept only where live AWS or code shows the work is still open)
+- **Dead env keys** (from the map-home S9·T3; still live 2026-10-19): `XAI_API_KEY_BACKUP` and `OPENAI_API_KEY` (no code reads them) on `newsInvokeGemini-dev`, `NewsProjectInvokeAgentLambda-dev` and others; `BRAVE_SEARCH_API_KEY`/`BRAVE_CONCURRENCY` on `newsInvokeGemini-dev` (ingest no longer uses Brave); the unused social-platform secrets on `newsPostLinkedin` (zip-diff first). Do it with the Phase 4 `LLM_*` env rename — same env maps; secret env changes need the operator's yes per Lambda.
+- **Brave grounding is half on** (from the backend plan's B2): `newsPredictionResolver` has `BRAVE_SEARCH_API_KEY`; `newsCountryIntelligence`, `newsThreadAnalysis` and `NewsProjectInvokeAgentLambda` call Brave in code but have no key, so their grounding silently returns nothing. Operator: set the key there, or delete those code paths.

@@ -1,11 +1,11 @@
-## Colour consistency: map home and map page — 2026-10-19 — proposed (operator review)
+## Colour consistency: map home and map page — 2026-10-19
 
 Status: active — operator decisions recorded 2026-10-19 (below); C5 hues picked (option A).
 
 Why: the operator sees the home (`/`) and map mixing yellow, red, orange and white with no clear meaning. Overnight audit 2026-10-18/19: a read-only code audit of the token system, a live-site pass in Chrome (desktop 1440×900; phone width could not be forced in that browser), and a cited good-practice guide. Raw reports (scratchpad, not in git): `ui_tokens_audit.md`, `ui_good_practice.md`, screenshots `home_before.jpg`, `risk_chips_before.png`, `risk_chips_after_neutral.png`, `home_after_neutral_chips.jpg`.
 
 ### What the site already decided (keep)
-`shared/styles/tokens.css` (live 2026-10-01, DS1 in `REDESIGN_MASTER_PLAN §3.1`): hue = crisis TYPE only; risk tier = number + word + ring weight, **never a colour**; amber `--warn` = stale/paused, `--ok`/`--error` = a check passed/failed. The rules are right. The home page breaks them.
+`shared/styles/tokens.css` (live 2026-10-01, DS1: decisions/0013, hues amended by 0022): hue = crisis TYPE only; risk tier = number + word + ring weight, **never a colour**; amber `--warn` = stale/paused, `--ok`/`--error` = a check passed/failed. The rules are right. The home page breaks them.
 
 ### What is wrong (evidence)
 1. **Risk chips take the crisis colour on the home page.** `TierChip` accepts a `hue` prop (`shared/ui/TierChip.jsx:13`) and the map passes the crisis hue (`features/map/components/HudIntelFeed.jsx:58,101`, `HudCountryRiskFeed.jsx:34` via `.hud-tier-chip --pin`, `SituationHome.css:96-102`). So "HIGH"/"ELEVATED" is coral for conflict, amber for humanitarian, violet for political — it reads as a red/amber/purple severity scale, the exact thing DS1 forbids. `/weekly` and the country list show the same chips neutral, so the same word looks different on two pages. Live computed colours on `/`: `gp-tier` High/Elevated/Moderate in `#ee7754` and `#d89e28`.
@@ -48,11 +48,11 @@ Today (`features/map/components/RadarMap.jsx`): the beam loops every 10s forever
 | # | Change |
 |---|---|
 | R1 | One lap when the map opens (about 4-5s), then the beam stops and the map is still. The beam is faint and thin (about a quarter of today's brightness). The play button becomes "Scan again" (one lap). |
-| R2 | "Happening now" = a soft light that slowly grows and shrinks on the point (breathing, about 2.4s), on markers new or escalating in the last 24h (`pulseSet`, cap lowered to 5). It keeps breathing while that is true; it replaces today's expanding ripple ring and the per-marker flare. No other marker moves. No "NEW" tag (operator 2026-10-19: too much). |
+| R2 | "Happening now" = a soft light that slowly grows and shrinks on the point (breathing, about 2.4s), on markers whose story changed in the last 12h (`pulseSet`, at most 5; decisions/0023). It keeps breathing while that is true; it replaces today's expanding ripple ring and the per-marker flare. No other marker moves. No "NEW" tag (operator 2026-10-19: too much). |
 | R4 | When the beam reaches a happening-now marker, a short card appears beside it for about 3s: headline, crisis type, risk word, how long ago (plus a one-line summary if the bundle carries one; checked before building). One card at a time, queued; the matching feed row highlights. Hover and click work as now. |
 | R5 | When fresh data arrives while the page is open, one sweep runs; newly added happening-now markers start breathing. |
 | R6 | Reduced motion: no sweep, no cards, no breathing; happening-now markers get a still soft halo. |
-Globe view keeps its spin for now; the same ping and NEW tag can follow there once the radar version is approved.
+Globe view keeps its spin for now; the same breathing ping can follow there once the radar version is approved.
 
 ### Build order (each checked in a local browser; one deploy at the end, which needs the operator's yes)
 C1 neutral tier chips → C2 one hue source → C4 one green/one amber → C3 surfaces/text/selected → C6 radar R1-R6 → C5 swatches shown, operator picks → C7 ratchet tightened, baseline lowered.

@@ -117,7 +117,9 @@ React + Vite SPA. Build output goes to the repo-root `docs/`.
 
 **Invariant:** imports flow `app → features → shared`. ESLint `no-restricted-imports` fails a
 `shared/` file that imports `@/features` or `@/app`, and a `features/` file that imports `@/app`.
-Feature-to-feature imports are allowed.
+Feature-to-feature imports are allowed but must not form a cycle: `quality/check_feature_cycles.mjs`
+(run by pre-commit with the other `quality/check_*.mjs`) fails on any feature↔feature cycle or any
+`shared → features` import.
 
 **Invariant:** imports inside `src/` use the `@/` alias (`vite.config.js`: `@` → `src`). The
 exceptions are the few files that Node tooling outside `src/` imports by relative path; they carry a

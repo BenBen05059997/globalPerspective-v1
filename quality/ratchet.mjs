@@ -1,7 +1,7 @@
 // ratchet — the shared engine behind the frontend style ratchets (quality/check_*.mjs).
 //
 // A check supplies `count(text, file)` -> { kind: n } for one source file. The engine walks
-// frontend src/**/*.{css,jsx,js} (tests excluded), keeps a per-file, per-kind baseline in
+// frontend src/**/*.{css,jsx,js,mjs} (tests excluded; a check may add repo dirs with `dirs`), keeps a per-file, per-kind baseline in
 // quality/<name>_baseline.json, and fails when any file's count of any kind RISES, or when a
 // file not in the baseline has any. Counts may only fall.
 //
@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = 'global-perspectives-starter/frontend/src';
-const EXT = new Set(['.css', '.jsx', '.js']);
+const EXT = new Set(['.css', '.jsx', '.js', '.mjs']);
 
 export const stripCssComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '');
 
@@ -30,17 +30,20 @@ function walk(dir, out) {
   }
 }
 
-// { 'features/map/X.css': { kind: n } } for every file with a non-zero count. `file` is relative to src.
-export function measure(root, count, skip = () => false) {
-  const src = path.join(root, SRC);
-  const files = [];
-  walk(src, files);
+// { 'features/map/X.css': { kind: n } } for every file with a non-zero count. `file` is relative to src;
+// files under the extra repo `dirs` (e.g. ['backend']) are keyed relative to the repo root instead.
+export function measure(root, count, skip = () => false, dirs = []) {
   const out = {};
-  for (const f of files.sort()) {
-    const rel = path.relative(src, f).split(path.sep).join('/');
-    if (skip(rel)) continue;
-    const kinds = Object.fromEntries(Object.entries(count(fs.readFileSync(f, 'utf8'), rel)).filter(([, n]) => n > 0));
-    if (Object.keys(kinds).length) out[rel] = kinds;
+  for (const dir of [SRC, ...dirs]) {
+    const base = path.join(root, dir);
+    const files = [];
+    walk(base, files);
+    for (const f of files.sort()) {
+      const rel = path.relative(dir === SRC ? base : root, f).split(path.sep).join('/');
+      if (skip(rel)) continue;
+      const kinds = Object.fromEntries(Object.entries(count(fs.readFileSync(f, 'utf8'), rel)).filter(([, n]) => n > 0));
+      if (Object.keys(kinds).length) out[rel] = kinds;
+    }
   }
   return out;
 }
@@ -90,9 +93,9 @@ export function report(counts) {
 }
 
 // CLI entry for a check: `name` is the baseline stem, `advice` the fix shown on a rise.
-export function run({ name, title, count, skip, note, advice }) {
+export function run({ name, title, count, skip, note, advice, dirs }) {
   const baselinePath = path.join(repoRoot, `quality/${name}_baseline.json`);
-  const current = measure(repoRoot, count, skip);
+  const current = measure(repoRoot, count, skip, dirs);
   const args = process.argv.slice(2);
   const write = () => {
     const files = Object.fromEntries(Object.entries(current).sort(([a], [b]) => a.localeCompare(b)));

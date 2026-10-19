@@ -13,8 +13,8 @@
 // The top `topN` countries by coverage are always candidates; up to `maxExtras` further countries are
 // candidates ONLY while they have an active alert.
 
-const ISO3_NAMES = require('./iso3Names.json');
-const PLACE_NAMES = require('./placeNames.json');
+const ISO3_NAMES = require('./_shared/iso3Names.json');
+const PLACE_NAMES = require('./_shared/placeNames.json');
 
 const ACTIVE_STATES = new Set(['emerging', 'escalating']);
 

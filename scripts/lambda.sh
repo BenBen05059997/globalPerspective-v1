@@ -10,7 +10,8 @@
 # newsInvokeGemini-dev). deploy/rollback need the same authorization as any `aws lambda update-function-code`
 # (see CLAUDE.md "Authorization"); the script never decides that for you.
 #
-# Package: copies amplify/backend/function/<dir>/src minus node_modules and test files. When functions.json
+# Package: copies amplify/backend/function/<dir>/src minus node_modules and test files, following symlinks, so the
+# committed src/_shared -> ../../../shared/src link ships as real files (_shared/llm.js etc.). When functions.json
 # says the deployed zip ships node_modules ("nodeModules": true), it installs production deps for linux/x64
 # (npm ci with a lockfile, else npm install); otherwise the runtime's @aws-sdk v3 is relied on, as live.
 #
@@ -45,10 +46,11 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 sha_b64() { openssl dgst -sha256 -binary "$1" | base64; }   # same encoding as Lambda's CodeSha256
 safe() { printf '%s' "$1" | tr '/+' '_-'; }                 # CodeSha256 -> filename
 
-# Copy src (no node_modules, no tests) into $1; install prod deps when the live zip ships them.
+# Copy src (no node_modules, no tests; symlinks followed, so _shared/ is real files) into $1; install prod deps
+# when the live zip ships them. diff and package both stage through here, so diff compares what package uploads.
 stage() {
   mkdir -p "$1"
-  rsync -a --exclude node_modules --exclude '*.test.js' --exclude '*.test.mjs' --exclude 'test-*' \
+  rsync -aL --exclude node_modules --exclude '*.test.js' --exclude '*.test.mjs' --exclude 'test-*' \
     --exclude 'test_*' --exclude .gitignore "$SRC/" "$1/"
   if [ "${2:-}" = deps ] && [ "$NODE_MODULES" = 1 ]; then
     local npm_flags=(--omit=dev --os=linux --cpu=x64 --no-audit --no-fund --loglevel=error)

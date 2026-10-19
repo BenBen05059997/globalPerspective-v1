@@ -14,17 +14,15 @@
 
 const lib = require('./lib');
 const { draftQuestion } = require('./draft');
+const { chat, parseJsonContent } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const LOG_TABLE = process.env.PREDICTION_LOG_TABLE || 'GlobalPerspectivePredictionLog';
 const LLM_KEY = process.env.XAI_API_KEY || '';
-const LLM_URL_RAW = process.env.GROK_API_URL || 'https://api.deepseek.com';
 const DRAFT_MODEL = process.env.DRAFT_MODEL || 'deepseek-v4-pro'; // Q6: judgment on evidence; not the GROK_MODEL (flash)
 const DRAFT_CONCURRENCY = parseInt(process.env.LLM_CONCURRENCY || '3', 10);
 const DEFAULT_DRAFT_LIMIT = parseInt(process.env.MAX_RESOLVE_PER_RUN || '40', 10);
 const REDRAFT_AFTER_DAYS = 5;
-
-const LLM_URL = LLM_URL_RAW.endsWith('/chat/completions') ? LLM_URL_RAW : `${LLM_URL_RAW.replace(/\/$/, '')}/chat/completions`;
 
 async function mapWithConcurrency(items, limit, worker) {
   const out = new Array(items.length);
@@ -181,20 +179,11 @@ function defaultDeps() {
     search: async (q) => { usage.searches++; return search0(q); },
     async llm(prompt) {
       if (!LLM_KEY) throw new Error('LLM key is not configured');
-      const resp = await fetch(LLM_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LLM_KEY}` },
-        body: JSON.stringify({
-          model: DRAFT_MODEL, messages: [{ role: 'user', content: prompt }], temperature: 0.1, max_tokens: 500,
-          response_format: { type: 'json_object' }, thinking: { type: 'disabled' },
-        }),
-      });
-      if (!resp.ok) throw new Error(`LLM ${resp.status}: ${(await resp.text()).slice(0, 160)}`);
-      const data = await resp.json();
+      const r = await chat({ step: 'settle_draft', model: DRAFT_MODEL, user: prompt, temperature: 0.1, maxTokens: 500, json: true });
       usage.llmCalls++;
-      usage.promptTokens += data?.usage?.prompt_tokens || 0;
-      usage.completionTokens += data?.usage?.completion_tokens || 0;
-      return JSON.parse(data?.choices?.[0]?.message?.content || '{}');
+      usage.promptTokens += r.usage?.prompt_tokens || 0;
+      usage.completionTokens += r.usage?.completion_tokens || 0;
+      return parseJsonContent(r.content);
     },
   };
 }

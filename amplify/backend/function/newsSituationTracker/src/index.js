@@ -13,7 +13,7 @@
 // NO LLM in S2 (what_changed is templated by the fold). DRY_RUN writes a parallel shadow universe
 // under world/shadow/ and shadow/situations/ and never consumes the inbox.
 
-const core = require('./situations-core');
+const core = require('./_shared/situations-core');
 const { buildSituation, coolSituation, buildStorySituation, LEVEL_TIER } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';

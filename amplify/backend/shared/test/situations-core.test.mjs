@@ -1,8 +1,8 @@
-// Unit tests for situations-core (no AWS). Run: node situations-core.test.mjs
+// Unit tests for situations-core (no AWS). Run: node --test (from amplify/backend/shared)
 import assert from 'node:assert';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-const core = require('./situations-core.js');
+const core = require('../src/situations-core.js');
 const { buildObservation, buildSituation, coolSituation, nextCheckAt, LEVEL_TIER, parseGeometry, affectedIso3 } = core;
 
 let pass = 0;

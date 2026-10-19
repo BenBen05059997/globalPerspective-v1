@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const { _internal } = require('./index.js');
-const core = require('./situations-core.js');
+const core = require('./_shared/situations-core.js');
 const { foldSweep, assembleWorld, deriveRanked, deriveLede, computeStale } = _internal;
 
 let pass = 0;

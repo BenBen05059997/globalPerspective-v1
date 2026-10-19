@@ -1,7 +1,8 @@
 'use strict';
 
-const { keepDayZero } = require('./dayZero');
-const { isCountryName } = require('./placeFilter');
+const { keepDayZero } = require('./_shared/dayZero');
+const { isCountryName } = require('./_shared/placeFilter');
+const { chat, stripCodeFence } = require('./_shared/llm');
 const { pickSpreadEntries } = require('./spreadEntries');
 const { buildWebIndex } = require('./webRecords');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
@@ -9,7 +10,6 @@ const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } = require(
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
-const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3000', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.3');
@@ -540,46 +540,16 @@ async function writeAnalysis(countryName, graph, country) {
 
 // ─── Grok API ─────────────────────────────────────────────────────────────────
 
-const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 async function invokeGrok(prompt) {
-  const response = await fetch(GROK_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${GROK_KEY}`,
-    },
-    body: JSON.stringify({
-      model: GROK_MODEL,
-      messages: [
-        { role: 'system', content: 'You are a causal analysis engine. Return only valid JSON. No markdown, no commentary.' },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: MAX_TOKENS,
-      temperature: TEMPERATURE,
-      response_format: { type: 'json_object' },
-      // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
-      // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
-      thinking: { type: 'disabled' },
-    }),
+  return chat({
+    step: 'systems_web',
+    model: GROK_MODEL,
+    system: 'You are a causal analysis engine. Return only valid JSON. No markdown, no commentary.',
+    user: prompt,
+    maxTokens: MAX_TOKENS,
+    temperature: TEMPERATURE,
+    json: true,
   });
-
-  const rawText = await response.text();
-  let parsed;
-  try { parsed = JSON.parse(rawText); } catch { parsed = rawText; }
-
-  if (!response.ok) {
-    const message = parsed?.error?.message || rawText || `status ${response.status}`;
-    throw new Error(`Grok API error: ${message}`);
-  }
-
-  logUsage('systems_web', GROK_MODEL, parsed?.usage);
-  const content = parsed?.choices?.[0]?.message?.content || '';
-  return { content: stripCodeFence(content) };
-}
-
-function stripCodeFence(value) {
-  if (typeof value !== 'string') return value;
-  return value.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').trim();
 }
 
 // Exported for unit testing the pure, deterministic helpers (no AWS/LLM needed).

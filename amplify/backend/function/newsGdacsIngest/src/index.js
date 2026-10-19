@@ -14,7 +14,7 @@
 
 const {
   eventKeyOf, buildObservation, OPENING_LEVELS, parseGeometry,
-} = require('./situations-core');
+} = require('./_shared/situations-core');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const TABLE = process.env.GDACS_TABLE || 'GlobalPerspectiveGdacsEvents';

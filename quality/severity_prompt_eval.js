@@ -28,7 +28,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { normalizeDimensions } = require('../amplify/backend/function/newsCountryIntelligence/src/riskDimensions');
+const { normalizeDimensions } = require('../amplify/backend/shared/src/riskDimensions');
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const REGION = 'ap-northeast-1';

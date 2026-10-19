@@ -49,15 +49,6 @@ test('selection: only changed threads, newest first, then larger; cap; the rest 
   assert.equal(by.unchanged.run, false);
 });
 
-test('request body: thinking disabled, JSON mode, no Gemini-only fields', () => {
-  const b = P.buildRequestBody({ model: 'deepseek-flash', prompt: 'Return JSON', maxTokens: 6000, temperature: 0.2, topP: 0.9 });
-  assert.deepEqual(b.thinking, { type: 'disabled' });
-  assert.deepEqual(b.response_format, { type: 'json_object' });
-  assert.equal(b.model, 'deepseek-flash');
-  assert.equal(b.max_tokens, 6000);
-  for (const k of ['generationConfig', 'thinking_budget', 'reasoning_effort']) assert.equal(k in b, false);
-});
-
 test('entryIds is sorted and de-duplicated', () => {
   assert.deepEqual(P.entryIds(th('t', [['b', 'd'], ['a', 'd'], ['b', 'd']])), ['a', 'b']);
 });

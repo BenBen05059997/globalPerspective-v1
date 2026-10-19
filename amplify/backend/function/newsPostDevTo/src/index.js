@@ -7,9 +7,10 @@ const {
   PutCommand,
   ScanCommand,
 } = require('@aws-sdk/lib-dynamodb');
-const { keepDayZero } = require('./dayZero');
+const { keepDayZero } = require('./_shared/dayZero');
+const { chat, stripCodeFence } = require('./_shared/llm');
 const { resolveStoryThreadIds } = require('./threadLinks');
-const { isCountryName, usableCountryRecord } = require('./placeFilter');
+const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { buildDailySummary, buildAiOverviewPrompt, formatDisplayDate, CATEGORY_LABEL } = require('./buildDailySummary');
 
 const REGION        = process.env.AWS_REGION || 'ap-northeast-1';
@@ -17,16 +18,13 @@ const TOPICS_TABLE  = process.env.TOPICS_DDB_TABLE;
 const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const POSTS_TABLE   = process.env.SOCIAL_POSTS_TABLE;
 const DEVTO_API_KEY = process.env.DEVTO_API_KEY || '';
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const XAI_API_KEY   = process.env.XAI_API_KEY || '';
 const GROK_MODEL    = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; matches the live env (checked 2026-10-19)
-const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const SITE_URL           = process.env.SITE_URL || 'https://globalperspective.net';
 const PLATFORM           = 'DEVTO';
 const POST_TTL_DAYS      = 90;
 const BRIEF_TTL_DAYS     = 90;
 const AI_MODEL           = process.env.AI_MODEL || 'deepseek/deepseek-v4-flash:free';
-const AI_ENDPOINT        = 'https://openrouter.ai/api/v1/chat/completions';
 
 const ddbClient = new DynamoDBClient({ region: REGION });
 const ddb = DynamoDBDocumentClient.from(ddbClient, {
@@ -162,31 +160,10 @@ Generate a JSON object with exactly these fields:
 Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 }
 
-const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 async function callGrok(prompt) {
   if (!XAI_API_KEY) return null;
-  const res = await fetch(GROK_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${XAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: GROK_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 2000,
-      temperature: 0.3,
-      // DeepSeek V4 defaults to thinking mode -> burns max_tokens on invisible
-      // reasoning and truncates/empties output (2026-07-26 outage). Disable.
-      thinking: { type: 'disabled' },
-    }),
-  });
-  const raw = await res.text();
-  if (!res.ok) throw new Error(`Grok API error ${res.status}: ${raw.substring(0, 200)}`);
-  const parsed = JSON.parse(raw);
-  logUsage('daily_brief', GROK_MODEL, parsed?.usage);
-  const content = parsed?.choices?.[0]?.message?.content || '';
-  return content.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').trim();
+  const { content } = await chat({ step: 'daily_brief', model: GROK_MODEL, user: prompt, maxTokens: 2000, temperature: 0.3 });
+  return stripCodeFence(content);
 }
 
 async function generateAndStoreDailyBrief(entries, dateKey) {
@@ -337,28 +314,9 @@ async function recordPosted(dedupPK, dateKey, articleId, articleUrl, entryCount)
 }
 
 async function callAi(prompt) {
-  const res = await fetch(AI_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: AI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 400,
-      temperature: 0.7,
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`OpenRouter API error ${res.status}: ${errText}`);
-  }
-
-  const data = await res.json();
-  logUsage('devto_article_openrouter', AI_MODEL, data?.usage);
-  return data.choices?.[0]?.message?.content?.trim() || '';
+  // OpenRouter (OPENROUTER_API_KEY), no thinking field.
+  const { content } = await chat({ step: 'devto_article_openrouter', provider: 'openrouter', model: AI_MODEL, user: prompt, maxTokens: 400, temperature: 0.7 });
+  return content.trim();
 }
 
 async function postToDevTo({ title, body_markdown, description }) {

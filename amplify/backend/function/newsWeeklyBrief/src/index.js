@@ -9,15 +9,15 @@
 // Manual-invoke first (no EventBridge schedule) until output quality is trusted —
 // mirrors the breaking-detector dry-run approach.
 
-const { keepDayZero } = require('./dayZero');
-const { isCountryName, usableCountryRecord } = require('./placeFilter');
+const { keepDayZero } = require('./_shared/dayZero');
+const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
+const { chat, stripCodeFence } = require('./_shared/llm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 // Legacy GROK_* names hold DeepSeek values in production (see feedback-misleading-grok-naming).
 const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; matches the live env (checked 2026-10-19)
-const LLM_ENDPOINT = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
 const LLM_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3500', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.3');
@@ -282,46 +282,14 @@ Include one signals entry per SIGNAL above, using its exact threadId.`;
 }
 
 function parseJson(content) {
-  const cleaned = stripCodeFence(content);
+  const cleaned = stripCodeFence(content, { trailingCommas: true });
   try { return JSON.parse(cleaned); }
   catch (err) { throw new Error(`Failed to parse JSON: ${err.message}\nRaw: ${cleaned.slice(0, 200)}`); }
 }
 
-// ── LLM call (OpenAI-compatible; mirrors newsThreadAnalysis) ────────────────────
-const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
+// ── LLM call (shared llm.js; thinking off) ────────────────────
 async function invokeLLM(prompt) {
-  const res = await fetch(LLM_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LLM_KEY}` },
-    body: JSON.stringify({
-      model: LLM_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: MAX_TOKENS,
-      temperature: TEMPERATURE,
-      response_format: { type: 'json_object' },
-      // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible
-      // reasoning_content and truncates/empties output (deepseek-chat retired 2026-07-24). Disable.
-      thinking: { type: 'disabled' },
-    }),
-  });
-  const raw = await res.text();
-  let parsed;
-  try { parsed = JSON.parse(raw); } catch { parsed = raw; }
-  if (!res.ok) throw new Error(`LLM error: ${parsed?.error?.message || raw || res.status}`);
-  logUsage('weekly_brief', LLM_MODEL, parsed?.usage);
-  return { modelId: parsed?.model || LLM_MODEL, content: extractContent(parsed) };
-}
-
-function extractContent(payload) {
-  if (!payload) return '';
-  const msg = payload?.choices?.[0]?.message?.content;
-  if (typeof msg === 'string') return msg;
-  if (typeof payload === 'string') return payload;
-  return JSON.stringify(payload);
-}
-
-function stripCodeFence(v) {
-  if (typeof v !== 'string') return v;
-  return v.replace(/^```(?:json)?\s*/i, '').replace(/```$/i, '').replace(/,(\s*[\]}])/g, '$1').trim();
+  const r = await chat({ step: 'weekly_brief', model: LLM_MODEL, user: prompt, maxTokens: MAX_TOKENS, temperature: TEMPERATURE, json: true });
+  return { modelId: r.model, content: r.content };
 }
 module.exports.topCountries = topCountries; // for tests

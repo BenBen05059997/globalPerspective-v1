@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const { buildWebIndex } = require('../src/webRecords');
-const { isCountryName } = require('../src/placeFilter');
+const { isCountryName } = require('../src/_shared/placeFilter');
 
 const NOW = '2026-10-01T05:00:00Z';
 const isCountry = (n) => isCountryName(n);

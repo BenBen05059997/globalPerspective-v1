@@ -5,7 +5,8 @@ const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryComman
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
 const { assembleDossier } = require('./dossier');
-const { isCountryName } = require('./placeFilter');
+const { isCountryName } = require('./_shared/placeFilter');
+const { chat } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 
@@ -1909,11 +1910,9 @@ async function buildEventDossier(countryName, threadId, hops) {
 
 // Reason over a dossier with the honesty contract (DeepSeek — public, ungated,
 // bounded by token cap; same engine as newsAnalyze/newsSystemsAnalysis).
-const DOSSIER_LLM_URL = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
 const DOSSIER_LLM_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
 async function analyzeDossierWithLLM(dossier) {
-  const key = process.env.XAI_API_KEY;
-  if (!key) throw new Error('LLM key not configured');
+  if (!process.env.XAI_API_KEY) throw new Error('LLM key not configured');
   const contract = dossier.reasoning_contract?.instructions || '';
   const system = 'You are a geopolitical intelligence analyst. Reason ONLY over the event-dossier JSON provided. '
     + `Grounding rules: ${contract} Cite entry titles for factual claims; label interpretation as "💭 judgment"; never invent a connection not in the dossier.`;
@@ -1926,22 +1925,11 @@ Treat any edge with flags.temporal_anomaly=true as CO-MOVEMENT, not proven causa
 DOSSIER:
 ${JSON.stringify(dossier)}`;
 
-  const res = await fetch(DOSSIER_LLM_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: DOSSIER_LLM_MODEL,
-      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-      max_tokens: 800,
-      temperature: 0.4,
-      // DeepSeek V4 defaults to thinking mode -> burns max_tokens on invisible
-      // reasoning and truncates/empties output (2026-07-26 outage). Disable.
-      thinking: { type: 'disabled' },
-    }),
+  // Behind API Gateway (29 s integration limit, dossier build included): one 20 s attempt, no retry.
+  const { content } = await chat({
+    step: 'dossier_analysis', model: DOSSIER_LLM_MODEL, system, user, maxTokens: 800, temperature: 0.4, timeoutMs: 20000, retries: 0,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`LLM ${res.status}: ${JSON.stringify(data).slice(0, 180)}`);
-  const text = (data?.choices?.[0]?.message?.content || '').trim();
+  const text = content.trim();
   if (!text) throw new Error('empty LLM response');
   return text;
 }

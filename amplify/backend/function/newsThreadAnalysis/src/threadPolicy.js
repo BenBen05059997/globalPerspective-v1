@@ -43,17 +43,4 @@ function selectThreads({ threads, existingByThread, maxThreads = 10 }) {
   }));
 }
 
-/** DeepSeek V4 request body. thinking must be disabled: it defaults on and burns max_tokens. */
-function buildRequestBody({ model, prompt, maxTokens, temperature, topP }) {
-  return {
-    model,
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: maxTokens,
-    temperature,
-    top_p: topP,
-    thinking: { type: 'disabled' },
-    response_format: { type: 'json_object' },
-  };
-}
-
-module.exports = { MAX_STORED_IDS, entryIds, isStale, selectThreads, buildRequestBody };
+module.exports = { MAX_STORED_IDS, entryIds, isStale, selectThreads };

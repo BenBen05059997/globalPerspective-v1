@@ -1,8 +1,8 @@
 // Scoring model v2 — derive the legacy scalar (riskScore/riskLevel) + lead axis
 // from a multi-dimensional risk vector.
 //
-// Kept BYTE-IDENTICAL across generators (newsCountryIntelligence,
-// newsThreadAnalysis) and mirrors the frontend adapter in
+// One copy, used by the generators (newsCountryIntelligence,
+// newsThreadAnalysis) through src/_shared; mirrors the frontend adapter in
 // src/utils/riskTiers.js (headlineFromDimensions): the headline is the WORST
 // axis, NEVER a weighted average. See SCORING_MODEL_V2_PLAN.md.
 

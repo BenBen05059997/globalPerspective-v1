@@ -1,18 +1,18 @@
 {
   "note": "Per-file count of raw px in font-size / border-radius / spacing properties in frontend src (see quality/check_style_px.mjs). Counts may only fall; lower them with --lower after moving to tokens.",
   "totals": {
-    "spacing": 438,
-    "fontSize": 188,
-    "radius": 47
+    "spacing": 435,
+    "fontSize": 186,
+    "radius": 46
   },
   "files": {
     "app/App.jsx": {
       "spacing": 4
     },
     "app/layout/Layout.css": {
-      "fontSize": 11,
-      "radius": 3,
-      "spacing": 35
+      "fontSize": 9,
+      "radius": 2,
+      "spacing": 32
     },
     "app/layout/LoadingIndicators.css": {
       "fontSize": 2,

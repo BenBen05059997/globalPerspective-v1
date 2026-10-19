@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref } from '@/shared/lib/links.js';
 import '@/shared/ui/ShareButtons.css';
 
 const IconLink = () => (
@@ -51,7 +51,7 @@ const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
 export default function ShareButtons({ path, title, threadId, preview }) {
   const [copied, setCopied] = useState(false);
-  const linkPath = path || (threadId ? threadPath(threadId) : '/');
+  const linkPath = path || (threadId ? storyHref(threadId) : '/');
   const baseUrl = `${window.location.origin}${linkPath}`;
   const previewQs = buildPreviewParams(preview);
   const url = previewQs ? `${baseUrl}?${previewQs}` : baseUrl;

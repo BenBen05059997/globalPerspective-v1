@@ -1,7 +1,6 @@
 import { Link } from 'react-router';
 import { useNotifications } from '@/features/breaking/hooks/useNotifications';
-import { alertPath } from '@/features/breaking/lib/alertPath.js';
-import { mapHref } from '@/shared/lib/links.js';
+import { breakingHref, mapHref } from '@/shared/lib/links.js';
 import '@/features/breaking/components/BreakingStrip.css';
 
 const FRESH_MS = 24 * 60 * 60 * 1000; // only surface genuinely fresh alerts (last 24h)
@@ -26,7 +25,7 @@ export default function BreakingStrip() {
   const more = fresh.length - 1;
   // One fresh alert → its resolver URL (the story page when it has one, else the map); several →
   // the map, where the alert stack lists them.
-  const to = more > 0 ? mapHref() : alertPath(latest);
+  const to = more > 0 ? mapHref() : breakingHref(latest.id || latest.threadId);
   const label = `Breaking: ${latest.title}${more > 0 ? ` — and ${more} more today` : ''}`;
 
   return (

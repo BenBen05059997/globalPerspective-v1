@@ -16,7 +16,7 @@ a hook resolves one alert id for the `/breaking/:id` redirect.
 ## Frontend
 - `components/NotificationBell.jsx` - nav bell + dropdown (mounted by `src/app/layout/Layout.jsx`)
 - `components/BreakingStrip.jsx` - "BREAKING" strip (mounted by `src/features/home/Home.jsx`); links to the alert's
-  resolver (`lib/alertPath.js`, shared with the bell) for one fresh alert, to the map (`mapHref()`) for several
+  resolver (`breakingHref()` in `@/shared/lib/links.js`, as the bell does) for one fresh alert, to the map (`mapHref()`) for several
 - `hooks/useNotifications.js` - alert feed, 5-minute poll, unread count; `hooks/useBreakingAlert.js` - one alert by id
 - Public API (`index.js`): `BreakingStrip` (home), `NotificationBell` (app layout), `useBreakingAlert` (app `LegacyRedirects`)
 - Imports from other features: none.

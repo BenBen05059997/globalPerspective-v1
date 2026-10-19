@@ -45,11 +45,10 @@ Today (`features/map/components/RadarMap.jsx`): the beam loops every 10s forever
 | # | Change |
 |---|---|
 | R1 | One lap when the map opens (about 4-5s), then the beam stops and the map is still. The beam is faint and thin (about a quarter of today's brightness). The play button becomes "Scan again" (one lap). |
-| R2 | Only important markers react when the beam passes: new since your last visit (`newIds`) or new/escalating in 24h (`pulseSet`, cap lowered to 5). Each pings: a ring grows out 2-3 times, then stops. No flare on the others; no endless rings. |
-| R3 | A small "NEW" tag next to markers opened since your last visit; it stays until the next visit. |
-| R4 | When the beam reaches a NEW or important marker, a short card appears beside it for about 3s: headline, crisis type, risk word, how long ago (plus a one-line summary if the bundle carries one; checked before building). One card at a time, queued; the matching feed row highlights. Hover and click work as now. |
-| R5 | When fresh data arrives while the page is open, one sweep runs and pings only what is newly added. |
-| R6 | Reduced motion: no sweep and no cards; NEW tags and a static ring only. |
+| R2 | "Happening now" = a soft light that slowly grows and shrinks on the point (breathing, about 2.4s), on markers new or escalating in the last 24h (`pulseSet`, cap lowered to 5). It keeps breathing while that is true; it replaces today's expanding ripple ring and the per-marker flare. No other marker moves. No "NEW" tag (operator 2026-10-19: too much). |
+| R4 | When the beam reaches a happening-now marker, a short card appears beside it for about 3s: headline, crisis type, risk word, how long ago (plus a one-line summary if the bundle carries one; checked before building). One card at a time, queued; the matching feed row highlights. Hover and click work as now. |
+| R5 | When fresh data arrives while the page is open, one sweep runs; newly added happening-now markers start breathing. |
+| R6 | Reduced motion: no sweep, no cards, no breathing; happening-now markers get a still soft halo. |
 Globe view keeps its spin for now; the same ping and NEW tag can follow there once the radar version is approved.
 
 ### Build order (each checked in a local browser; one deploy at the end, which needs the operator's yes)

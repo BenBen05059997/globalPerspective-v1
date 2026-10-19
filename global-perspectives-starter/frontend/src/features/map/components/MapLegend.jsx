@@ -178,7 +178,7 @@ export default function MapLegend({
       </div>
       <div className="sh-legrow">
         <b>Motion</b>
-        <span className="sh-leg"><i>budget: at most {MOTION_BUDGET.movers} moving, {MOTION_BUDGET.pulses} pulsing · today the globe spin or radar sweep, and a soft pulse on items new or escalating in the last 24h · reduced motion keeps everything still</i></span>
+        <span className="sh-leg"><i>budget: at most {MOTION_BUDGET.movers} moving, {MOTION_BUDGET.pulses} breathing · a soft breathing light marks what is happening now (changed in the last 12h) · the radar sweeps once when it opens or new items arrive, with a short card on each lit item it passes (“Scan again” for another lap); the globe spins · reduced motion keeps everything still</i></span>
       </div>
       <div className="sh-legrow">
         <b>Alert level</b>

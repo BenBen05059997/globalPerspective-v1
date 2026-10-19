@@ -19,5 +19,5 @@ post-hoc fuzzy matching stays banned).
 - Model output on pages is labelled "model judgment".
 - The Stories WEB view and the story page follow these wording rules.
 
-Source: `project-docs/archive/redesign-ux/_active/STORY_WEB_RETHINK_PLAN.md` (§5 ruling);
+Source: `git show 120de90:project-docs/archive/redesign-ux/_active/STORY_WEB_RETHINK_PLAN.md` (deleted 2026-10-19) (§5 ruling);
 `project-docs/plans/REDESIGN_MASTER_PLAN.md` (§1 honesty rules)

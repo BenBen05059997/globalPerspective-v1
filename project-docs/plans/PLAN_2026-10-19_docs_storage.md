@@ -32,15 +32,14 @@ project-docs/
   runbooks/<job-or-alert>.md       Trigger / Check (exact command) / Fix / Escalate / Last verified
   reference/                       GENERATED from code + live AWS (Lambdas, schedules, env key names, S3 prefixes,
                                    routes); never hand-edited
-  archive/                         finished plans, reports, legacy, old internal docs; not indexed
 src/features/<name>/README.md      ≤40 lines: purpose, routes, entry files, data hooks used, decisions that apply
 amplify/backend/function/<name>/README.md   ≤30 lines: purpose, trigger, reads/writes, gotchas (e.g. zip ≠ repo)
-CHANGES.md                         frozen archive; git log is the change log
+(no CHANGES.md)                   git log is the change log
 ```
-Doc types kept: 1 agent rules (CLAUDE.md) · 2 architecture overview · 3 decision record · 4 plan · 5 runbook · 6 feature/Lambda README · 7 generated reference. Reports and audits are dated outputs: they go to `archive/` once read, or stay next to the tool that made them (`quality/`, `predictions/`).
+Doc types kept: 1 agent rules (CLAUDE.md) · 2 architecture overview · 3 decision record · 4 plan · 5 runbook · 6 feature/Lambda README · 7 generated reference. Reports and audits are dated outputs: they are deleted once read, or stay next to the tool that made them (`quality/`, `predictions/`).
 
 ### Lifecycle
-- Plan: proposed → active → done. When done, its lasting decisions become decision records, the plan moves to `archive/` in the same commit.
+- Plan: proposed → active → done. When done, its lasting decisions become decision records, the plan is deleted in the same commit (git history keeps it).
 - Decision: accepted → superseded (new record links the old one). Never edited.
 - Runbook/reference/README: carry `Last verified: YYYY-MM-DD`; anything not verified in 6 months is re-checked or deleted.
 
@@ -61,5 +60,5 @@ Doc types kept: 1 agent rules (CLAUDE.md) · 2 architecture overview · 3 decisi
 
 ### Decisions for the operator
 1. Adopt this structure (yes/no/changes).
-2. Archive rather than delete old docs (recommended: archive; delete later).
+2. ~~Archive rather than delete~~ — operator chose DELETE (decision 0026); done 2026-10-19.
 3. Run D1-D6 after wave 2 merges, in parallel with wave 3 (docs only, no code), or now.

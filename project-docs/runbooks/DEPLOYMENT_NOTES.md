@@ -123,7 +123,7 @@ default frontend deployment workflow. Use them only for an explicitly authorized
 
 The Worker fronts all traffic and currently remains in production. Its captured live source is
 `cloudflare/front-worker/baseline/worker2.mjs`; it matches the code block in
-`project-docs/archive/distribution/WORKER_FULL_CODE.md`. Captured version:
+`git show 120de90:project-docs/archive/distribution/WORKER_FULL_CODE.md` (deleted 2026-10-19). Captured version:
 `91ba1e98-0959-4387-84f3-10a0d5790ad8`, deployed 2026-10-01. The separately prepared
 `cloudflare/front-worker/candidate.mjs` wrapper is **not uploaded**. It adds candidate-host-only
 blog passthrough and noindex handling; it is not a production change.

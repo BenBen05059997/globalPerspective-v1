@@ -29,4 +29,5 @@ Append-only: a decision is never edited; a new record supersedes it and says so 
 | [0022](0022-crisis-hues-option-a.md) | 2026-10-19 | Crisis hues re-picked (option A) | accepted |
 | [0023](0023-radar-one-sweep-12h-window.md) | 2026-10-19 | Radar: one sweep, happening now = 12 h, max 5 | accepted |
 | [0024](0024-feature-public-api-and-lambda-grouping.md) | 2026-10-19 | Feature index.js public API; Lambdas grouped by feature | accepted |
-| [0025](0025-docs-storage-layout.md) | 2026-10-19 | How documentation is stored | accepted |
+| [0025](0025-docs-storage-layout.md) | 2026-10-19 | How documentation is stored | accepted (archive/ part superseded by 0026) |
+| [0026](0026-delete-not-archive.md) | 2026-10-19 | Delete old docs instead of archiving them | accepted |

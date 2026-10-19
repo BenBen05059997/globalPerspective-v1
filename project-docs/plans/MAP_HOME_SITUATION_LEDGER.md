@@ -2,7 +2,7 @@
 
 Status: active — execution record for `MAP_HOME_SITUATION_PLAN.md`; todo rows remain.
 
-> Execution record for `MAP_HOME_SITUATION_PLAN.md`, per `project-docs/archive/playbooks/PLAN_EXECUTION_PLAYBOOK.md`. One row per task; declare (fill the four fields, set 🔧) before doing; on finish update the listed docs in the same commit, tick the boxes, set ✅ + commit hash. An agent resuming reads the plan then this file; the first 🔧 active row (or first 🔭 todo in stage order) is next.
+> Execution record for `MAP_HOME_SITUATION_PLAN.md`, per `git show 120de90:project-docs/archive/playbooks/PLAN_EXECUTION_PLAYBOOK.md` (deleted 2026-10-19). One row per task; declare (fill the four fields, set 🔧) before doing; on finish update the listed docs in the same commit, tick the boxes, set ✅ + commit hash. An agent resuming reads the plan then this file; the first 🔧 active row (or first 🔭 todo in stage order) is next.
 
 **Legend:** 🔭 todo · 🔧 active · ✅ done · ⛔ blocked · ♻️ superseded
 **Started:** 2026-09-08 · **Region:** ap-northeast-1 · **Ingest fn deployed name:** `newsInvokeGemini-dev`
@@ -50,7 +50,7 @@ Notes: **could not** test PutObject *as the gdacs role* — Lambda execution rol
 
 ### S0 · T3 — Cloudflare Worker `/data/*` route + fixture
 Status: ✅ done (2026-09-08, deployed to prod + live-verified)
-Reads/refs: `project-docs/archive/distribution/WORKER_FULL_CODE.md`; `DATA_STRATEGY.md` §3.6, §5; memory `project_cloudflare_worker`
+Reads/refs: `git show 120de90:project-docs/archive/distribution/WORKER_FULL_CODE.md` (deleted 2026-10-19); `DATA_STRATEGY.md` §3.6, §5; memory `project_cloudflare_worker`
 Changes: IAM user `gp-worker-s3-reader` + read-only policy; SigV4 GET + `/data/*` route in `WORKER_FULL_CODE.md` (key whitelist `DATA_ALLOWED`, `s-maxage=300`, member fail-closed, **403→404 map** for missing keys since the reader has no ListBucket); `frontend/fixtures/world.json` uploaded to `s3://…/world/latest.json`; `fixtures/README.md`; **deployed to `globalperspective-rss`** (compat date matched at 2026-04-01, routes preserved) with secrets `S3_ACCESS_KEY_ID`/`S3_SECRET_ACCESS_KEY` set via stdin
 Docs to update: `ARCHITECTURE.md` ✅ · memory `project_cloudflare_worker` ✅ · `CHANGES.md` ✅
 Verify / exit: ✅ proven in a throwaway CF worker first, then LIVE on `globalperspective.net`: `/data/world/latest.json`→200 (`x-rendered-by: cf-worker-data`, correct bundle), missing→404, member→401, disallowed→404; **regression-clean** — `/rss`→200 XML, bot pre-render→`cf-worker-bot`, passthrough→200
@@ -218,7 +218,7 @@ Commit: —
 
 ## Stage S5.5 — Design port (added 2026-09-09 after the in-person review; gates S6)
 
-Trigger: the operator reviewed the live `/map` in person and found it read as a working *renderer*, not a finished *product* (everything at equal weight, camera moving on load, clicks often paying off with an apology). An independent Sonnet critique + a live-data audit confirmed it. A design brief was handed to a fresh Claude designer; two rounds produced an approved static target (all six artboards + a GDACS variant + a no-situation-page footer). Kept in-repo at `project-docs/archive/redesign-ux/_active/MAP_HOME_DESIGN_TARGET.html`.
+Trigger: the operator reviewed the live `/map` in person and found it read as a working *renderer*, not a finished *product* (everything at equal weight, camera moving on load, clicks often paying off with an apology). An independent Sonnet critique + a live-data audit confirmed it. A design brief was handed to a fresh Claude designer; two rounds produced an approved static target (all six artboards + a GDACS variant + a no-situation-page footer). Kept in-repo at `git show 120de90:project-docs/archive/redesign-ux/_active/MAP_HOME_DESIGN_TARGET.html` (deleted 2026-10-19).
 
 ### S5.5 · T1 — Port the approved design onto the existing data contracts
 Status: ✅ done (browser-verified against LIVE prod data; source only, NOT deployed). Presentation-layer rewrite only — `useWorld`/`useSituationDetail`/`worldData.js`/Worker/`world/latest.json` all untouched.
@@ -401,7 +401,7 @@ Commit: —
 
 ---
 
-## Stage S9 — Fleet hygiene & retirements (added 2026-09-10 from `project-docs/archive/architecture/BACKEND_AUDIT_2026-09-10.md`)
+## Stage S9 — Fleet hygiene & retirements (added 2026-09-10 from `git show 120de90:project-docs/archive/architecture/BACKEND_AUDIT_2026-09-10.md` (deleted 2026-10-19))
 
 > Source: the whole-backend audit (every Lambda read + live-verified). All items below are **planned only — nothing executed**; each needs its own operator yes. Independent of S5.5-S8 ordering; can ride along whenever we're inside the relevant Lambda.
 

@@ -17,4 +17,4 @@ after a fresh operator go-live decision.
 - Billing and credits code or config need a fresh operator "yes" (CLAUDE.md, Authorization).
 - Site copy must not promise credits.
 
-Source: `project-docs/archive/billing/_proposed/PROD_CREDITS_NEXT_STEPS.md`; `CLAUDE.md`
+Source: `git show 120de90:project-docs/archive/billing/_proposed/PROD_CREDITS_NEXT_STEPS.md` (deleted 2026-10-19); `CLAUDE.md`

@@ -21,4 +21,4 @@ declined on 2026-09-29).
 - Env names `GROK_*` / `XAI_*` hold DeepSeek settings; read the live env, not the name.
 
 Source: `project-docs/plans/BACKEND_PLAN_2026-09-27.md` (Decisions);
-`project-docs/archive/architecture/_active/TASK_2026-09-29_batch2_models.md`; `CLAUDE.md`
+`git show 120de90:project-docs/archive/architecture/_active/TASK_2026-09-29_batch2_models.md` (deleted 2026-10-19); `CLAUDE.md`

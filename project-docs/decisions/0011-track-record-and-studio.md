@@ -23,5 +23,5 @@ S3 (fund DeepSeek or move jobs to another provider) stays the operator's busines
 - The scoring pipeline (per-question probability and named resolution source, weekly seeded
   sample, Monday operator settle-review) was built in Batch 4.
 
-Source: `project-docs/archive/redesign-ux/_active/TRACK_RECORD_AND_STUDIO_RULING.md`;
-`project-docs/archive/architecture/_active/TASK_2026-09-30_batch4_scoring_web_share.md`
+Source: `git show 120de90:project-docs/archive/redesign-ux/_active/TRACK_RECORD_AND_STUDIO_RULING.md` (deleted 2026-10-19);
+`git show 120de90:project-docs/archive/architecture/_active/TASK_2026-09-30_batch4_scoring_web_share.md` (deleted 2026-10-19)

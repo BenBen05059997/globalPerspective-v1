@@ -17,5 +17,5 @@ and directory page.
 - Links that carry `?layer= ?country= ?story= ?focus=` keep working through the redirect.
 - `/today` is reachable from the map's About drawer.
 
-Source: `project-docs/archive/redesign-ux/_active/TASK_2026-10-01_home_swap.md`;
+Source: `git show 120de90:project-docs/archive/redesign-ux/_active/TASK_2026-10-01_home_swap.md` (deleted 2026-10-19);
 `project-docs/plans/MAP_HOME_SITUATION_PLAN.md`

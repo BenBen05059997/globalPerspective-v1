@@ -14,5 +14,5 @@ We will retire `/spider-demo` once the Stories WEB view exists: it redirects to
 ## Consequences
 - The WEB view follows 0012 (news-based links, "judged to feed into").
 
-Source: `project-docs/archive/redesign-ux/_active/TASK_2026-10-02_stories_board_web.md` (P7b);
-`project-docs/archive/redesign-ux/_active/TASK_2026-10-01_dark_site_shared_tokens.md` (Decision 3)
+Source: `git show 120de90:project-docs/archive/redesign-ux/_active/TASK_2026-10-02_stories_board_web.md` (deleted 2026-10-19) (P7b);
+`git show 120de90:project-docs/archive/redesign-ux/_active/TASK_2026-10-01_dark_site_shared_tokens.md` (deleted 2026-10-19) (Decision 3)

@@ -20,9 +20,9 @@ Status: active.
 
 **Reads / references:**
 - `amplify/backend/function/NewsProjectInvokeAgentLambda/src/index.js` (`buildResearchPrompt`, `buildPredictionPrompt`, `generateAndStore`, `ensureStored`, `findSiblingItem`, `touchItem`, `logPredictionSnapshot`, `assignThreadId`, `readPastArchiveEntries`), `lib.js` (`decideReuse`, `validateTrigger` G1–G6, `buildGatedScenarios`, `METHODOLOGY_VERSION`), `questions.js` (G7–G12)
-- `project-docs/archive/prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md`, `project-docs/archive/prediction/PREDICTION_V1_EXAMPLE.md`
+- `git show 120de90:project-docs/archive/prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md` (deleted 2026-10-19), `git show 120de90:project-docs/archive/prediction/PREDICTION_V1_EXAMPLE.md` (deleted 2026-10-19)
 - `amplify/backend/function/newsModelGuard/src/index.js` (daily 12:00 UTC, SNS `GlobalPerspectiveAlerts`)
-- `amplify/backend/function/newsInvokeGemini/src/index.js` (`captureIngestion` → `GlobalPerspectiveIngestCapture`: SAW vs CHOSE per run), `project-docs/archive/pipeline-ingest/IMPACT_VALIDATION_METHODOLOGY.md`
+- `amplify/backend/function/newsInvokeGemini/src/index.js` (`captureIngestion` → `GlobalPerspectiveIngestCapture`: SAW vs CHOSE per run), `git show 120de90:project-docs/archive/pipeline-ingest/IMPACT_VALIDATION_METHODOLOGY.md` (deleted 2026-10-19)
 - `project-docs/runbooks/DEEPSEEK_COST_ESTIMATE.md`, memory `project_deepseek_cost`
 - Consumers: `RESEARCH_BRIEFING` is served by `newsSensitiveData` (`research_briefing` action) but no frontend page calls `fetchResearchBriefingCache` → safe to stop producing.
 
@@ -101,7 +101,7 @@ Success bar for P7d: hindsight recall ≥ ours, big misses < ours, non-Western r
 
 **Docs to update on completion:**
 - `project-docs/architecture/ARCHITECTURE.md` §2 (`NewsProjectInvokeAgentLambda`: single grounded call, G13, threadId reuse, no RESEARCH_BRIEFING) and the `newsModelGuard` section (balance alert)
-- `project-docs/archive/prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md` (addendum: v2 prompt, G13, version split) and `PREDICTION_V1_EXAMPLE.md` if the example output changes
+- `git show 120de90:project-docs/archive/prediction/_shipped/PREDICTION_METHODOLOGY_V1_PLAN.md` (deleted 2026-10-19) (addendum: v2 prompt, G13, version split) and `PREDICTION_V1_EXAMPLE.md` if the example output changes
 - `project-docs/runbooks/DEEPSEEK_COST_ESTIMATE.md` (measured numbers from P4)
 - `CHANGES.md` per phase; `project-docs/INDEX.md` row for this task; memory `project_deepseek_cost`, `project_prediction_methodology_v1`
 

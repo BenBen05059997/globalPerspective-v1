@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pre-commit: fast checks only (2026-10-19 rules reset). Docs are required only for architecture
-# changes (Stop hook reminder); CHANGES.md is frozen as an archive — git log is the change log.
+# changes (Stop hook reminder); git log is the change log (CHANGES.md deleted 2026-10-19).
 # Bypass: git commit --no-verify.
 set -e
 cd "$(git rev-parse --show-toplevel)"

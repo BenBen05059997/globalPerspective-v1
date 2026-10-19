@@ -5,8 +5,8 @@
 Severity's LIVING benchmark status is tracked in `quality/calibration/severity-*.md` reports; this document is the 2026-09-14 audit and is not re-verified per-score.
 
 Grounded in direct `grep`/`Read` of `amplify/backend/function/*/src/` and the `quality/` tree on
-this date, plus `project-docs/archive/architecture/WORLD_MODEL_FRAGMENTS.md`,
-`IMPORTANCE_SCALE_MAPPING.md`, and `project-docs/archive/pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md`.
+this date, plus `git show 120de90:project-docs/archive/architecture/WORLD_MODEL_FRAGMENTS.md` (deleted 2026-10-19),
+`IMPORTANCE_SCALE_MAPPING.md`, and `git show 120de90:project-docs/archive/pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md` (deleted 2026-10-19).
 All citations are file:line as read today; anywhere I could not verify a claim directly, it is
 flagged **UNVERIFIED** rather than guessed.
 
@@ -179,7 +179,7 @@ motivated in prose next to the code.
 
 **BENCHMARK = partial, one-time, not automated.** The ~14% precision figure the operator may
 recall (also cited in `MAP_HOME_SITUATION_PLAN.md:34`, `SCORING_MODEL_V2_PLAN.md:15`) comes from
-`project-docs/archive/alerts-email/BREAKING_ALERT_DEBATE_2026-06-24.md`: a **one-time 22-agent LLM debate**
+`git show 120de90:project-docs/archive/alerts-email/BREAKING_ALERT_DEBATE_2026-06-24.md` (deleted 2026-10-19): a **one-time 22-agent LLM debate**
 over exactly **7** real fired stories — an ALERT advocate + SUPPRESS skeptic argued each, then an
 independent LLM Judge scored six urgency dimensions and ruled `alert`/`hold`/`suppress`. Result:
 "the judge endorsed exactly **1 of 7** firings (~14% precision)... Both stories that were actually
@@ -539,7 +539,7 @@ Reference set** step, quoted verbatim:
 
 > "**P0 — Reference set.** Hand-label a 'what genuinely mattered' set from recent days (extends the
 > scoring gold set). This is the yardstick for *every* change below. Without it we're guessing."
-> (`project-docs/archive/pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md:115-116`)
+> (`git show 120de90:project-docs/archive/pipeline-ingest/IMPACT_FIRST_REDESIGN_PLAN.md:115-116` (deleted 2026-10-19))
 
 And later: "**P0 reference set** — needs no new infra; unblocks measuring *everything*. Highest-
 value first step." (L140). This was written as the necessary first step for the *selector* impact

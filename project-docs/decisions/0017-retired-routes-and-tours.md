@@ -19,5 +19,5 @@ We will:
 ## Consequences
 - Redirects live in `app/LegacyRedirects.jsx`; page guards check the redirects and the footer set.
 
-Source: `project-docs/archive/redesign-ux/_active/TASK_2026-10-01_dark_site_shared_tokens.md`
+Source: `git show 120de90:project-docs/archive/redesign-ux/_active/TASK_2026-10-01_dark_site_shared_tokens.md` (deleted 2026-10-19)
 (Decisions 1, 2, 13, 14); `project-docs/plans/REDESIGN_MASTER_PLAN.md` (§3.1, §3.2)

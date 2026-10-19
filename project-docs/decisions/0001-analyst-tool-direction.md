@@ -18,5 +18,5 @@ is not the product.
   differentiators.
 - The signal API (`newsSignals`) is not sold; whether to park it is still open (see 0015).
 
-Source: `project-docs/archive/strategy/ANALYST_TOOL_DIRECTION.md`;
-`project-docs/archive/causal-web/_proposed/ENTERPRISE_ANALYST_TOOL_PLAN.md`
+Source: `git show 120de90:project-docs/archive/strategy/ANALYST_TOOL_DIRECTION.md` (deleted 2026-10-19);
+`git show 120de90:project-docs/archive/causal-web/_proposed/ENTERPRISE_ANALYST_TOOL_PLAN.md` (deleted 2026-10-19)

@@ -19,5 +19,5 @@ feed `newsMarketsData` keeps running (no LLM, also used by country pages).
 - Economy design decisions E1–E8 wait until economy returns.
 - Re-enabling is reversible: `aws events enable-rule --name <rule>` and flipping the flag.
 
-Source: `project-docs/archive/redesign-ux/_active/ECONOMY_CONSOLE_DISCUSSION.md`;
+Source: `git show 120de90:project-docs/archive/redesign-ux/_active/ECONOMY_CONSOLE_DISCUSSION.md` (deleted 2026-10-19);
 `project-docs/plans/TASK_2026-09-27_parking.md`

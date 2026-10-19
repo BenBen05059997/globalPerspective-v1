@@ -1,6 +1,6 @@
 // check_docs — doc layout guard (project-docs/decisions/0025-docs-storage-layout.md).
 // Fails (exit 1) when: project-docs/INDEX.md is over 60 lines, links to a file that does not exist
-// or into archive/; a doc in project-docs/plans/ says `Status: done`; CLAUDE.md is over 80 lines.
+// a doc in project-docs/plans/ says `Status: done`; CLAUDE.md is over 80 lines.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,14 +20,13 @@ export function checkDocs() {
     const rel = target.split('#')[0];
     const abs = path.resolve(DOCS, rel);
     if (!fs.existsSync(abs)) problems.push(`INDEX.md links to a missing file: ${target}`);
-    else if (path.relative(DOCS, abs).startsWith('archive')) problems.push(`INDEX.md links into archive/: ${target}`);
   }
   const plans = path.join(DOCS, 'plans');
   for (const f of fs.existsSync(plans) ? fs.readdirSync(plans) : []) {
     if (!f.endsWith('.md')) continue;
     const done = fs.readFileSync(path.join(plans, f), 'utf8').split('\n')
       .find((l) => /^[\s>*_]*status[*_\s]*:[*_\s]*(done|shipped|cancelled)\b/i.test(l));
-    if (done) problems.push(`plans/${f} says "${done.trim()}" — move it to archive/`);
+    if (done) problems.push(`plans/${f} says "${done.trim()}" — record its decisions in decisions/ and delete it`);
   }
   const claude = lineCount(path.join(ROOT, 'CLAUDE.md'));
   if (claude > 80) problems.push(`CLAUDE.md has ${claude} lines (max 80)`);

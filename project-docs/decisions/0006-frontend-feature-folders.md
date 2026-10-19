@@ -21,5 +21,5 @@ this page".
 - Cross-feature edges are visible as `@/features/<other>/…` import lines.
 - Executed 2026-09-24 in phases P0–P12.
 
-Source: `project-docs/archive/architecture/REPO_RESTRUCTURE_DESIGN_2026-09-24.md` (§2.5, §2.6,
-recommendation); `project-docs/archive/architecture/_active/TASK_2026-09-24_frontend_feature_folders.md`
+Source: `git show 120de90:project-docs/archive/architecture/REPO_RESTRUCTURE_DESIGN_2026-09-24.md` (deleted 2026-10-19) (§2.5, §2.6,
+recommendation); `git show 120de90:project-docs/archive/architecture/_active/TASK_2026-09-24_frontend_feature_folders.md` (deleted 2026-10-19)

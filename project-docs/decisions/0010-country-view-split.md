@@ -18,4 +18,4 @@ recommended; C7/C8 later.
 ## Consequences
 - The card shows only stored, dated data; AI runs happen in the Studio.
 
-Source: `project-docs/archive/redesign-ux/_active/COUNTRY_VIEW_DISCUSSION.md`
+Source: `git show 120de90:project-docs/archive/redesign-ux/_active/COUNTRY_VIEW_DISCUSSION.md` (deleted 2026-10-19)

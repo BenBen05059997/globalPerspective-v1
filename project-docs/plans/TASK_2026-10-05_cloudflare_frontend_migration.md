@@ -9,7 +9,7 @@ Status: active.
 **Reads / references:**
 - `project-docs/plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md`
 - `CLAUDE.md`, `deploy.sh`, `.githooks/*`, frontend build/config/public content, `docs/` assets.
-- `project-docs/archive/distribution/WORKER_FULL_CODE.md`, Cloudflare current docs and captured live source/settings.
+- `git show 120de90:project-docs/archive/distribution/WORKER_FULL_CODE.md` (deleted 2026-10-19), Cloudflare current docs and captured live source/settings.
 
 **Changes (code):**
 - `global-perspectives-starter/frontend/worker/*`, `wrangler.jsonc`, package/lockfile, lint configuration as needed.
@@ -18,7 +18,7 @@ Status: active.
 
 **Docs to update on completion:**
 - This ledger; migration plan status; `project-docs/INDEX.md`; `CHANGES.md`.
-- `README.md`, `CLAUDE.md`, `project-docs/runbooks/DEPLOYMENT_NOTES.md`, `DOMAIN_SETUP.md`, `project-docs/architecture/ARCHITECTURE.md`, `project-docs/archive/distribution/WORKER_FULL_CODE.md`, `.claude/skills/deploy-frontend/SKILL.md` as implementation makes changes relevant. Keep current live-hosting facts accurate until cutover.
+- `README.md`, `CLAUDE.md`, `project-docs/runbooks/DEPLOYMENT_NOTES.md`, `DOMAIN_SETUP.md`, `project-docs/architecture/ARCHITECTURE.md`, `git show 120de90:project-docs/archive/distribution/WORKER_FULL_CODE.md` (deleted 2026-10-19), `.claude/skills/deploy-frontend/SKILL.md` as implementation makes changes relevant. Keep current live-hosting facts accurate until cutover.
 
 **Completion checklist:**
 - [x] Live baseline captured; unresolved account access identified.

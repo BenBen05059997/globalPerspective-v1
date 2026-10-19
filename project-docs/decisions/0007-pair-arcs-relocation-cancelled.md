@@ -15,6 +15,6 @@ We will not build it (operator: "no build"). The port is preserved on branch
 ## Consequences
 - Pair intelligence has no frontend consumer; its unbuilt UI plan is archived.
 
-Source: `project-docs/archive/redesign-ux/_active/TASK_2026-09-24_pair_arcs_relocation.md`;
-`project-docs/archive/redesign-ux/_active/PAIR_ARCS_RELOCATION_PLAN.md`;
-`project-docs/archive/architecture/CLEANUP_AUDIT_2026-09-24.md` (§4 D3)
+Source: `git show 120de90:project-docs/archive/redesign-ux/_active/TASK_2026-09-24_pair_arcs_relocation.md` (deleted 2026-10-19);
+`git show 120de90:project-docs/archive/redesign-ux/_active/PAIR_ARCS_RELOCATION_PLAN.md` (deleted 2026-10-19);
+`git show 120de90:project-docs/archive/architecture/CLEANUP_AUDIT_2026-09-24.md` (deleted 2026-10-19) (§4 D3)

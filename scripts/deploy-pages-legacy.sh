@@ -122,7 +122,6 @@ if [[ -n "$COMMIT_MSG" ]]; then
   (
     cd "$REPO_ROOT"
     git add docs/assets docs/index.html docs/404.html global-perspectives-starter/frontend/src/
-    [[ -f CHANGES.md ]] && git add CHANGES.md
     if git diff --cached --quiet; then
       log "Nothing to commit"
     else

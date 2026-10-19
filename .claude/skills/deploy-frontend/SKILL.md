@@ -24,7 +24,7 @@ or GitHub Pages legacy release needs explicit current-message authorization, per
      `docs/` without commit/push. Publishing that staged output still needs explicit legacy-release
      authorization.
    - If verification/build/package fails, stop before any upload or publish.
-2. Update `CHANGES.md` with a dated entry (what changed, why, files touched).
+2. Commit the change with a plain descriptive message (git log is the change log).
 3. Follow `project-docs/runbooks/DEPLOYMENT_NOTES.md` for target-specific smoke checks and release
    records. Do not infer candidate isolation from a `workers.dev` hostname: it shares the Worker
    code and configured backend integrations for that Worker.

@@ -33,7 +33,7 @@ Docs are for design intent and navigation: `project-docs/INDEX.md` (map), `ARCHI
 Update `ARCHITECTURE.md` (and `INDEX.md` for a new doc) only when the architecture changes: a Lambda,
 store/S3 prefix, schedule, route, feature or data flow is added or removed. Record design decisions
 in the relevant plan. Routine code changes need no doc edit; git log is the change log
-(`CHANGES.md` is a frozen archive).
+(old docs and CHANGES.md were deleted 2026-10-19; git history keeps them).
 
 ## Working style
 - Reversible work: keep going; report what changed and why. Diagnose-first requests: report, then wait.

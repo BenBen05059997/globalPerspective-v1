@@ -1,15 +1,15 @@
 # project-docs — index of living docs
 
 Code and live AWS are the truth; docs hold intent, decisions and how-to (decisions/0021).
-Layout and lifecycle: decisions/0025. Finished plans, reports and legacy docs are in `archive/`
-(kept, not indexed). `quality/check_docs.mjs` keeps this file ≤60 lines with working links.
+Layout and lifecycle: decisions/0025 and 0026. Finished plans, reports and legacy docs are deleted;
+git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines with working links.
 
 ## Start here
 - [ARCHITECTURE.md](architecture/ARCHITECTURE.md) — system overview.
-- [Decision records](decisions/README.md) — 25 accepted decisions, newest last.
+- [Decision records](decisions/README.md) — 26 accepted decisions, newest last.
 - [GLOSSARY.md](GLOSSARY.md) — terms, scores and IDs (2026-09-14; check facts against code).
-- `reference/` — generated from code and live AWS (Lambdas, schedules, routes); replaces the
-  hand-written inventories still in `architecture/` (BACKEND_GUIDE, SYSTEM_WIRING, PAGES_GUIDE).
+- [reference/](reference/lambdas.md) — generated from code and live AWS by `scripts/gen-reference.mjs`
+  (Lambdas, schedules, env key names, routes, features, S3 prefixes); never hand-edited.
 
 ## Rules (how things must be done)
 - [DATA_STRATEGY.md](rules/DATA_STRATEGY.md) — S3 for the world, DynamoDB for the user.

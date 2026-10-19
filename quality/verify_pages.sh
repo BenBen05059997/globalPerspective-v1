@@ -409,7 +409,7 @@ must_have "$T/components/StoriesWeb.jsx" "judged to feed into" "the list twin sa
 must_have "$T/components/StoriesWeb.jsx" "Strongest links" "the list twin 'Strongest links' is present"
 # e0c1a1f: the mechanism label is the shared ClaimTag (kind="judgment" renders MODEL JUDGMENT).
 must_have "$T/components/StoriesWeb.jsx" "<ClaimTag kind=\"judgment\"" "link mechanisms carry the judgment ClaimTag"
-must_have "$T/components/ClaimTag.jsx" "judgment: 'MODEL JUDGMENT'" "ClaimTag's judgment word is MODEL JUDGMENT"
+must_have "$SRC/shared/ui/ClaimTag.jsx" "judgment: 'MODEL JUDGMENT'" "ClaimTag's judgment word is MODEL JUDGMENT"
 must_have "$T/components/StoriesWeb.jsx" "isPhone \\? <>\\{twin\\}\\{graph\\}" "phone shows the list twin first, the graph below"
 must_have "$T/components/StoriesWeb.jsx" "webFootnote\\(merged\\.analyses\\)" "the footnote is computed from the merge (webFootnote)"
 must_not_have "$T/components/StoriesWeb.jsx" "[0-9]+ (analys|older)" "no hard-coded counts in the web view strings"
@@ -435,8 +435,9 @@ must_have "$SRC/features/map/lib/cardMentions.js" "MIN_TITLE_CHARS" "mention mat
 must_not_have "$SRC/features/map/lib/cardMentions.js" "levenshtein|fuzzy|similar|soundex" "mention matching has no fuzzy matching"
 must_have "$SRC/features/map/SituationHome.jsx" "webThreads=\\{webIndex" "the console passes the loaded web index titles to the story card"
 # 2 · StoryPeek wherever a story is named: one shared StoryLink
-must_have "$SRC/shared/ui/StoryLink.jsx" "usePeek" "StoryLink is built on usePeek"
-must_have "$SRC/shared/ui/StoryLink.jsx" "StoryPeek" "StoryLink renders the shared StoryPeek"
+must_have "$SRC/shared/ui/StoryLink.jsx" "EntityLink" "StoryLink is the story case of EntityLink"
+must_have "$SRC/shared/ui/EntityLink.jsx" "usePeek" "EntityLink is built on usePeek"
+must_have "$SRC/shared/ui/EntityLink.jsx" "<StoryPeek" "EntityLink renders the shared StoryPeek for stories"
 if grep -A4 "const openOnFocus" "$SRC/shared/hooks/usePeek.js" | grep -q "hasNoHoverCapability"; then
   PASS=$((PASS + 1)); echo "  $(green PASS) usePeek.openOnFocus opens nothing on touch devices (a tap navigates)"
 else

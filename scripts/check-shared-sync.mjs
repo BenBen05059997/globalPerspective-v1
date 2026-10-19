@@ -135,6 +135,13 @@ function checkRiskDimensions(pathA, pathB) {
   return { pass: false, diff: unifiedDiff(pathA, pathB) };
 }
 
+// amplify/backend/shared/src holds the one copy of the backend helpers; each Lambda reaches it through its committed
+// src/_shared symlink. The *_LAMBDAS lists below are the Lambdas that still carry their own copy (they must equal the
+// shared one); a Lambda leaves its list in the commit that moves it onto src/_shared.
+const SHARED = 'amplify/backend/shared/src';
+const RISK_LAMBDAS = ['newsCountryIntelligence', 'newsThreadAnalysis'];
+const SITCORE_LAMBDAS = ['newsGdacsIngest'];
+const SITCORE_TRACKER = 'newsSituationTracker'; // its copy carries the 2-line header (HEADER_2LINE)
 const DAYZERO_LAMBDAS = ['newsThreadAnalysis', 'newsSystemsAnalysis', 'newsCountryIntelligence', 'newsWeeklyBrief', 'newsDriftCorrector', 'newsPostDevTo'];
 
 /** N files must all be byte-identical to the first one (zero tolerance). */
@@ -163,13 +170,13 @@ const placeCore = (src) => { const a = src.indexOf("// Names in briefings come f
 function checkPlaceRule() {
   const base = 'amplify/backend/function/newsCountryIntelligence/src';
   for (const f of ['placeNames.json', 'iso3Names.json']) {
-    const r = checkAllIdentical([abs(`${base}/${f}`), ...PLACE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/${f}`)), abs(`${FE_DATA}/${f}`)]);
+    const r = checkAllIdentical([abs(`${base}/${f}`), abs(`${SHARED}/${f}`), ...PLACE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/${f}`)), abs(`${FE_DATA}/${f}`)]);
     if (!r.pass) return { pass: false, diff: `${f}: ${r.diff}` };
   }
-  const pf = checkAllIdentical(PLACE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/placeFilter.js`)));
+  const pf = checkAllIdentical([abs(`${SHARED}/placeFilter.js`), ...PLACE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/placeFilter.js`))]);
   if (!pf.pass) return { pass: false, diff: `placeFilter.js: ${pf.diff}` };
   const ref = placeCore(fs.readFileSync(abs(`${base}/refreshPolicy.js`), 'utf8'));
-  for (const f of [`amplify/backend/function/${PLACE_LAMBDAS[0]}/src/placeFilter.js`, 'global-perspectives-starter/frontend/src/shared/lib/placeNames.js']) {
+  for (const f of [`${SHARED}/placeFilter.js`, 'global-perspectives-starter/frontend/src/shared/lib/placeNames.js']) {
     const got = placeCore(fs.readFileSync(abs(f), 'utf8'));
     if (got !== ref) return { pass: false, diff: `${f}: the real-country rule text differs from refreshPolicy.js\n${textDiff('refreshPolicy.js', ref, path.basename(f), got)}` };
   }
@@ -266,18 +273,16 @@ function checkEntityNormalization(classifierCorePath, entityNormalizePath) {
 function livePairs() {
   return [
     {
-      name: 'riskDimensions.js',
-      run: () => checkRiskDimensions(
-        abs('amplify/backend/function/newsCountryIntelligence/src/riskDimensions.js'),
-        abs('amplify/backend/function/newsThreadAnalysis/src/riskDimensions.js'),
-      ),
+      name: 'riskDimensions.js (shared + Lambda copies)',
+      run: () => checkAllIdentical([abs(`${SHARED}/riskDimensions.js`), ...RISK_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/riskDimensions.js`))]),
     },
     {
-      name: 'situations-core.js',
-      run: () => checkSituationsCore(
-        abs('amplify/backend/function/newsSituationTracker/src/situations-core.js'),
-        abs('amplify/backend/function/newsGdacsIngest/src/situations-core.js'),
-      ),
+      name: 'situations-core.js (shared + Lambda copies)',
+      run: () => {
+        const r = checkAllIdentical([abs(`${SHARED}/situations-core.js`), ...SITCORE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/situations-core.js`))]);
+        if (!r.pass || !SITCORE_TRACKER) return r;
+        return checkSituationsCore(abs(`amplify/backend/function/${SITCORE_TRACKER}/src/situations-core.js`), abs(`${SHARED}/situations-core.js`));
+      },
     },
     {
       name: 'country_facts.json',
@@ -294,11 +299,11 @@ function livePairs() {
       ),
     },
     {
-      // Batch 3 / A: the day-zero rule for today-archive readers — six byte-identical copies.
-      name: 'dayZero.js (x6)',
-      run: () => checkAllIdentical(DAYZERO_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/dayZero.js`))),
+      // Batch 3 / A: the day-zero rule for today-archive readers.
+      name: 'dayZero.js (shared + Lambda copies)',
+      run: () => checkAllIdentical([abs(`${SHARED}/dayZero.js`), ...DAYZERO_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/dayZero.js`))]),
     },
-    { name: 'real-country rule (placeFilter x6, name tables x8, frontend)', run: () => checkPlaceRule() },
+    { name: 'real-country rule (placeFilter + name tables: shared, Lambda copies, frontend)', run: () => checkPlaceRule() },
     {
       // Batch 4 / G: the Studio share Lambda re-derives sources and re-runs the checks with the frontend's own
       // pure modules, so its copies must stay byte-identical (and so must the golden context fixture both test against).
@@ -371,7 +376,7 @@ function mkTmp() {
 
 async function selfTestRiskDimensions() {
   const dir = mkTmp();
-  const srcA = abs('amplify/backend/function/newsCountryIntelligence/src/riskDimensions.js');
+  const srcA = abs(`${SHARED}/riskDimensions.js`);
   const a = path.join(dir, 'riskDimensions.a.js');
   const b = path.join(dir, 'riskDimensions.b.js');
   fs.copyFileSync(srcA, a);
@@ -386,7 +391,7 @@ async function selfTestRiskDimensions() {
 async function selfTestSituationsCore() {
   const dir = mkTmp();
   const trackerSrc = abs('amplify/backend/function/newsSituationTracker/src/situations-core.js');
-  const ingestSrc = abs('amplify/backend/function/newsGdacsIngest/src/situations-core.js');
+  const ingestSrc = abs(`${SHARED}/situations-core.js`);
   const t = path.join(dir, 'tracker.js');
   const g = path.join(dir, 'gdacs.js');
   fs.copyFileSync(trackerSrc, t);
@@ -446,12 +451,12 @@ async function selfTestEntityNormalization() {
 
 async function selfTestDayZero() {
   const dir = mkTmp();
-  const paths = DAYZERO_LAMBDAS.map((n, i) => {
+  const paths = [0, 1].map((i) => {
     const t = path.join(dir, `dayZero${i}.js`);
-    fs.copyFileSync(abs(`amplify/backend/function/${n}/src/dayZero.js`), t);
+    fs.copyFileSync(abs(`${SHARED}/dayZero.js`), t);
     return t;
   });
-  fs.writeFileSync(paths[3], fs.readFileSync(paths[3], 'utf8').replace('utcDay(t) === today', 'utcDay(t) !== today'));
+  fs.writeFileSync(paths[1], fs.readFileSync(paths[1], 'utf8').replace('utcDay(t) === today', 'utcDay(t) !== today'));
   const result = checkAllIdentical(paths);
   fs.rmSync(dir, { recursive: true, force: true });
   return result;
@@ -459,7 +464,7 @@ async function selfTestDayZero() {
 
 async function selfTestPlaceRule() {
   const dir = mkTmp();
-  const ref = fs.readFileSync(abs('amplify/backend/function/newsSystemsAnalysis/src/placeFilter.js'), 'utf8');
+  const ref = fs.readFileSync(abs(`${SHARED}/placeFilter.js`), 'utf8');
   const a = path.join(dir, 'a.js'); const b = path.join(dir, 'b.js');
   fs.writeFileSync(a, ref); fs.writeFileSync(b, ref.replace("'uk': 'united kingdom'", "'uk': 'united kingdomx'"));
   const result = checkAllIdentical([a, b]);

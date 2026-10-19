@@ -6,6 +6,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const refreshPolicy = require('./refreshPolicy');
 const ISO3_NAMES = require('./_shared/iso3Names.json');
+const { resolveIso3 } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
 const { normalizeDimensions, deriveRisk, clampScore, tierFromScore } = require('./_shared/riskDimensions');
 
 let EDITORIAL_FACTS = {};
@@ -43,6 +44,7 @@ async function mapWithConcurrency(items, limit, worker) {
   await Promise.all(runners);
 }
 const COUNTRY_TTL_DAYS = 90;
+const TOP_THREAD_IDS = 10;
 const MAX_COUNTRIES = 20; // kept for reference; the policy's topN / maxExtras (below) now set the cap
 const WORLD_LATEST_URL = process.env.WORLD_LATEST_URL || 'https://globalperspective.net/data/world/latest.json';
 const POLICY_CFG = {
@@ -216,7 +218,10 @@ function groupByCountry(entries, threadAnalyses) {
   const countryMap = {};
 
   for (const entry of entries) {
-    for (const region of (entry.regions || [])) {
+    // Records are keyed by the canonical short name ("USA" and "United States" are one record, "West Bank"
+    // is Palestine); regions / aggregates keep their raw name and are filtered out by isCountryName.
+    const keys = new Set((entry.regions || []).map((region) => resolveIso3(region)?.name || region));
+    for (const region of keys) {
       if (!countryMap[region]) {
         countryMap[region] = {
           countryName: region,
@@ -262,6 +267,7 @@ function groupByCountry(entries, threadAnalyses) {
 
       return {
         countryName: c.countryName,
+        topThreadIds: threads.slice().sort((a, b) => b.articleCount - a.articleCount).slice(0, TOP_THREAD_IDS).map((t) => t.threadId),
         totalArticles: c.entries.length,
         entryDates: c.entries.map((e) => e.date),
         threads: threads.filter(t => t.articleCount >= 2).sort((a, b) => b.articleCount - a.articleCount),
@@ -514,6 +520,7 @@ async function writeAnalysis(countryName, analysis, country) {
     categories: country.categories,
     totalArticles: country.totalArticles,
     activeArcCount: country.threads.length,
+    threadIds: country.topThreadIds,
     dateRange: country.dateRange,
     dayCount: country.dayCount,
     generatedAt,

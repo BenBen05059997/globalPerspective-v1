@@ -1,23 +1,14 @@
+/* SituationHome (/) — the map console. Tokens only (shared/styles/tokens.css): surfaces from the
+   panel ladder (--bg page · --panel over the map · --panel-2 card · --panel-3 hover), text from the
+   text ladder, --accent = link / selected / focus, --warn = stale / paused / escalating, crisis hue
+   (--hue-*) = crisis TYPE only (dot, stripe, type label). Shared blocks (Button, Tabs, Card,
+   TierChip, SectionHeader, StoryRow, CategoryTag, Tooltip, BootLoader) draw their own look; this
+   file only lays them out. */
 .sh-root {
-  /* Console theme (DS1, 2026-09-26): the --sh- and --hue- vars below now alias the scoped
-     --c- tokens from shared/styles/tokens.css (.gp-console) instead of their own
-     literals, so the map page adopts the console palette through tokens. */
-  --sh-bg: var(--c-bg);
-  --sh-panel: var(--c-panel);
-  --sh-panel2: var(--c-panel-2);
-  --sh-border: var(--c-hairline);
-  --sh-text: var(--c-text-head);
-  --sh-muted: var(--c-text-muted);
-  --sh-dim: var(--c-text-dim); /* ~5.6:1 on --c-bg (WCAG AA) */
-  /* crisis hues — identical values to tokens.css's --c-hue-* (hue = crisis type only) */
-  --hue-conflict: var(--c-hue-conflict);
-  --hue-political: var(--c-hue-political);
-  --hue-economic: var(--c-hue-economic);
-  --hue-humanitarian: var(--c-hue-humanitarian);
-  background: var(--sh-bg);
-  color: var(--sh-text);
+  background: var(--bg);
+  color: var(--text-head);
   min-height: 100%;
-  padding: 14px clamp(12px, 3vw, 32px) 48px;
+  padding: var(--space-3) clamp(var(--space-3), 3vw, var(--space-8)) var(--space-12);
   transition: filter 0.4s ease;
 }
 .sh-root.sh-stale { filter: saturate(0.3) brightness(0.85); }
@@ -29,557 +20,390 @@
   clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
-/* ---- header: lede + freshness ---- */
-.sh-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--sh-border); }
-.sh-lede { font-size: clamp(17px, 2.4vw, 22px); font-weight: 600; letter-spacing: -0.015em; color: var(--sh-text); }
-.sh-sub { font-size: 13px; color: var(--sh-muted); margin-top: 3px; }
-.sh-live { font-size: 12px; color: var(--sh-muted); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; padding-top: 4px; }
-.sh-dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 6px #34d399; }
-.sh-dot-stale { background: #9aa4b2; box-shadow: none; }
-.sh-next { color: var(--sh-dim); }
-.sh-banner { background: #2a2410; border: 1px solid #4a3f16; color: #f2d492; padding: 8px 12px; border-radius: 8px; margin: 12px 0 0; font-size: 13px; }
+/* shared small words: "older" / "paused" (stale = --warn), "◇ new" (accent), ▲ escalating (--warn) */
+.sh-older, .sh-paused { font-family: var(--mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--warn); }
+.sh-new { font-size: var(--text-xs); color: var(--accent); }
+.sh-esc { font-size: var(--text-xs); color: var(--warn); }
+.sh-muted { color: var(--text-muted); font-size: var(--text-ui); }
+.sh-dim { color: var(--text-dim); }
+
+/* ---- header (phone): lede + freshness ---- */
+.sh-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; padding-bottom: var(--space-3); border-bottom: 1px solid var(--hairline); }
+.sh-lede { font-size: var(--text-xl); font-weight: var(--weight-semibold); letter-spacing: -0.015em; color: var(--text-head); }
+.sh-sub { font-size: var(--text-ui); color: var(--text-muted); margin-top: var(--space-1); }
+.sh-live { font-size: var(--text-sm); color: var(--text-muted); display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; padding-top: var(--space-1); }
+.sh-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.sh-dot-stale { background: var(--warn); }
+.sh-next { color: var(--text-dim); }
+.sh-banner { background: var(--warn-wash); border: 1px solid var(--warn); color: var(--text-head); padding: var(--space-2) var(--space-3); border-radius: var(--r-md); margin: var(--space-3) 0 0; font-size: var(--text-ui); }
 
 /* ---- HUD: honesty status line — styles live in components/HudStatusLine.css (shared by every page) ---- */
 
-/* ---- HUD panels: shared frame (M2; M6 moved brief/sensor out of the map into a row above it) ---- */
-.hud-panel {
-  position: relative; z-index: 4; background: var(--c-panel, rgba(6,12,20,0.95));
-  border: 1px solid var(--c-hairline, rgba(95,212,255,0.18)); border-radius: var(--c-radius-md, 4px);
-  padding: 10px 12px 11px; backdrop-filter: blur(4px);
-}
+/* ---- HUD panels: a Card (level "hud") with the console's two corner brackets ---- */
+.hud-panel { position: relative; z-index: 4; backdrop-filter: blur(4px); }
 .hud-panel-corner { position: absolute; width: 10px; height: 10px; pointer-events: none; }
-.hud-panel-corner-tl { top: -1px; left: -1px; border-top: 1.5px solid var(--c-hairline-strong, rgba(95,212,255,0.3)); border-left: 1.5px solid var(--c-hairline-strong, rgba(95,212,255,0.3)); }
-.hud-panel-corner-br { bottom: -1px; right: -1px; border-bottom: 1.5px solid var(--c-hairline-strong, rgba(95,212,255,0.3)); border-right: 1.5px solid var(--c-hairline-strong, rgba(95,212,255,0.3)); }
-.hud-label {
-  font-family: var(--c-mono, monospace); font-size: var(--c-hud-label-size, 10px); text-transform: uppercase;
-  letter-spacing: var(--c-hud-label-tracking, 0.1em); color: var(--c-accent, #5fd4ff); margin-bottom: 7px;
+.hud-panel-corner-tl { top: -1px; left: -1px; border-top: 1.5px solid var(--hairline-3); border-left: 1.5px solid var(--hairline-3); }
+.hud-panel-corner-br { bottom: -1px; right: -1px; border-bottom: 1.5px solid var(--hairline-3); border-right: 1.5px solid var(--hairline-3); }
+
+/* M6: the slim row above the map (phone, inside the compact HUD line): brief + sensor status side
+   by side, wrapping on narrow widths. */
+.sh-hud-row { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.sh-hud-row .hud-panel { flex: 1 1 100%; min-width: 220px; font-size: var(--text-xs); }
+
+/* situation brief — lede, lead line + "open story →", tier counts */
+.hud-brief-lede { margin: 0 0 var(--space-2); font-size: var(--text-ui); line-height: 1.4; color: var(--text-head); }
+.hud-brief-lead { margin: 0 0 var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--hairline); }
+.hud-brief-kicker { font-family: var(--mono); font-size: var(--text-xs); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.hud-brief-older { color: var(--warn); }
+.hud-brief-title { font-family: var(--serif); font-size: var(--text-lg); font-weight: var(--weight-semibold); line-height: 1.3; color: var(--text-head); margin-top: var(--space-1); }
+.hud-brief-open {
+  display: inline-flex; align-items: center; min-height: var(--tap-min); padding: 0; background: none; border: 0;
+  color: var(--accent); font: inherit; font-size: var(--text-sm); text-decoration: none; cursor: pointer;
 }
+.hud-brief-open:hover { text-decoration: underline; }
+.hud-brief-open:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.hud-brief-counts { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.hud-brief-count { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-xs); color: var(--text-muted); }
+/* F2.13: a colour token, not opacity, keeps the "zero" row legible (≥4.5:1) while de-emphasised. */
+.hud-brief-count-zero { color: var(--text-dim); }
+.hud-brief-count-n { font-weight: var(--weight-bold); color: var(--text-head); }
+.hud-brief-count-zero .hud-brief-count-n { color: var(--text-dim); }
+.hud-brief-count-label { text-transform: uppercase; letter-spacing: 0.04em; font-size: var(--text-2xs); }
 
-/* M6: the slim row above the map that replaces the two panels that used to float on top of it
-   (situation brief top-left, sensor status top-right) — they crowded the callout and the globe's
-   left edge. Two compact panels, side by side, wrapping on narrow widths. */
-.sh-hud-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-.sh-hud-row .hud-panel { flex: 1 1 260px; min-width: 220px; max-width: none; }
+/* sensor status: --ok = the source checked fine, --warn = it did not */
+.hud-sensor-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.hud-sensor-row { display: flex; align-items: baseline; gap: var(--space-2); font-size: var(--text-sm); }
+.hud-sensor-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); align-self: center; }
+.hud-sensor-dot-warn { background: var(--warn); }
+.hud-sensor-name { color: var(--text-muted); white-space: nowrap; }
+.hud-sensor-text { color: var(--text-head); }
 
-/* situation brief — tier counts only (M6: the duplicated lede sentence was dropped; the header
-   above already says it). */
-.hud-brief-counts { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.hud-brief-count { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sh-muted); }
-/* F2.13: was `opacity: 0.4` on the whole row (measured 2.66:1 on --c-bg) — a color token instead
-   of opacity keeps the "zero" row legible at ≥4.5:1 while still reading as de-emphasized. */
-.hud-brief-count-zero { color: var(--sh-dim); }
-.hud-brief-count-n { font-weight: 700; color: var(--sh-text); }
-.hud-brief-count-zero .hud-brief-count-n { color: var(--sh-dim); }
-.hud-brief-count-label { text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
+/* tier pin glyphs (brief counts) — SIZE steps = severity, a double ring for HIGH only. */
+.sh-leg-pin { --pin: var(--text-muted); width: 12px; height: 12px; border-radius: 50%; flex: none; background: var(--pin); position: relative; }
+.sh-pin-low { width: 5px; height: 5px; }
+.sh-pin-moderate { width: 8px; height: 8px; }
+.sh-pin-elevated { width: 11px; height: 11px; }
+.sh-pin-high { width: 11px; height: 11px; margin: 0 var(--space-1); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.3px var(--pin); }
 
-/* sensor status */
-.hud-sensor-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.hud-sensor-row { display: flex; align-items: baseline; gap: 7px; font-size: 12px; }
-.hud-sensor-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c-ok, #6fd29a); box-shadow: 0 0 6px var(--c-ok, #6fd29a); align-self: center; }
-.hud-sensor-dot-warn { background: var(--c-warn, #ffb347); box-shadow: 0 0 6px var(--c-warn, #ffb347); }
-.hud-sensor-name { color: var(--sh-muted); white-space: nowrap; }
-.hud-sensor-text { color: var(--sh-text); }
-
-/* intel feed (rail) */
-.hud-feed { position: static; max-width: none; padding: 0; background: none; border: 0; }
-.hud-feed .hud-panel-corner { display: none; }
-.hud-feed-label { display: flex; align-items: baseline; margin: 0 0 4px; padding: 2px 0 6px; position: sticky; top: 0; z-index: 1; background: var(--sh-bg); }
-.hud-feed-count { color: var(--sh-dim); text-transform: none; letter-spacing: normal; }
-.hud-feed-list { max-height: 588px; overflow-y: auto; list-style: none; margin: 0; padding: 0 2px 0 0; scrollbar-width: thin; scrollbar-color: #2a3446 transparent; }
-.hud-feed-list::-webkit-scrollbar { width: 8px; }
-.hud-feed-list::-webkit-scrollbar-thumb { background: #2a3446; border-radius: 4px; }
-.hud-feed-list li:not(.gp-row) button {
-  width: 100%; min-height: 44px; display: flex; align-items: flex-start; gap: 10px; background: none; border: 0;
-  border-bottom: 1px solid var(--sh-border); padding: 11px 6px; color: var(--sh-text); text-align: left; cursor: pointer;
-}
-.hud-feed-list li:not(.gp-row) button:hover, .hud-feed-list li.sh-active button { background: var(--sh-panel); }
-.hud-tier-chip {
-  /* F2.13: 9px measured ~4:1 against its background — 11px is the smallest size the checked
-     hue/border colors (--pin) reach ≥4.5:1 at comfortably. */
-  flex: none; margin-top: 1px; font-family: var(--c-mono, monospace); font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.05em; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--pin, var(--sh-border)); color: var(--pin, var(--sh-muted));
-}
-.hud-tier-chip-high { box-shadow: 0 0 6px -1px var(--pin); }
-.hud-feed-place { font-size: 11px; color: var(--sh-dim); }
+/* ---- intel feed / country-risk feed (rail): rows are the shared StoryRow ---- */
+.hud-feed .hud-feed-head { position: sticky; top: 0; z-index: 1; background: var(--bg); }
+.hud-feed .hud-stories-head { margin-top: var(--space-3); }
+.hud-feed-list { max-height: 588px; overflow-y: auto; list-style: none; margin: 0; padding: 0 2px 0 0; scrollbar-width: thin; scrollbar-color: var(--hairline-strong) transparent; }
+.hud-stories-hidden { padding: var(--space-2); }
 /* Radar mode (M4): a subtle, non-flashing mark that the sweep just passed this row. Fades in/out
-   only via opacity — never scrolls the list or moves focus (CLAUDE.md / WCAG 2.3). */
-.hud-scanned { font-size: 11px; color: var(--c-accent, #5fd4ff); opacity: 0.9; transition: opacity 0.3s ease; }
+   only via opacity — never scrolls the list or moves focus (WCAG 2.3). */
+.hud-scanned { font-size: var(--text-xs); color: var(--accent); transition: opacity 0.3s ease; }
 @media (prefers-reduced-motion: reduce) { .hud-scanned { transition: none; } }
 
-/* Stories group (M5a) — the topics feed under the situations. Honest date + paused note in the
-   group header; rows share the situation-row layout so keyboard/44px behaviour matches exactly. */
-.hud-stories-label { margin-top: 10px; }
-.hud-feed-paused { color: #d89e28; }
-.hud-story-chip { text-transform: none; font-weight: 600; }
-.hud-stories-hidden { padding: 8px 6px; }
+/* GDACS alert level (L1): the level as TEXT in a neutral chip — never a colour; marker hue stays
+   crisis type. Used in the feed row, the alert card and the situation detail. */
+.sh-gdacs-badge {
+  font-family: var(--mono); font-size: var(--text-xs); font-weight: var(--weight-bold); text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--text-body); border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-xs); padding: 1px var(--space-1); white-space: nowrap;
+}
 
+/* ---- the map ---- */
 .sh-mapwrap { position: relative; }
 .sh-mapinner { position: relative; }
-.sm-wrap {
-  position: relative; width: 100%; border: 1px solid var(--sh-border); border-radius: 12px; overflow: hidden;
-  background: radial-gradient(130% 100% at 50% 0%, #131a26 0%, #0d1017 60%, #090c12 100%);
-  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.55);
-}
-
-/* F2.15: a visible focus ring (accent colour) on the globe canvas and on radar's focusable
-   country/marker elements — RadarMap.jsx no longer force-suppresses the marker outline.
-   deck.gl wraps its <canvas> in a focusable `.deck-events-root` div (the div, not the canvas
-   itself, is what actually receives keyboard focus) — target both to be safe. */
-/* !important: deck.gl sets `outline: none` as an inline style on `.deck-events-root` on every
-   render (not something this repo's code controls), which otherwise always beats a stylesheet
-   rule regardless of selector specificity. */
+.sm-wrap { position: relative; width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; background: var(--bg); }
+/* F2.15: a visible focus ring on the globe canvas and the radar's focusable countries/markers.
+   !important: deck.gl sets `outline: none` inline on `.deck-events-root` on every render. */
 .sm-wrap canvas:focus-visible,
-.sm-wrap .deck-events-root:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff) !important; outline-offset: -2px; }
-.rd-shade:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); outline-offset: 2px; }
-.rd-marker:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); outline-offset: 4px; }
-.sh-maploading { display: flex; align-items: center; justify-content: center; color: var(--sh-muted); font-size: 13px; }
-/* transform-box: fill-box — without it, an SVG element's `transform-origin: center` resolves
-   against the whole <svg> viewport, not the shape's own bounds, so the pulse scales off-centre
-   (found live testing RadarMap's escalating ring in M4; the same class/bug was latent in the old
-   flat SituationMap.jsx, unexercised until now). */
-.sm-ring { animation: sm-ripple 2.4s ease-out infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes sm-ripple { 0% { opacity: 0.9; } 70% { opacity: 0.15; transform: scale(1.8); } 100% { opacity: 0; transform: scale(2.2); } }
-@media (prefers-reduced-motion: reduce) { .sm-ring { animation: none; opacity: 0.5; } }
-.sm-tip { position: absolute; pointer-events: none; opacity: 0; transition: opacity 0.12s; background: #0d1017; border: 1px solid var(--sh-border); color: var(--sh-text); font-size: 12px; padding: 6px 9px; border-radius: 7px; z-index: 5; max-width: 240px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+.sm-wrap .deck-events-root:focus-visible { outline: 2px solid var(--focus-ring) !important; outline-offset: -2px; }
+.rd-shade:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.rd-marker:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
+.sh-maploading { display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: var(--text-ui); }
+/* radar marker hover card: the shared Tooltip look (gp-tip), shown/placed by RadarMap.jsx */
+.sm-tip { position: absolute; opacity: 0; transition: opacity var(--fast); z-index: 5; max-width: 240px; }
 
-/* map controls (top-right cluster) */
-.sh-controls { position: absolute; top: 12px; right: 12px; z-index: 8; display: flex; gap: 6px; }
-.sh-ctl { min-height: 34px; background: rgba(20, 26, 36, 0.86); color: var(--sh-text); border: 1px solid var(--sh-border); border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; backdrop-filter: blur(4px); }
-.sh-ctl:hover { background: #1c2431; }
-.sh-key { display: inline-flex; align-items: center; gap: 5px; min-height: var(--c-tap-min, 44px); min-width: var(--c-tap-min, 44px); }
-.sh-key-dot { width: 7px; height: 7px; border-radius: 50%; }
-
-/* GDACS alert level (L1): the level as TEXT, never inferred marker colour — marker hue stays
-   crisis type. Used in the callout, the intel feed row, and the situation detail panel. */
-.sh-gdacs-badge {
-  font-family: var(--c-mono, monospace); font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.04em; color: var(--hue-humanitarian); border: 1px solid currentColor;
-  border-radius: 3px; padding: 1px 6px; white-space: nowrap;
-}
-.sh-gdacs-badge-sm { font-size: 11px; padding: 1px 5px; } /* F2.13: was 9px */
-
-/* GLOBE | RADAR segmented switch (M4 — replaces the old single "Flat map"/"Globe" toggle) */
-.sh-viewswitch { display: inline-flex; border: 1px solid var(--sh-border); border-radius: 8px; overflow: hidden; }
-.sh-viewswitch .sh-seg { border: 0; border-radius: 0; }
-.sh-viewswitch .sh-seg + .sh-seg { border-left: 1px solid var(--sh-border); }
-.sh-viewswitch .sh-seg-on { background: var(--c-accent, #5fd4ff); color: #06131c; font-weight: 600; }
-.sh-viewswitch .sh-seg-on:hover { background: var(--c-accent, #5fd4ff); }
-
-/* Radar sweep (M4): a rotating conic-gradient beam, positioned/rotated imperatively from a
-   requestAnimationFrame loop in RadarMap.jsx (its `background` is rewritten per frame — no CSS
-   @keyframes needed, and none run under reduced motion, when the element isn't rendered). */
+/* Radar sweep (M4): a rotating conic-gradient beam, positioned/rotated from RadarMap.jsx. */
 .rd-beam {
   position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;
   transform: translate(-50%, -50%); mix-blend-mode: screen;
 }
-.sh-quiet { position: absolute; top: 12px; left: 12px; z-index: 6; background: rgba(20, 26, 36, 0.86); border: 1px solid var(--sh-border); border-radius: 8px; padding: 6px 12px; font-size: 12px; color: var(--sh-muted); }
 
-/* globe-only footer: night-lights attribution + spin toggle (M3) */
-.sm-globe-foot { position: absolute; right: 12px; bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 8px; }
-.sm-attrib { font-family: var(--c-mono, monospace); font-size: 10px; letter-spacing: 0.03em; color: var(--c-text-dim, #7d8b96); }
+/* Controls over the map (Tabs segmented, Buttons): the shared blocks on a HUD surface so they read
+   over land and sea. One rule for phone and desktop. */
+.sh-onmap { background: var(--panel); backdrop-filter: blur(4px); }
+.sh-key { gap: var(--space-1); }
+.sh-key-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* phone: the control cluster floats over the map's top edge, wrapping to a second row */
+.sh-controls { position: absolute; top: var(--space-3); left: var(--space-3); right: var(--space-3); z-index: 8; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.sh-quiet { position: absolute; bottom: var(--space-3); left: var(--space-3); right: 68px; z-index: 6; background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--r-md); padding: var(--space-2) var(--space-3); font-size: var(--text-sm); color: var(--text-muted); }
+
+/* map foot: imagery credit + spin / "Scan again" control (globe and radar) */
+.sm-globe-foot { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: center; gap: var(--space-2); }
+.sm-attrib { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.03em; color: var(--text-dim); }
 .sm-spin-ctl {
-  width: var(--c-tap-min, 44px); height: var(--c-tap-min, 44px); min-width: var(--c-tap-min, 44px);
+  width: var(--tap-min); height: var(--tap-min); min-width: var(--tap-min);
   display: inline-flex; align-items: center; justify-content: center;
-  background: rgba(20, 26, 36, 0.86); color: var(--sh-text); border: 1px solid var(--sh-border);
-  border-radius: 8px; font-size: 15px; cursor: pointer; backdrop-filter: blur(4px);
+  background: var(--panel); color: var(--text-body); border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-sm); font-size: var(--text-md); cursor: pointer; backdrop-filter: blur(4px);
 }
-.sm-spin-ctl:hover:not(:disabled) { background: #1c2431; }
+.sm-spin-ctl:hover:not(:disabled) { border-color: var(--accent); color: var(--text-head); }
+.sm-spin-ctl:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .sm-spin-ctl:disabled { opacity: 0.4; cursor: default; }
 
-/* legend (M6: only rendered while open — see .sh-key toggle) */
-.sh-legend { position: absolute; left: 12px; bottom: 12px; z-index: 9; display: flex; flex-direction: column; gap: 6px; background: rgba(13, 16, 23, 0.92); border: 1px solid var(--sh-border); border-radius: 10px; padding: 9px 34px 9px 12px; font-size: 12px; backdrop-filter: blur(4px); max-width: min(92%, 560px); }
-.sh-legend-close {
-  display: block; position: absolute; top: 6px; right: 8px; width: 28px; height: 28px;
-  background: none; border: 0; color: var(--sh-muted); font-size: 20px; line-height: 1; cursor: pointer;
+/* legend (the "Key"; only rendered while open) */
+.sh-legend {
+  position: absolute; left: var(--space-3); bottom: var(--space-3); z-index: 9; display: flex; flex-direction: column; gap: var(--space-2);
+  background: var(--panel); border: 1px solid var(--hairline-strong); border-radius: var(--r-sm);
+  padding: var(--space-2) var(--space-10) var(--space-2) var(--space-3); font-size: var(--text-sm); backdrop-filter: blur(4px); max-width: min(92%, 560px);
 }
-.sh-legend-close:hover { color: var(--sh-text); }
-.sh-legrow { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 12px; }
-.sh-legrow > b { color: var(--sh-dim); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-.sh-leg { display: inline-flex; align-items: center; gap: 6px; color: var(--sh-text); }
-.sh-leg i { color: var(--sh-dim); font-style: normal; }
-/* F2.13: was `opacity: 0.4` on the whole row (text + dot) — keep the dimming on the
-   non-text pin only; the label text gets a token color that reaches ≥4.5:1. */
-.sh-leg-off { color: var(--sh-dim); }
+.sh-legend-close { position: absolute; top: 2px; right: 2px; font-size: var(--text-xl); }
+.sh-legrow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+.sh-legrow > b { color: var(--text-dim); font-weight: var(--weight-semibold); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; }
+.sh-leg { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-head); }
+.sh-leg i { color: var(--text-dim); font-style: normal; }
+/* F2.13: dim the non-text pin only; the label keeps a token colour that reaches ≥4.5:1. */
+.sh-leg-off { color: var(--text-dim); }
 .sh-leg-off .sh-leg-pin { opacity: 0.4; }
 .sh-leg-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-.sh-leg-esc { color: #ffb27a; font-size: 10px; }
-.sh-coverage { margin: 10px 2px 0; font-size: 13px; color: var(--sh-muted); }
-
-/* tier pin glyphs (brief counts) — R4a legend tokens: SIZE steps = severity, a double ring for
-   HIGH only. No glow here: glow now means freshness (live <24h), never severity. */
-.sh-leg-pin { --pin: var(--sh-muted); width: 12px; height: 12px; border-radius: 50%; flex: none; background: var(--pin); position: relative; }
-.sh-pin-low { width: 5px; height: 5px; }
-.sh-pin-moderate { width: 8px; height: 8px; }
-.sh-pin-elevated { width: 11px; height: 11px; }
-.sh-pin-high { width: 11px; height: 11px; margin: 0 3px; box-shadow: 0 0 0 2px var(--c-bg, #070d15), 0 0 0 3.3px var(--pin); }
 .lg-sw { flex: none; }
-.lg-glyph { flex: none; width: 14px; text-align: center; font-family: var(--c-mono, monospace); color: var(--sh-text); }
+.lg-glyph { flex: none; width: 14px; text-align: center; font-family: var(--mono); color: var(--text-head); }
+.sh-coverage { margin: var(--space-2) 2px 0; font-size: var(--text-ui); color: var(--text-muted); }
 
-/* ---- rail: list ---- */
+/* ---- rail: detail (a situation, a story card, the "no longer tracked" note) ---- */
 .sh-rail { min-width: 0; }
-.sh-list { max-height: 624px; overflow-y: auto; padding-right: 2px; scrollbar-width: thin; scrollbar-color: #2a3446 transparent; }
-.sh-detail { max-height: 624px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #2a3446 transparent; }
-.sh-list::-webkit-scrollbar, .sh-detail::-webkit-scrollbar { width: 8px; }
-.sh-list::-webkit-scrollbar-thumb, .sh-detail::-webkit-scrollbar-thumb { background: #2a3446; border-radius: 4px; }
-.sh-list h2 { position: sticky; top: 0; z-index: 1; background: var(--sh-bg); padding: 2px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sh-muted); margin: 0; font-weight: 600; }
-.sh-list h2 i { font-style: normal; color: var(--sh-dim); font-weight: 400; text-transform: none; letter-spacing: 0; }
-.sh-list ul, .sh-fold-index ul { list-style: none; margin: 0; padding: 0; }
-.sh-list li button { width: 100%; display: flex; align-items: flex-start; gap: 10px; background: none; border: 0; border-bottom: 1px solid var(--sh-border); padding: 11px 6px; color: var(--sh-text); text-align: left; cursor: pointer; }
-.sh-list li button:hover, .sh-list li.sh-active button { background: var(--sh-panel); }
-.sh-list .sh-leg-pin { margin-top: 3px; }
-.sh-row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.sh-row-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.sh-tierlbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--sh-border); color: var(--sh-muted); }
-/* risk = tier word + ring weight, never a traffic-light colour (DS1): neutral tier tokens, heavier rings */
-.sh-tierlbl-high { color: var(--tier-high); border-color: var(--tier-high); border-width: 2px; padding: 0 4px; }
-.sh-tierlbl-elevated { color: var(--tier-elevated); border-color: var(--tier-elevated); box-shadow: inset 0 0 0 1px var(--tier-elevated); }
-.sh-tierlbl-moderate { color: var(--tier-moderate); }
-.sh-esc-sm, .sh-esc { font-size: 11px; color: #ffb27a; }
-.sh-new { font-size: 11px; color: #7ee0b8; }
-.sh-row-title { font-size: 14px; line-height: 1.3; }
-.sh-row-what { font-size: 12px; color: var(--sh-muted); }
-.sh-muted { color: var(--sh-muted); font-size: 13px; }
+.sh-detail { max-height: 624px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--hairline-strong) transparent; background: var(--panel-2); border: 1px solid var(--hairline); border-radius: var(--r-lg); }
+.sh-back { width: 100%; min-height: var(--tap-min); text-align: left; background: var(--panel-2); border: 0; border-bottom: 1px solid var(--hairline); color: var(--text-muted); padding: var(--space-2) var(--space-3); font-size: var(--text-sm); cursor: pointer; position: sticky; top: 0; z-index: 2; }
+.sh-back:hover { color: var(--text-head); }
+.sh-back:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.sh-gone-text { padding: var(--space-4) var(--space-4); }
+.sh-detail-head { padding: var(--space-3) var(--space-4); }
+.sh-meta-row { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); flex-wrap: wrap; }
+.sh-axis { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; font-weight: var(--weight-semibold); }
+.sh-statelbl { font-size: var(--text-xs); color: var(--text-muted); }
+.sh-prov { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); border: 1px solid var(--hairline); border-radius: var(--r-sm); padding: 2px var(--space-2); margin-left: auto; }
+.sh-detail-title { font-size: var(--text-xl); font-weight: var(--weight-semibold); line-height: 1.28; letter-spacing: -0.01em; margin: 0 0 var(--space-2); color: var(--text-head); }
+.sh-substamp { font-size: var(--text-sm); color: var(--text-muted); }
+.sh-hot { color: var(--text-head); font-weight: var(--weight-semibold); }
+.sh-alert { color: var(--text-head); font-weight: var(--weight-semibold); }
 
-/* ---- rail: detail (replaces list) ---- */
-.sh-detail { background: var(--sh-panel); border: 1px solid var(--sh-border); border-radius: 12px; }
-.sh-back { width: 100%; min-height: var(--c-tap-min, 44px); text-align: left; background: var(--sh-panel2); border: 0; border-bottom: 1px solid var(--sh-border); color: var(--sh-muted); padding: 9px 14px; font-size: 12px; cursor: pointer; position: sticky; top: 0; z-index: 2; } /* F2.16: was 40px */
-.sh-back:hover { color: var(--sh-text); }
-.sh-detail-head { padding: 13px 15px; }
-.sh-meta-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; flex-wrap: wrap; }
-.sh-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--sh-border); color: var(--sh-muted); }
-.sh-badge-high { color: var(--tier-high); border-color: var(--tier-high); border-width: 2px; padding: 1px 6px; }
-.sh-badge-elevated { color: var(--tier-elevated); border-color: var(--tier-elevated); box-shadow: inset 0 0 0 1px var(--tier-elevated); }
-.sh-badge-moderate { color: var(--tier-moderate); border-color: var(--tier-moderate); }
-.sh-badge-low { color: var(--sh-muted); }
-.sh-axis { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-.sh-statelbl { font-size: 11px; color: var(--sh-muted); }
-.sh-prov { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sh-muted); border: 1px solid var(--sh-border); border-radius: 4px; padding: 2px 6px; margin-left: auto; }
-.sh-detail-title { font-size: 17px; font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; margin: 0 0 6px; color: var(--sh-text); }
-.sh-substamp { font-size: 12px; color: var(--sh-muted); }
-.sh-dim { color: var(--sh-dim); }
-.sh-hot { color: var(--text-head); font-weight: 600; }
-.sh-alert { color: var(--hue-humanitarian); font-weight: 600; }
+.sh-affected, .sh-official, .sh-evidence { padding: var(--space-3) var(--space-4); border-top: 1px solid var(--hairline); }
+.sh-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.sh-country { font-size: var(--text-sm); background: var(--panel-3); border: 1px solid var(--hairline); border-radius: var(--r-sm); padding: 2px var(--space-2); color: var(--text-head); }
+.sh-country.sh-more { color: var(--text-muted); }
 
-.sh-affected, .sh-official, .sh-evidence { padding: 11px 15px; border-top: 1px solid var(--sh-border); }
-.sh-lbl { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sh-dim); margin-bottom: 7px; }
-.sh-lbl i { font-style: normal; color: var(--sh-dim); }
-.sh-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.sh-country { font-size: 12px; background: var(--sh-panel2); border: 1px solid var(--sh-border); border-radius: 5px; padding: 2px 8px; color: var(--sh-text); }
-.sh-country.sh-more { color: var(--sh-muted); }
-
-.sh-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; margin: 0; border-top: 1px solid var(--sh-border); }
-.sh-metrics > div { padding: 10px 15px; border-right: 1px solid var(--sh-border); }
+.sh-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; margin: 0; border-top: 1px solid var(--hairline); }
+.sh-metrics > div { padding: var(--space-2) var(--space-4); border-right: 1px solid var(--hairline); }
 .sh-metrics > div:last-child { border-right: 0; }
-.sh-metrics dt { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sh-dim); margin-bottom: 3px; }
-.sh-metrics dd { margin: 0; font-size: 15px; font-weight: 600; color: var(--sh-text); }
+.sh-metrics dt { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 2px; }
+.sh-metrics dd { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); color: var(--text-head); }
 
 .sh-heads { list-style: none; margin: 0; padding: 0; }
-.sh-heads li { font-size: 13px; margin-bottom: 9px; line-height: 1.35; display: flex; flex-direction: column; gap: 1px; }
-.sh-heads a { color: var(--sh-text); text-decoration: none; }
-.sh-heads a:hover { color: #fff; text-decoration: underline; }
-.sh-src { color: var(--sh-dim); font-size: 11px; }
-.sh-consolidating { margin: 0; padding: 12px 15px; border-top: 1px solid var(--sh-border); font-size: 13px; color: var(--sh-muted); line-height: 1.45; }
+.sh-heads li { font-size: var(--text-ui); margin-bottom: var(--space-2); line-height: 1.35; display: flex; flex-direction: column; gap: 1px; }
+.sh-heads a { color: var(--text-head); text-decoration: none; }
+.sh-heads a:hover { color: var(--accent); text-decoration: underline; }
+.sh-src { color: var(--text-dim); font-size: var(--text-xs); }
+.sh-consolidating, .sh-note { margin: 0; padding: var(--space-3) var(--space-4); border-top: 1px solid var(--hairline); font-size: var(--text-sm); color: var(--text-muted); line-height: 1.45; }
 
-.sh-official .sh-report { display: block; color: #6cb6ff; text-decoration: none; font-weight: 600; font-size: 14px; }
+.sh-official .sh-report { display: block; color: var(--accent); text-decoration: none; font-weight: var(--weight-semibold); font-size: var(--text-base); }
 .sh-official .sh-report:hover { text-decoration: underline; }
-.sh-official .sh-dim { display: block; font-size: 11px; margin-top: 2px; }
-.sh-note { margin: 0; padding: 12px 15px; border-top: 1px solid var(--sh-border); font-size: 12px; color: var(--sh-muted); line-height: 1.45; }
-.sh-detail-foot { padding: 11px 15px; border-top: 1px solid var(--sh-border); background: var(--sh-panel2); }
-.sh-detail-foot a { color: #6cb6ff; text-decoration: none; font-size: 13px; }
+.sh-official .sh-dim { display: block; font-size: var(--text-xs); margin-top: 2px; }
+.sh-detail-foot { padding: var(--space-3) var(--space-4); border-top: 1px solid var(--hairline); background: var(--panel-3); }
+.sh-detail-foot a { display: inline-flex; align-items: center; min-height: var(--tap-min); color: var(--accent); text-decoration: none; font-size: var(--text-ui); }
 .sh-detail-foot a:hover { text-decoration: underline; }
-.sh-nopage { color: var(--sh-dim); font-size: 12px; }
 
-/* ---- below the fold ---- */
-.sh-fold { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--sh-border); display: flex; flex-direction: column; gap: 30px; }
-.sh-fold h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 4px; color: var(--sh-text); }
-.sh-fold-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 14px; }
+/* ---- story card (M5b): header -> WHAT IS HAPPENING -> WHAT IT MEANS -> WHY -> footer links.
+   Reuses .sh-detail / .sh-back / .sh-detail-foot from the situation detail above. ---- */
+.sc-head { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--hairline); }
+.sc-head-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-2); font-size: var(--text-xs); color: var(--text-muted); }
+.sc-country { color: var(--text-head); }
+.sc-updated { color: var(--text-dim); }
+.sc-title { font-size: var(--text-xl); font-weight: var(--weight-semibold); line-height: 1.3; letter-spacing: -0.01em; margin: 0; color: var(--text-head); }
+.sc-section { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--hairline); }
+.sc-text { font-size: var(--text-ui); line-height: 1.55; color: var(--text-head); margin: 0 0 var(--space-1); }
+.sc-model-tag { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin: var(--space-1) 0 0; }
+/* fact / inference basis tag (same vocabulary as the story page: INFERENCE = model judgment) */
+.sc-basis {
+  display: inline-block; font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.05em; font-weight: var(--weight-bold);
+  border-radius: var(--r-xs); padding: 1px var(--space-1); margin-right: var(--space-2); vertical-align: 1px;
+}
+.sc-basis--inference { color: var(--text-body); border: 1px solid var(--hairline-strong); }
+.sc-model-tag .sc-basis { margin: 0 2px 0 0; }
+.sc-cause-step { margin-bottom: var(--space-2); }
+.sc-cause-step:last-of-type { margin-bottom: 0; }
+.sc-cause-label { display: block; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--text-muted); margin-bottom: 2px; }
+.sc-foot { display: flex; flex-direction: column; gap: var(--space-1); }
+.sc-facts { margin: var(--space-1) 0 0; padding-left: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); }
+
+/* ---- below the fold (phone) / "About this map" drawer (desktop) ---- */
+.sh-fold { margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--hairline); display: flex; flex-direction: column; gap: var(--space-8); }
+.sh-fold h2 { font-size: var(--text-xl); font-weight: var(--weight-semibold); letter-spacing: -0.015em; margin: 0 0 var(--space-1); color: var(--text-head); }
+.sh-fold-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-5); margin-top: var(--space-3); }
 @media (max-width: 720px) { .sh-fold-cols { grid-template-columns: 1fr; } }
-.sh-fold-cols h4, .sh-fold-teasers h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sh-dim); margin: 0 0 6px; }
-.sh-fold-cols p { font-size: 13px; color: var(--sh-muted); line-height: 1.5; margin: 0; }
-.sh-teasers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 4px; }
-.sh-teasers a { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; background: var(--sh-panel); border: 1px solid var(--sh-border); border-radius: 10px; text-decoration: none; }
-.sh-teasers a:hover { border-color: #3a475c; }
-.sh-teasers b { color: var(--sh-text); font-size: 14px; }
-.sh-teasers span { color: var(--sh-muted); font-size: 12px; line-height: 1.4; }
+.sh-fold-cols h4 { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin: 0 0 var(--space-2); }
+.sh-fold-cols p { font-size: var(--text-ui); color: var(--text-muted); line-height: 1.5; margin: 0; }
+.sh-teasers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-2); margin-top: var(--space-1); }
+.sh-teasers a { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--space-4); background: var(--panel-2); border: 1px solid var(--hairline); border-radius: var(--r-md); text-decoration: none; }
+.sh-teasers a:hover { border-color: var(--hairline-3); }
+.sh-teasers b { color: var(--text-head); font-size: var(--text-base); }
+.sh-teasers span { color: var(--text-muted); font-size: var(--text-sm); line-height: 1.4; }
+.sh-fold-index ul { list-style: none; margin: 0; padding: 0; }
+.sh-fold-index h5 { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-ui); font-weight: var(--weight-semibold); margin: var(--space-4) 0 var(--space-2); color: var(--text-head); }
+.sh-fold-index li { font-size: var(--text-ui); padding: var(--space-1) 0; line-height: 1.4; }
+.sh-idx-link { min-height: var(--tap-min); background: none; border: 0; color: var(--text-head); cursor: pointer; padding: 2px 0; font-size: var(--text-ui); text-align: left; }
+.sh-idx-link:hover { color: var(--accent); text-decoration: underline; }
+.sh-idx-link:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
-.sh-fold-index h5 { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; margin: 16px 0 6px; color: var(--sh-text); }
-.sh-fold-index li { font-size: 13px; padding: 6px 0; line-height: 1.4; }
-.sh-idx-link { background: none; border: 0; color: var(--sh-text); cursor: pointer; padding: 2px 0; font-size: 13px; text-align: left; }
-.sh-idx-link:hover { color: #fff; text-decoration: underline; }
+/* ---- orientation banner (H1, M5b) — replaces the guided tour ---- */
+.sh-orient {
+  display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); padding: 0 0 0 var(--space-3);
+  min-height: var(--tap-min); background: var(--panel-2); border: 1px solid var(--hairline);
+  border-radius: var(--r-sm); color: var(--text-muted); font-size: var(--text-sm); line-height: 1.4;
+}
+.sh-orient-text { flex: 1; }
+.sh-orient-close { flex: none; font-size: var(--text-xl); }
 
-/* ---- mobile ---- */
-@media (max-width: 899.98px) {
-  .sh-hud-row .hud-panel { flex: 1 1 100%; padding: 8px 9px 9px; font-size: 11px; }
-  /* on a phone the open legend becomes a bottom sheet instead of an anchored panel */
-  .sh-legend {
-    /* Lifted clear of the app-wide phone tab bar (Layout.jsx `.gp-tabbar`, 58px + safe area) so it
-       never renders underneath/behind it. */
-    position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); top: auto; z-index: 40;
-    max-width: none; border-radius: 14px 14px 0 0; padding: 18px 40px 22px 16px; gap: 10px; background: rgba(13,16,23,0.98);
-    max-height: 72vh; overflow-y: auto;
-  }
-  .sh-legend .sh-legend-close { top: 10px; right: 12px; font-size: 22px; }
-  .sh-legrow { gap: 8px 14px; }
-  .sh-list { max-height: none; }
-  /* F2.16: was 40px, which (later in the cascade than .sh-key/.sh-seg's own 44px rule, same
-     specificity) silently shrank the Globe/Radar segmented buttons and the Key button back
-     under the 44px tap-target minimum on phone. */
-  .sh-ctl { min-height: var(--c-tap-min, 44px); }
-  /* Phone control row: the chips (Globe·Radar / Situations·Country risk / Key) are wider than a 360-390px screen, so the old right-anchored single row ran off the left
-     edge ("gh", "Rad", "Country risk" wrapping). Anchor both edges and wrap to a second row; every
-     chip keeps its label on one line and its 44px tap height. Desktop (>=900px) is untouched. */
-  .sh-controls { left: 12px; right: 12px; flex-wrap: wrap; justify-content: flex-start; }
-  .sh-controls .sh-ctl { white-space: nowrap; }
-  /* R4a: the wider control cluster fills the top edge on a phone — the empty-state note moves to
-     the bottom-left, clear of the spin/sweep control at bottom-right. */
-  .sh-quiet { top: auto; bottom: 12px; right: 68px; }
-}
-
-/* ---- M7: phone pattern (P1) — one tab switch (MAP · LIST · ALERTS) directly under the status
-   line, then one full-width panel per tab. Only rendered below 900px (SituationHome.jsx
-   useIsPhone) — this whole section has no effect at/above the breakpoint. ---- */
-.sh-phonetabs {
-  display: flex; gap: 6px; margin-top: 10px; padding: 3px;
-  background: var(--sh-panel2); border: 1px solid var(--sh-border); border-radius: 10px;
-}
-.sh-phonetab {
-  flex: 1; min-height: var(--c-tap-min, 44px); display: inline-flex; align-items: center; justify-content: center;
-  gap: 6px; background: none; border: 0; border-radius: 8px; color: var(--sh-muted); font-size: 13px; font-weight: 600;
-  cursor: pointer;
-}
-.sh-phonetab-on { background: var(--sh-panel); color: var(--sh-text); }
-.sh-phonetab-count {
-  display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px;
-  background: var(--hue-humanitarian); color: #06131c; border-radius: 9px; font-size: 10px; font-weight: 700;
-}
-.sh-phone-panel { margin-top: 12px; }
-.sh-phone-panel .hud-feed { padding: 10px 12px 11px; }
+/* ---- M7 phone pattern (P1): one tab switch (MAP · LIST · ALERTS) under the status line, then one
+   full-width panel per tab. Only rendered below 900px (useIsPhone). ---- */
+.sh-phone-panel { margin-top: var(--space-3); }
+.sh-phone-panel .hud-feed { padding: var(--space-2) var(--space-3); }
 .sh-phone-panel .hud-feed-list { max-height: none; }
 
-/* compact HUD line (MAP tab): replaces the two-panel row above the map with one summary line,
-   expandable inline in place — never a popover. */
-.sh-hud-compact { margin-bottom: 10px; }
+/* compact HUD line (MAP tab): one summary line above the map, expandable inline — never a popover. */
+.sh-hud-compact { margin-bottom: var(--space-2); }
 .sh-hud-compact-btn {
-  width: 100%; min-height: var(--c-tap-min, 44px); display: flex; align-items: center; justify-content: space-between;
-  gap: 10px; background: var(--sh-panel); border: 1px solid var(--sh-border); border-radius: 8px; padding: 0 12px;
-  color: var(--sh-text); font-size: 12px; cursor: pointer;
+  width: 100%; min-height: var(--tap-min); display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-2); background: var(--panel-2); border: 1px solid var(--hairline); border-radius: var(--r-sm); padding: 0 var(--space-3);
+  color: var(--text-head); font-size: var(--text-sm); cursor: pointer;
 }
+.sh-hud-compact-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .sh-hud-compact-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
-.sh-hud-compact-caret { flex: none; color: var(--sh-dim); font-size: 10px; }
-.sh-hud-compact-body { margin-top: 8px; }
-.sh-hud-compact-body .sh-hud-row .hud-panel { flex: 1 1 100%; }
+.sh-hud-compact-caret { flex: none; color: var(--text-dim); font-size: var(--text-2xs); }
+.sh-hud-compact-body { margin-top: var(--space-2); }
 
-/* bottom sheet (MAP tab, a situation/story selected): three stops — peek/half/full — with a drag
-   handle AND explicit buttons. Only `full` is a true modal (role=dialog + aria-modal). Reduced
-   motion drops the height transition entirely (instant cut), per the phone pattern brief. */
-.sheet-scrim { position: fixed; inset: 0; z-index: 44; background: rgba(4, 7, 12, 0.55); }
+/* bottom sheet (MAP tab, a selection): peek / half / full, a drag handle AND buttons. Only `full`
+   is a true modal. Reduced motion drops the height transition. The bottom offset clears the
+   app-wide phone tab bar (Layout.jsx `.gp-tabbar`, 58px + safe area) at every stop. */
+.sheet-scrim { position: fixed; inset: 0; z-index: 44; background: var(--strip); }
 .sheet {
-  /* A2: bottom offset by the app-wide phone tab bar's height (Layout.jsx `.gp-tabbar`, 58px +
-     safe area) so the sheet sits ABOVE that persistent bar rather than under/behind it at every
-     stop, including `full` (still comfortably < 100vh once the offset is subtracted). */
   position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 45; display: flex; flex-direction: column;
-  /* F2.17: was --sh-panel (rgba(...,0.95)) — a fully-opaque token so content scrolling underneath
-     never shows through the sheet or its header. */
-  background: var(--c-panel-2); border: 1px solid var(--sh-border); border-top-left-radius: 14px; border-top-right-radius: 14px;
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5); overflow: hidden; transition: height 0.22s ease;
+  background: var(--panel-2); border: 1px solid var(--hairline); border-top-left-radius: var(--r-xl); border-top-right-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg); overflow: hidden; transition: height 0.22s ease;
 }
 .sheet-instant { transition: none; }
 .sheet-peek { height: 120px; }
 .sheet-half { height: 45vh; }
 .sheet-full { height: 85vh; }
-/* F2.16: was 22px — the drag handle is itself a keyboard-operable `role="slider"`, so its tap
-   target needs to reach the 44px minimum too. */
-.sheet-handle-row { flex: none; display: flex; justify-content: center; align-items: center; min-height: var(--c-tap-min, 44px); cursor: grab; touch-action: none; }
-.sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--sh-border); }
-.sheet-topbar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 12px 10px; border-bottom: 1px solid var(--sh-border); }
+/* F2.16: the drag handle is a keyboard-operable role="slider", so its target reaches 44px too. */
+.sheet-handle-row { flex: none; display: flex; justify-content: center; align-items: center; min-height: var(--tap-min); cursor: grab; touch-action: none; }
+.sheet-handle-row:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.sheet-handle { width: 36px; height: 4px; border-radius: var(--r-xs); background: var(--hairline-strong); }
+.sheet-topbar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-1) var(--space-3) var(--space-2); border-bottom: 1px solid var(--hairline); }
 .sheet-titlewrap { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.sheet-subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sh-dim); }
-.sheet-title { font-size: 14px; font-weight: 600; color: var(--sh-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sheet-btns { flex: none; display: flex; gap: 6px; }
-.sheet-btn {
-  min-height: var(--c-tap-min, 44px); min-width: 44px; padding: 0 12px; background: var(--sh-panel2);
-  border: 1px solid var(--sh-border); border-radius: 8px; color: var(--sh-text); font-size: 12px; cursor: pointer;
-}
-.sheet-btn:hover { background: #1c2431; }
+.sheet-subtitle { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
+.sheet-title { font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-head); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-btns { flex: none; display: flex; gap: var(--space-2); }
 .sheet-body { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .sheet-body .sh-detail { border: 0; border-radius: 0; max-height: none; }
 
-/* ---- orientation banner (H1, M5b) — replaces the guided tour on /map ---- */
-.sh-orient {
-  display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 8px 12px;
-  min-height: 40px; background: var(--sh-panel2); border: 1px solid var(--sh-border);
-  border-radius: var(--c-radius-md, 4px); color: var(--sh-muted); font-size: 12px; line-height: 1.4;
-}
-.sh-orient-text { flex: 1; }
-.sh-orient-close {
-  flex: none; width: 28px; height: 28px; min-width: 44px; min-height: 44px; margin: -8px -6px;
-  display: inline-flex; align-items: center; justify-content: center; background: none; border: 0;
-  color: var(--sh-muted); font-size: 20px; line-height: 1; cursor: pointer;
-}
-.sh-orient-close:hover { color: var(--sh-text); }
-
-/* ---- story card (M5b): header -> WHAT IS HAPPENING -> WHAT IT MEANS -> WHY -> footer links.
-   Reuses .sh-detail / .sh-back / .sh-detail-foot from the situation detail panel above. ---- */
-.sc-head { padding: 13px 15px; border-bottom: 1px solid var(--sh-border); }
-.sc-head-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 7px; font-size: 11px; color: var(--sh-muted); }
-.sc-cat { display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
-.sc-cat-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-.sc-country { color: var(--sh-text); }
-.sc-updated, .sc-older { color: var(--sh-dim); }
-.sc-older { color: var(--c-warn, #ffb347); text-transform: uppercase; letter-spacing: 0.04em; font-size: 10px; }
-.sc-title { font-size: 17px; font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; margin: 0; color: var(--sh-text); }
-
-.sc-section { padding: 13px 15px; border-bottom: 1px solid var(--sh-border); }
-.sc-section-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sh-dim); margin: 0 0 7px; font-weight: 600; }
-.sc-text { font-size: 13px; line-height: 1.55; color: var(--sh-text); margin: 0 0 4px; }
-.sc-model-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sh-dim); margin: 4px 0 0; }
-/* fact / inference basis tags (same vocabulary as the story page: FACT = cited dated news, INFERENCE = model judgment) */
-.sc-basis {
-  display: inline-block; font-family: var(--c-mono); font-size: 9px; letter-spacing: 0.05em; font-weight: 700;
-  border-radius: var(--c-radius-sm); padding: 1px 5px; margin-right: 6px; vertical-align: 1px;
-}
-.sc-basis--inference { color: var(--accent); border: 1px solid var(--accent); }
-.sc-model-tag .sc-basis { margin: 0 2px 0 0; }
-.sc-cause-step { margin-bottom: 10px; }
-.sc-cause-step:last-of-type { margin-bottom: 0; }
-.sc-cause-label { display: block; font-size: 11px; font-weight: 600; color: var(--sh-muted); margin-bottom: 2px; }
-.sc-foot { display: flex; flex-direction: column; gap: 6px; }
-
-.sc-skeleton { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-.sc-skel-line { height: 11px; border-radius: 4px; background: linear-gradient(90deg, var(--sh-panel2) 25%, var(--sh-border) 50%, var(--sh-panel2) 75%); background-size: 200% 100%; animation: sc-shimmer 1.4s ease-in-out infinite; }
-.sc-skel-short { width: 60%; }
-@keyframes sc-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-@media (prefers-reduced-motion: reduce) { .sc-skel-line { animation: none; } }
-.sc-facts { margin: 4px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
-
-/* ---- HUD brief (R4a): lede, lead line + "open story →", tier counts ---- */
-.hud-brief-lede { margin: 0 0 8px; font-size: 13px; line-height: 1.4; color: var(--sh-text); }
-.hud-brief-lead { margin: 0 0 8px; padding-top: 8px; border-top: 1px solid var(--sh-border); }
-.hud-brief-kicker { font-family: var(--c-mono, monospace); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sh-muted); }
-.hud-brief-older { color: var(--c-warn, #ffb347); }
-.hud-brief-title { font-family: var(--c-serif, serif); font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--c-text-head, #eef5f9); margin-top: 4px; }
-.hud-brief-open {
-  display: inline-flex; align-items: center; min-height: var(--c-tap-min, 44px); padding: 0; background: none; border: 0;
-  color: var(--c-accent, #5fd4ff); font: inherit; font-size: 12px; text-decoration: none; cursor: pointer;
-}
-.hud-brief-open:hover { text-decoration: underline; }
-
-/* ---- alert stack (R4a, Console.dc.html): open situations as cards, most severe/newest first.
-   Same component on the desktop console (left edge) and the phone ALERTS tab. ---- */
+/* ---- alert stack (R4a): open situations as cards, most severe/newest first. Same component on
+   the desktop console (left column) and the phone ALERTS tab. Each card carries the StoryRow
+   stripe (crisis hue, --pin) on its left edge; selected = the one accent outline. ---- */
 .al-stack { display: flex; flex-direction: column; min-height: 0; }
 .al-head { flex: none; }
-.al-list { list-style: none; margin: 0; padding: 0 2px 0 0; display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #2a3446 transparent; }
+.al-list { list-style: none; margin: 0; padding: 0 2px 0 0; display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--hairline-strong) transparent; }
 .al-card {
-  width: 100%; min-height: var(--c-tap-min, 44px); display: flex; align-items: flex-start; gap: 10px; text-align: left;
-  padding: 8px 10px; background: rgba(8, 16, 26, 0.7); border: 1px solid var(--sh-border); border-left: 3px solid var(--pin);
-  border-radius: var(--c-radius-md, 4px); color: var(--sh-text); font: inherit; cursor: pointer;
+  width: 100%; min-height: var(--tap-min); display: flex; align-items: flex-start; gap: var(--space-2); text-align: left;
+  padding: var(--space-2) var(--space-3); background: var(--panel-2); border: 1px solid var(--hairline); border-left: 3px solid var(--pin);
+  border-radius: var(--r-sm); color: var(--text-head); font: inherit; cursor: pointer;
 }
-.al-card:hover { background: rgba(95, 212, 255, 0.06); }
-.al-card:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); outline-offset: 1px; }
-.al-item-on .al-card { border-color: var(--c-accent, #5fd4ff); border-left-color: var(--pin); background: rgba(95, 212, 255, 0.1); }
+.al-card:hover { background: var(--panel-3); }
+.al-card:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.al-item-on .al-card { border-color: var(--accent); border-left-color: var(--pin); }
 /* The card's mark repeats the map's shape token: ◆ alert / soft dot = approximate place. */
-.al-mark { flex: none; width: 9px; height: 9px; margin: 4px 2px 0; background: var(--pin); }
+.al-mark { flex: none; width: 9px; height: 9px; margin: var(--space-1) 2px 0; background: var(--pin); }
 .al-mark-alert { transform: rotate(45deg); }
-.al-mark-situation { border-radius: 50%; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06), 0 0 0 5px rgba(255, 255, 255, 0.03); }
+.al-mark-situation { border-radius: 50%; box-shadow: 0 0 0 3px var(--hairline), 0 0 0 5px var(--accent-wash); }
 .al-fresh-live .al-mark { box-shadow: 0 0 8px 1px var(--pin); }
-.al-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.al-top { display: flex; align-items: baseline; gap: 8px; font-family: var(--c-mono, monospace); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--sh-muted); }
+.al-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.al-top { display: flex; align-items: baseline; gap: var(--space-2); font-family: var(--mono); font-size: var(--text-xs); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
 .al-kind { color: var(--pin); flex: none; }
-.al-place { color: var(--sh-text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.al-age { margin-left: auto; flex: none; color: var(--sh-muted); text-transform: none; letter-spacing: 0; }
-.al-title { font-size: 13px; line-height: 1.3; color: var(--sh-text); }
-.al-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.al-tier { font-family: var(--c-mono, monospace); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; border: 1px solid var(--sh-border); color: var(--sh-muted); }
-.al-tier-high { color: var(--tier-high); border-color: var(--tier-high); border-width: 2px; padding: 0 4px; }
-.al-tier-elevated { color: var(--tier-elevated); border-color: var(--tier-elevated); box-shadow: inset 0 0 0 1px var(--tier-elevated); }
-.al-glyph { font-family: var(--c-mono, monospace); font-size: 11px; color: var(--sh-text); }
-.al-older { font-family: var(--c-mono, monospace); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--c-warn, #ffb347); }
-.al-empty, .al-note { margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: var(--sh-muted); }
-.al-note { flex: none; padding-top: 6px; border-top: 1px solid var(--sh-border); margin-top: 8px; }
-.sh-phone-panel .al-stack { padding: 10px 12px 11px; }
+.al-place { color: var(--text-head); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.al-age { margin-left: auto; flex: none; color: var(--text-muted); text-transform: none; letter-spacing: 0; }
+.al-title { font-size: var(--text-ui); line-height: 1.3; color: var(--text-head); }
+.al-tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.al-glyph { font-family: var(--mono); font-size: var(--text-xs); color: var(--text-head); }
+.al-empty, .al-note { margin: var(--space-1) 0 0; font-size: var(--text-sm); line-height: 1.45; color: var(--text-muted); }
+.al-note { flex: none; padding-top: var(--space-2); border-top: 1px solid var(--hairline); margin-top: var(--space-2); }
 
 /* ---- R4a · desktop full-bleed console (≥900px): the map is the page. The globe/radar fills the
-   band between two HUD columns; panels float over it with the translucent navy + corner-bracket
-   frame of Console.dc.html. No page scroll (the shell is one viewport tall, Layout.css). ---- */
+   band between two HUD columns; panels float over it. No page scroll (Layout.css). ---- */
 .sh-console {
-  --sh-col-l: 300px; --sh-col-r: 372px; --sh-gut: 16px; --sh-gap: 12px;
+  --sh-col-l: 300px; --sh-col-r: 372px; --sh-gut: var(--space-4); --sh-gap: var(--space-3);
   --sh-band-l: calc(var(--sh-gut) + var(--sh-col-l) + var(--sh-gap));
   --sh-band-r: calc(var(--sh-gut) + var(--sh-col-r) + var(--sh-gap));
   position: relative; height: 100%; min-height: 0; padding: 0; overflow: hidden;
-  background: radial-gradient(ellipse at 50% 55%, #0b1a2a 0%, #060c14 55%, #03060a 100%);
 }
 @media (max-width: 1360px) { .sh-console { --sh-col-l: 272px; --sh-col-r: 330px; } }
-/* the faint 48px console grid behind everything */
+/* the faint 48px console grid behind everything (a hairline, faded) */
 .sh-console::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  background-image: linear-gradient(rgba(95, 212, 255, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(95, 212, 255, 0.035) 1px, transparent 1px);
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.2;
+  background-image: linear-gradient(var(--hairline) 1px, transparent 1px), linear-gradient(90deg, var(--hairline) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 .sh-console .sh-band { position: absolute; top: 0; bottom: 0; left: var(--sh-band-l); right: var(--sh-band-r); }
 .sh-console .sh-mapwrap, .sh-console .sh-mapinner { height: 100%; }
-.sh-console .sm-wrap { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-.sh-console .hud-panel { background: rgba(8, 16, 26, 0.86); }
+.sh-console .sm-wrap { border: 0; border-radius: 0; background: transparent; }
 
-.sh-console .sh-col { position: absolute; top: 14px; bottom: 14px; z-index: 5; display: flex; flex-direction: column; gap: var(--sh-gap); min-height: 0; }
+.sh-console .sh-col { position: absolute; top: var(--space-3); bottom: var(--space-3); z-index: 5; display: flex; flex-direction: column; gap: var(--sh-gap); min-height: 0; }
 .sh-console .sh-col-left { left: var(--sh-gut); width: var(--sh-col-l); }
 .sh-console .sh-col-right { right: var(--sh-gut); width: var(--sh-col-r); }
 .sh-console .sh-col > .hud-brief, .sh-console .sh-col > .hud-sensor { flex: none; }
 .sh-console .sh-alertstack { flex: 0 1 auto; min-height: 0; }
 .sh-console .sh-rail {
-  flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #2a3446 transparent;
-  background: rgba(8, 16, 26, 0.9); border: 1px solid var(--sh-border); border-radius: var(--c-radius-md, 4px);
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--hairline-strong) transparent;
+  background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--r-sm);
 }
-.sh-console .sh-rail .hud-feed { padding: 10px 12px; background: none; }
-.sh-console .sh-rail .hud-feed-label { background: #08111b; }
+.sh-console .sh-rail .hud-feed { padding: var(--space-2) var(--space-3); }
+.sh-console .sh-rail .hud-feed-head { background: var(--panel); }
 .sh-console .sh-rail .hud-feed-list { max-height: none; overflow: visible; }
 .sh-console .sh-rail .sh-detail { max-height: none; border: 0; border-radius: 0; background: none; overflow: visible; }
 
 /* orientation line: a slim strip at the top of the map band, never pushing it down */
-.sh-console .sh-topline { position: absolute; top: 12px; left: var(--sh-band-l); right: var(--sh-band-r); z-index: 6; display: flex; flex-direction: column; gap: 6px; }
-.sh-console .sh-orient { margin: 0; padding: 0 2px 0 12px; min-height: var(--c-tap-min, 44px); background: rgba(8, 16, 26, 0.86); border-color: var(--sh-border); }
-.sh-console .sh-orient-close { margin: 0; }
+.sh-console .sh-topline { position: absolute; top: var(--space-3); left: var(--sh-band-l); right: var(--sh-band-r); z-index: 6; display: flex; flex-direction: column; gap: var(--space-2); }
+.sh-console .sh-orient { margin: 0; background: var(--panel); }
 .sh-console .sh-banner { margin: 0; }
 
-/* view bar: GLOBE | RADAR · layer · Key · About — bottom-left of the map band */
-/* right edge stops short of the globe's foot (Pause-spin button + the imagery credit above it, ~230px) so a wide bar wraps
-   instead of running under either; under 1180px the credit moves into the About drawer and only the button is cleared (66px) */
-.sh-console .sh-viewbar { position: absolute; bottom: 14px; left: var(--sh-band-l); right: calc(var(--sh-band-r) + 244px); z-index: 7; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+/* view bar: GLOBE | RADAR · layer · Key · About — bottom-left of the map band. The right edge stops
+   short of the globe's foot (spin button + imagery credit, ~230px); under 1180px the credit hides
+   and only the button is cleared. */
+.sh-console .sh-viewbar { position: absolute; bottom: var(--space-3); left: var(--sh-band-l); right: calc(var(--sh-band-r) + 244px); z-index: 7; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 @media (max-width: 1180px) {
   .sh-console .sh-viewbar { right: calc(var(--sh-band-r) + 66px); }
   .sh-console .sm-attrib { display: none; }
 }
-.sh-console .sh-ctl {
-  min-height: var(--c-tap-min, 44px); background: rgba(8, 16, 26, 0.86); border-color: rgba(95, 212, 255, 0.25); border-radius: var(--c-radius-md, 4px);
-  font-family: var(--c-mono, monospace); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-}
-.sh-console .sh-ctl:focus-visible, .sh-console .sm-spin-ctl:focus-visible, .hud-brief-open:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); outline-offset: 2px; }
-.sh-console .sh-viewswitch { border-color: rgba(95, 212, 255, 0.25); border-radius: var(--c-radius-md, 4px); }
-.sh-console .sm-globe-foot { right: 14px; bottom: 14px; flex-direction: column; align-items: flex-end; gap: 6px; }
-.sh-console .sm-spin-ctl { background: rgba(8, 16, 26, 0.86); border-color: rgba(95, 212, 255, 0.25); border-radius: var(--c-radius-md, 4px); }
-.sh-console .sh-legend { left: 0; bottom: 72px; max-height: calc(100% - 150px); overflow-y: auto; background: rgba(6, 12, 20, 0.95); border-color: var(--c-hairline-strong, rgba(95, 212, 255, 0.3)); border-radius: var(--c-radius-md, 4px); }
-.sh-console .sh-legend-close { width: 44px; height: 44px; top: 2px; right: 2px; }
+.sh-console .sm-globe-foot { right: var(--space-3); bottom: var(--space-3); flex-direction: column; align-items: flex-end; gap: var(--space-2); }
+.sh-console .sh-legend { left: 0; bottom: 72px; max-height: calc(100% - 150px); overflow-y: auto; }
 .sh-console .sh-status-inline { position: absolute; top: 0; left: var(--sh-band-l); right: var(--sh-band-r); z-index: 6; }
 
 /* "About this map" drawer — the old below-the-fold content, over the right column */
 .sh-about {
-  position: absolute; top: 14px; bottom: 14px; right: var(--sh-gut, 16px); width: min(560px, calc(100% - 32px)); z-index: 20;
-  overflow-y: auto; padding: 14px 18px 18px; background: var(--c-panel-2, #0b1622);
-  border: 1px solid var(--c-hairline-strong, rgba(95, 212, 255, 0.3)); border-radius: var(--c-radius-md, 4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  position: absolute; top: var(--space-3); bottom: var(--space-3); right: var(--sh-gut); width: min(560px, calc(100% - 32px)); z-index: 20;
+  overflow-y: auto; padding: var(--space-3) var(--space-4) var(--space-4); background: var(--panel-2);
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-sm); box-shadow: var(--shadow-lg);
 }
 .sh-about:focus { outline: none; }
-.sh-about:focus-visible { outline: 2px solid var(--c-accent, #5fd4ff); }
-.sh-about-close {
-  position: sticky; top: 0; float: right; width: 44px; height: 44px; margin: -6px -8px 0 0; z-index: 1;
-  background: var(--c-panel-2, #0b1622); border: 0; color: var(--sh-muted); font-size: 22px; line-height: 1; cursor: pointer;
+.sh-about:focus-visible { outline: 2px solid var(--focus-ring); }
+.sh-about-close { position: sticky; top: 0; float: right; z-index: 1; margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0; background: var(--panel-2); font-size: var(--text-2xl); }
+.sh-fold.sh-fold-drawer { margin-top: 0; padding-top: 0; border-top: 0; gap: var(--space-5); }
+.sh-fold-drawer .sh-fold-cols { grid-template-columns: 1fr; gap: var(--space-3); }
+.sh-about-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-top: var(--space-4); padding-top: var(--space-2); border-top: 1px solid var(--hairline); }
+.sh-about-links a { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap-min); min-width: var(--tap-min); color: var(--text-muted); font-size: var(--text-sm); text-decoration: none; }
+.sh-about-links a:hover { color: var(--text-head); text-decoration: underline; }
+
+/* ---- phone (<900px) ---- */
+@media (max-width: 899.98px) {
+  /* the open legend becomes a bottom sheet, lifted clear of the app-wide phone tab bar
+     (Layout.jsx `.gp-tabbar`, 58px + safe area) */
+  .sh-legend {
+    position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); top: auto; z-index: 40;
+    max-width: none; border-radius: var(--r-xl) var(--r-xl) 0 0; padding: var(--space-4) var(--space-10) var(--space-5) var(--space-4); gap: var(--space-2);
+    background: var(--panel-2); max-height: 72vh; overflow-y: auto;
+  }
+  .sh-legrow { gap: var(--space-2) var(--space-3); }
 }
-.sh-about-close:hover { color: var(--sh-text); }
-.sh-fold.sh-fold-drawer { margin-top: 0; padding-top: 0; border-top: 0; gap: 22px; }
-.sh-fold-drawer .sh-fold-cols { grid-template-columns: 1fr; gap: 14px; }
-.sh-about-links { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 18px; padding-top: 8px; border-top: 1px solid var(--sh-border); }
-.sh-about-links a { display: inline-flex; align-items: center; min-height: var(--c-tap-min, 44px); color: var(--sh-muted); font-size: 12px; text-decoration: none; }
-.sh-about-links a:hover { color: var(--sh-text); text-decoration: underline; }
-.sh-idx-link { min-height: var(--c-tap-min, 44px); }
-.sh-console .sh-viewswitch .sh-seg-on, .sh-console .sh-viewswitch .sh-seg-on:hover { background: var(--c-accent, #5fd4ff); color: #06131c; font-weight: 600; }
-.sh-console .sc-foot a, .sh-console .sh-detail-foot a { display: inline-flex; align-items: center; min-height: var(--c-tap-min, 44px); }
-.sh-about-links a { min-width: var(--c-tap-min, 44px); justify-content: center; }

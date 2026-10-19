@@ -12,7 +12,9 @@ import {
   ICON_MAPPING, GLYPH_SIZE, EDGE_SCALE, CORNER_SIZE, BRACKET_GAP, diamondSize, badgeOffset, bracketCorners, getIconAtlas,
 } from '@/features/map/lib/globeIcons.js';
 import { GLOBE_HORIZON } from '@/features/map/lib/globeHorizon.js';
-import { CRISIS_RGB } from '@/features/map/lib/crisisHue.js';
+import { CRISIS_RGB } from '@/shared/lib/crisisHue.js';
+import { TOKENS } from '@/shared/styles/tokens.js';
+import '@/shared/ui/primitives.css';
 import { pulseSet, MOTION_BUDGET } from '@/features/map/lib/pulse.js';
 import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import {
@@ -27,15 +29,8 @@ const EARTH_TEXTURE_URL = textureUrl(import.meta.env.BASE_URL);
 const EARTH_BOUNDS = [-180, -90, 180, 90];
 const SPIN_DEG_PER_SEC = 3; // "a few degrees a second at most" (task M3 spec)
 
-// Hue = kind of crisis, as RGB. oklch(0.70 0.155 h) normalised so no axis reads
-// as "worse" than another at equal tier (DATA_STRATEGY §5 / map design target).
-export const AXIS_RGB = {
-  conflict: [238, 119, 84],
-  political: [155, 140, 248],
-  economic: [56, 182, 222],
-  humanitarian: [216, 158, 40],
-};
-const AXIS_RGB_FALLBACK = [154, 164, 178];
+// Hue = kind of crisis, as RGB: CRISIS_RGB (shared/lib/crisisHue.js) is derived from the tokens.
+const rgbOf = (axis) => CRISIS_RGB[axis] || CRISIS_RGB.neutral;
 
 // R4a · the approved map tokens (lib/legend.js, Legend.dc.html) drawn with deck.gl:
 //   shape = kind (◆ GDACS alert = a diamond · news situation = a small dot in a soft, feathered
@@ -57,7 +52,8 @@ const NO_DEPTH_WRITE = { depthWriteEnabled: false };
 // the quad's winding, so every sprite was back-face culled. Culling nothing for sprites is safe:
 // the depth test against the sphere still hides them on the far side.
 const ICON_PARAMS = { cullMode: 'none' };
-const BADGE_RGB = [238, 245, 249];
+const BADGE_RGB = hexToRgb(TOKENS['text-head']);
+const ACCENT_RGB = hexToRgb(TOKENS.accent);
 const EDGE_RGB = [4, 7, 12];
 const outerR = (m) => m.size.ringR || m.size.r;
 
@@ -188,13 +184,13 @@ export default function SituationMap3D({
     () => situations.filter((s) => s.state !== 'closed' && s.centroid && situationFreshness(s) !== 'hidden'),
     [situations],
   );
-  const hue = (s) => AXIS_RGB[s.axis] || AXIS_RGB_FALLBACK;
+  const hue = (s) => rgbOf(s.axis);
   const pos = (s) => [s.centroid.lon, s.centroid.lat, MARK_LIFT_M];
   // One derived record per drawn situation, so every layer reads the same token decisions.
   const marks = useMemo(() => active.map((s) => {
     const fresh = situationFreshness(s);
     const look = freshnessLook(fresh);
-    const base = AXIS_RGB[s.axis] || AXIS_RGB_FALLBACK;
+    const base = rgbOf(s.axis);
     return {
       s, fresh, look, kind: markerKind(s), size: tierSize(s.tier), glyph: statusGlyph(s),
       rgb: look.desaturate ? desaturateRgb(base) : base, position: [s.centroid.lon, s.centroid.lat, MARK_LIFT_M],
@@ -211,7 +207,7 @@ export default function SituationMap3D({
   const selectionGeo = useMemo(() => {
     const s = focusId && situations.find((x) => x.id === focusId && x.centroid);
     if (!s) return null;
-    const rgb = AXIS_RGB[s.axis] || AXIS_RGB_FALLBACK;
+    const rgb = rgbOf(s.axis);
     const origin = [s.centroid.lon, s.centroid.lat];
     const originNum = (s.iso3_affected || []).map((c) => ISO3_TO_NUM[c]).find(Boolean);
     const fills = []; const arcs = []; const dests = [];
@@ -234,14 +230,14 @@ export default function SituationMap3D({
   const storyShadeFeatures = useMemo(() => (shading || []).map((e) => {
     const feat = iso3Feature(e.iso3);
     if (!feat) return null;
-    return { ...feat, properties: { ...feat.properties, __iso3: e.iso3, __count: e.count, __dim: e.dim, __rgb: CRISIS_RGB[e.crisisType] || CRISIS_RGB.neutral } };
+    return { ...feat, properties: { ...feat.properties, __iso3: e.iso3, __count: e.count, __dim: e.dim, __rgb: rgbOf(e.crisisType) } };
   }).filter(Boolean), [shading]);
   const storyShadeLayer = useMemo(() => (
     storyShadeFeatures.length
       ? new GeoJsonLayer({
         id: 'story-shade', data: storyShadeFeatures, stroked: true, filled: true, pickable: true,
         getFillColor: (f) => [...f.properties.__rgb, f.properties.__dim ? 26 : 46],
-        getLineColor: (f) => (f.properties.__iso3 === storyFocusIso3 ? [255, 255, 255, 230] : [...f.properties.__rgb, 130]),
+        getLineColor: (f) => (f.properties.__iso3 === storyFocusIso3 ? [...BADGE_RGB, 230] : [...f.properties.__rgb, 130]),
         getLineWidth: (f) => (f.properties.__iso3 === storyFocusIso3 ? 2.5 : 1),
         lineWidthUnits: 'pixels', lineWidthMinPixels: 1,
         onClick: (info) => info.object && onSelectCountry && onSelectCountry(info.object.properties.__iso3),
@@ -269,8 +265,8 @@ export default function SituationMap3D({
     riskFeatures.length
       ? new GeoJsonLayer({
         id: 'country-risk', data: riskFeatures, stroked: true, filled: true, pickable: true,
-        getFillColor: (f) => { const rgb = hexToRgb(f.properties.__risk.hue) || AXIS_RGB_FALLBACK; return [...rgb, f.properties.__risk.older ? 20 : 40]; },
-        getLineColor: (f) => { const rgb = hexToRgb(f.properties.__risk.hue) || AXIS_RGB_FALLBACK; return [...rgb, f.properties.__risk.older ? 110 : 210]; },
+        getFillColor: (f) => { const rgb = hexToRgb(f.properties.__risk.hue) || CRISIS_RGB.neutral; return [...rgb, f.properties.__risk.older ? 20 : 40]; },
+        getLineColor: (f) => { const rgb = hexToRgb(f.properties.__risk.hue) || CRISIS_RGB.neutral; return [...rgb, f.properties.__risk.older ? 110 : 210]; },
         getLineWidth: (f) => f.properties.__risk.outlineWidth,
         lineWidthUnits: 'pixels', lineWidthMinPixels: 1,
         onClick: (info) => info.object && onSelectCountryRisk && onSelectCountryRisk(info.object.properties.__risk),
@@ -289,7 +285,7 @@ export default function SituationMap3D({
     return highs.length
       ? new GeoJsonLayer({
         id: 'country-risk-double', data: highs, stroked: true, filled: false, pickable: false,
-        getLineColor: (f) => { const rgb = hexToRgb(f.properties.__risk.hue) || AXIS_RGB_FALLBACK; return [...rgb, f.properties.__risk.older ? 60 : 120]; },
+        getLineColor: (f) => { const rgb = hexToRgb(f.properties.__risk.hue) || CRISIS_RGB.neutral; return [...rgb, f.properties.__risk.older ? 60 : 120]; },
         getLineWidth: (f) => f.properties.__risk.outlineWidth + 2.5,
         lineWidthUnits: 'pixels', lineWidthMinPixels: 1,
       })
@@ -541,7 +537,7 @@ export default function SituationMap3D({
       if (f && t) data.push(...dashedArcPaths(f, t, a.confidence));
     }
     return data.length ? new PathLayer({
-      id: 'story-link-arcs', data, getPath: (d) => d.path, getColor: [95, 212, 255, 200],
+      id: 'story-link-arcs', data, getPath: (d) => d.path, getColor: [...ACCENT_RGB, 200],
       getWidth: (d) => (DASH[d.confidence] || DASH.medium).width, widthUnits: 'pixels', capRounded: true, pickable: false,
     }) : null;
   }, [linkArcs]);
@@ -593,7 +589,13 @@ export default function SituationMap3D({
     const glyph = statusGlyph(sit);
     const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const bits = [tierW, level, glyph ? `${glyph.glyph} ${glyph.label}` : null].filter(Boolean).map(esc).join(' · ');
-    return { html: `<b>${esc(sit.verb_label)}</b><br/>${bits}`, style: { background: '#0d1017', color: '#dfe6f2', fontSize: '12px', borderRadius: '7px', padding: '6px 9px', border: '1px solid #232c3a' } };
+    // The shared Tooltip look (gp-tip): deck.gl draws its own tooltip element, so it gets the same
+    // class and the token surface/text (its default inline colours would otherwise win).
+    return {
+      className: 'gp-tip',
+      html: `<div class="gp-tip__title">${esc(sit.verb_label)}</div><div class="gp-tip__meta">${bits}</div>`,
+      style: { backgroundColor: 'var(--panel-2)', color: 'var(--text-body)', padding: 'var(--space-3)', maxWidth: '280px' },
+    };
   }, []);
 
   return (

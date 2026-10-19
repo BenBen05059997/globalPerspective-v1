@@ -3,26 +3,28 @@
 // Legend.dc.html) and nothing else — shape = kind, hue = crisis type, size + double ring = HIGH,
 // brightness = freshness, ▲●◆▼ badges, motion budget, GDACS level as text. Items with nothing on
 // the map right now are dimmed with "none now" rather than hidden, so the key never changes shape.
-import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
+import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
+import { TOKENS } from '@/shared/styles/tokens.js';
 import { TIER_LABEL } from '@/features/map/lib/situationLabels.js';
 import { tierSize, TIERS, STATUS_GLYPHS, markerHex } from '@/features/map/lib/legend.js';
 import { outlineForTier } from '@/features/map/lib/countryRiskLayer.js';
 import { MOTION_BUDGET } from '@/features/map/lib/pulse.js';
+import Button from '@/shared/ui/Button.jsx';
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
 const SW = 22; // swatch box (px)
 const C = SW / 2;
-const GREY = '#b9c7d1';
+const GREY = TOKENS['text-muted'];
 
 function Swatch({ children, w = SW }) {
   return <svg className="lg-sw" width={w} height={SW} viewBox={`0 0 ${w} ${SW}`} aria-hidden="true">{children}</svg>;
 }
 
-export function DiamondMark({ color = AXIS_HUE.humanitarian, k = 6 }) {
-  return <Swatch><path d={`M${C} ${C - k}L${C + k} ${C}L${C} ${C + k}L${C - k} ${C}Z`} fill={color} stroke="#04070c" strokeWidth="1" /></Swatch>;
+export function DiamondMark({ color = CRISIS_HUE.humanitarian, k = 6 }) {
+  return <Swatch><path d={`M${C} ${C - k}L${C + k} ${C}L${C} ${C + k}L${C - k} ${C}Z`} fill={color} stroke={TOKENS.bg} strokeWidth="1" /></Swatch>;
 }
-export function SoftDotMark({ color = AXIS_HUE.political }) {
+export function SoftDotMark({ color = CRISIS_HUE.political }) {
   return (
     <Swatch>
       <circle cx={C} cy={C} r="10" fill={color} fillOpacity="0.16" />
@@ -31,14 +33,14 @@ export function SoftDotMark({ color = AXIS_HUE.political }) {
     </Swatch>
   );
 }
-function WashMark({ color = AXIS_HUE.political }) {
+function WashMark({ color = CRISIS_HUE.political }) {
   return <Swatch><path d="M3 7L9 3L17 4L20 11L16 19L7 19L3 13Z" fill={color} fillOpacity="0.22" stroke={color} strokeOpacity="0.5" /></Swatch>;
 }
 function BracketsMark() {
   return (
     <Swatch>
-      <path d="M2 7V2H7M15 2H20V7M20 15V20H15M7 20H2V15" fill="none" stroke="#eef5f9" strokeWidth="1.6" />
-      <circle cx={C} cy={C} r="3.5" fill={AXIS_HUE.conflict} />
+      <path d="M2 7V2H7M15 2H20V7M20 15V20H15M7 20H2V15" fill="none" stroke={TOKENS['text-head']} strokeWidth="1.6" />
+      <circle cx={C} cy={C} r="3.5" fill={CRISIS_HUE.conflict} />
     </Swatch>
   );
 }
@@ -54,8 +56,8 @@ function TierMark({ tier }) {
   );
 }
 function FreshMark({ state }) {
-  const base = AXIS_HUE.political;
-  if (state === 'hidden') return <Swatch><circle cx={C} cy={C} r="5" fill="none" stroke="#7d8b96" strokeDasharray="2 2" /></Swatch>;
+  const base = CRISIS_HUE.political;
+  if (state === 'hidden') return <Swatch><circle cx={C} cy={C} r="5" fill="none" stroke={TOKENS['text-dim']} strokeDasharray="2 2" /></Swatch>;
   return (
     <Swatch>
       {state === 'live' ? <circle cx={C} cy={C} r="9.5" fill={base} fillOpacity="0.28" /> : null}
@@ -97,11 +99,11 @@ export default function MapLegend({
   if (layer === 'risk') {
     return (
       <div id={id} className="sh-legend sh-legend-open" role="region" aria-label="How to read the country risk map">
-        <button className="sh-legend-close" onClick={onClose} aria-label="Close">×</button>
+        <Button variant="icon" className="sh-legend-close" onClick={onClose} label="Close">×</Button>
         <div className="sh-legrow">
           <b>Colour = worst-axis crisis type</b>
           {AXES.map((a) => (
-            <Item key={a} mark={<span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />}>{AXIS_LABEL[a]}</Item>
+            <Item key={a} mark={<span className="sh-leg-dot" style={{ background: CRISIS_HUE[a] }} />}>{AXIS_LABEL[a]}</Item>
           ))}
           <span className="sh-leg"><i>never a red/amber/green severity scale — the tier is the number and the word</i></span>
         </div>
@@ -132,7 +134,7 @@ export default function MapLegend({
 
   return (
     <div id={id} className="sh-legend sh-legend-open" role="region" aria-label="How to read the map">
-      <button className="sh-legend-close" onClick={onClose} aria-label="Close">×</button>
+      <Button variant="icon" className="sh-legend-close" onClick={onClose} label="Close">×</Button>
       <div className="sh-legrow">
         <b>Shape = what it is</b>
         <Item on={has(present?.kinds, 'alert')} mark={<DiamondMark />}>Official disaster alert (GDACS)</Item>
@@ -143,9 +145,9 @@ export default function MapLegend({
       <div className="sh-legrow">
         <b>Colour = crisis type</b>
         {AXES.map((a) => (
-          <Item key={a} on={has(present?.axes, a)} mark={<span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />}>{AXIS_LABEL[a]}</Item>
+          <Item key={a} on={has(present?.axes, a)} mark={<span className="sh-leg-dot" style={{ background: CRISIS_HUE[a] }} />}>{AXIS_LABEL[a]}</Item>
         ))}
-        {present?.neutral ? <Item mark={<span className="sh-leg-dot" style={{ background: '#9aa4b2' }} />}>Other topic</Item> : null}
+        {present?.neutral ? <Item mark={<span className="sh-leg-dot" style={{ background: CRISIS_HUE.neutral }} />}>Other topic</Item> : null}
       </div>
       <div className="sh-legrow">
         <b>Size = severity</b>
@@ -172,8 +174,8 @@ export default function MapLegend({
       </div>
       <div className="sh-legrow">
         <b>Line = judged link</b>
-        <Item on={linksNow > 0} mark={<Swatch w={34}><path d="M2 11H32" stroke="#5fd4ff" strokeWidth="2.2" strokeDasharray="9 5" fill="none" /></Swatch>} note="approx. place">Strong · long dashes</Item>
-        <Item on={linksNow > 0} mark={<Swatch w={34}><path d="M2 11H32" stroke="#5fd4ff" strokeWidth="1.5" strokeDasharray="3 5" fill="none" /></Swatch>} note="approx. place">Medium · short dashes</Item>
+        <Item on={linksNow > 0} mark={<Swatch w={34}><path d="M2 11H32" stroke={TOKENS.accent} strokeWidth="2.2" strokeDasharray="9 5" fill="none" /></Swatch>} note="approx. place">Strong · long dashes</Item>
+        <Item on={linksNow > 0} mark={<Swatch w={34}><path d="M2 11H32" stroke={TOKENS.accent} strokeWidth="1.5" strokeDasharray="3 5" fill="none" /></Swatch>} note="approx. place">Medium · short dashes</Item>
         <span className="sh-leg"><i>only for the selected story · model judgment, weak links are list-only</i></span>
       </div>
       <div className="sh-legrow">

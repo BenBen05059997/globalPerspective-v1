@@ -9,7 +9,7 @@
 //     skipped — it appears only in the list, never as a made-up country wash (H2);
 //   - stories sharing a country are grouped: the group's count is drawn as a small badge, and its
 //     hue/top story favour a real crisis category over 'neutral' when the group is mixed.
-import { crisisTypeForCategory, crisisHueForCategory } from '@/features/map/lib/crisisHue.js';
+import { crisisTypeForCategory, crisisHueForCategory } from '@/shared/lib/crisisHue.js';
 
 function topicIso3(topic) {
   if (Array.isArray(topic?.iso3) && topic.iso3[0]) return topic.iso3[0];

@@ -3,7 +3,7 @@
 // (R4a) the map is the whole page, so the same content opens from a small "About this map" control
 // as a drawer instead — nothing was dropped, it moved. Every date is computed by the caller.
 import { Link } from 'react-router-dom';
-import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
@@ -38,7 +38,7 @@ export default function MapAbout({
       <p className="sh-dim sh-imagery">Globe imagery: Earth at night, NASA Black Marble.</p>
 
       <div className="sh-fold-teasers">
-        <h4 className="sh-lbl">Elsewhere on Global Perspectives</h4>
+        <SectionHeader as="h3" label="Elsewhere on Global Perspectives" />
         <div className="sh-teasers">
           <Link to="/daily"><b>Daily Brief</b><span>
             {latestDailyEditionLabel ? `Latest edition ${latestDailyEditionLabel}` : 'The day’s developments, gathered and synthesised'}
@@ -55,13 +55,13 @@ export default function MapAbout({
 
       {ranked.length ? (
         <div className="sh-fold-index">
-          <h4 className="sh-lbl">Active situations · {ranked.length} open</h4>
+          <SectionHeader as="h3" label="Active situations" count={`${ranked.length} open`} />
           {AXES.map((a) => {
             const items = ranked.filter((s) => s.axis === a);
             if (!items.length) return null;
             return (
               <div key={a} className="sh-idx-group">
-                <h5><span className="sh-leg-dot" style={{ background: AXIS_HUE[a] }} />{AXIS_LABEL[a]} · {items.length}</h5>
+                <h5><span className="sh-leg-dot" style={{ background: `var(--hue-${a})` }} />{AXIS_LABEL[a]} · {items.length}</h5>
                 <ul>
                   {items.map((s) => (
                     <li key={s.id}>

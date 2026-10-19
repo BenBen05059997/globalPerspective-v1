@@ -6,14 +6,16 @@ import { useDailyBrief } from '@/features/daily/hooks/useDailyBrief.js';
 import { usePausedSince } from '@/features/map/hooks/usePausedSince.js';
 import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief.js';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics.js';
-import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
 import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
 import { gdacsStatus } from '@/features/map/lib/gdacsStatus.js';
 import HudBriefPanel from '@/features/map/components/HudBriefPanel.jsx';
 import HudSensorPanel from '@/features/map/components/HudSensorPanel.jsx';
 import HudIntelFeed from '@/features/map/components/HudIntelFeed.jsx';
 import HudCompactLine from '@/features/map/components/HudCompactLine.jsx';
-import MapPhoneTabs from '@/features/map/components/MapPhoneTabs.jsx';
+import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
+import Button from '@/shared/ui/Button.jsx';
+import TierChip from '@/shared/ui/TierChip.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import BottomSheet from '@/features/map/components/BottomSheet.jsx';
 import { phoneSheetStopFor, mapScrollTop } from '@/features/map/lib/phoneSheet.js';
 import { useIsPhone, PHONE_BREAKPOINT } from '@/shared/hooks/useIsPhone.js';
@@ -125,8 +127,8 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
       ) : null}
       <div className="sh-detail-head">
         <span className="sh-meta-row">
-          <span className={`sh-badge sh-badge-${selected.tier}`}>{TIER_LABEL[selected.tier] || selected.tier}</span>
-          <span className="sh-axis" style={{ color: AXIS_HUE[selected.axis] }}>{AXIS_LABEL[selected.axis] || selected.axis}</span>
+          <TierChip tier={selected.tier} />
+          <span className="sh-axis" style={{ color: `var(--hue-${selected.axis})` }}>{AXIS_LABEL[selected.axis] || selected.axis}</span>
           <span className="sh-statelbl">{STATE_LABEL[selected.state] || selected.state}</span>
           {isGdacs ? <span className="sh-prov">UN/EU GDACS</span>
             : (selected.escalating ? <span className="sh-esc">▲ escalating</span> : null)}
@@ -140,7 +142,7 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
 
       {affected.length ? (
         <div className="sh-affected">
-          <span className="sh-lbl">Affected</span>
+          <SectionHeader as="h3" label="Affected" />
           <span className="sh-chips">{affected.slice(0, 5).map((c) => <span key={c} className="sh-country">{iso3Name(c)}</span>)}
             {affected.length > 5 ? <span className="sh-country sh-more">+{affected.length - 5}</span> : null}</span>
         </div>
@@ -154,7 +156,7 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
             <div><dt>Type</dt><dd>{ev.category || selected.axis}</dd></div>
           </dl>
           <div className="sh-official">
-            <span className="sh-lbl">Official source</span>
+            <SectionHeader as="h3" label="Official source" />
             {ev.gdacs_report_url
               ? <a className="sh-report" href={ev.gdacs_report_url} target="_blank" rel="noreferrer">Official UN/EU GDACS report →</a>
               : <span className="sh-report">UN/EU GDACS</span>}
@@ -171,7 +173,7 @@ function SituationDetail({ selected, ev, isGdacs, m, affected, activeCount = 0, 
           </dl>
           {ev.headlines?.length ? (
             <div className="sh-evidence">
-              <span className="sh-lbl">Evidence <i>{ev.headlines.length} shown</i></span>
+              <SectionHeader as="h3" label="Evidence" count={`${ev.headlines.length} shown`} />
               <ul className="sh-heads">
                 {ev.headlines.slice(0, 6).map((h) => (
                   <li key={h.url}><a href={h.url} target="_blank" rel="noreferrer">{h.title}</a><span className="sh-src">{h.domain}</span></li>
@@ -691,24 +693,25 @@ export default function SituationHome() {
   const controls = (
     <>
       {USE_3D ? (
-        <div className="sh-viewswitch" role="group" aria-label="Map mode">
-          <button className={`sh-ctl sh-seg${view === 'globe' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'globe'} onClick={() => setView('globe')}>Globe</button>
-          <button className={`sh-ctl sh-seg${view === 'radar' ? ' sh-seg-on' : ''}`} aria-pressed={view === 'radar'} onClick={() => setView('radar')}>Radar</button>
-        </div>
+        <Tabs
+          variant="segmented" idBase="sh-mode" label="Map mode" className="sh-onmap" active={view} onChange={setView}
+          tabs={[{ key: 'globe', label: 'Globe' }, { key: 'radar', label: 'Radar' }]}
+        />
       ) : null}
-      <div className="sh-viewswitch sh-layerswitch" role="group" aria-label="Map layer">
-        <button className={`sh-ctl sh-seg${!riskMode ? ' sh-seg-on' : ''}`} aria-pressed={!riskMode} onClick={() => setLayer('situations')}>Situations</button>
-        <button className={`sh-ctl sh-seg${riskMode ? ' sh-seg-on' : ''}`} aria-pressed={riskMode} onClick={() => setLayer('risk')}>Country risk</button>
-      </div>
-      <button
+      <Tabs
+        variant="segmented" idBase="sh-layer" label="Map layer" className="sh-onmap" active={riskMode ? 'risk' : 'situations'} onChange={setLayer}
+        tabs={[{ key: 'situations', label: 'Situations' }, { key: 'risk', label: 'Country risk' }]}
+      />
+      <Button
         ref={legendBtnRef}
-        className="sh-ctl sh-key"
+        compact
+        className="sh-onmap sh-key"
         onClick={() => setLegendPersist(!legendOpen)}
         aria-expanded={legendOpen}
         aria-controls="sh-legend-panel"
       >
-        {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: AXIS_HUE[a] }} />)} Key
-      </button>
+        {AXES.map((a) => <span key={a} className="sh-key-dot" style={{ background: `var(--hue-${a})` }} />)} Key
+      </Button>
     </>
   );
 
@@ -796,7 +799,7 @@ export default function SituationHome() {
   const railContent = focusMissing ? (
     <div className="sh-detail sh-gone">
       <button className="sh-back" onClick={() => select(null)}>← All situations{ranked.length ? ` (${ranked.length})` : ''}</button>
-      <p className="sh-muted" style={{ padding: '16px 15px' }}>That situation is no longer being tracked — it may have closed since the link was shared. Browse the active situations instead.</p>
+      <p className="sh-muted sh-gone-text">That situation is no longer being tracked — it may have closed since the link was shared. Browse the active situations instead.</p>
     </div>
   ) : selected ? (
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={() => select(null)} />
@@ -819,7 +822,7 @@ export default function SituationHome() {
   );
 
   const sheetBody = focusMissing ? (
-    <p className="sh-muted" style={{ padding: '16px 15px' }}>That situation is no longer being tracked — it may have closed since the link was shared.</p>
+    <p className="sh-muted sh-gone-text">That situation is no longer being tracked — it may have closed since the link was shared.</p>
   ) : selected ? (
     <SituationDetail selected={selected} ev={ev} isGdacs={isGdacs} m={m} affected={affected} activeCount={ranked.length} onBack={closeSelection} showBack={false} />
   ) : selectedStory ? (
@@ -881,17 +884,17 @@ export default function SituationHome() {
 
         <div className="sh-viewbar" role="toolbar" aria-label="Map controls">
           {controls}
-          <button
-            ref={aboutBtnRef} className="sh-ctl" onClick={() => setAboutOpen((v) => !v)}
+          <Button
+            ref={aboutBtnRef} compact className="sh-onmap" onClick={() => setAboutOpen((v) => !v)}
             aria-expanded={aboutOpen} aria-controls="sh-about-panel"
           >
             About this map
-          </button>
+          </Button>
         </div>
 
         {aboutOpen ? (
           <section id="sh-about-panel" className="sh-about" role="region" aria-label="About this map" tabIndex={-1} ref={aboutPanelRef}>
-            <button className="sh-about-close" onClick={() => { setAboutOpen(false); aboutBtnRef.current?.focus?.(); }} aria-label="Close about this map">×</button>
+            <Button variant="icon" className="sh-about-close" onClick={() => { setAboutOpen(false); aboutBtnRef.current?.focus?.(); }} label="Close about this map">×</Button>
             <div className="sh-fold sh-fold-drawer">{aboutContent}</div>
             <nav className="sh-about-links" aria-label="Site">
               <Link to="/about">About</Link>
@@ -932,10 +935,17 @@ export default function SituationHome() {
       {staleBanner}
 
       {/* M7 phone pattern (P1): one tab switch — MAP (default, radar) · LIST · ALERTS. */}
-      <MapPhoneTabs active={phoneTab} onChange={setPhoneTab} alertCount={tierCounts.high + tierCounts.elevated} />
+      <Tabs
+        variant="phone" idBase="sh" label="Map view" active={phoneTab} onChange={setPhoneTab}
+        tabs={[
+          { key: 'map', label: 'Map' },
+          { key: 'list', label: 'List' },
+          { key: 'alerts', label: 'Alerts', count: tierCounts.high + tierCounts.elevated || undefined },
+        ]}
+      />
 
       {phoneTab === 'map' ? (
-        <div id="sh-panel-map" role="tabpanel" aria-labelledby="sh-tab-map" className="sh-phone-panel">
+        <div {...tabPanelProps('sh', 'map')} className="sh-phone-panel">
           {world || sensorRows.length ? (
             <HudCompactLine summary={hudSummary} expanded={hudExpanded} onToggle={() => setHudExpanded((v) => !v)}>
               <div className="sh-hud-row">
@@ -958,7 +968,7 @@ export default function SituationHome() {
           ) : null}
         </div>
       ) : phoneTab === 'list' ? (
-        <div id="sh-panel-list" role="tabpanel" aria-labelledby="sh-tab-list" className="sh-phone-panel">
+        <div {...tabPanelProps('sh', 'list')} className="sh-phone-panel">
           {riskMode ? (
             <HudCountryRiskFeed
               drawn={countryRiskLayer.drawn} hiddenOld={countryRiskLayer.hiddenOld} loading={countryRiskLayer.loading}
@@ -974,7 +984,7 @@ export default function SituationHome() {
           )}
         </div>
       ) : (
-        <div id="sh-panel-alerts" role="tabpanel" aria-labelledby="sh-tab-alerts" className="sh-phone-panel">
+        <div {...tabPanelProps('sh', 'alerts')} className="sh-phone-panel">
           {/* R4a: the ALERTS tab reuses the desktop alert stack's cards. */}
           {world ? (
             <AlertStack

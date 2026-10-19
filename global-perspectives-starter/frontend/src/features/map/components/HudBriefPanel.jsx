@@ -5,6 +5,8 @@
 // like the data didn't load). The tier dots use the legend's size steps + HIGH double ring.
 import { Link } from 'react-router-dom';
 import { TIER_LABEL } from '@/features/map/lib/situationLabels.js';
+import Card from '@/shared/ui/Card.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
 const TIERS = ['high', 'elevated', 'moderate', 'low'];
 
@@ -15,10 +17,10 @@ const TIERS = ['high', 'elevated', 'moderate', 'low'];
  */
 export default function HudBriefPanel({ counts, lede = null, lead = null, heading = 'Situation brief', className = '' }) {
   return (
-    <div className={`hud-panel hud-brief ${className}`.trim()} role="region" aria-label="Situation brief">
+    <Card level="hud" pad="sm" className={`hud-panel hud-brief ${className}`.trim()} role="region" aria-label="Situation brief">
       <div className="hud-panel-corner hud-panel-corner-tl" aria-hidden="true" />
       <div className="hud-panel-corner hud-panel-corner-br" aria-hidden="true" />
-      <div className="hud-label">{heading}</div>
+      <SectionHeader label={heading} />
       {lede ? <p className="hud-brief-lede">{lede}</p> : null}
       {lead ? (
         <div className="hud-brief-lead">
@@ -48,6 +50,6 @@ export default function HudBriefPanel({ counts, lede = null, lead = null, headin
         })}
       </ul>
       ) : null}
-    </div>
+    </Card>
   );
 }

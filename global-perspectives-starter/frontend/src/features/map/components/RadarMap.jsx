@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { AXIS_HUE } from '@/features/map/components/SituationMap.jsx';
+import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
+import { TOKENS } from '@/shared/styles/tokens.js';
+import { placeMapLabels } from '@/features/map/lib/mapLabels.js';
 import { land, FRAME } from '@/features/map/lib/landGeometry.js';
 import { TIER_LABEL, iso3Name } from '@/features/map/lib/situationLabels.js';
 import {
@@ -13,6 +15,7 @@ import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
 import {
   tierSize, markerKind, kindLabel, situationFreshness, freshnessLook, freshnessClass, statusGlyph, markerHex,
 } from '@/features/map/lib/legend.js';
+import '@/shared/ui/primitives.css';
 import '@/features/map/components/RadarMap.css';
 
 // iso3 -> country polygon, for H2 country shading (M5a). Built once from the same bundled
@@ -48,7 +51,7 @@ function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-const hue = (s) => AXIS_HUE[s.axis] || '#9aa4b2';
+const hue = (s) => CRISIS_HUE[s.axis] || CRISIS_HUE.neutral;
 const freshOf = (s) => situationFreshness(s, Date.now());
 
 // ◆ — a square rotated 45°, `k` = half its diagonal.
@@ -233,7 +236,7 @@ export default function RadarMap({
       const cx = width / 2, cy = height / 2;
 
       root.append('g').selectAll('path').data(land.features).join('path')
-        .attr('d', path).attr('fill', 'none').attr('stroke', 'rgba(95, 212, 255, 0.3)').attr('stroke-width', 0.6);
+        .attr('d', path).attr('fill', 'none').attr('stroke', TOKENS['hairline-strong']).attr('stroke-width', 0.6);
 
       // Country shading (H2, M5a): a story with no exact place shades its whole country instead
       // of getting a made-up pin — low-alpha wash in the crisis hue, a count badge when >1, a
@@ -247,7 +250,7 @@ export default function RadarMap({
         .attr('d', (d) => path(d.feature))
         .attr('fill', (d) => d.hue)
         .attr('fill-opacity', (d) => (d.dim ? 0.10 : 0.20))
-        .attr('stroke', (d) => (d.iso3 === storyFocusIso3 ? '#fff' : d.hue))
+        .attr('stroke', (d) => (d.iso3 === storyFocusIso3 ? TOKENS['text-head'] : d.hue))
         .attr('stroke-opacity', (d) => (d.iso3 === storyFocusIso3 ? 0.9 : 0.5))
         .attr('stroke-width', (d) => (d.iso3 === storyFocusIso3 ? 2 : 0.8))
         .attr('tabindex', 0)
@@ -266,7 +269,7 @@ export default function RadarMap({
         .attr('x', (d) => path.centroid(d.feature)[0])
         .attr('y', (d) => path.centroid(d.feature)[1])
         .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
-        .attr('fill', '#fff').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', TOKENS['text-head']).attr('font-size', 10).attr('font-weight', 700)
         .attr('pointer-events', 'none')
         .text((d) => d.count);
 
@@ -310,7 +313,7 @@ export default function RadarMap({
         const [bx, by] = path.centroid(focusShade.feature);
         if (Number.isFinite(bx) && Number.isFinite(by)) {
           root.append('path').attr('class', 'rd-brackets').attr('transform', `translate(${bx},${by})`)
-            .attr('d', bracketsPath(14)).attr('fill', 'none').attr('stroke', '#eef5f9').attr('stroke-width', 2)
+            .attr('d', bracketsPath(14)).attr('fill', 'none').attr('stroke', TOKENS['text-head']).attr('stroke-width', 2)
             .attr('pointer-events', 'none');
         }
       }
@@ -331,9 +334,9 @@ export default function RadarMap({
         const strong = a.confidence === 'strong';
         linkG.append('path').attr('class', `rd-link rd-link-${a.confidence}`)
           .attr('d', `M${p1[0]},${p1[1]} Q${mx},${my} ${p2[0]},${p2[1]}`)
-          .attr('fill', 'none').attr('stroke', '#5fd4ff').attr('stroke-opacity', 0.75)
+          .attr('fill', 'none').attr('stroke', TOKENS.accent).attr('stroke-opacity', 0.75)
           .attr('stroke-width', strong ? 2 : 1.4).attr('stroke-dasharray', strong ? '9 5' : '3 5').attr('stroke-linecap', 'round');
-        linkG.append('circle').attr('cx', p2[0]).attr('cy', p2[1]).attr('r', 4).attr('fill', 'none').attr('stroke', '#5fd4ff').attr('stroke-opacity', 0.8);
+        linkG.append('circle').attr('cx', p2[0]).attr('cy', p2[1]).attr('r', 4).attr('fill', 'none').attr('stroke', TOKENS.accent).attr('stroke-opacity', 0.8);
       }
 
       const proj = (s) => projection([s.centroid.lon, s.centroid.lat]) || [-9, -9];
@@ -363,9 +366,9 @@ export default function RadarMap({
         tip.style.opacity = 1; tip.style.left = `${x + 12}px`; tip.style.top = `${y + 12}px`;
         const level = gdacsLevelBadge(s);
         const glyph = statusGlyph(s);
-        tip.innerHTML = `<b>${escapeHtml(s.verb_label)}</b><br>${escapeHtml(TIER_LABEL[s.tier] || s.tier)}`
+        tip.innerHTML = `<div class="gp-tip__title">${escapeHtml(s.verb_label)}</div><div class="gp-tip__meta">${escapeHtml(TIER_LABEL[s.tier] || s.tier)}`
           + `${level ? ` · ${escapeHtml(level)}` : ''}${glyph ? ` · ${escapeHtml(`${glyph.glyph} ${glyph.label}`)}` : ''}`
-          + ` · ${escapeHtml(agoShort(s.last_change_at))}`;
+          + ` · ${escapeHtml(agoShort(s.last_change_at))}</div>`;
       };
       const hideTip = () => { tip.style.opacity = 0; };
 
@@ -407,8 +410,8 @@ export default function RadarMap({
         const look = freshnessLook(freshOf(s));
         const core = markerKind(s) === 'alert'
           // ◆ official alert: a diamond (MIL-STD alert frame), exact place from the feed.
-          ? g.append('path').attr('d', diamondPath(r * 1.2)).attr('stroke', '#04070c').attr('stroke-width', 1.5)
-          : g.append('circle').attr('r', Math.max(3, r * 0.6)).attr('stroke', '#04070c').attr('stroke-width', 1);
+          ? g.append('path').attr('d', diamondPath(r * 1.2)).attr('stroke', TOKENS.bg).attr('stroke-width', 1.5)
+          : g.append('circle').attr('r', Math.max(3, r * 0.6)).attr('stroke', TOKENS.bg).attr('stroke-width', 1);
         core.attr('class', 'rd-core').attr('fill', fill)
           .attr('opacity', look.desaturate ? 0.85 : 1)
           .attr('filter', look.glow ? 'url(#rd-glow)' : null);
@@ -416,15 +419,15 @@ export default function RadarMap({
         if (glyph) {
           const off = (tierSize(s.tier).ringR || r) + 3;
           g.append('text').attr('class', 'rd-badge').attr('x', off).attr('y', -off + 3)
-            .attr('font-size', 10).attr('fill', '#eef5f9').attr('pointer-events', 'none')
-            .attr('paint-order', 'stroke').attr('stroke', '#04070c').attr('stroke-width', 2.5)
+            .attr('font-size', 10).attr('fill', TOKENS['text-head']).attr('pointer-events', 'none')
+            .attr('paint-order', 'stroke').attr('stroke', TOKENS.bg).attr('stroke-width', 2.5)
             .text(glyph.glyph);
         }
         if (s.id === focusId) {
           // HUD brackets = selected (legend §1 / L4), replacing the old white glow ring.
           const b = (tierSize(s.tier).ringR || r) + 7;
           g.append('path').attr('class', 'rd-brackets').attr('d', bracketsPath(b))
-            .attr('fill', 'none').attr('stroke', '#eef5f9').attr('stroke-width', 2).attr('pointer-events', 'none');
+            .attr('fill', 'none').attr('stroke', TOKENS['text-head']).attr('stroke-width', 2).attr('pointer-events', 'none');
         }
       });
 
@@ -434,12 +437,15 @@ export default function RadarMap({
 
       const labelable = active.filter((s) => s.tier === 'high' || s.tier === 'elevated')
         .sort((a, b) => (tierSize(b.tier).ringR || tierSize(b.tier).r) - (tierSize(a.tier).ringR || tierSize(a.tier).r)).slice(0, 6);
-      root.append('g').selectAll('text.sm-label').data(labelable).join('text')
+      // Right of the marker, flipped left at the map's right edge, overlaps dropped (lib/mapLabels.js).
+      const labels = placeMapLabels(labelable.map((s) => ({
+        id: s.id, x: proj(s)[0], y: proj(s)[1] + 4, off: (tierSize(s.tier).ringR || tierSize(s.tier).r) + 14, text: s.verb_label,
+      })), { width });
+      root.append('g').selectAll('text.sm-label').data(labels).join('text')
         .attr('class', 'sm-label')
-        .attr('x', (s) => proj(s)[0] + (tierSize(s.tier).ringR || tierSize(s.tier).r) + 14)
-        .attr('y', (s) => proj(s)[1] + 4)
-        .text((s) => s.verb_label).attr('fill', '#dfe6f2').attr('font-size', 11)
-        .attr('paint-order', 'stroke').attr('stroke', '#0d1017').attr('stroke-width', 3);
+        .attr('x', (l) => l.x).attr('y', (l) => l.y).attr('text-anchor', (l) => l.anchor)
+        .text((l) => l.text).attr('fill', TOKENS['text-body']).attr('font-size', 11)
+        .attr('paint-order', 'stroke').attr('stroke', TOKENS.bg).attr('stroke-width', 3);
 
       // F2.2: the SVG is fully cleared and rebuilt every redraw (5-min poll, selection, resize),
       // which used to reset the zoom/pan to identity each time — reapply the visitor's last
@@ -516,7 +522,7 @@ export default function RadarMap({
           aria-hidden="true"
         />
       ) : null}
-      <div ref={tipRef} className="sm-tip" />
+      <div ref={tipRef} className="gp-tip sm-tip" />
       {/* Beam-pass card (C6 R4). aria-hidden: the same facts are in the marker's own label and the
           feed row, and a card every few seconds would be noise in a live region. */}
       {card ? (

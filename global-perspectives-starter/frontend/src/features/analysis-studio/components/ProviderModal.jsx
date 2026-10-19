@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { PROVIDERS, getProvider } from '@/features/analysis-studio/lib/llm';
 import { loadByok, saveByok, clearByok } from '@/features/analysis-studio/lib/byok';
 import '@/features/analysis-studio/components/ProviderModal.css';
+import Button from '@/shared/ui/Button.jsx';
 
 // BYOK chooser: pick provider → model → paste key. Stored browser-only.
 export default function ProviderModal({ onClose, onSaved }) {
@@ -64,7 +65,7 @@ export default function ProviderModal({ onClose, onSaved }) {
       <div className="pm-modal" role="dialog" aria-modal="true" aria-label="Choose analysis model">
         <div className="pm-header">
           <h3>Choose your model</h3>
-          <button className="pm-close" onClick={onClose} aria-label="Close">&times;</button>
+          <Button variant="icon" label="Close" onClick={onClose}>&times;</Button>
         </div>
 
         <p className="pm-note">
@@ -133,13 +134,13 @@ export default function ProviderModal({ onClose, onSaved }) {
 
           <div className="pm-actions">
             {existing && (
-              <button type="button" className="pm-clear" onClick={handleClear}>
+              <Button onClick={handleClear}>
                 Clear key
-              </button>
+              </Button>
             )}
-            <button type="submit" className="pm-save" disabled={!key.trim()}>
+            <Button variant="primary" type="submit" disabled={!key.trim()}>
               Save
-            </button>
+            </Button>
           </div>
         </form>
       </div>

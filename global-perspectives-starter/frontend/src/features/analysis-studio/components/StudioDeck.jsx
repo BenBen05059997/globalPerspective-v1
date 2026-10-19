@@ -11,7 +11,7 @@
 // across decks, defaulting to the newest. "READ AS TEXT" is the long light-themed view every
 // run has always rendered (StudioRunResult, unchanged) — still reachable, never removed.
 // BOARD stays the desktop case board (unchanged). Phone (P1): READ slides / MAP (lazy) / LOG
-// tabs on the dark surface, mirroring PhoneStoryMode's tab pattern (`.psm-*`, imported).
+// tabs (the shared Tabs, phone variant) on the dark surface, inside PhoneStoryMode's `.psm-*` panel chrome.
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import StudioRunResult from '@/features/analysis-studio/components/StudioRunResult';
 import {
@@ -24,11 +24,17 @@ import { buildReceipt } from '@/features/analysis-studio/lib/receipt';
 import { SOURCE_KIND_LABELS } from '@/features/analysis-studio/lib/analysisPrompt';
 import { formatCiteDate } from '@/features/analysis-studio/lib/formatDate';
 import { nextFocusId } from '@/features/analysis-studio/lib/deckStack';
+import Card from '@/shared/ui/Card.jsx';
+import Chip from '@/shared/ui/Chip.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import '@/features/threads/components/StoryMode.css';
 import '@/features/threads/components/PhoneStoryMode.css';
 import '@/features/analysis-studio/components/StudioDeck.css';
 
 const MAP_HEIGHT = 460;
+const VIEW_TABS = [{ key: 'deck', label: 'DECK' }, { key: 'text', label: 'READ AS TEXT' }, { key: 'board', label: 'BOARD' }];
+const PHONE_TABS = [{ key: 'read', label: 'READ' }, { key: 'map', label: 'MAP' }, { key: 'log', label: 'LOG' }];
 const PHONE_MAP_HEIGHT = 300;
 
 // The prose always opens with a "## Bottom line" section (SYSTEM_PROMPT) — pull just that
@@ -205,15 +211,11 @@ function DesktopDeck({ decorated, focused, focusId, onFocus, category }) {
       <div className="sm-topbar">
         <div className="sm-topbar-label">STUDIO DECK</div>
         {decorated.length > 1 && (
-          <div className="sd-switcher" role="tablist" aria-label="Case sections">
+          <div className="sd-switcher" role="group" aria-label="Case sections">
             {decorated.map((s) => (
-              <button
-                key={s.id} type="button" role="tab" aria-selected={s.id === focusId}
-                className={`sd-switcher-chip${s.id === focusId ? ' on' : ''}`}
-                onClick={() => onFocus(s.id)}
-              >
+              <Chip key={s.id} selected={s.id === focusId} onClick={() => onFocus(s.id)}>
                 {s.lensLabel}
-              </button>
+              </Chip>
             ))}
           </div>
         )}
@@ -253,19 +255,19 @@ function DesktopDeck({ decorated, focused, focusId, onFocus, category }) {
 function BoardCards({ section }) {
   return (
     <div className="as-board-grid">
-      <div className="as-board-card">
-        <div className="as-board-card-head">Analysis</div>
+      <Card pad="sm">
+        <SectionHeader as="h3" label="Analysis" />
         <StudioRunResult
           section={{ ...section, timeDates: [], picture: { ...section.picture, oursVsRun: null } }}
           expanded={section.expanded}
           onShowAnyway={section.onShowAnyway}
         />
-      </div>
+      </Card>
       {section.picture?.oursVsRun && (
-        <div className="as-board-card">
-          <div className="as-board-card-head">Our data vs this run</div>
+        <Card pad="sm">
+          <SectionHeader as="h3" label="Our data vs this run" />
           <OursVsRunStrip {...section.picture.oursVsRun} />
-        </div>
+        </Card>
       )}
     </div>
   );
@@ -286,19 +288,10 @@ function PhoneDeck({ decorated, focused, category }) {
       <div className="psm-topbar">
         <div className="psm-topbar-label">STUDIO DECK</div>
       </div>
-      <div className="psm-tabs" role="tablist" aria-label="Studio view">
-        {['read', 'map', 'log'].map((k) => (
-          <button
-            key={k} type="button" role="tab" aria-selected={tab === k}
-            className={`psm-tab${tab === k ? ' on' : ''}`} onClick={() => setTab(k)}
-          >
-            {k === 'read' ? 'READ' : k === 'map' ? 'MAP' : 'LOG'}
-          </button>
-        ))}
-      </div>
+      <Tabs variant="phone" idBase="sd-phone" label="Studio view" tabs={PHONE_TABS} active={tab} onChange={setTab} />
 
       {tab === 'read' && focused && (
-        <div className="psm-panel" role="tabpanel">
+        <div className="psm-panel" {...tabPanelProps('sd-phone', 'read')}>
           <div className="psm-slideview">{slides[slideIdx]?.content}</div>
           <div className="psm-slidenav" role="tablist" aria-label="Studio deck slides">
             <button type="button" className="psm-slidenav-btn" onClick={() => goto(slideIdx - 1)} disabled={slideIdx === 0} aria-label="Previous slide">◀</button>
@@ -314,13 +307,13 @@ function PhoneDeck({ decorated, focused, category }) {
 
       {tab === 'map' && (
         // Lazy: the map (and its data) only mount once this tab is opened.
-        <div className="psm-panel psm-panel-map" role="tabpanel">
+        <div className="psm-panel psm-panel-map" {...tabPanelProps('sd-phone', 'map')}>
           <StoryMap shading={shading} storyFocusIso3={focusIso3} height={PHONE_MAP_HEIGHT} />
         </div>
       )}
 
       {tab === 'log' && (
-        <ul className="as-phone-log" role="tabpanel">
+        <ul className="as-phone-log" {...tabPanelProps('sd-phone', 'log')}>
           {decorated.map((s) => (
             <li className="as-phone-log-row" key={s.id}>
               <span className="as-phone-log-lens">{s.lensLabel}</span>
@@ -345,11 +338,7 @@ export default function StudioDeck({ sections, view, onToggleView, expandedFaile
   return (
     <div className="as-deck">
       <div className="as-deck-head">
-        <div className="as-view-toggle">
-          <button type="button" className={view === 'deck' ? 'on' : ''} onClick={() => onToggleView('deck')}>DECK</button>
-          <button type="button" className={view === 'text' ? 'on' : ''} onClick={() => onToggleView('text')}>READ AS TEXT</button>
-          <button type="button" className={view === 'board' ? 'on' : ''} onClick={() => onToggleView('board')}>BOARD</button>
-        </div>
+        <Tabs variant="segmented" idBase="sd-view" label="Result view" tabs={VIEW_TABS} active={view} onChange={onToggleView} />
       </div>
 
       {view === 'text' && decorated.map((s) => <StudioRunResult key={s.id} section={s} expanded={s.expanded} onShowAnyway={s.onShowAnyway} />)}
@@ -357,11 +346,11 @@ export default function StudioDeck({ sections, view, onToggleView, expandedFaile
       {view === 'board' && (
         <>
           {decorated.length > 1 && (
-            <div className="as-board-picker">
+            <div className="as-board-picker" role="group" aria-label="Case sections">
               {decorated.map((s) => (
-                <button key={s.id} type="button" className={`as-board-chip${s.id === focusId ? ' on' : ''}`} onClick={() => setFocusId(s.id)}>
+                <Chip key={s.id} selected={s.id === focusId} onClick={() => setFocusId(s.id)}>
                   {s.lensLabel}
-                </button>
+                </Chip>
               ))}
             </div>
           )}

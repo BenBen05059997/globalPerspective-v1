@@ -29,6 +29,13 @@ import { addSection } from '@/features/analysis-studio/lib/deckStack';
 import ProviderModal from '@/features/analysis-studio/components/ProviderModal';
 import StudioDeck from '@/features/analysis-studio/components/StudioDeck';
 import { useIsPhone } from '@/shared/hooks/useIsPhone';
+import Button from '@/shared/ui/Button.jsx';
+import Card from '@/shared/ui/Card.jsx';
+import Chip from '@/shared/ui/Chip.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import StoryRow from '@/shared/ui/StoryRow.jsx';
+import { crisisDotVar } from '@/shared/lib/crisisHue';
 import '@/features/analysis-studio/AnalysisStudio.css';
 
 const MAX_STORIES = 4;
@@ -85,6 +92,37 @@ async function buildLensPicture(lensId, { struct, selectedTopics, citations, pro
     return { kind: 'freeform', data: { sentences: sentenceCitations(prose) }, oursVsRun: null };
   }
   return null;
+}
+
+// One story in the picker: the shared StoryRow (crisis-hue bar, category tag) with a check box as
+// its lead chip. Selected = the row's accent-outline active state; a full selection dims the rest
+// (toggle() already refuses a fifth story).
+function PickRow({ title, category, regions, date = null, badge = null, on, full, onClick }) {
+  const place = Array.isArray(regions) && regions.length > 0 ? regions.slice(0, 3).join(', ') : null;
+  return (
+    <StoryRow
+      title={title}
+      place={place}
+      hue={crisisDotVar(category)}
+      chip={<span className="as-check" aria-hidden>{on ? '✓' : ''}</span>}
+      meta={(
+        <>
+          {date ? <span className="as-story-date">{date}</span> : null}
+          <CategoryTag category={category} />
+          {badge ? <Richness value={badge} /> : null}
+        </>
+      )}
+      active={on}
+      dim={full}
+      onClick={onClick}
+    />
+  );
+}
+
+// RICH / THIN: how much stored material a story has. A neutral word (solid vs dashed outline),
+// not a status colour: neither is a check that passed or failed.
+function Richness({ value }) {
+  return <span className={`as-richness${value === 'RICH' ? ' rich' : ''}`}>{value}</span>;
 }
 
 export default function AnalysisStudio() {
@@ -467,20 +505,19 @@ export default function AnalysisStudio() {
               : 'Studio runs on your own API key.'}
           </p>
         </div>
-        <button className="as-model-chip" onClick={() => setModalOpen(true)} title="Choose provider / model / key">
-          <span className="as-chip-dot" />
+        <Button compact className="as-model-chip" onClick={() => setModalOpen(true)} title="Choose provider / model / key">
+          <span className="as-chip-dot" aria-hidden="true" />
           {serverCapable && !byok ? (isMember ? 'Member · included' : 'Included') : modelChip}
-          <span className="as-chip-caret">▾</span>
-        </button>
+          <span className="as-chip-caret" aria-hidden="true">▾</span>
+        </Button>
       </header>
 
       <div className="as-grid">
         {/* Step 1 — pick stories */}
-        <section className="as-panel">
-          <div className="as-panel-head">
-            <h2>1 · Select stories</h2>
+        <Card as="section">
+          <SectionHeader label="1 · Select stories">
             <span className="as-count">{selected.length}/{MAX_STORIES}</span>
-          </div>
+          </SectionHeader>
           {topicsLoading && topics.length === 0 ? (
             <div className="as-muted">Loading today's stories…</div>
           ) : topics.length === 0 ? (
@@ -492,33 +529,21 @@ export default function AnalysisStudio() {
                 const on = selected.includes(id);
                 const full = !on && selected.length >= MAX_STORIES;
                 return (
-                  <li key={id}>
-                    <button
-                      className={`as-story${on ? ' on' : ''}`}
-                      onClick={() => toggle(id)}
-                      disabled={full}
-                      title={full ? `Max ${MAX_STORIES} stories` : undefined}
-                    >
-                      <span className="as-check" aria-hidden>{on ? '✓' : ''}</span>
-                      <span className="as-story-body">
-                        <span className="as-story-title">{t.title}</span>
-                        <span className="as-story-meta">
-                          {t.category || '—'}
-                          {Array.isArray(t.regions) && t.regions.length > 0 && ` · ${t.regions.slice(0, 3).join(', ')}`}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
+                  <PickRow
+                    key={id} title={t.title} category={t.category} regions={t.regions}
+                    on={on} full={full} onClick={() => toggle(id)}
+                  />
                 );
               })}
             </ul>
           )}
 
           <div className="as-earlier">
-            <div className="as-earlier-head">Earlier stories (last 30 days)</div>
+            <SectionHeader as="h3" label="Earlier stories (last 30 days)" />
             <input
               className="as-input as-earlier-search"
               placeholder="Search earlier stories…"
+              aria-label="Search earlier stories"
               value={earlierQuery}
               onChange={(e) => setEarlierQuery(e.target.value)}
             />
@@ -537,25 +562,10 @@ export default function AnalysisStudio() {
                     const full = !on && selected.length >= MAX_STORIES;
                     const badge = earlierPreview[row.threadId];
                     return (
-                      <li key={id}>
-                        <button
-                          className={`as-story${on ? ' on' : ''}`}
-                          onClick={() => toggleEarlier(row)}
-                          disabled={full}
-                          title={full ? `Max ${MAX_STORIES} stories` : undefined}
-                        >
-                          <span className="as-check" aria-hidden>{on ? '✓' : ''}</span>
-                          <span className="as-story-body">
-                            <span className="as-story-title">{row.title}</span>
-                            <span className="as-story-meta">
-                              {row.date}
-                              {row.category && ` · ${row.category}`}
-                              {Array.isArray(row.regions) && row.regions.length > 0 && ` · ${row.regions.slice(0, 3).join(', ')}`}
-                            </span>
-                          </span>
-                          {badge && <span className={`as-richness ${badge === 'RICH' ? 'rich' : 'thin'}`}>{badge}</span>}
-                        </button>
-                      </li>
+                      <PickRow
+                        key={id} title={row.title} category={row.category} regions={row.regions} date={row.date}
+                        badge={badge} on={on} full={full} onClick={() => toggleEarlier(row)}
+                      />
                     );
                   })}
                 </ul>
@@ -565,23 +575,21 @@ export default function AnalysisStudio() {
               </>
             )}
           </div>
-        </section>
+        </Card>
 
         {/* Step 2 — choose mode */}
-        <section className="as-panel">
-          <div className="as-panel-head">
-            <h2>2 · Choose your analysis</h2>
-          </div>
+        <Card as="section">
+          <SectionHeader label="2 · Choose your analysis" />
 
           <div className="as-modes">
-            <button className={`as-mode${mode === 'guided' ? ' on' : ''}`} onClick={() => setMode('guided')}>
+            <Chip selected={mode === 'guided'} onClick={() => setMode('guided')}>
               Guided lens
-            </button>
-            <button className={`as-mode${mode === 'freeform' ? ' on' : ''}`} onClick={() => setMode('freeform')}>
+            </Chip>
+            <Chip selected={mode === 'freeform'} onClick={() => setMode('freeform')}>
               Free-form
-            </button>
-            <button
-              className={`as-mode${mode === 'deep' ? ' on' : ''}`}
+            </Chip>
+            <Chip
+              selected={mode === 'deep'}
               onClick={() => canDeepResearch && setMode('deep')}
               disabled={!canDeepResearch}
               title={canDeepResearch
@@ -589,7 +597,7 @@ export default function AnalysisStudio() {
                 : `${provider?.label || 'This provider'}'s API can't search the web — choose Perplexity or Anthropic`}
             >
               Deep research <span className="as-mode-tag">web</span>
-            </button>
+            </Chip>
           </div>
 
           {mode === 'deep' ? (
@@ -617,6 +625,8 @@ export default function AnalysisStudio() {
                   return (
                     <button
                       key={l.id}
+                      type="button"
+                      aria-pressed={activeLensId === l.id}
                       className={`as-lens${activeLensId === l.id ? ' on' : ''}`}
                       onClick={() => setLensId(l.id)}
                       disabled={compareDisabled}
@@ -647,7 +657,7 @@ export default function AnalysisStudio() {
 
           {selectedTopics.length > 0 && (
             <div className="as-quote" aria-live="polite">
-              <div className="as-quote-head">What this run sends</div>
+              <SectionHeader as="h3" label="What this run sends" />
               {quoteLoading && !quote ? (
                 <div className="as-muted">Checking what's stored for these stories…</div>
               ) : quote ? (
@@ -655,7 +665,7 @@ export default function AnalysisStudio() {
                   <ul className="as-quote-stories">
                     {quote.perStory.map((p, i) => (
                       <li key={i}>
-                        <span className={`as-richness ${p.richness === 'RICH' ? 'rich' : 'thin'}`}>{p.richness}</span>
+                        <Richness value={p.richness} />
                         <span className="as-quote-story-title">{p.title}</span>
                         <span className="as-quote-story-counts">
                           {Object.entries(p.counts).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${SOURCE_KIND_LABELS[k] || k}`).join(' · ') || 'no stored material'}
@@ -671,9 +681,9 @@ export default function AnalysisStudio() {
             </div>
           )}
 
-          <button className="as-run" onClick={onRun} disabled={running}>
+          <Button variant="primary" className="as-run" onClick={onRun} disabled={running}>
             {running ? 'Analyzing…' : sections.length > 0 ? '+ Add analysis' : 'Run analysis'}
-          </button>
+          </Button>
           {sections.length > 0 && !running && (
             <div className="as-hint">Runs another lens on the same frozen sources — no new fetch.</div>
           )}
@@ -688,7 +698,7 @@ export default function AnalysisStudio() {
             <div className="as-hint">
               Don't want to manage an API key? A <strong>membership</strong> includes Studio runs plus the
               full self-correction history.{' '}
-              <button className="as-link-btn" onClick={() => navigate('/membership')}>See membership →</button>
+              <button type="button" className="as-link-btn" onClick={() => navigate('/membership')}>See membership →</button>
             </div>
           )}
           {error && (
@@ -697,22 +707,20 @@ export default function AnalysisStudio() {
               {looksLikeKeyError && (
                 <div className="as-error-actions">
                   This usually means the API key is wrong or expired.
-                  <button className="as-link-btn" onClick={() => setModalOpen(true)}>Change API key</button>
+                  <button type="button" className="as-link-btn" onClick={() => setModalOpen(true)}>Change API key</button>
                 </div>
               )}
             </div>
           )}
-        </section>
+        </Card>
       </div>
 
       {/* Result — S5c: a case's runs stack here (F2), with a DECK|BOARD toggle (F3,
           desktop) / READ·MAP·LOG tabs (phone, P1). StudioRunResult renders each section
           with the exact markup/classes a single run has always used (S5a/S5b). */}
       {(running || sections.length > 0) && (
-        <section className="as-result">
-          <div className="as-panel-head">
-            <h2>Analysis</h2>
-          </div>
+        <Card as="section" className="as-result">
+          <SectionHeader label="Analysis" />
           {!running && sections.length > 0 && <ShareControl sections={sections} selectedTopics={selectedTopics} byok={byok} />}
           {running && (
             <div className="as-muted">Running on {serverCapable && mode !== 'deep' && (isMember || !byok) ? 'Global Perspectives AI' : modelChip}…</div>
@@ -728,7 +736,7 @@ export default function AnalysisStudio() {
               category={selectedTopics[0]?.category}
             />
           )}
-        </section>
+        </Card>
       )}
 
       {modalOpen && (
@@ -745,7 +753,7 @@ export default function AnalysisStudio() {
 
       {blocked && (
         <div className="as-gate" role="dialog" aria-modal="true" aria-label="Sign in required" ref={gateRef}>
-          <div className="as-gate-card">
+          <Card className="as-gate-card">
             <div className="label">Analysis Studio</div>
             <h2>Sign in to analyze</h2>
             <p>
@@ -754,10 +762,10 @@ export default function AnalysisStudio() {
             </p>
             <SignedOutExample />
             <div className="as-gate-actions">
-              <button className="as-run" onClick={() => navigate('/signin')}>Sign in</button>
-              <button className="as-gate-back" onClick={() => navigate('/')}>Back to home</button>
+              <Button variant="primary" onClick={() => navigate('/signin')}>Sign in</Button>
+              <Button onClick={() => navigate('/')}>Back to home</Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

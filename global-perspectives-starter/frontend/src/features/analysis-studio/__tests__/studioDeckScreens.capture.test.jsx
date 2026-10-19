@@ -185,14 +185,14 @@ async function gotoSlide(titleText) {
 // which can land after a click on an older section's tab. Retry until that tab is selected.
 // Scoped to the switcher chips: a slide dot can carry the same name (the lens picture slide).
 function sectionChip(name) {
-  return [...document.querySelectorAll('.sd-switcher-chip')].find((el) => el.textContent.trim() === name);
+  return [...document.querySelectorAll('.sd-switcher .gp-chip')].find((el) => el.textContent.trim() === name);
 }
 async function selectSection(name) {
   await waitFor(() => {
     const chip = sectionChip(name);
     expect(chip).toBeTruthy();
-    if (chip.getAttribute('aria-selected') !== 'true') fireEvent.click(chip);
-    expect(sectionChip(name).getAttribute('aria-selected')).toBe('true');
+    if (chip.getAttribute('aria-pressed') !== 'true') fireEvent.click(chip);
+    expect(sectionChip(name).getAttribute('aria-pressed')).toBe('true');
   });
 }
 
@@ -264,7 +264,7 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     mockRunChatImpl = async () => ({ text: WHATCHANGED_TEXT, webSources: [], usage: { inputTokens: 700, outputTokens: 150, model: 'gpt-5.6' } });
     await runLens(/^what changed/i);
     // The switcher now offers both sections; the newest (What changed) is focused.
-    await waitFor(() => expect(container.querySelectorAll('.sd-switcher-chip').length).toBe(2));
+    await waitFor(() => expect(container.querySelectorAll('.sd-switcher .gp-chip').length).toBe(2));
     writeSnapshot('s5c2_deck_stacked_case', container);
 
     // Switching sections swaps the whole deck (map + slides + time bar) to that run.
@@ -273,7 +273,7 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     await waitFor(() => expect(screen.getByText(/Scenario timeline/i)).toBeInTheDocument());
 
     // F3 — DECK | READ AS TEXT | BOARD toggle
-    fireEvent.click(screen.getByRole('button', { name: 'BOARD' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'BOARD' }));
     await waitFor(() => expect(container.querySelector('.as-board-grid')).toBeTruthy());
     expect(screen.getAllByText(/Receipt/).length).toBeGreaterThan(0);
     writeSnapshot('s5c2_deck_board', container);
@@ -305,7 +305,7 @@ describe('Studio deck — S5c mocked-provider screen capture', () => {
     fireEvent.click(await screen.findByText('Naval standoff escalates in the Taiwan Strait'));
     await runLens(/^scenario forecast/i);
     await waitFor(() => expect(screen.getByRole('tab', { name: 'MAP' })).toBeInTheDocument());
-    expect(container.querySelector('.as-view-toggle')).toBeFalsy();
+    expect(container.querySelector('[aria-label="Result view"]')).toBeFalsy();
     expect(container.querySelector('.gp-console.psm-root')).toBeTruthy();
     writeSnapshot('s5c2_phone_read', container);
 

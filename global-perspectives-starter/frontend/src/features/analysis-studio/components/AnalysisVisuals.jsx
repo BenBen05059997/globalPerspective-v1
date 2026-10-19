@@ -3,7 +3,8 @@
 // layered on top of the prose, never a replacement for it — every component renders null
 // on missing/empty input (the honest fallback: no struct → no extra UI, prose stands alone).
 // Pure CSS (no d3, no new deps) — see AnalysisVisuals.css, built from the existing design
-// tokens (var(--accent), var(--ink*), var(--risk-*), var(--line)).
+// role tokens (var(--accent), var(--text-*), var(--hairline)); direction and confirm/kill read
+// from their glyphs, not from a colour.
 
 import '@/features/analysis-studio/components/AnalysisVisuals.css';
 

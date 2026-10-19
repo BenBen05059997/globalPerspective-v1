@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { buildSharePayload, shareableSections, sameCitations } from '@/features/analysis-studio/lib/sharePayload.js';
 import { shareConfigured, createShare, rememberShare, loadMyShares, forgetShare, deleteShare } from '@/features/analysis-studio/lib/shareApi.js';
+import Button from '@/shared/ui/Button.jsx';
 
 // ShareControl — "Share this analysis". Rendered ONLY when the share endpoint is configured AND at least one section
 // passed its checks (a failed run has no button at all; it already says "not shareable"). Sharing sends the run's
@@ -42,9 +43,9 @@ export default function ShareControl({ sections, selectedTopics, byok }) {
     <div className="as-share" data-testid="share-control">
       {!made ? (
         <>
-          <button type="button" className="as-run as-share-btn" onClick={onShare} disabled={busy || !consistent}>
+          <Button variant="primary" className="as-share-btn" onClick={onShare} disabled={busy || !consistent}>
             {busy ? 'Sharing…' : `Share ${ok.length > 1 ? `these ${ok.length} analyses` : 'this analysis'}`}
-          </button>
+          </Button>
           <span className="as-share-note">
             Creates an unlisted, read-only page (not indexed by search engines). We freeze the sources from our data and re-run the checks;
             anyone with the link can read it. You can delete it any time.

@@ -1,14 +1,14 @@
 'use strict';
 
-const { keepDayZero } = require('./dayZero');
+const { keepDayZero } = require('./_shared/dayZero');
+const { chat, stripCodeFence } = require('./_shared/llm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { normalizeDimensions, deriveRisk, clampScore } = require('./riskDimensions');
+const { normalizeDimensions, deriveRisk, clampScore } = require('./_shared/riskDimensions');
 const policy = require('./threadPolicy');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const GROK_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; the env sets the live model
-const GROK_ENDPOINT = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
 const GROK_KEY = process.env.XAI_API_KEY || '';
 const MAX_TOKENS = parseInt(process.env.MAX_TOKENS || '3500', 10);
 const TEMPERATURE = Number(process.env.TEMPERATURE || '0.2');
@@ -277,7 +277,7 @@ Generate a JSON object with exactly these fields:
 Return ONLY valid JSON. No markdown fences, no commentary, no extra keys.`;
 
   const { content, modelId, latencyMs } = await invokeGrok(prompt);
-  const cleaned = stripCodeFence(content);
+  const cleaned = stripCodeFence(content, { trailingCommas: true });
 
   let parsed;
   try {
@@ -364,51 +364,7 @@ async function writeAnalysis(threadId, analysis, entryCount, entryTopicIds = [])
   }));
 }
 
-const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
 async function invokeGrok(prompt) {
-  const started = Date.now();
-  const response = await fetch(GROK_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${GROK_KEY}`,
-    },
-    body: JSON.stringify(policy.buildRequestBody({ model: GROK_MODEL, prompt, maxTokens: MAX_TOKENS, temperature: TEMPERATURE, topP: TOP_P })),
-  });
-
-  const rawText = await response.text();
-  const latencyMs = Date.now() - started;
-
-  let parsed;
-  try {
-    parsed = JSON.parse(rawText);
-  } catch {
-    parsed = rawText;
-  }
-
-  if (!response.ok) {
-    const message = parsed?.error?.message || rawText || `status ${response.status}`;
-    throw new Error(`Grok API error: ${message}`);
-  }
-
-  logUsage('thread_analysis', GROK_MODEL, parsed?.usage);
-  const content = extractContent(parsed);
-  return { modelId: parsed?.model || GROK_MODEL, content, latencyMs };
-}
-
-function extractContent(payload) {
-  if (!payload) return '';
-  const msg = payload?.choices?.[0]?.message?.content;
-  if (typeof msg === 'string') return stripCodeFence(msg);
-  if (typeof payload === 'string') return payload.trim();
-  return JSON.stringify(payload);
-}
-
-function stripCodeFence(value) {
-  if (typeof value !== 'string') return value;
-  return value
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/```$/i, '')
-    .replace(/,(\s*[\]}])/g, '$1')
-    .trim();
+  const r = await chat({ step: 'thread_analysis', model: GROK_MODEL, user: prompt, maxTokens: MAX_TOKENS, temperature: TEMPERATURE, topP: TOP_P, json: true });
+  return { modelId: r.model, content: r.content, latencyMs: r.latencyMs };
 }

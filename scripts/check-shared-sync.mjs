@@ -139,10 +139,10 @@ function checkRiskDimensions(pathA, pathB) {
 // src/_shared symlink. The *_LAMBDAS lists below are the Lambdas that still carry their own copy (they must equal the
 // shared one); a Lambda leaves its list in the commit that moves it onto src/_shared.
 const SHARED = 'amplify/backend/shared/src';
-const RISK_LAMBDAS = ['newsThreadAnalysis'];
+const RISK_LAMBDAS = [];
 const SITCORE_LAMBDAS = ['newsGdacsIngest'];
 const SITCORE_TRACKER = 'newsSituationTracker'; // its copy carries the 2-line header (HEADER_2LINE)
-const DAYZERO_LAMBDAS = ['newsThreadAnalysis', 'newsPostDevTo'];
+const DAYZERO_LAMBDAS = ['newsPostDevTo'];
 
 /** N files must all be byte-identical to the first one (zero tolerance). */
 function checkAllIdentical(paths) {

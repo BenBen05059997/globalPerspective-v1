@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import { shortDate } from '@/features/threads/lib/storyMode.js';
+import Button from '@/shared/ui/Button.jsx';
+import ClaimTag from '@/features/threads/components/ClaimTag.jsx';
 
 // SharedActorsList — "Shares actors with" (STORY_WEB_RETHINK_PLAN §5.2d), the Read-in-full Why
 // section's FACT line: other stories whose analyses name the same actors. Rows come from
@@ -16,7 +18,7 @@ export default function SharedActorsList({ rows }) {
   return (
     <div className="sa" data-testid="shared-actors">
       <p className="sa-caption">
-        <span className="sa-badge">FACT</span> named actors that both stories&apos; analyses list. Shared actors do not mean one
+        <ClaimTag kind="fact" /> named actors that both stories&apos; analyses list. Shared actors do not mean one
         story caused the other.
       </p>
       {shown.length > 0 ? (
@@ -36,9 +38,9 @@ export default function SharedActorsList({ rows }) {
         </ul>
       ) : null}
       {weak.length > 0 ? (
-        <button type="button" className="sa-more" aria-expanded={showWeak} onClick={() => setShowWeak((v) => !v)}>
+        <Button compact className="sa-more" aria-expanded={showWeak} onClick={() => setShowWeak((v) => !v)}>
           {showWeak ? 'Hide' : 'Show'} {weak.length} weaker {weak.length === 1 ? 'overlap' : 'overlaps'} (one shared actor)
-        </button>
+        </Button>
       ) : null}
     </div>
   );

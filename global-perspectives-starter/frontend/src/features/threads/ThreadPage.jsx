@@ -8,7 +8,6 @@ import { useNarrativeThread } from '@/features/threads/hooks/useNarrativeThread'
 import { useThreadAnalyses } from '@/features/threads/hooks/useThreadAnalyses';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
-import { CATEGORY_BADGE_COLORS, riskScoreToVar as RISK_COLOR } from '@/shared/styles/tokens';
 import { tierFromScore, tierLabel, deriveHeadline } from '@/shared/lib/riskTiers';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
 import CopyBriefing, { formatThreadBriefing } from '@/shared/ui/CopyBriefing';
@@ -30,20 +29,17 @@ import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import FedIntoList, { FedIntoToggle } from '@/features/threads/components/FedIntoList';
 import SharedActorsList from '@/features/threads/components/SharedActorsList';
 import { buildChapters, shortDate } from '@/features/threads/lib/storyMode';
-// Monitor fix (S2.2 review): CompactTimeline / ShareButtons / CopyBriefing's classes
-// (.compact-timeline*, .story-card-chevron, .share-buttons*, .copy-briefing-btn) live in
-// WeeklyPage.css, not their own component files — the same reason CountryPage.jsx,
-// CountryListPage.jsx, AuthCallback.jsx and WeeklyMap.jsx already import it directly rather than
-// relying on another route's chunk having loaded it first. ThreadPage never had this import, so a
-// cold/direct load of a thread URL (no prior /weekly visit in the session) rendered the Timeline
-// tab's daily-coverage rows, source counts and chevrons as unstyled plain text — reproduced on the
-// dev server via a direct navigation, and it would surface in production too under stricter CSS
-// code-splitting even though this app's current build happens to bundle all CSS into one file.
+// CompactTimeline's classes (.compact-timeline*, .story-card-chevron, .story-entry-*) live in
+// WeeklyPage.css: imported here so a cold/direct load of a thread URL styles the Timeline tab.
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/ThreadPage.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import Button from '@/shared/ui/Button.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
+import TierChip from '@/shared/ui/TierChip.jsx';
 
 function humanizeThreadId(id) {
   return (id || '')
@@ -199,7 +195,6 @@ export default function ThreadPage() {
   const { data: economicImpact, loading: economicLoading } = useEconomicImpact(threadId, { enabled: !ECONOMY_PARKED });
   const hasEconomy = !ECONOMY_PARKED && economicImpact && economicImpact.hasImpact !== false;
   const category = thread?.entries[0]?.category?.toLowerCase();
-  const catColors = CATEGORY_BADGE_COLORS[category];
 
   // Related threads: same category + same region
   const relatedThreads = useMemo(() => {
@@ -294,36 +289,36 @@ export default function ThreadPage() {
     if (analysis || fallbackEconomy) {
       const fallbackTitle = analysis?.threadTitle || economicImpact?.headline || humanizeThreadId(threadId);
       return (
-        <div className="container" style={{ paddingTop: 48, paddingBottom: 60, maxWidth: 760 }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '0.08em', marginBottom: 14 }}>
-            <Link to="/economy" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Back to Economy</Link>
-            <span style={{ margin: '0 10px', color: 'var(--line-2)' }}>·</span>
-            <Link to="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Home</Link>
+        <div className="container tp-fallback">
+          <div className="tp-fallback-crumbs">
+            <Link to="/economy">← Back to Economy</Link>
+            <span className="tp-crumb-sep">·</span>
+            <Link to="/">← Home</Link>
           </div>
-          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 30, lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 12px' }}>{fallbackTitle}</h1>
-          <p style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--ink-mid)', lineHeight: 1.5, margin: '0 0 24px' }}>
+          <h1 className="tp-fallback-h1">{fallbackTitle}</h1>
+          <p className="tp-fallback-dek">
             Full timeline isn&apos;t available for this story (it&apos;s aged out of the 90-day window),
             but here&apos;s the analysis we have.
           </p>
 
           {fallbackEconomy && (
-            <div style={{ marginBottom: 24 }}>
+            <div className="tp-fallback-econ">
               <MechanismCard impact={economicImpact} />
             </div>
           )}
 
           {analysis && (analysis.storyArc || analysis.trajectory) && (
-            <div style={{ marginTop: 4 }}>
+            <div className="tp-fallback-analysis">
               {analysis.storyArc && (
                 <>
-                  <div className="tp-section-lbl" style={{ marginBottom: 8 }}>Story arc</div>
-                  <p style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.6, margin: '0 0 20px' }}>{analysis.storyArc}</p>
+                  <SectionHeader label="Story arc" />
+                  <p className="tp-fallback-text">{analysis.storyArc}</p>
                 </>
               )}
               {analysis.trajectory && (
                 <>
-                  <div className="tp-section-lbl" style={{ marginBottom: 8 }}>What&apos;s next</div>
-                  <p style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.6, margin: 0 }}>{analysis.trajectory}</p>
+                  <SectionHeader label="What's next" />
+                  <p className="tp-fallback-text">{analysis.trajectory}</p>
                 </>
               )}
             </div>
@@ -332,10 +327,10 @@ export default function ThreadPage() {
       );
     }
     return (
-      <div className="tp-page" style={{ paddingTop: 60, textAlign: 'center' }}>
-        <h3 style={{ fontFamily: 'var(--serif)', fontSize: 28, marginBottom: 12 }}>Story arc not found</h3>
-        <p style={{ color: 'var(--ink-mid)', marginBottom: 24 }}>This thread may have expired or the link may be incorrect.</p>
-        <Link to="/weekly" style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--accent)' }}>← Back to Threads</Link>
+      <div className="tp-page tp-notfound">
+        <h3 className="tp-notfound-h">Story arc not found</h3>
+        <p className="tp-notfound-p">This thread may have expired or the link may be incorrect.</p>
+        <Link to="/weekly" className="tp-notfound-link">← Back to Threads</Link>
       </div>
     );
   }
@@ -374,7 +369,7 @@ export default function ThreadPage() {
 
       {relatedThreads.sameCategory.length > 0 && (
         <>
-          <div className="tp-left-hd">Related threads</div>
+          <SectionHeader as="h3" label="Related threads" />
           {relatedThreads.sameCategory.map(t => {
             return (
               <StoryLink key={t.threadId} threadId={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
@@ -391,7 +386,7 @@ export default function ThreadPage() {
 
       {relatedThreads.sameRegion.length > 0 && (
         <>
-          <div className="tp-left-hd" style={{ marginTop: 20 }}>Watching · region</div>
+          <SectionHeader as="h3" label="Watching · region" className="tp-left-sec" />
           {relatedThreads.sameRegion.map(t => (
             <StoryLink key={t.threadId} threadId={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
               <div className="tp-related-kicker">
@@ -509,7 +504,7 @@ export default function ThreadPage() {
               only the way BACK, shown once we're actually on the full page, so there is never
               more than one "Read in full"-ish control on screen at once. */}
           {readFull && (
-            <button type="button" className="tp-analyze-link" onClick={() => setReadFull(false)}>← Story mode</button>
+            <Button compact onClick={() => setReadFull(false)}>← Story mode</Button>
           )}
         </div>
       </div>
@@ -549,11 +544,9 @@ export default function ThreadPage() {
         {/* Thread header */}
         <div className="tp-hd">
           <div className="tp-hd-kicker">
-            {catColors && (
-              <CategoryTag category={category} />
-            )}
+            <CategoryTag category={category} />
             {thread?.entries[0]?.urgency === 'high' && (
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-head)', border: '1px solid var(--text-head)', padding: '0 6px', borderRadius: 3 }}>URGENT</span>
+              <span className="tp-urgent">URGENT</span>
             )}
             <SourceRobustness outlets={thread.allSources.length} regions={thread.regions?.length} size="md" />
             Story Arc · {thread.dayCount} days
@@ -578,8 +571,8 @@ export default function ThreadPage() {
         <div className="tp-stats">
           <div className="tp-stat">
             <div className="tp-stat-k">Thread Risk</div>
-            <div className="tp-stat-v tier" style={{ color: RISK_COLOR(analysis?.riskScore) }}>
-              {analysis?.riskScore != null ? tierLabel(tierFromScore(analysis.riskScore)) : '—'}
+            <div className="tp-stat-v tier">
+              <TierChip tier={tierFromScore(analysis?.riskScore)} />
             </div>
             <div className="tp-stat-d">{analysis?.riskScore != null ? `${analysis.riskScore} / 100` : '/100'}</div>
           </div>
@@ -595,7 +588,7 @@ export default function ThreadPage() {
           </div>
           <div className="tp-stat">
             <div className="tp-stat-k">Sentiment</div>
-            <div className="tp-stat-v" style={{ color: analysis?.sentiment != null && analysis.sentiment < -0.3 ? 'var(--risk-h)' : 'var(--ink)' }}>
+            <div className="tp-stat-v">
               {analysis?.sentiment != null ? (analysis.sentiment > 0 ? '+' : '') + analysis.sentiment.toFixed(1) : '—'}
             </div>
             <div className="tp-stat-d">−1 to +1</div>
@@ -603,20 +596,8 @@ export default function ThreadPage() {
         </div>
 
         {/* Content tabs */}
-        <div className="tp-content-tabs" role="tablist" aria-label="Thread evidence views">
-          {contentTabs.map(tab => (
-            <button
-              key={tab.key}
-              role="tab"
-              aria-selected={activeTab === tab.key}
-              className={`tp-content-tab${activeTab === tab.key ? ' on' : ''}`}
-              onClick={() => setContentTab(tab.key)}
-            >
-              {tab.label}
-              <span className="tp-tab-count">{tab.count}</span>
-            </button>
-          ))}
-        </div>
+        <Tabs idBase="tp" label="Thread evidence views" tabs={contentTabs} active={activeTab} onChange={setContentTab} className="tp-content-tabs" />
+        <div className="tp-tabpanel" {...tabPanelProps('tp', activeTab)}>
 
         {/* Overview tab — the synthesis, as short collapsible sections in reading order */}
         {activeTab === 'overview' && hasOverview && (
@@ -646,7 +627,7 @@ export default function ThreadPage() {
                 hasn't been part of a cross-story analysis, or the analysis found no links). */}
             {fedInto.length > 0 && (
               <OverviewSection label="News this story is judged to feed into" count={fedInto.length}>
-                <p className="tp-ov-text" style={{ fontStyle: 'italic', fontSize: 12.5 }}>
+                <p className="tp-ov-text tp-ov-text--note">
                   Links are between stories; we don&apos;t know which event in this story drove each one.
                 </p>
                 <FedIntoList links={fedInto} direction="into" />
@@ -692,8 +673,6 @@ export default function ThreadPage() {
             <CompactTimeline
               entries={thread.entries}
               entryShortTitles={analysis.entryShortTitles}
-              dotColor={catColors?.color}
-              inflectionTopicId={analysis.inflectionTopicId}
             />
           ) : thread.dayCount > 1 ? (
             <div className="tp-tl">
@@ -710,7 +689,7 @@ export default function ThreadPage() {
                         {entry.sources.slice(0, 3).map((s, j) => (
                           <span key={j}>
                             <b>{s.source || 'Source'}</b>
-                            {s.tier === 'secondary' && <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: '#999', marginLeft: 3 }}>secondary</span>}
+                            {s.tier === 'secondary' && <span className="tp-tl-sec">secondary</span>}
                           </span>
                         ))}
                       </div>
@@ -726,8 +705,8 @@ export default function ThreadPage() {
             links this story feeds into / from — S6-style, hidden entirely when there are none. */}
         {activeTab === 'timeline' && chapters.length > 0 && (fedInto.length > 0 || fedFrom.length > 0) && (
           <div className="tp-chapters-web">
-            <div className="tp-section-lbl" style={{ margin: '18px 0 4px' }}>Chapters</div>
-            <p style={{ fontSize: 11.5, fontStyle: 'italic', color: 'var(--ink-dim)', margin: '0 0 10px' }}>
+            <SectionHeader as="h3" label="Chapters" />
+            <p className="tp-chapters-note">
               CH1–CH{chapters.length} above group this story&apos;s own timeline. Links are between whole stories — we
               don&apos;t know which event in this story drove each one, so they&apos;re listed once below, not
               pinned to a chapter.
@@ -779,14 +758,12 @@ export default function ThreadPage() {
           <>
             <MechanismCard impact={economicImpact} />
             {/* Up-link: /weekly-markets retired to /briefings (economy parked), which shows the paused note */}
-            <Link
-              to="/briefings?from=markets"
-              style={{ display: 'inline-block', marginTop: 16, fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', textDecoration: 'none', color: 'var(--accent)' }}
-            >
+            <Link to="/briefings?from=markets" className="tp-econ-link">
               This story moved markets this week →
             </Link>
           </>
         )}
+        </div>
 
       </EditorialShell>
       )}

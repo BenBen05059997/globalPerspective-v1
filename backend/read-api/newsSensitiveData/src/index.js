@@ -3,9 +3,10 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand, QueryCommand, BatchGetCommand } = require('@aws-sdk/lib-dynamodb');
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
-const { isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
+const { countryKeys, briefWithIso3, weeklyWithIso3, webWithIso3, triggerVerdict, isoWeekOfDay, questionSampleState, questionOutcomeState, latestVerdictRow, capForTier, dedupeByAsOf, latestDayLabel, dedupeTopicDate, lightEntry, unionByTopicId, pickLatestBrief, briefKeys, shapeCountryFacts } = require('./lib');
 const { assembleDossier } = require('./dossier');
 const { isCountryName } = require('./_shared/placeFilter');
+const { iso3List } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
 const { chat } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
@@ -370,7 +371,7 @@ exports.handler = async (event) => {
         }
         const { PK, SK, ttl, ...rest } = Item;
         console.info('newsSensitiveData daily_brief response', { dateKey, found: true });
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: briefWithIso3(rest) }) };
       } catch (err) {
         console.error('daily_brief read error:', err);
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
@@ -394,7 +395,7 @@ exports.handler = async (event) => {
         console.info('newsSensitiveData latest_daily_brief response', { keys: keys.length, found: found.length, dateKey: item?.dateKey || null });
         if (!item) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null, dateKey: null, editions: [] }) };
         const { PK, SK, ttl, ...rest } = item;
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest, dateKey: rest.dateKey, editions }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: briefWithIso3(rest), dateKey: rest.dateKey, editions }) };
       } catch (err) {
         console.error('latest_daily_brief read error:', err);
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null, dateKey: null, editions: [] }) };
@@ -402,8 +403,20 @@ exports.handler = async (event) => {
     }
 
     if (action === 'weekly_brief') {
-      // Latest PUBLISHED weekly intelligence brief (human-approved via weekly/review.js).
+      // Latest PUBLISHED weekly intelligence brief (human-approved via weekly/review.js), or the published
+      // brief of one past week with {week: 'YYYY-MM-DD'} (its weekOf, the WEEKLY_BRIEF#<weekOf> key).
       try {
+        const week = payload?.week || qs?.week;
+        if (week !== undefined) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(String(week))) return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'week must be YYYY-MM-DD' }) };
+          const { Item } = await getDynamoClient().send(new GetCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE, Key: { PK: `WEEKLY_BRIEF#${week}`, SK: 'WEEKLY_BRIEF' },
+          }));
+          console.info('newsSensitiveData weekly_brief response', { week, found: Boolean(Item && Item.status === 'published') });
+          if (!Item || Item.status !== 'published') return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
+          const { PK, SK, ttl, ...rest } = Item;
+          return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: weeklyWithIso3(rest) }) };
+        }
         // Paginate — the table outgrew the 1MB scan page, so a single-page scan
         // misses published briefs that sit past the first page (bit us 2026-07-03).
         const Items = [];
@@ -427,7 +440,7 @@ exports.handler = async (event) => {
         const latest = Items.sort((a, b) => String(b.weekOf).localeCompare(String(a.weekOf)))[0];
         const { PK, SK, ttl, ...rest } = latest;
         console.info('newsSensitiveData weekly_brief response', { weekOf: rest.weekOf });
-        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: rest }) };
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: weeklyWithIso3(rest) }) };
       } catch (err) {
         console.error('weekly_brief read error:', err);
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
@@ -545,13 +558,16 @@ exports.handler = async (event) => {
       const client = getDynamoClient();
       await Promise.all(countryNames.map(async (name) => {
         try {
-          const { Item } = await client.send(new GetCommand({
-            TableName: SUMMARIZE_PREDICT_TABLE,
-            Key: { PK: `COUNTRY#${name}`, SK: 'COUNTRY_INTELLIGENCE' },
-          }));
-          if (Item) {
-            const { PK, SK, ttl, ...rest } = Item;
-            data[name] = rest;
+          for (const key of countryKeys(name)) { // canonical record first, then the requested spelling
+            const { Item } = await client.send(new GetCommand({
+              TableName: SUMMARIZE_PREDICT_TABLE,
+              Key: { PK: `COUNTRY#${key}`, SK: 'COUNTRY_INTELLIGENCE' },
+            }));
+            if (Item) {
+              const { PK, SK, ttl, ...rest } = Item;
+              data[name] = rest;
+              break;
+            }
           }
         } catch {}
       }));
@@ -573,12 +589,14 @@ exports.handler = async (event) => {
       const client = getDynamoClient();
       await Promise.all(countryNames.map(async (name) => {
         try {
-          const { Item } = await client.send(new GetCommand({
-            TableName: SUMMARIZE_PREDICT_TABLE,
-            Key: { PK: `FACTS#${name}`, SK: 'COUNTRY_FACTS' },
-          }));
-          const shaped = shapeCountryFacts(Item);
-          if (shaped) data[name] = shaped;
+          for (const key of countryKeys(name)) { // canonical record first, then the requested spelling
+            const { Item } = await client.send(new GetCommand({
+              TableName: SUMMARIZE_PREDICT_TABLE,
+              Key: { PK: `FACTS#${key}`, SK: 'COUNTRY_FACTS' },
+            }));
+            const shaped = shapeCountryFacts(Item);
+            if (shaped) { data[name] = shaped; break; }
+          }
         } catch {}
       }));
       console.info('newsSensitiveData country_facts response', { requested: countryNames.length, found: Object.keys(data).length });
@@ -592,11 +610,11 @@ exports.handler = async (event) => {
       }
       const client = getDynamoClient();
       try {
-        const [histOut, driftOut, archiveOut] = await Promise.all([
+        const readCountry = (key) => Promise.all([
           client.send(new QueryCommand({
             TableName: SUMMARIZE_PREDICT_TABLE,
             KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
-            ExpressionAttributeValues: { ':pk': `COUNTRY#${countryName}`, ':prefix': 'HISTORY#' },
+            ExpressionAttributeValues: { ':pk': `COUNTRY#${key}`, ':prefix': 'HISTORY#' },
             ScanIndexForward: false,
             Limit: 90,
           })),
@@ -604,7 +622,7 @@ exports.handler = async (event) => {
           client.send(new QueryCommand({
             TableName: SUMMARIZE_PREDICT_TABLE,
             KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
-            ExpressionAttributeValues: { ':pk': `COUNTRY#${countryName}`, ':prefix': 'DRIFT#' },
+            ExpressionAttributeValues: { ':pk': `COUNTRY#${key}`, ':prefix': 'DRIFT#' },
             ScanIndexForward: false,
             Limit: 10,
           })),
@@ -613,11 +631,17 @@ exports.handler = async (event) => {
           client.send(new QueryCommand({
             TableName: SUMMARIZE_PREDICT_TABLE,
             KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
-            ExpressionAttributeValues: { ':pk': `COUNTRY#${countryName}`, ':prefix': 'DRIFTLOG#' },
+            ExpressionAttributeValues: { ':pk': `COUNTRY#${key}`, ':prefix': 'DRIFTLOG#' },
             ScanIndexForward: false,
             Limit: 90,
           })),
         ]);
+        // canonical record first, then the requested spelling (records not yet merged)
+        let histOut, driftOut, archiveOut;
+        for (const key of countryKeys(countryName)) {
+          [histOut, driftOut, archiveOut] = await readCountry(key);
+          if ([histOut, driftOut, archiveOut].some((o) => (o.Items || []).length)) break;
+        }
         const snapshots = (histOut.Items || []).map(({ PK, SK, ttl, ...rest }) => rest);
         // Correction-history DEPTH is the member perk (MEMBER_GATING_PLAN.md): non-members get the
         // latest note free + an honest count of how many more; members get the full chain. The
@@ -654,7 +678,7 @@ exports.handler = async (event) => {
             TableName: SUMMARIZE_PREDICT_TABLE,
             FilterExpression: 'begins_with(SK, :d)',
             ExpressionAttributeValues: { ':d': 'DRIFT#' },
-            ProjectionExpression: 'PK, SK, asOf, changeLevel, changeScore, changeDimensions, triggerEvent, whyChanged, noSingleDriver, directionFlag',
+            ProjectionExpression: 'PK, SK, threadId, asOf, changeLevel, changeScore, changeDimensions, triggerEvent, whyChanged, noSingleDriver, directionFlag',
             ExclusiveStartKey,
           }));
           items.push(...(res.Items || []));
@@ -664,9 +688,14 @@ exports.handler = async (event) => {
         const notes = items.map((it) => {
           const pk = String(it.PK || '');
           const scope = pk.startsWith('COUNTRY#') ? 'country' : pk.startsWith('THREAD#') ? 'thread' : 'other';
+          const name = pk.replace(/^(COUNTRY#|THREAD#)/, '');
           return {
             scope,
-            name: pk.replace(/^(COUNTRY#|THREAD#)/, ''),
+            name,
+            // links: a country note's iso3 (resolver over its name), the thread (a thread note's own, else the
+            // trigger event's thread)
+            iso3: scope === 'country' ? iso3List([name]) : [],
+            threadId: it.threadId || it.triggerEvent?.threadId || null,
             asOf: it.asOf || String(it.SK || '').replace(/^DRIFT#/, ''),
             changeLevel: it.changeLevel || null,
             changeScore: it.changeScore || null,
@@ -770,7 +799,7 @@ exports.handler = async (event) => {
             id: t.id,
             text: t.text,
             deadline: t.deadline,
-            verdict: t.finalVerdict || null,
+            verdict: triggerVerdict(t.finalVerdict, t.question === true && t.qid ? qInfo.get(t.qid)?.state : null),
             confirmedBy: t.confirmedBy || null,
             citation: t.agentVerdict?.evidence?.[0]?.url || t.agentVerdict?.evidence?.[0]?.title || null,
             ...(t.question === false ? { question: false } : {}),
@@ -783,6 +812,7 @@ exports.handler = async (event) => {
 
         const snapshot = scenarios.length ? {
           topicId: it.topicId,
+          threadId: it.threadId || (typeof askedThreadId === 'string' && askedThreadId) || null,
           title: it.title || null,
           generatedAt: it.generatedAt || it.SK || null,
           status: it.status || 'open',
@@ -803,10 +833,14 @@ exports.handler = async (event) => {
       }
       const client = getDynamoClient();
       try {
-        const { Item } = await client.send(new GetCommand({
-          TableName: SUMMARIZE_PREDICT_TABLE,
-          Key: { PK: `SYSTEMS#${countryName}`, SK: 'SYSTEMS_ANALYSIS' },
-        }));
+        let Item;
+        for (const key of countryKeys(countryName)) { // canonical record first, then the requested spelling
+          ({ Item } = await client.send(new GetCommand({
+            TableName: SUMMARIZE_PREDICT_TABLE,
+            Key: { PK: `SYSTEMS#${key}`, SK: 'SYSTEMS_ANALYSIS' },
+          })));
+          if (Item) break;
+        }
         if (!Item) {
           return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Systems analysis not found for this country' }) };
         }
@@ -828,13 +862,14 @@ exports.handler = async (event) => {
       try {
         const { Item: idx } = await client.send(new GetCommand({ TableName: SUMMARIZE_PREDICT_TABLE, Key: { PK: 'WEB#INDEX', SK: 'LATEST' } }));
         if (!idx) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: null }) };
-        const { PK, SK, ...index } = idx; // eslint-disable-line no-unused-vars
+        const { PK, SK, ...stored } = idx; // eslint-disable-line no-unused-vars
+        const index = webWithIso3(stored);
         const threadId = payload?.threadId || qs?.threadId;
         if (!threadId) return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: index }) };
         const meta = (index.threads && index.threads[threadId]) || null;
         const { Item: rec } = await client.send(new GetCommand({ TableName: SUMMARIZE_PREDICT_TABLE, Key: { PK: `THREAD#${threadId}`, SK: 'WEB' } }));
         let record = null;
-        if (rec && rec.runId === index.runId) { const { PK: _p, SK: _s, ...rest } = rec; record = rest; } // eslint-disable-line no-unused-vars
+        if (rec && rec.runId === index.runId) { const { PK: _p, SK: _s, ...rest } = rec; record = webWithIso3(rest); } // eslint-disable-line no-unused-vars
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, data: {
           threadId, runId: index.runId, generatedAt: index.generatedAt, targets: index.targets, maxAgeDays: index.maxAgeDays,
           state: record ? record.state : (meta ? meta.state : null), meta, record,
@@ -1107,7 +1142,7 @@ exports.handler = async (event) => {
         do {
           const res = await client.send(new ScanCommand({
             TableName: PREDICTION_LOG_TABLE,
-            ProjectionExpression: 'title, category, generatedAt, scenarios, methodologyVersion',
+            ProjectionExpression: 'PK, topicId, threadId, title, category, generatedAt, scenarios, methodologyVersion',
             ExclusiveStartKey,
           }));
           items.push(...(res.Items || []));
@@ -1138,6 +1173,7 @@ exports.handler = async (event) => {
           for (const s of it.scenarios || []) {
             const p = typeof s.probability === 'number' ? s.probability : null;
             for (const t of s.triggers || []) {
+              if (t.question === true) continue; // scored by the question board (newsPredictionsSnapshot), as in trackRecord.js
               if (!t.deadline) continue;
               totalTriggers++;
               const v = t.finalVerdict;
@@ -1169,6 +1205,8 @@ exports.handler = async (event) => {
                 citation,
                 confirmedBy: t.confirmedBy || null,
                 confirmedAt: t.confirmedAt || null,
+                qid: t.qid || null,
+                clusterKey: it.threadId || it.topicId || it.PK || null,
               });
             }
           }
@@ -1842,14 +1880,7 @@ async function readArchiveRange(days) {
       if (Item && Array.isArray(Item.entries) && Item.entries.length > 0) {
         // Strip heavy AI fields to keep response under 6MB Lambda payload limit
         result[dateLabel] = {
-          entries: Item.entries.map(e => ({
-            topicId: e.topicId || e.id,
-            title: e.title,
-            category: Array.isArray(e.categories) ? e.categories[0] || '' : (e.category || ''),
-            regions: e.regions || [],
-            sources: e.sources || [],
-            threadId: e.threadId || null,
-          })),
+          entries: Item.entries.map(lightEntry),
           source: 'archive',
           updatedAt: Item.updatedAt || null,
         };

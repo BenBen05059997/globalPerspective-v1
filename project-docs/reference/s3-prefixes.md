@@ -20,8 +20,8 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `corpus/gdacs/latest.json` | newsImpactAudit | yes |
 | `corpus/gdelt/` | newsGdeltConflict, newsImpactAudit | yes |
 | `predictions/track_record.json` | newsPredictionsSnapshot, newsSensitiveData | yes |
-| `shadow/situations/` | newsSituationTracker | no |
-| `shadow/situations/index.json` | newsSituationTracker | no |
+| `shadow/situations/` | newsSituationTracker | yes |
+| `shadow/situations/index.json` | newsSituationTracker | yes |
 | `signals/` | newsSignals | yes |
 | `situations/archive/` | newsSituationTracker | yes |
 | `situations/history/` | newsSituationTracker | yes |
@@ -31,7 +31,7 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `stories/classify-cache.json` | newsSituationIngest | yes |
 | `stories/index.json` | newsSituationIngest, newsSituationTracker | yes |
 | `stories/state/` | NewsProjectInvokeAgentLambda, newsSituationIngest | yes |
-| `threads/story-map.json` | NewsProjectInvokeAgentLambda, newsSituationTracker | no |
+| `threads/story-map.json` | NewsProjectInvokeAgentLambda, newsSituationTracker | yes |
 | `world/latest.json` | newsSituationTracker | yes |
 | `world/latest.member.json` | newsSituationTracker | yes |
 | `world/shadow/` | newsSituationTracker | yes |
@@ -60,18 +60,19 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `stories/state/<storyId>.json`, `stories/index.json` | `newsSituationIngest` | hourly | tracker, map detail |
 | `stories/classify-cache.json` | `newsSituationIngest` | hourly (overwrite) | `newsSituationIngest` only |
 | `situations/inbox/gdacs-latest.json` | `newsGdacsIngest` — full-snapshot source | 20 min | tracker (read every sweep) |
-| `situations/inbox/<ts>-<source>-<id>.json` | per-event openers (`newsBreakingAlert`, later GDELT) | 4h | tracker (read + move to `processed/`) |
-| `situations/state/<id>.json`, `situations/index.json` | `newsSituationTracker` | 10-min sweep | map, thread/country pages |
+| `situations/state/<id>.json`, `situations/index.json` | `newsSituationTracker` | 30-min sweep | map, thread/country pages |
 | `situations/archive/<id>.json` | `newsSituationTracker` | on close+age-out | audit / life-story record (IA 30d) |
 | `situations/history/YYYY/MM/DD/HH/HHMM.json` | `newsSituationTracker` | each sweep | scrubber, `scripts/situations-log.mjs` |
 | `world/latest.json`, `world/YYYY/MM/DD/HHMM.json` | `newsSituationTracker` (assembles at end of sweep) | each sweep | **frontend** (via Worker) |
 | `world/latest.member.json` | `newsSituationTracker` | each sweep | frontend, JWT-gated at the Worker |
-| `world/shadow/…` | tracker in `DRY_RUN` | each sweep | humans, tuning |
+| `world/shadow/…`, `shadow/situations/…` | tracker in `DRY_RUN` (live `DRY_RUN=false`, so not written today) | each sweep | humans, tuning, `scripts/situations-log.mjs --shadow` |
+| `threads/story-map.json` | `NewsProjectInvokeAgentLambda` (matcher) | each story run (8h) | `newsSituationTracker` (stamps `threadId`) |
+| `tags/backfill/2026-09-11.json` | one-off matcher backfill; writer not in the repo | — | none |
 | `fixtures/` | humans | — | local dev, Worker smoke |
 | `signals/latest.json`, `signals/snapshots/YYYY-MM-DD.json` | `newsSignals` | daily build (cron-only) | `newsSignals` SERVE only — **never** the Worker (paid, key-gated product) |
 | `corpus/gdacs/latest.json` | `newsGdacsIngest` | each 20-min run | `newsImpactAudit` |
 | `corpus/gdelt/<day>.json` | `newsGdeltConflict` | each run (overwrite per day) | `newsImpactAudit` |
-| `audit/impact/<date>.json`, `audit/impact/latest.json` | `newsImpactAudit` | daily | audit trail / operator |
-| `audit/ingest-capture/latest.json` | `newsInvokeGemini` | each generation (every 4h) | `newsImpactAudit` |
+| `audit/impact/<date>.json`, `audit/impact/latest.json` | `newsImpactAudit` | daily — parked (schedule DISABLED, decisions/0015) | audit trail / operator |
+| `audit/ingest-capture/latest.json` | `newsInvokeGemini` | each generation (3×/day) | `newsImpactAudit` (parked), `newsSelectionShadow` |
 | `audit/selection-shadow/YYYY-MM-DD/HHMM.json`, `latest.json` | `newsSelectionShadow` | 3×/day, 5 min after selection | operator review only |
 | `predictions/track_record.json` | `newsPredictionsSnapshot` | `rate(30 min)` | `newsSensitiveData` proxy (`prediction_track_record`) — precomputed aggregate; PredictionLog DDB stays as the mutable store |

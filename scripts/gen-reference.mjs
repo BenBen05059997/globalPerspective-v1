@@ -19,6 +19,7 @@ const SRC = join(ROOT, 'global-perspectives-starter/frontend/src');
 const REGION = 'ap-northeast-1';
 const OFFLINE = process.argv.includes('--offline');
 const TODAY = new Date().toISOString().slice(0, 10);
+const SHARED = 'backend/shared'; // the one copy of shared Lambda code; each consumer links it as src/_shared
 const FUNCTIONS = JSON.parse(readFileSync(join(ROOT, 'scripts/functions.json'), 'utf8')).functions;
 const NAMES = Object.keys(FUNCTIONS).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
 
@@ -36,13 +37,15 @@ function header(title, sources) {
 function walk(dir, exts) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir).flatMap((name) => {
-    if (name === 'node_modules' || name.startsWith('.')) return [];
+    // src/_shared links to backend/shared/src: scanned once as SHARED, not once per Lambda.
+    if (name === 'node_modules' || name === '_shared' || name.startsWith('.')) return [];
     const p = join(dir, name);
     if (statSync(p).isDirectory()) return walk(p, exts);
     return exts.some((e) => name.endsWith(e)) ? [p] : [];
   });
 }
 
+const usesShared = (dir) => Boolean(dir) && existsSync(join(ROOT, dir, 'src/_shared'));
 const lambdaSources = (dir) => (dir ? walk(join(ROOT, dir, 'src'), ['.js', '.mjs', '.cjs']).filter((f) => !/\.test\.|__tests__|\/test_/.test(f)) : []);
 
 // ---------- live AWS (one place, so --offline skips all of it) ----------
@@ -137,22 +140,25 @@ const files = {};
   };
   // Set by the Lambda runtime itself, never in the function's env map.
   const AWS_RUNTIME_KEYS = new Set(['AWS_REGION', 'AWS_DEFAULT_REGION', 'AWS_LAMBDA_FUNCTION_NAME', 'AWS_LAMBDA_FUNCTION_VERSION', 'AWS_EXECUTION_ENV', 'LAMBDA_TASK_ROOT']);
-  const lines = [];
+  const sharedKeys = readInCode(SHARED);
+  const lines = [`## Shared code (\`${SHARED}/src\`, linked as \`src/_shared\`)\n`,
+    `- Reads: ${sharedKeys.length ? sharedKeys.map(code).join(', ') : '—'}. Listed once here: a Lambda that links it counts these as read, and they are not listed below as unset.`, ''];
   for (const n of NAMES) {
     const f = FUNCTIONS[n];
     const inCode = readInCode(f.dir);
+    const readable = usesShared(f.dir) ? [...inCode, ...sharedKeys] : inCode;
     lines.push(`## ${n}\n`);
     if (live) {
       const set = live.envKeys[n];
       lines.push(`- Live keys: ${set.length ? set.map(code).join(', ') : '—'}`);
       if (f.dir) {
-        const unread = set.filter((k) => !inCode.includes(k));
+        const unread = set.filter((k) => !readable.includes(k));
         const unset = inCode.filter((k) => !set.includes(k) && !AWS_RUNTIME_KEYS.has(k));
         lines.push(`- Set live, not read in repo source: ${unread.length ? unread.map(code).join(', ') : '—'}`);
         lines.push(`- Read in repo source, not set live (code default applies): ${unset.length ? unset.map(code).join(', ') : '—'}`);
       }
     } else {
-      lines.push(`- Read in repo source: ${inCode.length ? inCode.map(code).join(', ') : '—'}`);
+      lines.push(`- Read in repo source: ${inCode.length ? inCode.map(code).join(', ') : '—'}${usesShared(f.dir) ? ' (+ shared code)' : ''}`);
     }
     if (!f.dir) lines.push('- No repo source dir.');
     lines.push('');
@@ -218,8 +224,7 @@ const files = {};
   // MIME types, user agents, model ids and frontend paths are excluded.
   const NOT_S3 = /^(application|text|image|audio|video|multipart|features|shared|scripts|n)\/|\/\d|:|\.\.\./;
   const hits = [];
-  for (const n of NAMES) {
-    const dir = FUNCTIONS[n].dir;
+  for (const dir of [...NAMES.map((n) => FUNCTIONS[n].dir).filter(Boolean), SHARED]) {
     for (const f of lambdaSources(dir)) {
       for (const line of readFileSync(f, 'utf8').split('\n')) {
         if (/^\s*(import|\/\/|\*|\/\*)/.test(line)) continue;

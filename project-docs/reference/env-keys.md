@@ -6,6 +6,10 @@ Sources: `aws lambda get-function-configuration --query keys(Environment.Variabl
 
 Key NAMES only — values are never fetched into this file. Some deployed zips differ from the repo (see lambdas.md notes), so "read in repo source" can lag the deployed code. Env names can be misleading (e.g. `GROK_*`/`XAI_*` may hold another provider) — check the live value before assuming.
 
+## Shared code (`backend/shared/src`, linked as `src/_shared`)
+
+- Reads: `AWS_LAMBDA_FUNCTION_NAME`, `GROK_API_URL`, `OPENROUTER_API_KEY`, `XAI_API_KEY`. Listed once here: a Lambda that links it counts these as read, and they are not listed below as unset.
+
 ## newsAnalyze
 
 - Live keys: `ANALYZE_DAILY_CAP`, `FIREBASE_PROJECT_ID`, `GROK_API_URL`, `GROK_MODEL`, `MAX_TOKENS`, `USERS_DDB_TABLE`, `XAI_API_KEY`
@@ -21,7 +25,7 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `ALERT_EMAIL_FROM`, `ALERT_EMAIL_TO`, `BREAKING_ALERTS_TABLE`, `DRY_RUN`, `RESEND_API_KEY`, `SITE_URL`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`
 - Set live, not read in repo source: —
-- Read in repo source, not set live (code default applies): `DEDUPE_DAYS`, `DEDUPE_TTL_DAYS`, `GROK_API_URL`, `OPENROUTER_API_KEY`, `SIGNIFICANCE_THRESHOLD`, `XAI_API_KEY`
+- Read in repo source, not set live (code default applies): `DEDUPE_DAYS`, `DEDUPE_TTL_DAYS`, `SIGNIFICANCE_THRESHOLD`
 
 ## newsClientErrors
 
@@ -39,13 +43,13 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `GROK_API_URL`, `GROK_MODEL`, `LLM_CONCURRENCY`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `XAI_API_KEY`, `XAI_API_KEY_BACKUP`
 - Set live, not read in repo source: `XAI_API_KEY_BACKUP`
-- Read in repo source, not set live (code default applies): `BRAVE_SEARCH_API_KEY`, `COUNTRY_BASELINE_HOURS`, `COUNTRY_MAX_ALERT_EXTRAS`, `COUNTRY_TOP_N`, `COVERAGE_JUMP_FACTOR`, `COVERAGE_JUMP_MIN`, `MAX_TOKENS`, `OPENROUTER_API_KEY`, `TEMPERATURE`, `TOP_P`, `WORLD_LATEST_URL`
+- Read in repo source, not set live (code default applies): `BRAVE_SEARCH_API_KEY`, `COUNTRY_BASELINE_HOURS`, `COUNTRY_MAX_ALERT_EXTRAS`, `COUNTRY_TOP_N`, `COVERAGE_JUMP_FACTOR`, `COVERAGE_JUMP_MIN`, `MAX_TOKENS`, `TEMPERATURE`, `TOP_P`, `WORLD_LATEST_URL`
 
 ## newsDriftCorrector
 
 - Live keys: `DRIFT_LOOKBACK_DAYS`, `DRIFT_MAX_EVENTS`, `DRIFT_TTL_DAYS`, `GROK_API_URL`, `GROK_MODEL`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `XAI_API_KEY`
 - Set live, not read in repo source: —
-- Read in repo source, not set live (code default applies): `DRIFT_COUNTRIES`, `OPENROUTER_API_KEY`
+- Read in repo source, not set live (code default applies): `DRIFT_COUNTRIES`
 
 ## newsEconomicImpact
 
@@ -81,7 +85,7 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: —
 - Set live, not read in repo source: —
-- Read in repo source, not set live (code default applies): `GDACS_CORPUS_PREFIX`, `GDACS_FEED`, `GDACS_TABLE`, `GDACS_TTL_DAYS`, `GROK_API_URL`, `OPENROUTER_API_KEY`, `SITUATIONS_INBOX_DISABLED`, `SITUATIONS_INBOX_PREFIX`, `WORLD_BUCKET`, `XAI_API_KEY`
+- Read in repo source, not set live (code default applies): `GDACS_CORPUS_PREFIX`, `GDACS_FEED`, `GDACS_TABLE`, `GDACS_TTL_DAYS`, `SITUATIONS_INBOX_DISABLED`, `SITUATIONS_INBOX_PREFIX`, `WORLD_BUCKET`
 
 ## newsGdeltConflict
 
@@ -93,13 +97,13 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `GROK_API_URL`, `GROK_MODEL`, `IMPACT_AUDIT_TABLE`, `INGEST_CAPTURE_TABLE`, `MISS_ALERT_THRESHOLD`, `SNS_TOPIC_ARN`, `WORLD_BUCKET`, `XAI_API_KEY`
 - Set live, not read in repo source: `IMPACT_AUDIT_TABLE`, `INGEST_CAPTURE_TABLE`
-- Read in repo source, not set live (code default applies): `GDACS_CORPUS_KEY`, `GDELT_CORPUS_PREFIX`, `IMPACT_AUDIT_PREFIX`, `INGEST_CAPTURE_KEY`, `OPENROUTER_API_KEY`
+- Read in repo source, not set live (code default applies): `GDACS_CORPUS_KEY`, `GDELT_CORPUS_PREFIX`, `IMPACT_AUDIT_PREFIX`, `INGEST_CAPTURE_KEY`
 
 ## newsInvokeGemini-dev
 
 - Live keys: `BRAVE_CONCURRENCY`, `BRAVE_SEARCH_API_KEY`, `ENV`, `GROK_API_URL`, `GROK_MODEL`, `OPENAI_API_KEY`, `REGION`, `TOPICS_DDB_TABLE`, `TOPICS_LIMIT`, `WORLD_BUCKET`, `XAI_API_KEY`, `XAI_API_KEY_BACKUP`
 - Set live, not read in repo source: `BRAVE_CONCURRENCY`, `BRAVE_SEARCH_API_KEY`, `ENV`, `OPENAI_API_KEY`, `REGION`, `XAI_API_KEY_BACKUP`
-- Read in repo source, not set live (code default applies): `CAPTURE_TTL_DAYS`, `INGEST_CAPTURE_PREFIX`, `INGEST_CAPTURE_TABLE`, `OPENROUTER_API_KEY`, `SOURCE_ENRICH_CROSS_TOPIC`, `SOURCE_ENRICH_ENABLED`, `SOURCE_ENRICH_MAX`, `SOURCE_ENRICH_THRESHOLD`, `TOPICS_CACHE_ITEM_ID`
+- Read in repo source, not set live (code default applies): `CAPTURE_TTL_DAYS`, `INGEST_CAPTURE_PREFIX`, `INGEST_CAPTURE_TABLE`, `SOURCE_ENRICH_CROSS_TOPIC`, `SOURCE_ENRICH_ENABLED`, `SOURCE_ENRICH_MAX`, `SOURCE_ENRICH_THRESHOLD`, `TOPICS_CACHE_ITEM_ID`
 
 ## newsMarketsData
 
@@ -146,7 +150,7 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `BRAVE_SEARCH_API_KEY`, `GROK_API_URL`, `GROK_MODEL`, `LLM_CONCURRENCY`, `MAX_RESOLVE_PER_RUN`, `PREDICTION_LOG_TABLE`, `XAI_API_KEY`
 - Set live, not read in repo source: `GROK_MODEL`
-- Read in repo source, not set live (code default applies): `DRAFT_MODEL`, `OPENROUTER_API_KEY`
+- Read in repo source, not set live (code default applies): `DRAFT_MODEL`
 
 ## newsPredictionsSnapshot
 
@@ -182,7 +186,7 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `AGENT_FUNCTION_NAME`, `ENTERPRISE_API_KEYS`, `ENV`, `FARCASTER_SIGNER_UUID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_PROJECT_ID`, `GOOGLE_GEMINI_API_KEY`, `GOOGLE_GEOCODING_KEY`, `GRAPHQL_API_KEY`, `GRAPHQL_ENDPOINT`, `GROK_API_URL`, `GROK_MODEL`, `LOOPS_API_KEY`, `MAPBOX_GEOCODING_KEY`, `MEMBER_API_KEYS`, `NEYNAR_API_KEY`, `REGION`, `SUMMARIZE_PREDICT_TABLE`, `TIMEOUT_MS`, `TOPICS_CACHE_MAX_AGE_SECONDS`, `TOPICS_DDB_TABLE`, `TOPICS_REFRESH_FUNCTION_NAME`, `USERS_DDB_TABLE`, `XAI_API_KEY`
 - Set live, not read in repo source: `AGENT_FUNCTION_NAME`, `ENTERPRISE_API_KEYS`, `ENV`, `FARCASTER_SIGNER_UUID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `GOOGLE_GEMINI_API_KEY`, `GOOGLE_GEOCODING_KEY`, `GRAPHQL_API_KEY`, `GRAPHQL_ENDPOINT`, `LOOPS_API_KEY`, `MEMBER_API_KEYS`, `NEYNAR_API_KEY`, `REGION`, `TIMEOUT_MS`, `TOPICS_REFRESH_FUNCTION_NAME`
-- Read in repo source, not set live (code default applies): `OPENROUTER_API_KEY`, `PREDICTION_LOG_TABLE`, `PREDICTION_SORT_KEY`, `SUMMARY_PREDICT_MAX_AGE_SECONDS`, `SUMMARY_PREDICT_PK_PREFIX`, `SUMMARY_SORT_KEY`, `TOPICS_CACHE_ITEM_ID`, `TRACK_RECORD_KEY`, `WORLD_BUCKET`
+- Read in repo source, not set live (code default applies): `PREDICTION_LOG_TABLE`, `PREDICTION_SORT_KEY`, `SUMMARY_PREDICT_MAX_AGE_SECONDS`, `SUMMARY_PREDICT_PK_PREFIX`, `SUMMARY_SORT_KEY`, `TOPICS_CACHE_ITEM_ID`, `TRACK_RECORD_KEY`, `WORLD_BUCKET`
 
 ## newsSharedAnalysis
 
@@ -194,43 +198,43 @@ Key NAMES only — values are never fetched into this file. Some deployed zips d
 
 - Live keys: `API_KEYS_TABLE`, `BREAKING_ALERTS_TABLE`, `FREE_DELAY_HOURS`, `PREDICTION_LOG_TABLE`, `SIGNAL_TTL_DAYS`, `SITE_URL`, `SUMMARIZE_PREDICT_TABLE`, `WORLD_BUCKET`
 - Set live, not read in repo source: —
-- Read in repo source, not set live (code default applies): `GROK_API_URL`, `OPENROUTER_API_KEY`, `SIGNALS_PREFIX`, `XAI_API_KEY`
+- Read in repo source, not set live (code default applies): `SIGNALS_PREFIX`
 
 ## newsSituationIngest
 
 - Live keys: `GROK_API_URL`, `GROK_MODEL`, `WORLD_BUCKET`, `XAI_API_KEY`
 - Set live, not read in repo source: —
-- Read in repo source, not set live (code default applies): `CACHE_KEEP_HOURS`, `CLASSIFY_BATCH`, `CLASSIFY_CONCURRENCY`, `GDELT_ENABLED`, `GDELT_PER_QUERY`, `MAX_AGE_HOURS`, `MAX_BATCHES_PER_RUN`, `OPENROUTER_API_KEY`
+- Read in repo source, not set live (code default applies): `CACHE_KEEP_HOURS`, `CLASSIFY_BATCH`, `CLASSIFY_CONCURRENCY`, `GDELT_ENABLED`, `GDELT_PER_QUERY`, `MAX_AGE_HOURS`, `MAX_BATCHES_PER_RUN`
 
 ## newsSituationTracker
 
 - Live keys: `CLOSED_KEEP_HOURS`, `DRY_RUN`, `SWEEP_MIN`
 - Set live, not read in repo source: —
-- Read in repo source, not set live (code default applies): `CLOSE_AFTER_COOL_CHECKS`, `CORROBORATION_CAP`, `GDACS_STALE_MIN`, `GROK_API_URL`, `METRIC_NS`, `OPENROUTER_API_KEY`, `RAISE_COOLDOWN_MIN`, `SITUATION_TTL_DAYS`, `STORY_MAP_CAP`, `STORY_MAP_MIN_OUTLETS`, `STORY_MAP_MIN_SEVERITY`, `WORLD_BUCKET`, `XAI_API_KEY`
+- Read in repo source, not set live (code default applies): `CLOSE_AFTER_COOL_CHECKS`, `CORROBORATION_CAP`, `GDACS_STALE_MIN`, `METRIC_NS`, `RAISE_COOLDOWN_MIN`, `SITUATION_TTL_DAYS`, `STORY_MAP_CAP`, `STORY_MAP_MIN_OUTLETS`, `STORY_MAP_MIN_SEVERITY`, `WORLD_BUCKET`
 
 ## newsSourceAudit
 
 - Live keys: `AUDIT_MODEL`, `AUDIT_N`, `DRIFT_ALERT_THRESHOLD`, `GROK_API_URL`, `PROXY_ENDPOINT`, `SNS_TOPIC_ARN`, `XAI_API_KEY`
 - Set live, not read in repo source: —
-- Read in repo source, not set live (code default applies): `OPENROUTER_API_KEY`
+- Read in repo source, not set live (code default applies): —
 
 ## newsSystemsAnalysis
 
 - Live keys: `GROK_API_URL`, `GROK_MODEL`, `MAX_TOKENS`, `SUMMARIZE_PREDICT_TABLE`, `SYSTEMS_TOP_N`, `TOPICS_DDB_TABLE`, `XAI_API_KEY`, `XAI_API_KEY_BACKUP`
 - Set live, not read in repo source: `XAI_API_KEY_BACKUP`
-- Read in repo source, not set live (code default applies): `OPENROUTER_API_KEY`, `SYSTEMS_TEST_COUNTRIES`, `TEMPERATURE`
+- Read in repo source, not set live (code default applies): `SYSTEMS_TEST_COUNTRIES`, `TEMPERATURE`
 
 ## newsThreadAnalysis
 
 - Live keys: `GROK_API_URL`, `GROK_MODEL`, `INTER_CALL_DELAY_MS`, `MAX_TOKENS`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `XAI_API_KEY`, `XAI_API_KEY_BACKUP`
 - Set live, not read in repo source: `XAI_API_KEY_BACKUP`
-- Read in repo source, not set live (code default applies): `BRAVE_SEARCH_API_KEY`, `MAX_THREADS`, `OPENROUTER_API_KEY`, `TEMPERATURE`, `TOP_P`
+- Read in repo source, not set live (code default applies): `BRAVE_SEARCH_API_KEY`, `MAX_THREADS`, `TEMPERATURE`, `TOP_P`
 
 ## newsWeeklyBrief
 
 - Live keys: `GROK_API_URL`, `GROK_MODEL`, `MAX_TOKENS`, `SUMMARIZE_PREDICT_TABLE`, `TOPICS_DDB_TABLE`, `XAI_API_KEY`
 - Set live, not read in repo source: —
-- Read in repo source, not set live (code default applies): `OPENROUTER_API_KEY`, `TEMPERATURE`, `WEEKLY_TOP_COUNTRIES`, `WEEKLY_TOP_THREADS`
+- Read in repo source, not set live (code default applies): `TEMPERATURE`, `WEEKLY_TOP_COUNTRIES`, `WEEKLY_TOP_THREADS`
 
 ## newsWeeklyMarkets
 

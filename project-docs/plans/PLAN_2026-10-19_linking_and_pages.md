@@ -58,9 +58,9 @@ GUM/HKG/VAT); every other table and alias list is deleted; one resolver `resolve
 - Weekly signals: fill `related`; a route for past weeks.
 - Country records: merge duplicates under the canonical name, retire the 7 region records. Prepared dry run
   (`.board/linking/country_merge.md` + `.mjs`): copy 105, delete 368 (112 alias + 256 region), 0 user rows to
-  rewrite. Apply only after a table backup AND after the writers canonicalise names (`newsCountryIntelligence`
-  keys by the raw LLM name; `newsCountryFactsUpdater` hard-codes the long DRC/UAE names), else the duplicates
-  return; operator yes per run.
+  rewrite. Apply only after a table backup AND after the changed writers are deployed (merged in the repo 2026-10-19:
+  `newsCountryIntelligence` keys by the canonical short name, `newsCountryFactsUpdater` writes DR Congo / UAE;
+  not yet deployed), else the duplicates return; operator yes per run.
 
 ### Data-quality issues found (backlog, not part of linking)
 Thread mis-joins (a Brazil debate inside the Amazon-deforestation thread), situations fragmenting per entity
@@ -77,13 +77,13 @@ Each step: one commit or merge, verify + checks green, browser-checked before an
 operator's yes.
 
 ### L0 · Gather the facts (read-only) — done 2026-10-19, see Link design
-- [ ] Entity inventory: for each thing a reader can open (situation, story/thread, topic, country, forecast,
+- [x] Entity inventory: for each thing a reader can open (situation, story/thread, topic, country, forecast,
       brief edition, weekly signal, breaking alert, saved item, Studio run) — its id, its canonical page, where
       it is stored, and which related ids it carries today (sampled from live data, not docs).
-- [ ] Render inventory: every place a page shows one of those things, whether it links, and how.
-- [ ] Country identity: every distinct "country" string in live data and code, mapped to an ISO code or
+- [x] Render inventory: every place a page shows one of those things, whether it links, and how.
+- [x] Country identity: every distinct "country" string in live data and code, mapped to an ISO code or
       marked not-a-country (e.g. Strait of Hormuz, West Bank); which pages exist for which.
-- [ ] Link targets: the deep-link parameters each page accepts today (`/?focus=`, `/?story=`, `/?country=`,
+- [x] Link targets: the deep-link parameters each page accepts today (`/?focus=`, `/?story=`, `/?country=`,
       `/briefings?date=&mode=`, `/track-record` anchors, `/analyze?stories=`).
 
 ### L1 · The link module and component
@@ -96,9 +96,9 @@ operator's yes.
 - [ ] Back-end mirror for emails (`backend/shared/src/links.js`), same rules.
 
 ### L2 · Related ids at the source
-- [ ] Add the missing related ids where the data is written (decided from L0): e.g. forecasts → thread id,
+- [x] Add the missing related ids where the data is written (merged 2026-10-19: L2-IDS ab2cc23, L2-JOINS 0e23594) (decided from L0): e.g. forecasts → thread id,
       brief items → thread id + ISO3, situations → ISO3 list, weekly signals → thread id + ISO3.
-- [ ] Deploy the changed Lambdas with `scripts/lambda.sh` (diff first).
+- [ ] Deploy the changed Lambdas (the merged backend changes are in the repo, not yet deployed) with `scripts/lambda.sh` (diff first).
 
 ### L3 · Apply on every page
 - [ ] Story page: countries, forecast → track record, "show on map".
@@ -122,10 +122,10 @@ operator's yes.
 - [ ] B3 Weekly email button → the new address; saved "daily" items → the new address; sitemap and the
       Worker's page directory updated.
 - [ ] T1 Map → "Read today's topics" link; Worker bot pre-render for `/today`.
-- [ ] S1 Studio out of the nav; `plans/` gets the Studio redesign plan with its return criteria.
-- [ ] E1 Economy dead links removed; FX box labelled.
-- [ ] C1 Delete `useSystemsAnalysis`; one address for the countries list, the other redirects.
-- [ ] Decision records for 2-5 (superseding 0016's /today wording only where needed, and 0017's client-only redirects).
+- [x] S1 Studio out of the nav; `plans/` gets the Studio redesign plan with its return criteria.
+- [x] E1 Economy dead links removed; FX box labelled.
+- [ ] C1 (`useSystemsAnalysis` deleted, P-SMALL) one address for the countries list, the other redirects.
+- [x] Decision records for 2-5 (0028-0032) (superseding 0016's /today wording only where needed, and 0017's client-only redirects).
 
 ### R · Release
 - [ ] Website build; Cloudflare preview upload (yes); browser click-through of every page and link at desktop
@@ -149,7 +149,9 @@ operator's yes.
   compared, so same-day duplicates fork. Work: keep 0.4 but require keyword-only overlap >= 0.15 (a shared ISO3
   gate is useless: 115 of 116 score joins already share one); normalise titles in both lookups; include same-day
   earlier generations in the lookback; log every join `{topicId, threadId, via, score, kwScore}`; operator
-  merge/split tool.
+  merge/split tool. Merged 2026-10-19 (0e23594): all of it, including `backend/pipeline/cli/threads.mjs`
+  (`list-joins`, `merge`, `split`) and news situations keyed `news#<ISO3>#<threadId>` with the old ids as aliases;
+  not yet deployed.
 - Situation id = `news#<axis>#<ISO3>#<entity>` (`newsSituationIngest/src/classifier-core.js:133`), so one country
   splits by entity: live 2026-10-19, 59 situations, Ukraine 8, France 7, Iran 7; only 20 carry a `threadId`.
   Work: key news situations by country + thread when a thread exists, so the map, the story and the country agree.
@@ -177,14 +179,14 @@ operator's yes.
   the DRIFT `current*` fields); unused proxy actions `RESEARCH_BRIEFING`, `pair_analysis`.
 - Signals API: builds daily (`TriggerSignalsBuild` 10:00 UTC), 0 keys issued (`GlobalPerspectiveApiKeys`), no page
   reads it. Operator 2026-10-19: PARK — disable `TriggerSignalsBuild` (schedule change, needs a yes when run), keep
-  the code and the Function URL; add it to `runbooks/parked-jobs.md` and decision 0015's list.
+  the code and the Function URL; recorded in decision 0032 and `runbooks/parked-jobs.md`; the rule is still ENABLED until it is disabled with an operator yes.
 
 ## Usage evidence (read API logs, 7 days to 2026-10-19; `.board/linking/usage.md`)
 No page views exist in the repo; the read API logs only API calls with an Origin. Over 7 days of browser traffic:
 Stories pages are the most active (~10–30 loads/day); the map ~6–20 sessions/day; country pages ~4 loads/day;
 `/today` 6 direct hits in the week and its on-click Predict / Trace Cause calls: 0; `/daily` and `/weekly-brief`
 cannot be separated from the map and `/briefings` (they share the same calls); track record low; Studio 0 member
-runs and 0 shares. Operator 2026-10-19: `/today` stays (the site has no users yet; usage numbers do not decide
+runs and 0 shares. Operator 2026-10-19: `/today` stays, linked from the map (decision 0029; the site has no users yet; usage numbers do not decide
 this; it can be promoted later). GA4 is the only source of true page views if a firmer answer is ever wanted.
 
 ## Briefings merge facts (`.board/linking/briefings_and_map.md`)

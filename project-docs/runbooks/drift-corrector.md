@@ -7,7 +7,7 @@ EventBridge rule `TriggerDriftCorrector`, `cron(30 5 * * ? *)` UTC, no input.
 Repo source: `backend/pipeline/newsDriftCorrector/src/`.
 
 ## What it means
-When a country or thread HISTORY# snapshot moved, writes a grounded `DRIFT#<date>` note and a `DRIFTLOG#<date>` row (never overwrites the analysis); DeepSeek, up to 2 calls per move (direction check retry).
+When a country or thread HISTORY# snapshot moved, writes a grounded `DRIFT#<date>` note and a `DRIFTLOG#<date>` row (never overwrites the analysis); trigger events carry `threadId` beside `topicId`, and country events match the canonical country names; DeepSeek, up to 2 calls per move (direction check retry).
 
 ## Check
 - Schedule state: `aws events describe-rule --name TriggerDriftCorrector --region ap-northeast-1`

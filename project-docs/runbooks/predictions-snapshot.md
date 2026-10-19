@@ -7,7 +7,7 @@ EventBridge rule `TriggerPredictionsSnapshot`, `rate(30 minutes)`, no input.
 Repo source: `backend/predictions/newsPredictionsSnapshot/src/`.
 
 ## What it means
-Scans `PREDICTION_LOG_TABLE` and writes the track-record aggregate and question board to S3 `predictions/track_record.json` (`TRACK_RECORD_KEY`). No LLM.
+Scans `PREDICTION_LOG_TABLE` and writes the track-record aggregate and question board to S3 `predictions/track_record.json` (`TRACK_RECORD_KEY`). The track record `recent[]` items carry `qid` and `clusterKey`. No LLM.
 
 ## Check
 - Schedule state: `aws events describe-rule --name TriggerPredictionsSnapshot --region ap-northeast-1`

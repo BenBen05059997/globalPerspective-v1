@@ -7,7 +7,7 @@ EventBridge rule `TriggerWeeklyBrief`, `cron(0 6 ? * SUN *)` UTC, no input. (The
 Repo source: `backend/distribution/newsWeeklyBrief/src/`.
 
 ## What it means
-Builds the week's signals brief from 8 archive days, thread analyses and country briefings with one LLM call; writes `WEEKLY_BRIEF#<weekKey>` / `WEEKLY_BRIEF` (`status: published`) in `SUMMARIZE_PREDICT_TABLE`. The Sunday 14:00 email (`weekly-email.md`) sends it.
+Builds the week's signals brief from 8 archive days, thread analyses and country briefings with one LLM call; writes `WEEKLY_BRIEF#<weekKey>` / `WEEKLY_BRIEF` (`status: published`); each signal carries `iso3[]` and `relatedThreadIds` from the story web in `SUMMARIZE_PREDICT_TABLE`. The Sunday 14:00 email (`weekly-email.md`) sends it.
 
 ## Check
 - Schedule state: `aws events describe-rule --name TriggerWeeklyBrief --region ap-northeast-1`

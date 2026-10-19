@@ -7,7 +7,7 @@ EventBridge Scheduler `Fact`, `cron(0 5 ? * MON *)` Asia/Tokyo (Monday 05:00 JST
 Repo source: `backend/pipeline/newsCountryFactsUpdater/src/`.
 
 ## What it means
-Refreshes `FACTS#<name>` / `COUNTRY_FACTS` for 40 countries from Wikidata (leaders, capital, population) and ACLED conflict counts for the first 12. No LLM.
+Refreshes `FACTS#<name>` / `COUNTRY_FACTS` (canonical short names, e.g. DR Congo, UAE) for 40 countries from Wikidata (leaders, capital, population) and ACLED conflict counts for the first 12. No LLM.
 
 ## Check
 - Schedule state: `aws scheduler get-schedule --name Fact --region ap-northeast-1`

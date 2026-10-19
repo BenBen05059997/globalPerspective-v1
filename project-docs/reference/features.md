@@ -45,7 +45,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 - Folder: `src/features/analysis-studio`; routes: `/analyze`, `/analyze/s/:id`
 - Entry files: `AnalysisStudio.jsx`, `SharedAnalysisPage.jsx`
 - Public API (`index.js`): `loadByok`, `clearByok`, `getProvider`, `ProviderModal`
-- Decisions: — (none name its folder or routes)
+- Decisions: [0030](../decisions/0030-studio-out-of-menu.md)
 
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |
 |---|---|---|---|---|---|
@@ -74,7 +74,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 - Folder: `src/features/briefings`; routes: `/briefings`
 - Entry files: `BriefingsPage.jsx`
 - Public API (`index.js`): `storyLinkPath`, `peekInputForStory`
-- Decisions: [0017](../decisions/0017-retired-routes-and-tours.md)
+- Decisions: [0017](../decisions/0017-retired-routes-and-tours.md), [0028](../decisions/0028-briefings-merge-real-301s.md)
 
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |
 |---|---|---|---|---|---|
@@ -104,7 +104,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 - Folder: `src/features/daily`; routes: `/daily`, `/daily/:dateKey`
 - Entry files: `DailyPage.jsx`
 - Public API (`index.js`): no index.js
-- Decisions: — (none name its folder or routes)
+- Decisions: [0028](../decisions/0028-briefings-merge-real-301s.md)
 
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |
 |---|---|---|---|---|---|
@@ -116,7 +116,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 - Folder: `src/features/economy`; routes: `/economy`
 - Entry files: `EconomyPage.jsx`
 - Public API (`index.js`): `InstrumentChip`, `MechanismCard`, `useEconomicImpact`, `useMarketsCountry`
-- Decisions: [0009](../decisions/0009-economy-parked.md)
+- Decisions: [0009](../decisions/0009-economy-parked.md), [0031](../decisions/0031-economy-parked-fx-box-labelled.md)
 
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |
 |---|---|---|---|---|---|
@@ -131,7 +131,7 @@ Lambdas: those whose `features` in functions.json name the folder; a row does no
 - Folder: `src/features/home`; routes: `/today`
 - Entry files: `Home.jsx`
 - Public API (`index.js`): `Home`
-- Decisions: [0016](../decisions/0016-map-console-is-home.md)
+- Decisions: [0016](../decisions/0016-map-console-is-home.md), [0029](../decisions/0029-today-kept-linked-from-map.md), [0031](../decisions/0031-economy-parked-fx-box-labelled.md)
 
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |
 |---|---|---|---|---|---|
@@ -202,7 +202,7 @@ No Lambda in functions.json lists this feature.
 - Folder: `src/features/weekly-brief`; routes: `/weekly-brief`
 - Entry files: `WeeklyBriefPage.jsx`
 - Public API (`index.js`): `useWeeklyBrief`
-- Decisions: — (none name its folder or routes)
+- Decisions: [0028](../decisions/0028-briefings-merge-real-301s.md)
 
 | Lambda | Repo dir | Schedule (state) | Runbook | Writes S3 | Writes DynamoDB |
 |---|---|---|---|---|---|

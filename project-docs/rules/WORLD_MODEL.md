@@ -38,12 +38,13 @@ new ID space of its own.
 **Per VERIFY §A, there are two real, internally-generated identity roots — not five, not one:**
 
 1. **`storyId`** (`${axis}#${iso3}#${slug(entity)}`) — the map/situation pipeline's own key
-   (`backend/situations/newsSituationIngest/src/classifier-core.js`). `situationId` for a news-sourced situation is a
-   literal wrapper (`news#${storyId}`) — not a separate space. `situationId` for a GDACS-sourced
+   (`backend/situations/newsSituationIngest/src/classifier-core.js`). `situationId` for a news-sourced situation is
+   `news#<ISO3>#<threadId>` when the story has a thread (one situation per country and thread;
+   `newsSituationId` in `backend/shared/src/situations-core.js`), else the wrapper `news#${storyId}`; the old per-story ids stay as `aliases` — not a separate space. `situationId` for a GDACS-sourced
    situation (`gdacs#${eventKey}`) is a pass-through of GDACS's own upstream ID — external, not
    invented here.
 2. **`topicId`/`threadId` family** — the editorial pipeline's own key(s) (`newsInvokeGemini`).
-   Many `topicId`s accrete into one `threadId` (`continues_topic`). The economic-impact record
+   Many `topicId`s accrete into one `threadId` (`continues_topic`, else a composite score ≥ 0.4 with keyword overlap ≥ 0.15). Topic ids change every run; thread ids are stable, so every per-story record carries `threadId` and a `THREAD#<threadId>` / `TOPICS` row maps back. The economic-impact record
    (`PK: ECON#THREAD#{threadId}`) and `PredictionLog` (`PK: PRED#${topic.id}`) are **already
    correctly foreign-keyed onto this root** — they are not independent spaces and are not
    fragmentation to fix. Any future record that describes an aspect of an editorial event follows

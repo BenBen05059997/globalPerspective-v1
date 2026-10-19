@@ -7,13 +7,14 @@ EventBridge Scheduler `InvokeNewsAgent`, `cron(25 4/8 * * ? *)` UTC (04:25, 12:2
 Repo source: `backend/pipeline/NewsProjectInvokeAgentLambda/src/`.
 
 ## What it means
-Reads `staging`, writes SUMMARY / TRACE_CAUSE / PREDICTION per topic (`SUMMARIZE_PREDICT_TABLE`, `TOPIC#<id>`), logs forecasts to `PREDICTION_LOG_TABLE`, swaps `staging` → `latest`, writes `today-archive` and `archive#<date>`, and writes S3 `threads/story-map.json`. Calls the LLM (`GROK_MODEL`, `PREDICTION_MODEL`); no web search.
+Reads `staging`, writes SUMMARY / TRACE_CAUSE / PREDICTION per topic (`SUMMARIZE_PREDICT_TABLE`, `TOPIC#<id>`), logs forecasts to `PREDICTION_LOG_TABLE`, swaps `staging` → `latest`, writes `today-archive` and `archive#<date>`, and writes S3 `threads/story-map.json`. Thread joins (`threading.js`): a topic joins an existing thread only if the composite score is ≥ 0.4 **and** keyword overlap is ≥ 0.15; titles are normalised and earlier runs of the same day are in the lookback. Every assignment logs one `[join] {topicId, threadId, via, score, kwScore}` line, and each thread has a pointer row `THREAD#<threadId>` / `TOPICS` (current `topicId`, all `topicIds`). Calls the LLM (`GROK_MODEL`, `PREDICTION_MODEL`); no web search.
 
 ## Check
 - Schedule state: `aws scheduler get-schedule --name InvokeNewsAgent --region ap-northeast-1`
 - Last runs: `aws logs tail /aws/lambda/NewsProjectInvokeAgentLambda-dev --since 1d --region ap-northeast-1`
 - Success line: `aws logs tail /aws/lambda/NewsProjectInvokeAgentLambda-dev --since 2d --region ap-northeast-1 --filter-pattern '"Generation complete:"'`
 - Known failures: `Topics cache empty or stale`, `OpenAI error:`, `Generation failed for topic`, `NewsProjectInvokeAgentLambda error:` — `aws logs tail /aws/lambda/NewsProjectInvokeAgentLambda-dev --since 2d --region ap-northeast-1 --filter-pattern '"Topics cache empty or stale"'`
+- Join audit: `aws logs tail /aws/lambda/NewsProjectInvokeAgentLambda-dev --since 1d --region ap-northeast-1 --filter-pattern '"[join]"'`; list or repair wrong joins with `node backend/pipeline/cli/threads.mjs list-joins --since <date>` (read-only) and `merge` / `split` (print-only; `--apply` writes prod data and needs the operator's yes).
 - Errors per hour: `aws cloudwatch get-metric-statistics --namespace AWS/Lambda --metric-name Errors --dimensions Name=FunctionName,Value=NewsProjectInvokeAgentLambda-dev --start-time $(date -u -v-1d +%FT%TZ) --end-time $(date -u +%FT%TZ) --period 3600 --statistics Sum --region ap-northeast-1`
 
 ## Fix

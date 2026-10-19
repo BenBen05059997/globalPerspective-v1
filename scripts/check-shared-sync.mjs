@@ -21,12 +21,10 @@
  *                                          extraction from source instead — see
  *                                          extractUnexported() below)
  *
- *   (c) iso3Names.json                  — the shared ISO3->name table must equal the
- *                                          frontend's ISO3_NAME (shared/lib/situationLabels.js),
- *                                          extracted from source with extractUnexported()
- *   (d) real-country rule               — shared name tables == frontend data copies; the rule text
- *                                          in shared placeFilter.js and the frontend placeNames.js ==
- *                                          newsCountryIntelligence/src/refreshPolicy.js
+ *   (c) country identity                — the one country table (iso3Names.json) and placeNames.json are
+ *                                          byte-identical to the frontend data copies, and the resolver
+ *                                          core (between the markers) in backend/shared/src/countries.js ==
+ *                                          frontend shared/lib/countries.js
  *   (e) Studio share modules, sampleRuleGolden.json — byte-identical frontend/Lambda copies
  *
  * It only reads files (plus writes to a throwaway os.tmpdir() dir in --self-test
@@ -149,37 +147,38 @@ const SHARE_COPIES = [
   ['driftNote.js', 'shared/lib/'], ['dropRedatedRepeats.js', 'shared/lib/'],
 ];
 const FE_DATA = 'global-perspectives-starter/frontend/src/shared/data';
-const placeCore = (src) => { const a = src.indexOf("// Names in briefings come from the LLM's `regions`"); const b = src.indexOf('\nconst ymd = '); const e = src.indexOf('\n/** isRealCountryName'); const t = src.indexOf('\n// A COUNTRY# record a reader may use'); return src.slice(a, b > 0 ? b : (t > 0 ? t : e)).trim(); };
+const FE_LIB = 'global-perspectives-starter/frontend/src/shared/lib';
 
-/** Batch 3 / F: the real-country rule. (1) the shared placeNames.json and iso3Names.json are byte-identical to
- *  the frontend data copies; (2) the rule text (alias table, normKey, isCountryName) in the shared placeFilter.js
- *  and in the frontend shared/lib/placeNames.js is the same text as in newsCountryIntelligence/src/refreshPolicy.js. */
-function checkPlaceRule() {
+/** The text between `// --- <marker> ---` and `// --- end <marker> ---` (null when a marker is missing). */
+function markedBlock(src, marker) {
+  const a = src.indexOf(`// --- ${marker}`);
+  const b = src.indexOf(`// --- end ${marker} ---`);
+  return a >= 0 && b > a ? src.slice(src.indexOf('\n', a) + 1, b) : null;
+}
+
+/** The marked core of two files (one CommonJS, one ES module) must be the same text. */
+function checkMarkedCore(pathA, pathB, marker) {
+  const a = markedBlock(fs.readFileSync(pathA, 'utf8'), marker);
+  const b = markedBlock(fs.readFileSync(pathB, 'utf8'), marker);
+  if (a === null || b === null) return { pass: false, diff: `"${marker}" markers missing in ${a === null ? pathA : pathB}` };
+  if (a === b) return { pass: true };
+  return { pass: false, diff: textDiff(path.basename(pathA), a, `frontend-${path.basename(pathB)}`, b) };
+}
+
+/** Country identity: the shared name tables are byte-identical to the frontend data copies, and the resolver
+ *  core in backend/shared/src/countries.js is the same text as in the frontend shared/lib/countries.js. */
+function checkCountryIdentity(backendPath = abs(`${SHARED}/countries.js`), frontendPath = abs(`${FE_LIB}/countries.js`)) {
   for (const f of ['placeNames.json', 'iso3Names.json']) {
     const r = checkAllIdentical([abs(`${SHARED}/${f}`), abs(`${FE_DATA}/${f}`)]);
     if (!r.pass) return { pass: false, diff: `${f}: ${r.diff}` };
   }
-  const ref = placeCore(fs.readFileSync(fnPath('newsCountryIntelligence', 'src/refreshPolicy.js'), 'utf8'));
-  for (const f of [`${SHARED}/placeFilter.js`, 'global-perspectives-starter/frontend/src/shared/lib/placeNames.js']) {
-    const got = placeCore(fs.readFileSync(abs(f), 'utf8'));
-    if (got !== ref) return { pass: false, diff: `${f}: the real-country rule text differs from refreshPolicy.js\n${textDiff('refreshPolicy.js', ref, path.basename(f), got)}` };
-  }
-  return { pass: true };
+  return checkMarkedCore(backendPath, frontendPath, 'country resolver core');
 }
 
 function checkCountryFacts(pathA, pathB) {
   const a = JSON.parse(fs.readFileSync(pathA, 'utf8'));
   const b = JSON.parse(fs.readFileSync(pathB, 'utf8'));
   const diffs = jsonStructuralDiff(a, b);
-  if (!diffs.length) return { pass: true };
-  return { pass: false, diff: diffs.join('\n') };
-}
-
-function checkIso3Names(jsonPath, frontendPath) {
-  const json = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  const ex = extractUnexported(fs.readFileSync(frontendPath, 'utf8'), 'ISO3_NAME');
-  if (!ex.found) return { pass: false, diff: 'ISO3_NAME not found in the frontend source (marker changed?)' };
-  const diffs = jsonStructuralDiff(json, ex.value);
   if (!diffs.length) return { pass: true };
   return { pass: false, diff: diffs.join('\n') };
 }
@@ -250,14 +249,7 @@ function livePairs() {
         fnPath('newsPairIntelligence', 'src/country_facts.json'),
       ),
     },
-    {
-      name: 'iso3Names.json',
-      run: () => checkIso3Names(
-        abs(`${SHARED}/iso3Names.json`),
-        abs('global-perspectives-starter/frontend/src/shared/lib/situationLabels.js'),
-      ),
-    },
-    { name: 'real-country rule (shared placeFilter + name tables vs frontend and refreshPolicy)', run: () => checkPlaceRule() },
+    { name: 'country identity (name tables + resolver core, backend vs frontend)', run: () => checkCountryIdentity() },
     {
       // Batch 4 / G: the Studio share Lambda re-derives sources and re-runs the checks with the frontend's own
       // pure modules, so its copies must stay byte-identical (and so must the golden context fixture both test against).
@@ -347,13 +339,12 @@ async function selfTestCountryFacts() {
   return result;
 }
 
-async function selfTestIso3Names() {
+async function selfTestCountryIdentity() {
   const dir = mkTmp();
-  const b = path.join(dir, 'iso3Names.json');
-  const parsed = JSON.parse(fs.readFileSync(abs(`${SHARED}/iso3Names.json`), 'utf8'));
-  parsed.USA = `${parsed.USA}x`;
-  fs.writeFileSync(b, JSON.stringify(parsed));
-  const result = checkIso3Names(b, abs('global-perspectives-starter/frontend/src/shared/lib/situationLabels.js'));
+  const b = path.join(dir, 'countries.js');
+  const ref = fs.readFileSync(abs(`${FE_LIB}/countries.js`), 'utf8');
+  fs.writeFileSync(b, ref.replace("COUNTRIES[t]) return found(t);", "COUNTRIES[t]) return found(t) || null;"));
+  const result = checkCountryIdentity(abs(`${SHARED}/countries.js`), b);
   fs.rmSync(dir, { recursive: true, force: true });
   return result;
 }
@@ -371,16 +362,6 @@ async function selfTestEntityNormalization() {
   if (perturbed === raw) throw new Error("self-test fixture assumption broke: 'trump' alias not found");
   fs.writeFileSync(b, perturbed);
   const result = await checkEntityNormalization(a, b);
-  fs.rmSync(dir, { recursive: true, force: true });
-  return result;
-}
-
-async function selfTestPlaceRule() {
-  const dir = mkTmp();
-  const ref = fs.readFileSync(abs(`${SHARED}/placeFilter.js`), 'utf8');
-  const a = path.join(dir, 'a.js'); const b = path.join(dir, 'b.js');
-  fs.writeFileSync(a, ref); fs.writeFileSync(b, ref.replace("'uk': 'united kingdom'", "'uk': 'united kingdomx'"));
-  const result = checkAllIdentical([a, b]);
   fs.rmSync(dir, { recursive: true, force: true });
   return result;
 }
@@ -409,9 +390,8 @@ async function selfTest() {
   console.log('Self-test — perturbing one byte per pair and confirming DRIFT is caught\n');
   const cases = [
     ['country_facts.json', selfTestCountryFacts],
-    ['iso3Names.json', selfTestIso3Names],
+    ['country identity', selfTestCountryIdentity],
     ['entity-normalization', selfTestEntityNormalization],
-    ['real-country rule', selfTestPlaceRule],
     ['sampleRuleGolden.json', selfTestSampleGolden],
     ['Studio share modules', selfTestShareModules],
   ];

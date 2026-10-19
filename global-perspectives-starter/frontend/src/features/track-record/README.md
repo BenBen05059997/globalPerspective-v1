@@ -25,7 +25,7 @@ of changed reads (corrections). A plain text twin renders the same facts for pri
 
 ## Imports from other features
 - `@/features/account/components/FollowButton` -> follow a country from the ledger
-- `@/features/map/components/RadarMap.jsx` -> forecast board map
+- `@/shared/map/RadarMap.jsx` -> forecast board map
 - `@/shared/lib/situationLabels.js` -> `ISO3_NAME` for placing questions on countries
 
 ## Gotchas

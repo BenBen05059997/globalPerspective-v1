@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GlobeHorizon, HORIZON_GLSL, GLOBE_HORIZON } from '@/features/map/lib/globeHorizon.js';
+import { GlobeHorizon, HORIZON_GLSL, GLOBE_HORIZON } from '@/shared/map/globeHorizon.js';
 
 describe('GlobeHorizon', () => {
   it('injects a camera-facing test at the end of the vertex shader (no layer rebuild per frame)', () => {

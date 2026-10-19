@@ -6,7 +6,7 @@ import { rootCauseSteps } from '@/shared/lib/rootCause';
 import Button from '@/shared/ui/Button.jsx';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
-import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
+import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import {
   buildChapters, buildDeadlines, buildSlides, viewFrom,
 } from '@/features/threads/lib/storyMode.js';

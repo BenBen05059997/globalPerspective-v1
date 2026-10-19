@@ -8,7 +8,7 @@
 // Guiana, not Alaska's far end). A country absent from the 110m mesh (Malta, Singapore ...) gets a
 // small box around its catalogue centroid and `source: 'centroid'`. Nothing here is invented: no
 // code / no catalogue entry -> null and the caller keeps the old framing.
-import { land } from '@/features/map/lib/landGeometry';
+import { land } from '@/shared/map/landGeometry';
 import { COUNTRY_COORDINATES } from '@/features/threads/lib/mapConstants';
 
 const polysOf = (g) => (g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : []);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pulseSet, changedAt, MOTION_BUDGET, HAPPENING_NOW_MS } from '@/features/map/lib/pulse.js';
+import { pulseSet, changedAt, MOTION_BUDGET, HAPPENING_NOW_MS } from '@/shared/map/pulse.js';
 
 const NOW = new Date('2026-09-26T12:00:00Z').getTime();
 const h = (n) => new Date(NOW - n * 60 * 60 * 1000).toISOString(); // n hours before NOW

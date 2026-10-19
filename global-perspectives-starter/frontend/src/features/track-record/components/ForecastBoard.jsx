@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import RadarMap from '@/features/map/components/RadarMap.jsx';
+import RadarMap from '@/shared/map/RadarMap.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import Tabs from '@/shared/ui/Tabs.jsx';
 import { forecastPlaceCounts } from '@/features/track-record/lib/forecastPlaces.js';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLinkArcs, dashedArcPaths, DASH } from '@/features/map/lib/storyLinkArcs.js';
+import { buildLinkArcs, dashedArcPaths, DASH } from '@/shared/map/storyLinkArcs.js';
 
 const threads = {
   F: { places: [{ name: 'Iran', n: 12 }, { name: 'Israel', n: 2 }] },

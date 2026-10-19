@@ -6,9 +6,9 @@
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
 import { TIER_LABEL } from '@/shared/lib/situationLabels.js';
-import { tierSize, TIERS, STATUS_GLYPHS, markerHex } from '@/features/map/lib/legend.js';
-import { outlineForTier } from '@/features/map/lib/countryRiskLayer.js';
-import { MOTION_BUDGET } from '@/features/map/lib/pulse.js';
+import { tierSize, TIERS, STATUS_GLYPHS, markerHex } from '@/shared/map/legend.js';
+import { outlineForTier } from '@/shared/map/countryRiskLayer.js';
+import { MOTION_BUDGET } from '@/shared/map/pulse.js';
 import Button from '@/shared/ui/Button.jsx';
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];

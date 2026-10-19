@@ -10,7 +10,7 @@ import StoryRow from '@/shared/ui/StoryRow.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
+import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 
 function placeOf(s) {
   if (s.affected_names?.length) return s.affected_names[0];

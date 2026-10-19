@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { placeMapLabels } from '@/features/map/lib/mapLabels.js';
+import { placeMapLabels } from '@/shared/map/mapLabels.js';
 
 describe('placeMapLabels', () => {
   it('puts a label right of its marker when it fits', () => {

@@ -2,21 +2,22 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
-import { placeMapLabels } from '@/features/map/lib/mapLabels.js';
-import { land, FRAME } from '@/features/map/lib/landGeometry.js';
+import { placeMapLabels } from '@/shared/map/mapLabels.js';
+import { land, FRAME } from '@/shared/map/landGeometry.js';
 import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';
 import {
   bearingDeg, beamCrossed, lapAngle, LAP_START_DEG, gainedIds, NO_CARDS, enqueueCard, advanceCards,
   agoShort, scanCardText, scanControlLabel,
-} from '@/features/map/lib/radar.js';
-import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
-import { pulseSet, MOTION_BUDGET } from '@/features/map/lib/pulse.js';
-import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
+} from '@/shared/map/radar.js';
+import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/shared/map/countryGeo.js';
+import { pulseSet, MOTION_BUDGET } from '@/shared/map/pulse.js';
+import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 import {
   tierSize, markerKind, kindLabel, situationFreshness, freshnessLook, freshnessClass, statusGlyph, markerHex,
-} from '@/features/map/lib/legend.js';
+} from '@/shared/map/legend.js';
 import '@/shared/ui/primitives.css';
-import '@/features/map/components/RadarMap.css';
+import '@/shared/map/mapKit.css';
+import '@/shared/map/RadarMap.css';
 
 // iso3 -> country polygon, for H2 country shading (M5a). Built once from the same bundled
 // topojson RadarMap already draws coastlines from.

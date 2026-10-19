@@ -144,7 +144,7 @@ must_have "$SRC/features/track-record/components/ForecastBoard.jsx" "forecastPla
 must_not_have "$SRC/features/track-record/TrackRecordPage.jsx" "[Aa]waiting their deadline" "never claims a passed deadline is still awaiting"
 must_have "$SRC/features/threads/hooks/useStoryLinks.js" "useWebIndex" "story links read the story-web index (one shared call)"
 must_have "$SRC/features/threads/lib/linkStates.js" "No linked stories found yet for this story" "an empty story web says why, honestly"
-must_have "$SRC/features/map/lib/storyLinkArcs.js" "strong.*medium|DRAWN" "map lines are strong + medium only"
+must_have "$SRC/shared/map/storyLinkArcs.js" "strong.*medium|DRAWN" "map lines are strong + medium only"
 must_have "$SRC/features/analysis-studio/components/ShareControl.jsx" "shareableSections" "the share button exists only for runs that passed their checks"
 must_have "$SRC/features/analysis-studio/components/ShareControl.jsx" "shareConfigured" "sharing is hidden while the share endpoint is unset"
 must_have "$SRC/features/analysis-studio/SharedAnalysisPage.jsx" "useNoIndex" "the shared page is noindex"
@@ -175,7 +175,7 @@ else
 fi
 
 # ─── Globe badges / alert diamonds / selection brackets: pixel-space icons (2026-10-01) ───
-GLOBE3D="$SRC/features/map/components/SituationMap3D.jsx"
+GLOBE3D="$SRC/shared/map/SituationMap3D.jsx"
 must_not_have "$GLOBE3D" "degPerPx|pxPolygon|bracketPaths|lonScale" "no lon/lat polygon geometry for badges / diamonds / brackets (grew, skewed, detached when zoomed)"
 must_not_have "$GLOBE3D" "SolidPolygonLayer" "badges and diamonds are not SolidPolygonLayer patches of the sphere"
 must_have "$GLOBE3D" "IconLayer" "badges, diamonds and brackets are IconLayer billboards"
@@ -183,8 +183,8 @@ must_have "$GLOBE3D" "sizeUnits: 'pixels'" "icon layers are sized in screen pixe
 must_have "$GLOBE3D" "cullMode: 'none'" "IconLayer sprites are not back-face culled on GlobeView (y-flip reverses winding)"
 must_have "$GLOBE3D" "getPixelOffset: \(m\) => badgeOffset" "badge sits at a fixed pixel offset from its mark"
 must_have "$GLOBE3D" "extensions: GLOBE_HORIZON" "sprites hide with their anchor on the far side (no limb leak)"
-must_have "$SRC/features/map/lib/globeHorizon.js" "project\.cameraPosition" "horizon rule is a shader test on the camera, not a per-frame rebuild"
-must_not_have "$SRC/features/map/lib/globeIcons.js" "degPerPx|2 \*\* |Math\.pow\(2" "sprite sizes are fixed pixels, never scaled by the zoom"
+must_have "$SRC/shared/map/globeHorizon.js" "project\.cameraPosition" "horizon rule is a shader test on the camera, not a per-frame rebuild"
+must_not_have "$SRC/shared/map/globeIcons.js" "degPerPx|2 \*\* |Math\.pow\(2" "sprite sizes are fixed pixels, never scaled by the zoom"
 
 # ─── One token set (2026-10-01): hard-coded colour literals may only go DOWN ───
 # quality/color_literals_baseline.json holds today's per-file count; a rise (or a new file with
@@ -204,7 +204,7 @@ must_have "$BLOCKS/StoryRow.jsx" "createElement" "StoryRow renders one wrapper +
 must_not_have "$BLOCKS/TierChip.css" "background" "TierChip has no fill colours per tier (ring weight + word only)"
 must_not_have "$BLOCKS/TierChip.css" "#[0-9a-fA-F]{3,8}|rgba?\\(" "TierChip.css uses tokens, no colour literals"
 must_not_have "$BLOCKS/blocks.css" "#[0-9a-fA-F]{3,8}|rgba?\\(" "shared blocks CSS uses tokens, no colour literals"
-must_have "$SRC/features/map/lib/legend.js" "from '@/shared/lib/statusGlyph.js'" "map legend re-exports the glyph vocabulary from shared"
+must_have "$SRC/shared/map/legend.js" "from '@/shared/lib/statusGlyph.js'" "map legend re-exports the glyph vocabulary from shared"
 must_have "$SRC/features/map/components/HudIntelFeed.jsx" "StoryRow" "map intel feed rows are the shared StoryRow"
 must_have "$SRC/app/layout/Layout.jsx" "LoadTopBar" "request-activity bar comes from the shared loader module"
 if [ ! -e "$SRC/shared/ui/IntelligenceLoader.jsx" ] && [ ! -e "$SRC/app/layout/LoadingBar.jsx" ]; then
@@ -296,7 +296,7 @@ must_not_have "$T/Stories.css" "#[0-9a-fA-F]{3,8}\\b|rgba?\\(" "Stories.css is t
 must_not_have "$T/WeeklyPage.jsx" "return null" "WeeklyPage never null-gates"
 
 # ─── P5 (2026-10-01): sweep regressions ───
-must_not_have "$SRC/features/map/components/RadarMap.jsx" "(shading|linkArcs|countryRisk|situations) = \\[\\]" "RadarMap defaults are stable (a '= []' default re-ran the draw effect every render)"
+must_not_have "$SRC/shared/map/RadarMap.jsx" "(shading|linkArcs|countryRisk|situations) = \\[\\]" "RadarMap defaults are stable (a '= []' default re-ran the draw effect every render)"
 must_not_have "$SRC/features/track-record/components/ForecastBoard.jsx" "(situations|countryRisk)=\\{\\[\\]\\}" "ForecastBoard passes stable arrays to RadarMap (inline [] looped: Maximum update depth)"
 # (the /spider-demo prototype and its button guard were retired in P7b)
 must_not_have "$SRC/features/economy/EconomyPage.css" "ep-chg-(up|dn) *\\{ *color: *#" "economy change colours are tokens (the light-theme green/red were under 4.5:1 on dark)"
@@ -457,7 +457,7 @@ must_not_have "$SRC/features/countries/components/CountryCardV2.jsx" "brief the 
 # 7 · legend motion budget from the real constants
 must_have "$SRC/features/map/components/MapLegend.jsx" "MOTION_BUDGET.movers" "legend motion budget uses MOTION_BUDGET.movers"
 must_have "$SRC/features/map/components/MapLegend.jsx" "MOTION_BUDGET.pulses" "legend motion budget uses MOTION_BUDGET.pulses"
-must_not_have "$SRC/features/map/components/SituationMap3D.jsx" "pulseSet\\(active, Date.now\\(\\), 8\\)" "the globe uses the budget constant, not a literal 8"
+must_not_have "$SRC/shared/map/SituationMap3D.jsx" "pulseSet\\(active, Date.now\\(\\), 8\\)" "the globe uses the budget constant, not a literal 8"
 
 # 2026-10-02 operator yes: Studio credits copy removed (credits parked); Stories rail renamed
 must_not_have "$SRC/features/analysis-studio/AnalysisStudio.jsx" "Credits · |out of analysis credits|Add credits" "Studio shows no credits copy while credits are parked"

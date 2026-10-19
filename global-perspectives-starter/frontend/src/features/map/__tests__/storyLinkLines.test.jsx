@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import RadarMap from '@/features/map/components/RadarMap.jsx';
+import RadarMap from '@/shared/map/RadarMap.jsx';
 import MapLegend from '@/features/map/components/MapLegend.jsx';
 
 const base = { situations: [], focusId: null, callout: null, newIds: null, height: 300, onSelect() {}, onOpenCallout() {}, onScan() {}, shading: [], countryRisk: [], onSelectCountry() {} };

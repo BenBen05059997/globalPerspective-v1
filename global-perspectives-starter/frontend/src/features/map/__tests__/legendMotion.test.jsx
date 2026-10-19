@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import MapLegend from '@/features/map/components/MapLegend.jsx';
-import { MOTION_BUDGET, pulseSet } from '@/features/map/lib/pulse.js';
+import { MOTION_BUDGET, pulseSet } from '@/shared/map/pulse.js';
 
 describe('Key — motion budget', () => {
   it('says "at most 3 moving, 5 breathing" from MOTION_BUDGET', () => {

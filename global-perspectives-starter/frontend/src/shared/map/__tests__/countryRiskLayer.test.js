@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   chunkNames, MAX_NAMES_PER_CALL, outlineForTier, countryRiskEntry, buildCountryRiskLayer, riskPeekData,
-} from '@/features/map/lib/countryRiskLayer.js';
+} from '@/shared/map/countryRiskLayer.js';
 
 const NOW = Date.parse('2026-09-27T12:00:00Z');
 const daysAgo = (d) => new Date(NOW - d * 86400000).toISOString();

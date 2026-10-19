@@ -1,6 +1,6 @@
 // crisisHue — pure mapping from a story's editorial `category` to the console's crisis-hue
 // vocabulary (M5a). Hue = crisis TYPE only, never severity or freshness (those are separate
-// tokens — see freshnessState in shared/lib/freshness.js and TIER_R in SituationMap.jsx).
+// tokens — see freshnessState in shared/lib/freshness.js).
 //
 // Values come from the tokens (shared/styles/tokens.js mirrors tokens.css), so every map renderer
 // and every CSS rule agree about what a given hue means. Anything that isn't clearly one of the

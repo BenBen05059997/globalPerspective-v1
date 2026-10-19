@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
+import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 
 describe('gdacsLevelBadge', () => {
   it('returns null for a non-GDACS situation, whatever it carries', () => {

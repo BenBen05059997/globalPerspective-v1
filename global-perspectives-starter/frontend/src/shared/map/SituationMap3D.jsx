@@ -4,22 +4,23 @@ import { FlyToInterpolator, _GlobeView as GlobeView, _GlobeController as GlobeCo
 import { GeoJsonLayer, ScatterplotLayer, ArcLayer, BitmapLayer, PathLayer, IconLayer } from '@deck.gl/layers';
 import * as topojson from 'topojson-client';
 import { geoCentroid } from 'd3-geo';
-import topoData from '@/features/map/assets/countries-110m.json';
-import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/features/map/lib/countryGeo.js';
-import { dashedArcPaths, DASH } from '@/features/map/lib/storyLinkArcs.js';
-import { textureUrl, spinStep, spinControlState, globeZoomForHeight, globeFitFraction } from '@/features/map/lib/globeSpin.js';
+import topoData from '@/shared/map/countries-110m.json';
+import { ISO3_TO_NUM, ISO3_CENTROID_FALLBACK } from '@/shared/map/countryGeo.js';
+import { dashedArcPaths, DASH } from '@/shared/map/storyLinkArcs.js';
+import { textureUrl, spinStep, spinControlState, globeZoomForHeight, globeFitFraction } from '@/shared/map/globeSpin.js';
 import {
   ICON_MAPPING, GLYPH_SIZE, EDGE_SCALE, CORNER_SIZE, BRACKET_GAP, diamondSize, badgeOffset, bracketCorners, getIconAtlas,
-} from '@/features/map/lib/globeIcons.js';
-import { GLOBE_HORIZON } from '@/features/map/lib/globeHorizon.js';
+} from '@/shared/map/globeIcons.js';
+import { GLOBE_HORIZON } from '@/shared/map/globeHorizon.js';
 import { CRISIS_RGB } from '@/shared/lib/crisisHue.js';
 import { TOKENS } from '@/shared/styles/tokens.js';
 import '@/shared/ui/primitives.css';
-import { pulseSet, MOTION_BUDGET } from '@/features/map/lib/pulse.js';
-import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
+import '@/shared/map/mapKit.css';
+import { pulseSet, MOTION_BUDGET } from '@/shared/map/pulse.js';
+import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 import {
   tierSize, markerKind, situationFreshness, freshnessLook, statusGlyph, desaturateRgb, hexToRgb,
-} from '@/features/map/lib/legend.js';
+} from '@/shared/map/legend.js';
 
 // M3 · night-lights globe (operator's option B) — NASA Black Marble, taken from the MIT-licensed
 // three-globe package's examples. Loaded well after first paint (idle callback) so it never

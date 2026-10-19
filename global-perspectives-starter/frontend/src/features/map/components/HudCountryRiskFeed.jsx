@@ -2,7 +2,7 @@
 // map's polygons draw from, keyboard-reachable, StoryPeek on every row. Rows are the shared
 // StoryRow (stripe = the worst axis's crisis hue, neutral TierChip with the score), like the
 // intel feed, so the two layers' feeds read as one system, not two designs.
-import { riskPeekData } from '@/features/map/lib/countryRiskLayer.js';
+import { riskPeekData } from '@/shared/map/countryRiskLayer.js';
 import StoryRow from '@/shared/ui/StoryRow.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';

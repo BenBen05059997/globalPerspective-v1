@@ -2,8 +2,8 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   ICON_MAPPING, GLYPH_PTS, GLYPH_SIZE, EDGE_SCALE, CORNER_SIZE, BADGE_GAP, BRACKET_GAP, ATLAS_W, ATLAS_H,
   diamondSize, badgeOffset, bracketCorners, getIconAtlas,
-} from '@/features/map/lib/globeIcons.js';
-import { STATUS_GLYPHS } from '@/features/map/lib/legend.js';
+} from '@/shared/map/globeIcons.js';
+import { STATUS_GLYPHS } from '@/shared/map/legend.js';
 
 describe('globeIcons (pixel-space badge / alert / bracket sprites)', () => {
   it('has one sprite per legend glyph, plus the alert diamond and the bracket corner', () => {

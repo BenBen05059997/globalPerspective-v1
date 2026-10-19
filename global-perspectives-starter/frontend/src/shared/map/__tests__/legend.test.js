@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import {
   tierSize, markerKind, markerShape, situationFreshness, freshnessClass, freshnessLook, statusGlyph,
   desaturateRgb, hexToRgb, markerHex,
-} from '@/features/map/lib/legend.js';
+} from '@/shared/map/legend.js';
 
 const NOW = Date.parse('2026-09-27T12:00:00Z');
 const hoursAgo = (h) => new Date(NOW - h * 3600e3).toISOString();

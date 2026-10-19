@@ -1,25 +1,18 @@
 /* ForecastBoard — MAP | BOARD (shared Tabs segmented switch; panel and tiles are shared Cards).
-   The map pane reuses RadarMap (features/map), whose base `.sm-*` class names are styled in
-   SituationHome.css — not loaded on this page, so (as StoryMode.css does) we scope only the subset
-   RadarMap actually renders here. */
+   The map pane reuses RadarMap (shared/map), whose base `.sm-*` chrome comes from mapKit.css; only
+   this page's differences are scoped here. */
 .tr-fb { display: flex; flex-direction: column; gap: var(--space-3); }
 
 .tr-fb-mapgrid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: var(--space-3); }
 
 .tr-fb-map { position: relative; border-radius: var(--r-lg); overflow: hidden; height: 340px; background: var(--bg); border: 1px solid var(--hairline); }
 .tr-fb-map .sm-wrap {
-  position: relative; width: 100%; height: 100%; overflow: hidden;
+  height: 100%; border: 0; border-radius: 0;
   background: radial-gradient(130% 100% at 50% 0%, var(--panel-3) 0%, var(--panel-2) 60%, var(--bg) 100%);
 }
-/* RadarMap's hover tip is its own element (filled imperatively); drawn here like the shared Tooltip (.gp-tip). */
-.tr-fb-map .sm-tip {
-  position: absolute; pointer-events: none; opacity: 0; transition: opacity var(--fast);
-  background: var(--panel-2); border: 1px solid var(--hairline-strong); color: var(--text-body);
-  font-size: var(--text-sm); padding: var(--space-2) var(--space-3); border-radius: var(--r-md); z-index: 5; max-width: 240px;
-  box-shadow: var(--shadow-lg);
-}
-.tr-fb-map .sm-globe-foot { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: center; gap: var(--space-2); }
-.tr-fb-map .sm-attrib { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.03em; color: var(--text-muted); }
+/* RadarMap's hover tip (gp-tip sm-tip) with a tighter pad on this small map. */
+.tr-fb-map .sm-tip { padding: var(--space-2) var(--space-3); }
+.tr-fb-map .sm-attrib { color: var(--text-muted); }
 .tr-fb-map .sm-spin-ctl { display: none; }
 
 .tr-fb-panel { min-height: 340px; display: flex; flex-direction: column; gap: var(--space-2); overflow-y: auto; }

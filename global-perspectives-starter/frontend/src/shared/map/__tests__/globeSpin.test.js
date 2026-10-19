@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { textureUrl, wrapLongitude, spinStep, defaultMapView, normalizeStoredView, spinControlState, globeZoomForHeight, globeFitFraction, GLOBE_LIMB_FACTOR } from '@/features/map/lib/globeSpin.js';
+import { textureUrl, wrapLongitude, spinStep, defaultMapView, normalizeStoredView, spinControlState, globeZoomForHeight, globeFitFraction, GLOBE_LIMB_FACTOR } from '@/shared/map/globeSpin.js';
 
 describe('globeSpin — textureUrl', () => {
   it('builds the path under a root base', () => {

@@ -17,17 +17,17 @@ import {
 import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
 import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
 import { legacyNote } from '@/features/threads/lib/questionChips.js';
-import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
+import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import ClaimTag from '@/features/threads/components/ClaimTag.jsx';
-import RadarMap from '@/features/map/components/RadarMap.jsx';
+import RadarMap from '@/shared/map/RadarMap.jsx';
 import '@/features/threads/components/StoryMode.css';
 
 // Story-mode's map is the same console map component /map uses (lazy — deck.gl is heavy, code-
 // split so it only loads on this route), with a WebGL-less RadarMap fallback (same pattern as
 // SituationHome.jsx's USE_3D check).
-const SituationMap3D = lazy(() => import('@/features/map/components/SituationMap3D.jsx'));
+const SituationMap3D = lazy(() => import('@/shared/map/SituationMap3D.jsx'));
 
 function canUse3D() {
   try {

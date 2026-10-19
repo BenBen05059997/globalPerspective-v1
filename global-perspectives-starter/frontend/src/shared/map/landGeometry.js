@@ -6,7 +6,7 @@
 // component into the /account bundle. This module only needs topojson-client to decode the
 // bundled topology; no consumer of `land`/`FRAME` needs a d3 namespace import for that.
 import * as topojson from 'topojson-client';
-import topoData from '@/features/map/assets/countries-110m.json';
+import topoData from '@/shared/map/countries-110m.json';
 
 // Exported so every map view (RadarMap, SituationMap3D, deskMap) draws the same real coastlines
 // with the same crop, instead of each re-deriving its own land/frame from the topojson bundle.

@@ -106,23 +106,7 @@
 /* ---- the map ---- */
 .sh-mapwrap { position: relative; }
 .sh-mapinner { position: relative; }
-.sm-wrap { position: relative; width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; background: var(--bg); }
-/* F2.15: a visible focus ring on the globe canvas and the radar's focusable countries/markers.
-   !important: deck.gl sets `outline: none` inline on `.deck-events-root` on every render. */
-.sm-wrap canvas:focus-visible,
-.sm-wrap .deck-events-root:focus-visible { outline: 2px solid var(--focus-ring) !important; outline-offset: -2px; }
-.rd-shade:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.rd-marker:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
 .sh-maploading { display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: var(--text-ui); }
-/* radar marker hover card: the shared Tooltip look (gp-tip), shown/placed by RadarMap.jsx */
-.sm-tip { position: absolute; opacity: 0; transition: opacity var(--fast); z-index: 5; max-width: 240px; }
-
-/* Radar sweep (M4): a rotating conic-gradient beam, positioned/rotated from RadarMap.jsx. */
-.rd-beam {
-  position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;
-  transform: translate(-50%, -50%); mix-blend-mode: screen;
-}
-
 /* Controls over the map (Tabs segmented, Buttons): the shared blocks on a HUD surface so they read
    over land and sea. One rule for phone and desktop. */
 .sh-onmap { background: var(--panel); backdrop-filter: blur(4px); }
@@ -132,19 +116,6 @@
 /* phone: the control cluster floats over the map's top edge, wrapping to a second row */
 .sh-controls { position: absolute; top: var(--space-3); left: var(--space-3); right: var(--space-3); z-index: 8; display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .sh-quiet { position: absolute; bottom: var(--space-3); left: var(--space-3); right: 68px; z-index: 6; background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--r-md); padding: var(--space-2) var(--space-3); font-size: var(--text-sm); color: var(--text-muted); }
-
-/* map foot: imagery credit + spin / "Scan again" control (globe and radar) */
-.sm-globe-foot { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: center; gap: var(--space-2); }
-.sm-attrib { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.03em; color: var(--text-dim); }
-.sm-spin-ctl {
-  width: var(--tap-min); height: var(--tap-min); min-width: var(--tap-min);
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--panel); color: var(--text-body); border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-sm); font-size: var(--text-md); cursor: pointer; backdrop-filter: blur(4px);
-}
-.sm-spin-ctl:hover:not(:disabled) { border-color: var(--accent); color: var(--text-head); }
-.sm-spin-ctl:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.sm-spin-ctl:disabled { opacity: 0.4; cursor: default; }
 
 /* legend (the "Key"; only rendered while open) */
 .sh-legend {

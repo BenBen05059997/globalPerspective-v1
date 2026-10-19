@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import * as legend from '@/features/map/lib/legend.js';
+import * as legend from '@/shared/map/legend.js';
 import { statusGlyph, STATUS_GLYPHS } from '@/shared/lib/statusGlyph.js';
 
 describe('legend glyph vocabulary moved to shared', () => {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   bearingDeg, beamCrossed, lapAngle, LAP_MS, LAP_START_DEG, gainedIds,
   NO_CARDS, enqueueCard, advanceCards, agoShort, scanCardText, scanControlLabel,
-} from '@/features/map/lib/radar.js';
+} from '@/shared/map/radar.js';
 
 describe('radar — bearingDeg', () => {
   it('reads 0° due east of centre', () => {

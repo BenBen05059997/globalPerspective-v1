@@ -4,7 +4,7 @@
 // project-docs/redesign-ux/_active/CONSOLE_WIREFRAME_TECHNIQUE.md §3 for the original sweep design.
 import { AXIS_LABELS } from '@/shared/lib/riskTiers.js';
 import { TIER_LABEL } from '@/shared/lib/situationLabels.js';
-import { changedAt } from '@/features/map/lib/pulse.js';
+import { changedAt } from '@/shared/map/pulse.js';
 
 /**
  * Bearing of a point (x, y) from the map centre (cx, cy), in the same convention the sweep

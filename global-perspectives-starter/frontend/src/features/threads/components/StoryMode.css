@@ -92,15 +92,12 @@
 .sm-stage { position: relative; flex: 1 1 auto; display: flex; flex-direction: row; min-width: 0; }
 .sm-mapwrap { flex: 1 1 auto; min-width: 0; height: 100%; }
 .sm-maploading { display: flex; align-items: center; justify-content: center; }
-/* The map component (SituationMap3D/RadarMap) owns its `.sm-*` class names; their base styling
-   lives in SituationHome.css, which story mode doesn't load. Scope the few needed here instead of
-   pulling in the whole /map stylesheet (review fix #6). The backdrop climbs the panel ladder. */
+/* The map component (SituationMap3D/RadarMap) brings its `.sm-*` base from shared/map/mapKit.css;
+   story mode fills the stage edge to edge, and the backdrop climbs the panel ladder. */
 .sm-mapwrap .sm-wrap {
-  position: relative; width: 100%; height: 100%; overflow: hidden;
+  height: 100%; border: 0; border-radius: 0;
   background: radial-gradient(130% 100% at 50% 0%, var(--panel-3) 0%, var(--panel-2) 60%, var(--bg) 100%);
 }
-.sm-mapwrap .sm-globe-foot { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: center; gap: var(--space-2); }
-.sm-mapwrap .sm-attrib { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.03em; color: var(--text-dim); }
 /* The story map is held still, centred on the story's country — no idle spin, so its play/pause
    control has nothing to control here (review fix #6). */
 .sm-mapwrap .sm-spin-ctl { display: none; }

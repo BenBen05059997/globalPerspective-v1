@@ -1,7 +1,7 @@
 'use strict';
 
 // newsSituationTracker — the FOLDER (DATA_STRATEGY.md). Sole writer of situation state + the map
-// bundle. Every rate(10 minutes) sweep:
+// bundle. Every rate(30 minutes) sweep:
 //   1. read the latest observation snapshot(s) from situations/inbox/ (written by openers: GDACS now)
 //   2. load current state (situations/index.json → situations/state/<id>.json)
 //   3. FOLD: buildSituation for each observation, coolSituation for open situations gone from the

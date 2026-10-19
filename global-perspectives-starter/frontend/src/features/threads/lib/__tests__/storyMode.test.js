@@ -189,7 +189,13 @@ describe('viewFrom', () => {
 describe('mostLikelyScenario', () => {
   it('picks the scenario with the highest real probability', () => {
     const forecast = { scenarios: [{ label: 'Escalation', probability: 0.3 }, { label: 'De-escalation', probability: 0.55 }] };
-    expect(mostLikelyScenario(forecast)).toEqual({ label: 'De-escalation', probability: 0.55 });
+    expect(mostLikelyScenario(forecast)).toEqual({ name: 'De-escalation', probability: 0.55, lead: null });
+  });
+  it('drops a name that is only the rank, and leads with the earliest dated trigger', () => {
+    const forecast = { scenarios: [{ label: 'Most Likely', probability: 0.6, triggers: [
+      { text: 'Talks resume', deadline: '2026-12-01' }, { text: 'Ceasefire signed', deadline: '2026-11-03' }, { text: 'No date' },
+    ] }] };
+    expect(mostLikelyScenario(forecast)).toEqual({ name: null, probability: 0.6, lead: 'Ceasefire signed' });
   });
   it('is null with no forecast or no probability field', () => {
     expect(mostLikelyScenario(null)).toBeNull();

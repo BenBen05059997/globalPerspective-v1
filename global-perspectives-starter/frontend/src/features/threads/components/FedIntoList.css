@@ -1,0 +1,19 @@
+/* fi-* — FedIntoList / FedIntoToggle: one rendering of a story-link row, wherever it shows (story
+   mode's FED INTO slide, Read in full's Why section and Timeline "Show linked news"). Confidence is
+   the word and the dots, never a colour; "older analysis" is the one amber (stale) mark. */
+.fi-list { list-style: none; margin: 0; padding: 0; }
+.fi-row { position: relative; padding: var(--space-2) 0; border-bottom: 1px solid var(--hairline); }
+.fi-row.fi-older { filter: var(--fresh-older-filter); }
+.fi-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); flex-wrap: wrap; }
+.fi-head a { color: var(--accent); font-size: var(--text-ui); text-decoration: none; }
+.fi-head a:hover { text-decoration: underline; }
+.fi-conf-badge { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.04em; color: var(--text-muted); }
+.fi-meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: calc(var(--space-1) / 2); font-size: var(--text-xs); color: var(--text-dim); }
+.fi-older-tag { font-family: var(--mono); font-size: var(--text-2xs); color: var(--warn); }
+.fi-mechanism { margin: var(--space-1) 0 0; font-size: var(--text-ui); font-style: italic; color: var(--text-body); }
+.fi-cited { margin-top: calc(var(--space-1) / 2); font-size: var(--text-xs); color: var(--text-dim); }
+.fi-cited-list { display: flex; flex-direction: column; gap: calc(var(--space-1) / 2); margin: var(--space-1) 0 0; padding: 0; list-style: none; }
+.fi-cited-list li { font-size: var(--text-xs); line-height: 1.4; color: var(--text-dim); }
+.fi-cited-date { font-family: var(--mono); color: var(--text-body); }
+.fi-cited-more { font-style: italic; }
+.fi-toggle-wrap { margin: var(--space-2) 0 var(--space-3); }

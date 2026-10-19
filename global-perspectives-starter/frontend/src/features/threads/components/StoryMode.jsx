@@ -1,11 +1,12 @@
 import { useMemo, useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
+import Button from '@/shared/ui/Button.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import TierChip from '@/shared/ui/TierChip.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
-import { CATEGORY_BADGE_COLORS, riskScoreToVar as RISK_COLOR } from '@/shared/styles/tokens';
-import { tierFromScore, tierLabel } from '@/shared/lib/riskTiers';
+import { tierFromScore } from '@/shared/lib/riskTiers';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
 import { firstSentences } from '@/features/map/lib/cardText.js';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
@@ -19,6 +20,7 @@ import { legacyNote } from '@/features/threads/lib/questionChips.js';
 import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
 import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
+import ClaimTag from '@/features/threads/components/ClaimTag.jsx';
 import RadarMap from '@/features/map/components/RadarMap.jsx';
 import '@/features/threads/components/StoryMode.css';
 
@@ -61,14 +63,14 @@ function AnalysisNote({ generatedAt, children }) {
 // Review fix #8: the AI story-arc paragraph used to run off the bottom of the card with no cue.
 // Show the first ~3 sentences (cardText.js's shared summarizer, so story mode reads the same as
 // the map's story card) with an explicit "Read more" toggle, instead of relying only on scroll.
-function ExpandableText({ text, tagLabel }) {
+function ExpandableText({ text, tag }) {
   const [expanded, setExpanded] = useState(false);
   const short = useMemo(() => firstSentences(text, 3), [text]);
   const truncated = !!short && short.length < text.length;
   return (
     <>
       <p className="sm-slide-text">
-        {tagLabel && <span className="sm-ai-tag">{tagLabel}</span>} {expanded || !truncated ? text : short}
+        {tag && <ClaimTag kind={tag} />} {expanded || !truncated ? text : short}
       </p>
       {truncated && (
         <button type="button" className="sm-more-btn" onClick={() => setExpanded((e) => !e)}>
@@ -81,7 +83,7 @@ function ExpandableText({ text, tagLabel }) {
 
 // ── Slide bodies ──────────────────────────────────────────────────────────────
 
-export function BriefSlide({ thread, analysis, displayTitle, category, catColors, forecast, hasChapters, hasWatch, linkNote = null, onJumpTimeline, onJumpOutlook }) {
+export function BriefSlide({ thread, analysis, displayTitle, category, forecast, hasChapters, hasWatch, linkNote = null, onJumpTimeline, onJumpOutlook }) {
   const first = thread.entries[thread.entries.length - 1]; // oldest
   const from = thread.dateRange.from;
   const to = thread.dateRange.to;
@@ -89,38 +91,39 @@ export function BriefSlide({ thread, analysis, displayTitle, category, catColors
   return (
     <div className="sm-slide sm-slide-brief">
       <div className="sm-slide-kicker">
-        {catColors && <CategoryTag category={category} />}
+        <CategoryTag category={category} />
         <span>{rawDateLabel(from)} — {rawDateLabel(to)} · {spanDays(from, to)} day{spanDays(from, to) === 1 ? '' : 's'}</span>
       </div>
       <h2 className="sm-slide-title">{displayTitle}</h2>
       {analysis?.storyArc ? (
         <AnalysisNote generatedAt={analysis.generatedAt}>
-          <ExpandableText text={analysis.storyArc} tagLabel="model judgment" />
+          <ExpandableText text={analysis.storyArc} tag="judgment" />
         </AnalysisNote>
       ) : (
-        <p className="sm-slide-text"><span className="sm-fact-badge">FACT</span> {first?.title}</p>
+        <p className="sm-slide-text"><ClaimTag kind="fact" /> {first?.title}</p>
       )}
       {likely && (
         <div className="sm-likely-badge" title="The forecast's own highest-probability scenario">
-          Most likely: <b>{likely.label}</b> ({Math.round(likely.probability * 100)}%)
+          Most likely ({Math.round(likely.probability * 100)}%){likely.name ? <>: <b>{likely.name}</b></> : null}
+          {likely.lead ? <span className="sm-likely-lead">First dated trigger: {likely.lead}</span> : null}
         </div>
       )}
       <div className="sm-slide-stats">
         <span><b>{thread.entries.length}</b> events</span>
         <span><b>{thread.allSources.length}</b> sources</span>
         {analysis?.riskScore != null && (
-          <span style={{ color: RISK_COLOR(analysis.riskScore) }}><b>{tierLabel(tierFromScore(analysis.riskScore))}</b> risk</span>
+          <span className="sm-slide-risk"><TierChip tier={tierFromScore(analysis.riskScore)} /> risk</span>
         )}
       </div>
       {(hasChapters || hasWatch) && (
         <div className="sm-jump-row">
-          {hasChapters && <button type="button" className="sm-jump-btn" onClick={onJumpTimeline}>→ Timeline</button>}
-          {hasWatch && <button type="button" className="sm-jump-btn" onClick={onJumpOutlook}>→ Outlook</button>}
+          {hasChapters && <Button compact onClick={onJumpTimeline}>→ Timeline</Button>}
+          {hasWatch && <Button compact onClick={onJumpOutlook}>→ Outlook</Button>}
         </div>
       )}
       <StoryLinkNote note={linkNote} />
       <p className="sm-legend">
-        <span className="sm-fact-badge">FACT</span> cited dated news · <span className="sm-inference-badge">INFERENCE</span> model judgment
+        <ClaimTag kind="fact" /> cited dated news · <ClaimTag kind="inference" /> model judgment
       </p>
     </div>
   );
@@ -135,7 +138,7 @@ export function ChapterSlide({ chapter, index }) {
         {chapter.country && <span> · {chapter.country}</span>}
       </div>
       <h2 className="sm-slide-title">{chapter.label}</h2>
-      <p className="sm-legend"><span className="sm-fact-badge">FACT</span> cited dated news, this story&apos;s own timeline</p>
+      <p className="sm-legend"><ClaimTag kind="fact" /> cited dated news, this story&apos;s own timeline</p>
       <ul className="sm-chapter-entries">
         {chapter.entries.map((e, i) => (
           <li key={`${e.topicId || e.date}-${i}`}>
@@ -154,7 +157,7 @@ export function FedIntoSlide({ fedInto }) {
       <div className="sm-slide-kicker">FED INTO · {distinctTargets(fedInto)} linked {distinctTargets(fedInto) === 1 ? 'story' : 'stories'}</div>
       <h2 className="sm-slide-title">News this story is judged to feed into</h2>
       <p className="sm-caption">
-        <span className="sm-inference-badge">INFERENCE</span> Links are between stories; we don&apos;t know which event in
+        <ClaimTag kind="inference" /> Links are between stories; we don&apos;t know which event in
         this story drove each one.
       </p>
       <FedIntoList links={fedInto} direction="into" />
@@ -279,9 +282,9 @@ function Scrubber({ days, chapters, deadlines, inflectionDate, activeKey, onJump
 function Drawer({ label, open, onToggle, children }) {
   return (
     <div className="sm-drawer">
-      <button type="button" className={`sm-drawer-btn${open ? ' on' : ''}`} aria-expanded={open} onClick={onToggle}>
+      <Button compact selected={open} className="sm-drawer-btn" aria-expanded={open} onClick={onToggle}>
         {label}
-      </button>
+      </Button>
       {open && <div className="sm-drawer-body">{children}</div>}
     </div>
   );
@@ -320,7 +323,6 @@ export function StoryMap({ shading, storyFocusIso3, height, linkArcs = [] }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function StoryMode({ thread, analysis, forecast, displayTitle, category, onReadFull }) {
-  const catColors = CATEGORY_BADGE_COLORS[category];
   const entriesOldestFirst = useMemo(() => [...thread.entries].reverse(), [thread.entries]);
 
   const chapters = useMemo(
@@ -442,7 +444,7 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
     <div className="gp-console sm-root" ref={rootRef} style={{ height: rootHeight }}>
       <div className="sm-topbar">
         <div className="sm-topbar-label">STORY MODE</div>
-        <button type="button" className="sm-readfull-btn" onClick={onReadFull}>Read in full →</button>
+        <Button compact onClick={onReadFull}>Read in full →</Button>
       </div>
 
       <div className="sm-body">
@@ -509,7 +511,7 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
               <div className={`sm-slideview${reduced ? ' sm-instant' : ''}`}>
                 {activeSlide?.key === 'brief' && (
                   <BriefSlide
-                    thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors}
+                    thread={thread} analysis={analysis} displayTitle={displayTitle} category={category}
                     forecast={forecast} hasChapters={chapters.length > 0} hasWatch={deadlines.length > 0} linkNote={linkNote}
                     onJumpTimeline={() => chapters[0] && jumpToChapterKey(chapters[0].key)}
                     onJumpOutlook={() => jumpToChapterKey('watch')}

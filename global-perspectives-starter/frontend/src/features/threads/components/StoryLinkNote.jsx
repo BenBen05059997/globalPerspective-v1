@@ -1,3 +1,5 @@
+import '@/features/threads/components/StoryLinkNote.css';
+
 // StoryLinkNote — the honest "no linked stories" lines (lib/linkStates.js). Renders nothing while a
 // story is linked or while nothing is known yet.
 export default function StoryLinkNote({ note }) {

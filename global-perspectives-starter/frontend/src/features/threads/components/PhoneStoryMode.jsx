@@ -3,7 +3,8 @@ import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
-import { CATEGORY_BADGE_COLORS } from '@/shared/styles/tokens';
+import Button from '@/shared/ui/Button.jsx';
+import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
 import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
 import {
@@ -27,47 +28,11 @@ function prefersReducedMotion() {
   } catch { return false; }
 }
 
-// PhoneTabs — the P1 tab-bar pattern (same WAI-ARIA tabs + arrow-key roving used by MapPhoneTabs
-// on /map), rebuilt here rather than imported so this file has no dependency on the map feature's
-// internal tab list (READ/MAP/TIMELINE, not MAP/LIST/ALERTS).
-function PhoneTabs({ active, onChange }) {
-  const handleKeyDown = (e) => {
-    const { key } = e;
-    if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') return;
-    e.preventDefault();
-    const count = TABS.length;
-    const currentIndex = TABS.findIndex((t) => t.key === active);
-    let nextIndex;
-    if (key === 'Home') nextIndex = 0;
-    else if (key === 'End') nextIndex = count - 1;
-    else if (key === 'ArrowLeft') nextIndex = (currentIndex - 1 + count) % count;
-    else nextIndex = (currentIndex + 1) % count;
-    const nextKey = TABS[nextIndex].key;
-    onChange(nextKey);
-    requestAnimationFrame(() => document.getElementById(`psm-tab-${nextKey}`)?.focus());
-  };
-  return (
-    <div className="psm-tabs" role="tablist" aria-label="Story view" onKeyDown={handleKeyDown}>
-      {TABS.map((t) => (
-        <button
-          key={t.key} type="button" role="tab" id={`psm-tab-${t.key}`}
-          aria-selected={active === t.key} aria-controls={`psm-panel-${t.key}`}
-          tabIndex={active === t.key ? 0 : -1}
-          className={`psm-tab${active === t.key ? ' on' : ''}`}
-          onClick={() => onChange(t.key)}
-        >
-          {t.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function SlideBody({ activeSlide, activeChapter, chapters, thread, analysis, displayTitle, category, catColors, forecast, deadlines, fedInto, linkNote, onJumpTimeline, onJumpOutlook }) {
+function SlideBody({ activeSlide, activeChapter, chapters, thread, analysis, displayTitle, category, forecast, deadlines, fedInto, linkNote, onJumpTimeline, onJumpOutlook }) {
   if (activeSlide?.key === 'brief') {
     return (
       <BriefSlide
-        thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors}
+        thread={thread} analysis={analysis} displayTitle={displayTitle} category={category}
         forecast={forecast} hasChapters={chapters.length > 0} hasWatch={deadlines.length > 0} linkNote={linkNote}
         onJumpTimeline={onJumpTimeline} onJumpOutlook={onJumpOutlook}
       />
@@ -124,7 +89,6 @@ function DrawerSheet({ drawerKey, onClose, whySteps, who, view, sources }) {
 // a row jumps to that slide in READ. Drawers open as a full BottomSheet from a row of buttons
 // under the slide. 44px targets; reduced motion = instant (no swipe transition class).
 export default function PhoneStoryMode({ thread, analysis, forecast, displayTitle, category, onReadFull }) {
-  const catColors = CATEGORY_BADGE_COLORS[category];
   const entriesOldestFirst = useMemo(() => [...thread.entries].reverse(), [thread.entries]);
   const chapters = useMemo(
     () => buildChapters(entriesOldestFirst, analysis?.entryShortTitles, analysis?.inflectionTopicId, iso3ForName),
@@ -198,13 +162,13 @@ export default function PhoneStoryMode({ thread, analysis, forecast, displayTitl
     <div className="gp-console psm-root">
       <div className="psm-topbar">
         <div className="psm-topbar-label">STORY MODE</div>
-        <button type="button" className="psm-readfull-btn" onClick={onReadFull}>Read in full →</button>
+        <Button compact onClick={onReadFull}>Read in full →</Button>
       </div>
 
-      <PhoneTabs active={tab} onChange={setTab} />
+      <Tabs variant="phone" idBase="psm" label="Story view" tabs={TABS} active={tab} onChange={setTab} />
 
       {tab === 'read' && (
-        <div className="psm-panel" role="tabpanel" id="psm-panel-read" aria-labelledby="psm-tab-read">
+        <div className="psm-panel" {...tabPanelProps('psm', 'read')}>
           <div
             className={`psm-slideview${reduced ? ' sm-instant' : ''}`}
             onTouchStart={onTouchStart}
@@ -212,7 +176,7 @@ export default function PhoneStoryMode({ thread, analysis, forecast, displayTitl
           >
             <SlideBody
               activeSlide={activeSlide} activeChapter={activeChapter} chapters={chapters}
-              thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors}
+              thread={thread} analysis={analysis} displayTitle={displayTitle} category={category}
               forecast={forecast} deadlines={deadlines} fedInto={fedInto} linkNote={linkNote}
               onJumpTimeline={() => { if (chapters[0]) jumpToChapterKey(chapters[0].key); }}
               onJumpOutlook={() => jumpToChapterKey('watch')}
@@ -233,22 +197,22 @@ export default function PhoneStoryMode({ thread, analysis, forecast, displayTitl
           </div>
           {anyDrawer && (
             <div className="psm-drawer-row" role="group" aria-label="Story drawers">
-              {hasWhy && <button type="button" className="psm-drawer-open" onClick={() => setDrawer('why')}>WHY</button>}
-              {hasWho && <button type="button" className="psm-drawer-open" onClick={() => setDrawer('who')}>WHO</button>}
-              {hasViewFrom && <button type="button" className="psm-drawer-open" onClick={() => setDrawer('viewfrom')}>VIEW FROM</button>}
-              {hasSources && <button type="button" className="psm-drawer-open" onClick={() => setDrawer('sources')}>SOURCES</button>}
+              {hasWhy && <Button compact className="psm-drawer-open" onClick={() => setDrawer('why')}>WHY</Button>}
+              {hasWho && <Button compact className="psm-drawer-open" onClick={() => setDrawer('who')}>WHO</Button>}
+              {hasViewFrom && <Button compact className="psm-drawer-open" onClick={() => setDrawer('viewfrom')}>VIEW FROM</Button>}
+              {hasSources && <Button compact className="psm-drawer-open" onClick={() => setDrawer('sources')}>SOURCES</Button>}
             </div>
           )}
         </div>
       )}
 
       {tab === 'map' && (
-        <div className="psm-panel psm-panel-map" role="tabpanel" id="psm-panel-map" aria-labelledby="psm-tab-map">
+        <div className="psm-panel psm-panel-map" {...tabPanelProps('psm', 'map')}>
           <StoryMap shading={shading} linkArcs={linkArcs} storyFocusIso3={mapFocusIso3} height={320} />
           <BottomSheet stop={mapSheetStop} onStopChange={setMapSheetStop} onClose={() => setMapSheetStop('peek')} title={activeSlide?.label}>
             <SlideBody
               activeSlide={activeSlide} activeChapter={activeChapter} chapters={chapters}
-              thread={thread} analysis={analysis} displayTitle={displayTitle} category={category} catColors={catColors}
+              thread={thread} analysis={analysis} displayTitle={displayTitle} category={category}
               forecast={forecast} deadlines={deadlines} fedInto={fedInto} linkNote={linkNote}
               onJumpTimeline={() => { if (chapters[0]) jumpToChapterKey(chapters[0].key); }}
               onJumpOutlook={() => jumpToChapterKey('watch')}
@@ -258,7 +222,7 @@ export default function PhoneStoryMode({ thread, analysis, forecast, displayTitl
       )}
 
       {tab === 'timeline' && (
-        <div className="psm-panel" role="tabpanel" id="psm-panel-timeline" aria-labelledby="psm-tab-timeline">
+        <div className="psm-panel" {...tabPanelProps('psm', 'timeline')}>
           <ul className="psm-tl-list">
             {chapters.map((c, i) => (
               <li key={c.key}>

@@ -17,7 +17,7 @@ import '@/shared/ui/blocks.css';
 //   title, place            text
 //   crisis                  'conflict' | 'political' | 'economic' | 'humanitarian' -> bar colour token
 //   hue                     explicit CSS colour for the bar (wins over `crisis`; the map passes its axis hue)
-//   tier, score             TierChip inputs (no tier = "not scored"); `tierHue` tints the chip ring
+//   tier, score             TierChip inputs (no tier = "not scored"; the chip is always neutral)
 //   chip                    a node that REPLACES the TierChip (e.g. a category chip on unscored stories)
 //   status | situation      StatusGlyph input (key, or a tracker record)
 //   changedAt, now         ISO timestamp of the last change; `now` is for tests
@@ -30,7 +30,7 @@ import '@/shared/ui/blocks.css';
 //   id, peek, peekData      StoryPeek on hover/focus: `peek` is the usePeek() result, `peekData` the peekData() record
 //   as                      wrapper element, default 'li'
 export default function StoryRow({
-  title, place = null, crisis = null, hue = null, tier = null, score = null, tierHue = null, chip = null,
+  title, place = null, crisis = null, hue = null, tier = null, score = null, chip = null,
   status = null, situation = null, changedAt = null, now = Date.now(), meta = null, summary = null, watching = null,
   to = null, href = null, onClick = null, active = false, dim = false,
   id = null, peek = null, peekData = null, as: Wrapper = 'li', className = '',
@@ -53,7 +53,7 @@ export default function StoryRow({
 
   const body = (
     <>
-      {chip || <TierChip tier={tier} score={score} hue={tierHue} />}
+      {chip || <TierChip tier={tier} score={score} />}
       <span className="gp-row__main">
         <span className="gp-row__meta">
           <StatusGlyph status={status} situation={situation} />

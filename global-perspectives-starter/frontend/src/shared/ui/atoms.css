@@ -21,7 +21,7 @@
 .ss-label {
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: var(--warn);
+  color: var(--accent); /* LIVE = fresh data, the accent; --warn is reserved for stale/paused */
 }
 
 .ss-stat {

@@ -3,25 +3,12 @@
 const OpenAI = require('openai');
 const { applyEnrichment, annotateSourcesWithMetadata } = require('./source_enrichment');
 
-// Optional DynamoDB: prefer AWS SDK v3; fallback to v2 if available
-let ddbDoc = null;
-let usingAwsSdkV3 = false;
-try {
-  const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-  const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
-  const ddb = new DynamoDBClient({});
-  ddbDoc = DynamoDBDocumentClient.from(ddb);
-  usingAwsSdkV3 = true;
-} catch (_) {
-  try {
-    const AWS = require('aws-sdk');
-    ddbDoc = new AWS.DynamoDB.DocumentClient();
-  } catch (_ignored) {
-    // No AWS SDK available; writes will be skipped gracefully
-  }
-}
+// AWS SDK v3 is provided by the Lambda Node.js runtime.
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const ddbDoc = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
-const MODEL_NAME = process.env.GROK_MODEL || 'deepseek-v4-flash'; // grok-4-1 fallback was dead; set to live model (verified 2026-09-08)
+const MODEL_NAME = process.env.GROK_MODEL || 'deepseek-v4-pro'; // fallback only; matches the live env (checked 2026-10-19)
 const DEFAULT_LIMIT = 15;
 
 // Allowed categories for topic filtering
@@ -53,15 +40,9 @@ function slugifyTitle(title) {
 }
 
 async function readSeenTopics() {
-  if (!ddbDoc || !CACHE_TABLE) return [];
+  if (!CACHE_TABLE) return [];
   try {
-    let result;
-    if (usingAwsSdkV3) {
-      const { GetCommand } = require('@aws-sdk/lib-dynamodb');
-      result = await ddbDoc.send(new GetCommand({ TableName: CACHE_TABLE, Key: { id: SEEN_TOPICS_ID } }));
-    } else {
-      result = await ddbDoc.get({ TableName: CACHE_TABLE, Key: { id: SEEN_TOPICS_ID } }).promise();
-    }
+    const result = await ddbDoc.send(new GetCommand({ TableName: CACHE_TABLE, Key: { id: SEEN_TOPICS_ID } }));
     const item = result?.Item;
     if (!item || !Array.isArray(item.entries)) return [];
     const cutoff = Date.now() - (SEEN_TOPICS_TTL_HOURS * 60 * 60 * 1000);
@@ -73,19 +54,14 @@ async function readSeenTopics() {
 }
 
 async function writeSeenTopics(entries) {
-  if (!ddbDoc || !CACHE_TABLE) return;
+  if (!CACHE_TABLE) return;
   try {
     const item = {
       id: SEEN_TOPICS_ID,
       entries,
       updatedAt: new Date().toISOString(),
     };
-    if (usingAwsSdkV3) {
-      const { PutCommand } = require('@aws-sdk/lib-dynamodb');
-      await ddbDoc.send(new PutCommand({ TableName: CACHE_TABLE, Item: item }));
-    } else {
-      await ddbDoc.put({ TableName: CACHE_TABLE, Item: item }).promise();
-    }
+    await ddbDoc.send(new PutCommand({ TableName: CACHE_TABLE, Item: item }));
     console.log(`Wrote ${entries.length} seen topic fingerprints`);
   } catch (err) {
     console.warn('Failed to write seen topics:', err.message);
@@ -97,7 +73,7 @@ async function writeSeenTopics(entries) {
 // ============================================================
 
 async function readPastArchiveTitles(days) {
-  if (!ddbDoc || !CACHE_TABLE) return [];
+  if (!CACHE_TABLE) return [];
   try {
     const titles = [];
     const now = new Date();
@@ -110,13 +86,7 @@ async function readPastArchiveTitles(days) {
       const key = `archive#${y}-${m}-${d}`;
       const dateLabel = `${y}-${m}-${d}`;
       try {
-        let result;
-        if (usingAwsSdkV3) {
-          const { GetCommand } = require('@aws-sdk/lib-dynamodb');
-          result = await ddbDoc.send(new GetCommand({ TableName: CACHE_TABLE, Key: { id: key } }));
-        } else {
-          result = await ddbDoc.get({ TableName: CACHE_TABLE, Key: { id: key } }).promise();
-        }
+        const result = await ddbDoc.send(new GetCommand({ TableName: CACHE_TABLE, Key: { id: key } }));
         const entries = result?.Item?.entries;
         if (Array.isArray(entries)) {
           for (const entry of entries) {
@@ -416,8 +386,8 @@ function isScheduledEvent(event) {
 }
 
 async function writeCache({ topics, model, limit }) {
-  if (!ddbDoc || !CACHE_TABLE) {
-    const reason = !ddbDoc ? 'No DynamoDB client' : 'No TOPICS_DDB_TABLE env';
+  if (!CACHE_TABLE) {
+    const reason = 'No TOPICS_DDB_TABLE env';
     console.log(`Skipping cache write: ${reason}`);
     return { cached: false, reason };
   }
@@ -446,12 +416,7 @@ async function writeCache({ topics, model, limit }) {
 
   try {
     console.log(`DynamoDB write: table=${CACHE_TABLE}, id=${CACHE_ID}, generationId=${generationId}`);
-    if (usingAwsSdkV3) {
-      const { PutCommand } = require('@aws-sdk/lib-dynamodb');
-      await ddbDoc.send(new PutCommand({ TableName: CACHE_TABLE, Item: item }));
-    } else {
-      await ddbDoc.put({ TableName: CACHE_TABLE, Item: item }).promise();
-    }
+    await ddbDoc.send(new PutCommand({ TableName: CACHE_TABLE, Item: item }));
     console.log(`DynamoDB write OK: generationId=${generationId}`);
     return { cached: true, updatedAt, generationId };
   } catch (e) {

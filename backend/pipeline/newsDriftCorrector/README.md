@@ -19,10 +19,10 @@ Served by `newsSensitiveData` (`driftNotes`); `newsEmailSender` `drift_alert` ma
 - Countries: `DRIFT_COUNTRIES` (comma list; code default is 12 countries). `DRIFT_MAX_EVENTS` (25) events per prompt.
 
 ## Models
-- `XAI_API_KEY` / `GROK_API_URL` (default `https://api.deepseek.com/chat/completions`) / `GROK_MODEL` (fallback `deepseek-flash`): legacy names hold DeepSeek. Sends `thinking: { type: 'disabled' }`.
+- `XAI_API_KEY` / `GROK_API_URL` (fallback `https://api.deepseek.com`) / `GROK_MODEL` (fallback `deepseek-flash`) through the shared client `src/_shared/llm.js`: legacy names hold DeepSeek. Thinking is disabled.
 
 ## Gotchas
-- Idempotent per date: an existing `DRIFT#<date>` row is skipped (`alreadyNoted`). `src/dayZero.js` and the direction regexes are synced copies (`scripts/check-shared-sync.mjs`).
+- Idempotent per date: an existing `DRIFT#<date>` row is skipped (`alreadyNoted`). `dayZero` and `llm` come from `backend/shared/src` through the `src/_shared` symlink. The prose regexes in `src/directionCheck.js` are a port of the frontend `features/analysis-studio/lib/directionCheck.js`; nothing checks the two stay in step (its header says `check-shared-sync.mjs` does; it does not).
 
 ## Tests
 - `cd backend/pipeline/newsDriftCorrector/src && npm test` (`node --test ../test/*.test.js`): 31 pass.

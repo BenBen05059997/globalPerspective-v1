@@ -19,6 +19,7 @@ emails `ALERT_EMAIL_TO` (operator, not subscribers) and marks the row sent. LLM 
 ## Gotchas
 - `DRY_RUN` defaults ON: anything other than the string `false` sends nothing.
 - The header comment says it never auto-sends and waits for human confirm (`backend/distribution/cli/breaking/review.js`); the code auto-sends to the operator when `DRY_RUN` is off.
+- `placeFilter` (`usableCountryRecord`) comes from `backend/shared/src` through the `src/_shared` symlink.
 - Tune via `SIGNIFICANCE_THRESHOLD` (code default 2.0). `node index.js` runs a local pass against prod tables (writes the proposal row).
 - Subscriber breaking sends live in `newsEmailSender` (its breaking rule is DISABLED).
 

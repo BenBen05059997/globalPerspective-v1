@@ -1,6 +1,6 @@
 # newsGdacsIngest
 
-Keyless, LLM-free ingest of the GDACS disaster feed (UN+EU). Each run fetches the current event list, writes the full current set to the S3 corpus (read by newsImpactAudit), and writes one observation snapshot of all current Orange/Red events to the situations inbox. It holds no situation state: the tracker folds the observations. `src/situations-core.js` contains the pure fold helpers (`buildObservation`, `buildSituation`, `coolSituation`, `buildStorySituation`).
+Keyless, LLM-free ingest of the GDACS disaster feed (UN+EU). Each run fetches the current event list, writes the full current set to the S3 corpus (read by newsImpactAudit), and writes one observation snapshot of all current Orange/Red events to the situations inbox. It holds no situation state: the tracker folds the observations. The pure helpers (`buildObservation`, `buildSituation`, `coolSituation`, `buildStorySituation`) live in `backend/shared/src/situations-core.js`, reached through the `src/_shared` symlink and shared with newsSituationTracker.
 
 ## Deployment
 - Deployed name `newsGdacsIngest` · runtime `nodejs22.x` · group `situations` (scripts/functions.json)
@@ -15,10 +15,10 @@ Keyless, LLM-free ingest of the GDACS disaster feed (UN+EU). Each run fetches th
 ## Gotchas
 - `SITUATIONS_INBOX_DISABLED=true` skips the inbox write. Corpus and inbox writes are best-effort: a failure is logged and never fails the run.
 - The file header still says it "mirrors ... into GlobalPerspectiveGdacsEvents". That is stale: the handler no longer writes DynamoDB, and `GDACS_TABLE` and `ddb()` are unused.
-- `coolSituation` keeps the pre-cool tier (audit F3). Its doc comment ("cooling at tier 'low'") and one unit test still expect `low`.
+- `coolSituation` keeps the pre-cool tier (audit F3); its doc comment still says "cooling at tier 'low'".
 - Not a Function URL; the code emits no CORS headers.
 
 ## Tests
-- `cd backend/situations/newsGdacsIngest/src && node situations-core.test.mjs`. FAILS on 2026-10-19: 9 pass, then `cool: green observation` expects tier `low` and gets `high` (a stale test, see above). The tests after it do not run.
+- No Lambda-local tests. The situations-core tests: `cd backend/shared && node --test test/situations-core.test.mjs` (passes 2026-10-19).
 
 Last verified: 2026-10-19

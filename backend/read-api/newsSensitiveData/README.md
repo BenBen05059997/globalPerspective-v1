@@ -15,15 +15,15 @@ The site's read-only REST proxy (despite the name, all content is public). One h
 - External APIs: Mapbox geocoding (`MAPBOX_GEOCODING_KEY`); LLM for `dossier_analysis`; Google securetoken certs (`FIREBASE_PROJECT_ID`)
 
 ## Models
-- `dossier_analysis` only: `GROK_MODEL` (fallback `deepseek-flash`), key `XAI_API_KEY`, URL `GROK_API_URL` (default `api.deepseek.com`); the GROK_*/XAI_* names hold the DeepSeek config.
+- `dossier_analysis` only: `GROK_MODEL` (fallback `deepseek-flash`), key `XAI_API_KEY`, URL `GROK_API_URL` (fallback `https://api.deepseek.com`), through the shared client `src/_shared/llm.js`; the GROK_*/XAI_* names hold the DeepSeek config.
 
 ## Gotchas
 - CORS: code emits `Access-Control-Allow-Origin` (own allow-list; `rss` sends `*`) and answers OPTIONS itself.
 - Tier is a depth cap, never an auth gate: no/invalid token or any error means `free`, still 200. Capped: `country_history` drift notes (1) and `corrections_feed`.
 - `prediction_track_record` serves the S3 cache and falls back to a live Scan; that fallback must stay in sync with `newsPredictionsSnapshot/src/trackRecord.js`.
-- `archive_range` returns light entries (6 MB payload limit). `placeFilter.js` + `placeNames.json`/`iso3Names.json` and `lib.js` week helpers are shared copies (`scripts/check-shared-sync.mjs`, `newsPredictionResolver/test/weeksParity.test.js`).
+- `archive_range` returns light entries (6 MB payload limit). `placeFilter` (+ name tables) and `llm` come from `backend/shared/src` through the `src/_shared` symlink. The `lib.js` week helpers are still a copy, kept equal by `backend/predictions/newsPredictionResolver/test/weeksParity.test.js`.
 
 ## Tests
-- `cd backend/read-api/newsSensitiveData/src && npm test` (`node --test ../test/*.test.js`, offline): 41/41 passed 2026-10-19.
+- `cd backend/read-api/newsSensitiveData/src && npm test` (`node --test ../test/*.test.js`, offline): 35/35 passed 2026-10-19.
 
 Last verified: 2026-10-19

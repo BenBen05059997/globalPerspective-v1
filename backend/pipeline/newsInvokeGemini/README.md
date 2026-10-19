@@ -5,7 +5,7 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 ## Deployment
 - Deployed name `newsInvokeGemini-dev` (repo dir `newsInvokeGemini`) · runtime `nodejs22.x` · group `pipeline` (scripts/functions.json)
 - Trigger: EventBridge Scheduler `InvokeGoogleGemini` `cron(15 4/8 * * ? *)` (UTC, ENABLED). No Function URL (checked 2026-10-19).
-- Deploy: `scripts/lambda.sh newsInvokeGemini diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). The zip ships node_modules (`openai`).
+- Deploy: `scripts/lambda.sh newsInvokeGemini diff|package|deploy` (deploy needs operator authorization per CLAUDE.md). The zip ships no node_modules: `src/package.json` has no production deps (the runtime provides `@aws-sdk` v3).
 
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE` (key `id`): reads `seen-today` and `archive#YYYY-MM-DD` (previous 7 days); writes the cache item `id = TOPICS_CACHE_ITEM_ID` (default `staging`) and `seen-today`.
@@ -14,7 +14,7 @@ The topic selector at the head of the content pipeline. Despite the name, it doe
 - Env: `SOURCE_ENRICH_ENABLED`, `SOURCE_ENRICH_THRESHOLD`, `SOURCE_ENRICH_MAX`, `SOURCE_ENRICH_CROSS_TOPIC`, `TOPICS_LIMIT`.
 
 ## Models
-- `GROK_MODEL` (fallback `deepseek-v4-pro`, "matches the live env" per the code comment), key `XAI_API_KEY`, base `GROK_API_URL` (a trailing `/chat/completions` is stripped for the OpenAI SDK). The GROK_/XAI_ names are legacy and the provider is DeepSeek: the model fallback is a DeepSeek id, and the request sends DeepSeek's `thinking: {type: 'disabled'}`. Only the URL fallback (`api.x.ai/v1`) still points at xAI, so a missing `GROK_API_URL` would send a DeepSeek model id to xAI.
+- `GROK_MODEL` (fallback `deepseek-v4-pro`, "matches the live env" per the code comment) through the shared client `src/_shared/llm.js` (`backend/shared/src`, plain fetch, no SDK): `GROK_API_URL` (base or full `/chat/completions` URL, fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names are legacy and hold DeepSeek values; thinking is disabled.
 
 ## Gotchas
 - The names "Gemini" and "Grok" in the code and logs are historical.

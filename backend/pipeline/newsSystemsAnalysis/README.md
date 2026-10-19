@@ -13,15 +13,15 @@ Daily cross-domain causal "web" per country. Reads 30 days of topic archives plu
 - Other env names: `SYSTEMS_TEST_COUNTRIES` (comma list restricting targets), `MAX_TOKENS` (default 3000), `TEMPERATURE` (default 0.3)
 
 ## Models
-- `GROK_MODEL` (code fallback `deepseek-v4-pro`) at `GROK_API_URL`, key `XAI_API_KEY`. The code's URL fallback is `api.x.ai`, but live `GROK_API_URL` points at `api.deepseek.com` (checked 2026-10-19). Thinking mode disabled.
+- `GROK_MODEL` (code fallback `deepseek-v4-pro`) through the shared client `src/_shared/llm.js`: `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names hold DeepSeek values. Thinking mode disabled.
 
 ## Gotchas
 - `SYSTEMS#` rows carry a 14-day `ttl`, but the table's TTL is disabled, so old webs never expire; readers judge freshness from `generatedAt`.
 - A web-index failure is logged and does not undo the country webs already written.
 - Cites are kept only if the model was shown that entry (short `E12` codes mapped back to topicIds).
-- `dayZero.js`, `placeFilter.js`, `placeNames.json`, `iso3Names.json` are byte-identical copies guarded by `scripts/check-shared-sync.mjs`.
+- `dayZero`, `placeFilter` (+ name tables) and `llm` come from `backend/shared/src` through the `src/_shared` symlink; `scripts/lambda.sh` zips them as real files. Shared-module tests live in `backend/shared/test`.
 
 ## Tests
-- `cd backend/pipeline/newsSystemsAnalysis/src && npm test` (`node --test ../test/*.test.js`) - 22 passed 2026-10-19
+- `cd backend/pipeline/newsSystemsAnalysis/src && npm test` (`node --test ../test/*.test.js`) - 16 passed 2026-10-19
 
 Last verified: 2026-10-19

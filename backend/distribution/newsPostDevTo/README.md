@@ -10,10 +10,10 @@ Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-1
 ## Reads / writes
 - DynamoDB `TOPICS_DDB_TABLE`: reads `id = today-archive` (only entries archived today)
 - DynamoDB `SUMMARIZE_PREDICT_TABLE`: reads `THREAD#<id>`/`THREAD_ANALYSIS`, `COUNTRY#<name>`/`COUNTRY_INTELLIGENCE`; writes `DAILY_BRIEF#<date>`/`DAILY_BRIEF` (90-day `ttl`)
-- External APIs: `GROK_API_URL` (default `api.x.ai`) chat completions
+- External APIs: DeepSeek chat completions via `src/_shared/llm.js` (`GROK_API_URL`, fallback `https://api.deepseek.com`)
 
 ## Models
-- `GROK_MODEL` (fallback `deepseek-v4-pro`) with key `XAI_API_KEY` and URL `GROK_API_URL`. The request sends DeepSeek's `thinking: disabled`, so these GROK_*/XAI_* names hold a DeepSeek config; check live env for the host.
+- `GROK_MODEL` (fallback `deepseek-v4-pro`) with key `XAI_API_KEY`, through the shared client `src/_shared/llm.js` (thinking disabled). The GROK_*/XAI_* names hold DeepSeek values.
 
 ## Gotchas
 - Brief is skipped (logged, not an error) when `SUMMARIZE_PREDICT_TABLE` or `XAI_API_KEY` is unset.
@@ -22,6 +22,6 @@ Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-1
 - Thinking mode is disabled on purpose (2026-07-26 outage: thinking burned `max_tokens`).
 
 ## Tests
-- `cd backend/distribution/newsPostDevTo/src && npm test` (`node --test ../test/*.test.js`, offline): 15/15 passed 2026-10-19.
+- `cd backend/distribution/newsPostDevTo/src && npm test` (`node --test ../test/*.test.js`, offline): 9/9 passed 2026-10-19. `dayZero`, `placeFilter` and `llm` (from `backend/shared/src` via the `src/_shared` symlink) are tested in `backend/shared/test`.
 
 Last verified: 2026-10-19

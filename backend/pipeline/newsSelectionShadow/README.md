@@ -18,7 +18,7 @@ Shadow run of the layered story selector (plan P7). Shortly after each live topi
 ## Gotchas
 - Throws without `JEV_API_KEY`; skips (returns `ok: false`) when no live selection ran in the last 30 min.
 - Hard guard: throws when a run would need more than `MAX_JEV_CALLS` (default 300) Jev calls.
-- `classifier-core.js` is a symlink to `newsSituationIngest/src/classifier-core.js` (one clustering source); the deployed zip must hold the real file, so check `diff` before deploy.
+- `classifier-core.js` is a symlink to `newsSituationIngest/src/classifier-core.js` (one clustering source); `scripts/lambda.sh` follows the link, so the zip holds the real file.
 
 ## Tests
 - `cd backend/pipeline/newsSelectionShadow/src && node selection-core.test.mjs` (offline): 6 tests passed 2026-10-19.

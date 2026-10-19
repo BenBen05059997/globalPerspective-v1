@@ -14,14 +14,14 @@ Daily thread-level AI analysis. Reads 30 days of topic archives, groups entries 
 - Other env names: `MAX_TOKENS` (3500), `TEMPERATURE` (0.2), `TOP_P` (0.9), `INTER_CALL_DELAY_MS`
 
 ## Models
-- `GROK_MODEL` (code fallback `deepseek-flash`) at `GROK_API_URL`, key `XAI_API_KEY`. Code URL fallback is `api.x.ai`; live `GROK_API_URL` points at `api.deepseek.com` (checked 2026-10-19).
+- `GROK_MODEL` (code fallback `deepseek-flash`) through the shared client `src/_shared/llm.js`: `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. The GROK_/XAI_ names hold DeepSeek values.
 
 ## Gotchas
 - `ttl` attributes are set, but the SummarizeAndPredict table's TTL is disabled, so rows do not expire.
-- `riskDimensions.js` must stay byte-identical with newsCountryIntelligence's; `dayZero.js` with five other Lambdas. `scripts/check-shared-sync.mjs` checks both.
+- `riskDimensions`, `dayZero` and `llm` come from `backend/shared/src` through the `src/_shared` symlink (one copy, shared with newsCountryIntelligence and others); `scripts/lambda.sh` zips them as real files. Shared-module tests live in `backend/shared/test`.
 - Threads ageing out of the 30-day window never trigger a re-analysis.
 
 ## Tests
-- `cd backend/pipeline/newsThreadAnalysis/src && npm test` (`node --test ../test/*.test.js`) - 13 passed 2026-10-19
+- `cd backend/pipeline/newsThreadAnalysis/src && npm test` (`node --test ../test/*.test.js`) - 7 passed 2026-10-19
 
 Last verified: 2026-10-19

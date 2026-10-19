@@ -14,7 +14,7 @@ Daily independent audit of the topic selector's impact judgment. It reads the la
 - SNS: `SNS_TOPIC_ARN` when misses >= `MISS_ALERT_THRESHOLD` (default 2), or on any GDACS `country_absent` gap or GDELT gap.
 
 ## Models
-- `GROK_MODEL` (fallback `deepseek-flash`) at `GROK_API_URL` (fallback `api.deepseek.com/chat/completions`), with the key in `XAI_API_KEY`. Despite the GROK_/XAI_ names, this is DeepSeek (the code comment says so). Sends `thinking: {type: 'disabled'}`.
+- `GROK_MODEL` (fallback `deepseek-flash`) through the shared client `src/_shared/llm.js` (`backend/shared/src`): `GROK_API_URL` (fallback `https://api.deepseek.com`), key `XAI_API_KEY`. Despite the GROK_/XAI_ names, this is DeepSeek. Thinking is disabled.
 
 ## Gotchas
 - The schedule is DISABLED, so the audit is dormant and runs only on a manual invoke.

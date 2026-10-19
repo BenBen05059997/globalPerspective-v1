@@ -140,7 +140,7 @@ function checkRiskDimensions(pathA, pathB) {
 // shared one); a Lambda leaves its list in the commit that moves it onto src/_shared.
 const SHARED = 'amplify/backend/shared/src';
 const RISK_LAMBDAS = [];
-const SITCORE_LAMBDAS = ['newsGdacsIngest'];
+const SITCORE_LAMBDAS = [];
 const SITCORE_TRACKER = 'newsSituationTracker'; // its copy carries the 2-line header (HEADER_2LINE)
 const DAYZERO_LAMBDAS = [];
 

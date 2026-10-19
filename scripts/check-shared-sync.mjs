@@ -142,7 +142,7 @@ const SHARED = 'amplify/backend/shared/src';
 const RISK_LAMBDAS = [];
 const SITCORE_LAMBDAS = ['newsGdacsIngest'];
 const SITCORE_TRACKER = 'newsSituationTracker'; // its copy carries the 2-line header (HEADER_2LINE)
-const DAYZERO_LAMBDAS = ['newsPostDevTo'];
+const DAYZERO_LAMBDAS = [];
 
 /** N files must all be byte-identical to the first one (zero tolerance). */
 function checkAllIdentical(paths) {
@@ -159,7 +159,7 @@ const SHARE_COPIES = [
   ['analysisContext.js', 'features/analysis-studio/lib/'], ['analysisPrompt.js', 'features/analysis-studio/lib/'],
   ['driftNote.js', 'shared/lib/'], ['dropRedatedRepeats.js', 'shared/lib/'],
 ];
-const PLACE_LAMBDAS = ['newsPostDevTo', 'newsBreakingAlert', 'newsSignals', 'newsSensitiveData'];
+const PLACE_LAMBDAS = ['newsBreakingAlert', 'newsSignals', 'newsSensitiveData'];
 const FE_DATA = 'global-perspectives-starter/frontend/src/shared/data';
 const placeCore = (src) => { const a = src.indexOf("// Names in briefings come from the LLM's `regions`"); const b = src.indexOf('\nconst ymd = '); const e = src.indexOf('\n/** isRealCountryName'); const t = src.indexOf('\n// A COUNTRY# record a reader may use'); return src.slice(a, b > 0 ? b : (t > 0 ? t : e)).trim(); };
 

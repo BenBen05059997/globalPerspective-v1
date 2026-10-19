@@ -10,13 +10,13 @@
 // earlier run are reused from stories/classify-cache.json (2026-10-05), so only new ones cost a call.
 
 const core = require('./classifier-core');
+const { chat } = require('./_shared/llm');
 const { buildMessages, parseClassification, normalizeClassified, clusterStories, slug, splitByCache, nextCache } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
 const MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
 const API_KEY = process.env.XAI_API_KEY;
-const API_BASE = (process.env.GROK_API_URL || 'https://api.deepseek.com').replace(/\/chat\/completions\/?$/, '').replace(/\/$/, '');
 const BATCH = Number(process.env.CLASSIFY_BATCH) || 35;
 const MAX_BATCHES = Number(process.env.MAX_BATCHES_PER_RUN) || 12; // ≤ ~420 articles/run
 const CONCURRENCY = Number(process.env.CLASSIFY_CONCURRENCY) || 4; // parallel LLM calls (else 300s timeout)
@@ -133,20 +133,10 @@ async function fetchRss() {
   return all.filter((a) => a.ageH <= MAX_AGE_H && !seen.has(a.url) && seen.add(a.url));
 }
 
-const logUsage = (step, model, usage) => console.log('[usage] ' + JSON.stringify({ fn: process.env.AWS_LAMBDA_FUNCTION_NAME, step, model, ...usage }));
-// ── classify one batch via the flash model (raw fetch, OpenAI-compatible) ─────
+// ── classify one batch via the flash model (shared llm.js; thinking off) ─────
 async function classifyBatch(articles) {
-  const res = await fetch(`${API_BASE}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${API_KEY}` },
-    // DeepSeek V4 defaults to thinking mode, which burns max_tokens on invisible reasoning and
-    // returns empty content (finish_reason=length). Disable it — same guard as newsInvokeGemini.
-    body: JSON.stringify({ model: MODEL, messages: buildMessages(articles), temperature: 0, response_format: { type: 'json_object' }, max_tokens: 8192, thinking: { type: 'disabled' } }),
-  });
-  if (!res.ok) throw new Error(`LLM ${res.status}`);
-  const j = await res.json();
-  logUsage('classify_batch', MODEL, j.usage);
-  const raw = parseClassification(j.choices?.[0]?.message?.content);
+  const { content } = await chat({ step: 'classify_batch', model: MODEL, messages: buildMessages(articles), temperature: 0, json: true, maxTokens: 8192 });
+  const raw = parseClassification(content);
   const byN = new Map(raw.map((r) => [Number(r.n), r]));
   return articles.map((a, i) => normalizeClassified(byN.get(i + 1) || raw[i] || {}, a)).filter(Boolean);
 }

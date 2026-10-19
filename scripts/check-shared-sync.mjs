@@ -45,10 +45,6 @@ const ROOT = path.join(__dir, '..');
 const abs = (p) => path.join(ROOT, p);
 const req = createRequire(import.meta.url);
 
-const HEADER_2LINE =
-  '// ⚠️ SHARED MODULE — keep byte-identical with newsGdacsIngest/src/situations-core.js.\n' +
-  '// (Manual-deploy repo has no Lambda layers; sync by hand. Canonical: DATA_STRATEGY.md.)\n';
-
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
@@ -140,8 +136,6 @@ function checkRiskDimensions(pathA, pathB) {
 // shared one); a Lambda leaves its list in the commit that moves it onto src/_shared.
 const SHARED = 'amplify/backend/shared/src';
 const RISK_LAMBDAS = [];
-const SITCORE_LAMBDAS = [];
-const SITCORE_TRACKER = 'newsSituationTracker'; // its copy carries the 2-line header (HEADER_2LINE)
 const DAYZERO_LAMBDAS = [];
 
 /** N files must all be byte-identical to the first one (zero tolerance). */
@@ -181,19 +175,6 @@ function checkPlaceRule() {
     if (got !== ref) return { pass: false, diff: `${f}: the real-country rule text differs from refreshPolicy.js\n${textDiff('refreshPolicy.js', ref, path.basename(f), got)}` };
   }
   return { pass: true };
-}
-
-function checkSituationsCore(trackerPath, ingestPath) {
-  const trackerRaw = fs.readFileSync(trackerPath, 'utf8');
-  const ingestRaw = fs.readFileSync(ingestPath, 'utf8');
-  const trackerStripped = trackerRaw.startsWith(HEADER_2LINE)
-    ? trackerRaw.slice(HEADER_2LINE.length)
-    : trackerRaw;
-  if (trackerStripped === ingestRaw) return { pass: true };
-  return {
-    pass: false,
-    diff: textDiff('tracker(header-stripped)', trackerStripped, 'gdacs', ingestRaw),
-  };
 }
 
 function checkCountryFacts(pathA, pathB) {
@@ -275,14 +256,6 @@ function livePairs() {
     {
       name: 'riskDimensions.js (shared + Lambda copies)',
       run: () => checkAllIdentical([abs(`${SHARED}/riskDimensions.js`), ...RISK_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/riskDimensions.js`))]),
-    },
-    {
-      name: 'situations-core.js (shared + Lambda copies)',
-      run: () => {
-        const r = checkAllIdentical([abs(`${SHARED}/situations-core.js`), ...SITCORE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/situations-core.js`))]);
-        if (!r.pass || !SITCORE_TRACKER) return r;
-        return checkSituationsCore(abs(`amplify/backend/function/${SITCORE_TRACKER}/src/situations-core.js`), abs(`${SHARED}/situations-core.js`));
-      },
     },
     {
       name: 'country_facts.json',
@@ -388,20 +361,6 @@ async function selfTestRiskDimensions() {
   return result;
 }
 
-async function selfTestSituationsCore() {
-  const dir = mkTmp();
-  const trackerSrc = abs('amplify/backend/function/newsSituationTracker/src/situations-core.js');
-  const ingestSrc = abs(`${SHARED}/situations-core.js`);
-  const t = path.join(dir, 'tracker.js');
-  const g = path.join(dir, 'gdacs.js');
-  fs.copyFileSync(trackerSrc, t);
-  fs.copyFileSync(ingestSrc, g);
-  fs.appendFileSync(g, '\n// x');
-  const result = checkSituationsCore(t, g);
-  fs.rmSync(dir, { recursive: true, force: true });
-  return result;
-}
-
 async function selfTestCountryFacts() {
   const dir = mkTmp();
   const srcA = abs('amplify/backend/function/newsCountryIntelligence/src/country_facts.json');
@@ -496,7 +455,6 @@ async function selfTest() {
   console.log('Self-test — perturbing one byte per pair and confirming DRIFT is caught\n');
   const cases = [
     ['riskDimensions.js', selfTestRiskDimensions],
-    ['situations-core.js', selfTestSituationsCore],
     ['country_facts.json', selfTestCountryFacts],
     ['iso3Names.json', selfTestIso3Names],
     ['entity-normalization', selfTestEntityNormalization],

@@ -13,6 +13,9 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
 - `countries.js` + `iso3Names.json`: the one country table (`{ISO3: {name, iso2, aliases[], places?[]}}`,
   short display names such as "UAE", "DR Congo") and its resolver: `resolveCountry(text) -> {iso3, name} | null`,
   `isCountry`, `parentCountry` (West Bank -> Palestine). Frontend copy: `shared/lib/countries.js` + `shared/data`.
+- `links.js`: the site's page addresses for emails and posts, same rules as the frontend
+  `shared/lib/links.js` (`storyHref`, `countryHref`, `mapHref`, `briefingHref`, `forecastHref`, `studioHref`,
+  `todayHref`, `entityHref`, `ROUTE`) plus `absoluteUrl(path, site)`.
 - `placeFilter.js`: real-country rule (`isCountryName` = the resolver), `canonicalName`, `usableCountryRecord`.
   `placeNames.json` is no longer read here (only `newsCountryIntelligence/src/refreshPolicy.js` still reads it).
 - `riskDimensions.js`: 4-axis risk vector -> headline score/level (worst axis leads).
@@ -22,6 +25,6 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
 Who uses what: `git grep "_shared/" -- backend`.
 
 ## Checks
-- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/countries.test.js test/situations-core.test.mjs` (36 passed 2026-10-19).
-- Copies that cross the frontend/Lambda boundary (name tables, the country resolver core) are compared
+- Tests: `cd backend/shared && node --test test/dayZero.test.js test/llm.test.js test/placeFilter.test.js test/countries.test.js test/links.test.js test/situations-core.test.mjs` (38 passed 2026-10-19).
+- Copies that cross the frontend/Lambda boundary (name tables, the country resolver core, the link rules core) are compared
   by `node scripts/check-shared-sync.mjs`.

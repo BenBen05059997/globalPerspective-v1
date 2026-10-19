@@ -25,6 +25,8 @@
  *                                          byte-identical to the frontend data copies, and the resolver
  *                                          core (between the markers) in backend/shared/src/countries.js ==
  *                                          frontend shared/lib/countries.js
+ *   (d) link rules                      — the address-building core (between the markers) in
+ *                                          backend/shared/src/links.js == frontend shared/lib/links.js
  *   (e) Studio share modules, sampleRuleGolden.json — byte-identical frontend/Lambda copies
  *
  * It only reads files (plus writes to a throwaway os.tmpdir() dir in --self-test
@@ -251,6 +253,10 @@ function livePairs() {
     },
     { name: 'country identity (name tables + resolver core, backend vs frontend)', run: () => checkCountryIdentity() },
     {
+      name: 'link rules (backend/shared/src/links.js vs frontend shared/lib/links.js)',
+      run: () => checkMarkedCore(abs(`${SHARED}/links.js`), abs(`${FE_LIB}/links.js`), 'link rules core'),
+    },
+    {
       // Batch 4 / G: the Studio share Lambda re-derives sources and re-runs the checks with the frontend's own
       // pure modules, so its copies must stay byte-identical (and so must the golden context fixture both test against).
       name: 'Studio share modules (frontend + newsSharedAnalysis, 7 files + golden fixture)',
@@ -349,6 +355,16 @@ async function selfTestCountryIdentity() {
   return result;
 }
 
+async function selfTestLinkRules() {
+  const dir = mkTmp();
+  const b = path.join(dir, 'links.js');
+  const ref = fs.readFileSync(abs(`${FE_LIB}/links.js`), 'utf8');
+  fs.writeFileSync(b, ref.replace("today: '/today'", "today: '/todayx'"));
+  const result = checkMarkedCore(abs(`${SHARED}/links.js`), b, 'link rules core');
+  fs.rmSync(dir, { recursive: true, force: true });
+  return result;
+}
+
 async function selfTestEntityNormalization() {
   const dir = mkTmp();
   const srcA = fnPath('newsSituationIngest', 'src/classifier-core.js');
@@ -391,6 +407,7 @@ async function selfTest() {
   const cases = [
     ['country_facts.json', selfTestCountryFacts],
     ['country identity', selfTestCountryIdentity],
+    ['link rules', selfTestLinkRules],
     ['entity-normalization', selfTestEntityNormalization],
     ['sampleRuleGolden.json', selfTestSampleGolden],
     ['Studio share modules', selfTestShareModules],

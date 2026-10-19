@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Button from '@/shared/ui/Button.jsx';
+import '@/shared/ui/BottomSheet.css';
 
 // BottomSheet — M7 phone MAP tab: the selected situation/story's detail opens here instead of
 // the desktop rail. Three stops (P1): peek (~120px, title + category only), half (~45vh), full

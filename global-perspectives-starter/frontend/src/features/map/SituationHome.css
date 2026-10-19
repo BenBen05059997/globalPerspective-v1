@@ -247,29 +247,7 @@
 .sh-hud-compact-caret { flex: none; color: var(--text-dim); font-size: var(--text-2xs); }
 .sh-hud-compact-body { margin-top: var(--space-2); }
 
-/* bottom sheet (MAP tab, a selection): peek / half / full, a drag handle AND buttons. Only `full`
-   is a true modal. Reduced motion drops the height transition. The bottom offset clears the
-   app-wide phone tab bar (Layout.jsx `.gp-tabbar`, 58px + safe area) at every stop. */
-.sheet-scrim { position: fixed; inset: 0; z-index: 44; background: var(--strip); }
-.sheet {
-  position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 45; display: flex; flex-direction: column;
-  background: var(--panel-2); border: 1px solid var(--hairline); border-top-left-radius: var(--r-xl); border-top-right-radius: var(--r-xl);
-  box-shadow: var(--shadow-lg); overflow: hidden; transition: height 0.22s ease;
-}
-.sheet-instant { transition: none; }
-.sheet-peek { height: 120px; }
-.sheet-half { height: 45vh; }
-.sheet-full { height: 85vh; }
-/* F2.16: the drag handle is a keyboard-operable role="slider", so its target reaches 44px too. */
-.sheet-handle-row { flex: none; display: flex; justify-content: center; align-items: center; min-height: var(--tap-min); cursor: grab; touch-action: none; }
-.sheet-handle-row:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
-.sheet-handle { width: 36px; height: 4px; border-radius: var(--r-xs); background: var(--hairline-strong); }
-.sheet-topbar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-1) var(--space-3) var(--space-2); border-bottom: 1px solid var(--hairline); }
-.sheet-titlewrap { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.sheet-subtitle { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
-.sheet-title { font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-head); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sheet-btns { flex: none; display: flex; gap: var(--space-2); }
-.sheet-body { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* bottom sheet: base in shared/ui/BottomSheet.css; the detail fills the sheet body edge to edge */
 .sheet-body .sh-detail { border: 0; border-radius: 0; max-height: none; }
 
 /* ---- alert stack (R4a): open situations as cards, most severe/newest first. Same component on

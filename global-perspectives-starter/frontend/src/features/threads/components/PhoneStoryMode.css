@@ -126,46 +126,5 @@
 .psm-tl-deadline .psm-tl-date { color: var(--text-muted); }
 .psm-tl-empty { padding: var(--space-4) var(--space-2); font-size: var(--text-ui); color: var(--text-dim); }
 
-/* Monitor fix (S2.2 review #3): BottomSheet (features/map/components/BottomSheet.jsx) is styled only
-   by SituationHome.css, scoped to /map — its generic class names (.sheet, .sheet-topbar, .sheet-btn,
-   ...) had no rules here, so the sheet rendered as unstyled text. Re-styled here with the role tokens
-   rather than importing SituationHome.css or forking the component. Bottom-offset by the site's fixed
-   phone tab bar (Layout.css .gp-tabbar, 58px + safe area) the same way /map's sheet is. */
-.sheet-scrim { position: fixed; inset: 0; z-index: 44; background: var(--strip); }
-.sheet {
-  position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 45;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--hairline-strong);
-  border-top-left-radius: var(--r-xl); border-top-right-radius: var(--r-xl);
-  background: var(--panel-2); color: var(--text-body);
-  box-shadow: var(--shadow-lg);
-  font-family: var(--sans);
-  transition: height var(--base) var(--ease);
-}
-.sheet-instant { transition: none; }
-.sheet-peek { height: 120px; }
-.sheet-half { height: 45vh; }
-.sheet-full { height: 85vh; }
-.sheet-handle-row {
-  flex: none; display: flex; justify-content: center; align-items: center;
-  min-height: var(--tap-min); cursor: grab; touch-action: none;
-}
-.sheet-handle { width: 36px; height: 4px; border-radius: var(--r-xs); background: var(--hairline-strong); }
-.sheet-topbar {
-  flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
-  padding: var(--space-1) var(--space-3) var(--space-2); border-bottom: 1px solid var(--hairline);
-}
-.sheet-titlewrap { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.sheet-subtitle { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
-.sheet-title { overflow: hidden; font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-head); text-overflow: ellipsis; white-space: nowrap; }
-.sheet-btns { flex: none; display: flex; gap: var(--space-1); }
-.sheet-btn {
-  min-height: var(--tap-min); min-width: var(--tap-min); padding: 0 var(--space-3);
-  border: 1px solid var(--hairline-strong); border-radius: var(--r-sm);
-  background: var(--panel); color: var(--text-body);
-  font-family: var(--sans); font-size: var(--text-sm); cursor: pointer;
-}
-.sheet-btn:hover { border-color: var(--accent); color: var(--text-head); }
-.sheet-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.sheet-body { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: var(--space-2) var(--space-3); }
+/* BottomSheet (shared/ui/BottomSheet.css) holds plain text here, so its body gets a reading pad. */
+.psm-root .sheet-body { padding: var(--space-2) var(--space-3); }

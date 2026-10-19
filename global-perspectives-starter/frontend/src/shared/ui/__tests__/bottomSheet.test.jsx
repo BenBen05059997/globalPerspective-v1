@@ -3,7 +3,7 @@
 // to the trigger on close.
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import BottomSheet from '@/features/map/components/BottomSheet.jsx';
+import BottomSheet from '@/shared/ui/BottomSheet.jsx';
 
 function renderSheet(props = {}) {
   const onStopChange = vi.fn();

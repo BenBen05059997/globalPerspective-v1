@@ -16,7 +16,7 @@ import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
-import BottomSheet from '@/features/map/components/BottomSheet.jsx';
+import BottomSheet from '@/shared/ui/BottomSheet.jsx';
 import { phoneSheetStopFor, mapScrollTop } from '@/features/map/lib/phoneSheet.js';
 import { useIsPhone, PHONE_BREAKPOINT } from '@/shared/hooks/useIsPhone.js';
 import { hudCompactSummary } from '@/features/map/lib/hudCompact.js';

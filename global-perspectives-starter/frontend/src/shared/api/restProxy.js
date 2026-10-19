@@ -87,7 +87,7 @@ function limitedProxyFetch(headers, action, payload) {
   return promise;
 }
 
-export async function proxyAction(action, payload = {}) {
+async function proxyAction(action, payload = {}) {
   assertProxy();
   const { res, body } = await limitedProxyFetch({ 'Content-Type': 'application/json' }, action, payload);
 
@@ -140,10 +140,6 @@ export async function fetchPredictionCache(topicId) {
 
 export async function fetchTraceCauseCache(topicId) {
   return proxyAction('trace_cause', { topicId });
-}
-
-export async function fetchResearchBriefingCache(topicId) {
-  return proxyAction('research_briefing', { topicId });
 }
 
 export async function fetchTodayArchive() {
@@ -212,20 +208,12 @@ export async function fetchLatestDailyBrief(lookbackDays = 30) {
   return proxyAction('latest_daily_brief', { lookbackDays });
 }
 
-export async function fetchPairAnalysis(slug) {
-  return proxyAction('pair_analysis', { pair: slug });
-}
-
 export async function fetchWeeklyBrief() {
   return proxyAction('weekly_brief');
 }
 
 export async function fetchWeeklyMarkets() {
   return proxyAction('weekly_markets');
-}
-
-export async function fetchPairAnalysesList() {
-  return proxyAction('pair_analyses_list');
 }
 
 // ── Markets data (public, no auth required) ──────────────────────────────────
@@ -243,16 +231,6 @@ export async function fetchMarketsHistory(symbol, days = 30) {
 
 export async function fetchSystemsAnalysis(countryName) {
   return proxyAction('systems_analysis', { countryName });
-}
-
-// Event dossier + AI analysis over the causal web (see EVENT_DOSSIER_SPEC.md)
-export async function fetchDossierAnalysis(countryName, threadId, hops = 1) {
-  return proxyAction('dossier_analysis', { countryName, threadId, hops });
-}
-
-// World overview — per-country situation stats across all systems graphs
-export async function fetchWorldOverview() {
-  return proxyAction('world_overview', {});
 }
 
 // ── Economic Impact (per-thread economic disruption) ─────────────────────────
@@ -295,15 +273,6 @@ export async function fetchDisruptionsList({ minSeverity, country, limit } = {})
 
 export async function fetchTopMovers(limit = 10) {
   return proxyAction('economic_top_movers', { limit });
-}
-
-// Public preview endpoints (no auth required, for SEO / non-signed-in users)
-export async function fetchCountryPreview(countryName) {
-  return proxyAction('country_preview', { countryName });
-}
-
-export async function fetchThreadPreview(threadId) {
-  return proxyAction('thread_preview', { threadId });
 }
 
 // ── Saved items (newsSavedItems Lambda, separate Function URL endpoint) ────

@@ -39,7 +39,7 @@ Sources: `scripts/functions.json`, `aws lambda list-functions`, `list-function-u
 | `newsSelectionShadow` | `backend/pipeline/newsSelectionShadow/src` | nodejs22.x | pipeline | TriggerSelectionShadow cron(20 4,12,20 * * ? *) (ENABLED) |  |
 | `newsSensitiveData-dev` | `backend/read-api/newsSensitiveData/src` | nodejs22.x | read-api | — |  |
 | `newsSharedAnalysis` | `backend/read-api/newsSharedAnalysis/src` | nodejs22.x | read-api | Function URL (NONE) |  |
-| `newsSignals` | `backend/read-api/newsSignals/src` | nodejs22.x | read-api | TriggerSignalsBuild cron(0 10 * * ? *) (ENABLED); Function URL (NONE) |  |
+| `newsSignals` | `backend/read-api/newsSignals/src` | nodejs22.x | read-api | TriggerSignalsBuild cron(0 10 * * ? *) (DISABLED); Function URL (NONE) |  |
 | `newsSituationIngest` | `backend/situations/newsSituationIngest/src` | nodejs22.x | situations | TriggerSituationIngest rate(1 hour) (ENABLED) |  |
 | `newsSituationTracker` | `backend/situations/newsSituationTracker/src` | nodejs22.x | situations | TriggerSituationTracker rate(30 minutes) (ENABLED) |  |
 | `newsSourceAudit` | `backend/monitoring/newsSourceAudit/src` | nodejs22.x | monitoring | newsSourceAuditDaily cron(30 11 ? * MON,WED,FRI *) (ENABLED) |  |

@@ -25,8 +25,8 @@ Paths are relative to `global-perspectives-starter/frontend/`. Lazy = its own ch
 | `/track-record/text` | TrackRecordText | `src/features/track-record/TrackRecordText` | yes | page |
 | `/weekly-brief` | WeeklyBriefRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
 | `/briefings` | BriefingsPage | `src/features/briefings/BriefingsPage` | yes | page |
-| `/weekly-markets` | MarketsRedirect | `src/app/LegacyRedirects` | no | redirect → `/briefings?from=markets` |
-| `/breaking` | BreakingFeedRedirect | `src/app/LegacyRedirects` | no | redirect → `/` |
+| `/weekly-markets` | MarketsRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
+| `/breaking` | BreakingFeedRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
 | `/breaking/:id` | BreakingDetailRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
 | `/weekly` | WeeklyRoute | `src/app/LegacyRedirects` | no | page |
 | `/weekly/thread/:threadId` | ThreadPage | `src/features/threads/ThreadPage` | yes | page |

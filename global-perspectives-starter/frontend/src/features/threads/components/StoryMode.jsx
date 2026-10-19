@@ -3,7 +3,6 @@ import Button from '@/shared/ui/Button.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
-import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { tierFromScore } from '@/shared/lib/riskTiers';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
@@ -289,7 +288,7 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
   const entriesOldestFirst = useMemo(() => [...thread.entries].reverse(), [thread.entries]);
 
   const chapters = useMemo(
-    () => buildChapters(entriesOldestFirst, analysis?.entryShortTitles, analysis?.inflectionTopicId, iso3ForName),
+    () => buildChapters(entriesOldestFirst, analysis?.entryShortTitles, analysis?.inflectionTopicId),
     [entriesOldestFirst, analysis],
   );
   const deadlines = useMemo(() => buildDeadlines(forecast), [forecast]);

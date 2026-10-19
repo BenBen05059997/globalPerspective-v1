@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { COUNTRIES, resolveCountry, isCountry, parentCountry } from '@/shared/lib/countries.js';
-import { iso3Name, iso3ForName, ISO3_NAME } from '@/shared/lib/situationLabels.js';
-import { isRealCountryName } from '@/shared/lib/placeNames.js';
+import { resolveCountry, isCountry, parentCountry } from '@/shared/lib/countries.js';
+import { iso3Name } from '@/shared/lib/situationLabels.js';
 import { regionToCountryCode, getTopicRegion, getBroadRegionsForCountry } from '@/shared/lib/countryMapping';
 
 describe('country resolver (one table, short display names)', () => {
@@ -25,19 +24,17 @@ describe('country resolver (one table, short display names)', () => {
     expect(parentCountry('Scotland')).toEqual({ iso3: 'GBR', name: 'United Kingdom' });
     expect(parentCountry('Strait of Hormuz')).toBeNull();
   });
-  it('iso3ForName is alias-aware (the risk layer missed "United Arab Emirates")', () => {
-    expect(iso3ForName('United Arab Emirates')).toBe('ARE');
-    expect(iso3ForName('Democratic Republic of the Congo')).toBe('COD');
-    expect(iso3ForName('Strait of Hormuz')).toBeNull();
-    expect(iso3ForName('')).toBeNull();
+  it('resolveCountry is alias-aware (the risk layer missed "United Arab Emirates")', () => {
+    expect(resolveCountry('United Arab Emirates')?.iso3).toBe('ARE');
+    expect(resolveCountry('Democratic Republic of the Congo')?.iso3).toBe('COD');
+    expect(resolveCountry('Strait of Hormuz')).toBeNull();
+    expect(resolveCountry('')).toBeNull();
   });
-  it('ISO3_NAME is derived from the table', () => {
-    expect(Object.keys(ISO3_NAME)).toEqual(Object.keys(COUNTRIES));
-    expect(ISO3_NAME.ARE).toBe('UAE');
+  it('isCountry: aggregates, regions and sub-national places are not countries', () => {
+    for (const n of ['Europe', 'Asia', 'Middle East', 'Americas', 'Africa', 'Global', 'European Union', 'NATO', 'Gaza', '']) expect(isCountry(n)).toBe(false);
   });
-  it('isRealCountryName is the resolver', () => {
-    expect(isRealCountryName('Gambia')).toBe(true);
-    expect(isRealCountryName('Gaza')).toBe(false);
+  it('isCountry: countries, territories and archive variants are', () => {
+    for (const n of ['Iran', 'Taiwan', 'Palestine', 'Kosovo', 'Hong Kong', 'Gambia', 'USA', 'United States', 'UK', 'DR Congo', 'Democratic Republic of the Congo']) expect(isCountry(n)).toBe(true);
   });
   it('region grouping reads ISO-2 from the same table', () => {
     expect(regionToCountryCode('Scotland')).toBe('GB');

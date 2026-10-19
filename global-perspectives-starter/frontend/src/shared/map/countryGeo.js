@@ -1,7 +1,7 @@
 // countryGeo — ISO-3 → topojson numeric id join (generated from countries-110m.json by
 // name-match) + centroid fallbacks for countries absent from the 110m mesh. Used by the map to
 // draw spread arcs (origin→destination centroids) and tint affected-country polygons (slice 2b).
-// Regenerate if situationLabels ISO3_NAME or the topojson changes.
+// Regenerate if the country table (shared/data/iso3Names.json) or the topojson changes.
 
 export const ISO3_TO_NUM = {
   AFG: '004',

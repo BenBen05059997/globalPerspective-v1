@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useMembership } from '@/features/account/hooks/useMembership';
 import { createCheckout, createCreditCheckout, creditPacks } from '@/shared/api/restProxy';
+import Button from '@/shared/ui/Button.jsx';
+import Card from '@/shared/ui/Card.jsx';
 import '@/features/account/MembershipPage.css';
 
 const PLANS = [
@@ -77,36 +79,37 @@ export default function MembershipPage() {
             Membership isn't open yet — we're putting the finishing touches on checkout. Check back soon.
           </div>
         ) : isMember ? (
-          <div className="mp-active card-gp">
+          <Card className="mp-active">
             <div className="mp-active-badge">✓ You're a member</div>
             <p>
               Your membership is active{membership?.currentPeriodEnd
                 ? <> — renews {new Date(membership.currentPeriodEnd).toLocaleDateString()}</>
                 : null}.
             </p>
-            <Link to="/account" className="btn-gp">Manage in Account</Link>
-          </div>
+            <Button to="/account">Manage in Account</Button>
+          </Card>
         ) : (
           <>
             <div className="mp-plans">
               {PLANS.map((p) => (
-                <div key={p.id} className={`mp-plan card-gp${p.best ? ' best' : ''}`}>
+                <Card key={p.id} selected={!!p.best} className="mp-plan">
                   {p.best && <span className="mp-plan-tag">Best value</span>}
                   <div className="mp-plan-name">{p.name}</div>
                   <div className="mp-plan-price">{p.price}<span>{p.cadence}</span></div>
                   <div className="mp-plan-note">{p.note}</div>
                   {signedIn ? (
-                    <button
+                    <Button
+                      variant="primary"
                       className="mp-subscribe"
                       onClick={() => subscribe(p.id)}
                       disabled={busy !== null || loading}
                     >
                       {busy === p.id ? 'Starting checkout…' : `Subscribe ${p.price}${p.cadence}`}
-                    </button>
+                    </Button>
                   ) : (
-                    <Link to="/signin?returnTo=/membership" className="mp-subscribe mp-subscribe-link">Sign in to subscribe</Link>
+                    <Button to="/signin?returnTo=/membership" className="mp-subscribe">Sign in to subscribe</Button>
                   )}
-                </div>
+                </Card>
               ))}
             </div>
           </>
@@ -123,17 +126,18 @@ export default function MembershipPage() {
             {packs.length > 0 ? (
               <div className="mp-packs">
                 {packs.map((p) => (
-                  <div key={p.key} className="mp-pack card-gp">
+                  <Card key={p.key} className="mp-pack">
                     <div className="mp-pack-credits">{p.credits} credits</div>
                     {p.price && <div className="mp-pack-price">{p.price}</div>}
-                    <button
+                    <Button
+                      variant="primary"
                       className="mp-subscribe"
                       onClick={() => buyCredits(p)}
                       disabled={busy !== null || loading}
                     >
                       {busy === `credits:${p.key}` ? 'Starting checkout…' : 'Buy credits'}
-                    </button>
-                  </div>
+                    </Button>
+                  </Card>
                 ))}
               </div>
             ) : (

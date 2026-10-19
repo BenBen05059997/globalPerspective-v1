@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { usePreferences } from '@/features/account/hooks/usePreferences';
+import Button from '@/shared/ui/Button.jsx';
+import Card from '@/shared/ui/Card.jsx';
 import '@/features/account/components/SubscribeCard.css';
 
 // Email subscribe entry point. Surfaces the same opt-ins that live in Account →
@@ -61,8 +62,9 @@ export default function SubscribeCard({ kind = 'digest', variant = 'home' }) {
   const state = justSubscribed ? 'thanks' : subscribed ? 'subscribed' : 'cta';
 
   return (
-    <aside
-      className={`subcard subcard--${variant} subcard--${kind}${state === 'thanks' ? ' subcard--thanks' : ''}`}
+    <Card
+      as="aside"
+      className={`subcard subcard--${variant}${state === 'thanks' ? ' subcard--thanks' : ''}`}
       aria-label={`Subscribe to ${kind === 'breaking' ? 'breaking alerts' : 'the Weekly Brief'} by email`}
     >
       <div className="subcard-body">
@@ -79,17 +81,17 @@ export default function SubscribeCard({ kind = 'digest', variant = 'home' }) {
       </div>
       <div className="subcard-action">
         {state === 'thanks' || state === 'subscribed' ? (
-          <Link className="subcard-btn subcard-btn--ghost" to="/account?tab=notifications">Manage</Link>
+          <Button className="subcard-btn" to="/account?tab=notifications">Manage</Button>
         ) : signedIn ? (
-          <button className="subcard-btn" disabled={saving || loading} onClick={subscribe}>
+          <Button variant="primary" className="subcard-btn" disabled={saving || loading} onClick={subscribe}>
             {saving ? 'Subscribing…' : 'Subscribe'}
-          </button>
+          </Button>
         ) : (
-          <button className="subcard-btn" disabled={busy} onClick={handleSignInAndSubscribe}>
+          <Button variant="primary" className="subcard-btn" disabled={busy} onClick={handleSignInAndSubscribe}>
             {busy ? 'Opening…' : 'Subscribe'}
-          </button>
+          </Button>
         )}
       </div>
-    </aside>
+    </Card>
   );
 }

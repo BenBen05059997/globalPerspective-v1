@@ -101,15 +101,16 @@ t('fold unchanged: same level+countries → stamps refresh, no history growth', 
   assert.strictEqual(item.what_changed, prev.what_changed);
 });
 
-t('cool: green observation → cooling low once, then unchanged', () => {
+t('cool: green observation → cooling once at the pre-cool tier (audit F3), then unchanged', () => {
   const prev = buildSituation(null, obs({ alertlevel: 'Red' }), NOW, TTL).item;
   const green = obs({ alertlevel: 'Green' });
   const first = coolSituation(prev, green, '2026-09-08T03:00:00.000Z', TTL);
   assert.strictEqual(first.change, 'cooled');
-  assert.strictEqual(first.item.tier, 'low');
+  assert.strictEqual(first.item.tier, prev.tier); // tier held; state 'cooling' conveys ended-ness
   assert.strictEqual(first.item.state, 'cooling');
   const second = coolSituation(first.item, green, '2026-09-08T04:00:00.000Z', TTL);
   assert.strictEqual(second.change, 'unchanged');
+  assert.strictEqual(second.item.tier, prev.tier);
 });
 
 t('cool: gone from feed (obs null) → "no longer current"', () => {

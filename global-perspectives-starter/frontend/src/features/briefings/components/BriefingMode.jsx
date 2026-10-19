@@ -9,6 +9,8 @@ import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { SlideBody } from '@/features/briefings/components/BriefingSlides.jsx';
 import EditionsStrip, { WeeklyEditionNote } from '@/features/briefings/components/EditionsStrip.jsx';
 import ReadAsText from '@/features/briefings/components/ReadAsText.jsx';
+import Tabs from '@/shared/ui/Tabs.jsx';
+import Button from '@/shared/ui/Button.jsx';
 import '@/features/threads/components/StoryMode.css';
 import '@/features/briefings/components/BriefingMode.css';
 
@@ -20,6 +22,18 @@ function prefersReducedMotion() {
     return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   } catch { return false; }
+}
+
+const MODE_TABS = [{ key: 'daily', label: 'Daily' }, { key: 'weekly', label: 'Weekly' }];
+
+// DAILY / WEEKLY switch (desktop + phone): two views of the same page, so a segmented Tabs.
+export function BriefingModeToggle({ mode, onModeChange }) {
+  return (
+    <Tabs
+      variant="segmented" idBase="bm-mode" label="Daily or weekly" className="bm-mode-toggle"
+      tabs={MODE_TABS} active={mode} onChange={onModeChange}
+    />
+  );
 }
 
 // BriefingMode — desktop briefing mode (S3): map + horizontal slides + an editions strip, the
@@ -121,13 +135,10 @@ export default function BriefingMode({
     <div className="gp-console bm-root" ref={rootRef} style={{ height: rootHeight }}>
       <div className="sm-topbar bm-topbar">
         <div className="sm-topbar-label">BRIEFING MODE</div>
-        <div className="bm-mode-toggle" role="tablist" aria-label="Daily or weekly">
-          <button type="button" role="tab" aria-selected={mode === 'daily'} className={`bm-mode-btn${mode === 'daily' ? ' on' : ''}`} onClick={() => onModeChange('daily')}>DAILY</button>
-          <button type="button" role="tab" aria-selected={mode === 'weekly'} className={`bm-mode-btn${mode === 'weekly' ? ' on' : ''}`} onClick={() => onModeChange('weekly')}>WEEKLY</button>
-        </div>
-        <button type="button" className="sm-readfull-btn" onClick={() => setReadAsText((v) => !v)}>
+        <BriefingModeToggle mode={mode} onModeChange={onModeChange} />
+        <Button compact onClick={() => setReadAsText((v) => !v)}>
           {readAsText ? '← Back to briefing mode' : 'Read as text →'}
-        </button>
+        </Button>
       </div>
 
       {readAsText ? (

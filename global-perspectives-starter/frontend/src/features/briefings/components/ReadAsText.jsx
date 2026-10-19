@@ -1,6 +1,7 @@
 import { countryLinkPath, storyLinkPath, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
 import { Link } from 'react-router-dom';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 
 // ReadAsText — a plain, printable, accessible text version of the current edition (semantic
 // headings, no map/slide chrome), for email / print / search / screen readers. Built only from
@@ -18,14 +19,14 @@ function DailyText({ brief }) {
 
       {brief.summary && (
         <section>
-          <h2>The day</h2>
+          <SectionHeader label="The day" />
           {brief.summary.split(/\n{2,}/).map((p, i) => <p key={i}>{p.replace(/\*\*/g, '')}</p>)}
         </section>
       )}
 
       {(brief.stats?.totalArticles || brief.stats?.sourceOutlets || brief.stats?.countriesCovered) && (
         <section>
-          <h2>By the numbers</h2>
+          <SectionHeader label="By the numbers" />
           <ul>
             {brief.stats.totalArticles > 0 && <li>{brief.stats.totalArticles} articles</li>}
             {brief.stats.countriesCovered > 0 && <li>{brief.stats.countriesCovered} countries</li>}
@@ -36,7 +37,7 @@ function DailyText({ brief }) {
 
       {(brief.topStories || []).length > 0 && (
         <section>
-          <h2>Top stories</h2>
+          <SectionHeader label="Top stories" />
           {brief.topStories.map((s, i) => (
             <div key={i} className="bm-readtext-item">
               <h3>{i + 1}. {storyLinkPath(s) ? <StoryLink to={storyLinkPath(s)} topic={peekInputForStory(s)}>{s.title}</StoryLink> : s.title}</h3>
@@ -58,7 +59,7 @@ function DailyText({ brief }) {
 
       {brief.countryToWatch?.countryName && (
         <section>
-          <h2>Country to watch</h2>
+          <SectionHeader label="Country to watch" />
           <h3>
             <Link to={countryLinkPath(brief.countryToWatch.countryName)}>{brief.countryToWatch.countryName}</Link>
             {brief.countryToWatch.riskLevel ? ` — ${brief.countryToWatch.riskLevel} risk` : ''}
@@ -83,7 +84,7 @@ function WeeklyText({ brief }) {
 
       {(brief.signals || []).length > 0 && (
         <section>
-          <h2>Signals</h2>
+          <SectionHeader label="Signals" />
           {brief.signals.map((s, i) => (
             <div key={s.threadId || i} className="bm-readtext-item">
               <h3>{i + 1}. {s.lede}</h3>
@@ -98,7 +99,7 @@ function WeeklyText({ brief }) {
 
       {(brief.watch || []).length > 0 && (
         <section>
-          <h2>Next week's watchlist</h2>
+          <SectionHeader label="Next week's watchlist" />
           <ul>
             {brief.watch.map((w, i) => (
               <li key={i}>{w.event}{w.stake ? ` — ${w.stake}` : ''}</li>

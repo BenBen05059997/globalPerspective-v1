@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import { CATEGORY_BADGE_COLORS, RISK_SOLID } from '@/shared/styles/tokens';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+import TierChip from '@/shared/ui/TierChip.jsx';
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
@@ -13,6 +14,14 @@ const TRAJECTORY = {
   stable: { arrow: '→', label: 'Stable' },
   'de-escalating': { arrow: '↘', label: 'De-escalating' },
 };
+
+// A brief's riskLevel as the neutral TierChip; a value outside the four tiers stays plain text
+// (TierChip would otherwise read it as "Not scored").
+const TIERS = new Set(['low', 'moderate', 'elevated', 'high']);
+function RiskLevel({ level }) {
+  const tier = String(level).toLowerCase();
+  return TIERS.has(tier) ? <TierChip tier={tier} /> : <span>{level} risk</span>;
+}
 
 function Peekable({ id, item, children }) {
   const peek = usePeek();
@@ -70,13 +79,12 @@ function StoryNextQuestion({ threadId }) {
 }
 
 export function StorySlide({ story, index }) {
-  const catColors = CATEGORY_BADGE_COLORS[story.category];
   const region = (story.regions || [])[0];
   return (
     <div className="bm-slide bm-slide-story">
       <div className="bm-slide-kicker">
         TOP STORY {index + 1} of 8
-        {catColors && <span className="bm-cat-badge" style={{ background: catColors.bg, color: catColors.color }}>{story.category}</span>}
+        <CategoryTag category={story.category} />
       </div>
       <Peekable id={`bm-story-${index}`} item={peekInputForStory(story)}>
         <h2 className="bm-slide-title">{story.title}</h2>
@@ -115,11 +123,7 @@ export function WatchSlide({ countryToWatch, risingThread }) {
         <Link to={countryLinkPath(countryToWatch.countryName)}>{countryToWatch.countryName}</Link>
       </h2>
       <div className="bm-slide-stats">
-        {countryToWatch.riskLevel && (
-          <span style={{ color: RISK_SOLID[countryToWatch.riskLevel] || RISK_SOLID.moderate }}>
-            <b>{countryToWatch.riskLevel}</b> risk
-          </span>
-        )}
+        {countryToWatch.riskLevel && <RiskLevel level={countryToWatch.riskLevel} />}
         {traj && <span>{traj.arrow} {traj.label}</span>}
       </div>
       {countryToWatch.headline && <p className="bm-slide-text">{countryToWatch.headline}</p>}
@@ -162,8 +166,8 @@ export function SignalSlide({ signal, index }) {
       <div className="bm-slide-kicker">
         SIGNAL {index + 1}
         {signal.kind === 'development'
-          ? <span className="bm-cat-badge bm-cat-dev">development</span>
-          : signal.riskLevel && <span className="bm-cat-badge bm-cat-risk">{signal.riskLevel} risk</span>}
+          ? <CategoryTag category="development" />
+          : signal.riskLevel && <RiskLevel level={signal.riskLevel} />}
       </div>
       <Peekable id={`bm-signal-${index}`} item={peekInputForSignal(signal)}>
         <h2 className="bm-slide-title">{signal.lede}</h2>

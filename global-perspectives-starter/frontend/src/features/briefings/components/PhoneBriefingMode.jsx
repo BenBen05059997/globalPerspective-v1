@@ -9,6 +9,9 @@ import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { SlideBody } from '@/features/briefings/components/BriefingSlides.jsx';
 import EditionsStrip, { WeeklyEditionNote } from '@/features/briefings/components/EditionsStrip.jsx';
 import ReadAsText from '@/features/briefings/components/ReadAsText.jsx';
+import { BriefingModeToggle } from '@/features/briefings/components/BriefingMode.jsx';
+import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
+import Button from '@/shared/ui/Button.jsx';
 import '@/features/threads/components/StoryMode.css';
 import '@/features/threads/components/PhoneStoryMode.css';
 import '@/features/briefings/components/BriefingMode.css';
@@ -25,38 +28,6 @@ function prefersReducedMotion() {
     return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   } catch { return false; }
-}
-
-function PhoneTabs({ active, onChange }) {
-  const handleKeyDown = (e) => {
-    const { key } = e;
-    if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') return;
-    e.preventDefault();
-    const count = TABS.length;
-    const currentIndex = TABS.findIndex((t) => t.key === active);
-    let nextIndex;
-    if (key === 'Home') nextIndex = 0;
-    else if (key === 'End') nextIndex = count - 1;
-    else if (key === 'ArrowLeft') nextIndex = (currentIndex - 1 + count) % count;
-    else nextIndex = (currentIndex + 1) % count;
-    onChange(TABS[nextIndex].key);
-    requestAnimationFrame(() => document.getElementById(`pbm-tab-${TABS[nextIndex].key}`)?.focus());
-  };
-  return (
-    <div className="psm-tabs" role="tablist" aria-label="Briefing view" onKeyDown={handleKeyDown}>
-      {TABS.map((t) => (
-        <button
-          key={t.key} type="button" role="tab" id={`pbm-tab-${t.key}`}
-          aria-selected={active === t.key} aria-controls={`pbm-panel-${t.key}`}
-          tabIndex={active === t.key ? 0 : -1}
-          className={`psm-tab${active === t.key ? ' on' : ''}`}
-          onClick={() => onChange(t.key)}
-        >
-          {t.label}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 // PhoneBriefingMode — P1 + PH: READ default (swipeable slides), MAP tab (lazy-loads the map),
@@ -121,19 +92,16 @@ export default function PhoneBriefingMode({
     <div className="gp-console psm-root bm-root">
       <div className="psm-topbar bm-topbar">
         <div className="psm-topbar-label">BRIEFING MODE</div>
-        <div className="bm-mode-toggle" role="tablist" aria-label="Daily or weekly">
-          <button type="button" role="tab" aria-selected={mode === 'daily'} className={`bm-mode-btn${mode === 'daily' ? ' on' : ''}`} onClick={() => onModeChange('daily')}>DAILY</button>
-          <button type="button" role="tab" aria-selected={mode === 'weekly'} className={`bm-mode-btn${mode === 'weekly' ? ' on' : ''}`} onClick={() => onModeChange('weekly')}>WEEKLY</button>
-        </div>
+        <BriefingModeToggle mode={mode} onModeChange={onModeChange} />
       </div>
 
-      <PhoneTabs active={tab} onChange={setTab} />
+      <Tabs variant="phone" idBase="pbm" label="Briefing view" tabs={TABS} active={tab} onChange={setTab} />
 
       {tab === 'read' && (
-        <div className="psm-panel" role="tabpanel" id="pbm-panel-read" aria-labelledby="pbm-tab-read">
-          <button type="button" className="bm-readtext-btn" onClick={() => setReadAsText((v) => !v)}>
+        <div className="psm-panel" {...tabPanelProps('pbm', 'read')}>
+          <Button className="bm-readtext-btn" onClick={() => setReadAsText((v) => !v)}>
             {readAsText ? '← Back to slides' : 'Read as text →'}
-          </button>
+          </Button>
           {readAsText ? (
             <div className="bm-readtext-wrap">
               <ReadAsText mode={mode} brief={brief} />
@@ -166,13 +134,13 @@ export default function PhoneBriefingMode({
       )}
 
       {tab === 'map' && (
-        <div className="psm-panel psm-panel-map" role="tabpanel" id="pbm-panel-map" aria-labelledby="pbm-tab-map">
+        <div className="psm-panel psm-panel-map" {...tabPanelProps('pbm', 'map')}>
           <StoryMap shading={shading} storyFocusIso3={mapFocusIso3} height={320} />
         </div>
       )}
 
       {tab === 'editions' && (
-        <div className="psm-panel" role="tabpanel" id="pbm-panel-editions" aria-labelledby="pbm-tab-editions">
+        <div className="psm-panel" {...tabPanelProps('pbm', 'editions')}>
           {mode === 'weekly' ? (
             <WeeklyEditionNote weekOf={weeklyBrief?.weekOf} />
           ) : (

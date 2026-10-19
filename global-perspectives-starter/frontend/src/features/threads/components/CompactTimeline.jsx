@@ -35,7 +35,7 @@ export default function CompactTimeline({ entries, entryShortTitles, onEntryFocu
                 <span className="compact-timeline-date">{formatDateLabel(entry.date)}</span>
                 <span className="compact-timeline-title">{shortTitle}</span>
                 <span className="compact-timeline-meta">{sourceCount} source{sourceCount !== 1 ? 's' : ''}</span>
-                <span className={`story-card-chevron ${isExpanded ? 'open' : ''}`} aria-hidden="true">&#9662;</span>
+                <span className={`story-card-chevron ${isExpanded ? 'open' : ''}`} aria-hidden="true">▾</span>
               </button>
               {isExpanded && (
                 <div className="compact-timeline-expanded">

@@ -65,11 +65,12 @@ function driftClean(s) {
 function RailBlock({ label, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className={`tp-ai-block${open ? '' : ' collapsed'}`}>
-      <button type="button" className="tp-ai-toggle" aria-expanded={open} onClick={() => setOpen(o => !o)}>
-        <span className="tp-ai-section-lbl">{label}</span>
-        <span className={`tp-ai-chev${open ? ' open' : ''}`} aria-hidden="true">▾</span>
-      </button>
+    <div className="tp-ai-block">
+      <SectionHeader as="h3" label={label}>
+        <Button variant="icon" compact label={open ? `Hide ${label}` : `Show ${label}`} aria-expanded={open} onClick={() => setOpen(o => !o)}>
+          {open ? '▴' : '▾'}
+        </Button>
+      </SectionHeader>
       {open && <div className="tp-ai-block-body">{children}</div>}
     </div>
   );
@@ -422,9 +423,7 @@ export default function ThreadPage() {
         <RiskScorecard record={analysis} />
         {hasDrift && (
           <div className="tp-ai-block tp-ai-drift">
-            <div className="tp-ai-section-lbl">
-              What changed{analysis.driftNote.since ? ` · since ${driftDay(analysis.driftNote.since)}` : ''}
-            </div>
+            <SectionHeader as="h3" label={`What changed${analysis.driftNote.since ? ` · since ${driftDay(analysis.driftNote.since)}` : ''}`} />
             {safeTriggerEvent(analysis.driftNote)?.title && (
               <div className="tp-ai-drift-because">↳ Because: <b>{safeTriggerEvent(analysis.driftNote).title}</b></div>
             )}
@@ -571,7 +570,7 @@ export default function ThreadPage() {
         <div className="tp-stats">
           <div className="tp-stat">
             <div className="tp-stat-k">Thread Risk</div>
-            <div className="tp-stat-v tier">
+            <div className="tp-stat-v tp-stat-v--chip">
               <TierChip tier={tierFromScore(analysis?.riskScore)} />
             </div>
             <div className="tp-stat-d">{analysis?.riskScore != null ? `${analysis.riskScore} / 100` : '/100'}</div>
@@ -596,7 +595,7 @@ export default function ThreadPage() {
         </div>
 
         {/* Content tabs */}
-        <Tabs idBase="tp" label="Thread evidence views" tabs={contentTabs} active={activeTab} onChange={setContentTab} className="tp-content-tabs" />
+        <Tabs idBase="tp" label="Thread evidence views" tabs={contentTabs} active={activeTab} onChange={setContentTab} className="tp-views" />
         <div className="tp-tabpanel" {...tabPanelProps('tp', activeTab)}>
 
         {/* Overview tab — the synthesis, as short collapsible sections in reading order */}

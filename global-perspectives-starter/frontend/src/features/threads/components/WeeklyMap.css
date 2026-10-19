@@ -63,8 +63,7 @@
 .wmap-thread-panel.collapsed { width: 0; border-right: none; }
 .wmap-panel-toggle { position: absolute; left: 0; top: var(--space-3); z-index: 15; border-left: none; border-radius: 0 var(--r-md) var(--r-md) 0; background: var(--panel-2); }
 .wmap-thread-panel:not(.collapsed) + .wmap-map-area .wmap-panel-toggle { display: none; }
-.wmap-panel-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) var(--space-2) var(--space-1) var(--space-4); }
-.wmap-panel-header-left { font-size: var(--text-sm); font-weight: var(--weight-semibold); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.wmap-panel-top { flex-shrink: 0; align-items: center; margin: var(--space-2) var(--space-2) var(--space-2) var(--space-4); }
 .wmap-panel-filter { flex-shrink: 0; padding: 0 var(--space-3) var(--space-2); }
 .wmap-region-filter {
   width: 100%;

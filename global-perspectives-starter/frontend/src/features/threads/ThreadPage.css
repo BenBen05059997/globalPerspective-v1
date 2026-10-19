@@ -150,7 +150,7 @@
   color: var(--text-head);
 }
 /* Thread risk: the neutral TierChip (word + ring weight), never a tier colour. */
-.tp-stat-v.tier { font-family: var(--sans); font-size: var(--text-base); line-height: var(--leading-tight); letter-spacing: normal; }
+.tp-stat-v--chip { font-family: var(--sans); font-size: var(--text-base); line-height: var(--leading-tight); letter-spacing: normal; }
 .tp-stat-d { margin-top: var(--space-1); font-family: var(--mono); font-size: var(--text-xs); letter-spacing: 0.02em; color: var(--text-muted); }
 
 /* Watch questions (Overview) */
@@ -254,16 +254,6 @@
 .tp-ai-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
 .tp-ai-model { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.04em; color: var(--text-dim); }
 .tp-ai-body { flex: 1; overflow-y: auto; padding: var(--space-4) var(--space-5) var(--space-5); }
-.tp-ai-section-lbl {
-  margin: var(--space-4) 0 var(--space-2);
-  font-family: var(--mono);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.tp-ai-section-lbl:first-child { margin-top: 0; }
 .tp-ai-text { margin: 0 0 var(--space-2); font-size: var(--text-ui); line-height: 1.6; white-space: pre-line; color: var(--text-body); }
 .tp-ai-block + .tp-ai-block { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px dotted var(--hairline); }
 .tp-ai-foot {
@@ -285,25 +275,6 @@
 .tp-ai-drift-because { margin: 2px 0 var(--space-1); font-size: var(--text-ui); color: var(--text-body); }
 .tp-ai-drift-because b { color: var(--text-head); }
 
-/* Collapsible rail blocks (progressive disclosure) */
-.tp-ai-toggle {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-2);
-  width: 100%;
-  min-height: var(--tap-min);
-  margin: var(--space-2) 0 0;
-  padding: 0;
-  border: none;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-.tp-ai-toggle .tp-ai-section-lbl { margin: 0; }
-.tp-ai-toggle:hover .tp-ai-section-lbl { color: var(--text-head); }
-.tp-ai-chev { font-size: var(--text-2xs); color: var(--text-dim); transition: transform var(--fast) var(--ease); }
-.tp-ai-chev:not(.open) { transform: rotate(-90deg); }
 
 /* Grounding source cards */
 .tp-grounding-card { padding: var(--space-2) 0; border-bottom: 1px solid var(--hairline); }
@@ -397,7 +368,7 @@
 .tp-related-meta { margin-top: 3px; font-family: var(--mono); font-size: var(--text-2xs); color: var(--text-dim); }
 
 /* ── Content tabs (shared <Tabs>; this only spaces them) ─── */
-.tp-content-tabs { margin-bottom: var(--space-5); }
+.tp-views { margin-bottom: var(--space-5); }
 .tp-tabpanel:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
 
 /* ── Overview tab: sectioned synthesis ── */
@@ -459,7 +430,7 @@
   cursor: pointer;
 }
 .tp-ov-more:hover { color: var(--accent-strong); text-decoration: underline; }
-.tp-ov-head:focus-visible, .tp-ov-more:focus-visible, .tp-ai-toggle:focus-visible, .tp-related:focus-visible {
+.tp-ov-head:focus-visible, .tp-ov-more:focus-visible, .tp-related:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
   border-radius: var(--r-sm);

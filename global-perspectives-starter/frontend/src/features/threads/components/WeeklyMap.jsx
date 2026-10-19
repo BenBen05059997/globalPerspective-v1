@@ -15,6 +15,7 @@ import { crisisDotVar } from '@/shared/lib/crisisHue';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import Chip from '@/shared/ui/Chip.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/components/WeeklyMap.css';
@@ -487,10 +488,9 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
     <div className={`wmap-thread-panel ${open ? '' : 'collapsed'}`}>
       {activeThread ? (
         <>
-          <div className="wmap-panel-header">
-            <span className="wmap-panel-header-left">Story Detail</span>
+          <SectionHeader as="h2" label="Story Detail" className="wmap-panel-top">
             <Button variant="icon" compact label="Close panel" onClick={onClose}>✕</Button>
-          </div>
+          </SectionHeader>
           <ThreadDetailView
             thread={activeThread}
             onBack={() => onThreadClick(null)}
@@ -502,12 +502,9 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
         </>
       ) : (
         <>
-          <div className="wmap-panel-header">
-            <span className="wmap-panel-header-left">
-              {threadList.length} Thread{threadList.length !== 1 ? 's' : ''}
-            </span>
+          <SectionHeader as="h2" label={`${threadList.length} Thread${threadList.length !== 1 ? 's' : ''}`} className="wmap-panel-top">
             <Button variant="icon" compact label="Close panel" onClick={onClose}>✕</Button>
-          </div>
+          </SectionHeader>
           {allRegions.length > 1 && (
             <div className="wmap-panel-filter">
               <select
@@ -548,11 +545,11 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
                     <div className="wmap-country-replay-fill" style={{ width: `${((countryPlay.dateIdx + 1) / countryDates.length) * 100}%` }} />
                   </div>
                   <div className="wmap-country-replay-controls">
-                    <Button compact label="Previous day" onClick={() => onStepCountryPlay(-1)} disabled={countryPlay.dateIdx === 0}>&#9664;</Button>
+                    <Button compact label="Previous day" onClick={() => onStepCountryPlay(-1)} disabled={countryPlay.dateIdx === 0}>◀</Button>
                     <Button compact variant="primary" label={countryPlay.paused ? 'Play' : 'Pause'} onClick={onPauseCountryPlay}>
                       {countryPlay.paused || countryPlay.dateIdx >= countryDates.length - 1 ? '▶' : '❚❚'}
                     </Button>
-                    <Button compact label="Next day" onClick={() => onStepCountryPlay(1)} disabled={countryPlay.dateIdx >= countryDates.length - 1}>&#9654;</Button>
+                    <Button compact label="Next day" onClick={() => onStepCountryPlay(1)} disabled={countryPlay.dateIdx >= countryDates.length - 1}>▶</Button>
                     <Button compact label="Stop replay" onClick={onStopCountryPlay}>✕</Button>
                   </div>
                 </>
@@ -719,11 +716,11 @@ function StoryPlaybackOverlay({ storyPlay, thread, markers, onStop, onPause, onS
         Day {dateIdx + 1} of {thread.dates.length} · {articlesOnDate} article{articlesOnDate !== 1 ? 's' : ''}
       </div>
       <div className="wmap-playback-controls">
-        <Button compact className="wmap-playback-btn" label="Previous day" title="Previous day" onClick={() => onStep(-1)} disabled={isFirst}>&#9664;</Button>
+        <Button compact className="wmap-playback-btn" label="Previous day" title="Previous day" onClick={() => onStep(-1)} disabled={isFirst}>◀</Button>
         <Button compact variant="primary" className="wmap-playback-btn" label={paused ? 'Resume' : 'Pause'} title={paused ? 'Resume' : 'Pause'} onClick={onPause}>
           {paused || isLast ? '▶' : '❚❚'}
         </Button>
-        <Button compact className="wmap-playback-btn" label="Next day" title="Next day" onClick={() => onStep(1)} disabled={isLast}>&#9654;</Button>
+        <Button compact className="wmap-playback-btn" label="Next day" title="Next day" onClick={() => onStep(1)} disabled={isLast}>▶</Button>
         <Button compact label="Stop" title="Stop" onClick={onStop}>✕</Button>
       </div>
       {newToday.length > 0 && (

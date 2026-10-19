@@ -138,7 +138,7 @@ export default function App() {
             <Route path="/weekly-markets" element={<MarketsRedirect />} />
             <Route path="/breaking" element={<BreakingFeedRedirect />} />
             <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
-            <Route path="/weekly" element={<WeeklyPage />} />
+            <Route path="/weekly" element={<WeeklyPage countriesView={<CountryListPage />} />} />
             <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
             <Route path="/weekly/countries" element={<CountryListPage />} />
             <Route path="/weekly/country/:countryName" element={<CountryPage />} />

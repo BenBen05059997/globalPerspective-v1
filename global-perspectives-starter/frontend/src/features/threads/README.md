@@ -28,7 +28,7 @@ story mode; "Read in full" is the long tabbed page (Overview, Timeline, Actors, 
 
 ## Imports from other features
 - `map` -> `RadarMap`, `SituationMap3D` (lazy), `BottomSheet`, libs `situationLabels`, `storyLinkArcs`, `cardText`, `landGeometry`
-- `track-record` -> `questionStates` (`STATE_META`), `trFormatDate`; `countries` -> `CountryListPage`
+- `track-record` -> `questionStates` (`STATE_META`), `trFormatDate` (the Countries section body arrives as the `countriesView` prop from `app/App.jsx`)
 - `account` -> `SaveButton`; `economy` -> `MechanismCard`, `useEconomicImpact`
 
 ## Gotchas

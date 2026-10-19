@@ -104,7 +104,9 @@ React + Vite SPA. Build output goes to the repo-root `docs/`.
   `MapRedirect.jsx`), layout/chrome (`layout/`), the error boundary (`errors/`).
 - `src/features/<name>/` — 13 feature folders, each owning its pages, components, hooks and lib.
   `map` owns `/` (the situation console), `home` owns `/today`, `threads` owns `/weekly` and thread
-  pages, `countries` owns country pages, `analysis-studio` owns `/analyze`. Full table:
+  pages, `countries` owns country pages, `analysis-studio` owns `/analyze`. `/weekly`'s Countries
+  section is `countries`' `CountryListPage`, handed to `WeeklyPage` by `App.jsx` as its
+  `countriesView` prop so `threads` never imports `countries`. Full table:
   `project-docs/reference/features.md`; every route: `project-docs/reference/routes.md`.
 - `src/shared/` — cross-feature code: `api/restProxy.js` (the one client for the proxy and the
   Function-URL endpoints), `contexts/AuthContext.jsx`, `styles/tokens.css` + `styles/tokens.js`,

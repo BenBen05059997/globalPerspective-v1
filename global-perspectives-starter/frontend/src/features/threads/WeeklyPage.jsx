@@ -5,7 +5,6 @@ import { useSearchParams } from 'react-router-dom';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import EditorialShell from '@/shared/ui/EditorialShell';
 import StatusStrip from '@/shared/ui/StatusStrip';
-import CountryListPage from '@/features/countries/CountryListPage';
 import { useAuth } from '@/shared/contexts/AuthContext';
 import { useIsPhone } from '@/shared/hooks/useIsPhone';
 import { usePeek } from '@/shared/hooks/usePeek';
@@ -38,7 +37,9 @@ const VIEWS = ['list', 'board', 'timeline', 'map', 'web', 'changes'];
 // Phone: READ / MAP / TIMELINE tabs, READ default. The changed-since-last-visit section lives inside
 // READ and only exists once a previous-visit baseline does; `?view=changes` (the old CHANGES tab)
 // opens READ scrolled to it, or plain READ without a baseline.
-export default function WeeklyPage() {
+// `countriesView` is the Countries section's body; the router passes the countries feature's
+// CountryListPage (app/App.jsx), so threads never imports countries.
+export default function WeeklyPage({ countriesView = null }) {
   const { loading: authLoading } = useAuth();
   const isPhone = useIsPhone();
   const peek = usePeek();
@@ -121,7 +122,8 @@ export default function WeeklyPage() {
     return (
       <div className="wp-section-wrap">
         {header}
-        <CountryListPage />
+        {/* countriesView is a lazy page: suspend only the section body, never the header. */}
+        <Suspense fallback={<BootLoader variant="inline" />}>{countriesView}</Suspense>
       </div>
     );
   }

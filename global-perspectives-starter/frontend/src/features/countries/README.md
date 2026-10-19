@@ -5,7 +5,7 @@ map, the per-country page (Situation / Story arcs / Coverage tabs), and `Country
 one-screen country card the map console also mounts.
 
 ## Routes
-- `/weekly/countries` -> `CountryListPage` (also embedded in `WeeklyPage` at `/weekly?section=countries`)
+- `/weekly/countries` -> `CountryListPage` (also the Countries section of `/weekly?section=countries`: `app/App.jsx` passes it to `WeeklyPage` as `countriesView`)
 - `/weekly/country/:countryName` -> `CountryPage`
 
 ## Entry files

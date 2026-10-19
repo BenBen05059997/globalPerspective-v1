@@ -182,7 +182,7 @@ const files = {};
   redirectTarget.MapRedirect = 'redirect → `/` (keeps search + hash)';
   const inline = { Boom: 'deliberate crash (error-boundary test)', NotFound: '404 page' };
 
-  const routes = [...app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)\s*\/>\}/g)].map((m) => {
+  const routes = [...app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)\b/g)].map((m) => {
     const comp = m[2];
     const imp = imports[comp];
     const feature = imp?.path.match(/^src\/features\/([^/]+)/)?.[1] || null;

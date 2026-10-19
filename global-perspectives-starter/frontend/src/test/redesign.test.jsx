@@ -105,10 +105,10 @@ describe('Redesign v2 — WeeklyPage', () => {
     expect(within(left).getByText('Rising first')).toBeInTheDocument();
   });
 
-  it('header has Stories | Countries tabs, a tier count line and the List | Timeline | Map switch', () => {
+  it('header has Stories | a Countries link, a tier count line and the List | Timeline | Map switch', () => {
     renderWithRouter(<WeeklyPage />);
-    expect(screen.getByRole('tab', { name: 'Stories' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Countries' })).toBeInTheDocument();
+    expect(screen.getByText('Stories')).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Countries' })).toHaveAttribute('href', '/weekly/countries');
     expect(screen.getByLabelText('Open stories by tier').textContent).toMatch(/open stor/);
     for (const v of ['List', 'Timeline', 'Map']) expect(screen.getByRole('radio', { name: v })).toBeInTheDocument();
   });

@@ -4,7 +4,7 @@ import TierChip from '@/shared/ui/TierChip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { crisisOf, tierOf, timelineLayout, timelineSpan, timelineTicks } from '@/features/threads/lib/storyGroups';
 import { placeOf } from '@/features/threads/components/StoryLine.jsx';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 
 // StoriesTimeline — the C view: one line per story across the window, a dot on every day the story
 // REALLY had coverage (the thread's own archive day keys, same source as the old dot trail), a line
@@ -59,8 +59,8 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
           const hue = crisis === 'neutral' ? 'var(--text-dim)' : `var(--hue-${crisis})`;
           return (
             <li key={t.threadId} className="gp-row tl-row" style={{ '--row-hue': hue }}>
-              <StoryLink
-                threadId={t.threadId}
+              <EntityLink
+                kind="story" id={t.threadId}
                 topic={{ title, category: t.category, regions: t.regions, sources: t.sourceCount }}
                 asOf={t.changedAt}
                 className="gp-row__link tl-link"
@@ -84,7 +84,7 @@ export default function StoriesTimeline({ threads, analyses, windowValue, now })
                     {lay.dots.map((d) => <span key={d.date} className="tl-dot" style={{ left: `${d.pct}%` }} title={d.date} data-date={d.date} />)}
                   </span>
                 </span>
-              </StoryLink>
+              </EntityLink>
             </li>
           );
         })}

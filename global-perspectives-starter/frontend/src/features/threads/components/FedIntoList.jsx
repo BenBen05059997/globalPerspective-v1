@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { shortDate } from '@/features/threads/lib/storyMode.js';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import '@/features/threads/components/FedIntoList.css';
 
@@ -22,15 +22,15 @@ export default function FedIntoList({ links, direction = 'into' }) {
         return (
           <li key={`${targetId}-${link.country || ''}`} className={`fi-row${link.freshness === 'older' ? ' fi-older' : ''}`}>
             <div className="fi-head">
-              <StoryLink
-                threadId={targetId}
+              <EntityLink
+                kind="story" id={targetId}
                 target="_blank"
                 rel="noreferrer"
                 topic={targetTitle ? { title: targetTitle } : null}
                 hint="Open in a new tab"
               >
                 {targetTitle || targetId}
-              </StoryLink>
+              </EntityLink>
               <span className={`fi-conf-badge fi-conf-${link.confidence || 'weak'}`}>
                 {link.confidence ? `${'●'.repeat(CONF_DOTS[link.confidence] || 1)} ${link.confidence}` : 'unrated'} · model judgment
               </span>

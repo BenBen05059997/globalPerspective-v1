@@ -32,14 +32,13 @@ export { CATEGORY_ORDER };
 
 const VIEWS = ['list', 'board', 'timeline', 'map', 'web', 'changes'];
 
-// /weekly — Stories (A: intel-feed list, B: status board, C: 30-day timeline, the Map view, the story Web) | Countries.
-// URL: ?section=countries, ?view=list|board|timeline|map|web|changes, ?category=<topic> (ThreadPage breadcrumb).
+// /weekly — Stories (A: intel-feed list, B: status board, C: 30-day timeline, the Map view, the story Web).
+// The Countries tab is a link to /weekly/countries (old ?section=countries links redirect in app/LegacyRedirects.jsx).
+// URL: ?view=list|board|timeline|map|web|changes, ?category=<topic> (ThreadPage breadcrumb).
 // Phone: READ / MAP / TIMELINE tabs, READ default. The changed-since-last-visit section lives inside
 // READ and only exists once a previous-visit baseline does; `?view=changes` (the old CHANGES tab)
 // opens READ scrolled to it, or plain READ without a baseline.
-// `countriesView` is the Countries section's body; the router passes the countries feature's
-// CountryListPage (app/App.jsx), so threads never imports countries.
-export default function WeeklyPage({ countriesView = null }) {
+export default function WeeklyPage() {
   const { loading: authLoading } = useAuth();
   const isPhone = useIsPhone();
   const peek = usePeek();
@@ -60,13 +59,11 @@ export default function WeeklyPage({ countriesView = null }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const pageTab = searchParams.get('section') === 'countries' ? 'countries' : 'stories';
   const viewParam = searchParams.get('view');
   const view = VIEWS.includes(viewParam) ? viewParam : 'list';
   const categoryParam = searchParams.get('category');
   const category = categoryParam && CATEGORY_ORDER.includes(categoryParam) ? categoryParam : null;
   const patchParams = (fn) => setSearchParams((prev) => { const n = new URLSearchParams(prev); fn(n); return n; }, { replace: true });
-  const setPageTab = (tab) => patchParams((n) => { if (tab === 'countries') n.set('section', 'countries'); else n.delete('section'); });
   const setView = (v) => patchParams((n) => { if (v === 'list') n.delete('view'); else n.set('view', v); });
   const clearCategory = () => patchParams((n) => n.delete('category'));
 
@@ -109,24 +106,12 @@ export default function WeeklyPage({ countriesView = null }) {
 
   const header = (
     <StoriesHeader
-      pageTab={pageTab}
-      setPageTab={setPageTab}
       view={view}
       setView={setView}
       isPhone={isPhone}
-      counts={pageTab === 'stories' && !loading ? headerCounts : null}
+      counts={!loading ? headerCounts : null}
     />
   );
-
-  if (pageTab === 'countries') {
-    return (
-      <div className="wp-section-wrap">
-        {header}
-        {/* countriesView is a lazy page: suspend only the section body, never the header. */}
-        <Suspense fallback={<BootLoader variant="inline" />}>{countriesView}</Suspense>
-      </div>
-    );
-  }
 
   const totalArticles = threads.reduce((sum, t) => sum + t.articleCount, 0) + standalone.length;
   const strip = (

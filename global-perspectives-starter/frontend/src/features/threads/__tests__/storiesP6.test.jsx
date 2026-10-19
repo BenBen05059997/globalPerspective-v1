@@ -109,6 +109,12 @@ describe('header counts: scored tiers first, then a dim "N not yet scored"', () 
     expect(kids[unscoredIdx].textContent).toMatch(/^\d+ not yet scored$/);
     expect(counts.textContent).not.toMatch(/Not scored/);
   });
+  it('Countries is a plain link to its own page; Stories is the current page', () => {
+    renderAt();
+    const nav = screen.getByRole('navigation', { name: 'Stories or countries' });
+    expect(within(nav).getByRole('link', { name: 'Countries' })).toHaveAttribute('href', '/weekly/countries');
+    expect(within(nav).getByText('Stories')).toHaveAttribute('aria-current', 'page');
+  });
 });
 
 describe('Changed since your last visit needs a baseline', () => {

@@ -1,7 +1,7 @@
 # threads
 
 Story arcs ("Stories"). `/weekly`: threads from the 30-day archive as list, board, timeline, map or
-story web, with filters, a "changed since your last visit" rail and a Countries tab. A thread page
+story web, with filters, a "changed since your last visit" rail and a Countries link (`/weekly/countries`). A thread page
 opens in story mode; "Read in full" is the long tabbed page (Overview, Timeline, Actors, Sources).
 
 ## Status
@@ -9,9 +9,9 @@ opens in story mode; "Read in full" is the long tabbed page (Overview, Timeline,
 - `ECONOMY_PARKED` (`@/shared/lib/economyFlag.js`) drops the Economy tab; `?tab=economy` falls back to Overview.
 
 ## Routes
-- `/weekly` -> `WeeklyPage` (`?section=countries`, `?view=list|board|timeline|map|web|changes`, `?category=`)
+- `/weekly` -> `WeeklyPage` (`?view=list|board|timeline|map|web|changes`, `?category=`)
 - `/weekly/thread/:threadId` -> `ThreadPage` (`?tab=` opens Read in full; `?from=country&country=`)
-- Redirects (src/app/LegacyRedirects.jsx): `/spider-demo` -> `/weekly?view=web`; `/breaking/:id` -> its thread when it has one
+- Redirects (src/app/LegacyRedirects.jsx): `/weekly?section=countries` -> `/weekly/countries`; `/spider-demo` -> `/weekly?view=web`; `/breaking/:id` -> its thread when it has one
 
 ## Frontend
 - `WeeklyPage.jsx` - Stories page; `components/Stories*.jsx` are its header, filters and views
@@ -21,11 +21,12 @@ opens in story mode; "Read in full" is the long tabbed page (Overview, Timeline,
 - Public API (`index.js`): `useWeeklyArchive` (analysis-studio, countries), `useThreadAnalyses`, `buildDeadlines`,
   `COUNTRY_COORDINATES` (countries), `useWebIndex`, `deriveFromIndex` (map). `WeeklyMap` is not exported:
   countries lazy-imports it by path so it keeps its own chunk.
-- Imports from other features: `@/features/economy` -> `MechanismCard`, `useEconomicImpact`. The Countries section
-  of `/weekly` arrives as the `countriesView` prop from `app/App.jsx`, so threads never imports countries.
-- CSS: `WeeklyPage.css`, `Stories.css`, `ThreadPage.css` and `components/*.css` are imported only inside threads
-  (ThreadPage and WeeklyMap import `WeeklyPage.css` on purpose for cold loads). The deck shell shared with
-  analysis-studio and briefings is `@/shared/ui/deck.css`.
+- Imports `@/features/economy` (`MechanismCard`, `useEconomicImpact`), never countries. Links: addresses from
+  `@/shared/lib/links.js`; stories, countries (non-countries plain) and forecasts via `EntityLink`.
+  Story page: forecast questions link to `/track-record?q=<qid>` (anchor `q-<qid>`), "Show on map" -> `/?story=`,
+  "Analyze this arc" -> `/analyze?stories=<threadId>`. Stories map detail links the story and the live map.
+- CSS: threads' `*.css` are imported only inside threads (ThreadPage and WeeklyMap import `WeeklyPage.css` for
+  cold loads). The deck shell shared with analysis-studio and briefings is `@/shared/ui/deck.css`.
 
 ## Backend
 - Generated row: [reference/features.md#threads](../../../../../project-docs/reference/features.md#threads)
@@ -44,8 +45,7 @@ opens in story mode; "Read in full" is the long tabbed page (Overview, Timeline,
 - Decisions: [0012](../../../../../project-docs/decisions/0012-story-web-is-news-based.md) (story web is news-based),
   [0018](../../../../../project-docs/decisions/0018-spider-demo-retired-into-stories-web.md) (spider-demo -> WEB view),
   [0004](../../../../../project-docs/decisions/0004-developments-kept-demoted.md), [0013](../../../../../project-docs/decisions/0013-ds1-design-system-tier-never-a-colour.md)
-- Plans: [consistency](../../../../../project-docs/plans/PLAN_2026-10-19_consistency_and_modernisation.md),
-  [colour](../../../../../project-docs/plans/PLAN_2026-10-19_colour_consistency.md)
+- Plans: [consistency](../../../../../project-docs/plans/PLAN_2026-10-19_consistency_and_modernisation.md), [colour](../../../../../project-docs/plans/PLAN_2026-10-19_colour_consistency.md)
 - Rules: [WORLD_MODEL.md](../../../../../project-docs/rules/WORLD_MODEL.md)
 - Runbooks: [news-agent.md](../../../../../project-docs/runbooks/news-agent.md), [thread-analysis.md](../../../../../project-docs/runbooks/thread-analysis.md),
   [systems-analysis.md](../../../../../project-docs/runbooks/systems-analysis.md)

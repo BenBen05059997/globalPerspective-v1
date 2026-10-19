@@ -1,7 +1,9 @@
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import QuestionChip from '@/shared/ui/QuestionChip.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { legacyNote } from '@/shared/lib/questionChips.js';
+import { forecastAnchorId, forecastHref } from '@/shared/lib/links.js';
 
 const FC_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function fcDay(s) {
@@ -69,10 +71,14 @@ export default function ThreadForecast({ snapshot }) {
           <ul className="tp-fc-list">
             {s.triggers.map((t, ti) => {
               const st = triggerState(t);
+              // A scored question has its own entry in the track record; a legacy trigger stays plain text.
+              const qid = t.question === true ? t.qid : null;
               return (
-                <li key={t.id || ti} className={`tp-fc-item ${st}`}>
+                <li key={t.id || ti} id={qid ? forecastAnchorId(qid) : undefined} className={`tp-fc-item ${st}`}>
                   <span className="tp-fc-mark" aria-hidden="true">{MARK[st]}</span>
-                  <span className="tp-fc-text">{t.text}</span>
+                  {qid
+                    ? <EntityLink kind="forecast" id={qid} className="tp-fc-text">{t.text}</EntityLink>
+                    : <span className="tp-fc-text">{t.text}</span>}
                   <QuestionChip trigger={t} />
                   <span className="tp-fc-meta">
                     {st === 'fired' || st === 'notfired' || st === 'unclear'
@@ -93,7 +99,7 @@ export default function ThreadForecast({ snapshot }) {
 
       {note && <p className="tp-fc-intro">{note}</p>}
       <div className="tp-fc-foot">
-        <Link to="/track-record">How these forecasts are scored →</Link>
+        <Link to={forecastHref()}>How these forecasts are scored →</Link>
       </div>
     </div>
   );

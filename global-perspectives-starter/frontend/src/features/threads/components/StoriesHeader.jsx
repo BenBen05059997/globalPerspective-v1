@@ -1,6 +1,8 @@
+import { Link } from 'react-router';
 import Tabs from '@/shared/ui/Tabs.jsx';
+import { ROUTE } from '@/shared/lib/links.js';
 
-// StoriesHeader — the top of /weekly: Stories | Countries tabs, a one-line count of open stories by
+// StoriesHeader — the top of /weekly: Stories | Countries (a plain link to the countries page), a one-line count of open stories by
 // tier (computed from the loaded archive, never typed: scored tiers first, then a dim "N not yet
 // scored"), and the view switch (List | Board | Timeline | Map | Web). Phone (<900px) swaps it for READ / MAP /
 // TIMELINE tabs (READ default; the changed-since-last-visit section lives inside READ, and READ carries a
@@ -8,10 +10,6 @@ import Tabs from '@/shared/ui/Tabs.jsx';
 const TIER_WORD = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 const SCORED = ['high', 'elevated', 'moderate', 'low'];
 
-const SECTION_TABS = [
-  { key: 'stories', label: 'Stories' },
-  { key: 'countries', label: 'Countries' },
-];
 const DESKTOP_VIEWS = [
   { key: 'list', label: 'List' },
   { key: 'board', label: 'Board' },
@@ -38,19 +36,22 @@ function viewToTab(view) {
   return view === 'map' ? 'map' : view === 'timeline' ? 'timeline' : 'read';
 }
 
-export default function StoriesHeader({ pageTab, setPageTab, view, setView, isPhone, counts = null }) {
+export default function StoriesHeader({ view, setView, isPhone, counts = null }) {
   const shownView = view === 'changes' ? 'list' : view; // the old CHANGES view is the list
   return (
     <header className="sf-head">
       <div className="sf-head__row">
-        <Tabs idBase="wp-section" label="Stories or countries" tabs={SECTION_TABS} active={pageTab} onChange={setPageTab} className="wp-section-tabs" />
+        <nav className="gp-tabs gp-tabs--line wp-section-tabs" aria-label="Stories or countries">
+          <span className="gp-tabs__tab" aria-current="page">Stories</span>
+          <Link className="gp-tabs__tab wp-countries-link" to={ROUTE.countries}>Countries</Link>
+        </nav>
 
-        {pageTab === 'stories' && !isPhone ? (
+        {!isPhone ? (
           <Tabs variant="segmented" idBase="sf-view" label="View" tabs={DESKTOP_VIEWS} active={shownView} onChange={setView} className="sf-seg" />
         ) : null}
       </div>
 
-      {pageTab === 'stories' && counts && counts.total > 0 ? (
+      {counts && counts.total > 0 ? (
         <p className="sf-counts" aria-label="Open stories by tier">
           <strong>{counts.total}</strong> open {counts.total === 1 ? 'story' : 'stories'}
           <span className="sf-counts__win"> · last 30 days</span>
@@ -63,14 +64,14 @@ export default function StoriesHeader({ pageTab, setPageTab, view, setView, isPh
         </p>
       ) : null}
 
-      {pageTab === 'stories' && isPhone ? (
+      {isPhone ? (
         <Tabs
           variant="phone" idBase="sf-tab" label="Stories view" tabs={PHONE_TABS} active={viewToTab(view)}
           onChange={(t) => setView(t === 'read' ? 'list' : t)} className="sf-tabs"
         />
       ) : null}
 
-      {pageTab === 'stories' && isPhone && viewToTab(view) === 'read' ? (
+      {isPhone && viewToTab(view) === 'read' ? (
         <Tabs variant="segmented" idBase="sf-read" label="Read as" tabs={READ_VIEWS} active={shownView} onChange={setView} className="sf-subtoggle" />
       ) : null}
     </header>

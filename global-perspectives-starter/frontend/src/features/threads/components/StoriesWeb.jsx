@@ -8,10 +8,10 @@ import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import Tooltip from '@/shared/ui/Tooltip.jsx';
 import { CRISIS_LABEL } from '@/shared/lib/crisisHue.js';
 import { peekData } from '@/shared/lib/peekData.js';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref } from '@/shared/lib/links.js';
 import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
-import ClaimTag from '@/features/threads/components/ClaimTag.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 import {
   CONF_WIDTH, LAYOUT, WEB_DEFAULT_NODES, WEB_HIDE_DAYS, WEB_LIST_DEFAULT, WEB_LIST_MAX, WEB_MAX_NODES,
   layoutWeb, mergeWebLinks, nodeLinkWords, pickWebNodes, strongestLinks, webDateLabel, webFootnote,
@@ -107,7 +107,7 @@ function Graph({ picked, titleOf, peek }) {
           return (
             <span key={n.id} className="sw-nodewrap" style={{ left: `${(n.x / width) * 100}%`, top: n.y }}>
               <Link
-                to={threadPath(n.id)}
+                to={storyHref(n.id)}
                 className={`sw-node${left ? ' sw-node--left' : ''}`}
                 style={{ '--d': `${n.diameter}px`, '--row-hue': hueOf(n.lane) }}
                 data-thread={n.id}
@@ -146,12 +146,12 @@ function LinkItem({ edge, titleOf }) {
   const more = edge.cited.length - cites.length;
   return (
     <li className="sw-link" data-conf={edge.confidence} data-edge={edge.key}>
-      <StoryLink className="sw-link__story" threadId={edge.from} topic={{ title: titleOf(edge.from) }}>{titleOf(edge.from)}</StoryLink>
+      <EntityLink className="sw-link__story" kind="story" id={edge.from} topic={{ title: titleOf(edge.from) }}>{titleOf(edge.from)}</EntityLink>
       <p className="sw-link__rel">
         <span aria-hidden="true">{'↓'} </span>judged to feed into {'·'} <b className="sw-link__conf">{edge.confidence || 'unrated'}</b> {'·'} {n} {plural(n, 'analysis', 'analyses')}
         {edge.older ? <span className="sw-link__older"> {'·'} older analysis</span> : null}
       </p>
-      <StoryLink className="sw-link__story" threadId={edge.to} topic={{ title: titleOf(edge.to) }}>{titleOf(edge.to)}</StoryLink>
+      <EntityLink className="sw-link__story" kind="story" id={edge.to} topic={{ title: titleOf(edge.to) }}>{titleOf(edge.to)}</EntityLink>
       <p className="sw-link__webs">
         {edge.webs.map((w) => `${w.country || 'Unnamed analysis'}${w.confidence ? ` (${w.confidence}${w.generatedAt ? `, ${webDateLabel(w.generatedAt)}` : ''})` : ''}`).join(' · ')}
       </p>

@@ -274,3 +274,6 @@
 @media (max-width: 900px) {
   .sb-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* The Countries switch is a plain link to /weekly/countries: no browser underline on the tab look. */
+.wp-countries-link { text-decoration: none; }

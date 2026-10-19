@@ -1,10 +1,10 @@
 {
   "note": "Per-file count of hand-built route strings outside shared/lib/links.js and backend/shared/src/links.js (see quality/check_links.mjs). Counts may only fall; lower them with --lower after switching a caller to links.js.",
   "totals": {
-    "/track-record": 10,
+    "/track-record": 9,
     "/briefings": 1,
-    "/weekly/country": 12,
-    "/analyze": 15,
+    "/weekly/country": 11,
+    "/analyze": 12,
     "/today": 1,
     "/weekly/thread": 2
   },
@@ -68,16 +68,6 @@
     },
     "features/map/SituationHome.jsx": {
       "/weekly/thread": 1
-    },
-    "features/static/Disclosures.jsx": {
-      "/analyze": 1
-    },
-    "features/threads/components/ThreadForecast.jsx": {
-      "/track-record": 1
-    },
-    "features/threads/ThreadPage.jsx": {
-      "/weekly/country": 1,
-      "/analyze": 2
     },
     "features/track-record/TrackRecordPage.jsx": {
       "/weekly/thread": 1,

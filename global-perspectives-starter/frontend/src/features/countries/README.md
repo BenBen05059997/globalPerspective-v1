@@ -10,8 +10,7 @@ one-screen country card the map console also mounts.
   `useDisruptionsList` (`enabled: !ECONOMY_PARKED`); `useMarketsCountry` is not gated (FX box labelled "Market prices · raw quotes · as of <time>", no story link; decision 0031).
 
 ## Routes
-- `/weekly/countries` -> `CountryListPage` (also the Countries section of `/weekly?section=countries`:
-  `app/App.jsx` passes it to `WeeklyPage` as `countriesView`)
+- `/weekly/countries` -> `CountryListPage` (`/weekly?section=countries` redirects here, app/LegacyRedirects.jsx)
 - `/weekly/country/:countryName` -> `CountryPage` (`useParams()` already decodes; decoding again throws on `%`)
 
 ## Frontend

@@ -7,6 +7,7 @@
 import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { TIER_LABEL, iso3Name } from '@/shared/lib/situationLabels.js';
+import { briefingHref } from '@/shared/lib/links.js';
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };
@@ -43,11 +44,11 @@ export default function MapAbout({
       <div className="sh-fold-teasers">
         <SectionHeader as="h3" label="Elsewhere on Global Perspectives" />
         <div className="sh-teasers">
-          <Link to="/daily"><b>Daily Brief</b><span>
+          <Link to={briefingHref({ mode: 'read' })}><b>Daily Brief</b><span>
             {latestDailyEditionLabel ? `Latest edition ${latestDailyEditionLabel}` : 'The day’s developments, gathered and synthesised'}
             {paused ? ' — analysis paused.' : '.'}
           </span></Link>
-          <Link to="/weekly-brief"><b>Weekly</b><span>
+          <Link to={briefingHref({ mode: 'weekly' })}><b>Weekly</b><span>
             {latestWeeklyEditionLabel ? `Latest edition ${latestWeeklyEditionLabel}, with the reasoning shown.` : 'A long synthesis, with the reasoning shown.'}
           </span></Link>
           <Link to="/track-record"><b>Track Record</b><span>Every forecast scored against what happened, including the misses.</span></Link>

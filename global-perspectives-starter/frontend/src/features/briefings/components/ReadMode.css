@@ -1,4 +1,4 @@
-/* ── Daily page — newspaper broadsheet ───────────────────────
+/* ── /briefings read mode — the daily brief as a newspaper broadsheet ─────────
    Section labels, category tags and tier chips are the shared SectionHeader / CategoryTag /
    TierChip. Tokens only; trajectory is DirectionArrow + word in neutral ink. */
 
@@ -25,22 +25,8 @@
 .daily-topbar a { color: var(--text-muted); text-decoration: none; }
 .daily-topbar a:hover { color: var(--text-head); }
 
-.daily-date-nav { display: flex; align-items: center; gap: var(--space-3); }
-.daily-date-arrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-sm);
-  color: var(--text-body);
-  text-decoration: none;
-  font-size: var(--text-ui);
-  transition: border-color var(--fast);
-}
-.daily-date-arrow:hover { border-color: var(--hairline-strong); }
-@media (pointer: coarse) { .daily-date-arrow { min-width: var(--tap-min); min-height: var(--tap-min); } }
+.daily-date-nav { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+@media (pointer: coarse) { .daily-date-nav a { display: inline-flex; align-items: center; min-height: var(--tap-min); } }
 .daily-date-label { color: var(--text-head); font-weight: var(--weight-medium); }
 .daily-rel-tag {
   font-family: var(--mono);
@@ -70,18 +56,6 @@
 
 /* ── Masthead ────────────────────────────────────────────── */
 .daily-masthead { padding: var(--space-6) 0 var(--space-4); border-bottom: 1px solid var(--hairline-3); }
-.daily-masthead-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-body);
-  margin-bottom: var(--space-3);
-}
-.daily-masthead-center { color: var(--text-head); font-weight: var(--weight-semibold); }
 .daily-masthead-h1 {
   font-family: var(--serif);
   font-weight: var(--weight-semibold);
@@ -93,15 +67,6 @@
   color: var(--text-head);
 }
 .daily-masthead-h1 em { font-style: italic; font-weight: var(--weight-medium); }
-.daily-masthead-sub {
-  font-family: var(--serif);
-  font-style: italic;
-  text-align: center;
-  color: var(--text-body);
-  font-size: var(--text-md);
-  letter-spacing: 0.01em;
-  margin-bottom: var(--space-4);
-}
 .daily-masthead-bar {
   margin-top: var(--space-4);
   padding-top: var(--space-3);
@@ -387,27 +352,6 @@
 .daily-riskcard-top { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-1); flex-wrap: wrap; }
 .daily-riskcard-headline { font-size: var(--text-md); color: var(--text-body); line-height: var(--leading-normal); }
 
-/* ── Economic footprint ──────────────────────────────────── */
-.daily-footprint-chips {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
-}
-.daily-footprint-chips .ichip + .ichip { margin-top: 0; }
-.daily-footprint-lead {
-  font-family: var(--serif);
-  font-size: var(--text-base);
-  color: var(--text-body);
-  line-height: var(--leading-normal);
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-.daily-footprint-lead a { color: inherit; }
-
 /* ── Bar chart (category breakdown) ──────────────────────── */
 .daily-bars { display: grid; gap: var(--space-2); }
 .daily-bar-row { display: flex; align-items: center; gap: var(--space-3); }
@@ -465,25 +409,9 @@
 }
 .daily-full-body strong { color: var(--text-head); font-weight: var(--weight-semibold); }
 
-/* ── Footer nav ──────────────────────────────────────────── */
-.daily-footer-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-4) 0;
-  border-top: 1px solid var(--hairline);
-  margin-top: var(--space-10);
-  font-family: var(--mono);
-  font-size: var(--text-sm);
-  letter-spacing: 0.04em;
-}
-.daily-footer-nav a { color: var(--text-body); text-decoration: none; }
-.daily-footer-nav a:hover { color: var(--text-head); }
-.daily-footer-nav .daily-fn-muted { color: var(--text-dim); }
-
-/* ── Empty / error states ────────────────────────────────── */
+/* ── Empty state ─────────────────────────────────────────── */
 .daily-empty { padding: var(--space-20) 0; text-align: center; }
-.daily-empty h3 { font-family: var(--serif); font-size: var(--text-3xl); font-weight: var(--weight-semibold); margin: 0 0 var(--space-3); color: var(--text-head); }
+.daily-empty h1 { font-family: var(--serif); font-size: var(--text-3xl); font-weight: var(--weight-semibold); margin: 0 0 var(--space-3); color: var(--text-head); }
 .daily-empty p { color: var(--text-body); font-size: var(--text-md); margin-bottom: var(--space-5); }
 .daily-empty-links { display: flex; gap: var(--space-4); justify-content: center; }
 .daily-empty-links a { color: var(--accent); text-decoration: none; font-weight: var(--weight-medium); }
@@ -500,14 +428,8 @@
   .daily-page { padding: 0 var(--space-4) var(--space-16); }
   .daily-masthead-h1 { font-size: var(--text-5xl); }
   .daily-verdict-h3 { font-size: var(--text-2xl); }
-  .daily-masthead-top { flex-direction: column; align-items: center; gap: var(--space-1); }
   .daily-story { grid-template-columns: 36px 1fr; gap: var(--space-3); }
   .daily-bar-label { width: 84px; }
   .daily-masthead-bar { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
   .daily-verdict, .daily-callout { padding: var(--space-4); }
 }
-
-/* Interim Weekly Brief link (A1) — see DailyPage.jsx for why this exists. */
-.daily-weekly-brief-link { margin-bottom: var(--space-3); }
-.daily-weekly-brief-link a { font-size: var(--text-ui); font-weight: var(--weight-semibold); color: var(--text-muted); text-decoration: none; }
-.daily-weekly-brief-link a:hover { color: var(--text-head); text-decoration: underline; }

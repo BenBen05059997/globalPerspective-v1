@@ -24,7 +24,7 @@ const T = 15000;
 // dangling-reference class everywhere it can occur.
 const HUBS = [
   '/', '/economy', '/weekly', '/weekly/countries',
-  '/daily', '/map', '/about', '/contact', '/privacy', '/disclosures', '/whitepaper',
+  '/briefings?mode=read', '/map', '/about', '/contact', '/privacy', '/disclosures', '/whitepaper',
 ];
 
 // Hard dead-ends: the user landed somewhere broken.

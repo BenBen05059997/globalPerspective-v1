@@ -16,6 +16,11 @@ export function addDaysKey(dateKey, days) {
   return d.toISOString().slice(0, 10);
 }
 
+/** previousWeekKey — the weekly edition key one week before (weekly briefs are keyed by weekOf, one a week). */
+export function previousWeekKey(weekKey) {
+  return addDaysKey(weekKey, -7);
+}
+
 /**
  * lastNDateKeys — the `n` calendar dates ending at `anchorDateKey` (inclusive), newest first.
  * Used to size the daily editions-strip probe window (capped by the caller, not here).

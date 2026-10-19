@@ -7,10 +7,8 @@ import {
 import { lastNDateKeys, buildDailyEditionMarks, buildPausedSegment, todayKey } from '@/features/briefings/lib/editions.js';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
 import { SlideBody } from '@/features/briefings/components/BriefingSlides.jsx';
-import EditionsStrip, { WeeklyEditionNote } from '@/features/briefings/components/EditionsStrip.jsx';
-import ReadAsText from '@/features/briefings/components/ReadAsText.jsx';
+import EditionsStrip, { WeeklyEditionNav } from '@/features/briefings/components/EditionsStrip.jsx';
 import Tabs from '@/shared/ui/Tabs.jsx';
-import Button from '@/shared/ui/Button.jsx';
 import '@/shared/ui/deck.css';
 import '@/features/briefings/components/BriefingMode.css';
 
@@ -42,6 +40,7 @@ export default function BriefingMode({
   mode, onModeChange,
   dailyBrief, weeklyBrief,
   dailyEditionsIndex, dailyAnchorDateKey, requestedDateKey, onSelectDailyDate,
+  requestedWeek, hrefForWeek,
 }) {
   const brief = mode === 'weekly' ? weeklyBrief : dailyBrief;
   const slides = useMemo(
@@ -73,8 +72,6 @@ export default function BriefingMode({
   }, [next, prev]);
 
   const mapFocusIso3 = mode === 'weekly' ? mapFocusForWeeklySlide(activeSlide) : mapFocusForDailySlide(activeSlide);
-
-  const [readAsText, setReadAsText] = useState(false);
 
   const rootRef = useRef(null);
   const [rootHeight, setRootHeight] = useState(MIN_ROOT_HEIGHT);
@@ -134,61 +131,50 @@ export default function BriefingMode({
   return (
     <div className="gp-console bm-root" ref={rootRef} style={{ height: rootHeight }}>
       <div className="sm-topbar bm-topbar">
-        <div className="sm-topbar-label">BRIEFING MODE</div>
+        <div className="sm-topbar-label">PRESENT</div>
         <BriefingModeToggle mode={mode} onModeChange={onModeChange} />
-        <Button compact onClick={() => setReadAsText((v) => !v)}>
-          {readAsText ? '← Back to briefing mode' : 'Read as text →'}
-        </Button>
       </div>
 
-      {readAsText ? (
-        <div className="bm-readtext-wrap">
-          <ReadAsText mode={mode} brief={brief} />
-        </div>
-      ) : (
-        <>
-          <div className="sm-body">
-            <div className="sm-stage" ref={stageRef}>
-              <StoryMap shading={shading} storyFocusIso3={mapFocusIso3} height={stageHeight} />
+      <div className="sm-body">
+        <div className="sm-stage" ref={stageRef}>
+          <StoryMap shading={shading} storyFocusIso3={mapFocusIso3} height={stageHeight} />
 
-              <div className="sm-slidecard">
-                <div className="sm-slidenav" role="tablist" aria-label="Briefing slides">
-                  <button type="button" className="sm-slidenav-btn" onClick={prev} disabled={slideIdx === 0} aria-label="Previous slide">◀</button>
-                  <div className="sm-slidedots">
-                    {slides.map((s, i) => (
-                      <button
-                        key={s.key} type="button" role="tab" aria-selected={i === slideIdx}
-                        className={`sm-slidedot${i === slideIdx ? ' on' : ''}`}
-                        onClick={() => goto(i)} title={s.label}
-                      >{s.label}</button>
-                    ))}
-                  </div>
-                  <button type="button" className="sm-slidenav-btn" onClick={next} disabled={slideIdx === slides.length - 1} aria-label="Next slide">▶</button>
-                </div>
-                <div className="sm-slidescroll">
-                  <div className={`sm-slideview${reduced ? ' sm-instant' : ''}`}>
-                    <SlideBody mode={mode} slide={activeSlide} brief={brief} />
-                  </div>
-                </div>
-                <div className="sm-slidefade" aria-hidden="true" />
+          <div className="sm-slidecard">
+            <div className="sm-slidenav" role="tablist" aria-label="Briefing slides">
+              <button type="button" className="sm-slidenav-btn" onClick={prev} disabled={slideIdx === 0} aria-label="Previous slide">◀</button>
+              <div className="sm-slidedots">
+                {slides.map((s, i) => (
+                  <button
+                    key={s.key} type="button" role="tab" aria-selected={i === slideIdx}
+                    className={`sm-slidedot${i === slideIdx ? ' on' : ''}`}
+                    onClick={() => goto(i)} title={s.label}
+                  >{s.label}</button>
+                ))}
+              </div>
+              <button type="button" className="sm-slidenav-btn" onClick={next} disabled={slideIdx === slides.length - 1} aria-label="Next slide">▶</button>
+            </div>
+            <div className="sm-slidescroll">
+              <div className={`sm-slideview${reduced ? ' sm-instant' : ''}`}>
+                <SlideBody mode={mode} slide={activeSlide} brief={brief} isLast={slideIdx === slides.length - 1} />
               </div>
             </div>
+            <div className="sm-slidefade" aria-hidden="true" />
           </div>
+        </div>
+      </div>
 
-          {mode === 'weekly' ? (
-            <WeeklyEditionNote weekOf={weeklyBrief?.weekOf} />
-          ) : (
-            <EditionsStrip
-              key={mode}
-              marks={dailyMarks}
-              pausedSegment={pausedSegment}
-              currentDateKey={requestedDateKey || dailyAnchorDateKey}
-              onSelect={onSelectDailyDate}
-              latestLabel={dailyAnchorDateKey ? formatDateLabel(dailyAnchorDateKey) : null}
-              onGoLatest={() => onSelectDailyDate?.(dailyAnchorDateKey)}
-            />
-          )}
-        </>
+      {mode === 'weekly' ? (
+        <WeeklyEditionNav weekOf={weeklyBrief?.weekOf} requestedWeek={requestedWeek} hrefForWeek={hrefForWeek} />
+      ) : (
+        <EditionsStrip
+          key={mode}
+          marks={dailyMarks}
+          pausedSegment={pausedSegment}
+          currentDateKey={requestedDateKey || dailyAnchorDateKey}
+          onSelect={onSelectDailyDate}
+          latestLabel={dailyAnchorDateKey ? formatDateLabel(dailyAnchorDateKey) : null}
+          onGoLatest={() => onSelectDailyDate?.(dailyAnchorDateKey)}
+        />
       )}
     </div>
   );

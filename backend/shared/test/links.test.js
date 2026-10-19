@@ -16,6 +16,7 @@ test('story, country, map, briefing, forecast, studio and today addresses (same 
   assert.strictEqual(L.mapHref({ situation: 's1', layer: 'risk' }), '/?focus=s1&layer=risk');
   assert.strictEqual(L.briefingHref({ mode: 'weekly', week: '2026-10-13' }), '/briefings?mode=weekly&week=2026-10-13');
   assert.strictEqual(L.briefingHref({ date: '2026-10-18' }), '/briefings?date=2026-10-18');
+  assert.strictEqual(L.briefingHref({ mode: 'present', deck: 'weekly' }), '/briefings?mode=present&deck=weekly');
   assert.strictEqual(L.briefingHref({ mode: 'x', date: 'bad' }), '/briefings');
   assert.strictEqual(L.forecastHref('q1'), '/track-record?q=q1');
   assert.strictEqual(L.forecastAnchorId('q1'), 'q-q1');

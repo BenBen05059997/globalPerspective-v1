@@ -69,7 +69,7 @@ The world bucket name comes from each Lambda's env (`WORLD_BUCKET` and similar; 
 | `threads/story-map.json` | `NewsProjectInvokeAgentLambda` (matcher) | each story run (8h) | `newsSituationTracker` (stamps `threadId`) |
 | `tags/backfill/2026-09-11.json` | one-off matcher backfill; writer not in the repo | — | none |
 | `fixtures/` | humans | — | local dev, Worker smoke |
-| `signals/latest.json`, `signals/snapshots/YYYY-MM-DD.json` | `newsSignals` | daily build (cron-only) | `newsSignals` SERVE only — **never** the Worker (paid, key-gated product) |
+| `signals/latest.json`, `signals/snapshots/YYYY-MM-DD.json` | `newsSignals` | daily build (cron-only; parked, decisions/0032) | `newsSignals` SERVE only — **never** the Worker (paid, key-gated product) |
 | `corpus/gdacs/latest.json` | `newsGdacsIngest` | each 20-min run | `newsImpactAudit` |
 | `corpus/gdelt/<day>.json` | `newsGdeltConflict` | each run (overwrite per day) | `newsImpactAudit` |
 | `audit/impact/<date>.json`, `audit/impact/latest.json` | `newsImpactAudit` | daily — parked (schedule DISABLED, decisions/0015) | audit trail / operator |

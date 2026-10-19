@@ -154,7 +154,7 @@ export function formatDailyBrief(brief) {
     lines.push(`${brief.stats.totalArticles} articles · ${brief.stats.sourceOutlets} sources · ${brief.stats.countriesCovered} countries`);
   }
 
-  lines.push(`— Global Perspectives · globalperspective.net${briefingHref({ date: brief.dateKey })}`);
+  lines.push(`— Global Perspectives · globalperspective.net${briefingHref({ mode: 'read', date: brief.dateKey })}`);
 
   return lines.join('\n');
 }

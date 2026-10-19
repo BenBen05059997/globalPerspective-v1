@@ -40,6 +40,8 @@ describe('links — one address per destination', () => {
     expect(briefingHref({ mode: 'read', date: '2026-10-18' })).toBe('/briefings?mode=read&date=2026-10-18');
     expect(briefingHref({ mode: 'weekly', week: '2026-10-13' })).toBe('/briefings?mode=weekly&week=2026-10-13');
     expect(briefingHref({ mode: 'present' })).toBe('/briefings?mode=present');
+    expect(briefingHref({ mode: 'present', week: '2026-10-12', deck: 'weekly' })).toBe('/briefings?mode=present&week=2026-10-12&deck=weekly');
+    expect(briefingHref({ mode: 'present', deck: 'daily' })).toBe('/briefings?mode=present');
     expect(briefingHref({ mode: 'slides', date: '18 Oct' })).toBe('/briefings');
     expect(briefingHref()).toBe('/briefings');
   });

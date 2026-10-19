@@ -4,10 +4,8 @@
     "/track-record": 14,
     "/briefings": 1,
     "/weekly/thread": 7,
-    "/weekly/country": 15,
-    "/weekly-brief": 3,
+    "/weekly/country": 13,
     "/analyze": 15,
-    "/daily": 11,
     "/today": 1
   },
   "files": {
@@ -23,9 +21,6 @@
     },
     "backend/distribution/newsEmailSender/src/renderDriftEmail.js": {
       "/weekly/country": 1
-    },
-    "backend/distribution/newsEmailSender/src/renderWeeklyEmail.js": {
-      "/weekly-brief": 1
     },
     "backend/monitoring/newsFreshnessMonitor/src/settleCheck.js": {
       "/track-record": 1
@@ -50,8 +45,7 @@
       "/weekly/country": 1
     },
     "features/account/components/SavedPanel.jsx": {
-      "/weekly/country": 1,
-      "/daily": 1
+      "/weekly/country": 1
     },
     "features/analysis-studio/components/ShareControl.jsx": {
       "/analyze": 2
@@ -77,11 +71,6 @@
     "features/countries/CountryPage.jsx": {
       "/weekly/country": 2
     },
-    "features/daily/DailyPage.jsx": {
-      "/weekly/country": 2,
-      "/daily": 9,
-      "/weekly-brief": 1
-    },
     "features/economy/components/MechanismCard.jsx": {
       "/weekly/country": 1
     },
@@ -96,8 +85,6 @@
     },
     "features/map/components/MapAbout.jsx": {
       "/track-record": 1,
-      "/daily": 1,
-      "/weekly-brief": 1,
       "/today": 1
     },
     "features/map/components/StoryCard.jsx": {

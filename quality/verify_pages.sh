@@ -68,13 +68,28 @@ must_have "$SRC/app/layout/Layout.jsx" "location.pathname === '/' && !isPhone" "
 must_have "$SRC/features/map/components/MapAbout.jsx" "to=\"/today\"" "/today stays reachable from the map's About drawer (the footer no longer links it)"
 must_not_have "$SRC/app/layout/Layout.jsx" "pathname (===|!==) '/map'" "no stale /map pathname checks"
 
-# ─── BriefingsPage (S3, /briefings) ───
+# ─── BriefingsPage (/briefings: read / weekly / present modes; /daily and /weekly-brief merged 2026-10-19) ───
 must_have "$SRC/app/App.jsx" "import BriefingsPage|BriefingsPage = lazy" "imports BriefingsPage"
 must_have "$SRC/app/App.jsx" "/briefings" "wires /briefings route"
 must_have "$SRC/app/layout/Layout.jsx" "to: '/briefings'" "menu Briefings item points at /briefings"
-must_have "$SRC/features/briefings/BriefingsPage.jsx" "useDailyBrief" "uses useDailyBrief"
-must_have "$SRC/features/briefings/BriefingsPage.jsx" "useWeeklyBrief" "uses useWeeklyBrief"
-must_have "$SRC/features/briefings/BriefingsPage.jsx" "useDailyEditionsIndex" "wires the editions strip index"
+must_have "$SRC/features/briefings/BriefingsPage.jsx" "key: 'read'" "read mode exists (the default)"
+must_have "$SRC/features/briefings/BriefingsPage.jsx" "key: 'weekly'" "weekly mode exists"
+must_have "$SRC/features/briefings/BriefingsPage.jsx" "key: 'present'" "present mode exists"
+must_have "$SRC/features/briefings/BriefingsPage.jsx" "useDailyEditionsIndex" "present mode wires the editions strip index"
+must_have "$SRC/features/briefings/components/ReadMode.jsx" "useDailyBrief" "read mode uses useDailyBrief"
+must_have "$SRC/features/briefings/components/WeeklyMode.jsx" "useWeeklyBrief\\(weekParam\\)" "weekly mode reads the requested week (week=)"
+must_have "$SRC/features/briefings/components/ReadMode.jsx" "Key Takeaways" "read mode keeps Key Takeaways"
+must_have "$SRC/features/briefings/components/ReadMode.jsx" "Shape of the Day" "read mode keeps the category bars"
+must_have "$SRC/features/briefings/components/ReadMode.jsx" "Full Analysis" "read mode keeps the full analysis"
+must_have "$SRC/features/briefings/components/ReadMode.jsx" "SaveButton itemType=\"daily\"" "read mode keeps Save"
+must_have "$SRC/features/briefings/components/WeeklyMode.jsx" "SaveButton itemType=\"weekly\"" "weekly mode has Save"
+must_have "$SRC/features/briefings/components/WeeklyMode.jsx" "SubscribeCard" "weekly mode keeps the subscribe card"
+must_have "$SRC/features/briefings/components/BriefingSlides.jsx" "isLast && <SubscribeCard" "the weekly deck ends with the subscribe card"
+must_have "$SRC/app/App.jsx" 'path="/daily" element=\{<DailyRedirect' "/daily redirects to /briefings"
+must_have "$SRC/app/App.jsx" 'path="/daily/:dateKey" element=\{<DailyRedirect' "/daily/:date redirects to /briefings"
+must_have "$SRC/app/App.jsx" 'path="/weekly-brief" element=\{<WeeklyBriefRedirect' "/weekly-brief redirects to /briefings?mode=weekly"
+must_not_have "$SRC/app/App.jsx" "DailyPage|WeeklyBriefPage" "no page component behind /daily or /weekly-brief"
+must_have "$SRC/app/App.jsx" 'path="/weekly" element=\{<WeeklyRoute' "/weekly?section=countries redirects to /weekly/countries (one address for the countries list)"
 
 # ─── EconomyPage ───
 must_have "$SRC/features/economy/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
@@ -88,10 +103,8 @@ must_have "$SRC/features/home/Home.jsx" "disruptionByThread" "builds per-thread 
 must_have "$SRC/features/home/Home.jsx" "tab.{1,4}economy" "deep-links to economy tab"
 must_have "$SRC/features/home/Home.jsx" "SeverityBadge" "renders SeverityBadge"
 
-# ─── DailyPage ───
-must_have "$SRC/features/daily/DailyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"
-must_have "$SRC/features/daily/DailyPage.jsx" "tab.{1,4}economy" "deep-links to economy tab"
-must_have "$SRC/features/daily/DailyPage.jsx" "SeverityBadge" "renders SeverityBadge"
+# ─── Briefings read mode: Economic Footprint dropped with the merge (economy parked, 2026-10-19) ───
+must_not_have "$SRC/features/briefings/components/ReadMode.jsx" "useDisruptionsList|EconomicFootprint" "read mode carries no economy section while economy is parked"
 
 # ─── ThreadPage ───
 must_have "$SRC/features/threads/ThreadPage.jsx" "useEconomicImpact" "uses useEconomicImpact"
@@ -112,7 +125,7 @@ must_have "$SRC/features/countries/CountryListPage.jsx" "Disruption" "exposes Di
 
 # ─── WorldMapV2: REMOVED 2026-09-24 (legacy map deleted; /map = SituationHome) ───
 # Its four guards are gone with it. Disruption data keeps its surfaces on Home,
-# CountryPage, CountryListPage, EconomyPage, DailyPage — guarded above/below.
+# CountryPage, CountryListPage, EconomyPage, briefings read mode — guarded above/below.
 
 # ─── Disclosures ───
 must_have "$SRC/features/static/Disclosures.jsx" "Economic Disruption" "has Economic Disruption section"
@@ -223,21 +236,21 @@ fi
 LIGHT_BG="background(-color)?:[^;]*(#f[0-9a-fA-F]{2,7}\\b|#fff\\b|\\bwhite\\b|rgba?\\(\\s*2[0-9]{2})"
 for css in features/countries/CountryListPage.css features/countries/CountryPage.css features/countries/CountryCoverage.css \
            features/countries/components/CountryCardV2.css features/countries/components/CountryWhatChanged.css \
-           features/daily/DailyPage.css features/weekly-brief/WeeklyBriefPage.css \
+           features/briefings/components/ReadMode.css features/briefings/components/WeeklyMode.css \
            features/track-record/TrackRecordPage.css features/track-record/TrackRecordText.css \
            features/track-record/components/ForecastBoard.css features/track-record/components/SettlingLog.css \
            shared/ui/ShareButtons.css; do
   must_not_have "$SRC/$css" "$LIGHT_BG" "$css has no light background literals"
 done
 must_not_have "$SRC/shared/ui/atoms.css" "\\.ss-strip \\{[^}]*background: var\\(--(ink|text-head)\\)" "StatusStrip is a dark strip, not an inverted light bar"
-must_not_have "$SRC/features/daily/DailyPage.jsx" "authLoading|useAuth" "DailyPage does not gate public data on auth"
+must_not_have "$SRC/features/briefings/components/ReadMode.jsx" "authLoading|useAuth" "briefings read mode does not gate public data on auth"
 must_not_have "$SRC/features/countries/CountryPage.jsx" "authLoading" "CountryPage does not gate public data on auth"
-must_not_have "$SRC/features/daily/DailyPage.jsx" "RISK_COLORS|CATEGORY_BADGE_COLORS" "DailyPage has no pastel risk/category fills"
+must_not_have "$SRC/features/briefings/components/ReadMode.jsx" "RISK_COLORS|CATEGORY_BADGE_COLORS" "briefings read mode has no pastel risk/category fills"
 must_not_have "$SRC/features/countries/CountryPage.jsx" "RISK_COLORS|CATEGORY_BADGE_COLORS" "CountryPage has no pastel risk/category fills"
 must_not_have "$SRC/features/countries/CountryListPage.jsx" "RiskScoreBadge|CATEGORY_BADGE_COLORS" "country list uses TierChip/CategoryTag, not the old badges"
 must_have "$SRC/features/countries/CountryListPage.jsx" "TierChip" "country list risk is a TierChip"
-must_have "$SRC/features/weekly-brief/WeeklyBriefPage.jsx" "TierChip" "weekly brief risk is a TierChip"
-must_have "$SRC/features/daily/DailyPage.jsx" "SectionHeader" "daily sections use the shared SectionHeader"
+must_have "$SRC/features/briefings/components/WeeklyMode.jsx" "TierChip" "weekly brief risk is a TierChip"
+must_have "$SRC/features/briefings/components/ReadMode.jsx" "SectionHeader" "daily sections use the shared SectionHeader"
 must_have "$SRC/features/track-record/TrackRecordPage.jsx" "SectionHeader" "track record sections use the shared SectionHeader"
 must_not_have "$SRC/features/threads/WeeklyPage.css" "^\\.(bgt|cp)-|^\\.(share-btn|copy-briefing-btn)" "country/share rules live with their owners, not in WeeklyPage.css"
 
@@ -365,7 +378,7 @@ must_not_have "$T/components/StoriesHeader.jsx" "label: 'Changes'" "no phone CHA
 must_have "$SRC/shared/ui/CategoryTag.jsx" "crisisDotVar" "CategoryTag dots use the crisis hue (crisisDotVar)"
 must_have "$SRC/shared/lib/crisisHue.js" "export function crisisDotVar" "crisisDotVar lives in shared/lib/crisisHue"
 must_not_have "$SRC/shared/styles/tokens.js" "CATEGORY_DOT *=" "the 12-colour CATEGORY_DOT palette is retired"
-for f in shared/ui/CategoryTag.jsx features/daily/DailyPage.jsx features/countries/CountryPage.jsx features/threads/components/WeeklyMap.jsx features/threads/components/StoriesBoard.jsx features/threads/components/StoryLine.jsx features/threads/components/StoriesTimeline.jsx; do
+for f in shared/ui/CategoryTag.jsx features/briefings/components/ReadMode.jsx features/countries/CountryPage.jsx features/threads/components/WeeklyMap.jsx features/threads/components/StoriesBoard.jsx features/threads/components/StoryLine.jsx features/threads/components/StoriesTimeline.jsx; do
   must_not_have "$SRC/$f" "CATEGORY_DOT" "$f has no CATEGORY_DOT palette (dots = crisis hue)"
 done
 must_have "$T/lib/storyGroups.js" "export function deriveBoardStatus" "the board status is one pure function (deriveBoardStatus)"
@@ -439,7 +452,7 @@ if grep -A4 "const openOnFocus" "$SRC/shared/hooks/usePeek.js" | grep -q "hasNoH
 else
   FAIL=$((FAIL + 1)); FAILED+=("usePeek.openOnFocus must skip touch devices"); echo "  $(red FAIL) usePeek.openOnFocus does not skip touch devices"
 fi
-for f in features/countries/components/CountryCardV2.jsx features/threads/components/StoriesTimeline.jsx features/threads/ThreadPage.jsx features/weekly-brief/WeeklyBriefPage.jsx features/home/Home.jsx features/home/components/LedeBand.jsx features/daily/DailyPage.jsx features/briefings/components/ReadAsText.jsx features/account/components/SavedPanel.jsx features/account/components/DeskSinceLastVisit.jsx features/analysis-studio/SharedAnalysisPage.jsx features/countries/CountryPage.jsx features/threads/components/FedIntoList.jsx features/threads/components/StoriesChanged.jsx features/threads/components/StoriesWeb.jsx; do
+for f in features/countries/components/CountryCardV2.jsx features/threads/components/StoriesTimeline.jsx features/threads/ThreadPage.jsx features/briefings/components/WeeklyMode.jsx features/home/Home.jsx features/home/components/LedeBand.jsx features/briefings/components/ReadMode.jsx features/briefings/components/BriefingSlides.jsx features/account/components/SavedPanel.jsx features/account/components/DeskSinceLastVisit.jsx features/analysis-studio/SharedAnalysisPage.jsx features/countries/CountryPage.jsx features/threads/components/FedIntoList.jsx features/threads/components/StoriesChanged.jsx features/threads/components/StoriesWeb.jsx; do
   must_have "$SRC/$f" "StoryLink" "$f names stories through StoryLink (StoryPeek)"
 done
 # 3 · status line: computed from the newest generation time; approved wording

@@ -3,8 +3,6 @@
 
 .bm-root.psm-root { width: 100%; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }
 
-.psm-panel .bm-readtext-btn { display: flex; width: 100%; margin: var(--space-2) 0; }
-
 /* The editions strip's marks are already ≥44px tap targets (.bm-edition-mark min-width/min-height
    set in BriefingMode.css); on phone let the track wrap freely instead of scrolling sideways, so
    scrollWidth never exceeds the viewport (S2.2 lesson). */

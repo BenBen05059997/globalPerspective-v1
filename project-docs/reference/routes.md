@@ -15,20 +15,20 @@ Paths are relative to `global-perspectives-starter/frontend/`. Lazy = its own ch
 | `/about` | AboutContact | `src/features/static/AboutContact` | yes | page |
 | `/disclosures` | Disclosures | `src/features/static/Disclosures` | yes | page |
 | `/contact` | Contact | `src/features/static/Contact` | yes | page |
-| `/daily` | DailyPage | `src/features/daily/DailyPage` | yes | page |
-| `/daily/:dateKey` | DailyPage | `src/features/daily/DailyPage` | yes | page |
+| `/daily` | DailyRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
+| `/daily/:dateKey` | DailyRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
 | `/economy` | EconomyPage | `src/features/economy/EconomyPage` | yes | page |
 | `/analyze` | AnalysisStudio | `src/features/analysis-studio/AnalysisStudio` | yes | page |
 | `/analyze/s/:id` | SharedAnalysisPage | `src/features/analysis-studio/SharedAnalysisPage` | yes | page |
 | `/membership` | MembershipPage | `src/features/account/MembershipPage` | yes | page |
 | `/track-record` | TrackRecordPage | `src/features/track-record/TrackRecordPage` | yes | page |
 | `/track-record/text` | TrackRecordText | `src/features/track-record/TrackRecordText` | yes | page |
-| `/weekly-brief` | WeeklyBriefPage | `src/features/weekly-brief/WeeklyBriefPage` | yes | page |
+| `/weekly-brief` | WeeklyBriefRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
 | `/briefings` | BriefingsPage | `src/features/briefings/BriefingsPage` | yes | page |
 | `/weekly-markets` | MarketsRedirect | `src/app/LegacyRedirects` | no | redirect → `/briefings?from=markets` |
 | `/breaking` | BreakingFeedRedirect | `src/app/LegacyRedirects` | no | redirect → `/` |
 | `/breaking/:id` | BreakingDetailRedirect | `src/app/LegacyRedirects` | no | redirect (computed; see source) |
-| `/weekly` | WeeklyPage | `src/features/threads/WeeklyPage` | yes | page |
+| `/weekly` | WeeklyRoute | `src/app/LegacyRedirects` | no | page |
 | `/weekly/thread/:threadId` | ThreadPage | `src/features/threads/ThreadPage` | yes | page |
 | `/weekly/countries` | CountryListPage | `src/features/countries/CountryListPage` | yes | page |
 | `/weekly/country/:countryName` | CountryPage | `src/features/countries/CountryPage` | yes | page |

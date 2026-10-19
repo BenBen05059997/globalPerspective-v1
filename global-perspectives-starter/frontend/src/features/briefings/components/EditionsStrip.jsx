@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import Button from '@/shared/ui/Button.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
-import { labelledDateKeys } from '@/features/briefings/lib/editions.js';
+import { previousWeekKey, labelledDateKeys } from '@/features/briefings/lib/editions.js';
+import '@/features/briefings/components/EditionsStrip.css';
 
 // EditionsStrip — one mark per day (daily), oldest to newest, left to right, over the real probe
 // window (ending at the latest known edition — it never probes past it, see useDailyEditionsIndex),
@@ -92,23 +94,31 @@ export default function EditionsStrip({ marks, pausedSegment, currentDateKey, on
   );
 }
 
-// WeeklyEditionNote — the weekly strip is a single confirmed edition, not a row of marks: the
-// backend's `weekly_brief` action has no per-week lookup (only "the latest published"), so a row
-// of 7 "unknown" marks next to 1 real one would be noise dressed up as a timeline. Show the one
-// real week plainly and say, once, why there's nothing else to show — never invent a mark for a
-// week we have no way to confirm.
-export function WeeklyEditionNote({ weekOf }) {
+// WeeklyEditionNav — the weekly archive: the one edition shown, a step to the week before (weekly
+// editions are keyed by their weekOf, written once a week, so the week before is weekOf − 7 days;
+// `weekly_brief` with `week` returns exactly that week's edition or none), and the latest. No row
+// of probed marks. A read API without per-week lookup answers with the latest edition; then
+// `weekOf` differs from the requested week and the note says so plainly.
+//   hrefForWeek(week | null) -> the address for that edition (null = latest)
+export function WeeklyEditionNav({ weekOf, requestedWeek, hrefForWeek }) {
   if (!weekOf) return null;
   const label = formatDateLabel(weekOf);
+  const notServed = !!requestedWeek && weekOf !== requestedWeek;
   return (
     <div className="bm-editions bm-editions-weekly" role="group" aria-label="Editions">
       <div className="bm-editions-track">
-        <span className="bm-edition-mark bm-edition-solid current" aria-label={`Week of ${label}, edition available, currently showing`} title={`Week of ${label} — edition available`}>
+        <Link className="bm-edition-step" to={hrefForWeek(previousWeekKey(weekOf))}>← Week before</Link>
+        <span className="bm-edition-mark bm-edition-solid current" aria-label={`Week of ${label}, currently showing`} title={`Week of ${label}`}>
           <span className="bm-edition-dot" aria-hidden="true">●</span>
           <span className="bm-edition-label">Week of {label}</span>
         </span>
+        {requestedWeek && <Link className="bm-edition-step" to={hrefForWeek(null)}>Latest edition →</Link>}
       </div>
-      <p className="bm-editions-weekly-note">Earlier weeks: the archive isn't available here yet.</p>
+      {notServed && (
+        <p className="bm-editions-weekly-note" role="status">
+          The edition for the week of {formatDateLabel(requestedWeek)} is not available here yet; showing the latest edition (week of {label}).
+        </p>
+      )}
     </div>
   );
 }

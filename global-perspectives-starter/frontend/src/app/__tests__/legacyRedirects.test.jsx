@@ -4,7 +4,9 @@ import { MemoryRouter, Routes, Route, useLocation } from 'react-router';
 
 const fetchAlert = vi.fn();
 vi.mock('@/shared/api/restProxy', () => ({ fetchAlert: (...a) => fetchAlert(...a) }));
-import { MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect } from '@/app/LegacyRedirects';
+import {
+  MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute,
+} from '@/app/LegacyRedirects';
 
 function Where() {
   const { pathname, search } = useLocation();
@@ -19,7 +21,11 @@ function renderAt(path) {
         <Route path="/briefings" element={<Where />} />
         <Route path="/weekly/thread/:threadId" element={<Where />} />
         <Route path="/weekly-markets" element={<MarketsRedirect />} />
-        <Route path="/weekly" element={<Where />} />
+        <Route path="/weekly" element={<WeeklyRoute><Where /></WeeklyRoute>} />
+        <Route path="/weekly/countries" element={<Where />} />
+        <Route path="/daily" element={<DailyRedirect />} />
+        <Route path="/daily/:dateKey" element={<DailyRedirect />} />
+        <Route path="/weekly-brief" element={<WeeklyBriefRedirect />} />
         <Route path="/spider-demo" element={<SpiderDemoRedirect />} />
         <Route path="/breaking" element={<BreakingFeedRedirect />} />
         <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
@@ -77,5 +83,39 @@ describe('retired routes (P6, decisions 1 and 2)', () => {
     renderAt('/breaking/a3');
     await waitFor(() => expect(screen.getByTestId('where').textContent).toBe('/'));
     expect(fetchAlert).not.toHaveBeenCalled();
+  });
+});
+
+describe('briefings merge (2026-10-19): old addresses land on /briefings modes', () => {
+  it('/daily -> /briefings?mode=read', () => {
+    renderAt('/daily');
+    expect(screen.getByTestId('where').textContent).toBe('/briefings?mode=read');
+  });
+
+  it('/daily/:date -> /briefings?mode=read&date=:date', () => {
+    renderAt('/daily/2026-09-12');
+    expect(screen.getByTestId('where').textContent).toBe('/briefings?mode=read&date=2026-09-12');
+  });
+
+  it('/daily/<not a date> -> the latest edition, never a guessed date', () => {
+    renderAt('/daily/yesterday');
+    expect(screen.getByTestId('where').textContent).toBe('/briefings?mode=read');
+  });
+
+  it('/weekly-brief -> /briefings?mode=weekly', () => {
+    renderAt('/weekly-brief');
+    expect(screen.getByTestId('where').textContent).toBe('/briefings?mode=weekly');
+  });
+});
+
+describe('the countries list keeps one address', () => {
+  it('/weekly?section=countries -> /weekly/countries', () => {
+    renderAt('/weekly?section=countries');
+    expect(screen.getByTestId('where').textContent).toBe('/weekly/countries');
+  });
+
+  it('any other /weekly stays on the Stories page with its query', () => {
+    renderAt('/weekly?view=web');
+    expect(screen.getByTestId('where').textContent).toBe('/weekly?view=web');
   });
 });

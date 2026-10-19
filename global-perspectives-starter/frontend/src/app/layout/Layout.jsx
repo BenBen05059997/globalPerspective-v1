@@ -72,10 +72,9 @@ function Layout({ children }) {
   })();
 
   // N1 (approved 2026-09-26): plain, flat menu items — no groups, no dropdowns. "Map" is `/`
-  // (the logo goes there too); the old "Topics" page stays live at `/today` for existing links; "Countries" (`/weekly/countries`) and "Weekly Brief"
-  // (`/weekly-brief`) stay reachable via interim links on the Stories/Briefings pages instead of
-  // the menu. "Briefings" points at `/briefings` (S3, briefing mode); `/daily` and `/weekly-brief`
-  // stay live for existing links.
+  // (the logo goes there too); the old "Topics" page stays live at `/today` (linked from the map); "Countries" (`/weekly/countries`) is
+  // reachable from the Stories page instead of the menu. "Briefings" is `/briefings` (read, weekly and present
+  // modes); `/daily` and `/weekly-brief` redirect there.
   // `short` + `icon` feed the phone tab bar (P1/A2) — same items, short labels, a small
   // inline-SVG icon per item (no icon library).
   // F1.6 (review R2): plain, true tooltips — no claim of "today"/"live" the data can't back up

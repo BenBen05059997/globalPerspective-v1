@@ -44,7 +44,7 @@ describe('CopyBriefing footers use links.js', () => {
     expect(formatCountryBriefing('Strait of Hormuz', null, null).split('\n').pop()).toBe('— Global Perspectives · globalperspective.net');
   });
   it('daily footer points at the briefing date; thread footer at the story', () => {
-    expect(formatDailyBrief({ dateKey: '2026-10-18' }).split('\n').pop()).toBe('— Global Perspectives · globalperspective.net/briefings?date=2026-10-18');
+    expect(formatDailyBrief({ dateKey: '2026-10-18' }).split('\n').pop()).toBe('— Global Perspectives · globalperspective.net/briefings?mode=read&date=2026-10-18');
     expect(formatThreadBriefing({ threadId: 't-1', latestTitle: 'T', articleCount: 3, dayCount: 2, regions: ['Iran'] }, null).split('\n').pop()).toBe('— Global Perspectives · globalperspective.net/weekly/thread/t-1');
   });
 });

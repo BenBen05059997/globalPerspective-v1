@@ -59,13 +59,15 @@ function mapHref({ situation, story, country, layer } = {}) {
   return withQuery(ROUTE.map, params);
 }
 
-/** briefingHref({ mode: 'read'|'weekly'|'present', date: 'YYYY-MM-DD', week: 'YYYY-MM-DD' }) -> '/briefings?…'.
+/** briefingHref({ mode: 'read'|'weekly'|'present', date: 'YYYY-MM-DD', week: 'YYYY-MM-DD', deck: 'weekly' }) -> '/briefings?…'.
+ *  `deck: 'weekly'` picks the weekly deck in present mode (daily is the default deck).
  *  An unknown mode or a malformed day is left out rather than building a broken address. */
-function briefingHref({ mode, date, week } = {}) {
+function briefingHref({ mode, date, week, deck } = {}) {
   return withQuery(ROUTE.briefings, {
     mode: BRIEFING_MODES.includes(mode) ? mode : null,
     date: DAY.test(date || '') ? date : null,
     week: DAY.test(week || '') ? week : null,
+    deck: deck === 'weekly' ? 'weekly' : null,
   });
 }
 

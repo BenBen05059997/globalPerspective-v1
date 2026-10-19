@@ -33,7 +33,9 @@ import { buildChapters, shortDate } from '@/features/threads/lib/storyMode';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/ThreadPage.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import AsOf from '@/shared/ui/AsOf.jsx';
+import { ROUTE, mapHref, studioHref } from '@/shared/lib/links.js';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
@@ -110,15 +112,6 @@ function ClampText({ text, threshold = 360 }) {
   );
 }
 
-function formatTimeAgo(isoString) {
-  const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
 function formatDateRange(from, to) {
   if (!from) return '';
   const a = formatDateLabel(from);
@@ -138,7 +131,7 @@ export default function ThreadPage() {
   // related-threads sidebar — it's a best-effort enhancement, not load-bearing.
   const { entries: narrativeEntries, loading: threadLoading } = useNarrativeThread(threadId);
   const { dayMap, sortedDates } = useWeeklyArchive();
-  // Honor deep-linked tabs (threadPath's ?tab= contract — e.g. ?tab=economy from
+  // Honor deep-linked tabs (storyHref's ?tab= contract — e.g. ?tab=economy from
   // disruption links on Economy/Daily/Country/Map). Unknown values → Overview
   // (the synthesis-first landing tab; falls back to Timeline when no analysis yet).
   const requestedTab = searchParams.get('tab');
@@ -328,15 +321,10 @@ export default function ThreadPage() {
       <div className="tp-page tp-notfound">
         <h3 className="tp-notfound-h">Story arc not found</h3>
         <p className="tp-notfound-p">This thread may have expired or the link may be incorrect.</p>
-        <Link to="/weekly" className="tp-notfound-link">← Back to Threads</Link>
+        <Link to={ROUTE.stories} className="tp-notfound-link">← Back to Threads</Link>
       </div>
     );
   }
-
-  // Lead/primary topic for this thread — the newest entry (entries are sorted
-  // newest-first). A thread can span many regions/entries, but Analysis Studio
-  // takes a single topicId per story, so we deep-link the lead entry only.
-  const primaryTopicId = thread.entries[0]?.topicId || null;
 
   const inflectionEntry = analysis?.inflectionTopicId
     ? thread.entries.find(e => e.topicId === analysis.inflectionTopicId)
@@ -358,9 +346,9 @@ export default function ThreadPage() {
   const leftRail = (
     <div className="tp-left">
       <div className="tp-left-crumbs">
-        <Link to="/weekly">Threads</Link>
+        <Link to={ROUTE.stories}>Threads</Link>
         <span className="tp-crumb-sep">/</span>
-        {category && <Link to={`/weekly?category=${category}`}>{category}</Link>}
+        {category && <Link to={`${ROUTE.stories}?category=${encodeURIComponent(category)}`}>{category}</Link>}
         {category && <span className="tp-crumb-sep">/</span>}
         <span>{displayTitle.length > 20 ? displayTitle.slice(0, 20) + '…' : displayTitle}</span>
       </div>
@@ -370,13 +358,13 @@ export default function ThreadPage() {
           <SectionHeader as="h3" label="Related threads" />
           {relatedThreads.sameCategory.map(t => {
             return (
-              <StoryLink key={t.threadId} threadId={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
+              <EntityLink kind="story" key={t.threadId} id={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
                 <div className="tp-related-kicker">
                   {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
                 </div>
                 <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
                 <div className="tp-related-meta">{t.count} articles</div>
-              </StoryLink>
+              </EntityLink>
             );
           })}
         </>
@@ -386,13 +374,13 @@ export default function ThreadPage() {
         <>
           <SectionHeader as="h3" label="Watching · region" className="tp-left-sec" />
           {relatedThreads.sameRegion.map(t => (
-            <StoryLink key={t.threadId} threadId={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
+            <EntityLink kind="story" key={t.threadId} id={t.threadId} topic={{ title: t.title, category: t.category, regions: t.regions ? [...t.regions] : undefined }} className="tp-related">
               <div className="tp-related-kicker">
                 {[...t.regions].slice(0, 2).join(' · ')} · {t.category?.toUpperCase()}
               </div>
               <div className="tp-related-title">{t.title.length > 65 ? t.title.slice(0, 65) + '…' : t.title}</div>
               <div className="tp-related-meta">{t.count} articles</div>
-            </StoryLink>
+            </EntityLink>
           ))}
         </>
       )}
@@ -441,7 +429,7 @@ export default function ThreadPage() {
       </div>
       <div className="tp-ai-foot">
         <span>AI-generated · live signals</span>
-        {analysis?.generatedAt && <span>{formatTimeAgo(analysis.generatedAt)}</span>}
+        <AsOf generatedAt={analysis?.generatedAt} />
       </div>
     </div>
   );
@@ -475,22 +463,21 @@ export default function ThreadPage() {
         <span className="tp-topbar-sep">/</span>
         {fromCountry ? (
           <>
-            <Link to={`/weekly/country/${encodeURIComponent(fromCountry)}`}>{fromCountry}</Link>
+            <EntityLink kind="country" id={fromCountry}>{fromCountry}</EntityLink>
             <span className="tp-topbar-sep">/</span>
           </>
         ) : (
           <>
-            <Link to="/weekly">Threads</Link>
+            <Link to={ROUTE.stories}>Threads</Link>
             <span className="tp-topbar-sep">/</span>
           </>
         )}
         <span className="tp-topbar-current">{displayTitle.length > 48 ? displayTitle.slice(0, 48) + '…' : displayTitle}</span>
         <div className="tp-topbar-right">
-          <Link
-            to={primaryTopicId ? `/analyze?stories=${encodeURIComponent(primaryTopicId)}` : '/analyze'}
-            className="tp-analyze-link"
-            title="Analyze this arc in the Analysis Studio"
-          >
+          <Link to={mapHref({ story: threadId })} className="tp-analyze-link" title="Show this story on the map">
+            Show on map
+          </Link>
+          <Link to={studioHref([threadId])} className="tp-analyze-link" title="Analyze this arc in the Analysis Studio">
             Analyze this arc →
           </Link>
           <ShareButtons threadId={thread.threadId} title={displayTitle} preview={{ t: displayTitle, n: thread.articleCount, d: thread.dayCount, r: thread.regions, c: category }} />
@@ -559,7 +546,17 @@ export default function ThreadPage() {
           <div className="tp-hd-meta">
             <span>{formatDateRange(thread.dateRange.from, thread.dateRange.to)}</span>
             {category && <span>Category <b>{thread.entries[0]?.category}</b></span>}
-            {thread.regions.length > 0 && <span>Countries <b>{thread.regions.slice(0, 3).join(', ')}{thread.regions.length > 3 ? ` +${thread.regions.length - 3}` : ''}</b></span>}
+            {thread.regions.length > 0 && (
+              <span>
+                Countries{' '}
+                <b>
+                  {thread.regions.slice(0, 3).map((r, i) => (
+                    <span key={r}>{i > 0 && ', '}<EntityLink kind="country" id={r}>{r}</EntityLink></span>
+                  ))}
+                  {thread.regions.length > 3 ? ` +${thread.regions.length - 3}` : ''}
+                </b>
+              </span>
+            )}
           </div>
         </div>
 
@@ -598,6 +595,7 @@ export default function ThreadPage() {
         {/* Overview tab — the synthesis, as short collapsible sections in reading order */}
         {activeTab === 'overview' && hasOverview && (
           <div className="tp-overview">
+            <AsOf generatedAt={analysis.generatedAt} source="story analysis" className="tp-ov-asof" />
             {analysis.storyArc && (
               <OverviewSection label="Bottom line" defaultOpen>
                 <ClampText text={analysis.storyArc} />

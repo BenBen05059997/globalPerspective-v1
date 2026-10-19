@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import StoryLink from '@/shared/ui/StoryLink.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { shortDate } from '@/features/threads/lib/storyMode.js';
 import Button from '@/shared/ui/Button.jsx';
-import ClaimTag from '@/features/threads/components/ClaimTag.jsx';
+import ClaimTag from '@/shared/ui/ClaimTag.jsx';
 
 // SharedActorsList — "Shares actors with" (STORY_WEB_RETHINK_PLAN §5.2d), the Read-in-full Why
 // section's FACT line: other stories whose analyses name the same actors. Rows come from
@@ -25,9 +25,9 @@ export default function SharedActorsList({ rows }) {
         <ul className="sa-list">
           {shown.map((r) => (
             <li key={r.otherThreadId} className="sa-row" data-thread={r.otherThreadId}>
-              <StoryLink className="sa-story" threadId={r.otherThreadId} topic={r.otherTitle ? { title: r.otherTitle } : null} target="_blank" rel="noreferrer" hint="Open in a new tab">
+              <EntityLink className="sa-story" kind="story" id={r.otherThreadId} topic={r.otherTitle ? { title: r.otherTitle } : null} target="_blank" rel="noreferrer" hint="Open in a new tab">
                 {r.otherTitle || r.otherThreadId}
-              </StoryLink>
+              </EntityLink>
               <span className="sa-actors">{r.actors.join(' · ')}</span>
               <span className="sa-meta">
                 {r.weight} shared {r.weight === 1 ? 'actor' : 'actors'}

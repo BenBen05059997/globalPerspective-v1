@@ -177,6 +177,7 @@
 .wmap-detail-title { font-size: var(--text-md); font-weight: var(--weight-bold); line-height: 1.4; color: var(--text-head); }
 .wmap-detail-meta { padding: 0 var(--space-5) var(--space-3); font-size: var(--text-sm); color: var(--text-muted); }
 .wmap-detail-meta .wmap-detail-cat { margin-right: var(--space-2); }
+.wmap-detail-links { display: flex; flex-wrap: wrap; gap: var(--space-3); padding: 0 var(--space-5) var(--space-2); font-size: var(--text-sm); }
 /* Play Evolution: the panel's one primary Button; while playing it is the selected (accent outline) quiet Button */
 .wmap-detail-play { width: calc(100% - 2 * var(--space-5)); margin: 0 var(--space-5) var(--space-4); }
 .wmap-detail-day { margin-bottom: var(--space-4); padding: 0; }

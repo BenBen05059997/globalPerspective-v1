@@ -8,7 +8,7 @@ import TierChip from '@/shared/ui/TierChip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { ageShortFrom } from '@/shared/lib/age.js';
 import { peekData } from '@/shared/lib/peekData.js';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref } from '@/shared/lib/links.js';
 import {
   BOARD_RULE, BOARD_SPARK_DAYS, boardColumns, crisisOf, dayCounts, groupKeyOf, tierOf,
 } from '@/features/threads/lib/storyGroups';
@@ -52,7 +52,7 @@ function Card({ item, analysis, now, peek, colKey }) {
   return (
     <li className="sb-card" style={{ '--row-hue': hue }} data-status={colKey} data-thread={thread.threadId}>
       <Link
-        to={threadPath(thread.threadId)}
+        to={storyHref(thread.threadId)}
         className="sb-card__link"
         aria-describedby={open ? `peek-${id}` : undefined}
         onMouseEnter={peek ? (e) => peek.openOnHover(id, e.currentTarget) : undefined}

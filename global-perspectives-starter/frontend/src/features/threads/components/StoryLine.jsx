@@ -1,7 +1,7 @@
 import StoryRow from '@/shared/ui/StoryRow.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import { peekData } from '@/shared/lib/peekData.js';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref } from '@/shared/lib/links.js';
 import { crisisOf, tierOf, storySummary, watchingOf } from '@/features/threads/lib/storyGroups';
 
 // StoryLine — one story as the shared StoryRow: crisis-hue bar, TierChip (word + ring weight, the
@@ -30,7 +30,7 @@ export default function StoryLine({ thread, analysis = null, now, peek = null, d
   return (
     <StoryRow
       id={`${scope}:${thread.threadId}`}
-      to={threadPath(thread.threadId)}
+      to={storyHref(thread.threadId)}
       title={title}
       place={placeOf(thread)}
       crisis={crisis === 'neutral' ? null : crisis}

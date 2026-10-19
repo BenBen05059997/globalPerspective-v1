@@ -437,6 +437,7 @@
 .tp-ov-linknote { margin: var(--space-2) 0; }
 .tp-ov-prov { margin: var(--space-2) 0 0; font-size: var(--text-sm); line-height: var(--leading-normal); color: var(--text-muted); }
 .tp-ov-prov + .tp-ov-prov { margin-top: 2px; }
+.tp-ov-asof { display: block; margin: 0 0 var(--space-2); }
 
 /* Timeline "Show linked news" (chapters web) */
 .tp-chapters-web { margin-top: var(--space-5); }

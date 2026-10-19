@@ -17,6 +17,8 @@ import Button from '@/shared/ui/Button.jsx';
 import Chip from '@/shared/ui/Chip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CompactTimeline from '@/features/threads/components/CompactTimeline';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { ROUTE, mapHref } from '@/shared/lib/links.js';
 import '@/features/threads/WeeklyPage.css';
 import '@/features/threads/components/WeeklyMap.css';
 
@@ -402,13 +404,20 @@ function ThreadDetailView({ thread, onBack, onPlay, storyPlay, analysis, onEntry
     <div className="wmap-thread-detail">
       <button type="button" className="wmap-detail-back" onClick={onBack}>← All threads</button>
       <div className="wmap-detail-header">
-        <div className="wmap-detail-title">{displayTitle}</div>
+        <EntityLink kind="story" id={thread.threadId} className="wmap-detail-title">{displayTitle}</EntityLink>
+      </div>
+      <div className="wmap-detail-links">
+        <EntityLink kind="story" id={thread.threadId}>Open full story →</EntityLink>
+        <Link to={mapHref({ story: thread.threadId })}>Show on the live map</Link>
       </div>
       <div className="wmap-detail-meta">
         {thread.entries[0]?.category && (
           <CategoryTag category={thread.entries[0].category.toLowerCase()} className="wmap-detail-cat" />
         )}
-        {thread.articleCount} article{thread.articleCount !== 1 ? 's' : ''} · {thread.dates.length} day{thread.dates.length !== 1 ? 's' : ''} · {thread.regions.slice(0, 3).join(', ')}
+        {thread.articleCount} article{thread.articleCount !== 1 ? 's' : ''} · {thread.dates.length} day{thread.dates.length !== 1 ? 's' : ''}
+        {thread.regions.slice(0, 3).map((r, i) => (
+          <span key={r}>{i === 0 ? ' · ' : ', '}<EntityLink kind="country" id={r}>{r}</EntityLink></span>
+        ))}
       </div>
       <ThreadIntelligence analysis={analysis} />
       {canPlay && (
@@ -537,7 +546,7 @@ function ThreadListPanel({ threadList, highlightThread, onThreadClick, onPlayThr
               {countryPlay ? (
                 <>
                   <div className="wmap-country-replay-header">
-                    <span className="wmap-country-replay-country">{countryPlay.country}</span>
+                    <EntityLink kind="country" id={countryPlay.country} className="wmap-country-replay-country">{countryPlay.country}</EntityLink>
                     <span className="wmap-country-replay-date">{formatDateLabel(countryPlay.currentDate)}</span>
                     <span className="wmap-country-replay-progress-text">Day {countryPlay.dateIdx + 1} of {countryDates.length}</span>
                   </div>
@@ -1111,7 +1120,7 @@ export default function WeeklyMap({ embedded = false, hidePanel: hidePanelProp =
       {!isEmbedded && (
         <div className="wmap-header">
           <div className="wmap-header-left">
-            <Link to="/weekly" className="wmap-back-link">← Weekly</Link>
+            <Link to={ROUTE.stories} className="wmap-back-link">← Weekly</Link>
             <h1>Evolution Map</h1>
             {dateRangeLabel && <span className="wmap-date-range">{dateRangeLabel}</span>}
           </div>

@@ -19,7 +19,9 @@ import { legacyNote } from '@/shared/lib/questionChips.js';
 import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
-import ClaimTag from '@/features/threads/components/ClaimTag.jsx';
+import ClaimTag from '@/shared/ui/ClaimTag.jsx';
+import AsOf from '@/shared/ui/AsOf.jsx';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import StoryMap, { STORY_MAP_FALLBACK_HEIGHT } from '@/shared/map/StoryMap.jsx';
 import '@/shared/ui/deck.css';
 import '@/features/threads/components/StoryMode.css';
@@ -41,7 +43,9 @@ function AnalysisNote({ generatedAt, children }) {
   }
   return (
     <div className={state === 'older' ? 'sm-older' : ''}>
-      {state === 'older' && date && <span className="sm-older-tag">older analysis · {date}</span>}
+      {state === 'older' && date
+        ? <span className="sm-older-tag">older analysis · {date}</span>
+        : <AsOf generatedAt={generatedAt} source="story analysis" />}
       {children}
     </div>
   );
@@ -122,7 +126,7 @@ export function ChapterSlide({ chapter, index }) {
       <div className="sm-slide-kicker">
         CH{index + 1} · {formatDateLabel(chapter.from)}{chapter.to !== chapter.from ? ` – ${formatDateLabel(chapter.to)}` : ''}
         {chapter.isInflection && <span className="sm-flag"> ⚑ turning point</span>}
-        {chapter.country && <span> · {chapter.country}</span>}
+        {chapter.country && <span> · <EntityLink kind="country" id={chapter.country}>{chapter.country}</EntityLink></span>}
       </div>
       <h2 className="sm-slide-title">{chapter.label}</h2>
       <p className="sm-legend"><ClaimTag kind="fact" /> cited dated news, this story&apos;s own timeline</p>
@@ -167,7 +171,9 @@ export function WatchSlide({ deadlines }) {
             <li key={d.id} className="sm-watch-row">
               <span className="sm-watch-diamond" aria-hidden="true">◆</span>
               <div>
-                <div className="sm-watch-text">{d.label}</div>
+                <div className="sm-watch-text">
+                  {d.question === true && d.qid ? <EntityLink kind="forecast" id={d.qid}>{d.label}</EntityLink> : d.label}
+                </div>
                 <QuestionChip trigger={d} />
                 <div className="sm-watch-meta">
                   {formatDateLabel(d.deadline)}

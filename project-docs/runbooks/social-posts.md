@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge Scheduler `InvokeLinkedIn`, `cron(20 */3 * * ? *)` Asia/Tokyo, no input.
-Repo source: `amplify/backend/function/newsPostLinkedIn/src/`.
+Repo source: `backend/distribution/newsPostLinkedIn/src/`.
 
 ## What it means
 Posts up to 5 new `latest` topics per run to LinkedIn and/or Bluesky (whichever credentials are set), deduped by a `POSTED#<PLATFORM>#<fingerprint>` row in `SOCIAL_POSTS_TABLE`. Public posts.

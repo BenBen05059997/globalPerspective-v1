@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerModelGuard`, `cron(0 12 * * ? *)` UTC, no input.
-Repo source: `amplify/backend/function/newsModelGuard/src/`.
+Repo source: `backend/monitoring/newsModelGuard/src/`.
 
 ## What it means
 Checks the DeepSeek balance (`/user/balance`) and every Lambda's model env vars against DeepSeek `/models`; alerts SNS `GlobalPerspectiveAlerts` with `[GP] Model-retirement guard: …` or `DeepSeek balance low: $X` (threshold `DEEPSEEK_BALANCE_ALERT_USD`, default 3). Measured spend per job: `DEEPSEEK_COST_ESTIMATE.md`.

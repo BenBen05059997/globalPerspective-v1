@@ -71,11 +71,14 @@ talks to S3 directly — only through the Worker's `/data/*` route.
 
 Paths are named, not linked; search for them.
 
-### Backend — `amplify/backend/function/<dir>/src/`
+### Backend — `backend/<group>/<dir>/src/`
 
-The folder name "amplify" is historical; nothing is deployed with Amplify. Each Lambda is deployed by
-hand with the AWS CLI (see Deploy below). `scripts/functions.json` maps each deployed name to its repo
-dir, runtime, feature group and schedules. Names that surprise:
+Lambdas are grouped by feature (decision 0024): `backend/<group>/<dir>/` with `src/`, `test/` and a
+README. Three still sit in the historical `amplify/backend/function/` folder: `newsAnalyze` and
+`newsPolarBilling` (billing; moving them needs an operator yes) and `NewsProjectInvokeAgentLambda`.
+Nothing is deployed with Amplify. Each Lambda is deployed by hand (see Deploy below).
+`scripts/functions.json` maps each deployed name to its repo dir (`dir`, relative to the repo root;
+every tool reads it from there), runtime, feature group and schedules. Names that surprise:
 
 - `newsInvokeGemini` (deployed `newsInvokeGemini-dev`) — topic selection. Despite the name it calls
   DeepSeek, not Gemini.
@@ -83,7 +86,7 @@ dir, runtime, feature group and schedules. Names that surprise:
   suffix is production.
 - `newsPostLinkedIn` deploys as `newsPostLinkedin` (lower-case "in").
 - The Scheduler entry for country intelligence is named `countryIntelliegence` (typo is real).
-- `_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling`
+- `amplify/backend/function/_sandbox/` holds the deploy script for the `-sandbox` twins of `newsAnalyze` and `newsPolarBilling`
   (no repo src of their own).
 - `newsAnalyze/deployed-snapshot/` is a copy of what actually runs; `newsAnalyze/src/` is not it.
 
@@ -91,7 +94,7 @@ Feature groups (from functions.json): `pipeline` (selection, analysis, country r
 (map pipeline), `predictions`, `distribution` (email, social), `read-api` (proxy and Function-URL
 endpoints), `membership-studio` (Studio, billing), `monitoring`, `economy-parked`.
 
-**Invariant:** code shared between Lambdas lives once, in `amplify/backend/shared/src/` (`llm.js` —
+**Invariant:** code shared between Lambdas lives once, in `backend/shared/src/` (`llm.js` —
 the one LLM client and `[usage]` cost line; `placeFilter.js`, `dayZero.js`, `riskDimensions.js`,
 `situations-core.js`). Each consumer reaches it through a committed `src/_shared` symlink;
 `scripts/lambda.sh` copies the real files into the zip. Never copy these into a Lambda.
@@ -141,6 +144,9 @@ other GET paths.
   `check_color_literals.mjs`, `check_shared_blocks.mjs`), eval harnesses.
 - `predictions/` — `settle-review.js` (the human confirm step for forecast verdicts),
   `verify-draw.mjs`, older pilot scripts.
+- `backend/<group>/cli/` — operator review/send CLIs next to their Lambdas: `distribution/cli/breaking/`
+  (`review.js`, `send.js`, `send-test.js`), `distribution/cli/weekly/review.js`,
+  `economy-parked/cli/weekly-markets/review.js`.
 - `deploy.sh` (repo root) — frontend verify/build/package and release targets.
 
 ## Data flows
@@ -337,7 +343,7 @@ Active checks are run by hand: `scripts/smoke-test.mjs`, `link-crawl.mjs`, `auth
   the GitHub Pages release (production today). Each upload target needs explicit operator approval.
   Details: `project-docs/ops/DEPLOYMENT_NOTES.md`.
 - Lambdas: `scripts/lambda.sh <name> diff|package|deploy|rollback` packages
-  `amplify/backend/function/<dir>/src` (no node_modules, no tests), refuses to deploy over deployed
+  `<dir>/src` from functions.json (no node_modules, no tests), refuses to deploy over deployed
   files it cannot find in git unless forced, backs up first, and refuses `deployBlocked` functions.
   `scripts/audit-lambda-drift.sh` is the read-only fleet-wide diff.
 - Worker: code-only updates through the Cloudflare API that keep its routes, bindings and secrets

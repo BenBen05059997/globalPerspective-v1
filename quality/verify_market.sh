@@ -181,7 +181,7 @@ for rule in MarketsDataHourly MarketsYieldsDaily MarketsMacrosWeekly; do
 done
 
 # ─── Lambda code drift on newsMarketsData (if source exists) ────────────────
-SRC=amplify/backend/function/newsMarketsData/src/index.js
+SRC=backend/economy-parked/newsMarketsData/src/index.js
 if [ -f "$SRC" ]; then
   echo
   echo "==> Lambda code drift: newsMarketsData"

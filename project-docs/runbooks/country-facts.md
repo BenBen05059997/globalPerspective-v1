@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge Scheduler `Fact`, `cron(0 5 ? * MON *)` Asia/Tokyo (Monday 05:00 JST), no input.
-Repo source: `amplify/backend/function/newsCountryFactsUpdater/src/`.
+Repo source: `backend/pipeline/newsCountryFactsUpdater/src/`.
 
 ## What it means
 Refreshes `FACTS#<name>` / `COUNTRY_FACTS` for 40 countries from Wikidata (leaders, capital, population) and ACLED conflict counts for the first 12. No LLM.

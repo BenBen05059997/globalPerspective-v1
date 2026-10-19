@@ -28,7 +28,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { normalizeDimensions } = require('../amplify/backend/shared/src/riskDimensions');
+const { normalizeDimensions } = require('../backend/shared/src/riskDimensions');
 
 const AXES = ['conflict', 'political', 'economic', 'humanitarian'];
 const REGION = 'ap-northeast-1';
@@ -58,8 +58,8 @@ if (!LABEL) {
 }
 
 // ─── the CURRENT live rubric text, verbatim (used only for --baseline-check) ───────────────────
-// Quoted verbatim from amplify/backend/function/newsCountryIntelligence/src/index.js (~line
-// 487-492) and amplify/backend/function/newsThreadAnalysis/src/index.js (~line 263) as of
+// Quoted verbatim from backend/pipeline/newsCountryIntelligence/src/index.js (~line
+// 487-492) and backend/pipeline/newsThreadAnalysis/src/index.js (~line 263) as of
 // 2026-09-15 — see project-docs/architecture/SEVERITY_CODEBOOK.md §1. This block is NOT edited by
 // this harness; if the live prompt text ever changes, re-quote it here so --baseline-check keeps
 // meaning what it says.

@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerBreakingAlert`, `cron(35 4/8 * * ? *)` UTC, no input. Live env `DRY_RUN=false`.
-Repo source: `amplify/backend/function/newsBreakingAlert/src/`.
+Repo source: `backend/distribution/newsBreakingAlert/src/`.
 
 ## What it means
 Scores the `latest` topics against `SIGNIFICANCE_THRESHOLD`, proposes at most one story not alerted within `DEDUPE_DAYS`, writes it to `BREAKING_ALERTS_TABLE` and, with `DRY_RUN=false` and `RESEND_API_KEY` set, emails it to `ALERT_EMAIL_TO` (the operator address in env; subscriber sends are the separate, disabled `TriggerBreakingEmailSend`).

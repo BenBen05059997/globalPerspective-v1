@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerDailyAnalysis`, `cron(40 4 * * ? *)` UTC, no input.
-Repo source: `amplify/backend/function/newsThreadAnalysis/src/`.
+Repo source: `backend/pipeline/newsThreadAnalysis/src/`.
 
 ## What it means
 For multi-day story threads in the last 30 days of archive, writes `THREAD#<id>` / `THREAD_ANALYSIS` and `THREAD_HISTORY#<date>` in `SUMMARIZE_PREDICT_TABLE`; LLM (`GROK_MODEL`) plus two Brave calls per thread; at most `MAX_THREADS`.

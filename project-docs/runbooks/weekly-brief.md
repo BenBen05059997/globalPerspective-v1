@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerWeeklyBrief`, `cron(0 6 ? * SUN *)` UTC, no input. (The code comment still says "no EventBridge schedule"; the live rule exists.)
-Repo source: `amplify/backend/function/newsWeeklyBrief/src/`.
+Repo source: `backend/distribution/newsWeeklyBrief/src/`.
 
 ## What it means
 Builds the week's signals brief from 8 archive days, thread analyses and country briefings with one LLM call; writes `WEEKLY_BRIEF#<weekKey>` / `WEEKLY_BRIEF` (`status: published`) in `SUMMARIZE_PREDICT_TABLE`. The Sunday 14:00 email (`weekly-email.md`) sends it.

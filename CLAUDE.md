@@ -21,7 +21,9 @@ Docs are for design intent and navigation: `project-docs/INDEX.md` (map), `ARCHI
   (direction enforced by eslint). Imports use the `@/` alias. Shared tokens in
   `shared/styles/tokens.css`, shared blocks in `shared/ui/` — reuse them, never re-style locally.
 - `docs/` is build output — don't hand-edit; `docs/config.js` is operator-owned.
-- Lambdas: `amplify/backend/function/<name>/src/` (historical name; deployed manually).
+- Lambdas: `backend/<group>/<name>/src/`, shared helpers in `backend/shared/src/`; `scripts/functions.json`
+  `dir` is the path (newsAnalyze, newsPolarBilling, NewsProjectInvokeAgentLambda still in
+  `amplify/backend/function/`). Deploy with `scripts/lambda.sh`.
 - Scripts/checks: `scripts/`, `quality/`, `predictions/`.
 
 ## Verify

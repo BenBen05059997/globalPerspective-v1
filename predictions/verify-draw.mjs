@@ -15,7 +15,7 @@
  *   --public <proxy-url> --week 2026-W41   reads them from the PUBLIC aggregate (prediction_track_record, `questions.weeks[]`;
  *                         the pool is published for the latest 4 drawn weeks) — needs no credentials
  *
- * The ranking rule is the Lambda's own module (amplify/backend/function/newsPredictionResolver/src/lib.js).
+ * The ranking rule is the Lambda's own module (backend/predictions/newsPredictionResolver/src/lib.js).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,7 +25,7 @@ import { execFileSync } from 'node:child_process';
 
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
-const lib = require(path.join(here, '..', 'amplify/backend/function/newsPredictionResolver/src/lib.js'));
+const lib = require(path.join(here, '..', 'backend/predictions/newsPredictionResolver/src/lib.js'));
 
 function unmarshal(av) {
   if (av == null) return null;

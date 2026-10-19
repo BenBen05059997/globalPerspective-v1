@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerPredictionResolver`, `cron(30 10 * * ? *)` UTC, input `{"action":"tick"}`.
-Repo source: `amplify/backend/function/newsPredictionResolver/src/`.
+Repo source: `backend/predictions/newsPredictionResolver/src/`.
 
 ## What it means
 `tick`: commits seeds two weeks ahead, draws each ended week's sample, runs the verdict-draft pass on Mondays (LLM `DRAFT_MODEL` + Brave), and writes a `SETTLE#<week>/TICK#<iso>` heartbeat in `PREDICTION_LOG_TABLE`. The operator confirms verdicts on Mondays.

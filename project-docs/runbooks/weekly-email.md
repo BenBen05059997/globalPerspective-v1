@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerWeeklyEmailSend`, `cron(0 14 ? * SUN *)` UTC, input `{"mode":"weekly"}`. Live env `EMAIL_SEND_DRY_RUN=false` (real sends).
-Repo source: `amplify/backend/function/newsEmailSender/src/`.
+Repo source: `backend/distribution/newsEmailSender/src/`.
 
 ## What it means
 Emails the newest published weekly brief to `digestOptIn` subscribers via Resend and writes `EMAILLOG#weekly#<weekOf>` in `SUMMARIZE_PREDICT_TABLE`. User-facing sends.

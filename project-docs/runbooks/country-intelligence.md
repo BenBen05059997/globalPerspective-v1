@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge Scheduler `countryIntelliegence` (sic), `cron(15 5 * * ? *)` UTC, no input.
-Repo source: `amplify/backend/function/newsCountryIntelligence/src/`.
+Repo source: `backend/pipeline/newsCountryIntelligence/src/`.
 
 ## What it means
 Plans which countries to refresh (top `COUNTRY_TOP_N`, weekly baseline, alert or coverage-jump extras) and writes `COUNTRY#<name>` / `COUNTRY_INTELLIGENCE` and `HISTORY#<date>` in `SUMMARIZE_PREDICT_TABLE`; LLM plus up to 4 Brave calls per country. Reads `WORLD_LATEST_URL` for alert countries.

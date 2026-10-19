@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerSignalsBuild`, `cron(0 10 * * ? *)` UTC, input `{"action":"build"}`.
-Repo source: `amplify/backend/function/newsSignals/src/`.
+Repo source: `backend/read-api/newsSignals/src/`.
 
 ## What it means
 Builds S3 `signals/latest.json` and `signals/snapshots/<date>.json` from economic-impact records, the prediction log, country briefings and sent breaking alerts. No LLM. Whether to park it is undecided (decisions/0015).

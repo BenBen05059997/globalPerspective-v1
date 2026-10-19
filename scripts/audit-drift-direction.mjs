@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
-const dc = require(path.join(here, '../amplify/backend/function/newsDriftCorrector/src/directionCheck.js'));
+const dc = require(path.join(here, '../backend/pipeline/newsDriftCorrector/src/directionCheck.js'));
 
 const REGION = 'ap-northeast-1';
 const TABLE = 'SummarizeAndPredict';

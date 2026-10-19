@@ -47,7 +47,7 @@ const SEVERITY_BAND = {
 // Read INSTRUMENT_ALLOWLIST from the Lambda source so it cannot drift.
 const INSTRUMENT_ALLOWLIST = (() => {
   const src = fs.readFileSync(
-    path.join(__dirname, '..', 'amplify/backend/function/newsEconomicImpact/src/index.js'),
+    path.join(__dirname, '..', 'backend/economy-parked/newsEconomicImpact/src/index.js'),
     'utf8',
   );
   const m = src.match(/const INSTRUMENT_ALLOWLIST = new Set\(\[([\s\S]*?)\]\);/);

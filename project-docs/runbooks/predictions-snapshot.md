@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerPredictionsSnapshot`, `rate(30 minutes)`, no input.
-Repo source: `amplify/backend/function/newsPredictionsSnapshot/src/`.
+Repo source: `backend/predictions/newsPredictionsSnapshot/src/`.
 
 ## What it means
 Scans `PREDICTION_LOG_TABLE` and writes the track-record aggregate and question board to S3 `predictions/track_record.json` (`TRACK_RECORD_KEY`). No LLM.

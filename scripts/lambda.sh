@@ -6,14 +6,14 @@
 #   scripts/lambda.sh <name> deploy [--force]    # PROD MUTATION: backup deployed zip, upload build.zip, confirm sha
 #   scripts/lambda.sh <name> rollback            # PROD MUTATION: re-upload the newest backup, confirm sha
 #
-# <name> is the deployed name or the repo dir (scripts/functions.json maps them; e.g. newsInvokeGemini ->
-# newsInvokeGemini-dev). deploy/rollback need the same authorization as any `aws lambda update-function-code`
-# (see CLAUDE.md "Authorization"); the script never decides that for you.
+# <name> is the deployed name or the repo folder name (scripts/functions.json maps them; e.g. newsInvokeGemini ->
+# newsInvokeGemini-dev, repo dir backend/pipeline/newsInvokeGemini). deploy/rollback need the same authorization
+# as any `aws lambda update-function-code` (see CLAUDE.md "Authorization"); the script never decides that for you.
 #
-# Package: copies amplify/backend/function/<dir>/src minus node_modules and test files, following symlinks, so the
-# committed src/_shared -> ../../../shared/src link ships as real files (_shared/llm.js etc.). When functions.json
-# says the deployed zip ships node_modules ("nodeModules": true), it installs production deps for linux/x64
-# (npm ci with a lockfile, else npm install); otherwise the runtime's @aws-sdk v3 is relied on, as live.
+# Package: copies <dir>/src (functions.json "dir", e.g. backend/<group>/<name>) minus node_modules and test files,
+# following symlinks, so the committed src/_shared -> ../../../shared/src (backend/shared/src) link ships as real
+# files (_shared/llm.js etc.). When functions.json says the deployed zip ships node_modules ("nodeModules": true),
+# it installs production deps for linux/x64 (npm ci with a lockfile, else npm install); otherwise the runtime's @aws-sdk v3 is relied on, as live.
 #
 # Diff guard: every deployed file that differs from the package (or exists only in the deployed zip) is looked
 # up in git's object store. Found = those exact bytes were committed once, so the repo is ahead (safe).
@@ -32,13 +32,13 @@ ARG_NAME="$1"; CMD="$2"; FORCE=0
 # name|dir|nodeModules|deployBlocked from functions.json (accepts deployed name or repo dir)
 IFS='|' read -r NAME DIR NODE_MODULES BLOCKED < <(node -e '
   const fns = require(process.argv[1]).functions, q = process.argv[2];
-  const name = fns[q] ? q : Object.keys(fns).find((n) => fns[n].dir === q);
+  const name = fns[q] ? q : Object.keys(fns).find((n) => fns[n].dir && (fns[n].dir === q || fns[n].dir.split("/").pop() === q));
   if (!name) { console.error(`unknown Lambda: ${q} (not in scripts/functions.json)`); process.exit(1); }
   const f = fns[name];
   console.log([name, f.dir || "", f.nodeModules ? 1 : 0, f.deployBlocked || ""].join("|"));
 ' "$FUNCS_JSON" "$ARG_NAME")
 [ -n "$DIR" ] || { echo "✗ $NAME has no repo dir. ${BLOCKED}" >&2; exit 1; }
-SRC="$ROOT/amplify/backend/function/$DIR/src"
+SRC="$ROOT/$DIR/src"
 [ -d "$SRC" ] || { echo "✗ missing $SRC" >&2; exit 1; }
 BACKUPS="$ROOT/.deploy-backups/$NAME"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT

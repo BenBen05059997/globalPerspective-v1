@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge rule `TriggerSituationTracker`, `rate(30 minutes)`, no input. (The code comment says every 10 minutes; the live rule is 30.) Live env `DRY_RUN=false`.
-Repo source: `amplify/backend/function/newsSituationTracker/src/`.
+Repo source: `backend/situations/newsSituationTracker/src/`.
 
 ## What it means
 Sole writer of situation state and the map bundle: folds the GDACS inbox, `stories/index.json` and `threads/story-map.json` into `situations/state/`, `situations/index.json`, `situations/archive/`, `world/latest.json`, `world/latest.member.json` and timestamped `world/…` / `situations/history/…` snapshots. Emits `ChecksRun` and other metrics (`GlobalPerspective/Situations`, dimension `Mode`). No LLM.

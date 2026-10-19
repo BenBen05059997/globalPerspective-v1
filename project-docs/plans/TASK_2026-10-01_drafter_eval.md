@@ -17,7 +17,7 @@ Status: proposed (plan, not built).
 The claude-api skill's `build-eval` / `hillclimb` tools target Claude apps and skip other providers, so we follow the method, not the tool. The drafter runs on DeepSeek `deepseek-v4-pro`.
 
 **Reads / references:**
-- `amplify/backend/function/newsPredictionResolver/src/{draft,search,index,store}.js` (the `replay` action runs the drafter with no writes and never sees `p`);
+- `backend/predictions/newsPredictionResolver/src/{draft,search,index,store}.js` (the `replay` action runs the drafter with no writes and never sees `p`);
 - `predictions/settle-review.js` (the operator's confirm CLI);
 - `TASK_2026-09-30_batch4_scoring_web_share.md` (phase B; the drafter rules: YES needs a verbatim quote + a second agreeing pass, NO only after deadline + 3 days, VOID with a reason code);
 - `GlobalPerspectivePredictionLog` (`PRED#` rows with past deadlines; `Q#` rows once questions exist).

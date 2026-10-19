@@ -13,7 +13,7 @@ AI-powered global-news intelligence platform — [globalperspective.net](https:/
 | Autonomy / verify / deploy playbooks | `agent-kit/` (bindings in `agent-kit/PROJECT.md`) |
 | Task/docs-freshness convention | `project-docs/playbooks/TASK_WORKFLOW.md` |
 | Frontend source | `global-perspectives-starter/frontend/src/` — `app/` (chrome/routing) + `shared/` (cross-feature) + `features/<name>/` (13 features); see ARCHITECTURE.md's Frontend Path map |
-| Lambda source | `amplify/backend/function/<name>/src/` |
+| Lambda source | `backend/<group>/<name>/src/` (path per Lambda: `scripts/functions.json` `dir`; three still in `amplify/backend/function/`) |
 
 ## Traps — do NOT assume
 

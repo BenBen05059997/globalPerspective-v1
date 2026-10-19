@@ -4,7 +4,7 @@ Last verified: 2026-10-19 (schedule, target, input and alarm settings read from 
 
 ## Trigger
 EventBridge Scheduler `InvokeGoogleGemini`, `cron(15 4/8 * * ? *)` UTC (04:15, 12:15, 20:15), no input.
-Repo source: `amplify/backend/function/newsInvokeGemini/src/`.
+Repo source: `backend/pipeline/newsInvokeGemini/src/`.
 
 ## What it means
 Fetches the RSS feeds, makes one LLM call (`GROK_MODEL` on `GROK_API_URL`) to pick up to `TOPICS_LIMIT` topics, and writes them to `TOPICS_DDB_TABLE` item `staging` (`status: pending`, new `generationId`) plus `seen-today`; captures what it saw and chose to S3 `audit/ingest-capture/latest.json` and `audit/ingest-capture/<date>/<HHMM>.json`. The news agent (runbook `news-agent.md`) publishes `staging` 10 minutes later; the selection shadow reads the capture.

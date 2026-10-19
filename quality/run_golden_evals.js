@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const LAMBDA_SRC = path.join(__dirname, '..', 'amplify', 'backend', 'function', 'newsEconomicImpact', 'src');
+const LAMBDA_SRC = path.join(__dirname, '..', 'backend', 'economy-parked', 'newsEconomicImpact', 'src');
 const SRC = path.join(LAMBDA_SRC, 'index.js');
 const FIXTURES = path.join(__dirname, 'golden_evals.json');
 

@@ -22,7 +22,7 @@ vi.mock('firebase/auth', () => ({
 }));
 
 const useDisruptionsListMock = vi.fn(() => ({ data: [], loading: false, error: null }));
-vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({
+vi.mock('@/shared/hooks/useDisruptionsList', () => ({
   useDisruptionsList: (...args) => useDisruptionsListMock(...args),
 }));
 

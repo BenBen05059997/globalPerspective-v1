@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWeeklyArchive } from '@/features/threads';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence';
-import { useDisruptionsList } from '@/features/economy';
+import { useDisruptionsList } from '@/shared/hooks/useDisruptionsList';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { getTopicRegion } from '@/shared/lib/countryMapping';
 import { countryTier, compareByRisk } from '@/features/countries/lib/countryTier';

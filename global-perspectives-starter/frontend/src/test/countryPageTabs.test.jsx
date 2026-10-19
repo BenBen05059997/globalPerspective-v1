@@ -39,7 +39,7 @@ vi.mock('@/features/economy/hooks/useMarketsCountry', () => ({
   useMarketsCountry: () => ({ data: null, loading: false, error: null }),
 }));
 const useDisruptionsListMock = vi.fn(() => ({ data: [], loading: false, error: null }));
-vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({
+vi.mock('@/shared/hooks/useDisruptionsList', () => ({
   useDisruptionsList: (...args) => useDisruptionsListMock(...args),
 }));
 vi.mock('@/shared/contexts/AuthContext', () => ({

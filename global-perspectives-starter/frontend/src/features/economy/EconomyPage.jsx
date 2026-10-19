@@ -11,7 +11,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { threadPath } from '@/shared/lib/threadPath';
-import { useDisruptionsList } from '@/features/economy/hooks/useDisruptionsList';
+import { useDisruptionsList } from '@/shared/hooks/useDisruptionsList';
 import { useTopMovers } from '@/features/economy/hooks/useTopMovers';
 import { useMarketsGlobal } from '@/features/economy/hooks/useMarketsGlobal';
 import { useMarketsHistory } from '@/features/economy/hooks/useMarketsHistory';

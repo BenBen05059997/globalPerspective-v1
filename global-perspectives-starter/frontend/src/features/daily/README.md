@@ -23,7 +23,7 @@ country to watch, shape of the day, full analysis) with previous/next date navig
 
 ## Imports from other features
 - `@/features/briefings/lib/briefingSlides.js` -> `storyLinkPath`, `peekInputForStory`
-- `@/features/economy/hooks/useDisruptionsList`, `components/InstrumentChip` -> economic footprint
+- `@/shared/hooks/useDisruptionsList`, `components/InstrumentChip` -> economic footprint
 - `@/shared/ui/SaveButton` -> save this daily brief
 
 ## Gotchas

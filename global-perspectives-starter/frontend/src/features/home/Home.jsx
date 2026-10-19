@@ -19,7 +19,7 @@ import SourceRobustness from '@/shared/ui/SourceRobustness';
 import LedeBand from '@/features/home/components/LedeBand';
 import { BreakingStrip } from '@/features/breaking';
 import SubscribeCard from '@/shared/ui/SubscribeCard';
-import { useDisruptionsList } from '@/features/economy';
+import { useDisruptionsList } from '@/shared/hooks/useDisruptionsList';
 import { ECONOMY_PARKED } from '@/shared/lib/economyFlag';
 import { useTrackRecord, useCorrectionsFeed } from '@/features/track-record';
 import { composeTopicsLede } from '@/features/home/lib/composeTopicsLede';

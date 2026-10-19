@@ -41,7 +41,7 @@ const markets = {
   },
 };
 
-vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({
+vi.mock('@/shared/hooks/useDisruptionsList', () => ({
   useDisruptionsList: () => ({ data: disruptions, loading: false, error: null }),
 }));
 vi.mock('@/features/economy/hooks/useTopMovers', () => ({

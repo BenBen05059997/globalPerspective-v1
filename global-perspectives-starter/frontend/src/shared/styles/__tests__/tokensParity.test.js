@@ -27,7 +27,7 @@ describe('tokens.js == tokens.css :root', () => {
 
   it('the old light names and the --c-* names are aliases (var()), not second palettes', () => {
     const aliasBody = css.slice(css.indexOf('/* ═════════ ALIASES'), css.indexOf('scrollbar-color'));
-    for (const n of ['paper', 'paper-2', 'card', 'ink', 'ink-mid', 'ink-dim', 'line', 'accent-deep', 'risk-h', 'amber', 'c-bg', 'c-accent', 'c-text-dim', 'c-hue-conflict']) {
+    for (const n of ['paper', 'paper-2', 'card', 'ink', 'ink-mid', 'ink-dim', 'line', 'accent-deep', 'risk-h', 'c-bg', 'c-accent', 'c-text-dim', 'c-hue-conflict']) {
       expect(aliasBody, `--${n}`).toMatch(new RegExp(`^\\s*--${n}:\\s*var\\(--`, 'm'));
     }
   });

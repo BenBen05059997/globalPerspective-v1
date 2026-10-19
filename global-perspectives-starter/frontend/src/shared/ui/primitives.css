@@ -1,0 +1,96 @@
+/* Shared primitives (2026-10-19): Button, Tabs, Card, Chip, Tooltip. Role and scale tokens only
+   (tokens.css) — no colour literals, no off-scale sizes. ONE "selected" style everywhere: an accent
+   outline (accent border + accent text), never a fill. ONE focus ring: 2px --focus-ring. */
+
+/* ---- Button ---- */
+.gp-btn {
+  box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: var(--tap-min); padding: 0 var(--space-4);
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-sm); background: transparent;
+  color: var(--text-body); font: inherit; font-family: var(--sans); font-size: var(--text-ui);
+  font-weight: var(--weight-medium); line-height: var(--leading-tight); text-decoration: none; white-space: nowrap;
+  cursor: pointer; transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.gp-btn:hover { border-color: var(--accent); color: var(--text-head); }
+.gp-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.gp-btn:disabled, .gp-btn[aria-disabled='true'] { opacity: 0.5; cursor: not-allowed; }
+.gp-btn--primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.gp-btn--primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--on-accent); }
+.gp-btn--icon { min-width: var(--tap-min); padding: 0; border-color: transparent; color: var(--text-muted); }
+.gp-btn--icon:hover { border-color: transparent; background: var(--panel-3); color: var(--text-head); }
+.gp-btn--selected, .gp-btn--selected:hover { border-color: var(--accent); color: var(--accent); }
+.gp-btn--compact { min-height: 32px; padding: 0 var(--space-3); }
+.gp-btn--icon.gp-btn--compact { min-width: 32px; padding: 0; }
+@media (pointer: coarse) {
+  .gp-btn--compact { min-height: var(--tap-min); }
+  .gp-btn--icon.gp-btn--compact { min-width: var(--tap-min); }
+}
+
+/* ---- Tabs (line | phone | segmented) ---- */
+.gp-tabs { display: flex; gap: var(--space-1); }
+.gp-tabs__tab {
+  box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: var(--tap-min); padding: 0 var(--space-3); border: 0; background: transparent;
+  color: var(--text-muted); font: inherit; font-size: var(--text-ui); cursor: pointer; white-space: nowrap;
+}
+.gp-tabs__tab:hover { color: var(--text-head); }
+.gp-tabs__tab:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.gp-tabs__count { color: var(--text-dim); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+/* line + phone: accent underline under the selected tab */
+.gp-tabs--line, .gp-tabs--phone { border-bottom: 1px solid var(--hairline); }
+.gp-tabs--line .gp-tabs__tab, .gp-tabs--phone .gp-tabs__tab { border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.gp-tabs--line .gp-tabs__tab[aria-selected='true'],
+.gp-tabs--phone .gp-tabs__tab[aria-selected='true'] { color: var(--accent); border-bottom-color: var(--accent); }
+.gp-tabs--line { overflow-x: auto; scrollbar-width: none; }
+/* phone: equal columns, mono uppercase (one switch under the page header) */
+.gp-tabs--phone { display: grid; grid-template-columns: repeat(var(--tabs-n, 3), 1fr); gap: 0; margin: var(--space-3) 0 var(--space-2); }
+.gp-tabs--phone .gp-tabs__tab {
+  font-family: var(--mono); font-size: var(--text-sm); letter-spacing: 0.08em; text-transform: uppercase;
+}
+/* segmented: a bordered group; the selected segment gets the accent outline */
+.gp-tabs--segmented { display: inline-flex; gap: 0; padding: 2px; border: 1px solid var(--hairline); border-radius: var(--r-sm); }
+.gp-tabs--segmented .gp-tabs__tab { min-height: 32px; border: 1px solid transparent; border-radius: var(--r-xs); }
+.gp-tabs--segmented .gp-tabs__tab[aria-checked='true'] { border-color: var(--accent); color: var(--accent); }
+@media (pointer: coarse) { .gp-tabs--segmented .gp-tabs__tab { min-height: calc(var(--tap-min) - 6px); } }
+
+/* ---- Card (panel ladder) ---- */
+.gp-card {
+  box-sizing: border-box; min-width: 0; padding: var(--space-4);
+  border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--panel-2); color: var(--text-body);
+}
+.gp-card--2 { background: var(--panel-3); }
+.gp-card--hud { background: var(--panel); }
+.gp-card--pad-sm { padding: var(--space-3); }
+.gp-card--pad-none { padding: 0; }
+.gp-card--selected { border-color: var(--accent); }
+
+/* ---- Chip (filter toggle) ---- */
+.gp-chip {
+  box-sizing: border-box; display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: 32px; padding: 0 var(--space-3); border: 1px solid var(--hairline); border-radius: var(--r-pill);
+  background: transparent; color: var(--text-body); font: inherit; font-size: var(--text-ui); line-height: var(--leading-tight);
+  white-space: nowrap; cursor: pointer; transition: border-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.gp-chip:hover { border-color: var(--hairline-strong); color: var(--text-head); }
+.gp-chip:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.gp-chip--selected, .gp-chip--selected:hover { border-color: var(--accent); color: var(--accent); }
+.gp-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+.gp-chip__dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--chip-dot, var(--text-dim)); }
+.gp-chip__count { color: var(--text-dim); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+@media (pointer: coarse) { .gp-chip { min-height: var(--tap-min); } }
+
+/* ---- Tooltip (StoryPeek and map markers) ---- */
+.gp-tip {
+  z-index: 60; box-sizing: border-box; max-width: calc(100vw - 16px); padding: var(--space-3);
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-md); background: var(--panel-2);
+  box-shadow: var(--shadow-lg); color: var(--text-body); font-size: var(--text-sm); line-height: 1.4; pointer-events: none;
+}
+.gp-tip__kicker {
+  display: flex; align-items: center; gap: 6px; margin-bottom: var(--space-1);
+  color: var(--text-muted); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.05em; text-transform: uppercase;
+}
+.gp-tip__dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.gp-tip__title { margin-bottom: var(--space-1); color: var(--text-head); font-weight: var(--weight-semibold); }
+.gp-tip__meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 2px; color: var(--text-body); }
+.gp-tip__note { color: var(--text-dim); font-size: var(--text-xs); }
+.gp-tip__hint { margin-top: 6px; color: var(--text-dim); font-size: var(--text-xs); font-style: italic; }

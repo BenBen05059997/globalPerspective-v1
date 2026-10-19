@@ -445,7 +445,8 @@ must_have "$SRC/features/track-record/TrackRecordPage.jsx" "key: 'log', label: '
 must_have "$SRC/features/track-record/TrackRecordPage.jsx" "lazy\\(\\(\\) => import\\('@/features/track-record/components/ForecastBoard" "the forecast board map loads lazily"
 must_have "$SRC/features/countries/CountryPage.jsx" "key: 'map', label: 'Map'" "country page phone tabs: Read / Map"
 must_have "$SRC/features/countries/CountryPage.jsx" "phoneTab === 'map' \\?" "the country map is only mounted on the phone MAP tab"
-must_have "$SRC/shared/ui/PhoneTabs.jsx" "role=\"tablist\"" "PhoneTabs is a real tablist"
+must_have "$SRC/shared/ui/PhoneTabs.jsx" "<Tabs variant=\"phone\"" "PhoneTabs is the shared Tabs (phone variant)"
+must_have "$SRC/shared/ui/Tabs.jsx" "'tablist'" "Tabs is a real tablist"
 # 5 · Read in full: shared actors from real data, provenance, hidden-older count
 must_have "$T/lib/webIndexLinks.js" "index.shared" "shared actors come from web_index.shared"
 must_have "$T/ThreadPage.jsx" "Shares actors with" "Read in full has 'Shares actors with'"

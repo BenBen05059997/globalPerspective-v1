@@ -90,7 +90,10 @@ export const riskTierToVar = (tier) => (tier ? TIER_VAR[tier] : 'var(--text-head
 
 // ── Category ────────────────────────────────────────────────────────────────
 
-// Pastel badge palette ({ bg, text-color }) for category chips.
+// DEPRECATED (2026-10-19): a leftover light-theme pastel palette — a second palette on the dark frame.
+// Callers (wave 2 replaces each with <CategoryTag category={...} />, then deletes this export):
+// briefings/components/BriefingSlides.jsx, threads/ThreadPage.jsx, threads/components/PhoneStoryMode.jsx,
+// threads/components/StoryMode.jsx, threads/components/StoryEntryCard.jsx.
 export const CATEGORY_BADGE_COLORS = {
   conflict:   { bg: '#fee2e2', color: '#b91c1c' },
   military:   { bg: '#fee2e2', color: '#b91c1c' },

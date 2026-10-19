@@ -1,65 +1,16 @@
-/* Design tokens — single source of truth */
+/* Design tokens — single source of truth (the old alias names live in tokens.css's ALIASES block) */
 @import '@/shared/styles/tokens.css';
 
-/* Legacy aliases — keeps old component CSS working during incremental migration */
-:root {
-  --bg-primary:   var(--card);
-  --bg-secondary: var(--paper-2);
-  --bg-tertiary:  var(--paper-3);
-  --text-primary:   var(--ink);
-  --text-secondary: var(--ink-mid);
-  /* --text-muted is a role token now (tokens.css) — no alias needed */
-  --border-color: var(--line);
-  --border-dark:  var(--line-2);
-  --shadow:       rgba(0,0,0,0.06);
-  --shadow-dark:  rgba(0,0,0,0.12);
-
-  --radius-sm:   var(--r-sm);
-  --radius-md:   var(--r-md);
-  --radius-lg:   var(--r-lg);
-  --radius-xl:   var(--r-xl);
-  --radius-full: var(--r-pill);
-
-  --transition-fast: var(--fast);
-  --transition-base: var(--base);
-  --transition-slow: var(--slow);
-  --transition-ease: var(--ease);
-}
-
-/* Layout utilities */
+/* Layout container (app/layout/Layout.jsx, threads/ThreadPage.jsx) */
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
 }
 
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
-.gap-8 {
-  gap: 2rem;
-}
-
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-  color: var(--text-primary);
+  color: var(--text-head);
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -78,75 +29,14 @@ h3 {
 }
 
 p {
-  color: var(--text-secondary);
+  color: var(--text-body);
   margin-bottom: 1rem;
 }
 
-/* Buttons */
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: 2px solid var(--border-dark);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn:hover {
-  background-color: var(--text-primary);
-  color: var(--bg-primary);
-}
-
-.btn-primary {
-  background-color: var(--text-primary);
-  color: var(--bg-primary);
-}
-
-.btn-primary:hover {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-/* AI action button variants */
-.btn-summarize {
-  background-color: var(--bg-tertiary); /* grey */
-  color: var(--text-primary);
-  border-color: var(--border-dark);
-  border-radius: 9999px;
-}
-.btn-summarize:hover {
-  background-color: var(--text-primary);
-  color: var(--bg-primary);
-}
-
-.btn-predict {
-  background-color: var(--text-primary); /* black */
-  color: var(--bg-primary); /* white */
-  border-color: var(--text-primary);
-  border-radius: 9999px;
-}
-.btn-predict:hover {
-  background-color: var(--bg-primary); /* invert to white */
-  color: var(--text-primary); /* black text */
-  border-color: var(--text-primary);
-}
-
-/* Make link-style button match rounded shape */
-.btn-link {
-  border-radius: 9999px;
-}
-.btn-link:hover {
-  background-color: var(--text-primary) !important;
-  color: var(--bg-primary) !important;
-}
-/* Cards */
+/* Card — DEPRECATED (static/AboutContact, Contact, Disclosures and 2 more read `.card`); use <Card>. */
 .card {
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  background-color: var(--panel-2);
+  border: 1px solid var(--hairline);
   padding: 1.5rem;
   margin-bottom: 1rem;
   box-shadow: 0 2px 4px var(--shadow);
@@ -154,269 +44,51 @@ p {
 
 .card:hover {
   box-shadow: 0 4px 8px var(--shadow-dark);
-  border-color: var(--border-dark);
+  border-color: var(--hairline-strong);
 }
 
-/* Forms */
-.input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid var(--border-color);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 1rem;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--border-dark);
-}
-
-/* Navigation */
-.nav {
-  background-color: var(--bg-primary);
-  border-bottom: 2px solid var(--border-color);
-  padding: 1rem 0;
-}
-
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.nav-brand {
-  color: var(--text-primary);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-}
-
-.nav-toggle {
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--bg-primary);
-  cursor: pointer;
-  padding: 0.5rem;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
-}
-
-.nav-toggle span {
-  display: block;
-  width: 100%;
-  height: 2px;
-  background-color: var(--text-primary);
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.nav-toggle.open span:nth-child(1) {
-  transform: translateY(6px) rotate(45deg);
-}
-
-.nav-toggle.open span:nth-child(2) {
-  opacity: 0;
-}
-
-.nav-toggle.open span:nth-child(3) {
-  transform: translateY(-6px) rotate(-45deg);
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: auto;
-}
-
-.nav-link {
-  color: var(--text-primary);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.88rem;
-  padding: 0.4rem 0.7rem;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-}
-
-.nav-link:hover {
-  border-color: var(--border-dark);
-}
-
-.nav-link.active {
-  background-color: var(--text-primary);
-  color: var(--bg-primary);
-}
-
-/* Responsive design */
 @media (max-width: 768px) {
-  .container {
-    padding: 0 1rem;
-  }
-  
-  .flex {
-    flex-direction: column;
-  }
-  
-  .gap-4 > * + * {
-    margin-top: 1rem;
-  }
-
-  /* Mobile-specific adjustments */
   .card {
     padding: 1rem;
   }
-  
+
   h1 {
     font-size: 2rem;
   }
-  
+
   h2 {
     font-size: 1.5rem;
   }
-  
+
   h3 {
     font-size: 1.25rem;
   }
-  
-  .btn {
-    width: 100%;
-    text-align: center;
-  }
-  
-  .input {
-    font-size: 16px; /* Prevents zoom on iOS */
-  }
-
-  .nav-bar {
-    flex-wrap: wrap;
-    align-items: flex-start;
-    position: relative;
-  }
-
-  .nav-toggle {
-    display: inline-flex;
-  }
-
-  .nav-links {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: var(--bg-primary);
-    border: 2px solid var(--border-color);
-    border-top: none;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition: max-height 0.3s ease, opacity 0.3s ease;
-    z-index: 1000;
-    box-shadow: 0 4px 6px var(--shadow);
-  }
-
-  .nav-links.open {
-    max-height: 300px;
-    opacity: 1;
-    display: flex;
-  }
-
-  .nav-link {
-    width: 100%;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem;
-  }
-
 }
 
 @media (max-width: 480px) {
   .container {
     padding: 0 0.75rem;
   }
-  
-  .nav {
-    padding: 0.75rem 0;
-  }
-  
-  .nav h2 {
-    font-size: 1.25rem;
-  }
-  
+
   .card {
     padding: 0.75rem;
   }
-  
+
   h1 {
     font-size: 1.75rem;
   }
-  
-  .main-content {
-    padding: 1rem 0;
-  }
-
 }
 
-/* Utility classes */
-.text-center { text-align: center; }
-.mb-4 { margin-bottom: 1rem; }
-.mb-6 { margin-bottom: 1.5rem; }
-.mb-8 { margin-bottom: 2rem; }
-.mt-8 { margin-top: 2rem; }
-
-/* Animations */
+/* `spin` is read by features/home/Home.css */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
-}
-
-.skeleton {
-  background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-primary) 50%, var(--bg-secondary) 75%);
-  background-size: 200px 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-/* Improved touch targets for mobile */
+/* Touch: native selects get a 44px target on coarse pointers */
 @media (hover: none) and (pointer: coarse) {
-  .btn, .nav-link, .input, select {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .nav-link {
-    padding: 0.75rem 1rem;
+  select {
+    min-height: var(--tap-min);
   }
 }
 

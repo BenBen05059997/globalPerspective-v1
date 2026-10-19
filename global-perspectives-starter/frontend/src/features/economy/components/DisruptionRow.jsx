@@ -9,6 +9,7 @@ import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow.jsx';
 import QualityFlag from '@/features/economy/components/QualityFlag.jsx';
 import { threadPath } from '@/shared/lib/threadPath';
+import '@/features/economy/components/economyBlocks.css';
 
 function timeAgo(iso) {
   if (!iso) return null;

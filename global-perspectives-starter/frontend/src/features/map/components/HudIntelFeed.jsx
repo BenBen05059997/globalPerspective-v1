@@ -57,7 +57,6 @@ export default function HudIntelFeed({
             place={placeOf(s)}
             hue={AXIS_HUE[s.axis] || 'var(--text-dim)'}
             tier={s.tier}
-            tierHue={AXIS_HUE[s.axis] || 'var(--text-dim)'}
             situation={s}
             changedAt={s.last_change_at || s.opened_at || null}
             now={now}

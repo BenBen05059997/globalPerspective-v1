@@ -40,7 +40,6 @@ one-screen country card the map console also mounts.
   `country_facts` (memory, 30 min); `useCountryStories` -> `useArchiveDayMap` + `prediction_snapshot`.
 - `useWeeklyArchive` -> `archive_range`; `useThreadAnalyses` -> `thread_analysis`; `useMarketsCountry` -> `markets_country`;
   `useDisruptionsList` -> `economic_impact_list` (off while parked).
-- `hooks/useSystemsAnalysis.js` (`systems_analysis`) has no consumer outside its test.
 
 ## Docs
 - Decisions: [0010](../../../../../project-docs/decisions/0010-country-view-split.md) (country view split by job),

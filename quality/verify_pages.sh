@@ -65,7 +65,7 @@ must_have "$SRC/app/App.jsx" 'path="/map" element=\{<MapRedirect' "/map redirect
 must_have "$SRC/app/MapRedirect.jsx" "search, hash" "the /map redirect keeps the query params"
 must_have "$SRC/app/layout/Layout.jsx" "to: '/', exact: true, label: 'Map'" "menu Map item points at / (exact)"
 must_have "$SRC/app/layout/Layout.jsx" "location.pathname === '/' && !isPhone" "desktop console shell keyed on /"
-must_have "$SRC/features/map/components/MapAbout.jsx" "to=\"/today\"" "/today stays reachable from the map's About drawer (the footer no longer links it)"
+must_have "$SRC/features/map/components/MapAbout.jsx" "to=\{todayHref\(\)\}" "/today stays reachable from the map's About drawer (the footer no longer links it)"
 must_not_have "$SRC/app/layout/Layout.jsx" "pathname (===|!==) '/map'" "no stale /map pathname checks"
 
 # ─── BriefingsPage (/briefings: read / weekly / present modes; /daily and /weekly-brief merged 2026-10-19) ───

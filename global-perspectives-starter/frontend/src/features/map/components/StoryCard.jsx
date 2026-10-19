@@ -23,7 +23,8 @@ import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { freshnessState } from '@/shared/lib/freshness.js';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref, studioHref as studioPath } from '@/shared/lib/links.js';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 
 // Summary/trajectory text shaping lives in shared/lib/cardText.js (bullet-aware; see its header).
 
@@ -47,7 +48,6 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
   const known = useMemo(() => knownStoryTitles(webThreads, topic?.threadId || null), [webThreads, topic?.threadId]);
   if (!topic) return null;
 
-  const id = topic.threadId || topic.topicId || null;
   // F1.7 (review R2): show the topic's real category word (e.g. "climate", "energy") — the
   // crisis-type mapping stays for the hue dot only (CategoryTag), never as the visible label.
   const category = topic.category ? String(topic.category) : null;
@@ -72,9 +72,10 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
   const causeSteps = !analysisError && analysis?.rootCauseChain ? rootCauseSteps(analysis.rootCauseChain).slice(0, 3) : [];
   const analysisDateLabel = fmtDate(analysis?.generatedAt);
 
-  const openFullStoryHref = threadPath(id);
+  // The story page only for a real thread id (a topic id is not a story address).
+  const openFullStoryHref = topic.threadId ? storyHref(topic.threadId) : null;
   const studioId = topic.topicId || topic.threadId || null;
-  const studioHref = !fetchError && studioId ? `/analyze?stories=${encodeURIComponent(studioId)}` : null;
+  const studioHref = !fetchError && studioId ? studioPath(studioId) : null;
 
   const linkedInto = linked?.into || [];
   const linkedFrom = linked?.from || [];
@@ -87,7 +88,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
       <div className="sc-head">
         <div className="sc-head-row">
           <CategoryTag category={category} />
-          {primaryCountry ? <span className="sc-country">{primaryCountry}</span> : null}
+          {primaryCountry ? <EntityLink kind="country" id={primaryCountry} className="sc-country">{primaryCountry}</EntityLink> : null}
           {ownDateLabel ? <span className="sc-updated">updated {ownDateLabel}</span> : feedDateLabel ? <span className="sc-updated">stories from {feedDateLabel}</span> : null}
           {isOlder ? <span className="sh-older">older</span> : null}
         </div>
@@ -156,7 +157,7 @@ export default function StoryCard({ topic, asOf, onBack, activeCount = 0, webThr
       ) : null}
 
       <div className="sh-detail-foot sc-foot">
-        <Link to={openFullStoryHref}>Open full story →</Link>
+        {openFullStoryHref ? <Link to={openFullStoryHref}>Open full story →</Link> : null}
         {studioHref ? <Link to={studioHref}>Analyze in Studio →</Link> : null}
       </div>
     </div>

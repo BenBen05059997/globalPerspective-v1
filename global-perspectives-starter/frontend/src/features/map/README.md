@@ -10,11 +10,13 @@ COUNTRY RISK layer switch and, on phones, tabs plus a bottom sheet.
 ## Routes
 - `/` -> `SituationHome` (lazy; route fallback is `BootLoader` with `WAITING_SENSORS`)
 - Redirects: `/map` -> `/` keeping query + hash (`src/app/MapRedirect.jsx`); `/breaking` -> `/`
-- Query: `?focus=` (situation), `?story=` (topic), `?country=` (card), `?layer=`, `?about=` (About drawer)
+- Query (built by `mapHref` in `@/shared/lib/links.js`; resolved in `lib/deepLinks.js`): `?focus=<situation id>` (also an
+  old id in the situation's `aliases[]`); `?story=<threadId>` (today's topic, else the situation with that thread, else
+  `web_index.threads[id]`; unknown -> an honest "not on the map"); `?country=<ISO3 | name>` (card + fly-to + outline);
+  `?layer=`, `?about=`. Links out go through `links.js` / `EntityLink` (a story only with a real `threadId`).
 
 ## Frontend
-- `SituationHome.jsx` - the console; selection state, boot sensors, layer/view switches; the globe
-  `@/shared/map/SituationMap3D.jsx` is lazy (WebGL), `@/shared/map/RadarMap.jsx` is the radar
+- `SituationHome.jsx` - the console (selection, boot sensors, layer/view); globe `@/shared/map/SituationMap3D.jsx` (lazy), radar `RadarMap.jsx`
 - `components/Hud*` (status line, brief, sensor, intel feed, compact line, country-risk feed), `AlertStack`,
   `StoryCard`, `MapLegend`, `MapAbout`, `OrientationBanner`; phone: `@/shared/ui/Tabs` + `@/shared/ui/BottomSheet`
 - `lib/*.js` - alert stack, boot sensors, card mentions, gdacs status, HUD compact line, layer mode, phone sheet, story shading
@@ -30,8 +32,7 @@ COUNTRY RISK layer switch and, on phones, tabs plus a bottom sheet.
 - Generated row: [reference/features.md#map](../../../../../project-docs/reference/features.md#map)
 - `newsSituationTracker` (every 30 min) writes `world/latest.json`, `situations/state/` and the rest of the bundle;
   its inputs: `newsSituationIngest` (hourly; `stories/`, `corpus/`) and `newsGdacsIngest` (20 min; `situations/inbox/`);
-  `newsCountryIntelligence` (daily)
-  writes the country briefings behind the COUNTRY RISK layer.
+  `newsCountryIntelligence` (daily) writes the country briefings behind the COUNTRY RISK layer.
 
 ## Data
 - `useWorld()` -> `api/worldData.js` -> `/data/world/latest.json` (Worker `/data/*` -> S3), polled every 5 min;
@@ -39,7 +40,7 @@ COUNTRY RISK layer switch and, on phones, tabs plus a bottom sheet.
 - `useGeminiTopics()` (restProxy `topics`); `useStoryCardData` -> `summary` + `thread_analysis`.
 - `useCountryRiskLayer` -> `country_intelligence` (15 names per call) over `useArchiveDayMap` (`archive_range`),
   only once the layer is selected; it avoids `useWeeklyArchive` (needs AuthProvider).
-- `useDailyBrief()`, `useWeeklyBrief()`, `useWebIndex()` (`web_index`, only once a story is selected).
+- `useDailyBrief()`, `useWeeklyBrief()`, `useWebIndex()` (`web_index`, only once a `?story=` is set).
 - localStorage: `gp_map_last_seen`, `gp_map_layer`, `gp_map_view`, `gp_map_legend_open`.
 
 ## Docs

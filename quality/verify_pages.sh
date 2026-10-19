@@ -89,6 +89,7 @@ must_have "$SRC/app/App.jsx" 'path="/daily" element=\{<DailyRedirect' "/daily re
 must_have "$SRC/app/App.jsx" 'path="/daily/:dateKey" element=\{<DailyRedirect' "/daily/:date redirects to /briefings"
 must_have "$SRC/app/App.jsx" 'path="/weekly-brief" element=\{<WeeklyBriefRedirect' "/weekly-brief redirects to /briefings?mode=weekly"
 must_not_have "$SRC/app/App.jsx" "DailyPage|WeeklyBriefPage" "no page component behind /daily or /weekly-brief"
+must_have "$SRC/app/App.jsx" 'path="/weekly" element=\{<WeeklyRoute' "/weekly?section=countries redirects to /weekly/countries (one address for the countries list)"
 
 # ─── EconomyPage ───
 must_have "$SRC/features/economy/EconomyPage.jsx" "useDisruptionsList" "uses useDisruptionsList"

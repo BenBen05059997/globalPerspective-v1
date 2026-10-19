@@ -14,7 +14,7 @@ import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import MapRedirect from '@/app/MapRedirect';
 import {
-  MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect,
+  MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect, DailyRedirect, WeeklyBriefRedirect, WeeklyRoute,
 } from '@/app/LegacyRedirects';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
@@ -138,7 +138,7 @@ export default function App() {
             <Route path="/weekly-markets" element={<MarketsRedirect />} />
             <Route path="/breaking" element={<BreakingFeedRedirect />} />
             <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
-            <Route path="/weekly" element={<WeeklyPage countriesView={<CountryListPage />} />} />
+            <Route path="/weekly" element={<WeeklyRoute><WeeklyPage /></WeeklyRoute>} />
             <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
             <Route path="/weekly/countries" element={<CountryListPage />} />
             <Route path="/weekly/country/:countryName" element={<CountryPage />} />

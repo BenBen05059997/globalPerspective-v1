@@ -116,8 +116,8 @@ is published at <a href="${SITE_URL}/track-record">${SITE_URL}/track-record</a>.
 <h2>Briefings</h2>
 <ul>
 <li><a href="${SITE_URL}/today">Today's Topics</a> — today's global stories by region, with on-demand AI summary, forecast, and root-cause for any story</li>
-<li><a href="${SITE_URL}/daily">Daily Brief</a> — the end-of-day intelligence brief: one synthesised read of what mattered today</li>
-<li><a href="${SITE_URL}/weekly-brief">Weekly Brief</a> — Sunday signals digest: the week's discrete signals with fact kept separate from judgment; also delivered by email</li>
+<li><a href="${SITE_URL}/briefings?mode=read">Daily Brief</a> — the end-of-day intelligence brief: one synthesised read of what mattered today</li>
+<li><a href="${SITE_URL}/briefings?mode=weekly">Weekly Brief</a> — Sunday signals digest: the week's discrete signals with fact kept separate from judgment; also delivered by email</li>
 </ul>
 <h2>Intelligence</h2>
 <ul>
@@ -201,59 +201,13 @@ async function renderCountryPage(countryName) {
   }
 }
 
-async function renderDailyPage(dateKey) {
-  try {
-    // Try the requested date first; fall back up to 7 days to find the most recent brief
-    let data = null;
-    const base = new Date(dateKey + 'T00:00:00Z');
-    for (let daysBack = 0; daysBack <= 7; daysBack++) {
-      const d = new Date(base);
-      d.setUTCDate(d.getUTCDate() - daysBack);
-      const tryDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-      const res = await fetch(API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'daily_brief', payload: { dateKey: tryDate } }),
-        cf: { cacheTtl: 1800, cacheEverything: true },
-      });
-      const json = await res.json();
-      if (json?.data?.headline) { data = json.data; break; }
-    }
-    if (!data || !data.headline) return null;
-
-    const title = `${data.headline} — Daily Intelligence Brief`;
-    const description = data.summary
-      ? String(data.summary).replace(/\*\*/g, '').substring(0, 200).trim() + '…'
-      : `Global intelligence briefing for ${data.displayDate || dateKey}`;
-    const url = dateKey
-      ? `${SITE_URL}/daily/${encodeURIComponent(dateKey)}`
-      : `${SITE_URL}/daily`;
-
-    const topStoriesHtml = Array.isArray(data.topStories) && data.topStories.length
-      ? `<h2>Top Stories</h2><ul>${data.topStories.map(s =>
-          `<li><strong>${escapeHtml(s.title)}</strong> — ${escapeHtml(s.prediction || '')}</li>`
-        ).join('')}</ul>`
-      : '';
-
-    const statsHtml = data.stats
-      ? `<p>${escapeHtml(String(data.stats.totalArticles || ''))} articles · ${escapeHtml(String(data.stats.countriesCovered || ''))} countries · ${escapeHtml(String(data.stats.sourceOutlets || ''))} outlets</p>`
-      : '';
-
-    return buildBotHtml({
-      title,
-      description,
-      url,
-      heading: data.headline,
-      bodyHtml: `${statsHtml}<p>${escapeHtml(description)}</p>${topStoriesHtml}`,
-    });
-  } catch (err) {
-    return null;
-  }
-}
-
-// /briefings (briefing mode: latest daily edition by default, ?date=YYYY-MM-DD for a specific day, ?mode=weekly for the
-// weekly signals brief). Uses the public proxy actions latest_daily_brief / daily_brief / weekly_brief. Returns null when
-// there is nothing real to show, so the caller falls through to the SPA shell (never an empty or invented page).
+// /briefings (one page, three modes — see features/briefings/README.md): read = the daily brief
+// (?date=YYYY-MM-DD), weekly = the weekly signals brief (?week=YYYY-MM-DD), present = the slide deck
+// (?deck=weekly for the weekly one). Bots get the brief behind the mode; present renders the same
+// brief as read/weekly and names that page as canonical. The canonical always names the edition
+// actually served (a requested date with no edition falls back to the nearest earlier one), never the
+// requested date. Each renderer returns null when there is nothing real to show, so the caller falls
+// through to the SPA shell (never an empty or invented page).
 async function proxyData(action, payload) {
   const res = await fetch(API_BASE, {
     method: 'POST',
@@ -265,65 +219,154 @@ async function proxyData(action, payload) {
   return json?.data || null;
 }
 
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+const dateKeyOrNull = (v) => (typeof v === 'string' && DATE_KEY.test(v) ? v : null);
+function addDaysKey(dateKey, days) {
+  const d = new Date(dateKey + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+const threadLink = (threadId, text) => (typeof threadId === 'string' && /^thread-/.test(threadId)
+  ? `<a href="${SITE_URL}/weekly/thread/${encodeURIComponent(threadId)}">${escapeHtml(text)}</a>`
+  : escapeHtml(text));
+const countryLink = (name) => `<a href="${SITE_URL}/weekly/country/${encodeURIComponent(name)}">${escapeHtml(name)}</a>`;
+
+async function renderDailyBrief(dateParam) {
+  // A requested date walks back up to 7 days to the nearest earlier edition (as the page does).
+  let data = null;
+  if (dateParam) {
+    for (let back = 0; back <= 7 && !data; back++) {
+      const d = await proxyData('daily_brief', { dateKey: addDaysKey(dateParam, -back) });
+      if (d && d.headline) data = d;
+    }
+  } else {
+    data = await proxyData('latest_daily_brief', {});
+  }
+  if (!data || !data.headline || !dateKeyOrNull(data.dateKey)) return null;
+
+  const served = data.dateKey;
+  const title = `${data.headline} — Daily Brief, ${data.displayDate || served}`;
+  const description = data.summary
+    ? String(data.summary).replace(/\*\*/g, '').substring(0, 200).trim() + '…'
+    : `Global intelligence briefing for ${data.displayDate || served}`;
+  const stats = data.stats || {};
+  const statsHtml = (stats.totalArticles || stats.countriesCovered || stats.sourceOutlets)
+    ? `<p>${escapeHtml(String(stats.totalArticles || 0))} articles · ${escapeHtml(String(stats.countriesCovered || 0))} countries · ${escapeHtml(String(stats.sourceOutlets || 0))} outlets</p>`
+    : '';
+  const stories = Array.isArray(data.topStories) ? data.topStories.filter(s => s && s.title) : [];
+  // a story links to its story page only when the brief carries a real thread id (older briefs have none)
+  const storiesHtml = stories.length
+    ? `<h2>Top Stories</h2><ul>${stories.map(s => `<li><strong>${threadLink(s.threadId, s.title)}</strong>${(s.regions || []).length ? ` (${s.regions.map(countryLink).join(', ')})` : ''}${s.prediction ? ` — ${escapeHtml(s.prediction)}` : ''}</li>`).join('')}</ul>`
+    : '';
+  const rising = data.risingThread && data.risingThread.title
+    ? `<h2>Story to watch</h2><p>${threadLink(data.risingThread.threadId, data.risingThread.title)}${data.risingThread.oneLiner ? ` — ${escapeHtml(data.risingThread.oneLiner)}` : ''}</p>`
+    : '';
+  const watch = data.countryToWatch && data.countryToWatch.countryName
+    ? `<h2>Country to watch</h2><p>${countryLink(data.countryToWatch.countryName)}${data.countryToWatch.headline ? ` — ${escapeHtml(data.countryToWatch.headline)}` : ''}</p>`
+    : '';
+  return buildBotHtml({
+    title, description, url: `${SITE_URL}/briefings?mode=read&date=${served}`, heading: data.headline,
+    bodyHtml: `${statsHtml}<p>${escapeHtml(description)}</p>${storiesHtml}${rising}${watch}`,
+  });
+}
+
+async function renderWeeklyBrief(weekParam) {
+  const data = await proxyData('weekly_brief', weekParam ? { week: weekParam } : {});
+  const signals = Array.isArray(data?.signals) ? data.signals.filter(s => s && (s.lede || s.fact)) : [];
+  if (!data || !dateKeyOrNull(data.weekOf) || !signals.length) return null;
+  const title = `Weekly Signals Brief — week of ${data.weekOf}`;
+  const description = signals.slice(0, 3).map(s => s.lede || '').filter(Boolean).join(' • ')
+    || `Weekly signals brief for the week of ${data.weekOf}`;
+  const signalsHtml = `<h2>Signals</h2><ul>${signals.map(s => {
+    const link = typeof s.threadId === 'string' && /^thread-/.test(s.threadId)
+      ? ` <a href="${SITE_URL}/weekly/thread/${encodeURIComponent(s.threadId)}">Story arc</a>` : '';
+    return `<li><strong>${escapeHtml(s.lede || '')}</strong>${s.region ? ` (${escapeHtml(s.region)})` : ''}${s.fact ? ` — ${escapeHtml(s.fact)}` : ''}${s.soWhat ? ` <em>${escapeHtml(s.soWhat)}</em>` : ''}${link}</li>`;
+  }).join('')}</ul>`;
+  const watch = Array.isArray(data.watch) ? data.watch.filter(w => w && w.event) : [];
+  const watchHtml = watch.length
+    ? `<h2>Next week</h2><ul>${watch.map(w => `<li><strong>${escapeHtml(w.event)}</strong>${w.stake ? ` — ${escapeHtml(w.stake)}` : ''}</li>`).join('')}</ul>`
+    : '';
+  return buildBotHtml({
+    title, description, url: `${SITE_URL}/briefings?mode=weekly&week=${data.weekOf}`, heading: title,
+    bodyHtml: `<p>${escapeHtml(description)}</p>${signalsHtml}${watchHtml}`,
+  });
+}
+
 async function renderBriefingsPage(searchParams) {
   try {
-    const weekly = searchParams.get('mode') === 'weekly';
-    const dateParam = searchParams.get('date');
-    const validDate = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : null;
+    const mode = searchParams.get('mode');
+    const weekly = mode === 'weekly' || (mode === 'present' && searchParams.get('deck') === 'weekly');
+    return weekly
+      ? await renderWeeklyBrief(dateKeyOrNull(searchParams.get('week')))
+      : await renderDailyBrief(dateKeyOrNull(searchParams.get('date')));
+  } catch (err) {
+    return null;
+  }
+}
 
-    if (weekly) {
-      const data = await proxyData('weekly_brief', {});
-      const signals = Array.isArray(data?.signals) ? data.signals.filter(s => s && (s.lede || s.fact)) : [];
-      if (!data || !data.weekOf || !signals.length) return null;
-      const title = `Weekly Signals Brief — week of ${data.weekOf}`;
-      const description = signals.slice(0, 3).map(s => s.lede || '').filter(Boolean).join(' • ')
-        || `Weekly signals brief for the week of ${data.weekOf}`;
-      const signalsHtml = `<h2>Signals</h2><ul>${signals.map(s => {
-        const link = typeof s.threadId === 'string' && /^thread-/.test(s.threadId)
-          ? ` <a href="${SITE_URL}/weekly/thread/${encodeURIComponent(s.threadId)}">Story arc</a>` : '';
-        return `<li><strong>${escapeHtml(s.lede || '')}</strong>${s.fact ? ` — ${escapeHtml(s.fact)}` : ''}${s.soWhat ? ` <em>${escapeHtml(s.soWhat)}</em>` : ''}${link}</li>`;
-      }).join('')}</ul>`;
-      const watch = Array.isArray(data.watch) ? data.watch.filter(w => w && w.event) : [];
-      const watchHtml = watch.length
-        ? `<h2>Next week</h2><ul>${watch.map(w => `<li><strong>${escapeHtml(w.event)}</strong>${w.stake ? ` — ${escapeHtml(w.stake)}` : ''}</li>`).join('')}</ul>`
-        : '';
-      return buildBotHtml({
-        title, description, url: `${SITE_URL}/briefings?mode=weekly`, heading: title,
-        bodyHtml: `<p>${escapeHtml(description)}</p>${signalsHtml}${watchHtml}`,
-      });
-    }
-
-    const data = validDate
-      ? await proxyData('daily_brief', { dateKey: validDate })
-      : await proxyData('latest_daily_brief', {});
-    if (!data || !data.headline) return null;
-
-    const title = `${data.headline} — Daily Briefing`;
-    const description = data.summary
-      ? String(data.summary).replace(/\*\*/g, '').substring(0, 200).trim() + '…'
-      : `Global intelligence briefing for ${data.displayDate || data.dateKey || ''}`.trim();
-    const url = validDate ? `${SITE_URL}/briefings?date=${validDate}` : `${SITE_URL}/briefings`;
-
-    const stories = Array.isArray(data.topStories) ? data.topStories.filter(s => s && s.title) : [];
-    const storiesHtml = stories.length
-      ? `<h2>Top Stories</h2><ul>${stories.map(s => {
-          // a story links to its story page only when the brief carries a real thread id (older briefs have none)
-          const t = typeof s.threadId === 'string' && /^thread-/.test(s.threadId)
-            ? `<a href="${SITE_URL}/weekly/thread/${encodeURIComponent(s.threadId)}">${escapeHtml(s.title)}</a>`
-            : escapeHtml(s.title);
-          return `<li><strong>${t}</strong>${s.prediction ? ` — ${escapeHtml(s.prediction)}` : ''}</li>`;
-        }).join('')}</ul>`
-      : '';
-    const watch = data.countryToWatch && data.countryToWatch.countryName
-      ? `<h2>Country to watch</h2><p><a href="${SITE_URL}/weekly/country/${encodeURIComponent(data.countryToWatch.countryName)}">${escapeHtml(data.countryToWatch.countryName)}</a>${data.countryToWatch.headline ? ` — ${escapeHtml(data.countryToWatch.headline)}` : ''}</p>`
-      : '';
+// /today — today's topics (the `topics` proxy action the page reads): each topic with its regions,
+// linked to its story page only when it carries a real thread id.
+async function renderTodayPage() {
+  try {
+    const data = await proxyData('topics', {});
+    const topics = Array.isArray(data?.topics) ? data.topics.filter(t => t && t.title) : [];
+    if (!topics.length) return null;
+    const when = data.generatedDate || (data.updatedAt ? String(data.updatedAt).slice(0, 10) : '');
+    const title = `Today's Topics${when ? ` — ${when}` : ''}`;
+    const description = topics.slice(0, 3).map(t => t.title).join(' • ');
+    const listHtml = `<ul>${topics.map(t => `<li><strong>${threadLink(t.threadId, t.title)}</strong>${(t.regions || []).length ? ` (${t.regions.map(countryLink).join(', ')})` : ''}</li>`).join('')}</ul>`;
     return buildBotHtml({
-      title, description, url, heading: data.headline,
-      bodyHtml: `<p>${escapeHtml(description)}</p>${storiesHtml}${watch}`,
+      title, description, url: `${SITE_URL}/today`, heading: title,
+      bodyHtml: `<p>Today's global stories by region, with on-demand AI summary, forecast and root cause for each.</p>${listHtml}`,
+      ogType: 'website',
     });
   } catch (err) {
     return null;
   }
+}
+
+// Retired addresses answer with a real 301 (decisions 0017 and 0028; the client redirects in
+// app/LegacyRedirects.jsx and app/MapRedirect.jsx stay as the fallback). The request's query string
+// is kept: its keys are appended after the target's own (a target key wins).
+function legacyTarget(url) {
+  const path = url.pathname.replace(/\/+$/, '') || '/';
+  if (path === '/daily') return '/briefings?mode=read';
+  if (path.startsWith('/daily/')) {
+    // a malformed date (or escape) goes to the latest edition, never a guessed date
+    const date = dateKeyOrNull(path.slice('/daily/'.length));
+    return date ? `/briefings?mode=read&date=${date}` : '/briefings?mode=read';
+  }
+  if (path === '/weekly-brief') return '/briefings?mode=weekly';
+  if (path === '/weekly-markets') return '/briefings?from=markets';
+  if (path === '/spider-demo') return '/weekly?view=web';
+  if (path === '/map') return '/';
+  if (path === '/weekly' && url.searchParams.get('section') === 'countries') return '/weekly/countries';
+  return null;
+}
+
+function legacyRedirect(url) {
+  const target = legacyTarget(url);
+  if (!target) return null;
+  const out = new URL(target, url.origin);
+  const dropSection = url.pathname.replace(/\/+$/, '') === '/weekly';
+  for (const [k, v] of url.searchParams) {
+    if (dropSection && k === 'section') continue;
+    if (!out.searchParams.has(k)) out.searchParams.append(k, v);
+  }
+  return new Response(null, {
+    status: 301,
+    headers: { Location: out.toString(), 'Cache-Control': 'public, max-age=86400', 'X-Rendered-By': 'cf-worker-redirect' },
+  });
+}
+
+function botHtmlResponse(html) {
+  return new Response(html, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=1800',
+      'X-Rendered-By': 'cf-worker-bot',
+    },
+  });
 }
 
 export default {
@@ -389,6 +432,12 @@ export default {
       });
     }
 
+    // Retired addresses: real 301s for every client (GET/HEAD), before any pre-render or shell.
+    if (request.method === 'GET' || request.method === 'HEAD') {
+      const redirect = legacyRedirect(url);
+      if (redirect) return redirect;
+    }
+
     // Bot pre-rendering. Paths in NO_PRERENDER are never pre-rendered (Studio share links: per-reader,
     // private-by-default content; they get the plain SPA shell through the fallback below, like a human).
     const skipPrerender = NO_PRERENDER.some((re) => re.test(url.pathname));
@@ -408,62 +457,27 @@ export default {
       const threadMatch = url.pathname.match(/^\/weekly\/thread\/([^/]+)\/?$/);
       if (threadMatch) {
         const html = await renderThreadPage(decodeURIComponent(threadMatch[1]));
-        if (html) {
-          return new Response(html, {
-            headers: {
-              'Content-Type': 'text/html; charset=utf-8',
-              'Cache-Control': 'public, max-age=1800',
-              'X-Rendered-By': 'cf-worker-bot',
-            },
-          });
-        }
+        if (html) return botHtmlResponse(html);
       }
 
       // Country page: /weekly/country/:countryName
       const countryMatch = url.pathname.match(/^\/weekly\/country\/([^/]+)\/?$/);
       if (countryMatch) {
         const html = await renderCountryPage(decodeURIComponent(countryMatch[1]));
-        if (html) {
-          return new Response(html, {
-            headers: {
-              'Content-Type': 'text/html; charset=utf-8',
-              'Cache-Control': 'public, max-age=1800',
-              'X-Rendered-By': 'cf-worker-bot',
-            },
-          });
-        }
+        if (html) return botHtmlResponse(html);
       }
 
-      // Daily brief: /daily or /daily/:dateKey
-      const dailyMatch = url.pathname.match(/^\/daily(?:\/([^/]+))?\/?$/);
-      if (dailyMatch) {
-        const now = new Date();
-        const todayKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
-        const dateKey = dailyMatch[1] ? decodeURIComponent(dailyMatch[1]) : todayKey;
-        const html = await renderDailyPage(dateKey);
-        if (html) {
-          return new Response(html, {
-            headers: {
-              'Content-Type': 'text/html; charset=utf-8',
-              'Cache-Control': 'public, max-age=1800',
-              'X-Rendered-By': 'cf-worker-bot',
-            },
-          });
-        }
-      }
-      // Briefings: /briefings, /briefings?date=YYYY-MM-DD, /briefings?mode=weekly (query strings are read from
-      // url.searchParams; url.pathname never contains them, so the same match serves every variant)
+      // Briefings: /briefings with ?mode=read|weekly|present, ?date=, ?week=, ?deck= (query strings are
+      // read from url.searchParams; url.pathname never contains them, so one match serves every variant)
       if (/^\/briefings\/?$/.test(url.pathname)) {
         const html = await renderBriefingsPage(url.searchParams);
-        if (html) {
-          return new Response(html, {
-            headers: {
-              'Content-Type': 'text/html; charset=utf-8',
-              'Cache-Control': 'public, max-age=1800',
-              'X-Rendered-By': 'cf-worker-bot',
-            },
-          });
-        }
+        if (html) return botHtmlResponse(html);
+      }
+
+      // Today's topics: /today
+      if (/^\/today\/?$/.test(url.pathname)) {
+        const html = await renderTodayPage();
+        if (html) return botHtmlResponse(html);
       }
     }
 
@@ -478,9 +492,9 @@ export default {
     // wasn't already handled above (not /data/*, not /rss, not bot-prerendered)
     // gets the SPA shell (docs/index.html) with a real 200, not GitHub Pages'
     // 404 status for an unrecognised path. This covers every client route
-    // (/economy, /analyze, /membership, /track-record, /weekly-brief,
-    // /weekly-markets and /breaking(/:id) (both client redirects since 2026-10-01), /weekly, /weekly/countries,
-    // /signin, /account, /whitepaper, /spider-demo, etc.) without enumerating
+    // (/economy, /analyze, /membership, /track-record, /briefings,
+    // /breaking(/:id) (a client redirect since 2026-10-01), /weekly, /weekly/countries,
+    // /signin, /account, /whitepaper, etc.) without enumerating
     // them, and survives future route additions. A genuinely bogus path still
     // 200s the shell at the edge — the client router's own catch-all
     // (`*` -> NotFound in App.jsx) renders the real "not found" UI once the

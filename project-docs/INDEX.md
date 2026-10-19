@@ -23,6 +23,7 @@ git history keeps them. `quality/check_docs.mjs` keeps this file ≤60 lines wit
 - [Colour consistency](plans/PLAN_2026-10-19_colour_consistency.md) — map colours, radar C6.
 - [Grounded forecasts + cost](plans/TASK_2026-10-17_grounded_forecast_and_cost.md) — layered selector P7, shadow week.
 - [Cloudflare migration](plans/CLOUDFLARE_FRONTEND_MIGRATION_PLAN.md) — local build done; candidate and cutover gated.
+- [One link system + leaner pages](plans/PLAN_2026-10-19_linking_and_pages.md) — global links, Briefings merge, Studio out of nav; checklist.
 
 ## Runbooks
 - [Runbook index](runbooks/README.md) — one per scheduled job and alert, plus parked jobs;

@@ -159,7 +159,7 @@ const SHARE_COPIES = [
   ['analysisContext.js', 'features/analysis-studio/lib/'], ['analysisPrompt.js', 'features/analysis-studio/lib/'],
   ['driftNote.js', 'shared/lib/'], ['dropRedatedRepeats.js', 'shared/lib/'],
 ];
-const PLACE_LAMBDAS = ['newsSignals'];
+const PLACE_LAMBDAS = [];
 const FE_DATA = 'global-perspectives-starter/frontend/src/shared/data';
 const placeCore = (src) => { const a = src.indexOf("// Names in briefings come from the LLM's `regions`"); const b = src.indexOf('\nconst ymd = '); const e = src.indexOf('\n/** isRealCountryName'); const t = src.indexOf('\n// A COUNTRY# record a reader may use'); return src.slice(a, b > 0 ? b : (t > 0 ? t : e)).trim(); };
 

@@ -31,7 +31,7 @@ const {
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const adapter = require('./signalAdapter');
 const store = require('./signalStore');
-const { usableCountryRecord } = require('./placeFilter');
+const { usableCountryRecord } = require('./_shared/placeFilter');
 const { extractKey, verifyKey } = require('./apiKeys');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';

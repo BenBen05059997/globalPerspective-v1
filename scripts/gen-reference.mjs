@@ -354,7 +354,7 @@ let routes;
     if (!fns.length) { lines.push('No Lambda in functions.json lists this feature.'); return lines.join('\n'); }
     lines.push(table(['Lambda', 'Repo dir', 'Schedule (state)', 'Runbook', 'Writes S3', 'Writes DynamoDB'], fns.map((n) => {
       const f = FUNCTIONS[n];
-      const sch = schedules.filter((s) => s.targets.includes(n)).map((s) => `${s.name} ${code(s.expr)}${s.tz !== 'UTC' ? ` ${s.tz}` : ''} (${s.state})`);
+      const sch = schedules.filter((s) => s.targets.includes(n)).map((s) => `${s.via === 'Scheduler' ? 'Scheduler' : 'rule'} ${s.name} ${code(s.expr)}${s.tz !== 'UTC' ? ` ${s.tz}` : ''} (${s.state})`);
       if (live?.url[n]?.length) sch.push('Function URL');
       const rb = runbookOf(n);
       return [

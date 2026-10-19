@@ -23,3 +23,5 @@ The EMAILLOG marker stops a second send for the same week, so a re-run after a f
 ## Escalate
 - Alarm/alert: None specific; `Lambda-Errors-Spike`.
 - Code or env changes: operator-asked work only (CLAUDE.md, Authorization).
+
+**2026-10-19:** inline policy `newsEmailSender-logs` added to role `newsprojectLambdaRolefcb19312-dev` (operator yes). From the next run (Sunday 14:00 UTC) `/aws/lambda/newsEmailSender` should exist; until confirmed, keep using the EMAILLOG row + Invocations metric checks above.

@@ -385,7 +385,6 @@ function Home() {
           <Link to={ROUTE.trackRecord}>publicly scored</Link>, every revised conclusion{' '}
           <Link to={ROUTE.trackRecord}>logged</Link>. Summarise, predict, or trace the cause of any story below.
         </p>
-        <Link className="home-markets-link" to={studioHref()}>Run a cited, fabrication-checked AI deep-dive →</Link>
 
         {isStale && (
           <div className="home-alert stale">

@@ -16,7 +16,7 @@ Fill those in once per project and the rules apply.
 |---|---|
 | `CLAUDE.template.md` | The **standing instructions** — drop into the new repo as `CLAUDE.md`. Autonomy rules, halt conditions, the never-without-auth list, deploy gate, no-CI-merge-gate. |
 | `playbooks/VERIFY.md` | The 4-layer verification ladder (pre-commit → pre-deploy → post-deploy smoke → reviewer eyeball) + the independent-agent-audit pattern. |
-| `playbooks/COMMIT_PUSH.md` | Safe staging discipline, conventional commits, landing to main via PR. |
+| `playbooks/COMMIT_PUSH.md` | Safe staging discipline, plain descriptive commits, landing to main via PR. |
 | `playbooks/WORKTREE_CONCURRENCY.md` | One worktree per line of work — kills the "two sessions, one folder" git tangle class. |
 | `playbooks/AUTOMATION_LOOP.md` | Running the agent autonomously for hours: Ralph loop, budget + kill switches, halt rules. |
 | `MEMORY_SYSTEM.md` | The file-based persistent-memory convention (categories, frontmatter, the index file). |

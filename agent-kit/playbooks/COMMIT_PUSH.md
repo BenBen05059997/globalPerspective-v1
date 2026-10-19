@@ -9,12 +9,15 @@
    `git add` can sweep your files into its commit, and you'll stage build/cache/env noise.
 2. **Verify the staged set:** `git diff --cached --name-only` → abort if a foreign or generated
    file appears.
-3. **`git commit -F -`** (heredoc), not `-m`, for messages with apostrophes / non-ASCII / long bodies.
+3. **Plain descriptive commit messages** that match `git log` (e.g. "Move the weekly review CLI
+   next to its Lambda") — no `type(scope):` prefixes. One coherent change per commit. Use
+   `git commit -F -` (heredoc), not `-m`, for messages with apostrophes / non-ASCII / long bodies.
 4. **Never commit** generated artifacts, `.env*` secrets, build caches, or another session's files.
 5. **Land to `<DEFAULT_BRANCH>` via a PR** when the branch may have diverged — it does the 3-way
    merge server-side; a raw `push branch:main` only works on a clean fast-forward.
-6. **Merged ≠ live.** Deploy is a separate, gated `<DEPLOY_CMD>`.
-7. Commit/push **only when the user asks**; if on `<DEFAULT_BRANCH>`, branch first.
+6. **Merged ≠ live.** Publishing is a separate, gated release step (see "Merged ≠ deployed").
+7. Follow the repo's `CLAUDE.md` on when to commit and push (this repo: `git push` is allowed once
+   verify/hooks pass); if on `<DEFAULT_BRANCH>` and the work is risky, branch first.
 
 ## Commit safely
 
@@ -27,7 +30,7 @@ git diff --cached --name-only
 
 # Commit with -F (heredoc) — '-m' breaks on apostrophes; heredoc handles any text.
 git commit -F - <<'EOF'
-type(scope): subject
+Plain descriptive summary of the change
 
 Body explaining why.
 
@@ -97,12 +100,16 @@ curl -s -o /dev/null -w "%{http_code}" <PROD_URL>   # MUST be 200
 
 `rm -rf <CLEAN_BUILD_DIRS>` first or you risk a no-op deploy (stale code ships, smoke still passes).
 
+In this repo: `./deploy.sh` with no target is a safe local verify/build/package and publishes
+nothing. Only `./deploy.sh --target candidate|production|legacy-pages` publishes, and each needs a
+fresh operator "yes" in the current message (see `CLAUDE.md` → "Deploying the frontend").
+
 ## Deploy cadence — one push at a time (GitHub Pages concurrency trap)
 
 **Bit us 2026-06-30.** GitHub Pages deploys via a `github-pages` environment with **cancel-in-progress** concurrency: every push (or manual `POST /pages/builds`, or `gh run rerun`) creates a new deployment that **cancels the one still publishing**. Stacking ~5 pushes/triggers in a few minutes (source commit → deploy commit → docs commit → force-rebuild → empty re-trigger) made the *build* succeed every time but the *deploy* step fail with **"Deployment cancelled"** — looked like a hard breakage, was just self-inflicted thrash. After enough rapid failures, new pushes may **stop triggering builds at all** (Pages back-pressure). The site kept serving the prior-good bundle the whole time (200), so users saw nothing.
 
 Rules:
-- **Batch first, push once.** Land source + `docs/` + any doc updates in as few pushes as possible, then **let that one deploy settle** before the next push. `deploy.sh --commit … --push` already bundles build+docs into one commit — don't chase it with more pushes.
+- **Batch first, push once.** Land source + `docs/` + any doc updates in as few pushes as possible, then **let that one deploy settle** before the next push. `./deploy.sh --target legacy-pages --commit … --push` already bundles build+docs into one commit — don't chase it with more pushes.
 - **Don't hammer to "fix" a failing deploy.** More triggers prolong the thrash. Wait for the in-flight run to finish.
 - **Diagnose before re-triggering:** the *build* vs *deploy* job tells you which half failed —
   ```bash
@@ -118,7 +125,7 @@ Rules:
 - [ ] Concurrent session? → explicit staging + worktree if needed
 - [ ] Staged only intended paths; `git diff --cached --name-only` reviewed
 - [ ] No generated artifacts / `.env*` / foreign files staged
-- [ ] `git commit -F -` with attribution trailer
+- [ ] Plain descriptive message via `git commit -F -`, with attribution trailer
 - [ ] Land via PR (diverged) or fast-forward (clean)
 - [ ] Deploying? → **one push, then let it settle** — don't stack pushes/reruns (Pages cancel-in-progress thrash)
 - [ ] If "live" is the goal → deploy is a separate, gated step

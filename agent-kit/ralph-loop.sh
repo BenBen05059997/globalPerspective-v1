@@ -6,8 +6,9 @@
 # mark done. A fresh session per loop keeps context small and each commit a checkpoint.
 #
 # GUARDRAILS (hard):
-#   - NEVER deploys. ./deploy.sh stays gated to an explicit human "yes". This loop
-#     only produces LOCAL commits; you push/deploy by hand afterward.
+#   - NEVER deploys or publishes. Plain ./deploy.sh is only a local verify/build/package;
+#     every ./deploy.sh --target … publishes and stays gated to an explicit human "yes".
+#     This loop only produces LOCAL commits; you push/release by hand afterward.
 #   - Run from inside a dedicated git worktree (one line of work per worktree).
 #   - --dangerously-skip-permissions is ONLY safe in a sandbox/container, never the dev box.
 #
@@ -27,9 +28,10 @@ for i in $(seq 1 "$MAX_ITERS"); do
 
   PROMPT="Read $QUEUE. Pick the FIRST unchecked '[ ]' item and do ONLY that one.
 Follow the queue's Scope rules exactly (removals only, no logic changes, do not touch
-exhaustive-deps). Then: cd $APP_DIR && npm run verify. If green, commit locally with a
-conventional message (chore(lint): ...), mark the item [x] in $QUEUE, and append a one-line
-log entry. Do NOT push. Do NOT run ./deploy.sh. Stop after this one item."
+exhaustive-deps). Then: cd $APP_DIR && npm run verify. If green, stage explicit paths and
+commit locally with a plain descriptive message matching git log (e.g. 'Remove unused imports
+in X'), mark the item [x] in $QUEUE, and append a one-line log entry. Do NOT push. Do NOT run
+./deploy.sh --target (any target publishes). Stop after this one item."
 
   # headless one-shot; sandbox only.
   timeout 15m claude -p "$PROMPT" --dangerously-skip-permissions || { echo "iter $i: agent exited non-zero"; break; }
@@ -42,4 +44,4 @@ log entry. Do NOT push. Do NOT run ./deploy.sh. Stop after this one item."
   if [ "${lines:-0}" -gt "$DIFF_CAP" ]; then echo "diff > $DIFF_CAP — halt for review"; break; fi
 done
 
-echo "=== loop ended. Review: git log --oneline. Push/deploy is a separate, gated human step. ==="
+echo "=== loop ended. Review: git log --oneline. Push and any ./deploy.sh --target release are separate, gated human steps. ==="

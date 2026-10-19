@@ -1,21 +1,21 @@
 import { useState } from 'react';
-import { CATEGORY_BADGE_COLORS } from '@/shared/styles/tokens';
+import Button from '@/shared/ui/Button.jsx';
+import CategoryTag from '@/shared/ui/CategoryTag.jsx';
+
+const AI_TABS = [
+  { key: 'summary', field: 'summary', label: 'Summarize' },
+  { key: 'prediction', field: 'prediction', label: 'Predict' },
+  { key: 'trace', field: 'trace_cause', label: 'Trace Cause' },
+];
 
 export default function StoryEntryCard({ entry, compact }) {
   const [activeTab, setActiveTab] = useState(null);
-  const hasAi = entry.ai?.summary || entry.ai?.trace_cause || entry.ai?.prediction;
-  const aiKey = activeTab === 'trace' ? 'trace_cause' : activeTab;
-
-  const category = entry.category?.toLowerCase();
-  const catColors = CATEGORY_BADGE_COLORS[category];
+  const tabs = AI_TABS.filter((t) => entry.ai?.[t.field]);
+  const active = tabs.find((t) => t.key === activeTab);
 
   return (
     <div className={`story-entry-card ${compact ? 'compact' : ''}`}>
-      {category && (
-        <span className="story-category-badge" style={{ marginBottom: 4, display: 'inline-block', ...(catColors ? { background: catColors.bg, color: catColors.color } : {}) }}>
-          {category}
-        </span>
-      )}
+      <CategoryTag category={entry.category?.toLowerCase()} className="story-entry-cat" />
       <div className="story-entry-title">{entry.title}</div>
       {entry.sources && entry.sources.length > 0 && (
         <div className="story-entry-sources">
@@ -28,33 +28,18 @@ export default function StoryEntryCard({ entry, compact }) {
           ))}
         </div>
       )}
-      {hasAi && (
+      {tabs.length > 0 && (
         <div className="story-entry-toolbar">
-          <div className="ai-toolbar">
-            {entry.ai?.summary && (
-              <button
-                className={`ai-btn ai-btn-summary ${activeTab === 'summary' ? 'active' : ''}`}
-                onClick={() => setActiveTab(activeTab === 'summary' ? null : 'summary')}
-              >Summarize</button>
-            )}
-            {entry.ai?.prediction && (
-              <button
-                className={`ai-btn ai-btn-predict ${activeTab === 'prediction' ? 'active' : ''}`}
-                onClick={() => setActiveTab(activeTab === 'prediction' ? null : 'prediction')}
-              >Predict</button>
-            )}
-            {entry.ai?.trace_cause && (
-              <button
-                className={`ai-btn ai-btn-trace ${activeTab === 'trace' ? 'active' : ''}`}
-                onClick={() => setActiveTab(activeTab === 'trace' ? null : 'trace')}
-              >Trace Cause</button>
-            )}
-          </div>
+          {tabs.map((t) => (
+            <Button key={t.key} compact selected={activeTab === t.key} onClick={() => setActiveTab(activeTab === t.key ? null : t.key)}>
+              {t.label}
+            </Button>
+          ))}
         </div>
       )}
-      {activeTab && entry.ai?.[aiKey] && (
-        <div className={`story-entry-ai-content ${activeTab}`}>
-          <div className="story-entry-section-text">{entry.ai[aiKey]}</div>
+      {active && (
+        <div className="story-entry-ai-content">
+          <div className="story-entry-section-text">{entry.ai[active.field]}</div>
         </div>
       )}
     </div>

@@ -6,11 +6,31 @@
 // Honesty rules (CLAUDE.md "never invent facts"): every date comes from the archive's own day keys
 // (YYYY-MM-DD) or a day's real `updatedAt`; nothing here synthesises a date, a status or a score.
 import { getTopicRegion } from '@/shared/lib/countryMapping';
-import { getTrend } from '@/features/threads/components/TrendBadge';
 import { crisisTypeForCategory } from '@/shared/lib/crisisHue';
 import { deriveHeadline } from '@/shared/lib/riskTiers';
 
 export const MS_DAY = 86400000;
+
+// Coverage trend from the story's own per-day article counts: the recent half of its days vs the
+// older half ('new' with one day). Only 'rising' is shown (StoryLine's "▲ rising" mark).
+export function getTrend(entries) {
+  if (!entries || entries.length === 0) return 'new';
+  const dates = [...new Set(entries.map(e => e.date))].sort();
+  if (dates.length <= 1) return 'new';
+  const mid = Math.floor(dates.length / 2);
+  const olderDates = new Set(dates.slice(0, mid));
+  const recentDates = new Set(dates.slice(mid));
+  let olderCount = 0;
+  let recentCount = 0;
+  for (const e of entries) {
+    if (olderDates.has(e.date)) olderCount++;
+    if (recentDates.has(e.date)) recentCount++;
+  }
+  const ratio = olderCount > 0 ? recentCount / olderCount : 2;
+  if (ratio > 1.3) return 'rising';
+  if (ratio < 0.7) return 'fading';
+  return 'stable';
+}
 
 // Topic categories that /weekly?category= accepts (ThreadPage's breadcrumb links here).
 export const CATEGORY_ORDER = ['politics', 'economy', 'conflict', 'military', 'disaster', 'climate', 'energy', 'technology', 'science', 'business', 'health', 'society', 'other'];

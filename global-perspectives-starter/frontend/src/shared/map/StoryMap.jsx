@@ -26,8 +26,8 @@ export default function StoryMap({ shading, storyFocusIso3, height, linkArcs = [
       {use3D ? (
         <Suspense fallback={<div className="sm-maploading" style={{ height: h }}><BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" /></div>}>
           <SituationMap3D
-            situations={[]} focusId={null} callout={null} tour={null} newIds={null} view="globe"
-            onSelect={() => {}} onOpenCallout={() => {}} height={h} width={null}
+            situations={[]} focusId={null} newIds={null} view="globe"
+            onSelect={() => {}} height={h} width={null}
             shading={shading} linkArcs={linkArcs} storyFocusIso3={storyFocusIso3}
             onSelectCountry={() => {}} onHoverCountry={() => {}} onFocusCountry={() => {}} onLeaveCountry={() => {}}
             countryRisk={[]} onSelectCountryRisk={() => {}} onHoverCountryRisk={() => {}} onFocusCountryRisk={() => {}} onLeaveCountryRisk={() => {}}
@@ -35,8 +35,8 @@ export default function StoryMap({ shading, storyFocusIso3, height, linkArcs = [
         </Suspense>
       ) : (
         <RadarMap
-          situations={[]} focusId={null} callout={null} newIds={null}
-          onSelect={() => {}} onOpenCallout={() => {}} onScan={() => {}} height={h}
+          situations={[]} focusId={null} newIds={null}
+          onSelect={() => {}} onScan={() => {}} height={h}
           shading={shading} linkArcs={linkArcs} storyFocusIso3={storyFocusIso3}
           onSelectCountry={() => {}} onHoverCountry={() => {}} onFocusCountry={() => {}} onLeaveCountry={() => {}}
           countryRisk={[]} onSelectCountryRisk={() => {}} onHoverCountryRisk={() => {}} onFocusCountryRisk={() => {}} onLeaveCountryRisk={() => {}}

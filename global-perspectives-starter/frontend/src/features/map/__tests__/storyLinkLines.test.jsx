@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router';
 import RadarMap from '@/shared/map/RadarMap.jsx';
 import MapLegend from '@/features/map/components/MapLegend.jsx';
 
-const base = { situations: [], focusId: null, callout: null, newIds: null, height: 300, onSelect() {}, onOpenCallout() {}, onScan() {}, shading: [], countryRisk: [], onSelectCountry() {} };
+const base = { situations: [], focusId: null, newIds: null, height: 300, onSelect() {}, onScan() {}, shading: [], countryRisk: [], onSelectCountry() {} };
 
 describe('RadarMap link lines', () => {
   it('no arcs, no lines', () => {

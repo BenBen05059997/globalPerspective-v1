@@ -35,7 +35,7 @@ the Studio key panel. The Save / Follow / Subscribe controls other pages embed l
 ## Data
 - `useSavedItems` -> `window.SAVED_ITEMS_ENDPOINT`: `save_item`, `unsave_item`, `get_saved_items` (Firebase token)
 - `usePreferences` -> `window.USER_PREFS_ENDPOINT`: `get_prefs`, `set_prefs`, `follow_country`, `unfollow_country`
-- `useMembership` -> `window.POLAR_BILLING_ENDPOINT`: `get_membership`; `createCheckout` (`createCreditCheckout` is orphaned billing code, kept pending operator yes)
+- `useMembership` -> `window.POLAR_BILLING_ENDPOINT`: `get_membership`; `createCheckout`
   -> `create_checkout`. Without the endpoint `available` is false and billing UI is hidden.
 - `useDeskChanges` -> restProxy `country_history` per followed country, 3 at a time, members only (`DeskPanel`).
 - Desk and Alerts also read `useDailyBrief` (paused-since) and `useWeeklyBrief` (edition notes).

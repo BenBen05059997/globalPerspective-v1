@@ -6,7 +6,7 @@ free-form question, and runs an LLM analysis over our stored material. Runs go t
 by a validator, rendered as a deck, and can be shared.
 
 ## Status
-- Live. Server path only when `analyzeConfigured()` (`window.NEWS_ANALYZE_ENDPOINT` set) and (member or
+- Live but out of the nav menu (decision 0030, 2026-10-19; it returns when its [redesign plan](../../../../../project-docs/plans/PLAN_2026-10-19_studio_redesign.md) criteria are met). `/analyze` and shared runs stay routed; the country card and Account still link to it. Server path only when `analyzeConfigured()` (`window.NEWS_ANALYZE_ENDPOINT` set) and (member or
   credits > 0); credits are parked (decision 0002). Deep research always stays BYOK (needs web search).
 - The `economic` lens is `hidden: true` (economy parked): filtered from the picker, still in `LENSES`.
 - Signed-out / anonymous users get a sign-in gate; `SignedOutExample` shows `EXAMPLE_SHARE_ID`

@@ -5,7 +5,7 @@
 ## Product Overview
 **One-liner:** AI-powered geopolitical intelligence platform that tracks how stories evolve — not just what happened today.
 
-**What it does:** Global Perspectives ingests news from 20+ international sources across five continents three times a day (04:15, 12:15, 20:15 UTC), selects up to 13 important topics per cycle, and generates three-layer AI analysis per topic (Summary, Prediction, Trace Cause). A persistent narrative thread system links related events across days and geographies, revealing how stories develop over time. The home page is a world situation map: open situations on four axes (conflict, political, economic, humanitarian), each with a severity tier, plus severe natural disasters from the UN/EU GDACS feed. All reading is free, including the archive and thread/country intelligence; Polar membership buys deeper correction history, change-alerts on followed countries, and Analysis Studio compute.
+**What it does:** Global Perspectives ingests news from 20+ international sources across five continents three times a day (04:15, 12:15, 20:15 UTC), selects up to 13 important topics per cycle, and generates three-layer AI analysis per topic (Summary, Prediction, Trace Cause). A persistent narrative thread system links related events across days and geographies, revealing how stories develop over time. The home page is a world situation map: open situations on four axes (conflict, political, economic, humanitarian), each with a severity tier, plus severe natural disasters from the UN/EU GDACS feed. All reading is free, including the archive and thread/country intelligence; Polar membership buys deeper correction history, change-alerts on followed countries, and Analysis Studio compute (the Studio left the menu 2026-10-19 and is reachable by URL only; do not promote it as a headline feature).
 
 **Product category:** Geopolitical intelligence / AI news analysis
 
@@ -197,4 +197,4 @@
 **Active marketing channels:**
 - LinkedIn and Bluesky (via the `newsPostLinkedin` Lambda, every 3 hours; up to 5 new topics per platform per run)
 
-**Pending / not currently active:** X/Twitter, Threads, Dev.to (the publish path was removed 2026-05-18; the daily `newsPostDevTo` run now only builds the in-app Daily Brief at `/daily`), a Buffer-scheduled bulk-post queue, an SEO blog, and richer map-image social posts — none of these are live; verify current status before citing them as active.
+**Pending / not currently active:** X/Twitter, Threads, Dev.to (the publish path was removed 2026-05-18; the daily `newsPostDevTo` run now only builds the daily brief shown on `/briefings` (`/daily` redirects there)), a Buffer-scheduled bulk-post queue, an SEO blog, and richer map-image social posts — none of these are live; verify current status before citing them as active.

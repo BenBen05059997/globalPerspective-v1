@@ -144,6 +144,9 @@ other GET paths.
   `check_color_literals.mjs`, `check_shared_blocks.mjs`), eval harnesses.
 - `predictions/` — `settle-review.js` (the human confirm step for forecast verdicts),
   `verify-draw.mjs`, older pilot scripts.
+- `backend/<group>/cli/` — operator review/send CLIs next to their Lambdas: `distribution/cli/breaking/`
+  (`review.js`, `send.js`, `send-test.js`), `distribution/cli/weekly/review.js`,
+  `economy-parked/cli/weekly-markets/review.js`.
 - `deploy.sh` (repo root) — frontend verify/build/package and release targets.
 
 ## Data flows

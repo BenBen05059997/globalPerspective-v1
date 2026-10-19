@@ -2,12 +2,12 @@
 'use strict';
 
 /**
- * breaking/send-test.js — render a sample breaking alert and ACTUALLY send it via
+ * backend/distribution/cli/breaking/send-test.js — render a sample breaking alert and ACTUALLY send it via
  * Resend, so you can see the real email in your inbox.
  *
  * Run with your own Resend API key (never committed — a plaintext env var):
  *
- *   RESEND_API_KEY=re_xxx node breaking/send-test.js [recipient] [from]
+ *   RESEND_API_KEY=re_xxx node backend/distribution/cli/breaking/send-test.js [recipient] [from]
  *
  * Defaults:
  *   recipient = benlai310@gmail.com
@@ -19,7 +19,7 @@
  */
 
 const path = require('path');
-const SRC = path.join(__dirname, '..', 'backend', 'distribution', 'newsBreakingAlert', 'src');
+const SRC = path.join(__dirname, '..', '..', 'newsBreakingAlert', 'src');
 const { renderAlert } = require(path.join(SRC, 'render.js'));
 const { sendEmail } = require(path.join(SRC, 'sendEmail.js'));
 
@@ -57,7 +57,7 @@ const sample = renderAlert({
 
 (async () => {
   if (!process.env.RESEND_API_KEY) {
-    console.error('✗ Set your key first:  RESEND_API_KEY=re_xxx node breaking/send-test.js');
+    console.error('✗ Set your key first:  RESEND_API_KEY=re_xxx node backend/distribution/cli/breaking/send-test.js');
     process.exit(1);
   }
   console.log(`Sending sample breaking alert → ${to}  (from: ${from})`);

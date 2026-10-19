@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * breaking/review.js — human confirmation queue for breaking-news alerts.
+ * backend/distribution/cli/breaking/review.js — human confirmation queue for breaking-news alerts.
  *
  * The newsBreakingAlert Lambda detects a significant story each cycle and writes a
  * `status: 'proposed'` row to GlobalPerspectiveBreakingAlerts. It NEVER auto-sends.
@@ -15,8 +15,8 @@
  * is emailed. See BREAKING_ALERTS_PLAN.md.
  *
  * Usage:
- *   node breaking/review.js            # interactive: walk proposed alerts
- *   node breaking/review.js --list     # just list what's awaiting review
+ *   node backend/distribution/cli/breaking/review.js            # interactive: walk proposed alerts
+ *   node backend/distribution/cli/breaking/review.js --list     # just list what's awaiting review
  */
 
 const { execSync } = require('child_process');

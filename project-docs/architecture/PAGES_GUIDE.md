@@ -184,7 +184,7 @@ Use this when:
 
 - **Purpose:** A serif long-read of the latest **published** Weekly Signals Brief — a *signals digest* (discrete signals ranked by risk + a "what to watch" list), **not** a synthesized essay.
 - **Primary user job:** Catch up on the week in one screen: the highest-risk signals, each with a one-line "so what" and its sources.
-- **Data sources:** `useWeeklyBrief()` → `weekly_brief` action (latest `status:'published'` brief; **auto-published by `newsWeeklyBrief` each Sunday since 2026-07-03** — the old manual `weekly/review.js` gate was removed); 30-min cache. `Markdown.jsx` is used only for the backward-compatible legacy prose format.
+- **Data sources:** `useWeeklyBrief()` → `weekly_brief` action (latest `status:'published'` brief; **auto-published by `newsWeeklyBrief` each Sunday since 2026-07-03** — the old manual `backend/distribution/cli/weekly/review.js` gate was removed); 30-min cache. `Markdown.jsx` is used only for the backward-compatible legacy prose format.
 - **Auth gate:** None.
 - **Inbound links:** Primary nav "Weekly Brief" (`Layout.jsx:48`).
 - **Outbound links:** Per-signal **source outlets** (external article URLs) only — signals do **not** currently deep-link into thread/country pages; `related` is plain text.

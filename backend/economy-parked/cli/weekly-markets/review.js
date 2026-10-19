@@ -2,20 +2,20 @@
 'use strict';
 
 /**
- * weekly-markets/review.js — one-click human approval for the Weekly Markets Report.
+ * backend/economy-parked/cli/weekly-markets/review.js — one-click human approval for the Weekly Markets Report.
  *
  * newsWeeklyMarkets writes a `status:'draft'` WEEKLY_MARKETS#{weekKey} record. This script
  * lets the operator review the draft and publish it (status → 'published', which is what the
  * public weekly_markets action serves), or hold/reject. No public auth surface — AWS CLI, no
- * npm deps. Mirrors weekly/review.js + breaking/review.js + predictions/review.js.
+ * npm deps. Mirrors backend/distribution/cli/weekly/review.js + backend/distribution/cli/breaking/review.js + predictions/review.js.
  *
  * The human gate is the grounding/verification layer: attributing a weekly price move to a
  * cause is post-hoc, so the operator confirms each mover's note is honest (candidate driver,
  * not invented causation) before it goes public.
  *
  * Usage:
- *   node weekly-markets/review.js            # interactive: walk draft reports
- *   node weekly-markets/review.js --list     # just list drafts
+ *   node backend/economy-parked/cli/weekly-markets/review.js            # interactive: walk draft reports
+ *   node backend/economy-parked/cli/weekly-markets/review.js --list     # just list drafts
  */
 
 const { execSync } = require('child_process');

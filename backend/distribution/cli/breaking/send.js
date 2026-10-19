@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * breaking/send.js — send a REAL detected breaking alert (not the sample) to your inbox
+ * backend/distribution/cli/breaking/send.js — send a REAL detected breaking alert (not the sample) to your inbox
  * via Resend, then mark it sent. This is the production sender the pipeline was missing:
  * the newsBreakingAlert Lambda detects + writes a `proposed` row (with a fully-rendered
  * draft {subject, html, text}); review.js confirms it; THIS sends the stored draft.
@@ -10,7 +10,7 @@
  * Mirrors review.js: shells out to the AWS CLI (no npm deps), no public auth surface.
  *
  * Usage:
- *   RESEND_API_KEY=re_xxx node breaking/send.js <alertKey> [recipient] [from] [--force]
+ *   RESEND_API_KEY=re_xxx node backend/distribution/cli/breaking/send.js <alertKey> [recipient] [from] [--force]
  *
  * Defaults:
  *   recipient = benlai310@gmail.com
@@ -26,7 +26,7 @@
 
 const path = require('path');
 const { execFileSync } = require('child_process');
-const SRC = path.join(__dirname, '..', 'backend', 'distribution', 'newsBreakingAlert', 'src');
+const SRC = path.join(__dirname, '..', '..', 'newsBreakingAlert', 'src');
 const { sendEmail } = require(path.join(SRC, 'sendEmail.js'));
 
 const TABLE = 'GlobalPerspectiveBreakingAlerts';
@@ -46,8 +46,8 @@ function aws(serviceArgs) {
 function fail(msg) { console.error('✗ ' + msg); process.exit(1); }
 
 (async () => {
-  if (!alertKey) fail('Usage: RESEND_API_KEY=re_xxx node breaking/send.js <alertKey> [recipient] [from] [--force]');
-  if (!process.env.RESEND_API_KEY) fail('Set your key first:  RESEND_API_KEY=re_xxx node breaking/send.js ...');
+  if (!alertKey) fail('Usage: RESEND_API_KEY=re_xxx node backend/distribution/cli/breaking/send.js <alertKey> [recipient] [from] [--force]');
+  if (!process.env.RESEND_API_KEY) fail('Set your key first:  RESEND_API_KEY=re_xxx node backend/distribution/cli/breaking/send.js ...');
 
   // Read the proposal row.
   let item;
@@ -71,7 +71,7 @@ function fail(msg) { console.error('✗ ' + msg); process.exit(1); }
   if (!subject || (!html && !text)) fail('proposal has no usable draft (subject/html/text missing)');
   if (sent && !FORCE) fail(`already sent (sent=true). Pass --force to resend.`);
   if (status !== 'confirmed' && !FORCE) {
-    fail(`status is "${status}", not "confirmed". Run breaking/review.js first, or pass --force to send anyway.`);
+    fail(`status is "${status}", not "confirmed". Run backend/distribution/cli/breaking/review.js first, or pass --force to send anyway.`);
   }
 
   console.log(`Sending breaking alert "${alertKey}" → ${to}  (from: ${from}, status: ${status}${FORCE ? ', forced' : ''})`);

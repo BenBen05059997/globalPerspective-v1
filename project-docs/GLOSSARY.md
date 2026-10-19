@@ -199,7 +199,7 @@ operator go/no-go.
 proposed alert email. A human — the operator — is supposed to review and click "confirm" before it
 goes out to subscribers; it never auto-sends to the public.
 **Where it comes from:** Detector `backend/distribution/newsBreakingAlert/src/index.js` (writes
-`status:'proposed'` rows); confirm/reject tool `breaking/review.js`; actual send is
+`status:'proposed'` rows); confirm/reject tool `backend/distribution/cli/breaking/review.js`; actual send is
 `newsEmailSender` (`mode:'breaking'`, cron `TriggerBreakingEmailSend`). Built 2026-07-03/07-04;
 detector scheduled live since ~07-25.
 **Status:** Dormant/decision-pending, and now deliberately paused further. A 2026-09-10 audit found

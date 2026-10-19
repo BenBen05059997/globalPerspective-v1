@@ -2,16 +2,16 @@
 'use strict';
 
 /**
- * weekly/review.js — one-click human approval for the Weekly Intelligence Brief.
+ * backend/distribution/cli/weekly/review.js — one-click human approval for the Weekly Intelligence Brief.
  *
  * newsWeeklyBrief writes a `status:'draft'` WEEKLY_BRIEF#{weekKey} record. This script
  * lets the operator review the draft and publish it (status → 'published', which is what
  * the public weekly_brief action + the email will serve), or hold/reject. No public auth
- * surface — AWS CLI, no npm deps. Mirrors breaking/review.js + predictions/review.js.
+ * surface — AWS CLI, no npm deps. Mirrors backend/distribution/cli/breaking/review.js + predictions/review.js.
  *
  * Usage:
- *   node weekly/review.js            # interactive: walk draft briefs
- *   node weekly/review.js --list     # just list drafts
+ *   node backend/distribution/cli/weekly/review.js            # interactive: walk draft briefs
+ *   node backend/distribution/cli/weekly/review.js --list     # just list drafts
  */
 
 const { execSync } = require('child_process');

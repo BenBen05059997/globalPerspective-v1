@@ -21,11 +21,54 @@ view is a dead end, and the same brief lives at three addresses.
 5. Economy stays parked (not deleted). Remove every link that dead-ends in economy; label the country FX box as
    raw market prices with a timestamp.
 
+## Link design (from L0 facts, 2026-10-19)
+Facts: `.board/linking/entities.md`, `countries.md`, `renders.md` (live data + code). Key findings: topic ids change every
+run (title + position), thread ids are stable once made; countries are keyed by English name in records and URLs
+but by ISO3 in situations and topics, with ~9 disagreeing alias tables, duplicate records (USA 45 vs United States 85;
+DR Congo x2; Palestine x5) and region records (Africa, Europe, Global…); ~67 hand-built links; nothing links into
+the map; no single forecast is addressable.
+
+### Canonical entities and addresses (`shared/lib/links.js`; backend mirror for emails)
+| Entity | Key | Address | Notes |
+|---|---|---|---|
+| Story | `threadId` (stable) | `/weekly/thread/:threadId` (`threadPath`) | Topics are not linked entities: a topic links to its thread. |
+| Country | ISO3 | `/weekly/country/:displayName` | URL keeps the display name (saved items, follows); the page resolves aliases and codes and redirects to the canonical name. Non-countries are plain text; a place inside one country links to that country. |
+| Situation | situation id | `/?focus=<id>` | No thread: link its country. |
+| Map focus | story / country | `/?story=<threadId>`, `/?country=<ISO3>` | `?story=` must resolve any thread, not only today's topics; `?country=` zooms and highlights. |
+| Forecast | `qid` | `/track-record?q=<qid>`; inline `#q-<qid>` on the story page | Track record reads `q`, opens the board, scrolls, highlights; old qids need a lookup. |
+| Briefing | date / week | `/briefings?date=YYYY-MM-DD`, `/briefings?mode=weekly&week=YYYY-MM-DD` | After the merge; old `/daily/:date`, `/weekly-brief` 301 here. |
+| Studio | thread ids | `/analyze?stories=<threadId,…>` | Today it accepts only today's topic ids. |
+
+One component, `<EntityLink kind id>`, renders link + hover preview for story, country, situation, forecast.
+One country source: `backend/shared/src/iso3Names.json` extended to `{name, aliases[]}` (+17 missing countries,
+GUM/HKG/VAT); every other table and alias list is deleted; one resolver `resolveCountry(text) -> {iso3, name} | null`.
+
+### Ids to add at the source (L2)
+- Read API: `prediction_snapshot` returns `threadId`; track record `recent[]` gets `qid` + `clusterKey`.
+- Thread analysis: `iso3[]` (resolver over its topics' regions).
+- Country intelligence: top `threadIds[]` (from the archive's regions).
+- Archive entries, daily brief stories + country to watch, weekly signals, corrections, story web: `iso3[]` from the
+  resolver (not a second AI field — today the AI's `iso3` and `regions` disagree).
+- Drift "Because:" lines: `threadId` next to the `topicId`.
+- Studio citations: `threadId`.
+- Weekly signals: fill `related`; a route for past weeks.
+- Country records: merge duplicates under the canonical name, retire the 7 region records (DynamoDB writes and
+  deletes: operator yes).
+
+### Data-quality issues found (backlog, not part of linking)
+Thread mis-joins (a Brazil debate inside the Amazon-deforestation thread), situations fragmenting per entity
+(afghan / afghan-taliban / afghanistan), 19 of 56 situations with a thread, one forecast whose title did not match its
+thread, topic-keyed forecasts spread over many keys.
+
+### Open choices
+- Display names: "UAE" / "DR Congo" (short, recommended) or the long forms.
+- Merging and retiring country records (DynamoDB writes/deletes).
+
 ## Checklist
 Each step: one commit or merge, verify + checks green, browser-checked before any release. Releases need the
 operator's yes.
 
-### L0 · Gather the facts (read-only)
+### L0 · Gather the facts (read-only) — done 2026-10-19, see Link design
 - [ ] Entity inventory: for each thing a reader can open (situation, story/thread, topic, country, forecast,
       brief edition, weekly signal, breaking alert, saved item, Studio run) — its id, its canonical page, where
       it is stored, and which related ids it carries today (sampled from live data, not docs).

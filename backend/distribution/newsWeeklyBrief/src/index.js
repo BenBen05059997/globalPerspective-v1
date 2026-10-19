@@ -12,6 +12,7 @@
 const { keepDayZero } = require('./_shared/dayZero');
 const { isCountryName, usableCountryRecord } = require('./_shared/placeFilter');
 const { chat, stripCodeFence } = require('./_shared/llm');
+const { iso3List, resolveIso3 } = require('./_shared/resolveIso3'); // TODO(L1-LINKS): resolveCountry
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
@@ -70,7 +71,7 @@ exports.handler = async (event = {}) => {
   for (const c of countryCtx) if (Number.isFinite(Number(c.riskScore))) countryRisk[c.name] = Number(c.riskScore);
   for (const t of threadCtx) {
     const a = t.analysis || {};
-    const regionMax = Math.max(0, ...t.regions.map((r) => countryRisk[r] || 0));
+    const regionMax = Math.max(0, ...t.regions.map((r) => countryRisk[resolveIso3(r)?.name || r] || 0));
     const score = Number.isFinite(Number(a.riskScore)) ? Number(a.riskScore) : (regionMax > 0 ? regionMax : null);
     t.riskScore = score;
     t.riskLevel = riskLevelFromScore(score);
@@ -98,6 +99,7 @@ exports.handler = async (event = {}) => {
         riskLevel: t.riskLevel,        // deterministic
         riskScore: t.riskScore,        // deterministic
         region: t.regions.slice(0, 3).join(' · '),
+        iso3: iso3List(t.regions),     // deterministic: the resolver, not the model's iso3
         asOf: t.latestDate,            // deterministic
         sources: t.sources,            // real article links, deterministic
       };
@@ -106,6 +108,7 @@ exports.handler = async (event = {}) => {
     .sort((a, b) => (b.riskScore || 0) - (a.riskScore || 0)); // most significant first
 
   if (signals.length === 0) return fail('No usable signals produced — failing empty (honest).');
+  linkRelated(signals, await getRecord('WEB#INDEX', 'LATEST'));
 
   const watch = Array.isArray(parsed.watch)
     ? parsed.watch.filter((w) => w && w.event).map((w) => ({
@@ -216,9 +219,27 @@ function riskLevelFromScore(score) {
   return 'high';
 }
 
+// Related signals come from the story web (WEB#INDEX: cited links + shared actors between threads), not
+// the model: relatedThreadIds lists this week's other signals linked to this one, and `related` (shown as
+// text) names the first of them when the model left it empty.
+function linkRelated(signals, web) {
+  const pairs = new Set();
+  for (const l of web?.links || []) pairs.add(`${l.from}|${l.to}`).add(`${l.to}|${l.from}`);
+  for (const l of web?.shared || []) pairs.add(`${l.a}|${l.b}`).add(`${l.b}|${l.a}`);
+  for (const s of signals) {
+    const rel = signals.filter((o) => o !== s && pairs.has(`${s.threadId}|${o.threadId}`));
+    s.relatedThreadIds = rel.map((o) => o.threadId);
+    if (!s.related && rel.length) s.related = rel[0].lede;
+  }
+  return signals;
+}
+
 function topCountries(entries, n) {
   const counts = {};
-  for (const e of entries) for (const r of e.regions || []) counts[r] = (counts[r] || 0) + 1;
+  for (const e of entries) {
+    // canonical names = the COUNTRY# record keys (USA and United States count as one)
+    for (const r of new Set((e.regions || []).map((x) => resolveIso3(x)?.name || x))) counts[r] = (counts[r] || 0) + 1;
+  }
   // Batch 3 / F: aggregates (Europe, Middle East ...) must not take the top-N slots
   return Object.entries(counts).filter(([name]) => isCountryName(name)).sort((a, b) => b[1] - a[1]).slice(0, n).map(([name]) => name);
 }
@@ -293,3 +314,4 @@ async function invokeLLM(prompt) {
   return { modelId: r.model, content: r.content };
 }
 module.exports.topCountries = topCountries; // for tests
+module.exports.linkRelated = linkRelated;

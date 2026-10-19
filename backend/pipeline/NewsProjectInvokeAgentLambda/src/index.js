@@ -165,8 +165,9 @@ exports.handler = async (event) => {
         try { threadIdById[buildStableTopicId(raw, idx)] = assignThreadId(raw, pastEntries); } catch (e) { console.warn('early threadId failed:', e.message); }
       });
     }
-    const todayArchiveEntries = needsPrediction && !force ? await readTodayArchiveEntries() : [];
-    const genCtx = { pastEntries, factsByCountry, threadIdById, todayArchiveEntries, generatedAtDay: new Date().toISOString().slice(0, 10), force, dryRun, plan: [] };
+    const generatedAtDay = new Date().toISOString().slice(0, 10);
+    const todayArchiveEntries = needsPrediction && !force ? pastEntries.filter(e => e.date === generatedAtDay) : [];
+    const genCtx = { pastEntries, factsByCountry, threadIdById, todayArchiveEntries, generatedAtDay, force, dryRun, plan: [] };
 
     const outputs = [];
     const reused = [];
@@ -597,18 +598,6 @@ async function ensureStored(topic, kind, generationId, generatedDate, generatedY
   }
   await touchItem(pk, KIND_SK(kind), generationId, ttlSeconds);
   return { item: lib.restampFields(existing, generationId, ttlSeconds), reused: true };
-}
-
-// Today's archive entries (written by earlier runs today). Best-effort: [] on any failure.
-async function readTodayArchiveEntries() {
-  if (!TOPICS_TABLE) return [];
-  try {
-    const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: formatDateKey(new Date()) } }));
-    return Array.isArray(Item?.entries) ? Item.entries.map(e => ({ topicId: e.topicId, threadId: e.threadId })) : [];
-  } catch (e) {
-    console.warn(`today archive read failed: ${e.message}`);
-    return [];
-  }
 }
 
 // Newest stored item of this kind for the same title at another list position (see
@@ -1152,7 +1141,7 @@ function formatDateKey(date) {
 
 function assignThreadId(topic, pastEntries) {
   const m = threading.matchThread(topic, pastEntries);
-  if (m.via === 'continues_topic') console.log(`Thread inherited via continues_topic: "${topic.title}" -> ${m.threadId}`);
+  if (m.via === 'continues_topic' || m.via === 'title') console.log(`Thread inherited via ${m.via}: "${topic.title}" -> ${m.threadId}`);
   else if (m.via === 'score') console.log(`Thread inherited via Jaccard (${m.score.toFixed(2)}, kw ${m.kwScore.toFixed(2)}): "${topic.title}" -> ${m.threadId}`);
   const threadId = m.threadId || threading.generateThreadId(topic);
   if (m.via === 'new') console.log(`New thread created: "${topic.title}" -> ${threadId}`);
@@ -1164,14 +1153,18 @@ async function readPastArchiveEntries(days) {
   try {
     const entries = [];
     const now = new Date();
-    for (let i = 1; i <= days; i++) {
+    // i = 0 is today: earlier generations of the same day, so a same-day re-run of a story joins its
+    // thread instead of forking. This run's own topics are archived only after assignment; a forced
+    // re-run of the same generation finds its own rows and keeps their threadIds.
+    for (let i = 0; i <= days; i++) {
       const date = new Date(now);
       date.setUTCDate(date.getUTCDate() - i);
       const key = formatDateKey(date);
       try {
         const { Item } = await ddb.send(new GetCommand({ TableName: TOPICS_TABLE, Key: { id: key } }));
         if (Item && Array.isArray(Item.entries)) {
-          entries.push(...Item.entries.map(e => ({
+          // A day's rows are stored oldest generation first; reversed, the whole list is newest first.
+          entries.push(...Item.entries.slice().reverse().map(e => ({
             topicId: e.topicId,
             threadId: e.threadId,
             title: e.title,

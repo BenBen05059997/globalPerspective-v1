@@ -5,7 +5,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { joinScore, passesJoin, matchThread, relatedEntries, generateThreadId } = require('../src/threading');
+const { joinScore, passesJoin, matchThread, relatedEntries, generateThreadId, normalizeTitle } = require('../src/threading');
 
 const past = (t, threadId) => ({ ...t, threadId });
 
@@ -64,4 +64,31 @@ test('relatedEntries (arc digest) uses the same rule', () => {
 
 test('generateThreadId is the founding-title slug + sha1 prefix', () => {
   assert.match(generateThreadId(plagueRu), /^thread-russia-plague-quarantine-follo-[0-9a-f]{6}$/);
+});
+
+// ---------- normalised titles ----------
+
+test('normalizeTitle folds case, whitespace and punctuation', () => {
+  assert.equal(normalizeTitle("  Sri Lanka's Ex-First  Lady Arrested! "), normalizeTitle('sri lanka’s ex first lady arrested'));
+  assert.equal(normalizeTitle(''), '');
+});
+
+test('continues_topic matches a title that differs only in case and punctuation', () => {
+  const t = { ...plagueRu, title: 'Plague: WHO Sends Team to Russia', continues_topic: 'russia PLAGUE quarantine — following lab death raises concerns' };
+  const m = matchThread(t, [past(plagueRu, 'thread-plague')]);
+  assert.equal(m.via, 'continues_topic');
+  assert.equal(m.threadId, 'thread-plague');
+});
+
+test('the same title (case variant) joins by title, taking the newest entry', () => {
+  const halzen = { title: 'Belgian physicist Francis Halzen wins Nobel Prize in Physics', category: 'science', regions: ['Belgium'] };
+  const variant = { ...halzen, title: 'Belgian Physicist Francis Halzen Wins Nobel Prize in Physics' };
+  const m = matchThread(variant, [past(halzen, 'thread-newer'), past(halzen, 'thread-older')]);
+  assert.equal(m.via, 'title');
+  assert.equal(m.threadId, 'thread-newer');
+});
+
+test('an empty continues_topic never matches an untitled entry', () => {
+  const m = matchThread({ title: 'Brand new event', continues_topic: '' }, [past({ title: '' }, 'thread-x')]);
+  assert.equal(m.via, 'new');
 });

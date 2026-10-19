@@ -5,10 +5,12 @@
 //
 // Join rule (measured 2026-10-19, .board/linking/joins.md): a topic joins a past entry's thread when
 //   1. its continues_topic names that entry's title, or
-//   2. the composite score (0.5*keywords + 0.3*regions + 0.2*category) is >= JOIN_MIN_SCORE AND the
+//   2. its own title is that entry's title, or
+//   3. the composite score (0.5*keywords + 0.3*regions + 0.2*category) is >= JOIN_MIN_SCORE AND the
 //      keyword-only Jaccard is >= JOIN_MIN_KW. Same region + same category alone scores 0.5 with zero
 //      shared words; every judged wrong join had keyword overlap <= 0.10, every right one >= 0.14.
-// Otherwise it starts a new thread.
+// Otherwise it starts a new thread. Titles compare normalised (case, whitespace, punctuation), so
+// "Former German spy chief…" and "Former German Spy Chief…" are one story.
 
 const crypto = require('crypto');
 
@@ -65,17 +67,26 @@ function joinScore(topic, pastEntry) {
   return { score: (0.5 * kwScore) + (0.3 * regionScore) + (0.2 * categoryScore), kwScore };
 }
 
+function normalizeTitle(title) {
+  return String(title || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+
 const passesJoin = ({ score, kwScore }) => score >= JOIN_MIN_SCORE && kwScore >= JOIN_MIN_KW;
 
-const continuesEntry = (topic, entry) => Boolean(topic.continues_topic) && entry.title === topic.continues_topic;
+const continuesEntry = (topic, entry) => Boolean(normalizeTitle(topic.continues_topic)) && normalizeTitle(entry.title) === normalizeTitle(topic.continues_topic);
+const sameTitle = (topic, entry) => Boolean(normalizeTitle(topic.title)) && normalizeTitle(entry.title) === normalizeTitle(topic.title);
 
 // The thread a topic joins among past archive entries:
-// { threadId (null = start a new thread), via: 'continues_topic'|'score'|'new', score, kwScore, matched }.
+// { threadId (null = start a new thread), via: 'continues_topic'|'title'|'score'|'new', score, kwScore, matched }.
+// pastEntries come newest first, so a title match takes the most recent entry.
 // score/kwScore are the best composite seen (for the log), or the joined entry's when it joined.
 function matchThread(topic, pastEntries = []) {
   const withThread = pastEntries.filter(e => e && e.threadId);
   const cont = withThread.find(e => continuesEntry(topic, e));
   if (cont) return { threadId: cont.threadId, via: 'continues_topic', ...joinScore(topic, cont), matched: cont };
+  const same = withThread.find(e => sameTitle(topic, e));
+  if (same) return { threadId: same.threadId, via: 'title', ...joinScore(topic, same), matched: same };
 
   let best = null;
   let bestAny = { score: 0, kwScore: 0 };
@@ -90,10 +101,10 @@ function matchThread(topic, pastEntries = []) {
 
 // Past entries on the same story as the topic, by the same rule (the forecast's arc digest).
 function relatedEntries(topic, pastEntries = []) {
-  return pastEntries.filter(e => continuesEntry(topic, e) || passesJoin(joinScore(topic, e)));
+  return pastEntries.filter(e => continuesEntry(topic, e) || sameTitle(topic, e) || passesJoin(joinScore(topic, e)));
 }
 
 module.exports = {
   JOIN_MIN_SCORE, JOIN_MIN_KW,
-  slugify, generateThreadId, topicSignature, jaccard, joinScore, passesJoin, matchThread, relatedEntries,
+  slugify, generateThreadId, normalizeTitle, topicSignature, jaccard, joinScore, passesJoin, matchThread, relatedEntries,
 };

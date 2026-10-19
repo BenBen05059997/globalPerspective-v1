@@ -5,7 +5,7 @@ const { chat, stripCodeFence } = require('./_shared/llm');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const refreshPolicy = require('./refreshPolicy');
-const ISO3_NAMES = require('./iso3Names.json');
+const ISO3_NAMES = require('./_shared/iso3Names.json');
 const { normalizeDimensions, deriveRisk, clampScore, tierFromScore } = require('./_shared/riskDimensions');
 
 let EDITORIAL_FACTS = {};

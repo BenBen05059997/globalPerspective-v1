@@ -164,7 +164,7 @@ const placeCore = (src) => { const a = src.indexOf("// Names in briefings come f
 function checkPlaceRule() {
   const base = 'amplify/backend/function/newsCountryIntelligence/src';
   for (const f of ['placeNames.json', 'iso3Names.json']) {
-    const r = checkAllIdentical([abs(`${base}/${f}`), abs(`${SHARED}/${f}`), ...PLACE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/${f}`)), abs(`${FE_DATA}/${f}`)]);
+    const r = checkAllIdentical([abs(`${SHARED}/${f}`), ...PLACE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/${f}`)), abs(`${FE_DATA}/${f}`)]);
     if (!r.pass) return { pass: false, diff: `${f}: ${r.diff}` };
   }
   const pf = checkAllIdentical([abs(`${SHARED}/placeFilter.js`), ...PLACE_LAMBDAS.map((n) => abs(`amplify/backend/function/${n}/src/placeFilter.js`))]);
@@ -267,7 +267,7 @@ function livePairs() {
     {
       name: 'iso3Names.json',
       run: () => checkIso3Names(
-        abs('amplify/backend/function/newsCountryIntelligence/src/iso3Names.json'),
+        abs(`${SHARED}/iso3Names.json`),
         abs('global-perspectives-starter/frontend/src/features/map/lib/situationLabels.js'),
       ),
     },
@@ -383,7 +383,7 @@ async function selfTestCountryFacts() {
 async function selfTestIso3Names() {
   const dir = mkTmp();
   const b = path.join(dir, 'iso3Names.json');
-  const parsed = JSON.parse(fs.readFileSync(abs('amplify/backend/function/newsCountryIntelligence/src/iso3Names.json'), 'utf8'));
+  const parsed = JSON.parse(fs.readFileSync(abs(`${SHARED}/iso3Names.json`), 'utf8'));
   parsed.USA = `${parsed.USA}x`;
   fs.writeFileSync(b, JSON.stringify(parsed));
   const result = checkIso3Names(b, abs('global-perspectives-starter/frontend/src/features/map/lib/situationLabels.js'));

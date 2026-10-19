@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const P = require('../src/refreshPolicy');
-const ISO3 = require('../src/iso3Names.json');
+const ISO3 = require('../src/_shared/iso3Names.json');
 
 const NOW = new Date('2026-10-05T05:15:00Z');
 const H = 3600000;

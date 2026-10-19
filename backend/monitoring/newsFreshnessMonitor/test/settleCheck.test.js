@@ -47,5 +47,7 @@ test('the message names what is wrong, the board counts and what to do; no secre
   assert.match(m.body, /the oldest has waited 14 days/);
   assert.match(m.body, /3 sampled, 1 resolved, 1 void, 1 awaiting, 0 past deadline/);
   assert.match(m.body, /settle-review\.js/);
+  assert.match(m.body, /Public page: https:\/\/globalperspective\.net\/track-record\n/);
+  assert.match(buildMessage(ev, q, { siteUrl: 'https://staging.example', nowIso: NOW }).body, /Public page: https:\/\/staging\.example\/track-record\n/);
   assert.ok(m.subject.length <= 100);
 });

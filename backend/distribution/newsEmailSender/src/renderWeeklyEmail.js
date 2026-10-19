@@ -5,7 +5,7 @@
 // risk/development kind marked) + a "what to watch" list. No new facts minted —
 // this only formats fields the generator already wrote.
 
-const { SITE_URL, briefingHref, absoluteUrl } = require('./_shared/links');
+const { briefingHref, absoluteUrl } = require('./_shared/links');
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -37,8 +37,7 @@ function renderWeeklyEmail(brief, { siteUrl, unsubUrl } = {}) {
   const watch = Array.isArray(brief.watch) ? brief.watch : [];
   const threats = signals.filter((s) => s.kind !== 'development');
   const highRisk = threats.filter((s) => s.riskLevel === 'high').length;
-  const site = siteUrl || SITE_URL;
-  const briefUrl = absoluteUrl(briefingHref({ mode: 'weekly', week: brief.weekOf }), site);
+  const briefUrl = absoluteUrl(briefingHref({ mode: 'weekly', week: brief.weekOf }), siteUrl);
 
   const subject = `Weekly Signals Brief — week of ${weekLabel}`;
 

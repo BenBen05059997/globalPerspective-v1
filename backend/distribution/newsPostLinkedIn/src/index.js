@@ -1,6 +1,7 @@
 'use strict';
 
 const { generateTopicMapImage } = require('./mapImageGenerator');
+const { storyHref, absoluteUrl } = require('./_shared/links');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
   DynamoDBDocumentClient,
@@ -286,6 +287,7 @@ async function loadLatestTopics() {
     regions: Array.isArray(t.regions) ? t.regions : [],
     significance: t.significance || 'medium',
     sources: t.sources || [],
+    threadId: t.threadId || null,
   }));
 }
 
@@ -471,8 +473,8 @@ function formatLinkedInPost(topic, summary, prediction) {
 
   const header = `[${category}] ${topic.title}\n\n`;
 
-  // Deep-link to the specific story's thread page (not the homepage). SITE_URL ends in '/'.
-  const link = topic.threadId ? `${SITE_URL}weekly/thread/${topic.threadId}` : SITE_URL;
+  // Deep-link to the specific story's page (not the homepage).
+  const link = topic.threadId ? absoluteUrl(storyHref(topic.threadId), SITE_URL) : SITE_URL;
   const footer = `\nRead full analysis: ${link}\n\n` +
     buildHashtags(topic);
 

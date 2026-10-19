@@ -22,6 +22,7 @@ const path = require('path');
 const SRC = path.join(__dirname, '..', '..', 'newsBreakingAlert', 'src');
 const { renderAlert } = require(path.join(SRC, 'render.js'));
 const { sendEmail } = require(path.join(SRC, 'sendEmail.js'));
+const { storyHref, absoluteUrl } = require(path.join(__dirname, '..', '..', '..', 'shared', 'src', 'links.js'));
 
 const to = process.argv[2] || 'benlai310@gmail.com';
 const from = process.argv[3] || 'onboarding@resend.dev';
@@ -30,7 +31,7 @@ const sample = renderAlert({
   title: 'Strait of Hormuz partial closure threatens 20% of global oil flow',
   category: 'conflict',
   regions: ['Iran', 'United States', 'Saudi Arabia'],
-  threadUrl: 'https://globalperspective.net/weekly/thread/thread-hormuz-7f3a',
+  threadUrl: absoluteUrl(storyHref('thread-hormuz-7f3a')),
   summary:
     '- Iran announced it will restrict tanker transit through the strait in response to new sanctions.\n' +
     '- Brent crude opened up sharply; insurers began pricing war-risk premiums.\n' +

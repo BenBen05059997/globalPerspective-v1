@@ -135,4 +135,10 @@ t('summarize: no aliases field when there are none', () => {
   assert.ok(!('aliases' in summarize({ situationId: 'gdacs#FL#1', aliases: [] })));
 });
 
+t('situationHref: the story page when there is a thread, else the map focused on the situation', () => {
+  const { situationHref } = _internal;
+  assert.strictEqual(situationHref({ id: 'news#UKR#t-1', threadId: 't-1' }), '/weekly/thread/t-1');
+  assert.strictEqual(situationHref({ id: 'gdacs#FL#1', threadId: null }), '/?focus=gdacs%23FL%231');
+});
+
 console.log(`\n${pass} tests passed`);

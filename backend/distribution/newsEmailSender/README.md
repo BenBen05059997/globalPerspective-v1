@@ -14,7 +14,7 @@ country). Sends via Resend with a List-Unsubscribe link served by newsRecommend.
 - DynamoDB `USER_PREFS_TABLE` (default `GlobalPerspectiveUserPrefs`): scan opt-in flags, `email`, `unsubToken`, `followedCountries`.
 - DynamoDB `SUMMARIZE_PREDICT_TABLE` (default `SummarizeAndPredict`): scan `SK = WEEKLY_BRIEF`; `COUNTRY#`/`DRIFT#` notes (sets `emailedAt`); weekly marker `EMAILLOG#weekly#<weekOf>`/`EMAIL_LOG`.
 - DynamoDB `BREAKING_ALERTS_TABLE` (default `GlobalPerspectiveBreakingAlerts`): confirmed, not-yet-emailed rows newer than `BREAKING_FRESH_HOURS` (48); sets `emailedAt`.
-- External: Resend `api.resend.com` (`RESEND_API_KEY`, `EMAIL_FROM`); links use `SITE_URL`, `UNSUB_BASE_URL` (newsRecommend Function URL).
+- External: Resend `api.resend.com` (`RESEND_API_KEY`, `EMAIL_FROM`); site links come from `src/_shared/links.js` (weekly brief: `briefingHref`; drift: `countryHref`, no link when the name is not a country), env `SITE_URL` only overrides the origin; `UNSUB_BASE_URL` (newsRecommend Function URL).
 
 ## Gotchas
 - `EMAIL_SEND_DRY_RUN` defaults ON: anything other than `false` logs recipients and sends nothing.

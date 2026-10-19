@@ -17,13 +17,14 @@ const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } = requir
 const { scoreStory, effectiveThreshold, SIGNIFICANCE_THRESHOLD, regionRiskScore } = require('./significance');
 const { renderAlert } = require('./render');
 const { usableCountryRecord } = require('./_shared/placeFilter');
+const { storyHref, absoluteUrl } = require('./_shared/links');
 const { sendEmail } = require('./sendEmail');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 const SUMM_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const ALERTS_TABLE = process.env.BREAKING_ALERTS_TABLE || 'GlobalPerspectiveBreakingAlerts';
-const SITE_URL = (process.env.SITE_URL || 'https://globalperspective.net').replace(/\/$/, '');
+const SITE_URL = process.env.SITE_URL; // optional origin override; links.js holds the default
 
 const DRY_RUN = process.env.DRY_RUN !== 'false'; // default ON — never sends until explicitly disabled
 // Auto-send target. Audience of one for now ("send me first so I can eyeball"): each new
@@ -189,7 +190,7 @@ async function assembleStory(group, scored) {
     leadTopicId: leadId,
     threadId: realThreadId,
     hasArc,
-    threadUrl: hasArc ? `${SITE_URL}/weekly/thread/${realThreadId}` : null,
+    threadUrl: hasArc ? absoluteUrl(storyHref(realThreadId), SITE_URL) : null,
     summary: summaryText,
     prediction: predictionText,
     traceCause,

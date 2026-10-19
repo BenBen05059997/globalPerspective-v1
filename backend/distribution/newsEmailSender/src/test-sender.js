@@ -244,6 +244,7 @@ function loadSender(env) {
   check('Level B html shows RISKLEVEL headline', /HIGH/.test(out.html));
   check('Level B text shows axis scores too', /Conflict 65/.test(out.text) && /Humanitarian 82/.test(out.text));
   check('Level B text shows breadth flag', /3\/4 elevated/.test(out.text));
+  check('country link uses the canonical name', out.text.includes('https://globalperspective.net/weekly/country/DR%20Congo') && out.html.includes('/weekly/country/DR%20Congo'));
 
   // Level A — changeDimensions present but NO currentDimensions (older note, post-corrector-
   // upgrade but pre-Level-B-deploy shape) → per-axis pills, not the current-standing scorecard.
@@ -257,6 +258,7 @@ function loadSender(env) {
   };
   out = renderDriftEmail('Test Country A', [levelANote], { siteUrl: 'https://globalperspective.net' });
   check('Level A html shows a per-axis pill', /55→70/.test(out.html));
+  check('not a country -> no country link', !/weekly\/country/.test(out.html) && !/full living analysis/.test(out.text));
   check('Level A html does NOT show the old scalar phrasing', !/risk \d+ → \d+/.test(out.html));
 
   // Fallback — only changeScore (pre-v2 note, no dimensions at all) → unchanged scalar behavior.

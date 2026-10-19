@@ -15,6 +15,7 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, QueryCommand, UpdateCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { buildInterestProfile, isColdStart, rankRecommendations } = require('./scoring');
+const { storyHref, mapHref, absoluteUrl } = require('./_shared/links');
 
 const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-northeast-1';
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
@@ -22,7 +23,7 @@ const SAVED_ITEMS_TABLE = process.env.SAVED_ITEMS_TABLE;
 const USER_PREFS_TABLE = process.env.USER_PREFS_TABLE;
 const BREAKING_ALERTS_TABLE = process.env.BREAKING_ALERTS_TABLE || 'GlobalPerspectiveBreakingAlerts';
 const USERS_DDB_TABLE = process.env.USERS_DDB_TABLE || 'GlobalPerspectiveUserTable';
-const SITE_URL = (process.env.SITE_URL || 'https://globalperspective.net').replace(/\/$/, '');
+const SITE_URL = process.env.SITE_URL; // optional origin override; _shared/links.js holds the default
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 
 const DEFAULT_LIMIT = 8;
@@ -252,6 +253,11 @@ async function followCountry(uid, email, country, follow) {
   return getPrefs(uid);
 }
 
+// An alert's story page, only when it has a real thread with an arc (else the page is a thin shell).
+function alertStoryUrl(it) {
+  return it.hasArc && it.threadId ? absoluteUrl(storyHref(it.threadId), SITE_URL) : null;
+}
+
 // ── In-app notification feed (the bell) ────────────────────────────────────────
 // PUBLIC, no auth — the breaking-alert feed is a broadcast (the same global, already-
 // public stories for everyone). Returns confirmed/sent alerts, newest first. Read-state
@@ -271,8 +277,9 @@ async function listAlerts() {
         id: it.alertKey,
         threadId: it.alertKey, // legacy name (bell) — kept for back-compat
         title: it.title || 'Breaking story',
-        // The in-app home for a breaking alert is its own page, not the thread arc.
-        url: `${SITE_URL}/breaking/${encodeURIComponent(it.alertKey)}`,
+        // Where an alert lives now: its story when it has one, else the map (the retired /breaking/:id
+        // redirect sends readers to the same two places).
+        url: alertStoryUrl(it) || absoluteUrl(mapHref(), SITE_URL),
         category: it.category || null,
         regions: Array.isArray(it.regions) ? it.regions : [],
         reasons: Array.isArray(it.reasons) ? it.reasons : [],
@@ -313,9 +320,7 @@ async function getAlert(alertKey) {
       editorNote: it.editorNote || null,
       hasArc: !!it.hasArc,
       threadId: it.threadId || null,
-      threadUrl: it.hasArc && it.threadId
-        ? `${SITE_URL}/weekly/thread/${encodeURIComponent(it.threadId)}`
-        : null,
+      threadUrl: alertStoryUrl(it),
       outletCount: Number(it.outletCount) || 0,
       sourceCount: Number(it.sourceCount) || 0,
       story: it.story || null,        // { summary, prediction, traceCause, economic, sources }
@@ -341,7 +346,7 @@ function htmlPage(title, msg) {
       + `<body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:520px;margin:12vh auto;padding:0 24px;color:#1a1a1a;text-align:center;">`
       + `<h1 style="font:600 22px/1.3 Georgia,serif;">${title}</h1>`
       + `<p style="color:#555;line-height:1.6;">${msg}</p>`
-      + `<p><a href="https://globalperspective.net" style="color:#3b82f6;text-decoration:none;">← Global Perspectives</a></p></body></html>`,
+      + `<p><a href="${absoluteUrl(mapHref(), SITE_URL)}" style="color:#3b82f6;text-decoration:none;">← Global Perspectives</a></p></body></html>`,
   };
 }
 

@@ -16,7 +16,7 @@ process.env.BLUESKY_APP_PASSWORD = 'pw';
 process.env.MAX_POSTS_PER_RUN = '2';
 
 const TOPICS = [
-  { id: 't1', title: 'Parliament passes the budget', significance: 'high', regions: ['France'] },
+  { id: 't1', title: 'Parliament passes the budget', significance: 'high', regions: ['France'], threadId: 'thread-budget 1' },
   { id: 't2', title: 'Central bank cuts rates', significance: 'medium', regions: ['Japan'] },
 ];
 
@@ -99,4 +99,17 @@ test('partial success on a platform is a normal return', async () => {
   assert.strictEqual(res.statusCode, 200);
   const li = JSON.parse(res.body).platforms.LINKEDIN;
   assert.deepStrictEqual([li.posted, li.attempted], [1, 2]);
+});
+
+test('a LinkedIn post links its story page when the topic has a thread, else the site', async () => {
+  stubFetch({ linkedin: 'ok', bluesky: 'ok' });
+  const sent = [];
+  const ok = global.fetch;
+  global.fetch = async (url, opts) => {
+    if (url.includes('api.linkedin.com/rest/posts')) sent.push(JSON.parse(opts.body).commentary);
+    return ok(url, opts);
+  };
+  await handler({});
+  assert.ok(sent.some((c) => c.includes('Read full analysis: https://globalperspective.net/weekly/thread/thread-budget%201')));
+  assert.ok(sent.some((c) => c.includes('Read full analysis: https://globalperspective.net/\n')));
 });

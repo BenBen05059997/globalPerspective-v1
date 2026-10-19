@@ -20,6 +20,7 @@ PARKED (decision 0032): the key-gated Signal API; no key issued, no page reads i
 - Code emits no `Access-Control-Allow-Origin`; any browser CORS would come from the Function-URL config.
 - Rate limiter fails open if the DynamoDB update errors.
 - Country records that are regions or older than 30 days are skipped (`usableCountryRecord`, `src/_shared/placeFilter.js`).
+- The forecast track record URL comes from `links.js` (`forecastHref`); env `SITE_URL` only overrides the origin.
 - `placeFilter` and its name tables come from `backend/shared/src` through the `src/_shared` symlink; `scripts/lambda.sh` zips them as real files. Shared-module tests live in `backend/shared/test`.
 
 ## Tests

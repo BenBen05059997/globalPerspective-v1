@@ -10,7 +10,7 @@ Dead-man's switch for content freshness. It calls the public proxy `?action=topi
 ## Reads / writes
 - HTTP: `PROXY_URL` with `action=topics` and `action=prediction_track_record` (no direct table access).
 - SNS: publishes to `SNS_TOPIC_ARN`.
-- Env: `PROXY_URL`, `SNS_TOPIC_ARN`, `STALE_HOURS`, `SITE_URL`.
+- Env: `PROXY_URL`, `SNS_TOPIC_ARN`, `STALE_HOURS`, `SITE_URL` (origin override; the settle alert's track record link comes from `src/_shared/links.js`, a symlink to `backend/shared/src` that `scripts/lambda.sh` zips as real files).
 
 ## Gotchas
 - The settle alert is sent only on the 12:30 UTC run (at most once a day). It runs first, in its own try/catch, and never blocks the freshness check.
@@ -19,6 +19,6 @@ Dead-man's switch for content freshness. It calls the public proxy `?action=topi
 - Not a Function URL; the code emits no CORS headers.
 
 ## Tests
-- `cd backend/monitoring/newsFreshnessMonitor/src && npm test` (node --test ../test/*.test.js). Passed 5/5 on 2026-10-19.
+- `cd backend/monitoring/newsFreshnessMonitor/src && npm test` (node --test ../test/*.test.js). Passed 5/5 on 2026-10-19 (after the links switch).
 
 Last verified: 2026-10-19

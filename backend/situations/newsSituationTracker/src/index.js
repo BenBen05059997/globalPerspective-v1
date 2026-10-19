@@ -14,6 +14,7 @@
 // under world/shadow/ and shadow/situations/ and never consumes the inbox.
 
 const core = require('./_shared/situations-core');
+const { storyHref, mapHref } = require('./_shared/links');
 const { buildSituation, coolSituation, buildStorySituation, newsSituationId, mergeStories, LEVEL_TIER } = core;
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
@@ -140,7 +141,7 @@ function summarize(state) {
 }
 
 function situationHref(s) {
-  return s.threadId ? `/weekly/thread/${encodeURIComponent(s.threadId)}` : `/map?focus=${encodeURIComponent(s.id)}`;
+  return s.threadId ? storyHref(s.threadId) : mapHref({ situation: s.id });
 }
 
 function rankKey(s) {

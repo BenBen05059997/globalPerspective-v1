@@ -90,24 +90,6 @@ export const riskTierToVar = (tier) => (tier ? TIER_VAR[tier] : 'var(--text-head
 
 // ── Category ────────────────────────────────────────────────────────────────
 
-// DEPRECATED (2026-10-19): a leftover light-theme pastel palette — a second palette on the dark frame.
-// Callers (wave 2 replaces each with <CategoryTag category={...} />, then deletes this export):
-// briefings/components/BriefingSlides.jsx, threads/ThreadPage.jsx, threads/components/PhoneStoryMode.jsx,
-// threads/components/StoryMode.jsx, threads/components/StoryEntryCard.jsx.
-export const CATEGORY_BADGE_COLORS = {
-  conflict:   { bg: '#fee2e2', color: '#b91c1c' },
-  military:   { bg: '#fee2e2', color: '#b91c1c' },
-  disaster:   { bg: '#ffedd5', color: '#c2410c' },
-  politics:   { bg: '#dbeafe', color: '#1d4ed8' },
-  economy:    { bg: '#d1fae5', color: '#065f46' },
-  technology: { bg: '#ede9fe', color: '#5b21b6' },
-  health:     { bg: '#ccfbf1', color: '#0f766e' },
-  climate:    { bg: '#d1fae5', color: '#047857' },
-  science:    { bg: '#fae8ff', color: '#86198f' },
-  business:   { bg: '#e0f2fe', color: '#0369a1' },
-  society:    { bg: '#fef3c7', color: '#92400e' },
-  energy:     { bg: '#fefce8', color: '#713f12' },
-};
 
 // Topic dots use the crisis hue only (shared/lib/crisisHue.js crisisDotVar); the old 12-colour
 // CATEGORY_DOT palette was retired 2026-10-02 (P7a).

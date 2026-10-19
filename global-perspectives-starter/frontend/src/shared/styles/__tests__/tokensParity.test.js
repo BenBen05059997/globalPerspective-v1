@@ -25,10 +25,10 @@ describe('tokens.js == tokens.css :root', () => {
     for (const t of ['low', 'moderate', 'elevated', 'high']) expect(RISK_SOLID[t]).toBe(TOKENS[`tier-${t}`]);
   });
 
-  it('the old light names and the --c-* names are aliases (var()), not second palettes', () => {
+  it('every remaining alias is a var() of a role token, never a second palette', () => {
     const aliasBody = css.slice(css.indexOf('/* ═════════ ALIASES'), css.indexOf('scrollbar-color'));
-    for (const n of ['paper', 'paper-2', 'card', 'ink', 'ink-mid', 'ink-dim', 'line', 'accent-deep', 'risk-h', 'c-bg', 'c-accent', 'c-text-dim', 'c-hue-conflict']) {
-      expect(aliasBody, `--${n}`).toMatch(new RegExp(`^\\s*--${n}:\\s*var\\(--`, 'm'));
-    }
+    const defs = [...aliasBody.matchAll(/^\s*--([a-z0-9-]+):\s*([^;]+);/gm)];
+    expect(defs.length).toBeGreaterThan(0);
+    for (const [, n, v] of defs) expect(v.trim(), `--${n}`).toMatch(/^var\(--/);
   });
 });

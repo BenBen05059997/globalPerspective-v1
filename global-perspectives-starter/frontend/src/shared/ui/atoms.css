@@ -199,8 +199,7 @@
 }
 .da-sm { font-size: 11px; }
 .da-md { font-size: 14px; }
-.da-up    { color: var(--tier-high); }
-.da-down  { color: var(--tier-low); }
+.da-up, .da-down { color: inherit; } /* direction = glyph + label, never a tier colour (DS1) */
 .da-mixed { color: var(--text-body); }
 .da-flat  { color: var(--text-dim); }
 

@@ -30,12 +30,6 @@ describe('tokens.css — one :root palette (console values are the defaults)', (
     expect(rootBlock).toMatch(/--tap-min:\s*44px/);
   });
 
-  it('keeps the old --c-* names as aliases of the role tokens', () => {
-    expect(rootBlock).toMatch(/--c-bg:\s*var\(--bg\)/);
-    expect(rootBlock).toMatch(/--c-accent:\s*var\(--accent\)/);
-    expect(rootBlock).toMatch(/--c-tap-min:\s*var\(--tap-min\)/);
-  });
-
   it('has a reduced-motion rule on :root that collapses the motion durations', () => {
     const mqStart = css.indexOf('@media (prefers-reduced-motion: reduce)');
     expect(mqStart).toBeGreaterThan(-1);

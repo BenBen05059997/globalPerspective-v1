@@ -19,7 +19,8 @@
   content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 2px;
   background: var(--row-hue, var(--text-dim));
 }
-.gp-row__link:hover, .gp-row--active .gp-row__link { background: var(--panel); }
+.gp-row__link:hover { background: var(--panel); }
+.gp-row--active .gp-row__link { outline: 1px solid var(--accent); outline-offset: -1px; } /* the one selected style */
 .gp-row__link:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 .gp-row .gp-tier, .gp-row .gp-row__chip { margin-top: 1px; }
 .gp-row__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }

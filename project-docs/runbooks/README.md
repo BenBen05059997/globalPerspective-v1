@@ -14,7 +14,7 @@ One runbook per scheduled job or alert: Trigger / What it means / Check / Fix / 
 [situation-ingest](situation-ingest.md) hourly (LLM) · [situation-tracker](situation-tracker.md) 30 min · [gdacs-ingest](gdacs-ingest.md) 20 min · [gdelt-conflict](gdelt-conflict.md) 6 h · [predictions-snapshot](predictions-snapshot.md) 30 min · [signals-build](signals-build.md) 10:00 · [markets-data](markets-data.md) hourly · [country-facts](country-facts.md) Mon 05:00 JST · [social-posts](social-posts.md) every 3 h JST
 
 ## Monitors and alerts
-[freshness-monitor](freshness-monitor.md) · [error-digest](error-digest.md) · [model-guard](model-guard.md) · [alarms](alarms.md) · [parked-jobs](parked-jobs.md)
+[freshness-monitor](freshness-monitor.md) · [error-digest](error-digest.md) · [model-guard](model-guard.md) · [alarms](alarms.md) · [parked-jobs](parked-jobs.md) · [drift-email](drift-email.md) (activation, waits for the first follower)
 
 ## Procedures
 [DEPLOYMENT_NOTES](DEPLOYMENT_NOTES.md) (frontend release) · [DOMAIN_SETUP](DOMAIN_SETUP.md) · [BUG_PLAYBOOK](BUG_PLAYBOOK.md) · [AGENT_REVIEW_METHOD](AGENT_REVIEW_METHOD.md) · [ANALYTICS_GUIDE](ANALYTICS_GUIDE.md) · [DEEPSEEK_COST_ESTIMATE](DEEPSEEK_COST_ESTIMATE.md)

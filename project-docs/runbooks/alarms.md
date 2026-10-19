@@ -2,7 +2,7 @@
 
 Last verified: 2026-10-19 (`aws cloudwatch describe-alarms` and `aws sns list-topics` / `list-subscriptions-by-topic`, read-only). The `PPA*` / `ppa-*` alarms in the same account belong to another project and are not covered here.
 
-Two SNS topics are in use, with near-identical names: `GlobalPerspectivesAlerts` (1 https subscription) and `GlobalPerspectiveAlerts` (2 email subscriptions). The alarm list below says which one each alarm notifies. The monitor Lambdas (freshness, error digest, model guard, source audit) publish to `GlobalPerspectiveAlerts`.
+Two SNS topics are in use, with near-identical names: `GlobalPerspectivesAlerts` (1 https subscription to AWS Chatbot + 1 email) and `GlobalPerspectiveAlerts` (1 email). The alarm list below says which one each alarm notifies. The monitor Lambdas (freshness, error digest, model guard, source audit) publish to `GlobalPerspectiveAlerts`.
 
 ## Trigger
 | Alarm | Fires when | Topic |

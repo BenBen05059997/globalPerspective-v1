@@ -7,7 +7,7 @@ EventBridge Scheduler `InvokeNewsAgent`, `cron(25 4/8 * * ? *)` UTC (04:25, 12:2
 Repo source: `amplify/backend/function/NewsProjectInvokeAgentLambda/src/`.
 
 ## What it means
-Reads `staging`, writes SUMMARY / TRACE_CAUSE / PREDICTION per topic (`SUMMARIZE_PREDICT_TABLE`, `TOPIC#<id>`), logs forecasts to `PREDICTION_LOG_TABLE`, swaps `staging` → `latest`, writes `today-archive` and `archive#<date>`, and writes S3 `threads/story-map.json`. Calls the LLM (`GROK_MODEL`, `PREDICTION_MODEL`) and Brave.
+Reads `staging`, writes SUMMARY / TRACE_CAUSE / PREDICTION per topic (`SUMMARIZE_PREDICT_TABLE`, `TOPIC#<id>`), logs forecasts to `PREDICTION_LOG_TABLE`, swaps `staging` → `latest`, writes `today-archive` and `archive#<date>`, and writes S3 `threads/story-map.json`. Calls the LLM (`GROK_MODEL`, `PREDICTION_MODEL`); the optional Brave grounding needs `BRAVE_SEARCH_API_KEY`, which is not set live (2026-10-19).
 
 ## Check
 - Schedule state: `aws scheduler get-schedule --name InvokeNewsAgent --region ap-northeast-1`
@@ -21,4 +21,4 @@ A run guard skips a `staging` generation already processed (`Skipping run: stagi
 
 ## Escalate
 - Alarm/alert: `lambda-errors-NewsProjectInvokeAgentLambda-dev` (Errors ≥ 1 in 5 min → SNS `GlobalPerspectivesAlerts`).
-- LLM errors (`Grok API error:`, `OpenAI error:`, `DeepSeek <status>:`, `llm <status>:`) with HTTP 402 mean the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).
+- LLM errors: `OpenAI error: <message>` (this Lambda has its own client, not `backend/shared/src/llm.js`). Status 402 / `Insufficient Balance` means the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).

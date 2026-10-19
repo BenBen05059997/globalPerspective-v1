@@ -13,7 +13,7 @@ These EventBridge rules exist but are `DISABLED`:
 | `TriggerImpactAudit` | `cron(0 9 * * ? *)` | `newsImpactAudit` | parked 2026-09-28 (decisions/0015) |
 | `TriggerPairIntelligenceWeekly` | `cron(0 8 ? * MON *)` | `newsPairIntelligence`, input `{}` | pair intelligence has no consumer (decisions/0007) |
 | `TriggerBreakingEmailSend` | `rate(15 minutes)` | `newsEmailSender`, input `{"mode":"breaking"}` | subscriber breaking emails are off |
-| `TriggerDriftEmailSend` | `cron(40 7 * * ? *)` | `newsEmailSender`, input `{"mode":"drift_alert"}` | drift emails wait for the first follower (`plans/DRIFT_EMAIL_ACTIVATION_PLAN.md`) |
+| `TriggerDriftEmailSend` | `cron(40 7 * * ? *)` | `newsEmailSender`, input `{"mode":"drift_alert"}` | drift emails wait for the first follower ([drift-email](drift-email.md)) |
 
 ## What it means
 Nothing runs; the code stays in the repo. A disabled rule is the intended state, not a fault.

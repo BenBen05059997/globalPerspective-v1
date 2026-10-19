@@ -21,4 +21,4 @@ All writes are conditional (never overwrite) and drafts newer than 5 days are sk
 
 ## Escalate
 - Alarm/alert: The freshness monitor sends `[GP] Prediction settling overdue` (12 UTC run) when a draw or commit is missed, the tick is stale, or due questions are unsettled for 10+ days.
-- LLM errors (`Grok API error:`, `OpenAI error:`, `DeepSeek <status>:`, `llm <status>:`) with HTTP 402 mean the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).
+- LLM errors: `LLM <status>:` (deployed and repo); the drafter turns one into a `needs_human` draft with the note `llm error: …`. Status 402 / `Insufficient Balance` means the DeepSeek balance ran out: topping up is the operator's call (decisions/0014). Code or env changes: operator-asked work only (CLAUDE.md, Authorization).

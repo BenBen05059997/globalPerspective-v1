@@ -11,9 +11,10 @@ Emails the newest published weekly brief to `digestOptIn` subscribers via Resend
 
 ## Check
 - Schedule state: `aws events describe-rule --name TriggerWeeklyEmailSend --region ap-northeast-1`
-- Last runs: `aws logs tail /aws/lambda/newsEmailSender --since 1d --region ap-northeast-1`
-- Success line: `aws logs tail /aws/lambda/newsEmailSender --since 2d --region ap-northeast-1 --filter-pattern '"[email:weekly] week"'`
-- Known failures: `[email:weekly] no published brief; nothing to send`, `[email] send failed`, `Resend send failed` — `aws logs tail /aws/lambda/newsEmailSender --since 2d --region ap-northeast-1 --filter-pattern '"[email:weekly] no published brief; nothing to send"'`
+- No logs: the log group `/aws/lambda/newsEmailSender` does not exist (its role cannot write logs; adding that is an IAM change, operator's fresh yes), so `aws logs tail` fails with `ResourceNotFoundException`.
+- Was it sent: the marker row for the brief's week (`weekOf` = the brief's Sunday): `aws dynamodb get-item --table-name SummarizeAndPredict --region ap-northeast-1 --key '{"PK":{"S":"EMAILLOG#weekly#YYYY-MM-DD"},"SK":{"S":"EMAIL_LOG"}}'` → `recipients`, `sentAt`. No row after Sunday 14:00 UTC = not sent.
+- Did it run: `aws cloudwatch get-metric-statistics --namespace AWS/Lambda --metric-name Invocations --dimensions Name=FunctionName,Value=newsEmailSender --start-time $(date -u -v-8d +%FT%TZ) --end-time $(date -u +%FT%TZ) --period 86400 --statistics Sum --region ap-northeast-1`
+- Code paths that would log, if logs existed: `[email:weekly] no published brief; nothing to send`, `[email] send failed`, `Resend send failed`.
 - Errors per hour: `aws cloudwatch get-metric-statistics --namespace AWS/Lambda --metric-name Errors --dimensions Name=FunctionName,Value=newsEmailSender --start-time $(date -u -v-1d +%FT%TZ) --end-time $(date -u +%FT%TZ) --period 3600 --statistics Sum --region ap-northeast-1`
 
 ## Fix

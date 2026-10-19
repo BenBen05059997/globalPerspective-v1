@@ -2,6 +2,8 @@
 
 const crypto = require('crypto');
 const lib = require('./lib');
+const threading = require('./threading');
+const { slugify } = threading;
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
   DynamoDBDocumentClient,
@@ -920,13 +922,10 @@ function buildPremiseBlock(topic, factsByCountry = {}) {
 
 // A compact dated digest of how THIS story has evolved, from our own archive — so the forecast
 // builds on the arc, not just today's 48h snapshot. Matches past entries to the topic by the
-// same continues_topic + Jaccard logic used for threading (threadId isn't assigned until after
-// generation, so we can't key on it here). Returns "" when there's no real prior coverage.
+// same join rule as threading (threading.relatedEntries). Returns "" when there's no real prior coverage.
 function buildArcDigest(topic, pastEntries = []) {
   if (!pastEntries.length) return '';
-  const related = pastEntries.filter(e =>
-    (topic.continues_topic && e.title === topic.continues_topic) || computeJaccardScore(topic, e) >= 0.4,
-  );
+  const related = threading.relatedEntries(topic, pastEntries);
   const seen = new Set();
   const rows = [];
   for (const e of related) {
@@ -1110,7 +1109,7 @@ async function fetchAiContent(topicId) {
 function buildArchiveEntry(topic, ai, generationId, sourceCap, threadId) {
   return {
     topicId: topic.id,
-    threadId: threadId || generateThreadId(topic),
+    threadId: threadId || threading.generateThreadId(topic),
     title: topic.title,
     category: Array.isArray(topic.categories) ? topic.categories[0] || '' : '',
     regions: topic.regions || [],
@@ -1151,67 +1150,13 @@ function formatDateKey(date) {
 // NARRATIVE THREADING - threadId assignment
 // ============================================================
 
-const THREAD_STOP_WORDS = new Set([
-  'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or',
-  'is', 'are', 'was', 'were', 'as', 'by', 'its', 'be', 'with', 'from',
-]);
-
-function topicSignature(topic) {
-  const titleWords = String(topic.title || '')
-    .toLowerCase().split(/\W+/)
-    .filter(w => w.length > 2 && !THREAD_STOP_WORDS.has(w));
-  const keywords = (topic.search_keywords || []).map(k => String(k).toLowerCase());
-  return new Set([...titleWords, ...keywords]);
-}
-
-function jaccard(setA, setB) {
-  if (!setA.size || !setB.size) return 0;
-  let intersection = 0;
-  for (const item of setA) { if (setB.has(item)) intersection++; }
-  return intersection / (setA.size + setB.size - intersection);
-}
-
-function computeJaccardScore(topic, pastEntry) {
-  const keywordScore = jaccard(topicSignature(topic), topicSignature(pastEntry));
-  const regionsA = new Set((topic.regions || []).map(r => String(r).toLowerCase()));
-  const regionsB = new Set((pastEntry.regions || []).map(r => String(r).toLowerCase()));
-  const regionScore = jaccard(regionsA, regionsB);
-  const categoryScore = (topic.category || '') === (pastEntry.category || '') ? 1 : 0;
-  return (0.5 * keywordScore) + (0.3 * regionScore) + (0.2 * categoryScore);
-}
-
-function generateThreadId(topic) {
-  const slug = slugify(topic.title || 'topic', 'topic').slice(0, 30);
-  const hash = crypto.createHash('sha1').update(topic.title || '').digest('hex').slice(0, 6);
-  return `thread-${slug}-${hash}`;
-}
-
 function assignThreadId(topic, pastEntries) {
-  // 1. Grok detected a continuation — look up that topic's threadId
-  if (topic.continues_topic) {
-    const match = pastEntries.find(e => e.title === topic.continues_topic && e.threadId);
-    if (match) {
-      console.log(`Thread inherited via continues_topic: "${topic.title}" -> ${match.threadId}`);
-      return match.threadId;
-    }
-  }
-
-  // 2. Jaccard keyword similarity fallback
-  let bestScore = 0;
-  let bestEntry = null;
-  for (const entry of pastEntries) {
-    const score = computeJaccardScore(topic, entry);
-    if (score > bestScore) { bestScore = score; bestEntry = entry; }
-  }
-  if (bestScore >= 0.4 && bestEntry?.threadId) {
-    console.log(`Thread inherited via Jaccard (${bestScore.toFixed(2)}): "${topic.title}" -> ${bestEntry.threadId}`);
-    return bestEntry.threadId;
-  }
-
-  // 3. New thread
-  const newId = generateThreadId(topic);
-  console.log(`New thread created: "${topic.title}" -> ${newId}`);
-  return newId;
+  const m = threading.matchThread(topic, pastEntries);
+  if (m.via === 'continues_topic') console.log(`Thread inherited via continues_topic: "${topic.title}" -> ${m.threadId}`);
+  else if (m.via === 'score') console.log(`Thread inherited via Jaccard (${m.score.toFixed(2)}, kw ${m.kwScore.toFixed(2)}): "${topic.title}" -> ${m.threadId}`);
+  const threadId = m.threadId || threading.generateThreadId(topic);
+  if (m.via === 'new') console.log(`New thread created: "${topic.title}" -> ${threadId}`);
+  return threadId;
 }
 
 async function readPastArchiveEntries(days) {
@@ -1343,20 +1288,6 @@ async function buildAndWriteArchive(topics, generationId, threadIdByTopicArg = {
     console.error('Failed to write archive:', err);
     return false;
   }
-}
-
-function slugify(value, fallback = '') {
-  if (typeof value !== 'string') {
-    return fallback;
-  }
-  return value
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-')
-    .slice(0, 80) || fallback;
 }
 
 function normalizeList(input) {

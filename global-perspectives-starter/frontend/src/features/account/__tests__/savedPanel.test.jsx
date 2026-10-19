@@ -4,7 +4,7 @@
 // visible way back to "All" (a dead end).
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { SavedPanel } from '@/features/account/components/SavedPanel.jsx';
 
 const THREAD_ITEM = { itemType: 'thread', itemId: 't1', savedAt: '2026-09-20T00:00:00.000Z', metadata: { title: 'Thread one' } };

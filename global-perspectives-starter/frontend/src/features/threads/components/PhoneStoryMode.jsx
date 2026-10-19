@@ -1,17 +1,19 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
-import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
 import Button from '@/shared/ui/Button.jsx';
 import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
-import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
+import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import {
   buildChapters, buildDeadlines, buildSlides, viewFrom,
 } from '@/features/threads/lib/storyMode.js';
-import { BriefSlide, ChapterSlide, FedIntoSlide, WatchSlide, StoryMap } from '@/features/threads/components/StoryMode.jsx';
-import BottomSheet from '@/features/map/components/BottomSheet.jsx';
+import { BriefSlide, ChapterSlide, FedIntoSlide, WatchSlide } from '@/features/threads/components/StoryMode.jsx';
+import StoryMap from '@/shared/map/StoryMap.jsx';
+import BottomSheet from '@/shared/ui/BottomSheet.jsx';
+import '@/shared/ui/deck.css';
 import '@/features/threads/components/StoryMode.css';
 import '@/features/threads/components/PhoneStoryMode.css';
 

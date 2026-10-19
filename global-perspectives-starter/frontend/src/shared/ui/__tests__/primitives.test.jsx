@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import Button from '@/shared/ui/Button.jsx';
 import Tabs, { tabIds, tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import Card from '@/shared/ui/Card.jsx';

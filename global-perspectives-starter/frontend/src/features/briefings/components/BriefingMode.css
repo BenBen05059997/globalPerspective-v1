@@ -1,8 +1,8 @@
-/* BriefingMode — S3. Reuses StoryMode.css's .gp-console tokens and .sm-* slide/nav/stage/card
+/* BriefingMode — S3. Reuses the .gp-console tokens and shared/ui/deck.css's .sm-* slide/nav/stage/card
    classes (same map + horizontal slides pattern); this file only adds briefing-specific pieces:
    the DAILY/WEEKLY toggle, slide bodies, and the editions strip (replaces the story scrubber). */
 
-/* .sm-root (StoryMode.css) sets this same background/color/flex-column shell; BriefingMode uses
+/* .sm-root (shared/ui/deck.css) sets this same background/color/flex-column shell; BriefingMode uses
    its own root class (.bm-root) instead of .sm-root, so it needs the same base rule — the map +
    slide-card panels in normal view happen to cover the gap, but Read-as-text (which has no map/
    card, just this root's own background) exposed it as near-white text on the light page
@@ -79,7 +79,7 @@
 
 .bm-peekable { cursor: help; }
 
-/* The slide body reuses StoryMode.css's .sm-slidescroll/.sm-slidefade (scroll within a fixed-
+/* The slide body reuses deck.css's .sm-slidescroll/.sm-slidefade (scroll within a fixed-
    height card + a bottom fade). Its 30px fade was hard to read as "more below" once the editions
    strip's explain popover shrinks the available height (monitor review, S3): give the last line
    more breathing room and make the fade taller / more opaque so a scrollable slide reads as

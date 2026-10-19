@@ -2,7 +2,7 @@
 // slides" pattern as story mode (features/threads/lib/storyMode.js), built from what the real
 // daily_brief / weekly_brief payloads actually contain. A slide is only produced when its data is
 // present — never a placeholder/empty slide (CLAUDE.md).
-import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 
 // Daily topStories carry a real `threadId` since 2026-09-30 (newsPostDevTo resolves it from the

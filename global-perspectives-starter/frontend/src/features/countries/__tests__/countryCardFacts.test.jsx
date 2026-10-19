@@ -2,7 +2,7 @@
 // for a country without a sourced, dated fact. Data hooks are mocked (pure render test).
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 const factsHolder = vi.hoisted(() => ({ value: null }));
 vi.mock('@/features/countries/hooks/useCountryFacts.js', () => ({ useCountryFacts: () => ({ facts: factsHolder.value }) }));

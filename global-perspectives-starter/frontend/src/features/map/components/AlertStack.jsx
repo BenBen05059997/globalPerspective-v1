@@ -4,12 +4,12 @@
 // need for the retired /breaking feed (that route now redirects). The phone ALERTS tab reuses this same
 // component full width. Empty = one honest, computed line — never "the map is quiet".
 import { CRISIS_HUE } from '@/shared/lib/crisisHue.js';
-import { iso3Name } from '@/features/map/lib/situationLabels.js';
+import { iso3Name } from '@/shared/lib/situationLabels.js';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
-import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
-import { markerKind, kindLabel, statusGlyph, situationFreshness, markerHex } from '@/features/map/lib/legend.js';
+import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
+import { markerKind, kindLabel, statusGlyph, situationFreshness, markerHex } from '@/shared/map/legend.js';
 import { ageShort } from '@/features/map/lib/alertStack.js';
 
 const AXIS_LABEL = { conflict: 'Conflict', political: 'Political', economic: 'Economic', humanitarian: 'Humanitarian' };

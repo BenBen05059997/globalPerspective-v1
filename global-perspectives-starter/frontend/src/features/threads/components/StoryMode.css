@@ -1,51 +1,8 @@
-/* StoryMode — S2.1 (desktop). Role and scale tokens only (tokens.css). The shell classes (.sm-root,
-   .sm-topbar*, .sm-body, .sm-stage, .sm-mapwrap, .sm-slidecard, .sm-slidenav*, .sm-slidedot*,
-   .sm-slidescroll, .sm-slideview, .sm-slidefade, .sm-slide-kicker/-title/-text, .sm-instant,
-   .sm-readfull-btn) are also read by analysis-studio/StudioDeck and briefings/BriefingMode +
-   PhoneBriefingMode, which import this file. */
+/* StoryMode — S2.1 (desktop) story-specific rules: drawers, slide bodies, scrubber. The deck shell
+   (.sm-root, .sm-topbar, .sm-stage, .sm-slidecard, slide nav/dots/scroll/fade/kicker/title/text) is
+   shared/ui/deck.css; the map pane is shared/map/StoryMap.jsx + mapKit.css. Role and scale tokens only. */
 
-.sm-root {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  overflow: hidden;
-  border-radius: var(--r-sm);
-  background: var(--bg);
-  color: var(--text-body);
-  font-family: var(--sans);
-}
 
-.sm-topbar {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--hairline);
-  background: var(--panel-2);
-}
-.sm-topbar-label {
-  font-family: var(--mono);
-  font-size: var(--hud-label-size);
-  letter-spacing: var(--hud-label-tracking);
-  color: var(--accent);
-}
-/* Kept for briefings/BriefingMode.jsx's "read as text" toggle until it moves to <Button compact>. */
-.sm-readfull-btn {
-  min-height: var(--tap-min);
-  padding: 0 var(--space-3);
-  border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--text-head);
-  font-family: var(--mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-.sm-readfull-btn:hover, .sm-readfull-btn:focus-visible { border-color: var(--accent); color: var(--accent); }
-
-.sm-body { flex: 1 1 auto; display: flex; min-height: 0; }
 
 .sm-drawers-rail {
   flex: 0 0 180px;
@@ -86,74 +43,6 @@
 .sm-viewfrom-hd { margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--text-muted); }
 .sm-viewfrom-row { margin-bottom: var(--space-1); font-size: var(--text-ui); }
 
-/* ── Stage: map + slide card side by side (review fix #5 — the card used to float on top of
-   the map, covering ~40% of it and forcing an off-centre camera hack; now they share the row so
-   the map's own centring logic never needs to know about the card). ── */
-.sm-stage { position: relative; flex: 1 1 auto; display: flex; flex-direction: row; min-width: 0; }
-.sm-mapwrap { flex: 1 1 auto; min-width: 0; height: 100%; }
-.sm-maploading { display: flex; align-items: center; justify-content: center; }
-/* The map component (SituationMap3D/RadarMap) owns its `.sm-*` class names; their base styling
-   lives in SituationHome.css, which story mode doesn't load. Scope the few needed here instead of
-   pulling in the whole /map stylesheet (review fix #6). The backdrop climbs the panel ladder. */
-.sm-mapwrap .sm-wrap {
-  position: relative; width: 100%; height: 100%; overflow: hidden;
-  background: radial-gradient(130% 100% at 50% 0%, var(--panel-3) 0%, var(--panel-2) 60%, var(--bg) 100%);
-}
-.sm-mapwrap .sm-globe-foot { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: center; gap: var(--space-2); }
-.sm-mapwrap .sm-attrib { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.03em; color: var(--text-dim); }
-/* The story map is held still, centred on the story's country — no idle spin, so its play/pause
-   control has nothing to control here (review fix #6). */
-.sm-mapwrap .sm-spin-ctl { display: none; }
-
-.sm-slidecard {
-  position: relative;
-  flex: 0 0 380px;
-  max-width: 44%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid var(--hairline-strong);
-  background: var(--panel);
-  box-shadow: var(--shadow-lg);
-}
-.sm-slidenav { flex: 0 0 auto; display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4) 0; }
-.sm-slidenav-btn {
-  min-width: 36px;
-  min-height: 36px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--text-head);
-  cursor: pointer;
-}
-.sm-slidenav-btn:disabled { opacity: 0.3; cursor: default; }
-.sm-slidenav-btn:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
-.sm-slidenav-btn:focus-visible, .sm-slidedot:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.sm-slidedots { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1); }
-.sm-slidedot {
-  padding: 2px var(--space-2);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-sm);
-  background: transparent;
-  color: var(--text-dim);
-  font-family: var(--mono);
-  font-size: var(--text-2xs);
-  letter-spacing: 0.05em;
-  cursor: pointer;
-}
-/* the one selected style: accent outline + accent text */
-.sm-slidedot.on { border-color: var(--accent); color: var(--accent); }
-
-/* Review fix #8/#9: the card's body scrolls WITHIN a fixed-height card (never grows past the
-   viewport) and gets a bottom fade so a clipped slide is an obvious, not a silent, cut. */
-.sm-slidescroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-3) var(--space-4) var(--space-4); }
-.sm-slidefade {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 30px;
-  background: linear-gradient(to bottom, transparent, var(--panel));
-  pointer-events: none;
-}
 .sm-more-btn {
   display: block;
   min-height: var(--tap-min);
@@ -170,20 +59,6 @@
 .sm-more-btn:hover { color: var(--accent-strong); text-decoration: underline; }
 .sm-more-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
-.sm-slideview.sm-instant, .sm-slideview.sm-instant * { transition: none !important; animation: none !important; }
-.sm-slide-kicker {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1);
-  margin-bottom: var(--space-2);
-  font-family: var(--mono);
-  font-size: var(--text-2xs);
-  letter-spacing: 0.06em;
-  color: var(--text-dim);
-}
-.sm-slide-title { margin: 0 0 var(--space-2); font-family: var(--serif); font-size: var(--text-xl); line-height: var(--leading-tight); color: var(--text-head); }
-.sm-slide-text { font-size: var(--text-base); line-height: var(--leading-normal); color: var(--text-body); }
 .sm-slide-stats {
   display: flex;
   flex-wrap: wrap;
@@ -299,9 +174,6 @@
 }
 
 @media (max-width: 900px) {
-  .sm-body { flex-direction: column; }
   .sm-drawers-rail { width: 100%; flex-direction: row; flex-wrap: wrap; }
   .sm-drawer-btn { width: auto; }
-  .sm-stage { flex-direction: column; }
-  .sm-slidecard { flex: 1 1 auto; max-width: 100%; border-left: none; border-top: 1px solid var(--hairline-strong); }
 }

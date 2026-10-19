@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import SharedAnalysisView from '@/features/analysis-studio/components/SharedAnalysisView.jsx';
 import { EXAMPLE_SHARE_ID } from '@/features/analysis-studio/lib/sharedExample.js';
 import { shareConfigured, fetchShare } from '@/features/analysis-studio/lib/shareApi.js';

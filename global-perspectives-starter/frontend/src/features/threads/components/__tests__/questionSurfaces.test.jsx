@@ -2,7 +2,7 @@
 // of its own shows no chip and the surface says so once.
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { WatchSlide } from '@/features/threads/components/StoryMode.jsx';
 import ThreadForecast from '@/features/threads/components/ThreadForecast.jsx';
 

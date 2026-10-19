@@ -2,7 +2,7 @@
 // not spend its 24 briefing-lookup slots on them.
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 const lookups = vi.hoisted(() => ({ names: null }));
 const e = (regions, i) => ({ topicId: 't' + i, threadId: 'th' + i, title: 'x', category: 'politics', regions });
@@ -12,7 +12,7 @@ for (let i = 10; i < 16; i++) entries.push(e(['Middle East', 'Iran'], i));    //
 for (let i = 16; i < 19; i++) entries.push(e(['Global', 'Japan'], i));        // Global 3, Japan 3
 vi.mock('@/features/threads/hooks/useWeeklyArchive', () => ({ useWeeklyArchive: () => ({ dayMap: { '2026-09-30': { entries } }, sortedDates: ['2026-09-30'], loading: false }) }));
 vi.mock('@/features/countries/hooks/useCountryIntelligence', () => ({ useCountryIntelligence: (names) => { lookups.names = names; return { intelligence: {} }; } }));
-vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({ useDisruptionsList: () => ({ data: [] }) }));
+vi.mock('@/shared/hooks/useDisruptionsList', () => ({ useDisruptionsList: () => ({ data: [] }) }));
 vi.mock('@/features/countries/components/CountryOverviewMap', () => ({ default: () => null }));
 
 import CountryListPage from '@/features/countries/CountryListPage';

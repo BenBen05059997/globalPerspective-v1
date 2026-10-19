@@ -1,7 +1,7 @@
 // statusGlyph — the direction vocabulary shared by the map legend, alert cards, and every story
 // row: ▲ escalating · ● new · ◆ steady · ▼ cooling. Text glyphs (so they work without colour),
 // derived only from the tracker's own `state` / `escalating` fields. Lives in shared/ so shared UI
-// (StatusGlyph, StoryRow) can read it; features/map/lib/legend.js re-exports it for the map.
+// (StatusGlyph, StoryRow) can read it; shared/map/legend.js re-exports it for the map.
 const GLYPHS = {
   escalating: { glyph: '▲', key: 'escalating', label: 'escalating' },
   new: { glyph: '●', key: 'new', label: 'new' },

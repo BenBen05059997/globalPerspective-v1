@@ -26,8 +26,11 @@ whether analysis is paused.
 ## Shared blocks used
 - None (`@/shared/lib/freshness` is the only shared import).
 
+## Public API (`index.js`)
+- None: no `index.js`; nothing outside this folder imports it (route pages load lazily by path from `app/App.jsx`).
+
 ## Imports from other features
-- `@/features/daily/hooks/useDailyBrief` -> `useDailyBrief`, `MAX_LOOKBACK_DAYS` (AboutContact)
+- None. From shared: `@/shared/hooks/useDailyBrief` -> `useDailyBrief`, `MAX_LOOKBACK_DAYS` (AboutContact)
 
 ## Gotchas
 - About wording must not claim fixed rates ("every hour", "hundreds of articles daily"); it says

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
+import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/shared/hooks/useDailyBrief.js';
 import { pausedSince } from '@/shared/lib/freshness.js';
 import { reportAnalysisAt, useNewestAnalysisAt, newestOf } from '@/shared/lib/analysisFreshness.js';
 

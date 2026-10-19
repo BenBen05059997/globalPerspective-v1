@@ -2,11 +2,11 @@
 // (TRACK_RECORD_AND_STUDIO_RULING.md). The `prediction_track_record` action carries no place/
 // region field on a resolved trigger, so this derives a place the only honest way available:
 // matching a real country name against the trigger's own stored title/trigger text — the same
-// ISO3_NAME table the live map uses (features/map/lib/situationLabels.js), never a second,
+// ISO3_NAME table the live map uses (shared/lib/situationLabels.js), never a second,
 // hand-typed list, and never a guess from a city or an implied region. A trigger that names no
 // known country is simply not plotted (never a made-up pin — see StoryMode.jsx's shading rule).
-import { ISO3_NAME } from '@/features/map/lib/situationLabels.js';
-import { itemState } from '@/features/track-record/lib/questionStates.js';
+import { ISO3_NAME } from '@/shared/lib/situationLabels.js';
+import { itemState } from '@/shared/lib/questionStates.js';
 
 function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 

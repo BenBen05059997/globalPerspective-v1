@@ -3,10 +3,10 @@
 // paused-since date instead.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 let briefValue;
-vi.mock('@/features/daily/hooks/useDailyBrief', () => ({
+vi.mock('@/shared/hooks/useDailyBrief', () => ({
   useDailyBrief: () => briefValue,
   MAX_LOOKBACK_DAYS: 30,
 }));

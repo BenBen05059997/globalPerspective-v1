@@ -2,7 +2,7 @@
 // plots is also a keyboard-reachable row here (tier chip, escalating marker, place, one line),
 // so nothing on the map is only reachable by pointing at a pin. Rows are the shared StoryRow. M5a adds a STORIES group below
 // the situations: the current topics feed, honestly dated, with StoryPeek on every row.
-import { iso3Name } from '@/features/map/lib/situationLabels.js';
+import { iso3Name } from '@/shared/lib/situationLabels.js';
 import { crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { freshnessState } from '@/shared/lib/freshness.js';
 import { peekData } from '@/shared/lib/peekData.js';
@@ -10,7 +10,7 @@ import StoryRow from '@/shared/ui/StoryRow.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
+import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 
 function placeOf(s) {
   if (s.affected_names?.length) return s.affected_names[0];

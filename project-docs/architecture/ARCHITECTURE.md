@@ -107,18 +107,33 @@ React + Vite SPA. Build output goes to the repo-root `docs/`.
   `MapRedirect.jsx`), layout/chrome (`layout/`), the error boundary (`errors/`).
 - `src/features/<name>/` — 13 feature folders, each owning its pages, components, hooks and lib.
   `map` owns `/` (the situation console), `home` owns `/today`, `threads` owns `/weekly` and thread
-  pages, `countries` owns country pages, `analysis-studio` owns `/analyze`. Full table:
+  pages, `countries` owns country pages, `analysis-studio` owns `/analyze`. `/weekly`'s Countries
+  section is `countries`' `CountryListPage`, handed to `WeeklyPage` by `App.jsx` as its
+  `countriesView` prop so `threads` never imports `countries`. Full table:
   `project-docs/reference/features.md`; every route: `project-docs/reference/routes.md`.
+- `src/features/<name>/index.js` — a feature's public API: only what other features and `app/`
+  import (hooks, helpers, the few embedded components). Route pages are not in it: `App.jsx`
+  lazy-loads them by path so each stays its own chunk. `account`, `daily` and `static` have no
+  `index.js` (nothing outside them imports them).
 - `src/shared/` — cross-feature code: `api/restProxy.js` (the one client for the proxy and the
   Function-URL endpoints), `contexts/AuthContext.jsx`, `styles/tokens.css` + `styles/tokens.js`,
-  `lib/riskTiers.js`, `ui/` (shared blocks, boot loader).
+  `lib/` (pure helpers such as `riskTiers.js`, `situationLabels.js`, `questionChips.js`),
+  `hooks/` (data hooks several features read: `useDailyBrief`, `useMembership`, `usePreferences`,
+  `useSavedItems`, `useDisruptionsList`), `ui/` (shared blocks, boot loader, `BottomSheet`, the
+  Save / Follow / Subscribe controls, `deck.css` — the slide-deck shell of story, Studio and briefing
+  mode), `map/` (the map drawing kit: `RadarMap`, `SituationMap3D`, `StoryMap`, `mapKit.css`, their
+  pure libs and the topojson asset).
 - `worker/` + `wrangler.jsonc` — the Workers Static Assets site (`globalperspective-site`), prepared
   but not the production path yet.
 - `eslint.config.js`, `vite.config.js` — the import rules below.
 
 **Invariant:** imports flow `app → features → shared`. ESLint `no-restricted-imports` fails a
 `shared/` file that imports `@/features` or `@/app`, and a `features/` file that imports `@/app`.
-Feature-to-feature imports are allowed.
+Another feature (or `app/`) is imported only through its index (`@/features/<name>`); eslint fails
+a static import of a file inside another feature (tests and lazy `import()` are exempt).
+Feature-to-feature imports are allowed but must not form a cycle: `quality/check_feature_cycles.mjs`
+(run by pre-commit with the other `quality/check_*.mjs`) fails on any feature↔feature cycle or any
+`shared → features` import.
 
 **Invariant:** imports inside `src/` use the `@/` alias (`vite.config.js`: `@` → `src`). The
 exceptions are the few files that Node tooling outside `src/` imports by relative path; they carry a

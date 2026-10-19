@@ -1,7 +1,7 @@
 // hudCompact — M7 phone layout: the situation brief + sensor status panels (a slim row above the
 // map on desktop, M6) collapse into one compact line above the map on the MAP tab, expandable
 // inline (no popover). Pure string builder so the wording is unit-testable without rendering.
-import { TIER_LABEL } from '@/features/map/lib/situationLabels.js';
+import { TIER_LABEL } from '@/shared/lib/situationLabels.js';
 
 const TIERS = ['high', 'elevated', 'moderate', 'low'];
 

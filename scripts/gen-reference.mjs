@@ -176,8 +176,9 @@ const files = {};
   for (const m of app.matchAll(/(?:import\s+(\w+)\s+from\s+'(@\/[^']+)')|(?:const\s+(\w+)\s*=\s*lazy\(\(\)\s*=>\s*import\('(@\/[^']+)'\)\))/g)) {
     imports[m[1] || m[3]] = { path: (m[2] || m[4]).replace(/^@\//, 'src/'), lazy: Boolean(m[3]) };
   }
-  for (const m of app.matchAll(/import\s*\{([^}]+)\}\s*from\s*'@\/app\/LegacyRedirects'/g)) {
-    for (const name of m[1].split(',').map((s) => s.trim())) imports[name] = { path: 'src/app/LegacyRedirects', lazy: false };
+  // Named imports: the LegacyRedirects components and feature public APIs (`import { Home } from '@/features/home'`).
+  for (const m of app.matchAll(/import\s*\{([^}]+)\}\s*from\s*'(@\/[^']+)'/g)) {
+    for (const name of m[1].split(',').map((s) => s.trim())) imports[name] = { path: m[2].replace(/^@\//, 'src/'), lazy: false };
   }
   const redirectTarget = {};
   for (const m of legacy.matchAll(/export function (\w+)\(\)\s*\{([\s\S]*?)\n\}/g)) {
@@ -187,7 +188,7 @@ const files = {};
   redirectTarget.MapRedirect = 'redirect → `/` (keeps search + hash)';
   const inline = { Boom: 'deliberate crash (error-boundary test)', NotFound: '404 page' };
 
-  const routes = [...app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)\s*\/>\}/g)].map((m) => {
+  const routes = [...app.matchAll(/<Route\s+path="([^"]+)"\s+element=\{<(\w+)\b/g)].map((m) => {
     const comp = m[2];
     const imp = imports[comp];
     const feature = imp?.path.match(/^src\/features\/([^/]+)/)?.[1] || null;
@@ -206,7 +207,7 @@ const files = {};
     const top = readdirSync(dir).filter((f) => /\.(jsx?|tsx?)$/.test(f) && !/\.test\./.test(f)).sort();
     const subs = readdirSync(dir).filter((f) => statSync(join(dir, f)).isDirectory()).sort();
     const own = routes.filter((r) => r.feature === name).map((r) => code(r.path));
-    const appImporters = walk(join(SRC, 'app'), ['.js', '.jsx']).filter((f) => readFileSync(f, 'utf8').includes(`@/features/${name}/`)).map((f) => code(relative(join(SRC, '..'), f)));
+    const appImporters = walk(join(SRC, 'app'), ['.js', '.jsx']).filter((f) => new RegExp(`@/features/${name}['/]`).test(readFileSync(f, 'utf8'))).map((f) => code(relative(join(SRC, '..'), f)));
     const nFiles = walk(dir, ['.js', '.jsx', '.ts', '.tsx']).length;
     const routeCell = own.length ? own.join(', ') : appImporters.length ? `none — imported by ${appImporters.join(', ')}` : 'none — imported by other features';
     return [code(`src/features/${name}`), routeCell, top.join(', ') || '—', subs.join(', ') || '—', nFiles];

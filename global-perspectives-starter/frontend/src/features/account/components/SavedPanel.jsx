@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { threadPath } from '@/shared/lib/threadPath';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import Card from '@/shared/ui/Card.jsx';

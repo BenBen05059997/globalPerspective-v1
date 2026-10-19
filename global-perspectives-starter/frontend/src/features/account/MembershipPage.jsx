@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { useMembership } from '@/features/account/hooks/useMembership';
+import { useMembership } from '@/shared/hooks/useMembership';
 import { createCheckout, createCreditCheckout, creditPacks } from '@/shared/api/restProxy';
 import Button from '@/shared/ui/Button.jsx';
 import Card from '@/shared/ui/Card.jsx';

@@ -3,7 +3,7 @@
 // header counts put scored tiers first with a dim "N not yet scored"; phone tabs are READ / MAP / TIMELINE.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 import archiveFixture from '@fixtures/archive.json';
 import threadAnalysesFixture from '@fixtures/thread_analyses.json';
@@ -32,7 +32,6 @@ vi.mock('@/features/threads/hooks/useThreadAnalyses', () => ({
 }));
 vi.mock('@/shared/contexts/AuthContext', () => ({ AuthProvider: ({ children }) => children, useAuth: () => ({ user: null, loading: false }) }));
 vi.mock('@/shared/ui/boot/BootLoader.jsx', () => ({ default: () => <div data-testid="loader" /> }));
-vi.mock('@/features/countries/components/CountryOverviewMap', () => ({ default: () => <div /> }));
 const web = { state: { index: null, loading: false, failed: false } };
 vi.mock('@/features/threads/hooks/useWebIndex.js', () => ({ useWebIndex: () => web.state }));
 vi.mock('@/features/threads/components/WeeklyMap', () => ({ default: () => <div data-testid="weekly-map" /> }));

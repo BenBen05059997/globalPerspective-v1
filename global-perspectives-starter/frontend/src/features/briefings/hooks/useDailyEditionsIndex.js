@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchDailyBrief } from '@/shared/api/restProxy';
 import { reportFetchError } from '@/shared/api/errorSink';
 import { lastNDateKeys, todayKey, addDaysKey } from '@/features/briefings/lib/editions.js';
-import { loadLatestDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief.js';
+import { loadLatestDailyBrief, MAX_LOOKBACK_DAYS } from '@/shared/hooks/useDailyBrief.js';
 
 // useDailyEditionsIndex — powers the daily editions strip without a request-per-day fan-out
 // (TASK_2026-09-27_pages_local.md S3: "watch the fan-out"). Probes at most LOOKBACK_DAYS dates

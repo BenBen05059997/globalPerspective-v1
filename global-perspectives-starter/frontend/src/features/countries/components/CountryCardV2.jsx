@@ -14,7 +14,7 @@ import TierChip from '@/shared/ui/TierChip.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
 import { useCountryIntelligence } from '@/features/countries/hooks/useCountryIntelligence.js';
 import { useCountryHistory } from '@/features/countries/hooks/useCountryHistory.js';
-import { useMarketsCountry } from '@/features/economy/hooks/useMarketsCountry.js';
+import { useMarketsCountry } from '@/features/economy';
 import { useCountryStories } from '@/features/countries/hooks/useCountryStories.js';
 import { computeCountryDirection, directionLabel } from '@/features/countries/lib/countryDirection.js';
 import { countryWatchFlag } from '@/features/countries/lib/countryWatch.js';
@@ -22,12 +22,12 @@ import { futureDatedTriggers } from '@/features/countries/lib/countryTriggers.js
 import { fxRowForCountry } from '@/features/countries/lib/countryCurrency.js';
 import { deriveHeadline, AXES } from '@/shared/lib/riskTiers.js';
 import { freshnessState, COUNTRY_OLDER_AFTER_DAYS } from '@/shared/lib/freshness.js';
-import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { macroRows } from '@/features/countries/lib/countryMacro.js';
 import { factRows } from '@/features/countries/lib/countryFacts.js';
 import { useCountryFacts } from '@/features/countries/hooks/useCountryFacts.js';
-import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
-import { legacyNote } from '@/features/threads/lib/questionChips.js';
+import QuestionChip from '@/shared/ui/QuestionChip.jsx';
+import { legacyNote } from '@/shared/lib/questionChips.js';
 import '@/features/countries/components/CountryCardV2.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 

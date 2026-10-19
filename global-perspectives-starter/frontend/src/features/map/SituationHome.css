@@ -106,23 +106,7 @@
 /* ---- the map ---- */
 .sh-mapwrap { position: relative; }
 .sh-mapinner { position: relative; }
-.sm-wrap { position: relative; width: 100%; border: 1px solid var(--hairline); border-radius: var(--r-lg); overflow: hidden; background: var(--bg); }
-/* F2.15: a visible focus ring on the globe canvas and the radar's focusable countries/markers.
-   !important: deck.gl sets `outline: none` inline on `.deck-events-root` on every render. */
-.sm-wrap canvas:focus-visible,
-.sm-wrap .deck-events-root:focus-visible { outline: 2px solid var(--focus-ring) !important; outline-offset: -2px; }
-.rd-shade:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.rd-marker:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 4px; }
 .sh-maploading { display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: var(--text-ui); }
-/* radar marker hover card: the shared Tooltip look (gp-tip), shown/placed by RadarMap.jsx */
-.sm-tip { position: absolute; opacity: 0; transition: opacity var(--fast); z-index: 5; max-width: 240px; }
-
-/* Radar sweep (M4): a rotating conic-gradient beam, positioned/rotated from RadarMap.jsx. */
-.rd-beam {
-  position: absolute; z-index: 3; pointer-events: none; border-radius: 50%;
-  transform: translate(-50%, -50%); mix-blend-mode: screen;
-}
-
 /* Controls over the map (Tabs segmented, Buttons): the shared blocks on a HUD surface so they read
    over land and sea. One rule for phone and desktop. */
 .sh-onmap { background: var(--panel); backdrop-filter: blur(4px); }
@@ -132,19 +116,6 @@
 /* phone: the control cluster floats over the map's top edge, wrapping to a second row */
 .sh-controls { position: absolute; top: var(--space-3); left: var(--space-3); right: var(--space-3); z-index: 8; display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .sh-quiet { position: absolute; bottom: var(--space-3); left: var(--space-3); right: 68px; z-index: 6; background: var(--panel); border: 1px solid var(--hairline); border-radius: var(--r-md); padding: var(--space-2) var(--space-3); font-size: var(--text-sm); color: var(--text-muted); }
-
-/* map foot: imagery credit + spin / "Scan again" control (globe and radar) */
-.sm-globe-foot { position: absolute; right: var(--space-3); bottom: var(--space-3); z-index: 6; display: flex; align-items: center; gap: var(--space-2); }
-.sm-attrib { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: 0.03em; color: var(--text-dim); }
-.sm-spin-ctl {
-  width: var(--tap-min); height: var(--tap-min); min-width: var(--tap-min);
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--panel); color: var(--text-body); border: 1px solid var(--hairline-strong);
-  border-radius: var(--r-sm); font-size: var(--text-md); cursor: pointer; backdrop-filter: blur(4px);
-}
-.sm-spin-ctl:hover:not(:disabled) { border-color: var(--accent); color: var(--text-head); }
-.sm-spin-ctl:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.sm-spin-ctl:disabled { opacity: 0.4; cursor: default; }
 
 /* legend (the "Key"; only rendered while open) */
 .sh-legend {
@@ -276,29 +247,7 @@
 .sh-hud-compact-caret { flex: none; color: var(--text-dim); font-size: var(--text-2xs); }
 .sh-hud-compact-body { margin-top: var(--space-2); }
 
-/* bottom sheet (MAP tab, a selection): peek / half / full, a drag handle AND buttons. Only `full`
-   is a true modal. Reduced motion drops the height transition. The bottom offset clears the
-   app-wide phone tab bar (Layout.jsx `.gp-tabbar`, 58px + safe area) at every stop. */
-.sheet-scrim { position: fixed; inset: 0; z-index: 44; background: var(--strip); }
-.sheet {
-  position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 45; display: flex; flex-direction: column;
-  background: var(--panel-2); border: 1px solid var(--hairline); border-top-left-radius: var(--r-xl); border-top-right-radius: var(--r-xl);
-  box-shadow: var(--shadow-lg); overflow: hidden; transition: height 0.22s ease;
-}
-.sheet-instant { transition: none; }
-.sheet-peek { height: 120px; }
-.sheet-half { height: 45vh; }
-.sheet-full { height: 85vh; }
-/* F2.16: the drag handle is a keyboard-operable role="slider", so its target reaches 44px too. */
-.sheet-handle-row { flex: none; display: flex; justify-content: center; align-items: center; min-height: var(--tap-min); cursor: grab; touch-action: none; }
-.sheet-handle-row:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
-.sheet-handle { width: 36px; height: 4px; border-radius: var(--r-xs); background: var(--hairline-strong); }
-.sheet-topbar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-1) var(--space-3) var(--space-2); border-bottom: 1px solid var(--hairline); }
-.sheet-titlewrap { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.sheet-subtitle { font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
-.sheet-title { font-size: var(--text-base); font-weight: var(--weight-semibold); color: var(--text-head); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sheet-btns { flex: none; display: flex; gap: var(--space-2); }
-.sheet-body { flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* bottom sheet: base in shared/ui/BottomSheet.css; the detail fills the sheet body edge to edge */
 .sheet-body .sh-detail { border: 0; border-radius: 0; max-height: none; }
 
 /* ---- alert stack (R4a): open situations as cards, most severe/newest first. Same component on

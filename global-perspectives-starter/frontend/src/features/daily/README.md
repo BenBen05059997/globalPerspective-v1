@@ -1,8 +1,8 @@
 # daily
 
 `/daily`: the Daily Intelligence Brief as a long-form page (big picture, top stories, story and
-country to watch, shape of the day, full analysis) with previous/next date navigation. Also owns
-`useDailyBrief`, the shared hook many other surfaces use to read the latest brief.
+country to watch, shape of the day, full analysis) with previous/next date navigation. Its data hook
+`useDailyBrief` lives in `@/shared/hooks` because many other surfaces read the latest brief.
 
 ## Routes
 - `/daily` -> `DailyPage` (latest available brief)
@@ -10,7 +10,7 @@ country to watch, shape of the day, full analysis) with previous/next date navig
 
 ## Entry files
 - `DailyPage.jsx` - date nav, masthead, numbered sections, share / copy / save controls
-- `hooks/useDailyBrief.js` - `useDailyBrief(dateKey)`, `loadLatestDailyBrief()`, `MAX_LOOKBACK_DAYS` (30)
+- `@/shared/hooks/useDailyBrief.js` - `useDailyBrief(dateKey)`, `loadLatestDailyBrief()`, `MAX_LOOKBACK_DAYS` (30)
 
 ## Data
 - No date: restProxy `latest_daily_brief` (one call, server walks back `MAX_LOOKBACK_DAYS`)
@@ -21,10 +21,13 @@ country to watch, shape of the day, full analysis) with previous/next date navig
 ## Shared blocks used
 - `@/shared/ui/SectionHeader`, `ShareButtons`, `CopyBriefing`, `StoryLink`, `SeverityBadge`, `TierChip`, `boot/BootLoader`
 
+## Public API (`index.js`)
+- None: no `index.js`; nothing outside this folder imports it (route pages load lazily by path from `app/App.jsx`).
+
 ## Imports from other features
-- `@/features/briefings/lib/briefingSlides.js` -> `storyLinkPath`, `peekInputForStory`
-- `@/features/economy/hooks/useDisruptionsList`, `components/InstrumentChip` -> economic footprint
-- `@/features/account/components/SaveButton` -> save this daily brief
+- `@/features/briefings` -> `storyLinkPath`, `peekInputForStory`
+- `@/features/economy` -> `InstrumentChip` (economic footprint)
+- From shared: `@/shared/hooks/useDisruptionsList`, `@/shared/ui/SaveButton`, `@/shared/lib/trajectory.js` (`trajectoryOf`)
 
 ## Gotchas
 - `useDailyBrief` is also used by the map console, `usePausedSince` (map, used by Layout), About, Account / Desk, and briefings: a change here hits them all.

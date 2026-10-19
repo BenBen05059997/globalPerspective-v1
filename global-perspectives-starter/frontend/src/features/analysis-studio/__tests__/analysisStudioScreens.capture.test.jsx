@@ -16,7 +16,7 @@ import { render, screen, fireEvent, waitFor, configure } from '@testing-library/
 // These render the whole Studio page and wait on mocked async fetches + a mocked run; under a
 // parallel suite the 1 s default for findBy*/waitFor raced intermittently.
 configure({ asyncUtilTimeout: 5000 });
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -37,7 +37,7 @@ const MOCK_USER = { uid: 'test-user', isAnonymous: false };
 vi.mock('@/shared/contexts/AuthContext', () => ({
   useAuth: () => ({ user: MOCK_USER, loading: false }),
 }));
-vi.mock('@/features/account/hooks/useMembership', () => ({
+vi.mock('@/shared/hooks/useMembership', () => ({
   useMembership: () => ({ isMember: false, creditBalance: 0, available: false, refresh: vi.fn() }),
 }));
 // D2 (S5b): story-1 carries a threadId so the D2 stored-data feed activates (RICH —

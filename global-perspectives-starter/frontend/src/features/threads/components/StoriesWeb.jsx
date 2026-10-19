@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/shared/ui/Button.jsx';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';

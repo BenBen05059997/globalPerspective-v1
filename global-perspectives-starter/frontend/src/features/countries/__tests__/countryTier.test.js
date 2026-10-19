@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { countryTier, compareByRisk } from '@/features/countries/lib/countryTier';
-import { trajectoryOf } from '@/features/countries/lib/trajectory';
+import { trajectoryOf } from '@/shared/lib/trajectory';
 
 describe('countryTier', () => {
   it('is score-first, level only without a score, null when unscored', () => {

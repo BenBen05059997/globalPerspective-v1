@@ -3,7 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 const disruptions = [
   {
@@ -41,7 +41,7 @@ const markets = {
   },
 };
 
-vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({
+vi.mock('@/shared/hooks/useDisruptionsList', () => ({
   useDisruptionsList: () => ({ data: disruptions, loading: false, error: null }),
 }));
 vi.mock('@/features/economy/hooks/useTopMovers', () => ({

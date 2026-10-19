@@ -1,22 +1,22 @@
 // global-perspectives-starter/frontend/src/App.jsx
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router';
 import '@/app/App.css';
 import '@/shared/ui/atoms.css';
 import Layout from '@/app/layout/Layout';
 // Home (the old topics page, now at /today since the 2026-10-01 S6 swap) stays an eager import
 // from STAGE0_FIXES_PLAN.md item (g), when it was the most common first paint. `/` is now the
 // lazy SituationHome console; revisit whether /today should be lazy too.
-import Home from '@/features/home/Home';
+import { Home } from '@/features/home';
 import { ErrorBoundary } from '@/app/errors/ErrorHandling';
 import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
 import { setAuthProvider } from '@/shared/api/restProxy';
 import { useEffect, useLayoutEffect, lazy, Suspense } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import MapRedirect from '@/app/MapRedirect';
 import { MarketsRedirect, BreakingFeedRedirect, BreakingDetailRedirect, SpiderDemoRedirect } from '@/app/LegacyRedirects';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
-import { WAITING_SENSORS } from '@/features/map/lib/bootSensors.js';
+import { WAITING_SENSORS } from '@/features/map';
 
 // Route-level code splitting (STAGE0_FIXES_PLAN.md item (g)): every other page is its own chunk,
 // fetched on first navigation instead of bundled into the main chunk every visitor downloads.
@@ -138,7 +138,7 @@ export default function App() {
             <Route path="/weekly-markets" element={<MarketsRedirect />} />
             <Route path="/breaking" element={<BreakingFeedRedirect />} />
             <Route path="/breaking/:id" element={<BreakingDetailRedirect />} />
-            <Route path="/weekly" element={<WeeklyPage />} />
+            <Route path="/weekly" element={<WeeklyPage countriesView={<CountryListPage />} />} />
             <Route path="/weekly/thread/:threadId" element={<ThreadPage />} />
             <Route path="/weekly/countries" element={<CountryListPage />} />
             <Route path="/weekly/country/:countryName" element={<CountryPage />} />

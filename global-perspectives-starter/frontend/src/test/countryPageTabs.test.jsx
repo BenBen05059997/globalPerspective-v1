@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router';
 
 import archiveFixture from '@fixtures/archive.json';
 import threadAnalysesFixture from '@fixtures/thread_analyses.json';
@@ -39,7 +39,7 @@ vi.mock('@/features/economy/hooks/useMarketsCountry', () => ({
   useMarketsCountry: () => ({ data: null, loading: false, error: null }),
 }));
 const useDisruptionsListMock = vi.fn(() => ({ data: [], loading: false, error: null }));
-vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({
+vi.mock('@/shared/hooks/useDisruptionsList', () => ({
   useDisruptionsList: (...args) => useDisruptionsListMock(...args),
 }));
 vi.mock('@/shared/contexts/AuthContext', () => ({

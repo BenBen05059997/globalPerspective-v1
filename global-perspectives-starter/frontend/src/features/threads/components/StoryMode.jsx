@@ -1,40 +1,28 @@
-import { useMemo, useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
-import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import Button from '@/shared/ui/Button.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import { formatDateLabel } from '@/shared/lib/dateUtils';
-import { iso3ForName } from '@/features/map/lib/situationLabels.js';
+import { iso3ForName } from '@/shared/lib/situationLabels.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 import { tierFromScore } from '@/shared/lib/riskTiers';
 import { rootCauseSteps } from '@/shared/lib/rootCause';
-import { firstSentences } from '@/features/map/lib/cardText.js';
+import { firstSentences } from '@/shared/lib/cardText.js';
 import { useStoryLinks } from '@/features/threads/hooks/useStoryLinks.js';
 import {
   analysisTextState, buildChapters, buildScrubberDays, buildDeadlines, buildSlides, viewFrom,
   scrubberRange, pctForDate, shortDate, rawDateLabel, spanDays, buildScrubberTicks, mostLikelyScenario,
 } from '@/features/threads/lib/storyMode.js';
 import FedIntoList from '@/features/threads/components/FedIntoList.jsx';
-import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
-import { legacyNote } from '@/features/threads/lib/questionChips.js';
-import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
+import QuestionChip from '@/shared/ui/QuestionChip.jsx';
+import { legacyNote } from '@/shared/lib/questionChips.js';
+import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import { distinctTargets } from '@/features/threads/lib/webIndexLinks.js';
 import StoryLinkNote from '@/features/threads/components/StoryLinkNote.jsx';
 import ClaimTag from '@/features/threads/components/ClaimTag.jsx';
-import RadarMap from '@/features/map/components/RadarMap.jsx';
+import StoryMap, { STORY_MAP_FALLBACK_HEIGHT } from '@/shared/map/StoryMap.jsx';
+import '@/shared/ui/deck.css';
 import '@/features/threads/components/StoryMode.css';
-
-// Story-mode's map is the same console map component /map uses (lazy — deck.gl is heavy, code-
-// split so it only loads on this route), with a WebGL-less RadarMap fallback (same pattern as
-// SituationHome.jsx's USE_3D check).
-const SituationMap3D = lazy(() => import('@/features/map/components/SituationMap3D.jsx'));
-
-function canUse3D() {
-  try {
-    const c = document.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl'));
-  } catch { return false; }
-}
 
 function prefersReducedMotion() {
   try {
@@ -43,7 +31,6 @@ function prefersReducedMotion() {
   } catch { return false; }
 }
 
-const FALLBACK_STAGE_HEIGHT = 460;
 const MIN_ROOT_HEIGHT = 520;
 
 function AnalysisNote({ generatedAt, children }) {
@@ -290,36 +277,6 @@ function Drawer({ label, open, onToggle, children }) {
   );
 }
 
-// ── Map pane ──────────────────────────────────────────────────────────────────
-
-export function StoryMap({ shading, storyFocusIso3, height, linkArcs = [] }) {
-  const [use3D] = useState(() => canUse3D());
-  const h = height || FALLBACK_STAGE_HEIGHT;
-  return (
-    <div className="sm-mapwrap" style={{ height: h }}>
-      {use3D ? (
-        <Suspense fallback={<div className="sm-maploading" style={{ height: h }}><BootLoader variant="inline" className="gp-boot--tight" label="Loading map" text="Loading map" /></div>}>
-          <SituationMap3D
-            situations={[]} focusId={null} callout={null} tour={null} newIds={null} view="globe"
-            onSelect={() => {}} onOpenCallout={() => {}} height={h} width={null}
-            shading={shading} linkArcs={linkArcs} storyFocusIso3={storyFocusIso3}
-            onSelectCountry={() => {}} onHoverCountry={() => {}} onFocusCountry={() => {}} onLeaveCountry={() => {}}
-            countryRisk={[]} onSelectCountryRisk={() => {}} onHoverCountryRisk={() => {}} onFocusCountryRisk={() => {}} onLeaveCountryRisk={() => {}}
-          />
-        </Suspense>
-      ) : (
-        <RadarMap
-          situations={[]} focusId={null} callout={null} newIds={null}
-          onSelect={() => {}} onOpenCallout={() => {}} onScan={() => {}} height={h}
-          shading={shading} linkArcs={linkArcs} storyFocusIso3={storyFocusIso3}
-          onSelectCountry={() => {}} onHoverCountry={() => {}} onFocusCountry={() => {}} onLeaveCountry={() => {}}
-          countryRisk={[]} onSelectCountryRisk={() => {}} onHoverCountryRisk={() => {}} onFocusCountryRisk={() => {}} onLeaveCountryRisk={() => {}}
-        />
-      )}
-    </div>
-  );
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function StoryMode({ thread, analysis, forecast, displayTitle, category, onReadFull }) {
@@ -429,7 +386,7 @@ export default function StoryMode({ thread, analysis, forecast, displayTitle, ca
   // flex layout above has settled), not recomputed independently — so the map, the slide card and
   // the rest of the console always agree on how tall the middle band is.
   const stageRef = useRef(null);
-  const [stageHeight, setStageHeight] = useState(FALLBACK_STAGE_HEIGHT);
+  const [stageHeight, setStageHeight] = useState(STORY_MAP_FALLBACK_HEIGHT);
   useEffect(() => {
     if (!stageRef.current || typeof ResizeObserver !== 'function') return undefined;
     const ro = new ResizeObserver((entries) => {

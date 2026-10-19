@@ -22,7 +22,7 @@
  *                                          extractUnexported() below)
  *
  *   (c) iso3Names.json                  — the shared ISO3->name table must equal the
- *                                          frontend's ISO3_NAME (features/map/lib/situationLabels.js),
+ *                                          frontend's ISO3_NAME (shared/lib/situationLabels.js),
  *                                          extracted from source with extractUnexported()
  *   (d) real-country rule               — shared name tables == frontend data copies; the rule text
  *                                          in shared placeFilter.js and the frontend placeNames.js ==
@@ -254,7 +254,7 @@ function livePairs() {
       name: 'iso3Names.json',
       run: () => checkIso3Names(
         abs(`${SHARED}/iso3Names.json`),
-        abs('global-perspectives-starter/frontend/src/features/map/lib/situationLabels.js'),
+        abs('global-perspectives-starter/frontend/src/shared/lib/situationLabels.js'),
       ),
     },
     { name: 'real-country rule (shared placeFilter + name tables vs frontend and refreshPolicy)', run: () => checkPlaceRule() },
@@ -353,7 +353,7 @@ async function selfTestIso3Names() {
   const parsed = JSON.parse(fs.readFileSync(abs(`${SHARED}/iso3Names.json`), 'utf8'));
   parsed.USA = `${parsed.USA}x`;
   fs.writeFileSync(b, JSON.stringify(parsed));
-  const result = checkIso3Names(b, abs('global-perspectives-starter/frontend/src/features/map/lib/situationLabels.js'));
+  const result = checkIso3Names(b, abs('global-perspectives-starter/frontend/src/shared/lib/situationLabels.js'));
   fs.rmSync(dir, { recursive: true, force: true });
   return result;
 }

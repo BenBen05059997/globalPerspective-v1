@@ -3,7 +3,7 @@
 // nothing without a title to preview, and never opens a popover on a touch device (a tap navigates).
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 
 const TOPIC = { title: 'Strait of Hormuz closure', category: 'conflict', regions: ['Iran'], sources: 3 };

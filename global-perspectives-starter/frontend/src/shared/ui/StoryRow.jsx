@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import StatusGlyph from '@/shared/ui/StatusGlyph.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';

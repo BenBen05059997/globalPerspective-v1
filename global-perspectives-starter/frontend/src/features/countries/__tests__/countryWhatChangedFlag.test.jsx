@@ -2,7 +2,7 @@
 // cited event as the cause; the numbers stay. The real Iran 2026-08-19 note is the fixture.
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import CountryWhatChanged from '@/features/countries/components/CountryWhatChanged.jsx';
 
 const SNAPS = [

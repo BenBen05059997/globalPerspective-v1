@@ -3,7 +3,7 @@
 // an outage; and "AI-generated" only (no human-review step is evidenced in the repo).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { AuthProvider } from '@/shared/contexts/AuthContext';
 
 vi.mock('firebase/app', () => ({
@@ -22,12 +22,12 @@ vi.mock('firebase/auth', () => ({
 }));
 
 const useDisruptionsListMock = vi.fn(() => ({ data: [], loading: false, error: null }));
-vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({
+vi.mock('@/shared/hooks/useDisruptionsList', () => ({
   useDisruptionsList: (...args) => useDisruptionsListMock(...args),
 }));
 
 let briefValue;
-vi.mock('@/features/daily/hooks/useDailyBrief', () => ({
+vi.mock('@/shared/hooks/useDailyBrief', () => ({
   useDailyBrief: () => briefValue,
 }));
 

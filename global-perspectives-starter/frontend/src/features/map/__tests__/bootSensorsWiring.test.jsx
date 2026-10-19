@@ -2,7 +2,7 @@
 // the console opens on RadarMap, whose first real d3 draw is the Map sensor's signal.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import SituationHome from '@/features/map/SituationHome.jsx';
 
 const h = vi.hoisted(() => ({
@@ -15,7 +15,7 @@ vi.mock('@/features/map/hooks/useWorld.js', () => ({
   useWorld: () => h.world,
   useSituationDetail: () => ({ detail: null }),
 }));
-vi.mock('@/features/daily/hooks/useDailyBrief.js', () => ({
+vi.mock('@/shared/hooks/useDailyBrief.js', () => ({
   useDailyBrief: () => ({ brief: null, servedDateKey: null, loading: false, error: null }),
   MAX_LOOKBACK_DAYS: 30,
 }));

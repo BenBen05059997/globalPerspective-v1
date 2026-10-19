@@ -1,10 +1,10 @@
 import { useMemo, useCallback, useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router';
 import { useWorld, useSituationDetail } from '@/features/map/hooks/useWorld.js';
-import { useDailyBrief } from '@/features/daily/hooks/useDailyBrief.js';
+import { useDailyBrief } from '@/shared/hooks/useDailyBrief.js';
 import { usePausedSince } from '@/features/map/hooks/usePausedSince.js';
-import { useWeeklyBrief } from '@/features/weekly-brief/hooks/useWeeklyBrief.js';
+import { useWeeklyBrief } from '@/features/weekly-brief';
 import { useGeminiTopics } from '@/shared/data/useGeminiTopics.js';
 import HudStatusLine from '@/features/map/components/HudStatusLine.jsx';
 import { gdacsStatus } from '@/features/map/lib/gdacsStatus.js';
@@ -16,16 +16,16 @@ import Tabs, { tabPanelProps } from '@/shared/ui/Tabs.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
-import BottomSheet from '@/features/map/components/BottomSheet.jsx';
+import BottomSheet from '@/shared/ui/BottomSheet.jsx';
 import { phoneSheetStopFor, mapScrollTop } from '@/features/map/lib/phoneSheet.js';
 import { useIsPhone, PHONE_BREAKPOINT } from '@/shared/hooks/useIsPhone.js';
 import { hudCompactSummary } from '@/features/map/lib/hudCompact.js';
-import RadarMap from '@/features/map/components/RadarMap.jsx';
-import { iso3Name, buildLede, TIER_LABEL } from '@/features/map/lib/situationLabels.js';
+import RadarMap from '@/shared/map/RadarMap.jsx';
+import { iso3Name, buildLede, TIER_LABEL } from '@/shared/lib/situationLabels.js';
 import { freshnessState, olderLabel } from '@/shared/lib/freshness.js';
-import { gdacsLevelBadge } from '@/features/map/lib/gdacsLevel.js';
+import { gdacsLevelBadge } from '@/shared/map/gdacsLevel.js';
 import { storiesForShading } from '@/features/map/lib/storyShading.js';
-import { defaultMapView, normalizeStoredView } from '@/features/map/lib/globeSpin.js';
+import { defaultMapView, normalizeStoredView } from '@/shared/map/globeSpin.js';
 import { usePeek } from '@/shared/hooks/usePeek.js';
 import { peekData } from '@/shared/lib/peekData.js';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
@@ -37,23 +37,22 @@ import StoryCard from '@/features/map/components/StoryCard.jsx';
 import OrientationBanner from '@/features/map/components/OrientationBanner.jsx';
 import AlertStack from '@/features/map/components/AlertStack.jsx';
 import MapLegend from '@/features/map/components/MapLegend.jsx';
-import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
-import { deriveFromIndex } from '@/features/threads/lib/webIndexLinks.js';
+import { useWebIndex, deriveFromIndex } from '@/features/threads';
 import { linkedStoryLines } from '@/features/map/lib/cardMentions.js';
-import { buildLinkArcs } from '@/features/map/lib/storyLinkArcs.js';
+import { buildLinkArcs } from '@/shared/map/storyLinkArcs.js';
 import MapAbout from '@/features/map/components/MapAbout.jsx';
 import { alertStackItems, alertEmptyText, alertStackNote } from '@/features/map/lib/alertStack.js';
-import { markerKind, statusGlyph, situationFreshness } from '@/features/map/lib/legend.js';
+import { markerKind, statusGlyph, situationFreshness } from '@/shared/map/legend.js';
 import { threadPath } from '@/shared/lib/threadPath';
 import { useCountryRiskLayer } from '@/features/map/hooks/useCountryRiskLayer.js';
-import { riskPeekData } from '@/features/map/lib/countryRiskLayer.js';
+import { riskPeekData } from '@/shared/map/countryRiskLayer.js';
 import HudCountryRiskFeed from '@/features/map/components/HudCountryRiskFeed.jsx';
-import CountryCardV2 from '@/features/countries/components/CountryCardV2.jsx';
+import { CountryCardV2 } from '@/features/countries';
 import { normalizeLayer, DEFAULT_LAYER } from '@/features/map/lib/layerMode.js';
 import '@/features/map/SituationHome.css';
 
 // deck.gl is heavy — code-split so it loads only on this route.
-const SituationMap3D = lazy(() => import('@/features/map/components/SituationMap3D.jsx'));
+const SituationMap3D = lazy(() => import('@/shared/map/SituationMap3D.jsx'));
 
 function canUse3D() {
   try {

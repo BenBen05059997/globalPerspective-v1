@@ -1,7 +1,7 @@
 # account
 
 Sign-in (Firebase magic link, Google, guest), the signed-in account desk, the membership page,
-and the save / follow / subscribe controls other pages embed.
+and the Studio key panel. The save / follow / subscribe controls other pages embed live in `@/shared/ui`.
 
 ## Routes
 - `/signin` -> `SignIn`; `/auth/callback` -> `AuthCallback`; `/account` -> `Account`; `/membership` -> `MembershipPage`
@@ -12,7 +12,7 @@ and the save / follow / subscribe controls other pages embed.
 - `Account.jsx` - five rail sections (desk, alerts, studio, plan, profile) chosen by `?tab=`
 - `MembershipPage.jsx` - plans, benefits, subscribe and credit-pack checkout
 - `components/DeskPanel.jsx` (+ `DeskSinceLastVisit`, `DeskFollowing`, `SavedPanel`) - the Desk section
-- `components/SaveButton.jsx`, `FollowButton.jsx`, `SubscribeCard.jsx` - controls embedded elsewhere; `lib/desk.js`, `deskMap.js`, `accountClaims.js`
+- `lib/desk.js`, `deskMap.js`, `accountClaims.js`. The Save / Follow / Subscribe controls and their hooks live in `@/shared/ui` and `@/shared/hooks`
 
 ## Data
 - `useSavedItems` -> `window.SAVED_ITEMS_ENDPOINT` (newsSavedItems): `save_item`, `unsave_item`, `get_saved_items`
@@ -24,11 +24,14 @@ and the save / follow / subscribe controls other pages embed.
 ## Shared blocks used
 - `@/shared/ui/boot/BootLoader`, `@/shared/ui/StoryLink`
 
+## Public API (`index.js`)
+- None: no `index.js`; nothing outside this folder imports it (route pages load lazily by path from `app/App.jsx`).
+
 ## Imports from other features
-- `@/features/analysis-studio/lib/byok`, `lib/llm`, `components/ProviderModal` -> Studio key panel
-- `@/features/daily/hooks/useDailyBrief`, `@/features/weekly-brief/hooks/useWeeklyBrief` -> paused / edition notes
-- `@/features/map/lib/landGeometry.js` -> coastlines for the Desk map
-- `@/features/threads/WeeklyPage.css` -> error styling in `AuthCallback`
+- `@/features/analysis-studio` -> `loadByok`, `clearByok`, `getProvider`, `ProviderModal` (Studio key panel)
+- `@/features/weekly-brief` -> `useWeeklyBrief` (edition notes)
+- From shared (moved out of this folder in wave 3): `@/shared/ui/SaveButton`, `FollowButton`, `SubscribeCard`;
+  `@/shared/hooks/useMembership`, `useSavedItems`, `usePreferences`, `useDailyBrief`; `@/shared/map/landGeometry.js` (Desk map coastlines)
 
 ## Gotchas
 - `/account` signed out (or anonymous) shows `SignedOutDesk`, not a redirect. Old `?tab=` values map via `TAB_TO_SECTION`; unknown -> `desk`.

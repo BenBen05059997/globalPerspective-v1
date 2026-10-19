@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
-import QuestionChip from '@/features/threads/components/QuestionChip.jsx';
-import { legacyNote } from '@/features/threads/lib/questionChips.js';
+import QuestionChip from '@/shared/ui/QuestionChip.jsx';
+import { legacyNote } from '@/shared/lib/questionChips.js';
 
 const FC_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function fcDay(s) {

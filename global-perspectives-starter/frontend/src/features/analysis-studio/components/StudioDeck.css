@@ -51,8 +51,8 @@
 .as-phone-log-meta { font-size: var(--text-xs); color: var(--text-dim); font-family: var(--mono); }
 
 /* ── The dark deck (F1, monitor round 2) — reuses .sm-root/.sm-topbar/.sm-body/.sm-stage/
-   .sm-slidecard/.sm-slidenav/.sm-slidedot*/.sm-slidescroll/.sm-slideview/.sm-slidefade and
-   .sm-slide-kicker/-title/-text from StoryMode.css (imported) — only the Studio-specific
+   .sm-slidecard/.sm-slidenav/.sm-slidedot(s)/.sm-slidescroll/.sm-slideview/.sm-slidefade and
+   .sm-slide-kicker/-title/-text from shared/ui/deck.css — only the Studio-specific
    bits (slide bodies, sources/receipt lists, the time-bar wrap) are new here. ── */
 .sd-root { margin-top: var(--space-1); }
 .sd-body { flex: 0 0 auto; }

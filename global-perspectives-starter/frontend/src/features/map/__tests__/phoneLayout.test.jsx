@@ -3,7 +3,7 @@
 // and opens the detail as a bottom sheet at the half stop.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 const WORLD = {
   schema: 1,
@@ -27,7 +27,7 @@ vi.mock('@/features/map/hooks/useWorld.js', () => ({
   useSituationDetail: () => ({ detail: null }),
 }));
 
-vi.mock('@/features/daily/hooks/useDailyBrief.js', () => ({
+vi.mock('@/shared/hooks/useDailyBrief.js', () => ({
   useDailyBrief: () => ({ brief: { generatedAt: WORLD.generated_at }, servedDateKey: '2026-09-26', loading: false, error: null }),
   MAX_LOOKBACK_DAYS: 30,
 }));

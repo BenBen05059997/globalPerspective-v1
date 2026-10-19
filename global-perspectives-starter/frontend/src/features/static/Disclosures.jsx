@@ -1,5 +1,5 @@
 import StaticPage, { StaticSection } from '@/features/static/StaticPage.jsx';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 function Disclosures() {
   return (

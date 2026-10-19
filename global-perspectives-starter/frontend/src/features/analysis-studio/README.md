@@ -26,9 +26,13 @@ Output is checked by a validator, rendered as a deck, and can be shared.
 ## Shared blocks used
 - `@/shared/ui/Markdown`, `@/shared/ui/StoryLink`, `@/shared/ui/boot/BootLoader`
 
+## Public API (`index.js`)
+- `loadByok`, `clearByok` (`lib/byok`), `getProvider` (`lib/llm`), `ProviderModal` — used by `account`
+
 ## Imports from other features
-- `@/features/account/hooks/useMembership` -> member / credit balance; `@/features/threads/hooks/useWeeklyArchive`, `hooks/useNarrativeThread`, `components/StoryMode` (`StoryMap`)
-- `@/features/map/lib/situationLabels.js` -> `iso3ForName`; `@/features/track-record/lib/trFormatDate.js` -> `fmtDay`
+- `@/features/threads` -> `useWeeklyArchive`
+- From shared: `@/shared/hooks/useMembership` (member / credit balance), `@/shared/map/StoryMap.jsx` (deck map),
+  `@/shared/ui/deck.css` (deck shell), `@/shared/lib/situationLabels.js` (`iso3ForName`), `trFormatDate.js` (`fmtDay`), `dropRedatedRepeats.js`
 
 ## Gotchas
 - Signed-out and anonymous users get a modal sign-in gate; `SignedOutExample` shows `EXAMPLE_SHARE_ID` (`lib/sharedExample.js`, currently `null` -> "not ready yet").

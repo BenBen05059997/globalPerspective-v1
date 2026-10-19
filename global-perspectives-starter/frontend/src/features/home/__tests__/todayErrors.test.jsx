@@ -2,7 +2,7 @@
 // client-error sink, and every unavailable state carries a working Retry.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 const report = vi.fn();
 vi.mock('@/shared/api/errorSink', () => ({ reportFetchError: (...a) => report(...a) }));
@@ -11,10 +11,10 @@ const refetch = vi.fn();
 let topicsState;
 vi.mock('@/shared/data/useGeminiTopics', () => ({ useGeminiTopics: () => topicsState }));
 vi.mock('@/features/home/hooks/useTodayArchive', () => ({ useTodayArchive: () => ({ entries: [] }) }));
-vi.mock('@/features/economy/hooks/useDisruptionsList', () => ({ useDisruptionsList: () => ({ data: [] }) }));
+vi.mock('@/shared/hooks/useDisruptionsList', () => ({ useDisruptionsList: () => ({ data: [] }) }));
 vi.mock('@/features/track-record/hooks/useTrackRecord', () => ({ useTrackRecord: () => ({ data: null }) }));
 vi.mock('@/features/track-record/hooks/useCorrectionsFeed', () => ({ useCorrectionsFeed: () => ({ notes: [], total: 0 }) }));
-vi.mock('@/features/account/components/SubscribeCard', () => ({ default: () => null }));
+vi.mock('@/shared/ui/SubscribeCard', () => ({ default: () => null }));
 vi.mock('@/features/breaking/components/BreakingStrip', () => ({ default: () => null }));
 vi.mock('@/shared/data/contentService', () => ({
   default: {

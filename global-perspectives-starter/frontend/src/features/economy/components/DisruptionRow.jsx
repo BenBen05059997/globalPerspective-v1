@@ -4,7 +4,7 @@
 //   disruption: economic_impact record
 //   showTime?: boolean
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow.jsx';
 import QualityFlag from '@/features/economy/components/QualityFlag.jsx';

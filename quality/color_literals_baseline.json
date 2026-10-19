@@ -21,13 +21,13 @@
       "hex": 5,
       "func": 2
     },
-    "features/map/components/SituationMap3D.jsx": {
+    "shared/map/SituationMap3D.jsx": {
       "rgbArray": 5
     },
-    "features/map/lib/globeIcons.js": {
+    "shared/map/globeIcons.js": {
       "hex": 2
     },
-    "features/map/lib/legend.js": {
+    "shared/map/legend.js": {
       "template": 1
     },
     "shared/lib/crisisHue.js": {

@@ -2,7 +2,7 @@
 // signed-out console screen. Follows the mocking pattern from app/__tests__/layout.test.jsx.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { AuthProvider } from '@/shared/contexts/AuthContext';
 
 let authUser = null;

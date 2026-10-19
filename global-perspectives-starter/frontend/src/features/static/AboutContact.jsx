@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/features/daily/hooks/useDailyBrief';
+import { Link } from 'react-router';
+import { useDailyBrief, MAX_LOOKBACK_DAYS } from '@/shared/hooks/useDailyBrief';
 import { pausedSince } from '@/shared/lib/freshness';
 import Card from '@/shared/ui/Card.jsx';
 import StaticPage, { StaticSection } from '@/features/static/StaticPage.jsx';

@@ -1,7 +1,7 @@
 {
   "note": "Per-file count of raw px in font-size / border-radius / spacing properties in frontend src (see quality/check_style_px.mjs). Counts may only fall; lower them with --lower after moving to tokens.",
   "totals": {
-    "spacing": 439,
+    "spacing": 438,
     "fontSize": 188,
     "radius": 47
   },
@@ -36,18 +36,14 @@
       "radius": 20,
       "spacing": 158
     },
-    "features/map/components/RadarMap.css": {
-      "fontSize": 3,
-      "spacing": 5
-    },
     "features/map/SituationHome.css": {
-      "spacing": 15
+      "spacing": 14
     },
     "features/threads/components/PhoneStoryMode.css": {
-      "spacing": 2
+      "spacing": 1
     },
     "features/threads/components/StoryMode.css": {
-      "spacing": 4
+      "spacing": 3
     },
     "features/threads/components/WeeklyMap.css": {
       "spacing": 7
@@ -64,6 +60,10 @@
     },
     "features/threads/WeeklyPage.css": {
       "spacing": 1
+    },
+    "shared/map/RadarMap.css": {
+      "fontSize": 3,
+      "spacing": 5
     },
     "shared/styles/tokens.css": {
       "fontSize": 1
@@ -89,6 +89,12 @@
     },
     "shared/ui/boot/LoadTopBar.css": {
       "radius": 2
+    },
+    "shared/ui/BottomSheet.css": {
+      "spacing": 1
+    },
+    "shared/ui/deck.css": {
+      "spacing": 1
     },
     "shared/ui/primitives.css": {
       "spacing": 5

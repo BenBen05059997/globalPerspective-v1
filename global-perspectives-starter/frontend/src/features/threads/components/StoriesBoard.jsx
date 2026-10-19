@@ -2,7 +2,7 @@ import { useState } from 'react';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import Button from '@/shared/ui/Button.jsx';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
 import TierChip from '@/shared/ui/TierChip.jsx';
 import CategoryTag from '@/shared/ui/CategoryTag.jsx';

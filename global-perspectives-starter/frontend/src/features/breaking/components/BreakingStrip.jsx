@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useNotifications } from '@/features/breaking/hooks/useNotifications';
 import '@/features/breaking/components/BreakingStrip.css';
 

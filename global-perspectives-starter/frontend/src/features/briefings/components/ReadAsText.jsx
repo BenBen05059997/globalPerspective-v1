@@ -1,5 +1,5 @@
 import { countryLinkPath, storyLinkPath, peekInputForStory } from '@/features/briefings/lib/briefingSlides.js';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 

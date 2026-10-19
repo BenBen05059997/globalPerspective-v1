@@ -17,7 +17,7 @@ the current edition. Slides are built only from fields the brief payload actuall
 - `lib/briefingSlides.js` (slide builders, link paths), `lib/editions.js` (pure date helpers)
 
 ## Data
-- `useDailyBrief(date)` (daily feature) -> restProxy `daily_brief` / `latest_daily_brief`
+- `useDailyBrief(date)` (`@/shared/hooks`) -> restProxy `daily_brief` / `latest_daily_brief`
 - `useWeeklyBrief()` (weekly-brief feature) -> restProxy `weekly_brief`
 - `useDailyEditionsIndex` -> restProxy `daily_brief` probes, at most 14 days (`LOOKBACK_DAYS`), cached in sessionStorage `gp_briefings_daily_editions_v1`
 - `useStoryQuestion(threadId)` -> restProxy `prediction_snapshot` with `{ threadId }`
@@ -25,16 +25,19 @@ the current edition. Slides are built only from fields the brief payload actuall
 ## Shared blocks used
 - `@/shared/ui/StoryPeek`, `@/shared/ui/StoryLink` (with `usePeek`, `peekData`)
 
+## Public API (`index.js`)
+- `storyLinkPath`, `peekInputForStory` (`lib/briefingSlides.js`) — used by `daily`
+
 ## Imports from other features
-- `@/features/daily/hooks/useDailyBrief`, `@/features/weekly-brief/hooks/useWeeklyBrief` -> the briefs
-- `@/features/threads/components/StoryMode.jsx` (`StoryMap`), `components/QuestionChip.jsx`, `lib/questionChips.js` (`hasOwnProbability`)
-- `@/features/map/lib/situationLabels.js` -> `iso3ForName`
+- `@/features/weekly-brief` -> `useWeeklyBrief`
+- From shared: `@/shared/hooks/useDailyBrief`, `@/shared/map/StoryMap.jsx`, `@/shared/ui/deck.css`, `@/shared/ui/QuestionChip.jsx`,
+  `@/shared/lib/questionChips.js` (`hasOwnProbability`), `@/shared/lib/situationLabels.js` (`iso3ForName`)
 
 ## Gotchas
 - `?from=markets` shows a one-line "markets briefings paused" note; no markets line while economy is parked.
 - Weekly has a single edition only: the `weekly_brief` action returns just the latest, so no week strip.
 - An editions probe that fails stays "unknown", never "no edition"; it is reported once via `reportFetchError`.
 - Story links are built only when a `threadId` exists (daily topStories carry one since 2026-09-30).
-- `lib/briefingSlides.js` is also imported by `DailyPage.jsx` (`storyLinkPath`, `peekInputForStory`).
+- `lib/briefingSlides.js` is also imported by `DailyPage.jsx` (`storyLinkPath`, `peekInputForStory`) through the index.
 
 Last verified: 2026-10-19

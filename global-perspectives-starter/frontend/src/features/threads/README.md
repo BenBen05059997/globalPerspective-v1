@@ -26,15 +26,20 @@ story mode; "Read in full" is the long tabbed page (Overview, Timeline, Actors, 
 - `EditorialShell`, `StatusStrip`, `StoryLink`, `StoryPeek`, `StoryRow`, `CategoryTag`, `TierChip`,
   `FilterGroup`, `SectionHeader`, `ShareButtons`, `CopyBriefing`, `SourceRobustness`, `risk/RiskScorecard`, `boot/BootLoader`
 
+## Public API (`index.js`)
+- `useWeeklyArchive` (analysis-studio, countries), `useThreadAnalyses`, `buildDeadlines`, `COUNTRY_COORDINATES` (countries),
+  `useWebIndex`, `deriveFromIndex` (map). Not exported: `WeeklyMap` (countries lazy-imports it by path).
+
 ## Imports from other features
-- `map` -> `RadarMap`, `SituationMap3D` (lazy), `BottomSheet`, libs `situationLabels`, `storyLinkArcs`, `cardText`, `landGeometry`
-- `track-record` -> `questionStates` (`STATE_META`), `trFormatDate`; `countries` -> `CountryListPage`
-- `account` -> `SaveButton`; `economy` -> `MechanismCard`, `useEconomicImpact`
+- `@/features/economy` -> `MechanismCard`, `useEconomicImpact`
+- From shared: `@/shared/map/StoryMap.jsx`, `storyLinkArcs.js`, `landGeometry.js`; `@/shared/ui/BottomSheet.jsx`, `deck.css`, `SaveButton`,
+  `QuestionChip`; `@/shared/lib/situationLabels.js`, `cardText.js`, `questionChips.js`, `questionStates.js`, `trFormatDate.js`
+- The Countries section of `/weekly` arrives as the `countriesView` prop from `app/App.jsx`, so threads never imports countries.
 
 ## Gotchas
 - ECONOMY_PARKED drops the Economy tab; `?tab=economy` falls back to Overview. Any `?tab=` opens Read in full.
 - ThreadPage imports `WeeklyPage.css` on purpose (shared timeline/share classes on cold loads).
 - `gp_weekly_archive_v1` stores `uid` but does not check it on read.
-- Widely reused: hooks/StoryMode/libs by `countries`, `analysis-studio`, `briefings`, `map`; CSS by `account`.
+- Reused through `index.js` by `countries`, `analysis-studio` and `map`; the deck shell CSS is `@/shared/ui/deck.css`.
 
 Last verified: 2026-10-19

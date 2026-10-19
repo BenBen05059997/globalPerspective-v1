@@ -11,7 +11,7 @@
 // transitive dependency of `d3` (SituationMap3D.jsx imports from it directly too), so importing
 // only the two pieces this file actually needs keeps /account's bundle out of the map chunk.
 import { geoEqualEarth, geoPath } from 'd3-geo';
-import { land, FRAME } from '@/features/map/lib/landGeometry.js';
+import { land, FRAME } from '@/shared/map/landGeometry.js';
 
 export const WIDTH = 360;
 export const HEIGHT = 130;

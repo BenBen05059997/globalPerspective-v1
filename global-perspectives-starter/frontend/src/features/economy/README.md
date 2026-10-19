@@ -3,7 +3,7 @@
 PARKED. `/economy` is the instrument-first markets-meets-news page: which instruments current
 stories are repricing (leaderboard, dormant drawer, by-story bridge, live market context), plus
 a "This week" markets wrap. The feature also owns the economic hooks and atoms that threads,
-countries, daily and home reuse.
+countries and daily reuse (through `index.js`); `useDisruptionsList` lives in `@/shared/hooks`.
 
 ## Routes
 - `/economy` -> `EconomyPage` (`?view=week`, `?sev=`, `?hor=`, `?instrument=`, `?country=`, `?sort=`, `?dir=`, `?open=`)
@@ -16,12 +16,15 @@ countries, daily and home reuse.
 - `lib/composeEconomyBriefing.js` (deterministic briefing text), `lib/disruptionGate.js` (hides unreliable FX arrows / analogs), `data/economicAnalogs.js(on)`
 
 ## Data
-- restProxy actions via hooks: `useDisruptionsList` -> `economic_impact_list`, `useEconomicImpact` -> `economic_impact`, `useTopMovers` -> `economic_top_movers`
+- restProxy actions via hooks: `useDisruptionsList` (`@/shared/hooks`) -> `economic_impact_list`, `useEconomicImpact` -> `economic_impact`, `useTopMovers` -> `economic_top_movers`
 - `useMarketsGlobal` -> `markets_global`, `useMarketsHistory` -> `markets_history`, `useMarketsCountry` -> `markets_country`, `useWeeklyMarkets` -> `weekly_markets`
 - All through `useCachedQuery`; `useDisruptionsList` and `useEconomicImpact` take `{ enabled }`
 
 ## Shared blocks used
 - `@/shared/ui/SeverityBadge`, `@/shared/ui/DirectionArrow`
+
+## Public API (`index.js`)
+- `InstrumentChip` (daily), `MechanismCard`, `useEconomicImpact` (threads), `useMarketsCountry` (countries)
 
 ## Imports from other features
 - None.

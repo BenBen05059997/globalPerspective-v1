@@ -6,7 +6,7 @@
 //   amber  some of what fell due was confirmed
 //   red    something fell due, the week is over, and nothing was confirmed
 // "Due" = a sampled question whose deadline + 3 days falls in the week.
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 
 export function weekSquare(w, now = new Date()) {
   const start = Date.parse(`${w.weekStart}T00:00:00Z`);

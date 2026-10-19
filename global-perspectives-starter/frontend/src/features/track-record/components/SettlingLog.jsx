@@ -1,5 +1,5 @@
 import { buildWeeklySquares, settlingSummary } from '@/features/track-record/lib/settlingLog.js';
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 import '@/features/track-record/components/SettlingLog.css';
 
 // SettlingLog — one square per real week (questions.weeks[], built by the server from the weekly

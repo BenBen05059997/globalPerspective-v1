@@ -11,10 +11,11 @@ SITUATIONS / COUNTRY RISK layer switch and, on phones, tabs plus a bottom sheet.
 
 ## Entry files
 - `SituationHome.jsx` - the console; selection state, boot sensors, layer/view switches
-- `components/SituationMap3D.jsx` (globe, lazy, WebGL only) / `RadarMap.jsx` (radar view)
-- `components/Hud*`, `AlertStack`, `StoryCard`, `MapLegend`, `MapAbout`, `OrientationBanner`; phone: `MapPhoneTabs`, `BottomSheet`
-- `components/SituationMap.jsx` - constants only (`AXIS_HUE`), re-exports `land`/`FRAME`
-- `lib/*.js` - pure helpers (labels, legend, alert stack, radar, globe spin, boot sensors, risk layer)
+- Map kit in `@/shared/map/` (shared with threads, track-record, analysis-studio, briefings): `SituationMap3D.jsx` (globe, lazy,
+  WebGL only), `RadarMap.jsx` (radar), `StoryMap.jsx` (deck map pane), `mapKit.css`, libs (`legend`, `pulse`, `radar`, `globe*`,
+  `storyLinkArcs`, `landGeometry`, `countryGeo`, `countryRiskLayer`, `gdacsLevel`, `mapLabels`) + `countries-110m.json`
+- `components/Hud*`, `AlertStack`, `StoryCard`, `MapLegend`, `MapAbout`, `OrientationBanner`; phone: `MapPhoneTabs`, `@/shared/ui/BottomSheet`
+- `lib/*.js` - page helpers (alert stack, boot sensors, card mentions, HUD compact line, layer mode, phone sheet, story shading)
 
 ## Data
 - `useWorld()` -> `api/worldData.js` -> `/data/world/latest.json` (Worker `/data/*`, S3), polled 5 min;
@@ -27,14 +28,18 @@ SITUATIONS / COUNTRY RISK layer switch and, on phones, tabs plus a bottom sheet.
 ## Shared blocks used
 - `StoryPeek`, `StoryLink`, `StoryRow`, `boot/BootLoader`, `boot/staticBoot` (`endFullBoot`); `usePeek`, `useIsPhone`
 
+## Public API (`index.js`)
+- `HudStatusLine`, `useGdacsStatus`, `usePausedSince` (app layout), `WAITING_SENSORS` (app route fallback)
+
 ## Imports from other features
-- `daily/hooks/useDailyBrief`, `weekly-brief/hooks/useWeeklyBrief`, `countries/components/CountryCardV2`
-- `threads/hooks/useWebIndex`, `threads/lib/webIndexLinks` (`deriveFromIndex`)
+- `@/features/weekly-brief` -> `useWeeklyBrief`; `@/features/countries` -> `CountryCardV2`
+- `@/features/threads` -> `useWebIndex`, `deriveFromIndex`
+- From shared: `@/shared/hooks/useDailyBrief`, `@/shared/ui/BottomSheet.jsx`, the map kit in `@/shared/map/` (see Entry files)
 
 ## Gotchas
 - Situations not updated in 30+ days are hidden and counted, never dropped silently.
 - `useCountryRiskLayer` avoids `useWeeklyArchive` (needs AuthProvider); map data never gates on auth.
 - Boot sensors tick only on real data; the boot screen shows once per page load (`bootShown`).
-- Imported widely: app layout (`HudStatusLine`, `useGdacsStatus`, `usePausedSince`), App (`bootSensors`), threads, track-record, countries, account, analysis-studio, briefings.
+- Only app/ imports this feature (through `index.js`); what other features reused moved to `@/shared/map` and `@/shared/lib`.
 
 Last verified: 2026-10-19

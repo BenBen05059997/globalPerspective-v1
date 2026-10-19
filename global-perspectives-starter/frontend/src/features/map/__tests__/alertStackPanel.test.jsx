@@ -2,7 +2,7 @@
 // selects it (the map flies there, the live region announces it), and an honest empty line.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 let SITUATIONS = [];
 vi.mock('@/features/map/hooks/useWorld.js', () => ({
@@ -12,7 +12,7 @@ vi.mock('@/features/map/hooks/useWorld.js', () => ({
   }),
   useSituationDetail: () => ({ detail: null }),
 }));
-vi.mock('@/features/daily/hooks/useDailyBrief.js', () => ({
+vi.mock('@/shared/hooks/useDailyBrief.js', () => ({
   useDailyBrief: () => ({ brief: { generatedAt: '2026-09-12T09:00:00Z' }, servedDateKey: '2026-09-12', loading: false, error: null }),
   MAX_LOOKBACK_DAYS: 30,
 }));

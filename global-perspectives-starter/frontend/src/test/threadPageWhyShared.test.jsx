@@ -2,7 +2,7 @@
 // the "N older links hidden" count render only from real rows; weight-1 overlaps are collapsed.
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router';
 
 const THREAD_ID = 'thread-test-why-shared-abc123';
 const LINKS = vi.hoisted(() => ({ value: null }));

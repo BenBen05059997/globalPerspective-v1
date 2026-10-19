@@ -9,7 +9,7 @@
 // Every other SituationHome test in this folder already mocks both; this one now matches them.
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import SituationHome from '@/features/map/SituationHome.jsx';
 
 vi.mock('@/features/map/hooks/useWorld.js', () => ({
@@ -17,7 +17,7 @@ vi.mock('@/features/map/hooks/useWorld.js', () => ({
   useSituationDetail: () => ({ detail: null }),
 }));
 
-vi.mock('@/features/daily/hooks/useDailyBrief.js', () => ({
+vi.mock('@/shared/hooks/useDailyBrief.js', () => ({
   useDailyBrief: () => ({ brief: null, servedDateKey: null, loading: false, error: null }),
   MAX_LOOKBACK_DAYS: 30,
 }));

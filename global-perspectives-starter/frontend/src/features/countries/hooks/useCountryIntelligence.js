@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fetchCountryIntelligence } from '@/shared/api/restProxy';
 import { reportAnalysisAt, newestOf } from '@/shared/lib/analysisFreshness';
-import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES } from '@/features/map/lib/countryRiskLayer.js';
+import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES } from '@/shared/map/countryRiskLayer.js';
 
 const CACHE_KEY = 'gp_country_intel_v1';
 const CACHE_TTL_MS = 30 * 60 * 1000;

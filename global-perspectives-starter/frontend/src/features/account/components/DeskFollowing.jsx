@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { tierFromScore, tierLabel } from '@/shared/lib/riskTiers';
 import { WIDTH, HEIGHT, WORLD_PATH, centroidForCountry } from '@/features/account/lib/deskMap';
 import Card from '@/shared/ui/Card.jsx';

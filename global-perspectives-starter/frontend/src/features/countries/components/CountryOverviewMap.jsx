@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { Wrapper } from '@googlemaps/react-wrapper';
-import { COUNTRY_COORDINATES } from '@/features/threads/lib/mapConstants';
+import { COUNTRY_COORDINATES } from '@/features/threads';
 import { regionToCountryCode } from '@/shared/lib/countryMapping';
 
 // The Google map is painted from the site's role tokens (read from :root at call time, so the

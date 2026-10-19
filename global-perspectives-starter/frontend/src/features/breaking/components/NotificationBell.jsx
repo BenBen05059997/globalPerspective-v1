@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import SectionHeader from '@/shared/ui/SectionHeader.jsx';
 import { useNotifications } from '@/features/breaking/hooks/useNotifications';
 import '@/features/breaking/components/NotificationBell.css';

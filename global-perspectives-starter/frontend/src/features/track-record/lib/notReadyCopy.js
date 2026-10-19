@@ -2,7 +2,7 @@
 // the rule for when each line disappears cannot drift between the full page and the text page.
 // Rules: every date is computed from real data (a fixture without the date yields no date string);
 // every projection says "estimate"; nothing is shown as a placeholder.
-import { fmtDay } from '@/features/track-record/lib/trFormatDate.js';
+import { fmtDay } from '@/shared/lib/trFormatDate.js';
 
 const DAY = 86400000;
 const ms = (d) => Date.parse(`${String(d).slice(0, 10)}T00:00:00Z`);

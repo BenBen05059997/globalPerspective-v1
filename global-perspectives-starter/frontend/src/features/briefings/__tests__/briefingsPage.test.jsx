@@ -131,6 +131,27 @@ describe('read mode — sections', () => {
     expect(screen.getByRole('link', { name: 'France' }).getAttribute('href')).toBe('/weekly/country/France');
   });
 
+  it('regions stay text, the country to watch links to its page (a region to watch is an unlinked card)', () => {
+    dailyValue = {
+      ...fresh,
+      brief: {
+        ...fresh.brief, headline: 'Lead',
+        topStories: [{ title: 'Story B', category: 'conflict', regions: ['Middle East', 'UAE'], threadId: 'Not an id' }],
+        countryToWatch: { countryName: 'Sudan', riskLevel: 'high' },
+      },
+    };
+    const first = renderAt('/briefings');
+    expect(screen.getByText('Middle East').closest('a')).toBeNull();
+    expect(screen.getByRole('link', { name: 'UAE' }).getAttribute('href')).toBe('/weekly/country/UAE');
+    expect(screen.queryByRole('link', { name: 'Story B' })).toBeNull();
+    expect(screen.getAllByRole('link', { name: /Sudan/ }).map((a) => a.getAttribute('href'))).toContain('/weekly/country/Sudan');
+    first.unmount();
+    dailyValue = { ...fresh, brief: { ...fresh.brief, countryToWatch: { countryName: 'Sahel', riskLevel: 'high' } } };
+    renderAt('/briefings');
+    expect(screen.getAllByText('Sahel').every((el) => !el.closest('a'))).toBe(true);
+    expect(screen.queryByText('View full briefing →')).toBeNull();
+  });
+
   it('a rising thread without a thread id is plain text, not a guessed link', () => {
     dailyValue = { ...fresh, brief: { ...fresh.brief, risingThread: { title: 'No id arc' } } };
     renderAt('/briefings');
@@ -173,6 +194,7 @@ describe('weekly mode', () => {
     expect(screen.getByText('Signals tracked')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'reuters.com' }).getAttribute('href')).toBe('https://reuters.com/x');
     expect(screen.getByText(/Related: thread two/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sudan' }).getAttribute('href')).toBe('/weekly/country/Sudan');
     expect(screen.getByText('Vote')).toBeInTheDocument();
     expect(screen.getByText(/Signals are selected by significance/)).toBeInTheDocument();
     expect(document.title).toMatch(/^Weekly Brief — week of /);
@@ -197,6 +219,18 @@ describe('weekly mode', () => {
   it('no published brief is an honest empty state', () => {
     renderAt('/briefings?mode=weekly');
     expect(screen.getByText('No brief published yet')).toBeInTheDocument();
+  });
+});
+
+describe('weekly mode — Related', () => {
+  it('links Related to the other signal\'s story when the brief names it (relatedThreadIds)', () => {
+    const two = { threadId: 'thread-w2', lede: 'Signal two', kind: 'threat', riskLevel: 'low', region: 'Global', fact: 'F2' };
+    const one = { ...weekly.signals[0], related: 'Signal two', relatedThreadIds: ['thread-w2'] };
+    weeklyValue = { brief: { ...weekly, signals: [one, two] }, loading: false, error: null };
+    renderAt('/briefings?mode=weekly');
+    const related = screen.getByText(/Related:/);
+    expect(related.querySelector('a').getAttribute('href')).toBe('/weekly/thread/thread-w2');
+    expect(screen.getByText('Global').closest('a')).toBeNull();
   });
 });
 

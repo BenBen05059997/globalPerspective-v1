@@ -4,7 +4,7 @@
     "/track-record": 9,
     "/briefings": 1,
     "/weekly/thread": 6,
-    "/weekly/country": 12,
+    "/weekly/country": 11,
     "/analyze": 12
   },
   "files": {
@@ -54,9 +54,6 @@
     },
     "features/analysis-studio/SharedAnalysisPage.jsx": {
       "/analyze": 3
-    },
-    "features/briefings/lib/briefingSlides.js": {
-      "/weekly/country": 1
     },
     "features/countries/components/CountryCardV2.jsx": {
       "/analyze": 1

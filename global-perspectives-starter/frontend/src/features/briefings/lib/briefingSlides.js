@@ -2,25 +2,27 @@
 // slides" pattern as story mode (features/threads/lib/storyMode.js), built from what the real
 // daily_brief / weekly_brief payloads actually contain. A slide is only produced when its data is
 // present — never a placeholder/empty slide (CLAUDE.md).
-import { iso3ForName } from '@/shared/lib/situationLabels.js';
+import { parentCountry } from '@/shared/lib/countries.js';
 import { crisisHueForCategory, crisisTypeForCategory } from '@/shared/lib/crisisHue.js';
 
 // Daily topStories carry a real `threadId` since 2026-09-30 (newsPostDevTo resolves it from the
 // archive entry the story was written from; null when there is no confident match, and older
-// briefs have none). countryToWatch still carries only a country name. A link is only ever built
-// to a route that really exists: /weekly/thread/:id (ThreadPage) when a threadId is present, and
-// /weekly/country/:countryName (CountryPage) for countries.
-import { threadPath } from '@/shared/lib/threadPath.js';
+// briefs have none); the read API adds `iso3[]` to top stories, the country to watch and weekly
+// signals. Addresses come from shared/lib/links.js; this file only says which ids are real.
 
-/** storyLinkPath — the story page for a top story, or null when it has no real threadId. */
-export function storyLinkPath(story) {
-  const id = story && typeof story.threadId === 'string' ? story.threadId : '';
-  return /^thread-/.test(id) ? threadPath(id) : null;
+/** threadIdOf — a top story's / signal's / rising thread's real thread id, or null (no confident match,
+ *  an old brief, or a title in the id field). Only a real id is ever linked. */
+export function threadIdOf(item) {
+  const id = item && typeof item.threadId === 'string' ? item.threadId : '';
+  return /^thread-/.test(id) ? id : null;
 }
 
-export function countryLinkPath(countryName) {
-  if (!countryName) return null;
-  return `/weekly/country/${encodeURIComponent(countryName)}`;
+/** placeNames — the place names an item carries: daily `regions: string[]`, weekly `region: "A · B"`. */
+export function placeNames(item) {
+  if (!item) return [];
+  if (Array.isArray(item.regions)) return item.regions.filter(Boolean);
+  if (typeof item.region === 'string') return item.region.split('·').map((r) => r.trim()).filter(Boolean);
+  return [];
 }
 
 export function buildDailySlides(brief) {
@@ -49,26 +51,34 @@ export function buildWeeklySlides(brief) {
   return slides;
 }
 
-// regionsOf — first region string a slide's data carries, for map-focus + shading. Daily stories
-// use `regions: string[]`; weekly signals use `region: "A · B · C"`.
-function firstRegion(item) {
-  if (!item) return null;
-  if (Array.isArray(item.regions) && item.regions.length) return item.regions[0];
-  if (typeof item.region === 'string' && item.region.trim()) return item.region.split('·')[0].trim();
+// firstCountry — the first country an item names, for map focus + shading: its `iso3[]` when the read
+// API sent one, else its first place name that is (or lies inside) a country. A region is never a point.
+function firstIso3(item) {
+  if (Array.isArray(item?.iso3) && item.iso3[0]) return item.iso3[0];
+  for (const name of placeNames(item)) {
+    const c = parentCountry(name);
+    if (c) return c.iso3;
+  }
   return null;
+}
+
+/** The country a story / signal / country to watch is about, as { iso3, name }, or null. */
+export function firstCountry(item) {
+  const iso3 = firstIso3(item);
+  return iso3 ? parentCountry(iso3) : null;
 }
 
 /** mapFocusForDailySlide — the iso3 the map should fly to for a given daily slide. */
 export function mapFocusForDailySlide(slide) {
   if (!slide) return null;
-  if (slide.kind === 'story') return iso3ForName(firstRegion(slide.story));
-  if (slide.kind === 'watch') return iso3ForName(slide.countryToWatch?.countryName);
+  if (slide.kind === 'story') return firstIso3(slide.story);
+  if (slide.kind === 'watch') return firstIso3({ iso3: slide.countryToWatch?.iso3, regions: [slide.countryToWatch?.countryName] });
   return null;
 }
 
 export function mapFocusForWeeklySlide(slide) {
   if (!slide) return null;
-  if (slide.kind === 'signal') return iso3ForName(firstRegion(slide.signal));
+  if (slide.kind === 'signal') return firstIso3(slide.signal);
   return null;
 }
 
@@ -77,17 +87,17 @@ export function mapFocusForWeeklySlide(slide) {
 export function shadingForDailySlides(brief) {
   const out = [];
   const seen = new Set();
-  const push = (name, category, count) => {
-    const iso3 = iso3ForName(name);
-    if (!iso3 || seen.has(iso3)) return;
-    seen.add(iso3);
+  const push = (country, category, count) => {
+    if (!country || seen.has(country.iso3)) return;
+    seen.add(country.iso3);
     out.push({
-      iso3, count: count || 1, top: { title: name, category },
+      iso3: country.iso3, count: count || 1, top: { title: country.name, category },
       crisisType: crisisTypeForCategory(category), hue: crisisHueForCategory(category),
     });
   };
-  for (const s of (brief?.topStories || [])) push(firstRegion(s), s.category, s.sourceCount);
-  if (brief?.countryToWatch?.countryName) push(brief.countryToWatch.countryName, 'conflict', 1);
+  for (const s of (brief?.topStories || [])) push(firstCountry(s), s.category, s.sourceCount);
+  const ctw = brief?.countryToWatch;
+  if (ctw?.countryName) push(firstCountry({ iso3: ctw.iso3, regions: [ctw.countryName] }), 'conflict', 1);
   return out;
 }
 
@@ -95,8 +105,7 @@ export function shadingForWeeklySlides(brief) {
   const out = [];
   const seen = new Set();
   for (const s of (brief?.signals || [])) {
-    const name = firstRegion(s);
-    const iso3 = iso3ForName(name);
+    const iso3 = firstIso3(s);
     if (!iso3 || seen.has(iso3)) continue;
     seen.add(iso3);
     // Weekly signals carry only kind threat|development, no crisis type: never invent one
@@ -121,6 +130,6 @@ export function peekInputForSignal(signal) {
   if (!signal) return null;
   return {
     title: signal.lede, category: undefined,
-    regions: firstRegion(signal) ? [firstRegion(signal)] : undefined, sources: signal.sources,
+    regions: placeNames(signal).length ? placeNames(signal) : undefined, sources: signal.sources,
   };
 }

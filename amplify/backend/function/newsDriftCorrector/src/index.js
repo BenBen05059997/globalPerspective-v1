@@ -14,7 +14,8 @@
 
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, QueryCommand, GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
-const { keepDayZero } = require('./dayZero');
+const { keepDayZero } = require('./_shared/dayZero');
+const { chat } = require('./_shared/llm');
 const dir = require('./directionCheck');
 const { findAllDrifts, threadConclusionMoved, buildDriftPrompt, parseDriftResponse, changeDimensionsFrom, axisMoves } = require('./lib');
 
@@ -23,7 +24,6 @@ const SUMMARY_TABLE = process.env.SUMMARIZE_PREDICT_TABLE;
 const TOPICS_TABLE = process.env.TOPICS_DDB_TABLE;
 // Legacy GROK_* names hold DeepSeek values in production (see feedback-misleading-grok-naming).
 const LLM_MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
-const LLM_URL = (process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions');
 const LLM_KEY = process.env.XAI_API_KEY || '';
 const DRIFT_TTL_DAYS = parseInt(process.env.DRIFT_TTL_DAYS || '60', 10);
 const LOOKBACK_DAYS = parseInt(process.env.DRIFT_LOOKBACK_DAYS || '10', 10); // only note RECENT moves
@@ -81,16 +81,9 @@ async function alreadyNoted(country, dateKey) {
 }
 
 async function callLLM(prompt) {
-  const res = await fetch(LLM_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LLM_KEY}` },
-    body: JSON.stringify({ model: LLM_MODEL, temperature: 0.2, max_tokens: 500, thinking: { type: 'disabled' } /* V4 thinking burns max_tokens; deepseek-chat retired 2026-07-24 */, messages: [{ role: 'user', content: prompt }] }),
-  });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(`llm ${res.status}: ${body?.error?.message || res.statusText}`);
-  const text = body?.choices?.[0]?.message?.content;
-  if (!text) throw new Error('llm empty response');
-  return text;
+  const { content } = await chat({ step: 'drift_note', model: LLM_MODEL, user: prompt, temperature: 0.2, maxTokens: 500 });
+  if (!content) throw new Error('llm empty response');
+  return content;
 }
 
 // D9 (Batch 3 / E): ask for the note, VALIDATE its direction against the stored numbers, retry once with

@@ -142,7 +142,7 @@ const SHARED = 'amplify/backend/shared/src';
 const RISK_LAMBDAS = ['newsCountryIntelligence', 'newsThreadAnalysis'];
 const SITCORE_LAMBDAS = ['newsGdacsIngest'];
 const SITCORE_TRACKER = 'newsSituationTracker'; // its copy carries the 2-line header (HEADER_2LINE)
-const DAYZERO_LAMBDAS = ['newsThreadAnalysis', 'newsSystemsAnalysis', 'newsCountryIntelligence', 'newsWeeklyBrief', 'newsDriftCorrector', 'newsPostDevTo'];
+const DAYZERO_LAMBDAS = ['newsThreadAnalysis', 'newsSystemsAnalysis', 'newsCountryIntelligence', 'newsWeeklyBrief', 'newsPostDevTo'];
 
 /** N files must all be byte-identical to the first one (zero tolerance). */
 function checkAllIdentical(paths) {

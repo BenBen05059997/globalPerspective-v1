@@ -492,12 +492,18 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}) {
     v1.webContext ? `\nLive web context (fresh search — treat as leads, cite the outlet, do not over-trust):\n${v1.webContext}\n` : '',
     'CALENDAR RULE (strict): your training data ends before today, so you do NOT know the calendar ahead. Use a specific date, or the name of a scheduled event (summit, session, meeting, election, treaty expiry, review), ONLY if it appears in the Article Snippets, the dated archive digest or the verified facts above. If no scheduled date is known, say "no scheduled date known" — that is a correct, useful answer. Never fill a gap with a plausible date from memory. The "deadline" of a trigger is your own forecast window, not a claim, so you may choose it freely.',
     '',
-    'Reason silently first: (1) 2-3 closest historical precedents and how long each took to resolve — this is your base rate; (2) the 3-5 actors who decide the outcome and what each wants; (3) who holds the initiative now. Then return this JSON structure (all fields required):',
+    'Work in this order and WRITE each step into the JSON (nothing is done silently):',
+    '1. precedents: 5 closest past cases (different years/places). For each, which of the three scenarios below it ended like, and how long it took.',
+    '2. Scenario probabilities START from that count: the share of your precedents that ended like each scenario. Then adjust for today\'s specifics, and state the adjustment and why in the rationale. Equal counts must not all become 55-65%. "Most Likely" is by definition the scenario with the highest probability: if your count points elsewhere, rewrite the scenarios so the most common precedent outcome becomes "Most Likely".',
+    '3. Then the actors, the rationale and the triggers. Return this JSON structure (all fields required):',
     `{
+  "precedents": [
+    { "case": "string — past event, place and year", "ended_like": "Most Likely | Optimistic | Pessimistic", "took": "string — how long it took to resolve" }
+  ],
   "scenarios": [
     {
       "label": "Most Likely",
-      "probability_range": "string — your own estimate as a range, justified by the base rate of the precedents (do not reuse a stock split)",
+      "probability_range": "string — from the precedent count, adjusted (step 2)",
       "horizon": "string — your own estimate in days, weeks or months",
       "rationale": "string — 2-4 sentences naming specific actors, mechanisms and the precedent base rate; no date or scheduled event that is not in the input",
       "triggers": [
@@ -532,7 +538,7 @@ function buildPredictionPrompt(topic, generatedDate, generatedYear, v1 = {}) {
     '- Give 3 distinct triggers per scenario when three different checkable events exist; at most 3.',
     '- "resolution_source" must NAME the publisher or record that will exist after the deadline and settle the question (for example "Reuters or AP wire report", "Official Gazette of Japan", "UN Security Council press release", "IAEA Board report"). Never "news", "media", "reports" or "sources".',
     '- Only name a person in an office if the VERIFIED FACTS above or the snippets support it.',
-    'probability_range: before writing it, count how many of your precedents ended the way that scenario does, then adjust for today\'s specifics. Different stories must NOT get look-alike ranges — if you catch yourself writing the same stock split for every story, recompute from the precedents. A range may be narrow when precedents agree and wide when they do not. The three ranges must sum to ~100%. Output only the JSON object.',
+    'probability_range: the three scenario ranges must sum to about 100%. Output only the JSON object.',
   ].join('\n');
 }
 

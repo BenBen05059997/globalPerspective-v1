@@ -26,10 +26,13 @@ const FN_DIR = 'amplify/backend/function/NewsProjectInvokeAgentLambda';
 const FN = 'NewsProjectInvokeAgentLambda-dev';
 const REGION = 'ap-northeast-1';
 const OLD_REF = process.env.OLD_REF || '0ef24cf'; // last commit with the two-call job
-const RESULTS = path.join(HERE, 'results_2026-10-17.json');
-const REPORT = path.join(HERE, 'REPORT_2026-10-17.md');
+const HELD = process.argv.some((a) => a.startsWith('--days='));
+const RESULTS = path.join(HERE, HELD ? 'results_heldout_2026-10-17.json' : 'results_2026-10-17.json');
+const REPORT = path.join(HERE, HELD ? 'REPORT_heldout_2026-10-17.md' : 'REPORT_2026-10-17.md');
 const FROM_CACHE = process.argv.includes('--from-cache');
 const REDO_B = process.argv.includes('--redo-b'); // keep cached A, re-run only B (prompt iteration)
+// --days N: test on archived stories from the N days before today (unseen during prompt tuning), one per thread, max 40.
+const DAYS = Number((process.argv.find((a) => a.startsWith('--days=')) || '').split('=')[1]) || 0;
 const CONCURRENCY = 4;
 
 // DeepSeek v4-pro, $ per 1M tokens, [off-peak, peak] (project-docs/ops/DEEPSEEK_COST_ESTIMATE.md)
@@ -153,7 +156,20 @@ if (FROM_CACHE) {
   }
 
   const staging = getItem('NewsCache', { id: { S: 'staging' } });
-  const topics = staging.topics.map((t, i) => newJob.buildTopic(t, i));
+  let rawTopics = staging.topics;
+  if (DAYS) {
+    const seen = new Set(staging.topics.map((t) => t.threadId).filter(Boolean));
+    rawTopics = [];
+    for (let i = 1; i <= DAYS && rawTopics.length < 40; i++) {
+      const d = new Date(); d.setUTCDate(d.getUTCDate() - i);
+      const it = getItem('NewsCache', { id: { S: `archive#${d.toISOString().slice(0, 10)}` } });
+      for (const e of it?.entries || []) {
+        if (rawTopics.length >= 40 || !e.threadId || seen.has(e.threadId) || !(e.sources || []).length) continue;
+        seen.add(e.threadId); rawTopics.push({ ...e, _day: d.toISOString().slice(0, 10) });
+      }
+    }
+  }
+  const topics = rawTopics.map((t, i) => ({ ...newJob.buildTopic(t, i), _day: t._day }));
   const regions = newJob.collectRegions(topics);
   const factsByCountry = {};
   for (const c of regions) {
@@ -161,7 +177,7 @@ if (FROM_CACHE) {
     if (it) factsByCountry[c] = { country: c, current: [it.headOfState?.name, it.headOfGovernment?.name].filter(Boolean), stale: [], leadershipString: it.leadershipString || '' };
   }
   const pastEntries = [];
-  for (let i = 1; i <= 7; i++) {
+  for (let i = 1; i <= 7 + DAYS; i++) {
     const d = new Date(); d.setUTCDate(d.getUTCDate() - i);
     const key = `archive#${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
     const it = getItem('NewsCache', { id: { S: key } });
@@ -177,7 +193,8 @@ if (FROM_CACHE) {
     while (cursor < topics.length) {
       const i = cursor++; const topic = topics[i];
       const premiseBlock = newJob.buildPremiseBlock(topic, factsByCountry);
-      const arcDigest = newJob.buildArcDigest(topic, pastEntries);
+      // held-out stories only see archive history from BEFORE their own day (no look-ahead)
+      const arcDigest = newJob.buildArcDigest(topic, topic._day ? pastEntries.filter((e) => e.date < topic._day) : pastEntries);
       const v1 = { premiseBlock, arcDigest, webContext: '' };
       const inputText = newJob.forecastInputText(topic, v1);
       const row = { id: topic.id, title: topic.title, inputText, arcDigest, premiseBlock };

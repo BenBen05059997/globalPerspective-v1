@@ -16,6 +16,7 @@
 
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { SNSClient, PublishCommand } = require('@aws-sdk/client-sns');
+const { chat, parseJsonContent } = require('./_shared/llm');
 
 const REGION = process.env.AWS_REGION || 'ap-northeast-1';
 const WORLD_BUCKET = process.env.WORLD_BUCKET || 'globalperspective-world-280362093938';
@@ -29,8 +30,7 @@ const GDELT_CORPUS_PREFIX = process.env.GDELT_CORPUS_PREFIX || 'corpus/gdelt';
 const AUDIT_PREFIX = process.env.IMPACT_AUDIT_PREFIX || 'audit/impact';
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 const MISS_ALERT_THRESHOLD = Number(process.env.MISS_ALERT_THRESHOLD) || 2;
-const API_KEY = process.env.XAI_API_KEY; // legacy name — holds the DeepSeek key in prod
-const API_URL = process.env.GROK_API_URL || 'https://api.deepseek.com/chat/completions';
+// LLM: shared llm.js reads GROK_API_URL + XAI_API_KEY (legacy names — DeepSeek values in prod).
 const MODEL = process.env.GROK_MODEL || 'deepseek-flash'; // fallback only; matches the live env (checked 2026-10-19)
 
 const s3 = new S3Client({ region: REGION });
@@ -77,21 +77,8 @@ async function audit(input, chosen) {
     + 'In "missed", list ONLY genuinely HIGH-impact events the selector dropped, grounded in the '
     + 'titles/snippets (do not invent facts). Empty array if none.';
 
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      thinking: { type: 'disabled' }, // V4 thinking-mode burns max_tokens on reasoning_content → truncated/empty output; disable (matches the fleet; this straggler missed the 2026-07-26 patch, added 2026-09-08)
-      messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
-      temperature: 0.2,
-      max_tokens: 2500,
-      response_format: { type: 'json_object' },
-    }),
-  });
-  if (!res.ok) throw new Error(`DeepSeek ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const data = await res.json();
-  return JSON.parse(data.choices?.[0]?.message?.content || '{}');
+  const r = await chat({ step: 'impact_audit', model: MODEL, system: sys, user, temperature: 0.2, maxTokens: 2500, json: true });
+  return parseJsonContent(r.content);
 }
 
 // Deterministic, OBJECTIVE coverage gap: GDACS Orange/Red disasters the selector did not cover.

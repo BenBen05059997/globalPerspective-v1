@@ -154,7 +154,8 @@ export function formatDailyBrief(brief) {
     lines.push(`${brief.stats.totalArticles} articles · ${brief.stats.sourceOutlets} sources · ${brief.stats.countriesCovered} countries`);
   }
 
-  lines.push(`— Global Perspectives · globalperspective.net/daily/${brief.dateKey}`);
+  // TODO(L1-LINKS): briefingHref from @/shared/lib/links.js
+  lines.push(`— Global Perspectives · globalperspective.net/briefings?mode=read&date=${brief.dateKey}`);
 
   return lines.join('\n');
 }

@@ -36,7 +36,7 @@ function renderWeeklyEmail(brief, { siteUrl, unsubUrl } = {}) {
   const threats = signals.filter((s) => s.kind !== 'development');
   const highRisk = threats.filter((s) => s.riskLevel === 'high').length;
   const site = siteUrl || 'https://globalperspective.net';
-  const briefUrl = `${site}/weekly-brief`;
+  const briefUrl = `${site}/briefings?mode=weekly`;
 
   const subject = `Weekly Signals Brief — week of ${weekLabel}`;
 

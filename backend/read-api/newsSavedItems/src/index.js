@@ -29,7 +29,7 @@ const REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-n
 const SAVED_ITEMS_TABLE = process.env.SAVED_ITEMS_TABLE;
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 
-const ALLOWED_ITEM_TYPES = new Set(['thread', 'country', 'daily', 'pair']);
+const ALLOWED_ITEM_TYPES = new Set(['thread', 'country', 'daily', 'weekly', 'pair']);
 const MAX_SAVED_ITEMS = 500;
 const MAX_METADATA_BYTES = 4096;
 

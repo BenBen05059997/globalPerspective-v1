@@ -1,6 +1,6 @@
 # newsSavedItems
 
-Per-user saves/bookmarks. Actions `save_item`, `unsave_item`, `get_saved_items` (optional `itemType` filter, newest first, up to 500). Every action needs a Firebase JWT (`Authorization: Bearer`). Item types: `thread`, `country`, `daily`, `pair`; `itemId` max 256 chars, no `#`; `metadata` object max 4 KB (larger is dropped). Two invocation modes, auto-detected by `event.info?.fieldName`: AppSync resolver (`saveItem`/`unsaveItem`/`getSavedItems`, GraphQL-shaped returns) or Function URL (HTTP replies).
+Per-user saves/bookmarks. Actions `save_item`, `unsave_item`, `get_saved_items` (optional `itemType` filter, newest first, up to 500). Every action needs a Firebase JWT (`Authorization: Bearer`). Item types: `thread`, `country`, `daily`, `weekly` (a weekly brief, itemId = its weekOf), `pair`; `itemId` max 256 chars, no `#`; `metadata` object max 4 KB (larger is dropped). Two invocation modes, auto-detected by `event.info?.fieldName`: AppSync resolver (`saveItem`/`unsaveItem`/`getSavedItems`, GraphQL-shaped returns) or Function URL (HTTP replies).
 
 ## Deployment
 - Deployed name `newsSavedItems` · runtime `nodejs24.x` · group `read-api` (scripts/functions.json)

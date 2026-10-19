@@ -9,6 +9,8 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { computeCountryDrift } from '@/features/countries/lib/countryDrift';
 import RiskDeltaPill from '@/shared/ui/risk/RiskDeltaPill';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
+import { ROUTE } from '@/shared/lib/links.js';
 import '@/features/countries/components/CountryWhatChanged.css';
 import { safeWhy, safeTriggerEvent } from '@/shared/lib/driftNote.js';
 
@@ -79,7 +81,7 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [], driftNo
         <div className="cwc-why">
           {safeTriggerEvent(note)?.title && (
             <div className="cwc-because">
-              ↳ Because: <b>{safeTriggerEvent(note).title}</b>
+              ↳ Because: <b><EntityLink kind="story" id={safeTriggerEvent(note).threadId} topic={{ title: safeTriggerEvent(note).title }}>{safeTriggerEvent(note).title}</EntityLink></b>
               {safeTriggerEvent(note).date ? <span className="cwc-evdate"> · {fmtDay(safeTriggerEvent(note).date)}</span> : null}
             </div>
           )}
@@ -137,7 +139,7 @@ export default function CountryWhatChanged({ snapshots, driftNotes = [], driftNo
             ? '💭 Grounded in our coverage of the cited event — interpretation, not a forecast.'
             : 'Computed from our daily risk assessments — not a forecast.'}
         </span>
-        <Link className="cwc-foot-link" to="/track-record">All corrections →</Link>
+        <Link className="cwc-foot-link" to={ROUTE.trackRecord}>All corrections →</Link>
       </div>
     </div>
   );

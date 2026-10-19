@@ -10,7 +10,8 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { threadPath } from '@/shared/lib/threadPath';
+import { ROUTE, storyHref } from '@/shared/lib/links.js';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { useDisruptionsList } from '@/shared/hooks/useDisruptionsList';
 import { useTopMovers } from '@/features/economy/hooks/useTopMovers';
 import { useMarketsGlobal } from '@/features/economy/hooks/useMarketsGlobal';
@@ -130,7 +131,7 @@ function BriefingText({ briefing }) {
       {segs.map((s, i) => {
         if (i % 2 === 0) return <span key={i}>{s}</span>;
         return sid
-          ? <Link key={i} className="ep-brief-story" to={threadPath(sid, { tab: 'economy' })}>{s}</Link>
+          ? <Link key={i} className="ep-brief-story" to={storyHref(sid, { tab: 'economy' })}>{s}</Link>
           : <strong key={i}>{s}</strong>;
       })}
     </p>
@@ -204,7 +205,7 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
             <span className={`ep-sev-word ${s.severity}`}>{SEVERITY_LABEL[s.severity] || s.severity}</span>
           </div>
           <div className="ep-dr-headline">
-            <Link to={threadPath(s.scopeId, { tab: 'economy' })}>{s.headline}</Link>
+            <Link to={storyHref(s.scopeId, { tab: 'economy' })}>{s.headline}</Link>
             <QualityFlag impact={s} size="sm" />
           </div>
           <div className="ep-dr-dir">
@@ -237,7 +238,7 @@ function ExpandedPanel({ instrumentId, level, marketsAsOf, stories, mover, magni
           <div className="ep-affected">
             <b>Affected countries</b>
             {uniq.map(name => (
-              <Link key={name} className="ep-country-chip" to={`/weekly/country/${encodeURIComponent(name)}`}>{name}</Link>
+              <EntityLink key={name} kind="country" id={name} className="ep-country-chip">{name}</EntityLink>
             ))}
           </div>
         );
@@ -588,7 +589,7 @@ export default function EconomyPage() {
               ? 'The week in markets — a reviewed, published wrap.'
               : 'What today’s news is repricing — instrument-first.'}
           </p>
-          <Link className="ep-analyze-link" to="/analyze">Analyze what's repricing markets today →</Link>
+          <Link className="ep-analyze-link" to={ROUTE.studio}>Analyze what's repricing markets today →</Link>
           {/* Today / This week mode toggle — segmented control. Persists to ?view=. */}
           <div className="ep-mode-toggle" role="tablist" aria-label="Markets view">
             <button
@@ -943,7 +944,7 @@ export default function EconomyPage() {
                   return (
                     <div className="ep-sev-story" key={d.scopeId}>
                       <h4>
-                        <Link to={threadPath(d.scopeId, { tab: 'economy' })}>
+                        <Link to={storyHref(d.scopeId, { tab: 'economy' })}>
                           {d.headline || 'Disruption detected'}
                         </Link>
                         <QualityFlag impact={d} size="sm" />

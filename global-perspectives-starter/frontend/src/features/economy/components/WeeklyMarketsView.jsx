@@ -17,7 +17,7 @@
 
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router';
-import { threadPath } from '@/shared/lib/threadPath';
+import { storyHref } from '@/shared/lib/links.js';
 import { useWeeklyMarkets } from '@/features/economy/hooks/useWeeklyMarkets';
 import '@/features/economy/components/WeeklyMarketsView.css';
 
@@ -85,7 +85,7 @@ function Grounding({ m }) {
           <ul className="wm-cov-list">
             {coverage.map((c, i) => (
               <li className="wm-cov-row" key={c.threadId || i}>
-                <Link className="wm-cov-link" to={threadPath(c.threadId, { tab: 'economy' })}>
+                <Link className="wm-cov-link" to={storyHref(c.threadId, { tab: 'economy' })}>
                   {c.headline || 'View coverage'} →
                 </Link>
                 <SeverityChip severity={c.severity} />

@@ -209,7 +209,7 @@ export function buildStorySources({ analysis, forecast, drift, news } = {}, opts
 // analysis.js) does the fetching + buildStorySources() and calls this.
 //
 // Returns { context, citations:[{ n, kind, date, label, storyTitle, url }],
-//   perStory:[{ title, richness, counts, truncated }], thin, thinTitles, totalChars }.
+//   perStory:[{ title, threadId, richness, counts, truncated }], thin, thinTitles, totalChars }.
 export function assembleContext(stories) {
   const list = Array.isArray(stories) ? stories : [];
   const citations = [];
@@ -231,6 +231,7 @@ export function assembleContext(stories) {
     if (storySources.length === 0) lines.push('(no material available for this story)');
     perStory.push({
       title: t.title,
+      threadId: t.threadId || null,
       richness: story.richness || 'THIN',
       counts: story.counts || { NEWS: 0, ANALYSIS: 0, DRIFT: 0, FORECAST: 0 },
       truncated: !!story.truncated,

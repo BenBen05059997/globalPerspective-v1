@@ -18,12 +18,12 @@ import StoryRow from '@/shared/ui/StoryRow.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import Chip from '@/shared/ui/Chip.jsx';
 import DirectionArrow from '@/shared/ui/DirectionArrow';
-import { isRealCountryName } from '@/shared/lib/placeNames.js';
+import { parentCountry } from '@/shared/lib/countries.js';
+import { countryHref } from '@/shared/lib/links.js';
 import SeverityBadge from '@/shared/ui/SeverityBadge';
 import '@/features/countries/CountryListPage.css';
 
 const SEVERITY_RANK = { severe: 3, moderate: 2, minor: 1 };
-const countryPath = (name) => `/weekly/country/${encodeURIComponent(name)}`;
 
 function Trajectory({ value }) {
   const t = trajectoryOf(value);
@@ -34,7 +34,7 @@ function Trajectory({ value }) {
 
 function CountryCard({ country, intel, disruptionSeverity }) {
   return (
-    <Card as={Link} to={countryPath(country.name)} className="clp-card">
+    <Card as={Link} to={countryHref(country.name)} className="clp-card">
       <div className="clp-card-head">
         <span className="clp-card-name">{country.name}</span>
         <TierChip tier={countryTier(intel)} score={intel?.riskScore} />
@@ -77,7 +77,7 @@ function CountryRow({ country, intel }) {
   return (
     <StoryRow
       className="clp-row"
-      to={countryPath(country.name)}
+      to={countryHref(country.name)}
       title={country.name}
       tier={countryTier(intel)}
       score={intel?.riskScore}
@@ -170,7 +170,7 @@ function Leaderboard({ label, items, intelligence, meta }) {
             <StoryRow
               key={c.name}
               className="clp-lb-row"
-              to={countryPath(c.name)}
+              to={countryHref(c.name)}
               title={c.name}
               tier={countryTier(intel)}
               score={intel?.riskScore}
@@ -211,7 +211,8 @@ export default function CountryListPage() {
   const { dayMap, sortedDates, loading } = useWeeklyArchive();
 
   const handleCountryClick = useCallback((name) => {
-    navigate(countryPath(name));
+    const to = countryHref(name);
+    if (to) navigate(to);
   }, [navigate]);
 
   const countries = useMemo(() => {
@@ -219,8 +220,10 @@ export default function CountryListPage() {
     const map = {};
     for (const date of sortedDates) {
       for (const entry of (dayMap[date]?.entries || [])) {
-        for (const region of (entry.regions || [])) {
-          if (!isRealCountryName(region)) continue; // Batch 3 / F: skip aggregates (Europe, Middle East ...): they are not countries
+        // One row per country under its canonical name (USA / United States / US are one; West Bank counts
+        // for Palestine); regions, blocs and seas (Europe, NATO, Strait of Hormuz) are not countries.
+        const names = new Set((entry.regions || []).map((r) => parentCountry(r)?.name).filter(Boolean));
+        for (const region of names) {
           if (!map[region]) map[region] = { name: region, articles: 0, threads: new Set(), categories: {} };
           map[region].articles++;
           if (entry.threadId) map[region].threads.add(entry.threadId);
@@ -420,7 +423,7 @@ export default function CountryListPage() {
           />
           <div className="clp-others-grid">
             {filteredOthers.map(c => (
-              <Link key={c.name} to={countryPath(c.name)} className="clp-others-item">
+              <Link key={c.name} to={countryHref(c.name)} className="clp-others-item">
                 <span className="clp-others-name">{c.name}</span>
                 <span className="clp-others-count">{c.articles}</span>
               </Link>

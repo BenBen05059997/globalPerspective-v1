@@ -15,9 +15,8 @@
 // The Worker sends real 301s for these; the client redirects stay as the fallback.
 import { Navigate, useParams, useSearchParams } from 'react-router';
 import { useBreakingAlert } from '@/features/breaking';
-import { briefingHref } from '@/shared/lib/links.js';
+import { ROUTE, briefingHref, storyHref } from '@/shared/lib/links.js';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
-import { threadPath } from '@/shared/lib/threadPath';
 
 export function DailyRedirect() {
   const { dateKey } = useParams();
@@ -30,12 +29,12 @@ export function WeeklyBriefRedirect() {
 
 export function WeeklyRoute({ children }) {
   const [searchParams] = useSearchParams();
-  if (searchParams.get('section') === 'countries') return <Navigate replace to="/weekly/countries" />;
+  if (searchParams.get('section') === 'countries') return <Navigate replace to={ROUTE.countries} />;
   return children;
 }
 
 export function MarketsRedirect() {
-  return <Navigate replace to="/briefings?from=markets" />;
+  return <Navigate replace to={`${ROUTE.briefings}?from=markets`} />;
 }
 
 export function SpiderDemoRedirect() {
@@ -43,13 +42,13 @@ export function SpiderDemoRedirect() {
 }
 
 export function BreakingFeedRedirect() {
-  return <Navigate replace to="/" />;
+  return <Navigate replace to={ROUTE.map} />;
 }
 
 export function BreakingDetailRedirect() {
   const { id } = useParams();
   const { alert, loading } = useBreakingAlert(id);
   if (loading) return <BootLoader variant="inline" label="Opening the story" text="Opening the story" />;
-  const to = alert && alert.hasArc && alert.threadId ? threadPath(alert.threadId) : '/';
+  const to = alert && alert.hasArc && alert.threadId ? storyHref(alert.threadId) : ROUTE.map;
   return <Navigate replace to={to} />;
 }

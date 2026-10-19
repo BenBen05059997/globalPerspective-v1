@@ -1,58 +1,15 @@
 {
   "note": "Per-file count of hand-built route strings outside shared/lib/links.js and backend/shared/src/links.js (see quality/check_links.mjs). Counts may only fall; lower them with --lower after switching a caller to links.js.",
   "totals": {
-    "/track-record": 9,
-    "/briefings": 1,
-    "/weekly/country": 11,
-    "/analyze": 12,
+    "/weekly/country": 2,
+    "/track-record": 5,
+    "/analyze": 3,
     "/today": 1,
-    "/weekly/thread": 2
+    "/weekly/thread": 1
   },
   "files": {
-    "app/layout/Layout.jsx": {
-      "/track-record": 1,
-      "/briefings": 1
-    },
-    "features/account/Account.jsx": {
-      "/weekly/country": 1,
-      "/analyze": 1
-    },
-    "features/account/components/DeskFollowing.jsx": {
-      "/weekly/country": 1
-    },
-    "features/account/components/SavedPanel.jsx": {
-      "/weekly/country": 1
-    },
-    "features/analysis-studio/components/ShareControl.jsx": {
-      "/analyze": 2
-    },
-    "features/analysis-studio/components/SignedOutExample.jsx": {
-      "/analyze": 1
-    },
-    "features/analysis-studio/SharedAnalysisPage.jsx": {
-      "/analyze": 3
-    },
     "features/briefings/lib/briefingSlides.js": {
       "/weekly/country": 1
-    },
-    "features/countries/components/CountryCardV2.jsx": {
-      "/analyze": 1
-    },
-    "features/countries/components/CountryWhatChanged.jsx": {
-      "/track-record": 1
-    },
-    "features/countries/CountryListPage.jsx": {
-      "/weekly/country": 1
-    },
-    "features/countries/CountryPage.jsx": {
-      "/weekly/country": 2
-    },
-    "features/economy/components/MechanismCard.jsx": {
-      "/weekly/country": 1
-    },
-    "features/economy/EconomyPage.jsx": {
-      "/weekly/country": 1,
-      "/analyze": 1
     },
     "features/home/Home.jsx": {
       "/weekly/country": 1,
@@ -68,14 +25,6 @@
     },
     "features/map/SituationHome.jsx": {
       "/weekly/thread": 1
-    },
-    "features/track-record/TrackRecordPage.jsx": {
-      "/weekly/thread": 1,
-      "/weekly/country": 1,
-      "/track-record": 1
-    },
-    "features/track-record/TrackRecordText.jsx": {
-      "/track-record": 1
     }
   }
 }

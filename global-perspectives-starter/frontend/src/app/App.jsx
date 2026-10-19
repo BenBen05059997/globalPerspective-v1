@@ -19,6 +19,7 @@ import {
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import { removeStaticBoot } from '@/shared/ui/boot/staticBoot.js';
 import { WAITING_SENSORS } from '@/features/map';
+import { ROUTE } from '@/shared/lib/links.js';
 
 // Route-level code splitting (STAGE0_FIXES_PLAN.md item (g)): every other page is its own chunk,
 // fetched on first navigation instead of bundled into the main chunk every visitor downloads.
@@ -59,8 +60,8 @@ function NotFound() {
         That URL doesn't lead anywhere. Head back to the map or browse the weekly story arcs.
       </p>
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-        <Link to="/" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>← Map</Link>
-        <Link to="/weekly" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Weekly →</Link>
+        <Link to={ROUTE.map} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>← Map</Link>
+        <Link to={ROUTE.stories} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Weekly →</Link>
       </div>
     </div>
   );

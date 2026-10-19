@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { threadPath } from '@/shared/lib/threadPath';
-import { briefingHref } from '@/shared/lib/links.js';
+import { briefingHref, countryHref, storyHref } from '@/shared/lib/links.js';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
 import Card from '@/shared/ui/Card.jsx';
 import Chip from '@/shared/ui/Chip.jsx';
@@ -20,8 +19,8 @@ const TYPE_LABELS = {
 };
 
 function getItemHref(item) {
-  if (item.itemType === 'thread')  return threadPath(item.itemId);
-  if (item.itemType === 'country') return `/weekly/country/${encodeURIComponent(item.itemId)}`;
+  if (item.itemType === 'thread')  return storyHref(item.itemId);
+  if (item.itemType === 'country') return countryHref(item.itemId);
   if (item.itemType === 'daily')   return briefingHref({ mode: 'read', date: item.itemId });
   if (item.itemType === 'weekly')  return briefingHref({ mode: 'weekly', week: item.itemId });
   return null;

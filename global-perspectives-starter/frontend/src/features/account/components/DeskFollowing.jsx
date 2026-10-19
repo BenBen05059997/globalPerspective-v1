@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import EntityLink from '@/shared/ui/EntityLink.jsx';
 import { tierFromScore, tierLabel } from '@/shared/lib/riskTiers';
 import { WIDTH, HEIGHT, WORLD_PATH, centroidForCountry } from '@/features/account/lib/deskMap';
 import Card from '@/shared/ui/Card.jsx';
@@ -54,10 +54,10 @@ export default function DeskFollowing({ isMember, followedCountries, countryResu
       </svg>
       <div className="desk-following-chips">
         {rows.map((r) => (
-          <Link key={r.country} to={`/weekly/country/${encodeURIComponent(r.country)}`} className="desk-following-chip">
+          <EntityLink key={r.country} kind="country" id={r.country} className="desk-following-chip">
             🔔 {r.country}
             {r.score != null ? ` · risk ${r.score} · ${tierLabel(r.tier).toLowerCase()}` : ''}
-          </Link>
+          </EntityLink>
         ))}
       </div>
     </Card>

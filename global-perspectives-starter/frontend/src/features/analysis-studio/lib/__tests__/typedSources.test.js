@@ -102,8 +102,8 @@ describe('assembleContext — flat typed numbering across all selected stories',
   it('reports per-story richness and overall thin only when EVERY story is thin', () => {
     const mixed = assembleContext([richStory, thinStory]);
     expect(mixed.perStory).toEqual([
-      { title: 'Germany AfD thread', richness: 'RICH', counts: { NEWS: 1, ANALYSIS: 1, DRIFT: 0, FORECAST: 1 }, truncated: false },
-      { title: 'Philippines ferry fire', richness: 'THIN', counts: { NEWS: 1, ANALYSIS: 0, DRIFT: 0, FORECAST: 0 }, truncated: false },
+      { title: 'Germany AfD thread', threadId: null, richness: 'RICH', counts: { NEWS: 1, ANALYSIS: 1, DRIFT: 0, FORECAST: 1 }, truncated: false },
+      { title: 'Philippines ferry fire', threadId: null, richness: 'THIN', counts: { NEWS: 1, ANALYSIS: 0, DRIFT: 0, FORECAST: 0 }, truncated: false },
     ]);
     expect(mixed.thin).toBe(false); // richStory clears the bar
 

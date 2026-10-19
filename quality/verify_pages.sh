@@ -63,15 +63,15 @@ must_have "$SRC/app/App.jsx" 'path="/" element=\{<SituationHome' "/ renders the 
 must_have "$SRC/app/App.jsx" 'path="/today" element=\{<Home' "old home kept reachable at /today"
 must_have "$SRC/app/App.jsx" 'path="/map" element=\{<MapRedirect' "/map redirects to /"
 must_have "$SRC/app/MapRedirect.jsx" "search, hash" "the /map redirect keeps the query params"
-must_have "$SRC/app/layout/Layout.jsx" "to: '/', exact: true, label: 'Map'" "menu Map item points at / (exact)"
-must_have "$SRC/app/layout/Layout.jsx" "location.pathname === '/' && !isPhone" "desktop console shell keyed on /"
+must_have "$SRC/app/layout/Layout.jsx" "to: ROUTE.map, exact: true, label: 'Map'" "menu Map item points at / (exact; ROUTE.map from shared/lib/links.js)"
+must_have "$SRC/app/layout/Layout.jsx" "location.pathname === ROUTE.map && !isPhone" "desktop console shell keyed on / (ROUTE.map)"
 must_have "$SRC/features/map/components/MapAbout.jsx" "to=\"/today\"" "/today stays reachable from the map's About drawer (the footer no longer links it)"
 must_not_have "$SRC/app/layout/Layout.jsx" "pathname (===|!==) '/map'" "no stale /map pathname checks"
 
 # ─── BriefingsPage (/briefings: read / weekly / present modes; /daily and /weekly-brief merged 2026-10-19) ───
 must_have "$SRC/app/App.jsx" "import BriefingsPage|BriefingsPage = lazy" "imports BriefingsPage"
 must_have "$SRC/app/App.jsx" "/briefings" "wires /briefings route"
-must_have "$SRC/app/layout/Layout.jsx" "to: '/briefings'" "menu Briefings item points at /briefings"
+must_have "$SRC/app/layout/Layout.jsx" "to: ROUTE.briefings, label: 'Briefings'" "menu Briefings item points at /briefings (ROUTE.briefings)"
 must_have "$SRC/features/briefings/BriefingsPage.jsx" "key: 'read'" "read mode exists (the default)"
 must_have "$SRC/features/briefings/BriefingsPage.jsx" "key: 'weekly'" "weekly mode exists"
 must_have "$SRC/features/briefings/BriefingsPage.jsx" "key: 'present'" "present mode exists"

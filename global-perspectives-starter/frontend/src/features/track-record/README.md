@@ -11,18 +11,23 @@ changed reads (corrections). A plain text twin renders the same facts for print 
 
 ## Routes
 - `/track-record` -> `TrackRecordPage` ("service record"); `/track-record/text` -> `TrackRecordText` ("Read as text")
+- `/track-record?q=<qid>` (`forecastHref`): the board opens on BOARD, scrolls to that question (DOM id
+  `forecastAnchorId(qid)` = `q-<qid>`) and highlights it; the phone opens on the MAP tab. A qid that is not among
+  the sampled questions on the board gets one honest line, never a guessed match.
 
 ## Frontend
 - `TrackRecordPage.jsx` - page; local `CorrectionsLedger`; phone tabs Read / Map / Log
 - `TrackRecordText.jsx` - same view model, semantic headings, no map
 - `components/ForecastBoard.jsx` (radar map via `@/shared/map/RadarMap.jsx`, lazy), `DrawRow.jsx`, `SettlingLog.jsx`
+- `components/ForecastLinks.jsx` - each question's story (only when `clusterKey` is a real `thread-…` id; a topic-id
+  key stays plain text) and the countries its text names (`lib/forecastPlaces.js` `itemPlaces`, `itemStoryId`)
 - `lib/trackRecordView.js` - pure view model for both pages (pilotExclusion, stageWording, accuracyLock, notReadyCopy...)
 - `lib/sampleRule.js` - browser re-check of the weekly draw (`verifyDraw`, WebCrypto sha256); mirrors
   `backend/predictions/newsPredictionResolver/src/lib.js`, parity via `sampleRuleGolden.json` (guarded by
   `scripts/check-shared-sync.mjs`)
 - Public API (`index.js`): `useTrackRecord`, `useCorrectionsFeed` — used by `home` (trust strip)
-- Imports from other features: none. Shared: `FollowButton`, `@/shared/map/RadarMap.jsx`,
-  `@/shared/lib/situationLabels.js`, `questionStates.js`, `trFormatDate.js`, `driftNote.js`
+- Imports from other features: none. Shared: `FollowButton`, `EntityLink`, `@/shared/map/RadarMap.jsx`,
+  `@/shared/lib/links.js`, `countries.js`, `questionStates.js`, `trFormatDate.js`, `driftNote.js`
 
 ## Backend
 - Generated row: [reference/features.md#track-record](../../../../../project-docs/reference/features.md#track-record)

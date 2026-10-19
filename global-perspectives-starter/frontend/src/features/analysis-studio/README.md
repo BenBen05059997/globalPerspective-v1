@@ -13,8 +13,9 @@ by a validator, rendered as a deck, and can be shared.
   (`lib/sharedExample.js`, currently `null` -> "not ready yet"). Share UI hidden while `NEWS_SHARE_ENDPOINT` is unset.
 
 ## Routes
-- `/analyze` -> `AnalysisStudio` (`?stories=id1,id2` pre-selects known topic ids, max 4)
-- `/analyze/s/:id` -> `SharedAnalysisPage` (read-only, noindex shared run; owner can delete it)
+- `/analyze` -> `AnalysisStudio` (`?stories=` thread or topic ids, max 4: `studioHref`, `lib/requestedStories.js`)
+- `/analyze/s/:id` -> `SharedAnalysisPage` (read-only, noindex; owner can delete). Address: `shareApi.js` `sharePath(id)`;
+  "Run your own" reopens the Studio on its stories (`studioHref`).
 
 ## Frontend
 - `AnalysisStudio.jsx` - picker, lens/mode, quote before the run, run, stacked sections
@@ -26,7 +27,7 @@ by a validator, rendered as a deck, and can be shared.
   Node tooling (`quality/analysis/`): keep their relative imports (header comment says so).
 - Public API (`index.js`): `loadByok`, `clearByok`, `getProvider`, `ProviderModal` — used by `account`
 - Imports from other features: `@/features/threads` -> `useWeeklyArchive`. Shared: `useMembership`,
-  `@/shared/map/StoryMap.jsx`, `@/shared/ui/deck.css`, `@/shared/lib/situationLabels.js`, `trFormatDate.js`, `dropRedatedRepeats.js`
+  `@/shared/map/StoryMap.jsx`, `@/shared/ui/deck.css`, `@/shared/lib/countries.js`, `links.js`, `trFormatDate.js`, `dropRedatedRepeats.js`
 
 ## Backend
 - Generated row: [reference/features.md#analysis-studio](../../../../../project-docs/reference/features.md#analysis-studio)

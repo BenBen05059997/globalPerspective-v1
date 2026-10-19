@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { buildSharePayload, shareableSections, sameCitations } from '@/features/analysis-studio/lib/sharePayload.js';
-import { shareConfigured, createShare, rememberShare, loadMyShares, forgetShare, deleteShare } from '@/features/analysis-studio/lib/shareApi.js';
+import { shareConfigured, createShare, rememberShare, loadMyShares, forgetShare, deleteShare, sharePath } from '@/features/analysis-studio/lib/shareApi.js';
 import Button from '@/shared/ui/Button.jsx';
 
 // ShareControl — "Share this analysis". Rendered ONLY when the share endpoint is configured AND at least one section
 // passed its checks (a failed run has no button at all; it already says "not shareable"). Sharing sends the run's
 // prose + numbering; the server re-fetches and freezes the sources itself and re-runs the checks.
 function shareUrl(id) {
-  return `${window.location.origin}/analyze/s/${id}`;
+  return `${window.location.origin}${sharePath(id)}`;
 }
 
 export default function ShareControl({ sections, selectedTopics, byok }) {
@@ -71,7 +71,7 @@ export default function ShareControl({ sections, selectedTopics, byok }) {
           <ul>
             {mine.map((m) => (
               <li key={m.id}>
-                <a href={`/analyze/s/${m.id}`} target="_blank" rel="noopener noreferrer">{m.title || m.id}</a>
+                <a href={sharePath(m.id)} target="_blank" rel="noopener noreferrer">{m.title || m.id}</a>
                 <button type="button" className="as-link-btn" onClick={() => onDelete(m.id)}>Delete</button>
               </li>
             ))}

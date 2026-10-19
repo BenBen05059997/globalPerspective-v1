@@ -126,6 +126,40 @@ operator's yes.
 - [ ] Worker upload with the 301s and `/today` pre-render (yes).
 - [ ] Open from the 2026-10-19 run: `newsPostLinkedin` deploy needs `--force` (operator runs it or says leave it).
 
+## Added 2026-10-19 (operator yes; each point checked in code and live data, not assumed)
+
+### L2 is also "stable ids and sound joins" (verified)
+- Topic ids are the title plus the run position (`newsInvokeGemini/src/index.js:683`, `createStableTopicId(title, idx)`),
+  so they change every run; summaries and forecasts are keyed by them. Thread ids are stable. Rule: every
+  per-story record is keyed by `threadId`; the topic id stays internal.
+- A topic joins a thread when its `continues_topic` title matches, else when keyword Jaccard >= 0.4 against the
+  last 7 days (`NewsProjectInvokeAgentLambda/src/index.js:1189-1210`). Known mis-join live (a Brazil debate inside
+  the Amazon-deforestation thread). Work: raise the bar (require the same country and a higher score, or a
+  model check), log every join with its score, add an operator merge/split tool.
+- Situation id = `news#<axis>#<ISO3>#<entity>` (`newsSituationIngest/src/classifier-core.js:133`), so one country
+  splits by entity: live 2026-10-19, 59 situations, Ukraine 8, France 7, Iran 7; only 20 carry a `threadId`.
+  Work: key news situations by country + thread when a thread exists, so the map, the story and the country agree.
+
+### L3 also carries one "as of" block (verified)
+- The map, story page and country page each show freshness in their own way (`SituationHome`, `ThreadPage`
+  `updatedAt`/`as of`, `CountryPage` `updatedAt`); briefing slides show only the edition date; the track record
+  shows "checked once". Work: one shared `AsOf` block (generated time + source job) on every page, fed from the
+  object's own timestamp.
+
+### P also carries one fact/judgment tag (verified)
+- Four wordings for one idea across pages: "fact" (39 uses), "model judgment" (23), "inference" (19),
+  "AI-generated" (19); `threads` already has `ClaimTag kind="fact|judgment"`. Work: `ClaimTag` moves to
+  `shared/ui` and replaces the others; "judged to feed into" stays as the story-web relation wording (decision 0012).
+
+### Backlog for the next plan (not in this one)
+- One read model per page: today the story page reads 5 data hooks, the country page 6, the map 7, each with its
+  own browser cache. Target: each page reads one object (story, country, world, briefing, track record) that the
+  jobs write and the read API serves; the related ids from this plan live in that object.
+- Fewer jobs: `THREAD#` records have three live writers (`newsThreadAnalysis`, `newsSystemsAnalysis`,
+  `newsCountryIntelligence`); `COUNTRY#` two. To verify before merging any job: which writer owns which fields.
+- Signals API: builds daily (`TriggerSignalsBuild` 10:00 UTC), 0 keys issued (`GlobalPerspectiveApiKeys`), no page
+  reads it. Operator decision: delete or keep.
+
 ## Data we still lack
 No analytics in the repo. Three rulings could change with numbers: `/today` visits, email/search arrivals at
 `/daily` and `/weekly-brief`, Studio use. Sources: GA4, Search Console, Worker logs for bot renders.

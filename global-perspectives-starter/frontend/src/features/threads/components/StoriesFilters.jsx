@@ -1,4 +1,5 @@
 import FilterGroup from '@/shared/ui/FilterGroup.jsx';
+import Chip from '@/shared/ui/Chip.jsx';
 import { CRISIS_LABEL } from '@/shared/lib/crisisHue';
 import { CRISIS_TYPES, WINDOWS, SORTS } from '@/features/threads/lib/storyGroups';
 
@@ -36,9 +37,9 @@ export default function StoriesFilters({
       {category ? (
         <div className="sf-topic">
           <span className="gp-filter__legend">Topic</span>
-          <button type="button" className="sf-chip" onClick={clearCategory} aria-label={`Clear topic filter ${category}`}>
+          <Chip selected onClick={clearCategory} aria-label={`Clear topic filter ${category}`}>
             {category} <span aria-hidden="true">×</span>
-          </button>
+          </Chip>
         </div>
       ) : null}
 

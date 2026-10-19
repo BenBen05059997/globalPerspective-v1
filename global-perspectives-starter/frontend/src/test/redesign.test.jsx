@@ -110,7 +110,7 @@ describe('Redesign v2 — WeeklyPage', () => {
     expect(screen.getByRole('tab', { name: 'Stories' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Countries' })).toBeInTheDocument();
     expect(screen.getByLabelText('Open stories by tier').textContent).toMatch(/open stor/);
-    for (const v of ['List', 'Timeline', 'Map']) expect(screen.getByRole('button', { name: v })).toBeInTheDocument();
+    for (const v of ['List', 'Timeline', 'Map']) expect(screen.getByRole('radio', { name: v })).toBeInTheDocument();
   });
 
   it('search input updates on typing', () => {
@@ -148,7 +148,7 @@ describe('Redesign v2 — WeeklyPage', () => {
 
   it('timeline view draws one row per story with dots only on real coverage days', () => {
     renderWithRouter(<WeeklyPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Timeline' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Timeline' }));
     const rows = document.querySelectorAll('.tl-row');
     expect(rows.length).toBeGreaterThan(0);
     const dates = new Set(Object.keys(dayMap));

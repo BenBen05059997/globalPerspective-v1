@@ -61,8 +61,8 @@ beforeEach(() => { phone.on = false; web.state = { index: makeIndex(), loading: 
 describe('Stories WEB (?view=web)', () => {
   it('desktop: view order List | Board | Timeline | Map | Web with Web pressed; graph nodes are story links; the list twin is present', () => {
     renderAt('/weekly?view=web');
-    expect([...document.querySelectorAll('.sf-seg__btn')].map((b) => b.textContent)).toEqual(['List', 'Board', 'Timeline', 'Map', 'Web']);
-    expect(document.querySelector('.sf-seg__btn[aria-pressed="true"]').textContent).toBe('Web');
+    expect([...document.querySelectorAll('.sf-seg [role=radio]')].map((b) => b.textContent)).toEqual(['List', 'Board', 'Timeline', 'Map', 'Web']);
+    expect(document.querySelector('.sf-seg [aria-checked="true"]').textContent).toBe('Web');
     const nodes = document.querySelectorAll('a.sw-node');
     expect(nodes).toHaveLength(3);
     for (const n of nodes) expect(n.getAttribute('href')).toMatch(/^\/weekly\/thread\//);
@@ -74,7 +74,7 @@ describe('Stories WEB (?view=web)', () => {
     const row = document.querySelector('.sw-link[data-edge="' + A + '->' + B + '"]');
     expect(row.querySelector('.sw-link__rel').textContent).toMatch(/judged to feed into · strong · 2 analyses/);
     expect(row.querySelector('.sw-link__webs').textContent).toMatch(/Iran \(strong, .*\) · Israel \(weak, /);
-    expect(row.querySelector('.sw-link__tag').textContent).toBe('Model judgment');
+    expect(row.querySelector('.sw-link__mech .claim-tag').textContent).toBe('MODEL JUDGMENT');
     expect(row.querySelector('.sw-link__mech').textContent).toContain('Iran mechanism');
     expect(row.querySelector('.sw-link__cites').textContent).toContain('A cited headline');
     expect(document.querySelector('.sw').textContent.replace(/never \u201Ccaused\u201D/, '')).not.toMatch(/caused/i);
@@ -89,7 +89,7 @@ describe('Stories WEB (?view=web)', () => {
   it('the crisis filter applies: stories not matching drop out of the graph', () => {
     renderAt('/weekly?view=web');
     const before = document.querySelectorAll('a.sw-node').length;
-    fireEvent.click(screen.getAllByRole('button').find((b) => /^Conflict/.test(b.textContent)) || document.body);
+    fireEvent.click(screen.getByRole('checkbox', { name: /^Conflict/ }));
     expect(document.querySelectorAll('a.sw-node').length).toBeLessThanOrEqual(before);
   });
   it('phone: the list twin comes before the graph; Web is reachable from READ; no right-rail "changed" section', () => {
@@ -97,8 +97,8 @@ describe('Stories WEB (?view=web)', () => {
     renderAt('/weekly?view=web');
     const twin = screen.getByTestId('web-twin'); const graph = document.querySelector('.sw-graphwrap');
     expect(twin.compareDocumentPosition(graph) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect([...document.querySelectorAll('.sf-subtoggle .sf-seg__btn')].map((b) => b.textContent)).toEqual(['List', 'Board', 'Web']);
-    expect(document.querySelector('.sf-tabs__btn[aria-selected="true"]').textContent).toBe('Read');
+    expect([...document.querySelectorAll('.sf-subtoggle [role=radio]')].map((b) => b.textContent)).toEqual(['List', 'Board', 'Web']);
+    expect(document.querySelector('.sf-tabs [aria-selected="true"]').textContent).toBe('Read');
   });
   it('failed read: an inline note, no nodes; no index: an honest empty line; no links: empty state still shows the footnote', () => {
     web.state = { index: null, loading: false, failed: true };
@@ -118,6 +118,6 @@ describe('Stories WEB (?view=web)', () => {
   it('the other views are unchanged (list still renders story rows, no web section)', () => {
     renderAt('/weekly');
     expect(document.querySelector('.sw')).toBeNull();
-    expect(document.querySelectorAll('.sf-seg__btn')).toHaveLength(5);
+    expect(document.querySelectorAll('.sf-seg [role=radio]')).toHaveLength(5);
   });
 });

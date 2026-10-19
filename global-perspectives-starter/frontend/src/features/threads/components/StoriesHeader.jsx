@@ -1,3 +1,4 @@
+import Tabs from '@/shared/ui/Tabs.jsx';
 
 // StoriesHeader — the top of /weekly: Stories | Countries tabs, a one-line count of open stories by
 // tier (computed from the loaded archive, never typed: scored tiers first, then a dim "N not yet
@@ -7,65 +8,45 @@
 const TIER_WORD = { high: 'High', elevated: 'Elevated', moderate: 'Moderate', low: 'Low' };
 const SCORED = ['high', 'elevated', 'moderate', 'low'];
 
-export const DESKTOP_VIEWS = [
-  { value: 'list', label: 'List' },
-  { value: 'board', label: 'Board' },
-  { value: 'timeline', label: 'Timeline' },
-  { value: 'map', label: 'Map' },
-  { value: 'web', label: 'Web' },
+const SECTION_TABS = [
+  { key: 'stories', label: 'Stories' },
+  { key: 'countries', label: 'Countries' },
 ];
-export const PHONE_TABS = [
-  { value: 'read', label: 'Read' },
-  { value: 'map', label: 'Map' },
-  { value: 'timeline', label: 'Timeline' },
+const DESKTOP_VIEWS = [
+  { key: 'list', label: 'List' },
+  { key: 'board', label: 'Board' },
+  { key: 'timeline', label: 'Timeline' },
+  { key: 'map', label: 'Map' },
+  { key: 'web', label: 'Web' },
+];
+const PHONE_TABS = [
+  { key: 'read', label: 'Read' },
+  { key: 'map', label: 'Map' },
+  { key: 'timeline', label: 'Timeline' },
 ];
 
 // READ's own List | Board | Web toggle (phone): Board and Web are reachable without a fourth tab (P1 keeps READ / MAP / TIMELINE).
-export const READ_VIEWS = [
-  { value: 'list', label: 'List' },
-  { value: 'board', label: 'Board' },
-  { value: 'web', label: 'Web' },
+const READ_VIEWS = [
+  { key: 'list', label: 'List' },
+  { key: 'board', label: 'Board' },
+  { key: 'web', label: 'Web' },
 ];
 
 // `?view=changes` is the old CHANGES tab: it now opens READ (scrolled to the changed section).
 // `?view=board` and `?view=web` are also READ (the board and the story web are ways of reading the list).
-export function viewToTab(view) {
+function viewToTab(view) {
   return view === 'map' ? 'map' : view === 'timeline' ? 'timeline' : 'read';
 }
 
 export default function StoriesHeader({ pageTab, setPageTab, view, setView, isPhone, counts = null }) {
+  const shownView = view === 'changes' ? 'list' : view; // the old CHANGES view is the list
   return (
     <header className="sf-head">
       <div className="sf-head__row">
-        <div className="wp-section-tabs" role="tablist" aria-label="Stories or countries">
-          {['stories', 'countries'].map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={pageTab === tab}
-              className={`wp-section-tab ${pageTab === tab ? 'active' : ''}`}
-              onClick={() => setPageTab(tab)}
-            >
-              {tab === 'stories' ? 'Stories' : 'Countries'}
-            </button>
-          ))}
-        </div>
+        <Tabs idBase="wp-section" label="Stories or countries" tabs={SECTION_TABS} active={pageTab} onChange={setPageTab} className="wp-section-tabs" />
 
         {pageTab === 'stories' && !isPhone ? (
-          <div className="sf-seg" role="group" aria-label="View">
-            {DESKTOP_VIEWS.map((v) => (
-              <button
-                key={v.value}
-                type="button"
-                className="sf-seg__btn"
-                aria-pressed={view === v.value || (v.value === 'list' && view === 'changes')}
-                onClick={() => setView(v.value)}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
+          <Tabs variant="segmented" idBase="sf-view" label="View" tabs={DESKTOP_VIEWS} active={shownView} onChange={setView} className="sf-seg" />
         ) : null}
       </div>
 
@@ -74,7 +55,7 @@ export default function StoriesHeader({ pageTab, setPageTab, view, setView, isPh
           <strong>{counts.total}</strong> open {counts.total === 1 ? 'story' : 'stories'}
           <span className="sf-counts__win"> · last 30 days</span>
           {SCORED.filter((t) => counts[t] > 0).map((t) => (
-            <span key={t} className={`sf-counts__t sf-counts__t--${t}`}>
+            <span key={t} className="sf-counts__t">
               {TIER_WORD[t]} <b>{counts[t]}</b>
             </span>
           ))}
@@ -83,36 +64,14 @@ export default function StoriesHeader({ pageTab, setPageTab, view, setView, isPh
       ) : null}
 
       {pageTab === 'stories' && isPhone ? (
-        <div className="sf-tabs" role="tablist" aria-label="Stories view">
-          {PHONE_TABS.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              role="tab"
-              aria-selected={viewToTab(view) === t.value}
-              className="sf-tabs__btn"
-              onClick={() => setView(t.value === 'read' ? 'list' : t.value)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          variant="phone" idBase="sf-tab" label="Stories view" tabs={PHONE_TABS} active={viewToTab(view)}
+          onChange={(t) => setView(t === 'read' ? 'list' : t)} className="sf-tabs"
+        />
       ) : null}
 
       {pageTab === 'stories' && isPhone && viewToTab(view) === 'read' ? (
-        <div className="sf-subtoggle" role="group" aria-label="Read as">
-          {READ_VIEWS.map((v) => (
-            <button
-              key={v.value}
-              type="button"
-              className="sf-seg__btn"
-              aria-pressed={view === v.value || (v.value === 'list' && view === 'changes')}
-              onClick={() => setView(v.value)}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
+        <Tabs variant="segmented" idBase="sf-read" label="Read as" tabs={READ_VIEWS} active={shownView} onChange={setView} className="sf-subtoggle" />
       ) : null}
     </header>
   );

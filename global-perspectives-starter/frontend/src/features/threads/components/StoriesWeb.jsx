@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Button from '@/shared/ui/Button.jsx';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import BootLoader from '@/shared/ui/boot/BootLoader.jsx';
 import StoryPeek from '@/shared/ui/StoryPeek.jsx';
+import SectionHeader from '@/shared/ui/SectionHeader.jsx';
+import Tooltip from '@/shared/ui/Tooltip.jsx';
 import { CRISIS_LABEL } from '@/shared/lib/crisisHue.js';
 import { peekData } from '@/shared/lib/peekData.js';
 import { threadPath } from '@/shared/lib/threadPath';
 import { useWebIndex } from '@/features/threads/hooks/useWebIndex.js';
 import StoryLink from '@/shared/ui/StoryLink.jsx';
+import ClaimTag from '@/features/threads/components/ClaimTag.jsx';
 import {
   CONF_WIDTH, LAYOUT, WEB_DEFAULT_NODES, WEB_HIDE_DAYS, WEB_LIST_DEFAULT, WEB_LIST_MAX, WEB_MAX_NODES,
   layoutWeb, mergeWebLinks, nodeLinkWords, pickWebNodes, strongestLinks, webDateLabel, webFootnote,
@@ -123,10 +127,13 @@ function Graph({ picked, titleOf, peek }) {
           );
         })}
         {tip ? (
-          <div className="sw-tip" style={{ left: tip.x + 12, top: tip.y + 12 }} role="presentation" data-testid="web-edge-tip">
-            <b>{tip.edge.confidence || 'unrated'}</b> · model judgment · {tip.edge.webs.length} {plural(tip.edge.webs.length, 'analysis', 'analyses')}
-            <span>{clip(titleOf(tip.edge.from), 48)} {'→'} {clip(titleOf(tip.edge.to), 48)}</span>
-          </div>
+          <Tooltip
+            id="sw-edge-tip"
+            at={{ x: tip.x, y: tip.y }}
+            bounds={{ width, height }}
+            kicker={`${tip.edge.confidence || 'unrated'} · model judgment · ${tip.edge.webs.length} ${plural(tip.edge.webs.length, 'analysis', 'analyses')}`}
+            title={`${clip(titleOf(tip.edge.from), 48)} → ${clip(titleOf(tip.edge.to), 48)}`}
+          />
         ) : null}
       </div>
     </div>
@@ -149,7 +156,7 @@ function LinkItem({ edge, titleOf }) {
         {edge.webs.map((w) => `${w.country || 'Unnamed analysis'}${w.confidence ? ` (${w.confidence}${w.generatedAt ? `, ${webDateLabel(w.generatedAt)}` : ''})` : ''}`).join(' · ')}
       </p>
       {edge.mechanism ? (
-        <p className="sw-link__mech"><span className="sw-link__tag">Model judgment</span> {'“'}{edge.mechanism}{'”'}</p>
+        <p className="sw-link__mech"><ClaimTag kind="judgment" /> {'“'}{edge.mechanism}{'”'}</p>
       ) : null}
       {cites.length ? (
         <ul className="sw-link__cites" aria-label="Cited headlines">
@@ -218,14 +225,14 @@ export default function StoriesWeb({ threads, analyses, now, peek, isPhone }) {
 
   const twin = (
     <section className="sw-twin" aria-labelledby="sw-twin-h" data-testid="web-twin">
-      <h2 className="sw-h" id="sw-twin-h">Strongest links <span className="sw-h__sub">list view of the graph</span></h2>
+      <SectionHeader label="Strongest links" hint="list view of the graph" id="sw-twin-h" />
       {list.length ? (
         <>
           <ol className="sw-links">
             {shownList.map((e) => <LinkItem key={e.key} edge={e} titleOf={titleOf} />)}
           </ol>
           {list.length > shownList.length ? (
-            <button type="button" className="sf-more" onClick={() => setListAll(true)}>Show {Math.min(list.length, WEB_LIST_MAX) - shownList.length} more links</button>
+            <Button className="sf-more" onClick={() => setListAll(true)}>Show {Math.min(list.length, WEB_LIST_MAX) - shownList.length} more links</Button>
           ) : null}
         </>
       ) : (
@@ -236,14 +243,16 @@ export default function StoriesWeb({ threads, analyses, now, peek, isPhone }) {
 
   const graph = (
     <section className="sw-graphwrap" aria-labelledby="sw-graph-h">
-      <h2 className="sw-h" id="sw-graph-h">
-        Story graph <span className="sw-h__sub">the {picked.nodes.length} most-linked {plural(picked.nodes.length, 'story', 'stories')} {'·'} x = peak coverage day</span>
-      </h2>
+      <SectionHeader
+        label="Story graph"
+        hint={`the ${picked.nodes.length} most-linked ${plural(picked.nodes.length, 'story', 'stories')} · x = peak coverage day`}
+        id="sw-graph-h"
+      />
       <Graph picked={picked} titleOf={titleOf} peek={peek} />
       <p className="sw-note" data-testid="web-count">
         {picked.edges.length} of {merged.edges.length} merged {plural(merged.edges.length, 'link', 'links')} shown{picked.outside ? `; ${picked.outside} involve stories outside your filters or the archive` : ''}.
         {lonely ? ` ${lonely} of these ${plural(lonely, 'story is', 'stories are')} linked only to stories not shown here.` : ''}
-        {canShowAll ? <> <button type="button" className="sf-more sw-more" onClick={() => setShowAll(true)}>Show more stories</button></> : null}
+        {canShowAll ? <> <Button className="sf-more sw-more" onClick={() => setShowAll(true)}>Show more stories</Button></> : null}
       </p>
     </section>
   );

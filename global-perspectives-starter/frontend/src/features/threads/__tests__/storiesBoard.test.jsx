@@ -51,9 +51,9 @@ describe('Stories BOARD (?view=board)', () => {
     const cards = document.querySelectorAll('.sb-card');
     expect(cards.length).toBeGreaterThan(0);
     for (const c of cards) expect(c.querySelector('a.sb-card__link').getAttribute('href')).toMatch(/^\/weekly\/thread\//);
-    const seg = [...document.querySelectorAll('.sf-seg__btn')].map((b) => b.textContent);
+    const seg = [...document.querySelectorAll('.sf-seg [role=radio]')].map((b) => b.textContent);
     expect(seg).toEqual(['List', 'Board', 'Timeline', 'Map', 'Web']);
-    expect(document.querySelector('.sf-seg__btn[aria-pressed="true"]').textContent).toBe('Board');
+    expect(document.querySelector('.sf-seg [aria-checked="true"]').textContent).toBe('Board');
   });
   it('the board never says "escalating" (it measures coverage)', () => {
     renderAt('/weekly?view=board');

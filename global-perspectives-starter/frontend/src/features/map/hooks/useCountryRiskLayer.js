@@ -7,11 +7,12 @@
 //
 // Deliberately does NOT reuse features/threads' useWeeklyArchive — that hook calls useAuth() and
 // throws outside an AuthProvider (map tests render SituationHome standalone, and the map's public
-// data must never gate on auth anyway — CLAUDE.md). It calls the same public `archive_range`
-// proxy action directly instead, with its own tiny module-level cache.
+// data must never gate on auth anyway — CLAUDE.md). It reads the shared public archive instead
+// (useArchiveDayMap: one cached `archive_range` read per tab, shared with the country card).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { fetchArchiveRange, fetchCountryIntelligence } from '@/shared/api/restProxy.js';
+import { fetchCountryIntelligence } from '@/shared/api/restProxy.js';
 import { reportFetchError } from '@/shared/api/errorSink.js';
+import { useArchiveDayMap } from '@/shared/hooks/useArchiveDayMap.js';
 import { chunkNames, MAX_NAMES_PER_CALL, MAX_CONCURRENT_BATCHES, buildCountryRiskLayer } from '@/features/map/lib/countryRiskLayer.js';
 import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 
@@ -22,10 +23,8 @@ import { iso3ForName } from '@/features/map/lib/situationLabels.js';
 const MAX_CANDIDATES = 60;
 
 // Module-level session state, shared across every mount of this hook (the desktop console and the
-// phone tab render two different trees but should never double-fetch): the archive-derived name
-// list, and the country_intelligence results keyed by name.
-let archiveNamesCache = null; // string[] | null
-let archiveFetchPromise = null;
+// phone tab render two different trees but should never double-fetch): the country_intelligence
+// results keyed by name.
 let intelCache = new Map(); // name -> intel | null
 let intelFetchedKey = null; // the namesKey intelCache was built for
 
@@ -59,31 +58,14 @@ async function runPooled(items, limit, worker) {
   await Promise.all(runners);
 }
 
-async function loadArchiveNames() {
-  if (archiveNamesCache) return archiveNamesCache;
-  if (!archiveFetchPromise) {
-    archiveFetchPromise = fetchArchiveRange(30)
-      .then((result) => { archiveNamesCache = namesFromArchive(result?.data || {}); return archiveNamesCache; })
-      .catch((err) => { reportFetchError('map-country-risk-archive', err); archiveNamesCache = []; return archiveNamesCache; });
-  }
-  return archiveFetchPromise;
-}
-
 export function useCountryRiskLayer(active) {
-  const [names, setNames] = useState(() => archiveNamesCache || []);
+  const { dayMap, loading: archiveLoading } = useArchiveDayMap(Boolean(active));
+  const names = useMemo(() => (dayMap ? namesFromArchive(dayMap) : []), [dayMap]);
   const [intelByName, setIntelByName] = useState(() => Object.fromEntries(intelCache));
-  const [loading, setLoading] = useState(false);
+  const [intelLoading, setLoading] = useState(false);
+  const loading = archiveLoading || intelLoading;
   const [callCount, setCallCount] = useState(0);
   const startedRef = useRef(null);
-
-  useEffect(() => {
-    if (!active) return;
-    let cancelled = false;
-    if (archiveNamesCache) { setNames(archiveNamesCache); return undefined; }
-    setLoading(true);
-    loadArchiveNames().then((list) => { if (!cancelled) { setNames(list); setLoading(false); } });
-    return () => { cancelled = true; };
-  }, [active]);
 
   const namesKey = useMemo(() => names.join(','), [names]);
 

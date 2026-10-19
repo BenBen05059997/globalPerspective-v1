@@ -291,8 +291,6 @@ export default function ThreadPage() {
       return (
         <div className="container tp-fallback">
           <div className="tp-fallback-crumbs">
-            <Link to="/economy">← Back to Economy</Link>
-            <span className="tp-crumb-sep">·</span>
             <Link to="/">← Home</Link>
           </div>
           <h1 className="tp-fallback-h1">{fallbackTitle}</h1>
@@ -755,10 +753,6 @@ export default function ThreadPage() {
         {activeTab === 'economy' && hasEconomy && (
           <>
             <MechanismCard impact={economicImpact} />
-            {/* Up-link: /weekly-markets retired to /briefings (economy parked), which shows the paused note */}
-            <Link to="/briefings?from=markets" className="tp-econ-link">
-              This story moved markets this week →
-            </Link>
           </>
         )}
         </div>

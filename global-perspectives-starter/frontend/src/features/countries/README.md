@@ -7,7 +7,7 @@ one-screen country card the map console also mounts.
 ## Status
 - Live, public (signed-out reads work).
 - `ECONOMY_PARKED` (`@/shared/lib/economyFlag.js`) hides the disruption sort and blocks and turns off
-  `useDisruptionsList` (`enabled: !ECONOMY_PARKED`); `useMarketsCountry` is not gated.
+  `useDisruptionsList` (`enabled: !ECONOMY_PARKED`); `useMarketsCountry` is not gated (FX box = raw quotes, no link).
 
 ## Routes
 - `/weekly/countries` -> `CountryListPage` (also the Countries section of `/weekly?section=countries`:

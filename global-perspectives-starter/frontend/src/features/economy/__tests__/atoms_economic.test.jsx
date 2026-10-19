@@ -3,14 +3,12 @@
  * See ECONOMIC_VERIFICATION_PLAN.md §8.
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
 import MechanismCard from '@/features/economy/components/MechanismCard.jsx';
-import DisruptionRow from '@/features/economy/components/DisruptionRow.jsx';
-import DisruptionPreview from '@/features/economy/components/DisruptionPreview.jsx';
 import QualityFlag from '@/features/economy/components/QualityFlag.jsx';
 
 const router = (ui) => <MemoryRouter>{ui}</MemoryRouter>;
@@ -126,62 +124,6 @@ describe('MechanismCard', () => {
     expect(links.length).toBeGreaterThan(0);
     // EU airlines is type "sector" → should not be a link
     expect(container.querySelector('.mc-ent-static')).toBeTruthy();
-  });
-});
-
-// ─── DisruptionRow ─────────────────────────────────────────────────────────
-
-describe('DisruptionRow', () => {
-  it('renders as a Link when scopeId present', () => {
-    const { container } = render(router(<DisruptionRow disruption={FULL_IMPACT} />));
-    const link = container.querySelector('a.drow-link');
-    expect(link).toBeTruthy();
-    expect(link.getAttribute('href')).toContain('/weekly/thread/');
-    expect(link.getAttribute('href')).toContain('tab=economy');
-  });
-
-  it('renders as div (no Link) when scopeId is missing', () => {
-    const { container } = render(router(<DisruptionRow disruption={{ ...FULL_IMPACT, scopeId: null }} />));
-    expect(container.querySelector('a.drow-link')).toBeFalsy();
-    expect(container.querySelector('.drow')).toBeTruthy();
-  });
-
-  it('shows first 3 tickers + "+N more" when many instruments', () => {
-    const many = {
-      ...FULL_IMPACT,
-      instruments: Array.from({ length: 8 }, (_, i) => ({
-        instrumentId: `INS${i}`, direction: 'up', magnitude: 'moderate', citedTopicIds: ['topic-abc'],
-      })),
-    };
-    const { container } = render(router(<DisruptionRow disruption={many} />));
-    expect(container.textContent).toContain('+5 more');
-  });
-
-  it('renders nothing when hasImpact:false', () => {
-    const { container } = render(router(<DisruptionRow disruption={{ hasImpact: false }} />));
-    expect(container.firstChild).toBeNull();
-  });
-});
-
-// ─── DisruptionPreview ─────────────────────────────────────────────────────
-
-describe('DisruptionPreview', () => {
-  it('renders headline, severity, top tickers', () => {
-    const { container } = render(<DisruptionPreview impact={FULL_IMPACT} />);
-    expect(container.textContent).toContain('Iran-Israel');
-    expect(container.querySelector('.dprev-tick')).toBeTruthy();
-  });
-
-  it('fires onExpand callback on click', () => {
-    const fn = vi.fn();
-    render(<DisruptionPreview impact={FULL_IMPACT} onExpand={fn} />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(fn).toHaveBeenCalledTimes(1);
-  });
-
-  it('renders nothing when hasImpact:false', () => {
-    const { container } = render(<DisruptionPreview impact={{ hasImpact: false }} />);
-    expect(container.firstChild).toBeNull();
   });
 });
 

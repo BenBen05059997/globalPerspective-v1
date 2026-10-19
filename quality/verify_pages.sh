@@ -119,18 +119,14 @@ must_have "$SRC/features/static/Disclosures.jsx" "Economic Disruption" "has Econ
 must_have "$SRC/features/static/Disclosures.jsx" "[Aa]uto" "mentions automated quality judge"
 
 # ─── QualityFlag propagation contract (ECONOMIC_DISRUPTION.md §"Quality flag propagation") ───
-# Phase B's verdict flag must surface in all 3 atoms that render economic content.
-# One backend deploy → flag visible everywhere, only because each atom imports
-# QualityFlag itself. Remove any of these imports → flag goes dark on that surface.
+# Phase B's verdict flag must surface in every atom that renders economic content.
+# Each atom imports QualityFlag itself; remove the import → flag goes dark on that surface.
+# DisruptionRow / DisruptionPreview were deleted 2026-10-19 (only tests used them; economy parked).
 must_have "$SRC/features/economy/components/MechanismCard.jsx"     "import QualityFlag" "QualityFlag wired into MechanismCard"
-must_have "$SRC/features/economy/components/DisruptionRow.jsx"     "import QualityFlag" "QualityFlag wired into DisruptionRow"
-must_have "$SRC/features/economy/components/DisruptionPreview.jsx" "import QualityFlag" "QualityFlag wired into DisruptionPreview"
 must_have "$SRC/features/economy/components/MechanismCard.jsx"     "<QualityFlag" "QualityFlag rendered in MechanismCard"
-must_have "$SRC/features/economy/components/DisruptionRow.jsx"     "<QualityFlag" "QualityFlag rendered in DisruptionRow"
-must_have "$SRC/features/economy/components/DisruptionPreview.jsx" "<QualityFlag" "QualityFlag rendered in DisruptionPreview"
 
 # ─── §9.11 negative guards — pages that intentionally do NOT carry economic UI ───
-must_not_have "$SRC/features/threads/WeeklyPage.jsx" "useDisruptionsList|useEconomicImpact|useTopMovers|MechanismCard|DisruptionRow|DisruptionPreview" "no economic hooks/atoms"
+must_not_have "$SRC/features/threads/WeeklyPage.jsx" "useDisruptionsList|useEconomicImpact|useTopMovers|MechanismCard" "no economic hooks/atoms"
 
 # ─── S6: track record E2 (service record) + E1 text version ───
 # The July pilot (122 triggers, all confirmed 2026-07-24) is archived and must never be blended

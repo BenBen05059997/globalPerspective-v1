@@ -24,7 +24,8 @@ a trust strip, an earlier-today archive rail and a topic nav rail.
   `useCorrectionsFeed`
 - Failures render inline (no modal) and go to `reportFetchError`. Summary and Predict retry on cache miss/503 up to
   `MAX_RETRIES` (6), `RETRY_DELAY_MS` 10 s apart; Trace does not retry.
-- Masthead links to `/weekly-markets`, a retired route that redirects to `/briefings?from=markets`.
+- The masthead no longer links to `/weekly-markets` (economy parked; decision 0031). The map's About drawer links here
+  ("Read today's topics →", decision 0029).
 
 ## Backend
 - Generated row: [reference/features.md#home](../../../../../project-docs/reference/features.md#home)

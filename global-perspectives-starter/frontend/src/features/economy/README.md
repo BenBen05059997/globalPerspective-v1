@@ -20,8 +20,8 @@ markets wrap. The feature also owns the economic hooks and atoms that threads, c
 ## Frontend
 - `EconomyPage.jsx` - masthead + 3-column shell; URL-synced filters and sort; deliberately no `EditorialShell`
 - `components/WeeklyMarketsView.jsx` - the "This week" wrap
-- Atoms (`components/economyBlocks.css`): `InstrumentChip.jsx`, `MechanismCard.jsx`, `QualityFlag.jsx`, `Sparkline.jsx`;
-  `DisruptionRow.jsx`, `DisruptionPreview.jsx` are only referenced by tests today
+- Atoms (`components/economyBlocks.css`): `InstrumentChip.jsx`, `MechanismCard.jsx`, `QualityFlag.jsx`, `Sparkline.jsx`
+  (`DisruptionRow`/`DisruptionPreview` deleted 2026-10-19: only tests used them)
 - `lib/composeEconomyBriefing.js` (deterministic briefing text, loaded by `quality/briefing/verify_*.mjs`),
   `lib/disruptionGate.js` (hides unreliable FX arrows / analogs), `data/economicAnalogs.js(on)` — keep relative imports
 - Public API (`index.js`): `InstrumentChip` (daily), `MechanismCard`, `useEconomicImpact` (threads), `useMarketsCountry` (countries)

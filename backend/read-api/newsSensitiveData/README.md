@@ -21,9 +21,10 @@ The site's read-only REST proxy (despite the name, all content is public). One h
 - CORS: code emits `Access-Control-Allow-Origin` (own allow-list; `rss` sends `*`) and answers OPTIONS itself.
 - Tier is a depth cap, never an auth gate: no/invalid token or any error means `free`, still 200. Capped: `country_history` drift notes (1) and `corrections_feed`.
 - `prediction_track_record` serves the S3 cache and falls back to a live Scan; that fallback must stay in sync with `newsPredictionsSnapshot/src/trackRecord.js`.
+- Links (L2-IDS), derived here, never from a model: briefs, weekly signals, web index/records and light archive entries get `iso3[]` (`resolveIso3`, TODO L1-LINKS) when the stored row lacks it; drift notes carry `threadId`; prediction items carry `qid` and `clusterKey`; a question trigger's verdict comes from its `Q#` VERDICT row (yes = fired, no = not_fired). `weekly_brief` takes `week=YYYY-MM-DD` for a past published brief. Country/facts/history/systems lookups try the canonical short name first, then the requested spelling.
 - `archive_range` returns light entries (6 MB payload limit). `placeFilter` (+ name tables) and `llm` come from `backend/shared/src` through the `src/_shared` symlink. The `lib.js` week helpers are still a copy, kept equal by `backend/predictions/newsPredictionResolver/test/weeksParity.test.js`.
 
 ## Tests
-- `cd backend/read-api/newsSensitiveData/src && npm test` (`node --test ../test/*.test.js`, offline): 35/35 passed 2026-10-19.
+- `cd backend/read-api/newsSensitiveData/src && npm test` (`node --test ../test/*.test.js`, offline): 43/43 passed 2026-10-19.
 
 Last verified: 2026-10-19

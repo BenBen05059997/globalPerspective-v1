@@ -25,6 +25,6 @@ Served by `newsSensitiveData` (`driftNotes`); `newsEmailSender` `drift_alert` ma
 - Idempotent per date: an existing `DRIFT#<date>` row is skipped (`alreadyNoted`). `dayZero` and `llm` come from `backend/shared/src` through the `src/_shared` symlink. The prose regexes in `src/directionCheck.js` are a port of the frontend `features/analysis-studio/lib/directionCheck.js`; nothing checks the two stay in step (its header says `check-shared-sync.mjs` does; it does not).
 
 ## Tests
-- `cd backend/pipeline/newsDriftCorrector/src && npm test` (`node --test ../test/*.test.js`): 31 pass.
+- `cd backend/pipeline/newsDriftCorrector/src && npm test` (`node --test ../test/*.test.js`): 32 pass.
 
 Last verified: 2026-10-19

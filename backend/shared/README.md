@@ -17,7 +17,7 @@ under `_shared/`. An edit here changes every Lambda that requires the file on it
   Herzegovina). Replaced by L1-LINKS `resolveCountry`; callers are marked `TODO(L1-LINKS)`.
 - `riskDimensions.js`: 4-axis risk vector -> headline score/level (worst axis leads).
 - `situations-core.js`: GDACS observation + situation fold (`buildSituation`, `coolSituation`,
-  `buildStorySituation`). Pure, no AWS.
+  `buildStorySituation`; a threaded story's situation is `news#<ISO3>#<threadId>` with absorbed old ids in `aliases[]`). Pure, no AWS.
 
 Who uses what: `git grep "_shared/" -- backend`.
 

@@ -32,7 +32,6 @@ vi.mock('@/features/threads/hooks/useThreadAnalyses', () => ({
 }));
 vi.mock('@/shared/contexts/AuthContext', () => ({ AuthProvider: ({ children }) => children, useAuth: () => ({ user: null, loading: false }) }));
 vi.mock('@/shared/ui/boot/BootLoader.jsx', () => ({ default: () => <div data-testid="loader" /> }));
-vi.mock('@/features/countries/components/CountryOverviewMap', () => ({ default: () => <div /> }));
 const web = { state: { index: null, loading: false, failed: false } };
 vi.mock('@/features/threads/hooks/useWebIndex.js', () => ({ useWebIndex: () => web.state }));
 vi.mock('@/features/threads/components/WeeklyMap', () => ({ default: () => <div data-testid="weekly-map" /> }));

@@ -1,6 +1,6 @@
 # newsPolarBilling
 
-Polar.sh billing on one Function URL. A POST with a `webhook-signature` header is a Polar webhook (Standard-Webhooks HMAC, 5-minute replay window): `subscription.*` sets `tier` member/free from status; `order.paid`/`order.created` tops up credits for a known credit pack (idempotent via `processedOrders`), grants member for a known subscription product, and grants nothing for an unknown product. Otherwise a Firebase-JWT action: `create_checkout` (subscription plan or credit `pack`; uid sent as `customer_external_id`) and `get_membership`. Plan: `project-docs/billing/_active/POLAR_BILLING_PLAN.md`.
+Polar.sh billing on one Function URL. A POST with a `webhook-signature` header is a Polar webhook (Standard-Webhooks HMAC, 5-minute replay window): `subscription.*` sets `tier` member/free from status; `order.paid`/`order.created` tops up credits for a known credit pack (idempotent via `processedOrders`), grants member for a known subscription product, and grants nothing for an unknown product. Otherwise a Firebase-JWT action: `create_checkout` (subscription plan or credit `pack`; uid sent as `customer_external_id`) and `get_membership`. Credits are parked: `project-docs/decisions/0002-analysis-credits-parked.md`.
 
 ## Deployment
 - Deployed name `newsPolarBilling` · runtime `nodejs20.x` · group `membership-studio` (scripts/functions.json)

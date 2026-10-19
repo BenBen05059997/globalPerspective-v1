@@ -5,7 +5,7 @@ PARKED. Per-thread economic disruption analysis: picks threads with an economic 
 instruments from a CLOSED allowlist (unknown tickers dropped), direction + magnitude (never %), cited
 topicIds (uncited claims dropped) and a historical analog from `src/economic_analogs.json` (25 events),
 snapshots real market prices, and writes the record or a `{hasImpact:false}` tombstone.
-Concept: `project-docs/economy/ECONOMIC_DISRUPTION.md`.
+Parked by `project-docs/decisions/0009-economy-parked.md`.
 
 ## Deployment
 - Deployed name `newsEconomicImpact` · runtime `nodejs22.x` · group `economy-parked` (scripts/functions.json)

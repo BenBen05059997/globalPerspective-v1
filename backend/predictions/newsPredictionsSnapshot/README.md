@@ -1,6 +1,6 @@
 # newsPredictionsSnapshot
 
-Precomputes the forecast track record so `/track-record` does not Scan PredictionLog on every load. One full Scan of the log (excluding seed `SECRET` rows and operator-only `DRAFT#` rows), then `computeTrackRecord` (methodology-v1 era, from 2026-07-04) plus `buildQuestionBoard` (weekly sampled-question view: commits, draws, reveals, verdicts, health alarms; Brier scoring stays null below 150 resolved questions), written as one JSON object to S3.
+Precomputes the forecast track record so `/track-record` does not Scan PredictionLog on every load. One full Scan of the log (excluding seed `SECRET` rows and operator-only `DRAFT#` rows), then `computeTrackRecord` (methodology-v1 era, from 2026-07-04) plus `buildQuestionBoard` (weekly sampled-question view: commits, draws, reveals, verdicts, health alarms; Brier scoring stays null below 150 resolved questions), written as one JSON object to S3. Each `recent[]` item carries `qid` (the forecast's question, when it has one) and `clusterKey` (threadId, else topicId, else the PRED key: the same rule as the resolver's `Q#` SAMPLED row), so a result links to its story.
 
 ## Deployment
 - Deployed name `newsPredictionsSnapshot` · runtime `nodejs22.x` · group `predictions` (scripts/functions.json)
@@ -19,6 +19,6 @@ Precomputes the forecast track record so `/track-record` does not Scan Predictio
 - Scoring uses a fixed-seed cluster bootstrap so the published interval does not change every 30 minutes.
 
 ## Tests
-- `cd backend/predictions/newsPredictionsSnapshot/src && npm test` (three `node *.test.mjs` scripts, offline): 11 + 10 + 16 passed 2026-10-19.
+- `cd backend/predictions/newsPredictionsSnapshot/src && npm test` (three `node *.test.mjs` scripts, offline): 13 + 10 + 16 passed 2026-10-19.
 
 Last verified: 2026-10-19

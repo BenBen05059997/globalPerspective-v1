@@ -18,10 +18,10 @@ Despite the name, this no longer posts to Dev.to (publish path removed 2026-05-1
 ## Gotchas
 - Brief is skipped (logged, not an error) when `SUMMARIZE_PREDICT_TABLE` or `XAI_API_KEY` is unset.
 - Dead code left in `index.js`: Dev.to posting (`postToDevTo`, `DEVTO_API_KEY`), `SOCIAL_POSTS_TABLE` dedup helpers, and an OpenRouter `callAi` (`AI_MODEL`); none are called by the handler.
-- `topStories[].threadId` comes from the archive entry, never from the model; unmatched rising thread gets `null`.
+- `topStories[]` carry `threadId` (matched to an archive entry, never from the model; ambiguous or unmatched = `null`) and `iso3[]` (their regions through `resolveIso3`); `countryToWatch` carries `iso3[]` and the `threadId` of today's thread with most entries in that country.
 - Thinking mode is disabled on purpose (2026-07-26 outage: thinking burned `max_tokens`).
 
 ## Tests
-- `cd backend/distribution/newsPostDevTo/src && npm test` (`node --test ../test/*.test.js`, offline): 9/9 passed 2026-10-19. `dayZero`, `placeFilter` and `llm` (from `backend/shared/src` via the `src/_shared` symlink) are tested in `backend/shared/test`.
+- `cd backend/distribution/newsPostDevTo/src && npm test` (`node --test ../test/*.test.js`, offline): 11/11 passed 2026-10-19. `dayZero`, `placeFilter` and `llm` (from `backend/shared/src` via the `src/_shared` symlink) are tested in `backend/shared/test`.
 
 Last verified: 2026-10-19

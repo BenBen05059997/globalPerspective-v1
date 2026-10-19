@@ -9,6 +9,7 @@
 
 import DirectionArrow from '@/shared/ui/DirectionArrow.jsx';
 import { gateInstrument } from '@/features/economy/lib/disruptionGate.js';
+import '@/features/economy/components/economyBlocks.css';
 
 const MAG_PIPS = { small: 1, moderate: 2, large: 3 };
 

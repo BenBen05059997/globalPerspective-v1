@@ -6,6 +6,7 @@
 //   impact: economic_impact record (must contain qualityScores / qualityReasons /
 //           is_low_quality if the judge has run; renders nothing otherwise)
 //   size?: 'sm' | 'md'
+import '@/features/economy/components/economyBlocks.css';
 
 const AXIS_LABEL = {
   coherence: 'Coherence',

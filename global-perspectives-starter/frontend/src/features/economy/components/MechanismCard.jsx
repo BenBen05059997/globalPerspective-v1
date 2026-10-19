@@ -8,6 +8,7 @@ import InstrumentChip from '@/features/economy/components/InstrumentChip.jsx';
 import SeverityBadge from '@/shared/ui/SeverityBadge.jsx';
 import QualityFlag from '@/features/economy/components/QualityFlag.jsx';
 import { gateAnalog } from '@/features/economy/lib/disruptionGate.js';
+import '@/features/economy/components/economyBlocks.css';
 
 function EntityLine({ ent }) {
   if (!ent?.name) return null;
